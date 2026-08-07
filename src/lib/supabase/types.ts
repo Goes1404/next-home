@@ -1,150 +1,504 @@
 /**
- * Tipos do schema Supabase.
- *
- * Escrito à mão a partir de `supabase/migrations/0001_init.sql` — o normal
- * seria gerar isto via `generate_typescript_types` contra o projeto real,
- * mas a conta conectada ao MCP aqui não tem acesso administrativo ao
- * projeto configurado em `.env.local`. Assim que houver acesso (service
- * role ou o projeto entrar na organização certa), regenerar e substituir
- * este arquivo por completo.
+ * Tipos gerados a partir do projeto Supabase real (prhhrqyubjcafvucirri) via
+ * Management API — `types/typescript`. Não editar à mão; regenerar sempre
+ * que `supabase/migrations/` mudar.
  */
 
-export type StatusObra =
-  | "breve_lancamento"
-  | "pre_lancamento"
-  | "lancamento"
-  | "em_construcao"
-  | "ultimas_unidades"
-  | "pronto_para_morar";
-
-export type TipoImovel = "apartamento" | "alto_padrao" | "casa" | "terreno";
-export type FinalidadeImovel = "lancamento" | "venda";
-export type TipoMidia = "foto" | "planta" | "video" | "tour360";
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.15"
+  }
   public: {
     Tables: {
       corretores: {
         Row: {
-          id: string;
-          nome: string;
-          creci: string;
-          whatsapp: string;
-          email: string | null;
-          foto_url: string | null;
-          created_at: string;
-        };
-        Insert: Partial<Database["public"]["Tables"]["corretores"]["Row"]> & {
-          nome: string;
-          creci: string;
-          whatsapp: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["corretores"]["Row"]>;
-      };
+          created_at: string
+          creci: string
+          email: string | null
+          foto_url: string | null
+          id: string
+          nome: string
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string
+          creci: string
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          nome: string
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string
+          creci?: string
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          nome?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      empreendimento_lazer: {
+        Row: {
+          empreendimento_id: string
+          lazer_item_id: string
+        }
+        Insert: {
+          empreendimento_id: string
+          lazer_item_id: string
+        }
+        Update: {
+          empreendimento_id?: string
+          lazer_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empreendimento_lazer_empreendimento_id_fkey"
+            columns: ["empreendimento_id"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "empreendimento_lazer_lazer_item_id_fkey"
+            columns: ["lazer_item_id"]
+            isOneToOne: false
+            referencedRelation: "lazer_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empreendimentos: {
         Row: {
-          id: string;
-          slug: string;
-          nome: string;
-          tagline: string | null;
-          descricao: string | null;
-          status: StatusObra;
-          tipo: TipoImovel;
-          finalidade: FinalidadeImovel;
-          cidade: string;
-          bairro: string;
-          endereco: string | null;
-          lat: number | null;
-          lng: number | null;
-          preco_a_partir: number | null;
-          iptu: number | null;
-          condominio_valor: number | null;
-          construtora: string | null;
-          total_unidades: number | null;
-          total_torres: number | null;
-          total_andares: number | null;
-          entrega_prevista: string | null;
-          destaque: boolean;
-          ordem: number;
-          seo_titulo: string | null;
-          seo_descricao: string | null;
-          corretor_id: string | null;
-          codigo_legado: string | null;
-          publicado: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: Partial<Database["public"]["Tables"]["empreendimentos"]["Row"]> & {
-          slug: string;
-          nome: string;
-          cidade: string;
-          bairro: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["empreendimentos"]["Row"]>;
-      };
-      tipologias: {
-        Row: {
-          id: string;
-          empreendimento_id: string;
-          nome: string;
-          area_privativa: number | null;
-          dormitorios: number;
-          suites: number;
-          banheiros: number;
-          vagas: number;
-          preco: number | null;
-          planta_url: string | null;
-          ordem: number;
-        };
-        Insert: Partial<Database["public"]["Tables"]["tipologias"]["Row"]> & {
-          empreendimento_id: string;
-          nome: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["tipologias"]["Row"]>;
-      };
-      midias: {
-        Row: {
-          id: string;
-          empreendimento_id: string;
-          tipo: TipoMidia;
-          url: string;
-          alt: string | null;
-          largura: number | null;
-          altura: number | null;
-          blur_data_url: string | null;
-          ordem: number;
-        };
-        Insert: Partial<Database["public"]["Tables"]["midias"]["Row"]> & {
-          empreendimento_id: string;
-          url: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["midias"]["Row"]>;
-      };
+          bairro: string
+          cidade: string
+          codigo_legado: string | null
+          condominio_valor: number | null
+          construtora: string | null
+          corretor_id: string | null
+          created_at: string
+          descricao: string | null
+          destaque: boolean
+          endereco: string | null
+          entrega_prevista: string | null
+          finalidade: Database["public"]["Enums"]["finalidade_imovel"]
+          id: string
+          iptu: number | null
+          lat: number | null
+          lng: number | null
+          nome: string
+          ordem: number
+          preco_a_partir: number | null
+          publicado: boolean
+          seo_descricao: string | null
+          seo_titulo: string | null
+          slug: string
+          status: Database["public"]["Enums"]["status_obra"]
+          tagline: string | null
+          tipo: Database["public"]["Enums"]["tipo_imovel"]
+          total_andares: number | null
+          total_torres: number | null
+          total_unidades: number | null
+          updated_at: string
+        }
+        Insert: {
+          bairro: string
+          cidade: string
+          codigo_legado?: string | null
+          condominio_valor?: number | null
+          construtora?: string | null
+          corretor_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          destaque?: boolean
+          endereco?: string | null
+          entrega_prevista?: string | null
+          finalidade?: Database["public"]["Enums"]["finalidade_imovel"]
+          id?: string
+          iptu?: number | null
+          lat?: number | null
+          lng?: number | null
+          nome: string
+          ordem?: number
+          preco_a_partir?: number | null
+          publicado?: boolean
+          seo_descricao?: string | null
+          seo_titulo?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["status_obra"]
+          tagline?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_imovel"]
+          total_andares?: number | null
+          total_torres?: number | null
+          total_unidades?: number | null
+          updated_at?: string
+        }
+        Update: {
+          bairro?: string
+          cidade?: string
+          codigo_legado?: string | null
+          condominio_valor?: number | null
+          construtora?: string | null
+          corretor_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          destaque?: boolean
+          endereco?: string | null
+          entrega_prevista?: string | null
+          finalidade?: Database["public"]["Enums"]["finalidade_imovel"]
+          id?: string
+          iptu?: number | null
+          lat?: number | null
+          lng?: number | null
+          nome?: string
+          ordem?: number
+          preco_a_partir?: number | null
+          publicado?: boolean
+          seo_descricao?: string | null
+          seo_titulo?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["status_obra"]
+          tagline?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_imovel"]
+          total_andares?: number | null
+          total_torres?: number | null
+          total_unidades?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empreendimentos_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lazer_itens: {
-        Row: { id: string; nome: string; icone: string | null };
-        Insert: Partial<Database["public"]["Tables"]["lazer_itens"]["Row"]> & { nome: string };
-        Update: Partial<Database["public"]["Tables"]["lazer_itens"]["Row"]>;
-      };
-      empreendimento_lazer: {
-        Row: { empreendimento_id: string; lazer_item_id: string };
-        Insert: Database["public"]["Tables"]["empreendimento_lazer"]["Row"];
-        Update: Partial<Database["public"]["Tables"]["empreendimento_lazer"]["Row"]>;
-      };
+        Row: {
+          icone: string | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          icone?: string | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          icone?: string | null
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
-          id: string;
-          empreendimento_id: string | null;
-          nome: string;
-          email: string | null;
-          telefone: string | null;
-          mensagem: string | null;
-          origem: string | null;
-          consentimento_lgpd: boolean;
-          created_at: string;
-        };
-        Insert: Partial<Database["public"]["Tables"]["leads"]["Row"]> & { nome: string };
-        Update: Partial<Database["public"]["Tables"]["leads"]["Row"]>;
-      };
-    };
-  };
-};
+          consentimento_lgpd: boolean
+          created_at: string
+          email: string | null
+          empreendimento_id: string | null
+          id: string
+          mensagem: string | null
+          nome: string
+          origem: string | null
+          telefone: string | null
+        }
+        Insert: {
+          consentimento_lgpd?: boolean
+          created_at?: string
+          email?: string | null
+          empreendimento_id?: string | null
+          id?: string
+          mensagem?: string | null
+          nome: string
+          origem?: string | null
+          telefone?: string | null
+        }
+        Update: {
+          consentimento_lgpd?: boolean
+          created_at?: string
+          email?: string | null
+          empreendimento_id?: string | null
+          id?: string
+          mensagem?: string | null
+          nome?: string
+          origem?: string | null
+          telefone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_empreendimento_id_fkey"
+            columns: ["empreendimento_id"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      midias: {
+        Row: {
+          alt: string | null
+          altura: number | null
+          blur_data_url: string | null
+          empreendimento_id: string
+          id: string
+          largura: number | null
+          ordem: number
+          tipo: Database["public"]["Enums"]["tipo_midia"]
+          url: string
+        }
+        Insert: {
+          alt?: string | null
+          altura?: number | null
+          blur_data_url?: string | null
+          empreendimento_id: string
+          id?: string
+          largura?: number | null
+          ordem?: number
+          tipo?: Database["public"]["Enums"]["tipo_midia"]
+          url: string
+        }
+        Update: {
+          alt?: string | null
+          altura?: number | null
+          blur_data_url?: string | null
+          empreendimento_id?: string
+          id?: string
+          largura?: number | null
+          ordem?: number
+          tipo?: Database["public"]["Enums"]["tipo_midia"]
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "midias_empreendimento_id_fkey"
+            columns: ["empreendimento_id"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tipologias: {
+        Row: {
+          area_privativa: number | null
+          banheiros: number
+          dormitorios: number
+          empreendimento_id: string
+          id: string
+          nome: string
+          ordem: number
+          planta_url: string | null
+          preco: number | null
+          suites: number
+          vagas: number
+        }
+        Insert: {
+          area_privativa?: number | null
+          banheiros?: number
+          dormitorios?: number
+          empreendimento_id: string
+          id?: string
+          nome: string
+          ordem?: number
+          planta_url?: string | null
+          preco?: number | null
+          suites?: number
+          vagas?: number
+        }
+        Update: {
+          area_privativa?: number | null
+          banheiros?: number
+          dormitorios?: number
+          empreendimento_id?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          planta_url?: string | null
+          preco?: number | null
+          suites?: number
+          vagas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tipologias_empreendimento_id_fkey"
+            columns: ["empreendimento_id"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      finalidade_imovel: "lancamento" | "venda"
+      status_obra:
+        | "breve_lancamento"
+        | "pre_lancamento"
+        | "lancamento"
+        | "em_construcao"
+        | "ultimas_unidades"
+        | "pronto_para_morar"
+      tipo_imovel: "apartamento" | "alto_padrao" | "casa" | "terreno"
+      tipo_midia: "foto" | "planta" | "video" | "tour360"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      finalidade_imovel: ["lancamento", "venda"],
+      status_obra: [
+        "breve_lancamento",
+        "pre_lancamento",
+        "lancamento",
+        "em_construcao",
+        "ultimas_unidades",
+        "pronto_para_morar",
+      ],
+      tipo_imovel: ["apartamento", "alto_padrao", "casa", "terreno"],
+      tipo_midia: ["foto", "planta", "video", "tour360"],
+    },
+  },
+} as const
