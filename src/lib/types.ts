@@ -26,6 +26,13 @@ export const STATUS_LABEL: Record<StatusObra, string> = {
   pronto_para_morar: "Pronto para morar",
 };
 
+export const TIPO_LABEL: Record<TipoImovel, string> = {
+  apartamento: "Apartamento",
+  alto_padrao: "Alto padrão",
+  casa: "Casa",
+  terreno: "Terreno",
+};
+
 export type Tipologia = {
   nome: string;
   areaPrivativa: number | null;
@@ -74,4 +81,15 @@ export type Empreendimento = {
   tipologias: Tipologia[];
   lazer: string[];
   corretor: Corretor;
+};
+
+/** Filtros da listagem — cada campo em branco/undefined não filtra. */
+export type FiltrosEmpreendimento = {
+  tipo?: TipoImovel;
+  cidade?: string;
+  bairro?: string;
+  /** Preço "a partir de" não pode passar deste teto. */
+  precoMax?: number;
+  /** A tipologia mais compacta do empreendimento tem pelo menos isso de dormitórios. */
+  dormitoriosMin?: number;
 };
