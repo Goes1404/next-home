@@ -1,0 +1,92 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+import { liberarContexto, reservarContexto } from "./orcamentoWebgl";
+import { useGlassFallback } from "./useGlassFallback";
+
+// O canvas só existe no cliente e só é baixado quando algum painel usa WebGL.
+const GlassCanvas = dynamic(() => import("./GlassCanvas"), { ssr: false });
+
+type Preset = "painel" | "nav" | "card" | "pill";
+
+/** Ajustes por contexto de uso: superfícies pequenas pedem menos refração. */
+const PRESETS = {
+  painel: { radius: 24, thickness: 26, refraction: 22, chromatic: 0.16, blur: 3, liquid: 0.8 },
+  nav: { radius: 999, thickness: 18, refraction: 14, chromatic: 0.12, blur: 2.5, liquid: 0 },
+  card: { radius: 20, thickness: 22, refraction: 18, chromatic: 0.14, blur: 2, liquid: 0.5 },
+  pill: { radius: 999, thickness: 14, refraction: 11, chromatic: 0.1, blur: 2, liquid: 0 },
+} as const satisfies Record<Preset, Record<string, number>>;
+
+/** Teal da marca em 0..1, para tingir o vidro. */
+const TINT_MARCA: [number, number, number] = [0, 0.349, 0.31];
+
+export type GlassSurfaceProps = {
+  children?: React.ReactNode;
+  className?: string;
+  preset?: Preset;
+  /** Multiplica refração e ondulação do preset. */
+  intensity?: number;
+  /** Quanto do teal da marca entra no vidro (0 a 1). */
+  tint?: number;
+  as?: "div" | "header" | "nav" | "section" | "article" | "aside";
+};
+
+export function GlassSurface({
+  children,
+  className,
+  preset = "painel",
+  intensity = 1,
+  tint = 0.12,
+  as: Tag = "div",
+}: GlassSurfaceProps) {
+  const modo = useGlassFallback();
+  const [temSlot, setTemSlot] = useState(false);
+
+  // Reserva um contexto WebGL; se a cota da página acabou, fica no fallback.
+  // A aquisição de um recurso externo finito (a cota de contextos do
+  // navegador) é síncrona por natureza — não há valor derivável de
+  // props/state que substitua isto, por isso o setState direto no efeito é
+  // intencional aqui.
+  useEffect(() => {
+    if (modo !== "webgl") return;
+    if (!reservarContexto()) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTemSlot(true);
+    return () => {
+      liberarContexto();
+      setTemSlot(false);
+    };
+  }, [modo]);
+
+  const p = PRESETS[preset];
+  const usaWebgl = modo === "webgl" && temSlot;
+
+  return (
+    <Tag
+      className={cn(
+        "relative isolate overflow-hidden",
+        // `backdrop-filter` é caro; com o canvas cobrindo o painel inteiro ele
+        // seria trabalho jogado fora, então cada modo pinta só o que precisa.
+        usaWebgl ? "vidro-webgl" : "vidro-css",
+        preset === "nav" || preset === "pill" ? "rounded-full" : "rounded-glass",
+        className,
+      )}
+    >
+      {usaWebgl && (
+        <GlassCanvas
+          radius={p.radius}
+          thickness={p.thickness}
+          refraction={p.refraction * intensity}
+          chromatic={p.chromatic}
+          blur={p.blur}
+          liquid={p.liquid * intensity}
+          tint={TINT_MARCA}
+          tintAmount={tint}
+        />
+      )}
+      {children}
+    </Tag>
+  );
+}
