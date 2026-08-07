@@ -1,16 +1,29 @@
 import { GlassSurface } from "@/components/glass/GlassSurface";
-import { linkWhatsapp } from "@/lib/site";
+import { linkWhatsapp, linkWhatsappPara } from "@/lib/site";
+
+type WhatsappCtaProps = {
+  empreendimento?: string;
+  /** Quando informado, fala direto com o corretor responsável em vez da linha geral. */
+  corretor?: { nome: string; whatsapp: string };
+};
 
 /**
  * CTA flutuante — fica acima da barra de navegação inferior no mobile
  * (reserva de `--nav-mobile-h`) e no canto inferior direito no desktop.
  */
-export function WhatsappCta({ empreendimento }: { empreendimento?: string }) {
+export function WhatsappCta({ empreendimento, corretor }: WhatsappCtaProps) {
+  const link = corretor
+    ? linkWhatsappPara(
+        corretor.whatsapp,
+        `Olá, ${corretor.nome}! Vim pelo site${empreendimento ? ` e quero saber mais sobre o ${empreendimento}` : ""}.`,
+      )
+    : linkWhatsapp(empreendimento);
+
   return (
     <div className="pb-safe fixed right-4 bottom-[calc(var(--nav-mobile-h)+1rem)] z-40 sm:bottom-6">
       <GlassSurface preset="pill" tint={0.2} intensity={1.2}>
         <a
-          href={linkWhatsapp(empreendimento)}
+          href={link}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 px-5 py-3 text-sm font-medium text-mist-50"

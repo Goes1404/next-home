@@ -45,14 +45,20 @@ export const site = {
 
 export const enderecoLinha = `${site.endereco.logradouro} — ${site.endereco.bairro}, ${site.endereco.cidade}/${site.endereco.uf}`;
 
+/** Monta um link `wa.me` para qualquer número em E.164, com mensagem pré-preenchida. */
+export function linkWhatsappPara(numero: string, mensagem: string): string {
+  return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+}
+
 /**
- * Monta o link de WhatsApp com mensagem pré-preenchida.
- * O empreendimento entra na mensagem para o corretor já saber o contexto.
+ * Link de WhatsApp para a linha geral da imobiliária, com mensagem
+ * pré-preenchida. Use `linkWhatsappPara` diretamente quando o contato for
+ * com um corretor específico (ex.: o responsável por um empreendimento).
  */
 export function linkWhatsapp(empreendimento?: string, indice = 0): string {
   const alvo = site.whatsapp[indice] ?? site.whatsapp[0];
   const texto = empreendimento
     ? `Olá! Vim pelo site e quero saber mais sobre o ${empreendimento}.`
     : "Olá! Vim pelo site e quero falar com um corretor.";
-  return `https://wa.me/${alvo.numero}?text=${encodeURIComponent(texto)}`;
+  return linkWhatsappPara(alvo.numero, texto);
 }

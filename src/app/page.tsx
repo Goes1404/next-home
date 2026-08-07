@@ -1,42 +1,31 @@
 import Image from "next/image";
+import Link from "next/link";
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
-
-const IMAGEM_HERO = "/amostra/hero.jpg";
-
-const DESTAQUES = [
-  {
-    nome: "Eternity Alphaville",
-    bairro: "Centro Comercial Jubran, Barueri",
-    preco: "A partir de R$ 1.289.900",
-    imagem: "/amostra/1e524dc19bc9b585cda9f2922e12bf22.jpg",
-  },
-  {
-    nome: "Viva RSF Vila do Conde",
-    bairro: "Parque Viana, Barueri",
-    preco: "A partir de R$ 460.000",
-    imagem: "/amostra/f29b31c7eb1959c6ef4971f85a0ef0f4.jpg",
-  },
-];
+import { precoAPartirDe } from "@/lib/format";
+import { getEmpreendimentosDestaque } from "@/lib/queries";
 
 /**
- * Home provisória da Fase 1 — existe para provar o liquid glass em condições
- * reais (nav fixa, CTA flutuante, cards) antes das Fases 5-7 substituírem o
- * conteúdo por dados do Supabase. O fundo é `position: fixed`, o que casa com
- * a suposição do shader de que o vidro refrata o viewport, não o documento.
+ * Home imersiva provisória (Fase 5) — já lê da mesma camada de dados que a
+ * Fase 7 vai expandir com scroll-telling em GSAP. O fundo é `position:
+ * fixed`, o que casa com a suposição do shader de GlassSurface de que o
+ * vidro refrata o viewport, não o documento.
  */
-export default function Home() {
+export default async function Home() {
+  const destaques = await getEmpreendimentosDestaque();
+  const imagemHero = destaques[0]?.capa.url ?? "/marca/logo-original.png";
+
   return (
-    <GlassBackgroundProvider inicial={IMAGEM_HERO}>
+    <GlassBackgroundProvider inicial={imagemHero}>
       <SiteHeader />
       <WhatsappCta />
 
       <div className="fixed inset-0 -z-10">
         <Image
-          src={IMAGEM_HERO}
+          src={imagemHero}
           alt=""
           fill
           priority
@@ -66,26 +55,30 @@ export default function Home() {
 
         <section className="px-4 pb-28">
           <div className="mx-auto grid w-full max-w-3xl gap-4 sm:grid-cols-2">
-            {DESTAQUES.map((item, i) => (
-              <Reveal key={item.nome} delay={i * 0.12} from="baixo">
-                <GlassSurface preset="card" className="group overflow-hidden">
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-[calc(var(--radius-glass)-1px)]">
-                    <Image
-                      src={item.imagem}
-                      alt={item.nome}
-                      fill
-                      sizes="(min-width: 640px) 380px, 100vw"
-                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="px-5 py-4">
-                    <h2 className="font-display text-lg text-mist-50">{item.nome}</h2>
-                    <p className="text-fluid-sm mt-0.5 text-mist-400">{item.bairro}</p>
-                    <p className="text-fluid-sm mt-2 font-medium text-brand-200">
-                      {item.preco}
-                    </p>
-                  </div>
-                </GlassSurface>
+            {destaques.map((e, i) => (
+              <Reveal key={e.slug} delay={i * 0.12} from="baixo">
+                <Link href={`/empreendimentos/${e.slug}`}>
+                  <GlassSurface preset="card" className="group overflow-hidden">
+                    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-[calc(var(--radius-glass)-1px)]">
+                      <Image
+                        src={e.capa.url}
+                        alt={e.capa.alt}
+                        fill
+                        sizes="(min-width: 640px) 380px, 100vw"
+                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="px-5 py-4">
+                      <h2 className="font-display text-lg text-mist-50">{e.nome}</h2>
+                      <p className="text-fluid-sm mt-0.5 text-mist-400">
+                        {e.bairro}, {e.cidade}
+                      </p>
+                      <p className="text-fluid-sm mt-2 font-medium text-brand-200">
+                        {precoAPartirDe(e.precoAPartir)}
+                      </p>
+                    </div>
+                  </GlassSurface>
+                </Link>
               </Reveal>
             ))}
           </div>

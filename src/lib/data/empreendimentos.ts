@@ -1,0 +1,188 @@
+import type { Empreendimento } from "@/lib/types";
+
+/**
+ * Dados de demonstração — curadoria manual de 2 empreendimentos reais da
+ * Next Home, usados para construir e validar as páginas antes do Supabase
+ * (Fase 2) estar disponível. Os campos vêm do site atual; onde a fonte não
+ * trazia um valor (ex.: IPTU do Viva RSF), o campo fica `null` em vez de
+ * inventado — o texto trata isso como "consulte".
+ */
+export const EMPREENDIMENTOS: Empreendimento[] = [
+  {
+    slug: "eternity-alphaville",
+    nome: "Eternity Alphaville Tamboré",
+    tagline: "Descubra o incomparável. Viva além do seu tempo.",
+    descricao:
+      "Duas torres de alto padrão no Centro Comercial Jubran, a poucos minutos do coração de Alphaville. Unidades de 2 e 3 dormitórios com metragens generosas, posição de frente para a avenida e um clube de lazer completo — da academia com parede verde à piscina aquecida coberta.",
+    status: "em_construcao",
+    tipo: "alto_padrao",
+    finalidade: "lancamento",
+    cidade: "Barueri",
+    bairro: "Centro Comercial Jubran",
+    endereco: "Avenida Piracema, Centro Comercial Jubran, Barueri - SP",
+    precoAPartir: 1289900,
+    iptu: 650,
+    condominioValor: 890,
+    construtora: "RSF",
+    totalUnidades: 432,
+    totalTorres: 2,
+    totalAndares: 38,
+    entregaPrevista: "2029-04-01",
+    destaque: true,
+    capa: {
+      url: "/empreendimentos/eternity-alphaville/fachada.jpg",
+      alt: "Fachada das torres Eternity Alphaville Tamboré ao entardecer",
+      largura: 900,
+      altura: 636,
+    },
+    galeria: [
+      {
+        url: "/empreendimentos/eternity-alphaville/fachada.jpg",
+        alt: "Fachada das torres Eternity Alphaville Tamboré ao entardecer",
+        largura: 900,
+        altura: 636,
+      },
+      {
+        url: "/empreendimentos/eternity-alphaville/living-02.jpg",
+        alt: "Living integrado com cozinha e varanda gourmet, unidade 02 e 04",
+        largura: 900,
+        altura: 636,
+      },
+      {
+        url: "/empreendimentos/eternity-alphaville/living-03.jpg",
+        alt: "Living integrado com adega climatizada e sala de jantar, unidade 03",
+        largura: 900,
+        altura: 636,
+      },
+    ],
+    tipologias: [
+      {
+        nome: "2 dormitórios",
+        areaPrivativa: 74,
+        dormitorios: 2,
+        suites: 1,
+        banheiros: 2,
+        vagas: 2,
+        preco: 1289900,
+      },
+      {
+        nome: "3 dormitórios com 2 suítes",
+        areaPrivativa: 100,
+        dormitorios: 3,
+        suites: 2,
+        banheiros: 3,
+        vagas: 2,
+        preco: null,
+      },
+    ],
+    lazer: [
+      "Academia",
+      "Piscina aquecida",
+      "Piscina coberta",
+      "Cinema",
+      "Coworking",
+      "Espaço gourmet",
+      "Churrasqueira com piscina",
+      "Salão de festas",
+      "Playground",
+      "Espaço pet",
+      "Portaria 24h",
+    ],
+    corretor: {
+      nome: "Miro Araujo",
+      creci: "208199",
+      whatsapp: "5511947258116",
+    },
+  },
+  {
+    slug: "viva-rsf-vila-do-conde",
+    nome: "Viva RSF Vila do Conde",
+    tagline: "Perfeito para relaxar e aproveitar o melhor do seu Viva.",
+    descricao:
+      "No Parque Viana, a poucos passos de shopping e estação, o Viva RSF Vila do Conde chega com unidades de 43 a 71 m² e um clube de lazer completo: academia com parede verde, coworking, piscina adulto e infantil, quadra poliesportiva e até um espaço pet dedicado.",
+    status: "ultimas_unidades",
+    tipo: "apartamento",
+    finalidade: "lancamento",
+    cidade: "Barueri",
+    bairro: "Parque Viana",
+    endereco: "Parque Viana, Barueri - SP",
+    precoAPartir: 460000,
+    iptu: null,
+    condominioValor: null,
+    construtora: "RSF",
+    totalUnidades: 298,
+    totalTorres: null,
+    totalAndares: 28,
+    entregaPrevista: "2027-01-01",
+    destaque: true,
+    capa: {
+      url: "/empreendimentos/viva-rsf-vila-do-conde/fachada-lazer.jpg",
+      alt: "Vista aérea da fachada e área de lazer do Viva RSF Vila do Conde à noite",
+      largura: 831,
+      altura: 578,
+    },
+    galeria: [
+      {
+        url: "/empreendimentos/viva-rsf-vila-do-conde/fachada-lazer.jpg",
+        alt: "Vista aérea da fachada e área de lazer à noite",
+        largura: 831,
+        altura: 578,
+      },
+      {
+        url: "/empreendimentos/viva-rsf-vila-do-conde/piscina-adulto.jpg",
+        alt: "Piscina adulto com deck e espreguiçadeiras entre os prédios",
+        largura: 831,
+        altura: 578,
+      },
+      {
+        url: "/empreendimentos/viva-rsf-vila-do-conde/academia.jpg",
+        alt: "Academia equipada com parede verde e esteiras",
+        largura: 831,
+        altura: 578,
+      },
+      {
+        url: "/empreendimentos/viva-rsf-vila-do-conde/coworking.jpg",
+        alt: "Espaço de coworking com mesas comunitárias e poltronas",
+        largura: 831,
+        altura: 578,
+      },
+      {
+        url: "/empreendimentos/viva-rsf-vila-do-conde/pet-place.jpg",
+        alt: "Espaço pet place com brinquedos e obstáculos para cães",
+        largura: 831,
+        altura: 578,
+      },
+    ],
+    tipologias: [
+      {
+        nome: "3 dormitórios com 1 suíte",
+        areaPrivativa: 49,
+        dormitorios: 3,
+        suites: 1,
+        banheiros: 3,
+        vagas: 2,
+        preco: 460000,
+      },
+    ],
+    lazer: [
+      "Academia",
+      "Piscina adulto",
+      "Piscina infantil",
+      "Churrasqueira",
+      "Coworking",
+      "Espaço gourmet",
+      "Salão de festas",
+      "Portaria 24h",
+      "Quadra poliesportiva",
+      "Mini market",
+      "Brinquedoteca",
+      "Espaço pet",
+      "Jardim",
+    ],
+    corretor: {
+      nome: "Renan Azael",
+      creci: "248164",
+      whatsapp: "5511963310790",
+    },
+  },
+];

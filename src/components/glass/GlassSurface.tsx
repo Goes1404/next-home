@@ -14,9 +14,9 @@ type Preset = "painel" | "nav" | "card" | "pill";
 /** Ajustes por contexto de uso: superfícies pequenas pedem menos refração. */
 const PRESETS = {
   painel: { radius: 24, thickness: 26, refraction: 22, chromatic: 0.16, blur: 3, liquid: 0.8 },
-  nav: { radius: 999, thickness: 18, refraction: 14, chromatic: 0.12, blur: 2.5, liquid: 0 },
+  nav: { radius: 999, thickness: 18, refraction: 14, chromatic: 0.12, blur: 5, liquid: 0 },
   card: { radius: 20, thickness: 22, refraction: 18, chromatic: 0.14, blur: 2, liquid: 0.5 },
-  pill: { radius: 999, thickness: 14, refraction: 11, chromatic: 0.1, blur: 2, liquid: 0 },
+  pill: { radius: 999, thickness: 14, refraction: 11, chromatic: 0.1, blur: 5, liquid: 0 },
 } as const satisfies Record<Preset, Record<string, number>>;
 
 /** Teal da marca em 0..1, para tingir o vidro. */
@@ -62,6 +62,7 @@ export function GlassSurface({
 
   const p = PRESETS[preset];
   const usaWebgl = modo === "webgl" && temSlot;
+  const opaco = preset === "nav" || preset === "pill";
 
   return (
     <Tag
@@ -69,8 +70,15 @@ export function GlassSurface({
         "relative isolate overflow-hidden",
         // `backdrop-filter` é caro; com o canvas cobrindo o painel inteiro ele
         // seria trabalho jogado fora, então cada modo pinta só o que precisa.
-        usaWebgl ? "vidro-webgl" : "vidro-css",
-        preset === "nav" || preset === "pill" ? "rounded-full" : "rounded-glass",
+        // As utilities do Tailwind (não CSS à mão) porque o Lightning CSS
+        // descarta `backdrop-filter` sem prefixo em produção quando escrito
+        // manualmente em globals.css — ver comentário em `.vidro-css`.
+        usaWebgl ? "vidro-webgl" : ["vidro-css", opaco ? "backdrop-blur-2xl backdrop-saturate-150" : "backdrop-blur-xl backdrop-saturate-150"],
+        // Nav e pill ficam fixos na tela com conteúdo passando por baixo o
+        // tempo todo ao rolar; precisam de mais opacidade para não brigar
+        // visualmente com o que está sendo rolado.
+        opaco && "vidro-opaco",
+        opaco ? "rounded-full" : "rounded-glass",
         className,
       )}
     >
