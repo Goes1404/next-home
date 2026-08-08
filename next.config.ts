@@ -23,6 +23,9 @@ const nextConfig: NextConfig = {
   experimental: {
     // GSAP e OGL são pesados para o bundler resolver a cada build.
     optimizePackageImports: ["gsap", "ogl"],
+    // Morph da capa do card para o hero do empreendimento. Degrada sozinho
+    // em navegador sem View Transitions API: a navegação só não anima.
+    viewTransition: true,
   },
 
   async redirects() {

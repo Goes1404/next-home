@@ -16,6 +16,7 @@ export type StatusObra =
 
 export type TipoImovel = "apartamento" | "alto_padrao" | "casa" | "terreno";
 export type Finalidade = "lancamento" | "venda";
+export type TipoMidia = "foto" | "planta" | "video" | "tour360";
 
 export const STATUS_LABEL: Record<StatusObra, string> = {
   breve_lancamento: "Breve lançamento",
@@ -41,19 +42,26 @@ export type Tipologia = {
   banheiros: number;
   vagas: number;
   preco: number | null;
+  plantaUrl: string | null;
+  /** Null = não informado. A UI omite o aviso de disponibilidade nesse caso. */
+  unidadesDisponiveis: number | null;
 };
 
 export type Midia = {
+  tipo: TipoMidia;
   url: string;
   alt: string;
   largura: number;
   altura: number;
+  /** Data URL minúscula para o `placeholder="blur"` do next/image. */
+  blurDataUrl: string | null;
 };
 
 export type Corretor = {
   nome: string;
   creci: string;
   whatsapp: string;
+  fotoUrl: string | null;
 };
 
 export type Empreendimento = {
@@ -76,11 +84,27 @@ export type Empreendimento = {
   totalAndares: number | null;
   entregaPrevista: string | null;
   destaque: boolean;
+  lat: number | null;
+  lng: number | null;
+  /** ISO — alimenta o selo "novo" e a ordenação por mais recentes. */
+  criadoEm: string;
   capa: Midia;
+  /** Somente `tipo = 'foto'`: é o que a galeria mostra. */
   galeria: Midia[];
+  /** Plantas do empreendimento como um todo (as por tipologia ficam em `Tipologia.plantaUrl`). */
+  plantas: Midia[];
   tipologias: Tipologia[];
   lazer: string[];
   corretor: Corretor;
+};
+
+export type Ordenacao = "destaque" | "preco_asc" | "preco_desc" | "recentes";
+
+export const ORDENACAO_LABEL: Record<Ordenacao, string> = {
+  destaque: "Destaques",
+  preco_asc: "Menor preço",
+  preco_desc: "Maior preço",
+  recentes: "Mais recentes",
 };
 
 /** Filtros da listagem — cada campo em branco/undefined não filtra. */

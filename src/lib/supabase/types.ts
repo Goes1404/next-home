@@ -305,6 +305,7 @@ export type Database = {
           planta_url: string | null
           preco: number | null
           suites: number
+          unidades_disponiveis: number | null
           vagas: number
         }
         Insert: {
@@ -318,6 +319,7 @@ export type Database = {
           planta_url?: string | null
           preco?: number | null
           suites?: number
+          unidades_disponiveis?: number | null
           vagas?: number
         }
         Update: {
@@ -331,6 +333,7 @@ export type Database = {
           planta_url?: string | null
           preco?: number | null
           suites?: number
+          unidades_disponiveis?: number | null
           vagas?: number
         }
         Relationships: [
@@ -502,3 +505,4 @@ export const Constants = {
     },
   },
 } as const
+

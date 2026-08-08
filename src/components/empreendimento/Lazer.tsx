@@ -4,7 +4,7 @@ export function Lazer({ itens }: { itens: string[] }) {
   if (itens.length === 0) return null;
 
   return (
-    <section className="bg-ink-900/40 px-4 py-16 sm:py-24">
+    <section id="lazer" className="scroll-mt-24 bg-ink-900/40 px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-3xl">
         <Reveal>
           <h2 className="text-fluid-2xl text-mist-50">Lazer</h2>

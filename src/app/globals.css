@@ -212,6 +212,16 @@
     mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
   }
 
+  /* Barras de seção roláveis no mobile: a barra do SO polui um controle
+     que já sinaliza overflow pelo próprio conteúdo cortado. */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Área segura de iPhone para a navegação inferior */
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 0px);

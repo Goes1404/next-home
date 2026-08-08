@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Lenis from "lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { registrarLenis } from "./lenis";
 
 /**
  * Liga o scroll suave (Lenis) ao ScrollTrigger do GSAP.
@@ -34,6 +35,7 @@ export function SmoothScroll() {
       syncTouch: false,
     });
 
+    registrarLenis(lenis);
     lenis.on("scroll", ScrollTrigger.update);
 
     const aoTick = (tempo: number) => lenis.raf(tempo * 1000);
@@ -46,6 +48,7 @@ export function SmoothScroll() {
 
     return () => {
       gsap.ticker.remove(aoTick);
+      registrarLenis(null);
       lenis.destroy();
     };
   }, []);

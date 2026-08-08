@@ -14,7 +14,7 @@ corretor_renan as (
 emp_eternity as (
   insert into empreendimentos (
     slug, nome, tagline, descricao, status, tipo, finalidade,
-    cidade, bairro, endereco, preco_a_partir, iptu, condominio_valor,
+    cidade, bairro, endereco, lat, lng, preco_a_partir, iptu, condominio_valor,
     construtora, total_unidades, total_torres, total_andares,
     entrega_prevista, destaque, ordem, corretor_id, codigo_legado, publicado
   )
@@ -24,6 +24,8 @@ emp_eternity as (
     'Duas torres de alto padrão no Centro Comercial Jubran, a poucos minutos do coração de Alphaville. Unidades de 2 e 3 dormitórios com metragens generosas, posição de frente para a avenida e um clube de lazer completo — da academia com parede verde à piscina aquecida coberta.',
     'em_construcao', 'alto_padrao', 'lancamento',
     'Barueri', 'Centro Comercial Jubran', 'Avenida Piracema, Centro Comercial Jubran, Barueri - SP',
+    -- Coordenadas geocodificadas do endereço (centroide da via, não a porta).
+    -23.4981631, -46.8305372,
     1289900, 650, 890, 'RSF', 432, 2, 38, '2029-04-01', true, 1, corretor_miro.id, 'NE41168', true
   from corretor_miro
   returning id
@@ -31,7 +33,7 @@ emp_eternity as (
 emp_viva as (
   insert into empreendimentos (
     slug, nome, tagline, descricao, status, tipo, finalidade,
-    cidade, bairro, endereco, preco_a_partir, iptu, condominio_valor,
+    cidade, bairro, endereco, lat, lng, preco_a_partir, iptu, condominio_valor,
     construtora, total_unidades, total_torres, total_andares,
     entrega_prevista, destaque, ordem, corretor_id, codigo_legado, publicado
   )
@@ -41,6 +43,8 @@ emp_viva as (
     'No Parque Viana, a poucos passos de shopping e estação, o Viva RSF Vila do Conde chega com unidades de 43 a 71 m² e um clube de lazer completo: academia com parede verde, coworking, piscina adulto e infantil, quadra poliesportiva e até um espaço pet dedicado.',
     'ultimas_unidades', 'apartamento', 'lancamento',
     'Barueri', 'Parque Viana', 'Parque Viana, Barueri - SP',
+    -- Centroide do bairro: o cadastro não tem número de rua.
+    -23.5429430, -46.8686108,
     460000, null, null, 'RSF', 298, null, 28, '2027-01-01', true, 2, corretor_renan.id, 'VCOD-117', true
   from corretor_renan
   returning id

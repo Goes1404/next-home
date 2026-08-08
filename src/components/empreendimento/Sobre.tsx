@@ -16,7 +16,7 @@ export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento })
   );
 
   return (
-    <section className="mx-auto max-w-3xl px-4 pt-16 sm:pt-24">
+    <section id="sobre" className="mx-auto max-w-3xl scroll-mt-24 px-4 pt-16 sm:pt-24">
       <Reveal>
         <h2 className="text-fluid-2xl text-mist-50">Sobre o empreendimento</h2>
         <p className="text-fluid-base mt-4 text-mist-200">{e.descricao}</p>

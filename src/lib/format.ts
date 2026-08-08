@@ -27,6 +27,27 @@ export function areaM2(valor: number | null | undefined): string {
  * Resume a faixa de uma lista de valores: [2,2,3] → "2 a 3", [2,2] → "2".
  * Usado para dormitórios/vagas, que variam entre as tipologias.
  */
+/**
+ * Preço por m² — a métrica que compradores usam para comparar
+ * empreendimentos de metragens diferentes. Só faz sentido com os dois
+ * valores presentes e positivos.
+ */
+export function precoPorM2(
+  preco: number | null | undefined,
+  area: number | null | undefined,
+): string | null {
+  if (preco == null || area == null || preco <= 0 || area <= 0) return null;
+  return `${brl.format(Math.round(preco / area))}/m²`;
+}
+
+const DIAS_PARA_DEIXAR_DE_SER_NOVO = 30;
+
+/** Publicado há pouco tempo — alimenta o selo "novo" da listagem. */
+export function ehRecente(criadoEm: string): boolean {
+  const dias = (Date.now() - new Date(criadoEm).getTime()) / 86_400_000;
+  return dias >= 0 && dias <= DIAS_PARA_DEIXAR_DE_SER_NOVO;
+}
+
 export function faixa(valores: Array<number | null | undefined>): string | null {
   const nums = valores.filter((v): v is number => typeof v === "number" && v > 0);
   if (nums.length === 0) return null;

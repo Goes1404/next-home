@@ -1,4 +1,6 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ViewTransition } from "react";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
 import { precoAPartirDe } from "@/lib/format";
@@ -14,20 +16,34 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
   return (
     <section className="flex min-h-svh flex-col items-center justify-end px-4 pt-28 pb-16 sm:justify-center sm:pb-0">
       <div className="fixed inset-0 -z-10">
-        <Image
-          src={e.capa.url}
-          alt={e.capa.alt}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
+        <ViewTransition name={`capa-${e.slug}`}>
+          <Image
+            src={e.capa.url}
+            alt={e.capa.alt}
+            fill
+            priority
+            sizes="100vw"
+            placeholder={e.capa.blurDataUrl ? "blur" : "empty"}
+            blurDataURL={e.capa.blurDataUrl ?? undefined}
+            className="object-cover"
+          />
+        </ViewTransition>
         <div className="absolute inset-0 bg-gradient-to-b from-ink-950/60 via-ink-950/30 to-ink-950" />
       </div>
 
       <Reveal className="w-full max-w-2xl">
         <GlassSurface preset="painel" className="px-7 py-8 sm:px-10 sm:py-11">
-          <p className="text-fluid-xs mb-3 inline-flex items-center gap-2 font-medium tracking-[0.18em] text-brand-200 uppercase">
+          <Link
+            href="/empreendimentos"
+            className="text-fluid-xs mb-4 inline-flex items-center gap-1.5 text-mist-300 transition-colors hover:text-mist-50"
+          >
+            <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 5l-7 7 7 7" />
+            </svg>
+            Empreendimentos
+          </Link>
+
+          <p className="text-fluid-xs mb-3 flex items-center gap-2 font-medium tracking-[0.18em] text-brand-200 uppercase">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-300" />
             {STATUS_LABEL[e.status]} · {e.bairro}, {e.cidade}
           </p>

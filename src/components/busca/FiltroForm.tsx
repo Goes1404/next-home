@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { FiltrosEmpreendimento } from "@/lib/types";
-import { TIPO_LABEL } from "@/lib/types";
+import type { FiltrosEmpreendimento, Ordenacao } from "@/lib/types";
+import { ORDENACAO_LABEL, TIPO_LABEL } from "@/lib/types";
 
 /** Tetos de preço fixos — mais simples e mais rápido de escanear do que um slider. */
 const FAIXAS_PRECO = [
@@ -22,6 +22,7 @@ const CAMPO =
 
 export type FiltroFormProps = {
   filtrosAtuais: FiltrosEmpreendimento;
+  ordenacaoAtual: Ordenacao;
   regioes: { cidades: string[]; bairros: string[] };
   /** Id único por instância — o form aparece 1x no desktop e 1x no sheet mobile. */
   idPrefixo: string;
@@ -32,12 +33,20 @@ export type FiltroFormProps = {
  * Form GET puro: submeter recarrega `/empreendimentos` com a nova query
  * string, então filtrar funciona mesmo sem JavaScript.
  */
-export function FiltroForm({ filtrosAtuais, regioes, idPrefixo, className }: FiltroFormProps) {
+export function FiltroForm({
+  filtrosAtuais,
+  ordenacaoAtual,
+  regioes,
+  idPrefixo,
+  className,
+}: FiltroFormProps) {
   const temFiltro = Object.values(filtrosAtuais).some((v) => v != null && v !== "");
 
   return (
     <form action="/empreendimentos" method="get" className={className}>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      {/* 6 colunas só a partir de lg: em telas médias os selects ficariam
+          estreitos demais e cortariam o rótulo da opção escolhida. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <div>
           <label htmlFor={`${idPrefixo}-tipo`} className="text-fluid-xs mb-1 block text-mist-400">
             Tipo
@@ -130,6 +139,24 @@ export function FiltroForm({ filtrosAtuais, regioes, idPrefixo, className }: Fil
             {FAIXAS_DORMITORIOS.map((f) => (
               <option key={f.valor} value={f.valor}>
                 {f.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor={`${idPrefixo}-ordenar`} className="text-fluid-xs mb-1 block text-mist-400">
+            Ordenar por
+          </label>
+          <select
+            id={`${idPrefixo}-ordenar`}
+            name="ordenar"
+            defaultValue={ordenacaoAtual}
+            className={CAMPO}
+          >
+            {Object.entries(ORDENACAO_LABEL).map(([valor, label]) => (
+              <option key={valor} value={valor}>
+                {label}
               </option>
             ))}
           </select>
