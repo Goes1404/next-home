@@ -4,9 +4,11 @@ import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
+import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Reveal } from "@/components/motion/Reveal";
 import { precoAPartirDe } from "@/lib/format";
 import { getEmpreendimentosDestaque } from "@/lib/queries";
+import { HERO_VIDEO_URL } from "@/lib/site";
 
 /**
  * Home imersiva provisória (Fase 5) — já lê da mesma camada de dados que a
@@ -34,6 +36,7 @@ export default async function Home() {
           sizes="100vw"
           className="object-cover"
         />
+        {HERO_VIDEO_URL && <HeroVideoBackground src={HERO_VIDEO_URL} />}
         <div className="absolute inset-0 bg-gradient-to-b from-ink-950/55 via-ink-950/35 to-ink-950" />
       </div>
 
