@@ -60,7 +60,12 @@ export function mapEmpreendimento(row: LinhaEmpreendimento): Empreendimento {
     totalAndares: row.total_andares,
     entregaPrevista: row.entrega_prevista,
     destaque: row.destaque,
-    capa: midias[0] ?? { url: "/marca/logo-original.png", alt: row.nome, largura: 257, altura: 107 },
+    capa: midias[0] ?? {
+      url: "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/logo-original.png",
+      alt: row.nome,
+      largura: 257,
+      altura: 107,
+    },
     galeria: midias,
     tipologias: [...row.tipologias].sort((a, b) => a.ordem - b.ordem).map(mapTipologia),
     lazer: row.lazer.map((l) => l.lazer_itens?.nome).filter((n): n is string => !!n),

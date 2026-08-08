@@ -16,7 +16,9 @@ import { getEmpreendimentosDestaque } from "@/lib/queries";
  */
 export default async function Home() {
   const destaques = await getEmpreendimentosDestaque();
-  const imagemHero = destaques[0]?.capa.url ?? "/marca/logo-original.png";
+  const imagemHero =
+    destaques[0]?.capa.url ??
+    "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/logo-original.png";
 
   return (
     <GlassBackgroundProvider inicial={imagemHero}>

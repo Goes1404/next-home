@@ -60,27 +60,27 @@ tip_viva as (
   returning 1
 ),
 
--- Mídias (URLs locais de /public por enquanto — migrar para Storage é passo futuro)
+-- Mídias — arquivos publicados no bucket público `empreendimentos` do Supabase Storage.
 midias_eternity as (
   insert into midias (empreendimento_id, tipo, url, alt, largura, altura, ordem)
-  select id, 'foto'::tipo_midia, '/empreendimentos/eternity-alphaville/fachada.jpg', 'Fachada das torres Eternity Alphaville Tamboré ao entardecer', 900, 636, 1 from emp_eternity
+  select id, 'foto'::tipo_midia, 'https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/fachada.jpg', 'Fachada das torres Eternity Alphaville Tamboré ao entardecer', 900, 636, 1 from emp_eternity
   union all
-  select id, 'foto'::tipo_midia, '/empreendimentos/eternity-alphaville/living-02.jpg', 'Living integrado com cozinha e varanda gourmet, unidade 02 e 04', 900, 636, 2 from emp_eternity
+  select id, 'foto'::tipo_midia, 'https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-02.jpg', 'Living integrado com cozinha e varanda gourmet, unidade 02 e 04', 900, 636, 2 from emp_eternity
   union all
-  select id, 'foto'::tipo_midia, '/empreendimentos/eternity-alphaville/living-03.jpg', 'Living integrado com adega climatizada e sala de jantar, unidade 03', 900, 636, 3 from emp_eternity
+  select id, 'foto'::tipo_midia, 'https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg', 'Living integrado com adega climatizada e sala de jantar, unidade 03', 900, 636, 3 from emp_eternity
   returning 1
 ),
 midias_viva as (
   insert into midias (empreendimento_id, tipo, url, alt, largura, altura, ordem)
-  select id, 'foto'::tipo_midia, '/empreendimentos/viva-rsf-vila-do-conde/fachada-lazer.jpg', 'Vista aérea da fachada e área de lazer à noite', 831, 578, 1 from emp_viva
+  select id, 'foto'::tipo_midia, 'https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/fachada-lazer.jpg', 'Vista aérea da fachada e área de lazer à noite', 831, 578, 1 from emp_viva
   union all
-  select id, 'foto'::tipo_midia, '/empreendimentos/viva-rsf-vila-do-conde/piscina-adulto.jpg', 'Piscina adulto com deck e espreguiçadeiras entre os prédios', 831, 578, 2 from emp_viva
+  select id, 'foto'::tipo_midia, 'https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/piscina-adulto.jpg', 'Piscina adulto com deck e espreguiçadeiras entre os prédios', 831, 578, 2 from emp_viva
   union all
-  select id, 'foto'::tipo_midia, '/empreendimentos/viva-rsf-vila-do-conde/academia.jpg', 'Academia equipada com parede verde e esteiras', 831, 578, 3 from emp_viva
+  select id, 'foto'::tipo_midia, 'https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/academia.jpg', 'Academia equipada com parede verde e esteiras', 831, 578, 3 from emp_viva
   union all
-  select id, 'foto'::tipo_midia, '/empreendimentos/viva-rsf-vila-do-conde/coworking.jpg', 'Espaço de coworking com mesas comunitárias e poltronas', 831, 578, 4 from emp_viva
+  select id, 'foto'::tipo_midia, 'https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/coworking.jpg', 'Espaço de coworking com mesas comunitárias e poltronas', 831, 578, 4 from emp_viva
   union all
-  select id, 'foto'::tipo_midia, '/empreendimentos/viva-rsf-vila-do-conde/pet-place.jpg', 'Espaço pet place com brinquedos e obstáculos para cães', 831, 578, 5 from emp_viva
+  select id, 'foto'::tipo_midia, 'https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/pet-place.jpg', 'Espaço pet place com brinquedos e obstáculos para cães', 831, 578, 5 from emp_viva
   returning 1
 ),
 

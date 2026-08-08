@@ -1,12 +1,13 @@
 import type { NextConfig } from "next";
 
 /**
- * Host do Supabase Storage, derivado da URL pública do projeto.
- * Fica opcional para o build funcionar antes do Supabase estar provisionado.
+ * Host do Supabase Storage, derivado da URL pública do projeto — mesmo
+ * fallback de `lib/supabase/env.ts`, necessário porque o deploy atual não
+ * tem como receber variáveis de ambiente.
  */
-const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
-  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
-  : null;
+const supabaseHost = new URL(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://prhhrqyubjcafvucirri.supabase.co",
+).hostname;
 
 const nextConfig: NextConfig = {
   images: {
@@ -14,9 +15,9 @@ const nextConfig: NextConfig = {
     // Larguras alinhadas aos breakpoints reais do layout, evitando gerar
     // variantes que nunca são pedidas.
     deviceSizes: [390, 640, 828, 1080, 1280, 1920, 2560],
-    remotePatterns: supabaseHost
-      ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }]
-      : [],
+    remotePatterns: [
+      { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" },
+    ],
   },
 
   experimental: {
