@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Compartilhar } from "@/components/empreendimento/Compartilhar";
 import { Reveal } from "@/components/motion/Reveal";
 import { linkWhatsappPara } from "@/lib/site";
@@ -66,6 +67,13 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
             </svg>
             Falar no WhatsApp
           </a>
+
+          <Link
+            href={`/contato?empreendimento=${e.slug}`}
+            className="text-fluid-sm mt-4 block text-mist-400 underline-offset-4 hover:text-brand-200 hover:underline"
+          >
+            Prefere enviar uma mensagem? Use o formulário de contato.
+          </Link>
         </div>
 
         <div className="mt-6 flex justify-center">

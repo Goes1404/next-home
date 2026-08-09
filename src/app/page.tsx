@@ -2,22 +2,31 @@ import Image from "next/image";
 import Link from "next/link";
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { GlassSurface } from "@/components/glass/GlassSurface";
+import { CtaFinal } from "@/components/home/CtaFinal";
+import { Diferenciais } from "@/components/home/Diferenciais";
+import { Numeros } from "@/components/home/Numeros";
+import { Regioes } from "@/components/home/Regioes";
+import { ScrollCue } from "@/components/home/ScrollCue";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Reveal } from "@/components/motion/Reveal";
 import { precoAPartirDe } from "@/lib/format";
-import { getEmpreendimentosDestaque } from "@/lib/queries";
+import { getEmpreendimentos } from "@/lib/queries";
 import { HERO_VIDEO_URL } from "@/lib/site";
 
 /**
- * Home imersiva provisória (Fase 5) — já lê da mesma camada de dados que a
- * Fase 7 vai expandir com scroll-telling em GSAP. O fundo é `position:
- * fixed`, o que casa com a suposição do shader de GlassSurface de que o
- * vidro refrata o viewport, não o documento.
+ * Home imersiva (Fase 7): hero cinematográfico com fundo fixo + seções de
+ * scroll-telling reveladas via GSAP (`Reveal`/`Contador`). O fundo é
+ * `position: fixed`, o que casa com a suposição do shader de GlassSurface de
+ * que o vidro refrata o viewport, não o documento — por isso nenhuma seção
+ * abaixo pode envolver o header/CTA/fundo num ancestral com `transform`.
  */
 export default async function Home() {
-  const destaques = await getEmpreendimentosDestaque();
+  const todos = await getEmpreendimentos();
+  const destaques = todos.filter((e) => e.destaque);
+  const totalBairros = new Set(todos.map((e) => e.bairro)).size;
+
   const imagemHero =
     destaques[0]?.capa.url ??
     "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/logo-original.png";
@@ -56,10 +65,23 @@ export default async function Home() {
               </p>
             </GlassSurface>
           </Reveal>
+
+          <ScrollCue alvo="destaques" label="Role para ver mais" />
         </section>
 
-        <section className="px-4 pb-28">
-          <div className="mx-auto grid w-full max-w-3xl gap-4 sm:grid-cols-2">
+        <Numeros totalEmpreendimentos={todos.length} totalBairros={totalBairros} />
+
+        <Diferenciais />
+
+        <section id="destaques" className="scroll-mt-20 px-4 pt-4 pb-28">
+          <Reveal className="mx-auto max-w-lg text-center">
+            <h2 className="text-fluid-2xl text-mist-50">Destaques</h2>
+            <p className="text-fluid-base mt-3 text-mist-300">
+              Uma curadoria dos lançamentos que mais pedem atenção agora.
+            </p>
+          </Reveal>
+
+          <div className="mx-auto mt-10 grid w-full max-w-3xl gap-4 sm:grid-cols-2">
             {destaques.map((e, i) => (
               <Reveal key={e.slug} delay={i * 0.12} from="baixo">
                 <Link href={`/empreendimentos/${e.slug}`}>
@@ -74,7 +96,7 @@ export default async function Home() {
                       />
                     </div>
                     <div className="px-5 py-4">
-                      <h2 className="font-display text-lg text-mist-50">{e.nome}</h2>
+                      <h3 className="font-display text-lg text-mist-50">{e.nome}</h3>
                       <p className="text-fluid-sm mt-0.5 text-mist-400">
                         {e.bairro}, {e.cidade}
                       </p>
@@ -87,7 +109,20 @@ export default async function Home() {
               </Reveal>
             ))}
           </div>
+
+          <Reveal className="mt-10 text-center">
+            <Link
+              href="/empreendimentos"
+              className="text-fluid-sm font-medium text-brand-200 underline-offset-4 hover:underline"
+            >
+              Ver todos os {todos.length} empreendimentos →
+            </Link>
+          </Reveal>
         </section>
+
+        <Regioes />
+
+        <CtaFinal />
       </main>
     </GlassBackgroundProvider>
   );

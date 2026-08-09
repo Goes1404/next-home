@@ -18,6 +18,11 @@ export const site = {
     cidade: "Santana de Parnaíba",
     uf: "SP",
     cep: "06541-065",
+    // Centroide da via (geocodificado via Nominatim) — o cadastro não tem
+    // coordenada exata do prédio, mesma honestidade de escala usada no
+    // mapa de cada empreendimento (ver Localizacao.tsx).
+    lat: -23.4633543,
+    lng: -46.8774165,
   },
 
   /** Formato E.164 em `numero`, legível em `label`. */
