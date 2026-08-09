@@ -16,6 +16,7 @@
  * e tratamento visual que este script não reproduziria.
  */
 import * as cheerio from "cheerio";
+import type { AnyNode } from "domhandler";
 import iconv from "iconv-lite";
 
 const BASE = "https://www.nexthomeimobiliaria.com.br";
@@ -138,8 +139,46 @@ type Imovel = {
 
 // ------------------------------------------------------------- parsing --
 
-function textoLimpo($el: cheerio.Cheerio<any>): string {
+function textoLimpo($el: cheerio.Cheerio<AnyNode>): string {
   return $el.text().replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Lê o `BreadcrumbList` JSON-LD embutido na página — a própria
+ * categorização que o site usa no menu, mais confiável que tentar inferir
+ * tipo/finalidade a partir do slug da URL.
+ *
+ * Isolada como função pura (sem `let` reatribuído dentro de um closure) de
+ * propósito: essa combinação confunde o "narrowing de condições aliasadas"
+ * do TypeScript, que às vezes estreita a variável capturada para `never`
+ * mesmo depois do guard `if (!x) return`.
+ */
+function lerBreadcrumb(
+  $: cheerio.CheerioAPI,
+): { finalidadeFinal: "lancamento" | "venda"; tipo: string } | null {
+  for (const el of $('script[type="application/ld+json"]').toArray()) {
+    const raw = $(el).html();
+    if (!raw || !raw.includes("BreadcrumbList")) continue;
+    try {
+      const data = JSON.parse(raw);
+      const itens: Array<{ name: string }> = data.itemListElement ?? [];
+      const secao = itens[1]?.name?.toLowerCase();
+      const tipoTexto = itens[2]?.name;
+      if (!tipoTexto) continue;
+
+      const finalidadeFinal =
+        secao === "venda" ? "venda" : secao === "lançamentos" ? "lancamento" : null;
+      if (!finalidadeFinal) continue;
+
+      const tipo = MAPA_TIPO[tipoTexto.toLowerCase()];
+      if (!tipo) continue;
+
+      return { finalidadeFinal, tipo };
+    } catch {
+      /* ignora JSON-LD malformado */
+    }
+  }
+  return null;
 }
 
 function extrairImovel(html: string, url: string): Imovel | null {
@@ -147,26 +186,9 @@ function extrairImovel(html: string, url: string): Imovel | null {
 
   // Breadcrumb JSON-LD é o sinal mais confiável de tipo/finalidade — é a
   // própria categorização que o site usa no menu.
-  let finalidade: "lancamento" | "venda" | null = null;
-  let tipoTexto: string | null = null;
-  $('script[type="application/ld+json"]').each((_, el) => {
-    const raw = $(el).html();
-    if (!raw || !raw.includes("BreadcrumbList")) return;
-    try {
-      const data = JSON.parse(raw);
-      const itens: Array<{ name: string }> = data.itemListElement ?? [];
-      const secao = itens[1]?.name?.toLowerCase();
-      if (secao === "venda") finalidade = "venda";
-      else if (secao === "lançamentos") finalidade = "lancamento";
-      tipoTexto = itens[2]?.name ?? null;
-    } catch {
-      /* ignora JSON-LD malformado */
-    }
-  });
-  if (!finalidade || !tipoTexto) return null;
-
-  const tipo = MAPA_TIPO[tipoTexto.toLowerCase()];
-  if (!tipo) return null;
+  const breadcrumb = lerBreadcrumb($);
+  if (!breadcrumb) return null;
+  const { finalidadeFinal, tipo } = breadcrumb;
 
   const codigoLegado = $("#cod_referencia_imovelInfo").attr("value")?.trim() ?? "";
   if (!codigoLegado) return null;
@@ -202,7 +224,7 @@ function extrairImovel(html: string, url: string): Imovel | null {
     .replace(/^\s*/, "")
     .toLowerCase();
   const status =
-    MAPA_STATUS[tarja] ?? (finalidade === "lancamento" ? "lancamento" : "pronto_para_morar");
+    MAPA_STATUS[tarja] ?? (finalidadeFinal === "lancamento" ? "lancamento" : "pronto_para_morar");
 
   const precoTexto = textoLimpo($(".box-info-menu .valor .vn"));
   const precoAPartir = numero(precoTexto);
@@ -252,7 +274,7 @@ function extrairImovel(html: string, url: string): Imovel | null {
     descricao,
     status,
     tipo,
-    finalidade,
+    finalidade: finalidadeFinal,
     cidade,
     bairro,
     endereco,
@@ -362,7 +384,10 @@ function sqlNum(v: number | null | undefined): string {
   return v == null || Number.isNaN(v) ? "null" : String(v);
 }
 
-async function executarSql(query: string): Promise<any> {
+// Resultado de linhas do Postgres via REST — genuinamente dinâmico conforme
+// a query, não há tipo estático honesto a dar aqui.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function executarSql(query: string): Promise<any[]> {
   const res = await fetch(
     `https://api.supabase.com/v1/projects/${SUPABASE_REF}/database/query`,
     {
@@ -446,7 +471,7 @@ async function main() {
           on conflict (creci) do update set nome = excluded.nome
           returning id;
         `);
-        corretorId = res[0].id;
+        corretorId = res[0].id as string;
         corretoresVistos.set(imv.corretorCreci, corretorId);
       }
 
