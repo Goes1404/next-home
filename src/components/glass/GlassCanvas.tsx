@@ -113,7 +113,11 @@ export default function GlassCanvas(props: GlassCanvasProps) {
     };
 
     function atualizarGeometria() {
-      const rect = canvas!.getBoundingClientRect();
+      // Mede o PAI, não o canvas: `renderer.setSize()` alguns parágrafos
+      // abaixo escreve `style.width/height` fixos no canvas, então medir o
+      // próprio canvas depois da primeira chamada só devolveria o valor
+      // travado da vez anterior — nunca capturaria o painel crescendo.
+      const rect = (canvas!.parentElement ?? canvas!).getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
 
       renderer.setSize(rect.width, rect.height);
@@ -178,8 +182,23 @@ export default function GlassCanvas(props: GlassCanvasProps) {
     );
     observadorVisibilidade.observe(canvas);
 
+    // Observa o PAI, não o próprio canvas: `renderer.setSize()` (ogl) escreve
+    // `style.width/height` em px fixos no canvas a cada frame, o que desliga
+    // o `inset-0`/`w-full h-full` que antes o mantinha do tamanho do painel.
+    // Depois dessa primeira medição, o canvas some do radar de qualquer
+    // ResizeObserver nele mesmo — ele nunca mais muda de tamanho sozinho.
+    // Quem continua refletindo o conteúdo real (texto, reflow de fonte) é o
+    // painel-pai, então é ele que precisa ser observado para o vidro
+    // acompanhar o painel quando a fonte troca (`font-display: swap`) tarde,
+    // num carregamento lento.
+    const alvoTamanho = canvas.parentElement ?? canvas;
     const observadorTamanho = new ResizeObserver(marcarSujo);
-    observadorTamanho.observe(canvas);
+    observadorTamanho.observe(alvoTamanho);
+
+    // Web fonts com `display: swap` re-fluem o texto quando terminam de
+    // carregar — se isso acontecer depois da primeira medição (comum em
+    // conexão lenta), o painel muda de altura e o vidro precisa remedir.
+    document.fonts?.ready?.then(marcarSujo);
 
     // O recorte do fundo muda a cada pixel de scroll, então redesenhamos.
     window.addEventListener("scroll", marcarSujo, { passive: true });
