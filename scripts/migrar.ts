@@ -47,6 +47,30 @@ function slugify(s: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/** Preposições/artigos que ficam minúsculos no meio de um título, nunca na ponta. */
+const PALAVRAS_MINUSCULAS = new Set([
+  "de", "da", "do", "das", "dos", "e", "a", "o", "as", "os",
+  "em", "na", "no", "nas", "nos", "ao", "aos", "à", "às",
+  "com", "para", "por", "um", "uma", "ou", "que",
+]);
+
+/**
+ * O CMS legado às vezes grava o título em CAIXA ALTA. Normaliza pra title
+ * case em português só quando o título original é integralmente maiúsculo
+ * — um título que já vem com capitalização própria (ex. "Bosque AlphaGran")
+ * fica intocado, pra não arriscar quebrar um nome estilizado.
+ */
+function normalizarTitulo(nome: string): string {
+  if (nome !== nome.toUpperCase() || nome === nome.toLowerCase()) return nome;
+  const palavras = nome.toLowerCase().split(" ");
+  return palavras
+    .map((p, i) => {
+      if (i > 0 && i < palavras.length - 1 && PALAVRAS_MINUSCULAS.has(p)) return p;
+      return p.charAt(0).toUpperCase() + p.slice(1);
+    })
+    .join(" ");
+}
+
 async function buscarHtml(url: string): Promise<string> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${res.status} ao buscar ${url}`);
@@ -193,7 +217,9 @@ function extrairImovel(html: string, url: string): Imovel | null {
   const codigoLegado = $("#cod_referencia_imovelInfo").attr("value")?.trim() ?? "";
   if (!codigoLegado) return null;
 
-  const nome = $("#titulo_imovelInfo").attr("value")?.trim() || textoLimpo($("h1").first());
+  const nome = normalizarTitulo(
+    $("#titulo_imovelInfo").attr("value")?.trim() || textoLimpo($("h1").first()),
+  );
 
   const enderecoH2 = $("h2.notranslate").first();
   const endereco = textoLimpo(enderecoH2.find("strong[itemprop=streetAddress]"));
