@@ -147,6 +147,12 @@ void main() {
   float fio = smoothstep(1.5, 0.0, abs(d)) * (0.28 + 0.5 * voltadaParaLuz);
   cor += vec3(fio) * 0.5;
 
-  fragColor = vec4(cor, mascara);
+  // Sem imagem pra refratar, amostra() cai no gradiente procedural — bom
+  // como textura de base, ruim como painel opaco tapando o que está atrás
+  // (ex.: o vídeo do hero). Nesse caso o vidro fica quase transparente,
+  // só com o brilho da borda/especular para ainda ler como vidro.
+  float alpha = mascara * mix(0.16, 1.0, uHasTexture);
+
+  fragColor = vec4(cor, alpha);
 }
 `;
