@@ -17,7 +17,7 @@ export default function Loading() {
 
       <div className="mx-auto mt-10 grid w-full max-w-5xl animate-pulse gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="overflow-hidden rounded-2xl border border-white/10 bg-ink-900">
+          <div key={i} className="rounded-glass overflow-hidden border border-white/10 bg-ink-900">
             <div className="aspect-[4/3] w-full bg-white/5" />
             <div className="px-5 py-4">
               <div className="h-5 w-40 rounded bg-white/10" />

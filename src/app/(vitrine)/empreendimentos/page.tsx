@@ -60,9 +60,8 @@ function parseOrdenacao(sp: SearchParams): Ordenacao {
 /**
  * Filtros vivem na URL (form GET nativo) — funciona sem JavaScript e o
  * resultado é sempre renderizado no servidor. O fundo fixo (vídeo do hero)
- * vem do layout do grupo `(vitrine)`, compartilhado com a home — os cards
- * continuam com borda sólida em vez do liquid glass, já que são muitos e
- * nenhuma imagem única representa a página inteira.
+ * vem do layout do grupo `(vitrine)`, compartilhado com a home; os cards
+ * (`CardEmpreendimento`) usam o mesmo vidro CSS dos destaques da home.
  */
 export default async function EmpreendimentosPage({
   searchParams,
