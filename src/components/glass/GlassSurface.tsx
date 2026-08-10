@@ -49,7 +49,13 @@ export function GlassSurface({
   // navegador) é síncrona por natureza — não há valor derivável de
   // props/state que substitua isto, por isso o setState direto no efeito é
   // intencional aqui.
+  //
+  // O preset "painel" nunca pede WebGL: por escolha visual (o fallback em
+  // CSS — backdrop-filter nativo — ficou com a cara que o cliente queria,
+  // mais suave que o shader), esses painéis sempre caem no `vidro-css`. Como
+  // bônus, param de disputar os 5 slots do orçamento com nav/pill/card.
   useEffect(() => {
+    if (preset === "painel") return;
     if (modo !== "webgl") return;
     if (!reservarContexto()) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -58,10 +64,10 @@ export function GlassSurface({
       liberarContexto();
       setTemSlot(false);
     };
-  }, [modo]);
+  }, [modo, preset]);
 
   const p = PRESETS[preset];
-  const usaWebgl = modo === "webgl" && temSlot;
+  const usaWebgl = preset !== "painel" && modo === "webgl" && temSlot;
   const opaco = preset === "nav" || preset === "pill";
 
   return (
