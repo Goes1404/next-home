@@ -13,7 +13,7 @@ type Preset = "painel" | "nav" | "card" | "pill";
 
 /** Ajustes por contexto de uso: superfícies pequenas pedem menos refração. */
 const PRESETS = {
-  painel: { radius: 24, thickness: 26, refraction: 22, chromatic: 0.16, blur: 14, liquid: 0.8 },
+  painel: { radius: 24, thickness: 26, refraction: 22, chromatic: 0.16, blur: 14, liquid: 0 },
   nav: { radius: 999, thickness: 18, refraction: 14, chromatic: 0.12, blur: 5, liquid: 0 },
   card: { radius: 20, thickness: 22, refraction: 18, chromatic: 0.14, blur: 2, liquid: 0.5 },
   pill: { radius: 999, thickness: 14, refraction: 11, chromatic: 0.1, blur: 5, liquid: 0 },
