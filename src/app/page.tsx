@@ -27,24 +27,18 @@ export default async function Home() {
   const destaques = todos.filter((e) => e.destaque);
   const totalBairros = new Set(todos.map((e) => e.bairro)).size;
 
-  const imagemHero =
-    destaques[0]?.capa.url ??
-    "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/logo-original.png";
-
   return (
-    <GlassBackgroundProvider inicial={imagemHero}>
+    // `inicial` fica de fora de propósito: as capas cadastradas hoje vêm de
+    // material de divulgação (peça de brochura inteira, print com aviso de
+    // "Ativar o Windows" etc.) e não servem como fundo em tela cheia — sem
+    // uma imagem registrada, o shader do vidro cai no gradiente procedural
+    // dele mesmo (`fundoProcedural()` em shaders/glass.ts), que já existe
+    // exatamente para isso.
+    <GlassBackgroundProvider>
       <SiteHeader />
       <WhatsappCta />
 
-      <div className="fixed inset-0 -z-10">
-        <Image
-          src={imagemHero}
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-brand-900 via-ink-950 to-ink-950">
         {HERO_VIDEO_URL && <HeroVideoBackground src={HERO_VIDEO_URL} />}
         <div className="absolute inset-0 bg-gradient-to-b from-ink-950/55 via-ink-950/35 to-ink-950" />
       </div>
