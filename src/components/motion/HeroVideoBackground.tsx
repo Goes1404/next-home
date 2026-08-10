@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useGlassBackground } from "@/components/glass/GlassBackground";
 
 type NavigatorEstendido = Navigator & {
   connection?: { saveData?: boolean };
@@ -35,15 +36,27 @@ function usePodeReproduzir(): boolean {
  * chamador, por baixo deste componente) garante um LCP rápido via SSR; o
  * vídeo só começa a baixar depois de montado no cliente e só aparece quando
  * está pronto para tocar — daí o fade-in em vez de um corte brusco.
+ *
+ * Assim que pode tocar, se registra no `GlassBackgroundProvider` — os
+ * painéis de vidro passam a refratar o próprio vídeo (ver GlassCanvas.tsx),
+ * em vez de caírem no gradiente procedural que existe para quando não há
+ * nada para refratar.
  */
 export function HeroVideoBackground({ src }: { src: string }) {
   const permitido = usePodeReproduzir();
   const [pronto, setPronto] = useState(false);
+  const { definirVideo } = useGlassBackground();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    return () => definirVideo(null);
+  }, [definirVideo]);
 
   if (!permitido) return null;
 
   return (
     <video
+      ref={videoRef}
       className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
         pronto ? "opacity-100" : "opacity-0"
       }`}
@@ -52,7 +65,14 @@ export function HeroVideoBackground({ src }: { src: string }) {
       loop
       playsInline
       preload="auto"
-      onCanPlay={() => setPronto(true)}
+      // O vídeo vira textura WebGL (GlassCanvas) — sem crossOrigin, o
+      // WebGL recusa ler pixels de um <video> de outra origem (o bucket do
+      // Supabase Storage), mesmo o elemento tocando normalmente na tela.
+      crossOrigin="anonymous"
+      onCanPlay={() => {
+        setPronto(true);
+        definirVideo(videoRef.current);
+      }}
       aria-hidden
     >
       <source src={src} type="video/mp4" />

@@ -47,7 +47,7 @@ function recorteDoFundo(
 
 export default function GlassCanvas(props: GlassCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { src } = useGlassBackground();
+  const { src, video } = useGlassBackground();
 
   // Mantém os parâmetros atuais acessíveis ao loop sem recriar o renderer.
   const propsRef = useRef(props);
@@ -133,7 +133,10 @@ export default function GlassCanvas(props: GlassCanvasProps) {
       if (!visivel) return;
 
       const atual = propsRef.current;
-      const animando = atual.liquid > 0;
+      // Vídeo muda de conteúdo a cada frame independente da ondulação do
+      // preset — sem isso um preset com liquid:0 (nav/pill/card) só
+      // atualizaria a textura em scroll/resize, e o vídeo pareceria travado.
+      const animando = atual.liquid > 0 || video != null;
 
       // Sem animação, só redesenha quando algo mudou (scroll, resize, textura).
       if (!animando && !sujo) return;
@@ -154,12 +157,27 @@ export default function GlassCanvas(props: GlassCanvasProps) {
       programa.uniforms.uTint.value = atual.tint;
       programa.uniforms.uTintAmount.value = atual.tintAmount;
 
+      // O vídeo é o mesmo elemento DOM em toda renderização (a referência
+      // nunca muda), e o ogl só reenvia a textura pra GPU quando `image`
+      // muda ou `needsUpdate` está true — sem isso o frame ficaria congelado
+      // no instante em que o vídeo virou textura pela primeira vez.
+      if (video) textura.needsUpdate = true;
+
       renderer.render({ scene: malha });
     }
 
-    // A textura vem do Storage em outro domínio; sem crossOrigin o WebGL a rejeita.
+    // O vídeo tem prioridade sobre a imagem estática como fonte de refração
+    // (ver GlassBackground.tsx) — é o "liquid glass" de verdade, distorcendo
+    // o que está de fato tocando atrás do painel.
     let img: HTMLImageElement | null = null;
-    if (src) {
+    if (video) {
+      naturalW = video.videoWidth;
+      naturalH = video.videoHeight;
+      textura.image = video;
+      programa.uniforms.uHasTexture.value = 1;
+      marcarSujo();
+    } else if (src) {
+      // A textura vem do Storage em outro domínio; sem crossOrigin o WebGL a rejeita.
       img = new Image();
       img.crossOrigin = "anonymous";
       img.decoding = "async";
@@ -217,7 +235,7 @@ export default function GlassCanvas(props: GlassCanvasProps) {
       // cota de contextos WebGL é pequena.
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [src]);
+  }, [src, video]);
 
   return (
     <canvas
