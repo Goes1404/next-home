@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ViewTransition } from "react";
 import { FiltroForm } from "@/components/busca/FiltroForm";
 import { FiltroSheet } from "@/components/busca/FiltroSheet";
 import { FiltrosAtivos } from "@/components/busca/FiltrosAtivos";
 import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimento";
-import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
@@ -59,9 +59,10 @@ function parseOrdenacao(sp: SearchParams): Ordenacao {
 
 /**
  * Filtros vivem na URL (form GET nativo) — funciona sem JavaScript e o
- * resultado é sempre renderizado no servidor. Sem fundo fixo em WebGL aqui
- * de propósito: são muitos cards e nenhuma imagem única representa a
- * página inteira, então os cards usam borda sólida em vez do liquid glass.
+ * resultado é sempre renderizado no servidor. O fundo fixo (vídeo do hero)
+ * vem do layout do grupo `(vitrine)`, compartilhado com a home — os cards
+ * continuam com borda sólida em vez do liquid glass, já que são muitos e
+ * nenhuma imagem única representa a página inteira.
  */
 export default async function EmpreendimentosPage({
   searchParams,
@@ -80,11 +81,19 @@ export default async function EmpreendimentosPage({
   const temFiltroAtivo = Object.values(filtros).some((v) => v != null);
 
   return (
-    <GlassBackgroundProvider>
+    // Chegando da home via "Ver todos" (marcado "nav-forward"), o conteúdo
+    // desliza para dentro enquanto o vídeo de fundo — fora desta árvore, no
+    // layout do grupo — segue tocando sem interrupção. Ver o comentário
+    // equivalente na home (app/(vitrine)/page.tsx).
+    <ViewTransition
+      enter={{ "nav-forward": "nav-forward", default: "none" }}
+      exit={{ "nav-forward": "nav-forward", default: "none" }}
+      default="none"
+    >
       <SiteHeader />
       <WhatsappCta />
 
-      <main className="flex flex-1 flex-col bg-ink-950 px-4 pt-28 pb-20">
+      <main className="flex flex-1 flex-col px-4 pt-28 pb-20">
         {/*
           FiltroSheet abre um overlay `fixed inset-0`. Um `<Reveal>` aplica
           `transform` via GSAP no próprio elemento (mesmo já resolvido em
@@ -144,6 +153,6 @@ export default async function EmpreendimentosPage({
           </div>
         )}
       </main>
-    </GlassBackgroundProvider>
+    </ViewTransition>
   );
 }

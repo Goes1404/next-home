@@ -229,4 +229,52 @@
   .h-nav-safe {
     height: calc(var(--nav-mobile-h) + env(safe-area-inset-bottom, 0px));
   }
+
+  /*
+   * Transição "arrastada" entre a home e a listagem de empreendimentos
+   * (marcada via `transitionTypes={["nav-forward"]}` no Link + `enter`/`exit`
+   * no <ViewTransition> de cada página — ver app/(vitrine)/page.tsx e
+   * app/(vitrine)/empreendimentos/page.tsx). O vídeo de fundo não participa:
+   * mora no layout do grupo, fora da árvore que troca a cada navegação.
+   */
+  ::view-transition-old(.nav-forward) {
+    animation:
+      180ms var(--ease-in-out-quint) both nav-forward-fade-saida,
+      420ms var(--ease-out-expo) both nav-forward-desliza-saida;
+  }
+  ::view-transition-new(.nav-forward) {
+    animation:
+      240ms var(--ease-out-expo) 120ms both nav-forward-fade-entrada,
+      420ms var(--ease-out-expo) both nav-forward-desliza-entrada;
+  }
+
+  @keyframes nav-forward-fade-saida {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes nav-forward-fade-entrada {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes nav-forward-desliza-saida {
+    to {
+      translate: -48px 0;
+    }
+  }
+  @keyframes nav-forward-desliza-entrada {
+    from {
+      translate: 48px 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0s !important;
+    }
+  }
 }
