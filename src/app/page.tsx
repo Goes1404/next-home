@@ -3,8 +3,6 @@ import Link from "next/link";
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { CtaFinal } from "@/components/home/CtaFinal";
-import { Diferenciais } from "@/components/home/Diferenciais";
-import { Numeros } from "@/components/home/Numeros";
 import { Regioes } from "@/components/home/Regioes";
 import { ScrollCue } from "@/components/home/ScrollCue";
 import { SiteHeader } from "@/components/layout/SiteHeader";
@@ -32,7 +30,6 @@ export const revalidate = 300;
 export default async function Home() {
   const todos = await getEmpreendimentos();
   const destaques = todos.filter((e) => e.destaque);
-  const totalBairros = new Set(todos.map((e) => e.bairro)).size;
 
   return (
     // `inicial` fica de fora de propósito: as capas cadastradas hoje vêm de
@@ -69,10 +66,6 @@ export default async function Home() {
 
           <ScrollCue alvo="destaques" label="Role para ver mais" />
         </section>
-
-        <Numeros totalEmpreendimentos={todos.length} totalBairros={totalBairros} />
-
-        <Diferenciais />
 
         <section id="destaques" className="scroll-mt-20 px-4 pt-4 pb-28">
           <Reveal className="mx-auto max-w-lg text-center">
