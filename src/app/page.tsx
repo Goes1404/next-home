@@ -16,6 +16,13 @@ import { getEmpreendimentos } from "@/lib/queries";
 import { HERO_VIDEO_URL } from "@/lib/site";
 
 /**
+ * Revalida em segundo plano a cada 5 min: sem isso, a página fica estática
+ * desde o build e uma curadoria feita direto no banco (trocar destaque,
+ * trocar capa etc.) só apareceria no próximo deploy de código.
+ */
+export const revalidate = 300;
+
+/**
  * Home imersiva (Fase 7): hero cinematográfico com fundo fixo + seções de
  * scroll-telling reveladas via GSAP (`Reveal`/`Contador`). O fundo é
  * `position: fixed`, o que casa com a suposição do shader de GlassSurface de

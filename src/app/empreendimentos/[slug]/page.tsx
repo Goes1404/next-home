@@ -23,6 +23,13 @@ import type { Empreendimento } from "@/lib/types";
 
 type Params = { slug: string };
 
+/**
+ * Revalida em segundo plano a cada 5 min: sem isso, a página fica estática
+ * desde o build e uma curadoria feita direto no banco (trocar capa, marcar
+ * destaque etc.) só apareceria no próximo deploy de código.
+ */
+export const revalidate = 300;
+
 export async function generateStaticParams(): Promise<Params[]> {
   const slugs = await getSlugsEmpreendimentos();
   return slugs.map((slug) => ({ slug }));
