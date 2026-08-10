@@ -1,3 +1,4 @@
+import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
 
 const ITENS = [
@@ -31,13 +32,10 @@ export function Diferenciais() {
           className="mt-10 grid gap-6 sm:grid-cols-3"
         >
           {ITENS.map((item) => (
-            <div
-              key={item.titulo}
-              className="rounded-2xl border border-white/10 bg-ink-900/50 px-6 py-7"
-            >
+            <GlassSurface key={item.titulo} preset="painel" className="px-6 py-7">
               <h3 className="font-display text-lg text-mist-50">{item.titulo}</h3>
               <p className="text-fluid-sm mt-2 text-mist-400">{item.texto}</p>
-            </div>
+            </GlassSurface>
           ))}
         </Reveal>
       </div>
