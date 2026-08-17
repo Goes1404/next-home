@@ -22,6 +22,7 @@ export type Database = {
     Tables: {
       corretores: {
         Row: {
+          bio: string | null
           created_at: string
           creci: string
           email: string | null
@@ -33,6 +34,7 @@ export type Database = {
           whatsapp: string
         }
         Insert: {
+          bio?: string | null
           created_at?: string
           creci: string
           email?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           whatsapp: string
         }
         Update: {
+          bio?: string | null
           created_at?: string
           creci?: string
           email?: string | null

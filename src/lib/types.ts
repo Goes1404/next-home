@@ -69,7 +69,28 @@ export type Corretor = {
  * e pode compartilhar o portfólio atribuído a si. O registro genérico "Equipe
  * Next Home" não tem `slug`, e por isso fica fora da vitrine da equipe.
  */
-export type CorretorPerfil = Corretor & { id: string; slug: string };
+export type CorretorPerfil = Corretor & {
+  id: string;
+  slug: string;
+  /** Apresentação curta, escrita pelo próprio corretor no painel. */
+  bio: string | null;
+};
+
+/** Contato recebido pelos formulários do site, como o corretor o vê. */
+export type Lead = {
+  id: string;
+  nome: string;
+  email: string | null;
+  telefone: string | null;
+  mensagem: string | null;
+  /** "comprador" (quer comprar) ou "proprietario" (tem imóvel a ofertar). */
+  tipo: string;
+  /** Campos do imóvel ofertado — só nos leads de proprietário. */
+  detalhes: Record<string, string> | null;
+  origem: string | null;
+  criadoEm: string;
+  empreendimento: { nome: string; slug: string } | null;
+};
 
 export type Empreendimento = {
   slug: string;

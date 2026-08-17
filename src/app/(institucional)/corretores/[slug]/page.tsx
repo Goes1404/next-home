@@ -73,6 +73,12 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
             Corretor responsável · CRECI {corretor.creci}
           </p>
 
+          {corretor.bio && (
+            <p className="text-fluid-base mt-5 whitespace-pre-line text-mist-200">
+              {corretor.bio}
+            </p>
+          )}
+
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
             <a
               href={whatsapp}
