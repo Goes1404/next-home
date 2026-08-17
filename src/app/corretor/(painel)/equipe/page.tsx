@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SeletorDono } from "./SeletorDono";
+import { TogglePausa } from "./TogglePausa";
 import { EtiquetaEtapa, dataHora } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import { getEquipeAtiva, getLeadsDoFunil, souGestor } from "@/lib/corretorSessao";
 import { ETAPAS_FUNIL, ETAPA_LABEL, ORIGEM_ATRIBUICAO_LABEL, type Lead } from "@/lib/types";
@@ -11,13 +12,17 @@ export const metadata: Metadata = { title: "Equipe" };
 type LinhaResumo = {
   id: string;
   nome: string;
+  emPausa: boolean;
   total: number;
   novos: number;
   fechados: number;
   porRoleta: number;
 };
 
-function montarResumo(leads: Lead[], equipe: { id: string; nome: string }[]): LinhaResumo[] {
+function montarResumo(
+  leads: Lead[],
+  equipe: { id: string; nome: string; emPausa: boolean }[],
+): LinhaResumo[] {
   // Parte da equipe, não dos leads: quem ainda não recebeu nada precisa
   // aparecer com zero. Um corretor invisível na tabela é justamente o que a
   // roleta deveria evitar, e a única forma de notar é vê-lo zerado.
@@ -27,6 +32,7 @@ function montarResumo(leads: Lead[], equipe: { id: string; nome: string }[]): Li
       return {
         id: corretor.id,
         nome: corretor.nome,
+        emPausa: corretor.emPausa,
         total: meus.length,
         novos: meus.filter((l) => l.etapa === "novo").length,
         fechados: meus.filter((l) => l.etapa === "fechado").length,
@@ -84,6 +90,7 @@ export default async function EquipePage() {
             <thead>
               <tr className="text-fluid-xs text-mist-500">
                 <th className="border-b border-white/10 py-2 pr-4 font-normal">Corretor</th>
+                <th className="border-b border-white/10 py-2 pr-4 font-normal">Escala</th>
                 <th className="border-b border-white/10 py-2 pr-4 font-normal">Total</th>
                 <th className="border-b border-white/10 py-2 pr-4 font-normal">Novos</th>
                 <th className="border-b border-white/10 py-2 pr-4 font-normal">Fechados</th>
@@ -94,6 +101,9 @@ export default async function EquipePage() {
               {resumo.map((linha) => (
                 <tr key={linha.id} className="text-fluid-sm text-mist-200">
                   <td className="border-b border-white/5 py-2.5 pr-4">{linha.nome}</td>
+                  <td className="border-b border-white/5 py-2.5 pr-4">
+                    <TogglePausa corretorId={linha.id} emPausa={linha.emPausa} />
+                  </td>
                   <td className="border-b border-white/5 py-2.5 pr-4">{linha.total}</td>
                   <td className="border-b border-white/5 py-2.5 pr-4">{linha.novos}</td>
                   <td className="border-b border-white/5 py-2.5 pr-4">{linha.fechados}</td>

@@ -227,3 +227,34 @@ export async function atribuirLead(
   revalidatePath("/corretor/leads");
   return {};
 }
+
+/**
+ * Liga/desliga a pausa temporária de um corretor na escala da roleta. Só
+ * gestor — mesma checagem de `atribuirLead`.
+ */
+export async function alternarPausa(
+  corretorId: string,
+  pausado: boolean,
+): Promise<ResultadoAcao> {
+  const { supabase } = await exigirSessao();
+
+  if (!(await souGestor())) {
+    return { erro: "Só quem é gestor pode alterar a escala." };
+  }
+
+  const { data, error } = await supabase
+    .from("corretores")
+    .update({ em_pausa: pausado })
+    .eq("id", corretorId)
+    .select("id");
+
+  if (error) {
+    return { erro: "Não foi possível salvar agora. Tente novamente." };
+  }
+  if (!data || data.length === 0) {
+    return { erro: "Corretor não encontrado." };
+  }
+
+  revalidatePath("/corretor/equipe");
+  return {};
+}

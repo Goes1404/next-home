@@ -158,16 +158,18 @@ export async function getLeadsDoFunil(): Promise<Lead[]> {
  * com cadastro publicável. Oferecer alguém fora disso seria oferecer um
  * destino que não consegue abrir o painel.
  */
-export async function getEquipeAtiva(): Promise<{ id: string; nome: string }[]> {
+export async function getEquipeAtiva(): Promise<
+  { id: string; nome: string; emPausa: boolean }[]
+> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("corretores")
-    .select("id, nome")
+    .select("id, nome, em_pausa")
     .eq("ativo", true)
     .not("slug", "is", null)
     .not("user_id", "is", null)
     .order("nome");
 
   if (error) throw new Error(`Falha ao listar a equipe: ${error.message}`);
-  return (data ?? []) as { id: string; nome: string }[];
+  return (data ?? []).map((c) => ({ id: c.id, nome: c.nome, emPausa: c.em_pausa }));
 }
