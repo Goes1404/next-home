@@ -136,46 +136,24 @@ export async function POST(req: Request) {
   const tipo = parseTipo(corpo.tipo);
   const detalhes = tipo === "proprietario" ? parseDetalhes(corpo.detalhes) : null;
 
-  const base = {
+  const { error } = await supabase.from("leads").insert({
     nome,
     email,
     telefone,
+    mensagem,
     empreendimento_id: empreendimentoId,
     corretor_id: corretorAtivo?.id ?? null,
+    tipo,
+    detalhes,
     origem: normalizado(corpo.origem) ?? "site/contato",
     consentimento_lgpd: true,
-  };
-
-  const { error } = await supabase.from("leads").insert({ ...base, mensagem, tipo, detalhes });
+  });
 
   if (error) {
-    // Rede de segurança da janela de migração: as colunas `tipo`/`detalhes`
-    // (0005_leads_proprietario.sql) só existem depois que a migration roda no
-    // Supabase. Se o deploy do código chegar antes dela, o insert acima falha
-    // inteiro e um lead de proprietário — o mais caro do site — sumiria em
-    // silêncio. Aqui ele é regravado sem as colunas novas, com os dados do
-    // imóvel dobrados dentro da mensagem, para não se perder nada.
-    // Remover assim que a migration estiver aplicada em produção.
-    const resumo = [
-      mensagem,
-      detalhes &&
-        `[${tipo}] ${Object.entries(detalhes)
-          .map(([chave, valor]) => `${chave}: ${valor}`)
-          .join(" · ")}`,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-
-    const { error: erroFallback } = await supabase
-      .from("leads")
-      .insert({ ...base, mensagem: resumo || mensagem });
-
-    if (erroFallback) {
-      return NextResponse.json(
-        { erro: "Não foi possível enviar agora. Tente pelo WhatsApp." },
-        { status: 500 },
-      );
-    }
+    return NextResponse.json(
+      { erro: "Não foi possível enviar agora. Tente pelo WhatsApp." },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ ok: true });

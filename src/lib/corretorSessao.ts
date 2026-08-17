@@ -1,6 +1,6 @@
 import "server-only";
 
-import { consultarCorretores, mapCorretor, type LinhaCorretor } from "@/lib/queries";
+import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import type { CorretorPerfil, Lead } from "@/lib/types";
 
@@ -24,15 +24,15 @@ export async function getCorretorLogado(): Promise<CorretorPerfil | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const data = await consultarCorretores<LinhaCorretor>(
-    (select) =>
-      supabase.from("corretores").select(select).eq("user_id", user.id).maybeSingle(),
-    "Falha ao carregar o corretor da sessão",
-  );
+  const { data } = await supabase
+    .from("corretores")
+    .select(SELECT_CORRETOR)
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   // Sem `slug` a conta existe mas ainda não foi vinculada a um cadastro
   // publicável — o painel trata esse caso à parte.
-  return data?.slug ? mapCorretor(data) : null;
+  return data?.slug ? mapCorretor(data as LinhaCorretor) : null;
 }
 
 /** E-mail da conta autenticada — usado para revalidar a senha atual. */
@@ -45,36 +45,14 @@ export async function getEmailLogado(): Promise<string | null> {
 }
 
 /**
- * A migration 0006 traz duas coisas juntas: a coluna `corretores.bio` e a
- * policy que deixa o corretor ler os próprios leads. Se a coluna não existe,
- * a policy também não.
- *
- * Essa checagem existe porque RLS **não dá erro** quando falta policy — ela
- * simplesmente filtra tudo e devolve zero linhas. Sem um sinal externo, a
- * tela de leads não teria como distinguir "você não tem contatos" de "a
- * permissão ainda não foi aplicada", e mentiria para o corretor.
- *
- * Pode sair junto com o fallback de `bio` em queries.ts, quando a 0006
- * estiver aplicada em produção.
- */
-async function painelLiberado(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-): Promise<boolean> {
-  const { error } = await supabase.from("corretores").select("bio").limit(1);
-  return !error;
-}
-
-/**
  * Leads do corretor logado, mais recentes primeiro.
  *
- * O filtro por corretor vive na policy de RLS (0006), não aqui — o que
- * garante que um bug de query jamais vaze o lead de outro corretor.
+ * Note a ausência de um `.eq("corretor_id", ...)` aqui: o filtro vive na
+ * policy de RLS (0006), no banco. É de propósito — assim nenhum erro de
+ * query nesta camada consegue vazar o lead de um corretor para outro.
  */
-export async function getMeusLeads(): Promise<{ leads: Lead[]; permitido: boolean }> {
+export async function getMeusLeads(): Promise<Lead[]> {
   const supabase = await createClient();
-
-  if (!(await painelLiberado(supabase))) return { leads: [], permitido: false };
-
   const { data, error } = await supabase
     .from("leads")
     .select(
@@ -82,9 +60,9 @@ export async function getMeusLeads(): Promise<{ leads: Lead[]; permitido: boolea
     )
     .order("created_at", { ascending: false });
 
-  if (error) return { leads: [], permitido: false };
+  if (error) throw new Error(`Falha ao carregar os leads: ${error.message}`);
 
-  const leads = (data ?? []).map((row) => {
+  return (data ?? []).map((row) => {
     const emp = row.empreendimento as unknown as { nome: string; slug: string } | null;
     return {
       id: row.id,
@@ -99,6 +77,4 @@ export async function getMeusLeads(): Promise<{ leads: Lead[]; permitido: boolea
       empreendimento: emp,
     } satisfies Lead;
   });
-
-  return { leads, permitido: true };
 }

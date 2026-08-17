@@ -13,7 +13,7 @@ export default async function PainelInicio() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
-  const { leads, permitido } = await getMeusLeads();
+  const leads = await getMeusLeads();
 
   return (
     <div className="space-y-8">
@@ -26,7 +26,7 @@ export default async function PainelInicio() {
         <CopiarLink link={`${site.url}/?corretor=${corretor.slug}`} />
       </section>
 
-      {permitido && leads.length > 0 && (
+      {leads.length > 0 && (
         <section className="rounded-2xl border border-brand-400/30 bg-brand-900/25 p-6">
           <p className="font-display text-lg text-mist-50">
             {leads.length} contato{leads.length === 1 ? "" : "s"} esperando você

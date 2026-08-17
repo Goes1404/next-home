@@ -169,9 +169,7 @@ export async function getSlugsEmpreendimentos(): Promise<string[]> {
  * pelo link de um colega.
  * ------------------------------------------------------------------------ */
 
-const SELECT_CORRETOR = "id, slug, nome, creci, whatsapp, foto_url, bio";
-/** Sem `bio` — usado enquanto a migration 0006 não tiver rodado. */
-const SELECT_CORRETOR_SEM_BIO = "id, slug, nome, creci, whatsapp, foto_url";
+export const SELECT_CORRETOR = "id, slug, nome, creci, whatsapp, foto_url, bio";
 
 export type LinhaCorretor = {
   id: string;
@@ -180,7 +178,7 @@ export type LinhaCorretor = {
   creci: string;
   whatsapp: string;
   foto_url: string | null;
-  bio?: string | null;
+  bio: string | null;
 };
 
 export function mapCorretor(row: LinhaCorretor): CorretorPerfil {
@@ -191,43 +189,8 @@ export function mapCorretor(row: LinhaCorretor): CorretorPerfil {
     creci: row.creci,
     whatsapp: row.whatsapp,
     fotoUrl: row.foto_url,
-    bio: row.bio ?? null,
+    bio: row.bio,
   };
-}
-
-/**
- * `data` fica como `unknown` e o cast acontece dentro do helper: com um
- * `select()` recebendo string dinâmica, o supabase-js não consegue inferir a
- * forma da linha e devolve `GenericStringError[]`. O tipo real vem do
- * parâmetro `T`, que o chamador conhece.
- */
-type ResultadoConsulta = { data: unknown; error: { message: string } | null };
-
-/**
- * Roda a consulta pedindo `bio` e, se a coluna ainda não existir, repete sem
- * ela.
- *
- * Não é zelo excessivo: `bio` chega na migration 0006, que roda no Supabase
- * depois do deploy do código. Sem este fallback, a janela entre os dois
- * derruba o build inteiro — o `sitemap.ts` lista corretores e o prerender
- * falha, levando junto páginas que nada têm a ver com o painel.
- *
- * Pode sair quando a 0006 estiver aplicada em produção.
- */
-export async function consultarCorretores<T>(
-  executar: (select: string) => PromiseLike<ResultadoConsulta>,
-  contexto: string,
-): Promise<T | null> {
-  const comBio = await executar(SELECT_CORRETOR);
-  if (!comBio.error) return comBio.data as T | null;
-
-  if (!comBio.error.message.includes("bio")) {
-    throw new Error(`${contexto}: ${comBio.error.message}`);
-  }
-
-  const semBio = await executar(SELECT_CORRETOR_SEM_BIO);
-  if (semBio.error) throw new Error(`${contexto}: ${semBio.error.message}`);
-  return semBio.data as T | null;
 }
 
 /**
@@ -237,21 +200,26 @@ export async function consultarCorretores<T>(
  */
 export async function getCorretores(): Promise<CorretorPerfil[]> {
   const supabase = createClient();
-  const data = await consultarCorretores<LinhaCorretor[]>(
-    (select) =>
-      supabase.from("corretores").select(select).not("slug", "is", null).order("nome"),
-    "Falha ao listar corretores",
-  );
-  return (data ?? []).map(mapCorretor);
+  const { data, error } = await supabase
+    .from("corretores")
+    .select(SELECT_CORRETOR)
+    .not("slug", "is", null)
+    .order("nome");
+
+  if (error) throw new Error(`Falha ao listar corretores: ${error.message}`);
+  return (data as LinhaCorretor[]).map(mapCorretor);
 }
 
 export async function getCorretorPorSlug(slug: string): Promise<CorretorPerfil | null> {
   const supabase = createClient();
-  const data = await consultarCorretores<LinhaCorretor>(
-    (select) => supabase.from("corretores").select(select).eq("slug", slug).maybeSingle(),
-    `Falha ao buscar corretor "${slug}"`,
-  );
-  return data ? mapCorretor(data) : null;
+  const { data, error } = await supabase
+    .from("corretores")
+    .select(SELECT_CORRETOR)
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) throw new Error(`Falha ao buscar corretor "${slug}": ${error.message}`);
+  return data ? mapCorretor(data as LinhaCorretor) : null;
 }
 
 /** Empreendimentos sob responsabilidade de um corretor, na ordem curada. */

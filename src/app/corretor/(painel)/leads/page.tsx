@@ -108,7 +108,7 @@ function CartaoLead({ lead }: { lead: Lead }) {
 }
 
 export default async function LeadsPage() {
-  const { leads, permitido } = await getMeusLeads();
+  const leads = await getMeusLeads();
 
   return (
     <div>
@@ -117,19 +117,7 @@ export default async function LeadsPage() {
         Contatos recebidos pelos formulários do site que chegaram atribuídos a você.
       </p>
 
-      {/*
-        Distingue "não tenho permissão" de "não tem lead". Sem isso, enquanto a
-        migration 0006 não roda a tela mentiria dizendo que não há contatos.
-      */}
-      {!permitido ? (
-        <div className="mt-8 rounded-2xl border border-sand-400/30 bg-sand-400/10 p-6">
-          <p className="font-display text-mist-50">Permissão ainda não liberada</p>
-          <p className="text-fluid-sm mt-2 text-mist-300">
-            A leitura de leads depende de um ajuste no banco de dados que ainda não foi
-            aplicado. Assim que ele rodar, seus contatos aparecem aqui automaticamente.
-          </p>
-        </div>
-      ) : leads.length === 0 ? (
+      {leads.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-white/10 bg-ink-900/50 p-6">
           <p className="text-fluid-sm text-mist-300">
             Nenhum contato ainda. Compartilhe seu link pessoal — todo formulário preenchido a

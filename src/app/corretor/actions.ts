@@ -22,16 +22,6 @@ async function exigirSessao() {
   return { supabase, user };
 }
 
-/**
- * A migration 0006 traz a coluna `bio` e a policy de edição juntas. Antes
- * dela, o update falha citando a coluna; depois dela, mas sem a policy, o
- * RLS não afeta linha nenhuma e também não dá erro. Os dois casos têm a
- * mesma causa e merecem a mesma explicação, em vez de um "tente novamente"
- * que manda o corretor repetir algo que nunca vai funcionar.
- */
-const AVISO_MIGRACAO_PENDENTE =
-  "Sem permissão para editar o cadastro: o ajuste no banco de dados ainda não foi aplicado. Fale com quem administra o site.";
-
 /** Mantém só dígitos e garante o formato E.164 brasileiro que `wa.me` espera. */
 function normalizarWhatsapp(bruto: string): string | null {
   const digitos = bruto.replace(/\D/g, "");
@@ -106,14 +96,12 @@ export async function salvarPerfil(
     .select("id");
 
   if (error) {
-    return {
-      erro: error.message.includes("bio")
-        ? AVISO_MIGRACAO_PENDENTE
-        : "Não foi possível salvar agora. Tente novamente.",
-    };
+    return { erro: "Não foi possível salvar agora. Tente novamente." };
   }
   if (!data || data.length === 0) {
-    return { erro: AVISO_MIGRACAO_PENDENTE };
+    return {
+      erro: "Sem permissão para editar este cadastro. Fale com quem administra o site.",
+    };
   }
 
   // A página pública do corretor e a vitrine da equipe leem esses campos.
