@@ -10,7 +10,23 @@ export const site = {
   creci: "044589-J",
   descricao:
     "Portfólio de empreendimentos em Alphaville, Barueri, Santana de Parnaíba e Osasco. Lançamentos, alto padrão e oportunidades selecionadas.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.nexthomeimobiliaria.com.br",
+  /**
+   * Endereço onde este site realmente está publicado.
+   *
+   * **Não** é `nexthomeimobiliaria.com.br`: esse domínio ainda aponta para o
+   * site legado (Migmidia) e não está conectado ao projeto na Vercel. Como
+   * `site.url` monta o link pessoal que o corretor copia no painel, apontar
+   * para lá jogava o cliente dele no site antigo — o link chegava quebrado
+   * em toda conversa de WhatsApp.
+   *
+   * Também alimenta canonical, sitemap e JSON-LD, que precisam apontar para
+   * onde o conteúdo de fato está.
+   *
+   * No dia da virada de DNS, basta definir `NEXT_PUBLIC_SITE_URL` nas
+   * variáveis de ambiente da Vercel com o domínio final — sem tocar no
+   * código.
+   */
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://next-home-drab.vercel.app",
 
   endereco: {
     logradouro: "Calçada Antares, 264 — 2º andar",
