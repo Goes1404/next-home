@@ -1,13 +1,7 @@
 /**
  * Tipos gerados a partir do projeto Supabase real (prhhrqyubjcafvucirri) via
  * Management API — `types/typescript`. Não editar à mão; regenerar sempre
- * que `supabase/migrations/` mudar.
- *
- * Exceção conhecida: as colunas da migration 0007 (`corretores.papel`,
- * `.ativo`, `.regioes`; `leads.etapa`, `.etapa_alterada_em`,
- * `.origem_atribuicao`) foram acrescentadas à mão porque a geração lê o banco
- * em produção, e o código precisou compilar antes de a migration ser
- * aplicada. Regenerar depois de rodá-la — o resultado deve bater com isto.
+ * que `supabase/migrations/` mudar. Última geração: depois da 0007.
  */
 
 export type Json =
@@ -400,7 +394,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      corretor_atual: { Args: never; Returns: string }
+      eh_gestor: { Args: never; Returns: boolean }
     }
     Enums: {
       finalidade_imovel: "lancamento" | "venda"
