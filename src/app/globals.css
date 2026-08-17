@@ -7,13 +7,28 @@
  * demais, então cada uma ganha uma versão luminosa para texto e realce.
  */
 @theme {
-  /* Marca */
-  --color-brand-50: #e6f4f1;
-  --color-brand-100: #c0e4dd;
-  --color-brand-200: #8ccfc2;
-  --color-brand-300: #4fb8a5;
-  --color-brand-400: #17a08a;
-  --color-brand-500: #008773;
+  /*
+   * Marca — teal do logotipo (#00594F) como base profunda, com os tons
+   * claros puxados para um verde-esmeralda mais vivo.
+   *
+   * A divisão da escala não é estética por acaso:
+   * - 100–400 são usados como PRIMEIRO PLANO (texto de apoio, links, ícones,
+   *   o "Home" da logo) sobre fundo quase preto. Aqui, mais saturação = mais
+   *   presença e mais legibilidade ao mesmo tempo — foi o que corrigiu o
+   *   verde apagado dos detalhes (#8ccfc2 → #6fe7c0 sobe de 11,2:1 para
+   *   13,1:1 de contraste).
+   * - 500 é FUNDO de botão com texto branco por cima, onde vale o oposto:
+   *   clarear derruba o contraste (um #00a274 cairia para 3,3:1). O tom aqui
+   *   foi levemente escurecido (#008773 → #00806c) justamente para passar no
+   *   mínimo de 4,5:1 da WCAG AA, que a versão anterior não alcançava.
+   * - 600–900 ficam intocados: é o teal do logotipo e a base dos fundos.
+   */
+  --color-brand-50: #e8fbf4;
+  --color-brand-100: #bff5e2;
+  --color-brand-200: #6fe7c0;
+  --color-brand-300: #2fd6a4;
+  --color-brand-400: #0cbe8b;
+  --color-brand-500: #00806c;
   --color-brand-600: #00594f; /* teal do logotipo */
   --color-brand-700: #00443c;
   --color-brand-800: #00302b;
