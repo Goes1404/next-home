@@ -107,14 +107,29 @@ export async function Footer() {
 
         {/*
           Único acesso à área do corretor no site — sem isso só se chega
-          digitando a URL. Fica discreto no rodapé de propósito: é ferramenta
-          de equipe, não de visitante.
+          digitando a URL.
+
+          Começou como um link de texto solto aqui e o cliente não o
+          encontrou: cinza escuro, 13px, ao lado do copyright, ele não se
+          parecia com algo clicável. Agora tem contorno, cadeado e contraste
+          de link de verdade. Continua no rodapé, e não no menu, porque é
+          ferramenta de equipe — mas achável é requisito, discreto é estilo.
 
           Aponta para `/corretor` e não para `/corretor/entrar`: quem já tem
           sessão cai direto no painel, e quem não tem é mandado ao login pelo
           proxy. Um link só resolve os dois casos.
         */}
-        <Link href="/corretor" className="transition-colors hover:text-brand-200">
+        <Link
+          href="/corretor"
+          className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-mist-200 transition-colors hover:border-brand-300/50 hover:text-brand-200"
+        >
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" aria-hidden className="h-3.5 w-3.5">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+            />
+          </svg>
           Área do corretor
         </Link>
       </div>
