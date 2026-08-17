@@ -62,7 +62,9 @@ export default async function EquipePage() {
 
       <section>
         <h2 className="text-fluid-sm font-medium text-mist-100">Onde está cada contato</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
+        {/* Grade, e não `flex-wrap`: com sete etapas o wrap deixava seis numa
+            linha e uma órfã na seguinte, o que se lê como defeito. */}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           {porEtapa.map(({ etapa, total }) => (
             <div
               key={etapa}

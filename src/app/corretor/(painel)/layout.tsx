@@ -30,7 +30,14 @@ export default async function PainelLayout({
 
   return (
     <main className="flex min-h-svh flex-1 flex-col bg-ink-950 px-4 pt-10 pb-20">
-      <div className="mx-auto w-full max-w-3xl">
+      {/*
+        Mais largo que as páginas públicas de propósito: o quadro do funil tem
+        sete colunas e a tabela da equipe tem cinco. A 768px o kanban rolava na
+        horizontal com metade da tela vazia dos dois lados, o que parece
+        defeito. Os formulários se capam por conta própria — campo de nome com
+        1024px de largura seria o erro oposto.
+      */}
+      <div className="mx-auto w-full max-w-5xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link href="/" className="font-display text-lg text-mist-50">
             Next<span className="text-brand-300">Home</span>

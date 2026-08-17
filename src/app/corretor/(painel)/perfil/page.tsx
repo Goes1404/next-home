@@ -12,7 +12,9 @@ export default async function PerfilPage() {
   if (!corretor) return null;
 
   return (
-    <div>
+    // Formulário se cansa de ler antes de o painel acabar: campo de texto
+    // largo demais é tão ruim quanto estreito demais.
+    <div className="max-w-2xl">
       <h1 className="text-fluid-2xl text-mist-50">Meu perfil</h1>
       <p className="text-fluid-sm mt-2 text-mist-400">
         O que o cliente vê na sua{" "}
