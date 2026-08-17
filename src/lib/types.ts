@@ -64,6 +64,13 @@ export type Corretor = {
   fotoUrl: string | null;
 };
 
+/**
+ * Corretor com identidade própria no site — tem página em `/corretores/<slug>`
+ * e pode compartilhar o portfólio atribuído a si. O registro genérico "Equipe
+ * Next Home" não tem `slug`, e por isso fica fora da vitrine da equipe.
+ */
+export type CorretorPerfil = Corretor & { id: string; slug: string };
+
 export type Empreendimento = {
   slug: string;
   nome: string;

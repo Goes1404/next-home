@@ -4,6 +4,18 @@ import { createClient } from "@/lib/supabase/public";
 
 export const runtime = "nodejs";
 
+/** Os dois funis: quem quer comprar e quem tem imóvel para ofertar. */
+const TIPOS_VALIDOS = ["comprador", "proprietario"] as const;
+type TipoLead = (typeof TIPOS_VALIDOS)[number];
+
+/** Campos específicos do imóvel ofertado — só o formulário de proprietário manda. */
+type DetalhesImovel = {
+  imovelTipo?: string;
+  imovelCidade?: string;
+  imovelBairro?: string;
+  intencao?: string;
+};
+
 type CorpoLead = {
   nome?: string;
   email?: string;
@@ -12,6 +24,8 @@ type CorpoLead = {
   empreendimentoSlug?: string;
   origem?: string;
   consentimentoLgpd?: boolean;
+  tipo?: string;
+  detalhes?: DetalhesImovel;
   /** Honeypot: campo que só um bot preenche. */
   empresa?: string;
   /** Tempo em ms desde que o formulário apareceu na tela do visitante. */
@@ -39,6 +53,26 @@ function limitado(ip: string): boolean {
 function normalizado(v: string | undefined): string | null {
   const t = v?.trim();
   return t ? t : null;
+}
+
+/** Tipo desconhecido cai em "comprador" — o funil padrão do site. */
+function parseTipo(v: string | undefined): TipoLead {
+  return TIPOS_VALIDOS.includes(v as TipoLead) ? (v as TipoLead) : "comprador";
+}
+
+/**
+ * Só os campos conhecidos entram no jsonb, cada um limitado em tamanho: o
+ * corpo vem do cliente, e uma coluna livre é convite para lixo se aceitar
+ * qualquer chave.
+ */
+function parseDetalhes(d: DetalhesImovel | undefined): DetalhesImovel | null {
+  if (!d) return null;
+  const limpo: DetalhesImovel = {};
+  for (const chave of ["imovelTipo", "imovelCidade", "imovelBairro", "intencao"] as const) {
+    const valor = normalizado(d[chave]);
+    if (valor) limpo[chave] = valor.slice(0, 120);
+  }
+  return Object.keys(limpo).length > 0 ? limpo : null;
 }
 
 export async function POST(req: Request) {
@@ -99,19 +133,49 @@ export async function POST(req: Request) {
   // dono ficaria sem crédito correto de atribuição.
   const corretorAtivo = await getCorretorAtivo();
 
-  const { error } = await supabase.from("leads").insert({
+  const tipo = parseTipo(corpo.tipo);
+  const detalhes = tipo === "proprietario" ? parseDetalhes(corpo.detalhes) : null;
+
+  const base = {
     nome,
     email,
     telefone,
-    mensagem,
     empreendimento_id: empreendimentoId,
     corretor_id: corretorAtivo?.id ?? null,
     origem: normalizado(corpo.origem) ?? "site/contato",
     consentimento_lgpd: true,
-  });
+  };
+
+  const { error } = await supabase.from("leads").insert({ ...base, mensagem, tipo, detalhes });
 
   if (error) {
-    return NextResponse.json({ erro: "Não foi possível enviar agora. Tente pelo WhatsApp." }, { status: 500 });
+    // Rede de segurança da janela de migração: as colunas `tipo`/`detalhes`
+    // (0005_leads_proprietario.sql) só existem depois que a migration roda no
+    // Supabase. Se o deploy do código chegar antes dela, o insert acima falha
+    // inteiro e um lead de proprietário — o mais caro do site — sumiria em
+    // silêncio. Aqui ele é regravado sem as colunas novas, com os dados do
+    // imóvel dobrados dentro da mensagem, para não se perder nada.
+    // Remover assim que a migration estiver aplicada em produção.
+    const resumo = [
+      mensagem,
+      detalhes &&
+        `[${tipo}] ${Object.entries(detalhes)
+          .map(([chave, valor]) => `${chave}: ${valor}`)
+          .join(" · ")}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    const { error: erroFallback } = await supabase
+      .from("leads")
+      .insert({ ...base, mensagem: resumo || mensagem });
+
+    if (erroFallback) {
+      return NextResponse.json(
+        { erro: "Não foi possível enviar agora. Tente pelo WhatsApp." },
+        { status: 500 },
+      );
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -216,6 +216,7 @@ export type Database = {
           consentimento_lgpd: boolean
           corretor_id: string | null
           created_at: string
+          detalhes: Json | null
           email: string | null
           empreendimento_id: string | null
           id: string
@@ -223,11 +224,13 @@ export type Database = {
           nome: string
           origem: string | null
           telefone: string | null
+          tipo: string
         }
         Insert: {
           consentimento_lgpd?: boolean
           corretor_id?: string | null
           created_at?: string
+          detalhes?: Json | null
           email?: string | null
           empreendimento_id?: string | null
           id?: string
@@ -235,11 +238,13 @@ export type Database = {
           nome: string
           origem?: string | null
           telefone?: string | null
+          tipo?: string
         }
         Update: {
           consentimento_lgpd?: boolean
           corretor_id?: string | null
           created_at?: string
+          detalhes?: Json | null
           email?: string | null
           empreendimento_id?: string | null
           id?: string
@@ -247,6 +252,7 @@ export type Database = {
           nome?: string
           origem?: string | null
           telefone?: string | null
+          tipo?: string
         }
         Relationships: [
           {

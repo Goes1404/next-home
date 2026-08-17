@@ -1,7 +1,12 @@
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { createClient } from "@/lib/supabase/public";
 import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
-import type { Empreendimento, FiltrosEmpreendimento, Ordenacao } from "@/lib/types";
+import type {
+  CorretorPerfil,
+  Empreendimento,
+  FiltrosEmpreendimento,
+  Ordenacao,
+} from "@/lib/types";
 
 /**
  * Camada de acesso a dados dos empreendimentos, sobre o Supabase real
@@ -153,6 +158,84 @@ export async function getSlugsEmpreendimentos(): Promise<string[]> {
 
   if (error) throw new Error(`Falha ao listar slugs: ${error.message}`);
   return data.map((row) => row.slug);
+}
+
+/* ---------------------------------------------------------------------------
+ * Corretores
+ *
+ * Nenhuma das funções abaixo aplica `aplicarCorretorAtivo`: aqui o corretor é
+ * o assunto da página, não o intermediário da visita. Sobrepor pelo cookie
+ * faria a página de um corretor exibir outra pessoa para quem tivesse chegado
+ * pelo link de um colega.
+ * ------------------------------------------------------------------------ */
+
+const SELECT_CORRETOR = "id, slug, nome, creci, whatsapp, foto_url";
+
+type LinhaCorretor = {
+  id: string;
+  slug: string | null;
+  nome: string;
+  creci: string;
+  whatsapp: string;
+  foto_url: string | null;
+};
+
+function mapCorretor(row: LinhaCorretor): CorretorPerfil {
+  return {
+    id: row.id,
+    slug: row.slug!,
+    nome: row.nome,
+    creci: row.creci,
+    whatsapp: row.whatsapp,
+    fotoUrl: row.foto_url,
+  };
+}
+
+/**
+ * Equipe exibida publicamente. `slug not null` filtra o registro genérico
+ * "Equipe Next Home" (usado como fallback de empreendimento sem responsável),
+ * que não é uma pessoa e não deve aparecer na vitrine da equipe.
+ */
+export async function getCorretores(): Promise<CorretorPerfil[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("corretores")
+    .select(SELECT_CORRETOR)
+    .not("slug", "is", null)
+    .order("nome");
+
+  if (error) throw new Error(`Falha ao listar corretores: ${error.message}`);
+  return (data as LinhaCorretor[]).map(mapCorretor);
+}
+
+export async function getCorretorPorSlug(slug: string): Promise<CorretorPerfil | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("corretores")
+    .select(SELECT_CORRETOR)
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) throw new Error(`Falha ao buscar corretor "${slug}": ${error.message}`);
+  return data ? mapCorretor(data as LinhaCorretor) : null;
+}
+
+/** Empreendimentos sob responsabilidade de um corretor, na ordem curada. */
+export async function getEmpreendimentosPorCorretor(
+  corretorId: string,
+): Promise<Empreendimento[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("empreendimentos")
+    .select(SELECT_EMPREENDIMENTO)
+    .eq("corretor_id", corretorId)
+    .eq("publicado", true)
+    .order("ordem");
+
+  if (error) {
+    throw new Error(`Falha ao buscar empreendimentos do corretor: ${error.message}`);
+  }
+  return (data as unknown as LinhaEmpreendimento[]).map(mapEmpreendimento);
 }
 
 /** Cidades e bairros distintos, para popular os selects de filtro. */

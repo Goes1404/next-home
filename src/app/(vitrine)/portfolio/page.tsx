@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ViewTransition } from "react";
@@ -18,6 +19,17 @@ import { getEmpreendimentos } from "@/lib/queries";
  * trocar capa etc.) só apareceria no próximo deploy de código.
  */
 export const revalidate = 300;
+
+/**
+ * `noindex` de propósito: esta é a peça que o corretor compartilha no
+ * WhatsApp, não uma porta de entrada de busca. A home institucional (`/`)
+ * cobre a mesma intenção de quem procura a imobiliária no Google, e deixar as
+ * duas indexadas só faria uma diluir a outra.
+ */
+export const metadata: Metadata = {
+  title: "Portfólio de empreendimentos",
+  robots: { index: false, follow: true },
+};
 
 /**
  * Home imersiva (Fase 7): hero cinematográfico com fundo fixo (vivendo no

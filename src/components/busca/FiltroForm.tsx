@@ -27,6 +27,12 @@ export type FiltroFormProps = {
   /** Id único por instância — o form aparece 1x no desktop e 1x no sheet mobile. */
   idPrefixo: string;
   className?: string;
+  /**
+   * Versão de entrada, para o hero do institucional: só tipo, cidade e valor,
+   * e o botão vira "Buscar imóveis". Quem chega na home ainda não sabe o que
+   * quer refinar — a listagem é que oferece o conjunto completo de filtros.
+   */
+  compacto?: boolean;
 };
 
 /**
@@ -39,6 +45,7 @@ export function FiltroForm({
   regioes,
   idPrefixo,
   className,
+  compacto = false,
 }: FiltroFormProps) {
   const temFiltro = Object.values(filtrosAtuais).some((v) => v != null && v !== "");
 
@@ -46,7 +53,13 @@ export function FiltroForm({
     <form action="/empreendimentos" method="get" className={className}>
       {/* 6 colunas só a partir de lg: em telas médias os selects ficariam
           estreitos demais e cortariam o rótulo da opção escolhida. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div
+        className={
+          compacto
+            ? "grid grid-cols-2 gap-3 sm:grid-cols-3"
+            : "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
+        }
+      >
         <div>
           <label htmlFor={`${idPrefixo}-tipo`} className="text-fluid-xs mb-1 block text-mist-400">
             Tipo
@@ -85,26 +98,31 @@ export function FiltroForm({
           </select>
         </div>
 
-        <div>
-          <label htmlFor={`${idPrefixo}-bairro`} className="text-fluid-xs mb-1 block text-mist-400">
-            Bairro
-          </label>
-          <select
-            id={`${idPrefixo}-bairro`}
-            name="bairro"
-            defaultValue={filtrosAtuais.bairro ?? ""}
-            className={CAMPO}
-          >
-            <option value="">Qualquer</option>
-            {regioes.bairros.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!compacto && (
+          <div>
+            <label htmlFor={`${idPrefixo}-bairro`} className="text-fluid-xs mb-1 block text-mist-400">
+              Bairro
+            </label>
+            <select
+              id={`${idPrefixo}-bairro`}
+              name="bairro"
+              defaultValue={filtrosAtuais.bairro ?? ""}
+              className={CAMPO}
+            >
+              <option value="">Qualquer</option>
+              {regioes.bairros.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
+        {/* No compacto o par tipo/cidade ocupa a primeira linha do mobile e o
+            valor fica sozinho na segunda — full width em vez de meia coluna
+            solta ao lado de um vazio. */}
+        <div className={compacto ? "col-span-2 sm:col-span-1" : undefined}>
           <label htmlFor={`${idPrefixo}-preco`} className="text-fluid-xs mb-1 block text-mist-400">
             Valor
           </label>
@@ -123,54 +141,65 @@ export function FiltroForm({
           </select>
         </div>
 
-        <div>
-          <label htmlFor={`${idPrefixo}-dorms`} className="text-fluid-xs mb-1 block text-mist-400">
-            Dormitórios
-          </label>
-          <select
-            id={`${idPrefixo}-dorms`}
-            name="dormitoriosMin"
-            defaultValue={
-              filtrosAtuais.dormitoriosMin ? String(filtrosAtuais.dormitoriosMin) : ""
-            }
-            className={CAMPO}
-          >
-            <option value="">Qualquer</option>
-            {FAIXAS_DORMITORIOS.map((f) => (
-              <option key={f.valor} value={f.valor}>
-                {f.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!compacto && (
+          <div>
+            <label htmlFor={`${idPrefixo}-dorms`} className="text-fluid-xs mb-1 block text-mist-400">
+              Dormitórios
+            </label>
+            <select
+              id={`${idPrefixo}-dorms`}
+              name="dormitoriosMin"
+              defaultValue={
+                filtrosAtuais.dormitoriosMin ? String(filtrosAtuais.dormitoriosMin) : ""
+              }
+              className={CAMPO}
+            >
+              <option value="">Qualquer</option>
+              {FAIXAS_DORMITORIOS.map((f) => (
+                <option key={f.valor} value={f.valor}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label htmlFor={`${idPrefixo}-ordenar`} className="text-fluid-xs mb-1 block text-mist-400">
-            Ordenar por
-          </label>
-          <select
-            id={`${idPrefixo}-ordenar`}
-            name="ordenar"
-            defaultValue={ordenacaoAtual}
-            className={CAMPO}
-          >
-            {Object.entries(ORDENACAO_LABEL).map(([valor, label]) => (
-              <option key={valor} value={valor}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!compacto && (
+          <div>
+            <label
+              htmlFor={`${idPrefixo}-ordenar`}
+              className="text-fluid-xs mb-1 block text-mist-400"
+            >
+              Ordenar por
+            </label>
+            <select
+              id={`${idPrefixo}-ordenar`}
+              name="ordenar"
+              defaultValue={ordenacaoAtual}
+              className={CAMPO}
+            >
+              {Object.entries(ORDENACAO_LABEL).map(([valor, label]) => (
+                <option key={valor} value={valor}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex items-center gap-4">
         <button
           type="submit"
-          className="rounded-full bg-brand-500 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-400"
+          className={
+            compacto
+              ? "w-full rounded-full bg-brand-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-400 sm:w-auto sm:px-8"
+              : "rounded-full bg-brand-500 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-400"
+          }
         >
-          Filtrar
+          {compacto ? "Buscar imóveis" : "Filtrar"}
         </button>
-        {temFiltro && (
+        {!compacto && temFiltro && (
           <Link
             href="/empreendimentos"
             className="text-fluid-sm text-mist-300 underline-offset-4 hover:text-mist-50 hover:underline"

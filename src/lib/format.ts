@@ -40,6 +40,22 @@ export function precoPorM2(
   return `${brl.format(Math.round(preco / area))}/m²`;
 }
 
+/**
+ * Iniciais do nome — fallback de avatar enquanto não há foto cadastrada.
+ *
+ * Só partes que começam com letra entram: nomes cadastrados como
+ * "Cristal - Bruna" têm o hífen como palavra própria, e ele viraria uma
+ * "inicial" ("C-") se não fosse descartado aqui.
+ */
+export function iniciais(nome: string): string {
+  return nome
+    .split(/\s+/)
+    .filter((parte) => /^\p{L}/u.test(parte))
+    .slice(0, 2)
+    .map((parte) => parte[0]!.toUpperCase())
+    .join("");
+}
+
 const DIAS_PARA_DEIXAR_DE_SER_NOVO = 30;
 
 /** Publicado há pouco tempo — alimenta o selo "novo" da listagem. */

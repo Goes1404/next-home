@@ -2,18 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Compartilhar } from "@/components/empreendimento/Compartilhar";
 import { Reveal } from "@/components/motion/Reveal";
+import { iniciais } from "@/lib/format";
 import { linkWhatsappPara } from "@/lib/site";
 import type { Empreendimento } from "@/lib/types";
-
-/** Iniciais como fallback enquanto não há foto do corretor cadastrada. */
-function iniciais(nome: string): string {
-  return nome
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("");
-}
 
 export function Contato({ empreendimento: e }: { empreendimento: Empreendimento }) {
   const link = linkWhatsappPara(
