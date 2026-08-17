@@ -1,120 +1,26 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getMeusLeads } from "@/lib/corretorSessao";
-import { linkWhatsappPara } from "@/lib/site";
-import type { Lead } from "@/lib/types";
+import { CartaoLead } from "@/app/corretor/(painel)/_componentes/CartaoLead";
+import { getMeusLeads, souGestor } from "@/lib/corretorSessao";
 
 export const metadata: Metadata = { title: "Meus leads" };
 
-const ROTULO_DETALHE: Record<string, string> = {
-  imovelTipo: "Tipo",
-  imovelCidade: "Cidade",
-  imovelBairro: "Bairro",
-  intencao: "Intenção",
-};
-
-const dataHora = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-function CartaoLead({ lead }: { lead: Lead }) {
-  const ehProprietario = lead.tipo === "proprietario";
-  const whatsapp = lead.telefone
-    ? linkWhatsappPara(
-        lead.telefone.replace(/\D/g, "").length <= 11
-          ? `55${lead.telefone.replace(/\D/g, "")}`
-          : lead.telefone.replace(/\D/g, ""),
-        `Olá, ${lead.nome.split(" ")[0]}! Aqui é da Next Home, recebi seu contato pelo site.`,
-      )
-    : null;
-
-  return (
-    <article className="rounded-2xl border border-white/10 bg-ink-900/50 p-5">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-display text-lg text-mist-50">{lead.nome}</p>
-          <p className="text-fluid-xs mt-0.5 text-mist-500">
-            {dataHora.format(new Date(lead.criadoEm))}
-          </p>
-        </div>
-        <span
-          className={
-            ehProprietario
-              ? "text-fluid-xs rounded-full bg-sand-400/90 px-2.5 py-1 font-medium text-ink-950"
-              : "text-fluid-xs rounded-full bg-brand-500/20 px-2.5 py-1 font-medium text-brand-200"
-          }
-        >
-          {ehProprietario ? "Tem imóvel" : "Quer comprar"}
-        </span>
-      </div>
-
-      <dl className="text-fluid-sm mt-4 space-y-1 text-mist-300">
-        {lead.telefone && (
-          <div>
-            <dt className="inline text-mist-500">Telefone </dt>
-            <dd className="inline">{lead.telefone}</dd>
-          </div>
-        )}
-        {lead.email && (
-          <div>
-            <dt className="inline text-mist-500">E-mail </dt>
-            <dd className="inline break-all">{lead.email}</dd>
-          </div>
-        )}
-        {lead.empreendimento && (
-          <div>
-            <dt className="inline text-mist-500">Interesse </dt>
-            <dd className="inline">
-              <Link
-                href={`/empreendimentos/${lead.empreendimento.slug}`}
-                className="text-brand-200 underline-offset-4 hover:underline"
-              >
-                {lead.empreendimento.nome}
-              </Link>
-            </dd>
-          </div>
-        )}
-        {lead.detalhes &&
-          Object.entries(lead.detalhes).map(([chave, valor]) => (
-            <div key={chave}>
-              <dt className="inline text-mist-500">{ROTULO_DETALHE[chave] ?? chave} </dt>
-              <dd className="inline">{valor}</dd>
-            </div>
-          ))}
-      </dl>
-
-      {lead.mensagem && (
-        <p className="text-fluid-sm mt-3 rounded-xl border border-white/5 bg-ink-950/50 px-4 py-3 whitespace-pre-line text-mist-200">
-          {lead.mensagem}
-        </p>
-      )}
-
-      {whatsapp && (
-        <a
-          href={whatsapp}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 inline-flex rounded-full bg-brand-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-400"
-        >
-          Responder no WhatsApp
-        </a>
-      )}
-    </article>
-  );
-}
-
+/**
+ * A lista cronológica, ao lado do quadro do funil. As duas telas leem os
+ * mesmos dados: o funil responde "em que pé está cada negociação", esta aqui
+ * responde "o que chegou hoje" — e é onde cabem a mensagem inteira e todos os
+ * detalhes, que não caberiam num cartão de coluna.
+ */
 export default async function LeadsPage() {
-  const leads = await getMeusLeads();
+  const [leads, gestor] = await Promise.all([getMeusLeads(), souGestor()]);
 
   return (
     <div>
-      <h1 className="text-fluid-2xl text-mist-50">Meus leads</h1>
+      <h1 className="text-fluid-2xl text-mist-50">{gestor ? "Contatos" : "Meus leads"}</h1>
       <p className="text-fluid-sm mt-2 text-mist-400">
-        Contatos recebidos pelos formulários do site que chegaram atribuídos a você.
+        {gestor
+          ? "Todos os contatos recebidos pelos formulários do site, dos mais recentes aos mais antigos."
+          : "Contatos que chegaram atribuídos a você — pelo seu link pessoal ou pela distribuição automática."}
       </p>
 
       {leads.length === 0 ? (
@@ -133,7 +39,7 @@ export default async function LeadsPage() {
       ) : (
         <div className="mt-8 space-y-4">
           {leads.map((lead) => (
-            <CartaoLead key={lead.id} lead={lead} />
+            <CartaoLead key={lead.id} lead={lead} mostrarDono={gestor} />
           ))}
         </div>
       )}

@@ -2,10 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { souGestor } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
+import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 
 export type EstadoLogin = { erro?: string } | undefined;
 export type EstadoForm = { erro?: string; ok?: string } | undefined;
+/** Resultado das ações do funil — sucesso é a ausência de `erro`. */
+export type ResultadoAcao = { erro?: string };
 
 /**
  * Server Action é uma requisição POST à rota, não uma navegação — o
@@ -154,4 +158,81 @@ export async function trocarSenha(
   }
 
   return { ok: "Senha alterada." };
+}
+
+/**
+ * Move um lead de etapa no funil.
+ *
+ * O `.select("id")` no fim segue a mesma regra do `salvarPerfil`, e aqui ela
+ * é ainda mais necessária: a tela usa `useOptimistic`, então o cartão já
+ * pulou de coluna antes de o servidor responder. Sem conferir as linhas
+ * afetadas, um lead de outro corretor pareceria ter se movido — e só um
+ * recarregamento revelaria que nada aconteceu.
+ */
+export async function moverEtapa(leadId: string, etapa: string): Promise<ResultadoAcao> {
+  const { supabase } = await exigirSessao();
+
+  // `etapa` chega tipada como `string`, e não como `EtapaFunil`, de
+  // propósito: Server Action é um endpoint HTTP: o argumento vem pela rede e
+  // o tipo do TypeScript some na compilação. A lista fechada é a validação
+  // real — o `check` da migration é a segunda linha de defesa, não a
+  // primeira.
+  if (!ETAPAS_FUNIL.includes(etapa as EtapaFunil)) {
+    return { erro: "Etapa desconhecida." };
+  }
+
+  const { data, error } = await supabase
+    .from("leads")
+    .update({ etapa, etapa_alterada_em: new Date().toISOString() })
+    .eq("id", leadId)
+    .select("id");
+
+  if (error) {
+    return { erro: "Não foi possível mover agora. Tente novamente." };
+  }
+  if (!data || data.length === 0) {
+    return { erro: "Este lead não é seu — recarregue a página." };
+  }
+
+  revalidatePath("/corretor/funil");
+  revalidatePath("/corretor/leads");
+  revalidatePath("/corretor");
+  return {};
+}
+
+/**
+ * Passa um lead para outro corretor. Só gestor.
+ *
+ * A checagem de papel aqui é conveniência: quem decide de verdade é o
+ * `with check` da policy (0007), que exige que um corretor comum termine
+ * dono do lead — ou seja, ele não consegue nem doar nem roubar. A mensagem
+ * abaixo existe para o gestor entender o que houve, não para barrar ninguém.
+ */
+export async function atribuirLead(
+  leadId: string,
+  corretorId: string,
+): Promise<ResultadoAcao> {
+  const { supabase } = await exigirSessao();
+
+  if (!(await souGestor())) {
+    return { erro: "Só quem é gestor pode redistribuir leads." };
+  }
+
+  const { data, error } = await supabase
+    .from("leads")
+    .update({ corretor_id: corretorId, origem_atribuicao: "manual" })
+    .eq("id", leadId)
+    .select("id");
+
+  if (error) {
+    return { erro: "Não foi possível atribuir agora. Tente novamente." };
+  }
+  if (!data || data.length === 0) {
+    return { erro: "Sem permissão para atribuir este lead." };
+  }
+
+  revalidatePath("/corretor/equipe");
+  revalidatePath("/corretor/funil");
+  revalidatePath("/corretor/leads");
+  return {};
 }

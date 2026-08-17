@@ -2,6 +2,12 @@
  * Tipos gerados a partir do projeto Supabase real (prhhrqyubjcafvucirri) via
  * Management API — `types/typescript`. Não editar à mão; regenerar sempre
  * que `supabase/migrations/` mudar.
+ *
+ * Exceção conhecida: as colunas da migration 0007 (`corretores.papel`,
+ * `.ativo`, `.regioes`; `leads.etapa`, `.etapa_alterada_em`,
+ * `.origem_atribuicao`) foram acrescentadas à mão porque a geração lê o banco
+ * em produção, e o código precisou compilar antes de a migration ser
+ * aplicada. Regenerar depois de rodá-la — o resultado deve bater com isto.
  */
 
 export type Json =
@@ -22,6 +28,7 @@ export type Database = {
     Tables: {
       corretores: {
         Row: {
+          ativo: boolean
           bio: string | null
           created_at: string
           creci: string
@@ -29,11 +36,14 @@ export type Database = {
           foto_url: string | null
           id: string
           nome: string
+          papel: string
+          regioes: string[] | null
           slug: string | null
           user_id: string | null
           whatsapp: string
         }
         Insert: {
+          ativo?: boolean
           bio?: string | null
           created_at?: string
           creci: string
@@ -41,11 +51,14 @@ export type Database = {
           foto_url?: string | null
           id?: string
           nome: string
+          papel?: string
+          regioes?: string[] | null
           slug?: string | null
           user_id?: string | null
           whatsapp: string
         }
         Update: {
+          ativo?: boolean
           bio?: string | null
           created_at?: string
           creci?: string
@@ -53,6 +66,8 @@ export type Database = {
           foto_url?: string | null
           id?: string
           nome?: string
+          papel?: string
+          regioes?: string[] | null
           slug?: string | null
           user_id?: string | null
           whatsapp?: string
@@ -222,10 +237,13 @@ export type Database = {
           detalhes: Json | null
           email: string | null
           empreendimento_id: string | null
+          etapa: string
+          etapa_alterada_em: string
           id: string
           mensagem: string | null
           nome: string
           origem: string | null
+          origem_atribuicao: string | null
           telefone: string | null
           tipo: string
         }
@@ -236,10 +254,13 @@ export type Database = {
           detalhes?: Json | null
           email?: string | null
           empreendimento_id?: string | null
+          etapa?: string
+          etapa_alterada_em?: string
           id?: string
           mensagem?: string | null
           nome: string
           origem?: string | null
+          origem_atribuicao?: string | null
           telefone?: string | null
           tipo?: string
         }
@@ -250,10 +271,13 @@ export type Database = {
           detalhes?: Json | null
           email?: string | null
           empreendimento_id?: string | null
+          etapa?: string
+          etapa_alterada_em?: string
           id?: string
           mensagem?: string | null
           nome?: string
           origem?: string | null
+          origem_atribuicao?: string | null
           telefone?: string | null
           tipo?: string
         }

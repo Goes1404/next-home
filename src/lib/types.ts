@@ -76,6 +76,47 @@ export type CorretorPerfil = Corretor & {
   bio: string | null;
 };
 
+/**
+ * Etapas do funil de vendas, na ordem em que o quadro as exibe.
+ *
+ * "Fechado" e "Perdido" são etapas separadas — somar venda e derrota numa
+ * coluna só tornaria qualquer contagem inútil. No quadro elas dividem a
+ * última coluna.
+ *
+ * A ordem desta lista é a ordem das colunas: mudar aqui muda a tela. Os
+ * valores precisam continuar idênticos ao `check` da migration 0007.
+ */
+export const ETAPAS_FUNIL = [
+  "novo",
+  "primeiro_contato",
+  "visita_agendada",
+  "proposta_enviada",
+  "negociacao",
+  "fechado",
+  "perdido",
+] as const;
+
+export type EtapaFunil = (typeof ETAPAS_FUNIL)[number];
+
+export const ETAPA_LABEL: Record<EtapaFunil, string> = {
+  novo: "Novo lead",
+  primeiro_contato: "Primeiro contato",
+  visita_agendada: "Visita agendada",
+  proposta_enviada: "Proposta enviada",
+  negociacao: "Em negociação",
+  fechado: "Fechado",
+  perdido: "Perdido",
+};
+
+/** Como o lead ganhou dono — o que permite auditar a roleta. */
+export type OrigemAtribuicao = "link" | "roleta" | "manual";
+
+export const ORIGEM_ATRIBUICAO_LABEL: Record<OrigemAtribuicao, string> = {
+  link: "Link pessoal",
+  roleta: "Distribuição automática",
+  manual: "Atribuído pelo gestor",
+};
+
 /** Contato recebido pelos formulários do site, como o corretor o vê. */
 export type Lead = {
   id: string;
@@ -89,6 +130,13 @@ export type Lead = {
   detalhes: Record<string, string> | null;
   origem: string | null;
   criadoEm: string;
+  /** Etapa atual no funil. */
+  etapa: EtapaFunil;
+  /** Quando a etapa mudou pela última vez — base do "parado há N dias". */
+  etapaAlteradaEm: string;
+  origemAtribuicao: OrigemAtribuicao | null;
+  /** Dono do lead. Só o gestor vê leads de outros — e leads sem dono. */
+  corretor: { id: string; nome: string } | null;
   empreendimento: { nome: string; slug: string } | null;
 };
 

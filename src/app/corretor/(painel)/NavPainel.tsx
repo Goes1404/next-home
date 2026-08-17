@@ -6,22 +6,27 @@ import { cn } from "@/lib/utils";
 
 const ABAS = [
   { href: "/corretor", label: "Início" },
+  { href: "/corretor/funil", label: "Funil" },
   { href: "/corretor/leads", label: "Meus leads" },
   { href: "/corretor/links", label: "Links" },
   { href: "/corretor/perfil", label: "Perfil" },
   { href: "/corretor/senha", label: "Senha" },
 ];
 
+/** Aba que só o gestor enxerga — a página em si já se protege com notFound. */
+const ABA_GESTOR = { href: "/corretor/equipe", label: "Equipe" };
+
 /**
  * Abas do painel. Rola na horizontal no mobile em vez de quebrar em duas
  * linhas — mesmo padrão da barra de âncoras da página de empreendimento.
  */
-export function NavPainel() {
+export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
   const atual = usePathname();
+  const abas = ehGestor ? [...ABAS, ABA_GESTOR] : ABAS;
 
   return (
     <nav className="scrollbar-none mt-6 -mx-4 flex gap-2 overflow-x-auto px-4">
-      {ABAS.map((aba) => {
+      {abas.map((aba) => {
         // Comparação exata: `startsWith` marcaria "Início" como ativo em
         // todas as abas, já que `/corretor` é prefixo de todas elas.
         const ativa = atual === aba.href;

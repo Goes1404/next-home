@@ -51,7 +51,7 @@ export default async function PainelLayout({
 
         {corretor ? (
           <>
-            <NavPainel />
+            <NavPainel ehGestor={corretor.papel === "gestor"} />
             <div className="mt-8">{children}</div>
           </>
         ) : (

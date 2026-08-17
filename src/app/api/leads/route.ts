@@ -131,6 +131,11 @@ export async function POST(req: Request) {
   // mesmo motivo pelo qual os CTAs de WhatsApp são sobrepostos: sem isso, um
   // lead vindo pelo link de um corretor mas sobre empreendimento de outro
   // dono ficaria sem crédito correto de atribuição.
+  //
+  // O `null` abaixo, para quem chega sem link, não é descuido: o trigger
+  // `distribuir_lead` (migration 0007) escolhe um corretor da equipe no
+  // momento do insert. A distribuição vive no banco justamente para que
+  // nenhuma porta de entrada futura precise lembrar de fazê-la.
   const corretorAtivo = await getCorretorAtivo();
 
   const tipo = parseTipo(corpo.tipo);
