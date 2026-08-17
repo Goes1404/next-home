@@ -2,6 +2,7 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import { moverEtapa } from "@/app/corretor/actions";
+import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import {
   dataDoCartao,
   diasParado,
@@ -179,6 +180,10 @@ function Cartao({
 
       {lead.empreendimento && (
         <p className="text-fluid-xs mt-1 truncate text-mist-400">{lead.empreendimento.nome}</p>
+      )}
+
+      {lead.etapa === "visita_agendada" && (
+        <CampoVisita leadId={lead.id} quando={lead.visitaAgendadaEm} />
       )}
 
       <div className="mt-3 flex items-center gap-2">

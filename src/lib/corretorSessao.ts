@@ -72,9 +72,9 @@ export async function getEmailLogado(): Promise<string | null> {
 
 const SELECT_LEAD = `
   id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
-  etapa, etapa_alterada_em, origem_atribuicao,
+  etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em,
   corretor:corretores(id, nome),
-  empreendimento:empreendimentos(nome, slug)
+  empreendimento:empreendimentos(nome, slug, endereco)
 `;
 
 type LinhaLead = {
@@ -90,8 +90,9 @@ type LinhaLead = {
   etapa: EtapaFunil;
   etapa_alterada_em: string;
   origem_atribuicao: OrigemAtribuicao | null;
+  visita_agendada_em: string | null;
   corretor: { id: string; nome: string } | null;
-  empreendimento: { nome: string; slug: string } | null;
+  empreendimento: { nome: string; slug: string; endereco: string | null } | null;
 };
 
 function mapLead(row: LinhaLead): Lead {
@@ -108,6 +109,7 @@ function mapLead(row: LinhaLead): Lead {
     etapa: row.etapa,
     etapaAlteradaEm: row.etapa_alterada_em,
     origemAtribuicao: row.origem_atribuicao,
+    visitaAgendadaEm: row.visita_agendada_em,
     corretor: row.corretor,
     empreendimento: row.empreendimento,
   };

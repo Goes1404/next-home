@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { CartaoLead } from "@/app/corretor/(painel)/_componentes/CartaoLead";
+import { ListaLeads } from "./ListaLeads";
 import { getMeusLeads, souGestor } from "@/lib/corretorSessao";
 
 export const metadata: Metadata = { title: "Meus leads" };
@@ -23,26 +22,7 @@ export default async function LeadsPage() {
           : "Contatos que chegaram atribuídos a você — pelo seu link pessoal ou pela distribuição automática."}
       </p>
 
-      {leads.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-white/10 bg-ink-900/50 p-6">
-          <p className="text-fluid-sm text-mist-300">
-            Nenhum contato ainda. Compartilhe seu link pessoal — todo formulário preenchido a
-            partir dele chega aqui com seu nome.
-          </p>
-          <Link
-            href="/corretor/links"
-            className="text-fluid-sm mt-3 inline-block font-medium text-brand-200 underline-offset-4 hover:underline"
-          >
-            Pegar meus links →
-          </Link>
-        </div>
-      ) : (
-        <div className="mt-8 space-y-4">
-          {leads.map((lead) => (
-            <CartaoLead key={lead.id} lead={lead} mostrarDono={gestor} />
-          ))}
-        </div>
-      )}
+      <ListaLeads leads={leads} gestor={gestor} />
     </div>
   );
 }

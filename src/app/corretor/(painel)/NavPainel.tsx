@@ -8,6 +8,7 @@ const ABAS = [
   { href: "/corretor", label: "Início" },
   { href: "/corretor/funil", label: "Funil" },
   { href: "/corretor/leads", label: "Meus leads" },
+  { href: "/corretor/visitas", label: "Visitas" },
   { href: "/corretor/links", label: "Links" },
   { href: "/corretor/perfil", label: "Perfil" },
   { href: "/corretor/senha", label: "Senha" },

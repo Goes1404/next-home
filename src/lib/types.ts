@@ -137,7 +137,9 @@ export type Lead = {
   origemAtribuicao: OrigemAtribuicao | null;
   /** Dono do lead. Só o gestor vê leads de outros — e leads sem dono. */
   corretor: { id: string; nome: string } | null;
-  empreendimento: { nome: string; slug: string } | null;
+  empreendimento: { nome: string; slug: string; endereco: string | null } | null;
+  /** Data/hora marcada quando `etapa === "visita_agendada"`; null até o corretor definir. */
+  visitaAgendadaEm: string | null;
 };
 
 export type Empreendimento = {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import { linkWhatsappPara } from "@/lib/site";
 import { ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
 
@@ -155,22 +156,44 @@ export function CartaoLead({ lead, mostrarDono = false }: { lead: Lead; mostrarD
           ))}
       </dl>
 
+      {lead.etapa === "visita_agendada" && (
+        <CampoVisita leadId={lead.id} quando={lead.visitaAgendadaEm} />
+      )}
+
       {lead.mensagem && (
         <p className="text-fluid-sm mt-3 rounded-xl border border-white/5 bg-ink-950/50 px-4 py-3 whitespace-pre-line text-mist-200">
           {lead.mensagem}
         </p>
       )}
 
-      {whatsapp && (
-        <a
-          href={whatsapp}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 inline-flex rounded-full bg-brand-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-400"
-        >
-          Responder no WhatsApp
-        </a>
-      )}
+      <div className="mt-5 flex flex-wrap gap-2">
+        {whatsapp && (
+          <a
+            href={whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 min-w-[120px] rounded-xl bg-[#25D366] px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-[#1DA851]"
+          >
+            WhatsApp
+          </a>
+        )}
+        {lead.telefone && (
+          <a
+            href={`tel:${lead.telefone}`}
+            className="flex-1 min-w-[120px] rounded-xl border border-brand-500/30 bg-brand-500/10 px-4 py-2.5 text-center text-sm font-medium text-brand-200 transition-colors hover:bg-brand-500/20"
+          >
+            Ligar
+          </a>
+        )}
+        {lead.email && (
+          <a
+            href={`mailto:${lead.email}`}
+            className="flex-1 min-w-[120px] rounded-xl bg-ink-800 px-4 py-2.5 text-center text-sm font-medium text-mist-200 transition-colors hover:bg-ink-700"
+          >
+            E-mail
+          </a>
+        )}
+      </div>
     </article>
   );
 }

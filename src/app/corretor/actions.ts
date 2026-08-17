@@ -258,3 +258,41 @@ export async function alternarPausa(
   revalidatePath("/corretor/equipe");
   return {};
 }
+
+/**
+ * Marca (ou apaga, com `quando = null`) a data/hora de uma visita agendada.
+ *
+ * Não mexe em `etapa` — a etapa muda por `moverEtapa`, como qualquer outra.
+ * As duas ações ficam separadas porque o corretor pode reagendar uma visita
+ * sem que isso conte como "mudou de etapa" de novo (o card não deve pular a
+ * animação/optimistic update do funil só por causa de horário).
+ */
+export async function definirVisitaEm(
+  leadId: string,
+  quando: string | null,
+): Promise<ResultadoAcao> {
+  const { supabase } = await exigirSessao();
+
+  if (quando !== null && Number.isNaN(Date.parse(quando))) {
+    return { erro: "Data inválida." };
+  }
+
+  const { data, error } = await supabase
+    .from("leads")
+    .update({ visita_agendada_em: quando })
+    .eq("id", leadId)
+    .select("id");
+
+  if (error) {
+    return { erro: "Não foi possível salvar agora. Tente novamente." };
+  }
+  if (!data || data.length === 0) {
+    return { erro: "Este lead não é seu — recarregue a página." };
+  }
+
+  revalidatePath("/corretor/funil");
+  revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/visitas");
+  revalidatePath("/corretor");
+  return {};
+}

@@ -20,6 +20,10 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  turbopack: {
+    root: process.cwd(),
+  },
+
   experimental: {
     // GSAP e OGL são pesados para o bundler resolver a cada build.
     optimizePackageImports: ["gsap", "ogl"],
