@@ -100,9 +100,24 @@ export async function Footer() {
         </div>
       </div>
 
-      <p className="text-fluid-xs mx-auto mt-12 w-full max-w-5xl border-t border-white/5 pt-6 text-mist-500">
-        © {new Date().getFullYear()} {site.nomeCompleto}. CRECI {site.creci}.
-      </p>
+      <div className="text-fluid-xs mx-auto mt-12 flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-6 text-mist-500">
+        <p>
+          © {new Date().getFullYear()} {site.nomeCompleto}. CRECI {site.creci}.
+        </p>
+
+        {/*
+          Único acesso à área do corretor no site — sem isso só se chega
+          digitando a URL. Fica discreto no rodapé de propósito: é ferramenta
+          de equipe, não de visitante.
+
+          Aponta para `/corretor` e não para `/corretor/entrar`: quem já tem
+          sessão cai direto no painel, e quem não tem é mandado ao login pelo
+          proxy. Um link só resolve os dois casos.
+        */}
+        <Link href="/corretor" className="transition-colors hover:text-brand-200">
+          Área do corretor
+        </Link>
+      </div>
     </footer>
   );
 }
