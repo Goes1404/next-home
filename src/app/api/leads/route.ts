@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { createClient } from "@/lib/supabase/public";
 
 export const runtime = "nodejs";
@@ -92,12 +93,19 @@ export async function POST(req: Request) {
     empreendimentoId = data?.id ?? null;
   }
 
+  // Corretor do link pessoal do visitante (ver lib/corretorAtivo.ts) — o
+  // mesmo motivo pelo qual os CTAs de WhatsApp são sobrepostos: sem isso, um
+  // lead vindo pelo link de um corretor mas sobre empreendimento de outro
+  // dono ficaria sem crédito correto de atribuição.
+  const corretorAtivo = await getCorretorAtivo();
+
   const { error } = await supabase.from("leads").insert({
     nome,
     email,
     telefone,
     mensagem,
     empreendimento_id: empreendimentoId,
+    corretor_id: corretorAtivo?.id ?? null,
     origem: normalizado(corpo.origem) ?? "site/contato",
     consentimento_lgpd: true,
   });

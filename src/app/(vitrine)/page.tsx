@@ -8,6 +8,7 @@ import { ScrollCue } from "@/components/home/ScrollCue";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { precoAPartirDe } from "@/lib/format";
 import { getEmpreendimentos } from "@/lib/queries";
 
@@ -27,7 +28,7 @@ export const revalidate = 300;
  * abaixo pode envolver o header/CTA num ancestral com `transform`.
  */
 export default async function Home() {
-  const todos = await getEmpreendimentos();
+  const [todos, corretorAtivo] = await Promise.all([getEmpreendimentos(), getCorretorAtivo()]);
   const destaques = todos.filter((e) => e.destaque);
 
   return (
@@ -42,7 +43,7 @@ export default async function Home() {
       default="none"
     >
       <SiteHeader />
-      <WhatsappCta />
+      <WhatsappCta corretor={corretorAtivo ?? undefined} />
 
       <main className="flex flex-1 flex-col">
         <section className="flex min-h-svh flex-col items-center justify-center px-4 pt-24 pb-32">

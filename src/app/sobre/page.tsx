@@ -4,7 +4,8 @@ import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
-import { enderecoLinha, linkWhatsapp, site } from "@/lib/site";
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Sobre",
@@ -29,11 +30,16 @@ const VALORES = [
   },
 ];
 
-export default function SobrePage() {
+export default async function SobrePage() {
+  const corretorAtivo = await getCorretorAtivo();
+  const linkWhatsappGeral = corretorAtivo
+    ? linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pelo site.`)
+    : linkWhatsapp();
+
   return (
     <GlassBackgroundProvider>
       <SiteHeader />
-      <WhatsappCta />
+      <WhatsappCta corretor={corretorAtivo ?? undefined} />
 
       <main className="flex flex-1 flex-col bg-ink-950 px-4 pt-32 pb-24">
         <Reveal className="mx-auto w-full max-w-2xl text-center">
@@ -74,7 +80,7 @@ export default function SobrePage() {
 
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <a
-              href={linkWhatsapp()}
+              href={linkWhatsappGeral}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-full bg-brand-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-400"

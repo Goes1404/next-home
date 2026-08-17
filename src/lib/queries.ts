@@ -1,3 +1,4 @@
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { createClient } from "@/lib/supabase/public";
 import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
 import type { Empreendimento, FiltrosEmpreendimento, Ordenacao } from "@/lib/types";
@@ -7,26 +8,43 @@ import type { Empreendimento, FiltrosEmpreendimento, Ordenacao } from "@/lib/typ
  * (prhhrqyubjcafvucirri). RLS já restringe a leitura a `publicado = true`
  * (ver supabase/migrations/0001_init.sql) — o `.eq("publicado", true)"
  * aqui é redundante com a policy, mas deixa a intenção explícita na query.
+ *
+ * Colunas explícitas no embed de `corretor` (em vez de `corretores(*)`): a
+ * tabela ganhou `user_id`/`slug` (login de corretor) que não devem vazar
+ * pela API pública de empreendimentos.
  */
 
 const SELECT_EMPREENDIMENTO = `
   *,
-  corretor:corretores(*),
+  corretor:corretores(id, nome, creci, whatsapp, foto_url),
   tipologias(*),
   midias(*),
   lazer:empreendimento_lazer(lazer_itens(*))
 `;
 
+/**
+ * Com um corretor ativo (link pessoal, ver `corretorAtivo.ts`), ele
+ * sobrepõe o corretor cadastrado em cada item — em todo lugar do site, não
+ * só nos empreendimentos que são "dele" no cadastro.
+ */
+function aplicarCorretorAtivo(
+  lista: Empreendimento[],
+  corretorAtivo: Awaited<ReturnType<typeof getCorretorAtivo>>,
+): Empreendimento[] {
+  if (!corretorAtivo) return lista;
+  return lista.map((e) => ({ ...e, corretor: corretorAtivo }));
+}
+
 async function buscarPublicados(): Promise<Empreendimento[]> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("empreendimentos")
-    .select(SELECT_EMPREENDIMENTO)
-    .eq("publicado", true)
-    .order("ordem");
+  const [{ data, error }, corretorAtivo] = await Promise.all([
+    supabase.from("empreendimentos").select(SELECT_EMPREENDIMENTO).eq("publicado", true).order("ordem"),
+    getCorretorAtivo(),
+  ]);
 
   if (error) throw new Error(`Falha ao buscar empreendimentos: ${error.message}`);
-  return (data as unknown as LinhaEmpreendimento[]).map(mapEmpreendimento);
+  const lista = (data as unknown as LinhaEmpreendimento[]).map(mapEmpreendimento);
+  return aplicarCorretorAtivo(lista, corretorAtivo);
 }
 
 function bate(e: Empreendimento, f: FiltrosEmpreendimento): boolean {
@@ -114,15 +132,16 @@ export async function getEmpreendimentoBySlug(
   slug: string,
 ): Promise<Empreendimento | null> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("empreendimentos")
-    .select(SELECT_EMPREENDIMENTO)
-    .eq("slug", slug)
-    .eq("publicado", true)
-    .maybeSingle();
+  const [{ data, error }, corretorAtivo] = await Promise.all([
+    supabase.from("empreendimentos").select(SELECT_EMPREENDIMENTO).eq("slug", slug).eq("publicado", true).maybeSingle(),
+    getCorretorAtivo(),
+  ]);
 
   if (error) throw new Error(`Falha ao buscar empreendimento "${slug}": ${error.message}`);
-  return data ? mapEmpreendimento(data as unknown as LinhaEmpreendimento) : null;
+  if (!data) return null;
+
+  const e = mapEmpreendimento(data as unknown as LinhaEmpreendimento);
+  return corretorAtivo ? { ...e, corretor: corretorAtivo } : e;
 }
 
 export async function getSlugsEmpreendimentos(): Promise<string[]> {

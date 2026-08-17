@@ -28,6 +28,8 @@ export type Database = {
           foto_url: string | null
           id: string
           nome: string
+          slug: string | null
+          user_id: string | null
           whatsapp: string
         }
         Insert: {
@@ -37,6 +39,8 @@ export type Database = {
           foto_url?: string | null
           id?: string
           nome: string
+          slug?: string | null
+          user_id?: string | null
           whatsapp: string
         }
         Update: {
@@ -46,6 +50,8 @@ export type Database = {
           foto_url?: string | null
           id?: string
           nome?: string
+          slug?: string | null
+          user_id?: string | null
           whatsapp?: string
         }
         Relationships: []
@@ -208,6 +214,7 @@ export type Database = {
       leads: {
         Row: {
           consentimento_lgpd: boolean
+          corretor_id: string | null
           created_at: string
           email: string | null
           empreendimento_id: string | null
@@ -219,6 +226,7 @@ export type Database = {
         }
         Insert: {
           consentimento_lgpd?: boolean
+          corretor_id?: string | null
           created_at?: string
           email?: string | null
           empreendimento_id?: string | null
@@ -230,6 +238,7 @@ export type Database = {
         }
         Update: {
           consentimento_lgpd?: boolean
+          corretor_id?: string | null
           created_at?: string
           email?: string | null
           empreendimento_id?: string | null
@@ -240,6 +249,13 @@ export type Database = {
           telefone?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "leads_empreendimento_id_fkey"
             columns: ["empreendimento_id"]

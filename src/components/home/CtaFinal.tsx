@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
-import { linkWhatsapp } from "@/lib/site";
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { linkWhatsapp, linkWhatsappPara } from "@/lib/site";
 
-export function CtaFinal() {
+export async function CtaFinal() {
+  const corretorAtivo = await getCorretorAtivo();
+  const link = corretorAtivo
+    ? linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pelo site.`)
+    : linkWhatsapp();
+
   return (
     <section className="px-4 pb-24">
       <Reveal className="mx-auto w-full max-w-2xl">
@@ -15,7 +21,7 @@ export function CtaFinal() {
           </p>
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
             <a
-              href={linkWhatsapp()}
+              href={link}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-full bg-brand-500 px-7 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-400"

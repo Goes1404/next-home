@@ -4,8 +4,9 @@ import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getEmpreendimentos } from "@/lib/queries";
-import { enderecoLinha, linkWhatsapp, site } from "@/lib/site";
+import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contato",
@@ -26,12 +27,16 @@ export default async function ContatoPage({
 }: {
   searchParams: Promise<{ empreendimento?: string }>;
 }) {
-  const [sp, empreendimentos] = await Promise.all([searchParams, getEmpreendimentos()]);
+  const [sp, empreendimentos, corretorAtivo] = await Promise.all([
+    searchParams,
+    getEmpreendimentos(),
+    getCorretorAtivo(),
+  ]);
 
   return (
     <GlassBackgroundProvider>
       <SiteHeader />
-      <WhatsappCta />
+      <WhatsappCta corretor={corretorAtivo ?? undefined} />
 
       <main className="flex flex-1 flex-col bg-ink-950 px-4 pt-32 pb-24">
         <Reveal className="mx-auto w-full max-w-2xl text-center">
@@ -53,18 +58,34 @@ export default async function ContatoPage({
             <div className="rounded-2xl border border-white/10 bg-ink-900/50 p-6">
               <h2 className="font-display text-lg text-mist-50">WhatsApp</h2>
               <ul className="mt-3 space-y-1.5">
-                {site.whatsapp.map((w) => (
-                  <li key={w.numero}>
+                {corretorAtivo ? (
+                  <li>
                     <a
-                      href={linkWhatsapp()}
+                      href={linkWhatsappPara(
+                        corretorAtivo.whatsapp,
+                        `Olá, ${corretorAtivo.nome}! Vim pelo site.`,
+                      )}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-fluid-sm text-brand-200 underline-offset-4 hover:underline"
                     >
-                      {w.label}
+                      Falar com {corretorAtivo.nome}
                     </a>
                   </li>
-                ))}
+                ) : (
+                  site.whatsapp.map((w, i) => (
+                    <li key={w.numero}>
+                      <a
+                        href={linkWhatsapp(undefined, i)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-fluid-sm text-brand-200 underline-offset-4 hover:underline"
+                      >
+                        {w.label}
+                      </a>
+                    </li>
+                  ))
+                )}
               </ul>
 
               <h2 className="font-display mt-6 text-lg text-mist-50">Endereço</h2>

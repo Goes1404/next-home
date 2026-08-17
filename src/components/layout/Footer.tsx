@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { enderecoLinha, linkWhatsapp, site } from "@/lib/site";
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 
 const LINKS_RAPIDOS = [
   { href: "/empreendimentos", label: "Empreendimentos" },
@@ -21,7 +22,9 @@ const REDES = [
  * SiteHeader/WhatsappCta, que dependem do GlassBackgroundProvider local a
  * cada rota).
  */
-export function Footer() {
+export async function Footer() {
+  const corretorAtivo = await getCorretorAtivo();
+
   return (
     <footer className="border-t border-white/10 bg-ink-900 px-4 py-14">
       <div className="mx-auto grid w-full max-w-5xl gap-10 sm:grid-cols-3">
@@ -53,18 +56,31 @@ export function Footer() {
           <p className="text-fluid-sm font-medium text-mist-100">Contato</p>
           <ul className="mt-3 space-y-2">
             <li className="text-fluid-sm text-mist-400">{enderecoLinha}</li>
-            {site.whatsapp.map((w) => (
-              <li key={w.numero}>
+            {corretorAtivo ? (
+              <li>
                 <a
-                  href={linkWhatsapp()}
+                  href={linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pelo site.`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-fluid-sm text-mist-400 transition-colors hover:text-brand-200"
                 >
-                  {w.label}
+                  Falar com {corretorAtivo.nome}
                 </a>
               </li>
-            ))}
+            ) : (
+              site.whatsapp.map((w, i) => (
+                <li key={w.numero}>
+                  <a
+                    href={linkWhatsapp(undefined, i)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-fluid-sm text-mist-400 transition-colors hover:text-brand-200"
+                  >
+                    {w.label}
+                  </a>
+                </li>
+              ))
+            )}
           </ul>
 
           <div className="mt-5 flex gap-4">
