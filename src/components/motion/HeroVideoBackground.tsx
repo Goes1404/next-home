@@ -62,6 +62,7 @@ export function HeroVideoBackground({ src }: { src: string }) {
       }`}
       autoPlay
       muted
+      loop
       playsInline
       preload="auto"
       // O vídeo vira textura WebGL (GlassCanvas) — sem crossOrigin, o
@@ -71,11 +72,6 @@ export function HeroVideoBackground({ src }: { src: string }) {
       onCanPlay={() => {
         setPronto(true);
         definirVideo(videoRef.current);
-      }}
-      // Sem `loop`: toca só até 1s e para ali, congelando naquele quadro em
-      // vez de repetir o clipe inteiro sem fim.
-      onTimeUpdate={(e) => {
-        if (e.currentTarget.currentTime >= 1) e.currentTarget.pause();
       }}
       aria-hidden
     >
