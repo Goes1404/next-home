@@ -272,24 +272,6 @@ export async function getCorretorPorSlug(slug: string): Promise<CorretorPerfil |
   return data ? mapCorretor(data as LinhaCorretor) : null;
 }
 
-/** Empreendimentos sob responsabilidade de um corretor, na ordem curada. */
-export async function getEmpreendimentosPorCorretor(
-  corretorId: string,
-): Promise<Empreendimento[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("empreendimentos")
-    .select(SELECT_EMPREENDIMENTO)
-    .eq("corretor_id", corretorId)
-    .eq("publicado", true)
-    .order("ordem");
-
-  if (error) {
-    throw new Error(`Falha ao buscar empreendimentos do corretor: ${error.message}`);
-  }
-  return (data as unknown as LinhaEmpreendimento[]).map(mapEmpreendimento);
-}
-
 /** Cidades e bairros distintos, para popular os selects de filtro. */
 export async function getRegioesDisponiveis(): Promise<{
   cidades: string[];
