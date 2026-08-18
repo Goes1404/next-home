@@ -48,15 +48,15 @@ export function EditarDestaques({
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-ink-900/50 p-6">
-      <p className="font-display text-mist-50">Destaques do seu link</p>
-      <p className="text-fluid-sm mt-1 mb-4 text-mist-400">
+    <div className="rounded-2xl border border-linha bg-superficie p-6">
+      <p className="font-display text-titulo">Destaques do seu link</p>
+      <p className="text-fluid-sm mt-1 mb-4 text-apoio">
         Quem entra pelo seu link vê estes primeiro, nesta ordem. O resto do
         catálogo segue atrás, na ordem padrão.
       </p>
 
       {ordem.length === 0 && (
-        <p className="text-fluid-sm text-mist-500">
+        <p className="text-fluid-sm text-tenue">
           Nenhum destaque ainda — todo o catálogo aparece na ordem padrão.
         </p>
       )}
@@ -65,16 +65,16 @@ export function EditarDestaques({
         {ordem.map((slug, i) => (
           <li
             key={slug}
-            className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-ink-950/50 px-4 py-2.5"
+            className="flex items-center justify-between gap-2 rounded-xl border border-linha bg-elevado px-4 py-2.5"
           >
-            <span className="text-fluid-sm text-mist-100">{porSlug.get(slug) ?? slug}</span>
+            <span className="text-fluid-sm text-titulo">{porSlug.get(slug) ?? slug}</span>
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => mover(i, -1)}
                 disabled={i === 0}
                 aria-label="Subir"
-                className="rounded-lg p-1.5 text-mist-400 hover:text-mist-100 disabled:opacity-30"
+                className="rounded-lg p-1.5 text-apoio hover:text-titulo disabled:opacity-30"
               >
                 ↑
               </button>
@@ -83,7 +83,7 @@ export function EditarDestaques({
                 onClick={() => mover(i, 1)}
                 disabled={i === ordem.length - 1}
                 aria-label="Descer"
-                className="rounded-lg p-1.5 text-mist-400 hover:text-mist-100 disabled:opacity-30"
+                className="rounded-lg p-1.5 text-apoio hover:text-titulo disabled:opacity-30"
               >
                 ↓
               </button>
@@ -91,7 +91,7 @@ export function EditarDestaques({
                 type="button"
                 onClick={() => remover(slug)}
                 aria-label="Remover"
-                className="rounded-lg p-1.5 text-mist-400 hover:text-red-300"
+                className="rounded-lg p-1.5 text-apoio hover:text-perigo"
               >
                 ✕
               </button>
@@ -105,7 +105,7 @@ export function EditarDestaques({
           <select
             value={adicionar}
             onChange={(e) => setAdicionar(e.target.value)}
-            className="text-fluid-sm flex-1 rounded-lg border border-white/15 bg-ink-950 px-3 py-2 text-mist-200"
+            className="text-fluid-sm flex-1 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
           >
             <option value="">Adicionar empreendimento…</option>
             {disponiveis.map((i) => (
@@ -118,17 +118,17 @@ export function EditarDestaques({
             type="button"
             onClick={adicionarItem}
             disabled={!adicionar}
-            className="text-fluid-sm rounded-lg bg-brand-500 px-4 py-2 font-medium text-white disabled:opacity-50"
+            className="text-fluid-sm rounded-lg bg-acento px-4 py-2 font-medium text-white disabled:opacity-50"
           >
             Adicionar
           </button>
         </div>
       ) : (
-        <p className="text-fluid-xs mt-3 text-mist-500">Máximo de 15 destaques.</p>
+        <p className="text-fluid-xs mt-3 text-tenue">Máximo de 15 destaques.</p>
       )}
 
-      {pendente && <p className="text-fluid-xs mt-2 text-mist-500">Salvando…</p>}
-      {erro && <p className="text-fluid-xs mt-2 text-red-300">{erro}</p>}
+      {pendente && <p className="text-fluid-xs mt-2 text-tenue">Salvando…</p>}
+      {erro && <p className="text-fluid-xs mt-2 text-perigo">{erro}</p>}
     </div>
   );
 }

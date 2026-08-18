@@ -14,13 +14,13 @@ export default async function ImoveisPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <span className="text-[11px] uppercase font-bold tracking-wider text-brand-300">
+        <span className="text-[11px] uppercase font-bold tracking-wider text-acento-suave">
           Catálogo & Portfólio
         </span>
-        <h1 className="text-fluid-xl font-bold text-mist-50">
+        <h1 className="text-fluid-xl font-bold text-titulo">
           Edição & Gestão de Imóveis
         </h1>
-        <p className="text-fluid-xs text-mist-400 max-w-2xl">
+        <p className="text-fluid-xs text-apoio max-w-2xl">
           Altere fotos, textos comerciais, preços, tipologias e diferenciais de lazer diretamente pelo celular ou computador.
         </p>
       </div>

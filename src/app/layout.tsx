@@ -3,6 +3,8 @@ import { Alex_Brush, Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
 import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
 import { Footer } from "@/components/layout/Footer";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
+import { AreaTema } from "@/components/tema/AreaTema";
+import { scriptTema } from "@/components/tema/tema";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -96,8 +98,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  /*
+   * O site público é escuro e é ele que o navegador pinta na barra de
+   * endereço antes de qualquer JavaScript. O painel claro ajusta a sua
+   * própria cor em tempo de execução (ver AreaTema), então aqui fica a cor
+   * de quem chega pelo Google.
+   */
   themeColor: "#040b0a",
-  colorScheme: "dark",
+  colorScheme: "dark light",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -111,7 +119,16 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} ${alexBrush.variable} h-full antialiased`}
     >
+      <head>
+        {/*
+          Precisa rodar antes da primeira pintura, por isso é inline e não um
+          componente: o React só hidrata depois que o HTML já está na tela, e
+          nesse intervalo o painel claro apareceria escuro.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: scriptTema }} />
+      </head>
       <body className="flex min-h-full flex-col">
+        <AreaTema />
         <GlassSvgDefs />
         <SmoothScroll />
         {children}

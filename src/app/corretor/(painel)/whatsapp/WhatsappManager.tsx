@@ -149,13 +149,13 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
   return (
     <div className="space-y-8">
       {/* Navegação entre Abas */}
-      <div className="flex items-center gap-2 border-b border-white/10 pb-4">
+      <div className="flex items-center gap-2 border-b border-linha pb-4">
         <button
           onClick={() => setAbaAtiva("configuracoes")}
           className={`px-4 py-2 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer ${
             abaAtiva === "configuracoes"
-              ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
-              : "bg-white/5 text-mist-400 hover:text-white hover:bg-white/10"
+              ? "bg-acento text-white shadow-md shadow-acento/20"
+              : "bg-vidro text-apoio hover:text-titulo hover:bg-vidro-forte"
           }`}
         >
           📱 Conexão & Configurações
@@ -165,43 +165,43 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
           onClick={() => setAbaAtiva("playground")}
           className={`px-4 py-2 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "playground"
-              ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
-              : "bg-white/5 text-mist-400 hover:text-white hover:bg-white/10"
+              ? "bg-acento text-white shadow-md shadow-acento/20"
+              : "bg-vidro text-apoio hover:text-titulo hover:bg-vidro-forte"
           }`}
         >
           <span>🧪 Testar Minha IA ao Vivo</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-ok-lavado text-ok border border-ok-linha">
             Playground
           </span>
         </button>
       </div>
 
       {feedback && (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-fluid-xs font-semibold text-emerald-300 backdrop-blur animate-in fade-in duration-200">
+        <div className="rounded-2xl border border-ok-linha bg-ok-lavado p-4 text-fluid-xs font-semibold text-ok backdrop-blur duration-200">
           ✓ {feedback}
         </div>
       )}
 
       {avisoIa && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-fluid-xs font-semibold text-amber-300 backdrop-blur animate-in fade-in duration-200">
+        <div className="rounded-2xl border border-alerta-linha bg-alerta-lavado p-4 text-fluid-xs font-semibold text-alerta backdrop-blur duration-200">
           ⚠ {avisoIa}
         </div>
       )}
 
       {/* ABA 1: Conexão e Regras */}
       {abaAtiva === "configuracoes" && (
-        <div className="space-y-8 animate-in fade-in duration-200">
+        <div className="space-y-8 duration-200">
           {/* Card de Conexão */}
-          <div className="rounded-3xl border border-white/10 bg-ink-900/60 p-6 sm:p-8 backdrop-blur shadow-xl space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+          <div className="rounded-3xl border border-linha bg-superficie p-6 sm:p-8 backdrop-blur shadow-xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-linha pb-6">
               <div>
-                <span className="text-[11px] uppercase font-bold tracking-wider text-brand-300">
+                <span className="text-[11px] uppercase font-bold tracking-wider text-acento-suave">
                   Conexão Individual
                 </span>
-                <h2 className="text-fluid-lg font-bold text-mist-50">
+                <h2 className="text-fluid-lg font-bold text-titulo">
                   WhatsApp do Consultor ({corretorNome})
                 </h2>
-                <p className="text-fluid-xs text-mist-400 mt-1">
+                <p className="text-fluid-xs text-apoio mt-1">
                   Conecte o seu número pessoal para que sua IA atenda e qualifique leads diretamente no seu WhatsApp.
                 </p>
               </div>
@@ -210,19 +210,19 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                 <span
                   className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-fluid-xs font-semibold border ${
                     statusConexao === "conectado"
-                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                      ? "bg-ok-lavado border-ok-linha text-ok"
                       : statusConexao === "conectando"
-                      ? "bg-amber-500/10 border-amber-500/30 text-amber-300 animate-pulse"
-                      : "bg-red-500/10 border-red-500/30 text-red-300"
+                      ? "bg-alerta-lavado border-alerta-linha text-alerta animate-pulse"
+                      : "bg-perigo-lavado border-perigo-linha text-perigo"
                   }`}
                 >
                   <span
                     className={`h-2 w-2 rounded-full ${
                       statusConexao === "conectado"
-                        ? "bg-emerald-400"
+                        ? "bg-ok"
                         : statusConexao === "conectando"
-                        ? "bg-amber-400"
-                        : "bg-red-400"
+                        ? "bg-alerta"
+                        : "bg-perigo"
                     }`}
                   />
                   {statusConexao === "conectado"
@@ -235,14 +235,14 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                 {statusConexao === "conectado" ? (
                   <button
                     onClick={desconectar}
-                    className="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white text-fluid-xs font-semibold transition-colors border border-red-500/30 cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-perigo-lavado hover:bg-perigo text-perigo hover:text-titulo text-fluid-xs font-semibold transition-colors border border-perigo-linha cursor-pointer"
                   >
                     Desconectar
                   </button>
                 ) : (
                   <button
                     onClick={gerarQrCode}
-                    className="px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-xs font-semibold transition-all shadow-md cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-semibold transition-all shadow-md cursor-pointer"
                   >
                     Conectar via QR Code
                   </button>
@@ -251,22 +251,22 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
             </div>
 
             {mostrarQrCode && (
-              <div className="p-6 rounded-2xl border border-brand-500/30 bg-ink-950/90 text-center space-y-4 max-w-md mx-auto">
-                <h3 className="text-fluid-base font-bold text-white">Escaneie o QR Code com seu celular</h3>
-                <p className="text-fluid-xs text-mist-400">
+              <div className="p-6 rounded-2xl border border-acento-linha bg-fundo/90 text-center space-y-4 max-w-md mx-auto">
+                <h3 className="text-fluid-base font-bold text-titulo">Escaneie o QR Code com seu celular</h3>
+                <p className="text-fluid-xs text-apoio">
                   WhatsApp no celular ➔ Menu (Aparelhos conectados) ➔ Conectar um aparelho.
                 </p>
 
                 {conectando && (
-                  <p className="text-fluid-xs text-mist-400 py-10">Falando com o provedor…</p>
+                  <p className="text-fluid-xs text-apoio py-10">Falando com o provedor…</p>
                 )}
 
                 {!conectando && erroConexao && (
-                  <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-left">
-                    <p className="text-fluid-xs font-semibold text-amber-300">
+                  <div className="rounded-2xl border border-alerta-linha bg-alerta-lavado p-4 text-left">
+                    <p className="text-fluid-xs font-semibold text-alerta">
                       Não é possível parear um número agora
                     </p>
-                    <p className="text-[11px] text-mist-300 mt-1 leading-relaxed">{erroConexao}</p>
+                    <p className="text-[11px] text-corpo mt-1 leading-relaxed">{erroConexao}</p>
                   </div>
                 )}
 
@@ -284,7 +284,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                 <div className="flex items-center justify-center gap-2 pt-2">
                   <button
                     onClick={() => setMostrarQrCode(false)}
-                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-mist-300 text-fluid-xs font-semibold cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-vidro-forte hover:bg-vidro-mais text-corpo text-fluid-xs font-semibold cursor-pointer"
                   >
                     Fechar
                   </button>
@@ -294,37 +294,37 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
           </div>
 
           {/* Configurações da IA */}
-          <div className="rounded-3xl border border-white/10 bg-ink-900/60 p-6 sm:p-8 backdrop-blur shadow-xl space-y-6">
+          <div className="rounded-3xl border border-linha bg-superficie p-6 sm:p-8 backdrop-blur shadow-xl space-y-6">
             <div>
-              <span className="text-[11px] uppercase font-bold tracking-wider text-brand-300">
+              <span className="text-[11px] uppercase font-bold tracking-wider text-acento-suave">
                 Regras de Inteligência Artificial
               </span>
-              <h2 className="text-fluid-lg font-bold text-mist-50">
+              <h2 className="text-fluid-lg font-bold text-titulo">
                 Personalização do Agente Conversacional
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-fluid-xs font-bold text-mist-300 uppercase tracking-wider block">
+                <label className="text-fluid-xs font-bold text-corpo uppercase tracking-wider block">
                   Nome da Assistente
                 </label>
                 <input
                   type="text"
                   value={nomeAssistente}
                   onChange={(e) => setNomeAssistente(e.target.value)}
-                  className="w-full rounded-xl border border-white/15 bg-ink-950 px-4 py-2.5 text-fluid-sm text-mist-50 focus:border-brand-400 focus:outline-none"
+                  className="w-full rounded-xl border border-linha-forte bg-campo px-4 py-2.5 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-fluid-xs font-bold text-mist-300 uppercase tracking-wider block">
+                <label className="text-fluid-xs font-bold text-corpo uppercase tracking-wider block">
                   Tom de Voz do Atendimento
                 </label>
                 <select
                   value={tomVoz}
                   onChange={(e) => setTomVoz(e.target.value as TomVozBot)}
-                  className="w-full rounded-xl border border-white/15 bg-ink-950 px-4 py-2.5 text-fluid-sm text-mist-50 focus:border-brand-400 focus:outline-none cursor-pointer"
+                  className="w-full rounded-xl border border-linha-forte bg-campo px-4 py-2.5 text-fluid-sm text-titulo focus:border-acento focus:outline-none cursor-pointer"
                 >
                   <option value="consultivo_alto_padrao">Consultivo & Alto Padrão</option>
                   <option value="formal_direto">Formal & Direto</option>
@@ -334,7 +334,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
             </div>
 
             <div className="space-y-3 pt-2">
-              <label className="text-fluid-xs font-bold text-mist-300 uppercase tracking-wider block">
+              <label className="text-fluid-xs font-bold text-corpo uppercase tracking-wider block">
                 Modo de Ativação do Bot
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -343,12 +343,12 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                   onClick={() => setModoBot("24_7")}
                   className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                     modoBot === "24_7"
-                      ? "border-brand-400 bg-brand-500/15 text-white"
-                      : "border-white/10 bg-ink-950 text-mist-400 hover:text-white"
+                      ? "border-acento-linha bg-acento-lavado text-white"
+                      : "border-linha bg-campo text-apoio hover:text-titulo"
                   }`}
                 >
                   <span className="text-lg block mb-1">🤖</span>
-                  <h4 className="text-fluid-xs font-bold text-white">Sempre Ativo (24/7)</h4>
+                  <h4 className="text-fluid-xs font-bold text-titulo">Sempre Ativo (24/7)</h4>
                 </button>
 
                 <button
@@ -356,12 +356,12 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                   onClick={() => setModoBot("noturno_e_fds")}
                   className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                     modoBot === "noturno_e_fds"
-                      ? "border-brand-400 bg-brand-500/15 text-white"
-                      : "border-white/10 bg-ink-950 text-mist-400 hover:text-white"
+                      ? "border-acento-linha bg-acento-lavado text-white"
+                      : "border-linha bg-campo text-apoio hover:text-titulo"
                   }`}
                 >
                   <span className="text-lg block mb-1">🌙</span>
-                  <h4 className="text-fluid-xs font-bold text-white">Noturno & Fim de Semana</h4>
+                  <h4 className="text-fluid-xs font-bold text-titulo">Noturno & Fim de Semana</h4>
                 </button>
 
                 <button
@@ -369,21 +369,21 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                   onClick={() => setModoBot("co_piloto_3min")}
                   className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                     modoBot === "co_piloto_3min"
-                      ? "border-brand-400 bg-brand-500/15 text-white"
-                      : "border-white/10 bg-ink-950 text-mist-400 hover:text-white"
+                      ? "border-acento-linha bg-acento-lavado text-white"
+                      : "border-linha bg-campo text-apoio hover:text-titulo"
                   }`}
                 >
                   <span className="text-lg block mb-1">⏱️</span>
-                  <h4 className="text-fluid-xs font-bold text-white">Modo Co-Piloto (3 min)</h4>
+                  <h4 className="text-fluid-xs font-bold text-titulo">Modo Co-Piloto (3 min)</h4>
                 </button>
               </div>
             </div>
 
-            <div className="border-t border-white/10 pt-4 flex justify-end">
+            <div className="border-t border-linha pt-4 flex justify-end">
               <button
                 onClick={salvarConfiguracoes}
                 disabled={salvando}
-                className="px-6 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-xs font-bold transition-all cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all cursor-pointer"
               >
                 {salvando ? "Salvando..." : "Salvar Configurações"}
               </button>
@@ -394,18 +394,18 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
 
       {/* ABA 2: PLAYGROUND INTERATIVO AO VIVO */}
       {abaAtiva === "playground" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 duration-300">
           {/* Coluna 1 & 2: Chat Interativo Simulado do WhatsApp */}
-          <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-ink-950/90 shadow-2xl overflow-hidden flex flex-col h-[600px]">
+          <div className="lg:col-span-2 rounded-3xl border border-linha bg-fundo/90 shadow-2xl overflow-hidden flex flex-col h-[600px]">
             {/* Header do WhatsApp */}
-            <div className="bg-[#1f2c34] p-4 flex items-center justify-between border-b border-white/10">
+            <div className="bg-[#1f2c34] p-4 flex items-center justify-between border-b border-linha">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-brand-500 flex items-center justify-center font-bold text-white text-sm">
+                <div className="w-10 h-10 rounded-full bg-acento flex items-center justify-center font-bold text-white text-sm">
                   {nomeAssistente[0]}
                 </div>
                 <div>
-                  <h4 className="text-fluid-sm font-bold text-white">{nomeAssistente} (IA)</h4>
-                  <p className="text-[11px] text-emerald-400">
+                  <h4 className="text-fluid-sm font-bold text-titulo">{nomeAssistente} (IA)</h4>
+                  <p className="text-[11px] text-ok">
                     {iaDigitando ? "digitando..." : "online • assistente oficial"}
                   </p>
                 </div>
@@ -421,7 +421,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                     },
                   ])
                 }
-                className="text-[11px] text-mist-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 cursor-pointer"
+                className="text-[11px] text-apoio hover:text-titulo px-3 py-1.5 rounded-lg bg-vidro cursor-pointer"
               >
                 Reiniciar Chat
               </button>
@@ -438,29 +438,29 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                     className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-3.5 space-y-2 text-fluid-xs shadow-md ${
                       m.remetente === "cliente"
                         ? "bg-[#005c4b] text-white rounded-br-none"
-                        : "bg-[#202c33] text-mist-100 rounded-bl-none"
+                        : "bg-[#202c33] text-titulo rounded-bl-none"
                     }`}
                   >
                     <p className="leading-relaxed whitespace-pre-wrap">{m.texto}</p>
 
                     {/* Exibição de Anexos / Plantas */}
                     {m.anexos && m.anexos.length > 0 && (
-                      <div className="pt-2 space-y-2 border-t border-white/10">
+                      <div className="pt-2 space-y-2 border-t border-linha">
                         {m.anexos.map((anexo, i) => (
                           <div
                             key={i}
-                            className="p-2.5 rounded-xl bg-black/40 border border-white/10 flex items-center justify-between gap-3"
+                            className="p-2.5 rounded-xl bg-black/40 border border-linha flex items-center justify-between gap-3"
                           >
                             <div className="flex items-center gap-2">
                               <span className="text-base">📐</span>
                               <div>
-                                <span className="font-bold text-white block text-[11px]">
+                                <span className="font-bold text-titulo block text-[11px]">
                                   {anexo.titulo}
                                 </span>
-                                <span className="text-[10px] text-mist-400">PDF / Planta Oficial</span>
+                                <span className="text-[10px] text-apoio">PDF / Planta Oficial</span>
                               </div>
                             </div>
-                            <span className="px-2.5 py-1 rounded-lg bg-brand-500 text-white text-[10px] font-bold">
+                            <span className="px-2.5 py-1 rounded-lg bg-acento text-white text-[10px] font-bold">
                               Ver Planta
                             </span>
                           </div>
@@ -468,14 +468,14 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                       </div>
                     )}
 
-                    <span className="text-[9px] text-mist-400 block text-right">{m.hora}</span>
+                    <span className="text-[9px] text-apoio block text-right">{m.hora}</span>
                   </div>
                 </div>
               ))}
 
               {iaDigitando && (
                 <div className="flex justify-start">
-                  <div className="bg-[#202c33] text-mist-300 rounded-2xl px-4 py-2.5 text-fluid-xs animate-pulse">
+                  <div className="bg-[#202c33] text-corpo rounded-2xl px-4 py-2.5 text-fluid-xs animate-pulse">
                     {nomeAssistente} está digitando...
                   </div>
                 </div>
@@ -483,14 +483,14 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
             </div>
 
             {/* Sugestões Rápidas de Teste */}
-            <div className="p-2 bg-[#1f2c34] border-t border-white/10 flex gap-2 overflow-x-auto scrollbar-none">
+            <div className="p-2 bg-[#1f2c34] border-t border-linha flex gap-2 overflow-x-auto scrollbar-none">
               <button
                 onClick={() =>
                   enviarMensagemPlayground(
                     "Olá, procuro um apartamento de 3 suítes em Alphaville até 2 milhões",
                   )
                 }
-                className="shrink-0 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-mist-300 text-[11px] cursor-pointer"
+                className="shrink-0 px-3 py-1.5 rounded-lg bg-vidro hover:bg-vidro-forte text-corpo text-[11px] cursor-pointer"
               >
                 💡 &quot;Procuro 3 suítes até 2M&quot;
               </button>
@@ -500,7 +500,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                     "Pode me enviar a planta do apartamento de 140m² do Canvas Alphaville?",
                   )
                 }
-                className="shrink-0 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-mist-300 text-[11px] cursor-pointer"
+                className="shrink-0 px-3 py-1.5 rounded-lg bg-vidro hover:bg-vidro-forte text-corpo text-[11px] cursor-pointer"
               >
                 📐 &quot;Me envie a planta do Canvas&quot;
               </button>
@@ -510,7 +510,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                     "Gostei muito. Gostaria de agendar uma visita para este sábado às 15h.",
                   )
                 }
-                className="shrink-0 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-mist-300 text-[11px] cursor-pointer"
+                className="shrink-0 px-3 py-1.5 rounded-lg bg-vidro hover:bg-vidro-forte text-corpo text-[11px] cursor-pointer"
               >
                 📅 &quot;Agendar visita sábado 15h&quot;
               </button>
@@ -524,11 +524,11 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                 onChange={(e) => setInputChat(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && enviarMensagemPlayground()}
                 placeholder="Fingir ser um cliente e digitar mensagem..."
-                className="flex-1 rounded-xl bg-[#2a3942] px-4 py-2.5 text-fluid-xs text-white placeholder:text-mist-500 focus:outline-none"
+                className="flex-1 rounded-xl bg-[#2a3942] px-4 py-2.5 text-fluid-xs text-white placeholder:text-tenue focus:outline-none"
               />
               <button
                 onClick={() => enviarMensagemPlayground()}
-                className="p-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white transition-colors cursor-pointer"
+                className="p-2.5 rounded-xl bg-acento hover:bg-acento-hover text-white transition-colors cursor-pointer"
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                   <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
@@ -538,46 +538,46 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
           </div>
 
           {/* Coluna 3: Dossiê de Inteligência Atualizando em Tempo Real */}
-          <div className="rounded-3xl border border-white/10 bg-ink-900/80 p-6 backdrop-blur space-y-6 flex flex-col justify-between">
+          <div className="rounded-3xl border border-linha bg-superficie p-6 backdrop-blur space-y-6 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-brand-300">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-acento-suave">
                   Dossiê ao Vivo (IA)
                 </span>
                 {dossiePlayground.temperatura !== null && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-ok-lavado text-ok border border-ok-linha">
                     Score {dossiePlayground.temperatura}/100
                   </span>
                 )}
               </div>
 
-              <h3 className="text-fluid-base font-bold text-white">
+              <h3 className="text-fluid-base font-bold text-titulo">
                 Inteligência Comercial Extraída
               </h3>
 
               <div className="space-y-3">
                 {dossiePlayground.resumo ? (
-                  <div className="p-3 rounded-xl bg-ink-950 border border-white/10 space-y-0.5">
-                    <span className="text-[10px] text-mist-500 uppercase font-bold">
+                  <div className="p-3 rounded-xl bg-campo border border-linha space-y-0.5">
+                    <span className="text-[10px] text-tenue uppercase font-bold">
                       📋 Resumo do Cliente
                     </span>
-                    <p className="text-fluid-xs text-mist-100 whitespace-pre-line leading-relaxed">
+                    <p className="text-fluid-xs text-titulo whitespace-pre-line leading-relaxed">
                       {dossiePlayground.resumo}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-mist-500 leading-relaxed">
+                  <p className="text-[11px] text-tenue leading-relaxed">
                     Mande uma mensagem no chat ao lado para a IA analisar o perfil do cliente e montar o dossiê aqui.
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-brand-500/10 border border-brand-500/20">
-              <span className="text-[10px] text-brand-300 font-bold uppercase block mb-1">
+            <div className="p-3.5 rounded-2xl bg-acento-lavado border border-acento-linha">
+              <span className="text-[10px] text-acento-suave font-bold uppercase block mb-1">
                 💡 Por que testar?
               </span>
-              <p className="text-[11px] text-mist-300 leading-relaxed font-light">
+              <p className="text-[11px] text-corpo leading-relaxed font-light">
                 Use este simulador para validar o tom de voz e garantir que a Sofia esteja recomendando exatamente os imóveis corretos antes de colocar o número em produção.
               </p>
             </div>

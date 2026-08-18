@@ -6,16 +6,16 @@ import type { FundoTipo } from "@/lib/types";
 import { SeletorArquivo } from "./SeletorArquivo";
 
 const BOTAO_BASE = "text-fluid-sm rounded-full px-4 py-2 font-medium transition-colors";
-const BOTAO_ATIVO = "bg-brand-500 text-white";
-const BOTAO_INATIVO = "border border-white/15 text-mist-300 hover:border-white/30";
+const BOTAO_ATIVO = "bg-acento text-white";
+const BOTAO_INATIVO = "border border-linha-forte text-corpo hover:border-linha-forte";
 
 export function FundoLink({ fundoTipo }: { fundoTipo: FundoTipo }) {
   const [tipo, setTipo] = useState<FundoTipo>(fundoTipo);
 
   return (
     <div>
-      <p className="font-display text-mist-50">Fundo do seu link</p>
-      <p className="text-fluid-sm mt-1 mb-4 text-mist-400">
+      <p className="font-display text-titulo">Fundo do seu link</p>
+      <p className="text-fluid-sm mt-1 mb-4 text-apoio">
         O que aparece atrás do site pra quem entra pelo seu link pessoal.
       </p>
 

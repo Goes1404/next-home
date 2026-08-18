@@ -27,8 +27,8 @@ export default async function LeadsPage() {
 
   return (
     <div>
-      <h1 className="text-fluid-2xl text-mist-50">{gestor ? "Contatos" : "Meus leads"}</h1>
-      <p className="text-fluid-sm mt-2 text-mist-400">
+      <h1 className="text-fluid-2xl text-titulo">{gestor ? "Contatos" : "Meus leads"}</h1>
+      <p className="text-fluid-sm mt-2 text-apoio">
         {gestor
           ? "Todos os contatos recebidos pelos formulários do site, dos mais recentes aos mais antigos."
           : "Contatos que chegaram atribuídos a você — pelo seu link pessoal ou pela distribuição automática."}

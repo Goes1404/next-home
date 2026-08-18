@@ -55,33 +55,33 @@ export function GerenciarTemplates({ templatesIniciais }: { templatesIniciais: T
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-white/10 bg-ink-900/50 p-5">
-        <h2 className="text-fluid-sm font-medium text-mist-100">
+      <div className="rounded-2xl border border-linha bg-superficie p-5">
+        <h2 className="text-fluid-sm font-medium text-titulo">
           {editando ? "Editar template" : "Novo template"}
         </h2>
-        <p className="text-fluid-xs mt-1 text-mist-500">Variáveis disponíveis: {VARIAVEIS_DISPONIVEIS}</p>
+        <p className="text-fluid-xs mt-1 text-tenue">Variáveis disponíveis: {VARIAVEIS_DISPONIVEIS}</p>
 
         <div className="mt-4 space-y-3">
           <input
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
             placeholder="Título (ex.: Primeiro contato)"
-            className="text-fluid-sm w-full rounded-lg border border-white/15 bg-ink-950 px-3 py-2 text-mist-100"
+            className="text-fluid-sm w-full rounded-lg border border-linha-forte bg-campo px-3 py-2 text-titulo"
           />
           <textarea
             value={conteudo}
             onChange={(e) => setConteudo(e.target.value)}
             placeholder="Olá {{nome_lead}}, aqui é {{nome_corretor}}..."
             rows={4}
-            className="text-fluid-sm w-full rounded-lg border border-white/15 bg-ink-950 px-3 py-2 text-mist-100"
+            className="text-fluid-sm w-full rounded-lg border border-linha-forte bg-campo px-3 py-2 text-titulo"
           />
-          <label className="flex items-center gap-2 text-fluid-sm text-mist-300">
+          <label className="flex items-center gap-2 text-fluid-sm text-corpo">
             <input type="checkbox" checked={padrao} onChange={(e) => setPadrao(e.target.checked)} />
             Usar como padrão
           </label>
 
           {erro && (
-            <p role="alert" className="text-fluid-xs text-sand-300">
+            <p role="alert" className="text-fluid-xs text-etapa-areia">
               {erro}
             </p>
           )}
@@ -91,7 +91,7 @@ export function GerenciarTemplates({ templatesIniciais }: { templatesIniciais: T
               type="button"
               disabled={salvando || titulo.trim().length < 2 || conteudo.trim().length < 2}
               onClick={salvar}
-              className="text-fluid-sm rounded-lg bg-brand-500 px-4 py-2 font-medium text-white disabled:opacity-50"
+              className="text-fluid-sm rounded-lg bg-acento px-4 py-2 font-medium text-white disabled:opacity-50"
             >
               {editando ? "Salvar" : "Criar"}
             </button>
@@ -99,7 +99,7 @@ export function GerenciarTemplates({ templatesIniciais }: { templatesIniciais: T
               <button
                 type="button"
                 onClick={() => iniciarEdicao(null)}
-                className="text-fluid-sm rounded-lg border border-white/15 px-4 py-2 text-mist-300"
+                className="text-fluid-sm rounded-lg border border-linha-forte px-4 py-2 text-corpo"
               >
                 Cancelar
               </button>
@@ -110,31 +110,31 @@ export function GerenciarTemplates({ templatesIniciais }: { templatesIniciais: T
 
       <div className="space-y-2">
         {templates.length === 0 && (
-          <p className="text-fluid-sm text-mist-400">Nenhum template ainda.</p>
+          <p className="text-fluid-sm text-apoio">Nenhum template ainda.</p>
         )}
         {templates.map((template) => (
           <div
             key={template.id}
-            className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-ink-900/50 px-4 py-3"
+            className="flex items-start justify-between gap-3 rounded-xl border border-linha bg-superficie px-4 py-3"
           >
             <div className="min-w-0">
-              <p className="text-fluid-sm text-mist-50">
-                {template.titulo} {template.padrao && <span className="text-brand-300">· padrão</span>}
+              <p className="text-fluid-sm text-titulo">
+                {template.titulo} {template.padrao && <span className="text-acento-suave">· padrão</span>}
               </p>
-              <p className="text-fluid-xs mt-1 truncate text-mist-400">{template.conteudo}</p>
+              <p className="text-fluid-xs mt-1 truncate text-apoio">{template.conteudo}</p>
             </div>
             <div className="flex shrink-0 gap-2">
               <button
                 type="button"
                 onClick={() => iniciarEdicao(template)}
-                className="text-fluid-xs text-brand-200 underline-offset-4 hover:underline"
+                className="text-fluid-xs text-acento-suave underline-offset-4 hover:underline"
               >
                 Editar
               </button>
               <button
                 type="button"
                 onClick={() => apagar(template.id)}
-                className="text-fluid-xs text-sand-300 underline-offset-4 hover:underline"
+                className="text-fluid-xs text-etapa-areia underline-offset-4 hover:underline"
               >
                 Apagar
               </button>

@@ -23,7 +23,7 @@ export function CampoVisita({ leadId, quando }: { leadId: string; quando: string
 
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
-      <label className="text-fluid-xs text-mist-500" htmlFor={`visita-${leadId}`}>
+      <label className="text-fluid-xs text-tenue" htmlFor={`visita-${leadId}`}>
         Data da visita
       </label>
       <input
@@ -41,10 +41,10 @@ export function CampoVisita({ leadId, quando }: { leadId: string; quando: string
             if (resultado.erro) setErro(resultado.erro);
           });
         }}
-        className="text-fluid-xs rounded-lg border border-white/15 bg-ink-950 px-2 py-1.5 text-mist-200 disabled:opacity-50"
+        className="text-fluid-xs rounded-lg border border-linha-forte bg-campo px-2 py-1.5 text-corpo disabled:opacity-50"
       />
       {erro && (
-        <span role="alert" className="text-fluid-xs text-sand-300">
+        <span role="alert" className="text-fluid-xs text-etapa-areia">
           {erro}
         </span>
       )}

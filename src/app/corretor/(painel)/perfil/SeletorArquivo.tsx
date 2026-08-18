@@ -19,7 +19,7 @@ export function SeletorArquivo({
 
   return (
     <form ref={formRef} action={dispatch}>
-      <label className="text-fluid-sm inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-mist-200 transition-colors hover:border-brand-300">
+      <label className="text-fluid-sm inline-flex cursor-pointer items-center gap-2 rounded-full border border-linha-forte px-4 py-2 text-corpo transition-colors hover:border-acento-linha">
         {pendente ? "Enviando…" : rotulo}
         <input
           type="file"
@@ -30,9 +30,9 @@ export function SeletorArquivo({
           onChange={() => formRef.current?.requestSubmit()}
         />
       </label>
-      <p className="text-fluid-xs mt-1 text-mist-500">{dica}</p>
-      {estado?.erro && <p className="text-fluid-xs mt-1 text-red-300">{estado.erro}</p>}
-      {estado?.ok && <p className="text-fluid-xs mt-1 text-brand-200">{estado.ok}</p>}
+      <p className="text-fluid-xs mt-1 text-tenue">{dica}</p>
+      {estado?.erro && <p className="text-fluid-xs mt-1 text-perigo">{estado.erro}</p>}
+      {estado?.ok && <p className="text-fluid-xs mt-1 text-acento-suave">{estado.ok}</p>}
     </form>
   );
 }

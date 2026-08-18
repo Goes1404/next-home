@@ -30,7 +30,7 @@ export function WhatsappCta({ empreendimento, corretor }: WhatsappCtaProps) {
     : "Falar no WhatsApp";
 
   return (
-    <div className="pb-safe fixed right-4 bottom-[calc(var(--nav-mobile-h)+1rem)] z-40 sm:bottom-6">
+    <div className="pb-safe fixed right-4 bottom-4 z-40 sm:bottom-6">
       <GlassSurface preset="pill" tint={0.2} intensity={1.2}>
         <WhatsappLink
           href={link}

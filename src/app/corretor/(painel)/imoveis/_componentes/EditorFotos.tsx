@@ -74,16 +74,16 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
   return (
     <div className="space-y-6">
       {mensagem && (
-        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-fluid-xs font-bold animate-in fade-in">
+        <div className="p-3.5 rounded-2xl bg-ok-lavado border border-ok-linha text-ok text-fluid-xs font-bold">
           {mensagem}
         </div>
       )}
 
       {/* Botões de Ação para Celular */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-white/10 bg-ink-900/70">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-linha bg-superficie">
         <div>
-          <h3 className="text-fluid-base font-bold text-white">Galeria de Fotos do Imóvel</h3>
-          <p className="text-fluid-xs text-mist-400 mt-0.5">
+          <h3 className="text-fluid-base font-bold text-titulo">Galeria de Fotos do Imóvel</h3>
+          <p className="text-fluid-xs text-apoio mt-0.5">
             A 1ª foto é a <strong>Capa Principal</strong> na vitrine e nos cards do WhatsApp.
           </p>
         </div>
@@ -101,11 +101,11 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
 
           <label
             htmlFor="input-foto-upload"
-            className="w-full sm:w-auto min-h-[48px] px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-xs font-bold transition-all shadow-md shadow-brand-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            className="w-full sm:w-auto min-h-[48px] px-5 py-2.5 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all shadow-md shadow-acento/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             {enviando ? (
               <>
-                <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                <span className="h-4 w-4 rounded-full border-2 border-linha-forte border-t-white animate-spin" />
                 <span>Enviando Foto...</span>
               </>
             ) : (
@@ -119,10 +119,10 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
 
       {/* Grade Visual de Fotos */}
       {midias.length === 0 ? (
-        <div className="p-12 text-center rounded-3xl border border-dashed border-white/15 bg-ink-950/60 space-y-3">
+        <div className="p-12 text-center rounded-3xl border border-dashed border-linha-forte bg-elevado space-y-3">
           <span className="text-4xl block">🖼️</span>
-          <h4 className="text-fluid-base font-bold text-mist-200">Nenhuma foto cadastrada</h4>
-          <p className="text-fluid-xs text-mist-500 max-w-sm mx-auto">
+          <h4 className="text-fluid-base font-bold text-corpo">Nenhuma foto cadastrada</h4>
+          <p className="text-fluid-xs text-tenue max-w-sm mx-auto">
             Toque no botão acima para tirar fotos do imóvel no stand ou selecionar fotos da sua galeria.
           </p>
         </div>
@@ -135,12 +135,12 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
                 key={midia.url}
                 className={`group relative rounded-2xl overflow-hidden border transition-all ${
                   ehCapa
-                    ? "border-brand-400 shadow-[0_0_15px_rgba(202,138,4,0.3)] ring-2 ring-brand-400"
-                    : "border-white/10 hover:border-white/30"
+                    ? "border-acento ring-acento ring-2"
+                    : "border-linha hover:border-linha-forte"
                 }`}
               >
                 {/* Imagem */}
-                <div className="aspect-[4/3] relative bg-ink-950">
+                <div className="aspect-[4/3] relative bg-campo">
                   <Image
                     src={midia.url}
                     alt={midia.alt || "Foto do imóvel"}
@@ -151,24 +151,24 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
 
                   {/* Badge de Capa */}
                   {ehCapa && (
-                    <span className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-brand-500 text-white text-[10px] font-bold shadow-md flex items-center gap-1">
+                    <span className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-acento text-white text-[10px] font-bold shadow-md flex items-center gap-1">
                       ⭐ Capa Principal
                     </span>
                   )}
                 </div>
 
                 {/* Ações Rápidas de 1 Toque */}
-                <div className="p-2.5 bg-ink-900 flex items-center justify-between gap-1">
+                <div className="p-2.5 bg-superficie flex items-center justify-between gap-1">
                   {!ehCapa ? (
                     <button
                       type="button"
                       onClick={() => handleDefinirCapa(midia)}
-                      className="px-2 py-1.5 rounded-lg bg-white/5 hover:bg-brand-500 hover:text-white text-mist-300 text-[11px] font-semibold transition-colors cursor-pointer"
+                      className="px-2 py-1.5 rounded-lg bg-vidro hover:bg-acento hover:text-white text-corpo text-[11px] font-semibold transition-colors cursor-pointer"
                     >
                       Definir Capa
                     </button>
                   ) : (
-                    <span className="text-[10px] text-brand-300 font-bold px-2 py-1">
+                    <span className="text-[10px] text-acento-suave font-bold px-2 py-1">
                       Foto Destaque
                     </span>
                   )}
@@ -177,7 +177,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
                     type="button"
                     onClick={() => handleRemover(midia)}
                     title="Excluir Foto"
-                    className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-300 hover:text-white transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg bg-perigo-lavado hover:bg-perigo text-perigo hover:text-titulo transition-colors cursor-pointer"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

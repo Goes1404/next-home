@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
+import { ETIQUETA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { linkWhatsappPara } from "@/lib/site";
 import { ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
 
@@ -58,61 +59,51 @@ export function linkWhatsappLead(lead: Lead): string | null {
   );
 }
 
-const BADGE_PORTAL: Record<string, { label: string; classe: string }> = {
-  zap_imoveis: { label: "Zap Imóveis", classe: "bg-[#002f6c]/30 text-[#4da6ff] border-[#002f6c]/60" },
-  vivareal: { label: "VivaReal", classe: "bg-[#e84c3d]/20 text-[#ff7a6d] border-[#e84c3d]/40" },
-  olx: { label: "OLX", classe: "bg-[#6e0ad6]/25 text-[#bd85ff] border-[#6e0ad6]/50" },
-  imovelweb: { label: "Imovelweb", classe: "bg-[#e67e22]/25 text-[#f39c12] border-[#e67e22]/50" },
-  meta_ads: { label: "Meta Ads", classe: "bg-[#0066ff]/25 text-[#66a3ff] border-[#0066ff]/50" },
-  site_direto: { label: "Site Direto", classe: "bg-brand-500/20 text-brand-200 border-brand-500/40" },
+/**
+ * De onde o lead veio. Um ponto na cor do portal e o nome em texto neutro,
+ * em vez de seis pílulas coloridas.
+ *
+ * A versão anterior pintava o rótulo com a cor da marca do portal — um
+ * `#4da6ff` claro, pensado para fundo escuro. No tema claro isso vira texto
+ * pastel sobre branco. O ponto mantém o reconhecimento imediato da origem e
+ * o rótulo fica legível nos dois temas; de quebra, uma lista com dez leads
+ * de portais diferentes para de parecer uma caixa de lápis de cor.
+ */
+const PORTAL: Record<string, { label: string; cor: string }> = {
+  zap_imoveis: { label: "Zap Imóveis", cor: "#0f5bd7" },
+  vivareal: { label: "VivaReal", cor: "#e84c3d" },
+  olx: { label: "OLX", cor: "#6e0ad6" },
+  imovelweb: { label: "Imovelweb", cor: "#e67e22" },
+  meta_ads: { label: "Meta Ads", cor: "#0066ff" },
+  site_direto: { label: "Site direto", cor: "#00806c" },
 };
 
 export function BadgePortal({ portal, origem }: { portal?: string | null; origem?: string | null }) {
   const chave = portal || (origem?.includes("meta") ? "meta_ads" : null);
-  if (!chave || !BADGE_PORTAL[chave]) {
+  const dados = chave ? PORTAL[chave] : undefined;
+
+  if (!dados) {
     if (origem?.startsWith("inbound/")) {
-      return (
-        <span className="text-[11px] rounded-full border border-white/10 bg-white/5 px-2 py-0.5 font-medium text-mist-300">
-          📥 E-mail
-        </span>
-      );
+      return <Chip cor="#6d827c">E-mail</Chip>;
     }
     return null;
   }
 
-  const { label, classe } = BADGE_PORTAL[chave];
+  return <Chip cor={dados.cor}>{dados.label}</Chip>;
+}
+
+function Chip({ cor, children }: { cor: string; children: React.ReactNode }) {
   return (
-    <span className={`text-[11px] rounded-full border px-2 py-0.5 font-semibold ${classe}`}>
-      {label}
+    <span className="border-linha bg-vidro text-corpo inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium">
+      <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: cor }} />
+      {children}
     </span>
   );
 }
 
-/**
- * Cor por etapa, seguindo a temperatura do funil: verde no começo (chegou),
- * azul no meio (em andamento), areia perto do fechamento (dinheiro na mesa),
- * cinza no fim da linha. O corretor precisa ler a coluna de relance, não
- * decorar sete nomes.
- *
- * Só tokens que existem no `@theme` de `globals.css` — em Tailwind v4 uma
- * cor não declarada não gera classe nenhuma e o texto herda a cor do pai,
- * silenciosamente.
- */
-const COR_ETAPA: Record<EtapaFunil, string> = {
-  novo: "bg-brand-400/25 text-brand-100",
-  primeiro_contato: "bg-brand-500/25 text-brand-200",
-  visita_agendada: "bg-azure-400/25 text-azure-200",
-  proposta_enviada: "bg-sand-400/20 text-sand-300",
-  negociacao: "bg-sand-400/30 text-sand-300",
-  fechado: "bg-brand-400/40 text-brand-50",
-  perdido: "bg-white/10 text-mist-400",
-};
-
 export function EtiquetaEtapa({ etapa }: { etapa: EtapaFunil }) {
   return (
-    <span
-      className={`text-fluid-xs rounded-full px-2.5 py-1 font-medium ${COR_ETAPA[etapa]}`}
-    >
+    <span className={`text-fluid-xs rounded-full px-2.5 py-1 font-medium ${ETIQUETA_ETAPA[etapa]}`}>
       {ETAPA_LABEL[etapa]}
     </span>
   );
@@ -147,20 +138,27 @@ export function CartaoLead({
   const whatsapp = linkWhatsappLead(lead);
 
   return (
-    <article className="rounded-2xl border border-white/10 bg-ink-900/50 p-5">
+    <article className="rounded-2xl border border-linha bg-superficie p-5">
       {selecionavel && (
-        <label className="mb-3 flex items-center gap-2 text-fluid-xs text-mist-400">
-          <input type="checkbox" checked={selecionado} onChange={aoAlternarSelecao} />
-          Selecionar
+        // -my-2 devolve o espaço que o alvo de 44px acrescenta: a caixa
+        // ganha área de toque sem empurrar o resto do cartão para baixo.
+        <label className="text-fluid-xs text-apoio -my-2 mb-1 flex min-h-11 cursor-pointer items-center gap-2.5">
+          <input
+            type="checkbox"
+            checked={selecionado}
+            onChange={aoAlternarSelecao}
+            className="accent-acento h-4.5 w-4.5 cursor-pointer"
+          />
+          {selecionado ? "Selecionado" : "Selecionar"}
         </label>
       )}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-display text-lg text-mist-50">{lead.nome}</p>
+            <p className="font-display text-lg text-titulo">{lead.nome}</p>
             <BadgePortal portal={lead.portalOrigem} origem={lead.origem} />
           </div>
-          <p className="text-fluid-xs mt-0.5 text-mist-500">
+          <p className="text-fluid-xs mt-0.5 text-tenue">
             {dataHora.format(new Date(lead.criadoEm))}
           </p>
         </div>
@@ -169,8 +167,8 @@ export function CartaoLead({
           <span
             className={
               ehProprietario
-                ? "text-fluid-xs rounded-full bg-sand-400/90 px-2.5 py-1 font-medium text-ink-950"
-                : "text-fluid-xs rounded-full bg-brand-500/20 px-2.5 py-1 font-medium text-brand-200"
+                ? "text-fluid-xs rounded-full border border-etapa-areia-linha bg-etapa-areia-lavado px-2.5 py-1 font-medium text-etapa-areia"
+                : "text-fluid-xs rounded-full bg-acento-lavado px-2.5 py-1 font-medium text-acento-suave"
             }
           >
             {ehProprietario ? "Tem imóvel" : "Quer comprar"}
@@ -178,32 +176,32 @@ export function CartaoLead({
         </div>
       </div>
 
-      <dl className="text-fluid-sm mt-4 space-y-1 text-mist-300">
+      <dl className="text-fluid-sm mt-4 space-y-1 text-corpo">
         {mostrarDono && (
           <div>
-            <dt className="inline text-mist-500">Corretor </dt>
+            <dt className="inline text-tenue">Corretor </dt>
             <dd className="inline">{lead.corretor?.nome ?? "Sem dono"}</dd>
           </div>
         )}
         {lead.telefone && (
           <div>
-            <dt className="inline text-mist-500">Telefone </dt>
+            <dt className="inline text-tenue">Telefone </dt>
             <dd className="inline">{lead.telefone}</dd>
           </div>
         )}
         {lead.email && (
           <div>
-            <dt className="inline text-mist-500">E-mail </dt>
+            <dt className="inline text-tenue">E-mail </dt>
             <dd className="inline break-all">{lead.email}</dd>
           </div>
         )}
         {lead.empreendimento && (
           <div>
-            <dt className="inline text-mist-500">Interesse </dt>
+            <dt className="inline text-tenue">Interesse </dt>
             <dd className="inline">
               <Link
                 href={`/empreendimentos/${lead.empreendimento.slug}`}
-                className="text-brand-200 underline-offset-4 hover:underline"
+                className="text-acento-suave underline-offset-4 hover:underline"
               >
                 {lead.empreendimento.nome}
               </Link>
@@ -213,7 +211,7 @@ export function CartaoLead({
         {lead.detalhes &&
           Object.entries(lead.detalhes).map(([chave, valor]) => (
             <div key={chave}>
-              <dt className="inline text-mist-500">{ROTULO_DETALHE[chave] ?? chave} </dt>
+              <dt className="inline text-tenue">{ROTULO_DETALHE[chave] ?? chave} </dt>
               <dd className="inline">{valor}</dd>
             </div>
           ))}
@@ -224,7 +222,7 @@ export function CartaoLead({
       )}
 
       {lead.mensagem && (
-        <p className="text-fluid-sm mt-3 rounded-xl border border-white/5 bg-ink-950/50 px-4 py-3 whitespace-pre-line text-mist-200">
+        <p className="text-fluid-sm mt-3 rounded-xl border border-linha bg-elevado px-4 py-3 whitespace-pre-line text-corpo">
           {lead.mensagem}
         </p>
       )}
@@ -244,7 +242,7 @@ export function CartaoLead({
         {lead.telefone && (
           <a
             href={`tel:${lead.telefone}`}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-brand-500/30 bg-brand-500/10 text-brand-200 transition-colors hover:bg-brand-500/20"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-acento-linha bg-acento-lavado text-acento-suave transition-colors hover:opacity-85"
             title="Ligar"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -253,7 +251,7 @@ export function CartaoLead({
         {lead.email && (
           <a
             href={`mailto:${lead.email}`}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-ink-800 text-mist-200 transition-colors hover:bg-ink-700 hover:border-white/20"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-linha bg-elevado text-corpo transition-colors hover:bg-vidro-forte hover:border-linha-forte"
             title="E-mail"
           >
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>

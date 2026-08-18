@@ -41,7 +41,7 @@ export function SeletorDono({
             if (resultado.erro) setErro(resultado.erro);
           });
         }}
-        className="text-fluid-xs rounded-lg border border-white/15 bg-ink-950 px-2 py-1.5 text-mist-200 disabled:opacity-50"
+        className="text-fluid-xs rounded-lg border border-linha-forte bg-campo px-2 py-1.5 text-corpo disabled:opacity-50"
       >
         <option value="">Sem dono</option>
         {equipe.map((corretor) => (
@@ -51,7 +51,7 @@ export function SeletorDono({
         ))}
       </select>
       {erro && (
-        <span role="alert" className="text-fluid-xs text-sand-300">
+        <span role="alert" className="text-fluid-xs text-etapa-areia">
           {erro}
         </span>
       )}

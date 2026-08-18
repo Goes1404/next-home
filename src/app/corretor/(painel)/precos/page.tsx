@@ -15,8 +15,8 @@ export default async function PrecosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-fluid-2xl font-bold text-mist-50">Atualização de Preços em Massa</h1>
-        <p className="text-fluid-sm mt-1 text-mist-400">
+        <h1 className="text-fluid-2xl font-bold text-titulo">Atualização de Preços em Massa</h1>
+        <p className="text-fluid-sm mt-1 text-apoio">
           Concilie tabelas mensais de incorporadoras (Excel / Google Sheets) e atualize os valores do catálogo com preview visual e rollback.
         </p>
       </div>

@@ -36,12 +36,12 @@ export function EditorLazer({ lazerSelecionado, onToggle }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="p-5 sm:p-6 rounded-3xl border border-white/10 bg-ink-900/60 backdrop-blur space-y-4">
+      <div className="p-5 sm:p-6 rounded-3xl border border-linha bg-superficie backdrop-blur space-y-4">
         <div>
-          <h3 className="text-fluid-base font-bold text-white">
+          <h3 className="text-fluid-base font-bold text-titulo">
             🏊‍♂️ Lazer, Conforto & Diferenciais do Imóvel
           </h3>
-          <p className="text-fluid-xs text-mist-400 mt-1">
+          <p className="text-fluid-xs text-apoio mt-1">
             Toque nos chips abaixo para ativar ou desativar as características na página do imóvel.
           </p>
         </div>
@@ -59,8 +59,8 @@ export function EditorLazer({ lazerSelecionado, onToggle }: Props) {
                 onClick={() => onToggle(item.nome)}
                 className={`p-3.5 rounded-2xl border text-left flex items-center gap-3 transition-all cursor-pointer min-h-[52px] active:scale-98 ${
                   ativo
-                    ? "bg-brand-500/20 border-brand-400 text-white shadow-[0_0_15px_rgba(202,138,4,0.2)]"
-                    : "bg-ink-950/80 border-white/10 text-mist-400 hover:border-white/20 hover:text-white"
+                    ? "bg-acento-lavado border-acento-linha text-acento-suave"
+                    : "bg-fundo/80 border-linha text-apoio hover:border-linha-forte hover:text-titulo"
                 }`}
               >
                 <span className="text-xl shrink-0">{item.icone}</span>
@@ -68,8 +68,8 @@ export function EditorLazer({ lazerSelecionado, onToggle }: Props) {
                 <span
                   className={`h-5 w-5 rounded-full border flex items-center justify-center text-[10px] font-bold ${
                     ativo
-                      ? "bg-brand-500 border-brand-400 text-white"
-                      : "border-white/20 text-transparent"
+                      ? "bg-acento border-acento-linha text-white"
+                      : "border-linha-forte text-transparent"
                   }`}
                 >
                   ✓
@@ -80,19 +80,19 @@ export function EditorLazer({ lazerSelecionado, onToggle }: Props) {
         </div>
 
         {/* Adicionar Característica Customizada */}
-        <div className="pt-4 border-t border-white/10 flex items-center gap-2">
+        <div className="pt-4 border-t border-linha flex items-center gap-2">
           <input
             type="text"
             value={novoItem}
             onChange={(e) => setNovoItem(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdicionarCustom()}
             placeholder="Outro diferencial (ex: Gerador full para 100% das unidades)..."
-            className="min-h-[48px] flex-1 rounded-xl border border-white/15 bg-ink-950 px-4 text-fluid-xs text-white focus:border-brand-400 focus:outline-none"
+            className="min-h-[48px] flex-1 rounded-xl border border-linha-forte bg-campo px-4 text-fluid-xs text-titulo focus:border-acento focus:outline-none"
           />
           <button
             type="button"
             onClick={handleAdicionarCustom}
-            className="min-h-[48px] px-5 rounded-xl bg-white/10 hover:bg-brand-500 text-white text-fluid-xs font-bold transition-colors cursor-pointer"
+            className="min-h-[48px] px-5 rounded-xl bg-vidro-forte hover:bg-acento text-white text-fluid-xs font-bold transition-colors cursor-pointer"
           >
             + Adicionar
           </button>

@@ -12,8 +12,8 @@ export default async function CampanhasPainelPage() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-fluid-2xl text-mist-50 font-bold">Campanhas de WhatsApp</h1>
-        <p className="text-fluid-sm mt-1 text-mist-400">
+        <h1 className="text-fluid-2xl text-titulo font-bold">Campanhas de WhatsApp</h1>
+        <p className="text-fluid-sm mt-1 text-apoio">
           Reative clientes e dispare novidades de imóveis em lote de forma 100% segura com IA e proteção anti-ban.
         </p>
       </div>

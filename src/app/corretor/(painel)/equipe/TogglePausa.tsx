@@ -31,14 +31,14 @@ export function TogglePausa({ corretorId, emPausa }: { corretorId: string; emPau
         }}
         className={`text-fluid-xs rounded-full border px-3 py-1 transition-colors disabled:opacity-50 ${
           pausado
-            ? "border-sand-300/40 bg-sand-300/10 text-sand-300"
-            : "border-white/15 bg-ink-950 text-mist-300"
+            ? "border-etapa-areia-linha bg-etapa-areia-lavado text-etapa-areia"
+            : "border-linha-forte bg-campo text-corpo"
         }`}
       >
         {pausado ? "Em pausa" : "Na escala"}
       </button>
       {erro && (
-        <span role="alert" className="text-fluid-xs text-sand-300">
+        <span role="alert" className="text-fluid-xs text-etapa-areia">
           {erro}
         </span>
       )}

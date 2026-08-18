@@ -17,12 +17,12 @@ export function CopiarLink({ link }: { link: string }) {
         readOnly
         value={link}
         onFocus={(ev) => ev.currentTarget.select()}
-        className="w-full rounded-xl border border-white/15 bg-ink-950/60 px-4 py-3 text-mist-50 outline-none"
+        className="w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3 text-titulo outline-none"
       />
       <button
         type="button"
         onClick={copiar}
-        className="shrink-0 rounded-xl bg-brand-500 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-400"
+        className="shrink-0 rounded-xl bg-acento px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-acento-hover"
       >
         {copiado ? "Copiado!" : "Copiar"}
       </button>

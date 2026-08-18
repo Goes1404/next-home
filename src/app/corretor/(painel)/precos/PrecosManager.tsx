@@ -144,13 +144,13 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
   return (
     <div className="space-y-6">
       {/* Abas */}
-      <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+      <div className="flex items-center gap-2 border-b border-linha pb-3">
         <button
           onClick={() => setAbaAtiva("importar")}
           className={`px-4 py-2 text-fluid-sm font-medium rounded-lg transition-colors ${
             abaAtiva === "importar"
-              ? "bg-brand-500 text-white"
-              : "text-mist-400 hover:text-white hover:bg-white/5"
+              ? "bg-acento text-white"
+              : "text-apoio hover:text-titulo hover:bg-vidro"
           }`}
         >
           📥 Atualizar Preços em Massa
@@ -159,8 +159,8 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
           onClick={() => setAbaAtiva("historico")}
           className={`px-4 py-2 text-fluid-sm font-medium rounded-lg transition-colors ${
             abaAtiva === "historico"
-              ? "bg-brand-500 text-white"
-              : "text-mist-400 hover:text-white hover:bg-white/5"
+              ? "bg-acento text-white"
+              : "text-apoio hover:text-titulo hover:bg-vidro"
           }`}
         >
           🕒 Histórico de Reajustes ({historico.length})
@@ -171,8 +171,8 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
         <div
           className={`p-4 rounded-xl text-fluid-sm ${
             feedback.tipo === "sucesso"
-              ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-300"
-              : "bg-rose-500/15 border border-rose-500/30 text-rose-300"
+              ? "bg-ok-lavado border border-ok-linha text-ok"
+              : "bg-perigo-lavado border border-perigo-linha text-perigo"
           }`}
         >
           {feedback.msg}
@@ -182,18 +182,18 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
       {abaAtiva === "importar" ? (
         <div className="space-y-6">
           {/* Caixa de Entrada (Paste ou Upload) */}
-          <div className="rounded-2xl border border-white/10 bg-ink-900/60 p-5 backdrop-blur">
+          <div className="rounded-2xl border border-linha bg-superficie p-5 backdrop-blur">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <div>
-                <h3 className="text-fluid-base font-semibold text-mist-50">
+                <h3 className="text-fluid-base font-semibold text-titulo">
                   1. Cole a Tabela do Excel ou Envie o Arquivo
                 </h3>
-                <p className="text-fluid-xs text-mist-400">
+                <p className="text-fluid-xs text-apoio">
                   Copie as colunas de <strong>Nome do Imóvel</strong> e <strong>Novo Valor</strong> do Excel / Google Sheets e cole abaixo.
                 </p>
               </div>
 
-              <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-fluid-xs font-medium text-mist-200 transition-colors">
+              <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-vidro-forte hover:bg-vidro-mais text-fluid-xs font-medium text-corpo transition-colors">
                 <span>📁 Carregar Arquivo (.csv / .txt)</span>
                 <input type="file" accept=".csv,.txt,.tsv" onChange={onUploadArquivo} className="hidden" />
               </label>
@@ -207,7 +207,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                 processarConteudo(e.target.value);
               }}
               placeholder={`Exemplo de conteúdo copiado do Excel:\nResidencial Alphaville 1\tR$ 1.550.000\nEdifício Panorama\tR$ 890.000\nReserva Tamboré\tR$ 2.400.000`}
-              className="w-full rounded-xl border border-white/15 bg-ink-950 px-4 py-3 font-mono text-fluid-xs text-mist-200 placeholder:text-mist-600 focus:border-brand-400 focus:outline-none"
+              className="w-full rounded-xl border border-linha-forte bg-campo px-4 py-3 font-mono text-fluid-xs text-corpo placeholder:text-tenue focus:border-acento focus:outline-none"
             />
 
             {textoColado && (
@@ -218,7 +218,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                     setTextoColado("");
                     setItensConciliados([]);
                   }}
-                  className="text-fluid-xs text-mist-500 hover:text-mist-300"
+                  className="text-fluid-xs text-tenue hover:text-corpo"
                 >
                   Limpar tabela
                 </button>
@@ -231,32 +231,32 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
             <div className="space-y-4">
               {/* Cards de Métricas do Lote */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="rounded-xl border border-white/10 bg-ink-900/40 p-3">
-                  <span className="text-fluid-xs text-mist-400">Total Identificados</span>
-                  <p className="text-fluid-lg font-bold text-mist-50">{itensConciliados.length}</p>
+                <div className="rounded-xl border border-linha bg-superficie p-3">
+                  <span className="text-fluid-xs text-apoio">Total Identificados</span>
+                  <p className="text-fluid-lg font-bold text-titulo">{itensConciliados.length}</p>
                 </div>
-                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
-                  <span className="text-fluid-xs text-emerald-400">Com Aumento (Reajuste)</span>
-                  <p className="text-fluid-lg font-bold text-emerald-300">{aumentoCount}</p>
+                <div className="rounded-xl border border-ok-linha bg-ok-lavado p-3">
+                  <span className="text-fluid-xs text-ok">Com Aumento (Reajuste)</span>
+                  <p className="text-fluid-lg font-bold text-ok">{aumentoCount}</p>
                 </div>
-                <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 p-3">
-                  <span className="text-fluid-xs text-sky-400">Com Redução (Promoção)</span>
-                  <p className="text-fluid-lg font-bold text-sky-300">{reducaoCount}</p>
+                <div className="rounded-xl border border-info-linha bg-info-lavado p-3">
+                  <span className="text-fluid-xs text-info">Com Redução (Promoção)</span>
+                  <p className="text-fluid-lg font-bold text-info">{reducaoCount}</p>
                 </div>
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
-                  <span className="text-fluid-xs text-amber-400">Não Encontrados</span>
-                  <p className="text-fluid-lg font-bold text-amber-300">{naoEncontradosCount}</p>
+                <div className="rounded-xl border border-alerta-linha bg-alerta-lavado p-3">
+                  <span className="text-fluid-xs text-alerta">Não Encontrados</span>
+                  <p className="text-fluid-lg font-bold text-alerta">{naoEncontradosCount}</p>
                 </div>
               </div>
 
               {/* Tabela de Diff */}
-              <div className="rounded-2xl border border-white/10 bg-ink-900/60 overflow-hidden backdrop-blur">
-                <div className="p-4 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-ink-950/40">
+              <div className="rounded-2xl border border-linha bg-superficie overflow-hidden backdrop-blur">
+                <div className="p-4 border-b border-linha flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-elevado">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-fluid-base font-semibold text-mist-50">
+                    <h3 className="text-fluid-base font-semibold text-titulo">
                       2. Preview Comparativo dos Novos Preços
                     </h3>
-                    <span className="text-fluid-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 font-medium">
+                    <span className="text-fluid-xs px-2 py-0.5 rounded-full bg-acento-lavado text-acento-suave font-medium">
                       {itensSelecionadosCount} selecionados
                     </span>
                   </div>
@@ -265,15 +265,15 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                     <button
                       type="button"
                       onClick={() => toggleTodos(true)}
-                      className="text-fluid-xs text-brand-400 hover:text-brand-300 font-medium"
+                      className="text-fluid-xs text-acento-suave hover:text-acento-suave font-medium"
                     >
                       Selecionar Todos
                     </button>
-                    <span className="text-mist-600">·</span>
+                    <span className="text-tenue">·</span>
                     <button
                       type="button"
                       onClick={() => toggleTodos(false)}
-                      className="text-fluid-xs text-mist-400 hover:text-mist-300 font-medium"
+                      className="text-fluid-xs text-apoio hover:text-corpo font-medium"
                     >
                       Desmarcar Todos
                     </button>
@@ -282,7 +282,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-fluid-xs">
-                    <thead className="border-b border-white/10 bg-ink-950/70 text-mist-400 uppercase tracking-wider font-semibold">
+                    <thead className="border-b border-linha bg-fundo/70 text-apoio uppercase tracking-wider font-semibold">
                       <tr>
                         <th className="p-3.5 w-10 text-center">✓</th>
                         <th className="p-3.5">Nome na Planilha</th>
@@ -293,7 +293,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                         <th className="p-3.5 text-center">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5 font-mono">
+                    <tbody className="divide-y divide-linha font-mono">
                       {itensConciliados.map((item) => {
                         const ehAumento = item.diferencaReais !== null && item.diferencaReais > 0;
                         const ehReducao = item.diferencaReais !== null && item.diferencaReais < 0;
@@ -302,8 +302,8 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                           <tr
                             key={item.idTemp}
                             className={`transition-colors ${
-                              item.selecionado ? "bg-white/[0.02]" : "opacity-50"
-                            } hover:bg-white/[0.04]`}
+                              item.selecionado ? "bg-vidro" : "opacity-50"
+                            } hover:bg-vidro`}
                           >
                             <td className="p-3.5 text-center">
                               <input
@@ -311,11 +311,11 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                                 checked={item.selecionado}
                                 disabled={item.matchStatus === "nao_encontrado" && !item.empreendimentoId}
                                 onChange={() => toggleSelecionado(item.idTemp)}
-                                className="rounded border-white/20 bg-ink-950 text-brand-500 focus:ring-brand-400 h-4 w-4 cursor-pointer"
+                                className="rounded border-linha-forte bg-campo text-acento-suave focus:ring-acento h-4 w-4 cursor-pointer"
                               />
                             </td>
 
-                            <td className="p-3.5 text-mist-300 font-sans font-medium">
+                            <td className="p-3.5 text-corpo font-sans font-medium">
                               {item.linhaOriginal.textoNome}
                             </td>
 
@@ -324,7 +324,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                                 <select
                                   onChange={(e) => associarManualmente(item.idTemp, e.target.value)}
                                   defaultValue=""
-                                  className="w-full rounded-lg border border-amber-500/40 bg-ink-950 px-2 py-1 text-fluid-xs text-amber-200"
+                                  className="w-full rounded-lg border border-alerta-linha bg-campo px-2 py-1 text-fluid-xs text-alerta"
                                 >
                                   <option value="" disabled>
                                     ⚠️ Selecione para vincular...
@@ -336,15 +336,15 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                                   ))}
                                 </select>
                               ) : (
-                                <span className="text-mist-100 font-medium">{item.nomeEmpreendimento}</span>
+                                <span className="text-titulo font-medium">{item.nomeEmpreendimento}</span>
                               )}
                             </td>
 
-                            <td className="p-3.5 text-right text-mist-400">
+                            <td className="p-3.5 text-right text-apoio">
                               {formatarMoedaBRL(item.precoAtual)}
                             </td>
 
-                            <td className="p-3.5 text-right text-mist-50 font-semibold">
+                            <td className="p-3.5 text-right text-titulo font-semibold">
                               {formatarMoedaBRL(item.precoNovo)}
                             </td>
 
@@ -352,30 +352,30 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                               {item.diferencaReais !== null && item.variacaoPercentual !== null ? (
                                 <span
                                   className={`inline-flex items-center gap-1 font-semibold ${
-                                    ehAumento ? "text-emerald-400" : ehReducao ? "text-sky-400" : "text-mist-500"
+                                    ehAumento ? "text-ok" : ehReducao ? "text-info" : "text-tenue"
                                   }`}
                                 >
                                   {ehAumento ? "▲ +" : ehReducao ? "▼ " : "— "}
                                   {Math.abs(item.variacaoPercentual)}%
                                 </span>
                               ) : (
-                                <span className="text-mist-600">—</span>
+                                <span className="text-tenue">—</span>
                               )}
                             </td>
 
                             <td className="p-3.5 text-center">
                               {item.matchStatus === "exato" && (
-                                <span className="inline-block px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                <span className="inline-block px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-ok-lavado text-ok border border-ok-linha">
                                   Exato
                                 </span>
                               )}
                               {item.matchStatus === "sugerido" && (
-                                <span className="inline-block px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                                <span className="inline-block px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-info-lavado text-info border border-info-linha">
                                   Sugerido
                                 </span>
                               )}
                               {item.matchStatus === "nao_encontrado" && (
-                                <span className="inline-block px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                <span className="inline-block px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-alerta-lavado text-alerta border border-alerta-linha">
                                   Não Encontrado
                                 </span>
                               )}
@@ -388,14 +388,14 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                 </div>
 
                 {/* Barra de Ação de Confirmação */}
-                <div className="p-4 bg-ink-950/80 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="p-4 bg-fundo/80 border-t border-linha flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="w-full sm:w-80">
-                    <label className="text-fluid-xs text-mist-400 block mb-1">Identificação do Lote:</label>
+                    <label className="text-fluid-xs text-apoio block mb-1">Identificação do Lote:</label>
                     <input
                       type="text"
                       value={nomeLote}
                       onChange={(e) => setNomeLote(e.target.value)}
-                      className="w-full rounded-lg border border-white/15 bg-ink-900 px-3 py-1.5 text-fluid-xs text-mist-200"
+                      className="w-full rounded-lg border border-linha-forte bg-superficie px-3 py-1.5 text-fluid-xs text-corpo"
                     />
                   </div>
 
@@ -403,11 +403,11 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                     type="button"
                     disabled={isPending || itensSelecionadosCount === 0}
                     onClick={handleAplicarLote}
-                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-brand-500 hover:bg-brand-400 disabled:opacity-50 text-white font-semibold text-fluid-sm transition-all shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-acento hover:bg-acento-hover disabled:opacity-50 text-white font-semibold text-fluid-sm transition-all shadow-lg shadow-acento/25 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {isPending ? (
                       <>
-                        <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                        <svg className="animate-spin h-4 w-4 text-titulo" viewBox="0 0 24 24" fill="none">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                         </svg>
@@ -424,24 +424,24 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
         </div>
       ) : (
         /* Aba Histórico de Reajustes */
-        <div className="rounded-2xl border border-white/10 bg-ink-900/60 overflow-hidden backdrop-blur">
-          <div className="p-4 border-b border-white/10 bg-ink-950/40">
-            <h3 className="text-fluid-base font-semibold text-mist-50">
+        <div className="rounded-2xl border border-linha bg-superficie overflow-hidden backdrop-blur">
+          <div className="p-4 border-b border-linha bg-elevado">
+            <h3 className="text-fluid-base font-semibold text-titulo">
               Histórico de Tabelas Mensais Aplicadas
             </h3>
-            <p className="text-fluid-xs text-mist-400">
+            <p className="text-fluid-xs text-apoio">
               Auditoria de todos os lotes de preços atualizados com opção de rollback (desfazer reajuste).
             </p>
           </div>
 
           {historico.length === 0 ? (
-            <div className="p-8 text-center text-mist-500 text-fluid-sm">
+            <div className="p-8 text-center text-tenue text-fluid-sm">
               Nenhum lote de reajuste foi aplicado até o momento.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-fluid-xs">
-                <thead className="border-b border-white/10 bg-ink-950/70 text-mist-400 uppercase tracking-wider font-semibold">
+                <thead className="border-b border-linha bg-fundo/70 text-apoio uppercase tracking-wider font-semibold">
                   <tr>
                     <th className="p-3.5">Nome do Lote</th>
                     <th className="p-3.5">Data / Hora</th>
@@ -451,22 +451,22 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                     <th className="p-3.5 text-right">Ação</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-linha">
                   {historico.map((lote) => (
-                    <tr key={lote.id} className="hover:bg-white/[0.02]">
-                      <td className="p-3.5 font-medium text-mist-100">{lote.nomeLote}</td>
-                      <td className="p-3.5 text-mist-400">
+                    <tr key={lote.id} className="hover:bg-vidro">
+                      <td className="p-3.5 font-medium text-titulo">{lote.nomeLote}</td>
+                      <td className="p-3.5 text-apoio">
                         {new Date(lote.criadoEm).toLocaleString("pt-BR")}
                       </td>
-                      <td className="p-3.5 text-mist-300">{lote.gestorNome || "Gestor"}</td>
-                      <td className="p-3.5 text-center text-mist-200 font-semibold">{lote.totalImoveis}</td>
+                      <td className="p-3.5 text-corpo">{lote.gestorNome || "Gestor"}</td>
+                      <td className="p-3.5 text-center text-corpo font-semibold">{lote.totalImoveis}</td>
                       <td className="p-3.5 text-center">
                         {lote.status === "aplicado" ? (
-                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-ok-lavado text-ok border border-ok-linha">
                             Aplicado
                           </span>
                         ) : (
-                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-perigo-lavado text-perigo border border-perigo-linha">
                             Revertido
                           </span>
                         )}
@@ -477,7 +477,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                             type="button"
                             disabled={isPending}
                             onClick={() => handleReverter(lote.id)}
-                            className="px-3 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-fluid-xs font-medium transition-colors cursor-pointer"
+                            className="px-3 py-1 rounded-lg bg-perigo-lavado hover:opacity-85 text-perigo border border-perigo-linha text-fluid-xs font-medium transition-colors cursor-pointer"
                           >
                             ↩️ Desfazer Lote
                           </button>

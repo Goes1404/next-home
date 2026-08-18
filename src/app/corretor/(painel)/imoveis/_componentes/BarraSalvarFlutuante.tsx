@@ -20,9 +20,11 @@ export function BarraSalvarFlutuante({
   return (
     <aside
       aria-label="Barra de ações do imóvel"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-ink-950/90 border-t border-white/15 p-3 sm:p-4 backdrop-blur-xl shadow-[0_-10px_30px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-2 duration-300"
+      // `acima-da-nav`: no celular esta barra dividia o rodapé com a
+      // navegação inferior e o botão "Salvar alterações" ficava por baixo.
+      className="acima-da-nav fixed inset-x-0 z-45 bg-fundo/90 border-t border-linha-forte p-3 sm:p-4 shadow-painel-alto backdrop-blur-xl"
     >
-      <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto flex w-full max-w-[84rem] flex-wrap items-center justify-between gap-3 px-1 md:px-4">
         {/* Toggle Publicado no Site */}
         <div className="flex items-center gap-3">
           <button
@@ -30,13 +32,13 @@ export function BarraSalvarFlutuante({
             onClick={onTogglePublicado}
             className={`px-3 py-2 rounded-xl text-fluid-xs font-bold border transition-all cursor-pointer flex items-center gap-2 ${
               publicado
-                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                : "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                ? "bg-ok-lavado text-ok border-ok-linha"
+                : "bg-alerta-lavado text-alerta border-alerta-linha"
             }`}
           >
             <span
               className={`h-2.5 w-2.5 rounded-full ${
-                publicado ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+                publicado ? "bg-ok animate-pulse" : "bg-alerta"
               }`}
             />
             <span>{publicado ? "Publicado no Site" : "Rascunho Oculto"}</span>
@@ -46,7 +48,7 @@ export function BarraSalvarFlutuante({
             href={`/empreendimentos/${slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-mist-300 text-fluid-xs font-semibold transition-colors border border-white/10"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-vidro hover:bg-vidro-forte text-corpo text-fluid-xs font-semibold transition-colors border border-linha"
           >
             <span>👁️ Ver na Vitrine</span>
             <span>↗</span>
@@ -57,7 +59,7 @@ export function BarraSalvarFlutuante({
         <div className="flex items-center gap-2">
           <Link
             href="/corretor/imoveis"
-            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-mist-300 hover:text-white text-fluid-xs font-bold transition-colors"
+            className="px-4 py-2.5 rounded-xl bg-vidro-forte hover:bg-vidro-mais text-corpo hover:text-titulo text-fluid-xs font-bold transition-colors"
           >
             Voltar
           </Link>
@@ -66,11 +68,11 @@ export function BarraSalvarFlutuante({
             type="button"
             onClick={onSalvar}
             disabled={salvando}
-            className="min-h-[48px] px-6 sm:px-8 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 disabled:opacity-50 text-white text-fluid-xs sm:text-fluid-sm font-bold transition-all shadow-lg shadow-brand-500/30 flex items-center gap-2 cursor-pointer active:scale-95"
+            className="min-h-[48px] px-6 sm:px-8 py-2.5 rounded-xl bg-acento hover:bg-acento-hover disabled:opacity-50 text-white text-fluid-xs sm:text-fluid-sm font-bold transition-all shadow-lg shadow-acento/30 flex items-center gap-2 cursor-pointer active:scale-95"
           >
             {salvando ? (
               <>
-                <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                <span className="h-4 w-4 rounded-full border-2 border-linha-forte border-t-white animate-spin" />
                 <span>Salvando...</span>
               </>
             ) : (

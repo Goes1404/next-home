@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { NavPainel } from "./NavPainel";
 import { NavMobileBottom } from "./NavMobileBottom";
 import { sair } from "@/app/corretor/actions";
+import { AlternadorTema } from "@/components/tema/AlternadorTema";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { iniciais } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: { default: "Painel do corretor", template: "%s · Painel" },
@@ -21,6 +24,9 @@ export const metadata: Metadata = {
  * sessão antes de chegar. Layouts não re-executam a cada navegação entre
  * rotas irmãs, então cada Server Action revalida a sessão por conta própria
  * em vez de confiar nesta checagem.
+ *
+ * Toda a cor vem dos tokens de papel (`bg-fundo`, `text-apoio`, …), que
+ * trocam com o tema; ver a camada semântica em `globals.css`.
  */
 export default async function PainelLayout({
   children,
@@ -28,45 +34,74 @@ export default async function PainelLayout({
   children: React.ReactNode;
 }) {
   const corretor = await getCorretorLogado();
+  const ehGestor = corretor?.papel === "gestor";
 
   return (
-    <main className="flex min-h-svh flex-1 flex-col bg-ink-950 px-4 pt-10 pb-28 md:pb-20">
-      {/*
-        Mais largo que as páginas públicas de propósito: o quadro do funil tem
-        sete colunas e a tabela da equipe tem cinco. A 768px o kanban rolava na
-        horizontal com metade da tela vazia dos dois lados, o que parece
-        defeito. Os formulários se capam por conta própria — campo de nome com
-        1024px de largura seria o erro oposto.
-      */}
-      <div className="mx-auto w-full max-w-5xl">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link href="/" className="font-display text-lg text-mist-50">
-            Next<span className="text-brand-300">Home</span>
+    <main className="bg-fundo flex min-h-svh flex-1 flex-col">
+      <header className="border-linha bg-fundo/85 sticky top-0 z-40 border-b backdrop-blur-lg">
+        <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
+          <Link href="/" className="font-display text-titulo text-lg">
+            Next<span className="text-acento-suave">Home</span>
           </Link>
 
-          <div className="flex items-center gap-4">
-            {corretor && <span className="text-fluid-sm text-mist-400">{corretor.nome}</span>}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <AlternadorTema />
+
+            {corretor && (
+              <span className="flex items-center gap-2.5">
+                {corretor.fotoUrl ? (
+                  <Image
+                    src={corretor.fotoUrl}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="ring-linha h-8 w-8 rounded-full object-cover ring-1"
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="bg-acento-lavado text-acento-suave flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-semibold"
+                  >
+                    {iniciais(corretor.nome)}
+                  </span>
+                )}
+                {/* O nome cabe no desktop; no celular a inicial já identifica
+                    a conta e o espaço vale mais para o botão de sair. */}
+                <span className="text-fluid-sm text-corpo hidden sm:inline">{corretor.nome}</span>
+              </span>
+            )}
+
             <form action={sair}>
               <button
                 type="submit"
-                className="text-fluid-sm text-mist-400 underline-offset-4 hover:text-mist-100 hover:underline"
+                className="border-linha text-apoio hover:border-linha-forte hover:text-titulo cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition-colors"
               >
                 Sair
               </button>
             </form>
           </div>
         </div>
+      </header>
 
-        {corretor ? (
-          <>
-            <NavPainel ehGestor={corretor.papel === "gestor"} />
-            <div className="mt-8">{children}</div>
-            <NavMobileBottom />
-          </>
-        ) : (
+      {corretor ? (
+        <>
+          {/*
+            A coluna de conteúdo fica em 1fr com a lateral fixa em 15rem, o
+            que dá ~64rem de leitura no monitor comum — a mesma largura de
+            antes. É o que o quadro do funil (sete colunas) e a tabela da
+            equipe (cinco) pedem; formulários se capam por conta própria.
+          */}
+          <div className="mx-auto grid w-full max-w-[84rem] flex-1 grid-cols-1 gap-8 px-4 pt-6 pb-28 md:grid-cols-[15rem_minmax(0,1fr)] md:px-8 md:pb-16">
+            <NavPainel ehGestor={ehGestor} />
+            <div className="min-w-0">{children}</div>
+          </div>
+          <NavMobileBottom ehGestor={ehGestor} />
+        </>
+      ) : (
+        <div className="mx-auto w-full max-w-2xl px-4 py-12">
           <ContaSemVinculo />
-        )}
-      </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -78,9 +113,9 @@ export default async function PainelLayout({
  */
 function ContaSemVinculo() {
   return (
-    <div className="mt-10 rounded-2xl border border-white/10 bg-ink-900/50 p-7">
-      <h1 className="font-display text-lg text-mist-50">Conta ainda não vinculada</h1>
-      <p className="text-fluid-sm mt-2 text-mist-300">
+    <div className="border-linha bg-superficie shadow-painel rounded-2xl border p-7">
+      <h1 className="font-display text-titulo text-lg">Conta ainda não vinculada</h1>
+      <p className="text-fluid-sm text-corpo mt-2">
         Seu acesso está ativo, mas ainda não foi ligado a um cadastro de corretor. Fale com
         quem administra o site para concluir o vínculo — depois disso o painel abre normalmente.
       </p>

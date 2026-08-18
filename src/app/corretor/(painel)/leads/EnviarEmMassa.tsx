@@ -90,29 +90,29 @@ export function EnviarEmMassa({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-950/70 p-0 sm:items-center sm:p-4">
-      <div className="w-full max-w-lg rounded-t-2xl border border-white/10 bg-ink-900 p-6 sm:rounded-2xl">
-        <h2 className="font-display text-lg text-mist-50">
+    <div className="fixed inset-0 z-70 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
+      <div className="border-linha bg-superficie pb-safe max-h-[88svh] w-full max-w-lg overflow-y-auto rounded-t-2xl border p-6 sm:rounded-2xl sm:pb-6">
+        <h2 className="font-display text-lg text-titulo">
           Enviar mensagem para {leadsSelecionados.length} contato{leadsSelecionados.length === 1 ? "" : "s"}
         </h2>
 
         {comTelefoneValido.length < leadsSelecionados.length && (
-          <p className="text-fluid-xs mt-2 text-sand-300">
+          <p className="text-fluid-xs mt-2 text-etapa-areia">
             {leadsSelecionados.length - comTelefoneValido.length} sem telefone válido — serão pulados.
           </p>
         )}
 
         {templates.length === 0 ? (
-          <p className="text-fluid-sm mt-4 text-mist-300">
+          <p className="text-fluid-sm mt-4 text-corpo">
             Você ainda não tem template.{" "}
-            <Link href="/corretor/templates" className="text-brand-200 underline-offset-4 hover:underline">
+            <Link href="/corretor/templates" className="text-acento-suave underline-offset-4 hover:underline">
               Criar um agora
             </Link>
             .
           </p>
         ) : (
           <>
-            <label className="text-fluid-xs mt-4 block text-mist-400" htmlFor="template-massa">
+            <label className="text-fluid-xs mt-4 block text-apoio" htmlFor="template-massa">
               Template
             </label>
             <select
@@ -120,7 +120,7 @@ export function EnviarEmMassa({
               value={templateId}
               disabled={enviando}
               onChange={(e) => setTemplateId(e.target.value)}
-              className="text-fluid-sm mt-1 w-full rounded-lg border border-white/15 bg-ink-950 px-3 py-2 text-mist-100"
+              className="text-fluid-sm mt-1 w-full rounded-lg border border-linha-forte bg-campo px-3 py-2 text-titulo"
             >
               {templates.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -130,13 +130,13 @@ export function EnviarEmMassa({
             </select>
 
             {previa && (
-              <p className="text-fluid-sm mt-3 rounded-xl border border-white/5 bg-ink-950/50 px-4 py-3 whitespace-pre-line text-mist-200">
+              <p className="text-fluid-sm mt-3 rounded-xl border border-linha bg-elevado px-4 py-3 whitespace-pre-line text-corpo">
                 {previa}
               </p>
             )}
 
             {!enviando && !concluido && (
-              <p className="text-fluid-xs mt-3 text-mist-500">
+              <p className="text-fluid-xs mt-3 text-tenue">
                 Seu navegador pode pedir permissão pra abrir múltiplas janelas — permita para o envio
                 continuar.
               </p>
@@ -144,13 +144,13 @@ export function EnviarEmMassa({
 
             {(enviando || concluido) && (
               <div className="mt-4">
-                <div className="h-2 w-full overflow-hidden rounded-full bg-ink-950">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-campo">
                   <div
-                    className="h-full bg-brand-500 transition-all"
+                    className="h-full bg-acento transition-all"
                     style={{ width: `${(progresso / comTelefoneValido.length) * 100}%` }}
                   />
                 </div>
-                <p className="text-fluid-xs mt-2 text-mist-400">
+                <p className="text-fluid-xs mt-2 text-apoio">
                   {concluido
                     ? `Enviado para ${progresso} de ${comTelefoneValido.length}.`
                     : `${progresso} de ${comTelefoneValido.length}...`}
@@ -158,13 +158,13 @@ export function EnviarEmMassa({
               </div>
             )}
 
-            <div className="mt-5 flex gap-2">
+            <div className="mt-5 flex flex-wrap gap-2 pb-2">
               {!enviando && !concluido && (
                 <button
                   type="button"
                   disabled={!templateEscolhido || comTelefoneValido.length === 0}
                   onClick={disparar}
-                  className="text-fluid-sm rounded-lg bg-brand-500 px-4 py-2 font-medium text-white disabled:opacity-50"
+                  className="text-fluid-sm bg-acento flex min-h-11 items-center rounded-lg px-4 font-medium text-white disabled:opacity-50"
                 >
                   Confirmar disparo
                 </button>
@@ -172,7 +172,7 @@ export function EnviarEmMassa({
               <button
                 type="button"
                 onClick={fechar}
-                className="text-fluid-sm rounded-lg border border-white/15 px-4 py-2 text-mist-300"
+                className="text-fluid-sm border-linha-forte text-corpo flex min-h-11 items-center rounded-lg border px-4"
               >
                 {concluido ? "Fechar" : "Cancelar"}
               </button>

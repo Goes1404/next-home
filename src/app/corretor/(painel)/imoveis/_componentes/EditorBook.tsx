@@ -94,10 +94,10 @@ export function EditorBook({
     <div className="space-y-6">
       {mensagem && (
         <div
-          className={`p-4 rounded-2xl border text-fluid-xs font-bold animate-in fade-in ${
+          className={`p-4 rounded-2xl border text-fluid-xs font-bold ${
             mensagem.startsWith("✓")
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-              : "bg-red-500/10 border-red-500/30 text-red-300"
+              ? "bg-ok-lavado border-ok-linha text-ok"
+              : "bg-perigo-lavado border-perigo-linha text-perigo"
           }`}
         >
           {mensagem}
@@ -105,22 +105,22 @@ export function EditorBook({
       )}
 
       {/* Card Principal */}
-      <div className="p-5 sm:p-6 rounded-3xl border border-white/10 bg-ink-900/60 backdrop-blur space-y-6">
+      <div className="p-5 sm:p-6 rounded-3xl border border-linha bg-superficie backdrop-blur space-y-6">
         <div>
-          <span className="text-[11px] uppercase font-bold tracking-wider text-brand-300">
+          <span className="text-[11px] uppercase font-bold tracking-wider text-acento-suave">
             Material de Apresentação
           </span>
-          <h3 className="text-fluid-base font-bold text-white mt-0.5">
+          <h3 className="text-fluid-base font-bold text-titulo mt-0.5">
             📑 Book Digital Completo (PDF)
           </h3>
-          <p className="text-fluid-xs text-mist-400 mt-1">
+          <p className="text-fluid-xs text-apoio mt-1">
             Faça upload do Book oficial ou e-book em PDF. Ele ficará disponível para download dos clientes na vitrine pública e será enviado automaticamente pelo assistente de WhatsApp.
           </p>
         </div>
 
         {/* Título do Book */}
         <div className="space-y-1.5">
-          <label className="text-fluid-xs font-bold text-mist-300 uppercase tracking-wider block">
+          <label className="text-fluid-xs font-bold text-corpo uppercase tracking-wider block">
             Título / Nome do Material
           </label>
           <input
@@ -128,22 +128,22 @@ export function EditorBook({
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
             placeholder="Ex: Book Oficial de Lançamento — Next Home"
-            className="min-h-[48px] w-full rounded-xl border border-white/15 bg-ink-950 px-4 text-fluid-sm text-white focus:border-brand-400 focus:outline-none"
+            className="min-h-[48px] w-full rounded-xl border border-linha-forte bg-campo px-4 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
           />
         </div>
 
         {/* Estado Atual do Book */}
         {bookUrl ? (
-          <div className="p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 space-y-4">
+          <div className="p-5 rounded-2xl border border-ok-linha bg-ok-lavado space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">📑</span>
                 <div>
-                  <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 mb-1">
+                  <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-ok-lavado text-ok border border-ok-linha mb-1">
                     ✓ Book Ativo na Vitrine
                   </span>
-                  <h4 className="text-fluid-sm font-bold text-white">{titulo}</h4>
-                  <p className="text-[11px] text-mist-400 truncate max-w-md">{bookUrl}</p>
+                  <h4 className="text-fluid-sm font-bold text-titulo">{titulo}</h4>
+                  <p className="text-[11px] text-apoio truncate max-w-md">{bookUrl}</p>
                 </div>
               </div>
 
@@ -152,7 +152,7 @@ export function EditorBook({
                   href={bookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-fluid-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-ok text-white hover:opacity-90 text-fluid-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>Abrir / Baixar PDF</span>
                   <span>↗</span>
@@ -162,7 +162,7 @@ export function EditorBook({
                   type="button"
                   onClick={handleRemoverBook}
                   disabled={enviando}
-                  className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-300 hover:text-white text-fluid-xs font-bold transition-colors border border-red-500/20 cursor-pointer"
+                  className="px-3 py-2 rounded-xl bg-perigo-lavado hover:bg-perigo text-perigo hover:text-white text-fluid-xs font-bold transition-colors border border-perigo-linha cursor-pointer"
                 >
                   Excluir
                 </button>
@@ -171,13 +171,13 @@ export function EditorBook({
           </div>
         ) : (
           /* Upload do PDF via Mobile / Desktop */
-          <div className="p-8 text-center rounded-3xl border border-dashed border-white/20 bg-ink-950/70 space-y-4">
+          <div className="p-8 text-center rounded-3xl border border-dashed border-linha-forte bg-fundo/70 space-y-4">
             <span className="text-4xl block">📁</span>
             <div>
-              <h4 className="text-fluid-base font-bold text-white">
+              <h4 className="text-fluid-base font-bold text-titulo">
                 Selecione o arquivo PDF do Book
               </h4>
-              <p className="text-fluid-xs text-mist-400 mt-1">
+              <p className="text-fluid-xs text-apoio mt-1">
                 Tamanho máximo recomendado: 35MB
               </p>
             </div>
@@ -194,11 +194,11 @@ export function EditorBook({
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <label
                 htmlFor="input-pdf-book"
-                className="w-full sm:w-auto min-h-[48px] px-6 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-xs font-bold transition-all shadow-md shadow-brand-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                className="w-full sm:w-auto min-h-[48px] px-6 py-2.5 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all shadow-md shadow-acento/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
               >
                 {enviando ? (
                   <>
-                    <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    <span className="h-4 w-4 rounded-full border-2 border-linha-forte border-t-white animate-spin" />
                     <span>Enviando Book (PDF)...</span>
                   </>
                 ) : (
@@ -211,7 +211,7 @@ export function EditorBook({
               <button
                 type="button"
                 onClick={() => setModoManual(!modoManual)}
-                className="text-fluid-xs text-mist-400 hover:text-white underline-offset-4 hover:underline py-2"
+                className="text-fluid-xs text-apoio hover:text-titulo underline-offset-4 hover:underline py-2"
               >
                 {modoManual ? "Ocultar link manual" : "Ou colar link direto (Drive/Dropbox)"}
               </button>
@@ -221,8 +221,8 @@ export function EditorBook({
 
         {/* Inserção de Link Externo Alternativo */}
         {modoManual && (
-          <div className="p-4 rounded-2xl border border-white/10 bg-ink-950 space-y-3 animate-in fade-in">
-            <label className="text-[11px] font-bold text-mist-300 uppercase block">
+          <div className="p-4 rounded-2xl border border-linha bg-campo space-y-3">
+            <label className="text-[11px] font-bold text-corpo uppercase block">
               Link Externo do PDF (Google Drive, Cloudinary, AWS S3, etc.)
             </label>
             <div className="flex items-center gap-2">
@@ -231,13 +231,13 @@ export function EditorBook({
                 value={linkManual}
                 onChange={(e) => setLinkManual(e.target.value)}
                 placeholder="https://meudrive.com/book-alphaville.pdf"
-                className="min-h-[44px] flex-1 rounded-xl border border-white/15 bg-ink-900 px-3 text-fluid-xs text-white focus:border-brand-400 focus:outline-none"
+                className="min-h-[44px] flex-1 rounded-xl border border-linha-forte bg-superficie px-3 text-fluid-xs text-titulo focus:border-acento focus:outline-none"
               />
               <button
                 type="button"
                 onClick={handleSalvarLinkManual}
                 disabled={enviando}
-                className="min-h-[44px] px-4 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-xs font-bold cursor-pointer"
+                className="min-h-[44px] px-4 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold cursor-pointer"
               >
                 Salvar Link
               </button>

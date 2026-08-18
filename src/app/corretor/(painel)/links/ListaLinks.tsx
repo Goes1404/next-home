@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 export type ItemLink = { slug: string; nome: string; bairro: string; cidade: string };
 
 const CAMPO =
-  "w-full rounded-xl border border-white/15 bg-ink-950/60 px-4 py-3 text-mist-50 placeholder:text-mist-500 outline-none transition-colors focus:border-brand-300";
+  "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3 text-titulo placeholder:text-tenue outline-none transition-colors focus:border-acento";
 
 /** Remove acento para a busca casar "parnaiba" com "Parnaíba". */
 function normalizar(texto: string): string {
@@ -26,7 +26,7 @@ function BotaoCopiar({ texto, rotulo }: { texto: string; rotulo: string }) {
         setCopiado(true);
         setTimeout(() => setCopiado(false), 2000);
       }}
-      className="rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-mist-100 transition-colors hover:border-brand-300/50 hover:text-brand-200"
+      className="rounded-full border border-linha-forte px-4 py-2 text-xs font-medium text-titulo transition-colors hover:border-acento-linha hover:text-acento-suave"
     >
       {copiado ? "Copiado!" : rotulo}
     </button>
@@ -72,7 +72,7 @@ export function ListaLinks({
       />
 
       {filtrados.length === 0 ? (
-        <p className="text-fluid-sm mt-6 text-mist-400">
+        <p className="text-fluid-sm mt-6 text-apoio">
           Nenhum empreendimento encontrado para “{busca}”.
         </p>
       ) : (
@@ -83,10 +83,10 @@ export function ListaLinks({
             return (
               <li
                 key={item.slug}
-                className="rounded-2xl border border-white/10 bg-ink-900/50 p-4"
+                className="rounded-2xl border border-linha bg-superficie p-4"
               >
-                <p className="font-display text-mist-50">{item.nome}</p>
-                <p className="text-fluid-xs mt-0.5 text-mist-400">
+                <p className="font-display text-titulo">{item.nome}</p>
+                <p className="text-fluid-xs mt-0.5 text-apoio">
                   {item.bairro}, {item.cidade}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">

@@ -27,14 +27,14 @@ export default async function VisitasPage() {
 
   return (
     <div>
-      <h1 className="text-fluid-2xl text-mist-50">Agenda de Visitas</h1>
-      <p className="text-fluid-sm mt-2 text-mist-400">
+      <h1 className="text-fluid-2xl text-titulo">Agenda de Visitas</h1>
+      <p className="text-fluid-sm mt-2 text-apoio">
         Leads na etapa &ldquo;Visita agendada&rdquo; do funil, ordenados pelo horário marcado.
       </p>
 
       {visitas.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-white/10 bg-ink-900/50 p-6">
-          <p className="text-fluid-sm text-mist-300">
+        <div className="mt-8 rounded-2xl border border-linha bg-superficie p-6">
+          <p className="text-fluid-sm text-corpo">
             Nenhuma visita agendada no momento. Mova um lead para a etapa &ldquo;Visita
             agendada&rdquo; no funil e marque a data para ele aparecer aqui.
           </p>
@@ -53,19 +53,19 @@ export default async function VisitasPage() {
             return (
               <article
                 key={lead.id}
-                className="rounded-2xl border border-white/10 bg-ink-900/50 p-5"
+                className="rounded-2xl border border-linha bg-superficie p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-display text-lg text-mist-50">
+                    <p className="font-display text-lg text-titulo">
                       {hora ? `${hora} — ${lead.nome}` : lead.nome}
                     </p>
-                    <p className="text-fluid-sm mt-0.5 text-mist-400">
+                    <p className="text-fluid-sm mt-0.5 text-apoio">
                       {lead.empreendimento?.nome ?? "Imóvel não informado"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-fluid-xs rounded-full bg-azure-400/25 px-2.5 py-1 font-medium text-azure-200">
+                    <span className="text-fluid-xs rounded-full bg-etapa-azul-lavado px-2.5 py-1 font-medium text-etapa-azul">
                       {hora ? "Agendada" : "Sem horário"}
                     </span>
                   </div>
@@ -77,7 +77,7 @@ export default async function VisitasPage() {
                       href={linkMaps}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 rounded-xl bg-ink-800 px-4 py-2.5 text-center text-sm font-medium text-mist-200 transition-colors hover:bg-ink-700"
+                      className="flex-1 rounded-xl bg-elevado px-4 py-2.5 text-center text-sm font-medium text-corpo transition-colors hover:bg-vidro-forte"
                     >
                       Ir para o imóvel (GPS)
                     </a>
@@ -85,7 +85,7 @@ export default async function VisitasPage() {
                   {lead.telefone && (
                     <a
                       href={`tel:${lead.telefone}`}
-                      className="flex-1 rounded-xl border border-brand-500/30 bg-brand-500/10 px-4 py-2.5 text-center text-sm font-medium text-brand-200 transition-colors hover:bg-brand-500/20"
+                      className="flex-1 rounded-xl border border-acento-linha bg-acento-lavado px-4 py-2.5 text-center text-sm font-medium text-acento-suave transition-colors hover:opacity-85"
                     >
                       Ligar
                     </a>

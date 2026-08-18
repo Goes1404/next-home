@@ -5,7 +5,7 @@ import { salvarPerfil } from "@/app/corretor/actions";
 import type { CorretorPerfil } from "@/lib/types";
 
 const CAMPO =
-  "w-full rounded-xl border border-white/15 bg-ink-950/60 px-4 py-3 text-mist-50 placeholder:text-mist-500 outline-none transition-colors focus:border-brand-300";
+  "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3 text-titulo placeholder:text-tenue outline-none transition-colors focus:border-acento";
 
 /** "5511991234567" → "(11) 99123-4567", para editar em formato legível. */
 function paraExibicao(e164: string): string {
@@ -24,7 +24,7 @@ export function FormularioPerfil({ corretor }: { corretor: CorretorPerfil }) {
   return (
     <form action={action} className="space-y-4">
       <div>
-        <label htmlFor="nome" className="text-fluid-sm mb-1.5 block text-mist-300">
+        <label htmlFor="nome" className="text-fluid-sm mb-1.5 block text-corpo">
           Nome
         </label>
         <input
@@ -40,7 +40,7 @@ export function FormularioPerfil({ corretor }: { corretor: CorretorPerfil }) {
       </div>
 
       <div>
-        <label htmlFor="whatsapp" className="text-fluid-sm mb-1.5 block text-mist-300">
+        <label htmlFor="whatsapp" className="text-fluid-sm mb-1.5 block text-corpo">
           WhatsApp
         </label>
         <input
@@ -52,13 +52,13 @@ export function FormularioPerfil({ corretor }: { corretor: CorretorPerfil }) {
           placeholder="(11) 91234-5678"
           className={CAMPO}
         />
-        <p className="text-fluid-xs mt-1 text-mist-500">
+        <p className="text-fluid-xs mt-1 text-tenue">
           É o número que recebe todos os contatos dos seus links.
         </p>
       </div>
 
       <div>
-        <label htmlFor="bio" className="text-fluid-sm mb-1.5 block text-mist-300">
+        <label htmlFor="bio" className="text-fluid-sm mb-1.5 block text-corpo">
           Apresentação
         </label>
         <textarea
@@ -70,18 +70,18 @@ export function FormularioPerfil({ corretor }: { corretor: CorretorPerfil }) {
           placeholder="Há quanto tempo atua, regiões que conhece melhor, tipo de imóvel com que mais trabalha…"
           className={CAMPO}
         />
-        <p className="text-fluid-xs mt-1 text-mist-500">
+        <p className="text-fluid-xs mt-1 text-tenue">
           Aparece na sua página pública, para o cliente saber com quem vai falar.
         </p>
       </div>
 
-      {estado?.erro && <p className="text-fluid-sm text-red-300">{estado.erro}</p>}
-      {estado?.ok && <p className="text-fluid-sm text-brand-200">{estado.ok}</p>}
+      {estado?.erro && <p className="text-fluid-sm text-perigo">{estado.erro}</p>}
+      {estado?.ok && <p className="text-fluid-sm text-acento-suave">{estado.ok}</p>}
 
       <button
         type="submit"
         disabled={pendente}
-        className="rounded-full bg-brand-500 px-7 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-400 disabled:opacity-60"
+        className="rounded-full bg-acento px-7 py-3 text-sm font-medium text-white transition-colors hover:bg-acento-hover disabled:opacity-60"
       >
         {pendente ? "Salvando…" : "Salvar alterações"}
       </button>

@@ -9,14 +9,14 @@ export default async function SenhaPage() {
 
   return (
     <div>
-      <h1 className="text-fluid-2xl text-mist-50">Trocar senha</h1>
+      <h1 className="text-fluid-2xl text-titulo">Trocar senha</h1>
       {email && (
-        <p className="text-fluid-sm mt-2 text-mist-400">
-          Conta <span className="text-mist-200">{email}</span>.
+        <p className="text-fluid-sm mt-2 text-apoio">
+          Conta <span className="text-corpo">{email}</span>.
         </p>
       )}
 
-      <div className="mt-8 max-w-md rounded-2xl border border-white/10 bg-ink-900/50 p-6 sm:p-7">
+      <div className="mt-8 max-w-md rounded-2xl border border-linha bg-superficie p-6 sm:p-7">
         <FormularioSenha />
       </div>
     </div>

@@ -1,87 +1,157 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ATALHOS_MOBILE, gruposVisiveis, rotaAtiva } from "./_componentes/navegacao";
 
-const ABAS = [
-  { href: "/corretor", label: "Início", icone: IconHome },
-  { href: "/corretor/leads", label: "Leads", icone: IconUsers },
-  { href: "/corretor/visitas", label: "Visitas", icone: IconCalendar },
-  { href: "/corretor/funil", label: "Funil", icone: IconFilter },
-  { href: "/corretor/perfil", label: "Perfil", icone: IconUser },
-];
-
-export function NavMobileBottom() {
+/**
+ * Navegação do celular: quatro atalhos no polegar mais uma gaveta com o
+ * painel inteiro.
+ *
+ * A gaveta existe porque a barra inferior só cabe cinco alvos e o painel tem
+ * treze seções. Antes as outras oito simplesmente não tinham como ser
+ * abertas no celular — a barra de abas do topo é `hidden md:flex` —, o que
+ * deixava o corretor sem acesso a Imóveis, WhatsApp e Campanhas justamente
+ * no aparelho em que ele trabalha.
+ */
+export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
   const atual = usePathname();
+  const grupos = gruposVisiveis(ehGestor);
+
+  /*
+   * A gaveta guarda em que rota foi aberta, em vez de um booleano. Assim ela
+   * se fecha sozinha ao navegar — `aberta` deixa de ser verdade no mesmo
+   * render em que a rota muda — sem um efeito que chame setState e provoque
+   * um render em cascata.
+   */
+  const [abertaEm, setAbertaEm] = useState<string | null>(null);
+  const aberta = abertaEm !== null && abertaEm === atual;
+  const setAberta = (valor: boolean) => setAbertaEm(valor ? atual : null);
+
+  useEffect(() => {
+    if (!aberta) return;
+    const aoTeclar = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") setAbertaEm(null);
+    };
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+  }, [aberta]);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t border-white/5 bg-ink-950/80 px-2 backdrop-blur-md md:hidden pb-safe">
-      {ABAS.map((aba) => {
-        const ativa = atual === aba.href;
-        const Icone = aba.icone;
-        return (
-          <Link
-            key={aba.href}
-            href={aba.href}
-            className={cn(
-              "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
-              ativa ? "text-brand-300" : "text-mist-500 hover:text-mist-300",
-            )}
+    <div className="md:hidden">
+      <div
+        // `inert` tira o conteúdo fechado do foco e do leitor de tela; só
+        // `opacity-0` deixaria treze links tabuláveis atrás da página.
+        inert={!aberta}
+        aria-hidden={!aberta}
+        className={cn(
+          "fixed inset-0 z-60 transition-opacity duration-200",
+          aberta ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      >
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="Fechar menu"
+          onClick={() => setAberta(false)}
+          className="absolute inset-0 h-full w-full bg-black/60 backdrop-blur-[2px]"
+        />
+
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Todas as seções"
+          className={cn(
+            "border-linha bg-superficie pb-safe absolute inset-x-0 bottom-0 max-h-[80svh] overflow-y-auto rounded-t-3xl border-t px-5 pt-3 pb-6 transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)]",
+            aberta ? "translate-y-0" : "translate-y-full",
+          )}
+        >
+          <span aria-hidden className="bg-linha-forte mx-auto mb-5 block h-1 w-10 rounded-full" />
+
+          <div className="space-y-5">
+            {grupos.map((grupo) => (
+              <div key={grupo.titulo}>
+                <p className="text-tenue pb-2 text-[11px] font-medium tracking-[0.14em] uppercase">
+                  {grupo.titulo}
+                </p>
+                <ul className="grid grid-cols-2 gap-2">
+                  {grupo.itens.map((item) => {
+                    const ativa = rotaAtiva(atual, item.href);
+                    const Icone = item.icone;
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          aria-current={ativa ? "page" : undefined}
+                          className={cn(
+                            "flex min-h-12 items-center gap-2.5 rounded-xl border px-3 text-sm transition-colors",
+                            ativa
+                              ? "border-acento-linha bg-acento-lavado text-acento-suave font-medium"
+                              : "border-linha text-corpo",
+                          )}
+                        >
+                          <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
+                          {item.label}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <nav
+        aria-label="Atalhos do painel"
+        className="border-linha bg-fundo/85 h-nav-safe pb-safe fixed inset-x-0 bottom-0 z-50 flex items-stretch justify-around border-t px-1 backdrop-blur-lg"
+      >
+        {ATALHOS_MOBILE.map((item) => {
+          const ativa = rotaAtiva(atual, item.href);
+          const Icone = item.icone;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={ativa ? "page" : undefined}
+              className={cn(
+                "flex w-full flex-col items-center justify-center gap-1 transition-colors",
+                ativa ? "text-acento-suave" : "text-tenue",
+              )}
+            >
+              <Icone aria-hidden className="h-[22px] w-[22px]" />
+              <span className="text-[10px] font-medium tracking-wide">{item.label}</span>
+            </Link>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() => setAberta(!aberta)}
+          aria-expanded={aberta}
+          aria-label="Todas as seções"
+          className={cn(
+            "flex w-full cursor-pointer flex-col items-center justify-center gap-1 transition-colors",
+            aberta ? "text-acento-suave" : "text-tenue",
+          )}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            className="h-[22px] w-[22px]"
           >
-            <Icone className={cn("w-6 h-6", ativa && "fill-brand-300/20")} />
-            <span className="text-[10px] font-medium tracking-wide">{aba.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
-function IconHome(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
-}
-
-function IconUsers(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-
-function IconCalendar(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-      <line x1="16" x2="16" y1="2" y2="6" />
-      <line x1="8" x2="8" y1="2" y2="6" />
-      <line x1="3" x2="21" y1="10" y2="10" />
-    </svg>
-  );
-}
-
-function IconFilter(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-    </svg>
-  );
-}
-
-function IconUser(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+          <span className="text-[10px] font-medium tracking-wide">Menu</span>
+        </button>
+      </nav>
+    </div>
   );
 }

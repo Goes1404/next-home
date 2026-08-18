@@ -107,10 +107,10 @@ export function EditorImovelClient({ imovel }: Props) {
       {/* Feedback Toast */}
       {feedback && (
         <div
-          className={`p-4 rounded-2xl border text-fluid-xs font-bold animate-in fade-in ${
+          className={`p-4 rounded-2xl border text-fluid-xs font-bold ${
             feedback.startsWith("✓")
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-              : "bg-red-500/10 border-red-500/30 text-red-300"
+              ? "bg-ok-lavado border-ok-linha text-ok"
+              : "bg-perigo-lavado border-perigo-linha text-perigo"
           }`}
         >
           {feedback}
@@ -118,18 +118,18 @@ export function EditorImovelClient({ imovel }: Props) {
       )}
 
       {/* Abas Horizontais com Toque Grande para Mobile */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-2 border-b border-white/10">
+      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-2 border-b border-linha">
         <button
           type="button"
           onClick={() => setAbaAtiva("fotos")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "fotos"
-              ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
-              : "bg-white/5 text-mist-400 hover:text-white"
+              ? "bg-acento text-white shadow-md shadow-acento/20"
+              : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
           <span>📸 Fotos & Capa</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/30">
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-vidro-forte">
             {imovel.midias?.length || 0}
           </span>
         </button>
@@ -139,8 +139,8 @@ export function EditorImovelClient({ imovel }: Props) {
           onClick={() => setAbaAtiva("textos")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "textos"
-              ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
-              : "bg-white/5 text-mist-400 hover:text-white"
+              ? "bg-acento text-white shadow-md shadow-acento/20"
+              : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
           <span>✍️ Informações & Preços</span>
@@ -151,13 +151,13 @@ export function EditorImovelClient({ imovel }: Props) {
           onClick={() => setAbaAtiva("book")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "book"
-              ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
-              : "bg-white/5 text-mist-400 hover:text-white"
+              ? "bg-acento text-white shadow-md shadow-acento/20"
+              : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
           <span>📑 Book Digital (PDF)</span>
           {imovel.bookUrl && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-ok-lavado text-ok border border-ok-linha">
               PDF Ativo
             </span>
           )}
@@ -168,12 +168,12 @@ export function EditorImovelClient({ imovel }: Props) {
           onClick={() => setAbaAtiva("lazer")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "lazer"
-              ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
-              : "bg-white/5 text-mist-400 hover:text-white"
+              ? "bg-acento text-white shadow-md shadow-acento/20"
+              : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
           <span>🏊 Lazer & Diferenciais</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/30">{lazer.length}</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-vidro-forte">{lazer.length}</span>
         </button>
 
         <button
@@ -181,19 +181,19 @@ export function EditorImovelClient({ imovel }: Props) {
           onClick={() => setAbaAtiva("plantas")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "plantas"
-              ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
-              : "bg-white/5 text-mist-400 hover:text-white"
+              ? "bg-acento text-white shadow-md shadow-acento/20"
+              : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
           <span>📐 Plantas & Metragens</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/30">
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-vidro-forte">
             {tipologias.length}
           </span>
         </button>
       </div>
 
       {/* Conteúdo da Aba Ativa */}
-      <div className="animate-in fade-in duration-200">
+      <div className=" duration-200">
         {abaAtiva === "fotos" && (
           <EditorFotos
             empreendimentoId={imovel.id || imovel.slug}

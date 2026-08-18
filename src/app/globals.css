@@ -33,6 +33,7 @@
   --color-brand-700: #00443c;
   --color-brand-800: #00302b;
   --color-brand-900: #001d1a;
+  --color-brand-950: #000f0d;
 
   --color-azure-50: #e8f1fa;
   --color-azure-100: #c5daf1;
@@ -43,6 +44,8 @@
   --color-azure-600: #023a6f;
   --color-azure-700: #012a52;
   --color-azure-800: #011b35;
+  --color-azure-900: #010f1f;
+  --color-azure-950: #000811;
 
   /* Superfícies — quase-preto com viés teal, para o vidro ter o que refratar */
   --color-ink-950: #040b0a;
@@ -55,13 +58,102 @@
   --color-mist-50: #f6faf9;
   --color-mist-100: #e8f0ee;
   --color-mist-200: #cddad6;
+  /*
+   * 300 e 600 faltavam na escala e o código já os usava em mais de cem
+   * lugares. Em Tailwind v4 uma cor não declarada não gera classe nenhuma:
+   * `text-mist-300` virava silêncio e o texto herdava a cor do pai.
+   */
+  --color-mist-300: #b0c1bc;
   --color-mist-400: #93a8a2;
   --color-mist-500: #6d827c;
+  --color-mist-600: #556863;
 
   /* Areia — realce quente que equilibra o teal em contextos de alto padrão */
   --color-sand-300: #e8d5b0;
   --color-sand-400: #d4b483;
   --color-sand-500: #b8935c;
+
+  /*
+   * ---------------------------------------------------------------------
+   * Camada semântica — o que permite o painel do corretor ter tema claro
+   * ---------------------------------------------------------------------
+   * As escalas acima (ink/mist/brand/azure/sand) descrevem TINTAS e não
+   * mudam nunca: o site público é uma peça escura por decisão de projeto,
+   * com vídeo de fundo e vidro em WebGL, e depende delas literalmente.
+   *
+   * Os tokens abaixo descrevem PAPÉIS — "fundo da página", "texto de
+   * apoio", "linha divisória" — e é só isso que o tema troca. Quem usa
+   * papel (`bg-superficie`, `text-apoio`) acompanha o tema; quem usa tinta
+   * (`bg-ink-950`) fica escuro para sempre. Hoje o painel usa papel e o
+   * site usa tinta, e é esse o contrato.
+   *
+   * Os valores aqui são o tema ESCURO (o padrão). O claro sobrescreve os
+   * mesmos nomes em `:root[data-tema="claro"]`, mais abaixo.
+   */
+
+  /* Superfícies, do fundo da página para cima */
+  --color-fundo: #040b0a;
+  --color-superficie: #0b1a17;
+  --color-elevado: #12241f;
+  --color-campo: #071310;
+
+  /* Linhas e véus — translúcidos para acompanhar o que estiver embaixo */
+  --color-linha: rgb(255 255 255 / 0.1);
+  --color-linha-forte: rgb(255 255 255 / 0.2);
+  --color-vidro: rgb(255 255 255 / 0.05);
+  --color-vidro-forte: rgb(255 255 255 / 0.12);
+  --color-vidro-mais: rgb(255 255 255 / 0.2);
+
+  /*
+   * Texto em quatro degraus, do título ao rodapé de cartão. Quatro porque
+   * três não bastavam (rótulo e dica precisavam se distinguir) e cinco
+   * ninguém consegue aplicar com consistência.
+   */
+  --color-titulo: #f6faf9;
+  --color-corpo: #dbe6e3;
+  --color-apoio: #93a8a2;
+  --color-tenue: #7c918b;
+
+  /* Ação primária */
+  --color-acento: #00806c;
+  --color-acento-hover: #0cbe8b;
+  --color-acento-suave: #6fe7c0;
+  --color-acento-lavado: rgb(0 128 108 / 0.2);
+  --color-acento-linha: rgb(47 214 164 / 0.35);
+
+  /*
+   * Estados. Cada um em três peças — texto, fundo lavado e linha — porque
+   * é sempre assim que aparecem (uma tarja com borda e um rótulo dentro),
+   * e porque no claro o texto precisa escurecer enquanto o fundo clareia:
+   * um `emerald-300` sobre branco é ilegível.
+   */
+  --color-ok: #34d399;
+  --color-ok-lavado: rgb(52 211 153 / 0.14);
+  --color-ok-linha: rgb(52 211 153 / 0.34);
+
+  --color-alerta: #fbbf24;
+  --color-alerta-lavado: rgb(251 191 36 / 0.14);
+  --color-alerta-linha: rgb(251 191 36 / 0.34);
+
+  --color-perigo: #fb7185;
+  --color-perigo-lavado: rgb(251 113 133 / 0.14);
+  --color-perigo-linha: rgb(251 113 133 / 0.34);
+
+  --color-info: #7dd3fc;
+  --color-info-lavado: rgb(125 211 252 / 0.14);
+  --color-info-linha: rgb(125 211 252 / 0.34);
+
+  /*
+   * Cores de etapa do funil. Verde é o acento; faltavam o azul do meio do
+   * funil e a areia de quem já está perto de assinar.
+   */
+  --color-etapa-azul: #8fb9e3;
+  --color-etapa-azul-lavado: rgb(35 116 192 / 0.25);
+  --color-etapa-azul-linha: rgb(86 149 211 / 0.3);
+
+  --color-etapa-areia: #e8d5b0;
+  --color-etapa-areia-lavado: rgb(212 180 131 / 0.22);
+  --color-etapa-areia-linha: rgb(212 180 131 / 0.35);
 
   /* Tipografia */
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
@@ -84,6 +176,15 @@
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
 
+  /*
+   * Sombra do painel. No escuro ela quase não aparece (sombra preta sobre
+   * fundo preto), e o que separa um cartão do fundo é a linha. No claro é o
+   * contrário: a linha some e a sombra é que levanta o cartão. Por isso o
+   * token existe nos dois temas com valores muito diferentes.
+   */
+  --shadow-painel: 0 1px 2px rgb(0 0 0 / 0.28);
+  --shadow-painel-alto: 0 18px 40px -22px rgb(0 0 0 / 0.75);
+
   /* Vidro */
   --radius-glass: 1.5rem;
   --shadow-glass:
@@ -95,8 +196,115 @@
 @layer base {
   :root {
     color-scheme: dark;
-    /* Altura da barra de navegação inferior, usada para reservar espaço */
+
+    /*
+     * Altura da barra de navegação inferior do painel. É a MEDIDA OFICIAL:
+     * a própria barra se dimensiona por ela (`h-nav-safe`) e todo elemento
+     * fixo que precisa ficar acima dela usa `.acima-da-nav`. Antes o valor
+     * era só uma reserva de espaço que ninguém aplicava na barra, e os dois
+     * números divergiram.
+     */
     --nav-mobile-h: 4.25rem;
+
+    /* Altura da barra superior do painel — o que a lateral fixa precisa
+       descontar para não escorregar por baixo dela ao rolar. */
+    --painel-header-h: 3.75rem;
+  }
+
+  /*
+   * Camadas do painel, de baixo para cima. Registrado aqui porque um z-index
+   * escolhido no arquivo de cada componente é como os três elementos fixos
+   * do painel foram parar na mesma faixa:
+   *
+   *   30  cabeçalhos de seção grudentos
+   *   40  cabeçalho do painel, cabeçalhos do site
+   *   45  barras de ação flutuantes (seleção em massa, salvar imóvel)
+   *   50  navegação inferior do celular
+   *   60  gaveta de navegação
+   *   70  modais e diálogos — cobrem tudo, inclusive a navegação
+   *
+   * z-index sozinho não resolve dois elementos `fixed bottom-0`: eles
+   * ocupam o mesmo espaço e um esconde o outro por mais alto que esteja.
+   * Quem precisa conviver com a barra inferior empilha VERTICALMENTE, com
+   * a utility abaixo.
+   */
+
+  /*
+   * Tema claro. Só redefine os tokens de PAPEL — nenhuma tinta muda, então
+   * nada no site público se mexe, mesmo com o atributo ligado no <html>.
+   *
+   * O atributo é escrito antes da primeira pintura pelo script inline do
+   * layout raiz, e só em rotas /corretor (ver AreaTema.tsx). Fica em
+   * `@layer base` de propósito: a saída do `@theme` mora em `@layer theme`,
+   * que vem antes na ordem das camadas, então esta sobrescrita vence sem
+   * depender de especificidade.
+   *
+   * A luz aqui é mineral, não creme: o cinza tem uma gota do teal do
+   * logotipo, e toda linha divisória é teal a 14% em vez de preto a 10%.
+   * É o que faz a ferramenta parecer da marca, e não um admin genérico.
+   */
+  :root[data-tema="claro"] {
+    color-scheme: light;
+
+    --color-fundo: #edf2f0;
+    --color-superficie: #ffffff;
+    --color-elevado: #f4f8f7;
+    --color-campo: #ffffff;
+
+    --color-linha: rgb(0 63 55 / 0.14);
+    --color-linha-forte: rgb(0 63 55 / 0.26);
+    --color-vidro: rgb(0 63 55 / 0.05);
+    --color-vidro-forte: rgb(0 63 55 / 0.1);
+    --color-vidro-mais: rgb(0 63 55 / 0.17);
+
+    --color-titulo: #05211c;
+    --color-corpo: #183630;
+    --color-apoio: #4a6a63;
+    --color-tenue: #5f7c76;
+
+    /* No claro o acento é o teal do logotipo em cheio: 8,6:1 com branco. */
+    --color-acento: #00594f;
+    --color-acento-hover: #00443c;
+    --color-acento-suave: #00594f;
+    --color-acento-lavado: rgb(0 89 79 / 0.08);
+    --color-acento-linha: rgb(0 89 79 / 0.25);
+
+    --color-ok: #04785f;
+    --color-ok-lavado: rgb(4 120 95 / 0.1);
+    --color-ok-linha: rgb(4 120 95 / 0.28);
+
+    --color-alerta: #8a5200;
+    --color-alerta-lavado: rgb(180 105 0 / 0.11);
+    --color-alerta-linha: rgb(180 105 0 / 0.28);
+
+    --color-perigo: #be123c;
+    --color-perigo-lavado: rgb(190 18 60 / 0.08);
+    --color-perigo-linha: rgb(190 18 60 / 0.26);
+
+    --color-info: #0b6394;
+    --color-info-lavado: rgb(11 99 148 / 0.09);
+    --color-info-linha: rgb(11 99 148 / 0.26);
+
+    --color-etapa-azul: #034b8e;
+    --color-etapa-azul-lavado: rgb(3 75 142 / 0.1);
+    --color-etapa-azul-linha: rgb(3 75 142 / 0.26);
+
+    --color-etapa-areia: #8a6420;
+    --color-etapa-areia-lavado: rgb(138 100 32 / 0.11);
+    --color-etapa-areia-linha: rgb(138 100 32 / 0.28);
+
+    --shadow-painel: 0 1px 2px rgb(4 43 37 / 0.06), 0 1px 1px rgb(4 43 37 / 0.04);
+    --shadow-painel-alto: 0 20px 40px -24px rgb(4 43 37 / 0.35);
+  }
+
+  /*
+   * O rodapé institucional mora no layout raiz porque precisa existir uma
+   * vez só. Dentro do painel ele não faz sentido — "Empreendimentos, Sobre,
+   * Contato" abaixo de um CRM —, e no tema claro ele ainda entraria escuro.
+   * O atributo `data-area` é escrito na mesma passada do tema.
+   */
+  :root[data-area="painel"] body > footer {
+    display: none;
   }
 
   html {
@@ -114,8 +322,10 @@
   }
 
   body {
-    background-color: var(--color-ink-950);
-    color: var(--color-mist-100);
+    /* Papel, não tinta: no escuro dá exatamente o mesmo ink-950 de antes,
+       e no painel claro evita a faixa preta do overscroll. */
+    background-color: var(--color-fundo);
+    color: var(--color-corpo);
     font-family: var(--font-sans);
     font-size: var(--text-fluid-base);
     line-height: 1.6;
@@ -143,7 +353,9 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-brand-300);
+    /* No escuro é o brand-300 de sempre; no claro o token vira o teal cheio
+       do logotipo, que continua visível sobre branco. */
+    outline: 2px solid var(--color-acento-suave);
     outline-offset: 3px;
     border-radius: 4px;
   }
@@ -245,6 +457,21 @@
   }
   .h-nav-safe {
     height: calc(var(--nav-mobile-h) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /*
+   * Assenta um elemento fixo logo ACIMA da navegação inferior no celular e
+   * no rodapé da janela no desktop, onde a navegação não existe. A regra do
+   * desktop mora aqui dentro, e não num `md:bottom-0` à parte, para não
+   * depender da ordem em que as duas utilities saem no CSS final.
+   */
+  .acima-da-nav {
+    bottom: calc(var(--nav-mobile-h) + env(safe-area-inset-bottom, 0px));
+  }
+  @media (width >= 48rem) {
+    .acima-da-nav {
+      bottom: 0;
+    }
   }
 
   /*

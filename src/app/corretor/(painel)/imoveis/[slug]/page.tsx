@@ -28,22 +28,22 @@ export default async function EditarImovelPage({ params }: Props) {
   return (
     <div className="space-y-6">
       {/* Header do Editor */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-linha pb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Link
               href="/corretor/imoveis"
-              className="text-fluid-xs text-mist-400 hover:text-white transition-colors"
+              className="text-fluid-xs text-apoio hover:text-titulo transition-colors"
             >
               ← Todos os Imóveis
             </Link>
-            <span className="text-mist-600">•</span>
-            <span className="text-fluid-xs text-brand-300 font-semibold">
+            <span className="text-tenue">•</span>
+            <span className="text-fluid-xs text-acento-suave font-semibold">
               Edição Mobile-First
             </span>
           </div>
-          <h1 className="text-fluid-xl font-bold text-mist-50">{imovel.nome}</h1>
-          <p className="text-fluid-xs text-mist-400">
+          <h1 className="text-fluid-xl font-bold text-titulo">{imovel.nome}</h1>
+          <p className="text-fluid-xs text-apoio">
             {imovel.bairro}, {imovel.cidade} • {imovel.midias?.length || imovel.galeria?.length || 0} fotos cadastradas
           </p>
         </div>
@@ -52,7 +52,7 @@ export default async function EditarImovelPage({ params }: Props) {
           href={`/empreendimentos/${imovel.slug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="min-h-[44px] px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-mist-200 hover:text-white text-fluid-xs font-semibold transition-colors flex items-center justify-center gap-2 self-start sm:self-auto"
+          className="min-h-[44px] px-4 py-2 rounded-xl bg-vidro-forte hover:bg-vidro-mais text-corpo hover:text-titulo text-fluid-xs font-semibold transition-colors flex items-center justify-center gap-2 self-start sm:self-auto"
         >
           <span>👁️ Ver Página Pública</span>
           <span>↗</span>
