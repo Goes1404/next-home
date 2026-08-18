@@ -156,9 +156,10 @@ export async function getLeadsDoFunil(): Promise<Lead[]> {
 /**
  * Equipe elegível para receber lead — a lista que o gestor vê ao reatribuir.
  *
- * Mesmos critérios da roleta (`distribuir_lead`, 0007): ativo, com login e
- * com cadastro publicável. Oferecer alguém fora disso seria oferecer um
- * destino que não consegue abrir o painel.
+ * Mesmos critérios da roleta (`distribuir_lead`, 0011): ativo, sem pausa e
+ * com cadastro publicável (`slug`). Login não é mais pré-requisito — quem
+ * ainda não tem conta entra na escala do mesmo jeito; só não abre o painel
+ * até ganhar uma.
  */
 export async function getEquipeAtiva(): Promise<
   { id: string; nome: string; emPausa: boolean }[]
@@ -169,7 +170,6 @@ export async function getEquipeAtiva(): Promise<
     .select("id, nome, em_pausa")
     .eq("ativo", true)
     .not("slug", "is", null)
-    .not("user_id", "is", null)
     .order("nome");
 
   if (error) throw new Error(`Falha ao listar a equipe: ${error.message}`);
