@@ -88,12 +88,30 @@ export function diasParado(lead: Lead): number | null {
   return dias >= 1 ? dias : null;
 }
 
-export function CartaoLead({ lead, mostrarDono = false }: { lead: Lead; mostrarDono?: boolean }) {
+export function CartaoLead({
+  lead,
+  mostrarDono = false,
+  selecionavel = false,
+  selecionado = false,
+  aoAlternarSelecao,
+}: {
+  lead: Lead;
+  mostrarDono?: boolean;
+  selecionavel?: boolean;
+  selecionado?: boolean;
+  aoAlternarSelecao?: () => void;
+}) {
   const ehProprietario = lead.tipo === "proprietario";
   const whatsapp = linkWhatsappLead(lead);
 
   return (
     <article className="rounded-2xl border border-white/10 bg-ink-900/50 p-5">
+      {selecionavel && (
+        <label className="mb-3 flex items-center gap-2 text-fluid-xs text-mist-400">
+          <input type="checkbox" checked={selecionado} onChange={aoAlternarSelecao} />
+          Selecionar
+        </label>
+      )}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-display text-lg text-mist-50">{lead.nome}</p>
