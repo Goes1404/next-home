@@ -9,6 +9,9 @@ type NavigatorEstendido = Navigator & {
 
 const CONSULTA_MOVIMENTO = "(prefers-reduced-motion: reduce)";
 
+/** Câmera lenta no vídeo de fundo — mais contemplativo, menos "propaganda". */
+const VELOCIDADE = 0.4;
+
 /** Não reproduz se o usuário pediu menos movimento ou está economizando dados. */
 function podeReproduzir(): boolean {
   if (window.matchMedia(CONSULTA_MOVIMENTO).matches) return false;
@@ -69,6 +72,9 @@ export function HeroVideoBackground({ src }: { src: string }) {
       // WebGL recusa ler pixels de um <video> de outra origem (o bucket do
       // Supabase Storage), mesmo o elemento tocando normalmente na tela.
       crossOrigin="anonymous"
+      onLoadedMetadata={(e) => {
+        e.currentTarget.playbackRate = VELOCIDADE;
+      }}
       onCanPlay={() => {
         setPronto(true);
         definirVideo(videoRef.current);
