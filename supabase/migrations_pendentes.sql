@@ -1,5 +1,5 @@
 -- ==============================================================================
--- NEXT HOME - SCRIPT CONSOLIDADO DE MIGRAÇÕES PENDENTES (0014 até 0020)
+-- NEXT HOME - SCRIPT CONSOLIDADO DE MIGRAÇÕES PENDENTES (0014 até 0021)
 -- Execute este script no SQL Editor do seu Dashboard Supabase
 -- ==============================================================================
 
@@ -335,7 +335,7 @@ begin
 end $$;
 
 -- ------------------------------------------------------------------------------
--- 7. BOOK DIGITAL EM EMPREENDIMENTOS (0020)
+-- 7. BOOK DIGITAL EM EMPREENDIMENTOS (0021)
 -- ------------------------------------------------------------------------------
 alter table public.empreendimentos
   add column if not exists book_url text,

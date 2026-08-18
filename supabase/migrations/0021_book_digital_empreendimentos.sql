@@ -1,4 +1,4 @@
--- Migration 0020: Book Digital Completo para Empreendimentos (PDF)
+-- Migration 0021: Book Digital Completo para Empreendimentos (PDF)
 -- Adiciona suporte para upload e exibição de books e apresentações completas de empreendimentos
 
 alter table public.empreendimentos
