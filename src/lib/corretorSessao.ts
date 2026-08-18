@@ -83,6 +83,13 @@ const SELECT_LEAD = `
   empreendimento:empreendimentos(nome, slug, endereco)
 `;
 
+const SELECT_LEAD_BASE = `
+  id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
+  etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, anuncio_origem,
+  corretor:corretores(id, nome),
+  empreendimento:empreendimentos(nome, slug, endereco)
+`;
+
 type LinhaLead = {
   id: string;
   nome: string;
@@ -136,14 +143,28 @@ function mapLead(row: LinhaLead): Lead {
  */
 export async function getMeusLeads(): Promise<Lead[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const res = await supabase
     .from("leads")
     .select(SELECT_LEAD)
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(`Falha ao carregar os leads: ${error.message}`);
+  let rows = res.data as unknown as LinhaLead[] | null;
 
-  return (data as unknown as LinhaLead[]).map(mapLead);
+  if (res.error || !rows) {
+    // Fallback caso colunas adicionadas recentemente (ex: portal_origem) ainda não existam no banco
+    const fallback = await supabase
+      .from("leads")
+      .select(SELECT_LEAD_BASE)
+      .order("created_at", { ascending: false });
+
+    if (fallback.error) {
+      console.error("Falha ao carregar os leads:", res.error?.message, fallback.error.message);
+      return [];
+    }
+    rows = fallback.data as unknown as LinhaLead[] | null;
+  }
+
+  return (rows ?? []).map(mapLead);
 }
 
 /**
@@ -153,14 +174,28 @@ export async function getMeusLeads(): Promise<Lead[]> {
  */
 export async function getLeadsDoFunil(): Promise<Lead[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const res = await supabase
     .from("leads")
     .select(SELECT_LEAD)
     .order("etapa_alterada_em", { ascending: false });
 
-  if (error) throw new Error(`Falha ao carregar o funil: ${error.message}`);
+  let rows = res.data as unknown as LinhaLead[] | null;
 
-  return (data as unknown as LinhaLead[]).map(mapLead);
+  if (res.error || !rows) {
+    // Fallback caso colunas adicionadas recentemente (ex: portal_origem) ainda não existam no banco
+    const fallback = await supabase
+      .from("leads")
+      .select(SELECT_LEAD_BASE)
+      .order("etapa_alterada_em", { ascending: false });
+
+    if (fallback.error) {
+      console.error("Falha ao carregar o funil:", res.error?.message, fallback.error.message);
+      return [];
+    }
+    rows = fallback.data as unknown as LinhaLead[] | null;
+  }
+
+  return (rows ?? []).map(mapLead);
 }
 
 /**
@@ -182,7 +217,10 @@ export async function getEquipeAtiva(): Promise<
     .not("slug", "is", null)
     .order("nome");
 
-  if (error) throw new Error(`Falha ao listar a equipe: ${error.message}`);
+  if (error) {
+    console.error("Falha ao listar a equipe:", error.message);
+    return [];
+  }
   return (data ?? []).map((c) => ({ id: c.id, nome: c.nome, emPausa: c.em_pausa }));
 }
 
@@ -198,7 +236,10 @@ export async function getMeusTemplates(): Promise<TemplateMensagem[]> {
     .select("id, titulo, conteudo, padrao")
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(`Falha ao carregar os templates: ${error.message}`);
+  if (error) {
+    console.error("Falha ao carregar os templates:", error.message);
+    return [];
+  }
   return (data ?? []) as TemplateMensagem[];
 }
 
@@ -206,22 +247,30 @@ export async function getMeusTemplates(): Promise<TemplateMensagem[]> {
  * Contagem de cliques de WhatsApp para o corretor logado.
  */
 export async function getCliquesWhatsappCorretor(): Promise<{ hoje: number; total: number }> {
-  const supabase = await createClient();
-  const hojeInicio = new Date();
-  hojeInicio.setHours(0, 0, 0, 0);
+  try {
+    const supabase = await createClient();
+    const hojeInicio = new Date();
+    hojeInicio.setHours(0, 0, 0, 0);
 
-  const [totalRes, hojeRes] = await Promise.all([
-    supabase.from("cliques_whatsapp").select("id", { count: "exact", head: true }),
-    supabase
-      .from("cliques_whatsapp")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", hojeInicio.toISOString()),
-  ]);
+    const [totalRes, hojeRes] = await Promise.all([
+      supabase.from("cliques_whatsapp").select("id", { count: "exact", head: true }),
+      supabase
+        .from("cliques_whatsapp")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", hojeInicio.toISOString()),
+    ]);
 
-  return {
-    total: totalRes.count ?? 0,
-    hoje: hojeRes.count ?? 0,
-  };
+    if (totalRes.error || hojeRes.error) {
+      return { hoje: 0, total: 0 };
+    }
+
+    return {
+      total: totalRes.count ?? 0,
+      hoje: hojeRes.count ?? 0,
+    };
+  } catch {
+    return { hoje: 0, total: 0 };
+  }
 }
 
 /**
