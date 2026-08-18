@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { FormularioLogin } from "./FormularioLogin";
 
 export const metadata: Metadata = {
@@ -14,9 +15,9 @@ export default function EntrarPage() {
   return (
     <main className="flex min-h-svh flex-1 flex-col items-center justify-center bg-ink-950 px-4">
       <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-ink-900/50 p-7">
-        <p className="font-display text-lg text-mist-50">
+        <Link href="/" className="font-display inline-block text-lg text-mist-50">
           Next<span className="text-brand-300">Home</span>
-        </p>
+        </Link>
         <p className="text-fluid-sm mt-1 mb-6 text-mist-400">Área do corretor</p>
 
         <FormularioLogin />

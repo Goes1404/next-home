@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { WhatsappLink } from "@/components/analytics/WhatsappLink";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
+import { VoltarLink } from "@/components/ui/VoltarLink";
 import { iniciais } from "@/lib/format";
 import { getCorretorPorSlug } from "@/lib/queries";
 import { linkWhatsappPara, site } from "@/lib/site";
@@ -112,6 +113,10 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
             preset="painel"
             className="relative overflow-hidden px-7 py-10 text-center sm:px-12 sm:py-14 border border-brand-400/20 bg-gradient-to-b from-ink-900/80 to-ink-950/90 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
           >
+            <div className="text-left">
+              <VoltarLink href="/corretores">Toda a equipe</VoltarLink>
+            </div>
+
             <Reveal stagger={0.12} duration={0.7} className="flex flex-col items-center">
               {/* Retrato — moldura orgânica, não um avatar social redondo. Uma
                   segunda forma, deslocada atrás, dá a profundidade de duas
@@ -189,15 +194,6 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
               </div>
             </Reveal>
           </GlassSurface>
-        </Reveal>
-
-        <Reveal className="mt-16 text-center">
-          <Link
-            href="/corretores"
-            className="text-fluid-sm text-mist-400 underline-offset-4 hover:text-mist-100 hover:underline"
-          >
-            ← Ver toda a equipe
-          </Link>
         </Reveal>
       </main>
     </>

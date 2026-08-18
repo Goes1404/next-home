@@ -3,6 +3,7 @@ import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
+import { VoltarLink } from "@/components/ui/VoltarLink";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -18,6 +19,8 @@ export default function PrivacidadePage() {
 
       <main className="flex flex-1 flex-col bg-ink-950 px-4 pt-32 pb-24">
         <Reveal className="mx-auto w-full max-w-2xl">
+          <VoltarLink href="/">Início</VoltarLink>
+
           <h1 className="text-fluid-2xl text-mist-50">Política de Privacidade</h1>
           <p className="text-fluid-sm mt-2 text-mist-500">
             Última atualização: {new Date().toLocaleDateString("pt-BR", { year: "numeric", month: "long" })}

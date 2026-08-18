@@ -1,8 +1,8 @@
 import Image from "next/image";
-import Link from "next/link";
 import { ViewTransition } from "react";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
+import { VoltarLink } from "@/components/ui/VoltarLink";
 import { precoAPartirDe } from "@/lib/format";
 import { linkWhatsappPara } from "@/lib/site";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
@@ -33,15 +33,7 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
 
       <Reveal className="w-full max-w-2xl">
         <GlassSurface preset="painel" className="px-7 py-8 sm:px-10 sm:py-11">
-          <Link
-            href="/empreendimentos"
-            className="text-fluid-xs mb-4 inline-flex items-center gap-1.5 text-mist-300 transition-colors hover:text-mist-50"
-          >
-            <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 5l-7 7 7 7" />
-            </svg>
-            Empreendimentos
-          </Link>
+          <VoltarLink href="/empreendimentos">Empreendimentos</VoltarLink>
 
           <p className="text-fluid-xs mb-3 flex items-center gap-2 font-medium tracking-[0.18em] text-brand-200 uppercase">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-300" />

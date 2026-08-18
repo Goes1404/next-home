@@ -1,16 +1,24 @@
 import type { Metadata } from "next";
+import { WhatsappLink } from "@/components/analytics/WhatsappLink";
 import { FormularioContato } from "@/components/contato/FormularioContato";
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
+import { VoltarLink } from "@/components/ui/VoltarLink";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getEmpreendimentos } from "@/lib/queries";
 import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Contato",
-  description: `Fale com a ${site.nomeCompleto} — ${enderecoLinha}.`,
+  title: "Fale com a Next Home | Contato e Atendimento em Alphaville",
+  description: `Entre em contato com a equipe da ${site.nomeCompleto} — ${enderecoLinha}. WhatsApp, telefone e atendimento presencial em Alphaville.`,
+  alternates: { canonical: "/contato" },
+  openGraph: {
+    title: "Contato | Next Home Negócios Imobiliários",
+    description: `Fale com nossos consultores credenciados por WhatsApp ou visite nosso escritório em Alphaville.`,
+    url: `${site.url}/contato`,
+  },
 };
 
 /** Mesma janela de ~800 m usada nas páginas de empreendimento, centrada no escritório. */
@@ -40,9 +48,16 @@ export default async function ContatoPage({
 
       <main className="flex flex-1 flex-col bg-ink-950 px-4 pt-32 pb-24">
         <Reveal className="mx-auto w-full max-w-2xl text-center">
-          <h1 className="text-fluid-3xl text-mist-50">Fale com a Next Home</h1>
+          <div className="text-left">
+            <VoltarLink href="/">Início</VoltarLink>
+          </div>
+
+          <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-brand-200 uppercase">
+            Canais de Atendimento
+          </p>
+          <h1 className="text-fluid-3xl text-mist-50">Estamos prontos para atender você.</h1>
           <p className="text-fluid-base mt-4 text-mist-300">
-            Responda o formulário ou chame direto no WhatsApp — o que for mais fácil pra você.
+            Tire dúvidas sobre empreendimentos, agende uma visita exclusiva ou receba atendimento personalizado com nossos consultores.
           </p>
         </Reveal>
 
@@ -60,29 +75,28 @@ export default async function ContatoPage({
               <ul className="mt-3 space-y-1.5">
                 {corretorAtivo ? (
                   <li>
-                    <a
+                    <WhatsappLink
                       href={linkWhatsappPara(
                         corretorAtivo.whatsapp,
                         `Olá, ${corretorAtivo.nome}! Vim pelo site.`,
                       )}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      origem="contato"
+                      corretorId={corretorAtivo.id}
                       className="text-fluid-sm text-brand-200 underline-offset-4 hover:underline"
                     >
                       Falar com {corretorAtivo.nome}
-                    </a>
+                    </WhatsappLink>
                   </li>
                 ) : (
                   site.whatsapp.map((w, i) => (
                     <li key={w.numero}>
-                      <a
+                      <WhatsappLink
                         href={linkWhatsapp(undefined, i)}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        origem="contato"
                         className="text-fluid-sm text-brand-200 underline-offset-4 hover:underline"
                       >
                         {w.label}
-                      </a>
+                      </WhatsappLink>
                     </li>
                   ))
                 )}

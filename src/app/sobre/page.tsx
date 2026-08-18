@@ -1,99 +1,104 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
+import { VideoInstitucionalFrame } from "@/components/institucional/VideoInstitucionalFrame";
+import { TimelineEmpreendimentos } from "@/components/institucional/TimelineEmpreendimentos";
+import { NossaEssencia } from "@/components/institucional/NossaEssencia";
+import { SimuladorInvestimentoAlphaville } from "@/components/institucional/SimuladorInvestimentoAlphaville";
+import { SeloSegurancaJuridica } from "@/components/institucional/SeloSegurancaJuridica";
+import { VitrineOportunidadesSobre } from "@/components/institucional/VitrineOportunidadesSobre";
+import { HubContatoSegmentado } from "@/components/institucional/HubContatoSegmentado";
+import { VoltarLink } from "@/components/ui/VoltarLink";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
+import { getEmpreendimentos } from "@/lib/queries";
+import { linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Sobre",
-  description: `${site.nomeCompleto} — CRECI ${site.creci}. ${site.descricao}`,
+  title: "Sobre a Next Home | Imobiliária de Alto Padrão em Alphaville",
+  description: `Conheça a ${site.nomeCompleto} — CRECI ${site.creci}. Consultoria de alto padrão, curadoria de edifícios e condomínios em Alphaville, Tamboré e região.`,
+  alternates: { canonical: "/sobre" },
+  openGraph: {
+    title: `Sobre a Next Home | Negócios Imobiliários em Alphaville`,
+    description: "Conheça nossa trajetória, curadoria de edifícios e compromisso com o mercado imobiliário de alto padrão.",
+    url: `${site.url}/sobre`,
+  },
 };
 
-const VALORES = [
-  {
-    titulo: "Curadoria, não catálogo",
-    texto:
-      "Cada empreendimento entra no portfólio com página própria — texto, plantas e fotos organizados para quem está decidindo, não para preencher uma lista.",
-  },
-  {
-    titulo: "Corretor responsável, sempre",
-    texto:
-      "Todo lançamento tem um corretor com CRECI acompanhando de perto, disponível direto pelo WhatsApp em cada página.",
-  },
-  {
-    titulo: "Conhecimento da região",
-    texto:
-      "Atuação concentrada em Alphaville, Barueri, Santana de Parnaíba, Osasco e Itapevi — não tentamos cobrir o Brasil inteiro.",
-  },
-];
-
 export default async function SobrePage() {
-  const corretorAtivo = await getCorretorAtivo();
+  const [corretorAtivo, empreendimentos] = await Promise.all([
+    getCorretorAtivo(),
+    getEmpreendimentos(),
+  ]);
+
   const linkWhatsappGeral = corretorAtivo
-    ? linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pelo site.`)
-    : linkWhatsapp();
+    ? linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pela página institucional da Next Home.`)
+    : linkWhatsapp("Olá! Gostaria de conversar com um especialista da Next Home.");
 
   return (
     <GlassBackgroundProvider>
       <SiteHeader />
       <WhatsappCta corretor={corretorAtivo ?? undefined} />
 
-      <main className="flex flex-1 flex-col bg-ink-950 px-4 pt-32 pb-24">
-        <Reveal className="mx-auto w-full max-w-2xl text-center">
-          <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-brand-200 uppercase">
-            Sobre a Next Home
-          </p>
-          <h1 className="text-fluid-3xl text-mist-50">
-            Uma imobiliária dedicada a Alphaville e região.
-          </h1>
-          <p className="text-fluid-base mt-5 text-mist-300">{site.descricao}</p>
+      <main className="flex flex-1 flex-col bg-ink-950 px-4 pt-28 sm:pt-36 pb-16 overflow-hidden">
+        {/* 1. HERO INSTITUCIONAL ACOLHEDOR */}
+        <section className="max-w-4xl mx-auto text-center space-y-6 mb-12 sm:mb-16">
+          <Reveal>
+            <div className="mb-2 text-left">
+              <VoltarLink href="/">Início</VoltarLink>
+            </div>
+
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/15 text-mist-200 text-fluid-xs font-semibold backdrop-blur shadow-sm mb-2">
+              <span>🚪 Entre e fique à vontade</span>
+            </div>
+            <h1 className="text-fluid-3xl sm:text-fluid-4xl font-bold text-mist-50 tracking-tight leading-tight">
+              A Next Home Negócios Imobiliários
+            </h1>
+            <p className="text-fluid-base sm:text-fluid-lg text-mist-300 font-light leading-relaxed max-w-3xl mx-auto mt-4">
+              Nascemos com a vocação de redefinir a experiência de compra, venda e investimento imobiliário em Alphaville e Tamboré. Mais do que apresentar imóveis, construímos pontes entre famílias extraordinárias e os projetos arquitetônicos mais inspiradores de São Paulo.
+            </p>
+          </Reveal>
+        </section>
+
+        {/* 2. VÍDEO INSTITUCIONAL CINEMA GLASS */}
+        <section className="mb-16 sm:mb-24">
+          <Reveal delay={0.15}>
+            <VideoInstitucionalFrame
+              videoUrl={corretorAtivo?.videoUrl || undefined}
+              titulo={`Next Home — ${corretorAtivo?.nome || "Curadoria em Alphaville"}`}
+            />
+          </Reveal>
+        </section>
+
+        {/* 3. LINHA DO TEMPO VISUAL DOS EMPREENDIMENTOS */}
+        <Reveal delay={0.1}>
+          <TimelineEmpreendimentos />
         </Reveal>
 
-        <Reveal stagger={0.12} className="mx-auto mt-16 grid w-full max-w-4xl gap-6 sm:grid-cols-3">
-          {VALORES.map((v) => (
-            <div key={v.titulo} className="rounded-2xl border border-white/10 bg-ink-900/50 px-6 py-7">
-              <h2 className="font-display text-lg text-mist-50">{v.titulo}</h2>
-              <p className="text-fluid-sm mt-2 text-mist-400">{v.texto}</p>
-            </div>
-          ))}
+        {/* 4. NOSSA ESSÊNCIA (MISSÃO, VISÃO E VALORES) */}
+        <Reveal delay={0.1}>
+          <NossaEssencia />
         </Reveal>
 
-        <Reveal className="mx-auto mt-16 w-full max-w-2xl rounded-2xl border border-white/10 bg-ink-900/50 px-7 py-8 text-center">
-          <h2 className="font-display text-lg text-mist-50">Dados institucionais</h2>
-          <dl className="text-fluid-sm mt-4 space-y-2 text-mist-300">
-            <div>
-              <dt className="inline text-mist-500">CRECI </dt>
-              <dd className="inline">{site.creci}</dd>
-            </div>
-            <div>
-              <dt className="inline text-mist-500">Endereço </dt>
-              <dd className="inline">{enderecoLinha}</dd>
-            </div>
-            <div>
-              <dt className="inline text-mist-500">Atuação </dt>
-              <dd className="inline">{site.regioes.join(", ")}</dd>
-            </div>
-          </dl>
+        {/* 5. SIMULADOR DE VALORIZAÇÃO & RENTABILIDADE */}
+        <Reveal delay={0.1}>
+          <SimuladorInvestimentoAlphaville corretorWhatsapp={corretorAtivo?.whatsapp} />
+        </Reveal>
 
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <a
-              href={linkWhatsappGeral}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full bg-brand-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-400"
-            >
-              Falar no WhatsApp
-            </a>
-            <Link
-              href="/contato"
-              className="rounded-full border border-white/20 px-6 py-3 text-sm font-medium text-mist-100 transition-colors hover:border-brand-300/50 hover:text-brand-200"
-            >
-              Ver todos os contatos
-            </Link>
-          </div>
+        {/* 6. SELO DE SEGURANÇA JURÍDICA E CRECI-J */}
+        <Reveal delay={0.1}>
+          <SeloSegurancaJuridica />
+        </Reveal>
+
+        {/* 6. VITRINE DE OPORTUNIDADES DINÂMICAS (SEM DEAD-ENDS) */}
+        <Reveal delay={0.1}>
+          <VitrineOportunidadesSobre empreendimentos={empreendimentos} />
+        </Reveal>
+
+        {/* 7. HUB DE CONTATO SEGMENTADO */}
+        <Reveal delay={0.1}>
+          <HubContatoSegmentado linkWhatsapp={linkWhatsappGeral} />
         </Reveal>
       </main>
     </GlassBackgroundProvider>

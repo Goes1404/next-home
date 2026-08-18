@@ -1,30 +1,37 @@
 import type { Metadata } from "next";
+import { WhatsappLink } from "@/components/analytics/WhatsappLink";
 import { FormularioProprietario } from "@/components/contato/FormularioProprietario";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
+import { VoltarLink } from "@/components/ui/VoltarLink";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Anunciar meu imóvel",
-  description: `Anuncie seu imóvel com a ${site.nomeCompleto} — CRECI ${site.creci}. Avaliação e negociação em ${site.regioes.join(", ")}.`,
+  title: "Anunciar Imóvel em Alphaville e Barueri | Avaliação Gratuita",
+  description: `Venda ou alugue seu imóvel com a ${site.nomeCompleto} — CRECI ${site.creci}. Avaliação estratégica de mercado, compradores qualificados e suporte jurídico em ${site.regioes.join(", ")}.`,
   alternates: { canonical: "/anunciar-imovel" },
+  openGraph: {
+    title: "Anuncie seu Imóvel em Alphaville | Next Home",
+    description: `Máxima valorização e rapidez na venda ou locação do seu patrimônio imobiliário.`,
+    url: `${site.url}/anunciar-imovel`,
+  },
 };
 
 const ETAPAS = [
   {
-    titulo: "Você nos conta o imóvel",
-    texto: "Pelo formulário abaixo ou direto no WhatsApp — leva menos de dois minutos.",
+    titulo: "Envie as informações",
+    texto: "Em menos de 1 minuto, nos conte sobre o imóvel pelo formulário abaixo ou direto no WhatsApp.",
   },
   {
-    titulo: "Avaliamos com dado da região",
+    titulo: "Avaliação Precisa e Estratégica",
     texto:
-      "Um corretor com CRECI visita o imóvel e traz o valor de mercado real do metro quadrado, não um chute.",
+      "Estudo aprofundado com valores reais de fechamento na região para posicionar seu patrimônio com máxima rentabilidade.",
   },
   {
-    titulo: "Cuidamos da negociação",
+    titulo: "Divulgação e Negociação Premium",
     texto:
-      "Anúncio, visitas, propostas e documentação, com um responsável acompanhando do começo ao fim.",
+      "Produção visual profissional, qualificação rigorosa de compradores e suporte jurídico completo até a assinatura.",
   },
 ];
 
@@ -40,15 +47,18 @@ export default async function AnunciarImovelPage() {
   return (
     <main className="flex flex-1 flex-col px-4 pt-32 pb-24">
       <Reveal className="mx-auto w-full max-w-2xl text-center">
+        <div className="text-left">
+          <VoltarLink href="/">Início</VoltarLink>
+        </div>
+
         <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-brand-200 uppercase">
-          Para proprietários
+          Exclusividade para Proprietários
         </p>
         <h1 className="text-fluid-3xl text-mist-50">
-          Seu imóvel merece quem conhece a região.
+          Venda ou alugue seu imóvel com máxima valorização e total agilidade.
         </h1>
         <p className="text-fluid-base mt-5 text-mist-300">
-          A Next Home atua em {site.regioes.join(", ")} — a mesma região, todos os dias. Conte
-          sobre o seu imóvel e um corretor com CRECI entra em contato para avaliar.
+          Conectamos seu patrimônio a compradores e investidores qualificados em Alphaville e região. Conte sobre seu imóvel e receba uma avaliação estratégica sem compromisso.
         </p>
       </Reveal>
 
@@ -64,37 +74,38 @@ export default async function AnunciarImovelPage() {
 
       <div className="mx-auto mt-16 grid w-full max-w-4xl gap-8 lg:grid-cols-[1.1fr_1fr]">
         <Reveal className="rounded-2xl border border-white/10 bg-ink-900/50 p-6 sm:p-8">
-          <h2 className="font-display text-lg text-mist-50">Conte sobre o imóvel</h2>
+          <h2 className="font-display text-lg text-mist-50">Cadastre seu Imóvel</h2>
           <p className="text-fluid-sm mt-1 mb-6 text-mist-400">
-            Sem compromisso — a avaliação é gratuita.
+            Rápido, confidencial e com avaliação de mercado gratuita.
           </p>
           <FormularioProprietario regioes={[...site.regioes]} />
         </Reveal>
 
         <Reveal delay={0.1} className="space-y-6">
           <div className="rounded-2xl border border-white/10 bg-ink-900/50 p-6">
-            <h2 className="font-display text-lg text-mist-50">Prefere conversar?</h2>
+            <h2 className="font-display text-lg text-mist-50">Prefere atendimento direto?</h2>
             <p className="text-fluid-sm mt-2 text-mist-400">
               {corretorAtivo
-                ? `Fale direto com ${corretorAtivo.nome} no WhatsApp.`
-                : "Chame a gente no WhatsApp e já adiantamos as primeiras perguntas por lá."}
+                ? `Converse diretamente com ${corretorAtivo.nome} no WhatsApp.`
+                : "Fale com nossos especialistas no WhatsApp para tirar dúvidas e agendar uma avaliação."}
             </p>
-            <a
+            <WhatsappLink
               href={whatsapp}
-              target="_blank"
-              rel="noopener noreferrer"
+              origem="anunciar_imovel"
+              corretorId={corretorAtivo?.id}
               className="mt-5 inline-flex rounded-full bg-brand-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-400"
             >
               Falar no WhatsApp
-            </a>
+            </WhatsappLink>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-ink-900/50 p-6">
-            <h2 className="font-display text-lg text-mist-50">Por que a Next Home</h2>
+            <h2 className="font-display text-lg text-mist-50">Por que anunciar com a Next Home</h2>
             <ul className="text-fluid-sm mt-3 space-y-2 text-mist-400">
-              <li>Atuação concentrada em Alphaville e entorno, não no Brasil inteiro.</li>
-              <li>Corretor responsável com CRECI acompanhando o seu imóvel.</li>
-              <li>Cada imóvel com página própria, não uma linha numa lista.</li>
+              <li>✨ Base ativa de compradores qualificados em Alphaville e região.</li>
+              <li>📸 Produção visual profissional e destaque nos principais canais.</li>
+              <li>🛡️ Segurança jurídica completa e contratos claros do início ao fim.</li>
+              <li>🤝 Corretor responsável dedicado exclusivamente ao seu imóvel.</li>
             </ul>
             <p className="text-fluid-xs mt-4 text-mist-500">CRECI {site.creci}</p>
           </div>
