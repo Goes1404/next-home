@@ -26,6 +26,7 @@ export default async function InstitucionalLayout({
   children: React.ReactNode;
 }) {
   const corretorAtivo = await getCorretorAtivo();
+  const videoUrl = corretorAtivo?.videoUrl || HERO_VIDEO_URL;
 
   return (
     <GlassBackgroundProvider>
@@ -33,7 +34,7 @@ export default async function InstitucionalLayout({
       <WhatsappCta corretor={corretorAtivo ?? undefined} />
 
       <div className="fixed inset-0 -z-10 bg-gradient-to-br from-brand-900 via-ink-950 to-ink-950">
-        {HERO_VIDEO_URL && <HeroVideoBackground src={HERO_VIDEO_URL} />}
+        {videoUrl && <HeroVideoBackground src={videoUrl} />}
         <div className="absolute inset-0 bg-gradient-to-b from-ink-950/55 via-ink-950/35 to-ink-950" />
       </div>
 

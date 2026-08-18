@@ -44,6 +44,7 @@ const CORRETOR_INDEFINIDO = {
   creci: "044589-J",
   whatsapp: "5511972207204",
   fotoUrl: null,
+  videoUrl: null,
 };
 
 const CAPA_PADRAO: Midia = {
@@ -95,6 +96,7 @@ export function mapEmpreendimento(row: LinhaEmpreendimento): Empreendimento {
           creci: row.corretor.creci,
           whatsapp: row.corretor.whatsapp,
           fotoUrl: row.corretor.foto_url,
+          videoUrl: row.corretor.video_url,
         }
       : CORRETOR_INDEFINIDO,
   };

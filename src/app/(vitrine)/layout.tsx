@@ -2,6 +2,8 @@ import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { HERO_VIDEO_URL } from "@/lib/site";
 
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
+
 /**
  * Layout compartilhado pela home e pela listagem de empreendimentos.
  *
@@ -18,11 +20,14 @@ import { HERO_VIDEO_URL } from "@/lib/site";
  * aninhado, que sobrepõe este aqui só para a própria subárvore; o vídeo
  * continua rodando por baixo, apenas encoberto pelo hero opaco da página.
  */
-export default function VitrineLayout({ children }: { children: React.ReactNode }) {
+export default async function VitrineLayout({ children }: { children: React.ReactNode }) {
+  const corretorAtivo = await getCorretorAtivo();
+  const videoUrl = corretorAtivo?.videoUrl || HERO_VIDEO_URL;
+
   return (
     <GlassBackgroundProvider>
       <div className="fixed inset-0 -z-10 bg-gradient-to-br from-brand-900 via-ink-950 to-ink-950">
-        {HERO_VIDEO_URL && <HeroVideoBackground src={HERO_VIDEO_URL} />}
+        {videoUrl && <HeroVideoBackground src={videoUrl} />}
         <div className="absolute inset-0 bg-gradient-to-b from-ink-950/55 via-ink-950/35 to-ink-950" />
       </div>
 

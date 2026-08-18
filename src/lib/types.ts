@@ -62,6 +62,7 @@ export type Corretor = {
   creci: string;
   whatsapp: string;
   fotoUrl: string | null;
+  videoUrl: string | null;
 };
 
 /**

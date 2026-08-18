@@ -25,7 +25,7 @@ export async function getCorretorAtivo(): Promise<CorretorAtivo | null> {
   const supabase = createClient();
   const { data } = await supabase
     .from("corretores")
-    .select("id, nome, creci, whatsapp, foto_url")
+    .select("id, nome, creci, whatsapp, foto_url, video_url")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -37,5 +37,6 @@ export async function getCorretorAtivo(): Promise<CorretorAtivo | null> {
     creci: data.creci,
     whatsapp: data.whatsapp,
     fotoUrl: data.foto_url,
+    videoUrl: data.video_url,
   };
 }

@@ -21,7 +21,7 @@ import type {
 
 const SELECT_EMPREENDIMENTO = `
   *,
-  corretor:corretores(id, nome, creci, whatsapp, foto_url),
+  corretor:corretores(id, nome, creci, whatsapp, foto_url, video_url),
   tipologias(*),
   midias(*),
   lazer:empreendimento_lazer(lazer_itens(*))
@@ -169,7 +169,7 @@ export async function getSlugsEmpreendimentos(): Promise<string[]> {
  * pelo link de um colega.
  * ------------------------------------------------------------------------ */
 
-export const SELECT_CORRETOR = "id, slug, nome, creci, whatsapp, foto_url, bio";
+export const SELECT_CORRETOR = "id, slug, nome, creci, whatsapp, foto_url, video_url, bio";
 
 export type LinhaCorretor = {
   id: string;
@@ -179,6 +179,7 @@ export type LinhaCorretor = {
   whatsapp: string;
   foto_url: string | null;
   bio: string | null;
+  video_url: string | null;
 };
 
 export function mapCorretor(row: LinhaCorretor): CorretorPerfil {
@@ -189,6 +190,7 @@ export function mapCorretor(row: LinhaCorretor): CorretorPerfil {
     creci: row.creci,
     whatsapp: row.whatsapp,
     fotoUrl: row.foto_url,
+    videoUrl: row.video_url,
     bio: row.bio,
   };
 }
