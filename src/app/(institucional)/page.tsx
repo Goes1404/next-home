@@ -11,33 +11,38 @@ import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/
 import { enderecoLinha, site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: `${site.nomeCompleto} — Imobiliária em Alphaville, Barueri e região`,
+  title: `${site.nomeCompleto} — Imobiliária de Alto Padrão em Alphaville`,
   description: site.descricao,
   alternates: { canonical: "/" },
+  openGraph: {
+    title: `${site.nomeCompleto} — Imobiliária de Alto Padrão em Alphaville`,
+    description: site.descricao,
+    url: site.url,
+  },
 };
 
 /** Os três caminhos que trazem alguém a uma imobiliária. */
 const CAMINHOS = [
   {
     href: "/empreendimentos",
-    titulo: "Quero comprar",
+    titulo: "Quero Comprar",
     texto:
-      "Lançamentos e oportunidades selecionadas em Alphaville e região, cada um com página própria — plantas, lazer e localização.",
-    cta: "Ver imóveis",
+      "Explore lançamentos e projetos exclusivos com plantas inteligentes, lazer de resort e as melhores localizações de Alphaville e região.",
+    cta: "Explorar Imóveis",
   },
   {
     href: "/anunciar-imovel",
-    titulo: "Tenho um imóvel",
+    titulo: "Vender ou Anunciar",
     texto:
-      "Anuncie com quem conhece o metro quadrado da região e cuida da negociação do começo ao fim, com CRECI e contrato.",
-    cta: "Anunciar meu imóvel",
+      "Valorize seu patrimônio com quem tem compradores qualificados, divulgação profissional e negociação segura do início ao fim.",
+    cta: "Anunciar com Especialistas",
   },
   {
     href: "/corretores",
-    titulo: "Quero falar com alguém",
+    titulo: "Consultoria Exclusiva",
     texto:
-      "Nada de fila de atendimento genérico: escolha o corretor e fale direto no WhatsApp com quem acompanha o lançamento.",
-    cta: "Conhecer a equipe",
+      "Atendimento sob medida, sem filas ou mensagens robóticas. Fale direto com o especialista responsável pelo imóvel no WhatsApp.",
+    cta: "Falar com Especialista",
   },
 ];
 
@@ -99,14 +104,13 @@ export default async function HomeInstitucional() {
         <section className="flex flex-col items-center justify-center px-4 pt-24 pb-32 sm:min-h-svh sm:pt-28 sm:pb-20">
           <Reveal className="w-full max-w-3xl text-center">
             <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-brand-200 uppercase">
-              CRECI {site.creci} · {site.endereco.bairro}
+              Imóveis de Alto Padrão · Alphaville e Região
             </p>
             <h1 className="text-fluid-3xl text-mist-50">
-              A imobiliária que conhece Alphaville rua por rua.
+              O seu próximo endereço de alto padrão em Alphaville começa aqui.
             </h1>
             <p className="text-fluid-base mx-auto mt-5 max-w-xl text-mist-200">
-              {todos.length} empreendimentos selecionados, cada um com um corretor responsável
-              acompanhando de perto.
+              Curadoria exclusiva dos melhores lançamentos e imóveis selecionados. Atendimento consultivo e direto com quem realmente entende o seu estilo de vida.
             </p>
           </Reveal>
 
@@ -147,9 +151,9 @@ export default async function HomeInstitucional() {
         {destaques.length > 0 && (
           <section className="px-4 pb-24">
             <Reveal className="mx-auto max-w-lg text-center">
-              <h2 className="text-fluid-2xl text-mist-50">Em destaque agora</h2>
+              <h2 className="text-fluid-2xl text-mist-50">Coleção em Destaque</h2>
               <p className="text-fluid-base mt-3 text-mist-300">
-                Uma curadoria dos lançamentos que mais pedem atenção.
+                Projetos selecionados a dedo que unem sofisticação, conforto e alta valorização.
               </p>
             </Reveal>
 
@@ -177,9 +181,9 @@ export default async function HomeInstitucional() {
         {equipe.length > 0 && (
           <section className="px-4 pb-24">
             <Reveal className="mx-auto max-w-lg text-center">
-              <h2 className="text-fluid-2xl text-mist-50">Fale com um corretor</h2>
+              <h2 className="text-fluid-2xl text-mist-50">Especialistas ao Seu Lado</h2>
               <p className="text-fluid-base mt-3 text-mist-300">
-                Todos com CRECI, todos na região. Escolha quem vai te atender.
+                Consultores credenciados e dedicados a encontrar a oportunidade perfeita para você e sua família.
               </p>
             </Reveal>
 

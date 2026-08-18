@@ -52,6 +52,17 @@ Leads de anúncio do Instagram/Facebook chegam via
 8. Preencher `META_WEBHOOK_VERIFY_TOKEN`, `META_APP_SECRET`,
    `META_PAGE_ACCESS_TOKEN` em produção (Vercel) e em `.env.local`.
 
+## Sistema Multi-WhatsApp com Agente IA, Disparo Seguro & Dossiê de Clientes
+
+Para a especificação completa da arquitetura multi-instâncias de WhatsApp (1 número por corretor com QR Code), agente de IA conversacional (Gemini 2.0 Flash com RAG do catálogo de imóveis), motor de reativação segura anti-ban e geração automática de dossiês de clientes no CRM, consulte:
+- 📄 [**Roadmap Master Completo**](./docs/ROADMAP_WHATSAPP_AI_AGENT_E_DISPAROS.md)
+- 🕵️ [**Guia de Auditoria e Verificação Técnica (Claude Review)**](./docs/CLAUDE_VERIFICATION_WHATSAPP_AI.md)
+
+
+
+
+
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

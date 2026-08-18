@@ -9,7 +9,19 @@ export const site = {
   nomeCompleto: "Next Home Negócios Imobiliários",
   creci: "044589-J",
   descricao:
-    "Portfólio de empreendimentos em Alphaville, Barueri, Santana de Parnaíba e Osasco. Lançamentos, alto padrão e oportunidades selecionadas.",
+    "Imobiliária de alto padrão em Alphaville, Barueri, Santana de Parnaíba e região. Lançamentos exclusivos, apartamentos, casas em condomínio e assessoria imobiliária personalizada.",
+  keywords: [
+    "imobiliária em alphaville",
+    "apartamentos alto padrão alphaville",
+    "lançamentos em alphaville barueri",
+    "casas em condomínio fechado alphaville",
+    "comprar imóvel em santana de parnaíba",
+    "imóveis de luxo barueri",
+    "anunciar imóvel alphaville",
+    "next home imóveis",
+    "corretor de imóveis alphaville",
+    "imobiliária barueri e região",
+  ],
   /**
    * Endereço onde este site realmente está publicado.
    *

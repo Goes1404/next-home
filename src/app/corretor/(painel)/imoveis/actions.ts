@@ -1,0 +1,413 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { getCorretorLogado } from "@/lib/corretorSessao";
+import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
+import type { Empreendimento, StatusObra, TipoImovel, Finalidade } from "@/lib/types";
+
+export interface DadosGeraisInput {
+  nome: string;
+  tagline: string;
+  descricao: string;
+  precoAPartir: number | null;
+  condominioValor: number | null;
+  iptu: number | null;
+  status: StatusObra;
+  tipo: TipoImovel;
+  finalidade: Finalidade;
+  cidade: string;
+  bairro: string;
+  endereco: string;
+  entregaPrevista: string | null;
+  destaque: boolean;
+  publicado: boolean;
+}
+
+export interface TipologiaItemInput {
+  id?: string;
+  nome: string;
+  dormitorios: number;
+  suites: number;
+  banheiros: number;
+  vagas: number;
+  preco: number | null;
+  plantaUrl: string | null;
+  unidadesDisponiveis: number | null;
+}
+
+/**
+ * Busca os dados completos de um empreendimento para o editor do corretor.
+ */
+export async function buscarEmpreendimentoParaEdicao(slug: string): Promise<Empreendimento | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("empreendimentos")
+    .select(`
+      *,
+      corretor:corretores!empreendimentos_corretor_id_fkey(id, nome, creci, whatsapp, foto_url, video_url),
+      tipologias(*),
+      midias(*),
+      lazer:empreendimento_lazer(lazer_itens(*))
+    `)
+    .eq("slug", slug)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return mapEmpreendimento(data as unknown as LinhaEmpreendimento);
+}
+
+/**
+ * Salva as informações cadastrais e textos de marketing do imóvel.
+ */
+export async function salvarDadosGerais(
+  id: string,
+  slugAtual: string,
+  dados: DadosGeraisInput,
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) {
+    return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("empreendimentos")
+    .update({
+      nome: dados.nome.trim(),
+      tagline: dados.tagline?.trim() || null,
+      descricao: dados.descricao?.trim() || null,
+      preco_a_partir: dados.precoAPartir,
+      condominio_valor: dados.condominioValor,
+      iptu: dados.iptu,
+      status: dados.status,
+      tipo: dados.tipo,
+      finalidade: dados.finalidade,
+      cidade: dados.cidade.trim(),
+      bairro: dados.bairro.trim(),
+      endereco: dados.endereco?.trim() || null,
+      entrega_prevista: dados.entregaPrevista || null,
+      destaque: dados.destaque,
+      publicado: dados.publicado,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Erro ao salvar dados gerais do imóvel:", error);
+    return { ok: false, erro: "Não foi possível salvar os dados agora. Tente novamente." };
+  }
+
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath(`/empreendimentos/${slugAtual}`);
+  revalidatePath("/corretor/imoveis");
+  revalidatePath("/", "layout");
+
+  return { ok: true };
+}
+
+/**
+ * Faz upload de foto ou planta para o Supabase Storage e registra na tabela `midias`.
+ */
+export async function uploadFotoOuPlanta(
+  empreendimentoId: string,
+  slug: string,
+  formData: FormData,
+): Promise<{ ok: boolean; midia?: any; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) {
+    return { ok: false, erro: "Sessão expirada." };
+  }
+
+  const arquivo = formData.get("arquivo") as File | null;
+  const tipo = (formData.get("tipo") as string) || "foto";
+  const alt = (formData.get("alt") as string) || "Foto do empreendimento";
+
+  if (!arquivo || !(arquivo instanceof File) || arquivo.size === 0) {
+    return { ok: false, erro: "Selecione uma imagem válida." };
+  }
+
+  const supabase = await createClient();
+  const extensao = arquivo.name.split(".").pop() || "jpg";
+  const caminho = `empreendimentos/${empreendimentoId}/${tipo}-${Date.now()}.${extensao}`;
+
+  const { error: erroUpload } = await supabase.storage.from("empreendimentos").upload(caminho, arquivo);
+
+  if (erroUpload) {
+    console.error("Erro ao fazer upload no Supabase Storage:", erroUpload);
+    return { ok: false, erro: "Falha ao enviar arquivo. Verifique sua conexão." };
+  }
+
+  const { data: urlPublica } = supabase.storage.from("empreendimentos").getPublicUrl(caminho);
+
+  // Insere na tabela midias
+  const { data: novaMidia, error: erroMidia } = await supabase
+    .from("midias")
+    .insert({
+      empreendimento_id: empreendimentoId,
+      tipo: tipo as "foto" | "planta" | "video" | "tour360",
+      url: urlPublica.publicUrl,
+      alt: alt.trim(),
+      largura: 1920,
+      altura: 1080,
+      ordem: 10,
+    })
+    .select()
+    .single();
+
+  if (erroMidia) {
+    console.error("Erro ao registrar mídia no banco:", erroMidia);
+    return { ok: false, erro: "Imagem enviada, mas houve erro ao salvar no catálogo." };
+  }
+
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+
+  return { ok: true, midia: novaMidia };
+}
+
+/**
+ * Remove uma mídia (foto/planta) da galeria do imóvel.
+ */
+export async function removerMidiaImovel(
+  midiaId: string,
+  url: string,
+  slug: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("midias").delete().eq("id", midiaId);
+  if (error) {
+    return { ok: false, erro: "Não foi possível remover a foto agora." };
+  }
+
+  // Tenta remover do storage se for URL do próprio bucket
+  if (url.includes("/empreendimentos/")) {
+    const caminho = url.split("/empreendimentos/")[1];
+    if (caminho) {
+      await supabase.storage.from("empreendimentos").remove([caminho]);
+    }
+  }
+
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  return { ok: true };
+}
+
+/**
+ * Define uma foto específica como Capa Principal (ordem 0).
+ */
+export async function definirFotoComoCapa(
+  empreendimentoId: string,
+  midiaId: string,
+  slug: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+
+  const supabase = await createClient();
+
+  // Redefine todas as fotos do empreendimento para ordem padrão
+  await supabase
+    .from("midias")
+    .update({ ordem: 10 })
+    .eq("empreendimento_id", empreendimentoId)
+    .eq("tipo", "foto");
+
+  // Define a foto escolhida como ordem 0 (capa)
+  const { error } = await supabase
+    .from("midias")
+    .update({ ordem: 0 })
+    .eq("id", midiaId);
+
+  if (error) {
+    return { ok: false, erro: "Não foi possível definir como capa." };
+  }
+
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+  return { ok: true };
+}
+
+/**
+ * Salva as características de lazer e conveniências do empreendimento.
+ */
+export async function salvarLazerEmpreendimento(
+  empreendimentoId: string,
+  slug: string,
+  lazerNomes: string[],
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+
+  const supabase = await createClient();
+
+  // Para cada item de lazer marcado, garante que existe na tabela lazer_itens e vincula
+  for (const nome of lazerNomes) {
+    const { data: itemExistente } = await supabase
+      .from("lazer_itens")
+      .select("id")
+      .ilike("nome", nome.trim())
+      .maybeSingle();
+
+    let lazerId = itemExistente?.id;
+
+    if (!lazerId) {
+      const { data: novoItem } = await supabase
+        .from("lazer_itens")
+        .insert({ nome: nome.trim() })
+        .select("id")
+        .single();
+      lazerId = novoItem?.id;
+    }
+
+    if (lazerId) {
+      await supabase
+        .from("empreendimento_lazer")
+        .upsert(
+          { empreendimento_id: empreendimentoId, lazer_item_id: lazerId },
+          { onConflict: "empreendimento_id,lazer_item_id" },
+        );
+    }
+  }
+
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  return { ok: true };
+}
+
+/**
+ * Faz upload de PDF do Book Digital para o Storage e salva a URL no empreendimento.
+ */
+export async function uploadBookDigital(
+  empreendimentoId: string,
+  slug: string,
+  formData: FormData,
+): Promise<{ ok: boolean; url?: string; titulo?: string; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+
+  const arquivo = formData.get("arquivo") as File | null;
+  const titulo = (formData.get("titulo") as string) || "Book Oficial do Empreendimento";
+
+  if (!arquivo || !(arquivo instanceof File) || arquivo.size === 0) {
+    return { ok: false, erro: "Selecione um arquivo PDF válido." };
+  }
+
+  const supabase = await createClient();
+  const caminho = `empreendimentos/${empreendimentoId}/book-${Date.now()}.pdf`;
+
+  const { error: erroUpload } = await supabase.storage
+    .from("empreendimentos")
+    .upload(caminho, arquivo, {
+      contentType: "application/pdf",
+      upsert: true,
+    });
+
+  if (erroUpload) {
+    console.error("Erro ao fazer upload do Book no Supabase Storage:", erroUpload);
+    return { ok: false, erro: "Falha no envio do PDF. Verifique o tamanho do arquivo." };
+  }
+
+  const { data: urlPublica } = supabase.storage.from("empreendimentos").getPublicUrl(caminho);
+
+  const { error: erroUpdate } = await supabase
+    .from("empreendimentos")
+    .update({
+      book_url: urlPublica.publicUrl,
+      book_titulo: titulo.trim(),
+      updated_at: new Date().toISOString(),
+    } as any)
+    .eq("id", empreendimentoId);
+
+  if (erroUpdate) {
+    console.error("Erro ao atualizar book_url no banco:", erroUpdate);
+    return { ok: false, erro: "PDF enviado, mas houve erro ao salvar o link no imóvel." };
+  }
+
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+
+  return { ok: true, url: urlPublica.publicUrl, titulo };
+}
+
+/**
+ * Salva um link externo ou customizado para o Book Digital.
+ */
+export async function salvarLinkBookDigital(
+  empreendimentoId: string,
+  slug: string,
+  url: string | null,
+  titulo: string | null,
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("empreendimentos")
+    .update({
+      book_url: url?.trim() || null,
+      book_titulo: titulo?.trim() || null,
+      updated_at: new Date().toISOString(),
+    } as any)
+    .eq("id", empreendimentoId);
+
+  if (error) {
+    return { ok: false, erro: "Não foi possível salvar o link do Book." };
+  }
+
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  return { ok: true };
+}
+
+/**
+ * Remove o Book Digital do empreendimento.
+ */
+export async function removerBookDigital(
+  empreendimentoId: string,
+  slug: string,
+  urlAtual?: string | null,
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("empreendimentos")
+    .update({
+      book_url: null,
+      book_titulo: null,
+      updated_at: new Date().toISOString(),
+    } as any)
+    .eq("id", empreendimentoId);
+
+  if (error) {
+    return { ok: false, erro: "Não foi possível remover o Book agora." };
+  }
+
+  if (urlAtual && urlAtual.includes("/empreendimentos/")) {
+    const caminho = urlAtual.split("/empreendimentos/")[1];
+    if (caminho) {
+      await supabase.storage.from("empreendimentos").remove([caminho]);
+    }
+  }
+
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  return { ok: true };
+}

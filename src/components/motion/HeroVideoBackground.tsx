@@ -59,6 +59,7 @@ export function HeroVideoBackground({ src }: { src: string }) {
 
   return (
     <video
+      key={src}
       ref={videoRef}
       className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
         pronto ? "opacity-100" : "opacity-0"

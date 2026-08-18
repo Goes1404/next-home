@@ -18,8 +18,14 @@ import {
 } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Empreendimentos",
-  description: `Lançamentos e oportunidades em ${site.regioes.join(", ")}.`,
+  title: "Empreendimentos e Lançamentos de Alto Padrão em Alphaville e Barueri",
+  description: `Explore os melhores empreendimentos, apartamentos de alto padrão e lançamentos imobiliários em ${site.regioes.join(", ")}. Plantas exclusivas, lazer de resort e atendimento consultivo.`,
+  alternates: { canonical: "/empreendimentos" },
+  openGraph: {
+    title: "Empreendimentos em Alphaville e Barueri | Next Home",
+    description: `Catálogo exclusivo de lançamentos e imóveis selecionados em Alphaville e região.`,
+    url: `${site.url}/empreendimentos`,
+  },
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -109,14 +115,23 @@ export default async function EmpreendimentosPage({
                 {site.regioes.join(", ")}.
               </p>
             </Reveal>
-            <FiltroSheet temFiltroAtivo={temFiltroAtivo}>
-              <FiltroForm
-                filtrosAtuais={filtros}
-                ordenacaoAtual={ordenacao}
-                regioes={regioes}
-                idPrefixo="sheet"
-              />
-            </FiltroSheet>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/mapa"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-mist-100 text-fluid-xs font-semibold backdrop-blur border border-white/15 transition-all shadow-md"
+              >
+                <span>🗺️ Ver no Mapa</span>
+              </Link>
+
+              <FiltroSheet temFiltroAtivo={temFiltroAtivo}>
+                <FiltroForm
+                  filtrosAtuais={filtros}
+                  ordenacaoAtual={ordenacao}
+                  regioes={regioes}
+                  idPrefixo="sheet"
+                />
+              </FiltroSheet>
+            </div>
           </div>
 
           <FiltrosAtivos filtros={filtros} ordenacao={ordenacao} />

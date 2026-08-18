@@ -35,6 +35,7 @@ export const TIPO_LABEL: Record<TipoImovel, string> = {
 };
 
 export type Tipologia = {
+  id?: string;
   nome: string;
   areaPrivativa: number | null;
   dormitorios: number;
@@ -158,6 +159,7 @@ export type Lead = {
 };
 
 export type Empreendimento = {
+  id?: string;
   slug: string;
   nome: string;
   tagline: string;
@@ -177,11 +179,17 @@ export type Empreendimento = {
   totalAndares: number | null;
   entregaPrevista: string | null;
   destaque: boolean;
+  publicado?: boolean;
+  /** Link do Book Digital completo (PDF / Apresentação) */
+  bookUrl?: string | null;
+  bookTitulo?: string | null;
   lat: number | null;
   lng: number | null;
   /** ISO — alimenta o selo "novo" e a ordenação por mais recentes. */
   criadoEm: string;
   capa: Midia;
+  /** Todas as mídias associadas (fotos, plantas, vídeos) */
+  midias?: Midia[];
   /** Somente `tipo = 'foto'`: é o que a galeria mostra. */
   galeria: Midia[];
   /** Plantas do empreendimento como um todo (as por tipologia ficam em `Tipologia.plantaUrl`). */

@@ -27,8 +27,27 @@ export const revalidate = 300;
  * duas indexadas só faria uma diluir a outra.
  */
 export const metadata: Metadata = {
-  title: "Portfólio de empreendimentos",
+  title: "Portfólio Exclusivo de Imóveis em Alphaville | Next Home",
+  description: "Lançamentos imobiliários de alto padrão, plantas sofisticadas e lazer completo em Alphaville, Barueri e região.",
   robots: { index: false, follow: true },
+  openGraph: {
+    title: "Portfólio de Imóveis de Alto Padrão em Alphaville | Next Home",
+    description: "Confira a seleção exclusiva de lançamentos e oportunidades em Alphaville, Barueri e Santana de Parnaíba.",
+    images: [
+      {
+        url: "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Next Home Negócios Imobiliários",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Portfólio de Imóveis de Alto Padrão em Alphaville | Next Home",
+    description: "Confira a seleção exclusiva de lançamentos e oportunidades em Alphaville e região.",
+    images: ["https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/og-image.jpg"],
+  },
 };
 
 /**
@@ -65,11 +84,10 @@ export default async function Home() {
                 Alphaville · Barueri · Santana de Parnaíba
               </p>
               <h1 className="text-fluid-3xl text-mist-50">
-                Cada empreendimento merece o seu próprio palco.
+                Experiências únicas em cada detalhe. O melhor de Alphaville para você.
               </h1>
               <p className="text-fluid-base mt-4 text-mist-200">
-                Um portfólio dedicado a cada lançamento — plantas, lazer, localização e
-                atendimento direto com quem conhece a região.
+                Projetos de arquitetura sofisticada, lazer completo de resort e localizações privilegiadas para elevar seu padrão de vida.
               </p>
             </GlassSurface>
           </Reveal>
@@ -79,9 +97,9 @@ export default async function Home() {
 
         <section id="destaques" className="scroll-mt-20 px-4 pt-4 pb-28">
           <Reveal className="mx-auto max-w-lg text-center">
-            <h2 className="text-fluid-2xl text-mist-50">Destaques</h2>
+            <h2 className="text-fluid-2xl text-mist-50">Lançamentos Selecionados</h2>
             <p className="text-fluid-base mt-3 text-mist-300">
-              Uma curadoria dos lançamentos que mais pedem atenção agora.
+              Uma curadoria refinada dos projetos mais desejados da região.
             </p>
           </Reveal>
 

@@ -9,6 +9,7 @@ import { Localizacao } from "@/components/empreendimento/Localizacao";
 import { NavAncoras, type Secao } from "@/components/empreendimento/NavAncoras";
 import { Similares } from "@/components/empreendimento/Similares";
 import { Sobre } from "@/components/empreendimento/Sobre";
+import { BookDigital } from "@/components/empreendimento/BookDigital";
 import { Tipologias } from "@/components/empreendimento/Tipologias";
 import { Tour360 } from "@/components/empreendimento/Tour360";
 import { Video } from "@/components/empreendimento/Video";
@@ -66,6 +67,7 @@ export async function generateMetadata({
 /** Seções realmente renderizadas — a barra de âncoras não pode oferecer link morto. */
 function secoesDe(e: Empreendimento): Secao[] {
   const secoes: Secao[] = [{ id: "sobre", label: "Sobre" }];
+  secoes.push({ id: "book", label: "Book Digital" });
   if (e.tipologias.length > 0) secoes.push({ id: "tipologias", label: "Tipologias" });
   if (e.lazer.length > 0) secoes.push({ id: "lazer", label: "Lazer" });
   if (e.galeria.length > 0) secoes.push({ id: "galeria", label: "Galeria" });
@@ -157,6 +159,7 @@ export default async function EmpreendimentoPage({
           </div>
 
           <Sobre empreendimento={e} />
+          <BookDigital empreendimento={e} />
           <Tipologias tipologias={e.tipologias} plantasGerais={e.plantas} />
           <Lazer itens={e.lazer} />
           <Galeria fotos={e.galeria} />

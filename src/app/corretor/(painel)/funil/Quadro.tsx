@@ -4,10 +4,12 @@ import { useOptimistic, useState, useTransition } from "react";
 import { moverEtapa } from "@/app/corretor/actions";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import {
+  BadgePortal,
   dataDoCartao,
   diasParado,
   linkWhatsappLead,
 } from "@/app/corretor/(painel)/_componentes/CartaoLead";
+import { ModalDossieLead } from "./ModalDossieLead";
 import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
 
 /**
@@ -34,6 +36,7 @@ const COR_COLUNA: Record<EtapaFunil, string> = {
 export function Quadro({ leads, mostrarDono }: { leads: Lead[]; mostrarDono: boolean }) {
   const [erro, setErro] = useState<string | null>(null);
   const [arrastando, setArrastando] = useState<string | null>(null);
+  const [leadDossie, setLeadDossie] = useState<Lead | null>(null);
   const [, iniciarTransicao] = useTransition();
 
   // O cartão pula de coluna antes de o servidor responder. Se a resposta vier
@@ -119,6 +122,7 @@ export function Quadro({ leads, mostrarDono }: { leads: Lead[]; mostrarDono: boo
                     onMover={(destino) => mover(lead, destino)}
                     onArrastar={() => setArrastando(lead.id)}
                     onSoltar={() => setArrastando(null)}
+                    onVerDossie={() => setLeadDossie(lead)}
                   />
                 ))}
 
@@ -132,6 +136,11 @@ export function Quadro({ leads, mostrarDono }: { leads: Lead[]; mostrarDono: boo
           );
         })}
       </div>
+
+      {/* Modal de Dossiê Executivo da IA */}
+      {leadDossie && (
+        <ModalDossieLead lead={leadDossie} onFechar={() => setLeadDossie(null)} />
+      )}
     </div>
   );
 }
@@ -142,12 +151,14 @@ function Cartao({
   onMover,
   onArrastar,
   onSoltar,
+  onVerDossie,
 }: {
   lead: Lead;
   mostrarDono: boolean;
   onMover: (etapa: EtapaFunil) => void;
   onArrastar: () => void;
   onSoltar: () => void;
+  onVerDossie: () => void;
 }) {
   const whatsapp = linkWhatsappLead(lead);
   const parado = diasParado(lead);
@@ -161,9 +172,22 @@ function Cartao({
         onArrastar();
       }}
       onDragEnd={onSoltar}
-      className="rounded-xl border border-white/10 bg-ink-900/80 p-3"
+      className="rounded-xl border border-white/10 bg-ink-900/80 p-3 relative group"
     >
-      <p className="text-fluid-sm font-medium text-mist-50">{lead.nome}</p>
+      <div className="flex items-center justify-between gap-1 flex-wrap">
+        <p className="text-fluid-sm font-medium text-mist-50">{lead.nome}</p>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onVerDossie}
+            title="Ver Dossiê de Inteligência do Lead"
+            className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30 hover:bg-brand-500 hover:text-white transition-colors cursor-pointer"
+          >
+            🤖 Dossiê IA
+          </button>
+          <BadgePortal portal={lead.portalOrigem} origem={lead.origem} />
+        </div>
+      </div>
 
       <p className="text-fluid-xs mt-1 text-mist-500">
         {dataDoCartao(lead)}

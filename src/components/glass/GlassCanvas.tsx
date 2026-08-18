@@ -163,7 +163,11 @@ export default function GlassCanvas(props: GlassCanvasProps) {
       // no instante em que o vídeo virou textura pela primeira vez.
       if (video) textura.needsUpdate = true;
 
-      renderer.render({ scene: malha });
+      try {
+        renderer.render({ scene: malha });
+      } catch {
+        // Fallback gracioso caso o contexto WebGL esteja indisponível
+      }
     }
 
     // O vídeo tem prioridade sobre a imagem estática como fonte de refração

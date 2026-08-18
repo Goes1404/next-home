@@ -3,6 +3,7 @@ import { GlassSurface } from "@/components/glass/GlassSurface";
 
 const LINKS = [
   { href: "/empreendimentos", label: "Empreendimentos" },
+  { href: "/mapa", label: "Mapa" },
   { href: "/sobre", label: "Sobre" },
   { href: "/contato", label: "Contato" },
 ];

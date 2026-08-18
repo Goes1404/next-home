@@ -40,9 +40,51 @@ export function linkWhatsappLead(lead: Lead): string | null {
   const digitos = lead.telefone.replace(/\D/g, "");
   if (digitos.length < 10) return null;
   const e164 = digitos.length <= 11 ? `55${digitos}` : digitos;
+  const primeiroNome = lead.nome.split(" ")[0];
+
+  let textoOrigem = "pelo site da Next Home";
+  if (lead.portalOrigem === "zap_imoveis") textoOrigem = "pelo Zap Imóveis";
+  else if (lead.portalOrigem === "vivareal") textoOrigem = "pelo VivaReal";
+  else if (lead.portalOrigem === "olx") textoOrigem = "pela OLX";
+  else if (lead.portalOrigem === "imovelweb") textoOrigem = "pelo Imovelweb";
+  else if (lead.portalOrigem === "meta_ads" || lead.origem?.includes("meta")) textoOrigem = "pelo anúncio no Instagram/Facebook";
+
+  const imovel = lead.empreendimento?.nome || lead.anuncioOrigem;
+  const textoImovel = imovel ? ` sobre o ${imovel}` : "";
+
   return linkWhatsappPara(
     e164,
-    `Olá, ${lead.nome.split(" ")[0]}! Aqui é da Next Home, recebi seu contato pelo site.`,
+    `Olá, ${primeiroNome}! Aqui é da Next Home, recebi seu contato ${textoOrigem}${textoImovel}. Como posso te ajudar?`,
+  );
+}
+
+const BADGE_PORTAL: Record<string, { label: string; classe: string }> = {
+  zap_imoveis: { label: "Zap Imóveis", classe: "bg-[#002f6c]/30 text-[#4da6ff] border-[#002f6c]/60" },
+  vivareal: { label: "VivaReal", classe: "bg-[#e84c3d]/20 text-[#ff7a6d] border-[#e84c3d]/40" },
+  olx: { label: "OLX", classe: "bg-[#6e0ad6]/25 text-[#bd85ff] border-[#6e0ad6]/50" },
+  imovelweb: { label: "Imovelweb", classe: "bg-[#e67e22]/25 text-[#f39c12] border-[#e67e22]/50" },
+  meta_ads: { label: "Meta Ads", classe: "bg-[#0066ff]/25 text-[#66a3ff] border-[#0066ff]/50" },
+  site_direto: { label: "Site Direto", classe: "bg-brand-500/20 text-brand-200 border-brand-500/40" },
+};
+
+export function BadgePortal({ portal, origem }: { portal?: string | null; origem?: string | null }) {
+  const chave = portal || (origem?.includes("meta") ? "meta_ads" : null);
+  if (!chave || !BADGE_PORTAL[chave]) {
+    if (origem?.startsWith("inbound/")) {
+      return (
+        <span className="text-[11px] rounded-full border border-white/10 bg-white/5 px-2 py-0.5 font-medium text-mist-300">
+          📥 E-mail
+        </span>
+      );
+    }
+    return null;
+  }
+
+  const { label, classe } = BADGE_PORTAL[chave];
+  return (
+    <span className={`text-[11px] rounded-full border px-2 py-0.5 font-semibold ${classe}`}>
+      {label}
+    </span>
   );
 }
 
@@ -114,7 +156,10 @@ export function CartaoLead({
       )}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-display text-lg text-mist-50">{lead.nome}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-display text-lg text-mist-50">{lead.nome}</p>
+            <BadgePortal portal={lead.portalOrigem} origem={lead.origem} />
+          </div>
           <p className="text-fluid-xs mt-0.5 text-mist-500">
             {dataHora.format(new Date(lead.criadoEm))}
           </p>

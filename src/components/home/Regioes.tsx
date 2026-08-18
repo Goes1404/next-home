@@ -21,9 +21,9 @@ export function Regioes() {
     <section className="px-4 pb-16 sm:pb-24">
       <div className="mx-auto w-full max-w-3xl text-center">
         <Reveal>
-          <h2 className="text-fluid-2xl text-mist-50">Onde atuamos</h2>
+          <h2 className="text-fluid-2xl text-mist-50">Localizações Privilegiadas</h2>
           <p className="text-fluid-base mt-3 text-mist-300">
-            Da Grande Alphaville até Osasco, sempre com quem conhece a região de perto.
+            Os endereços mais nobres e desejados de Alphaville, Barueri e região metropolitana.
           </p>
         </Reveal>
 

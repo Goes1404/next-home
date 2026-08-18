@@ -196,21 +196,23 @@ export function ListaLeads({
       )}
 
       {selecionados.size > 0 && !modalAberto && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink-950/95 p-4 backdrop-blur-md">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
-            <p className="text-fluid-sm text-mist-200">{selecionados.size} selecionado(s)</p>
-            <div className="flex gap-2">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink-950/95 p-3 backdrop-blur-md sm:p-4">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-2">
+            <p className="text-fluid-sm shrink-0 whitespace-nowrap text-mist-200">
+              {selecionados.size} selecionado(s)
+            </p>
+            <div className="flex shrink-0 gap-2">
               <button
                 type="button"
                 onClick={() => setSelecionados(new Set())}
-                className="text-fluid-sm rounded-lg border border-white/15 px-4 py-2 text-mist-300"
+                className="text-fluid-sm whitespace-nowrap rounded-lg border border-white/15 px-3 py-2 text-mist-300"
               >
                 Limpar
               </button>
               <button
                 type="button"
                 onClick={() => setModalAberto(true)}
-                className="text-fluid-sm rounded-lg bg-brand-500 px-4 py-2 font-medium text-white"
+                className="text-fluid-sm whitespace-nowrap rounded-lg bg-brand-500 px-3 py-2 font-medium text-white"
               >
                 Enviar mensagem
               </button>
