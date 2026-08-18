@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCorretorLogado, souGestor } from "@/lib/corretorSessao";
+import { caminhoDoStorage, extensaoPorTipo, validarMidia, type CampoMidia } from "@/lib/midiaCorretor";
 import { createClient } from "@/lib/supabase/server";
 import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
@@ -103,6 +104,96 @@ export async function salvarPerfil(
   revalidatePath("/corretor/perfil");
   revalidatePath("/corretores");
   return { ok: "Perfil atualizado." };
+}
+
+/**
+ * Upload de avatar ou fundo (vídeo ou foto) pro Storage, e grava a URL
+ * pública na coluna certa. `campo` decide tudo: qual limite de
+ * tamanho/tipo vale, em qual coluna a URL entra, e — pros dois campos de
+ * fundo — qual `fundo_tipo` a mudança implica (subir um vídeo de fundo
+ * troca `fundo_tipo` pra 'video' mesmo que estivesse em 'foto', e
+ * vice-versa; não existe um "trocar o tipo" sem enviar o arquivo daquele
+ * tipo — evita `fundo_tipo` apontando pra uma URL que nunca existiu).
+ */
+export async function enviarMidiaCorretor(
+  campo: CampoMidia,
+  _estado: EstadoForm,
+  formData: FormData,
+): Promise<EstadoForm> {
+  const { supabase, user } = await exigirSessao();
+
+  const arquivo = formData.get("arquivo");
+  if (!(arquivo instanceof File) || arquivo.size === 0) {
+    return { erro: "Selecione um arquivo." };
+  }
+
+  const erroValidacao = validarMidia(campo, arquivo);
+  if (erroValidacao) return { erro: erroValidacao };
+
+  const { data: linhaAtual } = await supabase
+    .from("corretores")
+    .select("id, foto_url, video_url, fundo_foto_url")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!linhaAtual) {
+    return { erro: "Sem permissão para editar este cadastro. Fale com quem administra o site." };
+  }
+
+  const caminho = `corretores/${linhaAtual.id}/${campo}-${Date.now()}.${extensaoPorTipo(arquivo.type)}`;
+  const { error: erroUpload } = await supabase.storage
+    .from("empreendimentos")
+    .upload(caminho, arquivo);
+
+  if (erroUpload) {
+    return { erro: "Não foi possível enviar o arquivo. Tente novamente." };
+  }
+
+  const { data: urlPublica } = supabase.storage.from("empreendimentos").getPublicUrl(caminho);
+
+  const resultado =
+    campo === "avatar"
+      ? await supabase
+          .from("corretores")
+          .update({ foto_url: urlPublica.publicUrl })
+          .eq("user_id", user.id)
+          .select("id")
+      : campo === "fundo_video"
+        ? await supabase
+            .from("corretores")
+            .update({ video_url: urlPublica.publicUrl, fundo_tipo: "video" })
+            .eq("user_id", user.id)
+            .select("id")
+        : await supabase
+            .from("corretores")
+            .update({ fundo_foto_url: urlPublica.publicUrl, fundo_tipo: "foto" })
+            .eq("user_id", user.id)
+            .select("id");
+
+  if (resultado.error || !resultado.data || resultado.data.length === 0) {
+    await supabase.storage.from("empreendimentos").remove([caminho]);
+    return { erro: "Não foi possível salvar agora. Tente novamente." };
+  }
+
+  const urlAntiga =
+    campo === "avatar"
+      ? linhaAtual.foto_url
+      : campo === "fundo_video"
+        ? linhaAtual.video_url
+        : linhaAtual.fundo_foto_url;
+
+  if (urlAntiga) {
+    const caminhoAntigo = caminhoDoStorage(urlAntiga);
+    if (caminhoAntigo) await supabase.storage.from("empreendimentos").remove([caminhoAntigo]);
+  }
+
+  revalidatePath("/corretor/perfil");
+  revalidatePath("/corretores");
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio", "layout");
+  revalidatePath("/empreendimentos", "layout");
+
+  return { ok: "Enviado com sucesso." };
 }
 
 /**
