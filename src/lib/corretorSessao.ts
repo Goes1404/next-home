@@ -83,13 +83,6 @@ const SELECT_LEAD = `
   empreendimento:empreendimentos(nome, slug, endereco)
 `;
 
-const SELECT_LEAD_BASE = `
-  id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
-  etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, anuncio_origem,
-  corretor:corretores(id, nome),
-  empreendimento:empreendimentos(nome, slug, endereco)
-`;
-
 type LinhaLead = {
   id: string;
   nome: string;
@@ -143,28 +136,14 @@ function mapLead(row: LinhaLead): Lead {
  */
 export async function getMeusLeads(): Promise<Lead[]> {
   const supabase = await createClient();
-  const res = await supabase
+  const { data, error } = await supabase
     .from("leads")
     .select(SELECT_LEAD)
     .order("created_at", { ascending: false });
 
-  let rows = res.data as unknown as LinhaLead[] | null;
+  if (error) throw new Error(`Falha ao carregar os leads: ${error.message}`);
 
-  if (res.error || !rows) {
-    // Fallback caso colunas adicionadas recentemente (ex: portal_origem) ainda não existam no banco
-    const fallback = await supabase
-      .from("leads")
-      .select(SELECT_LEAD_BASE)
-      .order("created_at", { ascending: false });
-
-    if (fallback.error) {
-      console.error("Falha ao carregar os leads:", res.error?.message, fallback.error.message);
-      return [];
-    }
-    rows = fallback.data as unknown as LinhaLead[] | null;
-  }
-
-  return (rows ?? []).map(mapLead);
+  return (data as unknown as LinhaLead[]).map(mapLead);
 }
 
 /**
@@ -174,28 +153,14 @@ export async function getMeusLeads(): Promise<Lead[]> {
  */
 export async function getLeadsDoFunil(): Promise<Lead[]> {
   const supabase = await createClient();
-  const res = await supabase
+  const { data, error } = await supabase
     .from("leads")
     .select(SELECT_LEAD)
     .order("etapa_alterada_em", { ascending: false });
 
-  let rows = res.data as unknown as LinhaLead[] | null;
+  if (error) throw new Error(`Falha ao carregar o funil: ${error.message}`);
 
-  if (res.error || !rows) {
-    // Fallback caso colunas adicionadas recentemente (ex: portal_origem) ainda não existam no banco
-    const fallback = await supabase
-      .from("leads")
-      .select(SELECT_LEAD_BASE)
-      .order("etapa_alterada_em", { ascending: false });
-
-    if (fallback.error) {
-      console.error("Falha ao carregar o funil:", res.error?.message, fallback.error.message);
-      return [];
-    }
-    rows = fallback.data as unknown as LinhaLead[] | null;
-  }
-
-  return (rows ?? []).map(mapLead);
+  return (data as unknown as LinhaLead[]).map(mapLead);
 }
 
 /**
@@ -217,10 +182,7 @@ export async function getEquipeAtiva(): Promise<
     .not("slug", "is", null)
     .order("nome");
 
-  if (error) {
-    console.error("Falha ao listar a equipe:", error.message);
-    return [];
-  }
+  if (error) throw new Error(`Falha ao listar a equipe: ${error.message}`);
   return (data ?? []).map((c) => ({ id: c.id, nome: c.nome, emPausa: c.em_pausa }));
 }
 
@@ -236,17 +198,23 @@ export async function getMeusTemplates(): Promise<TemplateMensagem[]> {
     .select("id, titulo, conteudo, padrao")
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Falha ao carregar os templates:", error.message);
-    return [];
-  }
+  if (error) throw new Error(`Falha ao carregar os templates: ${error.message}`);
   return (data ?? []) as TemplateMensagem[];
 }
 
 /**
  * Contagem de cliques de WhatsApp para o corretor logado.
+ *
+ * Devolve `null` quando a consulta falha — e não zero. São coisas
+ * diferentes: "ninguém clicou hoje" é informação, "não consegui contar" é
+ * ausência dela, e exibir zero nos dois casos faria o corretor concluir
+ * que o link parou de converter.
+ *
+ * Diferente das outras consultas desta camada, esta não lança: é um bloco
+ * de estatística do painel, e derrubar a página inteira por causa de um
+ * contador seria troca ruim.
  */
-export async function getCliquesWhatsappCorretor(): Promise<{ hoje: number; total: number }> {
+export async function getCliquesWhatsappCorretor(): Promise<{ hoje: number; total: number } | null> {
   try {
     const supabase = await createClient();
     const hojeInicio = new Date();
@@ -261,15 +229,20 @@ export async function getCliquesWhatsappCorretor(): Promise<{ hoje: number; tota
     ]);
 
     if (totalRes.error || hojeRes.error) {
-      return { hoje: 0, total: 0 };
+      console.error(
+        "Falha ao contar cliques de WhatsApp:",
+        totalRes.error?.message ?? hojeRes.error?.message,
+      );
+      return null;
     }
 
     return {
       total: totalRes.count ?? 0,
       hoje: hojeRes.count ?? 0,
     };
-  } catch {
-    return { hoje: 0, total: 0 };
+  } catch (err) {
+    console.error("Falha ao contar cliques de WhatsApp:", err);
+    return null;
   }
 }
 
