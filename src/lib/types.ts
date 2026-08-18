@@ -118,6 +118,14 @@ export const ORIGEM_ATRIBUICAO_LABEL: Record<OrigemAtribuicao, string> = {
   manual: "Atribuído pelo gestor",
 };
 
+/** Modelo de mensagem que o corretor reutiliza no disparo em massa. */
+export type TemplateMensagem = {
+  id: string;
+  titulo: string;
+  conteudo: string;
+  padrao: boolean;
+};
+
 /** Contato recebido pelos formulários do site, como o corretor o vê. */
 export type Lead = {
   id: string;

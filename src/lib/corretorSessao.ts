@@ -2,7 +2,13 @@ import "server-only";
 
 import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
-import type { CorretorPerfil, EtapaFunil, Lead, OrigemAtribuicao } from "@/lib/types";
+import type {
+  CorretorPerfil,
+  EtapaFunil,
+  Lead,
+  OrigemAtribuicao,
+  TemplateMensagem,
+} from "@/lib/types";
 
 /**
  * Camada de acesso da área logada.
@@ -174,4 +180,20 @@ export async function getEquipeAtiva(): Promise<
 
   if (error) throw new Error(`Falha ao listar a equipe: ${error.message}`);
   return (data ?? []).map((c) => ({ id: c.id, nome: c.nome, emPausa: c.em_pausa }));
+}
+
+/**
+ * Templates do corretor logado, mais recentes primeiro. RLS (0013) já
+ * garante que só os próprios aparecem — sem `.eq` explícito de propósito,
+ * como as outras consultas desta camada.
+ */
+export async function getMeusTemplates(): Promise<TemplateMensagem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("templates_mensagens")
+    .select("id, titulo, conteudo, padrao")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(`Falha ao carregar os templates: ${error.message}`);
+  return (data ?? []) as TemplateMensagem[];
 }
