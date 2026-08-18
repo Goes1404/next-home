@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { ListaLeads } from "./ListaLeads";
-import { getMeusLeads, souGestor } from "@/lib/corretorSessao";
+import {
+  getCorretorLogado,
+  getEquipeAtiva,
+  getMeusLeads,
+  getMeusTemplates,
+  souGestor,
+} from "@/lib/corretorSessao";
 
 export const metadata: Metadata = { title: "Meus leads" };
 
@@ -11,7 +17,13 @@ export const metadata: Metadata = { title: "Meus leads" };
  * detalhes, que não caberiam num cartão de coluna.
  */
 export default async function LeadsPage() {
-  const [leads, gestor] = await Promise.all([getMeusLeads(), souGestor()]);
+  const [leads, gestor, corretor, templates] = await Promise.all([
+    getMeusLeads(),
+    souGestor(),
+    getCorretorLogado(),
+    getMeusTemplates(),
+  ]);
+  const equipe = gestor ? await getEquipeAtiva() : [];
 
   return (
     <div>
@@ -22,7 +34,14 @@ export default async function LeadsPage() {
           : "Contatos que chegaram atribuídos a você — pelo seu link pessoal ou pela distribuição automática."}
       </p>
 
-      <ListaLeads leads={leads} gestor={gestor} />
+      <ListaLeads
+        leads={leads}
+        gestor={gestor}
+        equipe={equipe}
+        templates={templates}
+        nomeCorretor={corretor?.nome ?? ""}
+        whatsappCorretor={corretor?.whatsapp ?? ""}
+      />
     </div>
   );
 }
