@@ -71,7 +71,20 @@ function bate(e: Empreendimento, f: FiltrosEmpreendimento): boolean {
  * "sob consulta" não é nem barato nem caro, e jogá-lo como 0 ou Infinity
  * distorceria as duas pontas da lista.
  */
-function ordenar(lista: Empreendimento[], modo: Ordenacao): Empreendimento[] {
+/**
+ * `destaquesCorretor` só existe quando a visita chegou pelo link pessoal de
+ * um corretor com destaques configurados — mapeia slug → posição escolhida
+ * por ele. Só entra em jogo no modo "destaque" (o padrão da listagem
+ * pública); uma ordenação explícita (preço, recentes) continua vencendo,
+ * já que nenhum seletor de ordenação visível ao visitante existe hoje, mas
+ * se um dia existir, a escolha dele não deve ser sobreposta por uma
+ * curadoria de terceiro.
+ */
+export function ordenar(
+  lista: Empreendimento[],
+  modo: Ordenacao,
+  destaquesCorretor?: Map<string, number>,
+): Empreendimento[] {
   const copia = [...lista];
 
   if (modo === "recentes") {
@@ -87,9 +100,36 @@ function ordenar(lista: Empreendimento[], modo: Ordenacao): Empreendimento[] {
     });
   }
 
+  if (destaquesCorretor?.size) {
+    return copia.sort((a, b) => {
+      const posA = destaquesCorretor.get(a.slug);
+      const posB = destaquesCorretor.get(b.slug);
+      if (posA != null && posB != null) return posA - posB;
+      if (posA != null) return -1;
+      if (posB != null) return 1;
+      return Number(b.destaque) - Number(a.destaque);
+    });
+  }
+
   // "destaque": destacados primeiro, depois a ordem curada do cadastro (já
   // aplicada pelo `.order("ordem")` da query).
   return copia.sort((a, b) => Number(b.destaque) - Number(a.destaque));
+}
+
+/** Destaques do corretor ativo (link pessoal), já ordenados — ou `undefined` sem link ou sem nenhum configurado. */
+async function buscarDestaquesCorretorAtivo(): Promise<Map<string, number> | undefined> {
+  const corretorAtivo = await getCorretorAtivo();
+  if (!corretorAtivo) return undefined;
+
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("corretor_destaques")
+    .select("empreendimento_slug, posicao")
+    .eq("corretor_id", corretorAtivo.id)
+    .order("posicao");
+
+  if (!data || data.length === 0) return undefined;
+  return new Map(data.map((d) => [d.empreendimento_slug, d.posicao]));
 }
 
 /**
@@ -103,9 +143,12 @@ export async function getEmpreendimentos(
   filtros?: FiltrosEmpreendimento,
   ordenacao: Ordenacao = "destaque",
 ): Promise<Empreendimento[]> {
-  const todos = await buscarPublicados();
+  const [todos, destaquesCorretor] = await Promise.all([
+    buscarPublicados(),
+    buscarDestaquesCorretorAtivo(),
+  ]);
   const filtrados = filtros ? todos.filter((e) => bate(e, filtros)) : todos;
-  return ordenar(filtrados, ordenacao);
+  return ordenar(filtrados, ordenacao, destaquesCorretor);
 }
 
 /**
