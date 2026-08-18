@@ -57,12 +57,16 @@ export type Midia = {
   blurDataUrl: string | null;
 };
 
+export type FundoTipo = "video" | "foto";
+
 export type Corretor = {
   nome: string;
   creci: string;
   whatsapp: string;
   fotoUrl: string | null;
   videoUrl: string | null;
+  fundoTipo: FundoTipo;
+  fundoFotoUrl: string | null;
 };
 
 /**

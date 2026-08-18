@@ -169,7 +169,8 @@ export async function getSlugsEmpreendimentos(): Promise<string[]> {
  * pelo link de um colega.
  * ------------------------------------------------------------------------ */
 
-export const SELECT_CORRETOR = "id, slug, nome, creci, whatsapp, foto_url, video_url, bio";
+export const SELECT_CORRETOR =
+  "id, slug, nome, creci, whatsapp, foto_url, video_url, fundo_tipo, fundo_foto_url, bio";
 
 export type LinhaCorretor = {
   id: string;
@@ -180,6 +181,8 @@ export type LinhaCorretor = {
   foto_url: string | null;
   bio: string | null;
   video_url: string | null;
+  fundo_tipo: string;
+  fundo_foto_url: string | null;
 };
 
 export function mapCorretor(row: LinhaCorretor): CorretorPerfil {
@@ -191,6 +194,8 @@ export function mapCorretor(row: LinhaCorretor): CorretorPerfil {
     whatsapp: row.whatsapp,
     fotoUrl: row.foto_url,
     videoUrl: row.video_url,
+    fundoTipo: row.fundo_tipo as CorretorPerfil["fundoTipo"],
+    fundoFotoUrl: row.fundo_foto_url,
     bio: row.bio,
   };
 }

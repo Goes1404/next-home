@@ -45,6 +45,8 @@ const CORRETOR_INDEFINIDO = {
   whatsapp: "5511972207204",
   fotoUrl: null,
   videoUrl: null,
+  fundoTipo: "video" as const,
+  fundoFotoUrl: null,
 };
 
 const CAPA_PADRAO: Midia = {
@@ -97,6 +99,8 @@ export function mapEmpreendimento(row: LinhaEmpreendimento): Empreendimento {
           whatsapp: row.corretor.whatsapp,
           fotoUrl: row.corretor.foto_url,
           videoUrl: row.corretor.video_url,
+          fundoTipo: "video" as const,
+          fundoFotoUrl: null,
         }
       : CORRETOR_INDEFINIDO,
   };
