@@ -14,7 +14,7 @@
 
 services:
   evolution:
-    image: atendai/evolution-api:v2.1.1
+    image: evoapicloud/evolution-api:v2.3.7
     restart: always
     depends_on:
       - postgres
@@ -35,6 +35,11 @@ services:
       - CONFIG_SESSION_PHONE_CLIENT=NextHome
       - CONFIG_SESSION_PHONE_NAME=Chrome
       - QRCODE_LIMIT=10
+      # A v2.3 liga o cache Redis por padrao. Sem um Redis no stack ela
+      # entra em loop de reconexao a cada 0,5s, enchendo o log e gastando
+      # CPU a toa. Nesse volume o cache local resolve.
+      - CACHE_REDIS_ENABLED=false
+      - CACHE_LOCAL_ENABLED=true
       - LOG_LEVEL=ERROR
     volumes:
       - evolution_instances:/evolution/instances
