@@ -142,6 +142,8 @@ export type Lead = {
   /** Campos do imóvel ofertado — só nos leads de proprietário. */
   detalhes: Record<string, string> | null;
   origem: string | null;
+  portalOrigem?: string | null;
+  anuncioOrigem?: string | null;
   criadoEm: string;
   /** Etapa atual no funil. */
   etapa: EtapaFunil;
@@ -184,6 +186,10 @@ export type Empreendimento = {
   galeria: Midia[];
   /** Plantas do empreendimento como um todo (as por tipologia ficam em `Tipologia.plantaUrl`). */
   plantas: Midia[];
+  /** `url` é o link do YouTube/Vimeo (ou de um mp4 direto) — nunca arquivo bruto de 360°. */
+  videos: Midia[];
+  /** `url` é a página do tour hospedada por terceiro (construtora, Matterport, Kuula...), incorporada via iframe. */
+  tours360: Midia[];
   tipologias: Tipologia[];
   lazer: string[];
   corretor: Corretor;

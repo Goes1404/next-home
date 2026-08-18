@@ -19,9 +19,14 @@ import type {
  * pela API pública de empreendimentos.
  */
 
+// `corretores!empreendimentos_corretor_id_fkey`, não só `corretores`: a
+// 0015 deu a `empreendimentos` e `corretores` um segundo caminho de relação
+// (via `corretor_destaques`, tabela ponte many-to-many), e sem o nome do
+// FK o PostgREST recusa o embed por ambiguidade — a leitura de qualquer
+// empreendimento passa a falhar com "more than one relationship was found".
 const SELECT_EMPREENDIMENTO = `
   *,
-  corretor:corretores(id, nome, creci, whatsapp, foto_url, video_url),
+  corretor:corretores!empreendimentos_corretor_id_fkey(id, nome, creci, whatsapp, foto_url, video_url),
   tipologias(*),
   midias(*),
   lazer:empreendimento_lazer(lazer_itens(*))

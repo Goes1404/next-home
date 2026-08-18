@@ -10,6 +10,8 @@ import { NavAncoras, type Secao } from "@/components/empreendimento/NavAncoras";
 import { Similares } from "@/components/empreendimento/Similares";
 import { Sobre } from "@/components/empreendimento/Sobre";
 import { Tipologias } from "@/components/empreendimento/Tipologias";
+import { Tour360 } from "@/components/empreendimento/Tour360";
+import { Video } from "@/components/empreendimento/Video";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { precoAPartirDe } from "@/lib/format";
@@ -67,6 +69,8 @@ function secoesDe(e: Empreendimento): Secao[] {
   if (e.tipologias.length > 0) secoes.push({ id: "tipologias", label: "Tipologias" });
   if (e.lazer.length > 0) secoes.push({ id: "lazer", label: "Lazer" });
   if (e.galeria.length > 0) secoes.push({ id: "galeria", label: "Galeria" });
+  if (e.videos.length > 0) secoes.push({ id: "video", label: "Vídeo" });
+  if (e.tours360.length > 0) secoes.push({ id: "tour360", label: "Tour 360°" });
   secoes.push({ id: "localizacao", label: "Localização" });
   secoes.push({ id: "contato", label: "Contato" });
   return secoes;
@@ -156,6 +160,8 @@ export default async function EmpreendimentoPage({
           <Tipologias tipologias={e.tipologias} plantasGerais={e.plantas} />
           <Lazer itens={e.lazer} />
           <Galeria fotos={e.galeria} />
+          <Video videos={e.videos} />
+          <Tour360 tours={e.tours360} />
           <Localizacao empreendimento={e} />
           <Contato empreendimento={e} />
           <Similares empreendimentos={similares} />

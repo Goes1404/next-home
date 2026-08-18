@@ -60,8 +60,8 @@ const CAPA_PADRAO: Midia = {
 
 export function mapEmpreendimento(row: LinhaEmpreendimento): Empreendimento {
   const midias = [...row.midias].sort((a, b) => a.ordem - b.ordem).map(mapMidia);
-  // A galeria é só de fotos: plantas têm proporção e leitura próprias, e
-  // vídeo/tour360 nem sequer renderizam num <Image>.
+  // A galeria é só de fotos: plantas, vídeo e tour360 têm leitura e
+  // renderização próprias (planta vira <Image>; vídeo e tour360, iframe).
   const fotos = midias.filter((m) => m.tipo === "foto");
 
   return {
@@ -90,6 +90,8 @@ export function mapEmpreendimento(row: LinhaEmpreendimento): Empreendimento {
     capa: fotos[0] ?? { ...CAPA_PADRAO, alt: row.nome },
     galeria: fotos,
     plantas: midias.filter((m) => m.tipo === "planta"),
+    videos: midias.filter((m) => m.tipo === "video"),
+    tours360: midias.filter((m) => m.tipo === "tour360"),
     tipologias: [...row.tipologias].sort((a, b) => a.ordem - b.ordem).map(mapTipologia),
     lazer: row.lazer.map((l) => l.lazer_itens?.nome).filter((n): n is string => !!n),
     corretor: row.corretor
