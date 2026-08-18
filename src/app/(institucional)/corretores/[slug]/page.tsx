@@ -107,84 +107,87 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="relative flex flex-1 flex-col px-4 pt-32 pb-24 overflow-hidden">
-        {/* Luzes de ambientação coloridas (Glow) */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute top-24 left-1/2 -translate-x-1/2 -z-10 h-96 w-full max-w-3xl rounded-full bg-gradient-to-tr from-brand-500/20 via-azure-500/15 to-sand-400/10 blur-[100px]"
-        />
-
-        <Reveal className="mx-auto w-full max-w-2xl">
+        <Reveal from="baixo" className="mx-auto w-full max-w-xl">
           <GlassSurface
             preset="painel"
-            className="relative overflow-hidden px-7 py-8 text-center sm:px-10 sm:py-11 border border-brand-400/20 bg-gradient-to-b from-ink-900/80 to-ink-950/90 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
+            className="relative overflow-hidden px-7 py-10 text-center sm:px-12 sm:py-14 border border-brand-400/20 bg-gradient-to-b from-ink-900/80 to-ink-950/90 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
           >
-            {/* Avatar com moldura luminosa e gradiente */}
-            <div className="relative mx-auto inline-block">
-              <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-brand-400 via-azure-400 to-sand-300 opacity-70 blur-sm" />
-              {corretor.fotoUrl ? (
-                <Image
-                  src={corretor.fotoUrl}
-                  alt={corretor.nome}
-                  width={104}
-                  height={104}
-                  className="relative mx-auto h-26 w-26 rounded-full object-cover ring-2 ring-brand-300/80 shadow-[0_0_20px_rgba(47,214,164,0.3)]"
-                />
-              ) : (
-                <span
+            <Reveal stagger={0.12} duration={0.7} className="flex flex-col items-center">
+              {/* Retrato — moldura orgânica, não um avatar social redondo. Uma
+                  segunda forma, deslocada atrás, dá a profundidade de duas
+                  camadas; a mesma dupla serve pro monograma sem foto. */}
+              <div className="relative h-40 w-40">
+                <div
                   aria-hidden
-                  className="font-display relative mx-auto flex h-26 w-26 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 via-brand-500 to-azure-500 text-2xl font-bold text-white ring-2 ring-brand-300/80 shadow-[0_0_20px_rgba(47,214,164,0.3)]"
-                >
-                  {iniciais(corretor.nome)}
+                  className="absolute inset-0 rotate-6 bg-gradient-to-br from-azure-500/70 to-brand-600/80"
+                  style={{ borderRadius: "62% 38% 55% 45% / 48% 42% 58% 52%" }}
+                />
+                {corretor.fotoUrl ? (
+                  <Image
+                    src={corretor.fotoUrl}
+                    alt={corretor.nome}
+                    width={168}
+                    height={168}
+                    className="absolute inset-0 -rotate-3 h-full w-full border border-sand-400/20 object-cover"
+                    style={{ borderRadius: "55% 45% 48% 52% / 55% 40% 60% 45%" }}
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="font-display absolute inset-0 -rotate-3 flex items-center justify-center border border-sand-400/20 bg-gradient-to-tr from-brand-700 via-brand-600 to-azure-600 text-4xl font-medium text-mist-50"
+                    style={{ borderRadius: "55% 45% 48% 52% / 55% 40% 60% 45%" }}
+                  >
+                    {iniciais(corretor.nome)}
+                  </span>
+                )}
+                <span
+                  title="Disponível no WhatsApp"
+                  className="absolute -bottom-1 -right-1 z-10 h-5 w-5 rounded-full bg-[#25D366] ring-4 ring-ink-950"
+                />
+              </div>
+
+              {/* Nome como assinatura — o traço pessoal que combina com o
+                  CRECI tratado como selo logo abaixo. */}
+              <h1 className="font-script text-6xl sm:text-7xl mt-4 leading-none text-sand-300">
+                {corretor.nome}
+              </h1>
+
+              {/* Credencial — o CRECI é o registro legal do corretor; tratado como
+                  um selo gravado, não como mais um chip decorativo entre outros. */}
+              <div className="mt-5 flex w-full max-w-[15rem] items-center gap-3">
+                <span aria-hidden className="h-px flex-1 bg-white/15" />
+                <span className="font-mono shrink-0 text-fluid-xs tracking-[0.2em] text-mist-400 uppercase">
+                  CRECI {corretor.creci}
                 </span>
+                <span aria-hidden className="h-px flex-1 bg-white/15" />
+              </div>
+
+              {corretor.bio && (
+                <p className="text-fluid-base mt-8 max-w-md border-l border-sand-400/25 pl-5 text-left whitespace-pre-line text-mist-200 leading-relaxed">
+                  {corretor.bio}
+                </p>
               )}
-              <span
-                title="Disponível no WhatsApp"
-                className="absolute bottom-1 right-1 h-5 w-5 rounded-full bg-[#25D366] ring-3 ring-ink-950 shadow-[0_0_10px_#25D366]"
-              />
-            </div>
 
-            <h1 className="text-fluid-2xl mt-5 font-bold tracking-tight text-mist-50">{corretor.nome}</h1>
-
-            {/* Badges Coloridos */}
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-500/15 border border-brand-400/30 px-3 py-1 text-xs font-semibold text-brand-200">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-300 animate-pulse" />
-                CRECI {corretor.creci}
-              </span>
-              <span className="inline-flex items-center rounded-full bg-azure-500/15 border border-azure-400/30 px-3 py-1 text-xs font-medium text-azure-200">
-                Alphaville & Região
-              </span>
-              <span className="inline-flex items-center rounded-full bg-sand-400/15 border border-sand-400/30 px-3 py-1 text-xs font-medium text-sand-300">
-                Consultor Especialista
-              </span>
-            </div>
-
-            {corretor.bio && (
-              <p className="text-fluid-base mt-6 whitespace-pre-line text-mist-200 leading-relaxed max-w-lg mx-auto">
-                {corretor.bio}
-              </p>
-            )}
-
-            {/* Botões de Ação com Cores Vibrantes */}
-            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <WhatsappLink
-                href={whatsapp}
-                origem="perfil_corretor"
-                corretorId={corretor.id}
-                className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#25D366] to-[#128C7E] px-7 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_25px_rgba(37,211,102,0.4)] hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                  <path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.77.46 3.45 1.27 4.9L2 22l5.25-1.38a9.96 9.96 0 0 0 4.79 1.22h.01c5.52 0 10-4.48 10-10s-4.48-9.84-10.01-9.84Zm5.85 14.1c-.25.7-1.45 1.34-2 1.42-.51.08-1.16.11-1.87-.12-.43-.14-.98-.32-1.69-.62-2.97-1.28-4.9-4.27-5.05-4.47-.15-.2-1.21-1.6-1.21-3.06s.77-2.17 1.04-2.47c.27-.3.6-.37.8-.37.2 0 .4 0 .57.01.18.01.43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.33.02.53-.1.2-.15.32-.3.5-.15.18-.31.4-.44.53-.15.15-.3.31-.13.6.17.3.77 1.27 1.65 2.06 1.14 1.02 2.1 1.33 2.4 1.48.3.15.47.13.65-.08.18-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.27.1 1.73.82 2.02.97.3.15.5.22.57.35.07.13.07.75-.18 1.45Z" />
-                </svg>
-                Falar no WhatsApp
-              </WhatsappLink>
-              <Link
-                href={`/portfolio?corretor=${corretor.slug}`}
-                className="flex items-center justify-center gap-2 rounded-full border border-brand-400/40 bg-gradient-to-r from-brand-950/40 to-ink-900/60 px-7 py-3.5 text-sm font-semibold text-brand-200 transition-all duration-300 hover:border-brand-300 hover:bg-brand-500/20 hover:text-brand-100 hover:shadow-[0_0_20px_rgba(47,214,164,0.2)]"
-              >
-                <span>✨</span> Ver portfólio completo
-              </Link>
-            </div>
+              <div className="mt-9 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
+                <WhatsappLink
+                  href={whatsapp}
+                  origem="perfil_corretor"
+                  corretorId={corretor.id}
+                  className="flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#20BD5A]"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                    <path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.77.46 3.45 1.27 4.9L2 22l5.25-1.38a9.96 9.96 0 0 0 4.79 1.22h.01c5.52 0 10-4.48 10-10s-4.48-9.84-10.01-9.84Zm5.85 14.1c-.25.7-1.45 1.34-2 1.42-.51.08-1.16.11-1.87-.12-.43-.14-.98-.32-1.69-.62-2.97-1.28-4.9-4.27-5.05-4.47-.15-.2-1.21-1.6-1.21-3.06s.77-2.17 1.04-2.47c.27-.3.6-.37.8-.37.2 0 .4 0 .57.01.18.01.43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.33.02.53-.1.2-.15.32-.3.5-.15.18-.31.4-.44.53-.15.15-.3.31-.13.6.17.3.77 1.27 1.65 2.06 1.14 1.02 2.1 1.33 2.4 1.48.3.15.47.13.65-.08.18-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.27.1 1.73.82 2.02.97.3.15.5.22.57.35.07.13.07.75-.18 1.45Z" />
+                  </svg>
+                  Falar no WhatsApp
+                </WhatsappLink>
+                <Link
+                  href={`/portfolio?corretor=${corretor.slug}`}
+                  className="flex items-center justify-center gap-2 rounded-full border border-brand-400/30 px-7 py-3.5 text-sm font-semibold text-brand-200 transition-colors hover:border-brand-300 hover:bg-brand-500/10"
+                >
+                  Ver portfólio completo <span aria-hidden>→</span>
+                </Link>
+              </div>
+            </Reveal>
           </GlassSurface>
         </Reveal>
 
