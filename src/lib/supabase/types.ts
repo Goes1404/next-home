@@ -1,7 +1,7 @@
 /**
  * Tipos gerados a partir do projeto Supabase real (prhhrqyubjcafvucirri) via
  * Management API — `types/typescript`. Não editar à mão; regenerar sempre
- * que `supabase/migrations/` mudar. Última geração: depois da 0013
+ * que `supabase/migrations/` mudar. Última geração: depois da 0015
  * (aplicada manualmente à conexão direta com Postgres — `gen types` local
  * exige Docker, indisponível neste ambiente; colunas conferidas por
  * introspecção antes de editar este arquivo).
@@ -23,6 +23,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      cliques_whatsapp: {
+        Row: {
+          id: string
+          created_at: string
+          corretor_id: string | null
+          empreendimento_id: string | null
+          origem: string
+          url_origem: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          corretor_id?: string | null
+          empreendimento_id?: string | null
+          origem: string
+          url_origem?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          corretor_id?: string | null
+          empreendimento_id?: string | null
+          origem?: string
+          url_origem?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliques_whatsapp_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cliques_whatsapp_empreendimento_id_fkey"
+            columns: ["empreendimento_id"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      corretor_destaques: {
+        Row: {
+          corretor_id: string
+          empreendimento_slug: string
+          posicao: number
+        }
+        Insert: {
+          corretor_id: string
+          empreendimento_slug: string
+          posicao: number
+        }
+        Update: {
+          corretor_id?: string
+          empreendimento_slug?: string
+          posicao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corretor_destaques_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corretor_destaques_empreendimento_slug_fkey"
+            columns: ["empreendimento_slug"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       corretores: {
         Row: {
           ativo: boolean
@@ -32,6 +110,8 @@ export type Database = {
           em_pausa: boolean
           email: string | null
           foto_url: string | null
+          fundo_foto_url: string | null
+          fundo_tipo: string
           id: string
           nome: string
           papel: string
@@ -49,6 +129,8 @@ export type Database = {
           em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
+          fundo_foto_url?: string | null
+          fundo_tipo?: string
           id?: string
           nome: string
           papel?: string
@@ -66,6 +148,8 @@ export type Database = {
           em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
+          fundo_foto_url?: string | null
+          fundo_tipo?: string
           id?: string
           nome?: string
           papel?: string
