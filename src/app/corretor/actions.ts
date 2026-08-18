@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { souGestor } from "@/lib/corretorSessao";
+import { getCorretorLogado, souGestor } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
@@ -294,5 +294,150 @@ export async function definirVisitaEm(
   revalidatePath("/corretor/leads");
   revalidatePath("/corretor/visitas");
   revalidatePath("/corretor");
+  return {};
+}
+
+/**
+ * Cria um template. `padrao: true` desmarca qualquer outro padrão do mesmo
+ * corretor antes de gravar o novo — só um padrão por vez.
+ */
+export async function criarTemplate(
+  titulo: string,
+  conteudo: string,
+  padrao: boolean,
+): Promise<ResultadoAcao> {
+  const { supabase } = await exigirSessao();
+
+  const tituloLimpo = titulo.trim();
+  const conteudoLimpo = conteudo.trim();
+  if (tituloLimpo.length < 2 || tituloLimpo.length > 120) {
+    return { erro: "Informe um título entre 2 e 120 caracteres." };
+  }
+  if (conteudoLimpo.length < 2 || conteudoLimpo.length > 2000) {
+    return { erro: "A mensagem precisa ter entre 2 e 2000 caracteres." };
+  }
+
+  const corretor = await getCorretorLogado();
+  if (!corretor) {
+    return { erro: "Conta sem vínculo de corretor." };
+  }
+
+  if (padrao) {
+    await supabase
+      .from("templates_mensagens")
+      .update({ padrao: false })
+      .eq("corretor_id", corretor.id)
+      .eq("padrao", true);
+  }
+
+  const { data, error } = await supabase
+    .from("templates_mensagens")
+    .insert({ corretor_id: corretor.id, titulo: tituloLimpo, conteudo: conteudoLimpo, padrao })
+    .select("id");
+
+  if (error) {
+    return { erro: "Não foi possível salvar agora. Tente novamente." };
+  }
+  if (!data || data.length === 0) {
+    return { erro: "Não foi possível salvar o template." };
+  }
+
+  revalidatePath("/corretor/templates");
+  return {};
+}
+
+/** Edita um template existente. Mesma regra de `padrao` de `criarTemplate`. */
+export async function editarTemplate(
+  id: string,
+  titulo: string,
+  conteudo: string,
+  padrao: boolean,
+): Promise<ResultadoAcao> {
+  const { supabase } = await exigirSessao();
+
+  const tituloLimpo = titulo.trim();
+  const conteudoLimpo = conteudo.trim();
+  if (tituloLimpo.length < 2 || tituloLimpo.length > 120) {
+    return { erro: "Informe um título entre 2 e 120 caracteres." };
+  }
+  if (conteudoLimpo.length < 2 || conteudoLimpo.length > 2000) {
+    return { erro: "A mensagem precisa ter entre 2 e 2000 caracteres." };
+  }
+
+  const corretor = await getCorretorLogado();
+  if (!corretor) {
+    return { erro: "Conta sem vínculo de corretor." };
+  }
+
+  if (padrao) {
+    await supabase
+      .from("templates_mensagens")
+      .update({ padrao: false })
+      .eq("corretor_id", corretor.id)
+      .eq("padrao", true)
+      .neq("id", id);
+  }
+
+  const { data, error } = await supabase
+    .from("templates_mensagens")
+    .update({ titulo: tituloLimpo, conteudo: conteudoLimpo, padrao })
+    .eq("id", id)
+    .select("id");
+
+  if (error) {
+    return { erro: "Não foi possível salvar agora. Tente novamente." };
+  }
+  if (!data || data.length === 0) {
+    return { erro: "Este template não é seu — recarregue a página." };
+  }
+
+  revalidatePath("/corretor/templates");
+  return {};
+}
+
+/** Apaga um template. Sem confirmação no servidor — a UI confirma antes de chamar. */
+export async function apagarTemplate(id: string): Promise<ResultadoAcao> {
+  const { supabase } = await exigirSessao();
+
+  const { data, error } = await supabase
+    .from("templates_mensagens")
+    .delete()
+    .eq("id", id)
+    .select("id");
+
+  if (error) {
+    return { erro: "Não foi possível apagar agora. Tente novamente." };
+  }
+  if (!data || data.length === 0) {
+    return { erro: "Este template não é seu — recarregue a página." };
+  }
+
+  revalidatePath("/corretor/templates");
+  return {};
+}
+
+/**
+ * Registra que uma aba de WhatsApp foi aberta para este lead com esta
+ * mensagem. Não confirma entrega — `wa.me` não permite isso; é só o
+ * registro de que o corretor disparou o envio em massa para este contato.
+ */
+export async function registrarEnvio(leadId: string, mensagem: string): Promise<ResultadoAcao> {
+  const { supabase } = await exigirSessao();
+
+  const corretor = await getCorretorLogado();
+  if (!corretor) {
+    return { erro: "Conta sem vínculo de corretor." };
+  }
+
+  const { error } = await supabase.from("historico_envios").insert({
+    lead_id: leadId,
+    corretor_id: corretor.id,
+    mensagem_enviada: mensagem,
+  });
+
+  if (error) {
+    return { erro: "Não foi possível registrar o envio." };
+  }
+
   return {};
 }
