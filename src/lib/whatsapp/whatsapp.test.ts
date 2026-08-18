@@ -106,13 +106,30 @@ describe("Fila de campanha — proteção anti-ban", () => {
     // O agendamento antigo multiplicava o índice por um atraso sorteado a
     // cada volta, o que podia colocar o 3º item ANTES do 2º — agrupando
     // disparos no mesmo instante, exatamente o que a proteção evita.
+    //
+    // A asserção é de ordem, não de intervalo exato: itens que caem fora do
+    // horário comercial são empurrados para a próxima janela, então a
+    // distância entre dois vizinhos pode ser de horas. Cravar o intervalo
+    // faria este teste passar de dia e quebrar de madrugada.
+    const fila = await filaPadrao();
+    const instantes = fila.map((i) => new Date(i.agendadoPara).getTime());
+
+    for (let i = 1; i < instantes.length; i++) {
+      expect(instantes[i]).toBeGreaterThan(instantes[i - 1]);
+    }
+  });
+
+  it("respeita o intervalo humanizado entre disparos da mesma janela", async () => {
     const fila = await filaPadrao();
     const instantes = fila.map((i) => new Date(i.agendadoPara).getTime());
 
     for (let i = 1; i < instantes.length; i++) {
       const intervaloSegundos = (instantes[i] - instantes[i - 1]) / 1000;
-      expect(intervaloSegundos).toBeGreaterThanOrEqual(INTERVALO_MINIMO_SEGUNDOS);
-      expect(intervaloSegundos).toBeLessThanOrEqual(INTERVALO_MAXIMO_SEGUNDOS);
+      // Só compara vizinhos que ficaram na mesma janela; quem foi adiado
+      // para o próximo dia útil naturalmente tem distância maior.
+      if (intervaloSegundos <= INTERVALO_MAXIMO_SEGUNDOS) {
+        expect(intervaloSegundos).toBeGreaterThanOrEqual(INTERVALO_MINIMO_SEGUNDOS);
+      }
     }
   });
 

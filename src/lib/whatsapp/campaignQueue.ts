@@ -1,8 +1,28 @@
+import { dentroDaJanela } from "./antiBan";
 import type { ItemFilaCampanha } from "./types";
 
 /** Piso e teto do intervalo humanizado entre disparos, em segundos. */
 export const INTERVALO_MINIMO_SEGUNDOS = 35;
 export const INTERVALO_MAXIMO_SEGUNDOS = 75;
+
+/**
+ * Empurra o horário até cair dentro da janela permitida.
+ *
+ * Uma fila longa começa às 19h e naturalmente atravessaria a madrugada;
+ * sem isto, o número mandaria mensagem às 3h — um dos padrões mais
+ * característicos de robô que existe.
+ */
+function proximoHorarioPermitido(instante: Date): Date {
+  let candidato = new Date(instante);
+  // Avança de 30 em 30 min por até uma semana; passou disso, algo está
+  // errado na configuração e é melhor devolver o valor original do que
+  // girar para sempre.
+  for (let i = 0; i < 336; i++) {
+    if (dentroDaJanela(candidato)) return candidato;
+    candidato = new Date(candidato.getTime() + 30 * 60_000);
+  }
+  return instante;
+}
 
 /**
  * Gera mensagens hiper-personalizadas por IA para cada lead da fila de disparo.
@@ -48,7 +68,11 @@ export async function gerarMensagensCampanhaPersonalizadas(params: {
   for (const lead of leads) {
     const janela = Math.max(1, INTERVALO_MAXIMO_SEGUNDOS - intervaloSegundosMinimo);
     const atrasoSegundos = intervaloSegundosMinimo + Math.floor(Math.random() * janela);
-    const agendadoPara = new Date(agora + deslocamentoSegundos * 1000).toISOString();
+
+    // Empurra para dentro do horário comercial antes de gravar: uma fila
+    // longa iniciada no fim da tarde escorregaria para a madrugada.
+    const bruto = new Date(agora + deslocamentoSegundos * 1000);
+    const agendadoPara = proximoHorarioPermitido(bruto).toISOString();
     deslocamentoSegundos += atrasoSegundos;
 
     let textoFinal = mensagemBase

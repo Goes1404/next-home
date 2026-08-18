@@ -716,6 +716,11 @@ export type Database = {
           nome_assistente: string
           tom_voz: string
           webhook_secret: string | null
+          conectado_em: string | null
+          envios_campanha_data: string | null
+          envios_campanha_contador: number
+          falhas_seguidas: number
+          bloqueado_ate: string | null
           created_at: string
           updated_at: string
         }
@@ -730,6 +735,11 @@ export type Database = {
           nome_assistente?: string
           tom_voz?: string
           webhook_secret?: string | null
+          conectado_em?: string | null
+          envios_campanha_data?: string | null
+          envios_campanha_contador?: number
+          falhas_seguidas?: number
+          bloqueado_ate?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -744,6 +754,11 @@ export type Database = {
           nome_assistente?: string
           tom_voz?: string
           webhook_secret?: string | null
+          conectado_em?: string | null
+          envios_campanha_data?: string | null
+          envios_campanha_contador?: number
+          falhas_seguidas?: number
+          bloqueado_ate?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -960,6 +975,10 @@ export type Database = {
     Functions: {
       corretor_atual: { Args: never; Returns: string }
       eh_gestor: { Args: never; Returns: boolean }
+      consumir_cota_campanha: {
+        Args: { p_instancia_id: string; p_limite: number }
+        Returns: number
+      }
     }
     Enums: {
       finalidade_imovel: "lancamento" | "venda"

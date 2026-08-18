@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
+import { bloqueadoAtePor, deveAbrirDisjuntor, limiteDiarioCampanha, diasDesdeConexao } from "./antiBan";
 import type { DossieClienteIA } from "./types";
 
 /**
@@ -12,6 +13,7 @@ import type { DossieClienteIA } from "./types";
  */
 
 export type InstanciaResolvida = {
+  id: string;
   corretorId: string;
   instanceName: string;
   nomeCorretor: string;
@@ -36,7 +38,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret")
+    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret")
     .eq("instance_name", instanceName)
     .maybeSingle();
 
@@ -51,6 +53,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
   if (!corretor) return null;
 
   return {
+    id: data.id,
     corretorId: data.corretor_id,
     instanceName: data.instance_name,
     nomeCorretor: corretor.nome,
@@ -195,6 +198,80 @@ export async function historicoRecente(
     .limit(limite);
 
   return (data ?? []).reverse().map((m) => ({ remetente: m.remetente, texto: m.conteudo }));
+}
+
+/**
+ * Reserva uma vaga na cota diária de campanha do número.
+ *
+ * A conta roda no banco (`consumir_cota_campanha`, 0020) porque dois
+ * disparos simultâneos leriam o mesmo contador e ambos se achariam dentro
+ * do limite — furando a cota exatamente no pico de volume.
+ */
+export async function reservarCotaCampanha(
+  instanciaId: string,
+  conectadoEm: Date | null,
+): Promise<{ permitido: boolean; motivo?: string }> {
+  if (!conectadoEm) {
+    return { permitido: false, motivo: "Número ainda não foi pareado." };
+  }
+
+  const limite = limiteDiarioCampanha(diasDesdeConexao(conectadoEm));
+  const supabase = createServiceClient();
+
+  const { data, error } = await supabase.rpc("consumir_cota_campanha", {
+    p_instancia_id: instanciaId,
+    p_limite: limite,
+  });
+
+  if (error) return { permitido: false, motivo: "Falha ao verificar a cota diária." };
+  if (typeof data === "number" && data < 0) {
+    return {
+      permitido: false,
+      motivo: `Cota diária de ${limite} disparos atingida (ou número temporariamente bloqueado).`,
+    };
+  }
+
+  return { permitido: true };
+}
+
+/**
+ * Contabiliza o resultado de um envio.
+ *
+ * Falhas seguidas quase sempre significam número já restrito pelo
+ * WhatsApp; insistir a partir daí é o que transforma restrição em
+ * banimento. Ao cruzar o limite, o disjuntor abre sozinho.
+ */
+export async function registrarResultadoEnvio(
+  instanciaId: string,
+  sucesso: boolean,
+): Promise<void> {
+  const supabase = createServiceClient();
+
+  if (sucesso) {
+    await supabase
+      .from("corretor_whatsapp_instancias")
+      .update({ falhas_seguidas: 0 })
+      .eq("id", instanciaId);
+    return;
+  }
+
+  const { data } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("falhas_seguidas")
+    .eq("id", instanciaId)
+    .maybeSingle();
+
+  const falhas = (data?.falhas_seguidas ?? 0) + 1;
+
+  await supabase
+    .from("corretor_whatsapp_instancias")
+    .update({
+      falhas_seguidas: falhas,
+      ...(deveAbrirDisjuntor(falhas)
+        ? { bloqueado_ate: bloqueadoAtePor().toISOString() }
+        : {}),
+    })
+    .eq("id", instanciaId);
 }
 
 /** Um dossiê por lead (`unique` na 0018) — cada análise substitui a anterior. */

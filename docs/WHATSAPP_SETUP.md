@@ -89,6 +89,52 @@ Mande uma mensagem de outro celular para o número conectado. Deve acontecer:
 Se a resposta não chegar, o retorno do webhook diz o motivo em
 `respostaMotivoFalha` — não falha em silêncio.
 
+## Regras anti-ban (o que o sistema impede sozinho)
+
+A política vive em `src/lib/whatsapp/antiBan.ts` — pura e coberta por 21
+testes, para poder ser discutida e ajustada sem subir nada.
+
+**1. Responder ≠ disparar.** Quem escreveu para o corretor recebe resposta
+sempre, sem cota e sem janela de horário — foi o cliente que puxou
+conversa, e deixá-lo no vácuo é pior para o número. Só o disparo frio de
+campanha consome cota.
+
+**2. Aquecimento do número.** A cota diária de campanha cresce com a idade
+da conexão:
+
+| Tempo conectado | Disparos/dia |
+|---|---|
+| 0–2 dias | 15 |
+| 3–6 dias | 30 |
+| 7–13 dias | 60 |
+| 14–29 dias | 100 |
+| 30+ dias | 150 |
+
+Números propositalmente conservadores: o gargalo de vocês é o volume real
+de leads, que é baixo. Não há nada a ganhar chegando perto do limite, e há
+um número de trabalho a perder.
+
+**3. Janela de horário.** Campanha só sai das 9h às 20h59, de segunda a
+sábado, no fuso de São Paulo. Fila longa iniciada no fim da tarde é
+empurrada para a próxima janela em vez de atravessar a madrugada.
+
+**4. Ritmo humano.** 35 a 75 segundos entre disparos, sorteados a cada
+mensagem — e a fila garante ordem crescente, sem duas mensagens caindo no
+mesmo segundo.
+
+**5. Texto sempre diferente.** Cada mensagem é reescrita pela IA. Quando
+isso não roda (sem `GEMINI_API_KEY`), o item fica marcado como
+`personalizadoPorIA: false` — a proteção não some em silêncio.
+
+**6. Disjuntor automático.** Três falhas de envio seguidas costumam
+significar número já restrito pelo WhatsApp. Insistir a partir daí é o que
+transforma restrição em banimento — então o sistema bloqueia sozinho os
+disparos daquele número por 12 horas.
+
+A cota é debitada por uma função no banco (`consumir_cota_campanha`), não
+na aplicação: dois disparos simultâneos leriam o mesmo contador e ambos se
+achariam dentro do limite, furando a cota justamente no pico.
+
 ## Modo de operação recomendado
 
 Comece com o bot em **Noturno & Fim de Semana**: ele cobre o horário em que

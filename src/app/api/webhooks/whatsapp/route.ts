@@ -12,6 +12,7 @@ import {
   historicoRecente,
   obterOuCriarConversa,
   pausarBotPorAtendimentoHumano,
+  registrarResultadoEnvio,
   resolverInstancia,
   salvarDossie,
   type InstanciaResolvida,
@@ -188,11 +189,16 @@ export async function POST(req: NextRequest) {
       .map((a) => `📎 ${a.titulo || a.tipo}: ${a.url}`);
     const textoParaEnviar = [respostaIA.textoResposta, ...linhasAnexos].join("\n\n");
 
+    // Responder quem nos escreveu não passa por cota nem por janela de
+    // horário (ver antiBan.ts): a conversa foi iniciada pelo cliente, e
+    // deixá-lo no vácuo é pior para o número do que responder de
+    // madrugada. O resultado alimenta o disjuntor de falhas seguidas.
     const envio = await enviarMensagemWhatsapp({
       instanceName: instancia.instanceName,
       telefone: sender,
       texto: textoParaEnviar,
     });
+    await registrarResultadoEnvio(instancia.id, envio.enviado);
 
     await gravarMensagem({
       conversaId: conversa.id,
