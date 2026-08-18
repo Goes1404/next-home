@@ -1,7 +1,7 @@
 /**
  * Tipos gerados a partir do projeto Supabase real (prhhrqyubjcafvucirri) via
  * Management API — `types/typescript`. Não editar à mão; regenerar sempre
- * que `supabase/migrations/` mudar. Última geração: depois da 0009
+ * que `supabase/migrations/` mudar. Última geração: depois da 0013
  * (aplicada manualmente à conexão direta com Postgres — `gen types` local
  * exige Docker, indisponível neste ambiente; colunas conferidas por
  * introspecção antes de editar este arquivo).
@@ -214,6 +214,48 @@ export type Database = {
           },
         ]
       }
+      historico_envios: {
+        Row: {
+          id: string
+          lead_id: string | null
+          corretor_id: string
+          mensagem_enviada: string
+          status_envio: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          lead_id?: string | null
+          corretor_id: string
+          mensagem_enviada: string
+          status_envio?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          lead_id?: string | null
+          corretor_id?: string
+          mensagem_enviada?: string
+          status_envio?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_envios_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_envios_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lazer_itens: {
         Row: {
           icone: string | null
@@ -350,6 +392,41 @@ export type Database = {
             columns: ["empreendimento_id"]
             isOneToOne: false
             referencedRelation: "empreendimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates_mensagens: {
+        Row: {
+          id: string
+          corretor_id: string
+          titulo: string
+          conteudo: string
+          padrao: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          corretor_id: string
+          titulo: string
+          conteudo: string
+          padrao?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          corretor_id?: string
+          titulo?: string
+          conteudo?: string
+          padrao?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "templates_mensagens_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
             referencedColumns: ["id"]
           },
         ]
