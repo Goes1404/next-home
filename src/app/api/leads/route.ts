@@ -155,6 +155,17 @@ export async function POST(req: Request) {
   });
 
   if (error) {
+    /*
+     * O visitante recebe uma saída (o WhatsApp), mas o erro precisa existir
+     * em algum lugar: sem este log, uma policy ou constraint que passe a
+     * recusar o insert derruba a entrada de leads do site inteiro sem
+     * nenhum sinal — a fila só fica vazia.
+     */
+    console.error("[leads] falha ao gravar lead do site:", error.message, {
+      origem: normalizado(corpo.origem) ?? "site/contato",
+      temEmail: Boolean(email),
+      temTelefone: Boolean(telefone),
+    });
     return NextResponse.json(
       { erro: "Não foi possível enviar agora. Tente pelo WhatsApp." },
       { status: 500 },

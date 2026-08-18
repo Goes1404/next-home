@@ -1,22 +1,42 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/public";
+import { createServiceClient } from "@/lib/supabase/service";
 import { extrairVariosLeadsComIA } from "@/lib/inbound/aiParser";
+import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
 import type { EmailInboundInput } from "@/lib/inbound/types";
 
 export const runtime = "nodejs";
 
 /**
- * Endpoint de Webhook para Ingestão Automática de Leads por E-mail (Email-to-Lead).
- * Suporta 1 lead individual ou listas/tabelas com até 50+ leads no mesmo e-mail.
+ * Ingestão automática de leads por e-mail (Zap, VivaReal, OLX, Imovelweb…).
+ * Aceita um lead individual ou uma lista/tabela com dezenas no mesmo e-mail.
+ *
+ * Roda com a CHAVE DE SERVIÇO, não com a publicável. As policies de `leads`
+ * dão select e update apenas a `authenticated`, e `inbound_logs` não tem
+ * policy de insert nenhuma — com o cliente publicável a deduplicação lia
+ * zero linhas sempre, o update do duplicado não acontecia e o log de
+ * auditoria era recusado em silêncio. É exatamente a armadilha que
+ * `lib/supabase/service.ts` descreve.
  */
 export async function POST(req: Request) {
-  const secretConfigurado = process.env.INBOUND_EMAIL_WEBHOOK_SECRET;
-  const tokenHeader = req.headers.get("x-webhook-token") || req.headers.get("x-webhook-secret");
-  const url = new URL(req.url);
-  const tokenQuery = url.searchParams.get("token");
+  const segredo = process.env.INBOUND_EMAIL_WEBHOOK_SECRET;
 
-  // Validação de autenticação se configurada
-  if (secretConfigurado && tokenHeader !== secretConfigurado && tokenQuery !== secretConfigurado) {
+  /*
+   * Falha fechada. Antes a checagem era `if (segredo && token !== segredo)`:
+   * sem a variável no ambiente, o endpoint aceitava qualquer POST de
+   * qualquer origem e escrevia direto no CRM.
+   */
+  if (!segredo) {
+    console.error("[inbound] INBOUND_EMAIL_WEBHOOK_SECRET ausente — recusando a chamada.");
+    return NextResponse.json({ erro: "Webhook não configurado." }, { status: 503 });
+  }
+
+  const url = new URL(req.url);
+  const token =
+    req.headers.get("x-webhook-token") ??
+    req.headers.get("x-webhook-secret") ??
+    url.searchParams.get("token");
+
+  if (token !== segredo) {
     return NextResponse.json({ erro: "Token de autenticação inválido." }, { status: 401 });
   }
 
@@ -39,31 +59,43 @@ export async function POST(req: Request) {
     subject: String(bodyRaw.subject || bodyRaw.Subject || ""),
     html: String(bodyRaw.html || bodyRaw.HtmlBody || bodyRaw.HTML || ""),
     text: String(bodyRaw.text || bodyRaw.TextBody || bodyRaw.plain || ""),
-    messageId: String(bodyRaw.messageId || bodyRaw.MessageID || bodyRaw.email_id || bodyRaw["Message-Id"] || ""),
+    messageId: String(
+      bodyRaw.messageId || bodyRaw.MessageID || bodyRaw.email_id || bodyRaw["Message-Id"] || "",
+    ),
   };
 
-  const supabase = createClient();
+  const supabase = createServiceClient();
 
-  // 1. Extração com IA (Gemini 2.0 Flash) + Fallback Regex (suporta 1 ou múltiplos leads)
-  const leadsExtraidos = await extrairVariosLeadsComIA(emailInput);
-
-  if (leadsExtraidos.length === 0) {
-    await supabase.from("inbound_logs").insert({
+  const registrarLog = async (
+    status: "sucesso" | "erro" | "ignorado",
+    extra: { erroMensagem?: string; leadId?: string | null } = {},
+  ) => {
+    const { error } = await supabase.from("inbound_logs").insert({
       de: emailInput.from || null,
       para: emailInput.to || null,
       assunto: emailInput.subject || null,
-      payload_raw: bodyRaw as any,
-      status: "ignorado",
-      erro_mensagem: "Não foi possível extrair nenhum lead com telefone válido do e-mail.",
+      payload_raw: bodyRaw as never,
+      status,
+      erro_mensagem: extra.erroMensagem ?? null,
+      lead_id: extra.leadId ?? null,
     });
+    // Este log é a fila de dead-letter do endpoint: se nem ele grava, o
+    // problema precisa aparecer em algum lugar.
+    if (error) console.error("[inbound] falha ao gravar inbound_logs:", error.message);
+  };
 
+  const leadsExtraidos = await extrairVariosLeadsComIA(emailInput);
+
+  if (leadsExtraidos.length === 0) {
+    await registrarLog("ignorado", {
+      erroMensagem: "Nenhum lead com telefone válido foi identificado no e-mail.",
+    });
     return NextResponse.json(
       { ok: false, mensagem: "E-mail recebido mas nenhum telefone válido foi identificado." },
       { status: 200 },
     );
   }
 
-  // Carrega catálogo e equipe para atribuição inteligente
   const [{ data: empreendimentos }, { data: corretores }] = await Promise.all([
     supabase.from("empreendimentos").select("id, nome, slug, corretor_id").limit(50),
     supabase.from("corretores").select("id, nome, slug").eq("ativo", true),
@@ -72,7 +104,8 @@ export async function POST(req: Request) {
   const trintaDiasAtras = new Date();
   trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
 
-  const leadsProcessados = [];
+  const processados: { id: string; deduplicado: boolean; nome: string; telefone: string }[] = [];
+  const falhas: { telefone: string; motivo: string }[] = [];
   let totalInseridos = 0;
   let totalDeduplicados = 0;
 
@@ -80,7 +113,6 @@ export async function POST(req: Request) {
     let empreendimentoId: string | null = null;
     let corretorId: string | null = null;
 
-    // Busca Empreendimento
     if (empreendimentos && (lead.imovelInteresse || lead.codigoReferencia)) {
       const termo = (lead.imovelInteresse || lead.codigoReferencia || "").toLowerCase();
       const match = empreendimentos.find(
@@ -95,7 +127,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Busca Corretor
     if (!corretorId && corretores && lead.corretorMencionado) {
       const nomeC = lead.corretorMencionado.toLowerCase();
       const matchC = corretores.find(
@@ -107,72 +138,104 @@ export async function POST(req: Request) {
       if (matchC) corretorId = matchC.id;
     }
 
-    // Deduplicação por Telefone (30 dias)
-    const { data: leadExistente } = await supabase
+    /*
+     * Compara pela coluna gerada `telefone_e164`, não pelo texto digitado: o
+     * mesmo cliente chega "(11) 99123-4567" por um portal e "11991234567"
+     * por outro, e a igualdade crua nunca casava os dois.
+     */
+    const e164 = normalizarTelefoneBrasileiro(lead.telefone);
+
+    const { data: existente, error: erroBusca } = await supabase
       .from("leads")
-      .select("id, mensagem, corretor_id")
-      .eq("telefone", lead.telefone)
+      .select("id, mensagem")
+      .eq("telefone_e164", e164 ?? lead.telefone)
       .gte("created_at", trintaDiasAtras.toISOString())
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (leadExistente) {
-      totalDeduplicados++;
-      const novaMensagem = `${leadExistente.mensagem || ""}\n\n[Novo contato via ${lead.portalOrigem} em ${new Date().toLocaleDateString("pt-BR")}]: ${lead.mensagemOriginal || ""}`.trim();
+    if (erroBusca) console.error("[inbound] falha ao consultar duplicado:", erroBusca.message);
 
-      await supabase
+    if (existente) {
+      const hoje = new Date().toLocaleDateString("pt-BR");
+      const novaMensagem =
+        `${existente.mensagem || ""}\n\n[Novo contato via ${lead.portalOrigem} em ${hoje}]: ${lead.mensagemOriginal || ""}`.trim();
+
+      const { error: erroUpdate } = await supabase
         .from("leads")
         .update({
           mensagem: novaMensagem,
           etapa_alterada_em: new Date().toISOString(),
           portal_origem: lead.portalOrigem,
         })
-        .eq("id", leadExistente.id);
+        .eq("id", existente.id);
 
-      leadsProcessados.push({ id: leadExistente.id, deduplicado: true, nome: lead.nome, telefone: lead.telefone });
-    } else {
-      totalInseridos++;
-      const { data: novoLead, error: erroInsert } = await supabase
-        .from("leads")
-        .insert({
-          nome: lead.nome,
-          telefone: lead.telefone,
-          email: lead.email,
-          mensagem: lead.mensagemOriginal,
-          tipo: "comprador",
-          origem: `inbound/${lead.portalOrigem}`,
-          portal_origem: lead.portalOrigem,
-          anuncio_origem: lead.imovelInteresse || lead.codigoReferencia || null,
-          email_message_id: emailInput.messageId || null,
-          empreendimento_id: empreendimentoId,
-          corretor_id: corretorId,
-          consentimento_lgpd: true,
-        })
-        .select("id, corretor_id")
-        .single();
-
-      if (novoLead) {
-        leadsProcessados.push({ id: novoLead.id, deduplicado: false, nome: lead.nome, telefone: lead.telefone });
+      if (erroUpdate) {
+        console.error(`[inbound] falha ao atualizar duplicado ${existente.id}:`, erroUpdate.message);
+        falhas.push({ telefone: lead.telefone, motivo: erroUpdate.message });
+        continue;
       }
+
+      totalDeduplicados++;
+      processados.push({
+        id: existente.id,
+        deduplicado: true,
+        nome: lead.nome,
+        telefone: lead.telefone,
+      });
+      continue;
     }
+
+    const { data: novo, error: erroInsert } = await supabase
+      .from("leads")
+      .insert({
+        nome: lead.nome,
+        telefone: lead.telefone,
+        email: lead.email,
+        mensagem: lead.mensagemOriginal,
+        tipo: "comprador",
+        origem: `inbound/${lead.portalOrigem}`,
+        portal_origem: lead.portalOrigem,
+        anuncio_origem: lead.imovelInteresse || lead.codigoReferencia || null,
+        email_message_id: emailInput.messageId || null,
+        empreendimento_id: empreendimentoId,
+        corretor_id: corretorId,
+        consentimento_lgpd: true,
+      })
+      .select("id")
+      .single();
+
+    /*
+     * O contador só sobe depois de o banco confirmar. Antes ele subia junto
+     * com a tentativa, e a resposta anunciava leads que nunca existiram.
+     */
+    if (erroInsert || !novo) {
+      const motivo = erroInsert?.message ?? "insert não retornou linha";
+      console.error(`[inbound] falha ao inserir lead ${lead.telefone}: ${motivo}`);
+      falhas.push({ telefone: lead.telefone, motivo });
+      continue;
+    }
+
+    totalInseridos++;
+    processados.push({ id: novo.id, deduplicado: false, nome: lead.nome, telefone: lead.telefone });
   }
 
-  // Registra log de auditoria
-  await supabase.from("inbound_logs").insert({
-    de: emailInput.from || null,
-    para: emailInput.to || null,
-    assunto: emailInput.subject || null,
-    payload_raw: bodyRaw as any,
-    status: "sucesso",
-    lead_id: leadsProcessados[0]?.id || null,
+  await registrarLog(falhas.length > 0 ? "erro" : "sucesso", {
+    leadId: processados[0]?.id ?? null,
+    erroMensagem:
+      falhas.length > 0
+        ? `${falhas.length} de ${leadsExtraidos.length} falharam: ${falhas
+            .map((f) => `${f.telefone} (${f.motivo})`)
+            .join("; ")}`.slice(0, 2000)
+        : undefined,
   });
 
   return NextResponse.json({
-    ok: true,
+    ok: falhas.length === 0,
     totalEncontrados: leadsExtraidos.length,
     totalInseridos,
     totalDeduplicados,
-    leads: leadsProcessados,
+    totalFalhas: falhas.length,
+    leads: processados,
   });
 }

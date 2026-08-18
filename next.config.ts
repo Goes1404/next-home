@@ -27,6 +27,17 @@ const nextConfig: NextConfig = {
   experimental: {
     // GSAP e OGL são pesados para o bundler resolver a cada build.
     optimizePackageImports: ["gsap", "ogl"],
+
+    serverActions: {
+      /*
+       * A importação de leads recebe PDF e planilha por Server Action, e o
+       * padrão de 1 MB recusa qualquer relatório de portal. O teto do
+       * arquivo é 10 MB (validado em `importar/actions.ts`); os 2 MB de
+       * folga cobrem o que o multipart acrescenta em fronteiras e cabeçalhos
+       * — a documentação do Next sugere reservar essa margem.
+       */
+      bodySizeLimit: "12mb",
+    },
     // Morph da capa do card para o hero do empreendimento. Degrada sozinho
     // em navegador sem View Transitions API: a navegação só não anima.
     viewTransition: true,

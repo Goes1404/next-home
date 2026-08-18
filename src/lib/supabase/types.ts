@@ -1,7 +1,7 @@
 /**
  * Tipos gerados a partir do projeto Supabase real (prhhrqyubjcafvucirri) via
  * Management API — `types/typescript`. Não editar à mão; regenerar sempre
- * que `supabase/migrations/` mudar. Última geração: depois da 0015
+ * que `supabase/migrations/` mudar. Última geração: depois da 0022
  * (aplicada manualmente à conexão direta com Postgres — `gen types` local
  * exige Docker, indisponível neste ambiente; colunas conferidas por
  * introspecção antes de editar este arquivo).
@@ -508,6 +508,7 @@ export type Database = {
           origem_atribuicao: string | null
           portal_origem: string | null
           telefone: string | null
+          telefone_e164: string | null
           tipo: string
           visita_agendada_em: string | null
         }

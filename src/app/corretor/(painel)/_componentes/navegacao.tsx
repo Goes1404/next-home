@@ -28,6 +28,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
       { href: "/corretor", label: "Início", icone: IconeInicio },
       { href: "/corretor/funil", label: "Funil", icone: IconeFunil },
       { href: "/corretor/leads", label: "Meus leads", icone: IconePessoas },
+      { href: "/corretor/importar", label: "Adicionar leads", icone: IconeAdicionar },
       { href: "/corretor/visitas", label: "Visitas", icone: IconeAgenda },
     ],
   },
@@ -94,6 +95,15 @@ function IconeInicio(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="m3 9.5 9-6.5 9 6.5V20a1 1 0 0 1-1 1h-4v-7H8v7H4a1 1 0 0 1-1-1z" />
+    </svg>
+  );
+}
+function IconeAdicionar(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M15 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
+      <circle cx="8.5" cy="7.5" r="3.5" />
+      <path d="M18 7v6M15 10h6" />
     </svg>
   );
 }
