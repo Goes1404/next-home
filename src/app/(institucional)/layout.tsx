@@ -1,6 +1,7 @@
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
+import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { HERO_VIDEO_URL } from "@/lib/site";
@@ -26,6 +27,7 @@ export default async function InstitucionalLayout({
   children: React.ReactNode;
 }) {
   const corretorAtivo = await getCorretorAtivo();
+  const usaFotoDeFundo = corretorAtivo?.fundoTipo === "foto" && corretorAtivo.fundoFotoUrl;
   const videoUrl = corretorAtivo?.videoUrl || HERO_VIDEO_URL;
 
   return (
@@ -34,7 +36,11 @@ export default async function InstitucionalLayout({
       <WhatsappCta corretor={corretorAtivo ?? undefined} />
 
       <div className="fixed inset-0 -z-10 bg-gradient-to-br from-brand-900 via-ink-950 to-ink-950">
-        {videoUrl && <HeroVideoBackground src={videoUrl} />}
+        {usaFotoDeFundo ? (
+          <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
+        ) : (
+          videoUrl && <HeroVideoBackground src={videoUrl} />
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-ink-950/55 via-ink-950/35 to-ink-950" />
       </div>
 
