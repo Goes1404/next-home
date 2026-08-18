@@ -74,7 +74,7 @@ export const enderecoLinha = `${site.endereco.logradouro} — ${site.endereco.ba
  * público `empreendimentos` do Supabase Storage e cole a URL aqui.
  */
 export const HERO_VIDEO_URL: string | null =
-  "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/hero-video.mp4";
+  "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/padrao.mp4";
 
 /** Monta um link `wa.me` para qualquer número em E.164, com mensagem pré-preenchida. */
 export function linkWhatsappPara(numero: string, mensagem: string): string {
