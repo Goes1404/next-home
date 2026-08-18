@@ -26,7 +26,7 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
   const abas = ehGestor ? [...ABAS, ABA_GESTOR] : ABAS;
 
   return (
-    <nav className="scrollbar-none mt-6 -mx-4 flex gap-2 overflow-x-auto px-4">
+    <nav className="scrollbar-none mt-6 -mx-4 hidden gap-2 overflow-x-auto px-4 md:flex">
       {abas.map((aba) => {
         // Comparação exata: `startsWith` marcaria "Início" como ativo em
         // todas as abas, já que `/corretor` é prefixo de todas elas.

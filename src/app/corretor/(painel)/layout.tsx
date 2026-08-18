@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { NavPainel } from "./NavPainel";
+import { NavMobileBottom } from "./NavMobileBottom";
 import { sair } from "@/app/corretor/actions";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 
@@ -29,7 +30,7 @@ export default async function PainelLayout({
   const corretor = await getCorretorLogado();
 
   return (
-    <main className="flex min-h-svh flex-1 flex-col bg-ink-950 px-4 pt-10 pb-20">
+    <main className="flex min-h-svh flex-1 flex-col bg-ink-950 px-4 pt-10 pb-28 md:pb-20">
       {/*
         Mais largo que as páginas públicas de propósito: o quadro do funil tem
         sete colunas e a tabela da equipe tem cinco. A 768px o kanban rolava na
@@ -60,6 +61,7 @@ export default async function PainelLayout({
           <>
             <NavPainel ehGestor={corretor.papel === "gestor"} />
             <div className="mt-8">{children}</div>
+            <NavMobileBottom />
           </>
         ) : (
           <ContaSemVinculo />
