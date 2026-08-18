@@ -1,0 +1,173 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { getCorretorLogado } from "@/lib/corretorSessao";
+import { getEmpreendimentos } from "@/lib/queries";
+import { createClient } from "@/lib/supabase/server";
+import { gerarRespostaIA } from "@/lib/whatsapp/aiAgent";
+import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
+import { obterQrCodeInstancia, provedorConfigurado } from "@/lib/whatsapp/provider";
+import type { ModoBotWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
+
+/**
+ * Ações do painel de WhatsApp do corretor.
+ *
+ * O playground precisa exercitar o MESMO caminho que atende o cliente lá na
+ * ponta (`aiAgent` + `dossierExtractor` sobre o catálogo real) — um
+ * simulador com respostas escritas à mão não valida tom de voz nem
+ * recomendação de imóvel, que é justamente para o que ele serve.
+ */
+
+/** Nome da instância no provedor — derivado do slug, estável e único por corretor. */
+function nomeInstanciaDe(slug: string): string {
+  return `nexthome-${slug}`;
+}
+
+export type RespostaPlayground = {
+  texto: string;
+  anexos: { tipo: string; url: string; titulo: string }[];
+  sugerirVisita: boolean;
+  transferirHumano: boolean;
+  score: number;
+  temperatura: string;
+  resumoDossie: string;
+  /** false = respondido pelo fallback (sem GEMINI_API_KEY ou erro na API). */
+  iaAtiva: boolean;
+};
+
+export async function testarAgenteIA(
+  mensagem: string,
+  historico: { remetente: "cliente" | "bot" | "corretor"; texto: string }[] = [],
+): Promise<RespostaPlayground | { erro: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+  if (!mensagem.trim()) return { erro: "Digite uma mensagem para testar." };
+
+  const supabase = await createClient();
+  const { data: instancia } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("nome_assistente, tom_voz")
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+
+  let catalogo: Awaited<ReturnType<typeof getEmpreendimentos>> = [];
+  try {
+    catalogo = await getEmpreendimentos();
+  } catch {
+    // Catálogo indisponível não impede testar o tom de voz.
+  }
+
+  const resposta = await gerarRespostaIA(
+    {
+      nomeCorretor: corretor.nome,
+      creciCorretor: corretor.creci,
+      telefoneCorretor: corretor.whatsapp,
+      nomeAssistente: instancia?.nome_assistente ?? "Sofia",
+      tomVoz: instancia?.tom_voz ?? "consultivo_alto_padrao",
+      catalogo,
+      historicoMensagens: historico,
+    },
+    mensagem,
+  );
+
+  const conversaCompleta = [...historico.map((h) => h.texto), mensagem].join("\n");
+  const dossie = await extrairDossieCliente(conversaCompleta, `playground-${corretor.id}`);
+
+  return {
+    texto: resposta.textoResposta,
+    anexos: resposta.anexosMidia ?? [],
+    sugerirVisita: resposta.sugerirVisita,
+    transferirHumano: resposta.transferirHumano,
+    score: dossie.temperaturaScore,
+    temperatura: dossie.temperaturaLabel,
+    resumoDossie: dossie.resumoExecutivo,
+    // O agente marca transferência com este motivo exato quando caiu no
+    // fallback — é como a UI sabe que não estava falando com o Gemini.
+    iaAtiva: !resposta.motivoTransferencia?.includes("Fallback"),
+  };
+}
+
+export async function salvarConfiguracaoWhatsapp(params: {
+  nomeAssistente: string;
+  tomVoz: TomVozBot;
+  modoBot: ModoBotWhatsapp;
+}): Promise<{ ok?: string; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  const nome = params.nomeAssistente.trim();
+  if (nome.length < 2 || nome.length > 40) {
+    return { erro: "O nome da assistente precisa ter entre 2 e 40 caracteres." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .upsert(
+      {
+        corretor_id: corretor.id,
+        instance_name: nomeInstanciaDe(corretor.slug),
+        nome_assistente: nome,
+        tom_voz: params.tomVoz,
+        modo_bot: params.modoBot,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "corretor_id" },
+    )
+    .select("id");
+
+  // Sem o `.select()` de conferência, uma policy que negasse a escrita
+  // devolveria zero linhas sem erro e a tela diria "salvo" sem ter salvado.
+  if (error) return { erro: "Não foi possível salvar agora. Tente novamente." };
+  if (!data || data.length === 0) {
+    return { erro: "Sem permissão para salvar esta configuração." };
+  }
+
+  revalidatePath("/corretor/whatsapp");
+  return { ok: "Configurações salvas." };
+}
+
+export type EstadoConexao = {
+  configurado: boolean;
+  qrcodeBase64?: string | null;
+  jaConectado?: boolean;
+  erro?: string;
+};
+
+export async function conectarWhatsapp(): Promise<EstadoConexao> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { configurado: false, erro: "Sessão expirada. Entre novamente." };
+
+  if (!provedorConfigurado()) {
+    return {
+      configurado: false,
+      erro: "Nenhum provedor de WhatsApp está conectado a este ambiente. Configure WHATSAPP_API_URL e WHATSAPP_API_KEY para parear um número.",
+    };
+  }
+
+  const instanceName = nomeInstanciaDe(corretor.slug);
+  const resultado = await obterQrCodeInstancia(instanceName);
+
+  if (!resultado.ok) {
+    return { configurado: true, erro: resultado.detalhe || "Falha ao falar com o provedor." };
+  }
+
+  const supabase = await createClient();
+  await supabase.from("corretor_whatsapp_instancias").upsert(
+    {
+      corretor_id: corretor.id,
+      instance_name: instanceName,
+      status_conexao: resultado.jaConectado ? "conectado" : "conectando",
+      qrcode_base64: resultado.qrcodeBase64,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "corretor_id" },
+  );
+
+  revalidatePath("/corretor/whatsapp");
+  return {
+    configurado: true,
+    qrcodeBase64: resultado.qrcodeBase64,
+    jaConectado: resultado.jaConectado,
+  };
+}

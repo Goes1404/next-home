@@ -340,6 +340,136 @@ export type Database = {
           },
         ]
       }
+      historico_precos_lotes: {
+        Row: {
+          id: string
+          nome_lote: string
+          gestor_id: string | null
+          total_imoveis: number
+          status: string
+          created_at: string
+          revertido_em: string | null
+        }
+        Insert: {
+          id?: string
+          nome_lote: string
+          gestor_id?: string | null
+          total_imoveis?: number
+          status?: string
+          created_at?: string
+          revertido_em?: string | null
+        }
+        Update: {
+          id?: string
+          nome_lote?: string
+          gestor_id?: string | null
+          total_imoveis?: number
+          status?: string
+          created_at?: string
+          revertido_em?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_precos_lotes_gestor_id_fkey"
+            columns: ["gestor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historico_precos_itens: {
+        Row: {
+          id: string
+          lote_id: string
+          empreendimento_id: string
+          preco_anterior: number | null
+          preco_novo: number
+          variacao_reais: number | null
+          variacao_percentual: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          lote_id: string
+          empreendimento_id: string
+          preco_anterior?: number | null
+          preco_novo: number
+          variacao_reais?: number | null
+          variacao_percentual?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          lote_id?: string
+          empreendimento_id?: string
+          preco_anterior?: number | null
+          preco_novo?: number
+          variacao_reais?: number | null
+          variacao_percentual?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_precos_itens_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "historico_precos_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_precos_itens_empreendimento_id_fkey"
+            columns: ["empreendimento_id"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inbound_logs: {
+        Row: {
+          assunto: string | null
+          created_at: string
+          de: string | null
+          erro_mensagem: string | null
+          id: string
+          lead_id: string | null
+          para: string | null
+          payload_raw: Json | null
+          status: string
+        }
+        Insert: {
+          assunto?: string | null
+          created_at?: string
+          de?: string | null
+          erro_mensagem?: string | null
+          id?: string
+          lead_id?: string | null
+          para?: string | null
+          payload_raw?: Json | null
+          status?: string
+        }
+        Update: {
+          assunto?: string | null
+          created_at?: string
+          de?: string | null
+          erro_mensagem?: string | null
+          id?: string
+          lead_id?: string | null
+          para?: string | null
+          payload_raw?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbound_logs_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lazer_itens: {
         Row: {
           icone: string | null
@@ -366,6 +496,7 @@ export type Database = {
           created_at: string
           detalhes: Json | null
           email: string | null
+          email_message_id: string | null
           empreendimento_id: string | null
           etapa: string
           etapa_alterada_em: string
@@ -375,6 +506,7 @@ export type Database = {
           nome: string
           origem: string | null
           origem_atribuicao: string | null
+          portal_origem: string | null
           telefone: string | null
           tipo: string
           visita_agendada_em: string | null
@@ -386,6 +518,7 @@ export type Database = {
           created_at?: string
           detalhes?: Json | null
           email?: string | null
+          email_message_id?: string | null
           empreendimento_id?: string | null
           etapa?: string
           etapa_alterada_em?: string
@@ -395,6 +528,7 @@ export type Database = {
           nome: string
           origem?: string | null
           origem_atribuicao?: string | null
+          portal_origem?: string | null
           telefone?: string | null
           tipo?: string
           visita_agendada_em?: string | null
@@ -406,6 +540,7 @@ export type Database = {
           created_at?: string
           detalhes?: Json | null
           email?: string | null
+          email_message_id?: string | null
           empreendimento_id?: string | null
           etapa?: string
           etapa_alterada_em?: string
@@ -415,6 +550,7 @@ export type Database = {
           nome?: string
           origem?: string | null
           origem_atribuicao?: string | null
+          portal_origem?: string | null
           telefone?: string | null
           tipo?: string
           visita_agendada_em?: string | null
@@ -567,6 +703,255 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      corretor_whatsapp_instancias: {
+        Row: {
+          id: string
+          corretor_id: string
+          instance_name: string
+          status_conexao: "desconectado" | "conectando" | "conectado"
+          telefone_conectado: string | null
+          qrcode_base64: string | null
+          modo_bot: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
+          nome_assistente: string
+          tom_voz: string
+          webhook_secret: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          corretor_id: string
+          instance_name: string
+          status_conexao?: "desconectado" | "conectando" | "conectado"
+          telefone_conectado?: string | null
+          qrcode_base64?: string | null
+          modo_bot?: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
+          nome_assistente?: string
+          tom_voz?: string
+          webhook_secret?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          corretor_id?: string
+          instance_name?: string
+          status_conexao?: "desconectado" | "conectando" | "conectado"
+          telefone_conectado?: string | null
+          qrcode_base64?: string | null
+          modo_bot?: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
+          nome_assistente?: string
+          tom_voz?: string
+          webhook_secret?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_conversas: {
+        Row: {
+          id: string
+          corretor_id: string
+          lead_id: string | null
+          telefone_cliente: string
+          nome_cliente: string | null
+          bot_ativo: boolean
+          pausado_humano_ate: string | null
+          ultima_mensagem: string | null
+          ultima_interacao_em: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          corretor_id: string
+          lead_id?: string | null
+          telefone_cliente: string
+          nome_cliente?: string | null
+          bot_ativo?: boolean
+          pausado_humano_ate?: string | null
+          ultima_mensagem?: string | null
+          ultima_interacao_em?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          corretor_id?: string
+          lead_id?: string | null
+          telefone_cliente?: string
+          nome_cliente?: string | null
+          bot_ativo?: boolean
+          pausado_humano_ate?: string | null
+          ultima_mensagem?: string | null
+          ultima_interacao_em?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_mensagens: {
+        Row: {
+          id: string
+          conversa_id: string
+          remetente: "cliente" | "bot" | "corretor"
+          tipo: "texto" | "audio" | "imagem" | "documento"
+          conteudo: string
+          midia_url: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          conversa_id: string
+          remetente: "cliente" | "bot" | "corretor"
+          tipo?: "texto" | "audio" | "imagem" | "documento"
+          conteudo: string
+          midia_url?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          conversa_id?: string
+          remetente?: "cliente" | "bot" | "corretor"
+          tipo?: "texto" | "audio" | "imagem" | "documento"
+          conteudo?: string
+          midia_url?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_campanhas: {
+        Row: {
+          id: string
+          corretor_id: string
+          titulo: string
+          empreendimento_id: string | null
+          mensagem_base: string
+          total_leads: number
+          total_enviados: number
+          total_respondidos: number
+          status: "rascunho" | "em_andamento" | "pausada" | "concluida"
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          corretor_id: string
+          titulo: string
+          empreendimento_id?: string | null
+          mensagem_base: string
+          total_leads?: number
+          total_enviados?: number
+          total_respondidos?: number
+          status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          corretor_id?: string
+          titulo?: string
+          empreendimento_id?: string | null
+          mensagem_base?: string
+          total_leads?: number
+          total_enviados?: number
+          total_respondidos?: number
+          status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
+          created_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_campanhas_fila: {
+        Row: {
+          id: string
+          campanha_id: string
+          lead_id: string | null
+          telefone: string
+          mensagem_personalizada: string
+          status: "pendente" | "enviado" | "erro" | "respondido"
+          agendado_para: string
+          enviado_em: string | null
+          resposta_em: string | null
+          erro_motivo: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          campanha_id: string
+          lead_id?: string | null
+          telefone: string
+          mensagem_personalizada: string
+          status?: "pendente" | "enviado" | "erro" | "respondido"
+          agendado_para?: string
+          enviado_em?: string | null
+          resposta_em?: string | null
+          erro_motivo?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          campanha_id?: string
+          lead_id?: string | null
+          telefone?: string
+          mensagem_personalizada?: string
+          status?: "pendente" | "enviado" | "erro" | "respondido"
+          agendado_para?: string
+          enviado_em?: string | null
+          resposta_em?: string | null
+          erro_motivo?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      lead_observacoes_ia: {
+        Row: {
+          id: string
+          lead_id: string
+          orcamento_min: number | null
+          orcamento_max: number | null
+          forma_pagamento: string | null
+          perfil_familiar: string | null
+          urgencia_mudanca: string | null
+          exigencias_especificas: any
+          objecoes_identificadas: any
+          temperatura_score: number
+          temperatura_label: "quente" | "morno" | "frio"
+          resumo_executivo: string
+          proximo_passo_sugerido: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          lead_id: string
+          orcamento_min?: number | null
+          orcamento_max?: number | null
+          forma_pagamento?: string | null
+          perfil_familiar?: string | null
+          urgencia_mudanca?: string | null
+          exigencias_especificas?: any
+          objecoes_identificadas?: any
+          temperatura_score?: number
+          temperatura_label?: "quente" | "morno" | "frio"
+          resumo_executivo: string
+          proximo_passo_sugerido?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          lead_id?: string
+          orcamento_min?: number | null
+          orcamento_max?: number | null
+          forma_pagamento?: string | null
+          perfil_familiar?: string | null
+          urgencia_mudanca?: string | null
+          exigencias_especificas?: any
+          objecoes_identificadas?: any
+          temperatura_score?: number
+          temperatura_label?: "quente" | "morno" | "frio"
+          resumo_executivo?: string
+          proximo_passo_sugerido?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
