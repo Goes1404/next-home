@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { EditarDestaques } from "./EditarDestaques";
 import { ListaLinks } from "./ListaLinks";
 import { CopiarLink } from "../CopiarLink";
-import { getCorretorLogado } from "@/lib/corretorSessao";
+import { getCorretorLogado, getMeusDestaques } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
 import { site } from "@/lib/site";
 
@@ -11,7 +12,10 @@ export default async function LinksPage() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
 
-  const empreendimentos = await getEmpreendimentos();
+  const [empreendimentos, destaques] = await Promise.all([
+    getEmpreendimentos(),
+    getMeusDestaques(),
+  ]);
 
   return (
     <div>
@@ -27,6 +31,13 @@ export default async function LinksPage() {
           Para quando o cliente ainda não sabe o que procura.
         </p>
         <CopiarLink link={`${site.url}/?corretor=${corretor.slug}`} />
+      </section>
+
+      <section className="mt-10">
+        <EditarDestaques
+          itens={empreendimentos.map((e) => ({ slug: e.slug, nome: e.nome }))}
+          destaquesIniciais={destaques}
+        />
       </section>
 
       <section className="mt-10">

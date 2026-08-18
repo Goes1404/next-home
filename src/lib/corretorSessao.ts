@@ -78,7 +78,7 @@ export async function getEmailLogado(): Promise<string | null> {
 
 const SELECT_LEAD = `
   id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
-  etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em,
+  etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, portal_origem, anuncio_origem,
   corretor:corretores(id, nome),
   empreendimento:empreendimentos(nome, slug, endereco)
 `;
@@ -92,6 +92,8 @@ type LinhaLead = {
   tipo: string;
   detalhes: unknown;
   origem: string | null;
+  portal_origem?: string | null;
+  anuncio_origem?: string | null;
   created_at: string;
   etapa: EtapaFunil;
   etapa_alterada_em: string;
@@ -111,6 +113,8 @@ function mapLead(row: LinhaLead): Lead {
     tipo: row.tipo,
     detalhes: (row.detalhes as Record<string, string> | null) ?? null,
     origem: row.origem,
+    portalOrigem: row.portal_origem,
+    anuncioOrigem: row.anuncio_origem,
     criadoEm: row.created_at,
     etapa: row.etapa,
     etapaAlteradaEm: row.etapa_alterada_em,
@@ -187,13 +191,40 @@ export async function getEquipeAtiva(): Promise<
  * garante que só os próprios aparecem — sem `.eq` explícito de propósito,
  * como as outras consultas desta camada.
  */
-export async function getMeusTemplates(): Promise<TemplateMensagem[]> {
+/**
+ * Contagem de cliques de WhatsApp para o corretor logado.
+ */
+export async function getCliquesWhatsappCorretor(): Promise<{ hoje: number; total: number }> {
+  const supabase = await createClient();
+  const hojeInicio = new Date();
+  hojeInicio.setHours(0, 0, 0, 0);
+
+  const [totalRes, hojeRes] = await Promise.all([
+    supabase.from("cliques_whatsapp").select("id", { count: "exact", head: true }),
+    supabase
+      .from("cliques_whatsapp")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", hojeInicio.toISOString()),
+  ]);
+
+  return {
+    total: totalRes.count ?? 0,
+    hoje: hojeRes.count ?? 0,
+  };
+}
+
+/**
+ * Slugs dos destaques do corretor logado, na ordem escolhida — quem entra
+ * pelo link dele vê esses primeiro (ver `ordenar()` em `queries.ts`).
+ */
+export async function getMeusDestaques(): Promise<string[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("templates_mensagens")
-    .select("id, titulo, conteudo, padrao")
-    .order("created_at", { ascending: false });
+    .from("corretor_destaques")
+    .select("empreendimento_slug")
+    .order("posicao");
 
-  if (error) throw new Error(`Falha ao carregar os templates: ${error.message}`);
-  return (data ?? []) as TemplateMensagem[];
+  if (error) throw new Error(`Falha ao carregar os destaques: ${error.message}`);
+  return (data ?? []).map((d) => d.empreendimento_slug);
 }
+

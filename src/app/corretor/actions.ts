@@ -197,6 +197,59 @@ export async function enviarMidiaCorretor(
 }
 
 /**
+ * Substitui a lista inteira de destaques do corretor logado. Sempre
+ * apaga-e-recria em vez de um PATCH incremental: são no máximo 15 linhas, e
+ * o cliente já manda o array final a cada mudança (adicionar, remover ou
+ * reordenar) — mais simples de acertar do que reconciliar um diff.
+ */
+export async function salvarDestaques(slugs: string[]): Promise<ResultadoAcao> {
+  const { supabase, user } = await exigirSessao();
+
+  if (slugs.length > 15) {
+    return { erro: "Máximo de 15 destaques." };
+  }
+
+  const { data: corretor } = await supabase
+    .from("corretores")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!corretor) {
+    return { erro: "Sem permissão para editar este cadastro. Fale com quem administra o site." };
+  }
+
+  const { error: erroApagar } = await supabase
+    .from("corretor_destaques")
+    .delete()
+    .eq("corretor_id", corretor.id);
+
+  if (erroApagar) {
+    return { erro: "Não foi possível salvar agora. Tente novamente." };
+  }
+
+  if (slugs.length === 0) {
+    revalidatePath("/corretor/links");
+    return {};
+  }
+
+  const { error: erroInserir } = await supabase.from("corretor_destaques").insert(
+    slugs.map((slug, index) => ({
+      corretor_id: corretor.id,
+      empreendimento_slug: slug,
+      posicao: index,
+    })),
+  );
+
+  if (erroInserir) {
+    return { erro: "Não foi possível salvar agora. Tente novamente." };
+  }
+
+  revalidatePath("/corretor/links");
+  return {};
+}
+
+/**
  * Troca a senha revalidando a atual antes.
  *
  * `auth.updateUser` sozinho aceitaria a troca só com a sessão válida — o que
