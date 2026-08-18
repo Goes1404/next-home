@@ -1,7 +1,10 @@
 /**
  * Tipos gerados a partir do projeto Supabase real (prhhrqyubjcafvucirri) via
  * Management API — `types/typescript`. Não editar à mão; regenerar sempre
- * que `supabase/migrations/` mudar. Última geração: depois da 0007.
+ * que `supabase/migrations/` mudar. Última geração: depois da 0009
+ * (aplicada manualmente à conexão direta com Postgres — `gen types` local
+ * exige Docker, indisponível neste ambiente; colunas conferidas por
+ * introspecção antes de editar este arquivo).
  */
 
 export type Json =
@@ -26,6 +29,7 @@ export type Database = {
           bio: string | null
           created_at: string
           creci: string
+          em_pausa: boolean
           email: string | null
           foto_url: string | null
           id: string
@@ -35,12 +39,14 @@ export type Database = {
           slug: string | null
           user_id: string | null
           whatsapp: string
+          video_url: string | null
         }
         Insert: {
           ativo?: boolean
           bio?: string | null
           created_at?: string
           creci: string
+          em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
           id?: string
@@ -50,12 +56,14 @@ export type Database = {
           slug?: string | null
           user_id?: string | null
           whatsapp: string
+          video_url?: string | null
         }
         Update: {
           ativo?: boolean
           bio?: string | null
           created_at?: string
           creci?: string
+          em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
           id?: string
@@ -65,6 +73,7 @@ export type Database = {
           slug?: string | null
           user_id?: string | null
           whatsapp?: string
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -225,6 +234,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          anuncio_origem: string | null
           consentimento_lgpd: boolean
           corretor_id: string | null
           created_at: string
@@ -234,14 +244,17 @@ export type Database = {
           etapa: string
           etapa_alterada_em: string
           id: string
+          meta_lead_id: string | null
           mensagem: string | null
           nome: string
           origem: string | null
           origem_atribuicao: string | null
           telefone: string | null
           tipo: string
+          visita_agendada_em: string | null
         }
         Insert: {
+          anuncio_origem?: string | null
           consentimento_lgpd?: boolean
           corretor_id?: string | null
           created_at?: string
@@ -251,14 +264,17 @@ export type Database = {
           etapa?: string
           etapa_alterada_em?: string
           id?: string
+          meta_lead_id?: string | null
           mensagem?: string | null
           nome: string
           origem?: string | null
           origem_atribuicao?: string | null
           telefone?: string | null
           tipo?: string
+          visita_agendada_em?: string | null
         }
         Update: {
+          anuncio_origem?: string | null
           consentimento_lgpd?: boolean
           corretor_id?: string | null
           created_at?: string
@@ -268,12 +284,14 @@ export type Database = {
           etapa?: string
           etapa_alterada_em?: string
           id?: string
+          meta_lead_id?: string | null
           mensagem?: string | null
           nome?: string
           origem?: string | null
           origem_atribuicao?: string | null
           telefone?: string | null
           tipo?: string
+          visita_agendada_em?: string | null
         }
         Relationships: [
           {
