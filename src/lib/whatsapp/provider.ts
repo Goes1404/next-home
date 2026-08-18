@@ -36,6 +36,46 @@ export function provedorConfigurado(): boolean {
   return configDoProvedor() !== null;
 }
 
+/**
+ * Cria a instância no provedor, já apontando o webhook de volta para o
+ * nosso endpoint — é o que faz as mensagens recebidas chegarem no CRM sem
+ * ninguém precisar configurar nada à mão no painel da Evolution.
+ *
+ * Silencioso de propósito: se a instância já existe, o provedor responde
+ * erro e o fluxo segue para o `connect` normalmente.
+ */
+async function garantirInstancia(
+  config: { baseUrl: string; apiKey: string },
+  instanceName: string,
+): Promise<void> {
+  const urlWebhook = process.env.WHATSAPP_WEBHOOK_URL;
+  const segredo = process.env.WHATSAPP_WEBHOOK_SECRET;
+
+  try {
+    await fetch(`${config.baseUrl}/instance/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: config.apiKey },
+      body: JSON.stringify({
+        instanceName,
+        qrcode: true,
+        integration: "WHATSAPP-BAILEYS",
+        ...(urlWebhook
+          ? {
+              webhook: {
+                url: urlWebhook,
+                byEvents: false,
+                headers: segredo ? { "x-webhook-secret": segredo } : undefined,
+                events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
+              },
+            }
+          : {}),
+      }),
+    });
+  } catch {
+    // Falha aqui não impede tentar o connect — o erro real aparece lá.
+  }
+}
+
 export type ResultadoQrCode =
   | { ok: true; qrcodeBase64: string | null; jaConectado: boolean }
   | { ok: false; motivo: "provedor_nao_configurado" | "erro_provedor"; detalhe?: string };
@@ -56,6 +96,12 @@ export async function obterQrCodeInstancia(instanceName: string): Promise<Result
       detalhe: "Defina WHATSAPP_API_URL e WHATSAPP_API_KEY para conectar um número.",
     };
   }
+
+  // Na primeira conexão do corretor a instância ainda não existe na
+  // Evolution — `/instance/connect` sozinho devolveria 404. Criar é
+  // idempotente na prática: se já existe, o provedor recusa e seguimos
+  // direto para o connect.
+  await garantirInstancia(config, instanceName);
 
   try {
     const controller = new AbortController();
