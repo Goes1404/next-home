@@ -1,0 +1,22 @@
+# TLS automático (Let's Encrypt) para a Evolution API.
+# O domínio vem do .env — ver docker-compose.yml.
+
+{$EVOLUTION_DOMAIN} {
+	reverse_proxy evolution:8080
+
+	# A Evolution mantém websocket aberto com o WhatsApp; sem um timeout
+	# generoso o proxy derruba a conexão e o número aparece como
+	# desconectado no painel sem motivo aparente.
+	@websocket {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	reverse_proxy @websocket evolution:8080
+
+	encode gzip
+
+	log {
+		output file /data/access.log
+		level ERROR
+	}
+}

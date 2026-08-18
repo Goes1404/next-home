@@ -25,24 +25,12 @@ com **um corretor voluntário**, não com a equipe inteira.
 
 ## 1. Subir a Evolution
 
-Precisa de um servidor com Docker e um domínio com HTTPS (uma VPS básica
-resolve). No servidor:
+O stack pronto está em [`infra/evolution/`](../infra/evolution/README.md):
+`docker-compose.yml` com Postgres para as sessões e Caddy resolvendo o
+HTTPS sozinho. No servidor é `docker compose up -d`.
 
-```bash
-docker run -d \
-  --name evolution \
-  -p 8080:8080 \
-  -e AUTHENTICATION_API_KEY='troque-por-uma-chave-longa-e-aleatoria' \
-  -v evolution_instances:/evolution/instances \
-  atendai/evolution-api:v2.1.1
-```
-
-Ponha um proxy reverso (Caddy, Nginx) com TLS na frente — o WhatsApp e o
-nosso webhook falam HTTPS. Anote a URL final, ex.:
-`https://evo.suaempresa.com.br`.
-
-> O volume (`-v`) não é opcional: sem ele, um restart do contêiner derruba
-> as sessões e todos os corretores precisam ler o QR Code de novo.
+Siga o [README de lá](../infra/evolution/README.md) — ele tem o passo a
+passo completo, incluindo a escolha do servidor e do subdomínio.
 
 ## 2. Configurar as variáveis na Vercel
 

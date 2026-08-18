@@ -1,0 +1,75 @@
+# Stack da Evolution API — o gateway que conecta o WhatsApp de cada corretor.
+#
+# Sobe três coisas: a Evolution, um Postgres só dela (não é o Supabase do
+# site) e o Caddy, que resolve o HTTPS sozinho via Let's Encrypt.
+#
+# Uso:
+#   1. copie este diretório para o servidor
+#   2. preencha o .env ao lado (veja .env.example)
+#   3. docker compose up -d
+#
+# Requisito: o domínio de EVOLUTION_DOMAIN já apontando (registro A) para
+# o IP deste servidor ANTES de subir — o Caddy só emite o certificado
+# depois que o DNS resolve.
+
+services:
+  evolution:
+    image: atendai/evolution-api:v2.1.1
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      - SERVER_URL=https://${EVOLUTION_DOMAIN}
+      - AUTHENTICATION_API_KEY=${AUTHENTICATION_API_KEY}
+      - AUTHENTICATION_TYPE=apikey
+      # Sessões no Postgres, não em memória: sem isto, todo restart do
+      # contêiner desconecta os corretores e cada um precisa ler o QR de novo.
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:${POSTGRES_PASSWORD}@postgres:5432/evolution
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=false
+      - DATABASE_SAVE_MESSAGE_UPDATE=false
+      - DATABASE_SAVE_DATA_CONTACTS=false
+      - DATABASE_SAVE_DATA_CHATS=false
+      - CONFIG_SESSION_PHONE_CLIENT=NextHome
+      - CONFIG_SESSION_PHONE_NAME=Chrome
+      - QRCODE_LIMIT=10
+      - LOG_LEVEL=ERROR
+    volumes:
+      - evolution_instances:/evolution/instances
+    expose:
+      - "8080"
+
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=evolution
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=evolution
+    volumes:
+      - evolution_postgres:/var/lib/postgresql/data
+
+  # O Caddy emite e renova o certificado sozinho. É o que evita a parte
+  # mais chata (e mais fácil de errar) de expor a Evolution na internet.
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    depends_on:
+      - evolution
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - EVOLUTION_DOMAIN=${EVOLUTION_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  evolution_instances:
+  evolution_postgres:
+  caddy_data:
+  caddy_config:

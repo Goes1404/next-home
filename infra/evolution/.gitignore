@@ -1,0 +1,2 @@
+# A chave mestra da Evolution e a senha do banco moram aqui. Nunca no git.
+.env
