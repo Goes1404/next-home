@@ -191,6 +191,17 @@ export async function getEquipeAtiva(): Promise<
  * garante que só os próprios aparecem — sem `.eq` explícito de propósito,
  * como as outras consultas desta camada.
  */
+export async function getMeusTemplates(): Promise<TemplateMensagem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("templates_mensagens")
+    .select("id, titulo, conteudo, padrao")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(`Falha ao carregar os templates: ${error.message}`);
+  return (data ?? []) as TemplateMensagem[];
+}
+
 /**
  * Contagem de cliques de WhatsApp para o corretor logado.
  */
