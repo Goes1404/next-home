@@ -86,7 +86,7 @@ export const enderecoLinha = `${site.endereco.logradouro} — ${site.endereco.ba
  * então o arquivo precisa estar disponível desde o primeiro request, sem
  * depender de uma URL externa.
  */
-export const HERO_VIDEO_URL: string | null = "/video/hero-scroll-60fps.mp4";
+export const HERO_VIDEO_URL: string | null = "/video/hero-scroll-hq.mp4";
 
 /** Monta um link `wa.me` para qualquer número em E.164, com mensagem pré-preenchida. */
 export function linkWhatsappPara(numero: string, mensagem: string): string {

@@ -34,7 +34,7 @@ export default async function VitrineLayout({ children }: { children: React.Reac
         ) : (
           videoUrl && <HeroVideoBackground src={videoUrl} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-fundo/55 via-fundo/35 to-fundo" />
+        <div className="absolute inset-0 bg-gradient-to-b from-fundo/30 via-fundo/10 to-fundo/90" />
       </div>
 
       {children}
