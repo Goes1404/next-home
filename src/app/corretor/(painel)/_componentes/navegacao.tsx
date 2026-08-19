@@ -36,6 +36,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
     titulo: "Conversas",
     itens: [
       { href: "/corretor/whatsapp", label: "WhatsApp IA", icone: IconeConversa },
+      { href: "/corretor/conversas", label: "Conversas", icone: IconeBaloes },
       { href: "/corretor/campanhas", label: "Campanhas", icone: IconeMegafone },
       { href: "/corretor/templates", label: "Templates", icone: IconeTexto },
     ],
@@ -135,6 +136,14 @@ function IconeConversa(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z" />
+    </svg>
+  );
+}
+function IconeBaloes(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M8 13.5H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v.5" />
+      <path d="M10 9h9a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2v3l-3.5-3H12a2 2 0 0 1-2-2z" />
     </svg>
   );
 }

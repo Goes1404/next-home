@@ -176,6 +176,26 @@ export async function pausarBotPorAtendimentoHumano(conversaId: string): Promise
     .eq("id", conversaId);
 }
 
+/**
+ * Quando o corretor falou pela última vez nesta conversa.
+ *
+ * É o relógio do modo co-piloto: enquanto o humano está ativo, o bot espera.
+ */
+export async function ultimaFalaDoCorretor(conversaId: string): Promise<string | null> {
+  const supabase = createServiceClient();
+
+  const { data } = await supabase
+    .from("whatsapp_mensagens")
+    .select("created_at")
+    .eq("conversa_id", conversaId)
+    .eq("remetente", "corretor")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data?.created_at ?? null;
+}
+
 /** Se o bot pode responder agora nesta conversa. */
 export function botDeveResponder(conversa: ConversaPersistida): boolean {
   if (!conversa.botAtivo) return false;

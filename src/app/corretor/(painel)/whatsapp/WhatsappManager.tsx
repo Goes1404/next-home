@@ -3,7 +3,45 @@
 import { useState } from "react";
 import type { ModoBotWhatsapp, StatusConexaoWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { conectarWhatsapp, salvarConfiguracaoWhatsapp, testarAgenteIA } from "./acoes";
-import { Smartphone, ClipboardList, TestTube, Bot, Moon, Ruler, Lightbulb, Calendar, AlertTriangle, Check, ArrowRight } from 'lucide-react';
+import { Smartphone, ClipboardList, TestTube, Bot, Moon, Ruler, Lightbulb, Calendar, AlertTriangle, Check, ArrowRight, Timer, BellOff } from 'lucide-react';
+import { EXPEDIENTE, MINUTOS_COPILOTO } from "@/lib/whatsapp/modoBot";
+
+/**
+ * As quatro opções de quando a IA fala, com a descrição do comportamento
+ * real — os números vêm de `modoBot.ts`, que é quem decide de fato, para o
+ * texto não envelhecer separado da regra.
+ */
+const MODOS: {
+  valor: ModoBotWhatsapp;
+  titulo: string;
+  descricao: string;
+  icone: typeof Bot;
+}[] = [
+  {
+    valor: "24_7",
+    titulo: "Sempre ativa (24/7)",
+    descricao: "Responde qualquer mensagem, a qualquer hora do dia.",
+    icone: Bot,
+  },
+  {
+    valor: "noturno_e_fds",
+    titulo: "Noturno e fim de semana",
+    descricao: `Só fora do expediente: depois das ${EXPEDIENTE.fimHora}h, antes das ${EXPEDIENTE.inicioHora}h e nos fins de semana.`,
+    icone: Moon,
+  },
+  {
+    valor: "co_piloto_3min",
+    titulo: `Co-piloto (${MINUTOS_COPILOTO} min)`,
+    descricao: `Fica quieta enquanto você responde e assume depois de ${MINUTOS_COPILOTO} minutos sem você falar na conversa.`,
+    icone: Timer,
+  },
+  {
+    valor: "desativado",
+    titulo: "Desligada",
+    descricao: "Nunca responde. As mensagens continuam sendo registradas no painel.",
+    icone: BellOff,
+  },
+];
 
 interface Props {
   corretorNome: string;
@@ -338,45 +376,37 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
               <label className="text-fluid-xs font-bold text-corpo uppercase tracking-wider block">
                 Modo de Ativação do Bot
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setModoBot("24_7")}
-                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                    modoBot === "24_7"
-                      ? "border-acento-linha bg-acento-lavado text-white"
-                      : "border-linha bg-campo text-apoio hover:text-titulo"
-                  }`}
-                >
-                  <span className="text-lg block mb-1"> <Bot className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
-                  <h4 className="text-fluid-xs font-bold text-titulo">Sempre Ativo (24/7)</h4>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setModoBot("noturno_e_fds")}
-                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                    modoBot === "noturno_e_fds"
-                      ? "border-acento-linha bg-acento-lavado text-white"
-                      : "border-linha bg-campo text-apoio hover:text-titulo"
-                  }`}
-                >
-                  <span className="text-lg block mb-1"> <Moon className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
-                  <h4 className="text-fluid-xs font-bold text-titulo">Noturno & Fim de Semana</h4>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setModoBot("co_piloto_3min")}
-                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                    modoBot === "co_piloto_3min"
-                      ? "border-acento-linha bg-acento-lavado text-white"
-                      : "border-linha bg-campo text-apoio hover:text-titulo"
-                  }`}
-                >
-                  <span className="text-lg block mb-1">⏱️</span>
-                  <h4 className="text-fluid-xs font-bold text-titulo">Modo Co-Piloto (3 min)</h4>
-                </button>
+              {/*
+                Cada opção diz o que FAZ, não só como se chama. Os rótulos
+                antes eram só título ("Modo Co-Piloto (3 min)") e nenhum
+                descrevia o comportamento — o que era pior porque dois deles
+                não tinham comportamento nenhum implementado.
+              */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {MODOS.map((opcao) => {
+                  const Icone = opcao.icone;
+                  const ativo = modoBot === opcao.valor;
+                  return (
+                    <button
+                      key={opcao.valor}
+                      type="button"
+                      onClick={() => setModoBot(opcao.valor)}
+                      aria-pressed={ativo}
+                      className={`cursor-pointer rounded-2xl border p-4 text-left transition-colors ${
+                        ativo
+                          ? "border-acento-linha bg-acento-lavado"
+                          : "border-linha bg-campo hover:border-linha-forte"
+                      }`}
+                    >
+                      <Icone
+                        aria-hidden
+                        className={`mb-1.5 h-5 w-5 ${ativo ? "text-acento-suave" : "text-apoio"}`}
+                      />
+                      <h4 className="text-fluid-xs text-titulo font-bold">{opcao.titulo}</h4>
+                      <p className="text-fluid-xs text-apoio mt-1 leading-snug">{opcao.descricao}</p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

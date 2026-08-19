@@ -15,8 +15,10 @@ import {
   registrarResultadoEnvio,
   resolverInstancia,
   salvarDossie,
+  ultimaFalaDoCorretor,
   type InstanciaResolvida,
 } from "@/lib/whatsapp/repositorio";
+import { decidirPorModo } from "@/lib/whatsapp/modoBot";
 
 export const runtime = "nodejs";
 
@@ -85,7 +87,22 @@ export async function POST(req: NextRequest) {
 
     // Normalização de payload para suportar Evolution API, Z-API e Meta Cloud API
     const instanceName = payload.instance || payload.instanceName || "";
-    const sender = payload.data?.key?.remoteJid?.replace(/\D/g, "") || payload.sender || payload.from || "";
+
+    /*
+     * O JID bruto precisa ser lido ANTES de virar só dígitos: é o sufixo que
+     * distingue pessoa (`@s.whatsapp.net`) de grupo (`@g.us`), lista de
+     * transmissão e o "status@broadcast". Ao tirar os símbolos, um grupo
+     * vira um número de 18 dígitos e passa por cliente — foi o que
+     * aconteceu: há conversas gravadas com "telefone" 120363401120401903,
+     * que é id de grupo. A IA respondendo dentro de um grupo é o pior lugar
+     * possível para ela errar.
+     */
+    const jidBruto: string = payload.data?.key?.remoteJid || payload.remoteJid || "";
+    if (/@(g\.us|broadcast)$/i.test(jidBruto) || jidBruto === "status@broadcast") {
+      return NextResponse.json({ ok: true, ignored: "Mensagem de grupo ou transmissão" });
+    }
+
+    const sender = jidBruto.replace(/\D/g, "") || payload.sender || payload.from || "";
     const fromMe = Boolean(payload.data?.key?.fromMe || payload.fromMe);
     const audioUrlOrBase64 =
       payload.data?.message?.audioMessage?.url ||
@@ -157,8 +174,23 @@ export async function POST(req: NextRequest) {
       midiaUrl: ehAudio ? audioUrlOrBase64 : null,
     });
 
-    if (!botDeveResponder(conversa) || instancia.modoBot === "desativado") {
+    if (!botDeveResponder(conversa)) {
       return NextResponse.json({ ok: true, action: "bot_pausado_nesta_conversa", sender });
+    }
+
+    /*
+     * O modo escolhido pelo corretor decide aqui — antes só `desativado` era
+     * lido, e "noturno e fim de semana" e "co-piloto" não faziam nada. O
+     * co-piloto precisa saber quando o humano falou pela última vez, e isso
+     * é uma consulta: só é feita no modo que usa.
+     */
+    const decisao = decidirPorModo(instancia.modoBot, {
+      ultimaFalaCorretorEm:
+        instancia.modoBot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
+    });
+
+    if (!decisao.pode) {
+      return NextResponse.json({ ok: true, action: "bot_silenciado_por_modo", motivo: decisao.motivo, modo: instancia.modoBot, sender });
     }
 
     // Catálogo real para RAG (com fallback resiliente)
