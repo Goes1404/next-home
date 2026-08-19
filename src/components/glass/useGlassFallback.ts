@@ -26,8 +26,26 @@ function temWebgl2(): boolean {
   return suporteWebgl2;
 }
 
+/** A leitura em vigor: o atributo do `<html>` vence a preferência do sistema. */
+function temaClaro(): boolean {
+  const escolhido = document.documentElement.dataset.tema;
+  if (escolhido) return escolhido === "claro";
+  return window.matchMedia("(prefers-color-scheme: light)").matches;
+}
+
 function decidir(): ModoVidro {
   const nav = navigator as NavigatorEstendido;
+
+  /*
+   * O shader é escrito para vidro sobre fundo escuro: soma brilho na borda e
+   * pinta o fundo procedural com um quase-preto fixo. Sobre fundo claro isso
+   * não tem conserto por parâmetro — brilho branco sobre branco não desenha
+   * nada —, então a leitura clara usa o fallback em CSS, que já tem receita
+   * própria (`--claro-vidro-*` no globals.css). Reescrever o shader para os
+   * dois fundos é trabalho à parte, e opcional: o fallback é bom o bastante
+   * que painel e card já o usam por escolha visual, não por limitação.
+   */
+  if (temaClaro()) return "css";
 
   // Preferências declaradas do usuário vêm antes de qualquer heurística.
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return "css";
@@ -46,6 +64,9 @@ function decidir(): ModoVidro {
 const CONSULTAS = [
   "(prefers-reduced-motion: reduce)",
   "(prefers-reduced-transparency: reduce)",
+  // Quem está em "seguir o sistema" e troca o tema do SO com o site aberto
+  // precisa ver o vidro trocar de receita junto.
+  "(prefers-color-scheme: light)",
 ] as const;
 
 function subscribe(aoMudar: () => void): () => void {

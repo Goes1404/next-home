@@ -77,7 +77,7 @@ export function Tipologias({
                     type="button"
                     onClick={() => setAberta(indiceDaPlanta(t))}
                     aria-label={`Ver planta de ${t.nome}`}
-                    className="group relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-fundo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300"
+                    className="group relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-fundo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
                   >
                     <Image
                       src={t.plantaUrl}
@@ -108,7 +108,7 @@ export function Tipologias({
                 </div>
 
                 {poucas && (
-                  <p className="text-fluid-xs mt-3 inline-flex items-center gap-1.5 text-sand-300">
+                  <p className="text-fluid-xs mt-3 inline-flex items-center gap-1.5 text-acento-quente">
                     <span className="h-1.5 w-1.5 rounded-full bg-sand-400" />
                     {t.unidadesDisponiveis === 1
                       ? "Última unidade disponível"

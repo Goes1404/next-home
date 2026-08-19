@@ -71,7 +71,7 @@ export default async function AnunciarImovelPage() {
       <Reveal stagger={0.1} className="mx-auto mt-14 grid w-full max-w-4xl gap-4 sm:grid-cols-3">
         {ETAPAS.map((etapa, i) => (
           <GlassSurface key={etapa.titulo} preset="painel" className="px-6 py-7">
-            <span className="font-display text-fluid-xl text-brand-300">{i + 1}</span>
+            <span className="font-display text-fluid-xl text-acento-forte">{i + 1}</span>
             <h2 className="font-display mt-2 text-lg text-titulo">{etapa.titulo}</h2>
             <p className="text-fluid-sm mt-2 text-legenda">{etapa.texto}</p>
           </GlassSurface>

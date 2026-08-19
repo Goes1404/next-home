@@ -75,7 +75,7 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
 
   if (status === "sucesso") {
     return (
-      <div className="rounded-2xl border border-brand-400/30 bg-brand-900/30 px-6 py-8 text-center">
+      <div className="rounded-2xl border border-brand-400/30 bg-marca-fundo/30 px-6 py-8 text-center">
         <p className="font-display text-lg text-titulo">Recebemos seu imóvel!</p>
         <p className="text-fluid-sm mt-2 text-apoio">
           Um corretor da Next Home vai entrar em contato para entender o imóvel e conversar

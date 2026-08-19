@@ -29,7 +29,7 @@ export function CardEmpreendimento({
   return (
     <Link
       href={`/empreendimentos/${e.slug}`}
-      className="block rounded-glass focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300"
+      className="block rounded-glass focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
     >
       <GlassSurface preset="card" className="group overflow-hidden">
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-[calc(var(--radius-glass)-1px)]">

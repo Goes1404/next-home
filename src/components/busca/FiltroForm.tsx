@@ -18,7 +18,7 @@ const FAIXAS_DORMITORIOS = [
 ];
 
 const CAMPO =
-  "w-full appearance-none rounded-xl border border-linha/10 bg-superficie px-3.5 py-2.5 text-sm text-corpo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300";
+  "w-full appearance-none rounded-xl border border-linha/10 bg-superficie px-3.5 py-2.5 text-sm text-corpo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte";
 
 export type FiltroFormProps = {
   filtrosAtuais: FiltrosEmpreendimento;

@@ -6,7 +6,7 @@ import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { AreaTema } from "@/components/tema/AreaTema";
 import { scriptTema } from "@/components/tema/tema";
 import { site } from "@/lib/site";
-import { getTemaEscolhido } from "@/lib/tema";
+import { COR_DA_BARRA, getTemaEscolhido } from "@/lib/tema";
 import "./globals.css";
 
 const inter = Inter({
@@ -98,11 +98,11 @@ export const metadata: Metadata = {
   },
 };
 
-/*
- * `themeColor` e `colorScheme` seguem apontando para a leitura escura porque,
- * hoje, ela é a única que existe de fato — a clara é cópia dela (fase 0 do
- * plano do tema claro). Quando a fase 2 escrever a paleta clara, isto vira um
- * `generateViewport` que lê o mesmo cookie de `lib/tema.ts`.
+/**
+ * Precisa ser `generateViewport` (e não a constante `viewport`) porque a cor
+ * da barra depende do cookie: quem escolheu um tema recebe a cor dele, e quem
+ * está em "seguir o sistema" recebe as duas atrás de media query, para o
+ * navegador escolher sozinho.
  */
 export const viewport: Viewport = {
   /*

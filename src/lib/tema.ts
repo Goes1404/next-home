@@ -28,3 +28,16 @@ export async function getTemaEscolhido(): Promise<Tema | null> {
   const valor = (await cookies()).get(COOKIE_TEMA)?.value;
   return valor === "claro" || valor === "escuro" ? valor : null;
 }
+
+/**
+ * Cor que o navegador usa na própria barra (Chrome no Android, Safari no iOS).
+ * Precisa acompanhar o fundo da página, senão a moldura do navegador fica de
+ * um tema e o conteúdo do outro.
+ *
+ * São os mesmos valores de `--fundo` em cada leitura, escritos à mão porque
+ * `<meta>` não lê variável CSS.
+ */
+export const COR_DA_BARRA: Record<Tema, string> = {
+  escuro: "#040b0a",
+  claro: "#f6faf9",
+};

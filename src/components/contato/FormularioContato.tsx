@@ -72,7 +72,7 @@ export function FormularioContato({
 
   if (status === "sucesso") {
     return (
-      <div className="rounded-2xl border border-brand-400/30 bg-brand-900/30 px-6 py-8 text-center">
+      <div className="rounded-2xl border border-brand-400/30 bg-marca-fundo/30 px-6 py-8 text-center">
         <p className="font-display text-lg text-titulo">Mensagem enviada!</p>
         <p className="text-fluid-sm mt-2 text-apoio">
           Recebemos seu contato e um corretor vai retornar em breve.

@@ -54,6 +54,14 @@
   --color-ink-800: #10221e;
   --color-ink-700: #1a302b;
   --color-ink-600: #2a453f;
+  /*
+   * 500 e 400 nasceram para o tema claro: do 600 para cima a escala salta de
+   * 9,9:1 direto para os 3,9:1 do `mist-500`, e faltavam os dois degraus de
+   * legenda e texto tênue que ainda passam em AA sobre `mist-50` (6,5:1 e
+   * 5,0:1). Continuam sendo `ink` — mesma família, mesmo viés teal.
+   */
+  --color-ink-500: #4a5f59;
+  --color-ink-400: #5c716b;
 
   /*
    * Mist — a escala de texto sobre fundo escuro. Os degraus são usados como
@@ -86,6 +94,9 @@
   --color-sand-300: #e8d5b0;
   --color-sand-400: #d4b483;
   --color-sand-500: #b8935c;
+  /* Nasceu junto com ink-400/500: é o degrau de areia que ainda passa em AA
+     sobre fundo claro (4,8:1), onde o sand-300 dá 1,3:1 e some. */
+  --color-sand-600: #8a6a38;
 
   /*
    * ---------------------------------------------------------------------
@@ -416,18 +427,17 @@
    * têm esse problema.
    */
   .vidro-css {
-    background: linear-gradient(
-      145deg,
-      rgb(255 255 255 / 0.1) 0%,
-      rgb(255 255 255 / 0.045) 45%,
-      rgb(255 255 255 / 0.075) 100%
-    );
-    box-shadow: var(--shadow-glass);
-    border: 1px solid rgb(255 255 255 / 0.12);
+    background: var(--vidro-fundo);
+    box-shadow: var(--vidro-sombra);
+    border: 1px solid var(--vidro-borda);
   }
 
   /* Com o canvas WebGL cobrindo o painel, resta apenas a base opaca que
-     garante contraste do texto se o contexto for perdido. */
+     garante contraste do texto se o contexto for perdido.
+
+     Estas duas classes seguem com cor fixa escura porque o WebGL só entra na
+     leitura escura: no claro, `useGlassFallback` devolve "css" antes de
+     qualquer heurística (ver o comentário lá). */
   .vidro-webgl {
     background: rgb(7 19 16 / 0.35);
     box-shadow: var(--shadow-glass);
@@ -444,12 +454,7 @@
     background: rgb(7 19 16 / 0.74);
   }
   .vidro-opaco.vidro-css {
-    background: linear-gradient(
-      145deg,
-      rgb(255 255 255 / 0.14) 0%,
-      rgb(255 255 255 / 0.08) 45%,
-      rgb(255 255 255 / 0.11) 100%
-    );
+    background: var(--vidro-fundo-opaco);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
   }

@@ -27,7 +27,7 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
             type="button"
             onClick={() => setAberta(i)}
             aria-label={`Ampliar imagem ${i + 1} de ${fotos.length}${foto.alt ? `: ${foto.alt}` : ""}`}
-            className="group relative aspect-[4/3] overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300"
+            className="group relative aspect-[4/3] overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
           >
             <Image
               src={foto.url}

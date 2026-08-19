@@ -34,7 +34,7 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
             ) : (
               <span
                 aria-hidden
-                className="font-display flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xl text-titulo"
+                className="font-display flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xl text-mist-50"
               >
                 {iniciais(e.corretor.nome)}
               </span>

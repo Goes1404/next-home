@@ -145,7 +145,7 @@ export default async function HomeInstitucional() {
                   >
                     <h2 className="font-display text-lg text-titulo">{c.titulo}</h2>
                     <p className="text-fluid-sm mt-2 flex-1 text-legenda">{c.texto}</p>
-                    <span className="text-fluid-sm mt-5 font-medium text-acento transition-colors group-hover:text-brand-100">
+                    <span className="text-fluid-sm mt-5 font-medium text-acento transition-colors group-hover:text-acento-intenso">
                       {c.cta} →
                     </span>
                   </GlassSurface>
