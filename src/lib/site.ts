@@ -79,14 +79,13 @@ export const site = {
 export const enderecoLinha = `${site.endereco.logradouro} — ${site.endereco.bairro}, ${site.endereco.cidade}/${site.endereco.uf}`;
 
 /**
- * Vídeo de fundo do hero da home — prédios, lazer, algo que traga sensação
- * de paz e pertencimento. Fica `null` até haver um arquivo definitivo; a
- * home cai de volta na imagem estática enquanto isso. Para ativar: suba um
- * .mp4 (H.264, sem áudio, ~15–25s em loop, idealmente < 8 MB) no bucket
- * público `empreendimentos` do Supabase Storage e cole a URL aqui.
+ * Vídeo de fundo do hero — servido como asset estático (`public/video/`) em
+ * vez do bucket do Supabase Storage porque agora ele não toca sozinho: o
+ * scroll da página controla o quadro exibido (ver HeroVideoBackground),
+ * então o arquivo precisa estar disponível desde o primeiro request, sem
+ * depender de uma URL externa.
  */
-export const HERO_VIDEO_URL: string | null =
-  "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/padrao.mp4";
+export const HERO_VIDEO_URL: string | null = "/video/hero-scroll.mp4";
 
 /** Monta um link `wa.me` para qualquer número em E.164, com mensagem pré-preenchida. */
 export function linkWhatsappPara(numero: string, mensagem: string): string {
