@@ -13,11 +13,11 @@ import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/
 import { enderecoLinha, site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: `${site.nomeCompleto} — Imobiliária de Alto Padrão em Alphaville`,
+  title: `${site.nomeCompleto} — Imóveis e Oportunidades em Alphaville, Barueri e Região`,
   description: site.descricao,
   alternates: { canonical: "/" },
   openGraph: {
-    title: `${site.nomeCompleto} — Imobiliária de Alto Padrão em Alphaville`,
+    title: `${site.nomeCompleto} — Imóveis e Oportunidades em Alphaville, Barueri e Região`,
     description: site.descricao,
     url: site.url,
   },
@@ -29,22 +29,22 @@ const CAMINHOS = [
     href: "/empreendimentos",
     titulo: "Quero Comprar",
     texto:
-      "Explore lançamentos e projetos exclusivos com plantas inteligentes, lazer de resort e as melhores localizações de Alphaville e região.",
-    cta: "Explorar Imóveis",
+      "Apartamentos na planta e prontos para morar com condições facilitadas, lazer completo e localizações estratégicas em Alphaville e região.",
+    cta: "Ver Melhores Oportunidades",
   },
   {
     href: "/anunciar-imovel",
     titulo: "Vender ou Anunciar",
     texto:
-      "Valorize seu patrimônio com quem tem compradores qualificados, divulgação profissional e negociação segura do início ao fim.",
-    cta: "Anunciar com Especialistas",
+      "Venda seu imóvel mais rápido com quem tem compradores ativos, divulgação estratégica e assessoria completa do início ao fim.",
+    cta: "Anunciar com Quem Vende",
   },
   {
     href: "/corretores",
-    titulo: "Consultoria Exclusiva",
+    titulo: "Atendimento Personalizado",
     texto:
-      "Atendimento sob medida, sem filas ou mensagens robóticas. Fale direto com o especialista responsável pelo imóvel no WhatsApp.",
-    cta: "Falar com Especialista",
+      "Tire dúvidas, faça simulações de financiamento e receba opções que cabem no seu orçamento direto com nossos corretores no WhatsApp.",
+    cta: "Falar com Corretor",
   },
 ];
 
@@ -111,13 +111,13 @@ export default async function HomeInstitucional() {
         <section className="flex flex-col items-center justify-center px-4 pt-24 pb-32 sm:min-h-svh sm:pt-28 sm:pb-20">
           <Reveal className="w-full max-w-3xl text-center">
             <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento uppercase">
-              Imóveis de Alto Padrão · Alphaville e Região
+              Imóveis & Oportunidades · Alphaville, Barueri e Região
             </p>
             <h1 className="text-fluid-3xl text-titulo">
-              O seu próximo endereço de alto padrão em Alphaville começa aqui.
+              A melhor oportunidade para morar bem ou investir na região que mais valoriza.
             </h1>
             <p className="text-fluid-base mx-auto mt-5 max-w-xl text-corpo-suave">
-              Curadoria exclusiva dos melhores lançamentos e imóveis selecionados. Atendimento consultivo e direto com quem realmente entende o seu estilo de vida.
+              Lançamentos na planta, apartamentos modernos e casas selecionadas com condições facilitadas de pagamento. Atendimento direto e ágil no WhatsApp.
             </p>
           </Reveal>
 
@@ -158,9 +158,9 @@ export default async function HomeInstitucional() {
         {destaques.length > 0 && (
           <section className="px-4 pb-24">
             <Reveal className="mx-auto max-w-lg text-center">
-              <h2 className="text-fluid-2xl text-titulo">Coleção em Destaque</h2>
+              <h2 className="text-fluid-2xl text-titulo">Oportunidades em Destaque</h2>
               <p className="text-fluid-base mt-3 text-apoio">
-                Projetos selecionados a dedo que unem sofisticação, conforto e alta valorização.
+                Projetos com excelente potencial de valorização, infraestrutura completa e condições especiais de lançamento.
               </p>
             </Reveal>
 
@@ -188,9 +188,9 @@ export default async function HomeInstitucional() {
         {equipe.length > 0 && (
           <section className="px-4 pb-24">
             <Reveal className="mx-auto max-w-lg text-center">
-              <h2 className="text-fluid-2xl text-titulo">Especialistas ao Seu Lado</h2>
+              <h2 className="text-fluid-2xl text-titulo">Equipe Pronta para Negociar</h2>
               <p className="text-fluid-base mt-3 text-apoio">
-                Consultores credenciados e dedicados a encontrar a oportunidade perfeita para você e sua família.
+                Corretores especializados prontos para tirar dúvidas, calcular financiamento e encontrar a melhor proposta para você.
               </p>
             </Reveal>
 

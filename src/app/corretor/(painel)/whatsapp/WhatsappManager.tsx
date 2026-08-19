@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ModoBotWhatsapp, StatusConexaoWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { conectarWhatsapp, salvarConfiguracaoWhatsapp, testarAgenteIA } from "./acoes";
+import { Smartphone, ClipboardList, TestTube, Bot, Moon, Ruler, Lightbulb, Calendar, AlertTriangle, Check, ArrowRight } from 'lucide-react';
 
 interface Props {
   corretorNome: string;
@@ -158,7 +159,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
               : "bg-vidro text-apoio hover:text-titulo hover:bg-vidro-forte"
           }`}
         >
-          📱 Conexão & Configurações
+           <Smartphone className="inline-block w-5 h-5 align-text-bottom mr-1" />  Conexão & Configurações
         </button>
 
         <button
@@ -169,7 +170,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
               : "bg-vidro text-apoio hover:text-titulo hover:bg-vidro-forte"
           }`}
         >
-          <span>🧪 Testar Minha IA ao Vivo</span>
+          <span> <TestTube className="inline-block w-5 h-5 align-text-bottom mr-1" />  Testar Minha IA ao Vivo</span>
           <span className="px-2 py-0.5 rounded-full text-[10px] bg-ok-lavado text-ok border border-ok-linha">
             Playground
           </span>
@@ -178,13 +179,13 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
 
       {feedback && (
         <div className="rounded-2xl border border-ok-linha bg-ok-lavado p-4 text-fluid-xs font-semibold text-ok backdrop-blur duration-200">
-          ✓ {feedback}
+           <Check className="inline-block w-5 h-5 align-text-bottom mr-1" />  {feedback}
         </div>
       )}
 
       {avisoIa && (
         <div className="rounded-2xl border border-alerta-linha bg-alerta-lavado p-4 text-fluid-xs font-semibold text-alerta backdrop-blur duration-200">
-          ⚠ {avisoIa}
+           <AlertTriangle className="inline-block w-5 h-5 align-text-bottom mr-1" />  {avisoIa}
         </div>
       )}
 
@@ -254,7 +255,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
               <div className="p-6 rounded-2xl border border-acento-linha bg-fundo/90 text-center space-y-4 max-w-md mx-auto">
                 <h3 className="text-fluid-base font-bold text-titulo">Escaneie o QR Code com seu celular</h3>
                 <p className="text-fluid-xs text-apoio">
-                  WhatsApp no celular ➔ Menu (Aparelhos conectados) ➔ Conectar um aparelho.
+                  WhatsApp no celular  <ArrowRight className="inline-block w-5 h-5 align-text-bottom mr-1" />  Menu (Aparelhos conectados)  <ArrowRight className="inline-block w-5 h-5 align-text-bottom mr-1" />  Conectar um aparelho.
                 </p>
 
                 {conectando && (
@@ -347,7 +348,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                       : "border-linha bg-campo text-apoio hover:text-titulo"
                   }`}
                 >
-                  <span className="text-lg block mb-1">🤖</span>
+                  <span className="text-lg block mb-1"> <Bot className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
                   <h4 className="text-fluid-xs font-bold text-titulo">Sempre Ativo (24/7)</h4>
                 </button>
 
@@ -360,7 +361,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                       : "border-linha bg-campo text-apoio hover:text-titulo"
                   }`}
                 >
-                  <span className="text-lg block mb-1">🌙</span>
+                  <span className="text-lg block mb-1"> <Moon className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
                   <h4 className="text-fluid-xs font-bold text-titulo">Noturno & Fim de Semana</h4>
                 </button>
 
@@ -452,7 +453,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                             className="p-2.5 rounded-xl bg-black/40 border border-linha flex items-center justify-between gap-3"
                           >
                             <div className="flex items-center gap-2">
-                              <span className="text-base">📐</span>
+                              <span className="text-base"> <Ruler className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
                               <div>
                                 <span className="font-bold text-titulo block text-[11px]">
                                   {anexo.titulo}
@@ -492,7 +493,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                 }
                 className="shrink-0 px-3 py-1.5 rounded-lg bg-vidro hover:bg-vidro-forte text-corpo text-[11px] cursor-pointer"
               >
-                💡 &quot;Procuro 3 suítes até 2M&quot;
+                 <Lightbulb className="inline-block w-5 h-5 align-text-bottom mr-1" />  &quot;Procuro 3 suítes até 2M&quot;
               </button>
               <button
                 onClick={() =>
@@ -502,7 +503,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                 }
                 className="shrink-0 px-3 py-1.5 rounded-lg bg-vidro hover:bg-vidro-forte text-corpo text-[11px] cursor-pointer"
               >
-                📐 &quot;Me envie a planta do Canvas&quot;
+                 <Ruler className="inline-block w-5 h-5 align-text-bottom mr-1" />  &quot;Me envie a planta do Canvas&quot;
               </button>
               <button
                 onClick={() =>
@@ -512,7 +513,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                 }
                 className="shrink-0 px-3 py-1.5 rounded-lg bg-vidro hover:bg-vidro-forte text-corpo text-[11px] cursor-pointer"
               >
-                📅 &quot;Agendar visita sábado 15h&quot;
+                 <Calendar className="inline-block w-5 h-5 align-text-bottom mr-1" />  &quot;Agendar visita sábado 15h&quot;
               </button>
             </div>
 
@@ -559,7 +560,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                 {dossiePlayground.resumo ? (
                   <div className="p-3 rounded-xl bg-campo border border-linha space-y-0.5">
                     <span className="text-[10px] text-tenue uppercase font-bold">
-                      📋 Resumo do Cliente
+                       <ClipboardList className="inline-block w-5 h-5 align-text-bottom mr-1" />  Resumo do Cliente
                     </span>
                     <p className="text-fluid-xs text-titulo whitespace-pre-line leading-relaxed">
                       {dossiePlayground.resumo}
@@ -575,7 +576,7 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
 
             <div className="p-3.5 rounded-2xl bg-acento-lavado border border-acento-linha">
               <span className="text-[10px] text-acento-suave font-bold uppercase block mb-1">
-                💡 Por que testar?
+                 <Lightbulb className="inline-block w-5 h-5 align-text-bottom mr-1" />  Por que testar?
               </span>
               <p className="text-[11px] text-corpo leading-relaxed font-light">
                 Use este simulador para validar o tom de voz e garantir que a Sofia esteja recomendando exatamente os imóveis corretos antes de colocar o número em produção.

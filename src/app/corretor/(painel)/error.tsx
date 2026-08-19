@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { AlertTriangle } from 'lucide-react';
 
 /**
  * Tela de erro do painel do corretor.
@@ -28,7 +29,7 @@ export default function ErroPainel({
   return (
     <div className="mx-auto max-w-lg py-16 text-center">
       <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full border border-alerta-linha bg-alerta-lavado text-2xl">
-        ⚠️
+         <AlertTriangle className="inline-block w-5 h-5 align-text-bottom mr-1" /> 
       </div>
 
       <h1 className="text-fluid-xl font-bold text-titulo">

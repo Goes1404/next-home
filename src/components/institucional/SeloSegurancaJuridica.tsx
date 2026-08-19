@@ -1,43 +1,40 @@
 import { site } from "@/lib/site";
+import { Landmark, Shield, Check } from "lucide-react";
 
 export function SeloSegurancaJuridica() {
   return (
     <section className="relative py-12 sm:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {/* Painel escuro fixo nos dois temas, de propósito: é uma vitrine de
-            marca (gradiente, blur, texto branco fixo), não uma leitura de
-            página — convertê-lo pediria redesenhar cada estado (selo,
-            badge, texto branco), não só trocar token de cor. */}
         <div className="relative overflow-hidden rounded-[2.5rem] border border-brand-500/30 bg-gradient-to-br from-brand-950/60 via-ink-950 to-ink-900/90 p-8 sm:p-14 backdrop-blur-2xl shadow-2xl">
           {/* Background Decorative Rings */}
           <div className="absolute top-0 right-0 -mt-16 -mr-16 w-80 h-80 rounded-full bg-brand-500/10 blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-80 h-80 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
 
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Texto de Autoridade */}
+            {/* Texto de Autoridade e Confiança */}
             <div className="lg:col-span-8 space-y-4">
               <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-brand-500/20 text-brand-300 text-[11px] font-bold uppercase tracking-wider border border-brand-500/30">
-                <span>🛡️ Segurança Patrimonial & Due Diligence</span>
+                <span> <Shield className="inline-block w-5 h-5 align-text-bottom mr-1" />  Segurança & Assessoria Completa</span>
               </div>
               <h2 className="text-fluid-2xl sm:text-fluid-3xl font-bold text-white tracking-tight leading-tight">
-                Garantia de conformidade legal e assessoria documental completa
+                Compre ou venda com total segurança e zero burocracia
               </h2>
               <p className="text-fluid-sm text-mist-300 leading-relaxed max-w-2xl font-light">
-                Com registro oficial sob o <strong className="text-white font-semibold">CRECI Jurídico {site.creci}</strong>, a Next Home submete cada transação imobiliária a um rigoroso processo de auditoria jurídica de certidões, matrículas e contratos, blindando o patrimônio e garantindo tranquilidade absoluta na sua aquisição.
+                Com registro oficial sob o <strong className="text-white font-semibold">CRECI Jurídico {site.creci}</strong>, a Next Home cuida de toda a documentação, certidões e contratos para você. Aprovamos seu financiamento com as melhores taxas dos bancos e garantimos uma negociação tranquila e transparente.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
                 <div className="flex items-center gap-2.5 text-mist-200 text-fluid-xs">
-                  <span className="text-brand-400">✓</span>
-                  <span>Auditoria de Matrículas</span>
+                  <span className="text-brand-400"> <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
+                  <span>Documentação 100% Verificada</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-mist-200 text-fluid-xs">
-                  <span className="text-brand-400">✓</span>
-                  <span>Certidões Negativas 100%</span>
+                  <span className="text-brand-400"> <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
+                  <span>Apoio em Financiamento</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-mist-200 text-fluid-xs">
-                  <span className="text-brand-400">✓</span>
-                  <span>Minutas Contratuais Claras</span>
+                  <span className="text-brand-400"> <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
+                  <span>Contratos Claros e Sem Pegadinhas</span>
                 </div>
               </div>
             </div>
@@ -46,7 +43,7 @@ export function SeloSegurancaJuridica() {
             <div className="lg:col-span-4 flex justify-center lg:justify-end">
               <div className="relative flex flex-col items-center justify-center p-8 rounded-3xl border border-white/20 bg-ink-950/80 shadow-2xl backdrop-blur text-center w-full max-w-[280px]">
                 <div className="w-16 h-16 rounded-full bg-brand-500/20 border border-brand-400/40 flex items-center justify-center text-2xl mb-3 shadow-inner">
-                  🏛️
+                   <Landmark className="inline-block w-5 h-5 align-text-bottom mr-1" /> 
                 </div>
                 <span className="text-[11px] uppercase tracking-widest text-brand-300 font-bold">
                   Registro Oficial
@@ -55,7 +52,7 @@ export function SeloSegurancaJuridica() {
                   CRECI {site.creci}
                 </span>
                 <span className="text-[11px] text-mist-400 mt-2 font-medium">
-                  Atuação em Alphaville, Tamboré e Região Metropolitana
+                  Atuação em Alphaville, Barueri e Região Metropolitana
                 </span>
               </div>
             </div>

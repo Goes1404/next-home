@@ -1,6 +1,7 @@
 "use client";
 
 import type { Tipologia } from "@/lib/types";
+import { Ruler } from 'lucide-react';
 
 interface Props {
   tipologias: Tipologia[];
@@ -21,7 +22,7 @@ export function EditorTipologias({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-linha pb-4">
           <div>
             <h3 className="text-fluid-base font-bold text-titulo">
-              📐 Plantas & Metragens Disponíveis
+               <Ruler className="inline-block w-5 h-5 align-text-bottom mr-1" />  Plantas & Metragens Disponíveis
             </h3>
             <p className="text-fluid-xs text-apoio mt-0.5">
               Cadastre as diferentes opções de plantas (ex: 82m², 115m², 140m²).
@@ -39,7 +40,7 @@ export function EditorTipologias({
 
         {tipologias.length === 0 ? (
           <div className="p-8 text-center rounded-2xl border border-dashed border-linha-forte bg-elevado space-y-2">
-            <span className="text-3xl block">📐</span>
+            <span className="text-3xl block"> <Ruler className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
             <p className="text-fluid-xs text-apoio">
               Nenhuma tipologia cadastrada. Toque no botão acima para adicionar a primeira opção de metragem.
             </p>

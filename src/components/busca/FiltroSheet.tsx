@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";import { X } from 'lucide-react';
+
 
 /**
  * Botão + painel deslizante no mobile.
@@ -67,7 +68,7 @@ export function FiltroSheet({
                 aria-label="Fechar filtros"
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-veu/10 text-titulo"
               >
-                ✕
+                 <X className="inline-block w-5 h-5 align-text-bottom mr-1" /> 
               </button>
             </div>
             {children}

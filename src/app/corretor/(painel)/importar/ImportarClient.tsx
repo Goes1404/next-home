@@ -13,6 +13,7 @@ import {
 } from "./actions";
 
 import { GmailLeadsExtractor } from "./GmailLeadsExtractor";
+import { Mail } from 'lucide-react';
 
 type Empreendimento = { id: string; nome: string };
 type Aba = "unico" | "lote" | "gmail";
@@ -35,7 +36,7 @@ export function ImportarClient({
       <div role="tablist" aria-label="Como adicionar" className="border-linha flex flex-wrap gap-1 border-b">
         <Botao aba="gmail" atual={aba} onSelect={setAba}>
           <span className="flex items-center gap-1.5">
-            <span>📧</span> Puxar do Gmail & Portais
+            <span> <Mail className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Puxar do Gmail & Portais
             <span className="rounded-full bg-brand-500/20 px-1.5 py-0.2 text-[10px] font-bold text-brand-300">
               IA
             </span>

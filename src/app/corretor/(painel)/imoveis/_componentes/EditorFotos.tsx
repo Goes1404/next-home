@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import type { Midia } from "@/lib/types";
 import { uploadFotoOuPlanta, removerMidiaImovel, definirFotoComoCapa } from "../actions";
+import { Check } from 'lucide-react';
 
 interface Props {
   empreendimentoId: string;
@@ -14,7 +15,7 @@ interface Props {
 export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
   const [midias, setMidias] = useState<Midia[]>(midiasIniciais);
   const [enviando, setEnviando] = useState(false);
-  const [mensagem, setMensagem] = useState<string | null>(null);
+  const [mensagem, setMensagem] = useState<React.ReactNode | null>(null);
   const inputUploadRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,11 +46,11 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
           setMidias((prev) => [...prev, nova]);
         }
       }
-      setMensagem("✓ Foto(s) adicionada(s) com sucesso!");
+      setMensagem(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Foto(s) adicionada(s) com sucesso!</>);
       setTimeout(() => setMensagem(null), 4000);
     } catch (err) {
       console.error(err);
-      setMensagem("❌ Erro ao enviar foto. Tente novamente.");
+      setMensagem(<>❌ Erro ao enviar foto. Tente novamente.</>);
     } finally {
       setEnviando(false);
       if (inputUploadRef.current) inputUploadRef.current.value = "";
@@ -59,7 +60,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
   const handleDefinirCapa = async (midia: Midia) => {
     // Reorganiza a lista localmente colocando a escolhida em 1º lugar
     setMidias((prev) => [midia, ...prev.filter((m) => m.url !== midia.url)]);
-    setMensagem("✓ Capa principal atualizada!");
+    setMensagem(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Capa principal atualizada!</>);
     setTimeout(() => setMensagem(null), 3000);
   };
 
@@ -67,7 +68,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
     if (!confirm("Tem certeza que deseja remover esta foto?")) return;
 
     setMidias((prev) => prev.filter((m) => m.url !== midia.url));
-    setMensagem("✓ Foto removida!");
+    setMensagem(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Foto removida!</>);
     setTimeout(() => setMensagem(null), 3000);
   };
 

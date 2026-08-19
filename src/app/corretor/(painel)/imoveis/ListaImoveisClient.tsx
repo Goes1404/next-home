@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Empreendimento } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
+import { MapPin } from 'lucide-react';
 
 interface Props {
   imoveis: Empreendimento[];
@@ -128,7 +129,7 @@ export function ListaImoveisClient({ imoveis }: Props) {
                       </h3>
                     </div>
                     <p className="text-fluid-xs text-apoio">
-                      📍 {imovel.bairro}, {imovel.cidade}
+                       <MapPin className="inline-block w-5 h-5 align-text-bottom mr-1" />  {imovel.bairro}, {imovel.cidade}
                     </p>
                     <p className="text-fluid-xs font-bold text-acento-suave pt-1">
                       A partir de: {precoFormatado}

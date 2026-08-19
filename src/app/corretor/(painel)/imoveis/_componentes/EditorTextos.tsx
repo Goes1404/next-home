@@ -1,6 +1,7 @@
 "use client";
 
-import type { StatusObra, TipoImovel } from "@/lib/types";
+import type { StatusObra, TipoImovel } from "@/lib/types";import { Building2, MapPin } from 'lucide-react';
+
 
 interface Props {
   dados: {
@@ -122,7 +123,7 @@ export function EditorTextos({ dados, onChange }: Props) {
       {/* 3. Localização */}
       <div className="p-5 sm:p-6 rounded-3xl border border-linha bg-superficie backdrop-blur space-y-4">
         <h3 className="text-fluid-base font-bold text-titulo border-b border-linha pb-3">
-          📍 Localização em Alphaville & Região
+           <MapPin className="inline-block w-5 h-5 align-text-bottom mr-1" />  Localização em Alphaville & Região
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -170,7 +171,7 @@ export function EditorTextos({ dados, onChange }: Props) {
       {/* 4. Estágio da Obra e Tipo */}
       <div className="p-5 sm:p-6 rounded-3xl border border-linha bg-superficie backdrop-blur space-y-4">
         <h3 className="text-fluid-base font-bold text-titulo border-b border-linha pb-3">
-          🏗️ Estágio & Categoria
+           <Building2 className="inline-block w-5 h-5 align-text-bottom mr-1" />  Estágio & Categoria
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -9,6 +9,7 @@ import { EditorTipologias } from "./EditorTipologias";
 import { EditorBook } from "./EditorBook";
 import { BarraSalvarFlutuante } from "./BarraSalvarFlutuante";
 import { salvarDadosGerais, salvarLazerEmpreendimento } from "../actions";
+import { Check } from "lucide-react";
 
 interface Props {
   imovel: Empreendimento;
@@ -17,7 +18,8 @@ interface Props {
 export function EditorImovelClient({ imovel }: Props) {
   const [abaAtiva, setAbaAtiva] = useState<"fotos" | "textos" | "book" | "plantas" | "lazer">("fotos");
   const [salvando, setSalvando] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<React.ReactNode | null>(null);
+  const [feedbackTipo, setFeedbackTipo] = useState<"sucesso" | "erro" | null>(null);
 
   // Estados do formulário
   const [dadosGerais, setDadosGerais] = useState({
@@ -82,6 +84,7 @@ export function EditorImovelClient({ imovel }: Props) {
   const handleSalvarTudo = async () => {
     setSalvando(true);
     setFeedback(null);
+    setFeedbackTipo(null);
 
     try {
       const imovelId = imovel.id || imovel.slug;
@@ -92,11 +95,13 @@ export function EditorImovelClient({ imovel }: Props) {
       // 2. Salva características de lazer
       await salvarLazerEmpreendimento(imovelId, imovel.slug, lazer);
 
-      setFeedback("✓ Todas as alterações foram salvas com sucesso no catálogo!");
-      setTimeout(() => setFeedback(null), 4000);
+      setFeedbackTipo("sucesso");
+      setFeedback(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Todas as alterações foram salvas com sucesso no catálogo!</>);
+      setTimeout(() => { setFeedback(null); setFeedbackTipo(null); }, 4000);
     } catch (err: any) {
       console.error(err);
-      setFeedback(`❌ Erro: ${err.message || "Não foi possível salvar agora."}`);
+      setFeedbackTipo("erro");
+      setFeedback(<>❌ Erro: {err.message || "Não foi possível salvar agora."}</>);
     } finally {
       setSalvando(false);
     }
@@ -108,7 +113,7 @@ export function EditorImovelClient({ imovel }: Props) {
       {feedback && (
         <div
           className={`p-4 rounded-2xl border text-fluid-xs font-bold ${
-            feedback.startsWith("✓")
+            feedbackTipo === "sucesso"
               ? "bg-ok-lavado border-ok-linha text-ok"
               : "bg-perigo-lavado border-perigo-linha text-perigo"
           }`}

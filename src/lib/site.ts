@@ -9,14 +9,15 @@ export const site = {
   nomeCompleto: "Next Home Negócios Imobiliários",
   creci: "044589-J",
   descricao:
-    "Imobiliária de alto padrão em Alphaville, Barueri, Santana de Parnaíba e região. Lançamentos exclusivos, apartamentos, casas em condomínio e assessoria imobiliária personalizada.",
+    "Sua imobiliária de confiança em Alphaville, Barueri, Santana de Parnaíba e região. As melhores oportunidades em apartamentos, casas, lançamentos na planta e prontos para morar com condições facilitadas e assessoria completa.",
   keywords: [
     "imobiliária em alphaville",
-    "apartamentos alto padrão alphaville",
-    "lançamentos em alphaville barueri",
-    "casas em condomínio fechado alphaville",
-    "comprar imóvel em santana de parnaíba",
-    "imóveis de luxo barueri",
+    "apartamentos em alphaville barueri",
+    "lançamentos na planta alphaville",
+    "oportunidades imobiliárias barueri",
+    "casas em condomínio alphaville",
+    "comprar apartamento santana de parnaíba",
+    "imóveis em barueri",
     "anunciar imóvel alphaville",
     "next home imóveis",
     "corretor de imóveis alphaville",
@@ -85,7 +86,7 @@ export const enderecoLinha = `${site.endereco.logradouro} — ${site.endereco.ba
  * então o arquivo precisa estar disponível desde o primeiro request, sem
  * depender de uma URL externa.
  */
-export const HERO_VIDEO_URL: string | null = "/video/hero-scroll.mp4";
+export const HERO_VIDEO_URL: string | null = "/video/hero-scroll-60fps.mp4";
 
 /** Monta um link `wa.me` para qualquer número em E.164, com mensagem pré-preenchida. */
 export function linkWhatsappPara(numero: string, mensagem: string): string {
@@ -100,7 +101,7 @@ export function linkWhatsappPara(numero: string, mensagem: string): string {
 export function linkWhatsapp(empreendimento?: string, indice = 0): string {
   const alvo = site.whatsapp[indice] ?? site.whatsapp[0];
   const texto = empreendimento
-    ? `Olá! Vim pelo site e quero saber mais sobre o ${empreendimento}.`
-    : "Olá! Vim pelo site e quero falar com um corretor.";
+    ? `Olá! Vim pelo site e quero receber a tabela de valores e condições do ${empreendimento}.`
+    : "Olá! Vim pelo site e quero conhecer as melhores oportunidades de imóveis.";
   return linkWhatsappPara(alvo.numero, texto);
 }

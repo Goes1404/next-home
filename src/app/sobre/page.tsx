@@ -14,14 +14,15 @@ import { VoltarLink } from "@/components/ui/VoltarLink";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getEmpreendimentos } from "@/lib/queries";
 import { linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
+import { DoorOpen } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Sobre a Next Home | Imobiliária de Alto Padrão em Alphaville",
-  description: `Conheça a ${site.nomeCompleto} — CRECI ${site.creci}. Consultoria de alto padrão, curadoria de edifícios e condomínios em Alphaville, Tamboré e região.`,
+  title: "Sobre a Next Home | Imóveis e Oportunidades em Alphaville e Região",
+  description: `Conheça a ${site.nomeCompleto} — CRECI ${site.creci}. Assessoria imobiliária completa, foco em negociação facilitada e as melhores oportunidades em Alphaville, Barueri e região.`,
   alternates: { canonical: "/sobre" },
   openGraph: {
-    title: `Sobre a Next Home | Negócios Imobiliários em Alphaville`,
-    description: "Conheça nossa trajetória, curadoria de edifícios e compromisso com o mercado imobiliário de alto padrão.",
+    title: `Sobre a Next Home | Negócios Imobiliários`,
+    description: "Conheça nossa trajetória, compromisso com a segurança jurídica e foco em encontrar o melhor negócio para você.",
     url: `${site.url}/sobre`,
   },
 };
@@ -33,8 +34,8 @@ export default async function SobrePage() {
   ]);
 
   const linkWhatsappGeral = corretorAtivo
-    ? linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pela página institucional da Next Home.`)
-    : linkWhatsapp("Olá! Gostaria de conversar com um especialista da Next Home.");
+    ? linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pela página institucional da Next Home e quero conhecer as oportunidades disponíveis.`)
+    : linkWhatsapp("Olá! Gostaria de conversar com um corretor da Next Home.");
 
   return (
     <GlassBackgroundProvider>
@@ -50,13 +51,13 @@ export default async function SobrePage() {
             </div>
 
             <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/15 text-corpo text-fluid-xs font-semibold backdrop-blur shadow-sm mb-2">
-              <span>🚪 Entre e fique à vontade</span>
+              <span> <DoorOpen className="inline-block w-5 h-5 align-text-bottom mr-1" />  Sua casa e seu investimento começam aqui</span>
             </div>
             <h1 className="text-fluid-3xl sm:text-fluid-4xl font-bold text-titulo tracking-tight leading-tight">
               A Next Home Negócios Imobiliários
             </h1>
-            <p className="text-fluid-base sm:text-fluid-lg text-apoio font-light leading-relaxed max-w-3xl mx-auto mt-4">
-              Nascemos com a vocação de redefinir a experiência de compra, venda e investimento imobiliário em Alphaville e Tamboré. Mais do que apresentar imóveis, construímos pontes entre famílias extraordinárias e os projetos arquitetônicos mais inspiradores de São Paulo.
+            <p className="text-fluid-base sm:text-fluid-lg text-apoio font-normal leading-relaxed max-w-3xl mx-auto mt-4">
+              Nascemos para tornar a compra, venda e o investimento em imóveis um processo simples, transparente e vantajoso. Conectamos você às melhores oportunidades da região com atendimento humanizado, negociação justa e total segurança do início ao fim.
             </p>
           </Reveal>
         </section>
@@ -66,7 +67,7 @@ export default async function SobrePage() {
           <Reveal delay={0.15}>
             <VideoInstitucionalFrame
               videoUrl={corretorAtivo?.videoUrl || undefined}
-              titulo={`Next Home — ${corretorAtivo?.nome || "Curadoria em Alphaville"}`}
+              titulo={`Next Home — ${corretorAtivo?.nome || "Oportunidades em Alphaville"}`}
             />
           </Reveal>
         </section>

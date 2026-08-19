@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { PortalOrigem } from "@/lib/inbound/types";
+import { Tag, Building, Home, Smartphone, Globe, Mail, FileText, ClipboardList, Download, AlertTriangle, MessageCircle, Rocket, RefreshCw, Sparkles, Zap, Check } from 'lucide-react';
 import {
   analisarEmailGmail,
   salvarLeadsDoGmail,
@@ -17,56 +18,56 @@ type Empreendimento = { id: string; nome: string };
 
 const PORTAL_INFO: Record<
   PortalOrigem,
-  { label: string; bg: string; text: string; border: string; icone: string }
+  { label: string; bg: string; text: string; border: string; icone: React.ReactNode }
 > = {
   zap_imoveis: {
     label: "Zap Imóveis",
     bg: "bg-blue-500/15",
     text: "text-blue-400",
     border: "border-blue-500/30",
-    icone: "⚡",
+    icone: <Zap className="w-4 h-4" />,
   },
   vivareal: {
     label: "VivaReal",
     bg: "bg-emerald-500/15",
     text: "text-emerald-400",
     border: "border-emerald-500/30",
-    icone: "🏠",
+    icone: <Home className="w-4 h-4" />,
   },
   olx: {
     label: "OLX",
     bg: "bg-purple-500/15",
     text: "text-purple-400",
     border: "border-purple-500/30",
-    icone: "🏷️",
+    icone: <Tag className="w-4 h-4" />,
   },
   imovelweb: {
     label: "Imovelweb",
     bg: "bg-amber-500/15",
     text: "text-amber-400",
     border: "border-amber-500/30",
-    icone: "🏢",
+    icone: <Building className="w-4 h-4" />,
   },
   meta_ads: {
     label: "Meta Ads (Insta/FB)",
     bg: "bg-indigo-500/15",
     text: "text-indigo-400",
     border: "border-indigo-500/30",
-    icone: "📱",
+    icone: <Smartphone className="w-4 h-4" />,
   },
   site_direto: {
     label: "Formulário do Site",
     bg: "bg-teal-500/15",
     text: "text-teal-400",
     border: "border-teal-500/30",
-    icone: "🌐",
+    icone: <Globe className="w-4 h-4" />,
   },
   email_outro: {
     label: "E-mail Direto",
     bg: "bg-slate-500/15",
     text: "text-slate-300",
     border: "border-slate-500/30",
-    icone: "✉️",
+    icone: <Mail className="w-4 h-4" />,
   },
 };
 
@@ -260,7 +261,7 @@ export function GmailLeadsExtractor({
                 : "text-apoio hover:bg-vidro hover:text-titulo",
             )}
           >
-            <span>✨</span> Extrator de E-mails / Gmail
+            <span> <Sparkles className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Extrator de E-mails / Gmail
           </button>
           <button
             type="button"
@@ -272,7 +273,7 @@ export function GmailLeadsExtractor({
                 : "text-apoio hover:bg-vidro hover:text-titulo",
             )}
           >
-            <span>⚡</span> Automação & Webhook
+            <span> <Zap className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Automação & Webhook
           </button>
           <button
             type="button"
@@ -284,7 +285,7 @@ export function GmailLeadsExtractor({
                 : "text-apoio hover:bg-vidro hover:text-titulo",
             )}
           >
-            <span>📜</span> Histórico de E-mails
+            <span> <FileText className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Histórico de E-mails
           </button>
         </div>
 
@@ -302,7 +303,7 @@ export function GmailLeadsExtractor({
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div>
                 <h2 className="font-display text-titulo text-lg font-semibold flex items-center gap-2">
-                  <span className="text-xl">📥</span> Puxar Leads do Gmail & Portais
+                  <span className="text-xl"> <Download className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Puxar Leads do Gmail & Portais
                 </h2>
                 <p className="text-fluid-xs text-apoio mt-1">
                   Copie o conteúdo de qualquer e-mail recebido no seu Gmail (Zap, VivaReal, OLX,
@@ -369,14 +370,14 @@ export function GmailLeadsExtractor({
 
               {erro && (
                 <div className="rounded-xl border border-perigo/30 bg-perigo/10 p-3.5 text-sm text-perigo flex items-center gap-2">
-                  <span>⚠️</span> {erro}
+                  <span> <AlertTriangle className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> {erro}
                 </div>
               )}
 
               {sucesso && (
                 <div className="rounded-xl border border-ok/30 bg-ok/10 p-3.5 text-sm text-ok flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span>✅</span> {sucesso}
+                    <span> <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> {sucesso}
                   </div>
                   <Link
                     href="/corretor/funil"
@@ -401,7 +402,7 @@ export function GmailLeadsExtractor({
                     </>
                   ) : (
                     <>
-                      <span>✨</span> Analisar & Extrair Leads do E-mail
+                      <span> <Sparkles className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Analisar & Extrair Leads do E-mail
                     </>
                   )}
                 </button>
@@ -432,7 +433,7 @@ export function GmailLeadsExtractor({
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-linha pb-4">
                 <div>
                   <h3 className="font-display text-titulo text-lg font-semibold flex items-center gap-2">
-                    <span>📋</span> {leadsExtraidos.length} Lead(s) Identificado(s)
+                    <span> <ClipboardList className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> {leadsExtraidos.length} Lead(s) Identificado(s)
                   </h3>
                   <p className="text-fluid-xs text-apoio mt-0.5">
                     Revise as informações extraídas antes de enviar para o seu funil de vendas.
@@ -480,7 +481,7 @@ export function GmailLeadsExtractor({
                           </span>
                           {lead.jaExiste && (
                             <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[11px] font-medium text-amber-400">
-                              ⚠️ Já cadastrado
+                               <AlertTriangle className="inline-block w-5 h-5 align-text-bottom mr-1" />  Já cadastrado
                             </span>
                           )}
                         </div>
@@ -492,7 +493,7 @@ export function GmailLeadsExtractor({
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-fluid-xs font-medium text-[#25D366] hover:underline"
                           >
-                            <span>💬</span> Abrir WhatsApp
+                            <span> <MessageCircle className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Abrir WhatsApp
                           </a>
                         )}
                       </div>
@@ -629,7 +630,7 @@ export function GmailLeadsExtractor({
                       </>
                     ) : (
                       <>
-                        <span>🚀</span> Enviar {selecionadosCount} Lead(s) para o Funil de Vendas
+                        <span> <Rocket className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Enviar {selecionadosCount} Lead(s) para o Funil de Vendas
                       </>
                     )}
                   </button>
@@ -654,7 +655,7 @@ export function GmailLeadsExtractor({
           <div className="rounded-2xl border border-linha bg-superficie p-6 shadow-painel space-y-6">
             <div>
               <h2 className="font-display text-titulo text-lg font-semibold flex items-center gap-2">
-                <span>⚡</span> Sincronização Automática com Gmail & Portais
+                <span> <Zap className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Sincronização Automática com Gmail & Portais
               </h2>
               <p className="text-fluid-xs text-apoio mt-1">
                 Configure uma regra de encaminhamento automático no seu Gmail para que todo lead do
@@ -680,7 +681,7 @@ export function GmailLeadsExtractor({
                   }}
                   className="rounded-lg bg-brand-500 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-400 transition-colors"
                 >
-                  {copiadoWebhook ? "✓ Copiado!" : "Copiar URL"}
+                  {copiadoWebhook ? <><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Copiado!</> : "Copiar URL"}
                 </button>
               </div>
               <p className="text-[11px] text-mist-400">
@@ -716,7 +717,7 @@ export function GmailLeadsExtractor({
                       }}
                       className="text-[10px] text-brand-300 hover:underline"
                     >
-                      {copiadoFiltro ? "✓" : "Copiar"}
+                      {copiadoFiltro ? <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> : "Copiar"}
                     </button>
                   </div>
                 </div>
@@ -754,7 +755,7 @@ export function GmailLeadsExtractor({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-titulo text-lg font-semibold flex items-center gap-2">
-                <span>📜</span> Histórico de E-mails Recebidos
+                <span> <FileText className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Histórico de E-mails Recebidos
               </h2>
               <p className="text-fluid-xs text-apoio mt-0.5">
                 Auditoria de todas as mensagens e leads processados pelo sistema.
@@ -767,7 +768,7 @@ export function GmailLeadsExtractor({
               disabled={carregandoHistorico}
               className="rounded-lg border border-linha px-3 py-1.5 text-xs text-apoio hover:text-titulo flex items-center gap-1.5"
             >
-              <span>🔄</span> {carregandoHistorico ? "Atualizando…" : "Atualizar"}
+              <span> <RefreshCw className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> {carregandoHistorico ? "Atualizando…" : "Atualizar"}
             </button>
           </div>
 
@@ -811,7 +812,7 @@ export function GmailLeadsExtractor({
                           )}
                         >
                           {log.status === "sucesso"
-                            ? "✓ Sucesso"
+                            ? <><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Sucesso</>
                             : log.status === "ignorado"
                               ? "Ignorado"
                               : "Erro"}

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { uploadBookDigital, removerBookDigital, salvarLinkBookDigital } from "../actions";
+import { FileText, Folder, Check } from 'lucide-react';
 
 interface Props {
   empreendimentoId: string;
@@ -19,7 +20,7 @@ export function EditorBook({
   const [bookUrl, setBookUrl] = useState<string | null>(bookUrlInicial || null);
   const [titulo, setTitulo] = useState(bookTituloInicial || "Book Oficial do Empreendimento");
   const [enviando, setEnviando] = useState(false);
-  const [mensagem, setMensagem] = useState<string | null>(null);
+  const [mensagem, setMensagem] = useState<React.ReactNode | null>(null);
   const [linkManual, setLinkManual] = useState(bookUrlInicial || "");
   const [modoManual, setModoManual] = useState(false);
   const inputPdfRef = useRef<HTMLInputElement>(null);
@@ -45,7 +46,7 @@ export function EditorBook({
       if (res.ok && res.url) {
         setBookUrl(res.url);
         setLinkManual(res.url);
-        setMensagem("✓ Book Digital enviado e publicado com sucesso!");
+        setMensagem(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Book Digital enviado e publicado com sucesso!</>);
         setTimeout(() => setMensagem(null), 4000);
       } else {
         setMensagem(`❌ ${res.erro || "Falha ao enviar PDF."}`);
@@ -65,7 +66,7 @@ export function EditorBook({
       const res = await salvarLinkBookDigital(empreendimentoId, slug, linkManual, titulo);
       if (res.ok) {
         setBookUrl(linkManual || null);
-        setMensagem("✓ Link do Book atualizado com sucesso!");
+        setMensagem(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> URL do Book Digital salva com sucesso!</>);
         setTimeout(() => setMensagem(null), 4000);
       }
     } finally {
@@ -82,7 +83,7 @@ export function EditorBook({
       if (res.ok) {
         setBookUrl(null);
         setLinkManual("");
-        setMensagem("✓ Book Digital removido do catálogo.");
+        setMensagem(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Book removido do catálogo!</>);
         setTimeout(() => setMensagem(null), 4000);
       }
     } finally {
@@ -95,9 +96,9 @@ export function EditorBook({
       {mensagem && (
         <div
           className={`p-4 rounded-2xl border text-fluid-xs font-bold ${
-            mensagem.startsWith("✓")
-              ? "bg-ok-lavado border-ok-linha text-ok"
-              : "bg-perigo-lavado border-perigo-linha text-perigo"
+            typeof mensagem === "string" && mensagem.startsWith("❌")
+              ? "bg-perigo-lavado border-perigo-linha text-perigo"
+              : "bg-ok-lavado border-ok-linha text-ok"
           }`}
         >
           {mensagem}
@@ -111,7 +112,7 @@ export function EditorBook({
             Material de Apresentação
           </span>
           <h3 className="text-fluid-base font-bold text-titulo mt-0.5">
-            📑 Book Digital Completo (PDF)
+             <FileText className="inline-block w-5 h-5 align-text-bottom mr-1" />  Book Digital Completo (PDF)
           </h3>
           <p className="text-fluid-xs text-apoio mt-1">
             Faça upload do Book oficial ou e-book em PDF. Ele ficará disponível para download dos clientes na vitrine pública e será enviado automaticamente pelo assistente de WhatsApp.
@@ -137,10 +138,10 @@ export function EditorBook({
           <div className="p-5 rounded-2xl border border-ok-linha bg-ok-lavado space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="text-3xl">📑</span>
+                <span className="text-3xl"> <FileText className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
                 <div>
                   <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-ok-lavado text-ok border border-ok-linha mb-1">
-                    ✓ Book Ativo na Vitrine
+                     <Check className="inline-block w-5 h-5 align-text-bottom mr-1" />  Book Ativo na Vitrine
                   </span>
                   <h4 className="text-fluid-sm font-bold text-titulo">{titulo}</h4>
                   <p className="text-[11px] text-apoio truncate max-w-md">{bookUrl}</p>
@@ -172,7 +173,7 @@ export function EditorBook({
         ) : (
           /* Upload do PDF via Mobile / Desktop */
           <div className="p-8 text-center rounded-3xl border border-dashed border-linha-forte bg-fundo/70 space-y-4">
-            <span className="text-4xl block">📁</span>
+            <span className="text-4xl block"> <Folder className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
             <div>
               <h4 className="text-fluid-base font-bold text-titulo">
                 Selecione o arquivo PDF do Book

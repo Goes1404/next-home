@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState } from "react";import { Shield, Zap, Check } from 'lucide-react';
+
 
 const ITENS_LAZER_SUGERIDOS = [
   { nome: "Piscina com Raia / Borda Infinita", icone: "🏊‍♂️" },
@@ -11,12 +12,12 @@ const ITENS_LAZER_SUGERIDOS = [
   { nome: "Coworking & Espaço Business", icone: "💼" },
   { nome: "SPA com Sauna & Salas de Massagem", icone: "🧖‍♀️" },
   { nome: "Brinquedoteca & Playground", icone: "🧸" },
-  { nome: "Ponto de Recarga para Carro Elétrico", icone: "⚡" },
+  { nome: "Ponto de Recarga para Carro Elétrico", icone: <Zap className="w-4 h-4" /> },
   { nome: "Bosque Privativo & Pista de Cooper", icone: "🌳" },
   { nome: "Salão de Festas Lounge & Espaço Gourmet", icone: "🥂" },
   { nome: "Adega Climatizada", icone: "🍷" },
   { nome: "Bicicletário com Oficina", icone: "🚲" },
-  { nome: "Guarita Blindada 24h & Biometria", icone: "🛡️" },
+  { nome: "Guarita Blindada 24h & Biometria", icone: <Shield className="w-4 h-4" /> },
   { nome: "Rooftop com Vista Panorâmica", icone: "🌇" },
 ];
 
@@ -72,7 +73,7 @@ export function EditorLazer({ lazerSelecionado, onToggle }: Props) {
                       : "border-linha-forte text-transparent"
                   }`}
                 >
-                  ✓
+                   <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> 
                 </span>
               </button>
             );

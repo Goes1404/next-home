@@ -10,6 +10,7 @@ import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { site } from "@/lib/site";
 import { getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
+import { Map } from "lucide-react";
 import {
   ORDENACAO_LABEL,
   type FiltrosEmpreendimento,
@@ -18,12 +19,12 @@ import {
 } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Empreendimentos e Lançamentos de Alto Padrão em Alphaville e Barueri",
-  description: `Explore os melhores empreendimentos, apartamentos de alto padrão e lançamentos imobiliários em ${site.regioes.join(", ")}. Plantas exclusivas, lazer de resort e atendimento consultivo.`,
+  title: "Empreendimentos e Lançamentos em Alphaville e Barueri | Melhores Ofertas",
+  description: `Confira as melhores oportunidades em apartamentos na planta, prontos para morar e casas em condomínio em ${site.regioes.join(", ")}. Condições facilitadas e atendimento rápido.`,
   alternates: { canonical: "/empreendimentos" },
   openGraph: {
-    title: "Empreendimentos em Alphaville e Barueri | Next Home",
-    description: `Catálogo exclusivo de lançamentos e imóveis selecionados em Alphaville e região.`,
+    title: "Empreendimentos e Oportunidades em Alphaville e Região | Next Home",
+    description: `Catálogo completo de lançamentos e oportunidades selecionadas em Alphaville e região.`,
     url: `${site.url}/empreendimentos`,
   },
 };
@@ -63,12 +64,6 @@ function parseOrdenacao(sp: SearchParams): Ordenacao {
     : "destaque";
 }
 
-/**
- * Filtros vivem na URL (form GET nativo) — funciona sem JavaScript e o
- * resultado é sempre renderizado no servidor. O fundo fixo (vídeo do hero)
- * vem do layout do grupo `(vitrine)`, compartilhado com a home; os cards
- * (`CardEmpreendimento`) usam o mesmo vidro CSS dos destaques da home.
- */
 export default async function EmpreendimentosPage({
   searchParams,
 }: {
@@ -86,10 +81,6 @@ export default async function EmpreendimentosPage({
   const temFiltroAtivo = Object.values(filtros).some((v) => v != null);
 
   return (
-    // Chegando da home via "Ver todos" (marcado "nav-forward"), o conteúdo
-    // desliza para dentro enquanto o vídeo de fundo — fora desta árvore, no
-    // layout do grupo — segue tocando sem interrupção. Ver o comentário
-    // equivalente na home (app/(vitrine)/page.tsx).
     <ViewTransition
       enter={{ "nav-forward": "nav-forward", default: "none" }}
       exit={{ "nav-forward": "nav-forward", default: "none" }}
@@ -99,19 +90,12 @@ export default async function EmpreendimentosPage({
       <WhatsappCta />
 
       <main className="flex flex-1 flex-col px-4 pt-28 pb-20">
-        {/*
-          FiltroSheet abre um overlay `fixed inset-0`. Um `<Reveal>` aplica
-          `transform` via GSAP no próprio elemento (mesmo já resolvido em
-          0,0, o transform explícito fica) — qualquer transform num
-          ancestral cria um novo containing block para `position: fixed`,
-          então o sheet nunca pode ficar dentro de um Reveal.
-        */}
         <div className="mx-auto w-full max-w-5xl">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <Reveal>
-              <h1 className="text-fluid-2xl text-titulo">Empreendimentos</h1>
+              <h1 className="text-fluid-2xl text-titulo">Empreendimentos & Oportunidades</h1>
               <p className="text-fluid-base mt-2 text-apoio">
-                {empreendimentos.length} empreendimento{empreendimentos.length === 1 ? "" : "s"} em{" "}
+                {empreendimentos.length} empreendimento{empreendimentos.length === 1 ? "" : "s"} disponível{empreendimentos.length === 1 ? "" : "is"} em{" "}
                 {site.regioes.join(", ")}.
               </p>
             </Reveal>
@@ -120,7 +104,7 @@ export default async function EmpreendimentosPage({
                 href="/mapa"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-corpo text-fluid-xs font-semibold backdrop-blur border border-white/15 transition-all shadow-md"
               >
-                <span>🗺️ Ver no Mapa</span>
+                <span> <Map className="inline-block w-5 h-5 align-text-bottom mr-1" />  Ver no Mapa</span>
               </Link>
 
               <FiltroSheet temFiltroAtivo={temFiltroAtivo}>
@@ -149,12 +133,12 @@ export default async function EmpreendimentosPage({
 
         {empreendimentos.length === 0 ? (
           <Reveal className="mx-auto mt-16 w-full max-w-5xl text-center">
-            <p className="text-fluid-lg text-corpo">Nenhum empreendimento com esses filtros.</p>
+            <p className="text-fluid-lg text-corpo">Nenhum empreendimento encontrado com esses filtros.</p>
             <Link
               href="/empreendimentos"
               className="text-fluid-sm mt-2 inline-block text-acento underline-offset-4 hover:underline"
             >
-              Limpar filtros
+              Ver todas as opções disponíveis
             </Link>
           </Reveal>
         ) : (

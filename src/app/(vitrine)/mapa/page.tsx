@@ -3,7 +3,8 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { MapaEmpreendimentos } from "@/components/mapa/MapaEmpreendimentos";
 import { getEmpreendimentos } from "@/lib/queries";
-import { site } from "@/lib/site";
+import { site } from "@/lib/site";import { ClipboardList } from 'lucide-react';
+
 
 export const metadata: Metadata = {
   title: "Mapa Interativo de Imóveis e Lançamentos em Alphaville",
@@ -50,7 +51,7 @@ export default async function MapaPage({
               href="/empreendimentos"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-corpo text-fluid-xs font-semibold backdrop-blur border border-white/15 transition-all"
             >
-              <span>📋 Ver em Lista</span>
+              <span> <ClipboardList className="inline-block w-5 h-5 align-text-bottom mr-1" />  Ver em Lista</span>
             </Link>
           </div>
         </div>

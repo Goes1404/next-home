@@ -6,6 +6,7 @@ import { parsearTabelaTexto } from "@/lib/precos/spreadsheetParser";
 import { conciliarPlanilhaComCatalogo } from "@/lib/precos/matchingEngine";
 import type { EmpreendimentoSimples, ItemConciliado, LoteHistorico } from "@/lib/precos/types";
 import { aplicarLotePrecos, reverterLotePrecos } from "./actions";
+import { Download, AlertTriangle, Rocket, PartyPopper, Clock, Folder, Check } from 'lucide-react';
 
 interface Props {
   catalogoInicial: EmpreendimentoSimples[];
@@ -109,7 +110,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
       if (res.ok) {
         setFeedback({
           tipo: "sucesso",
-          msg: `🎉 Sucesso! ${res.totalAlterados} imóveis foram atualizados no catálogo e o site já está com os novos valores!`,
+          msg: ` <PartyPopper className="inline-block w-5 h-5 align-text-bottom mr-1" />  Sucesso! ${res.totalAlterados} imóveis foram atualizados no catálogo e o site já está com os novos valores!`,
         });
         setItensConciliados([]);
         setTextoColado("");
@@ -153,7 +154,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
               : "text-apoio hover:text-titulo hover:bg-vidro"
           }`}
         >
-          📥 Atualizar Preços em Massa
+           <Download className="inline-block w-5 h-5 align-text-bottom mr-1" />  Atualizar Preços em Massa
         </button>
         <button
           onClick={() => setAbaAtiva("historico")}
@@ -163,7 +164,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
               : "text-apoio hover:text-titulo hover:bg-vidro"
           }`}
         >
-          🕒 Histórico de Reajustes ({historico.length})
+           <Clock className="inline-block w-5 h-5 align-text-bottom mr-1" />  Histórico de Reajustes ({historico.length})
         </button>
       </div>
 
@@ -194,7 +195,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
               </div>
 
               <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-vidro-forte hover:bg-vidro-mais text-fluid-xs font-medium text-corpo transition-colors">
-                <span>📁 Carregar Arquivo (.csv / .txt)</span>
+                <span> <Folder className="inline-block w-5 h-5 align-text-bottom mr-1" />  Carregar Arquivo (.csv / .txt)</span>
                 <input type="file" accept=".csv,.txt,.tsv" onChange={onUploadArquivo} className="hidden" />
               </label>
             </div>
@@ -284,7 +285,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                   <table className="w-full text-left text-fluid-xs">
                     <thead className="border-b border-linha bg-fundo/70 text-apoio uppercase tracking-wider font-semibold">
                       <tr>
-                        <th className="p-3.5 w-10 text-center">✓</th>
+                        <th className="p-3.5 w-10 text-center"> <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> </th>
                         <th className="p-3.5">Nome na Planilha</th>
                         <th className="p-3.5">Imóvel no Catálogo</th>
                         <th className="p-3.5 text-right">Preço Atual</th>
@@ -327,7 +328,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                                   className="w-full rounded-lg border border-alerta-linha bg-campo px-2 py-1 text-fluid-xs text-alerta"
                                 >
                                   <option value="" disabled>
-                                    ⚠️ Selecione para vincular...
+                                     <AlertTriangle className="inline-block w-5 h-5 align-text-bottom mr-1" />  Selecione para vincular...
                                   </option>
                                   {catalogoInicial.map((emp) => (
                                     <option key={emp.id} value={emp.id}>
@@ -414,7 +415,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                         <span>Atualizando Catálogo...</span>
                       </>
                     ) : (
-                      <span>🚀 Confirmar e Atualizar Catálogo ({itensSelecionadosCount} imóveis)</span>
+                      <span> <Rocket className="inline-block w-5 h-5 align-text-bottom mr-1" />  Confirmar e Atualizar Catálogo ({itensSelecionadosCount} imóveis)</span>
                     )}
                   </button>
                 </div>

@@ -21,9 +21,9 @@ export function Regioes() {
     <section className="px-4 pb-16 sm:pb-24">
       <div className="mx-auto w-full max-w-3xl text-center">
         <Reveal>
-          <h2 className="text-fluid-2xl text-titulo">Localizações Privilegiadas</h2>
+          <h2 className="text-fluid-2xl text-titulo">As Melhores Regiões para Morar ou Investir</h2>
           <p className="text-fluid-base mt-3 text-apoio">
-            Os endereços mais nobres e desejados de Alphaville, Barueri e região metropolitana.
+            Encontre opções nos principais bairros e cidades com infraestrutura completa, mobilidade e alta valorização.
           </p>
         </Reveal>
 

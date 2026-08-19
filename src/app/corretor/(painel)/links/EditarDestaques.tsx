@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { salvarDestaques } from "@/app/corretor/actions";
+import { salvarDestaques } from "@/app/corretor/actions";import { X } from 'lucide-react';
+
 
 type Item = { slug: string; nome: string };
 
@@ -93,7 +94,7 @@ export function EditarDestaques({
                 aria-label="Remover"
                 className="rounded-lg p-1.5 text-apoio hover:text-perigo"
               >
-                ✕
+                 <X className="inline-block w-5 h-5 align-text-bottom mr-1" /> 
               </button>
             </div>
           </li>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Empreendimento } from "@/lib/types";
+import { Shield, Building, Download, Rocket, Check } from 'lucide-react';
 
 interface Props {
   empreendimentos: Empreendimento[];
@@ -92,7 +93,7 @@ export function CampanhasManager({ empreendimentos }: Props) {
       {/* Banner de Feedback */}
       {feedback && (
         <div className="rounded-2xl border border-ok-linha bg-ok-lavado p-4 text-fluid-xs font-semibold text-ok backdrop-blur duration-200">
-          ✓ {feedback}
+           <Check className="inline-block w-5 h-5 align-text-bottom mr-1" />  {feedback}
         </div>
       )}
 
@@ -172,7 +173,7 @@ export function CampanhasManager({ empreendimentos }: Props) {
                   : "border-linha bg-campo text-apoio hover:text-titulo"
               }`}
             >
-              <h4 className="text-fluid-xs font-bold">📥 Novos Leads</h4>
+              <h4 className="text-fluid-xs font-bold"> <Download className="inline-block w-5 h-5 align-text-bottom mr-1" />  Novos Leads</h4>
               <p className="text-[11px] text-apoio mt-0.5">Etapa &quot;Novo lead&quot; no funil</p>
             </button>
 
@@ -210,7 +211,7 @@ export function CampanhasManager({ empreendimentos }: Props) {
         {/* Botão de Preview e Disparo */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-linha pt-4">
           <div className="flex items-center gap-2 text-[11px] text-apoio">
-            <span className="text-ok">🛡️ Proteção Anti-Ban:</span>
+            <span className="text-ok"> <Shield className="inline-block w-5 h-5 align-text-bottom mr-1" />  Proteção Anti-Ban:</span>
             <span>Envio com delay dinâmico de 30 a 75 segundos.</span>
           </div>
 
@@ -226,7 +227,7 @@ export function CampanhasManager({ empreendimentos }: Props) {
               onClick={iniciarDisparo}
               className="px-6 py-2 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all shadow-md shadow-acento/20 cursor-pointer"
             >
-              🚀 Iniciar Campanha Segura
+               <Rocket className="inline-block w-5 h-5 align-text-bottom mr-1" />  Iniciar Campanha Segura
             </button>
           </div>
         </div>
@@ -277,7 +278,7 @@ export function CampanhasManager({ empreendimentos }: Props) {
                     </span>
                   </div>
                   <p className="text-fluid-xs text-apoio">
-                    🏢 {c.imovelNome} • {c.data}
+                     <Building className="inline-block w-5 h-5 align-text-bottom mr-1" />  {c.imovelNome} • {c.data}
                   </p>
                 </div>
 

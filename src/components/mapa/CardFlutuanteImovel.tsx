@@ -5,7 +5,8 @@ import Image from "next/image";
 import type { Empreendimento } from "@/lib/types";
 import { STATUS_LABEL, TIPO_LABEL } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
-import { normalizarWhatsapp } from "@/lib/whatsapp";
+import { normalizarWhatsapp } from "@/lib/whatsapp";import { MapPin } from 'lucide-react';
+
 
 interface Props {
   imovel: Empreendimento;
@@ -81,7 +82,7 @@ export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
           <div>
             <h4 className="text-fluid-sm font-bold text-titulo line-clamp-1">{imovel.nome}</h4>
             <p className="text-fluid-xs text-legenda line-clamp-1">
-              📍 {imovel.bairro} — {imovel.cidade}
+               <MapPin className="inline-block w-5 h-5 align-text-bottom mr-1" />  {imovel.bairro} — {imovel.cidade}
             </p>
             <p className="text-[11px] text-tenue truncate mt-0.5">{imovel.endereco}</p>
           </div>

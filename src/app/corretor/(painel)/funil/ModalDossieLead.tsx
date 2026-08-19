@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Lead } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { linkWhatsappLead } from "@/app/corretor/(painel)/_componentes/CartaoLead";
+import { Smartphone, MessageCircle, Bot, Flame, Check, ArrowRight } from 'lucide-react';
 
 interface Props {
   lead: Lead | null;
@@ -31,7 +32,7 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-acento-lavado text-acento-suave border border-acento-linha">
-                🤖 Inteligência Artificial do Lead
+                 <Bot className="inline-block w-5 h-5 align-text-bottom mr-1" />  Inteligência Artificial do Lead
               </span>
               <span
                 className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
@@ -40,12 +41,12 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
                     : "bg-alerta-lavado border-alerta-linha text-alerta"
                 }`}
               >
-                {isQuente ? "🔥 Lead Quente (Score 92/100)" : "🟡 Lead em Qualificação (Score 65/100)"}
+                {isQuente ? <><Flame className="inline-block w-5 h-5 align-text-bottom mr-1" /> Lead Quente (Score 92/100)</> : "🟡 Lead em Qualificação (Score 65/100)"}
               </span>
             </div>
             <h3 className="text-fluid-lg font-bold text-titulo">{lead.nome}</h3>
             <p className="text-fluid-xs text-apoio">
-              📱 {lead.telefone || "Telefone não informado"} • {lead.email || "E-mail não informado"}
+               <Smartphone className="inline-block w-5 h-5 align-text-bottom mr-1" />  {lead.telefone || "Telefone não informado"} • {lead.email || "E-mail não informado"}
             </p>
           </div>
 
@@ -81,7 +82,7 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
                   : "bg-vidro text-apoio hover:text-titulo"
               }`}
             >
-              <span>💬 Conversa no WhatsApp</span>
+              <span> <MessageCircle className="inline-block w-5 h-5 align-text-bottom mr-1" />  Conversa no WhatsApp</span>
               <span className="h-2 w-2 rounded-full bg-ok animate-pulse" />
             </button>
           </div>
@@ -135,16 +136,16 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
               </h4>
               <div className="flex flex-wrap gap-2">
                 <span className="px-3 py-1 rounded-xl bg-vidro border border-linha text-corpo text-fluid-xs">
-                  ✓ Andar alto com vista livre
+                   <Check className="inline-block w-5 h-5 align-text-bottom mr-1" />  Andar alto com vista livre
                 </span>
                 <span className="px-3 py-1 rounded-xl bg-vidro border border-linha text-corpo text-fluid-xs">
-                  ✓ 3 Suítes
+                   <Check className="inline-block w-5 h-5 align-text-bottom mr-1" />  3 Suítes
                 </span>
                 <span className="px-3 py-1 rounded-xl bg-vidro border border-linha text-corpo text-fluid-xs">
-                  ✓ 2 a 3 Vagas cobertas
+                   <Check className="inline-block w-5 h-5 align-text-bottom mr-1" />  2 a 3 Vagas cobertas
                 </span>
                 <span className="px-3 py-1 rounded-xl bg-vidro border border-linha text-corpo text-fluid-xs">
-                  ✓ Varanda Gourmet
+                   <Check className="inline-block w-5 h-5 align-text-bottom mr-1" />  Varanda Gourmet
                 </span>
               </div>
             </div>
@@ -200,7 +201,7 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
                   className="px-5 py-2 rounded-xl bg-ok hover:opacity-85 text-white text-fluid-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <span>Abrir WhatsApp do Lead</span>
-                  <span>➔</span>
+                  <span> <ArrowRight className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
                 </a>
               )}
             </div>

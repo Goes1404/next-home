@@ -2,7 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Empreendimento } from "@/lib/types";
 import { STATUS_LABEL } from "@/lib/types";
-import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
+import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";import { MapPin, Flame } from 'lucide-react';
+
 
 interface Props {
   empreendimentos: Empreendimento[];
@@ -18,7 +19,7 @@ export function VitrineOportunidadesSobre({ empreendimentos }: Props) {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-veu/5 border border-linha/10 text-acento-forte text-fluid-xs font-semibold mb-3 backdrop-blur">
-              <span>🔥 Oportunidades Selecionadas</span>
+              <span> <Flame className="inline-block w-5 h-5 align-text-bottom mr-1" />  Oportunidades Selecionadas</span>
             </div>
             <h2 className="text-fluid-2xl sm:text-fluid-3xl font-bold text-titulo tracking-tight">
               Empreendimentos com unidades disponíveis
@@ -76,7 +77,7 @@ export function VitrineOportunidadesSobre({ empreendimentos }: Props) {
                   {imovel.nome}
                 </h3>
                 <p className="text-fluid-xs text-legenda">
-                  📍 {imovel.bairro} — {imovel.cidade}
+                   <MapPin className="inline-block w-5 h-5 align-text-bottom mr-1" />  {imovel.bairro} — {imovel.cidade}
                 </p>
 
                 <div className="flex items-center justify-between border-t border-linha/10 pt-3">

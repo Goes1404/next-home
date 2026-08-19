@@ -3,30 +3,31 @@
 import { useMemo, useState } from "react";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
+import { Building2, Home, TrendingUp } from "lucide-react";
 
 interface Props {
   corretorWhatsapp?: string;
 }
 
 const APORTES_RAPIDOS = [
-  { label: "R$ 800k", valor: 800_000 },
-  { label: "R$ 1,5M", valor: 1_500_000 },
-  { label: "R$ 3M", valor: 3_000_000 },
-  { label: "R$ 6M", valor: 6_000_000 },
-  { label: "R$ 10M+", valor: 10_000_000 },
+  { label: "R$ 350k", valor: 350_000 },
+  { label: "R$ 600k", valor: 600_000 },
+  { label: "R$ 1,2M", valor: 1_200_000 },
+  { label: "R$ 2,5M", valor: 2_500_000 },
+  { label: "R$ 5M+", valor: 5_000_000 },
 ];
 
 export function SimuladorInvestimentoAlphaville({
   corretorWhatsapp = "5511972207204",
 }: Props) {
-  const [valorInvestimento, setValorInvestimento] = useState<number>(1_500_000);
+  const [valorInvestimento, setValorInvestimento] = useState<number>(600_000);
   const [estrategia, setEstrategia] = useState<"planta" | "renda">("planta");
   const [horizonteAnos, setHorizonteAnos] = useState<number>(3);
 
-  // Cálculos baseados no histórico imobiliário de Alphaville / Tamboré
+  // Cálculos baseados no histórico imobiliário de Alphaville / Tamboré / Barueri
   const calculos = useMemo(() => {
     if (estrategia === "planta") {
-      // Valorização na planta: ~9.5% a.a. + salto de entrega de chaves
+      // Valorização na planta: ~11.5% a.a. considerando valorização da obra e entrega
       const taxaAnual = 0.115;
       const patrimonioFinal = valorInvestimento * Math.pow(1 + taxaAnual, horizonteAnos);
       const ganhoTotal = patrimonioFinal - valorInvestimento;
@@ -39,7 +40,7 @@ export function SimuladorInvestimentoAlphaville({
         rendaMensalEstimada: 0,
       };
     } else {
-      // Estratégia de Renda: 0.58% a.m. de yield + 7% a.a. de valorização do ativo
+      // Estratégia de Renda: yield médio + valorização do ativo
       const taxaValorizacaoAnual = 0.075;
       const yieldMensal = 0.0058;
       const rendaMensalEstimada = valorInvestimento * yieldMensal;
@@ -60,7 +61,7 @@ export function SimuladorInvestimentoAlphaville({
   // WhatsApp Link personalizado com os dados do simulador
   const fone = normalizarWhatsapp(corretorWhatsapp) || "5511972207204";
   const msgZap = encodeURIComponent(
-    `Olá! Fiz uma simulação de investimento de ${formatarMoedaBRL(valorInvestimento)} na Next Home (${estrategia === "planta" ? "Lançamento na Planta" : "Renda de Locação"}) para ${horizonteAnos} anos. Gostaria de receber o estudo completo e as opções disponíveis em Alphaville.`,
+    `Olá! Fiz uma simulação de investimento de ${formatarMoedaBRL(valorInvestimento)} na Next Home (${estrategia === "planta" ? "Lançamento na Planta" : "Renda de Aluguel"}) para ${horizonteAnos} anos. Gostaria de receber as melhores oportunidades com essas condições.`,
   );
   const zapLink = `https://wa.me/${fone}?text=${msgZap}`;
 
@@ -70,20 +71,16 @@ export function SimuladorInvestimentoAlphaville({
         {/* Cabeçalho */}
         <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-500/10 border border-brand-400/30 text-brand-300 text-fluid-xs font-semibold mb-3 backdrop-blur shadow-sm">
-            <span>📈 Inteligência Imobiliária & Investimento</span>
+            <span> <TrendingUp className="inline-block w-5 h-5 align-text-bottom mr-1" />  Oportunidade & Rentabilidade</span>
           </div>
           <h2 className="text-fluid-2xl sm:text-fluid-3xl font-bold text-titulo tracking-tight">
-            Simulador de Valorização & Rentabilidade em Alphaville
+            Simulador de Valorização & Retorno Imobiliário
           </h2>
-          <p className="text-fluid-sm text-legenda mt-3 font-light">
-            Projete o potencial de ganho de capital e geração de renda passiva nos bairros de maior liquidez da região.
+          <p className="text-fluid-sm text-legenda mt-3 font-normal">
+            Calcule o potencial de ganho do seu patrimônio com lançamentos na planta ou renda passiva de locação na região.
           </p>
         </div>
 
-        {/* Card do simulador, escuro fixo nos dois temas, de propósito: é uma
-            vitrine de marca (glassmorphism, controles e texto branco fixos),
-            não uma leitura de página — convertê-lo pediria redesenhar cada
-            estado (toggle, slider, resultado), não só trocar token de cor. */}
         <div className="relative rounded-[2.5rem] border border-white/15 bg-gradient-to-b from-ink-900/80 to-ink-950 p-6 sm:p-10 backdrop-blur-2xl shadow-2xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             {/* Controles da Simulação (Esquerda) */}
@@ -91,7 +88,7 @@ export function SimuladorInvestimentoAlphaville({
               {/* Seletor de Estratégia */}
               <div>
                 <label className="text-fluid-xs font-bold text-mist-300 uppercase tracking-wider block mb-2">
-                  Estratégia de Investimento
+                  Objetivo do Investimento
                 </label>
                 <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-ink-950 border border-white/10">
                   <button
@@ -102,7 +99,7 @@ export function SimuladorInvestimentoAlphaville({
                         : "text-mist-400 hover:text-white"
                     }`}
                   >
-                    🏗️ Ganho na Planta (Obra)
+                     <Building2 className="inline-block w-5 h-5 align-text-bottom mr-1" />  Comprar na Planta (Ganho de Obra)
                   </button>
                   <button
                     onClick={() => setEstrategia("renda")}
@@ -112,7 +109,7 @@ export function SimuladorInvestimentoAlphaville({
                         : "text-mist-400 hover:text-white"
                     }`}
                   >
-                    🏠 Renda de Aluguel + Ganho
+                     <Home className="inline-block w-5 h-5 align-text-bottom mr-1" />  Renda de Aluguel + Valorização
                   </button>
                 </div>
               </div>
@@ -121,7 +118,7 @@ export function SimuladorInvestimentoAlphaville({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-fluid-xs font-bold text-mist-300 uppercase tracking-wider">
-                    Aporte Estimado
+                    Valor Pretendido
                   </label>
                   <span className="text-fluid-lg font-bold text-brand-300">
                     {formatarMoedaBRL(valorInvestimento)}
@@ -131,9 +128,9 @@ export function SimuladorInvestimentoAlphaville({
                 {/* Slider */}
                 <input
                   type="range"
-                  min={500_000}
-                  max={10_000_000}
-                  step={100_000}
+                  min={250_000}
+                  max={6_000_000}
+                  step={50_000}
                   value={valorInvestimento}
                   onChange={(e) => setValorInvestimento(Number(e.target.value))}
                   className="w-full h-2 bg-ink-950 rounded-lg appearance-none cursor-pointer accent-brand-400 border border-white/15"
@@ -160,7 +157,7 @@ export function SimuladorInvestimentoAlphaville({
               {/* Horizonte de Tempo */}
               <div>
                 <label className="text-fluid-xs font-bold text-mist-300 uppercase tracking-wider block mb-2">
-                  Prazo de Projeção
+                  Prazo Desejado
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[1, 3, 5].map((anos) => (
@@ -200,7 +197,7 @@ export function SimuladorInvestimentoAlphaville({
                 <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
                   <div>
                     <span className="text-[11px] text-mist-400 block font-light">
-                      Ganho de Capital Bruto
+                      Ganho Estimado de Capital
                     </span>
                     <p className="text-fluid-base font-bold text-mist-100 mt-0.5">
                       +{formatarMoedaBRL(calculos.ganhoTotal)}
@@ -210,7 +207,7 @@ export function SimuladorInvestimentoAlphaville({
                   {estrategia === "renda" && (
                     <div>
                       <span className="text-[11px] text-mist-400 block font-light">
-                        Renda Mensal de Aluguel
+                        Renda Mensal Estimada
                       </span>
                       <p className="text-fluid-base font-bold text-emerald-400 mt-0.5">
                         ~{formatarMoedaBRL(calculos.rendaMensalEstimada)}/mês
@@ -221,7 +218,7 @@ export function SimuladorInvestimentoAlphaville({
                   {estrategia === "planta" && (
                     <div>
                       <span className="text-[11px] text-mist-400 block font-light">
-                        Média Histórica na Região
+                        Valorização Média da Região
                       </span>
                       <p className="text-fluid-base font-bold text-brand-300 mt-0.5">
                         ~11,5% ao ano
@@ -237,7 +234,7 @@ export function SimuladorInvestimentoAlphaville({
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-fluid-xs font-bold transition-all shadow-lg shadow-emerald-900/40 cursor-pointer"
                 >
-                  <span>Receber Estudo de Oportunidades no WhatsApp</span>
+                  <span>Receber Melhores Oportunidades no WhatsApp</span>
                   <span>→</span>
                 </a>
               </div>

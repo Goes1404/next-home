@@ -11,12 +11,12 @@ import { getEmpreendimentos } from "@/lib/queries";
 import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Fale com a Next Home | Contato e Atendimento em Alphaville",
-  description: `Entre em contato com a equipe da ${site.nomeCompleto} — ${enderecoLinha}. WhatsApp, telefone e atendimento presencial em Alphaville.`,
+  title: "Fale com a Next Home | Atendimento Rápido e Oportunidades",
+  description: `Entre em contato com a equipe da ${site.nomeCompleto} — ${enderecoLinha}. WhatsApp, simulações de financiamento e atendimento presencial em Alphaville e Barueri.`,
   alternates: { canonical: "/contato" },
   openGraph: {
     title: "Contato | Next Home Negócios Imobiliários",
-    description: `Fale com nossos consultores credenciados por WhatsApp ou visite nosso escritório em Alphaville.`,
+    description: `Fale com nossos corretores por WhatsApp para simulações, visitas e as melhores oportunidades imobiliárias.`,
     url: `${site.url}/contato`,
   },
 };
@@ -57,7 +57,7 @@ export default async function ContatoPage({
           </p>
           <h1 className="text-fluid-3xl text-titulo">Estamos prontos para atender você.</h1>
           <p className="text-fluid-base mt-4 text-apoio">
-            Tire dúvidas sobre empreendimentos, agende uma visita exclusiva ou receba atendimento personalizado com nossos consultores.
+            Tire suas dúvidas, faça simulações de financiamento ou agende uma visita sem compromisso com nossos corretores no WhatsApp.
           </p>
         </Reveal>
 

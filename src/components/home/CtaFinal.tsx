@@ -15,24 +15,24 @@ export async function CtaFinal() {
     <section className="px-4 pb-24">
       <Reveal className="mx-auto w-full max-w-2xl">
         <GlassSurface preset="painel" className="px-7 py-10 text-center sm:px-12 sm:py-14">
-          <h2 className="text-fluid-2xl text-titulo">Pronto para encontrar o imóvel dos seus sonhos?</h2>
+          <h2 className="text-fluid-2xl text-titulo">Pronto para encontrar a melhor oportunidade?</h2>
           <p className="text-fluid-base mt-3 text-apoio">
-            Nossa equipe de consultores está a uma mensagem de distância para apresentar as melhores opções com total exclusividade e rapidez.
+            Nossos corretores estão online agora para apresentar opções com excelente custo-benefício, simular condições de pagamento e agendar visitas sem burocracia.
           </p>
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
             <WhatsappLink
               href={link}
               origem="cta_final"
               corretorId={corretorAtivo?.id}
-              className="rounded-full bg-brand-500 px-7 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-400"
+              className="rounded-full bg-brand-500 px-7 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-400 shadow-md"
             >
-              Conversar no WhatsApp
+              Receber Ofertas no WhatsApp
             </WhatsappLink>
             <Link
               href="/empreendimentos"
               className="rounded-full border border-linha/20 px-7 py-3.5 text-sm font-medium text-corpo transition-colors hover:border-brand-300/50 hover:text-acento"
             >
-              Explorar Todos os Imóveis
+              Ver Todas as Oportunidades
             </Link>
           </div>
         </GlassSurface>

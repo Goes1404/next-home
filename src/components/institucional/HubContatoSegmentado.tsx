@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { site, enderecoLinha } from "@/lib/site";
+import { Home, MessageCircle, TrendingUp, Handshake, MapPin } from "lucide-react";
 
 interface Props {
   linkWhatsapp: string;
@@ -13,13 +14,13 @@ export function HubContatoSegmentado({ linkWhatsapp }: Props) {
           {/* Lado Esquerdo: Cabeçalho & Canais */}
           <div className="lg:col-span-6 space-y-4">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-veu/5 border border-linha/10 text-acento-forte text-fluid-xs font-semibold backdrop-blur">
-              <span>💬 Canais de Atendimento</span>
+              <span> <MessageCircle className="inline-block w-5 h-5 align-text-bottom mr-1" />  Canais de Atendimento</span>
             </div>
             <h2 className="text-fluid-2xl sm:text-fluid-3xl font-bold text-titulo tracking-tight">
-              Fale diretamente com nossa equipe especializada
+              Fale com nossos corretores e faça o melhor negócio
             </h2>
-            <p className="text-fluid-sm text-legenda font-light">
-              Seja para encontrar a residência perfeita em Alphaville, disponibilizar seu imóvel ou fazer parte da nossa rede de corretores parceiros.
+            <p className="text-fluid-sm text-legenda font-normal">
+              Atendimento rápido para quem quer comprar, vender, alugar ou investir com as melhores taxas e condições da região.
             </p>
 
             <div className="pt-4 flex flex-wrap gap-3">
@@ -29,7 +30,7 @@ export function HubContatoSegmentado({ linkWhatsapp }: Props) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-fluid-sm transition-colors shadow-lg shadow-emerald-900/30"
               >
-                <span>Falar no WhatsApp</span>
+                <span>Chamar no WhatsApp</span>
                 <span>→</span>
               </a>
 
@@ -37,7 +38,7 @@ export function HubContatoSegmentado({ linkWhatsapp }: Props) {
                 href="/contato"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/15 text-corpo font-semibold text-fluid-sm transition-colors border border-white/15"
               >
-                Formulário de Contato
+                Enviar Mensagem
               </Link>
             </div>
           </div>
@@ -46,10 +47,10 @@ export function HubContatoSegmentado({ linkWhatsapp }: Props) {
           <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Card 1: Comprar */}
             <div className="p-5 rounded-2xl border border-linha/10 bg-superficie/60 backdrop-blur space-y-2">
-              <span className="text-2xl block">🏠</span>
+              <span className="text-2xl block"> <Home className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
               <h4 className="text-fluid-sm font-bold text-titulo">Quero Comprar ou Investir</h4>
               <p className="text-[12px] text-legenda">
-                Apresentação privativa de lançamentos e oportunidades exclusivas na região.
+                Receba opções na planta e prontas para morar com fluxo de pagamento facilitado.
               </p>
               <a
                 href={linkWhatsapp}
@@ -57,31 +58,31 @@ export function HubContatoSegmentado({ linkWhatsapp }: Props) {
                 rel="noopener noreferrer"
                 className="text-fluid-xs font-semibold text-acento-forte hover:underline inline-block pt-1"
               >
-                Consultar catálogo →
+                Ver ofertas no WhatsApp →
               </a>
             </div>
 
             {/* Card 2: Anunciar Imóvel */}
             <div className="p-5 rounded-2xl border border-linha/10 bg-superficie/60 backdrop-blur space-y-2">
-              <span className="text-2xl block">📈</span>
+              <span className="text-2xl block"> <TrendingUp className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
               <h4 className="text-fluid-sm font-bold text-titulo">Anunciar meu Imóvel</h4>
               <p className="text-[12px] text-legenda">
-                Divulgação de alto padrão para compradores qualificados com total discrição.
+                Avaliação justa e divulgação ativa para compradores prontos para fechar negócio.
               </p>
               <Link
-                href="/anuncie"
+                href="/anunciar-imovel"
                 className="text-fluid-xs font-semibold text-acento-forte hover:underline inline-block pt-1"
               >
-                Cadastrar imóvel →
+                Cadastrar imóvel grátis →
               </Link>
             </div>
 
             {/* Card 3: Parcerias e Corretores */}
             <div className="p-5 rounded-2xl border border-linha/10 bg-superficie/60 backdrop-blur space-y-2">
-              <span className="text-2xl block">🤝</span>
+              <span className="text-2xl block"> <Handshake className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
               <h4 className="text-fluid-sm font-bold text-titulo">Seja um Corretor Parceiro</h4>
               <p className="text-[12px] text-legenda">
-                Acesse nossa infraestrutura tecnológica, esteira de leads e catálogo unificado.
+                Trabalhe com os melhores lançamentos, suporte completo e comissões atrativas.
               </p>
               <Link
                 href="/contato?assunto=parceria"
@@ -93,7 +94,7 @@ export function HubContatoSegmentado({ linkWhatsapp }: Props) {
 
             {/* Card 4: Sede & Endereço */}
             <div className="p-5 rounded-2xl border border-linha/10 bg-superficie/60 backdrop-blur space-y-2">
-              <span className="text-2xl block">📍</span>
+              <span className="text-2xl block"> <MapPin className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
               <h4 className="text-fluid-sm font-bold text-titulo">Sede & Atendimento</h4>
               <p className="text-[12px] text-legenda">
                 {enderecoLinha}

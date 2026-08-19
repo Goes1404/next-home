@@ -8,7 +8,8 @@ import {
   souGestor,
 } from "@/lib/corretorSessao";
 
-import Link from "next/link";
+import Link from "next/link";import { Mail } from 'lucide-react';
+
 
 export const metadata: Metadata = { title: "Meus leads" };
 
@@ -43,7 +44,7 @@ export default async function LeadsPage() {
           href="/corretor/importar"
           className="inline-flex items-center gap-2 rounded-full bg-brand-500 hover:bg-brand-400 px-4 py-2 text-sm font-medium text-white shadow-md transition-colors"
         >
-          <span>📧</span> Puxar do Gmail / Importar
+          <span> <Mail className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Puxar do Gmail / Importar
         </Link>
       </div>
 

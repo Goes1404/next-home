@@ -1,7 +1,8 @@
 import { Reveal } from "@/components/motion/Reveal";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { linkWhatsappPara } from "@/lib/site";
-import type { Empreendimento } from "@/lib/types";
+import type { Empreendimento } from "@/lib/types";import { Smartphone, FileText, Download, Check, ArrowRight } from 'lucide-react';
+
 
 interface Props {
   empreendimento: Empreendimento;
@@ -31,7 +32,7 @@ export function BookDigital({ empreendimento: e }: Props) {
             {/* Lado Esquerdo: Textos & Ícone */}
             <div className="space-y-4 text-center md:text-left flex-1">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-fluid-xs font-bold bg-brand-500/20 text-brand-300 border border-brand-500/40">
-                <span>📑</span>
+                <span> <FileText className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
                 <span>Material Exclusivo</span>
               </div>
 
@@ -45,13 +46,13 @@ export function BookDigital({ empreendimento: e }: Props) {
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-1 text-[11px] text-mist-400">
                 <span className="flex items-center gap-1">
-                  <span className="text-emerald-400">✓</span> Formato PDF Alta Resolução
+                  <span className="text-emerald-400"> <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Formato PDF Alta Resolução
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="text-emerald-400">✓</span> Acesso Instantâneo
+                  <span className="text-emerald-400"> <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Acesso Instantâneo
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="text-emerald-400">✓</span> Gratuito
+                  <span className="text-emerald-400"> <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Gratuito
                 </span>
               </div>
             </div>
@@ -66,7 +67,7 @@ export function BookDigital({ empreendimento: e }: Props) {
                     rel="noopener noreferrer"
                     className="min-h-[52px] px-8 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-sm font-bold transition-all shadow-xl shadow-brand-500/25 flex items-center justify-center gap-2.5 active:scale-98"
                   >
-                    <span>📥 Baixar Book Completo (PDF)</span>
+                    <span> <Download className="inline-block w-5 h-5 align-text-bottom mr-1" />  Baixar Book Completo (PDF)</span>
                     <span className="text-xs">↗</span>
                   </a>
 
@@ -76,7 +77,7 @@ export function BookDigital({ empreendimento: e }: Props) {
                     rel="noopener noreferrer"
                     className="min-h-[48px] px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-mist-200 hover:text-white text-fluid-xs font-semibold transition-colors flex items-center justify-center gap-2 border border-white/10"
                   >
-                    <span>📲 Receber no WhatsApp</span>
+                    <span> <Smartphone className="inline-block w-5 h-5 align-text-bottom mr-1" />  Receber no WhatsApp</span>
                   </a>
                 </>
               ) : (
@@ -86,8 +87,8 @@ export function BookDigital({ empreendimento: e }: Props) {
                   rel="noopener noreferrer"
                   className="min-h-[52px] px-8 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-sm font-bold transition-all shadow-xl shadow-brand-500/25 flex items-center justify-center gap-2 active:scale-98"
                 >
-                  <span>📲 Solicitar Book no WhatsApp</span>
-                  <span>➔</span>
+                  <span> <Smartphone className="inline-block w-5 h-5 align-text-bottom mr-1" />  Solicitar Book no WhatsApp</span>
+                  <span> <ArrowRight className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
                 </a>
               )}
             </div>

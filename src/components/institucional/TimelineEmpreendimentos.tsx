@@ -2,7 +2,8 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "next/link";import { Map, Home, MapPin } from 'lucide-react';
+
 
 interface MarcoHistorico {
   ano: string;
@@ -93,7 +94,7 @@ export function TimelineEmpreendimentos() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-veu/5 border border-linha/10 text-acento-forte text-fluid-xs font-semibold mb-3 backdrop-blur shadow-sm">
-              <span>🏠 Nossa trajetória, seu futuro lar</span>
+              <span> <Home className="inline-block w-5 h-5 align-text-bottom mr-1" />  Nossa trajetória, seu futuro lar</span>
             </div>
             <h2 className="text-fluid-2xl sm:text-fluid-3xl font-bold text-titulo tracking-tight">
               Um legado de excelência e valorização em Alphaville
@@ -169,7 +170,7 @@ export function TimelineEmpreendimentos() {
                     {item.nome}
                   </h3>
                   <div className="flex items-center gap-1.5 text-fluid-xs text-mist-300">
-                    <span>📍</span>
+                    <span> <MapPin className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
                     <span className="truncate">{item.bairro}</span>
                   </div>
                   <p className="text-[11px] text-mist-400 font-light line-clamp-1 border-t border-white/10 pt-2">
@@ -181,7 +182,7 @@ export function TimelineEmpreendimentos() {
                       href={`/mapa?imovel=${item.slug}`}
                       className="inline-flex items-center justify-center gap-1.5 w-full py-2 rounded-xl bg-white/10 hover:bg-brand-500 text-white text-[11px] font-semibold backdrop-blur border border-white/15 transition-all shadow-md"
                     >
-                      <span>🗺️ Ver no Mapa Noturno</span>
+                      <span> <Map className="inline-block w-5 h-5 align-text-bottom mr-1" />  Ver no Mapa Noturno</span>
                     </Link>
                   </div>
                 </div>
