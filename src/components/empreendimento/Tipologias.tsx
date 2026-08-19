@@ -50,8 +50,8 @@ export function Tipologias({
   return (
     <section id="tipologias" className="mx-auto max-w-3xl scroll-mt-24 px-4 py-16 sm:py-24">
       <Reveal>
-        <h2 className="text-fluid-2xl text-mist-50">Tipologias</h2>
-        <p className="text-fluid-base mt-2 text-mist-300">
+        <h2 className="text-fluid-2xl text-titulo">Tipologias</h2>
+        <p className="text-fluid-base mt-2 text-apoio">
           Metragens e valores por unidade — sujeitos a disponibilidade.
         </p>
       </Reveal>
@@ -66,9 +66,9 @@ export function Tipologias({
 
           return (
             <Reveal key={t.nome} delay={i * 0.08} from="baixo">
-              <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-ink-900 px-6 py-6">
-                <h3 className="font-display text-lg text-mist-50">{t.nome}</h3>
-                <p className="text-fluid-sm mt-1 text-mist-400">
+              <article className="flex h-full flex-col rounded-2xl border border-linha/10 bg-superficie px-6 py-6">
+                <h3 className="font-display text-lg text-titulo">{t.nome}</h3>
+                <p className="text-fluid-sm mt-1 text-legenda">
                   {areaM2(t.areaPrivativa)} privativos
                 </p>
 
@@ -77,7 +77,7 @@ export function Tipologias({
                     type="button"
                     onClick={() => setAberta(indiceDaPlanta(t))}
                     aria-label={`Ver planta de ${t.nome}`}
-                    className="group relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-ink-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300"
+                    className="group relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-fundo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300"
                   >
                     <Image
                       src={t.plantaUrl}
@@ -86,23 +86,25 @@ export function Tipologias({
                       sizes="(min-width: 640px) 340px, 100vw"
                       className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
                     />
-                    <span className="text-fluid-xs absolute right-2 bottom-2 rounded-full bg-ink-950/80 px-2.5 py-1 text-mist-200">
+                    {/* Literal como os demais selos sobre imagem: o fundo
+                        aqui é a planta, não a página. */}
+                    <span className="text-fluid-xs absolute right-2 bottom-2 rounded-full bg-ink-950/80 px-2.5 py-1 text-corpo-suave">
                       Ver planta
                     </span>
                   </button>
                 )}
 
-                <div className="mt-4 grid grid-cols-4 gap-2 border-t border-white/10 pt-4 text-center">
+                <div className="mt-4 grid grid-cols-4 gap-2 border-t border-linha/10 pt-4 text-center">
                   {CAMPOS.map((campo) => (
-                    <p key={campo.chave} className="text-fluid-sm font-medium text-mist-100">
+                    <p key={campo.chave} className="text-fluid-sm font-medium text-corpo">
                       {campo.label(t)}
                     </p>
                   ))}
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <p className="text-fluid-lg font-medium text-brand-200">{precoBRL(t.preco)}</p>
-                  {porM2 && <p className="text-fluid-xs text-mist-400">{porM2}</p>}
+                  <p className="text-fluid-lg font-medium text-acento">{precoBRL(t.preco)}</p>
+                  {porM2 && <p className="text-fluid-xs text-legenda">{porM2}</p>}
                 </div>
 
                 {poucas && (

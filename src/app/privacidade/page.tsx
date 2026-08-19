@@ -17,7 +17,7 @@ export default function PrivacidadePage() {
       <SiteHeader />
       <WhatsappCta />
 
-      <main className="flex flex-1 flex-col bg-ink-950 px-4 pt-32 pb-24">
+      <main className="flex flex-1 flex-col bg-fundo px-4 pt-32 pb-24">
         <Reveal className="mx-auto w-full max-w-2xl">
           <VoltarLink href="/">Início</VoltarLink>
 
@@ -26,9 +26,9 @@ export default function PrivacidadePage() {
             Última atualização: {new Date().toLocaleDateString("pt-BR", { year: "numeric", month: "long" })}
           </p>
 
-          <div className="text-fluid-base mt-8 space-y-6 text-mist-300">
+          <div className="text-fluid-base mt-8 space-y-6 text-apoio">
             <section>
-              <h2 className="font-display text-lg text-mist-50">Quais dados coletamos</h2>
+              <h2 className="font-display text-lg text-titulo">Quais dados coletamos</h2>
               <p className="mt-2">
                 Quando você envia o formulário de contato ou fala com um corretor, coletamos
                 apenas o que você mesmo informa: nome, e-mail e/ou telefone, mensagem e,
@@ -38,7 +38,7 @@ export default function PrivacidadePage() {
             </section>
 
             <section>
-              <h2 className="font-display text-lg text-mist-50">Para que usamos</h2>
+              <h2 className="font-display text-lg text-titulo">Para que usamos</h2>
               <p className="mt-2">
                 Esses dados servem exclusivamente para que a {site.nomeCompleto} (CRECI{" "}
                 {site.creci}) ou o corretor responsável pelo empreendimento entre em contato
@@ -48,7 +48,7 @@ export default function PrivacidadePage() {
             </section>
 
             <section>
-              <h2 className="font-display text-lg text-mist-50">Base legal e retenção</h2>
+              <h2 className="font-display text-lg text-titulo">Base legal e retenção</h2>
               <p className="mt-2">
                 O tratamento se baseia no seu consentimento explícito, dado no momento do
                 envio do formulário, conforme a Lei Geral de Proteção de Dados (Lei nº
@@ -58,12 +58,12 @@ export default function PrivacidadePage() {
             </section>
 
             <section>
-              <h2 className="font-display text-lg text-mist-50">Seus direitos</h2>
+              <h2 className="font-display text-lg text-titulo">Seus direitos</h2>
               <p className="mt-2">
                 Você pode pedir a qualquer momento a confirmação, correção, portabilidade ou
                 exclusão dos seus dados, ou revogar o consentimento — basta entrar em contato
                 pelo WhatsApp ou pela página de{" "}
-                <a href="/contato" className="text-brand-200 underline-offset-4 hover:underline">
+                <a href="/contato" className="text-acento underline-offset-4 hover:underline">
                   Contato
                 </a>
                 .

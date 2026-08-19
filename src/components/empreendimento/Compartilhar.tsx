@@ -41,7 +41,7 @@ export function Compartilhar({ titulo, texto }: { titulo: string; texto: string 
     <button
       type="button"
       onClick={compartilhar}
-      className="text-fluid-sm inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-mist-200 transition-colors hover:border-white/30 hover:text-mist-50"
+      className="text-fluid-sm inline-flex items-center gap-2 rounded-full border border-linha/15 px-4 py-2 text-corpo-suave transition-colors hover:border-linha/30 hover:text-titulo"
     >
       {estado === "copiado" ? (
         <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" className="h-4 w-4 text-brand-300">

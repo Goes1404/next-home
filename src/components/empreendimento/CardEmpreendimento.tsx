@@ -46,11 +46,15 @@ export function CardEmpreendimento({
             />
           </ViewTransition>
 
-          <span className="text-fluid-xs absolute top-3 left-3 rounded-full bg-ink-950/80 px-3 py-1 font-medium tracking-wide text-brand-200 uppercase backdrop-blur-sm">
+          {/* Cor literal: o selo flutua sobre a capa, e o que precisa
+              contrastar com ele é a foto — não a superfície da página. */}
+          <span className="text-fluid-xs absolute top-3 left-3 rounded-full bg-ink-950/80 px-3 py-1 font-medium tracking-wide text-acento uppercase backdrop-blur-sm">
             {STATUS_LABEL[e.status]}
           </span>
 
           {ehRecente(e.criadoEm) && (
+            // `text-ink-950` literal: o contraste aqui é com o próprio chip
+            // de areia, que é claro nos dois temas.
             <span className="text-fluid-xs absolute top-3 right-3 rounded-full bg-sand-400/90 px-2.5 py-1 font-medium text-ink-950">
               Novo
             </span>
@@ -58,11 +62,11 @@ export function CardEmpreendimento({
         </div>
 
         <div className="px-5 py-4">
-          <h3 className="font-display text-lg text-mist-50">{e.nome}</h3>
-          <p className="text-fluid-sm mt-0.5 text-mist-400">
+          <h3 className="font-display text-lg text-titulo">{e.nome}</h3>
+          <p className="text-fluid-sm mt-0.5 text-legenda">
             {e.bairro}, {e.cidade}
           </p>
-          <p className="text-fluid-sm mt-2 font-medium text-brand-200">
+          <p className="text-fluid-sm mt-2 font-medium text-acento">
             {precoAPartirDe(e.precoAPartir)}
           </p>
         </div>

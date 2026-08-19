@@ -109,8 +109,8 @@ export default async function EmpreendimentosPage({
         <div className="mx-auto w-full max-w-5xl">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <Reveal>
-              <h1 className="text-fluid-2xl text-mist-50">Empreendimentos</h1>
-              <p className="text-fluid-base mt-2 text-mist-300">
+              <h1 className="text-fluid-2xl text-titulo">Empreendimentos</h1>
+              <p className="text-fluid-base mt-2 text-apoio">
                 {empreendimentos.length} empreendimento{empreendimentos.length === 1 ? "" : "s"} em{" "}
                 {site.regioes.join(", ")}.
               </p>
@@ -142,17 +142,17 @@ export default async function EmpreendimentosPage({
               ordenacaoAtual={ordenacao}
               regioes={regioes}
               idPrefixo="desktop"
-              className="mt-6 hidden rounded-2xl border border-white/10 bg-ink-900/60 p-5 sm:block"
+              className="mt-6 hidden rounded-2xl border border-linha/10 bg-superficie/60 p-5 sm:block"
             />
           </Reveal>
         </div>
 
         {empreendimentos.length === 0 ? (
           <Reveal className="mx-auto mt-16 w-full max-w-5xl text-center">
-            <p className="text-fluid-lg text-mist-100">Nenhum empreendimento com esses filtros.</p>
+            <p className="text-fluid-lg text-corpo">Nenhum empreendimento com esses filtros.</p>
             <Link
               href="/empreendimentos"
-              className="text-fluid-sm mt-2 inline-block text-brand-200 underline-offset-4 hover:underline"
+              className="text-fluid-sm mt-2 inline-block text-acento underline-offset-4 hover:underline"
             >
               Limpar filtros
             </Link>

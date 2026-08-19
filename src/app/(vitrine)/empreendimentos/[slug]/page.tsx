@@ -153,7 +153,7 @@ export default async function EmpreendimentoPage({
       <main className="flex flex-1 flex-col">
         <Hero empreendimento={e} />
 
-        <div className="relative bg-ink-950">
+        <div className="relative bg-fundo">
           <div className="mx-auto max-w-3xl px-4">
             <NavAncoras secoes={secoesDe(e)} />
           </div>

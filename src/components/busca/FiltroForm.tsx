@@ -18,7 +18,7 @@ const FAIXAS_DORMITORIOS = [
 ];
 
 const CAMPO =
-  "w-full appearance-none rounded-xl border border-white/10 bg-ink-900 px-3.5 py-2.5 text-sm text-mist-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300";
+  "w-full appearance-none rounded-xl border border-linha/10 bg-superficie px-3.5 py-2.5 text-sm text-corpo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300";
 
 export type FiltroFormProps = {
   filtrosAtuais: FiltrosEmpreendimento;
@@ -61,7 +61,7 @@ export function FiltroForm({
         }
       >
         <div>
-          <label htmlFor={`${idPrefixo}-tipo`} className="text-fluid-xs mb-1 block text-mist-400">
+          <label htmlFor={`${idPrefixo}-tipo`} className="text-fluid-xs mb-1 block text-legenda">
             Tipo
           </label>
           <select
@@ -80,7 +80,7 @@ export function FiltroForm({
         </div>
 
         <div>
-          <label htmlFor={`${idPrefixo}-cidade`} className="text-fluid-xs mb-1 block text-mist-400">
+          <label htmlFor={`${idPrefixo}-cidade`} className="text-fluid-xs mb-1 block text-legenda">
             Cidade
           </label>
           <select
@@ -100,7 +100,7 @@ export function FiltroForm({
 
         {!compacto && (
           <div>
-            <label htmlFor={`${idPrefixo}-bairro`} className="text-fluid-xs mb-1 block text-mist-400">
+            <label htmlFor={`${idPrefixo}-bairro`} className="text-fluid-xs mb-1 block text-legenda">
               Bairro
             </label>
             <select
@@ -123,7 +123,7 @@ export function FiltroForm({
             valor fica sozinho na segunda — full width em vez de meia coluna
             solta ao lado de um vazio. */}
         <div className={compacto ? "col-span-2 sm:col-span-1" : undefined}>
-          <label htmlFor={`${idPrefixo}-preco`} className="text-fluid-xs mb-1 block text-mist-400">
+          <label htmlFor={`${idPrefixo}-preco`} className="text-fluid-xs mb-1 block text-legenda">
             Valor
           </label>
           <select
@@ -143,7 +143,7 @@ export function FiltroForm({
 
         {!compacto && (
           <div>
-            <label htmlFor={`${idPrefixo}-dorms`} className="text-fluid-xs mb-1 block text-mist-400">
+            <label htmlFor={`${idPrefixo}-dorms`} className="text-fluid-xs mb-1 block text-legenda">
               Dormitórios
             </label>
             <select
@@ -168,7 +168,7 @@ export function FiltroForm({
           <div>
             <label
               htmlFor={`${idPrefixo}-ordenar`}
-              className="text-fluid-xs mb-1 block text-mist-400"
+              className="text-fluid-xs mb-1 block text-legenda"
             >
               Ordenar por
             </label>
@@ -202,7 +202,7 @@ export function FiltroForm({
         {!compacto && temFiltro && (
           <Link
             href="/empreendimentos"
-            className="text-fluid-sm text-mist-300 underline-offset-4 hover:text-mist-50 hover:underline"
+            className="text-fluid-sm text-apoio underline-offset-4 hover:text-titulo hover:underline"
           >
             Limpar filtros
           </Link>

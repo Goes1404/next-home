@@ -36,7 +36,7 @@ export function FiltroSheet({
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="text-fluid-sm flex items-center gap-2 rounded-full border border-white/10 bg-ink-900 px-4 py-2 text-mist-100"
+        className="text-fluid-sm flex items-center gap-2 rounded-full border border-linha/10 bg-superficie px-4 py-2 text-corpo"
       >
         <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M7 12h10M10 18h4" />
@@ -58,12 +58,12 @@ export function FiltroSheet({
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-lg text-mist-50">Filtros</h2>
+              <h2 className="font-display text-lg text-titulo">Filtros</h2>
               <button
                 type="button"
                 onClick={() => setAberto(false)}
                 aria-label="Fechar filtros"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-mist-50"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-veu/10 text-titulo"
               >
                 ✕
               </button>

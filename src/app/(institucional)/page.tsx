@@ -143,9 +143,9 @@ export default async function HomeInstitucional() {
                     preset="card"
                     className="group flex h-full flex-col px-6 py-7"
                   >
-                    <h2 className="font-display text-lg text-mist-50">{c.titulo}</h2>
-                    <p className="text-fluid-sm mt-2 flex-1 text-mist-400">{c.texto}</p>
-                    <span className="text-fluid-sm mt-5 font-medium text-brand-200 transition-colors group-hover:text-brand-100">
+                    <h2 className="font-display text-lg text-titulo">{c.titulo}</h2>
+                    <p className="text-fluid-sm mt-2 flex-1 text-legenda">{c.texto}</p>
+                    <span className="text-fluid-sm mt-5 font-medium text-acento transition-colors group-hover:text-brand-100">
                       {c.cta} →
                     </span>
                   </GlassSurface>
@@ -175,7 +175,7 @@ export default async function HomeInstitucional() {
             <Reveal className="mt-10 text-center">
               <Link
                 href="/empreendimentos"
-                className="text-fluid-sm font-medium text-brand-200 underline-offset-4 hover:underline"
+                className="text-fluid-sm font-medium text-acento underline-offset-4 hover:underline"
               >
                 Ver todos os {todos.length} empreendimentos →
               </Link>
@@ -206,7 +206,7 @@ export default async function HomeInstitucional() {
               <Reveal className="mt-10 text-center">
                 <Link
                   href="/corretores"
-                  className="text-fluid-sm font-medium text-brand-200 underline-offset-4 hover:underline"
+                  className="text-fluid-sm font-medium text-acento underline-offset-4 hover:underline"
                 >
                   Ver toda a equipe →
                 </Link>
@@ -218,8 +218,8 @@ export default async function HomeInstitucional() {
         <CtaFinal />
 
         <Reveal className="px-4 pb-20 text-center">
-          <p className="text-fluid-sm text-mist-400">{enderecoLinha}</p>
-          <p className="text-fluid-xs mt-1 text-mist-500">CRECI {site.creci}</p>
+          <p className="text-fluid-sm text-legenda">{enderecoLinha}</p>
+          <p className="text-fluid-xs mt-1 text-tenue">CRECI {site.creci}</p>
         </Reveal>
       </main>
     </>

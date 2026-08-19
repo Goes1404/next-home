@@ -50,13 +50,13 @@ export default async function CorretoresPage() {
 
       <main className="flex flex-1 flex-col px-4 pt-32 pb-24">
         <Reveal className="mx-auto w-full max-w-2xl text-center">
-          <p className="text-fluid-xs text-brand-200 mb-3 font-medium tracking-[0.2em] uppercase">
+          <p className="text-fluid-xs text-acento mb-3 font-medium tracking-[0.2em] uppercase">
             Nossa equipe
           </p>
-          <h1 className="text-fluid-3xl text-mist-50">
+          <h1 className="text-fluid-3xl text-titulo">
             Quem acompanha cada lançamento de perto.
           </h1>
-          <p className="text-fluid-base mt-5 text-mist-300">
+          <p className="text-fluid-base mt-5 text-apoio">
             {corretores.length > 0 ? (
               <>
                 São {corretores.length} corretores com CRECI, todos atuando em{" "}
@@ -72,10 +72,10 @@ export default async function CorretoresPage() {
         {corretores.length === 0 ? (
           <Reveal className="mx-auto mt-14 w-full max-w-lg">
             <GlassSurface preset="painel" className="px-7 py-8 text-center">
-              <h2 className="text-fluid-lg font-display text-mist-50">
+              <h2 className="text-fluid-lg font-display text-titulo">
                 Estamos atualizando a equipe.
               </h2>
-              <p className="text-fluid-base mt-3 text-mist-300">
+              <p className="text-fluid-base mt-3 text-apoio">
                 Fale com a gente pelo WhatsApp que direcionamos você ao corretor certo
                 para o que você procura.
               </p>
@@ -108,10 +108,10 @@ export default async function CorretoresPage() {
                 className="flex flex-col items-center gap-5 px-7 py-7 text-center sm:flex-row sm:justify-between sm:text-left"
               >
                 <div className="sm:flex-1">
-                  <p className="font-display text-fluid-lg text-mist-50">
+                  <p className="font-display text-fluid-lg text-titulo">
                     Não sabe com quem falar?
                   </p>
-                  <p className="text-fluid-sm mt-1 text-mist-300">
+                  <p className="text-fluid-sm mt-1 text-apoio">
                     Conte o que procura na linha geral e direcionamos ao corretor da
                     região certa.
                   </p>
@@ -128,7 +128,7 @@ export default async function CorretoresPage() {
                   </a>
                   <Link
                     href="/contato"
-                    className="hover:border-brand-300/50 hover:text-brand-200 inline-flex h-12 items-center rounded-full border border-white/20 px-6 text-sm font-medium text-mist-100 transition-colors"
+                    className="hover:border-brand-300/50 hover:text-acento inline-flex h-12 items-center rounded-full border border-linha/20 px-6 text-sm font-medium text-corpo transition-colors"
                   >
                     Enviar mensagem
                   </Link>

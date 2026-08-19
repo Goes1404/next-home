@@ -14,7 +14,7 @@ type FormularioContatoProps = {
 };
 
 const CAMPO_BASE =
-  "w-full rounded-xl border border-white/15 bg-ink-950/60 px-4 py-3 text-mist-50 placeholder:text-mist-500 outline-none transition-colors focus:border-brand-300";
+  "w-full rounded-xl border border-linha/15 bg-fundo/60 px-4 py-3 text-titulo placeholder:text-tenue outline-none transition-colors focus:border-brand-300";
 
 export function FormularioContato({
   empreendimentos,
@@ -73,8 +73,8 @@ export function FormularioContato({
   if (status === "sucesso") {
     return (
       <div className="rounded-2xl border border-brand-400/30 bg-brand-900/30 px-6 py-8 text-center">
-        <p className="font-display text-lg text-mist-50">Mensagem enviada!</p>
-        <p className="text-fluid-sm mt-2 text-mist-300">
+        <p className="font-display text-lg text-titulo">Mensagem enviada!</p>
+        <p className="text-fluid-sm mt-2 text-apoio">
           Recebemos seu contato e um corretor vai retornar em breve.
         </p>
       </div>
@@ -90,7 +90,7 @@ export function FormularioContato({
       </div>
 
       <div>
-        <label htmlFor="nome" className="text-fluid-sm mb-1.5 block text-mist-300">
+        <label htmlFor="nome" className="text-fluid-sm mb-1.5 block text-apoio">
           Nome
         </label>
         <input id="nome" name="nome" type="text" required minLength={2} maxLength={120} className={CAMPO_BASE} />
@@ -98,23 +98,23 @@ export function FormularioContato({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="email" className="text-fluid-sm mb-1.5 block text-mist-300">
+          <label htmlFor="email" className="text-fluid-sm mb-1.5 block text-apoio">
             E-mail
           </label>
           <input id="email" name="email" type="email" className={CAMPO_BASE} />
         </div>
         <div>
-          <label htmlFor="telefone" className="text-fluid-sm mb-1.5 block text-mist-300">
+          <label htmlFor="telefone" className="text-fluid-sm mb-1.5 block text-apoio">
             Telefone / WhatsApp
           </label>
           <input id="telefone" name="telefone" type="tel" className={CAMPO_BASE} />
         </div>
       </div>
-      <p className="text-fluid-xs -mt-2 text-mist-500">Informe pelo menos um dos dois.</p>
+      <p className="text-fluid-xs -mt-2 text-tenue">Informe pelo menos um dos dois.</p>
 
       {empreendimentos.length > 0 && (
         <div>
-          <label htmlFor="empreendimento" className="text-fluid-sm mb-1.5 block text-mist-300">
+          <label htmlFor="empreendimento" className="text-fluid-sm mb-1.5 block text-apoio">
             Empreendimento de interesse
           </label>
           <select
@@ -134,22 +134,22 @@ export function FormularioContato({
       )}
 
       <div>
-        <label htmlFor="mensagem" className="text-fluid-sm mb-1.5 block text-mist-300">
+        <label htmlFor="mensagem" className="text-fluid-sm mb-1.5 block text-apoio">
           Mensagem
         </label>
         <textarea id="mensagem" name="mensagem" rows={4} maxLength={2000} className={CAMPO_BASE} />
       </div>
 
-      <label className="flex items-start gap-2.5 text-mist-400">
+      <label className="flex items-start gap-2.5 text-legenda">
         <input
           type="checkbox"
           name="lgpd"
           required
-          className="mt-1 h-4 w-4 shrink-0 rounded border-white/30 bg-ink-950 accent-brand-500"
+          className="mt-1 h-4 w-4 shrink-0 rounded border-linha/30 bg-fundo accent-brand-500"
         />
         <span className="text-fluid-xs">
           Concordo com o uso dos meus dados para contato sobre este assunto, conforme a{" "}
-          <Link href="/privacidade" className="text-brand-200 underline-offset-4 hover:underline">
+          <Link href="/privacidade" className="text-acento underline-offset-4 hover:underline">
             Política de Privacidade
           </Link>
           .

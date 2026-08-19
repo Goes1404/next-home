@@ -18,20 +18,20 @@ export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento })
   return (
     <section id="sobre" className="mx-auto max-w-3xl scroll-mt-24 px-4 pt-16 sm:pt-24">
       <Reveal>
-        <h2 className="text-fluid-2xl text-mist-50">Sobre o empreendimento</h2>
-        <p className="text-fluid-base mt-4 text-mist-200">{e.descricao}</p>
+        <h2 className="text-fluid-2xl text-titulo">Sobre o empreendimento</h2>
+        <p className="text-fluid-base mt-4 text-corpo-suave">{e.descricao}</p>
       </Reveal>
 
       {ficha.length > 0 && (
         <Reveal
           from="nenhuma"
           stagger={0.04}
-          className="mt-8 grid grid-cols-2 gap-4 border-t border-white/10 pt-8 sm:grid-cols-3"
+          className="mt-8 grid grid-cols-2 gap-4 border-t border-linha/10 pt-8 sm:grid-cols-3"
         >
           {ficha.map((f) => (
             <div key={f.label}>
-              <p className="text-fluid-xs text-mist-400 uppercase">{f.label}</p>
-              <p className="text-fluid-base mt-1 font-medium text-mist-50">{f.valor}</p>
+              <p className="text-fluid-xs text-legenda uppercase">{f.label}</p>
+              <p className="text-fluid-base mt-1 font-medium text-titulo">{f.valor}</p>
             </div>
           ))}
         </Reveal>

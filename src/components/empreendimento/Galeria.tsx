@@ -14,8 +14,8 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
   return (
     <section id="galeria" className="mx-auto max-w-3xl scroll-mt-24 px-4 py-16 sm:py-24">
       <Reveal>
-        <h2 className="text-fluid-2xl text-mist-50">Galeria</h2>
-        <p className="text-fluid-base mt-2 text-mist-300">
+        <h2 className="text-fluid-2xl text-titulo">Galeria</h2>
+        <p className="text-fluid-base mt-2 text-apoio">
           {fotos.length} {fotos.length === 1 ? "imagem" : "imagens"}. Toque para ampliar.
         </p>
       </Reveal>

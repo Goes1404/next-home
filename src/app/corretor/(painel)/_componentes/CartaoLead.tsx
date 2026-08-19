@@ -166,6 +166,8 @@ export function CartaoLead({
           <EtiquetaEtapa etapa={lead.etapa} />
           <span
             className={
+              // `text-ink-950` literal: contrasta com o chip de areia, que é
+              // claro nos dois temas.
               ehProprietario
                 ? "text-fluid-xs rounded-full border border-etapa-areia-linha bg-etapa-areia-lavado px-2.5 py-1 font-medium text-etapa-areia"
                 : "text-fluid-xs rounded-full bg-acento-lavado px-2.5 py-1 font-medium text-acento-suave"

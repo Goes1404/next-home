@@ -26,24 +26,24 @@ export async function Footer() {
   const corretorAtivo = await getCorretorAtivo();
 
   return (
-    <footer className="border-t border-white/10 bg-ink-900 px-4 py-14">
+    <footer className="border-t border-linha/10 bg-superficie px-4 py-14">
       <div className="mx-auto grid w-full max-w-5xl gap-10 sm:grid-cols-3">
         <div>
-          <p className="font-display text-lg text-mist-50">
+          <p className="font-display text-lg text-titulo">
             Next<span className="text-brand-300">Home</span>
           </p>
-          <p className="text-fluid-sm mt-3 max-w-xs text-mist-400">{site.descricao}</p>
-          <p className="text-fluid-xs mt-4 text-mist-500">CRECI {site.creci}</p>
+          <p className="text-fluid-sm mt-3 max-w-xs text-legenda">{site.descricao}</p>
+          <p className="text-fluid-xs mt-4 text-tenue">CRECI {site.creci}</p>
         </div>
 
         <div>
-          <p className="text-fluid-sm font-medium text-mist-100">Navegação</p>
+          <p className="text-fluid-sm font-medium text-corpo">Navegação</p>
           <ul className="mt-3 space-y-2">
             {LINKS_RAPIDOS.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="text-fluid-sm text-mist-400 transition-colors hover:text-brand-200"
+                  className="text-fluid-sm text-legenda transition-colors hover:text-acento"
                 >
                   {link.label}
                 </Link>
@@ -53,16 +53,16 @@ export async function Footer() {
         </div>
 
         <div>
-          <p className="text-fluid-sm font-medium text-mist-100">Contato</p>
+          <p className="text-fluid-sm font-medium text-corpo">Contato</p>
           <ul className="mt-3 space-y-2">
-            <li className="text-fluid-sm text-mist-400">{enderecoLinha}</li>
+            <li className="text-fluid-sm text-legenda">{enderecoLinha}</li>
             {corretorAtivo ? (
               <li>
                 <a
                   href={linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pelo site.`)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-fluid-sm text-mist-400 transition-colors hover:text-brand-200"
+                  className="text-fluid-sm text-legenda transition-colors hover:text-acento"
                 >
                   Falar com {corretorAtivo.nome}
                 </a>
@@ -74,7 +74,7 @@ export async function Footer() {
                     href={linkWhatsapp(undefined, i)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-fluid-sm text-mist-400 transition-colors hover:text-brand-200"
+                    className="text-fluid-sm text-legenda transition-colors hover:text-acento"
                   >
                     {w.label}
                   </a>
@@ -91,7 +91,7 @@ export async function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={rede.label}
-                className="text-fluid-xs text-mist-500 transition-colors hover:text-brand-200"
+                className="text-fluid-xs text-tenue transition-colors hover:text-acento"
               >
                 {rede.label}
               </a>
@@ -100,7 +100,7 @@ export async function Footer() {
         </div>
       </div>
 
-      <div className="text-fluid-xs mx-auto mt-12 flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-6 text-mist-500">
+      <div className="text-fluid-xs mx-auto mt-12 flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 border-t border-linha/5 pt-6 text-tenue">
         <p>
           © {new Date().getFullYear()} {site.nomeCompleto}. CRECI {site.creci}.
         </p>
@@ -121,7 +121,7 @@ export async function Footer() {
         */}
         <Link
           href="/corretor"
-          className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-mist-200 transition-colors hover:border-brand-300/50 hover:text-brand-200"
+          className="inline-flex items-center gap-2 rounded-full border border-linha/15 px-4 py-2 text-corpo-suave transition-colors hover:border-brand-300/50 hover:text-acento"
         >
           <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" aria-hidden className="h-3.5 w-3.5">
             <path

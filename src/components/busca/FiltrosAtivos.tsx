@@ -66,7 +66,7 @@ export function FiltrosAtivos({
             href={href}
             scroll={false}
             aria-label={`Remover filtro ${chip.label}`}
-            className="text-fluid-sm group inline-flex items-center gap-1.5 rounded-full border border-brand-500/40 bg-brand-500/10 py-1.5 pr-2.5 pl-3.5 text-mist-100 transition-colors hover:border-brand-400 hover:bg-brand-500/20"
+            className="text-fluid-sm group inline-flex items-center gap-1.5 rounded-full border border-brand-500/40 bg-brand-500/10 py-1.5 pr-2.5 pl-3.5 text-corpo transition-colors hover:border-brand-400 hover:bg-brand-500/20"
           >
             {chip.label}
             <svg
@@ -75,7 +75,7 @@ export function FiltrosAtivos({
               strokeWidth={2.2}
               stroke="currentColor"
               aria-hidden
-              className="h-3.5 w-3.5 text-mist-400 transition-colors group-hover:text-mist-50"
+              className="h-3.5 w-3.5 text-legenda transition-colors group-hover:text-titulo"
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
             </svg>
@@ -84,7 +84,7 @@ export function FiltrosAtivos({
       })}
 
       {ordenacaoVisivel && (
-        <span className="text-fluid-sm inline-flex items-center rounded-full border border-white/10 px-3.5 py-1.5 text-mist-400">
+        <span className="text-fluid-sm inline-flex items-center rounded-full border border-linha/10 px-3.5 py-1.5 text-legenda">
           {ORDENACAO_LABEL[ordenacao]}
         </span>
       )}
@@ -93,7 +93,7 @@ export function FiltrosAtivos({
         <Link
           href="/empreendimentos"
           scroll={false}
-          className="text-fluid-sm ml-1 text-mist-400 underline-offset-4 hover:text-mist-100 hover:underline"
+          className="text-fluid-sm ml-1 text-legenda underline-offset-4 hover:text-corpo hover:underline"
         >
           Limpar tudo
         </Link>

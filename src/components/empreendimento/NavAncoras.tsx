@@ -47,7 +47,7 @@ export function NavAncoras({ secoes }: { secoes: Secao[] }) {
       aria-label="Seções do empreendimento"
       className="sticky top-20 z-30 -mx-4 mb-2 px-4"
     >
-      <ul className="scrollbar-none flex gap-1 overflow-x-auto rounded-full border border-white/10 bg-ink-950/85 p-1.5 backdrop-blur-xl backdrop-saturate-150">
+      <ul className="scrollbar-none flex gap-1 overflow-x-auto rounded-full border border-linha/10 bg-fundo/85 p-1.5 backdrop-blur-xl backdrop-saturate-150">
         {secoes.map((s) => (
           <li key={s.id}>
             <a
@@ -61,7 +61,7 @@ export function NavAncoras({ secoes }: { secoes: Secao[] }) {
                 "text-fluid-sm block rounded-full px-4 py-2 whitespace-nowrap transition-colors",
                 ativa === s.id
                   ? "bg-brand-500 font-medium text-white"
-                  : "text-mist-300 hover:text-mist-50",
+                  : "text-apoio hover:text-titulo",
               )}
             >
               {s.label}

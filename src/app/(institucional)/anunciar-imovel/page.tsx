@@ -72,8 +72,8 @@ export default async function AnunciarImovelPage() {
         {ETAPAS.map((etapa, i) => (
           <GlassSurface key={etapa.titulo} preset="painel" className="px-6 py-7">
             <span className="font-display text-fluid-xl text-brand-300">{i + 1}</span>
-            <h2 className="font-display mt-2 text-lg text-mist-50">{etapa.titulo}</h2>
-            <p className="text-fluid-sm mt-2 text-mist-400">{etapa.texto}</p>
+            <h2 className="font-display mt-2 text-lg text-titulo">{etapa.titulo}</h2>
+            <p className="text-fluid-sm mt-2 text-legenda">{etapa.texto}</p>
           </GlassSurface>
         ))}
       </Reveal>
@@ -113,7 +113,7 @@ export default async function AnunciarImovelPage() {
               <li>🛡️ Segurança jurídica completa e contratos claros do início ao fim.</li>
               <li>🤝 Corretor responsável dedicado exclusivamente ao seu imóvel.</li>
             </ul>
-            <p className="text-fluid-xs mt-4 text-mist-500">CRECI {site.creci}</p>
+            <p className="text-fluid-xs mt-4 text-tenue">CRECI {site.creci}</p>
           </div>
         </Reveal>
       </div>

@@ -30,15 +30,15 @@ export function HeaderInstitucional() {
       >
         <Link
           href="/"
-          className="font-display shrink-0 text-lg leading-none font-medium tracking-tight whitespace-nowrap text-mist-50"
+          className="font-display shrink-0 text-lg leading-none font-medium tracking-tight whitespace-nowrap text-titulo"
         >
           Next<span className="text-brand-300">Home</span>
         </Link>
 
-        <ul className="hidden items-center gap-6 text-sm text-mist-100 sm:flex">
+        <ul className="hidden items-center gap-6 text-sm text-corpo sm:flex">
           {LINKS.map((link) => (
             <li key={link.href}>
-              <Link href={link.href} className="transition-colors hover:text-brand-200">
+              <Link href={link.href} className="transition-colors hover:text-acento">
                 {link.label}
               </Link>
             </li>

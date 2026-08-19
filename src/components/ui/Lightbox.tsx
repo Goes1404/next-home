@@ -5,6 +5,17 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import type { Midia } from "@/lib/types";
 
+/*
+ * ILHA ESCURA — este arquivo não usa os tokens de tema, e é a única exceção
+ * de arquivo inteiro.
+ *
+ * Um visualizador de foto é escuro em qualquer tema: a tela apaga em volta
+ * para a imagem ser a única coisa acesa. Como a superfície aqui nunca clareia,
+ * a cor dos controles por cima dela também não pode acompanhar o tema da
+ * página — `text-titulo` num tema claro pintaria de escuro um texto que vive
+ * sobre um véu quase preto.
+ */
+
 /** Distância mínima em px para um arrasto contar como troca de imagem. */
 const LIMIAR_SWIPE = 50;
 

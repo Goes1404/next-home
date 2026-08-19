@@ -11,13 +11,13 @@ export function Similares({ empreendimentos }: { empreendimentos: Empreendimento
   if (empreendimentos.length === 0) return null;
 
   return (
-    <section className="border-t border-white/10 px-4 py-16 sm:py-24">
+    <section className="border-t border-linha/10 px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-5xl">
         <Reveal className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 className="text-fluid-2xl text-mist-50">Veja também</h2>
+          <h2 className="text-fluid-2xl text-titulo">Veja também</h2>
           <Link
             href="/empreendimentos"
-            className="text-fluid-sm text-brand-200 underline-offset-4 hover:underline"
+            className="text-fluid-sm text-acento underline-offset-4 hover:underline"
           >
             Ver todos
           </Link>

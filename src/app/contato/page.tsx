@@ -46,7 +46,7 @@ export default async function ContatoPage({
       <SiteHeader />
       <WhatsappCta corretor={corretorAtivo ?? undefined} />
 
-      <main className="flex flex-1 flex-col bg-ink-950 px-4 pt-32 pb-24">
+      <main className="flex flex-1 flex-col bg-fundo px-4 pt-32 pb-24">
         <Reveal className="mx-auto w-full max-w-2xl text-center">
           <div className="text-left">
             <VoltarLink href="/">Início</VoltarLink>
@@ -62,7 +62,7 @@ export default async function ContatoPage({
         </Reveal>
 
         <div className="mx-auto mt-12 grid w-full max-w-4xl gap-8 lg:grid-cols-[1.1fr_1fr]">
-          <Reveal className="rounded-2xl border border-white/10 bg-ink-900/50 p-6 sm:p-8">
+          <Reveal className="rounded-2xl border border-linha/10 bg-superficie/50 p-6 sm:p-8">
             <FormularioContato
               empreendimentos={empreendimentos.map((e) => ({ slug: e.slug, nome: e.nome }))}
               empreendimentoPreselecionado={sp.empreendimento}
@@ -70,8 +70,8 @@ export default async function ContatoPage({
           </Reveal>
 
           <Reveal delay={0.1} className="space-y-6">
-            <div className="rounded-2xl border border-white/10 bg-ink-900/50 p-6">
-              <h2 className="font-display text-lg text-mist-50">WhatsApp</h2>
+            <div className="rounded-2xl border border-linha/10 bg-superficie/50 p-6">
+              <h2 className="font-display text-lg text-titulo">WhatsApp</h2>
               <ul className="mt-3 space-y-1.5">
                 {corretorAtivo ? (
                   <li>
@@ -102,12 +102,12 @@ export default async function ContatoPage({
                 )}
               </ul>
 
-              <h2 className="font-display mt-6 text-lg text-mist-50">Endereço</h2>
-              <p className="text-fluid-sm mt-2 text-mist-400">{enderecoLinha}</p>
-              <p className="text-fluid-xs mt-1 text-mist-500">CRECI {site.creci}</p>
+              <h2 className="font-display mt-6 text-lg text-titulo">Endereço</h2>
+              <p className="text-fluid-sm mt-2 text-legenda">{enderecoLinha}</p>
+              <p className="text-fluid-xs mt-1 text-tenue">CRECI {site.creci}</p>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-ink-900">
+            <div className="overflow-hidden rounded-2xl border border-linha/10 bg-superficie">
               <iframe
                 src={urlDoMapa(site.endereco.lat, site.endereco.lng)}
                 title={`Mapa da região de ${enderecoLinha}`}
@@ -115,7 +115,7 @@ export default async function ContatoPage({
                 referrerPolicy="no-referrer-when-downgrade"
                 className="aspect-[4/3] w-full border-0"
               />
-              <p className="text-fluid-xs px-5 py-3 text-mist-500">
+              <p className="text-fluid-xs px-5 py-3 text-tenue">
                 Mapa aproximado da região, para referência.
               </p>
             </div>

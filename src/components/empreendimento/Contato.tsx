@@ -14,14 +14,14 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
   );
 
   return (
-    <section id="contato" className="scroll-mt-24 bg-ink-900/40 px-4 py-16 sm:py-24">
+    <section id="contato" className="scroll-mt-24 bg-superficie/40 px-4 py-16 sm:py-24">
       <Reveal className="mx-auto max-w-xl text-center">
         <h2 className="text-fluid-2xl text-mist-50">Pronto para conhecer este imóvel de perto?</h2>
         <p className="text-fluid-base mt-3 text-mist-300">
           Receba a apresentação completa, tabela atualizada e tire todas as suas dúvidas diretamente com o especialista deste projeto.
         </p>
 
-        <div className="mt-8 rounded-2xl border border-white/10 bg-ink-900 px-6 py-7">
+        <div className="mt-8 rounded-2xl border border-linha/10 bg-superficie px-6 py-7">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:text-left">
             {e.corretor.fotoUrl ? (
               <Image
@@ -34,7 +34,7 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
             ) : (
               <span
                 aria-hidden
-                className="font-display flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xl text-mist-50"
+                className="font-display flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xl text-titulo"
               >
                 {iniciais(e.corretor.nome)}
               </span>
@@ -63,7 +63,7 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
 
           <Link
             href={`/contato?empreendimento=${e.slug}`}
-            className="text-fluid-sm mt-4 block text-mist-400 underline-offset-4 hover:text-brand-200 hover:underline"
+            className="text-fluid-sm mt-4 block text-legenda underline-offset-4 hover:text-acento hover:underline"
           >
             Prefere receber por e-mail? Preencha o formulário rápido.
           </Link>

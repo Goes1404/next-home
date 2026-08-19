@@ -30,7 +30,7 @@ export async function CtaFinal() {
             </WhatsappLink>
             <Link
               href="/empreendimentos"
-              className="rounded-full border border-white/20 px-7 py-3.5 text-sm font-medium text-mist-100 transition-colors hover:border-brand-300/50 hover:text-brand-200"
+              className="rounded-full border border-linha/20 px-7 py-3.5 text-sm font-medium text-corpo transition-colors hover:border-brand-300/50 hover:text-acento"
             >
               Explorar Todos os Imóveis
             </Link>

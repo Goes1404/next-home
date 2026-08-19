@@ -28,9 +28,9 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
   return (
     <section id="localizacao" className="mx-auto max-w-3xl scroll-mt-24 px-4 py-16 sm:py-24">
       <Reveal>
-        <h2 className="text-fluid-2xl text-mist-50">Localização</h2>
+        <h2 className="text-fluid-2xl text-titulo">Localização</h2>
 
-        <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-ink-900">
+        <div className="mt-6 overflow-hidden rounded-2xl border border-linha/10 bg-superficie">
           {temCoordenadas && (
             <iframe
               src={urlDoMapa(e.lat!, e.lng!)}
@@ -42,8 +42,8 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
           )}
 
           <div className="px-6 py-6">
-            <p className="text-fluid-lg text-mist-50">{e.endereco}</p>
-            <p className="text-fluid-sm mt-1 text-mist-400">
+            <p className="text-fluid-lg text-titulo">{e.endereco}</p>
+            <p className="text-fluid-sm mt-1 text-legenda">
               {e.bairro} · {e.cidade}
             </p>
 
@@ -52,7 +52,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
                 href={comoChegar}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-fluid-sm inline-flex items-center gap-1.5 font-medium text-brand-200 underline-offset-4 hover:underline"
+                className="text-fluid-sm inline-flex items-center gap-1.5 font-medium text-acento underline-offset-4 hover:underline"
               >
                 <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-4 w-4">
                   <path
@@ -65,7 +65,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
                 Como chegar
               </a>
               {temCoordenadas && (
-                <p className="text-fluid-xs text-mist-500">
+                <p className="text-fluid-xs text-tenue">
                   Mapa aproximado da região, para referência.
                 </p>
               )}

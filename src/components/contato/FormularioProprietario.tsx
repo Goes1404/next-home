@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 type Status = "ideal" | "enviando" | "sucesso" | "erro";
 
 const CAMPO_BASE =
-  "w-full rounded-xl border border-white/15 bg-ink-950/60 px-4 py-3 text-mist-50 placeholder:text-mist-500 outline-none transition-colors focus:border-brand-300";
+  "w-full rounded-xl border border-linha/15 bg-fundo/60 px-4 py-3 text-titulo placeholder:text-tenue outline-none transition-colors focus:border-brand-300";
 
 const TIPOS_IMOVEL = ["Apartamento", "Casa", "Terreno", "Comercial", "Outro"];
 const INTENCOES = ["Vender", "Alugar", "Ainda estou avaliando"];
@@ -76,8 +76,8 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
   if (status === "sucesso") {
     return (
       <div className="rounded-2xl border border-brand-400/30 bg-brand-900/30 px-6 py-8 text-center">
-        <p className="font-display text-lg text-mist-50">Recebemos seu imóvel!</p>
-        <p className="text-fluid-sm mt-2 text-mist-300">
+        <p className="font-display text-lg text-titulo">Recebemos seu imóvel!</p>
+        <p className="text-fluid-sm mt-2 text-apoio">
           Um corretor da Next Home vai entrar em contato para entender o imóvel e conversar
           sobre avaliação e condições.
         </p>
@@ -94,7 +94,7 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
       </div>
 
       <div>
-        <label htmlFor="nome" className="text-fluid-sm mb-1.5 block text-mist-300">
+        <label htmlFor="nome" className="text-fluid-sm mb-1.5 block text-apoio">
           Seu nome
         </label>
         <input id="nome" name="nome" type="text" required minLength={2} maxLength={120} className={CAMPO_BASE} />
@@ -102,23 +102,23 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="email" className="text-fluid-sm mb-1.5 block text-mist-300">
+          <label htmlFor="email" className="text-fluid-sm mb-1.5 block text-apoio">
             E-mail
           </label>
           <input id="email" name="email" type="email" className={CAMPO_BASE} />
         </div>
         <div>
-          <label htmlFor="telefone" className="text-fluid-sm mb-1.5 block text-mist-300">
+          <label htmlFor="telefone" className="text-fluid-sm mb-1.5 block text-apoio">
             Telefone / WhatsApp
           </label>
           <input id="telefone" name="telefone" type="tel" className={CAMPO_BASE} />
         </div>
       </div>
-      <p className="text-fluid-xs -mt-2 text-mist-500">Informe pelo menos um dos dois.</p>
+      <p className="text-fluid-xs -mt-2 text-tenue">Informe pelo menos um dos dois.</p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="imovelTipo" className="text-fluid-sm mb-1.5 block text-mist-300">
+          <label htmlFor="imovelTipo" className="text-fluid-sm mb-1.5 block text-apoio">
             Tipo do imóvel
           </label>
           <select id="imovelTipo" name="imovelTipo" defaultValue="" className={CAMPO_BASE}>
@@ -131,7 +131,7 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
           </select>
         </div>
         <div>
-          <label htmlFor="intencao" className="text-fluid-sm mb-1.5 block text-mist-300">
+          <label htmlFor="intencao" className="text-fluid-sm mb-1.5 block text-apoio">
             Quero
           </label>
           <select id="intencao" name="intencao" defaultValue="" className={CAMPO_BASE}>
@@ -147,7 +147,7 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="imovelCidade" className="text-fluid-sm mb-1.5 block text-mist-300">
+          <label htmlFor="imovelCidade" className="text-fluid-sm mb-1.5 block text-apoio">
             Cidade
           </label>
           <select id="imovelCidade" name="imovelCidade" defaultValue="" className={CAMPO_BASE}>
@@ -161,7 +161,7 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
           </select>
         </div>
         <div>
-          <label htmlFor="imovelBairro" className="text-fluid-sm mb-1.5 block text-mist-300">
+          <label htmlFor="imovelBairro" className="text-fluid-sm mb-1.5 block text-apoio">
             Bairro
           </label>
           <input id="imovelBairro" name="imovelBairro" type="text" maxLength={120} className={CAMPO_BASE} />
@@ -169,7 +169,7 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
       </div>
 
       <div>
-        <label htmlFor="mensagem" className="text-fluid-sm mb-1.5 block text-mist-300">
+        <label htmlFor="mensagem" className="text-fluid-sm mb-1.5 block text-apoio">
           Conte um pouco sobre o imóvel
         </label>
         <textarea
@@ -182,16 +182,16 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
         />
       </div>
 
-      <label className="flex items-start gap-2.5 text-mist-400">
+      <label className="flex items-start gap-2.5 text-legenda">
         <input
           type="checkbox"
           name="lgpd"
           required
-          className="mt-1 h-4 w-4 shrink-0 rounded border-white/30 bg-ink-950 accent-brand-500"
+          className="mt-1 h-4 w-4 shrink-0 rounded border-linha/30 bg-fundo accent-brand-500"
         />
         <span className="text-fluid-xs">
           Concordo com o uso dos meus dados para contato sobre a oferta deste imóvel, conforme a{" "}
-          <Link href="/privacidade" className="text-brand-200 underline-offset-4 hover:underline">
+          <Link href="/privacidade" className="text-acento underline-offset-4 hover:underline">
             Política de Privacidade
           </Link>
           .

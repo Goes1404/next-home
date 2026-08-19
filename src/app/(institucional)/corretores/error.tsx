@@ -25,13 +25,13 @@ export default function Error({
 
   return (
     <main className="flex min-h-svh flex-1 flex-col items-center justify-center px-4 text-center">
-      <p className="text-fluid-xs text-brand-200 font-medium tracking-[0.2em] uppercase">
+      <p className="text-fluid-xs text-acento font-medium tracking-[0.2em] uppercase">
         Next Home
       </p>
-      <h1 className="text-fluid-2xl mt-4 max-w-lg text-mist-50">
+      <h1 className="text-fluid-2xl mt-4 max-w-lg text-titulo">
         Não conseguimos carregar a equipe agora.
       </h1>
-      <p className="text-fluid-base mt-3 max-w-md text-mist-300">
+      <p className="text-fluid-base mt-3 max-w-md text-apoio">
         É uma falha temporária nossa, não do seu acesso. Tente de novo em instantes — ou
         fale direto com um corretor pela linha geral.
       </p>
@@ -48,7 +48,7 @@ export default function Error({
           href={linkWhatsapp()}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-12 items-center rounded-full border border-white/15 px-6 text-sm font-medium text-mist-100 transition-colors hover:border-white/30"
+          className="inline-flex h-12 items-center rounded-full border border-linha/15 px-6 text-sm font-medium text-corpo transition-colors hover:border-linha/30"
         >
           Falar no WhatsApp
         </a>
@@ -56,13 +56,13 @@ export default function Error({
 
       <Link
         href="/"
-        className="text-fluid-sm mt-8 text-mist-400 underline-offset-4 hover:text-mist-100 hover:underline"
+        className="text-fluid-sm mt-8 text-legenda underline-offset-4 hover:text-corpo hover:underline"
       >
         Voltar para a home
       </Link>
 
       {error.digest && (
-        <p className="text-fluid-xs mt-10 text-mist-500">Código: {error.digest}</p>
+        <p className="text-fluid-xs mt-10 text-tenue">Código: {error.digest}</p>
       )}
     </main>
   );
