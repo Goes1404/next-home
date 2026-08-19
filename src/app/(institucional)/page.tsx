@@ -64,7 +64,12 @@ export default async function HomeInstitucional() {
     getCorretorAtivo(),
   ]);
 
-  const destaques = todos.filter((e) => e.destaque).slice(0, 3);
+  let destaques = todos.filter((e) => e.destaque).slice(0, 3);
+  if (destaques.length < 3) {
+    const slugsDestaque = new Set(destaques.map((e) => e.slug));
+    const restantes = todos.filter((e) => !slugsDestaque.has(e.slug));
+    destaques = [...destaques, ...restantes.slice(0, 3 - destaques.length)];
+  }
   const equipe = corretores.slice(0, 4);
 
   const jsonLd = {
