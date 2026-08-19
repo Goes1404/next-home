@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
+import { getTemaEscolhido } from "@/lib/tema";
 
 const LINKS_RAPIDOS = [
   { href: "/empreendimentos", label: "Empreendimentos" },
@@ -23,7 +25,7 @@ const REDES = [
  * cada rota).
  */
 export async function Footer() {
-  const corretorAtivo = await getCorretorAtivo();
+  const [corretorAtivo, tema] = await Promise.all([getCorretorAtivo(), getTemaEscolhido()]);
 
   return (
     <footer className="border-t border-linha/10 bg-superficie px-4 py-14">
@@ -132,6 +134,8 @@ export async function Footer() {
           </svg>
           Área do corretor
         </Link>
+
+        <SeletorTema atual={tema} />
       </div>
     </footer>
   );

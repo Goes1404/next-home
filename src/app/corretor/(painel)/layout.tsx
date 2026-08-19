@@ -4,9 +4,10 @@ import Link from "next/link";
 import { NavPainel } from "./NavPainel";
 import { NavMobileBottom } from "./NavMobileBottom";
 import { sair } from "@/app/corretor/actions";
-import { AlternadorTema } from "@/components/tema/AlternadorTema";
+import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { iniciais } from "@/lib/format";
+import { getTemaEscolhido } from "@/lib/tema";
 
 export const metadata: Metadata = {
   title: { default: "Painel do corretor", template: "%s · Painel" },
@@ -33,11 +34,11 @@ export default async function PainelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const corretor = await getCorretorLogado();
+  const [corretor, tema] = await Promise.all([getCorretorLogado(), getTemaEscolhido()]);
   const ehGestor = corretor?.papel === "gestor";
 
   return (
-    <main className="bg-fundo flex min-h-svh flex-1 flex-col">
+    <main data-rota="painel" className="bg-fundo flex min-h-svh flex-1 flex-col">
       <header className="border-linha bg-fundo/85 sticky top-0 z-40 border-b backdrop-blur-lg">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
           <Link href="/" className="font-display text-titulo text-lg">
@@ -45,7 +46,7 @@ export default async function PainelLayout({
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <AlternadorTema />
+            <SeletorTema atual={tema} />
 
             {corretor && (
               <span className="flex items-center gap-2.5">

@@ -28,13 +28,13 @@ export default async function VitrineLayout({ children }: { children: React.Reac
 
   return (
     <GlassBackgroundProvider>
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-brand-900 via-ink-950 to-ink-950">
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-fundo-marca via-fundo to-fundo">
         {usaFotoDeFundo ? (
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : (
           videoUrl && <HeroVideoBackground src={videoUrl} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-ink-950/55 via-ink-950/35 to-ink-950" />
+        <div className="absolute inset-0 bg-gradient-to-b from-fundo/55 via-fundo/35 to-fundo" />
       </div>
 
       {children}

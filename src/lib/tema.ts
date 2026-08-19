@@ -34,10 +34,10 @@ export async function getTemaEscolhido(): Promise<Tema | null> {
  * Precisa acompanhar o fundo da página, senão a moldura do navegador fica de
  * um tema e o conteúdo do outro.
  *
- * São os mesmos valores de `--fundo` em cada leitura, escritos à mão porque
- * `<meta>` não lê variável CSS.
+ * São os mesmos valores de `--color-fundo` em cada leitura, escritos à mão
+ * porque `<meta>` não lê variável CSS.
  */
 export const COR_DA_BARRA: Record<Tema, string> = {
   escuro: "#040b0a",
-  claro: "#f6faf9",
+  claro: "#edf2f0",
 };

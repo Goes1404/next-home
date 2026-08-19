@@ -3,8 +3,6 @@ import { Alex_Brush, Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
 import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
 import { Footer } from "@/components/layout/Footer";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
-import { AreaTema } from "@/components/tema/AreaTema";
-import { scriptTema } from "@/components/tema/tema";
 import { site } from "@/lib/site";
 import { COR_DA_BARRA, getTemaEscolhido } from "@/lib/tema";
 import "./globals.css";
@@ -99,30 +97,35 @@ export const metadata: Metadata = {
 };
 
 /**
- * Precisa ser `generateViewport` (e não a constante `viewport`) porque a cor
- * da barra depende do cookie: quem escolheu um tema recebe a cor dele, e quem
- * está em "seguir o sistema" recebe as duas atrás de media query, para o
- * navegador escolher sozinho.
+ * `generateViewport` (e não a constante `viewport`) porque a cor da barra
+ * depende do cookie: quem escolheu um tema recebe a cor dele; quem está em
+ * "seguir o sistema" recebe as duas, uma por media query, para o navegador
+ * escolher sozinho.
  */
-export const viewport: Viewport = {
-  /*
-   * O site público é escuro e é ele que o navegador pinta na barra de
-   * endereço antes de qualquer JavaScript. O painel claro ajusta a sua
-   * própria cor em tempo de execução (ver AreaTema), então aqui fica a cor
-   * de quem chega pelo Google.
-   */
-  themeColor: "#040b0a",
-  colorScheme: "dark light",
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
-};
+export async function generateViewport(): Promise<Viewport> {
+  const tema = await getTemaEscolhido();
+
+  return {
+    themeColor:
+      tema === null
+        ? [
+            { media: "(prefers-color-scheme: light)", color: COR_DA_BARRA.claro },
+            { media: "(prefers-color-scheme: dark)", color: COR_DA_BARRA.escuro },
+          ]
+        : COR_DA_BARRA[tema],
+    colorScheme: tema === null ? "dark light" : tema === "claro" ? "light" : "dark",
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+  };
+}
 
 /**
  * O `data-tema` sai daqui, do servidor, e não de um script no cliente: como
  * toda rota deste site já é dinâmica, o cookie é lido antes de a resposta
  * sair, e o HTML chega ao navegador já no tema certo. É o que dispensa o
- * script de anti-flash e a piscada de tema errado no primeiro paint.
+ * script de anti-flash e a piscada de tema errado no primeiro paint — e vale
+ * para o site inteiro, não só o painel.
  *
  * Sem cookie, nenhum atributo é carimbado — e aí quem manda é a preferência
  * do sistema operacional, tratada em CSS puro (ver globals.css).
@@ -135,18 +138,10 @@ export default async function RootLayout({
   return (
     <html
       lang="pt-BR"
+      data-tema={tema ?? undefined}
       className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} ${alexBrush.variable} h-full antialiased`}
     >
-      <head>
-        {/*
-          Precisa rodar antes da primeira pintura, por isso é inline e não um
-          componente: o React só hidrata depois que o HTML já está na tela, e
-          nesse intervalo o painel claro apareceria escuro.
-        */}
-        <script dangerouslySetInnerHTML={{ __html: scriptTema }} />
-      </head>
       <body className="flex min-h-full flex-col">
-        <AreaTema />
         <GlassSvgDefs />
         <SmoothScroll />
         {children}

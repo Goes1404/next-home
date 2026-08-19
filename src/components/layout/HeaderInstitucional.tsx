@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
+import { SeletorTema } from "@/components/tema/SeletorTema";
+import { getTemaEscolhido } from "@/lib/tema";
 
 const LINKS = [
   { href: "/empreendimentos", label: "Imóveis" },
@@ -20,7 +22,9 @@ const LINKS = [
  * captar proprietário é o outro lado do negócio e, sem destaque, some no meio
  * dos links de quem quer comprar.
  */
-export function HeaderInstitucional() {
+export async function HeaderInstitucional() {
+  const tema = await getTemaEscolhido();
+
   return (
     <header className="fixed inset-x-0 top-0 z-40 flex justify-center px-4 pt-4">
       <GlassSurface
@@ -45,14 +49,20 @@ export function HeaderInstitucional() {
           ))}
         </ul>
 
-        {/* No mobile só o CTA cabe ao lado da logo sem apertar; os demais
-            destinos ficam nos três caminhos da home e no rodapé. */}
-        <Link
-          href="/anunciar-imovel"
-          className="shrink-0 rounded-full bg-brand-500 px-4 py-2 text-xs font-medium whitespace-nowrap text-white transition-colors hover:bg-brand-400 sm:text-sm"
-        >
-          Anunciar <span className="hidden sm:inline">meu </span>imóvel
-        </Link>
+        <div className="flex shrink-0 items-center gap-3">
+          {/* Some no mobile, junto com os links: só o CTA cabe ao lado da
+              logo sem apertar — quem quer trocar o tema chega pelo rodapé. */}
+          <div className="hidden sm:block">
+            <SeletorTema atual={tema} />
+          </div>
+
+          <Link
+            href="/anunciar-imovel"
+            className="shrink-0 rounded-full bg-brand-500 px-4 py-2 text-xs font-medium whitespace-nowrap text-white transition-colors hover:bg-brand-400 sm:text-sm"
+          >
+            Anunciar <span className="hidden sm:inline">meu </span>imóvel
+          </Link>
+        </div>
       </GlassSurface>
     </header>
   );

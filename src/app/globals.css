@@ -100,17 +100,17 @@
 
   /*
    * ---------------------------------------------------------------------
-   * Camada semântica — o que permite o painel do corretor ter tema claro
+   * Camada semântica — o que dá tema claro ao site inteiro, público e painel
    * ---------------------------------------------------------------------
    * As escalas acima (ink/mist/brand/azure/sand) descrevem TINTAS e não
-   * mudam nunca: o site público é uma peça escura por decisão de projeto,
-   * com vídeo de fundo e vidro em WebGL, e depende delas literalmente.
+   * mudam nunca. Os tokens abaixo descrevem PAPÉIS — "fundo da página",
+   * "texto de apoio", "linha divisória" — e é só isso que o tema troca.
    *
-   * Os tokens abaixo descrevem PAPÉIS — "fundo da página", "texto de
-   * apoio", "linha divisória" — e é só isso que o tema troca. Quem usa
-   * papel (`bg-superficie`, `text-apoio`) acompanha o tema; quem usa tinta
-   * (`bg-ink-950`) fica escuro para sempre. Hoje o painel usa papel e o
-   * site usa tinta, e é esse o contrato.
+   * Quem usa papel (`bg-superficie`, `text-apoio`) acompanha o tema; quem usa
+   * tinta (`bg-ink-950`) fica escuro para sempre. Um punhado de lugares usa
+   * tinta de propósito mesmo fora do painel — o véu escuro sobre a foto do
+   * hero, o overlay de modal, o Lightbox — porque ali o contraste é contra
+   * uma IMAGEM, não contra a página, e teria que ficar escuro nos dois temas.
    *
    * Os valores aqui são o tema ESCURO (o padrão). O claro sobrescreve os
    * mesmos nomes em `:root[data-tema="claro"]`, mais abaixo.
@@ -130,13 +130,17 @@
   --color-vidro-mais: rgb(255 255 255 / 0.2);
 
   /*
-   * Texto em quatro degraus, do título ao rodapé de cartão. Quatro porque
-   * três não bastavam (rótulo e dica precisavam se distinguir) e cinco
-   * ninguém consegue aplicar com consistência.
+   * Texto em seis degraus, do título ao rodapé de cartão.
+   * `corpo-suave` fica entre corpo e apoio (tagline, descrição longa);
+   * `legenda` usa o mesmo tom de `apoio` — é o degrau que sobra depois que
+   * `apoio` já ocupa o papel de texto de apoio dimmer, então não há espaço
+   * para um sétimo tom sem repetir contraste.
    */
   --color-titulo: #f6faf9;
   --color-corpo: #dbe6e3;
+  --color-corpo-suave: #cddad6;
   --color-apoio: #93a8a2;
+  --color-legenda: #93a8a2;
   --color-tenue: #7c918b;
 
   /* Ação primária */
@@ -145,6 +149,39 @@
   --color-acento-suave: #6fe7c0;
   --color-acento-lavado: rgb(0 128 108 / 0.2);
   --color-acento-linha: rgb(47 214 164 / 0.35);
+  /*
+   * Marca em primeiro plano, além do acento: no escuro "mais forte" clareia.
+   * - `acento-forte`: o "Home" do logotipo, ícones da marca e o anel de foco.
+   * - `acento-intenso`: o hover do acento nos links de destaque.
+   * - `acento-quente`: aviso em areia (últimas unidades, chamadas de atenção).
+   */
+  --color-acento-forte: #2fd6a4;
+  --color-acento-intenso: #bff5e2;
+  --color-acento-quente: #e8d5b0;
+
+  /* Véu translúcido sobre a superfície (skeleton de carregamento) */
+  --color-veu: #fff;
+
+  /* Fundo dos painéis de destaque da marca, e a parada de marca no
+     gradiente atrás do vídeo de fundo */
+  --color-marca-fundo: #001d1a;
+  --color-fundo-marca: #001d1a;
+
+  /* Receita do vidro — ver `.vidro-css` em @layer components */
+  --vidro-fundo: linear-gradient(
+    145deg,
+    rgb(255 255 255 / 0.1) 0%,
+    rgb(255 255 255 / 0.045) 45%,
+    rgb(255 255 255 / 0.075) 100%
+  );
+  --vidro-borda: rgb(255 255 255 / 0.12);
+  --vidro-sombra: var(--shadow-glass);
+  --vidro-fundo-opaco: linear-gradient(
+    145deg,
+    rgb(255 255 255 / 0.14) 0%,
+    rgb(255 255 255 / 0.08) 45%,
+    rgb(255 255 255 / 0.11) 100%
+  );
 
   /*
    * Estados. Cada um em três peças — texto, fundo lavado e linha — porque
@@ -270,14 +307,17 @@
    */
 
   /*
-   * Tema claro. Só redefine os tokens de PAPEL — nenhuma tinta muda, então
-   * nada no site público se mexe, mesmo com o atributo ligado no <html>.
+   * Tema claro, para o site inteiro — site público e painel do corretor.
+   * Só redefine os tokens de PAPEL — nenhuma TINTA (ink/mist/brand/azure/
+   * sand) muda, então cores de marca continuam idênticas nos dois temas.
    *
-   * O atributo é escrito antes da primeira pintura pelo script inline do
-   * layout raiz, e só em rotas /corretor (ver AreaTema.tsx). Fica em
-   * `@layer base` de propósito: a saída do `@theme` mora em `@layer theme`,
-   * que vem antes na ordem das camadas, então esta sobrescrita vence sem
-   * depender de especificidade.
+   * Dois gatilhos escrevem `data-tema`: a escolha explícita do visitante
+   * (cookie, lido no servidor — ver `lib/tema.ts`) carimba este atributo
+   * direto no `<html>` antes da primeira pintura; sem escolha, quem decide é
+   * `@media (prefers-color-scheme: light)`, logo abaixo, com os MESMOS
+   * valores. Fica em `@layer base` de propósito: a saída do `@theme` mora em
+   * `@layer theme`, que vem antes na ordem das camadas, então esta
+   * sobrescrita vence sem depender de especificidade.
    *
    * A luz aqui é mineral, não creme: o cinza tem uma gota do teal do
    * logotipo, e toda linha divisória é teal a 14% em vez de preto a 10%.
@@ -297,9 +337,16 @@
     --color-vidro-forte: rgb(0 63 55 / 0.1);
     --color-vidro-mais: rgb(0 63 55 / 0.17);
 
+    /*
+     * O texto claro NÃO é a escala `mist` invertida: `mist-400` sobre fundo
+     * claro dá 2,4:1, longe dos 4,5:1 da WCAG AA. Quem faz esse papel aqui é
+     * a escala `ink`.
+     */
     --color-titulo: #05211c;
     --color-corpo: #183630;
+    --color-corpo-suave: #1a302b;
     --color-apoio: #4a6a63;
+    --color-legenda: #4a6a63;
     --color-tenue: #5f7c76;
 
     /* No claro o acento é o teal do logotipo em cheio: 8,6:1 com branco. */
@@ -308,6 +355,20 @@
     --color-acento-suave: #00594f;
     --color-acento-lavado: rgb(0 89 79 / 0.08);
     --color-acento-linha: rgb(0 89 79 / 0.25);
+    --color-acento-forte: #00443c;
+    --color-acento-intenso: #00443c;
+    --color-acento-quente: #8a6a38;
+
+    /* Traço que contrasta com claro é a tinta, não o branco. */
+    --color-veu: #071310;
+
+    /*
+     * O painel de destaque inverte a lógica: no escuro é o teal mais
+     * profundo clareando o fundo; no claro precisa de um tom médio na mesma
+     * opacidade, senão não pinta nada sobre branco.
+     */
+    --color-marca-fundo: #2fd6a4;
+    --color-fundo-marca: #e8fbf4;
 
     --color-ok: #04785f;
     --color-ok-lavado: rgb(4 120 95 / 0.1);
@@ -335,15 +396,125 @@
 
     --shadow-painel: 0 1px 2px rgb(4 43 37 / 0.06), 0 1px 1px rgb(4 43 37 / 0.04);
     --shadow-painel-alto: 0 20px 40px -24px rgb(4 43 37 / 0.35);
+
+    /*
+     * O vidro no claro não é o escuro com opacidade trocada. Sobre fundo
+     * escuro, a profundidade vem de brilho: uma borda branca e dois filetes
+     * internos fingem a luz batendo na quina do painel. Sobre fundo claro,
+     * brilho branco sobre branco não desenha nada — quem separa o painel da
+     * página é sombra projetada e uma borda de tinta bem fraca.
+     */
+    --vidro-fundo: linear-gradient(
+      145deg,
+      rgb(255 255 255 / 0.86) 0%,
+      rgb(255 255 255 / 0.72) 45%,
+      rgb(255 255 255 / 0.8) 100%
+    );
+    --vidro-borda: rgb(7 19 16 / 0.08);
+    --vidro-sombra:
+      0 1px 2px 0 rgb(7 19 16 / 0.05), 0 14px 36px -14px rgb(7 19 16 / 0.22);
+    --vidro-fundo-opaco: linear-gradient(
+      145deg,
+      rgb(255 255 255 / 0.93) 0%,
+      rgb(255 255 255 / 0.84) 45%,
+      rgb(255 255 255 / 0.89) 100%
+    );
+  }
+
+  /*
+   * "Seguir o sistema" — sem cookie, o `<html>` não carrega `data-tema`
+   * nenhum, e quem decide é a preferência do sistema operacional. Precisa
+   * repetir TODOS os tokens do bloco acima: o `:not([data-tema="escuro"])`
+   * garante que a escolha explícita por escuro vence mesmo com o SO em
+   * modo claro.
+   */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-tema="escuro"]) {
+      color-scheme: light;
+
+      --color-fundo: #edf2f0;
+      --color-superficie: #ffffff;
+      --color-elevado: #f4f8f7;
+      --color-campo: #ffffff;
+
+      --color-linha: rgb(0 63 55 / 0.14);
+      --color-linha-forte: rgb(0 63 55 / 0.26);
+      --color-vidro: rgb(0 63 55 / 0.05);
+      --color-vidro-forte: rgb(0 63 55 / 0.1);
+      --color-vidro-mais: rgb(0 63 55 / 0.17);
+
+      --color-titulo: #05211c;
+      --color-corpo: #183630;
+      --color-corpo-suave: #1a302b;
+      --color-apoio: #4a6a63;
+      --color-legenda: #4a6a63;
+      --color-tenue: #5f7c76;
+
+      --color-acento: #00594f;
+      --color-acento-hover: #00443c;
+      --color-acento-suave: #00594f;
+      --color-acento-lavado: rgb(0 89 79 / 0.08);
+      --color-acento-linha: rgb(0 89 79 / 0.25);
+      --color-acento-forte: #00443c;
+      --color-acento-intenso: #00443c;
+      --color-acento-quente: #8a6a38;
+
+      --color-veu: #071310;
+
+      --color-marca-fundo: #2fd6a4;
+      --color-fundo-marca: #e8fbf4;
+
+      --color-ok: #04785f;
+      --color-ok-lavado: rgb(4 120 95 / 0.1);
+      --color-ok-linha: rgb(4 120 95 / 0.28);
+
+      --color-alerta: #8a5200;
+      --color-alerta-lavado: rgb(180 105 0 / 0.11);
+      --color-alerta-linha: rgb(180 105 0 / 0.28);
+
+      --color-perigo: #be123c;
+      --color-perigo-lavado: rgb(190 18 60 / 0.08);
+      --color-perigo-linha: rgb(190 18 60 / 0.26);
+
+      --color-info: #0b6394;
+      --color-info-lavado: rgb(11 99 148 / 0.09);
+      --color-info-linha: rgb(11 99 148 / 0.26);
+
+      --color-etapa-azul: #034b8e;
+      --color-etapa-azul-lavado: rgb(3 75 142 / 0.1);
+      --color-etapa-azul-linha: rgb(3 75 142 / 0.26);
+
+      --color-etapa-areia: #8a6420;
+      --color-etapa-areia-lavado: rgb(138 100 32 / 0.11);
+      --color-etapa-areia-linha: rgb(138 100 32 / 0.28);
+
+      --shadow-painel: 0 1px 2px rgb(4 43 37 / 0.06), 0 1px 1px rgb(4 43 37 / 0.04);
+      --shadow-painel-alto: 0 20px 40px -24px rgb(4 43 37 / 0.35);
+
+      --vidro-fundo: linear-gradient(
+        145deg,
+        rgb(255 255 255 / 0.86) 0%,
+        rgb(255 255 255 / 0.72) 45%,
+        rgb(255 255 255 / 0.8) 100%
+      );
+      --vidro-borda: rgb(7 19 16 / 0.08);
+      --vidro-sombra:
+        0 1px 2px 0 rgb(7 19 16 / 0.05), 0 14px 36px -14px rgb(7 19 16 / 0.22);
+      --vidro-fundo-opaco: linear-gradient(
+        145deg,
+        rgb(255 255 255 / 0.93) 0%,
+        rgb(255 255 255 / 0.84) 45%,
+        rgb(255 255 255 / 0.89) 100%
+      );
+    }
   }
 
   /*
    * O rodapé institucional mora no layout raiz porque precisa existir uma
    * vez só. Dentro do painel ele não faz sentido — "Empreendimentos, Sobre,
-   * Contato" abaixo de um CRM —, e no tema claro ele ainda entraria escuro.
-   * O atributo `data-area` é escrito na mesma passada do tema.
+   * Contato" abaixo de um CRM.
    */
-  :root[data-area="painel"] body > footer {
+  body:has([data-rota="painel"]) > footer {
     display: none;
   }
 
