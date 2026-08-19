@@ -3,6 +3,7 @@ import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { HERO_VIDEO_URL } from "@/lib/site";
 
 /**
@@ -23,7 +24,7 @@ import { HERO_VIDEO_URL } from "@/lib/site";
  * ação e faz o visitante escolher entre dois WhatsApps na mesma tela sem saber
  * que são pessoas diferentes. Quem precisa do CTA, monta o seu.
  */
-export default function InstitucionalLayout({
+export default async function InstitucionalLayout({
   children,
 }: {
   children: React.ReactNode;

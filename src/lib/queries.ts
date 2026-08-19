@@ -289,6 +289,53 @@ export async function getCorretorPorSlug(slug: string): Promise<CorretorPerfil |
   return data ? mapCorretor(data as LinhaCorretor) : null;
 }
 
+export type AtuacaoCorretor = {
+  total: number;
+  cidades: string[];
+};
+
+export async function getAtuacaoPorCorretor(): Promise<Record<string, AtuacaoCorretor>> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("empreendimentos")
+    .select("corretor_id, cidade")
+    .eq("publicado", true);
+
+  if (error) throw new Error(`Falha ao apurar atuação dos corretores: ${error.message}`);
+
+  const porCorretor: Record<string, { total: number; cidades: Set<string> }> = {};
+  for (const linha of data) {
+    if (!linha.corretor_id) continue;
+    const atual = (porCorretor[linha.corretor_id] ??= { total: 0, cidades: new Set() });
+    atual.total += 1;
+    atual.cidades.add(linha.cidade);
+  }
+
+  return Object.fromEntries(
+    Object.entries(porCorretor).map(([id, { total, cidades }]) => [
+      id,
+      { total, cidades: [...cidades].sort() },
+    ]),
+  );
+}
+
+export async function getEmpreendimentosPorCorretor(
+  corretorId: string,
+): Promise<Empreendimento[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("empreendimentos")
+    .select(SELECT_EMPREENDIMENTO)
+    .eq("corretor_id", corretorId)
+    .eq("publicado", true)
+    .order("ordem");
+
+  if (error) {
+    throw new Error(`Falha ao buscar empreendimentos do corretor: ${error.message}`);
+  }
+  return (data as unknown as LinhaEmpreendimento[]).map(mapEmpreendimento);
+}
+
 /** Cidades e bairros distintos, para popular os selects de filtro. */
 export async function getRegioesDisponiveis(): Promise<{
   cidades: string[];
