@@ -62,12 +62,33 @@ export function extrairVariosLeadsViaRegex(email: EmailInboundInput): LeadExtrai
 
   if (!texto && !assunto) return [];
 
+  // Se o e-mail tem estrutura de 1 lead detalhado (ex: e-mail de portal tradicional com "Nome:", "Telefone:"),
+  // testa primeiro o extrator de lead único detalhado
+  const leadUnico = extrairLeadViaRegex(email);
+
+  // Conta quantos telefones distintos existem no texto
+  const todosTelefones = (texto.match(/(?:\(?\d{2}\)?\s*)?9?\d{4}[-.\s]?\d{4}/g) || [])
+    .map(normalizarTelefoneBrasileiro)
+    .filter((t): t is string => Boolean(t));
+
+  const telefonesUnicos = Array.from(new Set(todosTelefones));
+
+  // Se só tem 1 telefone único e o leadUnico identificou nome válido, retorna ele
+  if (telefonesUnicos.length <= 1 && leadUnico && leadUnico.nome !== "Lead Interessado") {
+    return [leadUnico];
+  }
+
   // Quebra o texto por blocos ou linhas para detectar múltiplos contatos
   const linhas = texto.split("\n").map((l) => l.trim()).filter(Boolean);
   const leads: LeadExtraido[] = [];
   const telefonesVistos = new Set<string>();
 
-  // 1. Tenta identificar se é uma lista tabular ou múltiplos blocos
+  const rotulosDescartar = [
+    "telefone", "tel", "celular", "whats", "whatsapp", "fone", "contato",
+    "email", "e-mail", "mail", "nome", "cliente", "lead", "interessado",
+    "mensagem", "obs", "imovel", "imóvel", "ref"
+  ];
+
   for (let i = 0; i < linhas.length; i++) {
     const linha = linhas[i];
     const matchTelefone = linha.match(/(?:\(?\d{2}\)?\s*)?9?\d{4}[-.\s]?\d{4}/);
@@ -76,21 +97,34 @@ export function extrairVariosLeadsViaRegex(email: EmailInboundInput): LeadExtrai
       if (telefone && !telefonesVistos.has(telefone)) {
         telefonesVistos.add(telefone);
 
-        // Busca nome na mesma linha ou na linha anterior
+        // Busca nome na mesma linha ou nas linhas adjacentes
         let nomeRaw = "";
         const matchNomeLinha = linha.match(/(?:nome|cliente|lead)[\s:]*([A-Za-zÀ-ÖØ-öø-ÿ\s]{3,40})/i);
         if (matchNomeLinha) {
           nomeRaw = matchNomeLinha[1];
-        } else if (i > 0 && /^[A-Za-zÀ-ÖØ-öø-ÿ\s]{3,40}$/.test(linhas[i - 1])) {
-          nomeRaw = linhas[i - 1];
-        } else {
+        } else if (i > 0) {
+          const linhaAnt = linhas[i - 1];
+          const matchNomeAnt = linhaAnt.match(/(?:nome|cliente|lead)[\s:]*([A-Za-zÀ-ÖØ-öø-ÿ\s]{3,40})/i);
+          if (matchNomeAnt) {
+            nomeRaw = matchNomeAnt[1];
+          } else if (/^[A-Za-zÀ-ÖØ-öø-ÿ\s]{3,40}$/.test(linhaAnt) && !rotulosDescartar.includes(linhaAnt.toLowerCase())) {
+            nomeRaw = linhaAnt;
+          }
+        }
+
+        if (!nomeRaw) {
           // Pega palavras antes do telefone se houver
-          const partes = linha.split(matchTelefone[0])[0].trim();
-          if (partes.length >= 3 && partes.length <= 40) nomeRaw = partes;
+          const partes = linha.split(matchTelefone[0])[0].replace(/[:\-–\s]+$/g, "").trim();
+          if (partes.length >= 3 && partes.length <= 40 && !rotulosDescartar.includes(partes.toLowerCase())) {
+            nomeRaw = partes;
+          }
         }
 
         let nome = nomeRaw.replace(/^[:\-–\s]+|[:\-–\s]+$/g, "").trim();
-        const nomesInvalidos = ["viva real", "vivareal", "zap", "zap imoveis", "grupozap", "olx", "imovelweb", "novo lead", "lead"];
+        const nomesInvalidos = [
+          "viva real", "vivareal", "zap", "zap imoveis", "zap imóveis", "grupozap",
+          "olx", "imovelweb", "novo lead", "lead", ...rotulosDescartar
+        ];
         if (nomesInvalidos.includes(nome.toLowerCase()) || nome.length < 2) {
           nome = "Lead Interessado";
         }
@@ -111,9 +145,6 @@ export function extrairVariosLeadsViaRegex(email: EmailInboundInput): LeadExtrai
   }
 
   if (leads.length > 0) return leads;
-
-  // Fallback para e-mail com 1 lead padrão detalhado
-  const leadUnico = extrairLeadViaRegex(email);
   return leadUnico ? [leadUnico] : [];
 }
 
@@ -143,12 +174,12 @@ export function extrairLeadViaRegex(email: EmailInboundInput): LeadExtraido | nu
 
   // 2. Extração de Nome
   const regexNomePrioritario =
-    /(?:nome(?:\s+completo|\s+do\s+cliente)?|cliente|interessado|comprador|locat[aá]rio|remetente)[\s:]*([A-Za-zÀ-ÖØ-öø-ÿ\s]{3,50})(?:\n|\r|<|$|\s{2,}|[-–|])/i;
+    /(?:nome(?:\s+completo|\s+do\s+cliente)?|cliente|interessado|comprador|locat[aá]rio|remetente)[\s:]*([A-Za-zÀ-ÖØ-öø-ÿ.\s]{3,50})(?:\n|\r|<|$|\s{2,}|[-–|])/i;
   let matchNome = texto.match(regexNomePrioritario);
 
   if (!matchNome) {
     const regexNomeSecundario =
-      /(?:lead)[\s:]+([A-Za-zÀ-ÖØ-öø-ÿ\s]{3,50})(?:\n|\r|<|$|\s{2,}|[-–|])/i;
+      /(?:lead)[\s:]+([A-Za-zÀ-ÖØ-öø-ÿ.\s]{3,50})(?:\n|\r|<|$|\s{2,}|[-–|])/i;
     matchNome = texto.match(regexNomeSecundario);
   }
 

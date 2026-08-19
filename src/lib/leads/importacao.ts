@@ -1,4 +1,6 @@
 import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
+import { extrairVariosLeadsViaRegex } from "@/lib/inbound/regexFallback";
+import { extrairTextoDePdf } from "./pdfTexto";
 
 /**
  * Leitura de listas de leads que o corretor traz de fora — planilha exportada
@@ -27,7 +29,7 @@ export type CandidatoLead = {
 export type ResultadoExtracao = {
   candidatos: CandidatoLead[];
   /** Como o conteúdo foi lido, para a tela dizer ao corretor o que houve. */
-  metodo: "tabela" | "ia" | "nenhum";
+  metodo: "tabela" | "texto" | "ia" | "nenhum";
   aviso?: string;
 };
 
@@ -278,6 +280,15 @@ export async function extrairDeTexto(conteudo: string): Promise<ResultadoExtraca
   const tabela = dedupInterno(parsearTabelaLeads(limpo));
   if (tabela.length > 0) return { candidatos: tabela, metodo: "tabela" };
 
+  // Mesma escada do PDF: antes de gastar uma chamada de IA, tenta o extrator
+  // por regex, que já resolve lista solta no formato "Nome — telefone".
+  const doRegex = dedupInterno(
+    extrairVariosLeadsViaRegex({ text: limpo }).map((lead) =>
+      montarDeExtraido(lead.nome, lead.telefone, lead.email, lead.mensagemOriginal, lead.imovelInteresse),
+    ),
+  );
+  if (doRegex.length > 0) return { candidatos: doRegex, metodo: "texto" };
+
   const daIa = await chamarGemini([{ text: `Conteúdo:\n${limpo.slice(0, 60_000)}` }]);
   if (daIa === null) {
     return {
@@ -297,20 +308,52 @@ export async function extrairDeTexto(conteudo: string): Promise<ResultadoExtraca
 }
 
 /**
- * PDF vai inteiro para a IA, em vez de passar por um extrator de texto.
- * Relatório de portal costuma vir em tabela diagramada — e parte deles é
- * imagem escaneada, que extrator de texto devolve em branco.
+ * PDF, em três tentativas, da mais barata e verificável para a mais cara.
+ *
+ *   1. Texto embutido no arquivo (`pdfTexto.ts`) lido como tabela. Relatório
+ *      de portal e lista exportada são PDF de texto: o conteúdo está lá
+ *      dentro, e descomprimir é mais confiável do que pedir a um modelo que
+ *      leia o que já está escrito.
+ *   2. O mesmo texto pelo extrator por regex do inbound, que já sabe achar
+ *      pares nome/telefone em texto corrido — é o formato de relatório que
+ *      não vira tabela ao virar texto.
+ *   3. IA, com o PDF inteiro. É o caminho do PDF escaneado (página é imagem,
+ *      não há texto a extrair) e do diagramado que confunde os dois de cima.
+ *
+ * Só o passo 3 depende de GEMINI_API_KEY. Sem a chave, PDF de texto continua
+ * funcionando — que é a maior parte do que chega.
  */
-export async function extrairDePdf(base64: string): Promise<ResultadoExtracao> {
+export async function extrairDePdf(pdf: Buffer | Uint8Array): Promise<ResultadoExtracao> {
+  const texto = extrairTextoDePdf(pdf);
+
+  if (texto) {
+    const daTabela = dedupInterno(parsearTabelaLeads(texto));
+    if (daTabela.length > 0) return { candidatos: daTabela, metodo: "texto" };
+
+    const doRegex = dedupInterno(
+      extrairVariosLeadsViaRegex({ text: texto }).map((lead) =>
+        montarDeExtraido(lead.nome, lead.telefone, lead.email, lead.mensagemOriginal, lead.imovelInteresse),
+      ),
+    );
+    if (doRegex.length > 0) return { candidatos: doRegex, metodo: "texto" };
+  }
+
   const daIa = await chamarGemini([
-    { inline_data: { mime_type: "application/pdf", data: base64 } },
+    {
+      inline_data: {
+        mime_type: "application/pdf",
+        data: Buffer.isBuffer(pdf) ? pdf.toString("base64") : Buffer.from(pdf).toString("base64"),
+      },
+    },
   ]);
 
   if (daIa === null) {
     return {
       candidatos: [],
       metodo: "nenhum",
-      aviso: "A leitura de PDF depende da IA, que não está configurada neste ambiente.",
+      aviso: texto
+        ? "O PDF tem texto, mas nenhum telefone reconhecível. Confira o arquivo ou cole os contatos na outra aba."
+        : "Este PDF não tem texto embutido — provavelmente é escaneado. A leitura por imagem depende da IA, que não está configurada neste ambiente.",
     };
   }
 
@@ -320,4 +363,32 @@ export async function extrairDePdf(base64: string): Promise<ResultadoExtracao> {
     metodo: "ia",
     aviso: unicos.length === 0 ? "Nenhum contato com telefone foi encontrado no PDF." : undefined,
   };
+}
+
+/** Ponte entre o `LeadExtraido` do inbound e o candidato desta importação. */
+function montarDeExtraido(
+  nome: string,
+  telefone: string,
+  email: string | null | undefined,
+  mensagem: string | null | undefined,
+  imovel: string | null | undefined,
+): CandidatoLead {
+  return (
+    montar({
+      nome,
+      telefone,
+      email: email ?? null,
+      mensagem: mensagem ?? null,
+      imovelInteresse: imovel ?? null,
+    }) ?? {
+      // `montar` só devolve null quando o telefone não presta, e o extrator
+      // por regex já garante o contrário — este ramo é defensivo.
+      nome,
+      telefone,
+      telefoneE164: normalizarTelefoneBrasileiro(telefone),
+      email: email ?? null,
+      mensagem: mensagem ?? null,
+      imovelInteresse: imovel ?? null,
+    }
+  );
 }

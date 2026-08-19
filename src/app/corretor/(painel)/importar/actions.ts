@@ -12,14 +12,49 @@ import {
 import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
 import { createClient } from "@/lib/supabase/server";
 
+import { extrairVariosLeadsComIA } from "@/lib/inbound/aiParser";
+import type { PortalOrigem } from "@/lib/inbound/types";
+
 export type CandidatoRevisado = CandidatoLead & {
   /** Já existe um lead com este telefone no que o corretor enxerga. */
   jaExiste: boolean;
 };
 
+export type LeadEmailRevisado = {
+  idTemp: string;
+  nome: string;
+  telefone: string;
+  telefoneE164: string | null;
+  email: string | null;
+  imovelInteresse: string | null;
+  codigoReferencia: string | null;
+  portalOrigem: PortalOrigem;
+  mensagemOriginal: string | null;
+  valorMencionado?: number | null;
+  jaExiste: boolean;
+  empreendimentoSugeridoId: string | null;
+};
+
+export type InboundLogItem = {
+  id: string;
+  de: string | null;
+  para: string | null;
+  assunto: string | null;
+  status: "sucesso" | "erro" | "ignorado";
+  erroMensagem: string | null;
+  leadId: string | null;
+  criadoEm: string;
+};
+
+export type ResultadoAnaliseEmail = {
+  leads?: LeadEmailRevisado[];
+  erro?: string;
+  aviso?: string;
+};
+
 export type ResultadoAnalise = {
   candidatos?: CandidatoRevisado[];
-  metodo?: "tabela" | "ia";
+  metodo?: "tabela" | "texto" | "ia";
   erro?: string;
   aviso?: string;
 };
@@ -107,7 +142,7 @@ export async function analisarTexto(conteudo: string): Promise<ResultadoAnalise>
 
   return {
     candidatos: await marcarExistentes(supabase, resultado.candidatos),
-    metodo: resultado.metodo === "ia" ? "ia" : "tabela",
+    metodo: resultado.metodo === "nenhum" ? "tabela" : resultado.metodo,
     aviso: resultado.aviso,
   };
 }
@@ -141,7 +176,7 @@ export async function analisarArquivo(formData: FormData): Promise<ResultadoAnal
   }
 
   const resultado = ehPdf
-    ? await extrairDePdf(Buffer.from(await arquivo.arrayBuffer()).toString("base64"))
+    ? await extrairDePdf(Buffer.from(await arquivo.arrayBuffer()))
     : await extrairDeTexto(await arquivo.text());
 
   if (resultado.candidatos.length === 0) {
@@ -150,7 +185,7 @@ export async function analisarArquivo(formData: FormData): Promise<ResultadoAnal
 
   return {
     candidatos: await marcarExistentes(supabase, resultado.candidatos),
-    metodo: resultado.metodo === "ia" ? "ia" : "tabela",
+    metodo: resultado.metodo === "nenhum" ? "tabela" : resultado.metodo,
     aviso: resultado.aviso,
   };
 }
@@ -287,3 +322,189 @@ export async function criarLeadUnico(
 
   return { ok: `${nome.split(" ")[0]} entrou no seu funil, na etapa “Novo lead”.` };
 }
+
+/**
+ * Analisa o conteúdo de um e-mail do Gmail/Portais (texto ou HTML) com IA e Regex,
+ * sugerindo matching com empreendimentos do catálogo e verificando duplicidade.
+ */
+export async function analisarEmailGmail(dados: {
+  texto: string;
+  assunto?: string;
+  remetente?: string;
+  html?: string;
+}): Promise<ResultadoAnaliseEmail> {
+  const { supabase } = await exigirCorretor();
+
+  const conteudo = dados.texto || dados.html || "";
+  if (!conteudo.trim()) {
+    return { erro: "Cole o conteúdo do e-mail ou envie um arquivo antes de continuar." };
+  }
+
+  const extraidos = await extrairVariosLeadsComIA({
+    text: dados.texto,
+    html: dados.html,
+    subject: dados.assunto,
+    from: dados.remetente,
+  });
+
+  if (extraidos.length === 0) {
+    return {
+      erro: "Nenhum lead com telefone válido foi identificado neste e-mail. Verifique o conteúdo colado.",
+    };
+  }
+
+  // Buscar empreendimentos para sugerir match inteligente com o catálogo
+  const { data: empreendimentos } = await supabase
+    .from("empreendimentos")
+    .select("id, nome, slug")
+    .limit(100);
+
+  // Marcar existentes no banco
+  const telefonesE164 = extraidos
+    .map((l) => normalizarTelefoneBrasileiro(l.telefone))
+    .filter((t): t is string => Boolean(t));
+
+  const existentes = new Set<string>();
+  if (telefonesE164.length > 0) {
+    const { data: existentesDb } = await supabase
+      .from("leads")
+      .select("telefone_e164")
+      .in("telefone_e164", telefonesE164);
+
+    (existentesDb ?? []).forEach((l) => {
+      if (l.telefone_e164) existentes.add(l.telefone_e164);
+    });
+  }
+
+  const leads: LeadEmailRevisado[] = extraidos.map((item, idx) => {
+    const e164 = normalizarTelefoneBrasileiro(item.telefone);
+    let empreendimentoSugeridoId: string | null = null;
+
+    if (empreendimentos && (item.imovelInteresse || item.codigoReferencia)) {
+      const termo = (item.imovelInteresse || item.codigoReferencia || "").toLowerCase();
+      const match = empreendimentos.find(
+        (e) => termo.includes(e.nome.toLowerCase()) || e.nome.toLowerCase().includes(termo),
+      );
+      if (match) empreendimentoSugeridoId = match.id;
+    }
+
+    return {
+      idTemp: `lead-email-${Date.now()}-${idx}`,
+      nome: item.nome || "Lead Interessado",
+      telefone: item.telefone,
+      telefoneE164: e164,
+      email: item.email || null,
+      imovelInteresse: item.imovelInteresse || null,
+      codigoReferencia: item.codigoReferencia || null,
+      portalOrigem: item.portalOrigem,
+      mensagemOriginal: item.mensagemOriginal || null,
+      valorMencionado: item.valorMencionado || null,
+      jaExiste: Boolean(e164 && existentes.has(e164)),
+      empreendimentoSugeridoId,
+    };
+  });
+
+  return { leads };
+}
+
+/**
+ * Salva os leads extraídos do Gmail no funil de vendas com proteção e fallback seguro.
+ */
+export async function salvarLeadsDoGmail(
+  leads: LeadEmailRevisado[],
+  opcoes: { distribuirNaEquipe: boolean; consentimento: boolean },
+): Promise<ResumoImportacao> {
+  const { supabase, corretor } = await exigirCorretor();
+
+  if (!Array.isArray(leads) || leads.length === 0) {
+    return { erro: "Nenhum lead selecionado para importar." };
+  }
+  if (!opcoes.consentimento) {
+    return { erro: "Confirme que você tem autorização para tratar estes dados (LGPD)." };
+  }
+
+  const gestor = await souGestor();
+  const distribuir = opcoes.distribuirNaEquipe && gestor;
+
+  let inseridos = 0;
+  let falhas = 0;
+  let ignorados = 0;
+
+  for (const lead of leads) {
+    const telefoneNormalizado = normalizarTelefoneBrasileiro(lead.telefone);
+    if (!telefoneNormalizado) {
+      ignorados++;
+      continue;
+    }
+
+    const payloadCompleto = {
+      nome: (lead.nome || "Lead Interessado").slice(0, 120),
+      telefone: lead.telefone.slice(0, 40),
+      email: lead.email?.slice(0, 160) || null,
+      mensagem:
+        lead.mensagemOriginal?.slice(0, 2000) ||
+        `Lead importado via Gmail (${lead.portalOrigem})`,
+      anuncio_origem: (lead.imovelInteresse || lead.codigoReferencia)?.slice(0, 160) || null,
+      portal_origem: lead.portalOrigem,
+      empreendimento_id: lead.empreendimentoSugeridoId || null,
+      corretor_id: distribuir ? null : corretor.id,
+      origem_atribuicao: distribuir ? null : "manual",
+      tipo: "comprador",
+      origem: `inbound/${lead.portalOrigem}`,
+      consentimento_lgpd: true,
+    };
+
+    // Safe insert (fallback caso a coluna portal_origem não exista)
+    let { data, error } = await supabase.from("leads").insert(payloadCompleto).select("id");
+    if (error && error.message.includes("portal_origem")) {
+      const { portal_origem: _p, ...payloadBase } = payloadCompleto;
+      const resFallback = await supabase.from("leads").insert(payloadBase).select("id");
+      error = resFallback.error;
+      data = resFallback.data;
+    }
+
+    if (error) {
+      console.error("[inbound/gmail] Falha ao salvar lead:", error.message);
+      falhas++;
+    } else {
+      inseridos += data?.length ?? 1;
+    }
+  }
+
+  revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/funil");
+  revalidatePath("/corretor/importar");
+  revalidatePath("/corretor");
+
+  return { inseridos, ignorados, falhas };
+}
+
+/**
+ * Busca o histórico de auditoria de e-mails recebidos do inbound/Gmail.
+ */
+export async function buscarHistoricoInbound(): Promise<InboundLogItem[]> {
+  try {
+    const { supabase } = await exigirCorretor();
+    const { data, error } = await supabase
+      .from("inbound_logs")
+      .select("id, de, para, assunto, status, erro_mensagem, lead_id, created_at")
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (error) return [];
+
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      de: row.de,
+      para: row.para,
+      assunto: row.assunto,
+      status: row.status as "sucesso" | "erro" | "ignorado",
+      erroMensagem: row.erro_mensagem,
+      leadId: row.lead_id,
+      criadoEm: row.created_at,
+    }));
+  } catch {
+    return [];
+  }
+}
+

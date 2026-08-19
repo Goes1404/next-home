@@ -3,7 +3,7 @@ import { ImportarClient } from "./ImportarClient";
 import { getCorretorLogado, souGestor } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
 
-export const metadata: Metadata = { title: "Adicionar leads" };
+export const metadata: Metadata = { title: "Adicionar & Importar Leads (Gmail / IA)" };
 
 export default async function ImportarPage() {
   const corretor = await getCorretorLogado();
@@ -13,11 +13,10 @@ export default async function ImportarPage() {
 
   return (
     <div>
-      <h1 className="font-display text-titulo text-fluid-2xl">Adicionar leads</h1>
+      <h1 className="font-display text-titulo text-fluid-2xl">Adicionar & Importar Leads</h1>
       <p className="text-fluid-sm text-apoio mt-2 max-w-2xl">
-        Cadastre um contato na hora ou traga uma lista inteira de fora — planilha exportada de um
-        portal, tabela colada do Excel ou PDF de relatório. Você revisa tudo antes de entrar no
-        funil.
+        Puxe leads diretamente do seu <strong>Gmail</strong> (Zap Imóveis, VivaReal, OLX, Imovelweb),
+        importe planilhas/PDFs ou cadastre um contato na hora com inteligência artificial.
       </p>
 
       <ImportarClient

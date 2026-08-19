@@ -12,8 +12,10 @@ import {
   type ResumoImportacao,
 } from "./actions";
 
+import { GmailLeadsExtractor } from "./GmailLeadsExtractor";
+
 type Empreendimento = { id: string; nome: string };
-type Aba = "unico" | "lote";
+type Aba = "unico" | "lote" | "gmail";
 
 const CAMPO =
   "border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento w-full rounded-xl border px-4 py-3 outline-none transition-colors";
@@ -26,21 +28,31 @@ export function ImportarClient({
   empreendimentos: Empreendimento[];
   ehGestor: boolean;
 }) {
-  const [aba, setAba] = useState<Aba>("unico");
+  const [aba, setAba] = useState<Aba>("gmail");
 
   return (
     <div className="mt-8">
-      <div role="tablist" aria-label="Como adicionar" className="border-linha flex gap-1 border-b">
+      <div role="tablist" aria-label="Como adicionar" className="border-linha flex flex-wrap gap-1 border-b">
+        <Botao aba="gmail" atual={aba} onSelect={setAba}>
+          <span className="flex items-center gap-1.5">
+            <span>📧</span> Puxar do Gmail & Portais
+            <span className="rounded-full bg-brand-500/20 px-1.5 py-0.2 text-[10px] font-bold text-brand-300">
+              IA
+            </span>
+          </span>
+        </Botao>
         <Botao aba="unico" atual={aba} onSelect={setAba}>
-          Um contato
+          Um contato manual
         </Botao>
         <Botao aba="lote" atual={aba} onSelect={setAba}>
-          Vários de uma vez
+          Planilha / Arquivo
         </Botao>
       </div>
 
       <div className="mt-6">
-        {aba === "unico" ? (
+        {aba === "gmail" ? (
+          <GmailLeadsExtractor empreendimentos={empreendimentos} ehGestor={ehGestor} />
+        ) : aba === "unico" ? (
           <FormularioUnico empreendimentos={empreendimentos} />
         ) : (
           <Importador empreendimentos={empreendimentos} ehGestor={ehGestor} />
@@ -231,7 +243,7 @@ function Importador({
   const [modo, setModo] = useState<"colar" | "arquivo">("colar");
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState<string | null>(null);
-  const [metodo, setMetodo] = useState<"tabela" | "ia" | null>(null);
+  const [metodo, setMetodo] = useState<"tabela" | "texto" | "ia" | null>(null);
   const [linhas, setLinhas] = useState<(CandidatoRevisado & { incluir: boolean })[]>([]);
   const [resumo, setResumo] = useState<ResumoImportacao | null>(null);
 
@@ -359,7 +371,9 @@ function Importador({
           <p className="text-fluid-sm text-apoio mt-1">
             {metodo === "ia"
               ? "Lidos por IA — confira nome e telefone antes de confirmar."
-              : "Lidos direto da tabela. Confira e ajuste o que precisar."}
+              : metodo === "texto"
+                ? "Lidos do texto do arquivo. Confira e ajuste o que precisar."
+                : "Lidos direto da tabela. Confira e ajuste o que precisar."}
             {duplicados > 0 &&
               ` ${duplicados} já ${duplicados === 1 ? "está" : "estão"} na carteira e ${duplicados === 1 ? "veio" : "vieram"} desmarcado${duplicados === 1 ? "" : "s"}.`}
           </p>
@@ -503,7 +517,7 @@ function Importador({
             className="text-fluid-sm text-corpo file:border-linha-forte file:bg-vidro file:text-corpo hover:file:bg-vidro-forte w-full cursor-pointer file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-full file:border file:px-4 file:text-sm"
           />
           <p className="text-fluid-xs text-tenue mt-2">
-            PDF, CSV, TSV ou TXT, até 10 MB. Planilha do Excel: salve como CSV antes de enviar.
+            PDF, CSV, TSV ou TXT, até 10 MB. PDF escaneado (foto de página) depende da leitura por IA; PDF de texto é lido direto. Planilha do Excel: salve como CSV antes de enviar.
           </p>
 
           <button
