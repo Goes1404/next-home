@@ -110,13 +110,13 @@ export default async function HomeInstitucional() {
             flutuante do WhatsApp, que é `fixed`. */}
         <section className="flex flex-col items-center justify-center px-4 pt-24 pb-32 sm:min-h-svh sm:pt-28 sm:pb-20">
           <Reveal className="w-full max-w-3xl text-center">
-            <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-brand-200 uppercase">
+            <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento uppercase">
               Imóveis de Alto Padrão · Alphaville e Região
             </p>
-            <h1 className="text-fluid-3xl text-mist-50">
+            <h1 className="text-fluid-3xl text-titulo">
               O seu próximo endereço de alto padrão em Alphaville começa aqui.
             </h1>
-            <p className="text-fluid-base mx-auto mt-5 max-w-xl text-mist-200">
+            <p className="text-fluid-base mx-auto mt-5 max-w-xl text-corpo-suave">
               Curadoria exclusiva dos melhores lançamentos e imóveis selecionados. Atendimento consultivo e direto com quem realmente entende o seu estilo de vida.
             </p>
           </Reveal>
@@ -158,8 +158,8 @@ export default async function HomeInstitucional() {
         {destaques.length > 0 && (
           <section className="px-4 pb-24">
             <Reveal className="mx-auto max-w-lg text-center">
-              <h2 className="text-fluid-2xl text-mist-50">Coleção em Destaque</h2>
-              <p className="text-fluid-base mt-3 text-mist-300">
+              <h2 className="text-fluid-2xl text-titulo">Coleção em Destaque</h2>
+              <p className="text-fluid-base mt-3 text-apoio">
                 Projetos selecionados a dedo que unem sofisticação, conforto e alta valorização.
               </p>
             </Reveal>
@@ -188,8 +188,8 @@ export default async function HomeInstitucional() {
         {equipe.length > 0 && (
           <section className="px-4 pb-24">
             <Reveal className="mx-auto max-w-lg text-center">
-              <h2 className="text-fluid-2xl text-mist-50">Especialistas ao Seu Lado</h2>
-              <p className="text-fluid-base mt-3 text-mist-300">
+              <h2 className="text-fluid-2xl text-titulo">Especialistas ao Seu Lado</h2>
+              <p className="text-fluid-base mt-3 text-apoio">
                 Consultores credenciados e dedicados a encontrar a oportunidade perfeita para você e sua família.
               </p>
             </Reveal>

@@ -22,7 +22,10 @@ export function VideoInstitucionalFrame({
       {/* Glow de fundo elegante */}
       <div className="absolute -inset-1.5 rounded-[2.8rem] bg-gradient-to-r from-brand-500/20 via-brand-400/10 to-teal-500/20 blur-2xl opacity-75 group-hover:opacity-100 transition-opacity duration-700 -z-10" />
 
-      {/* Frame estilo Cinema com cantos generosos */}
+      {/* Frame estilo Cinema com cantos generosos. Cores literais de
+          propósito neste bloco: é a moldura e o véu de um vídeo em
+          reprodução, não a superfície da página — o contraste é
+          vídeo-vs-texto, e o vídeo continua escuro nos dois temas. */}
       <div className="relative overflow-hidden rounded-[2.2rem] sm:rounded-[2.8rem] border border-white/20 bg-ink-950 shadow-2xl shadow-black/90 aspect-video">
         <video
           src={videoUrl}

@@ -159,6 +159,8 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
                   className="h-28 w-28 shrink-0 rounded-full object-cover ring-1 ring-linha/15 sm:h-32 sm:w-32"
                 />
               ) : (
+                // `text-mist-50` literal, como o texto branco sobre botão da marca: as
+                // iniciais vivem sobre um círculo de teal sólido, igual nos dois temas.
                 <span
                   aria-hidden
                   className="font-display from-brand-500 to-brand-700 flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-3xl text-mist-50 ring-1 ring-linha/15 sm:h-32 sm:w-32"

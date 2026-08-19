@@ -41,7 +41,7 @@ export default async function SobrePage() {
       <SiteHeader />
       <WhatsappCta corretor={corretorAtivo ?? undefined} />
 
-      <main className="flex flex-1 flex-col bg-ink-950 px-4 pt-28 sm:pt-36 pb-16 overflow-hidden">
+      <main className="flex flex-1 flex-col bg-fundo px-4 pt-28 sm:pt-36 pb-16 overflow-hidden">
         {/* 1. HERO INSTITUCIONAL ACOLHEDOR */}
         <section className="max-w-4xl mx-auto text-center space-y-6 mb-12 sm:mb-16">
           <Reveal>
@@ -49,13 +49,13 @@ export default async function SobrePage() {
               <VoltarLink href="/">Início</VoltarLink>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/15 text-mist-200 text-fluid-xs font-semibold backdrop-blur shadow-sm mb-2">
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/15 text-corpo text-fluid-xs font-semibold backdrop-blur shadow-sm mb-2">
               <span>🚪 Entre e fique à vontade</span>
             </div>
-            <h1 className="text-fluid-3xl sm:text-fluid-4xl font-bold text-mist-50 tracking-tight leading-tight">
+            <h1 className="text-fluid-3xl sm:text-fluid-4xl font-bold text-titulo tracking-tight leading-tight">
               A Next Home Negócios Imobiliários
             </h1>
-            <p className="text-fluid-base sm:text-fluid-lg text-mist-300 font-light leading-relaxed max-w-3xl mx-auto mt-4">
+            <p className="text-fluid-base sm:text-fluid-lg text-apoio font-light leading-relaxed max-w-3xl mx-auto mt-4">
               Nascemos com a vocação de redefinir a experiência de compra, venda e investimento imobiliário em Alphaville e Tamboré. Mais do que apresentar imóveis, construímos pontes entre famílias extraordinárias e os projetos arquitetônicos mais inspiradores de São Paulo.
             </p>
           </Reveal>

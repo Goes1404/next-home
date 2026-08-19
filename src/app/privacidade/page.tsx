@@ -21,8 +21,8 @@ export default function PrivacidadePage() {
         <Reveal className="mx-auto w-full max-w-2xl">
           <VoltarLink href="/">Início</VoltarLink>
 
-          <h1 className="text-fluid-2xl text-mist-50">Política de Privacidade</h1>
-          <p className="text-fluid-sm mt-2 text-mist-500">
+          <h1 className="text-fluid-2xl text-titulo">Política de Privacidade</h1>
+          <p className="text-fluid-sm mt-2 text-tenue">
             Última atualização: {new Date().toLocaleDateString("pt-BR", { year: "numeric", month: "long" })}
           </p>
 

@@ -9,7 +9,7 @@ export function VoltarLink({ href, children }: { href: string; children: React.R
   return (
     <Link
       href={href}
-      className="text-fluid-xs mb-4 inline-flex items-center gap-1.5 text-mist-300 transition-colors hover:text-mist-50"
+      className="text-fluid-xs mb-4 inline-flex items-center gap-1.5 text-apoio transition-colors hover:text-titulo"
     >
       <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 5l-7 7 7 7" />

@@ -13,13 +13,13 @@ export function Tour360({ tours }: { tours: Midia[] }) {
   return (
     <section id="tour360" className="mx-auto max-w-3xl scroll-mt-24 px-4 py-16 sm:py-24">
       <Reveal>
-        <h2 className="text-fluid-2xl text-mist-50">Tour 360°</h2>
-        <p className="text-fluid-base mt-2 text-mist-300">
+        <h2 className="text-fluid-2xl text-titulo">Tour 360°</h2>
+        <p className="text-fluid-base mt-2 text-apoio">
           Ande pelo decorado — arraste pra olhar ao redor.
         </p>
       </Reveal>
 
-      <Reveal className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-ink-900/50">
+      <Reveal className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-superficie/50">
         <iframe
           src={tour.url}
           title={tour.alt || "Tour virtual 360°"}
@@ -34,7 +34,7 @@ export function Tour360({ tours }: { tours: Midia[] }) {
         href={tour.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-fluid-sm mt-3 inline-block text-brand-200 underline-offset-4 hover:underline"
+        className="text-fluid-sm mt-3 inline-block text-acento underline-offset-4 hover:underline"
       >
         Abrir tour em tela cheia →
       </a>

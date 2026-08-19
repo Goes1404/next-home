@@ -52,11 +52,11 @@ export default async function ContatoPage({
             <VoltarLink href="/">Início</VoltarLink>
           </div>
 
-          <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-brand-200 uppercase">
+          <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento uppercase">
             Canais de Atendimento
           </p>
-          <h1 className="text-fluid-3xl text-mist-50">Estamos prontos para atender você.</h1>
-          <p className="text-fluid-base mt-4 text-mist-300">
+          <h1 className="text-fluid-3xl text-titulo">Estamos prontos para atender você.</h1>
+          <p className="text-fluid-base mt-4 text-apoio">
             Tire dúvidas sobre empreendimentos, agende uma visita exclusiva ou receba atendimento personalizado com nossos consultores.
           </p>
         </Reveal>
@@ -82,7 +82,7 @@ export default async function ContatoPage({
                       )}
                       origem="contato"
                       corretorId={corretorAtivo.id}
-                      className="text-fluid-sm text-brand-200 underline-offset-4 hover:underline"
+                      className="text-fluid-sm text-acento underline-offset-4 hover:underline"
                     >
                       Falar com {corretorAtivo.nome}
                     </WhatsappLink>
@@ -93,7 +93,7 @@ export default async function ContatoPage({
                       <WhatsappLink
                         href={linkWhatsapp(undefined, i)}
                         origem="contato"
-                        className="text-fluid-sm text-brand-200 underline-offset-4 hover:underline"
+                        className="text-fluid-sm text-acento underline-offset-4 hover:underline"
                       >
                         {w.label}
                       </WhatsappLink>

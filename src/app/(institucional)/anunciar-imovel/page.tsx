@@ -57,13 +57,13 @@ export default async function AnunciarImovelPage() {
           <VoltarLink href="/">Início</VoltarLink>
         </div>
 
-        <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-brand-200 uppercase">
+        <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento uppercase">
           Exclusividade para Proprietários
         </p>
-        <h1 className="text-fluid-3xl text-mist-50">
+        <h1 className="text-fluid-3xl text-titulo">
           Venda ou alugue seu imóvel com máxima valorização e total agilidade.
         </h1>
-        <p className="text-fluid-base mt-5 text-mist-300">
+        <p className="text-fluid-base mt-5 text-apoio">
           Conectamos seu patrimônio a compradores e investidores qualificados em Alphaville e região. Conte sobre seu imóvel e receba uma avaliação estratégica sem compromisso.
         </p>
       </Reveal>
@@ -79,18 +79,18 @@ export default async function AnunciarImovelPage() {
       </Reveal>
 
       <div className="mx-auto mt-16 grid w-full max-w-4xl gap-8 lg:grid-cols-[1.1fr_1fr]">
-        <Reveal className="rounded-2xl border border-white/10 bg-ink-900/50 p-6 sm:p-8">
-          <h2 className="font-display text-lg text-mist-50">Cadastre seu Imóvel</h2>
-          <p className="text-fluid-sm mt-1 mb-6 text-mist-400">
+        <Reveal className="rounded-2xl border border-white/10 bg-superficie/50 p-6 sm:p-8">
+          <h2 className="font-display text-lg text-titulo">Cadastre seu Imóvel</h2>
+          <p className="text-fluid-sm mt-1 mb-6 text-legenda">
             Rápido, confidencial e com avaliação de mercado gratuita.
           </p>
           <FormularioProprietario regioes={[...site.regioes]} />
         </Reveal>
 
         <Reveal delay={0.1} className="space-y-6">
-          <div className="rounded-2xl border border-white/10 bg-ink-900/50 p-6">
-            <h2 className="font-display text-lg text-mist-50">Prefere atendimento direto?</h2>
-            <p className="text-fluid-sm mt-2 text-mist-400">
+          <div className="rounded-2xl border border-white/10 bg-superficie/50 p-6">
+            <h2 className="font-display text-lg text-titulo">Prefere atendimento direto?</h2>
+            <p className="text-fluid-sm mt-2 text-legenda">
               {corretorAtivo
                 ? `Converse diretamente com ${corretorAtivo.nome} no WhatsApp.`
                 : "Fale com nossos especialistas no WhatsApp para tirar dúvidas e agendar uma avaliação."}
@@ -105,9 +105,9 @@ export default async function AnunciarImovelPage() {
             </WhatsappLink>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-ink-900/50 p-6">
-            <h2 className="font-display text-lg text-mist-50">Por que anunciar com a Next Home</h2>
-            <ul className="text-fluid-sm mt-3 space-y-2 text-mist-400">
+          <div className="rounded-2xl border border-white/10 bg-superficie/50 p-6">
+            <h2 className="font-display text-lg text-titulo">Por que anunciar com a Next Home</h2>
+            <ul className="text-fluid-sm mt-3 space-y-2 text-legenda">
               <li>✨ Base ativa de compradores qualificados em Alphaville e região.</li>
               <li>📸 Produção visual profissional e destaque nos principais canais.</li>
               <li>🛡️ Segurança jurídica completa e contratos claros do início ao fim.</li>

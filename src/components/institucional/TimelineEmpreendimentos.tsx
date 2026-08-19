@@ -92,13 +92,13 @@ export function TimelineEmpreendimentos() {
         {/* Cabeçalho da Seção */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-brand-300 text-fluid-xs font-semibold mb-3 backdrop-blur shadow-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-veu/5 border border-linha/10 text-acento-forte text-fluid-xs font-semibold mb-3 backdrop-blur shadow-sm">
               <span>🏠 Nossa trajetória, seu futuro lar</span>
             </div>
-            <h2 className="text-fluid-2xl sm:text-fluid-3xl font-bold text-mist-50 tracking-tight">
+            <h2 className="text-fluid-2xl sm:text-fluid-3xl font-bold text-titulo tracking-tight">
               Um legado de excelência e valorização em Alphaville
             </h2>
-            <p className="text-fluid-sm text-mist-400 mt-3">
+            <p className="text-fluid-sm text-legenda mt-3">
               Conheça os principais marcos imobiliários que ajudamos a construir e comercializar ao longo dos anos. Toque em qualquer projeto para localizá-lo no mapa.
             </p>
           </div>
@@ -108,7 +108,7 @@ export function TimelineEmpreendimentos() {
             <button
               onClick={rolarParaEsquerda}
               aria-label="Rolar para a esquerda"
-              className="p-3 rounded-full bg-ink-900/80 hover:bg-brand-500 text-white border border-white/15 backdrop-blur transition-all duration-300 cursor-pointer shadow-lg"
+              className="p-3 rounded-full bg-superficie/80 hover:bg-brand-500 text-titulo hover:text-white border border-linha/15 backdrop-blur transition-all duration-300 cursor-pointer shadow-lg"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -117,7 +117,7 @@ export function TimelineEmpreendimentos() {
             <button
               onClick={rolarParaDireita}
               aria-label="Rolar para a direita"
-              className="p-3 rounded-full bg-ink-900/80 hover:bg-brand-500 text-white border border-white/15 backdrop-blur transition-all duration-300 cursor-pointer shadow-lg"
+              className="p-3 rounded-full bg-superficie/80 hover:bg-brand-500 text-titulo hover:text-white border border-linha/15 backdrop-blur transition-all duration-300 cursor-pointer shadow-lg"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -136,7 +136,11 @@ export function TimelineEmpreendimentos() {
               key={item.nome + index}
               className="relative shrink-0 w-[280px] sm:w-[320px] snap-start group"
             >
-              {/* Card Vertical Curvo */}
+              {/* Card Vertical Curvo. Cores literais de propósito daqui até o
+                  fim do card: a foto cobre o card inteiro (`fill -z-10`) e
+                  todo o texto fica sobre ela com um véu escuro por baixo —
+                  o contraste é foto-vs-texto, não página-vs-texto, igual ao
+                  Hero de empreendimento. */}
               <div className="relative h-[400px] sm:h-[440px] w-full rounded-[36px] overflow-hidden border border-white/15 bg-ink-900/60 shadow-xl transition-transform duration-500 group-hover:-translate-y-2 group-hover:border-brand-400/50 flex flex-col justify-between p-5">
                 <Image
                   src={item.imagem}

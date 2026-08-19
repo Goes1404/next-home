@@ -16,8 +16,8 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
   return (
     <section id="contato" className="scroll-mt-24 bg-superficie/40 px-4 py-16 sm:py-24">
       <Reveal className="mx-auto max-w-xl text-center">
-        <h2 className="text-fluid-2xl text-mist-50">Pronto para conhecer este imóvel de perto?</h2>
-        <p className="text-fluid-base mt-3 text-mist-300">
+        <h2 className="text-fluid-2xl text-titulo">Pronto para conhecer este imóvel de perto?</h2>
+        <p className="text-fluid-base mt-3 text-apoio">
           Receba a apresentação completa, tabela atualizada e tire todas as suas dúvidas diretamente com o especialista deste projeto.
         </p>
 
@@ -32,6 +32,8 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
                 className="h-18 w-18 shrink-0 rounded-full object-cover"
               />
             ) : (
+              // `text-mist-50` literal, como o texto branco sobre botão da marca: as
+              // iniciais vivem sobre um círculo de teal sólido, igual nos dois temas.
               <span
                 aria-hidden
                 className="font-display flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xl text-mist-50"
@@ -41,8 +43,8 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
             )}
 
             <div className="min-w-0 flex-1">
-              <p className="font-display text-lg text-mist-50">{e.corretor.nome}</p>
-              <p className="text-fluid-sm text-mist-400">
+              <p className="font-display text-lg text-titulo">{e.corretor.nome}</p>
+              <p className="text-fluid-sm text-legenda">
                 Consultor responsável · CRECI {e.corretor.creci}
               </p>
             </div>

@@ -83,10 +83,10 @@ export default async function Home() {
               <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento uppercase">
                 Alphaville · Barueri · Santana de Parnaíba
               </p>
-              <h1 className="text-fluid-3xl text-mist-50">
+              <h1 className="text-fluid-3xl text-titulo">
                 Experiências únicas em cada detalhe. O melhor de Alphaville para você.
               </h1>
-              <p className="text-fluid-base mt-4 text-mist-200">
+              <p className="text-fluid-base mt-4 text-corpo-suave">
                 Projetos de arquitetura sofisticada, lazer completo de resort e localizações privilegiadas para elevar seu padrão de vida.
               </p>
             </GlassSurface>
@@ -97,8 +97,8 @@ export default async function Home() {
 
         <section id="destaques" className="scroll-mt-20 px-4 pt-4 pb-28">
           <Reveal className="mx-auto max-w-lg text-center">
-            <h2 className="text-fluid-2xl text-mist-50">Lançamentos Selecionados</h2>
-            <p className="text-fluid-base mt-3 text-mist-300">
+            <h2 className="text-fluid-2xl text-titulo">Lançamentos Selecionados</h2>
+            <p className="text-fluid-base mt-3 text-apoio">
               Uma curadoria refinada dos projetos mais desejados da região.
             </p>
           </Reveal>

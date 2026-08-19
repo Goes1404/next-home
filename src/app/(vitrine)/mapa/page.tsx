@@ -34,13 +34,13 @@ export default async function MapaPage({
         {/* Cabeçalho da Página do Mapa */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
           <div>
-            <span className="text-[11px] uppercase tracking-widest font-bold text-brand-300">
+            <span className="text-[11px] uppercase tracking-widest font-bold text-acento-forte">
               Geolocalização & Arquitetura
             </span>
-            <h1 className="text-fluid-xl sm:text-fluid-2xl font-bold text-mist-50 tracking-tight">
+            <h1 className="text-fluid-xl sm:text-fluid-2xl font-bold text-titulo tracking-tight">
               Mapa de Imóveis & Lançamentos
             </h1>
-            <p className="text-fluid-xs sm:text-fluid-sm text-mist-400">
+            <p className="text-fluid-xs sm:text-fluid-sm text-legenda">
               Navegue pelos empreendimentos em Alphaville e Tamboré. Toque nos marcadores para ver os detalhes.
             </p>
           </div>
@@ -48,7 +48,7 @@ export default async function MapaPage({
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/empreendimentos"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-mist-100 text-fluid-xs font-semibold backdrop-blur border border-white/15 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-corpo text-fluid-xs font-semibold backdrop-blur border border-white/15 transition-all"
             >
               <span>📋 Ver em Lista</span>
             </Link>

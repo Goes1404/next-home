@@ -72,15 +72,18 @@ export function SimuladorInvestimentoAlphaville({
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-500/10 border border-brand-400/30 text-brand-300 text-fluid-xs font-semibold mb-3 backdrop-blur shadow-sm">
             <span>📈 Inteligência Imobiliária & Investimento</span>
           </div>
-          <h2 className="text-fluid-2xl sm:text-fluid-3xl font-bold text-mist-50 tracking-tight">
+          <h2 className="text-fluid-2xl sm:text-fluid-3xl font-bold text-titulo tracking-tight">
             Simulador de Valorização & Rentabilidade em Alphaville
           </h2>
-          <p className="text-fluid-sm text-mist-400 mt-3 font-light">
+          <p className="text-fluid-sm text-legenda mt-3 font-light">
             Projete o potencial de ganho de capital e geração de renda passiva nos bairros de maior liquidez da região.
           </p>
         </div>
 
-        {/* Card do Simulador com Visual Glassmorphism */}
+        {/* Card do simulador, escuro fixo nos dois temas, de propósito: é uma
+            vitrine de marca (glassmorphism, controles e texto branco fixos),
+            não uma leitura de página — convertê-lo pediria redesenhar cada
+            estado (toggle, slider, resultado), não só trocar token de cor. */}
         <div className="relative rounded-[2.5rem] border border-white/15 bg-gradient-to-b from-ink-900/80 to-ink-950 p-6 sm:p-10 backdrop-blur-2xl shadow-2xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             {/* Controles da Simulação (Esquerda) */}

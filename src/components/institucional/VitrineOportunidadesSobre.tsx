@@ -13,24 +13,24 @@ export function VitrineOportunidadesSobre({ empreendimentos }: Props) {
   if (destaques.length === 0) return null;
 
   return (
-    <section className="relative py-16 sm:py-24 border-t border-white/10">
+    <section className="relative py-16 sm:py-24 border-t border-linha/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
           <div>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-brand-300 text-fluid-xs font-semibold mb-3 backdrop-blur">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-veu/5 border border-linha/10 text-acento-forte text-fluid-xs font-semibold mb-3 backdrop-blur">
               <span>🔥 Oportunidades Selecionadas</span>
             </div>
-            <h2 className="text-fluid-2xl sm:text-fluid-3xl font-bold text-mist-50 tracking-tight">
+            <h2 className="text-fluid-2xl sm:text-fluid-3xl font-bold text-titulo tracking-tight">
               Empreendimentos com unidades disponíveis
             </h2>
-            <p className="text-fluid-sm text-mist-400 mt-2">
+            <p className="text-fluid-sm text-legenda mt-2">
               Conheça as opções ativas no nosso portfólio e agende uma apresentação privativa.
             </p>
           </div>
 
           <Link
             href="/empreendimentos"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-fluid-xs font-semibold backdrop-blur border border-white/15 transition-all self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-veu/10 hover:bg-veu/15 text-titulo text-fluid-xs font-semibold backdrop-blur border border-linha/15 transition-all self-start sm:self-auto"
           >
             <span>Ver Catálogo Completo</span>
             <span>→</span>
@@ -42,10 +42,10 @@ export function VitrineOportunidadesSobre({ empreendimentos }: Props) {
           {destaques.map((imovel) => (
             <div
               key={imovel.slug}
-              className="group relative overflow-hidden rounded-[2rem] border border-white/15 bg-ink-900/60 p-4 transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-400/50 shadow-xl"
+              className="group relative overflow-hidden rounded-[2rem] border border-linha/15 bg-superficie/60 p-4 transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-400/50 shadow-xl"
             >
               {/* Foto de Capa */}
-              <div className="relative aspect-[16/11] w-full overflow-hidden rounded-2xl bg-ink-950">
+              <div className="relative aspect-[16/11] w-full overflow-hidden rounded-2xl bg-superficie">
                 {imovel.capa?.url ? (
                   <Image
                     src={imovel.capa.url}
@@ -55,10 +55,11 @@ export function VitrineOportunidadesSobre({ empreendimentos }: Props) {
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-mist-500 text-fluid-xs">
+                  <div className="w-full h-full flex items-center justify-center text-tenue text-fluid-xs">
                     Next Home
                   </div>
                 )}
+                {/* Véu sobre a foto de capa (não sobre a página), para legibilidade do selo de status. */}
                 <div className="absolute inset-0 bg-gradient-to-t from-ink-950/80 via-transparent to-transparent" />
 
                 {/* Status Badge */}
@@ -71,26 +72,26 @@ export function VitrineOportunidadesSobre({ empreendimentos }: Props) {
 
               {/* Informações */}
               <div className="pt-4 space-y-2">
-                <h3 className="text-fluid-base font-bold text-mist-50 group-hover:text-brand-300 transition-colors line-clamp-1">
+                <h3 className="text-fluid-base font-bold text-titulo group-hover:text-acento-forte transition-colors line-clamp-1">
                   {imovel.nome}
                 </h3>
-                <p className="text-fluid-xs text-mist-400">
+                <p className="text-fluid-xs text-legenda">
                   📍 {imovel.bairro} — {imovel.cidade}
                 </p>
 
-                <div className="flex items-center justify-between border-t border-white/10 pt-3">
+                <div className="flex items-center justify-between border-t border-linha/10 pt-3">
                   <div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-mist-400 block">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-legenda block">
                       A partir de
                     </span>
-                    <span className="text-fluid-sm font-bold text-white">
+                    <span className="text-fluid-sm font-bold text-titulo">
                       {imovel.precoAPartir ? formatarMoedaBRL(imovel.precoAPartir) : "Consulte"}
                     </span>
                   </div>
 
                   <Link
                     href={`/empreendimentos/${imovel.slug}`}
-                    className="px-3.5 py-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500 text-brand-300 hover:text-white text-fluid-xs font-semibold transition-all border border-brand-400/30"
+                    className="px-3.5 py-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500 text-acento-forte hover:text-white text-fluid-xs font-semibold transition-all border border-brand-400/30"
                   >
                     Conhecer
                   </Link>

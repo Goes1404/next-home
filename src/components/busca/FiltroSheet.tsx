@@ -50,11 +50,13 @@ export function FiltroSheet({
           role="dialog"
           aria-modal="true"
           aria-label="Filtros"
+          // `bg-ink-950/80` literal: véu atrás do modal escurece a página
+          // por trás, em qualquer tema.
           className="fixed inset-0 z-70 flex items-end bg-ink-950/80"
           onClick={() => setAberto(false)}
         >
           <div
-            className="pb-safe max-h-[85svh] w-full overflow-y-auto rounded-t-3xl border-t border-white/10 bg-ink-950 px-5 pt-5 pb-8"
+            className="pb-safe max-h-[85svh] w-full overflow-y-auto rounded-t-3xl border-t border-white/10 bg-superficie px-5 pt-5 pb-8"
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">

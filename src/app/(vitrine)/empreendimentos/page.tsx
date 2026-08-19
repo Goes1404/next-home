@@ -118,7 +118,7 @@ export default async function EmpreendimentosPage({
             <div className="flex items-center gap-2">
               <Link
                 href="/mapa"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-mist-100 text-fluid-xs font-semibold backdrop-blur border border-white/15 transition-all shadow-md"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-corpo text-fluid-xs font-semibold backdrop-blur border border-white/15 transition-all shadow-md"
               >
                 <span>🗺️ Ver no Mapa</span>
               </Link>

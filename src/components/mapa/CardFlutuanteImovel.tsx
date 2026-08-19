@@ -21,9 +21,9 @@ export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
 
   return (
     <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-auto sm:w-96 z-[1000] animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="rounded-2xl border border-white/15 bg-ink-950/85 p-4 backdrop-blur-xl shadow-2xl shadow-black/80">
+      <div className="rounded-2xl border border-white/15 bg-superficie/85 p-4 backdrop-blur-xl shadow-2xl shadow-black/80">
         {/* Header do Card com Botão de Fechar */}
-        <div className="relative mb-3 overflow-hidden rounded-xl aspect-[16/10] bg-ink-900 border border-white/10">
+        <div className="relative mb-3 overflow-hidden rounded-xl aspect-[16/10] bg-superficie border border-white/10">
           {imovel.capa?.url ? (
             <Image
               src={imovel.capa.url}
@@ -33,11 +33,12 @@ export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
               className="object-cover transition-transform duration-500 hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-mist-500 text-fluid-xs">
+            <div className="w-full h-full flex items-center justify-center text-tenue text-fluid-xs">
               Sem foto disponível
             </div>
           )}
 
+          {/* Véu sobre a foto de capa (não sobre a página) para legibilidade dos badges/preço. */}
           <div className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-transparent to-black/30" />
 
           {/* Badges superiores */}
@@ -45,11 +46,13 @@ export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
             <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-brand-500/90 text-white backdrop-blur shadow-md">
               {STATUS_LABEL[imovel.status] || imovel.status}
             </span>
+            {/* Selo sobre a foto de capa: fundo preto sólido, mesmo nos dois temas. */}
             <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/60 text-mist-200 backdrop-blur border border-white/15">
               {TIPO_LABEL[imovel.tipo] || imovel.tipo}
             </span>
           </div>
 
+          {/* Botão sobre a foto de capa: fundo preto sólido, mesmo nos dois temas. */}
           <button
             onClick={onFechar}
             aria-label="Fechar detalhes do imóvel"
@@ -76,11 +79,11 @@ export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
         {/* Informações do Imóvel */}
         <div className="space-y-2">
           <div>
-            <h4 className="text-fluid-sm font-bold text-mist-50 line-clamp-1">{imovel.nome}</h4>
-            <p className="text-fluid-xs text-mist-400 line-clamp-1">
+            <h4 className="text-fluid-sm font-bold text-titulo line-clamp-1">{imovel.nome}</h4>
+            <p className="text-fluid-xs text-legenda line-clamp-1">
               📍 {imovel.bairro} — {imovel.cidade}
             </p>
-            <p className="text-[11px] text-mist-500 truncate mt-0.5">{imovel.endereco}</p>
+            <p className="text-[11px] text-tenue truncate mt-0.5">{imovel.endereco}</p>
           </div>
 
           {/* Ações */}

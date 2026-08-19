@@ -4,6 +4,10 @@ export function SeloSegurancaJuridica() {
   return (
     <section className="relative py-12 sm:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        {/* Painel escuro fixo nos dois temas, de propósito: é uma vitrine de
+            marca (gradiente, blur, texto branco fixo), não uma leitura de
+            página — convertê-lo pediria redesenhar cada estado (selo,
+            badge, texto branco), não só trocar token de cor. */}
         <div className="relative overflow-hidden rounded-[2.5rem] border border-brand-500/30 bg-gradient-to-br from-brand-950/60 via-ink-950 to-ink-900/90 p-8 sm:p-14 backdrop-blur-2xl shadow-2xl">
           {/* Background Decorative Rings */}
           <div className="absolute top-0 right-0 -mt-16 -mr-16 w-80 h-80 rounded-full bg-brand-500/10 blur-3xl pointer-events-none" />

@@ -16,6 +16,10 @@ export function BookDigital({ empreendimento: e }: Props) {
   return (
     <section id="book" className="mx-auto max-w-4xl scroll-mt-24 px-4 pt-16 sm:pt-24">
       <Reveal>
+        {/* Painel escuro fixo nos dois temas, de propósito: é uma vitrine de
+            marca (gradiente, botões e texto branco fixos), não uma leitura
+            de página — convertê-lo pediria redesenhar cada estado, não só
+            trocar token de cor. */}
         <GlassSurface
           preset="painel"
           className="relative overflow-hidden rounded-3xl p-6 sm:p-10 border border-brand-500/30 bg-gradient-to-br from-ink-900/90 via-ink-950/95 to-ink-900/90 shadow-2xl"

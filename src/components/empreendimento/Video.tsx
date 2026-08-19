@@ -15,11 +15,11 @@ export function Video({ videos }: { videos: Midia[] }) {
   return (
     <section id="video" className="mx-auto max-w-3xl scroll-mt-24 px-4 py-16 sm:py-24">
       <Reveal>
-        <h2 className="text-fluid-2xl text-mist-50">Vídeo</h2>
-        <p className="text-fluid-base mt-2 text-mist-300">Conheça o empreendimento em vídeo.</p>
+        <h2 className="text-fluid-2xl text-titulo">Vídeo</h2>
+        <p className="text-fluid-base mt-2 text-apoio">Conheça o empreendimento em vídeo.</p>
       </Reveal>
 
-      <Reveal className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-ink-900/50">
+      <Reveal className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-superficie/50">
         <div className="aspect-video">
           {embedUrl ? (
             <iframe
