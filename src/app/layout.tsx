@@ -6,6 +6,7 @@ import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { AreaTema } from "@/components/tema/AreaTema";
 import { scriptTema } from "@/components/tema/tema";
 import { site } from "@/lib/site";
+import { getTemaEscolhido } from "@/lib/tema";
 import "./globals.css";
 
 const inter = Inter({
@@ -97,6 +98,12 @@ export const metadata: Metadata = {
   },
 };
 
+/*
+ * `themeColor` e `colorScheme` seguem apontando para a leitura escura porque,
+ * hoje, ela é a única que existe de fato — a clara é cópia dela (fase 0 do
+ * plano do tema claro). Quando a fase 2 escrever a paleta clara, isto vira um
+ * `generateViewport` que lê o mesmo cookie de `lib/tema.ts`.
+ */
 export const viewport: Viewport = {
   /*
    * O site público é escuro e é ele que o navegador pinta na barra de
@@ -111,9 +118,20 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+/**
+ * O `data-tema` sai daqui, do servidor, e não de um script no cliente: como
+ * toda rota deste site já é dinâmica, o cookie é lido antes de a resposta
+ * sair, e o HTML chega ao navegador já no tema certo. É o que dispensa o
+ * script de anti-flash e a piscada de tema errado no primeiro paint.
+ *
+ * Sem cookie, nenhum atributo é carimbado — e aí quem manda é a preferência
+ * do sistema operacional, tratada em CSS puro (ver globals.css).
+ */
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const tema = await getTemaEscolhido();
+
   return (
     <html
       lang="pt-BR"

@@ -207,6 +207,21 @@
   --shadow-lift: 0 24px 64px -24px rgb(0 0 0 / 0.7);
 }
 
+/*
+ * Camada semântica — o meio de campo entre a paleta e os componentes.
+ *
+ * A paleta acima é matéria-prima: `mist-300` é um tom, não um papel. Os tokens
+ * abaixo dão o papel, e é por eles que os componentes pedem cor
+ * (`text-apoio`, `bg-superficie`, `border-linha/10`). Assim uma segunda
+ * leitura da mesma paleta — o tema claro — se resolve reapontando dez
+ * variáveis, em vez de reescrever 567 classes.
+ *
+ * Só a COR entra no token; a opacidade continua na utility. É o que faz
+ * `bg-ink-900/50` virar `bg-superficie/50` sem mudar um pixel: o Tailwind
+ * compila os dois para o mesmo `color-mix(in oklab, <cor> 50%, transparent)`.
+ * (Em navegador sem `color-mix` — anterior a 2023 — o token cai no valor
+ * opaco em vez do translúcido: degrada mais chapado, nunca ilegível.)
+ */
 @layer base {
   :root {
     color-scheme: dark;
