@@ -55,6 +55,20 @@
   --color-ink-700: #1a302b;
   --color-ink-600: #2a453f;
 
+  /*
+   * Mist — a escala de texto sobre fundo escuro. Os degraus são usados como
+   * hierarquia: 50 em título, 100/200 em texto forte, 300 em parágrafo de
+   * apoio, 400 em legenda, 500 em rodapé.
+   *
+   * O 300 precisa estar escrito aqui. Ele é o tom mais usado do site (mais de
+   * 50 ocorrências de `text-mist-300`) e, enquanto faltou nesta lista, o
+   * Tailwind 4 completou o buraco da escala sozinho, interpolando em oklch:
+   * saía #d0d6d8 — azulado (matiz ~220 contra os ~170 da família) e com
+   * praticamente o mesmo contraste do 200 (13,5:1 contra 13,8:1). Ou seja, o
+   * parágrafo de apoio nascia tão claro quanto o texto forte, e a hierarquia
+   * de três níveis virava um nível só. O valor abaixo é o ponto médio real
+   * entre 200 e 400, na matiz da família, e devolve o degrau (10,6:1).
+   */
   --color-mist-50: #f6faf9;
   --color-mist-100: #e8f0ee;
   --color-mist-200: #cddad6;

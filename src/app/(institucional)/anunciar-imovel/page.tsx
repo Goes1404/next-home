@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { WhatsappLink } from "@/components/analytics/WhatsappLink";
 import { FormularioProprietario } from "@/components/contato/FormularioProprietario";
 import { GlassSurface } from "@/components/glass/GlassSurface";
+import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
@@ -46,6 +47,11 @@ export default async function AnunciarImovelPage() {
 
   return (
     <main className="flex flex-1 flex-col px-4 pt-32 pb-24">
+      {/* O CTA flutuante saiu do layout do grupo para cada página (ver
+          `(institucional)/layout.tsx`); é `position: fixed`, então fica no
+          mesmo canto da tela esteja onde estiver na árvore. */}
+      <WhatsappCta corretor={corretorAtivo ?? undefined} />
+
       <Reveal className="mx-auto w-full max-w-2xl text-center">
         <div className="text-left">
           <VoltarLink href="/">Início</VoltarLink>

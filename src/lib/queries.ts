@@ -17,6 +17,18 @@ import type {
  * Colunas explícitas no embed de `corretor` (em vez de `corretores(*)`): a
  * tabela ganhou `user_id`/`slug` (login de corretor) que não devem vazar
  * pela API pública de empreendimentos.
+ *
+ * O `!empreendimentos_corretor_id_fkey` no embed não é enfeite: existe no
+ * banco uma tabela de junção `corretor_destaques (empreendimento_slug,
+ * corretor_id)` — criada fora deste repositório, ela não aparece em
+ * `supabase/migrations` nem nos tipos gerados. Com ela, o PostgREST passa a
+ * enxergar DOIS caminhos entre `empreendimentos` e `corretores` (a chave
+ * estrangeira direta e o muitos-para-muitos pela junção) e se recusa a
+ * adivinhar qual usar: toda query com este select passou a responder PGRST201
+ * ("more than one relationship was found"). Como este select alimenta a home,
+ * a listagem, o portfólio, a página de cada empreendimento e a do corretor, o
+ * site inteiro caía no `error.tsx` contra o banco de produção. Nomear a
+ * constraint desfaz o empate.
  */
 
 // `corretores!empreendimentos_corretor_id_fkey`, não só `corretores`: a

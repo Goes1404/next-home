@@ -56,6 +56,24 @@ export function iniciais(nome: string): string {
     .join("");
 }
 
+/**
+ * "5511972207204" → "(11) 97220-7204".
+ *
+ * O banco guarda o WhatsApp do corretor em E.164, formato de máquina. Na
+ * página dele o número também é lido por gente — quem quer salvar o contato
+ * na agenda em vez de abrir a conversa agora —, e ninguém copia um número
+ * grudado de 13 dígitos sem errar. Qualquer coisa fora do padrão brasileiro
+ * de celular volta como veio, com "+" na frente: melhor um número cru do que
+ * um número reformatado errado.
+ */
+export function telefoneBR(e164: string): string {
+  const digitos = e164.replace(/\D/g, "");
+  const brasileiro = /^55(\d{2})(\d{4,5})(\d{4})$/.exec(digitos);
+  if (!brasileiro) return `+${digitos}`;
+  const [, ddd, prefixo, sufixo] = brasileiro;
+  return `(${ddd}) ${prefixo}-${sufixo}`;
+}
+
 const DIAS_PARA_DEIXAR_DE_SER_NOVO = 30;
 
 /** Publicado há pouco tempo — alimenta o selo "novo" da listagem. */

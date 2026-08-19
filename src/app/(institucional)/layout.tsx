@@ -3,7 +3,6 @@ import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { HERO_VIDEO_URL } from "@/lib/site";
 
 /**
@@ -17,11 +16,14 @@ import { HERO_VIDEO_URL } from "@/lib/site";
  * isso nenhuma página abaixo pode envolver header/CTA num ancestral com
  * `transform`.
  *
- * O corretor ativo é resolvido aqui uma vez e desce para o CTA flutuante:
- * mesmo no institucional, quem chegou pelo link de um corretor continua
- * falando com ele.
+ * O CTA flutuante do WhatsApp não mora aqui, e sim em cada página — mesmo
+ * padrão do grupo `(vitrine)`. A página de um corretor é o motivo: ela já tem
+ * o botão dele, nomeado, no alto; um segundo botão flutuante apontando para a
+ * linha geral (ou para o corretor do cookie, que pode ser um colega) duplica a
+ * ação e faz o visitante escolher entre dois WhatsApps na mesma tela sem saber
+ * que são pessoas diferentes. Quem precisa do CTA, monta o seu.
  */
-export default async function InstitucionalLayout({
+export default function InstitucionalLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -33,7 +35,6 @@ export default async function InstitucionalLayout({
   return (
     <GlassBackgroundProvider>
       <HeaderInstitucional />
-      <WhatsappCta corretor={corretorAtivo ?? undefined} />
 
       <div className="fixed inset-0 -z-10 bg-gradient-to-br from-brand-900 via-ink-950 to-ink-950">
         {usaFotoDeFundo ? (

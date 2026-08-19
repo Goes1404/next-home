@@ -9,6 +9,7 @@ import { VoltarLink } from "@/components/ui/VoltarLink";
 import { iniciais } from "@/lib/format";
 import { getCorretorPorSlug } from "@/lib/queries";
 import { linkWhatsappPara, site } from "@/lib/site";
+import type { CorretorPerfil, Empreendimento } from "@/lib/types";
 
 type Params = { slug: string };
 
@@ -19,7 +20,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const corretor = await getCorretorPorSlug(slug);
-  if (!corretor) return {};
+  if (!corretor) return { title: "Corretor não encontrado" };
+
+  // Sem pronome nem "corretor/corretora": o cadastro não guarda gênero e
+  // metade da equipe é de mulheres.
+  const description = `${corretor.nome} atende pela ${site.nomeCompleto} — CRECI ${corretor.creci}. Atuação em ${site.regioes.join(", ")}.`;
 
   const titulo = `${corretor.nome} · Consultor Imobiliário | Next Home`;
   const descricao = corretor.bio
@@ -58,10 +63,47 @@ export async function generateMetadata({
   };
 }
 
+/** Cidades onde ele tem empreendimento hoje, sem repetição. */
+function cidadesDe(empreendimentos: Empreendimento[]): string[] {
+  return [...new Set(empreendimentos.map((e) => e.cidade))].sort();
+}
+
+/**
+ * Texto de apresentação.
+ *
+ * A `bio` é preenchida pelo próprio corretor no painel e, hoje, nenhum dos
+ * perfis tem uma. Sem um substituto, a página abre com um painel de vidro
+ * praticamente vazio — nome, CRECI e dois botões —, que é o oposto do que uma
+ * página de apresentação precisa fazer. O texto abaixo é montado do que o
+ * banco já sabe: quantos empreendimentos ele acompanha e onde.
+ */
+function apresentacao(corretor: CorretorPerfil, empreendimentos: Empreendimento[]) {
+  if (corretor.bio) return corretor.bio;
+
+  const cidades = cidadesDe(empreendimentos);
+  const primeiroNome = corretor.nome.split(" ")[0];
+
+  if (empreendimentos.length === 0) {
+    return `${primeiroNome} atende pela ${site.nomeCompleto}, com CRECI ${corretor.creci} e atuação em ${site.regioes.slice(0, 3).join(", ")} e região. Chame no WhatsApp e conte o que você procura.`;
+  }
+
+  const onde =
+    cidades.length === 1
+      ? cidades[0]
+      : `${cidades.slice(0, -1).join(", ")} e ${cidades.at(-1)}`;
+
+  return `${primeiroNome} acompanha ${empreendimentos.length} empreendimento${empreendimentos.length === 1 ? "" : "s"} em ${onde}, do primeiro contato à entrega das chaves.`;
+}
+
 /**
  * Página do corretor — o "microsite de agente" que a RE/MAX usa, adaptado ao
  * porte da Next Home: quem é, o que ele acompanha hoje, e dois caminhos para
  * falar com ele.
+ *
+ * O cabeçalho é de duas colunas a partir de `sm`: centralizado, o bloco
+ * inteiro (avatar + nome + texto + botões) empurra a lista de empreendimentos
+ * para baixo da dobra em desktop, e a lista é justamente a prova de que ele
+ * trabalha — o que mais convence alguém a chamar.
  *
  * O botão "Ver portfólio completo" leva ao mesmo link pessoal que ele copia no
  * painel (`/portfolio?corretor=<slug>`): a partir dali, todo CTA do site passa
@@ -76,6 +118,27 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
     corretor.whatsapp,
     `Olá, ${corretor.nome}! Vim pelo site da Next Home e quero falar com você.`,
   );
+  const cidades = cidadesDe(empreendimentos);
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    name: corretor.nome,
+    jobTitle: "Corretor de imóveis",
+    identifier: `CRECI ${corretor.creci}`,
+    telephone: `+${corretor.whatsapp}`,
+    url: `${site.url}/corretores/${corretor.slug}`,
+    ...(corretor.fotoUrl ? { image: corretor.fotoUrl } : {}),
+    worksFor: {
+      "@type": "RealEstateAgent",
+      name: site.nomeCompleto,
+      url: site.url,
+    },
+    areaServed: (cidades.length > 0 ? cidades : [...site.regioes]).map((nome) => ({
+      "@type": "Place",
+      name: nome,
+    })),
+  };
 
   const jsonLd = {
     "@context": "https://schema.org",

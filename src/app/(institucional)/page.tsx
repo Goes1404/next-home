@@ -6,7 +6,9 @@ import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimen
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { CtaFinal } from "@/components/home/CtaFinal";
 import { Regioes } from "@/components/home/Regioes";
+import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
 import { enderecoLinha, site } from "@/lib/site";
 
@@ -55,10 +57,11 @@ const CAMINHOS = [
  * detecta o `?corretor=` na raiz e manda direto ao catálogo.
  */
 export default async function HomeInstitucional() {
-  const [todos, regioes, corretores] = await Promise.all([
+  const [todos, regioes, corretores, corretorAtivo] = await Promise.all([
     getEmpreendimentos(),
     getRegioesDisponiveis(),
     getCorretores(),
+    getCorretorAtivo(),
   ]);
 
   const destaques = todos.filter((e) => e.destaque).slice(0, 3);
@@ -95,6 +98,10 @@ export default async function HomeInstitucional() {
         // Montado no servidor a partir de `lib/site.ts`, não de entrada de usuário.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
+      {/* O CTA flutuante deixou de vir do layout do grupo (ver
+          `(institucional)/layout.tsx`) e agora é escolha de cada página. */}
+      <WhatsappCta corretor={corretorAtivo ?? undefined} />
 
       <main className="flex flex-1 flex-col">
         {/* Altura de tela só a partir de `sm`: no telefone o conjunto título +
@@ -190,7 +197,7 @@ export default async function HomeInstitucional() {
             <div className="mx-auto mt-10 grid w-full max-w-4xl gap-4 sm:grid-cols-2">
               {equipe.map((c, i) => (
                 <Reveal key={c.slug} delay={i * 0.08} from="baixo">
-                  <CardCorretor corretor={c} />
+                  <CardCorretor corretor={c} compacto />
                 </Reveal>
               ))}
             </div>

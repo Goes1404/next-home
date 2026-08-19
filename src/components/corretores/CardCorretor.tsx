@@ -2,12 +2,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { iniciais } from "@/lib/format";
+import type { AtuacaoCorretor } from "@/lib/queries";
+import { linkWhatsappPara } from "@/lib/site";
 import type { CorretorPerfil } from "@/lib/types";
 
 /**
- * Corretor na vitrine da equipe. Poucos têm foto cadastrada hoje, então o
- * fallback de iniciais não é caso de borda — é o estado comum, e precisa
- * ficar apresentável.
+ * Corretor na vitrine da equipe.
+ *
+ * Duas decisões guiam este card, e as duas vêm do dado real:
+ *
+ * 1. Quase ninguém tem foto e *ninguém* tem bio preenchida — o fallback de
+ *    iniciais e a linha de atuação (`getAtuacaoPorCorretor`) não são caso de
+ *    borda, são o estado normal. Sem eles o card fica em nome + CRECI, que
+ *    não dá a ninguém como escolher com quem falar.
+ * 2. O WhatsApp é a conversão da página. Ele fica aqui, no card, e não só na
+ *    página de dentro: mandar quem já decidiu abrir mais uma página só para
+ *    achar o mesmo botão é um passo cobrado à toa.
+ *
+ * Como o card tem duas ações (abrir o perfil e chamar no WhatsApp), ele não é
+ * um `<Link>` por fora — HTML não permite âncora dentro de âncora, e um
+ * `onClick` no container deixaria o teclado de fora. O padrão é o do "stretched
+ * link": o nome é o link real, o `after:absolute inset-0` estende a área
+ * clicável dele por todo o card, e o botão de WhatsApp sobe num `z-10` para
+ * ficar por cima dessa camada.
  */
 export function CardCorretor({ corretor }: { corretor: CorretorPerfil }) {
   return (
