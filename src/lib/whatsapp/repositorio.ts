@@ -75,27 +75,35 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
 export type ConversaPersistida = {
   id: string;
   leadId: string | null;
+  telefoneCliente: string;
   botAtivo: boolean;
   pausadoHumanoAte: string | null;
   /** false = aguardando o corretor digitar a palavra-chave neste chat (ver modoBot.ts). */
   liberadoPorPalavraChave: boolean;
+  /** De onde esta conversa nasceu — 'campanha' é quem o disparo em massa criou (ver campaignDispatcher.ts). */
+  origem: "organica" | "campanha";
 };
 
-const SELECT_CONVERSA = "id, lead_id, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave";
+const SELECT_CONVERSA =
+  "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem";
 
 function mapConversa(row: {
   id: string;
   lead_id: string | null;
+  telefone_cliente: string;
   bot_ativo: boolean;
   pausado_humano_ate: string | null;
   liberado_por_palavra_chave: boolean;
+  origem: "organica" | "campanha";
 }): ConversaPersistida {
   return {
     id: row.id,
     leadId: row.lead_id,
+    telefoneCliente: row.telefone_cliente,
     botAtivo: row.bot_ativo,
     pausadoHumanoAte: row.pausado_humano_ate,
     liberadoPorPalavraChave: row.liberado_por_palavra_chave,
+    origem: row.origem,
   };
 }
 
@@ -294,6 +302,51 @@ export async function reservarCotaCampanha(
   }
 
   return { permitido: true };
+}
+
+/**
+ * O cliente respondeu a um disparo de campanha: marca o item da fila como
+ * `respondido` e soma no contador da campanha.
+ *
+ * Só chamado pelo webhook quando `conversa.origem === 'campanha'` — em
+ * conversa orgânica não existe item de fila para achar. Pega o envio
+ * `enviado` mais recente para este telefone (pode haver mais de um se o
+ * mesmo lead entrou em duas campanhas), porque é a esse que a resposta se
+ * refere.
+ */
+export async function marcarRespostaCampanha(telefoneCliente: string): Promise<void> {
+  const supabase = createServiceClient();
+
+  const { data: item } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .select("id, campanha_id")
+    .eq("telefone", telefoneCliente)
+    .eq("status", "enviado")
+    .order("enviado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!item) return;
+
+  await supabase
+    .from("whatsapp_campanhas_fila")
+    .update({ status: "respondido", resposta_em: new Date().toISOString() })
+    .eq("id", item.id);
+
+  // Recontado do zero, não incrementado: a contagem de linhas na fila é a
+  // fonte da verdade, e recalcular dela é imune a corrida entre dois
+  // webhooks concorrentes — incrementar a partir de uma leitura anterior
+  // não seria.
+  const { count } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .select("id", { count: "exact", head: true })
+    .eq("campanha_id", item.campanha_id)
+    .eq("status", "respondido");
+
+  await supabase
+    .from("whatsapp_campanhas")
+    .update({ total_respondidos: count ?? 0 })
+    .eq("id", item.campanha_id);
 }
 
 /**

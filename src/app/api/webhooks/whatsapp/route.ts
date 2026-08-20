@@ -14,6 +14,7 @@ import {
   gravarMensagem,
   historicoRecente,
   liberarConversaPorPalavraChave,
+  marcarRespostaCampanha,
   obterOuCriarConversa,
   pausarBotPorAtendimentoHumano,
   registrarResultadoEnvio,
@@ -191,6 +192,14 @@ export async function POST(req: NextRequest) {
       tipo: ehAudio ? "audio" : "texto",
       midiaUrl: ehAudio ? audioUrlOrBase64 : null,
     });
+
+    // Fecha o loop do disparador: se este telefone recebeu uma campanha e
+    // respondeu, é isso que faz o contador de "Respostas" da campanha
+    // deixar de ser sempre zero. Só vale a consulta em conversa de campanha
+    // — em conversa orgânica não existe item de fila para achar.
+    if (conversa.origem === "campanha") {
+      await marcarRespostaCampanha(sender);
+    }
 
     if (!botDeveResponder(conversa)) {
       return NextResponse.json({ ok: true, action: "bot_pausado_nesta_conversa", sender });

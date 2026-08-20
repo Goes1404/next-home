@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CampanhasManager } from "./CampanhasManager";
+import { listarCampanhas } from "./acoes";
 import { getEmpreendimentos } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CampanhasPainelPage() {
-  const empreendimentos = await getEmpreendimentos();
+  const [empreendimentos, campanhas] = await Promise.all([getEmpreendimentos(), listarCampanhas()]);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -18,7 +19,7 @@ export default async function CampanhasPainelPage() {
         </p>
       </div>
 
-      <CampanhasManager empreendimentos={empreendimentos} />
+      <CampanhasManager empreendimentos={empreendimentos} campanhasIniciais={campanhas} />
     </div>
   );
 }

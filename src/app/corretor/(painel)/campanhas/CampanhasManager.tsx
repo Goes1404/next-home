@@ -1,91 +1,123 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { Empreendimento } from "@/lib/types";
-import { Shield, Building, Download, Rocket, Check } from 'lucide-react';
+import { Shield, Building, Download, Rocket, Check, AlertTriangle, Zap } from "lucide-react";
+import {
+  criarCampanha,
+  gerarPreviewCampanha,
+  processarFilaAgora,
+  type CampanhaListada,
+  type FiltroLeadsCampanha,
+} from "./acoes";
 
 interface Props {
   empreendimentos: Empreendimento[];
+  campanhasIniciais: CampanhaListada[];
 }
 
-interface CampanhaMock {
-  id: string;
-  titulo: string;
-  imovelNome: string;
-  totalLeads: number;
-  enviados: number;
-  respondidos: number;
-  status: "em_andamento" | "concluida" | "pausada";
-  data: string;
-}
+const ROTULO_STATUS: Record<CampanhaListada["status"], string> = {
+  rascunho: "Rascunho",
+  em_andamento: "Enviando Fila",
+  pausada: "Pausada",
+  concluida: "Concluída",
+};
 
-export function CampanhasManager({ empreendimentos }: Props) {
+export function CampanhasManager({ empreendimentos, campanhasIniciais }: Props) {
   const [titulo, setTitulo] = useState("");
-  const [imovelSelecionado, setImovelSelecionado] = useState(empreendimentos[0]?.nome || "");
-  const [filtroLeads, setFiltroLeads] = useState("parados_15d");
+  const [imovelSlug, setImovelSlug] = useState(empreendimentos[0]?.slug ?? "");
+  const [filtroLeads, setFiltroLeads] = useState<FiltroLeadsCampanha>("parados_15d");
   const [mensagemBase, setMensagemBase] = useState(
     "Olá, {nome}! Tudo bem? Lembrei do seu interesse em Alphaville. Acabou de sair uma condição exclusiva na tabela do {imovel}. Gostaria de receber o book digital?",
   );
   const [gerandoPreview, setGerandoPreview] = useState(false);
   const [previewMensagens, setPreviewMensagens] = useState<string[]>([]);
-  const [campanhas, setCampanhas] = useState<CampanhaMock[]>([
-    {
-      id: "camp-1",
-      titulo: "Reativação Lançamento Canvas",
-      imovelNome: "Canvas Alphaville",
-      totalLeads: 48,
-      enviados: 48,
-      respondidos: 19,
-      status: "concluida",
-      data: "Ontem às 14:30",
-    },
-    {
-      id: "camp-2",
-      titulo: "Oportunidades Prontas para Morar",
-      imovelNome: "Lumina Tamboré",
-      totalLeads: 25,
-      enviados: 12,
-      respondidos: 4,
-      status: "em_andamento",
-      data: "Hoje às 10:00",
-    },
-  ]);
+  const [campanhas, setCampanhas] = useState<CampanhaListada[]>(campanhasIniciais);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const [criando, startCriacao] = useTransition();
+  const [processando, startProcessamento] = useTransition();
+
+  const imovelSelecionado = empreendimentos.find((e) => e.slug === imovelSlug) ?? null;
 
   const gerarPreviewIA = () => {
+    setErro(null);
     setGerandoPreview(true);
-    setTimeout(() => {
+    startCriacao(async () => {
+      const resultado = await gerarPreviewCampanha({
+        filtro: filtroLeads,
+        empreendimentoNome: imovelSelecionado?.nome ?? "nossos lançamentos em Alphaville",
+        mensagemBase,
+      });
       setGerandoPreview(false);
-      setPreviewMensagens([
-        `Olá Dr. Marcos! Tudo bem? Lembrei que você buscava 3 suítes em Alphaville. A incorporadora liberou 2 unidades com condição especial no ${imovelSelecionado}. Quer dar uma olhada na planta?`,
-        `Oi Fernanda, como vai? Lembrei do seu interesse em condomínios de alto padrão na região. Surgiu uma oportunidade imperdível no ${imovelSelecionado}. Posso te enviar o material?`,
-        `Olá Rodrigo! Passando para te atualizar sobre o ${imovelSelecionado}: entraram novas condições de pagamento nesta semana. Gostaria de receber o resumo?`,
-      ]);
-    }, 600);
+
+      if ("erro" in resultado) {
+        setErro(resultado.erro);
+        setPreviewMensagens([]);
+        return;
+      }
+      setPreviewMensagens(resultado.mensagens);
+    });
   };
 
   const iniciarDisparo = () => {
     if (!titulo.trim()) {
-      alert("Por favor, dê um título para a campanha.");
+      setErro("Por favor, dê um título para a campanha.");
       return;
     }
 
-    const nova: CampanhaMock = {
-      id: `camp-${Date.now()}`,
-      titulo,
-      imovelNome: imovelSelecionado,
-      totalLeads: 32,
-      enviados: 1,
-      respondidos: 0,
-      status: "em_andamento",
-      data: "Agora mesmo",
-    };
+    setErro(null);
+    startCriacao(async () => {
+      const resultado = await criarCampanha({
+        titulo,
+        empreendimentoId: imovelSelecionado?.id ?? null,
+        empreendimentoNome: imovelSelecionado?.nome ?? "nossos lançamentos em Alphaville",
+        filtro: filtroLeads,
+        mensagemBase,
+      });
 
-    setCampanhas([nova, ...campanhas]);
-    setTitulo("");
-    setPreviewMensagens([]);
-    setFeedback("Campanha iniciada com sucesso! Os envios seguirão a fila com delay seguro de 30-75s.");
-    setTimeout(() => setFeedback(null), 5000);
+      if ("erro" in resultado) {
+        setErro(resultado.erro);
+        return;
+      }
+
+      setCampanhas((prev) => [
+        {
+          id: resultado.campanhaId,
+          titulo,
+          empreendimentoNome: imovelSelecionado?.nome ?? null,
+          totalLeads: resultado.totalLeads,
+          totalEnviados: 0,
+          totalRespondidos: 0,
+          status: "em_andamento",
+          criadoEm: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+      setTitulo("");
+      setPreviewMensagens([]);
+      setFeedback(
+        `Campanha criada para ${resultado.totalLeads} lead(s). Os envios seguem a fila com delay seguro de 30-75s — o cron processa automaticamente, ou clique em "Processar fila agora" para não esperar.`,
+      );
+      setTimeout(() => setFeedback(null), 8000);
+    });
+  };
+
+  const processarAgora = () => {
+    setErro(null);
+    startProcessamento(async () => {
+      const resultado = await processarFilaAgora();
+      if ("erro" in resultado) {
+        setErro(resultado.erro);
+        return;
+      }
+      setFeedback(
+        resultado.processados === 0
+          ? "Nenhum envio pendente no momento — a fila já está em dia ou aguardando o horário agendado."
+          : `Processados ${resultado.processados} envio(s): ${resultado.enviados} entregue(s), ${resultado.erros} com erro.`,
+      );
+      setTimeout(() => setFeedback(null), 8000);
+    });
   };
 
   return (
@@ -93,7 +125,13 @@ export function CampanhasManager({ empreendimentos }: Props) {
       {/* Banner de Feedback */}
       {feedback && (
         <div className="rounded-2xl border border-ok-linha bg-ok-lavado p-4 text-fluid-xs font-semibold text-ok backdrop-blur duration-200">
-           <Check className="inline-block w-5 h-5 align-text-bottom mr-1" />  {feedback}
+          <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> {feedback}
+        </div>
+      )}
+
+      {erro && (
+        <div className="rounded-2xl border border-alerta-linha bg-alerta-lavado p-4 text-fluid-xs font-semibold text-alerta backdrop-blur duration-200">
+          <AlertTriangle className="inline-block w-5 h-5 align-text-bottom mr-1" /> {erro}
         </div>
       )}
 
@@ -132,12 +170,12 @@ export function CampanhasManager({ empreendimentos }: Props) {
               Empreendimento Foco
             </label>
             <select
-              value={imovelSelecionado}
-              onChange={(e) => setImovelSelecionado(e.target.value)}
+              value={imovelSlug}
+              onChange={(e) => setImovelSlug(e.target.value)}
               className="w-full rounded-xl border border-linha-forte bg-campo px-4 py-2.5 text-fluid-sm text-titulo focus:border-acento focus:outline-none cursor-pointer"
             >
               {empreendimentos.map((emp) => (
-                <option key={emp.slug} value={emp.nome}>
+                <option key={emp.slug} value={emp.slug}>
                   {emp.nome} ({emp.bairro})
                 </option>
               ))}
@@ -173,7 +211,10 @@ export function CampanhasManager({ empreendimentos }: Props) {
                   : "border-linha bg-campo text-apoio hover:text-titulo"
               }`}
             >
-              <h4 className="text-fluid-xs font-bold"> <Download className="inline-block w-5 h-5 align-text-bottom mr-1" />  Novos Leads</h4>
+              <h4 className="text-fluid-xs font-bold">
+                {" "}
+                <Download className="inline-block w-5 h-5 align-text-bottom mr-1" /> Novos Leads
+              </h4>
               <p className="text-[11px] text-apoio mt-0.5">Etapa &quot;Novo lead&quot; no funil</p>
             </button>
 
@@ -211,23 +252,28 @@ export function CampanhasManager({ empreendimentos }: Props) {
         {/* Botão de Preview e Disparo */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-linha pt-4">
           <div className="flex items-center gap-2 text-[11px] text-apoio">
-            <span className="text-ok"> <Shield className="inline-block w-5 h-5 align-text-bottom mr-1" />  Proteção Anti-Ban:</span>
-            <span>Envio com delay dinâmico de 30 a 75 segundos.</span>
+            <span className="text-ok">
+              {" "}
+              <Shield className="inline-block w-5 h-5 align-text-bottom mr-1" /> Proteção Anti-Ban:
+            </span>
+            <span>Envio com delay dinâmico de 30 a 75 segundos, só em horário comercial.</span>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={gerarPreviewIA}
-              disabled={gerandoPreview}
-              className="px-4 py-2 rounded-xl bg-vidro-forte hover:bg-vidro-mais text-titulo text-fluid-xs font-semibold transition-colors border border-linha-forte cursor-pointer"
+              disabled={gerandoPreview || criando}
+              className="px-4 py-2 rounded-xl bg-vidro-forte hover:bg-vidro-mais text-titulo text-fluid-xs font-semibold transition-colors border border-linha-forte cursor-pointer disabled:opacity-60"
             >
               {gerandoPreview ? "Gerando Variações..." : "👁️ Ver Variações da IA"}
             </button>
             <button
               onClick={iniciarDisparo}
-              className="px-6 py-2 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all shadow-md shadow-acento/20 cursor-pointer"
+              disabled={criando}
+              className="px-6 py-2 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all shadow-md shadow-acento/20 cursor-pointer disabled:opacity-60"
             >
-               <Rocket className="inline-block w-5 h-5 align-text-bottom mr-1" />  Iniciar Campanha Segura
+              <Rocket className="inline-block w-5 h-5 align-text-bottom mr-1" />
+              {criando ? "Criando..." : "Iniciar Campanha Segura"}
             </button>
           </div>
         </div>
@@ -252,16 +298,32 @@ export function CampanhasManager({ empreendimentos }: Props) {
 
       {/* 2. Histórico e Monitoramento de Campanhas */}
       <div className="rounded-3xl border border-linha bg-superficie p-6 sm:p-8 backdrop-blur shadow-xl space-y-6">
-        <div>
-          <h3 className="text-fluid-base font-bold text-titulo">Histórico de Campanhas</h3>
-          <p className="text-fluid-xs text-apoio">
-            Acompanhe o andamento da fila de envios e a taxa de resposta dos clientes.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h3 className="text-fluid-base font-bold text-titulo">Histórico de Campanhas</h3>
+            <p className="text-fluid-xs text-apoio">
+              Acompanhe o andamento da fila de envios e a taxa de resposta dos clientes.
+            </p>
+          </div>
+          <button
+            onClick={processarAgora}
+            disabled={processando}
+            className="px-4 py-2 rounded-xl bg-vidro-forte hover:bg-vidro-mais text-titulo text-fluid-xs font-semibold transition-colors border border-linha-forte cursor-pointer disabled:opacity-60 shrink-0"
+          >
+            <Zap className="inline-block w-4 h-4 align-text-bottom mr-1" />
+            {processando ? "Processando..." : "Processar fila agora"}
+          </button>
         </div>
+
+        {campanhas.length === 0 && (
+          <p className="text-fluid-xs text-tenue py-6 text-center">
+            Nenhuma campanha ainda. Crie a primeira acima.
+          </p>
+        )}
 
         <div className="divide-y divide-linha">
           {campanhas.map((c) => {
-            const perc = Math.round((c.enviados / c.totalLeads) * 100);
+            const perc = c.totalLeads > 0 ? Math.round((c.totalEnviados / c.totalLeads) * 100) : 0;
             return (
               <div key={c.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
@@ -271,14 +333,18 @@ export function CampanhasManager({ empreendimentos }: Props) {
                       className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
                         c.status === "concluida"
                           ? "bg-ok-lavado border-ok-linha text-ok"
-                          : "bg-alerta-lavado border-alerta-linha text-alerta animate-pulse"
+                          : c.status === "em_andamento"
+                          ? "bg-alerta-lavado border-alerta-linha text-alerta animate-pulse"
+                          : "bg-vidro border-linha text-apoio"
                       }`}
                     >
-                      {c.status === "concluida" ? "Concluída" : "Enviando Fila"}
+                      {ROTULO_STATUS[c.status]}
                     </span>
                   </div>
                   <p className="text-fluid-xs text-apoio">
-                     <Building className="inline-block w-5 h-5 align-text-bottom mr-1" />  {c.imovelNome} • {c.data}
+                    <Building className="inline-block w-5 h-5 align-text-bottom mr-1" />{" "}
+                    {c.empreendimentoNome ?? "Sem empreendimento vinculado"} •{" "}
+                    {new Date(c.criadoEm).toLocaleString("pt-BR")}
                   </p>
                 </div>
 
@@ -286,13 +352,14 @@ export function CampanhasManager({ empreendimentos }: Props) {
                   <div>
                     <span className="text-tenue block text-[10px]">Progresso</span>
                     <span className="font-bold text-titulo">
-                      {c.enviados}/{c.totalLeads} ({perc}%)
+                      {c.totalEnviados}/{c.totalLeads} ({perc}%)
                     </span>
                   </div>
                   <div>
                     <span className="text-tenue block text-[10px]">Respostas</span>
                     <span className="font-bold text-ok">
-                      {c.respondidos} leads ({Math.round((c.respondidos / (c.enviados || 1)) * 100)}%)
+                      {c.totalRespondidos} leads (
+                      {Math.round((c.totalRespondidos / (c.totalEnviados || 1)) * 100)}%)
                     </span>
                   </div>
                 </div>
