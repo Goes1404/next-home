@@ -78,3 +78,47 @@ export async function notificarCorretorLeadQuente(
 
   return { ...resultado, mensagemFormatada };
 }
+
+export interface ParametrosAtualizacaoDossie {
+  nomeCliente: string;
+  telefoneCliente: string;
+  /** Já formatado por `resumirMudancasDossie` (dossierExtractor.ts) — uma ou mais linhas com emoji. */
+  resumoMudancas: string;
+}
+
+/**
+ * Nota curta de acompanhamento — não é o alerta de lead quente (aquele pede
+ * ação imediata); este é só "a conversa andou, aqui está o que mudou". Só
+ * texto — separado do envio para poder ser testado sem rede, mesma razão de
+ * `formatarAlertaCorretor`.
+ */
+export function formatarAtualizacaoDossie(params: ParametrosAtualizacaoDossie): string {
+  return `📊 *Atualização do atendimento*
+
+*${params.nomeCliente}* (${params.telefoneCliente}) avançou na conversa:
+
+${params.resumoMudancas}
+
+A assistente continua conduzindo — isto é só para você acompanhar.`;
+}
+
+/** Envia a nota de acompanhamento. Mesmo contrato de honestidade de `notificarCorretorLeadQuente`. */
+export async function notificarAtualizacaoCorretor(
+  params: ParametrosAtualizacaoDossie & { instanceName: string; telefoneCorretor: string },
+): Promise<ResultadoEnvio & { mensagemFormatada: string }> {
+  const mensagemFormatada = formatarAtualizacaoDossie(params);
+
+  const resultado = await enviarMensagemWhatsapp({
+    instanceName: params.instanceName,
+    telefone: params.telefoneCorretor,
+    texto: mensagemFormatada,
+  });
+
+  if (!resultado.enviado) {
+    console.warn(
+      `Atualização de dossiê NÃO enviada ao corretor (${resultado.motivo}): ${resultado.detalhe ?? ""}`,
+    );
+  }
+
+  return { ...resultado, mensagemFormatada };
+}

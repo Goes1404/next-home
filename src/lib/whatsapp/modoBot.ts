@@ -113,3 +113,46 @@ export const ROTULO_MODO: Record<ModoBotWhatsapp, string> = {
   co_piloto_3min: `Co-piloto (entra após ${MINUTOS_COPILOTO} min de silêncio seu)`,
   desativado: "Desligada",
 };
+
+/**
+ * Ativação por palavra-chave manual do corretor.
+ *
+ * Complementa (não substitui) `decidirPorModo`: o modo decide QUANDO a IA
+ * pode falar; a palavra-chave decide SE ela já foi autorizada a entrar
+ * nesta conversa específica. Um corretor que atende pessoalmente do celular
+ * e, em algum ponto, digita a frase combinada está dizendo "pode assumir
+ * daqui" — sem isso, o WhatsApp não tem outro jeito de diferenciar "estou
+ * respondendo pessoalmente" de "pode voltar a responder por mim".
+ */
+
+/** Minúsculas e sem acento — "Pode Ativar" e "pode ativar" não podem ser sinais diferentes. */
+function normalizarParaComparacao(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+/** A mensagem (enviada pelo corretor) contém a palavra-chave de ativação cadastrada? */
+export function contemPalavraChave(mensagem: string, palavraChave: string | null | undefined): boolean {
+  const chave = palavraChave?.trim();
+  if (!chave) return false;
+  return normalizarParaComparacao(mensagem).includes(normalizarParaComparacao(chave));
+}
+
+/**
+ * Se esta conversa precisa aguardar a palavra-chave antes da IA poder
+ * responder ao cliente.
+ *
+ * Só existe trava quando o corretor cadastrou uma palavra-chave — sem uma
+ * configurada, o recurso está desligado e ninguém fica esperando por nada.
+ * Conversa de campanha (disparo em massa pelo próprio CRM) nunca exige
+ * palavra-chave: quem inicia o contato em massa já decidiu que a IA
+ * participa.
+ */
+export function exigePalavraChave(params: {
+  palavraChaveConfigurada: string | null | undefined;
+  origemConversa: "organica" | "campanha";
+}): boolean {
+  return Boolean(params.palavraChaveConfigurada?.trim()) && params.origemConversa !== "campanha";
+}

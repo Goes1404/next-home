@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { bloqueadoAtePor, deveAbrirDisjuntor, limiteDiarioCampanha, diasDesdeConexao } from "./antiBan";
+import { exigePalavraChave } from "./modoBot";
 import type { DossieClienteIA } from "./types";
 
 /**
@@ -23,6 +24,8 @@ export type InstanciaResolvida = {
   tomVoz: string;
   modoBot: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado";
   webhookSecret: string | null;
+  /** Frase que o corretor digita no próprio chat para "ligar" a IA. Nula = recurso desligado. */
+  palavraChaveAtivacao: string | null;
 };
 
 /**
@@ -38,7 +41,9 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret")
+    .select(
+      "id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret, palavra_chave_ativacao",
+    )
     .eq("instance_name", instanceName)
     .maybeSingle();
 
@@ -63,6 +68,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
     tomVoz: data.tom_voz,
     modoBot: data.modo_bot,
     webhookSecret: data.webhook_secret,
+    palavraChaveAtivacao: data.palavra_chave_ativacao,
   };
 }
 
@@ -71,31 +77,47 @@ export type ConversaPersistida = {
   leadId: string | null;
   botAtivo: boolean;
   pausadoHumanoAte: string | null;
+  /** false = aguardando o corretor digitar a palavra-chave neste chat (ver modoBot.ts). */
+  liberadoPorPalavraChave: boolean;
 };
+
+const SELECT_CONVERSA = "id, lead_id, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave";
+
+function mapConversa(row: {
+  id: string;
+  lead_id: string | null;
+  bot_ativo: boolean;
+  pausado_humano_ate: string | null;
+  liberado_por_palavra_chave: boolean;
+}): ConversaPersistida {
+  return {
+    id: row.id,
+    leadId: row.lead_id,
+    botAtivo: row.bot_ativo,
+    pausadoHumanoAte: row.pausado_humano_ate,
+    liberadoPorPalavraChave: row.liberado_por_palavra_chave,
+  };
+}
 
 /** Uma conversa por (corretor, telefone) — o `unique` da 0018 garante isso. */
 export async function obterOuCriarConversa(params: {
   corretorId: string;
   telefoneCliente: string;
   nomeCliente?: string | null;
+  /** Palavra-chave cadastrada na instância — decide se a conversa NASCE aguardando ativação. */
+  palavraChaveConfigurada?: string | null;
+  origem?: "organica" | "campanha";
 }): Promise<ConversaPersistida | null> {
   const supabase = createServiceClient();
 
   const { data: existente } = await supabase
     .from("whatsapp_conversas")
-    .select("id, lead_id, bot_ativo, pausado_humano_ate")
+    .select(SELECT_CONVERSA)
     .eq("corretor_id", params.corretorId)
     .eq("telefone_cliente", params.telefoneCliente)
     .maybeSingle();
 
-  if (existente) {
-    return {
-      id: existente.id,
-      leadId: existente.lead_id,
-      botAtivo: existente.bot_ativo,
-      pausadoHumanoAte: existente.pausado_humano_ate,
-    };
-  }
+  if (existente) return mapConversa(existente);
 
   // Sem conversa ainda: tenta amarrar num lead que já exista com este
   // telefone, para o dossiê cair no mesmo card do funil em vez de criar
@@ -109,6 +131,12 @@ export async function obterOuCriarConversa(params: {
     .limit(1)
     .maybeSingle();
 
+  const origem = params.origem ?? "organica";
+  const precisaDePalavraChave = exigePalavraChave({
+    palavraChaveConfigurada: params.palavraChaveConfigurada,
+    origemConversa: origem,
+  });
+
   const { data: criada, error } = await supabase
     .from("whatsapp_conversas")
     .insert({
@@ -116,18 +144,31 @@ export async function obterOuCriarConversa(params: {
       telefone_cliente: params.telefoneCliente,
       nome_cliente: params.nomeCliente ?? null,
       lead_id: lead?.id ?? null,
+      origem,
+      liberado_por_palavra_chave: !precisaDePalavraChave,
     })
-    .select("id, lead_id, bot_ativo, pausado_humano_ate")
+    .select(SELECT_CONVERSA)
     .single();
 
   if (error || !criada) return null;
 
-  return {
-    id: criada.id,
-    leadId: criada.lead_id,
-    botAtivo: criada.bot_ativo,
-    pausadoHumanoAte: criada.pausado_humano_ate,
-  };
+  return mapConversa(criada);
+}
+
+/**
+ * O corretor digitou a palavra-chave combinada no próprio chat: a IA está
+ * autorizada a assumir esta conversa a partir de agora.
+ *
+ * Diferente de `pausarBotPorAtendimentoHumano`: esta mensagem específica é
+ * o sinal de entrega, não de "estou cuidando pessoalmente" — por isso não
+ * grava pausa nenhuma, só derruba a trava de espera.
+ */
+export async function liberarConversaPorPalavraChave(conversaId: string): Promise<void> {
+  const supabase = createServiceClient();
+  await supabase
+    .from("whatsapp_conversas")
+    .update({ liberado_por_palavra_chave: true })
+    .eq("id", conversaId);
 }
 
 export async function gravarMensagem(params: {
@@ -200,6 +241,7 @@ export async function ultimaFalaDoCorretor(conversaId: string): Promise<string |
 export function botDeveResponder(conversa: ConversaPersistida): boolean {
   if (!conversa.botAtivo) return false;
   if (conversa.pausadoHumanoAte && new Date(conversa.pausadoHumanoAte) > new Date()) return false;
+  if (!conversa.liberadoPorPalavraChave) return false;
   return true;
 }
 
@@ -292,6 +334,43 @@ export async function registrarResultadoEnvio(
         : {}),
     })
     .eq("id", instanciaId);
+}
+
+/**
+ * O dossiê como estava ANTES desta mensagem — buscar antes de `salvarDossie`
+ * sobrescrever é o que permite ao webhook saber o que mudou de fato na
+ * conversa (ver `resumirMudancasDossie` em dossierExtractor.ts) e mandar ao
+ * corretor uma atualização incremental, em vez de só o alerta único de lead
+ * quente.
+ */
+export async function buscarDossieAtual(leadId: string): Promise<DossieClienteIA | null> {
+  const supabase = createServiceClient();
+
+  const { data } = await supabase
+    .from("lead_observacoes_ia")
+    .select("*")
+    .eq("lead_id", leadId)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    leadId: data.lead_id,
+    orcamentoMin: data.orcamento_min,
+    orcamentoMax: data.orcamento_max,
+    formaPagamento: data.forma_pagamento,
+    perfilFamiliar: data.perfil_familiar,
+    urgenciaMudanca: data.urgencia_mudanca,
+    exigenciasEspecificas: Array.isArray(data.exigencias_especificas) ? data.exigencias_especificas : [],
+    objecoesIdentificadas: Array.isArray(data.objecoes_identificadas) ? data.objecoes_identificadas : [],
+    temperaturaScore: data.temperatura_score,
+    temperaturaLabel: data.temperatura_label,
+    resumoExecutivo: data.resumo_executivo,
+    proximoPassoSugerido: data.proximo_passo_sugerido,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 }
 
 /** Um dossiê por lead (`unique` na 0018) — cada análise substitui a anterior. */

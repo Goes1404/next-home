@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { pareceRecusaDeTranscricao } from "./audioTranscriber";
-import { MINUTOS_COPILOTO, decidirPorModo, dentroDoExpediente } from "./modoBot";
+import {
+  MINUTOS_COPILOTO,
+  contemPalavraChave,
+  decidirPorModo,
+  dentroDoExpediente,
+  exigePalavraChave,
+} from "./modoBot";
 
 /** Datas fixas em UTC; o módulo converte para America/Sao_Paulo (UTC-3). */
 const QUARTA_14H_BRT = new Date("2026-08-19T17:00:00Z");
@@ -83,6 +89,35 @@ describe("Modo do bot — decisão por modo", () => {
 
   it("data inválida não deixa o bot mudo", () => {
     expect(decidirPorModo("co_piloto_3min", { ultimaFalaCorretorEm: "nem-data" }).pode).toBe(true);
+  });
+});
+
+describe("Ativação por palavra-chave", () => {
+  it("reconhece a palavra-chave sem se importar com maiúscula ou acento", () => {
+    expect(contemPalavraChave("Pode Continuar, obrigado!", "pode continuar")).toBe(true);
+    expect(contemPalavraChave("já pôde continuar com o atendimento", "PODE CONTINUAR")).toBe(true);
+  });
+
+  it("não reconhece quando a frase não está presente", () => {
+    expect(contemPalavraChave("Vou almoçar, já volto", "pode continuar")).toBe(false);
+  });
+
+  it("nunca ativa quando não há palavra-chave cadastrada", () => {
+    expect(contemPalavraChave("pode continuar", null)).toBe(false);
+    expect(contemPalavraChave("pode continuar", undefined)).toBe(false);
+    expect(contemPalavraChave("pode continuar", "   ")).toBe(false);
+  });
+
+  it("só exige palavra-chave quando há uma cadastrada e a conversa é orgânica", () => {
+    expect(
+      exigePalavraChave({ palavraChaveConfigurada: "pode continuar", origemConversa: "organica" }),
+    ).toBe(true);
+    expect(exigePalavraChave({ palavraChaveConfigurada: null, origemConversa: "organica" })).toBe(
+      false,
+    );
+    expect(
+      exigePalavraChave({ palavraChaveConfigurada: "pode continuar", origemConversa: "campanha" }),
+    ).toBe(false);
   });
 });
 

@@ -717,6 +717,7 @@ export type Database = {
           nome_assistente: string
           tom_voz: string
           webhook_secret: string | null
+          palavra_chave_ativacao: string | null
           conectado_em: string | null
           envios_campanha_data: string | null
           envios_campanha_contador: number
@@ -736,6 +737,7 @@ export type Database = {
           nome_assistente?: string
           tom_voz?: string
           webhook_secret?: string | null
+          palavra_chave_ativacao?: string | null
           conectado_em?: string | null
           envios_campanha_data?: string | null
           envios_campanha_contador?: number
@@ -755,6 +757,7 @@ export type Database = {
           nome_assistente?: string
           tom_voz?: string
           webhook_secret?: string | null
+          palavra_chave_ativacao?: string | null
           conectado_em?: string | null
           envios_campanha_data?: string | null
           envios_campanha_contador?: number
@@ -774,6 +777,8 @@ export type Database = {
           nome_cliente: string | null
           bot_ativo: boolean
           pausado_humano_ate: string | null
+          origem: "organica" | "campanha"
+          liberado_por_palavra_chave: boolean
           ultima_mensagem: string | null
           ultima_interacao_em: string
           created_at: string
@@ -786,6 +791,8 @@ export type Database = {
           nome_cliente?: string | null
           bot_ativo?: boolean
           pausado_humano_ate?: string | null
+          origem?: "organica" | "campanha"
+          liberado_por_palavra_chave?: boolean
           ultima_mensagem?: string | null
           ultima_interacao_em?: string
           created_at?: string
@@ -798,6 +805,8 @@ export type Database = {
           nome_cliente?: string | null
           bot_ativo?: boolean
           pausado_humano_ate?: string | null
+          origem?: "organica" | "campanha"
+          liberado_por_palavra_chave?: boolean
           ultima_mensagem?: string | null
           ultima_interacao_em?: string
           created_at?: string

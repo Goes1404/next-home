@@ -17,7 +17,9 @@ export default async function WhatsappPainelPage() {
   const supabase = await createClient();
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("nome_assistente, tom_voz, modo_bot, status_conexao, telefone_conectado")
+    .select(
+      "nome_assistente, tom_voz, modo_bot, status_conexao, telefone_conectado, palavra_chave_ativacao",
+    )
     .eq("corretor_id", corretor.id)
     .maybeSingle();
 
@@ -40,6 +42,7 @@ export default async function WhatsappPainelPage() {
                 modoBot: instancia.modo_bot as ModoBotWhatsapp,
                 statusConexao: instancia.status_conexao as StatusConexaoWhatsapp,
                 telefoneConectado: instancia.telefone_conectado,
+                palavraChaveAtivacao: instancia.palavra_chave_ativacao,
               }
             : null
         }

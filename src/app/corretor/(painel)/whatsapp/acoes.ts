@@ -91,6 +91,8 @@ export async function salvarConfiguracaoWhatsapp(params: {
   nomeAssistente: string;
   tomVoz: TomVozBot;
   modoBot: ModoBotWhatsapp;
+  /** Frase que, digitada pelo próprio corretor no chat, "liga" a IA na conversa. Vazio = recurso desligado. */
+  palavraChaveAtivacao?: string;
 }): Promise<{ ok?: string; erro?: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
@@ -98,6 +100,11 @@ export async function salvarConfiguracaoWhatsapp(params: {
   const nome = params.nomeAssistente.trim();
   if (nome.length < 2 || nome.length > 40) {
     return { erro: "O nome da assistente precisa ter entre 2 e 40 caracteres." };
+  }
+
+  const palavraChave = params.palavraChaveAtivacao?.trim() || null;
+  if (palavraChave && palavraChave.length < 3) {
+    return { erro: "A palavra-chave precisa ter pelo menos 3 caracteres, para não disparar por acaso." };
   }
 
   const supabase = await createClient();
@@ -110,6 +117,7 @@ export async function salvarConfiguracaoWhatsapp(params: {
         nome_assistente: nome,
         tom_voz: params.tomVoz,
         modo_bot: params.modoBot,
+        palavra_chave_ativacao: palavraChave,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "corretor_id" },

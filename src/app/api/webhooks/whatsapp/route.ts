@@ -4,14 +4,16 @@ import { getEmpreendimentos } from "@/lib/queries";
 import { gerarRespostaIA } from "@/lib/whatsapp/aiAgent";
 import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
 import { dividirEmMensagens } from "@/lib/whatsapp/chunking";
-import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
+import { extrairDossieCliente, resumirMudancasDossie } from "@/lib/whatsapp/dossierExtractor";
 import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
-import { notificarCorretorLeadQuente } from "@/lib/whatsapp/brokerNotifier";
+import { notificarAtualizacaoCorretor, notificarCorretorLeadQuente } from "@/lib/whatsapp/brokerNotifier";
 import { enviarMensagemWhatsapp, enviarMidiaWhatsapp, enviarPresencaDigitando } from "@/lib/whatsapp/provider";
 import {
   botDeveResponder,
+  buscarDossieAtual,
   gravarMensagem,
   historicoRecente,
+  liberarConversaPorPalavraChave,
   obterOuCriarConversa,
   pausarBotPorAtendimentoHumano,
   registrarResultadoEnvio,
@@ -20,7 +22,7 @@ import {
   ultimaFalaDoCorretor,
   type InstanciaResolvida,
 } from "@/lib/whatsapp/repositorio";
-import { decidirPorModo } from "@/lib/whatsapp/modoBot";
+import { contemPalavraChave, decidirPorModo } from "@/lib/whatsapp/modoBot";
 
 export const runtime = "nodejs";
 
@@ -148,14 +150,23 @@ export async function POST(req: NextRequest) {
       corretorId: instancia.corretorId,
       telefoneCliente: sender,
       nomeCliente: payload.senderName || null,
+      palavraChaveConfigurada: instancia.palavraChaveAtivacao,
     });
 
     if (!conversa) {
       return NextResponse.json({ ok: false, error: "Falha ao registrar a conversa." }, { status: 500 });
     }
 
-    // O corretor respondeu do celular dele: registra a fala e silencia a IA
-    // nesta conversa — gravado no banco, não só devolvido no JSON.
+    // O corretor respondeu do celular dele: registra a fala. Duas leituras
+    // possíveis para o que vem a seguir — e são mutuamente exclusivas:
+    //
+    //   1. A mensagem contém a palavra-chave cadastrada: é o sinal
+    //      combinado de "pode assumir" (ver modoBot.ts). Libera a conversa
+    //      e NÃO pausa — esta mensagem específica não é "estou atendendo
+    //      pessoalmente", é a entrega deliberada para a IA.
+    //   2. Qualquer outra mensagem do corretor: continua pausando a IA por
+    //      24h nesta conversa, como sempre — ele está atendendo por conta
+    //      própria e a IA não pode responder por cima.
     if (fromMe) {
       await gravarMensagem({
         conversaId: conversa.id,
@@ -163,8 +174,13 @@ export async function POST(req: NextRequest) {
         conteudo: text,
         tipo: ehAudio ? "audio" : "texto",
       });
-      await pausarBotPorAtendimentoHumano(conversa.id);
 
+      if (contemPalavraChave(text, instancia.palavraChaveAtivacao)) {
+        await liberarConversaPorPalavraChave(conversa.id);
+        return NextResponse.json({ ok: true, action: "bot_ativado_por_palavra_chave", sender });
+      }
+
+      await pausarBotPorAtendimentoHumano(conversa.id);
       return NextResponse.json({ ok: true, action: "pausa_bot_humano_registrada", sender });
     }
 
@@ -290,11 +306,19 @@ export async function POST(req: NextRequest) {
       conteudo: textoParaEnviar,
     });
 
+    // Busca o dossiê ANTES de sobrescrever: é a única forma de saber o que
+    // esta mensagem mudou de fato (ver resumirMudancasDossie), em vez de
+    // só o retrato estático de agora.
+    const dossieAnterior = conversa.leadId ? await buscarDossieAtual(conversa.leadId) : null;
     const dossie = await extrairDossieCliente(text, conversa.leadId ?? sender);
     if (conversa.leadId) {
       await salvarDossie(conversa.leadId, dossie);
     }
 
+    // Duas classes de aviso ao corretor, nunca as duas juntas na mesma
+    // mensagem: o alerta grande pede ação imediata (lead quente, visita,
+    // pedido de humano); a nota pequena é só "a conversa andou, aqui está o
+    // que mudou" — o feedback contínuo do atendimento em curso.
     let alerta: { enviado: boolean; motivo?: string } = { enviado: false };
     if (dossie.temperaturaScore >= 75 || respostaIA.sugerirVisita || respostaIA.transferirHumano) {
       const resultadoAlerta = await notificarCorretorLeadQuente({
@@ -313,6 +337,18 @@ export async function POST(req: NextRequest) {
           : "lead_quente_score_alto",
       });
       alerta = { enviado: resultadoAlerta.enviado, motivo: resultadoAlerta.motivo };
+    } else {
+      const mudancas = resumirMudancasDossie(dossieAnterior, dossie);
+      if (mudancas) {
+        const resultadoAtualizacao = await notificarAtualizacaoCorretor({
+          instanceName: instancia.instanceName,
+          telefoneCorretor: instancia.whatsappCorretor,
+          nomeCliente: payload.senderName || "Cliente WhatsApp",
+          telefoneCliente: sender,
+          resumoMudancas: mudancas,
+        });
+        alerta = { enviado: resultadoAtualizacao.enviado, motivo: resultadoAtualizacao.motivo };
+      }
     }
 
     return NextResponse.json({

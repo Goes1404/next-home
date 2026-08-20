@@ -2,14 +2,19 @@ import { describe, expect, it } from "vitest";
 import { construirPromptSistema, type ContextoAtendimento } from "./aiAgent";
 import { formatarExemplosFewShot, type ExemploConvertido } from "./aprendizadoContinuo";
 import { classificarTamanho, dividirEmMensagens } from "./chunking";
-import { extrairDossieCliente } from "./dossierExtractor";
+import { extrairDossieCliente, resumirMudancasDossie } from "./dossierExtractor";
+import type { DossieClienteIA } from "./types";
 import {
   gerarMensagensCampanhaPersonalizadas,
   INTERVALO_MINIMO_SEGUNDOS,
   INTERVALO_MAXIMO_SEGUNDOS,
 } from "./campaignQueue";
 import { transcreverAudioWhatsapp } from "./audioTranscriber";
-import { formatarAlertaCorretor, notificarCorretorLeadQuente } from "./brokerNotifier";
+import {
+  formatarAlertaCorretor,
+  formatarAtualizacaoDossie,
+  notificarCorretorLeadQuente,
+} from "./brokerNotifier";
 import { enviarMensagemWhatsapp, provedorConfigurado } from "./provider";
 import type { Empreendimento } from "@/lib/types";
 
@@ -109,6 +114,24 @@ describe("Agente IA — prompt com RAG do catálogo", () => {
 
     expect(prompt).toContain("EXEMPLOS REAIS DE CONVERSAS QUE CONVERTERAM");
     expect(prompt).toContain("Quero agendar visita");
+  });
+
+  it("instrui a não anunciar transferência para humano nem se identificar como IA por conta própria", () => {
+    const contexto: ContextoAtendimento = {
+      nomeCorretor: "Carlos Silva",
+      creciCorretor: "123456-F",
+      telefoneCorretor: "5511999998888",
+      nomeAssistente: "Sofia",
+      tomVoz: "consultivo_alto_padrao",
+      catalogo: [IMOVEL_MOCK],
+      historicoMensagens: [],
+    };
+
+    const prompt = construirPromptSistema(contexto);
+
+    expect(prompt).toMatch(/nunca diga.*vou avisar o corretor/i);
+    expect(prompt).toMatch(/direta e explícita/i);
+    expect(prompt).not.toMatch(/entrará em contato/i);
   });
 
   it("não menciona exemplos few-shot quando não há histórico de conversão", () => {
@@ -303,6 +326,81 @@ describe("Dossiê do cliente", () => {
     expect(dossie).toHaveProperty("temperaturaLabel");
     expect(dossie).toHaveProperty("resumoExecutivo");
     expect(dossie.exigenciasEspecificas).toBeInstanceOf(Array);
+  });
+});
+
+const DOSSIE_BASE: DossieClienteIA = {
+  id: "dossie-1",
+  leadId: "lead-1",
+  orcamentoMin: null,
+  orcamentoMax: null,
+  formaPagamento: null,
+  perfilFamiliar: null,
+  urgenciaMudanca: null,
+  exigenciasEspecificas: [],
+  objecoesIdentificadas: [],
+  temperaturaScore: 50,
+  temperaturaLabel: "morno",
+  resumoExecutivo: "Lead em atendimento inicial.",
+  proximoPassoSugerido: null,
+  createdAt: "2026-08-01T00:00:00Z",
+  updatedAt: "2026-08-01T00:00:00Z",
+};
+
+describe("Feedback contínuo ao corretor — diff de dossiê", () => {
+  it("aponta a primeira leitura de temperatura quando não havia dossiê anterior", () => {
+    const resumo = resumirMudancasDossie(null, DOSSIE_BASE);
+    expect(resumo).toContain("morno");
+  });
+
+  it("não aponta nada quando nada relevante mudou entre duas leituras iguais", () => {
+    const resumo = resumirMudancasDossie(DOSSIE_BASE, { ...DOSSIE_BASE });
+    expect(resumo).toBeNull();
+  });
+
+  it("aponta subida de temperatura", () => {
+    const novo: DossieClienteIA = { ...DOSSIE_BASE, temperaturaScore: 80, temperaturaLabel: "quente" };
+    const resumo = resumirMudancasDossie(DOSSIE_BASE, novo);
+    expect(resumo).toContain("morno");
+    expect(resumo).toContain("quente");
+  });
+
+  it("aponta orçamento identificado pela primeira vez", () => {
+    const novo: DossieClienteIA = { ...DOSSIE_BASE, orcamentoMin: 1_200_000, orcamentoMax: 1_500_000 };
+    const resumo = resumirMudancasDossie(DOSSIE_BASE, novo);
+    expect(resumo).toContain("1.200.000");
+    expect(resumo).toContain("1.500.000");
+  });
+
+  it("não repete o orçamento se ele já era conhecido antes", () => {
+    const anterior: DossieClienteIA = { ...DOSSIE_BASE, orcamentoMin: 1_000_000 };
+    const novo: DossieClienteIA = { ...DOSSIE_BASE, orcamentoMin: 1_000_000, temperaturaScore: 50 };
+    expect(resumirMudancasDossie(anterior, novo)).toBeNull();
+  });
+
+  it("aponta só a objeção nova, não as que já eram conhecidas", () => {
+    const anterior: DossieClienteIA = { ...DOSSIE_BASE, objecoesIdentificadas: ["preco"] };
+    const novo: DossieClienteIA = {
+      ...DOSSIE_BASE,
+      objecoesIdentificadas: ["preco", "prazo_entrega"],
+    };
+    const resumo = resumirMudancasDossie(anterior, novo);
+    expect(resumo).toContain("prazo entrega");
+    expect(resumo).not.toContain("Nova(s) objeção(ões): preco");
+  });
+});
+
+describe("Nota de acompanhamento ao corretor", () => {
+  it("formata a atualização sem soar como alerta urgente", () => {
+    const texto = formatarAtualizacaoDossie({
+      nomeCliente: "Fernanda",
+      telefoneCliente: "5511988882222",
+      resumoMudancas: "💰 Orçamento identificado: R$ 1.200.000",
+    });
+
+    expect(texto).toContain("Fernanda");
+    expect(texto).toContain("Orçamento identificado");
+    expect(texto).not.toMatch(/URGENTE|SOLICITAÇÃO DE VISITA/i);
   });
 });
 

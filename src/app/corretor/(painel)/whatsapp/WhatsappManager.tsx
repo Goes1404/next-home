@@ -52,6 +52,8 @@ interface Props {
     modoBot: ModoBotWhatsapp;
     statusConexao: StatusConexaoWhatsapp;
     telefoneConectado: string | null;
+    /** Frase que, digitada pelo próprio corretor no chat, "liga" a IA na conversa. */
+    palavraChaveAtivacao: string | null;
   } | null;
 }
 
@@ -77,6 +79,9 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
   const [nomeAssistente, setNomeAssistente] = useState(configInicial?.nomeAssistente ?? "Sofia");
   const [tomVoz, setTomVoz] = useState<TomVozBot>(
     configInicial?.tomVoz ?? "consultivo_alto_padrao",
+  );
+  const [palavraChaveAtivacao, setPalavraChaveAtivacao] = useState(
+    configInicial?.palavraChaveAtivacao ?? "",
   );
   const [mostrarQrCode, setMostrarQrCode] = useState(false);
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
@@ -133,7 +138,12 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
 
   const salvarConfiguracoes = async () => {
     setSalvando(true);
-    const resultado = await salvarConfiguracaoWhatsapp({ nomeAssistente, tomVoz, modoBot });
+    const resultado = await salvarConfiguracaoWhatsapp({
+      nomeAssistente,
+      tomVoz,
+      modoBot,
+      palavraChaveAtivacao,
+    });
     setSalvando(false);
     setFeedback(resultado.erro ?? resultado.ok ?? null);
     setTimeout(() => setFeedback(null), 4000);
@@ -408,6 +418,24 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                   );
                 })}
               </div>
+            </div>
+
+            <div className="space-y-2 border-t border-linha pt-4">
+              <label className="text-fluid-xs font-bold text-corpo uppercase tracking-wider block">
+                Palavra-chave de Ativação Manual (opcional)
+              </label>
+              <input
+                type="text"
+                value={palavraChaveAtivacao}
+                onChange={(e) => setPalavraChaveAtivacao(e.target.value)}
+                placeholder="ex: pode continuar"
+                className="w-full rounded-xl border border-linha-forte bg-campo px-4 py-2.5 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
+              />
+              <p className="text-fluid-xs text-apoio leading-snug">
+                {palavraChaveAtivacao.trim()
+                  ? `Com uma palavra-chave cadastrada, a IA fica em silêncio em conversas novas até você digitar "${palavraChaveAtivacao.trim()}" no próprio chat do WhatsApp — aí ela assume, sem o cliente perceber a troca. Deixe em branco para a IA responder normalmente, seguindo só o modo de ativação acima.`
+                  : "Deixe em branco para a IA responder normalmente, seguindo só o modo de ativação acima. Se preencher, ela só entra em ação em conversas novas depois que você mesmo digitar esta frase no chat — útil para atender pessoalmente o início e só depois passar a bola."}
+              </p>
             </div>
 
             <div className="border-t border-linha pt-4 flex justify-end">
