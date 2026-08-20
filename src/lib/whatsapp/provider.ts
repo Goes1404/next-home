@@ -134,6 +134,116 @@ export async function obterQrCodeInstancia(instanceName: string): Promise<Result
   }
 }
 
+/**
+ * Mostra "digitando..." no WhatsApp do cliente por `duracaoMs`.
+ *
+ * Silenciosa de propósito: é um detalhe cosmético entre balões de uma
+ * mesma resposta, não uma etapa que pode travar o envio. Se o provedor
+ * não responder ou não estiver configurado, a conversa segue sem o
+ * indicador — melhor que atrasar ou falhar a mensagem por causa disto.
+ */
+export async function enviarPresencaDigitando(params: {
+  instanceName: string;
+  telefone: string;
+  duracaoMs: number;
+}): Promise<void> {
+  const config = configDoProvedor();
+  if (!config) return;
+
+  const numero = params.telefone.replace(/\D/g, "");
+  if (!numero || !params.instanceName) return;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    await fetch(`${config.baseUrl}/chat/sendPresence/${encodeURIComponent(params.instanceName)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: config.apiKey },
+      signal: controller.signal,
+      body: JSON.stringify({ number: numero, presence: "composing", delay: params.duracaoMs }),
+    });
+
+    clearTimeout(timeoutId);
+  } catch {
+    // Ver comentário acima: falha aqui nunca deve interromper o envio real.
+  }
+}
+
+export type TipoMidiaWhatsapp = "foto" | "planta" | "video" | "tour360";
+
+/** A Evolution API só entende três tipos de mídia nativa; o resto vira documento. */
+function tipoMidiaDoProvedor(tipo: TipoMidiaWhatsapp): "image" | "video" | "document" {
+  if (tipo === "foto" || tipo === "planta") return "image";
+  if (tipo === "video") return "video";
+  return "document";
+}
+
+/**
+ * Envia foto, planta, vídeo ou PDF de tour como mídia nativa do WhatsApp —
+ * não como link de texto. É o que o cliente espera ao pedir "manda uma
+ * foto": um anexo que abre na hora, não um endereço para copiar e colar.
+ */
+export async function enviarMidiaWhatsapp(params: {
+  instanceName: string;
+  telefone: string;
+  tipo: TipoMidiaWhatsapp;
+  url: string;
+  legenda?: string;
+}): Promise<ResultadoEnvio> {
+  const { instanceName, telefone, tipo, url, legenda } = params;
+
+  const numero = telefone.replace(/\D/g, "");
+  if (!numero || !url.trim() || !instanceName) {
+    return { enviado: false, motivo: "dados_invalidos" };
+  }
+
+  const config = configDoProvedor();
+  if (!config) {
+    return {
+      enviado: false,
+      motivo: "provedor_nao_configurado",
+      detalhe: "Defina WHATSAPP_API_URL e WHATSAPP_API_KEY para ativar o envio.",
+    };
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const res = await fetch(`${config.baseUrl}/message/sendMedia/${encodeURIComponent(instanceName)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: config.apiKey },
+      signal: controller.signal,
+      body: JSON.stringify({
+        number: numero,
+        mediatype: tipoMidiaDoProvedor(tipo),
+        media: url,
+        caption: legenda || undefined,
+      }),
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const corpo = await res.text().catch(() => "");
+      return {
+        enviado: false,
+        motivo: "erro_provedor",
+        detalhe: `HTTP ${res.status}${corpo ? `: ${corpo.slice(0, 200)}` : ""}`,
+      };
+    }
+
+    return { enviado: true };
+  } catch (err) {
+    return {
+      enviado: false,
+      motivo: "erro_provedor",
+      detalhe: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 export async function enviarMensagemWhatsapp(params: {
   /** Instância do corretor no provedor — é dela que a mensagem sai. */
   instanceName: string;

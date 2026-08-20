@@ -2,10 +2,12 @@ import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { gerarRespostaIA } from "@/lib/whatsapp/aiAgent";
+import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
+import { dividirEmMensagens } from "@/lib/whatsapp/chunking";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
 import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
 import { notificarCorretorLeadQuente } from "@/lib/whatsapp/brokerNotifier";
-import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
+import { enviarMensagemWhatsapp, enviarMidiaWhatsapp, enviarPresencaDigitando } from "@/lib/whatsapp/provider";
 import {
   botDeveResponder,
   gravarMensagem,
@@ -193,13 +195,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, action: "bot_silenciado_por_modo", motivo: decisao.motivo, modo: instancia.modoBot, sender });
     }
 
-    // Catálogo real para RAG (com fallback resiliente)
-    let catalogo: Awaited<ReturnType<typeof getEmpreendimentos>> = [];
-    try {
-      catalogo = await getEmpreendimentos();
-    } catch (err) {
-      console.warn("Aviso: Falha ao carregar catálogo para o webhook (usando fallback):", err);
-    }
+    // Catálogo real para RAG e exemplos de conversas que converteram (ver
+    // aprendizadoContinuo.ts) — buscados em paralelo, e os dois com
+    // fallback resiliente: nenhum dos dois pode derrubar a resposta ao
+    // cliente por estar indisponível.
+    const [catalogo, exemplosFewShot] = await Promise.all([
+      getEmpreendimentos().catch((err) => {
+        console.warn("Aviso: Falha ao carregar catálogo para o webhook (usando fallback):", err);
+        return [] as Awaited<ReturnType<typeof getEmpreendimentos>>;
+      }),
+      buscarExemplosFewShot(instancia.corretorId),
+    ]);
 
     const respostaIA = await gerarRespostaIA(
       {
@@ -210,27 +216,73 @@ export async function POST(req: NextRequest) {
         tomVoz: instancia.tomVoz,
         catalogo,
         historicoMensagens: await historicoRecente(conversa.id),
+        exemplosFewShot,
       },
       text,
     );
 
-    // Anexos entram como links no corpo: o envio de mídia binária depende de
-    // outra rota do provedor, e um link clicável já entrega o material.
-    const linhasAnexos = (respostaIA.anexosMidia || [])
-      .filter((a) => a?.url)
-      .map((a) => `📎 ${a.titulo || a.tipo}: ${a.url}`);
-    const textoParaEnviar = [respostaIA.textoResposta, ...linhasAnexos].join("\n\n");
+    const anexos = (respostaIA.anexosMidia || []).filter((a) => a?.url);
+
+    // Quebra a resposta em balões (ver chunking.ts): longa vira duas
+    // médias, média vira duas pequenas, pequena fica como está. Cada balão
+    // depois do primeiro sai precedido de "digitando..." e um intervalo
+    // curto, para simular o ritmo de alguém escrevendo — não o despejo
+    // instantâneo característico de robô.
+    const partes = dividirEmMensagens(respostaIA.textoResposta);
+    const baloes = partes.length > 0 ? partes : [respostaIA.textoResposta];
+
+    let todosEnviados = true;
+    let primeiroMotivo: string | undefined;
+    let primeiroDetalhe: string | undefined;
+
+    function registrarFalha(motivo?: string, detalhe?: string) {
+      todosEnviados = false;
+      primeiroMotivo ??= motivo;
+      primeiroDetalhe ??= detalhe;
+    }
 
     // Responder quem nos escreveu não passa por cota nem por janela de
     // horário (ver antiBan.ts): a conversa foi iniciada pelo cliente, e
     // deixá-lo no vácuo é pior para o número do que responder de
     // madrugada. O resultado alimenta o disjuntor de falhas seguidas.
-    const envio = await enviarMensagemWhatsapp({
-      instanceName: instancia.instanceName,
-      telefone: sender,
-      texto: textoParaEnviar,
-    });
+    for (let i = 0; i < baloes.length; i++) {
+      if (i > 0) {
+        await enviarPresencaDigitando({ instanceName: instancia.instanceName, telefone: sender, duracaoMs: 1200 });
+        await new Promise((resolve) => setTimeout(resolve, 1000 + Math.floor(Math.random() * 1000)));
+      }
+
+      const envioBalao = await enviarMensagemWhatsapp({
+        instanceName: instancia.instanceName,
+        telefone: sender,
+        texto: baloes[i],
+      });
+      if (!envioBalao.enviado) registrarFalha(envioBalao.motivo, envioBalao.detalhe);
+    }
+
+    // Fotos, plantas, vídeos: mídia nativa do WhatsApp, não link no texto —
+    // é o que o cliente espera ao pedir "manda uma foto".
+    for (const anexo of anexos) {
+      await enviarPresencaDigitando({ instanceName: instancia.instanceName, telefone: sender, duracaoMs: 1000 });
+      await new Promise((resolve) => setTimeout(resolve, 800 + Math.floor(Math.random() * 700)));
+
+      const envioMidia = await enviarMidiaWhatsapp({
+        instanceName: instancia.instanceName,
+        telefone: sender,
+        tipo: anexo.tipo,
+        url: anexo.url,
+        legenda: anexo.titulo,
+      });
+      if (!envioMidia.enviado) registrarFalha(envioMidia.motivo, envioMidia.detalhe);
+    }
+
+    const envio = { enviado: todosEnviados, motivo: primeiroMotivo, detalhe: primeiroDetalhe };
     await registrarResultadoEnvio(instancia.id, envio.enviado);
+
+    // Registro no CRM: o texto completo (não os balões separados) e os
+    // anexos como nota de auditoria — mesmo enviados como mídia nativa, o
+    // corretor precisa ver no Live Chat o que foi mandado.
+    const linhasAnexos = anexos.map((a) => `📎 ${a.titulo || a.tipo}: ${a.url}`);
+    const textoParaEnviar = [respostaIA.textoResposta, ...linhasAnexos].join("\n\n");
 
     await gravarMensagem({
       conversaId: conversa.id,

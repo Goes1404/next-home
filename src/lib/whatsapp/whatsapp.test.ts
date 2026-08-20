@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { construirPromptSistema, type ContextoAtendimento } from "./aiAgent";
+import { formatarExemplosFewShot, type ExemploConvertido } from "./aprendizadoContinuo";
+import { classificarTamanho, dividirEmMensagens } from "./chunking";
 import { extrairDossieCliente } from "./dossierExtractor";
 import {
   gerarMensagensCampanhaPersonalizadas,
@@ -71,6 +73,156 @@ describe("Agente IA — prompt com RAG do catálogo", () => {
     expect(prompt).toContain("123456-F");
     expect(prompt).toContain("Canvas Alphaville");
     expect(prompt).toContain("1.450.000");
+  });
+
+  it("instrui técnicas de venda consultiva, não só atendimento", () => {
+    const contexto: ContextoAtendimento = {
+      nomeCorretor: "Carlos Silva",
+      creciCorretor: "123456-F",
+      telefoneCorretor: "5511999998888",
+      nomeAssistente: "Sofia",
+      tomVoz: "consultivo_alto_padrao",
+      catalogo: [IMOVEL_MOCK],
+      historicoMensagens: [],
+    };
+
+    const prompt = construirPromptSistema(contexto);
+
+    expect(prompt).toMatch(/SPIN/i);
+    expect(prompt).toMatch(/objeção/i);
+    expect(prompt).toMatch(/fechamento/i);
+  });
+
+  it("injeta os exemplos few-shot de conversas que converteram, quando existem", () => {
+    const contexto: ContextoAtendimento = {
+      nomeCorretor: "Carlos Silva",
+      creciCorretor: "123456-F",
+      telefoneCorretor: "5511999998888",
+      nomeAssistente: "Sofia",
+      tomVoz: "consultivo_alto_padrao",
+      catalogo: [IMOVEL_MOCK],
+      historicoMensagens: [],
+      exemplosFewShot: 'Exemplo real 1 (este lead avançou até a etapa "fechado"):\nCliente: Quero agendar visita\nVocê: Perfeito!',
+    };
+
+    const prompt = construirPromptSistema(contexto);
+
+    expect(prompt).toContain("EXEMPLOS REAIS DE CONVERSAS QUE CONVERTERAM");
+    expect(prompt).toContain("Quero agendar visita");
+  });
+
+  it("não menciona exemplos few-shot quando não há histórico de conversão", () => {
+    const contexto: ContextoAtendimento = {
+      nomeCorretor: "Carlos Silva",
+      creciCorretor: "123456-F",
+      telefoneCorretor: "5511999998888",
+      nomeAssistente: "Sofia",
+      tomVoz: "consultivo_alto_padrao",
+      catalogo: [IMOVEL_MOCK],
+      historicoMensagens: [],
+    };
+
+    const prompt = construirPromptSistema(contexto);
+
+    expect(prompt).not.toContain("EXEMPLOS REAIS DE CONVERSAS QUE CONVERTERAM");
+  });
+});
+
+describe("Quebra de mensagens (chunking)", () => {
+  it("mantém mensagem pequena como um único balão", () => {
+    const texto = "Olá! Temos 3 opções em Alphaville a partir de R$ 1,4 milhão.";
+    expect(classificarTamanho(texto)).toBe("pequena");
+    expect(dividirEmMensagens(texto)).toEqual([texto]);
+  });
+
+  it("quebra mensagem média em duas partes menores", () => {
+    const texto =
+      "Temos o Canvas Alphaville, com apartamentos de 3 suítes a partir de R$ 1,45 milhão. " +
+      "O empreendimento fica no Green Valley, a cinco minutos do shopping e das melhores escolas da região. " +
+      "Posso te mandar as plantas e o book completo agora mesmo?";
+    expect(classificarTamanho(texto)).toBe("media");
+
+    const partes = dividirEmMensagens(texto);
+    expect(partes.length).toBe(2);
+    expect(partes.join(" ").replace(/\s+/g, " ")).toBe(texto.replace(/\s+/g, " "));
+  });
+
+  it("quebra mensagem longa em duas partes, sem perder nem repetir texto", () => {
+    const texto = Array.from({ length: 8 })
+      .map((_, i) => `Este é o parágrafo número ${i + 1} sobre o empreendimento Canvas Alphaville.`)
+      .join(" ");
+    expect(classificarTamanho(texto)).toBe("longa");
+
+    const partes = dividirEmMensagens(texto);
+    expect(partes.length).toBe(2);
+    expect(partes.every((p) => p.length > 0)).toBe(true);
+  });
+
+  it("nunca corta uma palavra ao meio", () => {
+    const texto =
+      "Este apartamento possui trezentos e vinte metros quadrados de área privativa, quatro suítes espaçosas, " +
+      "varanda gourmet integrada e duas vagas de garagem cobertas, além de vista livre para o parque.";
+
+    const partes = dividirEmMensagens(texto);
+    for (const parte of partes) {
+      expect(parte.startsWith(" ")).toBe(false);
+      expect(parte.endsWith(" ")).toBe(false);
+    }
+  });
+
+  it("respeita o corte explícito marcado pela IA com '---'", () => {
+    const texto = "Primeira ideia curta.\n---\nSegunda ideia curta.\n---\nTerceira ideia curta.";
+    expect(dividirEmMensagens(texto)).toEqual([
+      "Primeira ideia curta.",
+      "Segunda ideia curta.",
+      "Terceira ideia curta.",
+    ]);
+  });
+
+  it("respeita parágrafo duplo como corte explícito", () => {
+    const texto = "Primeira ideia.\n\nSegunda ideia.";
+    expect(dividirEmMensagens(texto)).toEqual(["Primeira ideia.", "Segunda ideia."]);
+  });
+
+  it("devolve lista vazia para texto vazio, em vez de mandar balão em branco", () => {
+    expect(dividirEmMensagens("")).toEqual([]);
+    expect(dividirEmMensagens("   ")).toEqual([]);
+  });
+});
+
+describe("Aprendizado contínuo — exemplos few-shot", () => {
+  it("formata conversas convertidas como exemplos numerados com a etapa alcançada", () => {
+    const exemplos: ExemploConvertido[] = [
+      {
+        etapa: "visita_agendada",
+        mensagens: [
+          { remetente: "cliente", texto: "Quero ver o apartamento pessoalmente" },
+          { remetente: "bot", texto: "Ótimo! Que tal sábado às 10h?" },
+        ],
+      },
+    ];
+
+    const formatado = formatarExemplosFewShot(exemplos);
+
+    expect(formatado).toContain('Exemplo real 1 (este lead avançou até a etapa "visita_agendada")');
+    expect(formatado).toContain("Cliente: Quero ver o apartamento pessoalmente");
+    expect(formatado).toContain("Você: Ótimo! Que tal sábado às 10h?");
+  });
+
+  it("devolve string vazia quando não há nenhum exemplo", () => {
+    expect(formatarExemplosFewShot([])).toBe("");
+  });
+
+  it("descarta a saudação inicial e mantém só a cauda relevante da conversa", () => {
+    const mensagens = Array.from({ length: 14 }).map((_, i) => ({
+      remetente: (i % 2 === 0 ? "cliente" : "bot") as "cliente" | "bot",
+      texto: `mensagem-${i}`,
+    }));
+
+    const formatado = formatarExemplosFewShot([{ etapa: "fechado", mensagens }]);
+
+    expect(formatado).not.toContain("mensagem-0");
+    expect(formatado).toContain("mensagem-13");
   });
 });
 
