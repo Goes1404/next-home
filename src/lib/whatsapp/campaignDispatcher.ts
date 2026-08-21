@@ -14,12 +14,12 @@ import { gravarMensagem, obterOuCriarConversa, registrarResultadoEnvio, reservar
  * horário chega: é este módulo.
  *
  * Duas portas de entrada chamam esta mesma função:
- *   1. `/api/cron/campanhas`, batido pelo cron do Vercel a cada poucos
- *      minutos (ver vercel.json).
- *   2. O botão "Processar fila agora" no painel de campanhas — porque no
- *      plano Hobby da Vercel um cron declarado a cada 5 minutos só dispara
- *      de fato uma vez por dia; sem um botão manual, uma campanha de 30
- *      leads ficaria presa na fila até o dia seguinte.
+ *   1. `/api/cron/campanhas`, batido uma vez por dia pelo cron do Vercel
+ *      (ver vercel.json) — plano Hobby recusa o deploy inteiro se o cron
+ *      for mais frequente que isso, então é o teto real, não uma escolha.
+ *   2. O botão "Processar fila agora" no painel de campanhas — sem ele, uma
+ *      campanha criada depois do horário do cron ficaria com a IA de braços
+ *      cruzados até o disparo do dia seguinte.
  *
  * Cada chamada processa no máximo `limiteTotal` itens, e no máximo
  * `ITENS_POR_INSTANCIA_POR_CHAMADA` por instância — um teto baixo de

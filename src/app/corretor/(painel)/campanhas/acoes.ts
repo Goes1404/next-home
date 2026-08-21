@@ -183,9 +183,10 @@ export type ResultadoProcessarFila =
 
 /**
  * Processa a fila deste corretor agora, sem esperar o próximo tique do
- * cron. Existe porque, em plano Hobby da Vercel, o cron declarado a cada 5
- * minutos só dispara de fato uma vez por dia — sem este botão, uma campanha
- * recém-criada ficaria com a IA de braços cruzados até o dia seguinte.
+ * cron. Existe porque o cron só bate uma vez por dia (plano Hobby da Vercel
+ * recusa o deploy inteiro se for mais frequente — ver vercel.json) — sem
+ * este botão, uma campanha recém-criada ficaria com a IA de braços cruzados
+ * até o disparo do dia seguinte.
  */
 export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
   const corretor = await getCorretorLogado();
