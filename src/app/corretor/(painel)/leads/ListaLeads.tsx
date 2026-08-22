@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CartaoLead } from "@/app/corretor/(painel)/_componentes/CartaoLead";
+import { TabelaLeads } from "./TabelaLeads";
 import { EnviarEmMassa } from "./EnviarEmMassa";
 import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead, type TemplateMensagem } from "@/lib/types";
 
@@ -189,18 +189,14 @@ export function ListaLeads({
         <div
           // Só reserva espaço para a barra de seleção quando ela existe; a
           // reserva fixa deixava um vão morto no fim da lista o tempo todo.
-          className={`mt-6 space-y-4 ${selecionados.size > 0 ? "pb-40" : "pb-8"}`}
+          className={`mt-4 ${selecionados.size > 0 ? "pb-40" : "pb-8"}`}
         >
-          {leadsFiltrados.map((lead) => (
-            <CartaoLead
-              key={lead.id}
-              lead={lead}
-              mostrarDono={gestor}
-              selecionavel
-              selecionado={selecionados.has(lead.id)}
-              aoAlternarSelecao={() => alternarSelecao(lead.id)}
-            />
-          ))}
+          <TabelaLeads
+            leads={leadsFiltrados}
+            gestor={gestor}
+            selecionados={selecionados}
+            aoAlternarSelecao={alternarSelecao}
+          />
         </div>
       )}
 
