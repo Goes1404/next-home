@@ -1,11 +1,11 @@
 /**
- * Benchmark dos modelos da NVIDIA (build.nvidia.com) para o agente de
- * WhatsApp.
+ * Benchmark dos modelos de um provedor de IA, para o agente de WhatsApp.
  *
  * Uso:
  *   NVIDIA_API_KEY=... npm run bench:nvidia
- *   NVIDIA_API_KEY=... npm run bench:nvidia -- --modelos=a,b   (lista curta)
- *   NVIDIA_API_KEY=... npm run bench:nvidia -- --todos         (sem o filtro de candidatos)
+ *   GROQ_API_KEY=...   npm run bench:groq
+ *   ... npm run bench:groq -- --modelos=a,b   (lista curta)
+ *   ... npm run bench:nvidia -- --todos       (sem o filtro de candidatos)
  *
  * POR QUE ISTO EXISTE. `docs/MEMORIA.md` manda medir latência E uma data de
  * visita antes de trocar `NVIDIA_MODEL` — uma regra que ninguém cumpre se
@@ -44,6 +44,26 @@ const arg = (nome: string) =>
   process.argv.find((a) => a.startsWith(`--${nome}=`))?.split("=")[1];
 const temFlag = (nome: string) => process.argv.includes(`--${nome}`);
 
+/**
+ * Qual provedor está sendo medido. Um script só para os dois: duplicá-lo
+ * garantiria que os critérios divergissem na primeira correção feita em
+ * apenas uma das cópias.
+ */
+const PROVEDOR = (arg("provedor") ?? "nvidia") as "nvidia" | "groq";
+
+const CONFIG = {
+  nvidia: {
+    envChave: "NVIDIA_API_KEY",
+    envModelo: "NVIDIA_MODEL",
+    urlModelos: "https://integrate.api.nvidia.com/v1/models",
+  },
+  groq: {
+    envChave: "GROQ_API_KEY",
+    envModelo: "GROQ_MODEL",
+    urlModelos: "https://api.groq.com/openai/v1/models",
+  },
+}[PROVEDOR];
+
 /** Famílias que não têm o que fazer numa conversa de venda em português. */
 const FORA_DE_ESCOPO = [
   "embed", "rerank", "reward", "safety", "guard", "coder", "codegemma",
@@ -53,6 +73,9 @@ const FORA_DE_ESCOPO = [
   "genmol", "diffusion", "video", "image", "palmyra-med", "palmyra-fin",
   "laguna", "cosmos", "chatqa", "ising",
 ];
+
+/** Fora de escopo na Groq: áudio, guarda de segurança e modelo em árabe. */
+const FORA_DE_ESCOPO_GROQ = ["whisper", "orpheus", "prompt-guard", "safeguard", "allam"];
 
 /** Modelos base (não-instruct) e miniaturas que não sustentam o contrato. */
 const PEQUENOS_DEMAIS = [
@@ -65,16 +88,17 @@ async function listarCandidatos(): Promise<string[]> {
   const escolhidos = arg("modelos");
   if (escolhidos) return escolhidos.split(",").map((m) => m.trim());
 
-  const res = await fetch("https://integrate.api.nvidia.com/v1/models", {
-    headers: { Authorization: `Bearer ${process.env.NVIDIA_API_KEY}` },
+  const res = await fetch(CONFIG.urlModelos, {
+    headers: { Authorization: `Bearer ${process.env[CONFIG.envChave]}` },
   });
   if (!res.ok) throw new Error(`Não consegui listar os modelos: HTTP ${res.status}`);
 
   const ids: string[] = (await res.json()).data.map((m: { id: string }) => m.id);
   if (temFlag("todos")) return ids.sort();
 
+  const fora = PROVEDOR === "groq" ? FORA_DE_ESCOPO_GROQ : FORA_DE_ESCOPO;
   return ids
-    .filter((id) => !FORA_DE_ESCOPO.some((k) => id.toLowerCase().includes(k)))
+    .filter((id) => !fora.some((k) => id.toLowerCase().includes(k)))
     .filter((id) => !PEQUENOS_DEMAIS.includes(id))
     .sort();
 }
@@ -206,14 +230,31 @@ const CENARIOS: Cenario[] = [
     mensagem: "vocês têm apartamento no Leblon, Rio de Janeiro?",
     // Alucinação de catálogo vira número: `sanearRespostaIA` já conta slug
     // inventado. E o texto não pode afirmar que temos imóvel no Rio.
+    /*
+     * A NEGAÇÃO É O PONTO, e foi onde este critério errou feio na primeira
+     * versão: `/(temos)[^.!?]{0,60}(leblon)/` reprovava "Não temos unidades
+     * no Leblon" — a resposta CERTA — porque casava "temos … Leblon" sem
+     * olhar o "Não" na frente. Dois dos melhores modelos foram injustamente
+     * reprovados por isso.
+     *
+     * Agora a checagem é por frase: só reprova quando existe uma afirmação
+     * de posse SEM negação antes do verbo.
+     */
     avaliar: (r) => {
       if (r.slugsBloqueados > 0)
         return { passou: false, nota: `inventou ${r.slugsBloqueados} slug(s)` };
-      const inventou = /(temos|tenho|dispomos|oferecemos)[^.!?]{0,60}(leblon|rio de janeiro)/i.test(
-        r.texto,
-      );
-      return inventou
-        ? { passou: false, nota: "afirmou ter imóvel no Rio" }
+
+      const frases = r.texto.split(/[.!?\n]+/);
+      const afirmouTer = frases.some((frase) => {
+        if (!/leblon|rio de janeiro/i.test(frase)) return false;
+        const posse = frase.match(/\b(temos|tenho|dispomos|oferecemos|possuímos|há)\b/i);
+        if (!posse) return false;
+        const antes = frase.slice(0, posse.index ?? 0);
+        return !/\b(n(ã|a)o|nenhum|infelizmente|ainda n(ã|a)o|sem)\b/i.test(antes);
+      });
+
+      return afirmouTer
+        ? { passou: false, nota: `afirmou ter imóvel no Rio: "${r.texto.slice(0, 90)}"` }
         : { passou: true, nota: "não inventou" };
     },
   },
@@ -237,8 +278,16 @@ const CENARIOS: Cenario[] = [
   },
 ];
 
-/** Espaço entre chamadas: o tier gratuito é ~40 req/min por modelo. */
-const PAUSA_MS = 1_500;
+/**
+ * Espaço entre chamadas, por provedor.
+ *
+ * O gargalo não é o mesmo nos dois. A NVIDIA limita REQUISIÇÕES (~40/min),
+ * e 1,5s entre chamadas já resolve. A Groq limita TOKENS: 8.000 por minuto
+ * no `gpt-oss-120b`, e o nosso prompt tem ~3.400 entre entrada e saída —
+ * ou seja, **duas chamadas por minuto**. Sem esta pausa o benchmark
+ * reprovava todo mundo por 429 e media a própria pressa.
+ */
+const PAUSA_MS = PROVEDOR === "groq" ? 32_000 : 1_500;
 /**
  * Tentativas por cenário.
  *
@@ -254,8 +303,8 @@ const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
 type Tentativa = { resultado: Resultado | null; latenciaMs: number; erro?: string };
 
 async function chamarUmaVez(modelo: string, cenario: Cenario): Promise<Tentativa> {
-  process.env.NVIDIA_MODEL = modelo;
-  process.env.IA_PROVEDOR_FORCADO = "nvidia";
+  process.env[CONFIG.envModelo] = modelo;
+  process.env.IA_PROVEDOR_FORCADO = PROVEDOR;
 
   const inicio = Date.now();
   const bruta = await gerarRespostaIA(
@@ -311,18 +360,18 @@ type Linha = {
   /** Chamadas honradas / chamadas feitas. Instabilidade é reprovação lenta. */
   estabilidade: string;
   erro?: string;
-  cenarios: { id: string; passou: boolean; nota: string; latenciaMs: number }[];
+  cenarios: { id: string; passou: boolean; nota: string; latenciaMs: number; texto?: string }[];
   amostraTexto?: string;
 };
 
 async function main() {
-  if (!process.env.NVIDIA_API_KEY) {
-    console.error("Sem NVIDIA_API_KEY — nada a medir.");
+  if (!process.env[CONFIG.envChave]) {
+    console.error(`Sem ${CONFIG.envChave} — nada a medir.`);
     process.exit(1);
   }
 
   const modelos = await listarCandidatos();
-  console.log(`Candidatos: ${modelos.length}\n`);
+  console.log(`Provedor: ${PROVEDOR} — ${modelos.length} candidato(s)\n`);
 
   const linhas: Linha[] = [];
 
@@ -370,7 +419,15 @@ async function main() {
         });
         continue;
       }
-      cenarios.push({ id: cenario.id, ...cenario.avaliar(r.resultado), latenciaMs: r.latenciaMs });
+      const veredito = cenario.avaliar(r.resultado);
+      cenarios.push({
+        id: cenario.id,
+        ...veredito,
+        latenciaMs: r.latenciaMs,
+        // Só de quem reprovou: é o que permite conferir se a culpa foi do
+        // modelo ou do critério — como no falso positivo do Leblon.
+        ...(veredito.passou ? {} : { texto: r.resultado.texto }),
+      });
     }
 
     const aprovacoes = cenarios.filter((c) => c.passou).length;
@@ -446,10 +503,14 @@ async function main() {
 
   const data = new Date().toISOString().slice(0, 10);
   mkdirSync("eval/resultados", { recursive: true });
-  const arquivo = `eval/resultados/nvidia-modelos-${data}.json`;
+  const arquivo = `eval/resultados/${PROVEDOR}-modelos-${data}.json`;
   writeFileSync(
     arquivo,
-    JSON.stringify({ data, criterios: CENARIOS.map((c) => c.id), modelos: linhas }, null, 2),
+    JSON.stringify(
+      { provedor: PROVEDOR, data, criterios: CENARIOS.map((c) => c.id), modelos: linhas },
+      null,
+      2,
+    ),
   );
   console.log(`\nGravado em ${arquivo}`);
 }

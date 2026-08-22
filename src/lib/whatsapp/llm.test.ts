@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * e orçamento — com os adaptadores dublados, sem tocar em rede.
  */
 
+const chamarGroqJson = vi.fn();
 const chamarNvidiaJson = vi.fn();
 const chamarGeminiJson = vi.fn();
 
@@ -13,6 +14,12 @@ vi.mock("./nvidia", () => ({
   chamarNvidiaJson: (...args: unknown[]) => chamarNvidiaJson(...args),
   modeloNvidia: () => "meta/llama-3.3-70b-instruct",
   nvidiaConfigurada: () => Boolean(process.env.NVIDIA_API_KEY),
+}));
+
+vi.mock("./groq", () => ({
+  chamarGroqJson: (...args: unknown[]) => chamarGroqJson(...args),
+  modeloGroq: () => "openai/gpt-oss-120b",
+  groqConfigurada: () => Boolean(process.env.GROQ_API_KEY),
 }));
 
 vi.mock("./gemini", () => ({
@@ -36,6 +43,7 @@ let chamarLlmJson: typeof import("./llm").chamarLlmJson;
 
 beforeEach(async () => {
   vi.resetModules();
+  chamarGroqJson.mockReset();
   chamarNvidiaJson.mockReset();
   chamarGeminiJson.mockReset();
   delete process.env.IA_PROVEDOR_FORCADO;
@@ -145,5 +153,41 @@ describe("Provedor forçado (usado pelo eval)", () => {
 
     expect(r.ok).toBe(false);
     expect(chamarGeminiJson).not.toHaveBeenCalled();
+  });
+});
+
+describe("Três provedores na cascata", () => {
+  it("a Groq vem primeiro — é a mais rápida e o 429 dela custa 60ms", async () => {
+    // Com 8.000 tokens/min de teto e ~3.400 por chamada, a Groq estoura
+    // cota o tempo todo. Tentar mesmo assim vale: quando passa, responde em
+    // 0,7s no lugar de 5-7s; quando recusa, o provedor seguinte assume no
+    // mesmo instante e o cliente não percebe.
+    const { provedoresDisponiveis } = await import("./llm");
+    process.env.GROQ_API_KEY = "gsk-teste";
+    vi.resetModules();
+    const m = await import("./llm");
+    expect(m.provedoresDisponiveis()).toEqual(["groq", "nvidia", "gemini"]);
+    expect(provedoresDisponiveis).toBeDefined();
+    delete process.env.GROQ_API_KEY;
+  });
+
+  it("o terceiro provedor ainda recebe tempo útil quando os dois primeiros falham", async () => {
+    // Com a fatia de 55% (o valor de quando eram dois), o terceiro ficaria
+    // sem orçamento e a cascata teria um elo decorativo. Este teste mede o
+    // efeito, não a constante: o Gemini precisa ser chamado E com prazo.
+    process.env.GROQ_API_KEY = "gsk-teste";
+    vi.resetModules();
+    const { chamarLlmJson: chamar } = await import("./llm");
+
+    chamarGroqJson.mockResolvedValue(falha("http_429"));
+    chamarNvidiaJson.mockResolvedValue(falha("timeout"));
+    chamarGeminiJson.mockResolvedValue(ok("gemini-2.5-flash"));
+
+    const r = await chamar("prompt", { orcamentoMs: 26_000 });
+
+    expect(r.ok && r.modelo).toBe("gemini-2.5-flash");
+    const tetoGemini = chamarGeminiJson.mock.calls[0][1].timeoutMs;
+    expect(tetoGemini).toBeGreaterThan(3_000);
+    delete process.env.GROQ_API_KEY;
   });
 });

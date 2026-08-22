@@ -1,6 +1,7 @@
 import "server-only";
 
 import { chamarGeminiJson, geminiConfigurado, MODELO_GEMINI } from "./gemini";
+import { chamarGroqJson, groqConfigurada, modeloGroq } from "./groq";
 import { chamarNvidiaJson, modeloNvidia, nvidiaConfigurada } from "./nvidia";
 import { valeRetentar, type MotivoFalhaLlm, type ResultadoLlm } from "./llmTipos";
 
@@ -15,7 +16,19 @@ import { valeRetentar, type MotivoFalhaLlm, type ResultadoLlm } from "./llmTipos
  * que resolve é ter DOIS: quando o primeiro recusa, demora ou cai, o
  * segundo responde e ninguém percebe.
  *
- * Ordem: NVIDIA primeiro, Gemini de reserva.
+ * Ordem: **Groq → NVIDIA → Gemini**, e a ordem foi medida, não escolhida
+ * por preferência:
+ *
+ * | provedor | latência com o prompt real |
+ * |---|---|
+ * | Groq (`gpt-oss-120b`) | ~0,8s |
+ * | NVIDIA (`mistral-nemotron`) | ~5,5s, instável |
+ * | Gemini 2.5 Flash | 4,9–6,9s |
+ *
+ * Um primeiro provedor sub-segundo não é só conforto: é o que deixa a
+ * cascata inteira caber com folga no teto de 60s da função do webhook. Se
+ * a Groq falha, sobram ~25s de orçamento para os outros dois — quando o
+ * primeiro gastava 14s, sobrava quase nada.
  *
  * Duas regras que sustentam o desenho:
  *
@@ -34,10 +47,14 @@ export const ORCAMENTO_AGENTE_MS = 26_000;
 export const ORCAMENTO_DOSSIE_MS = 12_000;
 
 /**
- * Teto de cada provedor dentro do orçamento. Garante que o segundo sempre
- * tenha uma chance real: sem isso, o primeiro consumiria tudo.
+ * Teto de cada provedor dentro do orçamento, como fração do total.
+ *
+ * Com dois provedores era 0,55; com três, essa fatia deixaria o terceiro
+ * sem tempo útil (0,55 + 0,45 = tudo). Em 0,40 o pior caso fica em
+ * 0,40 + 0,40 + o resto — e mesmo assim o Groq, que vem primeiro, quase
+ * nunca chega perto do seu teto.
  */
-const FATIA_MAXIMA = 0.55;
+const FATIA_MAXIMA = 0.4;
 /** Abaixo disso não vale começar — só gastaria o resto do prazo para nada. */
 const MINIMO_UTIL_MS = 3_000;
 
@@ -49,6 +66,12 @@ type Provedor = {
 };
 
 const PROVEDORES: Provedor[] = [
+  {
+    nome: "groq",
+    configurado: groqConfigurada,
+    modelo: modeloGroq,
+    chamar: chamarGroqJson,
+  },
   {
     nome: "nvidia",
     configurado: nvidiaConfigurada,

@@ -1,0 +1,125 @@
+{
+  "provedor": "groq",
+  "data": "2026-08-22",
+  "criterios": [
+    "visita-sabado",
+    "preco-mais-barato",
+    "recusa-desconto",
+    "fora-do-catalogo",
+    "anexo-planta"
+  ],
+  "modelos": [
+    {
+      "modelo": "openai/gpt-oss-120b",
+      "status": "triagem",
+      "aprovacoes": 0,
+      "total": 5,
+      "latenciaMediaMs": 60,
+      "estabilidade": "0/2",
+      "erro": "http_429",
+      "cenarios": []
+    },
+    {
+      "modelo": "qwen/qwen3.6-27b",
+      "status": "triagem",
+      "aprovacoes": 0,
+      "total": 5,
+      "latenciaMediaMs": 61,
+      "estabilidade": "0/2",
+      "erro": "http_429",
+      "cenarios": []
+    },
+    {
+      "modelo": "openai/gpt-oss-20b",
+      "status": "reprovado",
+      "aprovacoes": 0,
+      "total": 5,
+      "latenciaMediaMs": 524,
+      "estabilidade": "1/10",
+      "cenarios": [
+        {
+          "id": "visita-sabado",
+          "passou": false,
+          "nota": "2026-08-22T10:00:00-03:00 — recusada por validarDataVisita",
+          "latenciaMs": 2271
+        },
+        {
+          "id": "preco-mais-barato",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 58
+        },
+        {
+          "id": "recusa-desconto",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 137
+        },
+        {
+          "id": "fora-do-catalogo",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 80
+        },
+        {
+          "id": "anexo-planta",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 74
+        }
+      ],
+      "amostraTexto": "Olá! O Canvas Alphaville oferece 3 suítes, acabamento de alto padrão e localização privilegiada em Alphaville. Temos unidades em construção, mas já podemos agendar uma visita ao decorado para você conhecer de perto. Se precisar de mais detalhes, posso enviar o book digital e a planta.\n\n---\n\nVocê prefere sábado, 22/08/2026, às 10h ou às 11h? Assim, podemos reservar o horário que melhor se encaixa na sua agenda. Aguardo sua confirmação!"
+    },
+    {
+      "modelo": "groq/compound-mini",
+      "status": "reprovado",
+      "aprovacoes": 0,
+      "total": 5,
+      "latenciaMediaMs": 863,
+      "estabilidade": "1/9",
+      "cenarios": [
+        {
+          "id": "visita-sabado",
+          "passou": false,
+          "nota": "2026-08-22T09:00:00-03:00 — recusada por validarDataVisita",
+          "latenciaMs": 3131
+        },
+        {
+          "id": "preco-mais-barato",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 921
+        },
+        {
+          "id": "recusa-desconto",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 143
+        },
+        {
+          "id": "fora-do-catalogo",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 61
+        },
+        {
+          "id": "anexo-planta",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 59
+        }
+      ],
+      "amostraTexto": "Olá, agradeço a preferência. O Canvas Alphaville oferece um apartamento de alto padrão com 3 suítes, ideal para quem busca conforto, privacidade e valorização, a poucos minutos do Tamboré. Cada suíte garante espaço exclusivo, perfeito para sua família.\n---\nTenho disponibilidade para visita neste sábado pela manhã: às 09:00 ou às 11:00. Qual horário lhe atende melhor?"
+    },
+    {
+      "modelo": "groq/compound",
+      "status": "triagem",
+      "aprovacoes": 0,
+      "total": 5,
+      "latenciaMediaMs": 4096,
+      "estabilidade": "0/2",
+      "erro": "http_4xx",
+      "cenarios": []
+    }
+  ]
+}
