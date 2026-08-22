@@ -113,6 +113,26 @@ export function linkWhatsappPara(numero: string, mensagem: string): string {
 }
 
 /**
+ * Abre a conversa DIRETO no WhatsApp, pulando a tela intermediária de
+ * `wa.me`/`api.whatsapp.com` ("Conversar com… / Abrir app"), que é onde o
+ * corretor ficava preso a cada disparo.
+ *
+ * No celular o esquema `whatsapp://` entrega a conversa ao app; no desktop
+ * o `web.whatsapp.com/send` cai direto no chat com o texto pronto.
+ *
+ * Atenção ao que isto NÃO faz: nenhum link do WhatsApp envia a mensagem
+ * sozinho — o toque em "enviar" é exigência da plataforma. Envio de
+ * verdade sem intervenção só pelo número conectado ao provedor (ver
+ * `whatsapp/provider.ts`); este link é a queda para quando não há um.
+ */
+export function linkWhatsappApp(numero: string, mensagem: string, ehCelular: boolean): string {
+  const texto = encodeURIComponent(mensagem);
+  return ehCelular
+    ? `whatsapp://send?phone=${numero}&text=${texto}`
+    : `https://web.whatsapp.com/send?phone=${numero}&text=${texto}`;
+}
+
+/**
  * Link de WhatsApp para a linha geral da imobiliária, com mensagem
  * pré-preenchida. Use `linkWhatsappPara` diretamente quando o contato for
  * com um corretor específico (ex.: o responsável por um empreendimento).
