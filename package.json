@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "eval": "tsx --conditions=react-server scripts/eval/rodarEval.ts"
+    "eval": "tsx --conditions=react-server scripts/eval/rodarEval.ts",
+    "bench:nvidia": "tsx --conditions=react-server scripts/eval/compararModelosNvidia.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
