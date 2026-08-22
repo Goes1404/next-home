@@ -84,7 +84,7 @@ export async function notificarCorretorLeadQuente(
 export interface ParametrosAtualizacaoDossie {
   nomeCliente: string;
   telefoneCliente: string;
-  /** Já formatado por `resumirMudancasDossie` (dossierExtractor.ts) — uma ou mais linhas com emoji. */
+  /** Já formatado por `detectarEvolucao` (evolucaoConversa.ts) — uma ou mais linhas com emoji. */
   resumoMudancas: string;
 }
 

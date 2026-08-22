@@ -1,4 +1,3 @@
-import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { algumProvedorConfigurado, chamarLlmJson, ORCAMENTO_DOSSIE_MS } from "./llm";
 import type { DossieClienteIA, TemperaturaLeadLabel } from "./types";
 
@@ -91,47 +90,3 @@ export async function extrairDossieCliente(
   };
 }
 
-/**
- * O que mudou de relevante entre o dossiê anterior e o novo — a mensagem
- * curta que vai para o corretor a cada avanço real da conversa (ver
- * `notificarAtualizacaoCorretor` em brokerNotifier.ts).
- *
- * Função pura, sem rede: recebe os dois dossiês prontos e só compara. `null`
- * quando não há nada digno de interromper o corretor — reextrair o dossiê a
- * cada mensagem naturalmente reafirma o que já se sabia, e reafirmação não é
- * novidade.
- */
-export function resumirMudancasDossie(
-  anterior: DossieClienteIA | null,
-  novo: DossieClienteIA,
-): string | null {
-  const mudancas: string[] = [];
-
-  if (novo.temperaturaLabel !== (anterior?.temperaturaLabel ?? null)) {
-    mudancas.push(
-      `🌡️ Temperatura${anterior ? ` mudou de ${anterior.temperaturaLabel} para` : " identificada como"} *${novo.temperaturaLabel}* (${novo.temperaturaScore}/100)`,
-    );
-  }
-
-  const orcamentoAntes = anterior?.orcamentoMin ?? anterior?.orcamentoMax ?? null;
-  const orcamentoAgora = novo.orcamentoMin ?? novo.orcamentoMax ?? null;
-  if (orcamentoAgora !== null && orcamentoAntes === null) {
-    const faixa =
-      novo.orcamentoMin && novo.orcamentoMax
-        ? `${formatarMoedaBRL(novo.orcamentoMin)} a ${formatarMoedaBRL(novo.orcamentoMax)}`
-        : formatarMoedaBRL(novo.orcamentoMin ?? novo.orcamentoMax);
-    mudancas.push(`💰 Orçamento identificado: ${faixa}`);
-  }
-
-  if (novo.urgenciaMudanca && novo.urgenciaMudanca !== (anterior?.urgenciaMudanca ?? null)) {
-    mudancas.push(`⏱️ Urgência: ${novo.urgenciaMudanca.replace(/_/g, " ")}`);
-  }
-
-  const objecoesAntes = new Set(anterior?.objecoesIdentificadas ?? []);
-  const objecoesNovas = novo.objecoesIdentificadas.filter((o) => !objecoesAntes.has(o));
-  if (objecoesNovas.length > 0) {
-    mudancas.push(`❗ Nova(s) objeção(ões): ${objecoesNovas.join(", ").replace(/_/g, " ")}`);
-  }
-
-  return mudancas.length > 0 ? mudancas.join("\n") : null;
-}

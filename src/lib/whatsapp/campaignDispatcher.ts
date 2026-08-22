@@ -174,7 +174,7 @@ export async function processarFilaCampanhas(params?: {
 
   let query = supabase
     .from("corretor_whatsapp_instancias")
-    .select("id, corretor_id, instance_name, status_conexao, conectado_em, bloqueado_ate");
+    .select("id, corretor_id, instance_name, status_conexao, conectado_em, bloqueado_ate, telefone_conectado");
 
   if (params?.corretorId) query = query.eq("corretor_id", params.corretorId);
 

@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { bloqueadoAtePor, deveAbrirDisjuntor, limiteDiarioCampanha, diasDesdeConexao } from "./antiBan";
 import { exigePalavraChave } from "./modoBot";
 import { consultarEstadoConexao } from "./provider";
+import { resetPorTrocaDeNumero } from "./trocaDeNumero";
 import type { DossieClienteIA } from "./types";
 
 /**
@@ -346,6 +347,32 @@ export async function podeAlertarLeadQuente(
     .eq("id", conversaId);
 
   return true;
+}
+
+/**
+ * Quando o corretor recebeu o último aviso de EVOLUÇÃO desta conversa.
+ *
+ * Separado de `alerta_quente_em` (que guarda a janela de 6h do alerta de
+ * lead quente) de propósito: um alerta urgente não pode ser silenciado pela
+ * carência do aviso comum, nem o comum herdar a janela do urgente.
+ */
+export async function ultimoAvisoEvolucao(conversaId: string): Promise<Date | null> {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("whatsapp_conversas")
+    .select("ultimo_aviso_evolucao_em")
+    .eq("id", conversaId)
+    .maybeSingle();
+
+  return data?.ultimo_aviso_evolucao_em ? new Date(data.ultimo_aviso_evolucao_em) : null;
+}
+
+export async function marcarAvisoEvolucao(conversaId: string): Promise<void> {
+  const supabase = createServiceClient();
+  await supabase
+    .from("whatsapp_conversas")
+    .update({ ultimo_aviso_evolucao_em: new Date().toISOString() })
+    .eq("id", conversaId);
 }
 
 /** Validação da data de visita proposta pela IA — nunca gravar lixo no funil. */
@@ -703,6 +730,8 @@ export async function sincronizarConexaoInstancia(params: {
   instanciaId: string;
   instanceName: string;
   conectadoEmAtual: string | null;
+  /** Número guardado hoje — é a base para detectar troca de chip. */
+  telefoneAtual?: string | null;
 }): Promise<EstadoInstancia> {
   const supabase = createServiceClient();
 
@@ -728,7 +757,11 @@ export async function sincronizarConexaoInstancia(params: {
     return { conectado: false, estado: estado.estado, conectadoEm: null };
   }
 
-  const conectadoEm = params.conectadoEmAtual ?? new Date().toISOString();
+  // Chip diferente = reputação diferente: zera cota, bloqueio e reinicia a
+  // curva de aquecimento (ver trocaDeNumero.ts). Reconexão do MESMO número
+  // não zera nada.
+  const reset = resetPorTrocaDeNumero(params.telefoneAtual, estado.telefone);
+  const conectadoEm = reset?.conectado_em ?? params.conectadoEmAtual ?? new Date().toISOString();
 
   await supabase
     .from("corretor_whatsapp_instancias")
@@ -739,9 +772,22 @@ export async function sincronizarConexaoInstancia(params: {
       // Um número que responde "open" não está mais em falha: zera o
       // contador para o disjuntor não abrir por histórico velho.
       falhas_seguidas: 0,
+      ...(reset
+        ? {
+            envios_campanha_contador: reset.envios_campanha_contador,
+            envios_campanha_data: reset.envios_campanha_data,
+            bloqueado_ate: reset.bloqueado_ate,
+          }
+        : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", params.instanciaId);
+
+  if (reset) {
+    console.warn(
+      `[whatsapp] número trocado em ${params.instanceName}: cota, bloqueio e aquecimento zerados.`,
+    );
+  }
 
   return { conectado: true, estado: estado.estado, conectadoEm: new Date(conectadoEm) };
 }
@@ -762,11 +808,18 @@ export async function registrarEventoConexao(params: {
 
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("id, conectado_em")
+    .select("id, conectado_em, telefone_conectado")
     .eq("instance_name", params.instanceName)
     .maybeSingle();
 
   if (!instancia) return;
+
+  // Chip diferente = reputação diferente. Zera cota do dia, bloqueio e
+  // reinicia o aquecimento (ver trocaDeNumero.ts); reconexão do MESMO
+  // número não zera nada.
+  const reset = conectado
+    ? resetPorTrocaDeNumero(instancia.telefone_conectado, params.telefone)
+    : null;
 
   await supabase
     .from("corretor_whatsapp_instancias")
@@ -774,13 +827,27 @@ export async function registrarEventoConexao(params: {
       status_conexao: conectado ? "conectado" : params.estado === "connecting" ? "conectando" : "desconectado",
       // Só carimba na primeira vez: uma reconexão (queda de internet, troca
       // de celular) não pode zerar a curva de aquecimento de um número que
-      // já vinha maduro.
+      // já vinha maduro. A exceção é a troca de número, tratada acima.
       ...(conectado && !instancia.conectado_em ? { conectado_em: new Date().toISOString() } : {}),
       ...(conectado && params.telefone ? { telefone_conectado: params.telefone } : {}),
       ...(conectado ? { falhas_seguidas: 0 } : {}),
+      ...(reset
+        ? {
+            conectado_em: reset.conectado_em,
+            envios_campanha_contador: reset.envios_campanha_contador,
+            envios_campanha_data: reset.envios_campanha_data,
+            bloqueado_ate: reset.bloqueado_ate,
+          }
+        : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", instancia.id);
+
+  if (reset) {
+    console.warn(
+      `[whatsapp] número trocado em ${params.instanceName}: cota, bloqueio e aquecimento zerados.`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

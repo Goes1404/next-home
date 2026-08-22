@@ -7,7 +7,8 @@ import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
 import { dividirEmMensagens } from "@/lib/whatsapp/chunking";
-import { extrairDossieCliente, resumirMudancasDossie } from "@/lib/whatsapp/dossierExtractor";
+import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
+import { detectarEvolucao, podeAvisarAgora } from "@/lib/whatsapp/evolucaoConversa";
 import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
 import { notificarAtualizacaoCorretor, notificarCorretorLeadQuente } from "@/lib/whatsapp/brokerNotifier";
 import { enviarMensagemWhatsapp, enviarMidiaWhatsapp, enviarPresencaDigitando } from "@/lib/whatsapp/provider";
@@ -34,6 +35,8 @@ import {
   ultimaMensagemClienteId,
   validarDataVisita,
   type InstanciaResolvida,
+  ultimoAvisoEvolucao,
+  marcarAvisoEvolucao,
 } from "@/lib/whatsapp/repositorio";
 import { contemPalavraChave, decidirPorModo } from "@/lib/whatsapp/modoBot";
 
@@ -532,14 +535,26 @@ export async function POST(req: NextRequest) {
     // pedido de humano); a nota pequena é só "a conversa andou, aqui está o
     // que mudou" — o feedback contínuo do atendimento em curso.
     //
-    // O alerta por score alto passa por debounce (1 por conversa a cada
-    // 6h): score >= 75 persiste por várias mensagens seguidas, e um alerta
-    // por mensagem ensina o corretor a ignorar o alerta. Evento novo
-    // (visita, transferência) fura o debounce — é acionável na hora.
+    /*
+     * O corretor é avisado quando a CONVERSA EVOLUI, não a cada resposta.
+     *
+     * Antes, `sugerirVisita` contava como evento novo — e o prompt atual faz
+     * a IA propor visita em quase toda mensagem, então o alerta completo
+     * disparava sempre. Somado a isso, qualquer variação do dossiê
+     * reextraído mandava uma segunda mensagem. Resultado: o WhatsApp do
+     * corretor virava eco da conversa, e aviso que chega o tempo todo deixa
+     * de ser lido.
+     *
+     * Agora só é ALERTA (o completo, com dossiê) o que exige ação imediata:
+     * o cliente confirmou visita, ou a IA travou e precisa de humano. A
+     * proposta de visita que a IA fez por conta própria não é notícia — o
+     * cliente ainda não respondeu.
+     */
     let alerta: { enviado: boolean; motivo?: string } = { enviado: false };
-    const eventoNovo = visitaConfirmada || respostaIA.sugerirVisita || respostaIA.transferirHumano;
+    const exigeAcaoAgora = visitaConfirmada || respostaIA.transferirHumano;
     const deveAlertar =
-      eventoNovo || (dossie.temperaturaScore >= 75 && (await podeAlertarLeadQuente(conversa.id)));
+      exigeAcaoAgora ||
+      (dossie.temperaturaScore >= 75 && (await podeAlertarLeadQuente(conversa.id)));
 
     if (deveAlertar) {
       const resultadoAlerta = await notificarCorretorLeadQuente({
@@ -563,16 +578,35 @@ export async function POST(req: NextRequest) {
       });
       alerta = { enviado: resultadoAlerta.enviado, motivo: resultadoAlerta.motivo };
     } else {
-      const mudancas = resumirMudancasDossie(dossieAnterior, dossie);
-      if (mudancas) {
-        const resultadoAtualizacao = await notificarAtualizacaoCorretor({
-          instanceName: instancia.instanceName,
-          telefoneCorretor: instancia.whatsappCorretor,
-          nomeCliente: payload.senderName || "Cliente WhatsApp",
-          telefoneCliente: sender,
-          resumoMudancas: mudancas,
-        });
-        alerta = { enviado: resultadoAtualizacao.enviado, motivo: resultadoAtualizacao.motivo };
+      /*
+       * Aviso curto de evolução — só o que um corretor consideraria
+       * notícia: o cliente esquentou de faixa, apareceu orçamento, surgiu
+       * objeção nova. Oscilação do score na mesma faixa e objeção
+       * reescrita com outra palavra ficam de fora (ver evolucaoConversa.ts).
+       */
+      const evolucao = detectarEvolucao({
+        anterior: dossieAnterior,
+        novo: dossie,
+        visitaConfirmada,
+        formatarMoeda: (v) =>
+          v === null
+            ? "—"
+            : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }),
+      });
+
+      if (evolucao) {
+        const ultimo = await ultimoAvisoEvolucao(conversa.id);
+        if (podeAvisarAgora(ultimo, evolucao.urgente)) {
+          const resultadoAtualizacao = await notificarAtualizacaoCorretor({
+            instanceName: instancia.instanceName,
+            telefoneCorretor: instancia.whatsappCorretor,
+            nomeCliente: payload.senderName || "Cliente WhatsApp",
+            telefoneCliente: sender,
+            resumoMudancas: evolucao.linhas.join("\n"),
+          });
+          alerta = { enviado: resultadoAtualizacao.enviado, motivo: resultadoAtualizacao.motivo };
+          if (resultadoAtualizacao.enviado) await marcarAvisoEvolucao(conversa.id);
+        }
       }
     }
 

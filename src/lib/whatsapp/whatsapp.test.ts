@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { construirPromptSistema, type ContextoAtendimento } from "./aiAgent";
 import { formatarExemplosFewShot, type ExemploConvertido } from "./aprendizadoContinuo";
 import { classificarTamanho, dividirEmMensagens } from "./chunking";
-import { extrairDossieCliente, resumirMudancasDossie } from "./dossierExtractor";
-import type { DossieClienteIA } from "./types";
+import { extrairDossieCliente } from "./dossierExtractor";
 import {
   gerarMensagensCampanhaPersonalizadas,
   montarFilaCampanha,
@@ -365,66 +364,6 @@ describe("Dossiê do cliente", () => {
   });
 });
 
-const DOSSIE_BASE: DossieClienteIA = {
-  id: "dossie-1",
-  leadId: "lead-1",
-  orcamentoMin: null,
-  orcamentoMax: null,
-  formaPagamento: null,
-  perfilFamiliar: null,
-  urgenciaMudanca: null,
-  exigenciasEspecificas: [],
-  objecoesIdentificadas: [],
-  temperaturaScore: 50,
-  temperaturaLabel: "morno",
-  resumoExecutivo: "Lead em atendimento inicial.",
-  proximoPassoSugerido: null,
-  createdAt: "2026-08-01T00:00:00Z",
-  updatedAt: "2026-08-01T00:00:00Z",
-};
-
-describe("Feedback contínuo ao corretor — diff de dossiê", () => {
-  it("aponta a primeira leitura de temperatura quando não havia dossiê anterior", () => {
-    const resumo = resumirMudancasDossie(null, DOSSIE_BASE);
-    expect(resumo).toContain("morno");
-  });
-
-  it("não aponta nada quando nada relevante mudou entre duas leituras iguais", () => {
-    const resumo = resumirMudancasDossie(DOSSIE_BASE, { ...DOSSIE_BASE });
-    expect(resumo).toBeNull();
-  });
-
-  it("aponta subida de temperatura", () => {
-    const novo: DossieClienteIA = { ...DOSSIE_BASE, temperaturaScore: 80, temperaturaLabel: "quente" };
-    const resumo = resumirMudancasDossie(DOSSIE_BASE, novo);
-    expect(resumo).toContain("morno");
-    expect(resumo).toContain("quente");
-  });
-
-  it("aponta orçamento identificado pela primeira vez", () => {
-    const novo: DossieClienteIA = { ...DOSSIE_BASE, orcamentoMin: 1_200_000, orcamentoMax: 1_500_000 };
-    const resumo = resumirMudancasDossie(DOSSIE_BASE, novo);
-    expect(resumo).toContain("1.200.000");
-    expect(resumo).toContain("1.500.000");
-  });
-
-  it("não repete o orçamento se ele já era conhecido antes", () => {
-    const anterior: DossieClienteIA = { ...DOSSIE_BASE, orcamentoMin: 1_000_000 };
-    const novo: DossieClienteIA = { ...DOSSIE_BASE, orcamentoMin: 1_000_000, temperaturaScore: 50 };
-    expect(resumirMudancasDossie(anterior, novo)).toBeNull();
-  });
-
-  it("aponta só a objeção nova, não as que já eram conhecidas", () => {
-    const anterior: DossieClienteIA = { ...DOSSIE_BASE, objecoesIdentificadas: ["preco"] };
-    const novo: DossieClienteIA = {
-      ...DOSSIE_BASE,
-      objecoesIdentificadas: ["preco", "prazo_entrega"],
-    };
-    const resumo = resumirMudancasDossie(anterior, novo);
-    expect(resumo).toContain("prazo entrega");
-    expect(resumo).not.toContain("Nova(s) objeção(ões): preco");
-  });
-});
 
 describe("Nota de acompanhamento ao corretor", () => {
   it("formata a atualização sem soar como alerta urgente", () => {

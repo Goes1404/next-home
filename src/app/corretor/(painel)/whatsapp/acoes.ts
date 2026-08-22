@@ -301,6 +301,7 @@ export async function verificarConexaoWhatsapp(): Promise<{
     instanciaId: instancia.id,
     instanceName: instancia.instance_name,
     conectadoEmAtual: instancia.conectado_em,
+    telefoneAtual: instancia.telefone_conectado,
   });
 
   if (estado.conectado) revalidatePath("/corretor/whatsapp");

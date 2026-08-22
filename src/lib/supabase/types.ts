@@ -864,6 +864,7 @@ export type Database = {
           telefone_cliente: string
           nome_cliente: string | null
           alerta_quente_em: string | null
+          ultimo_aviso_evolucao_em: string | null
           bot_ativo: boolean
           pausado_humano_ate: string | null
           origem: "organica" | "campanha"
@@ -879,6 +880,7 @@ export type Database = {
           telefone_cliente: string
           nome_cliente?: string | null
           alerta_quente_em?: string | null
+          ultimo_aviso_evolucao_em?: string | null
           bot_ativo?: boolean
           pausado_humano_ate?: string | null
           origem?: "organica" | "campanha"
@@ -894,6 +896,7 @@ export type Database = {
           telefone_cliente?: string
           nome_cliente?: string | null
           alerta_quente_em?: string | null
+          ultimo_aviso_evolucao_em?: string | null
           bot_ativo?: boolean
           pausado_humano_ate?: string | null
           origem?: "organica" | "campanha"

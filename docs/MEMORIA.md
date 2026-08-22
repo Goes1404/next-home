@@ -98,9 +98,21 @@ corretor).
   busca trechos reais de conversas de leads que avançaram no funil
   (visita, proposta, negociação, fechamento) e injeta como few-shot no
   prompt — recalculado a cada chamada, não depende de job semanal.
-- **Feedback contínuo ao corretor** (`dossierExtractor.ts` +
-  `brokerNotifier.ts`): além do alerta de lead quente, uma nota curta
-  quando o dossiê muda de forma relevante durante a conversa.
+- **Aviso ao corretor é por EVOLUÇÃO da conversa, não por mensagem**
+  (`evolucaoConversa.ts`). O que havia antes mandava mensagem quase toda
+  resposta, por duas causas somadas: `sugerirVisita` contava como "evento
+  novo" — e o prompt atual liga isso quase sempre — e qualquer diferença
+  entre duas leituras do dossiê disparava uma nota. Só que o dossiê é
+  reextraído por IA a cada mensagem e duas leituras nunca saem iguais: o
+  score oscila 38 → 42 → 39 e o rótulo pula frio ↔ morno sem o cliente ter
+  dito nada. **Aviso que chega o tempo todo deixa de ser lido**, que é o
+  pior desfecho para um alerta. Hoje a régua é: temperatura que SOBE de
+  faixa com folga de 5 pontos (termostato, não gatilho), orçamento
+  descoberto pela primeira vez, objeção nova comparada por forma
+  normalizada ("preco" = "Preço"), e visita confirmada. Mais carência de 45
+  min por conversa (`ultimo_aviso_evolucao_em`, 0033), que só notícia
+  urgente fura. `sugerirVisita` sozinho NÃO é notícia: é iniciativa da IA,
+  o cliente ainda não respondeu.
 - **Disparador de campanhas** (`campaignDispatcher.ts`): roda 1x/dia via
   cron (limite do Hobby, ver acima) **e** sob demanda pelo botão
   "Processar fila agora" no painel — na prática, o botão manual é o
@@ -398,6 +410,14 @@ trilho+IA, follow-up, métricas de funil).
 - **Telemetria (`ia_interacoes`, 0029)**: TODA interação (inclusive
   silêncios) com versão/latência/fallback/bloqueios. Botão 👍/👎 nas
   conversas alimenta o golden dataset (`scripts/eval/exportarGolden.ts`).
+- **Trocar o número pareado zera a reputação** (`trocaDeNumero.ts`):
+  contador do dia, `bloqueado_ate`, `falhas_seguidas` e a curva de
+  aquecimento (`conectado_em`) voltam ao zero. Chip novo herdando a
+  maturidade do anterior é o caminho curto para o banimento — dispararia em
+  volume alto num número que a Meta acabou de ver. Duas guardas importam:
+  RECONECTAR o mesmo número não zera nada (senão uma queda de internet
+  custaria a maturidade), e provedor que confirma conexão SEM informar o
+  número também não (tratar "não sei" como "é outro" zeraria à toa).
 - **Conectar/desconectar o número** (`provider.ts` + `whatsapp/acoes.ts`):
   `GET /instance/connect/{nome}` sem parâmetro devolve QR; **com
   `?number=55DDNNNNNNNNN` devolve `pairingCode`** (8 caracteres para digitar
