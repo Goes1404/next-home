@@ -157,7 +157,7 @@ export function Preloader() {
       suppressHydrationWarning
       onClick={encerrar}
       aria-hidden
-      className={`fixed inset-0 z-[9999] flex items-center justify-center bg-[#eef1f3] transition-opacity duration-700 ease-out data-oculto:hidden ${
+      className={`fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-[#eef1f3] transition-opacity duration-700 ease-out data-oculto:hidden ${
         fase === "saindo" ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >
@@ -167,20 +167,50 @@ export function Preloader() {
         <style>{`#nh-intro{display:none}`}</style>
       </noscript>
 
-      {/* Só nasce no cliente, depois da decisão desta sessão — quem tem
-          Save-Data ou já viu a vinheta não baixa um byte do vídeo. */}
+      {/* Só nascem no cliente, depois da decisão desta sessão — quem tem
+          Save-Data ou já viu a vinheta não baixa um byte do vídeo.
+
+          São DUAS cópias do mesmo vídeo, e é isso que torna o fundo do
+          vídeo invisível: a de trás cobre a tela inteira borrada
+          (`object-cover` + blur pesado), estendendo o cenário degradê da
+          vinheta para além do 16:9; a da frente é a nítida, contida. A
+          borda da cópia nítida encosta em conteúdo idêntico borrado, então
+          não existe retângulo visível — em nenhuma proporção de tela.
+          Clipar o fundo do arquivo para uma cor chapada não funcionaria: o
+          cenário é um degradê com elementos encostando nas bordas. */}
       {hidratado && (
-        <video
-          className="h-full w-full object-contain"
-          autoPlay
-          muted
-          playsInline
-          preload="auto"
-          onEnded={encerrar}
-        >
-          <source src={INTRO_VIDEO_WEBM_URL} type="video/webm" />
-          <source src={INTRO_VIDEO_URL} type="video/mp4" />
-        </video>
+        <>
+          <video
+            className="absolute inset-0 h-full w-full scale-125 object-cover blur-3xl brightness-[1.12] saturate-[0.35] opacity-70"
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+          >
+            <source src={INTRO_VIDEO_WEBM_URL} type="video/webm" />
+            <source src={INTRO_VIDEO_URL} type="video/mp4" />
+          </video>
+          {/* O wrapper abraça exatamente o 16:9 do vídeo (nada de
+              `object-contain` com letterbox dentro do elemento — a máscara
+              precisa esfumar a borda do CONTEÚDO, não a da tela). As duas
+              máscaras aninhadas (vertical fora, horizontal dentro) se
+              compõem sem depender de `mask-composite`. */}
+          <div className="relative aspect-video w-[min(100%,177.78vh)] [mask-image:linear-gradient(to_bottom,transparent,black_14%,black_86%,transparent)]">
+            <div className="h-full w-full [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+              <video
+                className="h-full w-full"
+                autoPlay
+                muted
+                playsInline
+                preload="auto"
+                onEnded={encerrar}
+              >
+                <source src={INTRO_VIDEO_WEBM_URL} type="video/webm" />
+                <source src={INTRO_VIDEO_URL} type="video/mp4" />
+              </video>
+            </div>
+          </div>
+        </>
       )}
 
       <button
