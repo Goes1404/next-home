@@ -94,10 +94,27 @@ corretor).
   mensagem, e proíbe markdown, lista e as aberturas de manual.
 - **Mídia nativa** (`provider.ts`): fotos/plantas/vídeos saem como anexo
   real do WhatsApp, não como link no texto.
-- **Aprendizado contínuo** (`aprendizadoContinuo.ts`): a cada resposta,
-  busca trechos reais de conversas de leads que avançaram no funil
-  (visita, proposta, negociação, fechamento) e injeta como few-shot no
-  prompt — recalculado a cada chamada, não depende de job semanal.
+- **A IA NÃO APRENDE sozinha** — nenhum LLM aprende entre chamadas. O que
+  existe é RECUPERAÇÃO (`aprendizadoContinuo.ts` + `recuperacao.ts`): a
+  cada resposta, trechos de conversas reais entram no prompt como few-shot.
+  Recalculado por chamada, sem job semanal.
+- **`telefone_e164` em `leads` é coluna GERADA** (`normalizar_telefone_br`).
+  `encontrarOuCriarLead` a incluía no insert, o Postgres recusava a linha
+  inteira ("cannot insert a non-DEFAULT value") e o erro era ignorado —
+  então **nenhum lead nascia de conversa de WhatsApp**. Ficou invisível
+  porque a função devolvia `null` em silêncio: 30 conversas com fala real
+  de cliente (721 mensagens) sem cadastro no CRM, e o dossiê e o few-shot
+  mortos por consequência. Backfill em 22/08 ligou as 36 conversas.
+- **Recuperar por RELEVÂNCIA, não por recência nem só por conversão**
+  (`recuperacao.ts`). O critério antigo — "3 conversas mais recentes de
+  leads convertidos" — falhava por dois lados: exigir conversão significa
+  não aprender nada até a primeira venda (o corpus tinha UMA conversa
+  elegível entre 36), e recência traz o que estava por perto, não o que
+  ajuda. Hoje pontua assunto (imóvel/bairro citado, 60), conversão (50),
+  engajamento do cliente (8 por fala, teto 6) e recência como desempate
+  (até 20). Corpus elegível saltou de 1 para 24 conversas.
+- **Conversa em que só o bot falou não é exemplo.** O mínimo de 2 falas do
+  cliente existe porque monólogo ensina justamente o que não funciona.
 - **Aviso ao corretor é por EVOLUÇÃO da conversa, não por mensagem**
   (`evolucaoConversa.ts`). O que havia antes mandava mensagem quase toda
   resposta, por duas causas somadas: `sugerirVisita` contava como "evento
