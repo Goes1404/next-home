@@ -175,15 +175,20 @@ describe("Quebra de mensagens (chunking)", () => {
     expect(dividirEmMensagens(texto)).toEqual([texto]);
   });
 
-  it("quebra mensagem média em duas partes menores", () => {
+  it("mensagem média vira pequenas", () => {
+    // Média pela régua NOVA (120-240 chars), que veio da medição das 93
+    // mensagens reais da corretora — média de 47, só 1 acima de 200.
     const texto =
-      "Temos o Canvas Alphaville, com apartamentos de 3 suítes a partir de R$ 1,45 milhão. " +
-      "O empreendimento fica no Green Valley, a cinco minutos do shopping e das melhores escolas da região. " +
-      "Posso te mandar as plantas e o book completo agora mesmo?";
+      "O Canvas fica no Green Valley, a cinco minutos do shopping. " +
+      "São 3 suítes com varanda gourmet. Posso te mandar as plantas agora?";
     expect(classificarTamanho(texto)).toBe("media");
 
     const partes = dividirEmMensagens(texto);
-    expect(partes.length).toBe(2);
+
+    // O que importa não é o NÚMERO de balões — é a promessa: nenhum pedaço
+    // pode continuar grande, e nada do texto pode se perder no caminho.
+    expect(partes.length).toBeGreaterThan(1);
+    for (const parte of partes) expect(classificarTamanho(parte)).toBe("pequena");
     expect(partes.join(" ").replace(/\s+/g, " ")).toBe(texto.replace(/\s+/g, " "));
   });
 
@@ -194,8 +199,11 @@ describe("Quebra de mensagens (chunking)", () => {
     expect(classificarTamanho(texto)).toBe("longa");
 
     const partes = dividirEmMensagens(texto);
-    expect(partes.length).toBe(2);
+
+    expect(partes.length).toBeGreaterThan(1);
     expect(partes.every((p) => p.length > 0)).toBe(true);
+    // Longa vira médias: nenhum balão pode sair ainda longo.
+    for (const parte of partes) expect(classificarTamanho(parte)).not.toBe("longa");
   });
 
   it("nunca corta uma palavra ao meio", () => {

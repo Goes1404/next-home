@@ -88,6 +88,20 @@ corretor).
   "Entendi!"). Mora em `sanearRespostaIA`, não no prompt: instrução de
   prompt é probabilística e falha justo na resposta que importa; função
   determinística vale sempre e é testável.
+- **O estilo da casa foi MEDIDO, não imaginado** (`estiloDaCasa.ts`). Três
+  conversas reais de uma corretora que fecha negócio, exportadas do
+  WhatsApp: 93 mensagens dela, média de **47 CARACTERES**, só 1 acima de
+  200, e apenas 23% terminando em pergunta. Ela não escreve parágrafo —
+  manda três ou quatro mensagens curtas seguidas, uma ideia em cada. Os
+  limites do chunking (eram 200/400) desceram para 120/240 por causa disso:
+  chamávamos de "pequena" uma mensagem 4x maior que a média dela.
+- **Exemplo fixo ≠ exemplo recuperado.** `estiloDaCasa.ts` está sempre no
+  prompt (é COMO se fala nesta casa); `recuperacao.ts` busca por relevância
+  (é o que já foi dito sobre AQUELE imóvel). Papéis diferentes.
+- **Conversa exportada precisa ser anonimizada E ter as cifras removidas**
+  antes de virar prompt. Uma das clientes conta que perdeu a irmã — isso não
+  entra em prompt nenhum. E a corretora fala valores à vontade: injetar
+  cru ensinaria à IA exatamente o que a regra de negócio proíbe.
 - **Regra de tamanho no prompt vale mais que o chunking.** O teto de balões
   é rede de segurança; o certo é a IA não escrever 1900 caracteres. O
   prompt agora pede resposta inteira em até 350 caracteres, uma ideia por

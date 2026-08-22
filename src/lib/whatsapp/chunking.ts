@@ -26,8 +26,14 @@
  * devolveria dois blocos enormes e a regra morreria do mesmo jeito.
  */
 
-const LIMITE_PEQUENA = 200;
-const LIMITE_MEDIA = 400;
+/*
+ * A régua veio da medição, não do achismo: 93 mensagens de uma corretora
+ * real desta casa têm média de 47 caracteres, e só UMA passou de 200.
+ * Os limites antigos (200/400) chamavam de "pequena" uma mensagem 4x maior
+ * que a média dela — e de "média" uma que ela nunca mandou na vida.
+ */
+const LIMITE_PEQUENA = 120;
+const LIMITE_MEDIA = 240;
 
 export type TamanhoMensagem = "pequena" | "media" | "longa";
 
