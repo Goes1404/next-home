@@ -2,7 +2,17 @@
  * Eval do agente de WhatsApp com LLM-as-judge calibrado.
  *
  * Uso (manual, antes de QUALQUER bump de PROMPT_VERSAO):
- *   GEMINI_API_KEY=... npx tsx scripts/eval/rodarEval.ts
+ *   GEMINI_API_KEY=... npm run eval
+ *
+ * SEMPRE por `npm run eval`, nunca por `npx tsx` direto. O script importa a
+ * cadeia do agente, que começa com `import "server-only"` — um pacote que
+ * LANÇA fora do runtime de servidor do React. Sem a flag
+ * `--conditions=react-server` (que o npm script já carrega, e é o mecanismo
+ * oficial do próprio pacote), o eval morre na primeira linha.
+ *
+ * Foi exatamente por isso que `eval/resultados/` ficou vazio desde que este
+ * arquivo nasceu: a regra "prompt novo não sobe com score abaixo do
+ * anterior" nunca pôde ser cumprida, porque o eval nunca chegou a rodar.
  *
  * Comparando provedores (a cascata tem NVIDIA e Gemini):
  *   NVIDIA_API_KEY=... GEMINI_API_KEY=... npx tsx scripts/eval/rodarEval.ts --provedor=nvidia
@@ -87,7 +97,7 @@ async function julgar(mensagem: string, resposta: string): Promise<Record<string
   return { fidelidade: j.fidelidade, conducao: j.conducao, tom: j.tom };
 }
 
-async function calibrar(): Promise<boolean> {
+async function calibrar(): Promise<"ok" | "juiz_mudo" | "descalibrado"> {
   let comparacoes = 0;
   let concordantes = 0;
 
@@ -102,17 +112,30 @@ async function calibrar(): Promise<boolean> {
     console.log(`  calibração ${caso.id}: judge=${JSON.stringify(nota)} humano=${JSON.stringify(caso.notaHumana)}`);
   }
 
-  const taxa = comparacoes > 0 ? concordantes / comparacoes : 0;
+  /*
+   * "Nenhuma comparação" e "o juiz discordou dos humanos" NÃO são a mesma
+   * coisa, e tratá-las igual mentia: sem GEMINI_API_KEY o juiz não responde,
+   * `comparacoes` fica em 0, e a tela dizia "0% — judge descalibrado",
+   * mandando revisar uma rubrica que estava boa.
+   */
+  if (comparacoes === 0) return "juiz_mudo";
+
+  const taxa = concordantes / comparacoes;
   console.log(`Concordância judge×humano: ${(taxa * 100).toFixed(0)}% (limiar ${calibracao.limiarConcordancia * 100}%)`);
-  return taxa >= calibracao.limiarConcordancia;
+  return taxa >= calibracao.limiarConcordancia ? "ok" : "descalibrado";
 }
 
 async function main() {
   console.log(`Eval do prompt ${PROMPT_VERSAO} — ${casos.length} casos\n`);
 
   console.log("1/2 Calibrando o judge...");
-  if (!(await calibrar())) {
-    console.error("ABORTADO: judge descalibrado — revisar a rubrica antes de confiar nos scores.");
+  const desfecho = await calibrar();
+  if (desfecho !== "ok") {
+    console.error(
+      desfecho === "juiz_mudo"
+        ? "ABORTADO: o juiz não respondeu a nenhum caso. O juiz é SEMPRE o Gemini (nunca o provedor sob avaliação) — confira GEMINI_API_KEY. Isto não é rubrica descalibrada."
+        : "ABORTADO: judge descalibrado — revisar a rubrica antes de confiar nos scores.",
+    );
     process.exit(1);
   }
 

@@ -24,10 +24,35 @@ import {
 const BASE_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
 
 /**
- * Llama 3.3 70B: forte em português e presente no catálogo gratuito.
+ * Escolhido MEDINDO contra a API real, não pela reputação do nome.
+ *
+ * O primeiro palpite foi `meta/llama-3.3-70b-instruct`, e ele estava errado:
+ * na conta gratuita esse modelo **não responde** — duas tentativas, 60s e
+ * 90s, sem uma linha de volta. Teria virado timeout em toda conversa.
+ *
+ * O que a medição com o prompt real (~3100 tokens de entrada) mostrou:
+ *
+ * | modelo | latência | veredito |
+ * |---|---|---|
+ * | `meta/llama-3.3-70b-instruct` | não respondeu em 90s | inutilizável |
+ * | `nvidia/llama-3.3-nemotron-super-49b-v1.5` | ~30s | lento demais |
+ * | `nvidia/nemotron-3.5-lightning-30b-a3b` | ~14s | lento, e cospe raciocínio antes do JSON |
+ * | `meta/llama-3.1-8b-instruct` | ~1,8s | rápido, mas agenda no DIA ERRADO |
+ * | `mistralai/mistral-nemotron` | ~5,5s | escolhido |
+ *
+ * O 8B foi descartado por um erro caro: o cliente pediu sábado e ele
+ * devolveu uma quinta-feira — e essa data vai direto para
+ * `leads.visita_agendada_em`. Visita marcada no dia errado é pior que
+ * visita não marcada.
+ *
+ * O mistral-nemotron acertou o sábado, recusou um pedido de 30% de desconto
+ * e não inventou imóvel fora do catálogo quando perguntado sobre o Leblon —
+ * os dois casos que os guardrails existem para pegar. A latência fica na
+ * mesma faixa do Gemini (4,9–6,9s medidos em produção).
+ *
  * `NVIDIA_MODEL` troca sem deploy de código.
  */
-export const MODELO_NVIDIA_PADRAO = "meta/llama-3.3-70b-instruct";
+export const MODELO_NVIDIA_PADRAO = "mistralai/mistral-nemotron";
 
 export function modeloNvidia(): string {
   return process.env.NVIDIA_MODEL || MODELO_NVIDIA_PADRAO;

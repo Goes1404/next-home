@@ -227,6 +227,27 @@ trilho+IA, follow-up, métricas de funil).
   - **`IA_PROVEDOR_FORCADO=nvidia|gemini`** restringe a cascata a um só.
     Existe para o eval: sem isso a NVIDIA falharia num caso difícil, o
     Gemini responderia por baixo, e o score mediria a mistura.
+- **Modelo da NVIDIA foi escolhido MEDINDO, não pelo nome.** O primeiro
+  palpite (`meta/llama-3.3-70b-instruct`) **não responde** nesta conta —
+  duas tentativas, 60s e 90s, nada de volta. Medido com o prompt real
+  (~3100 tokens): `nemotron-super-49b` ~30s, `nemotron-3.5-lightning-30b`
+  ~14s (e cospe raciocínio antes do JSON), `llama-3.1-8b` ~1,8s mas
+  **agendou visita no dia errado** (cliente pediu sábado, devolveu
+  quinta — e essa data vai para `leads.visita_agendada_em`),
+  `mistralai/mistral-nemotron` ~5,5s e acertou tudo, inclusive recusar 30%
+  de desconto e não inventar imóvel no Leblon. **Antes de trocar
+  `NVIDIA_MODEL`, medir latência E uma data de visita.**
+- **O eval NUNCA tinha rodado** — `eval/resultados/` vazio não era
+  esquecimento. `scripts/eval/rodarEval.ts` importa a cadeia do agente, que
+  começa com `import "server-only"`; esse pacote LANÇA fora do runtime de
+  servidor do React. Rodar por `npx tsx` direto morre na primeira linha.
+  Use **`npm run eval`**, que carrega `--conditions=react-server` (o
+  mecanismo oficial do próprio pacote). Corolário: a regra "prompt novo não
+  sobe com score abaixo do anterior" foi inaplicável até 22/08/2026.
+- **Juiz mudo ≠ rubrica ruim.** Sem `GEMINI_API_KEY` o juiz não responde,
+  `comparacoes` fica em 0 e o eval dizia "0% — judge descalibrado",
+  mandando revisar uma rubrica que estava boa. Hoje os dois desfechos têm
+  mensagens diferentes.
 - **`response_format` da NVIDIA não é confiável** em todo modelo do
   catálogo — diferente do `responseMimeType` do Gemini, que devolve JSON
   limpo por contrato. Como todo o contrato do agente é JSON,
