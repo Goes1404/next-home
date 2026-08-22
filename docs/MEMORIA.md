@@ -135,13 +135,14 @@ Coisas que valem lembrar daqui:
   Corolário importante: quando um chamador NÃO consegue a trava, ele não
   pode encadear — senão cada tique de um minuto abriria uma corrente nova
   de 60 elos por cima da que já roda.
-- **pg_cron + pg_net já estão instalados no projeto** (migration 0025), mas
-  o tique de um minuto NÃO está agendado: ele precisa do `CRON_SECRET` da
-  Vercel, que não mora no banco. Para ligar a rede de segurança, rode uma
-  vez no SQL editor:
-  `select public.configurar_disparo_automatico('https://next-home-drab.vercel.app/api/cron/campanhas', '<CRON_SECRET>');`
-  Sem isso o disparo continua automático (pela corrente) — só perde o
-  recomeço automático se uma corrente morrer no meio.
+- **pg_cron LIGADO em 22/08/2026**: `disparo-campanhas` (1/min) e
+  `followups-whatsapp` (a cada 5 min) agendados via
+  `configurar_disparo_automatico` / `configurar_followups_automaticos`, com
+  o segredo guardado no Vault. Se trocar o `CRON_SECRET` na Vercel, rode as
+  duas funções de novo com o valor novo — e lembre que env var nova na
+  Vercel SÓ VALE DEPOIS DE UM REDEPLOY (as funções serverless congelam o
+  ambiente no build; um 401 persistente após trocar o segredo quase sempre
+  é só isso).
 
 ## Vídeo de fundo e vinheta de abertura — o que custa caro descobrir
 
