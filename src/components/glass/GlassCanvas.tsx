@@ -185,6 +185,12 @@ export default function GlassCanvas(props: GlassCanvasProps) {
       img = new Image();
       img.crossOrigin = "anonymous";
       img.decoding = "async";
+      // Textura que não carrega deixa `uHasTexture` em 0 e o shader cai no
+      // fundo procedural — mas sem este `onerror` o handler ficava pendurado
+      // e a falha passava despercebida na investigação.
+      img.onerror = () => {
+        console.warn("Fundo indisponível para refração do vidro; usando o procedural.");
+      };
       img.onload = () => {
         naturalW = img!.naturalWidth;
         naturalH = img!.naturalHeight;
@@ -234,7 +240,10 @@ export default function GlassCanvas(props: GlassCanvasProps) {
       observadorTamanho.disconnect();
       window.removeEventListener("scroll", marcarSujo);
       window.removeEventListener("resize", marcarSujo);
-      if (img) img.onload = null;
+      if (img) {
+        img.onload = null;
+        img.onerror = null;
+      }
       // Devolve o contexto explicitamente; o GC do navegador demora demais e a
       // cota de contextos WebGL é pequena.
       gl.getExtension("WEBGL_lose_context")?.loseContext();

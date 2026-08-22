@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGlassBackground } from "@/components/glass/GlassBackground";
+import { HERO_VIDEO_URL, HERO_VIDEO_WEBM_URL } from "@/lib/site";
 
 type NavigatorEstendido = Navigator & {
   connection?: { saveData?: boolean };
@@ -68,15 +69,78 @@ function usePodeExibirVideo(): boolean {
  * GlassCanvas.tsx), em vez de caírem no gradiente procedural que existe
  * para quando não há nada para refratar.
  */
+/**
+ * Tempo até desistir de um vídeo que nem metadados entrega.
+ *
+ * Sem este teto, um fundo que trava no meio do download deixa o `<video>`
+ * em `opacity: 0` PARA SEMPRE — a tela fica no gradiente liso e o site
+ * parece quebrado (foi o sintoma relatado: "às vezes não carrega o
+ * efeito"). Vale para o vídeo do site e, principalmente, para o fundo
+ * personalizado do corretor, que vem de um bucket externo.
+ */
+const LIMITE_CARREGAMENTO_MS = 8000;
+
 export function HeroVideoBackground({ src, srcWebm }: { src: string; srcWebm?: string }) {
   const permitido = usePodeExibirVideo();
-  const [pronto, setPronto] = useState(false);
+  /*
+   * Fonte em uso. Quando o fundo PERSONALIZADO do corretor falha, cai uma
+   * vez para o vídeo padrão do site (local, sempre disponível) em vez de
+   * deixar a tela sem fundo nenhum: o visitante vê o site da imobiliária
+   * funcionando, não um erro de cadastro de outra pessoa.
+   */
+  const [estado, setEstado] = useState<{
+    /** src que a prop tinha quando este estado nasceu — trocou, tudo recomeça. */
+    origem: string;
+    fonte: { src: string; webm?: string };
+    pronto: boolean;
+    falhou: boolean;
+  } | null>(null);
+
+  const atual =
+    estado?.origem === src
+      ? estado
+      : { origem: src, fonte: { src, webm: srcWebm }, pronto: false, falhou: false };
+  const { fonte, pronto, falhou } = atual;
   const { definirVideo } = useGlassBackground();
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     return () => definirVideo(null);
   }, [definirVideo]);
+
+  /**
+   * Rede lenta não avisa que desistiu: o `<video>` simplesmente nunca
+   * dispara `loadedmetadata` nem `error`. Este relógio é o que transforma
+   * "carregando para sempre" numa decisão.
+   */
+  const aoFalhar = useCallback(() => {
+    setEstado((anterior) => {
+      const base = anterior?.origem === src ? anterior : atual;
+      if (base.falhou) return base;
+
+      // Queda única: o fundo PERSONALIZADO do corretor falhou, então entra o
+      // vídeo padrão do site (local, sempre disponível). O visitante vê o
+      // site da imobiliária funcionando, não o erro de cadastro de alguém.
+      if (base.fonte.src !== HERO_VIDEO_URL && HERO_VIDEO_URL) {
+        console.warn("Fundo personalizado indisponível; usando o vídeo padrão do site.");
+        return {
+          origem: src,
+          fonte: { src: HERO_VIDEO_URL, webm: HERO_VIDEO_WEBM_URL },
+          pronto: false,
+          falhou: false,
+        };
+      }
+      return { ...base, origem: src, pronto: false, falhou: true };
+    });
+    // `atual` é derivado das props a cada render; a dependência real é o src.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src]);
+
+  useEffect(() => {
+    if (!permitido || pronto || falhou) return;
+    const relogio = window.setTimeout(aoFalhar, LIMITE_CARREGAMENTO_MS);
+    return () => window.clearTimeout(relogio);
+  }, [permitido, pronto, falhou, fonte.src, aoFalhar]);
 
   useEffect(() => {
     if (!pronto) return;
@@ -123,11 +187,13 @@ export function HeroVideoBackground({ src, srcWebm }: { src: string; srcWebm?: s
     };
   }, [pronto]);
 
-  if (!permitido) return null;
+  // Falhou de vez: o gradiente do layout é o piso do desenho, e é melhor
+  // que um elemento invisível ocupando a tela.
+  if (!permitido || falhou) return null;
 
   return (
     <video
-      key={src}
+      key={fonte.src}
       ref={videoRef}
       className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
         pronto ? "opacity-100" : "opacity-0"
@@ -140,17 +206,18 @@ export function HeroVideoBackground({ src, srcWebm }: { src: string; srcWebm?: s
       // Supabase Storage usado pelo fundo personalizado do corretor).
       crossOrigin="anonymous"
       onLoadedMetadata={() => {
-        setPronto(true);
+        setEstado((anterior) => ({ ...(anterior?.origem === src ? anterior : atual), origem: src, pronto: true }));
         definirVideo(videoRef.current);
       }}
+      onError={aoFalhar}
       aria-hidden
     >
       {/* WebM primeiro: menor e é o que Chromium sem codecs proprietários
           decodifica; o MP4 cobre Safari antigo. Só o vídeo padrão do site
           tem as duas versões — o fundo personalizado do corretor (Supabase
           Storage) chega como MP4 único. */}
-      {srcWebm && <source src={srcWebm} type="video/webm" />}
-      <source src={src} type="video/mp4" />
+      {fonte.webm && <source src={fonte.webm} type="video/webm" />}
+      <source src={fonte.src} type="video/mp4" />
     </video>
   );
 }
