@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { CopiarLink } from "./CopiarLink";
+import { ParaHoje } from "./ParaHoje";
 import { TermometroFunil } from "./_componentes/TermometroFunil";
 import { getCliquesWhatsappCorretor, getCorretorLogado, getMeusLeads } from "@/lib/corretorSessao";
+import { agendaDoDia } from "@/lib/crm/timeline";
+import { getMinhasTarefas } from "@/lib/crm/dadosLead";
 import { site } from "@/lib/site";
 
 const ATALHOS = [
@@ -14,7 +17,13 @@ export default async function PainelInicio() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
-  const [leads, cliques] = await Promise.all([getMeusLeads(), getCliquesWhatsappCorretor()]);
+  const [leads, cliques, tarefas] = await Promise.all([
+    getMeusLeads(),
+    getCliquesWhatsappCorretor(),
+    getMinhasTarefas(),
+  ]);
+
+  const agenda = agendaDoDia(tarefas);
 
   // Só a etapa "novo" é uma pendência de verdade. Contar o funil inteiro
   // transformaria o aviso num número que nunca desce, e todo aviso que nunca
@@ -39,11 +48,13 @@ export default async function PainelInicio() {
       <div>
         <h1 className="font-display text-titulo text-fluid-2xl">Olá, {primeiroNome}</h1>
         <p className="text-fluid-sm text-apoio mt-1">
-          {novos === 0 && visitasHoje === 0
+          {novos === 0 && visitasHoje === 0 && agenda.length === 0
             ? "Nada pendente por aqui. Bom momento para divulgar seu link."
             : [
                 novos > 0 && `${novos} lead${novos === 1 ? "" : "s"} sem primeiro atendimento`,
                 visitasHoje > 0 && `${visitasHoje} visita${visitasHoje === 1 ? "" : "s"} hoje`,
+                agenda.length > 0 &&
+                  `${agenda.length} tarefa${agenda.length === 1 ? "" : "s"} para hoje`,
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -81,6 +92,8 @@ export default async function PainelInicio() {
           </p>
         </div>
       </section>
+
+      <ParaHoje tarefas={agenda} />
 
       <TermometroFunil leads={leads} />
 

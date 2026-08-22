@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
 import { moverEtapa } from "@/app/corretor/actions";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
@@ -167,7 +168,13 @@ function Cartao({
       className="rounded-xl border border-linha bg-superficie p-3 relative group"
     >
       <div className="flex items-center justify-between gap-1 flex-wrap">
-        <p className="text-fluid-sm font-medium text-titulo">{lead.nome}</p>
+        <Link
+          href={`/corretor/leads/${lead.id}`}
+          draggable={false}
+          className="text-fluid-sm font-medium text-titulo underline-offset-4 hover:text-acento-suave hover:underline"
+        >
+          {lead.nome}
+        </Link>
         <div className="flex items-center gap-1.5">
           <button
             type="button"

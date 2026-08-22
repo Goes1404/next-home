@@ -5,8 +5,10 @@ import { exigirGestorNaAcao } from "@/lib/guardas";
 import { redirect } from "next/navigation";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { caminhoDoStorage, extensaoPorTipo, validarMidia, type CampoMidia } from "@/lib/midiaCorretor";
+import { registrarInteracao } from "@/lib/crm/interacoes";
+import { textoMudancaEtapa } from "@/lib/crm/timeline";
 import { createClient } from "@/lib/supabase/server";
-import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
+import { ETAPA_LABEL, ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
 
 export type EstadoLogin = { erro?: string } | undefined;
@@ -345,6 +347,15 @@ export async function moverEtapa(leadId: string, etapa: string): Promise<Resulta
     return { erro: "Etapa desconhecida." };
   }
 
+  // A etapa de ORIGEM só existe antes do update — o `update` devolve a linha
+  // nova. É o que permite escrever "Novo lead → Visita agendada" no
+  // histórico em vez de só "mudou de etapa".
+  const { data: antes } = await supabase
+    .from("leads")
+    .select("etapa")
+    .eq("id", leadId)
+    .maybeSingle();
+
   const { data, error } = await supabase
     .from("leads")
     .update({ etapa, etapa_alterada_em: new Date().toISOString() })
@@ -358,6 +369,21 @@ export async function moverEtapa(leadId: string, etapa: string): Promise<Resulta
     return { erro: "Este lead não é seu — recarregue a página." };
   }
 
+  if (antes && antes.etapa !== etapa) {
+    const corretor = await getCorretorLogado();
+    await registrarInteracao(supabase, {
+      leadId,
+      corretorId: corretor?.id ?? null,
+      tipo: "etapa",
+      conteudo: textoMudancaEtapa(
+        ETAPA_LABEL[antes.etapa as EtapaFunil] ?? antes.etapa,
+        ETAPA_LABEL[etapa as EtapaFunil],
+      ),
+      detalhes: { de: antes.etapa, para: etapa },
+    });
+  }
+
+  revalidatePath(`/corretor/leads/${leadId}`);
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor/leads");
   revalidatePath("/corretor");
@@ -394,6 +420,21 @@ export async function atribuirLead(
     return { erro: "Sem permissão para atribuir este lead." };
   }
 
+  const { data: novoDono } = await supabase
+    .from("corretores")
+    .select("nome")
+    .eq("id", corretorId)
+    .maybeSingle();
+
+  await registrarInteracao(supabase, {
+    leadId,
+    corretorId: guarda.corretor.id,
+    tipo: "sistema",
+    conteudo: `Lead atribuído a ${novoDono?.nome ?? "outro corretor"}`,
+    detalhes: { corretorId },
+  });
+
+  revalidatePath(`/corretor/leads/${leadId}`);
   revalidatePath("/corretor/equipe");
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor/leads");
@@ -461,6 +502,21 @@ export async function definirVisitaEm(
     return { erro: "Este lead não é seu — recarregue a página." };
   }
 
+  const corretorVisita = await getCorretorLogado();
+  await registrarInteracao(supabase, {
+    leadId,
+    corretorId: corretorVisita?.id ?? null,
+    tipo: "visita",
+    conteudo: quando
+      ? `Visita marcada para ${new Intl.DateTimeFormat("pt-BR", {
+          dateStyle: "short",
+          timeStyle: "short",
+        }).format(new Date(quando))}`
+      : "Visita desmarcada",
+    detalhes: { quando },
+  });
+
+  revalidatePath(`/corretor/leads/${leadId}`);
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor/leads");
   revalidatePath("/corretor/visitas");
@@ -610,5 +666,17 @@ export async function registrarEnvio(leadId: string, mensagem: string): Promise<
     return { erro: "Não foi possível registrar o envio." };
   }
 
+  // O mesmo envio também na linha do tempo. `historico_envios` continua
+  // sendo gravada por compatibilidade, mas é `lead_interacoes` que a ficha
+  // do lead lê — foram 53 envios invisíveis justamente por só existirem lá.
+  await registrarInteracao(supabase, {
+    leadId,
+    corretorId: corretor.id,
+    tipo: "mensagem",
+    conteudo: mensagem,
+    detalhes: { canal: "disparo_em_massa" },
+  });
+
+  revalidatePath(`/corretor/leads/${leadId}`);
   return {};
 }

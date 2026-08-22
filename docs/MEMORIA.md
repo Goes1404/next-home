@@ -289,3 +289,46 @@ trilho+IA, follow-up, métricas de funil).
 - **Furo histórico corrigido**: `/corretor/precos` chamava `souGestor()` e
   ignorava o resultado — qualquer corretor logado aplicava reajuste em massa
   pela URL. Sempre conferir se o resultado da guarda é de fato USADO.
+
+## CRM — o que o lead passou a lembrar (0032)
+
+Diagnóstico feito sobre os dados reais, não sobre lista genérica. O que o
+CRM sabia fazer com um lead era só: mover de etapa, trocar de dono, marcar
+data de visita e registrar um envio. Faltava o resto.
+
+- **`historico_envios` tinha 53 linhas e ZERO leitores.** Só o `insert`
+  existia no código inteiro — nenhuma tela lia. Era memória gravada que
+  ninguém consultava. A 0032 faz backfill dessas 53 linhas para
+  `lead_interacoes`; a tabela antiga continua recebendo escrita por
+  compatibilidade, mas quem a ficha lê é a nova. **A lição que vale para o
+  resto do sistema: dado gravado e não exibido é indistinguível de dado
+  perdido** — antes de criar tabela, decidir em que tela ela aparece.
+- **Mensagens de WhatsApp NÃO são copiadas para `lead_interacoes`.** A
+  linha do tempo mescla as duas fontes em tempo de LEITURA
+  (`getTimelineDoLead`, em `src/lib/crm/dadosLead.ts`). Copiar criaria duas
+  verdades para divergir — `whatsapp_mensagens` já é histórico completo. O
+  disparo em massa também não precisa registrar nada: o
+  `campaignDispatcher` já grava a mensagem na conversa, e a mescla a pega.
+- **`lead_interacoes` não tem policy de UPDATE nem de DELETE, de
+  propósito.** Histórico que o próprio ator reescreve não é histórico. Isso
+  tem um efeito prático em teste: para exercitar a policy em produção, use
+  `begin; … rollback;` — não dá para limpar depois.
+- **A qualificação nasceu MANUAL.** `lead_observacoes_ia` está vazia (0
+  dossiês) e só 1 conversa tinha lead ligado, então não havia de onde
+  preencher automático. O caminho da IA se abre conforme o bot conversa; o
+  campo existe desde já para o corretor anotar.
+- **Colunas novas de `leads` precisaram entrar no grant explícito.** A 0007
+  fez `revoke update on leads` e concedeu coluna a coluna. Toda coluna nova
+  editável pelo painel precisa de `grant update (col) on leads to
+  authenticated` — sem isso a policy passa e o update afeta 0 linhas, em
+  silêncio. (E `papel` em `corretores` continua fora de qualquer grant, ver
+  seção de Administração.)
+- **`numeric` do Postgres chega como STRING no supabase-js.** Orçamento
+  precisa de conversão na leitura (`dadosLead.ts`), senão comparação e
+  formatação de moeda quebram sem erro.
+- **Tarefa sem lembrete é tarefa esquecida.** Não há SMTP no projeto, então
+  não existe e-mail nem push: o lembrete é a tela. Por isso a mesma tarefa
+  aparece na ficha do lead E no bloco "Para hoje" da tela inicial do painel.
+- **A classificação atrasada/hoje/futura compara por DIA, não por hora**
+  (`situacaoDaTarefa`). Comparar por hora pintaria a tela de vermelho toda
+  tarde — e alerta que sempre está aceso vira paisagem.

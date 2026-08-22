@@ -11,7 +11,7 @@ import {
   linkWhatsappLead,
 } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import type { Lead } from "@/lib/types";
-import { ChevronDown, Mail, Phone } from "lucide-react";
+import { ArrowRight, ChevronDown, Mail, Phone } from "lucide-react";
 
 /**
  * A lista de leads em formato de tabela — pensada para carteiras de 50+.
@@ -161,6 +161,15 @@ function DetalhesLead({ lead, gestor }: { lead: Lead; gestor: boolean }) {
           {lead.mensagem}
         </p>
       )}
+
+      {/* A porta para a ficha: histórico, qualificação e próximas ações. */}
+      <Link
+        href={`/corretor/leads/${lead.id}`}
+        onClick={(e) => e.stopPropagation()}
+        className="text-fluid-sm inline-flex items-center gap-1.5 rounded-full border border-acento-linha bg-acento-lavado px-4 py-2 font-medium text-acento-suave transition-opacity hover:opacity-85"
+      >
+        Abrir ficha <ArrowRight className="h-3.5 w-3.5" />
+      </Link>
     </div>
   );
 }
@@ -324,7 +333,13 @@ function FragmentoLinha({
         </td>
         <td className="max-w-[16rem] px-3 py-2.5">
           <div className="flex items-center gap-2">
-            <span className="text-fluid-sm truncate font-medium text-titulo">{lead.nome}</span>
+            <Link
+              href={`/corretor/leads/${lead.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-fluid-sm truncate font-medium text-titulo underline-offset-4 hover:text-acento-suave hover:underline"
+            >
+              {lead.nome}
+            </Link>
             <BadgePortal portal={lead.portalOrigem} origem={lead.origem} />
           </div>
         </td>

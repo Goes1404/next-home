@@ -1,7 +1,7 @@
 /**
  * Tipos gerados a partir do projeto Supabase real (prhhrqyubjcafvucirri) via
  * Management API — `types/typescript`. Não editar à mão; regenerar sempre
- * que `supabase/migrations/` mudar. Última geração: depois da 0030
+ * que `supabase/migrations/` mudar. Última geração: depois da 0032
  * (aplicada manualmente à conexão direta com Postgres — `gen types` local
  * exige Docker, indisponível neste ambiente; colunas conferidas por
  * introspecção antes de editar este arquivo).
@@ -514,6 +514,54 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_interacoes: {
+        Row: {
+          id: string
+          lead_id: string
+          corretor_id: string | null
+          tipo: "nota" | "mensagem" | "ligacao" | "etapa" | "visita" | "sistema"
+          conteudo: string
+          detalhes: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          lead_id: string
+          corretor_id?: string | null
+          tipo: "nota" | "mensagem" | "ligacao" | "etapa" | "visita" | "sistema"
+          conteudo: string
+          detalhes?: Json
+          created_at?: string
+        }
+        Update: { conteudo?: string; detalhes?: Json }
+        Relationships: []
+      }
+      lead_tarefas: {
+        Row: {
+          id: string
+          lead_id: string
+          corretor_id: string
+          titulo: string
+          prazo: string
+          concluida_em: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          lead_id: string
+          corretor_id: string
+          titulo: string
+          prazo: string
+          concluida_em?: string | null
+          created_at?: string
+        }
+        Update: {
+          titulo?: string
+          prazo?: string
+          concluida_em?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           anuncio_origem: string | null
@@ -530,6 +578,10 @@ export type Database = {
           meta_lead_id: string | null
           mensagem: string | null
           nome: string
+          orcamento_min: number | null
+          orcamento_max: number | null
+          dormitorios_min: number | null
+          regiao_interesse: string | null
           origem: string | null
           origem_atribuicao: string | null
           portal_origem: string | null
@@ -553,6 +605,10 @@ export type Database = {
           meta_lead_id?: string | null
           mensagem?: string | null
           nome: string
+          orcamento_min?: number | null
+          orcamento_max?: number | null
+          dormitorios_min?: number | null
+          regiao_interesse?: string | null
           origem?: string | null
           origem_atribuicao?: string | null
           portal_origem?: string | null
@@ -576,6 +632,10 @@ export type Database = {
           meta_lead_id?: string | null
           mensagem?: string | null
           nome?: string
+          orcamento_min?: number | null
+          orcamento_max?: number | null
+          dormitorios_min?: number | null
+          regiao_interesse?: string | null
           origem?: string | null
           origem_atribuicao?: string | null
           portal_origem?: string | null
