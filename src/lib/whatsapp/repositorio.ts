@@ -164,13 +164,24 @@ async function encontrarOuCriarLead(
   // a partir deles) — se não achou, é melhor não criar um duplicado.
   if (params.origem === "campanha") return null;
 
-  const { data: criado } = await supabase
+  /*
+   * `telefone_e164` NÃO entra no insert: é coluna GERADA
+   * (`normalizar_telefone_br(telefone)`). Mandá-la fazia o Postgres recusar
+   * a linha inteira com "cannot insert a non-DEFAULT value into column",
+   * e como o erro era ignorado, a função devolvia null em silêncio.
+   *
+   * O efeito disso foi grande e invisível: NENHUM lead nascia de conversa
+   * de WhatsApp. Em produção, 30 conversas com fala real de cliente — 721
+   * mensagens — ficaram sem cadastro no CRM. E como o dossiê e o few-shot
+   * de aprendizado dependem do vínculo conversa↔lead, os dois estavam
+   * mortos por consequência.
+   */
+  const { data: criado, error } = await supabase
     .from("leads")
     .insert({
       corretor_id: params.corretorId,
       nome: params.nomeCliente?.trim() || `WhatsApp ${params.telefoneCliente.slice(-4)}`,
       telefone: params.telefoneCliente,
-      telefone_e164: params.telefoneCliente,
       etapa: "novo",
       origem: "whatsapp/organico",
       origem_atribuicao: "manual",
@@ -178,6 +189,13 @@ async function encontrarOuCriarLead(
     })
     .select("id")
     .single();
+
+  // Falhar aqui não pode ser silencioso de novo: sem lead, a conversa
+  // acontece mas não vira nada no funil.
+  if (error) {
+    console.error("[whatsapp] não consegui criar o lead da conversa:", error.message);
+    return null;
+  }
 
   return criado?.id ?? null;
 }

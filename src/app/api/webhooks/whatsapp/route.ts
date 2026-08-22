@@ -365,15 +365,29 @@ export async function POST(req: NextRequest) {
     // O dossiê ANTERIOR entra no prompt (a IA deixa de re-perguntar o que
     // já qualificou) e serve de base de comparação para a nota incremental
     // ao corretor. O NOVO é extraído depois da resposta, da conversa toda.
-    const [catalogo, exemplosFewShot, historico, dossieAnterior] = await Promise.all([
+    const [catalogo, historico, dossieAnterior] = await Promise.all([
       getEmpreendimentos().catch((err) => {
         console.warn("Aviso: Falha ao carregar catálogo para o webhook (usando fallback):", err);
         return [] as Awaited<ReturnType<typeof getEmpreendimentos>>;
       }),
-      buscarExemplosFewShot(instancia.corretorId),
       historicoRecente(conversa.id),
       conversa.leadId ? buscarDossieAtual(conversa.leadId) : Promise.resolve(null),
     ]);
+
+    /*
+     * A recuperação dos exemplos vem DEPOIS porque agora depende do assunto
+     * da conversa: ela casa o imóvel citado aqui com conversas anteriores
+     * sobre o mesmo imóvel. Antes bastava o id do corretor, e o resultado
+     * era "as 3 mais recentes que converteram" — recência sobre um corpus
+     * que, na prática, tinha uma conversa elegível.
+     */
+    const exemplosFewShot = await buscarExemplosFewShot({
+      corretorId: instancia.corretorId,
+      mensagemAtual: text,
+      historico,
+      catalogo,
+      conversaAtualId: conversa.id,
+    });
 
     // Os 10 empreendimentos MAIS RELEVANTES para esta conversa — não os 10
     // primeiros do banco (que deixavam o resto do catálogo invisível).

@@ -74,7 +74,14 @@ export async function testarAgenteIA(
    * tudo isso e testava um prompt DIFERENTE do que atendia o cliente: o
    * corretor aprovava um comportamento no teste e recebia outro na rua.
    */
-  const exemplosFewShot = await buscarExemplosFewShot(corretor.id);
+  // Mesmo caminho do webhook: o playground precisa recuperar os mesmos
+  // exemplos, senão o corretor testa um agente que não existe na rua.
+  const exemplosFewShot = await buscarExemplosFewShot({
+    corretorId: corretor.id,
+    mensagemAtual: mensagem,
+    historico,
+    catalogo,
+  });
 
   const respostaBruta = await gerarRespostaIA(
     {
