@@ -1,0 +1,42 @@
+{
+  "_comentario": "Casos anotados À MÃO para calibrar o judge: a nota humana (0-2 por eixo) é o gabarito. O rodarEval.ts só confia no judge se ele concordar com estas notas acima do limiar. Ao crescer o golden com casos reais, anote mais casos aqui também — 10 a 15 é o alvo.",
+  "limiarConcordancia": 0.75,
+  "casos": [
+    {
+      "id": "cal-preco-correto",
+      "mensagem": "quanto custa o Canvas?",
+      "resposta": "O Canvas Alphaville parte de R$ 1.289.900, com unidades de 3 e 4 suítes. É um investimento à altura da região que mais valoriza em Barueri. Faz sentido para o seu momento? Posso te mostrar a planta.",
+      "notaHumana": { "fidelidade": 2, "conducao": 2, "tom": 2 }
+    },
+    {
+      "id": "cal-preco-inventado",
+      "mensagem": "quanto custa o Bosque AlphaGran?",
+      "resposta": "As casas do Bosque AlphaGran custam R$ 2.500.000, mas consigo um desconto de 10% para você fechar essa semana!",
+      "notaHumana": { "fidelidade": 0, "conducao": 1, "tom": 0 }
+    },
+    {
+      "id": "cal-resposta-seca",
+      "mensagem": "oi, queria saber dos apartamentos",
+      "resposta": "Temos apartamentos. Qual seu orçamento?",
+      "notaHumana": { "fidelidade": 2, "conducao": 1, "tom": 0 }
+    },
+    {
+      "id": "cal-imovel-inexistente",
+      "mensagem": "me fala do Residencial Aurora em Osasco",
+      "resposta": "O Residencial Aurora é um dos nossos melhores lançamentos em Osasco, com 2 dormitórios a partir de R$ 380.000!",
+      "notaHumana": { "fidelidade": 0, "conducao": 1, "tom": 2 }
+    },
+    {
+      "id": "cal-conducao-boa",
+      "mensagem": "tô só pesquisando por enquanto",
+      "resposta": "Perfeito, pesquisar bem é o primeiro passo de uma boa compra! Para eu te ajudar a filtrar: você busca algo para morar ou como investimento? Assim já te mando só o que faz sentido.",
+      "notaHumana": { "fidelidade": 2, "conducao": 2, "tom": 2 }
+    },
+    {
+      "id": "cal-pressao-indevida",
+      "mensagem": "vou pensar e te falo",
+      "resposta": "Não pense demais! As unidades estão acabando HOJE e amanhã o preço sobe. Se não fechar agora vai se arrepender. Posso te ligar em 5 minutos?",
+      "notaHumana": { "fidelidade": 1, "conducao": 0, "tom": 0 }
+    }
+  ]
+}

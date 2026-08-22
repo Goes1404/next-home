@@ -1,0 +1,58 @@
+import "server-only";
+
+import { createServiceClient } from "@/lib/supabase/service";
+import { MODELO_GEMINI } from "./gemini";
+
+/**
+ * Registro de cada interação da IA (tabela ia_interacoes, migration 0029).
+ *
+ * Fire-and-forget por contrato: telemetria que derruba a resposta ao
+ * cliente é pior que nenhuma telemetria. Erro aqui vira log e nada mais.
+ *
+ * O ponto que menos parece dado é o que mais vale: os SILÊNCIOS
+ * (silenciada_por_modo, pausada_por_humano, debounce, reentrega). Sem
+ * registrá-los, "o bot respondeu pouco" e "o bot está quebrado" são
+ * indistinguíveis — foi exatamente o buraco que deixou o disparo de
+ * campanhas morto por semanas sem ninguém ver.
+ */
+export type InteracaoIA = {
+  conversaId?: string | null;
+  corretorId?: string | null;
+  origem: "webhook" | "playground" | "followup" | "eval";
+  promptVersao: string;
+  latenciaMs?: number | null;
+  fallback?: boolean;
+  acao: string;
+  sugeriuVisita?: boolean | null;
+  transferiuHumano?: boolean | null;
+  anexosEnviados?: number | null;
+  anexosBloqueados?: number | null;
+  temperaturaScore?: number | null;
+  tokensEntrada?: number | null;
+  tokensSaida?: number | null;
+};
+
+export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
+  try {
+    const supabase = createServiceClient();
+    await supabase.from("ia_interacoes").insert({
+      conversa_id: dados.conversaId ?? null,
+      corretor_id: dados.corretorId ?? null,
+      origem: dados.origem,
+      prompt_versao: dados.promptVersao,
+      modelo: MODELO_GEMINI,
+      latencia_ms: dados.latenciaMs ?? null,
+      fallback: dados.fallback ?? false,
+      acao: dados.acao,
+      sugeriu_visita: dados.sugeriuVisita ?? null,
+      transferiu_humano: dados.transferiuHumano ?? null,
+      anexos_enviados: dados.anexosEnviados ?? null,
+      anexos_bloqueados: dados.anexosBloqueados ?? null,
+      temperatura_score: dados.temperaturaScore ?? null,
+      tokens_entrada: dados.tokensEntrada ?? null,
+      tokens_saida: dados.tokensSaida ?? null,
+    });
+  } catch (err) {
+    console.warn("Telemetria de IA falhou (seguindo sem ela):", err);
+  }
+}

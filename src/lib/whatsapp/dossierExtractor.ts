@@ -1,4 +1,5 @@
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
+import { chamarGeminiJson, geminiConfigurado } from "./gemini";
 import type { DossieClienteIA, TemperaturaLeadLabel } from "./types";
 
 const PROMPT_DOSSIE = `Você é um analista sênior de inteligência comercial imobiliária da Next Home.
@@ -26,8 +27,6 @@ export async function extrairDossieCliente(
   conversaTexto: string,
   leadId: string,
 ): Promise<DossieClienteIA> {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-
   const dossieDefault: DossieClienteIA = {
     id: "temp-" + leadId,
     leadId,
@@ -46,73 +45,46 @@ export async function extrairDossieCliente(
     updatedAt: new Date().toISOString(),
   };
 
-  if (!apiKey || conversaTexto.trim().length < 20) {
+  if (!geminiConfigurado() || conversaTexto.trim().length < 20) {
     return dossieDefault;
   }
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+  // A chamada (timeout + retentativa) mora em gemini.ts — a mesma
+  // resiliência do agente de resposta, sem duplicar o fetch aqui.
+  const resultado = await chamarGeminiJson(
+    `${PROMPT_DOSSIE}\n\n--- TRANSCRIÇÃO DA CONVERSA ---\n${conversaTexto.slice(0, 12000)}`,
+    { temperature: 0.1 },
+  );
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: `${PROMPT_DOSSIE}\n\n--- TRANSCRIÇÃO DA CONVERSA ---\n${conversaTexto.slice(0, 12000)}`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: "application/json",
-          },
-        }),
-      },
-    );
-
-    clearTimeout(timeoutId);
-
-    if (response.ok) {
-      const json = await response.json();
-      const texto = json.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (texto) {
-        const parsed = JSON.parse(texto);
-        const score = typeof parsed.temperaturaScore === "number" ? Math.min(100, Math.max(0, parsed.temperaturaScore)) : 50;
-        const label: TemperaturaLeadLabel = score >= 75 ? "quente" : score >= 40 ? "morno" : "frio";
-
-        return {
-          id: "dossie-" + leadId,
-          leadId,
-          orcamentoMin: typeof parsed.orcamentoMin === "number" ? parsed.orcamentoMin : null,
-          orcamentoMax: typeof parsed.orcamentoMax === "number" ? parsed.orcamentoMax : null,
-          formaPagamento: parsed.formaPagamento || null,
-          perfilFamiliar: parsed.perfilFamiliar || null,
-          urgenciaMudanca: parsed.urgenciaMudanca || null,
-          exigenciasEspecificas: Array.isArray(parsed.exigenciasEspecificas) ? parsed.exigenciasEspecificas : [],
-          objecoesIdentificadas: Array.isArray(parsed.objecoesIdentificadas) ? parsed.objecoesIdentificadas : [],
-          temperaturaScore: score,
-          temperaturaLabel: (parsed.temperaturaLabel as TemperaturaLeadLabel) || label,
-          resumoExecutivo: parsed.resumoExecutivo || "Lead qualificado via inteligência artificial.",
-          proximoPassoSugerido: parsed.proximoPassoSugerido || "Dar continuidade ao atendimento.",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-      }
-    }
-  } catch (err) {
-    console.error("Erro ao gerar dossiê do lead no Gemini:", err);
+  if (!resultado.ok) {
+    console.error("Erro ao gerar dossiê do lead no Gemini:", resultado.erro);
+    return dossieDefault;
   }
 
-  return dossieDefault;
+  const parsed = resultado.json as Record<string, unknown>;
+  const score =
+    typeof parsed.temperaturaScore === "number"
+      ? Math.min(100, Math.max(0, parsed.temperaturaScore))
+      : 50;
+  const label: TemperaturaLeadLabel = score >= 75 ? "quente" : score >= 40 ? "morno" : "frio";
+
+  return {
+    id: "dossie-" + leadId,
+    leadId,
+    orcamentoMin: typeof parsed.orcamentoMin === "number" ? parsed.orcamentoMin : null,
+    orcamentoMax: typeof parsed.orcamentoMax === "number" ? parsed.orcamentoMax : null,
+    formaPagamento: (parsed.formaPagamento as DossieClienteIA["formaPagamento"]) || null,
+    perfilFamiliar: (parsed.perfilFamiliar as DossieClienteIA["perfilFamiliar"]) || null,
+    urgenciaMudanca: (parsed.urgenciaMudanca as DossieClienteIA["urgenciaMudanca"]) || null,
+    exigenciasEspecificas: Array.isArray(parsed.exigenciasEspecificas) ? (parsed.exigenciasEspecificas as string[]) : [],
+    objecoesIdentificadas: Array.isArray(parsed.objecoesIdentificadas) ? (parsed.objecoesIdentificadas as string[]) : [],
+    temperaturaScore: score,
+    temperaturaLabel: (parsed.temperaturaLabel as TemperaturaLeadLabel) || label,
+    resumoExecutivo: (parsed.resumoExecutivo as string) || "Lead qualificado via inteligência artificial.",
+    proximoPassoSugerido: (parsed.proximoPassoSugerido as string) || "Dar continuidade ao atendimento.",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 /**

@@ -114,3 +114,40 @@ export async function lerMensagens(conversaId: string): Promise<MensagemConversa
     }))
     .reverse();
 }
+
+/**
+ * O corretor marcou uma resposta do bot como ruim.
+ *
+ * É o gesto mais barato do loop de melhoria contínua: a marcação fica em
+ * `ia_interacoes.avaliacao` e o export do golden dataset
+ * (scripts/eval/exportarGolden.ts) transforma cada uma num caso de teste —
+ * a falha real de hoje vira o teste automático que impede a mesma falha
+ * amanhã. A RLS da 0029 garante que só o dono da conversa avalia.
+ */
+export async function avaliarUltimaResposta(
+  conversaId: string,
+  avaliacao: "boa" | "ruim",
+): Promise<ResultadoConversa> {
+  const supabase = await exigirSessao();
+
+  const { data: interacao } = await supabase
+    .from("ia_interacoes")
+    .select("id")
+    .eq("conversa_id", conversaId)
+    .eq("acao", "respondida")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!interacao) return { erro: "Nenhuma resposta da IA registrada nesta conversa ainda." };
+
+  const { error } = await supabase
+    .from("ia_interacoes")
+    .update({ avaliacao })
+    .eq("id", interacao.id);
+
+  if (error) return { erro: "Não foi possível registrar a avaliação." };
+
+  revalidatePath("/corretor/conversas");
+  return { ok: avaliacao === "ruim" ? "Anotado — esta resposta vira caso de teste do próximo ajuste da IA." : "Avaliação registrada." };
+}

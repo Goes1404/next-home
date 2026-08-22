@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
-import { gerarRespostaIA } from "@/lib/whatsapp/aiAgent";
+import { gerarRespostaIA, PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
+import { ranquearCatalogo } from "@/lib/whatsapp/catalogoRelevante";
+import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
+import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
+import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
 import { obterQrCodeInstancia, provedorConfigurado } from "@/lib/whatsapp/provider";
 import type { ModoBotWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
@@ -57,18 +61,46 @@ export async function testarAgenteIA(
     // Catálogo indisponível não impede testar o tom de voz.
   }
 
-  const resposta = await gerarRespostaIA(
+  /*
+   * O playground monta EXATAMENTE o contexto de produção — few-shot,
+   * catálogo ranqueado e guardrails inclusos. A versão anterior pulava
+   * tudo isso e testava um prompt DIFERENTE do que atendia o cliente: o
+   * corretor aprovava um comportamento no teste e recebia outro na rua.
+   */
+  const exemplosFewShot = await buscarExemplosFewShot(corretor.id);
+
+  const respostaBruta = await gerarRespostaIA(
     {
       nomeCorretor: corretor.nome,
       creciCorretor: corretor.creci,
       telefoneCorretor: corretor.whatsapp,
       nomeAssistente: instancia?.nome_assistente ?? "Sofia",
       tomVoz: instancia?.tom_voz ?? "consultivo_alto_padrao",
-      catalogo,
+      catalogo: ranquearCatalogo({ catalogo, mensagemAtual: mensagem, historico }),
       historicoMensagens: historico,
+      exemplosFewShot,
     },
     mensagem,
   );
+
+  const saneada = sanearRespostaIA(respostaBruta, catalogo);
+  const resposta = saneada.resposta;
+
+  // Playground também entra na telemetria — com origem própria, para as
+  // métricas de produção nunca se misturarem com testes do corretor.
+  await registrarInteracao({
+    corretorId: corretor.id,
+    origem: "playground",
+    promptVersao: PROMPT_VERSAO,
+    latenciaMs: resposta.meta.latenciaMs,
+    fallback: resposta.meta.fallback,
+    acao: "respondida",
+    sugeriuVisita: resposta.sugerirVisita,
+    transferiuHumano: resposta.transferirHumano,
+    anexosBloqueados: saneada.anexosBloqueados + saneada.slugsBloqueados,
+    tokensEntrada: resposta.meta.tokensEntrada,
+    tokensSaida: resposta.meta.tokensSaida,
+  });
 
   const conversaCompleta = [...historico.map((h) => h.texto), mensagem].join("\n");
   const dossie = await extrairDossieCliente(conversaCompleta, `playground-${corretor.id}`);

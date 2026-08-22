@@ -15,13 +15,21 @@ export default async function WhatsappPainelPage() {
   // A configuração é lida do banco, não presumida: o painel precisa abrir
   // mostrando o que está de fato valendo para o número deste corretor.
   const supabase = await createClient();
-  const { data: instancia } = await supabase
-    .from("corretor_whatsapp_instancias")
-    .select(
-      "nome_assistente, tom_voz, modo_bot, status_conexao, telefone_conectado, palavra_chave_ativacao",
-    )
-    .eq("corretor_id", corretor.id)
-    .maybeSingle();
+  const [{ data: instancia }, { data: funil }] = await Promise.all([
+    supabase
+      .from("corretor_whatsapp_instancias")
+      .select(
+        "nome_assistente, tom_voz, modo_bot, status_conexao, telefone_conectado, palavra_chave_ativacao",
+      )
+      .eq("corretor_id", corretor.id)
+      .maybeSingle(),
+    // Funil real do atendimento (view da 0029): medir conversão, não vibe.
+    supabase
+      .from("whatsapp_funil_metricas")
+      .select("conversas, conversas_com_lead, leads_quentes, visitas_agendadas, em_negociacao")
+      .eq("corretor_id", corretor.id)
+      .maybeSingle(),
+  ]);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -31,6 +39,25 @@ export default async function WhatsappPainelPage() {
           Conecte seu WhatsApp pessoal de trabalho para que sua IA atenda, envie fotos/plantas e qualifique seus leads automaticamente.
         </p>
       </div>
+
+      {funil && (funil.conversas ?? 0) > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          {(
+            [
+              ["Conversas", funil.conversas],
+              ["Com ficha no funil", funil.conversas_com_lead],
+              ["Leads quentes", funil.leads_quentes],
+              ["Visitas agendadas", funil.visitas_agendadas],
+              ["Em negociação", funil.em_negociacao],
+            ] as const
+          ).map(([rotulo, valor]) => (
+            <div key={rotulo} className="rounded-2xl border border-linha bg-superficie p-4">
+              <p className="text-fluid-xs text-tenue">{rotulo}</p>
+              <p className="text-fluid-xl font-bold text-titulo">{valor ?? 0}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       <WhatsappManager
         corretorNome={corretor.nome}

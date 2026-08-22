@@ -128,6 +128,13 @@ export function montarFilaCampanha(params: {
   // 35s → 150s e 105s). Isso agruparia disparos no mesmo segundo, que é
   // exatamente o padrão que a proteção deveria evitar.
   let deslocamentoSegundos = 0;
+  // Último instante agendado: o guarda de monotonicidade. Empurrar dois
+  // itens para a próxima janela pode INVERTER a ordem — quem cruza uma
+  // fronteira de hora ganha um degrau de 30 min a menos no
+  // `proximoHorarioPermitido` e cai ANTES do item anterior (flagrado pelo
+  // teste rodando de madrugada). Nenhum item pode agendar antes do
+  // anterior + intervalo humanizado.
+  let anteriorMs = 0;
 
   for (const lead of leads) {
     const janela = Math.max(1, INTERVALO_MAXIMO_SEGUNDOS - intervaloSegundosMinimo);
@@ -136,7 +143,12 @@ export function montarFilaCampanha(params: {
     // Empurra para dentro do horário comercial antes de gravar: uma fila
     // longa iniciada no fim da tarde escorregaria para a madrugada.
     const bruto = new Date(agora + deslocamentoSegundos * 1000);
-    const agendadoPara = proximoHorarioPermitido(bruto).toISOString();
+    let agendado = proximoHorarioPermitido(bruto);
+    if (anteriorMs > 0 && agendado.getTime() < anteriorMs + atrasoSegundos * 1000) {
+      agendado = proximoHorarioPermitido(new Date(anteriorMs + atrasoSegundos * 1000));
+    }
+    anteriorMs = agendado.getTime();
+    const agendadoPara = agendado.toISOString();
     deslocamentoSegundos += atrasoSegundos;
 
     itens.push({

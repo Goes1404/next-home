@@ -531,6 +531,7 @@ export type Database = {
           origem_atribuicao?: string | null
           portal_origem?: string | null
           telefone?: string | null
+          telefone_e164?: string | null
           tipo?: string
           visita_agendada_em?: string | null
         }
@@ -553,6 +554,7 @@ export type Database = {
           origem_atribuicao?: string | null
           portal_origem?: string | null
           telefone?: string | null
+          telefone_e164?: string | null
           tipo?: string
           visita_agendada_em?: string | null
         }
@@ -775,6 +777,7 @@ export type Database = {
           lead_id: string | null
           telefone_cliente: string
           nome_cliente: string | null
+          alerta_quente_em: string | null
           bot_ativo: boolean
           pausado_humano_ate: string | null
           origem: "organica" | "campanha"
@@ -789,6 +792,7 @@ export type Database = {
           lead_id?: string | null
           telefone_cliente: string
           nome_cliente?: string | null
+          alerta_quente_em?: string | null
           bot_ativo?: boolean
           pausado_humano_ate?: string | null
           origem?: "organica" | "campanha"
@@ -803,6 +807,7 @@ export type Database = {
           lead_id?: string | null
           telefone_cliente?: string
           nome_cliente?: string | null
+          alerta_quente_em?: string | null
           bot_ativo?: boolean
           pausado_humano_ate?: string | null
           origem?: "organica" | "campanha"
@@ -834,6 +839,89 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_followups: {
+        Row: {
+          id: string
+          conversa_id: string
+          instancia_id: string
+          agendado_para: string
+          tentativa: number
+          status: "pendente" | "enviado" | "cancelado" | "descartado"
+          motivo: string | null
+          created_at: string
+          enviado_em: string | null
+        }
+        Insert: {
+          id?: string
+          conversa_id: string
+          instancia_id: string
+          agendado_para: string
+          tentativa?: number
+          status?: "pendente" | "enviado" | "cancelado" | "descartado"
+          motivo?: string | null
+          created_at?: string
+          enviado_em?: string | null
+        }
+        Update: {
+          id?: string
+          conversa_id?: string
+          instancia_id?: string
+          agendado_para?: string
+          tentativa?: number
+          status?: "pendente" | "enviado" | "cancelado" | "descartado"
+          motivo?: string | null
+          created_at?: string
+          enviado_em?: string | null
+        }
+        Relationships: []
+      }
+      ia_interacoes: {
+        Row: {
+          id: string
+          conversa_id: string | null
+          corretor_id: string | null
+          origem: "webhook" | "playground" | "followup" | "eval"
+          prompt_versao: string
+          modelo: string
+          latencia_ms: number | null
+          fallback: boolean
+          acao: string | null
+          sugeriu_visita: boolean | null
+          transferiu_humano: boolean | null
+          anexos_enviados: number | null
+          anexos_bloqueados: number | null
+          temperatura_score: number | null
+          tokens_entrada: number | null
+          tokens_saida: number | null
+          avaliacao: "boa" | "ruim" | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          conversa_id?: string | null
+          corretor_id?: string | null
+          origem: "webhook" | "playground" | "followup" | "eval"
+          prompt_versao: string
+          modelo?: string
+          latencia_ms?: number | null
+          fallback?: boolean
+          acao?: string | null
+          sugeriu_visita?: boolean | null
+          transferiu_humano?: boolean | null
+          anexos_enviados?: number | null
+          anexos_bloqueados?: number | null
+          temperatura_score?: number | null
+          tokens_entrada?: number | null
+          tokens_saida?: number | null
+          avaliacao?: "boa" | "ruim" | null
+          created_at?: string
+        }
+        Update: {
+          avaliacao?: "boa" | "ruim" | null
+          acao?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_mensagens: {
         Row: {
           id: string
@@ -842,6 +930,7 @@ export type Database = {
           tipo: "texto" | "audio" | "imagem" | "documento"
           conteudo: string
           midia_url: string | null
+          provider_message_id: string | null
           created_at: string
         }
         Insert: {
@@ -851,6 +940,7 @@ export type Database = {
           tipo?: "texto" | "audio" | "imagem" | "documento"
           conteudo: string
           midia_url?: string | null
+          provider_message_id?: string | null
           created_at?: string
         }
         Update: {
@@ -860,6 +950,7 @@ export type Database = {
           tipo?: "texto" | "audio" | "imagem" | "documento"
           conteudo?: string
           midia_url?: string | null
+          provider_message_id?: string | null
           created_at?: string
         }
         Relationships: []
@@ -1022,7 +1113,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      whatsapp_funil_metricas: {
+        Row: {
+          corretor_id: string | null
+          conversas: number | null
+          conversas_com_lead: number | null
+          leads_quentes: number | null
+          visitas_agendadas: number | null
+          em_negociacao: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       corretor_atual: { Args: never; Returns: string }

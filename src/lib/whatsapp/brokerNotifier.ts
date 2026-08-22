@@ -15,7 +15,7 @@ export interface ParametrosNotificacaoCorretor {
   empreendimentoNome?: string;
   temperaturaScore: number;
   resumoDossie: string;
-  motivoAlerta: "visita_solicitada" | "lead_quente_score_alto" | "transferencia_humana";
+  motivoAlerta: "visita_solicitada" | "visita_confirmada" | "lead_quente_score_alto" | "transferencia_humana";
 }
 
 /** Só monta o texto — separado do envio para poder ser testado sem rede. */
@@ -33,7 +33,9 @@ export function formatarAlertaCorretor(
   } = params;
 
   const emojiAlerta =
-    motivoAlerta === "visita_solicitada"
+    motivoAlerta === "visita_confirmada"
+      ? "✅ *VISITA CONFIRMADA PELA IA — JÁ ESTÁ NO SEU FUNIL*"
+      : motivoAlerta === "visita_solicitada"
       ? "📅 *SOLICITAÇÃO DE VISITA AGENDADA*"
       : motivoAlerta === "lead_quente_score_alto"
       ? "🔥 *NOVO LEAD QUENTE QUALIFICADO (Score " + temperaturaScore + "/100)*"

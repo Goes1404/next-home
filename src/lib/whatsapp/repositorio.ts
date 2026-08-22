@@ -108,6 +108,79 @@ function mapConversa(row: {
   };
 }
 
+/**
+ * Variantes do telefone vindas do JID do WhatsApp (só dígitos, com DDI),
+ * no formato de `leads.telefone_e164` (também só dígitos).
+ *
+ * A variante do nono dígito é o caso real que quebrava tudo: o mesmo
+ * celular existe como `5511988881111` num cadastro e `551188881111` no
+ * outro, e um match exato deixa o lead órfão para sempre.
+ */
+export function candidatosTelefone(jidDigitos: string): string[] {
+  const candidatos = new Set<string>([jidDigitos]);
+
+  if (jidDigitos.startsWith("55")) {
+    // 55 + DDD(2) + 9 + 8 dígitos → variante sem o 9
+    if (jidDigitos.length === 13 && jidDigitos[4] === "9") {
+      candidatos.add(jidDigitos.slice(0, 4) + jidDigitos.slice(5));
+    }
+    // 55 + DDD(2) + 8 dígitos → variante com o 9
+    if (jidDigitos.length === 12) {
+      candidatos.add(jidDigitos.slice(0, 4) + "9" + jidDigitos.slice(4));
+    }
+  }
+
+  return Array.from(candidatos);
+}
+
+/**
+ * Acha o lead deste telefone — ou o CRIA.
+ *
+ * Criar é deliberado: em produção, ZERO conversas tinham lead (o match era
+ * por igualdade exata com o telefone digitado à mão) e, sem lead, o dossiê
+ * extraído a cada mensagem era descartado em silêncio. Quem chama no
+ * WhatsApp é um contato comercial por definição — merece um card no funil,
+ * mesmo que nunca tenha preenchido formulário.
+ */
+async function encontrarOuCriarLead(
+  supabase: ReturnType<typeof createServiceClient>,
+  params: { corretorId: string; telefoneCliente: string; nomeCliente?: string | null; origem?: "organica" | "campanha" },
+): Promise<string | null> {
+  const candidatos = candidatosTelefone(params.telefoneCliente);
+
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("corretor_id", params.corretorId)
+    .in("telefone_e164", candidatos)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (lead) return lead.id;
+
+  // Conversa de campanha sempre nasce de um lead existente (a fila é montada
+  // a partir deles) — se não achou, é melhor não criar um duplicado.
+  if (params.origem === "campanha") return null;
+
+  const { data: criado } = await supabase
+    .from("leads")
+    .insert({
+      corretor_id: params.corretorId,
+      nome: params.nomeCliente?.trim() || `WhatsApp ${params.telefoneCliente.slice(-4)}`,
+      telefone: params.telefoneCliente,
+      telefone_e164: params.telefoneCliente,
+      etapa: "novo",
+      origem: "whatsapp/organico",
+      origem_atribuicao: "manual",
+      tipo: "comprador",
+    })
+    .select("id")
+    .single();
+
+  return criado?.id ?? null;
+}
+
 /** Uma conversa por (corretor, telefone) — o `unique` da 0018 garante isso. */
 export async function obterOuCriarConversa(params: {
   corretorId: string;
@@ -126,19 +199,21 @@ export async function obterOuCriarConversa(params: {
     .eq("telefone_cliente", params.telefoneCliente)
     .maybeSingle();
 
-  if (existente) return mapConversa(existente);
+  if (existente) {
+    // Conversa antiga sem lead (criada antes do vínculo por e164 existir, ou
+    // antes de o lead ser cadastrado): tenta religar agora. É barato e é o
+    // que permite ao dossiê desta mensagem ter um destino.
+    if (!existente.lead_id) {
+      const leadId = await encontrarOuCriarLead(supabase, params);
+      if (leadId) {
+        await supabase.from("whatsapp_conversas").update({ lead_id: leadId }).eq("id", existente.id);
+        return mapConversa({ ...existente, lead_id: leadId });
+      }
+    }
+    return mapConversa(existente);
+  }
 
-  // Sem conversa ainda: tenta amarrar num lead que já exista com este
-  // telefone, para o dossiê cair no mesmo card do funil em vez de criar
-  // uma ficha paralela.
-  const { data: lead } = await supabase
-    .from("leads")
-    .select("id")
-    .eq("telefone", params.telefoneCliente)
-    .eq("corretor_id", params.corretorId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const leadId = await encontrarOuCriarLead(supabase, params);
 
   const origem = params.origem ?? "organica";
   const precisaDePalavraChave = exigePalavraChave({
@@ -152,7 +227,7 @@ export async function obterOuCriarConversa(params: {
       corretor_id: params.corretorId,
       telefone_cliente: params.telefoneCliente,
       nome_cliente: params.nomeCliente ?? null,
-      lead_id: lead?.id ?? null,
+      lead_id: leadId,
       origem,
       liberado_por_palavra_chave: !precisaDePalavraChave,
     })
@@ -180,22 +255,40 @@ export async function liberarConversaPorPalavraChave(conversaId: string): Promis
     .eq("id", conversaId);
 }
 
+/**
+ * Grava a mensagem e devolve se ela é INÉDITA.
+ *
+ * `providerMessageId` (o `key.id` do provedor) alimenta o índice único da
+ * 0027: reentrega de webhook — que todo provedor faz — bate no conflito e
+ * devolve `inedita: false`, e o chamador encerra sem chamar a IA nem
+ * responder de novo. Sem isso, cada retry do provedor virava resposta
+ * duplicada no WhatsApp do cliente.
+ */
 export async function gravarMensagem(params: {
   conversaId: string;
   remetente: "cliente" | "bot" | "corretor";
   conteudo: string;
   tipo?: "texto" | "audio" | "imagem" | "documento";
   midiaUrl?: string | null;
-}): Promise<void> {
+  providerMessageId?: string | null;
+}): Promise<{ inedita: boolean }> {
   const supabase = createServiceClient();
 
-  await supabase.from("whatsapp_mensagens").insert({
+  const { error } = await supabase.from("whatsapp_mensagens").insert({
     conversa_id: params.conversaId,
     remetente: params.remetente,
     tipo: params.tipo ?? "texto",
     conteudo: params.conteudo,
     midia_url: params.midiaUrl ?? null,
+    provider_message_id: params.providerMessageId ?? null,
   });
+
+  // 23505 = violação de unicidade: é a reentrega. Qualquer outro erro é
+  // problema real, mas nunca pode derrubar o fluxo de resposta — loga e segue.
+  if (error) {
+    if (error.code === "23505") return { inedita: false };
+    console.error("Falha ao gravar mensagem de WhatsApp:", error.message);
+  }
 
   await supabase
     .from("whatsapp_conversas")
@@ -204,6 +297,133 @@ export async function gravarMensagem(params: {
       ultima_interacao_em: new Date().toISOString(),
     })
     .eq("id", params.conversaId);
+
+  return { inedita: true };
+}
+
+/**
+ * A mensagem de cliente mais recente da conversa — o relógio do buffer de
+ * rajada: a invocação cujo `providerMessageId` NÃO é o mais recente foi
+ * absorvida por uma mensagem que chegou depois, e quem responde é a outra.
+ */
+export async function ultimaMensagemClienteId(conversaId: string): Promise<string | null> {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("whatsapp_mensagens")
+    .select("provider_message_id")
+    .eq("conversa_id", conversaId)
+    .eq("remetente", "cliente")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.provider_message_id ?? null;
+}
+
+/**
+ * Debounce do alerta de lead quente: devolve true (e carimba) no máximo uma
+ * vez por janela. Sem isso, TODA mensagem de uma conversa com score alto
+ * disparava alerta novo — e alerta que spamma é alerta que o corretor
+ * silencia.
+ */
+export async function podeAlertarLeadQuente(
+  conversaId: string,
+  janelaHoras = 6,
+): Promise<boolean> {
+  const supabase = createServiceClient();
+
+  const { data } = await supabase
+    .from("whatsapp_conversas")
+    .select("alerta_quente_em")
+    .eq("id", conversaId)
+    .maybeSingle();
+
+  const ultimo = data?.alerta_quente_em ? new Date(data.alerta_quente_em).getTime() : 0;
+  if (Date.now() - ultimo < janelaHoras * 3600_000) return false;
+
+  await supabase
+    .from("whatsapp_conversas")
+    .update({ alerta_quente_em: new Date().toISOString() })
+    .eq("id", conversaId);
+
+  return true;
+}
+
+/** Validação da data de visita proposta pela IA — nunca gravar lixo no funil. */
+export function validarDataVisita(dataHoraISO: string, agora: Date = new Date()): Date | null {
+  const data = new Date(dataHoraISO);
+  if (Number.isNaN(data.getTime())) return null;
+  if (data <= agora) return null;
+  // Mais de 60 dias no futuro é quase certamente parse errado de "dia 30".
+  if (data.getTime() - agora.getTime() > 60 * 86_400_000) return null;
+  return data;
+}
+
+/**
+ * O cliente confirmou um horário com a IA: vira compromisso de verdade —
+ * data no lead E etapa do funil, o mesmo efeito de o corretor marcar à mão.
+ */
+export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promise<boolean> {
+  const supabase = createServiceClient();
+
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      visita_agendada_em: dataVisita.toISOString(),
+      etapa: "visita_agendada",
+      etapa_alterada_em: new Date().toISOString(),
+    })
+    .eq("id", leadId);
+
+  return !error;
+}
+
+// ---------------------------------------------------------------------------
+// Follow-ups proativos (migration 0028)
+// ---------------------------------------------------------------------------
+
+/** +24h na primeira tentativa, +72h na segunda. Depois disso, silêncio é resposta. */
+const HORAS_FOLLOWUP: Record<number, number> = { 1: 24, 2: 72 };
+export const MAX_TENTATIVAS_FOLLOWUP = 2;
+
+/**
+ * Agenda o próximo follow-up da conversa, se ainda couber um.
+ *
+ * Idempotente por desenho: se já existe um pendente, não cria outro; se a
+ * conversa já queimou as 2 tentativas, para — insistência vira denúncia de
+ * spam, e denúncia derruba o número (ver antiBan.ts).
+ */
+export async function agendarFollowup(conversaId: string, instanciaId: string): Promise<void> {
+  const supabase = createServiceClient();
+
+  const { data: existentes } = await supabase
+    .from("whatsapp_followups")
+    .select("id, status, tentativa")
+    .eq("conversa_id", conversaId);
+
+  if (existentes?.some((f) => f.status === "pendente")) return;
+
+  const enviados = existentes?.filter((f) => f.status === "enviado").length ?? 0;
+  const tentativa = enviados + 1;
+  if (tentativa > MAX_TENTATIVAS_FOLLOWUP) return;
+
+  const horas = HORAS_FOLLOWUP[tentativa] ?? 24;
+
+  await supabase.from("whatsapp_followups").insert({
+    conversa_id: conversaId,
+    instancia_id: instanciaId,
+    tentativa,
+    agendado_para: new Date(Date.now() + horas * 3600_000).toISOString(),
+  });
+}
+
+/** O cliente respondeu: todo follow-up pendente da conversa perde o motivo de existir. */
+export async function cancelarFollowupsPendentes(conversaId: string): Promise<void> {
+  const supabase = createServiceClient();
+  await supabase
+    .from("whatsapp_followups")
+    .update({ status: "cancelado", motivo: "cliente_respondeu" })
+    .eq("conversa_id", conversaId)
+    .eq("status", "pendente");
 }
 
 /** Janela padrão de silêncio do bot depois que o corretor entra na conversa. */

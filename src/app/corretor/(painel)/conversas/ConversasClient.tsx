@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import {
+  avaliarUltimaResposta,
   lerMensagens,
   retomarBotNaConversa,
   silenciarBotNaConversa,
@@ -124,6 +125,18 @@ function CartaoConversa({
     iniciar(async () => setMensagens(await lerMensagens(conversa.id)));
   }
 
+  // Loop de melhoria: "ruim" vira caso de teste do eval da IA (ver
+  // avaliarUltimaResposta). O aviso curto confirma que o clique valeu.
+  const [avaliacaoFeita, setAvaliacaoFeita] = useState<string | null>(null);
+  function avaliar(nota: "boa" | "ruim") {
+    onErro(null);
+    iniciar(async () => {
+      const resultado = await avaliarUltimaResposta(conversa.id, nota);
+      if (resultado.erro) onErro(resultado.erro);
+      else setAvaliacaoFeita(resultado.ok ?? "Registrado.");
+    });
+  }
+
   return (
     <article className="border-linha bg-superficie shadow-painel rounded-2xl border p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -172,6 +185,31 @@ function CartaoConversa({
         >
           {estado === "ativa" ? "Desligar IA aqui" : "Reativar IA agora"}
         </button>
+
+        {avaliacaoFeita ? (
+          <span className="text-fluid-xs text-ok px-2">{avaliacaoFeita}</span>
+        ) : (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => avaliar("boa")}
+              disabled={pendente}
+              title="A última resposta da IA foi boa"
+              className="border-linha text-apoio hover:text-ok flex min-h-11 cursor-pointer items-center rounded-full border px-3 text-sm transition-colors disabled:opacity-60"
+            >
+              👍 IA
+            </button>
+            <button
+              type="button"
+              onClick={() => avaliar("ruim")}
+              disabled={pendente}
+              title="A última resposta da IA foi ruim — vira caso de teste"
+              className="border-linha text-apoio hover:text-perigo flex min-h-11 cursor-pointer items-center rounded-full border px-3 text-sm transition-colors disabled:opacity-60"
+            >
+              👎 IA
+            </button>
+          </div>
+        )}
 
         <button
           type="button"

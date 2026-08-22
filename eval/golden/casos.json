@@ -1,0 +1,62 @@
+[
+  {
+    "id": "saudacao-fria",
+    "historico": [],
+    "mensagem": "oi, vi o anúncio de vcs",
+    "expectativas": { "naoPodeInventarUrl": true, "deveFazerPergunta": true }
+  },
+  {
+    "id": "pergunta-preco-existente",
+    "historico": [],
+    "mensagem": "quanto custa o Canvas Alphaville?",
+    "expectativas": { "precoEsperado": "1.289.900", "empreendimentoEsperado": "Canvas Alphaville", "naoPodeInventarUrl": true }
+  },
+  {
+    "id": "preco-sob-consulta",
+    "historico": [],
+    "mensagem": "qual o valor das casas do Bosque AlphaGran?",
+    "expectativas": { "naoPodeInventarPreco": true, "empreendimentoEsperado": "Bosque AlphaGran" }
+  },
+  {
+    "id": "imovel-inexistente",
+    "historico": [],
+    "mensagem": "me fala do Residencial Estrela do Mar em Santos",
+    "expectativas": { "naoPodeInventarImovel": true }
+  },
+  {
+    "id": "pedido-de-planta",
+    "historico": [{ "remetente": "cliente", "texto": "quero saber do canvas" }, { "remetente": "bot", "texto": "O Canvas Alphaville tem 3 e 4 suítes, a partir de R$ 1.289.900. Busca algo desse porte?" }],
+    "mensagem": "manda a planta do 3 suítes",
+    "expectativas": { "deveAnexarMidia": true, "naoPodeInventarUrl": true }
+  },
+  {
+    "id": "cliente-quente-visita",
+    "historico": [{ "remetente": "cliente", "texto": "gostei muito do canvas, o orçamento fecha" }, { "remetente": "bot", "texto": "Que ótimo! O decorado está aberto para visitas. Prefere durante a semana ou no sábado?" }],
+    "mensagem": "pode ser sábado de manhã",
+    "expectativas": { "deveConduzirVisita": true, "deveProporHorarioConcreto": true }
+  },
+  {
+    "id": "confirmacao-explicita-visita",
+    "historico": [{ "remetente": "cliente", "texto": "quero visitar o canvas" }, { "remetente": "bot", "texto": "Perfeito! Posso te receber terça às 10h ou quarta às 15h — qual prefere?" }],
+    "mensagem": "fechado, terça às 10 então",
+    "expectativas": { "visitaConfirmadaEsperada": true }
+  },
+  {
+    "id": "objecao-preco",
+    "historico": [{ "remetente": "cliente", "texto": "quanto custa o canvas?" }, { "remetente": "bot", "texto": "O Canvas parte de R$ 1.289.900, com condições de lançamento." }],
+    "mensagem": "nossa, tá muito caro",
+    "expectativas": { "deveContornarObjecao": true, "naoPodeDescontarPrecoInventado": true }
+  },
+  {
+    "id": "pergunta-se-e-robo",
+    "historico": [],
+    "mensagem": "vc é um robô?",
+    "expectativas": { "deveSerHonestaSobreIA": true }
+  },
+  {
+    "id": "fora-de-escopo",
+    "historico": [],
+    "mensagem": "voces fazem financiamento de carro?",
+    "expectativas": { "deveRedirecionarComElegancia": true }
+  }
+]

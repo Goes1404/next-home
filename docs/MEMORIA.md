@@ -198,3 +198,45 @@ Coisas que valem lembrar daqui:
   `context.route(/basemaps\.cartocdn\.com/, ...)` e responder com o corpo
   baixado via `curl` (ver sessão de 2026-08-22). Lembrete relacionado: o
   mesmo Chromium não decodifica H.264 — vídeos precisam de par WebM.
+
+## Chatbot (Sofia) — arquitetura pós-reforma de agosto/2026
+
+Reforma guiada por pesquisa de mercado + gap-analysis (plano em
+`/root/.claude/plans/` da sessão; resumo: requisitos de mercado = resposta
+imediata, qualificação estruturada, AGENDAR visita como ação, híbrido
+trilho+IA, follow-up, métricas de funil).
+
+- **Vínculo conversa↔lead**: `obterOuCriarConversa` casa por
+  `telefone_e164` (SÓ DÍGITOS, sem '+') com variantes de nono dígito
+  (`candidatosTelefone`), e CRIA o lead se não existir. Antes o match era
+  igualdade exata com o telefone digitado à mão: 0 de 32 conversas tinham
+  lead, 0 dossiês persistidos, few-shot morto. Backfill na 0026.
+- **Toda chamada ao Gemini passa por `gemini.ts`** (`chamarGeminiJson`):
+  timeout 8s + 1 retentativa + usage para telemetria. Não duplicar fetch.
+- **`PROMPT_VERSAO` em aiAgent.ts**: bump manual OBRIGATÓRIO a cada mudança
+  de prompt; roda `npx tsx scripts/eval/rodarEval.ts` antes e commita o
+  resultado de `eval/resultados/` — score não pode cair vs. versão anterior.
+- **Guardrails (`guardrails.ts`)**: nenhum anexo/slug sai sem existir no
+  catálogo. **Ranking (`catalogoRelevante.ts`)**: os 10 imóveis do prompt
+  são os mais relevantes (menções + faixa do dossiê), não os 10 primeiros.
+- **Dedup + rajada no webhook**: `provider_message_id` único (0027) mata
+  reentrega; espera de 6s + trava `resposta:<conversaId>` faz 1 resposta
+  por rajada de balões. A rota tem `maxDuration = 60`.
+- **Visita**: `visitaProposta.confirmadaPeloCliente` + `validarDataVisita`
+  → grava `leads.visita_agendada_em` + etapa. Data inválida degrada para
+  alerta comum.
+- **Follow-ups (0028)**: máx 2/conversa (+24h/+72h), cancelados por
+  resposta do cliente, CONSOMEM cota anti-ban. Runner
+  `/api/cron/followups`; ligar com
+  `select public.configurar_followups_automaticos('https://next-home-drab.vercel.app/api/cron/followups', '<CRON_SECRET>');`
+- **Telemetria (`ia_interacoes`, 0029)**: TODA interação (inclusive
+  silêncios) com versão/latência/fallback/bloqueios. Botão 👍/👎 nas
+  conversas alimenta o golden dataset (`scripts/eval/exportarGolden.ts`).
+- **Playground = produção**: `testarAgenteIA` usa few-shot + ranking +
+  guardrails, os mesmos do webhook. Se divergirem de novo, o teste do
+  corretor vira mentira.
+- **Flake didático**: fila de campanha criada de madrugada podia INVERTER
+  a ordem dos itens ao empurrar para a próxima janela (degrau de 30 min a
+  menos ao cruzar fronteira de hora). Corrigido com guarda de
+  monotonicidade em `montarFilaCampanha`; o teste que pegou só falhava
+  entre ~1h e ~9h.
