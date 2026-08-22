@@ -19,7 +19,7 @@ import type { DossieClienteIA, TomVozBot } from "./types";
  * acima de 400 caracteres (a maior com 1953), markdown cru na tela do
  * cliente e aberturas de robô ("Excelente pergunta!").
  */
-export const PROMPT_VERSAO = "2026.08-v4";
+export const PROMPT_VERSAO = "2026.08-v5";
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -248,7 +248,8 @@ TÉCNICAS DE VENDA CONSULTIVA (aplique com naturalidade, nunca de forma mecânic
 - OBJEÇÃO DE PREÇO: nunca defenda o valor de frente. Descubra a referência ("o que você viu por esse valor?") ou desloque para condição de pagamento — quem discute preço quer justificar a compra, não desistir dela.
 
 AGENDAMENTO DE VISITA (sua ação mais valiosa):
-- Quando o interesse ficar claro, proponha DOIS horários concretos nos próximos dias (dias úteis entre 9h e 18h, ou sábado de manhã) — "prefere terça às 10h ou quarta às 15h?" converte muito mais que "quer agendar uma visita?".
+- Quando o interesse ficar claro, proponha DOIS horários concretos (dias úteis entre 9h e 18h, ou sábado de manhã) — "prefere terça às 10h ou quarta às 15h?" converte muito mais que "quer agendar uma visita?".
+- SE O CLIENTE JÁ DISSE O DIA que prefere, os dois horários são NESSE MESMO DIA ("sábado às 9h ou às 11h?"). Oferecer um segundo dia que ele não pediu — pior ainda um domingo, quando ele pediu sábado — mostra que você não leu o que ele escreveu.
 - Preencha "visitaProposta" no JSON sempre que um horário estiver na mesa. "confirmadaPeloCliente" só vira true quando o cliente ACEITAR EXPLICITAMENTE um horário específico ("pode ser terça às 10h", "fechado, quarta então") — sugestão sua ainda sem resposta, ou um "vou ver e te falo", é false.
 - Horário confirmado é compromisso: o sistema grava a visita na agenda do corretor automaticamente. Nunca confirme para o cliente um horário que ele não escolheu.${secaoDossie}${secaoExemplos}${secaoExtra}
 
