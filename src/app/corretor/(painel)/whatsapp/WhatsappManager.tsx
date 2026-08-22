@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ModoBotWhatsapp, StatusConexaoWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
-import { conectarWhatsapp, salvarConfiguracaoWhatsapp, testarAgenteIA } from "./acoes";
+import { conectarWhatsapp, desconectarWhatsapp, salvarConfiguracaoWhatsapp, testarAgenteIA } from "./acoes";
 import { Smartphone, ClipboardList, TestTube, Bot, Moon, Ruler, Lightbulb, Calendar, AlertTriangle, Check, ArrowRight, Timer, BellOff } from 'lucide-react';
 import { EXPEDIENTE, MINUTOS_COPILOTO } from "@/lib/whatsapp/modoBot";
 
@@ -100,6 +100,10 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
     },
   ]);
   const [inputChat, setInputChat] = useState("");
+  const [telefoneParaParear, setTelefoneParaParear] = useState("");
+  const [codigoPareamento, setCodigoPareamento] = useState<string | null>(null);
+  const [modoPareamento, setModoPareamento] = useState<"qr" | "codigo">("qr");
+  const [desconectando, setDesconectando] = useState(false);
   const [iaDigitando, setIaDigitando] = useState(false);
   // Começa vazio: preencher com um dossiê fictício faria o corretor validar
   // uma leitura que a IA nunca fez.
@@ -108,32 +112,66 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
     temperatura: number | null;
   }>({ resumo: null, temperatura: null });
 
-  const gerarQrCode = async () => {
+  /**
+   * Pareamento. Sem telefone, vem o QR de sempre; com telefone, vem o
+   * código de 8 caracteres para digitar no próprio celular — o caminho de
+   * quem abre o painel PELO celular e não tem uma segunda tela para
+   * apontar a câmera.
+   */
+  const parear = async (porCodigo: boolean) => {
+    if (porCodigo && !telefoneParaParear.trim()) {
+      setErroConexao("Digite o número do WhatsApp que você quer conectar.");
+      return;
+    }
+
     setConectando(true);
     setErroConexao(null);
+    setCodigoPareamento(null);
+    setQrCodeBase64(null);
+    setModoPareamento(porCodigo ? "codigo" : "qr");
     setMostrarQrCode(true);
 
-    const resultado = await conectarWhatsapp();
+    const resultado = await conectarWhatsapp(porCodigo ? telefoneParaParear : undefined);
     setConectando(false);
 
     if (resultado.erro) {
       setErroConexao(resultado.erro);
-      setQrCodeBase64(null);
       setStatusConexao("desconectado");
       return;
     }
 
     setQrCodeBase64(resultado.qrcodeBase64 ?? null);
+    setCodigoPareamento(resultado.codigoPareamento ?? null);
     setStatusConexao(resultado.jaConectado ? "conectado" : "conectando");
   };
 
-  const desconectar = () => {
+  /**
+   * Desconecta DE VERDADE. A versão anterior só mexia no estado local e
+   * dizia "Instância desconectada": o número seguia pareado no provedor, e
+   * a única saída real era o celular (WhatsApp → Aparelhos conectados).
+   */
+  const desconectar = async () => {
+    if (!confirm("Desconectar este número? A IA para de responder até você conectar de novo.")) {
+      return;
+    }
+
+    setDesconectando(true);
+    setErroConexao(null);
+    const resultado = await desconectarWhatsapp();
+    setDesconectando(false);
+
+    if (resultado.erro) {
+      setErroConexao(resultado.erro);
+      return;
+    }
+
     setStatusConexao("desconectado");
     setTelefoneConectado(null);
     setMostrarQrCode(false);
     setQrCodeBase64(null);
-    setFeedback("Instância desconectada.");
-    setTimeout(() => setFeedback(null), 4000);
+    setCodigoPareamento(null);
+    setFeedback(resultado.ok ?? "Número desconectado.");
+    setTimeout(() => setFeedback(null), 5000);
   };
 
   const salvarConfiguracoes = async () => {
@@ -284,16 +322,17 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                 {statusConexao === "conectado" ? (
                   <button
                     onClick={desconectar}
-                    className="px-4 py-2 rounded-xl bg-perigo-lavado hover:bg-perigo text-perigo hover:text-titulo text-fluid-xs font-semibold transition-colors border border-perigo-linha cursor-pointer"
+                    disabled={desconectando}
+                    className="px-4 py-2 rounded-xl bg-perigo-lavado hover:bg-perigo text-perigo hover:text-titulo text-fluid-xs font-semibold transition-colors border border-perigo-linha cursor-pointer disabled:opacity-60"
                   >
-                    Desconectar
+                    {desconectando ? "Desconectando…" : "Desconectar"}
                   </button>
                 ) : (
                   <button
-                    onClick={gerarQrCode}
+                    onClick={() => parear(false)}
                     className="px-5 py-2.5 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-semibold transition-all shadow-md cursor-pointer"
                   >
-                    Conectar via QR Code
+                    Conectar
                   </button>
                 )}
               </div>
@@ -301,10 +340,74 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
 
             {mostrarQrCode && (
               <div className="p-6 rounded-2xl border border-acento-linha bg-fundo/90 text-center space-y-4 max-w-md mx-auto">
-                <h3 className="text-fluid-base font-bold text-titulo">Escaneie o QR Code com seu celular</h3>
-                <p className="text-fluid-xs text-apoio">
-                  WhatsApp no celular  <ArrowRight className="inline-block w-5 h-5 align-text-bottom mr-1" />  Menu (Aparelhos conectados)  <ArrowRight className="inline-block w-5 h-5 align-text-bottom mr-1" />  Conectar um aparelho.
-                </p>
+                {/* Dois caminhos: QR (quando há uma segunda tela) e código
+                    digitável (quando o painel está aberto no próprio
+                    celular que vai ser conectado — apontar a câmera para si
+                    mesmo é impossível). */}
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => parear(false)}
+                    className={`px-3.5 py-2 rounded-xl text-fluid-xs font-semibold cursor-pointer transition-colors ${
+                      modoPareamento === "qr"
+                        ? "bg-acento text-white"
+                        : "bg-vidro text-apoio hover:text-titulo"
+                    }`}
+                  >
+                    QR Code
+                  </button>
+                  <button
+                    onClick={() => setModoPareamento("codigo")}
+                    className={`px-3.5 py-2 rounded-xl text-fluid-xs font-semibold cursor-pointer transition-colors ${
+                      modoPareamento === "codigo"
+                        ? "bg-acento text-white"
+                        : "bg-vidro text-apoio hover:text-titulo"
+                    }`}
+                  >
+                    Código no telefone
+                  </button>
+                </div>
+
+                {modoPareamento === "qr" ? (
+                  <>
+                    <h3 className="text-fluid-base font-bold text-titulo">
+                      Escaneie o QR Code com seu celular
+                    </h3>
+                    <p className="text-fluid-xs text-apoio">
+                      WhatsApp no celular  <ArrowRight className="inline-block w-5 h-5 align-text-bottom mr-1" />  Aparelhos conectados  <ArrowRight className="inline-block w-5 h-5 align-text-bottom mr-1" />  Conectar um aparelho.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-fluid-base font-bold text-titulo">
+                      Conectar pelo número, sem câmera
+                    </h3>
+                    {!codigoPareamento && (
+                      <div className="space-y-2 text-left">
+                        <label className="text-fluid-xs text-apoio block" htmlFor="tel-pareamento">
+                          Número do WhatsApp que você quer conectar
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            id="tel-pareamento"
+                            type="tel"
+                            inputMode="numeric"
+                            value={telefoneParaParear}
+                            onChange={(e) => setTelefoneParaParear(e.target.value)}
+                            placeholder="11 99999-8888"
+                            className="text-fluid-sm min-w-0 flex-1 rounded-xl border border-linha-forte bg-campo px-3.5 py-2.5 text-titulo placeholder:text-tenue focus:border-acento focus:outline-none"
+                          />
+                          <button
+                            onClick={() => parear(true)}
+                            disabled={conectando}
+                            className="shrink-0 px-4 py-2.5 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold cursor-pointer disabled:opacity-60"
+                          >
+                            Gerar código
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 {conectando && (
                   <p className="text-fluid-xs text-apoio py-10">Falando com o provedor…</p>
@@ -319,9 +422,28 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
                   </div>
                 )}
 
+                {/* O código só existe se o provedor devolveu — inventar um
+                    faria o corretor digitar oito caracteres em vão. */}
+                {!conectando && !erroConexao && codigoPareamento && (
+                  <div className="space-y-3">
+                    <p className="font-mono text-3xl font-bold tracking-[0.25em] text-acento-suave">
+                      {codigoPareamento}
+                    </p>
+                    <ol className="text-fluid-xs text-apoio text-left space-y-1.5 mx-auto max-w-xs">
+                      <li>1. Abra o WhatsApp no celular deste número.</li>
+                      <li>2. Vá em Aparelhos conectados → Conectar aparelho.</li>
+                      <li>3. Toque em <strong className="text-corpo">Conectar com número de telefone</strong>.</li>
+                      <li>4. Digite o código acima.</li>
+                    </ol>
+                    <p className="text-[11px] text-tenue">
+                      O código expira em poucos minutos — se falhar, gere outro.
+                    </p>
+                  </div>
+                )}
+
                 {/* Só um QR vindo do provedor conecta de fato — um desenho
                     decorativo faria o corretor apontar o celular para nada. */}
-                {!conectando && !erroConexao && qrCodeBase64 && (
+                {!conectando && !erroConexao && qrCodeBase64 && modoPareamento === "qr" && (
                   // eslint-disable-next-line @next/next/no-img-element -- data URI vinda do provedor, sem otimização possível.
                   <img
                     src={qrCodeBase64.startsWith("data:") ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`}
@@ -332,7 +454,10 @@ export function WhatsappManager({ corretorNome, configInicial }: Props) {
 
                 <div className="flex items-center justify-center gap-2 pt-2">
                   <button
-                    onClick={() => setMostrarQrCode(false)}
+                    onClick={() => {
+                      setMostrarQrCode(false);
+                      setCodigoPareamento(null);
+                    }}
                     className="px-4 py-2 rounded-xl bg-vidro-forte hover:bg-vidro-mais text-corpo text-fluid-xs font-semibold cursor-pointer"
                   >
                     Fechar

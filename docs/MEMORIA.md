@@ -233,6 +233,17 @@ trilho+IA, follow-up, métricas de funil).
 - **Telemetria (`ia_interacoes`, 0029)**: TODA interação (inclusive
   silêncios) com versão/latência/fallback/bloqueios. Botão 👍/👎 nas
   conversas alimenta o golden dataset (`scripts/eval/exportarGolden.ts`).
+- **Conectar/desconectar o número** (`provider.ts` + `whatsapp/acoes.ts`):
+  `GET /instance/connect/{nome}` sem parâmetro devolve QR; **com
+  `?number=55DDNNNNNNNNN` devolve `pairingCode`** (8 caracteres para digitar
+  em Aparelhos conectados → Conectar com número de telefone) — é o caminho
+  de quem abre o painel pelo próprio celular que vai parear.
+  `DELETE /instance/logout/{nome}` desconecta e PRESERVA a instância (nome,
+  tom de voz, webhook); `/instance/delete` seria destrutivo e desnecessário.
+  Ao desconectar, **zerar `conectado_em`** junto: é a base da curva de
+  aquecimento, e um número novo herdando maturidade do anterior dispararia
+  em volume alto no primeiro dia. (O botão "Desconectar" antigo era falso —
+  só mexia no estado local da tela e o número seguia pareado no provedor.)
 - **Playground = produção**: `testarAgenteIA` usa few-shot + ranking +
   guardrails, os mesmos do webhook. Se divergirem de novo, o teste do
   corretor vira mentira.

@@ -10,7 +10,8 @@ import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
 import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
-import { obterQrCodeInstancia, provedorConfigurado } from "@/lib/whatsapp/provider";
+import { desconectarInstancia, obterQrCodeInstancia, provedorConfigurado } from "@/lib/whatsapp/provider";
+import { normalizarWhatsapp } from "@/lib/whatsapp";
 import type { ModoBotWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 
 /**
@@ -170,11 +171,18 @@ export async function salvarConfiguracaoWhatsapp(params: {
 export type EstadoConexao = {
   configurado: boolean;
   qrcodeBase64?: string | null;
+  /** Código de 8 caracteres para digitar no celular, quando o corretor pareia por número. */
+  codigoPareamento?: string | null;
   jaConectado?: boolean;
   erro?: string;
 };
 
-export async function conectarWhatsapp(): Promise<EstadoConexao> {
+/**
+ * Inicia o pareamento. Sem `telefone`, devolve o QR Code de sempre; com
+ * ele, o código digitável — o caminho de quem está no painel PELO celular
+ * e não tem uma segunda tela para apontar a câmera.
+ */
+export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { configurado: false, erro: "Sessão expirada. Entre novamente." };
 
@@ -185,8 +193,13 @@ export async function conectarWhatsapp(): Promise<EstadoConexao> {
     };
   }
 
+  const numero = telefone?.trim() ? normalizarWhatsapp(telefone) : null;
+  if (telefone?.trim() && !numero) {
+    return { configurado: true, erro: "Número inválido. Use DDD + número, ex.: 11 99999-8888." };
+  }
+
   const instanceName = nomeInstanciaDe(corretor.slug);
-  const resultado = await obterQrCodeInstancia(instanceName);
+  const resultado = await obterQrCodeInstancia(instanceName, numero);
 
   if (!resultado.ok) {
     return { configurado: true, erro: resultado.detalhe || "Falha ao falar com o provedor." };
@@ -227,6 +240,46 @@ export async function conectarWhatsapp(): Promise<EstadoConexao> {
   return {
     configurado: true,
     qrcodeBase64: resultado.qrcodeBase64,
+    codigoPareamento: resultado.codigoPareamento,
     jaConectado: resultado.jaConectado,
   };
+}
+
+/**
+ * Desliga o número pelo painel.
+ *
+ * Antes disso só dava para desconectar PELO CELULAR (WhatsApp → Aparelhos
+ * conectados → sair): quem trocou de aparelho, perdeu o telefone ou saiu da
+ * empresa deixava o número preso à instância, sem saída pelo sistema.
+ *
+ * O carimbo de conexão é zerado junto: `conectado_em` é a base da curva de
+ * aquecimento anti-ban (antiBan.ts), e um número novo herdando a maturidade
+ * do anterior sairia disparando em volume alto no primeiro dia — o padrão
+ * clássico de banimento.
+ */
+export async function desconectarWhatsapp(): Promise<{ ok?: string; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  const instanceName = nomeInstanciaDe(corretor.slug);
+  const resultado = await desconectarInstancia(instanceName);
+
+  if (!resultado.ok) {
+    return { erro: resultado.detalhe || "Não foi possível desconectar agora. Tente novamente." };
+  }
+
+  const supabase = await createClient();
+  await supabase
+    .from("corretor_whatsapp_instancias")
+    .update({
+      status_conexao: "desconectado",
+      conectado_em: null,
+      telefone_conectado: null,
+      qrcode_base64: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("corretor_id", corretor.id);
+
+  revalidatePath("/corretor/whatsapp");
+  return { ok: "Número desconectado. A IA para de responder até você conectar de novo." };
 }

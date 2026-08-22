@@ -77,17 +77,33 @@ async function garantirInstancia(
 }
 
 export type ResultadoQrCode =
-  | { ok: true; qrcodeBase64: string | null; jaConectado: boolean }
+  | {
+      ok: true;
+      qrcodeBase64: string | null;
+      /** Código de 8 caracteres para digitar no celular (pareamento por número). */
+      codigoPareamento: string | null;
+      jaConectado: boolean;
+    }
   | { ok: false; motivo: "provedor_nao_configurado" | "erro_provedor"; detalhe?: string };
 
 /**
- * Pede ao provedor o QR Code de pareamento da instância.
+ * Pede ao provedor o pareamento da instância — QR Code ou código digitável.
  *
- * Sem credenciais não existe QR nenhum para mostrar — devolver uma imagem
- * decorativa faria o corretor apontar o celular para um código que não
- * conecta em lugar nenhum.
+ * Passando `telefone` (E.164 só com dígitos), a Evolution devolve um
+ * `pairingCode` de 8 caracteres em vez da imagem: o corretor digita no
+ * próprio celular, em Aparelhos conectados → Conectar com número de
+ * telefone. É o caminho de quem está mexendo no painel PELO celular, onde
+ * não há uma segunda tela para apontar a câmera — apontar o celular para o
+ * QR exibido nele mesmo é impossível.
+ *
+ * Sem credenciais não existe pareamento nenhum para mostrar — devolver uma
+ * imagem decorativa faria o corretor apontar a câmera para um código que
+ * não conecta em lugar nenhum.
  */
-export async function obterQrCodeInstancia(instanceName: string): Promise<ResultadoQrCode> {
+export async function obterQrCodeInstancia(
+  instanceName: string,
+  telefone?: string | null,
+): Promise<ResultadoQrCode> {
   const config = configDoProvedor();
   if (!config) {
     return {
@@ -107,7 +123,12 @@ export async function obterQrCodeInstancia(instanceName: string): Promise<Result
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    const res = await fetch(`${config.baseUrl}/instance/connect/${encodeURIComponent(instanceName)}`, {
+    // `?number=` é o que faz a Evolution devolver `pairingCode` no lugar do QR.
+    const numero = telefone?.replace(/\D/g, "") || "";
+    const url = new URL(`${config.baseUrl}/instance/connect/${encodeURIComponent(instanceName)}`);
+    if (numero) url.searchParams.set("number", numero);
+
+    const res = await fetch(url.toString(), {
       method: "GET",
       headers: { apikey: config.apiKey },
       signal: controller.signal,
@@ -122,15 +143,65 @@ export async function obterQrCodeInstancia(instanceName: string): Promise<Result
 
     const json = await res.json();
     const base64: string | null = json?.base64 || json?.qrcode?.base64 || null;
+    const codigo: string | null =
+      json?.pairingCode || json?.qrcode?.pairingCode || json?.code || null;
     const jaConectado = json?.instance?.state === "open" || json?.state === "open";
 
-    return { ok: true, qrcodeBase64: base64, jaConectado };
+    return {
+      ok: true,
+      qrcodeBase64: base64,
+      // O `code` cru da Evolution às vezes é a string do QR (longa); só vale
+      // como código digitável se tiver a cara de um: 8 caracteres.
+      codigoPareamento: codigo && codigo.replace(/-/g, "").length <= 10 ? codigo : null,
+      jaConectado,
+    };
   } catch (err) {
     return {
       ok: false,
       motivo: "erro_provedor",
       detalhe: err instanceof Error ? err.message : String(err),
     };
+  }
+}
+
+/**
+ * Desconecta o número da instância (logout), pelo painel.
+ *
+ * Até aqui o corretor só conseguia desligar PELO CELULAR (WhatsApp →
+ * Aparelhos conectados → sair), e quem perdeu o acesso ao aparelho ficava
+ * com o número preso à instância sem saída nenhuma pelo sistema.
+ *
+ * `logout` derruba a sessão mas PRESERVA a instância e suas configurações
+ * (webhook, nome, tom de voz) — é o que permite reconectar depois sem
+ * refazer nada. Apagar a instância seria destrutivo e desnecessário.
+ */
+export async function desconectarInstancia(
+  instanceName: string,
+): Promise<{ ok: boolean; detalhe?: string }> {
+  const config = configDoProvedor();
+  if (!config) return { ok: false, detalhe: "Provedor de WhatsApp não configurado neste ambiente." };
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const res = await fetch(
+      `${config.baseUrl}/instance/logout/${encodeURIComponent(instanceName)}`,
+      { method: "DELETE", headers: { apikey: config.apiKey }, signal: controller.signal },
+    );
+
+    clearTimeout(timeoutId);
+
+    // 404 = a instância já não tem sessão ativa; o desfecho desejado já é o
+    // atual, então tratar como erro só assustaria o corretor à toa.
+    if (!res.ok && res.status !== 404) {
+      const corpo = await res.text().catch(() => "");
+      return { ok: false, detalhe: `HTTP ${res.status}${corpo ? `: ${corpo.slice(0, 200)}` : ""}` };
+    }
+
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, detalhe: err instanceof Error ? err.message : String(err) };
   }
 }
 
