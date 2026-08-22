@@ -85,8 +85,27 @@ export const enderecoLinha = `${site.endereco.logradouro} — ${site.endereco.ba
  * scroll da página controla o quadro exibido (ver HeroVideoBackground),
  * então o arquivo precisa estar disponível desde o primeiro request, sem
  * depender de uma URL externa.
+ *
+ * O arquivo é codificado PARA scrub: todo quadro é keyframe (`-g 1` no
+ * ffmpeg) e 48fps interpolados. Sem isso, cada mudança de `currentTime`
+ * obriga o decoder a voltar ao keyframe anterior e decodificar o GOP
+ * inteiro — foi o que fazia o fundo engasgar com o `hero-scroll-hq.mp4`
+ * antigo (56 Mbps, keyframes esparsos). Se trocar o vídeo, reencode com:
+ * `ffmpeg -i fonte.mp4 -an -vf "scale=1080:-2,minterpolate=fps=48:mi_mode=mci:mc_mode=aobmc:vsbmc=1" -c:v libx264 -preset medium -crf 27 -g 1 -pix_fmt yuv420p -movflags +faststart saida.mp4`
  */
-export const HERO_VIDEO_URL: string | null = "/video/hero-scroll-hq.mp4";
+export const HERO_VIDEO_URL: string | null = "/video/hero-scroll-fluido.mp4";
+
+/**
+ * Variante VP9 do mesmo vídeo (`-c:v libvpx-vp9 -crf 36 -b:v 0 -g 8`):
+ * comprime melhor que H.264 e é o único formato que alguns Chromium sem
+ * codecs proprietários (headless de CI incluso) conseguem decodificar.
+ * Vai como primeiro `<source>`; o MP4 fica de fallback para Safari antigo.
+ */
+export const HERO_VIDEO_WEBM_URL = "/video/hero-scroll-fluido.webm";
+
+/** Vinheta da logo exibida como preloader na primeira visita da sessão (ver Preloader.tsx). */
+export const INTRO_VIDEO_URL = "/video/intro.mp4";
+export const INTRO_VIDEO_WEBM_URL = "/video/intro.webm";
 
 /** Monta um link `wa.me` para qualquer número em E.164, com mensagem pré-preenchida. */
 export function linkWhatsappPara(numero: string, mensagem: string): string {

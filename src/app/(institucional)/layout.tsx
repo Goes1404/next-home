@@ -3,8 +3,9 @@ import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
+import { Preloader } from "@/components/motion/Preloader";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { HERO_VIDEO_URL } from "@/lib/site";
+import { HERO_VIDEO_URL, HERO_VIDEO_WEBM_URL } from "@/lib/site";
 
 /**
  * Casca do site institucional — a face pública para quem chega pelo Google,
@@ -35,13 +36,23 @@ export default async function InstitucionalLayout({
 
   return (
     <GlassBackgroundProvider>
+      {/* Vinheta da logo na primeira visita da sessão — também vive no
+          grupo (vitrine); o sessionStorage garante que aparece uma vez só,
+          por qualquer porta que o visitante entre. */}
+      <Preloader />
+
       <HeaderInstitucional />
 
       <div className="fixed inset-0 -z-10 bg-gradient-to-br from-fundo-marca via-fundo to-fundo">
         {usaFotoDeFundo ? (
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : (
-          videoUrl && <HeroVideoBackground src={videoUrl} />
+          videoUrl && (
+            <HeroVideoBackground
+              src={videoUrl}
+              srcWebm={videoUrl === HERO_VIDEO_URL ? HERO_VIDEO_WEBM_URL : undefined}
+            />
+          )
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-fundo/30 via-fundo/10 to-fundo/90" />
       </div>

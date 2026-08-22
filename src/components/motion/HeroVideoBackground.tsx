@@ -46,16 +46,29 @@ function usePodeExibirVideo(): boolean {
  * O `ScrollTrigger` compartilha o relógio do Lenis (ver SmoothScroll.tsx),
  * então o progresso lido aqui é o mesmo scroll suavizado que o resto do
  * site anima com — sem isso o vídeo saltaria à frente do que a rolagem
- * suave ainda está desenhando na tela. `gsap.to` interpola o `currentTime`
- * em vez de saltar direto: esconde os soluços de um vídeo com poucos
- * keyframes por segundo.
+ * suave ainda está desenhando na tela.
+ *
+ * A suavização do `currentTime` é um lerp contínuo no ticker do GSAP, e
+ * não um `gsap.to` por evento de scroll: criar um tween novo (com
+ * `overwrite`) a cada tique de rolagem gerava rajadas de tweens que
+ * nasciam e morriam dezenas de vezes por segundo — cada troca reiniciava a
+ * curva de easing e o vídeo andava em degraus. O lerp persegue o alvo no
+ * mesmo relógio do Lenis, quadro a quadro, e só escreve em `currentTime`
+ * quando o seek anterior já terminou (`seeking`), para não enfileirar
+ * seeks que o decoder ainda não drenou.
+ *
+ * Isso só é fluido de verdade porque o arquivo coopera: o vídeo do hero é
+ * codificado com todo quadro sendo keyframe (ver HERO_VIDEO_URL em
+ * site.ts) — seek em vídeo de keyframe esparso obriga o decoder a
+ * redecodificar o GOP inteiro a cada scroll, que era a causa raiz dos
+ * engasgos.
  *
  * Assim que os metadados chegam, se registra no `GlassBackgroundProvider` —
  * os painéis de vidro passam a refratar o próprio vídeo (ver
  * GlassCanvas.tsx), em vez de caírem no gradiente procedural que existe
  * para quando não há nada para refratar.
  */
-export function HeroVideoBackground({ src }: { src: string }) {
+export function HeroVideoBackground({ src, srcWebm }: { src: string; srcWebm?: string }) {
   const permitido = usePodeExibirVideo();
   const [pronto, setPronto] = useState(false);
   const { definirVideo } = useGlassBackground();
@@ -71,6 +84,9 @@ export function HeroVideoBackground({ src }: { src: string }) {
     if (!video || !Number.isFinite(video.duration)) return;
 
     gsap.registerPlugin(ScrollTrigger);
+
+    let alvo = video.currentTime;
+
     const gatilho = ScrollTrigger.create({
       // Sem `trigger`, só o range numérico: com `document.documentElement`
       // como trigger, `top top`/`bottom bottom` nunca reconhece o scroll da
@@ -80,16 +96,31 @@ export function HeroVideoBackground({ src }: { src: string }) {
       start: 0,
       end: () => document.documentElement.scrollHeight - window.innerHeight,
       onUpdate: (self) => {
-        gsap.to(video, {
-          currentTime: self.progress * video.duration,
-          duration: 0.5,
-          ease: "power1.out",
-          overwrite: true,
-        });
+        alvo = self.progress * video.duration;
       },
     });
 
-    return () => gatilho.kill();
+    const perseguir = (_t: number, deltaMs: number) => {
+      if (video.seeking) return;
+
+      const distancia = alvo - video.currentTime;
+      // Perto o bastante do alvo: para de escrever. Sem esta folga, o lerp
+      // escreveria `currentTime` a 60fps mesmo com a página parada, e cada
+      // escrita é um seek que custa decodificação.
+      if (Math.abs(distancia) < 1 / 60) return;
+
+      // Fator compensado pelo delta real do frame: a perseguição tem a
+      // mesma "elasticidade" a 60Hz ou 144Hz.
+      const fator = 1 - Math.exp(-deltaMs / 180);
+      video.currentTime += distancia * fator;
+    };
+
+    gsap.ticker.add(perseguir);
+
+    return () => {
+      gsap.ticker.remove(perseguir);
+      gatilho.kill();
+    };
   }, [pronto]);
 
   if (!permitido) return null;
@@ -114,6 +145,11 @@ export function HeroVideoBackground({ src }: { src: string }) {
       }}
       aria-hidden
     >
+      {/* WebM primeiro: menor e é o que Chromium sem codecs proprietários
+          decodifica; o MP4 cobre Safari antigo. Só o vídeo padrão do site
+          tem as duas versões — o fundo personalizado do corretor (Supabase
+          Storage) chega como MP4 único. */}
+      {srcWebm && <source src={srcWebm} type="video/webm" />}
       <source src={src} type="video/mp4" />
     </video>
   );

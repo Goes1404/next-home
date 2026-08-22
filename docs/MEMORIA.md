@@ -142,3 +142,36 @@ Coisas que valem lembrar daqui:
   `select public.configurar_disparo_automatico('https://next-home-drab.vercel.app/api/cron/campanhas', '<CRON_SECRET>');`
   Sem isso o disparo continua automático (pela corrente) — só perde o
   recomeço automático se uma corrente morrer no meio.
+
+## Vídeo de fundo e vinheta de abertura — o que custa caro descobrir
+
+- **Scrub por scroll engasga por causa do ARQUIVO, não do código.** O
+  `hero-scroll-hq.mp4` antigo tinha 56 MB / 56 Mbps com keyframes
+  esparsos: cada mudança de `currentTime` obrigava o decoder a voltar ao
+  keyframe anterior e redecodificar o GOP inteiro — era essa a causa raiz
+  dos engasgos do fundo. A regra: vídeo controlado por scroll precisa de
+  keyframes densos (`-g 1` no MP4/x264; `-g 8` no WebM/VP9, onde all-intra
+  incha demais). A receita completa de reencode está no comentário de
+  `HERO_VIDEO_URL` em `src/lib/site.ts`.
+- **A suavização do `currentTime` é um lerp no ticker do GSAP** (ver
+  `HeroVideoBackground.tsx`), não um `gsap.to` por evento de scroll —
+  tween novo por tique reinicia o easing dezenas de vezes por segundo e o
+  vídeo anda em degraus. E nunca escrever `currentTime` enquanto
+  `video.seeking` é true: enfileira seeks que o decoder não drena.
+- **O Chromium do Playwright (CI/headless) NÃO decodifica H.264**
+  (`canPlayType('video/mp4; codecs="avc1..."')` devolve vazio) — mas toca
+  VP9/AV1. Por isso todo vídeo estático do site tem par `.webm` (VP9),
+  servido como primeiro `<source>`: navegador real pega o menor, e o teste
+  automatizado consegue exercitar o caminho de vídeo de verdade. Sem o
+  WebM, o teste "passa" com o vídeo eternamente em `dur: NaN` e ninguém
+  percebe.
+- **A home `/` mora no grupo `(institucional)`, não no `(vitrine)`** — o
+  comentário antigo do layout da vitrine ("compartilhado pela home") é de
+  antes da separação. Qualquer coisa que precise aparecer na home entra em
+  `(institucional)/layout.tsx`.
+- **Vinheta de abertura (`Preloader.tsx`)**: uma vez por sessão
+  (`sessionStorage`), decidida por script inline antes da primeira pintura
+  (sem flash para quem já viu), pulada para `prefers-reduced-motion` /
+  `Save-Data`, teto de 7,5s. O vídeo (`public/video/intro.*`) está 1,3x
+  mais rápido que o original de WhatsApp justamente para a logo fechar em
+  ~4s.
