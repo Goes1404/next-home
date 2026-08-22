@@ -1,6 +1,6 @@
 import type { Empreendimento } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
-import { chamarGeminiJson } from "./gemini";
+import { chamarGeminiJson, TIMEOUT_AGENTE_MS, type MotivoFalhaGemini } from "./gemini";
 import type { DossieClienteIA, TomVozBot } from "./types";
 
 /**
@@ -90,7 +90,14 @@ export interface RespostaAgenteIA {
   anexosMidia: AnexoMidiaIA[];
   visitaProposta?: VisitaPropostaIA | null;
   /** Telemetria da chamada — ver ia_interacoes (0029). */
-  meta: { latenciaMs: number; fallback: boolean; tokensEntrada: number | null; tokensSaida: number | null };
+  meta: {
+    latenciaMs: number;
+    fallback: boolean;
+    /** Por que caiu no fallback. `null` quando a IA respondeu de fato. */
+    motivoFalha: MotivoFalhaGemini | null;
+    tokensEntrada: number | null;
+    tokensSaida: number | null;
+  };
 }
 
 /**
@@ -198,19 +205,52 @@ FORMATO DE RESPOSTA OBRIGATÓRIO (JSON EXCLUSIVO, sem crases markdown ou texto e
  * que é o dado mais importante de todos: fallback silencioso foi o que
  * deixou defeitos graves invisíveis por semanas neste sistema.
  */
+/**
+ * O que o CLIENTE lê quando a IA não respondeu.
+ *
+ * Depende de haver conversa em andamento, e essa é a correção: o texto era
+ * sempre uma saudação de primeiro contato ("Olá! Recebi sua mensagem sobre
+ * nossos imóveis...") — que, disparada no meio de uma conversa por causa de
+ * um timeout, ignora o que a pessoa acabou de perguntar e ainda se apresenta
+ * de novo. Parece que o atendimento reiniciou do zero.
+ *
+ * O que ele NUNCA faz, em nenhuma variação: responder no lugar da IA.
+ * Contingência promete retorno; não inventa conteúdo que o modelo não
+ * produziu.
+ */
+export function textoDeContingencia(params: {
+  nomeAssistente: string;
+  nomeCorretor: string;
+  temHistorico: boolean;
+}): string {
+  if (params.temHistorico) {
+    return `Só um instante — deixa eu confirmar isso direitinho para você. Já já te respondo, e o ${params.nomeCorretor} também está acompanhando por aqui.`;
+  }
+  return `Olá! Sou a ${params.nomeAssistente}, assistente do consultor ${params.nomeCorretor}. Recebi sua mensagem e já avisei o ${params.nomeCorretor} para te responder em instantes!`;
+}
+
 export async function gerarRespostaIA(
   ctx: ContextoAtendimento,
   mensagemCliente: string,
 ): Promise<RespostaAgenteIA> {
-  const fallback = (motivo: string, latenciaMs = 0): RespostaAgenteIA => ({
-    textoResposta: `Olá! Recebi sua mensagem sobre nossos imóveis em Alphaville. Estou avisando o ${ctx.nomeCorretor} para te dar um atendimento personalizado em instantes!`,
+  const fallback = (
+    motivoFalha: MotivoFalhaGemini,
+    latenciaMs = 0,
+  ): RespostaAgenteIA => ({
+    textoResposta: textoDeContingencia({
+      nomeAssistente: ctx.nomeAssistente,
+      nomeCorretor: ctx.nomeCorretor,
+      temHistorico: ctx.historicoMensagens.length > 0,
+    }),
     sugerirVisita: false,
+    // Continua transferindo: é assim que o corretor fica sabendo que
+    // precisa assumir esta conversa.
     transferirHumano: true,
-    motivoTransferencia: motivo,
+    motivoTransferencia: `IA indisponível (${motivoFalha})`,
     imoveisRecomendados: [],
     anexosMidia: [],
     visitaProposta: null,
-    meta: { latenciaMs, fallback: true, tokensEntrada: null, tokensSaida: null },
+    meta: { latenciaMs, fallback: true, motivoFalha, tokensEntrada: null, tokensSaida: null },
   });
 
   const promptSistema = construirPromptSistema(ctx);
@@ -231,17 +271,17 @@ export async function gerarRespostaIA(
 
   const entradaPrompt = `${promptSistema}\n\n--- HISTÓRICO DA CONVERSA ---\n${historicoFormatado}\nCliente: ${mensagemCliente}\n${ctx.nomeAssistente}:`;
 
-  const resultado = await chamarGeminiJson(entradaPrompt, { temperature: 0.2 });
+  const resultado = await chamarGeminiJson(entradaPrompt, {
+    temperature: 0.2,
+    timeoutMs: TIMEOUT_AGENTE_MS,
+  });
 
   if (!resultado.ok) {
-    if (resultado.erro === "sem_api_key") {
-      return {
-        ...fallback("API Key não configurada (Fallback)"),
-        textoResposta: `Olá! Sou a ${ctx.nomeAssistente}, assistente do consultor ${ctx.nomeCorretor}. Recebi sua mensagem e já avisei o ${ctx.nomeCorretor} para te responder em instantes!`,
-      };
-    }
-    console.error("Erro ao chamar o Gemini no agente de WhatsApp:", resultado.erro);
-    return fallback(`Erro na IA / Fallback (${resultado.erro})`, resultado.latenciaMs);
+    console.error(
+      `[whatsapp] agente caiu no fallback: ${resultado.erro}` +
+        `${resultado.detalhe ? ` (${resultado.detalhe})` : ""} em ${resultado.latenciaMs}ms`,
+    );
+    return fallback(resultado.erro, resultado.latenciaMs);
   }
 
   const parsed = resultado.json as Record<string, unknown>;
@@ -264,6 +304,7 @@ export async function gerarRespostaIA(
     meta: {
       latenciaMs: resultado.latenciaMs,
       fallback: false,
+      motivoFalha: null,
       tokensEntrada: resultado.tokensEntrada,
       tokensSaida: resultado.tokensSaida,
     },

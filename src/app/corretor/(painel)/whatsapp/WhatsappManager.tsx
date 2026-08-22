@@ -65,6 +65,34 @@ interface Props {
   } | null;
 }
 
+/**
+ * O que dizer quando a resposta veio da contingência.
+ *
+ * Existia uma frase só, culpando a falta de `GEMINI_API_KEY` para qualquer
+ * falha. Na prática o que acontecia era timeout — com a chave configurada e
+ * funcionando — e o corretor era mandado caçar um problema de configuração
+ * inexistente. Cada motivo agora tem a sua frase, e a saída dizia por qual
+ * caminho seguir.
+ */
+function explicarFallback(motivo?: string | null): string {
+  switch (motivo) {
+    case "timeout":
+      return "A IA passou do tempo limite e respondeu pelo modo de contingência. Costuma ser passageiro — mande a mensagem de novo.";
+    case "sem_api_key":
+      return "A IA respondeu pelo modo de contingência: não há GEMINI_API_KEY configurada neste ambiente.";
+    case "http_429":
+      return "Limite de uso do Gemini atingido no momento — a resposta veio pelo modo de contingência. Tente daqui a pouco.";
+    case "http_4xx":
+      return "O Gemini recusou a chamada (chave inválida ou sem permissão) e a resposta veio pelo modo de contingência.";
+    case "http_5xx":
+      return "O Gemini está instável agora; a resposta veio pelo modo de contingência. Tente de novo em instantes.";
+    case "resposta_vazia":
+      return "O Gemini respondeu vazio e a resposta veio pelo modo de contingência. Tente reformular a mensagem.";
+    default:
+      return "A IA respondeu pelo modo de contingência — este texto não reflete o agente real.";
+  }
+}
+
 interface MensagemPlayground {
   remetente: "cliente" | "bot";
   texto: string;
@@ -297,9 +325,11 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
     }
 
     if (!resposta.iaAtiva) {
-      setAvisoIa(
-        "A IA respondeu pelo modo de contingência (sem GEMINI_API_KEY configurada) — este texto não reflete o agente real.",
-      );
+      setAvisoIa(explicarFallback(resposta.motivoFalha));
+    } else {
+      // Uma resposta boa apaga o aviso da anterior: deixá-lo na tela faria
+      // parecer que a IA continua quebrada.
+      setAvisoIa(null);
     }
 
     setMensagensChat((prev) => [

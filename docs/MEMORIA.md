@@ -213,7 +213,38 @@ trilho+IA, follow-up, métricas de funil).
   igualdade exata com o telefone digitado à mão: 0 de 32 conversas tinham
   lead, 0 dossiês persistidos, few-shot morto. Backfill na 0026.
 - **Toda chamada ao Gemini passa por `gemini.ts`** (`chamarGeminiJson`):
-  timeout 8s + 1 retentativa + usage para telemetria. Não duplicar fetch.
+  timeout POR CHAMADOR + retentativa seletiva + usage para telemetria. Não
+  duplicar fetch.
+- **O teto de 8s era curto demais, e o sintoma parecia outra coisa.** Com
+  prompt de ~4000 tokens (few-shot + catálogo ranqueado + histórico), o
+  Gemini 2.5 Flash responde em 5–7s como comportamento NORMAL — a
+  telemetria de produção registrou 4950, 5247 e 6948 ms. Contra um teto de
+  8000 ms, isso é um segundo de folga, e o estouro é questão de tempo.
+  Hoje: `TIMEOUT_AGENTE_MS = 20s` (cliente esperando) e
+  `TIMEOUT_DOSSIE_MS = 12s` (roda depois dos envios). O orçamento do
+  webhook fecha assim: 6s de rajada + 20 + ~5 de envios + 12 ≈ 43s, sob o
+  teto de 60s da função.
+- **Timeout NÃO é retentado** (`valeRetentar`). Um timeout já gastou o
+  orçamento inteiro: a retentativa antiga custava 8000 + 500 + 8000 =
+  16 503 ms — número que aparece cru em `ia_interacoes` — para chegar ao
+  mesmo fallback. Erro que falha rápido (5xx, rede) continua valendo a
+  segunda tentativa.
+- **`ia_interacoes` é o que permite diagnosticar isso sem adivinhação.**
+  `fallback = true` com `latencia_ms ≈ 16500` e `tokens = null` é assinatura
+  de timeout duplo; `fallback = false` com tokens contados prova que a
+  chave está boa. Foi assim que se descobriu que o aviso "sem
+  GEMINI_API_KEY" da tela era falso.
+- **Motivo de falha é tipado** (`MotivoFalhaGemini`), não string livre. A
+  tela tinha UMA frase — "sem GEMINI_API_KEY configurada" — para qualquer
+  falha, e mandava o corretor caçar um problema de configuração que não
+  existia. E `iaAtiva` era decidido por `includes("Fallback")` no texto de
+  `motivoTransferencia`, um campo que a IA de verdade também escreve; hoje
+  sai de `meta.fallback`.
+- **A contingência não cumprimenta do zero quando há histórico**
+  (`textoDeContingencia`). O texto antigo era sempre "Olá! Recebi sua
+  mensagem sobre nossos imóveis..." — disparado por timeout na quinta
+  mensagem, ignorava a pergunta do cliente e fazia o atendimento parecer
+  ter reiniciado.
 - **`PROMPT_VERSAO` em aiAgent.ts**: bump manual OBRIGATÓRIO a cada mudança
   de prompt; roda `npx tsx scripts/eval/rodarEval.ts` antes e commita o
   resultado de `eval/resultados/` — score não pode cair vs. versão anterior.

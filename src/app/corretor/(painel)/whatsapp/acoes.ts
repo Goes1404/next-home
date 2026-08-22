@@ -5,6 +5,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import { gerarRespostaIA, PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
+import type { MotivoFalhaGemini } from "@/lib/whatsapp/gemini";
 import { ranquearCatalogo } from "@/lib/whatsapp/catalogoRelevante";
 import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
 import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
@@ -37,8 +38,10 @@ export type RespostaPlayground = {
   score: number;
   temperatura: string;
   resumoDossie: string;
-  /** false = respondido pelo fallback (sem GEMINI_API_KEY ou erro na API). */
+  /** false = respondido pelo fallback, sem passar pelo Gemini. */
   iaAtiva: boolean;
+  /** Por que caiu no fallback — a tela usa isto para dizer a verdade. */
+  motivoFalha?: MotivoFalhaGemini | null;
 };
 
 export async function testarAgenteIA(
@@ -115,9 +118,14 @@ export async function testarAgenteIA(
     score: dossie.temperaturaScore,
     temperatura: dossie.temperaturaLabel,
     resumoDossie: dossie.resumoExecutivo,
-    // O agente marca transferência com este motivo exato quando caiu no
-    // fallback — é como a UI sabe que não estava falando com o Gemini.
-    iaAtiva: !resposta.motivoTransferencia?.includes("Fallback"),
+    /*
+     * O sinal honesto é o `meta.fallback` — o mesmo que já vai para a
+     * telemetria. A versão anterior procurava a palavra "Fallback" dentro
+     * de `motivoTransferencia`: um texto livre, que a IA de verdade também
+     * pode escrever, decidindo se a IA estava ativa ou não.
+     */
+    iaAtiva: !resposta.meta.fallback,
+    motivoFalha: resposta.meta.motivoFalha,
   };
 }
 

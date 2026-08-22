@@ -1,5 +1,5 @@
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
-import { chamarGeminiJson, geminiConfigurado } from "./gemini";
+import { chamarGeminiJson, geminiConfigurado, TIMEOUT_DOSSIE_MS } from "./gemini";
 import type { DossieClienteIA, TemperaturaLeadLabel } from "./types";
 
 const PROMPT_DOSSIE = `Você é um analista sênior de inteligência comercial imobiliária da Next Home.
@@ -51,9 +51,13 @@ export async function extrairDossieCliente(
 
   // A chamada (timeout + retentativa) mora em gemini.ts — a mesma
   // resiliência do agente de resposta, sem duplicar o fetch aqui.
+  //
+  // Teto menor que o do agente de propósito: o dossiê é extraído DEPOIS de
+  // as mensagens já terem saído, então ninguém está esperando por ele — e
+  // é o que deixa o orçamento de 60s do webhook fechar com folga.
   const resultado = await chamarGeminiJson(
     `${PROMPT_DOSSIE}\n\n--- TRANSCRIÇÃO DA CONVERSA ---\n${conversaTexto.slice(0, 12000)}`,
-    { temperature: 0.1 },
+    { temperature: 0.1, timeoutMs: TIMEOUT_DOSSIE_MS },
   );
 
   if (!resultado.ok) {
