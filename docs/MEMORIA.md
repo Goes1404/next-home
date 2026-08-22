@@ -417,6 +417,15 @@ trilho+IA, follow-up, métricas de funil).
   12h e travavam a fila inteira (57 itens parados, flagrado em 22/08).
   Hoje `ehDestinatarioInexistente` separa os dois, e esse item vira erro
   definitivo sem retentativa — ele não vai passar a existir em 30 minutos.
+- **Botão "Limpar fila"** (`limparFilaDisparo`, no painel de Campanhas):
+  apaga só o que AINDA NÃO SAIU (`pendente` e `erro`). `enviado` e
+  `respondido` são histórico do atendimento — é deles que o Live Chat e a
+  linha do tempo do lead são feitos, e sumir com isso apagaria conversa
+  real. Apaga em vez de marcar "cancelado" porque a fila é lista de
+  intenções, não de fatos: guardar item cancelado encheria a tabela de
+  linhas que ninguém consulta (o erro do `historico_envios`). Campanha que
+  fica sem pendência é fechada junto, senão seguiria "em andamento" para
+  sempre prometendo disparo que não existe.
 - **Zerar `envios_campanha_contador` não destrava sozinho.** Se a fila
   ainda tem números inválidos, o disjuntor reabre em três tentativas. Antes
   de zerar, conferir `whatsapp_campanhas_fila` por `erro_motivo` — é onde a

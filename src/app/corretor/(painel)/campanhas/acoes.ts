@@ -260,6 +260,80 @@ export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
   };
 }
 
+export type ResultadoLimparFila =
+  | { ok: true; removidos: number; campanhasFechadas: number }
+  | { erro: string };
+
+/**
+ * Esvazia a fila de disparo deste corretor.
+ *
+ * Só remove o que AINDA NÃO SAIU — `pendente` e `erro`. Mensagem já
+ * entregue (`enviado`) ou respondida pelo cliente (`respondido`) é
+ * histórico do atendimento e nunca pode desaparecer: é dela que o Live Chat
+ * e a linha do tempo do lead são feitos.
+ *
+ * Por que apagar em vez de marcar como cancelada: a fila é uma lista de
+ * intenções, não de fatos. Um item pendente é uma mensagem que ninguém
+ * mandou; guardá-lo como "cancelado" encheria a tabela de linhas que nunca
+ * seriam consultadas — o mesmo erro do `historico_envios`, que acumulou 53
+ * registros que nenhuma tela lia.
+ *
+ * As campanhas que ficam sem nada pendente são fechadas na sequência. Sem
+ * isso elas continuariam em "em andamento" para sempre, prometendo um
+ * disparo que não existe mais.
+ */
+export async function limparFilaDisparo(): Promise<ResultadoLimparFila> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  const supabase = await createClient();
+
+  // O `.eq("corretor_id")` é explícito de propósito: desde a 0031 as
+  // policies de campanha incluem o gestor, e sem ele um gestor limparia a
+  // fila da equipe inteira ao clicar no botão da própria tela.
+  const { data: campanhas } = await supabase
+    .from("whatsapp_campanhas")
+    .select("id")
+    .eq("corretor_id", corretor.id);
+
+  const ids = (campanhas ?? []).map((c) => c.id);
+  if (ids.length === 0) return { ok: true, removidos: 0, campanhasFechadas: 0 };
+
+  const { data: removidas, error } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .delete()
+    .in("campanha_id", ids)
+    .in("status", ["pendente", "erro"])
+    .select("id");
+
+  if (error) return { erro: "Não foi possível limpar a fila agora. Tente de novo." };
+
+  // Fecha o que ficou sem pendência. Uma campanha cuja fila esvaziou não
+  // está mais "em andamento" — dizer que está é mentir na tela.
+  let campanhasFechadas = 0;
+  for (const id of ids) {
+    const { count } = await supabase
+      .from("whatsapp_campanhas_fila")
+      .select("id", { count: "exact", head: true })
+      .eq("campanha_id", id)
+      .eq("status", "pendente");
+
+    if ((count ?? 0) === 0) {
+      const { data } = await supabase
+        .from("whatsapp_campanhas")
+        .update({ status: "concluida" })
+        .eq("id", id)
+        .eq("corretor_id", corretor.id)
+        .neq("status", "concluida")
+        .select("id");
+      campanhasFechadas += data?.length ?? 0;
+    }
+  }
+
+  revalidatePath("/corretor/campanhas");
+  return { ok: true, removidos: removidas?.length ?? 0, campanhasFechadas };
+}
+
 export type StatusDisparo = {
   /** Nome pareado no provedor; null quando o número ainda não conectou. */
   numeroConectado: string | null;

@@ -2,10 +2,12 @@
 
 import { useState, useTransition } from "react";
 import type { Empreendimento } from "@/lib/types";
-import { Shield, Building, Download, Rocket, Check, AlertTriangle, Zap, Radio } from "lucide-react";
+import { Shield, Building, Download, Rocket, Check, AlertTriangle, Zap, Radio, Trash2 } from "lucide-react";
 import {
   criarCampanha,
   gerarPreviewCampanha,
+  limparFilaDisparo,
+  listarCampanhas,
   processarFilaAgora,
   statusDisparo,
   type CampanhaListada,
@@ -41,6 +43,7 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais, statusIni
   const [erro, setErro] = useState<string | null>(null);
   const [criando, startCriacao] = useTransition();
   const [processando, startProcessamento] = useTransition();
+  const [limpando, startLimpeza] = useTransition();
 
   const imovelSelecionado = empreendimentos.find((e) => e.slug === imovelSlug) ?? null;
 
@@ -136,6 +139,44 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais, statusIni
     });
   };
 
+  /**
+   * Esvazia a fila. Confirmação obrigatória: some com mensagens que o
+   * corretor programou, e não há como desfazer — a campanha teria de ser
+   * criada de novo.
+   */
+  const limparFila = () => {
+    const pendentes = status?.pendentes ?? 0;
+    if (
+      !confirm(
+        `Limpar a fila apaga ${pendentes} mensagem(ns) que ainda não saíram. ` +
+          `As já enviadas continuam no histórico. Não dá para desfazer. Confirma?`,
+      )
+    ) {
+      return;
+    }
+
+    setErro(null);
+    startLimpeza(async () => {
+      const resultado = await limparFilaDisparo();
+      if ("erro" in resultado) {
+        setErro(resultado.erro);
+        return;
+      }
+      await atualizarStatus();
+      setCampanhas(await listarCampanhas());
+
+      setFeedback(
+        resultado.removidos === 0
+          ? "A fila já estava vazia."
+          : `Fila limpa: ${resultado.removidos} envio(s) removido(s)` +
+            (resultado.campanhasFechadas > 0
+              ? `, ${resultado.campanhasFechadas} campanha(s) encerrada(s).`
+              : "."),
+      );
+      setTimeout(() => setFeedback(null), 8000);
+    });
+  };
+
   return (
     <div className="space-y-8">
       {/* Banner de Feedback */}
@@ -205,6 +246,22 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais, statusIni
                     })}
                   </span>
                 </div>
+              )}
+
+              {/* Mora ao lado do contador de propósito: quem decide limpar
+                  está olhando justamente para o número da fila. Só aparece
+                  quando há o que limpar — botão que não faz nada é ruído. */}
+              {status.pendentes > 0 && (
+                <button
+                  type="button"
+                  onClick={limparFila}
+                  disabled={limpando || processando}
+                  title="Apaga os envios que ainda não saíram. As mensagens já enviadas ficam no histórico."
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-perigo-linha bg-perigo-lavado px-3 py-2 text-[11px] font-bold text-perigo transition-colors hover:bg-perigo hover:text-titulo disabled:opacity-60 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {limpando ? "Limpando…" : "Limpar fila"}
+                </button>
               )}
             </div>
           </div>
