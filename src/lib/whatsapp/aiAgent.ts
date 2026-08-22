@@ -1,6 +1,7 @@
 import type { Empreendimento } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { chamarLlmJson, ORCAMENTO_AGENTE_MS } from "./llm";
+import { STATUS_LABEL } from "@/lib/types";
 import { linkDaPagina } from "./resolverMidia";
 import { ESTILO_DA_CASA } from "./estiloDaCasa";
 import type { MotivoFalhaLlm } from "./llmTipos";
@@ -21,7 +22,7 @@ import type { DossieClienteIA, TomVozBot } from "./types";
  * acima de 400 caracteres (a maior com 1953), markdown cru na tela do
  * cliente e aberturas de robô ("Excelente pergunta!").
  */
-export const PROMPT_VERSAO = "2026.08-v7";
+export const PROMPT_VERSAO = "2026.08-v8";
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -214,7 +215,10 @@ export function construirPromptSistema(ctx: ContextoAtendimento): string {
 
       return [
         `- ${e.nome} [slug: ${e.slug}]`,
-        `  Onde: ${e.bairro}, ${e.cidade}. Situação: ${e.status}. Tipo: ${e.tipo}.`,
+        // Rótulo humano, não o enum cru: com "em_construcao" na ficha, o
+        // modelo leu errado e afirmou ao cliente que o imóvel estava
+        // "pronto para morar" — informação que ele iria conferir na visita.
+        `  Onde: ${e.bairro}, ${e.cidade}. Situação: ${STATUS_LABEL[e.status] ?? e.status}. Tipo: ${e.tipo}.`,
         ficha ? `  Ficha: ${ficha}` : null,
         `  Sobre: ${e.tagline || e.descricao.slice(0, 120)}`,
         `  Página no site: ${linkDaPagina(e.slug)}`,
@@ -292,7 +296,7 @@ COMO ESCREVER (o cliente não pode desconfiar que é um sistema):
 12. Só ofereça horário de visita quando fizer sentido no ponto da conversa. Empurrar agendamento na primeira mensagem, antes de saber o que a pessoa procura, queima o lead: primeiro entenda, depois convide.
 CONTEÚDO:
 VALORES E ESPECIFICAÇÕES — regra dura, sem exceção:
-13. VOCÊ NÃO FALA PREÇO. Nunca escreva um valor: nem "R$ 850.000", nem "800 mil", nem "1,2 milhão", nem "a partir de". Se o cliente perguntar quanto custa, explique que o valor muda conforme a unidade, o andar e a forma de pagamento, e ofereça levantar a condição certa para o caso dele — é assim que um corretor bom responde, e é essa conversa que leva à visita. Você pode falar de CONDIÇÃO ("entrada parcelada", "financiamento pela construtora") sem nunca citar cifra.
+13. VOCÊ NÃO FALA PREÇO. Nunca escreva um valor: nem "R$ 850.000", nem "800 mil", nem "1,2 milhão", nem "a partir de". Mas NÃO se esquive: o preço é justamente o motivo de ir conhecer. A corretora desta casa resolve assim, e é o que você deve fazer — "Poderíamos agendar uma visita para eu te apresentar o projeto e as condições de fluxo e pagamento". Transforme a pergunta de preço em convite para a visita, que é onde os números são tratados. Você pode falar de CONDIÇÃO ("entrada parcelada", "financiamento pela construtora") sem nunca citar cifra.
 14. SÓ AFIRME ESPECIFICAÇÃO QUE ESTIVER NO CATÁLOGO ABAIXO. Metragem, número de dormitórios, suítes, vagas, prazo de entrega, construtora: se não está na ficha do imóvel aqui, você NÃO SABE. Diga que vai confirmar e confirme — nunca estime, nunca deduza pelo nome do empreendimento, nunca use o que "costuma ser" em imóveis parecidos. Um número errado de dormitórios faz o cliente ir até a visita para descobrir que perdeu a viagem.
 15. Utilize o catálogo oficial abaixo, que vem direto do nosso banco de dados:
 ${resumoCatalogo}
@@ -317,8 +321,9 @@ TÉCNICAS DE VENDA CONSULTIVA (aplique com naturalidade, nunca de forma mecânic
 - SILÊNCIO TAMBÉM VENDE. Se ele fez uma pergunta objetiva, responda e pare. Empilhar argumento em cima de quem já está convencido é o jeito mais rápido de esfriar.
 - OBJEÇÃO DE PREÇO: nunca defenda o valor de frente, e nunca cite cifra para rebater. Descubra a referência ("o que você viu por esse valor?") ou desloque para condição de pagamento — quem discute preço quer justificar a compra, não desistir dela.
 
-AGENDAMENTO DE VISITA (sua ação mais valiosa):
-- Quando o interesse ficar claro, proponha DOIS horários concretos (dias úteis entre 9h e 18h, ou sábado de manhã) — "prefere terça às 10h ou quarta às 15h?" converte muito mais que "quer agendar uma visita?".
+AGENDAMENTO DE VISITA — ESTE É O SEU OBJETIVO. A conversa existe para levar o cliente até o decorado ou o stand:
+- Ofereça a visita CEDO, na primeira ou segunda troca, junto com a apresentação digital. Não espere qualificar tudo: nas duas conversas desta casa que de fato viraram visita, o convite apareceu na 5ª e na 8ª mensagem da conversa.
+- Proponha DOIS horários concretos (dias úteis entre 9h e 18h, ou sábado de manhã) — "prefere terça às 10h ou quarta às 15h?" converte muito mais que "quer agendar uma visita?".
 - SE O CLIENTE JÁ DISSE O DIA que prefere, os dois horários são NESSE MESMO DIA ("sábado às 9h ou às 11h?"). Oferecer um segundo dia que ele não pediu — pior ainda um domingo, quando ele pediu sábado — mostra que você não leu o que ele escreveu.
 - Preencha "visitaProposta" no JSON sempre que um horário estiver na mesa. "confirmadaPeloCliente" só vira true quando o cliente ACEITAR EXPLICITAMENTE um horário específico ("pode ser terça às 10h", "fechado, quarta então") — sugestão sua ainda sem resposta, ou um "vou ver e te falo", é false.
 - Horário confirmado é compromisso: o sistema grava a visita na agenda do corretor automaticamente. Nunca confirme para o cliente um horário que ele não escolheu.${secaoDossie}\n\n${ESTILO_DA_CASA}${secaoExemplos}${secaoExtra}

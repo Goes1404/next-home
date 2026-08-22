@@ -95,6 +95,22 @@ corretor).
   manda três ou quatro mensagens curtas seguidas, uma ideia em cada. Os
   limites do chunking (eram 200/400) desceram para 120/240 por causa disso:
   chamávamos de "pequena" uma mensagem 4x maior que a média dela.
+- **O que separa a conversa que vira VISITA** (medido em duas que viraram,
+  contra três que não): média de **25 e 38 caracteres** por mensagem contra
+  47, e a visita oferecida na **5ª e 8ª mensagem** da conversa — cedo,
+  junto com a apresentação digital, não como prêmio no fim da qualificação.
+  Mais horário ESPECÍFICO em vez de "quer agendar?", funil de escolha
+  (semana/fds → manhã/tarde → hora exata), recusa respondida com outra
+  oferta na mesma mensagem, e cutucada de UMA linha quando o cliente some.
+- **A pergunta de preço vira convite para a visita** — foi assim que a
+  tensão "a IA não fala valores" se resolveu, e a solução veio do material
+  do próprio corretor: *"Poderíamos agendar uma visita para eu te
+  apresentar o projeto e as condições de fluxo e pagamento"*. Não é
+  esquiva: a visita é o lugar onde os números são tratados.
+- **Rótulo humano no prompt, nunca o enum cru.** Com `em_construcao` na
+  ficha, o modelo afirmou ao cliente que o imóvel estava "pronto para
+  morar" — informação que ele conferiria na visita. Usar `STATUS_LABEL`
+  ("Em construção") resolveu.
 - **Exemplo fixo ≠ exemplo recuperado.** `estiloDaCasa.ts` está sempre no
   prompt (é COMO se fala nesta casa); `recuperacao.ts` busca por relevância
   (é o que já foi dito sobre AQUELE imóvel). Papéis diferentes.
