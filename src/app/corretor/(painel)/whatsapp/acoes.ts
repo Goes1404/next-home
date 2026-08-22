@@ -10,7 +10,8 @@ import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
 import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
-import { desconectarInstancia, obterQrCodeInstancia, provedorConfigurado } from "@/lib/whatsapp/provider";
+import { desconectarInstancia, obterQrCodeInstancia, provedorConfigurado, type DesfechoPareamento } from "@/lib/whatsapp/provider";
+import { sincronizarConexaoInstancia } from "@/lib/whatsapp/repositorio";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
 import type { ModoBotWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 
@@ -174,6 +175,12 @@ export type EstadoConexao = {
   /** Código de 8 caracteres para digitar no celular, quando o corretor pareia por número. */
   codigoPareamento?: string | null;
   jaConectado?: boolean;
+  /**
+   * O que de fato saiu do provedor. A tela precisa disto para nunca mais
+   * cair no desfecho antigo: sem código e sem erro, ela não tinha o que
+   * dizer e devolvia o formulário vazio como se nada tivesse acontecido.
+   */
+  desfecho?: DesfechoPareamento;
   erro?: string;
 };
 
@@ -211,7 +218,10 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
       corretor_id: corretor.id,
       instance_name: instanceName,
       status_conexao: resultado.jaConectado ? "conectado" : "conectando",
-      qrcode_base64: resultado.qrcodeBase64,
+      // No pareamento por número não há QR para ninguém ler: guardar um
+      // seria o mesmo lixo de 13 KB que já estava no banco, envelhecendo
+      // sem nunca ser exibido.
+      qrcode_base64: numero ? null : resultado.qrcodeBase64,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "corretor_id" },
@@ -242,6 +252,57 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
     qrcodeBase64: resultado.qrcodeBase64,
     codigoPareamento: resultado.codigoPareamento,
     jaConectado: resultado.jaConectado,
+    desfecho: resultado.desfecho,
+  };
+}
+
+/**
+ * Pergunta ao provedor se o pareamento terminou.
+ *
+ * O pareamento acaba fora do nosso alcance — o corretor digita o código no
+ * celular e quem descobre isso é a Evolution. Sem esta pergunta, a tela
+ * ficava em "Aguardando Leitura" mesmo depois de conectar, e o corretor
+ * concluía que não tinha funcionado. O `connection.update` do webhook
+ * atualiza o banco, mas chega uma vez só e ninguém estava escutando.
+ *
+ * Reusa `sincronizarConexaoInstancia`, que já carimba `conectado_em` — a
+ * coluna de que depende TODO disparo de campanha.
+ */
+export async function verificarConexaoWhatsapp(): Promise<{
+  conectado: boolean;
+  estado: string;
+  telefone?: string | null;
+}> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { conectado: false, estado: "sem_sessao" };
+
+  const supabase = await createClient();
+  const { data: instancia } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("id, instance_name, conectado_em, telefone_conectado")
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+
+  if (!instancia?.instance_name) return { conectado: false, estado: "sem_instancia" };
+
+  const estado = await sincronizarConexaoInstancia({
+    instanciaId: instancia.id,
+    instanceName: instancia.instance_name,
+    conectadoEmAtual: instancia.conectado_em,
+  });
+
+  if (estado.conectado) revalidatePath("/corretor/whatsapp");
+
+  const { data: atualizada } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("telefone_conectado")
+    .eq("id", instancia.id)
+    .maybeSingle();
+
+  return {
+    conectado: estado.conectado,
+    estado: estado.estado,
+    telefone: atualizada?.telefone_conectado ?? instancia.telefone_conectado,
   };
 }
 

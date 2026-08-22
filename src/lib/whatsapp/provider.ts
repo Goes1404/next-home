@@ -1,5 +1,7 @@
 import "server-only";
 
+import { decidirPareamentoPorNumero } from "./pareamento";
+
 /**
  * Adaptador de envio de mensagens do WhatsApp.
  *
@@ -47,6 +49,7 @@ export function provedorConfigurado(): boolean {
 async function garantirInstancia(
   config: { baseUrl: string; apiKey: string },
   instanceName: string,
+  numero?: string | null,
 ): Promise<void> {
   const urlWebhook = process.env.WHATSAPP_WEBHOOK_URL;
   const segredo = process.env.WHATSAPP_WEBHOOK_SECRET;
@@ -58,6 +61,11 @@ async function garantirInstancia(
       body: JSON.stringify({
         instanceName,
         qrcode: true,
+        // Criar JÁ com o número é o que evita o problema pela raiz na
+        // primeira conexão: a Evolution abre o socket pedindo o código de
+        // pareamento em vez do QR, e nunca chega a entrar no estado
+        // `connecting` que descartaria o número depois.
+        ...(numero ? { number: numero } : {}),
         integration: "WHATSAPP-BAILEYS",
         ...(urlWebhook
           ? {
@@ -76,6 +84,22 @@ async function garantirInstancia(
   }
 }
 
+/**
+ * O que de fato aconteceu no pareamento. Antes, "sem código" e "deu erro"
+ * chegavam à tela do mesmo jeito — `codigoPareamento: null` — e ela não
+ * tinha como dizer nada ao corretor: o formulário simplesmente reaparecia
+ * vazio, sem código e sem explicação.
+ */
+export type DesfechoPareamento =
+  /** Veio o código de 8 caracteres para digitar no celular. */
+  | "codigo"
+  /** Veio o QR Code para escanear. */
+  | "qr"
+  /** O número já está conectado — não há o que parear. */
+  | "ja_conectado"
+  /** O provedor respondeu, mas sem código nem QR utilizável. */
+  | "sem_codigo";
+
 export type ResultadoQrCode =
   | {
       ok: true;
@@ -83,6 +107,7 @@ export type ResultadoQrCode =
       /** Código de 8 caracteres para digitar no celular (pareamento por número). */
       codigoPareamento: string | null;
       jaConectado: boolean;
+      desfecho: DesfechoPareamento;
     }
   | { ok: false; motivo: "provedor_nao_configurado" | "erro_provedor"; detalhe?: string };
 
@@ -113,18 +138,47 @@ export async function obterQrCodeInstancia(
     };
   }
 
+  const numero = telefone?.replace(/\D/g, "") || "";
+
+  /*
+   * Pareamento por número exige olhar o estado ANTES de pedir qualquer
+   * coisa — ver o quadro em `pareamento.ts`. O caso que quebrava tudo é o
+   * `connecting`: com um QR pendente segurando o socket, a Evolution
+   * descarta o `?number=` sem avisar e devolve o mesmo QR de novo, então o
+   * código de 8 caracteres nunca chegava à tela.
+   */
+  if (numero) {
+    const estadoAtual = await consultarEstadoConexao(instanceName);
+    const decisao = decidirPareamentoPorNumero(estadoAtual.ok ? estadoAtual.estado : null);
+
+    if (decisao.acao === "recusar") {
+      return {
+        ok: true,
+        qrcodeBase64: null,
+        codigoPareamento: null,
+        jaConectado: true,
+        desfecho: "ja_conectado",
+      };
+    }
+
+    // Derruba só a sessão PENDENTE (nunca uma conectada — `recusar` já
+    // saiu acima). `logout` preserva instância, webhook e tom de voz.
+    if (decisao.acao === "encerrar_antes") {
+      await desconectarInstancia(instanceName);
+    }
+  }
+
   // Na primeira conexão do corretor a instância ainda não existe na
   // Evolution — `/instance/connect` sozinho devolveria 404. Criar é
   // idempotente na prática: se já existe, o provedor recusa e seguimos
   // direto para o connect.
-  await garantirInstancia(config, instanceName);
+  await garantirInstancia(config, instanceName, numero || null);
 
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     // `?number=` é o que faz a Evolution devolver `pairingCode` no lugar do QR.
-    const numero = telefone?.replace(/\D/g, "") || "";
     const url = new URL(`${config.baseUrl}/instance/connect/${encodeURIComponent(instanceName)}`);
     if (numero) url.searchParams.set("number", numero);
 
@@ -147,13 +201,34 @@ export async function obterQrCodeInstancia(
       json?.pairingCode || json?.qrcode?.pairingCode || json?.code || null;
     const jaConectado = json?.instance?.state === "open" || json?.state === "open";
 
+    // O `code` cru da Evolution às vezes é a string do QR (longa); só vale
+    // como código digitável se tiver a cara de um: 8 caracteres.
+    const codigoDigitavel = codigo && codigo.replace(/-/g, "").length <= 10 ? codigo : null;
+
+    // Um pedido por número que volta sem código é o sintoma exato do bug
+    // antigo. Registrar é o que faltou para diagnosticá-lo: nos logs de
+    // produção não havia uma linha sequer sobre este caminho.
+    if (numero && !codigoDigitavel && !jaConectado) {
+      console.warn(
+        `[whatsapp] pareamento por número sem pairingCode em ${instanceName} —` +
+          ` estado=${json?.instance?.state ?? "?"} temQr=${Boolean(base64)}`,
+      );
+    }
+
+    const desfecho: DesfechoPareamento = jaConectado
+      ? "ja_conectado"
+      : codigoDigitavel
+        ? "codigo"
+        : base64
+          ? "qr"
+          : "sem_codigo";
+
     return {
       ok: true,
       qrcodeBase64: base64,
-      // O `code` cru da Evolution às vezes é a string do QR (longa); só vale
-      // como código digitável se tiver a cara de um: 8 caracteres.
-      codigoPareamento: codigo && codigo.replace(/-/g, "").length <= 10 ? codigo : null,
+      codigoPareamento: codigoDigitavel,
       jaConectado,
+      desfecho,
     };
   } catch (err) {
     return {

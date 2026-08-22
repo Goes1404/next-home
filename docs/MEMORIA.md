@@ -244,6 +244,33 @@ trilho+IA, follow-up, métricas de funil).
   aquecimento, e um número novo herdando maturidade do anterior dispararia
   em volume alto no primeiro dia. (O botão "Desconectar" antigo era falso —
   só mexia no estado local da tela e o número seguia pareado no provedor.)
+- **A Evolution IGNORA o `?number=` quando a instância está em
+  `connecting`.** É o fato que fazia o pareamento por código nunca
+  funcionar. O `connectToWhatsapp` da v2 decide pelo estado:
+
+  | estado | o que faz com `?number=` |
+  |---|---|
+  | `open` | ignora — devolve o estado da conexão |
+  | `connecting` | **ignora o número e devolve o QR em cache** |
+  | `close` | chama `requestPairingCode` → devolve `pairingCode` |
+
+  Como o botão "Conectar" abria o QR primeiro (`/instance/create` com
+  `qrcode: true`), a instância já estava em `connecting` quando o corretor
+  pedia o código — e o `pairingCode` voltava nulo SEMPRE. Hoje: o método é
+  escolhido antes de qualquer chamada, o create leva o `number` junto, e um
+  `connecting` pendente é derrubado com `logout` antes do connect (ver
+  `pareamento.ts`, com a tabela acima como teste). Estado `open` NUNCA é
+  derrubado por iniciativa do sistema — quem desconecta é o corretor.
+- **Pareamento que falha calado é pior que erro.** A tela devolvia o
+  formulário vazio quando `codigoPareamento` vinha nulo sem `erro`: sem
+  código, sem QR, sem explicação. Todo caminho do pareamento agora carrega
+  um `desfecho` (`codigo` | `qr` | `ja_conectado` | `sem_codigo`) e a tela
+  tem uma frase para cada um.
+- **O fim do pareamento acontece fora do nosso alcance.** Quem sabe que o
+  código foi digitado é a Evolution. A tela pergunta a cada 5s
+  (`verificarConexaoWhatsapp` → `sincronizarConexaoInstancia`, teto de ~2
+  min) — sem isso, um pareamento bem-sucedido segue mostrando "Aguardando
+  Leitura" e parece ter falhado.
 - **Playground = produção**: `testarAgenteIA` usa few-shot + ranking +
   guardrails, os mesmos do webhook. Se divergirem de novo, o teste do
   corretor vira mentira.

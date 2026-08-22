@@ -61,6 +61,9 @@ export default async function WhatsappPainelPage() {
 
       <WhatsappManager
         corretorNome={corretor.nome}
+        // Quase sempre é o mesmo número que vai ser pareado — deixar o
+        // campo pronto poupa digitação no celular, onde este fluxo mora.
+        whatsappCadastro={corretor.whatsapp ?? ""}
         configInicial={
           instancia
             ? {
