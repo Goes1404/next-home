@@ -1215,6 +1215,14 @@ export type Database = {
       }
     }
     Functions: {
+      devolver_cota_campanha: {
+        Args: { p_instancia_id: string }
+        Returns: number
+      }
+      resetar_cota_campanha: {
+        Args: { p_instancia_id: string }
+        Returns: undefined
+      }
       corretor_atual: { Args: never; Returns: string }
       eh_gestor: { Args: never; Returns: boolean }
       consumir_cota_campanha: {

@@ -2,13 +2,14 @@
 
 import { useState, useTransition } from "react";
 import type { Empreendimento } from "@/lib/types";
-import { Shield, Building, Download, Rocket, Check, AlertTriangle, Zap, Radio, Trash2 } from "lucide-react";
+import { Shield, Building, Download, Rocket, Check, AlertTriangle, Zap, Radio, Trash2, RotateCcw } from "lucide-react";
 import {
   criarCampanha,
   gerarPreviewCampanha,
   limparFilaDisparo,
   listarCampanhas,
   processarFilaAgora,
+  resetarCotaDisparo,
   statusDisparo,
   type CampanhaListada,
   type FiltroLeadsCampanha,
@@ -44,6 +45,7 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais, statusIni
   const [criando, startCriacao] = useTransition();
   const [processando, startProcessamento] = useTransition();
   const [limpando, startLimpeza] = useTransition();
+  const [resetando, startReset] = useTransition();
 
   const imovelSelecionado = empreendimentos.find((e) => e.slug === imovelSlug) ?? null;
 
@@ -177,6 +179,35 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais, statusIni
     });
   };
 
+  /**
+   * TEMPORÁRIO — fase de teste. Ver o aviso em `resetarCotaDisparo`: isto
+   * afrouxa a proteção anti-ban de propósito, e o texto da confirmação
+   * existe para que ninguém clique sem saber disso.
+   */
+  const resetarCota = () => {
+    if (
+      !confirm(
+        "Resetar a cota devolve os disparos do dia e solta qualquer bloqueio.\n\n" +
+          "A cota existe para proteger seu número: volume alto num número novo é o " +
+          "caminho mais curto para o WhatsApp bloquear a linha. Use só em teste. Confirma?",
+      )
+    ) {
+      return;
+    }
+
+    setErro(null);
+    startReset(async () => {
+      const resultado = await resetarCotaDisparo();
+      if (resultado.erro) {
+        setErro(resultado.erro);
+        return;
+      }
+      await atualizarStatus();
+      setFeedback("Cota do dia zerada e bloqueios soltos. A fila volta a andar.");
+      setTimeout(() => setFeedback(null), 8000);
+    });
+  };
+
   return (
     <div className="space-y-8">
       {/* Banner de Feedback */}
@@ -263,6 +294,20 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais, statusIni
                   {limpando ? "Limpando…" : "Limpar fila"}
                 </button>
               )}
+
+              {/* TEMPORÁRIO — fase de teste. Remover junto com
+                  `resetarCotaDisparo` e a função `resetar_cota_campanha`
+                  (migration 0034) quando a operação entrar no ritmo real. */}
+              <button
+                type="button"
+                onClick={resetarCota}
+                disabled={resetando || processando || limpando}
+                title="Fase de teste: devolve os disparos do dia e solta bloqueios. Afrouxa a proteção anti-ban."
+                className="inline-flex items-center gap-1.5 rounded-xl border border-alerta-linha bg-alerta-lavado px-3 py-2 text-[11px] font-bold text-alerta transition-opacity hover:opacity-80 disabled:opacity-60 cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                {resetando ? "Resetando…" : "Resetar cota"}
+              </button>
             </div>
           </div>
         </div>

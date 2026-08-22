@@ -417,6 +417,21 @@ trilho+IA, follow-up, métricas de funil).
   12h e travavam a fila inteira (57 itens parados, flagrado em 22/08).
   Hoje `ehDestinatarioInexistente` separa os dois, e esse item vira erro
   definitivo sem retentativa — ele não vai passar a existir em 30 minutos.
+- **Cota é devolvida quando o destinatário não existe** (`0034`,
+  `devolver_cota_campanha`). A cota é reservada ANTES do envio — é o que
+  evita corrida entre pg_cron, corrente da Vercel e botão do painel — mas
+  isso faz uma falha gastar cota sem entregar nada. Para número sem
+  WhatsApp a mensagem não existiu para ninguém: em produção, 15 disparos do
+  dia foram consumidos para entregar 3. A devolução mora no banco pelo
+  mesmo motivo do consumo (concorrência), tem piso em zero e **só age no
+  dia corrente** — decrementar contador de ontem daria crédito indevido.
+- **Botão "Resetar cota" é TEMPORÁRIO** (`resetar_cota_campanha`, 0034),
+  pedido para a fase de teste. **Afrouxa a proteção anti-ban de propósito**:
+  a cota diária existe porque volume alto num número novo faz o WhatsApp
+  bloquear a linha, e linha bloqueada não volta com deploy. Não toca em
+  `conectado_em` — zerá-lo reiniciaria a curva de aquecimento e daria cota
+  MENOR. Para remover: apagar a função no banco, a action `resetarCotaDisparo`
+  e o botão em `CampanhasManager.tsx`.
 - **Botão "Limpar fila"** (`limparFilaDisparo`, no painel de Campanhas):
   apaga só o que AINDA NÃO SAIU (`pendente` e `erro`). `enviado` e
   `respondido` são histórico do atendimento — é deles que o Live Chat e a

@@ -8,6 +8,7 @@ import {
   destravarDisparo,
   gravarMensagem,
   obterOuCriarConversa,
+  devolverCotaCampanha,
   registrarResultadoEnvio,
   reservarCotaCampanha,
   sincronizarConexaoInstancia,
@@ -409,7 +410,12 @@ async function processarInstancia(ctx: {
        * número errado seguidos travavam a fila inteira por 12 horas.
        */
       const numeroInexistente = !envio.enviado && ehDestinatarioInexistente(envio.detalhe);
-      if (!numeroInexistente) {
+      if (numeroInexistente) {
+        // A cota foi reservada antes do envio e este envio não aconteceu
+        // para ninguém: devolver evita que uma lista com telefones errados
+        // consuma o dia inteiro sem entregar mensagem nenhuma.
+        await devolverCotaCampanha(instancia.id);
+      } else {
         await registrarResultadoEnvio(instancia.id, envio.enviado);
       }
 

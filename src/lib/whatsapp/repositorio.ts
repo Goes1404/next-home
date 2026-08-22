@@ -553,6 +553,31 @@ export async function reservarCotaCampanha(
 }
 
 /**
+ * Devolve à cota do dia um disparo que não chegou a acontecer.
+ *
+ * A cota é reservada ANTES do envio — é o que evita corrida entre o cron, a
+ * corrente da Vercel e o botão do painel. O preço disso é que uma falha
+ * gasta cota mesmo sem entregar nada. Para a maioria das falhas isso é
+ * aceitável (o provedor tentou, o número foi exercitado), mas para
+ * destinatário sem WhatsApp não: a mensagem não existiu para ninguém.
+ *
+ * Em produção isso não foi detalhe — 15 disparos da cota do dia foram
+ * consumidos para entregar 3 mensagens, porque a lista tinha telefone
+ * digitado errado no cadastro.
+ *
+ * Silenciosa de propósito: devolver cota é otimização, não etapa crítica.
+ * Falhar aqui não pode derrubar o laço de disparo.
+ */
+export async function devolverCotaCampanha(instanciaId: string): Promise<void> {
+  try {
+    const supabase = createServiceClient();
+    await supabase.rpc("devolver_cota_campanha", { p_instancia_id: instanciaId });
+  } catch (err) {
+    console.warn("[whatsapp] não consegui devolver a cota:", err);
+  }
+}
+
+/**
  * O cliente respondeu a um disparo de campanha: marca o item da fila como
  * `respondido` e soma no contador da campanha.
  *

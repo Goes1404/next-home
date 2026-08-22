@@ -334,6 +334,51 @@ export async function limparFilaDisparo(): Promise<ResultadoLimparFila> {
   return { ok: true, removidos: removidas?.length ?? 0, campanhasFechadas };
 }
 
+/**
+ * TEMPORÁRIO — ferramenta de FASE DE TESTE.
+ *
+ * Zera a cota do dia, o bloqueio e o disjuntor deste corretor, para não ser
+ * preciso esperar a virada do dia a cada experimento.
+ *
+ * ISTO AFROUXA A PROTEÇÃO ANTI-BAN DE PROPÓSITO. A cota diária existe
+ * porque volume alto num número novo é o caminho mais curto para o WhatsApp
+ * bloquear a linha do corretor — e uma linha bloqueada não volta com
+ * deploy. Enquanto este botão existir, quem clicar está assumindo esse
+ * risco conscientemente.
+ *
+ * `conectado_em` não é tocado: zerá-lo reiniciaria a curva de aquecimento e
+ * daria cota MENOR, além de mentir sobre a idade do número.
+ *
+ * PARA REMOVER depois da fase de teste: apagar esta função, o botão em
+ * `CampanhasManager.tsx` e a função `resetar_cota_campanha` no banco
+ * (migration 0034).
+ */
+export async function resetarCotaDisparo(): Promise<{ ok?: true; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  const supabase = await createClient();
+
+  // Só a instância DESTE corretor: a RPC é `security definer` e recebe um
+  // id, então quem escolhe o id precisa ser esta camada, com a sessão.
+  const { data: instancia } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("id")
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+
+  if (!instancia) return { erro: "Nenhum número de WhatsApp configurado para você." };
+
+  const { error } = await supabase.rpc("resetar_cota_campanha", {
+    p_instancia_id: instancia.id,
+  });
+
+  if (error) return { erro: "Não foi possível resetar a cota agora." };
+
+  revalidatePath("/corretor/campanhas");
+  return { ok: true };
+}
+
 export type StatusDisparo = {
   /** Nome pareado no provedor; null quando o número ainda não conectou. */
   numeroConectado: string | null;
