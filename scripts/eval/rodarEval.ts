@@ -44,6 +44,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { gerarRespostaIA, PROMPT_VERSAO } from "../../src/lib/whatsapp/aiAgent";
 import { sanearRespostaIA } from "../../src/lib/whatsapp/guardrails";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
+import { contemValor } from "../../src/lib/whatsapp/semValores";
 import { ORCAMENTO_AGENTE_MS } from "../../src/lib/whatsapp/llm";
 import type { Empreendimento } from "../../src/lib/types";
 
@@ -125,6 +126,19 @@ async function calibrar(): Promise<"ok" | "juiz_mudo" | "descalibrado"> {
   return taxa >= calibracao.limiarConcordancia ? "ok" : "descalibrado";
 }
 
+/**
+ * Oferecer visita é `visitaProposta` preenchida OU o texto convidando. As
+ * duas contam: nas conversas que converteram, a corretora convida em
+ * linguagem solta ("podemos combinar para amanhã?") muito antes de existir
+ * data fechada para gravar em `leads.visita_agendada_em`. Exigir só o campo
+ * estruturado reprovaria justamente o convite CEDO, que é o comportamento
+ * que se quer medir.
+ */
+function ofereceVisita(r: { textoResposta: string; visitaProposta?: unknown }): boolean {
+  if (r.visitaProposta) return true;
+  return /visita|visitar|conhecer|decorado|stand|apresentar o projeto/i.test(r.textoResposta);
+}
+
 async function main() {
   console.log(`Eval do prompt ${PROMPT_VERSAO} — ${casos.length} casos\n`);
 
@@ -169,6 +183,21 @@ async function main() {
     }
     if (caso.expectativas?.deveAnexarMidia && saneada.resposta.anexosMidia.length === 0) {
       duras.push("nao_anexou_midia_esperada");
+    }
+    /*
+     * As duas regras mais novas — e as duas que o juiz NÃO consegue avaliar
+     * sozinho, porque as duas dependem do catálogo, não do texto.
+     *
+     * `naoPodeFalarValor` olha a resposta ANTES do saneamento
+     * (`bruta`), de propósito: `semValores.ts` limpa a saída, então medir
+     * depois dele mediria a rede de segurança, não o modelo. Prompt que só
+     * acerta porque o filtro apaga o erro é prompt que ainda erra.
+     */
+    if (caso.expectativas?.naoPodeFalarValor && contemValor(bruta.textoResposta)) {
+      duras.push("falou_valor");
+    }
+    if (caso.expectativas?.deveOferecerVisita && !ofereceVisita(saneada.resposta)) {
+      duras.push("nao_ofereceu_visita");
     }
     if (duras.length > 0) falhasDuras++;
 
