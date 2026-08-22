@@ -394,6 +394,28 @@ trilho+IA, follow-up, métricas de funil).
 - **`PROMPT_VERSAO` em aiAgent.ts**: bump manual OBRIGATÓRIO a cada mudança
   de prompt; roda `npx tsx scripts/eval/rodarEval.ts` antes e commita o
   resultado de `eval/resultados/` — score não pode cair vs. versão anterior.
+- **A IA NÃO FALA VALORES** (decisão comercial). Duas linhas de defesa: o
+  catálogo do prompt não mostra preço (o que o modelo não vê, não repete) e
+  `semValores.ts` limpa o texto de saída, trocando a FRASE inteira do preço
+  por um desvio — cortar só o número deixaria "sai por" e pareceria defeito.
+  O detector ignora metragem, ano, dormitório e horário; se confundisse, a
+  IA perderia a capacidade de descrever o imóvel.
+- **A IA pede mídia por SLUG + TIPO, nunca por URL** (`resolverMidia.ts`).
+  As URLs do storage têm hash de 32 caracteres; pedir ao modelo que
+  copiasse isso sem errar um dígito derrubava TODO anexo no guardrail —
+  a telemetria registrou **0 enviados e 6 bloqueados** em 22 interações,
+  ou seja, nenhuma foto e nenhuma planta chegou a cliente nenhum. Hoje o
+  código resolve a URL a partir do catálogo: alucinação vira impossível por
+  construção. Teto de 3 anexos por resposta (o WhatsApp entrega um a um,
+  com pausa).
+- **A ficha do prompt precisa ser COMPLETA, não resumida.** Com só
+  "3 dorm/110m²", o modelo preencheu o resto de cabeça e respondeu
+  "1 suíte" para um imóvel cadastrado com 3. Suítes, banheiros, vagas,
+  entrega e construtora entram todos — o que não está no prompt, a IA
+  inventa.
+- **"Apresentação digital" = link da página do imóvel**, montado por código
+  (`linkDaPagina`) a partir do slug. A IA nunca escreve o endereço: link
+  errado levaria o cliente a um 404 com a marca da imobiliária em cima.
 - **Guardrails (`guardrails.ts`)**: nenhum anexo/slug sai sem existir no
   catálogo. **Ranking (`catalogoRelevante.ts`)**: os 10 imóveis do prompt
   são os mais relevantes (menções + faixa do dossiê), não os 10 primeiros.

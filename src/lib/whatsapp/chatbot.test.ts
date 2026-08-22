@@ -72,8 +72,9 @@ describe("Guardrails de saída", () => {
       { nome: "Inventado", slug: "nao-existe", preco: null },
     ],
     anexosMidia: [
-      { tipo: "foto" as const, url: "https://cdn.x/capa.jpg", titulo: "Capa" },
-      { tipo: "foto" as const, url: "https://malicioso.com/foto.jpg", titulo: "Alucinada" },
+      { slug: "canvas", tipo: "foto" as const },
+      // Imóvel que não existe: a IA alucinou o empreendimento.
+      { slug: "imovel-inventado", tipo: "planta" as const },
     ],
     visitaProposta: null,
     meta: {
@@ -86,10 +87,12 @@ describe("Guardrails de saída", () => {
     },
   };
 
-  it("descarta anexo com URL fora do catálogo e conta o bloqueio", () => {
+  it("resolve a mídia do catálogo e ignora o pedido de imóvel inexistente", () => {
+    // A IA não escreve URL nenhuma: pede por slug + tipo, e o código busca
+    // o arquivo. Pedido de imóvel fora do catálogo não vira anexo.
     const saneada = sanearRespostaIA(resposta, catalogo);
-    expect(saneada.resposta.anexosMidia).toHaveLength(1);
-    expect(saneada.resposta.anexosMidia[0].url).toBe("https://cdn.x/capa.jpg");
+    expect(saneada.anexos).toHaveLength(1);
+    expect(saneada.anexos[0].url).toBe("https://cdn.x/capa.jpg");
     expect(saneada.anexosBloqueados).toBe(1);
   });
 

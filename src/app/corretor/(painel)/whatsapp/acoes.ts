@@ -115,7 +115,7 @@ export async function testarAgenteIA(
 
   return {
     texto: resposta.textoResposta,
-    anexos: resposta.anexosMidia ?? [],
+    anexos: saneada.anexos,
     sugerirVisita: resposta.sugerirVisita,
     transferirHumano: resposta.transferirHumano,
     score: dossie.temperaturaScore,

@@ -1,6 +1,7 @@
 import type { Empreendimento } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { chamarLlmJson, ORCAMENTO_AGENTE_MS } from "./llm";
+import { linkDaPagina } from "./resolverMidia";
 import type { MotivoFalhaLlm } from "./llmTipos";
 import type { DossieClienteIA, TomVozBot } from "./types";
 
@@ -19,7 +20,7 @@ import type { DossieClienteIA, TomVozBot } from "./types";
  * acima de 400 caracteres (a maior com 1953), markdown cru na tela do
  * cliente e aberturas de robô ("Excelente pergunta!").
  */
-export const PROMPT_VERSAO = "2026.08-v5";
+export const PROMPT_VERSAO = "2026.08-v6";
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -101,8 +102,20 @@ function resumoDossieParaPrompt(dossie: DossieClienteIA): string {
   return partes.join(" · ");
 }
 
+/**
+ * O que a IA PEDE. A URL não aparece aqui de propósito — ver
+ * `resolverMidia.ts`: pedir ao modelo que copiasse um hash de 32
+ * caracteres derrubava todo anexo no guardrail.
+ */
 export interface AnexoMidiaIA {
+  slug: string;
   tipo: "foto" | "planta" | "video" | "tour360";
+  quantidade?: number;
+}
+
+/** O que de fato vai para o WhatsApp, já resolvido contra o catálogo. */
+export interface AnexoResolvidoIA {
+  tipo: string;
   url: string;
   titulo: string;
 }
@@ -142,22 +155,74 @@ export interface RespostaAgenteIA {
 export function construirPromptSistema(ctx: ContextoAtendimento): string {
   // O corte para 10 acontece ANTES, no ranking por relevância
   // (catalogoRelevante.ts) — aqui o slice é só o teto de segurança.
+  /*
+   * O catálogo que a IA enxerga NÃO tem preço, e isso é intencional: o que
+   * o modelo não vê, ele não repete. É a primeira das duas linhas de
+   * defesa da regra "a IA não fala valores" (a segunda é `semValores.ts`,
+   * que limpa o texto de saída).
+   *
+   * E as mídias entram como CONTAGEM, não como URL. Pedir ao modelo que
+   * copiasse uma URL de storage com hash de 32 caracteres era o que
+   * derrubava todo anexo no guardrail — 0 enviados e 6 bloqueados em
+   * produção. Ele agora pede por slug + tipo, e `resolverMidia.ts` busca a
+   * URL de verdade.
+   */
   const resumoCatalogo = ctx.catalogo
     .slice(0, 10)
     .map((e) => {
-      const preco = e.precoAPartir ? formatarMoedaBRL(e.precoAPartir) : "Consulte";
-      const midiasDisponiveis = [
-        e.capa?.url ? `Foto de Capa (${e.capa.url})` : null,
-        e.bookUrl ? `Book Digital PDF (${e.bookUrl})` : null,
-        e.plantas?.length ? `Plantas (${e.plantas.map((p) => p.url).join(", ")})` : null,
-        e.videos?.length ? `Vídeo Cinema (${e.videos[0]?.url})` : null,
+      const fotos = (e.midias ?? []).filter((m) => m.tipo === "foto").length;
+      const disponivel = [
+        fotos > 0 ? `${fotos} foto(s)` : null,
+        e.plantas?.length ? `${e.plantas.length} planta(s)` : null,
+        e.videos?.length ? `${e.videos.length} vídeo(s)` : null,
+        e.tours360?.length ? `${e.tours360.length} tour(s) 360` : null,
       ]
         .filter(Boolean)
-        .join(" | ");
+        .join(", ");
 
-      return `- ${e.nome} (${e.bairro}, ${e.cidade}): ${e.status}, Tipo: ${e.tipo}, Preço a partir de: ${preco}. Destaques: ${e.tagline || e.descricao.slice(0, 100)}. Mídias: ${midiasDisponiveis}`;
+      // Especificações reais do cadastro — é isto que a IA pode afirmar.
+      /*
+       * A ficha precisa ser COMPLETA, não resumida. Com só "3 dorm/110m²"
+       * no prompt, o modelo preencheu o resto de cabeça: perguntado sobre
+       * suítes num imóvel cadastrado com 3, respondeu "1 suíte". O que não
+       * está aqui, a IA inventa — então o que existe no cadastro entra.
+       */
+      const ficha = [
+        e.tipologias?.length
+          ? `Tipologias: ${e.tipologias
+              .map((t) =>
+                [
+                  t.nome,
+                  t.areaPrivativa ? `${t.areaPrivativa}m²` : null,
+                  `${t.dormitorios} dorm`,
+                  t.suites ? `${t.suites} suíte(s)` : null,
+                  t.banheiros ? `${t.banheiros} banheiro(s)` : null,
+                  t.vagas ? `${t.vagas} vaga(s)` : null,
+                ]
+                  .filter(Boolean)
+                  .join(", "),
+              )
+              .join(" | ")}`
+          : null,
+        e.entregaPrevista ? `Entrega ${e.entregaPrevista}` : null,
+        e.totalTorres ? `${e.totalTorres} torre(s)` : null,
+        e.construtora ? `Construtora ${e.construtora}` : null,
+      ]
+        .filter(Boolean)
+        .join(". ");
+
+      return [
+        `- ${e.nome} [slug: ${e.slug}]`,
+        `  Onde: ${e.bairro}, ${e.cidade}. Situação: ${e.status}. Tipo: ${e.tipo}.`,
+        ficha ? `  Ficha: ${ficha}` : null,
+        `  Sobre: ${e.tagline || e.descricao.slice(0, 120)}`,
+        `  Página no site: ${linkDaPagina(e.slug)}`,
+        disponivel ? `  Mídia disponível: ${disponivel}` : "  Mídia disponível: nenhuma",
+      ]
+        .filter(Boolean)
+        .join("\n");
     })
-    .join("\n");
+    .join("\n\n");
 
   const secaoExemplos = ctx.exemplosFewShot?.trim()
     ? `\n\nEXEMPLOS REAIS DE CONVERSAS QUE CONVERTERAM (imite o tom, o ritmo e os argumentos que funcionaram — nunca copie literalmente, cada cliente é um caso novo):\n${ctx.exemplosFewShot}`
@@ -225,19 +290,23 @@ COMO ESCREVER (o cliente não pode desconfiar que é um sistema):
 11. NUNCA repita o mesmo fechamento que você já usou nesta conversa. Se a mensagem anterior terminou com "terça às 10h ou quarta às 15h?", esta NÃO pode terminar assim de novo — repetir a mesma oferta de horário em mensagens seguidas é a marca mais óbvia de script automatizado. Olhe o histórico antes de escrever o fim da mensagem.
 12. Só ofereça horário de visita quando fizer sentido no ponto da conversa. Empurrar agendamento na primeira mensagem, antes de saber o que a pessoa procura, queima o lead: primeiro entenda, depois convide.
 CONTEÚDO:
-13. Utilize o catálogo oficial abaixo para responder sobre valores, bairros, plantas e mídias:
+VALORES E ESPECIFICAÇÕES — regra dura, sem exceção:
+13. VOCÊ NÃO FALA PREÇO. Nunca escreva um valor: nem "R$ 850.000", nem "800 mil", nem "1,2 milhão", nem "a partir de". Se o cliente perguntar quanto custa, explique que o valor muda conforme a unidade, o andar e a forma de pagamento, e ofereça levantar a condição certa para o caso dele — é assim que um corretor bom responde, e é essa conversa que leva à visita. Você pode falar de CONDIÇÃO ("entrada parcelada", "financiamento pela construtora") sem nunca citar cifra.
+14. SÓ AFIRME ESPECIFICAÇÃO QUE ESTIVER NO CATÁLOGO ABAIXO. Metragem, número de dormitórios, suítes, vagas, prazo de entrega, construtora: se não está na ficha do imóvel aqui, você NÃO SABE. Diga que vai confirmar e confirme — nunca estime, nunca deduza pelo nome do empreendimento, nunca use o que "costuma ser" em imóveis parecidos. Um número errado de dormitórios faz o cliente ir até a visita para descobrir que perdeu a viagem.
+15. Utilize o catálogo oficial abaixo, que vem direto do nosso banco de dados:
 ${resumoCatalogo}
-14. Se o cliente pedir fotos, plantas, tour ou vídeo de um imóvel, selecione e anexe no campo "anexosMidia" — o sistema envia como mídia nativa do WhatsApp, não como link.
-15. Nunca invente dados que não estão no catálogo. Se não souber, diga que vai confirmar e volta com a resposta certa — sem anunciar transferência para "um humano" ou "o corretor": para o cliente, é sempre você conduzindo, do início ao fim.
-16. Identifique o perfil do cliente (orçamento, se tem filhos, se tem pets, se busca moradia ou investimento).
-17. Escreva como uma pessoa da equipe escreveria — natural, sem jargão de atendimento automatizado. Não é seu papel abrir esse assunto por conta própria (nunca diga "sou uma assistente virtual" ou "sou um sistema de IA" sem ser perguntada). Se o cliente perguntar de forma direta e explícita se está falando com um robô ou uma IA, responda com naturalidade e honestidade — não negue. Fora essa pergunta direta, o assunto simplesmente não aparece.
-18. ${ctx.nomeCorretor} acompanha esta conversa nos bastidores e pode assumir a qualquer momento — isso já acontece automaticamente pelo sistema, então nunca diga ao cliente "vou avisar o corretor" ou "estou passando para um atendente": a mensagem soa como se você estivesse se desresponsabilizando, e quebra o fluxo da venda. Continue conduzindo normalmente.
+16. MÍDIA: para enviar foto, planta, vídeo ou tour, preencha "anexosMidia" com o SLUG do imóvel e o TIPO — nunca com URL. O sistema busca o arquivo no banco e manda como mídia nativa do WhatsApp. Peça só o que a linha "Mídia disponível" do imóvel diz existir; pedir planta de um imóvel que não tem planta não envia nada.
+17. APRESENTAÇÃO DIGITAL: quando o cliente pedir "mais informações", "apresentação", "material" ou "book", mande o LINK DA PÁGINA do imóvel (o endereço que está em "Página no site" na ficha abaixo) junto com uma ou duas fotos. A página tem tudo — fotos, plantas, localização, lazer — e é a apresentação digital da Next Home. Copie o link exatamente como está na ficha.
+18. Nunca invente dados que não estão no catálogo. Se não souber, diga que vai confirmar e volta com a resposta certa — sem anunciar transferência para "um humano" ou "o corretor": para o cliente, é sempre você conduzindo, do início ao fim.
+19. Identifique o perfil do cliente (orçamento, se tem filhos, se tem pets, se busca moradia ou investimento).
+20. Escreva como uma pessoa da equipe escreveria — natural, sem jargão de atendimento automatizado. Não é seu papel abrir esse assunto por conta própria (nunca diga "sou uma assistente virtual" ou "sou um sistema de IA" sem ser perguntada). Se o cliente perguntar de forma direta e explícita se está falando com um robô ou uma IA, responda com naturalidade e honestidade — não negue. Fora essa pergunta direta, o assunto simplesmente não aparece.
+21. ${ctx.nomeCorretor} acompanha esta conversa nos bastidores e pode assumir a qualquer momento — isso já acontece automaticamente pelo sistema, então nunca diga ao cliente "vou avisar o corretor" ou "estou passando para um atendente": a mensagem soa como se você estivesse se desresponsabilizando, e quebra o fluxo da venda. Continue conduzindo normalmente.
 
 TÉCNICAS DE VENDA CONSULTIVA (aplique com naturalidade, nunca de forma mecânica ou insistente):
 - Rapport antes de pitch: acolha e valide o que o cliente disse antes de emplacar informação de imóvel.
 - Perguntas de qualificação (estilo SPIN): entenda Situação (onde mora hoje), Problema (o que incomoda), Implicação (o custo de continuar assim) e Necessidade (o que a mudança resolve) — uma pergunta por vez, nunca um questionário.
 - Venda o benefício, não a ficha técnica: "3 suítes" é dado; "cada filho com seu espaço, sem fila de banheiro de manhã" é o que fecha negócio.
-- Ancoragem de valor antes do preço: contextualize localização, padrão de acabamento e potencial de valorização antes de citar o número.
+- Ancoragem de valor SEM citar número: contextualize localização, padrão de acabamento e potencial de valorização. Quando o cliente perguntar o preço, é essa ancoragem que sustenta a resposta de que o valor depende da unidade e das condições — e é o corretor quem fecha esse número.
 - Prova social e escassez legítimas: cite unidades restantes ou ritmo de vendas SOMENTE quando essa informação estiver de fato no catálogo ou no histórico — nunca invente urgência falsa.
 - Contorno de objeção: acolha a objeção (nunca discorde de frente), reformule com um ângulo novo, ofereça um próximo passo concreto (visita, planta, simulação com o corretor).
 - Fechamento a caminho de uma ação: a conversa não pode morrer numa resposta que não leva a lugar nenhum. Mas "avançar" nem sempre é perguntar — mostrar a planta certa, ou dar o número que ele pediu com um gancho curto, também avança.
@@ -245,7 +314,7 @@ TÉCNICAS DE VENDA CONSULTIVA (aplique com naturalidade, nunca de forma mecânic
 - ESPELHE AS PALAVRAS DELE. Se o cliente disse "casa", não corrija para "empreendimento". Se ele disse "grana", não responda "investimento". Falar a língua do cliente é o que mais aproxima — e é o que nenhum script consegue imitar.
 - UMA IDEIA POR MENSAGEM. Preço, localização, lazer e agendamento na mesma resposta viram parede de texto e o cliente não responde a nenhum dos quatro. Escolha o que importa agora e guarde o resto para a próxima.
 - SILÊNCIO TAMBÉM VENDE. Se ele fez uma pergunta objetiva, responda e pare. Empilhar argumento em cima de quem já está convencido é o jeito mais rápido de esfriar.
-- OBJEÇÃO DE PREÇO: nunca defenda o valor de frente. Descubra a referência ("o que você viu por esse valor?") ou desloque para condição de pagamento — quem discute preço quer justificar a compra, não desistir dela.
+- OBJEÇÃO DE PREÇO: nunca defenda o valor de frente, e nunca cite cifra para rebater. Descubra a referência ("o que você viu por esse valor?") ou desloque para condição de pagamento — quem discute preço quer justificar a compra, não desistir dela.
 
 AGENDAMENTO DE VISITA (sua ação mais valiosa):
 - Quando o interesse ficar claro, proponha DOIS horários concretos (dias úteis entre 9h e 18h, ou sábado de manhã) — "prefere terça às 10h ou quarta às 15h?" converte muito mais que "quer agendar uma visita?".
@@ -261,10 +330,10 @@ FORMATO DE RESPOSTA OBRIGATÓRIO (JSON EXCLUSIVO, sem crases markdown ou texto e
   "motivoTransferencia": "Motivo se transferirHumano for true ou null",
   "empreendimentoCitado": "Nome do empreendimento principal se citado ou null",
   "imoveisRecomendados": [
-    { "nome": "Nome do Imovel", "slug": "slug-do-imovel", "preco": 1500000 }
+    { "nome": "Nome do Imovel", "slug": "slug-do-imovel" }
   ],
   "anexosMidia": [
-    { "tipo": "foto" | "planta" | "video" | "tour360", "url": "URL da foto ou planta", "titulo": "Descrição do anexo" }
+    { "slug": "slug-do-imovel-conforme-o-catalogo", "tipo": "foto" | "planta" | "video" | "tour360", "quantidade": 1 }
   ],
   "visitaProposta": { "dataHoraISO": "2026-08-25T10:00:00-03:00", "confirmadaPeloCliente": false } | null
 }`;

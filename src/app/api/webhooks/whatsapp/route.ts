@@ -422,7 +422,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const anexos = (respostaIA.anexosMidia || []).filter((a) => a?.url);
+    // Já resolvidos contra o catálogo pelo guardrail: a IA pediu por slug
+    // e tipo, e o código buscou as URLs reais (ver resolverMidia.ts).
+    const anexos = saneada.anexos;
 
     // Quebra a resposta em balões (ver chunking.ts): longa vira duas
     // médias, média vira duas pequenas, pequena fica como está. Cada balão

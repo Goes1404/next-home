@@ -1,6 +1,8 @@
 import type { Empreendimento } from "@/lib/types";
 import type { RespostaAgenteIA } from "./aiAgent";
 import { soarHumano } from "./vozHumana";
+import { removerValores } from "./semValores";
+import { resolverAnexos, type AnexoResolvido } from "./resolverMidia";
 import { verificarCoerenciaVisita } from "./coerenciaVisita";
 
 /**
@@ -25,6 +27,10 @@ import { verificarCoerenciaVisita } from "./coerenciaVisita";
 
 export type RespostaSaneada = {
   resposta: RespostaAgenteIA;
+  /** Anexos JÁ RESOLVIDOS contra o catálogo — é isto que o webhook envia. */
+  anexos: AnexoResolvido[];
+  /** A resposta citava um valor e teve de ser limpa? */
+  valorRemovido: boolean;
   /** Telemetria: quanta alucinação o trilho segurou (ver ia_interacoes). */
   anexosBloqueados: number;
   slugsBloqueados: number;
@@ -32,34 +38,35 @@ export type RespostaSaneada = {
   visitaIncoerente: boolean;
 };
 
-/** Toda URL que o catálogo de fato oferece — o universo permitido de anexos. */
-function urlsDoCatalogo(catalogo: Empreendimento[]): Set<string> {
-  const urls = new Set<string>();
-  for (const e of catalogo) {
-    if (e.capa?.url) urls.add(e.capa.url);
-    if (e.bookUrl) urls.add(e.bookUrl);
-    for (const p of e.plantas ?? []) urls.add(p.url);
-    for (const v of e.videos ?? []) urls.add(v.url);
-    for (const m of e.midias ?? []) urls.add(m.url);
-  }
-  return urls;
-}
 
 export function sanearRespostaIA(
   resposta: RespostaAgenteIA,
   catalogo: Empreendimento[],
 ): RespostaSaneada {
-  const urlsPermitidas = urlsDoCatalogo(catalogo);
   const slugsPermitidos = new Set(catalogo.map((e) => e.slug));
 
-  const anexosValidos = (resposta.anexosMidia ?? []).filter(
-    (a) => a?.url && urlsPermitidas.has(a.url),
-  );
+  /*
+   * A IA pede mídia por slug + tipo; quem monta a URL é o código. Isso
+   * torna alucinação de URL impossível por construção — antes, ela tinha
+   * de copiar um hash de 32 caracteres e errava sempre (0 anexos enviados
+   * e 6 bloqueados em produção).
+   */
+  const { anexos, pedidosSemMidia } = resolverAnexos(resposta.anexosMidia, catalogo);
+  if (pedidosSemMidia.length > 0) {
+    console.warn(`[guardrails] mídia pedida e não encontrada: ${pedidosSemMidia.join("; ")}`);
+  }
+
   const recomendadosValidos = (resposta.imoveisRecomendados ?? []).filter(
     (r) => r?.slug && slugsPermitidos.has(r.slug),
   );
 
-  const texto = soarHumano(resposta.textoResposta ?? "");
+  /*
+   * Valor sai do texto ANTES de qualquer outra coisa. A regra do negócio é
+   * que a IA não fala preço — e prompt sozinho vaza, principalmente quando
+   * o cliente pergunta duas ou três vezes seguidas.
+   */
+  const semValor = removerValores(soarHumano(resposta.textoResposta ?? ""));
+  const texto = semValor.texto;
 
   /*
    * A visita só passa se a data BATER com o dia prometido no texto. Uma
@@ -83,11 +90,13 @@ export function sanearRespostaIA(
     resposta: {
       ...resposta,
       textoResposta: texto,
-      anexosMidia: anexosValidos,
+      anexosMidia: resposta.anexosMidia ?? [],
       imoveisRecomendados: recomendadosValidos,
       visitaProposta: coerencia.coerente ? resposta.visitaProposta : null,
     },
-    anexosBloqueados: (resposta.anexosMidia?.length ?? 0) - anexosValidos.length,
+    anexos,
+    valorRemovido: semValor.removeu,
+    anexosBloqueados: pedidosSemMidia.length,
     slugsBloqueados: (resposta.imoveisRecomendados?.length ?? 0) - recomendadosValidos.length,
     visitaIncoerente: !coerencia.coerente,
   };

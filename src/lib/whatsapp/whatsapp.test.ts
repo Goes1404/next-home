@@ -61,7 +61,7 @@ const IMOVEL_MOCK: Empreendimento = {
 };
 
 describe("Agente IA — prompt com RAG do catálogo", () => {
-  it("injeta corretor, assistente e imóveis reais com preço formatado", () => {
+  it("injeta corretor, assistente e imóveis reais — mas NUNCA o preço", () => {
     const contexto: ContextoAtendimento = {
       nomeCorretor: "Carlos Silva",
       creciCorretor: "123456-F",
@@ -78,7 +78,23 @@ describe("Agente IA — prompt com RAG do catálogo", () => {
     expect(prompt).toContain("Carlos Silva");
     expect(prompt).toContain("123456-F");
     expect(prompt).toContain("Canvas Alphaville");
-    expect(prompt).toContain("1.450.000");
+
+    /*
+     * O preço NÃO entra no prompt, e isso é a primeira linha de defesa da
+     * regra "a IA não fala valores": o que o modelo não vê, ele não
+     * repete. A segunda é `semValores.ts`, que limpa o texto de saída.
+     */
+    expect(prompt).not.toContain("1.450.000");
+    expect(prompt).not.toContain("Preço a partir");
+    // O `R$` que sobra no prompt é o da própria REGRA ("nem R$ 850.000"),
+    // que existe para o modelo reconhecer o formato proibido. O que não
+    // pode existir é preço do catálogo.
+    expect(prompt).not.toMatch(/R\$\s?1\.450/);
+
+    // Em compensação, ele precisa ter o que permite responder de verdade:
+    // o slug (para pedir mídia) e o link da página do imóvel.
+    expect(prompt).toContain("slug: canvas-alphaville");
+    expect(prompt).toContain("/empreendimentos/canvas-alphaville");
   });
 
   it("instrui técnicas de venda consultiva, não só atendimento", () => {
