@@ -53,7 +53,7 @@ export default async function AnunciarImovelPage() {
           <VoltarLink href="/">Início</VoltarLink>
         </div>
 
-        <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento uppercase">
+        <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento-suave uppercase">
           Para Proprietários e Vendedores
         </p>
         <h1 className="text-fluid-3xl text-titulo">
@@ -105,19 +105,19 @@ export default async function AnunciarImovelPage() {
             <h2 className="font-display text-lg text-titulo">Por que anunciar com a Next Home</h2>
             <ul className="text-fluid-sm mt-3 space-y-2 text-legenda">
               <li className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-acento shrink-0" />
+                <Sparkles className="w-4 h-4 text-acento-suave shrink-0" />
                 <span>Base ativa de compradores cadastrados na região.</span>
               </li>
               <li className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-acento shrink-0" />
+                <Zap className="w-4 h-4 text-acento-suave shrink-0" />
                 <span>Divulgação destacada no Zap, VivaReal, OLX e Redes Sociais.</span>
               </li>
               <li className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-acento shrink-0" />
+                <Shield className="w-4 h-4 text-acento-suave shrink-0" />
                 <span>Segurança jurídica completa e contratos sem burocracia.</span>
               </li>
               <li className="flex items-center gap-2">
-                <Handshake className="w-4 h-4 text-acento shrink-0" />
+                <Handshake className="w-4 h-4 text-acento-suave shrink-0" />
                 <span>Acompanhamento dedicado de corretores especialistas.</span>
               </li>
             </ul>

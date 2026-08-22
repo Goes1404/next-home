@@ -12,7 +12,7 @@ export function ScrollCue({ alvo, label }: { alvo: string; label: string }) {
         ev.preventDefault();
         rolarPara(alvo);
       }}
-      className="motion-reduce:animate-none absolute bottom-10 flex flex-col items-center gap-2 text-apoio transition-colors hover:text-acento motion-safe:animate-bounce"
+      className="motion-reduce:animate-none absolute bottom-10 flex flex-col items-center gap-2 text-apoio transition-colors hover:text-acento-suave motion-safe:animate-bounce"
     >
       <span className="text-fluid-xs tracking-[0.2em] uppercase">{label}</span>
       <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">

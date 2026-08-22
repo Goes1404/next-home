@@ -24,7 +24,7 @@ export default function Error({
 
   return (
     <main className="flex min-h-svh flex-1 flex-col items-center justify-center bg-fundo px-4 text-center">
-      <p className="text-fluid-xs font-medium tracking-[0.2em] text-acento uppercase">
+      <p className="text-fluid-xs font-medium tracking-[0.2em] text-acento-suave uppercase">
         Next Home
       </p>
       <h1 className="text-fluid-2xl mt-4 max-w-lg text-titulo">

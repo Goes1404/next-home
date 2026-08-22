@@ -5,7 +5,8 @@ import Image from "next/image";
 import type { Empreendimento } from "@/lib/types";
 import { STATUS_LABEL, TIPO_LABEL } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
-import { normalizarWhatsapp } from "@/lib/whatsapp";import { MapPin } from 'lucide-react';
+import { normalizarWhatsapp } from "@/lib/whatsapp";
+import { MapPin } from 'lucide-react';
 
 
 interface Props {
@@ -22,9 +23,9 @@ export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
 
   return (
     <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-auto sm:w-96 z-[1000] animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="rounded-2xl border border-white/15 bg-superficie/85 p-4 backdrop-blur-xl shadow-2xl shadow-black/80">
+      <div className="rounded-2xl border border-linha-forte bg-superficie/90 p-4 shadow-painel-alto backdrop-blur-xl">
         {/* Header do Card com Botão de Fechar */}
-        <div className="relative mb-3 overflow-hidden rounded-xl aspect-[16/10] bg-superficie border border-white/10">
+        <div className="relative mb-3 overflow-hidden rounded-xl aspect-[16/10] bg-superficie border border-linha">
           {imovel.capa?.url ? (
             <Image
               src={imovel.capa.url}
@@ -93,7 +94,7 @@ export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
               href={`/empreendimentos/${imovel.slug}`}
               className="flex-1 text-center px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-xs font-semibold transition-all shadow-md shadow-brand-500/20"
             >
-              Ver Apresentação Completa
+              Ver imóvel
             </Link>
 
             <a

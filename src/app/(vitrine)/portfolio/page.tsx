@@ -80,7 +80,7 @@ export default async function Home() {
         <section className="flex min-h-svh flex-col items-center justify-center px-4 pt-24 pb-32">
           <Reveal className="w-full max-w-xl">
             <GlassSurface preset="painel" className="px-7 py-9 text-center sm:px-10 sm:py-12">
-              <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento uppercase">
+              <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento-suave uppercase">
                 Alphaville · Barueri · Santana de Parnaíba
               </p>
               <h1 className="text-fluid-3xl text-titulo">
@@ -122,7 +122,7 @@ export default async function Home() {
                       <p className="text-fluid-sm mt-0.5 text-legenda">
                         {e.bairro}, {e.cidade}
                       </p>
-                      <p className="text-fluid-sm mt-2 font-medium text-acento">
+                      <p className="text-fluid-sm mt-2 font-medium text-acento-suave">
                         {precoAPartirDe(e.precoAPartir)}
                       </p>
                     </div>
@@ -136,7 +136,7 @@ export default async function Home() {
             <Link
               href="/empreendimentos"
               transitionTypes={["nav-forward"]}
-              className="text-fluid-sm font-medium text-acento underline-offset-4 hover:underline"
+              className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
             >
               Ver todos os {todos.length} empreendimentos →
             </Link>

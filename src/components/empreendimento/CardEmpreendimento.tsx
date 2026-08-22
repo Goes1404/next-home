@@ -48,7 +48,7 @@ export function CardEmpreendimento({
 
           {/* Cor literal: o selo flutua sobre a capa, e o que precisa
               contrastar com ele é a foto — não a superfície da página. */}
-          <span className="text-fluid-xs absolute top-3 left-3 rounded-full bg-ink-950/80 px-3 py-1 font-medium tracking-wide text-acento uppercase backdrop-blur-sm">
+          <span className="text-fluid-xs absolute top-3 left-3 rounded-full bg-ink-950/80 px-3 py-1 font-medium tracking-wide text-acento-suave uppercase backdrop-blur-sm">
             {STATUS_LABEL[e.status]}
           </span>
 
@@ -66,7 +66,7 @@ export function CardEmpreendimento({
           <p className="text-fluid-sm mt-0.5 text-legenda">
             {e.bairro}, {e.cidade}
           </p>
-          <p className="text-fluid-sm mt-2 font-medium text-acento">
+          <p className="text-fluid-sm mt-2 font-medium text-acento-suave">
             {precoAPartirDe(e.precoAPartir)}
           </p>
         </div>

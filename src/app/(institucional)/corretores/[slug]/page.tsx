@@ -139,7 +139,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
         <nav aria-label="Trilha" className="mx-auto w-full max-w-5xl">
           <Link
             href="/corretores"
-            className="text-fluid-sm hover:text-acento inline-flex items-center gap-1.5 text-legenda transition-colors"
+            className="text-fluid-sm hover:text-acento-suave inline-flex items-center gap-1.5 text-legenda transition-colors"
           >
             <span aria-hidden>←</span> Toda a equipe
           </Link>
@@ -180,7 +180,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
                     {cidades.map((cidade) => (
                       <li
                         key={cidade}
-                        className="text-fluid-xs border-brand-300/25 bg-brand-500/10 text-acento rounded-full border px-3 py-1"
+                        className="text-fluid-xs border-brand-300/25 bg-brand-500/10 text-acento-suave rounded-full border px-3 py-1"
                       >
                         {cidade}
                       </li>
@@ -212,7 +212,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
 
                   <Link
                     href={`/portfolio?corretor=${corretor.slug}`}
-                    className="hover:border-brand-300/50 hover:text-acento inline-flex h-12 items-center justify-center rounded-full border border-linha/20 px-7 text-sm font-medium text-corpo transition-colors"
+                    className="hover:border-brand-300/50 hover:text-acento-suave inline-flex h-12 items-center justify-center rounded-full border border-linha/20 px-7 text-sm font-medium text-corpo transition-colors"
                   >
                     Ver portfólio completo
                   </Link>

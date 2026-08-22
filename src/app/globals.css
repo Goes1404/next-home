@@ -167,21 +167,38 @@
   --color-marca-fundo: #001d1a;
   --color-fundo-marca: #001d1a;
 
-  /* Receita do vidro — ver `.vidro-css` em @layer components */
+  /*
+   * Receita do vidro — ver `.vidro-css` em @layer components.
+   *
+   * No escuro o vidro é FUMÊ, não transparente: o fundo atrás dos painéis é
+   * um vídeo majoritariamente claro (céu, cidade, o logo 3D branco), e a
+   * versão anterior — branco a 4,5-10% — deixava texto mist claro batendo
+   * direto em vídeo claro: legenda de card e link sumiam por completo nos
+   * trechos brilhantes. O scrim escuro garante um piso de contraste para o
+   * texto claro EM QUALQUER quadro do vídeo; o brilho de quina continua por
+   * conta dos filetes brancos do `--shadow-glass`.
+   */
   --vidro-fundo: linear-gradient(
     145deg,
-    rgb(255 255 255 / 0.1) 0%,
-    rgb(255 255 255 / 0.045) 45%,
-    rgb(255 255 255 / 0.075) 100%
+    rgb(6 18 15 / 0.68) 0%,
+    rgb(6 18 15 / 0.56) 45%,
+    rgb(6 18 15 / 0.63) 100%
   );
-  --vidro-borda: rgb(255 255 255 / 0.12);
+  --vidro-borda: rgb(255 255 255 / 0.14);
   --vidro-sombra: var(--shadow-glass);
   --vidro-fundo-opaco: linear-gradient(
     145deg,
-    rgb(255 255 255 / 0.14) 0%,
-    rgb(255 255 255 / 0.08) 45%,
-    rgb(255 255 255 / 0.11) 100%
+    rgb(5 15 13 / 0.82) 0%,
+    rgb(5 15 13 / 0.7) 45%,
+    rgb(5 15 13 / 0.77) 100%
   );
+  /*
+   * Sombra que os textos dentro do vidro herdam (text-shadow é herdável).
+   * É o seguro extra para o pior caso — o quadro mais estourado do vídeo
+   * atravessando o scrim. No claro vira `none`: sombra sob texto escuro em
+   * painel branco só borra.
+   */
+  --vidro-texto-sombra: 0 1px 3px rgb(4 11 10 / 0.45);
 
   /*
    * Estados. Cada um em três peças — texto, fundo lavado e linha — porque
@@ -419,6 +436,7 @@
       rgb(255 255 255 / 0.84) 45%,
       rgb(255 255 255 / 0.89) 100%
     );
+    --vidro-texto-sombra: none;
   }
 
   /*
@@ -506,6 +524,7 @@
         rgb(255 255 255 / 0.84) 45%,
         rgb(255 255 255 / 0.89) 100%
       );
+      --vidro-texto-sombra: none;
     }
   }
 
@@ -601,6 +620,8 @@
     background: var(--vidro-fundo);
     box-shadow: var(--vidro-sombra);
     border: 1px solid var(--vidro-borda);
+    /* Herdada por todo texto do painel — ver o token, tema a tema. */
+    text-shadow: var(--vidro-texto-sombra, none);
   }
 
   /* Com o canvas WebGL cobrindo o painel, resta apenas a base opaca que
@@ -612,6 +633,7 @@
   .vidro-webgl {
     background: rgb(7 19 16 / 0.35);
     box-shadow: var(--shadow-glass);
+    text-shadow: var(--vidro-texto-sombra, none);
   }
 
   /*
@@ -802,32 +824,46 @@
 }
 
 .leaflet-container {
-  background: #040b0a !important;
+  /* Acompanha o tema — fundo fixo escuro fazia o mapa parecer um buraco
+     na página enquanto os tiles claros carregavam no tema claro. */
+  background: var(--color-fundo) !important;
   font-family: inherit !important;
   width: 100% !important;
   height: 100% !important;
 }
 
+/* Atribuição exigida pela licença OSM/CARTO — presente, mas discreta. */
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--color-fundo) 72%, transparent) !important;
+  color: var(--color-tenue) !important;
+  font-size: 10px !important;
+  padding: 1px 6px !important;
+  border-radius: 8px 0 0 0;
+}
+.leaflet-control-attribution a {
+  color: var(--color-apoio) !important;
+}
+
 .leaflet-control-zoom {
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  background: rgba(7, 19, 16, 0.85) !important;
+  border: 1px solid var(--color-linha-forte) !important;
+  background: color-mix(in srgb, var(--color-superficie) 88%, transparent) !important;
   backdrop-filter: blur(16px) !important;
   border-radius: 12px !important;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: var(--shadow-painel-alto) !important;
 }
 
 .leaflet-control-zoom-in,
 .leaflet-control-zoom-out {
   background: transparent !important;
-  color: #cddad6 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: var(--color-corpo) !important;
+  border-bottom: 1px solid var(--color-linha) !important;
   font-weight: bold !important;
 }
 
 .leaflet-control-zoom-in:hover,
 .leaflet-control-zoom-out:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: #ffffff !important;
+  background: var(--color-vidro-mais) !important;
+  color: var(--color-titulo) !important;
 }
 

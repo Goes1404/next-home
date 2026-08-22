@@ -38,7 +38,7 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
         <GlassSurface preset="painel" className="px-7 py-8 sm:px-10 sm:py-11">
           <VoltarLink href="/empreendimentos">Empreendimentos</VoltarLink>
 
-          <p className="text-fluid-xs mb-3 flex items-center gap-2 font-medium tracking-[0.18em] text-acento uppercase">
+          <p className="text-fluid-xs mb-3 flex items-center gap-2 font-medium tracking-[0.18em] text-acento-suave uppercase">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-300" />
             {STATUS_LABEL[e.status]} · {e.bairro}, {e.cidade}
           </p>

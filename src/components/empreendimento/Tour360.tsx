@@ -34,7 +34,7 @@ export function Tour360({ tours }: { tours: Midia[] }) {
         href={tour.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-fluid-sm mt-3 inline-block text-acento underline-offset-4 hover:underline"
+        className="text-fluid-sm mt-3 inline-block text-acento-suave underline-offset-4 hover:underline"
       >
         Abrir tour em tela cheia →
       </a>

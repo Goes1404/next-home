@@ -7,7 +7,7 @@ import type { Empreendimento } from "@/lib/types";
 const MapaClient = dynamic(() => import("./MapaInterativoClient"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[calc(100vh-80px)] min-h-[500px] rounded-2xl border border-white/10 bg-superficie/80 flex flex-col items-center justify-center gap-3 backdrop-blur-xl animate-pulse">
+    <div className="w-full h-[calc(100vh-80px)] min-h-[500px] rounded-2xl border border-linha bg-superficie/80 flex flex-col items-center justify-center gap-3 backdrop-blur-xl animate-pulse">
       <div className="relative flex items-center justify-center">
         <div className="w-12 h-12 rounded-full border-2 border-brand-500/30 border-t-brand-400 animate-spin" />
         <div className="absolute w-3 h-3 rounded-full bg-brand-400" />

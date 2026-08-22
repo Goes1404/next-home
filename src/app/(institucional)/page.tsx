@@ -10,6 +10,7 @@ import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
+import { MapaEmpreendimentos } from "@/components/mapa/MapaEmpreendimentos";
 import { enderecoLinha, site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -115,7 +116,7 @@ export default async function HomeInstitucional() {
             flutuante do WhatsApp, que é `fixed`. */}
         <section className="flex flex-col items-center justify-center px-4 pt-24 pb-32 sm:min-h-svh sm:pt-28 sm:pb-20">
           <Reveal className="w-full max-w-3xl text-center">
-            <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento uppercase">
+            <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento-suave uppercase">
               Imóveis & Oportunidades · Alphaville, Barueri e Região
             </p>
             <h1 className="text-fluid-3xl text-titulo">
@@ -150,7 +151,7 @@ export default async function HomeInstitucional() {
                   >
                     <h2 className="font-display text-lg text-titulo">{c.titulo}</h2>
                     <p className="text-fluid-sm mt-2 flex-1 text-legenda">{c.texto}</p>
-                    <span className="text-fluid-sm mt-5 font-medium text-acento transition-colors group-hover:text-acento-intenso">
+                    <span className="text-fluid-sm mt-5 font-medium text-acento-suave transition-colors group-hover:text-acento-intenso">
                       {c.cta} →
                     </span>
                   </GlassSurface>
@@ -180,7 +181,7 @@ export default async function HomeInstitucional() {
             <Reveal className="mt-10 text-center">
               <Link
                 href="/empreendimentos"
-                className="text-fluid-sm font-medium text-acento underline-offset-4 hover:underline"
+                className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
               >
                 Ver todos os {todos.length} empreendimentos →
               </Link>
@@ -189,6 +190,35 @@ export default async function HomeInstitucional() {
         )}
 
         <Regioes />
+
+        {/* Mapa geral: todos os imóveis com pin de localização; o clique
+            abre o card com as características básicas e o botão de ver o
+            imóvel (CardFlutuanteImovel, o mesmo da página /mapa). */}
+        <section className="px-4 pb-24">
+          <Reveal className="mx-auto max-w-lg text-center">
+            <h2 className="text-fluid-2xl text-titulo">Onde Cada Imóvel Está</h2>
+            <p className="text-fluid-base mt-3 text-apoio">
+              Explore o mapa da região: toque em um marcador para ver preço, endereço e abrir o
+              imóvel completo.
+            </p>
+          </Reveal>
+
+          <Reveal delay={0.1} from="baixo" className="mx-auto mt-10 w-full max-w-6xl">
+            <MapaEmpreendimentos
+              empreendimentos={todos}
+              alturaClasse="h-[62vh] min-h-[440px] max-h-[640px]"
+            />
+          </Reveal>
+
+          <Reveal className="mt-8 text-center">
+            <Link
+              href="/mapa"
+              className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
+            >
+              Abrir o mapa em tela cheia →
+            </Link>
+          </Reveal>
+        </section>
 
         {equipe.length > 0 && (
           <section className="px-4 pb-24">
@@ -211,7 +241,7 @@ export default async function HomeInstitucional() {
               <Reveal className="mt-10 text-center">
                 <Link
                   href="/corretores"
-                  className="text-fluid-sm font-medium text-acento underline-offset-4 hover:underline"
+                  className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
                 >
                   Ver toda a equipe →
                 </Link>

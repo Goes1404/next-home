@@ -17,7 +17,7 @@ export function Similares({ empreendimentos }: { empreendimentos: Empreendimento
           <h2 className="text-fluid-2xl text-titulo">Veja também</h2>
           <Link
             href="/empreendimentos"
-            className="text-fluid-sm text-acento underline-offset-4 hover:underline"
+            className="text-fluid-sm text-acento-suave underline-offset-4 hover:underline"
           >
             Ver todos
           </Link>

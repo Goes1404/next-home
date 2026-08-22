@@ -2,9 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
+// O CSS base do Leaflet é OBRIGATÓRIO: sem ele os tiles renderizam fora de
+// posição (cada tile num fluxo normal de layout, empilhados), os panes
+// perdem o z-index e os controles ficam soltos — era exatamente o "mapa
+// feio e desajustado". Nenhum outro arquivo importava isto.
+import "leaflet/dist/leaflet.css";
 import type { Empreendimento, StatusObra } from "@/lib/types";
 import { CardFlutuanteImovel } from "./CardFlutuanteImovel";
 import { FiltrosMapa } from "./FiltrosMapa";
+import { temaDoMapa, TILES_MAPA, ATRIBUICAO_MAPA, aoMudarTema } from "./temaDoMapa";
 
 interface Props {
   empreendimentos: Empreendimento[];
@@ -32,10 +38,15 @@ export default function MapaInterativoClient({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const tilesRef = useRef<L.TileLayer | null>(null);
 
   const [statusFiltro, setStatusFiltro] = useState<StatusObra | "todos">("todos");
   const [bairroFiltro, setBairroFiltro] = useState<string>("todos");
-  const [imovelSelecionado, setImovelSelecionado] = useState<Empreendimento | null>(null);
+  // Seleção inicial (link /mapa?imovel=slug) resolvida na montagem do
+  // estado — um efeito para isso seria um re-render a mais sem motivo.
+  const [imovelSelecionado, setImovelSelecionado] = useState<Empreendimento | null>(() =>
+    imovelInicialSlug ? (empreendimentos.find((e) => e.slug === imovelInicialSlug) ?? null) : null,
+  );
 
   // Lista de bairros únicos disponíveis
   const bairrosDisponiveis = useMemo(() => {
@@ -62,15 +73,27 @@ export default function MapaInterativoClient({
     const map = L.map(containerRef.current, {
       center: CENTRO_ALPHAVILLE,
       zoom: 13,
-      zoomControl: true,
-      attributionControl: false,
+      // No canto de baixo para não brigar com a barra de filtros, que mora
+      // no topo do mapa.
+      zoomControl: false,
+      // Atribuição ligada: exigência de licença do OpenStreetMap/CARTO.
+      attributionControl: true,
     });
+    map.attributionControl.setPrefix(false);
+    L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    // Camada Dark Matter do CartoDB (estética 21st.dev escura)
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    // Tiles do CARTO acompanhando o tema do site — mapa escuro dentro de um
+    // site claro (como era antes) parece um buraco na página.
+    const tiles = L.tileLayer(TILES_MAPA[temaDoMapa()], {
       maxZoom: 19,
       subdomains: "abcd",
+      attribution: ATRIBUICAO_MAPA,
     }).addTo(map);
+    tilesRef.current = tiles;
+
+    const pararDeObservarTema = aoMudarTema((tema) => {
+      tilesRef.current?.setUrl(TILES_MAPA[tema]);
+    });
 
     const layerGroup = L.layerGroup().addTo(map);
     markersLayerRef.current = layerGroup;
@@ -84,17 +107,14 @@ export default function MapaInterativoClient({
       }
     });
 
-    // Se houver slug inicial, seleciona
-    if (imovelInicialSlug) {
-      const match = empreendimentos.find((e) => e.slug === imovelInicialSlug);
-      if (match) setImovelSelecionado(match);
-    }
-
     return () => {
+      pararDeObservarTema();
       map.remove();
       mapRef.current = null;
+      tilesRef.current = null;
     };
-  }, [imovelInicialSlug, empreendimentos]);
+    // Nada aqui depende de props além da montagem: o mapa nasce uma vez.
+  }, []);
 
   // Atualiza marcadores quando a lista filtrada ou o item selecionado mudar
   useEffect(() => {
@@ -105,11 +125,14 @@ export default function MapaInterativoClient({
     layer.clearLayers();
     const bounds: [number, number][] = [];
 
-    // Fallback de coordenadas se o empreendimento não tiver lat/lng cadastrado
-    imoveisFiltrados.forEach((emp, index) => {
-      // Usa as coordenadas cadastradas ou distribui levemente no centroide de Alphaville
-      const lat = emp.lat ?? (CENTRO_ALPHAVILLE[0] + (index % 5 - 2) * 0.008);
-      const lng = emp.lng ?? (CENTRO_ALPHAVILLE[1] + (Math.floor(index / 5) - 2) * 0.008);
+    // Sem coordenada, sem pin: o fallback antigo espalhava os sem-cadastro
+    // numa grade falsa em volta do centro de Alphaville — um pin apontando
+    // para um lugar que não é o do imóvel é pior que pin nenhum. (Hoje todos
+    // os cadastros têm lat/lng; isto protege os próximos.)
+    imoveisFiltrados.forEach((emp) => {
+      if (emp.lat === null || emp.lng === null) return;
+      const lat = emp.lat;
+      const lng = emp.lng;
 
       const isAtivo = imovelSelecionado?.slug === emp.slug;
       const precoTexto = formatarPrecoTag(emp.precoAPartir);
@@ -146,7 +169,7 @@ export default function MapaInterativoClient({
   }, [imoveisFiltrados, imovelSelecionado]);
 
   return (
-    <div className={`relative w-full overflow-hidden rounded-2xl border border-white/10 ${alturaClasse}`}>
+    <div className={`relative w-full overflow-hidden rounded-2xl border border-linha ${alturaClasse}`}>
       {/* Filtros Flutuantes no Topo */}
       <FiltrosMapa
         statusFiltro={statusFiltro}

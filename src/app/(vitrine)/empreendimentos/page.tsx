@@ -136,7 +136,7 @@ export default async function EmpreendimentosPage({
             <p className="text-fluid-lg text-corpo">Nenhum empreendimento encontrado com esses filtros.</p>
             <Link
               href="/empreendimentos"
-              className="text-fluid-sm mt-2 inline-block text-acento underline-offset-4 hover:underline"
+              className="text-fluid-sm mt-2 inline-block text-acento-suave underline-offset-4 hover:underline"
             >
               Ver todas as opções disponíveis
             </Link>

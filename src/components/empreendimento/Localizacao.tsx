@@ -1,23 +1,12 @@
+import { MapaLocal } from "@/components/mapa/MapaLocal";
 import { Reveal } from "@/components/motion/Reveal";
 import type { Empreendimento } from "@/lib/types";
 
-/**
- * Meio-grau de janela do mapa, em graus decimais (~800 m). As coordenadas
- * cadastradas são centroides de via/bairro, não a porta do prédio — este
- * enquadramento mostra a região com honestidade, sem sugerir uma precisão
+/*
+ * As coordenadas cadastradas são centroides de via/bairro, não a porta do
+ * prédio — o zoom do MapaLocal enquadra a REGIÃO, sem sugerir uma precisão
  * que o dado não tem.
  */
-const RAIO_GRAUS = 0.008;
-
-function urlDoMapa(lat: number, lng: number): string {
-  const bbox = [lng - RAIO_GRAUS, lat - RAIO_GRAUS, lng + RAIO_GRAUS, lat + RAIO_GRAUS];
-  const params = new URLSearchParams({
-    bbox: bbox.join(","),
-    layer: "mapnik",
-    marker: `${lat},${lng}`,
-  });
-  return `https://www.openstreetmap.org/export/embed.html?${params}`;
-}
 
 export function Localizacao({ empreendimento: e }: { empreendimento: Empreendimento }) {
   const temCoordenadas = e.lat !== null && e.lng !== null;
@@ -31,15 +20,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
         <h2 className="text-fluid-2xl text-titulo">Localização</h2>
 
         <div className="mt-6 overflow-hidden rounded-2xl border border-linha/10 bg-superficie">
-          {temCoordenadas && (
-            <iframe
-              src={urlDoMapa(e.lat!, e.lng!)}
-              title={`Mapa da região de ${e.nome}`}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="aspect-[4/3] w-full border-0 sm:aspect-[16/9]"
-            />
-          )}
+          {temCoordenadas && <MapaLocal lat={e.lat!} lng={e.lng!} titulo={e.nome} />}
 
           <div className="px-6 py-6">
             <p className="text-fluid-lg text-titulo">{e.endereco}</p>
@@ -52,7 +33,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
                 href={comoChegar}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-fluid-sm inline-flex items-center gap-1.5 font-medium text-acento underline-offset-4 hover:underline"
+                className="text-fluid-sm inline-flex items-center gap-1.5 font-medium text-acento-suave underline-offset-4 hover:underline"
               >
                 <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-4 w-4">
                   <path

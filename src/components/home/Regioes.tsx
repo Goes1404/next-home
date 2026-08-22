@@ -32,7 +32,7 @@ export function Regioes() {
             <Link
               key={r.nome}
               href={r.href}
-              className="rounded-full border border-linha/15 bg-superficie/50 px-5 py-2.5 text-sm text-corpo transition-colors hover:border-brand-300/50 hover:text-acento"
+              className="rounded-full border border-linha/15 bg-superficie/50 px-5 py-2.5 text-sm text-corpo transition-colors hover:border-brand-300/50 hover:text-acento-suave"
             >
               {r.nome}
             </Link>

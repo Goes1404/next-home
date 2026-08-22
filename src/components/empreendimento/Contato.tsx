@@ -65,7 +65,7 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
 
           <Link
             href={`/contato?empreendimento=${e.slug}`}
-            className="text-fluid-sm mt-4 block text-legenda underline-offset-4 hover:text-acento hover:underline"
+            className="text-fluid-sm mt-4 block text-legenda underline-offset-4 hover:text-acento-suave hover:underline"
           >
             Prefere receber por e-mail? Preencha o formulário rápido.
           </Link>

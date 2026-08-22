@@ -175,3 +175,26 @@ Coisas que valem lembrar daqui:
   `Save-Data`, teto de 7,5s. O vídeo (`public/video/intro.*`) está 1,3x
   mais rápido que o original de WhatsApp justamente para a logo fechar em
   ~4s.
+
+## Mapas (Leaflet) — armadilhas conhecidas
+
+- **`leaflet/dist/leaflet.css` precisa ser importado explicitamente** (hoje
+  em `MapaInterativoClient.tsx` e `MapaLocalClient.tsx`). Sem ele os tiles
+  renderizam empilhados fora de posição e os controles ficam soltos — foi a
+  causa do "mapa feio e desajustado" original. Import de `leaflet` (o JS)
+  NÃO puxa o CSS junto.
+- **Tiles acompanham o tema** via `temaDoMapa.ts` (CARTO light_all/dark_all
+  + MutationObserver em `data-tema`). Atribuição OSM/CARTO é exigência de
+  licença — está ligada e estilizada discreta; não desligar.
+- **Nunca inventar coordenada de pin.** O fallback antigo espalhava imóveis
+  sem lat/lng numa grade falsa em volta de Alphaville. Hoje: sem coordenada,
+  sem pin — e os 27 cadastros foram geocodificados via Nominatim (centroide
+  de via/bairro; pares no mesmo endereço ganharam ~60m de offset para não
+  sobrepor). Ao cadastrar imóvel novo, preencher lat/lng.
+- **No sandbox de teste (Claude Code remoto), o Chromium do Playwright não
+  alcança hosts externos** — o egress proxy reseta o TLS do browser
+  (`ERR_CONNECTION_RESET`) mesmo com `proxy` + `ignoreHTTPSErrors`, embora o
+  curl passe. Para verificar mapas em screenshot, interceptar com
+  `context.route(/basemaps\.cartocdn\.com/, ...)` e responder com o corpo
+  baixado via `curl` (ver sessão de 2026-08-22). Lembrete relacionado: o
+  mesmo Chromium não decodifica H.264 — vídeos precisam de par WebM.

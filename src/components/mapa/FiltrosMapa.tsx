@@ -22,7 +22,7 @@ export function FiltrosMapa({
   return (
     <div className="absolute top-4 left-4 right-4 z-[1000] flex items-center justify-between gap-3 pointer-events-none">
       {/* Pílulas de filtro com scroll horizontal */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none p-1 pointer-events-auto bg-superficie/80 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl shadow-black/70">
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none p-1 pointer-events-auto bg-superficie/80 backdrop-blur-xl rounded-2xl border border-linha-forte shadow-2xl shadow-black/70">
         <button
           onClick={() => onMudarStatus("todos")}
           className={`px-3.5 py-1.5 rounded-xl text-fluid-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
@@ -72,7 +72,7 @@ export function FiltrosMapa({
           <select
             value={bairroFiltro}
             onChange={(e) => onMudarBairro(e.target.value)}
-            className="rounded-xl border border-white/15 bg-superficie px-3 py-1.5 text-fluid-xs text-corpo focus:outline-none focus:border-brand-400 cursor-pointer"
+            className="rounded-xl border border-linha-forte bg-superficie px-3 py-1.5 text-fluid-xs text-corpo focus:outline-none focus:border-brand-400 cursor-pointer"
           >
             <option value="todos">Todos os Bairros</option>
             {bairrosDisponiveis.map((b) => (

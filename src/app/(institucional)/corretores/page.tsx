@@ -37,7 +37,7 @@ export default async function CorretoresPage() {
   return (
     <main className="flex flex-1 flex-col px-4 pt-32 pb-24">
       <Reveal className="mx-auto w-full max-w-2xl text-center">
-        <p className="text-fluid-xs text-acento mb-3 font-medium tracking-[0.2em] uppercase">
+        <p className="text-fluid-xs text-acento-suave mb-3 font-medium tracking-[0.2em] uppercase">
           Nossa equipe
         </p>
         <h1 className="text-fluid-3xl text-titulo">
@@ -115,7 +115,7 @@ export default async function CorretoresPage() {
                 </a>
                 <Link
                   href="/contato"
-                  className="hover:border-brand-300/50 hover:text-acento inline-flex h-12 items-center rounded-full border border-linha/20 px-6 text-sm font-medium text-corpo transition-colors"
+                  className="hover:border-brand-300/50 hover:text-acento-suave inline-flex h-12 items-center rounded-full border border-linha/20 px-6 text-sm font-medium text-corpo transition-colors"
                 >
                   Enviar mensagem
                 </Link>

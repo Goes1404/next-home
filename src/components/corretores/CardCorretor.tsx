@@ -95,7 +95,7 @@ export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps)
           <Avatar corretor={corretor} tamanho={56} />
 
           <div className="min-w-0 flex-1">
-            <p className="font-display group-hover:text-acento truncate text-lg text-titulo transition-colors">
+            <p className="font-display group-hover:text-acento-suave truncate text-lg text-titulo transition-colors">
               {corretor.nome}
             </p>
             <p className="text-fluid-sm text-legenda">CRECI {corretor.creci}</p>
@@ -103,7 +103,7 @@ export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps)
 
           <span
             aria-hidden
-            className="group-hover:text-acento shrink-0 text-tenue transition-all group-hover:translate-x-0.5"
+            className="group-hover:text-acento-suave shrink-0 text-tenue transition-all group-hover:translate-x-0.5"
           >
             →
           </span>
@@ -134,7 +134,7 @@ export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps)
           <h2 className="font-display text-fluid-lg text-titulo">
             <Link
               href={`/corretores/${corretor.slug}`}
-              className="group-hover:text-acento transition-colors after:absolute after:inset-0"
+              className="group-hover:text-acento-suave transition-colors after:absolute after:inset-0"
             >
               {corretor.nome}
             </Link>
@@ -166,7 +166,7 @@ export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps)
       <div className="mt-auto flex items-center justify-between gap-3 border-t border-linha/10 pt-4">
         <span
           aria-hidden
-          className="text-fluid-sm group-hover:text-acento text-legenda transition-colors"
+          className="text-fluid-sm group-hover:text-acento-suave text-legenda transition-colors"
         >
           Ver perfil →
         </span>

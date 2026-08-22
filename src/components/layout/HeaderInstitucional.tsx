@@ -42,7 +42,7 @@ export async function HeaderInstitucional() {
         <ul className="hidden items-center gap-6 text-sm text-corpo sm:flex">
           {LINKS.map((link) => (
             <li key={link.href}>
-              <Link href={link.href} className="transition-colors hover:text-acento">
+              <Link href={link.href} className="transition-colors hover:text-acento-suave">
                 {link.label}
               </Link>
             </li>

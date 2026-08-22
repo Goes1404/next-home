@@ -103,7 +103,7 @@ export function Tipologias({
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <p className="text-fluid-lg font-medium text-acento">{precoBRL(t.preco)}</p>
+                  <p className="text-fluid-lg font-medium text-acento-suave">{precoBRL(t.preco)}</p>
                   {porM2 && <p className="text-fluid-xs text-legenda">{porM2}</p>}
                 </div>
 
