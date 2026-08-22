@@ -67,6 +67,16 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
   const handleRemover = async (midia: Midia) => {
     if (!confirm("Tem certeza que deseja remover esta foto?")) return;
 
+    // A versão anterior só removia do ESTADO e anunciava "Foto removida!" —
+    // a foto continuava no banco e ressuscitava no reload. Primeiro o
+    // servidor confirma, depois a tela obedece.
+    const res = await removerMidiaImovel(midia.id ?? "", midia.url, slug);
+    if (!res.ok) {
+      setMensagem(<>Não foi possível remover agora. Tente novamente.</>);
+      setTimeout(() => setMensagem(null), 4000);
+      return;
+    }
+
     setMidias((prev) => prev.filter((m) => m.url !== midia.url));
     setMensagem(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Foto removida!</>);
     setTimeout(() => setMensagem(null), 3000);

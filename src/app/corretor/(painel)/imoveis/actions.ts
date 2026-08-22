@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
-import type { Empreendimento, StatusObra, TipoImovel, Finalidade } from "@/lib/types";
+import type { Empreendimento, Midia, StatusObra, TipoImovel, Finalidade } from "@/lib/types";
+import { validarUrlMidiaExterna } from "@/lib/embedMidia";
 
 export interface DadosGeraisInput {
   nome: string;
@@ -410,4 +411,62 @@ export async function removerBookDigital(
   revalidatePath(`/empreendimentos/${slug}`);
   revalidatePath("/empreendimentos", "layout");
   return { ok: true };
+}
+
+/**
+ * Cadastra uma mídia EXTERNA por URL — vídeo (YouTube/Vimeo/arquivo) ou
+ * tour 3D (Matterport, Kuula, tour da construtora).
+ *
+ * É o par do upload de foto/planta para o que não é arquivo nosso: o vídeo
+ * mora no YouTube e o tour na plataforma da construtora; aqui só guardamos
+ * o link validado (`validarUrlMidiaExterna`) e o título que aparece no
+ * player. A página pública embeda a partir da tabela `midias`, como sempre.
+ */
+export async function adicionarMidiaExterna(
+  empreendimentoId: string,
+  slug: string,
+  params: { tipo: "video" | "tour360"; url: string; titulo: string },
+): Promise<{ ok: boolean; midia?: Midia; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+
+  const validacao = validarUrlMidiaExterna(params.tipo, params.url);
+  if (!validacao.ok) return { ok: false, erro: validacao.erro };
+
+  const titulo = params.titulo.trim();
+
+  const supabase = await createClient();
+  const { data: nova, error } = await supabase
+    .from("midias")
+    .insert({
+      empreendimento_id: empreendimentoId,
+      tipo: params.tipo,
+      url: validacao.url,
+      alt: titulo || (params.tipo === "video" ? "Vídeo do empreendimento" : "Tour virtual 360°"),
+      ordem: 50,
+    })
+    .select()
+    .single();
+
+  if (error || !nova) {
+    console.error("Erro ao cadastrar mídia externa:", error);
+    return { ok: false, erro: "Não foi possível salvar o link agora. Tente novamente." };
+  }
+
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+
+  return {
+    ok: true,
+    midia: {
+      id: nova.id,
+      url: nova.url,
+      alt: nova.alt ?? "",
+      tipo: nova.tipo,
+      largura: nova.largura ?? 0,
+      altura: nova.altura ?? 0,
+      blurDataUrl: nova.blur_data_url,
+    },
+  };
 }

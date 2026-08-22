@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
     deviceSizes: [390, 640, 828, 1080, 1280, 1920, 2560],
     remotePatterns: [
       { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" },
+      // Thumbnails oficiais do YouTube — a facade do PlayerVideo mostra a
+      // capa do vídeo sem carregar o player de 1 MB até o clique.
+      { protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" },
     ],
   },
 

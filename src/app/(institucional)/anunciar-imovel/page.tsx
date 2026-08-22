@@ -75,7 +75,7 @@ export default async function AnunciarImovelPage() {
       </Reveal>
 
       <div className="mx-auto mt-16 grid w-full max-w-4xl gap-8 lg:grid-cols-[1.1fr_1fr]">
-        <Reveal className="rounded-2xl border border-white/10 bg-superficie/50 p-6 sm:p-8">
+        <Reveal className="rounded-2xl border border-linha bg-superficie/50 p-6 sm:p-8">
           <h2 className="font-display text-lg text-titulo">Cadastre seu Imóvel</h2>
           <p className="text-fluid-sm mt-1 mb-6 text-legenda">
             Rápido, sem compromisso e com avaliação de mercado gratuita.
@@ -84,7 +84,7 @@ export default async function AnunciarImovelPage() {
         </Reveal>
 
         <Reveal delay={0.1} className="space-y-6">
-          <div className="rounded-2xl border border-white/10 bg-superficie/50 p-6">
+          <div className="rounded-2xl border border-linha bg-superficie/50 p-6">
             <h2 className="font-display text-lg text-titulo">Prefere atendimento direto?</h2>
             <p className="text-fluid-sm mt-2 text-legenda">
               {corretorAtivo
@@ -101,7 +101,7 @@ export default async function AnunciarImovelPage() {
             </WhatsappLink>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-superficie/50 p-6">
+          <div className="rounded-2xl border border-linha bg-superficie/50 p-6">
             <h2 className="font-display text-lg text-titulo">Por que anunciar com a Next Home</h2>
             <ul className="text-fluid-sm mt-3 space-y-2 text-legenda">
               <li className="flex items-center gap-2">

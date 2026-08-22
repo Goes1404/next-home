@@ -29,6 +29,7 @@ function mapTipologia(t: Tables<"tipologias">): Tipologia {
 
 function mapMidia(m: Tables<"midias">): Midia {
   return {
+    id: m.id,
     tipo: m.tipo,
     url: m.url,
     alt: m.alt ?? "",

@@ -7,6 +7,7 @@ import { EditorTextos } from "./EditorTextos";
 import { EditorLazer } from "./EditorLazer";
 import { EditorTipologias } from "./EditorTipologias";
 import { EditorBook } from "./EditorBook";
+import { EditorMidiasExternas } from "./EditorMidiasExternas";
 import { BarraSalvarFlutuante } from "./BarraSalvarFlutuante";
 import { salvarDadosGerais, salvarLazerEmpreendimento } from "../actions";
 import { Check } from "lucide-react";
@@ -16,7 +17,7 @@ interface Props {
 }
 
 export function EditorImovelClient({ imovel }: Props) {
-  const [abaAtiva, setAbaAtiva] = useState<"fotos" | "textos" | "book" | "plantas" | "lazer">("fotos");
+  const [abaAtiva, setAbaAtiva] = useState<"fotos" | "textos" | "book" | "midia" | "plantas" | "lazer">("fotos");
   const [salvando, setSalvando] = useState(false);
   const [feedback, setFeedback] = useState<React.ReactNode | null>(null);
   const [feedbackTipo, setFeedbackTipo] = useState<"sucesso" | "erro" | null>(null);
@@ -170,6 +171,23 @@ export function EditorImovelClient({ imovel }: Props) {
 
         <button
           type="button"
+          onClick={() => setAbaAtiva("midia")}
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+            abaAtiva === "midia"
+              ? "bg-acento text-white shadow-md shadow-acento/20"
+              : "bg-vidro text-apoio hover:text-titulo"
+          }`}
+        >
+          <span>🎬 Vídeos & Tour 3D</span>
+          {(imovel.videos?.length || 0) + (imovel.tours360?.length || 0) > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-vidro-forte">
+              {(imovel.videos?.length || 0) + (imovel.tours360?.length || 0)}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
           onClick={() => setAbaAtiva("lazer")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "lazer"
@@ -217,6 +235,14 @@ export function EditorImovelClient({ imovel }: Props) {
             slug={imovel.slug}
             bookUrlInicial={imovel.bookUrl}
             bookTituloInicial={imovel.bookTitulo}
+          />
+        )}
+
+        {abaAtiva === "midia" && (
+          <EditorMidiasExternas
+            empreendimentoId={imovel.id || imovel.slug}
+            slug={imovel.slug}
+            midiasIniciais={imovel.midias || []}
           />
         )}
 

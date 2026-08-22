@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";import { X } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { X } from 'lucide-react';
 
 
 /**
@@ -57,7 +58,7 @@ export function FiltroSheet({
           onClick={() => setAberto(false)}
         >
           <div
-            className="pb-safe max-h-[85svh] w-full overflow-y-auto rounded-t-3xl border-t border-white/10 bg-superficie px-5 pt-5 pb-8"
+            className="pb-safe max-h-[85svh] w-full overflow-y-auto rounded-t-3xl border-t border-linha-forte bg-superficie px-5 pt-5 pb-8"
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">

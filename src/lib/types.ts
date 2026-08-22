@@ -49,6 +49,8 @@ export type Tipologia = {
 };
 
 export type Midia = {
+  /** Id da linha em `midias` — presente quando veio do banco; ausente em placeholders. */
+  id?: string;
   tipo: TipoMidia;
   url: string;
   alt: string;
