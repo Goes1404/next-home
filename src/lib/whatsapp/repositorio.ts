@@ -3,6 +3,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { bloqueadoAtePor, deveAbrirDisjuntor, limiteDiarioCampanha, diasDesdeConexao } from "./antiBan";
 import { exigePalavraChave } from "./modoBot";
+import { consultarEstadoConexao } from "./provider";
 import type { DossieClienteIA } from "./types";
 
 /**
@@ -448,4 +449,148 @@ export async function salvarDossie(leadId: string, dossie: DossieClienteIA): Pro
     },
     { onConflict: "lead_id" },
   );
+}
+
+// ---------------------------------------------------------------------------
+// Estado de conexão da instância
+// ---------------------------------------------------------------------------
+
+export type EstadoInstancia = {
+  conectado: boolean;
+  estado: string;
+  /** Marco do pareamento — base da curva de aquecimento em `antiBan.ts`. */
+  conectadoEm: Date | null;
+  detalhe?: string;
+};
+
+/**
+ * Reconcilia o estado de conexão guardado no banco com o que o provedor
+ * diz agora, e devolve o resultado já normalizado.
+ *
+ * Esta função é a correção do bug que travava TODA campanha: `conectado_em`
+ * não era escrito em lugar nenhum do sistema, então `reservarCotaCampanha`
+ * lia `null`, respondia "número ainda não foi pareado" e o disparador
+ * parava — com a fila inteira parecendo apenas "pendente", sem erro
+ * nenhum registrado para o corretor ver.
+ *
+ * Sobre carimbar `conectado_em = agora` quando descobrimos um número já
+ * pareado: é deliberadamente conservador. O marco real do pareamento pode
+ * ter sido semanas atrás, mas não temos como saber — e errar para o lado
+ * "número novo" só custa uma cota diária menor nos primeiros dias, que
+ * sobe sozinha. Errar para o outro lado custa o número.
+ */
+export async function sincronizarConexaoInstancia(params: {
+  instanciaId: string;
+  instanceName: string;
+  conectadoEmAtual: string | null;
+}): Promise<EstadoInstancia> {
+  const supabase = createServiceClient();
+
+  const estado = await consultarEstadoConexao(params.instanceName);
+
+  if (!estado.ok) {
+    // Provedor fora do ar não é motivo para apagar um marco de conexão que
+    // já existe: mantemos o que o banco sabe e deixamos o chamador decidir.
+    return {
+      conectado: Boolean(params.conectadoEmAtual),
+      estado: "indisponivel",
+      conectadoEm: params.conectadoEmAtual ? new Date(params.conectadoEmAtual) : null,
+      detalhe: estado.detalhe,
+    };
+  }
+
+  if (!estado.conectado) {
+    await supabase
+      .from("corretor_whatsapp_instancias")
+      .update({ status_conexao: estado.estado === "connecting" ? "conectando" : "desconectado" })
+      .eq("id", params.instanciaId);
+
+    return { conectado: false, estado: estado.estado, conectadoEm: null };
+  }
+
+  const conectadoEm = params.conectadoEmAtual ?? new Date().toISOString();
+
+  await supabase
+    .from("corretor_whatsapp_instancias")
+    .update({
+      status_conexao: "conectado",
+      conectado_em: conectadoEm,
+      ...(estado.telefone ? { telefone_conectado: estado.telefone } : {}),
+      // Um número que responde "open" não está mais em falha: zera o
+      // contador para o disjuntor não abrir por histórico velho.
+      falhas_seguidas: 0,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", params.instanciaId);
+
+  return { conectado: true, estado: estado.estado, conectadoEm: new Date(conectadoEm) };
+}
+
+/**
+ * Aplica o `connection.update` que o provedor empurra pelo webhook.
+ *
+ * Mesmo efeito da sincronização ativa, sem a ida à rede — aqui o estado
+ * chegou de graça, junto do evento.
+ */
+export async function registrarEventoConexao(params: {
+  instanceName: string;
+  estado: string;
+  telefone?: string | null;
+}): Promise<void> {
+  const supabase = createServiceClient();
+  const conectado = params.estado === "open";
+
+  const { data: instancia } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("id, conectado_em")
+    .eq("instance_name", params.instanceName)
+    .maybeSingle();
+
+  if (!instancia) return;
+
+  await supabase
+    .from("corretor_whatsapp_instancias")
+    .update({
+      status_conexao: conectado ? "conectado" : params.estado === "connecting" ? "conectando" : "desconectado",
+      // Só carimba na primeira vez: uma reconexão (queda de internet, troca
+      // de celular) não pode zerar a curva de aquecimento de um número que
+      // já vinha maduro.
+      ...(conectado && !instancia.conectado_em ? { conectado_em: new Date().toISOString() } : {}),
+      ...(conectado && params.telefone ? { telefone_conectado: params.telefone } : {}),
+      ...(conectado ? { falhas_seguidas: 0 } : {}),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", instancia.id);
+}
+
+// ---------------------------------------------------------------------------
+// Trava de disparo (migration 0024)
+// ---------------------------------------------------------------------------
+
+/**
+ * Garante que só um disparador por vez use um número de WhatsApp.
+ *
+ * Três gatilhos independentes chamam o mesmo disparador — o cron diário, o
+ * botão "Processar fila agora" e o auto-encadeamento. Sem trava, dois deles
+ * chegando juntos leem a mesma linha `pendente` e mandam a mesma mensagem
+ * duas vezes, no mesmo segundo: rajada e texto repetido, os dois padrões
+ * que a fila existe para evitar.
+ */
+export async function travarDisparo(escopo: string, dono: string, segundos: number): Promise<boolean> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase.rpc("travar_disparo", {
+    p_escopo: escopo,
+    p_dono: dono,
+    p_segundos: segundos,
+  });
+
+  // Falha ao falar com o banco: não assumimos a trava. Perder um ciclo de
+  // disparo é barato; mandar em duplicidade, não.
+  if (error) return false;
+  return data === true;
+}
+
+export async function destravarDisparo(escopo: string, dono: string): Promise<void> {
+  const supabase = createServiceClient();
+  await supabase.rpc("destravar_disparo", { p_escopo: escopo, p_dono: dono });
 }

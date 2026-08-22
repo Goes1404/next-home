@@ -172,6 +172,25 @@ export async function conectarWhatsapp(): Promise<EstadoConexao> {
     { onConflict: "corretor_id" },
   );
 
+  /*
+   * Carimba o marco do pareamento — é dele que sai a curva de aquecimento
+   * anti-ban e, sem ele, `reservarCotaCampanha` recusa TODO disparo de
+   * campanha (era o que deixava a fila inteira parada em 'pendente' sem
+   * erro nenhum). O webhook `connection.update` também carimba; este
+   * caminho cobre quem já estava pareado antes deste código existir.
+   *
+   * `is("conectado_em", null)` é o que impede uma reconexão (queda de
+   * internet, troca de aparelho, clique repetido no botão) de zerar a curva
+   * de um número que já vinha maduro.
+   */
+  if (resultado.jaConectado) {
+    await supabase
+      .from("corretor_whatsapp_instancias")
+      .update({ conectado_em: new Date().toISOString() })
+      .eq("corretor_id", corretor.id)
+      .is("conectado_em", null);
+  }
+
   revalidatePath("/corretor/whatsapp");
   return {
     configurado: true,

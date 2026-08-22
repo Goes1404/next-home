@@ -91,3 +91,54 @@ corretor).
   instância de propósito, para nunca despachar a fila inteira de uma vez
   só (preserva o espaçamento anti-ban de 35-75s já calculado em
   `agendado_para` por `campaignQueue.ts`).
+
+## Disparo de campanhas — por que a fila ficava 100% parada
+
+Três problemas empilhados, todos descobertos na mesma investigação (agosto
+de 2026). Os três produziam o MESMO sintoma na tela: campanha criada, fila
+inteira em `pendente`, "0 enviados", zero erro em qualquer lugar.
+
+1. **`conectado_em` não era escrito por ninguém.** A coluna existia desde a
+   migration 0020 e era LIDA por `reservarCotaCampanha` (é dela que sai a
+   curva de aquecimento anti-ban), mas nenhum caminho do código a
+   preenchia — nem o `connect`, nem o webhook. Resultado: sempre `null`,
+   sempre "número ainda não foi pareado", e o disparador saía do laço antes
+   de mandar a primeira mensagem. Em produção a instância estava travada em
+   `status_conexao = 'conectando'` desde 18/08 com o número de fato pareado.
+   Agora três caminhos carimbam: o evento `connection.update` do webhook, o
+   botão de conectar, e uma sincronização ativa (`/instance/connectionState`)
+   que o próprio disparador faz antes de desistir.
+2. **Nada batia no disparador com frequência.** Cron da Vercel 1x/dia
+   (teto do Hobby) + botão manual que mandava 3 mensagens e parava. Uma
+   campanha de 40 leads levava semanas. Agora a rota `/api/cron/campanhas`
+   se reagenda sozinha (`after()` + fetch para si mesma) enquanto houver
+   fila que ela CONSEGUIRIA despachar — até 60 elos de ~45s, ≈45 min de
+   fila andando por gatilho. Criar campanha e clicar no botão acendem essa
+   corrente.
+3. **A criação da campanha fazia uma chamada ao Gemini por lead, em série,
+   dentro da server action** — antes de gravar qualquer linha. Com algumas
+   dezenas de leads isso estoura o tempo da função e a campanha não nasce.
+   A variação anti-ban por IA passou para o momento do ENVIO, um item por
+   vez (`variarMensagemComIA`), e o resultado é gravado de volta na linha
+   (`personalizado_por_ia`).
+
+Coisas que valem lembrar daqui:
+
+- **Diagnóstico**: se uma fila está toda em `pendente`, confira NESTA ordem
+  `corretor_whatsapp_instancias.conectado_em` (null = nada sai, nunca),
+  `bloqueado_ate`, `envios_campanha_contador` vs. a cota do dia, e só então
+  `agendado_para`. O painel de Campanhas agora mostra isso em português
+  (`statusDisparo`), justamente para ninguém precisar abrir o banco.
+- **`travar_disparo` / `destravar_disparo` (0024)**: trava por instância,
+  não global. Sem ela, cron + botão + corrente leem a mesma linha
+  `pendente` e mandam a mesma mensagem duas vezes no mesmo segundo.
+  Corolário importante: quando um chamador NÃO consegue a trava, ele não
+  pode encadear — senão cada tique de um minuto abriria uma corrente nova
+  de 60 elos por cima da que já roda.
+- **pg_cron + pg_net já estão instalados no projeto** (migration 0025), mas
+  o tique de um minuto NÃO está agendado: ele precisa do `CRON_SECRET` da
+  Vercel, que não mora no banco. Para ligar a rede de segurança, rode uma
+  vez no SQL editor:
+  `select public.configurar_disparo_automatico('https://next-home-drab.vercel.app/api/cron/campanhas', '<CRON_SECRET>');`
+  Sem isso o disparo continua automático (pela corrente) — só perde o
+  recomeço automático se uma corrente morrer no meio.

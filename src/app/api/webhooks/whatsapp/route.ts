@@ -16,6 +16,7 @@ import {
   liberarConversaPorPalavraChave,
   marcarRespostaCampanha,
   obterOuCriarConversa,
+  registrarEventoConexao,
   pausarBotPorAtendimentoHumano,
   registrarResultadoEnvio,
   resolverInstancia,
@@ -135,6 +136,28 @@ export async function POST(req: NextRequest) {
         { ok: false, error: `Instância "${instanceName}" não cadastrada.` },
         { status: 404 },
       );
+    }
+
+    /*
+     * `connection.update` é o evento que conta quando o corretor termina de
+     * ler o QR Code. Ignorá-lo custou caro: `conectado_em` ficava nulo para
+     * sempre, e como a curva de aquecimento anti-ban parte dessa coluna,
+     * TODA campanha era recusada com "número ainda não foi pareado" — a
+     * fila inteira parada em 'pendente', sem nenhum erro visível no painel.
+     *
+     * Chega sem `remoteJid` e sem texto, então precisa ser tratado antes de
+     * cair na checagem de "mensagem vazia" logo abaixo.
+     */
+    const evento = String(payload.event || payload.type || "").toLowerCase().replace(/_/g, ".");
+    const estadoConexao: string = payload.data?.state || payload.state || "";
+
+    if (evento === "connection.update" || (!text && !sender && estadoConexao)) {
+      await registrarEventoConexao({
+        instanceName,
+        estado: estadoConexao,
+        telefone: (payload.data?.wuid || payload.data?.owner || "").replace(/\D/g, "") || null,
+      });
+      return NextResponse.json({ ok: true, action: "conexao_atualizada", estado: estadoConexao });
     }
 
     const ehAudio = Boolean(!text && audioUrlOrBase64);

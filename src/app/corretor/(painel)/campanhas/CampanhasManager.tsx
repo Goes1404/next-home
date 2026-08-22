@@ -2,18 +2,21 @@
 
 import { useState, useTransition } from "react";
 import type { Empreendimento } from "@/lib/types";
-import { Shield, Building, Download, Rocket, Check, AlertTriangle, Zap } from "lucide-react";
+import { Shield, Building, Download, Rocket, Check, AlertTriangle, Zap, Radio } from "lucide-react";
 import {
   criarCampanha,
   gerarPreviewCampanha,
   processarFilaAgora,
+  statusDisparo,
   type CampanhaListada,
   type FiltroLeadsCampanha,
+  type StatusDisparo,
 } from "./acoes";
 
 interface Props {
   empreendimentos: Empreendimento[];
   campanhasIniciais: CampanhaListada[];
+  statusInicial: StatusDisparo | null;
 }
 
 const ROTULO_STATUS: Record<CampanhaListada["status"], string> = {
@@ -23,7 +26,7 @@ const ROTULO_STATUS: Record<CampanhaListada["status"], string> = {
   concluida: "Concluída",
 };
 
-export function CampanhasManager({ empreendimentos, campanhasIniciais }: Props) {
+export function CampanhasManager({ empreendimentos, campanhasIniciais, statusInicial }: Props) {
   const [titulo, setTitulo] = useState("");
   const [imovelSlug, setImovelSlug] = useState(empreendimentos[0]?.slug ?? "");
   const [filtroLeads, setFiltroLeads] = useState<FiltroLeadsCampanha>("parados_15d");
@@ -33,12 +36,15 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais }: Props) 
   const [gerandoPreview, setGerandoPreview] = useState(false);
   const [previewMensagens, setPreviewMensagens] = useState<string[]>([]);
   const [campanhas, setCampanhas] = useState<CampanhaListada[]>(campanhasIniciais);
+  const [status, setStatus] = useState<StatusDisparo | null>(statusInicial);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [criando, startCriacao] = useTransition();
   const [processando, startProcessamento] = useTransition();
 
   const imovelSelecionado = empreendimentos.find((e) => e.slug === imovelSlug) ?? null;
+
+  const atualizarStatus = async () => setStatus(await statusDisparo());
 
   const gerarPreviewIA = () => {
     setErro(null);
@@ -96,10 +102,11 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais }: Props) 
       ]);
       setTitulo("");
       setPreviewMensagens([]);
+      await atualizarStatus();
       setFeedback(
-        `Campanha criada para ${resultado.totalLeads} lead(s). Os envios seguem a fila com delay seguro de 30-75s — o cron processa automaticamente, ou clique em "Processar fila agora" para não esperar.`,
+        `Campanha criada para ${resultado.totalLeads} lead(s). O disparo já começou sozinho: as mensagens saem uma a cada 35-75s, em horário comercial, até a fila acabar. Não precisa clicar em mais nada.`,
       );
-      setTimeout(() => setFeedback(null), 8000);
+      setTimeout(() => setFeedback(null), 10000);
     });
   };
 
@@ -111,12 +118,21 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais }: Props) 
         setErro(resultado.erro);
         return;
       }
-      setFeedback(
+      await atualizarStatus();
+
+      const resumo =
         resultado.processados === 0
-          ? "Nenhum envio pendente no momento — a fila já está em dia ou aguardando o horário agendado."
-          : `Processados ${resultado.processados} envio(s): ${resultado.enviados} entregue(s), ${resultado.erros} com erro.`,
-      );
-      setTimeout(() => setFeedback(null), 8000);
+          ? "Nenhum envio vencido neste instante."
+          : `Processados ${resultado.processados} envio(s): ${resultado.enviados} entregue(s), ${resultado.erros} com erro.`;
+
+      const continuidade = resultado.continuaSozinha
+        ? ` A fila segue andando sozinha — restam ${resultado.restantes} para enviar.`
+        : resultado.restantes > 0
+          ? ` Restam ${resultado.restantes} na fila. ${resultado.diagnostico.join(" ")}`
+          : " Fila zerada.";
+
+      setFeedback(resumo + continuidade);
+      setTimeout(() => setFeedback(null), 10000);
     });
   };
 
@@ -132,6 +148,66 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais }: Props) 
       {erro && (
         <div className="rounded-2xl border border-alerta-linha bg-alerta-lavado p-4 text-fluid-xs font-semibold text-alerta backdrop-blur duration-200">
           <AlertTriangle className="inline-block w-5 h-5 align-text-bottom mr-1" /> {erro}
+        </div>
+      )}
+
+      {/* Estado do motor de disparo — responde "por que não está saindo?" */}
+      {status && (
+        <div
+          className={`rounded-2xl border p-4 sm:p-5 backdrop-blur ${
+            status.impedimento
+              ? "border-alerta-linha bg-alerta-lavado"
+              : "border-ok-linha bg-ok-lavado"
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-start gap-2">
+              <Radio
+                className={`w-5 h-5 shrink-0 mt-0.5 ${status.impedimento ? "text-alerta" : "text-ok animate-pulse"}`}
+              />
+              <div>
+                <h4 className={`text-fluid-xs font-bold ${status.impedimento ? "text-alerta" : "text-ok"}`}>
+                  {status.impedimento
+                    ? "Disparo automático parado"
+                    : status.pendentes > 0
+                      ? "Disparo automático em andamento"
+                      : "Disparo automático pronto"}
+                </h4>
+                <p className="text-[11px] text-apoio mt-0.5">
+                  {status.impedimento ??
+                    (status.pendentes > 0
+                      ? "As mensagens saem sozinhas, uma a cada 35-75s, sem ninguém precisar clicar."
+                      : "Nenhuma mensagem na fila. Crie uma campanha abaixo.")}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-5 text-fluid-xs text-corpo">
+              <div>
+                <span className="text-tenue block text-[10px]">Na fila</span>
+                <span className="font-bold text-titulo">{status.pendentes}</span>
+              </div>
+              <div>
+                <span className="text-tenue block text-[10px]">Cota de hoje</span>
+                <span className="font-bold text-titulo">
+                  {status.saldoHoje === null ? "—" : status.saldoHoje}
+                </span>
+              </div>
+              {status.proximoAgendadoEm && (
+                <div>
+                  <span className="text-tenue block text-[10px]">Próximo envio</span>
+                  <span className="font-bold text-titulo">
+                    {new Date(status.proximoAgendadoEm).toLocaleString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -302,7 +378,8 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais }: Props) 
           <div>
             <h3 className="text-fluid-base font-bold text-titulo">Histórico de Campanhas</h3>
             <p className="text-fluid-xs text-apoio">
-              Acompanhe o andamento da fila de envios e a taxa de resposta dos clientes.
+              Acompanhe o andamento da fila de envios e a taxa de resposta dos clientes. A fila anda
+              sozinha — o botão ao lado só serve para não esperar o próximo ciclo.
             </p>
           </div>
           <button
@@ -311,7 +388,7 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais }: Props) 
             className="px-4 py-2 rounded-xl bg-vidro-forte hover:bg-vidro-mais text-titulo text-fluid-xs font-semibold transition-colors border border-linha-forte cursor-pointer disabled:opacity-60 shrink-0"
           >
             <Zap className="inline-block w-4 h-4 align-text-bottom mr-1" />
-            {processando ? "Processando..." : "Processar fila agora"}
+            {processando ? "Processando..." : "Empurrar fila agora"}
           </button>
         </div>
 

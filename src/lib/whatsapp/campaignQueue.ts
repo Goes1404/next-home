@@ -25,38 +25,102 @@ function proximoHorarioPermitido(instante: Date): Date {
 }
 
 /**
- * Gera mensagens hiper-personalizadas por IA para cada lead da fila de disparo.
- *
- * Duas proteções anti-ban vivem aqui, e as duas precisam ser observáveis:
- * o espaçamento entre disparos e a variação do texto. Quando a variação por
- * IA não roda (sem chave, erro ou timeout), cada item sai marcado com
- * `personalizadoPorIA: false` — a fila não pode fingir que está protegida.
+ * Aplica os marcadores do template ao lead. Barato, sem rede.
  */
-export async function gerarMensagensCampanhaPersonalizadas(params: {
+export function aplicarTemplate(params: {
+  mensagemBase: string;
+  nomeLead: string;
+  empreendimentoNome?: string;
+}): string {
+  return params.mensagemBase
+    .replace(/{nome}/gi, params.nomeLead || "Tudo bem?")
+    .replace(/{imovel}/gi, params.empreendimentoNome || "nossos lançamentos em Alphaville");
+}
+
+/**
+ * Reescreve UMA mensagem com o Gemini para que nenhum disparo saia idêntico
+ * a outro — a proteção anti-ban de variação de texto.
+ *
+ * Devolve `personalizadoPorIA: false` (e o texto original intacto) sempre
+ * que a variação não acontecer de fato: sem chave, erro de rede, resposta
+ * vazia. A fila não pode fingir que está protegida quando não está.
+ *
+ * Uma chamada por mensagem, chamada no momento do ENVIO e não na criação da
+ * campanha. Fazer as N chamadas de uma vez, em série, dentro da server
+ * action de criar campanha era o que estourava o tempo da função antes de a
+ * fila chegar a ser gravada — campanha com algumas dezenas de leads
+ * simplesmente não nascia.
+ */
+export async function variarMensagemComIA(params: {
+  texto: string;
+  nomeLead: string;
+  timeoutMs?: number;
+}): Promise<{ texto: string; personalizadoPorIA: boolean }> {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  const semVariacao = { texto: params.texto, personalizadoPorIA: false };
+
+  if (!apiKey || !params.nomeLead) return semVariacao;
+
+  const promptVariacao = `Você é um redator imobiliário sênior da Next Home.
+Reescreva a mensagem abaixo para o cliente "${params.nomeLead}", mantendo o objetivo de negócio e o tom consultivo e elegante, mas variando a saudação e vocabulário para torná-la 100% natural, humana e única.
+Nunca use emojis em excesso. Máximo 2 parágrafos curtos.
+
+Mensagem Original:
+${params.texto}
+
+Mensagem Reescrita (apenas o texto puro da mensagem):`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), params.timeoutMs ?? 12000);
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: promptVariacao }] }],
+          generationConfig: { temperature: 0.7 },
+        }),
+        signal: controller.signal,
+      },
+    );
+
+    clearTimeout(timeoutId);
+    if (!res.ok) return semVariacao;
+
+    const json = await res.json();
+    const textoGerado = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (textoGerado && textoGerado.trim().length > 15) {
+      return { texto: textoGerado.trim(), personalizadoPorIA: true };
+    }
+  } catch (err) {
+    console.warn("Variação por IA indisponível; mantendo o texto base:", err);
+  }
+
+  return semVariacao;
+}
+
+/**
+ * Calcula os horários humanizados de uma fila de disparo, sem tocar em rede.
+ *
+ * A proteção que vive aqui é o espaçamento: 35-75s entre disparos, sempre
+ * dentro do horário comercial. É este cálculo que o disparador obedece —
+ * ele nunca manda um item antes de `agendadoPara`.
+ */
+export function montarFilaCampanha(params: {
   campanhaId: string;
-  leads: { id: string; nome: string; telefone: string; historicoOuInteresse?: string }[];
+  leads: { id: string; nome: string; telefone: string }[];
   mensagemBase: string;
   empreendimentoNome?: string;
   intervaloSegundosMinimo?: number;
-}): Promise<ItemFilaCampanha[]> {
-  const {
-    campanhaId,
-    leads,
-    mensagemBase,
-    empreendimentoNome,
-    intervaloSegundosMinimo = INTERVALO_MINIMO_SEGUNDOS,
-  } = params;
+}): ItemFilaCampanha[] {
+  const { campanhaId, leads, mensagemBase, empreendimentoNome } = params;
+  const intervaloSegundosMinimo = params.intervaloSegundosMinimo ?? INTERVALO_MINIMO_SEGUNDOS;
   const agora = Date.now();
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-
-  if (!apiKey) {
-    console.warn(
-      "Campanha sem GEMINI_API_KEY: as mensagens sairão sem variação por IA, aumentando o risco de bloqueio por spam.",
-    );
-  }
-
-  const itensFila: ItemFilaCampanha[] = [];
+  const itens: ItemFilaCampanha[] = [];
 
   // Acumulador, não `i * delay`: como cada volta sorteia o próprio atraso,
   // multiplicar pelo índice faz o instante de um item ficar ANTES do
@@ -75,56 +139,19 @@ export async function gerarMensagensCampanhaPersonalizadas(params: {
     const agendadoPara = proximoHorarioPermitido(bruto).toISOString();
     deslocamentoSegundos += atrasoSegundos;
 
-    let textoFinal = mensagemBase
-      .replace(/{nome}/gi, lead.nome || "Tudo bem?")
-      .replace(/{imovel}/gi, empreendimentoNome || "nossos lançamentos em Alphaville");
-
-    let personalizadoPorIA = false;
-
-    // Se houver Gemini API Key, hiper-personaliza a saudação para que nenhuma mensagem seja idêntica
-    if (apiKey && lead.nome) {
-      try {
-        const promptVariacao = `Você é um redator imobiliário sênior da Next Home.
-Reescreva a mensagem abaixo para o cliente "${lead.nome}", mantendo o objetivo de negócio e o tom consultivo e elegante, mas variando a saudação e vocabulário para torná-la 100% natural, humana e única.
-Nunca use emojis em excesso. Máximo 2 parágrafos curtos.
-
-Mensagem Original:
-${textoFinal}
-
-Mensagem Reescrita (apenas o texto puro da mensagem):`;
-
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ role: "user", parts: [{ text: promptVariacao }] }],
-              generationConfig: { temperature: 0.7 },
-            }),
-          },
-        );
-
-        if (res.ok) {
-          const json = await res.json();
-          const textoGerado = json.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (textoGerado && textoGerado.trim().length > 15) {
-            textoFinal = textoGerado.trim();
-            personalizadoPorIA = true;
-          }
-        }
-      } catch (err) {
-        console.warn("Fallback para mensagem base na fila:", err);
-      }
-    }
-
-    itensFila.push({
+    itens.push({
       id: `fila-${campanhaId}-${lead.id}`,
       campanhaId,
       leadId: lead.id,
       telefone: lead.telefone,
-      mensagemPersonalizada: textoFinal,
-      personalizadoPorIA,
+      mensagemPersonalizada: aplicarTemplate({
+        mensagemBase,
+        nomeLead: lead.nome,
+        empreendimentoNome,
+      }),
+      // A variação por IA acontece no envio (ver `variarMensagemComIA`).
+      // Nasce false porque, neste instante, ela de fato ainda não ocorreu.
+      personalizadoPorIA: false,
       status: "pendente",
       agendadoPara,
       enviadoEm: null,
@@ -134,5 +161,44 @@ Mensagem Reescrita (apenas o texto puro da mensagem):`;
     });
   }
 
-  return itensFila;
+  return itens;
+}
+
+/**
+ * Monta a fila JÁ com a variação por IA aplicada em todos os itens.
+ *
+ * Continua existindo para o preview do painel, que roda sobre uma amostra
+ * de 3 leads e precisa mostrar ao corretor o texto exato que sairia. Para a
+ * fila de verdade use `montarFilaCampanha` + `variarMensagemComIA` no
+ * envio: N chamadas de IA na criação da campanha não cabem no tempo de uma
+ * server action, nem em paralelo (a cota do Gemini rejeita a rajada).
+ */
+export async function gerarMensagensCampanhaPersonalizadas(params: {
+  campanhaId: string;
+  leads: { id: string; nome: string; telefone: string; historicoOuInteresse?: string }[];
+  mensagemBase: string;
+  empreendimentoNome?: string;
+  intervaloSegundosMinimo?: number;
+}): Promise<ItemFilaCampanha[]> {
+  if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_AI_API_KEY) {
+    console.warn(
+      "Campanha sem GEMINI_API_KEY: as mensagens sairão sem variação por IA, aumentando o risco de bloqueio por spam.",
+    );
+  }
+
+  const itens = montarFilaCampanha(params);
+
+  return Promise.all(
+    itens.map(async (item, indice) => {
+      const variacao = await variarMensagemComIA({
+        texto: item.mensagemPersonalizada,
+        nomeLead: params.leads[indice]?.nome ?? "",
+      });
+      return {
+        ...item,
+        mensagemPersonalizada: variacao.texto,
+        personalizadoPorIA: variacao.personalizadoPorIA,
+      };
+    }),
+  );
 }

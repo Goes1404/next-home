@@ -4,19 +4,25 @@ import { revalidatePath } from "next/cache";
 import { getCorretorLogado, getMeusLeads } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import type { Lead } from "@/lib/types";
+import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
 import { processarFilaCampanhas } from "@/lib/whatsapp/campaignDispatcher";
-import { gerarMensagensCampanhaPersonalizadas } from "@/lib/whatsapp/campaignQueue";
+import { gerarMensagensCampanhaPersonalizadas, montarFilaCampanha } from "@/lib/whatsapp/campaignQueue";
 import { provedorConfigurado } from "@/lib/whatsapp/provider";
+import { saldoDiario, dentroDaJanela } from "@/lib/whatsapp/antiBan";
 
 /**
- * Ações do painel de Campanhas: criar, listar e (quando o corretor não quer
- * esperar o cron) processar a fila na hora.
+ * Ações do painel de Campanhas: criar, listar, diagnosticar e (quando o
+ * corretor não quer esperar nem um minuto) empurrar a fila na hora.
  *
- * A montagem da fila (`gerarMensagensCampanhaPersonalizadas`) e o envio de
- * fato (`processarFilaCampanhas`) são os mesmos módulos usados pelo cron —
- * este arquivo só decide QUAIS leads entram e grava o resultado, sob a
- * sessão do corretor logado (RLS via `createClient`, nunca o cliente de
- * serviço aqui).
+ * A montagem da fila (`montarFilaCampanha`) e o envio de fato
+ * (`processarFilaCampanhas`) são os mesmos módulos usados pelo disparo
+ * automático — este arquivo só decide QUAIS leads entram e grava o
+ * resultado, sob a sessão do corretor logado (RLS via `createClient`, nunca
+ * o cliente de serviço aqui).
+ *
+ * Criar uma campanha já acende a corrente de auto-disparo
+ * (`acenderCorrenteDeDisparo`): a partir daí as mensagens saem sozinhas,
+ * uma a cada 35-75s, sem ninguém clicar em nada.
  */
 
 export type FiltroLeadsCampanha = "parados_15d" | "novos_sem_contato" | "todos";
@@ -116,7 +122,15 @@ export async function criarCampanha(params: {
 
   if (erroCampanha || !campanha) return { erro: "Não foi possível criar a campanha agora." };
 
-  const fila = await gerarMensagensCampanhaPersonalizadas({
+  // Fila montada SEM chamar a IA: só interpolação de template e cálculo de
+  // horários. A variação anti-ban por IA acontece no envio, um item por vez
+  // (`variarMensagemComIA`, usada pelo disparador).
+  //
+  // Antes, esta action fazia uma chamada ao Gemini por lead, em série,
+  // antes de gravar qualquer coisa. Com algumas dezenas de leads isso
+  // estoura o tempo da função e a campanha simplesmente não nasce — o
+  // corretor via "criando..." e nada aparecia.
+  const fila = montarFilaCampanha({
     campanhaId: campanha.id,
     leads: elegiveis,
     mensagemBase: params.mensagemBase,
@@ -129,6 +143,7 @@ export async function criarCampanha(params: {
       lead_id: item.leadId,
       telefone: item.telefone,
       mensagem_personalizada: item.mensagemPersonalizada,
+      personalizado_por_ia: item.personalizadoPorIA,
       status: item.status,
       agendado_para: item.agendadoPara,
     })),
@@ -139,6 +154,10 @@ export async function criarCampanha(params: {
     await supabase.from("whatsapp_campanhas").delete().eq("id", campanha.id);
     return { erro: "Não foi possível montar a fila de envio agora." };
   }
+
+  // Acende a corrente: a primeira mensagem sai em segundos e a fila segue
+  // andando sozinha, sem depender do corretor clicar em nada.
+  acenderCorrenteDeDisparo();
 
   revalidatePath("/corretor/campanhas");
   return { ok: true, campanhaId: campanha.id, totalLeads: elegiveis.length };
@@ -178,26 +197,47 @@ export async function listarCampanhas(): Promise<CampanhaListada[]> {
 }
 
 export type ResultadoProcessarFila =
-  | { ok: true; processados: number; enviados: number; erros: number }
+  | {
+      ok: true;
+      processados: number;
+      enviados: number;
+      erros: number;
+      restantes: number;
+      /** true = a fila segue andando sozinha a partir daqui. */
+      continuaSozinha: boolean;
+      diagnostico: string[];
+    }
   | { erro: string };
 
 /**
- * Processa a fila deste corretor agora, sem esperar o próximo tique do
- * cron. Existe porque o cron só bate uma vez por dia (plano Hobby da Vercel
- * recusa o deploy inteiro se for mais frequente — ver vercel.json) — sem
- * este botão, uma campanha recém-criada ficaria com a IA de braços cruzados
- * até o disparo do dia seguinte.
+ * Empurra a fila deste corretor agora, e deixa a corrente acesa.
+ *
+ * O botão continua existindo para quem não quer esperar nem um minuto, mas
+ * deixou de ser o caminho principal: ele processa um lote e acende a
+ * corrente de auto-disparo, que segue despachando sozinha. Antes, cada
+ * clique mandava no máximo 3 mensagens e parava — uma campanha de 40 leads
+ * exigia o corretor clicando o dia inteiro.
  */
 export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
 
-  const resultado = await processarFilaCampanhas({ corretorId: corretor.id, limiteTotal: 10 });
+  const resultado = await processarFilaCampanhas({
+    corretorId: corretor.id,
+    limiteTotal: 2,
+    // A server action responde para uma tela com alguém olhando: trabalha
+    // pouco e delega o resto à corrente, em vez de segurar o botão girando.
+    // O trabalho de verdade é da corrente, que tem os 60s da rota inteira.
+    orcamentoMs: 8_000,
+  });
+
+  if (resultado.deveContinuar) acenderCorrenteDeDisparo();
+
   revalidatePath("/corretor/campanhas");
 
   if (!resultado.dentroDaJanela) {
     return {
-      erro: "Fora do horário comercial (9h-20h, segunda a sábado) — campanhas não disparam agora. A fila segue esperando a próxima janela.",
+      erro: "Fora do horário comercial (9h às 20h59, de segunda a sábado) — campanhas não disparam agora. A fila segue esperando a próxima janela.",
     };
   }
 
@@ -206,5 +246,103 @@ export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
     processados: resultado.processados,
     enviados: resultado.enviados,
     erros: resultado.erros,
+    restantes: resultado.restantes,
+    continuaSozinha: resultado.deveContinuar,
+    diagnostico: resultado.diagnostico,
+  };
+}
+
+export type StatusDisparo = {
+  /** Nome pareado no provedor; null quando o número ainda não conectou. */
+  numeroConectado: string | null;
+  statusConexao: string;
+  /** Quantos disparos ainda cabem hoje neste número (curva de aquecimento). */
+  saldoHoje: number | null;
+  dentroDaJanela: boolean;
+  pendentes: number;
+  proximoAgendadoEm: string | null;
+  /** O que está impedindo a fila de andar, em português, ou null se está tudo certo. */
+  impedimento: string | null;
+};
+
+/**
+ * O que o painel precisa saber para responder "por que minha campanha não
+ * está saindo?" sem ninguém abrir o banco.
+ *
+ * Esta pergunta não tinha resposta antes: uma fila 100% pendente era
+ * indistinguível de uma fila travada por número não pareado, cota estourada
+ * ou disjuntor aberto. Os três casos apareciam como "0 enviados".
+ */
+export async function statusDisparo(): Promise<StatusDisparo | null> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return null;
+
+  const supabase = await createClient();
+
+  const { data: instancia } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("status_conexao, telefone_conectado, conectado_em, bloqueado_ate, envios_campanha_contador, envios_campanha_data")
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+
+  const { data: campanhas } = await supabase
+    .from("whatsapp_campanhas")
+    .select("id")
+    .eq("corretor_id", corretor.id)
+    .eq("status", "em_andamento");
+
+  const ids = (campanhas ?? []).map((c) => c.id);
+
+  let pendentes = 0;
+  let proximoAgendadoEm: string | null = null;
+
+  if (ids.length > 0) {
+    const { count } = await supabase
+      .from("whatsapp_campanhas_fila")
+      .select("id", { count: "exact", head: true })
+      .in("campanha_id", ids)
+      .eq("status", "pendente");
+    pendentes = count ?? 0;
+
+    const { data: proximo } = await supabase
+      .from("whatsapp_campanhas_fila")
+      .select("agendado_para")
+      .in("campanha_id", ids)
+      .eq("status", "pendente")
+      .order("agendado_para", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    proximoAgendadoEm = proximo?.agendado_para ?? null;
+  }
+
+  const conectadoEm = instancia?.conectado_em ? new Date(instancia.conectado_em) : null;
+  const hoje = new Date().toISOString().slice(0, 10);
+  const enviosHoje = instancia?.envios_campanha_data === hoje ? instancia.envios_campanha_contador : 0;
+
+  const saldoHoje = conectadoEm ? saldoDiario({ conectadoEm, enviosCampanhaHoje: enviosHoje }) : null;
+  const janelaAberta = dentroDaJanela(new Date());
+  const bloqueado = instancia?.bloqueado_ate && new Date(instancia.bloqueado_ate) > new Date();
+
+  let impedimento: string | null = null;
+  if (!instancia) {
+    impedimento = "Nenhum número de WhatsApp cadastrado. Conecte o seu em Configurações do WhatsApp.";
+  } else if (bloqueado) {
+    impedimento = `Envios pausados automaticamente até ${new Date(instancia.bloqueado_ate as string).toLocaleString("pt-BR")} após falhas seguidas do provedor.`;
+  } else if (instancia.status_conexao !== "conectado" || !conectadoEm) {
+    impedimento = "O número ainda não está pareado. Leia o QR Code em Configurações do WhatsApp — sem isso nenhum disparo é autorizado.";
+  } else if (saldoHoje === 0) {
+    impedimento = "Cota diária de disparos deste número atingida. A fila continua sozinha amanhã.";
+  } else if (!janelaAberta) {
+    impedimento = "Fora do horário comercial (9h às 20h59, de segunda a sábado). A fila retoma sozinha na próxima janela.";
+  }
+
+  return {
+    numeroConectado: instancia?.telefone_conectado ?? null,
+    statusConexao: instancia?.status_conexao ?? "sem_instancia",
+    saldoHoje,
+    dentroDaJanela: janelaAberta,
+    pendentes,
+    proximoAgendadoEm,
+    impedimento,
   };
 }

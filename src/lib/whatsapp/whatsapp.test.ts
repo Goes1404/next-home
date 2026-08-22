@@ -6,6 +6,8 @@ import { extrairDossieCliente, resumirMudancasDossie } from "./dossierExtractor"
 import type { DossieClienteIA } from "./types";
 import {
   gerarMensagensCampanhaPersonalizadas,
+  montarFilaCampanha,
+  variarMensagemComIA,
   INTERVALO_MINIMO_SEGUNDOS,
   INTERVALO_MAXIMO_SEGUNDOS,
 } from "./campaignQueue";
@@ -258,8 +260,14 @@ describe("Fila de campanha — proteção anti-ban", () => {
     { id: "lead-5", nome: "Paulo", telefone: "5511988885555" },
   ];
 
+  /*
+   * Caminho de PRODUÇÃO da fila. A variante com IA
+   * (`gerarMensagensCampanhaPersonalizadas`) ficou só para o preview do
+   * painel: uma chamada de rede por lead na criação da campanha estourava o
+   * tempo da server action antes de a fila chegar a ser gravada.
+   */
   async function filaPadrao() {
-    return gerarMensagensCampanhaPersonalizadas({
+    return montarFilaCampanha({
       campanhaId: "camp-100",
       leads,
       mensagemBase: "Olá, {nome}! Conheça o {imovel}.",
@@ -314,6 +322,34 @@ describe("Fila de campanha — proteção anti-ban", () => {
     // mensagens saíram variadas.
     const fila = await filaPadrao();
     expect(fila.every((i) => i.personalizadoPorIA === false)).toBe(true);
+  });
+
+  it("devolve o texto intacto quando a variação por IA não acontece", async () => {
+    // A variação passou a rodar no ENVIO, item a item. Se ela falhar, o
+    // disparo tem que sair mesmo assim — com o texto do template e admitindo
+    // que a proteção de variação não aconteceu naquele item.
+    const original = "Olá, Marina! Conheça o Canvas Alphaville.";
+    const resultado = await variarMensagemComIA({ texto: original, nomeLead: "Marina" });
+
+    expect(resultado.texto).toBe(original);
+    expect(resultado.personalizadoPorIA).toBe(false);
+  });
+
+  it("o preview do painel aplica as mesmas proteções da fila real", async () => {
+    const preview = await gerarMensagensCampanhaPersonalizadas({
+      campanhaId: "preview",
+      leads: leads.slice(0, 3),
+      mensagemBase: "Olá, {nome}! Conheça o {imovel}.",
+      empreendimentoNome: "Canvas Alphaville",
+    });
+
+    expect(preview).toHaveLength(3);
+    expect(preview[0].mensagemPersonalizada).toContain("Dr. Roberto");
+
+    const instantes = preview.map((i) => new Date(i.agendadoPara).getTime());
+    for (let i = 1; i < instantes.length; i++) {
+      expect(instantes[i]).toBeGreaterThan(instantes[i - 1]);
+    }
   });
 });
 

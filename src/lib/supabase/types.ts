@@ -1,7 +1,7 @@
 /**
  * Tipos gerados a partir do projeto Supabase real (prhhrqyubjcafvucirri) via
  * Management API — `types/typescript`. Não editar à mão; regenerar sempre
- * que `supabase/migrations/` mudar. Última geração: depois da 0022
+ * que `supabase/migrations/` mudar. Última geração: depois da 0024
  * (aplicada manualmente à conexão direta com Postgres — `gen types` local
  * exige Docker, indisponível neste ambiente; colunas conferidas por
  * introspecção antes de editar este arquivo).
@@ -813,6 +813,27 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_disparo_lock: {
+        Row: {
+          escopo: string
+          dono: string
+          travado_ate: string
+          atualizado_em: string
+        }
+        Insert: {
+          escopo: string
+          dono: string
+          travado_ate: string
+          atualizado_em?: string
+        }
+        Update: {
+          escopo?: string
+          dono?: string
+          travado_ate?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
       whatsapp_mensagens: {
         Row: {
           id: string
@@ -904,6 +925,8 @@ export type Database = {
           lead_id: string | null
           telefone: string
           mensagem_personalizada: string
+          personalizado_por_ia: boolean
+          tentativas: number
           status: "pendente" | "enviado" | "erro" | "respondido"
           agendado_para: string
           enviado_em: string | null
@@ -917,6 +940,8 @@ export type Database = {
           lead_id?: string | null
           telefone: string
           mensagem_personalizada: string
+          personalizado_por_ia?: boolean
+          tentativas?: number
           status?: "pendente" | "enviado" | "erro" | "respondido"
           agendado_para?: string
           enviado_em?: string | null
@@ -930,6 +955,8 @@ export type Database = {
           lead_id?: string | null
           telefone?: string
           mensagem_personalizada?: string
+          personalizado_por_ia?: boolean
+          tentativas?: number
           status?: "pendente" | "enviado" | "erro" | "respondido"
           agendado_para?: string
           enviado_em?: string | null
@@ -1003,6 +1030,14 @@ export type Database = {
       consumir_cota_campanha: {
         Args: { p_instancia_id: string; p_limite: number }
         Returns: number
+      }
+      travar_disparo: {
+        Args: { p_dono: string; p_escopo: string; p_segundos: number }
+        Returns: boolean
+      }
+      destravar_disparo: {
+        Args: { p_dono: string; p_escopo: string }
+        Returns: undefined
       }
     }
     Enums: {

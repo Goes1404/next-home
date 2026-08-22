@@ -134,6 +134,66 @@ export async function obterQrCodeInstancia(instanceName: string): Promise<Result
   }
 }
 
+export type EstadoConexaoProvedor =
+  | { ok: true; conectado: boolean; estado: string; telefone: string | null }
+  | { ok: false; detalhe: string };
+
+/**
+ * Pergunta ao provedor se a instância está de fato pareada AGORA.
+ *
+ * Existe porque o pareamento termina fora do nosso alcance: o corretor
+ * aponta o celular para o QR e quem descobre isso é a Evolution, não nós.
+ * Sem uma consulta ativa, o banco fica eternamente em "conectando" — e foi
+ * exatamente o que aconteceu em produção: a instância pareada de verdade
+ * seguia marcada como não conectada, e por causa disso `conectado_em`
+ * nunca era preenchido e NENHUM disparo de campanha era autorizado.
+ *
+ * O webhook `connection.update` também atualiza esse estado, mas ele só
+ * chega uma vez, no instante da troca. Quem entra depois (um deploy novo,
+ * um evento perdido, a instância pareada antes deste código existir)
+ * precisa de alguém que pergunte — é esta função.
+ */
+export async function consultarEstadoConexao(instanceName: string): Promise<EstadoConexaoProvedor> {
+  const config = configDoProvedor();
+  if (!config) return { ok: false, detalhe: "Provedor de WhatsApp não configurado neste ambiente." };
+  if (!instanceName) return { ok: false, detalhe: "Instância sem nome." };
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const res = await fetch(
+      `${config.baseUrl}/instance/connectionState/${encodeURIComponent(instanceName)}`,
+      { method: "GET", headers: { apikey: config.apiKey }, signal: controller.signal },
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const corpo = await res.text().catch(() => "");
+      return { ok: false, detalhe: `HTTP ${res.status}${corpo ? `: ${corpo.slice(0, 200)}` : ""}` };
+    }
+
+    const json = await res.json().catch(() => ({}));
+    const estado: string = json?.instance?.state || json?.state || "desconhecido";
+    const telefoneBruto: string =
+      json?.instance?.owner || json?.instance?.wuid || json?.owner || "";
+
+    return {
+      ok: true,
+      // "open" é o único estado da Evolution que significa "pode enviar".
+      // "connecting" e "close" não — tratar qualquer um dos dois como
+      // conectado faria a fila tentar despachar contra um número morto e
+      // queimar o disjuntor de falhas seguidas à toa.
+      conectado: estado === "open",
+      estado,
+      telefone: telefoneBruto ? telefoneBruto.replace(/\D/g, "") || null : null,
+    };
+  } catch (err) {
+    return { ok: false, detalhe: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 /**
  * Mostra "digitando..." no WhatsApp do cliente por `duracaoMs`.
  *
