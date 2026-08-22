@@ -11,7 +11,7 @@ import {
   INTERVALO_MINIMO_SEGUNDOS,
   INTERVALO_MAXIMO_SEGUNDOS,
 } from "./campaignQueue";
-import { transcreverAudioWhatsapp } from "./audioTranscriber";
+import { transcreverAudioWhatsapp, transcricaoTemConteudo } from "./audioTranscriber";
 import {
   formatarAlertaCorretor,
   formatarAtualizacaoDossie,
@@ -508,5 +508,22 @@ describe("Provedor de envio", () => {
 
     expect(semTelefone.enviado).toBe(false);
     expect(semTelefone.motivo).toBe("dados_invalidos");
+  });
+});
+
+describe("Transcrição de áudio: conteúdo de verdade", () => {
+  it("ponto solto do Whisper não é fala do cliente", () => {
+    // O Whisper não recusa como o Gemini: para áudio sem fala ele devolve
+    // "." com HTTP 200. Sem esta guarda o ponto entrava no histórico e a
+    // IA respondia a ele.
+    expect(transcricaoTemConteudo(".")).toBe(false);
+    expect(transcricaoTemConteudo(" ")).toBe(false);
+    expect(transcricaoTemConteudo("...")).toBe(false);
+    expect(transcricaoTemConteudo("")).toBe(false);
+  });
+
+  it("fala curta de verdade passa", () => {
+    expect(transcricaoTemConteudo("oi")).toBe(true);
+    expect(transcricaoTemConteudo("Quero visitar sábado de manhã.")).toBe(true);
   });
 });

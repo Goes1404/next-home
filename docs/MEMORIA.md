@@ -273,9 +273,33 @@ trilho+IA, follow-up, métricas de funil).
   de cortesia, com busca de chaves BALANCEADAS (regex guloso truncaria
   `visitaProposta`, que é aninhado). É o maior risco novo do caminho da
   NVIDIA e o mais testado.
-- **Áudio e PDF continuam SÓ no Gemini** (`audioTranscriber.ts`,
-  `importacao.ts`): mandam `inlineData`, e modelo de texto não recebe.
-  Nunca migrar esses dois para a cascata.
+- **A ordem da cascata é Groq → Gemini → NVIDIA, e foi MEDIDA.** A NVIDIA
+  já esteve na frente e foi rebaixada: dos 44 candidatos de chat, 21 dão
+  `404 Not found for account` e 14 estouram o tempo; os que respondem
+  oscilam entre 5,5s e timeout na mesma tarde. O Gemini é o único com
+  histórico limpo em produção (16/16). A Groq lidera por velocidade (1,4s)
+  e porque o 429 dela custa 60ms — é a aposta mais barata da fila.
+- **O teto da Groq é de TOKENS, não de requisições**: 8.000/min no
+  `gpt-oss-120b`, e o prompt do agente gasta ~3.400 — **duas chamadas por
+  minuto**. Por isso ela é a primeira e não a única. O benchmark espaça 32s
+  entre chamadas por causa disso; sem a pausa ele reprova todo mundo e mede
+  a própria pressa.
+- **Dois parâmetros da Groq que mudam tudo** (`groq.ts`): `max_tokens` em
+  2048 TRUNCAVA o JSON (os modelos gastam 1279–1735 tokens de saída), e
+  como a Groq valida antes de devolver, o corte virava HTTP 400
+  `json_validate_failed` que parecia defeito do modelo. E
+  `reasoning_effort: "low"` (só na família `gpt-oss`) derruba a saída de
+  1279 para 107 tokens e a resposta de 3,2s para 0,7s.
+- **PDF continua SÓ no Gemini** (`importacao.ts`): manda `inlineData`, e
+  modelo de texto não recebe. Nunca migrar para a cascata de texto.
+- **Áudio tem reserva desde agosto/2026** (`groqAudio.ts`): Gemini na
+  frente — ele transcreve E resume a intenção na mesma chamada — e Whisper
+  da Groq embaixo, quando ele não responde. Não entra em `llm.ts` porque o
+  contrato é outro (`multipart/form-data`, resposta em texto puro).
+- **O Whisper não recusa como o Gemini.** Diante de áudio sem fala ele
+  devolve `"."` com HTTP 200 — e sem `transcricaoTemConteudo` esse ponto
+  entrava no histórico COMO SE FOSSE FALA DO CLIENTE, com a IA respondendo
+  a ele. Flagrado testando a reserva com um tom puro.
 - **`ia_interacoes.modelo` é o eixo de comparação entre provedores.** Era a
   constante do Gemini cravada no insert — diria "gemini" mesmo quando quem
   atendesse fosse a NVIDIA. Hoje é o modelo que de fato respondeu, e o

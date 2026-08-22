@@ -1,6 +1,10 @@
 /**
- * Módulo de Transcrição e Compreensão de Áudios do WhatsApp usando Gemini 2.0 Flash Multimodal.
+ * Módulo de Transcrição e Compreensão de Áudios do WhatsApp.
+ *
+ * Gemini multimodal na frente (transcreve E resume a intenção numa
+ * chamada só); Whisper da Groq como reserva quando ele não responde.
  */
+import { groqAudioConfigurado, transcreverComGroq } from "./groqAudio";
 
 export interface ResultadoAudio {
   textoTranscrito: string;
@@ -46,6 +50,21 @@ export function pareceRecusaDeTranscricao(texto: string): boolean {
   return PADROES_DE_RECUSA.some((padrao) => padrao.test(limpo));
 }
 
+/**
+ * A transcrição tem conteúdo de verdade, ou é só pontuação e ruído?
+ *
+ * O Whisper não recusa como o Gemini: diante de um áudio sem fala ele
+ * devolve `"."` ou `" "`, com HTTP 200. Sem esta checagem esse ponto entrava
+ * no histórico da conversa COMO SE FOSSE FALA DO CLIENTE, e a IA respondia
+ * a ele. Flagrado testando a reserva com um áudio de tom puro.
+ */
+export function transcricaoTemConteudo(texto: string): boolean {
+  const limpo = texto?.trim() ?? "";
+  // Tira pontuação e espaços: o que sobra precisa ser palavra.
+  const letras = limpo.replace(/[\s.,!?;:—–\-…"']/g, "");
+  return letras.length >= 2;
+}
+
 const PROMPT_AUDIO = `Você é um assistente especializado em transcrever e compreender áudios de clientes imobiliários de alto padrão em Alphaville e região.
 Transcreva fielmente a fala do cliente e, caso haja termos em português coloquial ou gírias, preserve o significado original.
 
@@ -64,7 +83,10 @@ export async function transcreverAudioWhatsapp(
 ): Promise<ResultadoAudio> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
 
-  if (!apiKey || !audioBase64OrUrl) {
+  // Sem áudio não há o que fazer. Sem chave do Gemini, ainda há: a Groq
+  // pode transcrever. Desistir aqui era o que fazia a falta de UM provedor
+  // silenciar o cliente.
+  if (!audioBase64OrUrl || (!apiKey && !groqAudioConfigurado())) {
     return {
       textoTranscrito: "[Áudio recebido — não foi possível transcrever automaticamente]",
       intencaoResumida: "Transcrição indisponível: ouça o áudio original no WhatsApp.",
@@ -72,12 +94,15 @@ export async function transcreverAudioWhatsapp(
     };
   }
 
+  // Fora do `try` para sobreviver ao caminho de erro do Gemini: é este
+  // buffer que a Groq reaproveita, sem baixar o áudio de novo.
+  let dadosBase64 = audioBase64OrUrl;
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     // Se for URL, baixa o buffer e converte para base64
-    let dadosBase64 = audioBase64OrUrl;
     if (audioBase64OrUrl.startsWith("http://") || audioBase64OrUrl.startsWith("https://")) {
       const resBuffer = await fetch(audioBase64OrUrl, { signal: controller.signal });
       if (resBuffer.ok) {
@@ -88,7 +113,8 @@ export async function transcreverAudioWhatsapp(
       dadosBase64 = audioBase64OrUrl.split("base64,")[1];
     }
 
-    const response = await fetch(
+    const response = apiKey
+      ? await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
@@ -115,11 +141,12 @@ export async function transcreverAudioWhatsapp(
           },
         }),
       },
-    );
+        )
+      : null;
 
     clearTimeout(timeoutId);
 
-    if (response.ok) {
+    if (response?.ok) {
       const json = await response.json();
       const texto = json.candidates?.[0]?.content?.parts?.[0]?.text;
       if (texto) {
@@ -142,6 +169,31 @@ export async function transcreverAudioWhatsapp(
     }
   } catch (err) {
     console.error("Erro ao transcrever áudio no Gemini:", err);
+  }
+
+  /*
+   * A rede embaixo. Chegar aqui significa que o Gemini não transcreveu —
+   * sem chave, fora do ar, ou recusando o áudio. Antes disso virava
+   * "[não foi possível transcrever]" e o cliente ficava sem resposta até o
+   * corretor ouvir o áudio na mão.
+   *
+   * O Whisper só transcreve: a intenção resumida, que o Gemini devolve de
+   * graça na mesma chamada, aqui não existe. Melhor uma transcrição sem
+   * resumo que silêncio — e o texto abaixo não finge ter o que não tem.
+   */
+  if (groqAudioConfigurado() && dadosBase64) {
+    const reserva = await transcreverComGroq(dadosBase64, mimeType || "audio/ogg");
+    if (reserva.ok && !pareceRecusaDeTranscricao(reserva.texto) && transcricaoTemConteudo(reserva.texto)) {
+      console.warn("[audioTranscriber] Gemini indisponível; transcrito pela Groq (Whisper).");
+      return {
+        textoTranscrito: reserva.texto,
+        intencaoResumida: "Mensagem de voz do cliente (transcrita pela reserva, sem resumo de intenção).",
+        sucesso: true,
+      };
+    }
+    if (!reserva.ok) {
+      console.error("[audioTranscriber] reserva da Groq também falhou:", reserva.erro);
+    }
   }
 
   // `sucesso: false` e o texto precisam contar a MESMA história: dizer

@@ -16,19 +16,24 @@ import { valeRetentar, type MotivoFalhaLlm, type ResultadoLlm } from "./llmTipos
  * que resolve é ter DOIS: quando o primeiro recusa, demora ou cai, o
  * segundo responde e ninguém percebe.
  *
- * Ordem: **Groq → NVIDIA → Gemini**, e a ordem foi medida, não escolhida
- * por preferência:
+ * Ordem: **Groq → Gemini → NVIDIA**, e ela foi MEDIDA, não escolhida por
+ * preferência. Velocidade decide a frente; confiabilidade decide o resto:
  *
- * | provedor | latência com o prompt real |
- * |---|---|
- * | Groq (`gpt-oss-120b`) | ~0,8s |
- * | NVIDIA (`mistral-nemotron`) | ~5,5s, instável |
- * | Gemini 2.5 Flash | 4,9–6,9s |
+ * | provedor | latência | confiabilidade medida |
+ * |---|---|---|
+ * | Groq (`gpt-oss-120b`) | 1,4s | teto de 8k tokens/min → ~2 chamadas/min |
+ * | Gemini 2.5 Flash | 5–7s | 16 de 16 respostas em produção |
+ * | NVIDIA (`mistral-nemotron`) | 6–9s | 35 de 44 modelos nem existem; 3 a 6 falhas em 10 |
  *
- * Um primeiro provedor sub-segundo não é só conforto: é o que deixa a
- * cascata inteira caber com folga no teto de 60s da função do webhook. Se
- * a Groq falha, sobram ~25s de orçamento para os outros dois — quando o
- * primeiro gastava 14s, sobrava quase nada.
+ * A NVIDIA já esteve na frente e foi rebaixada por medição: dos 44
+ * candidatos de chat do catálogo, 21 devolvem `404 Not found for account`
+ * e 14 estouram o tempo. Os que respondem oscilam entre 5,5s e timeout na
+ * mesma tarde. Ela fica como terceiro fôlego, não como linha de frente.
+ *
+ * Um primeiro provedor de 1,4s não é só conforto: é o que deixa três elos
+ * caberem no teto de 60s da função do webhook. E o 429 da Groq — que
+ * acontece o tempo todo, dado o teto de tokens — custa 60ms: é a aposta
+ * mais barata da cascata.
  *
  * Duas regras que sustentam o desenho:
  *
@@ -73,16 +78,16 @@ const PROVEDORES: Provedor[] = [
     chamar: chamarGroqJson,
   },
   {
-    nome: "nvidia",
-    configurado: nvidiaConfigurada,
-    modelo: modeloNvidia,
-    chamar: chamarNvidiaJson,
-  },
-  {
     nome: "gemini",
     configurado: geminiConfigurado,
     modelo: () => MODELO_GEMINI,
     chamar: chamarGeminiJson,
+  },
+  {
+    nome: "nvidia",
+    configurado: nvidiaConfigurada,
+    modelo: modeloNvidia,
+    chamar: chamarNvidiaJson,
   },
 ];
 
