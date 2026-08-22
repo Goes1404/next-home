@@ -1,5 +1,6 @@
 import type { Empreendimento } from "@/lib/types";
 import type { RespostaAgenteIA } from "./aiAgent";
+import { soarHumano } from "./vozHumana";
 
 /**
  * Guardrails de saída: nada sai para o WhatsApp do cliente sem conferir
@@ -10,6 +11,12 @@ import type { RespostaAgenteIA } from "./aiAgent";
  * (o único filtro era `a?.url` truthy). Aqui é o trilho do padrão híbrido
  * "trilho + IA": a conversa é livre, os FATOS (mídia, imóvel citado) são
  * validados por código.
+ *
+ * Além dos fatos, o trilho normaliza a VOZ: `soarHumano` tira o markdown
+ * que o WhatsApp não renderiza e as aberturas de manual de atendimento.
+ * Isso mora aqui, e não só no prompt, porque instrução de prompt é
+ * probabilística — falha justo na resposta que importa — enquanto uma
+ * função determinística vale sempre e é testável.
  *
  * Módulo puro de propósito: sem rede e sem banco, para o eval e o vitest
  * exercitarem exatamente o que roda em produção.
@@ -52,6 +59,7 @@ export function sanearRespostaIA(
   return {
     resposta: {
       ...resposta,
+      textoResposta: soarHumano(resposta.textoResposta ?? ""),
       anexosMidia: anexosValidos,
       imoveisRecomendados: recomendadosValidos,
     },

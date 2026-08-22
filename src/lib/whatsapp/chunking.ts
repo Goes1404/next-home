@@ -3,16 +3,27 @@
  *
  * Uma resposta inteira mandada de uma vez lê como bilhete, não como
  * conversa — e é o oposto do que se pede de uma assistente que precisa
- * soar humana. A regra pedida pelo negócio é de um nível só: resposta
- * longa vira duas mensagens médias; resposta média vira duas pequenas;
- * resposta já pequena (do tamanho normal de um balão de WhatsApp) não
- * quebra. Não é recursivo — isso evitaria uma longa virar quatro ou oito
- * balões, que cansaria mais do que ajudaria.
+ * soar humana. A regra do negócio: resposta longa vira duas médias;
+ * resposta média vira duas pequenas; resposta já pequena não quebra.
+ *
+ * ATÉ AGOSTO/2026 ESSA PROMESSA ERA FALSA. O corte acontecia UMA VEZ só, e
+ * uma resposta de 1100 caracteres virava dois balões de 549 — ambos ainda
+ * "longos" pela própria régua deste arquivo. Em produção, 14 das 39
+ * respostas do bot passaram de 400 caracteres e a maior tinha 1953: o
+ * cliente recebia parede de texto, exatamente o que o chunking existia
+ * para evitar.
+ *
+ * Hoje o corte se repete até cada balão CABER na faixa prometida, com um
+ * teto de balões para uma resposta gigante não virar metralhadora. Esse
+ * teto é rede de segurança, não solução: o certo é a IA não escrever
+ * tanto, e é o que o prompt agora exige.
  *
  * A própria IA pode marcar o ponto de corte no texto que gera (com "---"
  * ou parágrafo duplo). Isso tem prioridade sobre o corte automático por
  * tamanho: quem escreveu o texto sabe melhor que uma régua de caracteres
- * onde a ideia realmente termina.
+ * onde a ideia realmente termina — mas cada pedaço marcado ainda passa
+ * pela régua, senão um parágrafo duplo no meio de um texto gigante
+ * devolveria dois blocos enormes e a regra morreria do mesmo jeito.
  */
 
 const LIMITE_PEQUENA = 200;
@@ -70,6 +81,34 @@ function dividirAoMeio(texto: string): [string, string] {
 }
 
 /**
+ * Teto de balões por resposta. Cinco já é muita notificação seguida no
+ * celular de alguém; passar disso é a IA metralhando, não conversando.
+ */
+const MAXIMO_BALOES = 5;
+
+/**
+ * Quebra um pedaço até que cada parte caiba no tamanho alvo.
+ *
+ * `alvo` é o teto de caracteres aceitável para o pedaço: `LIMITE_MEDIA`
+ * para uma resposta longa (longa → médias) e `LIMITE_PEQUENA` para uma
+ * média (média → pequenas).
+ */
+function quebrarAte(texto: string, alvo: number, restante: number): string[] {
+  if (texto.length <= alvo || restante <= 1) return [texto];
+
+  const [a, b] = dividirAoMeio(texto);
+  // Corte que não separou nada (texto sem espaço útil): parar aqui evita
+  // laço infinito e um balão vazio.
+  if (!a || !b) return [texto];
+
+  // A metade da esquerda pode precisar de mais um corte; a da direita
+  // recebe o que sobrar do teto.
+  const esquerda = quebrarAte(a, alvo, restante - 1);
+  const direita = quebrarAte(b, alvo, restante - esquerda.length);
+  return [...esquerda, ...direita];
+}
+
+/**
  * Divide a resposta do agente nas mensagens que de fato serão enviadas.
  *
  * Nunca devolve pedaço vazio: uma segunda metade em branco (texto curto
@@ -84,9 +123,23 @@ export function dividirEmMensagens(textoOriginal: string): string[] {
     .map((parte) => parte.trim())
     .filter(Boolean);
 
-  if (marcado.length > 1) return marcado;
+  // Mesmo respeitando o corte que a IA marcou, cada pedaço passa pela
+  // régua: um parágrafo duplo no meio de um texto gigante devolveria dois
+  // blocos enormes, e a promessa de tamanho morreria igual.
+  const pedacos = marcado.length > 1 ? marcado : [texto];
 
-  if (classificarTamanho(texto) === "pequena") return [texto];
+  const baloes: string[] = [];
+  for (const pedaco of pedacos) {
+    const tamanho = classificarTamanho(pedaco);
+    if (tamanho === "pequena") {
+      baloes.push(pedaco);
+      continue;
+    }
+    // Longa vira médias; média vira pequenas — um degrau, como pedido.
+    const alvo = tamanho === "longa" ? LIMITE_MEDIA : LIMITE_PEQUENA;
+    baloes.push(...quebrarAte(pedaco, alvo, MAXIMO_BALOES - baloes.length));
+    if (baloes.length >= MAXIMO_BALOES) break;
+  }
 
-  return dividirAoMeio(texto).filter(Boolean);
+  return baloes.filter(Boolean).slice(0, MAXIMO_BALOES);
 }

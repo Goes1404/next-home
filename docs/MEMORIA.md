@@ -72,8 +72,26 @@ corretor).
   Conversa de campanha (`origem = 'campanha'`) é isenta da trava de
   palavra-chave por definição.
 - **Quebra de mensagens** (`chunking.ts`): resposta longa vira duas
-  médias, média vira duas pequenas — um nível só, não recursivo. A IA pode
-  marcar o corte ela mesma com `---` ou parágrafo duplo.
+  médias, média vira duas pequenas. A IA pode marcar o corte ela mesma com
+  `---` ou parágrafo duplo. **Até 08/2026 essa promessa era FALSA**: o corte
+  acontecia uma vez só, então 1100 caracteres viravam dois balões de 549 —
+  ambos ainda longos pela régua do próprio arquivo. Em produção, 14 de 39
+  respostas passaram de 400 caracteres e a maior tinha 1953. Hoje o corte
+  se repete até caber na faixa, com teto de 5 balões; e cada pedaço marcado
+  pela IA também passa pela régua, senão um parágrafo duplo no meio de um
+  texto gigante devolveria dois blocos enormes.
+- **O WhatsApp não renderiza markdown, e todo modelo escreve markdown.**
+  O cliente recebeu literalmente `*   **Vista AlphaGran** (Barueri): …` —
+  asteriscos crus na tela, que entregam a IA na hora. `vozHumana.ts`
+  converte `**negrito**` para `*negrito*` (a sintaxe real do app), vira
+  lista em travessão e corta abertura de robô ("Excelente pergunta!",
+  "Entendi!"). Mora em `sanearRespostaIA`, não no prompt: instrução de
+  prompt é probabilística e falha justo na resposta que importa; função
+  determinística vale sempre e é testável.
+- **Regra de tamanho no prompt vale mais que o chunking.** O teto de balões
+  é rede de segurança; o certo é a IA não escrever 1900 caracteres. O
+  prompt agora pede resposta inteira em até 350 caracteres, uma ideia por
+  mensagem, e proíbe markdown, lista e as aberturas de manual.
 - **Mídia nativa** (`provider.ts`): fotos/plantas/vídeos saem como anexo
   real do WhatsApp, não como link no texto.
 - **Aprendizado contínuo** (`aprendizadoContinuo.ts`): a cada resposta,
