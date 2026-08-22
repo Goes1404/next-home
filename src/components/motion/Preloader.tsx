@@ -24,12 +24,16 @@ import { INTRO_VIDEO_URL, INTRO_VIDEO_WEBM_URL } from "@/lib/site";
  *    montado no cliente, depois da decisão, então quem não vê não baixa.
  */
 
-/** Tempo para a animação da logo se formar (ela fecha ~4s no arquivo 1.3x). */
-const ESPERA_MINIMA_MS = 4200;
+/**
+ * Tempo mínimo de exibição — o arco COMPLETO da vinheta (o arquivo 1.3x
+ * dura ~7,8s e o `onEnded` encerra junto). A versão anterior cortava aos
+ * 4,2s, na metade da animação, e a abertura parecia um soluço.
+ */
+const ESPERA_MINIMA_MS = 7200;
 /** Teto absoluto: além disso, segurar a tela vira punição, não marca. */
-const ESPERA_MAXIMA_MS = 7500;
-/** Duração do fade de saída — casada com a classe `duration-700` do overlay. */
-const FADE_MS = 700;
+const ESPERA_MAXIMA_MS = 9500;
+/** Duração da cortina de saída — casada com o `duration-[950ms]` do overlay. */
+const FADE_MS = 950;
 
 const CHAVE_SESSAO = "nh-intro-vista";
 
@@ -44,6 +48,7 @@ const SCRIPT_ANTI_FLASH = `try{
   var rm=matchMedia("(prefers-reduced-motion: reduce)").matches;
   var sd=navigator.connection&&navigator.connection.saveData;
   if(visto||rm||sd){el.setAttribute("data-oculto","1");}
+  else{document.documentElement.setAttribute("data-intro-ativa","1");}
 }catch(e){}`;
 
 type Fase = "exibindo" | "saindo" | "encerrado";
@@ -94,12 +99,21 @@ export function Preloader() {
       } catch {
         // Sem storage, a vinheta repetiria na próxima página — aceitável.
       }
+      // Solta o conteúdo da página NO MESMO instante em que a cortina
+      // começa a subir: o CSS de [data-intro-ativa] (globals.css) faz as
+      // seções chegarem em cascata enquanto a vinheta sai de cena.
+      delete document.documentElement.dataset.introAtiva;
       return "saindo";
     });
   }, []);
 
   useEffect(() => {
-    if (!permitido) return;
+    if (!permitido) {
+      // Sessão que não vê a vinheta nunca pode ficar com o conteúdo preso.
+      delete document.documentElement.dataset.introAtiva;
+      return;
+    }
+    document.documentElement.dataset.introAtiva = "1";
 
     // A página conta como pronta no evento `load` (imagens do hero
     // inclusas) — se ele já passou, `readyState` diz.
@@ -128,6 +142,7 @@ export function Preloader() {
       window.removeEventListener("load", aoCarregar);
       window.clearTimeout(timerMinimo);
       window.clearTimeout(timerTeto);
+      delete document.documentElement.dataset.introAtiva;
     };
   }, [permitido, encerrar]);
 
@@ -157,8 +172,8 @@ export function Preloader() {
       suppressHydrationWarning
       onClick={encerrar}
       aria-hidden
-      className={`fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-[#eef1f3] transition-opacity duration-700 ease-out data-oculto:hidden ${
-        fase === "saindo" ? "pointer-events-none opacity-0" : "opacity-100"
+      className={`fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-[#eef1f3] transition-[transform,opacity] duration-[950ms] ease-[cubic-bezier(0.83,0,0.17,1)] data-oculto:hidden ${
+        fase === "saindo" ? "pointer-events-none -translate-y-full opacity-40" : "translate-y-0 opacity-100"
       }`}
     >
       <script dangerouslySetInnerHTML={{ __html: SCRIPT_ANTI_FLASH }} />
@@ -195,7 +210,11 @@ export function Preloader() {
               precisa esfumar a borda do CONTEÚDO, não a da tela). As duas
               máscaras aninhadas (vertical fora, horizontal dentro) se
               compõem sem depender de `mask-composite`. */}
-          <div className="relative aspect-video w-[min(100%,177.78vh)] [mask-image:linear-gradient(to_bottom,transparent,black_14%,black_86%,transparent)]">
+          <div
+            className={`relative aspect-video w-[min(100%,177.78vh)] transition-transform duration-[950ms] ease-[cubic-bezier(0.83,0,0.17,1)] [mask-image:linear-gradient(to_bottom,transparent,black_14%,black_86%,transparent)] ${
+              fase === "saindo" ? "scale-110" : "scale-100"
+            }`}
+          >
             <div className="h-full w-full [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
               <video
                 className="h-full w-full"

@@ -654,6 +654,42 @@
 }
 
 @layer utilities {
+  /*
+   * Chegada dos elementos depois da vinheta de abertura.
+   *
+   * Enquanto `data-intro-ativa` está no <html> (carimbado pelo script
+   * inline do Preloader, antes da primeira pintura), as seções do <main>
+   * esperam fora de cena. Quando a cortina começa a subir, o Preloader
+   * derruba o atributo e cada seção desliza para o lugar em cascata — a
+   * página "chega" atrás da vinheta em vez de já estar parada lá.
+   *
+   * A animação `intro-socorro` é a válvula de segurança: se a hidratação
+   * morrer com o atributo carimbado, o conteúdo se liberta sozinho aos 12s
+   * — página presa atrás de uma vinheta órfã seria o pior desfecho
+   * possível. Em `prefers-reduced-motion` o script nem carimba o atributo.
+   */
+  main > * {
+    transition:
+      opacity 0.7s var(--ease-out-expo),
+      transform 0.85s var(--ease-out-expo);
+  }
+  :root[data-intro-ativa] main > * {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: intro-socorro 0.6s ease 12s forwards;
+  }
+  main > *:nth-child(2) { transition-delay: 0.09s; }
+  main > *:nth-child(3) { transition-delay: 0.18s; }
+  main > *:nth-child(4) { transition-delay: 0.27s; }
+  main > *:nth-child(n + 5) { transition-delay: 0.34s; }
+
+  @keyframes intro-socorro {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   /* Elementos animados pelo GSAP começam invisíveis; a classe é removida
      assim que o ScrollTrigger assume, e some sozinha se o JS falhar. */
   .gsap-pending {
