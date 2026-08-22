@@ -173,6 +173,25 @@ export function deveAbrirDisjuntor(falhasSeguidas: number): boolean {
   return falhasSeguidas >= FALHAS_PARA_ABRIR_DISJUNTOR;
 }
 
+/**
+ * O destinatário simplesmente não tem WhatsApp?
+ *
+ * Isso NÃO é falha do nosso número e não pode alimentar o disjuntor. A
+ * Evolution responde `HTTP 400` com `"exists": false` para um telefone que
+ * não está no WhatsApp — é dado ruim do lead, não sinal de que a nossa
+ * conexão está doente.
+ *
+ * Confundir os dois custou caro em produção: três leads seguidos com
+ * número inválido abriam o disjuntor por 12 horas e **travavam a fila
+ * inteira** — 57 itens parados por causa de telefones digitados errado no
+ * cadastro. O disjuntor existe para proteger o número quando o PROVEDOR
+ * está falhando; um destinatário inexistente não diz nada sobre isso.
+ */
+export function ehDestinatarioInexistente(detalhe: string | undefined): boolean {
+  if (!detalhe) return false;
+  return /"exists"\s*:\s*false/i.test(detalhe);
+}
+
 export function bloqueadoAtePor(agora: Date = new Date()): Date {
   return new Date(agora.getTime() + HORAS_DISJUNTOR * 3600_000);
 }

@@ -4,6 +4,7 @@ import {
   dentroDaJanela,
   deveAbrirDisjuntor,
   diasDesdeConexao,
+  ehDestinatarioInexistente,
   limiteDiarioCampanha,
   momentoEmSaoPaulo,
   podeEnviar,
@@ -174,5 +175,35 @@ describe("Disjuntor", () => {
   it("bloqueia por 12 horas", () => {
     const agora = new Date("2026-08-19T10:00:00Z");
     expect(bloqueadoAtePor(agora).toISOString()).toBe("2026-08-19T22:00:00.000Z");
+  });
+});
+
+describe("Destinatário sem WhatsApp não é falha do nosso número", () => {
+  // O caso real: 57 itens travados na fila porque três leads seguidos
+  // tinham telefone digitado errado no cadastro. O disjuntor abriu por 12h
+  // achando que a conexão estava doente.
+  const respostaReal =
+    'HTTP 400: {"status":400,"error":"Bad Request","response":{"message":[{"jid":"5581914849876@s.whatsapp.net","exists":false,"number":"5581914849876"}]}}';
+
+  it("reconhece a resposta da Evolution para número inexistente", () => {
+    expect(ehDestinatarioInexistente(respostaReal)).toBe(true);
+  });
+
+  it("falha de verdade do provedor continua contando", () => {
+    expect(ehDestinatarioInexistente("HTTP 500: Internal Server Error")).toBe(false);
+    expect(ehDestinatarioInexistente("HTTP 401: unauthorized")).toBe(false);
+    expect(ehDestinatarioInexistente(undefined)).toBe(false);
+  });
+
+  it("número que EXISTE não é confundido com inexistente", () => {
+    expect(ehDestinatarioInexistente('{"exists":true,"number":"5511999998888"}')).toBe(false);
+  });
+
+  it("três números inexistentes não abririam o disjuntor", () => {
+    // A prova da regra: só falha real alimenta o contador.
+    const falhasReais = [respostaReal, respostaReal, respostaReal].filter(
+      (d) => !ehDestinatarioInexistente(d),
+    ).length;
+    expect(deveAbrirDisjuntor(falhasReais)).toBe(false);
   });
 });

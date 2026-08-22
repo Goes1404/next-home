@@ -410,6 +410,17 @@ trilho+IA, follow-up, métricas de funil).
 - **Telemetria (`ia_interacoes`, 0029)**: TODA interação (inclusive
   silêncios) com versão/latência/fallback/bloqueios. Botão 👍/👎 nas
   conversas alimenta o golden dataset (`scripts/eval/exportarGolden.ts`).
+- **Número sem WhatsApp NÃO é falha do nosso número.** A Evolution
+  responde `HTTP 400` com `"exists": false` para telefone que não está no
+  app — dado ruim do lead, não sinal de conexão doente. Isso alimentava o
+  disjuntor: três cadastros com número errado SEGUIDOS abriam o bloqueio de
+  12h e travavam a fila inteira (57 itens parados, flagrado em 22/08).
+  Hoje `ehDestinatarioInexistente` separa os dois, e esse item vira erro
+  definitivo sem retentativa — ele não vai passar a existir em 30 minutos.
+- **Zerar `envios_campanha_contador` não destrava sozinho.** Se a fila
+  ainda tem números inválidos, o disjuntor reabre em três tentativas. Antes
+  de zerar, conferir `whatsapp_campanhas_fila` por `erro_motivo` — é onde a
+  causa real aparece.
 - **Trocar o número pareado zera a reputação** (`trocaDeNumero.ts`):
   contador do dia, `bloqueado_ate`, `falhas_seguidas` e a curva de
   aquecimento (`conectado_em`) voltam ao zero. Chip novo herdando a

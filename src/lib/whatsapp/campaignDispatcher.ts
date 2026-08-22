@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { dentroDaJanela } from "./antiBan";
+import { dentroDaJanela, ehDestinatarioInexistente } from "./antiBan";
 import { variarMensagemComIA } from "./campaignQueue";
 import { enviarMensagemWhatsapp } from "./provider";
 import {
@@ -401,7 +401,17 @@ async function processarInstancia(ctx: {
         texto,
       });
 
-      await registrarResultadoEnvio(instancia.id, envio.enviado);
+      /*
+       * Destinatário sem WhatsApp NÃO conta para o disjuntor. Ele existe
+       * para proteger o número quando o provedor está falhando, e um
+       * telefone inexistente é dado ruim do lead — não diz nada sobre a
+       * saúde da nossa conexão. Sem esta distinção, três cadastros com
+       * número errado seguidos travavam a fila inteira por 12 horas.
+       */
+      const numeroInexistente = !envio.enviado && ehDestinatarioInexistente(envio.detalhe);
+      if (!numeroInexistente) {
+        await registrarResultadoEnvio(instancia.id, envio.enviado);
+      }
 
       if (!envio.enviado) {
         parcial.erros++;
@@ -411,16 +421,23 @@ async function processarInstancia(ctx: {
         // Um número que o provedor recusa não pode ficar na frente da fila
         // bloqueando todo o resto: ou ele volta para o fim (retentativa
         // adiada) ou vira erro definitivo.
+        //
+        // Número inexistente não ganha retentativa: ele não vai passar a
+        // existir daqui a 30 minutos, e insistir só gasta a cota do dia.
         await supabase
           .from("whatsapp_campanhas_fila")
           .update(
-            tentativas >= MAX_TENTATIVAS
-              ? { status: "erro", erro_motivo: motivo, tentativas }
-              : {
-                  tentativas,
-                  erro_motivo: motivo,
-                  agendado_para: new Date(Date.now() + MINUTOS_ATE_RETENTAR * 60_000).toISOString(),
-                },
+            numeroInexistente
+              ? { status: "erro", erro_motivo: "Número não está no WhatsApp", tentativas }
+              : tentativas >= MAX_TENTATIVAS
+                ? { status: "erro", erro_motivo: motivo, tentativas }
+                : {
+                    tentativas,
+                    erro_motivo: motivo,
+                    agendado_para: new Date(
+                      Date.now() + MINUTOS_ATE_RETENTAR * 60_000,
+                    ).toISOString(),
+                  },
           )
           .eq("id", item.id);
 
