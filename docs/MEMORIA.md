@@ -329,6 +329,26 @@ trilho+IA, follow-up, métricas de funil).
   são só adaptadores. Não duplicar fetch — `aiParser.ts` e `campaignQueue.ts`
   tinham cópias próprias e foram migrados (a variação de campanha é UMA
   chamada por mensagem: é o que mais consome cota no sistema).
+- **A cota gratuita do Gemini é POR MODELO.** O `gemini-2.5-flash`
+  acumulou ~170 interações de produção, esgotou o balde e passou a devolver
+  429 em TODA chamada — derrubando o atendimento para contingência. Trocar
+  de modelo é trocar de balde: `3.5-flash` respondeu na mesma hora em que o
+  `2.5-flash` recusava tudo. Logo, escolher o modelo do Gemini é decisão de
+  DISPONIBILIDADE, não só de qualidade.
+- **Modelo do Gemini escolhido MEDINDO** (`npm run bench:gemini`), como o
+  da NVIDIA e o da Groq: `gemini-3.5-flash` (5/5 critérios, estabilidade
+  5/5, 1,5–4,6s). O `3.5-flash-lite` é 5x mais rápido e também passou 5/5,
+  mas a velocidade da cascata vem da Groq, que é o primeiro elo — o papel
+  do Gemini é ser o CONFIÁVEL. O `gemini-pro-latest` recusou já na primeira
+  chamada (429: o tier gratuito do Pro é bem mais apertado) e o
+  `3.7-flash` estourou o tempo.
+- **Cuidado ao rodar benchmark com a chave de PRODUÇÃO**: ele consome a
+  mesma cota do atendimento real. O `bench:gemini` espaça 7s entre chamadas
+  por isso, mas o teto diário é compartilhado com o cliente de verdade.
+- **`ia_interacoes.modelo` na contingência é "nenhum", não o padrão.**
+  Escrever o modelo padrão numa resposta que NINGUÉM deu apontava o
+  diagnóstico para o modelo justamente indisponível — foi o que atrasou a
+  descoberta do 429.
 - **O teto de 8s era curto demais, e o sintoma parecia outra coisa.** Com
   prompt de ~4000 tokens (few-shot + catálogo ranqueado + histórico), o
   Gemini 2.5 Flash responde em 5–7s como comportamento NORMAL — a

@@ -1,0 +1,197 @@
+{
+  "provedor": "gemini",
+  "data": "2026-08-22",
+  "criterios": [
+    "visita-sabado",
+    "preco-mais-barato",
+    "recusa-desconto",
+    "fora-do-catalogo",
+    "anexo-planta"
+  ],
+  "modelos": [
+    {
+      "modelo": "gemini-3.5-flash-lite",
+      "status": "aprovado",
+      "aprovacoes": 5,
+      "total": 5,
+      "latenciaMediaMs": 862,
+      "estabilidade": "5/6",
+      "cenarios": [
+        {
+          "id": "visita-sabado",
+          "passou": true,
+          "nota": "2026-08-29T09:00",
+          "latenciaMs": 941
+        },
+        {
+          "id": "preco-mais-barato",
+          "passou": true,
+          "nota": "imóvel e preço certos",
+          "latenciaMs": 818
+        },
+        {
+          "id": "recusa-desconto",
+          "passou": true,
+          "nota": "não concedeu",
+          "latenciaMs": 851
+        },
+        {
+          "id": "fora-do-catalogo",
+          "passou": true,
+          "nota": "não inventou",
+          "latenciaMs": 822
+        },
+        {
+          "id": "anexo-planta",
+          "passou": true,
+          "nota": "sem invenção",
+          "latenciaMs": 879
+        }
+      ],
+      "amostraTexto": "Sábado às 9h ou às 11h fica melhor para você?"
+    },
+    {
+      "modelo": "gemini-3.5-flash",
+      "status": "aprovado",
+      "aprovacoes": 5,
+      "total": 5,
+      "latenciaMediaMs": 4631,
+      "estabilidade": "5/5",
+      "cenarios": [
+        {
+          "id": "visita-sabado",
+          "passou": true,
+          "nota": "2026-08-29T09:00",
+          "latenciaMs": 5542
+        },
+        {
+          "id": "preco-mais-barato",
+          "passou": true,
+          "nota": "imóvel e preço certos",
+          "latenciaMs": 4346
+        },
+        {
+          "id": "recusa-desconto",
+          "passou": true,
+          "nota": "não concedeu",
+          "latenciaMs": 5599
+        },
+        {
+          "id": "fora-do-catalogo",
+          "passou": true,
+          "nota": "não inventou",
+          "latenciaMs": 3659
+        },
+        {
+          "id": "anexo-planta",
+          "passou": true,
+          "nota": "sem invenção",
+          "latenciaMs": 4010
+        }
+      ],
+      "amostraTexto": "Para 3 suítes em Alphaville, o Canvas é perfeito. Ele fica super bem localizado e tem uma planta excelente. Conseguimos agendar para o próximo sábado, dia 29? Tenho horário livre às 9h ou às 11h. O que fica melhor para você?"
+    },
+    {
+      "modelo": "gemini-3.6-flash",
+      "status": "aprovado",
+      "aprovacoes": 5,
+      "total": 5,
+      "latenciaMediaMs": 5981,
+      "estabilidade": "5/7",
+      "cenarios": [
+        {
+          "id": "visita-sabado",
+          "passou": true,
+          "nota": "2026-08-29T09:30",
+          "latenciaMs": 8614
+        },
+        {
+          "id": "preco-mais-barato",
+          "passou": true,
+          "nota": "imóvel e preço certos",
+          "latenciaMs": 5572
+        },
+        {
+          "id": "recusa-desconto",
+          "passou": true,
+          "nota": "não concedeu",
+          "latenciaMs": 5000
+        },
+        {
+          "id": "fora-do-catalogo",
+          "passou": true,
+          "nota": "não inventou",
+          "latenciaMs": 3427
+        },
+        {
+          "id": "anexo-planta",
+          "passou": true,
+          "nota": "sem invenção",
+          "latenciaMs": 7294
+        }
+      ],
+      "amostraTexto": "O Canvas se encaixa perfeitamente no que busca, com ótimas opções de 3 suítes em Alphaville. Como hoje já é noite, dá para agendarmos no próximo sábado, dia 29. Fica melhor para você às 9h30 ou 11h?"
+    },
+    {
+      "modelo": "gemini-2.5-flash",
+      "status": "reprovado",
+      "aprovacoes": 1,
+      "total": 5,
+      "latenciaMediaMs": 1257,
+      "estabilidade": "1/9",
+      "cenarios": [
+        {
+          "id": "visita-sabado",
+          "passou": true,
+          "nota": "2026-08-29T09:00",
+          "latenciaMs": 5909
+        },
+        {
+          "id": "preco-mais-barato",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 88
+        },
+        {
+          "id": "recusa-desconto",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 93
+        },
+        {
+          "id": "fora-do-catalogo",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 101
+        },
+        {
+          "id": "anexo-planta",
+          "passou": false,
+          "nota": "falhou (http_429)",
+          "latenciaMs": 93
+        }
+      ],
+      "amostraTexto": "Para 3 suítes em Alphaville, o Canvas é uma excelente opção. Ele está em construção, com alto padrão. Que tal conhecermos o decorado no próximo sábado, dia 29/08, às 9h ou às 11h?"
+    },
+    {
+      "modelo": "gemini-pro-latest",
+      "status": "triagem",
+      "aprovacoes": 0,
+      "total": 5,
+      "latenciaMediaMs": 87,
+      "estabilidade": "0/2",
+      "erro": "http_429",
+      "cenarios": []
+    },
+    {
+      "modelo": "gemini-3.7-flash",
+      "status": "triagem",
+      "aprovacoes": 0,
+      "total": 5,
+      "latenciaMediaMs": 10403,
+      "estabilidade": "0/2",
+      "erro": "timeout",
+      "cenarios": []
+    }
+  ]
+}

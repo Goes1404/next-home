@@ -49,7 +49,7 @@ const temFlag = (nome: string) => process.argv.includes(`--${nome}`);
  * garantiria que os critérios divergissem na primeira correção feita em
  * apenas uma das cópias.
  */
-const PROVEDOR = (arg("provedor") ?? "nvidia") as "nvidia" | "groq";
+const PROVEDOR = (arg("provedor") ?? "nvidia") as "nvidia" | "groq" | "gemini";
 
 const CONFIG = {
   nvidia: {
@@ -62,6 +62,11 @@ const CONFIG = {
     envModelo: "GROQ_MODEL",
     urlModelos: "https://api.groq.com/openai/v1/models",
   },
+  gemini: {
+    envChave: "GEMINI_API_KEY",
+    envModelo: "GEMINI_MODEL",
+    urlModelos: "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",
+  },
 }[PROVEDOR];
 
 /** Famílias que não têm o que fazer numa conversa de venda em português. */
@@ -72,6 +77,13 @@ const FORA_DE_ESCOPO = [
   "vila", "clip", "asr", "tts", "riva", "molmo", "protein", "fold",
   "genmol", "diffusion", "video", "image", "palmyra-med", "palmyra-fin",
   "laguna", "cosmos", "chatqa", "ising",
+];
+
+/** Fora de escopo no Gemini: imagem, áudio, robótica, pesquisa e visão. */
+const FORA_DE_ESCOPO_GEMINI = [
+  "embedding", "aqa", "tts", "image", "veo", "imagen", "learnlm", "gemma",
+  "robotics", "lyria", "nano-banana", "computer-use", "deep-research",
+  "antigravity", "omni", "customtools",
 ];
 
 /** Fora de escopo na Groq: áudio, guarda de segurança e modelo em árabe. */
@@ -88,15 +100,34 @@ async function listarCandidatos(): Promise<string[]> {
   const escolhidos = arg("modelos");
   if (escolhidos) return escolhidos.split(",").map((m) => m.trim());
 
-  const res = await fetch(CONFIG.urlModelos, {
-    headers: { Authorization: `Bearer ${process.env[CONFIG.envChave]}` },
+  // O Gemini autentica por query param e devolve `models[].name`; os outros
+  // dois falam o dialeto OpenAI (`Bearer` + `data[].id`).
+  const url =
+    PROVEDOR === "gemini"
+      ? `${CONFIG.urlModelos}&key=${process.env[CONFIG.envChave]}`
+      : CONFIG.urlModelos;
+  const res = await fetch(url, {
+    headers: PROVEDOR === "gemini" ? {} : { Authorization: `Bearer ${process.env[CONFIG.envChave]}` },
   });
   if (!res.ok) throw new Error(`Não consegui listar os modelos: HTTP ${res.status}`);
 
-  const ids: string[] = (await res.json()).data.map((m: { id: string }) => m.id);
+  const corpo = await res.json();
+  const ids: string[] =
+    PROVEDOR === "gemini"
+      ? (corpo.models ?? [])
+          .filter((m: { supportedGenerationMethods?: string[] }) =>
+            m.supportedGenerationMethods?.includes("generateContent"),
+          )
+          .map((m: { name: string }) => m.name.replace("models/", ""))
+      : corpo.data.map((m: { id: string }) => m.id);
   if (temFlag("todos")) return ids.sort();
 
-  const fora = PROVEDOR === "groq" ? FORA_DE_ESCOPO_GROQ : FORA_DE_ESCOPO;
+  const fora =
+    PROVEDOR === "groq"
+      ? FORA_DE_ESCOPO_GROQ
+      : PROVEDOR === "gemini"
+        ? FORA_DE_ESCOPO_GEMINI
+        : FORA_DE_ESCOPO;
   return ids
     .filter((id) => !fora.some((k) => id.toLowerCase().includes(k)))
     .filter((id) => !PEQUENOS_DEMAIS.includes(id))
@@ -287,7 +318,7 @@ const CENARIOS: Cenario[] = [
  * ou seja, **duas chamadas por minuto**. Sem esta pausa o benchmark
  * reprovava todo mundo por 429 e media a própria pressa.
  */
-const PAUSA_MS = PROVEDOR === "groq" ? 32_000 : 1_500;
+const PAUSA_MS = PROVEDOR === "groq" ? 32_000 : PROVEDOR === "gemini" ? 7_000 : 1_500;
 /**
  * Tentativas por cenário.
  *

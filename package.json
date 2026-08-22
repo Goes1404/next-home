@@ -10,7 +10,8 @@
     "test": "vitest run",
     "eval": "tsx --conditions=react-server scripts/eval/rodarEval.ts",
     "bench:nvidia": "tsx --conditions=react-server scripts/eval/compararModelos.ts --provedor=nvidia",
-    "bench:groq": "tsx --conditions=react-server scripts/eval/compararModelos.ts --provedor=groq"
+    "bench:groq": "tsx --conditions=react-server scripts/eval/compararModelos.ts --provedor=groq",
+    "bench:gemini": "tsx --conditions=react-server scripts/eval/compararModelos.ts --provedor=gemini"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

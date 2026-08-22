@@ -1,6 +1,6 @@
 import "server-only";
 
-import { chamarGeminiJson, geminiConfigurado, MODELO_GEMINI } from "./gemini";
+import { chamarGeminiJson, geminiConfigurado, modeloGemini } from "./gemini";
 import { chamarGroqJson, groqConfigurada, modeloGroq } from "./groq";
 import { chamarNvidiaJson, modeloNvidia, nvidiaConfigurada } from "./nvidia";
 import { valeRetentar, type MotivoFalhaLlm, type ResultadoLlm } from "./llmTipos";
@@ -80,7 +80,7 @@ const PROVEDORES: Provedor[] = [
   {
     nome: "gemini",
     configurado: geminiConfigurado,
-    modelo: () => MODELO_GEMINI,
+    modelo: modeloGemini,
     chamar: chamarGeminiJson,
   },
   {

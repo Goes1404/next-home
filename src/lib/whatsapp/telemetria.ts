@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { MODELO_GEMINI } from "./gemini";
+import { modeloGemini } from "./gemini";
 
 /**
  * Registro de cada interação da IA (tabela ia_interacoes, migration 0029).
@@ -47,7 +47,14 @@ export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
       corretor_id: dados.corretorId ?? null,
       origem: dados.origem,
       prompt_versao: dados.promptVersao,
-      modelo: dados.modelo ?? MODELO_GEMINI,
+      /*
+       * Na contingência NINGUÉM respondeu, então `dados.modelo` vem null e
+       * cair no padrão do Gemini seria mentira: a linha diria
+       * "gemini-2.5-flash" para uma resposta que o Gemini não deu. Foi o
+       * que atrapalhou o diagnóstico do 429 — a telemetria apontava para o
+       * modelo que estava justamente indisponível.
+       */
+      modelo: dados.modelo ?? (dados.fallback ? "nenhum" : modeloGemini()),
       latencia_ms: dados.latenciaMs ?? null,
       fallback: dados.fallback ?? false,
       acao: dados.acao,

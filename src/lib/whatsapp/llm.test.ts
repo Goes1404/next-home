@@ -25,7 +25,7 @@ vi.mock("./groq", () => ({
 vi.mock("./gemini", () => ({
   chamarGeminiJson: (...args: unknown[]) => chamarGeminiJson(...args),
   geminiConfigurado: () => Boolean(process.env.GEMINI_API_KEY),
-  MODELO_GEMINI: "gemini-2.5-flash",
+  modeloGemini: () => "gemini-2.5-flash",
 }));
 
 const ok = (modelo: string) => ({
