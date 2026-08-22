@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getCorretorLogado, souGestor } from "@/lib/corretorSessao";
+import { exigirGestorNaAcao } from "@/lib/guardas";
 import type { EmpreendimentoSimples, ItemConciliado, LoteHistorico } from "@/lib/precos/types";
 
 /**
@@ -34,9 +34,11 @@ export async function aplicarLotePrecos(
   nomeLote: string,
   itens: ItemConciliado[],
 ): Promise<{ ok: boolean; loteId?: string; totalAlterados?: number; erro?: string }> {
-  const gestor = await getCorretorLogado();
-  const ehGestor = await souGestor();
-  if (!gestor) return { ok: false, erro: "Sessão não autenticada." };
+  // A action é POST: o proxy não a cobre, e a página ser protegida não
+  // protege a ação. `souGestor()` era chamada aqui e o resultado ignorado.
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
+  const gestor = guarda.corretor;
 
   const itensValidos = itens.filter(
     (item) => item.selecionado && item.empreendimentoId && item.precoNovo > 0,
@@ -102,8 +104,9 @@ export async function aplicarLotePrecos(
  * Reverte todos os preços alterados em um lote específico (Rollback).
  */
 export async function reverterLotePrecos(loteId: string): Promise<{ ok: boolean; erro?: string }> {
-  const gestor = await getCorretorLogado();
-  if (!gestor) return { ok: false, erro: "Sessão não autenticada." };
+  // Desfazer um reajuste mexe no catálogo tanto quanto aplicá-lo.
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
 
   const supabase = await createClient();
 

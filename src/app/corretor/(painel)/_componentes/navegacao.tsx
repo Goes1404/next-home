@@ -46,6 +46,17 @@ export const GRUPOS_NAV: GrupoNav[] = [
     itens: [
       { href: "/corretor/imoveis", label: "Imóveis", icone: IconePredio },
       { href: "/corretor/links", label: "Links", icone: IconeElo },
+    ],
+  },
+  {
+    // Reajuste em massa e gestão de acessos são atos administrativos: ficam
+    // juntos, longe do dia a dia de quem só atende lead.
+    titulo: "Administração",
+    itens: [
+      { href: "/corretor/admin", label: "Visão geral", icone: IconeEquipe, gestor: true },
+      { href: "/corretor/admin/contas", label: "Contas", icone: IconePessoas, gestor: true },
+      { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeFunil, gestor: true },
+      { href: "/corretor/admin/whatsapp", label: "WhatsApp & IA", icone: IconeConversa, gestor: true },
       { href: "/corretor/precos", label: "Preços", icone: IconeEtiqueta, gestor: true },
     ],
   },
@@ -53,7 +64,6 @@ export const GRUPOS_NAV: GrupoNav[] = [
     titulo: "Conta",
     itens: [
       { href: "/corretor/perfil", label: "Perfil", icone: IconePessoa },
-      { href: "/corretor/equipe", label: "Equipe", icone: IconeEquipe, gestor: true },
       { href: "/corretor/senha", label: "Senha", icone: IconeChave },
     ],
   },

@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { exigirGestorNaAcao } from "@/lib/guardas";
 import { redirect } from "next/navigation";
-import { getCorretorLogado, souGestor } from "@/lib/corretorSessao";
+import { getCorretorLogado } from "@/lib/corretorSessao";
 import { caminhoDoStorage, extensaoPorTipo, validarMidia, type CampoMidia } from "@/lib/midiaCorretor";
 import { createClient } from "@/lib/supabase/server";
 import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
@@ -37,10 +38,31 @@ export async function entrar(_estado: EstadoLogin, formData: FormData): Promise<
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+  const { data: sessao, error } = await supabase.auth.signInWithPassword({
+    email,
+    password: senha,
+  });
 
   if (error) {
     return { erro: "E-mail ou senha inválidos." };
+  }
+
+  /*
+   * Senha provisória entregue pelo gestor: manda direto para a troca.
+   *
+   * É redirect, não bloqueio em todas as rotas: bloquear daria loop (a
+   * própria tela de senha é uma rota) e não protegeria ninguém além do dono
+   * da conta. Quem ignorar segue com a senha que o gestor conhece — e o
+   * banner do painel continua lembrando.
+   */
+  if (sessao?.user) {
+    const { data: corretor } = await supabase
+      .from("corretores")
+      .select("deve_trocar_senha")
+      .eq("user_id", sessao.user.id)
+      .maybeSingle();
+
+    if (corretor?.deve_trocar_senha) redirect("/corretor/senha");
   }
 
   redirect("/corretor");
@@ -292,6 +314,13 @@ export async function trocarSenha(
     return { erro: "Não foi possível trocar a senha agora. Tente novamente." };
   }
 
+  // A senha deixou de ser a provisória do gestor: some o redirect do login e
+  // o aviso do painel.
+  await supabase
+    .from("corretores")
+    .update({ deve_trocar_senha: false })
+    .eq("user_id", user.id);
+
   return { ok: "Senha alterada." };
 }
 
@@ -349,9 +378,8 @@ export async function atribuirLead(
 ): Promise<ResultadoAcao> {
   const { supabase } = await exigirSessao();
 
-  if (!(await souGestor())) {
-    return { erro: "Só quem é gestor pode redistribuir leads." };
-  }
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
 
   const { data, error } = await supabase
     .from("leads")
@@ -382,9 +410,8 @@ export async function alternarPausa(
 ): Promise<ResultadoAcao> {
   const { supabase } = await exigirSessao();
 
-  if (!(await souGestor())) {
-    return { erro: "Só quem é gestor pode alterar a escala." };
-  }
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
 
   const { data, error } = await supabase
     .from("corretores")

@@ -1,7 +1,7 @@
 /**
  * Tipos gerados a partir do projeto Supabase real (prhhrqyubjcafvucirri) via
  * Management API — `types/typescript`. Não editar à mão; regenerar sempre
- * que `supabase/migrations/` mudar. Última geração: depois da 0024
+ * que `supabase/migrations/` mudar. Última geração: depois da 0030
  * (aplicada manualmente à conexão direta com Postgres — `gen types` local
  * exige Docker, indisponível neste ambiente; colunas conferidas por
  * introspecção antes de editar este arquivo).
@@ -23,6 +23,29 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_eventos: {
+        Row: {
+          id: string
+          ator_id: string | null
+          acao: string
+          alvo_corretor_id: string | null
+          detalhes: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          ator_id?: string | null
+          acao: string
+          alvo_corretor_id?: string | null
+          detalhes?: Json
+          created_at?: string
+        }
+        Update: {
+          acao?: string
+          detalhes?: Json
+        }
+        Relationships: []
+      }
       cliques_whatsapp: {
         Row: {
           id: string
@@ -107,6 +130,7 @@ export type Database = {
           bio: string | null
           created_at: string
           creci: string
+          deve_trocar_senha: boolean
           em_pausa: boolean
           email: string | null
           foto_url: string | null
@@ -126,6 +150,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           creci: string
+          deve_trocar_senha?: boolean
           em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
@@ -145,6 +170,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           creci?: string
+          deve_trocar_senha?: boolean
           em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
@@ -1138,6 +1164,10 @@ export type Database = {
       }
       destravar_disparo: {
         Args: { p_dono: string; p_escopo: string }
+        Returns: undefined
+      }
+      definir_papel_corretor: {
+        Args: { alvo: string; novo_papel: string }
         Returns: undefined
       }
     }

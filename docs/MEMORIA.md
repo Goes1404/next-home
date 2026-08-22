@@ -252,3 +252,40 @@ trilho+IA, follow-up, métricas de funil).
   menos ao cruzar fronteira de hora). Corrigido com guarda de
   monotonicidade em `montarFilaCampanha`; o teste que pegou só falhava
   entre ~1h e ~9h.
+
+
+## Administração (papel `gestor`) — regras que não podem ser afrouxadas
+
+- **Só existem dois papéis**: `corretor` e `gestor`. O gestor É o admin; não
+  há terceiro nível (decisão de produto, agosto/2026).
+- **`papel` NUNCA pode ganhar `grant update`.** A RLS é permissiva por OR e a
+  policy da 0006 já autoriza o corretor a editar a própria linha — um grant em
+  `papel` deixaria qualquer um se autopromover a gestor. Trocar papel só pela
+  função `definir_papel_corretor` (0030, `security definer`), que também recusa
+  autodespromoção.
+- **Trigger `garantir_gestor_remanescente` (0030)**: barra despromover OU
+  desativar o último gestor ativo. Mora no banco porque `ativo` tem grant desde
+  a 0008 — dá para se desligar por dois caminhos.
+- **`admin_eventos` não tem policy de INSERT**: só as funções `security
+  definer` e o cliente de serviço escrevem. Log que o ator pode forjar não é
+  log. Senha temporária NUNCA entra em `detalhes`.
+- **Criar acesso** (`admin/acoes.ts`): a decisão de quem pode é sempre de
+  `exigirGestorNaAcao()` com o cliente de SESSÃO; a service key só executa
+  depois. Gera o `slug` ANTES do login (sem slug, `getCorretorLogado()` devolve
+  null e a pessoa cai em "Conta sem vínculo"), usa `email_confirm: true` (não há
+  SMTP no projeto) e, se o vínculo falhar, apaga o usuário do Auth — senão o
+  e-mail fica queimado pelo unique e nenhuma tentativa futura funciona.
+- **0031 abriu `whatsapp_*` e `ia_interacoes` para o gestor.** Consequência que
+  quebra tela: consultas que dependiam da policy para recortar precisam de
+  `.eq("corretor_id", ...)` explícito — `conversas/page.tsx` (o `maybeSingle()`
+  da instância passa a receber N linhas) e `campanhas/acoes.ts`. Ao abrir
+  qualquer outra policy para o gestor, procurar `maybeSingle()`/`single()` sem
+  filtro antes.
+- **Guarda de papel**: `src/lib/guardas.ts` — `exigirGestorNaPagina()` em CADA
+  `page.tsx` do segmento (layouts não re-executam entre rotas irmãs) e
+  `exigirGestorNaAcao()` em cada Server Action. Papel não é checado no
+  `proxy.ts` de propósito: seria round-trip ao banco por requisição (inclusive
+  prefetch) e uma segunda fonte de verdade para divergir das policies.
+- **Furo histórico corrigido**: `/corretor/precos` chamava `souGestor()` e
+  ignorava o resultado — qualquer corretor logado aplicava reajuste em massa
+  pela URL. Sempre conferir se o resultado da guarda é de fato USADO.

@@ -261,3 +261,61 @@ export async function getMeusDestaques(): Promise<string[]> {
   return (data ?? []).map((d) => d.empreendimento_slug);
 }
 
+
+
+/** Uma linha da tela de contas — o que o gestor precisa para decidir. */
+export type CorretorAdmin = {
+  id: string;
+  nome: string;
+  slug: string | null;
+  email: string | null;
+  papel: PapelCorretor;
+  ativo: boolean;
+  emPausa: boolean;
+  temLogin: boolean;
+  leads: number;
+};
+
+/**
+ * Todos os corretores para a administração — inclusive os inativos e os sem
+ * slug.
+ *
+ * Diferente de `getEquipeAtiva()`, que continua servindo à roleta e por isso
+ * só lista quem pode receber lead. Aqui o critério é o oposto: quem está fora
+ * é justamente quem o gestor precisa enxergar para consertar (sem login, sem
+ * slug, desativado).
+ *
+ * A RLS não recorta `corretores` na leitura (a policy da 0001 é pública), mas
+ * `papel`, `email` e `user_id` não estão no `SELECT_CORRETOR` da vitrine —
+ * esta função é o único lugar que os expõe, e só é chamada atrás da guarda de
+ * gestor.
+ */
+export async function getCorretoresParaAdmin(): Promise<CorretorAdmin[]> {
+  const supabase = await createClient();
+
+  const [{ data: corretores }, { data: leads }] = await Promise.all([
+    supabase
+      .from("corretores")
+      .select("id, nome, slug, email, papel, ativo, em_pausa, user_id")
+      .order("papel", { ascending: false })
+      .order("nome"),
+    supabase.from("leads").select("corretor_id"),
+  ]);
+
+  const porCorretor = new Map<string, number>();
+  for (const lead of leads ?? []) {
+    if (lead.corretor_id) porCorretor.set(lead.corretor_id, (porCorretor.get(lead.corretor_id) ?? 0) + 1);
+  }
+
+  return (corretores ?? []).map((c) => ({
+    id: c.id,
+    nome: c.nome,
+    slug: c.slug,
+    email: c.email,
+    papel: c.papel as PapelCorretor,
+    ativo: c.ativo,
+    emPausa: c.em_pausa,
+    temLogin: c.user_id !== null,
+    leads: porCorretor.get(c.id) ?? 0,
+  }));
+}

@@ -175,12 +175,20 @@ export type CampanhaListada = {
 };
 
 export async function listarCampanhas(): Promise<CampanhaListada[]> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return [];
+
+  // Filtro explícito desde a 0031: as policies de campanha passaram a
+  // incluir o gestor (a administração vê a equipe), então sem o `.eq` esta
+  // tela mostraria as campanhas dos colegas para quem administra. Aqui é a
+  // lista PESSOAL; a da equipe fica em /corretor/admin/whatsapp.
   const supabase = await createClient();
   const { data } = await supabase
     .from("whatsapp_campanhas")
     .select(
       "id, titulo, total_leads, total_enviados, total_respondidos, status, created_at, empreendimento:empreendimentos(nome)",
     )
+    .eq("corretor_id", corretor.id)
     .order("created_at", { ascending: false })
     .limit(20);
 

@@ -1,15 +1,22 @@
 import type { Metadata } from "next";
 import { buscarCatalogoAtualParaConciliacao, buscarHistoricoLotes } from "./actions";
 import { PrecosManager } from "./PrecosManager";
-import { souGestor } from "@/lib/corretorSessao";
+import { exigirGestorNaPagina } from "@/lib/guardas";
 
 export const metadata: Metadata = { title: "Atualização de Preços em Massa" };
 
 export default async function PrecosPage() {
-  const [catalogo, historico, gestor] = await Promise.all([
+  /*
+   * Reajuste em massa mexe no preço de TODO o catálogo de uma vez. O item já
+   * era gestor-only no menu, mas a página só calculava `souGestor()` e
+   * ignorava o resultado — quem digitasse a URL entrava. Aqui a guarda é de
+   * verdade; as policies da 0031 fecham o mesmo buraco no banco.
+   */
+  await exigirGestorNaPagina();
+
+  const [catalogo, historico] = await Promise.all([
     buscarCatalogoAtualParaConciliacao(),
     buscarHistoricoLotes(),
-    souGestor(),
   ]);
 
   return (

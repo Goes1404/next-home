@@ -17,19 +17,28 @@ export default async function ConversasPage() {
   const supabase = await createClient();
 
   /*
-   * Sem filtro por corretor na consulta de propósito: a policy da 0018 já
-   * recorta (o corretor vê as dele, o gestor vê as da imobiliária). Repetir
-   * o filtro aqui só criaria uma segunda regra para divergir da primeira.
+   * O filtro por corretor é OBRIGATÓRIO aqui.
+   *
+   * Antes ele era omitido de propósito, porque a policy da 0018 recortava
+   * sozinha. A 0031 abriu essas tabelas para o gestor (a administração
+   * precisa enxergar a operação da equipe) — e, sem o filtro, o
+   * `maybeSingle()` da instância passa a receber N linhas e explode
+   * justamente na tela do gestor.
+   *
+   * Esta continua sendo a CAIXA PESSOAL de quem está logado; a visão da
+   * equipe mora em /corretor/admin/whatsapp.
    */
   const [{ data: conversas }, { data: instancia }] = await Promise.all([
     supabase
       .from("whatsapp_conversas")
       .select("id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, ultima_mensagem, ultima_interacao_em, lead_id")
+      .eq("corretor_id", corretor.id)
       .order("ultima_interacao_em", { ascending: false })
       .limit(100),
     supabase
       .from("corretor_whatsapp_instancias")
       .select("modo_bot, status_conexao")
+      .eq("corretor_id", corretor.id)
       .maybeSingle(),
   ]);
 
