@@ -4,6 +4,18 @@
  * Uso (manual, antes de QUALQUER bump de PROMPT_VERSAO):
  *   GEMINI_API_KEY=... npx tsx scripts/eval/rodarEval.ts
  *
+ * Comparando provedores (a cascata tem NVIDIA e Gemini):
+ *   NVIDIA_API_KEY=... GEMINI_API_KEY=... npx tsx scripts/eval/rodarEval.ts --provedor=nvidia
+ *   GEMINI_API_KEY=...                    npx tsx scripts/eval/rodarEval.ts --provedor=gemini
+ *
+ * `--provedor` força QUEM RESPONDE, desligando a cascata para o teste — sem
+ * isso a NVIDIA falharia e o Gemini responderia por baixo, e o número seria
+ * de um provedor que não é o que se queria medir.
+ *
+ * O JUIZ é sempre o Gemini, em qualquer modo. Se o juiz fosse o mesmo
+ * provedor sob avaliação, a NVIDIA estaria dando nota para si mesma e o
+ * score perderia o sentido.
+ *
  * Fluxo:
  *  1. CALIBRAÇÃO: o judge avalia os casos de eval/golden/calibracao.json
  *     (anotados à mão) e o script ABORTA se a concordância com as notas
@@ -22,6 +34,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { gerarRespostaIA, PROMPT_VERSAO } from "../../src/lib/whatsapp/aiAgent";
 import { sanearRespostaIA } from "../../src/lib/whatsapp/guardrails";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
+import { ORCAMENTO_AGENTE_MS } from "../../src/lib/whatsapp/llm";
 import type { Empreendimento } from "../../src/lib/types";
 
 type Caso = {
@@ -30,6 +43,13 @@ type Caso = {
   mensagem: string;
   expectativas?: Record<string, unknown>;
 };
+
+// `--provedor=nvidia|gemini` restringe a cascata antes de qualquer chamada.
+const provedorArg = process.argv.find((a) => a.startsWith("--provedor="))?.split("=")[1];
+if (provedorArg) {
+  process.env.IA_PROVEDOR_FORCADO = provedorArg;
+  console.log(`Provedor forçado para o agente: ${provedorArg} (o juiz continua no Gemini)\n`);
+}
 
 const catalogo = JSON.parse(readFileSync("eval/fixtures/catalogo.json", "utf8")) as Empreendimento[];
 const casos = JSON.parse(readFileSync("eval/golden/casos.json", "utf8")) as Caso[];
@@ -51,10 +71,16 @@ function catalogoParaJudge(): string {
     .join("\n");
 }
 
+/**
+ * O juiz. Chama `chamarGeminiJson` DIRETO, sem passar pela cascata, e isso é
+ * deliberado: um juiz que pudesse cair na NVIDIA estaria, em metade das
+ * rodadas, avaliando o próprio provedor — e a nota deixaria de comparar
+ * coisa alguma.
+ */
 async function julgar(mensagem: string, resposta: string): Promise<Record<string, number> | null> {
   const resultado = await chamarGeminiJson(
     `${RUBRICA}\n\nCATÁLOGO OFICIAL:\n${catalogoParaJudge()}\n\nMENSAGEM DO CLIENTE: ${mensagem}\n\nRESPOSTA DA ASSISTENTE: ${resposta}`,
-    { temperature: 0 },
+    { temperature: 0, timeoutMs: ORCAMENTO_AGENTE_MS },
   );
   if (!resultado.ok) return null;
   const j = resultado.json as Record<string, number>;
@@ -143,10 +169,15 @@ async function main() {
   const scoreGeral = +(((medias.fidelidade + medias.conducao + medias.tom) / 6) * 100).toFixed(1);
 
   const data = new Date().toISOString().slice(0, 10);
-  const arquivo = `eval/resultados/${PROMPT_VERSAO}-${data}.json`;
+  const sufixo = provedorArg ? `-${provedorArg}` : "";
+  const arquivo = `eval/resultados/${PROMPT_VERSAO}${sufixo}-${data}.json`;
   writeFileSync(
     arquivo,
-    JSON.stringify({ promptVersao: PROMPT_VERSAO, data, scoreGeral, medias, falhasDuras, casos: resultados }, null, 2),
+    JSON.stringify(
+      { promptVersao: PROMPT_VERSAO, provedor: provedorArg ?? "cascata", data, scoreGeral, medias, falhasDuras, casos: resultados },
+      null,
+      2,
+    ),
   );
 
   console.log(`\nScore geral: ${scoreGeral}/100 · médias ${JSON.stringify(medias)} · ${falhasDuras} caso(s) com falha dura`);

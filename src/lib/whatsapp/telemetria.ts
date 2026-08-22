@@ -30,6 +30,13 @@ export type InteracaoIA = {
   temperaturaScore?: number | null;
   tokensEntrada?: number | null;
   tokensSaida?: number | null;
+  /**
+   * Qual modelo respondeu. Era a constante do Gemini cravada no insert —
+   * inútil desde que existe cascata, porque a coluna diria "gemini" mesmo
+   * quando quem atendeu foi a NVIDIA. É por aqui que se compara os dois
+   * provedores em produção.
+   */
+  modelo?: string | null;
 };
 
 export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
@@ -40,7 +47,7 @@ export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
       corretor_id: dados.corretorId ?? null,
       origem: dados.origem,
       prompt_versao: dados.promptVersao,
-      modelo: MODELO_GEMINI,
+      modelo: dados.modelo ?? MODELO_GEMINI,
       latencia_ms: dados.latenciaMs ?? null,
       fallback: dados.fallback ?? false,
       acao: dados.acao,

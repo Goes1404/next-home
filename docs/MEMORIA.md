@@ -212,9 +212,42 @@ trilho+IA, follow-up, métricas de funil).
   (`candidatosTelefone`), e CRIA o lead se não existir. Antes o match era
   igualdade exata com o telefone digitado à mão: 0 de 32 conversas tinham
   lead, 0 dossiês persistidos, few-shot morto. Backfill na 0026.
-- **Toda chamada ao Gemini passa por `gemini.ts`** (`chamarGeminiJson`):
-  timeout POR CHAMADOR + retentativa seletiva + usage para telemetria. Não
-  duplicar fetch.
+- **Provedor de IA é CASCATA, não um só** (`llm.ts` → `chamarLlmJson`):
+  NVIDIA (`build.nvidia.com`, OpenAI-compatível) primeiro, Gemini de
+  reserva. Nasceu de um `http_429` do Gemini em produção. **Trocar de
+  provedor não elimina limite** — o tier gratuito da NVIDIA também tem teto
+  (~40 req/min por modelo, por conta); o que resolve é ter dois.
+  - **Provedor sem chave é PULADO, não é falha.** Sem `NVIDIA_API_KEY` tudo
+    roda no Gemini, exatamente como antes. Dá para subir o código antes de
+    existir a chave.
+  - **Orçamento por PRAZO, não por tentativa** (`FATIA_MAXIMA`): o segundo
+    provedor recebe o tempo que sobrou. Somar os tetos dobraria o pior caso
+    e estouraria os 60s da função do webhook — trocando contingência por
+    504, em que o cliente não recebe nada.
+  - **`IA_PROVEDOR_FORCADO=nvidia|gemini`** restringe a cascata a um só.
+    Existe para o eval: sem isso a NVIDIA falharia num caso difícil, o
+    Gemini responderia por baixo, e o score mediria a mistura.
+- **`response_format` da NVIDIA não é confiável** em todo modelo do
+  catálogo — diferente do `responseMimeType` do Gemini, que devolve JSON
+  limpo por contrato. Como todo o contrato do agente é JSON,
+  `extrairJsonDeTexto` (`llmTipos.ts`) desembrulha cerca de código e frase
+  de cortesia, com busca de chaves BALANCEADAS (regex guloso truncaria
+  `visitaProposta`, que é aninhado). É o maior risco novo do caminho da
+  NVIDIA e o mais testado.
+- **Áudio e PDF continuam SÓ no Gemini** (`audioTranscriber.ts`,
+  `importacao.ts`): mandam `inlineData`, e modelo de texto não recebe.
+  Nunca migrar esses dois para a cascata.
+- **`ia_interacoes.modelo` é o eixo de comparação entre provedores.** Era a
+  constante do Gemini cravada no insert — diria "gemini" mesmo quando quem
+  atendesse fosse a NVIDIA. Hoje é o modelo que de fato respondeu, e o
+  playground mostra o mesmo dado embaixo de cada balão.
+- **O juiz do eval fica FIXO no Gemini** (`chamarGeminiJson` direto, sem
+  cascata). Juiz que pode cair no provedor sob avaliação está dando nota
+  para si mesmo.
+- **Toda chamada de texto passa por `llm.ts`**; `gemini.ts` e `nvidia.ts`
+  são só adaptadores. Não duplicar fetch — `aiParser.ts` e `campaignQueue.ts`
+  tinham cópias próprias e foram migrados (a variação de campanha é UMA
+  chamada por mensagem: é o que mais consome cota no sistema).
 - **O teto de 8s era curto demais, e o sintoma parecia outra coisa.** Com
   prompt de ~4000 tokens (few-shot + catálogo ranqueado + histórico), o
   Gemini 2.5 Flash responde em 5–7s como comportamento NORMAL — a

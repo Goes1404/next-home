@@ -1,5 +1,5 @@
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
-import { chamarGeminiJson, geminiConfigurado, TIMEOUT_DOSSIE_MS } from "./gemini";
+import { algumProvedorConfigurado, chamarLlmJson, ORCAMENTO_DOSSIE_MS } from "./llm";
 import type { DossieClienteIA, TemperaturaLeadLabel } from "./types";
 
 const PROMPT_DOSSIE = `Você é um analista sênior de inteligência comercial imobiliária da Next Home.
@@ -45,7 +45,7 @@ export async function extrairDossieCliente(
     updatedAt: new Date().toISOString(),
   };
 
-  if (!geminiConfigurado() || conversaTexto.trim().length < 20) {
+  if (!algumProvedorConfigurado() || conversaTexto.trim().length < 20) {
     return dossieDefault;
   }
 
@@ -55,9 +55,9 @@ export async function extrairDossieCliente(
   // Teto menor que o do agente de propósito: o dossiê é extraído DEPOIS de
   // as mensagens já terem saído, então ninguém está esperando por ele — e
   // é o que deixa o orçamento de 60s do webhook fechar com folga.
-  const resultado = await chamarGeminiJson(
+  const resultado = await chamarLlmJson(
     `${PROMPT_DOSSIE}\n\n--- TRANSCRIÇÃO DA CONVERSA ---\n${conversaTexto.slice(0, 12000)}`,
-    { temperature: 0.1, timeoutMs: TIMEOUT_DOSSIE_MS },
+    { temperature: 0.1, orcamentoMs: ORCAMENTO_DOSSIE_MS },
   );
 
   if (!resultado.ok) {

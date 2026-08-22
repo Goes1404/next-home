@@ -5,7 +5,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import { gerarRespostaIA, PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
-import type { MotivoFalhaGemini } from "@/lib/whatsapp/gemini";
+import type { MotivoFalhaLlm } from "@/lib/whatsapp/llmTipos";
 import { ranquearCatalogo } from "@/lib/whatsapp/catalogoRelevante";
 import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
 import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
@@ -41,7 +41,9 @@ export type RespostaPlayground = {
   /** false = respondido pelo fallback, sem passar pelo Gemini. */
   iaAtiva: boolean;
   /** Por que caiu no fallback — a tela usa isto para dizer a verdade. */
-  motivoFalha?: MotivoFalhaGemini | null;
+  motivoFalha?: MotivoFalhaLlm | null;
+  /** Qual modelo respondeu. É o A/B mais barato entre os provedores. */
+  modelo?: string | null;
 };
 
 export async function testarAgenteIA(
@@ -105,6 +107,7 @@ export async function testarAgenteIA(
     anexosBloqueados: saneada.anexosBloqueados + saneada.slugsBloqueados,
     tokensEntrada: resposta.meta.tokensEntrada,
     tokensSaida: resposta.meta.tokensSaida,
+    modelo: resposta.meta.modelo,
   });
 
   const conversaCompleta = [...historico.map((h) => h.texto), mensagem].join("\n");
@@ -126,6 +129,7 @@ export async function testarAgenteIA(
      */
     iaAtiva: !resposta.meta.fallback,
     motivoFalha: resposta.meta.motivoFalha,
+    modelo: resposta.meta.modelo,
   };
 }
 

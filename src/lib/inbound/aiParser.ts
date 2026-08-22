@@ -1,5 +1,6 @@
 import type { EmailInboundInput, LeadExtraido, PortalOrigem } from "./types";
 import { extrairLeadViaRegex, identificarPortalOrigem } from "./regexFallback";
+import { algumProvedorConfigurado, chamarLlmJson } from "@/lib/whatsapp/llm";
 import { normalizarTelefoneBrasileiro } from "./phoneUtils";
 
 const PROMPT_SISTEMA_MULTI = `Você é um extrator de leads imobiliários de alta precisão.
@@ -24,50 +25,31 @@ Você DEVE responder EXCLUSIVAMENTE um objeto JSON válido, sem texto antes ou d
 import { extrairVariosLeadsViaRegex } from "./regexFallback";
 
 /**
- * Extrai um ou múltiplos leads de um e-mail usando Gemini 2.0 Flash + Fallback Regex.
+ * Extrai um ou múltiplos leads de um e-mail pela cascata de IA, com
+ * fallback por regex quando nenhum provedor responde.
  */
 export async function extrairVariosLeadsComIA(email: EmailInboundInput): Promise<LeadExtraido[]> {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-
   const corpoTexto = email.text || email.html || "";
   const entradaCompleta = `Assunto: ${email.subject || ""}\nDe: ${email.from || ""}\nPara: ${email.to || ""}\n\nCorpo:\n${corpoTexto.slice(0, 10000)}`;
 
-  if (apiKey && corpoTexto.trim().length > 10) {
+  if (algumProvedorConfigurado() && corpoTexto.trim().length > 10) {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
-
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  { text: `${PROMPT_SISTEMA_MULTI}\n\nE-mail a ser analisado:\n${entradaCompleta}` },
-                ],
-              },
-            ],
-            generationConfig: {
-              temperature: 0.1,
-              responseMimeType: "application/json",
-            },
-          }),
-        },
+      // Pela cascata (NVIDIA → Gemini): um e-mail de portal que chega junto
+      // com outros dez não pode virar lead perdido porque um provedor
+      // estourou cota naquele minuto.
+      const resultado = await chamarLlmJson(
+        `${PROMPT_SISTEMA_MULTI}\n\nE-mail a ser analisado:\n${entradaCompleta}`,
+        { temperature: 0.1, orcamentoMs: 12_000 },
       );
 
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const json = await response.json();
-        const textoGerado = json.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (textoGerado) {
-          const parsed = JSON.parse(textoGerado);
-          const listaBruta = Array.isArray(parsed.leads) ? parsed.leads : Array.isArray(parsed) ? parsed : [parsed];
+      if (resultado.ok) {
+        {
+          const parsed = resultado.json as { leads?: unknown };
+          const listaBruta = Array.isArray(parsed.leads)
+            ? parsed.leads
+            : Array.isArray(parsed)
+              ? parsed
+              : [parsed];
 
           const resultados: LeadExtraido[] = [];
           for (const item of listaBruta) {

@@ -594,6 +594,7 @@ export async function POST(req: NextRequest) {
       temperaturaScore: dossie.temperaturaScore,
       tokensEntrada: respostaIA.meta.tokensEntrada,
       tokensSaida: respostaIA.meta.tokensSaida,
+      modelo: respostaIA.meta.modelo,
     });
 
     return NextResponse.json({

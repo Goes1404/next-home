@@ -76,7 +76,14 @@ describe("Guardrails de saída", () => {
       { tipo: "foto" as const, url: "https://malicioso.com/foto.jpg", titulo: "Alucinada" },
     ],
     visitaProposta: null,
-    meta: { latenciaMs: 10, fallback: false, motivoFalha: null, tokensEntrada: null, tokensSaida: null },
+    meta: {
+      latenciaMs: 10,
+      fallback: false,
+      motivoFalha: null,
+      modelo: "gemini-2.5-flash",
+      tokensEntrada: null,
+      tokensSaida: null,
+    },
   };
 
   it("descarta anexo com URL fora do catálogo e conta o bloqueio", () => {

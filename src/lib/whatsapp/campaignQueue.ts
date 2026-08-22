@@ -1,4 +1,5 @@
 import { dentroDaJanela } from "./antiBan";
+import { algumProvedorConfigurado, chamarLlmJson } from "./llm";
 import type { ItemFilaCampanha } from "./types";
 
 /** Piso e teto do intervalo humanizado entre disparos, em segundos. */
@@ -56,10 +57,9 @@ export async function variarMensagemComIA(params: {
   nomeLead: string;
   timeoutMs?: number;
 }): Promise<{ texto: string; personalizadoPorIA: boolean }> {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
   const semVariacao = { texto: params.texto, personalizadoPorIA: false };
 
-  if (!apiKey || !params.nomeLead) return semVariacao;
+  if (!algumProvedorConfigurado() || !params.nomeLead) return semVariacao;
 
   const promptVariacao = `Você é um redator imobiliário sênior da Next Home.
 Reescreva a mensagem abaixo para o cliente "${params.nomeLead}", mantendo o objetivo de negócio e o tom consultivo e elegante, mas variando a saudação e vocabulário para torná-la 100% natural, humana e única.
@@ -68,35 +68,33 @@ Nunca use emojis em excesso. Máximo 2 parágrafos curtos.
 Mensagem Original:
 ${params.texto}
 
-Mensagem Reescrita (apenas o texto puro da mensagem):`;
+Responda em JSON: {"mensagem": "o texto reescrito"}`;
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), params.timeoutMs ?? 12000);
+  /*
+   * Passa pela cascata (NVIDIA → Gemini) como o resto do sistema. Aqui a
+   * troca importa por volume: é UMA chamada por mensagem de campanha, e uma
+   * fila de 40 leads sozinha já chega perto do teto por minuto de qualquer
+   * provedor gratuito. Um estouro aqui não quebra nada — só devolve o texto
+   * sem variação, e aí todas as mensagens saem iguais, que é exatamente o
+   * padrão que o WhatsApp lê como spam.
+   *
+   * O contrato virou JSON (era texto cru) porque a cascata fala JSON com os
+   * dois provedores — e é o que permite o adaptador da NVIDIA desembrulhar
+   * a resposta com segurança.
+   */
+  const resultado = await chamarLlmJson(promptVariacao, {
+    temperature: 0.7,
+    orcamentoMs: params.timeoutMs ?? 12_000,
+  });
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: promptVariacao }] }],
-          generationConfig: { temperature: 0.7 },
-        }),
-        signal: controller.signal,
-      },
-    );
+  if (!resultado.ok) {
+    console.warn(`[campanha] variação por IA indisponível (${resultado.erro}); mantendo o texto base.`);
+    return semVariacao;
+  }
 
-    clearTimeout(timeoutId);
-    if (!res.ok) return semVariacao;
-
-    const json = await res.json();
-    const textoGerado = json.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (textoGerado && textoGerado.trim().length > 15) {
-      return { texto: textoGerado.trim(), personalizadoPorIA: true };
-    }
-  } catch (err) {
-    console.warn("Variação por IA indisponível; mantendo o texto base:", err);
+  const gerado = (resultado.json as { mensagem?: unknown })?.mensagem;
+  if (typeof gerado === "string" && gerado.trim().length > 15) {
+    return { texto: gerado.trim(), personalizadoPorIA: true };
   }
 
   return semVariacao;
@@ -192,9 +190,10 @@ export async function gerarMensagensCampanhaPersonalizadas(params: {
   empreendimentoNome?: string;
   intervaloSegundosMinimo?: number;
 }): Promise<ItemFilaCampanha[]> {
-  if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_AI_API_KEY) {
+  if (!algumProvedorConfigurado()) {
     console.warn(
-      "Campanha sem GEMINI_API_KEY: as mensagens sairão sem variação por IA, aumentando o risco de bloqueio por spam.",
+      "Campanha sem nenhum provedor de IA configurado (NVIDIA_API_KEY / GEMINI_API_KEY): " +
+        "as mensagens sairão sem variação, aumentando o risco de bloqueio por spam.",
     );
   }
 

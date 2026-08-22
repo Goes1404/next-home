@@ -1,6 +1,7 @@
 import type { Empreendimento } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
-import { chamarGeminiJson, TIMEOUT_AGENTE_MS, type MotivoFalhaGemini } from "./gemini";
+import { chamarLlmJson, ORCAMENTO_AGENTE_MS } from "./llm";
+import type { MotivoFalhaLlm } from "./llmTipos";
 import type { DossieClienteIA, TomVozBot } from "./types";
 
 /**
@@ -94,7 +95,9 @@ export interface RespostaAgenteIA {
     latenciaMs: number;
     fallback: boolean;
     /** Por que caiu no fallback. `null` quando a IA respondeu de fato. */
-    motivoFalha: MotivoFalhaGemini | null;
+    motivoFalha: MotivoFalhaLlm | null;
+    /** Qual modelo atendeu — a cascata pode ter usado o provedor de reserva. */
+    modelo: string | null;
     tokensEntrada: number | null;
     tokensSaida: number | null;
   };
@@ -234,7 +237,7 @@ export async function gerarRespostaIA(
   mensagemCliente: string,
 ): Promise<RespostaAgenteIA> {
   const fallback = (
-    motivoFalha: MotivoFalhaGemini,
+    motivoFalha: MotivoFalhaLlm,
     latenciaMs = 0,
   ): RespostaAgenteIA => ({
     textoResposta: textoDeContingencia({
@@ -250,7 +253,14 @@ export async function gerarRespostaIA(
     imoveisRecomendados: [],
     anexosMidia: [],
     visitaProposta: null,
-    meta: { latenciaMs, fallback: true, motivoFalha, tokensEntrada: null, tokensSaida: null },
+    meta: {
+      latenciaMs,
+      fallback: true,
+      motivoFalha,
+      modelo: null,
+      tokensEntrada: null,
+      tokensSaida: null,
+    },
   });
 
   const promptSistema = construirPromptSistema(ctx);
@@ -271,9 +281,12 @@ export async function gerarRespostaIA(
 
   const entradaPrompt = `${promptSistema}\n\n--- HISTÓRICO DA CONVERSA ---\n${historicoFormatado}\nCliente: ${mensagemCliente}\n${ctx.nomeAssistente}:`;
 
-  const resultado = await chamarGeminiJson(entradaPrompt, {
+  // A cascata (NVIDIA → Gemini) decide com quem falar; aqui só interessa
+  // se veio resposta. Cair no fallback agora significa que TODOS os
+  // provedores falharam, não que um deles teve um soluço.
+  const resultado = await chamarLlmJson(entradaPrompt, {
     temperature: 0.2,
-    timeoutMs: TIMEOUT_AGENTE_MS,
+    orcamentoMs: ORCAMENTO_AGENTE_MS,
   });
 
   if (!resultado.ok) {
@@ -305,6 +318,7 @@ export async function gerarRespostaIA(
       latenciaMs: resultado.latenciaMs,
       fallback: false,
       motivoFalha: null,
+      modelo: resultado.modelo,
       tokensEntrada: resultado.tokensEntrada,
       tokensSaida: resultado.tokensSaida,
     },

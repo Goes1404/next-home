@@ -97,6 +97,8 @@ interface MensagemPlayground {
   remetente: "cliente" | "bot";
   texto: string;
   hora: string;
+  /** Qual modelo respondeu — o A/B mais barato entre os provedores. */
+  modelo?: string | null;
   anexos?: { tipo: string; url: string; titulo: string }[];
 }
 
@@ -338,6 +340,7 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
         remetente: "bot",
         texto: resposta.texto,
         hora: "Agora",
+        modelo: resposta.modelo,
         anexos: resposta.anexos.length > 0 ? resposta.anexos : undefined,
       },
     ]);
@@ -794,7 +797,11 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
                       </div>
                     )}
 
-                    <span className="text-[9px] text-apoio block text-right">{m.hora}</span>
+                    <span className="text-[9px] text-apoio block text-right">
+                      {/* Qual modelo respondeu. Com a cascata, a resposta pode
+                          vir do provedor de reserva — e é aqui que se vê. */}
+                      {m.modelo ? `${m.modelo} · ${m.hora}` : m.hora}
+                    </span>
                   </div>
                 </div>
               ))}
