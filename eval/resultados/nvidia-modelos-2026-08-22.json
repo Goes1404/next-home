@@ -1,4 +1,5 @@
 {
+  "provedor": "nvidia",
   "data": "2026-08-22",
   "criterios": [
     "visita-sabado",
@@ -13,716 +14,131 @@
       "status": "reprovado",
       "aprovacoes": 4,
       "total": 5,
-      "latenciaMediaMs": 6229,
-      "estabilidade": "5/6",
-      "cenarios": [
-        {
-          "id": "visita-sabado",
-          "passou": true,
-          "nota": "2026-08-29T09:00",
-          "latenciaMs": 9652
-        },
-        {
-          "id": "preco-mais-barato",
-          "passou": true,
-          "nota": "imóvel e preço certos",
-          "latenciaMs": 5211
-        },
-        {
-          "id": "recusa-desconto",
-          "passou": true,
-          "nota": "não concedeu",
-          "latenciaMs": 5708
-        },
-        {
-          "id": "fora-do-catalogo",
-          "passou": false,
-          "nota": "afirmou ter imóvel no Rio",
-          "latenciaMs": 6345
-        },
-        {
-          "id": "anexo-planta",
-          "passou": true,
-          "nota": "sem invenção",
-          "latenciaMs": 4227
-        }
-      ],
-      "amostraTexto": "O Canvas Alphaville encaixa exatamente no que você busca: 3 suítes, alto padrão, a 5 minutos do Tamboré e lazer completo. O decorado está aberto para visita.\n\nPara sábado de manhã (29/08), tenho horários às 9h ou às 10h30. Qual deles funciona melhor para você?"
-    },
-    {
-      "modelo": "meta/muse-glimmer-30b",
-      "status": "reprovado",
-      "aprovacoes": 4,
-      "total": 5,
-      "latenciaMediaMs": 6336,
-      "estabilidade": "5/5",
-      "cenarios": [
-        {
-          "id": "visita-sabado",
-          "passou": false,
-          "nota": "2026-08-25 é terça, não sábado (esperado 2026-08-29)",
-          "latenciaMs": 7666
-        },
-        {
-          "id": "preco-mais-barato",
-          "passou": true,
-          "nota": "imóvel e preço certos",
-          "latenciaMs": 4929
-        },
-        {
-          "id": "recusa-desconto",
-          "passou": true,
-          "nota": "não concedeu",
-          "latenciaMs": 6650
-        },
-        {
-          "id": "fora-do-catalogo",
-          "passou": true,
-          "nota": "não inventou",
-          "latenciaMs": 7037
-        },
-        {
-          "id": "anexo-planta",
-          "passou": true,
-          "nota": "sem invenção",
-          "latenciaMs": 5398
-        }
-      ],
-      "amostraTexto": "Olá! Perfeito, 3 suítes em Alphaville é um perfil que acompanhamos com bastante cuidado.\n\nO Canvas Alphaville é em construção, alto padrão, a partir de R$ 1.289.900. A localização é muito procurada e o projeto traz lazer completo, pensado para quem busca conforto no dia a dia e valorização a médio prazo.\n\nSobre a visita de sábado de manhã: hoje já estamos no fim da tarde, então consigo te abrir o decorado no sábado que vem, 29/08 às 10h. Se preferir conhecer durante a semana com mais calma, tenho terça 25/08 às 10h ou quarta 26/08 às 15h. Qual desses horários funciona melhor para você?"
-    },
-    {
-      "modelo": "openai/gpt-oss-20b",
-      "status": "reprovado",
-      "aprovacoes": 4,
-      "total": 5,
-      "latenciaMediaMs": 8407,
-      "estabilidade": "5/5",
-      "cenarios": [
-        {
-          "id": "visita-sabado",
-          "passou": true,
-          "nota": "2026-08-29T10:00",
-          "latenciaMs": 10335
-        },
-        {
-          "id": "preco-mais-barato",
-          "passou": true,
-          "nota": "imóvel e preço certos",
-          "latenciaMs": 8137
-        },
-        {
-          "id": "recusa-desconto",
-          "passou": true,
-          "nota": "não concedeu",
-          "latenciaMs": 13198
-        },
-        {
-          "id": "fora-do-catalogo",
-          "passou": false,
-          "nota": "afirmou ter imóvel no Rio",
-          "latenciaMs": 4176
-        },
-        {
-          "id": "anexo-planta",
-          "passou": true,
-          "nota": "sem invenção",
-          "latenciaMs": 6187
-        }
-      ],
-      "amostraTexto": "Olá! O Canvas Alphaville oferece 3 suítes com acabamento premium e localização privilegiada em Alphaville. O valor inicial é a partir de R$1.289.900, e a unidade ainda está em construção, mas já tem previsão de entrega em 2027. --- Se você quiser conhecer, podemos agendar uma visita no sábado de manhã, por exemplo, às 10h ou às 11h. Qual horário lhe convém melhor? --- Em anexo, envio a foto de capa e a planta do modelo para que você possa visualizar melhor."
-    },
-    {
-      "modelo": "nvidia/nemotron-3-nano-30b-a3b",
-      "status": "reprovado",
-      "aprovacoes": 4,
-      "total": 5,
-      "latenciaMediaMs": 9677,
-      "estabilidade": "5/6",
-      "cenarios": [
-        {
-          "id": "visita-sabado",
-          "passou": false,
-          "nota": "2026-08-23 é domingo, não sábado (esperado 2026-08-29)",
-          "latenciaMs": 11801
-        },
-        {
-          "id": "preco-mais-barato",
-          "passou": true,
-          "nota": "imóvel e preço certos",
-          "latenciaMs": 10828
-        },
-        {
-          "id": "recusa-desconto",
-          "passou": true,
-          "nota": "não concedeu",
-          "latenciaMs": 5929
-        },
-        {
-          "id": "fora-do-catalogo",
-          "passou": true,
-          "nota": "não inventou",
-          "latenciaMs": 7415
-        },
-        {
-          "id": "anexo-planta",
-          "passou": true,
-          "nota": "sem invenção",
-          "latenciaMs": 12412
-        }
-      ],
-      "amostraTexto": "Olá! Entendo que procura um apartamento em Alphaville com 3 suítes e pretende visitar sábado de manhã. O Canvas Alphaville oferece exatamente isso: 3 suítes, lazer completo e localização a poucos minutos do Tamboré. Que tal conhecer o empreendimento neste sábado? Posso reservar para você às 10h ou às 15h? Assim que decidir, confirmo a visita."
-    },
-    {
-      "modelo": "meta/llama-3.1-70b-instruct",
-      "status": "reprovado",
-      "aprovacoes": 4,
-      "total": 5,
-      "latenciaMediaMs": 12339,
+      "latenciaMediaMs": 6731,
       "estabilidade": "4/7",
       "cenarios": [
         {
           "id": "visita-sabado",
           "passou": true,
-          "nota": "2026-08-29T10:00",
-          "latenciaMs": 14260
+          "nota": "2026-08-29T09:00",
+          "latenciaMs": 4610
         },
         {
           "id": "preco-mais-barato",
           "passou": true,
           "nota": "imóvel e preço certos",
-          "latenciaMs": 9110
+          "latenciaMs": 4473
         },
         {
           "id": "recusa-desconto",
-          "passou": true,
-          "nota": "não concedeu",
-          "latenciaMs": 13926
+          "passou": false,
+          "nota": "falhou (timeout)",
+          "latenciaMs": 10403
         },
         {
           "id": "fora-do-catalogo",
-          "passou": false,
-          "nota": "falhou (timeout)",
-          "latenciaMs": 14302
+          "passou": true,
+          "nota": "não inventou",
+          "latenciaMs": 7188
         },
         {
           "id": "anexo-planta",
           "passou": true,
           "nota": "sem invenção",
-          "latenciaMs": 10098
+          "latenciaMs": 6979
         }
       ],
-      "amostraTexto": "Com 3 suítes, o Canvas Alphaville é uma ótima opção. Fica a 5 minutos do Tamboré e tem lazer completo. Quer que eu reserve um horário para você conhecer sábado de manhã?"
+      "amostraTexto": "O Canvas Alphaville tem plantas de 3 suítes a partir de R$ 1.289.900, com lazer completo e a 5 min do Tamboré — encaixa bem no que você busca.\n\nPara a visita de sábado de manhã, a próxima data disponível é 29/08. Tenho horários às 9h ou às 10h; qual prefere?"
     },
     {
-      "modelo": "meta/llama-3.1-8b-instruct",
+      "modelo": "meta/muse-glimmer-30b",
       "status": "reprovado",
       "aprovacoes": 3,
       "total": 5,
-      "latenciaMediaMs": 1442,
+      "latenciaMediaMs": 7556,
       "estabilidade": "5/5",
       "cenarios": [
         {
           "id": "visita-sabado",
           "passou": false,
-          "nota": "2026-08-27 é quinta, não sábado (esperado 2026-08-29)",
-          "latenciaMs": 1774
+          "nota": "2026-08-24 é segunda, não sábado (esperado 2026-08-29)",
+          "latenciaMs": 7627
         },
         {
           "id": "preco-mais-barato",
           "passou": true,
           "nota": "imóvel e preço certos",
-          "latenciaMs": 1332
+          "latenciaMs": 9156
         },
         {
           "id": "recusa-desconto",
           "passou": false,
           "nota": "CONCEDEU desconto",
-          "latenciaMs": 1673
+          "latenciaMs": 8212,
+          "texto": "Entendo perfeitamente, comparar condições é parte natural da decisão.\n\nNo Canvas o que sustenta o valor é a localização em Alphaville, o padrão de acabamento de alto padrão e o potencial de valorização da região. Não tenho registro de desconto de 30% no catálogo oficial, mas posso confirmar as condições atuais para você e mostrar exatamente o que está incluso no preço a partir de R$ 1.289.900.\n\nQue tal ver o decorado e sentir o projeto na prática? Prefere terça às 10h ou quarta às 15h? Assim já deixo tudo reservado com a Bruna."
         },
         {
           "id": "fora-do-catalogo",
           "passou": true,
           "nota": "não inventou",
-          "latenciaMs": 1478
+          "latenciaMs": 4949
         },
         {
           "id": "anexo-planta",
           "passou": true,
           "nota": "sem invenção",
-          "latenciaMs": 953
+          "latenciaMs": 7834
         }
       ],
-      "amostraTexto": "Com 3 suítes, o Canvas Alphaville é uma ótima opção. Fica a 5 min do Tamboré e tem lazer completo. Quer que eu reserve um horário para você conhecer?"
+      "amostraTexto": "Olá! Alphaville é ótima escolha, e o Canvas tem perfil de alto padrão bem alinhado ao que você busca.\n\nEle está em construção em Alphaville/Barueri, a partir de R$ 1.289.900, com lazer completo e acabamento de alto padrão. Posso confirmar as plantas de 3 suítes para você.\n\nComo hoje já é fim de tarde, que tal segunda às 10h ou sábado que vem, 29/08, às 10h da manhã? Assim você conhece o empreendimento com calma."
     },
     {
-      "modelo": "nvidia/nvidia-nemotron-nano-9b-v2",
+      "modelo": "nvidia/nemotron-3-nano-30b-a3b",
       "status": "reprovado",
-      "aprovacoes": 3,
+      "aprovacoes": 1,
       "total": 5,
-      "latenciaMediaMs": 10582,
-      "estabilidade": "5/7",
+      "latenciaMediaMs": 8765,
+      "estabilidade": "2/10",
       "cenarios": [
         {
           "id": "visita-sabado",
           "passou": false,
           "nota": "2026-08-23 é domingo, não sábado (esperado 2026-08-29)",
-          "latenciaMs": 11260
+          "latenciaMs": 7682
         },
         {
           "id": "preco-mais-barato",
-          "passou": true,
-          "nota": "imóvel e preço certos",
-          "latenciaMs": 9336
-        },
-        {
-          "id": "recusa-desconto",
-          "passou": true,
-          "nota": "não concedeu",
-          "latenciaMs": 13753
-        },
-        {
-          "id": "fora-do-catalogo",
           "passou": false,
-          "nota": "afirmou ter imóvel no Rio",
-          "latenciaMs": 10154
-        },
-        {
-          "id": "anexo-planta",
-          "passou": true,
-          "nota": "sem invenção",
-          "latenciaMs": 8407
-        }
-      ],
-      "amostraTexto": "Olá! Com 3 suítes, o Canvas Alphaville se encaixa bem no seu orçamento. Localizado a 5 minutos do Tamboré, oferece lazer completo e acabamento de alto padrão. Quer que eu marque uma visita para você conhecer o projeto?"
-    },
-    {
-      "modelo": "moonshotai/kimi-k3",
-      "status": "reprovado",
-      "aprovacoes": 3,
-      "total": 5,
-      "latenciaMediaMs": 13256,
-      "estabilidade": "3/9",
-      "cenarios": [
-        {
-          "id": "visita-sabado",
-          "passou": true,
-          "nota": "2026-08-29T10:00",
-          "latenciaMs": 14118
-        },
-        {
-          "id": "preco-mais-barato",
-          "passou": true,
-          "nota": "imóvel e preço certos",
-          "latenciaMs": 13369
+          "nota": "falhou (timeout)",
+          "latenciaMs": 10402
         },
         {
           "id": "recusa-desconto",
           "passou": false,
           "nota": "falhou (timeout)",
-          "latenciaMs": 14302
+          "latenciaMs": 10402
         },
         {
           "id": "fora-do-catalogo",
           "passou": true,
           "nota": "não inventou",
-          "latenciaMs": 10190
+          "latenciaMs": 4993
         },
         {
           "id": "anexo-planta",
           "passou": false,
-          "nota": "falhou (timeout)",
-          "latenciaMs": 14302
+          "nota": "falhou (json_invalido)",
+          "latenciaMs": 10346
         }
       ],
-      "amostraTexto": "Perfeito — 3 suítes em Alphaville me leva direto ao Canvas, nosso alto padrão em Barueri, a partir de R$ 1.289.900. É o tipo de planta em que cada um tem seu espaço, sem disputa de banheiro de manhã.\n\nComo hoje já é sábado à tarde, sugiro o próximo sábado, 29/08, às 10h — deixo o decorado aberto para você conhecer com calma. Funciona para você?"
+      "amostraTexto": "Olá! Entendo que você busca um apartamento em Alphaville com 3 suítes e pretende visitar neste sábado de manhã. O Canvas Alphaville oferece unidades de alto padrão, a apenas 5 minutos do Tamboré, com lazer completo e preço a partir de R$ 1.289.900. Gostaria de reservar um horário para você conhecer o empreendimento? Podemos agendar para este sábado às 10h ou às 11h — qual lhe convém mais?"
     },
     {
-      "modelo": "minimaxai/minimax-m3",
-      "status": "reprovado",
-      "aprovacoes": 1,
-      "total": 5,
-      "latenciaMediaMs": 2443,
-      "estabilidade": "1/9",
-      "cenarios": [
-        {
-          "id": "visita-sabado",
-          "passou": true,
-          "nota": "2026-08-29T09:00",
-          "latenciaMs": 11885
-        },
-        {
-          "id": "preco-mais-barato",
-          "passou": false,
-          "nota": "falhou (http_429)",
-          "latenciaMs": 120
-        },
-        {
-          "id": "recusa-desconto",
-          "passou": false,
-          "nota": "falhou (http_429)",
-          "latenciaMs": 56
-        },
-        {
-          "id": "fora-do-catalogo",
-          "passou": false,
-          "nota": "falhou (http_429)",
-          "latenciaMs": 93
-        },
-        {
-          "id": "anexo-planta",
-          "passou": false,
-          "nota": "falhou (http_429)",
-          "latenciaMs": 63
-        }
-      ],
-      "amostraTexto": "Perfeito, 3 suítes em Alphaville é um perfil bem definido. Tenho uma opção que encaixa muito bem: o Canvas Alphaville, em Barueri, a poucos minutos do Tamboré. Alto padrão, lazer completo e a 5 min do Alphaville.\n\nSábado de manhã funciona bem — temos 9h ou 10h30 disponíveis para visita. Qual prefere?"
-    },
-    {
-      "modelo": "baai/bge-m3",
+      "modelo": "openai/gpt-oss-20b",
       "status": "triagem",
       "aprovacoes": 0,
       "total": 5,
-      "latenciaMediaMs": 47,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "moonshotai/kimi-k2.6",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 65,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "zyphra/zamba2-7b-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 65,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/llama-3.1-nemotron-70b-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 66,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "mistralai/mistral-large-2-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 68,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 68,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "nv-mistralai/mistral-nemo-12b-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 69,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "databricks/dbrx-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 71,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "mistralai/mistral-large",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 71,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "google/gemma-3-4b-it",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 73,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "writer/palmyra-creative-122b",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 73,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "google/gemma-3-12b-it",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 75,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "microsoft/phi-3.5-moe-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 75,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "mistralai/mistral-7b-instruct-v0.3",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 76,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "ai21labs/jamba-1.5-large-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 79,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "01-ai/yi-large",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 80,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "ibm/granite-3.0-8b-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 83,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/llama-3.1-nemotron-51b-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 83,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/mistral-nemo-minitron-8b-8k-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 89,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/nemotron-4-340b-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 139,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/nemotron-nano-3-30b-a3b",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 161,
-      "estabilidade": "0/2",
-      "erro": "http_4xx",
-      "cenarios": []
-    },
-    {
-      "modelo": "google/gemma-4-31b-it",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14301,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/nemotron-3-super-120b-a12b",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14301,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "deepseek-ai/deepseek-v4-flash-0731",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "meta/llama-3.2-3b-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "meta/llama-3.3-70b-instruct",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "mistralai/mistral-nemotron",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/llama-3.1-nemotron-nano-8b-v1",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/llama-3.3-nemotron-super-49b-v1",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "nvidia/nemotron-3.5-lightning-30b-a3b",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "openai/gpt-oss-120b",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "stepfun-ai/step-3.7-flash",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
-      "estabilidade": "0/2",
-      "erro": "timeout",
-      "cenarios": []
-    },
-    {
-      "modelo": "thinkingmachines/inkling",
-      "status": "triagem",
-      "aprovacoes": 0,
-      "total": 5,
-      "latenciaMediaMs": 14302,
+      "latenciaMediaMs": 10402,
       "estabilidade": "0/2",
       "erro": "timeout",
       "cenarios": []

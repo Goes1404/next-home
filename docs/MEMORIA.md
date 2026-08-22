@@ -227,6 +227,24 @@ trilho+IA, follow-up, métricas de funil).
   - **`IA_PROVEDOR_FORCADO=nvidia|gemini`** restringe a cascata a um só.
     Existe para o eval: sem isso a NVIDIA falharia num caso difícil, o
     Gemini responderia por baixo, e o score mediria a mistura.
+- **O catálogo gratuito da NVIDIA é quase todo INDISPONÍVEL.** Medidos os
+  44 candidatos de chat: **35 reprovaram na triagem** — 21 devolvem
+  `404 Not found for account` (aparecem em `/v1/models` mas não existem
+  para a conta) e 14 estouram o tempo. Dos 9 que respondem, nenhum é
+  estável: a coluna de estabilidade do benchmark (chamadas honradas /
+  feitas) deu 4/7, 2/10, 3/9 em modelos que numa rodada anterior tinham
+  passado. **Não trate a lista de `/v1/models` como o que dá para usar.**
+- **Uma medição só não distingue modelo lento de endpoint instável**, e a
+  diferença decide a escolha. O `mistral-nemotron` deu 5,5s numa hora e
+  dois HTTP 500 mais um timeout de 14s na seguinte. Por isso o benchmark
+  repete cada cenário e reporta estabilidade; sem isso ele reprova um
+  modelo bom por azar ou aprova um instável por sorte.
+- **Critério de benchmark que reprova sem mostrar o texto é inauditável.**
+  O critério do Leblon reprovava "Não temos unidades no Leblon" — a
+  resposta CERTA — porque casava "temos … Leblon" ignorando a negação.
+  Dois dos melhores modelos foram injustamente reprovados até isso
+  aparecer. Hoje a checagem é por frase, exige afirmação de posse sem
+  negação antes do verbo, e toda reprovação guarda o texto da resposta.
 - **Modelo da NVIDIA foi escolhido MEDINDO, não pelo nome.** O primeiro
   palpite (`meta/llama-3.3-70b-instruct`) **não responde** nesta conta —
   duas tentativas, 60s e 90s, nada de volta. Medido com o prompt real
