@@ -24,9 +24,8 @@ import { site } from "@/lib/site";
 
 /** O que a IA pede: nunca uma URL. */
 export type PedidoMidia = {
-  /** Vazio quando `tipo` é "catalogo" — o catálogo é do CORRETOR, não de um imóvel. */
-  slug?: string;
-  tipo: "foto" | "planta" | "video" | "tour360" | "catalogo";
+  slug: string;
+  tipo: "foto" | "planta" | "video" | "tour360";
   /** Quantas peças enviar. Sem isso, "manda as fotos" viraria 15 anexos. */
   quantidade?: number;
 };
@@ -98,13 +97,6 @@ export function resolverAnexos(
   pedidos: PedidoMidia[] | undefined,
   catalogo: Empreendimento[],
   jaEnviadas: Set<string> = new Set(),
-  /*
-   * O catálogo do CORRETOR — um PDF com as opções da casa, que a corretora
-   * manda em vez de digitar uma lista no chat (está nas conversas
-   * exportadas). É por corretor porque cada um trabalha com um recorte
-   * diferente, e é opcional: quem não subiu arquivo simplesmente não manda.
-   */
-  catalogoDoCorretor?: { url: string; nome: string } | null,
 ): { anexos: AnexoResolvido[]; pedidosSemMidia: string[]; repetidos: number } {
   const anexos: AnexoResolvido[] = [];
   const pedidosSemMidia: string[] = [];
@@ -113,29 +105,7 @@ export function resolverAnexos(
 
   for (const pedido of pedidos ?? []) {
     if (anexos.length >= MAXIMO_ANEXOS) break;
-    if (!pedido?.tipo) continue;
-
-    if (pedido.tipo === "catalogo") {
-      if (!catalogoDoCorretor?.url) {
-        pedidosSemMidia.push("catálogo do corretor não cadastrado");
-        continue;
-      }
-      if (jaEnviadas.has(catalogoDoCorretor.url)) {
-        repetidos += 1;
-        pedidosSemMidia.push("catálogo já enviado nesta conversa");
-        continue;
-      }
-      if (jaIncluidas.has(catalogoDoCorretor.url)) continue;
-      jaIncluidas.add(catalogoDoCorretor.url);
-      anexos.push({
-        tipo: "catalogo",
-        url: catalogoDoCorretor.url,
-        titulo: catalogoDoCorretor.nome || "Catálogo Next Home",
-      });
-      continue;
-    }
-
-    if (!pedido.slug) continue;
+    if (!pedido?.slug || !pedido?.tipo) continue;
 
     const imovel = catalogo.find((e) => e.slug === pedido.slug);
     if (!imovel) {
@@ -185,6 +155,19 @@ export function resolverAnexos(
  * princípio das mídias, e aqui um link errado levaria o cliente a um 404
  * com a marca da imobiliária em cima.
  */
+/**
+ * O catálogo do corretor É a página dele na plataforma, não um PDF.
+ *
+ * `?corretor=<slug>` na raiz é detectado pelo `proxy.ts` e leva direto ao
+ * catálogo com aquele corretor vinculado — todo CTA dali em diante fala com
+ * ele. Isso resolve o material de apoio melhor que um arquivo: nunca
+ * desatualiza, não precisa de upload, e o cliente cai num lugar onde pode
+ * navegar em vez de rolar um PDF no celular.
+ */
+export function linkDoCatalogo(slugCorretor: string): string {
+  return `${site.url}/?corretor=${slugCorretor}`;
+}
+
 export function linkDaPagina(slug: string): string {
   return `${site.url}/empreendimentos/${slug}`;
 }

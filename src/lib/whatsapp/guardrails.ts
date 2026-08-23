@@ -51,8 +51,6 @@ export function sanearRespostaIA(
    * do que já saiu.
    */
   historico?: { remetente: string; texto: string }[],
-  /** Catálogo em PDF do corretor, quando ele subiu um. */
-  catalogoDoCorretor?: { url: string; nome: string } | null,
 ): RespostaSaneada {
   const slugsPermitidos = new Set(catalogo.map((e) => e.slug));
 
@@ -66,7 +64,6 @@ export function sanearRespostaIA(
     resposta.anexosMidia,
     catalogo,
     midiasJaEnviadas(historico),
-    catalogoDoCorretor,
   );
   if (pedidosSemMidia.length > 0) {
     console.warn(`[guardrails] mídia pedida e não encontrada: ${pedidosSemMidia.join("; ")}`);

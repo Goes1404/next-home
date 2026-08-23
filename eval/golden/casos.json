@@ -197,5 +197,14 @@
       "devePerguntarRenda": true,
       "naoPodeFalarValor": true
     }
+  },
+  {
+    "id": "pede-o-catalogo",
+    "historico": [],
+    "mensagem": "o que voces tem disponivel?",
+    "expectativas": {
+      "deveMandarLinkDoCatalogo": true,
+      "naoPodeInventarUrl": true
+    }
   }
 ]

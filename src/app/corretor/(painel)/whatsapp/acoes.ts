@@ -8,7 +8,6 @@ import { gerarRespostaIA, PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import type { MotivoFalhaLlm } from "@/lib/whatsapp/llmTipos";
 import { ranquearCatalogo } from "@/lib/whatsapp/catalogoRelevante";
 import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
-import { catalogoDoCorretor } from "@/lib/whatsapp/repositorio";
 import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
@@ -87,6 +86,7 @@ export async function testarAgenteIA(
   const respostaBruta = await gerarRespostaIA(
     {
       nomeCorretor: corretor.nome,
+      slugCorretor: corretor.slug ?? undefined,
       creciCorretor: corretor.creci,
       telefoneCorretor: corretor.whatsapp,
       nomeAssistente: instancia?.nome_assistente ?? "Sofia",
@@ -98,7 +98,7 @@ export async function testarAgenteIA(
     mensagem,
   );
 
-  const saneada = sanearRespostaIA(respostaBruta, catalogo, historico, await catalogoDoCorretor(corretor.id));
+  const saneada = sanearRespostaIA(respostaBruta, catalogo, historico);
   const resposta = saneada.resposta;
 
   // Playground também entra na telemetria — com origem própria, para as
@@ -364,73 +364,4 @@ export async function desconectarWhatsapp(): Promise<{ ok?: string; erro?: strin
 
   revalidatePath("/corretor/whatsapp");
   return { ok: "Número desconectado. A IA para de responder até você conectar de novo." };
-}
-
-/**
- * Sobe o catálogo em PDF do corretor — o material que a IA manda quando o
- * cliente pergunta "o que vocês têm".
- *
- * É por corretor, não global: cada um trabalha com um recorte diferente de
- * produtos, e foi assim que o pedido chegou ("catálogo de produtos
- * personalizados do corretor").
- */
-export async function salvarCatalogoCorretor(
-  formData: FormData,
-): Promise<{ ok?: string; erro?: string; url?: string; nome?: string }> {
-  const corretor = await getCorretorLogado();
-  if (!corretor) return { erro: "Conta sem vínculo com corretor." };
-
-  const arquivo = formData.get("arquivo");
-  if (!(arquivo instanceof File) || arquivo.size === 0) {
-    return { erro: "Escolha um arquivo PDF." };
-  }
-  if (arquivo.type !== "application/pdf") {
-    return { erro: "O catálogo precisa ser um PDF — é o que o WhatsApp entrega bem como documento." };
-  }
-  // 16 MB é o teto de documento do WhatsApp; acima disso o envio falha no
-  // provedor e o cliente não recebe nada, sem erro visível para o corretor.
-  if (arquivo.size > 16 * 1024 * 1024) {
-    return { erro: "O PDF passa de 16 MB, que é o limite do WhatsApp para documento." };
-  }
-
-  const supabase = await createClient();
-  const caminho = `catalogos/${corretor.id}-${Date.now()}.pdf`;
-
-  const { error: erroUpload } = await supabase.storage
-    .from("corretores")
-    .upload(caminho, arquivo, { contentType: "application/pdf", upsert: true });
-
-  if (erroUpload) {
-    console.error("Erro ao subir catálogo do corretor:", erroUpload);
-    return { erro: "Falha ao enviar o arquivo. Tente de novo." };
-  }
-
-  const { data: publica } = supabase.storage.from("corretores").getPublicUrl(caminho);
-
-  const { data, error } = await supabase
-    .from("corretores")
-    .update({ catalogo_url: publica.publicUrl, catalogo_nome: arquivo.name })
-    .eq("id", corretor.id)
-    .select("id");
-
-  if (error || !data?.length) return { erro: "Não foi possível salvar o catálogo agora." };
-
-  revalidatePath("/corretor/whatsapp");
-  return { ok: "Catálogo salvo. A IA já pode enviá-lo.", url: publica.publicUrl, nome: arquivo.name };
-}
-
-/** Tira o catálogo do ar. O arquivo fica no storage; o que some é o vínculo. */
-export async function removerCatalogoCorretor(): Promise<{ ok?: string; erro?: string }> {
-  const corretor = await getCorretorLogado();
-  if (!corretor) return { erro: "Conta sem vínculo com corretor." };
-
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("corretores")
-    .update({ catalogo_url: null, catalogo_nome: null })
-    .eq("id", corretor.id);
-
-  if (error) return { erro: "Não foi possível remover agora." };
-  revalidatePath("/corretor/whatsapp");
-  return { ok: "Catálogo removido." };
 }

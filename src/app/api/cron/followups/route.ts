@@ -188,7 +188,7 @@ async function processarFollowup(
 
   const { data: corretor } = await supabase
     .from("corretores")
-    .select("nome, creci, whatsapp")
+    .select("nome, creci, whatsapp, slug")
     .eq("id", instancia.corretor_id)
     .single();
   if (!corretor) return descartar(supabase, item.id, "corretor_inexistente");
@@ -204,6 +204,7 @@ async function processarFollowup(
   const resposta = await gerarRespostaIA(
     {
       nomeCorretor: corretor.nome,
+      slugCorretor: corretor.slug ?? undefined,
       creciCorretor: corretor.creci,
       telefoneCorretor: corretor.whatsapp,
       nomeAssistente: instancia.nome_assistente,

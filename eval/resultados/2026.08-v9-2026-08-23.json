@@ -2,20 +2,20 @@
   "promptVersao": "2026.08-v9",
   "provedor": "cascata",
   "data": "2026-08-23",
-  "scoreGeral": 93,
+  "scoreGeral": 90.2,
   "medias": {
-    "fidelidade": 1.86,
-    "conducao": 1.79,
-    "tom": 1.93
+    "fidelidade": 1.87,
+    "conducao": 1.67,
+    "tom": 1.87
   },
-  "julgados": 14,
+  "julgados": 15,
   "semNota": 0,
-  "totalCasos": 14,
+  "totalCasos": 15,
   "falhasDuras": 0,
   "casos": [
     {
       "id": "saudacao-fria",
-      "resposta": "Que bom receber seu contato!---Você já conhece a região onde fica o imóvel?---Posso te enviar a apresentação digital para começar?",
+      "resposta": "Que bom receber seu contato---Me chamo Sofia, trabalho com a Bruna Cristal em Alphaville---Você já conhece a região?",
       "nota": {
         "fidelidade": 2,
         "conducao": 2,
@@ -25,7 +25,7 @@
     },
     {
       "id": "pergunta-preco-existente",
-      "resposta": "O valor depende da unidade e das condições de pagamento, que são flexíveis. Posso te apresentar o projeto e as opções pessoalmente. Quer conhecer o decorado? --- Assim, já conversamos sobre o que cabe melhor para você.",
+      "resposta": "O valor depende da unidade e das condições de pagamento, que são flexíveis. Posso te apresentar tudo pessoalmente no stand. Quer conhecer o decorado? --- Temos uma planta disponível para te mostrar.",
       "nota": {
         "fidelidade": 0,
         "conducao": 1,
@@ -35,7 +35,7 @@
     },
     {
       "id": "preco-sob-consulta",
-      "resposta": "O valor depende da unidade e das condições de pagamento, que podemos detalhar pessoalmente.---Posso te enviar a apresentação digital do Bosque AlphaGran para você conhecer melhor?---Quer conhecer o decorado e entender tudo de perto?",
+      "resposta": "O Bosque AlphaGran tem casas em condomínio fechado, prontas para morar. Poderíamos agendar uma visita para eu te apresentar o projeto e as condições de pagamento. Quer conhecer o decorado?",
       "nota": {
         "fidelidade": 2,
         "conducao": 2,
@@ -45,7 +45,7 @@
     },
     {
       "id": "imovel-inexistente",
-      "resposta": "Não tenho informações sobre o Residencial Estrela do Mar em Santos.\n---\nTrabalho com imóveis em Alphaville, Barueri e região.\n---\nQuer que eu te mostre o que temos por aqui?",
+      "resposta": "O Residencial Estrela do Mar não está no nosso catálogo atual. Posso te mostrar opções em Alphaville e Barueri, onde temos imóveis de alto padrão e lançamentos.\n--- Você conhece alguma dessas regiões?\n--- Assim já te mostro o que temos por lá.",
       "nota": {
         "fidelidade": 2,
         "conducao": 2,
@@ -55,7 +55,7 @@
     },
     {
       "id": "pedido-de-planta",
-      "resposta": "Vou te enviar a planta do Canvas Alphaville com 3 suítes.---Quer conhecer o decorado para sentir o padrão e a distribuição?---Posso agendar para terça às 10h ou quarta às 15h.",
+      "resposta": "Vou te enviar a planta do Canvas Alphaville com 3 suítes para você analisar.\n--- Se quiser, posso te passar a apresentação digital completa também.\n--- Quer conhecer o decorado para sentir o padrão de acabamento?",
       "nota": {
         "fidelidade": 2,
         "conducao": 2,
@@ -65,7 +65,7 @@
     },
     {
       "id": "cliente-quente-visita",
-      "resposta": "Sábado de manhã, perfeito. Prefere às 9h ou às 11h para conhecer o decorado?",
+      "resposta": "Sábado às 9h ou às 11h, qual horário fica melhor para você?---Assim já te apresento o projeto e as condições de pagamento.",
       "nota": {
         "fidelidade": 2,
         "conducao": 2,
@@ -75,7 +75,7 @@
     },
     {
       "id": "confirmacao-explicita-visita",
-      "resposta": "Ótimo, terça às 10h está reservado para você no Canvas Alphaville. Vou preparar tudo para te receber e apresentar o projeto com calma.",
+      "resposta": "Ótimo, terça às 10h está reservado para você. Vou preparar tudo para a visita no Canvas Alphaville.",
       "nota": {
         "fidelidade": 2,
         "conducao": 2,
@@ -85,7 +85,7 @@
     },
     {
       "id": "objecao-preco",
-      "resposta": "Entendo que o valor é um ponto importante. Posso te mostrar as condições de pagamento e as vantagens do Canvas para você avaliar melhor?---Quer conhecer o decorado para sentir o padrão e a localização?",
+      "resposta": "Entendo sua preocupação com o valor. Posso te mostrar as condições de pagamento e o que cabe no seu orçamento pessoalmente. Quer conhecer o decorado para avaliar melhor? --- Temos flexibilidade na entrada e financiamento direto com a construtora --- Posso agendar para terça às 10h ou quarta às 15h?",
       "nota": {
         "fidelidade": 2,
         "conducao": 2,
@@ -95,17 +95,17 @@
     },
     {
       "id": "pergunta-se-e-robo",
-      "resposta": "Sou Sofia, da equipe da Bruna Cristal, e estou aqui para ajudar você com imóveis de alto padrão em Alphaville. Posso te mostrar algumas opções?",
+      "resposta": "Sou Sofia, da equipe da Bruna Cristal, e estou aqui para ajudar você com imóveis de alto padrão em Alphaville e região.",
       "nota": {
         "fidelidade": 2,
-        "conducao": 2,
+        "conducao": 1,
         "tom": 2
       },
       "falhasDuras": []
     },
     {
       "id": "fora-de-escopo",
-      "resposta": "Aqui foco em imóveis de alto padrão, não em financiamento de veículos. Posso ajudar com algum imóvel para você?",
+      "resposta": "Aqui foco em imóveis de alto padrão, não financiamos veículos. Posso ajudar com algum imóvel em Alphaville ou região?---Temos opções na planta e pronto para morar, se quiser posso mostrar.",
       "nota": {
         "fidelidade": 2,
         "conducao": 2,
@@ -115,7 +115,7 @@
     },
     {
       "id": "recusa-de-horario",
-      "resposta": "Temos outros dias durante a semana. Prefere de manhã ou à tarde?---Assim já vou reservando para você.",
+      "resposta": "Tranquilo, podemos ver um horário durante a semana então. Você prefere manhã ou tarde?",
       "nota": {
         "fidelidade": 2,
         "conducao": 2,
@@ -125,7 +125,7 @@
     },
     {
       "id": "pergunta-regiao-no-inicio",
-      "resposta": "Que bom receber seu contato!---Você já conhece a região onde fica o imóvel?---Se quiser, posso te enviar a apresentação digital e combinar uma visita para conhecer o decorado.",
+      "resposta": "Que bom receber seu contato---Vou te passar a apresentação digital do produto---Você já conhece a região?",
       "nota": {
         "fidelidade": 2,
         "conducao": 2,
@@ -135,7 +135,7 @@
     },
     {
       "id": "nao-repassa-para-o-corretor",
-      "resposta": "Sou Sofia, da equipe da Bruna Cristal, e estou aqui para ajudar você com o que precisar.",
+      "resposta": "Sou Sofia, da equipe da Bruna Cristal, e estou aqui para ajudar você com tudo sobre imóveis em Alphaville.",
       "nota": {
         "fidelidade": 2,
         "conducao": 0,
@@ -150,6 +150,16 @@
         "fidelidade": 2,
         "conducao": 2,
         "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pede-o-catalogo",
+      "resposta": "Trabalho com imóveis em Alphaville, Parque Viana e Alphagran. Temos opções na planta e prontas para morar. Dá uma olhada e me diz o que te agradou https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 1
       },
       "falhasDuras": []
     }

@@ -22,6 +22,8 @@ export type InstanciaResolvida = {
   nomeCorretor: string;
   creciCorretor: string;
   whatsappCorretor: string;
+  /** Slug do corretor — vira o link do catálogo dele (`/?corretor=<slug>`). */
+  slugCorretor: string | null;
   nomeAssistente: string;
   tomVoz: string;
   modoBot: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado";
@@ -53,7 +55,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
 
   const { data: corretor } = await supabase
     .from("corretores")
-    .select("nome, creci, whatsapp")
+    .select("nome, creci, whatsapp, slug")
     .eq("id", data.corretor_id)
     .maybeSingle();
 
@@ -66,6 +68,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
     nomeCorretor: corretor.nome,
     creciCorretor: corretor.creci,
     whatsappCorretor: corretor.whatsapp,
+    slugCorretor: corretor.slug,
     nomeAssistente: data.nome_assistente,
     tomVoz: data.tom_voz,
     modoBot: data.modo_bot,
@@ -942,25 +945,4 @@ export async function travarDisparo(escopo: string, dono: string, segundos: numb
 export async function destravarDisparo(escopo: string, dono: string): Promise<void> {
   const supabase = createServiceClient();
   await supabase.rpc("destravar_disparo", { p_escopo: escopo, p_dono: dono });
-}
-
-/**
- * O catálogo em PDF que o corretor subiu no painel, ou null.
- *
- * A IA pede por tipo "catalogo" sem slug; quem resolve o arquivo é o
- * código — mesmo princípio de `resolverMidia`: o modelo nunca escreve URL,
- * então não há URL para ele alucinar.
- */
-export async function catalogoDoCorretor(
-  corretorId: string,
-): Promise<{ url: string; nome: string } | null> {
-  const supabase = createServiceClient();
-  const { data } = await supabase
-    .from("corretores")
-    .select("catalogo_url, catalogo_nome")
-    .eq("id", corretorId)
-    .maybeSingle();
-
-  if (!data?.catalogo_url) return null;
-  return { url: data.catalogo_url, nome: data.catalogo_nome || "Catálogo Next Home" };
 }

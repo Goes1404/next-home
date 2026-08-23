@@ -17,7 +17,6 @@ import {
   agendarVisitaLead,
   botDeveResponder,
   buscarDossieAtual,
-  catalogoDoCorretor,
   cancelarFollowupsPendentes,
   gravarMensagem,
   historicoRecente,
@@ -366,14 +365,13 @@ export async function POST(req: NextRequest) {
     // O dossiê ANTERIOR entra no prompt (a IA deixa de re-perguntar o que
     // já qualificou) e serve de base de comparação para a nota incremental
     // ao corretor. O NOVO é extraído depois da resposta, da conversa toda.
-    const [catalogo, historico, dossieAnterior, catalogoPdf] = await Promise.all([
+    const [catalogo, historico, dossieAnterior] = await Promise.all([
       getEmpreendimentos().catch((err) => {
         console.warn("Aviso: Falha ao carregar catálogo para o webhook (usando fallback):", err);
         return [] as Awaited<ReturnType<typeof getEmpreendimentos>>;
       }),
       historicoRecente(conversa.id),
       conversa.leadId ? buscarDossieAtual(conversa.leadId) : Promise.resolve(null),
-      catalogoDoCorretor(instancia.corretorId).catch(() => null),
     ]);
 
     /*
@@ -403,6 +401,7 @@ export async function POST(req: NextRequest) {
     const respostaBruta = await gerarRespostaIA(
       {
         nomeCorretor: instancia.nomeCorretor,
+        slugCorretor: instancia.slugCorretor ?? undefined,
         creciCorretor: instancia.creciCorretor,
         telefoneCorretor: instancia.whatsappCorretor,
         nomeAssistente: instancia.nomeAssistente,
@@ -417,7 +416,7 @@ export async function POST(req: NextRequest) {
 
     // Trilho do padrão "trilho + IA": nenhum anexo ou recomendação sai sem
     // existir no catálogo — instrução no prompt não é garantia.
-    const saneada = sanearRespostaIA(respostaBruta, catalogo, historico, catalogoPdf);
+    const saneada = sanearRespostaIA(respostaBruta, catalogo, historico);
     const respostaIA = saneada.resposta;
 
     // O buffer pode ter segurado a resposta por vários segundos; se o

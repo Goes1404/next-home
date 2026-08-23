@@ -2,7 +2,7 @@ import type { Empreendimento } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { chamarLlmJson, ORCAMENTO_AGENTE_MS } from "./llm";
 import { STATUS_LABEL } from "@/lib/types";
-import { linkDaPagina } from "./resolverMidia";
+import { linkDaPagina, linkDoCatalogo } from "./resolverMidia";
 import { ESTILO_DA_CASA } from "./estiloDaCasa";
 import type { MotivoFalhaLlm } from "./llmTipos";
 import type { DossieClienteIA, TomVozBot } from "./types";
@@ -65,6 +65,12 @@ export function calendarioProximosDias(quantos: number, hoje = new Date()): stri
 export interface ContextoAtendimento {
   nomeCorretor: string;
   creciCorretor: string;
+  /**
+   * Slug do corretor na plataforma. É dele que sai o link do catálogo
+   * personalizado (`/?corretor=<slug>`) — o material que a IA manda no
+   * lugar de digitar uma lista de imóveis no chat.
+   */
+  slugCorretor?: string;
   telefoneCorretor: string;
   nomeAssistente: string;
   tomVoz: string;
@@ -280,6 +286,18 @@ export function construirPromptSistema(ctx: ContextoAtendimento): string {
    */
   const calendario = calendarioProximosDias(10);
 
+  /*
+   * O catálogo do corretor é a página dele na plataforma, não um arquivo.
+   * Sem slug não há link, e um `/?corretor=` truncado levaria o cliente a
+   * uma home genérica sem vínculo nenhum — pior que não mandar nada. Por
+   * isso a seção inteira só existe quando o slug existe.
+   */
+  const blocoCatalogo = ctx.slugCorretor
+    ? `CATÁLOGO DA CASA: quando o cliente disser a região, ou pedir "o que vocês têm", mande ESTE link — copiado exatamente, sem alterar nada:
+${linkDoCatalogo(ctx.slugCorretor)}
+É o catálogo de ${ctx.nomeCorretor} na plataforma: o cliente navega pelos imóveis com foto, planta e localização em vez de rolar uma lista no chat. Mande UM link com uma frase curta ("dá uma olhada e me diz o que te agradou"), nunca o link junto de três parágrafos.`
+    : "";
+
   return `Você é ${ctx.nomeAssistente}, da equipe do corretor ${ctx.nomeCorretor} (CRECI ${ctx.creciCorretor}) da Next Home em Alphaville — especialista em vendas de imóveis de alto padrão.
 
 Você não é uma atendente de suporte: é uma vendedora. Seu objetivo é conduzir a conversa — com elegância, nunca com pressão — do primeiro "oi" até a visita agendada ou a proposta.
@@ -347,7 +365,7 @@ Só depois disso: a INDICAÇÃO ("pelo que você me contou, o que mais faz senti
 
 Se o cliente já disse alguma dessas coisas — nesta mensagem, no histórico ou no dossiê — NÃO PERGUNTE DE NOVO. Repetir pergunta já respondida é o erro que mais faz o cliente sumir, e é o que denuncia um sistema.
 
-CATÁLOGO DA CASA: quando o cliente disser a região, ou pedir "o que vocês têm", mande o catálogo do corretor pedindo "catalogo" em "anexosMidia" (sem slug). Ele é o material da casa, com as opções em um documento só — é o que a corretora manda no lugar de digitar uma lista.
+${blocoCatalogo}
 
 MÍDIA SEM REPETIÇÃO: olhe o histórico antes de pedir foto ou planta. O que já foi enviado nesta conversa NÃO se manda de novo — o sistema bloqueia, e a sua mensagem fica prometendo um anexo que não chega. Se ele já viu as fotos, o próximo passo é a planta, o link da página ou a visita; nunca as mesmas fotos outra vez.
 

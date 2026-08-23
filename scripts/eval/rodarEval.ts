@@ -257,6 +257,7 @@ async function main() {
     const bruta = await gerarRespostaIA(
       {
         nomeCorretor: "Bruna Cristal",
+        slugCorretor: "cristal-bruna",
         creciCorretor: "254161",
         telefoneCorretor: "5511999999999",
         nomeAssistente: "Sofia",
@@ -302,6 +303,18 @@ async function main() {
     const texto = saneada.resposta.textoResposta;
     if (caso.expectativas?.devePerguntarRegiao && !/regi[ãa]o|bairro|onde.*procura|conhece a/i.test(texto)) {
       duras.push("nao_perguntou_regiao");
+    }
+    /*
+     * O catálogo do corretor é o link da plataforma, montado por CÓDIGO a
+     * partir do slug e colado no prompt — a IA só copia. Se ela escrever
+     * outra coisa, o cliente cai numa home sem vínculo com o corretor e a
+     * atribuição do lead se perde.
+     */
+    if (
+      caso.expectativas?.deveMandarLinkDoCatalogo &&
+      !texto.includes("?corretor=")
+    ) {
+      duras.push("nao_mandou_link_do_catalogo");
     }
     if (caso.expectativas?.devePerguntarRenda && !/renda|ganha por m[êe]s|por m[êe]s.*fam[íi]lia/i.test(texto)) {
       duras.push("nao_perguntou_renda");

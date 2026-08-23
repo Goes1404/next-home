@@ -152,12 +152,21 @@ corretor).
   para de responder esperando "o de verdade". A regra 21 agora proíbe
   qualquer variação disso. O que NÃO mudou: se perguntarem direta e
   explicitamente se é uma IA, ela não nega — negar é mentir ao consumidor.
-- **Catálogo do corretor é por CORRETOR, e é PDF** (0035). Cada um trabalha
-  com um recorte. Bucket próprio (`corretores`): o de `empreendimentos` só
-  aceita imagem e mp4, então o upload de PDF falharia no mime type com erro
-  que parece de permissão. A IA pede por tipo `catalogo` sem slug — mesmo
-  princípio da mídia: o modelo nunca escreve URL, então não há URL para
-  alucinar.
+- **O catálogo do corretor É a página dele na plataforma**, não um arquivo:
+  `/?corretor=<slug>`, que o `proxy.ts` já resolve — grava um cookie de
+  atribuição de 30 dias e redireciona para `/portfolio`. O redirect SOLTA o
+  parâmetro da URL, e isso assusta ao testar com `curl`: o vínculo vive no
+  cookie, não na query. Uma iteração anterior (0035) chegou a criar coluna,
+  bucket e upload de PDF; a 0036 desfaz. O link é melhor por três motivos:
+  nunca desatualiza, não precisa de upload, e o cliente navega com foto,
+  planta e mapa em vez de rolar um PDF no celular.
+- **Nem todo corretor tem slug** — "Equipe Next Home" está com `null` em
+  produção. Sem slug o link sairia como `/?corretor=`, levando o cliente a
+  uma home sem vínculo nenhum: pior que não mandar nada. Por isso o bloco
+  inteiro do catálogo só entra no prompt quando o slug existe.
+- **Bucket do Supabase não se apaga por SQL** ("Direct deletion from storage
+  tables is not allowed"). O `corretores`, criado e abandonado no mesmo dia,
+  ficou vazio e sem policy — inerte, mas só sai pelo painel de Storage.
 - **O quebrador de mensagem tinha só DOIS níveis** — fim de frase ou
   qualquer espaço. Frase sem ponto final caía direto no segundo, e o
   cliente recebia "…pronta para" / "morar, ideal para…" em balões

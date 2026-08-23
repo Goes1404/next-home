@@ -376,13 +376,12 @@ export async function enviarPresencaDigitando(params: {
   }
 }
 
-export type TipoMidiaWhatsapp = "foto" | "planta" | "video" | "tour360" | "catalogo";
+export type TipoMidiaWhatsapp = "foto" | "planta" | "video" | "tour360";
 
 /** A Evolution API só entende três tipos de mídia nativa; o resto vira documento. */
 function tipoMidiaDoProvedor(tipo: TipoMidiaWhatsapp): "image" | "video" | "document" {
   if (tipo === "foto" || tipo === "planta") return "image";
   if (tipo === "video") return "video";
-  // tour360 e catalogo são PDF: documento.
   return "document";
 }
 

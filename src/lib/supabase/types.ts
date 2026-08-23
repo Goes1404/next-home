@@ -130,8 +130,6 @@ export type Database = {
           bio: string | null
           created_at: string
           creci: string
-          catalogo_url: string | null
-          catalogo_nome: string | null
           deve_trocar_senha: boolean
           em_pausa: boolean
           email: string | null
@@ -152,8 +150,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           creci: string
-          catalogo_url: string | null
-          catalogo_nome: string | null
           deve_trocar_senha?: boolean
           em_pausa?: boolean
           email?: string | null
@@ -174,8 +170,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           creci?: string
-          catalogo_url?: string | null
-          catalogo_nome?: string | null
           deve_trocar_senha?: boolean
           em_pausa?: boolean
           email?: string | null
