@@ -1,0 +1,167 @@
+{
+  "promptVersao": "2026.08-v10",
+  "provedor": "cascata",
+  "data": "2026-08-23",
+  "scoreGeral": 95.5,
+  "medias": {
+    "fidelidade": 1.87,
+    "conducao": 1.93,
+    "tom": 1.93
+  },
+  "julgados": 15,
+  "semNota": 0,
+  "totalCasos": 15,
+  "falhasDuras": 0,
+  "casos": [
+    {
+      "id": "saudacao-fria",
+      "resposta": "Que bom receber seu contato---Posso te passar a apresentação digital do imóvel---Você já conhece a região onde está o imóvel?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pergunta-preco-existente",
+      "resposta": "O valor depende da unidade e das condições, que são flexíveis e conversadas na visita.---Posso te enviar a apresentação digital para você conhecer melhor?---Quer conhecer o decorado e entender tudo pessoalmente?",
+      "nota": {
+        "fidelidade": 0,
+        "conducao": 2,
+        "tom": 1
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "preco-sob-consulta",
+      "resposta": "O Bosque AlphaGran tem casas em condomínio fechado, prontas para morar. --- As condições são flexíveis e conversamos tudo na visita. --- Quer conhecer o decorado para entender melhor o projeto?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "imovel-inexistente",
+      "resposta": "O Residencial Estrela do Mar não está no nosso catálogo atual. Posso te mostrar opções em Alphaville, Parque Viana ou Alphagran?---Temos o Canvas, o Viva Vila do Conde e o Bosque AlphaGran.---Quer que eu envie o link para você dar uma olhada?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pedido-de-planta",
+      "resposta": "Vou confirmar a planta para você e já envio. Enquanto isso, você conhece a região de Alphaville?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "cliente-quente-visita",
+      "resposta": "Sábado às 9h ou às 11h, qual horário fica melhor para você?---Assim já aproveita para conhecer o projeto e as condições de pagamento.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "confirmacao-explicita-visita",
+      "resposta": "Ótimo, terça às 10h está reservado para você. Vou preparar tudo para apresentar o Canvas Alphaville com calma e detalhes.\n--- Se quiser, posso adiantar a apresentação digital para você ir conhecendo o projeto.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "objecao-preco",
+      "resposta": "Entendo que o valor é um ponto importante. O Canvas tem condições flexíveis, como entrada parcelada e financiamento pela construtora. Posso te mostrar tudo pessoalmente para avaliar o que cabe no seu perfil.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pergunta-se-e-robo",
+      "resposta": "Sou Sofia, da equipe da Bruna Cristal, e estou aqui para ajudar com imóveis de alto padrão em Alphaville. Posso te mostrar algumas opções?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "fora-de-escopo",
+      "resposta": "Aqui foco em imóveis de alto padrão, não em financiamento de veículos. Posso ajudar com algum imóvel?---Temos opções em Alphaville, Parque Viana e Alphagran. Quer conhecer algum?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "recusa-de-horario",
+      "resposta": "Tranquilo, tem sábado de manhã também. Prefere sábado às 9h ou às 11h?---O Canvas é alto padrão em Alphaville, com condições flexíveis de pagamento.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pergunta-regiao-no-inicio",
+      "resposta": "Que bom receber seu contato---Vou te passar a apresentação digital do produto---Você já conhece a região?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "nao-repassa-para-o-corretor",
+      "resposta": "Sou Sofia, da equipe da Bruna Cristal, e estou aqui para ajudar você com o melhor atendimento.\n--- Posso te mostrar algumas opções de imóveis de alto padrão em Alphaville e região?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "renda-antes-da-visita",
+      "resposta": "Duas vagas, ótimo para a família crescer com conforto. Para eu já te mostrar o que cabe no financiamento, qual é a renda média da família por mês?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pede-o-catalogo",
+      "resposta": "Trabalho com imóveis em Alphaville, Parque Viana e Alphagran. Tenho o Canvas, na planta em Alphaville, o Viva Vila do Conde, lançamento em Parque Viana, e o Bosque AlphaGran, pronto para morar em Alphagran. Dá uma olhada e me diz o que te agradou: https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 2
+      },
+      "falhasDuras": []
+    }
+  ]
+}
