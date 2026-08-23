@@ -1,0 +1,137 @@
+{
+  "provedor": "openai",
+  "data": "2026-08-23",
+  "criterios": [
+    "visita-sabado",
+    "pergunta-de-preco",
+    "recusa-desconto",
+    "fora-do-catalogo",
+    "anexo-planta"
+  ],
+  "modelos": [
+    {
+      "modelo": "gpt-4.1-mini",
+      "status": "aprovado",
+      "aprovacoes": 5,
+      "total": 5,
+      "latenciaMediaMs": 2569,
+      "estabilidade": "5/5",
+      "cenarios": [
+        {
+          "id": "visita-sabado",
+          "passou": true,
+          "nota": "2026-08-29T12:00",
+          "latenciaMs": 2640
+        },
+        {
+          "id": "pergunta-de-preco",
+          "passou": true,
+          "nota": "desviou para a visita",
+          "latenciaMs": 2869
+        },
+        {
+          "id": "recusa-desconto",
+          "passou": true,
+          "nota": "não concedeu",
+          "latenciaMs": 2910
+        },
+        {
+          "id": "fora-do-catalogo",
+          "passou": true,
+          "nota": "não inventou",
+          "latenciaMs": 2122
+        },
+        {
+          "id": "anexo-planta",
+          "passou": true,
+          "nota": "sem invenção",
+          "latenciaMs": 2304
+        }
+      ],
+      "amostraTexto": "O Canvas Alphaville tem 3 suítes e fica a 5 minutos do Tamboré. Posso te enviar a apresentação digital para você conhecer melhor?---Se quiser, sábado às 9h ou às 11h para visitar o decorado?"
+    },
+    {
+      "modelo": "gpt-4.1",
+      "status": "reprovado",
+      "aprovacoes": 4,
+      "total": 5,
+      "latenciaMediaMs": 1221,
+      "estabilidade": "5/5",
+      "cenarios": [
+        {
+          "id": "visita-sabado",
+          "passou": true,
+          "nota": "2026-08-29T09:00",
+          "latenciaMs": 1584
+        },
+        {
+          "id": "pergunta-de-preco",
+          "passou": false,
+          "nota": "não falou valor, mas também não convidou",
+          "latenciaMs": 1175,
+          "texto": "Tenho opções de lançamento e prontos para morar em Barueri. --- O Viva Vila do Conde é pensado para quem busca o primeiro apê. --- Posso te mostrar a apresentação digital dele."
+        },
+        {
+          "id": "recusa-desconto",
+          "passou": true,
+          "nota": "não concedeu",
+          "latenciaMs": 1287
+        },
+        {
+          "id": "fora-do-catalogo",
+          "passou": true,
+          "nota": "não inventou",
+          "latenciaMs": 984
+        },
+        {
+          "id": "anexo-planta",
+          "passou": true,
+          "nota": "sem invenção",
+          "latenciaMs": 1073
+        }
+      ],
+      "amostraTexto": "O Canvas Alphaville é uma ótima opção para quem busca 3 suítes em Alphaville. --- Fica a cinco minutos do centro comercial, com lazer completo. --- Vou te enviar a apresentação digital."
+    },
+    {
+      "modelo": "gpt-4o-mini",
+      "status": "reprovado",
+      "aprovacoes": 4,
+      "total": 5,
+      "latenciaMediaMs": 1546,
+      "estabilidade": "5/5",
+      "cenarios": [
+        {
+          "id": "visita-sabado",
+          "passou": false,
+          "nota": "não propôs visita",
+          "latenciaMs": 2159
+        },
+        {
+          "id": "pergunta-de-preco",
+          "passou": true,
+          "nota": "desviou para a visita",
+          "latenciaMs": 1575
+        },
+        {
+          "id": "recusa-desconto",
+          "passou": true,
+          "nota": "não concedeu",
+          "latenciaMs": 1352
+        },
+        {
+          "id": "fora-do-catalogo",
+          "passou": true,
+          "nota": "não inventou",
+          "latenciaMs": 1149
+        },
+        {
+          "id": "anexo-planta",
+          "passou": true,
+          "nota": "sem invenção",
+          "latenciaMs": 1494
+        }
+      ],
+      "amostraTexto": "Temos boas opções. O Canvas é uma excelente escolha, em construção e com lazer completo. Podemos agendar para sábado às 10h ou 11h?"
+    }
+  ]
+}

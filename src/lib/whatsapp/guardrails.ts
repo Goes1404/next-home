@@ -3,7 +3,7 @@ import type { RespostaAgenteIA } from "./aiAgent";
 import { soarHumano } from "./vozHumana";
 import { removerValores } from "./semValores";
 import { resolverAnexos, type AnexoResolvido } from "./resolverMidia";
-import { verificarCoerenciaVisita } from "./coerenciaVisita";
+import { corrigirVisitaNoPassado, verificarCoerenciaVisita } from "./coerenciaVisita";
 
 /**
  * Guardrails de saída: nada sai para o WhatsApp do cliente sem conferir
@@ -75,8 +75,19 @@ export function sanearRespostaIA(
    * o corretor combinar, do que gravar a errada.
    */
   const visita = resposta.visitaProposta;
-  const coerencia = visita?.dataHoraISO
-    ? verificarCoerenciaVisita(texto, visita.dataHoraISO)
+  /*
+   * Antes de checar coerência, rola para a frente a data que já passou. Os
+   * modelos escolhem o sábado ANTERIOR quando o cliente pede "sábado" — foi
+   * medido em três deles no mesmo dia — e a proposta morria em
+   * `validarDataVisita`, deixando sem visita justamente o cliente que a
+   * pediu. Só age quando o dia da semana bate com o prometido no texto:
+   * divergência de verdade continua sendo descartada logo abaixo.
+   */
+  const dataVisita = visita?.dataHoraISO
+    ? corrigirVisitaNoPassado(visita.dataHoraISO, texto)
+    : undefined;
+  const coerencia = dataVisita
+    ? verificarCoerenciaVisita(texto, dataVisita)
     : ({ coerente: true } as const);
 
   if (!coerencia.coerente) {
@@ -92,7 +103,12 @@ export function sanearRespostaIA(
       textoResposta: texto,
       anexosMidia: resposta.anexosMidia ?? [],
       imoveisRecomendados: recomendadosValidos,
-      visitaProposta: coerencia.coerente ? resposta.visitaProposta : null,
+      visitaProposta:
+        coerencia.coerente && visita && dataVisita
+          ? { ...visita, dataHoraISO: dataVisita }
+          : coerencia.coerente
+            ? resposta.visitaProposta
+            : null,
     },
     anexos,
     valorRemovido: semValor.removeu,

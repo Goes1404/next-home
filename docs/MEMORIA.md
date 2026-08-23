@@ -221,6 +221,23 @@ Coisas que valem lembrar daqui:
   ambiente no build; um 401 persistente após trocar o segredo quase sempre
   é só isso).
 
+- **O calendário do prompt misturava DOIS FUSOS, e isso quebrava o
+  agendamento três horas por noite.** `calendarioProximosDias` formatava o
+  rótulo em São Paulo e a data ao lado com `toISOString()` (UTC). Das 21h à
+  meia-noite de Brasília o servidor já virou o dia, então o prompt afirmava
+  coisas como *"sábado, 29/08 = 2026-08-30"* — ensinando ao modelo que
+  sábado tem a data de domingo. O modelo obedecia, `coerenciaVisita`
+  descartava a proposta, e o cliente que pediu sábado terminava sem visita.
+  Justo as horas de maior movimento no WhatsApp. Apareceu porque o MESMO
+  modelo passou no benchmark às 20h e reprovou às 21h — variância que não
+  era do modelo.
+- **Modelo escolhe o sábado que JÁ PASSOU** quando o cliente pede "sábado";
+  medido em três modelos da OpenAI no mesmo dia. O prompt já mandava "nunca
+  proponha um dia que já passou" — instrução de prompt é probabilística.
+  `corrigirVisitaNoPassado` rola para a próxima ocorrência, e só quando o
+  dia da semana bate com o que o texto prometeu: divergência real continua
+  descartada.
+
 ## Vídeo de fundo e vinheta de abertura — o que custa caro descobrir
 
 - **Scrub por scroll engasga por causa do ARQUIVO, não do código.** O
@@ -384,6 +401,29 @@ trilho+IA, follow-up, métricas de funil).
   `json_validate_failed` que parecia defeito do modelo. E
   `reasoning_effort: "low"` (só na família `gpt-oss`) derruba a saída de
   1279 para 107 tokens e a resposta de 3,2s para 0,7s.
+- **A OpenAI entrou como QUARTO elo, por último, e é a única PAGA.** Groq,
+  Gemini e NVIDIA são gratuitos e cobrem quase tudo; a OpenAI só é chamada
+  quando os três falharam — que é exatamente onde hoje o cliente recebia a
+  contingência e a conversa morria. Se a fatura crescer sem os gratuitos
+  estarem doentes, é sinal de que a cascata quebrou antes: olhar
+  `ia_interacoes.modelo` antes de culpar o volume.
+- **Modelo da OpenAI medido, como os outros** (`npm run bench:openai`):
+  `gpt-4.1-mini` 5/5 a ~2,6s. O `gpt-4.1` e o `gpt-4o-mini` fazem 4/5 mais
+  rápido; `gpt-5` e `gpt-5-mini` **reprovam na triagem por TEMPO** (timeout
+  de 10,4s) — são modelos de raciocínio e não cabem no orçamento do webhook.
+- **O juiz do eval pode rodar na OpenAI** (`EVAL_JUIZ=openai`), e é o que
+  destrava a cota de 20/dia do Gemini. A regra antiga continua valendo com
+  trava explícita: `--provedor=X` com o juiz em X **aborta** — juiz que
+  avalia o próprio provedor dá nota para si mesmo.
+- **TRÊS critérios meus reprovaram o comportamento CERTO** (Leblon,
+  `preco-mais-barato`, `ofereceVisita`). O padrão é sempre o mesmo: o
+  critério foi escrito quando a regra de negócio era outra, e ninguém
+  reescreve critério ao mudar regra. `preco-mais-barato` exigia que a
+  resposta trouxesse "460" — depois de a IA ser PROIBIDA de falar valores;
+  os três modelos da OpenAI foram reprovados por obedecer. E `ofereceVisita`
+  exigia a palavra "visita" contra *"Tranquilo, podemos ver durante a semana
+  então. Prefere manhã ou tarde?"*, que é o padrão exato de quem converte.
+  **Ao mudar regra de negócio, procurar os critérios que a mediam.**
 - **PDF continua SÓ no Gemini** (`importacao.ts`): manda `inlineData`, e
   modelo de texto não recebe. Nunca migrar para a cascata de texto.
 - **Áudio tem reserva desde agosto/2026** (`groqAudio.ts`): Gemini na

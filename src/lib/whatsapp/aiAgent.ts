@@ -38,13 +38,26 @@ export function calendarioProximosDias(quantos: number, hoje = new Date()): stri
     day: "2-digit",
     month: "2-digit",
   });
+  /*
+   * A data ISO sai no MESMO fuso do rótulo (`en-CA` rende YYYY-MM-DD).
+   * Usar `toISOString()` aqui era um bug de produção, não de estilo: o
+   * rótulo vinha de São Paulo e a ISO de UTC, então das 21h à meia-noite de
+   * Brasília o prompt afirmava coisas como "sábado, 29/08 = 2026-08-30" —
+   * ensinando ao modelo que sábado tem a data de domingo. O modelo então
+   * agendava no dia errado, `coerenciaVisita` descartava a proposta, e o
+   * cliente recebia uma conversa sem visita nenhuma.
+   *
+   * Três horas quebradas toda noite, e justamente as de maior movimento
+   * numa conversa de WhatsApp. Foi assim que apareceu: o mesmo modelo
+   * passou no benchmark às 20h e reprovou às 21h.
+   */
+  const iso = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" });
   const linhas: string[] = [];
   for (let i = 0; i < quantos; i++) {
     const d = new Date(hoje);
     d.setDate(d.getDate() + i);
-    const iso = d.toISOString().slice(0, 10);
     const rotulo = i === 0 ? " (hoje)" : i === 1 ? " (amanhã)" : "";
-    linhas.push(`${fmt.format(d)}${rotulo} = ${iso}`);
+    linhas.push(`${fmt.format(d)}${rotulo} = ${iso.format(d)}`);
   }
   return linhas.join("\n");
 }

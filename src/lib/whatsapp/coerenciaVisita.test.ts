@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diasCitados, verificarCoerenciaVisita } from "./coerenciaVisita";
+import { corrigirVisitaNoPassado, diasCitados, verificarCoerenciaVisita } from "./coerenciaVisita";
 
 describe("Coerência entre o dia prometido e a data agendada", () => {
   it("aceita quando o texto e a data falam do mesmo dia", () => {
@@ -51,5 +51,35 @@ describe("Coerência entre o dia prometido e a data agendada", () => {
   it("reconhece 'terça-feira' e variações sem acento", () => {
     expect(diasCitados("terça-feira ou quinta")).toEqual([2, 4]);
     expect(diasCitados("pode ser sabado")).toEqual([6]);
+  });
+});
+
+describe("corrigirVisitaNoPassado", () => {
+  // 23/08/2026 é um domingo; o sábado anterior é 22/08 e o próximo, 29/08.
+  const domingo = new Date("2026-08-23T15:00:00-03:00");
+
+  it("rola para o próximo sábado quando o modelo devolve o que já passou", () => {
+    const corrigida = corrigirVisitaNoPassado(
+      "2026-08-22T10:00:00-03:00",
+      "Podemos no sábado às 10h?",
+      domingo,
+    );
+    expect(corrigida.slice(0, 10)).toBe("2026-08-29");
+  });
+
+  it("não mexe em data futura", () => {
+    const iso = "2026-08-29T10:00:00-03:00";
+    expect(corrigirVisitaNoPassado(iso, "sábado às 10h", domingo)).toBe(iso);
+  });
+
+  it("não corrige quando o dia da semana não bate com o texto", () => {
+    // Texto promete terça, data é de um sábado que passou: divergência real.
+    const iso = "2026-08-22T10:00:00-03:00";
+    expect(corrigirVisitaNoPassado(iso, "Podemos na terça?", domingo)).toBe(iso);
+  });
+
+  it("não inventa quando o texto não cita dia nenhum", () => {
+    const iso = "2026-08-22T10:00:00-03:00";
+    expect(corrigirVisitaNoPassado(iso, "Combinado, te espero!", domingo)).toBe(iso);
   });
 });

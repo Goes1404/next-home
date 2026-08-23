@@ -51,6 +51,20 @@ export type VerificacaoVisita =
  * Sem dia citado no texto não há o que conferir: uma proposta como
  * "amanhã de manhã" é coerente por construção.
  */
+/**
+ * Dia da semana (0=domingo) em São Paulo, não em UTC: 10h de sábado em
+ * -03:00 é sábado, mas o `getUTCDay` de uma data perto da meia-noite cairia
+ * no dia seguinte.
+ */
+function diaDaSemanaEmSaoPaulo(data: Date): number {
+  const nomes = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const curto = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "short",
+  }).format(data);
+  return nomes.indexOf(curto);
+}
+
 export function verificarCoerenciaVisita(
   textoResposta: string,
   dataHoraISO: string,
@@ -61,18 +75,7 @@ export function verificarCoerenciaVisita(
   const citados = diasCitados(textoResposta);
   if (citados.length === 0) return { coerente: true };
 
-  // Em São Paulo, não em UTC: 10h de sábado em -03:00 é sábado, mas o
-  // `getUTCDay` de uma data perto da meia-noite cairia no dia seguinte.
-  const diaNaData = Number(
-    new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/Sao_Paulo",
-      weekday: "short",
-    })
-      .format(data)
-      .replace(/Sun|Mon|Tue|Wed|Thu|Fri|Sat/, (d) =>
-        String(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(d)),
-      ),
-  );
+  const diaNaData = diaDaSemanaEmSaoPaulo(data);
 
   if (citados.includes(diaNaData)) return { coerente: true };
 
@@ -82,4 +85,38 @@ export function verificarCoerenciaVisita(
     diaNoTexto: citados[0],
     diaNaData,
   };
+}
+
+/**
+ * Rola uma data para a próxima ocorrência do mesmo dia da semana, quando o
+ * modelo devolveu uma que já passou.
+ *
+ * Por que existe: o prompt já manda "nunca proponha um dia que já passou", e
+ * os modelos desobedecem assim mesmo — medidos em 23/08/2026 (um domingo),
+ * `gpt-4.1` e `gpt-4.1-mini` responderam "sábado" com a data do sábado
+ * ANTERIOR. `validarDataVisita` recusava, e o cliente que tinha pedido
+ * sábado terminava a conversa sem visita nenhuma.
+ *
+ * O ajuste é seguro porque não inventa intenção: só age quando o dia da
+ * semana da data bate com o que o TEXTO prometeu ao cliente. "Sábado" dito
+ * ao cliente + data de um sábado que passou = o próximo sábado é a única
+ * leitura possível. Se o dia da semana não bater, não mexe — aí a
+ * divergência é real e `verificarCoerenciaVisita` descarta, como antes.
+ */
+export function corrigirVisitaNoPassado(
+  dataHoraISO: string,
+  texto: string,
+  agora: Date = new Date(),
+): string {
+  const data = new Date(dataHoraISO);
+  if (Number.isNaN(data.getTime()) || data > agora) return dataHoraISO;
+
+  const dias = diasCitados(texto);
+  const diaDaData = diaDaSemanaEmSaoPaulo(data);
+  if (dias.length !== 1 || dias[0] !== diaDaData) return dataHoraISO;
+
+  const corrigida = new Date(data);
+  while (corrigida <= agora) corrigida.setDate(corrigida.getDate() + 7);
+  // Mais de 60 dias adiante seria outro problema; deixa `validarDataVisita` recusar.
+  return corrigida.toISOString();
 }

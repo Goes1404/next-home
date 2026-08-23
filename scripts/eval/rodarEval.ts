@@ -45,6 +45,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { gerarRespostaIA, PROMPT_VERSAO } from "../../src/lib/whatsapp/aiAgent";
 import { sanearRespostaIA } from "../../src/lib/whatsapp/guardrails";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
+import { chamarOpenaiJson } from "../../src/lib/whatsapp/openai";
 import { contemValor } from "../../src/lib/whatsapp/semValores";
 
 /*
@@ -55,6 +56,18 @@ import { contemValor } from "../../src/lib/whatsapp/semValores";
  * IA — pelo resto do dia. `GEMINI_MODELO_JUIZ` troca sem mexer em código.
  */
 const MODELO_JUIZ = process.env.GEMINI_MODELO_JUIZ || "gemini-3.5-flash-lite";
+
+/*
+ * O juiz pode rodar na OpenAI (`EVAL_JUIZ=openai`) porque a cota gratuita do
+ * Gemini — 20 chamadas/dia por modelo — não cabe num eval de 17. A OpenAI é
+ * paga e não tem esse teto.
+ *
+ * A regra que NÃO pode cair junto: juiz nunca avalia o próprio provedor. A
+ * OpenAI entrou na cascata (por último), então `--provedor=openai` com o
+ * juiz na OpenAI seria o modelo dando nota para si mesmo. Isso aborta.
+ */
+const JUIZ = process.env.EVAL_JUIZ === "openai" ? "openai" : "gemini";
+const MODELO_JUIZ_OPENAI = process.env.OPENAI_MODELO_JUIZ || "gpt-4.1";
 import { ORCAMENTO_AGENTE_MS } from "../../src/lib/whatsapp/llm";
 import type { Empreendimento } from "../../src/lib/types";
 
@@ -99,9 +112,10 @@ function catalogoParaJudge(): string {
  * coisa alguma.
  */
 async function julgar(mensagem: string, resposta: string): Promise<Record<string, number> | null> {
-  const resultado = await chamarGeminiJson(
+  const chamar = JUIZ === "openai" ? chamarOpenaiJson : chamarGeminiJson;
+  const resultado = await chamar(
     `${RUBRICA}\n\nCATÁLOGO OFICIAL:\n${catalogoParaJudge()}\n\nMENSAGEM DO CLIENTE: ${mensagem}\n\nRESPOSTA DA ASSISTENTE: ${resposta}`,
-    { temperature: 0, timeoutMs: ORCAMENTO_AGENTE_MS, modelo: MODELO_JUIZ },
+    { temperature: 0, timeoutMs: ORCAMENTO_AGENTE_MS, modelo: JUIZ === "openai" ? MODELO_JUIZ_OPENAI : MODELO_JUIZ },
   );
   if (!resultado.ok) return null;
   const j = resultado.json as Record<string, number>;
@@ -125,7 +139,7 @@ function chaveDaCalibracao(): string {
   return createHash("sha256")
     .update(RUBRICA)
     .update(JSON.stringify(calibracao))
-    .update(MODELO_JUIZ)
+    .update(`${JUIZ}:${JUIZ === "openai" ? MODELO_JUIZ_OPENAI : MODELO_JUIZ}`)
     .digest("hex")
     .slice(0, 16);
 }
@@ -188,10 +202,37 @@ async function calibrar(): Promise<"ok" | "juiz_mudo" | "descalibrado"> {
  */
 function ofereceVisita(r: { textoResposta: string; visitaProposta?: unknown }): boolean {
   if (r.visitaProposta) return true;
-  return /visita|visitar|conhecer|decorado|stand|apresentar o projeto/i.test(r.textoResposta);
+  const t = r.textoResposta;
+  // Convite explícito.
+  if (/visita|visitar|conhecer|decorado|stand|apresentar o projeto/i.test(t)) return true;
+  /*
+   * E o afunilamento de horário, que é a MESMA coisa uma mensagem depois.
+   * Terceira vez que um critério meu reprova o comportamento certo: contra
+   * "Tranquilo, podemos ver durante a semana então. Prefere manhã ou
+   * tarde?" — o padrão exato da corretora que converte — a versão anterior
+   * exigia a palavra "visita" e devolvia falha. O juiz deu 2/2/2 à mesma
+   * resposta, e o juiz estava certo. Depois de "quer conhecer?", ninguém
+   * repete a palavra: negocia o horário.
+   */
+  return /manh[ãa]|tarde|fim de semana|durante a semana|s[áa]bado|domingo|\b\d{1,2}h\b|que hor[áa]rio/i.test(
+    t,
+  );
 }
 
 async function main() {
+  /*
+   * Juiz que avalia o próprio provedor não compara coisa alguma — dá nota
+   * para si mesmo. Vale para qualquer provedor, não só para a OpenAI.
+   */
+  if (provedorArg && provedorArg === JUIZ) {
+    console.error(
+      `ABORTADO: o agente está forçado em "${provedorArg}" e o juiz também roda nele.` +
+        ` Escolha outro juiz (EVAL_JUIZ) ou outro provedor (--provedor).`,
+    );
+    process.exit(1);
+  }
+
+  console.log(`Juiz: ${JUIZ} (${JUIZ === "openai" ? MODELO_JUIZ_OPENAI : MODELO_JUIZ})`);
   console.log(`Eval do prompt ${PROMPT_VERSAO} — ${casos.length} casos\n`);
 
   console.log("1/2 Calibrando o judge...");

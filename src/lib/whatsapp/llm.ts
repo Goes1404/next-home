@@ -3,6 +3,7 @@ import "server-only";
 import { chamarGeminiJson, geminiConfigurado, modeloGemini } from "./gemini";
 import { chamarGroqJson, groqConfigurada, modeloGroq } from "./groq";
 import { chamarNvidiaJson, modeloNvidia, nvidiaConfigurada } from "./nvidia";
+import { chamarOpenaiJson, modeloOpenai, openaiConfigurada } from "./openai";
 import { valeRetentar, type MotivoFalhaLlm, type ResultadoLlm } from "./llmTipos";
 
 /**
@@ -88,6 +89,19 @@ const PROVEDORES: Provedor[] = [
     configurado: nvidiaConfigurada,
     modelo: modeloNvidia,
     chamar: chamarNvidiaJson,
+  },
+  /*
+   * Por ÚLTIMO, e por ser o único pago. Os três acima são gratuitos e
+   * atendem a esmagadora maioria das mensagens; a OpenAI entra só quando
+   * todos falharam — o momento em que hoje o cliente recebe a contingência
+   * e a conversa morre. Alguns centavos valem mais que uma conversa perdida;
+   * pagar por mensagem que a Groq responde de graça em 0,8s, não.
+   */
+  {
+    nome: "openai",
+    configurado: openaiConfigurada,
+    modelo: modeloOpenai,
+    chamar: chamarOpenaiJson,
   },
 ];
 

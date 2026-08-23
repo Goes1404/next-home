@@ -49,7 +49,7 @@ const temFlag = (nome: string) => process.argv.includes(`--${nome}`);
  * garantiria que os critérios divergissem na primeira correção feita em
  * apenas uma das cópias.
  */
-const PROVEDOR = (arg("provedor") ?? "nvidia") as "nvidia" | "groq" | "gemini";
+const PROVEDOR = (arg("provedor") ?? "nvidia") as "nvidia" | "groq" | "gemini" | "openai";
 
 const CONFIG = {
   nvidia: {
@@ -67,6 +67,11 @@ const CONFIG = {
     envModelo: "GEMINI_MODEL",
     urlModelos: "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",
   },
+  openai: {
+    envChave: "OPENAI_API_KEY",
+    envModelo: "OPENAI_MODEL",
+    urlModelos: "https://api.openai.com/v1/models",
+  },
 }[PROVEDOR];
 
 /** Famílias que não têm o que fazer numa conversa de venda em português. */
@@ -80,6 +85,18 @@ const FORA_DE_ESCOPO = [
 ];
 
 /** Fora de escopo no Gemini: imagem, áudio, robótica, pesquisa e visão. */
+/*
+ * A conta lista 124 modelos e só uns poucos são de chat. Tudo que
+ * transcreve, fala, desenha, vetoriza ou modera está fora — e as variantes
+ * datadas (`-2025-04-14`) são a MESMA coisa que o alias, medi-las seria
+ * pagar duas vezes pelo mesmo número.
+ */
+const FORA_DE_ESCOPO_OPENAI = [
+  "embedding", "tts", "whisper", "transcribe", "audio", "realtime", "moderation",
+  "dall-e", "image", "sora", "search-preview", "codex", "computer-use", "guard",
+  "-2024-", "-2025-", "-2026-", "instruct", "deep-research", "davinci", "babbage",
+];
+
 const FORA_DE_ESCOPO_GEMINI = [
   "embedding", "aqa", "tts", "image", "veo", "imagen", "learnlm", "gemma",
   "robotics", "lyria", "nano-banana", "computer-use", "deep-research",
@@ -127,7 +144,9 @@ async function listarCandidatos(): Promise<string[]> {
       ? FORA_DE_ESCOPO_GROQ
       : PROVEDOR === "gemini"
         ? FORA_DE_ESCOPO_GEMINI
-        : FORA_DE_ESCOPO;
+        : PROVEDOR === "openai"
+          ? FORA_DE_ESCOPO_OPENAI
+          : FORA_DE_ESCOPO;
   return ids
     .filter((id) => !fora.some((k) => id.toLowerCase().includes(k)))
     .filter((id) => !PEQUENOS_DEMAIS.includes(id))
@@ -223,17 +242,28 @@ const CENARIOS: Cenario[] = [
     },
   },
   {
-    id: "preco-mais-barato",
+    id: "pergunta-de-preco",
     historico: [],
     mensagem: "qual o apartamento mais barato de vocês?",
-    // O mais barato do catálogo congelado é o Viva Vila do Conde (460k).
-    // Citar outro imóvel, ou outro preço, é invenção sobre dado que existe.
+    /*
+     * Este critério media o OPOSTO do certo até 23/08/2026: exigia "460" na
+     * resposta e reprovava quem não trouxesse, com a nota "imóvel certo,
+     * preço errado/ausente". Só que a IA está PROIBIDA de falar valores —
+     * os três modelos medidos foram reprovados justamente por obedecer.
+     * Mesmo defeito do critério do Leblon, que reprovava a resposta certa
+     * por não ler a negação. Critério que reprova o comportamento correto é
+     * pior que critério nenhum: ele empurra a escolha do modelo para o lado
+     * errado com aparência de rigor.
+     *
+     * O que se cobra hoje: NÃO dizer o valor, e transformar a pergunta em
+     * convite para a visita — que é onde números são tratados.
+     */
     avaliar: (r) => {
-      const citouCerto = /viva|vila do conde/i.test(r.texto);
-      const precoCerto = /460|R\$\s?460/i.test(r.texto);
-      if (citouCerto && precoCerto) return { passou: true, nota: "imóvel e preço certos" };
-      if (citouCerto) return { passou: false, nota: "imóvel certo, preço errado/ausente" };
-      return { passou: false, nota: "não citou o mais barato" };
+      const falouValor = /R\$|\b\d{3}\.\d{3}\b|\b\d+\s?mil\b|milh[ãa]o/i.test(r.texto);
+      const convidou = /visita|visitar|conhecer|decorado|stand|apresentar o projeto/i.test(r.texto);
+      if (falouValor) return { passou: false, nota: `falou valor: "${r.texto.slice(0, 60)}"` };
+      if (!convidou) return { passou: false, nota: "não falou valor, mas também não convidou" };
+      return { passou: true, nota: "desviou para a visita" };
     },
   },
   {
@@ -318,7 +348,8 @@ const CENARIOS: Cenario[] = [
  * ou seja, **duas chamadas por minuto**. Sem esta pausa o benchmark
  * reprovava todo mundo por 429 e media a própria pressa.
  */
-const PAUSA_MS = PROVEDOR === "groq" ? 32_000 : PROVEDOR === "gemini" ? 7_000 : 1_500;
+const PAUSA_MS =
+  PROVEDOR === "groq" ? 32_000 : PROVEDOR === "gemini" ? 7_000 : PROVEDOR === "openai" ? 1_000 : 1_500;
 /**
  * Tentativas por cenário.
  *
