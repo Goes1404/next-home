@@ -445,14 +445,18 @@ trilho+IA, follow-up, métricas de funil).
   são só adaptadores. Não duplicar fetch — `aiParser.ts` e `campaignQueue.ts`
   tinham cópias próprias e foram migrados (a variação de campanha é UMA
   chamada por mensagem: é o que mais consome cota no sistema).
-- **Cascata escrita ≠ cascata ATIVA.** Em 23/08/2026 a telemetria mostrou
-  **183 de 183 chamadas de produção no Gemini** — nenhuma na Groq, nenhuma
-  na NVIDIA. A Vercel só tinha `GEMINI_API_KEY`, e provedor sem chave é
-  PULADO (comportamento correto, e silencioso). Resultado: o código tinha
-  quatro elos e a produção tinha um, então qualquer soluço do Gemini caía em
-  contingência — exatamente o que a cascata existe para evitar. **Conferir
-  em `ia_interacoes` quais modelos de fato atenderam antes de considerar a
-  redundância ligada**; a única prova é `select modelo, count(*)`.
+- **A cascata ESTÁ ativa em produção, e a distribuição engana.** Em
+  23/08/2026 a contagem por modelo deu 188 no Gemini, 8 na NVIDIA e 2 na
+  Groq — e eu li isso como "só o Gemini tem chave na Vercel". Estava
+  ERRADO: as três chaves estavam configuradas e as linhas da Groq e da
+  NVIDIA eram `origem = 'webhook'`, ou seja, produção de verdade. A
+  distribuição desigual tem explicação própria: **o teto da Groq é de
+  TOKENS** (8.000/min contra ~3.400 por prompt = duas chamadas por minuto),
+  então ela 429 quase sempre e passa a vez; e a NVIDIA, sendo o terceiro
+  elo, só aparece quando o Gemini TAMBÉM falhou — as 8 linhas dela são 8
+  quedas do Gemini que o cliente não percebeu. **Ao conferir a cascata,
+  agrupar por `modelo, origem` e não só por `modelo`** — sem `origem` não
+  se distingue produção de teste, que foi exatamente o erro.
 - **A tela de diagnóstico nomeava "Gemini" em TODAS as frases de falha**,
   porque foi escrita quando ele era o único provedor — mandando o corretor
   caçar a chave do Gemini por falha que podia ser de qualquer um dos quatro.
