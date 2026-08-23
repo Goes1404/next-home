@@ -75,19 +75,31 @@ interface Props {
  * caminho seguir.
  */
 function explicarFallback(motivo?: string | null): string {
+  /*
+   * Estas frases nomeavam o Gemini em TODAS elas — foram escritas quando ele
+   * era o único provedor. Hoje a cascata tem quatro, e o texto mandava o
+   * corretor investigar a chave do Gemini por uma falha que podia ser de
+   * qualquer um deles. Pior: "não há GEMINI_API_KEY" aparecia quando o que
+   * de fato acontece é NENHUM provedor ter chave — a diferença entre trocar
+   * uma variável e configurar o ambiente do zero.
+   *
+   * A cascata só cai em contingência quando TODOS falham, e é isso que as
+   * frases dizem agora. Um provedor sozinho falhando é invisível aqui de
+   * propósito: o próximo da fila atende e o cliente nem percebe.
+   */
   switch (motivo) {
     case "timeout":
-      return "A IA passou do tempo limite e respondeu pelo modo de contingência. Costuma ser passageiro — mande a mensagem de novo.";
+      return "Todos os provedores de IA passaram do tempo limite e a resposta veio pelo modo de contingência. Costuma ser passageiro — mande a mensagem de novo.";
     case "sem_api_key":
-      return "A IA respondeu pelo modo de contingência: não há GEMINI_API_KEY configurada neste ambiente.";
+      return "Nenhum provedor de IA tem chave configurada neste ambiente (GROQ_API_KEY, GEMINI_API_KEY, NVIDIA_API_KEY ou OPENAI_API_KEY). A resposta veio pelo modo de contingência.";
     case "http_429":
-      return "Limite de uso do Gemini atingido no momento — a resposta veio pelo modo de contingência. Tente daqui a pouco.";
+      return "Todos os provedores de IA disponíveis estão no limite de uso agora — a resposta veio pelo modo de contingência. Configurar mais de um provedor evita isto.";
     case "http_4xx":
-      return "O Gemini recusou a chamada (chave inválida ou sem permissão) e a resposta veio pelo modo de contingência.";
+      return "Os provedores de IA recusaram a chamada (chave inválida, expirada ou sem permissão) e a resposta veio pelo modo de contingência. Confira as chaves no ambiente.";
     case "http_5xx":
-      return "O Gemini está instável agora; a resposta veio pelo modo de contingência. Tente de novo em instantes.";
+      return "Os provedores de IA estão instáveis agora; a resposta veio pelo modo de contingência. Tente de novo em instantes.";
     case "resposta_vazia":
-      return "O Gemini respondeu vazio e a resposta veio pelo modo de contingência. Tente reformular a mensagem.";
+      return "A IA respondeu vazio e o texto veio pelo modo de contingência. Tente reformular a mensagem.";
     default:
       return "A IA respondeu pelo modo de contingência — este texto não reflete o agente real.";
   }

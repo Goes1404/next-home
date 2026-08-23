@@ -445,6 +445,21 @@ trilho+IA, follow-up, métricas de funil).
   são só adaptadores. Não duplicar fetch — `aiParser.ts` e `campaignQueue.ts`
   tinham cópias próprias e foram migrados (a variação de campanha é UMA
   chamada por mensagem: é o que mais consome cota no sistema).
+- **Cascata escrita ≠ cascata ATIVA.** Em 23/08/2026 a telemetria mostrou
+  **183 de 183 chamadas de produção no Gemini** — nenhuma na Groq, nenhuma
+  na NVIDIA. A Vercel só tinha `GEMINI_API_KEY`, e provedor sem chave é
+  PULADO (comportamento correto, e silencioso). Resultado: o código tinha
+  quatro elos e a produção tinha um, então qualquer soluço do Gemini caía em
+  contingência — exatamente o que a cascata existe para evitar. **Conferir
+  em `ia_interacoes` quais modelos de fato atenderam antes de considerar a
+  redundância ligada**; a única prova é `select modelo, count(*)`.
+- **A tela de diagnóstico nomeava "Gemini" em TODAS as frases de falha**,
+  porque foi escrita quando ele era o único provedor — mandando o corretor
+  caçar a chave do Gemini por falha que podia ser de qualquer um dos quatro.
+  E dizia "não há GEMINI_API_KEY" quando o caso real é NENHUM provedor ter
+  chave: a diferença entre trocar uma variável e configurar o ambiente do
+  zero. Terceira vez que um texto de erro desatualizado aponta o diagnóstico
+  para o lugar errado neste projeto.
 - **A cota gratuita do Gemini é POR MODELO.** O `gemini-2.5-flash`
   acumulou ~170 interações de produção, esgotou o balde e passou a devolver
   429 em TODA chamada — derrubando o atendimento para contingência. Trocar
