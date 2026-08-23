@@ -703,6 +703,12 @@ export async function buscarDossieAtual(leadId: string): Promise<DossieClienteIA
     leadId: data.lead_id,
     orcamentoMin: data.orcamento_min,
     orcamentoMax: data.orcamento_max,
+    /*
+     * A renda mora em `leads`, não no dossiê — quem a carrega para a tela é
+     * `dadosLead.ts`. Aqui ela entra como null e só é preenchida pela
+     * extração, que é a única que a descobre.
+     */
+    rendaMensal: null,
     formaPagamento: data.forma_pagamento,
     perfilFamiliar: data.perfil_familiar,
     urgenciaMudanca: data.urgencia_mudanca,
@@ -739,6 +745,19 @@ export async function salvarDossie(leadId: string, dossie: DossieClienteIA): Pro
     },
     { onConflict: "lead_id" },
   );
+
+  /*
+   * A renda também vai para `leads`, e não só para o dossiê, porque é lá
+   * que a ficha do CRM lê — e dado gravado que nenhuma tela mostra é
+   * indistinguível de dado perdido (foi o que aconteceu com
+   * `historico_envios`, 53 linhas e zero leitores).
+   *
+   * Só escreve quando há valor: um dossiê reextraído sem a renda na
+   * conversa não pode APAGAR o que o cliente já disse antes.
+   */
+  if (dossie.rendaMensal !== null) {
+    await supabase.from("leads").update({ renda_mensal: dossie.rendaMensal }).eq("id", leadId);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -923,4 +942,25 @@ export async function travarDisparo(escopo: string, dono: string, segundos: numb
 export async function destravarDisparo(escopo: string, dono: string): Promise<void> {
   const supabase = createServiceClient();
   await supabase.rpc("destravar_disparo", { p_escopo: escopo, p_dono: dono });
+}
+
+/**
+ * O catálogo em PDF que o corretor subiu no painel, ou null.
+ *
+ * A IA pede por tipo "catalogo" sem slug; quem resolve o arquivo é o
+ * código — mesmo princípio de `resolverMidia`: o modelo nunca escreve URL,
+ * então não há URL para ele alucinar.
+ */
+export async function catalogoDoCorretor(
+  corretorId: string,
+): Promise<{ url: string; nome: string } | null> {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("corretores")
+    .select("catalogo_url, catalogo_nome")
+    .eq("id", corretorId)
+    .maybeSingle();
+
+  if (!data?.catalogo_url) return null;
+  return { url: data.catalogo_url, nome: data.catalogo_nome || "Catálogo Next Home" };
 }

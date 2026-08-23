@@ -9,6 +9,7 @@ import {
   testarAgenteIA,
   verificarConexaoWhatsapp,
 } from "./acoes";
+import { CatalogoDoCorretor } from "./CatalogoDoCorretor";
 import { Smartphone, ClipboardList, TestTube, Bot, Moon, Ruler, Lightbulb, Calendar, AlertTriangle, Check, ArrowRight, Timer, BellOff } from 'lucide-react';
 import { EXPEDIENTE, MINUTOS_COPILOTO } from "@/lib/whatsapp/modoBot";
 
@@ -51,6 +52,8 @@ const MODOS: {
 
 interface Props {
   corretorNome: string;
+  /** Catálogo em PDF já cadastrado, que a IA manda quando pedem as opções. */
+  catalogo?: { url: string; nome: string } | null;
   /** WhatsApp do cadastro, usado só para pré-preencher o campo de pareamento. */
   whatsappCadastro?: string;
   /** Configuração já gravada, quando a instância existe. */
@@ -114,7 +117,7 @@ interface MensagemPlayground {
   anexos?: { tipo: string; url: string; titulo: string }[];
 }
 
-export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial }: Props) {
+export function WhatsappManager({ corretorNome, catalogo, whatsappCadastro, configInicial }: Props) {
   const [abaAtiva, setAbaAtiva] = useState<"configuracoes" | "playground">("configuracoes");
   // O status vem do que está gravado na instância, não da existência de um
   // telefone no cadastro — ter WhatsApp no perfil não significa ter um
@@ -625,6 +628,8 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
           </div>
 
           {/* Configurações da IA */}
+          <CatalogoDoCorretor inicial={catalogo ?? null} />
+
           <div className="rounded-3xl border border-linha bg-superficie p-6 sm:p-8 backdrop-blur shadow-xl space-y-6">
             <div>
               <span className="text-[11px] uppercase font-bold tracking-wider text-acento-suave">

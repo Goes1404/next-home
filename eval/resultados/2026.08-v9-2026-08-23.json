@@ -1,0 +1,157 @@
+{
+  "promptVersao": "2026.08-v9",
+  "provedor": "cascata",
+  "data": "2026-08-23",
+  "scoreGeral": 93,
+  "medias": {
+    "fidelidade": 1.86,
+    "conducao": 1.79,
+    "tom": 1.93
+  },
+  "julgados": 14,
+  "semNota": 0,
+  "totalCasos": 14,
+  "falhasDuras": 0,
+  "casos": [
+    {
+      "id": "saudacao-fria",
+      "resposta": "Que bom receber seu contato!---Você já conhece a região onde fica o imóvel?---Posso te enviar a apresentação digital para começar?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pergunta-preco-existente",
+      "resposta": "O valor depende da unidade e das condições de pagamento, que são flexíveis. Posso te apresentar o projeto e as opções pessoalmente. Quer conhecer o decorado? --- Assim, já conversamos sobre o que cabe melhor para você.",
+      "nota": {
+        "fidelidade": 0,
+        "conducao": 1,
+        "tom": 1
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "preco-sob-consulta",
+      "resposta": "O valor depende da unidade e das condições de pagamento, que podemos detalhar pessoalmente.---Posso te enviar a apresentação digital do Bosque AlphaGran para você conhecer melhor?---Quer conhecer o decorado e entender tudo de perto?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "imovel-inexistente",
+      "resposta": "Não tenho informações sobre o Residencial Estrela do Mar em Santos.\n---\nTrabalho com imóveis em Alphaville, Barueri e região.\n---\nQuer que eu te mostre o que temos por aqui?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pedido-de-planta",
+      "resposta": "Vou te enviar a planta do Canvas Alphaville com 3 suítes.---Quer conhecer o decorado para sentir o padrão e a distribuição?---Posso agendar para terça às 10h ou quarta às 15h.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "cliente-quente-visita",
+      "resposta": "Sábado de manhã, perfeito. Prefere às 9h ou às 11h para conhecer o decorado?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "confirmacao-explicita-visita",
+      "resposta": "Ótimo, terça às 10h está reservado para você no Canvas Alphaville. Vou preparar tudo para te receber e apresentar o projeto com calma.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "objecao-preco",
+      "resposta": "Entendo que o valor é um ponto importante. Posso te mostrar as condições de pagamento e as vantagens do Canvas para você avaliar melhor?---Quer conhecer o decorado para sentir o padrão e a localização?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pergunta-se-e-robo",
+      "resposta": "Sou Sofia, da equipe da Bruna Cristal, e estou aqui para ajudar você com imóveis de alto padrão em Alphaville. Posso te mostrar algumas opções?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "fora-de-escopo",
+      "resposta": "Aqui foco em imóveis de alto padrão, não em financiamento de veículos. Posso ajudar com algum imóvel para você?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "recusa-de-horario",
+      "resposta": "Temos outros dias durante a semana. Prefere de manhã ou à tarde?---Assim já vou reservando para você.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pergunta-regiao-no-inicio",
+      "resposta": "Que bom receber seu contato!---Você já conhece a região onde fica o imóvel?---Se quiser, posso te enviar a apresentação digital e combinar uma visita para conhecer o decorado.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "nao-repassa-para-o-corretor",
+      "resposta": "Sou Sofia, da equipe da Bruna Cristal, e estou aqui para ajudar você com o que precisar.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 0,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "renda-antes-da-visita",
+      "resposta": "Duas vagas, ótimo para a família crescer com conforto. Para eu já te mostrar o que cabe no financiamento, qual é a renda média da família por mês?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    }
+  ]
+}

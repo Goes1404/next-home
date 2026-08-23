@@ -81,3 +81,32 @@ describe("Peneira completa + quebra", () => {
     }
   });
 });
+
+describe("Corte em fronteira de oração", () => {
+  /*
+   * Flagrado em teste com a API real: o cliente recebeu "…pronta para" e
+   * "morar, ideal para…" em balões separados. O quebrador tinha só dois
+   * níveis — fim de frase, ou QUALQUER espaço — então frase sem ponto final
+   * caía direto no segundo. Cortar no meio de "pronta para morar" não
+   * parece pessoa digitando rápido, parece software quebrado.
+   */
+  it("não termina balão em palavra que pede complemento", () => {
+    const texto =
+      "O Bosque AlphaGran é uma casa em condomínio fechado, pronta para morar, " +
+      "ideal para quem busca conforto e segurança em Alphaville";
+    const baloes = dividirEmMensagens(texto);
+    expect(baloes.length).toBeGreaterThan(1);
+    for (const balao of baloes) {
+      expect(balao).not.toMatch(/\b(para|de|da|do|em|com|que|uma?|no|na)$/i);
+    }
+  });
+
+  it("continua preferindo o fim de frase quando ele existe", () => {
+    const texto =
+      "O Canvas fica a cinco minutos do Tamboré. A entrega está prevista para janeiro de 2027. " +
+      "As unidades têm três suítes e duas vagas na garagem do prédio.";
+    for (const balao of dividirEmMensagens(texto).slice(0, -1)) {
+      expect(balao).toMatch(/[.!?]$/);
+    }
+  });
+});

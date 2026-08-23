@@ -219,7 +219,7 @@ async function processarFollowup(
 
   if (resposta.meta.fallback) return descartar(supabase, item.id, "ia_indisponivel");
 
-  const saneada = sanearRespostaIA(resposta, catalogo);
+  const saneada = sanearRespostaIA(resposta, catalogo, historico);
   const balao = dividirEmMensagens(saneada.resposta.textoResposta)[0] ?? saneada.resposta.textoResposta;
 
   const envio = await enviarMensagemWhatsapp({

@@ -84,6 +84,12 @@ export interface DossieClienteIA {
   leadId: string;
   orcamentoMin: number | null;
   orcamentoMax: number | null;
+  /**
+   * Renda média mensal declarada. NÃO é o mesmo que orçamento: orçamento é
+   * quanto a pessoa quer gastar no imóvel, renda é quanto entra por mês — e
+   * é a renda que decide o que o banco financia.
+   */
+  rendaMensal: number | null;
   formaPagamento: string | null;
   perfilFamiliar: string | null;
   urgenciaMudanca: string | null;

@@ -16,6 +16,8 @@ import type { Interacao, Tarefa, TipoInteracao } from "./timeline";
 export type LeadDetalhado = Lead & {
   orcamentoMin: number | null;
   orcamentoMax: number | null;
+  /** Renda média mensal declarada — o que decide o que o banco financia. */
+  rendaMensal: number | null;
   dormitoriosMin: number | null;
   regiaoInteresse: string | null;
   empreendimentoId: string | null;
@@ -24,7 +26,7 @@ export type LeadDetalhado = Lead & {
 const SELECT_DETALHE = `
   id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
   etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, portal_origem, anuncio_origem,
-  orcamento_min, orcamento_max, dormitorios_min, regiao_interesse, empreendimento_id,
+  orcamento_min, orcamento_max, renda_mensal, dormitorios_min, regiao_interesse, empreendimento_id,
   corretor:corretores(id, nome),
   empreendimento:empreendimentos(nome, slug, endereco)
 `;
@@ -47,6 +49,7 @@ type LinhaDetalhe = {
   visita_agendada_em: string | null;
   orcamento_min: number | string | null;
   orcamento_max: number | string | null;
+  renda_mensal: number | string | null;
   dormitorios_min: number | null;
   regiao_interesse: string | null;
   empreendimento_id: string | null;
@@ -91,6 +94,8 @@ export async function getLeadDetalhado(id: string): Promise<LeadDetalhado | null
     corretor: row.corretor,
     empreendimento: row.empreendimento,
     orcamentoMin: numero(row.orcamento_min),
+    // `numeric` do Postgres chega como STRING no supabase-js.
+    rendaMensal: numero(row.renda_mensal),
     orcamentoMax: numero(row.orcamento_max),
     dormitoriosMin: row.dormitorios_min,
     regiaoInteresse: row.regiao_interesse,

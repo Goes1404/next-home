@@ -12,6 +12,23 @@ export default async function WhatsappPainelPage() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
 
+  /*
+   * Consulta própria em vez de entrar no `SELECT_CORRETOR`: aquele alimenta
+   * as páginas PÚBLICAS de corretor, e não há motivo para carregar material
+   * de venda interno em toda visita ao site.
+   */
+  const catalogo = await (async () => {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("corretores")
+      .select("catalogo_url, catalogo_nome")
+      .eq("id", corretor.id)
+      .maybeSingle();
+    return data?.catalogo_url
+      ? { url: data.catalogo_url, nome: data.catalogo_nome ?? "Catálogo" }
+      : null;
+  })();
+
   // A configuração é lida do banco, não presumida: o painel precisa abrir
   // mostrando o que está de fato valendo para o número deste corretor.
   const supabase = await createClient();
@@ -61,6 +78,7 @@ export default async function WhatsappPainelPage() {
 
       <WhatsappManager
         corretorNome={corretor.nome}
+        catalogo={catalogo}
         // Quase sempre é o mesmo número que vai ser pareado — deixar o
         // campo pronto poupa digitação no celular, onde este fluxo mora.
         whatsappCadastro={corretor.whatsapp ?? ""}

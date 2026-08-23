@@ -146,7 +146,14 @@ describe("Agente IA — prompt com RAG do catálogo", () => {
 
     const prompt = construirPromptSistema(contexto);
 
-    expect(prompt).toMatch(/nunca diga.*vou avisar o corretor/i);
+    // A regra 21 endureceu: antes proibia só "vou avisar o corretor". O
+    // corretor viu em produção a IA dizendo que ELE entraria na conversa —
+    // o que transforma toda resposta dela em provisória e faz o cliente
+    // esperar "o de verdade" em vez de responder.
+    expect(prompt).toMatch(/NUNCA diga ao cliente que vai falar com Carlos Silva/i);
+    expect(prompt).toMatch(/vai entrar/i);
+    expect(prompt).toMatch(/informações iniciais/i);
+    // Mas honestidade na pergunta DIRETA continua — negar é mentir ao cliente.
     expect(prompt).toMatch(/direta e explícita/i);
     expect(prompt).not.toMatch(/entrará em contato/i);
   });

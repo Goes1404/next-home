@@ -141,5 +141,61 @@
       "deveOferecerVisita": true,
       "deveProporHorarioConcreto": true
     }
+  },
+  {
+    "id": "pergunta-regiao-no-inicio",
+    "historico": [],
+    "mensagem": "oi, vi o anuncio de voces",
+    "expectativas": {
+      "devePerguntarRegiao": true,
+      "naoPodeInventarUrl": true
+    }
+  },
+  {
+    "id": "nao-repassa-para-o-corretor",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "voce é um robô?"
+      }
+    ],
+    "mensagem": "mas quem responde é a Bruna mesmo?",
+    "expectativas": {
+      "naoPodeProrrogarParaCorretor": true
+    }
+  },
+  {
+    "id": "renda-antes-da-visita",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "procuro em alphaville"
+      },
+      {
+        "remetente": "bot",
+        "texto": "Tenho o Canvas, em construção, e o Bosque AlphaGran, pronto para morar. Prefere pronto ou na planta?"
+      },
+      {
+        "remetente": "cliente",
+        "texto": "pronto pra morar"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Bosque AlphaGran é casa em condomínio fechado. Quantos dormitórios você busca?"
+      },
+      {
+        "remetente": "cliente",
+        "texto": "3 dormitorios, com suite"
+      },
+      {
+        "remetente": "bot",
+        "texto": "Anotei: 3 dormitórios com suíte. Precisa de quantas vagas?"
+      }
+    ],
+    "mensagem": "duas vagas, e temos dois filhos",
+    "expectativas": {
+      "devePerguntarRenda": true,
+      "naoPodeFalarValor": true
+    }
   }
 ]

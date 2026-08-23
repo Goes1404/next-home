@@ -122,6 +122,48 @@ corretor).
   é rede de segurança; o certo é a IA não escrever 1900 caracteres. O
   prompt agora pede resposta inteira em até 350 caracteres, uma ideia por
   mensagem, e proíbe markdown, lista e as aberturas de manual.
+- **O funil de qualificação tem ordem, e ela é a da corretora real**
+  (agosto/2026): região → pronto ou na planta → tipologia → RENDA MENSAL →
+  indicação → visita. A renda vem ANTES de indicar imóvel e antes de propor
+  horário: é ela que define o que o banco financia, e sem ela a visita pode
+  ser marcada para quem não tem perfil. Na conversa da Priscila a Bruna faz
+  exatamente isso — região na 4ª mensagem, tipologia na 5ª, convite na 6ª.
+- **A v8 tinha uma CONTRADIÇÃO interna que eu mesmo criei**: a regra 12
+  dizia "primeiro entenda, depois convide" e a seção de agendamento dizia
+  "ofereça CEDO, não espere qualificar". Resolvida separando as duas
+  coisas: o CONVITE ("quer conhecer o decorado?") vem cedo, o HORÁRIO
+  concreto só depois do funil.
+- **`renda_mensal` ≠ `orcamento_min/max`.** Orçamento é quanto a pessoa
+  quer gastar no imóvel; renda é quanto entra por mês. São perguntas
+  diferentes e as duas importam. A renda mora em `leads` (é lá que a ficha
+  do CRM lê) e só é escrita quando a extração acha valor — dossiê
+  reextraído sem a renda na conversa não pode APAGAR o que o cliente já
+  disse.
+- **Loop de fotos: o prompt não segura, a lista do que já saiu segura.** A
+  IA reenviava as mesmas imagens a cada duas ou três mensagens e a conversa
+  parava de andar. `midiasJaEnviadas` lê as notas de auditoria
+  (`📎 título: url`) que o webhook já gravava no Live Chat — a URL é única
+  por arquivo, então serve de identidade sem tabela nova e sem backfill. E
+  o dedupe acontece ANTES de contar a quantidade: se o cliente já viu duas
+  fotos, "manda mais uma" traz a TERCEIRA.
+- **"A Bruna vai te responder" mata a conversa.** Relatado em produção: a
+  IA dizia que ajudava "com as informações iniciais" e que a corretora
+  entraria. Isso transforma toda resposta dela em provisória e o cliente
+  para de responder esperando "o de verdade". A regra 21 agora proíbe
+  qualquer variação disso. O que NÃO mudou: se perguntarem direta e
+  explicitamente se é uma IA, ela não nega — negar é mentir ao consumidor.
+- **Catálogo do corretor é por CORRETOR, e é PDF** (0035). Cada um trabalha
+  com um recorte. Bucket próprio (`corretores`): o de `empreendimentos` só
+  aceita imagem e mp4, então o upload de PDF falharia no mime type com erro
+  que parece de permissão. A IA pede por tipo `catalogo` sem slug — mesmo
+  princípio da mídia: o modelo nunca escreve URL, então não há URL para
+  alucinar.
+- **O quebrador de mensagem tinha só DOIS níveis** — fim de frase ou
+  qualquer espaço. Frase sem ponto final caía direto no segundo, e o
+  cliente recebia "…pronta para" / "morar, ideal para…" em balões
+  separados. Cortar no meio de uma locução não parece pessoa digitando
+  rápido, parece software quebrado. Hoje há um nível intermediário:
+  vírgula, ponto e vírgula, dois pontos e travessão.
 - **Mídia nativa** (`provider.ts`): fotos/plantas/vídeos saem como anexo
   real do WhatsApp, não como link no texto.
 - **A IA NÃO APRENDE sozinha** — nenhum LLM aprende entre chamadas. O que

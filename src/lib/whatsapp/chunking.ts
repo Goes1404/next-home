@@ -66,6 +66,29 @@ function dividirAoMeio(texto: string): [string, string] {
     }
   }
 
+  /*
+   * Segundo nível: fronteira de oração. Sem ele, uma frase sem ponto final
+   * caía direto no "qualquer espaço" e o cliente recebia dois balões assim:
+   *
+   *   "O Bosque AlphaGran é uma casa em condomínio fechado, pronta para"
+   *   "morar, ideal para quem busca conforto e segurança"
+   *
+   * Cortar no meio de "pronta para morar" não parece humano digitando
+   * rápido: parece software quebrado. Vírgula, ponto e vírgula, dois
+   * pontos e travessão são onde uma pessoa de fato daria enter.
+   */
+  if (melhorCorte === -1) {
+    const fimDeOracao = /[,;:]\s+|\s+—\s+/g;
+    while ((m = fimDeOracao.exec(texto))) {
+      const posicao = m.index + m[0].length;
+      const distancia = Math.abs(posicao - alvo);
+      if (distancia < melhorDistancia) {
+        melhorDistancia = distancia;
+        melhorCorte = posicao;
+      }
+    }
+  }
+
   if (melhorCorte === -1) {
     const espacoDepois = texto.indexOf(" ", Math.floor(alvo));
     const espacoAntes = texto.lastIndexOf(" ", Math.ceil(alvo));

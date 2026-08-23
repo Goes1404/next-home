@@ -130,6 +130,8 @@ export type Database = {
           bio: string | null
           created_at: string
           creci: string
+          catalogo_url: string | null
+          catalogo_nome: string | null
           deve_trocar_senha: boolean
           em_pausa: boolean
           email: string | null
@@ -150,6 +152,8 @@ export type Database = {
           bio?: string | null
           created_at?: string
           creci: string
+          catalogo_url: string | null
+          catalogo_nome: string | null
           deve_trocar_senha?: boolean
           em_pausa?: boolean
           email?: string | null
@@ -170,6 +174,8 @@ export type Database = {
           bio?: string | null
           created_at?: string
           creci?: string
+          catalogo_url?: string | null
+          catalogo_nome?: string | null
           deve_trocar_senha?: boolean
           em_pausa?: boolean
           email?: string | null
@@ -589,6 +595,7 @@ export type Database = {
           telefone_e164: string | null
           tipo: string
           visita_agendada_em: string | null
+          renda_mensal: number | null
         }
         Insert: {
           anuncio_origem?: string | null
@@ -616,6 +623,7 @@ export type Database = {
           telefone_e164?: string | null
           tipo?: string
           visita_agendada_em?: string | null
+          renda_mensal?: number | null
         }
         Update: {
           anuncio_origem?: string | null
@@ -643,6 +651,7 @@ export type Database = {
           telefone_e164?: string | null
           tipo?: string
           visita_agendada_em?: string | null
+          renda_mensal?: number | null
         }
         Relationships: [
           {

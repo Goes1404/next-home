@@ -30,6 +30,7 @@ const dossieBase: DossieClienteIA = {
   id: "d1",
   leadId: "l1",
   orcamentoMin: 500_000,
+  rendaMensal: null,
   orcamentoMax: 800_000,
   formaPagamento: "financiamento",
   perfilFamiliar: "casal_com_filhos",

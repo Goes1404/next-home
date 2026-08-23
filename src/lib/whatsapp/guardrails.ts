@@ -2,7 +2,7 @@ import type { Empreendimento } from "@/lib/types";
 import type { RespostaAgenteIA } from "./aiAgent";
 import { soarHumano } from "./vozHumana";
 import { removerValores } from "./semValores";
-import { resolverAnexos, type AnexoResolvido } from "./resolverMidia";
+import { midiasJaEnviadas, resolverAnexos, type AnexoResolvido } from "./resolverMidia";
 import { corrigirVisitaNoPassado, verificarCoerenciaVisita } from "./coerenciaVisita";
 
 /**
@@ -33,6 +33,8 @@ export type RespostaSaneada = {
   valorRemovido: boolean;
   /** Telemetria: quanta alucinação o trilho segurou (ver ia_interacoes). */
   anexosBloqueados: number;
+  /** Anexos que a IA pediu de novo e já tinham sido enviados nesta conversa. */
+  anexosRepetidos: number;
   slugsBloqueados: number;
   /** A visita foi descartada por prometer um dia e agendar outro? */
   visitaIncoerente: boolean;
@@ -42,6 +44,15 @@ export type RespostaSaneada = {
 export function sanearRespostaIA(
   resposta: RespostaAgenteIA,
   catalogo: Empreendimento[],
+  /*
+   * O histórico entra aqui só para uma coisa: saber que mídia já foi
+   * mandada nesta conversa. A IA entrava em loop reenviando as mesmas
+   * fotos, e "não repita" no prompt não segurava — o que segura é a lista
+   * do que já saiu.
+   */
+  historico?: { remetente: string; texto: string }[],
+  /** Catálogo em PDF do corretor, quando ele subiu um. */
+  catalogoDoCorretor?: { url: string; nome: string } | null,
 ): RespostaSaneada {
   const slugsPermitidos = new Set(catalogo.map((e) => e.slug));
 
@@ -51,7 +62,12 @@ export function sanearRespostaIA(
    * de copiar um hash de 32 caracteres e errava sempre (0 anexos enviados
    * e 6 bloqueados em produção).
    */
-  const { anexos, pedidosSemMidia } = resolverAnexos(resposta.anexosMidia, catalogo);
+  const { anexos, pedidosSemMidia, repetidos } = resolverAnexos(
+    resposta.anexosMidia,
+    catalogo,
+    midiasJaEnviadas(historico),
+    catalogoDoCorretor,
+  );
   if (pedidosSemMidia.length > 0) {
     console.warn(`[guardrails] mídia pedida e não encontrada: ${pedidosSemMidia.join("; ")}`);
   }
@@ -112,6 +128,7 @@ export function sanearRespostaIA(
     },
     anexos,
     valorRemovido: semValor.removeu,
+    anexosRepetidos: repetidos,
     anexosBloqueados: pedidosSemMidia.length,
     slugsBloqueados: (resposta.imoveisRecomendados?.length ?? 0) - recomendadosValidos.length,
     visitaIncoerente: !coerencia.coerente,

@@ -105,6 +105,7 @@ export async function concluirTarefa(tarefaId: string): Promise<ResultadoCrm> {
 export type Qualificacao = {
   orcamentoMin: number | null;
   orcamentoMax: number | null;
+  rendaMensal: number | null;
   dormitoriosMin: number | null;
   regiaoInteresse: string | null;
   empreendimentoId: string | null;
@@ -135,6 +136,7 @@ export async function salvarQualificacao(
     .update({
       orcamento_min: dados.orcamentoMin,
       orcamento_max: dados.orcamentoMax,
+      renda_mensal: dados.rendaMensal,
       dormitorios_min: dados.dormitoriosMin,
       regiao_interesse: dados.regiaoInteresse?.trim() || null,
       empreendimento_id: dados.empreendimentoId,

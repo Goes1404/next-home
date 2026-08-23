@@ -24,8 +24,9 @@ import { site } from "@/lib/site";
 
 /** O que a IA pede: nunca uma URL. */
 export type PedidoMidia = {
-  slug: string;
-  tipo: "foto" | "planta" | "video" | "tour360";
+  /** Vazio quando `tipo` é "catalogo" — o catálogo é do CORRETOR, não de um imóvel. */
+  slug?: string;
+  tipo: "foto" | "planta" | "video" | "tour360" | "catalogo";
   /** Quantas peças enviar. Sem isso, "manda as fotos" viraria 15 anexos. */
   quantidade?: number;
 };
@@ -64,17 +65,77 @@ function midiasDoTipo(imovel: Empreendimento, tipo: PedidoMidia["tipo"]) {
   }
 }
 
+/**
+ * O que já foi mandado nesta conversa, lido do próprio histórico.
+ *
+ * Cada anexo enviado deixa uma nota de auditoria no Live Chat no formato
+ * `📎 título: url` (ver o webhook). A URL é única por arquivo, então ela
+ * serve de identidade sem precisar de tabela nova — e funciona para as
+ * conversas que já existem, sem backfill.
+ *
+ * Isto existe porque a IA entrava em LOOP de fotos: mandava as mesmas
+ * imagens a cada duas ou três mensagens, e a conversa parava de andar. Uma
+ * regra de prompt pedindo "não repita" é probabilística; a lista do que já
+ * saiu é um fato, e o fato ganha.
+ */
+export function midiasJaEnviadas(
+  historico: { remetente: string; texto: string }[] | undefined,
+): Set<string> {
+  const urls = new Set<string>();
+  for (const m of historico ?? []) {
+    if (m.remetente !== "bot") continue;
+    for (const linha of m.texto.split("\n")) {
+      const marcador = linha.indexOf("📎");
+      if (marcador === -1) continue;
+      const url = linha.slice(marcador).match(/https?:\/\/\S+/)?.[0];
+      if (url) urls.add(url);
+    }
+  }
+  return urls;
+}
+
 export function resolverAnexos(
   pedidos: PedidoMidia[] | undefined,
   catalogo: Empreendimento[],
-): { anexos: AnexoResolvido[]; pedidosSemMidia: string[] } {
+  jaEnviadas: Set<string> = new Set(),
+  /*
+   * O catálogo do CORRETOR — um PDF com as opções da casa, que a corretora
+   * manda em vez de digitar uma lista no chat (está nas conversas
+   * exportadas). É por corretor porque cada um trabalha com um recorte
+   * diferente, e é opcional: quem não subiu arquivo simplesmente não manda.
+   */
+  catalogoDoCorretor?: { url: string; nome: string } | null,
+): { anexos: AnexoResolvido[]; pedidosSemMidia: string[]; repetidos: number } {
   const anexos: AnexoResolvido[] = [];
   const pedidosSemMidia: string[] = [];
   const jaIncluidas = new Set<string>();
+  let repetidos = 0;
 
   for (const pedido of pedidos ?? []) {
     if (anexos.length >= MAXIMO_ANEXOS) break;
-    if (!pedido?.slug || !pedido?.tipo) continue;
+    if (!pedido?.tipo) continue;
+
+    if (pedido.tipo === "catalogo") {
+      if (!catalogoDoCorretor?.url) {
+        pedidosSemMidia.push("catálogo do corretor não cadastrado");
+        continue;
+      }
+      if (jaEnviadas.has(catalogoDoCorretor.url)) {
+        repetidos += 1;
+        pedidosSemMidia.push("catálogo já enviado nesta conversa");
+        continue;
+      }
+      if (jaIncluidas.has(catalogoDoCorretor.url)) continue;
+      jaIncluidas.add(catalogoDoCorretor.url);
+      anexos.push({
+        tipo: "catalogo",
+        url: catalogoDoCorretor.url,
+        titulo: catalogoDoCorretor.nome || "Catálogo Next Home",
+      });
+      continue;
+    }
+
+    if (!pedido.slug) continue;
 
     const imovel = catalogo.find((e) => e.slug === pedido.slug);
     if (!imovel) {
@@ -90,8 +151,20 @@ export function resolverAnexos(
       continue;
     }
 
+    /*
+     * Pula o que já saiu nesta conversa ANTES de contar a quantidade: se o
+     * cliente já recebeu as duas primeiras fotos, "manda mais uma" tem de
+     * trazer a TERCEIRA, não repetir as duas e completar com uma nova.
+     */
+    const inéditas = disponiveis.filter((m) => !jaEnviadas.has(m.url));
+    repetidos += disponiveis.length - inéditas.length;
+    if (inéditas.length === 0) {
+      pedidosSemMidia.push(`${imovel.nome}: ${pedido.tipo} já enviada nesta conversa`);
+      continue;
+    }
+
     const quantos = Math.max(1, Math.min(pedido.quantidade ?? 1, MAXIMO_ANEXOS - anexos.length));
-    for (const midia of disponiveis.slice(0, quantos)) {
+    for (const midia of inéditas.slice(0, quantos)) {
       if (jaIncluidas.has(midia.url)) continue;
       jaIncluidas.add(midia.url);
       anexos.push({
@@ -102,7 +175,7 @@ export function resolverAnexos(
     }
   }
 
-  return { anexos, pedidosSemMidia };
+  return { anexos, pedidosSemMidia, repetidos };
 }
 
 /**

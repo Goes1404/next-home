@@ -35,6 +35,7 @@ export function Qualificacao({
   inicial: {
     orcamentoMin: number | null;
     orcamentoMax: number | null;
+    rendaMensal: number | null;
     dormitoriosMin: number | null;
     regiaoInteresse: string | null;
     empreendimentoId: string | null;
@@ -43,6 +44,7 @@ export function Qualificacao({
 }) {
   const [min, setMin] = useState(inicial.orcamentoMin?.toString() ?? "");
   const [max, setMax] = useState(inicial.orcamentoMax?.toString() ?? "");
+  const [renda, setRenda] = useState(inicial.rendaMensal?.toString() ?? "");
   const [dorms, setDorms] = useState(inicial.dormitoriosMin?.toString() ?? "");
   const [regiao, setRegiao] = useState(inicial.regiaoInteresse ?? "");
   const [empreendimento, setEmpreendimento] = useState(inicial.empreendimentoId ?? "");
@@ -55,6 +57,7 @@ export function Qualificacao({
       const r = await salvarQualificacao(leadId, {
         orcamentoMin: paraNumero(min),
         orcamentoMax: paraNumero(max),
+        rendaMensal: paraNumero(renda),
         dormitoriosMin: paraNumero(dorms),
         regiaoInteresse: regiao,
         empreendimentoId: empreendimento || null,
@@ -72,6 +75,25 @@ export function Qualificacao({
       <h2 className="text-fluid-base font-medium text-titulo">O que procura</h2>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className={rotulo} htmlFor="renda">
+            Renda mensal da família
+          </label>
+          <input
+            id="renda"
+            className={campo}
+            inputMode="numeric"
+            placeholder="ex.: 18000"
+            value={renda}
+            onChange={(e) => setRenda(e.target.value)}
+            disabled={salvando}
+          />
+          <p className="text-fluid-xs mt-1 text-tenue">
+            Diferente do orçamento: é o que entra por mês, e é o que define o financiamento. A IA
+            pergunta isso na conversa e preenche sozinha.
+          </p>
+        </div>
+
         <div>
           <label className={rotulo} htmlFor="orc-min">
             Orçamento de

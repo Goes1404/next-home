@@ -7,6 +7,7 @@ Sua missão é ler a transcrição de uma conversa de WhatsApp entre um cliente 
 Você DEVE responder EXCLUSIVAMENTE um objeto JSON válido no seguinte formato:
 {
   "orcamentoMin": number ou null,
+  "rendaMensal": number ou null (renda MENSAL da família, não o valor do imóvel; só preencha se o cliente disser),
   "orcamentoMax": number ou null,
   "formaPagamento": "a_vista" | "financiamento" | "permuta" | "misto" | null,
   "perfilFamiliar": "casal_com_filhos" | "casal_sem_filhos" | "solteiro" | "investidor" | null,
@@ -30,6 +31,7 @@ export async function extrairDossieCliente(
     id: "temp-" + leadId,
     leadId,
     orcamentoMin: null,
+    rendaMensal: null,
     orcamentoMax: null,
     formaPagamento: null,
     perfilFamiliar: null,
@@ -75,6 +77,7 @@ export async function extrairDossieCliente(
     id: "dossie-" + leadId,
     leadId,
     orcamentoMin: typeof parsed.orcamentoMin === "number" ? parsed.orcamentoMin : null,
+    rendaMensal: typeof parsed.rendaMensal === "number" ? parsed.rendaMensal : null,
     orcamentoMax: typeof parsed.orcamentoMax === "number" ? parsed.orcamentoMax : null,
     formaPagamento: (parsed.formaPagamento as DossieClienteIA["formaPagamento"]) || null,
     perfilFamiliar: (parsed.perfilFamiliar as DossieClienteIA["perfilFamiliar"]) || null,

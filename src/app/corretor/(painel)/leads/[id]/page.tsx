@@ -120,6 +120,7 @@ export default async function FichaLeadPage({
             leadId={lead.id}
             inicial={{
               orcamentoMin: lead.orcamentoMin,
+              rendaMensal: lead.rendaMensal,
               orcamentoMax: lead.orcamentoMax,
               dormitoriosMin: lead.dormitoriosMin,
               regiaoInteresse: lead.regiaoInteresse,

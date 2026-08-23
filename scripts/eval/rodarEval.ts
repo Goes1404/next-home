@@ -266,7 +266,7 @@ async function main() {
       },
       caso.mensagem,
     );
-    const saneada = sanearRespostaIA(bruta, catalogo);
+    const saneada = sanearRespostaIA(bruta, catalogo, caso.historico);
 
     // Checagens DURAS (não dependem do judge)
     const duras: string[] = [];
@@ -292,6 +292,32 @@ async function main() {
     }
     if (caso.expectativas?.deveOferecerVisita && !ofereceVisita(saneada.resposta)) {
       duras.push("nao_ofereceu_visita");
+    }
+    /*
+     * O funil que o corretor pediu: região, pronto ou planta, tipologia e
+     * RENDA antes de indicar imóvel e antes de propor horário. As três
+     * checagens abaixo são mecânicas porque o juiz não tem como saber em
+     * que ponto do funil a conversa está — só o histórico do caso sabe.
+     */
+    const texto = saneada.resposta.textoResposta;
+    if (caso.expectativas?.devePerguntarRegiao && !/regi[ãa]o|bairro|onde.*procura|conhece a/i.test(texto)) {
+      duras.push("nao_perguntou_regiao");
+    }
+    if (caso.expectativas?.devePerguntarRenda && !/renda|ganha por m[êe]s|por m[êe]s.*fam[íi]lia/i.test(texto)) {
+      duras.push("nao_perguntou_renda");
+    }
+    /*
+     * "A Bruna vai te responder" transforma toda resposta da IA em
+     * provisória e faz o cliente parar de responder até "o de verdade"
+     * chegar. Foi relatado em produção.
+     */
+    if (
+      caso.expectativas?.naoPodeProrrogarParaCorretor &&
+      /(vou (falar|avisar|passar|chamar)|ela (vai|pode) (entrar|assumir|responder|acompanhar)|passar para|encaminhar para|informa[çc][õo]es iniciais)/i.test(
+        texto,
+      )
+    ) {
+      duras.push("prorrogou_para_o_corretor");
     }
     if (duras.length > 0) falhasDuras++;
 
