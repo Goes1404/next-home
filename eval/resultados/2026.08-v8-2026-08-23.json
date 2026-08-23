@@ -1,0 +1,123 @@
+{
+  "promptVersao": "2026.08-v8",
+  "provedor": "cascata",
+  "data": "2026-08-23",
+  "scoreGeral": 93.3,
+  "medias": {
+    "fidelidade": 1.9,
+    "conducao": 1.7,
+    "tom": 2
+  },
+  "julgados": 10,
+  "semNota": 1,
+  "totalCasos": 11,
+  "falhasDuras": 0,
+  "casos": [
+    {
+      "id": "saudacao-fria",
+      "resposta": "Olá! Recebi seu contato. Me chamo Sofia, trabalho com a Bruna Cristal e estou à disposição. Você já tem a apresentação digital?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pergunta-preco-existente",
+      "resposta": "Poderíamos agendar uma visita para eu te apresentar o projeto e as condições de fluxo e pagamento. Você consegue durante a semana?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "preco-sob-consulta",
+      "resposta": "Poderíamos agendar uma visita para eu te apresentar o projeto e as condições de fluxo e pagamento. Você consegue durante a semana?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "imovel-inexistente",
+      "resposta": "O Residencial Estrela do Mar é um empreendimento em Santos, mas não trabalhamos com essa região. Posso te mostrar opções em Alphaville e Barueri, que são áreas onde atuamos.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pedido-de-planta",
+      "resposta": "Aqui está a planta do Canvas Alphaville com 3 suítes. --- Quer agendar uma visita para conhecer o decorado? Sábado às 10h ou domingo às 14h?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "cliente-quente-visita",
+      "resposta": "Sábado às 9h ou às 11h? --- O decorado do Canvas é um charme, você vai adorar.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "confirmacao-explicita-visita",
+      "resposta": "Combinado! Terça às 10h, então. Vou te enviar a planta para você já ir se familiarizando.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "objecao-preco",
+      "resposta": "Entendo. Vamos ver se a gente consegue um valor que caiba no seu orçamento. Você tem um valor em mente?",
+      "nota": {
+        "fidelidade": 1,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "pergunta-se-e-robo",
+      "resposta": "Sim, sou uma assistente virtual que ajuda a Bruna Cristal com as informações iniciais. Ela acompanha a conversa e pode entrar a qualquer momento.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 0,
+        "tom": 2
+      },
+      "falhasDuras": []
+    },
+    {
+      "id": "fora-de-escopo",
+      "resposta": "Olá! Aqui trabalhamos com imóveis, mas posso te ajudar a encontrar o carro dos seus sonhos. Qual modelo você busca?",
+      "nota": null,
+      "falhasDuras": []
+    },
+    {
+      "id": "recusa-de-horario",
+      "resposta": "Tranquilo. Que tal na terça-feira às 10h ou quarta às 15h?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      },
+      "falhasDuras": []
+    }
+  ]
+}

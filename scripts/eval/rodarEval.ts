@@ -40,11 +40,21 @@
  *     rastreabilidade score→versão. REGRA DO TIME: prompt novo não sobe
  *     com score médio abaixo do da versão anterior.
  */
+import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { gerarRespostaIA, PROMPT_VERSAO } from "../../src/lib/whatsapp/aiAgent";
 import { sanearRespostaIA } from "../../src/lib/whatsapp/guardrails";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
 import { contemValor } from "../../src/lib/whatsapp/semValores";
+
+/*
+ * O juiz roda num modelo PRÓPRIO, e isso não é preciosismo: a cota
+ * gratuita do Gemini é por modelo (20/dia por modelo nesta conta) e este
+ * eval gasta 17 chamadas. Apontá-lo para o modelo de produção faria cada
+ * rodada de teste deixar o atendimento real sem juiz — quer dizer, sem
+ * IA — pelo resto do dia. `GEMINI_MODELO_JUIZ` troca sem mexer em código.
+ */
+const MODELO_JUIZ = process.env.GEMINI_MODELO_JUIZ || "gemini-3.5-flash-lite";
 import { ORCAMENTO_AGENTE_MS } from "../../src/lib/whatsapp/llm";
 import type { Empreendimento } from "../../src/lib/types";
 
@@ -91,14 +101,55 @@ function catalogoParaJudge(): string {
 async function julgar(mensagem: string, resposta: string): Promise<Record<string, number> | null> {
   const resultado = await chamarGeminiJson(
     `${RUBRICA}\n\nCATÁLOGO OFICIAL:\n${catalogoParaJudge()}\n\nMENSAGEM DO CLIENTE: ${mensagem}\n\nRESPOSTA DA ASSISTENTE: ${resposta}`,
-    { temperature: 0, timeoutMs: ORCAMENTO_AGENTE_MS },
+    { temperature: 0, timeoutMs: ORCAMENTO_AGENTE_MS, modelo: MODELO_JUIZ },
   );
   if (!resultado.ok) return null;
   const j = resultado.json as Record<string, number>;
   return { fidelidade: j.fidelidade, conducao: j.conducao, tom: j.tom };
 }
 
+/*
+ * A calibração valida a RUBRICA — e a rubrica quase nunca muda. Refazê-la a
+ * cada rodada custava 6 das 20 chamadas diárias que o tier gratuito concede
+ * POR MODELO: 35% da cota gasta reconfirmando o que não mudou, e o eval
+ * ficando sem juiz na metade dos casos por causa disso.
+ *
+ * O cache é chaveado pelo conteúdo que de fato importa (rubrica + casos de
+ * calibração + modelo do juiz). Qualquer edição em qualquer um dos três
+ * invalida sozinha — não há como usar cache velho sem perceber. E
+ * `--recalibrar` força de qualquer jeito.
+ */
+const CACHE_CALIBRACAO = "eval/resultados/.calibracao.json";
+
+function chaveDaCalibracao(): string {
+  return createHash("sha256")
+    .update(RUBRICA)
+    .update(JSON.stringify(calibracao))
+    .update(MODELO_JUIZ)
+    .digest("hex")
+    .slice(0, 16);
+}
+
+function calibracaoEmCache(): number | null {
+  if (process.argv.includes("--recalibrar")) return null;
+  try {
+    const c = JSON.parse(readFileSync(CACHE_CALIBRACAO, "utf8")) as { chave: string; taxa: number };
+    return c.chave === chaveDaCalibracao() ? c.taxa : null;
+  } catch {
+    return null;
+  }
+}
+
 async function calibrar(): Promise<"ok" | "juiz_mudo" | "descalibrado"> {
+  const cache = calibracaoEmCache();
+  if (cache !== null) {
+    console.log(
+      `  concordância ${(cache * 100).toFixed(0)}% reaproveitada do cache ` +
+        `(rubrica e casos inalterados; --recalibrar refaz)`,
+    );
+    return cache >= calibracao.limiarConcordancia ? "ok" : "descalibrado";
+  }
+
   let comparacoes = 0;
   let concordantes = 0;
 
@@ -123,6 +174,7 @@ async function calibrar(): Promise<"ok" | "juiz_mudo" | "descalibrado"> {
 
   const taxa = concordantes / comparacoes;
   console.log(`Concordância judge×humano: ${(taxa * 100).toFixed(0)}% (limiar ${calibracao.limiarConcordancia * 100}%)`);
+  writeFileSync(CACHE_CALIBRACAO, JSON.stringify({ chave: chaveDaCalibracao(), taxa, modelo: MODELO_JUIZ }, null, 2));
   return taxa >= calibracao.limiarConcordancia ? "ok" : "descalibrado";
 }
 
@@ -157,6 +209,7 @@ async function main() {
   const resultados: unknown[] = [];
   const somas = { fidelidade: 0, conducao: 0, tom: 0 };
   let julgados = 0;
+  let semNota = 0;
   let falhasDuras = 0;
 
   for (const caso of casos) {
@@ -201,7 +254,16 @@ async function main() {
     }
     if (duras.length > 0) falhasDuras++;
 
+    /*
+     * Três desfechos, não dois. Antes, "o agente caiu em contingência" e "o
+     * juiz não conseguiu dar nota" imprimiam a mesma palavra — FALLBACK —
+     * e isso acusava o agente de uma falha que podia ter sido do juiz. Com
+     * a cota gratuita em 20 chamadas/dia por modelo, o segundo caso é
+     * comum: basta a cota acabar no meio da rodada.
+     */
     const nota = bruta.meta.fallback ? null : await julgar(caso.mensagem, saneada.resposta.textoResposta);
+    const desfecho = bruta.meta.fallback ? "FALLBACK do agente" : nota ? null : "SEM NOTA (juiz indisponível)";
+    if (!bruta.meta.fallback && !nota) semNota++;
     if (nota) {
       julgados++;
       somas.fidelidade += nota.fidelidade ?? 0;
@@ -210,7 +272,7 @@ async function main() {
     }
 
     resultados.push({ id: caso.id, resposta: saneada.resposta.textoResposta, nota, falhasDuras: duras });
-    console.log(`  ${caso.id}: ${nota ? JSON.stringify(nota) : "FALLBACK"} ${duras.length ? `⚠ ${duras.join(", ")}` : ""}`);
+    console.log(`  ${caso.id}: ${nota ? JSON.stringify(nota) : desfecho} ${duras.length ? `⚠ ${duras.join(", ")}` : ""}`);
   }
 
   const medias = {
@@ -226,13 +288,38 @@ async function main() {
   writeFileSync(
     arquivo,
     JSON.stringify(
-      { promptVersao: PROMPT_VERSAO, provedor: provedorArg ?? "cascata", data, scoreGeral, medias, falhasDuras, casos: resultados },
+      {
+        promptVersao: PROMPT_VERSAO,
+        provedor: provedorArg ?? "cascata",
+        data,
+        scoreGeral,
+        medias,
+        /*
+         * `julgados` fica no arquivo porque o score sozinho não é
+         * comparável: 80/100 sobre 11 casos e 80/100 sobre 3 são números
+         * diferentes fingindo ser o mesmo.
+         */
+        julgados,
+        semNota,
+        totalCasos: casos.length,
+        falhasDuras,
+        casos: resultados,
+      },
       null,
       2,
     ),
   );
 
-  console.log(`\nScore geral: ${scoreGeral}/100 · médias ${JSON.stringify(medias)} · ${falhasDuras} caso(s) com falha dura`);
+  console.log(
+    `\nScore geral: ${scoreGeral}/100 sobre ${julgados}/${casos.length} caso(s) julgado(s)` +
+      ` · médias ${JSON.stringify(medias)} · ${falhasDuras} com falha dura`,
+  );
+  if (semNota > 0) {
+    console.log(
+      `AVISO: ${semNota} caso(s) sem nota porque o juiz não respondeu (cota diária do modelo).` +
+        ` O score acima cobre só os julgados — não é comparável com uma rodada completa.`,
+    );
+  }
   console.log(`Resultado gravado em ${arquivo} — commite junto do bump de versão.`);
 }
 

@@ -58,13 +58,20 @@ export function geminiConfigurado(): boolean {
 
 export async function chamarGeminiJson(
   prompt: string,
-  opts: { temperature?: number; timeoutMs: number },
+  opts: { temperature?: number; timeoutMs: number; modelo?: string },
 ): Promise<ResultadoLlm> {
   const inicio = Date.now();
   const apiKey = chaveApi();
   if (!apiKey) return { ok: false, erro: "sem_api_key", latenciaMs: 0 };
 
-  const modelo = modeloGemini();
+  /*
+   * `opts.modelo` existe para o juiz do eval, e a razão é de cota, não de
+   * qualidade: o tier gratuito conta por MODELO (20 chamadas/dia por
+   * modelo nesta conta). Um eval de 17 chamadas no mesmo modelo que atende
+   * o cliente esgota o balde do atendimento — e o cliente cai em
+   * contingência porque alguém rodou um teste.
+   */
+  const modelo = opts.modelo || modeloGemini();
 
   try {
     const controller = new AbortController();

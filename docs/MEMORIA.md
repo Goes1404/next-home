@@ -339,6 +339,23 @@ trilho+IA, follow-up, métricas de funil).
   Use **`npm run eval`**, que carrega `--conditions=react-server` (o
   mecanismo oficial do próprio pacote). Corolário: a regra "prompt novo não
   sobe com score abaixo do anterior" foi inaplicável até 22/08/2026.
+- **O eval RODOU pela primeira vez em 23/08/2026: 93,3/100, zero falhas
+  duras, concordância juiz×humano de 100%.** É a primeira linha de base que
+  existe — daqui para frente a regra "prompt novo não sobe com score abaixo
+  do anterior" tem contra o que comparar.
+- **A cota gratuita do Gemini é de 20 chamadas/DIA por modelo**, não por
+  minuto (confirmado esperando a janela virar: o 429 persiste). Um eval de
+  17 chamadas no mesmo modelo que atende cliente esgotaria o balde do
+  ATENDIMENTO — cliente em contingência porque alguém rodou um teste. Por
+  isso o juiz tem modelo próprio (`GEMINI_MODELO_JUIZ`, padrão
+  `gemini-3.5-flash-lite`) e a calibração é cacheada por hash de
+  rubrica+casos+modelo (`--recalibrar` força): ela revalida a RUBRICA, que
+  quase nunca muda, e gastava 6 das 20 por rodada.
+- **"Agente caiu em contingência" e "juiz não deu nota" imprimiam a mesma
+  palavra.** Isso acusava o agente de uma falha que era do juiz — e com
+  20 chamadas/dia o segundo caso é rotina. Hoje são desfechos distintos, e
+  o score sai como `93,3 sobre 10/11 julgados`: score sem denominador não é
+  comparável entre rodadas.
 - **Juiz mudo ≠ rubrica ruim.** Sem `GEMINI_API_KEY` o juiz não responde,
   `comparacoes` fica em 0 e o eval dizia "0% — judge descalibrado",
   mandando revisar uma rubrica que estava boa. Hoje os dois desfechos têm

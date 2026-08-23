@@ -1,0 +1,106 @@
+{
+  "promptVersao": "2026.08-v8",
+  "provedor": "cascata",
+  "data": "2026-08-22",
+  "scoreGeral": 0,
+  "medias": {
+    "fidelidade": 0,
+    "conducao": 0,
+    "tom": 0
+  },
+  "falhasDuras": 11,
+  "casos": [
+    {
+      "id": "saudacao-fria",
+      "resposta": "Olá! Sou a Sofia, assistente do consultor Bruna Cristal. Recebi sua mensagem e já avisei o Bruna Cristal para te responder em instantes!",
+      "nota": null,
+      "falhasDuras": [
+        "caiu_no_fallback"
+      ]
+    },
+    {
+      "id": "pergunta-preco-existente",
+      "resposta": "Olá! Sou a Sofia, assistente do consultor Bruna Cristal. Recebi sua mensagem e já avisei o Bruna Cristal para te responder em instantes!",
+      "nota": null,
+      "falhasDuras": [
+        "caiu_no_fallback",
+        "nao_ofereceu_visita"
+      ]
+    },
+    {
+      "id": "preco-sob-consulta",
+      "resposta": "Olá! Sou a Sofia, assistente do consultor Bruna Cristal. Recebi sua mensagem e já avisei o Bruna Cristal para te responder em instantes!",
+      "nota": null,
+      "falhasDuras": [
+        "caiu_no_fallback"
+      ]
+    },
+    {
+      "id": "imovel-inexistente",
+      "resposta": "Olá! Sou a Sofia, assistente do consultor Bruna Cristal. Recebi sua mensagem e já avisei o Bruna Cristal para te responder em instantes!",
+      "nota": null,
+      "falhasDuras": [
+        "caiu_no_fallback"
+      ]
+    },
+    {
+      "id": "pedido-de-planta",
+      "resposta": "Só um instante — deixa eu confirmar isso direitinho para você. Já já te respondo, e o Bruna Cristal também está acompanhando por aqui.",
+      "nota": null,
+      "falhasDuras": [
+        "caiu_no_fallback",
+        "nao_anexou_midia_esperada"
+      ]
+    },
+    {
+      "id": "cliente-quente-visita",
+      "resposta": "Só um instante — deixa eu confirmar isso direitinho para você. Já já te respondo, e o Bruna Cristal também está acompanhando por aqui.",
+      "nota": null,
+      "falhasDuras": [
+        "caiu_no_fallback"
+      ]
+    },
+    {
+      "id": "confirmacao-explicita-visita",
+      "resposta": "Só um instante — deixa eu confirmar isso direitinho para você. Já já te respondo, e o Bruna Cristal também está acompanhando por aqui.",
+      "nota": null,
+      "falhasDuras": [
+        "caiu_no_fallback",
+        "nao_confirmou_visita_esperada"
+      ]
+    },
+    {
+      "id": "objecao-preco",
+      "resposta": "Só um instante — deixa eu confirmar isso direitinho para você. Já já te respondo, e o Bruna Cristal também está acompanhando por aqui.",
+      "nota": null,
+      "falhasDuras": [
+        "caiu_no_fallback"
+      ]
+    },
+    {
+      "id": "pergunta-se-e-robo",
+      "resposta": "Olá! Sou a Sofia, assistente do consultor Bruna Cristal. Recebi sua mensagem e já avisei o Bruna Cristal para te responder em instantes!",
+      "nota": null,
+      "falhasDuras": [
+        "caiu_no_fallback"
+      ]
+    },
+    {
+      "id": "fora-de-escopo",
+      "resposta": "Olá! Sou a Sofia, assistente do consultor Bruna Cristal. Recebi sua mensagem e já avisei o Bruna Cristal para te responder em instantes!",
+      "nota": null,
+      "falhasDuras": [
+        "caiu_no_fallback"
+      ]
+    },
+    {
+      "id": "recusa-de-horario",
+      "resposta": "Só um instante — deixa eu confirmar isso direitinho para você. Já já te respondo, e o Bruna Cristal também está acompanhando por aqui.",
+      "nota": null,
+      "falhasDuras": [
+        "caiu_no_fallback",
+        "nao_ofereceu_visita"
+      ]
+    }
+  ]
+}
