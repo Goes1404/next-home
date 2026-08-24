@@ -8,6 +8,7 @@ import { CtaFinal } from "@/components/home/CtaFinal";
 import { Regioes } from "@/components/home/Regioes";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { AberturaHome } from "@/components/motion/AberturaHome";
+import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
@@ -111,7 +112,12 @@ export default async function HomeInstitucional() {
               opacidade é o caminho curto para o elemento sumir. A classe
               `gsap-pending` mantém o contrato de sempre: nascem invisíveis e
               voltam sozinhos se o JS falhar (`.no-js`/`.motion-off`). */}
-          <div className="w-full max-w-4xl text-center">
+          {/* Camada POR FORA dos `data-abertura`: a AberturaHome é dona da
+              opacidade deles, a camada só escreve transform, e os dois nunca
+              dividem o mesmo nó. Título a -0.22 e busca a -0.10 — o título
+              escapa da tela antes, e é essa diferença que se lê como planos
+              separados em vez de um bloco só subindo. */}
+          <Camada velocidade={-0.22} className="w-full max-w-4xl text-center">
             <p
               data-abertura
               className="gsap-pending text-fluid-xs mb-4 font-medium tracking-[0.2em] text-acento-suave uppercase"
@@ -134,19 +140,21 @@ export default async function HomeInstitucional() {
               Lançamentos na planta e prontos para morar, com condições
               facilitadas e atendimento direto no WhatsApp.
             </p>
-          </div>
+          </Camada>
 
-          <div data-abertura className="gsap-pending mt-8 w-full max-w-3xl sm:mt-10">
-            <GlassSurface preset="painel" className="px-5 py-5 sm:px-7 sm:py-7">
-              <FiltroForm
-                compacto
-                filtrosAtuais={{}}
-                ordenacaoAtual="destaque"
-                regioes={regioes}
-                idPrefixo="hero"
-              />
-            </GlassSurface>
-          </div>
+          <Camada velocidade={-0.1} className="mt-8 w-full max-w-3xl sm:mt-10">
+            <div data-abertura className="gsap-pending">
+              <GlassSurface preset="painel" className="px-5 py-5 sm:px-7 sm:py-7">
+                <FiltroForm
+                  compacto
+                  filtrosAtuais={{}}
+                  ordenacaoAtual="destaque"
+                  regioes={regioes}
+                  idPrefixo="hero"
+                />
+              </GlassSurface>
+            </div>
+          </Camada>
         </section>
 
         {/* Do primeiro conteúdo em diante o fundo é OPACO, como na página do

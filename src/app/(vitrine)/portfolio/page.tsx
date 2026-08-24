@@ -8,6 +8,7 @@ import { Regioes } from "@/components/home/Regioes";
 import { ScrollCue } from "@/components/home/ScrollCue";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
+import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
@@ -29,11 +30,13 @@ export const revalidate = 300;
  */
 export const metadata: Metadata = {
   title: "Portfólio Exclusivo de Imóveis em Alphaville | Next Home",
-  description: "Lançamentos imobiliários de alto padrão, plantas sofisticadas e lazer completo em Alphaville, Barueri e região.",
+  description:
+    "Lançamentos imobiliários de alto padrão, plantas sofisticadas e lazer completo em Alphaville, Barueri e região.",
   robots: { index: false, follow: true },
   openGraph: {
     title: "Portfólio de Imóveis de Alto Padrão em Alphaville | Next Home",
-    description: "Confira a seleção exclusiva de lançamentos e oportunidades em Alphaville, Barueri e Santana de Parnaíba.",
+    description:
+      "Confira a seleção exclusiva de lançamentos e oportunidades em Alphaville, Barueri e Santana de Parnaíba.",
     images: [
       {
         url: "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/og-image.jpg",
@@ -46,8 +49,11 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Portfólio de Imóveis de Alto Padrão em Alphaville | Next Home",
-    description: "Confira a seleção exclusiva de lançamentos e oportunidades em Alphaville e região.",
-    images: ["https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/og-image.jpg"],
+    description:
+      "Confira a seleção exclusiva de lançamentos e oportunidades em Alphaville e região.",
+    images: [
+      "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/og-image.jpg",
+    ],
   },
 };
 
@@ -60,7 +66,10 @@ export const metadata: Metadata = {
  * abaixo pode envolver o header/CTA num ancestral com `transform`.
  */
 export default async function Home() {
-  const [todos, corretorAtivo] = await Promise.all([getEmpreendimentos(), getCorretorAtivo()]);
+  const [todos, corretorAtivo] = await Promise.all([
+    getEmpreendimentos(),
+    getCorretorAtivo(),
+  ]);
   const destaques = todos.filter((e) => e.destaque);
 
   return (
@@ -79,27 +88,37 @@ export default async function Home() {
 
       <main className="flex flex-1 flex-col">
         <section className="flex min-h-svh flex-col items-center justify-center px-4 pt-24 pb-32">
-          <Reveal className="w-full max-w-xl">
-            <GlassSurface preset="painel" className="px-7 py-9 text-center sm:px-10 sm:py-12">
-              <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento-suave uppercase">
-                Alphaville · Barueri · Santana de Parnaíba
-              </p>
-              <h1 className="text-fluid-3xl text-titulo">
-                Experiências únicas em cada detalhe. O melhor de Alphaville para você.
-              </h1>
-              <p className="text-fluid-base mt-4 text-corpo-suave">
-                Projetos de arquitetura sofisticada, lazer completo de resort e localizações privilegiadas para elevar seu padrão de vida.
-              </p>
-            </GlassSurface>
-          </Reveal>
+          {/* Camada por FORA do Reveal: os dois escrevem transform, e no
+              mesmo nó um atropelaria o outro. */}
+          <Camada velocidade={-0.16} className="w-full max-w-xl">
+            <Reveal>
+              <GlassSurface
+                preset="painel"
+                className="px-7 py-9 text-center sm:px-10 sm:py-12"
+              >
+                <p className="text-fluid-xs text-acento-suave mb-3 font-medium tracking-[0.2em] uppercase">
+                  Alphaville · Barueri · Santana de Parnaíba
+                </p>
+                <h1 className="text-fluid-3xl text-titulo">
+                  Experiências únicas em cada detalhe. O melhor de Alphaville para você.
+                </h1>
+                <p className="text-fluid-base text-corpo-suave mt-4">
+                  Projetos de arquitetura sofisticada, lazer completo de resort e
+                  localizações privilegiadas para elevar seu padrão de vida.
+                </p>
+              </GlassSurface>
+            </Reveal>
+          </Camada>
 
           <ScrollCue alvo="destaques" label="Role para ver mais" />
         </section>
 
         <section id="destaques" className="scroll-mt-20 px-4 pt-4 pb-28">
           <Reveal className="mx-auto max-w-lg text-center">
-            <TituloEditorial className="text-fluid-2xl text-titulo">Lançamentos Selecionados</TituloEditorial>
-            <p className="text-fluid-base mt-3 text-apoio">
+            <TituloEditorial className="text-fluid-2xl text-titulo">
+              Lançamentos Selecionados
+            </TituloEditorial>
+            <p className="text-fluid-base text-apoio mt-3">
               Uma curadoria refinada dos projetos mais desejados da região.
             </p>
           </Reveal>
@@ -119,11 +138,11 @@ export default async function Home() {
                       />
                     </div>
                     <div className="px-5 py-4">
-                      <h3 className="font-display text-lg text-titulo">{e.nome}</h3>
-                      <p className="text-fluid-sm mt-0.5 text-legenda">
+                      <h3 className="font-display text-titulo text-lg">{e.nome}</h3>
+                      <p className="text-fluid-sm text-legenda mt-0.5">
                         {e.bairro}, {e.cidade}
                       </p>
-                      <p className="text-fluid-sm mt-2 font-medium text-acento-suave">
+                      <p className="text-fluid-sm text-acento-suave mt-2 font-medium">
                         {precoAPartirDe(e.precoAPartir)}
                       </p>
                     </div>
@@ -137,7 +156,7 @@ export default async function Home() {
             <Link
               href="/empreendimentos"
               transitionTypes={["nav-forward"]}
-              className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
+              className="text-fluid-sm text-acento-suave font-medium underline-offset-4 hover:underline"
             >
               Ver todos os {todos.length} empreendimentos →
             </Link>
