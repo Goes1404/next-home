@@ -26,6 +26,26 @@ function proximoHorarioPermitido(instante: Date): Date {
 }
 
 /**
+ * "Contato sem nome" é o rótulo que a IMPORTAÇÃO grava quando a planilha
+ * não trouxe nome (ver `importacao.ts`). Serve para a ficha do CRM não
+ * ficar em branco — e NÃO serve para ser dito a uma pessoa.
+ *
+ * Em produção saiu literalmente: "Olá, Contato sem nome. É um prazer me
+ * apresentar: sou a Cristal, sua consultora imobiliária." O rótulo interno
+ * atravessou o template e chegou ao WhatsApp de um cliente.
+ *
+ * Trata como "sem nome" também o telefone e o que só tem sobrenome de uma
+ * letra: melhor cumprimentar sem nome nenhum do que errar o nome.
+ */
+export function nomeUtilDoLead(nome: string | null | undefined): string | null {
+  const limpo = (nome ?? "").trim();
+  if (limpo.length < 2) return null;
+  if (/^contato sem nome$/i.test(limpo)) return null;
+  if (/^[\d\s()+-]+$/.test(limpo)) return null;
+  return limpo;
+}
+
+/**
  * Aplica os marcadores do template ao lead. Barato, sem rede.
  */
 export function aplicarTemplate(params: {
@@ -34,7 +54,7 @@ export function aplicarTemplate(params: {
   empreendimentoNome?: string;
 }): string {
   return params.mensagemBase
-    .replace(/{nome}/gi, params.nomeLead || "Tudo bem?")
+    .replace(/{nome}/gi, nomeUtilDoLead(params.nomeLead) || "Tudo bem?")
     .replace(/{imovel}/gi, params.empreendimentoNome || "nossos lançamentos em Alphaville");
 }
 
@@ -59,10 +79,18 @@ export async function variarMensagemComIA(params: {
 }): Promise<{ texto: string; personalizadoPorIA: boolean }> {
   const semVariacao = { texto: params.texto, personalizadoPorIA: false };
 
-  if (!algumProvedorConfigurado() || !params.nomeLead) return semVariacao;
+  /*
+   * Sem nome utilizável a variação segue em frente — só não pode citar
+   * nome. Antes, `!params.nomeLead` pulava a variação inteira quando o
+   * nome faltava, e "Contato sem nome" passava como se fosse nome de
+   * gente: o pior dos dois mundos, mensagem idêntica às outras (sem a
+   * proteção anti-ban) OU o rótulo interno na tela do cliente.
+   */
+  const nome = nomeUtilDoLead(params.nomeLead);
+  if (!algumProvedorConfigurado()) return semVariacao;
 
   const promptVariacao = `Você é um redator imobiliário sênior da Next Home.
-Reescreva a mensagem abaixo para o cliente "${params.nomeLead}", mantendo o objetivo de negócio e o tom consultivo e elegante, mas variando a saudação e vocabulário para torná-la 100% natural, humana e única.
+Reescreva a mensagem abaixo ${nome ? `para o cliente "${nome}"` : "SEM CITAR NOME NENHUM (não sabemos o nome desta pessoa — cumprimente sem nome, e nunca escreva algo como \"Contato sem nome\", \"prezado cliente\" ou um nome inventado)"}, mantendo o objetivo de negócio e o tom consultivo e elegante, mas variando a saudação e vocabulário para torná-la 100% natural, humana e única.
 Nunca use emojis em excesso. Máximo 2 parágrafos curtos.
 
 Mensagem Original:

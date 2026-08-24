@@ -5,6 +5,7 @@ import {
   contemPalavraChave,
   decidirPorModo,
   dentroDoExpediente,
+  decidirPorFalaDoCorretor,
   exigePalavraChave,
 } from "./modoBot";
 
@@ -146,5 +147,93 @@ describe("Transcrição de áudio — recusa do modelo", () => {
     ).toBe(false);
     // Cliente reclamando que não recebeu material continua sendo fala real.
     expect(pareceRecusaDeTranscricao("Não recebi a planta que você falou, pode mandar?")).toBe(false);
+  });
+});
+
+describe("Fala do corretor — a palavra-chave só liga, qualquer outra fala desliga", () => {
+  const CHAVE = "ativar lia agora";
+
+  it("ativa a IA quando a mensagem traz a palavra-chave", () => {
+    expect(
+      decidirPorFalaDoCorretor({
+        mensagem: "pronto, ativar lia agora",
+        palavraChaveConfigurada: CHAVE,
+        origemConversa: "organica",
+      }),
+    ).toEqual({ acao: "ativar_ia" });
+  });
+
+  it("retrava a conversa em qualquer outra fala do corretor", () => {
+    expect(
+      decidirPorFalaDoCorretor({
+        mensagem: "oi mãe, vamos no cinema?",
+        palavraChaveConfigurada: CHAVE,
+        origemConversa: "organica",
+      }),
+    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
+  });
+
+  /*
+   * O caso que motivou tudo: a conversa já tinha sido liberada, e antes
+   * disto só a pausa de 24h segurava a IA. Ela vence sozinha — bastava o
+   * corretor passar um dia sem falar com a mãe para a IA assumir. Agora
+   * cada mensagem dele devolve a conversa ao estado bloqueado.
+   */
+  it("não deixa a liberação sobreviver ao silêncio do corretor", () => {
+    const decisao = decidirPorFalaDoCorretor({
+      mensagem: "Teste",
+      palavraChaveConfigurada: "pode continuar",
+      origemConversa: "organica",
+    });
+    expect(decisao).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
+  });
+
+  /*
+   * Sem palavra-chave cadastrada o recurso está DESLIGADO. Retravar aqui
+   * emudeceria a IA para sempre: não haveria palavra nenhuma para
+   * destravá-la depois.
+   */
+  it("não retrava quando não há palavra-chave cadastrada", () => {
+    expect(
+      decidirPorFalaDoCorretor({
+        mensagem: "qualquer coisa",
+        palavraChaveConfigurada: null,
+        origemConversa: "organica",
+      }),
+    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: false });
+  });
+
+  /** Campanha nunca exigiu palavra-chave — logo, não há o que retravar. */
+  it("não retrava conversa de campanha", () => {
+    expect(
+      decidirPorFalaDoCorretor({
+        mensagem: "vou assumir daqui",
+        palavraChaveConfigurada: CHAVE,
+        origemConversa: "campanha",
+      }),
+    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: false });
+  });
+});
+
+describe("Transcrição de áudio — o modelo aguardando em vez de transcrever", () => {
+  /*
+   * Este texto foi para o banco de PRODUÇÃO como se fosse fala de quem
+   * mandou o áudio. Nenhum dos padrões anteriores pegava: não há negação
+   * nem pedido de arquivo, é o modelo anunciando que está pronto.
+   */
+  it("reconhece o 'aguardando a fala do cliente' que foi gravado como mensagem", () => {
+    expect(pareceRecusaDeTranscricao("Aguardando a fala do cliente para transcrever.")).toBe(true);
+    expect(
+      pareceRecusaDeTranscricao("Pronto para transcrever e resumir a intenção do cliente."),
+    ).toBe(true);
+  });
+
+  it("continua aceitando fala de verdade sobre imóvel", () => {
+    expect(
+      pareceRecusaDeTranscricao(
+        "Oi, vi o anúncio da casa com cinco suítes, queria saber se ainda está disponível.",
+      ),
+    ).toBe(false);
+    expect(pareceRecusaDeTranscricao("Pode me mandar a planta do três dormitórios?")).toBe(false);
   });
 });

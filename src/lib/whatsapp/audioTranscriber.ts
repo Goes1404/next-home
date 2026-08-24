@@ -41,6 +41,24 @@ const PADROES_DE_RECUSA: RegExp[] = [
    * casaria.
    */
   /[áa]udio\b.{0,15}\b(vazio|inv[áa]lido|corrompido|ileg[íi]vel)\b/i,
+  /*
+   * O modelo AGUARDANDO em vez de transcrever. Isto foi para o banco em
+   * produção como se fosse fala de quem mandou o áudio:
+   *
+   *   "Aguardando a fala do cliente para transcrever.
+   *    [intenção detectada no áudio: Pronto para transcrever e resumir a
+   *     intenção do cliente.]"
+   *
+   * Nenhum dos padrões acima pega: não há negação nem pedido de arquivo, é
+   * o modelo anunciando que está pronto para começar. O sinal seguro é a
+   * TERCEIRA PESSOA — ninguém descrevendo um imóvel se chama de "o
+   * cliente" nem fala em "resumir a intenção".
+   */
+  /\baguardando\b.{0,30}\btranscrever\b/i,
+  /\bpronto\s+para\s+(transcrever|receber)\b/i,
+  /\b(envie|mande|compartilhe)\s+o\s+([áa]udio|arquivo)\b/i,
+  /\bfala\s+do\s+cliente\b/i,
+  /\bresumir\s+a\s+inten[çc][ãa]o\b/i,
 ];
 
 /** A transcrição é, na verdade, o modelo dizendo que não transcreveu? */
@@ -156,7 +174,13 @@ export async function transcreverAudioWhatsapp(
         // Resposta 200 não é garantia de transcrição: o modelo pode ter
         // devolvido, educadamente, que não transcreveu nada. Isso não pode
         // virar fala do cliente no histórico.
-        if (!pareceRecusaDeTranscricao(transcrito)) {
+        /*
+         * As DUAS checagens, não só a primeira. `transcricaoTemConteudo`
+         * só era aplicada no caminho da Groq — então uma resposta do
+         * Gemini com `"."` ou `" - "` passava direto e virava turno do
+         * cliente no histórico, com a IA respondendo a ela.
+         */
+        if (!pareceRecusaDeTranscricao(transcrito) && transcricaoTemConteudo(transcrito)) {
           return {
             textoTranscrito: transcrito,
             intencaoResumida: parsed.intencaoResumida || "Mensagem de voz sobre imóveis.",

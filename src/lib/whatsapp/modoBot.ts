@@ -156,3 +156,49 @@ export function exigePalavraChave(params: {
 }): boolean {
   return Boolean(params.palavraChaveConfigurada?.trim()) && params.origemConversa !== "campanha";
 }
+
+/**
+ * O que fazer quando o CORRETOR fala na conversa.
+ *
+ * A palavra-chave só LIGA a IA; qualquer outra fala do corretor a
+ * DESLIGA de novo. Antes, a liberação era permanente — `liberado_por_
+ * palavra_chave` só sabia virar `true`, nunca voltar — e o único freio
+ * era a pausa de 24h de `pausado_humano_ate`, que se renova a cada
+ * mensagem e vence sozinha. Numa linha PESSOAL (o caso real: a instância
+ * roda no WhatsApp que o corretor usa com a família) isso significa que
+ * bastava ele passar 24h sem falar com alguém para a IA assumir aquela
+ * conversa e começar a oferecer imóvel. Foi o que aconteceu em teste com
+ * a conversa da mãe dele.
+ *
+ * Como efeito colateral desejado, isto também cura as conversas que
+ * NASCERAM liberadas: `obterOuCriarConversa` congela a decisão no INSERT,
+ * então toda conversa criada antes de existir palavra-chave ficou com
+ * `liberado = true` para sempre. Com o retravamento, a primeira fala do
+ * corretor nessas conversas as devolve ao estado bloqueado — sem
+ * backfill.
+ *
+ * O retravamento só vale quando há palavra-chave cadastrada: sem ela o
+ * recurso está desligado, e travar seria emudecer a IA sem nenhum jeito
+ * de destravá-la.
+ */
+export type DecisaoFalaDoCorretor =
+  | { acao: "ativar_ia" }
+  | { acao: "pausar_ia"; retravarPalavraChave: boolean };
+
+export function decidirPorFalaDoCorretor(params: {
+  mensagem: string;
+  palavraChaveConfigurada: string | null | undefined;
+  origemConversa: "organica" | "campanha";
+}): DecisaoFalaDoCorretor {
+  if (contemPalavraChave(params.mensagem, params.palavraChaveConfigurada)) {
+    return { acao: "ativar_ia" };
+  }
+
+  return {
+    acao: "pausar_ia",
+    retravarPalavraChave: exigePalavraChave({
+      palavraChaveConfigurada: params.palavraChaveConfigurada,
+      origemConversa: params.origemConversa,
+    }),
+  };
+}

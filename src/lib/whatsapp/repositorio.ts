@@ -484,13 +484,27 @@ const HORAS_PAUSA_HUMANA = 24;
  * resposta HTTP não pausa nada, e a próxima mensagem do cliente voltaria a
  * ser respondida pelo bot por cima do atendimento humano.
  */
-export async function pausarBotPorAtendimentoHumano(conversaId: string): Promise<void> {
+export async function pausarBotPorAtendimentoHumano(
+  conversaId: string,
+  opcoes: { retravarPalavraChave?: boolean } = {},
+): Promise<void> {
   const supabase = createServiceClient();
   const ate = new Date(Date.now() + HORAS_PAUSA_HUMANA * 3600_000).toISOString();
 
+  /*
+   * A pausa de 24h sozinha não bastava: ela VENCE. Com palavra-chave
+   * cadastrada, a fala do corretor também retrava a conversa, e aí a IA
+   * só volta quando ele digitar a palavra de novo — em vez de voltar
+   * sozinha no dia seguinte, que numa linha pessoal significa a IA
+   * assumindo a conversa da família (ver `decidirPorFalaDoCorretor`).
+   */
   await supabase
     .from("whatsapp_conversas")
-    .update({ pausado_humano_ate: ate })
+    .update(
+      opcoes.retravarPalavraChave
+        ? { pausado_humano_ate: ate, liberado_por_palavra_chave: false }
+        : { pausado_humano_ate: ate },
+    )
     .eq("id", conversaId);
 }
 

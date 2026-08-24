@@ -4,6 +4,7 @@ import { soarHumano } from "./vozHumana";
 import { removerValores } from "./semValores";
 import { midiasJaEnviadas, resolverAnexos, type AnexoResolvido } from "./resolverMidia";
 import { corrigirVisitaNoPassado, verificarCoerenciaVisita } from "./coerenciaVisita";
+import { ehRepeticaoDoBot, textoNoLugarDaRepeticao } from "./repeticao";
 
 /**
  * Guardrails de saída: nada sai para o WhatsApp do cliente sem conferir
@@ -38,6 +39,8 @@ export type RespostaSaneada = {
   slugsBloqueados: number;
   /** A visita foi descartada por prometer um dia e agendar outro? */
   visitaIncoerente: boolean;
+  /** A resposta repetia, palavra por palavra, algo que o bot já tinha dito? */
+  repeticaoBloqueada: boolean;
 };
 
 
@@ -79,7 +82,24 @@ export function sanearRespostaIA(
    * o cliente pergunta duas ou três vezes seguidas.
    */
   const semValor = removerValores(soarHumano(resposta.textoResposta ?? ""));
-  const texto = semValor.texto;
+
+  /*
+   * Repetição literal do que o bot já disse. Medido: 23 das 80 mensagens
+   * enviadas em produção fazem parte de grupos de repetição exata — a
+   * mesma frase contra três arquivos diferentes, a mesma ficha do imóvel
+   * contra quatro perguntas diferentes. É o "looping" que a própria
+   * corretora anotou no chat.
+   *
+   * Vem DEPOIS de `soarHumano` e `removerValores` de propósito: o que se
+   * compara é o texto que o cliente vai ler, não o que o modelo escreveu —
+   * duas respostas diferentes na origem podem virar a mesma depois da
+   * limpeza, e nesse caso o cliente vê repetição do mesmo jeito.
+   */
+  const repetiu = ehRepeticaoDoBot(semValor.texto, historico);
+  if (repetiu) {
+    console.warn(`[guardrails] repetição bloqueada: ${semValor.texto.slice(0, 80)}`);
+  }
+  const texto = repetiu ? textoNoLugarDaRepeticao(historico) : semValor.texto;
 
   /*
    * A visita só passa se a data BATER com o dia prometido no texto. Uma
@@ -129,5 +149,6 @@ export function sanearRespostaIA(
     anexosBloqueados: pedidosSemMidia.length,
     slugsBloqueados: (resposta.imoveisRecomendados?.length ?? 0) - recomendadosValidos.length,
     visitaIncoerente: !coerencia.coerente,
+    repeticaoBloqueada: repetiu,
   };
 }

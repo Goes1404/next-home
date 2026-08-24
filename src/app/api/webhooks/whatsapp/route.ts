@@ -38,7 +38,8 @@ import {
   ultimoAvisoEvolucao,
   marcarAvisoEvolucao,
 } from "@/lib/whatsapp/repositorio";
-import { contemPalavraChave, decidirPorModo } from "@/lib/whatsapp/modoBot";
+import { decidirPorFalaDoCorretor, decidirPorModo } from "@/lib/whatsapp/modoBot";
+import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 
 export const runtime = "nodejs";
 // O buffer de rajada espera ~6s antes de responder, e o ciclo completo
@@ -237,9 +238,10 @@ export async function POST(req: NextRequest) {
     //      combinado de "pode assumir" (ver modoBot.ts). Libera a conversa
     //      e NÃO pausa — esta mensagem específica não é "estou atendendo
     //      pessoalmente", é a entrega deliberada para a IA.
-    //   2. Qualquer outra mensagem do corretor: continua pausando a IA por
-    //      24h nesta conversa, como sempre — ele está atendendo por conta
-    //      própria e a IA não pode responder por cima.
+    //   2. Qualquer outra mensagem do corretor: pausa a IA por 24h E
+    //      RETRAVA a conversa, devolvendo-a ao estado de espera pela
+    //      palavra-chave. A palavra-chave só liga; qualquer fala dele
+    //      desliga. A regra mora em `decidirPorFalaDoCorretor`.
     if (fromMe) {
       await gravarMensagem({
         conversaId: conversa.id,
@@ -248,13 +250,27 @@ export async function POST(req: NextRequest) {
         tipo: ehAudio ? "audio" : "texto",
       });
 
-      if (contemPalavraChave(text, instancia.palavraChaveAtivacao)) {
+      const decisao = decidirPorFalaDoCorretor({
+        mensagem: text,
+        palavraChaveConfigurada: instancia.palavraChaveAtivacao,
+        origemConversa: conversa.origem,
+      });
+
+      if (decisao.acao === "ativar_ia") {
         await liberarConversaPorPalavraChave(conversa.id);
         return NextResponse.json({ ok: true, action: "bot_ativado_por_palavra_chave", sender });
       }
 
-      await pausarBotPorAtendimentoHumano(conversa.id);
-      return NextResponse.json({ ok: true, action: "pausa_bot_humano_registrada", sender });
+      await pausarBotPorAtendimentoHumano(conversa.id, {
+        retravarPalavraChave: decisao.retravarPalavraChave,
+      });
+      return NextResponse.json({
+        ok: true,
+        action: decisao.retravarPalavraChave
+          ? "pausa_bot_humano_registrada_e_retravada"
+          : "pausa_bot_humano_registrada",
+        sender,
+      });
     }
 
     const gravacao = await gravarMensagem({
@@ -568,7 +584,15 @@ export async function POST(req: NextRequest) {
      * cliente ainda não respondeu.
      */
     let alerta: { enviado: boolean; motivo?: string } = { enviado: false };
-    const exigeAcaoAgora = visitaConfirmada || respostaIA.transferirHumano;
+    /*
+     * Pedido de ligação entra aqui em CÓDIGO, não por classificação do
+     * modelo. "me liga" é dos sinais mais fortes de intenção que existem, e
+     * no trace real que originou isto a IA respondeu "consigo te ligar sim"
+     * sem marcar `transferirHumano` — ou seja, prometeu uma ligação que
+     * ninguém ficou sabendo que precisava acontecer.
+     */
+    const pediuLigacao = clientePediuLigacao(text);
+    const exigeAcaoAgora = visitaConfirmada || respostaIA.transferirHumano || pediuLigacao;
     const deveAlertar =
       exigeAcaoAgora ||
       (dossie.temperaturaScore >= 75 && (await podeAlertarLeadQuente(conversa.id)));
@@ -587,6 +611,8 @@ export async function POST(req: NextRequest) {
           : dossie.resumoExecutivo,
         motivoAlerta: visitaConfirmada
           ? "visita_confirmada"
+          : pediuLigacao
+          ? "ligacao_solicitada"
           : respostaIA.sugerirVisita
           ? "visita_solicitada"
           : respostaIA.transferirHumano

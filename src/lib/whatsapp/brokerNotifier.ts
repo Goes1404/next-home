@@ -15,7 +15,13 @@ export interface ParametrosNotificacaoCorretor {
   empreendimentoNome?: string;
   temperaturaScore: number;
   resumoDossie: string;
-  motivoAlerta: "visita_solicitada" | "visita_confirmada" | "lead_quente_score_alto" | "transferencia_humana";
+  motivoAlerta:
+    | "visita_solicitada"
+    | "visita_confirmada"
+    | "lead_quente_score_alto"
+    | "transferencia_humana"
+    /** O cliente pediu para ser ligado. Quem liga é o corretor — ver `pedidoDeLigacao.ts`. */
+    | "ligacao_solicitada";
 }
 
 /** Só monta o texto — separado do envio para poder ser testado sem rede. */
@@ -39,6 +45,14 @@ export function formatarAlertaCorretor(
       ? "📅 *SOLICITAÇÃO DE VISITA AGENDADA*"
       : motivoAlerta === "lead_quente_score_alto"
       ? "🔥 *NOVO LEAD QUENTE QUALIFICADO (Score " + temperaturaScore + "/100)*"
+      /*
+       * Este precisa dizer o que fazer, não o que aconteceu: a assistente
+       * já respondeu ao cliente que a ligação acontece. Quem cumpre isso é
+       * o corretor, e se ele ler "cliente pediu atendimento humano" pode
+       * responder por escrito e deixar a promessa no ar.
+       */
+      : motivoAlerta === "ligacao_solicitada"
+      ? "📞 *CLIENTE PEDIU LIGAÇÃO — LIGUE PARA ELE*"
       : "🚨 *CLIENTE PEDIU ATENDIMENTO HUMANO*";
 
   return `${emojiAlerta}

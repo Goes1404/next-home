@@ -22,7 +22,7 @@ import type { DossieClienteIA, TomVozBot } from "./types";
  * acima de 400 caracteres (a maior com 1953), markdown cru na tela do
  * cliente e aberturas de robô ("Excelente pergunta!").
  */
-export const PROMPT_VERSAO = "2026.08-v10";
+export const PROMPT_VERSAO = "2026.08-v11";
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -337,6 +337,7 @@ ${resumoCatalogo}
 19. Identifique o perfil do cliente (orçamento, se tem filhos, se tem pets, se busca moradia ou investimento).
 20. Escreva como uma pessoa da equipe escreveria — natural, sem jargão de atendimento automatizado. Não é seu papel abrir esse assunto por conta própria (nunca diga "sou uma assistente virtual" ou "sou um sistema de IA" sem ser perguntada). Se o cliente perguntar de forma direta e explícita se está falando com um robô ou uma IA, responda com naturalidade e honestidade — não negue. Fora essa pergunta direta, o assunto simplesmente não aparece.
 21. VOCÊ É A PESSOA QUE ATENDE, do começo ao fim. ${ctx.nomeCorretor} acompanha nos bastidores e pode assumir — isso acontece pelo sistema, sem aviso. NUNCA diga ao cliente que vai falar com ${ctx.nomeCorretor}, que ${ctx.nomeCorretor} "vai entrar", "vai acompanhar", "assume daqui", "responde melhor que eu" ou qualquer variação. Também não se descreva como quem "ajuda ${ctx.nomeCorretor} com as informações iniciais": para o cliente não existem duas pessoas nesta conversa, existe você. Falar de si como intermediária transforma cada resposta sua em provisória e faz o cliente parar de responder até "o de verdade" chegar.
+22. A RESTRIÇÃO QUE O CLIENTE ACABOU DE DAR MANDA NA SUA PRÓXIMA MENSAGEM. Se ele disse "quero algo menor", "até 3 dormitórios", "só em Barueri", "pronto para morar", a resposta seguinte tem de OBEDECER isso. Duas coisas são proibidas: (a) reapresentar o mesmo imóvel que acabou de ser recusado, como se ele não tivesse falado nada; (b) responder com a ficha de um imóvel que NÃO atende à restrição sem dizer que não atende. Se o imóvel que você tem na mão não serve, fale isso na cara e ofereça a alternativa: "o Terra Alta é de 1 dormitório, não fecha com o que você precisa — o Viva tem 3, quer ver?". Se nada no catálogo atende, diga que não temos e pergunte o que dá para flexibilizar. Cliente que repete a mesma restrição duas vezes é cliente que já percebeu que você não está lendo.
 
 TÉCNICAS DE VENDA CONSULTIVA (aplique com naturalidade, nunca de forma mecânica ou insistente):
 - Rapport antes de pitch: acolha e valide o que o cliente disse antes de emplacar informação de imóvel.
@@ -414,6 +415,17 @@ FORMATO DE RESPOSTA OBRIGATÓRIO (JSON EXCLUSIVO, sem crases markdown ou texto e
  * O que ele NUNCA faz, em nenhuma variação: responder no lugar da IA.
  * Contingência promete retorno; não inventa conteúdo que o modelo não
  * produziu.
+ *
+ * E, desde 08/2026, também NÃO NOMEIA O CORRETOR. As duas variações
+ * anteriores diziam que ele "está acompanhando" ou que já tinha sido
+ * avisado — exatamente a fala que a regra 21 do prompt proíbe, porque
+ * transforma toda resposta em provisória e o cliente para de responder
+ * esperando "o de verdade". A regra existia no prompt e não alcançava
+ * este texto: ele é CÓDIGO, não passa por modelo nenhum. Em produção
+ * foram 14 mensagens assim — a maior fonte isolada da violação.
+ *
+ * O corretor continua sendo avisado: quem faz isso é `transferirHumano`
+ * na resposta, que é sinal interno. O cliente não precisa saber.
  */
 export function textoDeContingencia(params: {
   nomeAssistente: string;
@@ -421,9 +433,9 @@ export function textoDeContingencia(params: {
   temHistorico: boolean;
 }): string {
   if (params.temHistorico) {
-    return `Só um instante — deixa eu confirmar isso direitinho para você. Já já te respondo, e o ${params.nomeCorretor} também está acompanhando por aqui.`;
+    return `Só um instante — deixa eu confirmar isso certinho para você. Já te respondo.`;
   }
-  return `Olá! Sou a ${params.nomeAssistente}, assistente do consultor ${params.nomeCorretor}. Recebi sua mensagem e já avisei o ${params.nomeCorretor} para te responder em instantes!`;
+  return `Oi! Tudo bem? Sou a ${params.nomeAssistente}. Me dá um minutinho que já te respondo direitinho.`;
 }
 
 export async function gerarRespostaIA(
