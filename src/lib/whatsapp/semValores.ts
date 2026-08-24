@@ -55,6 +55,27 @@ const DESVIOS = [
  * texto como "sai por R$ 1.200.000" viraria "sai por" — pior que a versão
  * original, porque parece defeito.
  */
+/**
+ * Tira separador de balão que ficou órfão depois de uma frase ser removida.
+ *
+ * Flagrado no eval da v12: o cliente disse "meu teto é 600 mil", o modelo
+ * repetiu o número, `removerValores` cortou a frase — e a resposta chegou
+ * ao cliente começando com "--- ". Um traço solto no primeiro balão não
+ * parece uma pessoa digitando; parece software quebrado, que é o mesmo
+ * defeito que o quebrador de mensagens já corrigiu em outra forma.
+ *
+ * Também colapsa separador duplicado, pelo mesmo motivo: a frase do meio
+ * some e sobram dois "---" colados.
+ */
+export function limparSeparadoresOrfaos(texto: string): string {
+  return texto
+    .replace(/(\s*---\s*){2,}/g, " --- ")
+    .replace(/^\s*(---\s*)+/, "")
+    .replace(/(\s*---)+\s*$/, "")
+    .replace(/[ 	]{2,}/g, " ")
+    .trim();
+}
+
 export function removerValores(texto: string, semente = 0): { texto: string; removeu: boolean } {
   if (!contemValor(texto)) return { texto, removeu: false };
 

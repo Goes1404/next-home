@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ehRepeticaoDoBot, normalizarParaRepeticao, textoNoLugarDaRepeticao } from "./repeticao";
+import { limparSeparadoresOrfaos } from "./semValores";
 
 /**
  * Os casos abaixo são TRECHOS REAIS de produção (conversa …8216, 22/08),
@@ -131,5 +132,32 @@ describe("Repetição x conteúdo novo", () => {
     const anterior =
       "O Terra Alta tem 1 dormitório, 52m² e 2 vagas. Quer ver as fotos ou agendar uma visita?";
     expect(ehRepeticaoDoBot(`${anterior} 😊`, [{ remetente: "bot", texto: anterior }])).toBe(true);
+  });
+});
+
+describe("Separador de balão órfão", () => {
+  /*
+   * Caso real do eval da v12: o cliente disse "meu teto é 600 mil", o
+   * modelo repetiu o número, `removerValores` cortou a frase — e a
+   * resposta chegou começando com "--- ". Traço solto no primeiro balão
+   * não parece pessoa digitando, parece software quebrado.
+   */
+  it("tira o separador que sobra no começo depois de cortar a frase do preço", () => {
+    expect(
+      limparSeparadoresOrfaos("--- Quer que eu veja outras opções em Alphaville?"),
+    ).toBe("Quer que eu veja outras opções em Alphaville?");
+  });
+
+  it("colapsa separador duplicado quando a frase do meio some", () => {
+    expect(limparSeparadoresOrfaos("Oi! --- --- Quer conhecer?")).toBe("Oi! --- Quer conhecer?");
+  });
+
+  it("tira separador solto no fim", () => {
+    expect(limparSeparadoresOrfaos("Quer conhecer? ---")).toBe("Quer conhecer?");
+  });
+
+  it("não mexe em texto bem formado", () => {
+    const bom = "Oi! Tudo bem? --- Me conta, você conhece a região? --- Prefere manhã ou tarde?";
+    expect(limparSeparadoresOrfaos(bom)).toBe(bom);
   });
 });

@@ -1,7 +1,7 @@
 import type { Empreendimento } from "@/lib/types";
 import type { RespostaAgenteIA } from "./aiAgent";
 import { soarHumano } from "./vozHumana";
-import { removerValores } from "./semValores";
+import { limparSeparadoresOrfaos, removerValores } from "./semValores";
 import { midiasJaEnviadas, resolverAnexos, type AnexoResolvido } from "./resolverMidia";
 import { corrigirVisitaNoPassado, verificarCoerenciaVisita } from "./coerenciaVisita";
 import { ehRepeticaoDoBot, textoNoLugarDaRepeticao } from "./repeticao";
@@ -95,11 +95,17 @@ export function sanearRespostaIA(
    * duas respostas diferentes na origem podem virar a mesma depois da
    * limpeza, e nesse caso o cliente vê repetição do mesmo jeito.
    */
-  const repetiu = ehRepeticaoDoBot(semValor.texto, historico);
+  /*
+   * Remover a frase do preço pode deixar o separador de balão sozinho —
+   * a resposta chegava ao cliente começando com "--- ".
+   */
+  const semOrfaos = limparSeparadoresOrfaos(semValor.texto);
+
+  const repetiu = ehRepeticaoDoBot(semOrfaos, historico);
   if (repetiu) {
-    console.warn(`[guardrails] repetição bloqueada: ${semValor.texto.slice(0, 80)}`);
+    console.warn(`[guardrails] repetição bloqueada: ${semOrfaos.slice(0, 80)}`);
   }
-  const texto = repetiu ? textoNoLugarDaRepeticao(historico) : semValor.texto;
+  const texto = repetiu ? textoNoLugarDaRepeticao(historico) : semOrfaos;
 
   /*
    * A visita só passa se a data BATER com o dia prometido no texto. Uma
