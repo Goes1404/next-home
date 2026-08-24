@@ -6,6 +6,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { extrairImagensDePdf, TETO_IMAGENS } from "@/lib/imoveis/pdfImagens";
 import { gerarPreview } from "@/lib/imoveis/imagemDerivada";
 import { registrarMidia } from "@/lib/imoveis/registrarMidia";
+import { baixarArquivo, listarPasta, parsearLinkDrive, type ArquivoDrive } from "@/lib/imoveis/drive";
 
 export type ItemCurado = {
   /** Posição na extração. A extração é determinística, então isto é identidade. */
@@ -206,4 +207,62 @@ function depsMidiaSupabase(supabase: Awaited<ReturnType<typeof createClient>>) {
       return { id: data.id, duplicada: false, erro: null };
     },
   };
+}
+
+export async function listarMaterialDoDrive(
+  link: string,
+): Promise<{ ok: true; arquivos: ArquivoDrive[] } | { ok: false; erro: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada. Entre de novo." };
+
+  const alvo = parsearLinkDrive(link);
+  if (alvo.tipo === "nao_reconhecido") return { ok: false, erro: alvo.motivo };
+  if (alvo.tipo === "arquivo") {
+    return { ok: false, erro: "Este link é de um arquivo só. Cole o link da PASTA com o material." };
+  }
+
+  return listarPasta(alvo.id);
+}
+
+/**
+ * Traz UM arquivo do Drive para a galeria do imóvel.
+ *
+ * O cliente chama uma vez por arquivo escolhido, poucos em paralelo. O teto
+ * de função no plano Hobby é 60s: uma pasta inteira num request só estoura e
+ * perde tudo. Assim há progresso, retomada, e o arquivo que falha aparece
+ * nomeado sem derrubar os outros.
+ */
+export async function trazerArquivoDoDrive(entrada: {
+  empreendimentoId: string;
+  slug: string;
+  arquivoId: string;
+  nome: string;
+  tipo: "foto" | "planta";
+  capa: boolean;
+}): Promise<{ ok: boolean; duplicada?: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "sessão expirada" };
+
+  const baixado = await baixarArquivo(entrada.arquivoId);
+  if (!baixado.ok) return { ok: false, erro: baixado.erro };
+
+  const supabase = await createClient();
+  const resultado = await registrarMidia(depsMidiaSupabase(supabase), {
+    empreendimentoId: entrada.empreendimentoId,
+    bytes: baixado.bytes,
+    mime: baixado.mime,
+    tipo: entrada.tipo,
+    // O nome do arquivo é a melhor descrição que existe aqui, e sem a
+    // extensão ele vira texto alternativo aceitável.
+    alt: entrada.nome.replace(/\.[^.]+$/, ""),
+    ordem: entrada.capa ? 0 : 10,
+  });
+
+  if (!resultado.ok) return { ok: false, erro: resultado.erro };
+
+  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+
+  return { ok: true, duplicada: resultado.duplicada };
 }

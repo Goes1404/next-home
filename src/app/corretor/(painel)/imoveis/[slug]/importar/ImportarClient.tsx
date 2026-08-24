@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { OrigemDrive } from "./OrigemDrive";
 import { OrigemPdf } from "./OrigemPdf";
 
 /**
@@ -51,7 +52,7 @@ export function ImportarClient({
       {origem === "pdf" ? (
         <OrigemPdf empreendimentoId={empreendimentoId} slug={slug} />
       ) : (
-        <p className="text-fluid-xs text-apoio">Em breve.</p>
+        <OrigemDrive empreendimentoId={empreendimentoId} slug={slug} />
       )}
     </div>
   );
