@@ -25,6 +25,7 @@ export function EditorImovelClient({ imovel }: Props) {
   // Estados do formulário
   const [dadosGerais, setDadosGerais] = useState({
     nome: imovel.nome,
+    nomesAlternativos: imovel.nomesAlternativos ?? [],
     tagline: imovel.tagline || "",
     descricao: imovel.descricao || "",
     precoAPartir: imovel.precoAPartir,

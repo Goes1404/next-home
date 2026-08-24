@@ -68,6 +68,9 @@ export function mapEmpreendimento(row: LinhaEmpreendimento): Empreendimento {
   return {
     slug: row.slug,
     nome: row.nome,
+    // Como o cliente chama o imóvel (0044) — é por aqui que "Dom Parque"
+    // chega ao bot, num cadastro cujo `nome` é "Lançamento ao Lado do Parque".
+    nomesAlternativos: row.nomes_alternativos ?? [],
     tagline: row.tagline ?? "",
     descricao: row.descricao ?? "",
     status: row.status,
@@ -86,8 +89,8 @@ export function mapEmpreendimento(row: LinhaEmpreendimento): Empreendimento {
     entregaPrevista: row.entrega_prevista,
     destaque: row.destaque,
     publicado: row.publicado,
-    bookUrl: (row as any).book_url ?? null,
-    bookTitulo: (row as any).book_titulo ?? null,
+    bookUrl: row.book_url ?? null,
+    bookTitulo: row.book_titulo ?? null,
     lat: row.lat,
     lng: row.lng,
     criadoEm: row.created_at,

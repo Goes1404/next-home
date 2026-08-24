@@ -10,6 +10,8 @@ import { registrarMidia } from "@/lib/imoveis/registrarMidia";
 
 export interface DadosGeraisInput {
   nome: string;
+  /** Como o cliente chama o imóvel (nome comercial, apelido de anúncio). */
+  nomesAlternativos: string[];
   tagline: string;
   descricao: string;
   precoAPartir: number | null;
@@ -82,6 +84,7 @@ export async function salvarDadosGerais(
     .from("empreendimentos")
     .update({
       nome: dados.nome.trim(),
+      nomes_alternativos: (dados.nomesAlternativos ?? []).map((n) => n.trim()).filter(Boolean),
       tagline: dados.tagline?.trim() || null,
       descricao: dados.descricao?.trim() || null,
       preco_a_partir: dados.precoAPartir,

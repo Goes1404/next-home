@@ -1,11 +1,13 @@
 "use client";
 
-import type { StatusObra, TipoImovel } from "@/lib/types";import { Building2, MapPin } from 'lucide-react';
+import type { StatusObra, TipoImovel } from "@/lib/types";
+import { Building2, MapPin } from 'lucide-react';
 
 
 interface Props {
   dados: {
     nome: string;
+    nomesAlternativos: string[];
     tagline: string;
     descricao: string;
     precoAPartir: number | null;
@@ -42,6 +44,38 @@ export function EditorTextos({ dados, onChange }: Props) {
               placeholder="Ex: Canvas Alphaville"
               className="min-h-[48px] w-full rounded-xl border border-linha-forte bg-campo px-4 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
             />
+          </div>
+
+          {/*
+            O nome que o CLIENTE usa costuma não ser o do cadastro: nas
+            conversas reais, "Dom parque" para o "Lançamento ao Lado do
+            Parque" e "manacá Barueri" para o "More na Aldeia de Barueri".
+            Sem este campo, a IA trata o imóvel como se fosse de outra
+            imobiliária e responde com sugestão genérica.
+          */}
+          <div className="space-y-1.5">
+            <label className="text-fluid-xs font-bold text-corpo uppercase tracking-wider block">
+              Também conhecido como
+            </label>
+            <input
+              type="text"
+              value={dados.nomesAlternativos.join(", ")}
+              onChange={(e) =>
+                onChange(
+                  "nomesAlternativos",
+                  e.target.value
+                    .split(",")
+                    .map((n) => n.trim())
+                    .filter(Boolean),
+                )
+              }
+              placeholder="Ex: Dom Parque, Residencial Dom Parque"
+              className="min-h-[48px] w-full rounded-xl border border-linha-forte bg-campo px-4 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
+            />
+            <p className="text-fluid-xs text-legenda">
+              Separe por vírgula. É por estes nomes que o cliente chama o imóvel no WhatsApp — sem
+              eles, a IA não reconhece que ele está falando deste empreendimento.
+            </p>
           </div>
 
           <div className="space-y-1.5">
