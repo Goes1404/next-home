@@ -12,6 +12,10 @@ const ABAS = [
   { chave: "lista", href: "/corretor/leads", label: "Lista" },
   { chave: "funil", href: "/corretor/funil", label: "Funil" },
   { chave: "visitas", href: "/corretor/visitas", label: "Visitas" },
+  // Adicionar lead é rotina de quem trabalha a carteira, não visita rara:
+  // vira aba junto com as visões, em vez de um "← voltar" próprio. Duas
+  // gramáticas de navegação para o mesmo grupo é uma a mais.
+  { chave: "adicionar", href: "/corretor/importar", label: "Adicionar" },
 ] as const;
 
 export type AbaLeads = (typeof ABAS)[number]["chave"];
