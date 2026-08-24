@@ -114,7 +114,7 @@ export async function getFilaDeTrabalho(
     supabase
       .from("leads")
       .select("id, nome, telefone, etapa_alterada_em")
-      .in("etapa", ["primeiro_contato", "proposta_enviada", "negociacao"])
+      .in("etapa", ["primeiro_contato", "visita_agendada", "documentacao"])
       .lt("etapa_alterada_em", limiteEsfriar)
       .order("etapa_alterada_em", { ascending: true })
       .limit(TETO_DA_FILA),

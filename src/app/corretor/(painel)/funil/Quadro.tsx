@@ -11,6 +11,7 @@ import {
   linkWhatsappLead,
 } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import { BORDA_ETAPA, REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
+import { BotaoAvancar } from "@/app/corretor/(painel)/_componentes/BotaoAvancar";
 import { ModalDossieLead } from "./ModalDossieLead";
 import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
 
@@ -252,7 +253,14 @@ function Cartao({
         <CampoVisita leadId={lead.id} quando={lead.visitaAgendadaEm} />
       )}
 
-      <div className="mt-3 flex items-center gap-2">
+      {/* Um toque para avançar. O seletor de sete opções virou o caminho
+          secundário: ele resolve o caso raro (pular etapa, voltar, perder) e
+          por isso não precisa mais ser a primeira coisa que o dedo encontra. */}
+      <div className="mt-3">
+        <BotaoAvancar leadId={lead.id} etapa={lead.etapa} tamanho="compacto" className="w-full" />
+      </div>
+
+      <div className="mt-2 flex items-center gap-2">
         <label className="sr-only" htmlFor={`mover-${lead.id}`}>
           Mover {lead.nome} para outra etapa
         </label>

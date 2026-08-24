@@ -22,7 +22,7 @@ export const metadata: Metadata = { title: "Meus leads" };
  */
 const SEGMENTOS: Record<string, EtapaFunil[]> = {
   novos: ["novo"],
-  conversa: ["primeiro_contato", "proposta_enviada", "negociacao"],
+  conversa: ["primeiro_contato", "documentacao"],
   visitas: ["visita_agendada"],
   frios: ["perdido", "fechado"],
 };
