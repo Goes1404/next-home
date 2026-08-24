@@ -7,17 +7,31 @@ import {
   rotaAtiva,
 } from "./navegacao";
 
-describe("mapa de navegação (roadmap: 7 destinos)", () => {
-  it("corretor comum vê no máximo 7 destinos", () => {
+describe("mapa de navegação (o menu tem cinco destinos, e é de propósito)", () => {
+  it("corretor comum vê no máximo 5 destinos", () => {
     const itens = gruposVisiveis(false).flatMap((g) => g.itens);
-    expect(itens.length).toBeLessThanOrEqual(7);
+    expect(itens.length).toBeLessThanOrEqual(5);
   });
 
-  it("gestor vê os 7 + o bloco de administração", () => {
+  it("gestor vê os mesmos 5 mais Administração — nunca as telas de admin soltas", () => {
     const doGestor = gruposVisiveis(true).flatMap((g) => g.itens);
     const doCorretor = gruposVisiveis(false).flatMap((g) => g.itens);
-    expect(doGestor.length).toBeGreaterThan(doCorretor.length);
+
+    expect(doGestor.length).toBe(doCorretor.length + 1);
     expect(doGestor.some((i) => i.href === "/corretor/admin")).toBe(true);
+    // Contas, leads da equipe e WhatsApp da equipe são ABAS de Administração.
+    expect(doGestor.some((i) => i.href === "/corretor/admin/contas")).toBe(false);
+    expect(doGestor.some((i) => i.href === "/corretor/precos")).toBe(false);
+  });
+
+  it("WhatsApp é um destino só — conversas, campanhas e IA são abas dele", () => {
+    const itens = gruposVisiveis(false).flatMap((g) => g.itens);
+    const whatsapp = itens.find((i) => i.label === "WhatsApp");
+
+    expect(whatsapp).toBeDefined();
+    expect(whatsapp?.tambem).toContain("/corretor/campanhas");
+    expect(whatsapp?.tambem).toContain("/corretor/whatsapp");
+    expect(itens.filter((i) => i.href === "/corretor/campanhas")).toHaveLength(0);
   });
 
   it("toda rota absorvida (`tambem`) pertence a exatamente um destino", () => {

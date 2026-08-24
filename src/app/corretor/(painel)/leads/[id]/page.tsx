@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, Phone } from "lucide-react";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import { dataHora, diasParado, linkWhatsappLead } from "@/app/corretor/(painel)/_componentes/CartaoLead";
+import { REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { createClient } from "@/lib/supabase/server";
 import {
   getLeadDetalhado,
@@ -58,8 +59,14 @@ export default async function FichaLeadPage({
         <ArrowLeft className="h-4 w-4" /> Meus leads
       </Link>
 
-      {/* Cabeçalho: quem é, em que pé está e como falar com ele. */}
-      <header className="rounded-2xl border border-linha bg-elevado p-4 sm:p-5">
+      {/* Cabeçalho: quem é, em que pé está e como falar com ele. A régua de
+          cor na borda esquerda é a mesma da lista e do quadro — abrir a ficha
+          não muda o vocabulário visual. */}
+      <header className="relative overflow-hidden rounded-2xl border border-linha bg-elevado p-4 pl-5 sm:p-5 sm:pl-6">
+        <span
+          aria-hidden
+          className={`absolute inset-y-0 left-0 w-1.5 ${REGUA_ETAPA[lead.etapa]}`}
+        />
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-fluid-xl text-titulo">{lead.nome}</h1>

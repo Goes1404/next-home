@@ -17,14 +17,21 @@ import {
 
 type Filtro = "todos" | "hoje" | "novos" | "conversa" | "visitas" | "frios";
 
-/** Chips de segmento, na ordem do dia: o que pede ação vem primeiro. */
-const CHIPS: { valor: Filtro; label: string }[] = [
+/**
+ * Chips de segmento, na ordem do dia: o que pede ação vem primeiro.
+ *
+ * Cada chip carrega a cor das etapas que ele recorta — a mesma da régua, do
+ * quadro e do termômetro. Assim o chip "Visitas" é azul aqui, a linha do
+ * lead é azul na lista e a coluna é azul no quadro: uma escala de cor só
+ * para o painel inteiro, em vez de decoração por tela.
+ */
+const CHIPS: { valor: Filtro; label: string; cor?: string }[] = [
   { valor: "todos", label: "Todos" },
   { valor: "hoje", label: "Hoje" },
-  { valor: "novos", label: "Novos" },
-  { valor: "conversa", label: "Em conversa" },
-  { valor: "visitas", label: "Visitas" },
-  { valor: "frios", label: "Frios" },
+  { valor: "novos", label: "Novos", cor: "bg-acento" },
+  { valor: "conversa", label: "Em conversa", cor: "bg-etapa-ciano" },
+  { valor: "visitas", label: "Visitas", cor: "bg-etapa-azul" },
+  { valor: "frios", label: "Frios", cor: "bg-tenue/45" },
 ];
 
 /**
@@ -206,19 +213,28 @@ export function ListaLeads({
       </div>
 
       <div className="scrollbar-none mt-2 -mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-        {CHIPS.map(({ valor, label }) => (
-          <button
-            key={valor}
-            onClick={() => atualizarUrl({ filtro: valor === "todos" ? "" : valor, etapa: "" })}
-            className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-              filtro === valor && !etapaFiltro
-                ? "bg-acento text-white"
-                : "bg-superficie text-apoio hover:bg-elevado hover:text-corpo"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+        {CHIPS.map(({ valor, label, cor }) => {
+          const ativo = filtro === valor && !etapaFiltro;
+          return (
+            <button
+              key={valor}
+              onClick={() => atualizarUrl({ filtro: valor === "todos" ? "" : valor, etapa: "" })}
+              className={`flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors ${
+                ativo
+                  ? "bg-acento text-white"
+                  : "bg-superficie text-apoio hover:bg-elevado hover:text-corpo"
+              }`}
+            >
+              {cor && (
+                <span
+                  aria-hidden
+                  className={`h-2 w-2 shrink-0 rounded-full ${ativo ? "bg-white/80" : cor}`}
+                />
+              )}
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {mostrarFiltros && (

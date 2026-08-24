@@ -10,11 +10,19 @@ import type { SVGProps } from "react";
  * celular: a barra de abas é `hidden md:flex`. Com a lista aqui, quem
  * adiciona uma seção adiciona em todos os lugares por construção.
  *
- * O corretor comum vê SETE destinos, e é de propósito (roadmap "Painel de
- * Bolso"): Funil e Visitas viraram abas dentro de Leads, Importar é o botão
- * da própria tela de Leads, Templates mora em Campanhas, Links em Imóveis e
- * Senha dentro de Conta. As rotas antigas continuam existindo — só saíram do
- * menu; `tambem` mantém o destino certo aceso quando o corretor está nelas.
+ * O corretor comum vê CINCO destinos, e é de propósito: o painel tem treze
+ * telas, e treze itens de menu obrigam a decidir onde procurar antes de
+ * procurar. O que é parente virou aba (`AbasSecao`), não item:
+ *
+ *   Início
+ *   Leads      ← funil, visitas, importar
+ *   WhatsApp   ← conversas, campanhas, configuração da IA, templates
+ *   Imóveis    ← links por imóvel
+ *   Conta      ← senha; e, para o gestor, Administração ao lado
+ *
+ * As rotas antigas continuam existindo — só saíram do menu; `tambem` mantém
+ * o destino certo aceso quando o corretor está nelas, e nenhum link salvo
+ * quebra.
  */
 
 export type ItemNav = {
@@ -134,13 +142,6 @@ function IconeInicio(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconeFunil(p: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M3 4h18l-7 8.5V20l-4 1v-8.5z" />
-    </svg>
-  );
-}
 function IconePessoas(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
@@ -157,33 +158,10 @@ function IconeConversa(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconeBaloes(p: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M8 13.5H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v.5" />
-      <path d="M10 9h9a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2v3l-3.5-3H12a2 2 0 0 1-2-2z" />
-    </svg>
-  );
-}
-function IconeMegafone(p: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M4 9v6h3l7 4V5L7 9zM19 9a4 4 0 0 1 0 6" />
-    </svg>
-  );
-}
 function IconePredio(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M4 21V6l7-3v18M11 21h9V11l-9-3M15 12h1.5M15 15.5h1.5M15 19h1.5M7 9h1M7 12.5h1M7 16h1" />
-    </svg>
-  );
-}
-function IconeEtiqueta(p: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M20.5 12.5 12 21l-9-9V3h9z" />
-      <circle cx="7.5" cy="7.5" r="1.4" />
     </svg>
   );
 }

@@ -864,6 +864,27 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
   vem depois. Sem `concurrently` porque migration da Supabase roda em
   transação — quando a tabela crescer, índice novo passa a exigir
   `concurrently` FORA de migration.
+- **UMA COR POR ETAPA, e o menu tem CINCO destinos (0052).** Eram três cores
+  para sete etapas — "proposta enviada" e "em negociação" na mesma areia,
+  "novo" e "primeiro contato" no mesmo verde. Duas etapas com a mesma cor não
+  são identificáveis de relance, que é a única razão de existir cor de
+  status. Tokens novos: `etapa-ciano` e `etapa-laranja` (nos TRÊS blocos de
+  tema do `globals.css` — base escuro, `[data-tema=claro]` e o media query de
+  sistema; faltar em um deles deixa a cor invisível naquele tema).
+- **A régua de cor é o vocabulário visual do painel** (`REGUA_ETAPA`): barra
+  vertical na borda esquerda do cartão do quadro, da linha da lista (celular
+  E tabela) e do cabeçalho da ficha. Mesma escala em toda tela, então a etapa
+  se lê antes do texto e a lista mostra a distribuição do funil sem uma
+  palavra. **Ao criar tela nova de lead, usar a mesma régua** — escala de cor
+  própria por tela é o que a reforma veio desfazer.
+- **`AbasSecao` é o mecanismo que permite cinco destinos**: o que é parente
+  vira aba, não item de menu, e cada aba continua sendo uma ROTA de verdade
+  (endereço próprio, botão de voltar, nenhum link salvo quebrado). WhatsApp
+  reúne conversas + campanhas + IA; Administração reúne as cinco telas do
+  gestor. `navegacao.test.ts` trava a régua de 5 e verifica que as telas
+  absorvidas NÃO voltaram ao menu.
+- **Contador de aba só aparece quando > 0** — um contador que vive em zero
+  ensina a ignorar o contador. Mesma regra do cartão de pendência do Início.
 - **E2E autenticado do painel continua sem existir.** O Playwright está no
   `package.json` mas não há config, e o painel exige sessão de corretor —
   montar isso é trabalho próprio, não sobra de outra fase. O que existe hoje
