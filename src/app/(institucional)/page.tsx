@@ -9,6 +9,7 @@ import { Regioes } from "@/components/home/Regioes";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { AberturaHome } from "@/components/motion/AberturaHome";
 import { Camada } from "@/components/motion/Camada";
+import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
@@ -177,7 +178,10 @@ export default async function HomeInstitucional() {
                 <div className="mt-10 grid w-full gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {destaques.map((e, i) => (
                     <Reveal key={e.slug} delay={(i % 3) * 0.1} from="baixo">
-                      <CardEmpreendimento empreendimento={e} />
+                      <CardEmpreendimento
+                        empreendimento={e}
+                        velocidadeCapa={0.08 + (i % 3) * 0.05}
+                      />
                     </Reveal>
                   ))}
                 </div>
@@ -249,10 +253,14 @@ export default async function HomeInstitucional() {
                 </TituloEditorial>
 
                 <div className="mt-8 grid w-full gap-4 sm:grid-cols-2">
+                  {/* CartaoTilt no lugar do Reveal, não junto: o tilt já faz a
+                      própria entrada (cortina de clip-path) e já assume a
+                      opacidade. Somar o Reveal daria dois donos da mesma
+                      propriedade — o caminho curto para o card sumir. */}
                   {equipe.map((c, i) => (
-                    <Reveal key={c.slug} delay={(i % 2) * 0.08} from="baixo">
+                    <CartaoTilt key={c.slug} indice={i} className="rounded-glass">
                       <CardCorretor corretor={c} compacto />
-                    </Reveal>
+                    </CartaoTilt>
                   ))}
                 </div>
 

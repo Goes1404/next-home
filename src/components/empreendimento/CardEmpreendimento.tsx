@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ViewTransition } from "react";
 import { GlassSurface } from "@/components/glass/GlassSurface";
+import { Camada } from "@/components/motion/Camada";
 import { ehRecente, precoAPartirDe } from "@/lib/format";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
 
@@ -21,6 +22,7 @@ export function CardEmpreendimento({
   prioridade = false,
   sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
   aspecto = "aspect-[4/3]",
+  velocidadeCapa = 0.12,
 }: {
   empreendimento: Empreendimento;
   /** `priority` na imagem — só para os primeiros cards acima da dobra. */
@@ -28,6 +30,12 @@ export function CardEmpreendimento({
   sizes?: string;
   /** Proporção da capa — o card-destaque da listagem usa uma mais panorâmica. */
   aspecto?: string;
+  /**
+   * Velocidade da capa dentro da moldura. As grades escalonam por COLUNA —
+   * é a diferença entre colunas vizinhas que se lê como mosaico vivo; todas
+   * no mesmo ritmo pareceria a página inteira tremendo junto.
+   */
+  velocidadeCapa?: number;
 }) {
   return (
     <Link
@@ -39,18 +47,23 @@ export function CardEmpreendimento({
         className="group overflow-hidden transition-transform duration-500 ease-out hover:-translate-y-1.5"
       >
         <div className={`relative ${aspecto} w-full overflow-hidden rounded-t-[calc(var(--radius-glass)-1px)]`}>
-          <ViewTransition name={`capa-${e.slug}`}>
-            <Image
-              src={e.capa.url}
-              alt={e.capa.alt}
-              fill
-              sizes={sizes}
-              priority={prioridade}
-              placeholder={e.capa.blurDataUrl ? "blur" : "empty"}
-              blurDataURL={e.capa.blurDataUrl ?? undefined}
-              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-            />
-          </ViewTransition>
+          {/* `scale-110` na camada: sem a folga, o deslocamento exporia borda
+              vazia no alto ou embaixo da moldura. Mesma razão do
+              ParallaxImagem. */}
+          <Camada velocidade={velocidadeCapa} className="absolute inset-0 scale-110">
+            <ViewTransition name={`capa-${e.slug}`}>
+              <Image
+                src={e.capa.url}
+                alt={e.capa.alt}
+                fill
+                sizes={sizes}
+                priority={prioridade}
+                placeholder={e.capa.blurDataUrl ? "blur" : "empty"}
+                blurDataURL={e.capa.blurDataUrl ?? undefined}
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              />
+            </ViewTransition>
+          </Camada>
 
           {/* Cor literal: o selo flutua sobre a capa, e o que precisa
               contrastar com ele é a foto — não a superfície da página. */}

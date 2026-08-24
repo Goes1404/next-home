@@ -28,6 +28,7 @@ export function Similares({ empreendimentos }: { empreendimentos: Empreendimento
             <Reveal key={e.slug} delay={i * 0.08} from="baixo">
               <CardEmpreendimento
                 empreendimento={e}
+                velocidadeCapa={0.08 + (i % 3) * 0.05}
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
               />
             </Reveal>

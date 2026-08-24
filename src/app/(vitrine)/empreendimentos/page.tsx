@@ -162,6 +162,7 @@ export default async function EmpreendimentosPage({
                   <CardEmpreendimento
                     empreendimento={e}
                     prioridade={i < 3}
+                    velocidadeCapa={0.08 + (i % 3) * 0.05}
                     aspecto={destaqueGrande ? "aspect-[4/3] sm:aspect-[21/10]" : undefined}
                     sizes={
                       destaqueGrande

@@ -129,13 +129,18 @@ export default async function Home() {
                 <Link href={`/empreendimentos/${e.slug}`}>
                   <GlassSurface preset="card" className="group overflow-hidden">
                     <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-[calc(var(--radius-glass)-1px)]">
-                      <Image
-                        src={e.capa.url}
-                        alt={e.capa.alt}
-                        fill
-                        sizes="(min-width: 640px) 380px, 100vw"
-                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                      />
+                      <Camada
+                        velocidade={0.08 + (i % 2) * 0.06}
+                        className="absolute inset-0 scale-110"
+                      >
+                        <Image
+                          src={e.capa.url}
+                          alt={e.capa.alt}
+                          fill
+                          sizes="(min-width: 640px) 380px, 100vw"
+                          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        />
+                      </Camada>
                     </div>
                     <div className="px-5 py-4">
                       <h3 className="font-display text-titulo text-lg">{e.nome}</h3>
