@@ -933,3 +933,73 @@ data de visita e registrar um envio. Faltava o resto.
 - **A classificação atrasada/hoje/futura compara por DIA, não por hora**
   (`situacaoDaTarefa`). Comparar por hora pintaria a tela de vermelho toda
   tarde — e alerta que sempre está aceso vira paisagem.
+
+## Ingestão de material do empreendimento (PDF + Drive, 0042-0043)
+
+- **O upload de foto pelo painel NUNCA funcionou, e o erro culpava a
+  internet do corretor.** A única policy de `storage.objects` para
+  `authenticated` cobria `empreendimentos/corretores/<id>/…` (a pasta
+  pessoal, criada na 0015). Tanto `uploadFotoOuPlanta` quanto o envio do
+  book escreviam em `empreendimentos/<id>/…`, que policy nenhuma cobria — e
+  a mensagem de volta era "Falha ao enviar arquivo. Verifique sua conexão".
+  Eram TRÊS bloqueios empilhados com o mesmo sintoma: faltava a policy, o
+  caminho tinha um `empreendimentos/` redundante DENTRO do bucket que já se
+  chama assim (a policy confere o primeiro segmento do caminho), e o bucket
+  recusava `application/pdf`. **Ao investigar upload que falha, testar a
+  policy com identidade fingida** — `begin; set local role authenticated;
+  set local request.jwt.claims = '{"sub":"<user_id>"}'; … rollback;`.
+- **Como o defeito passou despercebido**: `select count(*) from midias`
+  devolve 286 linhas com medida real e blur preenchido, o que parece saúde.
+  Todas vieram de seed e do backfill de `scripts/gerar-blur.mjs`. **Zero
+  vieram de upload.** Um caminho que ninguém consegue usar não gera dado
+  ruim — gera ausência de dado, que é bem mais difícil de notar.
+- **`largura: 1920, altura: 1080` estavam CHUMBADOS no insert de `midias`**,
+  e `blur_data_url` nunca era preenchido. Oito componentes da vitrine leem
+  esses campos. Hoje existe um caminho único (`registrarMidia`), e a regra é:
+  **nenhum insert em `midias` fora dele** — com três origens (upload, PDF,
+  Drive), o insert espalhado repetiria o erro em três lugares.
+- **`sharp` era devDependency e virou dependência de runtime.** As derivadas
+  (medida, blur, prévia da curadoria) nascem da mesma decodificação. A
+  receita do blur — 12px, WebP q45 — **não pode mudar**: é a de
+  `scripts/gerar-blur.mjs`, que já rodou nas fotos no ar, e mudá-la deixaria
+  foto nova com placeholder diferente de foto antiga.
+- **Em PDF, `/DCTDecode` significa que os bytes do stream JÁ SÃO um JPEG.**
+  Copiar cru preserva a resolução original da construtora — a página mostra
+  a foto reduzida, mas o arquivo embutido costuma ser bem maior. Detalhe que
+  custa uma hora: o `endstream` vem depois de uma quebra de linha que NÃO
+  faz parte do JPEG, e sem recortar esses bytes o decodificador recusa o
+  arquivo inteiro.
+- **Bitmap `/FlateDecode` não é arquivo de imagem**, é só a sequência de
+  pixels: vira PNG com byte de filtro por linha + `deflate` (`montarPng`).
+  Paleta indexada e máscara ficam de fora de propósito — sairiam com a cor
+  errada, o que é pior que não sair.
+- **Server Action tem teto de corpo.** O padrão do Next é 1 MB e este
+  projeto usa 12 MB (por causa da importação de leads). Deck de construtora
+  passa disso, então **o PDF vai do navegador DIRETO para o Storage** e só o
+  caminho é mandado à action. Afrouxar o teto resolveria para este caso e
+  afrouxaria para TODAS as actions do sistema.
+- **A curadoria acontece entre duas requisições**, então os bytes precisam
+  morar em algum lugar: fica UM pdf no Storage, não as sessenta imagens. A
+  extração é determinística, então o índice de cada imagem continua valendo
+  na segunda leitura. Nenhuma tabela nova.
+- **No Drive, `supportsAllDrives` e `includeItemsFromAllDrives` são
+  obrigatórios** — pasta de construtora quase sempre mora em Drive
+  compartilhado, e sem eles a listagem volta VAZIA, o que na tela parece
+  pasta sem foto. Tem teste próprio porque o sintoma é silencioso. E nada é
+  baixado para curar: a grade usa o `thumbnailLink` da própria listagem, e
+  só o escolhido é transferido.
+- **Host do Drive é comparado por igualdade, não por sufixo**:
+  `xdrive.google.com` termina com `drive.google.com` e passaria na checagem
+  preguiçosa.
+- **Lista de enum escrita à mão erra.** Meu primeiro palpite de status tinha
+  "pronto" e "entregue", que não existem — o enum real vai de
+  `breve_lancamento` a `pronto_para_morar`. Hoje sai de
+  `Object.keys(STATUS_LABEL)`, inclusive dentro do prompt.
+- **Dedup de mídia é por sha256 do conteúdo** (`midias.hash_conteudo`), e o
+  índice único é PARCIAL: as 286 linhas antigas não têm hash e um índice
+  total recusaria a segunda delas. O hash também vai no nome do arquivo, o
+  que torna o upload idempotente, e é ele que faz a importação ser retomável.
+- **`midias` não segue o regime restritivo de `leads`**: nunca passou por
+  `revoke update`, então coluna nova herda o grant da tabela. Conferir
+  `information_schema.column_privileges` antes de escrever `grant` por
+  coluna — o grant a mais sugere um regime que a tabela não tem.
