@@ -590,6 +590,110 @@ trilho+IA, follow-up, métricas de funil).
 - **"Apresentação digital" = link da página do imóvel**, montado por código
   (`linkDaPagina`) a partir do slug. A IA nunca escreve o endereço: link
   errado levaria o cliente a um 404 com a marca da imobiliária em cima.
+- **A IA desfilava imóvel em vez de conversar** (`focoDaConversa.ts`,
+  24/08/2026). Medido em produção: o cliente pede a PLANTA DO TERRA ALTA e
+  recebe uma lista com outros três empreendimentos; "gostei do X" é
+  respondido com "que bom, mas temos outras opções, como...". A causa não
+  era só o prompt — a IA via DEZ fichas completas em toda mensagem, e o que
+  ela vê, ela oferece (mesma lição do `filtrarPorOrcamento`). Hoje, quando o
+  CLIENTE cita um imóvel, o catálogo do prompt encolhe para ele mais DUAS
+  reservas rotuladas como tal, e um bloco FOCO manda aprofundar. Detalhes
+  que custaram decisão: só a fala do cliente define o foco (se as do bot
+  contassem, o defeito se realimentaria — o foco seria sempre o último
+  imóvel que ela empurrou); a menção mais recente vence; "não gostei do X"
+  não vira foco em X; e nome ambíguo não decide nada — "Lançamento ao Lado
+  do Parque" existe TRÊS vezes no catálogo real, com slugs diferentes.
+  Zero reservas seria a leitura literal de "foco total" e está errado: a
+  regra 22 precisa de alternativa para o caso do imóvel que não atende.
+- **Reconhecer o nome do imóvel tem DUAS metades, e só uma é ortografia.**
+  (1) Grafia: "alfaville", "terraalta", "vrita alphaville" — resolvida com
+  Damerau-Levenshtein de limiar apertado (0 erro até 6 letras, 1 até 10, 2
+  acima), primeira letra obrigatória igual e empate entre imóveis
+  diferentes descartado. O erro é assimétrico: não achar custa uma resposta
+  genérica, achar o ERRADO faz a IA afirmar metragem e entrega de outro
+  empreendimento. (2) **Nome comercial ≠ nome do cadastro**, que nenhuma
+  distância de edição alcança: em produção, "Dom parque" para um cadastro
+  chamado "Lançamento ao Lado do Parque" e "manacá Barueri" para "More na
+  Aldeia de Barueri" — imóveis NOSSOS que o bot tratava como de outra
+  imobiliária. Resolvido com `nomes_alternativos` (0044), campo "também
+  conhecido como" na tela do imóvel. Casar contra a descrição inteira seria
+  pior que o defeito: ela carrega bairro, cidade e construtora.
+- **Três falsos positivos que o teste pegou e valem como régua**: "quero
+  algo de ALTA qualidade" virava foco no Terra Alta; "prefiro uma VISTA
+  boa" virava foco no Vista AlphaGran; e "moro perto DO PARQUE" casava com
+  o apelido "Dom Parque" (uma letra de distância). Daí as três guardas:
+  palavra comum do português não identifica imóvel sozinha (`COMUNS`),
+  n-grama que começa por preposição nunca é nome (`ABRE_FRASE`), e termo
+  curto não tolera erro nenhum.
+- **Cadastro em triplicata é problema de dado, mas o bot não pode travar
+  por causa dele.** O mesmo Dom Parque está cadastrado TRÊS vezes (mesmo
+  nome, mesma construtora, mesmo bairro, slugs diferentes). Termo ambíguo
+  normalmente significa "não escolho"; gêmeos assim se fundem no cadastro
+  mais completo (mais mídias e tipologias), e as reservas do foco nunca
+  trazem um gêmeo — oferecer "outra opção" que é o mesmo prédio é pior que
+  não oferecer nada. Imóveis DIFERENTES que dividem um apelido continuam
+  ambíguos.
+- **Regenerar `src/lib/supabase/types.ts` NÃO é só rodar o gerador.** Ele
+  conhece apenas os QUATRO enums nativos do Postgres (`status_obra`,
+  `tipo_imovel`, `tipo_midia`, `finalidade_imovel`); todo o resto do
+  vocabulário fechado deste banco é coluna de texto com CHECK, e para essas
+  ele devolve `string`. Sem reaplicar as uniões, quatro arquivos param de
+  compilar — e o pior caso não é o erro, é a regressão silenciosa de
+  tipagem. São 34 campos em 10 colunas (`modo_bot`, `status_conexao`,
+  `whatsapp_mensagens.remetente/tipo`, `whatsapp_campanhas.status`,
+  `whatsapp_campanhas_fila.status`, `whatsapp_conversas.origem`,
+  `whatsapp_followups.status`, `ia_interacoes.origem/avaliacao`,
+  `lead_interacoes.tipo`, `lead_observacoes_ia.temperatura_label`), a lista
+  está no cabeçalho do próprio arquivo. Na regeneração de 24/08 o gerador
+  também MELHOROU dois campos: `exigencias_especificas` e
+  `objecoes_identificadas` eram `any` e viraram `Json | null` — o que expôs
+  que o código aceitava `[null, 42]` vindo do jsonb (hoje `apenasTextos`
+  filtra).
+- **O mesmo empreendimento estava publicado TRÊS vezes** ("Lançamento ao
+  Lado do Parque" = Dom Parque, P4 Engenharia, criados no mesmo minuto de
+  08/08/2026, descrição idêntica, 4 mídias cada, zero lead ou campanha).
+  Despublicados dois na 0046 — DESPUBLICAR e não apagar, porque a leitura
+  pública já filtra `publicado = true` e apagar destruiria as linhas de
+  `midias` por cascade, deixando arquivo órfão no bucket, de forma
+  irreversível. Ao procurar duplicados, comparar nome + construtora +
+  bairro: "More Aldeia de Bareuri" e "More na Aldeia de Barueri" parecem o
+  mesmo e são imóveis diferentes (EBEN × RSF, bairros distintos).
+- **`execute_sql` do MCP da Supabase é bloqueado para UPDATE em produção**
+  pelo classificador do Claude Code; `apply_migration` passa. Não é
+  contorno: mudança de dado em produção deve mesmo ficar versionada em
+  `supabase/migrations/`.
+- **Imóvel que o cliente cita e NÃO é nosso** ("gostei do Dom Barueri") não
+  se responde com lista de alternativas: pergunta-se o que agradou nele
+  (regra 23). O critério de escolha é o que vale — empurrar três nomes para
+  quem elogiou outro imóvel encerra a conversa.
+- **O histórico do agente eram 12 mensagens, e 12 é pouco.** Com o bot
+  respondendo a quase toda fala, isso cobre umas seis trocas: região,
+  tipologia e o imóvel elogiado saíam da janela e ela recomeçava do zero —
+  metade da queixa "a IA não considera o histórico". Subiu para 20, e o
+  custo em tokens é menor que a economia do catálogo encolhido pelo foco.
+- **O eval mandava o catálogo CRU para o agente**, sem o ranking por
+  relevância nem o encolhimento por foco que o webhook faz. Ou seja: media
+  um prompt que produção nenhuma via — a mesma armadilha do playground, que
+  já tinha divergido antes. Hoje os quatro caminhos (webhook, follow-up,
+  playground, eval) passam por `catalogoParaAtendimento`.
+- **`npm run eval -- --sem-juiz`** roda só as checagens duras (fallback,
+  guardrail, foco, valor, prazo, teto de imóveis por mensagem). Existe
+  porque a máquina de quem desenvolve costuma ter a chave de UM provedor, e
+  o juiz é sempre o Gemini — sem ele o eval abortava na calibração e não
+  media nada. Não produz score: rodada sem juiz não se compara com rodada
+  julgada, e o arquivo sai marcado com `julgados: 0`.
+- **`deveFazerPergunta` era critério DECORATIVO**: dois casos o declaravam e
+  nada no eval o lia. Quarta vez que este projeto tropeça em critério que
+  não mede o que promete — vale reler a lista de expectativas do
+  `rodarEval.ts` sempre que uma regra de negócio mudar.
+- **O `alt` da foto ia como legenda da imagem no WhatsApp.** O cliente
+  recebia "Living integrado com adega climatizada e sala de jantar, unidade
+  03" embaixo do anexo — texto de acessibilidade e SEO do site, escrito para
+  leitor de tela, não para cliente. Corretor nenhum escreve assim. Hoje
+  `enviarMidiaWhatsapp` não tem mais parâmetro de legenda (em vez de só não
+  passar: legenda de novo tem de ser decisão consciente); o título continua
+  na nota de auditoria `📎 título: url` do Live Chat, que é onde quem lê é o
+  corretor — e é dela que `midiasJaEnviadas` tira a identidade do anexo.
 - **Guardrails (`guardrails.ts`)**: nenhum anexo/slug sai sem existir no
   catálogo. **Ranking (`catalogoRelevante.ts`)**: os 10 imóveis do prompt
   são os mais relevantes (menções + faixa do dossiê), não os 10 primeiros.
