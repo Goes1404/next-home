@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Camada } from "@/components/motion/Camada";
 import { ParallaxImagem } from "@/components/motion/ParallaxImagem";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
@@ -16,7 +17,10 @@ export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento })
   return (
     <section id="sobre" className="mx-auto max-w-7xl scroll-mt-24 px-4 pt-16 sm:px-8 sm:pt-28">
       <div className="grid items-start gap-10 lg:grid-cols-[7fr_5fr] lg:gap-16">
-        <div>
+        {/* O par foto/texto: a foto desce a +0.20, o texto sobe a -0.07. É a
+            DIFERENÇA que se lê como camada — foto sozinha se lê como foto
+            grande. */}
+        <Camada velocidade={-0.07}>
           <p className="text-fluid-xs mb-4 tracking-[0.22em] text-acento-suave uppercase">
             Sobre o empreendimento
           </p>
@@ -28,11 +32,14 @@ export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento })
               {e.descricao}
             </p>
           </Reveal>
-        </div>
+        </Camada>
 
+        {/* A coluna da foto NÃO vira Camada: `sticky` dentro de um elemento
+            com transform para de grudar, e é o sticky que segura a foto ao
+            lado do texto longo. O parallax dela mora no ParallaxImagem. */}
         {foto && (
           <Reveal from="baixo" className="lg:sticky lg:top-28">
-            <ParallaxImagem className="aspect-[3/4] rounded-2xl" intensidade={10}>
+            <ParallaxImagem className="aspect-[3/4] rounded-2xl" intensidade={20}>
               <Image
                 src={foto.url}
                 alt={foto.alt}

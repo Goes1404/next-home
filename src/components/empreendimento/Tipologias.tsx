@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { areaM2, precoBRL, precoPorM2 } from "@/lib/format";
@@ -79,13 +80,17 @@ export function Tipologias({
                     aria-label={`Ver planta de ${t.nome}`}
                     className="group relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-fundo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
                   >
-                    <Image
-                      src={t.plantaUrl}
-                      alt=""
-                      fill
-                      sizes="(min-width: 640px) 340px, 100vw"
-                      className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
-                    />
+                    {/* `scale-105` e não 110: planta é `object-contain`, e
+                        ampliar demais corta o desenho. */}
+                    <Camada velocidade={0.09} className="absolute inset-0 scale-105">
+                      <Image
+                        src={t.plantaUrl}
+                        alt=""
+                        fill
+                        sizes="(min-width: 640px) 340px, 100vw"
+                        className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </Camada>
                     {/* Literal como os demais selos sobre imagem: o fundo
                         aqui é a planta, não a página. */}
                     <span className="text-fluid-xs absolute right-2 bottom-2 rounded-full bg-ink-950/80 px-2.5 py-1 text-corpo-suave">

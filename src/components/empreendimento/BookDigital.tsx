@@ -1,3 +1,4 @@
+import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { linkWhatsappPara } from "@/lib/site";
@@ -25,8 +26,15 @@ export function BookDigital({ empreendimento: e }: Props) {
           preset="painel"
           className="relative overflow-hidden rounded-3xl p-6 sm:p-10 border border-brand-500/30 bg-gradient-to-br from-ink-900/90 via-ink-950/95 to-ink-900/90 shadow-2xl"
         >
-          {/* Luz de fundo decorativa */}
-          <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-brand-500/15 blur-3xl pointer-events-none" />
+          {/* Luz de fundo decorativa, agora em camada. Velocidade alta é
+              segura num borrão sem borda: ninguém percebe deslocamento —
+              percebe só que o painel tem profundidade. */}
+          <Camada
+            velocidade={0.4}
+            className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-brand-500/15 blur-3xl"
+          >
+            <span />
+          </Camada>
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             {/* Lado Esquerdo: Textos & Ícone */}

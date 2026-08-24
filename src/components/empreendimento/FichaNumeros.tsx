@@ -1,3 +1,4 @@
+import { Camada } from "@/components/motion/Camada";
 import { ContadorNumero } from "@/components/motion/ContadorNumero";
 import { Reveal } from "@/components/motion/Reveal";
 import { entregaPrevista } from "@/lib/format";
@@ -51,18 +52,23 @@ export function FichaNumeros({ empreendimento: e }: { empreendimento: Empreendim
         stagger={0.08}
         className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-10 px-4 py-14 sm:px-8 sm:py-20 md:grid-cols-3 lg:flex lg:items-end lg:justify-between"
       >
-        {numeros.map((n) => (
+        {/* A camada vai POR DENTRO da célula: o `Reveal stagger` já é dono da
+            opacidade e do transform de entrada dos filhos diretos, e somar
+            camada no mesmo nó seria dois donos da mesma matriz. */}
+        {numeros.map((n, i) => (
           <div key={n.rotulo}>
-            <p className="font-display text-fluid-3xl leading-none text-titulo">
-              {"texto" in n ? (
-                n.texto
-              ) : (
-                <ContadorNumero valor={n.valor} sufixo={n.sufixo ?? ""} />
-              )}
-            </p>
-            <p className="text-fluid-xs mt-3 tracking-[0.18em] text-legenda uppercase">
-              {n.rotulo}
-            </p>
+            <Camada velocidade={0.05 + (i % 3) * 0.04}>
+              <p className="font-display text-fluid-3xl leading-none text-titulo">
+                {"texto" in n ? (
+                  n.texto
+                ) : (
+                  <ContadorNumero valor={n.valor} sufixo={n.sufixo ?? ""} />
+                )}
+              </p>
+              <p className="text-fluid-xs mt-3 tracking-[0.18em] text-legenda uppercase">
+                {n.rotulo}
+              </p>
+            </Camada>
           </div>
         ))}
       </Reveal>
