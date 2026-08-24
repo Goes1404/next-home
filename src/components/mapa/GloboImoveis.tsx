@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import createGlobe from "cobe";
 import { liberarContexto, reservarContexto } from "@/components/glass/orcamentoWebgl";
+import { DURACAO_MERGULHO_MS, estadoDaTransicao } from "./transicaoGlobo";
 
 export type PinoGlobo = { lat: number; lng: number };
 
@@ -99,11 +100,29 @@ function paleta() {
 export function GloboImoveis({
   pinos,
   aoAtivar,
+  aoAproximar,
+  mergulhando = false,
+  aoFimDoMergulho,
   className = "",
 }: {
   pinos: PinoGlobo[];
   /** Chamado quando o visitante pede o mapa de perto. */
   aoAtivar: () => void;
+  /**
+   * O visitante demonstrou intenção (o ponteiro chegou no botão, ou o dedo
+   * encostou no globo). Serve para o pai montar o mapa ANTES da queda: o
+   * Leaflet trava a thread ao nascer, e esse engasgo no meio da animação é
+   * visível. Medido em dev: durante a montagem o rAF fica ~900ms sem tique.
+   */
+  aoAproximar?: () => void;
+  /**
+   * A câmera está caindo sobre a região. Quem decide é o pai, porque é ele
+   * que monta o mapa por baixo — a transição é um cruzamento entre os dois,
+   * não um efeito interno do globo.
+   */
+  mergulhando?: boolean;
+  /** O mergulho acabou: o globo já não é visível e pode ser desmontado. */
+  aoFimDoMergulho?: () => void;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -115,8 +134,16 @@ export function GloboImoveis({
   // Distingue arrastar de clicar: sem isto, girar o globo abriria o mapa ao
   // soltar o dedo.
   const girou = useRef(false);
+  // O mergulho é lido pelo laço de animação, que não re-renderiza: por isso
+  // ref, e não estado. `useEffect` abaixo só espelha a prop aqui dentro.
+  const mergulho = useRef<{ inicio: number } | null>(null);
+  const fimDoMergulho = useRef(aoFimDoMergulho);
+  const aoAproximarRef = useRef(aoAproximar);
 
   const aoPressionar = useCallback((e: React.PointerEvent) => {
+    // No toque não existe "passar o ponteiro por cima": o aviso de intenção
+    // possível é o dedo encostando.
+    aoAproximarRef.current?.();
     arrastando.current = { x: e.clientX, y: e.clientY };
     girou.current = false;
     parado.current = true;
@@ -150,6 +177,17 @@ export function GloboImoveis({
       window.removeEventListener("pointerup", aoSoltar);
     };
   }, []);
+
+  // Escrever em ref durante o render é proibido (o React pode descartar o
+  // trabalho e a escrita fica); num efeito é sempre depois do commit.
+  useEffect(() => {
+    fimDoMergulho.current = aoFimDoMergulho;
+    aoAproximarRef.current = aoAproximar;
+  }, [aoFimDoMergulho, aoAproximar]);
+
+  useEffect(() => {
+    if (mergulhando && !mergulho.current) mergulho.current = { inicio: performance.now() };
+  }, [mergulhando]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -198,12 +236,51 @@ export function GloboImoveis({
         opacity: 1,
       });
 
+      const moldura = molduraRef.current;
+      let terminou = false;
+
       const animar = () => {
         // A rotação livre é uma respiração lenta em torno do foco, não uma
         // volta ao mundo: o assunto da página é esta região.
-        if (!parado.current && !reduzido) {
+        if (!parado.current && !reduzido && !mergulho.current) {
           phi += (foco.phi - phi) * 0.02;
         }
+
+        /*
+         * MERGULHO. A curva mora em `transicaoGlobo.ts`; aqui só se aplica
+         * o que ela diz, em três lugares: o estado do cobe (escala, brilho,
+         * difusa), o CSS do canvas (escala e desfoque, que continuam o
+         * movimento para fora da moldura) e a atmosfera, que sai antes.
+         */
+        if (mergulho.current) {
+          const t = (performance.now() - mergulho.current.inicio) / DURACAO_MERGULHO_MS;
+          const e = estadoDaTransicao(t);
+
+          // A câmera volta ao foco antes de cair: mergulhar a partir do
+          // ângulo que o visitante deixou levaria a lente ao Atlântico.
+          const peso = e.pesoDoArrasto;
+          globo!.update({
+            phi: phi + (acumulado.current.phi + arrasto.current.phi) * peso,
+            theta: foco.theta + (acumulado.current.theta + arrasto.current.theta) * peso,
+            scale: e.escalaGlobo,
+            mapBrightness: e.brilhoDoMapa,
+            diffuse: e.difusa,
+            opacity: e.opacidadeGlobo,
+          });
+
+          canvas.style.transform = `translate(-50%, -50%) scale(${e.escalaCss})`;
+          canvas.style.filter = e.desfoque > 0.05 ? `blur(${e.desfoque.toFixed(2)}px)` : "";
+          canvas.style.opacity = String(e.opacidadeGlobo);
+          if (moldura) moldura.style.setProperty("--atmosfera", String(e.opacidadeAtmosfera));
+
+          if (t >= 1 && !terminou) {
+            terminou = true;
+            fimDoMergulho.current?.();
+          }
+          quadro = requestAnimationFrame(animar);
+          return;
+        }
+
         globo!.update({
           phi: phi + acumulado.current.phi + arrasto.current.phi,
           theta: foco.theta + acumulado.current.theta + arrasto.current.theta,
@@ -242,7 +319,17 @@ export function GloboImoveis({
   }, [pinos]);
 
   return (
-    <div ref={molduraRef} className={`relative overflow-hidden ${className}`}>
+    <div
+      ref={molduraRef}
+      /*
+       * `--atmosfera` é escrita pelo laço de animação e lida pelas três
+       * camadas decorativas. Uma variável só, num pai só: mexer em doze
+       * elementos por quadro custaria doze escritas de estilo, e o efeito é
+       * o mesmo.
+       */
+      style={{ "--atmosfera": 1 } as React.CSSProperties}
+      className={`relative overflow-hidden ${className}`}
+    >
       {/* ATMOSFERA — três camadas atrás do globo, todas decorativas e em
           transform/opacity puros (nada que peça layout). Sem elas o globo
           flutuava sozinho num retângulo vazio e parecia um recorte. */}
@@ -250,8 +337,9 @@ export function GloboImoveis({
       {/* 1. Halo: o brilho que sai de trás da esfera e respira devagar. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 aspect-square h-[95%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-90 blur-2xl motion-safe:animate-[respirar_7s_ease-in-out_infinite]"
+        className="pointer-events-none absolute top-1/2 left-1/2 aspect-square h-[95%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl motion-safe:animate-[respirar_7s_ease-in-out_infinite]"
         style={{
+          opacity: "calc(var(--atmosfera) * 0.9)",
           background:
             "radial-gradient(circle, var(--color-acento-forte) 0%, color-mix(in oklab, var(--color-acento-forte) 45%, transparent) 38%, transparent 66%)",
         }}
@@ -266,12 +354,14 @@ export function GloboImoveis({
              deslocados para fora do globo. */}
       <span
         aria-hidden
+        style={{ opacity: "var(--atmosfera)" }}
         className="pointer-events-none absolute top-1/2 left-1/2 aspect-square h-[94%] -translate-x-1/2 -translate-y-1/2 [perspective:900px]"
       >
         <span className="block h-full w-full rounded-full border border-acento-forte/30 [transform:rotateX(74deg)] motion-safe:animate-[girar_26s_linear_infinite]" />
       </span>
       <span
         aria-hidden
+        style={{ opacity: "var(--atmosfera)" }}
         className="pointer-events-none absolute top-1/2 left-1/2 aspect-square h-[112%] -translate-x-1/2 -translate-y-1/2 [perspective:900px]"
       >
         <span className="block h-full w-full rounded-full border border-acento-forte/18 [transform:rotateX(66deg)_rotateZ(28deg)] motion-safe:animate-[girar_40s_linear_infinite_reverse]" />
@@ -289,6 +379,7 @@ export function GloboImoveis({
             {
               top: `${p.y}%`,
               left: `${p.x}%`,
+              opacity: "calc(var(--atmosfera) * 0.85)",
               "--dur": `${p.dur}s`,
               animationDelay: `${p.atraso}s`,
             } as React.CSSProperties
@@ -306,8 +397,12 @@ export function GloboImoveis({
         aria-hidden
         // Centralizado por posicionamento absoluto justamente por causa dos
         // wrappers que o cobe injeta: eles ignoram o flex da moldura.
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-grab opacity-0 transition-opacity duration-1000"
-        style={{ touchAction: "none" }}
+        className="absolute top-1/2 left-1/2 cursor-grab opacity-0 transition-opacity duration-1000"
+        // O transform base é inline porque o laço do mergulho o reescreve a
+        // cada quadro; com a classe utilitária, a escala do mergulho e a
+        // centralização brigariam pelo mesmo `transform` (a mesma armadilha
+        // que já aconteceu com os anéis de órbita).
+        style={{ touchAction: "none", transform: "translate(-50%, -50%)" }}
       />
 
       {/* O convite é um botão de verdade: o canvas é aria-hidden e o teclado
@@ -315,7 +410,13 @@ export function GloboImoveis({
       <button
         type="button"
         onClick={aoAtivar}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full border border-linha/20 bg-fundo/85 px-6 py-3 text-fluid-sm font-medium text-titulo shadow-lg backdrop-blur-md transition-transform duration-300 hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
+        onPointerEnter={aoAproximar}
+        onFocus={aoAproximar}
+        // Durante a queda ele sai de cena junto com o resto: um convite
+        // parado sobre uma câmera em movimento é o que denuncia efeito
+        // colado por cima.
+        style={{ opacity: mergulhando ? 0 : 1, pointerEvents: mergulhando ? "none" : undefined }}
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 transition-opacity duration-300 rounded-full border border-linha/20 bg-fundo/85 px-6 py-3 text-fluid-sm font-medium text-titulo shadow-lg backdrop-blur-md transition-transform duration-300 hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
       >
         Ver o mapa de perto
       </button>

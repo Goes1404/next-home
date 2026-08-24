@@ -20,6 +20,12 @@ interface Props {
       um toque explícito, e sem a barra de filtros própria (a home já tem o
       formulário de busca — dois sistemas de filtro na mesma tela confundem). */
   compacto?: boolean;
+  /**
+   * O mapa nasce afastado e VOA até o enquadramento, porque quem chega aqui
+   * vinha caindo do globo (ver `transicaoGlobo.ts`). Aparecer parado no
+   * destino corta o movimento no meio — a câmera precisa terminar a queda.
+   */
+  entradaCinematica?: boolean;
 }
 
 // Coordenada padrão de Alphaville / Barueri
@@ -39,11 +45,13 @@ export default function MapaInterativoClient({
   imovelInicialSlug,
   alturaClasse = "h-[calc(100vh-80px)] min-h-[500px]",
   compacto = false,
+  entradaCinematica = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const tilesRef = useRef<L.TileLayer | null>(null);
+  const entradaJaVoou = useRef(false);
 
   const [statusFiltro, setStatusFiltro] = useState<StatusObra | "todos">("todos");
   const [bairroFiltro, setBairroFiltro] = useState<string>("todos");
@@ -96,7 +104,9 @@ export default function MapaInterativoClient({
 
     const map = L.map(containerRef.current, {
       center: CENTRO_ALPHAVILLE,
-      zoom: 13,
+      // Vindo do globo, o mapa começa alto — a região inteira à vista, na
+      // altura em que a queda estava — e desce até o enquadramento.
+      zoom: entradaCinematica ? 9 : 13,
       // No canto de baixo para não brigar com a barra de filtros, que mora
       // no topo do mapa.
       zoomControl: false,
@@ -197,9 +207,23 @@ export default function MapaInterativoClient({
 
     // Ajusta o zoom inicial para enquadrar todos os pins
     if (bounds.length > 0 && !imovelSelecionado) {
-      map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+      /*
+       * Com entrada cinemática o enquadramento é VOADO, não aplicado: é o
+       * último trecho da queda que começou no globo, e é o que faz as duas
+       * peças parecerem uma câmera só. `flyToBounds` já vem do Leaflet com
+       * a curva certa (zoom e pan juntos).
+       *
+       * Uma vez só (`entradaJaVoou`): este efeito também roda quando o
+       * filtro muda, e refazer o voo a cada filtro seria enjoativo.
+       */
+      if (entradaCinematica && !entradaJaVoou.current) {
+        entradaJaVoou.current = true;
+        map.flyToBounds(bounds, { padding: [60, 60], maxZoom: 15, duration: 1.1 });
+      } else {
+        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+      }
     }
-  }, [imoveisFiltrados, imovelSelecionado]);
+  }, [imoveisFiltrados, imovelSelecionado, entradaCinematica]);
 
   return (
     <div className={`relative w-full overflow-hidden rounded-2xl border border-linha ${alturaClasse}`}>

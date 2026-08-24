@@ -41,6 +41,8 @@ interface Props {
    * visitante talvez nunca role até ver.
    */
   adiarAteVisivel?: boolean;
+  /** Repassa ao mapa a entrada voada de quem vem caindo do globo. */
+  entradaCinematica?: boolean;
 }
 
 export function MapaEmpreendimentos({ alturaClasse = "h-[calc(100vh-80px)] min-h-[500px]", adiarAteVisivel = false, ...props }: Props) {
