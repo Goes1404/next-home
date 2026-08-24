@@ -130,3 +130,50 @@ describe("extrairImagensDePdf — página chapada", () => {
     expect(resultado.imagens[0].parecePaginaInteira).toBe(false);
   });
 });
+
+/**
+ * PDF em que o dicionário da imagem CONTÉM outro dicionário (`/DecodeParms`),
+ * e um segundo objeto que é a máscara de transparência do primeiro.
+ * Os dois casos vieram de um book real de construtora.
+ */
+function pdfComDecodeParmsEMascara(jpeg: Buffer): Buffer {
+  const mascara = deflateSync(Buffer.alloc(600 * 400, 0xff));
+  return Buffer.concat([
+    Buffer.from(
+      `%PDF-1.7\n` +
+        `4 0 obj\n<< /Type /XObject /Subtype /Image /Width 600 /Height 400 /ColorSpace /DeviceRGB` +
+        ` /BitsPerComponent 8 /SMask 5 0 R /DecodeParms << /BitsPerComponent 8 /Colors 3 /Columns 600 >>` +
+        ` /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`,
+      "latin1",
+    ),
+    jpeg,
+    Buffer.from(
+      `\nendstream\nendobj\n` +
+        `5 0 obj\n<< /Type /XObject /Subtype /Image /Width 600 /Height 400 /ColorSpace /DeviceGray` +
+        ` /BitsPerComponent 8 /DecodeParms << /BitsPerComponent 8 /Colors 1 /Columns 600 >>` +
+        ` /Filter /FlateDecode /Length ${mascara.length} >>\nstream\n`,
+      "latin1",
+    ),
+    mascara,
+    Buffer.from("\nendstream\nendobj\n%%EOF\n", "latin1"),
+  ]);
+}
+
+describe("extrairImagensDePdf — dicionário aninhado e máscara", () => {
+  it("lê a imagem mesmo quando o dicionário tem /DecodeParms dentro", async () => {
+    const resultado = extrairImagensDePdf(pdfComDecodeParmsEMascara(await jpegDeTeste(600, 400)));
+
+    expect(resultado.imagens).toHaveLength(1);
+    expect(resultado.imagens[0].mime).toBe("image/jpeg");
+    expect(resultado.naoSuportadas).toEqual([]);
+  });
+
+  it("não devolve a máscara de transparência como se fosse foto", async () => {
+    const resultado = extrairImagensDePdf(pdfComDecodeParmsEMascara(await jpegDeTeste(600, 400)));
+
+    // A máscara é um retângulo em escala de cinza: na grade ela apareceria
+    // como um quadro preto e branco sem sentido nenhum para o corretor.
+    expect(resultado.mascarasIgnoradas).toBe(1);
+    expect(resultado.imagens.every((i) => i.mime === "image/jpeg")).toBe(true);
+  });
+});

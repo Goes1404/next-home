@@ -20,6 +20,8 @@ export type ItemCurado = {
   altura: number;
   parecePlanta: boolean;
   parecePaginaInteira: boolean;
+  /** Escala de cinza: letreiro, logo ou recorte — não é foto. */
+  pareceGrafismo: boolean;
 };
 
 export type AnaliseDoPdf =
@@ -66,6 +68,11 @@ export async function analisarPdf(caminhoStaging: string): Promise<AnaliseDoPdf>
       `${extraidas.descartadasPorTamanho} imagens pequenas demais foram ignoradas — costumam ser logo e ícone.`,
     );
   }
+  if (extraidas.mascarasIgnoradas > 0) {
+    avisos.push(
+      `${extraidas.mascarasIgnoradas} ${extraidas.mascarasIgnoradas === 1 ? "recorte de transparência foi ignorado" : "recortes de transparência foram ignorados"} — não são fotos.`,
+    );
+  }
   if (extraidas.imagens.length === TETO_IMAGENS) {
     avisos.push(`Parei nas primeiras ${TETO_IMAGENS} imagens do arquivo.`);
   }
@@ -93,6 +100,7 @@ export async function analisarPdf(caminhoStaging: string): Promise<AnaliseDoPdf>
       altura: imagem.altura,
       parecePlanta: previa.parecePlanta,
       parecePaginaInteira: imagem.parecePaginaInteira,
+      pareceGrafismo: previa.pareceGrafismo,
     });
   }
 

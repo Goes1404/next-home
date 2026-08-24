@@ -38,7 +38,49 @@ export type ResultadoImagensPdf = {
   /** Vistas mas não lidas. Some em silêncio seria pior que não achar. */
   naoSuportadas: { codec: string; quantidade: number }[];
   descartadasPorTamanho: number;
+  /** Máscaras de transparência puladas — não são foto, são recorte. */
+  mascarasIgnoradas: number;
 };
+
+/**
+ * Objetos que outra imagem aponta como máscara de transparência.
+ *
+ * Máscara é o RECORTE de uma foto, não uma foto: em escala de cinza, ela é
+ * uma silhueta preta e branca. Num book real de construtora duas delas
+ * apareceram na grade de curadoria como quadros pretos sem sentido nenhum.
+ */
+function objetosQueSaoMascara(cru: string): Set<string> {
+  const mascaras = new Set<string>();
+  for (const achado of cru.matchAll(/\/(?:SMask|Mask)\s+(\d+)\s+\d+\s+R/g)) {
+    mascaras.add(achado[1]);
+  }
+  return mascaras;
+}
+
+/**
+ * Dicionário do objeto que contém este `stream`, do começo.
+ *
+ * Não dá para usar o último `<<` antes do `stream`: dicionário de imagem
+ * costuma CONTER outro (`/DecodeParms << … >>`), e a busca preguiçosa pega o
+ * de dentro — perdendo `/ColorSpace`, que é o que decide se a imagem é
+ * legível. Num book real isso recusou 22 imagens de uma vez.
+ */
+function dicionarioDoObjeto(cru: string, inicioStream: number): { dicionario: string; objeto: string | null } {
+  const trecho = cru.slice(Math.max(0, inicioStream - 4000), inicioStream);
+  const cabecalho = [...trecho.matchAll(/(\d+)\s+\d+\s+obj/g)].pop();
+
+  if (cabecalho?.index !== undefined) {
+    return {
+      dicionario: trecho.slice(cabecalho.index + cabecalho[0].length),
+      objeto: cabecalho[1],
+    };
+  }
+
+  // Sem cabeçalho de objeto por perto (PDF gerado de forma incomum): volta
+  // ao comportamento antigo, que cobre o caso simples.
+  const abre = trecho.lastIndexOf("<<");
+  return { dicionario: abre === -1 ? "" : trecho.slice(abre), objeto: null };
+}
 
 function numeroDoDicionario(dicionario: string, chave: string): number | null {
   const achado = dicionario.match(new RegExp(`/${chave}\\s+(\\d+)`));
@@ -123,6 +165,14 @@ function montarPng(pixels: Buffer, largura: number, altura: number, canais: 1 | 
   ]);
 }
 
+/** 1 = cinza, 3 = RGB. Qualquer outra conta não é bitmap simples. */
+function canaisPelaQuantidadeDeBytes(bytes: number, largura: number, altura: number): 1 | 3 | null {
+  const porPixel = bytes / (largura * altura);
+  if (porPixel === 1) return 1;
+  if (porPixel === 3) return 3;
+  return null;
+}
+
 function descomprimirFlate(bruto: Buffer): Buffer | null {
   for (const inflar of [inflateSync, inflateRawSync]) {
     try {
@@ -141,10 +191,13 @@ export function extrairImagensDePdf(pdf: Buffer | Uint8Array): ResultadoImagensP
   const imagens: ImagemExtraida[] = [];
   const naoLidos = new Map<string, number>();
   let descartadasPorTamanho = 0;
+  let mascarasIgnoradas = 0;
 
   if (!cru.startsWith("%PDF")) {
-    return { imagens, naoSuportadas: [], descartadasPorTamanho };
+    return { imagens, naoSuportadas: [], descartadasPorTamanho, mascarasIgnoradas };
   }
+
+  const mascaras = objetosQueSaoMascara(cru);
 
   const proporcaoPagina = proporcaoDaPagina(cru);
 
@@ -155,11 +208,15 @@ export function extrairImagensDePdf(pdf: Buffer | Uint8Array): ResultadoImagensP
     const fimStream = cru.indexOf("endstream", inicioStream);
     if (fimStream === -1) break;
 
-    const abreDicionario = cru.lastIndexOf("<<", inicioStream);
-    const dicionario = abreDicionario === -1 ? "" : cru.slice(abreDicionario, inicioStream);
+    const { dicionario, objeto } = dicionarioDoObjeto(cru, inicioStream);
     cursor = fimStream + "endstream".length;
 
     if (!/\/Subtype\s*\/Image/.test(dicionario)) continue;
+
+    if (objeto !== null && mascaras.has(objeto)) {
+      mascarasIgnoradas++;
+      continue;
+    }
 
     const largura = numeroDoDicionario(dicionario, "Width");
     const altura = numeroDoDicionario(dicionario, "Height");
@@ -207,8 +264,20 @@ export function extrairImagensDePdf(pdf: Buffer | Uint8Array): ResultadoImagensP
       // precisariam do dicionário de cores; são raras em deck e viram
       // "não suportado" em vez de saírem com a cor errada.
       const bits = numeroDoDicionario(dicionario, "BitsPerComponent");
-      const canais = /\/DeviceRGB/.test(dicionario) ? 3 : /\/DeviceGray/.test(dicionario) ? 1 : null;
-      const pixels = bits === 8 && canais ? descomprimirFlate(dados) : null;
+      const pixels = bits === 8 ? descomprimirFlate(dados) : null;
+
+      // O espaço de cor pode vir por REFERÊNCIA (`/ColorSpace 663 0 R`), e
+      // resolvê-la exigiria montar a tabela de objetos do arquivo inteiro.
+      // Quando isso acontece, a própria quantidade de bytes responde: um
+      // bitmap tem exatamente largura x altura x canais.
+      const canais = /\/DeviceRGB/.test(dicionario)
+        ? 3
+        : /\/DeviceGray/.test(dicionario)
+          ? 1
+          : pixels
+            ? canaisPelaQuantidadeDeBytes(pixels.length, largura, altura)
+            : null;
+
       const png = pixels && canais ? montarPng(pixels, largura, altura, canais) : null;
 
       if (png) {
@@ -233,5 +302,6 @@ export function extrairImagensDePdf(pdf: Buffer | Uint8Array): ResultadoImagensP
     imagens,
     naoSuportadas: [...naoLidos].map(([codec, quantidade]) => ({ codec, quantidade })),
     descartadasPorTamanho,
+    mascarasIgnoradas,
   };
 }

@@ -87,10 +87,13 @@ export function OrigemPdf({
             String(item.indice),
             {
               chave: String(item.indice),
-              // Página inteira entra DESMARCADA: quase sempre tem logo e
-              // texto por cima, e marcá-la por padrão faria o corretor
-              // desmarcar uma por uma.
-              incluir: !item.parecePaginaInteira,
+              // Letreiro e logo entram DESMARCADOS; página inteira, NÃO.
+              // Medido em dois books reais: as plantas são justamente
+              // imagens do tamanho da página, então desmarcá-las por padrão
+              // faria o corretor remarcar uma por uma — o contrário de
+              // ajudar. Já toda imagem em escala de cinza era letreiro ou
+              // recorte, nunca foto.
+              incluir: !item.pareceGrafismo,
               tipo: item.parecePlanta ? ("planta" as const) : ("foto" as const),
               capa: false,
             },
@@ -165,7 +168,11 @@ export function OrigemPdf({
           chave: String(item.indice),
           preview: item.preview,
           legenda: `${item.largura} × ${item.altura}`,
-          aviso: item.parecePaginaInteira ? "Parece a página inteira da apresentação" : undefined,
+          aviso: item.pareceGrafismo
+            ? "Parece letreiro ou logo, não foto"
+            : item.parecePaginaInteira
+              ? "Parece a página inteira da apresentação"
+              : undefined,
         }))
       : [];
 

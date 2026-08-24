@@ -38,12 +38,15 @@ export async function gerarBlur(bytes: Buffer): Promise<string | null> {
  * do Gemini é de 20 chamadas por dia e é a mesma que atende cliente no
  * WhatsApp: classificar foto gastaria o balde do atendimento.
  */
-export async function gerarPreview(bytes: Buffer): Promise<{ dataUrl: string; parecePlanta: boolean } | null> {
+export async function gerarPreview(
+  bytes: Buffer,
+): Promise<{ dataUrl: string; parecePlanta: boolean; pareceGrafismo: boolean } | null> {
   try {
     const imagem = sharp(bytes);
-    const [previa, stats] = await Promise.all([
+    const [previa, stats, meta] = await Promise.all([
       imagem.clone().resize(400).webp({ quality: 60 }).toBuffer(),
       imagem.clone().stats(),
+      imagem.clone().metadata(),
     ]);
 
     const medias = stats.channels.slice(0, 3).map((canal) => canal.mean);
@@ -53,6 +56,10 @@ export async function gerarPreview(bytes: Buffer): Promise<{ dataUrl: string; pa
     return {
       dataUrl: `data:image/webp;base64,${previa.toString("base64")}`,
       parecePlanta: clara && semCor,
+      // Um canal só é escala de cinza. Medido em dois books reais de
+      // construtora: TODA imagem de um canal era letreiro, logo ou máscara
+      // de recorte — nenhuma era foto. Foto de empreendimento é sempre RGB.
+      pareceGrafismo: meta.channels === 1,
     };
   } catch {
     return null;
