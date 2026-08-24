@@ -2,6 +2,7 @@ import type { Empreendimento } from "@/lib/types";
 import type { RespostaAgenteIA } from "./aiAgent";
 import { soarHumano } from "./vozHumana";
 import { limparSeparadoresOrfaos, removerValores } from "./semValores";
+import { removerPrazoInventado } from "./prazoEntrega";
 import { midiasJaEnviadas, resolverAnexos, type AnexoResolvido } from "./resolverMidia";
 import { corrigirVisitaNoPassado, verificarCoerenciaVisita } from "./coerenciaVisita";
 import { ehRepeticaoDoBot, textoNoLugarDaRepeticao } from "./repeticao";
@@ -39,6 +40,8 @@ export type RespostaSaneada = {
   slugsBloqueados: number;
   /** A visita foi descartada por prometer um dia e agendar outro? */
   visitaIncoerente: boolean;
+  /** A resposta prometia prazo de entrega que não existe no cadastro? */
+  prazoRemovido: boolean;
   /** A resposta repetia, palavra por palavra, algo que o bot já tinha dito? */
   repeticaoBloqueada: boolean;
 };
@@ -96,10 +99,18 @@ export function sanearRespostaIA(
    * limpeza, e nesse caso o cliente vê repetição do mesmo jeito.
    */
   /*
-   * Remover a frase do preço pode deixar o separador de balão sozinho —
-   * a resposta chegava ao cliente começando com "--- ".
+   * Prazo de entrega inventado. Só age quando NENHUM imóvel do catálogo tem
+   * data cadastrada — aí a afirmação é necessariamente invenção. É a
+   * promessa mais cara do negócio: o cliente rescinde aluguel contando com
+   * ela.
    */
-  const semOrfaos = limparSeparadoresOrfaos(semValor.texto);
+  const semPrazo = removerPrazoInventado(semValor.texto, catalogo);
+
+  /*
+   * Remover a frase do preço (ou do prazo) pode deixar o separador de balão
+   * sozinho — a resposta chegava ao cliente começando com "--- ".
+   */
+  const semOrfaos = limparSeparadoresOrfaos(semPrazo.texto);
 
   const repetiu = ehRepeticaoDoBot(semOrfaos, historico);
   if (repetiu) {
@@ -156,5 +167,6 @@ export function sanearRespostaIA(
     slugsBloqueados: (resposta.imoveisRecomendados?.length ?? 0) - recomendadosValidos.length,
     visitaIncoerente: !coerencia.coerente,
     repeticaoBloqueada: repetiu,
+    prazoRemovido: semPrazo.removeu,
   };
 }

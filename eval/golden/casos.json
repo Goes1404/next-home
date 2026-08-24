@@ -241,7 +241,8 @@
     "mensagem": "preciso mudar em 60 dias, tem que estar pronto",
     "expectativas": {
       "restricaoDoCliente": true,
-      "naoPodeFalarValor": true
+      "naoPodeFalarValor": true,
+      "naoPodeInventarPrazo": true
     }
   },
   {
@@ -318,7 +319,8 @@
     ],
     "mensagem": "meu contrato de aluguel vence mês que vem, não dá pra esperar obra",
     "expectativas": {
-      "restricaoDoCliente": true
+      "restricaoDoCliente": true,
+      "naoPodeInventarPrazo": true
     }
   },
   {
@@ -335,7 +337,8 @@
     ],
     "mensagem": "preciso das chaves em 15 dias, dá?",
     "expectativas": {
-      "restricaoDoCliente": true
+      "restricaoDoCliente": true,
+      "naoPodeInventarPrazo": true
     }
   },
   {
@@ -421,7 +424,8 @@
     ],
     "mensagem": "conheço sim, mas preciso de algo pra entrar em janeiro no máximo",
     "expectativas": {
-      "restricaoDoCliente": true
+      "restricaoDoCliente": true,
+      "naoPodeInventarPrazo": true
     }
   },
   {

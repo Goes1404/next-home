@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filtrarPorOrcamento, ranquearCatalogo } from "./catalogoRelevante";
+import { filtrarPorOrcamento, filtrarPorUrgencia, ranquearCatalogo } from "./catalogoRelevante";
 import type { Empreendimento } from "@/lib/types";
 
 /** Só os campos que o ranking olha; o resto não influencia a decisão. */
@@ -72,7 +72,7 @@ describe("Corte por orçamento do cliente", () => {
     const r = ranquearCatalogo({
       catalogo: [caro, barato],
       mensagemAtual: "quero ver opções",
-      dossie: { orcamentoMin: null, orcamentoMax: 600_000, exigenciasEspecificas: [] },
+      dossie: { orcamentoMin: null, orcamentoMax: 600_000, exigenciasEspecificas: [], urgenciaMudanca: null },
     });
     expect(r.map((e) => e.slug)).toEqual(["terra-alta"]);
   });
@@ -80,5 +80,57 @@ describe("Corte por orçamento do cliente", () => {
   it("sem dossiê, o ranking segue devolvendo tudo que cabe no limite", () => {
     const r = ranquearCatalogo({ catalogo: [caro, barato], mensagemAtual: "oi" });
     expect(r).toHaveLength(2);
+  });
+});
+
+describe("Corte por urgência do cliente", () => {
+  /*
+   * O caso do eval: cliente diz "meu contrato de aluguel vence mês que vem,
+   * não dá pra esperar obra" e recebe um imóvel EM CONSTRUÇÃO — com
+   * "entrega prevista para breve", data que não existe no cadastro. Dois
+   * defeitos numa frase, os dois já proibidos por prompt (regras 14 e 22).
+   */
+  const emObra = { ...base, slug: "canvas", status: "em_construcao" } as Empreendimento;
+  const pronto = { ...base, slug: "bosque", status: "pronto_para_morar" } as Empreendimento;
+  const ultimas = { ...base, slug: "vitra", status: "ultimas_unidades" } as Empreendimento;
+
+  it("tira o que está em obra de quem não pode esperar", () => {
+    expect(filtrarPorUrgencia([emObra, pronto], "imediata").map((e) => e.slug)).toEqual(["bosque"]);
+    expect(filtrarPorUrgencia([emObra, pronto], "3_meses").map((e) => e.slug)).toEqual(["bosque"]);
+  });
+
+  /* "Últimas unidades" é prédio pronto vendendo o que sobrou. */
+  it("mantém últimas unidades, que já está de pé", () => {
+    expect(filtrarPorUrgencia([emObra, ultimas], "imediata").map((e) => e.slug)).toEqual(["vitra"]);
+  });
+
+  it("não corta nada de quem tem tempo", () => {
+    expect(filtrarPorUrgencia([emObra, pronto], "6_meses")).toHaveLength(2);
+    expect(filtrarPorUrgencia([emObra, pronto], "apenas_pesquisando")).toHaveLength(2);
+    expect(filtrarPorUrgencia([emObra, pronto], null)).toHaveLength(2);
+  });
+
+  /*
+   * Sem o imóvel em obra no prompt não há prazo de entrega para inventar —
+   * mas catálogo vazio é onde o modelo inventa de vez. O filtro se desfaz.
+   */
+  it("se desfaz quando só há imóvel em obra", () => {
+    expect(filtrarPorUrgencia([emObra], "imediata").map((e) => e.slug)).toEqual(["canvas"]);
+  });
+
+  it("compõe com o corte por orçamento", () => {
+    const caroEmObra = { ...emObra, slug: "caro", precoAPartir: 2_000_000 } as Empreendimento;
+    const baratoPronto = { ...pronto, slug: "certo", precoAPartir: 500_000 } as Empreendimento;
+    const r = ranquearCatalogo({
+      catalogo: [caroEmObra, baratoPronto],
+      mensagemAtual: "preciso mudar logo",
+      dossie: {
+        orcamentoMin: null,
+        orcamentoMax: 600_000,
+        exigenciasEspecificas: [],
+        urgenciaMudanca: "imediata",
+      },
+    });
+    expect(r.map((e) => e.slug)).toEqual(["certo"]);
   });
 });

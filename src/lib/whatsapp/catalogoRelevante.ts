@@ -64,11 +64,52 @@ export function filtrarPorOrcamento(
   return cabem.length > 0 ? cabem : catalogo;
 }
 
+/**
+ * Estágios de obra em que NÃO dá para entrar agora. `ultimas_unidades` fica
+ * de fora da lista de propósito: é o próprio prédio pronto vendendo o que
+ * sobrou.
+ */
+const ESTAGIOS_NAO_PRONTOS = new Set(["breve_lancamento", "pre_lancamento", "lancamento", "em_construcao"]);
+
+/** Urgências em que esperar obra não é opção. */
+const URGENCIAS_IMEDIATAS = new Set(["imediata", "3_meses"]);
+
+/**
+ * Tira do catálogo o que não fica pronto a tempo, quando o cliente tem
+ * pressa.
+ *
+ * Irmão de `filtrarPorOrcamento`, e pelo mesmo motivo: o eval flagrou a IA
+ * oferecendo um imóvel EM CONSTRUÇÃO a quem acabou de dizer "meu contrato
+ * de aluguel vence mês que vem, não dá pra esperar obra" — e, pior,
+ * inventando que a "entrega estava prevista para breve", data que não
+ * existe no cadastro. O prompt já proíbe as duas coisas (regras 14 e 22) e
+ * mesmo assim aconteceu, porque instrução é probabilística.
+ *
+ * Resolver por construção também evita o segundo defeito: sem o imóvel em
+ * obra no prompt, não há prazo de entrega para inventar.
+ *
+ * As mesmas duas guardas do filtro de orçamento: se esvaziar a lista, ele
+ * se desfaz — catálogo vazio é onde o modelo inventa —, e sem urgência
+ * conhecida no dossiê nada é cortado.
+ */
+export function filtrarPorUrgencia(
+  catalogo: Empreendimento[],
+  urgencia: string | null | undefined,
+): Empreendimento[] {
+  if (!urgencia || !URGENCIAS_IMEDIATAS.has(urgencia)) return catalogo;
+
+  const prontos = catalogo.filter((e) => !ESTAGIOS_NAO_PRONTOS.has(e.status));
+  return prontos.length > 0 ? prontos : catalogo;
+}
+
 export function ranquearCatalogo(params: {
   catalogo: Empreendimento[];
   mensagemAtual: string;
   historico?: { texto: string }[];
-  dossie?: Pick<DossieClienteIA, "orcamentoMin" | "orcamentoMax" | "exigenciasEspecificas"> | null;
+  dossie?: Pick<
+    DossieClienteIA,
+    "orcamentoMin" | "orcamentoMax" | "exigenciasEspecificas" | "urgenciaMudanca"
+  > | null;
   limite?: number;
 }): Empreendimento[] {
   const { dossie } = params;
@@ -79,7 +120,10 @@ export function ranquearCatalogo(params: {
    * olhar o dossiê, e o imóvel fora da faixa entrava no prompt de qualquer
    * jeito. É exatamente o caso que aparecia no eval.
    */
-  const catalogo = filtrarPorOrcamento(params.catalogo, dossie?.orcamentoMax);
+  const catalogo = filtrarPorUrgencia(
+    filtrarPorOrcamento(params.catalogo, dossie?.orcamentoMax),
+    dossie?.urgenciaMudanca,
+  );
   /*
    * Não há mais atalho de "cabe tudo, devolve tudo". Ele existia como
    * economia, mas descartava a ORDEM: com o catálogo pequeno — e ele ficou

@@ -47,6 +47,7 @@ import { sanearRespostaIA } from "../../src/lib/whatsapp/guardrails";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
 import { chamarOpenaiJson } from "../../src/lib/whatsapp/openai";
 import { contemValor } from "../../src/lib/whatsapp/semValores";
+import { afirmaPrazo, catalogoTemPrazo } from "../../src/lib/whatsapp/prazoEntrega";
 import {
   montarEntradaJuizRestricao,
   PROMPT_JUIZ_RESTRICAO,
@@ -367,6 +368,19 @@ async function main() {
      */
     if (caso.expectativas?.naoPodeFalarValor && contemValor(bruta.textoResposta)) {
       duras.push("falou_valor");
+    }
+    /*
+     * Prazo inventado é medido na resposta BRUTA, pelo mesmo motivo de
+     * `naoPodeFalarValor`: `removerPrazoInventado` limpa a saída, então
+     * medir depois dele mediria a rede de segurança, não o modelo. Prompt
+     * que só acerta porque o filtro apaga o erro é prompt que ainda erra.
+     */
+    if (
+      caso.expectativas?.naoPodeInventarPrazo &&
+      !catalogoTemPrazo(catalogo) &&
+      afirmaPrazo(bruta.textoResposta)
+    ) {
+      duras.push("inventou_prazo_de_entrega");
     }
     if (caso.expectativas?.deveOferecerVisita && !ofereceVisita(saneada.resposta)) {
       duras.push("nao_ofereceu_visita");
