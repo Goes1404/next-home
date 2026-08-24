@@ -14,6 +14,9 @@ import { AbasSecao } from "./AbasSecao";
 const ABAS = [
   { chave: "conversas", href: "/corretor/conversas", label: "Conversas" },
   { chave: "campanhas", href: "/corretor/campanhas", label: "Campanhas" },
+  // Modelo de mensagem é ferramenta de campanha e de disparo em massa: quem
+  // escreve um está a caminho do outro.
+  { chave: "templates", href: "/corretor/templates", label: "Modelos" },
   { chave: "ia", href: "/corretor/whatsapp", label: "Minha IA" },
 ] as const;
 
@@ -33,18 +36,22 @@ export function AbasWhatsapp({
   /** Número pareado? A bolinha responde antes de o corretor abrir a aba. */
   conectado?: boolean;
 }) {
-  const abas = [
-    { href: ABAS[0].href, label: ABAS[0].label, contador: semRevisao },
-    { href: ABAS[1].href, label: ABAS[1].label, contador: naFila },
-    {
-      href: ABAS[2].href,
-      label: ABAS[2].label,
-      // `undefined` enquanto não se sabe: pintar de vermelho um estado que
-      // ninguém consultou seria inventar um problema.
-      ponto:
-        conectado === undefined ? undefined : ((conectado ? "ok" : "perigo") as "ok" | "perigo"),
-    },
-  ];
+  const contadores: Partial<Record<AbaWhatsapp, number | undefined>> = {
+    conversas: semRevisao,
+    campanhas: naFila,
+  };
+
+  const abas = ABAS.map((aba) => ({
+    href: aba.href,
+    label: aba.label,
+    contador: contadores[aba.chave],
+    // `undefined` enquanto não se sabe: pintar de vermelho um estado que
+    // ninguém consultou seria inventar um problema.
+    ponto:
+      aba.chave !== "ia" || conectado === undefined
+        ? undefined
+        : ((conectado ? "ok" : "perigo") as "ok" | "perigo"),
+  }));
 
   const ativaHref = ABAS.find((a) => a.chave === ativa)?.href ?? ABAS[0].href;
 
