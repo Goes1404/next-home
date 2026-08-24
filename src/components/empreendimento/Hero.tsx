@@ -53,6 +53,10 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
 
         <TituloEditorial
           as="h1"
+          // Palavra a palavra: o nome do imóvel tem duas ou três palavras e é
+          // o elemento gráfico dominante da página — cada uma subindo da
+          // máscara pesa mais que o bloco inteiro entrando de uma vez.
+          por="palavras"
           className="text-fluid-5xl max-w-[12ch] leading-[0.98] tracking-tight text-mist-50"
         >
           {e.nome}

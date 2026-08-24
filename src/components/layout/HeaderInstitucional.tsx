@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
+import { MenuMobile } from "@/components/layout/MenuMobile";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getTemaEscolhido } from "@/lib/tema";
 
@@ -56,23 +57,18 @@ export async function HeaderInstitucional() {
             <SeletorTema atual={tema} />
           </div>
 
-          {/* No celular, a home não tinha NENHUM link de navegação além da
-              logo — o comprador (a persona principal) ficava sem porta para o
-              catálogo no header. O atalho é sólido e o CTA de vendedor vira
-              secundário: prioridade invertida de propósito. */}
-          <Link
-            href="/empreendimentos"
-            className="shrink-0 rounded-full bg-brand-500 px-4 py-2 text-xs font-medium whitespace-nowrap text-white transition-colors hover:bg-brand-400 sm:hidden"
-          >
-            Imóveis
-          </Link>
-
+          {/* No celular a navegação inteira vive no MenuMobile: antes o
+              header tinha só logo + um CTA, e nenhum caminho para catálogo,
+              corretores, sobre ou contato. O botão de anunciar continua
+              visível no desktop, onde há espaço para ele ao lado dos links. */}
           <Link
             href="/anunciar-imovel"
-            className="shrink-0 rounded-full border border-linha/30 px-3 py-2 text-xs font-medium whitespace-nowrap text-corpo transition-colors hover:text-titulo sm:border-0 sm:bg-brand-500 sm:px-4 sm:text-sm sm:text-white sm:hover:bg-brand-400"
+            className="hidden shrink-0 rounded-full bg-brand-500 px-4 py-2 text-sm font-medium whitespace-nowrap text-white transition-colors hover:bg-brand-400 sm:inline-block"
           >
-            Anunciar <span className="hidden sm:inline">meu </span>imóvel
+            Anunciar meu imóvel
           </Link>
+
+          <MenuMobile links={LINKS} />
         </div>
       </GlassSurface>
     </header>

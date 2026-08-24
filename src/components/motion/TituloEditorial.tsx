@@ -24,11 +24,19 @@ export function TituloEditorial({
   className,
   as: TagName = "h2",
   delay = 0,
+  por = "linhas",
 }: {
   children: React.ReactNode;
   className?: string;
   as?: Tag;
   delay?: number;
+  /**
+   * Unidade do reveal. `"linhas"` é o padrão editorial da casa; `"palavras"`
+   * faz cada palavra subir da máscara uma após a outra — mais teatral, para
+   * o título que abre uma página (referência: "Masked Slide Reveal", 21st.dev
+   * semana 15). Em texto longo, palavra a palavra vira desfile: use linhas.
+   */
+  por?: "linhas" | "palavras";
 }) {
   const ref = useRef<HTMLElement>(null);
 
@@ -50,21 +58,25 @@ export function TituloEditorial({
       document.fonts.ready.then(() => {
         if (cancelado) return;
 
+        const porPalavra = por === "palavras";
+
         split = new SplitText(el, {
-          type: "lines",
+          // A máscara acompanha a unidade: mascarar linhas e animar palavras
+          // deixaria a palavra saindo por cima da linha vizinha.
+          type: porPalavra ? "words,lines" : "lines",
           linesClass: "linha-editorial",
-          // Máscara por linha: o pai de cada linha corta o overflow, e a
-          // linha sobe de trás do corte — sem elemento extra escrito à mão.
-          mask: "lines",
+          // O pai de cada pedaço corta o overflow, e o pedaço sobe de trás do
+          // corte — sem elemento extra escrito à mão.
+          mask: porPalavra ? "words" : "lines",
         });
 
         el.classList.remove("gsap-pending");
 
-        gsap.from(split.lines, {
+        gsap.from(porPalavra ? split.words : split.lines, {
           yPercent: 110,
-          duration: 1.1,
+          duration: porPalavra ? 0.9 : 1.1,
           delay,
-          stagger: 0.09,
+          stagger: porPalavra ? 0.055 : 0.09,
           ease: "power4.out",
           scrollTrigger: { trigger: el, start: "top 88%", once: true },
         });
@@ -76,7 +88,7 @@ export function TituloEditorial({
       split?.revert();
       contexto.revert();
     };
-  }, [delay]);
+  }, [delay, por]);
 
   return (
     // Junção crua de propósito: o twMerge do `cn` não conhece os utilitários
