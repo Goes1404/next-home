@@ -1107,3 +1107,130 @@ data de visita e registrar um envio. Faltava o resto.
   `revoke update`, então coluna nova herda o grant da tabela. Conferir
   `information_schema.column_privileges` antes de escrever `grant` por
   coluna — o grant a mais sugere um regime que a tabela não tem.
+
+## Front público — a reforma editorial (0041-0053)
+
+Página do imóvel, home, galeria e mapa foram refeitos numa sequência de
+commits em agosto/2026. O que ficou registrado aqui é o que custou tempo, não
+o que foi fácil.
+
+### Armadilhas de bundling e runtime
+
+- **Constante compartilhada não pode viajar dentro de módulo com dependência
+  nativa.** `OrigemPdf.tsx` é `"use client"` e importava `TETO_PDF_BYTES` — um
+  NÚMERO — de `pdfImagens.ts`, que importa `sharp`. Isso arrasta um binário do
+  Node para o grafo do cliente. Em produção a rota `/corretor/imoveis/[slug]`
+  caía com o erro genérico de Server Components, e o digest apontava para
+  `Failed to load external module sharp`. Os tetos foram para `limitesPdf.ts`,
+  sem dependência nativa. Ao criar constante que os dois lados usam, ela mora
+  sozinha.
+- **Os binários de plataforma do `sharp` precisam ser `optionalDependencies`
+  DECLARADAS.** O erro acima tinha uma segunda causa, independente do grafo:
+  `ERR_DLOPEN_FAILED: libvips-cpp.so.8.18.3`. O lock deste projeto é gerado no
+  Windows, onde só o par `win32-x64` se instala; `@img/sharp-linux-x64` e
+  `@img/sharp-libvips-linux-x64` ficam como opcionais do próprio sharp e a
+  Vercel não os resolveu. Declará-los no `package.json` resolve e não muda
+  nada no Windows (opcional de outra plataforma é ignorada no install local).
+- **Lição de método, não de código:** a primeira correção (tirar o sharp do
+  grafo do cliente) foi anunciada como solução antes de verificar que o
+  caminho `client -> server action -> pdfImagens -> sharp` continuava lá.
+  Higiene real, causa errada. Antes de dizer "resolvido", procurar TODOS os
+  caminhos até o módulo, não só o primeiro.
+- **`sharp` já está na lista de auto-externalizados do Next** (ver
+  `node_modules/next/dist/lib/server-external-packages.json`), então
+  acrescentá-lo a `serverExternalPackages` não conserta nada.
+
+### `backdrop-filter` cria containing block — a armadilha de três casos
+
+Qualquer `position: fixed` DENTRO de um `GlassSurface` fica preso ao vidro em
+vez da viewport. Já mordeu três vezes: o Lightbox (documentado no arquivo
+dele), a prévia do Lazer, e o menu mobile — que abria espremido dentro da
+barra do header. A saída é sempre a mesma: `createPortal` para
+`document.body`. O `transform` residual que o GSAP deixa no `Reveal` causa
+exatamente o mesmo efeito.
+
+### GSAP
+
+- **`twMerge` (o `cn`) descarta os utilitários `text-fluid-*`.** Ele não os
+  conhece e, ao ver um `text-<cor>` junto, considera conflito e joga o tamanho
+  fora — o título do hero saía com 17px em vez de 120px. Componentes que
+  recebem `className` com escala fluida juntam as classes cru
+  (`[a, b].filter(Boolean).join(" ")`), não com `cn`.
+- **`Flip` entre elementos DIFERENTES precisa de encaixe explícito.**
+  `Flip.getState(miniatura)` + `Flip.from({targets: palco})` não funciona: o
+  Flip só casa o mesmo elemento ou elementos com o mesmo `data-flip-id`. A
+  sequência que funciona é `Flip.fit(palco, origem)` -> `getState(palco)` ->
+  `clearProps` -> `Flip.from(estado)`.
+- **Dois donos da mesma opacidade fazem o elemento sumir.** Um item conduzido
+  por uma timeline de abertura não pode estar dentro de um `Reveal`. E quem
+  usa o contrato `.gsap-pending` precisa REMOVER a classe ao assumir — o
+  `Reveal` faz isso, e quem esquecer deixa o elemento dependendo de estilo
+  inline.
+- **A regra `.no-js .gsap-pending` existia sem ninguém aplicar a classe.** Sem
+  JavaScript, todo conteúdo animado ficava `opacity: 0` para sempre. O
+  contrato correto é o clássico: o `<html>` nasce `no-js` e o primeiro script
+  inline remove.
+
+### Globo do mapa da home (cobe)
+
+- **O cobe injeta DOIS divs sem classe** entre o container e o canvas, para as
+  âncoras dos marcadores. Eles quebram medida e centralização: medir
+  `canvas.parentElement` dá o número errado e `justify-center` não centraliza
+  nada. Medir a moldura por ref e posicionar o canvas em absoluto.
+- **Globo claro sobre página clara SOME.** A primeira tentativa clareava a
+  esfera no tema claro para "combinar" — virou um disco lavado sem contorno. O
+  que dá destaque é contraste: a esfera é escura nos dois temas.
+- **A fórmula de phi precisou de meio giro a oeste** (`- PI/2`), calibrado em
+  tela: com a conversão direta o Brasil nascia de perfil na borda direita, e
+  girando para o outro lado aparecia a Ásia.
+- **Keyframe de rotação não pode repetir o transform de posicionamento.** O
+  `@keyframes girar` trazia `translate(-50%,-50%) rotateX(...)` e sobrescrevia
+  o posicionamento, jogando os anéis de órbita para fora do globo. Hoje o pai
+  posiciona e inclina; o filho só gira.
+- **Camadas decorativas em volta de um elemento quadrado se ancoram na
+  ALTURA.** Ancoradas na largura, com a moldura o dobro de larga que alta, o
+  halo saía com 867px contra 436px do globo.
+- O contexto WebGL entra no mesmo orçamento dos painéis de vidro
+  (`orcamentoWebgl`): sem vaga o globo não monta e o mapa entra direto.
+
+### Peso no celular
+
+- **O vídeo de fundo baixava INTEIRO no mobile**: 14,8 MB de webm com
+  `preload="auto"`, 96% do peso da home, antes de qualquer interação. Hoje o
+  `HeroVideoBackground` só monta a partir de 768px; no celular o fundo é a
+  vinheta (`intro.webm`, 0,7 MB) em loop travado no último quadro.
+- **`dynamic()` com `ssr: false` NÃO adia por visibilidade** — o import
+  dispara na montagem. O Leaflet (146 KB + ~15 tiles de CDN externo)
+  inicializava com `scrollY = 0`, a 5,5 telas da dobra. Hoje há
+  IntersectionObserver, e na home o mapa nem existe até o visitante tocar o
+  globo.
+- **`touch-action: none` do Leaflet engole o gesto de rolagem** quando o mapa
+  é uma faixa no meio de uma página. No modo compacto ele nasce com
+  `dragging`/`touchZoom` desligados e um botão "Tocar para explorar" religa.
+
+### Conteúdo
+
+- **Filtro não pode oferecer opção sem estoque.** O select de Tipo vinha do
+  enum e oferecia "Casa" e "Terreno" com zero cadastros — a primeira interação
+  do site levava a uma listagem vazia. As opções passam a derivar do catálogo
+  publicado (`getRegioesDisponiveis().tipos`).
+- **Alt de foto era o nome do empreendimento repetido**: 257 das 265 fotos de
+  produção. Isso deixava o leitor de tela anunciar o mesmo nome duas vezes por
+  card e impedia qualquer casamento entre foto e item de lazer. As 265 foram
+  descritas por visão em 24/08/2026 (`scripts/altsNovos.json` é o espelho do
+  que foi aplicado; `scripts/altsBackup.json` é o caminho de volta).
+- **A prévia de lazer casa item e foto pelo ALT** (`lazerFotos.ts`), porque não
+  existe vínculo no banco: `lazer_itens` tem só `nome` e `icone`, e os 69 itens
+  de produção estão com `icone` nulo. O casamento exige o substantivo
+  principal do item, e substantivo genérico ("espaço", "área") exige também a
+  palavra que especifica — sem essa trava, "Espaço Gourmet" abria a foto do
+  espaço PET.
+
+### 21st.dev
+
+O código-fonte dos componentes da galeria pública fica **atrás de login**
+("Component source is locked"). As descrições, porém, são detalhadas o
+bastante para servir de especificação. Ao trazer algo de lá, conferir a
+dependência: vários usam Framer Motion (este projeto usa GSAP, e somar outro
+runtime de animação pesa no celular) e alguns são cenas de Remotion, que é
+framework de VÍDEO e não serve para página.
