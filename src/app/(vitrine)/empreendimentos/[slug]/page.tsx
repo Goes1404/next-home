@@ -166,7 +166,7 @@ export default async function EmpreendimentoPage({
           <CenaShowcase empreendimento={e} />
           <BookDigital empreendimento={e} />
           <Tipologias tipologias={e.tipologias} plantasGerais={e.plantas} />
-          <Lazer itens={e.lazer} />
+          <Lazer itens={e.lazer} fotos={e.galeria} />
           <Galeria fotos={e.galeria} />
           <Video videos={e.videos} />
           <Tour360 tours={e.tours360} />
