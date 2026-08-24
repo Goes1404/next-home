@@ -1,8 +1,8 @@
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
+import { FundoVideoMobile } from "@/components/motion/FundoVideoMobile";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
-import { SkylineParticulas } from "@/components/motion/SkylineParticulas";
 import { Preloader } from "@/components/motion/Preloader";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { HERO_VIDEO_URL, HERO_VIDEO_WEBM_URL } from "@/lib/site";
@@ -54,15 +54,20 @@ export default async function InstitucionalLayout({
             />
           )
         )}
-        {/* Par do vídeo para o CELULAR (o vídeo só monta no desktop): skyline
-            de partículas que se transforma com o scroll. Decide sozinho se
-            monta — mesmo padrão de gate do HeroVideoBackground. */}
-        <SkylineParticulas />
+        {/* Par do vídeo para o CELULAR (o hero-scroll só monta no desktop):
+            o vídeo da vinheta (0,7 MB) em loop mudo. Decide sozinho se monta
+            — mesmo padrão de gate do HeroVideoBackground. */}
+        <FundoVideoMobile />
         {/* O degrau do MEIO é o que segura o título do hero, que é centrado —
             e o vídeo por baixo muda de quadro com o scroll, então o contraste
             não pode depender da sorte do frame. Os 10% antigos falhavam
             exatamente ali. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-fundo/45 via-fundo/40 to-fundo/95" />
+        {/* Véu mais forte no CELULAR: lá o fundo é o vídeo da vinheta, cuja
+            logo é grande e clara e passa exatamente atrás do h1 — com os 40%
+            do desktop o título perdia legibilidade. No desktop o fundo é o
+            hero-scroll (imagem de cidade, sem tipografia embutida) e os 40%
+            seguem bastando. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-fundo/70 via-fundo/65 to-fundo/95 sm:from-fundo/45 sm:via-fundo/40" />
       </div>
 
       {children}
