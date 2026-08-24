@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
+import { HeaderCondensado } from "@/components/motion/HeaderCondensado";
 import { MenuMobile } from "@/components/layout/MenuMobile";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getTemaEscolhido } from "@/lib/tema";
@@ -27,7 +28,7 @@ export async function HeaderInstitucional() {
   const tema = await getTemaEscolhido();
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 flex justify-center px-4 pt-4">
+    <HeaderCondensado className="fixed inset-x-0 top-0 z-40 flex justify-center px-4 pt-4">
       <GlassSurface
         as="nav"
         preset="nav"
@@ -71,6 +72,6 @@ export async function HeaderInstitucional() {
           <MenuMobile links={LINKS} />
         </div>
       </GlassSurface>
-    </header>
+    </HeaderCondensado>
   );
 }

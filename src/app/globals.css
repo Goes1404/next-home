@@ -728,6 +728,26 @@
     opacity: 1;
   }
 
+  /* Header condensado: encolhe o respiro e fecha o vidro ao sair do topo.
+     Só padding e sombra — nada de transform, que criaria containing block e
+     prenderia o painel `fixed` do MenuMobile dentro da barra. */
+  header[data-condensado] {
+    transition:
+      padding-top 400ms cubic-bezier(0.22, 1, 0.36, 1),
+      filter 400ms ease;
+  }
+
+  header[data-condensado="sim"] {
+    padding-top: 0.35rem;
+    filter: drop-shadow(0 8px 24px rgb(0 0 0 / 0.18));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    header[data-condensado] {
+      transition: none;
+    }
+  }
+
   .edge-fade-b {
     mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
   }
