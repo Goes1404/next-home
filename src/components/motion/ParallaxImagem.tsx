@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useRef } from "react";
+import { useCamada } from "./Camada";
 import { cn } from "@/lib/utils";
 
 /**
@@ -11,7 +10,11 @@ import { cn } from "@/lib/utils";
  *
  * A imagem é levemente ampliada (`scale`) para o deslocamento nunca expor
  * borda vazia. `intensidade` é o quanto ela percorre, em % da própria
- * altura, do início ao fim da passagem pela viewport.
+ * altura, do centro até a ponta da passagem pela viewport.
+ *
+ * Desde 08/2026 a API é a mesma mas o motor mudou: em vez de um
+ * `ScrollTrigger` próprio, delega ao controlador central — um laço só para
+ * as ~40 camadas do site (ver `controladorCamadas.ts`).
  */
 export function ParallaxImagem({
   children,
@@ -22,43 +25,15 @@ export function ParallaxImagem({
   className?: string;
   intensidade?: number;
 }) {
-  const moldura = useRef<HTMLDivElement>(null);
   const alvo = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const quadro = moldura.current;
-    const filho = alvo.current;
-    if (!quadro || !filho) return;
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    const contexto = gsap.context(() => {
-      gsap.fromTo(
-        filho,
-        { yPercent: -intensidade },
-        {
-          yPercent: intensidade,
-          ease: "none",
-          scrollTrigger: {
-            trigger: quadro,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: true,
-          },
-        },
-      );
-    }, quadro);
-
-    return () => contexto.revert();
-  }, [intensidade]);
+  useCamada(alvo, { velocidade: intensidade / 100 });
 
   return (
-    <div ref={moldura} className={cn("relative overflow-hidden", className)}>
+    <div className={cn("relative overflow-hidden", className)}>
       <div
         ref={alvo}
-        className="absolute inset-0"
+        className="absolute inset-0 will-change-transform"
         style={{ scale: `${1 + (intensidade * 2) / 100}` }}
       >
         {children}
