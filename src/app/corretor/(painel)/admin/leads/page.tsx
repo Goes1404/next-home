@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SeletorDono } from "./SeletorDono";
 import { TogglePausa } from "./TogglePausa";
 import { EtiquetaEtapa, dataHora } from "@/app/corretor/(painel)/_componentes/CartaoLead";
+import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { getEquipeAtiva, getPaginaDeLeads } from "@/lib/corretorSessao";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getAgregadoDaEquipe } from "@/lib/admin/agregados";
@@ -43,12 +44,14 @@ export default async function EquipePage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-fluid-2xl text-titulo">Equipe</h1>
+        <h1 className="text-fluid-2xl text-titulo font-bold">Administração</h1>
         <p className="text-fluid-sm text-apoio mt-2">
           {agregado.total} contato{agregado.total === 1 ? "" : "s"} no total. A distribuição
           automática entrega o lead a quem recebeu menos nos últimos 30 dias.
         </p>
       </div>
+
+      <AbasAdmin ativa="leads" />
 
       <section>
         <h2 className="text-fluid-sm text-titulo font-medium">Onde está cada contato</h2>

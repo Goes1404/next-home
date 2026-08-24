@@ -10,7 +10,7 @@ import {
   diasParado,
   linkWhatsappLead,
 } from "@/app/corretor/(painel)/_componentes/CartaoLead";
-import { BORDA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
+import { BORDA_ETAPA, REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { ModalDossieLead } from "./ModalDossieLead";
 import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
 
@@ -188,8 +188,15 @@ function Cartao({
         onArrastar();
       }}
       onDragEnd={onSoltar}
-      className="rounded-xl border border-linha bg-superficie p-3 relative group"
+      className="rounded-xl border border-linha bg-superficie p-3 pl-4 relative group overflow-hidden"
     >
+      {/* A régua da etapa, igual à da lista: mesmo gesto, mesma escala. No
+          quadro ela reforça a coluna; ao arrastar entre colunas, é ela que
+          confirma que o cartão mudou de etapa. */}
+      <span
+        aria-hidden
+        className={`absolute inset-y-0 left-0 w-1 ${REGUA_ETAPA[lead.etapa]}`}
+      />
       <div className="flex items-center justify-between gap-1 flex-wrap">
         <Link
           href={`/corretor/leads/${lead.id}`}

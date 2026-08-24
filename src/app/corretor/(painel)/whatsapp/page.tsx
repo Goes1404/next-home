@@ -3,6 +3,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import type { ModoBotWhatsapp, StatusConexaoWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { WhatsappManager } from "./WhatsappManager";
+import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
 
 export const metadata: Metadata = {
   title: "Meu Assistente WhatsApp IA | Next Home",
@@ -35,26 +36,41 @@ export default async function WhatsappPainelPage() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-fluid-2xl text-titulo font-bold">Assistente WhatsApp & IA</h1>
+        <h1 className="text-fluid-2xl text-titulo font-bold">WhatsApp</h1>
         <p className="text-fluid-sm mt-1 text-apoio">
-          Conecte seu WhatsApp pessoal de trabalho para que sua IA atenda, envie fotos/plantas e qualifique seus leads automaticamente.
+          Conecte seu número para a IA atender, mandar fotos e plantas e qualificar seus leads
+          enquanto você não está.
         </p>
       </div>
 
+      <AbasWhatsapp
+        ativa="ia"
+        conectado={instancia?.status_conexao === "conectado"}
+      />
+
+      {/*
+        O funil do atendimento, em cores que dizem o estágio: cada número
+        herda a cor da etapa correspondente do CRM, então "visitas agendadas"
+        é azul aqui e no quadro, e o corretor lê a mesma escala nas duas
+        telas.
+      */}
       {funil && (funil.conversas ?? 0) > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           {(
             [
-              ["Conversas", funil.conversas],
-              ["Com ficha no funil", funil.conversas_com_lead],
-              ["Leads quentes", funil.leads_quentes],
-              ["Visitas agendadas", funil.visitas_agendadas],
-              ["Em negociação", funil.em_negociacao],
+              ["Conversas", funil.conversas, "border-linha"],
+              ["Com ficha no funil", funil.conversas_com_lead, "border-acento-linha"],
+              ["Leads quentes", funil.leads_quentes, "border-etapa-ciano-linha"],
+              ["Visitas agendadas", funil.visitas_agendadas, "border-etapa-azul-linha"],
+              ["Em negociação", funil.em_negociacao, "border-etapa-laranja-linha"],
             ] as const
-          ).map(([rotulo, valor]) => (
-            <div key={rotulo} className="rounded-2xl border border-linha bg-superficie p-4">
+          ).map(([rotulo, valor, borda]) => (
+            <div
+              key={rotulo}
+              className={`bg-superficie rounded-2xl border border-l-3 p-4 ${borda}`}
+            >
               <p className="text-fluid-xs text-tenue">{rotulo}</p>
-              <p className="text-fluid-xl font-bold text-titulo">{valor ?? 0}</p>
+              <p className="text-fluid-xl text-titulo font-bold tabular-nums">{valor ?? 0}</p>
             </div>
           ))}
         </div>

@@ -223,9 +223,22 @@
   --color-info-linha: rgb(125 211 252 / 0.34);
 
   /*
-   * Cores de etapa do funil. Verde é o acento; faltavam o azul do meio do
-   * funil e a areia de quem já está perto de assinar.
+   * Cores de etapa do funil — UMA POR ETAPA, e é isso que importa.
+   *
+   * Havia três cores para sete etapas: "proposta enviada" e "em negociação"
+   * eram a mesma areia, "novo" e "primeiro contato" o mesmo verde. Duas
+   * etapas com a mesma cor não são identificáveis de relance, que é a única
+   * razão de existir cor de status.
+   *
+   * A escala segue a temperatura da negociação e vai esquentando: verde na
+   * chegada, ciano quando a conversa começa, azul quando há compromisso
+   * marcado, âmbar quando há proposta na mesa, laranja no aperto final,
+   * verde sólido no fechamento e cinza no fim da linha.
    */
+  --color-etapa-ciano: #67d8d1;
+  --color-etapa-ciano-lavado: rgb(103 216 209 / 0.16);
+  --color-etapa-ciano-linha: rgb(103 216 209 / 0.34);
+
   --color-etapa-azul: #8fb9e3;
   --color-etapa-azul-lavado: rgb(35 116 192 / 0.25);
   --color-etapa-azul-linha: rgb(86 149 211 / 0.3);
@@ -233,6 +246,10 @@
   --color-etapa-areia: #e8d5b0;
   --color-etapa-areia-lavado: rgb(212 180 131 / 0.22);
   --color-etapa-areia-linha: rgb(212 180 131 / 0.35);
+
+  --color-etapa-laranja: #f0a072;
+  --color-etapa-laranja-lavado: rgb(240 160 114 / 0.17);
+  --color-etapa-laranja-linha: rgb(240 160 114 / 0.36);
 
   /* Tipografia */
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
@@ -406,6 +423,10 @@
     --color-info-lavado: rgb(11 99 148 / 0.09);
     --color-info-linha: rgb(11 99 148 / 0.26);
 
+    --color-etapa-ciano: #0e6b66;
+    --color-etapa-ciano-lavado: rgb(14 107 102 / 0.1);
+    --color-etapa-ciano-linha: rgb(14 107 102 / 0.26);
+
     --color-etapa-azul: #034b8e;
     --color-etapa-azul-lavado: rgb(3 75 142 / 0.1);
     --color-etapa-azul-linha: rgb(3 75 142 / 0.26);
@@ -413,6 +434,10 @@
     --color-etapa-areia: #8a6420;
     --color-etapa-areia-lavado: rgb(138 100 32 / 0.11);
     --color-etapa-areia-linha: rgb(138 100 32 / 0.28);
+
+    --color-etapa-laranja: #a84510;
+    --color-etapa-laranja-lavado: rgb(168 69 16 / 0.1);
+    --color-etapa-laranja-linha: rgb(168 69 16 / 0.27);
 
     --shadow-painel: 0 1px 2px rgb(4 43 37 / 0.06), 0 1px 1px rgb(4 43 37 / 0.04);
     --shadow-painel-alto: 0 20px 40px -24px rgb(4 43 37 / 0.35);

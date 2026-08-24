@@ -40,37 +40,20 @@ export const GRUPOS_NAV: GrupoNav[] = [
         icone: IconePessoas,
         tambem: ["/corretor/funil", "/corretor/visitas", "/corretor/importar"],
       },
-      { href: "/corretor/conversas", label: "Conversas", icone: IconeBaloes },
-    ],
-  },
-  {
-    titulo: "Divulgação",
-    itens: [
       {
-        href: "/corretor/campanhas",
-        label: "Campanhas",
-        icone: IconeMegafone,
-        tambem: ["/corretor/templates"],
+        // Conversas, Campanhas e a configuração da IA falam do mesmo número,
+        // do mesmo cliente e da mesma IA — viraram abas de um destino só.
+        href: "/corretor/conversas",
+        label: "WhatsApp",
+        icone: IconeConversa,
+        tambem: ["/corretor/campanhas", "/corretor/whatsapp", "/corretor/templates"],
       },
-      { href: "/corretor/whatsapp", label: "IA & WhatsApp", icone: IconeConversa },
       {
         href: "/corretor/imoveis",
         label: "Imóveis",
         icone: IconePredio,
         tambem: ["/corretor/links"],
       },
-    ],
-  },
-  {
-    // Reajuste em massa e gestão de acessos são atos administrativos: ficam
-    // juntos, longe do dia a dia de quem só atende lead.
-    titulo: "Administração",
-    itens: [
-      { href: "/corretor/admin", label: "Visão geral", icone: IconeEquipe, gestor: true },
-      { href: "/corretor/admin/contas", label: "Contas", icone: IconePessoas, gestor: true },
-      { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeFunil, gestor: true },
-      { href: "/corretor/admin/whatsapp", label: "WhatsApp & IA", icone: IconeConversa, gestor: true },
-      { href: "/corretor/precos", label: "Preços", icone: IconeEtiqueta, gestor: true },
     ],
   },
   {
@@ -81,6 +64,16 @@ export const GRUPOS_NAV: GrupoNav[] = [
         label: "Conta",
         icone: IconePessoa,
         tambem: ["/corretor/senha"],
+      },
+      {
+        // As cinco telas de administração viraram abas: o gestor também
+        // atende lead, e cinco itens de admin no menu invertem essa
+        // proporção.
+        href: "/corretor/admin",
+        label: "Administração",
+        icone: IconeEquipe,
+        tambem: ["/corretor/precos"],
+        gestor: true,
       },
     ],
   },
@@ -95,7 +88,12 @@ export const ATALHOS_MOBILE: ItemNav[] = [
     icone: IconePessoas,
     tambem: ["/corretor/funil", "/corretor/visitas", "/corretor/importar"],
   },
-  { href: "/corretor/conversas", label: "Conversas", icone: IconeBaloes },
+  {
+    href: "/corretor/conversas",
+    label: "WhatsApp",
+    icone: IconeConversa,
+    tambem: ["/corretor/campanhas", "/corretor/whatsapp", "/corretor/templates"],
+  },
 ];
 
 export function gruposVisiveis(ehGestor: boolean): GrupoNav[] {

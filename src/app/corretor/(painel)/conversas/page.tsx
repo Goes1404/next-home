@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ConversasClient, type ConversaResumo } from "./ConversasClient";
 import { RevisaoRespostas, type ItemRevisao } from "./RevisaoRespostas";
+import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { ROTULO_MODO } from "@/lib/whatsapp/modoBot";
 import { createClient } from "@/lib/supabase/server";
@@ -122,12 +123,20 @@ export default async function ConversasPage() {
 
   return (
     <div>
-      <h1 className="font-display text-titulo text-fluid-2xl">Conversas do WhatsApp</h1>
+      <h1 className="font-display text-titulo text-fluid-2xl">WhatsApp</h1>
       <p className="text-fluid-sm text-apoio mt-2 max-w-2xl">
         Quem está falando com o seu número e se a IA está atendendo. Sempre que você responde pelo
         celular, ela se cala por 24 horas naquela conversa — aqui você devolve a palavra a ela
         antes disso.
       </p>
+
+      <div className="mt-5">
+        <AbasWhatsapp
+          ativa="conversas"
+          semRevisao={itensRevisao.length}
+          conectado={instancia?.status_conexao === "conectado"}
+        />
+      </div>
 
       {modo && (
         <p className="text-fluid-sm text-apoio mt-4">

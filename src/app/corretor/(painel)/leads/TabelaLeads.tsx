@@ -11,6 +11,7 @@ import {
   linkWhatsappLead,
 } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import { FolhaAcoesLead } from "@/app/corretor/(painel)/_componentes/FolhaAcoesLead";
+import { REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import type { Lead } from "@/lib/types";
 import { ArrowRight, ChevronDown, Mail, Phone } from "lucide-react";
 
@@ -209,8 +210,15 @@ export function TabelaLeads({
           return (
             <li key={lead.id}>
               <div
-                className={`flex items-center gap-2.5 px-3 py-3 ${aberto ? "bg-elevado/60" : ""}`}
+                className={`flex items-center gap-2.5 py-3 pr-3 pl-0 ${aberto ? "bg-elevado/60" : ""}`}
               >
+                {/* A régua de cor: a etapa se lê antes de qualquer texto, e
+                    rolando a lista dá para ver a distribuição do funil sem
+                    ler uma palavra. Mesma escala do quadro e do termômetro. */}
+                <span
+                  aria-hidden
+                  className={`h-11 w-1 shrink-0 rounded-r-full ${REGUA_ETAPA[lead.etapa]}`}
+                />
                 <input
                   type="checkbox"
                   checked={selecionados.has(lead.id)}
@@ -284,6 +292,7 @@ export function TabelaLeads({
       <table className="hidden w-full border-collapse md:table">
         <thead>
           <tr className="border-b border-linha-forte bg-elevado/50 text-left">
+            <th className="w-1 p-0" aria-hidden />
             <th className="w-10 px-3 py-3" aria-label="Seleção" />
             <th className="text-fluid-xs px-3 py-3 font-semibold tracking-wide text-apoio uppercase">
               Lead
@@ -343,8 +352,9 @@ function FragmentoLinha({
   aoAlternarSelecao: () => void;
   aoAlternarAberto: () => void;
 }) {
-  // gestor soma a coluna "Corretor"; o colSpan da linha expandida acompanha.
-  const totalColunas = gestor ? 7 : 6;
+  // A régua de cor soma uma coluna; o gestor soma a de "Corretor". O colSpan
+  // da linha expandida acompanha as duas.
+  const totalColunas = gestor ? 8 : 7;
 
   return (
     <>
@@ -353,6 +363,9 @@ function FragmentoLinha({
         aria-expanded={aberto}
         className={`cursor-pointer transition-colors ${aberto ? "bg-elevado/60" : "hover:bg-elevado/40"}`}
       >
+        {/* A mesma régua da lista do celular, agora como borda esquerda da
+            linha: uma escala de cor só para as duas apresentações. */}
+        <td className={`w-1 p-0 ${REGUA_ETAPA[lead.etapa]}`} aria-hidden />
         <td className="px-3 py-2.5">
           <input
             type="checkbox"

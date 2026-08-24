@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 
@@ -79,6 +80,15 @@ export default async function AdminWhatsappPage() {
 
   return (
     <div className="space-y-6">
+      <div>
+        <h1 className="text-fluid-2xl text-titulo font-bold">Administração</h1>
+        <p className="text-fluid-sm text-apoio mt-1">
+          Os números da equipe e como a IA está atendendo em cada um deles.
+        </p>
+      </div>
+
+      <AbasAdmin ativa="whatsapp" />
+
       <section className="border-linha bg-superficie rounded-2xl border p-5">
         <h2 className="text-fluid-base font-bold text-titulo">Números da equipe</h2>
         <p className="text-fluid-xs text-apoio mt-1">

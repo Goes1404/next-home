@@ -12,7 +12,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
-import { MapaEmpreendimentos } from "@/components/mapa/MapaEmpreendimentos";
+import { GloboOuMapa } from "@/components/mapa/GloboOuMapa";
 import { enderecoLinha, site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -204,13 +204,17 @@ export default async function HomeInstitucional() {
               <TituloEditorial className="text-fluid-2xl text-titulo">
                 Onde cada imóvel está
               </TituloEditorial>
+              <Reveal from="nenhuma" delay={0.2}>
+                <p className="text-fluid-base mt-3 max-w-xl text-apoio">
+                  Cada ponto é um imóvel do catálogo. Toque no globo para abrir
+                  o mapa da região.
+                </p>
+              </Reveal>
 
               <Reveal delay={0.1} from="baixo" className="mt-8 w-full">
-                <MapaEmpreendimentos
+                <GloboOuMapa
                   empreendimentos={todos}
                   alturaClasse="h-[62vh] min-h-[440px] max-h-[640px]"
-                  compacto
-                  adiarAteVisivel
                 />
               </Reveal>
 
