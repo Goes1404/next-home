@@ -102,13 +102,20 @@ function aoTique() {
       entrada.tamanho,
     );
 
-    // O zoom acompanha a saída da tela: 1 no centro, `escala` nas pontas.
-    const escalaMax = entrada.opcoes.escala ?? 1;
-    const escala = fator === 0 ? 1 : 1 + (escalaMax - 1) * Math.abs(progresso);
+    const valores: Record<string, number> = horizontal ? { x: px } : { y: px };
 
-    entrada.aplicar(
-      horizontal ? { x: px, scale: escala } : { y: px, scale: escala },
-    );
+    // `scale` SÓ é escrito quando alguém pediu zoom. Escrever 1 por padrão
+    // apagaria a folga que as molduras usam contra borda vazia — a classe
+    // `scale-110` dos cards e o `style={{scale}}` do ParallaxImagem viram
+    // estilo inline sobrescrito a 60fps, e o deslocamento passa a mostrar o
+    // fundo da moldura.
+    if (entrada.opcoes.escala !== undefined) {
+      // O zoom acompanha a saída da tela: 1 no centro, `escala` nas pontas.
+      valores.scale =
+        fator === 0 ? 1 : 1 + (entrada.opcoes.escala - 1) * Math.abs(progresso);
+    }
+
+    entrada.aplicar(valores);
 
     entrada.opcoes.aoAtualizar?.(progresso);
   }
@@ -150,8 +157,15 @@ function aoMudarAmbiente() {
   ambiente = lerAmbiente();
   if (fatorDoAmbiente(ambiente) === 0) {
     // Devolve todo mundo ao lugar: com movimento reduzido o site é o mesmo
-    // site, só sem deslocamento.
-    for (const entrada of entradas) entrada.aplicar({ x: 0, y: 0, scale: 1 });
+    // site, só sem deslocamento. `scale` só volta a 1 em quem pediu zoom —
+    // nos outros, a folga contra borda vazia é da classe e não é nossa.
+    for (const entrada of entradas) {
+      entrada.aplicar(
+        entrada.opcoes.escala === undefined
+          ? { x: 0, y: 0 }
+          : { x: 0, y: 0, scale: 1 },
+      );
+    }
   }
 }
 
