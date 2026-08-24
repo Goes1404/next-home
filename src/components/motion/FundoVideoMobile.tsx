@@ -57,6 +57,20 @@ export function FundoVideoMobile() {
   const ref = useRef<HTMLVideoElement>(null);
   const [pronto, setPronto] = useState(false);
 
+  /**
+   * Trava no último quadro em vez de repetir. `loop` sozinho reiniciaria a
+   * vinheta a cada ciclo — a logo fecharia e sumiria sem parar; e só tirar
+   * `loop` deixaria o vídeo "acabado" (alguns navegadores repintam o poster
+   * ou o primeiro quadro no `ended`). Voltar um tico antes do fim e pausar
+   * fixa a imagem final na tela.
+   */
+  const pararNoFim = () => {
+    const v = ref.current;
+    if (!v) return;
+    if (Number.isFinite(v.duration)) v.currentTime = Math.max(0, v.duration - 0.05);
+    v.pause();
+  };
+
   if (!exibir) return null;
 
   return (
@@ -64,12 +78,15 @@ export function FundoVideoMobile() {
       ref={ref}
       autoPlay
       muted
-      loop
       playsInline
       preload="auto"
       aria-hidden
       onLoadedData={() => setPronto(true)}
-      className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
+      onEnded={pararNoFim}
+      // `object-contain` e não `cover`: a peça é a LOGO da marca, e cortar as
+      // bordas para preencher a tela decepava justamente o desenho. Contido,
+      // ela aparece inteira; o que sobra em volta é o gradiente do layout.
+      className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-1000 ${
         pronto ? "opacity-100" : "opacity-0"
       }`}
     >
