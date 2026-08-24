@@ -163,6 +163,17 @@ export function Preloader() {
     return () => window.clearTimeout(timer);
   }, [fase]);
 
+  // Esc encerra: com o scroll travado e a tela coberta, o teclado precisa de
+  // uma saída além de achar o botão "Pular" por tabulação.
+  useEffect(() => {
+    if (!permitido || fase === "encerrado") return;
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === "Escape") encerrar();
+    };
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [permitido, fase, encerrar]);
+
   if (!permitido || fase === "encerrado") return null;
 
   return (
@@ -171,7 +182,11 @@ export function Preloader() {
       // O script inline adiciona `data-oculto` fora do conhecimento do React.
       suppressHydrationWarning
       onClick={encerrar}
-      aria-hidden
+      // Sem `aria-hidden` no contêiner: o botão "Pular" mora aqui dentro, e
+      // elemento focável dentro de subárvore escondida vira foco fantasma —
+      // o leitor de tela cala justamente quando o foco chega no botão.
+      role="dialog"
+      aria-label="Vinheta de abertura"
       className={`fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-[#eef1f3] transition-[transform,opacity] duration-[950ms] ease-[cubic-bezier(0.83,0,0.17,1)] data-oculto:hidden ${
         fase === "saindo" ? "pointer-events-none -translate-y-full opacity-40" : "translate-y-0 opacity-100"
       }`}
@@ -235,6 +250,7 @@ export function Preloader() {
       <button
         type="button"
         onClick={encerrar}
+        aria-label="Pular vinheta de abertura"
         className="absolute bottom-6 right-6 rounded-full border border-neutral-300 bg-white/70 px-4 py-1.5 text-xs font-semibold tracking-wide text-neutral-500 backdrop-blur transition-colors hover:text-neutral-800"
       >
         Pular

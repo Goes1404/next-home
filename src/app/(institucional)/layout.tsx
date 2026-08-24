@@ -1,6 +1,5 @@
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
-import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
@@ -54,7 +53,11 @@ export default async function InstitucionalLayout({
             />
           )
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-fundo/30 via-fundo/10 to-fundo/90" />
+        {/* O degrau do MEIO é o que segura o título do hero, que é centrado —
+            e o vídeo por baixo muda de quadro com o scroll, então o contraste
+            não pode depender da sorte do frame. Os 10% antigos falhavam
+            exatamente ali. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-fundo/45 via-fundo/40 to-fundo/95" />
       </div>
 
       {children}

@@ -139,9 +139,23 @@ export default async function RootLayout({
     <html
       lang="pt-BR"
       data-tema={tema ?? undefined}
-      className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} ${alexBrush.variable} h-full antialiased`}
+      // Dois scripts inline mexem em atributos do <html> antes da hidratação
+      // de propósito (o `no-js` abaixo e o `data-intro-ativa` do Preloader);
+      // sem isto, o dev console acusa mismatch a cada carga.
+      suppressHydrationWarning
+      className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} ${alexBrush.variable} no-js h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        {/* A regra `.no-js .gsap-pending` do globals.css existia sem ninguém
+            aplicar a classe: sem JS, todo conteúdo animado ficava invisível
+            para sempre (opacity 0). O contrato correto é o clássico: o HTML
+            nasce `no-js` e o primeiro script remove — roda antes da pintura,
+            então com JS ligado a classe nunca chega a valer. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.documentElement.classList.remove("no-js")`,
+          }}
+        />
         <GlassSvgDefs />
         <SmoothScroll />
         {children}
