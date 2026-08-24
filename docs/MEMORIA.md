@@ -828,6 +828,21 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
   pareado, configurar tom de voz não serve de nada. O aviso leva de volta ao
   que falta em vez de deixar o corretor ajustar um atendimento que não vai
   acontecer.
+- **F5 (0050): CONTAR e LISTAR são consultas diferentes** (`admin/agregados.ts`).
+  As telas do gestor agregavam a partir de `getLeadsDoFunil()` — a mesma
+  query do quadro, com joins. Depois que o quadro ganhou teto de 300, isso
+  passaria a **contar errado em silêncio**: com 1.000 leads o painel diria
+  300, um número plausível que ninguém questiona. Hoje `getAgregadoDaEquipe`
+  faz UMA consulta magra (5 colunas, zero join, ~40 bytes por lead contra
+  ~400) e as listas são paginadas. **Regressão que eu mesmo criei na F0 —
+  ao pôr teto numa query, procurar quem a usa para CONTAR.**
+- **Todo número do painel do gestor é clicável** e cai na lista já filtrada
+  (`?etapa=`, `?corretor=`, `?filtro=`). KPI que não leva a lugar nenhum
+  obriga o gestor a refazer o filtro à mão para ver de quem o número é feito.
+- **`montarResumo` continua sendo a única verdade sobre "carga por
+  corretor"** — o agregado monta objetos com a forma de `Lead` só nos campos
+  que ela lê, em vez de reimplementar a conta. Duas versões da mesma conta
+  divergem, e essa decide quem recebe o próximo lead.
 
 ## CRM — o que o lead passou a lembrar (0032)
 
