@@ -843,6 +843,32 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
   corretor"** — o agregado monta objetos com a forma de `Lead` só nos campos
   que ela lê, em vez de reimplementar a conta. Duas versões da mesma conta
   divergem, e essa decide quem recebe o próximo lead.
+- **F6 (0051): dá para medir carga em PRODUÇÃO sem sujar nada** —
+  `scripts/medirCargaPainel.sql` insere 1.000 leads sintéticos, mede com
+  `explain (analyze)` e desfaz tudo no `rollback` final. Medido em
+  24/08/2026 com 1.057 leads: página da lista 1,3 ms, busca ilike 3,8 ms,
+  agregado do gestor < 1 ms, fila do Início < 1 ms. O banco real tinha só
+  **57 leads** — volume que não prova nada, e é por isso que os problemas de
+  escala passaram despercebidos até serem procurados.
+- **`escalaDoPainel.test.ts` LÊ O CÓDIGO das telas** e falha se alguma
+  chamar consulta sem teto (`getMeusLeads`) ou se uma tela do gestor voltar
+  a contar por `getLeadsDoFunil`. Teste feio, mas as duas regressões que ele
+  pega já aconteceram nesta reforma e as duas falhavam CALADAS — a regra não
+  é sobre o resultado de uma função, é sobre qual função a tela chama.
+  Exceção legítima registrada no próprio arquivo: `campanhas/acoes.ts`
+  precisa da base inteira para montar a fila (não é tela).
+- **Índice `leads_created_at_idx` (0041)**: a lista pagina por `created_at
+  desc` SEM filtro de corretor (caminho do gestor), e nenhum índice cobria
+  isso — `leads_corretor_idx` só serve à lista já filtrada. Com mil linhas o
+  planner ainda prefere Seq Scan (1,3 ms); o índice existe para o volume que
+  vem depois. Sem `concurrently` porque migration da Supabase roda em
+  transação — quando a tabela crescer, índice novo passa a exigir
+  `concurrently` FORA de migration.
+- **E2E autenticado do painel continua sem existir.** O Playwright está no
+  `package.json` mas não há config, e o painel exige sessão de corretor —
+  montar isso é trabalho próprio, não sobra de outra fase. O que existe hoje
+  é: teste de regra pura (fila, navegação), guarda de escala por leitura de
+  código, e medição de banco versionada.
 
 ## CRM — o que o lead passou a lembrar (0032)
 
