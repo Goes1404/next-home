@@ -7,6 +7,7 @@ import { GlassSurface } from "@/components/glass/GlassSurface";
 import { CtaFinal } from "@/components/home/CtaFinal";
 import { Regioes } from "@/components/home/Regioes";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
+import { AberturaHome } from "@/components/motion/AberturaHome";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
@@ -97,33 +98,45 @@ export default async function HomeInstitucional() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
+      <AberturaHome />
+
       <main id="conteudo" className="flex flex-1 flex-col">
         {/* Altura de tela só a partir de `sm`: no telefone o conjunto título +
             texto + busca é mais alto que a viewport, e forçar `min-h-svh` faria
             o conteúdo transbordar a caixa centralizada e cair atrás do CTA
             flutuante do WhatsApp, que é `fixed`. */}
         <section className="flex flex-col items-center justify-center px-4 pt-24 pb-24 sm:min-h-svh sm:pt-28 sm:pb-20">
+          {/* `data-abertura`: quem a AberturaHome conduz quando a vinheta
+              sai de cena. Estes itens NÃO usam Reveal — dois donos da mesma
+              opacidade é o caminho curto para o elemento sumir. A classe
+              `gsap-pending` mantém o contrato de sempre: nascem invisíveis e
+              voltam sozinhos se o JS falhar (`.no-js`/`.motion-off`). */}
           <div className="w-full max-w-4xl text-center">
-            <Reveal from="nenhuma" duration={0.7}>
-              <p className="text-fluid-xs mb-4 font-medium tracking-[0.2em] text-acento-suave uppercase">
-                Imóveis & Oportunidades · Alphaville, Barueri e Região
-              </p>
-            </Reveal>
+            <p
+              data-abertura
+              className="gsap-pending text-fluid-xs mb-4 font-medium tracking-[0.2em] text-acento-suave uppercase"
+            >
+              Imóveis & Oportunidades · Alphaville, Barueri e Região
+            </p>
             {/* O h1 é um FATO do estoque, curto de propósito: o anterior tinha
                 77 caracteres — seis linhas de display num celular — e não dizia
                 nada verificável. A promessa longa desceu para o subtítulo. */}
-            <TituloEditorial as="h1" className="text-fluid-4xl leading-[1.05] tracking-tight text-titulo">
+            <h1
+              data-abertura
+              className="gsap-pending text-fluid-4xl leading-[1.05] tracking-tight text-titulo"
+            >
               {todos.length} imóveis em Alphaville, Barueri e região.
-            </TituloEditorial>
-            <Reveal from="nenhuma" delay={0.4}>
-              <p className="text-fluid-base mx-auto mt-6 max-w-xl text-corpo-suave">
-                Lançamentos na planta e prontos para morar, com condições
-                facilitadas e atendimento direto no WhatsApp.
-              </p>
-            </Reveal>
+            </h1>
+            <p
+              data-abertura
+              className="gsap-pending text-fluid-base mx-auto mt-6 max-w-xl text-corpo-suave"
+            >
+              Lançamentos na planta e prontos para morar, com condições
+              facilitadas e atendimento direto no WhatsApp.
+            </p>
           </div>
 
-          <Reveal delay={0.12} className="mt-8 w-full max-w-3xl sm:mt-10">
+          <div data-abertura className="gsap-pending mt-8 w-full max-w-3xl sm:mt-10">
             <GlassSurface preset="painel" className="px-5 py-5 sm:px-7 sm:py-7">
               <FiltroForm
                 compacto
@@ -133,7 +146,7 @@ export default async function HomeInstitucional() {
                 idPrefixo="hero"
               />
             </GlassSurface>
-          </Reveal>
+          </div>
         </section>
 
         {/* Do primeiro conteúdo em diante o fundo é OPACO, como na página do

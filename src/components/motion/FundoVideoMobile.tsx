@@ -81,6 +81,7 @@ export function FundoVideoMobile() {
       playsInline
       preload="auto"
       aria-hidden
+      data-fundo-video
       onLoadedData={() => setPronto(true)}
       onEnded={pararNoFim}
       // `object-contain` e não `cover`: a peça é a LOGO da marca, e cortar as

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { ParallaxImagem } from "@/components/motion/ParallaxImagem";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
@@ -53,33 +54,38 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
       </Reveal>
 
       {resto.length > 0 && (
-        <Reveal stagger={0.06} className="mt-4 grid grid-cols-2 gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-3">
+        <div className="mt-4 grid grid-cols-2 gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-3">
           {resto.map((foto, i) => (
-            <button
+            <CartaoTilt
               key={foto.url}
-              type="button"
-              onClick={() => setAberta(i + 1)}
-              aria-label={`Ampliar imagem ${i + 2} de ${fotos.length}${foto.alt ? `: ${foto.alt}` : ""}`}
+              indice={i}
               className={
-                "group relative overflow-hidden rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte " +
+                "overflow-hidden rounded-2xl " +
                 // Ritmo do mosaico: a cada bloco de 5, a primeira célula é
                 // retrato e alta; as outras, paisagem — revista, não tabela.
                 (i % 5 === 0 ? "row-span-2 aspect-[3/4]" : "aspect-[4/3]")
               }
             >
-              <Image
-                src={foto.url}
-                alt={foto.alt}
-                fill
-                sizes="(min-width: 1024px) 33vw, 50vw"
-                placeholder={foto.blurDataUrl ? "blur" : "empty"}
-                blurDataURL={foto.blurDataUrl ?? undefined}
-                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
-              />
-              <span className="absolute inset-0 bg-ink-950/0 transition-colors duration-500 group-hover:bg-ink-950/15" />
-            </button>
+              <button
+                type="button"
+                onClick={() => setAberta(i + 1)}
+                aria-label={`Ampliar imagem ${i + 2} de ${fotos.length}${foto.alt ? `: ${foto.alt}` : ""}`}
+                className="group absolute inset-0 h-full w-full focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-acento-forte"
+              >
+                <Image
+                  src={foto.url}
+                  alt={foto.alt}
+                  fill
+                  sizes="(min-width: 1024px) 33vw, 50vw"
+                  placeholder={foto.blurDataUrl ? "blur" : "empty"}
+                  blurDataURL={foto.blurDataUrl ?? undefined}
+                  className="object-cover"
+                />
+                <span className="absolute inset-0 bg-ink-950/0 transition-colors duration-500 group-hover:bg-ink-950/10" />
+              </button>
+            </CartaoTilt>
           ))}
-        </Reveal>
+        </div>
       )}
 
       <Lightbox

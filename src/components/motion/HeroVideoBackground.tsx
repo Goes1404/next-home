@@ -217,6 +217,7 @@ export function HeroVideoBackground({ src, srcWebm }: { src: string; srcWebm?: s
       muted
       playsInline
       preload="auto"
+      data-fundo-video
       // O vídeo vira textura WebGL (GlassCanvas) — sem crossOrigin, o WebGL
       // recusa ler pixels de um <video> de outra origem (o bucket do
       // Supabase Storage usado pelo fundo personalizado do corretor).
