@@ -10,12 +10,45 @@
     "tipo": "alto_padrao",
     "finalidade": "lancamento",
     "precoAPartir": 1289900,
-    "capa": { "url": "https://cdn.eval/canvas/capa.jpg", "tipo": "foto", "alt": "Canvas" },
+    "capa": {
+      "url": "https://cdn.eval/canvas/capa.jpg",
+      "tipo": "foto",
+      "alt": "Canvas"
+    },
     "bookUrl": "https://cdn.eval/canvas/book.pdf",
-    "plantas": [{ "url": "https://cdn.eval/canvas/planta-3s.jpg", "tipo": "planta", "alt": "Planta 3 suítes" }],
+    "plantas": [
+      {
+        "url": "https://cdn.eval/canvas/planta-3s.jpg",
+        "tipo": "planta",
+        "alt": "Planta 3 suítes"
+      }
+    ],
     "videos": [],
     "lazer": [],
-    "tipologias": []
+    "tipologias": [
+      {
+        "nome": "3 suítes",
+        "areaPrivativa": 110,
+        "dormitorios": 3,
+        "suites": 3,
+        "banheiros": 4,
+        "vagas": 2,
+        "preco": null,
+        "plantaUrl": "https://cdn.eval/canvas/planta-3s.jpg",
+        "unidadesDisponiveis": null
+      },
+      {
+        "nome": "4 suítes",
+        "areaPrivativa": 145,
+        "dormitorios": 4,
+        "suites": 4,
+        "banheiros": 5,
+        "vagas": 3,
+        "preco": null,
+        "plantaUrl": null,
+        "unidadesDisponiveis": null
+      }
+    ]
   },
   {
     "nome": "Viva Vila do Conde",
@@ -28,11 +61,38 @@
     "tipo": "apartamento",
     "finalidade": "lancamento",
     "precoAPartir": 460000,
-    "capa": { "url": "https://cdn.eval/viva/capa.jpg", "tipo": "foto", "alt": "Viva" },
+    "capa": {
+      "url": "https://cdn.eval/viva/capa.jpg",
+      "tipo": "foto",
+      "alt": "Viva"
+    },
     "plantas": [],
     "videos": [],
     "lazer": [],
-    "tipologias": []
+    "tipologias": [
+      {
+        "nome": "2 dormitórios",
+        "areaPrivativa": 49,
+        "dormitorios": 2,
+        "suites": 1,
+        "banheiros": 2,
+        "vagas": 1,
+        "preco": null,
+        "plantaUrl": null,
+        "unidadesDisponiveis": null
+      },
+      {
+        "nome": "3 dormitórios",
+        "areaPrivativa": 63,
+        "dormitorios": 3,
+        "suites": 1,
+        "banheiros": 2,
+        "vagas": 2,
+        "preco": null,
+        "plantaUrl": null,
+        "unidadesDisponiveis": null
+      }
+    ]
   },
   {
     "nome": "Bosque AlphaGran",
@@ -45,10 +105,26 @@
     "tipo": "casa",
     "finalidade": "venda",
     "precoAPartir": null,
-    "capa": { "url": "https://cdn.eval/bosque/capa.jpg", "tipo": "foto", "alt": "Bosque" },
+    "capa": {
+      "url": "https://cdn.eval/bosque/capa.jpg",
+      "tipo": "foto",
+      "alt": "Bosque"
+    },
     "plantas": [],
     "videos": [],
     "lazer": [],
-    "tipologias": []
+    "tipologias": [
+      {
+        "nome": "Casa 3 dormitórios",
+        "areaPrivativa": 140,
+        "dormitorios": 3,
+        "suites": 1,
+        "banheiros": 3,
+        "vagas": 2,
+        "preco": null,
+        "plantaUrl": null,
+        "unidadesDisponiveis": null
+      }
+    ]
   }
 ]

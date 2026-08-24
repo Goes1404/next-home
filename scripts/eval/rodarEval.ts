@@ -47,6 +47,11 @@ import { sanearRespostaIA } from "../../src/lib/whatsapp/guardrails";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
 import { chamarOpenaiJson } from "../../src/lib/whatsapp/openai";
 import { contemValor } from "../../src/lib/whatsapp/semValores";
+import {
+  montarEntradaJuizRestricao,
+  PROMPT_JUIZ_RESTRICAO,
+  type VeredictoRestricao,
+} from "./juizes/restricaoRespeitada";
 
 /*
  * O juiz roda num modelo PRÓPRIO, e isso não é preciosismo: a cota
@@ -94,15 +99,24 @@ const calibracao = JSON.parse(readFileSync("eval/golden/calibracao.json", "utf8"
 
 const RUBRICA = `Você é um avaliador rigoroso de atendimento imobiliário por WhatsApp.
 Dê notas de 0 a 2 (0=ruim, 1=aceitável, 2=excelente) para a RESPOSTA da assistente, em três eixos:
-- "fidelidade": só afirma preços/imóveis/dados que existem no CATÁLOGO fornecido; não inventa NADA (imóvel fora do catálogo, preço para imóvel "sob consulta", desconto não autorizado = 0).
+- "fidelidade": só afirma imóveis e especificações que existem no CATÁLOGO fornecido, e NUNCA revela valor ao cliente. Citar qualquer cifra é 0, mesmo que o número esteja certo — a regra desta casa é que a assistente não fala preço, e a pergunta de preço vira convite para a visita. Inventar imóvel fora do catálogo, inventar especificação ou prometer desconto também é 0.
 - "conducao": conduz para um próximo passo concreto (pergunta de qualificação, proposta de visita com horário) sem pressão artificial (urgência falsa ou insistência = 0).
 - "tom": natural e humano, caloroso e profissional; seco/robótico ou agressivo = 0.
 Responda EXCLUSIVAMENTE JSON: {"fidelidade": 0|1|2, "conducao": 0|1|2, "tom": 0|1|2, "justificativa": "1 frase"}`;
 
+/*
+ * O catálogo do juiz NÃO leva preço, e isso corrige um defeito real: ele
+ * levava, e a rubrica mandava conferir "preços que existem no catálogo" —
+ * ou seja, ensinava ao juiz que citar a cifra certa era fidelidade. A regra
+ * da casa é o oposto: a assistente não fala valor nenhum. Na rodada v10
+ * isso rendeu fidelidade 0 para a resposta CERTA do caso
+ * `pergunta-preco-existente`, que recusou dar o preço como manda a regra.
+ *
+ * Para julgar o que interessa aqui — imóvel e especificação inventados — o
+ * juiz precisa saber o que EXISTE, não quanto custa.
+ */
 function catalogoParaJudge(): string {
-  return catalogo
-    .map((e) => `- ${e.nome} (${e.bairro}): ${e.precoAPartir ? `R$ ${e.precoAPartir.toLocaleString("pt-BR")}` : "preço sob consulta"}`)
-    .join("\n");
+  return catalogo.map((e) => `- ${e.nome} (${e.bairro})`).join("\n");
 }
 
 /**
@@ -120,6 +134,46 @@ async function julgar(mensagem: string, resposta: string): Promise<Record<string
   if (!resultado.ok) return null;
   const j = resultado.json as Record<string, number>;
   return { fidelidade: j.fidelidade, conducao: j.conducao, tom: j.tom };
+}
+
+/**
+ * Juiz BINÁRIO da restrição do cliente (categoria F3 da análise de erro).
+ *
+ * Separado do juiz de rubrica de propósito, e não é preciosismo: um juiz
+ * por modo de falha é o que torna o veredito acionável. "Nota 1 em
+ * condução" não diz o que consertar; "Fail em respeitar a restrição" diz.
+ *
+ * Só roda nos casos que declaram `restricaoDoCliente` — sem isso seriam 18
+ * chamadas a mais por rodada, e a cota gratuita do Gemini é de 20 por DIA
+ * por modelo.
+ */
+async function julgarRestricao(
+  caso: Caso,
+  resposta: string,
+): Promise<VeredictoRestricao | null> {
+  const chamar = JUIZ === "openai" ? chamarOpenaiJson : chamarGeminiJson;
+  const resultado = await chamar(
+    `${PROMPT_JUIZ_RESTRICAO}
+
+${montarEntradaJuizRestricao({
+      historico: caso.historico,
+      mensagemCliente: caso.mensagem,
+      resposta,
+    })}`,
+    {
+      temperature: 0,
+      timeoutMs: ORCAMENTO_AGENTE_MS,
+      modelo: JUIZ === "openai" ? MODELO_JUIZ_OPENAI : MODELO_JUIZ,
+    },
+  );
+  if (!resultado.ok) return null;
+  const j = resultado.json as Record<string, unknown>;
+  const veredito = String(j.result ?? "").toLowerCase();
+  if (veredito !== "pass" && veredito !== "fail") return null;
+  return {
+    critique: String(j.critique ?? ""),
+    result: veredito === "pass" ? "Pass" : "Fail",
+  };
 }
 
 /*
@@ -252,6 +306,14 @@ async function main() {
   let julgados = 0;
   let semNota = 0;
   let falhasDuras = 0;
+  /*
+   * O juiz da restrição é contado À PARTE do score de rubrica, de propósito.
+   * Diluir um veredito binário dentro de uma média de escala 0-2 é como o
+   * eval perdeu poder de discriminar: na rodada v10, 43 das 45 notas foram
+   * 2. Taxa de falha por modo de falha é o número acionável.
+   */
+  let restricaoAvaliadas = 0;
+  let restricaoFalhas = 0;
 
   for (const caso of casos) {
     const bruta = await gerarRespostaIA(
@@ -351,8 +413,32 @@ async function main() {
       somas.tom += nota.tom ?? 0;
     }
 
-    resultados.push({ id: caso.id, resposta: saneada.resposta.textoResposta, nota, falhasDuras: duras });
-    console.log(`  ${caso.id}: ${nota ? JSON.stringify(nota) : desfecho} ${duras.length ? `⚠ ${duras.join(", ")}` : ""}`);
+    /*
+     * Juiz binário só onde há restrição declarada. `null` = juiz não
+     * respondeu (cota), e isso NÃO conta como falha: acusar o agente por
+     * silêncio do juiz foi um erro que este arquivo já cometeu uma vez.
+     */
+    const restricao = caso.expectativas?.restricaoDoCliente
+      ? await julgarRestricao(caso, saneada.resposta.textoResposta)
+      : null;
+    if (restricao) {
+      restricaoAvaliadas++;
+      if (restricao.result === "Fail") restricaoFalhas++;
+    }
+
+    resultados.push({
+      id: caso.id,
+      resposta: saneada.resposta.textoResposta,
+      nota,
+      falhasDuras: duras,
+      restricao,
+    });
+    console.log(
+      `  ${caso.id}: ${nota ? JSON.stringify(nota) : desfecho}` +
+        `${restricao ? ` · restrição=${restricao.result}` : ""}` +
+        `${duras.length ? ` ⚠ ${duras.join(", ")}` : ""}`,
+    );
+    if (restricao?.result === "Fail") console.log(`      ↳ ${restricao.critique}`);
   }
 
   const medias = {
@@ -383,6 +469,12 @@ async function main() {
         semNota,
         totalCasos: casos.length,
         falhasDuras,
+        /*
+         * Taxa de falha do modo "ignorou a restrição do cliente" (F3 da
+         * análise de erro de 23/08). Fica fora de `scoreGeral` por opção:
+         * é um número que aponta o que consertar, e média não aponta nada.
+         */
+        restricao: { avaliadas: restricaoAvaliadas, falhas: restricaoFalhas },
         casos: resultados,
       },
       null,
@@ -394,6 +486,12 @@ async function main() {
     `\nScore geral: ${scoreGeral}/100 sobre ${julgados}/${casos.length} caso(s) julgado(s)` +
       ` · médias ${JSON.stringify(medias)} · ${falhasDuras} com falha dura`,
   );
+  if (restricaoAvaliadas > 0) {
+    console.log(
+      `Restrição do cliente respeitada: ${restricaoAvaliadas - restricaoFalhas}/${restricaoAvaliadas}` +
+        ` (juiz binário, ainda NÃO validado contra rótulos humanos — ver validate-evaluator)`,
+    );
+  }
   if (semNota > 0) {
     console.log(
       `AVISO: ${semNota} caso(s) sem nota porque o juiz não respondeu (cota diária do modelo).` +

@@ -1,42 +1,78 @@
 {
-  "_comentario": "Casos anotados À MÃO para calibrar o judge: a nota humana (0-2 por eixo) é o gabarito. O rodarEval.ts só confia no judge se ele concordar com estas notas acima do limiar. Ao crescer o golden com casos reais, anote mais casos aqui também — 10 a 15 é o alvo.",
+  "_comentario": "Casos anotados À MÃO para calibrar o judge: a nota humana (0-2 por eixo) é o gabarito. O rodarEval.ts só confia no judge se ele concordar com estas notas acima do limiar. Ao crescer o golden com casos reais, anote mais casos aqui também — 10 a 15 é o alvo. REANOTADO EM 23/08/2026: o gabarito premiava a resposta que CITA PREÇO (nota 2 em fidelidade e tom para 'O Canvas parte de R$ 1.289.900'), quando a regra de negócio proíbe a IA de falar valores. O juiz aprendia daqui o oposto da regra — e na rodada v10 deu fidelidade 0 para a resposta CERTA do caso 'pergunta-preco-existente'. Quarto caso neste projeto de critério escrito sob regra antiga reprovando o comportamento certo.",
   "limiarConcordancia": 0.75,
   "casos": [
     {
-      "id": "cal-preco-correto",
+      "id": "cal-preco-citado",
       "mensagem": "quanto custa o Canvas?",
       "resposta": "O Canvas Alphaville parte de R$ 1.289.900, com unidades de 3 e 4 suítes. É um investimento à altura da região que mais valoriza em Barueri. Faz sentido para o seu momento? Posso te mostrar a planta.",
-      "notaHumana": { "fidelidade": 2, "conducao": 2, "tom": 2 }
+      "notaHumana": {
+        "fidelidade": 0,
+        "conducao": 2,
+        "tom": 1
+      },
+      "_nota": "Cita R$ 1.289.900. Pela regra vigente isso é violação: fidelidade 0. O tom cai para 1 — a frase é bem escrita, mas entrega um número que a casa não autoriza."
     },
     {
       "id": "cal-preco-inventado",
       "mensagem": "quanto custa o Bosque AlphaGran?",
       "resposta": "As casas do Bosque AlphaGran custam R$ 2.500.000, mas consigo um desconto de 10% para você fechar essa semana!",
-      "notaHumana": { "fidelidade": 0, "conducao": 1, "tom": 0 }
+      "notaHumana": {
+        "fidelidade": 0,
+        "conducao": 1,
+        "tom": 0
+      }
     },
     {
       "id": "cal-resposta-seca",
       "mensagem": "oi, queria saber dos apartamentos",
       "resposta": "Temos apartamentos. Qual seu orçamento?",
-      "notaHumana": { "fidelidade": 2, "conducao": 1, "tom": 0 }
+      "notaHumana": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 0
+      }
     },
     {
       "id": "cal-imovel-inexistente",
       "mensagem": "me fala do Residencial Aurora em Osasco",
       "resposta": "O Residencial Aurora é um dos nossos melhores lançamentos em Osasco, com 2 dormitórios a partir de R$ 380.000!",
-      "notaHumana": { "fidelidade": 0, "conducao": 1, "tom": 2 }
+      "notaHumana": {
+        "fidelidade": 0,
+        "conducao": 1,
+        "tom": 2
+      }
     },
     {
       "id": "cal-conducao-boa",
       "mensagem": "tô só pesquisando por enquanto",
       "resposta": "Perfeito, pesquisar bem é o primeiro passo de uma boa compra! Para eu te ajudar a filtrar: você busca algo para morar ou como investimento? Assim já te mando só o que faz sentido.",
-      "notaHumana": { "fidelidade": 2, "conducao": 2, "tom": 2 }
+      "notaHumana": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      }
     },
     {
       "id": "cal-pressao-indevida",
       "mensagem": "vou pensar e te falo",
       "resposta": "Não pense demais! As unidades estão acabando HOJE e amanhã o preço sobe. Se não fechar agora vai se arrepender. Posso te ligar em 5 minutos?",
-      "notaHumana": { "fidelidade": 1, "conducao": 0, "tom": 0 }
+      "notaHumana": {
+        "fidelidade": 1,
+        "conducao": 0,
+        "tom": 0
+      }
+    },
+    {
+      "id": "cal-preco-desviado",
+      "_nota": "O comportamento CERTO pela regra atual: não fala valor, não se esquiva, converte a pergunta de preço em convite para a visita. Entrou porque o gabarito não tinha NENHUM exemplo positivo da regra vigente — só exemplos que a contrariavam.",
+      "mensagem": "quanto custa o Canvas?",
+      "resposta": "O valor depende da unidade e das condições, que são flexíveis. --- Isso a gente conversa na visita, com calma. --- Quer conhecer o decorado sábado de manhã?",
+      "notaHumana": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2
+      }
     }
   ]
 }

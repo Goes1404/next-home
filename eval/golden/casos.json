@@ -206,5 +206,340 @@
       "deveMandarLinkDoCatalogo": true,
       "naoPodeInventarUrl": true
     }
+  },
+  {
+    "id": "restricao-regiao",
+    "_nota": "Restrição de REGIÃO. Não repete nenhum cenário do few-shot do juiz (que usa tamanho e nº de dormitórios) — few-shot e caso de medição não podem se cruzar.",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "oi, procuro apartamento"
+      },
+      {
+        "remetente": "bot",
+        "texto": "Oi! Tudo bem? --- Tenho o Eternity, em Alphaville, e o Viva Vila do Conde, no Parque Viana. --- Você conhece a região?"
+      }
+    ],
+    "mensagem": "só quero em Barueri mesmo, alphaville não",
+    "expectativas": {
+      "restricaoDoCliente": true,
+      "naoPodeFalarValor": true
+    }
+  },
+  {
+    "id": "restricao-pronto-para-morar",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "procuro em barueri"
+      },
+      {
+        "remetente": "bot",
+        "texto": "Tenho o Canvas Alphaville, que está em construção. --- Quer conhecer o decorado?"
+      }
+    ],
+    "mensagem": "preciso mudar em 60 dias, tem que estar pronto",
+    "expectativas": {
+      "restricaoDoCliente": true,
+      "naoPodeFalarValor": true
+    }
+  },
+  {
+    "id": "restricao-recusa-explicita",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "quero ver o que voces tem"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Bosque AlphaGran é casa em condomínio fechado, pronta para morar. --- Quer ver as fotos?"
+      }
+    ],
+    "mensagem": "casa não, esse nao me interessa. tem apartamento?",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
+  },
+  {
+    "id": "restricao-regiao-inexistente",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "procuro apartamento"
+      },
+      {
+        "remetente": "bot",
+        "texto": "Tenho opções em Alphaville, Parque Viana e Alphagran. --- Você conhece a região?"
+      }
+    ],
+    "mensagem": "na verdade eu queria em santos, de frente pro mar",
+    "expectativas": {
+      "restricaoDoCliente": true,
+      "naoPodeInventarImovel": true
+    }
+  },
+  {
+    "id": "restricao-regiao-repetida",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "quero em barueri"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Canvas Alphaville tem 3 e 4 suítes. --- Quer conhecer o decorado?"
+      },
+      {
+        "remetente": "cliente",
+        "texto": "eu falei barueri"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Canvas fica em Alphaville, Barueri. --- Quer ver as fotos?"
+      }
+    ],
+    "mensagem": "barueri mas fora de alphaville, é a terceira vez que falo",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
+  },
+  {
+    "id": "restricao-estagio-implicito",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "oi, procuro em alphaville"
+      },
+      {
+        "remetente": "bot",
+        "texto": "Tenho o Canvas, em construção, e o Bosque AlphaGran, pronto. --- O que você busca?"
+      }
+    ],
+    "mensagem": "meu contrato de aluguel vence mês que vem, não dá pra esperar obra",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
+  },
+  {
+    "id": "restricao-estagio-impossivel",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "quero em alphaville"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Bosque AlphaGran está pronto para morar. --- Quer conhecer?"
+      }
+    ],
+    "mensagem": "preciso das chaves em 15 dias, dá?",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
+  },
+  {
+    "id": "restricao-recusa-repetida",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "quero apartamento"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Bosque AlphaGran é casa em condomínio fechado. --- Quer ver as fotos?"
+      },
+      {
+        "remetente": "cliente",
+        "texto": "casa não"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Bosque AlphaGran tem 3 dormitórios e 140m². --- Quer conhecer?"
+      }
+    ],
+    "mensagem": "de novo a casa? eu disse que quero APARTAMENTO",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
+  },
+  {
+    "id": "restricao-orcamento-direta",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "procuro em alphaville"
+      },
+      {
+        "remetente": "bot",
+        "texto": "Tenho o Canvas, de 3 e 4 suítes. --- Prefere pronto ou na planta?"
+      }
+    ],
+    "mensagem": "meu teto é 600 mil, cabe?",
+    "expectativas": {
+      "restricaoDoCliente": true,
+      "naoPodeFalarValor": true
+    }
+  },
+  {
+    "id": "restricao-orcamento-repetida",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "quanto custa o canvas?"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O valor depende da unidade e das condições. --- Quer conhecer o decorado?"
+      },
+      {
+        "remetente": "cliente",
+        "texto": "mas cabe em 600 mil?"
+      },
+      {
+        "remetente": "bot",
+        "texto": "As condições são flexíveis e conversamos na visita. --- Prefere manhã ou tarde?"
+      }
+    ],
+    "mensagem": "vc não me respondeu, eu só tenho 600 mil",
+    "expectativas": {
+      "restricaoDoCliente": true,
+      "naoPodeFalarValor": true
+    }
+  },
+  {
+    "id": "restricao-prazo-implicito",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "oi"
+      },
+      {
+        "remetente": "bot",
+        "texto": "Oi! Tudo bem? --- Me conta, você já conhece a região de Alphaville?"
+      }
+    ],
+    "mensagem": "conheço sim, mas preciso de algo pra entrar em janeiro no máximo",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
+  },
+  {
+    "id": "restricao-dormitorios-atende",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "procuro no parque viana"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Viva Vila do Conde fica no Parque Viana. --- Quantos dormitórios você precisa?"
+      }
+    ],
+    "mensagem": "3 dormitórios com suíte",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
+  },
+  {
+    "id": "restricao-dormitorios-nao-atende",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "quero ver o bosque alphagran"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Bosque AlphaGran é casa em condomínio fechado, pronta para morar. --- Quer ver as fotos?"
+      }
+    ],
+    "mensagem": "tem de 5 dormitórios?",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
+  },
+  {
+    "id": "restricao-dormitorios-repetida",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "preciso de 5 dormitórios"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Canvas Alphaville tem 3 e 4 suítes. --- Quer conhecer o decorado?"
+      },
+      {
+        "remetente": "cliente",
+        "texto": "eu preciso de 5"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Canvas tem 4 suítes, 145m² e 3 vagas. --- Quer ver a planta?"
+      }
+    ],
+    "mensagem": "cinco. você tem alguma coisa de 5 ou não tem?",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
+  },
+  {
+    "id": "restricao-tamanho-menor",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "quero em alphaville"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Canvas Alphaville tem 4 suítes, 145m² e 3 vagas. --- Quer ver a planta?"
+      }
+    ],
+    "mensagem": "quero algo menor",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
+  },
+  {
+    "id": "restricao-tamanho-inexistente",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "procuro no parque viana"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Viva Vila do Conde tem 2 dormitórios com 49m². --- Quer conhecer?"
+      }
+    ],
+    "mensagem": "tem alguma coisa de uns 30m²? é só pra mim",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
+  },
+  {
+    "id": "restricao-tamanho-repetida",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "quero algo compacto"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Canvas tem 3 suítes e 110m². --- Quer ver a planta?"
+      },
+      {
+        "remetente": "cliente",
+        "texto": "compacto, menor que isso"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Canvas de 4 suítes tem 145m² e 3 vagas. --- Quer conhecer?"
+      }
+    ],
+    "mensagem": "MENOR. você está me mostrando cada vez maior",
+    "expectativas": {
+      "restricaoDoCliente": true
+    }
   }
 ]
