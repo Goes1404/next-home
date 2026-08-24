@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
 import type { Empreendimento, Midia } from "@/lib/types";
 
@@ -89,6 +90,29 @@ export function CenaShowcase({ empreendimento: e }: { empreendimento: Empreendim
             // Respiro entre cenas: um trecho sem nada mudando.
             .to({}, { duration: 0.4 });
         }
+
+        // A foto continua VIVA durante o respiro. Sem isto, o trecho "sem
+        // nada mudando" da timeline vira imagem congelada — que parece
+        // player pausado, não cinema.
+        quadros.forEach((quadro) => {
+          const img = quadro.querySelector("img");
+          if (!img) return;
+          gsap.fromTo(
+            img,
+            { scale: 1, xPercent: 0 },
+            {
+              scale: 1.09,
+              xPercent: -2,
+              ease: "none",
+              scrollTrigger: {
+                trigger: el,
+                start: "top top",
+                end: `+=${(quadros.length - 1) * 90}%`,
+                scrub: 0.6,
+              },
+            },
+          );
+        });
       },
     );
 
@@ -140,16 +164,21 @@ export function CenaShowcase({ empreendimento: e }: { empreendimento: Empreendim
         {cenas.map((c) => (
           <Reveal key={c.foto.url}>
             <figure>
+              {/* O celular fica sem pin, mas não precisa ficar sem
+                  profundidade. A velocidade escrita é sempre a de desktop: o
+                  fator de 40% do controlador reduz isto a ~0.056 na prática. */}
               <div className="relative aspect-[4/5] overflow-hidden rounded-2xl">
-                <Image
-                  src={c.foto.url}
-                  alt={c.foto.alt}
-                  fill
-                  sizes="100vw"
-                  placeholder={c.foto.blurDataUrl ? "blur" : "empty"}
-                  blurDataURL={c.foto.blurDataUrl ?? undefined}
-                  className="object-cover"
-                />
+                <Camada velocidade={0.14} className="absolute inset-0 scale-110">
+                  <Image
+                    src={c.foto.url}
+                    alt={c.foto.alt}
+                    fill
+                    sizes="100vw"
+                    placeholder={c.foto.blurDataUrl ? "blur" : "empty"}
+                    blurDataURL={c.foto.blurDataUrl ?? undefined}
+                    className="object-cover"
+                  />
+                </Camada>
               </div>
               <figcaption className="mt-4">
                 <p className="text-fluid-xs mb-1 tracking-[0.22em] text-acento-suave uppercase">
