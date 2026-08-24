@@ -791,6 +791,19 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
   tarefa). Filtros avançados da lista ficam recolhidos atrás de "Filtros",
   mas abrem sozinhos quando algum está ativo — filtro invisível filtrando é
   a pior surpresa da tela.
+- **F3 (0048): o Início é uma FILA, não um relatório** (`filaDeTrabalho.ts`
+  + `FilaAgora.tsx`). A ordem é a do custo de perder: visita de hoje →
+  tarefa vencida → lead novo → tarefa de hoje → resposta da IA sem rótulo →
+  lead parado (7+ dias na mesma etapa). **A ordem é decisão de produto e tem
+  teste** (`filaDeTrabalho.test.ts`) — sem ele um refactor reordena os pesos
+  e "revisar respostas da IA" sobe acima de uma visita marcada para daqui a
+  duas horas. Teto de 6 itens: fila longa vira lista, e lista ninguém lê.
+- **Cada consulta da fila pede no máximo 6 linhas** e a de revisão é só
+  `count`/`head: true`. O Início não baixa carteira nem histórico — é a
+  tela mais aberta do painel.
+- **`ParaHoje.tsx` foi absorvido pela fila**, mas o gesto de concluir tarefa
+  em um toque sobreviveu (`BotaoConcluirTarefa`): era o único jeito de
+  fechar tarefa sem abrir a ficha, e perder isso seria regressão.
 
 ## CRM — o que o lead passou a lembrar (0032)
 

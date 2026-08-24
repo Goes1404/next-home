@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { CopiarLink } from "./CopiarLink";
-import { ParaHoje } from "./ParaHoje";
+import { FilaAgora } from "./_componentes/FilaAgora";
 import { TermometroFunil } from "./_componentes/TermometroFunil";
 import {
   getCliquesWhatsappCorretor,
   getContagemPorEtapa,
   getCorretorLogado,
-  getVisitasDeHoje,
 } from "@/lib/corretorSessao";
-import { agendaDoDia } from "@/lib/crm/timeline";
+import { getFilaDeTrabalho } from "@/lib/crm/filaDeTrabalho";
 import { getMinhasTarefas } from "@/lib/crm/dadosLead";
 import { site } from "@/lib/site";
 
@@ -18,26 +17,28 @@ const ATALHOS = [
   { href: "/corretor/imoveis", titulo: "Catálogo", texto: "Fotos, textos e preços dos imóveis." },
 ];
 
+/**
+ * A tela inicial do painel — uma FILA, não um relatório (roadmap F3).
+ *
+ * Antes daqui o corretor abria o painel e via números: 3 pendências, 2
+ * visitas, um termômetro. Bonito, e ainda assim ele precisava decidir o que
+ * fazer com aquilo. Agora a primeira coisa da tela é a próxima ação, com o
+ * botão do WhatsApp ao lado; os números continuam existindo, abaixo, para
+ * quem quiser conferir a carteira.
+ */
 export default async function PainelInicio() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
   // Contagens no banco, não a carteira: com ~100 leads por corretor (e a
   // equipe inteira para o gestor), o Início não tem por que baixar linhas.
-  const [contagens, visitasHoje, cliques, tarefas] = await Promise.all([
-    getContagemPorEtapa(),
-    getVisitasDeHoje(),
-    getCliquesWhatsappCorretor(),
+  const [tarefas, contagens, cliques] = await Promise.all([
     getMinhasTarefas(),
+    getContagemPorEtapa(),
+    getCliquesWhatsappCorretor(),
   ]);
 
-  const agenda = agendaDoDia(tarefas);
-
-  // Só a etapa "novo" é uma pendência de verdade. Contar o funil inteiro
-  // transformaria o aviso num número que nunca desce, e todo aviso que nunca
-  // desce vira paisagem.
-  const novos = contagens.novo;
-
+  const fila = await getFilaDeTrabalho(tarefas);
   const primeiroNome = corretor.nome.split(" ")[0];
 
   return (
@@ -45,18 +46,15 @@ export default async function PainelInicio() {
       <div>
         <h1 className="font-display text-titulo text-fluid-2xl">Olá, {primeiroNome}</h1>
         <p className="text-fluid-sm text-apoio mt-1">
-          {novos === 0 && visitasHoje === 0 && agenda.length === 0
-            ? "Nada pendente por aqui. Bom momento para divulgar seu link."
-            : [
-                novos > 0 && `${novos} lead${novos === 1 ? "" : "s"} sem primeiro atendimento`,
-                visitasHoje > 0 && `${visitasHoje} visita${visitasHoje === 1 ? "" : "s"} hoje`,
-                agenda.length > 0 &&
-                  `${agenda.length} tarefa${agenda.length === 1 ? "" : "s"} para hoje`,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
+          {fila.length === 0
+            ? "Nada pendente por aqui."
+            : `${fila.length} ${fila.length === 1 ? "coisa esperando" : "coisas esperando"} por você.`}
         </p>
       </div>
+
+      <FilaAgora itens={fila} />
+
+      <TermometroFunil contagens={contagens} />
 
       {/*
         O link e os cliques ficam lado a lado porque são a mesma história: o
@@ -90,33 +88,6 @@ export default async function PainelInicio() {
         </div>
       </section>
 
-      <ParaHoje tarefas={agenda} />
-
-      <TermometroFunil contagens={contagens} />
-
-      {(novos > 0 || visitasHoje > 0) && (
-        <section className="grid gap-4 sm:grid-cols-2">
-          {novos > 0 && (
-            <Pendencia
-              href="/corretor/funil"
-              quantidade={novos}
-              titulo={`Novo${novos === 1 ? "" : "s"} lead${novos === 1 ? "" : "s"}`}
-              texto="Ainda sem primeiro atendimento"
-              tom="acento"
-            />
-          )}
-          {visitasHoje > 0 && (
-            <Pendencia
-              href="/corretor/visitas"
-              quantidade={visitasHoje}
-              titulo={`Visita${visitasHoje === 1 ? "" : "s"} hoje`}
-              texto="Agendadas para as próximas horas"
-              tom="azul"
-            />
-          )}
-        </section>
-      )}
-
       <section className="grid gap-4 sm:grid-cols-3">
         {ATALHOS.map((a) => (
           <Link
@@ -130,44 +101,5 @@ export default async function PainelInicio() {
         ))}
       </section>
     </div>
-  );
-}
-
-/**
- * Cartão de pendência. Só aparece quando há o que fazer — um alerta que
- * mostra "0" ensina a ignorá-lo.
- */
-function Pendencia({
-  href,
-  quantidade,
-  titulo,
-  texto,
-  tom,
-}: {
-  href: string;
-  quantidade: number;
-  titulo: string;
-  texto: string;
-  tom: "acento" | "azul";
-}) {
-  const cor =
-    tom === "acento"
-      ? "border-acento-linha bg-acento-lavado text-acento-suave"
-      : "border-etapa-azul-linha bg-etapa-azul-lavado text-etapa-azul";
-
-  return (
-    <Link
-      href={href}
-      className={`flex items-center gap-4 rounded-2xl border p-5 transition-opacity hover:opacity-85 ${cor}`}
-    >
-      <span className="font-display text-3xl tabular-nums">{quantidade}</span>
-      <span className="min-w-0">
-        <span className="text-fluid-sm block font-medium">{titulo}</span>
-        <span className="text-fluid-xs text-apoio block">{texto}</span>
-      </span>
-      <span aria-hidden className="text-apoio ml-auto">
-        →
-      </span>
-    </Link>
   );
 }
