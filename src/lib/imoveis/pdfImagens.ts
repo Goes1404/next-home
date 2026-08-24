@@ -20,6 +20,9 @@ const LADO_MINIMO = 200;
 /** Deck de 80 páginas não pode virar 80 mídias. */
 export const TETO_IMAGENS = 60;
 
+/** Deck maior que isto não é apresentação: é catálogo inteiro da construtora. */
+export const TETO_PDF_BYTES = 25 * 1024 * 1024;
+
 export type ImagemExtraida = {
   bytes: Buffer;
   mime: "image/jpeg" | "image/png";

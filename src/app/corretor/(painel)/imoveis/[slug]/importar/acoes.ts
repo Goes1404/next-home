@@ -1,0 +1,209 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { getCorretorLogado } from "@/lib/corretorSessao";
+import { extrairImagensDePdf, TETO_IMAGENS } from "@/lib/imoveis/pdfImagens";
+import { gerarPreview } from "@/lib/imoveis/imagemDerivada";
+import { registrarMidia } from "@/lib/imoveis/registrarMidia";
+
+export type ItemCurado = {
+  /** Posição na extração. A extração é determinística, então isto é identidade. */
+  indice: number;
+  preview: string;
+  largura: number;
+  altura: number;
+  parecePlanta: boolean;
+  parecePaginaInteira: boolean;
+};
+
+export type AnaliseDoPdf =
+  | { ok: true; itens: ItemCurado[]; avisos: string[] }
+  | { ok: false; erro: string };
+
+/**
+ * Lê a apresentação já guardada no Storage e devolve as prévias do que dá
+ * para extrair dela.
+ *
+ * O arquivo NÃO chega por aqui: quem o envia é o navegador, direto para o
+ * Storage. Server Action tem teto de corpo (12 MB neste projeto, por causa
+ * da importação de leads) e um deck de construtora passa disso com folga —
+ * mandar o PDF pela action obrigaria a afrouxar esse teto para TODAS as
+ * actions do sistema. Assim os bytes nunca cruzam a função, o que também
+ * preserva o orçamento de 60s do plano Hobby.
+ *
+ * O PDF fica no Storage porque a curadoria acontece numa requisição
+ * diferente. Guardar UM arquivo é mais barato que guardar as sessenta
+ * imagens extraídas dele — e como a extração é determinística, o índice de
+ * cada imagem continua valendo quando o corretor mandar gravar.
+ */
+export async function analisarPdf(caminhoStaging: string): Promise<AnaliseDoPdf> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada. Entre de novo." };
+
+  const supabase = await createClient();
+  const baixado = await supabase.storage.from("empreendimentos").download(caminhoStaging);
+  if (baixado.error || !baixado.data) {
+    return { ok: false, erro: "Não encontrei o arquivo que você acabou de enviar. Tente escolher de novo." };
+  }
+
+  const bytes = Buffer.from(await baixado.data.arrayBuffer());
+  const extraidas = extrairImagensDePdf(bytes);
+
+  const avisos: string[] = [];
+  for (const { codec, quantidade } of extraidas.naoSuportadas) {
+    avisos.push(
+      `${quantidade} ${quantidade === 1 ? "imagem" : "imagens"} em um formato que ainda não sei ler (${codec}).`,
+    );
+  }
+  if (extraidas.descartadasPorTamanho > 0) {
+    avisos.push(
+      `${extraidas.descartadasPorTamanho} imagens pequenas demais foram ignoradas — costumam ser logo e ícone.`,
+    );
+  }
+  if (extraidas.imagens.length === TETO_IMAGENS) {
+    avisos.push(`Parei nas primeiras ${TETO_IMAGENS} imagens do arquivo.`);
+  }
+
+  if (extraidas.imagens.length === 0) {
+    return {
+      ok: false,
+      erro:
+        avisos.length > 0
+          ? `Não consegui tirar nenhuma foto deste PDF. ${avisos.join(" ")}`
+          : "Não encontrei imagem nenhuma dentro deste PDF.",
+    };
+  }
+
+  const itens: ItemCurado[] = [];
+  for (const [indice, imagem] of extraidas.imagens.entries()) {
+    const previa = await gerarPreview(imagem.bytes);
+    // Imagem que o decodificador não lê não vai para a grade: mostrar um
+    // quadro quebrado seria pior que não mostrar.
+    if (!previa) continue;
+    itens.push({
+      indice,
+      preview: previa.dataUrl,
+      largura: imagem.largura,
+      altura: imagem.altura,
+      parecePlanta: previa.parecePlanta,
+      parecePaginaInteira: imagem.parecePaginaInteira,
+    });
+  }
+
+  return { ok: true, itens, avisos };
+}
+
+export type ResultadoGravacao = {
+  ok: boolean;
+  gravadas: number;
+  duplicadas: number;
+  falhas: string[];
+  erro?: string;
+};
+
+/**
+ * Re-extrai o PDF guardado e sobe SÓ os índices escolhidos.
+ *
+ * Re-extrair em vez de guardar as imagens: a extração é determinística, e
+ * assim a área de passagem guarda um arquivo em vez de sessenta. O custo é
+ * uma segunda varredura do mesmo PDF, que roda em milissegundos.
+ *
+ * O resultado de cada item vem separado porque o corretor precisa saber
+ * QUAL imagem falhou — um total de "3 de 12" não diz o que refazer.
+ */
+export async function gravarEscolhasDoPdf(entrada: {
+  empreendimentoId: string;
+  slug: string;
+  caminhoStaging: string;
+  escolhas: { indice: number; tipo: "foto" | "planta"; capa: boolean }[];
+}): Promise<ResultadoGravacao> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) {
+    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], erro: "Sessão expirada. Entre de novo." };
+  }
+  if (entrada.escolhas.length === 0) {
+    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], erro: "Marque pelo menos uma imagem." };
+  }
+
+  const supabase = await createClient();
+  const baixado = await supabase.storage.from("empreendimentos").download(entrada.caminhoStaging);
+  if (baixado.error || !baixado.data) {
+    return {
+      ok: false,
+      gravadas: 0,
+      duplicadas: 0,
+      falhas: [],
+      erro: "O arquivo que eu estava usando não está mais aqui. Escolha o PDF de novo.",
+    };
+  }
+
+  const pdf = Buffer.from(await baixado.data.arrayBuffer());
+  const extraidas = extrairImagensDePdf(pdf);
+  const deps = depsMidiaSupabase(supabase);
+
+  let gravadas = 0;
+  let duplicadas = 0;
+  const falhas: string[] = [];
+
+  for (const escolha of entrada.escolhas) {
+    const imagem = extraidas.imagens[escolha.indice];
+    if (!imagem) {
+      falhas.push(`Imagem ${escolha.indice + 1} não foi encontrada na segunda leitura do arquivo.`);
+      continue;
+    }
+
+    const resultado = await registrarMidia(deps, {
+      empreendimentoId: entrada.empreendimentoId,
+      bytes: imagem.bytes,
+      mime: imagem.mime,
+      tipo: escolha.tipo,
+      alt: escolha.tipo === "planta" ? "Planta do empreendimento" : "Foto do empreendimento",
+      // Capa é ordem 0, mesma convenção de `definirFotoComoCapa`.
+      ordem: escolha.capa ? 0 : 10,
+    });
+
+    if (!resultado.ok) falhas.push(`Imagem ${escolha.indice + 1}: ${resultado.erro}`);
+    else if (resultado.duplicada) duplicadas++;
+    else gravadas++;
+  }
+
+  // O PDF de passagem já cumpriu o papel; deixá-lo no bucket seria lixo que
+  // ninguém volta a abrir.
+  await supabase.storage.from("empreendimentos").remove([entrada.caminhoStaging]);
+
+  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+
+  return { ok: true, gravadas, duplicadas, falhas };
+}
+
+/**
+ * Ponte entre `registrarMidia` (que não conhece Supabase, para ser testável)
+ * e o cliente de sessão. Fica aqui porque as duas origens da importação — o
+ * PDF e o Drive — usam a mesma ponte.
+ */
+function depsMidiaSupabase(supabase: Awaited<ReturnType<typeof createClient>>) {
+  return {
+    async subir(caminho: string, conteudo: Buffer, contentType: string) {
+      const { error } = await supabase.storage
+        .from("empreendimentos")
+        .upload(caminho, conteudo, { contentType, upsert: true });
+      return { erro: error?.message ?? null };
+    },
+    urlPublica(caminho: string) {
+      return supabase.storage.from("empreendimentos").getPublicUrl(caminho).data.publicUrl;
+    },
+    async inserir(linha: Parameters<Parameters<typeof registrarMidia>[0]["inserir"]>[0]) {
+      const { data, error } = await supabase.from("midias").insert(linha).select("id").single();
+      // 23505 = unique_violation: o índice de dedup recusou, e isso é sucesso.
+      if (error?.code === "23505") return { id: null, duplicada: true, erro: null };
+      if (error) {
+        console.error("Erro ao registrar mídia importada:", error);
+        return { id: null, duplicada: false, erro: error.message };
+      }
+      return { id: data.id, duplicada: false, erro: null };
+    },
+  };
+}

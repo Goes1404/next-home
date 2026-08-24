@@ -48,15 +48,24 @@ export default async function EditarImovelPage({ params }: Props) {
           </p>
         </div>
 
-        <Link
-          href={`/empreendimentos/${imovel.slug}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="min-h-[44px] px-4 py-2 rounded-xl bg-vidro-forte hover:bg-vidro-mais text-corpo hover:text-titulo text-fluid-xs font-semibold transition-colors flex items-center justify-center gap-2 self-start sm:self-auto"
-        >
-          <span>👁️ Ver Página Pública</span>
-          <span>↗</span>
-        </Link>
+        <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+          <Link
+            href={`/corretor/imoveis/${imovel.slug}/importar`}
+            className="min-h-[44px] px-4 py-2 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-colors flex items-center justify-center gap-2"
+          >
+            <span>📥 Importar material</span>
+          </Link>
+
+          <Link
+            href={`/empreendimentos/${imovel.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="min-h-[44px] px-4 py-2 rounded-xl bg-vidro-forte hover:bg-vidro-mais text-corpo hover:text-titulo text-fluid-xs font-semibold transition-colors flex items-center justify-center gap-2"
+          >
+            <span>👁️ Ver Página Pública</span>
+            <span>↗</span>
+          </Link>
+        </div>
       </div>
 
       <EditorImovelClient imovel={imovel} />
