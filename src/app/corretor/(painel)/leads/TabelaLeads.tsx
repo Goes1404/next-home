@@ -12,6 +12,7 @@ import {
 } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import { FolhaAcoesLead } from "@/app/corretor/(painel)/_componentes/FolhaAcoesLead";
 import { REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
+import { BotaoAvancar } from "@/app/corretor/(painel)/_componentes/BotaoAvancar";
 import type { Lead } from "@/lib/types";
 import { ArrowRight, ChevronDown, Mail, Phone } from "lucide-react";
 
@@ -270,6 +271,18 @@ export function TabelaLeads({
                     <circle cx="19" cy="12" r="1.7" />
                   </svg>
                 </button>
+              </div>
+
+              {/* O botão de um toque, embaixo da linha: mover o lead é a
+                  ação mais repetida do dia e não pode depender de abrir
+                  nada. Ocupa a largura toda porque é o alvo do polegar. */}
+              <div className="px-3 pb-3 pl-4">
+                <BotaoAvancar
+                  leadId={lead.id}
+                  etapa={lead.etapa}
+                  tamanho="compacto"
+                  className="w-full"
+                />
               </div>
 
               {aberto && (

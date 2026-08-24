@@ -99,8 +99,8 @@ describe("Contagem por etapa", () => {
     const contagem = contarPorEtapa([
       lead({ id: "1", etapa: "novo" }),
       lead({ id: "2", etapa: "novo" }),
-      lead({ id: "3", etapa: "negociacao" }),
+      lead({ id: "3", etapa: "documentacao" }),
     ]);
-    expect(contagem).toEqual({ novo: 2, negociacao: 1 });
+    expect(contagem).toEqual({ novo: 2, documentacao: 1 });
   });
 });

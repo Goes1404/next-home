@@ -20,7 +20,8 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
   const msg = lead.mensagem || "";
   const temFilhos = msg.toLowerCase().includes("filho") || msg.toLowerCase().includes("escola");
   const orcamentoEstimado = 1850000;
-  const temperaturaScore = lead.etapa === "visita_agendada" || lead.etapa === "proposta_enviada" ? 92 : 65;
+  const temperaturaScore =
+    lead.etapa === "visita_agendada" || lead.etapa === "documentacao" ? 92 : 65;
   const isQuente = temperaturaScore >= 75;
   const linkWhatsapp = linkWhatsappLead(lead);
 

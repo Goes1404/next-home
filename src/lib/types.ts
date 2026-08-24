@@ -87,33 +87,71 @@ export type CorretorPerfil = Corretor & {
 /**
  * Etapas do funil de vendas, na ordem em que o quadro as exibe.
  *
- * "Fechado" e "Perdido" são etapas separadas — somar venda e derrota numa
- * coluna só tornaria qualquer contagem inútil. No quadro elas dividem a
- * última coluna.
+ * Eram SETE até a 0045, e duas delas — "proposta enviada" e "em negociação" —
+ * tinham um lead cada em produção contra 42 em "novo": a distinção existia no
+ * schema e não na operação, e cobrava do corretor uma escolha a cada mexida.
+ * Viraram "documentação".
+ *
+ * "Fechado" e "Perdido" continuam separados — somar venda e derrota numa
+ * coluna só tornaria qualquer contagem inútil.
  *
  * A ordem desta lista é a ordem das colunas: mudar aqui muda a tela. Os
- * valores precisam continuar idênticos ao `check` da migration 0007.
+ * valores precisam continuar idênticos ao `check` da migration 0045.
  */
 export const ETAPAS_FUNIL = [
   "novo",
   "primeiro_contato",
   "visita_agendada",
-  "proposta_enviada",
-  "negociacao",
+  "documentacao",
   "fechado",
   "perdido",
 ] as const;
 
 export type EtapaFunil = (typeof ETAPAS_FUNIL)[number];
 
+/**
+ * O CAMINHO: as cinco etapas que um negócio percorre, em ordem.
+ *
+ * "Perdido" fica de fora de propósito — não é um passo do caminho, é a saída
+ * dele. Ficava ocupando uma coluna no quadro e um chip na lista como se
+ * fosse destino, quando o que o corretor faz com um lead perdido é tirá-lo
+ * da frente. Continua existindo (seis leads reais estavam nele), agora como
+ * ação secundária.
+ */
+export const ETAPAS_DO_CAMINHO = [
+  "novo",
+  "primeiro_contato",
+  "visita_agendada",
+  "documentacao",
+  "fechado",
+] as const satisfies readonly EtapaFunil[];
+
 export const ETAPA_LABEL: Record<EtapaFunil, string> = {
-  novo: "Novo lead",
-  primeiro_contato: "Primeiro contato",
-  visita_agendada: "Visita agendada",
-  proposta_enviada: "Proposta enviada",
-  negociacao: "Em negociação",
+  novo: "Leads",
+  primeiro_contato: "Contatei",
+  visita_agendada: "Visita",
+  documentacao: "Documentação",
   fechado: "Fechado",
   perdido: "Perdido",
+};
+
+/**
+ * O que o botão de um toque faz em cada etapa.
+ *
+ * O rótulo é o ATO, não o destino: "Contatei" (já falei com ele) em vez de
+ * "mover para Primeiro contato". O corretor não pensa em mover cartão, ele
+ * pensa no que acabou de fazer — e é isso que o botão registra.
+ *
+ * `null` encerra o caminho: quem fechou ou perdeu não avança para lugar
+ * nenhum, e um botão ali só seria armadilha.
+ */
+export const PROXIMA_ETAPA: Record<EtapaFunil, { etapa: EtapaFunil; acao: string } | null> = {
+  novo: { etapa: "primeiro_contato", acao: "Falei com ele" },
+  primeiro_contato: { etapa: "visita_agendada", acao: "Marquei visita" },
+  visita_agendada: { etapa: "documentacao", acao: "Visitou, seguiu" },
+  documentacao: { etapa: "fechado", acao: "Fechou negócio" },
+  fechado: null,
+  perdido: null,
 };
 
 /** Como o lead ganhou dono — o que permite auditar a roleta. */
@@ -164,6 +202,15 @@ export type Empreendimento = {
   id?: string;
   slug: string;
   nome: string;
+  /**
+   * Como o CLIENTE chama este imóvel: nome comercial, apelido de anúncio.
+   *
+   * Medido em conversa real: "Gostaria de informações do Dom parque" para um
+   * cadastro chamado "Lançamento ao Lado do Parque", e "manacá Barueri" para
+   * "More na Aldeia de Barueri". Sem isto o bot trata o imóvel como se fosse
+   * de outra imobiliária (ver `focoDaConversa.ts`).
+   */
+  nomesAlternativos?: string[];
   tagline: string;
   descricao: string;
   status: StatusObra;

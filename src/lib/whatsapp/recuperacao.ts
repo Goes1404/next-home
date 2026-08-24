@@ -22,9 +22,17 @@ import type { Empreendimento } from "@/lib/types";
  * `aprendizadoContinuo.ts`.
  */
 
-/** Etapas que provam que a conversa levou a algum lugar. */
+/**
+ * Etapas que provam que a conversa levou a algum lugar.
+ *
+ * As duas antigas ('proposta_enviada', 'negociacao') viraram 'documentacao'
+ * na 0045 e continuam listadas: conversas anteriores à migration podem estar
+ * gravadas com o nome velho em qualquer cópia ou export, e o custo de manter
+ * é uma linha — o de esquecer é um exemplo bom sumir do few-shot em silêncio.
+ */
 const ETAPAS_CONVERTIDAS = new Set([
   "visita_agendada",
+  "documentacao",
   "proposta_enviada",
   "negociacao",
   "fechado",

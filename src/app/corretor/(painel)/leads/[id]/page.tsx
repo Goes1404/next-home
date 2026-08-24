@@ -5,6 +5,8 @@ import { ArrowLeft, Mail, Phone } from "lucide-react";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import { dataHora, diasParado, linkWhatsappLead } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import { REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
+import { BotaoAvancar } from "@/app/corretor/(painel)/_componentes/BotaoAvancar";
+import { PassosDoFunil } from "@/app/corretor/(painel)/_componentes/PassosDoFunil";
 import { createClient } from "@/lib/supabase/server";
 import {
   getLeadDetalhado,
@@ -80,6 +82,10 @@ export default async function FichaLeadPage({
           </div>
           <SeletorEtapa leadId={lead.id} etapa={lead.etapa} />
         </div>
+
+        {/* Onde ele está no caminho, e o único botão para andar. */}
+        <PassosDoFunil etapa={lead.etapa} comRotulo className="mt-4" />
+        <BotaoAvancar leadId={lead.id} etapa={lead.etapa} className="mt-3" />
 
         <div className="mt-4 flex flex-wrap gap-2">
           {whatsapp && (
