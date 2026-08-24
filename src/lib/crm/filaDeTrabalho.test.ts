@@ -17,7 +17,10 @@ const PESOS: Record<TipoItemFila, number> = {
   lead_parado: 5,
 };
 
-function item(tipo: TipoItemFila, titulo = tipo): ItemFila {
+// `titulo: string` explícito: sem a anotação, o default (`= tipo`) faz o TS
+// inferir `TipoItemFila` e um título de verdade ("09h") vira erro de tipo —
+// e o arquivo entra no `tsconfig`, ou seja, derruba o `next build`.
+function item(tipo: TipoItemFila, titulo: string = tipo): ItemFila {
   return {
     chave: `${tipo}:${titulo}`,
     tipo,
