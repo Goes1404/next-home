@@ -804,6 +804,30 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
 - **`ParaHoje.tsx` foi absorvido pela fila**, mas o gesto de concluir tarefa
   em um toque sobreviveu (`BotaoConcluirTarefa`): era o único jeito de
   fechar tarefa sem abrir a ficha, e perder isso seria regressão.
+- **F4 (0049): as duas telas-monstro foram quebradas por ASSUNTO.**
+  `WhatsappManager` (957 linhas, 24 estados, 31 botões) virou casca de 131 +
+  `PainelConexao` / `ConfiguracaoIA` / `PlaygroundIA`; `CampanhasManager`
+  (552 linhas, 21 botões) virou casca de 56 + `StatusFila` / `NovaCampanha` /
+  `HistoricoCampanhas`. Ao mexer nessas telas, mexer no componente do
+  assunto — não voltar a empilhar tudo numa só.
+- **Criar campanha é um assistente de 3 passos** (quem recebe → o que dizer →
+  confirmar) e o **título virou opcional**: o componente gera
+  "público · imóvel · data" quando o campo fica vazio. A action continua
+  exigindo título não-vazio (validação de endpoint), então quem chamar
+  `criarCampanha` de outro lugar precisa mandar um.
+- **Status da fila em português de gente**: "Hoje saem 15 mensagens; as
+  outras 32 continuam amanhã, sozinhas" no lugar de pendentes/cota/próximo
+  envio. Cota, fila e instância são vocabulário de quem construiu o sistema.
+  A proteção anti-ban é explicada como CUIDADO com o número do corretor, não
+  como limite do produto.
+- **"Limpar fila" e "Resetar cota" foram para trás de "+ Avançado"** — a
+  primeira apaga mensagens programadas sem desfazer, a segunda afrouxa a
+  proteção anti-ban de propósito. Nenhuma das duas é rotina, e botão
+  destrutivo no mesmo nível do resto é convite ao clique errado.
+- **A aba de conexão avisa quando o número não está no ar**: sem número
+  pareado, configurar tom de voz não serve de nada. O aviso leva de volta ao
+  que falta em vez de deixar o corretor ajustar um atendimento que não vai
+  acontecer.
 
 ## CRM — o que o lead passou a lembrar (0032)
 
