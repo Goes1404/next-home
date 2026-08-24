@@ -6,6 +6,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
 import type { Empreendimento, Midia, StatusObra, TipoImovel, Finalidade } from "@/lib/types";
 import { validarUrlMidiaExterna } from "@/lib/embedMidia";
+import { registrarMidia } from "@/lib/imoveis/registrarMidia";
 
 export interface DadosGeraisInput {
   nome: string;
@@ -134,43 +135,62 @@ export async function uploadFotoOuPlanta(
   }
 
   const supabase = await createClient();
-  const extensao = arquivo.name.split(".").pop() || "jpg";
-  const caminho = `empreendimentos/${empreendimentoId}/${tipo}-${Date.now()}.${extensao}`;
+  const bytes = Buffer.from(await arquivo.arrayBuffer());
 
-  const { error: erroUpload } = await supabase.storage.from("empreendimentos").upload(caminho, arquivo);
+  // Toda gravação de mídia passa por `registrarMidia`: é lá que a medida
+  // real e o blur são calculados. Este caminho gravava 1920x1080 chumbado e
+  // blur nulo — sem ele, cada origem nova repetiria o mesmo erro.
+  const resultado = await registrarMidia(
+    {
+      async subir(caminhoDoArquivo, conteudo, contentType) {
+        const { error } = await supabase.storage
+          .from("empreendimentos")
+          .upload(caminhoDoArquivo, conteudo, { contentType, upsert: true });
+        return { erro: error?.message ?? null };
+      },
+      urlPublica(caminhoDoArquivo) {
+        return supabase.storage.from("empreendimentos").getPublicUrl(caminhoDoArquivo).data.publicUrl;
+      },
+      async inserir(linha) {
+        const { data, error } = await supabase.from("midias").insert(linha).select("id").single();
+        // 23505 = unique_violation: o índice de dedup recusou, e isso é sucesso.
+        if (error?.code === "23505") return { id: null, duplicada: true, erro: null };
+        if (error) {
+          console.error("Erro ao registrar mídia no banco:", error);
+          return { id: null, duplicada: false, erro: error.message };
+        }
+        return { id: data.id, duplicada: false, erro: null };
+      },
+    },
+    {
+      empreendimentoId,
+      bytes,
+      mime: arquivo.type || "image/jpeg",
+      tipo: tipo === "planta" ? "planta" : "foto",
+      alt,
+    },
+  );
 
-  if (erroUpload) {
-    console.error("Erro ao fazer upload no Supabase Storage:", erroUpload);
-    return { ok: false, erro: "Falha ao enviar arquivo. Verifique sua conexão." };
-  }
-
-  const { data: urlPublica } = supabase.storage.from("empreendimentos").getPublicUrl(caminho);
-
-  // Insere na tabela midias
-  const { data: novaMidia, error: erroMidia } = await supabase
-    .from("midias")
-    .insert({
-      empreendimento_id: empreendimentoId,
-      tipo: tipo as "foto" | "planta" | "video" | "tour360",
-      url: urlPublica.publicUrl,
-      alt: alt.trim(),
-      largura: 1920,
-      altura: 1080,
-      ordem: 10,
-    })
-    .select()
-    .single();
-
-  if (erroMidia) {
-    console.error("Erro ao registrar mídia no banco:", erroMidia);
-    return { ok: false, erro: "Imagem enviada, mas houve erro ao salvar no catálogo." };
+  if (!resultado.ok) {
+    return { ok: false, erro: resultado.erro };
   }
 
   revalidatePath(`/empreendimentos/${slug}`);
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
-  return { ok: true, midia: novaMidia };
+  return {
+    ok: true,
+    midia: {
+      id: resultado.id,
+      url: resultado.url,
+      tipo: tipo === "planta" ? "planta" : "foto",
+      alt: alt.trim(),
+      largura: resultado.largura,
+      altura: resultado.altura,
+      blur_data_url: resultado.blurDataUrl,
+    },
+  };
 }
 
 /**

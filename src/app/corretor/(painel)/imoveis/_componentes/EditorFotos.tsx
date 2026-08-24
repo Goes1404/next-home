@@ -41,7 +41,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
             alt: res.midia.alt,
             largura: res.midia.largura,
             altura: res.midia.altura,
-            blurDataUrl: null,
+            blurDataUrl: res.midia.blur_data_url,
           };
           setMidias((prev) => [...prev, nova]);
         }
