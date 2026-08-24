@@ -13,15 +13,14 @@
  */
 
 import { deflateSync, inflateSync, inflateRawSync } from "node:zlib";
+import { TETO_IMAGENS } from "./limitesPdf";
 
 /** Menor que isto é ícone, logo ou fio de rodapé — não é foto de imóvel. */
 const LADO_MINIMO = 200;
 
-/** Deck de 80 páginas não pode virar 80 mídias. */
-export const TETO_IMAGENS = 60;
-
-/** Deck maior que isto não é apresentação: é catálogo inteiro da construtora. */
-export const TETO_PDF_BYTES = 25 * 1024 * 1024;
+// Os tetos moram em `limitesPdf.ts` — este módulo importa `sharp`, e quem é
+// cliente não pode puxar binário nativo só para ler um número.
+export { TETO_IMAGENS, TETO_PDF_BYTES } from "./limitesPdf";
 
 export type ImagemExtraida = {
   bytes: Buffer;

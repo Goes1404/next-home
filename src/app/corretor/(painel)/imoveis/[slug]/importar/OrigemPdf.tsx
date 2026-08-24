@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { TETO_PDF_BYTES } from "@/lib/imoveis/pdfImagens";
+import { TETO_PDF_BYTES } from "@/lib/imoveis/limitesPdf";
 import type { RascunhoCadastro as Rascunho } from "@/lib/imoveis/rascunhoDePdf";
 import {
   analisarPdf,
