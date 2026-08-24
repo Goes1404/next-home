@@ -43,6 +43,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { gerarRespostaIA, PROMPT_VERSAO } from "../../src/lib/whatsapp/aiAgent";
+import { catalogoParaAtendimento, imoveisCitados } from "../../src/lib/whatsapp/focoDaConversa";
 import { sanearRespostaIA } from "../../src/lib/whatsapp/guardrails";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
 import { chamarOpenaiJson } from "../../src/lib/whatsapp/openai";
@@ -85,6 +86,18 @@ type Caso = {
 };
 
 // `--provedor=nvidia|gemini` restringe a cascata antes de qualquer chamada.
+/*
+ * `--sem-juiz` roda SÓ as checagens duras (fallback, guardrail, foco,
+ * visita, valor, teto de imóveis por mensagem). Existe por dois motivos:
+ * a máquina de quem desenvolve costuma ter a chave de um provedor só — e o
+ * juiz é sempre o Gemini —, e a cota gratuita dele é de 20 chamadas/DIA,
+ * compartilhada com o atendimento real.
+ *
+ * O que ele NÃO faz é score. Rodada sem juiz não se compara com rodada
+ * julgada, e o arquivo de resultado sai marcado (`julgados: 0`) justamente
+ * para ninguém somar as duas coisas depois.
+ */
+const semJuiz = process.argv.includes("--sem-juiz");
 const provedorArg = process.argv.find((a) => a.startsWith("--provedor="))?.split("=")[1];
 if (provedorArg) {
   process.env.IA_PROVEDOR_FORCADO = provedorArg;
@@ -305,8 +318,10 @@ async function main() {
   console.log(`Juiz: ${JUIZ} (${JUIZ === "openai" ? MODELO_JUIZ_OPENAI : MODELO_JUIZ})`);
   console.log(`Eval do prompt ${PROMPT_VERSAO} — ${casos.length} casos\n`);
 
+  if (semJuiz) console.log("Modo --sem-juiz: so as checagens duras, sem score de rubrica.");
+
   console.log("1/2 Calibrando o judge...");
-  const desfecho = await calibrar();
+  const desfecho = semJuiz ? "ok" : await calibrar();
   if (desfecho !== "ok") {
     console.error(
       desfecho === "juiz_mudo"
@@ -332,6 +347,18 @@ async function main() {
   let restricaoFalhas = 0;
 
   for (const caso of casos) {
+    /*
+     * O MESMO preparo do webhook: ranking por relevância e encolhimento
+     * pelo foco. O eval mandava o catálogo cru, então media um prompt que
+     * produção nenhuma via — mesma armadilha do playground, que já tinha
+     * divergido antes.
+     */
+    const { catalogo: catalogoDoPrompt, foco } = catalogoParaAtendimento({
+      catalogo,
+      mensagemAtual: caso.mensagem,
+      historico: caso.historico,
+    });
+
     const bruta = await gerarRespostaIA(
       {
         nomeCorretor: "Bruna Cristal",
@@ -340,8 +367,9 @@ async function main() {
         telefoneCorretor: "5511999999999",
         nomeAssistente: "Sofia",
         tomVoz: "consultivo_alto_padrao",
-        catalogo,
+        catalogo: catalogoDoPrompt,
         historicoMensagens: caso.historico,
+        foco,
       },
       caso.mensagem,
     );
@@ -356,6 +384,42 @@ async function main() {
     }
     if (caso.expectativas?.deveAnexarMidia && saneada.resposta.anexosMidia.length === 0) {
       duras.push("nao_anexou_midia_esperada");
+    }
+    /*
+     * FOCO: o cliente já escolheu um imóvel e a resposta cita outros.
+     *
+     * É o defeito mais reclamado da v14 em produção — "gostei do Terra
+     * Alta" respondido com "que bom, mas temos outras opções, como...". A
+     * checagem é dura porque é objetiva: basta contar nomes de catálogo no
+     * texto. Citar o imóvel do foco, quantas vezes quiser, não conta.
+     */
+    /*
+     * `deveFazerPergunta` era DECORATIVA: dois casos a declaravam e nada no
+     * eval a lia. Critério que não mede nada é pior que critério ausente —
+     * dá a impressão de cobertura que não existe (mesma lição dos três
+     * critérios que reprovavam o comportamento certo).
+     */
+    if (caso.expectativas?.deveFazerPergunta && !saneada.resposta.textoResposta.includes("?")) {
+      duras.push("nao_fez_pergunta");
+    }
+    /*
+     * Teto de nomes por mensagem. Vale para a conversa que ainda NÃO tem
+     * foco — inclusive quando o cliente elogia imóvel de outra imobiliária,
+     * onde a resposta certa é perguntar o que o agradou, não despejar três
+     * alternativas.
+     */
+    if (typeof caso.expectativas?.maximoImoveisCitados === "number") {
+      const citados = imoveisCitados(saneada.resposta.textoResposta, catalogo);
+      if (citados.length > caso.expectativas.maximoImoveisCitados) {
+        duras.push(`citou_${citados.length}_imoveis_numa_mensagem`);
+      }
+    }
+    if (caso.expectativas?.naoPodeOferecerOutroImovel) {
+      const outros = imoveisCitados(saneada.resposta.textoResposta, catalogo).filter(
+        (slug) => slug !== foco?.slug,
+      );
+      if (!foco) duras.push("foco_nao_detectado");
+      else if (outros.length > 0) duras.push(`ofereceu_outro_imovel_${outros.join("_")}`);
     }
     /*
      * As duas regras mais novas — e as duas que o juiz NÃO consegue avaliar
@@ -453,7 +517,8 @@ async function main() {
      * a cota gratuita em 20 chamadas/dia por modelo, o segundo caso é
      * comum: basta a cota acabar no meio da rodada.
      */
-    const nota = bruta.meta.fallback ? null : await julgar(caso.mensagem, saneada.resposta.textoResposta);
+    const nota =
+      semJuiz || bruta.meta.fallback ? null : await julgar(caso.mensagem, saneada.resposta.textoResposta);
     const desfecho = bruta.meta.fallback ? "FALLBACK do agente" : nota ? null : "SEM NOTA (juiz indisponível)";
     if (!bruta.meta.fallback && !nota) semNota++;
     if (nota) {
@@ -468,9 +533,10 @@ async function main() {
      * respondeu (cota), e isso NÃO conta como falha: acusar o agente por
      * silêncio do juiz foi um erro que este arquivo já cometeu uma vez.
      */
-    const restricao = caso.expectativas?.restricaoDoCliente
-      ? await julgarRestricao(caso, saneada.resposta.textoResposta)
-      : null;
+    const restricao =
+      !semJuiz && caso.expectativas?.restricaoDoCliente
+        ? await julgarRestricao(caso, saneada.resposta.textoResposta)
+        : null;
     if (restricao) {
       restricaoAvaliadas++;
       if (restricao.result === "Fail") restricaoFalhas++;

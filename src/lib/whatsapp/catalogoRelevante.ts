@@ -140,12 +140,18 @@ export function ranquearCatalogo(params: {
 
   const pontuados = catalogo.map((e, indice) => {
     let pontos = 0;
-    const nome = normalizar(e.nome);
+    /*
+     * O nome do cadastro E os apelidos (0044): o cliente escreve "Dom
+     * Parque", e o cadastro se chama "Lançamento ao Lado do Parque". Sem os
+     * apelidos aqui, o imóvel citado na mensagem não subia para o topo do
+     * ranking — ou seja, podia nem entrar no prompt.
+     */
+    const rotulos = [e.nome, ...(e.nomesAlternativos ?? [])].map(normalizar).filter(Boolean);
     const bairro = normalizar(e.bairro);
     const tipo = normalizar(e.tipo);
 
-    if (textoAtual.includes(nome)) pontos += 100;
-    if (textoHistorico.includes(nome)) pontos += 40;
+    if (rotulos.some((r) => textoAtual.includes(r))) pontos += 100;
+    if (rotulos.some((r) => textoHistorico.includes(r))) pontos += 40;
     if (textoAtual.includes(bairro)) pontos += 30;
     if (textoHistorico.includes(bairro)) pontos += 12;
     if (exigencias.includes(tipo)) pontos += 8;

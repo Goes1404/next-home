@@ -6,7 +6,7 @@ import { getEmpreendimentos } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import { gerarRespostaIA, PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import type { MotivoFalhaLlm } from "@/lib/whatsapp/llmTipos";
-import { ranquearCatalogo } from "@/lib/whatsapp/catalogoRelevante";
+import { catalogoParaAtendimento } from "@/lib/whatsapp/focoDaConversa";
 import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
 import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
@@ -83,6 +83,14 @@ export async function testarAgenteIA(
     catalogo,
   });
 
+  // Playground = produção: mesmo foco, mesmo catálogo encolhido. Se
+  // divergirem, o teste do corretor deixa de valer como teste.
+  const { catalogo: catalogoDoPrompt, foco } = catalogoParaAtendimento({
+    catalogo,
+    mensagemAtual: mensagem,
+    historico,
+  });
+
   const respostaBruta = await gerarRespostaIA(
     {
       nomeCorretor: corretor.nome,
@@ -91,9 +99,10 @@ export async function testarAgenteIA(
       telefoneCorretor: corretor.whatsapp,
       nomeAssistente: instancia?.nome_assistente ?? "Sofia",
       tomVoz: instancia?.tom_voz ?? "consultivo_alto_padrao",
-      catalogo: ranquearCatalogo({ catalogo, mensagemAtual: mensagem, historico }),
+      catalogo: catalogoDoPrompt,
       historicoMensagens: historico,
       exemplosFewShot,
+      foco,
     },
     mensagem,
   );

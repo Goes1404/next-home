@@ -545,5 +545,84 @@
     "expectativas": {
       "restricaoDoCliente": true
     }
+  },
+  {
+    "id": "foco-elogio-do-cliente",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "procuro apartamento em Alphaville"
+      },
+      {
+        "remetente": "bot",
+        "texto": "Tenho o Canvas Alphaville, pronto para morar, e o Bosque AlphaGran, em pré-lançamento. --- Qual desses te interessa mais?"
+      }
+    ],
+    "mensagem": "gostei do Canvas",
+    "expectativas": {
+      "naoPodeOferecerOutroImovel": true,
+      "naoPodeFalarValor": true
+    }
+  },
+  {
+    "id": "foco-vem-do-historico",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "quero saber do Viva Vila do Conde"
+      },
+      {
+        "remetente": "bot",
+        "texto": "O Viva Vila do Conde fica no Parque Viana e está nas últimas unidades. --- Quer conhecer o decorado?"
+      },
+      {
+        "remetente": "cliente",
+        "texto": "me conta mais"
+      },
+      {
+        "remetente": "bot",
+        "texto": "São 3 dormitórios com 1 suíte e 2 vagas. --- Prefere ver a planta ou as fotos?"
+      }
+    ],
+    "mensagem": "tem vaga coberta?",
+    "expectativas": {
+      "naoPodeOferecerOutroImovel": true
+    }
+  },
+  {
+    "id": "foco-imovel-de-outra-imobiliaria",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "oi, procuro apartamento em Barueri"
+      },
+      {
+        "remetente": "bot",
+        "texto": "Oi! Me conta: procura em que região de Barueri?"
+      }
+    ],
+    "mensagem": "gostei do Dom Barueri, vocês têm algo parecido?",
+    "expectativas": {
+      "maximoImoveisCitados": 1,
+      "deveFazerPergunta": true,
+      "naoPodeInventarUrl": true
+    }
+  },
+  {
+    "id": "foco-nome-escrito-errado",
+    "historico": [
+      {
+        "remetente": "cliente",
+        "texto": "procuro apartamento em Alphaville"
+      },
+      {
+        "remetente": "bot",
+        "texto": "Tenho o Canvas Alphaville, pronto para morar, e o Bosque AlphaGran. --- Qual te interessa mais?"
+      }
+    ],
+    "mensagem": "gostei do canvas alphavile, tem planta?",
+    "expectativas": {
+      "naoPodeOferecerOutroImovel": true
+    }
   }
 ]

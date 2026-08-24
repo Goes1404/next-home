@@ -143,6 +143,11 @@ export function candidatosTelefone(jidDigitos: string): string[] {
   return Array.from(candidatos);
 }
 
+/** Só as strings de um `jsonb` que deveria ser lista de texto. */
+function apenasTextos(valor: unknown): string[] {
+  return Array.isArray(valor) ? valor.filter((v): v is string => typeof v === "string") : [];
+}
+
 /**
  * Acha o lead deste telefone — ou o CRIA.
  *
@@ -564,10 +569,20 @@ export function botDeveResponder(conversa: ConversaPersistida): boolean {
   return true;
 }
 
-/** Últimas mensagens para dar memória ao agente — sem isso ele repete a saudação a cada turno. */
+/**
+ * Últimas mensagens para dar memória ao agente — sem isso ele repete a
+ * saudação a cada turno.
+ *
+ * Eram 12, e 12 é pouco: com o bot respondendo a quase toda fala, isso
+ * cobre umas seis trocas. A queixa "a IA não leva em conta o histórico"
+ * tinha aqui uma de suas causas — a região, a tipologia e o imóvel que o
+ * cliente elogiou saíam da janela e ela recomeçava do zero. Subiu para 20,
+ * e o custo em tokens é menor que a economia do catálogo encolhido pelo
+ * foco (dez fichas viram três, ver `focoDaConversa.ts`).
+ */
 export async function historicoRecente(
   conversaId: string,
-  limite = 12,
+  limite = 20,
 ): Promise<{ remetente: "cliente" | "bot" | "corretor"; texto: string }[]> {
   const supabase = createServiceClient();
 
@@ -757,8 +772,14 @@ export async function buscarDossieAtual(leadId: string): Promise<DossieClienteIA
     formaPagamento: data.forma_pagamento,
     perfilFamiliar: data.perfil_familiar,
     urgenciaMudanca: data.urgencia_mudanca,
-    exigenciasEspecificas: Array.isArray(data.exigencias_especificas) ? data.exigencias_especificas : [],
-    objecoesIdentificadas: Array.isArray(data.objecoes_identificadas) ? data.objecoes_identificadas : [],
+    /*
+     * As duas colunas são `jsonb`: o banco não garante que o array só tem
+     * texto, e o dossiê é escrito por IA. `Array.isArray` sozinho deixava
+     * passar `[null, 42]` e a tela renderizaria isso — filtrar por string é
+     * o que torna o tipo verdadeiro.
+     */
+    exigenciasEspecificas: apenasTextos(data.exigencias_especificas),
+    objecoesIdentificadas: apenasTextos(data.objecoes_identificadas),
     temperaturaScore: data.temperatura_score,
     temperaturaLabel: data.temperatura_label,
     resumoExecutivo: data.resumo_executivo,

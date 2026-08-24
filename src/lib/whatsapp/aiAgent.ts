@@ -21,8 +21,14 @@ import type { DossieClienteIA, TomVozBot } from "./types";
  * v3: regras de tamanho e de voz. Produção mostrava 14 de 39 respostas
  * acima de 400 caracteres (a maior com 1953), markdown cru na tela do
  * cliente e aberturas de robô ("Excelente pergunta!").
+ *
+ * v15: foco da conversa (regras 23 a 25 + bloco FOCO). A IA desfilava
+ * empreendimento em vez de aprofundar no que o cliente escolheu — em
+ * produção, "manda a planta do Terra Alta" foi respondido com uma lista
+ * de outros três. Vem junto com o encolhimento do catálogo no prompt
+ * (`focoDaConversa.ts`), que é a parte que segura de fato.
  */
-export const PROMPT_VERSAO = "2026.08-v14";
+export const PROMPT_VERSAO = "2026.08-v15";
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -82,6 +88,15 @@ export interface ContextoAtendimento {
   dossie?: DossieClienteIA | null;
   /** Instrução extra de cenário (ex.: follow-up de reengajamento). */
   instrucaoExtra?: string;
+  /**
+   * O imóvel que ESTA conversa já escolheu (ver `focoDaConversa.ts`).
+   *
+   * Quando existe, ele é o PRIMEIRO item de `catalogo` e o resto da lista
+   * são reservas. O prompt muda junto: em vez de apresentar opções, a IA
+   * aprofunda neste. Sem isso a conversa vira desfile de empreendimento —
+   * "gostei do Terra Alta" respondido com "temos outras opções, como...".
+   */
+  foco?: { slug: string; nome: string } | null;
 }
 
 /**
@@ -239,8 +254,20 @@ export function construirPromptSistema(ctx: ContextoAtendimento): string {
         .filter(Boolean)
         .join(". ");
 
+      /*
+       * Com foco definido, tudo que não é o foco entra ROTULADO como
+       * reserva. Sem o rótulo, a IA lê dez fichas equivalentes e volta a
+       * desfilar imóvel; com ele, a alternativa continua disponível para o
+       * caso da regra 22 (o imóvel não atende à restrição do cliente) sem
+       * virar vitrine.
+       */
+      const reserva =
+        ctx.foco && e.slug !== ctx.foco.slug
+          ? " (RESERVA — só entra se o cliente pedir outra opção ou se o imóvel do foco não atender ao que ele exigiu)"
+          : "";
+
       return [
-        `- ${e.nome} [slug: ${e.slug}]`,
+        `- ${e.nome} [slug: ${e.slug}]${reserva}`,
         // Rótulo humano, não o enum cru: com "em_construcao" na ficha, o
         // modelo leu errado e afirmou ao cliente que o imóvel estava
         // "pronto para morar" — informação que ele iria conferir na visita.
@@ -299,6 +326,23 @@ export function construirPromptSistema(ctx: ContextoAtendimento): string {
    * uma home genérica sem vínculo nenhum — pior que não mandar nada. Por
    * isso a seção inteira só existe quando o slug existe.
    */
+  /*
+   * FOCO. A conversa que já tem imóvel escolhido não precisa de vitrine —
+   * precisa de profundidade. Medido em produção: cliente pede a planta do
+   * Terra Alta e recebe uma lista com outros três empreendimentos.
+   *
+   * O bloco só existe quando `focoDaConversa.ts` achou um imóvel citado
+   * pelo CLIENTE; ele vem junto com o encolhimento do catálogo, que é a
+   * parte que realmente segura (o que ela não vê, não oferece).
+   */
+  const blocoFoco = ctx.foco
+    ? `FOCO DESTA CONVERSA: ${ctx.foco.nome}. O cliente já escolheu falar DESTE imóvel.
+- Sua próxima mensagem é sobre ELE: planta, metragem, lazer, entrega, condição, visita — o que ele perguntou.
+- NÃO ofereça outro empreendimento. Nada de "mas temos outras opções", "posso te mostrar também", "que tal conhecer o...". Cliente que disse do que gostou e recebe uma lista entende que ninguém leu o que ele escreveu.
+- Só saia deste imóvel em dois casos: (a) ele pedir outra coisa; (b) ele der uma exigência que este imóvel NÃO atende — e aí você fala isso na cara e oferece UMA reserva, uma só: "o ${ctx.foco.nome} é de 1 dormitório, não fecha com o que você precisa — o X tem 3, quer ver?".
+- Aprofundar é vender: uma informação nova por mensagem sobre o mesmo imóvel avança mais que três nomes diferentes.`
+    : "";
+
   const blocoCatalogo = ctx.slugCorretor
     ? `CATÁLOGO DA CASA: quando o cliente disser a região, ou pedir "o que vocês têm", marque "mandarCatalogo": true no JSON. NÃO ESCREVA O ENDEREÇO — o sistema anexa o link certo sozinho, e link digitado por você chega errado. Escreva só a frase curta que acompanha ("dá uma olhada e me diz o que te agradou"), nunca três parágrafos junto.
 É o catálogo de ${ctx.nomeCorretor} na plataforma: o cliente navega pelos imóveis com foto, planta e localização em vez de rolar uma lista no chat.`
@@ -344,6 +388,9 @@ ${resumoCatalogo}
 20. Escreva como uma pessoa da equipe escreveria — natural, sem jargão de atendimento automatizado. Não é seu papel abrir esse assunto por conta própria (nunca diga "sou uma assistente virtual" ou "sou um sistema de IA" sem ser perguntada). Se o cliente perguntar de forma direta e explícita se está falando com um robô ou uma IA, responda com naturalidade e honestidade — não negue, e RESPONDA À PERGUNTA: desviar para imóvel sem responder é o mesmo que negar. Fora essa pergunta direta, o assunto simplesmente não aparece.
 21. VOCÊ É A PESSOA QUE ATENDE, do começo ao fim. ${ctx.nomeCorretor} acompanha nos bastidores e pode assumir — isso acontece pelo sistema, sem aviso. NUNCA diga ao cliente que vai falar com ${ctx.nomeCorretor}, que ${ctx.nomeCorretor} "vai entrar", "vai acompanhar", "assume daqui", "responde melhor que eu" ou qualquer variação. Também não se apresente como "da equipe de ${ctx.nomeCorretor}", como "assistente de ${ctx.nomeCorretor}", nem como quem "ajuda ${ctx.nomeCorretor} com as informações iniciais": para o cliente não existem duas pessoas nesta conversa, existe você. Falar de si como intermediária transforma cada resposta sua em provisória e faz o cliente parar de responder até "o de verdade" chegar.
 22. A RESTRIÇÃO QUE O CLIENTE ACABOU DE DAR MANDA NA SUA PRÓXIMA MENSAGEM. Se ele disse "quero algo menor", "até 3 dormitórios", "só em Barueri", "pronto para morar", a resposta seguinte tem de OBEDECER isso. Duas coisas são proibidas: (a) reapresentar o mesmo imóvel que acabou de ser recusado, como se ele não tivesse falado nada; (b) responder com a ficha de um imóvel que NÃO atende à restrição sem dizer que não atende. Se o imóvel que você tem na mão não serve, fale isso na cara e ofereça a alternativa: "o Terra Alta é de 1 dormitório, não fecha com o que você precisa — o Viva tem 3, quer ver?". Se nada no catálogo atende, diga que não temos e pergunte o que dá para flexibilizar. Cliente que repete a mesma restrição duas vezes é cliente que já percebeu que você não está lendo. Quando a restrição for de ORÇAMENTO, reconheça o teto SEM REPETIR O NÚMERO que ele disse — "anotei", "nessa faixa", "dá para trabalhar nessa faixa" — e siga a conversa — ficar em silêncio sobre o limite e emendar proposta de horário é ignorar o que ele disse.
+23. EMPREENDIMENTO QUE NÃO É NOSSO. O cliente vai citar imóvel de outra imobiliária ("gostei do Dom Barueri", "vi o Manacá"). Se o nome NÃO está no catálogo abaixo, ele não é seu — não finja conhecer, não invente ficha e NÃO responda com uma lista de alternativas. Faça o que uma corretora faz: descubra o critério antes de indicar qualquer coisa. "Esse não é meu, mas me conta o que te agradou nele — a região, o tamanho?" A resposta dela é o que te diz qual imóvel NOSSO faz sentido, e aí você indica UM, com o motivo. Empurrar três nomes para quem elogiou outro imóvel é a forma mais rápida de acabar a conversa.
+24. NO MÁXIMO DOIS IMÓVEIS POR MENSAGEM, e só enquanto a conversa ainda não escolheu um. Três nomes numa mensagem não é atendimento, é catálogo — o cliente não responde a nenhum. Assim que ele demonstrar interesse em um ("gostei do X", "quero saber do X", "manda a planta do X"), a conversa é sobre esse até ele mudar de ideia.
+25. LEIA O HISTÓRICO ANTES DE ESCREVER. Região, tipologia, renda, prazo, o imóvel que ele elogiou, a objeção que ele levantou: está tudo acima, dito por ele. Responder como se a conversa começasse agora é o defeito que mais faz cliente sumir — ele já contou, e ter de repetir cansa.
 
 TÉCNICAS DE VENDA CONSULTIVA (aplique com naturalidade, nunca de forma mecânica ou insistente):
 - Rapport antes de pitch: acolha e valide o que o cliente disse antes de emplacar informação de imóvel.
@@ -371,6 +418,8 @@ Você NÃO indica imóvel, e NÃO propõe horário, antes de saber estas quatro 
 Só depois disso: a INDICAÇÃO ("pelo que você me contou, o que mais faz sentido é...") com o pitch de uma frase, e então a visita.
 
 Se o cliente já disse alguma dessas coisas — nesta mensagem, no histórico ou no dossiê — NÃO PERGUNTE DE NOVO. Repetir pergunta já respondida é o erro que mais faz o cliente sumir, e é o que denuncia um sistema.
+
+${blocoFoco}
 
 ${blocoCatalogo}
 

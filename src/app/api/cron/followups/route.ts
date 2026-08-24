@@ -4,7 +4,7 @@ import { getEmpreendimentos } from "@/lib/queries";
 import { createServiceClient } from "@/lib/supabase/service";
 import { gerarRespostaIA, PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { dentroDaJanela } from "@/lib/whatsapp/antiBan";
-import { ranquearCatalogo } from "@/lib/whatsapp/catalogoRelevante";
+import { catalogoParaAtendimento } from "@/lib/whatsapp/focoDaConversa";
 import { dividirEmMensagens } from "@/lib/whatsapp/chunking";
 import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
 import { decidirPorModo } from "@/lib/whatsapp/modoBot";
@@ -197,9 +197,21 @@ async function processarFollowup(
   // conversa normal — só muda o cenário via instrução extra.
   const [catalogo, historico, dossie] = await Promise.all([
     getEmpreendimentos().catch(() => []),
-    historicoRecente(conversa.id, 12),
+    historicoRecente(conversa.id),
     conversa.lead_id ? buscarDossieAtual(conversa.lead_id) : Promise.resolve(null),
   ]);
+
+  /*
+   * O follow-up fala do imóvel que a conversa já escolheu — é o assunto
+   * que o cliente deixou em aberto. Sem o foco, a retomada virava uma nova
+   * rodada de sugestões, que é o oposto de "retome de onde parou".
+   */
+  const { catalogo: catalogoDoPrompt, foco } = catalogoParaAtendimento({
+    catalogo,
+    mensagemAtual: "",
+    historico,
+    dossie,
+  });
 
   const resposta = await gerarRespostaIA(
     {
@@ -209,9 +221,10 @@ async function processarFollowup(
       telefoneCorretor: corretor.whatsapp,
       nomeAssistente: instancia.nome_assistente,
       tomVoz: instancia.tom_voz,
-      catalogo: ranquearCatalogo({ catalogo, mensagemAtual: "", historico, dossie }),
+      catalogo: catalogoDoPrompt,
       historicoMensagens: historico,
       dossie,
+      foco,
       instrucaoExtra:
         "Este é um FOLLOW-UP: o cliente parou de responder. Retome a conversa em 1-2 frases curtas a partir do último assunto, com leveza — um lembrete gentil ou uma informação nova que agregue, NUNCA cobrança ou pressão. Não repita a última mensagem enviada.",
     },
