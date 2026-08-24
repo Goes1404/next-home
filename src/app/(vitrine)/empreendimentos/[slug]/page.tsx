@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
+import { CenaShowcase } from "@/components/empreendimento/CenaShowcase";
 import { Contato } from "@/components/empreendimento/Contato";
+import { FichaNumeros } from "@/components/empreendimento/FichaNumeros";
 import { Galeria } from "@/components/empreendimento/Galeria";
 import { Hero } from "@/components/empreendimento/Hero";
 import { Lazer } from "@/components/empreendimento/Lazer";
@@ -154,11 +156,14 @@ export default async function EmpreendimentoPage({
         <Hero empreendimento={e} />
 
         <div className="relative bg-fundo">
+          <FichaNumeros empreendimento={e} />
+
           <div className="mx-auto max-w-3xl px-4">
             <NavAncoras secoes={secoesDe(e)} />
           </div>
 
           <Sobre empreendimento={e} />
+          <CenaShowcase empreendimento={e} />
           <BookDigital empreendimento={e} />
           <Tipologias tipologias={e.tipologias} plantasGerais={e.plantas} />
           <Lazer itens={e.lazer} />

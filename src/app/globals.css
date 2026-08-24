@@ -249,6 +249,9 @@
   --text-fluid-2xl: clamp(1.75rem, 1.4rem + 1.75vw, 2.75rem);
   --text-fluid-3xl: clamp(2.25rem, 1.6rem + 3.2vw, 4rem);
   --text-fluid-4xl: clamp(2.75rem, 1.7rem + 5.2vw, 5.5rem);
+  /* Display editorial — o nome do imóvel no hero. Sobe até 7.5rem no desktop
+     mas nunca passa de ~11vw, senão nome longo estoura a viewport no meio. */
+  --text-fluid-5xl: clamp(3rem, 1.2rem + 8.5vw, 7.5rem);
 
   /* Movimento — curvas compartilhadas entre CSS e GSAP */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);

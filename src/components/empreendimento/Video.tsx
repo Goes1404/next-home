@@ -12,7 +12,7 @@ export function Video({ videos }: { videos: Midia[] }) {
   if (videos.length === 0) return null;
 
   return (
-    <section id="video" className="mx-auto max-w-3xl scroll-mt-24 px-4 py-16 sm:py-24">
+    <section id="video" className="mx-auto max-w-5xl scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
       <Reveal>
         <h2 className="text-fluid-2xl text-titulo">{videos.length === 1 ? "Vídeo" : "Vídeos"}</h2>
         <p className="text-fluid-base mt-2 text-apoio">

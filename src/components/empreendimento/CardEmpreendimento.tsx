@@ -20,19 +20,25 @@ export function CardEmpreendimento({
   empreendimento: e,
   prioridade = false,
   sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
+  aspecto = "aspect-[4/3]",
 }: {
   empreendimento: Empreendimento;
   /** `priority` na imagem — só para os primeiros cards acima da dobra. */
   prioridade?: boolean;
   sizes?: string;
+  /** Proporção da capa — o card-destaque da listagem usa uma mais panorâmica. */
+  aspecto?: string;
 }) {
   return (
     <Link
       href={`/empreendimentos/${e.slug}`}
       className="block rounded-glass focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
     >
-      <GlassSurface preset="card" className="group overflow-hidden">
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-[calc(var(--radius-glass)-1px)]">
+      <GlassSurface
+        preset="card"
+        className="group overflow-hidden transition-transform duration-500 ease-out hover:-translate-y-1.5"
+      >
+        <div className={`relative ${aspecto} w-full overflow-hidden rounded-t-[calc(var(--radius-glass)-1px)]`}>
           <ViewTransition name={`capa-${e.slug}`}>
             <Image
               src={e.capa.url}
@@ -62,7 +68,11 @@ export function CardEmpreendimento({
         </div>
 
         <div className="px-5 py-4">
-          <h3 className="font-display text-lg text-titulo">{e.nome}</h3>
+          <h3 className="font-display text-lg text-titulo">
+            <span className="bg-gradient-to-r from-acento-forte to-acento-forte bg-[length:0%_1px] bg-left-bottom bg-no-repeat transition-[background-size] duration-500 group-hover:bg-[length:100%_1px]">
+              {e.nome}
+            </span>
+          </h3>
           <p className="text-fluid-sm mt-0.5 text-legenda">
             {e.bairro}, {e.cidade}
           </p>

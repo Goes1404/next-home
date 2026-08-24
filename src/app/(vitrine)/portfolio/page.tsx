@@ -9,6 +9,7 @@ import { ScrollCue } from "@/components/home/ScrollCue";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
+import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { precoAPartirDe } from "@/lib/format";
 import { getEmpreendimentos } from "@/lib/queries";
@@ -97,7 +98,7 @@ export default async function Home() {
 
         <section id="destaques" className="scroll-mt-20 px-4 pt-4 pb-28">
           <Reveal className="mx-auto max-w-lg text-center">
-            <h2 className="text-fluid-2xl text-titulo">Lançamentos Selecionados</h2>
+            <TituloEditorial className="text-fluid-2xl text-titulo">Lançamentos Selecionados</TituloEditorial>
             <p className="text-fluid-base mt-3 text-apoio">
               Uma curadoria refinada dos projetos mais desejados da região.
             </p>
@@ -105,7 +106,7 @@ export default async function Home() {
 
           <div className="mx-auto mt-10 grid w-full max-w-3xl gap-4 sm:grid-cols-2">
             {destaques.map((e, i) => (
-              <Reveal key={e.slug} delay={i * 0.12} from="baixo">
+              <Reveal key={e.slug} delay={(i % 2) * 0.1} from="baixo">
                 <Link href={`/empreendimentos/${e.slug}`}>
                   <GlassSurface preset="card" className="group overflow-hidden">
                     <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-[calc(var(--radius-glass)-1px)]">

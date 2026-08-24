@@ -8,6 +8,7 @@ import { CtaFinal } from "@/components/home/CtaFinal";
 import { Regioes } from "@/components/home/Regioes";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
+import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
 import { MapaEmpreendimentos } from "@/components/mapa/MapaEmpreendimentos";
@@ -115,17 +116,21 @@ export default async function HomeInstitucional() {
             o conteúdo transbordar a caixa centralizada e cair atrás do CTA
             flutuante do WhatsApp, que é `fixed`. */}
         <section className="flex flex-col items-center justify-center px-4 pt-24 pb-32 sm:min-h-svh sm:pt-28 sm:pb-20">
-          <Reveal className="w-full max-w-3xl text-center">
-            <p className="text-fluid-xs mb-3 font-medium tracking-[0.2em] text-acento-suave uppercase">
-              Imóveis & Oportunidades · Alphaville, Barueri e Região
-            </p>
-            <h1 className="text-fluid-3xl text-titulo">
+          <div className="w-full max-w-4xl text-center">
+            <Reveal from="nenhuma" duration={0.7}>
+              <p className="text-fluid-xs mb-4 font-medium tracking-[0.2em] text-acento-suave uppercase">
+                Imóveis & Oportunidades · Alphaville, Barueri e Região
+              </p>
+            </Reveal>
+            <TituloEditorial as="h1" className="text-fluid-4xl leading-[1.05] tracking-tight text-titulo">
               A melhor oportunidade para morar bem ou investir na região que mais valoriza.
-            </h1>
-            <p className="text-fluid-base mx-auto mt-5 max-w-xl text-corpo-suave">
-              Lançamentos na planta, apartamentos modernos e casas selecionadas com condições facilitadas de pagamento. Atendimento direto e ágil no WhatsApp.
-            </p>
-          </Reveal>
+            </TituloEditorial>
+            <Reveal from="nenhuma" delay={0.4}>
+              <p className="text-fluid-base mx-auto mt-6 max-w-xl text-corpo-suave">
+                Lançamentos na planta, apartamentos modernos e casas selecionadas com condições facilitadas de pagamento. Atendimento direto e ágil no WhatsApp.
+              </p>
+            </Reveal>
+          </div>
 
           <Reveal delay={0.12} className="mt-8 w-full max-w-3xl sm:mt-10">
             <GlassSurface preset="painel" className="px-5 py-5 sm:px-7 sm:py-7">
@@ -164,7 +169,7 @@ export default async function HomeInstitucional() {
         {destaques.length > 0 && (
           <section className="px-4 pb-24">
             <Reveal className="mx-auto max-w-lg text-center">
-              <h2 className="text-fluid-2xl text-titulo">Oportunidades em Destaque</h2>
+              <TituloEditorial className="text-fluid-2xl text-titulo">Oportunidades em Destaque</TituloEditorial>
               <p className="text-fluid-base mt-3 text-apoio">
                 Projetos com excelente potencial de valorização, infraestrutura completa e condições especiais de lançamento.
               </p>
@@ -196,7 +201,7 @@ export default async function HomeInstitucional() {
             imóvel (CardFlutuanteImovel, o mesmo da página /mapa). */}
         <section className="px-4 pb-24">
           <Reveal className="mx-auto max-w-lg text-center">
-            <h2 className="text-fluid-2xl text-titulo">Onde Cada Imóvel Está</h2>
+            <TituloEditorial className="text-fluid-2xl text-titulo">Onde Cada Imóvel Está</TituloEditorial>
             <p className="text-fluid-base mt-3 text-apoio">
               Explore o mapa da região: toque em um marcador para ver preço, endereço e abrir o
               imóvel completo.
@@ -223,7 +228,7 @@ export default async function HomeInstitucional() {
         {equipe.length > 0 && (
           <section className="px-4 pb-24">
             <Reveal className="mx-auto max-w-lg text-center">
-              <h2 className="text-fluid-2xl text-titulo">Equipe Pronta para Negociar</h2>
+              <TituloEditorial className="text-fluid-2xl text-titulo">Equipe Pronta para Negociar</TituloEditorial>
               <p className="text-fluid-base mt-3 text-apoio">
                 Corretores especializados prontos para tirar dúvidas, calcular financiamento e encontrar a melhor proposta para você.
               </p>

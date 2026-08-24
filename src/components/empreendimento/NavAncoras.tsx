@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { rolarPara } from "@/components/motion/lenis";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +17,25 @@ export type Secao = { id: string; label: string };
  */
 export function NavAncoras({ secoes }: { secoes: Secao[] }) {
   const [ativa, setAtiva] = useState<string | null>(secoes[0]?.id ?? null);
+  const progresso = useRef<HTMLSpanElement>(null);
+
+  // Fio de progresso de leitura na base da barra: scaleX acompanha o scroll
+  // da página inteira. Transform puro — nunca layout.
+  useEffect(() => {
+    const barra = progresso.current;
+    if (!barra) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    gsap.registerPlugin(ScrollTrigger);
+    const gatilho = ScrollTrigger.create({
+      start: 0,
+      end: "max",
+      onUpdate: (self) => {
+        barra.style.transform = `scaleX(${self.progress})`;
+      },
+    });
+    return () => gatilho.kill();
+  }, []);
 
   useEffect(() => {
     if (secoes.length === 0) return;
@@ -47,7 +68,13 @@ export function NavAncoras({ secoes }: { secoes: Secao[] }) {
       aria-label="Seções do empreendimento"
       className="sticky top-20 z-30 -mx-4 mb-2 px-4"
     >
-      <ul className="scrollbar-none flex gap-1 overflow-x-auto rounded-full border border-linha/10 bg-fundo/85 p-1.5 backdrop-blur-xl backdrop-saturate-150">
+      <ul className="scrollbar-none relative flex gap-1 overflow-x-auto rounded-full border border-linha/10 bg-fundo/85 p-1.5 backdrop-blur-xl backdrop-saturate-150">
+        <span
+          ref={progresso}
+          aria-hidden
+          className="absolute inset-x-4 bottom-0 h-px origin-left bg-acento-forte/70"
+          style={{ transform: "scaleX(0)" }}
+        />
         {secoes.map((s) => (
           <li key={s.id}>
             <a

@@ -48,7 +48,7 @@ export function Tipologias({
   const indiceDaPlanta = (t: Tipologia) => plantas.findIndex((p) => p.url === t.plantaUrl);
 
   return (
-    <section id="tipologias" className="mx-auto max-w-3xl scroll-mt-24 px-4 py-16 sm:py-24">
+    <section id="tipologias" className="mx-auto max-w-5xl scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
       <Reveal>
         <h2 className="text-fluid-2xl text-titulo">Tipologias</h2>
         <p className="text-fluid-base mt-2 text-apoio">

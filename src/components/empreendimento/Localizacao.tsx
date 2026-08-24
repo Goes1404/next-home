@@ -15,7 +15,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
   )}`;
 
   return (
-    <section id="localizacao" className="mx-auto max-w-3xl scroll-mt-24 px-4 py-16 sm:py-24">
+    <section id="localizacao" className="mx-auto max-w-5xl scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
       <Reveal>
         <h2 className="text-fluid-2xl text-titulo">Localização</h2>
 

@@ -2,45 +2,85 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { ParallaxImagem } from "@/components/motion/ParallaxImagem";
 import { Reveal } from "@/components/motion/Reveal";
+import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { Lightbox } from "@/components/ui/Lightbox";
 import type { Midia } from "@/lib/types";
 
+/**
+ * Mosaico editorial: a primeira foto abre em destaque com parallax, as
+ * demais entram num grid que alterna proporções — ritmo de revista, não
+ * tabela de miniaturas. Tudo continua clicável para o Lightbox.
+ */
 export function Galeria({ fotos }: { fotos: Midia[] }) {
   const [aberta, setAberta] = useState<number | null>(null);
 
   if (fotos.length === 0) return null;
 
+  const [destaque, ...resto] = fotos;
+
   return (
-    <section id="galeria" className="mx-auto max-w-3xl scroll-mt-24 px-4 py-16 sm:py-24">
+    <section id="galeria" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-16 sm:px-8 sm:py-28">
+      <div className="mb-10 sm:mb-14">
+        <TituloEditorial className="text-fluid-3xl text-titulo">Galeria</TituloEditorial>
+        <Reveal from="nenhuma" delay={0.2}>
+          <p className="text-fluid-base mt-3 text-apoio">
+            {fotos.length} {fotos.length === 1 ? "imagem" : "imagens"}. Toque para ampliar.
+          </p>
+        </Reveal>
+      </div>
+
       <Reveal>
-        <h2 className="text-fluid-2xl text-titulo">Galeria</h2>
-        <p className="text-fluid-base mt-2 text-apoio">
-          {fotos.length} {fotos.length === 1 ? "imagem" : "imagens"}. Toque para ampliar.
-        </p>
+        <button
+          type="button"
+          onClick={() => setAberta(0)}
+          aria-label={`Ampliar imagem 1 de ${fotos.length}${destaque.alt ? `: ${destaque.alt}` : ""}`}
+          className="group block w-full rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
+        >
+          <ParallaxImagem className="aspect-[16/9] w-full rounded-2xl" intensidade={8}>
+            <Image
+              src={destaque.url}
+              alt={destaque.alt}
+              fill
+              sizes="(min-width: 1280px) 1216px, 100vw"
+              placeholder={destaque.blurDataUrl ? "blur" : "empty"}
+              blurDataURL={destaque.blurDataUrl ?? undefined}
+              className="object-cover"
+            />
+          </ParallaxImagem>
+        </button>
       </Reveal>
 
-      <Reveal stagger={0.05} className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {fotos.map((foto, i) => (
-          <button
-            key={foto.url}
-            type="button"
-            onClick={() => setAberta(i)}
-            aria-label={`Ampliar imagem ${i + 1} de ${fotos.length}${foto.alt ? `: ${foto.alt}` : ""}`}
-            className="group relative aspect-[4/3] overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
-          >
-            <Image
-              src={foto.url}
-              alt={foto.alt}
-              fill
-              sizes="(min-width: 640px) 33vw, 50vw"
-              placeholder={foto.blurDataUrl ? "blur" : "empty"}
-              blurDataURL={foto.blurDataUrl ?? undefined}
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          </button>
-        ))}
-      </Reveal>
+      {resto.length > 0 && (
+        <Reveal stagger={0.06} className="mt-4 grid grid-cols-2 gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-3">
+          {resto.map((foto, i) => (
+            <button
+              key={foto.url}
+              type="button"
+              onClick={() => setAberta(i + 1)}
+              aria-label={`Ampliar imagem ${i + 2} de ${fotos.length}${foto.alt ? `: ${foto.alt}` : ""}`}
+              className={
+                "group relative overflow-hidden rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte " +
+                // Ritmo do mosaico: a cada bloco de 5, a primeira célula é
+                // retrato e alta; as outras, paisagem — revista, não tabela.
+                (i % 5 === 0 ? "row-span-2 aspect-[3/4]" : "aspect-[4/3]")
+              }
+            >
+              <Image
+                src={foto.url}
+                alt={foto.alt}
+                fill
+                sizes="(min-width: 1024px) 33vw, 50vw"
+                placeholder={foto.blurDataUrl ? "blur" : "empty"}
+                blurDataURL={foto.blurDataUrl ?? undefined}
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+              />
+              <span className="absolute inset-0 bg-ink-950/0 transition-colors duration-500 group-hover:bg-ink-950/15" />
+            </button>
+          ))}
+        </Reveal>
+      )}
 
       <Lightbox
         itens={fotos}

@@ -8,6 +8,7 @@ import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimen
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
+import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { site } from "@/lib/site";
 import { getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
 import { Map } from "lucide-react";
@@ -92,13 +93,15 @@ export default async function EmpreendimentosPage({
       <main className="flex flex-1 flex-col px-4 pt-28 pb-20">
         <div className="mx-auto w-full max-w-5xl">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <Reveal>
-              <h1 className="text-fluid-2xl text-titulo">Empreendimentos & Oportunidades</h1>
-              <p className="text-fluid-base mt-2 text-apoio">
+            <div>
+              <TituloEditorial as="h1" className="text-fluid-3xl tracking-tight text-titulo">
+                Empreendimentos & Oportunidades
+              </TituloEditorial>
+              <Reveal from="nenhuma" delay={0.25}><p className="text-fluid-base mt-2 text-apoio">
                 {empreendimentos.length} empreendimento{empreendimentos.length === 1 ? "" : "s"} disponível{empreendimentos.length === 1 ? "" : "is"} em{" "}
                 {site.regioes.join(", ")}.
-              </p>
-            </Reveal>
+              </p></Reveal>
+            </div>
             <div className="flex items-center gap-2">
               <Link
                 href="/mapa"
@@ -143,11 +146,32 @@ export default async function EmpreendimentosPage({
           </Reveal>
         ) : (
           <div className="mx-auto mt-10 grid w-full max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {empreendimentos.map((e, i) => (
-              <Reveal key={e.slug} delay={i * 0.06} from="baixo">
-                <CardEmpreendimento empreendimento={e} prioridade={i < 3} />
-              </Reveal>
-            ))}
+            {empreendimentos.map((e, i) => {
+              // O primeiro resultado sem filtro é a vitrine da vitrine:
+              // ocupa duas colunas com capa panorâmica.
+              const destaqueGrande = i === 0 && !temFiltroAtivo && empreendimentos.length > 3;
+              return (
+                <Reveal
+                  key={e.slug}
+                  // Stagger por coluna, não por índice: card do fim da lista
+                  // entra na viewport sozinho e não pode esperar 1,5s.
+                  delay={(i % 3) * 0.08}
+                  from="baixo"
+                  className={destaqueGrande ? "sm:col-span-2" : undefined}
+                >
+                  <CardEmpreendimento
+                    empreendimento={e}
+                    prioridade={i < 3}
+                    aspecto={destaqueGrande ? "aspect-[4/3] sm:aspect-[21/10]" : undefined}
+                    sizes={
+                      destaqueGrande
+                        ? "(min-width: 1024px) 66vw, 100vw"
+                        : undefined
+                    }
+                  />
+                </Reveal>
+              );
+            })}
           </div>
         )}
       </main>
