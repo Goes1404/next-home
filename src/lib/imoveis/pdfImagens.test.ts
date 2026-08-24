@@ -1,3 +1,4 @@
+import { deflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 import { extrairImagensDePdf } from "./pdfImagens";
@@ -46,5 +47,53 @@ describe("extrairImagensDePdf — JPEG embutido", () => {
   it("devolve vazio para arquivo que não é PDF, sem lançar", () => {
     const resultado = extrairImagensDePdf(Buffer.from("isto não é um pdf"));
     expect(resultado.imagens).toHaveLength(0);
+  });
+});
+
+/** PDF com bitmap RGB cru comprimido em Flate (sem JPEG no meio). */
+function pdfComBitmapFlate(largura: number, altura: number): Buffer {
+  const pixels = Buffer.alloc(largura * altura * 3, 0x80);
+  const comprimido = deflateSync(pixels);
+  const dicionario =
+    `<< /Type /XObject /Subtype /Image /Width ${largura} /Height ${altura}` +
+    ` /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode /Length ${comprimido.length} >>\n`;
+  return Buffer.concat([
+    Buffer.from(`%PDF-1.7\n1 0 obj\n${dicionario}stream\n`, "latin1"),
+    comprimido,
+    Buffer.from("\nendstream\nendobj\n%%EOF\n", "latin1"),
+  ]);
+}
+
+/** PDF com imagem em codec que não sabemos ler. */
+function pdfComJpx(largura: number, altura: number): Buffer {
+  const conteudo = Buffer.alloc(5000, 0x11);
+  const dicionario =
+    `<< /Type /XObject /Subtype /Image /Width ${largura} /Height ${altura}` +
+    ` /Filter /JPXDecode /Length ${conteudo.length} >>\n`;
+  return Buffer.concat([
+    Buffer.from(`%PDF-1.7\n1 0 obj\n${dicionario}stream\n`, "latin1"),
+    conteudo,
+    Buffer.from("\nendstream\nendobj\n%%EOF\n", "latin1"),
+  ]);
+}
+
+describe("extrairImagensDePdf — bitmap cru e codec desconhecido", () => {
+  it("remonta um PNG legível a partir de bitmap RGB comprimido em Flate", async () => {
+    const resultado = extrairImagensDePdf(pdfComBitmapFlate(300, 240));
+
+    expect(resultado.imagens).toHaveLength(1);
+    expect(resultado.imagens[0].mime).toBe("image/png");
+
+    // Prova de que o PNG remontado é válido: o sharp lê e confere as medidas.
+    const meta = await sharp(resultado.imagens[0].bytes).metadata();
+    expect(meta.width).toBe(300);
+    expect(meta.height).toBe(240);
+  });
+
+  it("conta o codec que não sabe ler em vez de sumir com a imagem", () => {
+    const resultado = extrairImagensDePdf(pdfComJpx(1200, 800));
+
+    expect(resultado.imagens).toHaveLength(0);
+    expect(resultado.naoSuportadas).toEqual([{ codec: "JPXDecode", quantidade: 1 }]);
   });
 });

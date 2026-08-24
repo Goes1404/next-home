@@ -12,6 +12,8 @@
  * arquivo embutido costuma ser bem maior que isso.
  */
 
+import { deflateSync, inflateSync, inflateRawSync } from "node:zlib";
+
 /** Menor que isto é ícone, logo ou fio de rodapé — não é foto de imóvel. */
 const LADO_MINIMO = 200;
 
@@ -44,6 +46,76 @@ function numeroDoDicionario(dicionario: string, chave: string): number | null {
 function codecDoDicionario(dicionario: string): string {
   const achado = dicionario.match(/\/Filter\s*\/?\[?\s*\/?(\w+)/);
   return achado ? achado[1] : "sem-filtro";
+}
+
+const TABELA_CRC = (() => {
+  const tabela = new Int32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    tabela[n] = c;
+  }
+  return tabela;
+})();
+
+function crc32(dados: Buffer): number {
+  let c = 0xffffffff;
+  for (const byte of dados) c = TABELA_CRC[(c ^ byte) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function chunkPng(tipo: string, dados: Buffer): Buffer {
+  const tamanho = Buffer.alloc(4);
+  tamanho.writeUInt32BE(dados.length);
+  const corpo = Buffer.concat([Buffer.from(tipo, "latin1"), dados]);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(corpo));
+  return Buffer.concat([tamanho, corpo, crc]);
+}
+
+/**
+ * Bitmap cru (o que sai do Flate) não é um arquivo de imagem — é só a
+ * sequência de pixels. Vira PNG acrescentando o byte de filtro por linha e
+ * comprimindo de novo. Custa uma recompressão, mas evita uma dependência de
+ * codificador de imagem só para este caso.
+ */
+function montarPng(pixels: Buffer, largura: number, altura: number, canais: 1 | 3): Buffer | null {
+  const bytesPorLinha = largura * canais;
+  if (pixels.length < bytesPorLinha * altura) return null;
+
+  const comFiltro = Buffer.alloc((bytesPorLinha + 1) * altura);
+  for (let y = 0; y < altura; y++) {
+    const destino = y * (bytesPorLinha + 1);
+    comFiltro[destino] = 0; // filtro "None"
+    pixels.copy(comFiltro, destino + 1, y * bytesPorLinha, (y + 1) * bytesPorLinha);
+  }
+
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(largura, 0);
+  ihdr.writeUInt32BE(altura, 4);
+  ihdr[8] = 8; // bits por canal
+  ihdr[9] = canais === 1 ? 0 : 2; // 0 = cinza, 2 = RGB
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
+
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunkPng("IHDR", ihdr),
+    chunkPng("IDAT", deflateSync(comFiltro)),
+    chunkPng("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+function descomprimirFlate(bruto: Buffer): Buffer | null {
+  for (const inflar of [inflateSync, inflateRawSync]) {
+    try {
+      return inflar(bruto);
+    } catch {
+      /* tenta o próximo formato */
+    }
+  }
+  return null;
 }
 
 export function extrairImagensDePdf(pdf: Buffer | Uint8Array): ResultadoImagensPdf {
@@ -81,10 +153,6 @@ export function extrairImagensDePdf(pdf: Buffer | Uint8Array): ResultadoImagensP
     }
 
     const codec = codecDoDicionario(dicionario);
-    if (codec !== "DCTDecode") {
-      naoLidos.set(codec, (naoLidos.get(codec) ?? 0) + 1);
-      continue;
-    }
 
     let inicioDados = inicioStream + "stream".length;
     if (cru[inicioDados] === "\r") inicioDados++;
@@ -96,14 +164,45 @@ export function extrairImagensDePdf(pdf: Buffer | Uint8Array): ResultadoImagensP
     if (cru[fimDados - 1] === "\n") fimDados--;
     if (cru[fimDados - 1] === "\r") fimDados--;
 
-    imagens.push({
-      bytes: bytes.subarray(inicioDados, fimDados),
-      mime: "image/jpeg",
-      largura,
-      altura,
-      pagina: null,
-      parecePaginaInteira: false,
-    });
+    const dados = bytes.subarray(inicioDados, fimDados);
+
+    if (codec === "DCTDecode") {
+      imagens.push({
+        bytes: dados,
+        mime: "image/jpeg",
+        largura,
+        altura,
+        pagina: null,
+        parecePaginaInteira: false,
+      });
+      continue;
+    }
+
+    if (codec === "FlateDecode") {
+      // Só bitmap de 8 bits em cinza ou RGB. Paleta indexada e máscara
+      // precisariam do dicionário de cores; são raras em deck e viram
+      // "não suportado" em vez de saírem com a cor errada.
+      const bits = numeroDoDicionario(dicionario, "BitsPerComponent");
+      const canais = /\/DeviceRGB/.test(dicionario) ? 3 : /\/DeviceGray/.test(dicionario) ? 1 : null;
+      const pixels = bits === 8 && canais ? descomprimirFlate(dados) : null;
+      const png = pixels && canais ? montarPng(pixels, largura, altura, canais) : null;
+
+      if (png) {
+        imagens.push({
+          bytes: png,
+          mime: "image/png",
+          largura,
+          altura,
+          pagina: null,
+          parecePaginaInteira: false,
+        });
+      } else {
+        naoLidos.set("FlateDecode", (naoLidos.get("FlateDecode") ?? 0) + 1);
+      }
+      continue;
+    }
+
+    naoLidos.set(codec, (naoLidos.get(codec) ?? 0) + 1);
   }
 
   return {
