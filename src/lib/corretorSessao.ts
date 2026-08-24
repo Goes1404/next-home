@@ -167,6 +167,11 @@ export type FiltroLeads = {
   busca?: string;
   /** Recorte por etapas do funil (uma ou várias — os segmentos da lista). */
   etapas?: EtapaFunil[];
+  /**
+   * "hoje" = o que pede ação agora: leads novos sem atendimento + visitas
+   * marcadas para o dia. É o segmento que abre o dia do corretor.
+   */
+  recorte?: "hoje";
   /** Só faz sentido para o gestor; corretor comum já é recortado pela RLS. */
   corretorId?: string;
   /** Datas `yyyy-mm-dd` vindas dos inputs de data da lista. */
@@ -191,6 +196,20 @@ function sanearBusca(busca: string): string {
 }
 
 /**
+ * O dia "de hoje" no fuso do Brasil (`yyyy-mm-dd`), não o do servidor (UTC):
+ * das 21h à meia-noite os dois divergem — a mesma armadilha que quebrou o
+ * calendário do bot três horas por noite.
+ */
+function diaEmSaoPaulo(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/**
  * Uma página de leads + o total do filtro, tudo resolvido no banco.
  *
  * É a fonte da tela de lista: com ~100 leads por corretor (e a equipe
@@ -208,6 +227,15 @@ export async function getPaginaDeLeads(
 
   const busca = filtro.busca ? sanearBusca(filtro.busca) : "";
   if (busca) query = query.or(`nome.ilike.%${busca}%,telefone.ilike.%${busca}%`);
+  if (filtro.recorte === "hoje") {
+    // Novo sem atendimento OU visita marcada para hoje. Cada `.or()` vira um
+    // grupo próprio no PostgREST e os grupos se combinam por AND — por isso
+    // este não atropela o da busca acima.
+    const dia = diaEmSaoPaulo();
+    query = query.or(
+      `etapa.eq.novo,and(etapa.eq.visita_agendada,visita_agendada_em.gte.${dia}T00:00:00-03:00,visita_agendada_em.lte.${dia}T23:59:59-03:00)`,
+    );
+  }
   if (filtro.etapas && filtro.etapas.length > 0) query = query.in("etapa", filtro.etapas);
   if (filtro.corretorId) query = query.eq("corretor_id", filtro.corretorId);
   if (filtro.criadoDe) query = query.gte("created_at", filtro.criadoDe);
@@ -287,15 +315,7 @@ export async function getLeadsDeVisita(): Promise<Lead[]> {
  */
 export async function getVisitasDeHoje(): Promise<number> {
   const supabase = await createClient();
-  const agora = new Date();
-  // O dia "de hoje" é o do fuso do Brasil, não o do servidor (UTC): das 21h
-  // à meia-noite os dois divergem — a mesma armadilha do calendário do bot.
-  const dia = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(agora);
+  const dia = diaEmSaoPaulo();
 
   const { count, error } = await supabase
     .from("leads")

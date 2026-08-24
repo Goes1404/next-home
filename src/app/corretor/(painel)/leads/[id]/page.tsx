@@ -49,7 +49,8 @@ export default async function FichaLeadPage({
   const parado = diasParado(lead);
 
   return (
-    <div className="space-y-4">
+    // O respiro extra no rodapé (mobile) é o espaço da barra de ações fixa.
+    <div className="space-y-4 pb-24 md:pb-0">
       <Link
         href="/corretor/leads"
         className="text-fluid-sm inline-flex items-center gap-1.5 text-apoio transition-colors hover:text-titulo"
@@ -128,10 +129,47 @@ export default async function FichaLeadPage({
             }}
             empreendimentos={empreendimentos ?? []}
           />
-          <ProximasAcoes leadId={lead.id} tarefas={tarefas} />
+          <div id="proximas-acoes" className="scroll-mt-24">
+            <ProximasAcoes leadId={lead.id} tarefas={tarefas} />
+          </div>
         </div>
 
         <LinhaDoTempo leadId={lead.id} itens={timeline} />
+      </div>
+
+      {/* Barra de ações no polegar (roadmap F2): no celular, as três ações
+          que resolvem 90% das visitas à ficha ficam fixas no rodapé — chamar,
+          ligar e agendar a próxima tarefa. No desktop o cabeçalho já basta. */}
+      <div className="acima-da-nav border-linha bg-fundo/95 fixed inset-x-0 z-45 border-t p-3 backdrop-blur-md md:hidden">
+        <div className="mx-auto flex w-full max-w-[84rem] items-center gap-2 px-1">
+          {whatsapp && (
+            <a
+              href={whatsapp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-fluid-sm flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#25D366] font-medium text-white transition-opacity hover:opacity-90"
+            >
+              WhatsApp
+            </a>
+          )}
+          {lead.telefone && (
+            <a
+              href={`tel:${lead.telefone}`}
+              aria-label={`Ligar para ${lead.nome}`}
+              className="border-linha-forte text-corpo flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors hover:border-acento-linha"
+            >
+              <Phone className="h-5 w-5" />
+            </a>
+          )}
+          <a
+            href="#proximas-acoes"
+            className={`text-fluid-sm border-acento-linha bg-acento-lavado text-acento-suave flex min-h-12 items-center justify-center rounded-xl border px-4 font-medium transition-opacity hover:opacity-85 ${
+              whatsapp ? "shrink-0" : "flex-1"
+            }`}
+          >
+            Tarefa
+          </a>
+        </div>
       </div>
     </div>
   );

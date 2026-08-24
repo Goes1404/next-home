@@ -16,13 +16,14 @@ import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 export const metadata: Metadata = { title: "Meus leads" };
 
 /**
- * Os quatro segmentos rápidos da lista, cada um um recorte de etapas que o
- * banco resolve. São os mesmos grupos que a tela já oferecia — a diferença é
- * que antes o recorte acontecia no navegador, sobre a carteira inteira.
+ * Os segmentos rápidos da lista, cada um um recorte de etapas que o banco
+ * resolve (roadmap F2): Hoje é especial — não é etapa, é "o que pede ação
+ * agora" (novos + visitas do dia) — e vai como `recorte` para a query.
  */
 const SEGMENTOS: Record<string, EtapaFunil[]> = {
-  novos: ["novo", "primeiro_contato"],
-  negociando: ["visita_agendada", "proposta_enviada", "negociacao"],
+  novos: ["novo"],
+  conversa: ["primeiro_contato", "proposta_enviada", "negociacao"],
+  visitas: ["visita_agendada"],
   frios: ["perdido", "fechado"],
 };
 
@@ -57,6 +58,7 @@ export default async function LeadsPage({
     // Uma etapa específica (vinda do seletor ou do link do quadro) vale mais
     // que o segmento — os dois juntos seriam uma interseção confusa.
     etapas: etapaValida ? [etapaValida] : SEGMENTOS[segmento],
+    recorte: !etapaValida && segmento === "hoje" ? "hoje" : undefined,
     corretorId: primeiroValor(params.corretor) || undefined,
     criadoDe: primeiroValor(params.de) || undefined,
     criadoAte: primeiroValor(params.ate) || undefined,

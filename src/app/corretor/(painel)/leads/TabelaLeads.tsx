@@ -10,6 +10,7 @@ import {
   EtiquetaEtapa,
   linkWhatsappLead,
 } from "@/app/corretor/(painel)/_componentes/CartaoLead";
+import { FolhaAcoesLead } from "@/app/corretor/(painel)/_componentes/FolhaAcoesLead";
 import type { Lead } from "@/lib/types";
 import { ArrowRight, ChevronDown, Mail, Phone } from "lucide-react";
 
@@ -189,21 +190,26 @@ export function TabelaLeads({
   // vários abertos ao mesmo tempo recriariam o pergaminho que esta tabela
   // veio substituir.
   const [abertoId, setAbertoId] = useState<string | null>(null);
+  // Lead com a folha de ações aberta (celular): WhatsApp/ligar/ficha/etapa.
+  const [leadFolha, setLeadFolha] = useState<Lead | null>(null);
 
   const alternar = (id: string) => setAbertoId((atual) => (atual === id ? null : id));
 
   return (
     <div className="overflow-hidden rounded-2xl border border-linha bg-superficie">
       {/* ---------------------------------------------------------------
-          Telefone: lista densa. Cada linha é um botão que expande.
+          Telefone: lista densa. O nome expande os detalhes; a ação primária
+          (WhatsApp) fica sempre à mostra e o "⋯" abre a folha de ações —
+          mover de etapa em dois toques, sem procurar nada (roadmap F2).
           --------------------------------------------------------------- */}
       <ul className="divide-y divide-linha md:hidden">
         {leads.map((lead) => {
           const aberto = abertoId === lead.id;
+          const whatsapp = linkWhatsappLead(lead);
           return (
             <li key={lead.id}>
               <div
-                className={`flex items-center gap-3 px-3 py-3 ${aberto ? "bg-elevado/60" : ""}`}
+                className={`flex items-center gap-2.5 px-3 py-3 ${aberto ? "bg-elevado/60" : ""}`}
               >
                 <input
                   type="checkbox"
@@ -216,21 +222,45 @@ export function TabelaLeads({
                   type="button"
                   onClick={() => alternar(lead.id)}
                   aria-expanded={aberto}
-                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="text-fluid-sm block truncate font-medium text-titulo">
                       {lead.nome}
                     </span>
-                    <span className="text-fluid-xs mt-0.5 flex items-center gap-2 text-tenue">
-                      {dataDoCartao(lead)}
-                      {lead.telefone && <span className="truncate">· {lead.telefone}</span>}
+                    <span className="text-fluid-xs mt-0.5 flex items-center gap-1.5 text-tenue">
+                      <EtiquetaEtapa etapa={lead.etapa} />
+                      <span className="truncate">{dataDoCartao(lead)}</span>
                     </span>
                   </span>
-                  <EtiquetaEtapa etapa={lead.etapa} />
                   <ChevronDown
                     className={`h-4 w-4 shrink-0 text-tenue transition-transform ${aberto ? "rotate-180" : ""}`}
                   />
+                </button>
+
+                {whatsapp && (
+                  <a
+                    href={whatsapp}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Chamar no WhatsApp"
+                    aria-label={`WhatsApp de ${lead.nome}`}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#25D366]/15 text-[#25D366] transition-colors hover:bg-[#25D366] hover:text-white"
+                  >
+                    <IconeWhatsapp className="h-5 w-5" />
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setLeadFolha(lead)}
+                  aria-label={`Mais ações para ${lead.nome}`}
+                  className="border-linha text-apoio flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:border-linha-forte hover:text-titulo"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="h-5 w-5">
+                    <circle cx="5" cy="12" r="1.7" />
+                    <circle cx="12" cy="12" r="1.7" />
+                    <circle cx="19" cy="12" r="1.7" />
+                  </svg>
                 </button>
               </div>
 
@@ -244,6 +274,8 @@ export function TabelaLeads({
           );
         })}
       </ul>
+
+      {leadFolha && <FolhaAcoesLead lead={leadFolha} onFechar={() => setLeadFolha(null)} />}
 
       {/* ---------------------------------------------------------------
           Desktop (md+): tabela de verdade. A linha inteira expande; as

@@ -15,7 +15,17 @@ import {
   type TemplateMensagem,
 } from "@/lib/types";
 
-type Filtro = "todos" | "novos" | "negociando" | "frios";
+type Filtro = "todos" | "hoje" | "novos" | "conversa" | "visitas" | "frios";
+
+/** Chips de segmento, na ordem do dia: o que pede ação vem primeiro. */
+const CHIPS: { valor: Filtro; label: string }[] = [
+  { valor: "todos", label: "Todos" },
+  { valor: "hoje", label: "Hoje" },
+  { valor: "novos", label: "Novos" },
+  { valor: "conversa", label: "Em conversa" },
+  { valor: "visitas", label: "Visitas" },
+  { valor: "frios", label: "Frios" },
+];
 
 /**
  * A casca client da lista de leads.
@@ -147,80 +157,114 @@ export function ListaLeads({
   }
 
   const leadsSelecionados = leads.filter((l) => selecionados.has(l.id));
-  const semNenhumLead = total === 0 && !temFiltroAtivo();
 
-  function temFiltroAtivo(): boolean {
-    return Boolean(buscaNaUrl || etapaFiltro || corretorFiltro || dataDe || dataAte || filtro !== "todos");
-  }
+  // Filtros "avançados" = os que não cabem no dia a dia do polegar. Ficam
+  // recolhidos (progressive disclosure), mas abrem sozinhos quando algum está
+  // ativo — filtro invisível filtrando é a pior surpresa da tela.
+  const filtrosAvancadosAtivos = [etapaFiltro, corretorFiltro, dataDe, dataAte].filter(
+    Boolean,
+  ).length;
+  const [mostrarFiltros, setMostrarFiltros] = useState(filtrosAvancadosAtivos > 0);
+
+  const temFiltroAtivo = Boolean(
+    buscaNaUrl || filtrosAvancadosAtivos > 0 || filtro !== "todos",
+  );
+  const semNenhumLead = total === 0 && !temFiltroAtivo;
 
   return (
     <div>
-      <div className="scrollbar-none mt-6 -mx-4 flex gap-2 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0">
-        {(["todos", "novos", "negociando", "frios"] as Filtro[]).map((f) => (
+      {/* Busca grudada no topo: achar UM lead entre 100 é a tarefa nº 1 da
+          tela, então ela nunca sai de baixo do dedo ao rolar. */}
+      <div className="sticky top-[var(--painel-header-h)] z-30 -mx-4 bg-fundo/95 px-4 pt-4 pb-2 backdrop-blur-md sm:mx-0 sm:px-0 md:static md:bg-transparent md:backdrop-blur-none">
+        <div className="flex gap-2">
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar nome ou telefone"
+            aria-label="Buscar nome ou telefone"
+            className="text-fluid-sm min-h-11 flex-1 rounded-xl border border-linha-forte bg-campo px-4 text-corpo"
+          />
           <button
-            key={f}
-            onClick={() => atualizarUrl({ filtro: f === "todos" ? "" : f, etapa: "" })}
+            type="button"
+            onClick={() => setMostrarFiltros((m) => !m)}
+            aria-expanded={mostrarFiltros}
+            className={`text-fluid-sm flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 transition-colors ${
+              filtrosAvancadosAtivos > 0
+                ? "border-acento-linha bg-acento-lavado text-acento-suave font-medium"
+                : "border-linha-forte text-apoio hover:text-titulo"
+            }`}
+          >
+            Filtros
+            {filtrosAvancadosAtivos > 0 && (
+              <span className="bg-acento flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold text-white tabular-nums">
+                {filtrosAvancadosAtivos}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div className="scrollbar-none mt-2 -mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+        {CHIPS.map(({ valor, label }) => (
+          <button
+            key={valor}
+            onClick={() => atualizarUrl({ filtro: valor === "todos" ? "" : valor, etapa: "" })}
             className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-              filtro === f && !etapaFiltro
+              filtro === valor && !etapaFiltro
                 ? "bg-acento text-white"
                 : "bg-superficie text-apoio hover:bg-elevado hover:text-corpo"
             }`}
           >
-            {f === "todos" && "Todos"}
-            {f === "novos" && "Novos/Quentes"}
-            {f === "negociando" && "Em Negociação"}
-            {f === "frios" && "Frios/Concluídos"}
+            {label}
           </button>
         ))}
       </div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        {gestor && (
+      {mostrarFiltros && (
+        <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {gestor && (
+            <select
+              value={corretorFiltro}
+              onChange={(e) => atualizarUrl({ corretor: e.target.value })}
+              className="text-fluid-xs min-h-11 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
+            >
+              <option value="">Todos os corretores</option>
+              {equipe.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          )}
           <select
-            value={corretorFiltro}
-            onChange={(e) => atualizarUrl({ corretor: e.target.value })}
-            className="text-fluid-xs rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
+            value={etapaFiltro}
+            onChange={(e) => atualizarUrl({ etapa: e.target.value, filtro: "" })}
+            className="text-fluid-xs min-h-11 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
           >
-            <option value="">Todos os corretores</option>
-            {equipe.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
+            <option value="">Todas as etapas</option>
+            {ETAPAS_FUNIL.map((etapa: EtapaFunil) => (
+              <option key={etapa} value={etapa}>
+                {ETAPA_LABEL[etapa]}
               </option>
             ))}
           </select>
-        )}
-        <select
-          value={etapaFiltro}
-          onChange={(e) => atualizarUrl({ etapa: e.target.value, filtro: "" })}
-          className="text-fluid-xs rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
-        >
-          <option value="">Todas as etapas</option>
-          {ETAPAS_FUNIL.map((etapa: EtapaFunil) => (
-            <option key={etapa} value={etapa}>
-              {ETAPA_LABEL[etapa]}
-            </option>
-          ))}
-        </select>
-        <input
-          type="date"
-          value={dataDe}
-          onChange={(e) => atualizarUrl({ de: e.target.value })}
-          className="text-fluid-xs rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
-        />
-        <input
-          type="date"
-          value={dataAte}
-          onChange={(e) => atualizarUrl({ ate: e.target.value })}
-          className="text-fluid-xs rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
-        />
-        <input
-          type="text"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar nome ou telefone"
-          className="text-fluid-xs rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo sm:col-span-2 lg:col-span-4"
-        />
-      </div>
+          <input
+            type="date"
+            value={dataDe}
+            onChange={(e) => atualizarUrl({ de: e.target.value })}
+            aria-label="Chegou a partir de"
+            className="text-fluid-xs min-h-11 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
+          />
+          <input
+            type="date"
+            value={dataAte}
+            onChange={(e) => atualizarUrl({ ate: e.target.value })}
+            aria-label="Chegou até"
+            className="text-fluid-xs min-h-11 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
+          />
+        </div>
+      )}
 
       {leads.length > 0 && (
         <label className="text-fluid-xs text-apoio mt-2 flex min-h-11 w-fit cursor-pointer items-center gap-2.5">

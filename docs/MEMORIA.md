@@ -779,6 +779,18 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
 - **"Carregar mais" acumula por contador de página + dedup por id** — a
   conta derivada (`length / 30`) travava quando o dedup encolhia uma página,
   e sem dedup um lead novo desloca o range e duplica linha na tela.
+- **F2 (0047): o segmento "Hoje" é um `recorte` na query, não uma etapa** —
+  `or(etapa.eq.novo, and(etapa.eq.visita_agendada, visita hoje))`. Detalhe de
+  PostgREST que importa: cada `.or()` vira um grupo próprio e os grupos se
+  combinam por AND — por isso o recorte convive com o `.or()` da busca sem
+  atropelá-lo. O dia é calculado no fuso de SP (`diaEmSaoPaulo`), mesma
+  armadilha do calendário do bot.
+- **No celular, o cartão do lead mostra SÓ a ação primária** (WhatsApp); o
+  resto mora na `FolhaAcoesLead` (bottom sheet): ligar, ficha e mover de
+  etapa em 2 toques. A ficha tem barra fixa no polegar (WhatsApp · ligar ·
+  tarefa). Filtros avançados da lista ficam recolhidos atrás de "Filtros",
+  mas abrem sozinhos quando algum está ativo — filtro invisível filtrando é
+  a pior surpresa da tela.
 
 ## CRM — o que o lead passou a lembrar (0032)
 
