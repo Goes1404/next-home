@@ -2,6 +2,7 @@ import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
+import { SkylineParticulas } from "@/components/motion/SkylineParticulas";
 import { Preloader } from "@/components/motion/Preloader";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { HERO_VIDEO_URL, HERO_VIDEO_WEBM_URL } from "@/lib/site";
@@ -53,6 +54,10 @@ export default async function InstitucionalLayout({
             />
           )
         )}
+        {/* Par do vídeo para o CELULAR (o vídeo só monta no desktop): skyline
+            de partículas que se transforma com o scroll. Decide sozinho se
+            monta — mesmo padrão de gate do HeroVideoBackground. */}
+        <SkylineParticulas />
         {/* O degrau do MEIO é o que segura o título do hero, que é centrado —
             e o vídeo por baixo muda de quadro com o scroll, então o contraste
             não pode depender da sorte do frame. Os 10% antigos falhavam
