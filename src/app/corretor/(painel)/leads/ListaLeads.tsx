@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TabelaLeads } from "./TabelaLeads";
 import { EnviarEmMassa } from "./EnviarEmMassa";
 import { carregarPaginaLeads } from "./acoes";
+import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import type { FiltroLeads } from "@/lib/corretorSessao";
 import {
   ETAPAS_FUNIL,
@@ -76,9 +77,9 @@ export function ListaLeads({
   const dataDe = params.get("de") ?? "";
   const dataAte = params.get("ate") ?? "";
 
-  // A busca é o único filtro com estado local: o input precisa responder a
-  // cada tecla, e a URL só muda depois da pausa de digitação (400ms).
-  const [busca, setBusca] = useState(params.get("busca") ?? "");
+  // Quem cuida do campo (e do debounce) é o `BuscaLeads`; aqui só se lê o
+  // termo em vigor, para o rodapé de "nenhum resultado" e o contador de
+  // filtros ativos.
   const buscaNaUrl = params.get("busca") ?? "";
 
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
@@ -116,20 +117,6 @@ export function ListaLeads({
     const qs = proximos.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
-
-  // Debounce da busca. O guard (`busca === buscaNaUrl`) evita o replace
-  // inútil no primeiro render e o loop quando a própria URL muda por fora.
-  useEffect(() => {
-    if (busca === buscaNaUrl) return;
-    const timer = setTimeout(() => {
-      const proximos = new URLSearchParams(params.toString());
-      if (busca) proximos.set("busca", busca);
-      else proximos.delete("busca");
-      const qs = proximos.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [busca, buscaNaUrl, params, pathname, router]);
 
   function carregarMais() {
     const proximaPagina = paginasCarregadas;
@@ -181,17 +168,12 @@ export function ListaLeads({
   return (
     <div>
       {/* Busca grudada no topo: achar UM lead entre 100 é a tarefa nº 1 da
-          tela, então ela nunca sai de baixo do dedo ao rolar. */}
+          tela, então ela nunca sai de baixo do dedo ao rolar. O campo é o
+          mesmo das outras abas (`BuscaLeads`) — mesma aparência, mesmo
+          comportamento, e o termo sobrevive à troca de aba. */}
       <div className="sticky top-[var(--painel-header-h)] z-30 -mx-4 bg-fundo/95 px-4 pt-4 pb-2 backdrop-blur-md sm:mx-0 sm:px-0 md:static md:bg-transparent md:backdrop-blur-none">
         <div className="flex gap-2">
-          <input
-            type="search"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar nome ou telefone"
-            aria-label="Buscar nome ou telefone"
-            className="text-fluid-sm min-h-11 flex-1 rounded-xl border border-linha-forte bg-campo px-4 text-corpo"
-          />
+          <BuscaLeads className="flex-1" />
           <button
             type="button"
             onClick={() => setMostrarFiltros((m) => !m)}

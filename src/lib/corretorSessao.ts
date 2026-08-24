@@ -278,11 +278,17 @@ export async function getContagemPorEtapa(): Promise<Record<EtapaFunil, number>>
  * moveu por último aparece em cima. É a ordem que o índice `leads_etapa_idx`
  * atende. Limitado a `TETO_DO_QUADRO` — ver o comentário da constante.
  */
-export async function getLeadsDoFunil(): Promise<Lead[]> {
+export async function getLeadsDoFunil(busca?: string): Promise<Lead[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("leads")
-    .select(SELECT_LEAD)
+
+  let query = supabase.from("leads").select(SELECT_LEAD);
+
+  // A busca é a MESMA das outras abas — mesmo saneamento, mesmas colunas.
+  // Duas buscas com regras diferentes na mesma tela seria pior que nenhuma.
+  const termo = busca ? sanearBusca(busca) : "";
+  if (termo) query = query.or(`nome.ilike.%${termo}%,telefone.ilike.%${termo}%`);
+
+  const { data, error } = await query
     .order("etapa_alterada_em", { ascending: false })
     .limit(TETO_DO_QUADRO);
 
@@ -295,12 +301,15 @@ export async function getLeadsDoFunil(): Promise<Lead[]> {
  * Leads com visita marcada (ou na etapa sem data ainda), para a agenda.
  * Sem data primeiro — são os que precisam de ação —, depois por horário.
  */
-export async function getLeadsDeVisita(): Promise<Lead[]> {
+export async function getLeadsDeVisita(busca?: string): Promise<Lead[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("leads")
-    .select(SELECT_LEAD)
-    .eq("etapa", "visita_agendada")
+
+  let query = supabase.from("leads").select(SELECT_LEAD).eq("etapa", "visita_agendada");
+
+  const termo = busca ? sanearBusca(busca) : "";
+  if (termo) query = query.or(`nome.ilike.%${termo}%,telefone.ilike.%${termo}%`);
+
+  const { data, error } = await query
     .order("visita_agendada_em", { ascending: true, nullsFirst: true })
     .limit(100);
 
