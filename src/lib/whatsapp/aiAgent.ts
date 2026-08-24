@@ -22,7 +22,7 @@ import type { DossieClienteIA, TomVozBot } from "./types";
  * acima de 400 caracteres (a maior com 1953), markdown cru na tela do
  * cliente e aberturas de robô ("Excelente pergunta!").
  */
-export const PROMPT_VERSAO = "2026.08-v13";
+export const PROMPT_VERSAO = "2026.08-v14";
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -156,6 +156,13 @@ export interface RespostaAgenteIA {
   empreendimentoCitado?: string;
   imoveisRecomendados: { nome: string; slug: string; preco: number | null; fotoUrl?: string }[];
   anexosMidia: AnexoMidiaIA[];
+  /**
+   * A IA decide SE manda o catálogo do corretor; quem escreve a URL é o
+   * código. Mesma separação de `anexosMidia`, e pelo mesmo motivo medido:
+   * pedir ao modelo que copiasse o endereço fazia ele mandar em cerca de
+   * metade das rodadas do eval.
+   */
+  mandarCatalogo?: boolean;
   visitaProposta?: VisitaPropostaIA | null;
   /** Telemetria da chamada — ver ia_interacoes (0029). */
   meta: {
@@ -293,9 +300,8 @@ export function construirPromptSistema(ctx: ContextoAtendimento): string {
    * isso a seção inteira só existe quando o slug existe.
    */
   const blocoCatalogo = ctx.slugCorretor
-    ? `CATÁLOGO DA CASA: quando o cliente disser a região, ou pedir "o que vocês têm", mande ESTE link — copiado exatamente, sem alterar nada:
-${linkDoCatalogo(ctx.slugCorretor)}
-É o catálogo de ${ctx.nomeCorretor} na plataforma: o cliente navega pelos imóveis com foto, planta e localização em vez de rolar uma lista no chat. Mande UM link com uma frase curta ("dá uma olhada e me diz o que te agradou"), nunca o link junto de três parágrafos.`
+    ? `CATÁLOGO DA CASA: quando o cliente disser a região, ou pedir "o que vocês têm", marque "mandarCatalogo": true no JSON. NÃO ESCREVA O ENDEREÇO — o sistema anexa o link certo sozinho, e link digitado por você chega errado. Escreva só a frase curta que acompanha ("dá uma olhada e me diz o que te agradou"), nunca três parágrafos junto.
+É o catálogo de ${ctx.nomeCorretor} na plataforma: o cliente navega pelos imóveis com foto, planta e localização em vez de rolar uma lista no chat.`
     : "";
 
   return `Você é ${ctx.nomeAssistente}, consultora de imóveis de alto padrão da Next Home em Alphaville, atendendo sob o CRECI ${ctx.creciCorretor}. Para o cliente existe só VOCÊ nesta conversa — nunca se apresente "da equipe de" ninguém (ver regra 21).
@@ -390,6 +396,7 @@ FORMATO DE RESPOSTA OBRIGATÓRIO (JSON EXCLUSIVO, sem crases markdown ou texto e
   "anexosMidia": [
     { "slug": "slug-do-imovel-conforme-o-catalogo", "tipo": "foto" | "planta" | "video" | "tour360", "quantidade": 1 }
   ],
+  "mandarCatalogo": true | false,
   "visitaProposta": { "dataHoraISO": "2026-08-25T10:00:00-03:00", "confirmadaPeloCliente": false } | null
 }`;
 }
@@ -458,6 +465,7 @@ export async function gerarRespostaIA(
     motivoTransferencia: `IA indisponível (${motivoFalha})`,
     imoveisRecomendados: [],
     anexosMidia: [],
+    mandarCatalogo: false,
     visitaProposta: null,
     meta: {
       latenciaMs,
@@ -516,6 +524,7 @@ export async function gerarRespostaIA(
       ? (parsed.imoveisRecomendados as RespostaAgenteIA["imoveisRecomendados"])
       : [],
     anexosMidia: Array.isArray(parsed.anexosMidia) ? (parsed.anexosMidia as AnexoMidiaIA[]) : [],
+    mandarCatalogo: Boolean(parsed.mandarCatalogo),
     visitaProposta:
       visita && typeof visita.dataHoraISO === "string"
         ? { dataHoraISO: visita.dataHoraISO, confirmadaPeloCliente: Boolean(visita.confirmadaPeloCliente) }

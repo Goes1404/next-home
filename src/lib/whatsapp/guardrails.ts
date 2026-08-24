@@ -3,7 +3,12 @@ import type { RespostaAgenteIA } from "./aiAgent";
 import { soarHumano } from "./vozHumana";
 import { limparSeparadoresOrfaos, removerValores } from "./semValores";
 import { removerPrazoInventado } from "./prazoEntrega";
-import { midiasJaEnviadas, resolverAnexos, type AnexoResolvido } from "./resolverMidia";
+import {
+  anexarLinkDoCatalogo,
+  midiasJaEnviadas,
+  resolverAnexos,
+  type AnexoResolvido,
+} from "./resolverMidia";
 import { corrigirVisitaNoPassado, verificarCoerenciaVisita } from "./coerenciaVisita";
 import { ehRepeticaoDoBot, textoNoLugarDaRepeticao } from "./repeticao";
 
@@ -42,6 +47,8 @@ export type RespostaSaneada = {
   visitaIncoerente: boolean;
   /** A resposta prometia prazo de entrega que não existe no cadastro? */
   prazoRemovido: boolean;
+  /** O link do catálogo foi escrito pelo código (a IA só pediu)? */
+  catalogoAnexado: boolean;
   /** A resposta repetia, palavra por palavra, algo que o bot já tinha dito? */
   repeticaoBloqueada: boolean;
 };
@@ -57,6 +64,12 @@ export function sanearRespostaIA(
    * do que já saiu.
    */
   historico?: { remetente: string; texto: string }[],
+  /*
+   * Slug do corretor. Só serve para uma coisa: escrever o link do catálogo
+   * quando a IA pedir `mandarCatalogo`. Ela decide SE; o endereço é do
+   * código — copiar URL o modelo faz errado em metade das vezes.
+   */
+  slugCorretor?: string | null,
 ): RespostaSaneada {
   const slugsPermitidos = new Set(catalogo.map((e) => e.slug));
 
@@ -116,7 +129,16 @@ export function sanearRespostaIA(
   if (repetiu) {
     console.warn(`[guardrails] repetição bloqueada: ${semOrfaos.slice(0, 80)}`);
   }
-  const texto = repetiu ? textoNoLugarDaRepeticao(historico) : semOrfaos;
+  const semRepeticao = repetiu ? textoNoLugarDaRepeticao(historico) : semOrfaos;
+
+  /*
+   * Por último, para o link não ser cortado por nenhum filtro anterior nem
+   * contar como repetição.
+   */
+  const comCatalogo = resposta.mandarCatalogo
+    ? anexarLinkDoCatalogo(semRepeticao, slugCorretor)
+    : { texto: semRepeticao, anexou: false };
+  const texto = comCatalogo.texto;
 
   /*
    * A visita só passa se a data BATER com o dia prometido no texto. Uma
@@ -168,5 +190,6 @@ export function sanearRespostaIA(
     visitaIncoerente: !coerencia.coerente,
     repeticaoBloqueada: repetiu,
     prazoRemovido: semPrazo.removeu,
+    catalogoAnexado: comCatalogo.anexou,
   };
 }

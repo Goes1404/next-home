@@ -345,7 +345,7 @@ async function main() {
       },
       caso.mensagem,
     );
-    const saneada = sanearRespostaIA(bruta, catalogo, caso.historico);
+    const saneada = sanearRespostaIA(bruta, catalogo, caso.historico, "cristal-bruna");
 
     // Checagens DURAS (não dependem do judge)
     const duras: string[] = [];

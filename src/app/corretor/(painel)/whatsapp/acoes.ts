@@ -98,7 +98,7 @@ export async function testarAgenteIA(
     mensagem,
   );
 
-  const saneada = sanearRespostaIA(respostaBruta, catalogo, historico);
+  const saneada = sanearRespostaIA(respostaBruta, catalogo, historico, corretor?.slug);
   const resposta = saneada.resposta;
 
   // Playground também entra na telemetria — com origem própria, para as

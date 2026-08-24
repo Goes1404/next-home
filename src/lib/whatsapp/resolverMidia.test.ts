@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { midiasJaEnviadas, resolverAnexos } from "./resolverMidia";
+import { anexarLinkDoCatalogo, midiasJaEnviadas, resolverAnexos } from "./resolverMidia";
 import type { Empreendimento } from "@/lib/types";
 
 /*
@@ -75,5 +75,43 @@ describe("resolverAnexos com dedupe", () => {
     );
     expect(anexos).toHaveLength(2);
     expect(repetidos).toBe(0);
+  });
+});
+
+describe("Link do catálogo do corretor", () => {
+  const CERTO = "https://next-home-drab.vercel.app/?corretor=cristal-bruna";
+
+  /*
+   * O eval mediu: com o prompt mandando "copie o endereço exatamente", a IA
+   * mandava o link em cerca de METADE das rodadas. Link de atribuição
+   * intermitente é pior que nenhum — a falha não aparece.
+   */
+  it("anexa o link quando a IA pediu e não escreveu nada", () => {
+    const r = anexarLinkDoCatalogo("Dá uma olhada e me diz o que te agradou.", "cristal-bruna");
+    expect(r.anexou).toBe(true);
+    expect(r.texto).toContain(CERTO);
+  });
+
+  it("não duplica quando o link certo já está no texto", () => {
+    const texto = `Dá uma olhada --- ${CERTO}`;
+    expect(anexarLinkDoCatalogo(texto, "cristal-bruna")).toEqual({ texto, anexou: false });
+  });
+
+  /* Slug errado leva a uma home sem vínculo e a atribuição do lead se perde. */
+  it("corrige link que a IA inventou com slug errado", () => {
+    const r = anexarLinkDoCatalogo(
+      "Olha aqui: https://next-home-drab.vercel.app/?corretor=bruna-cristal",
+      "cristal-bruna",
+    );
+    expect(r.anexou).toBe(true);
+    expect(r.texto).toContain(CERTO);
+    expect(r.texto).not.toContain("bruna-cristal");
+  });
+
+  /* Sem slug, `/?corretor=` truncado é pior que não mandar nada. */
+  it("não inventa link para corretor sem slug", () => {
+    const texto = "Dá uma olhada nas opções.";
+    expect(anexarLinkDoCatalogo(texto, null)).toEqual({ texto, anexou: false });
+    expect(anexarLinkDoCatalogo(texto, "  ")).toEqual({ texto, anexou: false });
   });
 });

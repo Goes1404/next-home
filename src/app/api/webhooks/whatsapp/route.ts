@@ -432,7 +432,7 @@ export async function POST(req: NextRequest) {
 
     // Trilho do padrão "trilho + IA": nenhum anexo ou recomendação sai sem
     // existir no catálogo — instrução no prompt não é garantia.
-    const saneada = sanearRespostaIA(respostaBruta, catalogo, historico);
+    const saneada = sanearRespostaIA(respostaBruta, catalogo, historico, instancia.slugCorretor);
     const respostaIA = saneada.resposta;
 
     // O buffer pode ter segurado a resposta por vários segundos; se o

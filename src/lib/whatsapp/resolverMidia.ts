@@ -168,6 +168,41 @@ export function linkDoCatalogo(slugCorretor: string): string {
   return `${site.url}/?corretor=${slugCorretor}`;
 }
 
+/**
+ * Põe o link do catálogo na resposta, e é o CÓDIGO que o escreve.
+ *
+ * Antes o prompt mandava a IA copiar o endereço "exatamente, sem alterar
+ * nada". O eval mostrou que ela manda em cerca de METADE das rodadas — e
+ * link de atribuição que funciona em metade das vezes é pior que não ter,
+ * porque a falha é intermitente e ninguém percebe. É a mesma lição que a
+ * mídia já tinha ensinado (0 anexos enviados, 6 bloqueados, até o código
+ * passar a montar a URL a partir do slug).
+ *
+ * Também conserta o caso em que ela escreveu um `?corretor=` por conta
+ * própria: qualquer variação vira o link certo, porque um slug errado leva
+ * o cliente a uma home sem vínculo e a atribuição do lead se perde.
+ */
+export function anexarLinkDoCatalogo(
+  texto: string,
+  slugCorretor: string | null | undefined,
+): { texto: string; anexou: boolean } {
+  const slug = slugCorretor?.trim();
+  if (!slug) return { texto, anexou: false };
+
+  const certo = linkDoCatalogo(slug);
+  if (texto.includes(certo)) return { texto, anexou: false };
+
+  /*
+   * Link de catálogo escrito pela IA, com slug errado ou truncado. Sem
+   * `.test()` de propósito: regex global guarda `lastIndex` entre chamadas
+   * e o segundo teste sairia do lugar errado.
+   */
+  const corrigido = texto.replace(/https?:\/\/\S*\?corretor=\S*/gi, certo);
+  if (corrigido !== texto) return { texto: corrigido, anexou: true };
+
+  return { texto: `${texto.trim()} --- ${certo}`.trim(), anexou: true };
+}
+
 export function linkDaPagina(slug: string): string {
   return `${site.url}/empreendimentos/${slug}`;
 }
