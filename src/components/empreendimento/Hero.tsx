@@ -1,5 +1,5 @@
-import Image from "next/image";
-import { ViewTransition } from "react";
+import { CapaHero } from "@/components/empreendimento/CapaHero";
+import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { VoltarLink } from "@/components/ui/VoltarLink";
@@ -20,26 +20,12 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
 
   return (
     <section className="relative flex min-h-svh flex-col justify-end">
-      <div className="fixed inset-0 -z-10">
-        <ViewTransition name={`capa-${e.slug}`}>
-          <Image
-            src={e.capa.url}
-            alt={e.capa.alt}
-            fill
-            priority
-            sizes="100vw"
-            placeholder={e.capa.blurDataUrl ? "blur" : "empty"}
-            blurDataURL={e.capa.blurDataUrl ?? undefined}
-            className="object-cover"
-          />
-        </ViewTransition>
-        {/* Cor literal de propósito: este véu escurece a FOTO de capa para o
-            texto branco por cima ficar legível. O fundo dele é a imagem, não a
-            página — num tema claro ele continua escuro, senão o texto some. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-ink-950/55 via-ink-950/15 to-ink-950" />
-      </div>
+      <CapaHero slug={e.slug} capa={e.capa} />
 
-      <div className="mx-auto w-full max-w-7xl px-4 pt-28 sm:px-8">
+      {/* Velocidade NEGATIVA: o conteúdo sobe mais rápido que a foto (que anda
+          a +0.08 na CapaHero). É o par que produz a separação de planos —
+          sozinha, cada metade só parece "uma foto grande". */}
+      <Camada velocidade={-0.18} className="mx-auto w-full max-w-7xl px-4 pt-28 sm:px-8">
         <Reveal from="nenhuma" duration={0.6}>
           <VoltarLink href="/empreendimentos">Empreendimentos</VoltarLink>
         </Reveal>
@@ -69,7 +55,7 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
         >
           {e.tagline}
         </TituloEditorial>
-      </div>
+      </Camada>
 
       {/* Barra de compra: divisória fina, informação mínima, um CTA. */}
       <Reveal from="baixo" delay={0.5} className="mx-auto w-full max-w-7xl px-4 sm:px-8">
