@@ -199,3 +199,58 @@ describe("Três provedores na cascata", () => {
     delete process.env.GROQ_API_KEY;
   });
 });
+
+describe("Ordem da cascata configurável", () => {
+  const semVar = () => delete process.env.IA_ORDEM_PROVEDORES;
+
+  afterEach(semVar);
+
+  it("sem a variável, mantém a ordem medida", async () => {
+    semVar();
+    vi.resetModules();
+    const { ordemDosProvedores } = await import("./llm");
+    expect(ordemDosProvedores().map((p) => p.nome)).toEqual([
+      "groq",
+      "gemini",
+      "nvidia",
+      "openai",
+    ]);
+  });
+
+  /*
+   * O caso do piloto: a Groq saiu por tamanho de prompt e o cliente passou
+   * a esperar a latência do Gemini (8,5s de média em produção) quando a
+   * OpenAI responde em ~2,6s.
+   */
+  it("põe o provedor pedido na frente", async () => {
+    process.env.IA_ORDEM_PROVEDORES = "openai,gemini";
+    vi.resetModules();
+    const { ordemDosProvedores } = await import("./llm");
+    expect(ordemDosProvedores().map((p) => p.nome)).toEqual([
+      "openai",
+      "gemini",
+      "groq",
+      "nvidia",
+    ]);
+  });
+
+  /*
+   * Um typo na variável NÃO pode remover provedor da cascata — seria o
+   * jeito mais fácil de derrubar o atendimento sem perceber.
+   */
+  it("nome desconhecido é ignorado e ninguém fica de fora", async () => {
+    process.env.IA_ORDEM_PROVEDORES = "openai, xpto ,,gemini";
+    vi.resetModules();
+    const { ordemDosProvedores } = await import("./llm");
+    const nomes = ordemDosProvedores().map((p) => p.nome);
+    expect(nomes).toEqual(["openai", "gemini", "groq", "nvidia"]);
+    expect(nomes).toHaveLength(4);
+  });
+
+  it("repetido não duplica", async () => {
+    process.env.IA_ORDEM_PROVEDORES = "openai,openai";
+    vi.resetModules();
+    const { ordemDosProvedores } = await import("./llm");
+    expect(ordemDosProvedores()).toHaveLength(4);
+  });
+});

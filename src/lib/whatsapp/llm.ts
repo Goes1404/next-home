@@ -116,6 +116,46 @@ const PROVEDORES: Provedor[] = [
   },
 ];
 
+/**
+ * Ordem da cascata, configurável por ambiente.
+ *
+ * O padrão (Groq → Gemini → NVIDIA → OpenAI) foi MEDIDO e continua certo
+ * para operação normal: os três primeiros são gratuitos e a OpenAI, paga,
+ * cobre o que sobra.
+ *
+ * O que mudou e justifica poder inverter: a Groq saiu do ar por tamanho de
+ * prompt, e com ela fora o cliente passou a esperar a latência do Gemini —
+ * 8,5s de média e 10,4s de pior caso, medidos em produção — quando a
+ * OpenAI responde em ~2,6s. Numa fase de piloto, com poucas conversas, a
+ * conta inverte: o custo de alguns centavos por conversa é menor que o de
+ * um lead que desiste esperando.
+ *
+ * `IA_ORDEM_PROVEDORES=openai,gemini,nvidia` reordena sem deploy. Nome
+ * desconhecido é ignorado, e quem ficar de fora da lista entra depois na
+ * ordem padrão — assim uma variável mal digitada nunca REMOVE um provedor
+ * da cascata, que seria o jeito mais fácil de derrubar o atendimento com
+ * um typo.
+ */
+export function ordemDosProvedores(): Provedor[] {
+  const bruto = (process.env.IA_ORDEM_PROVEDORES || "").trim();
+  if (!bruto) return PROVEDORES;
+
+  const pedidos = bruto
+    .split(",")
+    .map((n) => n.trim().toLowerCase())
+    .filter(Boolean);
+
+  const escolhidos: Provedor[] = [];
+  for (const nome of pedidos) {
+    const p = PROVEDORES.find((x) => x.nome === nome);
+    if (p && !escolhidos.includes(p)) escolhidos.push(p);
+  }
+  for (const p of PROVEDORES) {
+    if (!escolhidos.includes(p)) escolhidos.push(p);
+  }
+  return escolhidos;
+}
+
 export async function chamarLlmJson(
   prompt: string,
   opts?: { temperature?: number; orcamentoMs?: number },
@@ -124,7 +164,7 @@ export async function chamarLlmJson(
   const prazoFinal = Date.now() + orcamentoMs;
   const tetoPorProvedor = Math.floor(orcamentoMs * FATIA_MAXIMA);
 
-  const disponiveis = PROVEDORES.filter(
+  const disponiveis = ordemDosProvedores().filter(
     (p) =>
       p.configurado() &&
       (p.cabe?.(prompt) ?? true) &&
