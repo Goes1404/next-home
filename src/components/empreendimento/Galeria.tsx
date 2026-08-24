@@ -46,7 +46,9 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
           aria-label={`Ampliar imagem 1 de ${fotos.length}${destaque.alt ? `: ${destaque.alt}` : ""}`}
           className="group block w-full rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
         >
-          <ParallaxImagem className="aspect-[16/9] w-full rounded-2xl" intensidade={8}>
+          {/* A foto de abertura é grande o bastante para aguentar o dobro da
+              intensidade das demais — é ela que dá o tom da seção. */}
+          <ParallaxImagem className="aspect-[16/9] w-full rounded-2xl" intensidade={18}>
             <Image
               src={destaque.url}
               alt={destaque.alt}
@@ -66,6 +68,10 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
             <CartaoTilt
               key={foto.url}
               indice={i}
+              // Coluna 1 a 0.06, coluna 2 a 0.12, coluna 3 a 0.18. É a
+              // diferença ENTRE colunas que produz o ritmo de revista; todas
+              // no mesmo passo pareceria a grade inteira tremendo junta.
+              velocidadeCamada={0.06 + (i % 3) * 0.06}
               className={
                 "overflow-hidden rounded-2xl " +
                 // Ritmo do mosaico: a cada bloco de 5, a primeira célula é

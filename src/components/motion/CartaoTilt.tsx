@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useCamada } from "./Camada";
 
 /**
  * Moldura com duas camadas de efeito, para as fotos da galeria:
@@ -22,13 +23,26 @@ export function CartaoTilt({
   children,
   className,
   indice = 0,
+  velocidadeCamada = 0,
 }: {
   children: React.ReactNode;
   className?: string;
   /** Posição na grade — escalona a entrada sem depender de um pai. */
   indice?: number;
+  /**
+   * Deslocamento do conteúdo DENTRO da moldura. `0` desliga e o componente
+   * se comporta exatamente como antes.
+   *
+   * A camada vai num nó interno, nunca no externo: o externo já é dono do
+   * `clipPath` e das rotações do tilt, e somar `y` ali seria dois donos da
+   * mesma matriz de transform.
+   */
+  velocidadeCamada?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const interno = useRef<HTMLDivElement>(null);
+
+  useCamada(interno, { velocidade: velocidadeCamada });
 
   useEffect(() => {
     const el = ref.current;
@@ -41,14 +55,24 @@ export function CartaoTilt({
     }
 
     gsap.registerPlugin(ScrollTrigger);
-    const interno = el.firstElementChild as HTMLElement | null;
+
+    /**
+     * O zoom de entrada é PULADO quando há camada: ali o primeiro filho é o
+     * nó da camada, cuja `scale-110` é a folga contra borda vazia. Animar a
+     * escala dele até 1 apagaria essa folga para sempre, e o deslocamento
+     * passaria a mostrar o fundo da moldura. A cortina do `clip-path`
+     * continua, que é o que dá a entrada.
+     */
+    const primeiroFilho = velocidadeCamada
+      ? null
+      : (el.firstElementChild as HTMLElement | null);
 
     const contexto = gsap.context(() => {
       // Assume a opacidade ANTES de soltar a classe (contrato do Reveal): a
       // cortina do clip-path é quem esconde daqui em diante.
       gsap.set(el, { opacity: 1, clipPath: "inset(100% 0% 0% 0%)" });
       el.classList.remove("gsap-pending");
-      if (interno) gsap.set(interno, { scale: 1.18 });
+      if (primeiroFilho) gsap.set(primeiroFilho, { scale: 1.18 });
 
       const tl = gsap.timeline({
         scrollTrigger: { trigger: el, start: "top 88%", once: true },
@@ -56,8 +80,8 @@ export function CartaoTilt({
       });
 
       tl.to(el, { clipPath: "inset(0% 0% 0% 0%)", duration: 1.05, ease: "power3.inOut" }, 0);
-      if (interno) {
-        tl.to(interno, { scale: 1, duration: 1.4, ease: "power2.out" }, 0);
+      if (primeiroFilho) {
+        tl.to(primeiroFilho, { scale: 1, duration: 1.4, ease: "power2.out" }, 0);
       }
     }, el);
 
@@ -101,7 +125,7 @@ export function CartaoTilt({
       contexto.revert();
       limpar?.();
     };
-  }, [indice]);
+  }, [indice, velocidadeCamada]);
 
   return (
     <div
@@ -110,7 +134,16 @@ export function CartaoTilt({
       // regra `.no-js`/`.motion-off` do globals.css devolve a opacidade.
       className={`gsap-pending group/tilt relative [transform-style:preserve-3d] [perspective:1000px] ${className ?? ""}`}
     >
-      {children}
+      {/* Com camada, o conteúdo ganha um nó próprio (e a folga do `scale-110`
+          contra borda vazia). Sem ela, os filhos ficam onde sempre estiveram
+          — inclusive para o `firstElementChild` que a cortina amplia. */}
+      {velocidadeCamada ? (
+        <div ref={interno} className="absolute inset-0 scale-110 will-change-transform">
+          {children}
+        </div>
+      ) : (
+        children
+      )}
       {/* Brilho que segue o cursor. `pointer-events-none` para nunca roubar o
           clique do botão que abre o Lightbox. */}
       <span
