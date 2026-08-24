@@ -1234,3 +1234,49 @@ bastante para servir de especificação. Ao trazer algo de lá, conferir a
 dependência: vários usam Framer Motion (este projeto usa GSAP, e somar outro
 runtime de animação pesa no celular) e alguns são cenas de Remotion, que é
 framework de VÍDEO e não serve para página.
+
+### A medição da F0, feita com books de verdade (24/08/2026)
+
+Dois arquivos reais: **Dom Parque** (P4, 68 páginas, 6,1 MB) e **Vila dos
+Jatobás** (22 páginas, 6,9 MB). O que saiu:
+
+| | Dom Parque | Jatobás |
+|---|---|---|
+| imagens embutidas | 95 | 59 |
+| extraídas e legíveis | 57 | 30 |
+| codecs recusados | 0 | 0 |
+| máscaras puladas | 5 | 22 |
+| pequenas descartadas | 33 | 7 |
+| tempo | 27 ms | 57 ms |
+
+**Nenhum dos dois é deck "chapado"** — a decisão que a F0 existia para tomar.
+O parser caseiro basta; `mupdf` wasm fica fora, e a economia é de 20-40 MB na
+função.
+
+Três defeitos que SÓ apareceram com arquivo de verdade, e que nenhum PDF
+sintético de teste teria pego:
+
+- **`lastIndexOf("<<")` acha o dicionário ERRADO.** Dicionário de imagem
+  costuma conter outro (`/DecodeParms << … >>`), e a busca preguiçosa pega o
+  de dentro — perdendo o `/ColorSpace`. No Jatobás isso recusou 22 de 52
+  imagens, todas reportadas como "codec não suportado". O dicionário certo
+  vem do cabeçalho do objeto (`N 0 obj`).
+- **Máscara de transparência não é foto.** Objetos apontados por `/SMask` ou
+  `/Mask` são o RECORTE de outra imagem: em escala de cinza, uma silhueta
+  preta e branca. Duas delas apareceram na grade de curadoria do Dom Parque
+  como quadros pretos. Hoje são puladas e contadas à parte.
+- **`/ColorSpace` pode vir por referência** (`663 0 R`), e resolvê-la exigiria
+  montar a tabela de objetos do arquivo. Quando vem assim, a quantidade de
+  bytes responde: bitmap tem exatamente largura × altura × canais.
+
+E uma lição de PRODUTO, não de código: **página inteira não pode entrar
+desmarcada**. A régua nasceu pensando em deck de Canva, mas nos dois books
+reais as PLANTAS são justamente as imagens do tamanho da página —
+desmarcá-las obrigaria o corretor a remarcar uma por uma, o contrário de
+ajudar. Quem entra desmarcado é imagem de UM CANAL: nos dois arquivos, todas
+as 7 eram letreiro, logo ou recorte, e nenhuma era foto. Foto de
+empreendimento é sempre RGB.
+
+Bônus que justifica a extração em vez do print da página: a foto aérea da
+região saiu **sem os pins e rótulos** que o deck desenha por cima — o
+arquivo embutido é a foto original, limpa.
