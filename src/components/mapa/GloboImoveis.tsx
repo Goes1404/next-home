@@ -26,6 +26,22 @@ export type PinoGlobo = { lat: number; lng: number };
  * mostra o mapa direto.
  */
 
+/** Posições fixas da poeira estelar (percentuais da moldura). */
+const POEIRA = [
+  { x: 12, y: 18, dur: 3.2, atraso: 0 },
+  { x: 88, y: 22, dur: 4.1, atraso: 0.6 },
+  { x: 24, y: 74, dur: 3.6, atraso: 1.2 },
+  { x: 76, y: 68, dur: 4.6, atraso: 0.3 },
+  { x: 8, y: 52, dur: 3.9, atraso: 1.8 },
+  { x: 94, y: 48, dur: 3.3, atraso: 0.9 },
+  { x: 34, y: 8, dur: 4.3, atraso: 1.5 },
+  { x: 62, y: 90, dur: 3.5, atraso: 0.4 },
+  { x: 18, y: 36, dur: 4.8, atraso: 2.1 },
+  { x: 82, y: 84, dur: 3.1, atraso: 1.1 },
+  { x: 46, y: 14, dur: 4.4, atraso: 0.8 },
+  { x: 56, y: 82, dur: 3.7, atraso: 1.6 },
+];
+
 /** Centro de Alphaville/Barueri — para onde o globo aponta. */
 const FOCO = { lat: -23.4985, lng: -46.8532 };
 
@@ -62,12 +78,21 @@ function paleta() {
     && (document.documentElement.matches('[data-tema="claro"]')
       || !window.matchMedia("(prefers-color-scheme: dark)").matches);
 
+  // Nos DOIS temas o globo é ESCURO: uma esfera de teal profundo com os
+  // continentes desenhados em pontos claros. A primeira tentativa deixava o
+  // globo claro no tema claro para "combinar" com a página — e o resultado
+  // foi um disco lavado, sem massa nem contorno, que sumia no fundo. Uma
+  // esfera escura sobre página clara é justamente o que dá o destaque: vira
+  // objeto, não mancha.
   return {
-    dark: claro ? 0 : 1,
-    base: (claro ? [0.92, 0.95, 0.94] : [0.09, 0.16, 0.15]) as [number, number, number],
-    brilho: (claro ? [0.85, 0.92, 0.9] : [0.05, 0.11, 0.1]) as [number, number, number],
-    mapa: claro ? 8 : 5,
-    marca: lerCor("--color-acento-forte", claro ? "#00443c" : "#2fd6a4"),
+    dark: 1,
+    base: [0.02, 0.15, 0.13] as [number, number, number],
+    brilho: (claro ? [0.11, 0.5, 0.4] : [0.06, 0.36, 0.29]) as [number, number, number],
+    // Brilho do mapa alto: é o que faz os continentes aparecerem como pontos
+    // luminosos em vez de um chuvisco cinza.
+    mapa: 14,
+    marca: lerCor("--color-acento-forte", "#2fd6a4"),
+    difusa: 1.6,
   };
 }
 
@@ -146,7 +171,7 @@ export function GloboImoveis({
       // e eles quebram tanto a medida quanto a centralização do flex — o
       // globo saía encostado à esquerda e cortado (visto em tela).
       const caixa = molduraRef.current?.getBoundingClientRect();
-      const largura = Math.floor(Math.min(caixa?.width ?? 0, caixa?.height ?? 0) * 0.86);
+      const largura = Math.floor(Math.min(caixa?.width ?? 0, caixa?.height ?? 0) * 0.78);
       if (largura <= 0 || globo) return;
       canvas.style.width = `${largura}px`;
       canvas.style.height = `${largura}px`;
@@ -160,15 +185,17 @@ export function GloboImoveis({
         phi,
         theta: foco.theta,
         dark: cores.dark,
-        diffuse: 1.1,
-        mapSamples: 12000,
+        diffuse: cores.difusa,
+        // Mais amostras: com 12 000 os pontos ficavam esparsos e a costa do
+        // Brasil não se lia.
+        mapSamples: 18000,
         mapBrightness: cores.mapa,
         baseColor: cores.base,
         markerColor: cores.marca,
         glowColor: cores.brilho,
-        markerElevation: 0.01,
-        markers: pinos.map((p) => ({ location: [p.lat, p.lng] as [number, number], size: 0.035 })),
-        opacity: 0.95,
+        markerElevation: 0.02,
+        markers: pinos.map((p) => ({ location: [p.lat, p.lng] as [number, number], size: 0.045 })),
+        opacity: 1,
       });
 
       const animar = () => {
@@ -215,7 +242,60 @@ export function GloboImoveis({
   }, [pinos]);
 
   return (
-    <div ref={molduraRef} className={`relative ${className}`}>
+    <div ref={molduraRef} className={`relative overflow-hidden ${className}`}>
+      {/* ATMOSFERA — três camadas atrás do globo, todas decorativas e em
+          transform/opacity puros (nada que peça layout). Sem elas o globo
+          flutuava sozinho num retângulo vazio e parecia um recorte. */}
+
+      {/* 1. Halo: o brilho que sai de trás da esfera e respira devagar. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-1/2 aspect-square h-[95%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-90 blur-2xl motion-safe:animate-[respirar_7s_ease-in-out_infinite]"
+        style={{
+          background:
+            "radial-gradient(circle, var(--color-acento-forte) 0%, color-mix(in oklab, var(--color-acento-forte) 45%, transparent) 38%, transparent 66%)",
+        }}
+      />
+
+      {/* 2. Órbitas: dois anéis finos inclinados, girando em ritmos
+             diferentes — dão escala e movimento sem competir com o globo.
+
+             Cada anel é um PAR: o pai posiciona e inclina, o filho só gira.
+             Juntar as duas coisas num elemento só fazia o transform da
+             animação sobrescrever o do posicionamento, e os anéis saíam
+             deslocados para fora do globo. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-1/2 aspect-square h-[94%] -translate-x-1/2 -translate-y-1/2 [perspective:900px]"
+      >
+        <span className="block h-full w-full rounded-full border border-acento-forte/30 [transform:rotateX(74deg)] motion-safe:animate-[girar_26s_linear_infinite]" />
+      </span>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-1/2 aspect-square h-[112%] -translate-x-1/2 -translate-y-1/2 [perspective:900px]"
+      >
+        <span className="block h-full w-full rounded-full border border-acento-forte/18 [transform:rotateX(66deg)_rotateZ(28deg)] motion-safe:animate-[girar_40s_linear_infinite_reverse]" />
+      </span>
+
+      {/* 3. Poeira estelar: pontos fixos que cintilam. São 12 posições
+             escritas à mão em vez de sorteadas — sorteio no render daria
+             posições diferentes no servidor e no cliente. */}
+      {POEIRA.map((p, i) => (
+        <span
+          key={i}
+          aria-hidden
+          className="pointer-events-none absolute h-[3px] w-[3px] rounded-full bg-acento-forte/70 motion-safe:animate-[cintilar_var(--dur)_ease-in-out_infinite]"
+          style={
+            {
+              top: `${p.y}%`,
+              left: `${p.x}%`,
+              "--dur": `${p.dur}s`,
+              animationDelay: `${p.atraso}s`,
+            } as React.CSSProperties
+          }
+        />
+      ))}
+
       <canvas
         ref={canvasRef}
         onPointerDown={aoPressionar}

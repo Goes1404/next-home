@@ -931,3 +931,43 @@
   color: var(--color-titulo) !important;
 }
 
+/*
+ * Atmosfera do globo da home (GloboImoveis). Três animações decorativas em
+ * transform/opacity puros — nenhuma pede layout, e todas ficam sob
+ * `motion-safe` no componente, então movimento reduzido as desliga.
+ */
+@keyframes respirar {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+/*
+ * O giro é só rotação em Z: quem posiciona e inclina é o elemento pai. A
+ * primeira versão repetia `translate(-50%,-50%) rotateX(...)` dentro do
+ * keyframe e brigava com as classes de posicionamento — os anéis saíam
+ * deslocados para fora do globo (visto em tela).
+ */
+@keyframes girar {
+  to {
+    transform: rotateZ(360deg);
+  }
+}
+
+@keyframes cintilar {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.3);
+  }
+}
