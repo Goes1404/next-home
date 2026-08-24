@@ -326,7 +326,11 @@ export async function uploadBookDigital(
   }
 
   const supabase = await createClient();
-  const caminho = `empreendimentos/${empreendimentoId}/book-${Date.now()}.pdf`;
+  // Sem o prefixo redundante `empreendimentos/` dentro do bucket que já se
+  // chama assim: a policy de storage confere o PRIMEIRO segmento do caminho
+  // contra os ids de empreendimento, e a pasta a mais fazia todo envio de
+  // book ser recusado (mesmo defeito do upload de foto, corrigido na 0043).
+  const caminho = `${empreendimentoId}/book-${Date.now()}.pdf`;
 
   const { error: erroUpload } = await supabase.storage
     .from("empreendimentos")

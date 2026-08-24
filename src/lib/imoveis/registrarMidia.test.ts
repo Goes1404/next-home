@@ -127,3 +127,19 @@ describe("registrarMidia", () => {
     expect(inseridas).toHaveLength(0);
   });
 });
+
+describe("caminho no Storage", () => {
+  it("começa pelo id do empreendimento, que é o que a policy de storage confere", async () => {
+    const { deps, caminhos } = depsFalsas();
+
+    await registrarMidia(deps, {
+      empreendimentoId: "11111111-2222-3333-4444-555555555555",
+      bytes: await fotoDeTeste(),
+      mime: "image/png",
+      tipo: "planta",
+      alt: "Planta",
+    });
+
+    expect(caminhos[0]).toMatch(/^11111111-2222-3333-4444-555555555555\/planta-[0-9a-f]{16}\.png$/);
+  });
+});

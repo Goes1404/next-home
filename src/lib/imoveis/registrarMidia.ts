@@ -72,10 +72,16 @@ export async function registrarMidia(deps: DepsMidia, entrada: EntradaMidia): Pr
   // campos nulos, que é como a vitrine já sabe se comportar.
   const [medida, blur] = await Promise.all([medirImagem(entrada.bytes), gerarBlur(entrada.bytes)]);
 
-  // O hash no nome do arquivo faz o upload ser idempotente: reenviar o mesmo
-  // conteúdo escreve por cima do mesmo caminho, em vez de encher o bucket
-  // com cópias que ninguém vai apagar.
-  const caminho = `empreendimentos/${entrada.empreendimentoId}/${entrada.tipo}-${hash.slice(0, 16)}.${extensaoDe(entrada.mime)}`;
+  // O caminho começa no id do empreendimento porque é isso que a policy de
+  // storage confere (`storage.foldername(name)[1]` tem de ser um
+  // empreendimento que existe). O código antigo prefixava `empreendimentos/`
+  // de novo, dentro do bucket que já se chama assim — pasta redundante que
+  // NENHUMA policy cobria, e por isso todo upload pelo painel era recusado.
+  //
+  // O hash no nome faz o upload ser idempotente: reenviar o mesmo conteúdo
+  // escreve por cima do mesmo caminho, em vez de encher o bucket com cópias
+  // que ninguém vai apagar.
+  const caminho = `${entrada.empreendimentoId}/${entrada.tipo}-${hash.slice(0, 16)}.${extensaoDe(entrada.mime)}`;
 
   const upload = await deps.subir(caminho, entrada.bytes, entrada.mime);
   if (upload.erro) {
