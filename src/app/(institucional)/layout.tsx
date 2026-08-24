@@ -1,11 +1,10 @@
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
-import { FundoVideoMobile } from "@/components/motion/FundoVideoMobile";
+import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { HERO_VIDEO_URL, HERO_VIDEO_WEBM_URL } from "@/lib/site";
 
 /**
  * Casca do site institucional — a face pública para quem chega pelo Google,
@@ -32,7 +31,10 @@ export default async function InstitucionalLayout({
 }) {
   const corretorAtivo = await getCorretorAtivo();
   const usaFotoDeFundo = corretorAtivo?.fundoTipo === "foto" && corretorAtivo.fundoFotoUrl;
-  const videoUrl = corretorAtivo?.videoUrl || HERO_VIDEO_URL;
+  // Vídeo PRÓPRIO do corretor continua tendo precedência sobre a vinheta:
+  // é personalização explícita dele, e trocá-la pela peça da casa apagaria
+  // uma escolha que ele fez no painel.
+  const videoDoCorretor = corretorAtivo?.videoUrl || null;
 
   return (
     <GlassBackgroundProvider>
@@ -44,30 +46,28 @@ export default async function InstitucionalLayout({
       <HeaderInstitucional />
 
       <div className="fixed inset-0 -z-10 bg-gradient-to-br from-fundo-marca via-fundo to-fundo">
+        {/* O fundo é a VINHETA, em toda tela: a peça que o Preloader acabou
+            de mostrar recua para trás do conteúdo e congela no último quadro.
+            O hero-scroll com scrub saiu daqui — pesava 14,8 MB e baixava
+            inteiro antes de qualquer interação; a vinheta são 0,7 MB. O
+            componente e a receita de reencode continuam no repositório
+            (HeroVideoBackground, HERO_VIDEO_URL) para quem for retomá-los.
+
+            Foto de fundo do corretor continua tendo precedência: é
+            personalização explícita dele. */}
         {usaFotoDeFundo ? (
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
+        ) : videoDoCorretor ? (
+          <HeroVideoBackground src={videoDoCorretor} />
         ) : (
-          videoUrl && (
-            <HeroVideoBackground
-              src={videoUrl}
-              srcWebm={videoUrl === HERO_VIDEO_URL ? HERO_VIDEO_WEBM_URL : undefined}
-            />
-          )
+          <FundoVideoIntro />
         )}
-        {/* Par do vídeo para o CELULAR (o hero-scroll só monta no desktop):
-            o vídeo da vinheta (0,7 MB) em loop mudo. Decide sozinho se monta
-            — mesmo padrão de gate do HeroVideoBackground. */}
-        <FundoVideoMobile />
-        {/* O degrau do MEIO é o que segura o título do hero, que é centrado —
-            e o vídeo por baixo muda de quadro com o scroll, então o contraste
-            não pode depender da sorte do frame. Os 10% antigos falhavam
-            exatamente ali. */}
-        {/* Véu mais forte no CELULAR: lá o fundo é o vídeo da vinheta, cuja
-            logo é grande e clara e passa exatamente atrás do h1 — com os 40%
-            do desktop o título perdia legibilidade. No desktop o fundo é o
-            hero-scroll (imagem de cidade, sem tipografia embutida) e os 40%
-            seguem bastando. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-fundo/70 via-fundo/65 to-fundo/95 sm:from-fundo/45 sm:via-fundo/40" />
+        {/* O degrau do MEIO é o que segura o título do hero, que é centrado.
+            O véu é forte igual nas duas larguras porque o fundo agora é o
+            mesmo em todas: a vinheta tem a logo grande e clara passando
+            exatamente atrás do h1, e com os 40% de antes o título perdia
+            legibilidade. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-fundo/70 via-fundo/62 to-fundo/95" />
       </div>
 
       {children}

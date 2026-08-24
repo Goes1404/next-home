@@ -7,30 +7,22 @@ type NavigatorEstendido = Navigator & {
   connection?: { saveData?: boolean };
 };
 
-const CONSULTA_MOBILE = "(max-width: 767px)";
 const CONSULTA_MOVIMENTO = "(prefers-reduced-motion: reduce)";
 
 /**
- * Não exibe fora do celular, com movimento reduzido ou em economia de dados —
- * ao contrário do skyline de partículas (que era cálculo local), aqui há
- * download de verdade, então `saveData` volta a valer.
+ * Não exibe com movimento reduzido ou em economia de dados. Não há mais
+ * corte por largura: a vinheta é o fundo em TODA tela.
  */
 function podeExibir(): boolean {
   if (window.matchMedia(CONSULTA_MOVIMENTO).matches) return false;
-  if (!window.matchMedia(CONSULTA_MOBILE).matches) return false;
   if ((navigator as NavigatorEstendido).connection?.saveData) return false;
   return true;
 }
 
 function inscrever(aoMudar: () => void): () => void {
-  const mobile = window.matchMedia(CONSULTA_MOBILE);
   const movimento = window.matchMedia(CONSULTA_MOVIMENTO);
-  mobile.addEventListener("change", aoMudar);
   movimento.addEventListener("change", aoMudar);
-  return () => {
-    mobile.removeEventListener("change", aoMudar);
-    movimento.removeEventListener("change", aoMudar);
-  };
+  return () => movimento.removeEventListener("change", aoMudar);
 }
 
 function usePodeExibir(): boolean {
@@ -38,9 +30,10 @@ function usePodeExibir(): boolean {
 }
 
 /**
- * Fundo do CELULAR: o vídeo da vinheta de abertura (public/video/intro.*)
- * em loop mudo atrás do conteúdo — a mesma peça de marca do Preloader,
- * agora morando também no background.
+ * Fundo da home: o vídeo da vinheta de abertura (public/video/intro.*), a
+ * mesma peça que o Preloader acabou de mostrar — ela desce para trás do
+ * conteúdo e congela no último quadro. A continuidade é o ponto: a marca não
+ * "sai" da tela quando a vinheta acaba, ela recua e vira ambiente.
  *
  * Por que o intro e não o hero-scroll: o intro pesa 0,7 MB (webm) contra
  * os 14,8 MB do vídeo de scrub — cabe no 4G sem comprometer a página. O
@@ -52,7 +45,7 @@ function usePodeExibir(): boolean {
  * Save-Data não baixa um byte. O fade-in evita o corte seco quando o
  * primeiro quadro chega.
  */
-export function FundoVideoMobile() {
+export function FundoVideoIntro() {
   const exibir = usePodeExibir();
   const ref = useRef<HTMLVideoElement>(null);
   const [pronto, setPronto] = useState(false);
