@@ -17,8 +17,14 @@ entram no cadastro da plataforma sem passar por dezenas de cliques.
 - `blur_data_url` nunca é preenchido por nenhum caminho do código. Oito
   componentes da vitrine leem esse campo (`Galeria`, `Hero`,
   `CardEmpreendimento`, `CenaShowcase`, `Lazer`, `Sobre`, `Tipologias`,
-  `Lightbox`) e todos caem em `placeholder="empty"`: flash branco em toda
-  foto do site.
+  `Lightbox`) e caem em `placeholder="empty"` quando ele falta.
+- **Os dois defeitos acima são LATENTES, não ativos — medido em 24/08/2026.**
+  As 286 mídias de produção têm medida real e blur preenchido, porque todas
+  nasceram de seed e do backfill de `scripts/gerar-blur.mjs`. Nenhuma foto
+  jamais subiu pelo `uploadFotoOuPlanta`: é por isso que o defeito nunca
+  apareceu na tela. Só que é exatamente esse o caminho que a importação em
+  massa vai usar — sem o conserto, as primeiras fotos enviadas pelo painel
+  seriam centenas de linhas com `1920x1080` e sem placeholder.
 - Nada extrai imagem de PDF. `src/lib/leads/pdfTexto.ts` extrai **texto** de
   PDF sem dependência nenhuma, mas serve à importação de leads.
 - Nenhuma integração com Drive.

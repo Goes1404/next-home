@@ -670,6 +670,7 @@ export type Database = {
           altura: number | null
           blur_data_url: string | null
           empreendimento_id: string
+          hash_conteudo: string | null
           id: string
           largura: number | null
           ordem: number
@@ -681,6 +682,7 @@ export type Database = {
           altura?: number | null
           blur_data_url?: string | null
           empreendimento_id: string
+          hash_conteudo?: string | null
           id?: string
           largura?: number | null
           ordem?: number
@@ -692,6 +694,7 @@ export type Database = {
           altura?: number | null
           blur_data_url?: string | null
           empreendimento_id?: string
+          hash_conteudo?: string | null
           id?: string
           largura?: number | null
           ordem?: number
