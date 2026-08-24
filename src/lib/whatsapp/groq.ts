@@ -52,6 +52,44 @@ export function groqConfigurada(): boolean {
   return chaveApi() !== null;
 }
 
+/**
+ * Teto de TOKENS POR MINUTO da conta, no tier gratuito/on-demand.
+ *
+ * Não é limite de requisições: é orçamento de tokens por janela de um
+ * minuto, e ele conta o prompt inteiro. Quando o prompt sozinho passa
+ * disso, NENHUMA chamada cabe — nem esperando, nem espaçando. A Groq
+ * responde HTTP 413 (não 429), que é a diferença entre "tente de novo
+ * daqui a pouco" e "isto nunca vai passar".
+ *
+ * `GROQ_TPM_LIMITE` troca sem deploy, para quando a conta subir de tier.
+ */
+export function limiteTpmGroq(): number {
+  const bruto = Number(process.env.GROQ_TPM_LIMITE);
+  return Number.isFinite(bruto) && bruto > 0 ? bruto : 8_000;
+}
+
+/**
+ * Este prompt tem chance de caber no orçamento de tokens da Groq?
+ *
+ * Existe porque o prompt do agente CRESCEU além do teto e ninguém percebeu:
+ * de ~3.600 tokens na v2 para ~8.400 na v9, enquanto o limite é 8.000. A
+ * Groq — o elo mais rápido da cascata, 0,8s — parou de atender na v6 e o
+ * sistema seguiu chamando-a a cada mensagem, colecionando 413 no log e
+ * exibindo, na tela de diagnóstico, um provedor que não tinha como
+ * responder.
+ *
+ * A conta é deliberadamente conservadora: ~3,6 caracteres por token em
+ * português, mais a saída (os modelos gastam 107–1.735 tokens de resposta,
+ * e ela também entra no orçamento do minuto). Errar para baixo custa uma
+ * chamada rápida perdida; errar para cima faz pular um provedor que
+ * caberia.
+ */
+export function promptCabeNaGroq(prompt: string): boolean {
+  const entrada = Math.ceil(prompt.length / 3.6);
+  const RESERVA_SAIDA = 400;
+  return entrada + RESERVA_SAIDA <= limiteTpmGroq();
+}
+
 const INSTRUCAO_JSON =
   "Você responde SOMENTE com um objeto JSON válido, sem cercas de código, " +
   "sem comentários e sem nenhum texto antes ou depois. Nada além do JSON.";

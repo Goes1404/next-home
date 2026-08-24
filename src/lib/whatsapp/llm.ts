@@ -1,7 +1,7 @@
 import "server-only";
 
 import { chamarGeminiJson, geminiConfigurado, modeloGemini } from "./gemini";
-import { chamarGroqJson, groqConfigurada, modeloGroq } from "./groq";
+import { chamarGroqJson, groqConfigurada, modeloGroq, promptCabeNaGroq } from "./groq";
 import { chamarNvidiaJson, modeloNvidia, nvidiaConfigurada } from "./nvidia";
 import { chamarOpenaiJson, modeloOpenai, openaiConfigurada } from "./openai";
 import { valeRetentar, type MotivoFalhaLlm, type ResultadoLlm } from "./llmTipos";
@@ -69,6 +69,16 @@ type Provedor = {
   configurado: () => boolean;
   modelo: () => string;
   chamar: (p: string, o: { temperature?: number; timeoutMs: number }) => Promise<ResultadoLlm>;
+  /*
+   * Este provedor consegue atender ESTE prompt? Diferente de
+   * `configurado`, que é sobre ter chave, isto é sobre o pedido caber no
+   * orçamento dele. Só a Groq usa hoje, e por um motivo medido: o prompt
+   * do agente passou dos 8.000 tokens/min da conta e ela devolve HTTP 413
+   * em toda mensagem desde a v6 do prompt. Um provedor que não pode
+   * responder não deve ser contado como disponível — nem no laço, nem na
+   * tela de diagnóstico.
+   */
+  cabe?: (prompt: string) => boolean;
 };
 
 const PROVEDORES: Provedor[] = [
@@ -77,6 +87,7 @@ const PROVEDORES: Provedor[] = [
     configurado: groqConfigurada,
     modelo: modeloGroq,
     chamar: chamarGroqJson,
+    cabe: promptCabeNaGroq,
   },
   {
     nome: "gemini",
@@ -114,8 +125,24 @@ export async function chamarLlmJson(
   const tetoPorProvedor = Math.floor(orcamentoMs * FATIA_MAXIMA);
 
   const disponiveis = PROVEDORES.filter(
-    (p) => p.configurado() && (!provedorForcado() || p.nome === provedorForcado()),
+    (p) =>
+      p.configurado() &&
+      (p.cabe?.(prompt) ?? true) &&
+      (!provedorForcado() || p.nome === provedorForcado()),
   );
+  /*
+   * Avisar quando um provedor com chave fica de fora por não caber. Sem
+   * isto, o elo mais rápido da cascata some em silêncio — foi assim que a
+   * Groq passou cinco versões de prompt fora do ar sem ninguém notar.
+   */
+  for (const p of PROVEDORES) {
+    if (p.configurado() && p.cabe && !p.cabe(prompt)) {
+      console.warn(
+        `[ia] ${p.nome} PULADO: o prompt (${prompt.length} chars) não cabe no orçamento de tokens da conta. ` +
+          `Encurtar o prompt traz este provedor de volta.`,
+      );
+    }
+  }
   if (disponiveis.length === 0) {
     return { ok: false, erro: "sem_api_key", latenciaMs: 0 };
   }
@@ -179,9 +206,18 @@ function provedorForcado(): string | null {
   return process.env.IA_PROVEDOR_FORCADO || null;
 }
 
-/** Nomes dos provedores com chave, na ordem de tentativa. Usado em diagnóstico. */
-export function provedoresDisponiveis(): string[] {
-  return PROVEDORES.filter((p) => p.configurado()).map((p) => p.nome);
+/**
+ * Nomes dos provedores com chave, na ordem de tentativa. Usado em diagnóstico.
+ *
+ * `prompt` é opcional de propósito: sem ele a resposta é "quem tem chave",
+ * que é o que a tela de configuração quer mostrar. COM ele, a resposta é
+ * "quem pode atender esta mensagem" — e as duas divergem desde que o
+ * prompt passou do teto de tokens da Groq.
+ */
+export function provedoresDisponiveis(prompt?: string): string[] {
+  return PROVEDORES.filter(
+    (p) => p.configurado() && (prompt === undefined || (p.cabe?.(prompt) ?? true)),
+  ).map((p) => p.nome);
 }
 
 export function algumProvedorConfigurado(): boolean {

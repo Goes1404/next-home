@@ -20,6 +20,14 @@ vi.mock("./groq", () => ({
   chamarGroqJson: (...args: unknown[]) => chamarGroqJson(...args),
   modeloGroq: () => "openai/gpt-oss-120b",
   groqConfigurada: () => Boolean(process.env.GROQ_API_KEY),
+  /*
+   * Os testes deste arquivo são sobre a ORDEM e o ORÇAMENTO da cascata, não
+   * sobre o tamanho do prompt — por isso aqui o prompt sempre cabe. Quem
+   * cobre o corte por tokens é `groqTpm.test.ts`, com os tamanhos reais
+   * medidos em produção.
+   */
+  promptCabeNaGroq: () => true,
+  limiteTpmGroq: () => 8_000,
 }));
 
 vi.mock("./gemini", () => ({
