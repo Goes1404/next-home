@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { getMeusLeads } from "@/lib/corretorSessao";
-import type { Lead } from "@/lib/types";
+import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
+import { getLeadsDeVisita } from "@/lib/corretorSessao";
 
 export const metadata: Metadata = { title: "Minhas Visitas" };
 
@@ -9,21 +9,12 @@ const horaFormatada = new Intl.DateTimeFormat("pt-BR", {
   minute: "2-digit",
 });
 
-/** Visitas ordenadas por data: sem data marcada primeiro (precisam de atenção), depois as mais próximas. */
-function ordenarVisitas(visitas: Lead[]): Lead[] {
-  return [...visitas].sort((a, b) => {
-    if (!a.visitaAgendadaEm && !b.visitaAgendadaEm) return 0;
-    if (!a.visitaAgendadaEm) return -1;
-    if (!b.visitaAgendadaEm) return 1;
-    return a.visitaAgendadaEm.localeCompare(b.visitaAgendadaEm);
-  });
-}
-
 export default async function VisitasPage() {
-  const leads = await getMeusLeads();
   // Visita É o lead na etapa "visita_agendada" (migration 0009) — não um
   // registro à parte. Ver CampoVisita.tsx para onde a data é definida.
-  const visitas = ordenarVisitas(leads.filter((lead) => lead.etapa === "visita_agendada"));
+  // A query já vem recortada e ordenada (sem data primeiro) — antes esta
+  // tela baixava a carteira inteira para filtrar meia dúzia de visitas.
+  const visitas = await getLeadsDeVisita();
 
   return (
     <div>
@@ -31,6 +22,8 @@ export default async function VisitasPage() {
       <p className="text-fluid-sm mt-2 text-apoio">
         Leads na etapa &ldquo;Visita agendada&rdquo; do funil, ordenados pelo horário marcado.
       </p>
+
+      <AbasLeads ativa="visitas" />
 
       {visitas.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-linha bg-superficie p-6">

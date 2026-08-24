@@ -1,7 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCorretorLogado } from "@/lib/corretorSessao";
+import {
+  getCorretorLogado,
+  getPaginaDeLeads,
+  type FiltroLeads,
+  type PaginaDeLeads,
+} from "@/lib/corretorSessao";
 import { preencherTemplate } from "@/lib/mensagem";
 import { createClient } from "@/lib/supabase/server";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
@@ -239,4 +244,18 @@ export async function dispararParaLeadsSelecionados(params: {
     campanhaId: campanha.id,
     recorte: recortar(leads, params.leadIds.length, instancia),
   };
+}
+
+/**
+ * Próxima página da lista, para o botão "carregar mais".
+ *
+ * O filtro chega do cliente mas não é confiável nem precisa ser: a RLS
+ * recorta o que a sessão pode ver, exatamente como na primeira página que a
+ * própria tela renderizou no servidor.
+ */
+export async function carregarPaginaLeads(
+  filtro: FiltroLeads,
+  pagina: number,
+): Promise<PaginaDeLeads> {
+  return getPaginaDeLeads(filtro, pagina);
 }

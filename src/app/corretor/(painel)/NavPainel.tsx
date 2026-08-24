@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { gruposVisiveis, rotaAtiva } from "./_componentes/navegacao";
+import { gruposVisiveis, itemAtivo } from "./_componentes/navegacao";
 
 /**
  * Barra lateral do painel (desktop).
@@ -29,7 +29,7 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
             </p>
             <ul className="space-y-0.5">
               {grupo.itens.map((item) => {
-                const ativa = rotaAtiva(atual, item.href);
+                const ativa = itemAtivo(atual, item);
                 const Icone = item.icone;
                 return (
                   <li key={item.href}>

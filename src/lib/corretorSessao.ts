@@ -2,12 +2,13 @@ import "server-only";
 
 import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
-import type {
-  CorretorPerfil,
-  EtapaFunil,
-  Lead,
-  OrigemAtribuicao,
-  TemplateMensagem,
+import {
+  ETAPAS_FUNIL,
+  type CorretorPerfil,
+  type EtapaFunil,
+  type Lead,
+  type OrigemAtribuicao,
+  type TemplateMensagem,
 } from "@/lib/types";
 
 /**
@@ -133,6 +134,10 @@ function mapLead(row: LinhaLead): Lead {
  * query nesta camada consegue vazar o lead de um corretor para outro. É
  * também o que faz a mesma função servir corretor e gestor sem um `if`: a
  * policy é que decide se "os meus" significa sete leads ou setecentos.
+ *
+ * ATENÇÃO: sem paginação — puxa a carteira inteira. Serve apenas os lugares
+ * que precisam de TODOS os leads de uma vez e sabem que o volume é pequeno.
+ * Tela de lista usa `getPaginaDeLeads`; contagem usa `getContagemPorEtapa`.
  */
 export async function getMeusLeads(): Promise<Lead[]> {
   const supabase = await createClient();
@@ -146,21 +151,161 @@ export async function getMeusLeads(): Promise<Lead[]> {
   return (data as unknown as LinhaLead[]).map(mapLead);
 }
 
+/** Quantos leads cada tela recebe por vez. */
+export const LEADS_POR_PAGINA = 30;
+
+/**
+ * O quadro do funil renderiza um cartão por lead, sem paginação possível num
+ * kanban — então ele tem um teto. Para um corretor (≈100 leads) o teto nunca
+ * aparece; para o gestor, o quadro mostra os mais recentes e a coluna aponta
+ * para a lista quando há mais.
+ */
+export const TETO_DO_QUADRO = 300;
+
+export type FiltroLeads = {
+  /** Busca por nome ou telefone, resolvida no banco via ilike. */
+  busca?: string;
+  /** Recorte por etapas do funil (uma ou várias — os segmentos da lista). */
+  etapas?: EtapaFunil[];
+  /** Só faz sentido para o gestor; corretor comum já é recortado pela RLS. */
+  corretorId?: string;
+  /** Datas `yyyy-mm-dd` vindas dos inputs de data da lista. */
+  criadoDe?: string;
+  criadoAte?: string;
+};
+
+export type PaginaDeLeads = {
+  leads: Lead[];
+  /** Total que casa com o filtro — não só o tamanho da página. */
+  total: number;
+};
+
+/**
+ * Os caracteres de sintaxe do `.or()` do PostgREST (vírgula, parênteses) e os
+ * curingas do ilike não podem chegar crus na query: uma vírgula digitada na
+ * busca viraria um segundo predicado. Busca é nome ou telefone — nada disso
+ * faz falta.
+ */
+function sanearBusca(busca: string): string {
+  return busca.replace(/[,()%_]/g, " ").trim();
+}
+
+/**
+ * Uma página de leads + o total do filtro, tudo resolvido no banco.
+ *
+ * É a fonte da tela de lista: com ~100 leads por corretor (e a equipe
+ * inteira para o gestor), filtrar em memória obrigava toda visita à tela a
+ * baixar a carteira completa. Aqui o navegador só recebe o que mostra.
+ */
+export async function getPaginaDeLeads(
+  filtro: FiltroLeads = {},
+  pagina = 0,
+): Promise<PaginaDeLeads> {
+  const supabase = await createClient();
+  const de = Math.max(0, pagina) * LEADS_POR_PAGINA;
+
+  let query = supabase.from("leads").select(SELECT_LEAD, { count: "exact" });
+
+  const busca = filtro.busca ? sanearBusca(filtro.busca) : "";
+  if (busca) query = query.or(`nome.ilike.%${busca}%,telefone.ilike.%${busca}%`);
+  if (filtro.etapas && filtro.etapas.length > 0) query = query.in("etapa", filtro.etapas);
+  if (filtro.corretorId) query = query.eq("corretor_id", filtro.corretorId);
+  if (filtro.criadoDe) query = query.gte("created_at", filtro.criadoDe);
+  if (filtro.criadoAte) query = query.lte("created_at", `${filtro.criadoAte}T23:59:59`);
+
+  const { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .range(de, de + LEADS_POR_PAGINA - 1);
+
+  if (error) throw new Error(`Falha ao carregar os leads: ${error.message}`);
+
+  return {
+    leads: (data as unknown as LinhaLead[]).map(mapLead),
+    total: count ?? 0,
+  };
+}
+
+/**
+ * Contagem por etapa sem baixar linha nenhuma (`head: true`): alimenta o
+ * termômetro do Início e os cabeçalhos das colunas do quadro. Sete queries
+ * de contagem em paralelo custam menos que uma que trafega a carteira.
+ */
+export async function getContagemPorEtapa(): Promise<Record<EtapaFunil, number>> {
+  const supabase = await createClient();
+  const pares = await Promise.all(
+    ETAPAS_FUNIL.map(async (etapa) => {
+      const { count, error } = await supabase
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .eq("etapa", etapa);
+      if (error) throw new Error(`Falha ao contar o funil: ${error.message}`);
+      return [etapa, count ?? 0] as const;
+    }),
+  );
+  return Object.fromEntries(pares) as Record<EtapaFunil, number>;
+}
+
 /**
  * Os mesmos leads, ordenados para o quadro: dentro de cada coluna, o que se
  * moveu por último aparece em cima. É a ordem que o índice `leads_etapa_idx`
- * atende.
+ * atende. Limitado a `TETO_DO_QUADRO` — ver o comentário da constante.
  */
 export async function getLeadsDoFunil(): Promise<Lead[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("leads")
     .select(SELECT_LEAD)
-    .order("etapa_alterada_em", { ascending: false });
+    .order("etapa_alterada_em", { ascending: false })
+    .limit(TETO_DO_QUADRO);
 
   if (error) throw new Error(`Falha ao carregar o funil: ${error.message}`);
 
   return (data as unknown as LinhaLead[]).map(mapLead);
+}
+
+/**
+ * Leads com visita marcada (ou na etapa sem data ainda), para a agenda.
+ * Sem data primeiro — são os que precisam de ação —, depois por horário.
+ */
+export async function getLeadsDeVisita(): Promise<Lead[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("leads")
+    .select(SELECT_LEAD)
+    .eq("etapa", "visita_agendada")
+    .order("visita_agendada_em", { ascending: true, nullsFirst: true })
+    .limit(100);
+
+  if (error) throw new Error(`Falha ao carregar as visitas: ${error.message}`);
+
+  return (data as unknown as LinhaLead[]).map(mapLead);
+}
+
+/**
+ * Quantas visitas estão marcadas para hoje — o número do cartão de pendência
+ * do Início. Contado no banco pelo dia local de São Paulo.
+ */
+export async function getVisitasDeHoje(): Promise<number> {
+  const supabase = await createClient();
+  const agora = new Date();
+  // O dia "de hoje" é o do fuso do Brasil, não o do servidor (UTC): das 21h
+  // à meia-noite os dois divergem — a mesma armadilha do calendário do bot.
+  const dia = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(agora);
+
+  const { count, error } = await supabase
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .eq("etapa", "visita_agendada")
+    .gte("visita_agendada_em", `${dia}T00:00:00-03:00`)
+    .lte("visita_agendada_em", `${dia}T23:59:59-03:00`);
+
+  if (error) throw new Error(`Falha ao contar as visitas: ${error.message}`);
+  return count ?? 0;
 }
 
 /**

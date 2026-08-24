@@ -749,6 +749,37 @@ trilho+IA, follow-up, métricas de funil).
   ignorava o resultado — qualquer corretor logado aplicava reajuste em massa
   pela URL. Sempre conferir se o resultado da guarda é de fato USADO.
 
+## Painel do corretor — reforma "Painel de Bolso" (0045, em andamento)
+
+Diretriz de produto (24/08/2026): corretor trabalha no CELULAR, quer o mínimo
+de decisão possível, e a plataforma opera com ~100 leads por corretor (gestor
+vê a equipe inteira via RLS — milhares de linhas). Roadmap completo em
+artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
+
+- **A navegação tem SETE destinos para o corretor comum, de propósito.**
+  Funil e Visitas viraram abas dentro de Leads (`AbasLeads.tsx`), Importar é
+  o botão da tela de Leads, Templates mora em Campanhas, Links em Imóveis,
+  Senha dentro de Conta. As rotas antigas CONTINUAM existindo (nenhum link
+  salvo quebra) — só saíram do menu; `tambem` em `navegacao.tsx` mantém o
+  destino certo aceso. **Não reintroduzir item no menu sem rever a régua**
+  (máx. 7; o que não couber vira aba/seção de um destino existente). O teste
+  `navegacao.test.ts` trava isso.
+- **A lista de leads é paginada NO BANCO** (`getPaginaDeLeads`, 30 por
+  página, busca por `ilike`, filtros por etapa/corretor/data na query; todo
+  filtro vive na URL `?filtro=&etapa=&busca=`). `getMeusLeads()` sem limite
+  ainda existe mas é LEGADO — não usar em tela nova; contagens vêm de
+  `getContagemPorEtapa()` (7 counts `head: true` em paralelo, mais barato
+  que trafegar linhas).
+- **O quadro do funil tem teto de 300 cartões** (`TETO_DO_QUADRO`): kanban
+  não pagina. O cabeçalho da coluna mostra a contagem REAL do banco e, quando
+  nem todo cartão coube, a coluna aponta para a lista filtrada por etapa.
+- **A busca do `.or()` do PostgREST precisa de saneamento**: vírgula e
+  parênteses digitados na busca virariam sintaxe de predicado
+  (`sanearBusca` remove `,()%_`). Não passar input cru para `.or()`.
+- **"Carregar mais" acumula por contador de página + dedup por id** — a
+  conta derivada (`length / 30`) travava quando o dedup encolhia uma página,
+  e sem dedup um lead novo desloca o range e duplica linha na tela.
+
 ## CRM — o que o lead passou a lembrar (0032)
 
 Diagnóstico feito sobre os dados reais, não sobre lista genérica. O que o

@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
 import { Quadro } from "./Quadro";
-import { getLeadsDoFunil, souGestor } from "@/lib/corretorSessao";
+import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
+import { getContagemPorEtapa, getLeadsDoFunil, souGestor } from "@/lib/corretorSessao";
 
 export const metadata: Metadata = { title: "Funil" };
 
 export default async function FunilPage() {
   // Uma consulta só serve os dois papéis: a policy da 0007 decide se "os
-  // meus leads" são os do corretor ou os da imobiliária inteira.
-  const [leads, gestor] = await Promise.all([getLeadsDoFunil(), souGestor()]);
+  // meus leads" são os do corretor ou os da imobiliária inteira. A contagem
+  // vem à parte porque o quadro tem teto (`TETO_DO_QUADRO`): o cabeçalho da
+  // coluna mostra o total real mesmo quando nem todo cartão coube.
+  const [leads, contagens, gestor] = await Promise.all([
+    getLeadsDoFunil(),
+    getContagemPorEtapa(),
+    souGestor(),
+  ]);
 
   return (
     <div>
@@ -18,7 +25,9 @@ export default async function FunilPage() {
           : "Seus contatos, da chegada ao fechamento. Arraste o cartão ou use o seletor para mudar de etapa."}
       </p>
 
-      <Quadro leads={leads} mostrarDono={gestor} />
+      <AbasLeads ativa="funil" />
+
+      <Quadro leads={leads} contagens={contagens} mostrarDono={gestor} />
     </div>
   );
 }

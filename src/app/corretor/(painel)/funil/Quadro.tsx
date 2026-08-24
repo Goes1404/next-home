@@ -26,7 +26,16 @@ import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/typ
  */
 
 
-export function Quadro({ leads, mostrarDono }: { leads: Lead[]; mostrarDono: boolean }) {
+export function Quadro({
+  leads,
+  contagens,
+  mostrarDono,
+}: {
+  leads: Lead[];
+  /** Total real por etapa, do banco — o quadro pode ter recebido menos (teto). */
+  contagens?: Record<EtapaFunil, number>;
+  mostrarDono: boolean;
+}) {
   const [erro, setErro] = useState<string | null>(null);
   const [arrastando, setArrastando] = useState<string | null>(null);
   const [leadDossie, setLeadDossie] = useState<Lead | null>(null);
@@ -86,6 +95,11 @@ export function Quadro({ leads, mostrarDono }: { leads: Lead[]; mostrarDono: boo
       <div className="scrollbar-none -mx-4 flex gap-3 overflow-x-auto px-4 pb-4 md:-mx-8 md:px-8">
         {ETAPAS_FUNIL.map((etapa) => {
           const daEtapa = otimista.filter((lead) => lead.etapa === etapa);
+          // O quadro recebe no máximo `TETO_DO_QUADRO` leads; a contagem do
+          // banco é a verdade. Quando nem todo cartão coube, a coluna avisa
+          // e aponta para a lista, que é paginada.
+          const totalReal = contagens?.[etapa] ?? daEtapa.length;
+          const faltando = Math.max(0, totalReal - daEtapa.length);
           return (
             <section
               key={etapa}
@@ -103,7 +117,7 @@ export function Quadro({ leads, mostrarDono }: { leads: Lead[]; mostrarDono: boo
                 <h2 className="text-fluid-sm font-medium text-titulo">
                   {ETAPA_LABEL[etapa]}
                 </h2>
-                <span className="text-fluid-xs text-tenue">{daEtapa.length}</span>
+                <span className="text-fluid-xs text-tenue">{totalReal}</span>
               </header>
 
               <div className="space-y-2">
@@ -119,10 +133,19 @@ export function Quadro({ leads, mostrarDono }: { leads: Lead[]; mostrarDono: boo
                   />
                 ))}
 
-                {daEtapa.length === 0 && (
+                {daEtapa.length === 0 && faltando === 0 && (
                   <p className="text-fluid-xs px-1 py-6 text-center text-tenue">
                     Vazio
                   </p>
+                )}
+
+                {faltando > 0 && (
+                  <Link
+                    href={`/corretor/leads?etapa=${etapa}`}
+                    className="text-fluid-xs block px-1 py-2 text-center text-acento-suave underline-offset-4 hover:underline"
+                  >
+                    + {faltando} mais antigo{faltando === 1 ? "" : "s"} — ver na lista
+                  </Link>
                 )}
               </div>
             </section>

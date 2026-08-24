@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BARRA_ETAPA } from "./etapas";
-import { ETAPAS_FUNIL, ETAPA_LABEL, type Lead } from "@/lib/types";
+import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil } from "@/lib/types";
 
 /**
  * O funil inteiro em uma faixa.
@@ -12,14 +12,15 @@ import { ETAPAS_FUNIL, ETAPA_LABEL, type Lead } from "@/lib/types";
  * "primeiro contato" fica visível antes de qualquer número ser lido.
  *
  * Sem dependência de gráfico: são sete divs em um flex, e a proporção é o
- * próprio `flex-grow`.
+ * próprio `flex-grow`. Recebe contagens prontas (`getContagemPorEtapa`) em
+ * vez da carteira inteira — um termômetro não precisa das linhas.
  */
-export function TermometroFunil({ leads }: { leads: Lead[] }) {
+export function TermometroFunil({ contagens }: { contagens: Record<EtapaFunil, number> }) {
   const porEtapa = ETAPAS_FUNIL.map((etapa) => ({
     etapa,
-    total: leads.filter((lead) => lead.etapa === etapa).length,
+    total: contagens[etapa] ?? 0,
   }));
-  const total = leads.length;
+  const total = porEtapa.reduce((soma, { total: quantos }) => soma + quantos, 0);
 
   return (
     <section className="border-linha bg-superficie shadow-painel rounded-2xl border p-5 sm:p-6">

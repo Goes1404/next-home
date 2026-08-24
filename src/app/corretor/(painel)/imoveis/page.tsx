@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getEmpreendimentos } from "@/lib/queries";
 import { ListaImoveisClient } from "./ListaImoveisClient";
 
@@ -13,16 +14,25 @@ export default async function ImoveisPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <span className="text-[11px] uppercase font-bold tracking-wider text-acento-suave">
-          Catálogo & Portfólio
-        </span>
-        <h1 className="text-fluid-xl font-bold text-titulo">
-          Edição & Gestão de Imóveis
-        </h1>
-        <p className="text-fluid-xs text-apoio max-w-2xl">
-          Altere fotos, textos comerciais, preços, tipologias e diferenciais de lazer diretamente pelo celular ou computador.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <span className="text-[11px] uppercase font-bold tracking-wider text-acento-suave">
+            Catálogo & Portfólio
+          </span>
+          <h1 className="text-fluid-xl font-bold text-titulo">
+            Edição & Gestão de Imóveis
+          </h1>
+          <p className="text-fluid-xs text-apoio max-w-2xl">
+            Altere fotos, textos comerciais, preços, tipologias e diferenciais de lazer diretamente pelo celular ou computador.
+          </p>
+        </div>
+        {/* Links por imóvel saíram do menu (roadmap: 7 destinos); o caminho é por aqui. */}
+        <Link
+          href="/corretor/links"
+          className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo inline-flex min-h-10 items-center rounded-full border px-4 transition-colors"
+        >
+          Links por imóvel
+        </Link>
       </div>
 
       <ListaImoveisClient imoveis={imoveis} />

@@ -15,17 +15,28 @@ export default async function PerfilPage() {
     // Formulário se cansa de ler antes de o painel acabar: campo de texto
     // largo demais é tão ruim quanto estreito demais.
     <div className="max-w-2xl">
-      <h1 className="text-fluid-2xl text-titulo">Meu perfil</h1>
-      <p className="text-fluid-sm mt-2 text-apoio">
-        O que o cliente vê na sua{" "}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-fluid-2xl text-titulo">Meu perfil</h1>
+          <p className="text-fluid-sm mt-2 text-apoio">
+            O que o cliente vê na sua{" "}
+            <Link
+              href={`/corretores/${corretor.slug}`}
+              className="text-acento-suave underline-offset-4 hover:underline"
+            >
+              página pública
+            </Link>
+            .
+          </p>
+        </div>
+        {/* Senha saiu do menu (roadmap: 7 destinos — "Conta" cobre as duas). */}
         <Link
-          href={`/corretores/${corretor.slug}`}
-          className="text-acento-suave underline-offset-4 hover:underline"
+          href="/corretor/senha"
+          className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo inline-flex min-h-10 items-center rounded-full border px-4 transition-colors"
         >
-          página pública
+          Alterar senha
         </Link>
-        .
-      </p>
+      </div>
 
       <div className="border-acento-linha bg-superficie shadow-painel mt-8 rounded-2xl border p-5">
         <EditorAvatar nome={corretor.nome} fotoUrl={corretor.fotoUrl} />

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ATALHOS_MOBILE, gruposVisiveis, rotaAtiva } from "./_componentes/navegacao";
+import { ATALHOS_MOBILE, gruposVisiveis, itemAtivo } from "./_componentes/navegacao";
 
 /**
  * Navegação do celular: quatro atalhos no polegar mais uma gaveta com o
@@ -78,7 +78,7 @@ export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
                 </p>
                 <ul className="grid grid-cols-2 gap-2">
                   {grupo.itens.map((item) => {
-                    const ativa = rotaAtiva(atual, item.href);
+                    const ativa = itemAtivo(atual, item);
                     const Icone = item.icone;
                     return (
                       <li key={item.href}>
@@ -110,7 +110,7 @@ export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
         className="border-linha bg-fundo/85 h-nav-safe pb-safe fixed inset-x-0 bottom-0 z-50 flex items-stretch justify-around border-t px-1 backdrop-blur-lg"
       >
         {ATALHOS_MOBILE.map((item) => {
-          const ativa = rotaAtiva(atual, item.href);
+          const ativa = itemAtivo(atual, item);
           const Icone = item.icone;
           return (
             <Link

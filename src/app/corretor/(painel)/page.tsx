@@ -2,7 +2,12 @@ import Link from "next/link";
 import { CopiarLink } from "./CopiarLink";
 import { ParaHoje } from "./ParaHoje";
 import { TermometroFunil } from "./_componentes/TermometroFunil";
-import { getCliquesWhatsappCorretor, getCorretorLogado, getMeusLeads } from "@/lib/corretorSessao";
+import {
+  getCliquesWhatsappCorretor,
+  getContagemPorEtapa,
+  getCorretorLogado,
+  getVisitasDeHoje,
+} from "@/lib/corretorSessao";
 import { agendaDoDia } from "@/lib/crm/timeline";
 import { getMinhasTarefas } from "@/lib/crm/dadosLead";
 import { site } from "@/lib/site";
@@ -17,8 +22,11 @@ export default async function PainelInicio() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
-  const [leads, cliques, tarefas] = await Promise.all([
-    getMeusLeads(),
+  // Contagens no banco, não a carteira: com ~100 leads por corretor (e a
+  // equipe inteira para o gestor), o Início não tem por que baixar linhas.
+  const [contagens, visitasHoje, cliques, tarefas] = await Promise.all([
+    getContagemPorEtapa(),
+    getVisitasDeHoje(),
     getCliquesWhatsappCorretor(),
     getMinhasTarefas(),
   ]);
@@ -28,18 +36,7 @@ export default async function PainelInicio() {
   // Só a etapa "novo" é uma pendência de verdade. Contar o funil inteiro
   // transformaria o aviso num número que nunca desce, e todo aviso que nunca
   // desce vira paisagem.
-  const novos = leads.filter((lead) => lead.etapa === "novo").length;
-
-  const hoje = new Date();
-  const visitasHoje = leads.filter((lead) => {
-    if (lead.etapa !== "visita_agendada" || !lead.visitaAgendadaEm) return false;
-    const data = new Date(lead.visitaAgendadaEm);
-    return (
-      data.getFullYear() === hoje.getFullYear() &&
-      data.getMonth() === hoje.getMonth() &&
-      data.getDate() === hoje.getDate()
-    );
-  }).length;
+  const novos = contagens.novo;
 
   const primeiroNome = corretor.nome.split(" ")[0];
 
@@ -95,7 +92,7 @@ export default async function PainelInicio() {
 
       <ParaHoje tarefas={agenda} />
 
-      <TermometroFunil leads={leads} />
+      <TermometroFunil contagens={contagens} />
 
       {(novos > 0 || visitasHoje > 0) && (
         <section className="grid gap-4 sm:grid-cols-2">

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { EditarDestaques } from "./EditarDestaques";
 import { ListaLinks } from "./ListaLinks";
 import { CopiarLink } from "../CopiarLink";
@@ -19,7 +20,14 @@ export default async function LinksPage() {
 
   return (
     <div>
-      <h1 className="text-fluid-2xl text-titulo">Seus links</h1>
+      {/* A tela saiu do menu e passou a morar dentro de Imóveis. */}
+      <Link
+        href="/corretor/imoveis"
+        className="text-fluid-sm inline-flex items-center gap-1.5 text-apoio transition-colors hover:text-titulo"
+      >
+        ← Imóveis
+      </Link>
+      <h1 className="text-fluid-2xl mt-3 text-titulo">Seus links</h1>
       <p className="text-fluid-sm mt-2 text-apoio">
         Qualquer um destes links atribui o atendimento a você — inclusive em imóveis de outro
         corretor responsável.

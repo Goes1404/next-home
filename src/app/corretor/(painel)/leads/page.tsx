@@ -1,27 +1,69 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Mail } from "lucide-react";
 import { ListaLeads } from "./ListaLeads";
+import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import {
   getCorretorLogado,
   getEquipeAtiva,
-  getMeusLeads,
   getMeusTemplates,
+  getPaginaDeLeads,
   souGestor,
+  type FiltroLeads,
 } from "@/lib/corretorSessao";
-
-import Link from "next/link";import { Mail } from 'lucide-react';
-
+import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Meus leads" };
+
+/**
+ * Os quatro segmentos rápidos da lista, cada um um recorte de etapas que o
+ * banco resolve. São os mesmos grupos que a tela já oferecia — a diferença é
+ * que antes o recorte acontecia no navegador, sobre a carteira inteira.
+ */
+const SEGMENTOS: Record<string, EtapaFunil[]> = {
+  novos: ["novo", "primeiro_contato"],
+  negociando: ["visita_agendada", "proposta_enviada", "negociacao"],
+  frios: ["perdido", "fechado"],
+};
+
+function primeiroValor(v: string | string[] | undefined): string {
+  return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
+}
 
 /**
  * A lista cronológica, ao lado do quadro do funil. As duas telas leem os
  * mesmos dados: o funil responde "em que pé está cada negociação", esta aqui
  * responde "o que chegou hoje" — e é onde cabem a mensagem inteira e todos os
  * detalhes, que não caberiam num cartão de coluna.
+ *
+ * Todo filtro vive na URL (`?filtro=`, `?etapa=`, `?busca=`…): quem filtra é
+ * o banco, por página de 30 — o navegador nunca recebe a carteira inteira.
  */
-export default async function LeadsPage() {
-  const [leads, gestor, corretor, templates] = await Promise.all([
-    getMeusLeads(),
+export default async function LeadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+
+  const segmento = primeiroValor(params.filtro);
+  const etapaParam = primeiroValor(params.etapa);
+  const etapaValida = (ETAPAS_FUNIL as readonly string[]).includes(etapaParam)
+    ? (etapaParam as EtapaFunil)
+    : undefined;
+
+  const filtro: FiltroLeads = {
+    busca: primeiroValor(params.busca) || undefined,
+    // Uma etapa específica (vinda do seletor ou do link do quadro) vale mais
+    // que o segmento — os dois juntos seriam uma interseção confusa.
+    etapas: etapaValida ? [etapaValida] : SEGMENTOS[segmento],
+    corretorId: primeiroValor(params.corretor) || undefined,
+    criadoDe: primeiroValor(params.de) || undefined,
+    criadoAte: primeiroValor(params.ate) || undefined,
+  };
+
+  const [pagina, gestor, corretor, templates] = await Promise.all([
+    getPaginaDeLeads(filtro),
     souGestor(),
     getCorretorLogado(),
     getMeusTemplates(),
@@ -48,8 +90,12 @@ export default async function LeadsPage() {
         </Link>
       </div>
 
+      <AbasLeads ativa="lista" />
+
       <ListaLeads
-        leads={leads}
+        leadsIniciais={pagina.leads}
+        total={pagina.total}
+        filtroServidor={filtro}
         gestor={gestor}
         equipe={equipe}
         templates={templates}
