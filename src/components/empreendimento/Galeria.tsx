@@ -16,6 +16,13 @@ import type { Midia } from "@/lib/types";
  */
 export function Galeria({ fotos }: { fotos: Midia[] }) {
   const [aberta, setAberta] = useState<number | null>(null);
+  // A miniatura clicada, para o lightbox abrir A PARTIR dela (shared element).
+  const [origem, setOrigem] = useState<HTMLElement | null>(null);
+
+  const abrir = (i: number, ev: React.MouseEvent<HTMLButtonElement>) => {
+    setOrigem(ev.currentTarget);
+    setAberta(i);
+  };
 
   if (fotos.length === 0) return null;
 
@@ -35,7 +42,7 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
       <Reveal>
         <button
           type="button"
-          onClick={() => setAberta(0)}
+          onClick={(ev) => abrir(0, ev)}
           aria-label={`Ampliar imagem 1 de ${fotos.length}${destaque.alt ? `: ${destaque.alt}` : ""}`}
           className="group block w-full rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
         >
@@ -68,7 +75,7 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
             >
               <button
                 type="button"
-                onClick={() => setAberta(i + 1)}
+                onClick={(ev) => abrir(i + 1, ev)}
                 aria-label={`Ampliar imagem ${i + 2} de ${fotos.length}${foto.alt ? `: ${foto.alt}` : ""}`}
                 className="group absolute inset-0 h-full w-full focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-acento-forte"
               >
@@ -91,6 +98,7 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
       <Lightbox
         itens={fotos}
         indice={aberta}
+        origem={origem}
         aoFechar={() => setAberta(null)}
         aoTrocar={setAberta}
         rotulo="Galeria de fotos"

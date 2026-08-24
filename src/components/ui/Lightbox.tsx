@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { gsap } from "gsap";
+import { Flip } from "gsap/Flip";
+import { Observer } from "gsap/Observer";
 import type { Midia } from "@/lib/types";
 
 /*
@@ -36,6 +39,12 @@ function useMontado(): boolean {
 
 export type LightboxProps = {
   itens: Midia[];
+  /**
+   * Miniatura de onde a imagem "saiu". Com ela, abrir o lightbox deixa de ser
+   * um corte: a foto do mosaico VOA da própria posição até a tela cheia e
+   * volta ao fechar — continuidade espacial (shared element).
+   */
+  origem?: HTMLElement | null;
   /** Índice aberto; `null` mantém o lightbox fechado. */
   indice: number | null;
   aoFechar: () => void;
@@ -61,9 +70,12 @@ export function Lightbox({
   aoFechar,
   aoTrocar,
   rotulo = "Galeria",
+  origem = null,
 }: LightboxProps) {
   const montado = useMontado();
   const fecharRef = useRef<HTMLButtonElement>(null);
+  const palcoRef = useRef<HTMLDivElement>(null);
+  const fundoRef = useRef<HTMLDivElement>(null);
   const toqueX = useRef<number | null>(null);
   // Devolve o foco a quem abriu o lightbox — sem isso o leitor de tela e o
   // teclado voltam para o topo do documento ao fechar.
@@ -104,6 +116,81 @@ export function Lightbox({
     };
   }, [aberto, aoFechar, anterior, proxima]);
 
+  /**
+   * Abertura como ELEMENTO COMPARTILHADO e arrastar-para-dispensar.
+   *
+   * Feito com Flip e Observer do GSAP, e não com uma biblioteca de motion
+   * nova: o GSAP já é o motor da casa, e somar outro runtime de animação
+   * pesaria justamente no celular, que acabou de perder 14,8 MB de vídeo. O
+   * Flip é a ferramenta canônica para isto — mede o estado inicial (a
+   * miniatura), deixa o React pintar o final (tela cheia) e interpola a
+   * diferença com transform puro.
+   */
+  useEffect(() => {
+    if (!aberto) return;
+    const palco = palcoRef.current;
+    const fundo = fundoRef.current;
+    if (!palco) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    gsap.registerPlugin(Flip, Observer);
+    let observador: Observer | null = null;
+
+    const contexto = gsap.context(() => {
+      if (origem) {
+        // Miniatura e palco são nós DIFERENTES, então não basta capturar o
+        // estado de um e animar o outro (o Flip só casa elementos iguais ou
+        // com o mesmo data-flip-id). O caminho é: encaixar o palco em cima da
+        // miniatura, fotografar esse encaixe, devolver o palco ao tamanho
+        // natural e animar de volta a partir da foto.
+        Flip.fit(palco, origem, { scale: true });
+        const estado = Flip.getState(palco);
+        gsap.set(palco, { clearProps: "transform,width,height,top,left" });
+        Flip.from(estado, {
+          duration: 0.62,
+          ease: "power3.inOut",
+          scale: true,
+        });
+      } else {
+        gsap.from(palco, { scale: 0.92, autoAlpha: 0, duration: 0.4, ease: "power2.out" });
+      }
+
+      if (fundo) gsap.from(fundo, { autoAlpha: 0, duration: 0.35 });
+
+      // Arrastar para dispensar: a foto acompanha o dedo e some se o gesto
+      // for decidido. Só no eixo Y — o X já é a troca de imagem por swipe.
+      observador = Observer.create({
+        target: palco,
+        type: "touch,pointer",
+        dragMinimum: 8,
+        tolerance: 12,
+        onDrag: (self) => {
+          const dy = self.deltaY + (gsap.getProperty(palco, "y") as number);
+          gsap.set(palco, { y: dy, scale: 1 - Math.min(Math.abs(dy) / 1400, 0.14) });
+          if (fundo) gsap.set(fundo, { opacity: 1 - Math.min(Math.abs(dy) / 700, 0.55) });
+        },
+        onDragEnd: () => {
+          const dy = gsap.getProperty(palco, "y") as number;
+          if (Math.abs(dy) > 130) {
+            aoFechar();
+            return;
+          }
+          // Não passou do limiar: volta com mola, o gesto foi uma hesitação.
+          gsap.to(palco, { y: 0, scale: 1, duration: 0.5, ease: "elastic.out(1, 0.7)" });
+          if (fundo) gsap.to(fundo, { opacity: 1, duration: 0.3 });
+        },
+      });
+    });
+
+    return () => {
+      observador?.kill();
+      contexto.revert();
+    };
+    // `indice` fora das deps de propósito: trocar de foto dentro do lightbox
+    // não é uma nova abertura, e refazer o Flip a cada seta daria um salto.
+  }, [aberto, origem, aoFechar]);
+
   if (!montado || !aberto) return null;
 
   const atual = itens[indice];
@@ -113,7 +200,11 @@ export function Lightbox({
       role="dialog"
       aria-modal="true"
       aria-label={rotulo}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-ink-950/98 p-4"
+      ref={fundoRef}
+      // `bg-ink-950/92` + desfoque: o fundo fosco deixa a página entrever-se
+      // atrás da foto, o que dá profundidade e reforça que o lightbox é uma
+      // camada — antes era um preto de 98% que apagava o contexto.
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-ink-950/92 p-4 backdrop-blur-xl"
       onClick={aoFechar}
       onTouchStart={(ev) => {
         toqueX.current = ev.touches[0].clientX;
@@ -162,7 +253,8 @@ export function Lightbox({
       )}
 
       <div
-        className="relative h-[75vh] w-full max-w-4xl"
+        ref={palcoRef}
+        className="relative h-[75vh] w-full max-w-4xl touch-none"
         onClick={(ev) => ev.stopPropagation()}
       >
         <Image
