@@ -23,7 +23,12 @@ const CAMPO =
 export type FiltroFormProps = {
   filtrosAtuais: FiltrosEmpreendimento;
   ordenacaoAtual: Ordenacao;
-  regioes: { cidades: string[]; bairros: string[] };
+  regioes: {
+    cidades: string[];
+    bairros: string[];
+    /** Tipos com estoque real. Sem a lista, cai no enum completo. */
+    tipos?: string[];
+  };
   /** Id único por instância — o form aparece 1x no desktop e 1x no sheet mobile. */
   idPrefixo: string;
   className?: string;
@@ -71,11 +76,15 @@ export function FiltroForm({
             className={CAMPO}
           >
             <option value="">Qualquer</option>
-            {Object.entries(TIPO_LABEL).map(([valor, label]) => (
-              <option key={valor} value={valor}>
-                {label}
-              </option>
-            ))}
+            {/* Só tipos com estoque: oferecer "Casa" com zero casas manda o
+                visitante para uma listagem vazia na primeira interação. */}
+            {Object.entries(TIPO_LABEL)
+              .filter(([valor]) => !regioes.tipos || regioes.tipos.includes(valor))
+              .map(([valor, label]) => (
+                <option key={valor} value={valor}>
+                  {label}
+                </option>
+              ))}
           </select>
         </div>
 

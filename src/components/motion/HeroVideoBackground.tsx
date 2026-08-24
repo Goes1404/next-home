@@ -11,18 +11,34 @@ type NavigatorEstendido = Navigator & {
 };
 
 const CONSULTA_MOVIMENTO = "(prefers-reduced-motion: reduce)";
+const CONSULTA_DESKTOP = "(min-width: 768px)";
 
-/** Não exibe se o usuário pediu menos movimento ou está economizando dados. */
+/**
+ * Não exibe se o usuário pediu menos movimento, está economizando dados —
+ * ou está num CELULAR. Este último corte foi medido, não estimado: no
+ * primeiro load da home em viewport mobile, o vídeo de fundo baixava
+ * INTEIRO (14,8 MB de webm com `preload="auto"`) antes de qualquer
+ * interação — 96% do peso da página, na rede do 4G. O tráfego real vem de
+ * link de WhatsApp no telefone; lá o fundo é a imagem estática que o
+ * chamador já renderiza por baixo, e o scrub segue vivo no desktop, onde a
+ * técnica rende.
+ */
 function podeExibirVideo(): boolean {
   if (window.matchMedia(CONSULTA_MOVIMENTO).matches) return false;
+  if (!window.matchMedia(CONSULTA_DESKTOP).matches) return false;
   if ((navigator as NavigatorEstendido).connection?.saveData) return false;
   return true;
 }
 
 function inscrever(aoMudar: () => void): () => void {
-  const consulta = window.matchMedia(CONSULTA_MOVIMENTO);
-  consulta.addEventListener("change", aoMudar);
-  return () => consulta.removeEventListener("change", aoMudar);
+  const movimento = window.matchMedia(CONSULTA_MOVIMENTO);
+  const desktop = window.matchMedia(CONSULTA_DESKTOP);
+  movimento.addEventListener("change", aoMudar);
+  desktop.addEventListener("change", aoMudar);
+  return () => {
+    movimento.removeEventListener("change", aoMudar);
+    desktop.removeEventListener("change", aoMudar);
+  };
 }
 
 /**

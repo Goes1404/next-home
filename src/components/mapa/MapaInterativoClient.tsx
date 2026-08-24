@@ -16,6 +16,10 @@ interface Props {
   empreendimentos: Empreendimento[];
   imovelInicialSlug?: string;
   alturaClasse?: string;
+  /** Mapa embutido no meio de página rolável: gestos de toque só depois de
+      um toque explícito, e sem a barra de filtros própria (a home já tem o
+      formulário de busca — dois sistemas de filtro na mesma tela confundem). */
+  compacto?: boolean;
 }
 
 // Coordenada padrão de Alphaville / Barueri
@@ -34,6 +38,7 @@ export default function MapaInterativoClient({
   empreendimentos,
   imovelInicialSlug,
   alturaClasse = "h-[calc(100vh-80px)] min-h-[500px]",
+  compacto = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -58,6 +63,16 @@ export default function MapaInterativoClient({
   }, [empreendimentos]);
 
   // Imóveis filtrados
+  const [gestosContidos, setGestosContidos] = useState(false);
+
+  const liberarGestos = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.dragging.enable();
+    map.touchZoom.enable();
+    setGestosContidos(false);
+  };
+
   const imoveisFiltrados = useMemo(() => {
     return empreendimentos.filter((e) => {
       if (statusFiltro !== "todos" && e.status !== statusFiltro) return false;
@@ -70,6 +85,15 @@ export default function MapaInterativoClient({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    // No modo compacto o mapa nasce com os gestos de toque DESLIGADOS:
+    // `.leaflet-container` tem `touch-action: none`, então um mapa de 62vh no
+    // meio da home engolia o gesto de rolagem — o dedo que encostava na faixa
+    // arrastava o mapa e a página não andava. O botão "Tocar para explorar"
+    // religa tudo. Fora do compacto (/mapa), nada muda: lá o mapa é o
+    // conteúdo e arrastar é o ponto da tela.
+    const ehToque = window.matchMedia("(pointer: coarse)").matches;
+    const conterGestos = compacto && ehToque;
+
     const map = L.map(containerRef.current, {
       center: CENTRO_ALPHAVILLE,
       zoom: 13,
@@ -78,7 +102,9 @@ export default function MapaInterativoClient({
       zoomControl: false,
       // Atribuição ligada: exigência de licença do OpenStreetMap/CARTO.
       attributionControl: true,
+      ...(conterGestos ? { dragging: false, touchZoom: false, tap: false } : {}),
     });
+    setGestosContidos(conterGestos);
     map.attributionControl.setPrefix(false);
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
@@ -113,7 +139,9 @@ export default function MapaInterativoClient({
       mapRef.current = null;
       tilesRef.current = null;
     };
-    // Nada aqui depende de props além da montagem: o mapa nasce uma vez.
+    // O mapa nasce UMA vez; `compacto` é decisão de call site e não muda em
+    // runtime, então fica fora do array de propósito.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Atualiza marcadores quando a lista filtrada ou o item selecionado mudar
@@ -150,7 +178,12 @@ export default function MapaInterativoClient({
         iconAnchor: [14, 14],
       });
 
-      const marker = L.marker([lat, lng], { icon: customIcon });
+      const marker = L.marker([lat, lng], {
+        icon: customIcon,
+        // Nome de verdade no pino: sem isto, cada marcador era uma parada de
+        // tabulação anônima cujo único texto era o preço.
+        title: `${emp.nome} — ${emp.bairro}`,
+      });
       marker.on("click", () => {
         setImovelSelecionado(emp);
         map.flyTo([lat, lng], Math.max(map.getZoom(), 15), {
@@ -170,18 +203,30 @@ export default function MapaInterativoClient({
 
   return (
     <div className={`relative w-full overflow-hidden rounded-2xl border border-linha ${alturaClasse}`}>
-      {/* Filtros Flutuantes no Topo */}
-      <FiltrosMapa
+      {/* Filtros Flutuantes no Topo — não no compacto: a home já tem o
+          formulário de busca, e dois sistemas de filtro com vocabulários
+          diferentes na mesma página confundem. */}
+      {!compacto && <FiltrosMapa
         statusFiltro={statusFiltro}
         onMudarStatus={setStatusFiltro}
         bairroFiltro={bairroFiltro}
         onMudarBairro={setBairroFiltro}
         bairrosDisponiveis={bairrosDisponiveis}
         totalImoveisExibidos={imoveisFiltrados.length}
-      />
+      />}
 
       {/* Container Leaflet */}
       <div ref={containerRef} className="w-full h-full" />
+
+      {gestosContidos && (
+        <button
+          type="button"
+          onClick={liberarGestos}
+          className="absolute inset-x-0 bottom-4 z-[500] mx-auto w-fit rounded-full border border-linha/20 bg-fundo/90 px-5 py-2.5 text-fluid-sm font-medium text-titulo shadow-lg backdrop-blur-md"
+        >
+          Tocar para explorar o mapa
+        </button>
+      )}
 
       {/* Card Flutuante do Imóvel Selecionado */}
       {imovelSelecionado && (

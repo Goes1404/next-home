@@ -25,30 +25,21 @@ export const metadata: Metadata = {
   },
 };
 
-/** Os três caminhos que trazem alguém a uma imobiliária. */
-const CAMINHOS = [
-  {
-    href: "/empreendimentos",
-    titulo: "Quero Comprar",
-    texto:
-      "Apartamentos na planta e prontos para morar com condições facilitadas, lazer completo e localizações estratégicas em Alphaville e região.",
-    cta: "Ver Melhores Oportunidades",
-  },
-  {
-    href: "/anunciar-imovel",
-    titulo: "Vender ou Anunciar",
-    texto:
-      "Venda seu imóvel mais rápido com quem tem compradores ativos, divulgação estratégica e assessoria completa do início ao fim.",
-    cta: "Anunciar com Quem Vende",
-  },
-  {
-    href: "/corretores",
-    titulo: "Atendimento Personalizado",
-    texto:
-      "Tire dúvidas, faça simulações de financiamento e receba opções que cabem no seu orçamento direto com nossos corretores no WhatsApp.",
-    cta: "Falar com Corretor",
-  },
-];
+/**
+ * Dos três "caminhos" antigos sobrou só o do vendedor. Os outros dois eram
+ * ruído medido: "Quero Comprar" apontava para o MESMO destino da busca logo
+ * acima (a home tinha seis controles diferentes caindo em /empreendimentos
+ * sem filtro), e "Atendimento Personalizado" prometia WhatsApp mas abria uma
+ * página-índice. Este fica porque /anunciar-imovel não tem nenhuma outra
+ * porta na home.
+ */
+const VENDEDOR = {
+  href: "/anunciar-imovel",
+  titulo: "Tem um imóvel para vender?",
+  texto:
+    "Venda mais rápido com quem tem compradores ativos, divulgação estratégica e assessoria completa do início ao fim.",
+  cta: "Anunciar com Quem Vende",
+};
 
 /**
  * Home institucional — a porta de entrada de quem chega pelo Google.
@@ -106,28 +97,28 @@ export default async function HomeInstitucional() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* O CTA flutuante deixou de vir do layout do grupo (ver
-          `(institucional)/layout.tsx`) e agora é escolha de cada página. */}
-      <WhatsappCta corretor={corretorAtivo ?? undefined} />
-
-      <main className="flex flex-1 flex-col">
+      <main id="conteudo" className="flex flex-1 flex-col">
         {/* Altura de tela só a partir de `sm`: no telefone o conjunto título +
             texto + busca é mais alto que a viewport, e forçar `min-h-svh` faria
             o conteúdo transbordar a caixa centralizada e cair atrás do CTA
             flutuante do WhatsApp, que é `fixed`. */}
-        <section className="flex flex-col items-center justify-center px-4 pt-24 pb-32 sm:min-h-svh sm:pt-28 sm:pb-20">
+        <section className="flex flex-col items-center justify-center px-4 pt-24 pb-24 sm:min-h-svh sm:pt-28 sm:pb-20">
           <div className="w-full max-w-4xl text-center">
             <Reveal from="nenhuma" duration={0.7}>
               <p className="text-fluid-xs mb-4 font-medium tracking-[0.2em] text-acento-suave uppercase">
                 Imóveis & Oportunidades · Alphaville, Barueri e Região
               </p>
             </Reveal>
+            {/* O h1 é um FATO do estoque, curto de propósito: o anterior tinha
+                77 caracteres — seis linhas de display num celular — e não dizia
+                nada verificável. A promessa longa desceu para o subtítulo. */}
             <TituloEditorial as="h1" className="text-fluid-4xl leading-[1.05] tracking-tight text-titulo">
-              A melhor oportunidade para morar bem ou investir na região que mais valoriza.
+              {todos.length} imóveis em Alphaville, Barueri e região.
             </TituloEditorial>
             <Reveal from="nenhuma" delay={0.4}>
               <p className="text-fluid-base mx-auto mt-6 max-w-xl text-corpo-suave">
-                Lançamentos na planta, apartamentos modernos e casas selecionadas com condições facilitadas de pagamento. Atendimento direto e ágil no WhatsApp.
+                Lançamentos na planta e prontos para morar, com condições
+                facilitadas e atendimento direto no WhatsApp.
               </p>
             </Reveal>
           </div>
@@ -145,123 +136,146 @@ export default async function HomeInstitucional() {
           </Reveal>
         </section>
 
-        <section className="px-4 pb-20">
-          <div className="mx-auto grid w-full max-w-5xl gap-4 sm:grid-cols-3">
-            {CAMINHOS.map((c, i) => (
-              <Reveal key={c.href} delay={i * 0.1} from="baixo">
-                <Link href={c.href} className="rounded-glass block h-full">
-                  <GlassSurface
-                    preset="card"
-                    className="group flex h-full flex-col px-6 py-7"
+        {/* Do primeiro conteúdo em diante o fundo é OPACO, como na página do
+            imóvel: é o que permite bandas de seção — sem fundo próprio não
+            existe separação, tudo flutuava translúcido sobre o vídeo. */}
+        <div className="relative bg-fundo pt-16 sm:pt-24">
+          {/* PRODUTO PRIMEIRO. Antes, o primeiro imóvel aparecia a 2,9 telas
+              de rolagem, atrás de três cards institucionais. Numa imobiliária
+              o produto é a foto do imóvel — ela abre o conteúdo. */}
+          {destaques.length > 0 && (
+            <section className="px-4 pb-24 sm:px-8 sm:pb-28">
+              <div className="mx-auto w-full max-w-5xl">
+                <p className="text-fluid-xs mb-3 tracking-[0.22em] text-acento-suave uppercase">
+                  Selecionados
+                </p>
+                <TituloEditorial className="text-fluid-3xl text-titulo">
+                  Oportunidades em destaque
+                </TituloEditorial>
+
+                <div className="mt-10 grid w-full gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {destaques.map((e, i) => (
+                    <Reveal key={e.slug} delay={(i % 3) * 0.1} from="baixo">
+                      <CardEmpreendimento empreendimento={e} />
+                    </Reveal>
+                  ))}
+                </div>
+
+                <Reveal className="mt-10">
+                  <Link
+                    href="/empreendimentos"
+                    className="text-fluid-base font-medium text-acento-suave underline-offset-4 hover:underline"
                   >
-                    <h2 className="font-display text-lg text-titulo">{c.titulo}</h2>
-                    <p className="text-fluid-sm mt-2 flex-1 text-legenda">{c.texto}</p>
-                    <span className="text-fluid-sm mt-5 font-medium text-acento-suave transition-colors group-hover:text-acento-intenso">
-                      {c.cta} →
-                    </span>
-                  </GlassSurface>
+                    Ver todos os {todos.length} imóveis →
+                  </Link>
+                </Reveal>
+              </div>
+            </section>
+          )}
+
+          {/* Regioes é compartilhado com o portfólio do corretor — a banda vem
+              do embrulho, não de dentro do componente. */}
+          <div className="bg-superficie/40">
+            <Regioes />
+          </div>
+
+          {/* Mapa geral: todos os imóveis com pin de localização; o clique
+              abre o card com as características básicas e o botão de ver o
+              imóvel (CardFlutuanteImovel, o mesmo da página /mapa). */}
+          {todos.length > 0 && (
+          <section className="px-4 py-16 sm:px-8 sm:py-24">
+            <div className="mx-auto w-full max-w-6xl">
+              <p className="text-fluid-xs mb-3 tracking-[0.22em] text-acento-suave uppercase">
+                A região
+              </p>
+              <TituloEditorial className="text-fluid-2xl text-titulo">
+                Onde cada imóvel está
+              </TituloEditorial>
+
+              <Reveal delay={0.1} from="baixo" className="mt-8 w-full">
+                <MapaEmpreendimentos
+                  empreendimentos={todos}
+                  alturaClasse="h-[62vh] min-h-[440px] max-h-[640px]"
+                  compacto
+                  adiarAteVisivel
+                />
+              </Reveal>
+
+              <Reveal className="mt-6">
+                <Link
+                  href="/mapa"
+                  className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
+                >
+                  Abrir o mapa em tela cheia →
                 </Link>
               </Reveal>
-            ))}
-          </div>
-        </section>
-
-        {destaques.length > 0 && (
-          <section className="px-4 pb-24">
-            <Reveal className="mx-auto max-w-lg text-center">
-              <TituloEditorial className="text-fluid-2xl text-titulo">Oportunidades em Destaque</TituloEditorial>
-              <p className="text-fluid-base mt-3 text-apoio">
-                Projetos com excelente potencial de valorização, infraestrutura completa e condições especiais de lançamento.
-              </p>
-            </Reveal>
-
-            <div className="mx-auto mt-10 grid w-full max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {destaques.map((e, i) => (
-                <Reveal key={e.slug} delay={i * 0.1} from="baixo">
-                  <CardEmpreendimento empreendimento={e} prioridade={i < 3} />
-                </Reveal>
-              ))}
             </div>
+          </section>
+          )}
 
-            <Reveal className="mt-10 text-center">
-              <Link
-                href="/empreendimentos"
-                className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
-              >
-                Ver todos os {todos.length} empreendimentos →
+          {equipe.length > 0 && (
+            <section className="bg-superficie/40 px-4 py-16 sm:px-8 sm:py-24">
+              <div className="mx-auto w-full max-w-4xl">
+                <p className="text-fluid-xs mb-3 tracking-[0.22em] text-acento-suave uppercase">
+                  Atendimento
+                </p>
+                <TituloEditorial className="text-fluid-2xl text-titulo">
+                  Equipe pronta para negociar
+                </TituloEditorial>
+
+                <div className="mt-8 grid w-full gap-4 sm:grid-cols-2">
+                  {equipe.map((c, i) => (
+                    <Reveal key={c.slug} delay={(i % 2) * 0.08} from="baixo">
+                      <CardCorretor corretor={c} compacto />
+                    </Reveal>
+                  ))}
+                </div>
+
+                {corretores.length > equipe.length && (
+                  <Reveal className="mt-8">
+                    <Link
+                      href="/corretores"
+                      className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
+                    >
+                      Ver toda a equipe →
+                    </Link>
+                  </Reveal>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* A porta do vendedor — única rota da home para /anunciar-imovel. */}
+          <section className="px-4 py-16 sm:px-8 sm:py-20">
+            <Reveal from="baixo" className="mx-auto w-full max-w-4xl">
+              <Link href={VENDEDOR.href} className="rounded-glass block">
+                <GlassSurface preset="card" className="group flex flex-col gap-4 px-6 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-10">
+                  <div>
+                    <h2 className="font-display text-fluid-xl text-titulo">{VENDEDOR.titulo}</h2>
+                    <p className="text-fluid-sm mt-2 max-w-lg text-legenda">{VENDEDOR.texto}</p>
+                  </div>
+                  <span className="text-fluid-base shrink-0 font-medium text-acento-suave transition-colors group-hover:text-acento-intenso">
+                    {VENDEDOR.cta} →
+                  </span>
+                </GlassSurface>
               </Link>
             </Reveal>
           </section>
-        )}
 
-        <Regioes />
+          <CtaFinal />
 
-        {/* Mapa geral: todos os imóveis com pin de localização; o clique
-            abre o card com as características básicas e o botão de ver o
-            imóvel (CardFlutuanteImovel, o mesmo da página /mapa). */}
-        <section className="px-4 pb-24">
-          <Reveal className="mx-auto max-w-lg text-center">
-            <TituloEditorial className="text-fluid-2xl text-titulo">Onde Cada Imóvel Está</TituloEditorial>
-            <p className="text-fluid-base mt-3 text-apoio">
-              Explore o mapa da região: toque em um marcador para ver preço, endereço e abrir o
-              imóvel completo.
-            </p>
+          <Reveal className="px-4 pb-16 text-center">
+            <p className="text-fluid-sm text-legenda">{enderecoLinha}</p>
+            <p className="text-fluid-xs mt-1 text-tenue">CRECI {site.creci}</p>
           </Reveal>
-
-          <Reveal delay={0.1} from="baixo" className="mx-auto mt-10 w-full max-w-6xl">
-            <MapaEmpreendimentos
-              empreendimentos={todos}
-              alturaClasse="h-[62vh] min-h-[440px] max-h-[640px]"
-            />
-          </Reveal>
-
-          <Reveal className="mt-8 text-center">
-            <Link
-              href="/mapa"
-              className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
-            >
-              Abrir o mapa em tela cheia →
-            </Link>
-          </Reveal>
-        </section>
-
-        {equipe.length > 0 && (
-          <section className="px-4 pb-24">
-            <Reveal className="mx-auto max-w-lg text-center">
-              <TituloEditorial className="text-fluid-2xl text-titulo">Equipe Pronta para Negociar</TituloEditorial>
-              <p className="text-fluid-base mt-3 text-apoio">
-                Corretores especializados prontos para tirar dúvidas, calcular financiamento e encontrar a melhor proposta para você.
-              </p>
-            </Reveal>
-
-            <div className="mx-auto mt-10 grid w-full max-w-4xl gap-4 sm:grid-cols-2">
-              {equipe.map((c, i) => (
-                <Reveal key={c.slug} delay={i * 0.08} from="baixo">
-                  <CardCorretor corretor={c} compacto />
-                </Reveal>
-              ))}
-            </div>
-
-            {corretores.length > equipe.length && (
-              <Reveal className="mt-10 text-center">
-                <Link
-                  href="/corretores"
-                  className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
-                >
-                  Ver toda a equipe →
-                </Link>
-              </Reveal>
-            )}
-          </section>
-        )}
-
-        <CtaFinal />
-
-        <Reveal className="px-4 pb-20 text-center">
-          <p className="text-fluid-sm text-legenda">{enderecoLinha}</p>
-          <p className="text-fluid-xs mt-1 text-tenue">CRECI {site.creci}</p>
-        </Reveal>
+        </div>
       </main>
+
+      {/* O CTA flutuante é escolha de cada página (ver layout do grupo) e vem
+          DEPOIS do main: é `fixed`, então visualmente nada muda — mas na
+          ordem de tabulação ele deixa de ser a primeira parada do conteúdo e
+          vai para o fim, onde o canto da tela sugere que ele está. */}
+      <WhatsappCta corretor={corretorAtivo ?? undefined} />
     </>
   );
 }

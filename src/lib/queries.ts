@@ -6,6 +6,7 @@ import type {
   Empreendimento,
   FiltrosEmpreendimento,
   Ordenacao,
+  TipoImovel,
 } from "@/lib/types";
 
 /**
@@ -336,13 +337,22 @@ export async function getEmpreendimentosPorCorretor(
   return (data as unknown as LinhaEmpreendimento[]).map(mapEmpreendimento);
 }
 
-/** Cidades e bairros distintos, para popular os selects de filtro. */
+/**
+ * Cidades, bairros e TIPOS distintos, para popular os selects de filtro.
+ *
+ * Os tipos saem do catálogo publicado, não do enum: oferecer "Casa" com zero
+ * casas em estoque manda o visitante para uma listagem vazia na primeira
+ * interação do site — medido em produção: casa e terreno tinham 0 resultados
+ * enquanto o select os oferecia.
+ */
 export async function getRegioesDisponiveis(): Promise<{
   cidades: string[];
   bairros: string[];
+  tipos: TipoImovel[];
 }> {
   const todos = await buscarPublicados();
   const cidades = [...new Set(todos.map((e) => e.cidade))].sort();
   const bairros = [...new Set(todos.map((e) => e.bairro))].sort();
-  return { cidades, bairros };
+  const tipos = [...new Set(todos.map((e) => e.tipo))].sort();
+  return { cidades, bairros, tipos };
 }

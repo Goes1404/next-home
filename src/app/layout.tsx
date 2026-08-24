@@ -146,6 +146,15 @@ export default async function RootLayout({
       className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} ${alexBrush.variable} no-js h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        {/* Primeiro parável do documento: quem navega por teclado pula o
+            header fixo e o botão flutuante de WhatsApp direto para o
+            conteúdo. Invisível até receber foco. */}
+        <a
+          href="#conteudo"
+          className="sr-only z-[100] rounded-full bg-brand-500 px-5 py-2.5 text-sm font-medium text-white focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
+        >
+          Pular para o conteúdo
+        </a>
         {/* A regra `.no-js .gsap-pending` do globals.css existia sem ninguém
             aplicar a classe: sem JS, todo conteúdo animado ficava invisível
             para sempre (opacity 0). O contrato correto é o clássico: o HTML
