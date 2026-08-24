@@ -606,6 +606,22 @@ trilho+IA, follow-up, métricas de funil).
 - **Telemetria (`ia_interacoes`, 0029)**: TODA interação (inclusive
   silêncios) com versão/latência/fallback/bloqueios. Botão 👍/👎 nas
   conversas alimenta o golden dataset (`scripts/eval/exportarGolden.ts`).
+- **O 👍/👎 coletou ZERO rótulos até 24/08/2026, e a causa era estrutural**
+  (corrigido na 0040): `ia_interacoes` não guardava o id da mensagem que a
+  resposta virou, então só dava para avaliar "a última resposta da
+  conversa" — a falha no MEIO da conversa (o rótulo que mais ensina) era
+  impossível de gravar. Hoje o webhook gera o uuid da interação ANTES do
+  envio e carimba `whatsapp_mensagens.interacao_id`; o Live Chat avalia
+  balão a balão, e a tela de Conversas tem fila de revisão ("N respostas
+  sem revisão") — rótulo que exige abrir conversa por conversa não
+  acontece. Lição irmã da do `historico_envios`: botão que só alcança um
+  caso raro do dado é indistinguível de botão que não existe.
+- **O exportarGolden cortava o caso no lugar errado para `ruim` do meio**:
+  recebia o `created_at` da interação ruim e o IGNORAVA, cortando na última
+  fala do cliente da conversa INTEIRA — o eval testaria a pergunta errada.
+  Hoje o caso de `ruim` corta na última fala do cliente ANTES da resposta
+  marcada (via `interacao_id`, com fallback por timestamp), um caso por
+  interação (`ruim-<id da interação>`), e só a amostra geral corta no fim.
 - **Número sem WhatsApp NÃO é falha do nosso número.** A Evolution
   responde `HTTP 400` com `"exists": false` para telefone que não está no
   app — dado ruim do lead, não sinal de conexão doente. Isso alimentava o

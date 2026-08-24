@@ -234,13 +234,17 @@ async function processarFollowup(
     return descartar(supabase, item.id, `erro_envio:${envio.motivo ?? "desconhecido"}`);
   }
 
-  await gravarMensagem({ conversaId: conversa.id, remetente: "bot", conteudo: balao });
+  // Mesmo uuid na mensagem e na telemetria (0040): follow-up também é
+  // resposta avaliável no Live Chat.
+  const interacaoId = crypto.randomUUID();
+  await gravarMensagem({ conversaId: conversa.id, remetente: "bot", conteudo: balao, interacaoId });
   await supabase
     .from("whatsapp_followups")
     .update({ status: "enviado", enviado_em: new Date().toISOString() })
     .eq("id", item.id);
 
   await registrarInteracao({
+    id: interacaoId,
     conversaId: conversa.id,
     corretorId: instancia.corretor_id,
     origem: "followup",

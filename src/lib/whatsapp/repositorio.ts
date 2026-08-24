@@ -314,6 +314,12 @@ export async function gravarMensagem(params: {
   tipo?: "texto" | "audio" | "imagem" | "documento";
   midiaUrl?: string | null;
   providerMessageId?: string | null;
+  /**
+   * Vínculo com a linha de telemetria (ia_interacoes, 0040). O chamador
+   * gera o uuid ANTES do envio e usa o mesmo id nos dois inserts — é o que
+   * torna cada resposta do bot avaliável individualmente no Live Chat.
+   */
+  interacaoId?: string | null;
 }): Promise<{ inedita: boolean }> {
   const supabase = createServiceClient();
 
@@ -324,6 +330,7 @@ export async function gravarMensagem(params: {
     conteudo: params.conteudo,
     midia_url: params.midiaUrl ?? null,
     provider_message_id: params.providerMessageId ?? null,
+    interacao_id: params.interacaoId ?? null,
   });
 
   // 23505 = violação de unicidade: é a reentrega. Qualquer outro erro é

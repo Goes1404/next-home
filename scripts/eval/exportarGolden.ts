@@ -35,15 +35,49 @@ function anonimizar(texto: string): string {
     .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, "[email]");
 }
 
+type MensagemGolden = {
+  remetente: string;
+  conteudo: string;
+  created_at: string;
+  interacao_id: string | null;
+};
+
+async function mensagensDa(conversaId: string): Promise<MensagemGolden[] | null> {
+  const { data } = await supabase
+    .from("whatsapp_mensagens")
+    .select("remetente, conteudo, created_at, interacao_id")
+    .eq("conversa_id", conversaId)
+    .order("created_at", { ascending: true })
+    .limit(40);
+  return data && data.length >= 2 ? (data as MensagemGolden[]) : null;
+}
+
+function montarCaso(id: string, origem: "ruim" | "amostra", msgs: MensagemGolden[], corte: number) {
+  return {
+    id,
+    origem,
+    historico: msgs.slice(0, corte).map((m) => ({
+      remetente: m.remetente,
+      texto: anonimizar(m.conteudo).slice(0, 500),
+    })),
+    mensagem: anonimizar(msgs[corte].conteudo).slice(0, 500),
+    expectativas: {},
+  };
+}
+
 async function main() {
   const casosAtuais = JSON.parse(readFileSync(ARQUIVO, "utf8")) as { id: string }[];
   const idsExistentes = new Set(casosAtuais.map((c) => c.id));
   const novos: unknown[] = [];
 
-  // 1. Interações marcadas como ruins — prioridade máxima
+  // 1. Interações marcadas como ruins — prioridade máxima. Um caso POR
+  // INTERAÇÃO, cortado no PONTO DA FALHA: a versão anterior cortava na
+  // última fala do cliente da conversa inteira, então um `ruim` na 3ª
+  // resposta de 5 exportava a conversa cortada no fim — e o eval testava
+  // a pergunta errada.
   const { data: ruins } = await supabase
     .from("ia_interacoes")
-    .select("conversa_id, created_at")
+    .select("id, conversa_id, created_at")
     .eq("avaliacao", "ruim")
     .not("conversa_id", "is", null)
     // Teste da equipe não entra no golden — ver migration 0038.
@@ -51,7 +85,38 @@ async function main() {
     .order("created_at", { ascending: false })
     .limit(100);
 
-  // 2. Conversas com participação do bot (amostra geral)
+  for (const ruim of ruins ?? []) {
+    const id = `ruim-${(ruim.id as string).slice(0, 8)}`;
+    if (idsExistentes.has(id)) continue;
+
+    const msgs = await mensagensDa(ruim.conversa_id as string);
+    if (!msgs) continue;
+
+    // A resposta marcada: pelo vínculo direto (0040) ou, para rótulos sem
+    // vínculo, a última mensagem do bot antes da linha de telemetria.
+    let alvo = msgs.findIndex((m) => m.interacao_id === ruim.id);
+    if (alvo < 0) {
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        if (msgs[i].remetente === "bot" && msgs[i].created_at <= (ruim.created_at as string)) {
+          alvo = i;
+          break;
+        }
+      }
+    }
+    if (alvo < 0) continue;
+
+    // O caso termina na última fala do CLIENTE antes da resposta marcada:
+    // é ela que o eval responde.
+    let corte = alvo - 1;
+    while (corte >= 0 && msgs[corte].remetente !== "cliente") corte--;
+    if (corte < 1) continue;
+
+    novos.push(montarCaso(id, "ruim", msgs, corte));
+  }
+
+  // 2. Conversas com participação do bot (amostra geral) — aqui o corte na
+  // última fala do cliente da conversa é o comportamento CERTO: não há
+  // ponto de falha marcado, o caso é a conversa como um todo.
   const { data: conversas } = await supabase
     .from("whatsapp_conversas")
     .select("id")
@@ -59,37 +124,18 @@ async function main() {
     .order("ultima_interacao_em", { ascending: false })
     .limit(100);
 
-  const alvos = new Map<string, "ruim" | "amostra">();
-  for (const r of ruins ?? []) alvos.set(r.conversa_id as string, "ruim");
-  for (const c of conversas ?? []) if (!alvos.has(c.id)) alvos.set(c.id, "amostra");
+  for (const c of conversas ?? []) {
+    const id = `amostra-${c.id.slice(0, 8)}`;
+    if (idsExistentes.has(id)) continue;
 
-  for (const [conversaId, origem] of alvos) {
-    const { data: msgs } = await supabase
-      .from("whatsapp_mensagens")
-      .select("remetente, conteudo, created_at")
-      .eq("conversa_id", conversaId)
-      .order("created_at", { ascending: true })
-      .limit(40);
+    const msgs = await mensagensDa(c.id);
+    if (!msgs) continue;
 
-    if (!msgs || msgs.length < 2) continue;
-    // O caso termina na última fala do CLIENTE: é ela que o eval responde.
     let corte = msgs.length - 1;
     while (corte >= 0 && msgs[corte].remetente !== "cliente") corte--;
     if (corte < 1) continue;
 
-    const id = `${origem}-${conversaId.slice(0, 8)}`;
-    if (idsExistentes.has(id)) continue;
-
-    novos.push({
-      id,
-      origem,
-      historico: msgs.slice(0, corte).map((m) => ({
-        remetente: m.remetente,
-        texto: anonimizar(m.conteudo).slice(0, 500),
-      })),
-      mensagem: anonimizar(msgs[corte].conteudo).slice(0, 500),
-      expectativas: {},
-    });
+    novos.push(montarCaso(id, "amostra", msgs, corte));
   }
 
   if (novos.length === 0) {

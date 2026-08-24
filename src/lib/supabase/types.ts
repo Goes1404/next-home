@@ -1031,6 +1031,7 @@ export type Database = {
           conteudo: string
           midia_url: string | null
           provider_message_id: string | null
+          interacao_id: string | null
           created_at: string
         }
         Insert: {
@@ -1041,6 +1042,7 @@ export type Database = {
           conteudo: string
           midia_url?: string | null
           provider_message_id?: string | null
+          interacao_id?: string | null
           created_at?: string
         }
         Update: {
@@ -1051,6 +1053,7 @@ export type Database = {
           conteudo?: string
           midia_url?: string | null
           provider_message_id?: string | null
+          interacao_id?: string | null
           created_at?: string
         }
         Relationships: []

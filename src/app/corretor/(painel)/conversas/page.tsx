@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ConversasClient, type ConversaResumo } from "./ConversasClient";
+import { RevisaoRespostas, type ItemRevisao } from "./RevisaoRespostas";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { ROTULO_MODO } from "@/lib/whatsapp/modoBot";
 import { createClient } from "@/lib/supabase/server";
@@ -60,6 +61,65 @@ export default async function ConversasPage() {
 
   const modo = (instancia?.modo_bot ?? null) as ModoBotWhatsapp | null;
 
+  /*
+   * Fila de revisão: respostas do bot ainda sem 👍/👎, com o contexto
+   * mínimo para julgar (a fala do cliente imediatamente anterior). Vem
+   * ANTES da lista de conversas porque é a única coisa da tela que pede
+   * ação — rótulo é o combustível do golden dataset, e rótulo que depende
+   * de abrir conversa por conversa não acontece (medido: zero em produção).
+   */
+  const { data: semAvaliacao } = await supabase
+    .from("ia_interacoes")
+    .select("id, conversa_id, created_at")
+    .eq("corretor_id", corretor.id)
+    .in("origem", ["webhook", "followup"])
+    .eq("e_teste", false)
+    .in("acao", ["respondida", "visita_confirmada"])
+    .is("avaliacao", null)
+    .not("conversa_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  let itensRevisao: ItemRevisao[] = [];
+  if (semAvaliacao && semAvaliacao.length > 0) {
+    const idsInteracao = semAvaliacao.map((i) => i.id);
+    const conversaIds = [...new Set(semAvaliacao.map((i) => i.conversa_id as string))];
+
+    const [{ data: respostas }, { data: falasCliente }] = await Promise.all([
+      supabase
+        .from("whatsapp_mensagens")
+        .select("conversa_id, conteudo, created_at, interacao_id")
+        .in("interacao_id", idsInteracao),
+      supabase
+        .from("whatsapp_mensagens")
+        .select("conversa_id, conteudo, created_at")
+        .in("conversa_id", conversaIds)
+        .eq("remetente", "cliente")
+        .order("created_at", { ascending: false })
+        .limit(400),
+    ]);
+
+    const nomes = new Map(lista.map((c) => [c.id, c.nome || c.telefone]));
+
+    // Interação sem mensagem vinculada (anterior ao backfill que falhou a
+    // janela) fica de fora: sem o texto não há o que julgar.
+    itensRevisao = (respostas ?? [])
+      .filter((r) => r.interacao_id !== null)
+      .map((r) => {
+        const fala = (falasCliente ?? []).find(
+          (f) => f.conversa_id === r.conversa_id && f.created_at < r.created_at,
+        );
+        return {
+          interacaoId: r.interacao_id as string,
+          clienteNome: nomes.get(r.conversa_id) ?? "Cliente",
+          falaCliente: fala?.conteudo ?? null,
+          respostaBot: r.conteudo,
+          criadoEm: r.created_at,
+        };
+      })
+      .sort((a, b) => (a.criadoEm < b.criadoEm ? 1 : -1));
+  }
+
   return (
     <div>
       <h1 className="font-display text-titulo text-fluid-2xl">Conversas do WhatsApp</h1>
@@ -80,6 +140,8 @@ export default async function ConversasPage() {
           </Link>
         </p>
       )}
+
+      <RevisaoRespostas itens={itensRevisao} />
 
       <ConversasClient conversas={lista} />
     </div>

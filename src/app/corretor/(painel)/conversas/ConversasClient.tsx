@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import {
-  avaliarUltimaResposta,
+  avaliarInteracao,
   lerMensagens,
   retomarBotNaConversa,
   silenciarBotNaConversa,
@@ -125,18 +125,6 @@ function CartaoConversa({
     iniciar(async () => setMensagens(await lerMensagens(conversa.id)));
   }
 
-  // Loop de melhoria: "ruim" vira caso de teste do eval da IA (ver
-  // avaliarUltimaResposta). O aviso curto confirma que o clique valeu.
-  const [avaliacaoFeita, setAvaliacaoFeita] = useState<string | null>(null);
-  function avaliar(nota: "boa" | "ruim") {
-    onErro(null);
-    iniciar(async () => {
-      const resultado = await avaliarUltimaResposta(conversa.id, nota);
-      if (resultado.erro) onErro(resultado.erro);
-      else setAvaliacaoFeita(resultado.ok ?? "Registrado.");
-    });
-  }
-
   return (
     <article className="border-linha bg-superficie shadow-painel rounded-2xl border p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -186,31 +174,6 @@ function CartaoConversa({
           {estado === "ativa" ? "Desligar IA aqui" : "Reativar IA agora"}
         </button>
 
-        {avaliacaoFeita ? (
-          <span className="text-fluid-xs text-ok px-2">{avaliacaoFeita}</span>
-        ) : (
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => avaliar("boa")}
-              disabled={pendente}
-              title="A última resposta da IA foi boa"
-              className="border-linha text-apoio hover:text-ok flex min-h-11 cursor-pointer items-center rounded-full border px-3 text-sm transition-colors disabled:opacity-60"
-            >
-              👍 IA
-            </button>
-            <button
-              type="button"
-              onClick={() => avaliar("ruim")}
-              disabled={pendente}
-              title="A última resposta da IA foi ruim — vira caso de teste"
-              className="border-linha text-apoio hover:text-perigo flex min-h-11 cursor-pointer items-center rounded-full border px-3 text-sm transition-colors disabled:opacity-60"
-            >
-              👎 IA
-            </button>
-          </div>
-        )}
-
         <button
           type="button"
           onClick={verConversa}
@@ -228,7 +191,7 @@ function CartaoConversa({
           ) : mensagens.length === 0 ? (
             <p className="text-fluid-xs text-tenue">Sem mensagens registradas.</p>
           ) : (
-            mensagens.map((m) => <Balao key={m.id} mensagem={m} />)
+            mensagens.map((m) => <Balao key={m.id} mensagem={m} onErro={onErro} />)
           )}
         </div>
       )}
@@ -242,8 +205,34 @@ const AUTOR: Record<MensagemConversa["remetente"], { rotulo: string; classe: str
   corretor: { rotulo: "Você", classe: "bg-vidro-forte border-linha text-corpo ml-auto" },
 };
 
-function Balao({ mensagem }: { mensagem: MensagemConversa }) {
+function Balao({
+  mensagem,
+  onErro,
+}: {
+  mensagem: MensagemConversa;
+  onErro: (e: string | null) => void;
+}) {
   const autor = AUTOR[mensagem.remetente];
+
+  /*
+   * Avaliação POR BALÃO — o motivo de existir do vínculo da 0040. Antes só
+   * a última resposta da conversa era avaliável; a falha no meio (o rótulo
+   * que mais ensina) não tinha onde ser registrada.
+   */
+  const [nota, setNota] = useState<"boa" | "ruim" | null>(mensagem.avaliacao);
+  const [salvando, setSalvando] = useState(false);
+  const avaliavel = mensagem.remetente === "bot" && mensagem.interacaoId !== null;
+
+  function avaliar(valor: "boa" | "ruim") {
+    if (!mensagem.interacaoId) return;
+    onErro(null);
+    setSalvando(true);
+    void avaliarInteracao(mensagem.interacaoId, valor).then((resultado) => {
+      setSalvando(false);
+      if (resultado.erro) onErro(resultado.erro);
+      else setNota(valor);
+    });
+  }
 
   return (
     <div className={cn("max-w-[85%] rounded-2xl border px-4 py-2.5", autor.classe)}>
@@ -251,6 +240,34 @@ function Balao({ mensagem }: { mensagem: MensagemConversa }) {
         {autor.rotulo} · {dataHora.format(new Date(mensagem.criadoEm))}
       </p>
       <p className="text-fluid-sm mt-0.5 whitespace-pre-line">{mensagem.conteudo}</p>
+
+      {avaliavel &&
+        (nota ? (
+          <p className={cn("mt-1.5 text-[11px] font-medium", nota === "boa" ? "text-ok" : "text-perigo")}>
+            {nota === "boa" ? "👍 Avaliada como boa" : "👎 Marcada como ruim — vira caso de teste"}
+          </p>
+        ) : (
+          <div className="mt-1.5 flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => avaliar("boa")}
+              disabled={salvando}
+              title="Esta resposta da IA foi boa"
+              className="border-linha text-apoio hover:text-ok cursor-pointer rounded-full border px-2.5 py-1 text-xs transition-colors disabled:opacity-60"
+            >
+              👍
+            </button>
+            <button
+              type="button"
+              onClick={() => avaliar("ruim")}
+              disabled={salvando}
+              title="Esta resposta da IA foi ruim — vira caso de teste"
+              className="border-linha text-apoio hover:text-perigo cursor-pointer rounded-full border px-2.5 py-1 text-xs transition-colors disabled:opacity-60"
+            >
+              👎
+            </button>
+          </div>
+        ))}
     </div>
   );
 }

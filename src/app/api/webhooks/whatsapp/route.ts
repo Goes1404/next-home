@@ -537,10 +537,21 @@ export async function POST(req: NextRequest) {
     const linhasAnexos = anexos.map((a) => `📎 ${a.titulo || a.tipo}: ${a.url}`);
     const textoParaEnviar = [respostaIA.textoResposta, ...linhasAnexos].join("\n\n");
 
+    /*
+     * O id da interação nasce AQUI, antes dos dois inserts: o mesmo uuid
+     * vai na mensagem (interacao_id, 0040) e na linha de telemetria. É o
+     * vínculo que permite avaliar ESTA resposta no Live Chat — sem ele,
+     * só a última resposta da conversa era avaliável, e a falha no meio
+     * da conversa (o rótulo mais valioso do golden dataset) era
+     * literalmente impossível de gravar.
+     */
+    const interacaoId = crypto.randomUUID();
+
     await gravarMensagem({
       conversaId: conversa.id,
       remetente: "bot",
       conteudo: textoParaEnviar,
+      interacaoId,
     });
 
     /*
@@ -676,6 +687,7 @@ export async function POST(req: NextRequest) {
     // taxa de fallback, anexos bloqueados pelos guardrails e a
     // rastreabilidade por versão de prompt (ver ia_interacoes, 0029).
     await registrarInteracao({
+      id: interacaoId,
       conversaId: conversa.id,
       corretorId: instancia.corretorId,
       origem: "webhook",

@@ -16,6 +16,13 @@ import { modeloGemini } from "./gemini";
  * campanhas morto por semanas sem ninguém ver.
  */
 export type InteracaoIA = {
+  /**
+   * Id da linha, quando o chamador precisa conhecê-lo ANTES do insert —
+   * é o caso do webhook, que carimba o mesmo uuid na mensagem gravada
+   * (whatsapp_mensagens.interacao_id, 0040) para a resposta ser avaliável
+   * balão a balão no Live Chat.
+   */
+  id?: string;
   conversaId?: string | null;
   corretorId?: string | null;
   origem: "webhook" | "playground" | "followup" | "eval";
@@ -45,6 +52,7 @@ export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
   try {
     const supabase = createServiceClient();
     await supabase.from("ia_interacoes").insert({
+      ...(dados.id ? { id: dados.id } : {}),
       conversa_id: dados.conversaId ?? null,
       corretor_id: dados.corretorId ?? null,
       origem: dados.origem,

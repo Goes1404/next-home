@@ -87,6 +87,10 @@ export type MensagemConversa = {
   remetente: "cliente" | "bot" | "corretor";
   conteudo: string;
   criadoEm: string;
+  /** Vínculo com a telemetria (0040) — é o que torna ESTE balão avaliável. */
+  interacaoId: string | null;
+  /** Avaliação já dada a esta resposta, se houver. */
+  avaliacao: "boa" | "ruim" | null;
 };
 
 /** Últimas mensagens, para o corretor conferir antes de devolver a palavra ao bot. */
@@ -95,7 +99,7 @@ export async function lerMensagens(conversaId: string): Promise<MensagemConversa
 
   const { data, error } = await supabase
     .from("whatsapp_mensagens")
-    .select("id, remetente, conteudo, created_at")
+    .select("id, remetente, conteudo, created_at, interacao_id")
     .eq("conversa_id", conversaId)
     .order("created_at", { ascending: false })
     .limit(30);
@@ -105,48 +109,61 @@ export async function lerMensagens(conversaId: string): Promise<MensagemConversa
     return [];
   }
 
+  /*
+   * A avaliação mora em ia_interacoes, não na mensagem. Segunda query em
+   * vez de embed do PostgREST: o tipo gerado à mão (types.ts) não conhece
+   * a relação, e duas queries simples valem mais que um cast.
+   */
+  const idsInteracao = (data ?? []).map((m) => m.interacao_id).filter((v): v is string => v !== null);
+  const avaliacoes = new Map<string, "boa" | "ruim" | null>();
+  if (idsInteracao.length > 0) {
+    const { data: interacoes } = await supabase
+      .from("ia_interacoes")
+      .select("id, avaliacao")
+      .in("id", idsInteracao);
+    for (const i of interacoes ?? []) avaliacoes.set(i.id, i.avaliacao);
+  }
+
   return (data ?? [])
     .map((m) => ({
       id: m.id,
       remetente: m.remetente as MensagemConversa["remetente"],
       conteudo: m.conteudo,
       criadoEm: m.created_at,
+      interacaoId: m.interacao_id,
+      avaliacao: m.interacao_id ? (avaliacoes.get(m.interacao_id) ?? null) : null,
     }))
     .reverse();
 }
 
 /**
- * O corretor marcou uma resposta do bot como ruim.
+ * O corretor avaliou UMA resposta específica do bot.
+ *
+ * Substitui `avaliarUltimaResposta`, que só alcançava a interação mais
+ * recente da conversa — se o bot respondeu cinco vezes e a terceira foi
+ * ruim, o rótulo mais valioso do golden dataset era impossível de gravar.
+ * O vínculo balão→interação (0040) resolve: o Live Chat passa o id exato.
  *
  * É o gesto mais barato do loop de melhoria contínua: a marcação fica em
  * `ia_interacoes.avaliacao` e o export do golden dataset
- * (scripts/eval/exportarGolden.ts) transforma cada uma num caso de teste —
- * a falha real de hoje vira o teste automático que impede a mesma falha
- * amanhã. A RLS da 0029 garante que só o dono da conversa avalia.
+ * (scripts/eval/exportarGolden.ts) transforma cada `ruim` num caso de
+ * teste — a falha real de hoje vira o teste automático que impede a mesma
+ * falha amanhã. A RLS da 0029 garante que só o dono da conversa avalia.
  */
-export async function avaliarUltimaResposta(
-  conversaId: string,
+export async function avaliarInteracao(
+  interacaoId: string,
   avaliacao: "boa" | "ruim",
 ): Promise<ResultadoConversa> {
   const supabase = await exigirSessao();
 
-  const { data: interacao } = await supabase
-    .from("ia_interacoes")
-    .select("id")
-    .eq("conversa_id", conversaId)
-    .eq("acao", "respondida")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (!interacao) return { erro: "Nenhuma resposta da IA registrada nesta conversa ainda." };
-
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("ia_interacoes")
     .update({ avaliacao })
-    .eq("id", interacao.id);
+    .eq("id", interacaoId)
+    .select("id");
 
   if (error) return { erro: "Não foi possível registrar a avaliação." };
+  if (!data || data.length === 0) return { erro: "Resposta não encontrada na sua carteira." };
 
   revalidatePath("/corretor/conversas");
   return { ok: avaliacao === "ruim" ? "Anotado — esta resposta vira caso de teste do próximo ajuste da IA." : "Avaliação registrada." };
