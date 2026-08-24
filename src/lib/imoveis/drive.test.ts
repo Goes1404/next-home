@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { parsearLinkDrive } from "./drive";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { listarPasta, parsearLinkDrive } from "./drive";
 
 describe("parsearLinkDrive", () => {
   it("lê link de pasta com sufixo de compartilhamento", () => {
@@ -50,5 +50,70 @@ describe("parsearLinkDrive", () => {
 
   it("recusa host parecido com o do Google, que é o vetor óbvio de phishing", () => {
     expect(parsearLinkDrive("https://drive.google.com.exemplo.net/drive/folders/1A2b").tipo).toBe("nao_reconhecido");
+  });
+});
+
+describe("listarPasta", () => {
+  beforeEach(() => {
+    vi.stubEnv("GOOGLE_API_KEY", "chave-de-teste");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it("separa imagem de vídeo e ignora o resto", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          files: [
+            { id: "a", name: "fachada.jpg", mimeType: "image/jpeg", size: "3000000", thumbnailLink: "https://t/a" },
+            { id: "b", name: "tour.mp4", mimeType: "video/mp4", size: "300000000" },
+            { id: "c", name: "tabela.xlsx", mimeType: "application/vnd.ms-excel", size: "20000" },
+          ],
+        }),
+      ),
+    );
+
+    const resultado = await listarPasta("pasta-1");
+
+    expect(resultado.ok).toBe(true);
+    if (!resultado.ok) return;
+    expect(resultado.arquivos.map((a) => a.nome)).toEqual(["fachada.jpg", "tour.mp4"]);
+    expect(resultado.arquivos[1].ehVideo).toBe(true);
+  });
+
+  it("pede à API os parâmetros de Drive compartilhado, senão a pasta volta vazia", async () => {
+    const espiao = vi.fn(async () => Response.json({ files: [] }));
+    vi.stubGlobal("fetch", espiao);
+
+    await listarPasta("pasta-1");
+
+    const chamada = String(espiao.mock.calls[0][0]);
+    expect(chamada).toContain("supportsAllDrives=true");
+    expect(chamada).toContain("includeItemsFromAllDrives=true");
+  });
+
+  it("explica em português que a pasta não está aberta quando o Google recusa", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 404 })));
+
+    const resultado = await listarPasta("pasta-fechada");
+
+    expect(resultado.ok).toBe(false);
+    if (resultado.ok) return;
+    expect(resultado.erro).toMatch(/qualquer pessoa com o link/i);
+  });
+
+  it("diz que falta configurar quando não há chave, em vez de chamar a API sem ela", async () => {
+    vi.stubEnv("GOOGLE_API_KEY", "");
+    const espiao = vi.fn();
+    vi.stubGlobal("fetch", espiao);
+
+    const resultado = await listarPasta("pasta-1");
+
+    expect(resultado.ok).toBe(false);
+    expect(espiao).not.toHaveBeenCalled();
   });
 });
