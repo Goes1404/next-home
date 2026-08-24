@@ -3,8 +3,16 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TETO_PDF_BYTES } from "@/lib/imoveis/pdfImagens";
-import { analisarPdf, gravarEscolhasDoPdf, type AnaliseDoPdf } from "./acoes";
+import type { RascunhoCadastro as Rascunho } from "@/lib/imoveis/rascunhoDePdf";
+import {
+  analisarPdf,
+  aplicarRascunhoNoCadastro,
+  gravarEscolhasDoPdf,
+  sugerirCadastroDoPdf,
+  type AnaliseDoPdf,
+} from "./acoes";
 import { GradeCuradoria, type EscolhaCuradoria, type ItemDaGrade } from "./GradeCuradoria";
+import { RascunhoCadastro } from "./RascunhoCadastro";
 
 /**
  * Aba da apresentação em PDF.
@@ -14,16 +22,30 @@ import { GradeCuradoria, type EscolhaCuradoria, type ItemDaGrade } from "./Grade
  * deck de construtora passa disso. Assim o PDF não cruza a função, e o teto
  * não precisa ser afrouxado para todas as outras actions do sistema.
  */
-export function OrigemPdf({ empreendimentoId, slug }: { empreendimentoId: string; slug: string }) {
+export function OrigemPdf({
+  empreendimentoId,
+  slug,
+  cadastroAtual,
+}: {
+  empreendimentoId: string;
+  slug: string;
+  cadastroAtual: Record<string, unknown>;
+}) {
   const [analise, setAnalise] = useState<AnaliseDoPdf | null>(null);
   const [caminhoStaging, setCaminhoStaging] = useState<string | null>(null);
   const [escolhas, setEscolhas] = useState<Record<string, EscolhaCuradoria>>({});
   const [etapa, setEtapa] = useState<"parado" | "enviando" | "lendo" | "gravando">("parado");
   const [resumo, setResumo] = useState<string | null>(null);
+  const [rascunho, setRascunho] = useState<Rascunho | null>(null);
+  const [avisoRascunho, setAvisoRascunho] = useState<string | null>(null);
+  const [rascunhoSalvo, setRascunhoSalvo] = useState<string | null>(null);
 
   const aoEscolherArquivo = async (arquivo: File) => {
     setResumo(null);
     setAnalise(null);
+    setRascunho(null);
+    setAvisoRascunho(null);
+    setRascunhoSalvo(null);
 
     if (arquivo.size > TETO_PDF_BYTES) {
       const mb = (arquivo.size / 1024 / 1024).toFixed(0);
@@ -75,7 +97,24 @@ export function OrigemPdf({ empreendimentoId, slug }: { empreendimentoId: string
           ]),
         ),
       );
+
+      // Lido DEPOIS das imagens e sem travar a tela: a IA é o elo que pode
+      // demorar ou estar fora do ar, e a curadoria das fotos não depende dela.
+      void sugerirCadastroDoPdf(caminho).then((sugestao) => {
+        if (sugestao.ok) setRascunho(sugestao.rascunho);
+        else setAvisoRascunho(sugestao.aviso);
+      });
     }
+  };
+
+  const salvarRascunho = async (aceitos: Partial<Rascunho>) => {
+    const resultado = await aplicarRascunhoNoCadastro({ empreendimentoId, slug, aceitos });
+    setRascunhoSalvo(
+      resultado.ok
+        ? `${Object.keys(aceitos).length} ${Object.keys(aceitos).length === 1 ? "campo salvo" : "campos salvos"} no cadastro.`
+        : (resultado.erro ?? "Não consegui salvar agora."),
+    );
+    if (resultado.ok) setRascunho(null);
   };
 
   const gravar = async () => {
@@ -193,6 +232,17 @@ export function OrigemPdf({ empreendimentoId, slug }: { empreendimentoId: string
       {resumo ? (
         <p role="status" className="text-fluid-xs text-corpo">
           {resumo}
+        </p>
+      ) : null}
+
+      {rascunho ? (
+        <RascunhoCadastro rascunho={rascunho} atual={cadastroAtual} aoAplicar={salvarRascunho} />
+      ) : null}
+
+      {avisoRascunho ? <p className="text-fluid-xs text-apoio">{avisoRascunho}</p> : null}
+      {rascunhoSalvo ? (
+        <p role="status" className="text-fluid-xs text-corpo">
+          {rascunhoSalvo}
         </p>
       ) : null}
     </div>

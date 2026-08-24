@@ -16,10 +16,12 @@ export function ImportarClient({
   empreendimentoId,
   slug,
   nome,
+  cadastroAtual,
 }: {
   empreendimentoId: string;
   slug: string;
   nome: string;
+  cadastroAtual: Record<string, unknown>;
 }) {
   const [origem, setOrigem] = useState<"pdf" | "drive">("pdf");
 
@@ -50,7 +52,7 @@ export function ImportarClient({
       </nav>
 
       {origem === "pdf" ? (
-        <OrigemPdf empreendimentoId={empreendimentoId} slug={slug} />
+        <OrigemPdf empreendimentoId={empreendimentoId} slug={slug} cadastroAtual={cadastroAtual} />
       ) : (
         <OrigemDrive empreendimentoId={empreendimentoId} slug={slug} />
       )}

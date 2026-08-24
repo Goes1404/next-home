@@ -87,7 +87,10 @@ describe("listarPasta", () => {
 
   it("pede à API os parâmetros de Drive compartilhado, senão a pasta volta vazia", async () => {
     // A assinatura variádica existe só para `mock.calls[0][0]` ser tipado.
-    const espiao = vi.fn(async (...args: unknown[]) => (args, Response.json({ files: [] })));
+    const espiao = vi.fn(async (...args: unknown[]) => {
+      void args;
+      return Response.json({ files: [] });
+    });
     vi.stubGlobal("fetch", espiao);
 
     await listarPasta("pasta-1");

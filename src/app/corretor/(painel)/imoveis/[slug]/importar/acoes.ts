@@ -7,6 +7,10 @@ import { extrairImagensDePdf, TETO_IMAGENS } from "@/lib/imoveis/pdfImagens";
 import { gerarPreview } from "@/lib/imoveis/imagemDerivada";
 import { registrarMidia } from "@/lib/imoveis/registrarMidia";
 import { baixarArquivo, listarPasta, parsearLinkDrive, type ArquivoDrive } from "@/lib/imoveis/drive";
+import { montarRascunhoDePdf, type RascunhoCadastro } from "@/lib/imoveis/rascunhoDePdf";
+import type { Database } from "@/lib/supabase/types";
+
+type AtualizacaoEmpreendimento = Database["public"]["Tables"]["empreendimentos"]["Update"];
 
 export type ItemCurado = {
   /** Posição na extração. A extração é determinística, então isto é identidade. */
@@ -265,4 +269,106 @@ export async function trazerArquivoDoDrive(entrada: {
   revalidatePath("/corretor/imoveis");
 
   return { ok: true, duplicada: resultado.duplicada };
+}
+
+export type SugestaoDeCadastro =
+  | { ok: true; rascunho: RascunhoCadastro }
+  | { ok: false; aviso: string };
+
+/**
+ * Propõe o cadastro a partir do texto da apresentação já guardada.
+ *
+ * Roda separado de `analisarPdf` de propósito: a IA é o elo que pode
+ * demorar ou estar fora do ar, e as imagens não podem ficar esperando por
+ * ela. Se esta falhar, a curadoria das fotos continua funcionando.
+ */
+export async function sugerirCadastroDoPdf(caminhoStaging: string): Promise<SugestaoDeCadastro> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, aviso: "Sessão expirada. Entre de novo." };
+
+  const supabase = await createClient();
+  const baixado = await supabase.storage.from("empreendimentos").download(caminhoStaging);
+  if (baixado.error || !baixado.data) {
+    return { ok: false, aviso: "Não consegui reabrir o arquivo para ler os dados escritos nele." };
+  }
+
+  const resultado = await montarRascunhoDePdf(Buffer.from(await baixado.data.arrayBuffer()));
+
+  if (!resultado.ok) {
+    return {
+      ok: false,
+      aviso:
+        resultado.motivo === "sem_texto"
+          ? "Esta apresentação não tem texto embutido — é imagem pura. As fotos acima continuam disponíveis, mas os dados do imóvel precisam ser digitados."
+          : "Não consegui ler os dados escritos nesta apresentação agora. As fotos acima continuam disponíveis.",
+    };
+  }
+
+  return { ok: true, rascunho: resultado.rascunho };
+}
+
+/**
+ * Grava SÓ os campos que o corretor marcou.
+ *
+ * Não reusa `salvarDadosGerais` porque aquela action recebe o formulário
+ * inteiro: mandar o rascunho por ela apagaria todo campo que a IA não leu.
+ */
+export async function aplicarRascunhoNoCadastro(entrada: {
+  empreendimentoId: string;
+  slug: string;
+  aceitos: Partial<RascunhoCadastro>;
+}): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada. Entre de novo." };
+
+  const COLUNA: Record<keyof RascunhoCadastro, string | null> = {
+    nome: "nome",
+    construtora: "construtora",
+    cidade: "cidade",
+    bairro: "bairro",
+    endereco: "endereco",
+    status: "status",
+    entregaPrevista: "entrega_prevista",
+    totalTorres: "total_torres",
+    totalAndares: "total_andares",
+    totalUnidades: "total_unidades",
+    tagline: "tagline",
+    descricao: "descricao",
+    // Plantas e lazer têm tabela própria (tipologias, empreendimento_lazer) e
+    // campos que não saem de uma apresentação — preço, unidades disponíveis.
+    // A tela mostra o que foi lido e manda cadastrar lá.
+    tipologias: null,
+    lazer: null,
+  };
+
+  const mudancas: AtualizacaoEmpreendimento = {};
+  for (const [campo, valor] of Object.entries(entrada.aceitos)) {
+    const coluna = COLUNA[campo as keyof RascunhoCadastro];
+    if (coluna && valor !== undefined) {
+      // O mapa `COLUNA` é a garantia de que só coluna existente entra; o
+      // cast diz isso ao compilador, que não consegue seguir a indireção.
+      (mudancas as Record<string, unknown>)[coluna] = valor;
+    }
+  }
+
+  if (Object.keys(mudancas).length === 0) {
+    return { ok: false, erro: "Nada para salvar." };
+  }
+
+  mudancas.updated_at = new Date().toISOString();
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("empreendimentos").update(mudancas).eq("id", entrada.empreendimentoId);
+
+  if (error) {
+    console.error("Erro ao aplicar o rascunho no cadastro:", error);
+    return { ok: false, erro: "Não consegui salvar no cadastro agora. Tente de novo." };
+  }
+
+  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+  revalidatePath("/", "layout");
+
+  return { ok: true };
 }

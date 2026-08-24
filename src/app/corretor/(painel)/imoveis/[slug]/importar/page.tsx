@@ -34,7 +34,25 @@ export default async function ImportarMaterialPage({ params }: Props) {
         ← Voltar para o imóvel
       </Link>
 
-      <ImportarClient empreendimentoId={imovel.id} slug={slug} nome={imovel.nome} />
+      <ImportarClient
+        empreendimentoId={imovel.id}
+        slug={slug}
+        nome={imovel.nome}
+        cadastroAtual={{
+          nome: imovel.nome,
+          construtora: imovel.construtora,
+          cidade: imovel.cidade,
+          bairro: imovel.bairro,
+          endereco: imovel.endereco,
+          status: imovel.status,
+          entregaPrevista: imovel.entregaPrevista,
+          totalTorres: imovel.totalTorres,
+          totalAndares: imovel.totalAndares,
+          totalUnidades: imovel.totalUnidades,
+          tagline: imovel.tagline,
+          descricao: imovel.descricao,
+        }}
+      />
     </div>
   );
 }
