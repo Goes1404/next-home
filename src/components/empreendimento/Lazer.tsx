@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { FundoEmCamadas } from "@/components/motion/FundoEmCamadas";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { fotosDoLazer } from "@/lib/lazerFotos";
@@ -78,7 +79,13 @@ export function Lazer({ itens, fotos = [] }: { itens: string[]; fotos?: Midia[] 
   };
 
   return (
-    <section id="lazer" className="scroll-mt-24 bg-superficie/40 px-4 py-16 sm:px-8 sm:py-28">
+    // A lista é alvo de toque e a prévia é `fixed` num portal — nada aqui
+    // pode ganhar transform. Quem dá profundidade é o fundo.
+    <section
+      id="lazer"
+      className="relative overflow-hidden scroll-mt-24 bg-superficie/40 px-4 py-16 sm:px-8 sm:py-28"
+    >
+      <FundoEmCamadas intensidade={0.7} />
       <div className="mx-auto max-w-7xl">
         <TituloEditorial className="text-fluid-3xl text-titulo">Lazer</TituloEditorial>
         <Reveal from="nenhuma" delay={0.2}>

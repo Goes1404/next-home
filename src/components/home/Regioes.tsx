@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FundoEmCamadas } from "@/components/motion/FundoEmCamadas";
 import { Reveal } from "@/components/motion/Reveal";
 
 /**
@@ -18,7 +19,11 @@ const REGIOES = [
 
 export function Regioes() {
   return (
-    <section className="px-4 pb-16 sm:pb-24">
+    // Os chips são alvo de clique e por isso NÃO se movem. Quem dá
+    // profundidade aqui é o fundo. `overflow-hidden` é obrigatório: sem ele
+    // as manchas vazam e criam barra de rolagem horizontal.
+    <section className="relative overflow-hidden px-4 pb-16 sm:pb-24">
+      <FundoEmCamadas />
       <div className="mx-auto w-full max-w-3xl text-center">
         <Reveal>
           <h2 className="text-fluid-2xl text-titulo">As Melhores Regiões para Morar ou Investir</h2>

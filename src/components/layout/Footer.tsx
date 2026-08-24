@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FundoEmCamadas } from "@/components/motion/FundoEmCamadas";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
@@ -28,7 +29,8 @@ export async function Footer() {
   const [corretorAtivo, tema] = await Promise.all([getCorretorAtivo(), getTemaEscolhido()]);
 
   return (
-    <footer className="border-t border-linha/10 bg-superficie px-4 py-14">
+    <footer className="relative overflow-hidden border-t border-linha/10 bg-superficie px-4 py-14">
+      <FundoEmCamadas intensidade={0.5} />
       <div className="mx-auto grid w-full max-w-5xl gap-10 sm:grid-cols-3">
         <div>
           <p className="font-display text-lg text-titulo">

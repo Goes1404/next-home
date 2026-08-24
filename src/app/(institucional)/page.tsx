@@ -280,7 +280,10 @@ export default async function HomeInstitucional() {
 
           {/* A porta do vendedor — única rota da home para /anunciar-imovel. */}
           <section className="px-4 py-16 sm:px-8 sm:py-20">
-            <Reveal from="baixo" className="mx-auto w-full max-w-4xl">
+            {/* CartaoTilt no lugar do Reveal: ele traz o brilho que segue o
+                ponteiro e já faz a própria entrada. Somar o Reveal daria dois
+                donos da opacidade. */}
+            <CartaoTilt indice={0} className="mx-auto w-full max-w-4xl">
               <Link href={VENDEDOR.href} className="rounded-glass block">
                 <GlassSurface preset="card" className="group flex flex-col gap-4 px-6 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-10">
                   <div>
@@ -292,7 +295,7 @@ export default async function HomeInstitucional() {
                   </span>
                 </GlassSurface>
               </Link>
-            </Reveal>
+            </CartaoTilt>
           </section>
 
           <CtaFinal />
