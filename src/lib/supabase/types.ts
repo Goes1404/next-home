@@ -809,6 +809,7 @@ export type Database = {
           tom_voz: string
           webhook_secret: string | null
           palavra_chave_ativacao: string | null
+          palavra_chave_teste: string | null
           conectado_em: string | null
           envios_campanha_data: string | null
           envios_campanha_contador: number
@@ -829,6 +830,7 @@ export type Database = {
           tom_voz?: string
           webhook_secret?: string | null
           palavra_chave_ativacao?: string | null
+          palavra_chave_teste?: string | null
           conectado_em?: string | null
           envios_campanha_data?: string | null
           envios_campanha_contador?: number
@@ -849,6 +851,7 @@ export type Database = {
           tom_voz?: string
           webhook_secret?: string | null
           palavra_chave_ativacao?: string | null
+          palavra_chave_teste?: string | null
           conectado_em?: string | null
           envios_campanha_data?: string | null
           envios_campanha_contador?: number

@@ -21,6 +21,7 @@ import {
   gravarMensagem,
   historicoRecente,
   liberarConversaPorPalavraChave,
+  marcarConversaComoTeste,
   marcarRespostaCampanha,
   obterOuCriarConversa,
   podeAlertarLeadQuente,
@@ -253,12 +254,25 @@ export async function POST(req: NextRequest) {
       const decisao = decidirPorFalaDoCorretor({
         mensagem: text,
         palavraChaveConfigurada: instancia.palavraChaveAtivacao,
+        palavraChaveTeste: instancia.palavraChaveTeste,
         origemConversa: conversa.origem,
       });
 
       if (decisao.acao === "ativar_ia") {
         await liberarConversaPorPalavraChave(conversa.id);
-        return NextResponse.json({ ok: true, action: "bot_ativado_por_palavra_chave", sender });
+        /*
+         * A palavra de TESTE liga a IA e tira a conversa do corpus. Sem
+         * isto, o corretor testando pela linha de verdade voltaria a
+         * envenenar o few-shot — o problema que a 0038 acabou de limpar.
+         */
+        if (decisao.marcarComoTeste) await marcarConversaComoTeste(conversa.id);
+        return NextResponse.json({
+          ok: true,
+          action: decisao.marcarComoTeste
+            ? "bot_ativado_em_modo_teste"
+            : "bot_ativado_por_palavra_chave",
+          sender,
+        });
       }
 
       await pausarBotPorAtendimentoHumano(conversa.id, {
@@ -307,6 +321,7 @@ export async function POST(req: NextRequest) {
         conversaId: conversa.id,
         corretorId: instancia.corretorId,
         origem: "webhook",
+        eTeste: conversa.eTeste,
         promptVersao: PROMPT_VERSAO,
         acao: "pausada_por_humano",
       });
@@ -329,6 +344,7 @@ export async function POST(req: NextRequest) {
         conversaId: conversa.id,
         corretorId: instancia.corretorId,
         origem: "webhook",
+        eTeste: conversa.eTeste,
         promptVersao: PROMPT_VERSAO,
         acao: "silenciada_por_modo",
       });
@@ -353,6 +369,7 @@ export async function POST(req: NextRequest) {
           conversaId: conversa.id,
           corretorId: instancia.corretorId,
           origem: "webhook",
+        eTeste: conversa.eTeste,
           promptVersao: PROMPT_VERSAO,
           acao: "absorvida_por_debounce",
         });
@@ -367,6 +384,7 @@ export async function POST(req: NextRequest) {
         conversaId: conversa.id,
         corretorId: instancia.corretorId,
         origem: "webhook",
+        eTeste: conversa.eTeste,
         promptVersao: PROMPT_VERSAO,
         acao: "absorvida_por_debounce",
       });
@@ -445,6 +463,7 @@ export async function POST(req: NextRequest) {
           conversaId: conversa.id,
           corretorId: instancia.corretorId,
           origem: "webhook",
+        eTeste: conversa.eTeste,
           promptVersao: PROMPT_VERSAO,
           latenciaMs: respostaIA.meta.latenciaMs,
           acao: "absorvida_por_debounce",

@@ -147,6 +147,7 @@ export async function salvarConfiguracaoWhatsapp(params: {
   modoBot: ModoBotWhatsapp;
   /** Frase que, digitada pelo próprio corretor no chat, "liga" a IA na conversa. Vazio = recurso desligado. */
   palavraChaveAtivacao?: string;
+  palavraChaveTeste?: string;
 }): Promise<{ ok?: string; erro?: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
@@ -157,8 +158,27 @@ export async function salvarConfiguracaoWhatsapp(params: {
   }
 
   const palavraChave = params.palavraChaveAtivacao?.trim() || null;
-  if (palavraChave && palavraChave.length < 3) {
-    return { erro: "A palavra-chave precisa ter pelo menos 3 caracteres, para não disparar por acaso." };
+  const palavraTeste = params.palavraChaveTeste?.trim() || null;
+
+  /*
+   * Duas palavras iguais fariam a de teste vencer sempre (ela é conferida
+   * primeiro) e o corretor perderia o modo normal sem entender por quê.
+   */
+  if (palavraChave && palavraTeste && palavraChave.toLowerCase() === palavraTeste.toLowerCase()) {
+    return { erro: "A palavra de teste precisa ser diferente da de ativação." };
+  }
+  for (const [rotulo, valor] of [
+    ["A palavra-chave", palavraChave],
+    ["A palavra de teste", palavraTeste],
+  ] as const) {
+    /*
+     * O mínimo existe porque o casamento é por substring: a palavra
+     * cadastrada em produção era "Teste", e "testei"/"testando" abriam a
+     * porta. Três caracteres é pouco, mas é o piso que já existia.
+     */
+    if (valor && valor.length < 3) {
+      return { erro: `${rotulo} precisa ter pelo menos 3 caracteres, para não disparar por acaso.` };
+    }
   }
 
   const supabase = await createClient();
@@ -172,6 +192,7 @@ export async function salvarConfiguracaoWhatsapp(params: {
         tom_voz: params.tomVoz,
         modo_bot: params.modoBot,
         palavra_chave_ativacao: palavraChave,
+        palavra_chave_teste: palavraTeste,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "corretor_id" },

@@ -62,6 +62,7 @@ interface Props {
     telefoneConectado: string | null;
     /** Frase que, digitada pelo próprio corretor no chat, "liga" a IA na conversa. */
     palavraChaveAtivacao: string | null;
+    palavraChaveTeste: string | null;
   } | null;
 }
 
@@ -132,6 +133,9 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
   );
   const [palavraChaveAtivacao, setPalavraChaveAtivacao] = useState(
     configInicial?.palavraChaveAtivacao ?? "",
+  );
+  const [palavraChaveTeste, setPalavraChaveTeste] = useState(
+    configInicial?.palavraChaveTeste ?? "",
   );
   const [mostrarQrCode, setMostrarQrCode] = useState(false);
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
@@ -305,6 +309,7 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
       tomVoz,
       modoBot,
       palavraChaveAtivacao,
+      palavraChaveTeste,
     });
     setSalvando(false);
     setFeedback(resultado.erro ?? resultado.ok ?? null);
@@ -717,6 +722,24 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
                 {palavraChaveAtivacao.trim()
                   ? `Com uma palavra-chave cadastrada, a IA fica em silêncio em conversas novas até você digitar "${palavraChaveAtivacao.trim()}" no próprio chat do WhatsApp — aí ela assume, sem o cliente perceber a troca. Deixe em branco para a IA responder normalmente, seguindo só o modo de ativação acima.`
                   : "Deixe em branco para a IA responder normalmente, seguindo só o modo de ativação acima. Se preencher, ela só entra em ação em conversas novas depois que você mesmo digitar esta frase no chat — útil para atender pessoalmente o início e só depois passar a bola."}
+              </p>
+            </div>
+
+            <div className="space-y-2 border-t border-linha pt-4">
+              <label className="text-fluid-xs font-bold text-corpo uppercase tracking-wider block">
+                Palavra-chave de Teste (opcional)
+              </label>
+              <input
+                type="text"
+                value={palavraChaveTeste}
+                onChange={(e) => setPalavraChaveTeste(e.target.value)}
+                placeholder="ex: modo teste agora"
+                className="w-full rounded-xl border border-linha-forte bg-campo px-4 py-2.5 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
+              />
+              <p className="text-fluid-xs text-apoio leading-snug">
+                {palavraChaveTeste.trim()
+                  ? `Digitar "${palavraChaveTeste.trim()}" no chat liga a IA E marca a conversa como TESTE: ela sai das análises de qualidade e nunca vira exemplo de treinamento para a IA. Use quando estiver testando pelo seu próprio WhatsApp — a conversa continua visível no Live Chat normalmente.`
+                  : "Serve para testar sem sujar o aprendizado da IA. Ao digitar esta frase no chat, a IA assume a conversa e ela passa a contar como teste — fica fora das análises e nunca vira exemplo de treinamento. Precisa ser diferente da palavra-chave de ativação."}
               </p>
             </div>
 

@@ -152,9 +152,13 @@ export function contemPalavraChave(mensagem: string, palavraChave: string | null
  */
 export function exigePalavraChave(params: {
   palavraChaveConfigurada: string | null | undefined;
+  /** A de teste também liga a trava: ter qualquer uma cadastrada é ter o recurso ligado. */
+  palavraChaveTeste?: string | null;
   origemConversa: "organica" | "campanha";
 }): boolean {
-  return Boolean(params.palavraChaveConfigurada?.trim()) && params.origemConversa !== "campanha";
+  const temAlguma =
+    Boolean(params.palavraChaveConfigurada?.trim()) || Boolean(params.palavraChaveTeste?.trim());
+  return temAlguma && params.origemConversa !== "campanha";
 }
 
 /**
@@ -182,22 +186,41 @@ export function exigePalavraChave(params: {
  * de destravá-la.
  */
 export type DecisaoFalaDoCorretor =
-  | { acao: "ativar_ia" }
+  | { acao: "ativar_ia"; marcarComoTeste: boolean }
   | { acao: "pausar_ia"; retravarPalavraChave: boolean };
 
 export function decidirPorFalaDoCorretor(params: {
   mensagem: string;
   palavraChaveConfigurada: string | null | undefined;
+  /**
+   * Palavra que liga a IA E marca a conversa como teste. Existe porque o
+   * corretor continua testando pelo WhatsApp de verdade durante o piloto, e
+   * essas conversas nascem como REAIS — indo parar no few-shot que entra no
+   * prompt. Foi assim que 46 conversas de teste viraram exemplo de
+   * atendimento bom (ver migrations 0038 e 0039).
+   */
+  palavraChaveTeste?: string | null;
   origemConversa: "organica" | "campanha";
 }): DecisaoFalaDoCorretor {
+  /*
+   * A de teste é conferida PRIMEIRO. Se as duas palavras casarem com a
+   * mesma mensagem, marcar teste é o desfecho seguro: uma conversa real
+   * marcada como teste custa um exemplo a menos no corpus; uma de teste
+   * marcada como real envenena o prompt.
+   */
+  if (contemPalavraChave(params.mensagem, params.palavraChaveTeste)) {
+    return { acao: "ativar_ia", marcarComoTeste: true };
+  }
+
   if (contemPalavraChave(params.mensagem, params.palavraChaveConfigurada)) {
-    return { acao: "ativar_ia" };
+    return { acao: "ativar_ia", marcarComoTeste: false };
   }
 
   return {
     acao: "pausar_ia",
     retravarPalavraChave: exigePalavraChave({
       palavraChaveConfigurada: params.palavraChaveConfigurada,
+      palavraChaveTeste: params.palavraChaveTeste,
       origemConversa: params.origemConversa,
     }),
   };

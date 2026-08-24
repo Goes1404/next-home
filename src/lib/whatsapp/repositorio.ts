@@ -30,6 +30,7 @@ export type InstanciaResolvida = {
   webhookSecret: string | null;
   /** Frase que o corretor digita no próprio chat para "ligar" a IA. Nula = recurso desligado. */
   palavraChaveAtivacao: string | null;
+  palavraChaveTeste: string | null;
 };
 
 /**
@@ -46,7 +47,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
   const { data, error } = await supabase
     .from("corretor_whatsapp_instancias")
     .select(
-      "id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret, palavra_chave_ativacao",
+      "id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret, palavra_chave_ativacao, palavra_chave_teste",
     )
     .eq("instance_name", instanceName)
     .maybeSingle();
@@ -74,6 +75,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
     modoBot: data.modo_bot,
     webhookSecret: data.webhook_secret,
     palavraChaveAtivacao: data.palavra_chave_ativacao,
+    palavraChaveTeste: data.palavra_chave_teste,
   };
 }
 
@@ -87,10 +89,12 @@ export type ConversaPersistida = {
   liberadoPorPalavraChave: boolean;
   /** De onde esta conversa nasceu — 'campanha' é quem o disparo em massa criou (ver campaignDispatcher.ts). */
   origem: "organica" | "campanha";
+  /** Conversa de teste da equipe: fora do few-shot e do golden (ver 0038/0039). */
+  eTeste: boolean;
 };
 
 const SELECT_CONVERSA =
-  "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem";
+  "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste";
 
 function mapConversa(row: {
   id: string;
@@ -100,6 +104,7 @@ function mapConversa(row: {
   pausado_humano_ate: string | null;
   liberado_por_palavra_chave: boolean;
   origem: "organica" | "campanha";
+  e_teste: boolean;
 }): ConversaPersistida {
   return {
     id: row.id,
@@ -108,6 +113,7 @@ function mapConversa(row: {
     botAtivo: row.bot_ativo,
     pausadoHumanoAte: row.pausado_humano_ate,
     liberadoPorPalavraChave: row.liberado_por_palavra_chave,
+    eTeste: row.e_teste,
     origem: row.origem,
   };
 }
@@ -269,6 +275,21 @@ export async function obterOuCriarConversa(params: {
  * o sinal de entrega, não de "estou cuidando pessoalmente" — por isso não
  * grava pausa nenhuma, só derruba a trava de espera.
  */
+/**
+ * O corretor digitou a palavra de TESTE: a conversa deixa de contar como
+ * atendimento real, para sempre.
+ *
+ * Sem volta de propósito. Conversa usada para testar já está contaminada —
+ * mensagens "Teste", repetição proposital, o próprio corretor fingindo ser
+ * cliente. Nada disso vira exemplo bom depois, e o custo de um falso
+ * positivo (uma conversa real marcada como teste) é um exemplo a menos no
+ * corpus; o do falso negativo é o prompt aprendendo besteira.
+ */
+export async function marcarConversaComoTeste(conversaId: string): Promise<void> {
+  const supabase = createServiceClient();
+  await supabase.from("whatsapp_conversas").update({ e_teste: true }).eq("id", conversaId);
+}
+
 export async function liberarConversaPorPalavraChave(conversaId: string): Promise<void> {
   const supabase = createServiceClient();
   await supabase

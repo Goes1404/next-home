@@ -19,6 +19,8 @@ export type InteracaoIA = {
   conversaId?: string | null;
   corretorId?: string | null;
   origem: "webhook" | "playground" | "followup" | "eval";
+  /** A conversa foi marcada como teste (palavra-chave de teste, ver 0039). */
+  eTeste?: boolean;
   promptVersao: string;
   latenciaMs?: number | null;
   fallback?: boolean;
@@ -53,7 +55,12 @@ export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
        * teste misturadas ao que deveria ser corpus de aprendizado, sendo
        * ensinadas ao agente como few-shot.
        */
-      e_teste: dados.origem === "playground" || dados.origem === "eval",
+      /*
+       * Playground e eval são teste por definição. `eTeste` cobre o caso do
+       * meio: o corretor testando pela linha de verdade, que chega como
+       * `webhook` e só se distingue pela palavra-chave de teste.
+       */
+      e_teste: dados.eTeste === true || dados.origem === "playground" || dados.origem === "eval",
       prompt_versao: dados.promptVersao,
       /*
        * Na contingência NINGUÉM respondeu, então `dados.modelo` vem null e

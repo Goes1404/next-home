@@ -160,7 +160,7 @@ describe("Fala do corretor — a palavra-chave só liga, qualquer outra fala des
         palavraChaveConfigurada: CHAVE,
         origemConversa: "organica",
       }),
-    ).toEqual({ acao: "ativar_ia" });
+    ).toEqual({ acao: "ativar_ia", marcarComoTeste: false });
   });
 
   it("retrava a conversa em qualquer outra fala do corretor", () => {
@@ -235,5 +235,95 @@ describe("Transcrição de áudio — o modelo aguardando em vez de transcrever"
       ),
     ).toBe(false);
     expect(pareceRecusaDeTranscricao("Pode me mandar a planta do três dormitórios?")).toBe(false);
+  });
+});
+
+describe("Palavra-chave de TESTE", () => {
+  const CHAVE = "ativar lia agora";
+  const TESTE = "modo teste agora";
+
+  /*
+   * A 0038 limpou 46 conversas e 891 interações de teste que estavam sendo
+   * ensinadas ao agente como few-shot. Esta palavra existe para isso não se
+   * repetir: o corretor continua testando pela linha de verdade durante o
+   * piloto, e essas conversas nasceriam como REAIS.
+   */
+  it("liga a IA e marca a conversa como teste", () => {
+    expect(
+      decidirPorFalaDoCorretor({
+        mensagem: "modo teste agora",
+        palavraChaveConfigurada: CHAVE,
+        palavraChaveTeste: TESTE,
+        origemConversa: "organica",
+      }),
+    ).toEqual({ acao: "ativar_ia", marcarComoTeste: true });
+  });
+
+  it("a palavra normal continua ligando sem marcar", () => {
+    expect(
+      decidirPorFalaDoCorretor({
+        mensagem: "ativar lia agora",
+        palavraChaveConfigurada: CHAVE,
+        palavraChaveTeste: TESTE,
+        origemConversa: "organica",
+      }),
+    ).toEqual({ acao: "ativar_ia", marcarComoTeste: false });
+  });
+
+  /*
+   * Se as duas casarem, marcar teste é o desfecho seguro: uma conversa real
+   * marcada como teste custa um exemplo a menos; uma de teste marcada como
+   * real envenena o prompt.
+   */
+  it("na dúvida, teste vence", () => {
+    expect(
+      decidirPorFalaDoCorretor({
+        mensagem: "ativar lia agora em modo teste agora",
+        palavraChaveConfigurada: CHAVE,
+        palavraChaveTeste: TESTE,
+        origemConversa: "organica",
+      }),
+    ).toEqual({ acao: "ativar_ia", marcarComoTeste: true });
+  });
+
+  it("qualquer outra fala do corretor continua retravando", () => {
+    expect(
+      decidirPorFalaDoCorretor({
+        mensagem: "oi mãe",
+        palavraChaveConfigurada: CHAVE,
+        palavraChaveTeste: TESTE,
+        origemConversa: "organica",
+      }),
+    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
+  });
+
+  /* Ter só a de teste também liga a trava — o recurso está ligado. */
+  it("só a palavra de teste cadastrada já exige ativação", () => {
+    expect(
+      exigePalavraChave({
+        palavraChaveConfigurada: null,
+        palavraChaveTeste: TESTE,
+        origemConversa: "organica",
+      }),
+    ).toBe(true);
+    expect(
+      decidirPorFalaDoCorretor({
+        mensagem: "qualquer coisa",
+        palavraChaveConfigurada: null,
+        palavraChaveTeste: TESTE,
+        origemConversa: "organica",
+      }),
+    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
+  });
+
+  it("sem palavra de teste cadastrada, nada é marcado", () => {
+    expect(
+      decidirPorFalaDoCorretor({
+        mensagem: "ativar lia agora",
+        palavraChaveConfigurada: CHAVE,
+        palavraChaveTeste: null,
+        origemConversa: "organica",
+      }),
+    ).toEqual({ acao: "ativar_ia", marcarComoTeste: false });
   });
 });
