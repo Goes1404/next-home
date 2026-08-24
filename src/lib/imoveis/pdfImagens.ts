@@ -48,6 +48,20 @@ function codecDoDicionario(dicionario: string): string {
   return achado ? achado[1] : "sem-filtro";
 }
 
+/**
+ * Proporção da primeira página do PDF. Serve de régua para desconfiar de
+ * imagem que é a página inteira. Uma página só basta: deck tem formato
+ * único, e ler todas custaria varrer o arquivo de novo.
+ */
+function proporcaoDaPagina(cru: string): number | null {
+  const caixa = cru.match(/\/MediaBox\s*\[\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\]/);
+  if (!caixa) return null;
+  const largura = Number(caixa[3]) - Number(caixa[1]);
+  const altura = Number(caixa[4]) - Number(caixa[2]);
+  if (!(largura > 0) || !(altura > 0)) return null;
+  return largura / altura;
+}
+
 const TABELA_CRC = (() => {
   const tabela = new Int32Array(256);
   for (let n = 0; n < 256; n++) {
@@ -130,6 +144,8 @@ export function extrairImagensDePdf(pdf: Buffer | Uint8Array): ResultadoImagensP
     return { imagens, naoSuportadas: [], descartadasPorTamanho };
   }
 
+  const proporcaoPagina = proporcaoDaPagina(cru);
+
   let cursor = 0;
   while (imagens.length < TETO_IMAGENS) {
     const inicioStream = cru.indexOf("stream", cursor);
@@ -166,6 +182,12 @@ export function extrairImagensDePdf(pdf: Buffer | Uint8Array): ResultadoImagensP
 
     const dados = bytes.subarray(inicioDados, fimDados);
 
+    // Deck do Canva costuma ter UMA imagem por página, do tamanho da
+    // página, com logo e texto por cima. Extrair não é errado; apresentar
+    // como "foto do empreendimento" sem avisar é.
+    const parecePaginaInteira =
+      proporcaoPagina !== null && Math.abs(largura / altura - proporcaoPagina) < 0.03;
+
     if (codec === "DCTDecode") {
       imagens.push({
         bytes: dados,
@@ -173,7 +195,7 @@ export function extrairImagensDePdf(pdf: Buffer | Uint8Array): ResultadoImagensP
         largura,
         altura,
         pagina: null,
-        parecePaginaInteira: false,
+        parecePaginaInteira,
       });
       continue;
     }
@@ -194,7 +216,7 @@ export function extrairImagensDePdf(pdf: Buffer | Uint8Array): ResultadoImagensP
           largura,
           altura,
           pagina: null,
-          parecePaginaInteira: false,
+          parecePaginaInteira,
         });
       } else {
         naoLidos.set("FlateDecode", (naoLidos.get("FlateDecode") ?? 0) + 1);

@@ -97,3 +97,36 @@ describe("extrairImagensDePdf — bitmap cru e codec desconhecido", () => {
     expect(resultado.naoSuportadas).toEqual([{ codec: "JPXDecode", quantidade: 1 }]);
   });
 });
+
+/** PDF com MediaBox de A4 paisagem e uma imagem só. */
+function pdfComPagina(jpeg: Buffer, largura: number, altura: number): Buffer {
+  const dicionario =
+    `<< /Type /XObject /Subtype /Image /Width ${largura} /Height ${altura}` +
+    ` /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\n`;
+  return Buffer.concat([
+    Buffer.from(
+      `%PDF-1.7\n1 0 obj\n<< /Type /Page /MediaBox [0 0 842 595] >>\nendobj\n2 0 obj\n${dicionario}stream\n`,
+      "latin1",
+    ),
+    jpeg,
+    Buffer.from("\nendstream\nendobj\n%%EOF\n", "latin1"),
+  ]);
+}
+
+describe("extrairImagensDePdf — página chapada", () => {
+  it("marca a imagem cuja proporção bate com a da página", async () => {
+    // A4 paisagem: 842 x 595 pontos ≈ 1,415. A imagem 2000x1414 tem a MESMA
+    // proporção — é a página inteira, com logo e texto por cima.
+    const jpeg = await jpegDeTeste(2000, 1414);
+    const resultado = extrairImagensDePdf(pdfComPagina(jpeg, 2000, 1414));
+
+    expect(resultado.imagens[0].parecePaginaInteira).toBe(true);
+  });
+
+  it("não marca foto de proporção diferente da página", async () => {
+    const jpeg = await jpegDeTeste(1000, 1000);
+    const resultado = extrairImagensDePdf(pdfComPagina(jpeg, 1000, 1000));
+
+    expect(resultado.imagens[0].parecePaginaInteira).toBe(false);
+  });
+});
