@@ -24,6 +24,46 @@ function normalizar(texto: string): string {
     .replace(/[̀-ͯ]/g, "");
 }
 
+/**
+ * Quanto acima do teto declarado ainda vale mostrar. Ninguém decide
+ * orçamento com régua: quem diz "600 mil" costuma olhar 650 sem reclamar.
+ */
+const TOLERANCIA_ORCAMENTO = 1.2;
+
+/**
+ * Tira do catálogo o que está claramente fora do bolso do cliente.
+ *
+ * Existe por causa de um caso que o eval expôs e que a regra de negócio
+ * tornava insolúvel: o cliente diz duas vezes "só tenho 600 mil" e a IA
+ * responde oferecendo um imóvel de 1,28 milhão. Ela não estava
+ * desobedecendo — o catálogo do prompt NÃO TEM PREÇO (é a primeira defesa
+ * do "a IA não fala valores"), então ela não tinha como saber que aquilo
+ * não cabia. Pontuar não bastava: o ranking dava -10 ao que estoura a
+ * faixa, mas com 10 vagas e poucos imóveis ele entrava assim mesmo.
+ *
+ * O filtro resolve por CONSTRUÇÃO, que é o padrão desta base: o que a IA
+ * não vê, ela não oferece — mesma lógica de `resolverMidia`.
+ *
+ * Duas guardas importam:
+ * - imóvel sem `precoAPartir` (sob consulta) NUNCA é cortado: preço
+ *   desconhecido não é preço alto, e sumir com ele seria esconder opção
+ *   por falta de cadastro;
+ * - se o filtro esvaziar a lista, ele se desfaz. Catálogo vazio deixaria a
+ *   IA sem nada concreto para dizer, e é aí que modelo inventa. Melhor
+ *   mostrar o que existe e deixá-la avisar que está acima da faixa.
+ */
+export function filtrarPorOrcamento(
+  catalogo: Empreendimento[],
+  orcamentoMax: number | null | undefined,
+): Empreendimento[] {
+  if (!orcamentoMax || orcamentoMax <= 0) return catalogo;
+
+  const teto = orcamentoMax * TOLERANCIA_ORCAMENTO;
+  const cabem = catalogo.filter((e) => !e.precoAPartir || e.precoAPartir <= teto);
+
+  return cabem.length > 0 ? cabem : catalogo;
+}
+
 export function ranquearCatalogo(params: {
   catalogo: Empreendimento[];
   mensagemAtual: string;
@@ -31,9 +71,23 @@ export function ranquearCatalogo(params: {
   dossie?: Pick<DossieClienteIA, "orcamentoMin" | "orcamentoMax" | "exigenciasEspecificas"> | null;
   limite?: number;
 }): Empreendimento[] {
-  const { catalogo, dossie } = params;
+  const { dossie } = params;
   const limite = params.limite ?? LIMITE_PADRAO;
-  if (catalogo.length <= limite) return catalogo;
+  /*
+   * O corte por orçamento vem ANTES do atalho de catálogo pequeno. Estava
+   * depois, na prática: com 10 ou menos imóveis a função devolvia tudo sem
+   * olhar o dossiê, e o imóvel fora da faixa entrava no prompt de qualquer
+   * jeito. É exatamente o caso que aparecia no eval.
+   */
+  const catalogo = filtrarPorOrcamento(params.catalogo, dossie?.orcamentoMax);
+  /*
+   * Não há mais atalho de "cabe tudo, devolve tudo". Ele existia como
+   * economia, mas descartava a ORDEM: com o catálogo pequeno — e ele ficou
+   * pequeno agora que o filtro de orçamento corta antes —, o imóvel que o
+   * cliente acabou de citar deixava de ir para o topo. Ordenar até dez
+   * itens não custa nada e a ordenação é estável, então sem sinal nenhum o
+   * resultado é idêntico à ordem editorial de antes.
+   */
 
   // A mensagem atual pesa mais que o histórico: é o assunto de AGORA.
   const textoAtual = normalizar(params.mensagemAtual);

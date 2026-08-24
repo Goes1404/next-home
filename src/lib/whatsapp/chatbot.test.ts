@@ -117,14 +117,35 @@ describe("Catálogo relevante — ranking léxico", () => {
     expect(top).toHaveLength(10);
   });
 
-  it("faixa de orçamento do dossiê pesa no ranking", () => {
+  /*
+   * O mecanismo mudou na v13, e para mais forte: antes, estourar a faixa
+   * custava -10 no ranking e o imóvel caro ainda podia entrar no prompt.
+   * Agora ele é EXCLUÍDO antes de ranquear. A garantia deixou de ser
+   * "aparece mais para baixo" e passou a ser "não aparece" — foi assim que
+   * se resolveu o caso em que a IA oferecia 1,28 milhão a quem disse ter
+   * 600 mil (ver `filtrarPorOrcamento`).
+   */
+  it("imóvel fora da faixa do dossiê não chega ao prompt", () => {
     const top = ranquearCatalogo({ catalogo, mensagemAtual: "olá", dossie: dossieBase });
-    // Na faixa (com a tolerância de ±20%): res-1..res-6 e canvas — sete
-    // itens empatados, desempatados pela ordem editorial. Fora da faixa
-    // (res-12, 1,5M) é penalizado e cai para fora do corte.
-    const slugsTop = top.slice(0, 7).map((e) => e.slug);
-    expect(slugsTop).toContain("canvas");
-    expect(top.map((e) => e.slug)).not.toContain("res-12");
+    const slugs = top.map((e) => e.slug);
+
+    // Teto de 800k + 20% de tolerância = 960k. Passam res-0..res-6 e canvas.
+    expect(slugs).toContain("canvas"); // 700k, dentro
+    expect(slugs).toContain("res-6"); // 900k, dentro
+    expect(slugs).not.toContain("res-7"); // 1,0M, fora
+    expect(slugs).not.toContain("res-12"); // 1,5M, fora
+  });
+
+  it("dentro da faixa, quem foi citado ainda vai para o topo", () => {
+    // Sem isto o corte por orçamento teria custado a relevância: com poucos
+    // itens sobrando, a função devolvia a ordem editorial e ignorava o que
+    // o cliente acabou de dizer.
+    const top = ranquearCatalogo({
+      catalogo,
+      mensagemAtual: "quero saber do canvas alphaville",
+      dossie: dossieBase,
+    });
+    expect(top[0].slug).toBe("canvas");
   });
 
   it("sem sinal nenhum, mantém a ordem editorial (corte antigo)", () => {
