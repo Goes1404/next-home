@@ -1,7 +1,9 @@
+import { FundoEmCamadas } from "@/components/motion/FundoEmCamadas";
 import { Sparkles } from 'lucide-react';
 export function NossaEssencia() {
   return (
-    <section className="relative py-16 sm:py-24 border-t border-linha/10">
+    <section className="relative overflow-hidden py-16 sm:py-24 border-t border-linha/10">
+      <FundoEmCamadas intensidade={0.5} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Cabeçalho */}
         <div className="text-center max-w-3xl mx-auto mb-16">

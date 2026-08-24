@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Camada } from "@/components/motion/Camada";
 import type { Empreendimento } from "@/lib/types";
 import { STATUS_LABEL } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";import { MapPin, Flame } from 'lucide-react';
@@ -48,13 +49,15 @@ export function VitrineOportunidadesSobre({ empreendimentos }: Props) {
               {/* Foto de Capa */}
               <div className="relative aspect-[16/11] w-full overflow-hidden rounded-2xl bg-superficie">
                 {imovel.capa?.url ? (
-                  <Image
-                    src={imovel.capa.url}
-                    alt={imovel.nome}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+                  <Camada velocidade={0.09} className="absolute inset-0 scale-110">
+                    <Image
+                      src={imovel.capa.url}
+                      alt={imovel.nome}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </Camada>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-tenue text-fluid-xs">
                     Next Home

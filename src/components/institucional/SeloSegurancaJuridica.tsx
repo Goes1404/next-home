@@ -1,3 +1,4 @@
+import { Camada } from "@/components/motion/Camada";
 import { site } from "@/lib/site";
 import { Landmark, Shield, Check } from "lucide-react";
 
@@ -41,6 +42,8 @@ export function SeloSegurancaJuridica() {
 
             {/* Selo Visual / Badge de Credibilidade */}
             <div className="lg:col-span-4 flex justify-center lg:justify-end">
+              {/* Negativo: o selo sobe contra o painel, que fica parado. */}
+              <Camada velocidade={-0.06} className="flex w-full justify-center lg:justify-end">
               <div className="relative flex flex-col items-center justify-center p-8 rounded-3xl border border-white/20 bg-ink-950/80 shadow-2xl backdrop-blur text-center w-full max-w-[280px]">
                 <div className="w-16 h-16 rounded-full bg-brand-500/20 border border-brand-400/40 flex items-center justify-center text-2xl mb-3 shadow-inner">
                    <Landmark className="inline-block w-5 h-5 align-text-bottom mr-1" /> 
@@ -55,6 +58,7 @@ export function SeloSegurancaJuridica() {
                   Atuação em Alphaville, Barueri e Região Metropolitana
                 </span>
               </div>
+              </Camada>
             </div>
           </div>
         </div>

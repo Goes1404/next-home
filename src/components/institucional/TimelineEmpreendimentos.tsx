@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { Camada } from "@/components/motion/Camada";
 import Image from "next/image";
 import Link from "next/link";import { Map, Home, MapPin } from 'lucide-react';
 
@@ -143,13 +144,24 @@ export function TimelineEmpreendimentos() {
                   o contraste é foto-vs-texto, não página-vs-texto, igual ao
                   Hero de empreendimento. */}
               <div className="relative h-[400px] sm:h-[440px] w-full rounded-[36px] overflow-hidden border border-white/15 bg-ink-900/60 shadow-xl transition-transform duration-500 group-hover:-translate-y-2 group-hover:border-brand-400/50 flex flex-col justify-between p-5">
-                <Image
-                  src={item.imagem}
-                  alt={item.nome}
-                  fill
-                  sizes="(max-width: 640px) 280px, 320px"
-                  className="object-cover transition-transform duration-700 group-hover:scale-110 -z-10"
-                />
+                {/* Eixo X porque o movimento aqui é HORIZONTAL: o carrossel
+                    anda de lado, e a camada acompanha o eixo do movimento.
+                    `apenasDesktop` — no celular o carrossel já é arrastado
+                    com o dedo, e somar deslocamento ao gesto confunde. */}
+                <Camada
+                  eixo="x"
+                  velocidade={0.1}
+                  apenasDesktop
+                  className="absolute inset-0 -z-10 scale-110"
+                >
+                  <Image
+                    src={item.imagem}
+                    alt={item.nome}
+                    fill
+                    sizes="(max-width: 640px) 280px, 320px"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                </Camada>
 
                 {/* Gradiente Escuro */}
                 <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/50 to-black/30 -z-10" />
