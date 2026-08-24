@@ -389,15 +389,23 @@ function tipoMidiaDoProvedor(tipo: TipoMidiaWhatsapp): "image" | "video" | "docu
  * Envia foto, planta, vídeo ou PDF de tour como mídia nativa do WhatsApp —
  * não como link de texto. É o que o cliente espera ao pedir "manda uma
  * foto": um anexo que abre na hora, não um endereço para copiar e colar.
+ *
+ * SEM LEGENDA, de propósito. O que ia no `caption` era o `alt` da foto no
+ * site — texto de acessibilidade e SEO, escrito para leitor de tela: o
+ * cliente recebia "Living integrado com adega climatizada e sala de
+ * jantar, unidade 03" embaixo da imagem. Corretor nenhum escreve assim, e
+ * a régua da casa é mensagem curta. O contexto já vai no balão de texto
+ * ANTES do anexo; a foto fala por si. O parâmetro deixou de existir em
+ * vez de só não ser passado: legenda de novo tem de ser decisão
+ * consciente, não descuido de chamador.
  */
 export async function enviarMidiaWhatsapp(params: {
   instanceName: string;
   telefone: string;
   tipo: TipoMidiaWhatsapp;
   url: string;
-  legenda?: string;
 }): Promise<ResultadoEnvio> {
-  const { instanceName, telefone, tipo, url, legenda } = params;
+  const { instanceName, telefone, tipo, url } = params;
 
   const numero = telefone.replace(/\D/g, "");
   if (!numero || !url.trim() || !instanceName) {
@@ -425,7 +433,6 @@ export async function enviarMidiaWhatsapp(params: {
         number: numero,
         mediatype: tipoMidiaDoProvedor(tipo),
         media: url,
-        caption: legenda || undefined,
       }),
     });
 

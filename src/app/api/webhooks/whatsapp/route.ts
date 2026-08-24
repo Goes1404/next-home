@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { gerarRespostaIA, PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
-import { ranquearCatalogo } from "@/lib/whatsapp/catalogoRelevante";
+import { catalogoParaAtendimento } from "@/lib/whatsapp/focoDaConversa";
 import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
@@ -423,9 +423,17 @@ export async function POST(req: NextRequest) {
       conversaAtualId: conversa.id,
     });
 
-    // Os 10 empreendimentos MAIS RELEVANTES para esta conversa — não os 10
-    // primeiros do banco (que deixavam o resto do catálogo invisível).
-    const catalogoRanqueado = ranquearCatalogo({
+    /*
+     * Os empreendimentos que a IA vai enxergar. Duas camadas:
+     *
+     * 1. RELEVÂNCIA — os 10 mais relevantes para esta conversa, não os 10
+     *    primeiros do banco (que deixavam o resto do catálogo invisível).
+     * 2. FOCO — se o cliente já escolheu um imóvel, a lista encolhe para
+     *    ele mais duas reservas. Enquanto ela via as dez fichas em toda
+     *    mensagem, respondia "manda a planta do Terra Alta" com uma lista
+     *    de outros três; o que a IA não vê, ela não oferece.
+     */
+    const { catalogo: catalogoRanqueado, foco } = catalogoParaAtendimento({
       catalogo,
       mensagemAtual: text,
       historico,
@@ -444,6 +452,7 @@ export async function POST(req: NextRequest) {
         historicoMensagens: historico,
         exemplosFewShot,
         dossie: dossieAnterior,
+        foco,
       },
       text,
     );
@@ -513,7 +522,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Fotos, plantas, vídeos: mídia nativa do WhatsApp, não link no texto —
-    // é o que o cliente espera ao pedir "manda uma foto".
+    // é o que o cliente espera ao pedir "manda uma foto". Sem legenda: o
+    // `titulo` é o alt do site (texto de acessibilidade) e ia junto da
+    // imagem para o cliente. Ele fica só na nota de auditoria do Live Chat,
+    // logo abaixo, onde quem lê é o corretor.
     for (const anexo of anexos) {
       await enviarPresencaDigitando({ instanceName: instancia.instanceName, telefone: sender, duracaoMs: 1000 });
       await new Promise((resolve) => setTimeout(resolve, 800 + Math.floor(Math.random() * 700)));
@@ -523,7 +535,6 @@ export async function POST(req: NextRequest) {
         telefone: sender,
         tipo: anexo.tipo,
         url: anexo.url,
-        legenda: anexo.titulo,
       });
       if (!envioMidia.enviado) registrarFalha(envioMidia.motivo, envioMidia.detalhe);
     }
