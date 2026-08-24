@@ -64,6 +64,14 @@ export async function buscarConversasRelevantes(params: {
     .select("id, ultima_interacao_em, lead:leads(etapa), whatsapp_mensagens(remetente, conteudo, created_at)")
     .eq("corretor_id", params.corretorId)
     .not("lead_id", "is", null)
+    /*
+     * Conversa de teste NÃO vira exemplo. Isto não é higiene de relatório:
+     * estas conversas entram no PROMPT como few-shot, então o corpus de
+     * teste da equipe — a mãe do corretor, um amigo, uma conversa sobre
+     * aula de escola e dezenas de "Teste" — estava sendo ensinado ao
+     * agente como se fosse atendimento que funcionou. Ver migration 0038.
+     */
+    .eq("e_teste", false)
     .order("ultima_interacao_em", { ascending: false })
     .limit(40);
 

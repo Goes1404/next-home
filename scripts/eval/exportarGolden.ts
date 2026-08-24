@@ -46,6 +46,8 @@ async function main() {
     .select("conversa_id, created_at")
     .eq("avaliacao", "ruim")
     .not("conversa_id", "is", null)
+    // Teste da equipe não entra no golden — ver migration 0038.
+    .eq("e_teste", false)
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -53,6 +55,7 @@ async function main() {
   const { data: conversas } = await supabase
     .from("whatsapp_conversas")
     .select("id")
+    .eq("e_teste", false)
     .order("ultima_interacao_em", { ascending: false })
     .limit(100);
 

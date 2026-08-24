@@ -46,6 +46,14 @@ export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
       conversa_id: dados.conversaId ?? null,
       corretor_id: dados.corretorId ?? null,
       origem: dados.origem,
+      /*
+       * Playground e eval são teste POR DEFINIÇÃO — nunca há cliente do
+       * outro lado. Marcar na origem evita o trabalho manual de limpar
+       * depois, que é o que produziu a migration 0038: 891 interações de
+       * teste misturadas ao que deveria ser corpus de aprendizado, sendo
+       * ensinadas ao agente como few-shot.
+       */
+      e_teste: dados.origem === "playground" || dados.origem === "eval",
       prompt_versao: dados.promptVersao,
       /*
        * Na contingência NINGUÉM respondeu, então `dados.modelo` vem null e

@@ -875,6 +875,7 @@ export type Database = {
           ultima_mensagem: string | null
           ultima_interacao_em: string
           created_at: string
+          e_teste: boolean
         }
         Insert: {
           id?: string
@@ -890,6 +891,7 @@ export type Database = {
           liberado_por_palavra_chave?: boolean
           ultima_mensagem?: string | null
           ultima_interacao_em?: string
+          e_teste?: boolean
           created_at?: string
         }
         Update: {
@@ -906,6 +908,7 @@ export type Database = {
           liberado_por_palavra_chave?: boolean
           ultima_mensagem?: string | null
           ultima_interacao_em?: string
+          e_teste?: boolean
           created_at?: string
         }
         Relationships: []
@@ -987,6 +990,7 @@ export type Database = {
           tokens_saida: number | null
           avaliacao: "boa" | "ruim" | null
           created_at: string
+          e_teste: boolean
         }
         Insert: {
           id?: string
@@ -1006,6 +1010,7 @@ export type Database = {
           tokens_entrada?: number | null
           tokens_saida?: number | null
           avaliacao?: "boa" | "ruim" | null
+          e_teste?: boolean
           created_at?: string
         }
         Update: {
