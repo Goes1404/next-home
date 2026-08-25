@@ -11,6 +11,7 @@ type Chip = { chave: keyof FiltrosEmpreendimento; label: string };
 
 function chips(f: FiltrosEmpreendimento): Chip[] {
   const lista: Chip[] = [];
+  if (f.busca) lista.push({ chave: "busca", label: `“${f.busca}”` });
   if (f.tipo) lista.push({ chave: "tipo", label: TIPO_LABEL[f.tipo] });
   if (f.cidade) lista.push({ chave: "cidade", label: f.cidade });
   if (f.bairro) lista.push({ chave: "bairro", label: f.bairro });
@@ -25,6 +26,7 @@ function chips(f: FiltrosEmpreendimento): Chip[] {
 
 function comFiltros(f: FiltrosEmpreendimento, ordenacao: Ordenacao): URLSearchParams {
   const p = new URLSearchParams();
+  if (f.busca) p.set("busca", f.busca);
   if (f.tipo) p.set("tipo", f.tipo);
   if (f.cidade) p.set("cidade", f.cidade);
   if (f.bairro) p.set("bairro", f.bairro);

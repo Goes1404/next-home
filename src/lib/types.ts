@@ -263,6 +263,8 @@ export const ORDENACAO_LABEL: Record<Ordenacao, string> = {
 
 /** Filtros da listagem — cada campo em branco/undefined não filtra. */
 export type FiltrosEmpreendimento = {
+  /** Busca livre por nome — inclui os nomes alternativos ("Dom Parque"). */
+  busca?: string;
   tipo?: TipoImovel;
   cidade?: string;
   bairro?: string;

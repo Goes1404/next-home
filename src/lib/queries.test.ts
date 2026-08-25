@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ordenar } from "./queries";
+import { bate, ordenar } from "./queries";
 import type { Empreendimento } from "./types";
 
 function item(over: Partial<Empreendimento> & { slug: string }): Empreendimento {
@@ -75,5 +75,54 @@ describe("ordenar — modo destaque com destaques de corretor", () => {
     const destaques = new Map([["a", 0]]);
     const resultado = ordenar(lista, "preco_asc", destaques);
     expect(resultado.map((e) => e.slug)).toEqual(["b", "a"]);
+  });
+});
+
+describe("bate — busca por nome", () => {
+  const vista = item({
+    slug: "vista",
+    nome: "Vista AlphaGran",
+    bairro: "Alphaville",
+    cidade: "Barueri",
+    construtora: "P4 Engenharia",
+  });
+  const domParque = item({
+    slug: "dom",
+    nome: "Lançamento ao Lado do Parque",
+    nomesAlternativos: ["Dom Parque"],
+    cidade: "Osasco",
+  });
+
+  it("acha por nome, ignorando caixa e acento", () => {
+    expect(bate(vista, { busca: "vista alphagran" })).toBe(true);
+    expect(bate(vista, { busca: "VISTA" })).toBe(true);
+    expect(bate(item({ slug: "e", nome: "Estação 267" }), { busca: "estacao" })).toBe(true);
+  });
+
+  it("acha pelo nome ALTERNATIVO — é o nome do anúncio que o visitante conhece", () => {
+    expect(bate(domParque, { busca: "dom parque" })).toBe(true);
+  });
+
+  it("cruza campos: cada palavra precisa bater em algum lugar", () => {
+    expect(bate(vista, { busca: "vista barueri" })).toBe(true);
+    expect(bate(vista, { busca: "vista campinas" })).toBe(false);
+  });
+
+  it("acha por bairro e construtora", () => {
+    expect(bate(vista, { busca: "alphaville" })).toBe(true);
+    expect(bate(vista, { busca: "p4" })).toBe(true);
+  });
+
+  it("nome de outro imóvel não bate", () => {
+    expect(bate(vista, { busca: "terra alta" })).toBe(false);
+  });
+
+  it("busca vazia ou só espaço não filtra nada", () => {
+    expect(bate(vista, { busca: "   " })).toBe(true);
+  });
+
+  it("compõe com os outros filtros por AND", () => {
+    expect(bate(vista, { busca: "vista", cidade: "Barueri" })).toBe(true);
+    expect(bate(vista, { busca: "vista", cidade: "Osasco" })).toBe(false);
   });
 });

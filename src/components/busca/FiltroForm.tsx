@@ -56,6 +56,28 @@ export function FiltroForm({
 
   return (
     <form action="/empreendimentos" method="get" className={className}>
+      {/* A busca por nome é linha própria, acima dos selects: é o filtro de
+          quem JÁ SABE o que procura (viu o anúncio, ouviu do corretor) e não
+          deveria ter de traduzir um nome em tipo/cidade/faixa. Fora do
+          compacto da home, que promete só o começo da conversa. */}
+      {!compacto && (
+        <div className="mb-3">
+          <label htmlFor={`${idPrefixo}-busca`} className="text-fluid-xs mb-1 block text-legenda">
+            Nome do empreendimento
+          </label>
+          <input
+            id={`${idPrefixo}-busca`}
+            type="search"
+            name="busca"
+            defaultValue={filtrosAtuais.busca ?? ""}
+            placeholder="Ex.: Vista AlphaGran, Dom Parque, Terra Alta…"
+            maxLength={80}
+            autoComplete="off"
+            className={`${CAMPO} placeholder:text-tenue`}
+          />
+        </div>
+      )}
+
       {/* 6 colunas só a partir de lg: em telas médias os selects ficariam
           estreitos demais e cortariam o rótulo da opção escolhida. */}
       <div
