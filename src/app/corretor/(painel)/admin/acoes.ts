@@ -241,6 +241,78 @@ export async function alternarAtivoCorretor(
   return { ok: ativo ? "Corretor reativado." : "Corretor desativado — sai da roleta de leads." };
 }
 
+/**
+ * Passa a carteira INTEIRA de um corretor (ou todos os leads sem dono) para
+ * outro corretor, de uma vez.
+ *
+ * É a ação que faltava desde a 0030 — o valor `leads_redistribuidos` existe
+ * no check de `admin_eventos` desde lá, e nenhuma linha de código o
+ * escrevia. Sem isto, desligar alguém deixava os leads dele num limbo: o
+ * seletor unitário só alcança os ~50 leads mais recentes, e uma carteira de
+ * 80 leads antigos não tinha caminho nenhum pela interface.
+ *
+ * `deId = null` significa "os sem dono": o mesmo gesto resolve o backlog de
+ * órfãos que a roleta não conseguiu atribuir.
+ */
+export async function redistribuirCarteira(
+  deId: string | null,
+  paraId: string,
+): Promise<ResultadoAdmin & { movidos?: number }> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
+
+  if (deId === paraId) return { erro: "Origem e destino são o mesmo corretor." };
+
+  const supabase = await createClient();
+
+  // O destino precisa existir e estar ativo — mandar uma carteira para um
+  // corretor desativado só trocaria um limbo por outro.
+  const { data: destino } = await supabase
+    .from("corretores")
+    .select("id, nome, ativo")
+    .eq("id", paraId)
+    .maybeSingle();
+  if (!destino) return { erro: "Corretor de destino não encontrado." };
+  if (!destino.ativo) {
+    return { erro: `${destino.nome} está desativado — reative antes de passar leads para ele.` };
+  }
+
+  let query = supabase.from("leads").update({
+    corretor_id: paraId,
+    origem_atribuicao: "manual",
+  });
+  query = deId === null ? query.is("corretor_id", null) : query.eq("corretor_id", deId);
+
+  const { data: movidos, error } = await query.select("id");
+  if (error) return { erro: traduzirErroBanco(error.message) };
+
+  const total = movidos?.length ?? 0;
+  if (total === 0) {
+    return { ok: deId === null ? "Não havia leads sem dono." : "Este corretor não tem leads." };
+  }
+
+  // Auditoria pelo cliente de serviço — mesma razão das outras ações: a
+  // tabela não tem policy de INSERT de propósito (log forjável não é log).
+  await createServiceClient()
+    .from("admin_eventos")
+    .insert({
+      ator_id: guarda.corretor.id,
+      acao: "leads_redistribuidos",
+      alvo_corretor_id: deId,
+      detalhes: { para: paraId, quantidade: total },
+    });
+
+  revalidatePath("/corretor/admin/leads");
+  revalidatePath("/corretor/admin");
+  revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/funil");
+
+  return {
+    ok: `${total} lead${total === 1 ? "" : "s"} agora ${total === 1 ? "é" : "são"} de ${destino.nome}.`,
+    movidos: total,
+  };
+}
+
 /** Mensagem do trigger/função vira algo que o gestor entende e sabe resolver. */
 function traduzirErroBanco(mensagem: string): string {
   if (mensagem.includes("sem nenhum gestor ativo")) {

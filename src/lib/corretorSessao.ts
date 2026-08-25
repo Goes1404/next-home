@@ -177,6 +177,14 @@ export type FiltroLeads = {
   /** Datas `yyyy-mm-dd` vindas dos inputs de data da lista. */
   criadoDe?: string;
   criadoAte?: string;
+  /**
+   * Leads sem corretor responsável. Existe porque o KPI "N sem dono" da
+   * administração aponta para a lista — e um número clicável que cai numa
+   * lista SEM o filtro é um número que mente sobre o próprio destino.
+   */
+  semDono?: boolean;
+  /** Sem mudança de etapa há N dias (e ainda em jogo). Mesmo motivo acima. */
+  paradoDias?: number;
 };
 
 export type PaginaDeLeads = {
@@ -240,6 +248,15 @@ export async function getPaginaDeLeads(
   if (filtro.corretorId) query = query.eq("corretor_id", filtro.corretorId);
   if (filtro.criadoDe) query = query.gte("created_at", filtro.criadoDe);
   if (filtro.criadoAte) query = query.lte("created_at", `${filtro.criadoAte}T23:59:59`);
+  if (filtro.semDono) query = query.is("corretor_id", null);
+  if (filtro.paradoDias && filtro.paradoDias > 0) {
+    // "Parado" = a etapa não muda há N dias E o negócio ainda está em jogo.
+    // Fechado/perdido parados são só história encerrada.
+    const limite = new Date(Date.now() - filtro.paradoDias * 86_400_000).toISOString();
+    query = query
+      .lt("etapa_alterada_em", limite)
+      .not("etapa", "in", "(fechado,perdido)");
+  }
 
   const { data, error, count } = await query
     .order("created_at", { ascending: false })

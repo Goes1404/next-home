@@ -115,11 +115,26 @@ function LinhaCorretor({
       aoAvisar(r.erro ?? r.ok ?? "", Boolean(r.erro));
     });
 
-  const trocarAtivo = () =>
+  const trocarAtivo = () => {
+    /*
+     * Desativar é a ação mais séria da tela e era a única SEM confirmação.
+     * E o aviso diz o que o botão não faz: os leads NÃO mudam de mão
+     * sozinhos — sem redistribuir, viram um bolo que ninguém atende, e o
+     * dono some da tabela de carga.
+     */
+    if (corretor.ativo) {
+      const aviso =
+        corretor.leads > 0
+          ? `Desativar ${corretor.nome}?\n\nEle sai da roleta, mas os ${corretor.leads} lead${corretor.leads === 1 ? "" : "s"} dele CONTINUAM com ele. Passe a carteira em Administração → Leads da equipe → Passar carteira (antes ou depois, mas não esqueça).`
+          : `Desativar ${corretor.nome}?\n\nEle sai da roleta e não recebe mais leads.`;
+      if (!confirm(aviso)) return;
+    }
+
     iniciar(async () => {
       const r = await alternarAtivoCorretor(corretor.id, !corretor.ativo);
       aoAvisar(r.erro ?? r.ok ?? "", Boolean(r.erro));
     });
+  };
 
   return (
     <li className="border-linha border-t py-4 first:border-t-0">

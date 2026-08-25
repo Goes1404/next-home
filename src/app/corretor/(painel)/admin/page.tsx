@@ -94,7 +94,9 @@ export default async function AdminVisaoGeralPage() {
           rotulo="Leads na base"
           valor={String(agregado.total)}
           detalhe={`${agregado.semDono} sem dono`}
-          href="/corretor/leads"
+          // O detalhe é a parte acionável do cartão: cai na lista JÁ
+          // recortada nos órfãos, que é o que o gestor vai resolver.
+          href={agregado.semDono > 0 ? "/corretor/leads?dono=sem" : "/corretor/leads"}
         />
         <Kpi
           rotulo="Conversão"
@@ -106,7 +108,7 @@ export default async function AdminVisaoGeralPage() {
           rotulo="Parados há 15+ dias"
           valor={String(agregado.parados15d)}
           detalhe="pedem cutucão"
-          href="/corretor/leads?filtro=conversa"
+          href="/corretor/leads?parado=15"
         />
         <Kpi
           rotulo="Visitas pelo WhatsApp"
