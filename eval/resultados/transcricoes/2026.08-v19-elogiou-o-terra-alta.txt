@@ -1,0 +1,46 @@
+elogiou-o-terra-alta · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: gostei do Terra Alta, me fala mais dele
+[1] Sofia:   O Terra Alta tem 1 dormitório com suíte, 52m² e 2 vagas. Está em construção no Jardim Tupanci, Barueri.
+As condições de pagamento são flexíveis, com entrada parcelada.
+Quer conhecer o decorado para eu te apresentar o projeto e as condições pessoalmente?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+
+[2] Cliente: mais foto
+              e a metragem
+[2] Sofia:   Enviei as fotos que tenho do Terra Alta para você conferir.
+A metragem é de 52m², com 1 dormitório e suíte.
+Quer que eu te envie o link da apresentação digital para ver mais detalhes?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+
+[3] Cliente: mais foto
+              e a planta
+[3] Sofia:   Fotos já enviei, não temos planta cadastrada para o Terra Alta.
+Posso mandar o link da página com todos os detalhes do projeto.
+Quer conhecer o decorado para ver de perto o acabamento e a planta real?
+As condições são flexíveis e ajustamos na visita.
+
+[4] Cliente: mais foto
+              tem planta?
+[4] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[5] Cliente: já pedi
+[5] Sofia:   Como mencionei, não temos planta cadastrada para o Terra Alta.
+Posso enviar o link da página com todos os detalhes do projeto para você conferir.
+
+[6] Cliente: mais foto
+[6] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[7] Cliente: mais foto
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: mais foto
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: mais foto
+[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[10] Cliente: mais foto
+[10] Sofia:   Enviei todas as fotos que temos do Terra Alta. Não há planta cadastrada, só o link da página com detalhes.
+Quer agendar para conhecer o decorado esta semana? Posso te mostrar tudo pessoalmente.

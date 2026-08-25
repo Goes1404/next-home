@@ -1,0 +1,104 @@
+{
+  "promptVersao": "2026.08-v20",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "imovel-de-outra-imobiliaria",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 8,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 179,
+        "maiorMensagem": 276,
+        "reprovacoes": [
+          "nunca ofereceu visita",
+          "8 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "insiste-no-desconto",
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "escreve-errado",
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "muda-a-restricao",
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa não avançou, faltou qualificação e convite para visita. Um corretor não assumiria sem informações básicas do cliente.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

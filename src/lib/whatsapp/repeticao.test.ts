@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ehRepeticaoDoBot, normalizarParaRepeticao, textoNoLugarDaRepeticao } from "./repeticao";
+import { aproveitarSoONovo, ehRepeticaoDoBot, normalizarParaRepeticao, textoNoLugarDaRepeticao } from "./repeticao";
 import { limparSeparadoresOrfaos } from "./semValores";
 
 /**
@@ -208,5 +208,36 @@ describe("quase idêntica também é loop (Onda 2)", () => {
         historico,
       ),
     ).toBe(false);
+  });
+});
+
+describe("aproveitarSoONovo — cortar o eco, manter o inédito", () => {
+  const historico = [
+    {
+      remetente: "bot",
+      texto:
+        "O More Aldeia tem um conceito moderno e funcional, focado em conforto. Quer que eu te envie a apresentação digital para você ver tudo com calma?",
+    },
+  ];
+
+  it("frase ecoada sai; a inédita fica com a pontuação dela", () => {
+    const r = aproveitarSoONovo(
+      "Quer que eu te envie a apresentação digital para você avaliar com calma? O More Aldeia fica a cinco minutos da estação e tem entrada parcelada.",
+      historico,
+    );
+    expect(r).toBe("O More Aldeia fica a cinco minutos da estação e tem entrada parcelada.");
+  });
+
+  it("resposta toda ecoada vira vazio — e o chamador cai no enlatado", () => {
+    const r = aproveitarSoONovo(
+      "Quer que eu te envie a apresentação digital para ver tudo com calma?",
+      historico,
+    );
+    expect(r.length).toBeLessThan(40);
+  });
+
+  it("sem histórico do bot, nada é cortado", () => {
+    const texto = "Quer que eu te envie a apresentação digital para você ver tudo com calma?";
+    expect(aproveitarSoONovo(texto, [])).toBe(texto);
   });
 });

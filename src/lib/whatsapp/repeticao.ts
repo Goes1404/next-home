@@ -133,3 +133,45 @@ export function textoNoLugarDaRepeticao(
   const jaRepetiu = (historico ?? []).filter((m) => m.remetente === "bot").length;
   return SAIDAS[jaRepetiu % SAIDAS.length];
 }
+
+/**
+ * Aproveita o que a resposta tem de NOVO, cortando só as frases ecoadas.
+ *
+ * A primeira versão da guarda trocava a resposta INTEIRA por uma frase de
+ * pivô enlatada — e o juiz mediu o estrago na v19: `mesmaPessoa` caiu de
+ * 2,00 para 1,88 (o enlatado soa como outra pessoa) e "assumiria" caiu de
+ * 12/16 para 7/16, porque junto com o eco ia embora a parte da resposta
+ * que respondia. Cortar a frase repetida e manter a inédita preserva a voz
+ * e a informação; o enlatado vira último recurso, quando NADA sobra.
+ *
+ * Limiar 0,6 por frase, medido: o CTA repetido da transcrição real dá
+ * 0,63; frase com conteúdo novo sobre o mesmo imóvel fica em 0,10-0,19.
+ */
+export function aproveitarSoONovo(
+  texto: string,
+  historico?: { remetente: string; texto: string }[],
+): string {
+  const anteriores = (historico ?? [])
+    .filter((m) => m.remetente === "bot")
+    .slice(-JANELA_MENSAGENS_BOT)
+    .flatMap((m) => frasesDe(m.texto))
+    .map((f) => normalizarParaRepeticao(f))
+    .filter((f) => f.length >= 25);
+  if (anteriores.length === 0) return texto;
+
+  const ineditas = frasesDe(texto).filter((frase) => {
+    const n = normalizarParaRepeticao(frase);
+    if (n.length < 25) return true;
+    return !anteriores.some((ant) => semelhanca(n, ant) >= 0.6);
+  });
+
+  return ineditas.join(" ").replace(/\s{2,}/g, " ").trim();
+}
+
+/** Quebra em frases preservando a pontuação de cada uma. */
+function frasesDe(texto: string): string[] {
+  return (texto ?? "")
+    .split(/(?<=[.!?])\s+|\n/)
+    .map((f) => f.trim())
+    .filter(Boolean);
+}

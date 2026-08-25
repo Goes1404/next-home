@@ -24,7 +24,7 @@ import {
 
 function frasePrincipal(status: StatusDisparo): string {
   if (status.impedimento) return status.impedimento;
-  if (status.pendentes === 0) return "Nenhuma mensagem esperando. Crie uma campanha abaixo.";
+  if (status.pendentes === 0) return "Nenhuma mensagem esperando. Crie uma lista de transmissão abaixo.";
 
   const saldo = status.saldoHoje;
   if (saldo !== null && saldo < status.pendentes) {

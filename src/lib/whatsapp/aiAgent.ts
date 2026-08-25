@@ -43,7 +43,7 @@ import { blocoDaVezDoCliente } from "./rajada";
  * sem imóvel nomeado, ela respondeu "o imóvel do anúncio tem 3 dormitórios,
  * 3 suítes e 2 vagas" — inventou qual imóvel era, que erra tudo de uma vez.
  */
-export const PROMPT_VERSAO = "2026.08-v19";
+export const PROMPT_VERSAO = "2026.08-v20"; // prompt idêntico à v19; muda a guarda anti-eco (2b: aproveita frases novas)
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.

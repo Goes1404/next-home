@@ -13,7 +13,7 @@ import { AbasSecao } from "./AbasSecao";
  */
 const ABAS = [
   { chave: "conversas", href: "/corretor/conversas", label: "Conversas" },
-  { chave: "campanhas", href: "/corretor/campanhas", label: "Campanhas" },
+  { chave: "campanhas", href: "/corretor/campanhas", label: "Listas de transmissão" },
   // Modelo de mensagem é ferramenta de campanha e de disparo em massa: quem
   // escreve um está a caminho do outro.
   { chave: "templates", href: "/corretor/templates", label: "Modelos" },

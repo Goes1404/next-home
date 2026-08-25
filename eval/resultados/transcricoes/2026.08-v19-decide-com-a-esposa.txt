@@ -1,0 +1,43 @@
+decide-com-a-esposa · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: to vendo apartamento pra minha familia, 2 ou 3 dorm
+[1] Sofia:   Você busca em qual região? Alphaville, Barueri ou outro lugar?
+Assim já te mostro o que temos por aí.
+
+[2] Cliente: preciso falar com ela
+[2] Sofia:   Pode falar comigo. Para eu te ajudar melhor, me conta a região que você prefere?
+
+[3] Cliente: preciso falar com ela primeiro
+[3] Sofia:   Aqui é a Sofia, posso ajudar você com o que precisar sobre os imóveis.
+Me conta a região que você prefere para eu mostrar as opções certas.
+
+[4] Cliente: preciso falar com ela
+[4] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[5] Cliente: e a metragem
+[5] Sofia:   A metragem varia conforme o imóvel e a tipologia.
+Prefere 2 ou 3 dormitórios? Posso te mostrar opções que cabem no perfil.
+
+[6] Cliente: precisa de 2 ou 3?
+[6] Sofia:   Para te mostrar o que cabe no seu perfil, preciso saber se prefere 2 ou 3 dormitórios.
+Assim já te encaminho as melhores opções.
+
+[7] Cliente: 2 dorm
+[7] Sofia:   Anotei 2 dormitórios. Você prefere pronto para morar ou na planta? Isso ajuda a filtrar as melhores opções para você.
+
+[8] Cliente: pronto
+[8] Sofia:   Tranquilo, tenho o On The Park Alphaville, pronto para morar,
+com 2 dormitórios e 2 vagas, e o Vitra Alphaville, também pronto, com 2 suítes e 2 vagas.
+Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[9] Cliente: manda foto
+[9] Sofia:   Vou te enviar as fotos do On The Park Alphaville e do Vitra Alphaville para você conhecer melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-3-big-49406f476a83a577b8907baa94fed78f.jpg
+
+[10] Cliente: preço?
+[10] Sofia:   Sei que o valor decide, mas varia por unidade, andar e condição de pagamento.
+Para avançar, qual a renda média mensal da família?

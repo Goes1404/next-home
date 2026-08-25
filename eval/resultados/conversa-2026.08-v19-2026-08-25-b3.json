@@ -1,0 +1,176 @@
+{
+  "promptVersao": "2026.08-v19",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "pergunta-se-e-robo-no-meio",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 9,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Me conta, você conhece a região ou quer que eu apresente algumas opções?"
+        ],
+        "perguntasReaparecidas": [
+          "e a taxa condomínio?",
+          "é bot ou pessoa?",
+          "é bot ou pessoa?",
+          "é humano ou script?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 5,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "perfil",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 175,
+        "maiorMensagem": 295,
+        "reprovacoes": [
+          "ofereceu visita só no turno 9",
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
+          "5 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 0,
+        "assumiria": false,
+        "justificativa": "A conversa girou em torno da dúvida sobre ser bot ou pessoa, sem qualificação ou avanço real. Mudou o registro e não conduziu ao próximo passo.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "investidor-objetivo",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 9,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "visita",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 152,
+        "maiorMensagem": 246,
+        "reprovacoes": [
+          "9 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos sobre valor, sem qualificação efetiva ou condução clara ao próximo passo, tornando difícil para um corretor assumir.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "confuso-entre-dois",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer agendar uma visita para conhecer o Terra Alta e as condições de pagamento pessoalmente?",
+          "Prefere conhecer pessoalmente?"
+        ],
+        "perguntasReaparecidas": [
+          "e a área de lazer?",
+          "e o preço do more aldeia?",
+          "e o preço do more aldeia?",
+          "e a metragem dele?",
+          "e o preço do more aldeia?",
+          "e a metragem dele?",
+          "e o preço do more aldeia?",
+          "e a metragem dele?"
+        ],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 9,
+        "assuntosCobertos": [
+          "estagio",
+          "tipologia",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 156,
+        "maiorMensagem": 260,
+        "reprovacoes": [
+          "repetiu 2 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 8 pergunta(s) — ela não respondeu",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "9 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem qualificação efetiva e sem conduzir ao próximo passo. Faltou controle e assertividade para avançar.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "educado-que-enrola",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 9,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 3,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia",
+          "renda",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 133,
+        "maiorMensagem": 178,
+        "reprovacoes": [
+          "ofereceu visita só no turno 9"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa foi cordial, qualificou parcialmente tipologia e região, mas faltou condução firme ao próximo passo e aprofundar renda/estágio da obra.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

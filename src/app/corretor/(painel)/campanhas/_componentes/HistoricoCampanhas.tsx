@@ -23,7 +23,7 @@ export function HistoricoCampanhas({ campanhas }: { campanhas: CampanhaListada[]
   if (campanhas.length === 0) {
     return (
       <p className="text-fluid-sm text-tenue py-6 text-center">
-        Nenhuma campanha ainda. A primeira você cria aí em cima.
+        Nenhuma lista de transmissão ainda. A primeira você cria aí em cima.
       </p>
     );
   }

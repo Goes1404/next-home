@@ -1,0 +1,60 @@
+rajada-curta-e-seca · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi
+[1] Sofia:   Olá! Em que região você procura seu imóvel? Posso te mostrar opções que tenho por aqui.
+
+[2] Cliente: qual o valor
+[2] Sofia:   Sei que o valor é importante e varia por unidade e condições.
+Para te passar tudo certinho, posso agendar uma visita para apresentar o projeto e as condições.
+Qual região você prefere?
+
+[3] Cliente: onde fica
+              tem foto
+[3] Sofia:   Tenho fotos dos imóveis que tenho aqui, posso te enviar para você conhecer melhor.
+Você prefere que eu mande as fotos de algum bairro específico?
+Assim já te mostro o que mais combina com você.
+
+[4] Cliente: tem foto
+              qual o valor
+[4] Sofia:   Tenho fotos dos imóveis em Alphaville, Barueri e Osasco. Dá uma olhada e me diz o que te agradou.
+O valor varia conforme unidade e condições, melhor ver pessoalmente.
+Quer conhecer o decorado para eu te apresentar tudo com calma?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[5] Cliente: onde fica alphaville
+              tem foto
+[5] Sofia:   Alphaville fica em Barueri, região nobre e valorizada.
+Tenho fotos do On The Park Alphaville e do Vitra Alphaville, ambos prontos para morar.
+Quer que eu envie as fotos para você?
+
+[6] Cliente: tem foto
+              qual o valor
+[6] Sofia:   Envio as fotos do On The Park Alphaville e do Vitra Alphaville para você conhecer melhor.
+O valor varia por unidade e condições, e posso apresentar tudo na visita.
+Quer conhecer o decorado? Posso agendar para você.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-3-big-49406f476a83a577b8907baa94fed78f.jpg
+
+[7] Cliente: tem foto
+              qual o valor
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-4-big-c927018093552dd1e44890698536515d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-5-big-b8ce3deb5bcf41e5d85efcda6567ddc5.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+
+[8] Cliente: onde fica
+              tem foto
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: qual valor
+              onde fica
+[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[10] Cliente: onde fica alphaville
+              tem foto
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-2-big-56cbd63eb7afb430e0e17e65af38778d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-3-big-6ee6905482a046988bde5334ff1b4877.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-4-big-8053195313275bc888429d8ab9a9a4ea.jpg

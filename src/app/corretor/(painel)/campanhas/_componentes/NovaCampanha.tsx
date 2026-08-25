@@ -173,7 +173,7 @@ export function NovaCampanha({
           status: "em_andamento",
           criadoEm: new Date().toISOString(),
         },
-        `Campanha criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens já começaram a sair sozinhas — não precisa clicar em mais nada.`,
+        `Lista de transmissão criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens já começaram a sair sozinhas — não precisa clicar em mais nada.`,
       );
 
       // Volta ao começo para a próxima campanha.
@@ -238,7 +238,7 @@ export function NovaCampanha({
                 {carteira !== null && carteiraFiltrada.length === 0 && (
                   <p className="text-fluid-xs text-apoio px-1 py-3">
                     {carteira.length === 0
-                      ? "Nenhum lead com WhatsApp disponível para campanha."
+                      ? "Nenhum lead com WhatsApp disponível para a lista."
                       : "Ninguém com esse nome."}
                   </p>
                 )}
@@ -297,7 +297,7 @@ export function NovaCampanha({
             rows={4}
             value={mensagemBase}
             onChange={(e) => setMensagemBase(e.target.value)}
-            aria-label="Mensagem da campanha"
+            aria-label="Mensagem da lista de transmissão"
             className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento w-full rounded-xl border p-3.5 focus:outline-none"
           />
           <p className="text-fluid-xs text-tenue">
@@ -347,7 +347,7 @@ export function NovaCampanha({
 
           <div className="space-y-1.5">
             <label className="text-fluid-xs text-apoio block" htmlFor="titulo-campanha">
-              Nome desta campanha (opcional — só para você achar depois)
+              Nome desta lista (opcional — só para você achar depois)
             </label>
             <input
               id="titulo-campanha"
