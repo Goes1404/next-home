@@ -880,6 +880,97 @@ trilho+IA, follow-up, métricas de funil).
   entre ~1h e ~9h.
 
 
+## O eval de CONVERSA e a ativação da IA (F0-F7, 24/08/2026)
+
+- **O eval media RESPOSTA, nunca CONVERSA, e isso era um teto.** Cada um dos
+  36 casos é um histórico congelado mais uma pergunta: a IA responde uma vez
+  e o caso acaba. TODO defeito relatado em produção mora entre turnos —
+  desfilar imóveis, ignorar o histórico, reenviar as mesmas fotos, responder
+  só o último balão, trocar de voz. **O eval deu 95,8/100 num agente que
+  fazia todos.** `npm run eval:conversa` roda um cliente simulado por até 12
+  turnos contra a Sofia de verdade.
+- **O cliente simulado NÃO pode rodar no provedor do agente**, e coincidir
+  ABORTA a rodada. Modelo conversando consigo mesmo entende a própria
+  pergunta mal formulada, aceita a resposta ambígua e nunca reproduz o
+  mal-entendido — que é onde o atendimento real quebra. Mesma regra do juiz.
+- **A primeira rodada já pegou o que o eval de resposta não vê**: com "vi um
+  anúncio de vocês", sem imóvel nomeado, ela respondeu "o imóvel do anúncio
+  tem 3 dormitórios, 3 suítes e 2 vagas" — inventou QUAL imóvel era, que
+  erra tudo de uma vez. Virou a regra 22b da v17.
+- **As métricas de conversa são função pura, sem LLM** (`metricasConversa.ts`),
+  e a mais forte é "o CLIENTE repetiu a pergunta": não há regra que decida se
+  uma resposta *respondeu*, mas se ele refaz a pergunta, ela não respondeu.
+  Quem julga é o comportamento dele, não uma rubrica.
+- **Paráfrase NÃO é detectada, de propósito.** O erro é assimétrico: deixar
+  passar custa uma medida; acusar repetição que não houve manda alguém
+  consertar comportamento correto — que é como este projeto perdeu tempo
+  quatro vezes.
+- **Conversa que morre por falha do EVAL conta como NÃO MEDIDA**, nunca como
+  aprovada. Score sem denominador é o defeito recorrente daqui.
+- **Uma rodada do eval não distingue regressão de variância**: três rodadas
+  quase iguais da v17 deram 2, 4 e 1 falhas duras. Mesma lição do benchmark
+  de modelos — medição única não separa sinal de sorte.
+- **A IA nunca tinha respondido um cliente, e o painel jurava que sim.**
+  Três causas empilhadas: (1) `botDeveResponder` exige
+  `liberado_por_palavra_chave` e conversa nova nasce travada; (2) o botão
+  "reativar IA" não tocava nessa coluna — o corretor clicava, a tela dizia
+  "reativada", o bot seguia mudo; (3) o selo `estadoDa` ignorava a mesma
+  coluna e mostrava verde "IA atendendo". **Ao mexer em condição de
+  atendimento, conferir se a TELA lê as mesmas condições que o código.**
+- **A trava virou incentivo**: quem já era do CRM antes da conversa é
+  atendido na hora; número desconhecido espera a palavra-chave. O detalhe
+  que faz a regra existir é que o webhook CRIA o lead de quem escreve (0026),
+  então "tem lead" seria verdade para todo mundo — o critério é `jaEraDoCrm`,
+  decidido no insert e guardado em `whatsapp_conversas.cliente_conhecido`
+  (0049), não recalculado.
+- **Para cliente conhecido, a fala do corretor pausa mas NÃO retrava.** Um
+  "te ligo já" desligaria a IA naquele lead para sempre, sem ele saber. Para
+  desconhecido a trava continua inteira — é ela que protege a conversa da
+  família, e o caso foi real (a IA assumiu a conversa da mãe do corretor).
+- **`ia_interacoes.modelo` mentia por causa do SCHEMA, não do código.** A
+  coluna nasceu `not null default 'gemini-2.5-flash'`, e um default preenche
+  o que o insert omite — então `pausada_por_humano`, que sai do webhook
+  ANTES de qualquer chamada, recebia um modelo. Eram 1.443 de 1.496 linhas.
+  O código já tinha sido corrigido uma vez (para a contingência) e não
+  adiantou. **Ao consertar dado que mente, conferir o default da coluna.**
+  Hoje: `null` = ninguém chamado, `'nenhum'` = todos falharam,
+  `where modelo is not null` = atendimento real (99 respostas na vida).
+- **O rótulo vem do MUNDO; o humano só desempata** (`rotuloAutomatico.ts`).
+  Juiz LLM mede a rubrica, e a rubrica é o que alguém achou que era certo no
+  dia em que a escreveu — quatro critérios deste projeto já reprovaram o
+  comportamento CERTO. O que dá para automatizar sem circularidade é o que
+  aconteceu depois: o cliente sumiu, repetiu a pergunta, pediu humano, ou o
+  corretor assumiu. **O corretor já rotula, só não clica** — e o que ele
+  digita não é a nota, é a resposta certa.
+- **Assumir NEM SEMPRE é correção** (`assumiuCorrigindo`). Às vezes ele entra
+  porque o lead esquentou e quer fechar. Sem separar os dois casos, toda
+  conversa de sucesso vira 👎 — e rótulo que pune o sucesso é pior que
+  rótulo nenhum.
+- **Palpite `null` é o desfecho mais comum e tem de ser.** Marcar "bom" toda
+  vez que nada deu errado encheria o dataset de exemplos sem informação, e o
+  sistema aprenderia que o normal é ótimo.
+- **`turnoDeAtendimento.ts` existe porque a divergência já aconteceu DUAS
+  vezes** (playground sem few-shot; eval com catálogo cru). Webhook,
+  playground, follow-up e eval passam por ela. O que ela NÃO faz é
+  igualmente decidido: gravar mensagem, enviar, telemetria, dossiê, aviso —
+  efeitos sobre o mundo que um eval não pode disparar.
+- **Falha de transcrição de áudio era invisível e virava fala do cliente.**
+  `transcreverAudioWhatsapp` devolvia `sucesso: false` e ninguém lia: o texto
+  "[Áudio recebido — não foi possível transcrever]" entrava no histórico e a
+  IA respondia a ELE. 104 áudios recebidos sem nenhuma medida de quantos
+  foram entendidos.
+- **Orçamento ficava só no dossiê, e a ficha do CRM lê de `leads`** — 0 de 58
+  leads com orçamento num sistema que extrai orçamento de toda conversa.
+  Terceira encarnação do defeito do `historico_envios`.
+- **Os 12 anexos "barrados" são history, não presente**: todos de v2 a v7, a
+  era em que a IA copiava URL. Desde a v8: 13 enviados, 0 barrados. **Ao ler
+  contador acumulado de `ia_interacoes`, agrupar por `prompt_versao`** — sem
+  isso um defeito já corrigido continua aparecendo como se fosse de hoje.
+- **A ficha do prompt diz a AUSÊNCIA em voz alta** ("SEM planta"). Listar só
+  o que existe fazia o modelo pedir o que não existe: o guardrail bloqueava,
+  mas o texto já tinha prometido, e o cliente ficava esperando um anexo que
+  nunca chega. Mesma lição do `STATUS_LABEL`.
+
 ## Administração (papel `gestor`) — regras que não podem ser afrouxadas
 
 - **Só existem dois papéis**: `corretor` e `gestor`. O gestor É o admin; não
