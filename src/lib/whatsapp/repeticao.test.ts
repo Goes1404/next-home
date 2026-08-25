@@ -161,3 +161,52 @@ describe("Separador de balão órfão", () => {
     expect(limparSeparadoresOrfaos(bom)).toBe(bom);
   });
 });
+
+describe("quase idêntica também é loop (Onda 2)", () => {
+  // Pares REAIS da fábrica de 25/08: a Sofia repetiu a ideia trocando a
+  // moldura, e a guarda literal deixava passar.
+  const historico = [
+    {
+      remetente: "bot",
+      texto:
+        "O More Aldeia tem um conceito moderno e funcional, focado em conforto e praticidade para o dia a dia. Quer que eu te envie a apresentação digital para você ver tudo com calma?",
+    },
+  ];
+
+  it("mesma ideia de casaco trocado é bloqueada", () => {
+    expect(
+      ehRepeticaoDoBot(
+        "O More Aldeia tem um conceito moderno e funcional, com lazer completo. Quer que eu te envie a apresentação digital para você avaliar com calma?",
+        historico,
+      ),
+    ).toBe(true);
+  });
+
+  it("resposta com conteúdo NOVO de verdade passa", () => {
+    // Medido: máximo 0,10 de semelhança — margem larga até o limiar 0,45.
+    expect(
+      ehRepeticaoDoBot(
+        "O More Aldeia fica a cinco minutos da estação Antônio João e tem entrada parcelada direto com a construtora. Prefere visitar sábado de manhã ou à tarde?",
+        historico,
+      ),
+    ).toBe(false);
+  });
+
+  it("paráfrase genuína passa DE PROPÓSITO (0,28-0,38 medido) — é papel da regra 27", () => {
+    expect(
+      ehRepeticaoDoBot(
+        "Entendo sua dúvida, o More Aldeia é moderno, com lazer completo e foco em conforto. Posso enviar a apresentação digital para você avaliar com calma?",
+        historico,
+      ),
+    ).toBe(false);
+  });
+
+  it("paráfrase distante fica abaixo do limiar, de propósito", () => {
+    expect(
+      ehRepeticaoDoBot(
+        "Esse projeto foi pensado para quem valoriza praticidade no dia a dia, com áreas de lazer completas no condomínio.",
+        historico,
+      ),
+    ).toBe(false);
+  });
+});

@@ -1,3 +1,5 @@
+import { semelhanca } from "./metricasConversa";
+
 /**
  * A IA não pode mandar de novo, palavra por palavra, o que já mandou.
  *
@@ -86,9 +88,25 @@ export function ehRepeticaoDoBot(
      * informação nova seria descartada junto com a novidade — trocaríamos
      * o loop por perda de conteúdo, que é pior porque não aparece.
      */
-    if (!novo.includes(anterior) && !anterior.includes(novo)) return false;
-    const proporcao = Math.min(novo.length, anterior.length) / Math.max(novo.length, anterior.length);
-    return proporcao >= 0.7;
+    if (novo.includes(anterior) || anterior.includes(novo)) {
+      const proporcao =
+        Math.min(novo.length, anterior.length) / Math.max(novo.length, anterior.length);
+      if (proporcao >= 0.7) return true;
+    }
+
+    /*
+     * Quase idêntica também é loop (Onda 2, 25/08). A fábrica mediu 9-11
+     * respostas "quase idênticas" POR RODADA passando pela guarda literal:
+     * o modelo troca duas palavras e repete a ideia inteira, cinco turnos
+     * seguidos. O limiar 0,45 foi MEDIDO nos pares reais da transcrição:
+     * o eco de casaco trocado dá 0,55; a paráfrase genuína, 0,28-0,38; e
+     * conteúdo novo sobre o MESMO imóvel, no máximo 0,10. Paráfrase fica
+     * abaixo de propósito — é a decisão documentada do medidor: acusar
+     * variação legítima mandaria consertar comportamento correto, e a
+     * paráfrase-loop é papel da regra 27 do prompt, com o resultado
+     * cobrado pelas métricas de conversa.
+     */
+    return semelhanca(novo, anterior) >= 0.45;
   });
 }
 

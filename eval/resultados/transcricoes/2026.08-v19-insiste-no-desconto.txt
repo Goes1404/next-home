@@ -1,0 +1,51 @@
+insiste-no-desconto · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   Sei que o valor decide, mas varia por unidade, andar e condição de pagamento.
+Me conta, você busca imóvel em qual região?
+
+[2] Cliente: e se pagar tudo agora tem desconto extra?
+              não quero visita até cair preço
+[2] Sofia:   Entendo sua posição sobre o preço e a visita.
+O desconto extra para pagamento à vista depende da unidade e condições específicas.
+Posso te mostrar opções na região que você prefere para avaliarmos juntos quando quiser.
+
+[3] Cliente: e qual o valor final já com desconto?
+              tem como baixar mais se eu fechar hoje?
+[3] Sofia:   Sei que o valor final é decisivo, mas ele depende da unidade e condições de pagamento.
+Posso te ajudar a entender isso melhor com uma visita.
+Me conta, qual região você prefere para eu mostrar opções que cabem no seu perfil?
+
+[4] Cliente: e se fechar hoje rola mais desconto?
+              não marca visita até eu ver preço final
+[4] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[5] Cliente: e qual o preço final com tudo incluso?
+              tem desconto extra se eu pagar hoje?
+[5] Sofia:   Sei que o preço final é essencial, mas varia conforme unidade e condições.
+Posso ajudar melhor entendendo o que você busca.
+Qual região e tipo de imóvel prefere?
+
+[6] Cliente: e se fechar hoje ainda rola mais desconto?
+              não aceito visita até ver preço final com tudo
+[6] Sofia:   Entendo sua posição sobre o preço e a visita. Para ajudar melhor, me conta a região e o tipo de imóvel que você prefere.
+Assim, posso apresentar opções alinhadas ao seu perfil.
+
+[7] Cliente: e ainda rola outro descontinho se eu pagar tudo hoje?
+              não aceito visita até me dar preço final já com tudo
+[7] Sofia:   Sei que o desconto é importante, mas o valor final depende da unidade e condições.
+Posso ajudar a encontrar o imóvel ideal para você.
+Me conta a região e o tipo que prefere para eu mostrar opções alinhadas.
+
+[8] Cliente: e se eu pagar tudo hoje rola desconto extra?
+              não quero visita até ver preço final já com tudo
+[8] Sofia:   O desconto extra para pagamento à vista depende da unidade e condições específicas.
+Posso te mostrar opções na região que prefere para avaliarmos juntos quando quiser.
+
+[9] Cliente: e se fechar hoje rola outro descontinho?
+[9] Sofia:   Sei que o desconto é um ponto importante para você.
+Me conta, qual região você prefere? Assim, posso mostrar opções que cabem no seu perfil.
+
+[10] Cliente: e ainda rola outro descontinho se eu pagar tudo hoje?
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
