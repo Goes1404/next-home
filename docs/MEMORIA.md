@@ -1387,3 +1387,48 @@ empreendimento é sempre RGB.
 Bônus que justifica a extração em vez do print da página: a foto aérea da
 região saiu **sem os pins e rótulos** que o deck desenha por cima — o
 arquivo embutido é a foto original, limpa.
+
+### `sharp` na Vercel: o binário não chega sozinho (25/08/2026)
+
+Sintoma: `/corretor/imoveis/[slug]/importar` **e** `/corretor/imoveis/[slug]`
+caíam com o erro genérico de Server Components. Build limpo, testes verdes,
+tudo funcionando na máquina local. O erro real só aparece em
+`get_runtime_errors` da Vercel — o digest não diz nada:
+
+```
+Could not load the "sharp" module using the linux-x64 runtime
+ERR_DLOPEN_FAILED: libvips-cpp.so.8.18.3: cannot open shared object file
+```
+
+**Três tentativas, e só a terceira era a causa.** As duas primeiras eram
+necessárias, mas não explicavam o erro:
+
+1. Um componente `"use client"` importava uma CONSTANTE de um módulo que
+   importa `sharp` — isso arrasta o binário nativo para o grafo do cliente.
+   Constante compartilhada entre servidor e cliente mora em módulo sem
+   dependência nativa (`limitesPdf.ts`).
+2. `@img/sharp-linux-x64` e `@img/sharp-libvips-linux-x64` não estavam
+   declaradas: o lock é gerado no Windows, onde só o par win32 é instalado.
+   Viraram `optionalDependencies` do projeto.
+3. **A causa real: o `.so` não chegava à função.** Medido DE DENTRO do
+   runtime: a pasta `node_modules/@img` existia, com `sharp-linux-x64` e
+   `sharp-libvips-linux-x64` presentes — e sem o `lib/libvips-cpp.so.8.18.3`.
+   O rastreador de arquivos não enxerga esse arquivo porque ele **nunca é
+   `require`d**: quem o abre é o binário nativo, por `dlopen`, em tempo de
+   execução. Resolvido com `outputFileTracingIncludes` no `next.config.ts`,
+   escopado a `/corretor/**` para não engordar a função do webhook.
+
+Duas lições que valem além do `sharp`:
+
+- **Erro que só existe no runtime se investiga NO runtime.** A tela do painel
+  exige sessão de corretor, então não dá para exercitar por `curl`. Uma rota
+  pública temporária que só reporta estado — plataforma, o que existe em
+  `node_modules/@img`, se o módulo carrega — respondeu em UM deploy o que
+  três rodadas de palpite não responderam. Detalhe operacional: preview é
+  protegido e `curl` direto leva 302; `web_fetch_vercel_url` do MCP da
+  Vercel entra.
+- **Dependência nativa importada no TOPO do módulo derruba a página
+  inteira.** A falha acontece antes de qualquer `try/catch`, e o estrago
+  vaza para telas vizinhas: aqui levou junto o editor do imóvel, que só
+  compartilhava a action de upload. Hoje o `sharp` é carregado sob demanda,
+  com o resultado em cache, e o pior caso é foto sem medida e sem blur.
