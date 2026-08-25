@@ -38,7 +38,7 @@ export type RespostaPlayground = {
   score: number;
   temperatura: string;
   resumoDossie: string;
-  /** false = respondido pelo fallback, sem passar pelo Gemini. */
+  /** false = respondido pelo fallback, sem passar pelo motor de IA. */
   iaAtiva: boolean;
   /** Por que caiu no fallback — a tela usa isto para dizer a verdade. */
   motivoFalha?: MotivoFalhaLlm | null;

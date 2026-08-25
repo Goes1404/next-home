@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { gerarRespostaIA, PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { catalogoParaAtendimento } from "@/lib/whatsapp/focoDaConversa";
+import { separarRajada } from "@/lib/whatsapp/rajada";
 import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
@@ -61,7 +62,7 @@ function segredoConfere(recebido: string, esperado: string): boolean {
 }
 
 /**
- * O POST aciona duas chamadas pagas ao Gemini e pode disparar mensagem no
+ * O POST aciona duas chamadas pagas ao motor de IA e pode disparar mensagem no
  * WhatsApp do corretor — não pode ficar aberto na internet.
  *
  * Falha fechada: sem segredo configurado, recusa em produção. Em
@@ -409,6 +410,23 @@ export async function POST(req: NextRequest) {
     ]);
 
     /*
+     * A VEZ DO CLIENTE são todos os balões que ele mandou desde a última
+     * resposta — não só o que acionou esta invocação.
+     *
+     * O buffer de rajada já agrupava as invocações; o que faltava era
+     * agrupar o CONTEÚDO. Quem escreve "qual a metragem do de 3 dorm?" e
+     * emenda "e tem vaga?" recebia resposta só da vaga: a primeira pergunta
+     * virava mais uma linha de histórico, indistinguível de algo dito dez
+     * minutos antes. `historico` já contém esses balões (foram gravados
+     * antes desta consulta), então separar aqui não custa uma ida ao banco.
+     */
+    const { historico: historicoAnterior, pendentes } = separarRajada(historico);
+    const vezDoCliente = pendentes.length > 0 ? pendentes : [text];
+    // Foco, ranking e few-shot leem a vez inteira: o imóvel citado pode
+    // estar no primeiro balão e a pergunta no último.
+    const textoDaVez = vezDoCliente.join(" | ");
+
+    /*
      * A recuperação dos exemplos vem DEPOIS porque agora depende do assunto
      * da conversa: ela casa o imóvel citado aqui com conversas anteriores
      * sobre o mesmo imóvel. Antes bastava o id do corretor, e o resultado
@@ -417,8 +435,8 @@ export async function POST(req: NextRequest) {
      */
     const exemplosFewShot = await buscarExemplosFewShot({
       corretorId: instancia.corretorId,
-      mensagemAtual: text,
-      historico,
+      mensagemAtual: textoDaVez,
+      historico: historicoAnterior,
       catalogo,
       conversaAtualId: conversa.id,
     });
@@ -435,8 +453,8 @@ export async function POST(req: NextRequest) {
      */
     const { catalogo: catalogoRanqueado, foco } = catalogoParaAtendimento({
       catalogo,
-      mensagemAtual: text,
-      historico,
+      mensagemAtual: textoDaVez,
+      historico: historicoAnterior,
       dossie: dossieAnterior,
     });
 
@@ -449,12 +467,12 @@ export async function POST(req: NextRequest) {
         nomeAssistente: instancia.nomeAssistente,
         tomVoz: instancia.tomVoz,
         catalogo: catalogoRanqueado,
-        historicoMensagens: historico,
+        historicoMensagens: historicoAnterior,
         exemplosFewShot,
         dossie: dossieAnterior,
         foco,
       },
-      text,
+      vezDoCliente,
     );
 
     // Trilho do padrão "trilho + IA": nenhum anexo ou recomendação sai sem
@@ -571,8 +589,13 @@ export async function POST(req: NextRequest) {
      * há dez mensagens sumia do dossiê a cada nova extração. O
      * `dossieAnterior` (buscado antes da resposta) segue sendo a base da
      * comparação para a nota incremental ao corretor.
+     *
+     * Aqui vale `historico` e não `historicoAnterior`: ele já inclui os
+     * balões desta rajada (foram gravados antes da consulta). Emendar
+     * `text` no fim, como se fazia, duplicava a última fala do cliente na
+     * transcrição — e fala repetida pesa mais na extração do que deveria.
      */
-    const transcricao = [...historico, { remetente: "cliente" as const, texto: text }]
+    const transcricao = historico
       .map((m) => `${m.remetente === "cliente" ? "Cliente" : m.remetente === "corretor" ? "Corretor" : "Assistente"}: ${m.texto}`)
       .join("\n");
     const dossie = await extrairDossieCliente(transcricao, conversa.leadId ?? sender);
@@ -632,7 +655,7 @@ export async function POST(req: NextRequest) {
      * sem marcar `transferirHumano` — ou seja, prometeu uma ligação que
      * ninguém ficou sabendo que precisava acontecer.
      */
-    const pediuLigacao = clientePediuLigacao(text);
+    const pediuLigacao = vezDoCliente.some(clientePediuLigacao);
     const exigeAcaoAgora = visitaConfirmada || respostaIA.transferirHumano || pediuLigacao;
     const deveAlertar =
       exigeAcaoAgora ||

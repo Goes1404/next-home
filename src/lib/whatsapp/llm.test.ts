@@ -1,14 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * A cascata é o que faz "nunca mais ficar sem IA" ser verdade. Estes testes
- * cobrem as decisões que sustentam isso — ordem, pulo de provedor sem chave
- * e orçamento — com os adaptadores dublados, sem tocar em rede.
+ * O motor de IA é UM só (a OpenAI) desde 24/08/2026 — trocar de provedor no
+ * meio da conversa mudava o jeito de escrever e o cliente sentia. Estes
+ * testes cobrem as decisões que sustentam isso: quem atende, quando os
+ * provedores de reserva podem entrar, e o orçamento de tempo. Adaptadores
+ * dublados, sem tocar em rede.
  */
 
 const chamarGroqJson = vi.fn();
 const chamarNvidiaJson = vi.fn();
 const chamarGeminiJson = vi.fn();
+const chamarOpenaiJson = vi.fn();
+
+vi.mock("./openai", () => ({
+  chamarOpenaiJson: (...args: unknown[]) => chamarOpenaiJson(...args),
+  modeloOpenai: () => "gpt-4.1-mini",
+  openaiConfigurada: () => Boolean(process.env.OPENAI_API_KEY),
+}));
 
 vi.mock("./nvidia", () => ({
   chamarNvidiaJson: (...args: unknown[]) => chamarNvidiaJson(...args),
@@ -54,7 +63,15 @@ beforeEach(async () => {
   chamarGroqJson.mockReset();
   chamarNvidiaJson.mockReset();
   chamarGeminiJson.mockReset();
+  chamarOpenaiJson.mockReset();
   delete process.env.IA_PROVEDOR_FORCADO;
+  delete process.env.IA_ORDEM_PROVEDORES;
+  /*
+   * Os testes abaixo herdaram o cenário de quando havia cascata, e continuam
+   * válidos: sem chave da OpenAI, os provedores de reserva assumem — é o
+   * único caminho em que ainda existe cascata.
+   */
+  delete process.env.OPENAI_API_KEY;
   process.env.NVIDIA_API_KEY = "nvapi-teste";
   process.env.GEMINI_API_KEY = "gemini-teste";
   ({ chamarLlmJson } = await import("./llm"));
@@ -63,10 +80,12 @@ beforeEach(async () => {
 afterEach(() => {
   delete process.env.NVIDIA_API_KEY;
   delete process.env.GEMINI_API_KEY;
+  delete process.env.OPENAI_API_KEY;
   delete process.env.IA_PROVEDOR_FORCADO;
+  delete process.env.IA_ORDEM_PROVEDORES;
 });
 
-describe("Ordem da cascata", () => {
+describe("Ordem dos provedores de reserva (só quando não há motor)", () => {
   it("o primeiro da fila responde e os seguintes nem são chamados", async () => {
     chamarGeminiJson.mockResolvedValue(ok("gemini-2.5-flash"));
 
@@ -200,57 +219,110 @@ describe("Três provedores na cascata", () => {
   });
 });
 
-describe("Ordem da cascata configurável", () => {
-  const semVar = () => delete process.env.IA_ORDEM_PROVEDORES;
-
-  afterEach(semVar);
-
-  it("sem a variável, mantém a ordem medida", async () => {
-    semVar();
+describe("Motor único", () => {
+  const comMotor = async () => {
+    process.env.OPENAI_API_KEY = "sk-teste";
     vi.resetModules();
-    const { ordemDosProvedores } = await import("./llm");
-    expect(ordemDosProvedores().map((p) => p.nome)).toEqual([
-      "groq",
-      "gemini",
-      "nvidia",
-      "openai",
-    ]);
+    return import("./llm");
+  };
+
+  it("com a chave do motor, ninguém mais é chamado", async () => {
+    /*
+     * O ponto de toda a mudança: a cascata trocava de provedor no meio da
+     * conversa e o cliente sentia — outro registro, outro jeito de
+     * perguntar, mais informal. Uma conversa, uma voz.
+     */
+    const { chamarLlmJson: chamar } = await comMotor();
+    chamarOpenaiJson.mockResolvedValue(ok("gpt-4.1-mini"));
+
+    const r = await chamar("prompt");
+
+    expect(r.ok && r.modelo).toBe("gpt-4.1-mini");
+    expect(chamarGeminiJson).not.toHaveBeenCalled();
+    expect(chamarGroqJson).not.toHaveBeenCalled();
+    expect(chamarNvidiaJson).not.toHaveBeenCalled();
   });
 
-  /*
-   * O caso do piloto: a Groq saiu por tamanho de prompt e o cliente passou
-   * a esperar a latência do Gemini (8,5s de média em produção) quando a
-   * OpenAI responde em ~2,6s.
-   */
-  it("põe o provedor pedido na frente", async () => {
-    process.env.IA_ORDEM_PROVEDORES = "openai,gemini";
-    vi.resetModules();
-    const { ordemDosProvedores } = await import("./llm");
-    expect(ordemDosProvedores().map((p) => p.nome)).toEqual([
-      "openai",
-      "gemini",
-      "groq",
-      "nvidia",
-    ]);
+  it("motor que falha vira CONTINGÊNCIA, não troca de voz", async () => {
+    // Falha do motor é uma resposta que não veio — o cliente recebe o texto
+    // de contingência, que é da mesma assistente. Cobrir com outro provedor
+    // devolveria a resposta e tiraria a consistência, que é o que se está
+    // comprando aqui.
+    const { chamarLlmJson: chamar } = await comMotor();
+    chamarOpenaiJson.mockResolvedValue(falha("http_429"));
+
+    const r = await chamar("prompt");
+
+    expect(r.ok).toBe(false);
+    expect(chamarGeminiJson).not.toHaveBeenCalled();
   });
 
-  /*
-   * Um typo na variável NÃO pode remover provedor da cascata — seria o
-   * jeito mais fácil de derrubar o atendimento sem perceber.
-   */
-  it("nome desconhecido é ignorado e ninguém fica de fora", async () => {
+  it("o motor sozinho recebe a maior parte do orçamento — e sobra para a retentativa", async () => {
+    // Com um provedor só, dividir o prazo em fatias de 40% deixaria tempo
+    // para ninguém gastar. Mas 100% também não serve: sem folga, o erro que
+    // falha rápido (5xx) nunca teria a segunda chance que `valeRetentar` promete.
+    const { chamarLlmJson: chamar } = await comMotor();
+    chamarOpenaiJson.mockResolvedValueOnce(falha("http_5xx"));
+    chamarOpenaiJson.mockResolvedValueOnce(ok("gpt-4.1-mini"));
+
+    const r = await chamar("prompt", { orcamentoMs: 20_000 });
+
+    expect(r.ok).toBe(true);
+    const teto = chamarOpenaiJson.mock.calls[0][1].timeoutMs;
+    expect(teto).toBeGreaterThan(20_000 * 0.4);
+    expect(teto).toBeLessThan(20_000);
+    expect(chamarOpenaiJson).toHaveBeenCalledTimes(2);
+  });
+
+  it("a tela de diagnóstico mostra QUEM RESPONDE, não quem tem chave", async () => {
+    // Em produção as quatro chaves existem na Vercel. Listar as quatro faria
+    // o corretor procurar defeito num provedor que não atende ninguém.
+    process.env.GROQ_API_KEY = "gsk-teste";
+    const { provedoresDisponiveis } = await comMotor();
+    expect(provedoresDisponiveis()).toEqual(["openai"]);
+    delete process.env.GROQ_API_KEY;
+  });
+
+  it("sem chave do motor, a reserva assume — melhor voz trocada que silêncio", async () => {
+    // Ausência de motor é ambiente desconfigurado, não modo de operação: a
+    // escolha aqui é entre a voz de outro provedor e não responder nada.
+    vi.resetModules();
+    const { ordemDosProvedores } = await import("./llm");
+    expect(ordemDosProvedores().map((p) => p.nome)).toEqual(["groq", "gemini", "nvidia"]);
+  });
+});
+
+describe("IA_ORDEM_PROVEDORES (eval e benchmark)", () => {
+  it("a lista pedida vale exatamente como escrita", async () => {
+    // O eval precisa medir UM provedor. Completar a lista com os que
+    // faltam, como se fazia, faria outro provedor responder por baixo e o
+    // score sair de uma mistura.
+    process.env.OPENAI_API_KEY = "sk-teste";
+    process.env.IA_ORDEM_PROVEDORES = "gemini";
+    vi.resetModules();
+    const { ordemDosProvedores } = await import("./llm");
+    expect(ordemDosProvedores().map((p) => p.nome)).toEqual(["gemini"]);
+  });
+
+  it("nome desconhecido é ignorado, o resto vale", async () => {
     process.env.IA_ORDEM_PROVEDORES = "openai, xpto ,,gemini";
     vi.resetModules();
     const { ordemDosProvedores } = await import("./llm");
-    const nomes = ordemDosProvedores().map((p) => p.nome);
-    expect(nomes).toEqual(["openai", "gemini", "groq", "nvidia"]);
-    expect(nomes).toHaveLength(4);
+    expect(ordemDosProvedores().map((p) => p.nome)).toEqual(["openai", "gemini"]);
   });
 
   it("repetido não duplica", async () => {
     process.env.IA_ORDEM_PROVEDORES = "openai,openai";
     vi.resetModules();
     const { ordemDosProvedores } = await import("./llm");
-    expect(ordemDosProvedores()).toHaveLength(4);
+    expect(ordemDosProvedores()).toHaveLength(1);
+  });
+
+  it("typo em TUDO cai no padrão em vez de deixar o atendimento sem motor", async () => {
+    process.env.OPENAI_API_KEY = "sk-teste";
+    process.env.IA_ORDEM_PROVEDORES = "xpto,fulano";
+    vi.resetModules();
+    const { ordemDosProvedores } = await import("./llm");
+    expect(ordemDosProvedores().map((p) => p.nome)).toEqual(["openai"]);
   });
 });

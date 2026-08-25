@@ -357,7 +357,37 @@ trilho+IA, follow-up, métricas de funil).
   (`candidatosTelefone`), e CRIA o lead se não existir. Antes o match era
   igualdade exata com o telefone digitado à mão: 0 de 32 conversas tinham
   lead, 0 dossiês persistidos, few-shot morto. Backfill na 0026.
-- **Provedor de IA é CASCATA, não um só** (`llm.ts` → `chamarLlmJson`):
+- **O MOTOR DE IA É UM SÓ desde 24/08/2026: a OpenAI (`gpt-4.1-mini`), que
+  é paga** (`llm.ts` → `ordemDosProvedores`). A cascata de quatro provedores
+  foi desmontada, e o motivo não é técnico: cada provedor escreve de um
+  jeito, e a troca acontecia NO MEIO da conversa, sem ninguém perceber. Do
+  lado do cliente, o registro caía e a mensagem ficava mais informal — como
+  se outra pessoa tivesse assumido o chat. A cascata resolvia queda de
+  provedor gratuito criando um problema pior: inconsistência de voz em toda
+  conversa em que um elo tropeçava. Provedor pago é justamente o que não
+  morre no meio (cota comercial, não balde de 20 chamadas/dia). Detalhes
+  que importam:
+  - **Falha do motor vira CONTINGÊNCIA, não troca de voz.** Cobrir com
+    outro provedor devolveria a resposta e tiraria exatamente o que se
+    comprou. A contingência é da mesma assistente (`textoDeContingencia`).
+  - **Motor SEM CHAVE é o único caso em que a reserva volta** (Groq →
+    Gemini → NVIDIA), com aviso no log. É ambiente desconfigurado, não modo
+    de operação: aí a escolha é entre voz trocada e silêncio.
+  - **`IA_ORDEM_PROVEDORES` agora vale EXATAMENTE como escrita** — não
+    completa mais a lista com quem faltou. O eval precisa medir UM
+    provedor; completar faria outro responder por baixo e o score sair de
+    uma mistura. Typo em TODOS os nomes cai no padrão, para um erro de
+    digitação não emudecer o atendimento.
+  - **Com um provedor só, o orçamento não se divide em fatias**
+    (`FATIA_MOTOR_UNICO = 0,6`): sobraria prazo para ninguém gastar. Não é
+    1,0 porque `valeRetentar` precisa de folga para a segunda tentativa.
+  - **A tela de diagnóstico mostra QUEM RESPONDE, não quem tem chave.** As
+    quatro chaves seguem na Vercel; `provedoresDisponiveis()` sai da ordem
+    do motor, senão o corretor caça defeito num provedor que não atende
+    ninguém. (Quinta vez que texto desatualizado aponta o diagnóstico para
+    o lugar errado neste projeto — as frases do playground foram junto.)
+- **A CASCATA, enquanto existiu** (`llm.ts` → `chamarLlmJson`), e o que
+  continua valendo dela:
   NVIDIA (`build.nvidia.com`, OpenAI-compatível) primeiro, Gemini de
   reserva. Nasceu de um `http_429` do Gemini em produção. **Trocar de
   provedor não elimina limite** — o tier gratuito da NVIDIA também tem teto
@@ -700,6 +730,23 @@ trilho+IA, follow-up, métricas de funil).
 - **Dedup + rajada no webhook**: `provider_message_id` único (0027) mata
   reentrega; espera de 6s + trava `resposta:<conversaId>` faz 1 resposta
   por rajada de balões. A rota tem `maxDuration = 60`.
+- **Agrupar as INVOCAÇÕES não era agrupar o CONTEÚDO** (`rajada.ts`, v16 do
+  prompt). O buffer já fazia uma resposta por rajada, mas o que ia para a IA
+  como "mensagem da vez" era só o ÚLTIMO balão; os anteriores caíam no meio
+  do histórico, indistinguíveis de fala de dez minutos atrás. Quem escrevia
+  "qual a metragem do de 3 dorm?" e emendava "e tem vaga?" era respondido só
+  sobre a vaga — e a última linha costuma ser a menos importante. Hoje
+  `separarRajada` corta o histórico na última fala do bot OU DO CORRETOR (se
+  o humano respondeu, nada está em aberto) e devolve os balões pendentes,
+  que entram no prompt como linhas `Cliente:` separadas, com aviso de que
+  nenhuma foi respondida. Sem timestamp de propósito: entre espera de 6s,
+  reentrega, debounce e retentativa, relógio ali é fonte de erro. Balão que
+  passa do teto de 8 não some — VOLTA ao histórico, porque o que a rajada
+  decide é onde a fala aparece no prompt, nunca se ela aparece.
+- **O dossiê recebia a última fala do cliente DUPLICADA**: a transcrição era
+  `[...historico, mensagemAtual]`, e `historicoRecente` já a continha (a
+  gravação acontece antes da consulta). Fala repetida pesa mais na extração
+  do que deveria.
 - **Visita**: `visitaProposta.confirmadaPeloCliente` + `validarDataVisita`
   → grava `leads.visita_agendada_em` + etapa. Data inválida degrada para
   alerta comum.

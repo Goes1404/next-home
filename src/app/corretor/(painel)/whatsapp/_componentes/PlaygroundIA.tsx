@@ -7,8 +7,8 @@ import { testarAgenteIA } from "../acoes";
 /**
  * O playground — conversar com a IA antes de pôr o número no ar.
  *
- * Chama o MESMO agente que atende o cliente no WhatsApp (cascata de
- * provedores + catálogo real + guardrails), não uma simulação: é isso que
+ * Chama o MESMO agente que atende o cliente no WhatsApp (mesmo motor de
+ * IA, mesmo catálogo, mesmos guardrails), não uma simulação: é isso que
  * torna o teste um teste de verdade. Se um dia divergirem, o teste do
  * corretor vira mentira.
  */
@@ -17,7 +17,7 @@ type MensagemPlayground = {
   remetente: "cliente" | "bot";
   texto: string;
   hora: string;
-  /** Qual modelo respondeu — o A/B mais barato entre os provedores da cascata. */
+  /** Qual modelo respondeu. Com motor único deve ser sempre o mesmo — se variar, a cascata de reserva entrou, e isso é notícia. */
   modelo?: string | null;
   anexos?: { tipo: string; url: string; titulo: string }[];
 };
@@ -31,24 +31,24 @@ const SUGESTOES = [
 /**
  * O que dizer quando a resposta veio da contingência.
  *
- * Estas frases nomeavam o Gemini em TODAS elas — foram escritas quando ele
- * era o único provedor. Hoje a cascata tem quatro, e o texto mandava o
- * corretor investigar a chave do Gemini por uma falha que podia ser de
- * qualquer um deles. A cascata só cai em contingência quando TODOS falham, e
- * é isso que as frases dizem agora.
+ * Estas frases já nomearam o Gemini em todas elas — foram escritas quando
+ * ele era o único provedor — e depois falaram em "todos os provedores",
+ * quando havia cascata. Desde 24/08/2026 o motor é um só (ChatGPT), e é
+ * isso que elas dizem: apontar o corretor para o lugar errado é o defeito
+ * mais repetido deste projeto.
  */
 function explicarFallback(motivo?: string | null): string {
   switch (motivo) {
     case "timeout":
-      return "Todos os provedores de IA passaram do tempo limite e a resposta veio pelo modo de contingência. Costuma ser passageiro — mande a mensagem de novo.";
+      return "O motor de IA (ChatGPT) passou do tempo limite e a resposta veio pelo modo de contingência. Costuma ser passageiro — mande a mensagem de novo.";
     case "sem_api_key":
-      return "Nenhum provedor de IA tem chave configurada neste ambiente (GROQ_API_KEY, GEMINI_API_KEY, NVIDIA_API_KEY ou OPENAI_API_KEY). A resposta veio pelo modo de contingência.";
+      return "O motor de IA não tem chave configurada neste ambiente (OPENAI_API_KEY). Enquanto isso, a resposta vem pelo modo de contingência.";
     case "http_429":
-      return "Todos os provedores de IA disponíveis estão no limite de uso agora — a resposta veio pelo modo de contingência. Configurar mais de um provedor evita isto.";
+      return "A conta do motor de IA está no limite de uso agora — a resposta veio pelo modo de contingência. Confira o saldo e o limite da conta da OpenAI.";
     case "http_4xx":
-      return "Os provedores de IA recusaram a chamada (chave inválida, expirada ou sem permissão) e a resposta veio pelo modo de contingência. Confira as chaves no ambiente.";
+      return "O motor de IA recusou a chamada (chave inválida, expirada ou sem permissão) e a resposta veio pelo modo de contingência. Confira a OPENAI_API_KEY no ambiente.";
     case "http_5xx":
-      return "Os provedores de IA estão instáveis agora; a resposta veio pelo modo de contingência. Tente de novo em instantes.";
+      return "O motor de IA está instável agora; a resposta veio pelo modo de contingência. Tente de novo em instantes.";
     case "resposta_vazia":
       return "A IA respondeu vazio e o texto veio pelo modo de contingência. Tente reformular a mensagem.";
     default:
@@ -192,8 +192,9 @@ export function PlaygroundIA({
                   )}
 
                   <span className="block text-right text-[9px] text-[#8696a0]">
-                    {/* Qual modelo respondeu. Com a cascata, a resposta pode
-                        vir do provedor de reserva — e é aqui que se vê. */}
+                    {/* Qual modelo respondeu. Com motor único, esperado é
+                        sempre o mesmo nome; nome diferente aqui significa
+                        que o motor está fora e a reserva assumiu. */}
                     {m.modelo ? `${m.modelo} · ${m.hora}` : m.hora}
                   </span>
                 </div>

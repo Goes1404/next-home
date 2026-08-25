@@ -6,6 +6,7 @@ import { linkDaPagina, linkDoCatalogo } from "./resolverMidia";
 import { ESTILO_DA_CASA } from "./estiloDaCasa";
 import type { MotivoFalhaLlm } from "./llmTipos";
 import type { DossieClienteIA, TomVozBot } from "./types";
+import { blocoDaVezDoCliente } from "./rajada";
 
 /**
  * Versão do prompt de atendimento. REGRA: qualquer mudança de conteúdo em
@@ -27,8 +28,15 @@ import type { DossieClienteIA, TomVozBot } from "./types";
  * produção, "manda a planta do Terra Alta" foi respondido com uma lista
  * de outros três. Vem junto com o encolhimento do catálogo no prompt
  * (`focoDaConversa.ts`), que é a parte que segura de fato.
+ *
+ * v16: a rajada (regra 26 + `rajada.ts`). O cliente escreve em vários
+ * balões e só o último chegava como "mensagem da vez"; os anteriores
+ * caíam no histórico, indistinguíveis de fala de dez minutos atrás — e a
+ * IA respondia uma pergunta de duas. Como na v15, o prompt é a metade
+ * fraca: quem segura é a separação entre o que já foi respondido e o que
+ * está em aberto.
  */
-export const PROMPT_VERSAO = "2026.08-v15";
+export const PROMPT_VERSAO = "2026.08-v16";
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -391,6 +399,7 @@ ${resumoCatalogo}
 23. EMPREENDIMENTO QUE NÃO É NOSSO. O cliente vai citar imóvel de outra imobiliária ("gostei do Dom Barueri", "vi o Manacá"). Se o nome NÃO está no catálogo abaixo, ele não é seu — não finja conhecer, não invente ficha e NÃO responda com uma lista de alternativas. Faça o que uma corretora faz: descubra o critério antes de indicar qualquer coisa. "Esse não é meu, mas me conta o que te agradou nele — a região, o tamanho?" A resposta dela é o que te diz qual imóvel NOSSO faz sentido, e aí você indica UM, com o motivo. Empurrar três nomes para quem elogiou outro imóvel é a forma mais rápida de acabar a conversa.
 24. NO MÁXIMO DOIS IMÓVEIS POR MENSAGEM, e só enquanto a conversa ainda não escolheu um. Três nomes numa mensagem não é atendimento, é catálogo — o cliente não responde a nenhum. Assim que ele demonstrar interesse em um ("gostei do X", "quero saber do X", "manda a planta do X"), a conversa é sobre esse até ele mudar de ideia.
 25. LEIA O HISTÓRICO ANTES DE ESCREVER. Região, tipologia, renda, prazo, o imóvel que ele elogiou, a objeção que ele levantou: está tudo acima, dito por ele. Responder como se a conversa começasse agora é o defeito que mais faz cliente sumir — ele já contou, e ter de repetir cansa.
+26. O CLIENTE ESCREVE EM VÁRIOS BALÕES, E TODOS SÃO PARA VOCÊ. Quando a vez dele terminar com mais de uma linha "Cliente:", elas chegaram juntas e NENHUMA foi respondida ainda — não são histórico. Responda o conteúdo de TODAS antes de perguntar qualquer outra coisa: se ele fez duas perguntas, as duas têm resposta na sua vez. Responder só a última é o erro mais comum aqui, e é justamente a última que costuma ser a menos importante ("...e tem vaga?" depois de "qual a metragem do de 3 dorm?"). Isso NÃO muda o seu jeito de escrever: continue em mensagens curtas, uma ideia em cada — duas respostas curtas, não um parágrafo com tópicos. E se dois balões disserem a mesma coisa, é uma resposta só.
 
 TÉCNICAS DE VENDA CONSULTIVA (aplique com naturalidade, nunca de forma mecânica ou insistente):
 - Rapport antes de pitch: acolha e valide o que o cliente disse antes de emplacar informação de imóvel.
@@ -496,7 +505,14 @@ export function textoDeContingencia(params: {
 
 export async function gerarRespostaIA(
   ctx: ContextoAtendimento,
-  mensagemCliente: string,
+  /**
+   * O que o cliente disse na vez dele. Um texto, ou os BALÕES da rajada —
+   * quando ele escreveu várias mensagens seguidas e nenhuma foi respondida
+   * ainda (ver `rajada.ts`). Aceitar os dois formatos é o que permite o
+   * webhook mandar a vez inteira sem mudar o playground, o follow-up e o
+   * eval, que sempre tiveram uma mensagem só.
+   */
+  mensagemCliente: string | string[],
 ): Promise<RespostaAgenteIA> {
   const fallback = (
     motivoFalha: MotivoFalhaLlm,
@@ -542,11 +558,17 @@ export async function gerarRespostaIA(
     })
     .join("\n");
 
-  const entradaPrompt = `${promptSistema}\n\n--- HISTÓRICO DA CONVERSA ---\n${historicoFormatado}\nCliente: ${mensagemCliente}\n${ctx.nomeAssistente}:`;
+  // A vez do cliente: um balão sai como sempre saiu; vários viram linhas
+  // separadas com o aviso de que nenhuma foi respondida ainda (rajada.ts).
+  const vezDoCliente = blocoDaVezDoCliente(
+    Array.isArray(mensagemCliente) ? mensagemCliente : [mensagemCliente],
+  );
 
-  // A cascata (NVIDIA → Gemini) decide com quem falar; aqui só interessa
-  // se veio resposta. Cair no fallback agora significa que TODOS os
-  // provedores falharam, não que um deles teve um soluço.
+  const entradaPrompt = `${promptSistema}\n\n--- HISTÓRICO DA CONVERSA ---\n${historicoFormatado}\n${vezDoCliente}\n${ctx.nomeAssistente}:`;
+
+  // O motor é um só (ver llm.ts): cair no fallback aqui significa que a
+  // OpenAI não respondeu nem na retentativa — não que um elo de cascata
+  // teve um soluço e outro cobriu.
   const resultado = await chamarLlmJson(entradaPrompt, {
     temperature: 0.2,
     orcamentoMs: ORCAMENTO_AGENTE_MS,

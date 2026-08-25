@@ -7,44 +7,49 @@ import { chamarOpenaiJson, modeloOpenai, openaiConfigurada } from "./openai";
 import { valeRetentar, type MotivoFalhaLlm, type ResultadoLlm } from "./llmTipos";
 
 /**
- * A cascata de provedores de IA — o único ponto do sistema que decide COM
- * QUEM falar.
+ * O motor de IA — o único ponto do sistema que decide COM QUEM falar.
  *
- * Existe porque um provedor só é um ponto único de falha, e isso não é
- * teoria: em agosto de 2026 o Gemini estourou cota (`http_429`) e o cliente
- * passou a receber mensagem de contingência. Trocar de fornecedor não
- * resolveria — o tier gratuito da NVIDIA também tem teto (~40 req/min). O
- * que resolve é ter DOIS: quando o primeiro recusa, demora ou cai, o
- * segundo responde e ninguém percebe.
+ * **Hoje é UM só: a OpenAI (`gpt-4.1-mini`), que é paga.** Isso é uma
+ * mudança deliberada de 24/08/2026, e o motivo não é técnico, é de
+ * atendimento: quatro provedores diferentes escrevem de quatro jeitos
+ * diferentes, e a cascata trocava de provedor NO MEIO da conversa, sem
+ * ninguém perceber. O cliente sentia a mudança — o registro caía de tom, o
+ * jeito de perguntar mudava, a mensagem ficava mais informal — como se
+ * outra pessoa tivesse assumido o chat. Ninguém contrata quatro corretoras
+ * para revezar dentro de uma mesma conversa.
  *
- * Ordem: **Groq → Gemini → NVIDIA**, e ela foi MEDIDA, não escolhida por
- * preferência. Velocidade decide a frente; confiabilidade decide o resto:
+ * A cascata resolvia um problema real (queda de provedor gratuito) criando
+ * um pior: consistência quebrada em TODA conversa em que um elo tropeçava.
+ * O provedor pago é justamente o que não morre no meio: cota é comercial,
+ * não um balde de 20 chamadas por dia. Alguns centavos por conversa custam
+ * menos que um lead que percebe que está falando com um robô mal costurado.
  *
- * | provedor | latência | confiabilidade medida |
+ * O que ficou registrado da medição anterior, porque continua verdadeiro e
+ * é o que justifica a escolha de qual provedor fica:
+ *
+ * | provedor | latência | por que NÃO é o motor |
  * |---|---|---|
- * | Groq (`gpt-oss-120b`) | 1,4s | teto de 8k tokens/min → ~2 chamadas/min |
- * | Gemini 2.5 Flash | 5–7s | 16 de 16 respostas em produção |
- * | NVIDIA (`mistral-nemotron`) | 6–9s | 35 de 44 modelos nem existem; 3 a 6 falhas em 10 |
+ * | OpenAI (`gpt-4.1-mini`) | ~2,6s | **é o motor** — 5/5 no bench, pago, sem teto diário |
+ * | Groq (`gpt-oss-120b`) | 1,4s | teto de 8k tokens/min: o prompt do agente já não cabe |
+ * | Gemini 3.5 Flash | 5–7s | cota gratuita de 20 chamadas/DIA por modelo |
+ * | NVIDIA (`mistral-nemotron`) | 6–9s | 35 de 44 modelos nem existem para a conta |
  *
- * A NVIDIA já esteve na frente e foi rebaixada por medição: dos 44
- * candidatos de chat do catálogo, 21 devolvem `404 Not found for account`
- * e 14 estouram o tempo. Os que respondem oscilam entre 5,5s e timeout na
- * mesma tarde. Ela fica como terceiro fôlego, não como linha de frente.
+ * Os outros três continuam no código e continuam testados — não como
+ * cascata silenciosa, mas como duas coisas:
  *
- * Um primeiro provedor de 1,4s não é só conforto: é o que deixa três elos
- * caberem no teto de 60s da função do webhook. E o 429 da Groq — que
- * acontece o tempo todo, dado o teto de tokens — custa 60ms: é a aposta
- * mais barata da cascata.
+ * 1. **Rede de segurança para AUSÊNCIA de motor.** Sem `OPENAI_API_KEY`
+ *    configurada, o sistema não pode simplesmente emudecer: aí sim a
+ *    ordem antiga vale, com aviso no log. É a diferença entre "o motor
+ *    falhou nesta chamada" (contingência, e a conversa continua com a
+ *    mesma voz) e "não existe motor nenhum" (o serviço está desconfigurado).
+ * 2. **`IA_ORDEM_PROVEDORES`**, para eval e benchmark, que precisam medir
+ *    um provedor específico sem deploy.
  *
- * Duas regras que sustentam o desenho:
- *
- * 1. **Provedor sem chave é pulado, não é falha.** Sem `NVIDIA_API_KEY` o
- *    sistema inteiro continua no Gemini, exatamente como antes — dá para
- *    subir este código antes de existir chave nenhuma.
- * 2. **Orçamento por PRAZO, não por tentativa.** O segundo provedor recebe
- *    o tempo que sobrou, não um teto novo. Somar os dois tetos dobraria o
- *    pior caso e estouraria os 60s da função do webhook — trocando uma
- *    resposta de contingência por um 504, em que o cliente não recebe nada.
+ * Regra que sobreviveu ao desenho antigo e continua valendo:
+ * **orçamento por PRAZO, não por tentativa.** Com um motor só, ele recebe
+ * o orçamento quase inteiro e a retentativa herda o que sobrou — nunca um
+ * teto novo, senão o pior caso estoura os 60s da função do webhook e o
+ * cliente troca uma contingência por um 504, em que não recebe nada.
  */
 
 /** Cliente esperando na tela: é o orçamento que vale a pena gastar. */
@@ -59,8 +64,19 @@ export const ORCAMENTO_DOSSIE_MS = 12_000;
  * sem tempo útil (0,55 + 0,45 = tudo). Em 0,40 o pior caso fica em
  * 0,40 + 0,40 + o resto — e mesmo assim o Groq, que vem primeiro, quase
  * nunca chega perto do seu teto.
+ *
+ * Só vale quando há MAIS DE UM provedor na fila. Com motor único, dividir o
+ * orçamento em fatias seria desperdiçar prazo do cliente: sobraria tempo
+ * para ninguém gastar. Ver `FATIA_MOTOR_UNICO`.
  */
 const FATIA_MAXIMA = 0.4;
+/**
+ * Com um motor só, a primeira tentativa leva a maior parte do orçamento e a
+ * retentativa herda o resto. Não é 1,0 de propósito: `valeRetentar` existe
+ * para o que falha RÁPIDO (5xx, JSON estranho), e sem folga a retentativa
+ * nunca aconteceria — a única falha que o cliente veria seria a definitiva.
+ */
+const FATIA_MOTOR_UNICO = 0.6;
 /** Abaixo disso não vale começar — só gastaria o resto do prazo para nada. */
 const MINIMO_UTIL_MS = 3_000;
 
@@ -116,44 +132,47 @@ const PROVEDORES: Provedor[] = [
   },
 ];
 
+/** O motor. Um só, e é o pago — ver o cabeçalho deste arquivo. */
+const MOTOR = "openai";
+
 /**
- * Ordem da cascata, configurável por ambiente.
+ * Ordem de tentativa dos provedores. Com motor configurado, a lista tem UM
+ * item — a consistência de voz dentro de uma conversa vale mais que a
+ * disponibilidade marginal que um segundo provedor traria.
  *
- * O padrão (Groq → Gemini → NVIDIA → OpenAI) foi MEDIDO e continua certo
- * para operação normal: os três primeiros são gratuitos e a OpenAI, paga,
- * cobre o que sobra.
+ * Duas saídas dessa regra, e as duas são explícitas:
  *
- * O que mudou e justifica poder inverter: a Groq saiu do ar por tamanho de
- * prompt, e com ela fora o cliente passou a esperar a latência do Gemini —
- * 8,5s de média e 10,4s de pior caso, medidos em produção — quando a
- * OpenAI responde em ~2,6s. Numa fase de piloto, com poucas conversas, a
- * conta inverte: o custo de alguns centavos por conversa é menor que o de
- * um lead que desiste esperando.
- *
- * `IA_ORDEM_PROVEDORES=openai,gemini,nvidia` reordena sem deploy. Nome
- * desconhecido é ignorado, e quem ficar de fora da lista entra depois na
- * ordem padrão — assim uma variável mal digitada nunca REMOVE um provedor
- * da cascata, que seria o jeito mais fácil de derrubar o atendimento com
- * um typo.
+ * - **`IA_ORDEM_PROVEDORES=gemini,openai`** manda em tudo. É o que o eval e
+ *   o benchmark usam para medir um provedor específico sem deploy. Nome
+ *   desconhecido é ignorado; se NENHUM nome resolver (typo em tudo), cai no
+ *   padrão em vez de ficar sem motor — um erro de digitação não pode
+ *   emudecer o atendimento.
+ * - **Motor sem chave.** Se `OPENAI_API_KEY` não existe, não há o que
+ *   preservar: a escolha passa a ser entre a voz de outro provedor e
+ *   silêncio. A ordem antiga volta, com aviso no log — é uma configuração
+ *   incompleta do ambiente, não um modo de operação.
  */
 export function ordemDosProvedores(): Provedor[] {
   const bruto = (process.env.IA_ORDEM_PROVEDORES || "").trim();
-  if (!bruto) return PROVEDORES;
 
-  const pedidos = bruto
-    .split(",")
-    .map((n) => n.trim().toLowerCase())
-    .filter(Boolean);
+  if (bruto) {
+    const escolhidos: Provedor[] = [];
+    for (const nome of bruto.split(",").map((n) => n.trim().toLowerCase())) {
+      const p = PROVEDORES.find((x) => x.nome === nome);
+      if (p && !escolhidos.includes(p)) escolhidos.push(p);
+    }
+    if (escolhidos.length > 0) return escolhidos;
+  }
 
-  const escolhidos: Provedor[] = [];
-  for (const nome of pedidos) {
-    const p = PROVEDORES.find((x) => x.nome === nome);
-    if (p && !escolhidos.includes(p)) escolhidos.push(p);
-  }
-  for (const p of PROVEDORES) {
-    if (!escolhidos.includes(p)) escolhidos.push(p);
-  }
-  return escolhidos;
+  const motor = PROVEDORES.find((p) => p.nome === MOTOR)!;
+  if (motor.configurado()) return [motor];
+
+  console.warn(
+    `[ia] ${MOTOR.toUpperCase()}_API_KEY não configurada — o motor único está fora do ar. ` +
+      `Usando os provedores de reserva, o que faz o tom da conversa mudar quando um deles falha. ` +
+      `Configure a chave do motor para voltar ao normal.`,
+  );
+  return PROVEDORES.filter((p) => p.nome !== MOTOR);
 }
 
 export async function chamarLlmJson(
@@ -162,13 +181,16 @@ export async function chamarLlmJson(
 ): Promise<ResultadoLlm> {
   const orcamentoMs = opts?.orcamentoMs ?? ORCAMENTO_AGENTE_MS;
   const prazoFinal = Date.now() + orcamentoMs;
-  const tetoPorProvedor = Math.floor(orcamentoMs * FATIA_MAXIMA);
 
   const disponiveis = ordemDosProvedores().filter(
     (p) =>
       p.configurado() &&
       (p.cabe?.(prompt) ?? true) &&
       (!provedorForcado() || p.nome === provedorForcado()),
+  );
+
+  const tetoPorProvedor = Math.floor(
+    orcamentoMs * (disponiveis.length === 1 ? FATIA_MOTOR_UNICO : FATIA_MAXIMA),
   );
   /*
    * Avisar quando um provedor com chave fica de fora por não caber. Sem
@@ -247,17 +269,22 @@ function provedorForcado(): string | null {
 }
 
 /**
- * Nomes dos provedores com chave, na ordem de tentativa. Usado em diagnóstico.
+ * Quem vai de fato atender, na ordem de tentativa. Usado em diagnóstico.
  *
- * `prompt` é opcional de propósito: sem ele a resposta é "quem tem chave",
- * que é o que a tela de configuração quer mostrar. COM ele, a resposta é
- * "quem pode atender esta mensagem" — e as duas divergem desde que o
- * prompt passou do teto de tokens da Groq.
+ * Sai de `ordemDosProvedores`, e não da lista completa, por um motivo
+ * prático: com motor único a resposta é `["openai"]` mesmo havendo quatro
+ * chaves configuradas na Vercel. A tela precisa mostrar QUEM RESPONDE, não
+ * quem tem chave — senão promete uma cascata que não existe mais, e o
+ * corretor procura defeito no provedor errado.
+ *
+ * `prompt` é opcional de propósito: sem ele a resposta é a fila do motor;
+ * COM ele, é "quem pode atender ESTA mensagem" — as duas divergem desde que
+ * o prompt do agente passou do teto de tokens da Groq.
  */
 export function provedoresDisponiveis(prompt?: string): string[] {
-  return PROVEDORES.filter(
-    (p) => p.configurado() && (prompt === undefined || (p.cabe?.(prompt) ?? true)),
-  ).map((p) => p.nome);
+  return ordemDosProvedores()
+    .filter((p) => p.configurado() && (prompt === undefined || (p.cabe?.(prompt) ?? true)))
+    .map((p) => p.nome);
 }
 
 export function algumProvedorConfigurado(): boolean {
