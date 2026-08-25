@@ -23,7 +23,20 @@ export type ResultadoEnvio = {
   /** Preenchido só quando `enviado` é false — o que impediu o envio. */
   motivo?: "provedor_nao_configurado" | "erro_provedor" | "dados_invalidos";
   detalhe?: string;
+  /**
+   * Id da mensagem no provedor (`key.id` da resposta da Evolution), quando
+   * ele veio. É o que permite casar o ack de entrega/leitura
+   * (MESSAGES_UPDATE) com a linha gravada — a base dos ✓✓ do Live Chat.
+   */
+  messageId?: string;
 };
+
+/** `key.id` do corpo de resposta da Evolution, se o formato for o esperado. */
+function messageIdDaResposta(corpo: unknown): string | undefined {
+  if (typeof corpo !== "object" || corpo === null) return undefined;
+  const key = (corpo as { key?: { id?: unknown } }).key;
+  return typeof key?.id === "string" && key.id ? key.id : undefined;
+}
 
 /** `null` quando o provedor não está configurado — o chamador decide o que fazer. */
 function configDoProvedor(): { baseUrl: string; apiKey: string } | null {
@@ -73,7 +86,7 @@ async function garantirInstancia(
                 url: urlWebhook,
                 byEvents: false,
                 headers: segredo ? { "x-webhook-secret": segredo } : undefined,
-                events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
+                events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE"],
               },
             }
           : {}),
@@ -81,6 +94,40 @@ async function garantirInstancia(
     });
   } catch {
     // Falha aqui não impede tentar o connect — o erro real aparece lá.
+  }
+}
+
+/**
+ * Reconfigura o webhook de uma instância que JÁ existe no provedor.
+ *
+ * O `instance/create` só vale na criação — para a instância pareada em
+ * produção, acrescentar um evento novo (caso do MESSAGES_UPDATE, que traz
+ * os ✓✓ de entrega/leitura) exige o `webhook/set`. Idempotente e barato;
+ * falha em silêncio de propósito: webhook sem o evento novo degrada para
+ * "sem tick", nunca para erro na tela.
+ */
+export async function garantirEventosWebhook(instanceName: string): Promise<void> {
+  const config = configDoProvedor();
+  const urlWebhook = process.env.WHATSAPP_WEBHOOK_URL;
+  const segredo = process.env.WHATSAPP_WEBHOOK_SECRET;
+  if (!config || !urlWebhook || !instanceName) return;
+
+  try {
+    await fetch(`${config.baseUrl}/webhook/set/${encodeURIComponent(instanceName)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: config.apiKey },
+      body: JSON.stringify({
+        webhook: {
+          enabled: true,
+          url: urlWebhook,
+          byEvents: false,
+          headers: segredo ? { "x-webhook-secret": segredo } : undefined,
+          events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE"],
+        },
+      }),
+    });
+  } catch {
+    // Sem drama: o pior caso é a tela seguir sem ticks até a próxima visita.
   }
 }
 
@@ -447,7 +494,7 @@ export async function enviarMidiaWhatsapp(params: {
       };
     }
 
-    return { enviado: true };
+    return { enviado: true, messageId: messageIdDaResposta(await res.json().catch(() => null)) };
   } catch (err) {
     return {
       enviado: false,
@@ -503,7 +550,7 @@ export async function enviarMensagemWhatsapp(params: {
       };
     }
 
-    return { enviado: true };
+    return { enviado: true, messageId: messageIdDaResposta(await res.json().catch(() => null)) };
   } catch (err) {
     return {
       enviado: false,

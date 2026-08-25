@@ -76,13 +76,18 @@ function midiasDoTipo(imovel: Empreendimento, tipo: PedidoMidia["tipo"]) {
  * imagens a cada duas ou três mensagens, e a conversa parava de andar. Uma
  * regra de prompt pedindo "não repita" é probabilística; a lista do que já
  * saiu é um fato, e o fato ganha.
+ *
+ * Nota do CORRETOR conta também: desde que o painel envia anexo
+ * (`enviarMidiaDoPainel`), a foto que ele mandou pelo Live Chat já chegou
+ * ao cliente — a IA reenviá-la seria o mesmo loop com outro remetente. Só
+ * a fala do CLIENTE fica de fora: URL citada por ele não é anexo nosso.
  */
 export function midiasJaEnviadas(
   historico: { remetente: string; texto: string }[] | undefined,
 ): Set<string> {
   const urls = new Set<string>();
   for (const m of historico ?? []) {
-    if (m.remetente !== "bot") continue;
+    if (m.remetente !== "bot" && m.remetente !== "corretor") continue;
     for (const linha of m.texto.split("\n")) {
       const marcador = linha.indexOf("📎");
       if (marcador === -1) continue;

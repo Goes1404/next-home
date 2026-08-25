@@ -35,11 +35,18 @@ describe("midiasJaEnviadas", () => {
     expect(enviadas).toEqual(new Set(["https://cdn.exemplo/a.jpg", "https://cdn.exemplo/b.jpg"]));
   });
 
-  it("só conta o que o BOT mandou — anexo do cliente não é envio nosso", () => {
+  it("anexo do cliente não é envio nosso", () => {
     const enviadas = midiasJaEnviadas([
       { remetente: "cliente", texto: "📎 foto: https://cdn.exemplo/z.jpg" },
     ]);
     expect(enviadas.size).toBe(0);
+  });
+
+  it("anexo do CORRETOR conta — a IA não reenvia o que ele mandou pelo painel", () => {
+    const enviadas = midiasJaEnviadas([
+      { remetente: "corretor", texto: "📎 Sala do decorado: https://cdn.exemplo/d.jpg" },
+    ]);
+    expect(enviadas).toEqual(new Set(["https://cdn.exemplo/d.jpg"]));
   });
 
   it("conversa sem anexo nenhum devolve conjunto vazio", () => {

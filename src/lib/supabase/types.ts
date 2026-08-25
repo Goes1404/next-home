@@ -1222,11 +1222,13 @@ export type Database = {
           bot_ativo: boolean
           cliente_conhecido: boolean
           corretor_id: string
+          corretor_leu_ate: string | null
           created_at: string
           e_teste: boolean
           id: string
           lead_id: string | null
           liberado_por_palavra_chave: boolean
+          nao_lidas: number
           nome_cliente: string | null
           origem: "organica" | "campanha"
           pausado_humano_ate: string | null
@@ -1240,11 +1242,13 @@ export type Database = {
           bot_ativo?: boolean
           cliente_conhecido?: boolean
           corretor_id: string
+          corretor_leu_ate?: string | null
           created_at?: string
           e_teste?: boolean
           id?: string
           lead_id?: string | null
           liberado_por_palavra_chave?: boolean
+          nao_lidas?: number
           nome_cliente?: string | null
           origem?: "organica" | "campanha"
           pausado_humano_ate?: string | null
@@ -1258,11 +1262,13 @@ export type Database = {
           bot_ativo?: boolean
           cliente_conhecido?: boolean
           corretor_id?: string
+          corretor_leu_ate?: string | null
           created_at?: string
           e_teste?: boolean
           id?: string
           lead_id?: string | null
           liberado_por_palavra_chave?: boolean
+          nao_lidas?: number
           nome_cliente?: string | null
           origem?: "organica" | "campanha"
           pausado_humano_ate?: string | null
@@ -1370,6 +1376,7 @@ export type Database = {
           midia_url: string | null
           provider_message_id: string | null
           remetente: "cliente" | "bot" | "corretor"
+          status_entrega: "enviada" | "entregue" | "lida" | null
           tipo: "texto" | "audio" | "imagem" | "documento"
         }
         Insert: {
@@ -1381,6 +1388,7 @@ export type Database = {
           midia_url?: string | null
           provider_message_id?: string | null
           remetente: "cliente" | "bot" | "corretor"
+          status_entrega?: "enviada" | "entregue" | "lida" | null
           tipo?: "texto" | "audio" | "imagem" | "documento"
         }
         Update: {
@@ -1392,6 +1400,7 @@ export type Database = {
           midia_url?: string | null
           provider_message_id?: string | null
           remetente?: "cliente" | "bot" | "corretor"
+          status_entrega?: "enviada" | "entregue" | "lida" | null
           tipo?: "texto" | "audio" | "imagem" | "documento"
         }
         Relationships: [
