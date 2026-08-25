@@ -10,6 +10,7 @@ import { baixarArquivo, listarPasta, parsearLinkDrive, type ArquivoDrive } from 
 import { montarRascunhoDePdf, type RascunhoCadastro } from "@/lib/imoveis/rascunhoDePdf";
 import { lerPlanta } from "@/lib/imoveis/lerPlanta";
 import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
+import { limparTextoDeApresentacao } from "@/lib/imoveis/textoDoDeck";
 import type { Database } from "@/lib/supabase/types";
 
 type AtualizacaoEmpreendimento = Database["public"]["Tables"]["empreendimentos"]["Update"];
@@ -249,7 +250,7 @@ export async function gerarTipologiaDaPlanta(entrada: {
   const imagem = extrairImagensDePdf(pdf).imagens[entrada.indice];
   if (!imagem) return { ok: false, erro: "não reencontrei a planta no arquivo" };
 
-  const leitura = await lerPlanta(imagem.bytes, imagem.mime, extrairTextoDePdf(pdf));
+  const leitura = await lerPlanta(imagem.bytes, imagem.mime, limparTextoDeApresentacao(extrairTextoDePdf(pdf)));
   if (!leitura.ok) {
     return {
       ok: false,

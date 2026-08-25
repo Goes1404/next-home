@@ -1,4 +1,5 @@
 import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
+import { limparTextoDeApresentacao } from "./textoDoDeck";
 import { STATUS_LABEL, type StatusObra } from "@/lib/types";
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
 
@@ -165,7 +166,7 @@ export type ResultadoRascunho =
   | { ok: false; motivo: "sem_texto" | "ia_indisponivel" };
 
 export async function montarRascunhoDePdf(pdf: Buffer): Promise<ResultadoRascunho> {
-  const conteudo = extrairTextoDePdf(pdf);
+  const conteudo = limparTextoDeApresentacao(extrairTextoDePdf(pdf));
 
   // Sem texto embutido o deck é imagem pura (escaneado ou feito no Canva).
   // Não vale mandar para a IA: ela receberia uma string vazia e inventaria
