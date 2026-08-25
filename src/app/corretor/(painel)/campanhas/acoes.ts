@@ -25,7 +25,7 @@ import { saldoDiario, dentroDaJanela } from "@/lib/whatsapp/antiBan";
  * uma a cada 35-75s, sem ninguém clicar em nada.
  */
 
-export type FiltroLeadsCampanha = "parados_15d" | "novos_sem_contato" | "todos";
+export type FiltroLeadsCampanha = "parados_15d" | "novos_sem_contato" | "todos" | "selecionados";
 
 const DIAS_PARADO = 15;
 
@@ -39,6 +39,8 @@ function elegivel(lead: Lead, filtro: FiltroLeadsCampanha): boolean {
     const dias = (Date.now() - new Date(lead.etapaAlteradaEm).getTime()) / 86_400_000;
     return dias >= DIAS_PARADO;
   }
+  // "todos" e "selecionados" usam só as regras de base: quem recorta a
+  // seleção manual é a lista de ids, mais abaixo.
   return true;
 }
 
@@ -52,16 +54,36 @@ export async function listarLeadsElegiveis(filtro: FiltroLeadsCampanha): Promise
     .map((lead) => ({ id: lead.id, nome: lead.nome, telefone: lead.telefone as string }));
 }
 
+/**
+ * Recorta os elegíveis pela seleção manual do corretor.
+ *
+ * A INTERSEÇÃO é a segurança: os ids chegam pela rede (Server Action é
+ * endpoint HTTP) e só valem se apontarem para um lead que a RLS já entregou
+ * como do corretor E que passa nas regras de base (tem telefone, não está
+ * fechado/perdido). Id alheio ou inventado simplesmente não sobrevive ao
+ * filtro — nunca vira mensagem.
+ */
+function recortarPorSelecao(elegiveis: LeadElegivel[], leadIds: string[] | undefined): LeadElegivel[] {
+  const escolhidos = new Set(leadIds ?? []);
+  return elegiveis.filter((lead) => escolhidos.has(lead.id));
+}
+
 export async function gerarPreviewCampanha(params: {
   filtro: FiltroLeadsCampanha;
   empreendimentoNome: string;
   mensagemBase: string;
+  /** Só para `filtro: "selecionados"` — os leads escolhidos um a um. */
+  leadIds?: string[];
 }): Promise<{ mensagens: string[] } | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
   if (!params.mensagemBase.trim()) return { erro: "Escreva uma mensagem base primeiro." };
 
-  const elegiveis = await listarLeadsElegiveis(params.filtro);
+  let elegiveis = await listarLeadsElegiveis(params.filtro);
+  if (params.filtro === "selecionados") {
+    elegiveis = recortarPorSelecao(elegiveis, params.leadIds);
+    if (elegiveis.length === 0) return { erro: "Escolha ao menos um lead primeiro." };
+  }
   if (elegiveis.length === 0) {
     return { erro: "Nenhum lead elegível para este filtro no momento." };
   }
@@ -86,6 +108,8 @@ export async function criarCampanha(params: {
   empreendimentoNome: string;
   filtro: FiltroLeadsCampanha;
   mensagemBase: string;
+  /** Só para `filtro: "selecionados"` — os leads escolhidos um a um. */
+  leadIds?: string[];
 }): Promise<ResultadoCriarCampanha> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
@@ -100,7 +124,11 @@ export async function criarCampanha(params: {
     };
   }
 
-  const elegiveis = await listarLeadsElegiveis(params.filtro);
+  let elegiveis = await listarLeadsElegiveis(params.filtro);
+  if (params.filtro === "selecionados") {
+    elegiveis = recortarPorSelecao(elegiveis, params.leadIds);
+    if (elegiveis.length === 0) return { erro: "Escolha ao menos um lead primeiro." };
+  }
   if (elegiveis.length === 0) {
     return { erro: "Nenhum lead elegível para este filtro no momento." };
   }
