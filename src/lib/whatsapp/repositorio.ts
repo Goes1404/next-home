@@ -602,6 +602,26 @@ export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promi
   return !error;
 }
 
+/**
+ * A primeira resposta do bot É o primeiro contato — a etapa acompanha.
+ *
+ * Deterministico por construção: nenhum julgamento de IA decide isso, é um
+ * FATO (uma resposta saiu). O `eq("etapa", "novo")` no update é a regra
+ * inteira: só avança quem ainda está em "novo", nunca volta ninguém, e
+ * chamar duas vezes não faz nada na segunda — o termostato do funil. As
+ * etapas seguintes continuam humanas (fora a visita confirmada, que já é
+ * automática): o dossiê da IA oscila entre leituras, e etapa que anda e
+ * volta sozinha no quadro destrói a confiança do corretor no funil.
+ */
+export async function avancarLeadParaPrimeiroContato(leadId: string): Promise<void> {
+  const supabase = createServiceClient();
+  await supabase
+    .from("leads")
+    .update({ etapa: "primeiro_contato", etapa_alterada_em: new Date().toISOString() })
+    .eq("id", leadId)
+    .eq("etapa", "novo");
+}
+
 // ---------------------------------------------------------------------------
 // Follow-ups proativos (migration 0028)
 // ---------------------------------------------------------------------------
