@@ -67,3 +67,30 @@ describe("interpretarRascunho", () => {
     expect(interpretarRascunho([1, 2, 3])).toEqual({});
   });
 });
+
+describe("números do empreendimento vs. números da construtora", () => {
+  it("recusa contagem grande demais para UM empreendimento", () => {
+    // Caso real: o book do Dom Parque abre com o portfólio da construtora
+    // ("+15 anos, 145 torres, 27 mil lares") e a IA gravou 145 torres num
+    // prédio que tem UMA. O cadastro errado vira afirmação da IA ao cliente.
+    const rascunho = interpretarRascunho({
+      nome: "Dom Parque",
+      totalTorres: 145,
+      totalAndares: 44,
+      totalUnidades: 720,
+    });
+
+    expect(rascunho.totalTorres).toBeUndefined();
+    // O que é plausível continua passando: 44 andares e 720 unidades são
+    // exatamente o que a ficha técnica desse mesmo book informa.
+    expect(rascunho.totalAndares).toBe(44);
+    expect(rascunho.totalUnidades).toBe(720);
+  });
+
+  it("recusa andares e unidades fora da escala de um prédio", () => {
+    const rascunho = interpretarRascunho({ totalAndares: 300, totalUnidades: 27000 });
+
+    expect(rascunho.totalAndares).toBeUndefined();
+    expect(rascunho.totalUnidades).toBeUndefined();
+  });
+});

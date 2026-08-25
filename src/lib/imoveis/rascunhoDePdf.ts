@@ -63,10 +63,33 @@ function texto(valor: unknown): string | undefined {
   return typeof valor === "string" && valor.trim().length > 0 ? valor.trim() : undefined;
 }
 
+/**
+ * Tetos de plausibilidade para UM empreendimento.
+ *
+ * Book de construtora abre com o portfólio dela — o do Dom Parque estampa
+ * "+15 anos, 145 torres, 27 mil lares" na página 3 — e a IA gravou 145
+ * torres num prédio que tem UMA. O cadastro errado não fica no cadastro:
+ * vira ficha no prompt e a IA afirma ao cliente.
+ *
+ * O prompt já manda não confundir, mas instrução de prompt é probabilística
+ * e falha justo no caso que importa. Estes tetos valem sempre. Quando o
+ * número real passar do teto (não existe prédio assim), o corretor digita à
+ * mão — recusar é melhor que gravar o número da construtora.
+ */
+const TETO_PLAUSIVEL = {
+  totalTorres: 12,
+  totalAndares: 60,
+  totalUnidades: 3000,
+} as const;
+
 function inteiro(valor: unknown): number | undefined {
   if (typeof valor !== "number" && typeof valor !== "string") return undefined;
   const n = Number(valor);
   return Number.isFinite(n) && n > 0 ? Math.round(n) : undefined;
+}
+
+function dentroDoPlausivel(valor: number | undefined, teto: number): number | undefined {
+  return valor !== undefined && valor <= teto ? valor : undefined;
 }
 
 /** Separada de `montarRascunhoDePdf` para ser testável sem chamar modelo. */
@@ -107,9 +130,9 @@ export function interpretarRascunho(bruto: unknown): RascunhoCadastro {
     endereco: texto(cru.endereco),
     status: STATUS_VALIDOS.includes(status as StatusObra) ? (status as StatusObra) : undefined,
     entregaPrevista: texto(cru.entregaPrevista),
-    totalTorres: inteiro(cru.totalTorres),
-    totalAndares: inteiro(cru.totalAndares),
-    totalUnidades: inteiro(cru.totalUnidades),
+    totalTorres: dentroDoPlausivel(inteiro(cru.totalTorres), TETO_PLAUSIVEL.totalTorres),
+    totalAndares: dentroDoPlausivel(inteiro(cru.totalAndares), TETO_PLAUSIVEL.totalAndares),
+    totalUnidades: dentroDoPlausivel(inteiro(cru.totalUnidades), TETO_PLAUSIVEL.totalUnidades),
     tagline: texto(cru.tagline),
     descricao: texto(cru.descricao),
     tipologias: tipologias && tipologias.length > 0 ? tipologias : undefined,
@@ -124,6 +147,9 @@ Regras:
 - Responda SÓ com JSON, sem cerca de código e sem comentário.
 - NUNCA inclua preço, valor, condição de pagamento ou entrada. Se o texto tiver, ignore.
 - Campo que o texto não deixar claro: OMITA. Não invente e não chute.
+- Número do PORTFÓLIO da construtora ("145 torres entregues", "27 mil lares",
+  "15 anos de mercado") NÃO é do empreendimento. Só conte torres, andares e
+  unidades DESTE prédio, e só se a ficha técnica disser.
 - "status" só pode ser um destes: ${STATUS_VALIDOS.join(", ")}.
 - "entregaPrevista" no formato AAAA-MM.
 
