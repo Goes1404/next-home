@@ -1,13 +1,9 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
-import { gerarRespostaIA, PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
-import { catalogoParaAtendimento } from "@/lib/whatsapp/focoDaConversa";
-import { separarRajada } from "@/lib/whatsapp/rajada";
-import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
+import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
+import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
-import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
-import { dividirEmMensagens } from "@/lib/whatsapp/chunking";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
 import { detectarEvolucao, podeAvisarAgora } from "@/lib/whatsapp/evolucaoConversa";
 import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
@@ -410,75 +406,31 @@ export async function POST(req: NextRequest) {
     ]);
 
     /*
-     * A VEZ DO CLIENTE são todos os balões que ele mandou desde a última
-     * resposta — não só o que acionou esta invocação.
-     *
-     * O buffer de rajada já agrupava as invocações; o que faltava era
-     * agrupar o CONTEÚDO. Quem escreve "qual a metragem do de 3 dorm?" e
-     * emenda "e tem vaga?" recebia resposta só da vaga: a primeira pergunta
-     * virava mais uma linha de histórico, indistinguível de algo dito dez
-     * minutos antes. `historico` já contém esses balões (foram gravados
-     * antes desta consulta), então separar aqui não custa uma ida ao banco.
+     * UM turno de atendimento, no caminho compartilhado
+     * (`turnoDeAtendimento.ts`): separa a rajada, recupera few-shot,
+     * ranqueia e encolhe o catálogo pelo foco, gera, saneia e quebra em
+     * balões. Playground, follow-up e eval chamam a MESMA função — foi
+     * duas vezes que um caminho paralelo divergiu e o teste passou a medir
+     * um agente que não existe.
      */
-    const { historico: historicoAnterior, pendentes } = separarRajada(historico);
-    const vezDoCliente = pendentes.length > 0 ? pendentes : [text];
-    // Foco, ranking e few-shot leem a vez inteira: o imóvel citado pode
-    // estar no primeiro balão e a pergunta no último.
-    const textoDaVez = vezDoCliente.join(" | ");
-
-    /*
-     * A recuperação dos exemplos vem DEPOIS porque agora depende do assunto
-     * da conversa: ela casa o imóvel citado aqui com conversas anteriores
-     * sobre o mesmo imóvel. Antes bastava o id do corretor, e o resultado
-     * era "as 3 mais recentes que converteram" — recência sobre um corpus
-     * que, na prática, tinha uma conversa elegível.
-     */
-    const exemplosFewShot = await buscarExemplosFewShot({
-      corretorId: instancia.corretorId,
-      mensagemAtual: textoDaVez,
-      historico: historicoAnterior,
-      catalogo,
-      conversaAtualId: conversa.id,
-    });
-
-    /*
-     * Os empreendimentos que a IA vai enxergar. Duas camadas:
-     *
-     * 1. RELEVÂNCIA — os 10 mais relevantes para esta conversa, não os 10
-     *    primeiros do banco (que deixavam o resto do catálogo invisível).
-     * 2. FOCO — se o cliente já escolheu um imóvel, a lista encolhe para
-     *    ele mais duas reservas. Enquanto ela via as dez fichas em toda
-     *    mensagem, respondia "manda a planta do Terra Alta" com uma lista
-     *    de outros três; o que a IA não vê, ela não oferece.
-     */
-    const { catalogo: catalogoRanqueado, foco } = catalogoParaAtendimento({
-      catalogo,
-      mensagemAtual: textoDaVez,
-      historico: historicoAnterior,
-      dossie: dossieAnterior,
-    });
-
-    const respostaBruta = await gerarRespostaIA(
-      {
+    const turno = await executarTurnoDeAtendimento({
+      identidade: {
         nomeCorretor: instancia.nomeCorretor,
         slugCorretor: instancia.slugCorretor ?? undefined,
         creciCorretor: instancia.creciCorretor,
         telefoneCorretor: instancia.whatsappCorretor,
         nomeAssistente: instancia.nomeAssistente,
         tomVoz: instancia.tomVoz,
-        catalogo: catalogoRanqueado,
-        historicoMensagens: historicoAnterior,
-        exemplosFewShot,
-        dossie: dossieAnterior,
-        foco,
       },
-      vezDoCliente,
-    );
+      catalogo,
+      historico,
+      dossie: dossieAnterior,
+      fewShot: { corretorId: instancia.corretorId, conversaAtualId: conversa.id },
+    });
 
-    // Trilho do padrão "trilho + IA": nenhum anexo ou recomendação sai sem
-    // existir no catálogo — instrução no prompt não é garantia.
-    const saneada = sanearRespostaIA(respostaBruta, catalogo, historico, instancia.slugCorretor);
-    const respostaIA = saneada.resposta;
+    const respostaIA = turno.resposta;
+    const anexos = turno.anexos;
+    const baloes = turno.baloes;
 
     // O buffer pode ter segurado a resposta por vários segundos; se o
     // cliente mandou mais um balão nesse meio-tempo, quem responde é a
@@ -499,18 +451,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Já resolvidos contra o catálogo pelo guardrail: a IA pediu por slug
-    // e tipo, e o código buscou as URLs reais (ver resolverMidia.ts).
-    const anexos = saneada.anexos;
-
-    // Quebra a resposta em balões (ver chunking.ts): longa vira duas
-    // médias, média vira duas pequenas, pequena fica como está. Cada balão
-    // depois do primeiro sai precedido de "digitando..." e um intervalo
-    // curto, para simular o ritmo de alguém escrevendo — não o despejo
-    // instantâneo característico de robô.
-    const partes = dividirEmMensagens(respostaIA.textoResposta);
-    const baloes = partes.length > 0 ? partes : [respostaIA.textoResposta];
-
+    /*
+     * Os anexos já vêm resolvidos contra o catálogo (a IA pede por slug e
+     * tipo, o código busca a URL — ver resolverMidia.ts), e o texto já vem
+     * quebrado em balões: longa vira duas médias, média vira duas
+     * pequenas. Cada balão depois do primeiro sai precedido de
+     * "digitando..." com um intervalo curto, para ter o ritmo de alguém
+     * escrevendo em vez do despejo instantâneo característico de robô.
+     */
     let todosEnviados = true;
     let primeiroMotivo: string | undefined;
     let primeiroDetalhe: string | undefined;
@@ -655,7 +603,7 @@ export async function POST(req: NextRequest) {
      * sem marcar `transferirHumano` — ou seja, prometeu uma ligação que
      * ninguém ficou sabendo que precisava acontecer.
      */
-    const pediuLigacao = vezDoCliente.some(clientePediuLigacao);
+    const pediuLigacao = turno.vezDoCliente.some(clientePediuLigacao);
     const exigeAcaoAgora = visitaConfirmada || respostaIA.transferirHumano || pediuLigacao;
     const deveAlertar =
       exigeAcaoAgora ||
@@ -732,7 +680,7 @@ export async function POST(req: NextRequest) {
       sugeriuVisita: respostaIA.sugerirVisita,
       transferiuHumano: respostaIA.transferirHumano,
       anexosEnviados: anexos.length,
-      anexosBloqueados: saneada.anexosBloqueados + saneada.slugsBloqueados,
+      anexosBloqueados: turno.bloqueios,
       temperaturaScore: dossie.temperaturaScore,
       tokensEntrada: respostaIA.meta.tokensEntrada,
       tokensSaida: respostaIA.meta.tokensSaida,

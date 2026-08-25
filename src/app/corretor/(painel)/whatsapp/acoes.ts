@@ -4,11 +4,9 @@ import { revalidatePath } from "next/cache";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
-import { gerarRespostaIA, PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
+import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import type { MotivoFalhaLlm } from "@/lib/whatsapp/llmTipos";
-import { catalogoParaAtendimento } from "@/lib/whatsapp/focoDaConversa";
-import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
-import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
+import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
 import { desconectarInstancia, obterQrCodeInstancia, provedorConfigurado, type DesfechoPareamento } from "@/lib/whatsapp/provider";
@@ -69,46 +67,27 @@ export async function testarAgenteIA(
   }
 
   /*
-   * O playground monta EXATAMENTE o contexto de produção — few-shot,
-   * catálogo ranqueado e guardrails inclusos. A versão anterior pulava
-   * tudo isso e testava um prompt DIFERENTE do que atendia o cliente: o
-   * corretor aprovava um comportamento no teste e recebia outro na rua.
+   * Playground = produção, e agora por CONSTRUÇÃO e não por disciplina: é
+   * a mesma função que o webhook chama (`turnoDeAtendimento.ts`). A versão
+   * anterior remontava o preparo aqui, e foi assim que ela já divergiu uma
+   * vez — pulava few-shot e ranking, então o corretor aprovava um
+   * comportamento no teste e recebia outro na rua.
    */
-  // Mesmo caminho do webhook: o playground precisa recuperar os mesmos
-  // exemplos, senão o corretor testa um agente que não existe na rua.
-  const exemplosFewShot = await buscarExemplosFewShot({
-    corretorId: corretor.id,
-    mensagemAtual: mensagem,
-    historico,
-    catalogo,
-  });
-
-  // Playground = produção: mesmo foco, mesmo catálogo encolhido. Se
-  // divergirem, o teste do corretor deixa de valer como teste.
-  const { catalogo: catalogoDoPrompt, foco } = catalogoParaAtendimento({
-    catalogo,
-    mensagemAtual: mensagem,
-    historico,
-  });
-
-  const respostaBruta = await gerarRespostaIA(
-    {
+  const turno = await executarTurnoDeAtendimento({
+    identidade: {
       nomeCorretor: corretor.nome,
       slugCorretor: corretor.slug ?? undefined,
       creciCorretor: corretor.creci,
       telefoneCorretor: corretor.whatsapp,
       nomeAssistente: instancia?.nome_assistente ?? "Sofia",
       tomVoz: instancia?.tom_voz ?? "consultivo_alto_padrao",
-      catalogo: catalogoDoPrompt,
-      historicoMensagens: historico,
-      exemplosFewShot,
-      foco,
     },
-    mensagem,
-  );
+    catalogo,
+    historico: [...historico, { remetente: "cliente" as const, texto: mensagem }],
+    fewShot: { corretorId: corretor.id },
+  });
 
-  const saneada = sanearRespostaIA(respostaBruta, catalogo, historico, corretor?.slug);
-  const resposta = saneada.resposta;
+  const resposta = turno.resposta;
 
   // Playground também entra na telemetria — com origem própria, para as
   // métricas de produção nunca se misturarem com testes do corretor.
@@ -121,7 +100,7 @@ export async function testarAgenteIA(
     acao: "respondida",
     sugeriuVisita: resposta.sugerirVisita,
     transferiuHumano: resposta.transferirHumano,
-    anexosBloqueados: saneada.anexosBloqueados + saneada.slugsBloqueados,
+    anexosBloqueados: turno.bloqueios,
     tokensEntrada: resposta.meta.tokensEntrada,
     tokensSaida: resposta.meta.tokensSaida,
     modelo: resposta.meta.modelo,
@@ -132,7 +111,7 @@ export async function testarAgenteIA(
 
   return {
     texto: resposta.textoResposta,
-    anexos: saneada.anexos,
+    anexos: turno.anexos,
     sugerirVisita: resposta.sugerirVisita,
     transferirHumano: resposta.transferirHumano,
     score: dossie.temperaturaScore,

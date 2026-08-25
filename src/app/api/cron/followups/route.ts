@@ -2,11 +2,9 @@ import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { createServiceClient } from "@/lib/supabase/service";
-import { gerarRespostaIA, PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
+import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { dentroDaJanela } from "@/lib/whatsapp/antiBan";
-import { catalogoParaAtendimento } from "@/lib/whatsapp/focoDaConversa";
-import { dividirEmMensagens } from "@/lib/whatsapp/chunking";
-import { sanearRespostaIA } from "@/lib/whatsapp/guardrails";
+import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { decidirPorModo } from "@/lib/whatsapp/modoBot";
 import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
 import {
@@ -202,39 +200,37 @@ async function processarFollowup(
   ]);
 
   /*
-   * O follow-up fala do imóvel que a conversa já escolheu — é o assunto
-   * que o cliente deixou em aberto. Sem o foco, a retomada virava uma nova
-   * rodada de sugestões, que é o oposto de "retome de onde parou".
+   * O MESMO turno do webhook (`turnoDeAtendimento.ts`), com uma diferença
+   * declarada: `vezDoCliente` vazio. Ninguém falou — é o silêncio que
+   * motiva a mensagem, e a instrução extra diz o que fazer com ele.
+   *
+   * O foco continua valendo: o follow-up fala do imóvel que a conversa já
+   * escolheu, que é o assunto deixado em aberto. Sem ele, a retomada virava
+   * uma rodada nova de sugestões, o oposto de "retome de onde parou".
    */
-  const { catalogo: catalogoDoPrompt, foco } = catalogoParaAtendimento({
-    catalogo,
-    mensagemAtual: "",
-    historico,
-    dossie,
-  });
-
-  const resposta = await gerarRespostaIA(
-    {
+  const turno = await executarTurnoDeAtendimento({
+    identidade: {
       nomeCorretor: corretor.nome,
       slugCorretor: corretor.slug ?? undefined,
       creciCorretor: corretor.creci,
       telefoneCorretor: corretor.whatsapp,
       nomeAssistente: instancia.nome_assistente,
       tomVoz: instancia.tom_voz,
-      catalogo: catalogoDoPrompt,
-      historicoMensagens: historico,
-      dossie,
-      foco,
-      instrucaoExtra:
-        "Este é um FOLLOW-UP: o cliente parou de responder. Retome a conversa em 1-2 frases curtas a partir do último assunto, com leveza — um lembrete gentil ou uma informação nova que agregue, NUNCA cobrança ou pressão. Não repita a última mensagem enviada.",
     },
-    "(o cliente não respondeu; escreva a mensagem de retomada)",
-  );
+    catalogo,
+    historico,
+    dossie,
+    vezDoCliente: [],
+    instrucaoExtra:
+      "Este é um FOLLOW-UP: o cliente parou de responder. Retome a conversa em 1-2 frases curtas a partir do último assunto, com leveza — um lembrete gentil ou uma informação nova que agregue, NUNCA cobrança ou pressão. Não repita a última mensagem enviada.",
+  });
 
+  const resposta = turno.resposta;
   if (resposta.meta.fallback) return descartar(supabase, item.id, "ia_indisponivel");
 
-  const saneada = sanearRespostaIA(resposta, catalogo, historico);
-  const balao = dividirEmMensagens(saneada.resposta.textoResposta)[0] ?? saneada.resposta.textoResposta;
+  // Follow-up é UM balão, sempre: quem não respondeu à última mensagem não
+  // precisa receber três.
+  const balao = turno.baloes[0] ?? resposta.textoResposta;
 
   const envio = await enviarMensagemWhatsapp({
     instanceName: instancia.instance_name,
@@ -265,7 +261,7 @@ async function processarFollowup(
     latenciaMs: resposta.meta.latenciaMs,
     acao: "respondida",
     anexosEnviados: 0,
-    anexosBloqueados: saneada.anexosBloqueados + saneada.slugsBloqueados,
+    anexosBloqueados: turno.bloqueios,
   });
 
   return "enviado";
