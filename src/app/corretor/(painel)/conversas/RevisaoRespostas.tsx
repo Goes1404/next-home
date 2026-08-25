@@ -20,6 +20,25 @@ export type ItemRevisao = {
   falaCliente: string | null;
   respostaBot: string;
   criadoEm: string;
+  /**
+   * O que o MUNDO disse sobre esta resposta — o cliente repetiu a pergunta,
+   * pediu para falar com gente, ou o corretor entrou corrigindo. Vazio na
+   * maioria: silêncio do mundo é o desfecho mais comum.
+   */
+  sinais?: string[];
+  /**
+   * O texto que o corretor digitou logo depois, quando ele entrou
+   * corrigindo. Não é só a nota — é a resposta certa.
+   */
+  correcaoDoCorretor?: string | null;
+};
+
+/** Como cada sinal se lê para quem abre a tela. */
+const FRASE_DO_SINAL: Record<string, string> = {
+  corretor_corrigiu: "você entrou corrigindo",
+  cliente_repetiu_a_pergunta: "o cliente teve de repetir a pergunta",
+  cliente_pediu_humano: "o cliente pediu para falar com gente",
+  cliente_sumiu: "o cliente não respondeu mais",
 };
 
 const dataHora = new Intl.DateTimeFormat("pt-BR", {
@@ -54,8 +73,8 @@ export function RevisaoRespostas({ itens }: { itens: ItemRevisao[] }) {
           : `${pendentes.length} respostas da IA sem revisão`}
       </h2>
       <p className="text-fluid-xs text-apoio mt-1">
-        Cada 👎 vira caso de teste do próximo ajuste da IA — é o que impede a mesma falha de se
-        repetir. Avalie aqui, sem precisar abrir cada conversa.
+        As que já têm sinal de problema vêm primeiro — o cliente repetiu a pergunta, pediu para
+        falar com gente, ou você entrou corrigindo. Cada 👎 vira caso de teste do próximo ajuste.
       </p>
 
       {erro && (
@@ -71,6 +90,12 @@ export function RevisaoRespostas({ itens }: { itens: ItemRevisao[] }) {
               {item.clienteNome} · {dataHora.format(new Date(item.criadoEm))}
             </p>
 
+            {item.sinais && item.sinais.length > 0 && (
+              <p className="text-fluid-xs text-alerta mt-2 font-medium">
+                ⚠ {item.sinais.map((s) => FRASE_DO_SINAL[s] ?? s).join(" · ")}
+              </p>
+            )}
+
             {item.falaCliente && (
               <p className="text-fluid-xs text-apoio mt-2 line-clamp-2">
                 Cliente: “{item.falaCliente}”
@@ -80,6 +105,12 @@ export function RevisaoRespostas({ itens }: { itens: ItemRevisao[] }) {
             <p className="text-fluid-sm text-corpo mt-2 line-clamp-4 whitespace-pre-line">
               {item.respostaBot}
             </p>
+
+            {item.correcaoDoCorretor && (
+              <p className="border-linha text-fluid-xs text-apoio mt-2 border-l-2 pl-3 line-clamp-3">
+                Você respondeu: “{item.correcaoDoCorretor}”
+              </p>
+            )}
 
             <div className="mt-3 flex items-center gap-2">
               <button

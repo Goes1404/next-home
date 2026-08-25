@@ -7,6 +7,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { ROTULO_MODO } from "@/lib/whatsapp/modoBot";
 import { createClient } from "@/lib/supabase/server";
 import type { ModoBotWhatsapp } from "@/lib/whatsapp/types";
+import { lerSinaisDoMundo, type LeituraDoMundo } from "@/lib/whatsapp/rotuloAutomatico";
 
 export const metadata: Metadata = { title: "Conversas do WhatsApp" };
 
@@ -86,39 +87,72 @@ export default async function ConversasPage() {
     const idsInteracao = semAvaliacao.map((i) => i.id);
     const conversaIds = [...new Set(semAvaliacao.map((i) => i.conversa_id as string))];
 
-    const [{ data: respostas }, { data: falasCliente }] = await Promise.all([
+    /*
+     * O histórico INTEIRO das conversas envolvidas, não só a fala do
+     * cliente: é dele que saem os sinais do mundo (`rotuloAutomatico.ts`).
+     * O corretor já rotula toda vez que assume o teclado depois de uma
+     * resposta — ele só não clica.
+     */
+    const [{ data: respostas }, { data: mensagens }] = await Promise.all([
       supabase
         .from("whatsapp_mensagens")
         .select("conversa_id, conteudo, created_at, interacao_id")
         .in("interacao_id", idsInteracao),
       supabase
         .from("whatsapp_mensagens")
-        .select("conversa_id, conteudo, created_at")
+        .select("conversa_id, remetente, conteudo, created_at, interacao_id")
         .in("conversa_id", conversaIds)
-        .eq("remetente", "cliente")
-        .order("created_at", { ascending: false })
-        .limit(400),
+        .order("created_at", { ascending: true })
+        .limit(600),
     ]);
 
     const nomes = new Map(lista.map((c) => [c.id, c.nome || c.telefone]));
+
+    // Uma leitura por conversa; depois é só casar pelo id da interação.
+    const leituraPorInteracao = new Map<string, LeituraDoMundo>();
+    for (const conversaId of conversaIds) {
+      const historico = (mensagens ?? [])
+        .filter((m) => m.conversa_id === conversaId)
+        .map((m) => ({
+          remetente: m.remetente as "cliente" | "bot" | "corretor",
+          texto: m.conteudo,
+          interacaoId: m.interacao_id,
+        }));
+      for (const leitura of lerSinaisDoMundo(historico)) {
+        if (leitura.interacaoId) leituraPorInteracao.set(leitura.interacaoId, leitura);
+      }
+    }
 
     // Interação sem mensagem vinculada (anterior ao backfill que falhou a
     // janela) fica de fora: sem o texto não há o que julgar.
     itensRevisao = (respostas ?? [])
       .filter((r) => r.interacao_id !== null)
       .map((r) => {
-        const fala = (falasCliente ?? []).find(
-          (f) => f.conversa_id === r.conversa_id && f.created_at < r.created_at,
-        );
+        const fala = (mensagens ?? [])
+          .filter((m) => m.conversa_id === r.conversa_id && m.remetente === "cliente" && m.created_at < r.created_at)
+          .at(-1);
+        const leitura = leituraPorInteracao.get(r.interacao_id as string);
         return {
           interacaoId: r.interacao_id as string,
           clienteNome: nomes.get(r.conversa_id) ?? "Cliente",
           falaCliente: fala?.conteudo ?? null,
           respostaBot: r.conteudo,
           criadoEm: r.created_at,
+          sinais: leitura?.sinais.filter((s) => s !== "cliente_seguiu" && s !== "corretor_assumiu_para_fechar"),
+          correcaoDoCorretor: leitura?.correcaoDoCorretor ?? null,
         };
       })
-      .sort((a, b) => (a.criadoEm < b.criadoEm ? 1 : -1));
+      /*
+       * O que o mundo já apontou vem primeiro. Vinte respostas sem ordem
+       * nenhuma é uma lista; vinte com as três problemáticas no topo é uma
+       * fila de trabalho — e é a diferença entre colher rótulo e não colher
+       * (medido: zero rótulos desde a 0040).
+       */
+      .sort((a, b) => {
+        const peso = (i: typeof a) => (i.sinais && i.sinais.length > 0 ? 0 : 1);
+        if (peso(a) !== peso(b)) return peso(a) - peso(b);
+        return a.criadoEm < b.criadoEm ? 1 : -1;
+      });
   }
 
   return (
