@@ -115,7 +115,7 @@ export async function criarCampanha(params: {
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
 
   const titulo = params.titulo.trim();
-  if (!titulo) return { erro: "Dê um título para a campanha." };
+  if (!titulo) return { erro: "Dê um título para a lista de transmissão." };
   if (!params.mensagemBase.trim()) return { erro: "Escreva a mensagem base." };
 
   if (!provedorConfigurado()) {
@@ -148,7 +148,7 @@ export async function criarCampanha(params: {
     .select("id")
     .single();
 
-  if (erroCampanha || !campanha) return { erro: "Não foi possível criar a campanha agora." };
+  if (erroCampanha || !campanha) return { erro: "Não foi possível criar a lista de transmissão agora." };
 
   // Fila montada SEM chamar a IA: só interpolação de template e cálculo de
   // horários. A variação anti-ban por IA acontece no envio, um item por vez
@@ -273,7 +273,7 @@ export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
 
   if (!resultado.dentroDaJanela) {
     return {
-      erro: "Fora do horário comercial (9h às 20h59, de segunda a sábado) — campanhas não disparam agora. A fila segue esperando a próxima janela.",
+      erro: "Fora do horário comercial (9h às 20h59, de segunda a sábado) — as listas não disparam agora. A fila segue esperando a próxima janela.",
     };
   }
 

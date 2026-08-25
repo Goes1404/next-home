@@ -5,7 +5,7 @@ import { listarCampanhas, statusDisparo } from "./acoes";
 import { getEmpreendimentos } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Campanhas de WhatsApp & Reativação | Next Home",
+  title: "Listas de Transmissão de WhatsApp | Next Home",
 };
 
 /**
@@ -27,7 +27,7 @@ export default async function CampanhasPainelPage() {
       <div>
         <h1 className="text-fluid-2xl text-titulo font-bold">WhatsApp</h1>
         <p className="text-fluid-sm mt-1 text-apoio">
-          Crie a campanha e pronto: as mensagens saem sozinhas, uma a uma, com pausa entre elas.
+          Crie a lista de transmissão e pronto: as mensagens saem sozinhas, uma a uma, com pausa entre elas.
           Nada aqui depende de você ficar clicando.
         </p>
       </div>
