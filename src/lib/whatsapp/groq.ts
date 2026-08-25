@@ -96,13 +96,13 @@ const INSTRUCAO_JSON =
 
 export async function chamarGroqJson(
   prompt: string,
-  opts: { temperature?: number; timeoutMs: number },
+  opts: { temperature?: number; timeoutMs: number; modelo?: string; maxTokens?: number },
 ): Promise<ResultadoLlm> {
   const inicio = Date.now();
   const apiKey = chaveApi();
   if (!apiKey) return { ok: false, erro: "sem_api_key", latenciaMs: 0 };
 
-  const modelo = modeloGroq();
+  const modelo = opts.modelo || modeloGroq();
 
   try {
     const controller = new AbortController();
@@ -131,7 +131,14 @@ export async function chamarGroqJson(
          * virava HTTP 400 `json_validate_failed` — que parecia defeito do
          * modelo e era só truncamento nosso.
          */
-        max_tokens: 4096,
+        /*
+         * `maxTokens` menor importa além do custo: o limitador da Groq
+         * RESERVA o max_tokens pedido contra o teto de tokens/minuto. Com
+         * 4096 reservados, duas chamadas no mesmo minuto estouram os 8.000
+         * do tier gratuito — foi o que emudecia o cliente simulado do eval,
+         * cuja fala cabe folgada em 600.
+         */
+        max_tokens: opts.maxTokens ?? 4096,
         /*
          * Só a família `gpt-oss` aceita este parâmetro, e ele é o que
          * transforma a Groq no provedor mais rápido da cascata: em `low` a

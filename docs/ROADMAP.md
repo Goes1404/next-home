@@ -43,6 +43,43 @@ O que já está construído precisa ser PROVADO antes de escalar.
 **Portão H0→H1:** memória confirmada + linha de base registrada + decisão
 de privacidade tomada.
 
+## Trilha S — Simulador de produção (paralela a H0/H1, iniciada 25/08)
+
+Enquanto a IA não pode atender lead de verdade, a produção é SIMULADA em
+ritmo acelerado: clientes-modelo conversam com a Sofia real (mesma função do
+webhook, `executarTurnoDeAtendimento`), dezenas de conversas por dia, e cada
+rodada alimenta a versão seguinte do prompt. Duas regras inegociáveis:
+
+1. **Simulação testa; só conversa real ensina.** Nada sintético entra no
+   few-shot nem no golden dataset — IA aprendendo com texto que outra IA
+   escreveu é ela aprendendo consigo mesma.
+2. **Prompt novo nunca sobe sem comparar com a rodada anterior** — as
+   aberturas das personas são fixas justamente para as rodadas serem
+   comparáveis.
+
+- **S0 · Motor (feito).** Eval de conversa com personas, métricas
+  determinísticas puras, juiz por conversa, transcrições legíveis. Primeiro
+  defeito real pego em 25/08: o loop do "é parecido?" (mesma oferta 7
+  turnos seguidos).
+- **S1 · Fábrica (em curso).** Cliente simulado na Groq (chave criada
+  25/08 — sem gargalo de cota); 16 personas calibradas pela MEDIÇÃO das
+  conversas de teste reais (mediana 17 caracteres, 71% em rajada, 14% com
+  "?"); rodada completa vira rotina diária. *Portão: 16 conversas/dia
+  rodando sem intervenção.*
+- **S2 · Ciclo de melhoria.** Rodada → lista de defeitos → prompt vN+1 →
+  re-rodada → score não pode cair. Fila da v18: loop do "é parecido?",
+  `falou_valor`, `inventou_prazo_de_entrega`. *Portão: 2 rodadas completas
+  seguidas sem falha dura.*
+- **S3 · Simular o mundo, não só o texto.** Pedido de foto em sequência
+  (dedupe), agendamento com fuso, follow-up com relógio injetado (48h em
+  segundos), cliente que volta depois de dias, áudio. *Portão: cada caminho
+  do webhook coberto por ao menos uma persona.*
+- **S4 · Rótulo em massa.** `rotuloAutomatico` sobre toda conversa
+  simulada + painel de defeitos por versão de prompt — "top de linha" vira
+  número acompanhável, não opinião. *Portão: tendência de 3 versões medida.*
+- **S5 · Portão de abertura.** N noites seguidas limpas + rótulos humanos
+  concordando com o juiz → abre o piloto H1 com dado, não com fé.
+
 ## H1 — Piloto com leads reais (1–2 semanas)
 
 - **H1.1 Piloto controlado.** Cadastrar 5–10 leads reais no CRM (a regra da

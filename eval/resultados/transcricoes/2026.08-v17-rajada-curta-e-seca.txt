@@ -1,0 +1,52 @@
+rajada-curta-e-seca · teto_de_turnos · 8 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi
+[1] Sofia:   Olá! Como posso ajudar você a encontrar seu próximo imóvel de alto padrão?
+
+[2] Cliente: qual valor
+              tem foto
+              onde fica
+[2] Sofia:   Os valores variam conforme o imóvel e as condições, que conversamos na visita.
+Tenho fotos dos empreendimentos que trabalho, posso enviar para você.
+Você procura imóvel em alguma região específica?
+
+[3] Cliente: mais barato
+              fotos
+[3] Sofia:   Você busca algo mais acessível. Para qual região você gostaria de opções? Posso enviar fotos para facilitar.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[4] Cliente: tem 3 dorm
+              tem 2 banh
+[4] Sofia:   Tenho opções com 3 dormitórios e 2 banheiros, como o Eternity Alphaville e o Vitra Alphaville, ambos em Barueri.
+Quer que eu envie fotos para você dar uma olhada?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-02.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/fachada.jpg
+
+[5] Cliente: Quero ver Alphaville
+              Quero foto
+[5] Sofia:   Alphaville tem o Eternity, com 2 ou 3 dormitórios, e o Vitra, com 2 suítes e 107m².
+Posso enviar fotos para você conhecer melhor?
+Quer conhecer o decorado para sentir o padrão?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-2-big-56cbd63eb7afb430e0e17e65af38778d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-3-big-6ee6905482a046988bde5334ff1b4877.jpg
+
+[6] Cliente: qual Alphaville
+              tem 3 dorm
+              tem 2 banh
+[6] Sofia:   O Eternity Alphaville tem 3 dormitórios, 2 suítes e 3 banheiros, e o Vitra Alphaville tem 2 suítes e 2 banheiros.
+Quer que eu envie fotos do Eternity para você conhecer melhor?
+Quer conhecer o decorado para sentir o padrão e as condições?
+
+[7] Cliente: tem 3 dorm
+              tem 2 banh
+[7] Sofia:   O Eternity Alphaville tem 3 dormitórios, 2 suítes e 3 banheiros, perfeito para quem busca espaço e conforto.
+Posso enviar fotos para você conhecer melhor?
+Quer agendar uma visita para sentir o padrão e conversar sobre as condições?
+
+[8] Cliente: tem 3 dorm
+              tem 2 banh
+[8] Sofia:   O Eternity Alphaville tem 3 dormitórios, 2 suítes e 3 banheiros, ideal para quem busca conforto e privacidade.
+Posso enviar fotos para você conhecer melhor? Quer conhecer o decorado para sentir o padrão e as condições?

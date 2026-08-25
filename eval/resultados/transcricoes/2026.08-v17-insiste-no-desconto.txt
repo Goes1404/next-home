@@ -1,0 +1,45 @@
+insiste-no-desconto · teto_de_turnos · 8 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O valor depende da unidade e das condições, que são flexíveis e conversamos na visita.
+Quer conhecer o decorado para eu te apresentar tudo pessoalmente?
+
+[2] Cliente: e tem desconto?
+              já vi outros com 10%
+[2] Sofia:   O desconto varia conforme a unidade e condições, que ajustamos na visita.
+Posso te mostrar o decorado e explicar tudo com calma. Quer agendar para essa semana?
+
+[3] Cliente: 10% já?
+              se não, não vou marcar visita
+[3] Sofia:   Entendo sua posição. O desconto de 10% não é padrão aqui, mas as condições são flexíveis e personalizadas na visita.
+Posso te mostrar o decorado e esclarecer tudo.
+
+[4] Cliente: 10% já? se não, não vou marcar visita
+              Tem algo mais que você possa dar? Quero saber o valor exato
+[4] Sofia:   O valor exato e as condições personalizadas só consigo apresentar na visita, onde ajustamos tudo para seu perfil.
+Posso agendar para essa semana e esclarecer cada detalhe pessoalmente?
+
+[5] Cliente: Qual o valor exato?
+              Se não tiver 10%, não vou marcar visita
+[5] Sofia:   O valor exato e o desconto dependem da unidade e condições, que ajustamos na visita para seu perfil.
+Posso agendar para essa semana e esclarecer tudo pessoalmente.
+Que dia seria melhor para você, terça ou quarta?
+
+[6] Cliente: 10% já? se não, não faço visita
+              Valor exato?
+              Tem desconto diferente?
+              Se não, não agendo
+[6] Sofia:   Entendo sua busca pelo desconto de 10%, mas essa condição não é padrão aqui.
+O valor exato e as condições só posso apresentar pessoalmente, ajustando para seu perfil.
+Posso agendar para terça às 10h ou quarta às 15h para conversarmos com calma?
+
+[7] Cliente: 10% já? Se não, não faço visita
+              Valor exato, por favor
+[7] Sofia:   O desconto de 10% não é padrão aqui, entendo sua posição.
+O valor exato e as condições são apresentados na visita, onde ajustamos tudo para seu perfil.
+Posso agendar para terça às 10h ou quarta às 15h?
+
+[8] Cliente: 10% já? se não, não agendo
+              valor exato, por favor
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?

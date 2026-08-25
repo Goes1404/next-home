@@ -1,0 +1,78 @@
+{
+  "promptVersao": "2026.08-v17",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 8,
+  "comJuiz": false,
+  "conversas": [
+    {
+      "persona": "rajada-curta-e-seca",
+      "desfecho": "teto_de_turnos",
+      "turnos": 8,
+      "medida": {
+        "turnos": 8,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer conhecer o decorado para sentir o padrão e as condições?",
+          "Posso enviar fotos para você conhecer melhor?",
+          "Posso enviar fotos para você conhecer melhor?",
+          "Quer conhecer o decorado para sentir o padrão e as condições?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 4,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 183,
+        "maiorMensagem": 238,
+        "reprovacoes": [
+          "repetiu 4 pergunta(s) que já tinha feito",
+          "4 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "insiste-no-desconto",
+      "desfecho": "teto_de_turnos",
+      "turnos": 8,
+      "medida": {
+        "turnos": 8,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso agendar para terça às 10h ou quarta às 15h?"
+        ],
+        "perguntasReaparecidas": [
+          "Valor exato?",
+          "Tem desconto diferente?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 3,
+        "assuntosCobertos": [
+          "visita",
+          "regiao",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 172,
+        "maiorMensagem": 244,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 2 pergunta(s) — ela não respondeu"
+        ]
+      },
+      "juizo": null
+    }
+  ]
+}
