@@ -34,3 +34,49 @@ describe("onde camada NÃO pode entrar", () => {
     });
   }
 });
+
+/**
+ * Dois donos da mesma matriz de transform fazem o elemento saltar: o Reveal
+ * anima `x`/`y` na entrada e a camada escreve `y` a cada frame. O padrão
+ * correto é `<Camada><Reveal>…</Reveal></Camada>` — nunca os dois no mesmo
+ * nó, e nunca as props de um na tag do outro.
+ */
+describe("camada e reveal não dividem nó", () => {
+  const ARQUIVOS = [
+    "empreendimento/Galeria.tsx",
+    "empreendimento/Sobre.tsx",
+    "empreendimento/FichaNumeros.tsx",
+    "empreendimento/Tipologias.tsx",
+    "empreendimento/CardEmpreendimento.tsx",
+    "empreendimento/CenaShowcase.tsx",
+    "home/Regioes.tsx",
+  ];
+
+  for (const caminho of ARQUIVOS) {
+    it(`${caminho} não mistura as props das duas primitivas`, () => {
+      const fonte = readFileSync(join(RAIZ, caminho), "utf8");
+      expect(fonte).not.toMatch(/<Reveal[^>]*\bvelocidade=/);
+      expect(fonte).not.toMatch(/<Camada[^>]*\bstagger=/);
+      expect(fonte).not.toMatch(/<Camada[^>]*\bfrom=/);
+    });
+  }
+});
+
+/**
+ * `position: sticky` dentro de uma camada para de grudar: o transform muda
+ * o containing block. No `Sobre`, é o sticky que segura a foto ao lado do
+ * texto longo — perdê-lo é uma regressão visível e silenciosa.
+ */
+describe("sticky não vive dentro de camada", () => {
+  it("a coluna sticky do Sobre não está dentro de uma Camada", () => {
+    const fonte = readFileSync(join(RAIZ, "empreendimento/Sobre.tsx"), "utf8");
+    const camada = fonte.indexOf("<Camada");
+    const fechaCamada = fonte.indexOf("</Camada>");
+    const sticky = fonte.indexOf("lg:sticky");
+
+    expect(sticky).toBeGreaterThan(-1);
+    expect(camada).toBeGreaterThan(-1);
+    // O sticky vem DEPOIS do fechamento da camada, não entre abrir e fechar.
+    expect(sticky).toBeGreaterThan(fechaCamada);
+  });
+});

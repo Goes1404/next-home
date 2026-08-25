@@ -23,12 +23,14 @@ export type OpcoesCamada = {
   escala?: number;
   /**
    * Escape para efeitos que não são deslocamento (véu que fecha, header que
-   * condensa). Recebe o progresso de -1 a 1 e escreve o que quiser.
+   * condensa). Recebe o progresso de -1 a 1 e o FATOR do ambiente (1 no
+   * desktop, 0,4 no celular, 0 com movimento reduzido) — quem escreve à mão
+   * precisa aplicar o fator, senão escapa da régua global.
    *
    * Não pode ler layout (`getBoundingClientRect`, `offsetTop`): roda na fase
    * de ESCRITA do frame, e uma leitura ali força relayout no meio do laço.
    */
-  aoAtualizar?: (progresso: number) => void;
+  aoAtualizar?: (progresso: number, fator: number) => void;
 };
 
 type Entrada = {
@@ -117,7 +119,7 @@ function aoTique() {
 
     entrada.aplicar(valores);
 
-    entrada.opcoes.aoAtualizar?.(progresso);
+    entrada.opcoes.aoAtualizar?.(progresso, fator);
   }
 }
 

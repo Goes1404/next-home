@@ -1235,6 +1235,50 @@ dependência: vários usam Framer Motion (este projeto usa GSAP, e somar outro
 runtime de animação pesa no celular) e alguns são cenas de Remotion, que é
 framework de VÍDEO e não serve para página.
 
+### Parallax e camadas (24/08/2026)
+
+- **O parallax do site inteiro roda em UM laço** (`controladorCamadas.ts`), não
+  um `ScrollTrigger` por componente: com ~40 camadas, o padrão antigo daria
+  60–90 gatilhos recalculando a cada `refresh` (resize, troca de tema,
+  navegação). A matemática vive separada e testada em `camadasCalculo.ts`, sem
+  DOM. Medido depois de pronto: mediana de 16,7 ms por quadro (60fps), p95 de
+  18,4 ms, zero quadro acima de 50 ms rolando a home inteira.
+- **O laço tem fase de LEITURA e fase de ESCRITA, nessa ordem.** Intercalar
+  `getBoundingClientRect` com escrita de transform força relayout no meio do
+  laço. Por isso `aoAtualizar` também não pode ler layout: ele roda na fase de
+  escrita.
+- **Elemento `position: fixed` NÃO SERVE de referência de scroll.** O
+  retângulo dele é sempre a viewport inteira, então o progresso dá zero para
+  sempre e nada se move. Foi assim que a capa do hero do imóvel nasceu
+  parada — o defeito só apareceu medindo o `transform` no navegador, porque
+  build, tipos e testes passavam. Hoje a `CapaHero` registra um MEDIDOR
+  irmão (`absolute inset-0`, que rola com a seção) e conduz foto e véu pelo
+  `aoAtualizar`.
+- **O controlador não escreve `scale` por padrão.** Escrever `1` todo frame
+  sobrescrevia, por estilo inline, o `scale-110` das molduras de card e o
+  `style={{scale}}` do `ParallaxImagem` — a folga que existe justamente para o
+  deslocamento nunca expor o fundo da moldura. `scale` só sai para quem passou
+  `escala`.
+- **`Camada` e `Reveal` nunca no mesmo nó**: os dois escrevem transform. O
+  padrão é `<Camada><Reveal>…</Reveal></Camada>`. Onde entra `CartaoTilt`, o
+  `Reveal` SAI — o tilt já assume a opacidade (cortina de `clip-path`).
+- **`position: sticky` dentro de camada para de grudar** (o transform muda o
+  containing block). No `Sobre`, é o sticky que segura a foto ao lado do texto
+  longo; por isso só a coluna de TEXTO virou camada. Tem teste.
+- **Onde o conteúdo é alvo de clique, quem se move é o FUNDO**
+  (`FundoEmCamadas.tsx`): chip de região e item de lazer não saem do lugar. A
+  seção que recebe o fundo precisa de `overflow-hidden`.
+- **O header condensa por ATRIBUTO (`data-condensado`), não por transform**:
+  ele contém o MenuMobile, cujo painel é `fixed` num portal. Quarta vez que
+  essa armadilha aparece neste projeto.
+- **`camadasGuardas.test.ts` LÊ O CÓDIGO** e reprova camada em mapa, player,
+  formulário e navegação — a regressão aqui falharia calada: o site continua
+  "funcionando", só com o mapa tremendo sob o dedo.
+- **Ao medir overflow horizontal em viewport emulado, 15px são a barra de
+  rolagem, não conteúdo.** `clientWidth` 375 num viewport de 390 é a
+  scrollbar clássica do Chromium headless; num celular real ela é overlay. Só
+  acuse o layout depois de esconder o suspeito e remedir.
+
 ### A medição da F0, feita com books de verdade (24/08/2026)
 
 Dois arquivos reais: **Dom Parque** (P4, 68 páginas, 6,1 MB) e **Vila dos

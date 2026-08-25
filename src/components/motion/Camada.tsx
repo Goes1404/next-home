@@ -35,7 +35,7 @@ export function useCamada(
       eixo,
       apenasDesktop,
       escala,
-      aoAtualizar: (p) => atuais.current.aoAtualizar?.(p),
+      aoAtualizar: (p, f) => atuais.current.aoAtualizar?.(p, f),
     });
   }, [ref, velocidade, eixo, apenasDesktop, escala]);
 }
