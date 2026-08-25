@@ -1,0 +1,52 @@
+decide-com-a-esposa · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: to vendo apartamento pra minha familia, 2 ou 3 dorm
+[1] Sofia:   Você procura em que região? Tenho opções interessantes em Barueri e Osasco, por exemplo.
+
+[2] Cliente: Barueri
+              Falo com ela
+[2] Sofia:   Barueri tem ótimas opções, inclusive o More Aldeia de Bareuri,
+que é pronto para morar e fica perto do shopping e da estação.
+Você prefere imóvel pronto ou na planta?
+Isso ajuda a ajustar as opções para sua família.
+
+[3] Cliente: Falando com ela
+[3] Sofia:   O More Aldeia de Bareuri tem 2 dormitórios, sendo 1 suíte, com 64m² e 1 vaga.
+Está pronto para morar, com condições flexíveis de pagamento.
+Quer conhecer o decorado? Posso te enviar a apresentação digital para dar uma olhada.
+
+[4] Cliente: Falo com ela
+[4] Sofia:   Vou te enviar a apresentação digital do More Aldeia de Bareuri para vocês conhecerem melhor o projeto.
+Quer que eu mande a planta também?
+Podemos agendar uma visita para que eu te apresente as condições e o imóvel pessoalmente.
+
+[5] Cliente: Falo com ela
+[5] Sofia:   Enviei a apresentação digital do More Aldeia de Bareuri para vocês.
+Quer que eu mande a planta também?
+Podemos agendar uma visita para eu te mostrar o imóvel e as condições.
+
+[6] Cliente: Falo com ela
+[6] Sofia:   O More Aldeia de Bareuri tem 64m², 2 dormitórios com 1 suíte e 1 vaga.
+Está pronto para morar, com condições flexíveis e entrada parcelada.
+Quer que eu envie a planta para vocês analisarem?
+
+[7] Cliente: Falo com ela
+[7] Sofia:   O More Aldeia de Bareuri tem 5 fotos e uma planta disponível.
+Posso enviar a planta para vocês analisarem com calma.
+Quer conhecer o decorado? Podemos agendar uma visita para eu apresentar o imóvel e as condições.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/planta-big-d49eee85acbe2ebf4ceb5765fb85cc4b.jpeg
+
+[8] Cliente: Falo com ela
+[8] Sofia:   Enviei a planta do More Aldeia de Bareuri para vocês.
+Quer conhecer o decorado? Poderíamos agendar para sábado às 9h ou às 11h.
+
+[9] Cliente: Falo com ela
+[9] Sofia:   Fico à disposição para quando quiserem conhecer o decorado.
+Sábado às 9h ou às 11h fica bom para vocês?
+Assim aproveitamos para conversar sobre as condições e o projeto.
+
+[10] Cliente: Falo com ela
+[10] Sofia:   Entendo, fico à disposição para quando puderem visitar.
+Se preferir, posso reservar sábado às 9h ou às 11h para vocês.
+Assim aproveitamos para apresentar o imóvel e as condições.

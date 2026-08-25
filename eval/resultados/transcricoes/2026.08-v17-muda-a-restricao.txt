@@ -1,15 +1,58 @@
-muda-a-restricao · cliente_mudo · 2 turnos
+muda-a-restricao · teto_de_turnos · 10 turnos
 ————————————————————————————————————————————————————————————
 
 [1] Cliente: boa tarde! procuro apartamento de 4 dormitórios
-[1] Sofia:   Não tenho opções com 4 dormitórios, o maior é de 3.
-Quer conhecer?
-              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+[1] Sofia:   Não tenho opções com 4 dormitórios no catálogo. O maior é de 3 dormitórios, quer que eu te mostre essas opções?
 
-[2] Cliente: não tem de 4? que pena
-              então deixa. vcs tem algo de 2 quartos?
-              e que já esteja pronto pra mudar, não quero esperar obra
-[2] Sofia:   Não tenho de 4 dormitórios, mas tenho opções de 2 quartos prontos para morar.
-O On The Park Alphaville é uma delas, com 2 suítes e 2 vagas. Dá uma olhada e me diz o que te agradou.
-https://next-home-drab.vercel.app/?corretor=cristal-bruna
-              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg
+[2] Cliente: tô mudando, preciso pronto, 2 dorm, 60m2
+              e tem?
+              qual valor?
+              manda foto
+[2] Sofia:   Tenho o More na Aldeia de Barueri, 2 dormitórios, 63m², pronto para morar,
+e o More Aldeia de Bareuri, 2 dormitórios, 64m², também pronto.
+As condições são flexíveis e conversamos na visita.
+Quer que eu envie as fotos para você dar uma olhada?
+
+[3] Cliente: tá ok, mas quero 1 dorm, 45m2, pronto
+[3] Sofia:   Não tenho pronto com 1 dormitório e 45m², só em obra.
+O Terra Alta tem 1 dormitório, 52m², pronto para morar em breve. Quer que eu te envie as fotos para avaliar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-3-big-75c8b2df2fb9cedf8deb0b5002c9a935.jpeg
+
+[4] Cliente: ok, 1 dorm, 35m2 pronto
+              manda foto
+[4] Sofia:   Não tenho pronto com 35m² e 1 dormitório, só em obra.
+O Terra Alta tem 1 dormitório, 52m², pronto para morar em breve. Quer que eu envie as fotos para avaliar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-4-big-847e1f55bb4b7eee7f216ebbce93f7f0.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-5-big-b8697f666d01bb4d7c1d9b9651b07d8b.jpeg
+
+[5] Cliente: tô de 2 dorm 50m2 pronto
+[5] Sofia:   O More Aldeia de Barueri tem 2 dormitórios e 63m², pronto para morar, fica um pouco acima dos 50m² que você mencionou.
+Posso te enviar as fotos para avaliar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-1-big-fa9d826751f7a7f2f548546f1fa3985a.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-2-big-5d61ecbe0596294db5e89af22bc6814c.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-3-big-b113766a6aef5b7e10ea66673cd2a78c.jpg
+
+[6] Cliente: cansado, 1 dorm 30m2 pronto
+[6] Sofia:   Não tenho pronto com 30m² e 1 dormitório. O Terra Alta, com 52m², é o menor pronto que tenho.
+Quer que eu te envie as fotos para avaliar?
+
+[7] Cliente: cansado, 1 dorm 30m2 pronto
+[7] Sofia:   Entendo a preferência pelo menor espaço e pronto para morar.
+O Terra Alta, com 52m² e 1 dormitório, é o menor pronto que tenho. Quer que eu envie as fotos para você avaliar?
+
+[8] Cliente: tô cansado, 1 dorm 30m2 pronto
+[8] Sofia:   Entendo que busca algo compacto e pronto, mas não tenho 30m² disponível.
+O Terra Alta, com 52m², é o menor pronto que tenho. Quer conhecer o decorado para sentir o espaço?
+
+[9] Cliente: tô cansado, 1 dorm 30m2 pronto
+[9] Sofia:   Entendo sua preferência pelo compacto e pronto, mas não tenho essa metragem exata.
+O Terra Alta, com 52m², é o menor pronto que posso mostrar.
+Quer conhecer o decorado para sentir o espaço?
+
+[10] Cliente: 2 dorm 45m2 pronto
+[10] Sofia:   O More Aldeia de Barueri tem 2 dormitórios e 63m², pronto para morar, um pouco acima dos 45m² que mencionou.
+Posso enviar as fotos para você avaliar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-4-big-1b09fd6fe77678ef68e20a0056ee74d7.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-5-big-26c7191610578ff0ed5343163672c698.jpg

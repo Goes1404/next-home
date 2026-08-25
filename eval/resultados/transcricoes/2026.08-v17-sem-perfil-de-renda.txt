@@ -1,0 +1,69 @@
+sem-perfil-de-renda · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria sair do aluguel, pago 900 hoje, da pra financiar
+[1] Sofia:   Sair do aluguel é um passo importante.
+Você tem preferência por região para o imóvel?
+Assim já te mostro opções que cabem no seu perfil.
+
+[2] Cliente: custa q
+              tem foto
+              onde fica
+[2] Sofia:   Entendo que o preço é fundamental para você.
+Poderíamos agendar uma visita para eu te apresentar o projeto e as condições de pagamento, que são flexíveis.
+Tenho fotos dos imóveis que posso te enviar para você conhecer melhor.
+Sobre a localização, trabalho com opções em Barueri, Osasco e Alphaville. Qual região prefere?
+
+[3] Cliente: qual o valor
+              tem foto
+              onde fica
+[3] Sofia:   O valor depende da unidade e das condições, que conversamos na visita.
+Tenho fotos para te mostrar.
+Trabalho com imóveis em Barueri, Osasco e Alphaville.
+Qual região prefere?
+
+[4] Cliente: qual valor
+              tem foto
+[4] Sofia:   O valor varia conforme a unidade e as condições, que detalho na visita.
+Tenho fotos para te enviar, qual região prefere: Barueri, Osasco ou Alphaville?
+
+[5] Cliente: qual valor
+              tem foto
+              onde fica
+[5] Sofia:   O valor varia conforme a unidade e condições, que detalho na visita.
+Tenho fotos para te enviar.
+Prefere Barueri, Osasco ou Alphaville?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[6] Cliente: qual valor tem foto
+              onde fica
+[6] Sofia:   O valor depende da unidade e condições, que apresento na visita.
+Tenho fotos para te enviar.
+Prefere Barueri, Osasco ou Alphaville?
+Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[7] Cliente: qual valor tem foto
+              onde fica
+[7] Sofia:   O valor depende da unidade e condições, que detalho na visita.
+Tenho fotos para te enviar.
+Prefere Barueri, Osasco ou Alphaville?
+Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[8] Cliente: qual valor tem foto
+              onde fica
+[8] Sofia:   O valor depende da unidade e condições, que apresento na visita. Tenho fotos para enviar.
+Prefere Barueri, Osasco ou Alphaville? Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[9] Cliente: qual valor tem foto
+              onde fica
+[9] Sofia:   O valor depende da unidade e condições, que detalho na visita. Tenho fotos para enviar.
+Prefere Barueri, Osasco ou Alphaville? Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[10] Cliente: qual valor tem foto
+              onde fica
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna

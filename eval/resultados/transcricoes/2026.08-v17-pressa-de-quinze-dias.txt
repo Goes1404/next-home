@@ -1,0 +1,64 @@
+pressa-de-quinze-dias · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: preciso de apto pra entrar em 15 dias no maximo, tem algo assim
+[1] Sofia:   Para entrada em 15 dias, o ideal é pronto para morar.
+Você conhece a região onde gostaria de morar? Posso te mostrar opções que entregam rápido.
+
+[2] Cliente: sim, preciso de algo pronto, 15 dias
+              não aceito obra
+              quero pronto, não quase
+[2] Sofia:   Você tem preferência por alguma região específica?
+Posso te mostrar opções que atendem a isso.
+
+[3] Cliente: tem 15 dias?
+              não aceito obra
+              quero pronto
+              não quase
+[3] Sofia:   Você quer algo 100% pronto para morar, sem obra nem atraso. Qual região prefere? Alphaville, Barueri ou Osasco?
+
+[4] Cliente: e aí, preciso de algo pronto 15 dias
+              não aceito obra
+              quero pronto, não quase
+[4] Sofia:   Entendo sua urgência e a necessidade de algo 100% pronto para morar. Alphaville, Barueri e Osasco têm opções assim.
+Qual dessas regiões você prefere para eu mostrar as melhores unidades?
+
+[5] Cliente: cá! 15 dias?
+              não obra
+              quero pronto
+[5] Sofia:   Para entrada em 15 dias, só pronto para morar mesmo. Alphaville tem o On The Park e o Vitra, ambos prontos. Barueri e Osasco também têm opções.
+Quer que eu te envie o catálogo para dar uma olhada e me dizer o que te agradou? Posso te mostrar o decorado também.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[6] Cliente: 15 dias?
+              sem obra
+              pronto
+[6] Sofia:   Posso te enviar o catálogo para você ver as opções e escolher o que mais te agrada?
+Quer conhecer o decorado para sentir o padrão e a localização?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[7] Cliente: 15 dias?
+              sem obra
+              pronto
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[8] Cliente: 15 dias
+              não obra
+              pronto
+[8] Sofia:   Entendo que precisa para 15 dias, sem obra, 100% pronto para morar.
+Posso te mostrar o On The Park Alphaville, que é uma das últimas unidades disponíveis.
+Quer conhecer o decorado para sentir o padrão e a localização?
+Posso agendar para sábado às 10h ou às 11h, qual horário prefere?
+
+[9] Cliente: 15 dias?
+              não obra
+              pronto
+[9] Sofia:   O On The Park Alphaville é 100% pronto, sem obra, e tem últimas unidades.
+Quer conhecer o decorado para sentir o padrão e a localização?
+Posso agendar para sábado às 10h ou às 11h, qual horário prefere?
+
+[10] Cliente: 15 dias?
+              não obra
+              pronto
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.

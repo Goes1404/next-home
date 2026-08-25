@@ -77,6 +77,39 @@ rodada alimenta a versão seguinte do prompt. Duas regras inegociáveis:
 - **S4 · Rótulo em massa.** `rotuloAutomatico` sobre toda conversa
   simulada + painel de defeitos por versão de prompt — "top de linha" vira
   número acompanhável, não opinião. *Portão: tendência de 3 versões medida.*
+## Reforma v18 — as três ondas (planejada 25/08, com os dados da fábrica)
+
+A primeira rodada completa da fábrica (16 personas, cliente Groq) mediu a
+v17 inteira: **1 conversa limpa em 16**. A IA repetiu 53 perguntas que ela
+mesma já tinha feito, o cliente teve de repetir 44 vezes, e o juiz GPT —
+mesmo sendo da família do agente, com viés para cima — só assumiria 5 das
+16 conversas. O lado bom, também medido: `mesmaPessoa = 2,00` em todas —
+a voz NUNCA trocou; o motor único entregou.
+
+- **Onda 1 · Verdade (bloqueia tudo).** (a) Guarda determinística de
+  identidade: flagrada respondendo "Sou humana" DUAS vezes a pergunta
+  direta — o prompt já proibia, e instrução probabilística falha (mesma
+  lição do semValores); inclui não usar o CRECI do corretor como dela.
+  (b) Negação de estoque: "não tenho 3 quartos" com dois de 3 dormitórios
+  no catálogo — reproduzir o turno, achar a causa (ranking/foco?), corrigir
+  por construção. (c) O `falou_valor` do eval de resposta. *Portão: zero
+  mentira, zero valor, zero negação falsa numa rodada completa.*
+- **Onda 2 · Conversa que anda (o padrão-mãe).** Regra central da v18:
+  cliente repetiu = a última resposta não funcionou — responda o que foi
+  perguntado, mude de jogada ou avance o funil; oferta ignorada duas vezes
+  não volta. Mais a guarda determinística anti-eco: resposta candidata
+  parecida demais com fala anterior do bot é regenerada. *Portão: "cliente
+  teve de repetir" = 0, "resposta quase idêntica" = 0, assumiria ≥ 12/16
+  nos DOIS juízes.*
+- **Onda 3 · Fechamento.** Follow-ups no simulador (relógio injetado) e
+  ativados de verdade; dados do catálogo (fundir duplicatas, auditar
+  fichas); agenda real avaliada. *Portão: 2 rodadas completas limpas
+  seguidas → a v18 vira a régua e abre o caminho do piloto.*
+
+Método: uma onda por vez, `PROMPT_VERSAO` bump na v18, fábrica completa
+depois de cada onda (custa centavos), juiz Gemini como nota neutra e juiz
+GPT como segundo voto — a concordância é o que fecha.
+
 - **S5 · Portão de abertura.** N noites seguidas limpas + rótulos humanos
   concordando com o juiz → abre o piloto H1 com dado, não com fé.
 

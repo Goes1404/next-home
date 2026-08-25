@@ -1,0 +1,155 @@
+{
+  "promptVersao": "2026.08-v17",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": false,
+  "conversas": [
+    {
+      "persona": "quer-tudo-pelo-zap",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer que eu mande as fotos e a planta do More Aldeia para você?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 8,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 204,
+        "maiorMensagem": 285,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "8 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "pressa-de-quinze-dias",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 5,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer conhecer o decorado para sentir o padrão e a localização?",
+          "Quer conhecer o decorado para sentir o padrão e a localização?",
+          "Posso agendar para sábado às 10h ou às 11h, qual horário prefere?"
+        ],
+        "perguntasReaparecidas": [
+          "15 dias?",
+          "15 dias?",
+          "15 dias?",
+          "15 dias?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 5,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "renda",
+          "perfil",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 174,
+        "maiorMensagem": 318,
+        "reprovacoes": [
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
+          "5 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "decide-com-a-esposa",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 3,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer que eu mande a planta também?",
+          "Quer conhecer o decorado?",
+          "Quer conhecer o decorado?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 4,
+        "assuntosCobertos": [
+          "regiao",
+          "perfil",
+          "estagio",
+          "tipologia",
+          "visita",
+          "renda"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 180,
+        "maiorMensagem": 227,
+        "reprovacoes": [
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "4 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "sem-perfil-de-renda",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Qual região prefere?",
+          "Prefere Barueri, Osasco ou Alphaville?",
+          "Prefere Barueri, Osasco ou Alphaville?",
+          "Prefere Barueri, Osasco ou Alphaville?",
+          "Prefere Barueri, Osasco ou Alphaville?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 3,
+        "maiorSequenciaSemNovidade": 8,
+        "assuntosCobertos": [
+          "regiao",
+          "renda",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 201,
+        "maiorMensagem": 320,
+        "reprovacoes": [
+          "repetiu 5 pergunta(s) que já tinha feito",
+          "mandou 3 resposta(s) quase idêntica(s) a uma anterior",
+          "8 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    }
+  ]
+}

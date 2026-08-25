@@ -1,0 +1,68 @@
+quer-tudo-pelo-zap · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me passa as infos por aqui mesmo, nao tenho tempo de visita
+[1] Sofia:   Entendo a correria, mas a visita é onde apresento condições e detalhes que não cabem no texto.
+Posso te enviar a apresentação digital para começar?
+
+[2] Cliente: manda planta
+              tem metragem
+[2] Sofia:   Tenho as plantas de alguns empreendimentos, mas nem todos têm disponíveis.
+Qual imóvel você viu? Posso enviar a planta se tiver.
+A metragem varia conforme o imóvel, posso confirmar para você.
+Se quiser, mando o link da apresentação digital com fotos e detalhes para você avaliar.
+
+[3] Cliente: qual o valor
+[3] Sofia:   O valor depende da unidade e das condições, que conversamos melhor na visita.
+Posso te enviar o link da apresentação digital para você conhecer melhor o projeto?
+
+[4] Cliente: manda planta
+              tem foto
+              qual valor
+[4] Sofia:   Posso enviar fotos e o link da apresentação digital para você conhecer o projeto melhor.
+Nem todos têm planta disponível, mas confirmo para o imóvel que escolher.
+O valor depende da unidade e das condições, que apresento na visita. Quer que eu mande o link para começar?
+
+[5] Cliente: manda planta
+              tem foto
+              qual valor
+[5] Sofia:   Posso enviar fotos do Viva RSF Vila do Conde e do More Aldeia de Bareuri, que têm fotos disponíveis.
+Planta só do More Aldeia, se quiser.
+O valor depende da unidade e condições, que apresento na visita.
+Quer que eu mande os links das apresentações digitais para você avaliar com calma?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/fachada-lazer.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-1-big-1fed6dfac329a4107d85c4e67b48f0b5.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/planta-big-d49eee85acbe2ebf4ceb5765fb85cc4b.jpeg
+
+[6] Cliente: manda planta
+              tem foto
+              qual valor
+[6] Sofia:   O More Aldeia de Bareuri tem planta e fotos que posso enviar para você.
+O Viva RSF Vila do Conde tem fotos, mas não planta.
+O valor depende da unidade e condições, que apresento na visita.
+Quer que eu mande as fotos e a planta do More Aldeia para você avaliar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-2-big-4157f723f5d95731b87a582d2da35adc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-3-big-cc95e85e4862cc5c7044a92fc5cc2c1e.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-4-big-a6ade71bfce54ea1e5466b7b9cd8203c.jpeg
+
+[7] Cliente: manda planta
+              tem foto
+              qual valor
+[7] Sofia:   O More Aldeia de Bareuri tem planta e fotos que posso enviar para você avaliar.
+O Viva RSF Vila do Conde tem fotos, mas não planta.
+O valor depende da unidade e condições, que apresento na visita.
+Quer que eu mande as fotos e a planta do More Aldeia para você?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-5-big-d94f973e385a0c52fe59f63de2be47a4.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/piscina-adulto.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/academia.jpg
+
+[8] Cliente: qual valor
+[8] Sofia:   O valor depende da unidade e das condições, que apresento na visita.
+Podemos agendar para eu te mostrar tudo com calma? Prefere terça às 10h ou quarta às 15h?
+
+[9] Cliente: qual valor
+[9] Sofia:   O valor varia conforme a unidade e as condições, que apresento na visita.
+Posso agendar para terça às 10h ou quarta às 15h para te mostrar tudo com calma?
+
+[10] Cliente: qual valor
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
