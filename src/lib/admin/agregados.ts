@@ -24,6 +24,7 @@ type LinhaMagra = {
   id: string;
   etapa: EtapaFunil;
   etapa_alterada_em: string;
+  created_at: string;
   origem_atribuicao: string | null;
   corretor_id: string | null;
 };
@@ -45,13 +46,24 @@ export async function getAgregadoDaEquipe(
   agora: Date = new Date(),
 ): Promise<AgregadoDaEquipe> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data, error, count } = await supabase
     .from("leads")
-    .select("id, etapa, etapa_alterada_em, origem_atribuicao, corretor_id");
+    .select("id, etapa, etapa_alterada_em, created_at, origem_atribuicao, corretor_id", {
+      count: "exact",
+    });
 
   if (error) throw new Error(`Falha ao carregar os números da equipe: ${error.message}`);
 
   const linhas = (data ?? []) as LinhaMagra[];
+
+  // Defesa contra a falha calada que este arquivo existe para evitar: se o
+  // PostgREST truncar a resposta (max-rows), as contas sairiam MENORES sem
+  // erro nenhum — um total plausível que ninguém questiona. Melhor quebrar.
+  if (count !== null && count !== linhas.length) {
+    throw new Error(
+      `Os números da equipe seriam parciais (${linhas.length} de ${count} leads) — o servidor truncou a consulta.`,
+    );
+  }
 
   const porEtapa = {} as Record<EtapaFunil, number>;
   let semDono = 0;
@@ -84,6 +96,7 @@ export async function getAgregadoDaEquipe(
     (l) =>
       ({
         etapa: l.etapa,
+        criadoEm: l.created_at,
         origemAtribuicao: l.origem_atribuicao,
         corretor: l.corretor_id ? { id: l.corretor_id, nome: "" } : null,
       }) as unknown as Lead,
@@ -92,7 +105,7 @@ export async function getAgregadoDaEquipe(
   return {
     total: linhas.length,
     porEtapa,
-    porCorretor: montarResumo(paraResumo, equipe),
+    porCorretor: montarResumo(paraResumo, equipe, agora),
     semDono,
     parados15d,
     conversao: concluidos === 0 ? null : Math.round((fechados / concluidos) * 100),

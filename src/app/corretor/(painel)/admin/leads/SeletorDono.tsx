@@ -43,7 +43,12 @@ export function SeletorDono({
         }}
         className="text-fluid-xs rounded-lg border border-linha-forte bg-campo px-2 py-1.5 text-corpo disabled:opacity-50"
       >
-        <option value="">Sem dono</option>
+        {/* Desabilitada de propósito: não existe ação "tirar o dono" — a
+            opção é só o estado inicial do lead órfão. Selecionável, ela era
+            um botão que não fazia nada. */}
+        <option value="" disabled>
+          {donoAtual ? "Passar para…" : "Sem dono — escolher"}
+        </option>
         {equipe.map((corretor) => (
           <option key={corretor.id} value={corretor.id}>
             {corretor.nome}

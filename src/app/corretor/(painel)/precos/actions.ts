@@ -68,20 +68,36 @@ export async function aplicarLotePrecos(
 
   const loteId = loteCriado.id;
 
-  // 2. Atualiza os preços e registra itens do histórico
+  /*
+   * 2. Atualiza os preços e registra os itens do histórico.
+   *
+   * ERRO PARA O LAÇO. A versão anterior descartava todo erro: se o 20º item
+   * falhasse, os 19 primeiros ficavam aplicados, `total_imoveis` mentia e o
+   * histórico ficava sem os itens que faltaram — o que quebra o rollback,
+   * porque reverter usa exatamente esses itens. Sem transação no supabase-js,
+   * o honesto é parar no primeiro erro e DIZER quantos entraram, para o
+   * gestor decidir se reverte o parcial ou tenta o resto de novo.
+   */
+  let aplicados = 0;
   for (const item of itensValidos) {
     if (!item.empreendimentoId) continue;
 
-    // Atualiza preço no catálogo
-    await supabase
+    const { error: erroPreco } = await supabase
       .from("empreendimentos")
-      .update({
-        preco_a_partir: item.precoNovo,
-      })
+      .update({ preco_a_partir: item.precoNovo })
       .eq("id", item.empreendimentoId);
+    if (erroPreco) {
+      await supabase
+        .from("historico_precos_lotes")
+        .update({ total_imoveis: aplicados })
+        .eq("id", loteId);
+      return {
+        ok: false,
+        erro: `O reajuste parou no ${aplicados + 1}º imóvel (${erroPreco.message}). Os ${aplicados} primeiros FORAM aplicados — confira o lote no histórico e use Desfazer se quiser voltar tudo.`,
+      };
+    }
 
-    // Registra item no histórico
-    await supabase.from("historico_precos_itens").insert({
+    const { error: erroItem } = await supabase.from("historico_precos_itens").insert({
       lote_id: loteId,
       empreendimento_id: item.empreendimentoId,
       preco_anterior: item.precoAtual,
@@ -89,15 +105,36 @@ export async function aplicarLotePrecos(
       variacao_reais: item.diferencaReais,
       variacao_percentual: item.variacaoPercentual,
     });
+    if (erroItem) {
+      // Preço mudou mas o histórico não gravou: desfaz ESTE preço na hora —
+      // um item aplicado sem registro é um item que o rollback nunca acha.
+      await supabase
+        .from("empreendimentos")
+        .update({ preco_a_partir: item.precoAtual })
+        .eq("id", item.empreendimentoId);
+      await supabase
+        .from("historico_precos_lotes")
+        .update({ total_imoveis: aplicados })
+        .eq("id", loteId);
+      return {
+        ok: false,
+        erro: `O histórico falhou no ${aplicados + 1}º imóvel e o reajuste parou (${erroItem.message}). Os ${aplicados} primeiros foram aplicados e estão no lote.`,
+      };
+    }
+
+    aplicados += 1;
   }
 
-  // 3. Revalidação instantânea de todas as páginas afetadas
+  // 3. Revalida as listas. As páginas de imóvel são ISR (5 min) e NÃO são
+  // purgadas por aqui — por isso a mensagem de sucesso fala em "até 5
+  // minutos", e não em "já está no site".
   revalidatePath("/");
   revalidatePath("/portfolio");
   revalidatePath("/empreendimentos");
+  revalidatePath("/mapa");
   revalidatePath("/corretor/precos");
 
-  return { ok: true, loteId, totalAlterados: itensValidos.length };
+  return { ok: true, loteId, totalAlterados: aplicados };
 }
 
 /**
@@ -110,6 +147,19 @@ export async function reverterLotePrecos(loteId: string): Promise<{ ok: boolean;
 
   const supabase = await createClient();
 
+  // Trava de idempotência: reverter duas vezes não é inócuo — se um lote
+  // NOVO mexeu nos mesmos imóveis depois, a segunda reversão do antigo
+  // desfaria o novo em silêncio. Lote revertido fica revertido.
+  const { data: lote } = await supabase
+    .from("historico_precos_lotes")
+    .select("status")
+    .eq("id", loteId)
+    .maybeSingle();
+  if (!lote) return { ok: false, erro: "Lote não encontrado." };
+  if (lote.status === "revertido") {
+    return { ok: false, erro: "Este lote já foi desfeito — desfazer de novo poderia atropelar um reajuste mais recente." };
+  }
+
   // 1. Busca os itens do lote
   const { data: itens, error: erroItens } = await supabase
     .from("historico_precos_itens")
@@ -120,14 +170,21 @@ export async function reverterLotePrecos(loteId: string): Promise<{ ok: boolean;
     return { ok: false, erro: `Falha ao buscar itens do lote: ${erroItens?.message}` };
   }
 
-  // 2. Restaura o preço anterior de cada empreendimento
+  // 2. Restaura o preço anterior de cada empreendimento. Erro PARA o laço
+  // e o lote continua "aplicado" — assim dá para tentar desfazer de novo.
+  let restaurados = 0;
   for (const item of itens) {
-    await supabase
+    const { error: erroVolta } = await supabase
       .from("empreendimentos")
-      .update({
-        preco_a_partir: item.preco_anterior,
-      })
+      .update({ preco_a_partir: item.preco_anterior })
       .eq("id", item.empreendimento_id);
+    if (erroVolta) {
+      return {
+        ok: false,
+        erro: `A reversão parou no ${restaurados + 1}º de ${itens.length} imóveis (${erroVolta.message}). O lote segue como aplicado — tente Desfazer de novo.`,
+      };
+    }
+    restaurados += 1;
   }
 
   // 3. Marca o lote como revertido
@@ -164,7 +221,20 @@ export async function buscarHistoricoLotes(): Promise<LoteHistorico[]> {
 
   if (error) return [];
 
-  return (data ?? []).map((l: any) => ({
+  type LinhaLote = {
+    id: string;
+    nome_lote: string;
+    total_imoveis: number;
+    status: "aplicado" | "revertido";
+    created_at: string;
+    revertido_em: string | null;
+    // O supabase-js tipa embed de FK não declarada como array; em runtime,
+    // com `!inner` implícito de um-para-um, vem objeto. O cast único aqui é
+    // menor que espalhar `any` pelo map.
+    gestor: { nome: string } | null;
+  };
+
+  return ((data ?? []) as unknown as LinhaLote[]).map((l) => ({
     id: l.id,
     nomeLote: l.nome_lote,
     totalImoveis: l.total_imoveis,

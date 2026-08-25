@@ -110,7 +110,9 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
       if (res.ok) {
         setFeedback({
           tipo: "sucesso",
-          msg: ` <PartyPopper className="inline-block w-5 h-5 align-text-bottom mr-1" />  Sucesso! ${res.totalAlterados} imóveis foram atualizados no catálogo e o site já está com os novos valores!`,
+          // A página de cada imóvel revalida em até 5 minutos (ISR) — dizer
+          // "já está no site" aqui seria mentira na janela que mais importa.
+          msg: `Sucesso! ${res.totalAlterados} ${res.totalAlterados === 1 ? "imóvel foi atualizado" : "imóveis foram atualizados"} no catálogo. As páginas dos imóveis atualizam no site em até 5 minutos.`,
         });
         setItensConciliados([]);
         setTextoColado("");

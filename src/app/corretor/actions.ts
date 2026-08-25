@@ -435,9 +435,13 @@ export async function atribuirLead(
   });
 
   revalidatePath(`/corretor/leads/${leadId}`);
-  revalidatePath("/corretor/equipe");
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor/leads");
+  // As telas do gestor que exibem dono e carga. `/corretor/equipe` (que já
+  // esteve aqui) hoje é só um redirect — revalidá-la não redesenha nada, e
+  // foi por isso que o seletor de dono parecia não salvar.
+  revalidatePath("/corretor/admin/leads");
+  revalidatePath("/corretor/admin");
   return {};
 }
 
@@ -467,7 +471,11 @@ export async function alternarPausa(
     return { erro: "Corretor não encontrado." };
   }
 
-  revalidatePath("/corretor/equipe");
+  // Onde a pausa aparece: a tabela de carga (admin/leads), o "(pausa)" da
+  // visão geral e o dropdown de contas.
+  revalidatePath("/corretor/admin/leads");
+  revalidatePath("/corretor/admin");
+  revalidatePath("/corretor/admin/contas");
   return {};
 }
 

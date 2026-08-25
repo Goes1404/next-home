@@ -16,26 +16,47 @@ export type LinhaResumo = {
   total: number;
   novos: number;
   fechados: number;
+  /** Sem os perdidos, a conversão por pessoa não é calculável nem de cabeça. */
+  perdidos: number;
+  /** `fechados ÷ concluídos`, mesma régua da conversão global; null até o 1º desfecho. */
+  conversao: number | null;
+  /**
+   * Recebidos nos últimos 30 dias — a JANELA QUE A ROLETA USA para decidir
+   * quem recebe o próximo lead (0011). O total histórico não explica as
+   * decisões dela; esta coluna sim.
+   */
+  recebidos30d: number;
   porRoleta: number;
 };
 
 export function montarResumo(
   leads: Lead[],
   equipe: { id: string; nome: string; emPausa: boolean }[],
+  agora: Date = new Date(),
 ): LinhaResumo[] {
+  const limite30d = agora.getTime() - 30 * 86_400_000;
+
   // Parte da EQUIPE, não dos leads: quem ainda não recebeu nada precisa
   // aparecer com zero. Um corretor invisível na tabela é justamente o que a
   // roleta deveria evitar, e a única forma de notar é vê-lo zerado.
   return equipe
     .map((corretor) => {
       const meus = leads.filter((lead) => lead.corretor?.id === corretor.id);
+      const fechados = meus.filter((lead) => lead.etapa === "fechado").length;
+      const perdidos = meus.filter((lead) => lead.etapa === "perdido").length;
+      const concluidos = fechados + perdidos;
       return {
         id: corretor.id,
         nome: corretor.nome,
         emPausa: corretor.emPausa,
         total: meus.length,
         novos: meus.filter((lead) => lead.etapa === "novo").length,
-        fechados: meus.filter((lead) => lead.etapa === "fechado").length,
+        fechados,
+        perdidos,
+        conversao: concluidos === 0 ? null : Math.round((fechados / concluidos) * 100),
+        recebidos30d: meus.filter(
+          (lead) => lead.criadoEm && new Date(lead.criadoEm).getTime() >= limite30d,
+        ).length,
         porRoleta: meus.filter((lead) => lead.origemAtribuicao === "roleta").length,
       };
     })

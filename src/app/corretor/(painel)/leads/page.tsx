@@ -53,6 +53,12 @@ export default async function LeadsPage({
     ? (etapaParam as EtapaFunil)
     : undefined;
 
+  // `?dono=sem` e `?parado=15` chegam dos KPIs da administração — cada
+  // número clicável de lá cai aqui JÁ recortado, senão o número mente sobre
+  // o próprio destino.
+  const semDono = primeiroValor(params.dono) === "sem";
+  const paradoDias = Number(primeiroValor(params.parado)) || undefined;
+
   const filtro: FiltroLeads = {
     busca: primeiroValor(params.busca) || undefined,
     // Uma etapa específica (vinda do seletor ou do link do quadro) vale mais
@@ -62,6 +68,8 @@ export default async function LeadsPage({
     corretorId: primeiroValor(params.corretor) || undefined,
     criadoDe: primeiroValor(params.de) || undefined,
     criadoAte: primeiroValor(params.ate) || undefined,
+    semDono: semDono || undefined,
+    paradoDias,
   };
 
   const [pagina, gestor, corretor, templates] = await Promise.all([
@@ -93,6 +101,19 @@ export default async function LeadsPage({
       </div>
 
       <AbasLeads ativa="lista" />
+
+      {/* Recorte vindo de um KPI da administração. Precisa estar ESCRITO na
+          tela: filtro invisível filtrando é a pior surpresa de uma lista —
+          o gestor esqueceria por que "sumiram" leads. */}
+      {(semDono || paradoDias) && (
+        <p className="text-fluid-sm border-acento-linha bg-acento-lavado text-acento-suave mt-4 flex flex-wrap items-center gap-2 rounded-xl border px-4 py-2.5">
+          Mostrando só{" "}
+          {semDono ? "leads sem corretor responsável" : `leads parados há ${paradoDias}+ dias`}.
+          <Link href="/corretor/leads" className="font-medium underline underline-offset-2">
+            Ver todos
+          </Link>
+        </p>
+      )}
 
       <ListaLeads
         leadsIniciais={pagina.leads}

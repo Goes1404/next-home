@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { RedistribuirCarteira } from "./RedistribuirCarteira";
 import { SeletorDono } from "./SeletorDono";
 import { TogglePausa } from "./TogglePausa";
 import { EtiquetaEtapa, dataHora } from "@/app/corretor/(painel)/_componentes/CartaoLead";
@@ -53,11 +54,20 @@ export default async function EquipePage() {
 
       <AbasAdmin ativa="leads" />
 
+      <RedistribuirCarteira
+        equipe={agregado.porCorretor.map((linha) => ({
+          id: linha.id,
+          nome: linha.nome,
+          totalLeads: linha.total,
+        }))}
+      />
+
       <section>
         <h2 className="text-fluid-sm text-titulo font-medium">Onde está cada contato</h2>
-        {/* Grade, e não `flex-wrap`: com sete etapas o wrap deixava seis numa
-            linha e uma órfã na seguinte, o que se lê como defeito. */}
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+        {/* Grade, e não `flex-wrap`: o wrap deixava uma etapa órfã na linha
+            seguinte, o que se lê como defeito. Seis colunas = seis etapas
+            (funil de cinco passos + perdido, migration 0045). */}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           {ETAPAS_FUNIL.map((etapa) => (
             <Link
               key={etapa}
@@ -82,9 +92,13 @@ export default async function EquipePage() {
                 <th className="border-linha border-b py-2 pr-4 font-normal">Corretor</th>
                 <th className="border-linha border-b py-2 pr-4 font-normal">Escala</th>
                 <th className="border-linha border-b py-2 pr-4 font-normal">Total</th>
+                {/* A janela de 30 dias é a que a ROLETA usa para decidir o
+                    próximo — o total histórico não explica as decisões dela. */}
+                <th className="border-linha border-b py-2 pr-4 font-normal">Últimos 30d</th>
                 <th className="border-linha border-b py-2 pr-4 font-normal">Novos</th>
                 <th className="border-linha border-b py-2 pr-4 font-normal">Fechados</th>
-                <th className="border-linha border-b py-2 font-normal">Pela roleta</th>
+                <th className="border-linha border-b py-2 pr-4 font-normal">Perdidos</th>
+                <th className="border-linha border-b py-2 font-normal">Conversão</th>
               </tr>
             </thead>
             <tbody>
@@ -104,11 +118,21 @@ export default async function EquipePage() {
                     <TogglePausa corretorId={linha.id} emPausa={linha.emPausa} />
                   </td>
                   <td className="border-linha border-b py-2.5 pr-4 tabular-nums">{linha.total}</td>
+                  <td className="border-linha border-b py-2.5 pr-4 tabular-nums">
+                    {linha.recebidos30d}
+                  </td>
                   <td className="border-linha border-b py-2.5 pr-4 tabular-nums">{linha.novos}</td>
                   <td className="border-linha border-b py-2.5 pr-4 tabular-nums">
                     {linha.fechados}
                   </td>
-                  <td className="border-linha border-b py-2.5 tabular-nums">{linha.porRoleta}</td>
+                  <td className="border-linha border-b py-2.5 pr-4 tabular-nums">
+                    {linha.perdidos}
+                  </td>
+                  <td className="border-linha border-b py-2.5 tabular-nums">
+                    {/* "—" até o primeiro desfecho: 0% acusaria de não vender
+                        quem ainda nem teve chance de fechar. */}
+                    {linha.conversao === null ? "—" : `${linha.conversao}%`}
+                  </td>
                 </tr>
               ))}
             </tbody>

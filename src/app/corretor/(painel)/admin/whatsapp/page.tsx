@@ -21,6 +21,20 @@ const ROTULO_MODO: Record<string, string> = {
   desativado: "Desligada",
 };
 
+/**
+ * O enum de `admin_eventos` em frase de gente. Sem isto a tela mostrava o
+ * valor cru com underscores trocados por espaço ("conta criada") — legível
+ * por sorte, e só até alguém criar uma ação nova.
+ */
+const ROTULO_EVENTO: Record<string, string> = {
+  conta_criada: "criou o acesso de",
+  senha_redefinida: "redefiniu a senha de",
+  papel_alterado: "mudou o papel de",
+  corretor_desativado: "desativou",
+  corretor_reativado: "reativou",
+  leads_redistribuidos: "redistribuiu os leads de",
+};
+
 function Selo({ ok, texto }: { ok: boolean; texto: string }) {
   return (
     <span
@@ -49,7 +63,7 @@ export default async function AdminWhatsappPage() {
       ),
     supabase
       .from("ia_interacoes")
-      .select("acao, fallback, latencia_ms, anexos_bloqueados, avaliacao, prompt_versao")
+      .select("fallback, latencia_ms, anexos_bloqueados, avaliacao, created_at")
       .order("created_at", { ascending: false })
       .limit(500),
     supabase
@@ -70,6 +84,9 @@ export default async function AdminWhatsappPage() {
   const latenciaMedia = latencias.length
     ? Math.round(latencias.reduce((s, l) => s + l, 0) / latencias.length)
     : null;
+  // "Últimas 500" sem dizer desde quando não é comparável com nada: 500
+  // respostas podem ser dois dias ou quatro meses.
+  const desde = total > 0 ? new Date(interacoes![total - 1].created_at) : null;
 
   const dataHora = new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
@@ -117,7 +134,22 @@ export default async function AdminWhatsappPage() {
                         ` · bloqueado até ${dataHora.format(new Date(i.bloqueado_ate as string))}`}
                     </p>
                   </div>
-                  <Selo ok={conectado && !bloqueado} texto={conectado ? "Conectado" : "Desconectado"} />
+                  <div className="flex flex-col items-end gap-1">
+                    <Selo
+                      ok={conectado && !bloqueado}
+                      texto={conectado ? "Conectado" : "Desconectado"}
+                    />
+                    {/* Conectar exige o CELULAR do dono do número (QR ou
+                        código) — não existe ação remota honesta aqui. O que
+                        o gestor pode fazer é saber a quem pedir, e é isso
+                        que a linha diz. */}
+                    {!conectado && (
+                      <span className="text-fluid-xs text-apoio">
+                        peça para {nomePor.get(i.corretor_id) ?? "o corretor"} conectar em
+                        WhatsApp → Conexão
+                      </span>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -128,18 +160,23 @@ export default async function AdminWhatsappPage() {
       <section className="border-linha bg-superficie rounded-2xl border p-5">
         <h2 className="text-fluid-base font-bold text-titulo">Qualidade da IA</h2>
         <p className="text-fluid-xs text-apoio mt-1">
-          Últimas {total} interações registradas (ver `ia_interacoes`).
+          As últimas {total} respostas da IA
+          {desde ? ` — desde ${dataHora.format(desde)}` : ""}.
         </p>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            ["Interações", String(total), ""],
+            ["Respostas", String(total), ""],
             [
-              "Caiu no fallback",
+              "Vieram da contingência",
               String(fallbacks),
-              total ? `${Math.round((fallbacks / total) * 100)}%` : "",
+              total ? `${Math.round((fallbacks / total) * 100)}% — a IA falhou e um texto padrão cobriu` : "",
             ],
-            ["Latência média", latenciaMedia === null ? "—" : `${latenciaMedia} ms`, ""],
-            ["Marcadas 👎", String(ruins), bloqueados ? `${bloqueados} anexos barrados` : ""],
+            [
+              "Tempo até responder",
+              latenciaMedia === null ? "—" : `${(latenciaMedia / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} s`,
+              "média — é o que o cliente espera no chat",
+            ],
+            ["Avaliadas como ruins", String(ruins), bloqueados ? `${bloqueados} anexos barrados` : ""],
           ].map(([rotulo, valor, detalhe]) => (
             <div key={rotulo} className="border-linha bg-elevado rounded-xl border p-3">
               <p className="text-fluid-xs text-tenue">{rotulo}</p>
@@ -153,7 +190,8 @@ export default async function AdminWhatsappPage() {
       <section className="border-linha bg-superficie rounded-2xl border p-5">
         <h2 className="text-fluid-base font-bold text-titulo">Registro de ações</h2>
         <p className="text-fluid-xs text-apoio mt-1">
-          Quem criou conta, redefiniu senha ou mudou papel — a trilha que a `admin_eventos` guarda.
+          Quem criou conta, redefiniu senha ou mudou papel — cada ação administrativa fica
+          registrada e ninguém consegue apagar.
         </p>
         {(eventos ?? []).length === 0 ? (
           <p className="text-fluid-sm text-apoio mt-4">Nenhuma ação administrativa ainda.</p>
@@ -165,7 +203,7 @@ export default async function AdminWhatsappPage() {
                 <strong className="text-titulo">
                   {(e.ator_id && nomePor.get(e.ator_id)) || "Alguém"}
                 </strong>{" "}
-                {e.acao.replace(/_/g, " ")}
+                {ROTULO_EVENTO[e.acao] ?? e.acao.replace(/_/g, " ")}
                 {e.alvo_corretor_id && nomePor.get(e.alvo_corretor_id) && (
                   <> — {nomePor.get(e.alvo_corretor_id)}</>
                 )}

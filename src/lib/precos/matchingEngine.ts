@@ -110,7 +110,14 @@ export function conciliarPlanilhaComCatalogo(
       variacaoPercentual,
       matchStatus: status,
       scoreSimilaridade: maiorScore,
-      selecionado: status === "exato" || status === "sugerido",
+      /*
+       * Só o match EXATO entra pré-marcado. "Sugerido" é meia-semelhança de
+       * nome (score ≥ 0,50) — pré-marcá-lo fazia o preço público de um
+       * imóvel mudar por parecença, a menos que o gestor notasse e
+       * desmarcasse. O default seguro é o oposto: sugestão se CONFERE, não
+       * se desfaz.
+       */
+      selecionado: status === "exato",
     };
   });
 }
