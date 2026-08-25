@@ -1149,6 +1149,57 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
   é: teste de regra pura (fila, navegação), guarda de escala por leitura de
   código, e medição de banco versionada.
 
+## A IA nunca via as próprias respostas (25/08/2026)
+
+Relatado pelo usuário como "manda oi do nada, parece que perde o
+contexto" — com print de uma conversa real em que ela abria com "Oi!"
+repetidas vezes e reofereceu a apresentação depois de o cliente já ter
+aceitado. Não era perda de contexto: era AUSÊNCIA. **Nenhuma mensagem do
+bot foi gravada entre 23/08 e 25/08/2026.**
+
+- **Causa: ordem de escrita violando uma FK, em silêncio.**
+  `whatsapp_mensagens.interacao_id` referencia `ia_interacoes` (0040). O
+  webhook gerava o uuid da interação ANTES de enviar e mandava esse id no
+  insert da mensagem — mas a linha de `ia_interacoes` só é escrita no FIM
+  da requisição. O insert violava a FK, o erro caía num `console.error` e
+  `gravarMensagem` devolvia `{ inedita: true }` como se tivesse gravado.
+  O cliente recebia a resposta normalmente; só o banco sabia que ela não
+  tinha sido salva. **Medido: 8 respostas numa hora, zero linhas de bot no
+  banco.**
+- **Por que ninguém viu antes**: tipos passavam, testes passavam, build
+  passava, e a mensagem CHEGAVA no WhatsApp — os quatro sinais que este
+  projeto costuma checar estavam todos verdes. Só uma consulta no banco
+  revelava o buraco. Reforça a regra da casa: medir produção, não confiar
+  em "parece que está funcionando".
+- **Correção por construção, não por disciplina**: `interacaoId` SAIU dos
+  parâmetros de `gravarMensagem`. O vínculo virou
+  `vincularInteracaoNaMensagem`, chamada depois de `registrarInteracao` já
+  ter escrito a linha. Quando um parâmetro só pode ser usado errado
+  (gravar antes do que ele aponta existir), ele não deve existir — mesma
+  lógica que tirou `legenda` de `enviarMidiaWhatsapp`.
+- **A mensagem continua sendo gravada ANTES da telemetria**, de propósito:
+  se a função estourar tempo no dossiê ou no aviso ao corretor depois, a
+  conversa já está salva. Perder o vínculo custa uma avaliação no Live
+  Chat; perder a mensagem custaria o contexto inteiro de novo.
+- **`gravacaoDeMensagem.test.ts` lê o CÓDIGO-FONTE** (não roda o webhook)
+  para travar a ordem nos dois chamadores (webhook e follow-up). Teste
+  feio, mas é o único jeito de pegar esta classe de regressão sem banco de
+  teste — a mesma classe de teste que `escalaDoPainel.test.ts` e
+  `camadasGuardas.test.ts` já usam neste projeto.
+- **Efeito colateral descoberto ao investigar**: a busca pela conversa do
+  print trouxe, na mesma tabela, a conversa PESSOAL do corretor (namorada,
+  madrugada, apelidos) — porque o número da instância é o WhatsApp
+  pessoal dele, e toda mensagem que chega ali é gravada, liberada ou não.
+  Uma dessas conversas estava com `liberado_por_palavra_chave = true` e
+  `bot_ativo = true`: a IA respondeu a uma mensagem afetuosa dela ("Oi!
+  Que bom receber seu carinho 😊") por engano, antes da F3 existir. Contida
+  manualmente (`bot_ativo = false`) — mesmo mecanismo do botão
+  "silenciar" do painel. **Ainda em aberto, e é decisão de produto/LGPD,
+  não coisa para decidir sozinho**: hoje a trava de palavra-chave impede a
+  IA de FALAR com quem não é liberado, mas não impede o sistema de
+  GRAVAR. Enquanto o número for pessoal, considerar não persistir
+  conteúdo de conversas nunca liberadas, ou dar retenção curta a elas.
+
 ## CRM — o que o lead passou a lembrar (0032)
 
 Diagnóstico feito sobre os dados reais, não sobre lista genérica. O que o
