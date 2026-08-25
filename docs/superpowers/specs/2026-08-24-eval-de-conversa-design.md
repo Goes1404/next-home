@@ -192,9 +192,7 @@ Ordem definida pelo objetivo declarado: **confiar no texto dela antes de
 abrir para os leads.**
 
 - **F0 (este spec)** — o eval passa a rodar conversa.
-- **F1** — o humano rotula as transcrições; os 👍/👎 (que colheram ZERO
-  desde a 0040) viram o golden dataset, e o eval passa a medir o critério
-  do corretor em vez de uma rubrica genérica.
+- **F1** — o rótulo vem do MUNDO; o humano desempata. Ver a seção abaixo.
 - **F2** — os dois defeitos que o eval já sabe apontar: inventar
   especificação ao aprofundar no imóvel em foco, e não avisar quando o
   imóvel não atende à restrição que o cliente acabou de dar.
@@ -210,6 +208,76 @@ abrir para os leads.**
 - **F5+** — renda e orçamento chegando ao CRM (0 de 58 leads hoje), áudio
   (104 recebidos), anexo (12 bloqueios contra 14 envios), e a IA voltando
   sozinha depois que o corretor fala.
+
+## F1 — o rótulo vem do mundo; o humano desempata
+
+Decidido em 24/08/2026, depois da pergunta certa: "esse rótulo pode ser
+automático?"
+
+### Por que rótulo 100% automático não serve
+
+Rótulo automático por juiz LLM é o juiz medindo a RUBRICA — e a rubrica é
+o que alguém achou que era certo no dia em que a escreveu. Este projeto
+tem três provas de que isso apodrece em silêncio: o critério do Leblon
+reprovava a resposta CERTA porque casava "temos … Leblon" ignorando a
+negação; `preco-mais-barato` exigia que a resposta trouxesse "460" depois
+de a IA ter sido PROIBIDA de falar valores; e `ofereceVisita` exigia a
+palavra "visita" contra *"podemos ver durante a semana então, prefere
+manhã ou tarde?"*, que é o padrão exato de quem converte.
+
+Automatizar o rótulo fecha o círculo: o sistema converge para o que está
+escrito na rubrica, com confiança total, e ninguém percebe quando a regra
+de negócio mudou por baixo. **O rótulo humano é a única coisa fora desse
+laço.** O que muda na F1 não é eliminá-lo — é gastá-lo onde ele informa.
+
+### Camada 1 — sinais do mundo (automáticos, não circulares)
+
+Calculados do que já está gravado. Não são opinião de modelo nenhum:
+
+| sinal | leitura | fonte |
+|---|---|---|
+| corretor assumiu logo depois | ele leu e achou que precisava consertar | `remetente = 'corretor'` na sequência |
+| cliente sumiu | a resposta matou a conversa | ausência de fala posterior |
+| cliente repetiu a pergunta | ela não respondeu o que foi perguntado | similaridade com a fala anterior |
+| cliente escreveu "?" / "não entendi" | resposta confusa | padrão de texto |
+| cliente pediu ligação/humano | ela travou | `clientePediuLigacao`, já existe |
+| visita marcada | a melhor notícia que existe | `leads.visita_agendada_em` |
+
+O primeiro é o mais valioso e sai de graça: **o corretor já rotula, só não
+clica.** Cada vez que ele digita logo depois de uma resposta da IA, isso é
+um 👎 com a correção anexada — e a mensagem dele não é só o rótulo, é a
+RESPOSTA CERTA, pronta para virar exemplo de few-shot.
+
+Ressalva que precisa entrar no código, não só aqui: assumir nem sempre é
+correção. Às vezes o corretor entra porque o lead esquentou e ele quer
+fechar. O sinal tem de separar "assumiu contradizendo" de "assumiu para
+avançar" — senão vira 👎 injusto em toda conversa boa, que é o pior
+resultado possível para um rótulo.
+
+O vínculo necessário já existe: `whatsapp_mensagens.interacao_id` (0040)
+liga a mensagem enviada à linha de telemetria, então dá para saber o que
+aconteceu DEPOIS de cada resposta específica.
+
+### Camada 2 — juiz LLM
+
+O que já existe. Imediato e barato, mas mede a rubrica. Vale como segunda
+opinião, nunca como verdade.
+
+### Camada 3 — o humano, só no desacordo
+
+A fila de revisão mostra apenas os casos em que **mundo e juiz discordam**:
+o mundo diz que foi ruim e o juiz deu nota alta, ou o contrário. Onde os
+dois concordam, o rótulo humano não acrescenta informação.
+
+Na prática, dez conversas em vez de duzentas — e são exatamente as dez que
+corrigem a rubrica, que é a única coisa que o automático não faz sozinho.
+
+### O que NÃO pode acontecer
+
+Rótulo de juiz não entra no golden dataset nem no few-shot. Modelo
+treinando na própria opinião é o laço que este desenho existe para evitar.
+O few-shot atual já acerta nisso por acidente feliz: ele recupera por
+CONVERSÃO e relevância, que são sinais do mundo.
 
 ## Linha de base medida em 24/08/2026
 
