@@ -24,6 +24,7 @@ import {
   marcarRespostaCampanha,
   obterOuCriarConversa,
   podeAlertarLeadQuente,
+  preencherNomeContato,
   registrarEventoConexao,
   pausarBotPorAtendimentoHumano,
   registrarResultadoEnvio,
@@ -337,6 +338,17 @@ export async function POST(req: NextRequest) {
     // novo é mandar a mesma resposta duas vezes para o cliente.
     if (!gravacao.inedita) {
       return NextResponse.json({ ok: true, ignored: "reentrega", sender });
+    }
+
+    // O pushName vem em toda mensagem do CLIENTE (aqui, depois do desvio de
+    // fromMe — o pushName de mensagem do corretor é o nome DELE). Preenche
+    // conversa sem nome e lead ainda no placeholder "WhatsApp 1234".
+    if (payload.senderName) {
+      await preencherNomeContato({
+        conversaId: conversa.id,
+        leadId: conversa.leadId,
+        nome: String(payload.senderName),
+      });
     }
 
     // O cliente respondeu: todo follow-up proativo pendente desta conversa

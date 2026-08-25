@@ -234,6 +234,38 @@ async function encontrarOuCriarLead(
   return { leadId: criado?.id ?? null, jaEraDoCrm: false };
 }
 
+/**
+ * Preenche o nome do contato onde ele FALTA, a partir do pushName que o
+ * WhatsApp manda em toda mensagem.
+ *
+ * O nome era capturado só na CRIAÇÃO da conversa: quem escreveu antes de o
+ * provedor entregar o pushName ficava sem nome para sempre, e o lead
+ * nascia "WhatsApp 4567" e nunca mais mudava — impossível de localizar na
+ * lista. As duas guardas são deliberadas: a conversa só recebe nome quando
+ * está NULA (nome digitado pelo corretor nunca é sobrescrito por pushName,
+ * que é texto livre do cliente), e o lead só troca quando ainda carrega o
+ * placeholder `WhatsApp %` — lead com nome de verdade no CRM fica quieto.
+ */
+export async function preencherNomeContato(params: {
+  conversaId: string;
+  leadId?: string | null;
+  nome: string;
+}): Promise<void> {
+  const nome = params.nome.trim().slice(0, 120);
+  if (!nome) return;
+  const supabase = createServiceClient();
+
+  await supabase
+    .from("whatsapp_conversas")
+    .update({ nome_cliente: nome })
+    .eq("id", params.conversaId)
+    .is("nome_cliente", null);
+
+  if (params.leadId) {
+    await supabase.from("leads").update({ nome }).eq("id", params.leadId).like("nome", "WhatsApp %");
+  }
+}
+
 /** Uma conversa por (corretor, telefone) — o `unique` da 0018 garante isso. */
 export async function obterOuCriarConversa(params: {
   corretorId: string;
