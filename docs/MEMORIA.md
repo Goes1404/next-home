@@ -381,17 +381,22 @@ trilho+IA, follow-up, métricas de funil).
   - **Com um provedor só, o orçamento não se divide em fatias**
     (`FATIA_MOTOR_UNICO = 0,6`): sobraria prazo para ninguém gastar. Não é
     1,0 porque `valeRetentar` precisa de folga para a segunda tentativa.
-  - **A troca de voz foi MEDIDA depois da decisão, e é maior do que
-    parecia.** Em 7 dias de `origem = 'webhook'` (produção de verdade),
-    **6 das 18 conversas — uma em cada três — foram atendidas por mais de
-    um modelo**, e uma delas passou por CINCO (`gemini-2.5-flash`,
-    `gemini-3.5-flash`, `gpt-4.1-mini`, `mistral-nemotron`,
-    `gpt-oss-120b`). Olhando só o total, o defeito some: 1.270 respostas do
-    Gemini contra 41 dos outros parece 3% de nada. **A unidade que importa
-    não é a resposta, é a CONVERSA** — porque o cliente não compara duas
-    mensagens de conversas diferentes, ele sente a mudança dentro da dele.
-    Contar por linha em vez de por conversa é o que deixou isso invisível
-    por semanas.
+  - **A troca de voz foi MEDIDA, e medir errado quase virou fato
+    registrado.** A primeira conta deu "1.270 respostas do Gemini contra 41
+    dos outros" e estava ERRADA: `ia_interacoes.modelo` carimba o modelo
+    PADRÃO em linha onde nenhum modelo rodou (ver o item sobre `modelo`
+    mentir em `pausada_por_humano`). Contando só `acao = 'respondida'`, o
+    universo real são **47 respostas em 5 conversas**, distribuídas em
+    NVIDIA 29 · Gemini 9 · OpenAI 6 · Groq 3 — e **3 das 5 conversas
+    foram atendidas por mais de um modelo**. A cascata revezava de
+    verdade; não era um provedor com 97% e uma ponta dos outros.
+    **Antes de tirar conclusão de `ia_interacoes`, filtrar por
+    `acao = 'respondida'`** — sem isso a tabela conta como resposta o
+    silêncio de um bot pausado.
+  - **A unidade que importa não é a RESPOSTA, é a CONVERSA.** O cliente
+    não compara mensagens de conversas diferentes; ele sente a mudança
+    dentro da dele. Um provedor com 3% do total pode estar em um terço das
+    conversas.
   - **A tela de diagnóstico mostra QUEM RESPONDE, não quem tem chave.** As
     quatro chaves seguem na Vercel; `provedoresDisponiveis()` sai da ordem
     do motor, senão o corretor caça defeito num provedor que não atende
