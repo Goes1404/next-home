@@ -1,0 +1,15 @@
+muda-a-restricao · cliente_mudo · 2 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: boa tarde! procuro apartamento de 4 dormitórios
+[1] Sofia:   Não tenho opções com 4 dormitórios, o maior é de 3.
+Quer conhecer?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+
+[2] Cliente: não tem de 4? que pena
+              então deixa. vcs tem algo de 2 quartos?
+              e que já esteja pronto pra mudar, não quero esperar obra
+[2] Sofia:   Não tenho de 4 dormitórios, mas tenho opções de 2 quartos prontos para morar.
+O On The Park Alphaville é uma delas, com 2 suítes e 2 vagas. Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg

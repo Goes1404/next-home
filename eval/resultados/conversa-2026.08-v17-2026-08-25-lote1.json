@@ -1,0 +1,65 @@
+{
+  "promptVersao": "2026.08-v17",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "gemini",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "familia-tres-dorm",
+      "desfecho": "cliente_mudo",
+      "turnos": 3,
+      "medida": {
+        "turnos": 3,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 1,
+        "assuntosCobertos": [
+          "regiao",
+          "perfil",
+          "tipologia",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 218,
+        "maiorMensagem": 233,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "elogiou-o-terra-alta",
+      "desfecho": "cliente_mudo",
+      "turnos": 1,
+      "medida": {
+        "turnos": 1,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "renda",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 261,
+        "maiorMensagem": 261,
+        "reprovacoes": []
+      },
+      "juizo": null
+    }
+  ]
+}

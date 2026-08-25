@@ -1574,3 +1574,34 @@ Duas lições que valem além do `sharp`:
   vaza para telas vizinhas: aqui levou junto o editor do imóvel, que só
   compartilhava a action de upload. Hoje o `sharp` é carregado sob demanda,
   com o resultado em cache, e o pior caso é foto sem medida e sem blur.
+
+## Eval de conversa — a primeira rodada com dado real (25/08/2026)
+
+- **A cota diária do Gemini vira à MEIA-NOITE DO PACÍFICO (04:00 de
+  Brasília), não à meia-noite local.** Rodada às 23h e rodada às 2h da manhã
+  seguinte gastam o MESMO balde. Foi por isso que a "rodada nova" da
+  madrugada nasceu morta: para o Google ainda era o mesmo dia. Antes de
+  acusar cota, conferir a hora no Pacífico.
+- **Modelos aposentados nesta conta (404, medido 25/08):** `gemini-2.0-flash`
+  e `gemini-2.5-flash-lite` ("no longer available to new users"). O
+  `gemini-2.5-flash` LEGADO ainda responde. Cliente simulado que cala na
+  PRIMEIRA chamada é modelo aposentado; cliente que cala no MEIO é cota ou
+  timeout.
+- **`gemini-3.6-flash` não serve de cliente simulado com timeout de 30s**: é
+  modelo de raciocínio, a latência estoura o teto de forma intermitente e o
+  desfecho vira `cliente_mudo` — que parece cota mas não é (a sonda direta
+  responde na hora). `EVAL_CLIENTE_TIMEOUT_MS` existe para esse caso.
+- **O primeiro defeito real que SÓ o eval de conversa pegou** (persona
+  `imovel-de-outra-imobiliaria`, 9 turnos): o cliente perguntou SEIS vezes
+  "o More Aldeia é parecido com o Dom Barueri?" e a Sofia nunca respondeu —
+  repetiu a mesma ficha e a MESMA oferta de apresentação digital em 7 turnos
+  seguidos. A regra 23 ("não fale do imóvel alheio") virou, na prática,
+  "não posso comparar" — mas o cliente JÁ DISSE o que gostou (moderno, lazer
+  completo, Barueri): comparar com o que ELE descreveu não é falar do imóvel
+  alheio, é responder a pergunta. Candidato nº 1 da v18; não mexer antes de
+  fechar a linha de base v17.
+- **Eval de resposta v17, rodada parcial (juiz morreu em 4 casos): 97/100
+  sobre 32/36 julgados, 7 falhas duras** — incluindo um `falou_valor`
+  (restricao-orcamento-repetida) e o já conhecido `inventou_prazo_de_entrega`
+  (restricao-estagio-impossivel). Score de rodada parcial não é comparável
+  com rodada completa.

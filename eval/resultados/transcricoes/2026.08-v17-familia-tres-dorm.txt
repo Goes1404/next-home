@@ -1,0 +1,21 @@
+familia-tres-dorm · cliente_mudo · 3 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato! Você conhece a região onde gostaria de investir ou morar?
+Posso ajudar a encontrar o imóvel ideal para você.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[2] Cliente: Conheço sim, já moro em Barueri de aluguel
+              To procurando um de 3 dormitórios aqui ou em Alphaville, perto da escola dos meus filhos
+              Tem alguma opção? Qual o valor?
+[2] Sofia:   O More Aldeia de Bareuri tem 2 dormitórios, não 3, e fica em Barueri, perto do shopping e estação
+Posso te enviar a apresentação digital para você conhecer melhor?
+Quer conhecer o decorado para entender as condições e valores?
+
+[3] Cliente: 2 quartos nao me atende de jeito nenhum, preciso de 3
+              tem algum de 3 dormitorios ou nao?
+              e qual a faixa de preco?
+[3] Sofia:   Não tenho opção de 3 dormitórios no More Aldeia de Bareuri, só 2 mesmo.
+Posso mostrar o On The Park Alphaville, que tem 3 suítes, se quiser.
+Sobre valores, a melhor forma é agendar uma visita para apresentar as condições e o projeto.

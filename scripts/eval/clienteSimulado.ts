@@ -140,7 +140,11 @@ export async function proximaFalaDoCliente(
    */
   const resultado = await CHAMADAS[provedorDoCliente()](promptDoCliente(persona, conversa), {
     temperature: 0.8,
-    timeoutMs: 30_000,
+    // 30s cabe nos modelos rápidos; modelos de raciocínio (3.6-flash) estouram
+    // esse teto de forma intermitente e o cliente cala no meio da conversa —
+    // parece cota, mas é timeout. EVAL_CLIENTE_TIMEOUT_MS estica quando o
+    // único modelo com cota sobrando é um de raciocínio.
+    timeoutMs: Number(process.env.EVAL_CLIENTE_TIMEOUT_MS ?? 30_000),
     modelo: process.env.EVAL_CLIENTE_MODELO,
   });
 
