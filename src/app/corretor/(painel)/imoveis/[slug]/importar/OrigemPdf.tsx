@@ -7,6 +7,8 @@ import type { RascunhoCadastro as Rascunho } from "@/lib/imoveis/rascunhoDePdf";
 import {
   analisarPdf,
   aplicarRascunhoNoCadastro,
+  descartarPdfDeImportacao,
+  gerarTipologiaDaPlanta,
   gravarEscolhasDoPdf,
   sugerirCadastroDoPdf,
   type AnaliseDoPdf,
@@ -34,11 +36,12 @@ export function OrigemPdf({
   const [analise, setAnalise] = useState<AnaliseDoPdf | null>(null);
   const [caminhoStaging, setCaminhoStaging] = useState<string | null>(null);
   const [escolhas, setEscolhas] = useState<Record<string, EscolhaCuradoria>>({});
-  const [etapa, setEtapa] = useState<"parado" | "enviando" | "lendo" | "gravando">("parado");
+  const [etapa, setEtapa] = useState<"parado" | "enviando" | "lendo" | "gravando" | "lendoPlantas">("parado");
   const [resumo, setResumo] = useState<string | null>(null);
   const [rascunho, setRascunho] = useState<Rascunho | null>(null);
   const [avisoRascunho, setAvisoRascunho] = useState<string | null>(null);
   const [rascunhoSalvo, setRascunhoSalvo] = useState<string | null>(null);
+  const [tipologias, setTipologias] = useState<string | null>(null);
 
   const aoEscolherArquivo = async (arquivo: File) => {
     setResumo(null);
@@ -46,6 +49,7 @@ export function OrigemPdf({
     setRascunho(null);
     setAvisoRascunho(null);
     setRascunhoSalvo(null);
+    setTipologias(null);
 
     if (arquivo.size > TETO_PDF_BYTES) {
       const mb = (arquivo.size / 1024 / 1024).toFixed(0);
@@ -130,15 +134,15 @@ export function OrigemPdf({
     }
 
     setEtapa("gravando");
+    setTipologias(null);
     const resultado = await gravarEscolhasDoPdf({
       empreendimentoId,
       slug,
       caminhoStaging,
       escolhas: escolhidas.map((e) => ({ indice: Number(e.chave), tipo: e.tipo, capa: e.capa })),
     });
-    setEtapa("parado");
-
     if (!resultado.ok) {
+      setEtapa("parado");
       setResumo(resultado.erro ?? "Não consegui gravar agora.");
       return;
     }
@@ -155,8 +159,42 @@ export function OrigemPdf({
         .join(" "),
     );
 
-    // O PDF de passagem foi apagado ao gravar: outra importação começa
-    // escolhendo o arquivo de novo.
+    // Cada planta vira a tipologia que ela representa — é dela que o bot
+    // tira dormitórios, suítes e metragem para responder ao cliente. Uma
+    // por vez: cada leitura é uma ida ao modelo com a imagem junto.
+    if (resultado.plantas.length > 0) {
+      setEtapa("lendoPlantas");
+      const nomes: string[] = [];
+      const problemas: string[] = [];
+
+      for (const [i, planta] of resultado.plantas.entries()) {
+        setTipologias(`Lendo planta ${i + 1} de ${resultado.plantas.length}…`);
+        const lida = await gerarTipologiaDaPlanta({
+          empreendimentoId,
+          slug,
+          caminhoStaging,
+          indice: planta.indice,
+          plantaUrl: planta.url,
+        });
+        if (lida.ok) nomes.push(lida.nome);
+        else problemas.push(`Planta ${planta.indice + 1}: ${lida.erro}.`);
+      }
+
+      setTipologias(
+        [
+          nomes.length > 0
+            ? `${nomes.length} ${nomes.length === 1 ? "planta virou tipologia" : "plantas viraram tipologias"}: ${nomes.join(", ")}.`
+            : "Nenhuma planta virou tipologia.",
+          ...problemas,
+        ].join(" "),
+      );
+    }
+
+    // Só agora a apresentação pode ir embora: era dela que saía o texto com
+    // o nome e a metragem de cada planta.
+    await descartarPdfDeImportacao(caminhoStaging);
+
+    setEtapa("parado");
     setAnalise(null);
     setCaminhoStaging(null);
     setEscolhas({});
@@ -231,7 +269,11 @@ export function OrigemPdf({
             disabled={ocupado}
             className="w-full min-h-[48px] rounded-xl bg-acento px-5 text-fluid-xs font-bold text-white shadow-md shadow-acento/20 transition-all active:scale-95 disabled:opacity-60"
           >
-            {etapa === "gravando" ? "Adicionando ao imóvel…" : "Adicionar ao imóvel"}
+            {etapa === "gravando"
+              ? "Adicionando ao imóvel…"
+              : etapa === "lendoPlantas"
+                ? "Lendo as plantas…"
+                : "Adicionar ao imóvel"}
           </button>
         </>
       ) : null}
@@ -239,6 +281,12 @@ export function OrigemPdf({
       {resumo ? (
         <p role="status" className="text-fluid-xs text-corpo">
           {resumo}
+        </p>
+      ) : null}
+
+      {tipologias ? (
+        <p role="status" className="text-fluid-xs text-corpo">
+          {tipologias}
         </p>
       ) : null}
 

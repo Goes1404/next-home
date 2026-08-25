@@ -8,6 +8,8 @@ import { gerarPreview, sharpDisponivel } from "@/lib/imoveis/imagemDerivada";
 import { registrarMidia } from "@/lib/imoveis/registrarMidia";
 import { baixarArquivo, listarPasta, parsearLinkDrive, type ArquivoDrive } from "@/lib/imoveis/drive";
 import { montarRascunhoDePdf, type RascunhoCadastro } from "@/lib/imoveis/rascunhoDePdf";
+import { lerPlanta } from "@/lib/imoveis/lerPlanta";
+import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
 import type { Database } from "@/lib/supabase/types";
 
 type AtualizacaoEmpreendimento = Database["public"]["Tables"]["empreendimentos"]["Update"];
@@ -121,6 +123,8 @@ export type ResultadoGravacao = {
   gravadas: number;
   duplicadas: number;
   falhas: string[];
+  /** O que foi marcado como planta, para virar tipologia em seguida. */
+  plantas: { indice: number; url: string }[];
   erro?: string;
 };
 
@@ -142,10 +146,10 @@ export async function gravarEscolhasDoPdf(entrada: {
 }): Promise<ResultadoGravacao> {
   const corretor = await getCorretorLogado();
   if (!corretor) {
-    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], erro: "Sessão expirada. Entre de novo." };
+    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], plantas: [], erro: "Sessão expirada. Entre de novo." };
   }
   if (entrada.escolhas.length === 0) {
-    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], erro: "Marque pelo menos uma imagem." };
+    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], plantas: [], erro: "Marque pelo menos uma imagem." };
   }
 
   const supabase = await createClient();
@@ -156,6 +160,7 @@ export async function gravarEscolhasDoPdf(entrada: {
       gravadas: 0,
       duplicadas: 0,
       falhas: [],
+      plantas: [],
       erro: "O arquivo que eu estava usando não está mais aqui. Escolha o PDF de novo.",
     };
   }
@@ -167,6 +172,7 @@ export async function gravarEscolhasDoPdf(entrada: {
   let gravadas = 0;
   let duplicadas = 0;
   const falhas: string[] = [];
+  const plantas: { indice: number; url: string }[] = [];
 
   for (const escolha of entrada.escolhas) {
     const imagem = extraidas.imagens[escolha.indice];
@@ -185,20 +191,121 @@ export async function gravarEscolhasDoPdf(entrada: {
       ordem: escolha.capa ? 0 : 10,
     });
 
-    if (!resultado.ok) falhas.push(`Imagem ${escolha.indice + 1}: ${resultado.erro}`);
-    else if (resultado.duplicada) duplicadas++;
+    if (!resultado.ok) {
+      falhas.push(`Imagem ${escolha.indice + 1}: ${resultado.erro}`);
+      continue;
+    }
+
+    if (resultado.duplicada) duplicadas++;
     else gravadas++;
+
+    // Planta não é só foto na galeria: é a tipologia do imóvel, e é dela que
+    // o bot tira dormitórios, suítes e metragem para responder ao cliente.
+    if (escolha.tipo === "planta") plantas.push({ indice: escolha.indice, url: resultado.url });
   }
 
-  // O PDF de passagem já cumpriu o papel; deixá-lo no bucket seria lixo que
-  // ninguém volta a abrir.
-  await supabase.storage.from("empreendimentos").remove([entrada.caminhoStaging]);
+  // O PDF de passagem SÓ é apagado quando a leitura das plantas terminar
+  // (`descartarPdfDeImportacao`): é dele que sai o texto onde moram o nome e
+  // a metragem de cada tipologia — a imagem sozinha não tem isso.
 
   revalidatePath(`/empreendimentos/${entrada.slug}`);
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
-  return { ok: true, gravadas, duplicadas, falhas };
+  return { ok: true, gravadas, duplicadas, falhas, plantas };
+}
+
+export type ResultadoTipologia =
+  | { ok: true; nome: string; criada: boolean }
+  | { ok: false; erro: string };
+
+/**
+ * Transforma UMA planta já gravada na tipologia correspondente.
+ *
+ * Uma por chamada, como a transferência do Drive: cada leitura é uma ida ao
+ * modelo com a imagem embutida, e um deck com sete plantas estouraria o teto
+ * de 60s da função se tudo fosse numa requisição só.
+ *
+ * A tipologia é a ficha que o bot lê para responder "quantos dormitórios",
+ * "qual a metragem" — por isso a planta não pode parar na galeria.
+ */
+export async function gerarTipologiaDaPlanta(entrada: {
+  empreendimentoId: string;
+  slug: string;
+  caminhoStaging: string;
+  indice: number;
+  plantaUrl: string;
+}): Promise<ResultadoTipologia> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "sessão expirada" };
+
+  const supabase = await createClient();
+  const baixado = await supabase.storage.from("empreendimentos").download(entrada.caminhoStaging);
+  if (baixado.error || !baixado.data) {
+    return { ok: false, erro: "não encontrei mais o arquivo da apresentação" };
+  }
+
+  const pdf = Buffer.from(await baixado.data.arrayBuffer());
+  const imagem = extrairImagensDePdf(pdf).imagens[entrada.indice];
+  if (!imagem) return { ok: false, erro: "não reencontrei a planta no arquivo" };
+
+  const leitura = await lerPlanta(imagem.bytes, imagem.mime, extrairTextoDePdf(pdf));
+  if (!leitura.ok) {
+    return {
+      ok: false,
+      erro:
+        leitura.motivo === "sem_api_key"
+          ? "a leitura de plantas depende da IA, que não está configurada aqui"
+          : "não consegui ler os dados desta planta",
+    };
+  }
+
+  const t = leitura.tipologia;
+
+  // Mesma planta lida de novo não vira tipologia duplicada: o nome é a
+  // identidade dentro do empreendimento, e reimportar deve ATUALIZAR.
+  const { data: existente } = await supabase
+    .from("tipologias")
+    .select("id")
+    .eq("empreendimento_id", entrada.empreendimentoId)
+    .ilike("nome", t.nome)
+    .maybeSingle();
+
+  const linha = {
+    empreendimento_id: entrada.empreendimentoId,
+    nome: t.nome,
+    dormitorios: t.dormitorios,
+    suites: t.suites,
+    banheiros: t.banheiros,
+    vagas: t.vagas,
+    area_privativa: t.metragem,
+    planta_url: entrada.plantaUrl,
+  };
+
+  // `preco` e `unidades_disponiveis` ficam de FORA de propósito: não saem de
+  // uma apresentação, mudam toda semana, e a IA é proibida de falar valores.
+  const { error } = existente
+    ? await supabase.from("tipologias").update(linha).eq("id", existente.id)
+    : await supabase.from("tipologias").insert(linha);
+
+  if (error) {
+    console.error("Erro ao gravar tipologia da planta:", error);
+    return { ok: false, erro: "não consegui salvar a tipologia" };
+  }
+
+  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidatePath("/corretor/imoveis");
+
+  return { ok: true, nome: t.nome, criada: !existente };
+}
+
+/** Apaga a apresentação da área de passagem, encerrando a importação. */
+export async function descartarPdfDeImportacao(caminhoStaging: string): Promise<void> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return;
+
+  const supabase = await createClient();
+  await supabase.storage.from("empreendimentos").remove([caminhoStaging]);
 }
 
 /**
