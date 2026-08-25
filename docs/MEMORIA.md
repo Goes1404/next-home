@@ -1143,11 +1143,24 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
   absorvidas NÃO voltaram ao menu.
 - **Contador de aba só aparece quando > 0** — um contador que vive em zero
   ensina a ignorar o contador. Mesma regra do cartão de pendência do Início.
-- **E2E autenticado do painel continua sem existir.** O Playwright está no
-  `package.json` mas não há config, e o painel exige sessão de corretor —
-  montar isso é trabalho próprio, não sobra de outra fase. O que existe hoje
-  é: teste de regra pura (fila, navegação), guarda de escala por leitura de
-  código, e medição de banco versionada.
+- **E2E existe desde 25/08/2026** (`npm run test:e2e`, `playwright.config.ts`
+  + `e2e/`). O que importa saber antes de mexer:
+  - **O banco por trás é o de PRODUÇÃO** — não há ambiente de teste. Todo
+    spec do painel é READ-ONLY por contrato: abre tela, marca checkbox, abre
+    modal, e NUNCA aciona o botão que grava/dispara/move. Spec novo herda a
+    regra.
+  - **O painel exige credencial real**: `E2E_CORRETOR_EMAIL` /
+    `E2E_CORRETOR_SENHA` em `.env.e2e.local` (fora do git). Sem elas o setup
+    grava uma sessão VAZIA e os specs do painel PULAM com aviso — não
+    falham. O detalhe que custou descobrir: o `storageState` referenciado no
+    `use` do projeto morre com ENOENT antes de qualquer teste, então o setup
+    precisa gravar o arquivo mesmo quando pula.
+  - **`workers: 1`, medido**: com 2, os specs disputam o dev server pelos
+    vídeos de fundo (0,7–15 MB) e a rodada flake — 2 falhas numa execução,
+    zero na seguinte. E `page.goto` usa `domcontentloaded`: o evento `load`
+    inclui o download do vídeo e estourava o timeout sem testar nada.
+  - **Device móvel é Pixel 7, não iPhone**: o preset de iPhone pede WebKit,
+    que não está instalado — e o que se quer é o viewport móvel, não Safari.
 
 ## A IA nunca via as próprias respostas (25/08/2026)
 
