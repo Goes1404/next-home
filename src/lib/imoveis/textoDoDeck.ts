@@ -13,8 +13,15 @@
  * ruído, e mexer nele mudaria um caminho que já funciona em produção.
  */
 
-/** Linha de um caractere só sobra de qualquer varredura; não informa nada. */
-const TAMANHO_MINIMO_DA_LINHA = 2;
+/**
+ * Linha de um caractere só costuma ser sobra de varredura — MENOS quando é
+ * dígito: na ficha técnica do book, os finais "1" e "2" ocupam uma linha
+ * cada, e descartá-los desalinhava a tabela inteira (sete finais para nove
+ * metragens), que é justamente o que dá a metragem de cada planta.
+ */
+function tamanhoAceitavel(linha: string): boolean {
+  return linha.length >= 2 || /^\d$/.test(linha);
+}
 
 /**
  * A assinatura do lixo não é o caractere estranho — `³`, `«` e `Ï` contam
@@ -74,7 +81,7 @@ export function limparTextoDeApresentacao(bruto: string): string {
         .replace(/[ \t]+/g, " ")
         .trim(),
     )
-    .filter((linha) => linha.length >= TAMANHO_MINIMO_DA_LINHA)
+    .filter(tamanhoAceitavel)
     .filter(pareceFrase)
     .filter(poucosSimbolos)
     .filter(vocabularioDeTexto)

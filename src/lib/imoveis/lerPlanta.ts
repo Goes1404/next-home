@@ -1,5 +1,6 @@
 import { extrairJsonDeTexto } from "@/lib/whatsapp/llmTipos";
 import { modeloOpenai } from "@/lib/whatsapp/openai";
+import { lerFichaDeMetragens, metragemPelaFicha } from "./fichaTecnica";
 
 /**
  * Lê uma planta e devolve a tipologia que ela representa.
@@ -54,60 +55,6 @@ function inteiroAte(valor: unknown, teto: number): number | null {
   return Math.round(n);
 }
 
-/**
- * A metragem só vale se o modelo mostrar DE ONDE tirou.
- *
- * O deck do Dom Parque lista nove metragens e a imagem não diz qual é a
- * dela — o título fica em texto vetorial da página, que a extração não
- * associa à imagem. Sem esta amarra o modelo escolhe uma metragem
- * plausível e erra: mediu-se 51,8 m² para a planta de 47,75. Metragem
- * errada é pior que metragem ausente, porque a IA afirma o número ao
- * cliente e ele confere na visita.
- */
-/**
- * Compara pelo conteúdo, não pelos sinais. O modelo devolve "m²" e
- * "artística" com acento; a extração do PDF nem sempre. Exigir igualdade
- * literal reprovaria citação legítima — foi o que aconteceu na primeira
- * medição, e a metragem certa (47,75) foi descartada junto com os chutes.
- */
-function normalizar(texto: string): string {
-  return texto
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/[²]/g, "2")
-    .replace(/[^a-z0-9,.]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function metragemAncorada(
-  metragem: number | null,
-  trecho: unknown,
-  textoDoPdf: string,
-): number | null {
-  if (metragem === null) return null;
-  // Fragmento ("51,37 m") não é citação: é o número recortado do meio do
-  // deck, e foi assim que a metragem de 1 dormitório veio parar numa planta
-  // de 2. Legenda de planta é uma frase.
-  if (typeof trecho !== "string" || trecho.trim().length < 25) {
-    if (process.env.DEBUG_PLANTA) console.warn("[planta] trecho curto demais:", trecho);
-    return null;
-  }
-
-  if (!normalizar(textoDoPdf).includes(normalizar(trecho))) {
-    if (process.env.DEBUG_PLANTA) console.warn("[planta] trecho não confere:", JSON.stringify(trecho));
-    return null;
-  }
-
-  // A frase citada precisa conter o número que ele diz ter lido nela.
-  const comVirgula = metragem.toFixed(2).replace(".", ",");
-  const inteiro = String(Math.trunc(metragem));
-  return trecho.includes(comVirgula) || trecho.includes(String(metragem)) || trecho.includes(inteiro)
-    ? metragem
-    : null;
-}
-
 /** Separada da chamada de rede para ser testável sem modelo nenhum. */
 export function interpretarTipologia(bruto: unknown, textoDoPdf = ""): TipologiaDaPlanta | null {
   if (!bruto || typeof bruto !== "object" || Array.isArray(bruto)) return null;
@@ -119,14 +66,6 @@ export function interpretarTipologia(bruto: unknown, textoDoPdf = ""): Tipologia
   const dormitorios = inteiroAte(cru.dormitorios, LIMITES.dormitorios);
   if (dormitorios === null) return null;
 
-  const metragemCrua = typeof cru.metragem === "number" ? cru.metragem : Number(cru.metragem);
-  const metragem =
-    Number.isFinite(metragemCrua) &&
-    metragemCrua >= LIMITES.metragemMinima &&
-    metragemCrua <= LIMITES.metragemMaxima
-      ? Math.round(metragemCrua * 100) / 100
-      : null;
-
   return {
     nome: nome.slice(0, 80),
     dormitorios,
@@ -134,7 +73,12 @@ export function interpretarTipologia(bruto: unknown, textoDoPdf = ""): Tipologia
     suites: Math.min(inteiroAte(cru.suites, LIMITES.suites) ?? 0, dormitorios),
     banheiros: inteiroAte(cru.banheiros, LIMITES.banheiros) ?? 0,
     vagas: inteiroAte(cru.vagas, LIMITES.vagas) ?? 0,
-    metragem: metragemAncorada(metragem, cru.trechoDaMetragem, textoDoPdf),
+    // A metragem NÃO vem do modelo: vem da ficha técnica, pelo final que ele
+    // leu na imagem. Foi assim que se resolveu o erro de 51,8 m² numa planta
+    // de 47,75 — o modelo escolhia entre as nove metragens do book.
+    metragem: metragemPelaFicha(lerFichaDeMetragens(textoDoPdf), {
+      final: typeof cru.final === "string" ? cru.final : null,
+    }),
   };
 }
 
@@ -142,29 +86,86 @@ function montarPrompt(textoDoPdf: string): string {
   return `A imagem é a planta de um apartamento, tirada da apresentação abaixo.
 
 Devolva SÓ um JSON com a tipologia que ESTA planta representa:
-{"nome":"","dormitorios":0,"suites":0,"banheiros":0,"vagas":0,"metragem":0,"trechoDaMetragem":""}
+{"nome":"","dormitorios":0,"suites":0,"banheiros":0,"vagas":0,"final":""}
 
 Regras:
 - "nome" é como a apresentação chama esta planta (ex.: "Confort 1 dorm.",
   "Prime 2 dorms", "Max 3 dorms"). Se não houver nome, descreva pela
   composição: "2 dormitórios, 1 suíte".
-- "metragem" é a área PRIVATIVA em m², nunca a área do terreno nem a
-  construída do empreendimento inteiro.
+- "final" é o número da unidade escrito NA IMAGEM ("PLANTA TIPO FINAL 11",
+  ou o quadradinho destacado no diagrama do pavimento). Só o que estiver
+  desenhado na planta vale; se não houver, devolva "".
 - Conte dormitórios, suítes, banheiros e vagas DESTA planta.
-- O título e a metragem quase sempre estão no TEXTO, não desenhados na
-  imagem: use o texto para identificar de qual tipologia é esta planta,
-  conferindo com o que você vê (número de quartos, de banheiros, varanda).
-- "trechoDaMetragem" é a FRASE do texto, copiada literalmente, que informa a
-  área desta planta (ex.: "Planta artística do Apartamento de 1 dormitório de
-  47,75 m² - final 11"). O deck lista várias metragens: só vale a que a frase
-  copiada disser. Se você não encontrar a frase desta planta, devolva
-  "trechoDaMetragem" vazio e metragem 0 — chutar entre as metragens do
-  empreendimento é o erro que mais atrapalha.
+- NÃO devolva metragem: o m² sai da ficha técnica, não da sua leitura.
+- O nome da tipologia quase sempre está no TEXTO, não desenhado na imagem:
+  use o texto para identificar qual é esta planta, conferindo com o que você
+  vê (número de quartos, de banheiros, varanda).
 - Se não der para saber com segurança, devolva 0 no campo — não invente.
 - NUNCA inclua preço.
 
 Texto da apresentação:
 ${textoDoPdf.slice(0, TETO_DE_TEXTO)}`;
+}
+
+/**
+ * Confere o final com uma pergunta SÓ sobre ele, sem o texto do deck junto.
+ *
+ * Medido: quando a planta não traz o final desenhado, o modelo não responde
+ * "não sei" — ele chuta, e chuta o mesmo número que viu em outra página
+ * ("11"). Isso dava a área do apartamento de 1 dormitório para plantas de 2.
+ *
+ * Duas leituras independentes concordarem num número inventado é bem menos
+ * provável que uma só; e quando o número ESTÁ escrito na imagem, as duas
+ * concordam sempre. É a mesma ideia do voto: caro seria pedir três.
+ */
+async function confirmarFinal(
+  imagem: Buffer,
+  mime: string,
+  apiKey: string,
+  timeoutMs: number,
+): Promise<string | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const resposta = await fetch(BASE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: modeloOpenai(),
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text:
+                  'Esta imagem é a planta de um apartamento. Está escrito nela o número do final ' +
+                  '(por exemplo "PLANTA TIPO FINAL 11", ou um quadradinho destacado num diagrama)? ' +
+                  'Responda SÓ com JSON: {"final":"11"} se estiver escrito, ou {"final":""} se não estiver. ' +
+                  "Não deduza pelo tipo de apartamento: só vale o que está desenhado.",
+              },
+              { type: "image_url", image_url: { url: `data:${mime};base64,${imagem.toString("base64")}` } },
+            ],
+          },
+        ],
+        max_tokens: 60,
+        temperature: 0,
+        response_format: { type: "json_object" },
+      }),
+    });
+
+    if (!resposta.ok) return null;
+    const corpo = await resposta.json();
+    const json = extrairJsonDeTexto(corpo?.choices?.[0]?.message?.content ?? "");
+    const final = (json as { final?: unknown } | null)?.final;
+    return typeof final === "string" && final.trim() ? final.trim() : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export type ResultadoLeituraPlanta =
@@ -230,7 +231,28 @@ export async function lerPlanta(
 
     const corpo = await resposta.json();
     const texto: string | undefined = corpo?.choices?.[0]?.message?.content;
-    const tipologia = texto ? interpretarTipologia(extrairJsonDeTexto(texto), textoDoPdf) : null;
+    if (!texto) return { ok: false, motivo: "resposta_inutil" };
+
+    const bruto = extrairJsonDeTexto(texto) as Record<string, unknown> | null;
+    const primeiraLeitura = typeof bruto?.final === "string" ? bruto.final : null;
+
+    // Metragem só entra com o final CONFIRMADO por uma segunda leitura.
+    const confirmado = primeiraLeitura
+      ? await confirmarFinal(imagem, mime, apiKey, opts.timeoutMs ?? 25_000)
+      : null;
+    const mesmoNumero =
+      confirmado !== null &&
+      primeiraLeitura !== null &&
+      confirmado.match(/\d+/)?.[0] === primeiraLeitura.match(/\d+/)?.[0];
+
+    const tipologia = interpretarTipologia(
+      { ...bruto, final: mesmoNumero ? primeiraLeitura : "" },
+      textoDoPdf,
+    );
+
+    if (process.env.DEBUG_PLANTA) {
+      console.warn(`[planta] final: leu ${JSON.stringify(primeiraLeitura)}, confirmou ${JSON.stringify(confirmado)}`);
+    }
 
     return tipologia ? { ok: true, tipologia } : { ok: false, motivo: "resposta_inutil" };
   } catch (erro) {
