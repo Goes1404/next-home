@@ -1,0 +1,35 @@
+quer-visitar-sabado · cliente_encerrou · 8 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria visitar um apartamento sábado, dá?
+[1] Sofia:   Sábado dá sim, de manhã ou à tarde? Posso te mostrar opções que tenho na região que você prefere.
+
+[2] Cliente: tarde
+[2] Sofia:   Sábado à tarde está ótimo. Você já tem uma região em mente para a visita?
+Assim já preparo as opções que mais combinam com você.
+
+[3] Cliente: Qual bairro?
+[3] Sofia:   Tenho opções em Barueri, Osasco e Alphaville. Prefere alguma dessas regiões para a visita no sábado à tarde?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[4] Cliente: Barueri
+[4] Sofia:   Barueri tem ótimas opções, tanto prontas quanto na planta. Prefere pronto para morar ou aceita esperar a obra?
+Assim já te mostro o que cabe no seu perfil.
+
+[5] Cliente: 14h?
+              ok
+[5] Sofia:   Sábado às 14h está reservado para você. Vou preparar as opções em Barueri, pronto e na planta, para apresentar no stand.
+Posso te enviar o link com as fotos para já ir conhecendo?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[6] Cliente: certo, só sábado
+              qual horário?
+[6] Sofia:   Confirmado sábado às 14h no stand em Barueri. Vou preparar tudo para você conhecer as opções.
+Quer que eu envie o link com as fotos para já ir vendo?
+
+[7] Cliente: 14h
+[7] Sofia:   Sábado às 14h está reservado para você no stand em Barueri. Vou preparar as opções para apresentar pessoalmente.
+
+[8] Cliente: ok
+[8] Sofia:   Sábado às 14h está agendado para você. Vou preparar as opções para apresentar no stand.
+Qual a renda média da família para eu já adiantar o que cabe no financiamento?

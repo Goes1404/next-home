@@ -139,14 +139,37 @@ function catalogoParaJudge(): string {
  * rodadas, avaliando o próprio provedor — e a nota deixaria de comparar
  * coisa alguma.
  */
+let notasDoJuizReserva = 0;
+/**
+ * Chamada de juiz com RESERVA: Gemini primeiro; se a cota gratuita morrer
+ * no meio da rodada (o modo de falha mais comum daqui), o GPT assume — com
+ * contagem à parte, porque ele é da MESMA família do agente e a nota dele
+ * carrega viés para cima. Caso sem nota nenhuma continua sendo pior que
+ * caso julgado pela reserva: score sem denominador já custou caro aqui.
+ */
+async function chamarJuiz(prompt: string) {
+  const principal = JUIZ === "openai" ? chamarOpenaiJson : chamarGeminiJson;
+  const resultado = await principal(prompt, {
+    temperature: 0,
+    timeoutMs: ORCAMENTO_AGENTE_MS,
+    modelo: JUIZ === "openai" ? MODELO_JUIZ_OPENAI : MODELO_JUIZ,
+  });
+  if (resultado.ok || JUIZ === "openai") return resultado;
+  const reserva = await chamarOpenaiJson(prompt, {
+    temperature: 0,
+    timeoutMs: ORCAMENTO_AGENTE_MS,
+    modelo: MODELO_JUIZ_OPENAI,
+  });
+  if (reserva.ok) notasDoJuizReserva++;
+  return reserva;
+}
+
 async function julgar(
   mensagem: string,
   resposta: string,
 ): Promise<{ fidelidade: number; conducao: number; tom: number; justificativa: string } | null> {
-  const chamar = JUIZ === "openai" ? chamarOpenaiJson : chamarGeminiJson;
-  const resultado = await chamar(
+  const resultado = await chamarJuiz(
     `${RUBRICA}\n\nCATÁLOGO OFICIAL:\n${catalogoParaJudge()}\n\nMENSAGEM DO CLIENTE: ${mensagem}\n\nRESPOSTA DA ASSISTENTE: ${resposta}`,
-    { temperature: 0, timeoutMs: ORCAMENTO_AGENTE_MS, modelo: JUIZ === "openai" ? MODELO_JUIZ_OPENAI : MODELO_JUIZ },
   );
   if (!resultado.ok) return null;
   const j = resultado.json as Record<string, unknown>;
@@ -180,8 +203,7 @@ async function julgarRestricao(
   caso: Caso,
   resposta: string,
 ): Promise<VeredictoRestricao | null> {
-  const chamar = JUIZ === "openai" ? chamarOpenaiJson : chamarGeminiJson;
-  const resultado = await chamar(
+  const resultado = await chamarJuiz(
     `${PROMPT_JUIZ_RESTRICAO}
 
 ${montarEntradaJuizRestricao({
@@ -189,11 +211,6 @@ ${montarEntradaJuizRestricao({
       mensagemCliente: caso.mensagem,
       resposta,
     })}`,
-    {
-      temperature: 0,
-      timeoutMs: ORCAMENTO_AGENTE_MS,
-      modelo: JUIZ === "openai" ? MODELO_JUIZ_OPENAI : MODELO_JUIZ,
-    },
   );
   if (!resultado.ok) return null;
   const j = resultado.json as Record<string, unknown>;

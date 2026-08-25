@@ -1,0 +1,137 @@
+{
+  "promptVersao": "2026.08-v18",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "educado-que-enrola",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 7,
+        "assuntosCobertos": [
+          "estagio",
+          "tipologia",
+          "visita",
+          "perfil",
+          "regiao"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 136,
+        "maiorMensagem": 168,
+        "reprovacoes": [
+          "7 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A assistente não qualificou tipologia, renda ou estágio da obra, insistiu pouco na visita e girou em torno de fotos e preço.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "investidor-objetivo",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer que eu envie as plantas também?",
+          "Quer que eu envie as plantas também?",
+          "Quer agendar uma visita para eu te mostrar tudo com calma?",
+          "Que tal agendarmos uma visita para eu te apresentar tudo com calma?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "visita",
+          "perfil",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 227,
+        "maiorMensagem": 326,
+        "reprovacoes": [
+          "repetiu 4 pergunta(s) que já tinha feito",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa manteve consistência e convidou para visita, mas girou em torno do valor sem qualificar perfil ou avançar muito.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "insiste-no-desconto",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Me conta, procura imóvel em qual região?",
+          "Me conta, em qual região você busca o imóvel?",
+          "Me conta, qual região você prefere para eu indicar imóveis que cabem no seu perfil?",
+          "Me conta, prefere em qual região para eu indicar opções que cabem no seu perfil?",
+          "Você busca 2 dormitórios, certo?",
+          "Me conta, prefere em qual região para eu indicar opções que cabem no seu perfil?"
+        ],
+        "perguntasReaparecidas": [
+          "tem desconto extra à vista?",
+          "e o preço final?",
+          "10% à vista, aceita?"
+        ],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 5,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 194,
+        "maiorMensagem": 285,
+        "reprovacoes": [
+          "repetiu 6 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 3 pergunta(s) — ela não respondeu",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "5 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A assistente manteve consistência, tentou qualificar região e tipologia, mas a conversa ficou travada no preço. Não houve avanço pleno, mas não comprometeu.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

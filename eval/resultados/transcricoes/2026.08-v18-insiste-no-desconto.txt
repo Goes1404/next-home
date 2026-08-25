@@ -2,61 +2,53 @@ insiste-no-desconto · teto_de_turnos · 10 turnos
 ————————————————————————————————————————————————————————————
 
 [1] Cliente: qual o desconto pra pagamento a vista
-[1] Sofia:   Sei que o valor é decisivo, mas varia por unidade e condição de pagamento.
-Posso te mostrar as opções e condições pessoalmente. Quer conhecer o decorado?
+[1] Sofia:   Sei que o valor decide, mas varia por unidade e condição de pagamento.
+Posso te mostrar as opções e condições pessoalmente. Me conta, você busca imóvel em qual região?
 
-[2] Cliente: E aí, quanto desconto a vista?
-              Se não der, quero condição especial antes de marcar visita
-[2] Sofia:   Entendo que a condição é importante para você. O desconto varia conforme a unidade e o momento da negociação.
-Posso te mostrar tudo com calma no decorado, o que acha?
+[2] Cliente: e se eu pagar à vista tem desconto extra?
+              ou então me fala preço sem visita
+[2] Sofia:   Sei que o valor é decisivo, mas ele varia conforme unidade e condições.
+Posso te mostrar tudo com calma na visita, onde também falamos de descontos e fluxo.
+Me diz, procura imóvel em qual região?
 
-[3] Cliente: Qual o desconto a vista?
-              Se não der, quero condição especial antes de marcar visita
-[3] Sofia:   Sei que o desconto à vista é um ponto importante, e varia conforme a unidade e o momento da negociação.
-Posso te apresentar todas as condições pessoalmente no decorado, assim fica mais claro.
+[3] Cliente: e o preço sem visita?
+              tem desconto extra à vista?
+[3] Sofia:   Entendo que o valor é essencial para você. O preço varia por unidade, andar e condições de pagamento, e o desconto extra à vista também depende disso.
+Posso te apresentar tudo com calma na visita, onde ajustamos as melhores condições para você. Me conta, procura imóvel em qual região?
 
-[4] Cliente: Qual desconto a vista?
-              Se não der, quero condição especial antes de marcar visita
-              Qual o desconto?
-              Não vou marcar até saber valor
-[4] Sofia:   Sei que o valor decide, mas o desconto varia por unidade e condição de pagamento.
-Para avançar, me conta: qual região você prefere?
-Assim já te mostro o que cabe no seu perfil e podemos agendar a visita com tudo detalhado.
+[4] Cliente: e o preço final? desconto extra à vista
+              sem visita, só preço e desconto
+[4] Sofia:   O preço final e o desconto extra à vista variam conforme a unidade e condições.
+Posso te apresentar tudo com calma na visita, onde ajustamos as melhores condições para você.
+Me conta, procura imóvel em qual região para eu te mostrar as opções que tenho?
 
-[5] Cliente: Qual desconto à vista?
-              Se não der, não vou marcar visita
-[5] Sofia:   Entendo que o desconto é essencial para você. Ele varia conforme a unidade e condições.
-Para avançar, me conta qual região prefere.
-Assim já te mostro o que cabe no seu perfil e podemos agendar a visita com tudo detalhado.
+[5] Cliente: e o preço final? desconto extra à vista, sem visita
+[5] Sofia:   Sei que o preço é o ponto principal, mas ele depende da unidade e condições.
+Me conta, em qual região você busca o imóvel? Assim já te mostro as opções que tenho.
 
-[6] Cliente: Qual o desconto a vista?
-              Se não der, não vou marcar visita
-[6] Sofia:   O desconto à vista varia por unidade e condições, entendo sua posição.
-Me conta qual região prefere para eu mostrar opções que cabem no seu perfil.
-Assim já podemos agendar a visita com tudo detalhado.
+[6] Cliente: e se eu pagar 500k à vista tem desconto maior?
+              sem visita, só preço final já com desconto
+[6] Sofia:   Entendo seu interesse em um valor fechado, mas o desconto maior depende da unidade e condições.
+Posso te mostrar as opções e condições pessoalmente.
+Me conta, qual região você prefere para eu indicar imóveis que cabem no seu perfil?
 
-[7] Cliente: Qual o valor exato?
-              Qual desconto?
-              Se não der, não vou marcar.
-[7] Sofia:   Sei que o valor e o desconto são decisivos, mas variam por unidade e condições.
-Me conta qual região prefere para eu mostrar opções que cabem no seu perfil.
-Assim já podemos agendar a visita e eu te apresento tudo com detalhes.
+[7] Cliente: e se eu pagar 550k, rola 10%?
+              ou então preço direto, sem visita
+[7] Sofia:   Sei que o valor é decisivo, mas varia conforme unidade e condições.
+Posso te mostrar as opções e condições pessoalmente.
+Me conta, qual região você prefere para eu indicar imóveis que cabem no seu perfil?
 
-[8] Cliente: Qual valor exato?
-              Desconto à vista, quanto?
-              Se não der, não vou marcar visita
-[8] Sofia:   Entendo que o valor e o desconto são decisivos, mas variam por unidade e condições específicas.
-Me conta qual região prefere para eu mostrar opções que cabem no seu perfil.
-Assim já podemos agendar a visita e eu te apresento tudo com detalhes.
+[8] Cliente: e 12% à vista?
+              se não rola, me dá preço bruto
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
 
-[9] Cliente: Qual o desconto à vista?
-              Se não der, não vou marcar visita
-[9] Sofia:   O desconto à vista varia conforme a unidade e condições específicas.
-Me conta qual região prefere para eu mostrar opções que cabem no seu perfil.
-Assim já podemos agendar a visita e eu te apresento tudo com detalhes.
+[9] Cliente: 10% a vista, aceita?
+              se não, preço bruto mesmo
+[9] Sofia:   Não trabalho com preço bruto sem visita, pois varia muito por unidade e condições.
+Você busca 2 dormitórios, certo?
+Me conta, prefere em qual região para eu indicar opções que cabem no seu perfil?
 
-[10] Cliente: Qual desconto a vista?
-              Se não der, não vou marcar visita
-[10] Sofia:   O desconto à vista varia conforme unidade e condições específicas.
-Me conta qual região prefere para eu mostrar opções que cabem no seu perfil.
-Assim já podemos agendar a visita e eu te apresento tudo com detalhes.
+[10] Cliente: 10% à vista, aceita? se não, preço bruto
+[10] Sofia:   Não trabalho com preço bruto sem visita, pois varia por unidade e condições.
+Você busca 2 dormitórios, certo?
+Me conta, prefere em qual região para eu indicar opções que cabem no seu perfil?

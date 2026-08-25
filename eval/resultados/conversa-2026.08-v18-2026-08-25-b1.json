@@ -1,0 +1,210 @@
+{
+  "promptVersao": "2026.08-v18",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "familia-tres-dorm",
+      "desfecho": "ia_indisponivel",
+      "turnos": 8,
+      "medida": {
+        "turnos": 8,
+        "turnoDaOfertaDeVisita": 3,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso agendar sua visita para sábado às 10h ou às 11h?",
+          "Posso agendar sua visita para sábado às 10h ou às 11h?"
+        ],
+        "perguntasReaparecidas": [
+          "Qual valor?",
+          "Qual valor?",
+          "Qual valor?",
+          "Qual preço?"
+        ],
+        "respostasRepetidas": 2,
+        "maiorSequenciaSemNovidade": 5,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "perfil",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 215,
+        "maiorMensagem": 322,
+        "reprovacoes": [
+          "repetiu 2 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
+          "mandou 2 resposta(s) quase idêntica(s) a uma anterior",
+          "5 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A assistente entrou em loop repetitivo a partir do turno 4, ignorando a insistência do cliente em agendar e regredindo no turno 7 ao pedir informações já fornecidas."
+      }
+    },
+    {
+      "persona": "elogiou-o-terra-alta",
+      "desfecho": "cliente_mudo",
+      "turnos": 9,
+      "medida": {
+        "turnos": 9,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer conhecer o decorado para sentir o espaço?",
+          "Quer conhecer o decorado para sentir o espaço?",
+          "Quer agendar uma visita para conhecer o decorado esta semana?"
+        ],
+        "perguntasReaparecidas": [
+          "Foto?",
+          "Mais?",
+          "Foto?",
+          "Mais?",
+          "Foto?",
+          "Mais?",
+          "Foto?",
+          "Mais?",
+          "Foto?",
+          "Foto?",
+          "Mais?",
+          "Foto?",
+          "Mais?",
+          "Foto?",
+          "Mais?",
+          "Foto?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 8,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "renda",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 170,
+        "maiorMensagem": 255,
+        "reprovacoes": [
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 16 pergunta(s) — ela não respondeu",
+          "8 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa entrou em loop repetitivo. O cliente insistiu em pedir fotos e a assistente repetiu as mesmas respostas sem conseguir qualificar o contato ou avançar."
+      }
+    },
+    {
+      "persona": "imovel-de-outra-imobiliaria",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 6,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Prefere pronto para morar ou na planta?",
+          "Prefere pronto para morar ou na planta?",
+          "Quer conhecer o decorado?",
+          "Quer conhecer o decorado?"
+        ],
+        "perguntasReaparecidas": [
+          "vi outro, gostei, tem algo igual?",
+          "você tem algo igual?",
+          "tem algo igual?"
+        ],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 4,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "perfil",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 151,
+        "maiorMensagem": 258,
+        "reprovacoes": [
+          "repetiu 4 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 3 pergunta(s) — ela não respondeu",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "4 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "muda-a-restricao",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso agendar uma visita para te apresentar o projeto e as condições?",
+          "Prefere terça às 10h ou quarta às 15h?",
+          "Posso agendar visita para terça às 10h ou quarta às 15h para apresentar tudo?"
+        ],
+        "perguntasReaparecidas": [
+          "qual metragem?",
+          "tô de 2 dorm pronto morar, que preço?",
+          "qual metragem?",
+          "qual metragem?",
+          "tô de 1 dorm pronto morar, quanto?",
+          "qual metragem?",
+          "Qual preço?",
+          "qual metragem?",
+          "Qual preço?",
+          "quanto?",
+          "qual metragem?"
+        ],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 8,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia",
+          "estagio",
+          "visita",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 248,
+        "maiorMensagem": 478,
+        "reprovacoes": [
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 11 pergunta(s) — ela não respondeu",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "8 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa entrou em um loop repetitivo infinito. O cliente insistia nas mesmas perguntas e a assistente respondia de forma robótica, sem conseguir qualificar ou avançar."
+      }
+    }
+  ]
+}

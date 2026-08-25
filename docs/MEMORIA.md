@@ -1618,3 +1618,25 @@ Duas lições que valem além do `sharp`:
   (restricao-orcamento-repetida) e o já conhecido `inventou_prazo_de_entrega`
   (restricao-estagio-impossivel). Score de rodada parcial não é comparável
   com rodada completa.
+
+## Reforma v18 — Onda 1 medida (25/08/2026, manhã)
+
+- **v17 → v18 no mesmo juiz GPT, mesma rubrica: "assumiria" 5/16 → 12/16;
+  avançou 0,44 → 0,75; mesmaPessoa 2,00 nas duas** (a voz não troca desde o
+  motor único). Determinístico: perguntas repetidas pela IA 53 → 36; o
+  resto do loop fica para a Onda 2. `falou_valor` sumiu do eval de resposta.
+- **Juiz e cliente simulado agora têm RESERVA PAGA** (decisão do usuário):
+  juiz Gemini → `gpt-4.1` com carimbo (`juiz: "gpt-reserva"` na conversa;
+  contador no eval de resposta); cliente Groq → `gpt-4o-mini` (modelo
+  DIFERENTE do agente de propósito — mesmo modelo dos dois lados é o modelo
+  se entrevistando). Nota sem origem não compara versão; por isso o carimbo.
+- **O balde diário da Groq esgota de verdade**: `gpt-oss-20b` morreu no meio
+  da rodada (9 personas mudas no turno 1); `openai/gpt-oss-120b` é balde
+  separado e estava livre porque o agente não usa mais a Groq.
+- **`TypeError: fetch failed` no agente = rede LOCAL, não OpenAI.** Sonda
+  com `curl api.openai.com` antes de culpar o provedor: numa tarde a rede
+  oscilou, 5 conversas morreram como `ia_indisponivel`, e a sonda devolvia
+  200 com latência subindo (1,2s → 3s). Re-rodar resolveu.
+- **Comando de fundo tem teto de 10 min**: rodada de 16 personas NÃO cabe
+  em um `npm run eval:conversa` só — dividir em lotes de ≤4 e renomear o
+  JSON entre lotes (o arquivo de saída é por versão+dia e se sobrescreve).

@@ -1,0 +1,69 @@
+investidor-objetivo · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual a menor tipologia do vista alphagran
+[1] Sofia:   Não tenho informações sobre o Vista Alphagran, poderia me dizer o que gostou nele?
+Assim vejo o que temos na região que atende seu perfil.
+
+[2] Cliente: qual o valor
+              onde fica
+[2] Sofia:   O Vitra Alphaville fica no Dezoito do Forte, Barueri, pronto para morar.
+Sobre valor, varia por unidade e condição de pagamento. Posso te enviar o catálogo para conhecer as opções?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: valor?
+              foto?
+[3] Sofia:   Sei que o valor é importante, mas varia por unidade e condições de pagamento.
+Posso te enviar as fotos do Vitra Alphaville para você conhecer melhor?
+Dá uma olhada e me diz o que te agradou.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-2-big-56cbd63eb7afb430e0e17e65af38778d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-3-big-6ee6905482a046988bde5334ff1b4877.jpg
+
+[4] Cliente: valor exato
+              manda foto
+[4] Sofia:   Sei que o valor exato é decisivo, mas varia por unidade e condições de pagamento.
+Posso te enviar as fotos do Vitra Alphaville para você conhecer melhor.
+Quer que eu envie as plantas também? Dá para agendar uma visita para apresentar tudo com calma.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-4-big-8053195313275bc888429d8ab9a9a4ea.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-5-big-6da7666a1e8dcb3a29b4969be1b7c89e.jpg
+
+[5] Cliente: valor exato
+              foto
+[5] Sofia:   Entendo que o valor exato é essencial para você.
+Ele varia conforme a unidade e as condições de pagamento, que podemos detalhar na visita.
+Já te enviei as fotos do Vitra Alphaville para conhecer o padrão.
+Quer que eu envie as plantas também?
+Podemos agendar uma visita para apresentar tudo com calma e esclarecer suas dúvidas.
+
+[6] Cliente: valor ainda
+              foto
+[6] Sofia:   O valor exato depende da unidade e condições, que detalho na visita.
+Já enviei as fotos do Vitra Alphaville para você conhecer o padrão.
+Quer que eu envie as plantas também?
+Podemos agendar uma visita para apresentar tudo com calma e esclarecer suas dúvidas.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-4437ee1f8f0ca0135bd73540a6063059.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-db60774778f5a3d788cdcb47cdd43db3.jpg
+
+[7] Cliente: valor exato
+              foto
+[7] Sofia:   O valor exato varia por unidade e condições, que apresento na visita.
+Já te enviei as fotos e as plantas do Vitra Alphaville para conhecer o padrão.
+Quer agendar uma visita para eu te mostrar tudo com calma?
+
+[8] Cliente: valor exato
+              foto
+[8] Sofia:   O valor exato varia conforme unidade e condições, que apresento na visita.
+Já te enviei fotos e plantas do Vitra Alphaville para conhecer o padrão.
+Quer agendar uma visita para eu te mostrar tudo com calma?
+
+[9] Cliente: já perguntei valor exato e foto
+[9] Sofia:   Sei que o valor exato é decisivo, mas varia por unidade e condições.
+Já te enviei fotos e plantas do Vitra Alphaville para conhecer o padrão.
+Que tal agendarmos uma visita para eu te apresentar tudo com calma?
+
+[10] Cliente: já falei valor e foto
+[10] Sofia:   Entendo que o valor exato é essencial para você.
+Ele varia conforme a unidade e condições, que detalho na visita.
+Já enviei fotos e plantas do Vitra Alphaville para conhecer o padrão.
+Que tal agendarmos uma visita para eu te apresentar tudo com calma?

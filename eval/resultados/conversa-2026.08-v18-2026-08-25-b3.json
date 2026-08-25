@@ -1,0 +1,157 @@
+{
+  "promptVersao": "2026.08-v18",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "quer-tudo-pelo-zap",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 8,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "estagio",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 163,
+        "maiorMensagem": 236,
+        "reprovacoes": [
+          "8 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A assistente lidou bem com um cliente difícil e repetitivo, mantendo a postura, recusando passar valores e conseguindo extrair a região de interesse após insistência.",
+        "juiz": "gemini"
+      }
+    },
+    {
+      "persona": "pressa-de-quinze-dias",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer agendar para conhecer o decorado e eu te apresentar tudo pessoalmente?",
+          "Quer agendar para conhecer o decorado e eu te apresentar tudo pessoalmente?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 8,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "renda",
+          "perfil",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 186,
+        "maiorMensagem": 228,
+        "reprovacoes": [
+          "repetiu 2 pergunta(s) que já tinha feito",
+          "8 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa manteve consistência e tentou conduzir à visita, mas girou em torno do preço. Qualificação inicial foi feita, mas faltou aprofundar.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "decide-com-a-esposa",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 3,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "valor?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "regiao",
+          "perfil",
+          "estagio",
+          "tipologia",
+          "visita",
+          "renda"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 170,
+        "maiorMensagem": 257,
+        "reprovacoes": [
+          "o cliente teve de repetir 1 pergunta(s) — ela não respondeu",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A assistente foi consistente, buscou qualificar a renda e a tipologia, evitou passar valores conforme a regra e insistiu no agendamento da visita de forma educada.",
+        "juiz": "gemini"
+      }
+    },
+    {
+      "persona": "sem-perfil-de-renda",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 5,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer que eu envie agora para você dar uma olhada?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 5,
+        "assuntosCobertos": [
+          "regiao",
+          "renda",
+          "tipologia",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 182,
+        "maiorMensagem": 265,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "5 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    }
+  ]
+}

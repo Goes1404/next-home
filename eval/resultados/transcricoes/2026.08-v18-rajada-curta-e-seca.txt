@@ -1,0 +1,41 @@
+rajada-curta-e-seca · cliente_mudo · 7 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi
+[1] Sofia:   Olá! Em que região você procura seu próximo imóvel? Posso te mostrar opções que tenho por aqui.
+
+[2] Cliente: tem foto
+              qual valor
+[2] Sofia:   Tenho fotos dos imóveis que te interessarem, posso enviar para você. Sobre valor, varia conforme unidade e condições, melhor ver pessoalmente.
+Quer conhecer o decorado? Posso te enviar o catálogo para dar uma olhada e me dizer o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: tem foto
+[3] Sofia:   Enviei o catálogo para você dar uma olhada e me dizer o que chamou atenção.
+Posso te mostrar fotos específicas dos imóveis que gostar.
+
+[4] Cliente: Alphaville tem casas
+              Quero saber tudo
+[4] Sofia:   Não trabalho com casas, só apartamentos em Alphaville e região.
+Tenho opções em prontos e na planta, quer que eu te mostre? Dá uma olhada no catálogo e me diz o que gostou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[5] Cliente: Alphaville tudo?
+              casa?
+              quero tudo
+[5] Sofia:   Não trabalho com casas, só apartamentos em Alphaville e região.
+Tenho opções prontas e na planta, quer que eu te mostre? Dá uma olhada no catálogo e me diz o que gostou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[6] Cliente: quero saber tudo
+              tem foto
+[6] Sofia:   Tenho apartamentos em Alphaville prontos e na planta, com fotos que posso enviar.
+Quer que eu te mostre as opções disponíveis para você escolher?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[7] Cliente: Alphaville tudo
+              tem foto
+[7] Sofia:   Tenho fotos dos apartamentos em Alphaville, prontos e na planta. Posso enviar as imagens dos que você gostar.
+Quer que eu te mostre as opções para você escolher?
+Dá uma olhada no catálogo e me diz o que chamou atenção.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna

@@ -1,0 +1,51 @@
+decide-com-a-esposa · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: to vendo apartamento pra minha familia, 2 ou 3 dorm
+[1] Sofia:   Você procura em que região? Tenho opções em Barueri, Osasco e Alphaville. Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[2] Cliente: Barueri?
+[2] Sofia:   Em Barueri, tenho o More Aldeia de Barueri, pronto para morar, e o Viva RSF Vila do Conde, com últimas unidades.
+Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: e a metragem?
+              e preço?
+[3] Sofia:   O More Aldeia tem 63m², 2 dormitórios com suíte e o Viva RSF tem 49m², 3 dormitórios com suíte.
+Sobre preço, varia por unidade e condição de pagamento.
+Podemos agendar uma visita para eu te apresentar o projeto e as condições? Posso te mostrar pessoalmente.
+
+[4] Cliente: valor?
+[4] Sofia:   Sei que o valor é importante, mas varia por unidade, andar e condição de pagamento.
+Me conta, qual a renda média da família para eu já te mostrar o que cabe no financiamento?
+
+[5] Cliente: preciso falar com ela
+[5] Sofia:   Sem pressa. Me avisa quando puder falar para avançarmos com as opções e agendar a visita.
+
+[6] Cliente: vou falar depois
+[6] Sofia:   Fico no aguardo. Quando quiser, só avisar para avançarmos e agendar a visita.
+
+[7] Cliente: quando eu falar
+[7] Sofia:   Fico à disposição para quando vocês conversarem.
+Enquanto isso, posso te enviar o catálogo completo para ir vendo as opções com calma?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[8] Cliente: manda foto
+[8] Sofia:   Vou te enviar fotos do More Aldeia de Barueri, que é pronto para morar e tem 2 dormitórios com suíte.
+Também posso mandar do Viva RSF Vila do Conde, que tem 3 dormitórios com suíte, se quiser.
+Qual prefere ver primeiro?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-1-big-fa9d826751f7a7f2f548546f1fa3985a.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-2-big-5d61ecbe0596294db5e89af22bc6814c.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-3-big-b113766a6aef5b7e10ea66673cd2a78c.jpg
+
+[9] Cliente: mais 2
+[9] Sofia:   Vou mandar mais duas fotos do More Aldeia de Barueri para você conhecer melhor.
+Se quiser, depois posso enviar do Viva RSF também, que tem 3 dormitórios.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-4-big-1b09fd6fe77678ef68e20a0056ee74d7.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-5-big-26c7191610578ff0ed5343163672c698.jpg
+
+[10] Cliente: valor?
+[10] Sofia:   Sei que o valor é decisivo, mas varia conforme unidade e condição.
+Posso te mostrar tudo pessoalmente na visita.
+Quer agendar para quinta ou sexta-feira?

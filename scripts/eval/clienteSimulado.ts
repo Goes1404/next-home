@@ -182,6 +182,25 @@ export async function proximaFalaDoCliente(
     resultado = await CHAMADAS[provedor](promptDoCliente(persona, conversa), opcoes);
   }
 
+  /*
+   * RESERVA PAGA (decisão do usuário, 25/08): cota gratuita esgotada não
+   * pode mais matar a rodada — o cliente cai para a OpenAI. Num modelo
+   * DIFERENTE do agente de propósito (`gpt-4o-mini` contra `gpt-4.1-mini`):
+   * mesmo modelo dos dois lados é o modelo se entrevistando, que é o que a
+   * trava de provedor existe para impedir. Família igual ainda enviesa um
+   * pouco para a cooperação — por isso a reserva é o ÚLTIMO recurso, não o
+   * padrão, e o log grita quando ela assume.
+   */
+  if (!resultado.ok && provedor !== "openai") {
+    console.warn(
+      "[eval] cliente simulado SEM COTA no provedor gratuito — reserva paga assumiu (gpt-4o-mini)",
+    );
+    resultado = await CHAMADAS.openai(promptDoCliente(persona, conversa), {
+      ...opcoes,
+      modelo: process.env.EVAL_CLIENTE_MODELO_RESERVA || "gpt-4o-mini",
+    });
+  }
+
   if (!resultado.ok) return null;
 
   const json = resultado.json as { mensagem?: unknown; encerrar?: unknown; porque?: unknown };

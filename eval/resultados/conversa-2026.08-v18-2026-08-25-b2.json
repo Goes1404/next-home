@@ -1,0 +1,155 @@
+{
+  "promptVersao": "2026.08-v18",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "escreve-errado",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer que eu agende uma visita para conhecer o decorado e as condições?",
+          "Posso agendar uma visita para você conhecer o decorado e as condições?",
+          "Terça às 10h ou quarta às 15h?",
+          "Posso agendar uma visita para você conhecer o decorado e as condições?",
+          "Terça às 10h ou quarta às 15h, qual prefere?"
+        ],
+        "perguntasReaparecidas": [
+          "planta?",
+          "vcs?"
+        ],
+        "respostasRepetidas": 3,
+        "maiorSequenciaSemNovidade": 9,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "visita",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 141,
+        "maiorMensagem": 184,
+        "reprovacoes": [
+          "repetiu 5 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 2 pergunta(s) — ela não respondeu",
+          "mandou 3 resposta(s) quase idêntica(s) a uma anterior",
+          "9 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A assistente entrou em um loop repetitivo, insistindo que já enviou as plantas enquanto o cliente continuava pedindo, gerando frustração e travando o atendimento."
+      }
+    },
+    {
+      "persona": "quer-visitar-sabado",
+      "desfecho": "cliente_encerrou",
+      "turnos": 8,
+      "medida": {
+        "turnos": 8,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 3,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "estagio",
+          "tipologia",
+          "perfil",
+          "renda"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 151,
+        "maiorMensagem": 237,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "rajada-curta-e-seca",
+      "desfecho": "cliente_mudo",
+      "turnos": 7,
+      "medida": {
+        "turnos": 7,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Tenho opções prontas e na planta, quer que eu te mostre?",
+          "Quer que eu te mostre as opções para você escolher?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 3,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "estagio",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 210,
+        "maiorMensagem": 302,
+        "reprovacoes": [
+          "repetiu 2 pergunta(s) que já tinha feito",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa entrou em loop repetitivo a partir do turno 4. A assistente não enviou fotos, não qualificou a renda e apenas repetiu o link do catálogo."
+      }
+    },
+    {
+      "persona": "insiste-no-desconto",
+      "desfecho": "cliente_mudo",
+      "turnos": 1,
+      "medida": {
+        "turnos": 1,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 156,
+        "maiorMensagem": 156,
+        "reprovacoes": []
+      },
+      "juizo": {
+        "avancou": 2,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A assistente agiu corretamente: evitou falar de valores, convidou para uma visita e iniciou a qualificação da região de forma natural e profissional."
+      }
+    }
+  ]
+}
