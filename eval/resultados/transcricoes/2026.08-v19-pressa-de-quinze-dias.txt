@@ -1,0 +1,64 @@
+pressa-de-quinze-dias · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: preciso de apto pra entrar em 15 dias no maximo, tem algo assim
+[1] Sofia:   Para entrada em 15 dias, o ideal é pronto para morar.
+Você conhece a região onde gostaria de morar? Tenho opções em Barueri e Osasco.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[2] Cliente: e a região? já falei que preciso rápido
+              não quero obra, só pronto
+[2] Sofia:   Pronto para morar é o caminho certo para você. Prefere Barueri ou Osasco?
+Tenho opções em ambos os locais que entregam rápido.
+
+[3] Cliente: não falei de região de novo
+              quero ver os prontos
+[3] Sofia:   Tenho apartamentos prontos em Barueri e Osasco.
+Posso te mostrar o Vitra Alphaville, com 2 suítes, ou o More Aldeia de Barueri, com 2 dormitórios e suíte.
+Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[4] Cliente: não pedi pra ver os imóveis de novo
+              quero fotos e preços dos prontos
+              tô com pressa!
+[4] Sofia:   Entendo a pressa e a importância de agilizarmos. Posso te enviar as fotos do Vitra Alphaville, que tem 2 suítes e está pronto para morar.
+Sobre valores, podemos conversar pessoalmente, onde te apresento as condições flexíveis de pagamento. Quer que eu envie as fotos para você avaliar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-2-big-56cbd63eb7afb430e0e17e65af38778d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-3-big-6ee6905482a046988bde5334ff1b4877.jpg
+
+[5] Cliente: quero preços e fotos de todos prontos
+              não pedi só do Vitra!
+[5] Sofia:   Entendo a urgência e o interesse em ver tudo.
+Tenho fotos do Vitra Alphaville, que é um dos mais completos, com 2 suítes e 2 vagas.
+Sobre preços, só trato pessoalmente na visita, onde apresento as condições flexíveis.
+Quer que eu envie as fotos do Vitra para você avaliar enquanto conversamos?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-4-big-8053195313275bc888429d8ab9a9a4ea.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-5-big-6da7666a1e8dcb3a29b4969be1b7c89e.jpg
+
+[6] Cliente: quero fotos e preços de todos prontos!
+              não pedi só do Vitra!
+[6] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[7] Cliente: quero fotos e preços de todos os prontos já!
+              não só do Vitra!
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: não sei como ajudar se não manda as fotos
+              quero tudo pronto!
+              não só do Vitra!
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: não pedi pra falar de dormitórios
+              quero fotos e preços de todos prontos!
+[9] Sofia:   O Vitra Alphaville tem 2 dormitórios, 2 suítes, 2 vagas e 107m².
+Está pronto para morar e com condições flexíveis de pagamento. Posso te enviar a planta para avaliar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-4437ee1f8f0ca0135bd73540a6063059.jpg
+
+[10] Cliente: quero fotos e preços de todos prontos!
+              não só do Vitra!
+[10] Sofia:   Enviei as fotos e a planta do Vitra Alphaville, que é um dos prontos mais completos que temos.
+Sobre preços, só trato pessoalmente na visita, com condições flexíveis.
+Quer conhecer o decorado para ver tudo de perto e conversar sobre as condições?
+Posso agendar para terça às 10h ou quarta às 15h.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-db60774778f5a3d788cdcb47cdd43db3.jpg

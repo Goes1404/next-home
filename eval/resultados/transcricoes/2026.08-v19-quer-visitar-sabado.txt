@@ -1,0 +1,37 @@
+quer-visitar-sabado · cliente_encerrou · 7 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria visitar um apartamento sábado, dá?
+[1] Sofia:   Sábado dá sim, de manhã ou à tarde você prefere?
+Posso te mostrar opções que estão prontas para morar ou na planta, o que acha?
+
+[2] Cliente: tarde
+[2] Sofia:   Tarde de sábado está ótimo. Você prefere apartamento pronto para morar ou na planta?
+A condição de pagamento muda bastante entre eles.
+
+[3] Cliente: pronto
+[3] Sofia:   Tranquilo, pronto para morar tem o More Aldeia de Barueri e o Vitra Alphaville, ambos com 2 dormitórios e suíte.
+Quer que eu te envie o catálogo para dar uma olhada?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[4] Cliente: qual horário exato?
+              endereço?
+[4] Sofia:   O sábado posso te oferecer às 14h ou às 16h para visitar o More Aldeia ou o Vitra Alphaville.
+Sobre o endereço, mando o link do catálogo que tem tudo certinho para você.
+Quer que eu agende para um desses horários?
+
+[5] Cliente: 14h ou 16h?
+              endereço?
+[5] Sofia:   14h de sábado fica ótimo para a visita, então.
+O link do catálogo tem o endereço certinho e fotos para você conferir antes.
+Confirmo o agendamento para sábado às 14h no More Aldeia ou no Vitra Alphaville, qual prefere?
+
+[6] Cliente: endereço?
+              More Aldeia
+[6] Sofia:   O More Aldeia de Barueri fica no Jardim Iracema, Barueri.
+O link do catálogo tem o endereço completo e fotos para você conferir.
+Confirmo sua visita para sábado às 14h no More Aldeia.
+Se precisar de mais alguma coisa, fico à disposição.
+
+[7] Cliente: ok
+[7] Sofia:   Ótimo, sua visita para sábado às 14h no More Aldeia está confirmada. Se precisar ajustar algo, me avisa.

@@ -1,0 +1,155 @@
+{
+  "promptVersao": "2026.08-v19",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "quer-tudo-pelo-zap",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Para eu te indicar certo: quantos dormitórios você precisa?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 7,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 157,
+        "maiorMensagem": 280,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "7 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem qualificação efetiva nem avanço real. Faltou condução firme e assertiva para o próximo passo.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "pressa-de-quinze-dias",
+      "desfecho": "ia_indisponivel",
+      "turnos": 2,
+      "medida": {
+        "turnos": 2,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "renda",
+          "perfil",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 217,
+        "maiorMensagem": 251,
+        "reprovacoes": []
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A assistente conduziu bem a urgência, evitou passar valores e propôs a visita rapidamente, embora ainda falte qualificar a renda e a tipologia do imóvel.",
+        "juiz": "gemini"
+      }
+    },
+    {
+      "persona": "decide-com-a-esposa",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 8,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 3,
+        "assuntosCobertos": [
+          "regiao",
+          "perfil",
+          "tipologia",
+          "estagio",
+          "visita",
+          "renda"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 123,
+        "maiorMensagem": 250,
+        "reprovacoes": []
+      },
+      "juizo": {
+        "avancou": 2,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa qualificou tipologia, região, estágio da obra e conduziu ao próximo passo, mantendo consistência e postura profissional.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "sem-perfil-de-renda",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Prefere que eu envie de Barueri, Osasco ou Alphaville?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 5,
+        "assuntosCobertos": [
+          "regiao",
+          "renda",
+          "visita",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 203,
+        "maiorMensagem": 380,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "5 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem avanço real. Faltou envio de fotos e condução efetiva ao próximo passo. Cliente ficou repetindo pedidos.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+familia-tres-dorm · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato
+Você já conhece a região onde está o imóvel do anúncio?
+Se quiser, posso te enviar a apresentação digital para conhecer melhor.
+
+[2] Cliente: tem 3 dorm?
+              e valor?
+[2] Sofia:   Temos opções com 3 dormitórios, sim. Sobre valor, varia por unidade e condição de pagamento.
+Posso te enviar a apresentação digital para você conhecer melhor?
+Quer conhecer o decorado?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: qual o valor exato?
+              e tem perto da escola?
+[3] Sofia:   Sei que o valor é decisivo, mas ele varia por unidade e condições.
+Sobre escola, posso confirmar a região que prefere para indicar o melhor.
+Quer que eu te envie a apresentação digital para você avaliar com calma?
+
+[4] Cliente: qual o valor exato?
+              e tem 3 dorm perto da escola das crianças?
+[4] Sofia:   Entendo que o valor é importante, mas depende da unidade e condições de pagamento.
+Para te indicar o imóvel certo, qual região prefere perto da escola?
+Temos opções com 3 dormitórios em Barueri e Alphaville, por exemplo.
+
+[5] Cliente: e qual a metragem?
+              e a taxa de condomínio?
+[5] Sofia:   O tamanho varia conforme o imóvel, por exemplo, 100m² no Eternity Alphaville Tamboré, que tem 3 dormitórios e 2 suítes.
+A taxa de condomínio depende do prédio e da unidade, posso confirmar para você.
+Quer que eu envie a apresentação digital do Eternity para você avaliar com calma?
+Quer conhecer o decorado para entender melhor o padrão e as condições?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-02.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/fachada.jpg
+
+[6] Cliente: qual valor exato?
+              tem visita sábado?
+[6] Sofia:   Sei que o valor exato é decisivo, mas varia por unidade e condições.
+Temos visita sábado sim.
+Prefere sábado às 9h ou às 11h para conhecer o decorado e as condições?
+
+[7] Cliente: qual valor exato?
+              sábado 9h tá bom
+[7] Sofia:   Combinado para sábado às 9h.
+Vou agendar para você conhecer o decorado e as condições de pagamento.
+Se quiser, posso adiantar a apresentação digital para você já ir conhecendo o projeto.
+
+[8] Cliente: qual valor exato?
+              e a taxa do condomínio?
+[8] Sofia:   O valor exato varia conforme a unidade e condições de pagamento, que conversamos na visita.
+A taxa de condomínio depende do apartamento e bloco, confirmo para você no sábado.
+Posso adiantar a apresentação digital para você já ir conhecendo o projeto?
+
+[9] Cliente: qual valor exato?
+              e taxa do condomínio?
+[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[10] Cliente: valor exato?
+              e taxa condomínio?
+[10] Sofia:   Sei que o valor exato e a taxa do condomínio são decisivos, mas variam por unidade e condições.
+Posso agendar uma visita para te apresentar tudo com calma.
+Prefere terça às 10h ou quarta às 15h?

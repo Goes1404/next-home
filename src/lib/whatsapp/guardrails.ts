@@ -10,7 +10,7 @@ import {
   type AnexoResolvido,
 } from "./resolverMidia";
 import { corrigirVisitaNoPassado, verificarCoerenciaVisita } from "./coerenciaVisita";
-import { ehRepeticaoDoBot, textoNoLugarDaRepeticao } from "./repeticao";
+import { aproveitarSoONovo, ehRepeticaoDoBot, textoNoLugarDaRepeticao } from "./repeticao";
 import { manterIdentidadeHonesta } from "./identidadeHonesta";
 
 /**
@@ -142,7 +142,18 @@ export function sanearRespostaIA(
   if (repetiu) {
     console.warn(`[guardrails] repetição bloqueada: ${semOrfaos.slice(0, 80)}`);
   }
-  const semRepeticao = repetiu ? textoNoLugarDaRepeticao(historico) : identidade.texto;
+  /*
+   * Eco detectado: primeiro tenta APROVEITAR as frases novas da resposta —
+   * jogar tudo fora e mandar um pivô enlatado quebrou a voz na v19
+   * (mesmaPessoa 2,00 → 1,88) e levou junto a parte que respondia. O
+   * enlatado só sai quando não sobra frase inédita nenhuma.
+   */
+  const soONovo = repetiu ? aproveitarSoONovo(identidade.texto, historico) : identidade.texto;
+  const semRepeticao = repetiu
+    ? soONovo.length >= 40
+      ? soONovo
+      : textoNoLugarDaRepeticao(historico)
+    : identidade.texto;
 
   /*
    * Por último, para o link não ser cortado por nenhum filtro anterior nem

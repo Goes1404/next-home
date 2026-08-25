@@ -1,0 +1,175 @@
+{
+  "promptVersao": "2026.08-v19",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "familia-tres-dorm",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer que eu envie a apresentação digital do Eternity para você avaliar com calma?"
+        ],
+        "perguntasReaparecidas": [
+          "qual o valor exato?",
+          "e tem 3 dorm perto da escola das crianças?",
+          "qual valor exato?",
+          "qual valor exato?",
+          "qual valor exato?",
+          "e a taxa do condomínio?",
+          "qual valor exato?",
+          "e taxa do condomínio?",
+          "valor exato?",
+          "e taxa condomínio?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "tipologia",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 204,
+        "maiorMensagem": 352,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 10 pergunta(s) — ela não respondeu",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A assistente confirmou o agendamento para sábado, mas depois esqueceu, ofereceu novos horários e entrou em um loop repetitivo e frustrante com o cliente.",
+        "juiz": "gemini"
+      }
+    },
+    {
+      "persona": "elogiou-o-terra-alta",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Prefere conhecer pessoalmente?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 2,
+        "maiorSequenciaSemNovidade": 9,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "renda",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 134,
+        "maiorMensagem": 253,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "mandou 2 resposta(s) quase idêntica(s) a uma anterior",
+          "9 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa entrou em loop repetitivo. O cliente insistiu em fotos e a assistente repetiu as mesmas perguntas e respostas sem qualificar ou avançar no atendimento.",
+        "juiz": "gemini"
+      }
+    },
+    {
+      "persona": "rajada-curta-e-seca",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 2,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "perfil",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 140,
+        "maiorMensagem": 287,
+        "reprovacoes": [
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem qualificação efetiva nem avanço real. Faltou condução firme e respostas mais objetivas para engajar o cliente.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "quer-visitar-sabado",
+      "desfecho": "cliente_encerrou",
+      "turnos": 7,
+      "medida": {
+        "turnos": 7,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "endereço?",
+          "endereço?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 4,
+        "assuntosCobertos": [
+          "estagio",
+          "tipologia",
+          "visita",
+          "perfil",
+          "regiao"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 179,
+        "maiorMensagem": 236,
+        "reprovacoes": [
+          "o cliente teve de repetir 2 pergunta(s) — ela não respondeu",
+          "4 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 2,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa foi conduzida de forma consistente, qualificou tipologia e estágio, marcou visita e não houve deslizes no atendimento.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

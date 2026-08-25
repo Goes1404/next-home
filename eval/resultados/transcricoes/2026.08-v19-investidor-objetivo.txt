@@ -1,0 +1,54 @@
+investidor-objetivo · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual a menor tipologia do vista alphagran
+[1] Sofia:   O Vitra Alphaville tem 2 dormitórios, 107m², com 2 suítes e 2 vagas.
+É pronto para morar e fica em Alphaville. Quer conhecer o decorado para ver os detalhes?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+
+[2] Cliente: qual o valor
+              tem foto
+[2] Sofia:   Sei que o valor é importante, mas ele varia conforme unidade e condições de pagamento.
+Posso te enviar as fotos do Vitra para você conhecer melhor?
+Tenho 5 fotos disponíveis, mando para você.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-2-big-56cbd63eb7afb430e0e17e65af38778d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-3-big-6ee6905482a046988bde5334ff1b4877.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-4-big-8053195313275bc888429d8ab9a9a4ea.jpg
+
+[3] Cliente: onde fica
+[3] Sofia:   O Vitra Alphaville fica no Dezoito do Forte Empresarial, em Alphaville, Barueri.
+Posso te enviar a planta para você ter uma ideia do layout?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-4437ee1f8f0ca0135bd73540a6063059.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-db60774778f5a3d788cdcb47cdd43db3.jpg
+
+[4] Cliente: valor
+              foto
+[4] Sofia:   Enviei as fotos e as plantas para você conhecer melhor o Vitra Alphaville.
+Poderíamos agendar uma visita para eu te apresentar o projeto e as condições de pagamento?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-5-big-6da7666a1e8dcb3a29b4969be1b7c89e.jpg
+
+[5] Cliente: valor exato
+[5] Sofia:   Sei que o valor exato é decisivo, mas ele varia por unidade, andar e condição de pagamento.
+Me conta, qual região você prefere para eu indicar o que cabe no seu perfil?
+
+[6] Cliente: valor exato
+[6] Sofia:   Entendo que o valor exato é fundamental para você.
+Para avançar, me conta qual região prefere e o perfil que busca, assim já te mostro opções alinhadas.
+
+[7] Cliente: valor ainda não
+              qual região
+[7] Sofia:   Anotei que quer saber o valor exato, que depende da unidade e condições.
+Para te ajudar melhor, qual região você prefere?
+Assim, posso indicar opções que cabem no seu perfil.
+
+[8] Cliente: valor exato
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: valor ainda não
+              foto
+[9] Sofia:   O Vitra Alphaville tem 2 dormitórios, 2 suítes e 2 vagas, com 107m². Já te enviei as fotos e plantas.
+Quer que eu te envie novamente as fotos para você analisar com calma?
+Ou prefere que eu te apresente o decorado para explicar tudo pessoalmente?
+
+[10] Cliente: valor exato
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.

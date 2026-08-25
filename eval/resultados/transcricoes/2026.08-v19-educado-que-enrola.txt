@@ -1,0 +1,38 @@
+educado-que-enrola · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: achei lindo o empreendimento de vcs no instagram
+[1] Sofia:   Que bom que gostou! Qual região você prefere para o imóvel?
+Tenho opções em Alphaville, Barueri e Osasco, todas com padrão alto.
+
+[2] Cliente: e a metragem?
+[2] Sofia:   A metragem varia conforme o empreendimento e a tipologia. Prefere algo mais compacto ou espaçoso?
+
+[3] Cliente: vou pensar
+[3] Sofia:   Pense com calma. Se quiser posso te enviar o catálogo completo para você dar uma olhada e me dizer o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[4] Cliente: vou ver aqui
+[4] Sofia:   Fique à vontade para analisar. Quando quiser, posso te mostrar opções que encaixem no que busca.
+
+[5] Cliente: tem 2 dorm?
+[5] Sofia:   Tem sim, vários com 2 dormitórios e suíte. Quer que eu te envie o catálogo focado nessas opções?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[6] Cliente: vou pensar
+[6] Sofia:   Fique à vontade para pensar. Quando quiser, posso ajudar a filtrar por região, tipo ou faixa de renda para facilitar.
+
+[7] Cliente: e o preço?
+[7] Sofia:   Sei que o valor é importante, mas varia por unidade, andar e condição de pagamento.
+Para avançar, me conta a região que prefere e sua renda mensal, assim já te mostro o que cabe.
+
+[8] Cliente: qual a faixa de preço?
+[8] Sofia:   Entendo que o preço é decisivo. Ele varia conforme unidade, andar e condições de pagamento.
+Me conta a região e sua renda mensal para eu mostrar opções que cabem no seu perfil.
+
+[9] Cliente: vou pensar
+[9] Sofia:   Tudo bem, fique à vontade para pensar.
+Quando quiser, podemos marcar uma visita para eu te apresentar o projeto e as condições de pagamento.
+
+[10] Cliente: depois te falo
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
