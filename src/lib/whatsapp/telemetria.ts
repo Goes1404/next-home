@@ -1,7 +1,6 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { modeloGemini } from "./gemini";
 
 /**
  * Registro de cada interação da IA (tabela ia_interacoes, migration 0029).
@@ -71,13 +70,28 @@ export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
       e_teste: dados.eTeste === true || dados.origem === "playground" || dados.origem === "eval",
       prompt_versao: dados.promptVersao,
       /*
-       * Na contingência NINGUÉM respondeu, então `dados.modelo` vem null e
-       * cair no padrão do Gemini seria mentira: a linha diria
-       * "gemini-2.5-flash" para uma resposta que o Gemini não deu. Foi o
-       * que atrapalhou o diagnóstico do 429 — a telemetria apontava para o
-       * modelo que estava justamente indisponível.
+       * O modelo é o que DE FATO respondeu, ou nada. Nunca um palpite.
+       *
+       * Esta linha já mentiu duas vezes, e a segunda foi grande. A primeira:
+       * na contingência ninguém respondeu, e cair no padrão fazia a tabela
+       * dizer "gemini-2.5-flash" para uma resposta que o Gemini não deu —
+       * apontando o diagnóstico do 429 justamente para o modelo
+       * indisponível. Resolvido com o "nenhum".
+       *
+       * A segunda sobreviveu à primeira correção: `pausada_por_humano` e
+       * `silenciada_por_modo` são registradas SEM chamar modelo nenhum — o
+       * webhook sai antes — e mesmo assim recebiam o padrão. Em 24/08/2026
+       * eram **1.443 de 1.496 linhas** carimbadas com um modelo que nunca
+       * foi chamado. Contando por linha, isso fazia o Gemini parecer
+       * responsável por 97% do atendimento; o número real era 9 respostas
+       * de 47. Uma conclusão inteira sobre a cascata saiu daí, e estava
+       * errada.
+       *
+       * Regra: quem chamou modelo passa o modelo. Quem não chamou não
+       * inventa — `null` é a resposta honesta, e é ela que permite filtrar
+       * "o que a IA de fato respondeu" com `where modelo is not null`.
        */
-      modelo: dados.modelo ?? (dados.fallback ? "nenhum" : modeloGemini()),
+      modelo: dados.modelo ?? (dados.fallback ? "nenhum" : null),
       latencia_ms: dados.latenciaMs ?? null,
       fallback: dados.fallback ?? false,
       acao: dados.acao,

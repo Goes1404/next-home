@@ -91,10 +91,18 @@ export type ConversaPersistida = {
   origem: "organica" | "campanha";
   /** Conversa de teste da equipe: fora do few-shot e do golden (ver 0038/0039). */
   eTeste: boolean;
+  /**
+   * O telefone já era do CRM ANTES desta conversa (0049).
+   *
+   * Decide duas coisas: a IA atende sem esperar palavra-chave, e ela VOLTA
+   * sozinha quando a pausa de 24h vence — em vez de ficar retravada para
+   * sempre pela primeira mensagem que o corretor digitou.
+   */
+  clienteConhecido: boolean;
 };
 
 const SELECT_CONVERSA =
-  "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste";
+  "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido";
 
 function mapConversa(row: {
   id: string;
@@ -105,6 +113,7 @@ function mapConversa(row: {
   liberado_por_palavra_chave: boolean;
   origem: "organica" | "campanha";
   e_teste: boolean;
+  cliente_conhecido?: boolean;
 }): ConversaPersistida {
   return {
     id: row.id,
@@ -113,6 +122,7 @@ function mapConversa(row: {
     botAtivo: row.bot_ativo,
     pausadoHumanoAte: row.pausado_humano_ate,
     liberadoPorPalavraChave: row.liberado_por_palavra_chave,
+    clienteConhecido: row.cliente_conhecido ?? false,
     eTeste: row.e_teste,
     origem: row.origem,
   };
@@ -284,6 +294,7 @@ export async function obterOuCriarConversa(params: {
       lead_id: leadId,
       origem,
       liberado_por_palavra_chave: !precisaDePalavraChave,
+      cliente_conhecido: jaEraDoCrm,
     })
     .select(SELECT_CONVERSA)
     .single();
@@ -842,8 +853,31 @@ export async function salvarDossie(leadId: string, dossie: DossieClienteIA): Pro
    * Só escreve quando há valor: um dossiê reextraído sem a renda na
    * conversa não pode APAGAR o que o cliente já disse antes.
    */
-  if (dossie.rendaMensal !== null) {
-    await supabase.from("leads").update({ renda_mensal: dossie.rendaMensal }).eq("id", leadId);
+  /*
+   * Renda E orçamento vão para `leads`, não só para o dossiê.
+   *
+   * A renda já ia; o orçamento ficava só em `lead_observacoes_ia` — e a
+   * ficha do CRM lê de `leads.orcamento_min/max`. Resultado medido em
+   * 24/08/2026: **0 de 58 leads com orçamento**, num sistema que extrai
+   * orçamento de toda conversa. Mesmo defeito de `historico_envios`: dado
+   * gravado que nenhuma tela mostra é indistinguível de dado perdido.
+   *
+   * `renda_mensal` e `orcamento_*` são coisas diferentes e as duas
+   * importam: orçamento é quanto a pessoa quer gastar no imóvel; renda é
+   * quanto entra por mês, e é ela que define o que o banco financia.
+   *
+   * Campo sem valor NÃO é escrito. Um dossiê reextraído de uma conversa em
+   * que o assunto não voltou viria com null, e null sobrescrevendo apagaria
+   * o que o cliente já disse dez mensagens atrás. Por isso o objeto é
+   * montado campo a campo, e o update só acontece se sobrou alguma coisa.
+   */
+  const doLead: { renda_mensal?: number; orcamento_min?: number; orcamento_max?: number } = {};
+  if (dossie.rendaMensal !== null) doLead.renda_mensal = dossie.rendaMensal;
+  if (dossie.orcamentoMin !== null) doLead.orcamento_min = dossie.orcamentoMin;
+  if (dossie.orcamentoMax !== null) doLead.orcamento_max = dossie.orcamentoMax;
+
+  if (Object.keys(doLead).length > 0) {
+    await supabase.from("leads").update(doLead).eq("id", leadId);
   }
 }
 

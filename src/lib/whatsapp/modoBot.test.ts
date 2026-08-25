@@ -377,3 +377,42 @@ describe("quem já é do CRM não espera palavra-chave (F3)", () => {
     ).toBe(true);
   });
 });
+
+describe("a IA volta sozinha para cliente conhecido (F7)", () => {
+  it("fala do corretor pausa, mas NÃO retrava lead do CRM", () => {
+    /*
+     * Retravar aqui significaria que um "te ligo já" desliga a IA naquele
+     * lead para sempre, e o corretor nem fica sabendo. A pausa de 24h
+     * vence; a IA volta.
+     */
+    const d = decidirPorFalaDoCorretor({
+      mensagem: "te ligo em 10 minutos",
+      palavraChaveConfigurada: "pode continuar",
+      origemConversa: "organica",
+      clienteConhecido: true,
+    });
+    expect(d).toEqual({ acao: "pausar_ia", retravarPalavraChave: false });
+  });
+
+  it("número desconhecido continua sendo retravado", () => {
+    // É esta trava que protege a conversa da família — a instância roda no
+    // WhatsApp pessoal do corretor, e o caso foi real.
+    const d = decidirPorFalaDoCorretor({
+      mensagem: "opa, tudo certo?",
+      palavraChaveConfigurada: "pode continuar",
+      origemConversa: "organica",
+      clienteConhecido: false,
+    });
+    expect(d).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
+  });
+
+  it("a palavra-chave continua ligando a IA em qualquer caso", () => {
+    const d = decidirPorFalaDoCorretor({
+      mensagem: "pode continuar",
+      palavraChaveConfigurada: "pode continuar",
+      origemConversa: "organica",
+      clienteConhecido: false,
+    });
+    expect(d).toEqual({ acao: "ativar_ia", marcarComoTeste: false });
+  });
+});

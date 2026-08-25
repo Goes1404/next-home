@@ -225,6 +225,19 @@ export function decidirPorFalaDoCorretor(params: {
    */
   palavraChaveTeste?: string | null;
   origemConversa: "organica" | "campanha";
+  /**
+   * O telefone já era do CRM antes desta conversa (0049).
+   *
+   * Para cliente conhecido, a fala do corretor PAUSA mas não retrava: a
+   * pausa de 24h vence e a IA volta sozinha. Retravar aqui significaria que
+   * uma única mensagem dele — "te ligo já" — desliga a IA naquele lead para
+   * sempre, e ele nem fica sabendo.
+   *
+   * Para número desconhecido a trava continua inteira. É ela que protege a
+   * conversa da família, e o caso que a motivou foi real: em teste, a IA
+   * assumiu a conversa da mãe do corretor e começou a oferecer imóvel.
+   */
+  clienteConhecido?: boolean;
 }): DecisaoFalaDoCorretor {
   /*
    * A de teste é conferida PRIMEIRO. Se as duas palavras casarem com a
@@ -246,6 +259,7 @@ export function decidirPorFalaDoCorretor(params: {
       palavraChaveConfigurada: params.palavraChaveConfigurada,
       palavraChaveTeste: params.palavraChaveTeste,
       origemConversa: params.origemConversa,
+      jaEraDoCrm: params.clienteConhecido,
     }),
   };
 }

@@ -204,8 +204,23 @@ export async function POST(req: NextRequest) {
     }
 
     const ehAudio = Boolean(!text && audioUrlOrBase64);
+    /*
+     * A transcrição falhou? Isso PRECISA ser visível.
+     *
+     * `transcreverAudioWhatsapp` já devolvia `sucesso: false`, e ninguém
+     * lia. O texto de erro — "[Áudio recebido — não foi possível
+     * transcrever automaticamente]" — entrava na conversa COMO SE FOSSE
+     * FALA DO CLIENTE, e a IA respondia a ele. O cliente mandou um áudio
+     * dizendo o que queria e recebeu uma resposta sobre coisa nenhuma.
+     *
+     * 104 áudios recebidos em produção até 24/08/2026, e nenhuma medida de
+     * quantos foram entendidos. Agora o desfecho é carimbado na telemetria
+     * e o cliente ouve a verdade em vez de uma resposta inventada.
+     */
+    let audioFalhou = false;
     if (ehAudio) {
       const resultadoAudio = await transcreverAudioWhatsapp(audioUrlOrBase64);
+      audioFalhou = !resultadoAudio.sucesso;
       text = resultadoAudio.textoTranscrito;
       // A intenção resumida era calculada e jogada fora; como anotação ela
       // ajuda a IA quando a transcrição sai truncada ou ambígua.
@@ -254,6 +269,7 @@ export async function POST(req: NextRequest) {
         palavraChaveConfigurada: instancia.palavraChaveAtivacao,
         palavraChaveTeste: instancia.palavraChaveTeste,
         origemConversa: conversa.origem,
+        clienteConhecido: conversa.clienteConhecido,
       });
 
       if (decisao.acao === "ativar_ia") {
@@ -310,6 +326,32 @@ export async function POST(req: NextRequest) {
     // — em conversa orgânica não existe item de fila para achar.
     if (conversa.origem === "campanha") {
       await marcarRespostaCampanha(sender);
+    }
+
+    /*
+     * Áudio que não deu para entender: fale a verdade e chame o corretor.
+     *
+     * Responder ao texto de erro como se fosse a fala do cliente é o pior
+     * desfecho possível — ele contou o que queria e recebeu resposta sobre
+     * outra coisa. Uma frase honesta custa nada e mantém a conversa viva;
+     * e o corretor fica sabendo, porque o áudio ainda está lá no WhatsApp
+     * dele para ser ouvido por gente.
+     */
+    if (audioFalhou && botDeveResponder(conversa)) {
+      await enviarMensagemWhatsapp({
+        instanceName: instancia.instanceName,
+        telefone: sender,
+        texto: "Recebi seu áudio mas não consegui ouvir direito por aqui. Pode me escrever ou mandar de novo?",
+      });
+      await registrarInteracao({
+        conversaId: conversa.id,
+        corretorId: instancia.corretorId,
+        origem: "webhook",
+        eTeste: conversa.eTeste,
+        promptVersao: PROMPT_VERSAO,
+        acao: "audio_nao_transcrito",
+      });
+      return NextResponse.json({ ok: true, action: "audio_nao_transcrito", sender });
     }
 
     if (!botDeveResponder(conversa)) {

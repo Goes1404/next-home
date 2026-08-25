@@ -587,7 +587,7 @@ export type Database = {
           fallback: boolean
           id: string
           latencia_ms: number | null
-          modelo: string
+          modelo: string | null
           origem: "webhook" | "playground" | "followup" | "eval"
           prompt_versao: string
           sugeriu_visita: boolean | null
@@ -608,7 +608,7 @@ export type Database = {
           fallback?: boolean
           id?: string
           latencia_ms?: number | null
-          modelo?: string
+          modelo?: string | null
           origem: "webhook" | "playground" | "followup" | "eval"
           prompt_versao: string
           sugeriu_visita?: boolean | null
@@ -629,7 +629,7 @@ export type Database = {
           fallback?: boolean
           id?: string
           latencia_ms?: number | null
-          modelo?: string
+          modelo?: string | null
           origem?: string
           prompt_versao?: string
           sugeriu_visita?: boolean | null
@@ -1220,6 +1220,7 @@ export type Database = {
         Row: {
           alerta_quente_em: string | null
           bot_ativo: boolean
+          cliente_conhecido: boolean
           corretor_id: string
           created_at: string
           e_teste: boolean
@@ -1237,6 +1238,7 @@ export type Database = {
         Insert: {
           alerta_quente_em?: string | null
           bot_ativo?: boolean
+          cliente_conhecido?: boolean
           corretor_id: string
           created_at?: string
           e_teste?: boolean
@@ -1254,6 +1256,7 @@ export type Database = {
         Update: {
           alerta_quente_em?: string | null
           bot_ativo?: boolean
+          cliente_conhecido?: boolean
           corretor_id?: string
           created_at?: string
           e_teste?: boolean
