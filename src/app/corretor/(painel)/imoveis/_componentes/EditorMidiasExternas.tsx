@@ -33,6 +33,7 @@ function FormularioLink({
   const [url, setUrl] = useState("");
   const [titulo, setTitulo] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [confirmacao, setConfirmacao] = useState<string | null>(null);
   const [salvando, iniciar] = useTransition();
 
   const rotulos =
@@ -50,28 +51,53 @@ function FormularioLink({
 
   function enviar() {
     setErro(null);
+    setConfirmacao(null);
     if (!url.trim()) {
       setErro("Cole o link primeiro.");
       return;
     }
     iniciar(async () => {
-      const res = await adicionarMidiaExterna(empreendimentoId, slug, {
-        tipo,
-        url,
-        titulo,
-      });
-      if (!res.ok || !res.midia) {
-        setErro(res.erro ?? "Não foi possível salvar.");
-        return;
+      // A action pode LANÇAR (rede caiu, deploy no meio) além de devolver
+      // erro. Sem o catch, a exceção morria dentro da transition e a tela
+      // não dizia NADA — nem salvo, nem falha. Foi exatamente o sintoma
+      // relatado em produção: "não apareceu, sem nenhum aviso".
+      try {
+        const res = await adicionarMidiaExterna(empreendimentoId, slug, {
+          tipo,
+          url,
+          titulo,
+        });
+        if (!res.ok || !res.midia) {
+          setErro(res.erro ?? "Não foi possível salvar.");
+          return;
+        }
+        onAdicionado(res.midia);
+        setUrl("");
+        setTitulo("");
+        setConfirmacao(
+          tipo === "video"
+            ? "Vídeo adicionado — já está na página do imóvel, na seção Vídeos."
+            : "Tour adicionado — já está na página do imóvel, na seção Tour Virtual.",
+        );
+      } catch (e) {
+        console.error("Falha ao salvar mídia externa:", e);
+        setErro("Não foi possível salvar agora. Confira a internet e tente de novo.");
       }
-      onAdicionado(res.midia);
-      setUrl("");
-      setTitulo("");
     });
   }
 
   return (
-    <div className="space-y-2">
+    /* <form> de verdade, não div com botão: colar o link e apertar ENTER é o
+       gesto natural — e fora de um form, Enter não dispara nada. O corretor
+       colava, dava Enter, achava que salvou e saía da tela: nada era salvo e
+       nenhum aviso aparecia (o clique no botão era o único caminho vivo). */
+    <form
+      className="space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        enviar();
+      }}
+    >
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="url"
@@ -89,8 +115,7 @@ function FormularioLink({
           className="text-fluid-xs min-w-0 flex-1 rounded-xl border border-linha-forte bg-campo px-3.5 py-2.5 text-corpo placeholder:text-tenue focus:border-acento focus:outline-none"
         />
         <button
-          type="button"
-          onClick={enviar}
+          type="submit"
           disabled={salvando}
           className="text-fluid-xs shrink-0 cursor-pointer rounded-xl bg-acento px-4 py-2.5 font-bold text-white transition-colors hover:bg-acento-hover disabled:opacity-60"
         >
@@ -98,7 +123,8 @@ function FormularioLink({
         </button>
       </div>
       {erro && <p className="text-fluid-xs text-perigo">{erro}</p>}
-    </div>
+      {confirmacao && <p className="text-fluid-xs font-medium text-ok">{confirmacao}</p>}
+    </form>
   );
 }
 
