@@ -1,0 +1,10 @@
+familia-tres-dorm · cliente_mudo · 2 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato---Você já conhece a região onde está o imóvel?---Se quiser, posso te enviar a apresentação digital e combinar uma visita para conhecer o decorado.
+
+[2] Cliente: conheço sim, já moro em barueri de aluguel
+              queria saber o valor desse do anuncio, ele tem 3 quartos?
+              preciso de 3 quartos pras crianças e queria ver no fds
+[2] Sofia:   Morar em Barueri facilita muito o dia a dia---O imóvel do anúncio tem 3 dormitórios, com 3 suítes e 2 vagas---As condições e valores conversamos na visita, que tal sábado de manhã para conhecer o decorado?

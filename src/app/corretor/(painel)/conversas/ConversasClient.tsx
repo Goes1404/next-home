@@ -16,6 +16,8 @@ export type ConversaResumo = {
   nome: string | null;
   botAtivo: boolean;
   pausadoAte: string | null;
+  /** A conversa já foi autorizada — a terceira condição de `botDeveResponder`. */
+  liberada: boolean;
   ultimaMensagem: string | null;
   ultimaInteracaoEm: string;
   temLead: boolean;
@@ -38,12 +40,25 @@ function telefoneLegivel(e164: string): string {
   return `(${ddd}) ${meio}-${resto.slice(meio.length)}`;
 }
 
-type Estado = "ativa" | "pausada_humano" | "desligada";
+type Estado = "ativa" | "pausada_humano" | "aguardando_liberacao" | "desligada";
 
+/**
+ * O estado tem de refletir as TRÊS condições de `botDeveResponder`, não
+ * duas.
+ *
+ * A versão anterior olhava só `botAtivo` e a pausa, e ignorava
+ * `liberadoPorPalavraChave` — então conversa travada aparecia com o selo
+ * verde "IA atendendo" enquanto o bot estava estruturalmente mudo. Não
+ * havia, em tela nenhuma, como descobrir isso. Foi por causa deste selo que
+ * ninguém percebeu que a IA nunca tinha respondido um cliente: o painel
+ * afirmava que estava tudo funcionando.
+ */
 function estadoDa(conversa: ConversaResumo): Estado {
   if (!conversa.botAtivo) return "desligada";
   const pausada = conversa.pausadoAte && new Date(conversa.pausadoAte).getTime() > Date.now();
-  return pausada ? "pausada_humano" : "ativa";
+  if (pausada) return "pausada_humano";
+  if (!conversa.liberada) return "aguardando_liberacao";
+  return "ativa";
 }
 
 const SELO: Record<Estado, { texto: string; classe: string }> = {
@@ -51,6 +66,10 @@ const SELO: Record<Estado, { texto: string; classe: string }> = {
   pausada_humano: {
     texto: "IA em pausa",
     classe: "border-alerta-linha bg-alerta-lavado text-alerta",
+  },
+  aguardando_liberacao: {
+    texto: "IA aguardando liberação",
+    classe: "border-etapa-laranja/40 bg-etapa-laranja/10 text-etapa-laranja",
   },
   desligada: { texto: "IA desligada", classe: "border-linha bg-vidro-forte text-apoio" },
 };

@@ -327,3 +327,53 @@ describe("Palavra-chave de TESTE", () => {
     ).toEqual({ acao: "ativar_ia", marcarComoTeste: false });
   });
 });
+
+describe("quem já é do CRM não espera palavra-chave (F3)", () => {
+  it("lead que já existia antes da conversa é atendido na hora", () => {
+    /*
+     * A trava existe porque a instância roda no WhatsApp PESSOAL do
+     * corretor — mas do jeito antigo ela travava cliente junto com cunhado,
+     * e o resultado medido em 24/08/2026 foi 172 mensagens de cliente e
+     * ZERO respostas. Quem foi cadastrado de propósito é cliente conhecido.
+     */
+    expect(
+      exigePalavraChave({
+        palavraChaveConfigurada: "pode continuar",
+        origemConversa: "organica",
+        jaEraDoCrm: true,
+      }),
+    ).toBe(false);
+  });
+
+  it("número desconhecido continua esperando — é o que protege a família", () => {
+    expect(
+      exigePalavraChave({
+        palavraChaveConfigurada: "pode continuar",
+        origemConversa: "organica",
+        jaEraDoCrm: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("sem palavra-chave cadastrada, nada disso importa", () => {
+    // O recurso inteiro está desligado; ninguém espera por nada.
+    expect(
+      exigePalavraChave({
+        palavraChaveConfigurada: null,
+        origemConversa: "organica",
+        jaEraDoCrm: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("a palavra de TESTE também liga a trava", () => {
+    expect(
+      exigePalavraChave({
+        palavraChaveConfigurada: null,
+        palavraChaveTeste: "modo teste",
+        origemConversa: "organica",
+        jaEraDoCrm: false,
+      }),
+    ).toBe(true);
+  });
+});

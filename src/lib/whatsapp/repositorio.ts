@@ -157,10 +157,20 @@ function apenasTextos(valor: unknown): string[] {
  * WhatsApp é um contato comercial por definição — merece um card no funil,
  * mesmo que nunca tenha preenchido formulário.
  */
+/**
+ * Devolve o lead deste telefone, criando se não houver — e diz QUAL dos
+ * dois aconteceu.
+ *
+ * `jaEraDoCrm` é o que a F3 precisa: quem já estava cadastrado antes desta
+ * conversa é cliente conhecido e a IA atende na hora; número desconhecido
+ * espera a palavra-chave. Sem essa distinção a regra não existiria — o
+ * lead é criado aqui mesmo, então "tem lead" passa a ser verdade para todo
+ * mundo no instante em que a pessoa escreve.
+ */
 async function encontrarOuCriarLead(
   supabase: ReturnType<typeof createServiceClient>,
   params: { corretorId: string; telefoneCliente: string; nomeCliente?: string | null; origem?: "organica" | "campanha" },
-): Promise<string | null> {
+): Promise<{ leadId: string | null; jaEraDoCrm: boolean }> {
   const candidatos = candidatosTelefone(params.telefoneCliente);
 
   const { data: lead } = await supabase
@@ -172,11 +182,11 @@ async function encontrarOuCriarLead(
     .limit(1)
     .maybeSingle();
 
-  if (lead) return lead.id;
+  if (lead) return { leadId: lead.id, jaEraDoCrm: true };
 
   // Conversa de campanha sempre nasce de um lead existente (a fila é montada
   // a partir deles) — se não achou, é melhor não criar um duplicado.
-  if (params.origem === "campanha") return null;
+  if (params.origem === "campanha") return { leadId: null, jaEraDoCrm: false };
 
   /*
    * `telefone_e164` NÃO entra no insert: é coluna GERADA
@@ -208,10 +218,10 @@ async function encontrarOuCriarLead(
   // acontece mas não vira nada no funil.
   if (error) {
     console.error("[whatsapp] não consegui criar o lead da conversa:", error.message);
-    return null;
+    return { leadId: null, jaEraDoCrm: false };
   }
 
-  return criado?.id ?? null;
+  return { leadId: criado?.id ?? null, jaEraDoCrm: false };
 }
 
 /** Uma conversa por (corretor, telefone) — o `unique` da 0018 garante isso. */
@@ -221,6 +231,8 @@ export async function obterOuCriarConversa(params: {
   nomeCliente?: string | null;
   /** Palavra-chave cadastrada na instância — decide se a conversa NASCE aguardando ativação. */
   palavraChaveConfigurada?: string | null;
+  /** A de teste também liga a trava: ter qualquer uma cadastrada é ter o recurso ligado. */
+  palavraChaveTeste?: string | null;
   origem?: "organica" | "campanha";
 }): Promise<ConversaPersistida | null> {
   const supabase = createServiceClient();
@@ -237,7 +249,7 @@ export async function obterOuCriarConversa(params: {
     // antes de o lead ser cadastrado): tenta religar agora. É barato e é o
     // que permite ao dossiê desta mensagem ter um destino.
     if (!existente.lead_id) {
-      const leadId = await encontrarOuCriarLead(supabase, params);
+      const { leadId } = await encontrarOuCriarLead(supabase, params);
       if (leadId) {
         await supabase.from("whatsapp_conversas").update({ lead_id: leadId }).eq("id", existente.id);
         return mapConversa({ ...existente, lead_id: leadId });
@@ -246,12 +258,21 @@ export async function obterOuCriarConversa(params: {
     return mapConversa(existente);
   }
 
-  const leadId = await encontrarOuCriarLead(supabase, params);
+  const { leadId, jaEraDoCrm } = await encontrarOuCriarLead(supabase, params);
 
   const origem = params.origem ?? "organica";
+  /*
+   * Quem já era do CRM antes desta conversa é atendido na hora; número
+   * desconhecido espera a palavra-chave. É o que faz a trava deixar de ser
+   * silêncio e virar incentivo para cadastrar o lead — ver
+   * `exigePalavraChave`, e a medição de 24/08 que motivou isto: 172
+   * mensagens de cliente, zero respostas.
+   */
   const precisaDePalavraChave = exigePalavraChave({
     palavraChaveConfigurada: params.palavraChaveConfigurada,
+    palavraChaveTeste: params.palavraChaveTeste,
     origemConversa: origem,
+    jaEraDoCrm,
   });
 
   const { data: criada, error } = await supabase

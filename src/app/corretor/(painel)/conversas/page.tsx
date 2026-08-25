@@ -34,7 +34,7 @@ export default async function ConversasPage() {
   const [{ data: conversas }, { data: instancia }] = await Promise.all([
     supabase
       .from("whatsapp_conversas")
-      .select("id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, ultima_mensagem, ultima_interacao_em, lead_id")
+      .select("id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id")
       .eq("corretor_id", corretor.id)
       .order("ultima_interacao_em", { ascending: false })
       .limit(100),
@@ -55,6 +55,7 @@ export default async function ConversasPage() {
     telefone: c.telefone_cliente,
     nome: c.nome_cliente,
     botAtivo: c.bot_ativo,
+    liberada: c.liberado_por_palavra_chave,
     pausadoAte: c.pausado_humano_ate,
     ultimaMensagem: c.ultima_mensagem,
     ultimaInteracaoEm: c.ultima_interacao_em,

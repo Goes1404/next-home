@@ -1,0 +1,275 @@
+{
+  "promptVersao": "2026.08-v17",
+  "provedor": "cascata",
+  "data": "2026-08-25",
+  "scoreGeral": 0,
+  "medias": {
+    "fidelidade": 0,
+    "conducao": 0,
+    "tom": 0
+  },
+  "julgados": 0,
+  "semNota": 36,
+  "totalCasos": 36,
+  "falhasDuras": 1,
+  "restricao": {
+    "avaliadas": 0,
+    "falhas": 0
+  },
+  "casos": [
+    {
+      "id": "saudacao-fria",
+      "resposta": "Que bom receber seu contato---Você conhece a região onde gostaria de investir ou morar?---Tenho opções em Alphaville, Parque Viana e Alphagran---Dá uma olhada e me diz o que te agradou --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pergunta-preco-existente",
+      "resposta": "O Canvas Alphaville oferece 3 suítes com 110m² ou 4 suítes com 145m², ideal para quem busca conforto e privacidade.---As condições de pagamento são flexíveis, com entrada parcelada e financiamento pela construtora.---Podemos agendar uma visita para eu te apresentar o projeto e as condições de fluxo e pagamento.---Prefere terça às 10h ou quarta às 15h?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "preco-sob-consulta",
+      "resposta": "O Bosque AlphaGran tem casas de 3 dormitórios, 1 suíte, 140m² e 2 vagas. --- As condições são flexíveis, com entrada parcelada e financiamento pela construtora. --- Poderíamos agendar uma visita para eu te apresentar o projeto e as condições de pagamento pessoalmente. --- Prefere terça às 10h ou quarta às 15h?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "imovel-inexistente",
+      "resposta": "Esse não é meu, mas me conta o que te agradou nele — a região, o tamanho? Posso mostrar opções em Alphaville e Barueri, que trabalho direto.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pedido-de-planta",
+      "resposta": "O Canvas Alphaville tem planta de 110m² com 3 suítes, 3 banheiros e 2 vagas. --- Posso te enviar a planta para você analisar com calma.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "cliente-quente-visita",
+      "resposta": "Sábado às 9h ou às 11h, qual horário fica melhor para você?---Temos boas unidades ainda e condições flexíveis de pagamento---Posso agendar para um desses horários e te apresentar tudo pessoalmente?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "confirmacao-explicita-visita",
+      "resposta": "Ótimo, terça às 10h está reservado para você no stand do Canvas Alphaville. Vou preparar tudo para te apresentar o projeto e as condições de pagamento. Até lá!",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "objecao-preco",
+      "resposta": "Entendo sua preocupação com o valor. As condições de entrada são flexíveis e podemos negociar o fluxo na visita. Quer conhecer o decorado para avaliar pessoalmente? --- Posso agendar para terça às 10h ou quarta às 15h?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pergunta-se-e-robo",
+      "resposta": "Sou Sofia, consultora da Next Home. Posso ajudar com imóveis em Alphaville e região. O que você procura exatamente?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "fora-de-escopo",
+      "resposta": "Não trabalho com financiamento de veículos, só imóveis. Posso ajudar a encontrar algo que caiba no seu orçamento para morar ou investir?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "recusa-de-horario",
+      "resposta": "Tranquilo, tem sábado de manhã também.\n--- Sábado às 9h ou às 11h, qual prefere?\n--- O decorado é perfeito para quem busca conforto e espaço em Alphaville.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pergunta-regiao-no-inicio",
+      "resposta": "Que bom receber seu contato! Me conta, você procura imóvel em qual região? Tenho opções em Alphaville, Parque Viana e Alphagran.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "nao-repassa-para-o-corretor",
+      "resposta": "Sou Sofia, consultora da Next Home em Alphaville, e estou aqui para ajudar você com imóveis de alto padrão. Posso te mostrar algumas opções?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "renda-antes-da-visita",
+      "resposta": "O Bosque AlphaGran tem 3 dormitórios, 1 suíte e 2 vagas, ideal para sua família. Para eu já te mostrar o que cabe no financiamento, qual é a renda média da família por mês?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pede-o-catalogo",
+      "resposta": "Trabalho com imóveis em Alphaville, Parque Viana e Alphagran. Dá uma olhada e me diz o que te agradou. --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-regiao",
+      "resposta": "Só Barueri então. --- Tenho o Viva Vila do Conde, lançamento no Parque Viana, com 2 ou 3 dormitórios. --- Quer que eu te envie o catálogo para dar uma olhada? --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-pronto-para-morar",
+      "resposta": "Você prefere pronto para morar, então. --- Em Barueri, tenho o Bosque AlphaGran, casas em condomínio fechado, prontas para morar. --- Também tem o Viva Vila do Conde, lançamento, apartamentos com 2 ou 3 dormitórios. --- Dá uma olhada e me diz o que te agradou. --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-recusa-explicita",
+      "resposta": "Tenho o Viva Vila do Conde, lançamento em Parque Viana, com 2 ou 3 dormitórios. --- Quer que eu te envie o link com as informações? --- Posso agendar uma visita para você conhecer o decorado.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-regiao-inexistente",
+      "resposta": "Santos não está na minha área de atuação, mas me conta o que você busca no imóvel — tamanho, quartos, perfil — para eu ver o que posso oferecer aqui.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-regiao-repetida",
+      "resposta": "Você busca Barueri fora de Alphaville. --- Tenho o Viva Vila do Conde, lançamento com 2 ou 3 dormitórios. --- Dá uma olhada e me diz o que te agradou. --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-estagio-implicito",
+      "resposta": "Então o Bosque AlphaGran, pronto para morar, pode ser ideal para você. --- É uma casa com 3 dormitórios, 1 suíte e 2 vagas. --- Quer conhecer o decorado para sentir o espaço?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-estagio-impossivel",
+      "resposta": "Você prefere algo na planta com prazo maior? --- Posso mostrar opções em Alphaville assim.",
+      "nota": null,
+      "falhasDuras": [
+        "inventou_prazo_de_entrega"
+      ],
+      "restricao": null
+    },
+    {
+      "id": "restricao-recusa-repetida",
+      "resposta": "Você prefere apartamento. --- Trabalhamos com o Viva Vila do Conde, lançamento em Parque Viana, com opções de 2 ou 3 dormitórios. --- Quer dar uma olhada no catálogo para ver o que te agrada? --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-orcamento-direta",
+      "resposta": "Anotei seu teto, nessa faixa dá para trabalhar com algumas opções. --- Prefere pronto para morar ou na planta? --- A condição de pagamento muda bastante entre eles.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-orcamento-repetida",
+      "resposta": "Anotei sua faixa, dá para trabalhar nela. --- Podemos agendar uma visita para eu te mostrar o projeto e as condições de pagamento? --- Prefere terça às 10h ou quarta às 15h?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-prazo-implicito",
+      "resposta": "Você prefere algo pronto para morar, então. --- Em Alphaville, tenho o Canvas, que está em construção, e o Bosque AlphaGran, pronto para morar. --- Quer que eu te envie o catálogo para dar uma olhada? --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-dormitorios-atende",
+      "resposta": "O Viva Vila do Conde tem opção de 3 dormitórios com suíte e 63m², 2 vagas. --- Quer que eu te envie a apresentação digital para conhecer melhor? --- Posso agendar visita para amanhã de manhã, se quiser.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-dormitorios-nao-atende",
+      "resposta": "Não tenho de 5 dormitórios, o maior é de 3 suítes e 140m². --- Cada casa tem 2 vagas e 3 banheiros. --- Quer conhecer o decorado para sentir o espaço?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-dormitorios-repetida",
+      "resposta": "Não tenho nada com 5 dormitórios no catálogo. --- Posso te mostrar opções com até 4 suítes que são muito espaçosas e exclusivas. --- Quer dar uma olhada?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-tamanho-menor",
+      "resposta": "O Canvas Alphaville tem opções a partir de 110m², com 3 suítes e 2 vagas. --- É obra em andamento, com condições flexíveis de pagamento. --- Quer que eu te envie a planta para avaliar?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-tamanho-inexistente",
+      "resposta": "Não tenho nada tão pequeno no Parque Viana. --- O Viva Vila do Conde é o menor que temos lá. --- Quer ver outras regiões ou prefere algo na planta?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-tamanho-repetida",
+      "resposta": "Não tenho nada menor que 110m² no catálogo. --- Posso mostrar o Viva Vila do Conde, que tem 2 ou 3 dormitórios e é mais compacto. --- Quer dar uma olhada? --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "foco-elogio-do-cliente",
+      "resposta": "O Canvas Alphaville tem opções de 3 ou 4 suítes, com 110m² e 145m². --- É obra em andamento, padrão alto e localização excelente. --- As condições são flexíveis, com entrada parcelada e financiamento pela construtora. --- Quer conhecer o decorado para sentir o padrão e a planta?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "foco-vem-do-historico",
+      "resposta": "O Viva Vila do Conde tem 2 vagas, mas vou confirmar se são cobertas e te retorno. --- Enquanto isso, quer que eu envie a planta para você?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "foco-imovel-de-outra-imobiliaria",
+      "resposta": "Dom Barueri não é nosso, mas me conta o que gostou: localização, tamanho, perfil? Assim te mostro opções que tenho em Barueri.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "foco-nome-escrito-errado",
+      "resposta": "O Canvas Alphaville tem planta de 110m² com 3 suítes e outra de 145m² com 4 suítes. --- Cada um com vagas para 2 e 3 carros, respectivamente. --- Quer que eu te envie a planta para você analisar?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    }
+  ]
+}

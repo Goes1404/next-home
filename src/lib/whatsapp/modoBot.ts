@@ -146,19 +146,43 @@ export function contemPalavraChave(mensagem: string, palavraChave: string | null
  *
  * Só existe trava quando o corretor cadastrou uma palavra-chave — sem uma
  * configurada, o recurso está desligado e ninguém fica esperando por nada.
- * Conversa de campanha (disparo em massa pelo próprio CRM) nunca exige
- * palavra-chave: quem inicia o contato em massa já decidiu que a IA
- * participa.
+ *
+ * Duas isenções, e as duas significam a mesma coisa: **nós já sabemos que
+ * este número é cliente.**
+ *
+ * 1. **Campanha.** Quem dispara em massa pelo próprio CRM já decidiu que a
+ *    IA participa.
+ * 2. **O número já era do CRM antes desta conversa** (`jaEraDoCrm`). Ele foi
+ *    importado, veio de formulário do site ou foi cadastrado à mão — em
+ *    todos os casos alguém o pôs lá de propósito.
+ *
+ * A segunda isenção é o que faz a trava parar de ser silêncio e virar
+ * incentivo. Medido em 24/08/2026: a instância roda no WhatsApp PESSOAL do
+ * corretor, então a trava tem razão de existir — mas do jeito antigo ela
+ * travava cliente junto com cunhado, e o resultado foi 172 mensagens de
+ * cliente e ZERO respostas. Agora quem cadastra o lead é atendido; quem não
+ * cadastra continua esperando a palavra.
+ *
+ * O detalhe que faz a regra funcionar: "já era do CRM" significa que o lead
+ * existia ANTES desta conversa. O webhook CRIA o lead de quem escreve (foi a
+ * correção da 0026, sem a qual nenhum lead nascia de WhatsApp), então "tem
+ * lead" seria verdade para todo mundo no instante em que a pessoa manda a
+ * primeira mensagem — e a checagem passaria sempre, valendo nada.
  */
 export function exigePalavraChave(params: {
   palavraChaveConfigurada: string | null | undefined;
   /** A de teste também liga a trava: ter qualquer uma cadastrada é ter o recurso ligado. */
   palavraChaveTeste?: string | null;
   origemConversa: "organica" | "campanha";
+  /** O telefone já tinha lead no CRM ANTES desta conversa começar. */
+  jaEraDoCrm?: boolean;
 }): boolean {
   const temAlguma =
     Boolean(params.palavraChaveConfigurada?.trim()) || Boolean(params.palavraChaveTeste?.trim());
-  return temAlguma && params.origemConversa !== "campanha";
+  if (!temAlguma) return false;
+  if (params.origemConversa === "campanha") return false;
+  if (params.jaEraDoCrm) return false;
+  return true;
 }
 
 /**

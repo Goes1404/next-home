@@ -1,0 +1,37 @@
+{
+  "promptVersao": "2026.08-v16",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "gemini",
+  "tetoDeTurnos": 4,
+  "comJuiz": false,
+  "conversas": [
+    {
+      "persona": "familia-tres-dorm",
+      "desfecho": "cliente_mudo",
+      "turnos": 2,
+      "medida": {
+        "turnos": 2,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "tipologia",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 190,
+        "maiorMensagem": 205,
+        "reprovacoes": []
+      },
+      "juizo": null
+    }
+  ]
+}

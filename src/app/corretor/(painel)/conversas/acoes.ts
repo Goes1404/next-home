@@ -35,9 +35,20 @@ async function exigirSessao() {
 export async function retomarBotNaConversa(conversaId: string): Promise<ResultadoConversa> {
   const supabase = await exigirSessao();
 
+  /*
+   * `liberado_por_palavra_chave` entra AQUI, e a ausência dela é o defeito
+   * que fazia este botão mentir: `botDeveResponder` exige TRÊS coisas —
+   * bot ativo, pausa vencida e conversa liberada — e a versão anterior
+   * mexia só nas duas primeiras. O corretor clicava, a tela dizia "IA
+   * reativada nesta conversa", e o bot continuava mudo.
+   *
+   * Reativar pela tela É a autorização explícita, do mesmo jeito que
+   * digitar a palavra-chave no chat: quem clicou foi o dono da conversa,
+   * logado, olhando para ela.
+   */
   const { data, error } = await supabase
     .from("whatsapp_conversas")
-    .update({ bot_ativo: true, pausado_humano_ate: null })
+    .update({ bot_ativo: true, pausado_humano_ate: null, liberado_por_palavra_chave: true })
     .eq("id", conversaId)
     .select("id");
 
