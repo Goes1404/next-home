@@ -1,0 +1,62 @@
+insiste-no-desconto · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   Sei que o valor é decisivo, mas varia por unidade e condição de pagamento.
+Posso te mostrar as opções e condições pessoalmente. Quer conhecer o decorado?
+
+[2] Cliente: E aí, quanto desconto a vista?
+              Se não der, quero condição especial antes de marcar visita
+[2] Sofia:   Entendo que a condição é importante para você. O desconto varia conforme a unidade e o momento da negociação.
+Posso te mostrar tudo com calma no decorado, o que acha?
+
+[3] Cliente: Qual o desconto a vista?
+              Se não der, quero condição especial antes de marcar visita
+[3] Sofia:   Sei que o desconto à vista é um ponto importante, e varia conforme a unidade e o momento da negociação.
+Posso te apresentar todas as condições pessoalmente no decorado, assim fica mais claro.
+
+[4] Cliente: Qual desconto a vista?
+              Se não der, quero condição especial antes de marcar visita
+              Qual o desconto?
+              Não vou marcar até saber valor
+[4] Sofia:   Sei que o valor decide, mas o desconto varia por unidade e condição de pagamento.
+Para avançar, me conta: qual região você prefere?
+Assim já te mostro o que cabe no seu perfil e podemos agendar a visita com tudo detalhado.
+
+[5] Cliente: Qual desconto à vista?
+              Se não der, não vou marcar visita
+[5] Sofia:   Entendo que o desconto é essencial para você. Ele varia conforme a unidade e condições.
+Para avançar, me conta qual região prefere.
+Assim já te mostro o que cabe no seu perfil e podemos agendar a visita com tudo detalhado.
+
+[6] Cliente: Qual o desconto a vista?
+              Se não der, não vou marcar visita
+[6] Sofia:   O desconto à vista varia por unidade e condições, entendo sua posição.
+Me conta qual região prefere para eu mostrar opções que cabem no seu perfil.
+Assim já podemos agendar a visita com tudo detalhado.
+
+[7] Cliente: Qual o valor exato?
+              Qual desconto?
+              Se não der, não vou marcar.
+[7] Sofia:   Sei que o valor e o desconto são decisivos, mas variam por unidade e condições.
+Me conta qual região prefere para eu mostrar opções que cabem no seu perfil.
+Assim já podemos agendar a visita e eu te apresento tudo com detalhes.
+
+[8] Cliente: Qual valor exato?
+              Desconto à vista, quanto?
+              Se não der, não vou marcar visita
+[8] Sofia:   Entendo que o valor e o desconto são decisivos, mas variam por unidade e condições específicas.
+Me conta qual região prefere para eu mostrar opções que cabem no seu perfil.
+Assim já podemos agendar a visita e eu te apresento tudo com detalhes.
+
+[9] Cliente: Qual o desconto à vista?
+              Se não der, não vou marcar visita
+[9] Sofia:   O desconto à vista varia conforme a unidade e condições específicas.
+Me conta qual região prefere para eu mostrar opções que cabem no seu perfil.
+Assim já podemos agendar a visita e eu te apresento tudo com detalhes.
+
+[10] Cliente: Qual desconto a vista?
+              Se não der, não vou marcar visita
+[10] Sofia:   O desconto à vista varia conforme unidade e condições específicas.
+Me conta qual região prefere para eu mostrar opções que cabem no seu perfil.
+Assim já podemos agendar a visita e eu te apresento tudo com detalhes.

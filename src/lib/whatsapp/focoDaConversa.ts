@@ -259,6 +259,20 @@ function construirIndice(catalogo: Empreendimento[]): Indice {
         if (!palavra || GENERICAS.has(palavra) || COMUNS.has(palavra) || /^\d+$/.test(palavra)) {
           continue;
         }
+        /*
+         * A checagem acima é por IGUALDADE — e o cadastro real tem typo.
+         * "More Aldeia de BAREURI" escapava da lista (que tem "barueri"),
+         * virava token distintivo, e o fuzzy de 1 erro fazia QUALQUER
+         * cliente que dissesse "Barueri" — a cidade de metade do catálogo —
+         * travar o foco nesse imóvel. Medido em 25/08: o catálogo do prompt
+         * encolhia para um 2 dorm e a Sofia negava os 3 dorm que existem.
+         * Um token à distância de edição de uma palavra genérica é a
+         * palavra genérica escrita errado, e não identifica nada sozinho.
+         */
+        const pareceGenerica = [...GENERICAS, ...COMUNS].some(
+          (g) => distancia(palavra, g, tolerancia(palavra)) <= tolerancia(palavra),
+        );
+        if (pareceGenerica) continue;
         registrar(palavra, imovel.slug);
       }
     }

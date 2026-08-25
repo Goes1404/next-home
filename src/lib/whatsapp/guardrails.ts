@@ -11,6 +11,7 @@ import {
 } from "./resolverMidia";
 import { corrigirVisitaNoPassado, verificarCoerenciaVisita } from "./coerenciaVisita";
 import { ehRepeticaoDoBot, textoNoLugarDaRepeticao } from "./repeticao";
+import { manterIdentidadeHonesta } from "./identidadeHonesta";
 
 /**
  * Guardrails de saída: nada sai para o WhatsApp do cliente sem conferir
@@ -70,6 +71,8 @@ export function sanearRespostaIA(
    * código — copiar URL o modelo faz errado em metade das vezes.
    */
   slugCorretor?: string | null,
+  /** Nome da assistente, para a apresentação honesta quando a IA mentir sobre o que é. */
+  nomeAssistente?: string | null,
 ): RespostaSaneada {
   const slugsPermitidos = new Set(catalogo.map((e) => e.slug));
 
@@ -125,11 +128,21 @@ export function sanearRespostaIA(
    */
   const semOrfaos = limparSeparadoresOrfaos(semPrazo.texto);
 
-  const repetiu = ehRepeticaoDoBot(semOrfaos, historico);
+  /*
+   * A IA não mente sobre o que é. Flagrada respondendo "Sou humana" a uma
+   * pergunta direta (25/08) — o prompt já proibia, e prompt é
+   * probabilístico. A frase mentirosa vira apresentação honesta.
+   */
+  const identidade = manterIdentidadeHonesta(semOrfaos, nomeAssistente);
+  if (identidade.corrigiu) {
+    console.warn(`[guardrails] identidade corrigida: a resposta negava ser IA`);
+  }
+
+  const repetiu = ehRepeticaoDoBot(identidade.texto, historico);
   if (repetiu) {
     console.warn(`[guardrails] repetição bloqueada: ${semOrfaos.slice(0, 80)}`);
   }
-  const semRepeticao = repetiu ? textoNoLugarDaRepeticao(historico) : semOrfaos;
+  const semRepeticao = repetiu ? textoNoLugarDaRepeticao(historico) : identidade.texto;
 
   /*
    * Por último, para o link não ser cortado por nenhum filtro anterior nem
