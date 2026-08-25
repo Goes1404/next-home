@@ -6,6 +6,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TabelaLeads } from "./TabelaLeads";
 import { EnviarEmMassa } from "./EnviarEmMassa";
 import { carregarPaginaLeads } from "./acoes";
+import { moverEtapaEmMassa } from "@/app/corretor/actions";
+import { PONTO_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import type { FiltroLeads } from "@/lib/corretorSessao";
 import {
@@ -84,6 +86,10 @@ export function ListaLeads({
 
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [modalAberto, setModalAberto] = useState(false);
+  // Segundo andar da barra de seleção: a lista de etapas para mover o lote.
+  const [escolhendoEtapa, setEscolhendoEtapa] = useState(false);
+  const [avisoLote, setAvisoLote] = useState<string | null>(null);
+  const [movendoLote, iniciarLote] = useTransition();
 
   // Páginas além da primeira, acumuladas pelo botão "carregar mais". O
   // contador é estado próprio (e não `leads.length / 30`) porque o dedup
@@ -104,6 +110,7 @@ export function ListaLeads({
     setExtras([]);
     setPaginasCarregadas(1);
     setSelecionados(new Set());
+    setEscolhendoEtapa(false);
   }
 
   const leads = [...leadsIniciais, ...extras];
@@ -151,6 +158,31 @@ export function ListaLeads({
   }
 
   const leadsSelecionados = leads.filter((l) => selecionados.has(l.id));
+
+  function moverLote(etapa: EtapaFunil) {
+    const ids = [...selecionados];
+    setAvisoLote(null);
+    iniciarLote(async () => {
+      const res = await moverEtapaEmMassa(ids, etapa);
+      if (res.erro) {
+        setAvisoLote(res.erro);
+        return;
+      }
+      // O aviso diz o número que o SERVIDOR confirmou, não o da seleção:
+      // um lead que trocou de dono no meio simplesmente não é movido, e a
+      // tela não pode anunciar 15 quando foram 12.
+      setAvisoLote(
+        res.movidos === ids.length
+          ? `${res.movidos} lead${res.movidos === 1 ? "" : "s"} para “${ETAPA_LABEL[etapa]}”.`
+          : `${res.movidos} de ${ids.length} movidos — os demais mudaram de dono. Recarregue a lista.`,
+      );
+      setSelecionados(new Set());
+      setEscolhendoEtapa(false);
+      // Some sozinho: confirmação não é alerta, não precisa de clique.
+      setTimeout(() => setAvisoLote(null), 5000);
+      router.refresh();
+    });
+  }
 
   // Filtros "avançados" = os que não cabem no dia a dia do polegar. Ficam
   // recolhidos (progressive disclosure), mas abrem sozinhos quando algum está
@@ -347,6 +379,15 @@ export function ListaLeads({
               </button>
               <button
                 type="button"
+                onClick={() => setEscolhendoEtapa((v) => !v)}
+                aria-expanded={escolhendoEtapa}
+                disabled={movendoLote}
+                className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha flex min-h-11 cursor-pointer items-center rounded-lg border px-3 whitespace-nowrap transition-colors disabled:opacity-60"
+              >
+                {movendoLote ? "Movendo…" : "Mover para…"}
+              </button>
+              <button
+                type="button"
                 onClick={() => setModalAberto(true)}
                 className="text-fluid-sm bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-lg px-4 font-medium whitespace-nowrap text-white transition-colors"
               >
@@ -354,6 +395,37 @@ export function ListaLeads({
               </button>
             </div>
           </div>
+
+          {/* O segundo andar abre PARA CIMA do conteúdo da barra (a barra é
+              fixed, então crescer para cima é só ficar mais alta). Cada botão
+              leva a bolinha da régua: a mesma cor da coluna do quadro e da
+              linha da lista — o corretor mira pela cor antes de ler. */}
+          {escolhendoEtapa && (
+            <div className="mx-auto mt-3 flex w-full max-w-[84rem] flex-wrap gap-2 px-1 md:px-4">
+              {ETAPAS_FUNIL.map((etapa) => (
+                <button
+                  key={etapa}
+                  type="button"
+                  onClick={() => moverLote(etapa)}
+                  disabled={movendoLote}
+                  className="text-fluid-xs border-linha bg-superficie text-corpo hover:border-acento-linha hover:text-titulo flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 font-medium transition-colors disabled:opacity-60"
+                >
+                  <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${PONTO_ETAPA[etapa]}`} />
+                  {ETAPA_LABEL[etapa]}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Confirmação do lote — fora da barra, porque a barra some junto com a
+          seleção e a notícia precisa sobreviver a ela. */}
+      {avisoLote && (
+        <div className="acima-da-nav fixed inset-x-0 z-45 p-3 sm:p-4" role="status">
+          <p className="text-fluid-sm border-ok-linha bg-ok-lavado text-ok mx-auto w-fit rounded-full border px-4 py-2 font-medium backdrop-blur-md">
+            {avisoLote}
+          </p>
         </div>
       )}
 
