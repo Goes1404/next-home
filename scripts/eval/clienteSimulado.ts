@@ -27,7 +27,10 @@ import type { Persona } from "./personas";
 
 type Provedor = "groq" | "gemini" | "nvidia" | "openai";
 
-const CHAMADAS: Record<Provedor, (p: string, o: { temperature?: number; timeoutMs: number }) => Promise<ResultadoLlm>> = {
+const CHAMADAS: Record<
+  Provedor,
+  (p: string, o: { temperature?: number; timeoutMs: number; modelo?: string }) => Promise<ResultadoLlm>
+> = {
   groq: chamarGroqJson,
   gemini: chamarGeminiJson,
   nvidia: chamarNvidiaJson,
@@ -129,9 +132,16 @@ export async function proximaFalaDoCliente(
     return { baloes: [persona.primeiraMensagem], encerrar: false, porque: "abertura fixa da persona" };
   }
 
+  /*
+   * `EVAL_CLIENTE_MODELO` existe pela mesma razão do modelo do juiz: a cota
+   * gratuita do Gemini conta por MODELO. Cliente e juiz no mesmo modelo
+   * disputam 20 chamadas/dia, e quem fica sem é sempre o juiz — as
+   * conversas saem sem nota justo na rodada que você queria ler.
+   */
   const resultado = await CHAMADAS[provedorDoCliente()](promptDoCliente(persona, conversa), {
     temperature: 0.8,
     timeoutMs: 30_000,
+    modelo: process.env.EVAL_CLIENTE_MODELO,
   });
 
   if (!resultado.ok) return null;

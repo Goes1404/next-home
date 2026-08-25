@@ -1,92 +1,63 @@
 [
   {
-    "nome": "Canvas Alphaville",
-    "slug": "canvas-alphaville",
-    "tagline": "Viva o alto padrão em Alphaville",
-    "descricao": "Apartamentos de 3 e 4 suítes com vista livre, lazer completo e localização privilegiada.",
-    "bairro": "Alphaville",
+    "nome": "Eternity Alphaville Tamboré",
+    "slug": "eternity-alphaville",
+    "nomesAlternativos": [],
+    "tagline": "Descubra o incomparável. Viva além do seu tempo.",
+    "descricao": "Duas torres de alto padrão no Centro Comercial Jubran, a poucos minutos do coração de Alphaville. Unidades de 2 e 3 dormitórios com metragens generosas, posição de frente para a avenida e um clube de ",
+    "bairro": "Centro Comercial Jubran",
     "cidade": "Barueri",
     "status": "em_construcao",
     "tipo": "alto_padrao",
     "finalidade": "lancamento",
     "precoAPartir": 1289900,
+    "construtora": "RSF",
+    "lat": -23.4981631,
+    "lng": -46.8305372,
     "capa": {
-      "url": "https://cdn.eval/canvas/capa.jpg",
+      "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg",
       "tipo": "foto",
-      "alt": "Canvas"
+      "alt": "Living integrado com adega climatizada e sala de jantar, unidade 03"
     },
-    "bookUrl": "https://cdn.eval/canvas/book.pdf",
-    "plantas": [
+    "midias": [
       {
-        "url": "https://cdn.eval/canvas/planta-3s.jpg",
-        "tipo": "planta",
-        "alt": "Planta 3 suítes"
-      }
-    ],
-    "videos": [],
-    "lazer": [],
-    "tipologias": [
-      {
-        "nome": "3 suítes",
-        "areaPrivativa": 110,
-        "dormitorios": 3,
-        "suites": 3,
-        "banheiros": 4,
-        "vagas": 2,
-        "preco": null,
-        "plantaUrl": "https://cdn.eval/canvas/planta-3s.jpg",
-        "unidadesDisponiveis": null
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg",
+        "tipo": "foto",
+        "alt": "Living integrado com adega climatizada e sala de jantar, unidade 03"
       },
       {
-        "nome": "4 suítes",
-        "areaPrivativa": 145,
-        "dormitorios": 4,
-        "suites": 4,
-        "banheiros": 5,
-        "vagas": 3,
-        "preco": null,
-        "plantaUrl": null,
-        "unidadesDisponiveis": null
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-02.jpg",
+        "tipo": "foto",
+        "alt": "Living integrado com cozinha e varanda gourmet, unidade 02 e 04"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/fachada.jpg",
+        "tipo": "foto",
+        "alt": "Fachada das torres Eternity Alphaville Tamboré ao entardecer"
       }
-    ]
-  },
-  {
-    "nome": "Viva Vila do Conde",
-    "slug": "viva-vila-do-conde",
-    "tagline": "Seu primeiro apartamento em Barueri",
-    "descricao": "2 dormitórios com varanda, condomínio clube, minutos do centro.",
-    "bairro": "Parque Viana",
-    "cidade": "Barueri",
-    "status": "lancamento",
-    "tipo": "apartamento",
-    "finalidade": "lancamento",
-    "precoAPartir": 460000,
-    "capa": {
-      "url": "https://cdn.eval/viva/capa.jpg",
-      "tipo": "foto",
-      "alt": "Viva"
-    },
+    ],
     "plantas": [],
     "videos": [],
+    "tours360": [],
     "lazer": [],
     "tipologias": [
       {
         "nome": "2 dormitórios",
-        "areaPrivativa": 49,
+        "areaPrivativa": 74,
         "dormitorios": 2,
         "suites": 1,
         "banheiros": 2,
-        "vagas": 1,
+        "vagas": 2,
         "preco": null,
         "plantaUrl": null,
         "unidadesDisponiveis": null
       },
       {
-        "nome": "3 dormitórios",
-        "areaPrivativa": 63,
+        "nome": "3 dormitórios com 2 suítes",
+        "areaPrivativa": 100,
         "dormitorios": 3,
-        "suites": 1,
-        "banheiros": 2,
+        "suites": 2,
+        "banheiros": 3,
         "vagas": 2,
         "preco": null,
         "plantaUrl": null,
@@ -95,34 +66,623 @@
     ]
   },
   {
-    "nome": "Bosque AlphaGran",
-    "slug": "bosque-alphagran",
-    "tagline": "Casas em condomínio fechado",
-    "descricao": "Casas de 4 suítes com quintal, segurança 24h, área verde preservada.",
-    "bairro": "Alphagran",
+    "nome": "Viva RSF Vila do Conde",
+    "slug": "viva-rsf-vila-do-conde",
+    "nomesAlternativos": [],
+    "tagline": "Perfeito para relaxar e aproveitar o melhor do seu Viva.",
+    "descricao": "No Parque Viana, a poucos passos de shopping e estação, o Viva RSF Vila do Conde chega com unidades de 43 a 71 m² e um clube de lazer completo: academia com parede verde, coworking, piscina adulto e i",
+    "bairro": "Parque Viana",
     "cidade": "Barueri",
-    "status": "pronto_para_morar",
-    "tipo": "casa",
-    "finalidade": "venda",
-    "precoAPartir": null,
+    "status": "ultimas_unidades",
+    "tipo": "apartamento",
+    "finalidade": "lancamento",
+    "precoAPartir": 460000,
+    "construtora": "RSF",
+    "lat": -23.542943,
+    "lng": -46.8686108,
     "capa": {
-      "url": "https://cdn.eval/bosque/capa.jpg",
+      "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/fachada-lazer.jpg",
       "tipo": "foto",
-      "alt": "Bosque"
+      "alt": "Vista aérea da fachada e área de lazer à noite"
     },
+    "midias": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/fachada-lazer.jpg",
+        "tipo": "foto",
+        "alt": "Vista aérea da fachada e área de lazer à noite"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/piscina-adulto.jpg",
+        "tipo": "foto",
+        "alt": "Piscina adulto com deck e espreguiçadeiras entre os prédios"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/academia.jpg",
+        "tipo": "foto",
+        "alt": "Academia equipada com parede verde e esteiras"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/coworking.jpg",
+        "tipo": "foto",
+        "alt": "Espaço de coworking com mesas comunitárias e poltronas"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/pet-place.jpg",
+        "tipo": "foto",
+        "alt": "Espaço pet place com brinquedos e obstáculos para cães"
+      }
+    ],
     "plantas": [],
     "videos": [],
+    "tours360": [],
     "lazer": [],
     "tipologias": [
       {
-        "nome": "Casa 3 dormitórios",
-        "areaPrivativa": 140,
+        "nome": "3 dormitórios com 1 suíte",
+        "areaPrivativa": 49,
         "dormitorios": 3,
         "suites": 1,
         "banheiros": 3,
         "vagas": 2,
         "preco": null,
         "plantaUrl": null,
+        "unidadesDisponiveis": null
+      }
+    ]
+  },
+  {
+    "nome": "More Aldeia de Bareuri",
+    "slug": "more-aldeia-de-bareuri-var064",
+    "nomesAlternativos": [],
+    "tagline": "MORE NA ALDEIA DE BARUERI A POUCOS MINUTOS DO SHOPPING E DA ESTAÇÃO",
+    "descricao": "MORE NA ALDEIA DE BARUERI A POUCOS MINUTOS DO SHOPPING E DA ESTAÇÃO\n\nAPARTAMENTO 2 DORMITÓRIOS COM SUITE E BANHEIRO SOCIAL\n\nMOVEIS PLANEJADOS DE QUALIDADE NA COZINHA E QUARTO DO CASAL\n\nCHURRASQUEIRA A",
+    "bairro": "Jardim Timbauhy/aldeia",
+    "cidade": "Barueri",
+    "status": "pronto_para_morar",
+    "tipo": "apartamento",
+    "finalidade": "venda",
+    "precoAPartir": 600000,
+    "construtora": "EBEN EMPREENDIMENTOS",
+    "lat": -23.5126641,
+    "lng": -46.861404,
+    "capa": {
+      "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-1-big-1fed6dfac329a4107d85c4e67b48f0b5.jpeg",
+      "tipo": "foto",
+      "alt": "Fachada da torre residencial com varandas e palmeiras na entrada"
+    },
+    "midias": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-1-big-1fed6dfac329a4107d85c4e67b48f0b5.jpeg",
+        "tipo": "foto",
+        "alt": "Fachada da torre residencial com varandas e palmeiras na entrada"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-2-big-4157f723f5d95731b87a582d2da35adc.jpeg",
+        "tipo": "foto",
+        "alt": "Sala de jantar com mesa redonda, TV e quadros na parede"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-3-big-cc95e85e4862cc5c7044a92fc5cc2c1e.jpeg",
+        "tipo": "foto",
+        "alt": "Sala de estar e jantar com mesa redonda, sofá e TV"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-4-big-a6ade71bfce54ea1e5466b7b9cd8203c.jpeg",
+        "tipo": "foto",
+        "alt": "Sala de estar com sofá, tapete estampado e mesa de jantar"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-5-big-d94f973e385a0c52fe59f63de2be47a4.jpeg",
+        "tipo": "foto",
+        "alt": "Cozinha corredor com fogão, geladeira e área de serviço integrada"
+      }
+    ],
+    "plantas": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/planta-big-d49eee85acbe2ebf4ceb5765fb85cc4b.jpeg",
+        "tipo": "planta",
+        "alt": "Planta — More Aldeia de Bareuri"
+      }
+    ],
+    "videos": [],
+    "tours360": [],
+    "lazer": [],
+    "tipologias": [
+      {
+        "nome": "2 dormitórios",
+        "areaPrivativa": 64,
+        "dormitorios": 2,
+        "suites": 1,
+        "banheiros": 1,
+        "vagas": 1,
+        "preco": null,
+        "plantaUrl": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/planta-big-d49eee85acbe2ebf4ceb5765fb85cc4b.jpeg",
+        "unidadesDisponiveis": null
+      }
+    ]
+  },
+  {
+    "nome": "Terra Alta",
+    "slug": "terra-alta-ta141",
+    "nomesAlternativos": [],
+    "tagline": "Viva no coração de Barueri com conforto e praticidade!Descubra o seu novo lar no Jardim Tupanci, em Barueri, no Condomínio Terra",
+    "descricao": "Viva no coração de Barueri com conforto e praticidade!Descubra o seu novo lar no Jardim Tupanci, em Barueri, no Condomínio Terra\n\nempreendimento na planta , entrega em abril de 2028\n\nLocalização Privi",
+    "bairro": "Jardim Tupanci",
+    "cidade": "Barueri",
+    "status": "em_construcao",
+    "tipo": "apartamento",
+    "finalidade": "lancamento",
+    "precoAPartir": 455000,
+    "construtora": "RVS construtora",
+    "lat": -23.4938913,
+    "lng": -46.8700722,
+    "capa": {
+      "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg",
+      "tipo": "foto",
+      "alt": "Fachada da torre residencial iluminada ao anoitecer"
+    },
+    "midias": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg",
+        "tipo": "foto",
+        "alt": "Fachada da torre residencial iluminada ao anoitecer"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg",
+        "tipo": "foto",
+        "alt": "Vista aérea da região com a torre e distâncias até pontos de interesse"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-3-big-75c8b2df2fb9cedf8deb0b5002c9a935.jpeg",
+        "tipo": "foto",
+        "alt": "Hall de entrada e bike station com bicicletas penduradas"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-4-big-847e1f55bb4b7eee7f216ebbce93f7f0.jpeg",
+        "tipo": "foto",
+        "alt": "Casal abraçado na sala em peça sobre lar feito para seu estilo de vida"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-5-big-b8697f666d01bb4d7c1d9b9651b07d8b.jpeg",
+        "tipo": "foto",
+        "alt": "Planta da unidade de 77,45 m² com 3 dormitórios, suíte, lavabo e 2 vagas"
+      }
+    ],
+    "plantas": [],
+    "videos": [],
+    "tours360": [],
+    "lazer": [],
+    "tipologias": [
+      {
+        "nome": "1 dormitório",
+        "areaPrivativa": 52,
+        "dormitorios": 1,
+        "suites": 1,
+        "banheiros": 0,
+        "vagas": 2,
+        "preco": null,
+        "plantaUrl": null,
+        "unidadesDisponiveis": null
+      }
+    ]
+  },
+  {
+    "nome": "Vila Eco Park",
+    "slug": "vila-eco-park-mj605",
+    "nomesAlternativos": [],
+    "tagline": "Seu Novo Capítulo Começa Aqui, no Munhoz Júnior, Osasco!Descubra o prazer de viver em um lançamento que redefine o conceito de bem-estar e praticidade. Este cha",
+    "descricao": "Seu Novo Capítulo Começa Aqui, no Munhoz Júnior, Osasco!Descubra o prazer de viver em um lançamento que redefine o conceito de bem-estar e praticidade. Este charmoso apartamento, situado na Rua Pereir",
+    "bairro": "Munhoz Júnior",
+    "cidade": "Osasco",
+    "status": "lancamento",
+    "tipo": "apartamento",
+    "finalidade": "lancamento",
+    "precoAPartir": 249000,
+    "construtora": "Árbore Engenharia",
+    "lat": -23.5018492,
+    "lng": -46.8064562,
+    "capa": {
+      "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-1-big-1597aad13631a310ed7b0fc07ffbb619.jpg",
+      "tipo": "foto",
+      "alt": "Fachada das torres residenciais em cartaz de lançamento de 2 dormitórios"
+    },
+    "midias": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-1-big-1597aad13631a310ed7b0fc07ffbb619.jpg",
+        "tipo": "foto",
+        "alt": "Fachada das torres residenciais em cartaz de lançamento de 2 dormitórios"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-2-big-a9da807487ea43da180107514a2dbf8b.jpg",
+        "tipo": "foto",
+        "alt": "Torres residenciais em peça de lançamento de 2 dormitórios com varanda grill"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-3-big-06248497c720b210e19a743a066ded5a.jpg",
+        "tipo": "foto",
+        "alt": "Planta da unidade de 2 dormitórios com sala, cozinha e WC social"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-4-big-fe950ef31c0f68077e3ed1dd300bb8f3.jpg",
+        "tipo": "foto",
+        "alt": "Torre residencial com brinquedoteca, mini market e playground em destaque"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-5-big-3b3bc7ded5f736a38dfbbf44ab804ebd.jpg",
+        "tipo": "foto",
+        "alt": "Planta da unidade de 1 dormitório com sala ampliada"
+      }
+    ],
+    "plantas": [],
+    "videos": [],
+    "tours360": [],
+    "lazer": [],
+    "tipologias": [
+      {
+        "nome": "2 dormitórios",
+        "areaPrivativa": 38.81,
+        "dormitorios": 2,
+        "suites": 0,
+        "banheiros": 1,
+        "vagas": 1,
+        "preco": null,
+        "plantaUrl": null,
+        "unidadesDisponiveis": null
+      }
+    ]
+  },
+  {
+    "nome": "Apartamento 1 ou 2 Dorms 39 M2",
+    "slug": "apartamento-1-ou-2-dorms-39-m2-vvj710",
+    "nomesAlternativos": [],
+    "tagline": "Viva com Estilo e Conforto no Viva Jaguaribe, em Osasco!Descubra o seu novo lar no coração do Jaguaribe, em Osasco! Apresentamos um apartamento encantador no pr",
+    "descricao": "Viva com Estilo e Conforto no Viva Jaguaribe, em Osasco!Descubra o seu novo lar no coração do Jaguaribe, em Osasco! Apresentamos um apartamento encantador no prestigiado condomínio Viva Jaguaribe, um ",
+    "bairro": "Jaguaribe",
+    "cidade": "Osasco",
+    "status": "lancamento",
+    "tipo": "apartamento",
+    "finalidade": "lancamento",
+    "precoAPartir": 319000,
+    "construtora": "RSF Empreendimentos",
+    "lat": -23.5566801,
+    "lng": -46.7874726,
+    "capa": {
+      "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/apartamento-1-ou-2-dorms-39-m2-vvj710/foto-1-big-d242e549c93376bd3731c63f31b4d4df.jpeg",
+      "tipo": "foto",
+      "alt": "Espaço fitness ao ar livre com barras de calistenia, kettlebells e pergolado"
+    },
+    "midias": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/apartamento-1-ou-2-dorms-39-m2-vvj710/foto-1-big-d242e549c93376bd3731c63f31b4d4df.jpeg",
+        "tipo": "foto",
+        "alt": "Espaço fitness ao ar livre com barras de calistenia, kettlebells e pergolado"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/apartamento-1-ou-2-dorms-39-m2-vvj710/foto-2-big-78abea8806ef60e32f0c737ebffa988c.jpeg",
+        "tipo": "foto",
+        "alt": "Academia equipada com estações de musculação, esteiras e bancos"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/apartamento-1-ou-2-dorms-39-m2-vvj710/foto-3-big-5802b2fa7bdb6323dbd99fa66443b5c8.jpeg",
+        "tipo": "foto",
+        "alt": "Ateliê de artes com mesa alta, banquetas e cavaletes de pintura"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/apartamento-1-ou-2-dorms-39-m2-vvj710/foto-4-big-bf0b6a649845d69a8a0908a85a8b6e65.jpeg",
+        "tipo": "foto",
+        "alt": "Espaço beleza com poltronas de manicure e bancadas de salão"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/apartamento-1-ou-2-dorms-39-m2-vvj710/foto-5-big-3f3be94bc8813d7d2d6b74bc63d186c2.jpeg",
+        "tipo": "foto",
+        "alt": "Bicicletário coberto com bicicletas em suportes suspensos"
+      }
+    ],
+    "plantas": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/apartamento-1-ou-2-dorms-39-m2-vvj710/planta-big-c0f25ce93b31f8001b16117e79fd3f14.jpg",
+        "tipo": "planta",
+        "alt": "Planta — Apartamento 1 ou 2 Dorms 39 M2"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/apartamento-1-ou-2-dorms-39-m2-vvj710/planta-big-31288fe2d755d2c1af34be929a4dbdf6.jpg",
+        "tipo": "planta",
+        "alt": "Planta — Apartamento 1 ou 2 Dorms 39 M2"
+      }
+    ],
+    "videos": [],
+    "tours360": [],
+    "lazer": [],
+    "tipologias": [
+      {
+        "nome": "2 dormitórios",
+        "areaPrivativa": 39,
+        "dormitorios": 2,
+        "suites": 0,
+        "banheiros": 1,
+        "vagas": 1,
+        "preco": null,
+        "plantaUrl": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/apartamento-1-ou-2-dorms-39-m2-vvj710/planta-big-31288fe2d755d2c1af34be929a4dbdf6.jpg",
+        "unidadesDisponiveis": null
+      }
+    ]
+  },
+  {
+    "nome": "Vitra Alphaville",
+    "slug": "vitra-alphaville-vt110",
+    "nomesAlternativos": [],
+    "tagline": "Descubra Seu Novo Capítulo no Vitra Alphaville!Imagine viver em um apartamento que une sofisticação, conforto e praticidade, tudo isso em um dos endereços mais ",
+    "descricao": "Descubra Seu Novo Capítulo no Vitra Alphaville!Imagine viver em um apartamento que une sofisticação, conforto e praticidade, tudo isso em um dos endereços mais desejados de Alphaville, no vibrante bai",
+    "bairro": "Dezoito do Forte Empresarial/alphaville.",
+    "cidade": "Barueri",
+    "status": "pronto_para_morar",
+    "tipo": "apartamento",
+    "finalidade": "venda",
+    "precoAPartir": 1000000,
+    "construtora": "Lidera",
+    "lat": -23.4846844,
+    "lng": -46.8547836,
+    "capa": {
+      "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg",
+      "tipo": "foto",
+      "alt": "Fachada da torre residencial vista da rua sob céu azul"
+    },
+    "midias": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg",
+        "tipo": "foto",
+        "alt": "Fachada da torre residencial vista da rua sob céu azul"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-2-big-56cbd63eb7afb430e0e17e65af38778d.jpg",
+        "tipo": "foto",
+        "alt": "Piscina no rooftop com deck de madeira, espreguicadeiras e vista da cidade"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-3-big-6ee6905482a046988bde5334ff1b4877.jpg",
+        "tipo": "foto",
+        "alt": "Salao de festas com lounge, mesas de jantar e cozinha integrada"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-4-big-8053195313275bc888429d8ab9a9a4ea.jpg",
+        "tipo": "foto",
+        "alt": "Churrasqueira do espaço gourmet com pérgola e mesas ao ar livre"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-5-big-6da7666a1e8dcb3a29b4969be1b7c89e.jpg",
+        "tipo": "foto",
+        "alt": "Brinquedoteca com piscina de bolinhas, parede de escalada e balancos"
+      }
+    ],
+    "plantas": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-4437ee1f8f0ca0135bd73540a6063059.jpg",
+        "tipo": "planta",
+        "alt": "Planta — Vitra Alphaville"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-db60774778f5a3d788cdcb47cdd43db3.jpg",
+        "tipo": "planta",
+        "alt": "Planta — Vitra Alphaville"
+      }
+    ],
+    "videos": [],
+    "tours360": [],
+    "lazer": [],
+    "tipologias": [
+      {
+        "nome": "2 dormitórios",
+        "areaPrivativa": 107,
+        "dormitorios": 2,
+        "suites": 2,
+        "banheiros": 2,
+        "vagas": 2,
+        "preco": null,
+        "plantaUrl": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-f32f9f72cc37f0140e9021ec356d6df5.jpg",
+        "unidadesDisponiveis": null
+      }
+    ]
+  },
+  {
+    "nome": "On The Park Alphaville",
+    "slug": "on-the-park-alphaville-ne72055",
+    "nomesAlternativos": [],
+    "tagline": "Ultimas Unidade do On The Park Alphaville",
+    "descricao": "Ultimas Unidade do On The Park Alphaville\n\nApartamento de 62 à 94 M² com 1 à 3 suítes em Alphaville\n\nTemos unidades na torre Trianon e Ibirapuera!",
+    "bairro": "Alphaville",
+    "cidade": "Barueri",
+    "status": "pronto_para_morar",
+    "tipo": "apartamento",
+    "finalidade": "venda",
+    "precoAPartir": 800000,
+    "construtora": "CNL",
+    "lat": -23.4836895,
+    "lng": -46.8688706,
+    "capa": {
+      "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg",
+      "tipo": "foto",
+      "alt": "Vista aérea da região com lago, áreas verdes e montanhas"
+    },
+    "midias": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg",
+        "tipo": "foto",
+        "alt": "Vista aérea da região com lago, áreas verdes e montanhas"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg",
+        "tipo": "foto",
+        "alt": "Mapa de localização via satélite com vias e comércios da região"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-3-big-49406f476a83a577b8907baa94fed78f.jpg",
+        "tipo": "foto",
+        "alt": "Salão gourmet com mesa de jantar longa e cozinha integrada"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-4-big-c927018093552dd1e44890698536515d.jpg",
+        "tipo": "foto",
+        "alt": "Planta da implantação do lazer com piscinas, academia, quadra e playground"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-5-big-b8ce3deb5bcf41e5d85efcda6567ddc5.jpg",
+        "tipo": "foto",
+        "alt": "Brinquedoteca com piscina de bolinhas, escorregador e bichos de pelúcia"
+      }
+    ],
+    "plantas": [],
+    "videos": [],
+    "tours360": [],
+    "lazer": [],
+    "tipologias": [
+      {
+        "nome": "2 dormitórios",
+        "areaPrivativa": null,
+        "dormitorios": 2,
+        "suites": 3,
+        "banheiros": 3,
+        "vagas": 2,
+        "preco": null,
+        "plantaUrl": null,
+        "unidadesDisponiveis": null
+      }
+    ]
+  },
+  {
+    "nome": "More na Aldeia de Barueri",
+    "slug": "more-na-aldeia-de-barueri-mac238",
+    "nomesAlternativos": [
+      "Manacá",
+      "Manacá Barueri"
+    ],
+    "tagline": "Descubra seu Novo Lar no Jardim Iracema, Barueri!Apresentamos o mais novo lançamento que vai transformar seu conceito de moradia: um apartamento moderno e elega",
+    "descricao": "Descubra seu Novo Lar no Jardim Iracema, Barueri!Apresentamos o mais novo lançamento que vai transformar seu conceito de moradia: um apartamento moderno e elegante no desejado bairro Jardim Iracema/Al",
+    "bairro": "Jardim Iracema/aldeia",
+    "cidade": "Barueri",
+    "status": "em_construcao",
+    "tipo": "apartamento",
+    "finalidade": "lancamento",
+    "precoAPartir": 569000,
+    "construtora": "RSF Empreendimentos",
+    "lat": -23.5111388,
+    "lng": -46.8627345,
+    "capa": {
+      "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-1-big-fa9d826751f7a7f2f548546f1fa3985a.jpg",
+      "tipo": "foto",
+      "alt": "Piscina com raia e piscina infantil vistas do alto, com deck e jardins"
+    },
+    "midias": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-1-big-fa9d826751f7a7f2f548546f1fa3985a.jpg",
+        "tipo": "foto",
+        "alt": "Piscina com raia e piscina infantil vistas do alto, com deck e jardins"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-2-big-5d61ecbe0596294db5e89af22bc6814c.jpg",
+        "tipo": "foto",
+        "alt": "Churrasqueira do espaço gourmet sob pergolado com mesas ao ar livre"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-3-big-b113766a6aef5b7e10ea66673cd2a78c.jpg",
+        "tipo": "foto",
+        "alt": "Coworking com mesas compartilhadas e letreiro neon na parede"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-4-big-1b09fd6fe77678ef68e20a0056ee74d7.jpg",
+        "tipo": "foto",
+        "alt": "Salão de festas com mesas de jantar, poltronas azuis e lounge"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-5-big-26c7191610578ff0ed5343163672c698.jpg",
+        "tipo": "foto",
+        "alt": "Salão de jogos com mesa de pôquer, pebolim e sofá"
+      }
+    ],
+    "plantas": [],
+    "videos": [],
+    "tours360": [],
+    "lazer": [],
+    "tipologias": [
+      {
+        "nome": "2 dormitórios",
+        "areaPrivativa": 63,
+        "dormitorios": 2,
+        "suites": 1,
+        "banheiros": 1,
+        "vagas": 0,
+        "preco": null,
+        "plantaUrl": null,
+        "unidadesDisponiveis": null
+      }
+    ]
+  },
+  {
+    "nome": "Elos Barueri",
+    "slug": "elos-barueri-ne61101",
+    "nomesAlternativos": [],
+    "tagline": "Localizada na Rua General de Divisão de Pedro Rodrigues da Silva, bairro Aldeia, Barueri/SP",
+    "descricao": "Localizada na Rua General de Divisão de Pedro Rodrigues da Silva, bairro Aldeia, Barueri/SP\n\nCondomínio Elos Barueri,\n\nApartamento, Revenda, Oportunidade!\n\nÁrea 56.64m²,\n\nUnidade \"crua\" entregue confo",
+    "bairro": "Aldeia",
+    "cidade": "Barueri",
+    "status": "pronto_para_morar",
+    "tipo": "apartamento",
+    "finalidade": "venda",
+    "precoAPartir": 555000,
+    "construtora": "Albino Nunes",
+    "lat": -23.5152425,
+    "lng": -46.8555138,
+    "capa": {
+      "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/foto-1-big-e678e7ebc51cb4e4332a322465dcf7b3.jpg",
+      "tipo": "foto",
+      "alt": "Planta da implantação do condomínio com piscinas, quadra e áreas comuns"
+    },
+    "midias": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/foto-1-big-e678e7ebc51cb4e4332a322465dcf7b3.jpg",
+        "tipo": "foto",
+        "alt": "Planta da implantação do condomínio com piscinas, quadra e áreas comuns"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/foto-2-big-95fcb18c87f4813a0036339e5404bf0d.jpg",
+        "tipo": "foto",
+        "alt": "Playground com escorregador, balanços e escada de cordas"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/foto-3-big-545b2d6348e9ee795e9b818cb278ea7c.jpg",
+        "tipo": "foto",
+        "alt": "Torres residenciais de fachada branca com varandas e jardim"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/foto-4-big-51036dd2f501b8edd8923f102acc098d.jpg",
+        "tipo": "foto",
+        "alt": "Piscina com deck molhado, espreguiçadeiras e palmeiras"
+      },
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/foto-5-big-7f8598633c1998c4e581b2503ca96b71.jpg",
+        "tipo": "foto",
+        "alt": "Planta da unidade de 2 dormitórios com sala e cozinha integradas"
+      }
+    ],
+    "plantas": [
+      {
+        "url": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/planta-big-147885cd819a8f841a57b56a934b579e.jpg",
+        "tipo": "planta",
+        "alt": "Planta — Elos Barueri"
+      }
+    ],
+    "videos": [],
+    "tours360": [],
+    "lazer": [],
+    "tipologias": [
+      {
+        "nome": "2 dormitórios",
+        "areaPrivativa": 56.64,
+        "dormitorios": 2,
+        "suites": 1,
+        "banheiros": 1,
+        "vagas": 1,
+        "preco": null,
+        "plantaUrl": "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/planta-big-147885cd819a8f841a57b56a934b579e.jpg",
         "unidadesDisponiveis": null
       }
     ]

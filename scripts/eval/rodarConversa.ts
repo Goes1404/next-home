@@ -149,9 +149,19 @@ async function julgarConversa(c: ConversaSimulada) {
     .map((t, i) => `[${i + 1}] Cliente: ${t.cliente.join(" / ")}\n[${i + 1}] Sofia: ${t.bot}`)
     .join("\n");
 
+  /*
+   * Modelo PRÓPRIO do juiz, separado do que o cliente simulado usa.
+   *
+   * A cota gratuita do Gemini conta por MODELO (20 chamadas/dia por modelo
+   * nesta conta), e numa rodada de seis personas o cliente simulado sozinho
+   * gasta dezenas. Com os dois no mesmo modelo, o juiz fica sem cota no meio
+   * da rodada e metade das conversas sai sem nota — foi assim que o eval de
+   * resposta perdeu 8 dos 36 casos numa medição.
+   */
   const r = await chamarGeminiJson(`${RUBRICA_DA_CONVERSA}\n\nCONVERSA:\n${transcricao}`, {
     temperature: 0,
     timeoutMs: 45_000,
+    modelo: process.env.GEMINI_MODELO_JUIZ || "gemini-3.5-flash-lite",
   });
   if (!r.ok) return null;
   return r.json as { avancou: number; mesmaPessoa: number; assumiria: boolean; justificativa: string };
@@ -180,7 +190,10 @@ async function principal() {
   const relatorio = [];
   for (const persona of escolhidas) {
     const conversa = await conversarCom(persona);
-    const medida = medirConversa(conversa.turnos);
+    const medida = medirConversa(conversa.turnos, {
+      conversaCompleta:
+        conversa.desfecho === "cliente_encerrou" || conversa.desfecho === "teto_de_turnos",
+    });
     const juizo = SEM_JUIZ ? null : await julgarConversa(conversa);
 
     console.log(

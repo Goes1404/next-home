@@ -186,8 +186,21 @@ export type MedidaDaConversa = {
   reprovacoes: string[];
 };
 
-export function medirConversa(turnos: TurnoRegistrado[]): MedidaDaConversa {
+export function medirConversa(
+  turnos: TurnoRegistrado[],
+  /**
+   * A conversa chegou ao fim por conta própria?
+   *
+   * `false` quando ela morreu por falha do EVAL — cliente simulado sem cota,
+   * provedor fora. Aí não dá para cobrar o que ainda ia acontecer: uma
+   * conversa de um turno reprovada por "nunca ofereceu visita" acusa o
+   * agente de algo que ele não teve chance de fazer, que é o defeito de
+   * eval mais repetido deste projeto.
+   */
+  opcoes: { conversaCompleta?: boolean } = {},
+): MedidaDaConversa {
   const reprovacoes: string[] = [];
+  const completa = opcoes.conversaCompleta ?? true;
 
   // ---- visita: quando foi oferecida
   let turnoDaOferta: number | null = null;
@@ -198,7 +211,8 @@ export function medirConversa(turnos: TurnoRegistrado[]): MedidaDaConversa {
     }
   }
   if (turnoDaOferta === null) {
-    reprovacoes.push("nunca ofereceu visita");
+    // Só cobra o convite de quem teve turnos para dá-lo.
+    if (completa && turnos.length >= 3) reprovacoes.push("nunca ofereceu visita");
   } else if (turnoDaOferta > TURNO_LIMITE_DA_VISITA) {
     reprovacoes.push(`ofereceu visita só no turno ${turnoDaOferta}`);
   }

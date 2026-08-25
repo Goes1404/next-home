@@ -88,9 +88,22 @@ describe("oferta de visita", () => {
     const m = medirConversa([
       turno("oi", "Olá! Como posso ajudar?"),
       turno("procuro apê", "Certo, me conte mais."),
+      turno("em Barueri", "Entendi, vou procurar."),
     ]);
     expect(m.turnoDaOfertaDeVisita).toBeNull();
     expect(m.reprovacoes).toContain("nunca ofereceu visita");
+  });
+
+  it("conversa curta demais NÃO é cobrada pelo convite que não coube", () => {
+    /*
+     * Uma conversa de um turno reprovada por "nunca ofereceu visita" acusa
+     * o agente de algo que ele não teve chance de fazer. Acontece quando o
+     * cliente simulado fica sem cota — falha do eval, não do atendimento.
+     */
+    const m = medirConversa([turno("oi", "Olá! Em qual região você procura?")], {
+      conversaCompleta: false,
+    });
+    expect(m.reprovacoes).not.toContain("nunca ofereceu visita");
   });
 
   it("convite tardio reprova mesmo existindo", () => {

@@ -16,6 +16,7 @@ import {
   buscarDossieAtual,
   cancelarFollowupsPendentes,
   gravarMensagem,
+  vincularInteracaoNaMensagem,
   historicoRecente,
   liberarConversaPorPalavraChave,
   marcarConversaComoTeste,
@@ -567,11 +568,20 @@ export async function POST(req: NextRequest) {
      */
     const interacaoId = crypto.randomUUID();
 
-    await gravarMensagem({
+    /*
+     * A mensagem é gravada SEM o vínculo, e o vínculo vem depois de a
+     * telemetria existir. A FK exige essa ordem, e invertê-la custou dois
+     * dias de respostas não gravadas — com a IA cumprimentando do zero em
+     * toda mensagem porque nunca via as próprias falas.
+     *
+     * Gravar aqui, e não no fim, é deliberado: se a função estourar o tempo
+     * no dossiê (12s) ou num aviso, a conversa já está salva. Perder o
+     * vínculo custa uma avaliação; perder a mensagem custa o contexto.
+     */
+    const mensagemDoBot = await gravarMensagem({
       conversaId: conversa.id,
       remetente: "bot",
       conteudo: textoParaEnviar,
-      interacaoId,
     });
 
     /*
@@ -729,6 +739,9 @@ export async function POST(req: NextRequest) {
       tokensSaida: respostaIA.meta.tokensSaida,
       modelo: respostaIA.meta.modelo,
     });
+
+    // Agora a linha de telemetria existe: a FK aceita o vínculo.
+    await vincularInteracaoNaMensagem(mensagemDoBot.id, interacaoId);
 
     return NextResponse.json({
       ok: true,

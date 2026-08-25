@@ -344,6 +344,33 @@ export async function liberarConversaPorPalavraChave(conversaId: string): Promis
  * responder de novo. Sem isso, cada retry do provedor virava resposta
  * duplicada no WhatsApp do cliente.
  */
+/**
+ * Grava uma mensagem da conversa.
+ *
+ * **`interacaoId` NÃO é parâmetro daqui, e a ausência é a correção.**
+ *
+ * `whatsapp_mensagens.interacao_id` tem chave estrangeira para
+ * `ia_interacoes` (0040), e o webhook grava a mensagem do bot ANTES de
+ * escrever a telemetria — o uuid existe, a linha ainda não. O insert violava
+ * a FK, o erro caía no `console.error` abaixo, e a função devolvia
+ * `{ inedita: true }` como se tivesse gravado.
+ *
+ * O efeito foi grande e silencioso: **nenhuma resposta do bot foi salva
+ * entre 23/08 e 25/08/2026.** E como `historicoRecente` é o que alimenta o
+ * prompt, a IA nunca via as próprias falas: ela cumprimentava do zero em
+ * TODA mensagem ("Oi!" cinco vezes na mesma conversa) e repetia a mesma
+ * oferta depois de o cliente já ter aceitado. Parecia perda de contexto;
+ * era ausência de contexto.
+ *
+ * Por isso o vínculo saiu daqui e virou `vincularInteracaoNaMensagem`, que
+ * roda DEPOIS da telemetria existir. A ordem passa a ser impossível de
+ * inverter por engano — mesma escolha que tirou o parâmetro `legenda` de
+ * `enviarMidiaWhatsapp`: quando um parâmetro só pode ser usado errado, ele
+ * não deve existir.
+ *
+ * A regra por trás: **a conversa é o produto, a telemetria é instrumento.**
+ * Instrumento nunca pode apagar produto.
+ */
 export async function gravarMensagem(params: {
   conversaId: string;
   remetente: "cliente" | "bot" | "corretor";
@@ -351,30 +378,28 @@ export async function gravarMensagem(params: {
   tipo?: "texto" | "audio" | "imagem" | "documento";
   midiaUrl?: string | null;
   providerMessageId?: string | null;
-  /**
-   * Vínculo com a linha de telemetria (ia_interacoes, 0040). O chamador
-   * gera o uuid ANTES do envio e usa o mesmo id nos dois inserts — é o que
-   * torna cada resposta do bot avaliável individualmente no Live Chat.
-   */
-  interacaoId?: string | null;
-}): Promise<{ inedita: boolean }> {
+}): Promise<{ inedita: boolean; id: string | null }> {
   const supabase = createServiceClient();
 
-  const { error } = await supabase.from("whatsapp_mensagens").insert({
-    conversa_id: params.conversaId,
-    remetente: params.remetente,
-    tipo: params.tipo ?? "texto",
-    conteudo: params.conteudo,
-    midia_url: params.midiaUrl ?? null,
-    provider_message_id: params.providerMessageId ?? null,
-    interacao_id: params.interacaoId ?? null,
-  });
+  const { data, error } = await supabase
+    .from("whatsapp_mensagens")
+    .insert({
+      conversa_id: params.conversaId,
+      remetente: params.remetente,
+      tipo: params.tipo ?? "texto",
+      conteudo: params.conteudo,
+      midia_url: params.midiaUrl ?? null,
+      provider_message_id: params.providerMessageId ?? null,
+    })
+    .select("id")
+    .maybeSingle();
 
   // 23505 = violação de unicidade: é a reentrega. Qualquer outro erro é
   // problema real, mas nunca pode derrubar o fluxo de resposta — loga e segue.
   if (error) {
-    if (error.code === "23505") return { inedita: false };
+    if (error.code === "23505") return { inedita: false, id: null };
     console.error("Falha ao gravar mensagem de WhatsApp:", error.message);
+    return { inedita: true, id: null };
   }
 
   await supabase
@@ -385,7 +410,30 @@ export async function gravarMensagem(params: {
     })
     .eq("id", params.conversaId);
 
-  return { inedita: true };
+  return { inedita: true, id: data?.id ?? null };
+}
+
+/**
+ * Liga a mensagem enviada à linha de telemetria que a produziu (0040).
+ *
+ * Roda DEPOIS de `registrarInteracao`, porque a FK exige que a linha de
+ * `ia_interacoes` já exista. Falhar aqui custa a avaliação individual
+ * daquela resposta no Live Chat — nunca a mensagem, que já está gravada.
+ */
+export async function vincularInteracaoNaMensagem(
+  mensagemId: string | null,
+  interacaoId: string,
+): Promise<void> {
+  if (!mensagemId) return;
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from("whatsapp_mensagens")
+    .update({ interacao_id: interacaoId })
+    .eq("id", mensagemId);
+
+  if (error) {
+    console.warn("[whatsapp] mensagem gravada, mas sem vínculo com a telemetria:", error.message);
+  }
 }
 
 /**

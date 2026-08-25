@@ -10,6 +10,7 @@ import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
 import {
   buscarDossieAtual,
   gravarMensagem,
+  vincularInteracaoNaMensagem,
   historicoRecente,
   registrarResultadoEnvio,
   reservarCotaCampanha,
@@ -246,7 +247,13 @@ async function processarFollowup(
   // Mesmo uuid na mensagem e na telemetria (0040): follow-up também é
   // resposta avaliável no Live Chat.
   const interacaoId = crypto.randomUUID();
-  await gravarMensagem({ conversaId: conversa.id, remetente: "bot", conteudo: balao, interacaoId });
+  // Sem o vínculo no insert: a FK para `ia_interacoes` exige que a linha de
+  // telemetria já exista, e ela é escrita logo abaixo. Ver gravarMensagem.
+  const mensagemDoBot = await gravarMensagem({
+    conversaId: conversa.id,
+    remetente: "bot",
+    conteudo: balao,
+  });
   await supabase
     .from("whatsapp_followups")
     .update({ status: "enviado", enviado_em: new Date().toISOString() })
@@ -263,6 +270,8 @@ async function processarFollowup(
     anexosEnviados: 0,
     anexosBloqueados: turno.bloqueios,
   });
+
+  await vincularInteracaoNaMensagem(mensagemDoBot.id, interacaoId);
 
   return "enviado";
 }
