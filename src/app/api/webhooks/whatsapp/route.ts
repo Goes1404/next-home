@@ -13,6 +13,7 @@ import {
   agendarFollowup,
   agendarVisitaLead,
   aplicarAckDeEntrega,
+  avancarLeadParaPrimeiroContato,
   botDeveResponder,
   buscarDossieAtual,
   cancelarFollowupsPendentes,
@@ -776,6 +777,12 @@ export async function POST(req: NextRequest) {
 
     // Agora a linha de telemetria existe: a FK aceita o vínculo.
     await vincularInteracaoNaMensagem(mensagemDoBot.id, interacaoId);
+
+    // A primeira resposta ENTREGUE é o primeiro contato — o funil acompanha
+    // sozinho (só sai de "novo"; nunca volta; idempotente).
+    if (envio.enviado && conversa.leadId) {
+      await avancarLeadParaPrimeiroContato(conversa.leadId);
+    }
 
     return NextResponse.json({
       ok: true,
