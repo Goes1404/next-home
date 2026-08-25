@@ -27,6 +27,28 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
 
+  /*
+   * O `sharp` roda em Server Action do painel (medida, blur e prévia de
+   * imagem). O rastreador de arquivos da Vercel incluía a PASTA dos pacotes
+   * nativos mas não o binário de dentro: medido na função, `@img` existia
+   * com `sharp-linux-x64` e `sharp-libvips-linux-x64`, e mesmo assim o
+   * carregamento morria em `ERR_DLOPEN_FAILED: libvips-cpp.so.8.18.3`.
+   *
+   * A razão é que esse `.so` nunca é `require`d — quem o abre é o binário
+   * nativo, por dlopen, em tempo de execução. Rastreador nenhum enxerga
+   * isso, e o build passa limpo enquanto a rota quebra em produção.
+   */
+  outputFileTracingIncludes: {
+    "/corretor/**": [
+      "./node_modules/@img/sharp-linux-x64/**/*",
+      "./node_modules/@img/sharp-libvips-linux-x64/**/*",
+    ],
+    "/api/diag/sharp": [
+      "./node_modules/@img/sharp-linux-x64/**/*",
+      "./node_modules/@img/sharp-libvips-linux-x64/**/*",
+    ],
+  },
+
   experimental: {
     // GSAP e OGL são pesados para o bundler resolver a cada build.
     optimizePackageImports: ["gsap", "ogl"],

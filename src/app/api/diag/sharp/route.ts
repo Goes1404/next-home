@@ -16,22 +16,25 @@ import { NextResponse } from "next/server";
  */
 export const dynamic = "force-dynamic";
 
-async function pastaImg(): Promise<string[] | string> {
-  for (const caminho of ["node_modules/@img", "/var/task/node_modules/@img"]) {
+async function listar(caminho: string): Promise<string[] | string> {
+  for (const raiz of ["node_modules/", "/var/task/node_modules/"]) {
     try {
-      return await readdir(caminho);
+      return await readdir(raiz + caminho, { recursive: true });
     } catch {
       /* tenta o próximo */
     }
   }
-  return "não encontrei a pasta @img";
+  return `não encontrei ${caminho}`;
 }
 
 export async function GET() {
   const relatorio: Record<string, unknown> = {
     plataforma: `${process.platform}-${process.arch}`,
     cwd: process.cwd(),
-    pacotesImg: await pastaImg(),
+    pacotesImg: await listar("@img"),
+    // O que importa não é a pasta existir: é o .so estar DENTRO dela.
+    dentroDoLibvips: await listar("@img/sharp-libvips-linux-x64"),
+    dentroDoSharpLinux: await listar("@img/sharp-linux-x64"),
   };
 
   try {
