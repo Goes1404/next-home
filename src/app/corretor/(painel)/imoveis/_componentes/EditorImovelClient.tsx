@@ -227,7 +227,17 @@ export function EditorImovelClient({ imovel }: Props) {
         )}
 
         {abaAtiva === "textos" && (
-          <EditorTextos dados={dadosGerais} onChange={handleCampoGeralChange} />
+          <EditorTextos
+            dados={dadosGerais}
+            onChange={handleCampoGeralChange}
+            contexto={{
+              tipologias,
+              lazer,
+              construtora: imovel.construtora,
+              totalUnidades: imovel.totalUnidades,
+              totalTorres: imovel.totalTorres,
+            }}
+          />
         )}
 
         {abaAtiva === "book" && (

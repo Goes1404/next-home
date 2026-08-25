@@ -1,7 +1,9 @@
 "use client";
 
-import type { StatusObra, TipoImovel } from "@/lib/types";
-import { Building2, MapPin } from 'lucide-react';
+import { useState, useTransition } from "react";
+import type { StatusObra, Tipologia, TipoImovel } from "@/lib/types";
+import { Building2, MapPin, Sparkles } from 'lucide-react';
+import { melhorarDescricaoComIA } from "../actions";
 
 
 interface Props {
@@ -21,9 +23,67 @@ interface Props {
     entregaPrevista: string | null;
   };
   onChange: (campo: string, valor: any) => void;
+  /**
+   * O que a IA precisa saber e que não é editado nesta aba. Vem do
+   * formulário aberto (tipologias e lazer que o corretor acabou de mexer),
+   * não do banco — pedir o texto logo depois de preencher a ficha é o uso
+   * natural, e ler do banco descreveria o imóvel como ele era antes.
+   */
+  contexto: {
+    tipologias: Tipologia[];
+    lazer: string[];
+    construtora: string | null;
+    totalUnidades: number | null;
+    totalTorres: number | null;
+  };
 }
 
-export function EditorTextos({ dados, onChange }: Props) {
+export function EditorTextos({ dados, onChange, contexto }: Props) {
+  /**
+   * A sugestão da IA fica ao LADO do texto, nunca por cima dele.
+   *
+   * Trocar a descrição no clique economizaria um botão e destruiria, sem
+   * volta, o texto que o corretor escreveu — o campo não tem histórico e a
+   * tela não tem desfazer. Ele compara e decide.
+   */
+  const [sugestao, setSugestao] = useState<string | null>(null);
+  const [erroIA, setErroIA] = useState<string | null>(null);
+  const [gerando, iniciarGeracao] = useTransition();
+
+  function pedirTexto() {
+    setErroIA(null);
+    setSugestao(null);
+    iniciarGeracao(async () => {
+      const res = await melhorarDescricaoComIA({
+        nome: dados.nome,
+        tagline: dados.tagline,
+        descricaoAtual: dados.descricao,
+        tipo: dados.tipo,
+        status: dados.status,
+        cidade: dados.cidade,
+        bairro: dados.bairro,
+        construtora: contexto.construtora,
+        entregaPrevista: dados.entregaPrevista,
+        totalUnidades: contexto.totalUnidades,
+        totalTorres: contexto.totalTorres,
+        tipologias: contexto.tipologias.map((t) => ({
+          nome: t.nome,
+          areaPrivativa: t.areaPrivativa,
+          dormitorios: t.dormitorios,
+          suites: t.suites,
+          banheiros: t.banheiros,
+          vagas: t.vagas,
+        })),
+        lazer: contexto.lazer,
+      });
+      if (!res.ok) {
+        setErroIA(res.erro);
+        return;
+      }
+      setSugestao(res.descricao);
+    });
+  }
+
   return (
     <div className="space-y-6">
       {/* 1. Nome e Textos de Marketing */}
@@ -92,9 +152,20 @@ export function EditorTextos({ dados, onChange }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-fluid-xs font-bold text-corpo uppercase tracking-wider block">
-              Descrição Comercial Completa
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="text-fluid-xs font-bold text-corpo uppercase tracking-wider block">
+                Descrição Comercial Completa
+              </label>
+              <button
+                type="button"
+                onClick={pedirTexto}
+                disabled={gerando}
+                className="text-fluid-xs inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-full border border-acento/40 bg-acento/10 px-3.5 font-bold text-acento-suave transition-colors hover:bg-acento/20 disabled:cursor-wait disabled:opacity-60"
+              >
+                <Sparkles className="h-4 w-4" />
+                {gerando ? "Escrevendo…" : dados.descricao.trim() ? "Melhorar com IA" : "Escrever com IA"}
+              </button>
+            </div>
             <textarea
               rows={4}
               value={dados.descricao}
@@ -102,6 +173,54 @@ export function EditorTextos({ dados, onChange }: Props) {
               placeholder="Descreva os diferenciais, acabamentos, arquitetura e conveniências..."
               className="w-full rounded-xl border border-linha-forte bg-campo p-4 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
             />
+            <p className="text-fluid-xs text-legenda">
+              A IA escreve a partir da ficha: plantas, lazer, estágio da obra e localização. Ela não
+              cita valores nem inventa item que não esteja cadastrado — quanto mais completa a ficha,
+              melhor o texto.
+            </p>
+
+            {erroIA && <p className="text-fluid-xs text-perigo">{erroIA}</p>}
+
+            {sugestao && (
+              <div className="mt-3 space-y-3 rounded-2xl border border-acento/30 bg-acento/5 p-4">
+                <p className="text-fluid-xs font-bold text-acento-suave uppercase tracking-wider">
+                  Sugestão da IA — confira antes de usar
+                </p>
+                <p className="text-fluid-sm whitespace-pre-line text-corpo">{sugestao}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange("descricao", sugestao);
+                      setSugestao(null);
+                    }}
+                    className="text-fluid-xs min-h-[40px] cursor-pointer rounded-xl bg-acento px-4 font-bold text-white transition-colors hover:bg-acento-hover"
+                  >
+                    Usar este texto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={pedirTexto}
+                    disabled={gerando}
+                    className="text-fluid-xs min-h-[40px] cursor-pointer rounded-xl border border-linha-forte px-4 font-bold text-corpo transition-colors hover:text-titulo disabled:opacity-60"
+                  >
+                    Gerar outra
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSugestao(null)}
+                    className="text-fluid-xs min-h-[40px] cursor-pointer rounded-xl px-4 font-bold text-legenda transition-colors hover:text-titulo"
+                  >
+                    Descartar
+                  </button>
+                </div>
+                {/* "Usar este texto" só preenche o campo — quem grava é o
+                    botão de salvar da barra, como em todo o resto da tela. */}
+                <p className="text-fluid-xs text-legenda">
+                  Usar o texto só preenche o campo. Nada vai para o site antes de você salvar.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
