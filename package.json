@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "eval": "tsx --conditions=react-server scripts/eval/rodarEval.ts",
     "eval:conversa": "tsx --conditions=react-server scripts/eval/rodarConversa.ts",
     "eval:fixture": "tsx scripts/eval/gerarFixtureCatalogo.ts",

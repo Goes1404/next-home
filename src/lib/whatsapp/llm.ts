@@ -196,8 +196,12 @@ export async function chamarLlmJson(
    * Avisar quando um provedor com chave fica de fora por não caber. Sem
    * isto, o elo mais rápido da cascata some em silêncio — foi assim que a
    * Groq passou cinco versões de prompt fora do ar sem ninguém notar.
+   *
+   * Só quem está na ORDEM DO MOTOR conta: com motor único na OpenAI e a
+   * chave da Groq no ambiente, avisar "groq PULADO" a cada chamada é ruído
+   * sobre um provedor que nunca seria chamado.
    */
-  for (const p of PROVEDORES) {
+  for (const p of ordemDosProvedores()) {
     if (p.configurado() && p.cabe && !p.cabe(prompt)) {
       console.warn(
         `[ia] ${p.nome} PULADO: o prompt (${prompt.length} chars) não cabe no orçamento de tokens da conta. ` +

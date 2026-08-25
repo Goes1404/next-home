@@ -1,0 +1,46 @@
+quer-tudo-pelo-zap · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me passa as infos por aqui mesmo, nao tenho tempo de visita
+[1] Sofia:   Entendo a correria, mas a visita é onde apresento o projeto e condições com detalhes.
+Posso te enviar o catálogo digital para você avaliar com calma.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[2] Cliente: manda link do catálogo direto e preço
+[2] Sofia:   Segue o link do catálogo para você dar uma olhada com calma.
+Sobre preço, as condições variam conforme unidade e pagamento, e eu explico tudo na visita. Quer conhecer o decorado?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: qual o valor
+              tem foto
+[3] Sofia:   Sei que o valor é decisivo, mas varia por unidade e condição de pagamento.
+Posso te mostrar as fotos dos imóveis para começar? Qual região te interessa?
+
+[4] Cliente: valor e foto ainda
+              não quero visita, só isso
+[4] Sofia:   Entendo que queira só as fotos e o valor, mas o preço depende da unidade e condições.
+Posso enviar fotos dos imóveis na região que você prefere para começar?
+
+[5] Cliente: valor ainda, foto já, sem visita
+[5] Sofia:   Sei que o valor é importante, mas varia muito por unidade e condições.
+Posso te mostrar fotos dos imóveis na região que prefere para ajudar na escolha?
+
+[6] Cliente: valor e foto já, sem visita
+[6] Sofia:   Posso te mostrar fotos dos imóveis na região que prefere para ajudar na escolha.
+
+[7] Cliente: valor foto já, sem visita
+[7] Sofia:   Entendo seu ponto, mas o valor certo só consigo passar na visita, onde apresento as condições.
+Me diz a região que você prefere para eu te enviar fotos específicas.
+
+[8] Cliente: valor foto já manda
+[8] Sofia:   Para te enviar fotos e falar de valores, preciso saber a região que você prefere. Assim, te mostro o que cabe no perfil.
+
+[9] Cliente: qual região
+              valor e foto já
+[9] Sofia:   Trabalho com imóveis em Barueri, Osasco e Alphaville. Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[10] Cliente: Barueri valor foto já
+[10] Sofia:   Em Barueri, tenho o More Aldeia de Barueri, pronto para morar, e o Elos Barueri, também pronto.
+Posso te enviar fotos de algum desses para começar?
+Quer conhecer o decorado para entender melhor as condições?

@@ -1,0 +1,138 @@
+{
+  "promptVersao": "2026.08-v18",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "pergunta-se-e-robo-no-meio",
+      "desfecho": "ia_indisponivel",
+      "turnos": 9,
+      "medida": {
+        "turnos": 9,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Me conta, qual região de Alphaville te interessa mais?",
+          "Me conta, qual região de Alphaville te interessa mais?",
+          "Quantos dormitórios você precisa?"
+        ],
+        "perguntasReaparecidas": [
+          "é pessoa ou robô?",
+          "é pessoa ou robô?",
+          "é pessoa ou robô?",
+          "é pessoa ou robô?"
+        ],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 8,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "visita",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 159,
+        "maiorMensagem": 221,
+        "reprovacoes": [
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "8 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "investidor-objetivo",
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "confuso-entre-dois",
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "educado-que-enrola",
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "insiste-no-desconto",
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa avançou com alguns tropeços, mantendo consistência no atendimento. Faltou qualificação completa, mas o corretor assumiria sem constrangimento.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

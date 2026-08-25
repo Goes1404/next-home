@@ -1,0 +1,36 @@
+confuso-entre-dois · ia_indisponivel · 6 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me fala do terra alta e do more aldeia, qual compensa mais
+[1] Sofia:   O Terra Alta tem 1 dormitório, 52m², 2 vagas e está em construção no Jardim Tupanci.
+É ideal para quem busca conforto e praticidade em Barueri.
+Posso te enviar a apresentação digital e marcar uma visita para você conhecer o decorado?
+
+[2] Cliente: e a metragem?
+              e preço?
+[2] Sofia:   O Terra Alta tem 52m², 1 dormitório com suíte e 2 vagas.
+As condições são flexíveis, com entrada parcelada e financiamento pela construtora.
+Podemos agendar uma visita para eu te apresentar o projeto e as condições de pagamento.
+
+[3] Cliente: e preço?
+              e se tem 2 dorm?
+[3] Sofia:   O Terra Alta tem 1 dormitório, não tem opção de 2 dormitórios.
+Sobre preço, varia por unidade e condições, melhor ver na visita.
+Quer conhecer o decorado? Posso agendar para terça às 10h ou às 15h?
+
+[4] Cliente: e preço?
+              tem 2 dorm?
+[4] Sofia:   Como mencionei, o Terra Alta é de 1 dormitório, não tem 2 dormitórios.
+Sobre preço, varia conforme unidade e condições, melhor tratar na visita.
+Posso agendar para terça às 10h ou às 15h para você conhecer o decorado?
+
+[5] Cliente: e o More Aldeia tem 2 dorm?
+              e preço dele?
+[5] Sofia:   O More Aldeia não é um empreendimento nosso, mas me conta o que gostou nele — região, tamanho?
+Assim te mostro o que temos que se encaixa.
+
+[6] Cliente: e o More Aldeia tem 2 dorm?
+              e preço?
+[6] Sofia:   O More Aldeia não é nosso empreendimento, então não tenho os dados exatos.
+Me conta o que te agradou nele, a região ou o tamanho?
+Assim te mostro opções que temos e que encaixam no seu perfil.

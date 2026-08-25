@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { ArrowLeft, ArrowRight, Rocket, Shield, Sparkles } from "lucide-react";
 import type { Empreendimento } from "@/lib/types";
 import {
   criarCampanha,
   gerarPreviewCampanha,
+  listarLeadsElegiveis,
   type CampanhaListada,
   type FiltroLeadsCampanha,
+  type LeadElegivel,
 } from "../acoes";
 
 /**
@@ -36,7 +38,20 @@ const PUBLICOS: { valor: FiltroLeadsCampanha; titulo: string; descricao: string 
     titulo: "Todos os meus leads",
     descricao: "A carteira inteira. Use com cuidado: mensagem repetida cansa quem já respondeu.",
   },
+  {
+    valor: "selecionados",
+    titulo: "Escolher um por um",
+    descricao: "Você marca exatamente quem recebe — busque pelo nome e monte a lista.",
+  },
 ];
+
+/** Minúsculas e sem acento, para a busca achar "João" digitando "joao". */
+function chaveBusca(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
 
 const MENSAGEM_PADRAO =
   "Olá, {nome}! Tudo bem? Lembrei do seu interesse em Alphaville. Acabou de sair uma condição exclusiva na tabela do {imovel}. Gostaria de receber o book digital?";
@@ -58,9 +73,50 @@ export function NovaCampanha({
   const [erro, setErro] = useState<string | null>(null);
   const [criando, iniciarCriacao] = useTransition();
 
+  // ---- Seleção manual ("Escolher um por um") -------------------------
+  // A carteira elegível chega UMA vez, quando a opção é escolhida (~100
+  // leads por corretor — diretriz de produto — cabem inteiros na memória;
+  // paginar aqui só atrapalharia a busca).
+  const [carteira, setCarteira] = useState<LeadElegivel[] | null>(null);
+  const [buscaLead, setBuscaLead] = useState("");
+  const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (publico !== "selecionados" || carteira !== null) return;
+    let vivo = true;
+    listarLeadsElegiveis("selecionados").then((leads) => {
+      if (vivo) setCarteira(leads);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [publico, carteira]);
+
+  const carteiraFiltrada = useMemo(() => {
+    if (!carteira) return [];
+    const termo = chaveBusca(buscaLead.trim());
+    if (!termo) return carteira;
+    return carteira.filter((l) => chaveBusca(l.nome).includes(termo));
+  }, [carteira, buscaLead]);
+
+  function alternarLead(id: string) {
+    setEscolhidos((atual) => {
+      const proximo = new Set(atual);
+      if (proximo.has(id)) proximo.delete(id);
+      else proximo.add(id);
+      return proximo;
+    });
+  }
+
   const imovel = empreendimentos.find((e) => e.slug === imovelSlug) ?? null;
   const nomeImovel = imovel?.nome ?? "nossos lançamentos em Alphaville";
   const publicoEscolhido = PUBLICOS.find((p) => p.valor === publico)!;
+  const selecaoManual = publico === "selecionados";
+  const leadIds = selecaoManual ? [...escolhidos] : undefined;
+  /** No modo manual, o rótulo carrega o número — é o que o corretor confere. */
+  const rotuloPublico = selecaoManual
+    ? `${escolhidos.size} lead${escolhidos.size === 1 ? "" : "s"} escolhido${escolhidos.size === 1 ? "" : "s"} a dedo`
+    : publicoEscolhido.titulo;
 
   function verExemplos() {
     setErro(null);
@@ -70,6 +126,7 @@ export function NovaCampanha({
         filtro: publico,
         empreendimentoNome: nomeImovel,
         mensagemBase,
+        leadIds,
       });
       setGerando(false);
 
@@ -87,7 +144,7 @@ export function NovaCampanha({
     // melhor do que um campo vazio bloqueando o envio.
     const nomeCampanha =
       titulo.trim() ||
-      `${publicoEscolhido.titulo} · ${nomeImovel} · ${new Date().toLocaleDateString("pt-BR")}`;
+      `${rotuloPublico} · ${nomeImovel} · ${new Date().toLocaleDateString("pt-BR")}`;
 
     setErro(null);
     iniciarCriacao(async () => {
@@ -97,6 +154,7 @@ export function NovaCampanha({
         empreendimentoNome: nomeImovel,
         filtro: publico,
         mensagemBase,
+        leadIds,
       });
 
       if ("erro" in resultado) {
@@ -122,6 +180,8 @@ export function NovaCampanha({
       setPasso(1);
       setTitulo("");
       setExemplos([]);
+      setEscolhidos(new Set());
+      setBuscaLead("");
     });
   }
 
@@ -157,6 +217,54 @@ export function NovaCampanha({
               <p className="text-fluid-xs text-apoio mt-1 leading-snug">{opcao.descricao}</p>
             </button>
           ))}
+
+          {selecaoManual && (
+            <div className="border-linha rounded-xl border p-3">
+              <input
+                type="search"
+                value={buscaLead}
+                onChange={(e) => setBuscaLead(e.target.value)}
+                placeholder="Buscar pelo nome…"
+                aria-label="Buscar lead pelo nome"
+                className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-11 w-full rounded-lg border px-3.5 focus:outline-none"
+              />
+
+              {/* Teto de altura + rolagem própria: a carteira pode ter 100
+                  nomes e o passo 1 não pode virar uma página infinita. */}
+              <div className="mt-2 max-h-64 space-y-1 overflow-y-auto">
+                {carteira === null && (
+                  <p className="text-fluid-xs text-apoio px-1 py-3">Carregando seus leads…</p>
+                )}
+                {carteira !== null && carteiraFiltrada.length === 0 && (
+                  <p className="text-fluid-xs text-apoio px-1 py-3">
+                    {carteira.length === 0
+                      ? "Nenhum lead com WhatsApp disponível para campanha."
+                      : "Ninguém com esse nome."}
+                  </p>
+                )}
+                {carteiraFiltrada.map((lead) => (
+                  <label
+                    key={lead.id}
+                    className="hover:bg-vidro flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={escolhidos.has(lead.id)}
+                      onChange={() => alternarLead(lead.id)}
+                      className="accent-acento h-4 w-4 shrink-0"
+                    />
+                    <span className="text-fluid-sm text-titulo min-w-0 truncate">{lead.nome}</span>
+                  </label>
+                ))}
+              </div>
+
+              <p className="text-fluid-xs text-apoio border-linha mt-2 border-t pt-2 tabular-nums">
+                {escolhidos.size === 0
+                  ? "Marque quem deve receber."
+                  : `${escolhidos.size} marcado${escolhidos.size === 1 ? "" : "s"}.`}
+              </p>
+            </div>
+          )}
 
           <div className="space-y-1.5 pt-2">
             <label className="text-fluid-xs text-apoio block" htmlFor="imovel-campanha">
@@ -225,7 +333,7 @@ export function NovaCampanha({
           <dl className="text-fluid-sm space-y-2">
             <div className="flex gap-2">
               <dt className="text-apoio shrink-0">Para:</dt>
-              <dd className="text-titulo">{publicoEscolhido.titulo}</dd>
+              <dd className="text-titulo">{rotuloPublico}</dd>
             </div>
             <div className="flex gap-2">
               <dt className="text-apoio shrink-0">Sobre:</dt>
@@ -246,7 +354,7 @@ export function NovaCampanha({
               type="text"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              placeholder={`${publicoEscolhido.titulo} · ${nomeImovel}`}
+              placeholder={`${rotuloPublico} · ${nomeImovel}`}
               className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-12 w-full rounded-xl border px-3.5 focus:outline-none"
             />
           </div>
@@ -282,7 +390,16 @@ export function NovaCampanha({
         {passo < 3 ? (
           <button
             type="button"
-            onClick={() => setPasso((p) => (p === 1 ? 2 : 3))}
+            onClick={() => {
+              // No modo manual, seguir sem ninguém marcado geraria uma
+              // campanha vazia lá no fim — melhor barrar aqui, com contexto.
+              if (passo === 1 && selecaoManual && escolhidos.size === 0) {
+                setErro("Marque ao menos um lead antes de continuar.");
+                return;
+              }
+              setErro(null);
+              setPasso((p) => (p === 1 ? 2 : 3));
+            }}
             className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium text-white transition-colors"
           >
             Continuar <ArrowRight className="h-4 w-4" />

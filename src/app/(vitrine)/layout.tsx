@@ -1,4 +1,5 @@
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
+import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
@@ -37,12 +38,20 @@ export default async function VitrineLayout({ children }: { children: React.Reac
         {usaFotoDeFundo ? (
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : (
-          videoUrl && (
-            <HeroVideoBackground
-              src={videoUrl}
-              srcWebm={videoUrl === HERO_VIDEO_URL ? HERO_VIDEO_WEBM_URL : undefined}
-            />
-          )
+          <>
+            {videoUrl && (
+              <HeroVideoBackground
+                src={videoUrl}
+                srcWebm={videoUrl === HERO_VIDEO_URL ? HERO_VIDEO_WEBM_URL : undefined}
+              />
+            )}
+            {/* O hero-scroll não monta no celular (14,8 MB antes de qualquer
+                interação), e sem par o fundo aqui era um gradiente liso. A
+                vinheta — 0,7 MB, a mesma peça do institucional — cobre a tela
+                inteira lá, e os dois nunca aparecem juntos: um só existe
+                acima de 768px, o outro só abaixo. */}
+            <FundoVideoIntro somenteMobile />
+          </>
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-fundo/30 via-fundo/10 to-fundo/90" />
       </div>

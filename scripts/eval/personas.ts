@@ -23,7 +23,19 @@ export type Comportamento =
   /** Escreve o nome do imóvel errado. Exercita o reconhecimento por grafia. */
   | "escreve_errado"
   /** Responde curto e seco. Exercita a condução quando o cliente não ajuda. */
-  | "responde_monossilabico";
+  | "responde_monossilabico"
+  /** Pergunta sem usar "?". Medido: só 14% das falas reais têm interrogação. */
+  | "sem_interrogacao"
+  /** Pede desconto e insiste. Exercita a recusa sem perder a conversa. */
+  | "pede_desconto"
+  /** Recusa a visita e quer tudo pelo chat. Exercita a recusa respondida com outra oferta. */
+  | "recusa_visita"
+  /** Empurra a decisão para outra pessoa. Exercita a condução sem pressão. */
+  | "decide_com_outra_pessoa"
+  /** Enrola: "vou pensar", "depois te falo". Exercita a cutucada de UMA linha. */
+  | "enrola_sem_decidir"
+  /** No meio da conversa, pergunta se está falando com um robô. */
+  | "pergunta_se_e_robo";
 
 export type Persona = {
   id: string;
@@ -111,6 +123,134 @@ export const PERSONAS: Persona[] = [
       "É a ação de maior valor do bot, e a que mais errou: modelo escolhendo o " +
       "sábado que JÁ PASSOU, medido em três modelos no mesmo dia. A data vai para " +
       "leads.visita_agendada_em.",
+  },
+
+  /*
+   * Personas do S1 (25/08/2026), calibradas pela MEDIÇÃO das 8 conversas de
+   * teste reais (1.466 falas de cliente): mediana de 17 caracteres, 46% das
+   * falas com 15 ou menos, 71% chegando em rajada, só 14% com "?". O
+   * cliente simulado antigo escrevia 96-378 caracteres — dez vezes mais
+   * longo que o real, e um cliente verboso facilita a vida da IA.
+   */
+  {
+    id: "rajada-curta-e-seca",
+    descricao: "cliente que digita como a média medida da casa: pedaços de frase, um atrás do outro",
+    objetivo: "entender o que existe em Alphaville sem escrever uma frase completa",
+    restricoes: ["quer região de Alphaville", "não escreve mensagem longa nunca"],
+    comportamentos: ["escreve_em_rajada", "responde_monossilabico", "sem_interrogacao"],
+    primeiraMensagem: "oi",
+    porque:
+      "É o estilo MEDIDO do cliente real: mediana de 17 caracteres e 71% das falas " +
+      "em rajada. Se a IA só funciona com cliente articulado, ela não funciona.",
+  },
+  {
+    id: "insiste-no-desconto",
+    descricao: "cliente negociador, acha que tudo tem desconto se apertar",
+    objetivo: "arrancar um desconto ou condição especial antes de aceitar visitar",
+    restricoes: ["não marca visita enquanto achar que está caro"],
+    comportamentos: ["pede_desconto", "insiste_no_preco"],
+    primeiraMensagem: "qual o desconto pra pagamento a vista",
+    porque:
+      "O eval de resposta testa UMA recusa de desconto; conversa real tem três " +
+      "investidas seguidas. A recusa tem de vir com outra oferta na mesma mensagem, " +
+      "senão a conversa morre — padrão medido nas conversas que viraram visita.",
+  },
+  {
+    id: "quer-tudo-pelo-zap",
+    descricao: "cliente ocupado que resolve tudo por mensagem e detesta compromisso presencial",
+    objetivo: "conseguir planta, metragem e condições sem sair de casa",
+    restricoes: ["recusa visita pelo menos duas vezes antes de considerar"],
+    comportamentos: ["recusa_visita", "sem_interrogacao"],
+    primeiraMensagem: "me passa as infos por aqui mesmo, nao tenho tempo de visita",
+    porque:
+      "A régua da casa manda oferecer visita cedo — mas cliente que recusa DUAS " +
+      "vezes não pode receber a mesma oferta uma terceira: é o loop do Dom Barueri " +
+      "de outro ângulo. Recusa respondida com outra oferta, não com insistência.",
+  },
+  {
+    id: "pressa-de-quinze-dias",
+    descricao: "cliente que vendeu o imóvel e precisa sair do atual em duas semanas",
+    objetivo: "achar algo PRONTO para entrar em 15 dias",
+    restricoes: ["prazo de 15 dias, inegociável", "não aceita obra nem 'quase pronto'"],
+    comportamentos: ["escreve_em_rajada"],
+    primeiraMensagem: "preciso de apto pra entrar em 15 dias no maximo, tem algo assim",
+    porque:
+      "O caso restricao-estagio-impossivel é a falha dura que sobrou no eval de " +
+      "resposta (inventou_prazo_de_entrega). Em conversa longa a pressão por " +
+      "inventar prazo cresce a cada turno — é aqui que o defeito aparece inteiro.",
+  },
+  {
+    id: "decide-com-a-esposa",
+    descricao: "marido que faz a pesquisa mas não fecha nada sozinho",
+    objetivo: "levantar opções boas o bastante para mostrar para a esposa",
+    restricoes: ["não confirma visita sem falar com ela primeiro"],
+    comportamentos: ["decide_com_outra_pessoa", "responde_monossilabico"],
+    primeiraMensagem: "to vendo apartamento pra minha familia, 2 ou 3 dorm",
+    porque:
+      "Decisor duplo é o caso comum que nenhum eval cobria: a resposta certa " +
+      "convida OS DOIS para o decorado em vez de pressionar quem não decide. " +
+      "Pressão aqui queima a venda com quem manda de verdade.",
+  },
+  {
+    id: "sem-perfil-de-renda",
+    descricao: "cliente animado para sair do aluguel, com renda apertada para o catálogo",
+    objetivo: "sair do aluguel de 900 reais e financiar qualquer coisa",
+    restricoes: ["renda familiar em torno de 2.500", "entrada quase zero"],
+    comportamentos: ["sem_interrogacao", "escreve_em_rajada"],
+    primeiraMensagem: "queria sair do aluguel, pago 900 hoje, da pra financiar",
+    porque:
+      "O funil da corretora pergunta RENDA antes de indicar — e este é o caso em " +
+      "que a resposta certa é honesta sem humilhar: não inventar subsídio, não " +
+      "prometer aprovação, e não sumir com o cliente que hoje não tem perfil.",
+  },
+  {
+    id: "pergunta-se-e-robo-no-meio",
+    descricao: "cliente desconfiado de atendimento automático, testa quem responde",
+    objetivo: "só continua a conversa se sentir que fala com gente que sabe o que diz",
+    restricoes: ["em algum momento pergunta diretamente se é um robô"],
+    comportamentos: ["pergunta_se_e_robo"],
+    primeiraMensagem: "boa noite, vi o anuncio do lancamento em alphaville",
+    porque:
+      "Duas regras em tensão de propósito: se perguntarem direta e explicitamente " +
+      "se é IA, ela não nega (mentir ao consumidor não) — e a regra 21 proíbe " +
+      "'a Bruna vai te responder', que mata a conversa. O equilíbrio só aparece " +
+      "numa conversa inteira.",
+  },
+  {
+    id: "investidor-objetivo",
+    descricao: "investidor de primeira viagem, fala pouco e quer número",
+    objetivo: "comparar metragem, tipologia e entrega para decidir onde estudar melhor",
+    restricoes: ["quer dado concreto, não adjetivo", "detesta resposta de vendedor"],
+    comportamentos: ["responde_monossilabico", "sem_interrogacao"],
+    primeiraMensagem: "qual a menor tipologia do vista alphagran",
+    porque:
+      "A ficha completa existe no prompt justamente para este cliente: metragem " +
+      "errada aqui é flagrada na hora. E a pergunta de preço dele vira convite " +
+      "para a visita — onde os números são tratados — sem soar esquiva.",
+  },
+  {
+    id: "confuso-entre-dois",
+    descricao: "cliente que gostou de dois empreendimentos e mistura os dados deles",
+    objetivo: "decidir entre os dois que viu no site",
+    restricoes: ["cita dois imóveis nossos e alterna entre eles"],
+    comportamentos: ["escreve_em_rajada"],
+    primeiraMensagem: "me fala do terra alta e do more aldeia, qual compensa mais",
+    porque:
+      "O FOCO da conversa foi desenhado para UM imóvel citado; dois ao mesmo tempo " +
+      "testa a fronteira: a IA precisa comparar os NOSSOS sem misturar ficha de um " +
+      "com a do outro — metragem trocada entre imóveis é o erro que a visita expõe.",
+  },
+  {
+    id: "educado-que-enrola",
+    descricao: "cliente simpático que elogia tudo e não decide nada",
+    objetivo: "colecionar informação sem se comprometer com nada",
+    restricoes: ["responde 'vou pensar' ou 'depois te falo' a toda proposta"],
+    comportamentos: ["enrola_sem_decidir"],
+    primeiraMensagem: "achei lindo o empreendimento de vcs no instagram",
+    porque:
+      "O padrão medido de quem converte inclui a cutucada de UMA linha quando o " +
+      "cliente enrola — não um parágrafo de pressão nem três ofertas seguidas. " +
+      "Este é o cliente que separa condução de insistência.",
   },
 ];
 

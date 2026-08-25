@@ -1,0 +1,59 @@
+familia-tres-dorm · ia_indisponivel · 8 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato. Você conhece a região onde está o imóvel? Posso te mostrar opções que tenho por ali.
+
+[2] Cliente: e aí
+              quero 3d
+              perto da escola
+[2] Sofia:   Você busca 3 dormitórios perto de escola.
+Trabalhamos com opções em Barueri e Alphaville, que são regiões com boa estrutura escolar.
+Prefere pronto para morar ou na planta?
+
+[3] Cliente: prefiro pronto
+              qual valor?
+              o valor?
+              quero saber o preço
+[3] Sofia:   Entendo que o valor é decisivo, varia por unidade e condições de pagamento. Para pronto, tenho opções em Alphaville e Barueri que podem te interessar.
+Posso te enviar o catálogo para você dar uma olhada e me dizer o que te agradou? Quer conhecer o decorado também?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[4] Cliente: Oi!
+              Quero 3 dorm, pronto, perto da escola
+              Qual valor?
+              Preciso saber preço
+              Quero marcar visita fim de semana
+[4] Sofia:   Anotei: 3 dormitórios, pronto e perto da escola.
+O fim de semana é ótimo para visitar o decorado e conhecer as condições.
+Tenho o On The Park Alphaville, com 3 suítes e 2 vagas, pronto para morar.
+Posso agendar sábado às 10h ou às 11h para você conhecer? Assim já conversamos sobre o projeto e o fluxo de pagamento.
+
+[5] Cliente: Oi!
+              Quero 3d, pronto, perto da escola
+              Qual valor?
+              Preciso saber preço
+              Marcar visita fim de semana
+[5] Sofia:   O On The Park Alphaville tem 3 suítes e 2 vagas, pronto para morar, perto de escolas renomadas.
+Posso agendar sua visita para sábado às 10h ou às 11h?
+Assim você conhece o decorado e conversamos sobre condições e fluxo de pagamento.
+
+[6] Cliente: Oi!
+              Quero 3d pronto perto escola
+              Qual preço?
+              Marcar visita fim de semana
+[6] Sofia:   O On The Park Alphaville é uma excelente opção, com 3 suítes e 2 vagas, pronto para morar e perto de escolas renomadas.
+Posso agendar sua visita para sábado às 10h ou às 11h?
+Assim você conhece o decorado e conversamos sobre condições e fluxo de pagamento.
+
+[7] Cliente: Oi, quero 3d pronto perto escola
+              Qual valor?
+              Marcar visita fim de semana
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: Oi, quero 3d pronto perto da escola
+              Qual preço?
+              Preciso saber valor
+              Marcar visita fim de semana
+[8] Sofia:   O On The Park Alphaville tem 3 suítes, 2 vagas e está pronto para morar, perto de escolas renomadas.
+Poderíamos agendar sua visita para sábado às 10h ou às 11h? Assim você conhece o decorado e conversamos sobre condições e fluxo de pagamento.

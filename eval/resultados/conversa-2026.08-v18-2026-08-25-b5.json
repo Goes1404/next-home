@@ -1,0 +1,110 @@
+{
+  "promptVersao": "2026.08-v18",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "confuso-entre-dois",
+      "desfecho": "ia_indisponivel",
+      "turnos": 6,
+      "medida": {
+        "turnos": 6,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso agendar para terça às 10h ou às 15h para você conhecer o decorado?"
+        ],
+        "perguntasReaparecidas": [
+          "e preço?",
+          "e preço?",
+          "tem 2 dorm?",
+          "e o More Aldeia tem 2 dorm?",
+          "e preço?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 4,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "visita",
+          "renda"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 201,
+        "maiorMensagem": 233,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 5 pergunta(s) — ela não respondeu",
+          "4 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "educado-que-enrola",
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "investidor-objetivo",
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "insiste-no-desconto",
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    }
+  ]
+}

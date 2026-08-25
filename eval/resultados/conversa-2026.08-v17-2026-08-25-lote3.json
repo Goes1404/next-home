@@ -1,0 +1,59 @@
+{
+  "promptVersao": "2026.08-v17",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "gemini",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "escreve-errado",
+      "desfecho": "cliente_mudo",
+      "turnos": 1,
+      "medida": {
+        "turnos": 1,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [
+          "regiao"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 101,
+        "maiorMensagem": 101,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "quer-visitar-sabado",
+      "desfecho": "cliente_mudo",
+      "turnos": 1,
+      "medida": {
+        "turnos": 1,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [
+          "regiao",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 242,
+        "maiorMensagem": 242,
+        "reprovacoes": []
+      },
+      "juizo": null
+    }
+  ]
+}

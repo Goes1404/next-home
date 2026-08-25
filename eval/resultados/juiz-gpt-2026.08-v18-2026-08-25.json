@@ -1,0 +1,151 @@
+{
+  "versao": "2026.08-v18",
+  "modeloJuiz": "gpt-4.1",
+  "juizDaMesmaFamilia": true,
+  "resultados": [
+    {
+      "persona": "confuso-entre-dois",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa foi consistente e educada, tentou qualificar e conduzir à visita, mas cliente insistiu em preço e não avançou muito."
+      }
+    },
+    {
+      "persona": "decide-com-a-esposa",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa qualificou região e tipologia, convidou para visita cedo e manteve consistência. Faltou explorar renda e estágio da obra."
+      }
+    },
+    {
+      "persona": "educado-que-enrola",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa manteve consistência e tentou qualificar região e tipologia, mas o cliente não colaborou. Assistente conduziu corretamente, apesar de pouco avanço."
+      }
+    },
+    {
+      "persona": "elogiou-o-terra-alta",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A assistente manteve consistência, insistiu no convite para visita e tentou qualificar, apesar do cliente não colaborar. Não houve erro grave."
+      }
+    },
+    {
+      "persona": "escreve-errado",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A assistente manteve consistência, insistiu na visita e respondeu com educação, mas não conseguiu qualificar o cliente nem avançar muito além do envio de materiais."
+      }
+    },
+    {
+      "persona": "familia-tres-dorm",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa foi consistente, convidou para visita e qualificou parcialmente, mas cliente repetiu perguntas e não houve avanço claro sobre renda ou tipologia detalhada."
+      }
+    },
+    {
+      "persona": "imovel-de-outra-imobiliaria",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa foi consistente, buscou qualificar tipologia e região, e conduziu para alternativas. Faltou avançar mais, mas não comprometeu o atendimento."
+      }
+    },
+    {
+      "persona": "insiste-no-desconto",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "Assistente manteve postura consistente, tentou qualificar e conduziu à visita, apesar da insistência do cliente em valores e descontos."
+      }
+    },
+    {
+      "persona": "investidor-objetivo",
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem qualificação do cliente nem avanço real. Só repetiu respostas, sem explorar perfil ou conduzir ao próximo passo."
+      }
+    },
+    {
+      "persona": "muda-a-restricao",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa foi consistente, insistiu no convite à visita e apresentou opções, mas girou em torno das mesmas perguntas sem qualificar renda ou região."
+      }
+    },
+    {
+      "persona": "pergunta-se-e-robo-no-meio",
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, ignorando a principal dúvida do cliente. Não houve avanço real nem qualificação efetiva."
+      }
+    },
+    {
+      "persona": "pressa-de-quinze-dias",
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa ficou travada na exigência de preço, sem qualificação ou avanço real. Não houve condução ao próximo passo relevante."
+      }
+    },
+    {
+      "persona": "quer-tudo-pelo-zap",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa foi consistente e educada, insistiu na qualificação e visita, mas avançou pouco. Faltou explorar tipologia e renda do cliente."
+      }
+    },
+    {
+      "persona": "quer-visitar-sabado",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa avançou com agendamento e tentativa de qualificação, mas faltou explorar tipologia. Registro consistente e abordagem profissional."
+      }
+    },
+    {
+      "persona": "rajada-curta-e-seca",
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem qualificação efetiva nem avanço real. Faltou condução firme e extração de informações relevantes do cliente."
+      }
+    },
+    {
+      "persona": "sem-perfil-de-renda",
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa foi consistente, insistiu no convite para visita e apresentou opções. Faltou qualificação de renda, mas não comprometeu o atendimento."
+      }
+    }
+  ]
+}

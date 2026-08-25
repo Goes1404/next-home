@@ -1,0 +1,69 @@
+investidor-objetivo · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual a menor tipologia do vista alphagran
+[1] Sofia:   Não tenho o Vista Alphagran no meu portfólio. Me conta o que você busca em região e tamanho, que te mostro opções aqui.
+
+[2] Cliente: dá 2 dorm?
+              valor?
+              entrega?
+              foto?
+              local?
+[2] Sofia:   O Vitra Alphaville tem 2 dormitórios com 2 suítes, 107m², pronto para morar.
+Posso te enviar as fotos para conhecer melhor?
+As condições de pagamento são flexíveis e conversamos na visita.
+Quer conhecer o decorado para ver tudo de perto?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+
+[3] Cliente: valor
+              entrega
+              foto
+              local
+[3] Sofia:   Posso te enviar as fotos que tenho aqui para você conhecer melhor?
+Fica no Dezoito do Forte Empresarial, em Alphaville, uma localização estratégica e valorizada.
+As condições de pagamento são flexíveis e conversamos tudo na visita.
+Quer conhecer o decorado para sentir o espaço?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-2-big-56cbd63eb7afb430e0e17e65af38778d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-3-big-6ee6905482a046988bde5334ff1b4877.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-4-big-8053195313275bc888429d8ab9a9a4ea.jpg
+
+[4] Cliente: valor
+              entrega
+              foto
+              local
+[4] Sofia:   O Vitra Alphaville é pronto para morar, com 2 suítes e 107m².
+Posso te enviar as fotos que tenho aqui para conhecer melhor?
+Fica no Dezoito do Forte Empresarial, Alphaville, uma região valorizada.
+As condições são flexíveis e conversamos tudo na visita. Quer conhecer o decorado para sentir o espaço?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-5-big-6da7666a1e8dcb3a29b4969be1b7c89e.jpg
+
+[5] Cliente: 107m² 2 suítes pronto 2025
+[5] Sofia:   Quer conhecer o decorado para sentir o espaço?
+
+[6] Cliente: valor
+[6] Sofia:   O valor depende da unidade e das condições, que são flexíveis e conversamos na visita.
+Posso agendar para você conhecer o decorado e entender tudo melhor?
+
+[7] Cliente: valor
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: valor
+              entrega
+              foto
+              local
+[8] Sofia:   Posso enviar as fotos para você conhecer melhor?
+Fica no Dezoito do Forte Empresarial, Alphaville, uma região valorizada.
+As condições são flexíveis e conversamos tudo na visita.
+Quer conhecer o decorado para sentir o espaço?
+
+[9] Cliente: valor
+              entrega
+              foto
+              local
+[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[10] Cliente: valor entrega foto local
+[10] Sofia:   Posso enviar as fotos para você conhecer melhor?
+Fica no Dezoito do Forte Empresarial, Alphaville, região valorizada.
+As condições são flexíveis e conversamos tudo na visita.
+Quer conhecer o decorado para sentir o espaço?

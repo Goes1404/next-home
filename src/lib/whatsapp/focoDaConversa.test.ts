@@ -279,3 +279,46 @@ describe("o foco chega ao prompt", () => {
     expect(prompt).toContain("EMPREENDIMENTO QUE NÃO É NOSSO");
   });
 });
+
+describe("typo de cadastro não vira token distintivo", () => {
+  /*
+   * Flagrado pela fábrica em 25/08/2026: o cadastro real "More Aldeia de
+   * BAREURI" (typo) escapava da lista de genéricas — que tem "barueri" — e
+   * o fuzzy de 1 erro fazia QUALQUER menção à cidade travar o foco nesse
+   * imóvel. O catálogo do prompt encolhia para um 2 dorm e a Sofia negava
+   * os 3 dormitórios que existem no catálogo.
+   */
+  const comTypo = [
+    imovel("More Aldeia de Bareuri", "more-aldeia-de-bareuri-var064"),
+    imovel("Eternity Alphaville Tamboré", "eternity-alphaville"),
+  ];
+
+  it("'vi o Dom Barueri' (imóvel alheio + cidade) não foca ninguém", () => {
+    const foco = detectarFoco({
+      mensagemAtual: "vi o Dom Barueri e gostei bastante, vocês têm algo assim?",
+      historico: [],
+      catalogo: comTypo,
+    });
+    expect(foco).toBeNull();
+  });
+
+  it("citar só a cidade não foca ninguém", () => {
+    const foco = detectarFoco({
+      mensagemAtual: "procuro apartamento em barueri",
+      historico: [],
+      catalogo: comTypo,
+    });
+    expect(foco).toBeNull();
+  });
+
+  it("o nome inteiro do imóvel, mesmo com o typo, continua focando", () => {
+    // O n-grama do matcher vai até 3 palavras; nome de 4 só casa quando a
+    // frase é o próprio nome — que é como o cliente cola do anúncio.
+    const foco = detectarFoco({
+      mensagemAtual: "More Aldeia de Bareuri",
+      historico: [],
+      catalogo: comTypo,
+    });
+    expect(foco?.imovel.slug).toBe("more-aldeia-de-bareuri-var064");
+  });
+});

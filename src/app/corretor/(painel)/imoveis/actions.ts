@@ -7,6 +7,12 @@ import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mapp
 import type { Empreendimento, Midia, StatusObra, TipoImovel, Finalidade } from "@/lib/types";
 import { validarUrlMidiaExterna } from "@/lib/embedMidia";
 import { registrarMidia } from "@/lib/imoveis/registrarMidia";
+import {
+  interpretarRespostaDescricao,
+  montarPromptDescricao,
+  type EntradaDescricaoIA,
+} from "@/lib/imoveis/descricaoIA";
+import { algumProvedorConfigurado, chamarLlmJson } from "@/lib/whatsapp/llm";
 
 export interface DadosGeraisInput {
   nome: string;
@@ -496,4 +502,56 @@ export async function adicionarMidiaExterna(
       blurDataUrl: nova.blur_data_url,
     },
   };
+}
+
+/**
+ * Reescreve a descrição comercial do imóvel com a IA.
+ *
+ * NÃO grava nada. O texto volta para a tela e o corretor decide se troca —
+ * é a diferença entre uma ferramenta e um acidente: descrição que ele levou
+ * meia hora escrevendo não pode ser substituída por um clique sem volta.
+ *
+ * Recebe os dados do FORMULÁRIO, não do banco, de propósito: o uso natural
+ * é preencher a ficha e pedir o texto na sequência, e ler do banco
+ * descreveria o imóvel como ele era antes das edições ainda não salvas.
+ */
+export async function melhorarDescricaoComIA(
+  entrada: EntradaDescricaoIA,
+): Promise<{ ok: true; descricao: string } | { ok: false; erro: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+
+  if (!entrada.nome?.trim()) {
+    return { ok: false, erro: "Preencha ao menos o nome do imóvel antes de pedir o texto." };
+  }
+
+  if (!algumProvedorConfigurado()) {
+    return { ok: false, erro: "A IA não está configurada neste ambiente. Fale com o administrador." };
+  }
+
+  // Orçamento próprio: quem espera aqui é o corretor olhando a tela, não um
+  // cliente no WhatsApp — dá para esperar mais que os 26s do atendimento, e
+  // texto longo custa mais tokens de saída que uma resposta de chat.
+  const resultado = await chamarLlmJson(montarPromptDescricao(entrada), {
+    temperature: 0.7,
+    orcamentoMs: 40_000,
+  });
+
+  if (!resultado.ok) {
+    console.warn("[imoveis] IA não devolveu descrição:", resultado.erro, resultado.detalhe);
+    return {
+      ok: false,
+      erro:
+        resultado.erro === "http_429"
+          ? "A IA atingiu o limite de uso agora há pouco. Tente de novo em alguns minutos."
+          : "A IA não respondeu agora. Tente de novo em instantes.",
+    };
+  }
+
+  const descricao = interpretarRespostaDescricao(resultado.json);
+  if (!descricao) {
+    return { ok: false, erro: "A IA devolveu um texto curto demais para usar. Tente de novo." };
+  }
+
+  return { ok: true, descricao };
 }

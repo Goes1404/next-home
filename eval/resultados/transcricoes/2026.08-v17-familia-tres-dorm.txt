@@ -1,0 +1,69 @@
+familia-tres-dorm · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato! Você conhece a região onde está procurando? Posso te mostrar opções que tenho por ali.
+
+[2] Cliente: Oi
+              Quero 3 dorm em Barueri ou Alphaville
+              Tem algo perto da escola?
+              Qual o valor?
+              Qual a metragem?
+              Preciso marcar visita fim de semana
+[2] Sofia:   Você busca 3 dormitórios, certo?
+O More Aldeia de Bareuri tem 2 dormitórios, 64m², 1 suíte e 1 vaga, fica em Barueri, perto de escolas.
+Posso te enviar a apresentação digital para você conhecer melhor?
+Quer conhecer o decorado no fim de semana? Tenho sábado às 9h ou às 11h.
+
+[3] Cliente: Qual o valor?
+              Já falamos escola, tem perto?
+[3] Sofia:   O More Aldeia de Bareuri fica a poucos minutos de escolas, ideal para quem valoriza essa comodidade.
+Sobre o valor, as condições são flexíveis e conversamos na visita.
+Quer que eu envie a apresentação digital para você analisar com calma?
+
+[4] Cliente: Qual o valor?
+              Qual o valor?
+              Valor?
+              Valor?
+              Qual o valor?
+              Preciso marcar visita fim de semana
+[4] Sofia:   Entendo a importância do valor para sua decisão. As condições são flexíveis e ajustamos pessoalmente na visita.
+O More Aldeia de Bareuri tem 64m², 2 dormitórios, 1 suíte e 1 vaga.
+Fica a poucos minutos de escolas, excelente para quem busca essa comodidade.
+Posso agendar sua visita para sábado às 9h ou às 11h?
+
+[5] Cliente: Qual o valor?
+              Preciso marcar visita fim de semana
+[5] Sofia:   O valor depende da unidade e das condições, que ajustamos na visita.
+Sábado às 9h ou às 11h para conhecer o decorado e conversar sobre tudo?
+
+[6] Cliente: Qual o valor?
+              Preciso marcar visita fim de semana
+[6] Sofia:   O valor é definido conforme a unidade e condições, que conversamos na visita.
+Sábado às 9h ou às 11h para conhecer o decorado e tirar todas as suas dúvidas?
+
+[7] Cliente: Valor?
+              Valor?
+              Preciso marcar visita fim de semana
+[7] Sofia:   O valor é tratado na visita, onde apresento o projeto e as condições flexíveis.
+Sábado às 9h ou às 11h para conhecer o decorado e esclarecer tudo?
+Fico à disposição para agendar o melhor horário para você.
+
+[8] Cliente: Qual o valor?
+              Preciso marcar visita fim de semana
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: Qual o valor?
+              Preciso marcar visita fim de semana
+[9] Sofia:   O More Aldeia de Bareuri tem 2 dormitórios, 64m², 1 suíte e 1 vaga.
+Fica a poucos minutos de escolas, ideal para quem valoriza essa comodidade.
+As condições são flexíveis e ajustamos tudo na visita.
+Posso agendar sua visita para sábado às 9h ou às 11h para conhecer o decorado?
+
+[10] Cliente: Qual o valor?
+              Sábado 9h ok?
+[10] Sofia:   Sábado às 9h está reservado para você conhecer o decorado do More Aldeia de Bareuri.
+Vou enviar a apresentação digital para você analisar antes da visita.
+As condições e valores conversamos pessoalmente no stand.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-1-big-1fed6dfac329a4107d85c4e67b48f0b5.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-2-big-4157f723f5d95731b87a582d2da35adc.jpeg

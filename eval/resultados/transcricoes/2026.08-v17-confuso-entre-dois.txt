@@ -1,0 +1,74 @@
+confuso-entre-dois · cliente_mudo · 9 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me fala do terra alta e do more aldeia, qual compensa mais
+[1] Sofia:   O Terra Alta tem 1 dormitório, 52m², 2 vagas, ideal para quem busca conforto e praticidade no Jardim Tupanci.
+Está em construção, com condições flexíveis de pagamento. Quer conhecer o decorado para entender melhor o projeto?
+
+[2] Cliente: cê manda foto do terra alta?
+              e o more aldeia?
+              quero saber quem tem melhor vista
+[2] Sofia:   Enviei as fotos do Terra Alta para você conferir.
+O More Aldeia não é um imóvel nosso, mas posso ajudar com o Terra Alta, que tem ótima localização e conforto.
+Sobre vista, confirmo e te retorno, tudo bem?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-3-big-75c8b2df2fb9cedf8deb0b5002c9a935.jpeg
+
+[3] Cliente: mais vista terra alta?
+              mais 2 dorm?
+              cê sabe preço?
+              vou ver o mais barato
+[3] Sofia:   O Terra Alta tem 1 dormitório, não tem opção de 2 dormitórios no catálogo.
+Sobre a vista, confirmo e te retorno, pois não temos essa informação detalhada.
+Quanto ao preço, as condições são flexíveis e tratamos isso na visita.
+Quer agendar para conhecer o decorado e conversar sobre o que cabe no seu orçamento?
+
+[4] Cliente: cê tem foto do terra alta vista?
+              qual preço?
+[4] Sofia:   Não temos foto da vista do Terra Alta, vou confirmar e te aviso.
+As condições de pagamento são flexíveis e ajustamos na visita.
+Posso agendar para você conhecer o decorado e falar sobre o orçamento?
+
+[5] Cliente: mais foto?
+              preço?
+              quero 2 dorm
+[5] Sofia:   O Terra Alta é 1 dormitório, não tem 2 dormitórios no catálogo.
+Não temos mais fotos além das que enviei, nem da vista.
+Sobre preço, as condições são flexíveis e ajustamos na visita.
+Quer agendar para conhecer o decorado e conversar sobre o que cabe no seu orçamento?
+
+[6] Cliente: mais 2 dorm?
+              cê tem foto da vista?
+              qual preço?
+              vou ver o mais barato
+[6] Sofia:   O Terra Alta tem só 1 dormitório, não tem 2 dormitórios no catálogo.
+Não temos foto da vista, vou confirmar e te aviso.
+Preço e condições são tratados na visita, com flexibilidade.
+Quer agendar para conhecer o decorado e conversar sobre o orçamento?
+
+[7] Cliente: mais foto?
+              qual preço?
+              quero 2 dorm
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: cê sabe quem tem vista melhor?
+              pra 2 dorm, não tem?
+              qual preço?
+              mais foto?
+              vou ver o mais barato
+[8] Sofia:   O Terra Alta tem 1 dormitório, não há opção de 2 dormitórios no catálogo.
+Não temos fotos da vista, vou confirmar e te aviso.
+Preço e condições são tratados na visita, com flexibilidade.
+Quer conhecer o decorado para entender melhor o projeto e as condições?
+
+[9] Cliente: cê manda foto do terra alta?
+              e o more aldeia?
+              qual tem vista melhor?
+              cê tem foto?
+              qual preço?
+              vou ver o mais barato
+[9] Sofia:   O Terra Alta tem fotos que já te enviei, não temos da vista.
+O More Aldeia não é nosso, mas confirmo a vista do Terra Alta e te falo.
+Preço e condições são flexíveis, tratamos na visita.
+Quer conhecer o decorado para entender tudo melhor?

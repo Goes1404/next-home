@@ -1,0 +1,170 @@
+{
+  "promptVersao": "2026.08-v17",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": false,
+  "conversas": [
+    {
+      "persona": "pergunta-se-e-robo-no-meio",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso saber o que procura para agilizar?",
+          "Me conta, procura imóvel em Alphaville mesmo ou prefere região próxima?"
+        ],
+        "perguntasReaparecidas": [
+          "robo?",
+          "robo?",
+          "robo?",
+          "humano?",
+          "humano?",
+          "robo?"
+        ],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 9,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 152,
+        "maiorMensagem": 180,
+        "reprovacoes": [
+          "nunca ofereceu visita",
+          "repetiu 2 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 6 pergunta(s) — ela não respondeu",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "9 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "investidor-objetivo",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso te enviar as fotos que tenho aqui para você conhecer melhor?",
+          "Posso te enviar as fotos que tenho aqui para conhecer melhor?",
+          "Quer conhecer o decorado para sentir o espaço?",
+          "Quer conhecer o decorado para sentir o espaço?",
+          "Posso enviar as fotos para você conhecer melhor?",
+          "Quer conhecer o decorado para sentir o espaço?",
+          "Posso enviar as fotos para você conhecer melhor?",
+          "Quer conhecer o decorado para sentir o espaço?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 8,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "visita",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 171,
+        "maiorMensagem": 300,
+        "reprovacoes": [
+          "repetiu 8 pergunta(s) que já tinha feito",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "8 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "confuso-entre-dois",
+      "desfecho": "cliente_mudo",
+      "turnos": 9,
+      "medida": {
+        "turnos": 9,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer agendar para conhecer o decorado e conversar sobre o que cabe no seu orçamento?",
+          "Quer agendar para conhecer o decorado e conversar sobre o orçamento?",
+          "Quer conhecer o decorado para entender melhor o projeto e as condições?",
+          "Quer conhecer o decorado para entender tudo melhor?"
+        ],
+        "perguntasReaparecidas": [
+          "mais 2 dorm?",
+          "cê tem foto da vista?",
+          "qual preço?",
+          "mais foto?",
+          "qual preço?",
+          "qual preço?",
+          "mais foto?",
+          "cê manda foto do terra alta?",
+          "e o more aldeia?",
+          "qual preço?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 7,
+        "assuntosCobertos": [
+          "estagio",
+          "tipologia",
+          "visita",
+          "regiao"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 224,
+        "maiorMensagem": 310,
+        "reprovacoes": [
+          "repetiu 4 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 10 pergunta(s) — ela não respondeu",
+          "7 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "educado-que-enrola",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso agendar uma visita para apresentar tudo pessoalmente?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "renda"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 156,
+        "maiorMensagem": 281,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    }
+  ]
+}

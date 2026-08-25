@@ -1,0 +1,50 @@
+escreve-errado · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vcs tem o vrita alphagran ainda?
+[1] Sofia:   O Vitra Alphaville é pronto para morar, com 2 dormitórios e 2 suítes.
+Posso te enviar a apresentação digital para conhecer melhor? Quer conhecer o decorado?
+
+[2] Cliente: cê tem foto do vrita alphagran?
+              manda a planta
+[2] Sofia:   O Vitra Alphaville tem fotos e plantas disponíveis, vou te enviar para conhecer melhor.
+Dá uma olhada e me diz o que te agradou.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-2-big-56cbd63eb7afb430e0e17e65af38778d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-3-big-6ee6905482a046988bde5334ff1b4877.jpg
+
+[3] Cliente: planta do vrita alphagran
+[3] Sofia:   Vou te enviar a planta do Vitra Alphaville para você analisar com calma.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-4437ee1f8f0ca0135bd73540a6063059.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-db60774778f5a3d788cdcb47cdd43db3.jpg
+
+[4] Cliente: já mandei
+[4] Sofia:   Que bom que já viu a planta. Quer conhecer o decorado para sentir o espaço e as condições?
+Posso agendar para terça às 10h ou quarta às 15h.
+
+[5] Cliente: planta do vrita alphagran
+[5] Sofia:   Já te enviei as plantas disponíveis do Vitra Alphaville.
+Quer que eu agende uma visita para você conhecer o decorado e as condições? Posso terça às 10h ou quarta às 15h.
+
+[6] Cliente: planta do vrita alphagran
+[6] Sofia:   Já te enviei as plantas disponíveis do Vitra Alphaville.
+Quer que eu agende uma visita para conhecer o decorado e as condições? Posso terça às 10h ou quarta às 15h.
+
+[7] Cliente: planta do vrita alphagran
+[7] Sofia:   Já enviei as plantas disponíveis do Vitra Alphaville.
+Posso agendar uma visita para você conhecer o decorado e as condições? Terça às 10h ou quarta às 15h?
+
+[8] Cliente: já mandei
+              vê aí
+[8] Sofia:   Entendo que você quer a planta, já enviei as duas disponíveis do Vitra Alphaville.
+Posso agendar uma visita para você conhecer o decorado e as condições? Terça às 10h ou quarta às 15h?
+
+[9] Cliente: planta?
+              vcs?
+[9] Sofia:   Já enviei as duas plantas disponíveis do Vitra Alphaville.
+Posso agendar uma visita para você conhecer o decorado e as condições?
+Terça às 10h ou quarta às 15h, qual prefere?
+
+[10] Cliente: planta?
+              vcs?
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.

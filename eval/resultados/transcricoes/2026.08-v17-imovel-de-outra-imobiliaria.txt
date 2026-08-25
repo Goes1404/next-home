@@ -1,0 +1,50 @@
+imovel-de-outra-imobiliaria · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vi o Dom Barueri e gostei bastante, vocês têm algo assim?
+[1] Sofia:   Esse Dom Barueri não é nosso, mas me conta o que gostou nele — região, tamanho, tipo de imóvel?
+
+[2] Cliente: Curti o Dom Barueri, região top, 3 quartos, 2 banheiros. Tem algo parecido?
+              Qual o valor e a metragem?
+[2] Sofia:   Não tenho de 3 dormitórios no More Aldeia de Bareuri, que é de 2 dormitórios e 64m².
+Posso te mostrar ele, que é pronto para morar, perto do shopping e estação.
+Quer conhecer o decorado? Posso mandar a apresentação digital para você.
+
+[3] Cliente: Curti o Dom Barueri, região top, 3 quartos, 2 banheiros. Tem algo parecido?
+[3] Sofia:   O More Aldeia de Bareuri tem 2 dormitórios, 1 suíte, 1 vaga e 64m².
+É pronto para morar, perto do shopping e estação. Quer que eu envie a apresentação digital?
+
+[4] Cliente: Qual o preço?
+[4] Sofia:   O valor depende da unidade e das condições, que são flexíveis e conversamos na visita.
+Posso agendar para você conhecer o decorado e detalhar tudo pessoalmente.
+
+[5] Cliente: Curti Dom Barueri, região top, 3 quartos, 2 banheiros. Tem algo parecido?
+              Qual o valor?
+              Tem metragem?
+              Se não, desistir.
+[5] Sofia:   O More Aldeia de Bareuri tem 64m², 2 dormitórios, 1 suíte e 1 vaga. É pronto para morar, perto do shopping e estação.
+As condições são flexíveis e trato tudo na visita. Quer conhecer o decorado? Posso agendar para terça às 10h ou quarta às 15h.
+
+[6] Cliente: Curti o Dom Barueri, região top, 3 quartos, 2 banheiros. Tem algo parecido?
+              Qual o valor?
+              Tem metragem?
+              Se não, desistir.
+[6] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[7] Cliente: Curti Dom Barueri, 3 quartos, 2 banheiros, região top. Tem algo igual?
+              Qual preço?
+[7] Sofia:   Não tenho nada igual a 3 quartos no catálogo, só o More Aldeia de Bareuri, que é 2 dormitórios e 64m².
+Quer que eu envie a apresentação digital para você?
+
+[8] Cliente: Não tem 3 quartos, então?
+              Se não, desistir
+[8] Sofia:   Não tenho 3 quartos no catálogo, só o More Aldeia de Bareuri com 2 dormitórios e 64m².
+Posso enviar a apresentação digital para você conhecer melhor?
+
+[9] Cliente: Tem 3 quartos? Se não, desistir.
+[9] Sofia:   Não tenho 3 quartos no More Aldeia de Bareuri, só 2 dormitórios com suíte e 64m².
+Posso enviar a apresentação digital para você avaliar melhor?
+
+[10] Cliente: Tem 3 quartos? Se não, desistir.
+[10] Sofia:   O More Aldeia de Bareuri tem 2 dormitórios, 1 suíte e 64m².
+Posso enviar a apresentação digital para você avaliar melhor?

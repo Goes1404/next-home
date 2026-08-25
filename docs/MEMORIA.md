@@ -1143,11 +1143,24 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
   absorvidas NÃO voltaram ao menu.
 - **Contador de aba só aparece quando > 0** — um contador que vive em zero
   ensina a ignorar o contador. Mesma regra do cartão de pendência do Início.
-- **E2E autenticado do painel continua sem existir.** O Playwright está no
-  `package.json` mas não há config, e o painel exige sessão de corretor —
-  montar isso é trabalho próprio, não sobra de outra fase. O que existe hoje
-  é: teste de regra pura (fila, navegação), guarda de escala por leitura de
-  código, e medição de banco versionada.
+- **E2E existe desde 25/08/2026** (`npm run test:e2e`, `playwright.config.ts`
+  + `e2e/`). O que importa saber antes de mexer:
+  - **O banco por trás é o de PRODUÇÃO** — não há ambiente de teste. Todo
+    spec do painel é READ-ONLY por contrato: abre tela, marca checkbox, abre
+    modal, e NUNCA aciona o botão que grava/dispara/move. Spec novo herda a
+    regra.
+  - **O painel exige credencial real**: `E2E_CORRETOR_EMAIL` /
+    `E2E_CORRETOR_SENHA` em `.env.e2e.local` (fora do git). Sem elas o setup
+    grava uma sessão VAZIA e os specs do painel PULAM com aviso — não
+    falham. O detalhe que custou descobrir: o `storageState` referenciado no
+    `use` do projeto morre com ENOENT antes de qualquer teste, então o setup
+    precisa gravar o arquivo mesmo quando pula.
+  - **`workers: 1`, medido**: com 2, os specs disputam o dev server pelos
+    vídeos de fundo (0,7–15 MB) e a rodada flake — 2 falhas numa execução,
+    zero na seguinte. E `page.goto` usa `domcontentloaded`: o evento `load`
+    inclui o download do vídeo e estourava o timeout sem testar nada.
+  - **Device móvel é Pixel 7, não iPhone**: o preset de iPhone pede WebKit,
+    que não está instalado — e o que se quer é o viewport móvel, não Safari.
 
 ## A IA nunca via as próprias respostas (25/08/2026)
 
@@ -1574,3 +1587,56 @@ Duas lições que valem além do `sharp`:
   vaza para telas vizinhas: aqui levou junto o editor do imóvel, que só
   compartilhava a action de upload. Hoje o `sharp` é carregado sob demanda,
   com o resultado em cache, e o pior caso é foto sem medida e sem blur.
+
+## Eval de conversa — a primeira rodada com dado real (25/08/2026)
+
+- **A cota diária do Gemini vira à MEIA-NOITE DO PACÍFICO (04:00 de
+  Brasília), não à meia-noite local.** Rodada às 23h e rodada às 2h da manhã
+  seguinte gastam o MESMO balde. Foi por isso que a "rodada nova" da
+  madrugada nasceu morta: para o Google ainda era o mesmo dia. Antes de
+  acusar cota, conferir a hora no Pacífico.
+- **Modelos aposentados nesta conta (404, medido 25/08):** `gemini-2.0-flash`
+  e `gemini-2.5-flash-lite` ("no longer available to new users"). O
+  `gemini-2.5-flash` LEGADO ainda responde. Cliente simulado que cala na
+  PRIMEIRA chamada é modelo aposentado; cliente que cala no MEIO é cota ou
+  timeout.
+- **`gemini-3.6-flash` não serve de cliente simulado com timeout de 30s**: é
+  modelo de raciocínio, a latência estoura o teto de forma intermitente e o
+  desfecho vira `cliente_mudo` — que parece cota mas não é (a sonda direta
+  responde na hora). `EVAL_CLIENTE_TIMEOUT_MS` existe para esse caso.
+- **O primeiro defeito real que SÓ o eval de conversa pegou** (persona
+  `imovel-de-outra-imobiliaria`, 9 turnos): o cliente perguntou SEIS vezes
+  "o More Aldeia é parecido com o Dom Barueri?" e a Sofia nunca respondeu —
+  repetiu a mesma ficha e a MESMA oferta de apresentação digital em 7 turnos
+  seguidos. A regra 23 ("não fale do imóvel alheio") virou, na prática,
+  "não posso comparar" — mas o cliente JÁ DISSE o que gostou (moderno, lazer
+  completo, Barueri): comparar com o que ELE descreveu não é falar do imóvel
+  alheio, é responder a pergunta. Candidato nº 1 da v18; não mexer antes de
+  fechar a linha de base v17.
+- **Eval de resposta v17, rodada parcial (juiz morreu em 4 casos): 97/100
+  sobre 32/36 julgados, 7 falhas duras** — incluindo um `falou_valor`
+  (restricao-orcamento-repetida) e o já conhecido `inventou_prazo_de_entrega`
+  (restricao-estagio-impossivel). Score de rodada parcial não é comparável
+  com rodada completa.
+
+## Reforma v18 — Onda 1 medida (25/08/2026, manhã)
+
+- **v17 → v18 no mesmo juiz GPT, mesma rubrica: "assumiria" 5/16 → 12/16;
+  avançou 0,44 → 0,75; mesmaPessoa 2,00 nas duas** (a voz não troca desde o
+  motor único). Determinístico: perguntas repetidas pela IA 53 → 36; o
+  resto do loop fica para a Onda 2. `falou_valor` sumiu do eval de resposta.
+- **Juiz e cliente simulado agora têm RESERVA PAGA** (decisão do usuário):
+  juiz Gemini → `gpt-4.1` com carimbo (`juiz: "gpt-reserva"` na conversa;
+  contador no eval de resposta); cliente Groq → `gpt-4o-mini` (modelo
+  DIFERENTE do agente de propósito — mesmo modelo dos dois lados é o modelo
+  se entrevistando). Nota sem origem não compara versão; por isso o carimbo.
+- **O balde diário da Groq esgota de verdade**: `gpt-oss-20b` morreu no meio
+  da rodada (9 personas mudas no turno 1); `openai/gpt-oss-120b` é balde
+  separado e estava livre porque o agente não usa mais a Groq.
+- **`TypeError: fetch failed` no agente = rede LOCAL, não OpenAI.** Sonda
+  com `curl api.openai.com` antes de culpar o provedor: numa tarde a rede
+  oscilou, 5 conversas morreram como `ia_indisponivel`, e a sonda devolvia
+  200 com latência subindo (1,2s → 3s). Re-rodar resolveu.
+- **Comando de fundo tem teto de 10 min**: rodada de 16 personas NÃO cabe
+  em um `npm run eval:conversa` só — dividir em lotes de ≤4 e renomear o
+  JSON entre lotes (o arquivo de saída é por versão+dia e se sobrescreve).

@@ -50,6 +50,9 @@ function parseFiltros(sp: SearchParams): FiltrosEmpreendimento {
   const tipo = primeiro(sp.tipo);
 
   return {
+    // Teto de 80 chars: é campo de nome, não de redação — e a URL vai para
+    // o histórico e para links compartilhados.
+    busca: primeiro(sp.busca)?.trim().slice(0, 80) || undefined,
     tipo: tipo && TIPOS_VALIDOS.includes(tipo as TipoImovel) ? (tipo as TipoImovel) : undefined,
     cidade: primeiro(sp.cidade) || undefined,
     bairro: primeiro(sp.bairro) || undefined,

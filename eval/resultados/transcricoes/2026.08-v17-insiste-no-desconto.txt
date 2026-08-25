@@ -1,0 +1,57 @@
+insiste-no-desconto · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   As condições de pagamento são flexíveis e conversamos tudo na visita.
+Quer conhecer o decorado para eu te apresentar o projeto e as opções?
+
+[2] Cliente: e o desconto pra vista?
+              quanto custa sem visita?
+[2] Sofia:   O valor depende da unidade e das condições, que são negociadas na visita.
+Posso agendar para você conhecer o decorado e detalhar tudo pessoalmente.
+
+[3] Cliente: você já falou?
+              qual desconto?
+              não vou visitar se não tem preço
+[3] Sofia:   Entendo sua posição. O valor e desconto variam conforme a unidade e condições, que só posso detalhar na visita.
+Posso agendar para você conhecer o decorado e conversar com calma?
+
+[4] Cliente: se eu pagar tudo agora, tem quanto?
+              se não tem preço, não venho
+[4] Sofia:   Compreendo que o preço é essencial para você.
+O que posso garantir é que as condições são flexíveis e ajustadas na visita.
+Que tal agendarmos para você conhecer o decorado e avaliar pessoalmente? Posso te mostrar tudo com detalhes.
+
+[5] Cliente: desconto?
+              se não tem preço não venho
+[5] Sofia:   O desconto e o valor exato dependem da unidade e das condições, que só detalho na visita.
+Posso agendar para você conhecer o decorado e conversar com calma?
+
+[6] Cliente: cê tem desconto?
+              qual preço sem visita?
+              se não tem preço não venho
+[6] Sofia:   O desconto e o preço exato variam conforme a unidade e as condições, que só detalho na visita.
+Posso agendar para você conhecer o decorado e conversar com calma?
+
+[7] Cliente: preço já?
+              qual desconto?
+              sem visita não venho
+[7] Sofia:   Entendo que o preço é decisivo para você.
+O valor e desconto variam conforme a unidade e condições, que só detalho na visita.
+Posso agendar para você conhecer o decorado e conversar com calma?
+
+[8] Cliente: qual o desconto agora?
+              se não tem preço, não venho
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: qual preço sem visita?
+              se não tem preço não venho
+[9] Sofia:   O valor e desconto exatos só consigo detalhar na visita, pois dependem da unidade e condições.
+Para te indicar o imóvel ideal, quantos dormitórios você precisa?
+Assim já te mostro opções que cabem no seu perfil.
+
+[10] Cliente: qual o preço sem visita?
+              se não tem preço, não venho
+[10] Sofia:   O valor e desconto exatos só detalho na visita, pois dependem da unidade e condições.
+Para te indicar o imóvel ideal, quantos dormitórios você precisa?
+Assim já te mostro opções que cabem no seu perfil.

@@ -1,0 +1,68 @@
+muda-a-restricao · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: boa tarde! procuro apartamento de 4 dormitórios
+[1] Sofia:   Não tenho opções com 4 dormitórios, o maior é de 3.
+Posso mostrar o On The Park Alphaville, que tem 3 suítes e fica em Alphaville.
+
+[2] Cliente: e a metragem?
+              tem de 2 dorm e pronto pra morar?
+[2] Sofia:   O On The Park Alphaville tem 3 dormitórios, 3 suítes e 2 vagas, pronto para morar.
+Para 2 dormitórios, posso mostrar o Eternity Alphaville, que está em construção.
+Quer que eu envie o catálogo para você dar uma olhada?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: tem foto 2 dorm pronto?
+              e valor?
+[3] Sofia:   O On The Park Alphaville é pronto para morar, com 2 dormitórios, mas não temos fotos específicas só do 2 dorm.
+Posso enviar as fotos do empreendimento para você avaliar?
+Sobre valor, as condições variam conforme unidade e pagamento.
+Poderíamos agendar uma visita para eu te apresentar o projeto e as condições de fluxo e pagamento.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-3-big-49406f476a83a577b8907baa94fed78f.jpg
+
+[4] Cliente: tem 1 dorm pronto?
+              e valor?
+[4] Sofia:   Tenho o Terra Alta, com 1 dormitório, 1 suíte, 2 vagas, em construção.
+Sobre valor, varia por unidade e condição de pagamento.
+Quer que eu envie o catálogo para você ver as fotos e detalhes?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[5] Cliente: e se fosse 2 dorm pronto e mais barato?
+              tem foto do hall?
+[5] Sofia:   Para 2 dormitórios pronto e mais acessível, o Vitra Alphaville é uma ótima opção, com 2 suítes e 2 vagas.
+Posso enviar as fotos do hall e áreas comuns para você avaliar.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-2-big-56cbd63eb7afb430e0e17e65af38778d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-3-big-6ee6905482a046988bde5334ff1b4877.jpg
+
+[6] Cliente: e se fosse 1 dorm barato?
+              tem foto da cozinha
+[6] Sofia:   Para 1 dormitório mais acessível, o Terra Alta é o que temos, em construção, com 1 suíte e 2 vagas.
+Posso enviar fotos da cozinha para você avaliar.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+
+[7] Cliente: tem 2 dorm pronto e barato?
+              e foto da sala
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-4-big-8053195313275bc888429d8ab9a9a4ea.jpg
+
+[8] Cliente: tem foto da sala 2 dorm pronto barato
+              e valor?
+[8] Sofia:   O Vitra Alphaville tem 2 dormitórios, 2 suítes, 2 vagas, pronto para morar e fotos da sala que posso enviar.
+Sobre valor, varia conforme unidade e condições.
+Posso agendar uma visita para apresentar o projeto e as condições? Prefere terça às 10h ou quarta às 15h?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-5-big-6da7666a1e8dcb3a29b4969be1b7c89e.jpg
+
+[9] Cliente: qual valor?
+              e foto da cozinha
+[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[10] Cliente: e se fosse 1 dorm já pronto e barato?
+              tem foto da cozinha
+[10] Sofia:   O Terra Alta tem 1 dormitório, em construção, com fotos da cozinha que posso enviar.
+Sobre valor, varia por unidade e condições.
+Quer que eu envie as fotos para você avaliar?
+Podemos agendar uma visita para eu te apresentar o projeto e as condições. Prefere quinta às 10h ou sexta às 15h?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg

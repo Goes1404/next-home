@@ -1,0 +1,152 @@
+{
+  "promptVersao": "2026.08-v17",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": false,
+  "conversas": [
+    {
+      "persona": "escreve-errado",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso mandar a apresentação digital completa para você conhecer o projeto e as condições?",
+          "Quer conhecer o decorado?",
+          "Posso te mandar a apresentação digital completa para conhecer o projeto e as condições?",
+          "Posso mandar a apresentação digital completa para você conhecer o projeto e as condições?",
+          "Quer conhecer o decorado para sentir o espaço pessoalmente?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 9,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "visita",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 144,
+        "maiorMensagem": 204,
+        "reprovacoes": [
+          "repetiu 5 pergunta(s) que já tinha feito",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "9 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "quer-visitar-sabado",
+      "desfecho": "cliente_encerrou",
+      "turnos": 2,
+      "medida": {
+        "turnos": 2,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [
+          "estagio",
+          "tipologia",
+          "visita",
+          "perfil",
+          "regiao"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 167,
+        "maiorMensagem": 196,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "rajada-curta-e-seca",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 3,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer conhecer o decorado?",
+          "Quer conhecer o decorado?",
+          "Posso agendar para terça às 10h ou quarta às 15h?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 2,
+        "maiorSequenciaSemNovidade": 7,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "perfil",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 145,
+        "maiorMensagem": 210,
+        "reprovacoes": [
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "mandou 2 resposta(s) quase idêntica(s) a uma anterior",
+          "7 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "insiste-no-desconto",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso agendar para você conhecer o decorado e conversar com calma?",
+          "Posso agendar para você conhecer o decorado e conversar com calma?",
+          "Posso agendar para você conhecer o decorado e conversar com calma?",
+          "Para te indicar o imóvel ideal, quantos dormitórios você precisa?"
+        ],
+        "perguntasReaparecidas": [
+          "qual desconto?",
+          "qual o desconto agora?",
+          "qual preço sem visita?",
+          "qual o preço sem visita?"
+        ],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "visita",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 168,
+        "maiorMensagem": 231,
+        "reprovacoes": [
+          "repetiu 4 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    }
+  ]
+}

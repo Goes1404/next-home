@@ -159,6 +159,7 @@ export async function executarTurnoDeAtendimento(
     pedido.catalogo,
     pedido.historico,
     pedido.identidade.slugCorretor,
+    pedido.identidade.nomeAssistente,
   );
 
   const partes = dividirEmMensagens(saneada.resposta.textoResposta);

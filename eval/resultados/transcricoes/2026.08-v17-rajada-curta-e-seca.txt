@@ -1,0 +1,64 @@
+rajada-curta-e-seca · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi
+[1] Sofia:   Olá! Em que região você procura seu imóvel? Posso te mostrar opções que tenho por aqui.
+
+[2] Cliente: alfa
+              preciso
+              de
+              2 dorm
+[2] Sofia:   Alphaville tem opções como o Eternity, com 2 dormitórios e 74m², e o Vitra, com 2 suítes e 107m².
+Prefere pronto para morar ou na planta?
+Assim já te mostro o que encaixa melhor.
+
+[3] Cliente: tem foto
+              qual o valor
+[3] Sofia:   Tenho fotos do Eternity e do Vitra, posso enviar para você.
+Sobre valor, as condições são flexíveis e trato isso na visita.
+Quer conhecer o decorado para ver tudo de perto?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-02.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/fachada.jpg
+
+[4] Cliente: foto ok
+[4] Sofia:   Vou te enviar as fotos do Eternity e do Vitra para você avaliar melhor.
+Quer conhecer o decorado? Posso agendar para terça às 10h ou quarta às 15h.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-2-big-56cbd63eb7afb430e0e17e65af38778d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-3-big-6ee6905482a046988bde5334ff1b4877.jpg
+
+[5] Cliente: valor
+              foto
+[5] Sofia:   As fotos do Eternity e do Vitra já te enviei para avaliar.
+Sobre valor, as condições são flexíveis e trato isso na visita.
+Quer conhecer o decorado? Posso agendar para terça às 10h ou quarta às 15h.
+
+[6] Cliente: tem valor
+              tem foto
+[6] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-4-big-8053195313275bc888429d8ab9a9a4ea.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-5-big-6da7666a1e8dcb3a29b4969be1b7c89e.jpg
+
+[7] Cliente: tem foto
+              tem valor
+              qual o valor
+[7] Sofia:   Já te enviei as fotos dos dois empreendimentos para avaliar com calma.
+Sobre valor, as condições são flexíveis e trato isso na visita.
+Quer conhecer o decorado? Posso agendar para terça às 10h ou quarta às 15h.
+
+[8] Cliente: valor
+              foto
+[8] Sofia:   As fotos dos empreendimentos já estão com você para avaliar.
+Sobre valor, as condições são flexíveis e conversamos na visita.
+Posso agendar para terça às 10h ou quarta às 15h?
+
+[9] Cliente: valor?
+              foto?
+[9] Sofia:   As fotos já estão com você para avaliar.
+Sobre valor, as condições são flexíveis e conversamos na visita.
+Posso agendar para terça às 10h ou quarta às 15h?
+
+[10] Cliente: valor
+              foto
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.

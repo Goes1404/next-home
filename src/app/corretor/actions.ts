@@ -390,6 +390,90 @@ export async function moverEtapa(leadId: string, etapa: string): Promise<Resulta
   return {};
 }
 
+/** Teto de uma leva. A lista carrega 30 por página; 500 cobre qualquer seleção real. */
+const TETO_LOTE_ETAPA = 500;
+
+/**
+ * Move VÁRIOS leads de etapa de uma vez — a versão em lote do `moverEtapa`.
+ *
+ * Um único UPDATE com `.in()`, não um `moverEtapa` por lead em série: com 30
+ * selecionados seriam 30 round-trips ao banco dentro de uma action, e o
+ * tempo somado estoura a paciência de quem está no celular.
+ *
+ * A RLS decide o que de fato se move: o UPDATE só alcança linhas do
+ * corretor (policy da 0007), então id de lead alheio na lista simplesmente
+ * não é afetado — e o retorno diz quantos foram, para a tela nunca anunciar
+ * "15 movidos" quando foram 12.
+ *
+ * O histórico segue o padrão do individual (uma linha de `lead_interacoes`
+ * por lead, "de → para"), mas só para quem REALMENTE trocou de etapa —
+ * mover 20 leads para "Em negociação" com 3 já lá não pode encher a linha
+ * do tempo desses 3 com uma mudança que não houve.
+ */
+export async function moverEtapaEmMassa(
+  leadIds: string[],
+  etapa: string,
+): Promise<{ movidos: number; erro?: string }> {
+  const { supabase } = await exigirSessao();
+
+  if (!ETAPAS_FUNIL.includes(etapa as EtapaFunil)) {
+    return { movidos: 0, erro: "Etapa desconhecida." };
+  }
+
+  const ids = [...new Set(leadIds)].filter((id) => typeof id === "string" && id.length > 0);
+  if (ids.length === 0) return { movidos: 0, erro: "Nenhum lead selecionado." };
+  if (ids.length > TETO_LOTE_ETAPA) {
+    return { movidos: 0, erro: `No máximo ${TETO_LOTE_ETAPA} leads por vez.` };
+  }
+
+  // As etapas de ORIGEM, antes do update — é o que permite gravar
+  // "Novo lead → Visita agendada" e pular quem já estava na etapa destino.
+  const { data: antes } = await supabase.from("leads").select("id, etapa").in("id", ids);
+
+  const { data: afetados, error } = await supabase
+    .from("leads")
+    .update({ etapa, etapa_alterada_em: new Date().toISOString() })
+    .in("id", ids)
+    .select("id");
+
+  if (error) {
+    return { movidos: 0, erro: "Não foi possível mover agora. Tente novamente." };
+  }
+
+  const movidos = afetados?.length ?? 0;
+
+  if (movidos > 0 && antes) {
+    const corretor = await getCorretorLogado();
+    const etapaAnterior = new Map(antes.map((l) => [l.id, l.etapa]));
+    const linhas = (afetados ?? [])
+      .filter((l) => etapaAnterior.get(l.id) && etapaAnterior.get(l.id) !== etapa)
+      .map((l) => ({
+        lead_id: l.id,
+        corretor_id: corretor?.id ?? null,
+        tipo: "etapa" as const,
+        conteudo: textoMudancaEtapa(
+          ETAPA_LABEL[etapaAnterior.get(l.id) as EtapaFunil] ?? etapaAnterior.get(l.id)!,
+          ETAPA_LABEL[etapa as EtapaFunil],
+        ),
+        detalhes: { de: etapaAnterior.get(l.id)!, para: etapa, em_massa: true },
+      }));
+    if (linhas.length > 0) {
+      // Mesmo espírito do `registrarInteracao`: histórico que falha não pode
+      // desfazer a mudança de etapa que já aconteceu.
+      try {
+        await supabase.from("lead_interacoes").insert(linhas);
+      } catch (e) {
+        console.warn("Histórico da mudança em massa não gravado:", e);
+      }
+    }
+  }
+
+  revalidatePath("/corretor/funil");
+  revalidatePath("/corretor/leads");
+  revalidatePath("/corretor");
+  return { movidos };
+}
+
 /**
  * Passa um lead para outro corretor. Só gestor.
  *

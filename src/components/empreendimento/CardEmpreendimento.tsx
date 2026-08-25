@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ViewTransition } from "react";
 import { GlassSurface } from "@/components/glass/GlassSurface";
+import { BrilhoCarro } from "@/components/motion/BrilhoCarro";
 import { Camada } from "@/components/motion/Camada";
 import { ehRecente, precoAPartirDe } from "@/lib/format";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
@@ -79,6 +80,11 @@ export function CardEmpreendimento({
             </span>
           )}
         </div>
+
+        {/* O reflexo cobre o card INTEIRO, não só a capa: o que brilha é a
+            superfície de vidro, e um brilho que morre na borda da foto
+            denunciaria que são duas peças coladas. */}
+        <BrilhoCarro />
 
         <div className="px-5 py-4">
           <h3 className="font-display text-lg text-titulo">

@@ -25,6 +25,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
+import { chamarOpenaiJson } from "../../src/lib/whatsapp/openai";
 import { executarTurnoDeAtendimento } from "../../src/lib/whatsapp/turnoDeAtendimento";
 import { medirConversa, type TurnoRegistrado } from "../../src/lib/whatsapp/metricasConversa";
 import { PROMPT_VERSAO } from "../../src/lib/whatsapp/aiAgent";
@@ -144,7 +145,11 @@ Responda SOMENTE com JSON:
 
 Contexto de negócio: a assistente NÃO pode falar valores (isso é correto, não penalize), deve convidar para visita cedo, e deve qualificar região, estágio da obra, tipologia e renda.`;
 
-async function julgarConversa(c: ConversaSimulada) {
+type JuizoDaConversa = { avancou: number; mesmaPessoa: number; assumiria: boolean; justificativa: string };
+
+async function julgarConversa(
+  c: ConversaSimulada,
+): Promise<(JuizoDaConversa & { juiz: "gemini" | "gpt-reserva" }) | null> {
   const transcricao = c.turnos
     .map((t, i) => `[${i + 1}] Cliente: ${t.cliente.join(" / ")}\n[${i + 1}] Sofia: ${t.bot}`)
     .join("\n");
@@ -158,13 +163,33 @@ async function julgarConversa(c: ConversaSimulada) {
    * da rodada e metade das conversas sai sem nota — foi assim que o eval de
    * resposta perdeu 8 dos 36 casos numa medição.
    */
-  const r = await chamarGeminiJson(`${RUBRICA_DA_CONVERSA}\n\nCONVERSA:\n${transcricao}`, {
+  const prompt = `${RUBRICA_DA_CONVERSA}
+
+CONVERSA:
+${transcricao}`;
+  const gemini = await chamarGeminiJson(prompt, {
     temperature: 0,
     timeoutMs: 45_000,
     modelo: process.env.GEMINI_MODELO_JUIZ || "gemini-3.5-flash-lite",
   });
-  if (!r.ok) return null;
-  return r.json as { avancou: number; mesmaPessoa: number; assumiria: boolean; justificativa: string };
+  if (gemini.ok) {
+    return { ...(gemini.json as JuizoDaConversa), juiz: "gemini" as const };
+  }
+
+  /*
+   * RESERVA: a cota gratuita do Gemini morre no meio da rodada com
+   * frequência, e conversa sem nota é rodada perdida. O GPT assume — com
+   * CARIMBO no resultado, porque ele é da mesma família do agente e a nota
+   * dele carrega viés para cima. Nota comparável entre versões exige saber
+   * qual juiz a deu.
+   */
+  const gpt = await chamarOpenaiJson(prompt, {
+    temperature: 0,
+    timeoutMs: 60_000,
+    modelo: process.env.OPENAI_MODELO_JUIZ || "gpt-4.1",
+  });
+  if (!gpt.ok) return null;
+  return { ...(gpt.json as JuizoDaConversa), juiz: "gpt-reserva" as const };
 }
 
 async function principal() {

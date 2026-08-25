@@ -1,0 +1,43 @@
+educado-que-enrola · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: achei lindo o empreendimento de vcs no instagram
+[1] Sofia:   Que bom que gostou! Posso te enviar o catálogo para você dar uma olhada e me dizer o que te agradou?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[2] Cliente: vou pensar, manda mais fotos
+[2] Sofia:   Posso te enviar fotos de alguns empreendimentos para você conhecer melhor. Prefere algo pronto para morar ou na planta?
+
+[3] Cliente: vou pensar, me manda fotos da fachada
+[3] Sofia:   Posso enviar fotos da fachada do Eternity Alphaville ou do Viva RSF Vila do Conde, que são destaques na região.
+Qual prefere?
+
+[4] Cliente: vou pensar, manda
+[4] Sofia:   Vou te enviar as fotos da fachada do Eternity Alphaville e do Viva RSF Vila do Conde para você conhecer melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/fachada-lazer.jpg
+
+[5] Cliente: vou ver aqui
+[5] Sofia:   Fica à vontade para analisar com calma.
+Se quiser, posso te ajudar a entender detalhes ou agendar uma visita para conhecer pessoalmente.
+
+[6] Cliente: vou pensar, qual preço?
+[6] Sofia:   Sei que o valor é importante, mas varia por unidade e condições de pagamento.
+Posso te mostrar tudo com calma numa visita. Quer conhecer o decorado?
+
+[7] Cliente: vou pensar, depois te falo
+[7] Sofia:   Fique à vontade para pensar com calma. Quando quiser, estou aqui para ajudar no que precisar.
+
+[8] Cliente: qual preço exato?
+[8] Sofia:   Sei que o valor decide, mas varia conforme unidade, andar e condições.
+Me conta, você busca em qual região?
+Assim já posso te mostrar opções que cabem no seu perfil.
+
+[9] Cliente: qual preço exato, sem rodeio
+[9] Sofia:   Entendo que o preço é decisivo. Ele varia conforme unidade, andar e condições de pagamento.
+Me conta, qual região você prefere para eu indicar o que cabe no seu perfil?
+
+[10] Cliente: vou pensar, me manda planta
+[10] Sofia:   Não temos planta disponível para o imóvel ainda.
+Posso te enviar o link da página com todas as informações e fotos.
+Quer que eu mande?

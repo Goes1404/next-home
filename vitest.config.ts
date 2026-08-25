@@ -13,5 +13,8 @@ export default defineConfig({
   test: {
     environment: "node",
     testTimeout: 20000,
+    // Os `*.spec.ts` de e2e/ são do Playwright — casam com o padrão padrão
+    // do vitest e quebram na importação de @playwright/test.
+    exclude: ["**/node_modules/**", "e2e/**"],
   },
 });

@@ -70,7 +70,38 @@ async function buscarPublicados(): Promise<Empreendimento[]> {
   return aplicarCorretorAtivo(lista, corretorAtivo);
 }
 
-function bate(e: Empreendimento, f: FiltrosEmpreendimento): boolean {
+/** Minúsculas e sem acento: "Estação" e "estacao" são a mesma busca. */
+function chave(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
+/**
+ * A busca cobre nome, nomes alternativos, bairro, cidade e construtora.
+ *
+ * Os alternativos entram pelo mesmo motivo que existem (0044): o visitante
+ * conhece o imóvel pelo nome do ANÚNCIO — "Dom Parque" — e o cadastro se
+ * chama "Lançamento ao Lado do Parque". Busca que só olha o `nome` devolve
+ * vazio justamente para quem chegou mais interessado.
+ *
+ * Cada palavra digitada precisa aparecer em algum campo ("vista barueri"
+ * acha o Vista AlphaGran de Barueri), mas uma palavra só precisa bater num
+ * campo — busca de AND estrito entre campos devolveria vazio quase sempre.
+ */
+export function bateBusca(e: Empreendimento, busca: string): boolean {
+  const alvo = chave(
+    [e.nome, ...(e.nomesAlternativos ?? []), e.bairro, e.cidade, e.construtora ?? ""].join(" "),
+  );
+  return chave(busca)
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((palavra) => alvo.includes(palavra));
+}
+
+export function bate(e: Empreendimento, f: FiltrosEmpreendimento): boolean {
+  if (f.busca && !bateBusca(e, f.busca)) return false;
   if (f.tipo && e.tipo !== f.tipo) return false;
   if (f.cidade && e.cidade !== f.cidade) return false;
   if (f.bairro && e.bairro !== f.bairro) return false;

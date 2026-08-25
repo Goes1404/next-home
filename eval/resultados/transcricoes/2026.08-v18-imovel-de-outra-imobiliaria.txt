@@ -1,0 +1,55 @@
+imovel-de-outra-imobiliaria · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vi o Dom Barueri e gostei bastante, vocês têm algo assim?
+[1] Sofia:   Esse Dom Barueri não é nosso, mas me conta o que gostou nele — localização, tamanho, padrão?
+Assim te mostro opções que tenho.
+
+[2] Cliente: tô de olho no Dom Barueri, gostei da vista, metragem, preço. Vocês têm algo parecido?
+[2] Sofia:   Não tenho o Dom Barueri, mas posso mostrar opções com vista e metragem semelhantes em Barueri.
+Prefere pronto para morar ou na planta?
+
+[3] Cliente: tô vendo Dom Barueri, gostei da vista, metragem, preço
+              você tem algo igual?
+[3] Sofia:   Não tenho algo igual ao Dom Barueri, mas posso mostrar opções com vista e metragem próximas em Barueri.
+Prefere pronto para morar ou na planta?
+
+[4] Cliente: vi outro, gostei, tem algo igual?
+              vista, metragem, preço, igual?
+[4] Sofia:   Não tenho nada igual ao Dom Barueri, mas posso mostrar opções com vista e metragem próximas em Barueri.
+Prefere pronto para morar ou na planta?
+
+[5] Cliente: tô vendo outro, gostei da vista, metragem, preço. Igual?
+              você tem algo igual?
+              se não tem, manda foto do que tem
+[5] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/foto-1-big-e678e7ebc51cb4e4332a322465dcf7b3.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-1-big-fa9d826751f7a7f2f548546f1fa3985a.jpg
+
+[6] Cliente: tô vendo Dom Barueri, vista top, metragem 100, preço 350k
+              tem algo igual?
+[6] Sofia:   Não tenho nada com 100m² em Barueri,
+o maior que tenho é de 74m² no Eternity Alphaville, na planta, com vista e padrão alto.
+Quer conhecer o decorado?
+Posso te enviar fotos e a apresentação digital para avaliar melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg
+
+[7] Cliente: tô vendo Dom Barueri, vista top, metragem 100, preço 350k
+[7] Sofia:   O Eternity Alphaville tem 74m², 2 dormitórios e 1 suíte, padrão alto e vista agradável.
+Posso enviar a apresentação digital para você avaliar melhor? Quer conhecer o decorado?
+
+[8] Cliente: vamo falar de outro?
+              tô no Dom, vista, 100m², 350k
+[8] Sofia:   O Dom Barueri não é nosso, e não tenho nada igual a 100m² nessa faixa em Barueri. O Eternity Alphaville tem 74m², 2 dorm e 1 suíte, padrão alto e vista agradável.
+Posso enviar a apresentação digital e fotos para você avaliar melhor. Quer conhecer o decorado?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-02.jpg
+
+[9] Cliente: vamo ver outra?
+              muita gente faz igual
+              pra mim preço top
+[9] Sofia:   Preço é essencial. Para eu te mostrar opções que cabem no seu orçamento, qual a região que prefere?
+Barueri, Osasco, Alphaville?
+
+[10] Cliente: vamo ver outro, preço top
+[10] Sofia:   Anotei que preço é prioridade.
+Você prefere Barueri, Osasco ou Alphaville para eu mostrar opções que cabem no seu orçamento?

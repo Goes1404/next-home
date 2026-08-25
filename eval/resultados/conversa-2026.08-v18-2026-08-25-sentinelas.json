@@ -1,0 +1,147 @@
+{
+  "promptVersao": "2026.08-v18",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "tetoDeTurnos": 10,
+  "comJuiz": false,
+  "conversas": [
+    {
+      "persona": "pergunta-se-e-robo-no-meio",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 9,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Prefere imóvel pronto para morar ou na planta?",
+          "Prefere imóvel pronto para morar ou na planta?"
+        ],
+        "perguntasReaparecidas": [
+          "robo?",
+          "Tá falando com um robô?",
+          "robo?",
+          "falando com quem?",
+          "robo?"
+        ],
+        "respostasRepetidas": 3,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "perfil",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 126,
+        "maiorMensagem": 169,
+        "reprovacoes": [
+          "ofereceu visita só no turno 9",
+          "repetiu 2 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 5 pergunta(s) — ela não respondeu",
+          "mandou 3 resposta(s) quase idêntica(s) a uma anterior",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "imovel-de-outra-imobiliaria",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 3,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "O Dom Barueri não é nosso, mas me conta o que gostou nele — a região, o tamanho, o estilo?",
+          "Posso te enviar fotos e a apresentação digital para avaliar melhor?",
+          "Quer conhecer o decorado?",
+          "Posso agendar para terça às 10h ou quarta às 15h?",
+          "Quer conhecer o decorado?",
+          "Posso agendar para terça às 10h ou quarta às 15h?",
+          "Você prefere pronto para morar ou na planta?"
+        ],
+        "perguntasReaparecidas": [
+          "Qual preço?",
+          "Fica perto de escolas?",
+          "Tem algo parecido?",
+          "Qual a metragem?",
+          "Tem varanda e sacada?",
+          "Fica perto de escolas?",
+          "Qual a faixa de preço?",
+          "Tem algo parecido?",
+          "Qual o preço?",
+          "Qual a metragem?",
+          "Tem varanda?",
+          "Fica perto de escolas?",
+          "Qual preço?"
+        ],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 5,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia",
+          "visita",
+          "estagio",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 213,
+        "maiorMensagem": 355,
+        "reprovacoes": [
+          "repetiu 7 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 13 pergunta(s) — ela não respondeu",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "5 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "insiste-no-desconto",
+      "desfecho": "teto_de_turnos",
+      "turnos": 10,
+      "medida": {
+        "turnos": 10,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "Qual desconto a vista?",
+          "Qual o desconto?",
+          "Qual desconto à vista?",
+          "Qual o desconto a vista?",
+          "Qual desconto?",
+          "Qual valor exato?",
+          "Desconto à vista, quanto?",
+          "Qual o desconto à vista?",
+          "Qual desconto a vista?"
+        ],
+        "respostasRepetidas": 2,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "visita",
+          "regiao"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 206,
+        "maiorMensagem": 243,
+        "reprovacoes": [
+          "o cliente teve de repetir 9 pergunta(s) — ela não respondeu",
+          "mandou 2 resposta(s) quase idêntica(s) a uma anterior",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    }
+  ]
+}

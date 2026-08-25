@@ -1,0 +1,76 @@
+{
+  "promptVersao": "2026.08-v17",
+  "data": "2026-08-25",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "gemini",
+  "tetoDeTurnos": 10,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "imovel-de-outra-imobiliaria",
+      "desfecho": "cliente_mudo",
+      "turnos": 9,
+      "medida": {
+        "turnos": 9,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer que eu te envie a apresentação digital para conhecer melhor?",
+          "Quer que eu te envie a apresentação digital para conhecer melhor?",
+          "Quer que eu te envie a apresentação digital para você avaliar com calma?",
+          "Quer que eu te envie a apresentação digital para você avaliar com calma?",
+          "Quer conhecer o decorado para sentir o conceito pessoalmente?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "estagio",
+          "tipologia",
+          "renda",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 255,
+        "maiorMensagem": 378,
+        "reprovacoes": [
+          "repetiu 5 pergunta(s) que já tinha feito",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    },
+    {
+      "persona": "muda-a-restricao",
+      "desfecho": "cliente_mudo",
+      "turnos": 2,
+      "medida": {
+        "turnos": 2,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [
+          "tipologia",
+          "visita",
+          "regiao",
+          "estagio",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 152,
+        "maiorMensagem": 238,
+        "reprovacoes": []
+      },
+      "juizo": null
+    }
+  ]
+}

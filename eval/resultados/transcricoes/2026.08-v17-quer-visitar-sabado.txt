@@ -1,0 +1,11 @@
+quer-visitar-sabado · cliente_encerrou · 2 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria visitar um apartamento sábado, dá?
+[1] Sofia:   Sábado pela manhã dá sim. Prefere às 9h ou às 11h?
+Posso te mostrar opções que estão prontas para morar ou na planta, o que prefere?
+Assim já aproveitamos para alinhar o que cabe melhor para você.
+
+[2] Cliente: 9h ok
+[2] Sofia:   Ótimo, sábado às 9h está reservado para você.
+Para eu preparar as opções, me confirma a região que prefere e quantos dormitórios precisa?

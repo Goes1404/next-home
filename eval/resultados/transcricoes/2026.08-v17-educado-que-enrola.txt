@@ -1,0 +1,52 @@
+educado-que-enrola · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: achei lindo o empreendimento de vcs no instagram
+[1] Sofia:   Que bom que gostou! Posso saber qual região você prefere para eu te mostrar opções que temos por lá?
+
+[2] Cliente: region?
+              qual bairro?
+              quero ver foto?
+[2] Sofia:   Trabalho com Alphaville, Barueri e Osasco.
+Tenho opções em Alphaville, Vila do Conde e Jaguaribe. Dá uma olhada e me diz o que te agradou
+Posso te enviar fotos de algum desses?
+Quer conhecer o decorado para sentir o padrão?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: link recebido, vou ver
+[3] Sofia:   Fico à disposição para quando quiser ver as fotos ou conhecer o decorado.
+Posso te ajudar a escolher o melhor para seu perfil.
+
+[4] Cliente: Valeu, preciso saber valor total e taxa de financiamento?
+[4] Sofia:   Os valores e condições variam conforme a unidade e negociação.
+Posso agendar uma visita para apresentar o projeto e as condições de pagamento?
+Temos flexibilidade e entrada parcelada, o que facilita bastante.
+
+[5] Cliente: vou ver aqui
+              depois te falo
+[5] Sofia:   Fique à vontade para analisar com calma. Quando quiser, estou aqui para ajudar no que precisar.
+
+[6] Cliente: vou ver aqui
+              depois te falo
+[6] Sofia:   Fique à vontade para analisar com calma. Quando quiser, posso ajudar a esclarecer qualquer dúvida.
+
+[7] Cliente: link ok, preciso saber valor total
+              taxa de financiamento?
+[7] Sofia:   Os valores e a taxa de financiamento dependem da unidade escolhida e das condições negociadas no momento da visita.
+Posso agendar um horário para te apresentar tudo pessoalmente?
+Temos flexibilidade e entrada parcelada, o que facilita bastante.
+
+[8] Cliente: preciso saber valor total e taxa de financiamento
+              vou ver aqui
+[8] Sofia:   Os valores e taxas variam conforme a unidade e negociação.
+Posso agendar uma visita para apresentar tudo pessoalmente?
+Temos flexibilidade e entrada parcelada, que facilitam bastante.
+
+[9] Cliente: tô vendo o site, depois te falo
+              vou ver aqui, depois te falo
+[9] Sofia:   Fique à vontade para analisar com calma.
+Quando quiser, posso ajudar a esclarecer qualquer dúvida ou agendar uma visita para apresentar o projeto e as condições.
+
+[10] Cliente: valor total?
+              taxa?
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
