@@ -12,6 +12,7 @@ import { enviarMensagemWhatsapp, enviarMidiaWhatsapp, enviarPresencaDigitando } 
 import {
   agendarFollowup,
   agendarVisitaLead,
+  aplicarAckDeEntrega,
   botDeveResponder,
   buscarDossieAtual,
   cancelarFollowupsPendentes,
@@ -202,6 +203,27 @@ export async function POST(req: NextRequest) {
         telefone: (payload.data?.wuid || payload.data?.owner || "").replace(/\D/g, "") || null,
       });
       return NextResponse.json({ ok: true, action: "conexao_atualizada", estado: estadoConexao });
+    }
+
+    /*
+     * MESSAGES_UPDATE é o ack de entrega/leitura (0051) — vira os ✓✓ das
+     * mensagens que o corretor mandou pelo painel. Sem texto e sem fala:
+     * precisa sair ANTES da checagem de "mensagem vazia". Ack de balão do
+     * bot cai aqui também e é ignorado dentro de `aplicarAckDeEntrega`
+     * (não guarda provider id) — é o custo de não carimbar ack de UM balão
+     * numa linha que representa VÁRIOS.
+     */
+    if (evento === "messages.update") {
+      const ackId: string | null = payload.data?.keyId || payload.data?.key?.id || null;
+      const ackStatus = String(payload.data?.status || "").toUpperCase();
+      const status =
+        ackStatus === "READ" || ackStatus === "PLAYED"
+          ? ("lida" as const)
+          : ackStatus === "DELIVERY_ACK"
+            ? ("entregue" as const)
+            : null;
+      if (ackId && status) await aplicarAckDeEntrega(ackId, status);
+      return NextResponse.json({ ok: true, action: "ack_registrado", status: ackStatus });
     }
 
     const ehAudio = Boolean(!text && audioUrlOrBase64);

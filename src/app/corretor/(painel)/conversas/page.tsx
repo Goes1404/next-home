@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { after } from "next/server";
 import Link from "next/link";
+import { garantirEventosWebhook } from "@/lib/whatsapp/provider";
 import { ConversasClient, type ConversaResumo } from "./ConversasClient";
 import { RevisaoRespostas, type ItemRevisao } from "./RevisaoRespostas";
 import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
@@ -34,16 +36,28 @@ export default async function ConversasPage() {
   const [{ data: conversas }, { data: instancia }] = await Promise.all([
     supabase
       .from("whatsapp_conversas")
-      .select("id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id")
+      .select("id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas")
       .eq("corretor_id", corretor.id)
       .order("ultima_interacao_em", { ascending: false })
       .limit(100),
     supabase
       .from("corretor_whatsapp_instancias")
-      .select("modo_bot, status_conexao")
+      .select("modo_bot, status_conexao, instance_name")
       .eq("corretor_id", corretor.id)
       .maybeSingle(),
   ]);
+
+  /*
+   * O MESSAGES_UPDATE (✓✓ de entrega, 0051) entrou na lista de eventos
+   * DEPOIS de a instância de produção existir, e `instance/create` não
+   * reconfigura instância viva. O `webhook/set` aqui, fora do caminho da
+   * resposta (`after`), garante o evento sem exigir reconexão — idempotente
+   * e falha-silenciosa: o pior caso é seguir sem tick.
+   */
+  if (instancia?.instance_name) {
+    const nomeInstancia = instancia.instance_name;
+    after(() => garantirEventosWebhook(nomeInstancia));
+  }
 
   /*
    * "Está pausada agora?" não é calculado aqui: a resposta depende do
@@ -60,6 +74,7 @@ export default async function ConversasPage() {
     ultimaMensagem: c.ultima_mensagem,
     ultimaInteracaoEm: c.ultima_interacao_em,
     temLead: Boolean(c.lead_id),
+    naoLidas: c.nao_lidas,
   }));
 
   const modo = (instancia?.modo_bot ?? null) as ModoBotWhatsapp | null;
@@ -187,7 +202,7 @@ export default async function ConversasPage() {
 
       <RevisaoRespostas itens={itensRevisao} />
 
-      <ConversasClient conversas={lista} />
+      <ConversasClient conversas={lista} podeEnviar={instancia?.status_conexao === "conectado"} />
     </div>
   );
 }

@@ -378,6 +378,8 @@ export async function gravarMensagem(params: {
   tipo?: "texto" | "audio" | "imagem" | "documento";
   midiaUrl?: string | null;
   providerMessageId?: string | null;
+  /** Só para mensagem ENVIADA por nós: nasce 'enviada' e o ack promove. */
+  statusEntrega?: "enviada" | null;
 }): Promise<{ inedita: boolean; id: string | null }> {
   const supabase = createServiceClient();
 
@@ -390,6 +392,7 @@ export async function gravarMensagem(params: {
       conteudo: params.conteudo,
       midia_url: params.midiaUrl ?? null,
       provider_message_id: params.providerMessageId ?? null,
+      status_entrega: params.statusEntrega ?? null,
     })
     .select("id")
     .maybeSingle();
@@ -411,6 +414,35 @@ export async function gravarMensagem(params: {
     .eq("id", params.conversaId);
 
   return { inedita: true, id: data?.id ?? null };
+}
+
+const ORDEM_ENTREGA = { enviada: 1, entregue: 2, lida: 3 } as const;
+
+/**
+ * Aplica um ack de entrega/leitura vindo do MESSAGES_UPDATE (0051).
+ *
+ * Monotônico: ack chega fora de ordem com frequência (READ antes do
+ * DELIVERY atrasado), e rebaixar "lida" para "entregue" seria o tick
+ * andando para trás na tela do corretor. Mensagem não encontrada é o caso
+ * normal — quase todo ack é de balão do bot, que não guarda provider id.
+ */
+export async function aplicarAckDeEntrega(
+  providerMessageId: string,
+  status: "entregue" | "lida",
+): Promise<void> {
+  const supabase = createServiceClient();
+
+  const { data } = await supabase
+    .from("whatsapp_mensagens")
+    .select("id, status_entrega")
+    .eq("provider_message_id", providerMessageId)
+    .maybeSingle();
+
+  if (!data) return;
+  const atual = data.status_entrega ? ORDEM_ENTREGA[data.status_entrega] : 0;
+  if (ORDEM_ENTREGA[status] <= atual) return;
+
+  await supabase.from("whatsapp_mensagens").update({ status_entrega: status }).eq("id", data.id);
 }
 
 /**
