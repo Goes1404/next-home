@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { extrairImagensDePdf, TETO_IMAGENS } from "@/lib/imoveis/pdfImagens";
-import { gerarPreview } from "@/lib/imoveis/imagemDerivada";
+import { gerarPreview, sharpDisponivel } from "@/lib/imoveis/imagemDerivada";
 import { registrarMidia } from "@/lib/imoveis/registrarMidia";
 import { baixarArquivo, listarPasta, parsearLinkDrive, type ArquivoDrive } from "@/lib/imoveis/drive";
 import { montarRascunhoDePdf, type RascunhoCadastro } from "@/lib/imoveis/rascunhoDePdf";
@@ -75,6 +75,15 @@ export async function analisarPdf(caminhoStaging: string): Promise<AnaliseDoPdf>
   }
   if (extraidas.imagens.length === TETO_IMAGENS) {
     avisos.push(`Parei nas primeiras ${TETO_IMAGENS} imagens do arquivo.`);
+  }
+
+  // Sem o processador de imagem não há prévia nenhuma, e o corretor merece
+  // saber que o problema é do ambiente — não do arquivo que ele mandou.
+  if (!(await sharpDisponivel())) {
+    return {
+      ok: false,
+      erro: "O processamento de imagem não está disponível neste ambiente, então não consigo mostrar as fotos do PDF. Avise quem cuida do sistema.",
+    };
   }
 
   if (extraidas.imagens.length === 0) {
