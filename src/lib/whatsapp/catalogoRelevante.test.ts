@@ -72,7 +72,7 @@ describe("Corte por orçamento do cliente", () => {
     const r = ranquearCatalogo({
       catalogo: [caro, barato],
       mensagemAtual: "quero ver opções",
-      dossie: { orcamentoMin: null, orcamentoMax: 600_000, exigenciasEspecificas: [], urgenciaMudanca: null },
+      dossie: { orcamentoMin: null, orcamentoMax: 600_000, exigenciasEspecificas: [], urgenciaMudanca: null, regiaoInteresse: null },
     });
     expect(r.map((e) => e.slug)).toEqual(["terra-alta"]);
   });
@@ -129,8 +129,61 @@ describe("Corte por urgência do cliente", () => {
         orcamentoMax: 600_000,
         exigenciasEspecificas: [],
         urgenciaMudanca: "imediata",
+        regiaoInteresse: null,
       },
     });
     expect(r.map((e) => e.slug)).toEqual(["certo"]);
+  });
+});
+
+describe("Região do dossiê no ranking (roadmap nº 5)", () => {
+  const tupanci = { ...base, nome: "Terra Alta", slug: "tupanci", bairro: "Jardim Tupanci", cidade: "Barueri" };
+  const alphaville = { ...base, nome: "Canvas", slug: "alpha", bairro: "Alphaville", cidade: "Barueri" };
+  const osasco = { ...base, nome: "Vista", slug: "osasco", bairro: "Centro", cidade: "Osasco" };
+  const dossieCom = (regiaoInteresse: string | null) => ({
+    orcamentoMin: null,
+    orcamentoMax: null,
+    exigenciasEspecificas: [],
+    urgenciaMudanca: null,
+    regiaoInteresse,
+  });
+
+  it("a região dita dez mensagens atrás continua puxando o bairro para o topo", () => {
+    // A mensagem de agora não fala de lugar nenhum — o sinal é só o dossiê.
+    const r = ranquearCatalogo({
+      catalogo: [osasco, alphaville, tupanci],
+      mensagemAtual: "e tem vaga de garagem?",
+      dossie: dossieCom("Jardim Tupanci"),
+    });
+    expect(r[0].slug).toBe("tupanci");
+  });
+
+  it("região composta casa bairro E cidade: 'Centro de Barueri' não leva ao Centro de Osasco", () => {
+    const centroBarueri = { ...base, nome: "More", slug: "centro-ba", bairro: "Centro", cidade: "Barueri" };
+    const r = ranquearCatalogo({
+      catalogo: [osasco, centroBarueri],
+      mensagemAtual: "bom dia",
+      dossie: dossieCom("Centro de Barueri"),
+    });
+    // Os dois casam por bairro ("Centro"), mas só o de Barueri soma a cidade.
+    expect(r[0].slug).toBe("centro-ba");
+  });
+
+  it("a menção explícita de AGORA continua mandando mais que a região do dossiê", () => {
+    const r = ranquearCatalogo({
+      catalogo: [tupanci, alphaville],
+      mensagemAtual: "me fala do Canvas",
+      dossie: dossieCom("Jardim Tupanci"),
+    });
+    expect(r[0].slug).toBe("alpha");
+  });
+
+  it("sem região no dossiê, nada muda — ordem editorial preservada", () => {
+    const r = ranquearCatalogo({
+      catalogo: [osasco, alphaville],
+      mensagemAtual: "oi",
+      dossie: dossieCom(null),
+    });
+    expect(r.map((e) => e.slug)).toEqual(["osasco", "alpha"]);
   });
 });

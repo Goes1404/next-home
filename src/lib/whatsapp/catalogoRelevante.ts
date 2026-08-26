@@ -108,7 +108,7 @@ export function ranquearCatalogo(params: {
   historico?: { texto: string }[];
   dossie?: Pick<
     DossieClienteIA,
-    "orcamentoMin" | "orcamentoMax" | "exigenciasEspecificas" | "urgenciaMudanca"
+    "orcamentoMin" | "orcamentoMax" | "exigenciasEspecificas" | "urgenciaMudanca" | "regiaoInteresse"
   > | null;
   limite?: number;
 }): Empreendimento[] {
@@ -137,6 +137,16 @@ export function ranquearCatalogo(params: {
   const textoAtual = normalizar(params.mensagemAtual);
   const textoHistorico = normalizar((params.historico ?? []).map((m) => m.texto).join(" "));
   const exigencias = normalizar((dossie?.exigenciasEspecificas ?? []).join(" "));
+  const regiaoDossie = normalizar(dossie?.regiaoInteresse ?? "");
+
+  /*
+   * "Centro de Barueri" precisa casar com bairro "Centro" E com cidade
+   * "Barueri" — nenhum dos dois é substring do outro na direção única.
+   * Por isso a comparação é nas DUAS direções, com piso de 4 letras para
+   * "de"/"do" não casarem com nada.
+   */
+  const casaComRegiao = (lugar: string) =>
+    lugar.length >= 4 && regiaoDossie.length >= 4 && (regiaoDossie.includes(lugar) || lugar.includes(regiaoDossie));
 
   const pontuados = catalogo.map((e, indice) => {
     let pontos = 0;
@@ -155,6 +165,18 @@ export function ranquearCatalogo(params: {
     if (textoAtual.includes(bairro)) pontos += 30;
     if (textoHistorico.includes(bairro)) pontos += 12;
     if (exigencias.includes(tipo)) pontos += 8;
+
+    /*
+     * Região do dossiê (roadmap nº 5, 26/08): agora que `regiao_interesse`
+     * se preenche sozinha, ela vira sinal PERSISTENTE do ranking — o
+     * cliente disse a região dez mensagens atrás e ela continua valendo,
+     * mesmo quando a mensagem de agora não a repete. Pesa menos que a
+     * menção explícita de agora (o assunto da vez manda) e mais que o
+     * desempate editorial. Bairro vale mais que cidade: "Barueri" é metade
+     * do catálogo, "Jardim Tupanci" decide de verdade.
+     */
+    if (casaComRegiao(bairro)) pontos += 20;
+    if (casaComRegiao(normalizar(e.cidade))) pontos += 10;
 
     // Faixa de orçamento do dossiê: dentro dela vale mais; sem preço no
     // cadastro fica neutro (não pode sumir só por estar "sob consulta").

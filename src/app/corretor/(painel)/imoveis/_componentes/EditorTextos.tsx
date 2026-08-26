@@ -136,6 +136,15 @@ export function EditorTextos({ dados, onChange, contexto }: Props) {
               Separe por vírgula. É por estes nomes que o cliente chama o imóvel no WhatsApp — sem
               eles, a IA não reconhece que ele está falando deste empreendimento.
             </p>
+            {/* O campo vazio é um problema INVISÍVEL: a IA só falha lá no
+                WhatsApp, dias depois, e ninguém liga a falha a este campo.
+                O aviso traz o problema para onde a correção mora. */}
+            {dados.nomesAlternativos.length === 0 && (
+              <p className="text-fluid-xs rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-500">
+                Sem apelido cadastrado: se o anúncio ou o cliente usarem um nome comercial diferente
+                do título acima, a IA não vai reconhecer este imóvel na conversa.
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">

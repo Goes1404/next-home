@@ -26,8 +26,10 @@
 1. **Preencher `nomes_alternativos` dos cadastros reais.** A correção de
    grafia não alcança nome comercial diferente do nome do cadastro ("Dom
    Parque" ≠ "Lançamento ao Lado do Parque") — isso é dado, não código. Passar
-   pelos ~27 cadastros e registrar como cada um é anunciado. Bônus: um aviso
-   na tela do imóvel quando o campo está vazio.
+   pelos ~27 cadastros e registrar como cada um é anunciado.
+   **[Bônus entregue 26/08]**: a tela do imóvel agora avisa quando o campo
+   está vazio (o problema era invisível — a IA só falhava dias depois, no
+   WhatsApp, longe de onde a correção mora).
 2. **[ENTREGUE 26/08] Extrair `dormitorios_min` da conversa.** Feito no
    mesmo padrão da região: prompt do dossiê + persistência em `salvarDossie`
    (só quando há valor) + entrada no bloco "o que você já sabe" do prompt.
@@ -61,11 +63,12 @@
 
 ## Médio prazo (próximo mês)
 
-5. **Região alimenta o ranking do catálogo.** Hoje `catalogoRelevante.ts`
-   pontua menções e faixa de orçamento; com `regiao_interesse` preenchida
-   sozinha, dá para priorizar os imóveis da região do cliente antes mesmo de
-   ele citar um nome — e a Sofia apresenta "o que existe ALI" com mais
-   precisão.
+5. **[ENTREGUE 26/08] Região alimenta o ranking do catálogo.** A região do
+   dossiê virou sinal persistente em `ranquearCatalogo`: bairro que casa
+   soma 20, cidade soma 10 — menos que a menção explícita de agora (o
+   assunto da vez manda), mais que o desempate editorial. Casamento nas
+   duas direções com piso de 4 letras ("Centro de Barueri" acha bairro
+   Centro E cidade Barueri, sem "de" casar com nada). 4 testes novos.
 6. **Follow-up com contexto, não genérico.** Os dois follow-ups (+24h/+72h)
    existem e consomem cota anti-ban; o texto ainda não usa o dossiê. "Vi que
    você procurava 3 dorm no centro de Barueri — abriu uma condição nova no X"
