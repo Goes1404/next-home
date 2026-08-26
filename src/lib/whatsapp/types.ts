@@ -105,6 +105,14 @@ export interface DossieClienteIA {
    */
   dormitoriosMin: number | null;
   formaPagamento: string | null;
+  /**
+   * Com o que o cliente trabalha, nas palavras dele. Serve para o corretor
+   * preparar a conversa de financiamento — NUNCA para deduzir renda: saber
+   * a profissão não diz quanto alguém ganha, e um chute vira promessa.
+   */
+  profissao: string | null;
+  /** A compra soma renda com outra pessoa? Muda o que o banco financia. */
+  compraEmConjunto: boolean | null;
   perfilFamiliar: string | null;
   urgenciaMudanca: string | null;
   exigenciasEspecificas: string[];

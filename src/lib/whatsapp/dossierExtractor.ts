@@ -12,6 +12,8 @@ Você DEVE responder EXCLUSIVAMENTE um objeto JSON válido no seguinte formato:
   "dormitoriosMin": number ou null (quantos dormitórios o cliente disse precisar; só se ELE disser, nunca deduza do imóvel apresentado),
   "orcamentoMax": number ou null,
   "formaPagamento": "a_vista" | "financiamento" | "permuta" | "misto" | null,
+  "profissao": string ou null (com o que o cliente trabalha, nas palavras dele; NUNCA deduza renda a partir disso),
+  "compraEmConjunto": true | false | null (true se a compra soma renda com cônjuge/familiar/sócio; false se é só ele; null se não disse),
   "perfilFamiliar": "casal_com_filhos" | "casal_sem_filhos" | "solteiro" | "investidor" | null,
   "urgenciaMudanca": "imediata" | "3_meses" | "6_meses" | "apenas_pesquisando" | null,
   "exigenciasEspecificas": ["lista de exigencias citadas como andar_alto, 3_vagas, 2_suites, pet_friendly, vista_livre; inclua também, QUANDO O CLIENTE DISSER: estágio desejado (na_planta | em_construcao | pronto_para_morar), finalidade (moradia_propria | investimento) e situação de crédito (credito_aprovado | precisa_assessoria_credito)"],
@@ -38,6 +40,8 @@ export async function extrairDossieCliente(
     dormitoriosMin: null,
     orcamentoMax: null,
     formaPagamento: null,
+    profissao: null,
+    compraEmConjunto: null,
     perfilFamiliar: null,
     urgenciaMudanca: null,
     exigenciasEspecificas: [],
@@ -92,6 +96,11 @@ export async function extrairDossieCliente(
         : null,
     orcamentoMax: typeof parsed.orcamentoMax === "number" ? parsed.orcamentoMax : null,
     formaPagamento: (parsed.formaPagamento as DossieClienteIA["formaPagamento"]) || null,
+    profissao:
+      typeof parsed.profissao === "string" && parsed.profissao.trim()
+        ? parsed.profissao.trim().slice(0, 80)
+        : null,
+    compraEmConjunto: typeof parsed.compraEmConjunto === "boolean" ? parsed.compraEmConjunto : null,
     perfilFamiliar: (parsed.perfilFamiliar as DossieClienteIA["perfilFamiliar"]) || null,
     urgenciaMudanca: (parsed.urgenciaMudanca as DossieClienteIA["urgenciaMudanca"]) || null,
     exigenciasEspecificas: Array.isArray(parsed.exigenciasEspecificas) ? (parsed.exigenciasEspecificas as string[]) : [],

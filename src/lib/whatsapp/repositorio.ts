@@ -967,6 +967,11 @@ export async function buscarDossieAtual(leadId: string): Promise<DossieClienteIA
     regiaoInteresse: null,
     dormitoriosMin: null,
     formaPagamento: data.forma_pagamento,
+    // Ainda sem coluna própria: chegam na extração e entram no prompt da
+    // mesma conversa. Persistir exigiria migration, e o valor deles é
+    // orientar a resposta agora — não virar relatório.
+    profissao: null,
+    compraEmConjunto: null,
     perfilFamiliar: data.perfil_familiar,
     urgenciaMudanca: data.urgencia_mudanca,
     /*

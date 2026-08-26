@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Empreendimento } from "@/lib/types";
-import { rendaEstaPendente } from "./funilQualificacao";
+import { blocoCapacidadePendente, capacidadeEstaPendente } from "./funilQualificacao";
 import { construirPromptSistema } from "./aiAgent";
 
 const base = {
@@ -16,7 +16,13 @@ const CATALOGO = [
   { ...base, nome: "Terra Alta", slug: "terra-alta", bairro: "Jardim Tupanci", cidade: "Barueri" },
 ] as unknown as Empreendimento[];
 
-const SEM_DOSSIE = { rendaMensal: null, regiaoInteresse: null, dormitoriosMin: null };
+const SEM_DOSSIE = {
+  rendaMensal: null,
+  regiaoInteresse: null,
+  dormitoriosMin: null,
+  orcamentoMin: null,
+  orcamentoMax: null,
+};
 
 describe("rendaEstaPendente — o caso que o eval da v22 reprovou", () => {
   /*
@@ -34,7 +40,7 @@ describe("rendaEstaPendente — o caso que o eval da v22 reprovou", () => {
 
   it("aponta a renda como pendência", () => {
     expect(
-      rendaEstaPendente({
+      capacidadeEstaPendente({
         dossie: SEM_DOSSIE,
         historico: historicoDoEval,
         mensagemAtual: "duas vagas, e temos dois filhos",
@@ -52,9 +58,9 @@ describe("rendaEstaPendente — o caso que o eval da v22 reprovou", () => {
       tomVoz: "consultivo_alto_padrao",
       catalogo: CATALOGO,
       historicoMensagens: [],
-      rendaPendente: true,
+      capacidadePendente: true,
     });
-    expect(prompt).toContain("PENDÊNCIA DESTA CONVERSA — RENDA");
+    expect(prompt).toContain("PENDÊNCIA DESTA CONVERSA — CAPACIDADE");
     expect(prompt).toContain("NÃO indique imóvel");
   });
 
@@ -68,7 +74,7 @@ describe("rendaEstaPendente — o caso que o eval da v22 reprovou", () => {
       catalogo: CATALOGO,
       historicoMensagens: [],
     });
-    expect(prompt).not.toContain("PENDÊNCIA DESTA CONVERSA — RENDA");
+    expect(prompt).not.toContain("PENDÊNCIA DESTA CONVERSA — CAPACIDADE");
   });
 });
 
@@ -83,7 +89,7 @@ describe("as guardas contra repergunta — o defeito nº 1 do projeto", () => {
 
   it("renda já no dossiê nunca é repergunta", () => {
     expect(
-      rendaEstaPendente({
+      capacidadeEstaPendente({
         dossie: { ...SEM_DOSSIE, rendaMensal: 12_000 },
         historico: conversaBase,
         mensagemAtual: "e tem vaga?",
@@ -94,7 +100,7 @@ describe("as guardas contra repergunta — o defeito nº 1 do projeto", () => {
 
   it("cliente que JÁ falou de renda não é perguntado de novo", () => {
     expect(
-      rendaEstaPendente({
+      capacidadeEstaPendente({
         dossie: SEM_DOSSIE,
         historico: [...conversaBase, { remetente: "cliente", texto: "nossa renda é uns 15 mil por mês" }],
         mensagemAtual: "e tem vaga?",
@@ -105,7 +111,7 @@ describe("as guardas contra repergunta — o defeito nº 1 do projeto", () => {
 
   it("assistente que ACABOU de perguntar não insiste na sequência", () => {
     expect(
-      rendaEstaPendente({
+      capacidadeEstaPendente({
         dossie: SEM_DOSSIE,
         historico: [...conversaBase, { remetente: "bot", texto: "qual a renda média da família por mês?" }],
         mensagemAtual: "prefiro não falar isso agora",
@@ -116,7 +122,7 @@ describe("as guardas contra repergunta — o defeito nº 1 do projeto", () => {
 
   it("no começo da conversa a renda não é a próxima pergunta", () => {
     expect(
-      rendaEstaPendente({
+      capacidadeEstaPendente({
         dossie: SEM_DOSSIE,
         historico: [{ remetente: "cliente", texto: "oi" }],
         mensagemAtual: "quero apartamento em alphaville de 3 dormitorios",
@@ -127,7 +133,7 @@ describe("as guardas contra repergunta — o defeito nº 1 do projeto", () => {
 
   it("sem tipologia ainda, a renda espera — o funil tem ordem", () => {
     expect(
-      rendaEstaPendente({
+      capacidadeEstaPendente({
         dossie: SEM_DOSSIE,
         historico: [
           { remetente: "cliente", texto: "procuro em alphaville" },
@@ -142,7 +148,7 @@ describe("as guardas contra repergunta — o defeito nº 1 do projeto", () => {
 
   it("sem região ainda, a renda espera", () => {
     expect(
-      rendaEstaPendente({
+      capacidadeEstaPendente({
         dossie: SEM_DOSSIE,
         historico: [
           { remetente: "cliente", texto: "quero 3 dormitorios" },
@@ -157,8 +163,8 @@ describe("as guardas contra repergunta — o defeito nº 1 do projeto", () => {
 
   it("a região do dossiê conta como respondida, mesmo sem citar bairro agora", () => {
     expect(
-      rendaEstaPendente({
-        dossie: { rendaMensal: null, regiaoInteresse: "Centro de Barueri", dormitoriosMin: 3 },
+      capacidadeEstaPendente({
+        dossie: { ...SEM_DOSSIE, regiaoInteresse: "Centro de Barueri", dormitoriosMin: 3 },
         historico: [
           { remetente: "cliente", texto: "bom dia" },
           { remetente: "bot", texto: "Bom dia! O que você procura?" },
@@ -168,5 +174,61 @@ describe("as guardas contra repergunta — o defeito nº 1 do projeto", () => {
         catalogo: CATALOGO,
       }),
     ).toBe(true);
+  });
+});
+
+describe("a escada da capacidade (v25)", () => {
+  const conversa = [
+    { remetente: "cliente", texto: "procuro em alphaville" },
+    { remetente: "bot", texto: "Prefere pronto ou na planta?" },
+    { remetente: "cliente", texto: "pronto" },
+    { remetente: "bot", texto: "Quantos dormitórios?" },
+    { remetente: "cliente", texto: "3 dormitorios" },
+  ];
+
+  it("quem já disse a FAIXA não é perguntado de novo — nem sobre renda", () => {
+    // O ponto da mudança: faixa de valor responde "o que cabe no bolso"
+    // sem obrigar ninguém a abrir a folha de pagamento.
+    for (const msg of ["até 600 mil", "penso em uns 700 mil", "tenho R$ 500.000", "meu orçamento é 1 milhão"]) {
+      expect(
+        capacidadeEstaPendente({
+          dossie: SEM_DOSSIE,
+          historico: conversa,
+          mensagemAtual: msg,
+          catalogo: CATALOGO,
+        }),
+        msg,
+      ).toBe(false);
+    }
+  });
+
+  it("orçamento no dossiê também encerra a pendência", () => {
+    expect(
+      capacidadeEstaPendente({
+        dossie: { ...SEM_DOSSIE, orcamentoMax: 600_000 },
+        historico: conversa,
+        mensagemAtual: "e tem vaga?",
+        catalogo: CATALOGO,
+      }),
+    ).toBe(false);
+  });
+
+  it("sem faixa nem renda, a pendência continua de pé", () => {
+    expect(
+      capacidadeEstaPendente({
+        dossie: SEM_DOSSIE,
+        historico: conversa,
+        mensagemAtual: "e tem vaga de garagem?",
+        catalogo: CATALOGO,
+      }),
+    ).toBe(true);
+  });
+
+  it("o bloco propõe a escada, do menos invasivo ao mais", () => {
+    const b = blocoCapacidadePendente();
+    expect(b).toContain("faixa");
+    expect(b).toContain("só sua ou em conjunto");
+    expect(b.indexOf("faixa")).toBeLessThan(b.indexOf("renda média"));
+    expect(b).toContain("UMA pergunta por mensagem");
   });
 });

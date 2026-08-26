@@ -194,8 +194,8 @@
     ],
     "mensagem": "duas vagas, e temos dois filhos",
     "expectativas": {
-      "devePerguntarRenda": true,
-      "naoPodeFalarValor": true
+      "naoPodeFalarValor": true,
+      "deveQualificarCapacidade": true
     }
   },
   {

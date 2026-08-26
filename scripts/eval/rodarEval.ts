@@ -523,8 +523,25 @@ async function main() {
     ) {
       duras.push("nao_mandou_link_do_catalogo");
     }
-    if (caso.expectativas?.devePerguntarRenda && !/renda|ganha por m[êe]s|por m[êe]s.*fam[íi]lia/i.test(texto)) {
-      duras.push("nao_perguntou_renda");
+    /*
+     * QUALIFICAR CAPACIDADE, não "perguntar a renda" (v25).
+     *
+     * O critério exigia a palavra "renda" e reprovava "qual faixa de valor
+     * você tem em mente?" — que é o comportamento pedido a partir da v25:
+     * a escada vai do menos invasivo (faixa) ao mais (renda), e PARA assim
+     * que tem a resposta. Cobrar a renda seca aqui obrigaria a IA a fazer
+     * justamente a pergunta que espanta cliente.
+     *
+     * Sexta vez que um critério desta base reprovou o comportamento certo
+     * por ter sido escrito quando a regra de negócio era outra. A régua
+     * que fica: ao mudar regra, procurar os critérios que a mediam.
+     */
+    const qualificouCapacidade =
+      /renda|ganha por m[êe]s|por m[êe]s.*fam[íi]lia/i.test(texto) ||
+      /faixa de (valor|pre[çc]o)|qual (a )?faixa|valor .*(tem em mente|pensou|pretende)|or[çc]amento/i.test(texto) ||
+      /(s[óo] sua|sozinh|em conjunto|com mais alguém|com outra pessoa)/i.test(texto);
+    if (caso.expectativas?.deveQualificarCapacidade && !qualificouCapacidade) {
+      duras.push("nao_qualificou_capacidade");
     }
     /*
      * "A Bruna vai te responder" transforma toda resposta da IA em

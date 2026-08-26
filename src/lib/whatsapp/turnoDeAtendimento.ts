@@ -5,7 +5,7 @@ import { gerarRespostaIA, type RespostaAgenteIA } from "./aiAgent";
 import type { AnexoResolvido } from "./resolverMidia";
 import { buscarExemplosFewShot } from "./aprendizadoContinuo";
 import { catalogoParaAtendimento } from "./focoDaConversa";
-import { rendaEstaPendente } from "./funilQualificacao";
+import { capacidadeEstaPendente } from "./funilQualificacao";
 import { catalogoTemPrazo } from "./prazoEntrega";
 import { sanearRespostaIA } from "./guardrails";
 import { dividirEmMensagens } from "./chunking";
@@ -145,13 +145,14 @@ export async function executarTurnoDeAtendimento(
   });
 
   /*
-   * A renda entra como PENDÊNCIA calculada, não como regra genérica: o
-   * eval da v22 pegou a IA indicando imóvel sem perguntá-la, com a regra
-   * do funil já no prompt. Mora aqui, no caminho único, para os quatro
+   * A capacidade entra como PENDÊNCIA calculada, não como regra genérica:
+   * o eval da v22 pegou a IA indicando imóvel sem perguntá-la, com a regra
+   * do funil já no prompt. Satisfeita por faixa de valor OU renda — ver
+   * funilQualificacao. Mora aqui, no caminho único, para os quatro
    * chamadores enxergarem a mesma conversa (a divergência playground ×
    * webhook já custou caro duas vezes).
    */
-  const rendaPendente = rendaEstaPendente({
+  const capacidadePendente = capacidadeEstaPendente({
     dossie: pedido.dossie,
     historico: historicoAnterior,
     mensagemAtual: textoDaVez,
@@ -167,7 +168,7 @@ export async function executarTurnoDeAtendimento(
       dossie: pedido.dossie,
       instrucaoExtra: pedido.instrucaoExtra,
       foco,
-      rendaPendente,
+      capacidadePendente,
       /*
        * O aviso olha o catálogo QUE FOI AO PROMPT, não o completo: é sobre
        * o que ela pode citar nesta resposta. O guardrail

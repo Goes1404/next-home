@@ -7,7 +7,7 @@ import { ESTILO_DA_CASA } from "./estiloDaCasa";
 import type { MotivoFalhaLlm } from "./llmTipos";
 import type { DossieClienteIA, TomVozBot } from "./types";
 import { blocoDaVezDoCliente } from "./rajada";
-import { blocoRendaPendente } from "./funilQualificacao";
+import { blocoCapacidadePendente } from "./funilQualificacao";
 import { blocoSemPrazoCadastrado } from "./prazoEntrega";
 
 /**
@@ -45,7 +45,7 @@ import { blocoSemPrazoCadastrado } from "./prazoEntrega";
  * sem imóvel nomeado, ela respondeu "o imóvel do anúncio tem 3 dormitórios,
  * 3 suítes e 2 vagas" — inventou qual imóvel era, que erra tudo de uma vez.
  */
-export const PROMPT_VERSAO = "2026.08-v24"; // bloco PRAZO NÃO CADASTRADO por código; detector de prazo deixa de acusar frase honesta ("a entrega depende da unidade")
+export const PROMPT_VERSAO = "2026.08-v25"; // capacidade em escada (faixa -> sozinho/conjunto -> profissão -> renda) no lugar da pergunta seca de renda; profissão NUNCA vira renda deduzida
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -112,12 +112,13 @@ export interface ContextoAtendimento {
    */
   semPrazoCadastrado?: boolean;
   /**
-   * A renda ainda é a próxima pergunta desta conversa
-   * (`funilQualificacao.ts`). Quem decide é o CÓDIGO: a regra do funil já
-   * estava no prompt e o eval flagrou a indicação de imóvel sem renda
-   * mesmo assim — instrução geral compete com outras 28 e perde.
+   * A capacidade de compra (faixa, composição ou renda) ainda é a próxima
+   * pergunta desta conversa (`funilQualificacao.ts`). Quem decide é o
+   * CÓDIGO: a regra do funil já estava no prompt e o eval flagrou a
+   * indicação de imóvel sem ela mesmo assim — instrução geral compete com
+   * outras 28 e perde.
    */
-  rendaPendente?: boolean;
+  capacidadePendente?: boolean;
   /**
    * O imóvel que ESTA conversa já escolheu (ver `focoDaConversa.ts`).
    *
@@ -161,6 +162,10 @@ function resumoDossieParaPrompt(dossie: DossieClienteIA): string {
   if (dossie.perfilFamiliar) partes.push(`perfil: ${dossie.perfilFamiliar.replace(/_/g, " ")}`);
   if (dossie.urgenciaMudanca) partes.push(`urgência: ${dossie.urgenciaMudanca.replace(/_/g, " ")}`);
   if (dossie.formaPagamento) partes.push(`pagamento: ${dossie.formaPagamento.replace(/_/g, " ")}`);
+  if (dossie.profissao) partes.push(`profissão: ${dossie.profissao}`);
+  if (dossie.compraEmConjunto !== null && dossie.compraEmConjunto !== undefined) {
+    partes.push(dossie.compraEmConjunto ? "compra em conjunto" : "compra sozinho");
+  }
   if (dossie.exigenciasEspecificas.length > 0) {
     partes.push(`exigências: ${dossie.exigenciasEspecificas.join(", ")}`);
   }
@@ -466,13 +471,14 @@ Você NÃO indica imóvel, e NÃO propõe horário, antes de saber estas quatro 
 1. REGIÃO — pergunte ESPECÍFICO, não genérico: "em qual região de Barueri você procura?" — nunca "onde você procura imóvel?", que é vago demais e recebe resposta vaga. Se ele responder outra cidade (Alphaville, Osasco, Tamboré...), ótimo: a resposta dele já disse onde é, siga com o que existe LÁ. A região que ele disser entra sozinha na ficha dele no sistema — não precisa confirmar nem repetir de volta. Depois de saber, apresente em frase corrida as opções que existem ALI no catálogo abaixo, sem listar tudo o que temos. Duas ou três, no máximo.
 2. PRONTO OU NA PLANTA — "você prefere pronto para morar ou na planta?". Muda tudo: quem quer morar em 60 dias e quem aceita esperar a obra não olham o mesmo imóvel, e indicar errado queima a conversa. Na planta costuma ter condição de pagamento melhor; pronto resolve urgência. Diga isso como quem sabe, sem citar cifra.
 3. TIPOLOGIA — quantos dormitórios, se precisa de suíte, vaga, se tem filhos ou pet. Uma coisa por vez.
-4. RENDA MENSAL — pergunte a renda média mensal da família ANTES de indicar o imóvel e ANTES de propor horário. Não é curiosidade nem é constrangimento: é o que define o que dá para financiar, e é pergunta normal em imobiliária. Faça com a razão junto, nunca seca: "para eu já te mostrar o que cabe no financiamento, qual é a renda média da família por mês?". Se ele desconversar, siga a conversa sem insistir e pergunte de novo mais adiante — perder o lead por insistência é pior que ficar sem o dado.
+4. O QUE CABE NO BOLSO — e aqui a ordem importa, porque esta é a pergunta que mais espanta cliente. Vá do menos invasivo para o mais, e PARE assim que tiver a resposta: (a) a FAIXA que ele procura — "qual faixa de valor você tem em mente?" — que quase todo mundo responde e já basta para indicar direito; (b) se a compra é SOZINHA ou EM CONJUNTO — "a compra é só sua ou em conjunto?" —, porque duas rendas somam no financiamento e isso muda o que dá para comprar; (c) a PROFISSÃO, que entra como conversa e não como formulário ("e você trabalha com o quê?"), ajuda o corretor a preparar a proposta e costuma abrir o assunto renda naturalmente; (d) a RENDA MENSAL, e só se nada acima veio — com a razão junto: "pra eu já te mostrar o que cabe no financiamento, qual é a renda média da família por mês?". UMA por mensagem, nunca as quatro. Se ele desconversar em qualquer uma, siga a conversa e volte mais adiante — perder o lead por insistência é pior que ficar sem o dado.
+4b. NUNCA DEDUZA A RENDA DA PROFISSÃO. Saber que ele é engenheiro não diz quanto ele ganha, e afirmar ou assumir um valor a partir disso ("com sua profissão, dá para financiar X") é chute que vira promessa. A profissão serve para o corretor conhecer o cliente e preparar a conversa de financiamento — quem confirma número é o banco, na simulação.
 
 Só depois disso: a INDICAÇÃO ("pelo que você me contou, o que mais faz sentido é...") com o pitch de uma frase, e então a visita.
 
 Se o cliente já disse alguma dessas coisas — nesta mensagem, no histórico ou no dossiê — NÃO PERGUNTE DE NOVO. Repetir pergunta já respondida é o erro que mais faz o cliente sumir, e é o que denuncia um sistema.
 
-${ctx.rendaPendente ? `${blocoRendaPendente()}\n\n` : ""}${ctx.semPrazoCadastrado ? `${blocoSemPrazoCadastrado()}\n\n` : ""}${blocoFoco}
+${ctx.capacidadePendente ? `${blocoCapacidadePendente()}\n\n` : ""}${ctx.semPrazoCadastrado ? `${blocoSemPrazoCadastrado()}\n\n` : ""}${blocoFoco}
 
 ${blocoCatalogo}
 

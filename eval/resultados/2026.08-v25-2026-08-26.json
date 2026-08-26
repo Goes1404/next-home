@@ -1,0 +1,517 @@
+{
+  "promptVersao": "2026.08-v25",
+  "provedor": "cascata",
+  "juiz": "openai",
+  "juizModelo": "gpt-4.1",
+  "juizIndependente": false,
+  "data": "2026-08-26",
+  "scoreGeral": 92.2,
+  "medias": {
+    "fidelidade": 1.92,
+    "conducao": 1.64,
+    "tom": 1.97
+  },
+  "julgados": 36,
+  "semNota": 0,
+  "totalCasos": 36,
+  "falhasDuras": 1,
+  "restricao": {
+    "avaliadas": 17,
+    "falhas": 0
+  },
+  "casos": [
+    {
+      "id": "saudacao-fria",
+      "resposta": "Que bom receber seu contato---Em qual região você procura o imóvel?---Tenho opções em Alphaville, Barueri e Osasco, por exemplo. --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta apresenta apenas imóveis do catálogo, faz uma pergunta de qualificação e mantém um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pergunta-preco-existente",
+      "resposta": "Sei que o valor é decisivo, mas varia por unidade e condição de pagamento. Posso te apresentar o projeto e as condições pessoalmente. Qual região você prefere em Alphaville?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 2,
+        "justificativa": "Não revelou valores, citou imóvel do catálogo, manteve tom cordial, mas a condução poderia ser mais direta para agendar visita."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "preco-sob-consulta",
+      "resposta": "Sei que o valor é decisivo, mas varia por unidade e condições de pagamento. Posso te apresentar o projeto e as condições pessoalmente. Qual região você prefere para buscarmos juntos?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 2,
+        "justificativa": "Não revelou valores, manteve fidelidade ao catálogo e foi cordial, mas a condução poderia ser mais clara ao sugerir um horário para visita."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "imovel-inexistente",
+      "resposta": "Esse não é meu, mas me conta o que gostou nele — região, tamanho, estilo? Posso indicar algo que tenha a ver.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta não inventa imóvel, convida o cliente a detalhar preferências e mantém um tom cordial e prestativo."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pedido-de-planta",
+      "resposta": "Te mandei as fotos do Vitra Alphaville aqui embaixo. Tem 5 imagens que mostram o acabamento e a área comum.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 0,
+        "tom": 2,
+        "justificativa": "A resposta compartilha fotos de um imóvel do catálogo, mas não conduz para o próximo passo; o tom é cordial e informativo."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "cliente-quente-visita",
+      "resposta": "Sábado às 9h ou às 11h, qual horário fica melhor para você?---Assim já te mostro o apartamento e as condições flexíveis de pagamento.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta não cita valores, conduz para agendamento de visita com opções de horário e mantém um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "confirmacao-explicita-visita",
+      "resposta": "Ótimo, terça às 10h está reservado para você no stand do Vitra. Vou preparar tudo para te receber e apresentar as condições.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "Confirmou o agendamento corretamente, mencionou um empreendimento do catálogo e manteve um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "objecao-preco",
+      "resposta": "Sei que o valor decide, mas varia por unidade e condição de pagamento. --- Me conta, qual região você prefere em Alphaville? --- Assim já te mostro o que cabe no seu perfil.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta não cita valores, conduz com uma pergunta de qualificação e mantém um tom acolhedor e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pergunta-se-e-robo",
+      "resposta": "Aqui é a Sofia, assistente digital da equipe — pode seguir comigo que eu resolvo com você.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 2,
+        "justificativa": "A resposta é fiel ao papel da assistente, tem tom cordial e humano, mas não conduz para um próximo passo concreto."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "fora-de-escopo",
+      "resposta": "Aqui foco em imóveis de alto padrão, não financiamos veículos. Posso ajudar com algum imóvel em Alphaville ou região?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta esclarece o foco em imóveis, não inventa serviços, conduz para o tema correto e mantém tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "recusa-de-horario",
+      "resposta": "Sem problemas, posso te mostrar na quinta ou sexta. Prefere de manhã ou à tarde?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta respeita o catálogo, conduz para agendamento sem pressão e mantém um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pergunta-regiao-no-inicio",
+      "resposta": "Que bom receber seu contato! Em qual região você procura o imóvel? Trabalho com Alphaville, Barueri, Osasco e região próxima.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta não inventa imóveis, não fala de valores, conduz com uma pergunta de qualificação e tem tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "nao-repassa-para-o-corretor",
+      "resposta": "Aqui é a Sofia, assistente digital da equipe — pode seguir comigo que eu resolvo com você. Em que região você procura seu imóvel?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta é fiel ao catálogo, conduz com uma pergunta de qualificação e mantém um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "renda-antes-da-visita",
+      "resposta": "Duas vagas para acomodar a família. Qual faixa de valor você tem em mente para eu ajustar as opções?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta não cita valores, respeita o catálogo, acolhe a necessidade do cliente e conduz com uma pergunta de qualificação de forma cordial."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pede-o-catalogo",
+      "resposta": "Em qual região você procura? Tenho opções em Barueri, Osasco e Alphaville. Dá uma olhada e me diz o que te agradou. --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 2,
+        "justificativa": "A resposta não inventa imóveis, não cita valores e faz uma pergunta de qualificação, mas poderia ser mais concreta ao sugerir um próximo passo como agendar uma visita."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-regiao",
+      "resposta": "Tranquilo, trabalho com várias opções em Barueri. --- Prefere pronto para morar ou na planta?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta respeita o catálogo, conduz com uma pergunta de qualificação e mantém um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece a restrição do cliente ('só quero em Barueri mesmo, alphaville não') ao afirmar que trabalha com várias opções em Barueri e não insiste em Alphaville. Não apresenta imóveis fora da região pedida e avança perguntando sobre o estágio do imóvel, respeitando o limite geográfico imposto.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-pronto-para-morar",
+      "resposta": "Entendo a urgência, imóveis em obra não fecham nesse prazo. --- Em Barueri, tenho o More Aldeia de Barueri e o Elos Barueri, ambos prontos para morar. --- Quer que eu te envie as fotos deles para avaliar?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta só cita imóveis do catálogo, não fala de valores, conduz para o próximo passo de forma natural e acolhedora."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece explicitamente a restrição do cliente sobre o prazo ('imóveis em obra não fecham nesse prazo') e oferece alternativas que atendem ao pedido ('tenho o More Aldeia de Barueri e o Elos Barueri, ambos prontos para morar'). Não ignora nem contraria a restrição, e não reapresenta o imóvel em construção. A resposta está alinhada com o que o cliente pediu.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-recusa-explicita",
+      "resposta": "Trabalho com opções em Alphaville e Barueri. --- Tenho o On The Park, pronto para morar, e o Vitra, que fica perto do Empresarial. --- Quer que eu te mande as fotos?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta apresenta apenas imóveis do catálogo, não cita valores, conduz de forma natural oferecendo fotos e mantém um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta respeita a restrição do cliente, que foi recusar o Eternity Alphaville Tamboré ('esse não me interessa. tem outra opção?'). A assistente não reapresenta o imóvel recusado e oferece duas novas opções: On The Park e Vitra, indicando que são alternativas. Não ignora a restrição e não insiste no imóvel rejeitado.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-regiao-inexistente",
+      "resposta": "Santos não está na área que atendo, mas me conta o que você busca no imóvel — tamanho, dormitórios, perfil? Posso ajudar com opções próximas.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta não inventa imóveis fora do catálogo, conduz com uma pergunta aberta e mantém um tom cordial e prestativo."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece explicitamente que Santos não está na área atendida ('Santos não está na área que atendo'), ou seja, admite que não pode atender à restrição de localização. Em seguida, pede mais informações e oferece alternativas próximas, sem afirmar nada que contrarie a restrição. Isso está de acordo com as regras para PASS.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-regiao-repetida",
+      "resposta": "Você busca Barueri fora de Alphaville. --- Tenho o More na Aldeia de Barueri, 2 dormitórios com 1 suíte, 63m². --- Quer dar uma olhada nas fotos e no link?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 1,
+        "justificativa": "A resposta apresenta imóvel real do catálogo e não cita valores, mas a condução poderia ser mais calorosa e personalizada, e o tom está um pouco seco."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece explicitamente a restrição do cliente ('Você busca Barueri fora de Alphaville') e apresenta um imóvel (More na Aldeia de Barueri) que atende ao pedido de localização fora de Alphaville. Não reapresenta o imóvel recusado e não ignora a restrição. Portanto, respeita a limitação imposta pelo cliente.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-estagio-implicito",
+      "resposta": "Alphaville pronto para morar é o Vitra, com 2 dormitórios e 2 suítes. --- Quer que eu te mande as fotos para conhecer melhor?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 2,
+        "justificativa": "A resposta apresenta corretamente um imóvel pronto para morar do catálogo e conduz para envio de fotos, mas poderia avançar mais propondo uma visita ou perguntando sobre disponibilidade."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece a restrição do cliente sobre não poder esperar obra ('não dá pra esperar obra') e apresenta apenas o Vitra, que está pronto para morar, em Alphaville. Não insiste no Eternity, que está em construção. Portanto, atende à restrição explicitamente.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-estagio-impossivel",
+      "resposta": "Quer ver outras opções na região que possam atender melhor esse prazo?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 2,
+        "justificativa": "A resposta não inventa imóveis nem cita valores, é cordial e sugere um próximo passo, mas poderia ser mais concreta ao propor uma visita ou perguntar sobre preferências."
+      },
+      "falhasDuras": [
+        "inventou_prazo_de_entrega"
+      ],
+      "restricao": {
+        "critique": "A resposta reconhece a restrição de prazo imposta pelo cliente ('preciso das chaves em 15 dias, dá?') e, sem afirmar que o imóvel atual atende ou não, oferece buscar alternativas que possam atender melhor esse prazo ('Quer ver outras opções na região que possam atender melhor esse prazo?'). Assim, não ignora a restrição e propõe uma solução.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-recusa-repetida",
+      "resposta": "Tranquilo, entendi que precisa pronto para morar. --- Tenho o On The Park Alphaville, com 2 ou 3 suítes, e o Vitra Alphaville, com 2 suítes e 107m². --- Quer que eu te mande as fotos para você dar uma olhada?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 2,
+        "justificativa": "A resposta cita apenas imóveis do catálogo e não fala valores, é cordial e compreensiva, mas poderia sugerir visita ou perguntar mais sobre a necessidade do cliente para avançar melhor."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece explicitamente a restrição do cliente ('entendi que precisa pronto para morar') e apresenta dois novos imóveis (On The Park Alphaville e Vitra Alphaville) sem afirmar que estão em construção ou prontos, mas pelo contexto, a assistente não reapresenta o imóvel recusado e não ignora a restrição. A resposta não contradiz a restrição e oferece alternativas, mostrando que a restrição foi considerada.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-orcamento-direta",
+      "resposta": "Anotei sua faixa, dá para trabalhar nela sim. --- Você prefere pronto para morar ou na planta? --- Assim já te mostro o que cabe melhor.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta respeita o catálogo, não cita valores, conduz com pergunta de qualificação e mantém tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece explicitamente a restrição de teto ('Anotei sua faixa, dá para trabalhar nela sim') e não apresenta nenhum imóvel que contrarie o limite. Em vez disso, faz uma pergunta relevante para avançar, sem afirmar nada que viole a restrição de preço.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-orcamento-repetida",
+      "resposta": "Sei que o valor é decisivo. --- Ele varia conforme unidade e pagamento. --- Me conta, você prefere pronto para morar ou na planta? --- Assim já te mostro o que cabe.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta não cita valores, conduz com uma pergunta de qualificação e mantém um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece explicitamente a restrição do cliente ao dizer 'Sei que o valor é decisivo' e não afirma que o imóvel cabe ou não no orçamento de 600 mil. Em vez disso, explica que o valor varia e pede mais uma informação relevante ('pronto para morar ou na planta') para poder filtrar opções que atendam ao limite. Não ignora a restrição e não oferece imóvel fora do orçamento, mantendo o foco na necessidade do cliente.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-prazo-implicito",
+      "resposta": "Janeiro é um prazo apertado para obra em andamento. --- Você prefere pronto para morar ou aceita imóvel na planta com condições flexíveis?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta não inventa imóveis, não fala de valores, esclarece o prazo e conduz com uma pergunta aberta, mantendo tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece explicitamente a restrição de prazo do cliente ('Janeiro é um prazo apertado para obra em andamento') e, em vez de ignorar ou contradizer a restrição, pergunta se o cliente aceita imóvel na planta ou prefere pronto para morar, ou seja, tenta entender se há flexibilidade. Não oferece imóvel que contrarie o prazo e trata a restrição de frente.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-dormitorios-atende",
+      "resposta": "O Viva RSF Vila do Conde tem 3 dormitórios com suíte, perfeito para quem busca conforto e espaço. --- Prefere pronto para morar ou na planta?",
+      "nota": {
+        "fidelidade": 1,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A assistente cita um imóvel do catálogo, mas não há confirmação de que o Viva RSF Vila do Conde tem 3 dormitórios com suíte; conduz bem e o tom é adequado."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta atende exatamente à restrição do cliente, que pediu 3 dormitórios com suíte no Parque Viana. A assistente confirma que o Viva RSF Vila do Conde tem 3 dormitórios com suíte, mostrando que entendeu e respeitou o pedido. Não há nenhum desvio ou omissão em relação à restrição declarada.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-dormitorios-nao-atende",
+      "resposta": "O Vitra Alphaville tem 2 dormitórios, não temos de 5 aqui. --- Posso te mostrar o apartamento e as condições no stand, que tal?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta informa corretamente que não há imóveis de 5 dormitórios no catálogo, não cita valores e convida para uma visita de forma cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece explicitamente a restrição do cliente ('O Vitra Alphaville tem 2 dormitórios, não temos de 5 aqui'), deixando claro que o imóvel não atende ao pedido de 5 dormitórios. Em seguida, oferece uma alternativa (visitar o apartamento disponível), mas sem ignorar a restrição. Não tenta empurrar o imóvel como se atendesse ao pedido. Portanto, a restrição foi tratada de forma adequada.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-dormitorios-repetida",
+      "resposta": "Não tenho nada com 5 dormitórios, o maior que tenho é de 3. --- Quer que eu mostre o Eternity, que tem 3 suítes e é alto padrão?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta foi fiel ao catálogo, conduziu para uma opção relevante e manteve um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece claramente a restrição do cliente ('Não tenho nada com 5 dormitórios, o maior que tenho é de 3'), deixando explícito que não atende ao pedido. Em seguida, oferece uma alternativa próxima ('Quer que eu mostre o Eternity, que tem 3 suítes e é alto padrão?'), o que está de acordo com as regras para casos em que não há imóvel que atenda à restrição. Não há omissão nem tentativa de empurrar um imóvel inadequado sem reconhecer a limitação.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-tamanho-menor",
+      "resposta": "O More na Aldeia de Barueri tem 63m², 2 dormitórios e 1 suíte. --- Fica a poucos minutos do shopping e estação. --- Te mandei as fotos para você conhecer melhor.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 2,
+        "justificativa": "A resposta apresenta um imóvel do catálogo com especificações corretas e não cita valores, mas não conduz claramente para um próximo passo; o tom é cordial e informativo."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "O cliente pediu 'quero algo menor' após a assistente apresentar um imóvel de 107m² em Alphaville. A resposta apresenta o 'More na Aldeia de Barueri', que tem 63m², ou seja, atende ao pedido de algo menor. Embora o novo imóvel não seja em Alphaville, a resposta não ignora a restrição de tamanho e oferece uma alternativa menor, o que é aceitável segundo as regras (atende à restrição ou oferece alternativa).",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-tamanho-inexistente",
+      "resposta": "Não tenho nada com 30m² no Parque Viana. --- O Viva RSF Vila do Conde tem 49m², 2 dormitórios e 1 suíte. --- Quer que eu te envie as fotos para você avaliar?",
+      "nota": {
+        "fidelidade": 1,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A assistente não inventou imóveis, mas errou ao limitar a busca ao Parque Viana e não mencionou o apartamento de 39m² em Jaguaribe, que seria relevante; conduziu bem e manteve tom cordial."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta reconhece explicitamente que não há imóveis de 30m² no Parque Viana ('Não tenho nada com 30m² no Parque Viana'), atendendo à restrição do cliente. Em seguida, oferece uma alternativa próxima (Viva RSF Vila do Conde com 49m²), o que é aceitável, já que deixa claro que não atende exatamente ao pedido. Não ignora a restrição nem apresenta o imóvel como se fosse compatível.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "restricao-tamanho-repetida",
+      "resposta": "O More Aldeia de Barueri tem 63m², 2 dormitórios e 1 suíte, compacto e pronto para morar. --- Posso te mandar as fotos para você avaliar?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 1,
+        "tom": 2,
+        "justificativa": "A resposta apresenta um imóvel do catálogo com especificações corretas e não cita valores, mas poderia conduzir melhor propondo uma visita ou perguntando sobre preferências, além de oferecer fotos."
+      },
+      "falhasDuras": [],
+      "restricao": {
+        "critique": "A resposta atende claramente à restrição do cliente, que pediu um imóvel menor do que 100m² e reclamou que estava recebendo opções cada vez maiores. A assistente apresenta o More Aldeia de Barueri, com 63m², que é significativamente menor do que as opções anteriores e se encaixa no pedido de algo compacto. O trecho 'O More Aldeia de Barueri tem 63m², 2 dormitórios e 1 suíte, compacto e pronto para morar' mostra que a restrição foi respeitada.",
+        "result": "Pass"
+      }
+    },
+    {
+      "id": "foco-elogio-do-cliente",
+      "resposta": "O Vitra Alphaville tem 2 dormitórios, sendo 2 suítes, e 2 vagas. --- São 107m² de conforto e sofisticação. --- Posso te enviar as fotos e a planta para conhecer melhor?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta apresenta apenas informações do catálogo, não cita valores, conduz de forma natural oferecendo material adicional e mantém um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "foco-vem-do-historico",
+      "resposta": "O Viva RSF Vila do Conde tem 2 vagas, mas vou confirmar se são cobertas e te retorno. --- Enquanto isso, te mandei as fotos para você ir vendo.",
+      "nota": {
+        "fidelidade": 1,
+        "conducao": 1,
+        "tom": 2,
+        "justificativa": "A assistente menciona um imóvel do catálogo e não cita valores, mas afirma número de vagas sem confirmar se são cobertas, e não conduz para um próximo passo claro."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "foco-imovel-de-outra-imobiliaria",
+      "resposta": "Dom Barueri não é nosso, mas me conta o que gostou nele — localização, tamanho, estilo? Assim vejo o que temos em Barueri que se encaixa.",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta não inventa imóveis, não fala de valores, convida o cliente a detalhar preferências e mantém um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "foco-nome-escrito-errado",
+      "resposta": "Te mandei as fotos do Vitra Alphaville aqui embaixo. --- Tem 2 dormitórios, sendo 2 suítes, e 2 vagas na garagem. --- Quer que eu te envie a planta para você ver a distribuição dos ambientes?",
+      "nota": {
+        "fidelidade": 2,
+        "conducao": 2,
+        "tom": 2,
+        "justificativa": "A resposta apresenta apenas informações do catálogo, não cita valores, conduz de forma natural oferecendo a planta e mantém um tom cordial e profissional."
+      },
+      "falhasDuras": [],
+      "restricao": null
+    }
+  ],
+  "nota_da_medicao": {
+    "comparavel_com_v24": "SIM — mesmo juiz (gpt-4.1), mesmos casos, 36/36 julgados.",
+    "v24": "92,0 · 1 falha dura · restrição 16/17 · fid 1,86 · cond 1,72 · tom 1,94",
+    "v25": "92,2 · 1 falha dura · restrição 17/17 · fid 1,92 · cond 1,64 · tom 1,97",
+    "leitura": "Score praticamente empatado (dentro do ruído), com ganho claro em fidelidade e em restrição respeitada (16/17 -> 17/17). Condução caiu 0,08, o que pode ser variância: duas rodadas de checagem dura deram 2 e 2 falhas, e os CASOS mudaram entre elas.",
+    "criterio_corrigido": "devePerguntarRenda virou deveQualificarCapacidade. O antigo exigia a palavra 'renda' e reprovava 'qual faixa de valor você tem em mente?' — o comportamento que a v25 veio produzir. SEXTA vez que um critério desta base reprova o certo por ter sido escrito quando a regra de negócio era outra. Sem essa correção a rodada deu 90,2; com ela, 92,2 — e a diferença era o critério, não o agente.",
+    "restante": "restricao-estagio-impossivel (prazo) e pergunta-preco-existente (o critério ofereceVisita não reconhece 'te mostrar o projeto pessoalmente' — falso positivo já catalogado)."
+  }
+}
