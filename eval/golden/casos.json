@@ -11,21 +11,21 @@
   {
     "id": "pergunta-preco-existente",
     "historico": [],
-    "mensagem": "quanto custa o Canvas Alphaville?",
+    "mensagem": "quanto custa o Vitra Alphaville?",
     "expectativas": {
       "naoPodeFalarValor": true,
       "deveOferecerVisita": true,
-      "empreendimentoEsperado": "Canvas Alphaville",
+      "empreendimentoEsperado": "Vitra Alphaville",
       "naoPodeInventarUrl": true
     }
   },
   {
     "id": "preco-sob-consulta",
     "historico": [],
-    "mensagem": "qual o valor das casas do Bosque AlphaGran?",
+    "mensagem": "qual o valor do On The Park Alphaville?",
     "expectativas": {
       "naoPodeInventarPreco": true,
-      "empreendimentoEsperado": "Bosque AlphaGran"
+      "empreendimentoEsperado": "On The Park Alphaville"
     }
   },
   {
@@ -41,14 +41,14 @@
     "historico": [
       {
         "remetente": "cliente",
-        "texto": "quero saber do canvas"
+        "texto": "quero saber do vitra"
       },
       {
         "remetente": "bot",
-        "texto": "O Canvas Alphaville tem 3 e 4 suítes, a partir de R$ 1.289.900. Busca algo desse porte?"
+        "texto": "O Vitra Alphaville tem 2 suítes e 107m², pronto para morar. Busca algo desse porte?"
       }
     ],
-    "mensagem": "manda a planta do 3 suítes",
+    "mensagem": "manda umas fotos dele",
     "expectativas": {
       "deveAnexarMidia": true,
       "naoPodeInventarUrl": true
@@ -59,7 +59,7 @@
     "historico": [
       {
         "remetente": "cliente",
-        "texto": "gostei muito do canvas, o orçamento fecha"
+        "texto": "gostei muito do vitra, o orçamento fecha"
       },
       {
         "remetente": "bot",
@@ -77,7 +77,7 @@
     "historico": [
       {
         "remetente": "cliente",
-        "texto": "quero visitar o canvas"
+        "texto": "quero visitar o vitra"
       },
       {
         "remetente": "bot",
@@ -94,11 +94,11 @@
     "historico": [
       {
         "remetente": "cliente",
-        "texto": "quanto custa o canvas?"
+        "texto": "quanto custa o vitra?"
       },
       {
         "remetente": "bot",
-        "texto": "O Canvas parte de R$ 1.289.900, com condições de lançamento."
+        "texto": "O valor depende da unidade e das condições. --- Quer conhecer o decorado?"
       }
     ],
     "mensagem": "nossa, tá muito caro",
@@ -129,7 +129,7 @@
     "historico": [
       {
         "remetente": "cliente",
-        "texto": "vi o anuncio do canvas"
+        "texto": "vi o anuncio do vitra"
       },
       {
         "remetente": "bot",
@@ -173,7 +173,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "Tenho o Canvas, em construção, e o Bosque AlphaGran, pronto para morar. Prefere pronto ou na planta?"
+        "texto": "Tenho o Eternity, em construção, e o Vitra, pronto para morar. Prefere pronto ou na planta?"
       },
       {
         "remetente": "cliente",
@@ -181,7 +181,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "O Bosque AlphaGran é casa em condomínio fechado. Quantos dormitórios você busca?"
+        "texto": "O Vitra Alphaville é apartamento com suíte. Quantos dormitórios você busca?"
       },
       {
         "remetente": "cliente",
@@ -235,7 +235,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "Tenho o Canvas Alphaville, que está em construção. --- Quer conhecer o decorado?"
+        "texto": "Tenho o Eternity Alphaville Tamboré, que está em construção. --- Quer conhecer o decorado?"
       }
     ],
     "mensagem": "preciso mudar em 60 dias, tem que estar pronto",
@@ -254,10 +254,10 @@
       },
       {
         "remetente": "bot",
-        "texto": "O Bosque AlphaGran é casa em condomínio fechado, pronta para morar. --- Quer ver as fotos?"
+        "texto": "O Eternity Alphaville Tamboré é alto padrão, em construção. --- Quer ver as fotos?"
       }
     ],
-    "mensagem": "casa não, esse nao me interessa. tem apartamento?",
+    "mensagem": "esse não me interessa. tem outra opção?",
     "expectativas": {
       "restricaoDoCliente": true
     }
@@ -271,7 +271,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "Tenho opções em Alphaville, Parque Viana e Alphagran. --- Você conhece a região?"
+        "texto": "Tenho opções em Alphaville, Parque Viana e Jardim Tupanci. --- Você conhece a região?"
       }
     ],
     "mensagem": "na verdade eu queria em santos, de frente pro mar",
@@ -289,7 +289,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "O Canvas Alphaville tem 3 e 4 suítes. --- Quer conhecer o decorado?"
+        "texto": "O Vitra Alphaville tem 2 suítes e 107m². --- Quer conhecer o decorado?"
       },
       {
         "remetente": "cliente",
@@ -297,7 +297,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "O Canvas fica em Alphaville, Barueri. --- Quer ver as fotos?"
+        "texto": "O Vitra fica em Alphaville, Barueri. --- Quer ver as fotos?"
       }
     ],
     "mensagem": "barueri mas fora de alphaville, é a terceira vez que falo",
@@ -314,7 +314,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "Tenho o Canvas, em construção, e o Bosque AlphaGran, pronto. --- O que você busca?"
+        "texto": "Tenho o Eternity, em construção, e o Vitra, pronto. --- O que você busca?"
       }
     ],
     "mensagem": "meu contrato de aluguel vence mês que vem, não dá pra esperar obra",
@@ -332,7 +332,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "O Bosque AlphaGran está pronto para morar. --- Quer conhecer?"
+        "texto": "O Vitra Alphaville está pronto para morar. --- Quer conhecer?"
       }
     ],
     "mensagem": "preciso das chaves em 15 dias, dá?",
@@ -346,22 +346,22 @@
     "historico": [
       {
         "remetente": "cliente",
-        "texto": "quero apartamento"
+        "texto": "quero algo pronto pra morar"
       },
       {
         "remetente": "bot",
-        "texto": "O Bosque AlphaGran é casa em condomínio fechado. --- Quer ver as fotos?"
+        "texto": "O Eternity Alphaville Tamboré é alto padrão, em construção. --- Quer ver as fotos?"
       },
       {
         "remetente": "cliente",
-        "texto": "casa não"
+        "texto": "em construção não"
       },
       {
         "remetente": "bot",
-        "texto": "O Bosque AlphaGran tem 3 dormitórios e 140m². --- Quer conhecer?"
+        "texto": "O Eternity tem 3 dormitórios e 100m². --- Quer conhecer?"
       }
     ],
-    "mensagem": "de novo a casa? eu disse que quero APARTAMENTO",
+    "mensagem": "de novo esse? eu disse que preciso PRONTO pra morar",
     "expectativas": {
       "restricaoDoCliente": true
     }
@@ -375,7 +375,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "Tenho o Canvas, de 3 e 4 suítes. --- Prefere pronto ou na planta?"
+        "texto": "Tenho o Vitra Alphaville, de 2 suítes. --- Prefere pronto ou na planta?"
       }
     ],
     "mensagem": "meu teto é 600 mil, cabe?",
@@ -389,7 +389,7 @@
     "historico": [
       {
         "remetente": "cliente",
-        "texto": "quanto custa o canvas?"
+        "texto": "quanto custa o vitra?"
       },
       {
         "remetente": "bot",
@@ -450,11 +450,11 @@
     "historico": [
       {
         "remetente": "cliente",
-        "texto": "quero ver o bosque alphagran"
+        "texto": "quero ver o vitra alphaville"
       },
       {
         "remetente": "bot",
-        "texto": "O Bosque AlphaGran é casa em condomínio fechado, pronta para morar. --- Quer ver as fotos?"
+        "texto": "O Vitra Alphaville é apartamento de 2 dormitórios com suíte, pronto para morar. --- Quer ver as fotos?"
       }
     ],
     "mensagem": "tem de 5 dormitórios?",
@@ -471,7 +471,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "O Canvas Alphaville tem 3 e 4 suítes. --- Quer conhecer o decorado?"
+        "texto": "O Vitra Alphaville tem 2 dormitórios com 2 suítes. --- Quer conhecer o decorado?"
       },
       {
         "remetente": "cliente",
@@ -479,7 +479,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "O Canvas tem 4 suítes, 145m² e 3 vagas. --- Quer ver a planta?"
+        "texto": "O Eternity tem 3 dormitórios e 100m². --- Quer ver as fotos?"
       }
     ],
     "mensagem": "cinco. você tem alguma coisa de 5 ou não tem?",
@@ -496,7 +496,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "O Canvas Alphaville tem 4 suítes, 145m² e 3 vagas. --- Quer ver a planta?"
+        "texto": "O Vitra Alphaville tem 2 suítes e 107m². --- Quer ver as fotos?"
       }
     ],
     "mensagem": "quero algo menor",
@@ -530,7 +530,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "O Canvas tem 3 suítes e 110m². --- Quer ver a planta?"
+        "texto": "O Eternity tem 3 dormitórios e 100m². --- Quer ver as fotos?"
       },
       {
         "remetente": "cliente",
@@ -538,7 +538,7 @@
       },
       {
         "remetente": "bot",
-        "texto": "O Canvas de 4 suítes tem 145m² e 3 vagas. --- Quer conhecer?"
+        "texto": "O Vitra Alphaville tem 107m² e 2 suítes. --- Quer conhecer?"
       }
     ],
     "mensagem": "MENOR. você está me mostrando cada vez maior",
@@ -555,10 +555,10 @@
       },
       {
         "remetente": "bot",
-        "texto": "Tenho o Canvas Alphaville, pronto para morar, e o Bosque AlphaGran, em pré-lançamento. --- Qual desses te interessa mais?"
+        "texto": "Tenho o Vitra Alphaville, pronto para morar, e o On The Park Alphaville. --- Qual desses te interessa mais?"
       }
     ],
-    "mensagem": "gostei do Canvas",
+    "mensagem": "gostei do Vitra",
     "expectativas": {
       "naoPodeOferecerOutroImovel": true,
       "naoPodeFalarValor": true
@@ -617,10 +617,10 @@
       },
       {
         "remetente": "bot",
-        "texto": "Tenho o Canvas Alphaville, pronto para morar, e o Bosque AlphaGran. --- Qual te interessa mais?"
+        "texto": "Tenho o Vitra Alphaville, pronto para morar, e o On The Park Alphaville. --- Qual te interessa mais?"
       }
     ],
-    "mensagem": "gostei do canvas alphavile, tem planta?",
+    "mensagem": "gostei do vitra alphavile, tem foto?",
     "expectativas": {
       "naoPodeOferecerOutroImovel": true
     }

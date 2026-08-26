@@ -133,11 +133,39 @@ function normalizarParaComparacao(texto: string): string {
     .toLowerCase();
 }
 
-/** A mensagem (enviada pelo corretor) contém a palavra-chave de ativação cadastrada? */
+/**
+ * Tamanho mínimo de uma palavra-chave.
+ *
+ * Guarda contra o pior acidente possível deste campo: uma chave de uma ou
+ * duas letras ("a", "ok") aparece dentro de quase toda mensagem, e a IA
+ * assumiria a conversa na primeira coisa que o corretor digitasse — numa
+ * linha PESSOAL, é o caso da conversa da família de novo. Chave curta
+ * demais é descartada em silêncio, nunca aceita "quase".
+ */
+const MINIMO_PALAVRA_CHAVE = 3;
+
+/**
+ * As palavras-chave cadastradas neste campo.
+ *
+ * O corretor pode cadastrar VÁRIAS, separadas por vírgula (pedido de
+ * 26/08/2026): na prática ele não lembra da frase exata no meio do
+ * atendimento, e uma chave só significava recorrer ao painel para
+ * consultá-la — atrito que fazia o recurso não ser usado. O campo continua
+ * sendo texto (nenhuma migration): a lista mora nele, separada por vírgula.
+ */
+export function listarPalavrasChave(campo: string | null | undefined): string[] {
+  return (campo ?? "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p.length >= MINIMO_PALAVRA_CHAVE);
+}
+
+/** A mensagem (enviada pelo corretor) contém ALGUMA das palavras-chave cadastradas? */
 export function contemPalavraChave(mensagem: string, palavraChave: string | null | undefined): boolean {
-  const chave = palavraChave?.trim();
-  if (!chave) return false;
-  return normalizarParaComparacao(mensagem).includes(normalizarParaComparacao(chave));
+  const chaves = listarPalavrasChave(palavraChave);
+  if (chaves.length === 0) return false;
+  const texto = normalizarParaComparacao(mensagem);
+  return chaves.some((chave) => texto.includes(normalizarParaComparacao(chave)));
 }
 
 /**
@@ -177,8 +205,12 @@ export function exigePalavraChave(params: {
   /** O telefone já tinha lead no CRM ANTES desta conversa começar. */
   jaEraDoCrm?: boolean;
 }): boolean {
+  // Pela LISTA, não pelo campo: um campo com "a, ok" (chaves curtas demais,
+  // todas descartadas) não pode ligar a trava — travaria a IA sem existir
+  // palavra nenhuma capaz de destravá-la.
   const temAlguma =
-    Boolean(params.palavraChaveConfigurada?.trim()) || Boolean(params.palavraChaveTeste?.trim());
+    listarPalavrasChave(params.palavraChaveConfigurada).length > 0 ||
+    listarPalavrasChave(params.palavraChaveTeste).length > 0;
   if (!temAlguma) return false;
   if (params.origemConversa === "campanha") return false;
   if (params.jaEraDoCrm) return false;

@@ -6,6 +6,7 @@ import {
   decidirPorModo,
   dentroDoExpediente,
   decidirPorFalaDoCorretor,
+  listarPalavrasChave,
   exigePalavraChave,
 } from "./modoBot";
 
@@ -414,5 +415,49 @@ describe("a IA volta sozinha para cliente conhecido (F7)", () => {
       clienteConhecido: false,
     });
     expect(d).toEqual({ acao: "ativar_ia", marcarComoTeste: false });
+  });
+});
+
+describe("Várias palavras-chave no mesmo campo (26/08/2026)", () => {
+  const CHAVES = "pode assumir, sofia entra, assume ai";
+
+  it("qualquer uma das chaves cadastradas ativa a IA", () => {
+    for (const msg of [
+      "pode assumir aí",
+      "Sofia entra nessa",
+      "assume ai que eu tô dirigindo",
+    ]) {
+      expect(contemPalavraChave(msg, CHAVES), msg).toBe(true);
+    }
+  });
+
+  it("fala comum do corretor continua não ativando", () => {
+    for (const msg of ["te ligo já", "bom dia, tudo bem?", "vou passar aí"]) {
+      expect(contemPalavraChave(msg, CHAVES), msg).toBe(false);
+    }
+  });
+
+  it("chave curta demais é descartada — 'a' não pode ligar a IA em toda mensagem", () => {
+    expect(contemPalavraChave("bom dia", "a, ok")).toBe(false);
+    expect(listarPalavrasChave("a, ok, pode assumir")).toEqual(["pode assumir"]);
+  });
+
+  it("campo só com chaves inválidas NÃO liga a trava — senão nada destravaria", () => {
+    expect(
+      exigePalavraChave({
+        palavraChaveConfigurada: "a, ok",
+        origemConversa: "organica",
+        jaEraDoCrm: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("uma chave só continua funcionando como antes", () => {
+    expect(contemPalavraChave("pode assumir", "pode assumir")).toBe(true);
+    expect(contemPalavraChave("outra coisa", "pode assumir")).toBe(false);
+  });
+
+  it("espaço e caixa não importam na lista", () => {
+    expect(contemPalavraChave("PODE ASSUMIR", "  pode assumir ,  sofia entra ")).toBe(true);
   });
 });

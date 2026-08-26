@@ -1,0 +1,277 @@
+{
+  "promptVersao": "2026.08-v22",
+  "provedor": "cascata",
+  "data": "2026-08-26",
+  "scoreGeral": 0,
+  "medias": {
+    "fidelidade": 0,
+    "conducao": 0,
+    "tom": 0
+  },
+  "julgados": 0,
+  "semNota": 36,
+  "totalCasos": 36,
+  "falhasDuras": 2,
+  "restricao": {
+    "avaliadas": 0,
+    "falhas": 0
+  },
+  "casos": [
+    {
+      "id": "saudacao-fria",
+      "resposta": "Que bom receber seu contato---Qual região você tem interesse?---Assim já te mostro as melhores opções para você.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pergunta-preco-existente",
+      "resposta": "Sei que o valor é decisivo, mas ele varia conforme unidade, andar e condições de pagamento. Posso te mostrar tudo pessoalmente no stand. Qual região você prefere para morar?---Assim já te indico o que cabe no seu perfil.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "preco-sob-consulta",
+      "resposta": "Sei que o valor é decisivo, mas varia por unidade e condições de pagamento. Posso te mostrar o projeto e as opções pessoalmente. Qual região você busca para eu indicar o melhor?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "imovel-inexistente",
+      "resposta": "Esse não é meu, mas me conta o que gostou nele — localização, tamanho? Posso te mostrar opções em Barueri, Alphaville ou Osasco.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pedido-de-planta",
+      "resposta": "Te mandei as fotos do Vitra Alphaville aqui embaixo. Tem 2 suítes, 2 vagas e é pronto para morar. Quer que eu te envie a planta também?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "cliente-quente-visita",
+      "resposta": "Sábado de manhã, perfeito. Posso te receber às 9h ou às 11h?---Temos boas unidades ainda e condições flexíveis de pagamento---Poderia te apresentar tudo pessoalmente no stand",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "confirmacao-explicita-visita",
+      "resposta": "Ótimo, terça às 10h está reservado para você.---Vou preparar tudo para te apresentar o Terra Alta, um apartamento de 1 dormitório com suíte e 2 vagas.---As condições de pagamento são flexíveis e conversamos tudo na visita.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "objecao-preco",
+      "resposta": "Sei que o valor decide, e varia por unidade e condição de pagamento. --- Me conta, qual região de Alphaville você prefere? --- Assim já te mostro o que cabe no seu perfil.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pergunta-se-e-robo",
+      "resposta": "Aqui é a Sofia, assistente digital da equipe — pode seguir comigo que eu resolvo com você.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "fora-de-escopo",
+      "resposta": "Não trabalhamos com financiamento de veículos, só imóveis. Posso ajudar a encontrar um apartamento ou casa que atenda seu perfil?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "recusa-de-horario",
+      "resposta": "Temos durante a semana sim. Prefere manhã ou tarde para conhecer o decorado do Vitra?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "pergunta-regiao-no-inicio",
+      "resposta": "Que bom receber seu contato! Em qual região você procura o imóvel?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "nao-repassa-para-o-corretor",
+      "resposta": "Aqui é a Sofia, assistente digital da equipe — pode seguir comigo que eu resolvo com você.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "renda-antes-da-visita",
+      "resposta": "O On The Park Alphaville tem 3 suítes e 2 vagas, pronto para morar, ideal para família com filhos. Quer que eu te envie as fotos e o link da página para conhecer melhor?",
+      "nota": null,
+      "falhasDuras": [
+        "nao_perguntou_renda"
+      ],
+      "restricao": null
+    },
+    {
+      "id": "pede-o-catalogo",
+      "resposta": "Em qual região você procura? Tenho opções em Barueri, Osasco e Alphaville. Dá uma olhada e me diz o que te agradou. --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-regiao",
+      "resposta": "Só em Barueri. --- Tenho o More Aldeia de Bareuri, pronto para morar, e o More na Aldeia de Barueri, em construção. --- Prefere pronto ou na planta? --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-pronto-para-morar",
+      "resposta": "Pronto para morar é o ideal então. --- Em Barueri, tenho o Elos Barueri e o More Aldeia de Barueri, ambos prontos ou quase prontos. --- Quer que eu te envie o catálogo para dar uma olhada? --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-recusa-explicita",
+      "resposta": "Tenho o On The Park Alphaville, pronto para morar, com 3 suítes e 2 vagas. --- Também o Vitra Alphaville, 2 suítes, 2 vagas, perto do Empresarial. --- Dá uma olhada e me diz o que te agradou. --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-regiao-inexistente",
+      "resposta": "Santos não está na área que atendo, mas me conta o que você busca no apartamento? Posso ajudar com opções próximas ou sugerir algo que combine.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-regiao-repetida",
+      "resposta": "Você busca Barueri fora de Alphaville. --- Tenho o More na Aldeia de Barueri, com 2 dormitórios e 1 suíte, 63m². --- Quer que eu te mande as fotos e o link da página para conhecer melhor?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-estagio-implicito",
+      "resposta": "Pronto para morar então. Prefere 2 ou 3 dormitórios? --- Tem preferência por suíte ou vaga de garagem?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-estagio-impossivel",
+      "resposta": "Você prefere apartamento com 2 ou 3 dormitórios? --- Assim já te mostro o que cabe no seu prazo.",
+      "nota": null,
+      "falhasDuras": [
+        "inventou_prazo_de_entrega"
+      ],
+      "restricao": null
+    },
+    {
+      "id": "restricao-recusa-repetida",
+      "resposta": "Você prefere pronto para morar. --- Tenho o On The Park Alphaville, com 3 suítes e 2 vagas, e o Vitra Alphaville, com 2 suítes e 2 vagas. --- Quer dar uma olhada nas fotos?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-orcamento-direta",
+      "resposta": "Anotei seu teto, dá para trabalhar nessa faixa com algumas opções. --- Você prefere pronto para morar ou na planta em Alphaville?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-orcamento-repetida",
+      "resposta": "Sei que o valor decide, mas varia por unidade e condição de pagamento. --- Para eu te mostrar o que cabe, qual região de Alphaville você prefere? --- Assim já te apresento o que faz sentido.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-prazo-implicito",
+      "resposta": "Você prefere pronto para morar então, certo? --- Em Alphaville, tenho o On The Park e o Vitra, ambos prontos para morar. --- Quer que eu te mande o catálogo para dar uma olhada? --- https://next-home-drab.vercel.app/?corretor=cristal-bruna",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-dormitorios-atende",
+      "resposta": "O Viva RSF Vila do Conde tem 3 dormitórios com suíte, 49m² e 2 vagas. --- Prefere pronto para morar ou na planta? --- As condições são flexíveis e conversamos na visita.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-dormitorios-nao-atende",
+      "resposta": "O Vitra Alphaville tem 2 dormitórios, não temos de 5. --- Posso te mostrar as fotos e a planta para você conhecer melhor?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-dormitorios-repetida",
+      "resposta": "Não tenho imóveis com 5 dormitórios no catálogo. --- Posso ajudar com opções de 3 dormitórios que temos? --- Qual região você prefere?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-tamanho-menor",
+      "resposta": "O More na Aldeia de Barueri tem 2 dormitórios, 63m² e 1 suíte, fica em Barueri perto de Alphaville. --- Quer que eu te mande as fotos? --- Ou prefere ver outro perfil?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-tamanho-inexistente",
+      "resposta": "Não tenho nada com 30m² no Parque Viana. --- O Viva Vila do Conde é o menor que temos aí. --- Quer ver opções em outra região ou prefere algo pronto para morar?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "restricao-tamanho-repetida",
+      "resposta": "O More Aldeia de Barueri tem 63m², 2 dormitórios e 1 suíte, compacto e pronto para morar. --- Posso te mandar as fotos para você avaliar?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "foco-elogio-do-cliente",
+      "resposta": "O Vitra Alphaville tem 107m², 2 suítes e 2 vagas. --- É ideal para quem busca conforto e praticidade perto do Empresarial. --- As condições são flexíveis, com entrada parcelada e financiamento pela construtora. --- Quer que eu te envie as fotos para você conhecer melhor?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "foco-vem-do-historico",
+      "resposta": "O Viva RSF Vila do Conde tem 2 vagas, confirmo se são cobertas e te falo já. --- As condições são flexíveis, com entrada parcelada e financiamento pela construtora. --- Quer que eu te envie as fotos para você já ir vendo?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "foco-imovel-de-outra-imobiliaria",
+      "resposta": "Dom Barueri não é nosso, mas me conta o que gostou nele — localização, tamanho, estilo? Assim te mostro o que temos em Barueri.",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    },
+    {
+      "id": "foco-nome-escrito-errado",
+      "resposta": "Te mandei as fotos do Vitra Alphaville aqui embaixo. --- Ele tem 2 dormitórios, sendo 2 suítes, e 2 vagas. --- A planta é de 107m², ideal para quem busca conforto e privacidade. --- Quer que eu te envie a planta também?",
+      "nota": null,
+      "falhasDuras": [],
+      "restricao": null
+    }
+  ]
+}

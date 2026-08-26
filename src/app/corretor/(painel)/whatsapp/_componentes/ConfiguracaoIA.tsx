@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Bot, BellOff, Moon, Timer } from "lucide-react";
-import { EXPEDIENTE, MINUTOS_COPILOTO } from "@/lib/whatsapp/modoBot";
+import { EXPEDIENTE, MINUTOS_COPILOTO, listarPalavrasChave } from "@/lib/whatsapp/modoBot";
 import type { ModoBotWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { salvarConfiguracaoWhatsapp } from "../acoes";
 
@@ -56,6 +56,13 @@ export type ConfigIA = {
   palavraChaveTeste: string | null;
 };
 
+/** "a", "a" e "b", "a", "b" e "c" — lista em português, com aspas. */
+function listarEmTexto(chaves: string[]): string {
+  const comAspas = chaves.map((c) => `"${c}"`);
+  if (comAspas.length === 1) return comAspas[0];
+  return `${comAspas.slice(0, -1).join(", ")} ou ${comAspas[comAspas.length - 1]}`;
+}
+
 export function ConfiguracaoIA({
   inicial,
   aoMudarNome,
@@ -71,6 +78,12 @@ export function ConfiguracaoIA({
     inicial?.palavraChaveAtivacao ?? "",
   );
   const [palavraChaveTeste, setPalavraChaveTeste] = useState(inicial?.palavraChaveTeste ?? "");
+
+  // A tela mostra as chaves que VALEM, pela mesma função que o webhook usa:
+  // se ela descarta "ok" por ser curta, o corretor precisa ver isso aqui, e
+  // não descobrir no atendimento que a palavra não liga nada.
+  const chavesAtivacao = listarPalavrasChave(palavraChaveAtivacao);
+  const chavesTeste = listarPalavrasChave(palavraChaveTeste);
 
   // Abre sozinho quando já existe algo configurado: ajuste invisível em
   // vigor é a mesma armadilha do filtro escondido da lista de leads.
@@ -187,20 +200,24 @@ export function ConfiguracaoIA({
 
           <div className="border-linha space-y-1.5 border-t pt-4">
             <label className="text-fluid-xs text-apoio block" htmlFor="palavra-ativacao">
-              Palavra-chave de ativação (opcional)
+              Palavras-chave de ativação (opcional)
             </label>
             <input
               id="palavra-ativacao"
               type="text"
               value={palavraChaveAtivacao}
               onChange={(e) => setPalavraChaveAtivacao(e.target.value)}
-              placeholder="ex: pode continuar"
+              placeholder="ex: pode continuar, assume aí, sofia entra"
               className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-11 w-full rounded-xl border px-3.5 focus:outline-none"
             />
             <p className="text-fluid-xs text-apoio leading-snug">
-              {palavraChaveAtivacao.trim()
-                ? `A IA fica em silêncio em conversas novas até você digitar "${palavraChaveAtivacao.trim()}" no próprio chat do WhatsApp — aí ela assume, sem o cliente perceber a troca.`
-                : "Em branco, a IA responde normalmente. Se preencher, ela só entra em ação depois que você digitar esta frase no chat — útil para atender pessoalmente o início e só depois passar a bola."}
+              {chavesAtivacao.length > 0
+                ? `A IA fica em silêncio em conversas novas até você digitar ${listarEmTexto(chavesAtivacao)} no próprio chat do WhatsApp — aí ela assume, sem o cliente perceber a troca.`
+                : "Em branco, a IA responde normalmente. Se preencher, ela só entra em ação depois que você digitar uma destas frases no chat — útil para atender pessoalmente o início e só depois passar a bola."}
+            </p>
+            <p className="text-fluid-xs text-tenue leading-snug">
+              Separe por vírgula para cadastrar mais de uma — no meio do atendimento ninguém lembra
+              da frase exata. Cada uma precisa de pelo menos 3 letras.
             </p>
           </div>
 
@@ -217,9 +234,9 @@ export function ConfiguracaoIA({
               className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-11 w-full rounded-xl border px-3.5 focus:outline-none"
             />
             <p className="text-fluid-xs text-apoio leading-snug">
-              {palavraChaveTeste.trim()
-                ? `Digitar "${palavraChaveTeste.trim()}" no chat liga a IA E marca a conversa como teste: ela sai das análises de qualidade e nunca vira exemplo de treinamento.`
-                : "Serve para testar sem sujar o aprendizado da IA. Precisa ser diferente da palavra-chave de ativação."}
+              {chavesTeste.length > 0
+                ? `Digitar ${listarEmTexto(chavesTeste)} no chat liga a IA E marca a conversa como teste: ela sai das análises de qualidade e nunca vira exemplo de treinamento.`
+                : "Serve para testar sem sujar o aprendizado da IA. Também aceita várias, separadas por vírgula — e precisam ser diferentes das de ativação."}
             </p>
           </div>
         </div>
