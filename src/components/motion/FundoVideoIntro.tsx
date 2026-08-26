@@ -117,6 +117,21 @@ export function FundoVideoIntro({
      * volta —, e é decisão de composição, não de duração.
      */
     pararEm?: number;
+    /**
+     * Quanto SUBIR o quadro, em % da altura da tela.
+     *
+     * Existe porque a peça foi composta com a marca na metade de BAIXO —
+     * medido quadro a quadro: o símbolo ocupa de 42% a 79% da altura do
+     * vídeo, e a busca da home começa a 51% da tela. Os dois disputam o
+     * mesmo lugar, e nenhum `object-position` resolve: com `cover` numa
+     * tela mais alta que o vídeo a escala é dada pela ALTURA, então não
+     * sobra folga vertical para deslocar dentro da caixa.
+     *
+     * Subir o quadro tira a marca da frente da busca; a faixa que sobra
+     * embaixo fica justamente atrás do cartão de busca e do degrau final
+     * do véu, então não aparece.
+     */
+    deslocarY?: number;
   };
 } = {}) {
   const exibir = usePodeExibir(somenteMobile);
@@ -161,6 +176,7 @@ export function FundoVideoIntro({
   const usarAlternativo = Boolean(fonteMobile) && ehMobile;
   const vertical = usarAlternativo && Boolean(fonteMobile!.vertical);
   const pararEm = usarAlternativo ? fonteMobile!.pararEm : undefined;
+  const deslocarY = usarAlternativo ? fonteMobile!.deslocarY : undefined;
   const webm = usarAlternativo ? fonteMobile!.webm : INTRO_VIDEO_WEBM_URL;
   const mp4 = usarAlternativo ? fonteMobile!.mp4 : INTRO_VIDEO_URL;
 
@@ -219,6 +235,7 @@ export function FundoVideoIntro({
         onTimeUpdate={congelarNoPonto}
         onEnded={pararNoFim}
         className={`absolute inset-0 h-full w-full ${vertical ? "object-cover" : "object-contain"}`}
+        style={deslocarY ? { transform: `translateY(${deslocarY}%)` } : undefined}
       >
         {fontes}
       </video>

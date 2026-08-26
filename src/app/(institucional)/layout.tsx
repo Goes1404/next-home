@@ -78,7 +78,14 @@ export default async function InstitucionalLayout({
               vertical: true,
               // Congela com a logo inteira e os prédios em volta; o fim da
               // peça é um close que corta "Next Home" atrás da busca.
-              pararEm: 4,
+              //
+              // 1,5s + subir 26% da tela: medido quadro a quadro. Antes de
+              // 1,5s a marca ainda não fechou; depois, só cresce. Os 26%
+              // são o que tira o símbolo da frente do cartão de busca (que
+              // começa a 51% da tela) sem levar o topo dele para trás do
+              // header.
+              pararEm: 1.5,
+              deslocarY: -26,
             }}
           />
         )}
