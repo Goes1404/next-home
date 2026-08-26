@@ -8,6 +8,7 @@ import type { MotivoFalhaLlm } from "./llmTipos";
 import type { DossieClienteIA, TomVozBot } from "./types";
 import { blocoDaVezDoCliente } from "./rajada";
 import { blocoRendaPendente } from "./funilQualificacao";
+import { blocoSemPrazoCadastrado } from "./prazoEntrega";
 
 /**
  * Versão do prompt de atendimento. REGRA: qualquer mudança de conteúdo em
@@ -44,7 +45,7 @@ import { blocoRendaPendente } from "./funilQualificacao";
  * sem imóvel nomeado, ela respondeu "o imóvel do anúncio tem 3 dormitórios,
  * 3 suítes e 2 vagas" — inventou qual imóvel era, que erra tudo de uma vez.
  */
-export const PROMPT_VERSAO = "2026.08-v23"; // bloco PENDÊNCIA DE RENDA calculado por código (funilQualificacao.ts) — a regra do funil sozinha não segurava
+export const PROMPT_VERSAO = "2026.08-v24"; // bloco PRAZO NÃO CADASTRADO por código; detector de prazo deixa de acusar frase honesta ("a entrega depende da unidade")
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -104,6 +105,12 @@ export interface ContextoAtendimento {
   dossie?: DossieClienteIA | null;
   /** Instrução extra de cenário (ex.: follow-up de reengajamento). */
   instrucaoExtra?: string;
+  /**
+   * Nenhum imóvel do catálogo desta conversa tem data de entrega
+   * (`catalogoTemPrazo`). Quem calcula é o CÓDIGO — a regra 14 sozinha não
+   * segurou, e o guardrail que corta depois deixa a resposta pobre.
+   */
+  semPrazoCadastrado?: boolean;
   /**
    * A renda ainda é a próxima pergunta desta conversa
    * (`funilQualificacao.ts`). Quem decide é o CÓDIGO: a regra do funil já
@@ -465,7 +472,7 @@ Só depois disso: a INDICAÇÃO ("pelo que você me contou, o que mais faz senti
 
 Se o cliente já disse alguma dessas coisas — nesta mensagem, no histórico ou no dossiê — NÃO PERGUNTE DE NOVO. Repetir pergunta já respondida é o erro que mais faz o cliente sumir, e é o que denuncia um sistema.
 
-${ctx.rendaPendente ? `${blocoRendaPendente()}\n\n` : ""}${blocoFoco}
+${ctx.rendaPendente ? `${blocoRendaPendente()}\n\n` : ""}${ctx.semPrazoCadastrado ? `${blocoSemPrazoCadastrado()}\n\n` : ""}${blocoFoco}
 
 ${blocoCatalogo}
 

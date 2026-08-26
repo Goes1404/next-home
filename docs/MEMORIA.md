@@ -1705,3 +1705,33 @@ Duas lições que valem além do `sharp`:
   quem foi arquivado. `leadArquivado.test.ts` lê o código-fonte e reprova
   qualquer consulta de `leads` sem o filtro; ele já pegou a contagem por
   corretor da tela de Contas, que eu tinha esquecido.
+
+## O detector de prazo acusava a honestidade (26/08/2026, v24)
+
+- **`afirmaPrazo` casava a palavra "entrega" e mais nada**, então cortava
+  frases que a IA DEVE dizer: "o Vitra é pronto para morar, mas a entrega
+  imediata depende da unidade" (ressalva honesta) e "não tenho a data de
+  entrega, eu confirmo com você" — esta última é literalmente o que a
+  regra 23b manda. Como o guardrail age em PRODUÇÃO, isso não era só ruído
+  de eval: a resposta chegava ao cliente sem a ressalva, e quando a frase
+  era a única, virava "deixa eu confirmar o prazo certinho".
+  **Quinto critério desta base a reprovar o comportamento certo.**
+- **A régua nova tem três partes juntas**: menção de entrega + marcador de
+  TEMPO (mês, ano, "em N meses", "fim do ano", "breve", "imediata") +
+  ausência de desarme (negação, "depende", "confirmo", "checar"). Sem o
+  marcador, falar de entrega não é prometer data.
+- **"prazo" sozinho é tão amplo quanto "entrega" era**: "janeiro é um
+  prazo apertado para obra" avalia o prazo DO CLIENTE e não promete nada.
+  Só conta `prazo de entrega|da obra|de conclusão`.
+- **Avisar ANTES vale mais que cortar DEPOIS**: `blocoSemPrazoCadastrado`
+  entra no prompt quando NENHUM imóvel do catálogo tem data, e diz também
+  o que ela PODE dizer — bloco que só proíbe empurra a IA para o silêncio,
+  e silêncio sobre prazo também perde cliente. O guardrail continua como
+  rede.
+- **Medido**: v23 = 90,3 com 2 falhas duras (2/2/2 em três rodadas de
+  checagem dura); v24 = 92,0 com 1 (1/0/0 — duas rodadas ZERADAS). Mesmo
+  juiz, mesmos casos, mesmo denominador: só aqui a comparação vale.
+- **O arquivo de resultado é por versão+dia e se SOBRESCREVE.** Rodar
+  `--sem-juiz` depois de uma rodada julgada apaga o score dela. Aconteceu
+  nesta sessão; recuperado com `git show <commit>:<arquivo>`. Rodada
+  julgada que importa: commitar antes de rodar outra coisa.

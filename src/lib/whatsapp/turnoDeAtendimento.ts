@@ -6,6 +6,7 @@ import type { AnexoResolvido } from "./resolverMidia";
 import { buscarExemplosFewShot } from "./aprendizadoContinuo";
 import { catalogoParaAtendimento } from "./focoDaConversa";
 import { rendaEstaPendente } from "./funilQualificacao";
+import { catalogoTemPrazo } from "./prazoEntrega";
 import { sanearRespostaIA } from "./guardrails";
 import { dividirEmMensagens } from "./chunking";
 import { separarRajada, type Fala } from "./rajada";
@@ -167,6 +168,12 @@ export async function executarTurnoDeAtendimento(
       instrucaoExtra: pedido.instrucaoExtra,
       foco,
       rendaPendente,
+      /*
+       * O aviso olha o catálogo QUE FOI AO PROMPT, não o completo: é sobre
+       * o que ela pode citar nesta resposta. O guardrail
+       * (`removerPrazoInventado`) segue como rede depois.
+       */
+      semPrazoCadastrado: !catalogoTemPrazo(catalogoDoPrompt),
     },
     vezDoCliente.length > 0
       ? vezDoCliente
