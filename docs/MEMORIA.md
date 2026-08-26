@@ -1640,3 +1640,68 @@ Duas lições que valem além do `sharp`:
 - **Comando de fundo tem teto de 10 min**: rodada de 16 personas NÃO cabe
   em um `npm run eval:conversa` só — dividir em lotes de ≤4 e renomear o
   JSON entre lotes (o arquivo de saída é por versão+dia e se sobrescreve).
+
+## O eval medido de verdade (26/08/2026)
+
+- **O eval NÃO media o prompt de produção, e isso reprovou uma correção que
+  estava no ar.** `rodarEval.ts` chamava `gerarRespostaIA` direto,
+  replicando parte do preparo do webhook (ranking e foco) — então o bloco
+  de PENDÊNCIA DE RENDA, que entrou no `turnoDeAtendimento`, nunca chegou
+  ao teste: a primeira rodada da v23 acusou `nao_perguntou_renda` numa
+  correção que já valia em produção. **Terceira encarnação da mesma
+  divergência** (catálogo cru; playground sem few-shot; agora a pendência
+  do funil). Hoje o eval usa `executarTurnoDeAtendimento`, e o turno
+  devolve `respostaBruta` porque o eval precisa medir o modelo ANTES do
+  guardrail. Ao acrescentar QUALQUER etapa ao turno, ela já vale nos
+  quatro chamadores — mas confira se o eval ainda passa por ele.
+- **23 dos 36 casos golden citavam imóveis que não existem no fixture**
+  ("Canvas Alphaville", "Bosque AlphaGran"). A IA respondia certo — "esse
+  não está no meu catálogo" — e o eval reprovava. O cabeçalho de
+  `gerarFixtureCatalogo.ts` já documentava esse defeito nas PERSONAS;
+  ninguém tinha olhado os CASOS. Reescritos com imóveis e specs reais.
+  Corolário: `pedido-de-planta` exigia planta e NENHUM imóvel do fixture
+  tem planta (só foto) — critério que pede o impossível reprova sempre.
+- **Uma rodada não separa regressão de variância.** Três rodadas de
+  checagem dura na v23 deram 2, 2, 2 falhas — mas os CASOS que falharam
+  mudaram entre elas (`pergunta-regiao-no-inicio` caiu em 1 de 3). Só o
+  que repete em todas é defeito.
+- **Score só compara quando a régua é a mesma.** A v23 deu 90,3 sobre
+  36/36 contra 97 sobre 32/36 da v17 — e isso NÃO é queda: mudaram o juiz
+  (gpt-4.1 no lugar do Gemini), o denominador (primeira rodada completa
+  do histórico; os casos que o juiz antigo não julgava entram agora na
+  média) e os próprios casos. Antes de comparar dois números, comparar os
+  três denominadores.
+- **Juiz no mesmo provedor do agente: autorizado, mas carimbado.** Sem
+  chave de outro provedor, a escolha é entre nota enviesada e nota
+  nenhuma. O que sustenta a nota é modelo diferente (juiz `gpt-4.1` ×
+  agente `gpt-4.1-mini`) e a CALIBRAÇÃO contra notas humanas — deu 100%
+  (limiar 75%). O resultado grava `juizIndependente: false`, e a trava
+  antiga (`--provedor` igual ao juiz) não pegava esse caso: com motor
+  único, o agente já roda na OpenAI sem flag nenhuma.
+- **Falha remanescente da v23**: a família PRAZO. Contra "preciso das
+  chaves em 15 dias", o modelo tenta afirmar data de entrega; o guardrail
+  corta antes do cliente, mas o critério mede a resposta BRUTA de
+  propósito — prompt que só acerta porque o filtro apaga o erro é prompt
+  que ainda erra.
+
+## Excluir lead: a policy sozinha não basta (0055)
+
+- **`leads` nunca teve DELETE** — as policies cobriam insert, select e
+  update, então não havia caminho nenhum para tirar duplicado ou teste da
+  lista. Hoje há arquivar (reversível, o botão do dia a dia) e excluir
+  (irreversível, exige o lead já arquivado).
+- **Criar a policy de delete NÃO habilita o delete**: a 0022 revogou o
+  grant (`revoke update, delete, truncate ... from anon` e o padrão do
+  Supabase), e o Postgres recusa ANTES de avaliar a policy — "permission
+  denied for table leads". Build e vitest passam; só o teste no banco
+  pega. Mesma família da armadilha de `grant update (coluna)`.
+- **Excluir leva por CASCADE** o dossiê da IA, as tarefas e a linha do
+  tempo; a conversa de WhatsApp fica sem lead (`set null`) e as mensagens
+  continuam. E quem foi excluído VOLTA como lead novo se escrever de novo
+  (`obterOuCriarConversa` cria, 0026) — o que se apaga é o registro, não o
+  futuro.
+- **Ao adicionar coluna de recorte (`arquivado_em`), o risco é a consulta
+  esquecida**: a regressão é calada — a tela funciona e só volta a contar
+  quem foi arquivado. `leadArquivado.test.ts` lê o código-fonte e reprova
+  qualquer consulta de `leads` sem o filtro; ele já pegou a contagem por
+  corretor da tela de Contas, que eu tinha esquecido.

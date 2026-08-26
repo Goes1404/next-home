@@ -47,7 +47,7 @@ import { executarTurnoDeAtendimento } from "../../src/lib/whatsapp/turnoDeAtendi
 import { catalogoParaAtendimento, imoveisCitados } from "../../src/lib/whatsapp/focoDaConversa";
 import { sanearRespostaIA } from "../../src/lib/whatsapp/guardrails";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
-import { chamarOpenaiJson } from "../../src/lib/whatsapp/openai";
+import { chamarOpenaiJson, modeloOpenai } from "../../src/lib/whatsapp/openai";
 import { contemValor } from "../../src/lib/whatsapp/semValores";
 import { afirmaPrazo, catalogoTemPrazo } from "../../src/lib/whatsapp/prazoEntrega";
 import {
@@ -76,7 +76,7 @@ const MODELO_JUIZ = process.env.GEMINI_MODELO_JUIZ || "gemini-3.5-flash-lite";
  */
 const JUIZ = process.env.EVAL_JUIZ === "openai" ? "openai" : "gemini";
 const MODELO_JUIZ_OPENAI = process.env.OPENAI_MODELO_JUIZ || "gpt-4.1";
-import { ORCAMENTO_AGENTE_MS } from "../../src/lib/whatsapp/llm";
+import { ORCAMENTO_AGENTE_MS, ordemDosProvedores } from "../../src/lib/whatsapp/llm";
 import type { Empreendimento } from "../../src/lib/types";
 
 type Caso = {
@@ -331,6 +331,34 @@ async function main() {
         ` Escolha outro juiz (EVAL_JUIZ) ou outro provedor (--provedor).`,
     );
     process.exit(1);
+  }
+
+  /*
+   * O caso que a trava acima NÃO pega: sem `--provedor`, o agente roda a
+   * ordem configurada — e desde 24/08 essa ordem é um provedor só, a
+   * OpenAI. Com `EVAL_JUIZ=openai` o juiz é do MESMO provedor do agente
+   * sem nenhuma flag denunciar isso.
+   *
+   * Não aborta (foi autorizado em 26/08, e sem chave de outro provedor a
+   * alternativa é não ter nota nenhuma), mas nunca passa calado: o
+   * conflito vai para a tela E para o arquivo de resultado. Nota sem
+   * origem não compara versão — e uma nota destas não se compara com uma
+   * rodada julgada por provedor independente.
+   *
+   * O que sustenta a nota mesmo assim: o juiz usa MODELO diferente do
+   * agente (gpt-4.1 contra gpt-4.1-mini), e a calibração logo abaixo o
+   * afere contra notas HUMANAS — um juiz condescendente reprova ali antes
+   * de julgar qualquer coisa.
+   */
+  const juizNoMesmoProvedor =
+    !provedorArg && JUIZ === "openai" && ordemDosProvedores().every((p) => p.nome === "openai");
+  if (juizNoMesmoProvedor) {
+    console.warn(
+      `ATENÇÃO: juiz e agente no MESMO provedor (openai). Modelos diferentes` +
+        ` (juiz ${MODELO_JUIZ_OPENAI} × agente ${modeloOpenai()}) e a calibração` +
+        ` contra notas humanas seguram a nota — mas ela NÃO é comparável com` +
+        ` uma rodada julgada por provedor independente.\n`,
+    );
   }
 
   console.log(`Juiz: ${JUIZ} (${JUIZ === "openai" ? MODELO_JUIZ_OPENAI : MODELO_JUIZ})`);
@@ -597,6 +625,15 @@ async function main() {
       {
         promptVersao: PROMPT_VERSAO,
         provedor: provedorArg ?? "cascata",
+        juiz: JUIZ,
+        juizModelo: JUIZ === "openai" ? MODELO_JUIZ_OPENAI : MODELO_JUIZ,
+        /*
+         * Carimbo de independência: `false` significa que quem julgou vem
+         * do mesmo provedor de quem respondeu. A nota continua útil (a
+         * calibração contra humano vale), mas comparar esta rodada com uma
+         * julgada por provedor independente é comparar réguas diferentes.
+         */
+        juizIndependente: !juizNoMesmoProvedor,
         data,
         scoreGeral,
         medias,
