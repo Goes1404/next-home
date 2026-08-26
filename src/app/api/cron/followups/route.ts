@@ -19,6 +19,7 @@ import {
   ultimaFalaDoCorretor,
 } from "@/lib/whatsapp/repositorio";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
+import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -66,7 +67,79 @@ type ItemFollowup = {
   instancia_id: string;
   tentativa: number;
   agendado_para: string;
+  tipo: "reengajamento" | "lembrete_visita";
 };
+
+/** Janela em que uma visita futura ganha lembrete: entre 8h e 30h antes. */
+const LEMBRETE_MIN_HORAS = 8;
+const LEMBRETE_MAX_HORAS = 30;
+
+/**
+ * Agenda o lembrete de véspera para visitas marcadas (roadmap item 7).
+ *
+ * Roda em todo tique, e é idempotente: uma visita ganha UM lembrete por
+ * conversa (o índice tipo+conversa torna a busca barata). O horário do
+ * lembrete é "20h antes da visita, nunca no passado" — se cair fora da
+ * janela comercial, o próprio runner o segura até a janela abrir.
+ */
+async function agendarLembretesDeVisita(
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<number> {
+  const agora = Date.now();
+  const { data: visitas } = await supabase
+    .from("leads")
+    .select("id, corretor_id, visita_agendada_em")
+    .gte("visita_agendada_em", new Date(agora + LEMBRETE_MIN_HORAS * 3600_000).toISOString())
+    .lte("visita_agendada_em", new Date(agora + LEMBRETE_MAX_HORAS * 3600_000).toISOString())
+    .not("corretor_id", "is", null)
+    .limit(50);
+
+  let agendados = 0;
+  for (const lead of visitas ?? []) {
+    const { data: conversa } = await supabase
+      .from("whatsapp_conversas")
+      .select("id, corretor_id")
+      .eq("lead_id", lead.id)
+      .eq("corretor_id", lead.corretor_id!)
+      .limit(1)
+      .maybeSingle();
+    // Visita marcada fora do WhatsApp (importação, painel) não tem conversa
+    // para lembrar por aqui — o lembrete é do canal, não do CRM.
+    if (!conversa) continue;
+
+    const { data: jaTem } = await supabase
+      .from("whatsapp_followups")
+      .select("id")
+      .eq("conversa_id", conversa.id)
+      .eq("tipo", "lembrete_visita")
+      .in("status", ["pendente", "enviado"])
+      .gte("created_at", new Date(agora - 7 * 86_400_000).toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (jaTem) continue;
+
+    const { data: instancia } = await supabase
+      .from("corretor_whatsapp_instancias")
+      .select("id")
+      .eq("corretor_id", lead.corretor_id!)
+      .maybeSingle();
+    if (!instancia) continue;
+
+    const quando = Math.max(
+      agora,
+      new Date(lead.visita_agendada_em!).getTime() - 20 * 3600_000,
+    );
+    await supabase.from("whatsapp_followups").insert({
+      conversa_id: conversa.id,
+      instancia_id: instancia.id,
+      tentativa: 1,
+      tipo: "lembrete_visita",
+      agendado_para: new Date(quando).toISOString(),
+    });
+    agendados++;
+  }
+  return agendados;
+}
 
 export async function GET(req: NextRequest) {
   if (!requisicaoAutenticada(req)) {
@@ -89,9 +162,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    await agendarLembretesDeVisita(supabase);
+
     const { data: vencidos } = await supabase
       .from("whatsapp_followups")
-      .select("id, conversa_id, instancia_id, tentativa, agendado_para")
+      .select("id, conversa_id, instancia_id, tentativa, agendado_para, tipo")
       .eq("status", "pendente")
       .lte("agendado_para", new Date().toISOString())
       .order("agendado_para", { ascending: true })
@@ -192,6 +267,25 @@ async function processarFollowup(
     .single();
   if (!corretor) return descartar(supabase, item.id, "corretor_inexistente");
 
+  // Lembrete de visita é revalidado contra a AGENDA na hora do envio: a
+  // visita pode ter sido desmarcada ou movida desde o agendamento, e
+  // lembrar de uma visita que não existe é pior que não lembrar.
+  let visitaFormatada: string | undefined;
+  if (item.tipo === "lembrete_visita") {
+    const { data: lead } = conversa.lead_id
+      ? await supabase
+          .from("leads")
+          .select("visita_agendada_em")
+          .eq("id", conversa.lead_id)
+          .maybeSingle()
+      : { data: null };
+    const visita = lead?.visita_agendada_em;
+    if (!visita || new Date(visita).getTime() < Date.now() + 3600_000) {
+      return descartar(supabase, item.id, "visita_desmarcada_ou_passou");
+    }
+    visitaFormatada = formatarVisitaSP(visita);
+  }
+
   // Gera o texto de reengajamento com o MESMO agente e guardrails da
   // conversa normal — só muda o cenário via instrução extra.
   const [catalogo, historico, dossie] = await Promise.all([
@@ -222,8 +316,15 @@ async function processarFollowup(
     historico,
     dossie,
     vezDoCliente: [],
-    instrucaoExtra:
-      "Este é um FOLLOW-UP: o cliente parou de responder. Retome a conversa em 1-2 frases curtas a partir do último assunto, com leveza — um lembrete gentil ou uma informação nova que agregue, NUNCA cobrança ou pressão. Não repita a última mensagem enviada.",
+    // A instrução muda por tipo e tentativa (roadmap item 6): retomada com
+    // gancho concreto do dossiê, cutucada de uma linha na segunda, e o
+    // lembrete de visita fala só da visita. Testada em followupTexto.
+    instrucaoExtra: instrucaoDoFollowup({
+      tipo: item.tipo,
+      tentativa: item.tentativa,
+      dossie,
+      visitaFormatada,
+    }),
   });
 
   const resposta = turno.resposta;

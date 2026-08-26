@@ -20,6 +20,7 @@
  *   - whatsapp_campanhas_fila.status
  *   - whatsapp_conversas.origem
  *   - whatsapp_followups.status
+ *   - whatsapp_followups.tipo (0054)
  *   - whatsapp_mensagens.remetente
  *   - whatsapp_mensagens.tipo
  *
@@ -1359,6 +1360,7 @@ export type Database = {
           motivo: string | null
           status: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa: number
+          tipo: "reengajamento" | "lembrete_visita"
         }
         Insert: {
           agendado_para: string
@@ -1370,6 +1372,7 @@ export type Database = {
           motivo?: string | null
           status?: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa?: number
+          tipo?: "reengajamento" | "lembrete_visita"
         }
         Update: {
           agendado_para?: string
@@ -1381,6 +1384,7 @@ export type Database = {
           motivo?: string | null
           status?: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa?: number
+          tipo?: "reengajamento" | "lembrete_visita"
         }
         Relationships: [
           {

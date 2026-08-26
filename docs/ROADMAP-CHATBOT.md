@@ -69,14 +69,20 @@
    assunto da vez manda), mais que o desempate editorial. Casamento nas
    duas direções com piso de 4 letras ("Centro de Barueri" acha bairro
    Centro E cidade Barueri, sem "de" casar com nada). 4 testes novos.
-6. **Follow-up com contexto, não genérico.** Os dois follow-ups (+24h/+72h)
-   existem e consomem cota anti-ban; o texto ainda não usa o dossiê. "Vi que
-   você procurava 3 dorm no centro de Barueri — abriu uma condição nova no X"
-   converte mais que "oi, tudo bem?". (`0028` + `campaignQueue.ts`)
-7. **Lembrete de visita.** Visita confirmada grava
-   `leads.visita_agendada_em`, mas ninguém lembra o cliente na véspera —
-   no-show é visita perdida do corretor. Um follow-up especial, fora da cota
-   dupla, no dia anterior.
+6. **[ENTREGUE 26/08] Follow-up com contexto, não genérico.** A instrução
+   do runner agora carrega os ganchos do dossiê (região, dormitórios) e
+   muda por tentativa: retomada com gancho concreto na 1ª, cutucada de UMA
+   linha na 2ª (estilo da casa), sempre proibindo o "oi, tudo bem?".
+   Função pura testada em `followupTexto.ts`.
+7. **[ENTREGUE 26/08] Lembrete de visita na véspera.** Reusa a fila dos
+   follow-ups com a coluna `tipo` (0054): o runner agenda sozinho o
+   lembrete ~20h antes de toda visita com conversa de WhatsApp, revalida a
+   agenda na hora do envio (visita desmarcada/movida descarta o lembrete)
+   e a mensagem fala SÓ da visita. Três regras deliberadas: não conta no
+   teto de 2 reengajamentos, resposta do cliente não o cancela (responder
+   "ok" não desmarca visita), e a janela comercial do runner o segura para
+   o horário certo. Data formatada no fuso de SP — a armadilha do
+   calendário, com teste.
 8. **Métricas de funil do bot no painel.** Conversas → qualificados (região +
    renda) → visita proposta → confirmada. Os dados já existem
    (`ia_interacoes`, `leads`); falta a tela. Régua do projeto: dado gravado e

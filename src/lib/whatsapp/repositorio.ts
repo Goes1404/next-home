@@ -658,10 +658,13 @@ export const MAX_TENTATIVAS_FOLLOWUP = 2;
 export async function agendarFollowup(conversaId: string, instanciaId: string): Promise<void> {
   const supabase = createServiceClient();
 
+  // Só o REENGAJAMENTO conta para o teto de 2 e para o "já tem pendente":
+  // lembrete de visita é serviço, não insistência, e vive fora desta conta.
   const { data: existentes } = await supabase
     .from("whatsapp_followups")
     .select("id, status, tentativa")
-    .eq("conversa_id", conversaId);
+    .eq("conversa_id", conversaId)
+    .eq("tipo", "reengajamento");
 
   if (existentes?.some((f) => f.status === "pendente")) return;
 
@@ -679,14 +682,20 @@ export async function agendarFollowup(conversaId: string, instanciaId: string): 
   });
 }
 
-/** O cliente respondeu: todo follow-up pendente da conversa perde o motivo de existir. */
+/**
+ * O cliente respondeu: o REENGAJAMENTO pendente perde o motivo de existir.
+ * O lembrete de visita NÃO é cancelado aqui de propósito — responder "ok!"
+ * hoje não desmarca a visita de amanhã; quem desfaz o lembrete é a
+ * revalidação do runner contra `leads.visita_agendada_em`.
+ */
 export async function cancelarFollowupsPendentes(conversaId: string): Promise<void> {
   const supabase = createServiceClient();
   await supabase
     .from("whatsapp_followups")
     .update({ status: "cancelado", motivo: "cliente_respondeu" })
     .eq("conversa_id", conversaId)
-    .eq("status", "pendente");
+    .eq("status", "pendente")
+    .eq("tipo", "reengajamento");
 }
 
 /** Janela padrão de silêncio do bot depois que o corretor entra na conversa. */

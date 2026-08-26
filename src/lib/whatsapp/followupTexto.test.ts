@@ -1,0 +1,50 @@
+import { describe, expect, it } from "vitest";
+import { formatarVisitaSP, instrucaoDoFollowup } from "./followupTexto";
+
+describe("instrução do follow-up (roadmap nº 6)", () => {
+  it("1ª tentativa com dossiê usa os ganchos concretos", () => {
+    const i = instrucaoDoFollowup({
+      tipo: "reengajamento",
+      tentativa: 1,
+      dossie: { regiaoInteresse: "Centro de Barueri", dormitoriosMin: 3 },
+    });
+    expect(i).toContain("Centro de Barueri");
+    expect(i).toContain("3+ dormitórios");
+    expect(i).toContain("FOLLOW-UP");
+  });
+
+  it("sem dossiê, ainda exige âncora concreta — nunca 'oi, tudo bem?'", () => {
+    const i = instrucaoDoFollowup({ tipo: "reengajamento", tentativa: 1, dossie: null });
+    expect(i).toContain("último assunto concreto");
+    expect(i).toContain("não retoma nada");
+  });
+
+  it("2ª tentativa vira cutucada de UMA linha, sem anunciar que é a última", () => {
+    const i = instrucaoDoFollowup({ tipo: "reengajamento", tentativa: 2, dossie: null });
+    expect(i).toContain("SEGUNDO follow-up");
+    expect(i).toContain("UMA linha");
+    expect(i).toContain("sem dizer que é a última");
+  });
+
+  it("lembrete de visita fala SÓ da visita, com a data formatada", () => {
+    const i = instrucaoDoFollowup({
+      tipo: "lembrete_visita",
+      tentativa: 1,
+      visitaFormatada: "sábado, 30/08, às 10:00",
+    });
+    expect(i).toContain("LEMBRETE DE VISITA");
+    expect(i).toContain("sábado, 30/08, às 10:00");
+    expect(i).toContain("NÃO reofereça outros imóveis");
+  });
+});
+
+describe("formatarVisitaSP — o fuso é São Paulo, nunca UTC", () => {
+  it("21h de Brasília não vira o dia seguinte", () => {
+    // 2026-08-29T21:00 em SP é 2026-08-30T00:00 UTC — a armadilha do
+    // calendário do bot, que ensinava sábado com data de domingo.
+    const f = formatarVisitaSP("2026-08-30T00:00:00Z");
+    expect(f).toContain("29/08");
+    expect(f).toContain("21:00");
+    expect(f.toLowerCase()).toContain("sábado");
+  });
+});
