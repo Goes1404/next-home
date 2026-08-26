@@ -11,6 +11,13 @@ const CONSULTA_MOVIMENTO = "(prefers-reduced-motion: reduce)";
 const CONSULTA_MOBILE = "(max-width: 767.98px)";
 
 /**
+ * Dissolve a base do quadro deslocado. Começa em 72% do elemento porque é
+ * onde o cartão de busca entra na frente — antes disso a máscara comeria a
+ * própria marca.
+ */
+const MASCARA_BASE = "linear-gradient(to bottom, #000 72%, transparent 100%)";
+
+/**
  * Não exibe com movimento reduzido ou em economia de dados. Não há corte por
  * largura: a vinheta é o fundo em TODA tela — salvo quando o chamador pede
  * `somenteMobile`, que existe para o grupo (vitrine), onde o desktop já tem o
@@ -127,9 +134,15 @@ export function FundoVideoIntro({
      * tela mais alta que o vídeo a escala é dada pela ALTURA, então não
      * sobra folga vertical para deslocar dentro da caixa.
      *
-     * Subir o quadro tira a marca da frente da busca; a faixa que sobra
-     * embaixo fica justamente atrás do cartão de busca e do degrau final
-     * do véu, então não aparece.
+     * Subir o quadro tira a marca da frente da busca, e o preço é uma
+     * faixa sem imagem embaixo — que o cartão de busca cobre quase
+     * inteira. O que NÃO se aceita é o corte: sem máscara, a base do
+     * vídeo encontra o fundo numa linha horizontal reta (medido: prédio
+     * em (143,145,139) virando fundo em (228,235,233) de um pixel para o
+     * outro, nas tiras que sobram ao lado do cartão). Linha reta no meio
+     * de uma foto não se lê como composição, se lê como defeito. Por
+     * isso o deslocamento vem acompanhado de um esmaecimento do próprio
+     * vídeo: ele se dissolve no fundo em vez de acabar.
      */
     deslocarY?: number;
   };
@@ -235,7 +248,22 @@ export function FundoVideoIntro({
         onTimeUpdate={congelarNoPonto}
         onEnded={pararNoFim}
         className={`absolute inset-0 h-full w-full ${vertical ? "object-cover" : "object-contain"}`}
-        style={deslocarY ? { transform: `translateY(${deslocarY}%)` } : undefined}
+        style={
+          deslocarY
+            ? {
+                transform: `translateY(${deslocarY}%)`,
+                /* Esmaece o último quarto do QUADRO, não da tela: a
+                   máscara é do elemento, que já está deslocado. O trecho
+                   opaco termina onde o cartão de busca começa, então o
+                   esmaecimento acontece atrás dele e nas tiras laterais —
+                   nunca por cima da marca. `WebkitMaskImage` continua
+                   necessário no Safari do iPhone, que é justamente o
+                   aparelho para o qual esta peça existe. */
+                WebkitMaskImage: MASCARA_BASE,
+                maskImage: MASCARA_BASE,
+              }
+            : undefined
+        }
       >
         {fontes}
       </video>
