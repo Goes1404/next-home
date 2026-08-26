@@ -359,6 +359,24 @@ export async function marcarConversaComoTeste(conversaId: string): Promise<void>
   await supabase.from("whatsapp_conversas").update({ e_teste: true }).eq("id", conversaId);
 }
 
+/**
+ * O lead chegou pela mensagem pronta de um anúncio (link porteiro
+ * /wa/<campanha>): carimba a origem e o anúncio na ficha do CRM.
+ *
+ * O gate por `origem = 'whatsapp/organico'` é deliberado: só promove o
+ * lead que o PRÓPRIO webhook acabou de criar como genérico. Lead que já
+ * era do CRM (importado, formulário do Lead Ads, manual) mantém a origem
+ * verdadeira — sobrescrever apagaria de onde ele veio de fato.
+ */
+export async function marcarLeadVindoDeAnuncio(leadId: string, nomeImovel: string): Promise<void> {
+  const supabase = createServiceClient();
+  await supabase
+    .from("leads")
+    .update({ origem: "meta/ctwa", anuncio_origem: nomeImovel.slice(0, 160) })
+    .eq("id", leadId)
+    .eq("origem", "whatsapp/organico");
+}
+
 export async function liberarConversaPorPalavraChave(conversaId: string): Promise<void> {
   const supabase = createServiceClient();
   await supabase

@@ -1461,6 +1461,10 @@ export type Database = {
         Returns: undefined
       }
       desligar_disparo_automatico: { Args: never; Returns: string }
+      sortear_corretor_whatsapp: {
+        Args: never
+        Returns: { corretor_id: string; telefone: string }[]
+      }
       desligar_followups_automaticos: { Args: never; Returns: string }
       destravar_disparo: {
         Args: { p_dono: string; p_escopo: string }

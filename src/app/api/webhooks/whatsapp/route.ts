@@ -21,6 +21,7 @@ import {
   vincularInteracaoNaMensagem,
   historicoRecente,
   liberarConversaPorPalavraChave,
+  marcarLeadVindoDeAnuncio,
   marcarConversaComoTeste,
   marcarRespostaCampanha,
   obterOuCriarConversa,
@@ -41,6 +42,7 @@ import {
   marcarAvisoEvolucao,
 } from "@/lib/whatsapp/repositorio";
 import { decidirPorFalaDoCorretor, decidirPorModo } from "@/lib/whatsapp/modoBot";
+import { reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 
 export const runtime = "nodejs";
@@ -339,6 +341,26 @@ export async function POST(req: NextRequest) {
     // novo é mandar a mesma resposta duas vezes para o cliente.
     if (!gravacao.inedita) {
       return NextResponse.json({ ok: true, ignored: "reentrega", sender });
+    }
+
+    /*
+     * Mensagem pronta de anúncio (link porteiro /wa/<campanha>): quem
+     * chega por ela clicou num anúncio pago — é lead por definição, então
+     * a conversa é LIBERADA sem palavra-chave (o mesmo raciocínio da
+     * isenção de origem 'campanha' no disparo ativo; a trava existe para
+     * proteger o número pessoal, e ninguém abre conversa pessoal com o
+     * texto exato do anúncio). O lead recebe a origem e o anúncio na
+     * ficha — é o que liga a conversa às métricas de custo por campanha.
+     */
+    const nomeDoAnuncio = reconhecerMensagemDeAnuncio(text);
+    if (nomeDoAnuncio) {
+      if (!conversa.liberadoPorPalavraChave) {
+        await liberarConversaPorPalavraChave(conversa.id);
+        conversa.liberadoPorPalavraChave = true;
+      }
+      if (conversa.leadId) {
+        await marcarLeadVindoDeAnuncio(conversa.leadId, nomeDoAnuncio);
+      }
     }
 
     // O pushName vem em toda mensagem do CLIENTE (aqui, depois do desvio de

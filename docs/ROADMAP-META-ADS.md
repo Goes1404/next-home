@@ -113,7 +113,18 @@ o lead nasce no CRM já atribuído à campanha. RESTRIÇÃO DE PRODUTO
 único foi descartado pelo usuário. O desenho é distribuir NO CLIQUE, não
 depois da mensagem:
 
-1. **Link porteiro com rodízio** (`/wa/<campanha>`, ex.: `/wa/manaca`).
+1. **[ENTREGUE 26/08] Link porteiro com rodízio** (`/wa/<campanha>`, ex.:
+   `/wa/manaca`). Implementado em `src/app/wa/[campanha]/route.ts` +
+   `porteiro.ts` (lógica pura, testada) + `sortear_corretor_whatsapp`
+   (0052, no banco, mesma régua da roleta; revoke de anon — a função
+   devolve telefone pessoal). Cliques logados em `cliques_whatsapp`
+   (tabela que o site já usava) com `origem = 'anuncio/<campanha>'`;
+   campanha desconhecida ou nenhum corretor conectado degradam para a
+   página do imóvel/home, nunca para erro. O webhook reconhece a mensagem
+   pronta (`reconhecerMensagemDeAnuncio`, casamento estrito por prefixo),
+   LIBERA a conversa sem palavra-chave e carimba o lead
+   (`origem = 'meta/ctwa'`, `anuncio_origem`) — só quando o lead nasceu
+   genérico do WhatsApp, para não apagar origem verdadeira de lead antigo.
    O anúncio aponta para esse link nosso; no clique, o servidor sorteia o
    corretor da vez e redireciona para
    `wa.me/<numero-do-corretor>?text=<mensagem pronta da campanha>`. É o
