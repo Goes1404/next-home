@@ -33,7 +33,18 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
     .select("id, slug, nome, nomes_alternativos")
     .eq("publicado", true);
 
-  const alvo = resolverCampanha(campanha, imoveis ?? []);
+  // A linha crua do banco usa snake_case; sem este mapeamento o apelido
+  // nunca chega ao casamento — foi exatamente o bug do primeiro teste em
+  // produção (/wa/manaca caía na home).
+  const alvo = resolverCampanha(
+    campanha,
+    (imoveis ?? []).map((i) => ({
+      id: i.id,
+      slug: i.slug,
+      nome: i.nome,
+      nomesAlternativos: i.nomes_alternativos,
+    })),
+  );
 
   // Fire-and-forget seria perder o clique se a função for congelada logo
   // após o redirect; o insert é aguardado de propósito (custa ~1 RTT).
