@@ -54,6 +54,7 @@ export type ConfigIA = {
   modoBot: ModoBotWhatsapp;
   palavraChaveAtivacao: string | null;
   palavraChaveTeste: string | null;
+  palavrasEntradaCliente: string | null;
 };
 
 /** "a", "a" e "b", "a", "b" e "c" — lista em português, com aspas. */
@@ -78,18 +79,23 @@ export function ConfiguracaoIA({
     inicial?.palavraChaveAtivacao ?? "",
   );
   const [palavraChaveTeste, setPalavraChaveTeste] = useState(inicial?.palavraChaveTeste ?? "");
+  const [palavrasEntradaCliente, setPalavrasEntradaCliente] = useState(
+    inicial?.palavrasEntradaCliente ?? "",
+  );
 
   // A tela mostra as chaves que VALEM, pela mesma função que o webhook usa:
   // se ela descarta "ok" por ser curta, o corretor precisa ver isso aqui, e
   // não descobrir no atendimento que a palavra não liga nada.
   const chavesAtivacao = listarPalavrasChave(palavraChaveAtivacao);
   const chavesTeste = listarPalavrasChave(palavraChaveTeste);
+  const chavesEntrada = listarPalavrasChave(palavrasEntradaCliente);
 
   // Abre sozinho quando já existe algo configurado: ajuste invisível em
   // vigor é a mesma armadilha do filtro escondido da lista de leads.
   const temAvancado = Boolean(
     inicial?.palavraChaveAtivacao ||
       inicial?.palavraChaveTeste ||
+      inicial?.palavrasEntradaCliente ||
       (inicial?.nomeAssistente && inicial.nomeAssistente !== "Sofia"),
   );
   const [mostrarAvancado, setMostrarAvancado] = useState(temAvancado);
@@ -105,6 +111,7 @@ export function ConfiguracaoIA({
       modoBot,
       palavraChaveAtivacao,
       palavraChaveTeste,
+      palavrasEntradaCliente,
     });
     setSalvando(false);
     setFeedback(resultado.erro ?? resultado.ok ?? null);
@@ -237,6 +244,32 @@ export function ConfiguracaoIA({
               {chavesTeste.length > 0
                 ? `Digitar ${listarEmTexto(chavesTeste)} no chat liga a IA E marca a conversa como teste: ela sai das análises de qualidade e nunca vira exemplo de treinamento.`
                 : "Serve para testar sem sujar o aprendizado da IA. Também aceita várias, separadas por vírgula — e precisam ser diferentes das de ativação."}
+            </p>
+          </div>
+
+          {/* A porta de entrada do CLIENTE (0056). Fica DEPOIS das duas do
+              corretor de propósito: é a única que afrouxa a trava, e quem
+              a liga precisa ler o aviso embaixo. */}
+          <div className="border-linha space-y-1.5 border-t pt-4">
+            <label className="text-fluid-xs text-apoio block" htmlFor="palavras-entrada">
+              Frases que o CLIENTE escreve e ligam a IA (opcional)
+            </label>
+            <input
+              id="palavras-entrada"
+              type="text"
+              value={palavrasEntradaCliente}
+              onChange={(e) => setPalavrasEntradaCliente(e.target.value)}
+              placeholder="ex: vim pelo anúncio, quero informações, vi no instagram"
+              className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-11 w-full rounded-xl border px-3.5 focus:outline-none"
+            />
+            <p className="text-fluid-xs text-apoio leading-snug">
+              {chavesEntrada.length > 0
+                ? `Quem escrever ${listarEmTexto(chavesEntrada)} é atendido na hora, sem você precisar liberar. Quem escrever qualquer outra coisa continua esperando você.`
+                : "Em branco, todo número desconhecido espera você liberar a conversa. Preencha para que quem vier de um anúncio seja atendido sozinho — útil quando o volume aumenta."}
+            </p>
+            <p className="text-fluid-xs text-tenue leading-snug">
+              Use frases que só quem viu sua divulgação escreveria. Elas afrouxam a trava de
+              propósito: quanto mais genérica a frase, mais gente a IA atende sem você saber.
             </p>
           </div>
         </div>

@@ -136,6 +136,8 @@ export async function salvarConfiguracaoWhatsapp(params: {
   /** Frase que, digitada pelo próprio corretor no chat, "liga" a IA na conversa. Vazio = recurso desligado. */
   palavraChaveAtivacao?: string;
   palavraChaveTeste?: string;
+  /** Frases que o CLIENTE escreve e que liberam a IA na hora (0056). */
+  palavrasEntradaCliente?: string;
 }): Promise<{ ok?: string; erro?: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
@@ -147,6 +149,7 @@ export async function salvarConfiguracaoWhatsapp(params: {
 
   const palavraChave = params.palavraChaveAtivacao?.trim() || null;
   const palavraTeste = params.palavraChaveTeste?.trim() || null;
+  const frasesEntrada = params.palavrasEntradaCliente?.trim() || null;
 
   /*
    * Duas palavras iguais fariam a de teste vencer sempre (ela é conferida
@@ -155,6 +158,20 @@ export async function salvarConfiguracaoWhatsapp(params: {
   if (palavraChave && palavraTeste && palavraChave.toLowerCase() === palavraTeste.toLowerCase()) {
     return { erro: "A palavra de teste precisa ser diferente da de ativação." };
   }
+  /*
+   * A porta de entrada do cliente é a ÚNICA que afrouxa a trava, então a
+   * validação dela é por FRASE, não pelo campo inteiro: "vim pelo anúncio,
+   * oi" tem uma frase legítima e uma que abriria a conversa para qualquer
+   * pessoa que cumprimenta.
+   */
+  for (const frase of (frasesEntrada ?? "").split(",").map((f) => f.trim()).filter(Boolean)) {
+    if (frase.length < 3) {
+      return {
+        erro: `"${frase}" é curta demais para liberar a IA sozinha — use uma frase que só quem viu sua divulgação escreveria.`,
+      };
+    }
+  }
+
   for (const [rotulo, valor] of [
     ["A palavra-chave", palavraChave],
     ["A palavra de teste", palavraTeste],
@@ -178,6 +195,7 @@ export async function salvarConfiguracaoWhatsapp(params: {
         instance_name: nomeInstanciaDe(corretor.slug),
         nome_assistente: nome,
         tom_voz: params.tomVoz,
+        palavras_entrada_cliente: frasesEntrada,
         modo_bot: params.modoBot,
         palavra_chave_ativacao: palavraChave,
         palavra_chave_teste: palavraTeste,

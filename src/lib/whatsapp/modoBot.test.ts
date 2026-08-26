@@ -7,6 +7,7 @@ import {
   dentroDoExpediente,
   decidirPorFalaDoCorretor,
   listarPalavrasChave,
+  clienteTrouxeFraseDeEntrada,
   exigePalavraChave,
 } from "./modoBot";
 
@@ -459,5 +460,64 @@ describe("Várias palavras-chave no mesmo campo (26/08/2026)", () => {
 
   it("espaço e caixa não importam na lista", () => {
     expect(contemPalavraChave("PODE ASSUMIR", "  pode assumir ,  sofia entra ")).toBe(true);
+  });
+});
+
+describe("Porta de entrada do CLIENTE (0056)", () => {
+  const FRASES = "vim pelo anuncio, quero informacoes, vi no instagram";
+
+  it("quem chega com uma das frases é atendido na hora", () => {
+    for (const msg of [
+      "Oi, vim pelo anúncio de vocês",
+      "Boa tarde, quero informações sobre apartamentos",
+      "vi no Instagram e queria saber mais",
+    ]) {
+      expect(
+        clienteTrouxeFraseDeEntrada({ mensagem: msg, palavrasEntradaCliente: FRASES }),
+        msg,
+      ).toBe(true);
+    }
+  });
+
+  /*
+   * O que a trava existe para proteger: a instância roda no WhatsApp
+   * PESSOAL do corretor, e a IA já assumiu a conversa da mãe dele uma vez.
+   * Conversa comum NÃO pode abrir a porta.
+   */
+  it("conversa pessoal continua travada", () => {
+    for (const msg of [
+      "oi, tudo bem?",
+      "filho, você vem jantar hoje?",
+      "bom dia! me liga quando puder",
+    ]) {
+      expect(
+        clienteTrouxeFraseDeEntrada({ mensagem: msg, palavrasEntradaCliente: FRASES }),
+        msg,
+      ).toBe(false);
+    }
+  });
+
+  it("sem frases cadastradas, a trava segue inteira", () => {
+    expect(
+      clienteTrouxeFraseDeEntrada({ mensagem: "vim pelo anúncio", palavrasEntradaCliente: null }),
+    ).toBe(false);
+    expect(
+      clienteTrouxeFraseDeEntrada({ mensagem: "vim pelo anúncio", palavrasEntradaCliente: "" }),
+    ).toBe(false);
+  });
+
+  it("frase curta demais é descartada — senão qualquer 'oi' abriria a porta", () => {
+    expect(clienteTrouxeFraseDeEntrada({ mensagem: "oi", palavrasEntradaCliente: "oi, ok" })).toBe(
+      false,
+    );
+  });
+
+  it("acento e caixa não decidem nada", () => {
+    expect(
+      clienteTrouxeFraseDeEntrada({
+        mensagem: "VIM PELO ANÚNCIO!!",
+        palavrasEntradaCliente: "vim pelo anuncio",
+      }),
+    ).toBe(true);
   });
 });

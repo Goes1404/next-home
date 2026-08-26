@@ -34,6 +34,7 @@ interface Props {
     /** Frase que, digitada pelo próprio corretor no chat, "liga" a IA na conversa. */
     palavraChaveAtivacao: string | null;
     palavraChaveTeste: string | null;
+    palavrasEntradaCliente: string | null;
   } | null;
 }
 
@@ -116,6 +117,7 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
                   modoBot: configInicial.modoBot,
                   palavraChaveAtivacao: configInicial.palavraChaveAtivacao,
                   palavraChaveTeste: configInicial.palavraChaveTeste,
+                  palavrasEntradaCliente: configInicial.palavrasEntradaCliente,
                 }
               : null
           }

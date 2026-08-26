@@ -41,7 +41,11 @@ import {
   ultimoAvisoEvolucao,
   marcarAvisoEvolucao,
 } from "@/lib/whatsapp/repositorio";
-import { decidirPorFalaDoCorretor, decidirPorModo } from "@/lib/whatsapp/modoBot";
+import {
+  clienteTrouxeFraseDeEntrada,
+  decidirPorFalaDoCorretor,
+  decidirPorModo,
+} from "@/lib/whatsapp/modoBot";
 import { reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 
@@ -361,6 +365,30 @@ export async function POST(req: NextRequest) {
       if (conversa.leadId) {
         await marcarLeadVindoDeAnuncio(conversa.leadId, nomeDoAnuncio);
       }
+    }
+
+    /*
+     * PORTA DE ENTRADA DO CLIENTE (0056): a mensagem traz uma das frases
+     * que o corretor cadastrou ("vim pelo anúncio", "quero informações").
+     * Quem escreve isso está respondendo a uma peça de divulgação nossa —
+     * é lead por definição, como já eram a campanha e o link /wa/.
+     *
+     * Sem isto, conversa nova de número desconhecido ficava MUDA até o
+     * corretor liberar uma por uma: silêncio sem erro em lugar nenhum, e
+     * o que travava um teste em massa.
+     *
+     * A trava segue inteira para quem NÃO trouxer nenhuma frase — é ela
+     * que protege a conversa da família no número pessoal.
+     */
+    if (
+      !conversa.liberadoPorPalavraChave &&
+      clienteTrouxeFraseDeEntrada({
+        mensagem: text,
+        palavrasEntradaCliente: instancia.palavrasEntradaCliente,
+      })
+    ) {
+      await liberarConversaPorPalavraChave(conversa.id);
+      conversa.liberadoPorPalavraChave = true;
     }
 
     // O pushName vem em toda mensagem do CLIENTE (aqui, depois do desvio de

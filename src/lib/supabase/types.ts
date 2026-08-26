@@ -179,6 +179,7 @@ export type Database = {
           nome_assistente: string
           palavra_chave_ativacao: string | null
           palavra_chave_teste: string | null
+          palavras_entrada_cliente: string | null
           qrcode_base64: string | null
           status_conexao: "desconectado" | "conectando" | "conectado"
           telefone_conectado: string | null
@@ -200,6 +201,7 @@ export type Database = {
           nome_assistente?: string
           palavra_chave_ativacao?: string | null
           palavra_chave_teste?: string | null
+          palavras_entrada_cliente?: string | null
           qrcode_base64?: string | null
           status_conexao?: "desconectado" | "conectando" | "conectado"
           telefone_conectado?: string | null
@@ -221,6 +223,7 @@ export type Database = {
           nome_assistente?: string
           palavra_chave_ativacao?: string | null
           palavra_chave_teste?: string | null
+          palavras_entrada_cliente?: string | null
           qrcode_base64?: string | null
           status_conexao?: "desconectado" | "conectando" | "conectado"
           telefone_conectado?: string | null

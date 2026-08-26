@@ -295,3 +295,29 @@ export function decidirPorFalaDoCorretor(params: {
     }),
   };
 }
+
+/**
+ * A PRIMEIRA mensagem do cliente traz uma das frases de entrada?
+ *
+ * Existe para destravar o que a trava de palavra-chave impedia sem querer
+ * (26/08/2026): conversa nova de número desconhecido nasce muda até o
+ * corretor liberar, e num teste em massa — ou num anúncio que o cliente
+ * responde com as palavras dele — isso vira silêncio sem erro nenhum na
+ * tela. Quem escreve "vim pelo anúncio" está respondendo a uma peça de
+ * divulgação NOSSA: é lead por definição, como já eram a campanha e o
+ * link `/wa/<campanha>`.
+ *
+ * O que NÃO muda: sem nenhuma frase cadastrada, ou sem nenhuma delas na
+ * mensagem, a trava segue inteira. É ela que protege a conversa da
+ * família no número pessoal do corretor — o caso real que a criou.
+ *
+ * Reusa `contemPalavraChave`, então herda as duas guardas dele: várias
+ * frases separadas por vírgula e piso de 3 letras (frase curta demais
+ * casaria com quase toda mensagem e abriria a porta para qualquer um).
+ */
+export function clienteTrouxeFraseDeEntrada(params: {
+  mensagem: string;
+  palavrasEntradaCliente: string | null | undefined;
+}): boolean {
+  return contemPalavraChave(params.mensagem, params.palavrasEntradaCliente);
+}
