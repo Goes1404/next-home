@@ -110,18 +110,22 @@ export const INTRO_VIDEO_WEBM_URL = "/video/intro.webm";
 /**
  * Vinheta institucional usada como fundo da home NO CELULAR (26/08/2026).
  *
- * Prédios vistos de baixo abrindo para a logo no céu — 10s, e como as
- * outras vinhetas ela congela no último quadro (a logo no céu vira o
- * ambiente da página).
+ * Prédios vistos de baixo subindo até a logo — 8s, e como as outras
+ * vinhetas ela congela no último quadro (a marca vira o ambiente da
+ * página).
+ *
+ * O arquivo é VERTICAL (720x1280), e é isso que dispensa a camada
+ * desfocada do `FundoVideoIntro`: ela só existe para preencher a borda que
+ * sobra de um 16:9 numa tela alta. Com a proporção da tela, `object-cover`
+ * enche sozinho — uma decodificação a menos no aparelho fraco. Ao trocar
+ * por um vídeo 16:9, tirar `vertical: true` no layout, senão o corte come
+ * a logo.
  *
  * Receita do par, para quem for regerar: áudio REMOVIDO (`-an` — é fundo
- * mudo, e a trilha era peso morto), 1024px de largura (a camada nítida
- * ocupa a largura da tela no celular, ~430 CSS px), VP9 `-crf 42 -b:v 0
- * -cpu-used 1` e H.264 `-crf 30 -preset slow -movflags +faststart`. O WebM
- * sai com 636 KB para 10s — abaixo do `intro.webm` (736 KB para 7,8s), e
- * isso importa porque na PRIMEIRA visita da sessão o celular carrega os
- * dois: a vinheta do preloader e este fundo — peso de fundo no 4G é a régua desta pasta, e o hero-scroll de
- * 14,8 MB é o lembrete do que acontece quando ela é ignorada.
+ * mudo), VP9 `-crf 44 -b:v 0 -cpu-used 1` e H.264 `-crf 30 -preset slow
+ * -movflags +faststart`. O WebM sai com 607 KB para 8s, e o peso importa
+ * porque na PRIMEIRA visita da sessão o celular carrega os dois vídeos: a
+ * vinheta do preloader e este fundo.
  */
 export const FUNDO_HOME_VIDEO_URL = "/video/fundo-home.mp4";
 export const FUNDO_HOME_VIDEO_WEBM_URL = "/video/fundo-home.webm";

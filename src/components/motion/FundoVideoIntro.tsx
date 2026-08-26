@@ -97,7 +97,18 @@ export function FundoVideoIntro({
    * usam a mesma vinheta de abertura — que era o comportamento até
    * 26/08/2026, quando a home ganhou uma peça própria no celular.
    */
-  fonteMobile?: { webm: string; mp4: string };
+  fonteMobile?: {
+    webm: string;
+    mp4: string;
+    /**
+     * A peça já está na proporção da tela (9:16). Sem isto o componente
+     * monta as DUAS camadas — a desfocada existe só para preencher a
+     * borda que sobra de um vídeo 16:9 numa tela alta, e num vídeo
+     * vertical não sobra borda nenhuma: `cover` enche a tela e a segunda
+     * decodificação seria peso e bateria a troco de nada.
+     */
+    vertical?: boolean;
+  };
 } = {}) {
   const exibir = usePodeExibir(somenteMobile);
   const ehMobile = useEhMobile();
@@ -122,6 +133,7 @@ export function FundoVideoIntro({
   if (!exibir) return null;
 
   const usarAlternativo = Boolean(fonteMobile) && ehMobile;
+  const vertical = usarAlternativo && Boolean(fonteMobile!.vertical);
   const webm = usarAlternativo ? fonteMobile!.webm : INTRO_VIDEO_WEBM_URL;
   const mp4 = usarAlternativo ? fonteMobile!.mp4 : INTRO_VIDEO_URL;
 
@@ -149,21 +161,27 @@ export function FundoVideoIntro({
         pronto ? "opacity-100" : "opacity-0"
       }`}
     >
-      {/* Camada de PREENCHIMENTO: enche a tela em qualquer proporção. Desfocada
-          e um tanto apagada para não competir com a logo nítida por cima —
-          quem tem de ser lido é o quadro de cima. */}
-      <video
-        autoPlay
-        muted
-        playsInline
-        preload="auto"
-        onEnded={pararNoFim}
-        className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-2xl"
-      >
-        {fontes}
-      </video>
+      {/* A camada de PREENCHIMENTO só existe para o vídeo 16:9: ela cobre a
+          tela desfocada para não sobrar borda vazia em volta do quadro
+          contido. Vídeo vertical dispensa — e dispensar economiza uma
+          decodificação inteira no aparelho mais fraco. */}
+      {!vertical && (
+        <video
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          onEnded={pararNoFim}
+          className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-2xl"
+        >
+          {fontes}
+        </video>
+      )}
 
-      {/* Camada da LOGO: contida, então a marca aparece inteira em toda tela. */}
+      {/* A camada da MARCA. `contain` no 16:9 (a logo inteira, com o
+          desfoque preenchendo em volta); `cover` no vertical, que já tem a
+          proporção da tela — ali `contain` deixaria tarja em cima e
+          embaixo justamente onde não precisa. */}
       <video
         autoPlay
         muted
@@ -171,7 +189,7 @@ export function FundoVideoIntro({
         preload="auto"
         onLoadedData={() => setPronto(true)}
         onEnded={pararNoFim}
-        className="absolute inset-0 h-full w-full object-contain"
+        className={`absolute inset-0 h-full w-full ${vertical ? "object-cover" : "object-contain"}`}
       >
         {fontes}
       </video>

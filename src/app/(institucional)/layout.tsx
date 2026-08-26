@@ -65,7 +65,11 @@ export default async function InstitucionalLayout({
              logo no céu); no desktop segue a de abertura, a mesma que o
              preloader acabou de mostrar. */
           <FundoVideoIntro
-            fonteMobile={{ webm: FUNDO_HOME_VIDEO_WEBM_URL, mp4: FUNDO_HOME_VIDEO_URL }}
+            fonteMobile={{
+              webm: FUNDO_HOME_VIDEO_WEBM_URL,
+              mp4: FUNDO_HOME_VIDEO_URL,
+              vertical: true,
+            }}
           />
         )}
         {/* O degrau do MEIO é o que segura o título do hero, que é centrado.
