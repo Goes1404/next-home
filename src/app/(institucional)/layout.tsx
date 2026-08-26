@@ -5,6 +5,7 @@ import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { FUNDO_HOME_VIDEO_URL, FUNDO_HOME_VIDEO_WEBM_URL } from "@/lib/site";
 
 /**
  * Casca do site institucional — a face pública para quem chega pelo Google,
@@ -60,11 +61,17 @@ export default async function InstitucionalLayout({
         ) : videoDoCorretor ? (
           <HeroVideoBackground src={videoDoCorretor} />
         ) : (
-          <FundoVideoIntro />
+          /* No celular, a home tem vinheta própria (prédios abrindo para a
+             logo no céu); no desktop segue a de abertura, a mesma que o
+             preloader acabou de mostrar. */
+          <FundoVideoIntro
+            fonteMobile={{ webm: FUNDO_HOME_VIDEO_WEBM_URL, mp4: FUNDO_HOME_VIDEO_URL }}
+          />
         )}
         {/* O degrau do MEIO é o que segura o título do hero, que é centrado.
-            O véu é forte igual nas duas larguras porque o fundo agora é o
-            mesmo em todas: a vinheta tem a logo grande e clara passando
+            O véu é forte igual nas duas larguras porque as DUAS vinhetas
+            (a de abertura no desktop, a institucional no celular) têm a
+            logo grande e clara passando
             exatamente atrás do h1, e com os 40% de antes o título perdia
             legibilidade. */}
         <div className="absolute inset-0 bg-gradient-to-b from-fundo/70 via-fundo/62 to-fundo/95" />

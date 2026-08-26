@@ -107,6 +107,25 @@ export const HERO_VIDEO_WEBM_URL = "/video/hero-scroll-fluido.webm";
 export const INTRO_VIDEO_URL = "/video/intro.mp4";
 export const INTRO_VIDEO_WEBM_URL = "/video/intro.webm";
 
+/**
+ * Vinheta institucional usada como fundo da home NO CELULAR (26/08/2026).
+ *
+ * Prédios vistos de baixo abrindo para a logo no céu — 10s, e como as
+ * outras vinhetas ela congela no último quadro (a logo no céu vira o
+ * ambiente da página).
+ *
+ * Receita do par, para quem for regerar: áudio REMOVIDO (`-an` — é fundo
+ * mudo, e a trilha era peso morto), 1024px de largura (a camada nítida
+ * ocupa a largura da tela no celular, ~430 CSS px), VP9 `-crf 42 -b:v 0
+ * -cpu-used 1` e H.264 `-crf 30 -preset slow -movflags +faststart`. O WebM
+ * sai com 636 KB para 10s — abaixo do `intro.webm` (736 KB para 7,8s), e
+ * isso importa porque na PRIMEIRA visita da sessão o celular carrega os
+ * dois: a vinheta do preloader e este fundo — peso de fundo no 4G é a régua desta pasta, e o hero-scroll de
+ * 14,8 MB é o lembrete do que acontece quando ela é ignorada.
+ */
+export const FUNDO_HOME_VIDEO_URL = "/video/fundo-home.mp4";
+export const FUNDO_HOME_VIDEO_WEBM_URL = "/video/fundo-home.webm";
+
 /** Monta um link `wa.me` para qualquer número em E.164, com mensagem pré-preenchida. */
 export function linkWhatsappPara(numero: string, mensagem: string): string {
   return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;

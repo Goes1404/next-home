@@ -43,6 +43,20 @@ function usePodeExibir(somenteMobile: boolean): boolean {
 }
 
 /**
+ * Se a tela é de celular AGORA. Mesma inscrição de `usePodeExibir` — o
+ * fundo pode ser um vídeo diferente aqui (ver `fonteMobile`), e no SSR a
+ * resposta é `false` como no resto do componente: o servidor não emite
+ * vídeo nenhum.
+ */
+function useEhMobile(): boolean {
+  return useSyncExternalStore(
+    inscrever,
+    () => window.matchMedia(CONSULTA_MOBILE).matches,
+    () => false,
+  );
+}
+
+/**
  * Fundo da home: o vídeo da vinheta de abertura (public/video/intro.*), a
  * mesma peça que o Preloader acabou de mostrar — ela desce para trás do
  * conteúdo e congela no último quadro. A continuidade é o ponto: a marca não
@@ -73,8 +87,20 @@ function usePodeExibir(somenteMobile: boolean): boolean {
  * decodificação, que termina junto com a vinheta (as duas congelam no último
  * quadro).
  */
-export function FundoVideoIntro({ somenteMobile = false }: { somenteMobile?: boolean } = {}) {
+export function FundoVideoIntro({
+  somenteMobile = false,
+  fonteMobile,
+}: {
+  somenteMobile?: boolean;
+  /**
+   * Vídeo alternativo para telas de celular. Sem isto, mobile e desktop
+   * usam a mesma vinheta de abertura — que era o comportamento até
+   * 26/08/2026, quando a home ganhou uma peça própria no celular.
+   */
+  fonteMobile?: { webm: string; mp4: string };
+} = {}) {
   const exibir = usePodeExibir(somenteMobile);
+  const ehMobile = useEhMobile();
   const [pronto, setPronto] = useState(false);
 
   /**
@@ -95,10 +121,14 @@ export function FundoVideoIntro({ somenteMobile = false }: { somenteMobile?: boo
 
   if (!exibir) return null;
 
+  const usarAlternativo = Boolean(fonteMobile) && ehMobile;
+  const webm = usarAlternativo ? fonteMobile!.webm : INTRO_VIDEO_WEBM_URL;
+  const mp4 = usarAlternativo ? fonteMobile!.mp4 : INTRO_VIDEO_URL;
+
   const fontes = (
     <>
-      <source src={INTRO_VIDEO_WEBM_URL} type="video/webm" />
-      <source src={INTRO_VIDEO_URL} type="video/mp4" />
+      <source src={webm} type="video/webm" />
+      <source src={mp4} type="video/mp4" />
     </>
   );
 
@@ -109,6 +139,10 @@ export function FundoVideoIntro({ somenteMobile = false }: { somenteMobile?: boo
        recuaria e as duas se descolariam na tela. `overflow-hidden` porque a
        camada de preenchimento é ampliada de propósito. */
     <div
+      /* A key troca com a fonte: mudar os <source> de um <video> já montado
+         NÃO recarrega nada (o navegador só lê a lista uma vez), então quem
+         cruzasse o breakpoint ficaria com o vídeo da largura anterior. */
+      key={webm}
       data-fundo-video
       aria-hidden
       className={`absolute inset-0 overflow-hidden transition-opacity duration-1000 ${
