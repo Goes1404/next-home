@@ -93,10 +93,13 @@ export default async function InstitucionalLayout({
             por cima dele. No desktop o h1 é centrado e a logo passa
             exatamente atrás dele — com pouco véu o título some. No celular
             o texto do hero saiu da tela (26/08), então não há o que
-            proteger: o véu alivia e a vinheta aparece como peça, não como
-            textura. O degrau FINAL continua forte nas duas: é ele que
-            evita o corte seco para a primeira banda opaca. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-fundo/25 via-fundo/25 to-fundo/90 sm:from-fundo/70 sm:via-fundo/62 sm:to-fundo/95" />
+            proteger — e um véu que não protege nada só LAVA a imagem:
+            medido, os 25% de véu derrubavam a saturação da peça de 0,269
+            (arquivo) para 0,130 na tela, metade da cor. Por isso o
+            celular vai a zero no topo. O degrau FINAL continua forte nas
+            duas: é ele que evita o corte seco para a primeira banda
+            opaca, e é ele que sustenta o esmaecimento da base do vídeo. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-fundo/0 via-fundo/0 to-fundo/85 sm:from-fundo/70 sm:via-fundo/62 sm:to-fundo/95" />
       </div>
 
       {children}

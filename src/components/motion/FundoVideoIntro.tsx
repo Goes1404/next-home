@@ -261,6 +261,11 @@ export function FundoVideoIntro({
                    aparelho para o qual esta peça existe. */
                 WebkitMaskImage: MASCARA_BASE,
                 maskImage: MASCARA_BASE,
+                /* A peça foi renderizada suave. Tirar o véu devolveu a cor
+                   do arquivo; este realce é o empurrão final, e é modesto
+                   de propósito — saturação alta demais entrega vídeo
+                   gerado, e o azul do céu é o primeiro a estourar. */
+                filter: "saturate(1.18) contrast(1.05)",
               }
             : undefined
         }
