@@ -43,7 +43,7 @@ import { blocoDaVezDoCliente } from "./rajada";
  * sem imóvel nomeado, ela respondeu "o imóvel do anúncio tem 3 dormitórios,
  * 3 suítes e 2 vagas" — inventou qual imóvel era, que erra tudo de uma vez.
  */
-export const PROMPT_VERSAO = "2026.08-v20"; // prompt idêntico à v19; muda a guarda anti-eco (2b: aproveita frases novas)
+export const PROMPT_VERSAO = "2026.08-v21"; // pergunta de região específica ("qual região de Barueri?") + região do dossiê no bloco "o que você já sabe"
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -136,6 +136,7 @@ function instrucaoDeTom(tomVoz: string): string {
 /** Resumo do dossiê para o prompt — só o que orienta a próxima resposta. */
 function resumoDossieParaPrompt(dossie: DossieClienteIA): string {
   const partes: string[] = [];
+  if (dossie.regiaoInteresse) partes.push(`região onde procura: ${dossie.regiaoInteresse}`);
   if (dossie.orcamentoMin || dossie.orcamentoMax) {
     partes.push(
       `orçamento ${dossie.orcamentoMin ? formatarMoedaBRL(dossie.orcamentoMin) : "?"} a ${dossie.orcamentoMax ? formatarMoedaBRL(dossie.orcamentoMax) : "?"}`,
@@ -445,7 +446,7 @@ ENTENDIMENTO ANTES DA INDICAÇÃO — a ordem importa, e é a ordem que a corret
 
 Você NÃO indica imóvel, e NÃO propõe horário, antes de saber estas quatro coisas. Uma pergunta por mensagem, na conversa, nunca como formulário — e sempre encaixando a próxima na resposta que ele acabou de dar.
 
-1. REGIÃO — "você conhece a região?" / "procura em que região?". Depois de saber, apresente em frase corrida as opções que existem ALI no catálogo abaixo, sem listar tudo o que temos. Duas ou três, no máximo.
+1. REGIÃO — pergunte ESPECÍFICO, não genérico: "em qual região de Barueri você procura?" — nunca "onde você procura imóvel?", que é vago demais e recebe resposta vaga. Se ele responder outra cidade (Alphaville, Osasco, Tamboré...), ótimo: a resposta dele já disse onde é, siga com o que existe LÁ. A região que ele disser entra sozinha na ficha dele no sistema — não precisa confirmar nem repetir de volta. Depois de saber, apresente em frase corrida as opções que existem ALI no catálogo abaixo, sem listar tudo o que temos. Duas ou três, no máximo.
 2. PRONTO OU NA PLANTA — "você prefere pronto para morar ou na planta?". Muda tudo: quem quer morar em 60 dias e quem aceita esperar a obra não olham o mesmo imóvel, e indicar errado queima a conversa. Na planta costuma ter condição de pagamento melhor; pronto resolve urgência. Diga isso como quem sabe, sem citar cifra.
 3. TIPOLOGIA — quantos dormitórios, se precisa de suíte, vaga, se tem filhos ou pet. Uma coisa por vez.
 4. RENDA MENSAL — pergunte a renda média mensal da família ANTES de indicar o imóvel e ANTES de propor horário. Não é curiosidade nem é constrangimento: é o que define o que dá para financiar, e é pergunta normal em imobiliária. Faça com a razão junto, nunca seca: "para eu já te mostrar o que cabe no financiamento, qual é a renda média da família por mês?". Se ele desconversar, siga a conversa sem insistir e pergunte de novo mais adiante — perder o lead por insistência é pior que ficar sem o dado.

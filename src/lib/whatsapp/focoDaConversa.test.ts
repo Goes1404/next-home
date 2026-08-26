@@ -99,6 +99,25 @@ describe("variação de escrita do nome", () => {
     expect(foco("Quero informações do manacá Barueri")).toBe("more-na-aldeia-de-barueri-mac238");
   });
 
+  it("erro de digitação em nome CURTO — a queixa 'só reconhece escrito certinho'", () => {
+    // "vitra" tem 5 letras e não tolerava erro nenhum: qualquer typo no
+    // apelido curto virava resposta genérica. Um erro no MIolo passa;
+    // primeira e última letra continuam obrigatórias.
+    expect(foco("quero saber do virta")).toBe("vitra-alphaville-vt110");
+    expect(foco("me fala do vitrra")).toBe("vitra-alphaville-vt110");
+  });
+
+  it("nome curto com a PONTA diferente continua não casando", () => {
+    // A última letra é o que separa "alta" de "alto" — typo na ponta não
+    // é typo, é outra palavra.
+    expect(foco("quero saber do vitro")).toBeNull();
+  });
+
+  it("palavra comum do português nunca entra no fuzzy, mesmo a um erro de um nome", () => {
+    expect(foco("prefiro uma vista boa")).toBeNull();
+    expect(foco("procuro na regiao central")).toBeNull();
+  });
+
   it("NÃO inventa foco por palavra parecida", () => {
     for (const texto of [
       "quero algo de alta qualidade",

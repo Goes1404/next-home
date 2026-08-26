@@ -134,12 +134,23 @@ function normalizar(texto: string): string {
  * imóvel custa uma resposta genérica; achar o ERRADO faz a IA afirmar
  * metragem, entrega e condição de outro empreendimento. Com um erro livre
  * em palavra curta, "alta" viraria "alto" e "elos" viraria "eles".
+ *
+ * Palavras de 5 e 6 letras toleravam ZERO erro, e era daí que vinha a
+ * queixa de produção "a IA só reconhece o nome escrito certinho": "virta"
+ * não achava o Vitra, "canvs" não achava o Canvas. Hoje toleram UM erro,
+ * mas sob guarda dupla em `melhorTermo`: além da primeira letra, a ÚLTIMA
+ * também tem de bater (quem digita errado erra no meio, não nas pontas —
+ * e é a última letra que separa "alta" de "alto"), e pedaço de frase que É
+ * uma palavra comum do português nunca entra no fuzzy.
  */
 function tolerancia(termo: string): number {
-  if (termo.length <= 6) return 0;
+  if (termo.length <= 4) return 0;
   if (termo.length <= 10) return 1;
   return 2;
 }
+
+/** Até este tamanho, o fuzzy exige que a última letra também bata. */
+const TAMANHO_CURTO = 6;
 
 /**
  * Damerau-Levenshtein com corte: para assim que a linha inteira passa do
@@ -351,6 +362,11 @@ function melhorTermo(candidato: string, indice: Indice): string | null {
   const exato = indice.termos.get(candidato);
   if (exato !== undefined) return exato ? candidato : null;
 
+  // Palavra comum do português não entra no fuzzy: "vista" a um erro de um
+  // nome curto do catálogo seria a IA travando foco porque o cliente disse
+  // "vista boa". O casamento exato acima já cobriu o caso legítimo.
+  if (GENERICAS.has(candidato) || COMUNS.has(candidato)) return null;
+
   const limite = tolerancia(candidato);
   if (limite === 0) return null;
 
@@ -360,8 +376,17 @@ function melhorTermo(candidato: string, indice: Indice): string | null {
   for (let tamanho = candidato.length - limite; tamanho <= candidato.length + limite; tamanho++) {
     for (const termo of indice.porTamanho.get(tamanho) ?? []) {
       if (termo[0] !== candidato[0]) continue;
-      // Termo curto não tolera erro: casar "elos" com "eles" seria pior que
-      // não casar nada.
+      // Nome curto: a ÚLTIMA letra também tem de bater. O erro de digitação
+      // mora no meio da palavra; a ponta diferente é palavra diferente
+      // ("alta"/"alto").
+      if (
+        (candidato.length <= TAMANHO_CURTO || termo.length <= TAMANHO_CURTO) &&
+        termo[termo.length - 1] !== candidato[candidato.length - 1]
+      ) {
+        continue;
+      }
+      // Termo curto demais não tolera erro: casar "elos" com "eles" seria
+      // pior que não casar nada.
       if (tolerancia(termo) === 0) continue;
 
       const d = distancia(candidato, termo, limite);

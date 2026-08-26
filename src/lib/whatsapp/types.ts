@@ -90,6 +90,13 @@ export interface DossieClienteIA {
    * é a renda que decide o que o banco financia.
    */
   rendaMensal: number | null;
+  /**
+   * Região onde o cliente procura imóvel, extraída da conversa ("Centro de
+   * Barueri", "Alphaville"...). Como a renda, mora em `leads`
+   * (`regiao_interesse`) — é de lá que a ficha do CRM e o painel de
+   * conversas leem — e só é escrita quando a extração acha valor.
+   */
+  regiaoInteresse: string | null;
   formaPagamento: string | null;
   perfilFamiliar: string | null;
   urgenciaMudanca: string | null;

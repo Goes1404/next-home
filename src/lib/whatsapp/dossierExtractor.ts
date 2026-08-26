@@ -8,6 +8,7 @@ Você DEVE responder EXCLUSIVAMENTE um objeto JSON válido no seguinte formato:
 {
   "orcamentoMin": number ou null,
   "rendaMensal": number ou null (renda MENSAL da família, não o valor do imóvel; só preencha se o cliente disser),
+  "regiaoInteresse": string ou null (região/bairro onde o CLIENTE disse que procura imóvel, ex: "Centro de Barueri", "Alphaville", "Jardim Tupanci"; use as palavras dele, nunca deduza do imóvel que a atendente ofereceu),
   "orcamentoMax": number ou null,
   "formaPagamento": "a_vista" | "financiamento" | "permuta" | "misto" | null,
   "perfilFamiliar": "casal_com_filhos" | "casal_sem_filhos" | "solteiro" | "investidor" | null,
@@ -32,6 +33,7 @@ export async function extrairDossieCliente(
     leadId,
     orcamentoMin: null,
     rendaMensal: null,
+    regiaoInteresse: null,
     orcamentoMax: null,
     formaPagamento: null,
     perfilFamiliar: null,
@@ -78,6 +80,10 @@ export async function extrairDossieCliente(
     leadId,
     orcamentoMin: typeof parsed.orcamentoMin === "number" ? parsed.orcamentoMin : null,
     rendaMensal: typeof parsed.rendaMensal === "number" ? parsed.rendaMensal : null,
+    regiaoInteresse:
+      typeof parsed.regiaoInteresse === "string" && parsed.regiaoInteresse.trim()
+        ? parsed.regiaoInteresse.trim().slice(0, 120)
+        : null,
     orcamentoMax: typeof parsed.orcamentoMax === "number" ? parsed.orcamentoMax : null,
     formaPagamento: (parsed.formaPagamento as DossieClienteIA["formaPagamento"]) || null,
     perfilFamiliar: (parsed.perfilFamiliar as DossieClienteIA["perfilFamiliar"]) || null,
