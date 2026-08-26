@@ -97,6 +97,13 @@ export interface DossieClienteIA {
    * conversas leem — e só é escrita quando a extração acha valor.
    */
   regiaoInteresse: string | null;
+  /**
+   * Dormitórios que o cliente pediu. Como a região e a renda: mora em
+   * `leads.dormitorios_min` (a coluna existia desde sempre e ninguém
+   * escrevia — mesma família do defeito do orçamento) e só é escrita
+   * quando a extração acha valor.
+   */
+  dormitoriosMin: number | null;
   formaPagamento: string | null;
   perfilFamiliar: string | null;
   urgenciaMudanca: string | null;

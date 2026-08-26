@@ -50,7 +50,7 @@ export default async function AnunciosPage() {
   const corte = new Date(Date.now() - DIAS_DA_JANELA * 86_400_000);
   const corteDia = corte.toISOString().slice(0, 10);
 
-  const [{ data: metricas }, { count: leadsCrm }, { count: cliquesPorteiro }] = await Promise.all([
+  const [{ data: metricas }, { data: leadsDeAnuncio }, { count: cliquesPorteiro }] = await Promise.all([
     sessao
       .from("meta_ads_metricas")
       .select("dia, campanha_id, campanha_nome, gasto, cliques, resultados_meta")
@@ -58,7 +58,7 @@ export default async function AnunciosPage() {
       .order("dia"),
     sessao
       .from("leads")
-      .select("id", { count: "exact", head: true })
+      .select("id")
       .in("origem", ["meta/leadads", "meta/ctwa"])
       .gte("created_at", corte.toISOString()),
     servico
@@ -71,6 +71,30 @@ export default async function AnunciosPage() {
   // `numeric` do Postgres chega como STRING no supabase-js — sem a
   // conversão o gasto concatenaria em vez de somar (lição da casa).
   const linhas = (metricas ?? []).map((m) => ({ ...m, gasto: Number(m.gasto) || 0 }));
+  const leadsCrm = (leadsDeAnuncio ?? []).length;
+
+  /*
+   * A QUALIDADE do lead vem do dossiê da IA (pedido de 26/08): a Sofia já
+   * dá nota 0-100 (quente/morno/frio) para todo lead que conversa. Quem
+   * nunca respondeu não tem dossiê e entra como "não engajou" — que NÃO é
+   * frio: é uma faixa própria, e o % dela é um termômetro da campanha por
+   * si só (campanha que atrai curioso que some).
+   */
+  const idsDeAnuncio = (leadsDeAnuncio ?? []).map((l) => l.id);
+  const { data: dossies } = idsDeAnuncio.length
+    ? await sessao
+        .from("lead_observacoes_ia")
+        .select("lead_id, temperatura_label")
+        .in("lead_id", idsDeAnuncio)
+    : { data: [] as { lead_id: string; temperatura_label: string }[] };
+
+  const temperatura = { quente: 0, morno: 0, frio: 0 };
+  for (const d of dossies ?? []) {
+    if (d.temperatura_label === "quente") temperatura.quente++;
+    else if (d.temperatura_label === "morno") temperatura.morno++;
+    else if (d.temperatura_label === "frio") temperatura.frio++;
+  }
+  const naoEngajou = Math.max(0, leadsCrm - (dossies?.length ?? 0));
 
   const totalGasto = linhas.reduce((s, l) => s + l.gasto, 0);
   const totalResultadosMeta = linhas.reduce((s, l) => s + (l.resultados_meta ?? 0), 0);
@@ -96,8 +120,17 @@ export default async function AnunciosPage() {
   }
   const campanhas = [...porCampanha.values()].sort((a, b) => b.gasto - a.gasto);
 
-  const cplCrm = leadsCrm && leadsCrm > 0 ? totalGasto / leadsCrm : null;
+  const cplCrm = leadsCrm > 0 ? totalGasto / leadsCrm : null;
+  const custoPorQuente = temperatura.quente > 0 ? totalGasto / temperatura.quente : null;
   const conectado = metaAdsConfigurado();
+
+  const faixasDeQualidade = [
+    { rotulo: "Quentes", valor: temperatura.quente, cor: "var(--color-sand-400)" },
+    { rotulo: "Mornos", valor: temperatura.morno, cor: "var(--color-azure-300)" },
+    { rotulo: "Frios", valor: temperatura.frio, cor: "var(--color-mist-400)" },
+    { rotulo: "Não engajaram", valor: naoEngajou, cor: "var(--color-ink-500)" },
+  ];
+  const totalComFaixa = faixasDeQualidade.reduce((s, f) => s + f.valor, 0);
 
   return (
     <div className="space-y-6">
@@ -137,6 +170,49 @@ export default async function AnunciosPage() {
           <GraficoGastoDia dias={dias} />
         </div>
       </section>
+
+      {leadsCrm > 0 && (
+        <section className="border-linha bg-superficie rounded-2xl border p-4">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-fluid-base text-titulo font-semibold">
+              Qualidade dos leads de anúncio (nota da IA)
+            </h2>
+            <p className="text-fluid-sm text-apoio tabular-nums">
+              Custo por lead quente:{" "}
+              <span className="text-titulo font-semibold">
+                {custoPorQuente === null ? "—" : formatarMoedaBRL(custoPorQuente)}
+              </span>
+            </p>
+          </div>
+
+          {/* Distribuição em barra única com respiro entre segmentos; o
+              rótulo com a contagem fica SEMPRE no texto ao lado — cor
+              sozinha não identifica nada. */}
+          <div className="flex h-3 w-full gap-0.5 overflow-hidden rounded-full" role="img" aria-label="Distribuição de qualidade dos leads de anúncio">
+            {faixasDeQualidade
+              .filter((f) => f.valor > 0)
+              .map((f) => (
+                <div
+                  key={f.rotulo}
+                  style={{ width: `${(f.valor / Math.max(totalComFaixa, 1)) * 100}%`, background: f.cor }}
+                  title={`${f.rotulo}: ${f.valor}`}
+                />
+              ))}
+          </div>
+          <ul className="text-fluid-xs text-apoio mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            {faixasDeQualidade.map((f) => (
+              <li key={f.rotulo} className="flex items-center gap-1.5 tabular-nums">
+                <span className="inline-block h-2 w-2 rounded-full" style={{ background: f.cor }} />
+                {f.rotulo}: {f.valor}
+              </li>
+            ))}
+          </ul>
+          <p className="text-fluid-xs text-tenue mt-2">
+            A nota vem da conversa: quem nunca respondeu não tem nota — e muita gente sem resposta
+            é sinal de campanha que atrai curioso.
+          </p>
+        </section>
+      )}
 
       {campanhas.length > 0 && (
         <section className="border-linha bg-superficie overflow-x-auto rounded-2xl border p-4">

@@ -951,8 +951,9 @@ export async function buscarDossieAtual(leadId: string): Promise<DossieClienteIA
      * extração, que é a única que a descobre.
      */
     rendaMensal: null,
-    // Como a renda: mora em `leads.regiao_interesse`, não no dossiê.
+    // Como a renda: moram em `leads`, não no dossiê.
     regiaoInteresse: null,
+    dormitoriosMin: null,
     formaPagamento: data.forma_pagamento,
     perfilFamiliar: data.perfil_familiar,
     urgenciaMudanca: data.urgencia_mudanca,
@@ -1028,6 +1029,7 @@ export async function salvarDossie(leadId: string, dossie: DossieClienteIA): Pro
     orcamento_min?: number;
     orcamento_max?: number;
     regiao_interesse?: string;
+    dormitorios_min?: number;
   } = {};
   if (dossie.rendaMensal !== null) doLead.renda_mensal = dossie.rendaMensal;
   if (dossie.orcamentoMin !== null) doLead.orcamento_min = dossie.orcamentoMin;
@@ -1035,6 +1037,7 @@ export async function salvarDossie(leadId: string, dossie: DossieClienteIA): Pro
   // A região que o cliente disser no WhatsApp entra sozinha na ficha do CRM
   // (pedido de 25/08/2026) — o corretor recebe o lead já com ela preenchida.
   if (dossie.regiaoInteresse !== null) doLead.regiao_interesse = dossie.regiaoInteresse;
+  if (dossie.dormitoriosMin !== null) doLead.dormitorios_min = dossie.dormitoriosMin;
 
   if (Object.keys(doLead).length > 0) {
     await supabase.from("leads").update(doLead).eq("id", leadId);

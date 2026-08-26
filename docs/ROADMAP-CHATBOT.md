@@ -28,10 +28,12 @@
    Parque" ≠ "Lançamento ao Lado do Parque") — isso é dado, não código. Passar
    pelos ~27 cadastros e registrar como cada um é anunciado. Bônus: um aviso
    na tela do imóvel quando o campo está vazio.
-2. **Extrair `dormitorios_min` da conversa.** A coluna existe em `leads`,
-   a ficha lê, e ninguém escreve — mesma família do defeito da renda e do
-   orçamento (0 de 58 leads preenchidos até alguém ligar o fio). Uma linha no
-   prompt do dossiê + persistência em `salvarDossie`.
+2. **[ENTREGUE 26/08] Extrair `dormitorios_min` da conversa.** Feito no
+   mesmo padrão da região: prompt do dossiê + persistência em `salvarDossie`
+   (só quando há valor) + entrada no bloco "o que você já sabe" do prompt.
+   O dossiê também passou a etiquetar crédito (credito_aprovado /
+   precisa_assessoria_credito), estágio desejado e finalidade
+   (moradia/investimento) nas exigências — a ficha já as exibe.
 3. **Onda 2 do loop de repetição.** A v18 derrubou perguntas repetidas de 53
    para 36 no eval de conversa; o resto do loop está mapeado e continua sendo
    a queixa que mais mata conversa. (`repeticao.ts`, métricas em

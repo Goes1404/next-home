@@ -9,11 +9,12 @@ Você DEVE responder EXCLUSIVAMENTE um objeto JSON válido no seguinte formato:
   "orcamentoMin": number ou null,
   "rendaMensal": number ou null (renda MENSAL da família, não o valor do imóvel; só preencha se o cliente disser),
   "regiaoInteresse": string ou null (região/bairro onde o CLIENTE disse que procura imóvel, ex: "Centro de Barueri", "Alphaville", "Jardim Tupanci"; use as palavras dele, nunca deduza do imóvel que a atendente ofereceu),
+  "dormitoriosMin": number ou null (quantos dormitórios o cliente disse precisar; só se ELE disser, nunca deduza do imóvel apresentado),
   "orcamentoMax": number ou null,
   "formaPagamento": "a_vista" | "financiamento" | "permuta" | "misto" | null,
   "perfilFamiliar": "casal_com_filhos" | "casal_sem_filhos" | "solteiro" | "investidor" | null,
   "urgenciaMudanca": "imediata" | "3_meses" | "6_meses" | "apenas_pesquisando" | null,
-  "exigenciasEspecificas": ["lista de exigencias citadas como andar_alto, 3_vagas, pet_friendly, vista_livre, etc"],
+  "exigenciasEspecificas": ["lista de exigencias citadas como andar_alto, 3_vagas, 2_suites, pet_friendly, vista_livre; inclua também, QUANDO O CLIENTE DISSER: estágio desejado (na_planta | em_construcao | pronto_para_morar), finalidade (moradia_propria | investimento) e situação de crédito (credito_aprovado | precisa_assessoria_credito)"],
   "objecoesIdentificadas": ["lista de dúvidas ou objeções citadas como preco, taxa_condominio, prazo_entrega, etc"],
   "temperaturaScore": 0 a 100 (número indicando probabilidade de compra nos próximos 60 dias),
   "temperaturaLabel": "quente" | "morno" | "frio",
@@ -34,6 +35,7 @@ export async function extrairDossieCliente(
     orcamentoMin: null,
     rendaMensal: null,
     regiaoInteresse: null,
+    dormitoriosMin: null,
     orcamentoMax: null,
     formaPagamento: null,
     perfilFamiliar: null,
@@ -83,6 +85,10 @@ export async function extrairDossieCliente(
     regiaoInteresse:
       typeof parsed.regiaoInteresse === "string" && parsed.regiaoInteresse.trim()
         ? parsed.regiaoInteresse.trim().slice(0, 120)
+        : null,
+    dormitoriosMin:
+      typeof parsed.dormitoriosMin === "number" && parsed.dormitoriosMin >= 1 && parsed.dormitoriosMin <= 10
+        ? Math.round(parsed.dormitoriosMin)
         : null,
     orcamentoMax: typeof parsed.orcamentoMax === "number" ? parsed.orcamentoMax : null,
     formaPagamento: (parsed.formaPagamento as DossieClienteIA["formaPagamento"]) || null,

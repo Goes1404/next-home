@@ -137,6 +137,7 @@ function instrucaoDeTom(tomVoz: string): string {
 function resumoDossieParaPrompt(dossie: DossieClienteIA): string {
   const partes: string[] = [];
   if (dossie.regiaoInteresse) partes.push(`região onde procura: ${dossie.regiaoInteresse}`);
+  if (dossie.dormitoriosMin) partes.push(`dormitórios: ${dossie.dormitoriosMin}+`);
   if (dossie.orcamentoMin || dossie.orcamentoMax) {
     partes.push(
       `orçamento ${dossie.orcamentoMin ? formatarMoedaBRL(dossie.orcamentoMin) : "?"} a ${dossie.orcamentoMax ? formatarMoedaBRL(dossie.orcamentoMax) : "?"}`,

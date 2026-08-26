@@ -32,6 +32,7 @@ const dossieBase: DossieClienteIA = {
   orcamentoMin: 500_000,
   rendaMensal: null,
   regiaoInteresse: null,
+  dormitoriosMin: null,
   orcamentoMax: 800_000,
   formaPagamento: "financiamento",
   perfilFamiliar: "casal_com_filhos",
