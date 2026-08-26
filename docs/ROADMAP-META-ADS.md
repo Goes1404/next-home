@@ -104,6 +104,37 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
 - UTM/atribuição do site: leads que chegam pela vitrine com `utm_campaign`
   do Meta entram na mesma conta.
 
+## F5 — Campanhas Click-to-WhatsApp (decisão do cliente, 26/08/2026)
+
+O cliente prefere anúncio "enviar mensagem" (CTWA) a formulário: o lead
+clica, o WhatsApp abre com mensagem pronta ("olá, gostaria de mais
+informações do Manacá"), a Sofia faz o pré-atendimento e o lead nasce no
+CRM já atribuído à campanha. Quase tudo disso JÁ EXISTE (webhook cria
+lead, apelido resolve o imóvel, dossiê qualifica). O que falta:
+
+1. **Atribuição automática da campanha.** Mensagem vinda de clique em
+   anúncio chega com metadados do anúncio (no Cloud API é o objeto
+   `referral` com `ctwa_clid` e `source_id`; na Evolution/Baileys vem em
+   `contextInfo.externalAdReply`). O webhook passa a ler e gravar
+   `meta_campanha_id`/`meta_ad_id` no lead — VERIFICAR no payload real da
+   Evolution qual campo chega, antes de codar contra a doc. Plano B
+   determinístico: mensagem pronta única por campanha (o texto identifica
+   a origem).
+2. **Número central dedicado (chip da casa, não pessoal).** Ali, todo
+   contato é lead por definição: conversa nova nasce LIBERADA (sem trava
+   de palavra-chave — hoje a trava existe para proteger conversa pessoal,
+   que nesse número não há). De quebra, resolve a pendência LGPD da
+   conversa pessoal gravada. Anti-ban tranquilo: quem inicia é o cliente.
+3. **Distribuição para os corretores — separar CONVERSA de DONO DO
+   LEAD.** A conversa fica na instância central; o lead é atribuído em
+   rodízio na criação (a régua de carga é `montarResumo`, a única verdade
+   sobre "quem recebe o próximo lead"). O corretor sorteado recebe alerta
+   no WhatsApp dele (mesmo mecanismo do `brokerNotifier`, com resumo +
+   wa.me do cliente) e trabalha pelo Live Chat — ou chama do próprio
+   número quando o lead esquenta, com o histórico inteiro no CRM.
+   Passagem de bastão explícita (Sofia manda o contato do corretor) fica
+   como opção posterior; o risco dela é perder o cliente na troca.
+
 ## Decisões que NÃO estão em aberto
 
 - Painel nunca chama a Graph API direto (token, latência, rate limit).
