@@ -42,7 +42,8 @@
  */
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
-import { gerarRespostaIA, PROMPT_VERSAO } from "../../src/lib/whatsapp/aiAgent";
+import { PROMPT_VERSAO } from "../../src/lib/whatsapp/aiAgent";
+import { executarTurnoDeAtendimento } from "../../src/lib/whatsapp/turnoDeAtendimento";
 import { catalogoParaAtendimento, imoveisCitados } from "../../src/lib/whatsapp/focoDaConversa";
 import { sanearRespostaIA } from "../../src/lib/whatsapp/guardrails";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
@@ -365,32 +366,38 @@ async function main() {
 
   for (const caso of casos) {
     /*
-     * O MESMO preparo do webhook: ranking por relevância e encolhimento
-     * pelo foco. O eval mandava o catálogo cru, então media um prompt que
-     * produção nenhuma via — mesma armadilha do playground, que já tinha
-     * divergido antes.
+     * O CAMINHO ÚNICO (`turnoDeAtendimento`), o mesmo do webhook, do
+     * playground e do follow-up. Antes daqui o eval remontava o prompt por
+     * fora — copiava o ranking e o foco, mas ficava para trás a cada etapa
+     * nova. Foi assim de novo em 26/08: o bloco de PENDÊNCIA DE RENDA
+     * entrou no turno, valeu em produção e o eval continuou medindo um
+     * prompt sem ele, reprovando uma correção que estava no ar.
+     *
+     * Terceira encarnação da mesma divergência (catálogo cru, playground
+     * sem few-shot, agora a pendência do funil). Copiar mais uma vez
+     * garantiria a quarta.
      */
-    const { catalogo: catalogoDoPrompt, foco } = catalogoParaAtendimento({
-      catalogo,
-      mensagemAtual: caso.mensagem,
-      historico: caso.historico,
-    });
-
-    const bruta = await gerarRespostaIA(
-      {
+    const turno = await executarTurnoDeAtendimento({
+      identidade: {
         nomeCorretor: "Bruna Cristal",
         slugCorretor: "cristal-bruna",
         creciCorretor: "254161",
         telefoneCorretor: "5511999999999",
         nomeAssistente: "Sofia",
         tomVoz: "consultivo_alto_padrao",
-        catalogo: catalogoDoPrompt,
-        historicoMensagens: caso.historico,
-        foco,
       },
-      caso.mensagem,
-    );
-    const saneada = sanearRespostaIA(bruta, catalogo, caso.historico, "cristal-bruna");
+      catalogo,
+      // O turno recebe a conversa INTEIRA e separa a vez do cliente
+      // sozinho (é o que a rajada faz em produção).
+      historico: [...caso.historico, { remetente: "cliente" as const, texto: caso.mensagem }],
+    });
+
+    const bruta = turno.respostaBruta;
+    const saneada = {
+      resposta: turno.resposta,
+      anexosBloqueados: turno.bloqueios,
+    };
+    const foco = turno.foco;
 
     // Checagens DURAS (não dependem do judge)
     const duras: string[] = [];

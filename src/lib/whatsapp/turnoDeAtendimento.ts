@@ -82,6 +82,15 @@ export type PedidoDeTurno = {
 export type TurnoDeAtendimento = {
   /** Já saneada pelos guardrails. */
   resposta: RespostaAgenteIA;
+  /**
+   * A resposta ANTES dos guardrails — o que o modelo de fato escreveu.
+   *
+   * Existe para o eval: medir depois do saneamento mediria a rede de
+   * segurança, não o prompt ("prompt que só acerta porque o filtro apaga
+   * o erro é prompt que ainda erra"). Quem atende o cliente usa
+   * `resposta`; ninguém deve enviar isto.
+   */
+  respostaBruta: RespostaAgenteIA;
   /** O texto quebrado em balões, na ordem de envio. */
   baloes: string[];
   /**
@@ -182,6 +191,7 @@ export async function executarTurnoDeAtendimento(
 
   return {
     resposta: saneada.resposta,
+    respostaBruta: bruta,
     baloes: partes.length > 0 ? partes : [saneada.resposta.textoResposta],
     anexos: saneada.anexos,
     foco,
