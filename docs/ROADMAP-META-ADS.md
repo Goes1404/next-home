@@ -106,34 +106,40 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
 
 ## F5 — Campanhas Click-to-WhatsApp (decisão do cliente, 26/08/2026)
 
-O cliente prefere anúncio "enviar mensagem" (CTWA) a formulário: o lead
-clica, o WhatsApp abre com mensagem pronta ("olá, gostaria de mais
-informações do Manacá"), a Sofia faz o pré-atendimento e o lead nasce no
-CRM já atribuído à campanha. Quase tudo disso JÁ EXISTE (webhook cria
-lead, apelido resolve o imóvel, dossiê qualifica). O que falta:
+O cliente prefere anúncio que abre o WhatsApp com mensagem pronta ("olá,
+gostaria de mais informações do Manacá"): a Sofia faz o pré-atendimento e
+o lead nasce no CRM já atribuído à campanha. RESTRIÇÃO DE PRODUTO
+(26/08): **cada corretor atende no próprio número** — número central
+único foi descartado pelo usuário. O desenho é distribuir NO CLIQUE, não
+depois da mensagem:
 
-1. **Atribuição automática da campanha.** Mensagem vinda de clique em
-   anúncio chega com metadados do anúncio (no Cloud API é o objeto
-   `referral` com `ctwa_clid` e `source_id`; na Evolution/Baileys vem em
-   `contextInfo.externalAdReply`). O webhook passa a ler e gravar
-   `meta_campanha_id`/`meta_ad_id` no lead — VERIFICAR no payload real da
-   Evolution qual campo chega, antes de codar contra a doc. Plano B
-   determinístico: mensagem pronta única por campanha (o texto identifica
-   a origem).
-2. **Número central dedicado (chip da casa, não pessoal).** Ali, todo
-   contato é lead por definição: conversa nova nasce LIBERADA (sem trava
-   de palavra-chave — hoje a trava existe para proteger conversa pessoal,
-   que nesse número não há). De quebra, resolve a pendência LGPD da
-   conversa pessoal gravada. Anti-ban tranquilo: quem inicia é o cliente.
-3. **Distribuição para os corretores — separar CONVERSA de DONO DO
-   LEAD.** A conversa fica na instância central; o lead é atribuído em
-   rodízio na criação (a régua de carga é `montarResumo`, a única verdade
-   sobre "quem recebe o próximo lead"). O corretor sorteado recebe alerta
-   no WhatsApp dele (mesmo mecanismo do `brokerNotifier`, com resumo +
-   wa.me do cliente) e trabalha pelo Live Chat — ou chama do próprio
-   número quando o lead esquenta, com o histórico inteiro no CRM.
-   Passagem de bastão explícita (Sofia manda o contato do corretor) fica
-   como opção posterior; o risco dela é perder o cliente na troca.
+1. **Link porteiro com rodízio** (`/wa/<campanha>`, ex.: `/wa/manaca`).
+   O anúncio aponta para esse link nosso; no clique, o servidor sorteia o
+   corretor da vez e redireciona para
+   `wa.me/<numero-do-corretor>?text=<mensagem pronta da campanha>`. É o
+   primo invertido do `/?corretor=slug` do catálogo: lá o link FIXA um
+   corretor, aqui o link ESCOLHE um. Regras do sorteio: rodízio por carga
+   (`montarResumo` é a única verdade sobre quem recebe o próximo lead) e
+   corretor com instância desconectada é PULADO — clique nunca cai no
+   vazio.
+2. **Nada muda depois do clique.** A mensagem chega no número do próprio
+   corretor, a Sofia DELE atende (multi-instância já existe), e o lead
+   nasce com o `corretor_id` dele — a resolução por instância já faz
+   isso hoje.
+3. **Atribuição pela porta de entrada.** Cada clique é logado
+   (campanha, corretor sorteado, timestamp) e a conversa nova é casada à
+   campanha pelo texto da mensagem pronta (único por campanha) +
+   proximidade temporal do clique. Métrica bônus que nem a Meta dá:
+   cliques que NÃO viraram mensagem — % de curioso por campanha.
+4. **Trava de palavra-chave:** conversa que nasce casada a um clique de
+   campanha entra LIBERADA (é lead por definição — mesmo raciocínio da
+   isenção de `origem = 'campanha'` no disparo ativo). Conversa sem
+   clique correspondente segue a regra atual, que protege o número
+   pessoal.
+5. **Configuração do anúncio:** objetivo de tráfego/link apontando para o
+   link porteiro, em vez do formato "mensagem" nativo (CTWA exige número
+   fixo de destino, que é exatamente o que não queremos). O resultado
+   para o lead é idêntico: clique → WhatsApp aberto com texto pronto.
 
 ## Decisões que NÃO estão em aberto
 
