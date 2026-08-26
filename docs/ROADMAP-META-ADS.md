@@ -67,6 +67,17 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
   (join por `meta_campanha_id`), `gasto ÷ visitas agendadas` e
   `gasto ÷ fechados` — o funil já tem as etapas, ninguém mais tem esse
   número.
+- **QUALIDADE do lead pela IA (pedido de 26/08): custo por lead QUENTE.**
+  A nota já existe — `lead_observacoes_ia.temperatura_score` (0–100,
+  quente/morno/frio), extraída de toda conversa — só nunca foi cruzada com
+  campanha. Métricas: temperatura média por campanha, distribuição
+  quente/morno/frio, e `gasto ÷ leads quentes` — que pode inverter o
+  ranking do CPL simples (campanha barata de lead frio × cara de lead
+  quente). Duas regras de honestidade: lead SEM dossiê (nunca respondeu no
+  WhatsApp) entra como faixa própria "não engajou", nunca como frio — e o
+  % de não-engajados é, por si, um termômetro da campanha; e a leitura
+  filtra `acao = 'respondida'`/dossiê real, a mesma armadilha já
+  documentada de `ia_interacoes`.
 - Regra da casa que se aplica inteira: **contar e listar são consultas
   diferentes** (`admin/agregados.ts`) — a agregação é uma query magra
   própria, nunca derivada da lista do quadro.
