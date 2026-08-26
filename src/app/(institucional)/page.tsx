@@ -110,8 +110,16 @@ export default async function HomeInstitucional() {
             transbordava por cima do CTA flutuante do WhatsApp. Com o texto
             do hero fora da tela no celular sobra só a busca, que cabe com
             folga — e a vinheta da marca ganha a tela inteira, que é o ponto
-            de ela estar ali. */}
-        <section className="relative flex min-h-svh flex-col items-center justify-center px-4 pt-24 pb-24 sm:pt-28 sm:pb-20">
+            de ela estar ali.
+
+            No celular a busca desce para o terço inferior (`justify-end`):
+            centralizada, ela cobria justamente o símbolo, que também é
+            centrado no quadro. Assim a metade de cima fica só para a marca.
+            O `pb-32` não é folga estética — é o que mantém a busca acima do
+            CTA flutuante do WhatsApp, que é `fixed` no canto inferior. Do
+            `sm` para cima volta ao centro, porque lá quem manda na
+            composição é o texto do hero. */}
+        <section className="relative flex min-h-svh flex-col items-center justify-end px-4 pt-24 pb-32 sm:justify-center sm:pt-28 sm:pb-20">
           {/* O medidor do parallax do fundo. Precisa de um ancestral que
               ROLE (esta seção, agora `relative`) — o fundo é `fixed` e não
               serve de referência de scroll. */}
