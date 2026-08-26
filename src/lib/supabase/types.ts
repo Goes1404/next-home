@@ -899,6 +899,7 @@ export type Database = {
       leads: {
         Row: {
           anuncio_origem: string | null
+          arquivado_em: string | null
           consentimento_lgpd: boolean
           corretor_id: string | null
           created_at: string
@@ -927,6 +928,7 @@ export type Database = {
         }
         Insert: {
           anuncio_origem?: string | null
+          arquivado_em?: string | null
           consentimento_lgpd?: boolean
           corretor_id?: string | null
           created_at?: string
@@ -955,6 +957,7 @@ export type Database = {
         }
         Update: {
           anuncio_origem?: string | null
+          arquivado_em?: string | null
           consentimento_lgpd?: boolean
           corretor_id?: string | null
           created_at?: string

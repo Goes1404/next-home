@@ -150,3 +150,82 @@ export async function salvarQualificacao(
   revalidatePath(`/corretor/leads/${leadId}`);
   return { ok: "Qualificação salva." };
 }
+
+/**
+ * Arquivar, restaurar e excluir (0055).
+ *
+ * As duas ações existem separadas porque o peso delas é diferente, e a
+ * tela precisa refletir isso: arquivar é o botão do dia a dia (some da
+ * lista, volta com um clique, nada é destruído); excluir apaga de verdade
+ * e leva junto o dossiê da IA, as tarefas e a linha do tempo.
+ *
+ * Quem recorta é a RLS, como no resto deste arquivo: corretor mexe nos
+ * seus, gestor em todos. O `.select()` de volta é o que separa "não pude"
+ * de "não havia" — sem ele, um id alheio devolveria sucesso sem ter
+ * mudado nada.
+ */
+export async function arquivarLead(leadId: string): Promise<ResultadoCrm> {
+  const ctx = await sessao();
+  if ("erro" in ctx) return { erro: ctx.erro };
+
+  const { data, error } = await ctx.supabase
+    .from("leads")
+    .update({ arquivado_em: new Date().toISOString() })
+    .eq("id", leadId)
+    .select("id");
+
+  if (error || !data?.length) return { erro: "Não foi possível arquivar este lead." };
+
+  revalidatePath("/corretor/leads");
+  revalidatePath(`/corretor/leads/${leadId}`);
+  return { ok: "Lead arquivado. Ele sai das listas e do funil, e dá para restaurar quando quiser." };
+}
+
+export async function restaurarLead(leadId: string): Promise<ResultadoCrm> {
+  const ctx = await sessao();
+  if ("erro" in ctx) return { erro: ctx.erro };
+
+  const { data, error } = await ctx.supabase
+    .from("leads")
+    .update({ arquivado_em: null })
+    .eq("id", leadId)
+    .select("id");
+
+  if (error || !data?.length) return { erro: "Não foi possível restaurar este lead." };
+
+  revalidatePath("/corretor/leads");
+  revalidatePath(`/corretor/leads/${leadId}`);
+  return { ok: "Lead restaurado." };
+}
+
+/**
+ * Exclusão definitiva. Não há desfazer.
+ *
+ * Exige que o lead JÁ ESTEJA ARQUIVADO: são dois passos de propósito, para
+ * que apagar nunca seja um toque a mais no mesmo lugar de arquivar. O
+ * `.eq("arquivado_em", ...)` não serve aqui (é um timestamp qualquer), então
+ * a conferência é uma leitura antes — e ela também é o que permite dizer
+ * "arquive primeiro" em vez de falhar sem explicação.
+ */
+export async function excluirLeadDefinitivo(leadId: string): Promise<ResultadoCrm> {
+  const ctx = await sessao();
+  if ("erro" in ctx) return { erro: ctx.erro };
+
+  const { data: lead } = await ctx.supabase
+    .from("leads")
+    .select("id, arquivado_em")
+    .eq("id", leadId)
+    .maybeSingle();
+
+  if (!lead) return { erro: "Lead não encontrado." };
+  if (!lead.arquivado_em) {
+    return { erro: "Arquive o lead antes de excluir — excluir não tem volta." };
+  }
+
+  const { data, error } = await ctx.supabase.from("leads").delete().eq("id", leadId).select("id");
+
+  if (error || !data?.length) return { erro: "Não foi possível excluir este lead." };
+
+  revalidatePath("/corretor/leads");
+  return { ok: "Lead excluído definitivamente." };
+}

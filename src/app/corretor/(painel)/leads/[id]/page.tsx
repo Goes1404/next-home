@@ -17,6 +17,7 @@ import { ORIGEM_ATRIBUICAO_LABEL } from "@/lib/types";
 import { LinhaDoTempo } from "./LinhaDoTempo";
 import { ProximasAcoes } from "./ProximasAcoes";
 import { Qualificacao } from "./Qualificacao";
+import { ArquivarLead } from "./ArquivarLead";
 import { SeletorEtapa } from "./SeletorEtapa";
 
 export const metadata: Metadata = { title: "Lead" };
@@ -149,6 +150,8 @@ export default async function FichaLeadPage({
 
         <LinhaDoTempo leadId={lead.id} itens={timeline} />
       </div>
+
+      <ArquivarLead leadId={lead.id} arquivado={Boolean(lead.arquivadoEm)} nome={lead.nome} />
 
       {/* Barra de ações no polegar (roadmap F2): no celular, as três ações
           que resolvem 90% das visitas à ficha ficam fixas no rodapé — chamar,

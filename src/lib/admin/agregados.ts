@@ -50,7 +50,10 @@ export async function getAgregadoDaEquipe(
     .from("leads")
     .select("id, etapa, etapa_alterada_em, created_at, origem_atribuicao, corretor_id", {
       count: "exact",
-    });
+    })
+    // Lead arquivado sai de TODA conta do gestor: se aparecesse aqui e não
+    // na lista, o número do painel não bateria com o que ele abre ao clicar.
+    .is("arquivado_em", null);
 
   if (error) throw new Error(`Falha ao carregar os números da equipe: ${error.message}`);
 

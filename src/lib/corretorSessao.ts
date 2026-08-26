@@ -144,6 +144,7 @@ export async function getMeusLeads(): Promise<Lead[]> {
   const { data, error } = await supabase
     .from("leads")
     .select(SELECT_LEAD)
+    .is("arquivado_em", null)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(`Falha ao carregar os leads: ${error.message}`);
@@ -172,6 +173,12 @@ export type FiltroLeads = {
    * marcadas para o dia. É o segmento que abre o dia do corretor.
    */
   recorte?: "hoje";
+  /**
+   * Mostra os ARQUIVADOS em vez dos ativos (0055). É o único caminho de
+   * volta para um lead arquivado — sem ele, arquivar seria perder, e a
+   * régua da casa é que dado guardado sem tela é dado perdido.
+   */
+  arquivados?: boolean;
   /** Só faz sentido para o gestor; corretor comum já é recortado pela RLS. */
   corretorId?: string;
   /** Datas `yyyy-mm-dd` vindas dos inputs de data da lista. */
@@ -232,6 +239,9 @@ export async function getPaginaDeLeads(
   const de = Math.max(0, pagina) * LEADS_POR_PAGINA;
 
   let query = supabase.from("leads").select(SELECT_LEAD, { count: "exact" });
+  query = filtro.arquivados
+    ? query.not("arquivado_em", "is", null)
+    : query.is("arquivado_em", null);
 
   const busca = filtro.busca ? sanearBusca(filtro.busca) : "";
   if (busca) query = query.or(`nome.ilike.%${busca}%,telefone.ilike.%${busca}%`);
@@ -282,6 +292,7 @@ export async function getContagemPorEtapa(): Promise<Record<EtapaFunil, number>>
       const { count, error } = await supabase
         .from("leads")
         .select("id", { count: "exact", head: true })
+        .is("arquivado_em", null)
         .eq("etapa", etapa);
       if (error) throw new Error(`Falha ao contar o funil: ${error.message}`);
       return [etapa, count ?? 0] as const;
@@ -298,7 +309,7 @@ export async function getContagemPorEtapa(): Promise<Record<EtapaFunil, number>>
 export async function getLeadsDoFunil(busca?: string): Promise<Lead[]> {
   const supabase = await createClient();
 
-  let query = supabase.from("leads").select(SELECT_LEAD);
+  let query = supabase.from("leads").select(SELECT_LEAD).is("arquivado_em", null);
 
   // A busca é a MESMA das outras abas — mesmo saneamento, mesmas colunas.
   // Duas buscas com regras diferentes na mesma tela seria pior que nenhuma.
@@ -321,7 +332,11 @@ export async function getLeadsDoFunil(busca?: string): Promise<Lead[]> {
 export async function getLeadsDeVisita(busca?: string): Promise<Lead[]> {
   const supabase = await createClient();
 
-  let query = supabase.from("leads").select(SELECT_LEAD).eq("etapa", "visita_agendada");
+  let query = supabase
+    .from("leads")
+    .select(SELECT_LEAD)
+    .is("arquivado_em", null)
+    .eq("etapa", "visita_agendada");
 
   const termo = busca ? sanearBusca(busca) : "";
   if (termo) query = query.or(`nome.ilike.%${termo}%,telefone.ilike.%${termo}%`);
@@ -346,6 +361,7 @@ export async function getVisitasDeHoje(): Promise<number> {
   const { count, error } = await supabase
     .from("leads")
     .select("id", { count: "exact", head: true })
+    .is("arquivado_em", null)
     .eq("etapa", "visita_agendada")
     .gte("visita_agendada_em", `${dia}T00:00:00-03:00`)
     .lte("visita_agendada_em", `${dia}T23:59:59-03:00`);
@@ -490,7 +506,9 @@ export async function getCorretoresParaAdmin(): Promise<CorretorAdmin[]> {
       .select("id, nome, slug, email, papel, ativo, em_pausa, user_id")
       .order("papel", { ascending: false })
       .order("nome"),
-    supabase.from("leads").select("corretor_id"),
+    // Arquivado não conta na carga do corretor: a coluna "leads" da tela
+    // de contas tem de bater com a lista que ele abre.
+    supabase.from("leads").select("corretor_id").is("arquivado_em", null),
   ]);
 
   const porCorretor = new Map<string, number>();

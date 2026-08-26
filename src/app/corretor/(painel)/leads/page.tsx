@@ -57,6 +57,9 @@ export default async function LeadsPage({
   // número clicável de lá cai aqui JÁ recortado, senão o número mente sobre
   // o próprio destino.
   const semDono = primeiroValor(params.dono) === "sem";
+  // `?arquivados=1` é o caminho de volta: a lista mostra o que foi
+  // arquivado, e é de lá que se restaura (ou se exclui de vez).
+  const verArquivados = primeiroValor(params.arquivados) === "1";
   const paradoDias = Number(primeiroValor(params.parado)) || undefined;
 
   const filtro: FiltroLeads = {
@@ -70,6 +73,7 @@ export default async function LeadsPage({
     criadoAte: primeiroValor(params.ate) || undefined,
     semDono: semDono || undefined,
     paradoDias,
+    arquivados: verArquivados || undefined,
   };
 
   const [pagina, gestor, corretor, templates] = await Promise.all([
@@ -84,12 +88,22 @@ export default async function LeadsPage({
     <div>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-fluid-2xl text-titulo">{gestor ? "Contatos" : "Meus leads"}</h1>
+          <h1 className="text-fluid-2xl text-titulo">
+            {verArquivados ? "Arquivados" : gestor ? "Contatos" : "Meus leads"}
+          </h1>
           <p className="text-fluid-sm mt-1 text-apoio max-w-2xl">
-            {gestor
-              ? "Todos os contatos recebidos pelos formulários do site e portais parceiros."
-              : "Contatos que chegaram atribuídos a você — pelo seu link pessoal, portais ou distribuição automática."}
+            {verArquivados
+              ? "Leads fora das listas e do funil. Abra um deles para restaurar ou excluir de vez."
+              : gestor
+                ? "Todos os contatos recebidos pelos formulários do site e portais parceiros."
+                : "Contatos que chegaram atribuídos a você — pelo seu link pessoal, portais ou distribuição automática."}
           </p>
+          <Link
+            href={verArquivados ? "/corretor/leads" : "/corretor/leads?arquivados=1"}
+            className="text-fluid-xs text-tenue hover:text-corpo mt-2 inline-block underline underline-offset-4 transition-colors"
+          >
+            {verArquivados ? "← Voltar para os leads ativos" : "Ver leads arquivados"}
+          </Link>
         </div>
 
         <Link

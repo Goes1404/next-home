@@ -21,12 +21,15 @@ export type LeadDetalhado = Lead & {
   dormitoriosMin: number | null;
   regiaoInteresse: string | null;
   empreendimentoId: string | null;
+  /** Preenchido = fora das listas (0055). A ficha continua abrindo por link direto. */
+  arquivadoEm: string | null;
 };
 
 const SELECT_DETALHE = `
   id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
   etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, portal_origem, anuncio_origem,
   orcamento_min, orcamento_max, renda_mensal, dormitorios_min, regiao_interesse, empreendimento_id,
+  arquivado_em,
   corretor:corretores(id, nome),
   empreendimento:empreendimentos(nome, slug, endereco)
 `;
@@ -52,6 +55,7 @@ type LinhaDetalhe = {
   renda_mensal: number | string | null;
   dormitorios_min: number | null;
   regiao_interesse: string | null;
+  arquivado_em: string | null;
   empreendimento_id: string | null;
   corretor: { id: string; nome: string } | null;
   empreendimento: { nome: string; slug: string; endereco: string | null } | null;
@@ -99,6 +103,7 @@ export async function getLeadDetalhado(id: string): Promise<LeadDetalhado | null
     orcamentoMax: numero(row.orcamento_max),
     dormitoriosMin: row.dormitorios_min,
     regiaoInteresse: row.regiao_interesse,
+    arquivadoEm: row.arquivado_em,
     empreendimentoId: row.empreendimento_id,
   };
 }

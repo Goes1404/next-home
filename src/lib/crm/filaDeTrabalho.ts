@@ -100,6 +100,7 @@ export async function getFilaDeTrabalho(
     supabase
       .from("leads")
       .select("id, nome, telefone, visita_agendada_em")
+      .is("arquivado_em", null)
       .eq("etapa", "visita_agendada")
       .gte("visita_agendada_em", `${dia}T00:00:00-03:00`)
       .lte("visita_agendada_em", `${dia}T23:59:59-03:00`)
@@ -108,12 +109,14 @@ export async function getFilaDeTrabalho(
     supabase
       .from("leads")
       .select("id, nome, telefone, created_at")
+      .is("arquivado_em", null)
       .eq("etapa", "novo")
       .order("created_at", { ascending: true })
       .limit(TETO_DA_FILA),
     supabase
       .from("leads")
       .select("id, nome, telefone, etapa_alterada_em")
+      .is("arquivado_em", null)
       .in("etapa", ["primeiro_contato", "visita_agendada", "documentacao"])
       .lt("etapa_alterada_em", limiteEsfriar)
       .order("etapa_alterada_em", { ascending: true })
