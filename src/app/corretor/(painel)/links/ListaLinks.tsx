@@ -80,6 +80,14 @@ export function ListaLinks({
           {filtrados.map((item) => {
             const link = `${baseUrl}/empreendimentos/${item.slug}?corretor=${slugCorretor}`;
             const mensagem = `Olá! Separei este empreendimento pra você: ${item.nome}, em ${item.bairro}, ${item.cidade}.\n\n${link}`;
+            /*
+             * O link de ANÚNCIO é diferente dos outros dois de propósito:
+             * ele NÃO atribui a quem copiou — no clique, o sistema sorteia
+             * o corretor da vez (rodízio por carga, só entre conectados) e
+             * abre o WhatsApp DELE com a mensagem pronta da campanha. É o
+             * destino que vai no campo URL do anúncio do Meta.
+             */
+            const linkAnuncio = `${baseUrl}/wa/${item.slug}`;
             return (
               <li
                 key={item.slug}
@@ -92,6 +100,7 @@ export function ListaLinks({
                 <div className="mt-3 flex flex-wrap gap-2">
                   <BotaoCopiar texto={link} rotulo="Copiar link" />
                   <BotaoCopiar texto={mensagem} rotulo="Copiar mensagem" />
+                  <BotaoCopiar texto={linkAnuncio} rotulo="Copiar link de anúncio (Meta)" />
                 </div>
               </li>
             );

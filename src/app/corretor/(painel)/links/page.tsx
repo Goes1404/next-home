@@ -30,7 +30,10 @@ export default async function LinksPage() {
       <h1 className="text-fluid-2xl mt-3 text-titulo">Seus links</h1>
       <p className="text-fluid-sm mt-2 text-apoio">
         Qualquer um destes links atribui o atendimento a você — inclusive em imóveis de outro
-        corretor responsável.
+        corretor responsável. A exceção é o <span className="text-titulo">link de anúncio (Meta)</span>:
+        ele é o destino da campanha paga e distribui cada clique em rodízio entre os corretores com
+        WhatsApp conectado — quem clica cai direto no WhatsApp do corretor da vez, com a mensagem
+        pronta.
       </p>
 
       <section className="mt-8 rounded-2xl border border-linha bg-superficie p-6">
