@@ -9,6 +9,7 @@ import { Regioes } from "@/components/home/Regioes";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { AberturaHome } from "@/components/motion/AberturaHome";
 import { Camada } from "@/components/motion/Camada";
+import { ParallaxFundoHome } from "@/components/motion/ParallaxFundoHome";
 import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
@@ -103,11 +104,18 @@ export default async function HomeInstitucional() {
       <AberturaHome />
 
       <main id="conteudo" className="flex flex-1 flex-col">
-        {/* Altura de tela só a partir de `sm`: no telefone o conjunto título +
-            texto + busca é mais alto que a viewport, e forçar `min-h-svh` faria
-            o conteúdo transbordar a caixa centralizada e cair atrás do CTA
-            flutuante do WhatsApp, que é `fixed`. */}
-        <section className="flex flex-col items-center justify-center px-4 pt-24 pb-24 sm:min-h-svh sm:pt-28 sm:pb-20">
+        {/* Tela cheia nas DUAS larguras desde 26/08/2026. A restrição antiga
+            ("altura de tela só a partir de sm") existia porque no telefone o
+            conjunto título + texto + busca não cabia na viewport e
+            transbordava por cima do CTA flutuante do WhatsApp. Com o texto
+            do hero fora da tela no celular sobra só a busca, que cabe com
+            folga — e a vinheta da marca ganha a tela inteira, que é o ponto
+            de ela estar ali. */}
+        <section className="relative flex min-h-svh flex-col items-center justify-center px-4 pt-24 pb-24 sm:pt-28 sm:pb-20">
+          {/* O medidor do parallax do fundo. Precisa de um ancestral que
+              ROLE (esta seção, agora `relative`) — o fundo é `fixed` e não
+              serve de referência de scroll. */}
+          <ParallaxFundoHome />
           {/* `data-abertura`: quem a AberturaHome conduz quando a vinheta
               sai de cena. Estes itens NÃO usam Reveal — dois donos da mesma
               opacidade é o caminho curto para o elemento sumir. A classe
@@ -121,7 +129,7 @@ export default async function HomeInstitucional() {
           <Camada velocidade={-0.22} className="w-full max-w-4xl text-center">
             <p
               data-abertura
-              className="gsap-pending text-fluid-xs mb-4 font-medium tracking-[0.2em] text-acento-suave uppercase"
+              className="gsap-pending so-para-leitor text-fluid-xs sm:mb-4 font-medium tracking-[0.2em] text-acento-suave uppercase"
             >
               Imóveis & Oportunidades · Alphaville, Barueri e Região
             </p>
@@ -130,13 +138,13 @@ export default async function HomeInstitucional() {
                 nada verificável. A promessa longa desceu para o subtítulo. */}
             <h1
               data-abertura
-              className="gsap-pending text-fluid-4xl leading-[1.05] tracking-tight text-titulo"
+              className="gsap-pending so-para-leitor text-fluid-4xl leading-[1.05] tracking-tight text-titulo"
             >
               {todos.length} imóveis em Alphaville, Barueri e região.
             </h1>
             <p
               data-abertura
-              className="gsap-pending text-fluid-base mx-auto mt-6 max-w-xl text-corpo-suave"
+              className="gsap-pending so-para-leitor text-fluid-base mx-auto sm:mt-6 max-w-xl text-corpo-suave"
             >
               Lançamentos na planta e prontos para morar, com condições
               facilitadas e atendimento direto no WhatsApp.

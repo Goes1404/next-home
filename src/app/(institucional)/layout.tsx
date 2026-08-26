@@ -46,7 +46,14 @@ export default async function InstitucionalLayout({
 
       <HeaderInstitucional />
 
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-fundo-marca via-fundo to-fundo">
+      {/* `data-fundo-parallax` é o nó que o ParallaxFundoHome move — um
+          acima de `[data-fundo-video]`, que a AberturaHome já conduz: dois
+          donos do mesmo transform brigariam. `will-change` porque este nó
+          passa a receber transform a cada quadro. */}
+      <div
+        data-fundo-parallax
+        className="fixed inset-0 -z-10 will-change-transform bg-gradient-to-br from-fundo-marca via-fundo to-fundo"
+      >
         {/* O fundo é a VINHETA, em toda tela: a peça que o Preloader acabou
             de mostrar recua para trás do conteúdo e congela no último quadro.
             O hero-scroll com scrub saiu daqui — pesava 14,8 MB e baixava
@@ -72,13 +79,14 @@ export default async function InstitucionalLayout({
             }}
           />
         )}
-        {/* O degrau do MEIO é o que segura o título do hero, que é centrado.
-            O véu é forte igual nas duas larguras porque as DUAS vinhetas
-            (a de abertura no desktop, a institucional no celular) têm a
-            logo grande e clara passando
-            exatamente atrás do h1, e com os 40% de antes o título perdia
-            legibilidade. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-fundo/70 via-fundo/62 to-fundo/95" />
+        {/* O véu tem PESOS DIFERENTES por largura, e a razão é o que está
+            por cima dele. No desktop o h1 é centrado e a logo passa
+            exatamente atrás dele — com pouco véu o título some. No celular
+            o texto do hero saiu da tela (26/08), então não há o que
+            proteger: o véu alivia e a vinheta aparece como peça, não como
+            textura. O degrau FINAL continua forte nas duas: é ele que
+            evita o corte seco para a primeira banda opaca. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-fundo/25 via-fundo/25 to-fundo/90 sm:from-fundo/70 sm:via-fundo/62 sm:to-fundo/95" />
       </div>
 
       {children}

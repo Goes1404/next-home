@@ -728,6 +728,39 @@
     opacity: 1;
   }
 
+  /* FORA DA TELA, DENTRO DO HTML.
+     O texto do hero saiu da vista no celular (26/08/2026) para a vinheta da
+     marca aparecer inteira — mas o h1 é o que o Google lê para posicionar a
+     home, e `display: none` esconderia dele também. Isto tira da tela sem
+     tirar do documento: leitor de tela continua anunciando, buscador
+     continua indexando. A partir de `sm` o texto volta ao normal, porque lá
+     ele é o herói da composição.
+     Escrito à mão porque o utilitário `sr-only` do Tailwind não é gerado
+     neste projeto — verificado no navegador: a classe ficava no elemento e
+     o computed style seguia `position: static`. */
+  .so-para-leitor {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+  @media (min-width: 640px) {
+    .so-para-leitor {
+      position: static;
+      width: auto;
+      height: auto;
+      margin: 0;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+    }
+  }
+
   /* Header condensado: encolhe o respiro e fecha o vidro ao sair do topo.
      Só padding e sombra — nada de transform, que criaria containing block e
      prenderia o painel `fixed` do MenuMobile dentro da barra. */
