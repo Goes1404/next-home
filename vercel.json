@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/campanhas",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/meta-ads",
+      "schedule": "30 9 * * *"
     }
   ]
 }

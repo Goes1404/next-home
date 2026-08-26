@@ -13,6 +13,7 @@ const ABAS = [
   { chave: "leads", href: "/corretor/admin/leads", label: "Leads da equipe" },
   { chave: "contas", href: "/corretor/admin/contas", label: "Contas" },
   { chave: "whatsapp", href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe" },
+  { chave: "anuncios", href: "/corretor/admin/anuncios", label: "Anúncios" },
   { chave: "precos", href: "/corretor/precos", label: "Preços" },
 ] as const;
 

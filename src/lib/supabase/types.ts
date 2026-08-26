@@ -862,6 +862,39 @@ export type Database = {
           },
         ]
       }
+      meta_ads_metricas: {
+        Row: {
+          atualizado_em: string
+          campanha_id: string
+          campanha_nome: string
+          cliques: number
+          dia: string
+          gasto: number
+          impressoes: number
+          resultados_meta: number
+        }
+        Insert: {
+          atualizado_em?: string
+          campanha_id: string
+          campanha_nome?: string
+          cliques?: number
+          dia: string
+          gasto?: number
+          impressoes?: number
+          resultados_meta?: number
+        }
+        Update: {
+          atualizado_em?: string
+          campanha_id?: string
+          campanha_nome?: string
+          cliques?: number
+          dia?: string
+          gasto?: number
+          impressoes?: number
+          resultados_meta?: number
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           anuncio_origem: string | null
