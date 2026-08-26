@@ -7,6 +7,7 @@ import { ESTILO_DA_CASA } from "./estiloDaCasa";
 import type { MotivoFalhaLlm } from "./llmTipos";
 import type { DossieClienteIA, TomVozBot } from "./types";
 import { blocoDaVezDoCliente } from "./rajada";
+import { blocoRendaPendente } from "./funilQualificacao";
 
 /**
  * Versão do prompt de atendimento. REGRA: qualquer mudança de conteúdo em
@@ -43,7 +44,7 @@ import { blocoDaVezDoCliente } from "./rajada";
  * sem imóvel nomeado, ela respondeu "o imóvel do anúncio tem 3 dormitórios,
  * 3 suítes e 2 vagas" — inventou qual imóvel era, que erra tudo de uma vez.
  */
-export const PROMPT_VERSAO = "2026.08-v22"; // regra 28 (aja, não peça licença: envia e anuncia em vez de "posso mandar?") + convite de visita exige o básico (região + o que procura)
+export const PROMPT_VERSAO = "2026.08-v23"; // bloco PENDÊNCIA DE RENDA calculado por código (funilQualificacao.ts) — a regra do funil sozinha não segurava
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -103,6 +104,13 @@ export interface ContextoAtendimento {
   dossie?: DossieClienteIA | null;
   /** Instrução extra de cenário (ex.: follow-up de reengajamento). */
   instrucaoExtra?: string;
+  /**
+   * A renda ainda é a próxima pergunta desta conversa
+   * (`funilQualificacao.ts`). Quem decide é o CÓDIGO: a regra do funil já
+   * estava no prompt e o eval flagrou a indicação de imóvel sem renda
+   * mesmo assim — instrução geral compete com outras 28 e perde.
+   */
+  rendaPendente?: boolean;
   /**
    * O imóvel que ESTA conversa já escolheu (ver `focoDaConversa.ts`).
    *
@@ -457,7 +465,7 @@ Só depois disso: a INDICAÇÃO ("pelo que você me contou, o que mais faz senti
 
 Se o cliente já disse alguma dessas coisas — nesta mensagem, no histórico ou no dossiê — NÃO PERGUNTE DE NOVO. Repetir pergunta já respondida é o erro que mais faz o cliente sumir, e é o que denuncia um sistema.
 
-${blocoFoco}
+${ctx.rendaPendente ? `${blocoRendaPendente()}\n\n` : ""}${blocoFoco}
 
 ${blocoCatalogo}
 

@@ -5,6 +5,7 @@ import { gerarRespostaIA, type RespostaAgenteIA } from "./aiAgent";
 import type { AnexoResolvido } from "./resolverMidia";
 import { buscarExemplosFewShot } from "./aprendizadoContinuo";
 import { catalogoParaAtendimento } from "./focoDaConversa";
+import { rendaEstaPendente } from "./funilQualificacao";
 import { sanearRespostaIA } from "./guardrails";
 import { dividirEmMensagens } from "./chunking";
 import { separarRajada, type Fala } from "./rajada";
@@ -133,6 +134,20 @@ export async function executarTurnoDeAtendimento(
     dossie: pedido.dossie,
   });
 
+  /*
+   * A renda entra como PENDÊNCIA calculada, não como regra genérica: o
+   * eval da v22 pegou a IA indicando imóvel sem perguntá-la, com a regra
+   * do funil já no prompt. Mora aqui, no caminho único, para os quatro
+   * chamadores enxergarem a mesma conversa (a divergência playground ×
+   * webhook já custou caro duas vezes).
+   */
+  const rendaPendente = rendaEstaPendente({
+    dossie: pedido.dossie,
+    historico: historicoAnterior,
+    mensagemAtual: textoDaVez,
+    catalogo: pedido.catalogo,
+  });
+
   const bruta = await gerarRespostaIA(
     {
       ...pedido.identidade,
@@ -142,6 +157,7 @@ export async function executarTurnoDeAtendimento(
       dossie: pedido.dossie,
       instrucaoExtra: pedido.instrucaoExtra,
       foco,
+      rendaPendente,
     },
     vezDoCliente.length > 0
       ? vezDoCliente

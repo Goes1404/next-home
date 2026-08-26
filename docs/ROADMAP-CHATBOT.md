@@ -57,6 +57,18 @@
    para 36 no eval de conversa; o resto do loop está mapeado e continua sendo
    a queixa que mais mata conversa. (`repeticao.ts`, métricas em
    `metricasConversa.ts`)
+3b. **[ENTREGUE 26/08] Renda antes de indicar imóvel.** O eval da v22
+   flagrou a IA indicando imóvel com região, estágio e tipologia na mesa e
+   NENHUMA pergunta de renda — a regra 4 do funil já estava no prompt e
+   perdeu para as outras 28. Corrigido por construção: `funilQualificacao.ts`
+   calcula a pendência e injeta um bloco curto e imperativo
+   (`PENDÊNCIA DESTA CONVERSA — RENDA`) no prompt, no caminho único do
+   `turnoDeAtendimento` (os quatro chamadores enxergam a mesma conversa).
+   Conservador de propósito, porque repergunta é o defeito nº 1 daqui:
+   não dispara se a renda está no dossiê, se o cliente já tocou no assunto,
+   se a assistente acabou de perguntar, no começo da conversa, ou antes de
+   região E tipologia. Prompt v23. **Pendente: rodar o eval para confirmar
+   que `renda-antes-da-visita` passa.**
 4. **Rodar o eval da v21 e fechar a linha de base.** O prompt mudou nesta
    rodada e o eval não rodou (sem chave no sandbox). Regra da casa: score não
    pode cair vs. v20.
