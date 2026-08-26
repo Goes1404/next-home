@@ -76,6 +76,9 @@ export default async function InstitucionalLayout({
               webm: FUNDO_HOME_VIDEO_WEBM_URL,
               mp4: FUNDO_HOME_VIDEO_URL,
               vertical: true,
+              // Congela com a logo inteira e os prédios em volta; o fim da
+              // peça é um close que corta "Next Home" atrás da busca.
+              pararEm: 4,
             }}
           />
         )}

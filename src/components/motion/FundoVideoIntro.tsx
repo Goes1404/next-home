@@ -108,6 +108,15 @@ export function FundoVideoIntro({
      * decodificação seria peso e bateria a troco de nada.
      */
     vertical?: boolean;
+    /**
+     * Segundo em que a peça CONGELA, em vez de ir até o fim.
+     *
+     * O último quadro desta vinheta é um close: a logo cresce até
+     * estourar a tela e "Next Home" chega cortado atrás da busca. Parar
+     * antes é o que devolve o enquadramento — logo inteira, prédios em
+     * volta —, e é decisão de composição, não de duração.
+     */
+    pararEm?: number;
   };
 } = {}) {
   const exibir = usePodeExibir(somenteMobile);
@@ -130,10 +139,28 @@ export function FundoVideoIntro({
     v.pause();
   };
 
+  /**
+   * Congela no segundo pedido, em vez de esperar o fim.
+   *
+   * `timeupdate` dispara a cada ~250ms, então o vídeo pode passar alguns
+   * quadros do alvo — por isso o `currentTime` é reposicionado, e não só
+   * pausado: o quadro que fica na tela é o escolhido, não o que calhou.
+   * A guarda de `paused` existe porque reposicionar dispara um seek, que
+   * dispara outro `timeupdate`.
+   */
+  const congelarNoPonto = (evento: React.SyntheticEvent<HTMLVideoElement>) => {
+    if (!pararEm) return;
+    const v = evento.currentTarget;
+    if (v.paused || v.currentTime < pararEm) return;
+    v.currentTime = pararEm;
+    v.pause();
+  };
+
   if (!exibir) return null;
 
   const usarAlternativo = Boolean(fonteMobile) && ehMobile;
   const vertical = usarAlternativo && Boolean(fonteMobile!.vertical);
+  const pararEm = usarAlternativo ? fonteMobile!.pararEm : undefined;
   const webm = usarAlternativo ? fonteMobile!.webm : INTRO_VIDEO_WEBM_URL;
   const mp4 = usarAlternativo ? fonteMobile!.mp4 : INTRO_VIDEO_URL;
 
@@ -171,6 +198,7 @@ export function FundoVideoIntro({
           muted
           playsInline
           preload="auto"
+          onTimeUpdate={congelarNoPonto}
           onEnded={pararNoFim}
           className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-2xl"
         >
@@ -188,6 +216,7 @@ export function FundoVideoIntro({
         playsInline
         preload="auto"
         onLoadedData={() => setPronto(true)}
+        onTimeUpdate={congelarNoPonto}
         onEnded={pararNoFim}
         className={`absolute inset-0 h-full w-full ${vertical ? "object-cover" : "object-contain"}`}
       >
