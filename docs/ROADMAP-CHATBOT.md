@@ -34,6 +34,23 @@
    O dossiê também passou a etiquetar crédito (credito_aprovado /
    precisa_assessoria_credito), estágio desejado e finalidade
    (moradia/investimento) nas exigências — a ficha já as exibe.
+2b. **[ENTREGUE 26/08, medir na v22] Agir em vez de pedir licença.** Pedido
+   do usuário: "posso te mandar as fotos?" vira "te mandei as fotos aqui
+   embaixo" COM o anexo na mesma resposta. Regra 28 da v22: ação que é dela
+   e não custa nada ao cliente (foto, planta, link) se executa e se anuncia;
+   pergunta fica reservada ao que exige compromisso DELE (horário, ligação,
+   dado pessoal). Pendente: rodar o eval da v22 e conferir nas conversas
+   reais se o "posso...?" sumiu — instrução de prompt é probabilística, e se
+   sobrar caso em produção o caminho é guarda determinística em
+   `vozHumana.ts` (detectar pergunta de permissão + pedido de mídia e
+   converter em envio).
+2c. **Aprimorar as lacunas da qualificação (pedido de 26/08).** O que resta
+   estruturar: suítes e vagas como colunas (hoje são texto livre nas
+   exigências), status de crédito e finalidade como campos próprios quando
+   alguma tela precisar filtrar por eles, e a régua "convite de visita só
+   com o básico em mãos" (região + o que procura — entrou no prompt v22)
+   verificada no eval de conversa com um critério que a meça de verdade
+   (lição da casa: regra nova sem critério que a leia é decorativa).
 3. **Onda 2 do loop de repetição.** A v18 derrubou perguntas repetidas de 53
    para 36 no eval de conversa; o resto do loop está mapeado e continua sendo
    a queixa que mais mata conversa. (`repeticao.ts`, métricas em
