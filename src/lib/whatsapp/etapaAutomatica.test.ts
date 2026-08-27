@@ -13,6 +13,7 @@ import { describe, expect, it } from "vitest";
 
 const REPOSITORIO = readFileSync("src/lib/whatsapp/repositorio.ts", "utf8");
 const WEBHOOK = readFileSync("src/app/api/webhooks/whatsapp/route.ts", "utf8");
+const DISPARADOR = readFileSync("src/lib/whatsapp/campaignDispatcher.ts", "utf8");
 
 describe("novo → primeiro_contato automático", () => {
   it("o update só alcança quem ainda está em 'novo' — o termostato do funil", () => {
@@ -33,8 +34,25 @@ describe("novo → primeiro_contato automático", () => {
     expect(contexto).toContain("envio.enviado");
   });
 
+  /*
+   * A campanha ficou de fora por dois meses, e o defeito era CALADO: as
+   * mensagens saíam, o Live Chat mostrava tudo certo, e o quadro seguia
+   * dizendo "Novo lead" para quem já tinha sido abordado. Medido em
+   * produção: 10 leads com mensagem entregue, nenhum fora de "Novo".
+   */
+  it("o disparo de campanha também avança o lead", () => {
+    expect(DISPARADOR).toContain("avancarLeadParaPrimeiroContato(");
+  });
+
+  it("o disparador só avança DEPOIS de gravar o envio como bem-sucedido", () => {
+    const chamada = DISPARADOR.indexOf("avancarLeadParaPrimeiroContato(");
+    const contexto = DISPARADOR.slice(chamada - 3000, chamada);
+    // Mensagem que não saiu não é contato com ninguém — mesma régua do webhook.
+    expect(contexto).toContain('status: "enviado"');
+  });
+
   it("nenhum caminho escreve etapa de julgamento (negociação etc.) automaticamente", () => {
-    for (const arquivo of [REPOSITORIO, WEBHOOK]) {
+    for (const arquivo of [REPOSITORIO, WEBHOOK, DISPARADOR]) {
       expect(arquivo).not.toContain('etapa: "documentacao"');
       expect(arquivo).not.toContain('etapa: "fechado"');
       expect(arquivo).not.toContain('etapa: "perdido"');

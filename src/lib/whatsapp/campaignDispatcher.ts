@@ -5,6 +5,7 @@ import { dentroDaJanela, ehDestinatarioInexistente } from "./antiBan";
 import { variarMensagemComIA } from "./campaignQueue";
 import { enviarMensagemWhatsapp } from "./provider";
 import {
+  avancarLeadParaPrimeiroContato,
   destravarDisparo,
   gravarMensagem,
   obterOuCriarConversa,
@@ -501,6 +502,26 @@ async function processarInstancia(ctx: {
       if (conversa) {
         await gravarMensagem({ conversaId: conversa.id, remetente: "bot", conteudo: texto });
       }
+
+      /*
+       * O funil anda com a mensagem que SAIU.
+       *
+       * Até 27/08/2026 só o webhook chamava isto — ou seja, o lead só saía
+       * de "Novo" quando a IA RESPONDIA alguém que escreveu. Quem recebia
+       * um disparo e não respondia ficava em "Novo" para sempre, embora já
+       * tivesse sido abordado. Medido: 10 leads com mensagem entregue e
+       * nenhum fora de "Novo".
+       *
+       * Isso corrói o quadro de duas formas ao mesmo tempo: a coluna "Novo"
+       * mistura quem nunca foi abordado com quem já recebeu mensagem, e o
+       * filtro "parados há 15 dias" volta a oferecer para a campanha
+       * exatamente quem acabou de receber uma.
+       *
+       * A função tem `.eq("etapa", "novo")` embutido, então isto nunca
+       * puxa ninguém para TRÁS: quem já está em negociação continua onde
+       * está. É a mesma guarda de termostato que o webhook usa.
+       */
+      if (item.lead_id) await avancarLeadParaPrimeiroContato(item.lead_id);
 
       // Renova a trava a cada mensagem: um lote longo não pode perder a
       // trava no meio e deixar outro disparador entrar por cima.

@@ -820,6 +820,17 @@ trilho+IA, follow-up, métricas de funil).
   linhas que ninguém consulta (o erro do `historico_envios`). Campanha que
   fica sem pendência é fechada junto, senão seguiria "em andamento" para
   sempre prometendo disparo que não existe.
+- **A campanha mandava mensagem e NÃO mexia no funil** (27/08/2026). O
+  avanço `novo → primeiro_contato` só era chamado pelo webhook, ou seja,
+  quando a IA RESPONDIA alguém que escreveu. Quem recebia um disparo e não
+  respondia ficava em "Novo" para sempre, já tendo sido abordado — medido:
+  10 leads com mensagem entregue, nenhum fora de "Novo". O estrago é duplo
+  e calado: a coluna "Novo" mistura quem nunca foi abordado com quem já
+  recebeu mensagem, e o filtro "parados há 15 dias" volta a oferecer para a
+  próxima campanha exatamente quem acabou de receber uma. Corrigido no
+  disparador (depois de gravar o envio como bem-sucedido) e no passado pela
+  0059. **Ao criar caminho novo que FALA com o cliente, procurar quem mexe
+  no funil** — `etapaAutomatica.test.ts` agora lê os três arquivos.
 - **O envio mandava o telefone SEM O DDI, e o erro acusava o lead**
   (27/08/2026). O provedor só tirava a pontuação
   (`replace(/\D/g, "")`), então `11.95721-6675` virava `11957216675` — onze
