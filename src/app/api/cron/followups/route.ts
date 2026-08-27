@@ -351,10 +351,15 @@ async function processarFollowup(
   const interacaoId = crypto.randomUUID();
   // Sem o vínculo no insert: a FK para `ia_interacoes` exige que a linha de
   // telemetria já exista, e ela é escrita logo abaixo. Ver gravarMensagem.
+  // Mesmo comprovante do disparo de campanha: sem o id do provedor, o ACK
+  // de entrega do webhook (0051) não tem por onde casar, e o follow-up
+  // ficaria para sempre sem confirmação de ✓✓.
   const mensagemDoBot = await gravarMensagem({
     conversaId: conversa.id,
     remetente: "bot",
     conteudo: balao,
+    providerMessageId: envio.messageId ?? null,
+    statusEntrega: envio.messageId ? "enviada" : null,
   });
   await supabase
     .from("whatsapp_followups")

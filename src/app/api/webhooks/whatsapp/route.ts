@@ -603,6 +603,17 @@ export async function POST(req: NextRequest) {
     let todosEnviados = true;
     let primeiroMotivo: string | undefined;
     let primeiroDetalhe: string | undefined;
+    /*
+     * Id do PRIMEIRO balão, que ancora a confirmação de entrega.
+     *
+     * A resposta vira N balões, cada um com o próprio id no provedor, mas o
+     * Live Chat guarda UMA linha com o texto inteiro. O ✓✓ do primeiro
+     * balão é a melhor âncora disponível: se ele foi entregue, a conversa
+     * chegou. Sem nenhum id — como era até 27/08/2026 — o ACK que o webhook
+     * recebe (0051) não tinha por onde casar, e resposta da IA nunca podia
+     * mostrar entrega.
+     */
+    let idDoPrimeiroBalao: string | undefined;
 
     function registrarFalha(motivo?: string, detalhe?: string) {
       todosEnviados = false;
@@ -626,6 +637,7 @@ export async function POST(req: NextRequest) {
         texto: baloes[i],
       });
       if (!envioBalao.enviado) registrarFalha(envioBalao.motivo, envioBalao.detalhe);
+      if (i === 0) idDoPrimeiroBalao = envioBalao.messageId;
     }
 
     // Fotos, plantas, vídeos: mídia nativa do WhatsApp, não link no texto —
@@ -679,6 +691,8 @@ export async function POST(req: NextRequest) {
       conversaId: conversa.id,
       remetente: "bot",
       conteudo: textoParaEnviar,
+      providerMessageId: idDoPrimeiroBalao ?? null,
+      statusEntrega: idDoPrimeiroBalao ? "enviada" : null,
     });
 
     /*

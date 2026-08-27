@@ -501,7 +501,39 @@ async function processarInstancia(ctx: {
         origem: "campanha",
       });
       if (conversa) {
-        await gravarMensagem({ conversaId: conversa.id, remetente: "bot", conteudo: texto });
+        /*
+         * Guarda o COMPROVANTE do provedor, como o Live Chat já fazia.
+         *
+         * Até 27/08/2026 o disparo gravava a mensagem sem o
+         * `provider_message_id`. A consequência era pior do que parece: o
+         * ACK de entrega que o webhook recebe (0051) casa por esse id, então
+         * mensagem de campanha NUNCA podia receber ✓✓. Medido: 27 disparos,
+         * zero com id do provedor e zero com status de entrega.
+         *
+         * Isso deixava o sistema sem como distinguir "a mensagem chegou" de
+         * "a chamada HTTP não deu erro" — e era exatamente essa a dúvida do
+         * corretor ao dizer que as mensagens não estavam saindo de verdade.
+         * Com o id gravado, o ✓✓ vem sozinho pelo webhook.
+         *
+         * `statusEntrega` só nasce "enviada" quando há id: a Evolution
+         * devolve a chave da mensagem num envio real, e um 2xx sem chave é
+         * justamente o caso que não se pode afirmar como enviado.
+         */
+        await gravarMensagem({
+          conversaId: conversa.id,
+          remetente: "bot",
+          conteudo: texto,
+          providerMessageId: envio.messageId ?? null,
+          statusEntrega: envio.messageId ? "enviada" : null,
+        });
+
+        if (!envio.messageId) {
+          // Sem chave não há como confirmar entrega depois. Não vira erro
+          // (a mensagem pode ter saído), mas não pode passar em silêncio.
+          console.warn(
+            `[campanha] provedor respondeu 2xx SEM id de mensagem para ${item.telefone} — envio não confirmável.`,
+          );
+        }
       }
 
       /*
