@@ -22,7 +22,20 @@ import { normalizarTelefoneBr } from "./telefone";
 export type ResultadoEnvio = {
   enviado: boolean;
   /** Preenchido só quando `enviado` é false — o que impediu o envio. */
-  motivo?: "provedor_nao_configurado" | "erro_provedor" | "dados_invalidos";
+  motivo?:
+    | "provedor_nao_configurado"
+    | "erro_provedor"
+    | "dados_invalidos"
+    /**
+     * O provedor respondeu 2xx mas NÃO devolveu a chave da mensagem.
+     *
+     * A Evolution devolve `key.id` em todo envio real — é dela que sai o
+     * ✓✓ depois. Um 2xx sem chave não é envio: é a chamada HTTP tendo
+     * sucesso sem que mensagem nenhuma tenha saído. Tratar isso como
+     * sucesso foi o que fez o painel dizer "enviado" para 27 mensagens que
+     * nunca apareceram no WhatsApp do corretor (27/08/2026).
+     */
+    | "sem_confirmacao";
   detalhe?: string;
   /**
    * Id da mensagem no provedor (`key.id` da resposta da Evolution), quando
@@ -497,7 +510,34 @@ export async function enviarMidiaWhatsapp(params: {
       };
     }
 
-    return { enviado: true, messageId: messageIdDaResposta(await res.json().catch(() => null)) };
+    /*
+     * Lê como TEXTO e só então tenta interpretar como JSON.
+     *
+     * O `res.json().catch(() => null)` de antes escondia dois casos
+     * distintos sob o mesmo `null`: resposta que não é JSON e resposta que
+     * é JSON sem a chave. Nos dois, o corpo — a única pista do que o
+     * provedor realmente respondeu — era descartado. Foi por isso que 27
+     * envios falharam em silêncio sem deixar rastro nenhum.
+     */
+    const corpo = await res.text().catch(() => "");
+    let json: unknown = null;
+    try {
+      json = corpo ? JSON.parse(corpo) : null;
+    } catch {
+      // Corpo não-JSON: `json` fica null e o caso cai no `sem_confirmacao`
+      // abaixo, com o texto cru preservado no detalhe.
+    }
+
+    const messageId = messageIdDaResposta(json);
+    if (!messageId) {
+      return {
+        enviado: false,
+        motivo: "sem_confirmacao",
+        detalhe: `HTTP ${res.status} sem key.id — resposta: ${corpo.slice(0, 300) || "(vazia)"}`,
+      };
+    }
+
+    return { enviado: true, messageId };
   } catch (err) {
     return {
       enviado: false,
@@ -553,7 +593,38 @@ export async function enviarMensagemWhatsapp(params: {
       };
     }
 
-    return { enviado: true, messageId: messageIdDaResposta(await res.json().catch(() => null)) };
+    /*
+     * A prova de envio é a CHAVE da mensagem, não o código HTTP.
+     *
+     * A regra inegociável no topo deste arquivo já dizia "nunca reportar
+     * enviado: true sem uma resposta de sucesso do provedor" — e este
+     * ponto a violava: qualquer 2xx passava. Em 27/08/2026 isso fez o
+     * painel mostrar 27 mensagens enviadas que nunca chegaram ao WhatsApp
+     * do corretor, todas sem `key.id`.
+     *
+     * Ler como TEXTO antes de interpretar preserva o corpo da resposta —
+     * o `res.json().catch(() => null)` de antes o descartava, e era a
+     * única pista do que o provedor de fato respondeu.
+     */
+    const corpo = await res.text().catch(() => "");
+    let json: unknown = null;
+    try {
+      json = corpo ? JSON.parse(corpo) : null;
+    } catch {
+      // Corpo não-JSON cai no `sem_confirmacao` abaixo, com o texto cru
+      // preservado no detalhe.
+    }
+
+    const messageId = messageIdDaResposta(json);
+    if (!messageId) {
+      return {
+        enviado: false,
+        motivo: "sem_confirmacao",
+        detalhe: `HTTP ${res.status} sem key.id — resposta: ${corpo.slice(0, 300) || "(vazia)"}`,
+      };
+    }
+
+    return { enviado: true, messageId };
   } catch (err) {
     return {
       enviado: false,
