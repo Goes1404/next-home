@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, QrCode, Smartphone } from "lucide-react";
 import type { StatusConexaoWhatsapp } from "@/lib/whatsapp/types";
-import { conectarWhatsapp, desconectarWhatsapp, verificarConexaoWhatsapp } from "../acoes";
+import {
+  conectarWhatsapp,
+  desconectarWhatsapp,
+  diagnosticarProvedorWhatsapp,
+  verificarConexaoWhatsapp,
+} from "../acoes";
 
 /**
  * Conectar o número — um assistente de três passos (roadmap F4).
@@ -188,6 +193,28 @@ export function PainelConexao({
             </button>
           </div>
         </div>
+
+        {/* TEMPORÁRIO — diagnóstico de 27/08/2026: o provedor confirmava
+            envio sem entregar. O botão manda uma mensagem de teste PARA O
+            PRÓPRIO número e grava a resposta crua do provedor. Remover
+            junto com `diagnosticarProvedorWhatsapp` e `lib/whatsapp/sonda.ts`
+            quando a causa aparecer. */}
+        <button
+          onClick={async () => {
+            setErro(null);
+            setFeedback("Perguntando ao provedor…");
+            const r = await diagnosticarProvedorWhatsapp();
+            if (r.erro) {
+              setFeedback(null);
+              setErro(r.erro);
+              return;
+            }
+            setFeedback(r.ok ?? null);
+          }}
+          className="text-fluid-xs border-linha-forte text-apoio hover:text-titulo min-h-11 cursor-pointer rounded-xl border px-4 transition-colors"
+        >
+          Testar envio para o meu número
+        </button>
 
         {feedback && (
           <p className="text-fluid-xs text-ok border-ok-linha bg-ok-lavado rounded-xl border px-4 py-3">

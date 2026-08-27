@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { sondarProvedor } from "@/lib/whatsapp/sonda";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -391,4 +392,40 @@ export async function desconectarWhatsapp(): Promise<{ ok?: string; erro?: strin
 
   revalidatePath("/corretor/whatsapp");
   return { ok: "Número desconectado. A IA para de responder até você conectar de novo." };
+}
+
+/**
+ * Roda a sonda de diagnóstico do provedor e guarda a resposta crua.
+ *
+ * TEMPORÁRIA — existe para o caso de 27/08/2026, em que a Evolution
+ * confirmava envio (devolvia `key.id`) sem que mensagem nenhuma chegasse,
+ * enquanto continuava recebendo normalmente. Some junto com o botão quando
+ * a causa aparecer. Ver `lib/whatsapp/sonda.ts`.
+ */
+export async function diagnosticarProvedorWhatsapp(): Promise<{ ok?: string; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  const supabase = await createClient();
+  const { data: instancia } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("instance_name, telefone_conectado")
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+
+  if (!instancia?.instance_name) return { erro: "Nenhum número conectado para diagnosticar." };
+
+  // O teste manda para o PRÓPRIO número conectado: não incomoda cliente
+  // nenhum, não gasta reputação com terceiro, e dá para conferir na hora
+  // abrindo o WhatsApp — se a mensagem não aparecer nem para si mesmo, o
+  // problema não é do destinatário.
+  const destino = instancia.telefone_conectado;
+  if (!destino) return { erro: "O provedor não informa qual número está pareado." };
+
+  const resultado = await sondarProvedor(instancia.instance_name, destino);
+  if ("erro" in resultado) return { erro: resultado.erro };
+
+  return {
+    ok: "Diagnóstico gravado. Confira se a mensagem de teste chegou no seu WhatsApp e avise.",
+  };
 }
