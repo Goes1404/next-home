@@ -820,6 +820,29 @@ trilho+IA, follow-up, métricas de funil).
   linhas que ninguém consulta (o erro do `historico_envios`). Campanha que
   fica sem pendência é fechada junto, senão seguiria "em andamento" para
   sempre prometendo disparo que não existe.
+- **O envio mandava o telefone SEM O DDI, e o erro acusava o lead**
+  (27/08/2026). O provedor só tirava a pontuação
+  (`replace(/\D/g, "")`), então `11.95721-6675` virava `11957216675` — onze
+  dígitos, sem `55`. A Evolution responde a isso com `"exists": false`, que o
+  sistema traduz para **"Número não está no WhatsApp"**: um defeito NOSSO
+  vestido de dado ruim do cliente. Pior, `ehDestinatarioInexistente` marca
+  esse item como erro DEFINITIVO, sem retentativa (e com razão: número que
+  não existe não passa a existir). Ou seja, o lead era queimado para sempre
+  por causa de uma vírgula no cadastro. Medido: **37 dos 95 leads (39%)**
+  estavam nessa situação — e todos os 95 já tinham `telefone_e164` correto,
+  porque o BANCO sabia normalizar desde a coluna gerada. Só o código de
+  envio não sabia. Hoje `normalizarTelefoneBr` (`telefone.ts`) espelha a
+  função `normalizar_telefone_br` do Postgres e roda no provedor, que é o
+  ponto único por onde toda mensagem passa. **Corolário para diagnóstico:
+  "Número não está no WhatsApp" na fila NÃO é prova de telefone errado —
+  confira o que foi de fato enviado antes de culpar o cadastro.**
+- **Marcar a campanha com `ignorar_janela` não solta a fila que já existe.**
+  Os itens foram gravados com `agendado_para` na próxima janela, e o
+  disparador obedece a HORA, não a marca. Liberar é sempre duas coisas:
+  marcar a campanha **e reagendar os pendentes a partir de agora**, com o
+  mesmo espaçamento de 35-75s. Sem o segundo passo o botão parece não fazer
+  nada — e "parece não fazer nada" é o pior desfecho possível para um botão
+  de urgência.
 - **A janela de horário e as outras três proteções anti-ban defendem coisas
   DIFERENTES**, e confundi-las é o risco do botão "enviar a qualquer hora"
   (0058). Espaçamento de 35-75s, cota da curva de aquecimento e disjuntor

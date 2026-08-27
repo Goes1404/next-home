@@ -1,6 +1,7 @@
 import "server-only";
 
 import { decidirPareamentoPorNumero } from "./pareamento";
+import { normalizarTelefoneBr } from "./telefone";
 
 /**
  * Adaptador de envio de mensagens do WhatsApp.
@@ -185,7 +186,9 @@ export async function obterQrCodeInstancia(
     };
   }
 
-  const numero = telefone?.replace(/\D/g, "") || "";
+  // Também normaliza o número DO CORRETOR: pareamento por código exige o
+  // DDI, e ele digita o próprio telefone do jeito que fala.
+  const numero = normalizarTelefoneBr(telefone) ?? "";
 
   /*
    * Pareamento por número exige olhar o estado ANTES de pedir qualquer
@@ -403,7 +406,7 @@ export async function enviarPresencaDigitando(params: {
   const config = configDoProvedor();
   if (!config) return;
 
-  const numero = params.telefone.replace(/\D/g, "");
+  const numero = normalizarTelefoneBr(params.telefone);
   if (!numero || !params.instanceName) return;
 
   try {
@@ -454,7 +457,7 @@ export async function enviarMidiaWhatsapp(params: {
 }): Promise<ResultadoEnvio> {
   const { instanceName, telefone, tipo, url } = params;
 
-  const numero = telefone.replace(/\D/g, "");
+  const numero = normalizarTelefoneBr(telefone);
   if (!numero || !url.trim() || !instanceName) {
     return { enviado: false, motivo: "dados_invalidos" };
   }
@@ -512,7 +515,7 @@ export async function enviarMensagemWhatsapp(params: {
 }): Promise<ResultadoEnvio> {
   const { instanceName, telefone, texto } = params;
 
-  const numero = telefone.replace(/\D/g, "");
+  const numero = normalizarTelefoneBr(telefone);
   if (!numero || !texto.trim() || !instanceName) {
     return { enviado: false, motivo: "dados_invalidos" };
   }

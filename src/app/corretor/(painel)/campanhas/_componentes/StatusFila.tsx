@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { RotateCcw, Trash2, Zap } from "lucide-react";
+import { Clock, RotateCcw, Trash2, Zap } from "lucide-react";
 import {
+  liberarEnvioAgora,
   limparFilaDisparo,
   processarFilaAgora,
   resetarCotaDisparo,
@@ -49,6 +50,7 @@ export function StatusFila({
   const [processando, iniciarProcessamento] = useTransition();
   const [limpando, iniciarLimpeza] = useTransition();
   const [resetando, iniciarReset] = useTransition();
+  const [liberando, iniciarLiberacao] = useTransition();
 
   if (!status) return null;
 
@@ -138,6 +140,43 @@ export function StatusFila({
     });
   }
 
+  /**
+   * Solta a fila que está esperando o horário comercial.
+   *
+   * Marcar a campanha não basta: os itens já foram gravados com
+   * `agendado_para` na próxima janela, e o disparador obedece a hora, não a
+   * marca. A ação reagenda tudo a partir de agora — ver `liberarEnvioAgora`.
+   */
+  function liberar() {
+    if (
+      !confirm(
+        "As mensagens vão sair AGORA, mesmo fora do horário comercial.\n\n" +
+          "O intervalo entre uma e outra continua valendo — o que muda é só a espera pela " +
+          "manhã. Mensagem de propaganda de madrugada é o que mais gera denúncia, e denúncia " +
+          "é o que derruba um número. Confirma?",
+      )
+    ) {
+      return;
+    }
+
+    setErro(null);
+    iniciarLiberacao(async () => {
+      const resultado = await liberarEnvioAgora();
+      if ("erro" in resultado) {
+        setErro(resultado.erro);
+        return;
+      }
+      await atualizar();
+      setFeedback(
+        `Liberado: ${resultado.mensagens} mensagem${resultado.mensagens === 1 ? "" : "s"} saindo agora, uma a cada minuto.` +
+          (resultado.retentativas > 0
+            ? ` ${resultado.retentativas} que tinha${resultado.retentativas === 1 ? "" : "m"} falhado volta${resultado.retentativas === 1 ? "" : "m"} para a fila.`
+            : ""),
+      );
+      setTimeout(() => setFeedback(null), 10000);
+    });
+  }
+
   return (
     <section
       className={`rounded-2xl border p-5 sm:p-6 ${
@@ -166,6 +205,20 @@ export function StatusFila({
             </p>
           )}
         </div>
+
+        {/* Quando a fila está parada, o botão útil é o que a solta — não o
+            "enviar agora", que respeita a mesma janela e não faria nada. */}
+        {status.pendentes > 0 && parada && (
+          <button
+            type="button"
+            onClick={liberar}
+            disabled={liberando}
+            className="text-fluid-sm border-alerta-linha text-alerta hover:opacity-80 flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-opacity disabled:opacity-60"
+          >
+            <Clock className="h-4 w-4" />
+            {liberando ? "Liberando…" : "Liberar envio agora"}
+          </button>
+        )}
 
         {status.pendentes > 0 && !parada && (
           <button

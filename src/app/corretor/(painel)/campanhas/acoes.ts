@@ -6,7 +6,12 @@ import { createClient } from "@/lib/supabase/server";
 import type { Lead } from "@/lib/types";
 import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
 import { processarFilaCampanhas } from "@/lib/whatsapp/campaignDispatcher";
-import { gerarMensagensCampanhaPersonalizadas, montarFilaCampanha } from "@/lib/whatsapp/campaignQueue";
+import {
+  gerarMensagensCampanhaPersonalizadas,
+  montarFilaCampanha,
+  INTERVALO_MAXIMO_SEGUNDOS,
+  INTERVALO_MINIMO_SEGUNDOS,
+} from "@/lib/whatsapp/campaignQueue";
 import { provedorConfigurado } from "@/lib/whatsapp/provider";
 import { saldoDiario, dentroDaJanela } from "@/lib/whatsapp/antiBan";
 
@@ -346,6 +351,103 @@ export async function enviarAgoraParaTodosOsLeads(params: {
     mensagemBase,
     ignorarJanela: true,
   });
+}
+
+export type ResultadoLiberacao =
+  | { ok: true; campanhas: number; mensagens: number; retentativas: number }
+  | { erro: string };
+
+/**
+ * Solta uma fila que está esperando o horário comercial.
+ *
+ * Sem isto, a exceção de janela (0058) só valia para campanha NOVA: a lista
+ * criada às 21h já nascia com cada item agendado para as 9h do dia seguinte,
+ * e marcar a campanha depois não adiantava nada — o disparador obedece o
+ * `agendado_para`, não a marca. Liberar é, portanto, duas coisas:
+ *
+ *  1. marcar a campanha com `ignorar_janela`; e
+ *  2. **reagendar os pendentes a partir de agora**, mantendo o espaçamento
+ *     de 35-75s. É o passo que as pessoas esquecem, e sem ele o botão
+ *     parece não fazer nada.
+ *
+ * Também devolve à fila os itens em `erro`. O motivo é específico: até
+ * 27/08/2026 o envio mandava o telefone sem o DDI `55`, a Evolution
+ * respondia `"exists": false` e o item virava erro DEFINITIVO — 39% dos
+ * leads da base eram queimados por uma pontuação no cadastro. Esses erros
+ * são falsos, e a cota gasta com eles já foi devolvida (0034).
+ *
+ * `campanhaId` ausente = todas as campanhas em andamento do corretor. É o
+ * botão "liberar tudo"; com id, é o botão de uma lista só.
+ */
+export async function liberarEnvioAgora(params?: {
+  campanhaId?: string;
+}): Promise<ResultadoLiberacao> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  const supabase = await createClient();
+
+  // A RLS já recorta por corretor; o `.eq` explícito existe porque o gestor
+  // enxerga a equipe inteira desde a 0031 e liberaria a fila dos colegas.
+  let queryCampanhas = supabase
+    .from("whatsapp_campanhas")
+    .select("id")
+    .eq("corretor_id", corretor.id)
+    .eq("status", "em_andamento");
+
+  if (params?.campanhaId) queryCampanhas = queryCampanhas.eq("id", params.campanhaId);
+
+  const { data: campanhas } = await queryCampanhas;
+  const ids = (campanhas ?? []).map((c) => c.id);
+  if (ids.length === 0) return { erro: "Nenhuma lista em andamento para liberar." };
+
+  const { error: erroMarca } = await supabase
+    .from("whatsapp_campanhas")
+    .update({ ignorar_janela: true })
+    .in("id", ids);
+
+  if (erroMarca) return { erro: "Não foi possível liberar o envio agora." };
+
+  // Erro falso volta para a fila ANTES do reagendamento, para entrar na
+  // mesma escada de horários dos pendentes.
+  const { data: revividos } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .update({ status: "pendente", erro_motivo: null })
+    .in("campanha_id", ids)
+    .eq("status", "erro")
+    .select("id");
+
+  const { data: pendentes } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .select("id")
+    .in("campanha_id", ids)
+    .eq("status", "pendente")
+    .order("agendado_para", { ascending: true });
+
+  // Reagenda a partir de agora, com o mesmo espaçamento humanizado da
+  // montagem original. Um `update` por item porque cada um recebe um
+  // horário diferente — é o preço de não despachar tudo no mesmo segundo,
+  // que é justamente o padrão que o WhatsApp lê como robô.
+  const janela = INTERVALO_MAXIMO_SEGUNDOS - INTERVALO_MINIMO_SEGUNDOS;
+  let deslocamentoSegundos = 0;
+
+  for (const item of pendentes ?? []) {
+    await supabase
+      .from("whatsapp_campanhas_fila")
+      .update({ agendado_para: new Date(Date.now() + deslocamentoSegundos * 1000).toISOString() })
+      .eq("id", item.id);
+    deslocamentoSegundos += INTERVALO_MINIMO_SEGUNDOS + Math.floor(Math.random() * janela);
+  }
+
+  acenderCorrenteDeDisparo();
+  revalidatePath("/corretor/campanhas");
+
+  return {
+    ok: true,
+    campanhas: ids.length,
+    mensagens: pendentes?.length ?? 0,
+    retentativas: revividos?.length ?? 0,
+  };
 }
 
 export type ResultadoLimparFila =

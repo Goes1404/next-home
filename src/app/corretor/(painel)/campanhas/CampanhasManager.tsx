@@ -63,7 +63,10 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais, statusIni
         }}
       />
 
-      <HistoricoCampanhas campanhas={campanhas} />
+      <HistoricoCampanhas
+        campanhas={campanhas}
+        aoLiberar={async () => setCampanhas(await listarCampanhas())}
+      />
     </div>
   );
 }
