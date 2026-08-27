@@ -44,7 +44,11 @@ describe("toda consulta de lead filtra os arquivados (0055)", () => {
           consulta.includes('is("arquivado_em", null)') ||
           // A lista de arquivados é a exceção legítima: é a tela que existe
           // para mostrá-los, e ela alterna entre os dois filtros.
-          consulta.includes('filtro.arquivados');
+          consulta.includes('filtro.arquivados') ||
+          // Consulta que existe para contar OS ARQUIVADOS (o selo do botão
+          // de acesso). Ela olha para o outro lado do mesmo filtro — não é
+          // consulta que "esqueceu" de recortar.
+          consulta.includes('not("arquivado_em", "is", null)');
         expect(filtra, `consulta sem filtro de arquivado em ${arquivo}:\n${consulta.slice(0, 200)}`).toBe(true);
       }
     });
@@ -55,6 +59,25 @@ describe("toda consulta de lead filtra os arquivados (0055)", () => {
     // guardado sem tela é indistinguível de dado perdido.
     expect(fonte("src/lib/corretorSessao.ts")).toContain('not("arquivado_em", "is", null)');
     expect(fonte("src/app/corretor/(painel)/leads/page.tsx")).toContain("arquivados");
+  });
+
+  it("excluir em LOTE também exige arquivado antes — a trava vive na query", () => {
+    const acoes = fonte("src/app/corretor/(painel)/leads/acoes.ts");
+    const delecao = acoes.slice(acoes.indexOf("export async function excluirLeadsEmLote"));
+    const corpo = delecao.slice(0, delecao.indexOf("\n}"));
+    // Na QUERY, e não numa conferência em JavaScript antes: entre ler e
+    // apagar, o lead pode ter sido restaurado em outra aba.
+    expect(corpo).toContain('.delete()');
+    expect(corpo).toContain('not("arquivado_em", "is", null)');
+  });
+
+  it("arquivar em lote não alcança quem já estava arquivado", () => {
+    const acoes = fonte("src/app/corretor/(painel)/leads/acoes.ts");
+    const fn = acoes.slice(acoes.indexOf("export async function arquivarLeadsEmLote"));
+    const corpo = fn.slice(0, fn.indexOf("\n}"));
+    // Sem isto, arquivar de novo reescreveria a data e o lead pareceria
+    // recém-arquivado — histórico que o próprio sistema falsifica.
+    expect(corpo).toContain('is("arquivado_em", null)');
   });
 
   it("excluir exige o lead arquivado antes — dois passos, não um", () => {

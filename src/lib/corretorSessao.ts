@@ -231,6 +231,25 @@ function diaEmSaoPaulo(): string {
  * inteira para o gestor), filtrar em memória obrigava toda visita à tela a
  * baixar a carteira completa. Aqui o navegador só recebe o que mostra.
  */
+/**
+ * Quantos leads estão arquivados.
+ *
+ * `head: true` — só o número, nenhuma linha trafegada. É o que permite o
+ * botão de arquivados mostrar a contagem sem custo, e sem contagem o botão
+ * não resolve o problema que ele existe para resolver: saber que há algo lá.
+ *
+ * A RLS recorta como no resto do arquivo: corretor conta os seus, gestor
+ * conta todos.
+ */
+export async function contarLeadsArquivados(): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .not("arquivado_em", "is", null);
+  return count ?? 0;
+}
+
 export async function getPaginaDeLeads(
   filtro: FiltroLeads = {},
   pagina = 0,

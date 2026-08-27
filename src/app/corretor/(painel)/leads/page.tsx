@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail } from "lucide-react";
+import { Archive, Mail } from "lucide-react";
 import { ListaLeads } from "./ListaLeads";
 import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import {
@@ -8,6 +8,7 @@ import {
   getEquipeAtiva,
   getMeusTemplates,
   getPaginaDeLeads,
+  contarLeadsArquivados,
   souGestor,
   type FiltroLeads,
 } from "@/lib/corretorSessao";
@@ -76,11 +77,12 @@ export default async function LeadsPage({
     arquivados: verArquivados || undefined,
   };
 
-  const [pagina, gestor, corretor, templates] = await Promise.all([
+  const [pagina, gestor, corretor, templates, arquivados] = await Promise.all([
     getPaginaDeLeads(filtro),
     souGestor(),
     getCorretorLogado(),
     getMeusTemplates(),
+    contarLeadsArquivados(),
   ]);
   const equipe = gestor ? await getEquipeAtiva() : [];
 
@@ -98,12 +100,30 @@ export default async function LeadsPage({
                 ? "Todos os contatos recebidos pelos formulários do site e portais parceiros."
                 : "Contatos que chegaram atribuídos a você — pelo seu link pessoal, portais ou distribuição automática."}
           </p>
-          <Link
-            href={verArquivados ? "/corretor/leads" : "/corretor/leads?arquivados=1"}
-            className="text-fluid-xs text-tenue hover:text-corpo mt-2 inline-block underline underline-offset-4 transition-colors"
-          >
-            {verArquivados ? "← Voltar para os leads ativos" : "Ver leads arquivados"}
-          </Link>
+          {/* Era um texto cinza minúsculo debaixo do parágrafo — relatado
+              como "não consigo acessar os arquivados", e com razão: no
+              celular ele desaparece. Agora é um botão de verdade, e leva a
+              CONTAGEM: sem o número, quem arquivou algo não tem como saber
+              se ainda está lá. Some quando não há nada arquivado — porta
+              para uma sala vazia é ruído. */}
+          {(verArquivados || arquivados > 0) && (
+            <Link
+              href={verArquivados ? "/corretor/leads" : "/corretor/leads?arquivados=1"}
+              className="text-fluid-xs border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 transition-colors"
+            >
+              {verArquivados ? (
+                "← Voltar para os leads ativos"
+              ) : (
+                <>
+                  <Archive aria-hidden className="h-3.5 w-3.5" />
+                  Arquivados
+                  <span className="bg-chip text-apoio rounded-full px-1.5 text-[10px] font-semibold tabular-nums">
+                    {arquivados}
+                  </span>
+                </>
+              )}
+            </Link>
+          )}
         </div>
 
         <Link
@@ -138,6 +158,7 @@ export default async function LeadsPage({
         templates={templates}
         nomeCorretor={corretor?.nome ?? ""}
         whatsappCorretor={corretor?.whatsapp ?? ""}
+        verArquivados={verArquivados}
       />
     </div>
   );

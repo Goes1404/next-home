@@ -1794,6 +1794,25 @@ Duas lições que valem além do `sharp`:
   continuam. E quem foi excluído VOLTA como lead novo se escrever de novo
   (`obterOuCriarConversa` cria, 0026) — o que se apaga é o registro, não o
   futuro.
+- **A regra de dois passos virou LUGAR, não só ordem** (27/08/2026). Com
+  arquivar e excluir em lote, a trava "arquive antes de excluir" deixou de
+  poder ser só uma checagem: agora arquivar só existe na lista ATIVA e
+  excluir só existe na lista de ARQUIVADOS. Nunca o mesmo botão no mesmo
+  lugar — apagar não pode ser um toque a mais onde antes se arquivava.
+- **A trava do lote vive na QUERY, não em JavaScript.** `excluirLeadsEmLote`
+  põe `not("arquivado_em","is",null)` no próprio DELETE; conferir antes e
+  apagar depois seria uma corrida (entre a leitura e o delete, o lead pode
+  ter sido restaurado noutra aba). A diferença entre ids pedidos e linhas
+  afetadas é o que a tela conta de volta.
+- **`arquivarLeadsEmLote` filtra `is("arquivado_em", null)`** — sem isso,
+  arquivar de novo reescreveria a data e o lead pareceria recém-arquivado.
+  Histórico que o próprio sistema falsifica.
+- **"Não consigo acessar os arquivados" era um link cinza de `text-fluid-xs`**
+  debaixo de um parágrafo: no celular, invisível na prática. Virou botão com
+  CONTAGEM — sem o número, quem arquivou não tem como saber se ainda está
+  lá — e some quando não há nada arquivado (porta para sala vazia é ruído).
+  `contarLeadsArquivados` é a exceção registrada em `leadArquivado.test.ts`:
+  ela olha para o outro lado do mesmo filtro, não "esqueceu" de recortar.
 - **Ao adicionar coluna de recorte (`arquivado_em`), o risco é a consulta
   esquecida**: a regressão é calada — a tela funciona e só volta a contar
   quem foi arquivado. `leadArquivado.test.ts` lê o código-fonte e reprova

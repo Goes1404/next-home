@@ -5,7 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TabelaLeads } from "./TabelaLeads";
 import { EnviarEmMassa } from "./EnviarEmMassa";
-import { carregarPaginaLeads } from "./acoes";
+import {
+  arquivarLeadsEmLote,
+  carregarPaginaLeads,
+  excluirLeadsEmLote,
+  restaurarLeadsEmLote,
+  type ResultadoLote,
+} from "./acoes";
 import { moverEtapaEmMassa } from "@/app/corretor/actions";
 import { PONTO_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
@@ -59,6 +65,7 @@ export function ListaLeads({
   templates,
   nomeCorretor,
   whatsappCorretor,
+  verArquivados = false,
 }: {
   leadsIniciais: Lead[];
   total: number;
@@ -68,6 +75,15 @@ export function ListaLeads({
   templates: TemplateMensagem[];
   nomeCorretor: string;
   whatsappCorretor: string;
+  /**
+   * A lista está mostrando os ARQUIVADOS.
+   *
+   * Muda quais ações a seleção oferece, e é o que mantém a regra de dois
+   * passos da 0055 de pé: arquivar só existe na lista ativa, excluir só
+   * existe aqui. Nunca o mesmo botão no mesmo lugar — apagar não pode ser
+   * um toque a mais onde antes se arquivava.
+   */
+  verArquivados?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -89,6 +105,7 @@ export function ListaLeads({
   // Segundo andar da barra de seleção: a lista de etapas para mover o lote.
   const [escolhendoEtapa, setEscolhendoEtapa] = useState(false);
   const [avisoLote, setAvisoLote] = useState<string | null>(null);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [movendoLote, iniciarLote] = useTransition();
 
   // Páginas além da primeira, acumuladas pelo botão "carregar mais". O
@@ -158,6 +175,30 @@ export function ListaLeads({
   }
 
   const leadsSelecionados = leads.filter((l) => selecionados.has(l.id));
+
+  /**
+   * Ações de arquivo em lote. Uma função só porque as três diferem apenas
+   * na chamada e no verbo — e porque o pós-processamento (limpar seleção,
+   * avisar, recarregar) tem de ser idêntico nas três.
+   */
+  function agirEmLote(
+    acao: (ids: string[]) => Promise<ResultadoLote>,
+    verbo: (n: number) => string,
+  ) {
+    const ids = [...selecionados];
+    setAvisoLote(null);
+    iniciarLote(async () => {
+      const resultado = await acao(ids);
+      if ("erro" in resultado) {
+        setAvisoLote(resultado.erro);
+        return;
+      }
+      setSelecionados(new Set());
+      setConfirmandoExclusao(false);
+      setAvisoLote(verbo(resultado.afetados));
+      router.refresh();
+    });
+  }
 
   function moverLote(etapa: EtapaFunil) {
     const ids = [...selecionados];
@@ -377,6 +418,7 @@ export function ListaLeads({
               >
                 Limpar
               </button>
+              {!verArquivados && (
               <button
                 type="button"
                 onClick={() => setEscolhendoEtapa((v) => !v)}
@@ -386,13 +428,61 @@ export function ListaLeads({
               >
                 {movendoLote ? "Movendo…" : "Mover para…"}
               </button>
-              <button
-                type="button"
-                onClick={() => setModalAberto(true)}
-                className="text-fluid-sm bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-lg px-4 font-medium whitespace-nowrap text-white transition-colors"
-              >
-                Enviar mensagem
-              </button>
+              )}
+              {/* Na lista ARQUIVADOS as ações são outras: restaurar e
+                  excluir. Mandar mensagem para quem foi arquivado seria o
+                  contrário do gesto de arquivar, e arquivar de novo não faz
+                  sentido nenhum. */}
+              {verArquivados ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      agirEmLote(restaurarLeadsEmLote, (n) =>
+                        n === 0
+                          ? "Nada a restaurar."
+                          : `${n} lead${n === 1 ? "" : "s"} restaurado${n === 1 ? "" : "s"}.`,
+                      )
+                    }
+                    disabled={movendoLote}
+                    className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha flex min-h-11 cursor-pointer items-center rounded-lg border px-3 whitespace-nowrap transition-colors disabled:opacity-60"
+                  >
+                    Restaurar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmandoExclusao(true)}
+                    disabled={movendoLote}
+                    className="text-fluid-sm border-perigo-linha bg-perigo-lavado text-perigo flex min-h-11 cursor-pointer items-center rounded-lg border px-3 whitespace-nowrap transition-opacity hover:opacity-80 disabled:opacity-60"
+                  >
+                    Excluir
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      agirEmLote(arquivarLeadsEmLote, (n) =>
+                        n === 0
+                          ? "Nada a arquivar — já estavam arquivados."
+                          : `${n} lead${n === 1 ? "" : "s"} arquivado${n === 1 ? "" : "s"}.`,
+                      )
+                    }
+                    disabled={movendoLote}
+                    className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha flex min-h-11 cursor-pointer items-center rounded-lg border px-3 whitespace-nowrap transition-colors disabled:opacity-60"
+                  >
+                    {movendoLote ? "…" : "Arquivar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalAberto(true)}
+                    className="text-fluid-sm bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-lg px-4 font-medium whitespace-nowrap text-white transition-colors"
+                  >
+                    Enviar mensagem
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -400,6 +490,46 @@ export function ListaLeads({
               fixed, então crescer para cima é só ficar mais alta). Cada botão
               leva a bolinha da régua: a mesma cor da coluna do quadro e da
               linha da lista — o corretor mira pela cor antes de ler. */}
+          {/* Confirmação da exclusão no MESMO andar de baixo da barra, e não
+              num `confirm()` do navegador: o número de leads precisa estar
+              escrito na frase que a pessoa confirma. "Apagar os
+              selecionados?" não diz se são 3 ou 300. */}
+          {confirmandoExclusao && (
+            <div className="border-perigo-linha bg-perigo-lavado mx-auto mt-3 w-full max-w-[84rem] rounded-lg border px-3 py-3 md:px-4">
+              <p className="text-fluid-sm text-titulo font-medium">
+                Excluir {selecionados.size} lead{selecionados.size === 1 ? "" : "s"} para sempre?
+              </p>
+              <p className="text-fluid-xs text-apoio mt-1">
+                Vai junto o histórico de conversa no CRM, as tarefas e o que a IA anotou sobre
+                cada um. Não dá para desfazer.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    agirEmLote(excluirLeadsEmLote, (n) =>
+                      n === 0
+                        ? "Nada foi excluído — só leads arquivados podem ser apagados."
+                        : `${n} lead${n === 1 ? "" : "s"} excluído${n === 1 ? "" : "s"} para sempre.`,
+                    )
+                  }
+                  disabled={movendoLote}
+                  className="text-fluid-sm border-perigo-linha bg-perigo-lavado text-perigo flex min-h-11 cursor-pointer items-center rounded-lg border px-4 font-medium transition-opacity hover:opacity-80 disabled:opacity-60"
+                >
+                  {movendoLote ? "Excluindo…" : `Sim, excluir ${selecionados.size}`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmandoExclusao(false)}
+                  disabled={movendoLote}
+                  className="text-fluid-sm border-linha-forte text-corpo min-h-11 cursor-pointer rounded-lg border px-4 transition-colors disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
           {escolhendoEtapa && (
             <div className="mx-auto mt-3 flex w-full max-w-[84rem] flex-wrap gap-2 px-1 md:px-4">
               {ETAPAS_FUNIL.map((etapa) => (

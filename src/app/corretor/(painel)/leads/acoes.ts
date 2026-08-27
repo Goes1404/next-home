@@ -30,6 +30,109 @@ import { provedorConfigurado } from "@/lib/whatsapp/provider";
  * Campanhas já usavam. Nenhuma aba abre; as mensagens saem sozinhas.
  */
 
+/**
+ * Arquivar, restaurar e excluir VÁRIOS leads de uma vez.
+ *
+ * A ficha já fazia as três, uma a uma (0055). Em lote elas passam a ser
+ * usáveis para o que de fato acontece: uma importação que veio errada, uma
+ * planilha duplicada, uma lista de teste. Limpar isso lead a lead é o
+ * mesmo trabalho de não limpar.
+ *
+ * A regra de DOIS PASSOS continua inteira, e é o que separa estas duas
+ * funções: arquivar é o gesto do dia a dia (some da lista, volta com um
+ * clique, nada é destruído) e acontece na lista ativa; excluir apaga de
+ * verdade — com o dossiê da IA, as tarefas e a linha do tempo junto — e só
+ * acontece na lista de ARQUIVADOS. Nunca são o mesmo botão no mesmo lugar.
+ *
+ * Quem recorta é a RLS, como na ficha: corretor mexe nos seus, gestor em
+ * todos. O `.select()` de volta é o que separa "não pude" de "não havia" —
+ * sem ele, ids alheios devolveriam sucesso sem ter mudado nada, e o aviso
+ * na tela diria "12 arquivados" tendo arquivado zero.
+ */
+export type ResultadoLote = { ok: true; afetados: number } | { erro: string };
+
+/** Teto por chamada: seleção é da PÁGINA (30), e isso é folga suficiente. */
+const TETO_DO_LOTE = 200;
+
+function idsValidos(leadIds: string[]): string[] | null {
+  const ids = [...new Set(leadIds)].filter(Boolean);
+  if (ids.length === 0 || ids.length > TETO_DO_LOTE) return null;
+  return ids;
+}
+
+export async function arquivarLeadsEmLote(leadIds: string[]): Promise<ResultadoLote> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  const ids = idsValidos(leadIds);
+  if (!ids) return { erro: "Selecione ao menos um lead." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("leads")
+    .update({ arquivado_em: new Date().toISOString() })
+    .in("id", ids)
+    .is("arquivado_em", null)
+    .select("id");
+
+  if (error) return { erro: "Não foi possível arquivar agora." };
+
+  revalidatePath("/corretor/leads");
+  return { ok: true, afetados: data?.length ?? 0 };
+}
+
+export async function restaurarLeadsEmLote(leadIds: string[]): Promise<ResultadoLote> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  const ids = idsValidos(leadIds);
+  if (!ids) return { erro: "Selecione ao menos um lead." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("leads")
+    .update({ arquivado_em: null })
+    .in("id", ids)
+    .not("arquivado_em", "is", null)
+    .select("id");
+
+  if (error) return { erro: "Não foi possível restaurar agora." };
+
+  revalidatePath("/corretor/leads");
+  return { ok: true, afetados: data?.length ?? 0 };
+}
+
+/**
+ * Exclusão definitiva em lote. Não há desfazer.
+ *
+ * O `.not("arquivado_em", "is", null)` no próprio DELETE é a trava dos dois
+ * passos, e ela vive na QUERY de propósito: uma conferência em JavaScript
+ * antes do delete seria uma corrida — entre ler e apagar, o lead pode ter
+ * sido restaurado em outra aba. Assim, lead não arquivado simplesmente não
+ * é alcançado, e a diferença entre pedidos e afetados é o que a tela conta
+ * de volta.
+ */
+export async function excluirLeadsEmLote(leadIds: string[]): Promise<ResultadoLote> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  const ids = idsValidos(leadIds);
+  if (!ids) return { erro: "Selecione ao menos um lead." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("leads")
+    .delete()
+    .in("id", ids)
+    .not("arquivado_em", "is", null)
+    .select("id");
+
+  if (error) return { erro: "Não foi possível excluir agora." };
+
+  revalidatePath("/corretor/leads");
+  return { ok: true, afetados: data?.length ?? 0 };
+}
+
 export type RecorteDisparo = {
   /** Leads selecionados que têm telefone utilizável. */
   elegiveis: number;
