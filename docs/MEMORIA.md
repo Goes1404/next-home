@@ -820,6 +820,27 @@ trilho+IA, follow-up, métricas de funil).
   linhas que ninguém consulta (o erro do `historico_envios`). Campanha que
   fica sem pendência é fechada junto, senão seguiria "em andamento" para
   sempre prometendo disparo que não existe.
+- **"Contato sem nome" vazou uma SEGUNDA vez — agora para o painel**
+  (27/08/2026). A fila do Início mostrou seis linhas idênticas de "Falar com
+  Contato sem nome · Chegou hoje": seis pessoas diferentes, indistinguíveis
+  na tela, ocupando as seis vagas da fila. `nomeUtilDoLead` já existia e
+  resolvia — mas morava em `campaignQueue.ts`, e só o disparo a usava. Hoje
+  mora em `leads/nomeExibido.ts` (módulo PURO, sem dependência: importá-la
+  de dentro do `campaignQueue` arrastaria o `llm.ts` para o grafo da tela
+  mais aberta do painel — a mesma armadilha do `limitesPdf.ts`). **Sem nome
+  utilizável, a identidade é o TELEFONE**, que é o que distingue uma linha
+  da outra e o que o corretor reconhece.
+- **Fila que mostra seis vezes o mesmo assunto não é fila, é lista.** O teto
+  de 6 do Início não serve de nada se um tipo só puder ocupar os 6 — uma
+  importação de dez leads escondia tudo o que viesse depois. Hoje são no
+  máximo 2 itens individuais por tipo, e o resto vira UMA linha agrupada
+  ("Mais 8 leads novos esperando") que leva à lista filtrada. O item
+  agrupado não tem botão de WhatsApp de propósito: ele aponta para várias
+  pessoas, e abriria a conversa de quem?
+- **Link de painel para lista precisa usar o parâmetro que a lista LÊ.**
+  Escrevi `?filtro=parados` e a lista só entende `?parado=N` (o mesmo dos
+  KPIs da administração) — parâmetro desconhecido é ignorado em silêncio e
+  o corretor cai na lista inteira, achando que o filtro não funciona.
 - **Tentativas de contato são DUAS contagens, não uma** (`leads`, 0060).
   `tentativas_contato` é o total na vida e nunca diminui; `tentativas_sem_resposta`
   zera quando o cliente fala. Guardar só o total não resolve nada: um lead

@@ -73,3 +73,38 @@ describe("ordem da fila de trabalho", () => {
     expect(TETO_DA_FILA).toBeLessThanOrEqual(6);
   });
 });
+
+describe("nome e agrupamento na fila (27/08/2026)", () => {
+  /*
+   * Reprodução do que apareceu em produção: uma importação de dez leads sem
+   * nome encheu as seis vagas com "Falar com Contato sem nome · Chegou
+   * hoje" — seis pessoas diferentes, indistinguíveis, escondendo tudo o que
+   * viesse depois.
+   */
+  it("sem nome utilizável, o TELEFONE vira a identidade", async () => {
+    const { nomeParaExibir } = await import("@/lib/leads/nomeExibido");
+    expect(nomeParaExibir({ nome: "Contato sem nome", telefone: "11.95721-6675" })).toBe(
+      "(11) 95721-6675",
+    );
+    expect(nomeParaExibir({ nome: "  ", telefone: "5511995738920" })).toBe("(11) 99573-8920");
+  });
+
+  it("nome de verdade continua ganhando do telefone", async () => {
+    const { nomeParaExibir } = await import("@/lib/leads/nomeExibido");
+    expect(nomeParaExibir({ nome: "Priscila", telefone: "11957216675" })).toBe("Priscila");
+  });
+
+  it("sem nome E sem telefone, diz a verdade em vez de inventar", async () => {
+    const { nomeParaExibir } = await import("@/lib/leads/nomeExibido");
+    expect(nomeParaExibir({ nome: null, telefone: null })).toBe("Contato sem nome");
+    // Número que não dá para remontar não vira identidade falsa.
+    expect(nomeParaExibir({ nome: null, telefone: "123" })).toBe("Contato sem nome");
+  });
+
+  it("a fila agrupa a partir do terceiro item do mesmo tipo", async () => {
+    const { INDIVIDUAIS_POR_TIPO } = await import("./filaDeTrabalho");
+    // O teto de 6 não serve de nada se um assunto só puder ocupar os 6.
+    expect(INDIVIDUAIS_POR_TIPO).toBeLessThan(6);
+    expect(INDIVIDUAIS_POR_TIPO).toBeGreaterThan(1);
+  });
+});

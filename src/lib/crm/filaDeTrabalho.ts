@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { situacaoDaTarefa, type Tarefa } from "@/lib/crm/timeline";
+import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import type { Lead } from "@/lib/types";
 
 /**
@@ -45,6 +46,20 @@ export type ItemFila = {
 
 /** Quantos itens a fila mostra. Mais que isso vira lista, não fila. */
 export const TETO_DA_FILA = 6;
+
+/**
+ * Quantos itens individuais do MESMO tipo a fila mostra antes de agrupar.
+ *
+ * Sem isto, uma importação de dez leads enche as seis vagas com dez linhas
+ * iguais — flagrado em produção: seis "Falar com Contato sem nome · Chegou
+ * hoje", indistinguíveis entre si, escondendo tudo o que viesse depois. Fila
+ * que mostra dez vezes a mesma coisa não é fila, é lista — e o teto de 6
+ * existe justamente contra isso.
+ *
+ * Dois é o número porque um não deixa claro que há mais de um caso, e três
+ * já ocupa metade da fila com um assunto só.
+ */
+export const INDIVIDUAIS_POR_TIPO = 2;
 
 /** Dias sem mexer no lead até ele contar como parado. */
 const DIAS_PARA_ESFRIAR = 7;
@@ -108,14 +123,14 @@ export async function getFilaDeTrabalho(
       .limit(TETO_DA_FILA),
     supabase
       .from("leads")
-      .select("id, nome, telefone, created_at")
+      .select("id, nome, telefone, created_at", { count: "exact" })
       .is("arquivado_em", null)
       .eq("etapa", "novo")
       .order("created_at", { ascending: true })
       .limit(TETO_DA_FILA),
     supabase
       .from("leads")
-      .select("id, nome, telefone, etapa_alterada_em")
+      .select("id, nome, telefone, etapa_alterada_em", { count: "exact" })
       .is("arquivado_em", null)
       .in("etapa", ["primeiro_contato", "visita_agendada", "documentacao"])
       .lt("etapa_alterada_em", limiteEsfriar)
@@ -139,7 +154,7 @@ export async function getFilaDeTrabalho(
     itens.push({
       chave: `visita_hoje:${lead.id}`,
       tipo: "visita_hoje",
-      titulo: `Visita com ${lead.nome}`,
+      titulo: `Visita com ${nomeParaExibir(lead)}`,
       detalhe: lead.visita_agendada_em
         ? `Hoje às ${horaCurta.format(new Date(lead.visita_agendada_em))}`
         : "Hoje, sem horário definido",
@@ -149,16 +164,30 @@ export async function getFilaDeTrabalho(
     });
   }
 
-  for (const lead of novos.data ?? []) {
+  for (const lead of (novos.data ?? []).slice(0, INDIVIDUAIS_POR_TIPO)) {
     const dias = diasDesde(lead.created_at, agora);
     itens.push({
       chave: `lead_novo:${lead.id}`,
       tipo: "lead_novo",
-      titulo: `Falar com ${lead.nome}`,
+      titulo: `Falar com ${nomeParaExibir(lead)}`,
       detalhe:
         dias === 0 ? "Chegou hoje, sem atendimento" : `Esperando há ${dias} ${dias === 1 ? "dia" : "dias"}`,
       href: `/corretor/leads/${lead.id}`,
       whatsapp: whatsappDoLead(lead),
+      peso: PESO.lead_novo,
+    });
+  }
+
+  const novosAlem = (novos.count ?? 0) - INDIVIDUAIS_POR_TIPO;
+  if (novosAlem > 0) {
+    itens.push({
+      chave: "lead_novo:resto",
+      tipo: "lead_novo",
+      titulo: `Mais ${novosAlem} lead${novosAlem === 1 ? "" : "s"} novo${novosAlem === 1 ? "" : "s"} esperando`,
+      detalhe: "Abrir a lista para atender de uma vez",
+      href: "/corretor/leads?etapa=novo",
+      // Sem WhatsApp: o item aponta para VÁRIAS pessoas, e um botão de
+      // conversa aqui abriria a de quem? Ação em lote acontece na lista.
       peso: PESO.lead_novo,
     });
   }
@@ -192,15 +221,30 @@ export async function getFilaDeTrabalho(
     });
   }
 
-  for (const lead of parados.data ?? []) {
+  for (const lead of (parados.data ?? []).slice(0, INDIVIDUAIS_POR_TIPO)) {
     const dias = diasDesde(lead.etapa_alterada_em, agora);
     itens.push({
       chave: `lead_parado:${lead.id}`,
       tipo: "lead_parado",
-      titulo: `Retomar ${lead.nome}`,
+      titulo: `Retomar ${nomeParaExibir(lead)}`,
       detalhe: `Parado há ${dias} dias`,
       href: `/corretor/leads/${lead.id}`,
       whatsapp: whatsappDoLead(lead),
+      peso: PESO.lead_parado,
+    });
+  }
+
+  const paradosAlem = (parados.count ?? 0) - INDIVIDUAIS_POR_TIPO;
+  if (paradosAlem > 0) {
+    itens.push({
+      chave: "lead_parado:resto",
+      tipo: "lead_parado",
+      titulo: `Mais ${paradosAlem} lead${paradosAlem === 1 ? "" : "s"} parado${paradosAlem === 1 ? "" : "s"}`,
+      detalhe: `Sem movimento há mais de ${DIAS_PARA_ESFRIAR} dias`,
+      // `?parado=N` é o parâmetro que a lista de fato lê (o mesmo dos KPIs
+      // da administração). Conferido: `?filtro=` não existe e seria ignorado
+      // em silêncio, levando o corretor para a lista inteira.
+      href: `/corretor/leads?parado=${DIAS_PARA_ESFRIAR}`,
       peso: PESO.lead_parado,
     });
   }

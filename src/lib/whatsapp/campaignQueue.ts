@@ -1,4 +1,5 @@
 import { dentroDaJanela } from "./antiBan";
+import { nomeUtilDoLead } from "@/lib/leads/nomeExibido";
 import { algumProvedorConfigurado, chamarLlmJson } from "./llm";
 import type { ItemFilaCampanha } from "./types";
 
@@ -25,25 +26,12 @@ function proximoHorarioPermitido(instante: Date): Date {
   return instante;
 }
 
-/**
- * "Contato sem nome" é o rótulo que a IMPORTAÇÃO grava quando a planilha
- * não trouxe nome (ver `importacao.ts`). Serve para a ficha do CRM não
- * ficar em branco — e NÃO serve para ser dito a uma pessoa.
- *
- * Em produção saiu literalmente: "Olá, Contato sem nome. É um prazer me
- * apresentar: sou a Cristal, sua consultora imobiliária." O rótulo interno
- * atravessou o template e chegou ao WhatsApp de um cliente.
- *
- * Trata como "sem nome" também o telefone e o que só tem sobrenome de uma
- * letra: melhor cumprimentar sem nome nenhum do que errar o nome.
+/*
+ * `nomeUtilDoLead` mora em `leads/nomeExibido.ts` — módulo puro, para a
+ * fila do Início poder usá-la sem arrastar o `llm.ts` junto. Reexportado
+ * aqui porque este arquivo era a casa dela e há chamadores apontando para cá.
  */
-export function nomeUtilDoLead(nome: string | null | undefined): string | null {
-  const limpo = (nome ?? "").trim();
-  if (limpo.length < 2) return null;
-  if (/^contato sem nome$/i.test(limpo)) return null;
-  if (/^[\d\s()+-]+$/.test(limpo)) return null;
-  return limpo;
-}
+export { nomeUtilDoLead };
 
 /**
  * Aplica os marcadores do template ao lead. Barato, sem rede.
