@@ -124,7 +124,25 @@ export async function garantirEventosWebhook(instanceName: string): Promise<void
   const config = configDoProvedor();
   const urlWebhook = process.env.WHATSAPP_WEBHOOK_URL;
   const segredo = process.env.WHATSAPP_WEBHOOK_SECRET;
-  if (!config || !urlWebhook || !instanceName) return;
+
+  /*
+   * Silêncio aqui custou caro: em 27/08/2026 descobriu-se que NENHUMA das
+   * 1.825 mensagens enviadas na história tinha status de entrega — o ✓✓
+   * nunca funcionou. A causa candidata é esta função voltando cedo, e
+   * voltando cedo sem dizer nada.
+   *
+   * Degradar sem erro na tela continua certo (webhook sem o evento novo é
+   * "sem tick", não é falha de atendimento). O que não pode é degradar sem
+   * deixar rastro: quem for investigar "por que não tem ✓✓" precisa
+   * encontrar a resposta no log, não deduzi-la.
+   */
+  if (!urlWebhook) {
+    console.warn(
+      "[whatsapp] WHATSAPP_WEBHOOK_URL ausente: os eventos de entrega (✓✓) não são registrados no provedor.",
+    );
+    return;
+  }
+  if (!config || !instanceName) return;
 
   try {
     await fetch(`${config.baseUrl}/webhook/set/${encodeURIComponent(instanceName)}`, {
