@@ -45,10 +45,14 @@ describe("novo → primeiro_contato automático", () => {
   });
 
   it("o disparador só avança DEPOIS de gravar o envio como bem-sucedido", () => {
-    const chamada = DISPARADOR.indexOf("avancarLeadParaPrimeiroContato(");
-    const contexto = DISPARADOR.slice(chamada - 3000, chamada);
-    // Mensagem que não saiu não é contato com ninguém — mesma régua do webhook.
-    expect(contexto).toContain('status: "enviado"');
+    // Compara POSIÇÕES em vez de fatiar uma janela de N caracteres: a
+    // janela quebrava a cada comentário novo entre os dois pontos, e o que
+    // o teste protege é a ordem — mensagem que não saiu não é contato com
+    // ninguém, mesma régua do webhook.
+    const gravouEnvio = DISPARADOR.indexOf('status: "enviado"');
+    const avanco = DISPARADOR.indexOf("avancarLeadParaPrimeiroContato(", gravouEnvio);
+    expect(gravouEnvio).toBeGreaterThan(-1);
+    expect(avanco).toBeGreaterThan(gravouEnvio);
   });
 
   it("nenhum caminho escreve etapa de julgamento (negociação etc.) automaticamente", () => {

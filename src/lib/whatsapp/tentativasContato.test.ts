@@ -30,10 +30,13 @@ describe("o que conta como tentativa: iniciativa NOSSA", () => {
   });
 
   it("o disparo só conta DEPOIS de gravar o envio como bem-sucedido", () => {
-    const chamada = DISPARADOR.indexOf("registrarTentativaDeContato(");
-    const contexto = DISPARADOR.slice(chamada - 3200, chamada);
-    // Mensagem que não saiu não é tentativa de falar com ninguém.
-    expect(contexto).toContain('status: "enviado"');
+    // Por posição, não por janela de caracteres: a janela quebrava a cada
+    // comentário novo entre os dois pontos. Mensagem que não saiu não é
+    // tentativa de falar com ninguém.
+    const gravouEnvio = DISPARADOR.indexOf('status: "enviado"');
+    const contagem = DISPARADOR.indexOf("registrarTentativaDeContato(", gravouEnvio);
+    expect(gravouEnvio).toBeGreaterThan(-1);
+    expect(contagem).toBeGreaterThan(gravouEnvio);
   });
 });
 
