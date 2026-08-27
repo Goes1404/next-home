@@ -13,6 +13,7 @@ import {
   vincularInteracaoNaMensagem,
   historicoRecente,
   registrarResultadoEnvio,
+  registrarTentativaDeContato,
   reservarCotaCampanha,
   travarDisparo,
   destravarDisparo,
@@ -359,6 +360,11 @@ async function processarFollowup(
     .from("whatsapp_followups")
     .update({ status: "enviado", enviado_em: new Date().toISOString() })
     .eq("id", item.id);
+
+  // Follow-up é iniciativa nossa: conta como tentativa de contato (0060).
+  // É justamente aqui que o contador fica interessante — follow-up é o
+  // segundo e o terceiro toque em quem não respondeu ao primeiro.
+  await registrarTentativaDeContato(conversa.lead_id);
 
   await registrarInteracao({
     id: interacaoId,

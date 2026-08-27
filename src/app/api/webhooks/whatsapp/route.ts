@@ -14,6 +14,7 @@ import {
   agendarVisitaLead,
   aplicarAckDeEntrega,
   avancarLeadParaPrimeiroContato,
+  registrarRespostaDoLead,
   botDeveResponder,
   buscarDossieAtual,
   cancelarFollowupsPendentes,
@@ -346,6 +347,17 @@ export async function POST(req: NextRequest) {
     if (!gravacao.inedita) {
       return NextResponse.json({ ok: true, ignored: "reentrega", sender });
     }
+
+    /*
+     * O cliente falou: a contagem de insistência volta a zero (0060).
+     *
+     * Vem depois da guarda de reentrega de propósito — o provedor reentrega
+     * a mesma mensagem, e zerar duas vezes não faz mal, mas contar a mesma
+     * fala como dois sinais de vida faria. Fica ANTES de toda a decisão de
+     * responder ou não: mesmo em conversa travada por palavra-chave, o
+     * cliente respondeu, e é isso que o número guarda.
+     */
+    await registrarRespostaDoLead(conversa.leadId);
 
     /*
      * Mensagem pronta de anúncio (link porteiro /wa/<campanha>): quem

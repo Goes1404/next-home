@@ -23,13 +23,18 @@ export type LeadDetalhado = Lead & {
   empreendimentoId: string | null;
   /** Preenchido = fora das listas (0055). A ficha continua abrindo por link direto. */
   arquivadoEm: string | null;
+  /** Quantas vezes NÓS já falamos com ele: campanha, follow-up, Live Chat (0060). */
+  tentativasContato: number;
+  /** Dessas, quantas desde a última fala dele. Zera quando ele responde. */
+  tentativasSemResposta: number;
+  ultimaTentativaEm: string | null;
 };
 
 const SELECT_DETALHE = `
   id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
   etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, portal_origem, anuncio_origem,
   orcamento_min, orcamento_max, renda_mensal, dormitorios_min, regiao_interesse, empreendimento_id,
-  arquivado_em,
+  arquivado_em, tentativas_contato, tentativas_sem_resposta, ultima_tentativa_em,
   corretor:corretores(id, nome),
   empreendimento:empreendimentos(nome, slug, endereco)
 `;
@@ -56,6 +61,9 @@ type LinhaDetalhe = {
   dormitorios_min: number | null;
   regiao_interesse: string | null;
   arquivado_em: string | null;
+  tentativas_contato: number | null;
+  tentativas_sem_resposta: number | null;
+  ultima_tentativa_em: string | null;
   empreendimento_id: string | null;
   corretor: { id: string; nome: string } | null;
   empreendimento: { nome: string; slug: string; endereco: string | null } | null;
@@ -97,6 +105,9 @@ export async function getLeadDetalhado(id: string): Promise<LeadDetalhado | null
     visitaAgendadaEm: row.visita_agendada_em,
     corretor: row.corretor,
     empreendimento: row.empreendimento,
+    tentativasContato: row.tentativas_contato ?? 0,
+    tentativasSemResposta: row.tentativas_sem_resposta ?? 0,
+    ultimaTentativaEm: row.ultima_tentativa_em,
     orcamentoMin: numero(row.orcamento_min),
     // `numeric` do Postgres chega como STRING no supabase-js.
     rendaMensal: numero(row.renda_mensal),

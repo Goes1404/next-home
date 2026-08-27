@@ -84,6 +84,31 @@ export default async function FichaLeadPage({
           <SeletorEtapa leadId={lead.id} etapa={lead.etapa} />
         </div>
 
+        {/* Quantas vezes já tentamos falar com ele (0060).
+            Só aparece quando houve alguma: contador que vive em zero ensina
+            a ignorar o contador — mesma régua do selo de aba e do cartão de
+            pendência do Início.
+
+            O número em destaque é o SEM RESPOSTA, não o total: um lead com
+            seis tentativas que respondeu todas é o melhor da carteira, e um
+            com três sem nenhuma resposta é o que precisa sair da fila. O
+            mesmo número significaria coisas opostas. */}
+        {lead.tentativasContato > 0 && (
+          <p
+            className={`text-fluid-xs mt-2 ${
+              lead.tentativasSemResposta >= 3 ? "text-alerta" : "text-tenue"
+            }`}
+          >
+            {lead.tentativasContato}{" "}
+            {lead.tentativasContato === 1 ? "tentativa de contato" : "tentativas de contato"}
+            {lead.ultimaTentativaEm &&
+              ` · última em ${dataHora.format(new Date(lead.ultimaTentativaEm))}`}
+            {lead.tentativasSemResposta > 0 &&
+              ` · ${lead.tentativasSemResposta} sem resposta`}
+            {lead.tentativasSemResposta >= 3 && " — talvez seja hora de parar"}
+          </p>
+        )}
+
         {/* Onde ele está no caminho, e o único botão para andar. */}
         <PassosDoFunil etapa={lead.etapa} comRotulo className="mt-4" />
         <BotaoAvancar leadId={lead.id} etapa={lead.etapa} className="mt-3" />

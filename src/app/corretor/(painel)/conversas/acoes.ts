@@ -14,6 +14,7 @@ import {
   liberarConversaPorPalavraChave,
   marcarConversaComoTeste,
   pausarBotPorAtendimentoHumano,
+  registrarTentativaDeContato,
 } from "@/lib/whatsapp/repositorio";
 
 export type ResultadoConversa = { erro?: string; ok?: string };
@@ -235,7 +236,7 @@ async function carregarConversaEInstancia(
 ) {
   const { data: conversa } = await supabase
     .from("whatsapp_conversas")
-    .select("id, corretor_id, telefone_cliente, origem, cliente_conhecido")
+    .select("id, corretor_id, telefone_cliente, origem, cliente_conhecido, lead_id")
     .eq("id", conversaId)
     .maybeSingle();
 
@@ -309,6 +310,13 @@ export async function enviarMensagemDoPainel(
     providerMessageId: envio.messageId ?? null,
     statusEntrega: envio.messageId ? "enviada" : null,
   });
+
+  /*
+   * Mensagem que o corretor manda pelo Live Chat é iniciativa da casa:
+   * conta como tentativa de contato (0060). Diferente da resposta da IA,
+   * que não conta — ali quem puxou conversa foi o cliente.
+   */
+  await registrarTentativaDeContato(conversa.lead_id);
 
   const decisao = decidirPorFalaDoCorretor({
     mensagem: conteudo,

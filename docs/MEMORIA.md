@@ -820,6 +820,26 @@ trilho+IA, follow-up, métricas de funil).
   linhas que ninguém consulta (o erro do `historico_envios`). Campanha que
   fica sem pendência é fechada junto, senão seguiria "em andamento" para
   sempre prometendo disparo que não existe.
+- **Tentativas de contato são DUAS contagens, não uma** (`leads`, 0060).
+  `tentativas_contato` é o total na vida e nunca diminui; `tentativas_sem_resposta`
+  zera quando o cliente fala. Guardar só o total não resolve nada: um lead
+  com 6 tentativas que respondeu todas é o melhor da carteira, e um com 3
+  sem nenhuma resposta é o que precisa sair da fila — o mesmo número
+  significaria coisas opostas. O que a ficha destaca é o SEM RESPOSTA.
+- **Aqui a regra da casa se inverte de propósito: contador em coluna, não
+  conta na leitura.** Mensagem de WhatsApp não é copiada para
+  `lead_interacoes` porque duas verdades divergem — mas contar disparos,
+  follow-ups e mensagens por lead a cada render seria uma consulta por linha
+  na lista paginada (30) e no quadro (até 300 cartões). Contador é barato de
+  ler, e o que ele guarda é FATO ("tentamos falar N vezes"), não julgamento.
+- **A resposta da IA NÃO é tentativa de contato.** Só conta o que NÓS
+  iniciamos: campanha, follow-up e mensagem do corretor pelo Live Chat.
+  Contar a resposta faria a conversa mais engajada parecer a mais
+  insistente — exatamente o contrário do que o número serve para decidir.
+- **O incremento mora no banco** (`registrar_tentativa_contato`, `security
+  definer`), pelo mesmo motivo das funções de cota: cron, corrente de
+  disparo e botão do painel tocam a mesma fila, e ler-somar-gravar da
+  aplicação perde contagem quando duas mensagens saem no mesmo instante.
 - **A campanha mandava mensagem e NÃO mexia no funil** (27/08/2026). O
   avanço `novo → primeiro_contato` só era chamado pelo webhook, ou seja,
   quando a IA RESPONDIA alguém que escreveu. Quem recebia um disparo e não

@@ -634,6 +634,40 @@ export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promi
  * automática): o dossiê da IA oscila entre leituras, e etapa que anda e
  * volta sozinha no quadro destrói a confiança do corretor no funil.
  */
+/**
+ * Marca uma tentativa de contato NOSSA neste lead.
+ *
+ * Chamada por todo caminho em que a iniciativa é da casa: disparo de
+ * campanha, follow-up automático e mensagem que o corretor manda pelo Live
+ * Chat. A resposta da IA a quem escreveu NÃO chama — responder não é tentar
+ * alcançar alguém, e contá-la faria a conversa mais engajada parecer a mais
+ * insistente.
+ *
+ * O incremento acontece no banco (`registrar_tentativa_contato`, 0060) e
+ * não aqui: ler-somar-gravar perde contagem quando duas mensagens saem no
+ * mesmo instante, e é exatamente isso que acontece com cron, corrente de
+ * disparo e botão do painel tocando a mesma fila. Mesma razão das funções
+ * de cota.
+ */
+export async function registrarTentativaDeContato(leadId: string | null): Promise<void> {
+  if (!leadId) return;
+  const supabase = createServiceClient();
+  await supabase.rpc("registrar_tentativa_contato", { p_lead_id: leadId });
+}
+
+/**
+ * O cliente falou: zera a contagem de insistência.
+ *
+ * O TOTAL não é tocado — ele é histórico, e histórico que o próprio sistema
+ * reescreve não é histórico. O que zera é `tentativas_sem_resposta`, que é
+ * a contagem que responde "já insisti demais aqui?".
+ */
+export async function registrarRespostaDoLead(leadId: string | null): Promise<void> {
+  if (!leadId) return;
+  const supabase = createServiceClient();
+  await supabase.rpc("registrar_resposta_do_lead", { p_lead_id: leadId });
+}
+
 export async function avancarLeadParaPrimeiroContato(leadId: string): Promise<void> {
   const supabase = createServiceClient();
   await supabase

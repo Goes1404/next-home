@@ -926,6 +926,9 @@ export type Database = {
           renda_mensal: number | null
           telefone: string | null
           telefone_e164: string | null
+          tentativas_contato: number
+          tentativas_sem_resposta: number
+          ultima_tentativa_em: string | null
           tipo: string
           visita_agendada_em: string | null
         }
@@ -955,6 +958,9 @@ export type Database = {
           renda_mensal?: number | null
           telefone?: string | null
           telefone_e164?: string | null
+          tentativas_contato?: number
+          tentativas_sem_resposta?: number
+          ultima_tentativa_em?: string | null
           tipo?: string
           visita_agendada_em?: string | null
         }
@@ -984,6 +990,9 @@ export type Database = {
           renda_mensal?: number | null
           telefone?: string | null
           telefone_e164?: string | null
+          tentativas_contato?: number
+          tentativas_sem_resposta?: number
+          ultima_tentativa_em?: string | null
           tipo?: string
           visita_agendada_em?: string | null
         }
@@ -1496,6 +1505,14 @@ export type Database = {
       configurar_followups_automaticos: {
         Args: { p_token: string; p_url: string }
         Returns: string
+      }
+      registrar_tentativa_contato: {
+        Args: { p_lead_id: string }
+        Returns: undefined
+      }
+      registrar_resposta_do_lead: {
+        Args: { p_lead_id: string }
+        Returns: undefined
       }
       consumir_cota_campanha: {
         Args: { p_instancia_id: string; p_limite: number }

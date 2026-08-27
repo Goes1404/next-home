@@ -7,6 +7,7 @@ import { enviarMensagemWhatsapp } from "./provider";
 import {
   avancarLeadParaPrimeiroContato,
   destravarDisparo,
+  registrarTentativaDeContato,
   gravarMensagem,
   obterOuCriarConversa,
   devolverCotaCampanha,
@@ -522,6 +523,8 @@ async function processarInstancia(ctx: {
        * está. É a mesma guarda de termostato que o webhook usa.
        */
       if (item.lead_id) await avancarLeadParaPrimeiroContato(item.lead_id);
+      // Disparo é iniciativa nossa: conta como tentativa de contato (0060).
+      await registrarTentativaDeContato(item.lead_id);
 
       // Renova a trava a cada mensagem: um lote longo não pode perder a
       // trava no meio e deixar outro disparador entrar por cima.
