@@ -141,8 +141,16 @@ export function montarFilaCampanha(params: {
   mensagemBase: string;
   empreendimentoNome?: string;
   intervaloSegundosMinimo?: number;
+  /**
+   * Agenda em qualquer horário, sem empurrar para o comercial.
+   *
+   * O espaçamento de 35-75s continua valendo — é ele que evita a rajada.
+   * O que sai é só o adiamento para a próxima janela.
+   */
+  ignorarJanela?: boolean;
 }): ItemFilaCampanha[] {
   const { campanhaId, leads, mensagemBase, empreendimentoNome } = params;
+  const ignorarJanela = params.ignorarJanela ?? false;
   const intervaloSegundosMinimo = params.intervaloSegundosMinimo ?? INTERVALO_MINIMO_SEGUNDOS;
   const agora = Date.now();
 
@@ -169,9 +177,14 @@ export function montarFilaCampanha(params: {
     // Empurra para dentro do horário comercial antes de gravar: uma fila
     // longa iniciada no fim da tarde escorregaria para a madrugada.
     const bruto = new Date(agora + deslocamentoSegundos * 1000);
-    let agendado = proximoHorarioPermitido(bruto);
+    // Com `ignorarJanela` o horário permitido é o próprio instante: a
+    // função de empurrar sai do caminho, e só ela. A monotonicidade abaixo
+    // continua rodando igual — sem ela, dois itens podem cair no mesmo
+    // segundo, que é a rajada que o espaçamento existe para evitar.
+    const permitido = ignorarJanela ? (d: Date) => d : proximoHorarioPermitido;
+    let agendado = permitido(bruto);
     if (anteriorMs > 0 && agendado.getTime() < anteriorMs + atrasoSegundos * 1000) {
-      agendado = proximoHorarioPermitido(new Date(anteriorMs + atrasoSegundos * 1000));
+      agendado = permitido(new Date(anteriorMs + atrasoSegundos * 1000));
     }
     anteriorMs = agendado.getTime();
     const agendadoPara = agendado.toISOString();

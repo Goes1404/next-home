@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 import type { Empreendimento } from "@/lib/types";
+import { EnvioImediato } from "./_componentes/EnvioImediato";
 import { HistoricoCampanhas } from "./_componentes/HistoricoCampanhas";
 import { NovaCampanha } from "./_componentes/NovaCampanha";
 import { StatusFila } from "./_componentes/StatusFila";
@@ -44,6 +45,18 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais, statusIni
       <NovaCampanha
         empreendimentos={empreendimentos}
         aoCriar={(campanha, aviso) => {
+          setCampanhas((prev) => [campanha, ...prev]);
+          setFeedback(aviso);
+          setTimeout(() => setFeedback(null), 10000);
+        }}
+      />
+
+      {/* Depois do assistente, e não antes: o caminho normal é criar uma
+          lista escolhendo o público. Este é o atalho para a carteira
+          inteira agora — poderoso e sem volta, então não disputa a
+          atenção com o fluxo que se quer que seja o padrão. */}
+      <EnvioImediato
+        aoEnviar={(campanha, aviso) => {
           setCampanhas((prev) => [campanha, ...prev]);
           setFeedback(aviso);
           setTimeout(() => setFeedback(null), 10000);

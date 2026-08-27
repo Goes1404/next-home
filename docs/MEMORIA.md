@@ -820,6 +820,25 @@ trilho+IA, follow-up, métricas de funil).
   linhas que ninguém consulta (o erro do `historico_envios`). Campanha que
   fica sem pendência é fechada junto, senão seguiria "em andamento" para
   sempre prometendo disparo que não existe.
+- **A janela de horário e as outras três proteções anti-ban defendem coisas
+  DIFERENTES**, e confundi-las é o risco do botão "enviar a qualquer hora"
+  (0058). Espaçamento de 35-75s, cota da curva de aquecimento e disjuntor
+  protegem o NÚMERO — são o que evita o WhatsApp restringir a linha. A
+  janela de 9h-20h59 protege a REPUTAÇÃO junto a quem recebe: mensagem de
+  propaganda às 3h é o que faz o destinatário denunciar, e denúncia é o
+  sinal mais forte que existe. Por isso a exceção afrouxa **só a janela**, e
+  há teste para cada uma das outras três continuar barrando. Se um dia
+  alguém "simplificar" isso liberando as quatro, o botão deixa de ser
+  exceção e vira o caminho curto para queimar a linha.
+- **A exceção é por CAMPANHA, não uma configuração global** — é o que a
+  torna auditável. Com um interruptor global ninguém saberia, depois, quais
+  mensagens saíram de madrugada; com a marca na linha da campanha, o
+  histórico responde sozinho.
+- **Fora da janela o disparador ESTREITA o escopo, não sai.** A versão
+  anterior tinha um `return` global logo no começo; mantê-lo faria um
+  disparo urgente ficar parado porque uma campanha comum estava na fila do
+  mesmo número. Hoje ele filtra as campanhas ativas por `ignorar_janela` e
+  só desiste quando não existe nenhuma.
 - **Zerar `envios_campanha_contador` não destrava sozinho.** Se a fila
   ainda tem números inválidos, o disjuntor reabre em três tentativas. Antes
   de zerar, conferir `whatsapp_campanhas_fila` por `erro_motivo` — é onde a

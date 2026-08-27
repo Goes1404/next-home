@@ -165,12 +165,33 @@ export async function processarFilaCampanhas(params?: {
   // Campanha é contato frio: fora do horário comercial, nada sai — mesma
   // regra que rege o preview em antiBan.ts. Mensagem de campanha às 3h é a
   // assinatura mais clara de robô que existe.
-  if (!dentroDaJanela(new Date())) {
+  //
+  // A exceção é a campanha marcada com `ignorar_janela` (0058), pedida
+  // explicitamente pelo corretor. Fora da janela o disparador não para: ele
+  // ESTREITA o escopo para essas campanhas e só desiste quando não existe
+  // nenhuma. Estreitar em vez de sair é o que impede o pior desfecho — um
+  // disparo urgente ficar parado porque outra campanha comum estava na
+  // fila do mesmo número.
+  const janelaAberta = dentroDaJanela(new Date());
+  if (!janelaAberta) {
     resultado.dentroDaJanela = false;
+
+    const { count: urgentes } = await supabase
+      .from("whatsapp_campanhas")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "em_andamento")
+      .eq("ignorar_janela", true);
+
+    if (!urgentes) {
+      resultado.diagnostico.push(
+        "Fora do horário comercial (9h às 20h59, de segunda a sábado). A fila retoma sozinha na próxima janela.",
+      );
+      return resultado;
+    }
+
     resultado.diagnostico.push(
-      "Fora do horário comercial (9h às 20h59, de segunda a sábado). A fila retoma sozinha na próxima janela.",
+      "Fora do horário comercial: só as listas marcadas para enviar a qualquer hora estão saindo agora.",
     );
-    return resultado;
   }
 
   let query = supabase
@@ -202,6 +223,7 @@ export async function processarFilaCampanhas(params?: {
       fimDoOrcamento,
       margemMs,
       vagas: Math.min(ITENS_POR_INSTANCIA_POR_CHAMADA, limiteTotal - resultado.processados),
+      somenteUrgentes: !janelaAberta,
     });
 
     resultado.processados += parcial.processados;
@@ -251,6 +273,8 @@ async function processarInstancia(ctx: {
   fimDoOrcamento: number;
   margemMs: number;
   vagas: number;
+  /** Fora da janela: só campanhas marcadas com `ignorar_janela` entram. */
+  somenteUrgentes: boolean;
 }): Promise<ResultadoInstancia> {
   const { supabase, instancia, dono, fimDoOrcamento, margemMs } = ctx;
 
@@ -297,11 +321,15 @@ async function processarInstancia(ctx: {
     conectadoEm = estado.conectadoEm.toISOString();
   }
 
-  const { data: campanhasAtivas } = await supabase
+  let queryCampanhas = supabase
     .from("whatsapp_campanhas")
     .select("id")
     .eq("corretor_id", instancia.corretor_id)
     .eq("status", "em_andamento");
+
+  if (ctx.somenteUrgentes) queryCampanhas = queryCampanhas.eq("ignorar_janela", true);
+
+  const { data: campanhasAtivas } = await queryCampanhas;
 
   const idsCampanhas = (campanhasAtivas ?? []).map((c) => c.id);
   if (idsCampanhas.length === 0) return vazio("sem_campanha_ativa");

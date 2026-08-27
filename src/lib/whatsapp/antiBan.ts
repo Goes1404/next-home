@@ -100,6 +100,14 @@ export type ContextoEnvio = {
   enviosCampanhaHoje: number;
   /** Preenchido quando o disjuntor está aberto (ver `deveAbrirDisjuntor`). */
   bloqueadoAte?: Date | null;
+  /**
+   * Exceção explícita: esta campanha dispara em qualquer horário.
+   *
+   * Afrouxa SÓ a janela. Cota diária, curva de aquecimento e disjuntor
+   * continuam valendo — são eles que protegem o número; a janela protege
+   * a reputação junto a quem recebe, que é outra coisa e outro risco.
+   */
+  ignorarJanela?: boolean;
   agora?: Date;
 };
 
@@ -127,7 +135,7 @@ export function podeEnviar(ctx: ContextoEnvio): Veredito {
   // para o número, já que silêncio depois de contato gera bloqueio.
   if (ctx.tipo === "resposta") return { permitido: true };
 
-  if (!dentroDaJanela(agora)) {
+  if (!ctx.ignorarJanela && !dentroDaJanela(agora)) {
     return {
       permitido: false,
       motivo: "fora_da_janela",

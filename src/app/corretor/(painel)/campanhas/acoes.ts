@@ -110,6 +110,13 @@ export async function criarCampanha(params: {
   mensagemBase: string;
   /** Só para `filtro: "selecionados"` — os leads escolhidos um a um. */
   leadIds?: string[];
+  /**
+   * Dispara em qualquer horário, inclusive madrugada e domingo (0058).
+   *
+   * Exceção pedida caso a caso. O espaçamento de 35-75s, a cota diária da
+   * curva de aquecimento e o disjuntor continuam valendo.
+   */
+  ignorarJanela?: boolean;
 }): Promise<ResultadoCriarCampanha> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
@@ -144,6 +151,7 @@ export async function criarCampanha(params: {
       mensagem_base: params.mensagemBase,
       total_leads: elegiveis.length,
       status: "em_andamento",
+      ignorar_janela: params.ignorarJanela ?? false,
     })
     .select("id")
     .single();
@@ -163,6 +171,7 @@ export async function criarCampanha(params: {
     leads: elegiveis,
     mensagemBase: params.mensagemBase,
     empreendimentoNome: params.empreendimentoNome,
+    ignorarJanela: params.ignorarJanela,
   });
 
   const { error: erroFila } = await supabase.from("whatsapp_campanhas_fila").insert(
@@ -271,9 +280,13 @@ export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
 
   revalidatePath("/corretor/campanhas");
 
-  if (!resultado.dentroDaJanela) {
+  // Fora da janela o disparador não para mais: ele estreita o escopo para
+  // as listas marcadas com "enviar a qualquer hora" (0058). Só é erro
+  // quando NADA saiu — senão a tela diria "não disparou" logo depois de
+  // disparar, que é a pior forma de mentir para quem está olhando.
+  if (!resultado.dentroDaJanela && resultado.processados === 0) {
     return {
-      erro: "Fora do horário comercial (9h às 20h59, de segunda a sábado) — as listas não disparam agora. A fila segue esperando a próxima janela.",
+      erro: "Fora do horário comercial (9h às 20h59, de segunda a sábado) — as listas comuns não disparam agora. A fila segue esperando a próxima janela.",
     };
   }
 
@@ -286,6 +299,53 @@ export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
     continuaSozinha: resultado.deveContinuar,
     diagnostico: resultado.diagnostico,
   };
+}
+
+export type ResultadoEnvioImediato =
+  | { ok: true; campanhaId: string; totalLeads: number }
+  | { erro: string };
+
+/**
+ * Dispara UMA mensagem para todos os leads, a qualquer hora.
+ *
+ * É o botão "enviar agora, mesmo fora do horário" do painel. Por baixo não
+ * há caminho novo: monta uma campanha comum marcada com `ignorar_janela`
+ * (0058) e acende a mesma corrente de disparo. Fazer disso um caminho
+ * paralelo — mandar direto pelo provedor, sem fila — perderia de uma vez o
+ * espaçamento anti-ban, o registro no Live Chat, a cota e o histórico da
+ * campanha. O que muda é a janela, e só ela.
+ *
+ * O título é gerado aqui porque este botão não tem formulário: quem clica
+ * quer mandar, não quer nomear uma lista. No histórico ele aparece com a
+ * data, para depois se saber qual disparo foi este.
+ */
+export async function enviarAgoraParaTodosOsLeads(params: {
+  mensagemBase: string;
+}): Promise<ResultadoEnvioImediato> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  const mensagemBase = params.mensagemBase.trim();
+  if (mensagemBase.length < 10) {
+    return { erro: "Escreva a mensagem que vai para os leads (pelo menos uma frase)." };
+  }
+
+  const agora = new Date().toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return criarCampanha({
+    titulo: `Envio imediato · ${agora}`,
+    empreendimentoId: null,
+    empreendimentoNome: "nossos lançamentos em Alphaville",
+    filtro: "todos",
+    mensagemBase,
+    ignorarJanela: true,
+  });
 }
 
 export type ResultadoLimparFila =

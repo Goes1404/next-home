@@ -1145,6 +1145,7 @@ export type Database = {
           created_at: string
           empreendimento_id: string | null
           id: string
+          ignorar_janela: boolean
           mensagem_base: string
           status: "rascunho" | "em_andamento" | "pausada" | "concluida"
           titulo: string
@@ -1157,6 +1158,7 @@ export type Database = {
           created_at?: string
           empreendimento_id?: string | null
           id?: string
+          ignorar_janela?: boolean
           mensagem_base: string
           status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
           titulo: string
@@ -1169,6 +1171,7 @@ export type Database = {
           created_at?: string
           empreendimento_id?: string | null
           id?: string
+          ignorar_janela?: boolean
           mensagem_base?: string
           status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
           titulo?: string
