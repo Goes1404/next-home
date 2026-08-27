@@ -87,8 +87,28 @@ export async function sondarProvedor(instanceName: string, numeroDestino: string
   passos.push(
     await perguntar("estado desta conexão", `${baseUrl}/instance/connectionState/${instancia}`, { headers: cabecalho }),
   );
+  /*
+   * A pergunta que decide, agora que sabemos que enviar FUNCIONA (o teste
+   * para o próprio número chegou em 27/08 11:45).
+   *
+   * Se o envio funciona e as campanhas não chegam, a diferença está no
+   * DESTINATÁRIO. `whatsappNumbers` devolve o JID canônico de cada número e
+   * se ele existe — é aqui que apareceria o problema clássico do nono
+   * dígito no Brasil: mandamos para `5511957216675` e o JID real do
+   * cadastro é `551157216675`. Quando o JID não existe, o Baileys ainda
+   * cria a chave da mensagem localmente e devolve `key.id`; a mensagem
+   * simplesmente não vai a lugar nenhum. Bate com o sintoma inteiro.
+   */
   passos.push(
-    await perguntar("envio de teste para o próprio número", `${baseUrl}/message/sendText/${instancia}`, {
+    await perguntar("JID real deste número", `${baseUrl}/chat/whatsappNumbers/${instancia}`, {
+      method: "POST",
+      headers: cabecalho,
+      body: JSON.stringify({ numbers: [numeroDestino] }),
+    }),
+  );
+
+  passos.push(
+    await perguntar("envio de teste", `${baseUrl}/message/sendText/${instancia}`, {
       method: "POST",
       headers: cabecalho,
       body: JSON.stringify({
@@ -98,14 +118,26 @@ export async function sondarProvedor(instanceName: string, numeroDestino: string
     }),
   );
 
-  // Cliente de serviço: `admin_eventos` não tem policy de INSERT de
-  // propósito (log que o ator pode forjar não é log), então só as funções
-  // security definer e o serviço escrevem nele.
+  /*
+   * Tabela própria (0061), e o erro do insert é CONFERIDO.
+   *
+   * A primeira versão gravava em `admin_eventos` — que tem vocabulário
+   * fechado por CHECK — e ignorava o retorno. O insert era recusado, a
+   * sonda dizia "diagnóstico gravado", e o dado não existia. Repeti,
+   * dentro da própria ferramenta de diagnóstico, o defeito que ela foi
+   * criada para investigar: afirmar sucesso sem conferir a resposta.
+   */
   const supabase = createServiceClient();
-  await supabase.from("admin_eventos").insert({
-    acao: "diagnostico_provedor_whatsapp",
-    detalhes: { instanceName, numeroDestino, passos },
+  const { error } = await supabase.from("whatsapp_diagnosticos").insert({
+    instance_name: instanceName,
+    destino: numeroDestino,
+    passos,
   });
+
+  if (error) {
+    console.error("[sonda] não consegui gravar o diagnóstico:", error.message);
+    return { erro: `A sonda rodou, mas não consegui gravar o resultado: ${error.message}` };
+  }
 
   return { ok: true, passos: passos.map((p) => ({ passo: p.passo, status: p.status })) };
 }

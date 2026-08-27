@@ -1148,6 +1148,30 @@ export type Database = {
           },
         ]
       }
+      whatsapp_diagnosticos: {
+        Row: {
+          created_at: string
+          destino: string | null
+          id: string
+          instance_name: string
+          passos: Json
+        }
+        Insert: {
+          created_at?: string
+          destino?: string | null
+          id?: string
+          instance_name: string
+          passos?: Json
+        }
+        Update: {
+          created_at?: string
+          destino?: string | null
+          id?: string
+          instance_name?: string
+          passos?: Json
+        }
+        Relationships: []
+      }
       whatsapp_campanhas: {
         Row: {
           corretor_id: string
