@@ -1886,3 +1886,31 @@ Duas lições que valem além do `sharp`:
   Alphaville (~7), Aldeia (~6), Barueri (22), Osasco (2). Criar 18 páginas
   de um imóvel cada é o caminho conhecido para ser tratado como conteúdo
   fino.
+
+## Barra fixa que estoura a largura (27/08/2026)
+
+- **Botão cortado numa barra `fixed` não fica "feio": fica INALCANÇÁVEL.**
+  Medido em viewport de 360px: os quatro botões da seleção em lote somavam
+  557px numa caixa de 352 — "Arquivar" terminava em 415px e "Enviar
+  mensagem" em 569, os dois fora de uma tela de 376. Sem rolagem na barra,
+  não havia gesto que os alcançasse.
+- **`whitespace-nowrap` já impede o encolhimento**, e isso confunde o
+  diagnóstico. Item de flex tem `min-width: auto`, então texto que não
+  quebra segura a largura mínima do botão: o conteúdo TRANSBORDA em vez de
+  espremer. Onde há `overflow-x-auto` isso vira rolagem (é por isso que os
+  chips da lista e os filtros do mapa funcionam); onde não há, vira conteúdo
+  inacessível. Ou seja: acrescentar `shrink-0` não conserta nada aqui — o
+  que decide é o contêiner ter, ou não, como rolar.
+- **A escolha foi QUEBRAR LINHA, não rolar.** Rolagem lateral resolveria o
+  alcance e não o resto: botão escondido atrás de um gesto que ninguém
+  adivinha é quase tão ruim quanto botão cortado. Com `flex-wrap` nos dois
+  níveis (contêiner e grupo de botões), item mais estreito que a caixa nunca
+  cai fora. Custo medido: 148px de altura no pior caso (360px de tela, três
+  linhas) e 96px do iPhone comum para cima — aceitável numa barra que só
+  existe enquanto há seleção.
+- **Como medir isso sem login**: o painel exige sessão, então reproduzir a
+  MARCAÇÃO exata num HTML avulso servido com o CSS compilado
+  (`.next/static/chunks/*.css`, o maior deles) e medir `scrollWidth` contra
+  `clientWidth` e o `getBoundingClientRect().right` de cada botão contra
+  `window.innerWidth`. Sem o CSS o teste passa sempre — a primeira medição
+  desta sessão saiu com o arquivo errado e deu "cabe tudo".

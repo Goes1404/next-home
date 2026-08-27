@@ -406,11 +406,24 @@ export function ListaLeads({
         // "Enviar mensagem" inalcançável justamente depois de selecionar os
         // leads. Empilhadas, as duas cabem.
         <div className="acima-da-nav border-linha bg-fundo/95 fixed inset-x-0 z-45 border-t p-3 backdrop-blur-md sm:p-4">
-          <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-2 px-1 md:px-4">
+          {/* `flex-wrap` nos DOIS níveis, e não `overflow-x-auto`.
+              Medido em 360px: os botões somavam 557px numa caixa de 352 —
+              "Arquivar" terminava em 415px e "Enviar mensagem" em 569, os
+              dois fora de uma tela de 376. E como esta barra é `fixed` e não
+              tinha rolagem, eles ficavam simplesmente INALCANÇÁVEIS: a ação
+              existia, aparecia pela metade e não dava para tocar.
+
+              Rolagem lateral resolveria o alcance e não o resto — botão
+              escondido atrás de um gesto que ninguém adivinha é quase tão
+              ruim quanto botão cortado. Quebrando linha, tudo fica visível:
+              148px de altura no pior caso (360px de tela, três linhas),
+              96px do iPhone comum para cima. É uma barra temporária, que só
+              existe enquanto há seleção. */}
+          <div className="mx-auto flex w-full max-w-[84rem] flex-wrap items-center justify-between gap-x-3 gap-y-2 px-1 md:px-4">
             <p className="text-fluid-sm shrink-0 whitespace-nowrap text-corpo">
               {selecionados.size} selecionado(s)
             </p>
-            <div className="flex shrink-0 gap-2">
+            <div className="flex flex-1 flex-wrap justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setSelecionados(new Set())}
