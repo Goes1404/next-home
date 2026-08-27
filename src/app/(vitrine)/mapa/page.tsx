@@ -8,8 +8,9 @@ import { ClipboardList } from 'lucide-react';
 
 
 export const metadata: Metadata = {
-  title: "Mapa Interativo de Imóveis e Lançamentos em Alphaville",
-  description: `Explore os edifícios, condomínios e lançamentos de alto padrão em Alphaville, Tamboré e Barueri diretamente no mapa interativo da ${site.nome}.`,
+  title: "Mapa de Imóveis e Lançamentos em Alphaville",
+  description:
+    "Explore condomínios e lançamentos de alto padrão em Alphaville, Tamboré e Barueri direto no mapa interativo.",
   alternates: { canonical: "/mapa" },
   openGraph: {
     title: `Mapa de Imóveis em Alphaville | ${site.nome}`,

@@ -1848,3 +1848,41 @@ Duas lições que valem além do `sharp`:
   `--sem-juiz` depois de uma rodada julgada apaga o score dela. Aconteceu
   nesta sessão; recuperado com `git show <commit>:<arquivo>`. Rodada
   julgada que importa: commitar antes de rodar outra coisa.
+
+## SEO — o que está pronto e o que decide o ranking (27/08/2026)
+
+- **A base técnica já era boa, e o defeito estava no texto.** `robots.ts`,
+  `sitemap.ts` (39 URLs), `metadataBase`, canonical e Open Graph por página,
+  `RealEstateAgent` com NAP + geo + `areaServed` na home, e `Residence` com
+  endereço, coordenadas e lazer em cada empreendimento — tudo isso já
+  existia. O que estava errado eram **título e descrição em TODAS as nove
+  páginas públicas**: home com 101 caracteres de título (corte do Google:
+  60) e 224 de descrição (corte: ~155). Não foi descuido de uma página, foi
+  ausência de régua.
+- **O sufixo da marca é a armadilha.** O `template` do layout raiz
+  acrescenta `" · Next Home"` — 12 caracteres que não aparecem em lugar
+  nenhum do arquivo da página. Quem escreve um título de 55 achando que
+  cabe, publica 67. Por isso `LIMITE_TITULO_PAGINA` já desconta o sufixo, e
+  há teste provando a subtração.
+- **`seo.test.ts` LÊ OS ARQUIVOS das páginas públicas** e reprova título
+  literal fora da régua. É a mesma classe de `escalaDoPainel.test.ts`: a
+  regressão é calada — build passa, página abre, e o estrago só aparece na
+  SERP, onde ninguém do time olha.
+- **Título de empreendimento leva CIDADE, não bairro.** "Eternity Alphaville
+  Tamboré — Centro Comercial Jubran, Barueri" tem 62 e o Google cortava
+  justamente a cidade, que é o termo buscado. O bairro foi para a descrição,
+  onde cabem 155.
+- **O domínio real EXISTE e não aponta para cá.**
+  `nexthomeimobiliaria.com.br` responde (Apache, redireciona para `www`) e
+  serve o site legado da Migmidia, com título "Next Home Negócios
+  Imobiliários - Next Home Imóveis Lançamentos Barueri". Enquanto a
+  aplicação viver em `next-home-drab.vercel.app`, **nenhum trabalho de
+  on-page tem teto**: subdomínio gratuito não constrói autoridade, e o
+  domínio que tem histórico está apontando para outro lugar. `site.url` já
+  lê `NEXT_PUBLIC_SITE_URL`, então a virada é de DNS + variável de ambiente,
+  sem tocar em código.
+- **Página por bairro seria conteúdo raso.** São 24 imóveis publicados em 18
+  bairros — a maioria com UM. O agrupamento que tem inventário é outro:
+  Alphaville (~7), Aldeia (~6), Barueri (22), Osasco (2). Criar 18 páginas
+  de um imóvel cada é o caminho conhecido para ser tratado como conteúdo
+  fino.

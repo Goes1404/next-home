@@ -9,8 +9,8 @@ import { getAtuacaoPorCorretor, getCorretores } from "@/lib/queries";
 import { linkWhatsapp, site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Nossos Corretores de Imóveis em Alphaville | Next Home",
-  description: `Fale com consultores imobiliários credenciados CRECI ${site.creci} da ${site.nomeCompleto}. Especialistas em compra, venda e investimentos em ${site.regioes.join(", ")}.`,
+  title: "Corretores de Imóveis em Alphaville",
+  description: `Fale com consultores credenciados CRECI ${site.creci}. Especialistas em compra, venda e investimento em Alphaville, Barueri e região.`,
   alternates: { canonical: "/corretores" },
   openGraph: {
     title: "Equipe de Corretores de Imóveis | Next Home Alphaville",

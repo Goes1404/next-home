@@ -25,6 +25,7 @@ import {
   getSlugsEmpreendimentos,
 } from "@/lib/queries";
 import type { Empreendimento } from "@/lib/types";
+import { descricaoDePagina, tituloDePagina } from "@/lib/seo";
 
 type Params = { slug: string };
 
@@ -49,8 +50,17 @@ export async function generateMetadata({
   const e = await getEmpreendimentoBySlug(slug);
   if (!e) return {};
 
-  const titulo = `${e.nome} — ${e.bairro}, ${e.cidade}`;
-  const descricao = `${e.tagline} ${precoAPartirDe(e.precoAPartir)}.`;
+  /*
+   * Título com CIDADE e não com bairro: sobram 48 caracteres depois do
+   * sufixo " · Next Home", e "Eternity Alphaville Tamboré — Centro
+   * Comercial Jubran, Barueri" tem 62 — o Google cortava justamente o nome
+   * da cidade, que é o termo que as pessoas buscam. O bairro não se perde:
+   * ele vai para a descrição, onde cabem 155.
+   */
+  const titulo = tituloDePagina(`${e.nome} — ${e.cidade}`);
+  const descricao = descricaoDePagina(
+    `${e.tagline} ${e.bairro}, ${e.cidade}. ${precoAPartirDe(e.precoAPartir)}.`,
+  );
 
   return {
     title: titulo,

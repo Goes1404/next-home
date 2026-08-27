@@ -9,6 +9,7 @@ import { iniciais, telefoneBR } from "@/lib/format";
 import { getCorretorPorSlug, getEmpreendimentosPorCorretor } from "@/lib/queries";
 import { linkWhatsappPara, site } from "@/lib/site";
 import type { CorretorPerfil, Empreendimento } from "@/lib/types";
+import { descricaoDePagina } from "@/lib/seo";
 
 type Params = { slug: string };
 
@@ -23,7 +24,13 @@ export async function generateMetadata({
 
   // Sem pronome nem "corretor/corretora": o cadastro não guarda gênero e
   // metade da equipe é de mulheres.
-  const description = `${corretor.nome} atende pela ${site.nomeCompleto} — CRECI ${corretor.creci}. Atuação em ${site.regioes.join(", ")}.`;
+  // `site.regioes` cresce quando a imobiliária abre região nova, e a
+  // descrição estourava os 155 do Google por causa disso. A régua corta no
+  // fim, que é onde a lista de regiões está — o nome e o CRECI, que são o
+  // que identifica, ficam sempre visíveis.
+  const description = descricaoDePagina(
+    `${corretor.nome} atende pela ${site.nomeCompleto} — CRECI ${corretor.creci}. Atuação em ${site.regioes.join(", ")}.`,
+  );
 
   return {
     title: corretor.nome,

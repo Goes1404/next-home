@@ -11,8 +11,8 @@ import { getEmpreendimentos } from "@/lib/queries";
 import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Fale com a Next Home | Atendimento Rápido e Oportunidades",
-  description: `Entre em contato com a equipe da ${site.nomeCompleto} — ${enderecoLinha}. WhatsApp, simulações de financiamento e atendimento presencial em Alphaville e Barueri.`,
+  title: "Fale com a Next Home",
+  description: `WhatsApp, simulação de financiamento e atendimento presencial em Alphaville e Barueri. ${enderecoLinha}.`,
   alternates: { canonical: "/contato" },
   openGraph: {
     title: "Contato | Next Home Negócios Imobiliários",

@@ -19,8 +19,12 @@ import { GloboOuMapa } from "@/components/mapa/GloboOuMapa";
 import { enderecoLinha, site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: `${site.nomeCompleto} — Imóveis e Oportunidades em Alphaville, Barueri e Região`,
-  description: site.descricao,
+  // 39 + 12 do sufixo " · Next Home" = 51, dentro dos 60 do Google. O nome
+  // completo saiu do título porque o sufixo já carrega a marca — repeti-la
+  // gastava 31 caracteres para dizer duas vezes a mesma coisa.
+  title: "Imóveis em Alphaville, Barueri e Região",
+  description:
+    "Apartamentos, casas e lançamentos em Alphaville, Barueri e Santana de Parnaíba. Veja fotos, plantas e condições, e agende sua visita.",
   alternates: { canonical: "/" },
   openGraph: {
     title: `${site.nomeCompleto} — Imóveis e Oportunidades em Alphaville, Barueri e Região`,

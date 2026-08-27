@@ -20,8 +20,9 @@ import {
 } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Empreendimentos e Lançamentos em Alphaville e Barueri | Melhores Ofertas",
-  description: `Confira as melhores oportunidades em apartamentos na planta, prontos para morar e casas em condomínio em ${site.regioes.join(", ")}. Condições facilitadas e atendimento rápido.`,
+  title: "Lançamentos e Imóveis em Alphaville e Barueri",
+  description:
+    "Apartamentos na planta, prontos para morar e casas em condomínio em Alphaville, Barueri e região. Fotos, plantas e condições de pagamento.",
   alternates: { canonical: "/empreendimentos" },
   openGraph: {
     title: "Empreendimentos e Oportunidades em Alphaville e Região | Next Home",

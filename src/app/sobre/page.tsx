@@ -17,8 +17,8 @@ import { linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 import { DoorOpen } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Sobre a Next Home | Imóveis e Oportunidades em Alphaville e Região",
-  description: `Conheça a ${site.nomeCompleto} — CRECI ${site.creci}. Assessoria imobiliária completa, foco em negociação facilitada e as melhores oportunidades em Alphaville, Barueri e região.`,
+  title: "Sobre a Next Home",
+  description: `Assessoria imobiliária completa em Alphaville, Barueri e região — CRECI ${site.creci}. Negociação facilitada e segurança jurídica do começo ao fim.`,
   alternates: { canonical: "/sobre" },
   openGraph: {
     title: `Sobre a Next Home | Negócios Imobiliários`,

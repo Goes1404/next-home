@@ -10,8 +10,8 @@ import { linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 import { Shield, Handshake, Sparkles, Zap, Check } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Anunciar Imóvel em Alphaville, Barueri e Região | Avaliação Gratuita",
-  description: `Venda ou alugue seu imóvel mais rápido com a ${site.nomeCompleto} — CRECI ${site.creci}. Avaliação real de mercado, compradores ativos cadastrados e suporte jurídico em ${site.regioes.join(", ")}.`,
+  title: "Anunciar Imóvel em Alphaville e Barueri",
+  description: `Avaliação real de mercado, compradores já cadastrados e suporte jurídico. Venda ou alugue com a Next Home — CRECI ${site.creci}.`,
   alternates: { canonical: "/anunciar-imovel" },
   openGraph: {
     title: "Anuncie seu Imóvel | Next Home Negócios Imobiliários",
