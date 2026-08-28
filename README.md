@@ -65,8 +65,11 @@ docs/                     roadmaps, setup e a memória operacional
 | **Site** | `NEXT_PUBLIC_SITE_URL` | canonical, sitemap e links do bot apontam para o domínio errado |
 | **WhatsApp** | `WHATSAPP_API_URL`, `WHATSAPP_API_KEY`, `WHATSAPP_WEBHOOK_SECRET`, `WHATSAPP_WEBHOOK_URL` | nenhuma mensagem sai — nem a resposta ao cliente, nem o alerta ao corretor |
 | **IA (motor)** | `OPENAI_API_KEY`, `OPENAI_MODEL` (opcional) | todo atendimento cai em contingência |
-| **IA (reserva)** | `GROQ_API_KEY`, `GEMINI_API_KEY`, `NVIDIA_API_KEY` | só entram quando o motor está SEM CHAVE; o Gemini também é usado para PDF e transcrição de áudio |
+| **IA (Gemini)** | `GEMINI_API_KEY` | importar PDF e entender áudio param — é o caminho **único** de PDF e a primeira escolha na transcrição, mesmo com o motor no ar |
+| **IA (reserva)** | `GROQ_API_KEY`, `NVIDIA_API_KEY` | só entram quando o motor está SEM CHAVE (ambiente desconfigurado, não modo de operação) |
 | **Cron** | `CRON_SECRET` | `/api/cron/*` recusa toda requisição em produção |
+| **Lead por e-mail** | `INBOUND_EMAIL_WEBHOOK_SECRET` | `/api/webhooks/email-lead` devolve 503 (falha fechada, de propósito) |
+| **Google Drive** | `GOOGLE_API_KEY` | importar mídia por link de pasta some da tela, com aviso |
 | **Meta Lead Ads** | `META_WEBHOOK_VERIFY_TOKEN`, `META_APP_SECRET`, `META_PAGE_ACCESS_TOKEN`, `META_GRAPH_VERSION` | leads de anúncio não chegam |
 | **Meta Ads (métricas)** | `META_ADS_TOKEN`, `META_ADS_ACCOUNT_ID` | tela de Anúncios funciona, só sem o gasto |
 | **E2E** | `E2E_CORRETOR_EMAIL`, `E2E_CORRETOR_SENHA` em `.env.e2e.local` | specs do painel **pulam** (não falham) |
