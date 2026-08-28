@@ -220,6 +220,60 @@ corretor).
   só (preserva o espaçamento anti-ban de 35-75s já calculado em
   `agendado_para` por `campaignQueue.ts`).
 
+## O espaçamento anti-ban não valia no envio (28/08/2026)
+
+Relatado como "as mensagens estão saindo todas de uma vez, e isso causa
+ban" — depois de DOIS números restringidos em teste. Estava certo.
+
+- **O intervalo de 35-75s existia só no PAPEL.** Ele era calculado na
+  criação da campanha e gravado em `whatsapp_campanhas_fila.agendado_para`.
+  O disparador respeitava esse horário pela METADE: item no futuro, ele
+  esperava (`esperaMs > 0`); item VENCIDO tinha espera negativa e saía na
+  hora — e o seguinte, e o seguinte. Medido na campanha e59c871a: 15
+  mensagens agendadas ao longo de 14 minutos saíram em **57 segundos**, com
+  2 a 5 segundos entre elas. Noutra campanha do mesmo dia, 14 dos 31
+  intervalos abaixo de 5s.
+- **A proteção só valia para a fila EM DIA**, que é justamente o caso que
+  não precisa de proteção. Bastava o disparador ficar parado — número
+  desconectado, fora da janela, cota, deploy, corrente que morreu — para a
+  fila inteira vencer junto e sair em rajada no retorno. O teto de 3 itens
+  por chamada não segura: o auto-encadeamento chama a si mesmo em seguida,
+  e três chamadas seguidas são nove mensagens em poucos segundos.
+- **Piso de tempo que depende do chamador não é piso, é convenção.** A
+  correção (0062) põe a trava no BANCO, carimbada no mesmo UPDATE atômico
+  que consome a cota (`proximo_envio_permitido_em`) — mesmo motivo da cota
+  morar lá: pg_cron, corrente da Vercel e botão do painel tocam a mesma
+  fila e ler-somar-gravar da aplicação perde a corrida.
+- **Cobre os dois caminhos que iniciam contato de graça**, porque campanha
+  e follow-up já passavam por `reservarCotaCampanha`. Ao criar caminho novo
+  que FALA com o cliente por iniciativa nossa, é por ali que ele tem de
+  passar.
+- **O sorteio do intervalo mudou de lugar**: era na criação da fila, agora
+  é a cada concessão. Cadência exata de 35s é tão reconhecível quanto
+  rajada.
+- **Numa trava de segurança, o lado errado de errar é "deixa passar".**
+  Erro do banco ou resposta vazia recusam o envio: "não sei se o intervalo
+  passou" tem de valer como "ainda não passou".
+- **Aguardar não é processar.** Contar a espera como item processado fazia
+  a chamada devolver "3 processados, 0 enviados" e encerrar a vaga sem ter
+  mandado nada.
+- **Follow-up recusado por espaçamento é PULADO, não descartado** — o
+  runner descartava por `cota_esgotada`, e follow-up descartado não volta:
+  uma campanha falando 40s antes apagaria um follow-up legítimo.
+- **Migration aplicada ≠ produção protegida.** Entre aplicar a 0062 e o
+  deploy sair, a produção seguia chamando `consumir_cota_campanha` (a
+  versão sem trava) e seguia podendo mandar em rajada. A 0063 endurece
+  também a função ANTIGA: ela não sabe dizer "espere 40s" (devolve inteiro),
+  então responde -1, que o código antigo lê como cota atingida e usa para
+  parar. Rótulo impreciso no painel por algumas horas, comportamento
+  correto — e o pg_cron retoma no minuto seguinte. **Ao corrigir defeito de
+  segurança que vive numa função do banco, endurecer a função que a
+  produção AINDA chama, não só a nova.**
+- **Diagnóstico**: rajada não aparece em `agendado_para`, que continua
+  perfeito. Ela só aparece comparando `enviado_em` com o `lag(enviado_em)`
+  da mesma campanha. Contar quantos intervalos ficaram abaixo de 30s é a
+  medida que importa.
+
 ## Disparo de campanhas — por que a fila ficava 100% parada
 
 Três problemas empilhados, todos descobertos na mesma investigação (agosto
