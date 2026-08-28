@@ -3,9 +3,14 @@ import { nomeUtilDoLead } from "@/lib/leads/nomeExibido";
 import { algumProvedorConfigurado, chamarLlmJson } from "./llm";
 import type { ItemFilaCampanha } from "./types";
 
-/** Piso e teto do intervalo humanizado entre disparos, em segundos. */
-export const INTERVALO_MINIMO_SEGUNDOS = 35;
-export const INTERVALO_MAXIMO_SEGUNDOS = 75;
+/**
+ * Piso e teto do intervalo humanizado entre disparos, em segundos.
+ *
+ * A definição mora em `antiBan.ts` desde a 0062, junto com o resto da
+ * política; reexportados aqui porque este módulo era o endereço deles.
+ */
+import { INTERVALO_MINIMO_SEGUNDOS, INTERVALO_MAXIMO_SEGUNDOS } from "./antiBan";
+export { INTERVALO_MINIMO_SEGUNDOS, INTERVALO_MAXIMO_SEGUNDOS };
 
 /**
  * Empurra o horário até cair dentro da janela permitida.

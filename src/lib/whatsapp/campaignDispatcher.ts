@@ -398,13 +398,44 @@ async function processarInstancia(ctx: {
         await dormir(esperaMs);
       }
 
+      /*
+       * A vez de disparar: cota diária E espaçamento, decididos no banco
+       * (0062). O intervalo precisa ser verificado AQUI, contra o relógio,
+       * e não só contra `agendado_para` — item vencido tem espera negativa,
+       * e era assim que uma fila atrasada saía inteira em rajada: 15
+       * mensagens em 57 segundos, com 2 a 5 segundos entre elas.
+       */
       const cota = await reservarCotaCampanha(instancia.id, new Date(conectadoEm));
+
+      if (!cota.permitido && cota.motivo === "aguardando_intervalo") {
+        /*
+         * Espera de segundos, não do dia: vale segurar a chamada aberta, do
+         * mesmo jeito que já se espera por `agendado_para`. Se não couber no
+         * orçamento, a corrente pega no próximo elo — e o piso continua
+         * valendo lá, porque quem guarda o instante é o banco.
+         *
+         * `continue` sem incrementar `processados`: aguardar não é
+         * processar, e contar isso como item gasto faria a chamada devolver
+         * "3 processados, 0 enviados" e encerrar a vaga sem ter mandado nada.
+         */
+        const tempoDisponivel = fimDoOrcamento - Date.now() - margemMs;
+        if (cota.esperaMs > Math.min(ESPERA_MAXIMA_MS, tempoDisponivel)) {
+          parcial.motivo = "aguardando_horario";
+          parcial.deveContinuar = true;
+          parcial.diagnostico = "Respeitando o intervalo entre disparos para proteger o número.";
+          break;
+        }
+        await dormir(cota.esperaMs);
+        continue;
+      }
+
       if (!cota.permitido) {
-        // Cota do NÚMERO estourou: nada mais sai por hoje nesta instância.
-        // Não é motivo para a corrente continuar.
-        parcial.motivo = "cota_diaria";
+        // Cota do NÚMERO estourou (ou o disjuntor está aberto): nada mais
+        // sai por hoje nesta instância. Não é motivo para a corrente
+        // continuar.
+        parcial.motivo = cota.motivo === "numero_bloqueado" ? "numero_bloqueado" : "cota_diaria";
         parcial.diagnostico =
-          cota.motivo ?? "Cota diária de disparos deste número atingida. A fila continua amanhã.";
+          cota.detalhe ?? "Cota diária de disparos deste número atingida. A fila continua amanhã.";
         break;
       }
 

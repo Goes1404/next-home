@@ -30,6 +30,18 @@ export type ConfigAntiBan = {
   permitirDomingo: boolean;
 };
 
+/**
+ * Piso e teto do intervalo humanizado entre dois disparos do MESMO número.
+ *
+ * Moram aqui, e não em `campaignQueue.ts`, porque são política anti-ban —
+ * a mesma classe do limite diário e da janela — e porque `repositorio.ts`
+ * precisa deles para carimbar a trava de tempo no banco. Importá-los do
+ * `campaignQueue` arrastaria o `llm.ts` (variação por IA) para o grafo de
+ * quem só quer um número.
+ */
+export const INTERVALO_MINIMO_SEGUNDOS = 35;
+export const INTERVALO_MAXIMO_SEGUNDOS = 75;
+
 export const CONFIG_PADRAO: ConfigAntiBan = {
   horaInicio: 9,
   horaFim: 20,

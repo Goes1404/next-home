@@ -259,6 +259,13 @@ async function processarFollowup(
   if (!decisao.pode) return descartar(supabase, item.id, "modo_nao_permite");
 
   const cota = await reservarCotaCampanha(instancia.id, new Date(instancia.conectado_em));
+  /*
+   * Espaçamento anti-ban (0062) NÃO é motivo para descartar: a vez chega em
+   * segundos e o tique seguinte pega o item. Descartar aqui apagaria um
+   * follow-up legítimo porque uma campanha mandou mensagem 40 segundos
+   * antes — e follow-up descartado não volta.
+   */
+  if (!cota.permitido && cota.motivo === "aguardando_intervalo") return "pulado";
   if (!cota.permitido) return descartar(supabase, item.id, "cota_esgotada");
 
   const { data: corretor } = await supabase

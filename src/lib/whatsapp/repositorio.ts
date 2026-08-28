@@ -1,7 +1,14 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { bloqueadoAtePor, deveAbrirDisjuntor, limiteDiarioCampanha, diasDesdeConexao } from "./antiBan";
+import {
+  bloqueadoAtePor,
+  deveAbrirDisjuntor,
+  limiteDiarioCampanha,
+  diasDesdeConexao,
+  INTERVALO_MINIMO_SEGUNDOS,
+  INTERVALO_MAXIMO_SEGUNDOS,
+} from "./antiBan";
 import { exigePalavraChave } from "./modoBot";
 import { consultarEstadoConexao } from "./provider";
 import { resetPorTrocaDeNumero } from "./trocaDeNumero";
@@ -824,38 +831,123 @@ export async function historicoRecente(
   return (data ?? []).reverse().map((m) => ({ remetente: m.remetente, texto: m.conteudo }));
 }
 
+export type VezDeDisparar =
+  | { permitido: true }
+  | {
+      permitido: false;
+      /**
+       * `aguardando_intervalo` é o único motivo em que vale a pena ESPERAR:
+       * a vez chega em segundos. Os outros são do dia inteiro.
+       */
+      motivo: "aguardando_intervalo" | "cota_diaria" | "numero_bloqueado" | "falha";
+      detalhe: string;
+      /** Quanto falta para a próxima vez, quando isso é conhecido. */
+      esperaMs: number;
+    };
+
 /**
- * Reserva uma vaga na cota diária de campanha do número.
+ * Pede a vez de disparar por este número: cota diária E espaçamento.
  *
- * A conta roda no banco (`consumir_cota_campanha`, 0020) porque dois
- * disparos simultâneos leriam o mesmo contador e ambos se achariam dentro
- * do limite — furando a cota exatamente no pico de volume.
+ * A conta roda no banco (`consumir_cota_campanha_espacada`, 0062) porque
+ * pg_cron, corrente da Vercel e botão do painel tocam a mesma fila. Dois
+ * disparos simultâneos leriam o mesmo contador e ambos se achariam dentro do
+ * limite — e, pior, os dois se achariam autorizados a mandar no mesmo
+ * segundo.
+ *
+ * O espaçamento entrou aqui, e não no laço do disparador, por causa de um
+ * defeito medido em produção: o intervalo de 35-75s vivia só em
+ * `agendado_para`, calculado na criação da campanha. Item VENCIDO tinha
+ * espera negativa e saía na hora, um atrás do outro — 15 mensagens em 57
+ * segundos quando a fila ficou 28 minutos parada. Piso de tempo real que
+ * depende do chamador não é piso: é convenção. Este é o único ponto por onde
+ * todo disparo iniciado por nós passa (campanha e follow-up), então é aqui
+ * que a garantia cabe.
  */
 export async function reservarCotaCampanha(
   instanciaId: string,
   conectadoEm: Date | null,
-): Promise<{ permitido: boolean; motivo?: string }> {
+): Promise<VezDeDisparar> {
   if (!conectadoEm) {
-    return { permitido: false, motivo: "Número ainda não foi pareado." };
+    return {
+      permitido: false,
+      motivo: "falha",
+      detalhe: "Número ainda não foi pareado.",
+      esperaMs: 0,
+    };
   }
 
   const limite = limiteDiarioCampanha(diasDesdeConexao(conectadoEm));
   const supabase = createServiceClient();
 
-  const { data, error } = await supabase.rpc("consumir_cota_campanha", {
+  const { data, error } = await supabase.rpc("consumir_cota_campanha_espacada", {
     p_instancia_id: instanciaId,
     p_limite: limite,
+    p_intervalo_min: INTERVALO_MINIMO_SEGUNDOS,
+    p_intervalo_max: INTERVALO_MAXIMO_SEGUNDOS,
   });
 
-  if (error) return { permitido: false, motivo: "Falha ao verificar a cota diária." };
-  if (typeof data === "number" && data < 0) {
+  if (error) {
+    /*
+     * Falha ao PERGUNTAR não pode virar permissão. Antes de 0062 um erro
+     * aqui já recusava o envio, e isso continua: sem resposta do banco não
+     * há como saber se o intervalo foi cumprido, e mandar assim mesmo é
+     * exatamente o risco que a trava existe para remover.
+     */
+    console.error("[anti-ban] não foi possível reservar a vez de disparo:", error.message);
     return {
       permitido: false,
-      motivo: `Cota diária de ${limite} disparos atingida (ou número temporariamente bloqueado).`,
+      motivo: "falha",
+      detalhe: "Falha ao verificar a cota diária.",
+      esperaMs: 0,
     };
   }
 
-  return { permitido: true };
+  const resposta = data;
+
+  if (!resposta) {
+    /*
+     * Sem `error` e sem corpo: não deveria acontecer, e é justamente por
+     * isso que precisa de um lado definido. Numa trava anti-ban o lado
+     * seguro de errar é NÃO mandar — "não sei se já passou o intervalo"
+     * tem de valer como "ainda não passou".
+     */
+    console.error("[anti-ban] resposta vazia ao reservar a vez de disparo.");
+    return {
+      permitido: false,
+      motivo: "falha",
+      detalhe: "Falha ao verificar a cota diária.",
+      esperaMs: 0,
+    };
+  }
+
+  if (resposta.ok) return { permitido: true };
+
+  const esperaMs = Math.max(0, (resposta.espera_segundos ?? 0) * 1000);
+
+  if (resposta.motivo === "aguardando_intervalo") {
+    return {
+      permitido: false,
+      motivo: "aguardando_intervalo",
+      detalhe: `Aguardando o intervalo anti-ban entre disparos (${Math.ceil(esperaMs / 1000)}s).`,
+      esperaMs,
+    };
+  }
+
+  if (resposta.motivo === "numero_bloqueado") {
+    return {
+      permitido: false,
+      motivo: "numero_bloqueado",
+      detalhe: "Envios deste número estão pausados após falhas seguidas do provedor.",
+      esperaMs,
+    };
+  }
+
+  return {
+    permitido: false,
+    motivo: "cota_diaria",
+    detalhe: `Cota diária de ${limite} disparos atingida.`,
+    esperaMs: 0,
+  };
 }
 
 /**

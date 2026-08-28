@@ -1542,6 +1542,30 @@ export type Database = {
         Args: { p_instancia_id: string; p_limite: number }
         Returns: number
       }
+      /**
+       * 0062. Escrita à mão, como o resto das uniões deste arquivo: o
+       * gerador devolveria `Json` para o retorno e o chamador perderia a
+       * checagem dos motivos.
+       */
+      consumir_cota_campanha_espacada: {
+        Args: {
+          p_instancia_id: string
+          p_limite: number
+          p_intervalo_min?: number
+          p_intervalo_max?: number
+        }
+        Returns: {
+          ok: boolean
+          motivo?:
+            | "aguardando_intervalo"
+            | "cota_diaria"
+            | "numero_bloqueado"
+            | "instancia_inexistente"
+          espera_segundos?: number
+          total?: number
+          intervalo_segundos?: number
+        }
+      }
       corretor_atual: { Args: never; Returns: string }
       definir_papel_corretor: {
         Args: { alvo: string; novo_papel: string }
