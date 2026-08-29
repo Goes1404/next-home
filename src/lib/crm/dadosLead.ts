@@ -3,6 +3,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { EtapaFunil, Lead, OrigemAtribuicao } from "@/lib/types";
 import type { Interacao, Tarefa, TipoInteracao } from "./timeline";
+import type { AtribuicaoMarketing } from "@/lib/marketing/atribuicao";
 
 /**
  * Leitura da ficha de um lead: os dados do lead, suas tarefas e a linha do
@@ -29,6 +30,31 @@ export type LeadDetalhado = Lead & {
   tentativasSemResposta: number;
   ultimaTentativaEm: string | null;
 };
+
+export type TouchpointMarketing = {
+  id: string;
+  tipo: string;
+  origem: string | null;
+  atribuicao: AtribuicaoMarketing;
+  ocorridoEm: string;
+};
+
+export type PreferenciaContato = { canal: string; permitido: boolean; atualizadoEm: string };
+
+export async function getPreferenciasDoLead(leadId: string): Promise<PreferenciaContato[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("marketing_preferencias")
+    .select("canal, permitido, atualizado_em")
+    .eq("lead_id", leadId)
+    .eq("finalidade", "atendimento_solicitado")
+    .order("canal");
+  return (data ?? []).map((item) => ({
+    canal: item.canal,
+    permitido: item.permitido,
+    atualizadoEm: item.atualizado_em,
+  }));
+}
 
 const SELECT_DETALHE = `
   id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
@@ -132,6 +158,35 @@ export async function getTarefasDoLead(leadId: string): Promise<Tarefa[]> {
     titulo: t.titulo,
     prazo: t.prazo,
     concluidaEm: t.concluida_em,
+  }));
+}
+
+export async function getTouchpointsDoLead(leadId: string): Promise<TouchpointMarketing[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("marketing_touchpoints")
+    .select("id, tipo, origem, utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, gbraid, wbraid, fbclid, ttclid, ocorrido_em")
+    .eq("lead_id", leadId)
+    .order("ocorrido_em", { ascending: true })
+    .limit(100);
+
+  return (data ?? []).map((item) => ({
+    id: item.id,
+    tipo: item.tipo,
+    origem: item.origem,
+    ocorridoEm: item.ocorrido_em,
+    atribuicao: {
+      utm_source: item.utm_source ?? undefined,
+      utm_medium: item.utm_medium ?? undefined,
+      utm_campaign: item.utm_campaign ?? undefined,
+      utm_content: item.utm_content ?? undefined,
+      utm_term: item.utm_term ?? undefined,
+      gclid: item.gclid ?? undefined,
+      gbraid: item.gbraid ?? undefined,
+      wbraid: item.wbraid ?? undefined,
+      fbclid: item.fbclid ?? undefined,
+      ttclid: item.ttclid ?? undefined,
+    },
   }));
 }
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { lerAtribuicao, type AtribuicaoMarketing } from "@/lib/marketing/atribuicao";
 
 type Status = "ideal" | "enviando" | "sucesso" | "erro";
 
@@ -28,8 +29,10 @@ export function FormularioContato({
   // `Date.now()` é impuro, então só pode rodar num efeito (montagem real no
   // cliente), nunca durante a própria renderização.
   const montadoEm = useRef<number | null>(null);
+  const atribuicao = useRef<AtribuicaoMarketing>({});
   useEffect(() => {
     montadoEm.current = Date.now();
+    atribuicao.current = lerAtribuicao(window.location.search);
   }, []);
 
   async function aoEnviar(ev: React.FormEvent<HTMLFormElement>) {
@@ -48,6 +51,7 @@ export function FormularioContato({
       consentimentoLgpd: dados.get("lgpd") === "on",
       empresa: String(dados.get("empresa") ?? ""),
       elapsedMs: montadoEm.current == null ? null : Date.now() - montadoEm.current,
+      atribuicao: atribuicao.current,
     };
 
     try {

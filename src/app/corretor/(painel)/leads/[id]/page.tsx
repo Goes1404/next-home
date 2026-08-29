@@ -10,6 +10,8 @@ import { PassosDoFunil } from "@/app/corretor/(painel)/_componentes/PassosDoFuni
 import { createClient } from "@/lib/supabase/server";
 import {
   getLeadDetalhado,
+  getTouchpointsDoLead,
+  getPreferenciasDoLead,
   getTarefasDoLead,
   getTimelineDoLead,
 } from "@/lib/crm/dadosLead";
@@ -19,6 +21,8 @@ import { ProximasAcoes } from "./ProximasAcoes";
 import { Qualificacao } from "./Qualificacao";
 import { ArquivarLead } from "./ArquivarLead";
 import { SeletorEtapa } from "./SeletorEtapa";
+import { OrigemJornada } from "./OrigemJornada";
+import { PreferenciasContato } from "./PreferenciasContato";
 
 export const metadata: Metadata = { title: "Lead" };
 
@@ -43,9 +47,11 @@ export default async function FichaLeadPage({
   if (!lead) notFound();
 
   const supabase = await createClient();
-  const [tarefas, timeline, { data: empreendimentos }] = await Promise.all([
+  const [tarefas, timeline, touchpoints, preferencias, { data: empreendimentos }] = await Promise.all([
     getTarefasDoLead(id),
     getTimelineDoLead(id),
+    getTouchpointsDoLead(id),
+    getPreferenciasDoLead(id),
     supabase.from("empreendimentos").select("id, nome").order("nome"),
   ]);
 
@@ -156,6 +162,8 @@ export default async function FichaLeadPage({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">
+          <OrigemJornada touchpoints={touchpoints} />
+          <PreferenciasContato preferencias={preferencias} />
           <Qualificacao
             leadId={lead.id}
             inicial={{

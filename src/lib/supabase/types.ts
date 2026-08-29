@@ -866,6 +866,171 @@ export type Database = {
           },
         ]
       }
+      event_outbox: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          destino: string
+          id: string
+          marketing_evento_id: string
+          proxima_tentativa_em: string
+          status: string
+          tentativas: number
+          ultimo_erro: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          destino: string
+          id?: string
+          marketing_evento_id: string
+          proxima_tentativa_em?: string
+          status?: string
+          tentativas?: number
+          ultimo_erro?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          destino?: string
+          id?: string
+          marketing_evento_id?: string
+          proxima_tentativa_em?: string
+          status?: string
+          tentativas?: number
+          ultimo_erro?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_outbox_marketing_evento_id_fkey"
+            columns: ["marketing_evento_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_consentimentos: {
+        Row: { base_legal: string; canal: string; criado_em: string; estado: string; finalidade: string; id: string; lead_id: string; ocorrido_em: string; origem: string | null; versao_aviso: string }
+        Insert: { base_legal?: string; canal: string; criado_em?: string; estado: string; finalidade: string; id?: string; lead_id: string; ocorrido_em?: string; origem?: string | null; versao_aviso: string }
+        Update: { base_legal?: string; canal?: string; criado_em?: string; estado?: string; finalidade?: string; id?: string; lead_id?: string; ocorrido_em?: string; origem?: string | null; versao_aviso?: string }
+        Relationships: [{ foreignKeyName: "marketing_consentimentos_lead_id_fkey"; columns: ["lead_id"]; isOneToOne: false; referencedRelation: "leads"; referencedColumns: ["id"] }]
+      }
+      marketing_eventos: {
+        Row: {
+          criado_em: string
+          entidade_id: string
+          entidade_tipo: string
+          event_id: string
+          id: string
+          lead_id: string | null
+          ocorrido_em: string
+          payload: Json
+          tipo: string
+        }
+        Insert: {
+          criado_em?: string
+          entidade_id: string
+          entidade_tipo: string
+          event_id: string
+          id?: string
+          lead_id?: string | null
+          ocorrido_em: string
+          payload?: Json
+          tipo: string
+        }
+        Update: {
+          criado_em?: string
+          entidade_id?: string
+          entidade_tipo?: string
+          event_id?: string
+          id?: string
+          lead_id?: string | null
+          ocorrido_em?: string
+          payload?: Json
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_eventos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_touchpoints: {
+        Row: {
+          criado_em: string
+          fbclid: string | null
+          gbraid: string | null
+          gclid: string | null
+          id: string
+          lead_id: string
+          ocorrido_em: string
+          origem: string | null
+          tipo: string
+          ttclid: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          wbraid: string | null
+        }
+        Insert: {
+          criado_em?: string
+          fbclid?: string | null
+          gbraid?: string | null
+          gclid?: string | null
+          id?: string
+          lead_id: string
+          ocorrido_em?: string
+          origem?: string | null
+          tipo?: string
+          ttclid?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          wbraid?: string | null
+        }
+        Update: {
+          criado_em?: string
+          fbclid?: string | null
+          gbraid?: string | null
+          gclid?: string | null
+          id?: string
+          lead_id?: string
+          ocorrido_em?: string
+          origem?: string | null
+          tipo?: string
+          ttclid?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          wbraid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_touchpoints_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_preferencias: {
+        Row: { atualizado_em: string; canal: string; finalidade: string; id: string; lead_id: string; permitido: boolean }
+        Insert: { atualizado_em?: string; canal: string; finalidade: string; id?: string; lead_id: string; permitido?: boolean }
+        Update: { atualizado_em?: string; canal?: string; finalidade?: string; id?: string; lead_id?: string; permitido?: boolean }
+        Relationships: [{ foreignKeyName: "marketing_preferencias_lead_id_fkey"; columns: ["lead_id"]; isOneToOne: false; referencedRelation: "leads"; referencedColumns: ["id"] }]
+      }
       meta_ads_metricas: {
         Row: {
           atualizado_em: string
@@ -913,6 +1078,9 @@ export type Database = {
           empreendimento_id: string | null
           etapa: string
           etapa_alterada_em: string
+          fbclid: string | null
+          gbraid: string | null
+          gclid: string | null
           id: string
           mensagem: string | null
           meta_lead_id: string | null
@@ -930,7 +1098,14 @@ export type Database = {
           tentativas_sem_resposta: number
           ultima_tentativa_em: string | null
           tipo: string
+          ttclid: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
           visita_agendada_em: string | null
+          wbraid: string | null
         }
         Insert: {
           anuncio_origem?: string | null
@@ -945,6 +1120,9 @@ export type Database = {
           empreendimento_id?: string | null
           etapa?: string
           etapa_alterada_em?: string
+          fbclid?: string | null
+          gbraid?: string | null
+          gclid?: string | null
           id?: string
           mensagem?: string | null
           meta_lead_id?: string | null
@@ -962,7 +1140,14 @@ export type Database = {
           tentativas_sem_resposta?: number
           ultima_tentativa_em?: string | null
           tipo?: string
+          ttclid?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           visita_agendada_em?: string | null
+          wbraid?: string | null
         }
         Update: {
           anuncio_origem?: string | null
@@ -977,6 +1162,9 @@ export type Database = {
           empreendimento_id?: string | null
           etapa?: string
           etapa_alterada_em?: string
+          fbclid?: string | null
+          gbraid?: string | null
+          gclid?: string | null
           id?: string
           mensagem?: string | null
           meta_lead_id?: string | null
@@ -994,7 +1182,14 @@ export type Database = {
           tentativas_sem_resposta?: number
           ultima_tentativa_em?: string | null
           tipo?: string
+          ttclid?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           visita_agendada_em?: string | null
+          wbraid?: string | null
         }
         Relationships: [
           {
@@ -1501,6 +1696,19 @@ export type Database = {
       }
     }
     Views: {
+      sla_leads_metricas: {
+        Row: {
+          canal_automatico: string | null
+          canal_humano: string | null
+          iniciado_em: string | null
+          lead_id: string | null
+          primeira_resposta_automatica_em: string | null
+          primeira_resposta_humana_em: string | null
+          segundos_automatico: number | null
+          segundos_humano: number | null
+        }
+        Relationships: [{ foreignKeyName: "sla_leads_lead_id_fkey"; columns: ["lead_id"]; isOneToOne: true; referencedRelation: "leads"; referencedColumns: ["id"] }]
+      }
       whatsapp_funil_metricas: {
         Row: {
           conversas: number | null
@@ -1522,6 +1730,10 @@ export type Database = {
       }
     }
     Functions: {
+      processar_outbox_analytics_interno: {
+        Args: { p_limite?: number }
+        Returns: number
+      }
       configurar_disparo_automatico: {
         Args: { p_token: string; p_url: string }
         Returns: string

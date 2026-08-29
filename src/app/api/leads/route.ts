@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { createClient } from "@/lib/supabase/public";
+import { CHAVES_ATRIBUICAO, type AtribuicaoMarketing } from "@/lib/marketing/atribuicao";
 
 export const runtime = "nodejs";
 
@@ -30,6 +31,7 @@ type CorpoLead = {
   empresa?: string;
   /** Tempo em ms desde que o formulário apareceu na tela do visitante. */
   elapsedMs?: number | null;
+  atribuicao?: AtribuicaoMarketing;
 };
 
 /**
@@ -73,6 +75,16 @@ function parseDetalhes(d: DetalhesImovel | undefined): DetalhesImovel | null {
     if (valor) limpo[chave] = valor.slice(0, 120);
   }
   return Object.keys(limpo).length > 0 ? limpo : null;
+}
+
+function parseAtribuicao(valor: AtribuicaoMarketing | undefined): AtribuicaoMarketing {
+  const atribuicao: AtribuicaoMarketing = {};
+  if (!valor || typeof valor !== "object") return atribuicao;
+  for (const chave of CHAVES_ATRIBUICAO) {
+    const campo = typeof valor[chave] === "string" ? valor[chave].trim() : "";
+    if (campo) atribuicao[chave] = campo.slice(0, 500);
+  }
+  return atribuicao;
 }
 
 export async function POST(req: Request) {
@@ -140,6 +152,7 @@ export async function POST(req: Request) {
 
   const tipo = parseTipo(corpo.tipo);
   const detalhes = tipo === "proprietario" ? parseDetalhes(corpo.detalhes) : null;
+  const atribuicao = parseAtribuicao(corpo.atribuicao);
 
   const { error } = await supabase.from("leads").insert({
     nome,
@@ -152,6 +165,7 @@ export async function POST(req: Request) {
     detalhes,
     origem: normalizado(corpo.origem) ?? "site/contato",
     consentimento_lgpd: true,
+    ...atribuicao,
   });
 
   if (error) {
