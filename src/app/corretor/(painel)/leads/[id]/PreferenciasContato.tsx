@@ -1,9 +1,26 @@
+"use client";
+
+import { useState, useTransition } from "react";
 import { ShieldCheck } from "lucide-react";
 import type { PreferenciaContato } from "@/lib/crm/dadosLead";
+import { definirPreferenciaContato } from "./acoes";
 
 const CANAL: Record<string, string> = { email: "E-mail", whatsapp: "WhatsApp", telefone: "Ligação" };
 
-export function PreferenciasContato({ preferencias }: { preferencias: PreferenciaContato[] }) {
+export function PreferenciasContato({ leadId, preferencias }: { leadId: string; preferencias: PreferenciaContato[] }) {
+  const [pendente, iniciar] = useTransition();
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  function alternar(item: PreferenciaContato) {
+    iniciar(async () => {
+      const resultado = await definirPreferenciaContato(
+        leadId,
+        item.canal as "email" | "whatsapp" | "telefone",
+        !item.permitido,
+      );
+      setAviso(resultado.ok ?? resultado.erro ?? null);
+    });
+  }
   return (
     <section className="rounded-2xl border border-linha bg-elevado p-4 sm:p-5" aria-labelledby="preferencias-titulo">
       <div className="flex items-start gap-3">
@@ -22,15 +39,22 @@ export function PreferenciasContato({ preferencias }: { preferencias: Preferenci
       ) : (
         <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
           {preferencias.map((item) => (
-            <li key={item.canal} className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-vidro px-3 py-2">
+            <li key={item.canal} className="flex items-center justify-between gap-3 rounded-xl bg-vidro px-3 py-2">
               <span className="text-fluid-sm text-corpo">{CANAL[item.canal] ?? item.canal}</span>
-              <span className={`text-xs font-medium ${item.permitido ? "text-emerald-300" : "text-red-300"}`}>
+              <button
+                type="button"
+                disabled={pendente}
+                onClick={() => alternar(item)}
+                className={`min-h-11 rounded-lg px-3 text-xs font-medium transition-colors disabled:opacity-60 ${item.permitido ? "text-emerald-300 hover:bg-emerald-400/10" : "text-red-300 hover:bg-red-400/10"}`}
+                aria-label={`${item.permitido ? "Bloquear" : "Reativar"} contato por ${CANAL[item.canal] ?? item.canal}`}
+              >
                 {item.permitido ? "Permitido" : "Bloqueado"}
-              </span>
+              </button>
             </li>
           ))}
         </ul>
       )}
+      {aviso && <p role="status" className="text-fluid-xs mt-3 text-apoio">{aviso}</p>}
     </section>
   );
 }

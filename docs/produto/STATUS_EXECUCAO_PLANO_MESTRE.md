@@ -15,7 +15,7 @@
 | Taxonomia e eventos idempotentes | Concluído localmente | `marketing_eventos`, chave estável e testes |
 | Outbox transacional | Concluído localmente | Migrations `0065` e `0066` |
 | Monitor de eventos | Concluído localmente | `/corretor/admin/eventos` |
-| Consentimentos e preferências | Concluído localmente | Migration `0067` e visualização na ficha |
+| Consentimentos e preferências | Concluído localmente | Migrations `0067`/`0069`, visualização e opt-out por canal |
 | SLA de primeira resposta | Concluído localmente | Migration `0068` e `/corretor/admin/sla` |
 | Venda como entidade formal | Bloqueado por decisão | DEC-001 e DEC-002 |
 | Auditoria sensível | Pendente | Depende do primeiro fluxo de venda |
@@ -31,6 +31,7 @@
 | `0066_processador_outbox_interno.sql` | Consumidor interno concorrente | Pendente |
 | `0067_consentimentos_preferencias.sql` | Histórico de consentimento e preferência por canal | Pendente |
 | `0068_sla_primeira_resposta.sql` | SLA automático/humano e backfill conservador | Pendente |
+| `0069_optout_por_canal.sql` | Alteração auditável de preferência por canal | Pendente |
 
 ## Decisões que bloqueiam o próximo eixo
 

@@ -16,6 +16,7 @@ Aplicar, nesta ordem:
 3. `0066_processador_outbox_interno.sql`
 4. `0067_consentimentos_preferencias.sql`
 5. `0068_sla_primeira_resposta.sql`
+6. `0069_optout_por_canal.sql`
 
 Não selecionar somente algumas migrations: `0065` depende das colunas de `0064`, e as telas foram tipadas para o conjunto completo.
 
@@ -37,6 +38,7 @@ O teste roda dentro de uma transação e termina com `ROLLBACK`. Qualquer requis
 4. Gerar uma resposta da Sofia e uma resposta humana no WhatsApp.
 5. Abrir Administração → SLA e confirmar as duas medições.
 6. Transferir o lead entre corretores e confirmar que a origem permaneceu inalterada.
+7. Bloquear e reativar um canal na ficha; confirmar preferência atual e dois eventos históricos.
 
 ## Rollback
 

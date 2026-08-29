@@ -1730,6 +1730,10 @@ export type Database = {
       }
     }
     Functions: {
+      definir_preferencia_contato: {
+        Args: { p_canal: string; p_lead_id: string; p_permitido: boolean }
+        Returns: boolean
+      }
       processar_outbox_analytics_interno: {
         Args: { p_limite?: number }
         Returns: number

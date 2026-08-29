@@ -15,6 +15,25 @@ import { createClient } from "@/lib/supabase/server";
 
 export type ResultadoCrm = { ok?: string; erro?: string };
 
+export async function definirPreferenciaContato(
+  leadId: string,
+  canal: "email" | "whatsapp" | "telefone",
+  permitido: boolean,
+): Promise<ResultadoCrm> {
+  const ctx = await sessao();
+  if ("erro" in ctx) return { erro: ctx.erro };
+
+  const { data, error } = await ctx.supabase.rpc("definir_preferencia_contato", {
+    p_lead_id: leadId,
+    p_canal: canal,
+    p_permitido: permitido,
+  });
+  if (error || !data) return { erro: "Não foi possível alterar a preferência deste contato." };
+
+  revalidatePath(`/corretor/leads/${leadId}`);
+  return { ok: permitido ? "Canal reativado." : "Canal bloqueado e revogação registrada." };
+}
+
 async function sessao() {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." as const };

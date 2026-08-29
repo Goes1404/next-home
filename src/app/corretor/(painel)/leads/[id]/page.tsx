@@ -163,7 +163,7 @@ export default async function FichaLeadPage({
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">
           <OrigemJornada touchpoints={touchpoints} />
-          <PreferenciasContato preferencias={preferencias} />
+          <PreferenciasContato leadId={lead.id} preferencias={preferencias} />
           <Qualificacao
             leadId={lead.id}
             inicial={{
