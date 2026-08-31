@@ -167,9 +167,18 @@ mais falas do cliente.
      zerados (`leads_quentes` e `em_negociacao`) e ninguém reparou — ou
      seja, o projeto já tem no ar a demonstração do que acontece quando se
      monta funil sem dado.
-   - **O que fazer antes da tela:** `ia_interacoes.sugeriu_visita` tem 46
-     linhas vivas e **zero leitores no repositório inteiro** — só é escrito.
-     É o defeito da casa outra vez, e é o degrau mais barato de acender.
+   - **[ENTREGUE 31/08] O degrau mais barato foi aceso** (0072):
+     `ia_interacoes.sugeriu_visita` tinha 46 linhas vivas e zero leitores no
+     repositório inteiro. Agora é o degrau "Visitas propostas" da tela de
+     WhatsApp — e a medida certa são **6 conversas**, não 46: a unidade do
+     funil é a conversa, e contar interações multiplicaria o número por oito.
+     Junto foi corrigido um erro de contagem que ninguém tinha visto: a
+     visita saía de `etapa = 'visita_agendada'`, a etapa ATUAL, então o lead
+     que visitava e AVANÇAVA sumia do degrau — um funil em que as visitas
+     caem quando o negócio melhora. Agora é cumulativa (a data, que é o
+     fato, ou a etapa de visita em diante).
+   - **O que ainda falta é o degrau do meio**, e ele depende de conversa
+     real: `qualificados (região + renda)` continua em 0 de 112.
 
 ## Longo prazo (quando o volume justificar)
 

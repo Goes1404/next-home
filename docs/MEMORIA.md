@@ -2259,3 +2259,28 @@ os itens.
 - **F2 pronta não é F2 funcionando:** `meta_ads_metricas` segue com 0 linhas
   e nenhum lead tem `meta_campanha_id`, então a tabela não renderiza. O
   código espera o dado, e o dado espera duas variáveis de ambiente.
+
+## O funil do bot ganhou o degrau da visita proposta (0072, 31/08/2026)
+
+- **46 interações são 6 CONVERSAS**, e a diferença é de oito vezes. A
+  auditoria encontrou `ia_interacoes.sugeriu_visita` com 46 linhas vivas e
+  zero leitores; a tentação era escrever 46 na tela. A unidade do funil é a
+  conversa — o cliente não compara mensagens de conversas diferentes, ele
+  vive a dele. **Ao acender um contador de `ia_interacoes`, decidir primeiro
+  se a unidade é a resposta ou a conversa.**
+- **O degrau da visita contava a etapa ATUAL, e por isso caía quando o
+  negócio melhorava.** `etapa = 'visita_agendada'` some quando o lead vai
+  para documentação: um funil em que o número de visitas DIMINUI conforme a
+  venda avança. Agora é cumulativo — `visita_agendada_em` (o fato) OU etapa
+  de visita em diante.
+- **Nenhuma das duas fontes de visita conta certo sozinha**, e isso é dado,
+  não teoria: os 2 leads com `visita_agendada_em` não têm conversa de
+  WhatsApp e já estão em `perdido`; o único lead na etapa de visita NÃO tem
+  a data (o corretor moveu o cartão à mão). Por isso o OR.
+- **`create or replace view` recusa coluna nova no MEIO da lista**
+  ("cannot change name of view column"). Como a ordem das colunas é a ordem
+  do funil, o caminho é `drop view` + `create view` na mesma migration.
+- **Zero honesto não é zero quebrado.** `leads_quentes` e `em_negociacao`
+  seguem em 0 e ficaram como estão: não há dossiê (6 para 112 leads) nem
+  negócio em andamento. Mexer neles para "melhorar o número" seria maquiar
+  a tela — o que se conserta é a CONTA errada, não o resultado baixo.

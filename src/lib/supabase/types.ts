@@ -1524,6 +1524,7 @@ export type Database = {
           em_negociacao: number | null
           leads_quentes: number | null
           visitas_agendadas: number | null
+          visitas_propostas: number | null
         }
         Relationships: [
           {

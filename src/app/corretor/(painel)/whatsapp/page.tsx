@@ -28,7 +28,9 @@ export default async function WhatsappPainelPage() {
     // Funil real do atendimento (view da 0029): medir conversão, não vibe.
     supabase
       .from("whatsapp_funil_metricas")
-      .select("conversas, conversas_com_lead, leads_quentes, visitas_agendadas, em_negociacao")
+      .select(
+        "conversas, conversas_com_lead, leads_quentes, visitas_propostas, visitas_agendadas, em_negociacao",
+      )
       .eq("corretor_id", corretor.id)
       .maybeSingle(),
   ]);
@@ -55,22 +57,34 @@ export default async function WhatsappPainelPage() {
         telas.
       */}
       {funil && (funil.conversas ?? 0) > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {(
             [
-              ["Conversas", funil.conversas, "border-linha"],
-              ["Com ficha no funil", funil.conversas_com_lead, "border-acento-linha"],
-              ["Leads quentes", funil.leads_quentes, "border-etapa-ciano-linha"],
-              ["Visitas agendadas", funil.visitas_agendadas, "border-etapa-azul-linha"],
-              ["Em negociação", funil.em_negociacao, "border-etapa-laranja-linha"],
+              ["Conversas", funil.conversas, "border-linha", null],
+              ["Com ficha no funil", funil.conversas_com_lead, "border-acento-linha", null],
+              ["Leads quentes", funil.leads_quentes, "border-etapa-ciano-linha", null],
+              /*
+               * O degrau que faltava entre conversar e marcar: em quantas
+               * conversas a IA chegou a OFERECER a visita. O dado era
+               * gravado desde a 0029 e não tinha leitor nenhum (0072).
+               */
+              [
+                "Visitas propostas",
+                funil.visitas_propostas,
+                "border-etapa-azul-linha",
+                "a IA ofereceu",
+              ],
+              ["Visitas marcadas", funil.visitas_agendadas, "border-etapa-azul-linha", "o cliente aceitou"],
+              ["Em negociação", funil.em_negociacao, "border-etapa-laranja-linha", null],
             ] as const
-          ).map(([rotulo, valor, borda]) => (
+          ).map(([rotulo, valor, borda, detalhe]) => (
             <div
               key={rotulo}
               className={`bg-superficie rounded-2xl border border-l-3 p-4 ${borda}`}
             >
               <p className="text-fluid-xs text-tenue">{rotulo}</p>
               <p className="text-fluid-xl text-titulo font-bold tabular-nums">{valor ?? 0}</p>
+              {detalhe && <p className="text-fluid-xs text-tenue mt-0.5">{detalhe}</p>}
             </div>
           ))}
         </div>
