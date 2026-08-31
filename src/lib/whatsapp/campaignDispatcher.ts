@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { dentroDaJanela, ehDestinatarioInexistente } from "./antiBan";
+import { avisarQuedaSeNecessario } from "./avisoDeQueda";
 import { variarMensagemComIA } from "./campaignQueue";
 import { enviarMensagemWhatsapp } from "./provider";
 import {
@@ -312,6 +313,20 @@ async function processarInstancia(ctx: {
     });
 
     if (!estado.conectado || !estado.conectadoEm) {
+      /*
+       * Este é o instante em que o sistema DESCOBRE que o número saiu do ar
+       * — e, até 31/08/2026, o instante em que ele não fazia nada a
+       * respeito: a instância caiu em 28/08 e ficou três dias fora sem
+       * ninguém saber, porque as quatro proteções do número impedem o
+       * estrago mas nenhuma conta o apagão (roadmap, H0.0).
+       *
+       * O aviso sai daqui, e não de um cron novo, porque é aqui que a queda
+       * é percebida de fato. Ele manda no máximo um e-mail por queda, não
+       * lança, e é aguardado de propósito: `after()` não vale quando este
+       * caminho encerra a requisição em seguida.
+       */
+      await avisarQuedaSeNecessario(instancia.id);
+
       return vazio(
         "nao_conectado",
         estado.estado === "indisponivel"

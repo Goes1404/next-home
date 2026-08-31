@@ -340,7 +340,15 @@ export async function verificarConexaoWhatsapp(): Promise<{
     telefoneAtual: instancia.telefone_conectado,
   });
 
-  if (estado.conectado) revalidatePath("/corretor/whatsapp");
+  if (estado.conectado) {
+    revalidatePath("/corretor/whatsapp");
+    // A faixa de "número fora do ar" vive no LAYOUT do painel, e layout não
+    // re-executa ao navegar entre rotas irmãs: sem revalidar a camada de
+    // layout, o corretor reconecta e o aviso continua na tela até um
+    // recarregamento completo — "consertei e o alerta não sumiu" é a pior
+    // leitura possível de um alerta.
+    revalidatePath("/corretor", "layout");
+  }
 
   const { data: atualizada } = await supabase
     .from("corretor_whatsapp_instancias")
@@ -391,6 +399,8 @@ export async function desconectarWhatsapp(): Promise<{ ok?: string; erro?: strin
     .eq("corretor_id", corretor.id);
 
   revalidatePath("/corretor/whatsapp");
+  // Desconectar por vontade própria também muda a faixa do layout.
+  revalidatePath("/corretor", "layout");
   return { ok: "Número desconectado. A IA para de responder até você conectar de novo." };
 }
 

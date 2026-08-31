@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { NavPainel } from "./NavPainel";
 import { NavMobileBottom } from "./NavMobileBottom";
 import { sair } from "@/app/corretor/actions";
@@ -86,6 +87,14 @@ export default async function PainelLayout({
 
       {corretor ? (
         <>
+          {/*
+            Enquanto o número está fora do ar, nada mais no painel está
+            acontecendo de verdade — por isso a faixa vem antes do conteúdo,
+            em toda tela. Ela devolve `null` no caminho feliz, que é quase
+            sempre (ver FaixaConexao).
+          */}
+          <FaixaConexao corretorId={corretor.id} />
+
           {/*
             A coluna de conteúdo fica em 1fr com a lateral fixa em 15rem, o
             que dá ~64rem de leitura no monitor comum — a mesma largura de

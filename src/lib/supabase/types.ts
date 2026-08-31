@@ -166,10 +166,12 @@ export type Database = {
       }
       corretor_whatsapp_instancias: {
         Row: {
+          aviso_queda_enviado_em: string | null
           bloqueado_ate: string | null
           conectado_em: string | null
           corretor_id: string
           created_at: string
+          desconectado_em: string | null
           envios_campanha_contador: number
           envios_campanha_data: string | null
           falhas_seguidas: number
@@ -188,10 +190,12 @@ export type Database = {
           webhook_secret: string | null
         }
         Insert: {
+          aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
           conectado_em?: string | null
           corretor_id: string
           created_at?: string
+          desconectado_em?: string | null
           envios_campanha_contador?: number
           envios_campanha_data?: string | null
           falhas_seguidas?: number
@@ -210,10 +214,12 @@ export type Database = {
           webhook_secret?: string | null
         }
         Update: {
+          aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
           conectado_em?: string | null
           corretor_id?: string
           created_at?: string
+          desconectado_em?: string | null
           envios_campanha_contador?: number
           envios_campanha_data?: string | null
           falhas_seguidas?: number

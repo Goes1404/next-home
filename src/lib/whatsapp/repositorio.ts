@@ -1243,6 +1243,19 @@ export async function sincronizarConexaoInstancia(params: {
       .update({ status_conexao: estado.estado === "connecting" ? "conectando" : "desconectado" })
       .eq("id", params.instanciaId);
 
+    /*
+     * Carimba o marco da queda UMA VEZ (0065). O `is(..., null)` é a parte
+     * que importa: este caminho roda a cada ciclo do cron, e reescrever a
+     * cada passagem faria um apagão de três dias aparecer eternamente como
+     * "faz um minuto" — o defeito ficaria invisível justamente por ser
+     * contínuo. É este marco que sustenta o "faz 3 dias" do aviso.
+     */
+    await supabase
+      .from("corretor_whatsapp_instancias")
+      .update({ desconectado_em: new Date().toISOString() })
+      .eq("id", params.instanciaId)
+      .is("desconectado_em", null);
+
     return { conectado: false, estado: estado.estado, conectadoEm: null };
   }
 
@@ -1261,6 +1274,11 @@ export async function sincronizarConexaoInstancia(params: {
       // Um número que responde "open" não está mais em falha: zera o
       // contador para o disjuntor não abrir por histórico velho.
       falhas_seguidas: 0,
+      // O número voltou: apaga o marco da queda e a marca do aviso (0065).
+      // É o que arma o alerta da PRÓXIMA vez — queda nova é notícia nova,
+      // mesmo que a anterior tenha sido ontem.
+      desconectado_em: null,
+      aviso_queda_enviado_em: null,
       ...(reset
         ? {
             envios_campanha_contador: reset.envios_campanha_contador,
