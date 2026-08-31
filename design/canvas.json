@@ -1,0 +1,25 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "No painel (celular)" },
+    { "file": "Estados.dc.html", "x": 510, "y": 0, "w": 420, "h": 900, "title": "Os três estados — escuro" },
+    { "file": "Claro.dc.html", "x": 1050, "y": 0, "w": 420, "h": 900, "title": "Os três estados — claro" },
+    { "file": "Email.dc.html", "x": 1590, "y": 0, "w": 600, "h": 880, "title": "E-mail de alerta" }
+  ],
+  "annotations": [
+    {
+      "id": "porque-dois-canais",
+      "x": 0,
+      "y": -150,
+      "w": 390,
+      "text": "Por que os dois canais:\na faixa cobre quem abre o painel, o e-mail alcança quem não abre — que foi exatamente o caso dos três dias de silêncio de 28/08.\n\nAvisar pelo WhatsApp seria avisar num telefone mudo."
+    },
+    {
+      "id": "regua-de-cor",
+      "x": 510,
+      "y": -150,
+      "w": 420,
+      "text": "Uma cor por gravidade, tirada dos tokens que já existem (perigo / alerta / info).\n\nRosa = parou e só você resolve. Âmbar = o sistema se protegeu e volta sozinho. Azul = está funcionando, só não agora.\n\nSó o estado rosa ganha botão primário: os outros dois não pedem ação nenhuma."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

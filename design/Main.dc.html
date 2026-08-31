@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap">
+  <style>
+    :root {
+      --fundo: #040b0a; --superficie: #0b1a17; --elevado: #12241f;
+      --titulo: #f6faf9; --corpo: #dbe6e3; --apoio: #93a8a2; --tenue: #7c918b;
+      --linha: rgb(255 255 255 / 0.1);
+      --perigo: #fb7185; --perigo-lavado: rgb(251 113 133 / 0.14); --perigo-linha: rgb(251 113 133 / 0.34);
+      --acento-forte: #2fd6a4; --acento-lavado: rgb(0 128 108 / 0.2);
+      --sombra: 0 1px 2px rgb(0 0 0 / 0.28);
+      --xs: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);
+      --sm: clamp(0.875rem, 0.84rem + 0.18vw, 0.9375rem);
+    }
+    body { margin: 0; background: var(--fundo); font-family: Inter, system-ui, sans-serif;
+           -webkit-font-smoothing: antialiased; }
+    a { color: var(--acento-forte); } a:hover { color: #bff5e2; }
+    .disp { font-family: Fraunces, Georgia, serif; }
+  </style>
+</helmet>
+
+<div style="min-height: 844px; background: var(--fundo); color: var(--corpo)">
+
+  <!-- Cabeçalho real do painel: sticky, borda embaixo, logo em display -->
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--linha)">
+    <span class="disp" style="font-size: 18px; color: var(--titulo)">Next<span style="color: #6fe7c0">Home</span></span>
+    <div style="display: flex; align-items: center; gap: 10px">
+      <span style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 999px; background: var(--acento-lavado); color: #6fe7c0; font-size: 11px; font-weight: 600">BR</span>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px; padding: 24px 16px 40px">
+
+    <!--
+      A FAIXA. Mora acima de tudo porque enquanto ela existe nada mais no
+      painel funciona: sem número no ar não há conversa, dossiê nem
+      follow-up. Perigo (rosa) é a cor de "parou", reservada para este caso.
+    -->
+    <div style="display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--perigo-linha); background: var(--perigo-lavado); border-radius: 16px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; gap: 10px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px" aria-hidden="true">
+          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>
+          <path d="M12 9v4"/><path d="M12 17h.01"/>
+        </svg>
+        <div style="min-width: 0">
+          <p style="margin: 0; font-size: var(--sm); font-weight: 600; color: var(--titulo); line-height: 1.35">Seu WhatsApp saiu do ar</p>
+          <p style="margin: 6px 0 0; font-size: var(--xs); color: var(--corpo); line-height: 1.55; text-wrap: pretty">
+            Desde sexta, 28/08 às 16h22 — faz <strong style="color: var(--titulo); font-weight: 600">3 dias</strong>.
+            Ninguém está recebendo nem respondendo mensagem, e 15 disparos estão parados esperando.
+          </p>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <a href="#" style="display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; border-radius: 999px; background: #fb7185; color: #2a0710; font-size: var(--sm); font-weight: 600; text-decoration: none">Reconectar meu número</a>
+        <a href="#" style="display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--perigo-linha); color: var(--corpo); font-size: var(--sm); font-weight: 500; text-decoration: none">Ver o que parou</a>
+      </div>
+    </div>
+
+    <!-- A fila do Início, desbotada de propósito: ela não anda enquanto o
+         número está fora do ar, e fingir que anda seria mentir na tela. -->
+    <div style="border: 1px solid var(--linha); background: var(--superficie); border-radius: 16px; box-shadow: var(--sombra); overflow: hidden; opacity: 0.55">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 20px 20px 0">
+        <span class="disp" style="font-size: 18px; color: var(--titulo)">Agora</span>
+        <span style="font-size: var(--xs); color: var(--tenue); font-variant-numeric: tabular-nums">6 itens</span>
+      </div>
+      <div style="display: flex; flex-direction: column; margin-top: 16px">
+        <div style="display: flex; align-items: stretch; gap: 12px; padding-right: 12px; border-top: 1px solid var(--linha)">
+          <span style="width: 4px; flex-shrink: 0; background: #8fb9e3"></span>
+          <span style="flex: 1; min-width: 0; padding: 14px 0">
+            <span style="display: block; font-size: var(--sm); color: var(--titulo); font-weight: 500">Visita hoje · Marina Duarte</span>
+            <span style="display: block; font-size: var(--xs); color: var(--apoio); margin-top: 2px">15h00 — Vitra Alphaville</span>
+          </span>
+        </div>
+        <div style="display: flex; align-items: stretch; gap: 12px; padding-right: 12px; border-top: 1px solid var(--linha)">
+          <span style="width: 4px; flex-shrink: 0; background: #67d8d1"></span>
+          <span style="flex: 1; min-width: 0; padding: 14px 0">
+            <span style="display: block; font-size: var(--sm); color: var(--titulo); font-weight: 500">Falar com (11) 95721-6675</span>
+            <span style="display: block; font-size: var(--xs); color: var(--apoio); margin-top: 2px">Chegou hoje</span>
+          </span>
+        </div>
+        <div style="display: flex; align-items: stretch; gap: 12px; padding-right: 12px; border-top: 1px solid var(--linha)">
+          <span style="width: 4px; flex-shrink: 0; background: #2fd6a4"></span>
+          <span style="flex: 1; min-width: 0; padding: 14px 0">
+            <span style="display: block; font-size: var(--sm); color: var(--titulo); font-weight: 500">Mais 8 leads novos esperando</span>
+            <span style="display: block; font-size: var(--xs); color: var(--apoio); margin-top: 2px">Importados ontem</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# O arquivo publicado carrega o editor inteiro (~2 MB) e é regerado a partir
+# dos .dc.html deste diretório — não vale versionar.
+*.html
+!*.dc.html
