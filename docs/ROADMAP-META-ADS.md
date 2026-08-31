@@ -11,11 +11,15 @@ Conferido no banco e no código de produção:
 
 | fase | estado | como se sabe |
 |---|---|---|
-| **F0 — IDs do anúncio no lead** | **ENTREGUE 31/08** | migration 0064 aplicada; webhook grava os três IDs; `metaAnuncio.ts` + 7 testes |
-| F1 — gasto diário | **feita** | `0053_meta_ads_metricas.sql`, `/api/cron/meta-ads`, `src/lib/metaAds.ts` (re-lê 3 dias, upsert por `(dia, campanha_id)`) |
-| F2 — CPL do CRM | **desbloqueada** | a junção por ID existe; falta a consulta agregada e o número na tela |
-| F3 — tela do gestor | **feita** | `admin/anuncios/` |
-| F5 — link porteiro CTWA | feita (26/08) | `/wa/[campanha]`, `porteiro.ts`, 0052 |
+| **F0 — IDs do anúncio no lead** | **ENTREGUE 31/08** | migration 0070 aplicada; webhook grava os três IDs; `metaAnuncio.ts` + 7 testes |
+| F1 — gasto diário | **código no ar, NUNCA sincronizou** | `meta_ads_metricas` tem **0 linhas** (31/08). Faltam `META_ADS_ACCOUNT_ID` e `META_ADS_TOKEN` na Vercel — sem eles a rota devolve `nao_configurado` e não escreve nada (`metaAds.ts:101`) |
+| F2 — CPL do CRM | **parcial** | CPL do CRM e custo por lead quente JÁ estão na tela (`admin/anuncios/page.tsx:123-124`), mas são GLOBAIS; a junção POR CAMPANHA (`meta_campanha_id`) não é lida por consulta nenhuma |
+| F3 — tela do gestor | **feita, mostrando zeros** | `admin/anuncios/`; com F1 sem dado, `totalGasto = 0` e os KPIs saem como "—" |
+| F5 — link porteiro CTWA | **feita, sem tráfego real** | 11 cliques em `cliques_whatsapp`, TODOS de 26/08 numa janela de 1h (dois deles `anuncio/nao-existe`): é o teste de quem construiu. **0 leads** com `origem = 'meta/ctwa'` |
+
+> **Auditado em 31/08 por uma rodada de agentes, contra código e banco.**
+> Três das quatro fases marcadas como entregues não produziram uma linha de
+> dado. O padrão é o mesmo da casa: código no ar ≠ código exercitado.
 
 **A ordem se inverteu, e o efeito é que a tela existe e não pode mostrar o
 número principal.** F1 trouxe o lado do dinheiro (gasto por campanha por
@@ -74,7 +78,7 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
   responde por 90 dias e o backfill se escreve então.
 - A partir daqui, todo lead novo do Meta já nasce ligado à campanha.
 
-**Como ficou** (`0064`, `src/lib/metaAnuncio.ts`, `webhooks/meta/route.ts`):
+**Como ficou** (`0070`, `src/lib/metaAnuncio.ts`, `webhooks/meta/route.ts`):
 
 - Três colunas de texto em `leads` + índice PARCIAL em `meta_campanha_id`
   (a maioria dos leads nunca virá de anúncio; índice total indexaria nulo).
@@ -110,7 +114,13 @@ conversa que nasce em seguida — proximidade temporal + a mensagem pronta,
 que é única por campanha (F5, item 3). Enquanto isso não existir, o CPL
 por ID vale para Lead Ads e o de CTWA continua por nome.
 
-### F1 — Sincronizar o gasto diário — ENTREGUE
+### F1 — Sincronizar o gasto diário — CÓDIGO ENTREGUE, NUNCA EXECUTADO
+
+**O que falta é configuração, não código:** `META_ADS_ACCOUNT_ID` e um token
+de System User com `ads_read` nas variáveis de ambiente da Vercel — e o
+redeploy que as faz valer (env var nova só existe depois do build). Enquanto
+isso, `meta_ads_metricas` fica em 0 linhas e a tela de Anúncios inteira
+mostra travessão.
 
 - Tabela `meta_ads_metricas`: `dia`, `campanha_id`, `campanha_nome`,
   `gasto`, `impressoes`, `cliques`, `leads_meta`, unique em
@@ -125,7 +135,14 @@ por ID vale para Lead Ads e o de CTWA continua por nome.
 - Agendar via pg_cron (`configurar_*`, mesmo padrão do disparo) ou cron da
   Vercel — 1x/dia cabe no Hobby.
 
-### F2 — O número que só o CRM tem
+### F2 — O número que só o CRM tem — PARCIAL
+
+Já está na tela (desde `f293c52` / `c7c1e98`, anteriores à F0): o KPI "Custo
+por lead (CRM)" e a seção "Qualidade dos leads de anúncio", com custo por
+lead quente e a faixa "não engajaram" que o roadmap pedia. **O que falta é o
+por CAMPANHA**: os dois CPLs da tela são globais (gasto total ÷ leads de
+anúncio), e `meta_campanha_id` — a coluna que a F0 criou — ainda não é lida
+por consulta nenhuma. Custo por visita e custo por fechado não existem.
 
 - View/consulta agregada: por campanha e por dia, `gasto ÷ leads do CRM`
   (join por `meta_campanha_id`), `gasto ÷ visitas agendadas` e
@@ -159,7 +176,7 @@ por ID vale para Lead Ads e o de CTWA continua por nome.
   esta tela precisa; se a área de gráficos crescer (F4+), aí sim avaliar
   recharts.
 
-### F4 — Alertas e refinamentos
+### F4 — Alertas e refinamentos — NÃO COMEÇOU (confirmado: nenhum alerta no código)
 
 - CPL da campanha fugiu da própria média (mesmo termostato com folga do
   `evolucaoConversa`) → aviso ao gestor.

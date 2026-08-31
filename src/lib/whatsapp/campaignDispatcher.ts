@@ -2,7 +2,7 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { dentroDaJanela, ehDestinatarioInexistente } from "./antiBan";
-import { avisarQuedaSeNecessario } from "./avisoDeQueda";
+import { varrerQuedasDeNumero } from "./avisoDeQueda";
 import { variarMensagemComIA } from "./campaignQueue";
 import { enviarMensagemWhatsapp } from "./provider";
 import {
@@ -175,6 +175,19 @@ export async function processarFilaCampanhas(params?: {
   // nenhuma. Estreitar em vez de sair é o que impede o pior desfecho — um
   // disparo urgente ficar parado porque outra campanha comum estava na
   // fila do mesmo número.
+  /*
+   * O aviso de queda vem ANTES de tudo, e é deliberado.
+   *
+   * Abaixo há três saídas antecipadas — fora da janela sem campanha urgente,
+   * número com disjuntor aberto, nenhuma campanha ativa — e um aviso
+   * pendurado depois delas herdaria todas. O incidente que criou este
+   * recurso é exatamente esse caso: em 28/08 o disjuntor abriu no mesmo
+   * minuto da queda, e nas 12 horas seguintes nenhum aviso sairia.
+   *
+   * A varredura não lança e sai barata quando não há o que avisar.
+   */
+  await varrerQuedasDeNumero();
+
   const janelaAberta = dentroDaJanela(new Date());
   if (!janelaAberta) {
     resultado.dentroDaJanela = false;
@@ -313,20 +326,6 @@ async function processarInstancia(ctx: {
     });
 
     if (!estado.conectado || !estado.conectadoEm) {
-      /*
-       * Este é o instante em que o sistema DESCOBRE que o número saiu do ar
-       * — e, até 31/08/2026, o instante em que ele não fazia nada a
-       * respeito: a instância caiu em 28/08 e ficou três dias fora sem
-       * ninguém saber, porque as quatro proteções do número impedem o
-       * estrago mas nenhuma conta o apagão (roadmap, H0.0).
-       *
-       * O aviso sai daqui, e não de um cron novo, porque é aqui que a queda
-       * é percebida de fato. Ele manda no máximo um e-mail por queda, não
-       * lança, e é aguardado de propósito: `after()` não vale quando este
-       * caminho encerra a requisição em seguida.
-       */
-      await avisarQuedaSeNecessario(instancia.id);
-
       return vazio(
         "nao_conectado",
         estado.estado === "indisponivel"

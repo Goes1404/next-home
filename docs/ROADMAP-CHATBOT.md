@@ -52,7 +52,19 @@ mais falas do cliente.
 
 ## Curto prazo (próximas 1–2 semanas)
 
-1. **Preencher `nomes_alternativos` dos cadastros reais.** A correção de
+1. **Preencher `nomes_alternativos` — 23 de 25 publicados seguem vazios**
+   (medido em 31/08; os 2 preenchidos vêm do backfill da 0044, nenhum foi
+   curado à mão). E o "bônus" de 26/08 — o aviso de campo vazio na tela do
+   imóvel — **nunca produziu uma linha**: a última edição de QUALQUER
+   empreendimento em produção é de 25/08 01h55, anterior ao próprio aviso e
+   ao campo "Também conhecido como". Aviso dentro de tela que ninguém abre é
+   indistinguível de aviso que não existe; se a curadoria não acontecer esta
+   semana, o caminho é uma lista dos 23 no painel, não mais um aviso no
+   editor. Nove dos 23 têm nome que é TÍTULO DE ANÚNCIO ("3 Dormitórios com
+   Suite e 2 Vagas", "Melhor valor de metro da Região") — para esses o
+   apelido não é opcional, é a única forma de o bot reconhecer o imóvel.
+
+   *Texto original:* **Preencher `nomes_alternativos` dos cadastros reais.** A correção de
    grafia não alcança nome comercial diferente do nome do cadastro ("Dom
    Parque" ≠ "Lançamento ao Lado do Parque") — isso é dado, não código. Passar
    pelos ~27 cadastros e registrar como cada um é anunciado.
@@ -132,10 +144,23 @@ mais falas do cliente.
    "ok" não desmarca visita), e a janela comercial do runner o segura para
    o horário certo. Data formatada no fuso de SP — a armadilha do
    calendário, com teste.
-8. **Métricas de funil do bot no painel.** Conversas → qualificados (região +
-   renda) → visita proposta → confirmada. Os dados já existem
-   (`ia_interacoes`, `leads`); falta a tela. Régua do projeto: dado gravado e
-   não exibido é indistinguível de dado perdido.
+8. **Métricas de funil do bot no painel — as DUAS metades da frase antiga
+   estavam erradas** (auditado em 31/08).
+   - "Falta a tela" exagerava: já existe funil de 5 degraus alimentado pela
+     view `whatsapp_funil_metricas`, em `/corretor/whatsapp` e como KPI em
+     `/corretor/admin`. O que não existe é o funil com ESTA forma.
+   - "Os dados já existem" subestimava, e é o erro caro: dos quatro degraus,
+     **o do meio não tem dado nenhum**. `renda_mensal` está preenchida em 0
+     de 112 leads e `regiao_interesse` em 1 — a interseção é zero. Uma tela
+     construída hoje mostraria 123 → **0** → 46 → 2, e degrau zerado no meio
+     de um funil não é medição, é ruído que ensina a ignorar a tela.
+   - Achado de brinde: a tela que JÁ existe tem dois degraus permanentemente
+     zerados (`leads_quentes` e `em_negociacao`) e ninguém reparou — ou
+     seja, o projeto já tem no ar a demonstração do que acontece quando se
+     monta funil sem dado.
+   - **O que fazer antes da tela:** `ia_interacoes.sugeriu_visita` tem 46
+     linhas vivas e **zero leitores no repositório inteiro** — só é escrito.
+     É o defeito da casa outra vez, e é o degrau mais barato de acender.
 
 ## Longo prazo (quando o volume justificar)
 

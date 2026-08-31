@@ -137,6 +137,46 @@ export async function carregarAvisoDaConexao(
 }
 
 /**
+ * Passa por TODAS as instâncias e avisa as que estiverem caídas.
+ *
+ * ## Por que uma varredura, e não um gancho no caminho do disparo
+ *
+ * A primeira versão disto (31/08, manhã) chamava o aviso de dentro do
+ * disparador, no ponto em que a conexão falha. Uma auditoria do próprio
+ * roadmap derrubou a ideia no mesmo dia, e o contraexemplo é o incidente
+ * que originou o recurso: em 28/08 os três timeouts abriram o disjuntor **no
+ * mesmo minuto** da queda, e `processarInstancia` devolve `numero_bloqueado`
+ * ANTES de chegar à checagem de conexão. Ou seja: nas 12 horas de bloqueio,
+ * o aviso não sairia — justamente no caso que ele existe para cobrir.
+ *
+ * Havia ainda dois outros desvios pela frente: fora da janela comercial o
+ * disparador retorna antes de olhar instância nenhuma, e sem campanha ativa
+ * ele também sai cedo. Aviso pendurado no caminho do disparo herda todas as
+ * saídas antecipadas do disparo.
+ *
+ * Por isso a varredura roda ANTES de tudo, a cada tique do cron, e não
+ * depende de haver fila, janela aberta ou número liberado. É barata: uma
+ * consulta para todas as instâncias, e cada uma que já foi avisada sai no
+ * primeiro `if`.
+ */
+export async function varrerQuedasDeNumero(agora: Date = new Date()): Promise<void> {
+  try {
+    const supabase = createServiceClient();
+
+    const { data } = await supabase
+      .from("corretor_whatsapp_instancias")
+      .select("id")
+      .is("aviso_queda_enviado_em", null);
+
+    for (const linha of data ?? []) {
+      await avisarQuedaSeNecessario(linha.id, agora);
+    }
+  } catch (e) {
+    console.error("[aviso-queda] varredura falhou sem derrubar o ciclo:", e);
+  }
+}
+
+/**
  * Manda o e-mail de queda — no máximo UM por queda.
  *
  * Chamado pelo cron de disparo, que roda a cada minuto: sem a marca em

@@ -74,7 +74,7 @@ O que já está construído precisa ser PROVADO antes de escalar.
      corretor é o WhatsApp que acabou de cair.
 
      **ENTREGUE em 31/08 — faixa no painel + e-mail** (`saudeDaConexao.ts`,
-     `avisoDeQueda.ts`, `FaixaConexao.tsx`, `email.ts`, migration 0065).
+     `avisoDeQueda.ts`, `FaixaConexao.tsx`, `email.ts`, migration 0071).
      A decisão e o texto moram numa função pura só, lida pelos dois canais;
      o e-mail sai de onde a queda é descoberta (o disparador), no máximo um
      por queda. **Duas coisas ainda faltam para ele funcionar de verdade:**
@@ -222,9 +222,25 @@ GPT como segundo voto — a concordância é o que fecha.
 - **H1.1 Piloto controlado.** Cadastrar 5–10 leads reais no CRM (a regra da
   F3 liga a IA para eles automaticamente). Acompanhar cada conversa na fila
   de revisão no mesmo dia.
-- **H1.2 Follow-ups saindo de verdade.** Zero enviados na vida. Conferir o
-  pg_cron (`followups-whatsapp` roda a cada 5 min), o cancelamento por
-  resposta e o texto de retomada com o novo turno compartilhado.
+- **H1.2 Follow-ups saindo de verdade — e o cron é INOCENTE.** Auditado em
+  31/08: `followups-whatsapp` está ativo em `*/5 * * * *` com **2.719
+  execuções sem uma única falha** (22/08 a 31/08), respondendo HTTP 200 com
+  `{"processados":0,"enviados":0}`. Fila vazia, não erro. Como `descartado`
+  também é 0, `processarFollowup` **nunca rodou uma vez**: não é que o envio
+  falha, é que nunca foi tentado. Os três buracos reais:
+  1. `agendarFollowup` só é chamado no webhook, e ainda sob duas condições
+     (`envio.enviado && temperaturaScore >= 40`). **A campanha não agenda
+     nada**: `campaignDispatcher.ts` não tem uma referência sequer a
+     follow-up. São 87 disparos entregues — exatamente a população que
+     existe para ser reengajada — e nenhuma linha criada para eles.
+  2. As 16 linhas que existiram foram todas canceladas por resposta do
+     cliente ANTES das +24h. O cancelamento está certo; o efeito é que só
+     nascem follow-ups dentro de conversa ativa, que é justamente quem não
+     precisa.
+  3. `lembrete_visita` (0054, no ar desde 26/08) tem **zero linhas na
+     vida**: a função roda a cada tique e exige lead com visita entre +8h e
+     +30h; a base tem 2 visitas, ambas de antes da própria migration. ~1.400
+     execuções sem um candidato.
 - **H1.3 Rótulo diário vira rotina.** A fila ordenada por sinais do mundo
   existe; a meta é o corretor gastar 10 min/dia nela. Se não acontecer em
   uma semana, o problema é de produto, não de disciplina — voltar ao desenho.
@@ -259,9 +275,15 @@ conversão lead→visita medida por 2 semanas seguidas.
 - **H3.2 Painel do gestor com o funil da IA.** Taxa de resposta, tempo até
   primeira resposta, visitas por corretor — os agregados magros da F5 do
   Painel de Bolso servem de modelo.
-- **H3.3 E2E autenticado do painel.** Continua sem existir (registrado na
-  memória do projeto). Sessão de corretor + fluxos críticos: lead → conversa
-  → revisão → visita.
+- **H3.3 E2E autenticado do painel — JÁ EXISTE desde 25/08.** A afirmação
+  antiga ("continua sem existir") estava errada, e a auditoria de 31/08 a
+  derrubou: há um projeto Playwright `painel` com `dependencies: ["setup"]` e
+  `storageState`, um setup que faz login pela tela REAL (`/corretor/entrar`)
+  e 4 specs autenticados read-only (fila do Início, seleção em lote de
+  leads, público de campanhas, editor de imóvel). O que falta de verdade:
+  o resto do fluxo crítico (conversa → revisão de resposta → visita) e um
+  RUNNER — não há `.github/workflows`, então o suite só roda se alguém
+  digitar o comando.
 - **H3.4 Ingestão de material fechando o ciclo.** PDF/Drive → curadoria →
   `midias`/`tipologias` → catálogo que a IA lê. As pontas existem; falta o
   caminho virar rotina de cadastro.

@@ -1,4 +1,7 @@
--- 0065 — O número caiu e nada avisou (roadmap, H0.0)
+-- 0071 — O número caiu e nada avisou (roadmap, H0.0)
+--
+-- (Nasceu como 0065 e foi renumerada em 31/08 pelo mesmo motivo da 0070:
+-- a branch em produção já usa 0064-0069.)
 --
 -- ## O incidente
 --

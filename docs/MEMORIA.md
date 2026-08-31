@@ -10,8 +10,21 @@
 - **Projeto:** `next-home` (`prj_53ntT4KUJ6whucua5l2aMQO1cs9e`), no time
   `sq1matheusgsilva-7306's projects` (`team_z5rGXQYGDIY2WL5NadGucSBJ`).
 - **Domínio de produção:** `next-home-drab.vercel.app`.
-- **A branch de produção real NÃO é `main`.** É
-  `claude/modernizar-plataforma-imobiliaria-2tm13q` — provavelmente porque
+- **[ATUALIZADO 31/08] A "branch de produção" já não é uma só, e conferir
+  isso agora é obrigatório.** O último deploy com `target: production` é de
+  **29/08 05h19, commit `4c1359c`, da branch `ingestao-de-midia`** — nem a
+  `main`, nem a branch abaixo. Alguém promoveu um preview pelo painel, e a
+  regra escrita aqui deixou de descrever a realidade sem que nada avisasse.
+  **Antes de afirmar "está no ar", listar os deployments e filtrar por
+  `target = production`** (`list_deployments` do MCP da Vercel); `git
+  merge-base --is-ancestor <sha> <sha-em-producao>` responde se um commit
+  chegou lá. Duas consequências medidas em 31/08: `ingestao-de-midia` está
+  **3 commits à frente** da branch documentada (traz `0064`–`0069`, código de
+  atribuição de marketing e outbox de eventos), e o código no ar espera
+  tabelas que o banco NÃO tem (`marketing_touchpoints`, `event_outbox`) —
+  ou seja, o cron `/api/cron/event-outbox` chama uma função inexistente.
+- **A branch de produção documentada (e que ainda recebe deploy) NÃO é
+  `main`.** É `claude/modernizar-plataforma-imobiliaria-2tm13q` — provavelmente porque
   foi a branch usada quando o projeto foi conectado ao GitHub, e ninguém
   trocou depois. Push só em `main` gera preview, nunca produção. Até
   alguém trocar isso em Settings → Git → Production Branch no painel da
@@ -2030,7 +2043,7 @@ sistema parado. A cadeia, reconstruída no banco:
 - **Nome de anúncio não junta com gasto.** O webhook guardava
   `anuncio_origem` (o NOME), e o gasto vive em `meta_ads_metricas` chaveado
   por `campanha_id`. Renomear o anúncio no Gerenciador quebrava a
-  atribuição do passado sem ninguém saber. A 0064 põe `meta_ad_id`,
+  atribuição do passado sem ninguém saber. A 0070 põe `meta_ad_id`,
   `meta_conjunto_id` e `meta_campanha_id` em `leads`.
 - **Em `leads`, INSERT é grant de TABELA e UPDATE é coluna a coluna.**
   (`anon=arxtm`, sem `w`; 12 colunas com grant próprio de update.) Ou seja:
@@ -2069,7 +2082,7 @@ sistema parado. A cadeia, reconstruída no banco:
   dados do lead) e só o primeiro era lido: lead com o segundo preenchido
   nascia sem atribuição à toa.
 
-## O aviso de queda do número (0065, 31/08/2026)
+## O aviso de queda do número (0071, 31/08/2026)
 
 - **Carimbo de queda tem de ser gravado UMA VEZ, não a cada ciclo.**
   `desconectado_em` é escrito com `.is("desconectado_em", null)` porque o
@@ -2111,3 +2124,48 @@ sistema parado. A cadeia, reconstruída no banco:
   o canal natural para avisar era o que tinha caído. `email.ts` (Resend)
   falha FECHADO sem `RESEND_API_KEY` e nunca lança — quem chama está no
   meio de um ciclo de disparo.
+
+## Auditar o roadmap com agentes — o que a rodada de 31/08 ensinou
+
+Quinze agentes verificaram sete afirmações dos roadmaps contra o código e o
+banco, cada veredito contestado por um cético. **Três dos sete vereditos
+foram derrubados pelo cético** — e a lição maior é sobre o método, não sobre
+os itens.
+
+- **A etapa do cético pagou por si.** Ela derrubou "métricas de funil"
+  (a tela já existia), "E2E autenticado" (existia desde 25/08) e corrigiu a
+  evidência de `nomes_alternativos`. Sem ela, três correções erradas teriam
+  entrado no roadmap com aparência de rigor.
+- **Roadmap envelhece para os DOIS lados.** O padrão que se esperava — item
+  marcado como entregue e que não está — apareceu (F1 do Meta Ads, 0 linhas);
+  mas o inverso apareceu tanto quanto: itens marcados como pendentes que já
+  existiam. **Ao auditar, procurar as duas direções.**
+- **"Feito" e "produziu dado" são perguntas diferentes, e a segunda é a que
+  importa.** Meta Ads F1 (0 linhas), F5 (11 cliques, todos do smoke test de
+  quem construiu), `lembrete_visita` (0 linhas em ~1.400 execuções), o campo
+  "Também conhecido como" (nenhum empreendimento editado desde 25/08 01h55,
+  antes de o campo existir): quatro caminhos no ar, zero efeito. **A consulta
+  que resolve é sempre `count(*)`, e ela quase nunca é feita.**
+- **Cron que roda e acerta parece cron quebrado quando o resultado é zero.**
+  O `followups-whatsapp` tem 2.719 execuções sem falha respondendo
+  `{"processados":0}` — o roadmap insinuava que ele era o suspeito. O
+  culpado estava três camadas acima: `agendarFollowup` só é chamado pelo
+  webhook, e a campanha (87 disparos entregues, a população que existe para
+  reengajar) não agenda nada. **Antes de culpar o runner, conferir quem
+  ENFILEIRA.**
+- **Colisão de número de migration é pior que buraco.** Esta branch nasceu
+  com `0064`/`0065` e a branch em produção já tinha `0064`–`0069` com outro
+  conteúdo. Renumerar para `0070`/`0071` abre um buraco que se fecha sozinho
+  no merge; manter a colisão só se revelaria no merge, quando o número — a
+  única coisa que define a ordem de execução aqui — já estaria mentindo.
+  `migrations.test.ts` ganhou uma lista `RESERVADOS` declarada, e um teste
+  que reprova reserva já ocupada, para ela não virar comentário morto.
+- **Aviso pendurado no caminho feliz herda todas as saídas antecipadas dele.**
+  A primeira versão do aviso de queda (escrita horas antes, na mesma sessão)
+  chamava o alerta de dentro do disparador, no ponto em que a conexão falha.
+  Só que `processarInstancia` devolve `numero_bloqueado` ANTES disso — e no
+  incidente de 28/08 o disjuntor abriu no MESMO MINUTO da queda: nas 12 horas
+  de bloqueio, nenhum e-mail sairia, justamente no caso que o recurso existe
+  para cobrir. Fora da janela comercial havia uma segunda saída antes ainda.
+  Hoje a varredura roda antes de tudo, a cada tique, sem depender de fila,
+  janela ou número liberado.

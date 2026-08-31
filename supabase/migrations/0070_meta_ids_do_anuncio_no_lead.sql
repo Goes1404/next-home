@@ -1,4 +1,9 @@
--- 0064 — Os IDs do anúncio no lead (roadmap Meta Ads, F0)
+-- 0070 — Os IDs do anúncio no lead (roadmap Meta Ads, F0)
+--
+-- (Nasceu como 0064 e foi renumerada em 31/08: a branch que está DE FATO em
+-- produção — `ingestao-de-midia`, deploy 4c1359c de 29/08 — já ocupa 0064 a
+-- 0069 com outro conteúdo. Dois arquivos com o mesmo número e conteúdos
+-- diferentes é o tipo de colisão que só aparece no merge, tarde.)
 --
 -- ## O defeito
 --
