@@ -1,9 +1,32 @@
-# Roadmap — Custo por lead do Meta Ads no CRM (26/08/2026)
+# Roadmap — Custo por lead do Meta Ads no CRM (26/08/2026, revisto em 31/08)
 
 > Objetivo: o gestor abre o painel e vê quanto cada campanha do Meta custou,
 > quantos leads trouxe, e o custo por lead — sem abrir o Gerenciador de
 > Anúncios. E, melhor que a Meta consegue: custo por VISITA e por VENDA,
 > porque o funil mora aqui.
+
+## Estado em 31/08/2026 — a fase 0 ficou para trás das outras
+
+Conferido no banco e no código de produção:
+
+| fase | estado | como se sabe |
+|---|---|---|
+| **F0 — IDs do anúncio no lead** | **NÃO FEITA** | `leads` não tem `meta_ad_id`, `meta_conjunto_id` nem `meta_campanha_id`; só `meta_lead_id` e `anuncio_origem` (o NOME) |
+| F1 — gasto diário | **feita** | `0053_meta_ads_metricas.sql`, `/api/cron/meta-ads`, `src/lib/metaAds.ts` (re-lê 3 dias, upsert por `(dia, campanha_id)`) |
+| F2 — CPL do CRM | **bloqueada pela F0** | sem `meta_campanha_id` no lead não existe a junção por ID |
+| F3 — tela do gestor | **feita** | `admin/anuncios/` |
+| F5 — link porteiro CTWA | feita (26/08) | `/wa/[campanha]`, `porteiro.ts`, 0052 |
+
+**A ordem se inverteu, e o efeito é que a tela existe e não pode mostrar o
+número principal.** F1 trouxe o lado do dinheiro (gasto por campanha por
+dia) e F3 trouxe onde exibir; o lado do lead continua ligado à campanha
+pelo NOME do anúncio, que muda quando alguém renomeia no Gerenciador. O
+CPL do CRM — o número que só nós temos — depende da F0 e de mais nada.
+
+**F0 é pequena e desbloqueia a F2 inteira:** uma migration com três
+colunas de texto, um `fields=name,adset{id,name},campaign{id,name}` a mais
+na chamada que o webhook já faz, e um backfill dos leads com `meta_lead_id`
+preenchido (a Graph API responde por leads de até 90 dias).
 
 ## O que já existe (e o que falta nele)
 
@@ -12,8 +35,9 @@
   `anuncio_origem` é o NOME do anúncio, e nome muda quando alguém renomeia
   no Gerenciador. **Falta guardar os IDs** (anúncio, conjunto, campanha),
   que são a chave de junção estável com o gasto.
-- O lado do dinheiro não existe: nada consulta a Marketing API
-  (`/act_<id>/insights`), e não há onde guardar gasto por campanha por dia.
+- ~~O lado do dinheiro não existe~~ — **existe desde a F1**: `metaAds.ts`
+  consulta `/act_<id>/insights` e `meta_ads_metricas` guarda gasto por
+  campanha por dia. O que falta é o outro lado da junção (F0).
 
 ## A arquitetura recomendada (decidida, não em aberto)
 
@@ -35,7 +59,7 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
 
 ## Fases
 
-### F0 — Guardar os IDs do anúncio no lead (pré-requisito de tudo)
+### F0 — Guardar os IDs do anúncio no lead (pré-requisito de tudo) — PENDENTE, e agora é o gargalo
 
 - Migration: `leads.meta_ad_id`, `leads.meta_conjunto_id`,
   `leads.meta_campanha_id` (text, null).
@@ -46,7 +70,7 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
   ainda responde para leads de até 90 dias).
 - A partir daqui, todo lead novo do Meta já nasce ligado à campanha.
 
-### F1 — Sincronizar o gasto diário
+### F1 — Sincronizar o gasto diário — ENTREGUE
 
 - Tabela `meta_ads_metricas`: `dia`, `campanha_id`, `campanha_nome`,
   `gasto`, `impressoes`, `cliques`, `leads_meta`, unique em
@@ -82,7 +106,7 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
   diferentes** (`admin/agregados.ts`) — a agregação é uma query magra
   própria, nunca derivada da lista do quadro.
 
-### F3 — O gráfico no painel do gestor
+### F3 — O gráfico no painel do gestor — ENTREGUE (sem o CPL, que espera a F0)
 
 - Tela em Administração (aba nova ou seção no painel do gestor), com
   `exigirGestorNaPagina()` como toda page do segmento.

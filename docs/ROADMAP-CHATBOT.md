@@ -1,9 +1,38 @@
-# Roadmap do Chatbot (Sofia) — 26/08/2026
+# Roadmap do Chatbot (Sofia) — 26/08/2026, revisto em 31/08
 
 > Prioridade decidida pela régua de sempre desta casa: primeiro o que foi
 > **medido** doendo em produção, depois o que multiplica venda, por último o
 > que é polimento. Cada item aponta o arquivo onde a mudança mora, para a
 > sessão que for implementar não começar do zero.
+
+## Estado em 31/08/2026
+
+O prompt está na **v25** — três versões além do que este arquivo descrevia.
+A linha de base do eval de RESPOSTA está fechada e é comparável (mesmo
+juiz `gpt-4.1`, mesmos 36 casos, mesmo denominador):
+
+| versão | score | falhas duras | julgados |
+|---|---|---|---|
+| v23 | 90,3 | 2 | 36/36 |
+| v24 | 92,0 | 1 | 36/36 |
+| **v25** | **92,2** | **1** | 36/36 |
+
+- **v24** consertou o detector de prazo, que reprovava a honestidade
+  ("não tenho a data de entrega, eu confirmo com você" era cortado pelo
+  guardrail — em produção, não só no eval).
+- **v25** trocou a pergunta seca de renda por uma **escada de capacidade**
+  (faixa → sozinho/conjunto → profissão → renda), e a profissão nunca vira
+  renda deduzida.
+- **Os pendentes de eval deste arquivo estão resolvidos:** as rodadas da
+  v22, v23, v24 e v25 estão em `eval/resultados/`. O que NÃO rodou é o
+  eval de **conversa**, parado na v20 — cinco versões sem a medição que
+  pega o loop de repetição. É o pendente nº 1 daqui.
+
+**O contexto que mudou tudo:** o número de WhatsApp está fora do ar desde
+28/08 (ver H0.0 no `ROADMAP.md`). Nenhum item deste roadmap que dependa de
+conversa real anda enquanto isso não voltar — e a medição de produção
+confirma: 55 conversas com fala do bot desde 25/08, e só **3** com duas ou
+mais falas do cliente.
 
 ## Entregue em 26/08 (esta rodada)
 
@@ -45,7 +74,9 @@
    reais se o "posso...?" sumiu — instrução de prompt é probabilística, e se
    sobrar caso em produção o caminho é guarda determinística em
    `vozHumana.ts` (detectar pergunta de permissão + pedido de mídia e
-   converter em envio).
+   converter em envio). **Em 31/08 a conferência em produção continua
+   impossível**: só 3 conversas com 2+ falas do cliente desde 25/08, e o
+   número está fora do ar desde 28/08.
 2c. **Aprimorar as lacunas da qualificação (pedido de 26/08).** O que resta
    estruturar: suítes e vagas como colunas (hoje são texto livre nas
    exigências), status de crédito e finalidade como campos próprios quando
@@ -67,11 +98,17 @@
    Conservador de propósito, porque repergunta é o defeito nº 1 daqui:
    não dispara se a renda está no dossiê, se o cliente já tocou no assunto,
    se a assistente acabou de perguntar, no começo da conversa, ou antes de
-   região E tipologia. Prompt v23. **Pendente: rodar o eval para confirmar
-   que `renda-antes-da-visita` passa.**
-4. **Rodar o eval da v21 e fechar a linha de base.** O prompt mudou nesta
-   rodada e o eval não rodou (sem chave no sandbox). Regra da casa: score não
-   pode cair vs. v20.
+   região E tipologia. Prompt v23. **[Confirmado] o eval da v23 rodou
+   36/36 (90,3) e a v25 refinou a pergunta numa escada de capacidade,
+   fechando em 92,2 com uma falha dura.**
+4. **[ENTREGUE] Linha de base do eval de RESPOSTA fechada** — v22 a v25
+   rodadas, score subindo (90,3 → 92,0 → 92,2). **O que ficou no lugar
+   dele, e é o pendente nº 1 deste arquivo: o eval de CONVERSA está parado
+   na v20.** Cinco versões de prompt subiram sem a única medição que pega
+   loop de repetição, desfile de imóveis e resposta que não responde.
+   Rodar `npm run eval:conversa` na v25, em lotes de ≤4 personas (teto de
+   10 min por comando), duas rodadas — uma só não separa regressão de
+   variância.
 
 ## Médio prazo (próximo mês)
 

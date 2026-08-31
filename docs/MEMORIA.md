@@ -1968,3 +1968,59 @@ Duas lições que valem além do `sharp`:
   `clientWidth` e o `getBoundingClientRect().right` de cada botão contra
   `window.innerWidth`. Sem o CSS o teste passa sempre — a primeira medição
   desta sessão saiu com o arquivo errado e deu "cabe tudo".
+
+## O número caiu e nada avisou — três dias de silêncio (31/08/2026)
+
+Investigação que começou com "atualiza os roadmaps" e terminou achando o
+sistema parado. A cadeia, reconstruída no banco:
+
+| quando (SP) | o quê |
+|---|---|
+| 28/08 16h21 | a instância reconecta (`conectado_em` carimbado) |
+| 28/08 16h22 | 5 disparos saem em rajada (3 a 8s entre eles) |
+| 28/08 16h23 | 3 envios morrem com `This operation was aborted` |
+| 28/08 16h23 | disjuntor abre: `falhas_seguidas = 3`, bloqueio de 12h |
+| 28/08 → 31/08 | `status_conexao = 'desconectado'`, 15 itens parados, zero mensagem, zero aviso |
+
+- **O sistema tem QUATRO proteções do número e nenhum aviso de que ele
+  saiu do ar.** Espaçamento, cota, disjuntor e janela impedem o estrago;
+  nada conta que o número caiu. Três dias passaram por normalidade. E o
+  aviso tem um problema de desenho próprio, que é por que ele ainda não
+  existe: **o canal natural para avisar o corretor é o WhatsApp que
+  acabou de cair**. Não há SMTP no projeto; sobra a tela do painel, que só
+  é vista por quem abre.
+- **`erro_motivo` num item PENDENTE é a pista mais valiosa da fila**, e é
+  fácil não olhar para ela. Os 8 itens em `erro` diziam todos "Número não
+  está no WhatsApp" — que NÃO alimenta o disjuntor (`ehDestinatarioInexistente`
+  faz a separação, e fez certo). Quem abriu o disjuntor foram 3 timeouts
+  que estavam escondidos nos itens ainda `pendente`, esperando retentativa.
+  **Ao diagnosticar disjuntor aberto, os erros definitivos raramente são a
+  causa — a causa está nos pendentes.**
+- **Disjuntor expirado não é fila destravada.** `bloqueado_ate` venceu em
+  29/08 04h23 e nada voltou a sair: o que segura desde então é
+  `status_conexao`. Conferir as duas coisas, na ordem da MEMORIA.
+- **A 0062 está no ar e NUNCA foi exercitada.** As duas funções existem em
+  produção e as duas conhecem `proximo_envio_permitido_em`; o código está
+  na branch de produção. Mas o último disparo é de 28/08 16h22 e a correção
+  subiu às 20h14 do mesmo dia — a rajada medida (16 de 18 intervalos
+  abaixo de 30s, mediana 4s) é toda ANTERIOR. **Correção de segurança que
+  não encontrou tráfego é hipótese, não fato.** A prova é a consulta do
+  bloco 3 de `scripts/estadoDoCiclo.sql` dar zero depois que o número
+  voltar.
+- **A campanha fala e ninguém responde: 88 entregues, 1 resposta (1,1%).**
+  Isso não é defeito da IA — ela não chega a conversar. É a mensagem de
+  abertura, a lista ou o horário, e se mede como marketing.
+- **O que a medição do ciclo provou de bom:** a correção da memória
+  (`7cde0d4`) segurou — **81 mensagens do bot gravadas** contra 0 em
+  25/08. O que ela mostrou de ruim é o outro lado da mesma moeda: das 55
+  conversas em que o bot falou desde 25/08, **53 são disparo de campanha**
+  e só **3** têm duas ou mais falas do cliente. O bot está falando, quase
+  ninguém está conversando.
+- **`scripts/estadoDoCiclo.sql` existe para isto não custar uma terceira
+  sessão.** Sete blocos, só leitura, na ordem de diagnóstico: número no ar
+  → há quanto tempo nada acontece → espaçamento valendo → por que a fila
+  parou → métricas-norte → conversão da campanha → contingência por versão
+  de prompt. Rodar antes de investigar qualquer "parou de funcionar".
+- **Cuidado com a contagem de conversa com fala do cliente**: na vida
+  inteira são 46, e isso engana — quase todas são anteriores ao bot
+  atender (eram conversas do corretor). Recortar por período é obrigatório.
