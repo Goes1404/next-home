@@ -2391,3 +2391,36 @@ Rodado em 31/08/2026, 16 personas × até 12 turnos, com a chave da OpenAI.
   (`marcado.length > 1`) descartava a limpeza, mandando o texto CRU. O
   cliente recebeu literalmente `--- Para ajudar, qual região você prefere?
   ---`. Achado lendo transcrição do eval, não teste.
+
+## A guarda anti-loop ERA o loop (31/08/2026)
+
+O achado que finalmente moveu o número da Onda 2, e o mais instrutivo da
+sessão: quatro dos doze turnos da pior conversa eram texto da PRÓPRIA
+guarda anti-repetição.
+
+- **`textoNoLugarDaRepeticao` escolhia por `totalDeMensagensDoBot % 3`.**
+  Com três frases na lista, o resto do módulo faz o índice VOLTAR: o
+  cliente recebeu "Me conta um pouco mais do que você procura" nos turnos 7
+  e 10, palavra por palavra, e as outras duas saídas alternadas no meio. O
+  comentário da lista prometia "varia para não virar, ela mesma, um segundo
+  loop" — e o mecanismo derrotava a promessa. **Comentário que promete não
+  é guarda; o que vale é o que o código faz.**
+- **A escolha agora é pela primeira frase AINDA NÃO DITA na conversa**, e
+  quando as três acabam ela muda de GÊNERO: devolve a escolha ao cliente em
+  vez de insistir numa quarta pergunta de qualificação. Insistir seria o
+  loop de novo com outra roupa.
+- **O efeito, medido nas mesmas 4 personas:** "o cliente teve de repetir"
+  caiu de 22 (v25 e v26-só-prompt) para **12**; perguntas repetidas pela IA,
+  de 7 para **3**; respostas quase idênticas, de 2-3 para **0**. O veredito
+  do juiz ("assumiria") ficou em 1/4 — n=4 e uma rodada só não separam sinal
+  de ruído nesse indicador, mas as métricas determinísticas são bem menos
+  ruidosas e as três andaram na mesma direção.
+- **Corrigir a JOGADA não bastou; corrigir a REPETIÇÃO bastou.** A v26
+  trocou a pergunta de funil pela oferta de visita (regra 27(b)) e o número
+  não mudou — ela passou a oferecer os mesmos dois horários quatro vezes.
+  Foi só quando o texto parou de se repetir que o cliente parou de repetir.
+- **Um teste afirmava o mecanismo quebrado**: "varia, para não virar ela
+  mesma um segundo loop" testava que a saída muda conforme a CONTAGEM de
+  mensagens — que é exatamente o módulo que fazia o índice voltar. Foi
+  reescrito para a intenção (varia quando a anterior já foi dita). **Teste
+  que codifica o mecanismo em vez do efeito protege o defeito.**

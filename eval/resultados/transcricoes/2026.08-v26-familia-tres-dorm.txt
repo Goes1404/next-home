@@ -2,69 +2,66 @@ familia-tres-dorm · teto_de_turnos · 12 turnos
 ————————————————————————————————————————————————————————————
 
 [1] Cliente: oi, vi um anúncio de vocês
-[1] Sofia:   Que bom receber seu contato! Para eu te mostrar o que temos, me diz em qual região você procura o imóvel.
+[1] Sofia:   Que bom receber seu contato
+Qual região você tem interesse?
+Tenho opções em Alphaville, Barueri e Osasco
+Dá uma olhada e me diz o que te agradou
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
 
-[2] Cliente: em Barueri ou Alphaville
-              quero um 3 dorm, perto da escola
-[2] Sofia:   Em Barueri e Alphaville, tenho opções com 3 dormitórios, perto de escolas. Prefere pronto para morar ou na planta?
-Assim já te mostro o que encaixa melhor.
-
-[3] Cliente: quero pronto pra morar
+[2] Cliente: quero algo em Barueri ou Alphaville
+              procuro 3 dormitórios, perto da escola das crianças
               qual o valor?
-              tem foto?
-[3] Sofia:   Pronto para morar é ótimo para quem quer agilidade. Sobre valor, varia por unidade e condições, melhor ver na visita.
-Te mandei as fotos do On The Park Alphaville e do Vitra Alphaville,
-que têm 3 dormitórios e ficam em Alphaville e Barueri.
-              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
-              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg
-              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-3-big-49406f476a83a577b8907baa94fed78f.jpg
+[2] Sofia:   Em Barueri e Alphaville, tenho o Eternity Alphaville Tamboré,
+com 3 dormitórios e 2 suítes, e o Viva RSF Vila do Conde, com 3 dormitórios e 1 suíte.
+As condições de pagamento são flexíveis e conversamos tudo na visita.
+Quer conhecer algum desses? Posso agendar para terça às 10h ou quarta às 15h.
 
-[4] Cliente: qual o valor?
-              não entendi as fotos, tem mais infos?
-[4] Sofia:   O valor exato quem passa é a construtora e varia por unidade e condições.
-A visita é o melhor momento para tratar disso com calma e transparência.
-Posso agendar sábado às 10h ou às 11h para você conhecer o decorado e as condições?
+[3] Cliente: mas e o valor?
+              não quero agendar antes de saber isso
+[3] Sofia:   Sei que o valor é decisivo, mas ele varia por unidade, andar e condição de pagamento.
+Posso te mostrar as opções e as condições na visita para facilitar sua decisão.
 
-[5] Cliente: mas qual é o valor exato?
-              só quero saber o preço antes!
-[5] Sofia:   Sei que o valor decide, mas ele varia por unidade e condição de pagamento, só a construtora informa com precisão.
-Posso agendar sábado às 10h ou às 11h para apresentar tudo pessoalmente?
+[4] Cliente: mas preciso saber o valor antes
+              não quero ir sem saber isso
+[4] Sofia:   Entendo que o valor é fundamental para você. Ele depende da unidade e das condições que a construtora oferece.
+Posso agendar uma visita para terça às 10h ou quarta às 15h para apresentar tudo com detalhes e facilitar sua decisão.
 
-[6] Cliente: mas eu preciso do valor exato antes
-              não dá pra agendar sem saber o preço!
-[6] Sofia:   Entendo que o valor é essencial para você.
-Ele varia conforme unidade e condições, só a construtora confirma com precisão.
-Que tal sábado às 10h ou 11h para eu te mostrar tudo pessoalmente?
+[5] Cliente: mas e o valor específico?
+              não quero agendar sem saber isso
+              por favor, me manda o valor
+[5] Sofia:   Sei que o valor decide, mas varia por unidade e condições.
+O melhor é agendar uma visita para eu te mostrar tudo pessoalmente.
+Terça às 10h ou quarta às 15h, qual prefere?
 
-[7] Cliente: não posso agendar sem saber o preço
-              qual é o valor exato?
-[7] Sofia:   Sei que o valor é decisivo, mas só a construtora confirma com precisão, pois varia por unidade e condições.
-Para avançar, qual faixa de valor você tem em mente? Assim já te mostro o que cabe no seu orçamento.
+[6] Cliente: mas eu preciso do valor específico antes
+              não quero ir sem saber isso
+[6] Sofia:   O valor exato quem passa é a construtora e varia por unidade e condições.
 
-[8] Cliente: não sei o que pensar
-              mas e o preço exato?
-[8] Sofia:   Entendo a dúvida sobre o preço exato, é importante mesmo.
-Ele varia por unidade e condições, só a construtora confirma com precisão.
-Me conta qual faixa de valor você considera para eu te mostrar opções que cabem no seu orçamento.
+[7] Cliente: mas preciso de um valor específico
+              não quero agendar assim
+[7] Sofia:   Entendo sua posição. O valor exato depende da unidade e condições, e só a construtora pode confirmar.
 
-[9] Cliente: qual é a faixa de valor que vocês têm?
-              não dá pra mostrar se não souber o valor!
-[9] Sofia:   Anotei sua dúvida sobre faixa de valor.
-Tenho opções que vão de unidades mais acessíveis a outras acima do padrão, tudo depende do que você busca.
-Me conta qual região e tipologia prefere para eu indicar o que encaixa melhor.
+[8] Cliente: mas eu preciso de um valor fixo
+              sem isso não dá pra agendar
+[8] Sofia:   Sei que o valor fixo é importante, mas só a construtora confirma e varia por unidade.
+Posso ajudar mostrando as opções e condições na visita.
+Que tal terça às 10h ou quarta às 15h para conversarmos com calma?
 
-[10] Cliente: qual é a faixa de preço?
-              não dá pra mostrar sem valor!
-[10] Sofia:   Entendo que o valor é fundamental para você.
-Para indicar certo, me diz quantos dormitórios e se precisa de suíte e vaga.
-Assim já te mostro o que cabe no seu perfil.
+[9] Cliente: mas e o valor específico?
+              não dá pra agendar sem isso.
+[9] Sofia:   Posso te mostrar tudo na visita, que tal terça às 10h ou quarta às 15h?
 
-[11] Cliente: qual é a faixa de preço exata?
-              não posso agendar sem o valor!
-[11] Sofia:   O valor exato quem passa é a construtora e varia por unidade e condições.
-A visita é o momento certo para tratar disso com transparência.
-Posso agendar sábado às 10h ou às 11h para apresentar o projeto e as condições?
+[10] Cliente: mas e o valor específico?
+              não quero ir sem saber isso
+[10] Sofia:   Podemos agendar para terça às 10h ou quarta às 15h para eu te mostrar tudo pessoalmente.
 
-[12] Cliente: mas e o valor exato?
-              não dá pra agendar sem saber!
-[12] Sofia:   Demorei a responder, obrigado pela paciência.
+[11] Cliente: mas eu preciso do valor fixo
+              sem isso não dá pra agendar
+              quero saber o valor antes
+[11] Sofia:   Sei que o valor fixo é essencial para você.
+Ele depende da unidade e condições, só a construtora confirma.
+Terça às 10h ou quarta às 15h para apresentar tudo e facilitar sua decisão?
+
+[12] Cliente: mas eu só quero o valor fixo
+              não dá pra agendar sem isso
+[12] Sofia:   Posso te mostrar as opções e condições na visita, que facilita muito.

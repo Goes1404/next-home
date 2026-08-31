@@ -2,65 +2,73 @@ educado-que-enrola · teto_de_turnos · 12 turnos
 ————————————————————————————————————————————————————————————
 
 [1] Cliente: achei lindo o empreendimento de vcs no instagram
-[1] Sofia:   Que bom que gostou! Pode me dizer qual região você prefere para eu indicar algo alinhado?
-Temos opções em Alphaville, Barueri e Osasco.
+[1] Sofia:   Que bom que gostou! Qual região você prefere para o imóvel? Alphaville, Barueri, Osasco ou outra?
 https://next-home-drab.vercel.app/?corretor=cristal-bruna
 
-[2] Cliente: não sei, tô vendo ainda
-              e em Osasco, o que tem?
-[2] Sofia:   Em Osasco, tenho o Vila Eco Park, lançamento com 2 dormitórios e 1 vaga,
-e o Apartamento 1 ou 2 Dorms com 39m², também lançamento.
+[2] Cliente: não sei ainda
+              quero mais info primeiro
+[2] Sofia:   Entendo, posso te enviar o catálogo com as opções que temos em Alphaville, Barueri e Osasco para você conhecer melhor.
 Dá uma olhada e me diz o que te agradou.
 https://next-home-drab.vercel.app/?corretor=cristal-bruna
 
-[3] Cliente: qual é o preço?
-              tem fotos deles?
-[3] Sofia:   Sei que o preço é importante, mas varia por unidade e condições de pagamento.
-Posso te mostrar as fotos dos dois para você avaliar melhor. Te mandei as fotos aqui embaixo.
+[3] Cliente: não sei se Alphaville é pra mim
+              tem outras opções?
+[3] Sofia:   Trabalho também com Barueri e Osasco, com opções variadas.
+Quer que eu te envie o catálogo dessas regiões para você avaliar?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[4] Cliente: depois te falo
+              mas Osasco tem o que?
+[4] Sofia:   Em Osasco, tenho opções como o Vila Eco Park, lançamento com 2 dormitórios e 1 vaga,
+e o apartamento no Jaguaribe, também com 2 dormitórios.
+Quer que eu te envie o catálogo completo dessas opções para você avaliar com calma?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[5] Cliente: quero saber mais do Vila Eco Park
+              qual metragem?
+[5] Sofia:   O Vila Eco Park tem 2 dormitórios, 38,81m², 1 banheiro e 1 vaga.
+É um lançamento no Munhoz Júnior, Osasco, com foco em bem-estar e praticidade.
+As condições são flexíveis, com entrada parcelada e financiamento pela construtora.
+Quer que eu te envie as fotos para você conhecer melhor?
               📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-1-big-1597aad13631a310ed7b0fc07ffbb619.jpg
               📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-2-big-a9da807487ea43da180107514a2dbf8b.jpg
               📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-3-big-06248497c720b210e19a743a066ded5a.jpg
 
-[4] Cliente: muito legais as fotos
-              qual o preço deles?
-[4] Sofia:   Entendo que o preço é decisivo, e ele varia conforme unidade e condições.
-Posso agendar uma visita para apresentar o projeto e as condições de pagamento?
-Você prefere durante a semana ou no fim de semana?
+[6] Cliente: vou ver aqui
+              tem mais fotos?
+[6] Sofia:   Te mandei as fotos do Vila Eco Park aqui embaixo para você conhecer melhor o projeto e o acabamento.
+Se quiser, posso te enviar o link da página com todas as informações.
+Quer que eu agende uma visita para você conhecer o decorado e as condições pessoalmente?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-4-big-fe950ef31c0f68077e3ed1dd300bb8f3.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-5-big-3b3bc7ded5f736a38dfbbf44ab804ebd.jpg
 
-[5] Cliente: vou pensar
-              depois te falo
-[5] Sofia:   Tranquilo, fique à vontade para pensar.
-Quando quiser, posso agendar uma visita para apresentar tudo com calma e sem compromisso.
+[7] Cliente: tem mais fotos do Vila?
+              vou pensar na visita
+[7] Sofia:   Te mandei todas as fotos que tenho do Vila Eco Park.
+Se quiser, olha o link da página com tudo sobre o empreendimento.
+Quando quiser, podemos agendar uma visita para você conhecer o decorado e as condições pessoalmente.
 
-[6] Cliente: obrigada pela paciência
-              vou ver aqui depois
-[6] Sofia:   Que bom, fico à disposição para quando quiser retomar. Posso te enviar o catálogo completo para facilitar sua avaliação?
-https://next-home-drab.vercel.app/?corretor=cristal-bruna
+[8] Cliente: vou ver aqui
+              tem mais fotos do Vila?
+[8] Sofia:   Enviei todas as fotos disponíveis do Vila Eco Park.
+Aqui está o link da página com todas as informações para você analisar com calma:
+https://next-home-drab.vercel.app/empreendimentos/vila-eco-park-mj605
 
-[7] Cliente: pode mandar o catálogo sim
-              vou olhar depois
-[7] Sofia:   Te mandei o catálogo completo para você olhar com calma. Dá uma olhada e me diz o que te agradou.
-https://next-home-drab.vercel.app/?corretor=cristal-bruna
+[9] Cliente: vou ver as infos
+              mas to querendo mais fotos
+[9] Sofia:   O link da página tem tudo para você analisar com calma.
 
-[8] Cliente: obrigada, vou ver sim
-              depois te falo
-[8] Sofia:   Que bom, fico à disposição para quando quiser retomar a conversa.
-Se preferir, posso ajudar a esclarecer qualquer dúvida que surgir.
-Fique à vontade para me chamar quando quiser.
+[10] Cliente: não é bem isso que eu queria
+              tem mais fotos?
+[10] Sofia:   O material completo está no link da página, com fotos, localização e detalhes.
 
-[9] Cliente: ok, vou ver aqui com calma
-              depois te falo novamente
-[9] Sofia:   Fique à vontade para analisar com calma. Estou aqui para ajudar quando quiser retomar a conversa.
+[11] Cliente: não é isso que eu perguntei
+              tem mais fotos?
+[11] Sofia:   Não há mais fotos disponíveis além das que já te mandei.
 
-[10] Cliente: ok, vou olhar o catálogo
-              depois te falo
-[10] Sofia:   Fique à vontade para analisar o catálogo com calma. Quando quiser, é só me chamar para avançarmos.
-
-[11] Cliente: ok, vou olhar com calma
-              depois te falo
-[11] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
-
-[12] Cliente: não sei ainda
-              vou pensar
-[12] Sofia:   Sem problemas, pensar com calma é essencial.
-Quando definir, me conta quantos dormitórios você imagina para eu ajudar melhor.
+[12] Cliente: poxa, achei que tinha mais
+              não vai ter mais nada?
+[12] Sofia:   Entendo a vontade de ver mais detalhes.
+No momento, essas são todas as fotos oficiais do Vila Eco Park.
+O link da página tem o material completo para você analisar com calma.
+Se quiser, podemos agendar uma visita para você conhecer o decorado e as condições pessoalmente.

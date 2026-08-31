@@ -105,11 +105,19 @@ describe("Texto que entra no lugar da repetição", () => {
     }
   });
 
-  it("varia, para não virar ela mesma um segundo loop", () => {
+  /*
+   * A intenção deste teste não mudou: a saída não pode virar ela mesma um
+   * loop. O MECANISMO mudou, e por medição — ele variava conforme a
+   * CONTAGEM de mensagens do bot (`total % 3`), e com três saídas o resto
+   * do módulo faz o índice voltar. O eval da v26 flagrou: a mesma frase nos
+   * turnos 7 e 10, palavra por palavra. Agora a variação depende do que foi
+   * DITO, que é a única coisa que o cliente percebe.
+   */
+  it("varia quando a saída anterior já foi dita — não pela contagem", () => {
     const uma = textoNoLugarDaRepeticao([{ remetente: "bot", texto: "a" }]);
     const outra = textoNoLugarDaRepeticao([
       { remetente: "bot", texto: "a" },
-      { remetente: "bot", texto: "b" },
+      { remetente: "bot", texto: uma },
     ]);
     expect(uma).not.toBe(outra);
   });
@@ -239,5 +247,59 @@ describe("aproveitarSoONovo — cortar o eco, manter o inédito", () => {
   it("sem histórico do bot, nada é cortado", () => {
     const texto = "Quer que eu te envie a apresentação digital para você ver tudo com calma?";
     expect(aproveitarSoONovo(texto, [])).toBe(texto);
+  });
+});
+
+describe("a saída nunca repete a saída — a guarda não pode virar o loop", () => {
+  const bot = (texto: string) => ({ remetente: "bot", texto });
+
+  /*
+   * O defeito medido no eval da v26 (`insiste-no-desconto`): a escolha era
+   * `totalDeMensagensDoBot % 3`, o índice voltava, e a persona recebeu
+   * "Me conta um pouco mais do que você procura" nos turnos 7 e 10 — palavra
+   * por palavra. Quatro dos doze turnos daquela conversa eram desta lista.
+   */
+  it("não devolve uma saída que já foi dita nesta conversa", () => {
+    const primeira = textoNoLugarDaRepeticao([]);
+    const segunda = textoNoLugarDaRepeticao([bot(primeira)]);
+    const terceira = textoNoLugarDaRepeticao([bot(primeira), bot(segunda)]);
+
+    expect(new Set([primeira, segunda, terceira]).size).toBe(3);
+  });
+
+  it("reconhece a saída já dita mesmo dentro de uma mensagem maior", () => {
+    const primeira = textoNoLugarDaRepeticao([]);
+    const depois = textoNoLugarDaRepeticao([
+      bot(`Claro! ${primeira} Fico no aguardo.`),
+    ]);
+    expect(depois).not.toBe(primeira);
+  });
+
+  /*
+   * Esgotadas as saídas, uma quarta pergunta de qualificação seria o loop
+   * de novo. O que ainda não foi tentado é devolver a ESCOLHA ao cliente.
+   */
+  it("quando todas foram usadas, muda de gênero em vez de insistir", () => {
+    const usadas = [
+      textoNoLugarDaRepeticao([]),
+      "Para eu te indicar certo: quantos dormitórios você precisa?",
+      "Prefere conhecer pessoalmente? Consigo te mostrar essa semana.",
+      "Me conta um pouco mais do que você procura para eu te ajudar melhor.",
+    ].map(bot);
+
+    const final = textoNoLugarDaRepeticao(usadas);
+    expect(final).toContain("Me diz o que te ajudaria mais agora");
+    expect(usadas.map((u) => u.texto)).not.toContain(final);
+  });
+
+  it("nunca devolve texto vazio — mensagem em branco é pior que repetição", () => {
+    const tudo = [
+      "Me conta um pouco mais do que você procura para eu te ajudar melhor.",
+      "Para eu te indicar certo: quantos dormitórios você precisa?",
+      "Prefere conhecer pessoalmente? Consigo te mostrar essa semana.",
+      "Me diz o que te ajudaria mais agora: ver as fotos, o link com tudo do empreendimento, ou marcar de conversar pessoalmente?",
+    ].map(bot);
+
+    expect(textoNoLugarDaRepeticao(tudo).length).toBeGreaterThan(0);
   });
 });

@@ -13,28 +13,24 @@
       "turnos": 12,
       "medida": {
         "turnos": 12,
-        "turnoDaOfertaDeVisita": 1,
+        "turnoDaOfertaDeVisita": 4,
         "midiasRepetidas": [],
         "perguntasRepetidasPelaIa": [
-          "Posso te receber terça às 10h ou quarta às 15h?",
-          "Prefere terça às 10h ou quarta às 15h para a visita?",
-          "Posso te receber terça às 10h ou quarta às 15h?"
+          "Posso te mostrar sábado às 10h ou às 11h?",
+          "Posso te mostrar sábado às 10h ou às 11h, qual prefere?",
+          "Posso te mostrar sábado às 10h ou às 11h, qual prefere?"
         ],
         "perguntasReaparecidas": [
-          "qual o valor exato da unidade?",
+          "mas qual é o valor?",
+          "desconto pra visita?",
+          "mas qual é o preço?",
           "qual o valor exato?",
-          "tem desconto ou não?",
-          "qual o valor exato?",
-          "tem desconto ou não?",
-          "qual o valor exato?",
-          "tem desconto ou não?",
-          "qual o valor exato?",
-          "tem desconto ou não?",
-          "tem desconto ou não?"
+          "qual o valor da unidade?"
         ],
-        "respostasRepetidas": 2,
+        "respostasRepetidas": 0,
         "maiorSequenciaSemNovidade": 6,
         "assuntosCobertos": [
+          "regiao",
           "visita",
           "tipologia"
         ],
@@ -42,11 +38,10 @@
           "gpt-4.1-mini"
         ],
         "mediaDeCaracteres": 149,
-        "maiorMensagem": 257,
+        "maiorMensagem": 230,
         "reprovacoes": [
           "repetiu 3 pergunta(s) que já tinha feito",
-          "o cliente teve de repetir 10 pergunta(s) — ela não respondeu",
-          "mandou 2 resposta(s) quase idêntica(s) a uma anterior",
+          "o cliente teve de repetir 5 pergunta(s) — ela não respondeu",
           "6 turnos seguidos sem assunto novo"
         ]
       },
@@ -54,7 +49,7 @@
         "avancou": 0,
         "mesmaPessoa": 2,
         "assumiria": false,
-        "justificativa": "A conversa girou em círculos, sem avanço real ou qualificação. Faltou explorar região, renda e estágio da obra. Não conduziu ao próximo passo.",
+        "justificativa": "A conversa girou em círculos, sem qualificação efetiva. A assistente foi consistente, mas não avançou nem extraiu informações relevantes do cliente.",
         "juiz": "gpt-reserva"
       }
     },
@@ -64,35 +59,39 @@
       "turnos": 12,
       "medida": {
         "turnos": 12,
-        "turnoDaOfertaDeVisita": 4,
+        "turnoDaOfertaDeVisita": 2,
         "midiasRepetidas": [],
         "perguntasRepetidasPelaIa": [],
         "perguntasReaparecidas": [
-          "qual o preço deles?"
+          "tem mais fotos do Vila?",
+          "tem mais fotos do Vila?",
+          "tem mais fotos?",
+          "tem mais fotos?"
         ],
         "respostasRepetidas": 0,
-        "maiorSequenciaSemNovidade": 8,
+        "maiorSequenciaSemNovidade": 7,
         "assuntosCobertos": [
           "regiao",
+          "visita",
           "estagio",
           "tipologia",
-          "visita"
+          "renda"
         ],
         "modelos": [
           "gpt-4.1-mini"
         ],
-        "mediaDeCaracteres": 151,
-        "maiorMensagem": 229,
+        "mediaDeCaracteres": 188,
+        "maiorMensagem": 284,
         "reprovacoes": [
-          "o cliente teve de repetir 1 pergunta(s) — ela não respondeu",
-          "8 turnos seguidos sem assunto novo"
+          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
+          "7 turnos seguidos sem assunto novo"
         ]
       },
       "juizo": {
         "avancou": 1,
         "mesmaPessoa": 2,
         "assumiria": true,
-        "justificativa": "A conversa foi cordial, consistente e respeitou as regras. Faltou qualificação de renda e estágio da obra, mas conduziu com tropeços.",
+        "justificativa": "A conversa foi consistente, qualificou parcialmente e convidou para visita. Faltou aprofundar tipologia e renda, mas não comprometeu o atendimento.",
         "juiz": "gpt-reserva"
       }
     },
@@ -104,44 +103,34 @@
         "turnos": 12,
         "turnoDaOfertaDeVisita": 1,
         "midiasRepetidas": [],
-        "perguntasRepetidasPelaIa": [
-          "Posso te enviar as fotos para você conhecer melhor?",
-          "Qual faixa de valor você tem em mente para avançarmos?",
-          "Prefere conhecer pessoalmente?"
-        ],
+        "perguntasRepetidasPelaIa": [],
         "perguntasReaparecidas": [
-          "mas e o more aldeia?",
-          "e o terra alta tem suíte, certo?",
-          "mas e a metragem do more aldeia?",
-          "mas e a metragem do more aldeia?",
-          "quantas vagas tem?",
-          "mas a metragem do more aldeia??",
-          "não tem mais nada?"
+          "mas e o preço do more aldeia?"
         ],
-        "respostasRepetidas": 1,
-        "maiorSequenciaSemNovidade": 11,
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 10,
         "assuntosCobertos": [
+          "regiao",
           "estagio",
           "tipologia",
-          "visita"
+          "visita",
+          "perfil"
         ],
         "modelos": [
           "gpt-4.1-mini"
         ],
-        "mediaDeCaracteres": 153,
-        "maiorMensagem": 292,
+        "mediaDeCaracteres": 195,
+        "maiorMensagem": 329,
         "reprovacoes": [
-          "repetiu 3 pergunta(s) que já tinha feito",
-          "o cliente teve de repetir 7 pergunta(s) — ela não respondeu",
-          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
-          "11 turnos seguidos sem assunto novo"
+          "o cliente teve de repetir 1 pergunta(s) — ela não respondeu",
+          "10 turnos seguidos sem assunto novo"
         ]
       },
       "juizo": {
         "avancou": 0,
         "mesmaPessoa": 2,
         "assumiria": false,
-        "justificativa": "A conversa girou em círculos, sem avanço real. Faltou qualificação e insistiu sem solução para a dúvida principal do cliente.",
+        "justificativa": "A conversa girou em círculos, sem qualificação ou avanço real. A assistente foi consistente, mas não conduziu nem qualificou o cliente.",
         "juiz": "gpt-reserva"
       }
     },
@@ -151,42 +140,36 @@
       "turnos": 12,
       "medida": {
         "turnos": 12,
-        "turnoDaOfertaDeVisita": 3,
+        "turnoDaOfertaDeVisita": 2,
         "midiasRepetidas": [],
-        "perguntasRepetidasPelaIa": [
-          "Posso agendar sábado às 10h ou às 11h para apresentar o projeto e as condições?"
-        ],
+        "perguntasRepetidasPelaIa": [],
         "perguntasReaparecidas": [
-          "qual o valor?",
-          "mas qual é o valor exato?",
-          "qual é o valor exato?",
-          "qual é a faixa de preço exata?"
+          "mas e o valor específico?",
+          "mas e o valor específico?"
         ],
         "respostasRepetidas": 0,
-        "maiorSequenciaSemNovidade": 9,
+        "maiorSequenciaSemNovidade": 10,
         "assuntosCobertos": [
           "regiao",
-          "estagio",
           "tipologia",
-          "perfil",
-          "visita"
+          "visita",
+          "perfil"
         ],
         "modelos": [
           "gpt-4.1-mini"
         ],
-        "mediaDeCaracteres": 183,
-        "maiorMensagem": 240,
+        "mediaDeCaracteres": 155,
+        "maiorMensagem": 296,
         "reprovacoes": [
-          "repetiu 1 pergunta(s) que já tinha feito",
-          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
-          "9 turnos seguidos sem assunto novo"
+          "o cliente teve de repetir 2 pergunta(s) — ela não respondeu",
+          "10 turnos seguidos sem assunto novo"
         ]
       },
       "juizo": {
         "avancou": 0,
         "mesmaPessoa": 2,
         "assumiria": false,
-        "justificativa": "A conversa girou em círculos sobre o valor, sem avanço real. Faltou qualificação de renda e condução efetiva ao próximo passo.",
+        "justificativa": "A conversa girou em círculos, sem avanço real. Faltou qualificação e insistiu no convite sem abordar outras necessidades do cliente.",
         "juiz": "gpt-reserva"
       }
     }
