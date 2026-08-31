@@ -1,0 +1,88 @@
+# Esteira de verificação do Next Home.
+#
+# ## Por que ela nasceu em 31/08/2026
+#
+# O repositório tinha 867 testes e NENHUMA esteira: tudo só rodava se
+# alguém digitasse o comando. Isso é grave aqui mais do que em outros
+# projetos, porque boa parte dos testes desta base é de uma classe
+# específica — guardas que LEEM O CÓDIGO-FONTE para impedir regressão
+# calada:
+#
+#   escalaDoPainel ....... tela que volta a consultar sem teto
+#   camadasGuardas ....... parallax em mapa, player ou formulário
+#   etapaAutomatica ...... caminho que fala com o cliente e não mexe no funil
+#   gravacaoDeMensagem ... a ordem de escrita que fez a IA perder a memória
+#   linksDeFiltro ........ link de painel com parâmetro que a lista não lê
+#   migrations ........... numeração colidida entre duas sessões
+#   seo .................. título fora da régua do Google
+#   funilDoBot ........... degrau do funil contando a unidade errada
+#
+# Cada uma dessas existe porque o defeito JÁ ACONTECEU e falhou em
+# silêncio: build passando, tipos passando, tela abrindo. Guarda que só
+# roda quando alguém lembra é indistinguível de guarda que não existe — a
+# mesma régua que este projeto aplica a dado gravado e não exibido.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# Push seguido não precisa esperar a verificação do anterior: cancela e
+# roda o que importa, que é o topo da branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # A ordem é a do tempo de resposta: o que falha rápido vem antes,
+      # para o erro aparecer em segundos e não depois do build.
+      - name: Tipos
+        run: npx tsc --noEmit
+
+      - name: Testes
+        run: npm test
+
+      # O build pega o que teste e tipo não pegam — foi assim que a página
+      # do imóvel caiu em produção com o `sharp`: um componente "use client"
+      # importando uma CONSTANTE de um módulo com dependência nativa
+      # arrastava o binário para o grafo do cliente. Tipos passavam.
+      #
+      # Roda sem segredo nenhum de propósito: todas as rotas do projeto são
+      # dinâmicas, então nada consulta o Supabase em tempo de build. Se um
+      # dia alguma virar estática, é aqui que isso aparece.
+      - name: Build
+        run: npm run build
+
+      # Catraca, não porta: 14 erros herdados não podem deixar a esteira
+      # vermelha no primeiro dia (ver scripts/lintTeto.mjs).
+      - name: Lint (catraca)
+        run: node scripts/lintTeto.mjs
+
+# O que esta esteira NÃO roda, e por quê:
+#
+# - `npm run test:e2e` — os specs do painel exigem credencial REAL
+#   (E2E_CORRETOR_EMAIL/SENHA) e o banco por trás é o de PRODUÇÃO, não há
+#   ambiente de teste. Rodar a cada push seria bater no banco de clientes
+#   de verdade a cada commit. Enquanto não houver ambiente separado, o E2E
+#   continua sendo comando de gente.
+#
+# - `npm run eval` e `eval:conversa` — custam chamada de LLM paga a cada
+#   rodada e consomem a MESMA cota do atendimento real. Eval é decisão de
+#   quem está mexendo no prompt, não rotina de push.

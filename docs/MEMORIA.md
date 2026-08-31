@@ -2284,3 +2284,42 @@ os itens.
   seguem em 0 e ficaram como estão: não há dossiê (6 para 112 leads) nem
   negócio em andamento. Mexer neles para "melhorar o número" seria maquiar
   a tela — o que se conserta é a CONTA errada, não o resultado baixo.
+
+## A esteira de CI (31/08/2026) — e por que ela demorou a existir
+
+- **867 testes e nenhuma esteira.** Tudo rodava só quando alguém digitava o
+  comando. Isso pesa mais aqui do que na média porque boa parte dos testes
+  desta base é de uma classe específica: guardas que LEEM O CÓDIGO-FONTE
+  (`escalaDoPainel`, `camadasGuardas`, `etapaAutomatica`,
+  `gravacaoDeMensagem`, `linksDeFiltro`, `migrations`, `seo`, `funilDoBot`).
+  Cada uma nasceu de um defeito que já aconteceu e falhou CALADO — build
+  passando, tipos passando, tela abrindo. **Guarda que só roda quando alguém
+  lembra é indistinguível de guarda que não existe**, a mesma régua que o
+  projeto aplica a dado gravado e não exibido.
+- **`next build` entra na esteira e não precisa de segredo nenhum**: todas
+  as rotas do projeto são dinâmicas, então nada consulta o Supabase em tempo
+  de build (conferido rodando). Vale a pena porque o build pega o que teste
+  e tipo não pegam — foi exatamente o caso do `sharp`, em que um componente
+  `"use client"` importava uma CONSTANTE de um módulo com dependência nativa
+  e arrastava o binário para o grafo do cliente. Se um dia alguma rota virar
+  estática, é aqui que isso aparece.
+- **Lint entrou como CATRACA, não como porta** (`scripts/lintTeto.mjs`). São
+  14 erros herdados (11 `no-explicit-any` nos editores de imóvel, 2
+  `Date.now()` em corpo de Server Component, 1 `prefer-const`) em arquivo de
+  ninguém. Pôr `eslint` puro como porta deixaria a esteira VERMELHA no
+  primeiro dia — e esteira vermelha por padrão é esteira que ninguém olha,
+  do mesmo jeito que alerta sempre aceso vira paisagem. A catraca reprova
+  acima do teto e avisa para BAIXAR o teto quando alguém limpa. Mesma ideia
+  da lista `RESERVADOS` de `migrations.test.ts`: exceção declarada, com
+  número, que reclama quando fica obsoleta.
+- **Catraca foi testada com dente**: introduzi um `any` de propósito, ela
+  reprovou com 15/14, removi, voltou a passar. Guarda nova que não é
+  provocada uma vez é só otimismo.
+- **A esteira NÃO roda o E2E**, e o motivo é o de sempre nesta base: os
+  specs do painel exigem credencial real e o banco por trás é o de
+  PRODUÇÃO. Rodar a cada push seria bater no banco de clientes de verdade a
+  cada commit. Nem os evals: custam LLM pago e consomem a MESMA cota do
+  atendimento.
+- **Conferido antes de subir**: `npm ci` do zero, tipos, testes, build e
+  catraca, na ordem exata do arquivo. Esteira que nasce vermelha ensina a
+  ignorar esteira.

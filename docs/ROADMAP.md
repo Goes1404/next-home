@@ -288,9 +288,13 @@ conversão lead→visita medida por 2 semanas seguidas.
   `storageState`, um setup que faz login pela tela REAL (`/corretor/entrar`)
   e 4 specs autenticados read-only (fila do Início, seleção em lote de
   leads, público de campanhas, editor de imóvel). O que falta de verdade:
-  o resto do fluxo crítico (conversa → revisão de resposta → visita) e um
-  RUNNER — não há `.github/workflows`, então o suite só roda se alguém
-  digitar o comando.
+  o resto do fluxo crítico (conversa → revisão de resposta → visita).
+  **[ENTREGUE 31/08] A esteira existe** (`.github/workflows/ci.yml`): tipos,
+  867 testes, build e catraca de lint a cada push e PR. Ela NÃO roda o E2E,
+  e por um motivo que não é preguiça: os specs do painel exigem credencial
+  real e o banco por trás é o de PRODUÇÃO — rodar a cada commit seria bater
+  no banco de clientes de verdade. Enquanto não houver ambiente separado, o
+  E2E continua sendo comando de gente.
 - **H3.4 Ingestão de material fechando o ciclo.** PDF/Drive → curadoria →
   `midias`/`tipologias` → catálogo que a IA lê. As pontas existem; falta o
   caminho virar rotina de cadastro.
