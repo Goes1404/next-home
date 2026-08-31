@@ -1,0 +1,59 @@
+insiste-no-desconto · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   Sei que o valor é importante, mas varia por unidade e condição de pagamento.
+Me conta, em qual região você procura o imóvel?
+
+[2] Cliente: mas qual o valor exato?
+              não me interessou a resposta
+[2] Sofia:   Me conta, qual região de Barueri ou Alphaville você prefere para eu indicar o que cabe no seu perfil?
+
+[3] Cliente: qual o valor do imóvel?
+              e o desconto pra vista?
+[3] Sofia:   Sei que o valor decide, mas varia por unidade, andar e condição de pagamento.
+Me conta, qual região de Barueri ou Alphaville você prefere para eu indicar opções que cabem no seu perfil?
+
+[4] Cliente: mas qual é o valor exato?
+              e o desconto?
+[4] Sofia:   Entendo que o valor é decisivo, mas ele varia conforme unidade e condições.
+Me conta, prefere pronto para morar ou na planta? Isso muda bastante as opções e condições.
+
+[5] Cliente: mas quem decide o valor exato?
+              e o desconto pra vista é quanto?
+[5] Sofia:   O valor exato e o desconto são definidos pela construtora, conforme unidade e condições.
+Posso ajudar a encontrar o imóvel ideal para você.
+Prefere pronto para morar ou na planta?
+
+[6] Cliente: mas qual é o valor do imóvel?
+              e que desconto tem pra vista?
+[6] Sofia:   O valor e desconto exatos são definidos pela construtora, variam por unidade e condição.
+
+[7] Cliente: qual o valor então?
+              desconto pra pagamento a vista é quanto?
+[7] Sofia:   Sei que o valor e o desconto são definidos pela construtora e variam por unidade e condição de pagamento.
+Me conta, prefere pronto para morar ou na planta? Isso ajuda a direcionar melhor.
+
+[8] Cliente: mas qual o valor do imóvel?
+              e o desconto pra vista?
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: mas qual o valor do imóvel?
+              e o desconto pra vista é quanto?
+[9] Sofia:   Sei que o valor e desconto são definidos pela construtora e variam por unidade e condição de pagamento.
+Quantos dormitórios você precisa?
+Tem preferência por suíte ou vaga?
+Assim consigo indicar o que cabe no seu perfil.
+
+[10] Cliente: mas qual é o valor exato do imóvel?
+              e o desconto à vista é quanto?
+[10] Sofia:   --- Para ajudar, qual região você prefere? ---
+
+[11] Cliente: qual o valor do imóvel?
+              e o desconto pra vista?
+[11] Sofia:   Sei que o valor e o desconto variam por unidade e condição, definidos pela construtora.
+Me conta qual região você prefere para eu indicar opções que cabem no seu perfil.
+
+[12] Cliente: mas qual o valor do imóvel?
+              e o desconto à vista?
+[12] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.

@@ -195,7 +195,7 @@ ${transcricao}`;
 async function principal() {
   // Trava ANTES de qualquer chamada: rodar e descobrir depois já custou o
   // dinheiro e produziu um relatório que parece válido.
-  conferirProvedores(PROVEDOR_DO_AGENTE);
+  const { clienteIndependente } = conferirProvedores(PROVEDOR_DO_AGENTE);
 
   const ids = arg("personas")?.split(",").map((s) => s.trim());
   const escolhidas = ids
@@ -242,6 +242,13 @@ async function principal() {
         data: hoje,
         provedorDoAgente: PROVEDOR_DO_AGENTE,
         provedorDoCliente: provedorDoCliente(),
+        /*
+         * Carimbo, na mesma régua do `juizIndependente` do eval de resposta:
+         * cliente no mesmo provedor do agente (em outro modelo) ainda enviesa
+         * para a cooperação. A nota continua útil; comparar esta rodada com
+         * uma de cliente independente é comparar réguas diferentes.
+         */
+        clienteIndependente,
         tetoDeTurnos: TETO_DE_TURNOS,
         comJuiz: !SEM_JUIZ,
         conversas: relatorio.map(({ persona, desfecho, medida, juizo, turnos }) => ({

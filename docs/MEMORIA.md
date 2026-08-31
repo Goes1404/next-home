@@ -2323,3 +2323,38 @@ os itens.
 - **Conferido antes de subir**: `npm ci` do zero, tipos, testes, build e
   catraca, na ordem exata do arquivo. Esteira que nasce vermelha ensina a
   ignorar esteira.
+
+## O eval de conversa da v25 — o número que o eval de resposta escondia
+
+Rodado em 31/08/2026, 16 personas × até 12 turnos, com a chave da OpenAI.
+
+- **92,2 no eval de RESPOSTA e 1 conversa aproveitável em 16 no de
+  CONVERSA.** A distância entre os dois números é o achado, não um deles: o
+  eval de resposta mede um turno congelado e não pode ver o que quebra
+  ENTRE turnos. Quem só olha o primeiro conclui que o prompt está ótimo.
+- **15 das 16 com `avancou = 0` e 14 batendo o teto de 12 turnos.** O loop,
+  medido: 27 vezes o cliente teve de repetir uma pergunta que a IA não
+  respondeu, 14 perguntas repetidas pela própria IA, média de 7,5 turnos
+  seguidos sem assunto novo.
+- **A guarda anti-eco funciona e não basta.** O log mostra
+  `[guardrails] repetição bloqueada` várias vezes na MESMA frase de desvio
+  de preço: o modelo insiste, o código segura. Guarda determinística
+  compensa o sintoma; o prompt continua produzindo o comportamento.
+- **`mesmaPessoa` 1,88 com um único zero** — a voz não troca. O motor único
+  entregou o que prometeu, e esse é o único indicador que não regrediu.
+- **Cliente simulado no mesmo provedor do agente é ADMISSÍVEL, mas
+  carimbado.** Com só uma chave, agente e cliente caem na OpenAI e a trava
+  abortava a rodada — deixando o eval impossível justamente para quem
+  desenvolve. A fresta é a mesma que o juiz já usava (`juizIndependente`):
+  passa com MODELO diferente (`gpt-4.1-mini` × `gpt-4o-mini`) e o resultado
+  grava `clienteIndependente: false`. O que continua abortando é o mesmo
+  modelo dos dois lados. **Família igual enviesa PARA A COOPERAÇÃO**, então
+  o número real tende a ser pior — e comparar 1/16 com os 5/16 da v17
+  (cliente independente) é comparar réguas diferentes.
+- **`tsx` não carrega `.env.local`** — isso é do Next. O eval precisa das
+  variáveis exportadas no shell (`set -a; . ./.env.local; set +a`), senão
+  ele roda inteiro, não avisa nada e devolve `ia_indisponivel` em toda
+  conversa: uma rodada que parece medida e não mediu nada.
+- **O arquivo de saída é por versão+dia e SOBRESCREVE.** Rodada em lotes
+  precisa copiar o JSON entre lotes (`-b1`, `-b2`, …), senão o último lote
+  apaga os anteriores e a rodada "completa" some.

@@ -1,0 +1,57 @@
+escreve-errado · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vcs tem o vrita alphagran ainda?
+[1] Sofia:   O Vitra Alphaville está disponível e é um apartamento de 2 dormitórios com 2 suítes e 2 vagas.
+Posso te mostrar as fotos para começar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+
+[2] Cliente: não pedi foto, manda planta do vrita
+              nao é isso q eu quero
+[2] Sofia:   O Vitra Alphaville tem planta sim, vou te enviar aqui.
+Se não é esse que você quer, me conta o que procura para eu ajudar melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-4437ee1f8f0ca0135bd73540a6063059.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-db60774778f5a3d788cdcb47cdd43db3.jpg
+
+[3] Cliente: mandou planta do vrita?
+              não pedi outra foto!
+[3] Sofia:   Te mandei as duas plantas do Vitra, são as únicas que temos.
+Se não é esse, me fala o que você procura para eu ajudar melhor.
+
+[4] Cliente: não é do vrita, só a planta
+              vc tem certeza?
+[4] Sofia:   Sim, confirmei: só temos essas duas plantas do Vitra mesmo.
+Se quiser, posso te mostrar outras opções na região ou de outro padrão.
+
+[5] Cliente: só quero a planta do vrita
+              vc ta me entendendo?
+[5] Sofia:   Confirmei que as plantas enviadas são do Vitra Alphaville, as únicas disponíveis no catálogo.
+Se quiser, posso ajudar com outras opções ou informações.
+
+[6] Cliente: vc ta de sacanagem? so quero a planta do vrita
+              se tiver outra planta, manda logo!
+[6] Sofia:   Reforcei que as plantas enviadas são as únicas do Vitra Alphaville que temos.
+
+[7] Cliente: vc ta me enrolando? manda a planta do vrita
+              só isso que eu quero!
+[7] Sofia:   As plantas que tenho do Vitra são essas duas que te enviei, são as únicas disponíveis no catálogo.
+Se quiser, posso te enviar o link da página com todos os detalhes.
+
+[8] Cliente: vc ta de sacanagem?
+              só quero a planta do vrita!
+[8] Sofia:   As plantas que te enviei são as únicas oficiais do Vitra Alphaville que temos no catálogo.
+Olha o link da página, tem tudo lá para você conferir com calma. Posso te enviar?
+
+[9] Cliente: vc ta me enrolando, manda a planta do vrita!
+[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[10] Cliente: vc ta de sacanagem ainda? só a planta do vrita!
+[10] Sofia:   https://next-home-drab.vercel.app/empreendimentos/vitra-alphaville-vt110
+
+[11] Cliente: vc ta me enrolando
+              manda a planta do vrita!
+[11] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[12] Cliente: vc ta de sacanagem? manda a planta do vrita!
+              só isso que eu quero!
+[12] Sofia:   O Vitra Alphaville tem 2 dormitórios, 2 suítes e 2 vagas. Quer que eu te envie o link da página com tudo para conferir?

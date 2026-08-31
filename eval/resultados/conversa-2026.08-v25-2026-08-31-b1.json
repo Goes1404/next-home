@@ -1,0 +1,87 @@
+{
+  "promptVersao": "2026.08-v25",
+  "data": "2026-08-31",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "openai",
+  "clienteIndependente": false,
+  "tetoDeTurnos": 12,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "familia-tres-dorm",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 5,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "--- Para avançar, qual faixa de valor você tem em mente?"
+        ],
+        "perguntasReaparecidas": [
+          "mas e o valor?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 7,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 175,
+        "maiorMensagem": 343,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 1 pergunta(s) — ela não respondeu",
+          "7 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, não qualificou renda nem avançou. O cliente ficou frustrado e não houve condução efetiva ao próximo passo.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "pergunta-se-e-robo-no-meio",
+      "desfecho": "cliente_encerrou",
+      "turnos": 6,
+      "medida": {
+        "turnos": 6,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 4,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "perfil",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 179,
+        "maiorMensagem": 240,
+        "reprovacoes": [
+          "4 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 0,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, houve repetição de respostas robóticas e não houve avanço na qualificação ou convite para visita.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

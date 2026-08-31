@@ -1,0 +1,97 @@
+{
+  "promptVersao": "2026.08-v25",
+  "data": "2026-08-31",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "openai",
+  "clienteIndependente": false,
+  "tetoDeTurnos": 12,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "confuso-entre-dois",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Para eu te indicar certo: quantos dormitórios você precisa?",
+          "Para eu te indicar certo: quantos dormitórios você precisa?"
+        ],
+        "perguntasReaparecidas": [
+          "mas e o more aldeia?",
+          "não tem nada dele pra me mostrar?",
+          "mas você não tem nada do more?",
+          "não tem nada dele pra me mostrar?"
+        ],
+        "respostasRepetidas": 2,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "estagio",
+          "tipologia",
+          "renda",
+          "visita",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 157,
+        "maiorMensagem": 327,
+        "reprovacoes": [
+          "repetiu 2 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
+          "mandou 2 resposta(s) quase idêntica(s) a uma anterior",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem avanço real. A assistente não qualificou direito e insistiu no produto errado, frustrando o cliente.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "educado-que-enrola",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 5,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "tem opção com churrasqueira?",
+          "mas e a churrasqueira?",
+          "tá, mas e a churrasqueira?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 7,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 163,
+        "maiorMensagem": 278,
+        "reprovacoes": [
+          "o cliente teve de repetir 3 pergunta(s) — ela não respondeu",
+          "7 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, a dúvida principal não foi respondida claramente e houve insistência inadequada em visita e links.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

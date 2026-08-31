@@ -1,7 +1,7 @@
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
 import { chamarGroqJson } from "../../src/lib/whatsapp/groq";
 import { chamarNvidiaJson } from "../../src/lib/whatsapp/nvidia";
-import { chamarOpenaiJson } from "../../src/lib/whatsapp/openai";
+import { chamarOpenaiJson, modeloOpenai } from "../../src/lib/whatsapp/openai";
 import type { ResultadoLlm } from "../../src/lib/whatsapp/llmTipos";
 import type { Persona } from "./personas";
 
@@ -52,15 +52,59 @@ export function provedorDoCliente(): Provedor {
  * tudo derivado de um modelo se entrevistando. Melhor não ter medida do que
  * ter uma medida falsa que ninguém sabe que é falsa.
  */
-export function conferirProvedores(provedorDoAgente: string): void {
+/** O modelo que o cliente simulado vai usar neste provedor. */
+export function modeloDoCliente(provedor: Provedor): string | undefined {
+  return (
+    process.env.EVAL_CLIENTE_MODELO || (provedor === "groq" ? "openai/gpt-oss-20b" : undefined)
+  );
+}
+
+/**
+ * A trava, e a única fresta que ela admite.
+ *
+ * Provedor diferente é o normal e não tem conversa. Provedor IGUAL era
+ * abortar sempre — e isso deixava a rodada impossível para quem só tem a
+ * chave de um provedor, que é a situação real de quem desenvolve aqui.
+ *
+ * A fresta é a MESMA que o juiz já usa desde 26/08 (`juizIndependente` no
+ * `rodarEval.ts`): mesmo provedor passa, desde que o MODELO seja outro e
+ * escolhido de propósito — e o resultado sai CARIMBADO, para ninguém
+ * comparar esta rodada com uma de cliente independente como se fossem a
+ * mesma régua. Família igual (gpt-4o-mini contra gpt-4.1-mini) ainda
+ * enviesa um pouco para a cooperação; o carimbo é o que impede a nota de
+ * ser lida como se não enviesasse.
+ *
+ * O que continua ABORTANDO é o caso que a trava sempre existiu para
+ * impedir: o mesmo modelo dos dois lados, que é o modelo se entrevistando.
+ */
+export function conferirProvedores(provedorDoAgente: string): { clienteIndependente: boolean } {
   const cliente = provedorDoCliente();
-  if (cliente === provedorDoAgente) {
+  if (cliente !== provedorDoAgente) return { clienteIndependente: true };
+
+  const modeloCliente = modeloDoCliente(cliente);
+  const modeloAgente = cliente === "openai" ? modeloOpenai() : process.env.IA_MODELO;
+
+  if (!modeloCliente) {
     throw new Error(
-      `O cliente simulado e o agente rodariam no mesmo provedor (${cliente}). ` +
+      `O cliente simulado e o agente rodariam no mesmo provedor (${cliente}) e no mesmo modelo. ` +
         `Modelo conversando consigo mesmo produz conversa cooperativa demais e o score não vale nada. ` +
-        `Defina EVAL_CLIENTE_PROVEDOR com outro provedor.`,
+        `Use outro provedor em EVAL_CLIENTE_PROVEDOR, ou fixe um modelo diferente em EVAL_CLIENTE_MODELO.`,
     );
   }
+
+  if (modeloAgente && modeloCliente === modeloAgente) {
+    throw new Error(
+      `EVAL_CLIENTE_MODELO="${modeloCliente}" é o MESMO modelo do agente. ` +
+        `Escolha outro — mesmo modelo dos dois lados é o modelo se entrevistando.`,
+    );
+  }
+
+  console.warn(
+    `[eval] cliente simulado no MESMO provedor do agente (${cliente}), em modelo diferente ` +
+      `(${modeloCliente} contra ${modeloAgente ?? "padrão"}). A rodada sai carimbada como ` +
+      `clienteIndependente: false — não compare com rodada de cliente independente.`,
+  );
+  return { clienteIndependente: false };
 }
 
 const INSTRUCOES_DE_COMPORTAMENTO: Record<string, string> = {
@@ -164,8 +208,7 @@ export async function proximaFalaDoCliente(
      * grande. `maxTokens` baixo é o que faz a fábrica caber no minuto — o
      * limitador da Groq reserva o max_tokens pedido contra o teto da conta.
      */
-    modelo:
-      process.env.EVAL_CLIENTE_MODELO || (provedor === "groq" ? "openai/gpt-oss-20b" : undefined),
+    modelo: modeloDoCliente(provedor),
     maxTokens: 600,
   };
 

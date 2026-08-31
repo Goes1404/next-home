@@ -1,0 +1,32 @@
+quer-visitar-sabado · cliente_encerrou · 6 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria visitar um apartamento sábado, dá?
+[1] Sofia:   Sábado dá sim, de manhã ou à tarde? Posso te mostrar opções que tenho em Alphaville e região para você escolher.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[2] Cliente: de manhã
+              não quero opções, só o que pedi
+[2] Sofia:   Sábado de manhã para visitar um apartamento.
+Em qual região você procura exatamente? Alphaville, Barueri, Osasco ou outra?
+
+[3] Cliente: Alphaville mesmo.
+              Só isso.
+[3] Sofia:   Em Alphaville, tenho o On The Park Alphaville, pronto para morar, e o Vitra Alphaville, também pronto.
+Ambos com 2 dormitórios e vagas para 2 carros.
+Quer conhecer o decorado no sábado de manhã? Posso agendar para 05/09 às 9h ou às 11h.
+
+[4] Cliente: quero o Vitra
+              11h tá bom
+[4] Sofia:   Combinado, sábado 05/09 às 11h para conhecer o Vitra Alphaville.
+Vou agendar para você e já te envio a planta para ir se familiarizando.
+Te mandei a planta aqui embaixo para você dar uma olhada.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-4437ee1f8f0ca0135bd73540a6063059.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-db60774778f5a3d788cdcb47cdd43db3.jpg
+
+[5] Cliente: não pedi planta
+              só quero confirmar o horário
+[5] Sofia:   Confirmado para sábado, 05/09, às 11h no Vitra Alphaville. Fico à disposição para qualquer ajuste.
+
+[6] Cliente: tá bom, vejo você lá
+[6] Sofia:   Ótimo, sábado às 11h está reservado para você no Vitra Alphaville. Qualquer coisa, só avisar.

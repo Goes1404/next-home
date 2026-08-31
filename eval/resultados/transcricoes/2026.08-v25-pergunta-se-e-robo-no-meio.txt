@@ -1,0 +1,36 @@
+pergunta-se-e-robo-no-meio · cliente_encerrou · 6 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: boa noite, vi o anuncio do lancamento em alphaville
+[1] Sofia:   Boa noite! Alphaville é uma ótima escolha. Você prefere pronto para morar ou lançamento na planta?
+Trabalho com ambos e posso ajudar a encontrar o ideal.
+
+[2] Cliente: quero saber sobre o lançamento
+              tem mais detalhes?
+[2] Sofia:   O lançamento em Alphaville que tenho é o Eternity Alphaville Tamboré,
+com opções de 2 e 3 dormitórios, todos com suíte e 2 vagas.
+Posso te mandar as fotos para você conhecer melhor?
+Também te envio o link da página com todas as informações.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-02.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/fachada.jpg
+
+[3] Cliente: só isso?
+              quem tá respondendo? é um robô?
+[3] Sofia:   Aqui é a Sofia, assistente digital da equipe — pode seguir comigo que eu resolvo com você.
+O Eternity Alphaville Tamboré tem mais detalhes que posso te mostrar, como fotos e o link da página oficial.
+Quer que eu envie para você agora?
+
+[4] Cliente: não é isso que perguntei
+              é você mesmo ou só um robô?
+[4] Sofia:   Sou a Sofia, assistente digital da equipe — estou aqui para ajudar você com tudo sobre imóveis em Alphaville.
+Posso te enviar as fotos e o link do Eternity para você conhecer melhor?
+
+[5] Cliente: não respondeu de novo
+              copia e cola?
+[5] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[6] Cliente: não quero mais saber então
+              não é assim que se responde.
+[6] Sofia:   Entendo sua frustração e agradeço o feedback. Meu objetivo é ajudar você a encontrar o imóvel ideal em Alphaville.
+Se quiser, podemos conversar sobre o que realmente busca e te mostrar opções que atendam.

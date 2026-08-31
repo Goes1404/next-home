@@ -98,12 +98,41 @@ O que já está construído precisa ser PROVADO antes de escalar.
   produção. O que a medição também mostrou, e não é bom: dessas conversas,
   só **3 têm 2 ou mais falas do cliente** — a memória está provada, o
   atendimento em profundidade não.
-- **H0.2 Linha de base oficial dos DOIS evals. ◑ METADE FEITA.** O eval de
-  RESPOSTA fechou: 36/36 casos, juiz `gpt-4.1`, v25 = **92,2** com 1 falha
-  dura (v23 90,3 → v24 92,0 → v25 92,2, mesma régua). O eval de CONVERSA
-  parou na v20 — cinco versões de prompt subiram sem passar por ele, e é
-  justamente ele que pega o loop de repetição e o desfile de imóveis.
-  *Falta: rodar `npm run eval:conversa` na v25, duas rodadas.*
+- **H0.2 Linha de base oficial dos DOIS evals. ✅ FECHADA em 31/08 — e o
+  segundo eval derrubou a leitura otimista do primeiro.**
+
+  | eval | v25 |
+  |---|---|
+  | RESPOSTA (36 casos, juiz `gpt-4.1`) | **92,2** · 1 falha dura |
+  | CONVERSA (16 personas × 12 turnos) | **1 conversa em 16** que um corretor assumiria |
+
+  O eval de resposta diz 92,2; o de conversa diz que **15 das 16 conversas
+  não avançaram** (`avancou = 0`) e que 14 bateram o teto de 12 turnos sem
+  chegar a lugar nenhum. Essa distância entre os dois números É o achado —
+  e é exatamente o que a Trilha S previa: todo defeito que dói mora ENTRE
+  turnos, e um eval de resposta única não pode vê-lo.
+
+  O que a medição determinística mostra, somando as 16:
+
+  - **27 vezes o cliente teve de repetir** uma pergunta que a IA não
+    respondeu;
+  - **14 perguntas repetidas pela própria IA**;
+  - **7,5 turnos seguidos sem assunto novo**, em média — o loop, medido;
+  - 6 respostas quase idênticas a uma anterior (a guarda anti-eco pegou
+    outras: o log mostra `repetição bloqueada` várias vezes, ou seja, o
+    modelo INSISTE e é o código que segura);
+  - visita nunca oferecida em 1 persona, e no turno 12 em outra.
+
+  O que continua bom: **`mesmaPessoa` média 1,88 com um único zero** — a voz
+  não troca, o motor único entregou o que prometeu.
+
+  **CAVEAT que impede comparação com as rodadas de v17/v18:** só havia
+  chave da OpenAI, então agente e cliente simulado rodaram no MESMO
+  provedor (modelos diferentes: `gpt-4.1-mini` × `gpt-4o-mini`). A rodada
+  sai carimbada com `clienteIndependente: false`, na mesma régua do
+  `juizIndependente` do eval de resposta. Família igual enviesa PARA A
+  COOPERAÇÃO — ou seja, o número real provavelmente é pior, não melhor.
+  Comparar 1/16 com os 5/16 da v17 é comparar réguas diferentes.
 - **H0.3 Primeiros rótulos.** 3 de 20. Saiu do zero (a fila da 0040
   funciona), mas está longe do portão.
 - **H0.4 Decisão de privacidade (LGPD).** Continua em aberto e continua
@@ -113,8 +142,10 @@ O que já está construído precisa ser PROVADO antes de escalar.
   liberada, (b) retenção curta com purga, ou (c) linha de trabalho dedicada
   por corretor.
 
-**Portão H0→H1:** número no ar (o aviso de queda já existe) + eval de
-conversa na v25 + 20 rótulos + decisão de privacidade tomada. *(A memória, que era o
+**Portão H0→H1:** número no ar (o aviso de queda já existe) + 20 rótulos +
+decisão de privacidade tomada. *(A linha de base dos dois evals fechou em
+31/08 — e o de conversa acendeu uma luz vermelha que o de resposta
+escondia: ver H0.2. A Onda 2 volta a ser o trabalho nº 1 do prompt.)* *(A memória, que era o
 primeiro item deste portão, já passou.)*
 
 ### O que a medição de 31/08 acrescentou à fila
