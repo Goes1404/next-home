@@ -63,3 +63,49 @@ describe("novo → primeiro_contato automático", () => {
     }
   });
 });
+
+/**
+ * A mesma classe de buraco, um andar acima: quem FALA com o cliente por
+ * iniciativa nossa também precisa agendar o reengajamento.
+ *
+ * Descoberto em 31/08/2026 auditando o roadmap. `agendarFollowup` era
+ * chamado em UM lugar — o webhook, e ainda sob a condição de a temperatura
+ * passar de 40. Resultado medido: 87 disparos de campanha entregues e ZERO
+ * follow-ups criados para eles, justamente a população que a fila de
+ * reengajamento existe para alcançar. As 16 linhas que a tabela teve na
+ * vida nasceram todas dentro de conversa ativa.
+ *
+ * O sintoma enganava: o `followups-whatsapp` acumulou 2.719 execuções sem
+ * uma falha, respondendo "processados: 0" — cron saudável, fila vazia.
+ * Antes de culpar o runner, conferir quem ENFILEIRA.
+ */
+describe("quem fala com o cliente agenda o reengajamento", () => {
+  it("o disparo de campanha agenda follow-up", () => {
+    expect(DISPARADOR).toContain("agendarFollowup(");
+  });
+
+  it("o webhook continua agendando", () => {
+    expect(WEBHOOK).toContain("agendarFollowup(");
+  });
+
+  it("o agendamento do disparo acontece DEPOIS de a mensagem ser gravada", () => {
+    // Follow-up de mensagem que não chegou a existir seria insistência
+    // sobre o nada — e a conversa é o que o runner revalida antes de enviar.
+    const gravou = DISPARADOR.indexOf("gravarMensagem({");
+    const agendou = DISPARADOR.indexOf("agendarFollowup(");
+    expect(gravou).toBeGreaterThan(-1);
+    expect(agendou).toBeGreaterThan(gravou);
+  });
+
+  /*
+   * As proteções do reengajamento não podem ser afrouxadas para caber o
+   * caso novo: o teto de 2 e a trava de "um pendente por vez" são o que
+   * separa follow-up de perseguição.
+   */
+  it("o teto de tentativas e a trava de pendente continuam em agendarFollowup", () => {
+    const fn = REPOSITORIO.slice(REPOSITORIO.indexOf("export async function agendarFollowup"));
+    const corpo = fn.slice(0, fn.indexOf("\n}"));
+    expect(corpo).toContain("MAX_TENTATIVAS_FOLLOWUP");
+    expect(corpo).toContain('f.status === "pendente"');
+  });
+});

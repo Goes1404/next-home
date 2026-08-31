@@ -228,11 +228,18 @@ GPT como segundo voto — a concordância é o que fecha.
   `{"processados":0,"enviados":0}`. Fila vazia, não erro. Como `descartado`
   também é 0, `processarFollowup` **nunca rodou uma vez**: não é que o envio
   falha, é que nunca foi tentado. Os três buracos reais:
-  1. `agendarFollowup` só é chamado no webhook, e ainda sob duas condições
-     (`envio.enviado && temperaturaScore >= 40`). **A campanha não agenda
-     nada**: `campaignDispatcher.ts` não tem uma referência sequer a
-     follow-up. São 87 disparos entregues — exatamente a população que
-     existe para ser reengajada — e nenhuma linha criada para eles.
+  1. ~~`agendarFollowup` só é chamado no webhook~~ — **CORRIGIDO em 31/08**:
+     o disparo de campanha passou a agendar o reengajamento logo depois de
+     gravar a mensagem, com as mesmas proteções de sempre (teto de 2, nunca
+     dois pendentes, cancelamento automático na resposta do cliente, cota
+     anti-ban e janela comercial). O primeiro toque cai em +24h.
+     **Os 87 disparos antigos NÃO foram backfillados de propósito** — criar
+     87 follow-ups de uma vez seria uma rajada para gente que recebeu
+     mensagem há dias. Vale para o que sair daqui em diante.
+     Junto veio o texto que o caso novo exigia: para quem nunca falou, a
+     instrução PROÍBE a linguagem de retomada ("voltando ao nosso papo" para
+     quem nunca disse uma palavra é a primeira coisa que entrega um robô) e
+     pede uma informação nova sobre o imóvel.
   2. As 16 linhas que existiram foram todas canceladas por resposta do
      cliente ANTES das +24h. O cancelamento está certo; o efeito é que só
      nascem follow-ups dentro de conversa ativa, que é justamente quem não

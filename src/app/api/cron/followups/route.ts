@@ -332,6 +332,10 @@ async function processarFollowup(
       tentativa: item.tentativa,
       dossie,
       visitaFormatada,
+      // `ultimaCliente` já foi buscada acima para a revalidação de resposta:
+      // ausência dela significa que o cliente nunca falou — o caso do
+      // disparo de campanha que ninguém respondeu.
+      clienteNuncaFalou: !ultimaCliente,
     }),
   });
 

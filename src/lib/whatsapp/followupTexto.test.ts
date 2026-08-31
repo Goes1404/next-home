@@ -48,3 +48,44 @@ describe("formatarVisitaSP — o fuso é São Paulo, nunca UTC", () => {
     expect(f.toLowerCase()).toContain("sábado");
   });
 });
+
+/**
+ * O caso que nasceu em 31/08, quando a campanha passou a agendar follow-up:
+ * o cliente recebeu um disparo e nunca disse nada.
+ */
+describe("follow-up de quem nunca falou", () => {
+  const nuncaFalou = (tentativa: number) =>
+    instrucaoDoFollowup({ tipo: "reengajamento", tentativa, clienteNuncaFalou: true });
+
+  it("proíbe a linguagem de retomada — não houve conversa para retomar", () => {
+    const texto = nuncaFalou(1);
+    expect(texto).toContain("ainda não falou nada nesta conversa");
+    expect(texto).toContain("não houve conversa");
+    expect(texto).toContain("NUNCA diga");
+  });
+
+  it("pede informação NOVA sobre o imóvel, não um 'oi, tudo bem?'", () => {
+    expect(nuncaFalou(1)).toContain("informação concreta e nova");
+  });
+
+  it("na segunda tentativa é uma linha só, sem cobrança", () => {
+    const texto = nuncaFalou(2);
+    expect(texto).toContain("UMA linha");
+    expect(texto).toContain("sem cobrar resposta");
+    expect(texto).toContain("última tentativa");
+  });
+
+  /*
+   * A instrução de quem JÁ conversou continua sendo outra: ela ancora no
+   * dossiê e fala em retomada. Misturar as duas devolveria a frase falsa.
+   */
+  it("não contamina o caminho de quem já conversou", () => {
+    const conversou = instrucaoDoFollowup({
+      tipo: "reengajamento",
+      tentativa: 1,
+      dossie: { regiaoInteresse: "Alphaville", dormitoriosMin: 3 },
+    });
+    expect(conversou).toContain("Alphaville");
+    expect(conversou).not.toContain("não houve conversa");
+  });
+});

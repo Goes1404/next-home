@@ -2169,3 +2169,33 @@ os itens.
   para cobrir. Fora da janela comercial havia uma segunda saída antes ainda.
   Hoje a varredura roda antes de tudo, a cada tique, sem depender de fila,
   janela ou número liberado.
+
+## A campanha falava e nunca voltava (31/08/2026)
+
+- **`agendarFollowup` tinha UM chamador, e era o errado para o volume.** Só
+  o webhook agendava, e ainda sob `temperaturaScore >= 40` — ou seja, só
+  ganhava reengajamento quem JÁ estava conversando. Quem recebeu disparo e
+  ficou calado, não. Medido: **87 disparos entregues, 0 follow-ups criados
+  para eles**; as 16 linhas da vida inteira nasceram em conversa ativa e
+  foram todas canceladas pela resposta do cliente antes de vencer.
+- **O sintoma apontava para o lugar errado.** O `followups-whatsapp`
+  acumulou 2.719 execuções sem uma falha respondendo `{"processados":0}` —
+  cron saudável, fila vazia. **Antes de culpar o runner, conferir quem
+  ENFILEIRA.** É a irmã da lição do funil (0059): ao criar caminho que FALA
+  com o cliente, procurar quem agenda o retorno, não só quem move a etapa.
+- **"Retomando nossa conversa" para quem nunca falou é o defeito que o caso
+  novo criou.** Follow-up de campanha alcança gente que não disse uma
+  palavra; a instrução de retomada mentiria na primeira frase. Por isso
+  `instrucaoDoFollowup` ganhou `clienteNuncaFalou`, que proíbe a linguagem
+  de retomada e pede uma informação NOVA sobre o imóvel. O runner já sabia
+  a resposta sem consulta nova: ele busca a última fala do cliente para
+  revalidar, e a ausência dela É o sinal.
+- **O runner exige `liberado_por_palavra_chave`, e isso quase matou a
+  correção.** A isenção de conversa de campanha mora em `modoBot.ts`, não
+  no runner, que lê a coluna crua. Conferido antes de escrever: as 59
+  conversas de campanha estão todas com a coluna `true` (o insert de
+  `obterOuCriarConversa` já libera), então o follow-up roda. Se um dia a
+  regra de liberação mudar, este caminho para calado.
+- **Sem backfill, de propósito.** Agendar para os 87 disparos antigos seria
+  uma rajada de reengajamento para gente abordada há dias — e rajada é
+  exatamente o que as quatro proteções do número existem para impedir.

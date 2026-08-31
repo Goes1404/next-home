@@ -6,6 +6,7 @@ import { varrerQuedasDeNumero } from "./avisoDeQueda";
 import { variarMensagemComIA } from "./campaignQueue";
 import { enviarMensagemWhatsapp } from "./provider";
 import {
+  agendarFollowup,
   avancarLeadParaPrimeiroContato,
   destravarDisparo,
   registrarTentativaDeContato,
@@ -579,6 +580,27 @@ async function processarInstancia(ctx: {
             `[campanha] provedor respondeu 2xx SEM id de mensagem para ${item.telefone} — envio não confirmável.`,
           );
         }
+
+        /*
+         * O disparo agenda o REENGAJAMENTO. Até 31/08/2026 ele não fazia
+         * isso, e o buraco só apareceu numa auditoria: `agendarFollowup`
+         * era chamado em UM lugar só — o webhook, e ainda sob a condição de
+         * a temperatura passar de 40. Ou seja, só ganhava follow-up quem já
+         * estava conversando; quem recebeu um disparo e ficou calado, não.
+         *
+         * Medido no dia: 87 disparos entregues, ZERO follow-ups criados
+         * para eles — exatamente a população que a fila de reengajamento
+         * existe para alcançar. As 16 linhas que a tabela teve na vida
+         * nasceram todas dentro de conversa ativa e foram todas canceladas
+         * pela resposta do cliente antes de vencer.
+         *
+         * As proteções que importam já estão em `agendarFollowup` e no
+         * runner, e nenhuma foi afrouxada: teto de 2 por conversa, nunca
+         * dois pendentes ao mesmo tempo, cancelamento automático assim que
+         * o cliente responde, cota anti-ban consumida no envio e janela
+         * comercial respeitada. O primeiro toque cai em +24h.
+         */
+        await agendarFollowup(conversa.id, instancia.id);
       }
 
       /*
