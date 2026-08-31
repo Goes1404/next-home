@@ -1,0 +1,194 @@
+{
+  "promptVersao": "2026.08-v26",
+  "data": "2026-08-31",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "openai",
+  "clienteIndependente": false,
+  "tetoDeTurnos": 12,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "insiste-no-desconto",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso te receber terça às 10h ou quarta às 15h?",
+          "Prefere terça às 10h ou quarta às 15h para a visita?",
+          "Posso te receber terça às 10h ou quarta às 15h?"
+        ],
+        "perguntasReaparecidas": [
+          "qual o valor exato da unidade?",
+          "qual o valor exato?",
+          "tem desconto ou não?",
+          "qual o valor exato?",
+          "tem desconto ou não?",
+          "qual o valor exato?",
+          "tem desconto ou não?",
+          "qual o valor exato?",
+          "tem desconto ou não?",
+          "tem desconto ou não?"
+        ],
+        "respostasRepetidas": 2,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "visita",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 149,
+        "maiorMensagem": 257,
+        "reprovacoes": [
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 10 pergunta(s) — ela não respondeu",
+          "mandou 2 resposta(s) quase idêntica(s) a uma anterior",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem avanço real ou qualificação. Faltou explorar região, renda e estágio da obra. Não conduziu ao próximo passo.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "educado-que-enrola",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 4,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "qual o preço deles?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 8,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 151,
+        "maiorMensagem": 229,
+        "reprovacoes": [
+          "o cliente teve de repetir 1 pergunta(s) — ela não respondeu",
+          "8 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa foi cordial, consistente e respeitou as regras. Faltou qualificação de renda e estágio da obra, mas conduziu com tropeços.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "confuso-entre-dois",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso te enviar as fotos para você conhecer melhor?",
+          "Qual faixa de valor você tem em mente para avançarmos?",
+          "Prefere conhecer pessoalmente?"
+        ],
+        "perguntasReaparecidas": [
+          "mas e o more aldeia?",
+          "e o terra alta tem suíte, certo?",
+          "mas e a metragem do more aldeia?",
+          "mas e a metragem do more aldeia?",
+          "quantas vagas tem?",
+          "mas a metragem do more aldeia??",
+          "não tem mais nada?"
+        ],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 11,
+        "assuntosCobertos": [
+          "estagio",
+          "tipologia",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 153,
+        "maiorMensagem": 292,
+        "reprovacoes": [
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 7 pergunta(s) — ela não respondeu",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "11 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem avanço real. Faltou qualificação e insistiu sem solução para a dúvida principal do cliente.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "familia-tres-dorm",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 3,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso agendar sábado às 10h ou às 11h para apresentar o projeto e as condições?"
+        ],
+        "perguntasReaparecidas": [
+          "qual o valor?",
+          "mas qual é o valor exato?",
+          "qual é o valor exato?",
+          "qual é a faixa de preço exata?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 9,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "perfil",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 183,
+        "maiorMensagem": 240,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
+          "9 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos sobre o valor, sem avanço real. Faltou qualificação de renda e condução efetiva ao próximo passo.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

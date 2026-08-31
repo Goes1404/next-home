@@ -6,6 +6,7 @@ import type { AnexoResolvido } from "./resolverMidia";
 import { buscarExemplosFewShot } from "./aprendizadoContinuo";
 import { catalogoParaAtendimento } from "./focoDaConversa";
 import { capacidadeEstaPendente } from "./funilQualificacao";
+import { blocoPerguntaIgnorada, perguntaIgnorada } from "./perguntaIgnorada";
 import { catalogoTemPrazo } from "./prazoEntrega";
 import { sanearRespostaIA } from "./guardrails";
 import { dividirEmMensagens } from "./chunking";
@@ -159,6 +160,18 @@ export async function executarTurnoDeAtendimento(
     catalogo: pedido.catalogo,
   });
 
+  /*
+   * O cliente está repetindo uma pergunta que ficou sem resposta?
+   *
+   * Medido no eval da v25: 27 repetições em 16 conversas, e uma delas com
+   * a MESMA pergunta doze vezes. A régua é o comportamento dele, não uma
+   * rubrica: se ele refaz a pergunta, ela não foi respondida.
+   */
+  const ignorada = perguntaIgnorada({
+    historico: historicoAnterior,
+    mensagemAtual: textoDaVez,
+  });
+
   const bruta = await gerarRespostaIA(
     {
       ...pedido.identidade,
@@ -169,6 +182,7 @@ export async function executarTurnoDeAtendimento(
       instrucaoExtra: pedido.instrucaoExtra,
       foco,
       capacidadePendente,
+      blocoPerguntaIgnorada: ignorada ? blocoPerguntaIgnorada(ignorada) : undefined,
       /*
        * O aviso olha o catálogo QUE FOI AO PROMPT, não o completo: é sobre
        * o que ela pode citar nesta resposta. O guardrail

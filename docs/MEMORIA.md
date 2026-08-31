@@ -2358,3 +2358,36 @@ Rodado em 31/08/2026, 16 personas × até 12 turnos, com a chave da OpenAI.
 - **O arquivo de saída é por versão+dia e SOBRESCREVE.** Rodada em lotes
   precisa copiar o JSON entre lotes (`-b1`, `-b2`, …), senão o último lote
   apaga os anteriores e a rodada "completa" some.
+
+## Onda 2, primeira tentativa (v26): o loop não é da JOGADA, é de não trocar de jogada
+
+- **A regra 27(b) do prompt MANDAVA fazer o errado**, e ninguém tinha notado:
+  diante de insistência em preço, ela dizia "avance o funil com UMA pergunta
+  nova". Foi exatamente isso doze vezes seguidas na persona
+  `insiste-no-desconto` da v25. E contradizia a própria memória desta casa,
+  que resolveu a tensão do preço em agosto: **a pergunta de preço é o
+  convite para a visita**. Ao medir um defeito de conversa, ler a regra que
+  governa aquele momento — ela pode ser a causa, não a vítima.
+- **Corrigir a jogada não desfez o loop.** Com a 27(b) apontando para a
+  visita e o bloco determinístico de `perguntaIgnorada` no topo do prompt, a
+  v26 parou de devolver pergunta de funil e passou a oferecer horário
+  concreto — e ofereceu **os mesmos dois horários quatro vezes seguidas**,
+  contra um cliente que escrevia "não faz sentido visitar sem saber o
+  preço". Medido nas mesmas 4 personas: "cliente teve de repetir" 22 na v25
+  e **22 na v26**; perguntas repetidas pela IA, 7 e 7. Um juiz a mais
+  assumiria (0/4 → 1/4), dentro do ruído.
+- **A lição:** o defeito não é QUAL jogada ela escolhe, é que ela não troca
+  de jogada quando a escolhida não funciona. A regra 27 já diz "oferta que o
+  cliente IGNOROU duas vezes não volta" — e a oferta voltou quatro vezes.
+  Enquanto o que o código injeta for "responda isto agora", o modelo repete
+  a mesma resposta; falta o bloco saber **o que já foi oferecido e recusado**
+  e proibir nominalmente aquela jogada.
+- **`perguntaIgnorada.ts` é a métrica do eval virando pendência do prompt.**
+  O eval mede "o cliente teve de repetir" desde sempre; a produção não
+  detectava nada. A régua é o comportamento dele, não uma rubrica: se ele
+  refaz a pergunta, ela não foi respondida.
+- **Um bug que chegou ao cliente:** quando a IA embrulha a resposta inteira
+  em `---`, a divisão de balões devolvia UM pedaço limpo e a condição
+  (`marcado.length > 1`) descartava a limpeza, mandando o texto CRU. O
+  cliente recebeu literalmente `--- Para ajudar, qual região você prefere?
+  ---`. Achado lendo transcrição do eval, não teste.

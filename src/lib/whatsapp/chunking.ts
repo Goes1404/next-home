@@ -152,10 +152,20 @@ export function dividirEmMensagens(textoOriginal: string): string[] {
     .map((parte) => parte.trim())
     .filter(Boolean);
 
-  // Mesmo respeitando o corte que a IA marcou, cada pedaço passa pela
-  // régua: um parágrafo duplo no meio de um texto gigante devolveria dois
-  // blocos enormes, e a promessa de tamanho morreria igual.
-  const pedacos = marcado.length > 1 ? marcado : [texto];
+  /*
+   * Mesmo respeitando o corte que a IA marcou, cada pedaço passa pela
+   * régua: um parágrafo duplo no meio de um texto gigante devolveria dois
+   * blocos enormes, e a promessa de tamanho morreria igual.
+   *
+   * O `>= 1` (era `> 1`) conserta um vazamento que chegou ao CLIENTE, visto
+   * no eval da v25: quando a IA embrulha a resposta inteira em marcadores
+   * (`--- texto ---`), a divisão devolve UM pedaço limpo — e a condição
+   * antiga descartava essa limpeza e mandava o texto CRU, com os traços.
+   * O cliente recebeu literalmente "--- Para ajudar, qual região você
+   * prefere? ---". Sem marcador nenhum o resultado é o mesmo de antes: a
+   * divisão devolve o texto inteiro num pedaço só.
+   */
+  const pedacos = marcado.length >= 1 ? marcado : [texto];
 
   const baloes: string[] = [];
   for (const pedaco of pedacos) {

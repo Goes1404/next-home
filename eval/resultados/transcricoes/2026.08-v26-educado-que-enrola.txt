@@ -1,0 +1,66 @@
+educado-que-enrola · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: achei lindo o empreendimento de vcs no instagram
+[1] Sofia:   Que bom que gostou! Pode me dizer qual região você prefere para eu indicar algo alinhado?
+Temos opções em Alphaville, Barueri e Osasco.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[2] Cliente: não sei, tô vendo ainda
+              e em Osasco, o que tem?
+[2] Sofia:   Em Osasco, tenho o Vila Eco Park, lançamento com 2 dormitórios e 1 vaga,
+e o Apartamento 1 ou 2 Dorms com 39m², também lançamento.
+Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: qual é o preço?
+              tem fotos deles?
+[3] Sofia:   Sei que o preço é importante, mas varia por unidade e condições de pagamento.
+Posso te mostrar as fotos dos dois para você avaliar melhor. Te mandei as fotos aqui embaixo.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-1-big-1597aad13631a310ed7b0fc07ffbb619.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-2-big-a9da807487ea43da180107514a2dbf8b.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-3-big-06248497c720b210e19a743a066ded5a.jpg
+
+[4] Cliente: muito legais as fotos
+              qual o preço deles?
+[4] Sofia:   Entendo que o preço é decisivo, e ele varia conforme unidade e condições.
+Posso agendar uma visita para apresentar o projeto e as condições de pagamento?
+Você prefere durante a semana ou no fim de semana?
+
+[5] Cliente: vou pensar
+              depois te falo
+[5] Sofia:   Tranquilo, fique à vontade para pensar.
+Quando quiser, posso agendar uma visita para apresentar tudo com calma e sem compromisso.
+
+[6] Cliente: obrigada pela paciência
+              vou ver aqui depois
+[6] Sofia:   Que bom, fico à disposição para quando quiser retomar. Posso te enviar o catálogo completo para facilitar sua avaliação?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[7] Cliente: pode mandar o catálogo sim
+              vou olhar depois
+[7] Sofia:   Te mandei o catálogo completo para você olhar com calma. Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[8] Cliente: obrigada, vou ver sim
+              depois te falo
+[8] Sofia:   Que bom, fico à disposição para quando quiser retomar a conversa.
+Se preferir, posso ajudar a esclarecer qualquer dúvida que surgir.
+Fique à vontade para me chamar quando quiser.
+
+[9] Cliente: ok, vou ver aqui com calma
+              depois te falo novamente
+[9] Sofia:   Fique à vontade para analisar com calma. Estou aqui para ajudar quando quiser retomar a conversa.
+
+[10] Cliente: ok, vou olhar o catálogo
+              depois te falo
+[10] Sofia:   Fique à vontade para analisar o catálogo com calma. Quando quiser, é só me chamar para avançarmos.
+
+[11] Cliente: ok, vou olhar com calma
+              depois te falo
+[11] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[12] Cliente: não sei ainda
+              vou pensar
+[12] Sofia:   Sem problemas, pensar com calma é essencial.
+Quando definir, me conta quantos dormitórios você imagina para eu ajudar melhor.

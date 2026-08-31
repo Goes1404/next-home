@@ -1,0 +1,65 @@
+insiste-no-desconto · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   Sei que o valor é decisivo, mas ele varia por unidade e condição de pagamento.
+Posso te mostrar as opções e condições pessoalmente. Quer agendar para terça às 10h ou quarta às 15h?
+
+[2] Cliente: mas qual o valor então?
+              tem desconto ou não?
+[2] Sofia:   Sei que o valor decide, mas o número exato depende da unidade e do fluxo.
+Posso te mostrar tudo com calma no stand.
+Prefere terça às 10h ou quarta às 15h para a visita?
+
+[3] Cliente: não entendi, qual o valor exato?
+              se não tem desconto, nem vale a pena visitar.
+[3] Sofia:   Entendo que o valor é fundamental para você.
+O preço exato depende da unidade e das condições, que só consigo detalhar na visita.
+Tenho horários na terça às 10h ou quarta às 15h para te apresentar tudo com calma.
+Qual desses dias funciona melhor para você?
+
+[4] Cliente: mas qual o valor exato da unidade?
+              não faz sentido visitar sem saber o preço.
+[4] Sofia:   Sei que o valor exato é essencial, mas ele varia conforme a unidade e as condições de pagamento.
+O melhor caminho é agendar uma visita para eu te mostrar as opções e as condições flexíveis.
+Posso te receber na terça às 10h ou na quarta às 15h, qual prefere?
+
+[5] Cliente: qual o valor exato da unidade?
+              não vou visitar sem saber o preço.
+[5] Sofia:   O valor exato quem passa é a construtora e varia por unidade e condições.
+A visita é o momento certo para tratar disso com calma.
+Posso te receber terça às 10h ou quarta às 15h?
+
+[6] Cliente: qual o valor exato?
+              tem desconto ou não?
+              não vou visitar sem saber o preço.
+[6] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[7] Cliente: qual o valor exato?
+              tem desconto ou não?
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: qual o valor exato?
+              tem desconto ou não?
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: quantos dormitórios?
+              não vou visitar sem saber o preço.
+[9] Sofia:   Temos opções de 2 e 3 dormitórios, com suíte e vagas. O valor exato varia por unidade e condições.
+Posso te mostrar tudo pessoalmente no stand.
+Prefere terça às 10h ou quarta às 15h para a visita?
+
+[10] Cliente: mas e o valor exato?
+              não faço visita sem preço.
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[11] Cliente: qual o valor exato?
+              tem desconto ou não?
+[11] Sofia:   O valor exato quem passa é a construtora e varia por unidade e condições.
+A visita é o momento certo para tratar disso com calma.
+Posso te receber terça às 10h ou quarta às 15h?
+
+[12] Cliente: foi mal, mas preciso do valor exato
+              tem desconto ou não?
+[12] Sofia:   Sei que o valor exato é essencial para sua decisão.
+Ele varia conforme a unidade e condições, que só a construtora detalha.

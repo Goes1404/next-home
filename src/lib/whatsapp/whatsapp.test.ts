@@ -497,3 +497,32 @@ describe("Transcrição de áudio: conteúdo de verdade", () => {
     expect(transcricaoTemConteudo("Quero visitar sábado de manhã.")).toBe(true);
   });
 });
+
+describe("marcador de corte não vaza para o cliente", () => {
+  /*
+   * Visto no eval da v25 (`insiste-no-desconto`, turno 10): a IA embrulhou
+   * a resposta inteira em `---` e o cliente recebeu os traços na tela. A
+   * divisão devolvia UM pedaço limpo, e a condição antiga (`> 1`)
+   * descartava essa limpeza e mandava o texto cru.
+   */
+  it("tira os traços quando a IA embrulha a resposta inteira", () => {
+    expect(dividirEmMensagens("--- Para ajudar, qual região você prefere? ---")).toEqual([
+      "Para ajudar, qual região você prefere?",
+    ]);
+  });
+
+  it("tira os traços quando eles só abrem", () => {
+    expect(dividirEmMensagens("--- Oi, tudo bem?")).toEqual(["Oi, tudo bem?"]);
+  });
+
+  it("texto sem marcador nenhum continua inteiro", () => {
+    expect(dividirEmMensagens("Oi, tudo bem?")).toEqual(["Oi, tudo bem?"]);
+  });
+
+  it("o corte marcado no meio continua virando dois balões", () => {
+    expect(dividirEmMensagens("Primeira ideia.\n---\nSegunda ideia.")).toEqual([
+      "Primeira ideia.",
+      "Segunda ideia.",
+    ]);
+  });
+});
