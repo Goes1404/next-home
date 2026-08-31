@@ -11,9 +11,9 @@ Conferido no banco e no código de produção:
 
 | fase | estado | como se sabe |
 |---|---|---|
-| **F0 — IDs do anúncio no lead** | **NÃO FEITA** | `leads` não tem `meta_ad_id`, `meta_conjunto_id` nem `meta_campanha_id`; só `meta_lead_id` e `anuncio_origem` (o NOME) |
+| **F0 — IDs do anúncio no lead** | **ENTREGUE 31/08** | migration 0064 aplicada; webhook grava os três IDs; `metaAnuncio.ts` + 7 testes |
 | F1 — gasto diário | **feita** | `0053_meta_ads_metricas.sql`, `/api/cron/meta-ads`, `src/lib/metaAds.ts` (re-lê 3 dias, upsert por `(dia, campanha_id)`) |
-| F2 — CPL do CRM | **bloqueada pela F0** | sem `meta_campanha_id` no lead não existe a junção por ID |
+| F2 — CPL do CRM | **desbloqueada** | a junção por ID existe; falta a consulta agregada e o número na tela |
 | F3 — tela do gestor | **feita** | `admin/anuncios/` |
 | F5 — link porteiro CTWA | feita (26/08) | `/wa/[campanha]`, `porteiro.ts`, 0052 |
 
@@ -59,16 +59,56 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
 
 ## Fases
 
-### F0 — Guardar os IDs do anúncio no lead (pré-requisito de tudo) — PENDENTE, e agora é o gargalo
+### F0 — Guardar os IDs do anúncio no lead — ENTREGUE em 31/08/2026
 
 - Migration: `leads.meta_ad_id`, `leads.meta_conjunto_id`,
   `leads.meta_campanha_id` (text, null).
 - No webhook, a busca do anúncio passa a pedir
   `fields=name,adset{id,name},campaign{id,name}` — uma chamada só, mesma
   latência.
-- Backfill dos leads existentes com `meta_lead_id` preenchido (a Graph API
-  ainda responde para leads de até 90 dias).
+- ~~Backfill dos leads existentes~~ — **não há o que preencher**: medido em
+  31/08, `leads` tem **ZERO** linhas com `meta_lead_id`. O webhook de Lead
+  Ads nunca produziu um lead, porque o cliente escolheu (26/08) o formato
+  Click-to-WhatsApp. Escrever um backfill para zero linhas seria código
+  especulativo; se um dia entrarem leads de formulário, a Graph API
+  responde por 90 dias e o backfill se escreve então.
 - A partir daqui, todo lead novo do Meta já nasce ligado à campanha.
+
+**Como ficou** (`0064`, `src/lib/metaAnuncio.ts`, `webhooks/meta/route.ts`):
+
+- Três colunas de texto em `leads` + índice PARCIAL em `meta_campanha_id`
+  (a maioria dos leads nunca virá de anúncio; índice total indexaria nulo).
+- Uma chamada só à Graph API, com `fields=name,adset{id,name},campaign{id,name}`.
+  Há teste afirmando que `adset` e `campaign` continuam na lista: se alguém
+  "simplificar" de volta para `fields=name`, a API segue devolvendo 200, o
+  lead segue nascendo, e só o CPL some — sem erro nenhum no caminho.
+- **Grants deliberadamente ausentes.** Em `leads` o INSERT é grant de tabela,
+  então o webhook já escreve nas colunas novas; o UPDATE foi revogado na
+  0007 e concedido coluna a coluna, e estas três ficam de fora — ninguém
+  edita atribuição de anúncio à mão, e permitir isso seria permitir
+  reescrever de onde veio um lead pago. Conferido em produção:
+  `anon` insere = true, `authenticated` atualiza = false.
+- **O ad_id passou a ter dois caminhos.** Ele chega em `change.value.ad_id`
+  e também nos dados do lead; antes só o primeiro era lido, então quando
+  ele vinha ausente o lead nascia sem atribuição mesmo com a Graph API
+  sabendo a origem.
+- **Nada disso lança.** Resposta ausente, JSON de outro formato ou ID que
+  não é dígito viram `null` — perder os IDs é recuperável, perder o LEAD
+  não é.
+
+**O que a F0 NÃO resolve, e é o que falta para o CPL de CTWA.** O formato
+que o cliente escolhe é o link porteiro `/wa/<campanha>`, que não passa
+pelo webhook de Lead Ads. Para esse caminho, a boa notícia é que
+`cliques_whatsapp.url_origem` já guarda a query string inteira: basta o
+anúncio apontar para
+
+    https://<site>/wa/<campanha>?mc={{campaign.id}}&ma={{ad.id}}
+
+(a Meta substitui as chaves no clique) e o ID da campanha passa a ser
+guardado **hoje, sem código novo**. O que falta é casar o clique com a
+conversa que nasce em seguida — proximidade temporal + a mensagem pronta,
+que é única por campanha (F5, item 3). Enquanto isso não existir, o CPL
+por ID vale para Lead Ads e o de CTWA continua por nome.
 
 ### F1 — Sincronizar o gasto diário — ENTREGUE
 

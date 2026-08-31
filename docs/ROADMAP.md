@@ -71,9 +71,16 @@ O que já está construído precisa ser PROVADO antes de escalar.
      janela — quatro proteções do número — e nenhum aviso de que o número
      saiu do ar. Três dias de silêncio passaram por normalidade. E o aviso
      tem um problema de desenho próprio: o canal natural para avisar o
-     corretor é o WhatsApp que acabou de cair. *Decisão pendente com o
-     usuário: por onde avisar (e-mail não existe no projeto; sobra a tela
-     do painel, que só é vista por quem abre).*
+     corretor é o WhatsApp que acabou de cair.
+
+     **Decisão tomada em 31/08: faixa no painel + e-mail.** A faixa
+     vermelha aparece no topo de toda tela do painel enquanto a instância
+     não estiver conectada — cobre quem abre. O e-mail (provedor novo,
+     tipo Resend, com env própria) alcança quem NÃO abre, que é exatamente
+     o caso deste incidente. Os dois juntos porque nenhum sozinho resolve:
+     painel sem e-mail repete o silêncio de três dias; e-mail sem faixa
+     não diz o que fazer quando a pessoa entra. *Ainda não implementado —
+     é o próximo item de código depois da Meta Ads F0.*
 
 - **H0.1 Verificar a memória ao vivo. ✅ FECHADO (31/08).** Não por teste
   manual, por dado: **81 mensagens do bot gravadas** desde a correção

@@ -2024,3 +2024,47 @@ sistema parado. A cadeia, reconstruída no banco:
 - **Cuidado com a contagem de conversa com fala do cliente**: na vida
   inteira são 46, e isso engana — quase todas são anteriores ao bot
   atender (eram conversas do corretor). Recortar por período é obrigatório.
+
+## Meta Ads F0 — os IDs do anúncio no lead (31/08/2026)
+
+- **Nome de anúncio não junta com gasto.** O webhook guardava
+  `anuncio_origem` (o NOME), e o gasto vive em `meta_ads_metricas` chaveado
+  por `campanha_id`. Renomear o anúncio no Gerenciador quebrava a
+  atribuição do passado sem ninguém saber. A 0064 põe `meta_ad_id`,
+  `meta_conjunto_id` e `meta_campanha_id` em `leads`.
+- **Em `leads`, INSERT é grant de TABELA e UPDATE é coluna a coluna.**
+  (`anon=arxtm`, sem `w`; 12 colunas com grant próprio de update.) Ou seja:
+  coluna nova nasce insertável — o webhook funciona sem grant nenhum — e
+  NÃO nasce editável pelo painel, que aqui é o comportamento desejado.
+  A regra da MEMORIA ("coluna nova editável precisa de grant") vale para o
+  UPDATE; para o INSERT o oposto é verdade. Conferir com
+  `has_column_privilege` antes de escrever grant que não precisa existir.
+- **Não conceder update em atribuição de anúncio** foi decisão, não
+  esquecimento: é o dado que diz de onde veio um lead PAGO, e tela que o
+  edita é tela que o falsifica.
+- **A F0 chegou depois da F1 e da F3.** O gasto (0053) e a tela de Anúncios
+  já existiam; faltava justamente a metade barata, e sem ela a tela não
+  podia mostrar o número principal. **Ao construir por fases, conferir se a
+  fase que é PRÉ-REQUISITO das outras foi de fato feita** — "F1 e F3
+  prontas" soa como progresso e escondia que o CPL era impossível.
+- **`leads` tem ZERO linhas com `meta_lead_id`.** O webhook de Lead Ads
+  nunca produziu um lead: o cliente escolheu Click-to-WhatsApp em 26/08. Por
+  isso o backfill previsto no roadmap NÃO foi escrito — backfill de zero
+  linhas é código especulativo. E é o alerta maior: a F0 sozinha não produz
+  dado nenhum no formato de anúncio que o cliente usa.
+- **Para o CTWA, a atribuição por ID sai de graça** e ninguém tinha
+  reparado: `cliques_whatsapp.url_origem` já grava `pathname + search`.
+  Basta o anúncio apontar para `/wa/<campanha>?mc={{campaign.id}}&ma={{ad.id}}`
+  — a Meta substitui as chaves no clique — e o ID passa a ser guardado sem
+  uma linha de código. Falta só casar clique ↔ conversa (F5, item 3).
+- **Regressão calada que o teste trava:** se alguém simplificar a chamada
+  de volta para `fields=name`, a Graph API responde 200, o lead nasce, e só
+  o CPL some. Por isso `CAMPOS_DO_ANUNCIO` é constante exportada e há teste
+  afirmando que `adset{id` e `campaign{id` continuam nela.
+- **ID da Meta às vezes vem number, às vezes string**, e a coluna é `text`:
+  sem validar, `null` viraria a string "null" e um objeto viraria
+  "[object Object]" — lixo que casa com nenhuma linha de gasto e só aparece
+  meses depois. `idValido` exige dígitos e devolve `null` para o resto.
+- **O `ad_id` tem dois caminhos** (`change.value.ad_id` e o `ad_id` dos
+  dados do lead) e só o primeiro era lido: lead com o segundo preenchido
+  nascia sem atribuição à toa.

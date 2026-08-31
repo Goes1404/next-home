@@ -915,6 +915,9 @@ export type Database = {
           etapa_alterada_em: string
           id: string
           mensagem: string | null
+          meta_ad_id: string | null
+          meta_campanha_id: string | null
+          meta_conjunto_id: string | null
           meta_lead_id: string | null
           nome: string
           orcamento_max: number | null
@@ -947,6 +950,9 @@ export type Database = {
           etapa_alterada_em?: string
           id?: string
           mensagem?: string | null
+          meta_ad_id?: string | null
+          meta_campanha_id?: string | null
+          meta_conjunto_id?: string | null
           meta_lead_id?: string | null
           nome: string
           orcamento_max?: number | null
@@ -979,6 +985,9 @@ export type Database = {
           etapa_alterada_em?: string
           id?: string
           mensagem?: string | null
+          meta_ad_id?: string | null
+          meta_campanha_id?: string | null
+          meta_conjunto_id?: string | null
           meta_lead_id?: string | null
           nome?: string
           orcamento_max?: number | null
