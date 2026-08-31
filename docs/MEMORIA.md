@@ -2199,3 +2199,33 @@ os itens.
 - **Sem backfill, de propósito.** Agendar para os 87 disparos antigos seria
   uma rajada de reengajamento para gente abordada há dias — e rajada é
   exatamente o que as quatro proteções do número existem para impedir.
+
+## A lista de apelidos pendentes (31/08/2026)
+
+- **Aviso dentro do editor não moveu nada em 5 dias.** O campo "Também
+  conhecido como" e o aviso de campo vazio subiram em 25 e 26/08; em 31/08
+  **nenhum empreendimento tinha sido editado desde 25/08 01h55** — antes do
+  próprio aviso. Aviso só é visto por quem já abriu aquela tela, e quem abre
+  um imóvel foi lá fazer outra coisa. **Quando um aviso não produz dado,
+  mudar o LUGAR vale mais que reforçar o texto**: a lista foi para a tela de
+  Imóveis, por onde o corretor passa.
+- **A urgência não é igual para todos, e a diferença é medível.** Dos 23
+  publicados sem apelido, **9 têm nome que é título de anúncio** ("Melhor
+  valor de metro da Região", "3 Dormitórios com Suite e 2 Vagas"): para
+  esses não existe nome que o cliente possa acertar, e o imóvel é invisível
+  para o bot. Os outros 14 têm nome de verdade e a perda é pequena. Por isso
+  a lista abre os 9 e esconde os 14 atrás de um clique — 23 linhas é lista, e
+  lista ninguém lê.
+- **A heurística foi calibrada contra os 23 nomes REAIS**, não imaginada:
+  quatro assinaturas (tipologia com unidade, chamada de oferta, substantivo
+  comum na abertura, referência a lugar vizinho) acertam os 9 e não acusam
+  nenhum dos 14. O caso que quase quebrou a regra é "Estação 267": tem
+  número, mas sem unidade depois — sem exigir `\b<dorm|vaga|m2>\b` ele
+  viraria falso positivo.
+- **A lista mostra bairro e construtora ao lado do nome**, e isso não é
+  enfeite: para "Melhor valor de metro da Região" o nome não diz nem qual
+  imóvel é. Sem essa âncora o corretor teria de abrir um por um para
+  descobrir de qual está falando.
+- **Custa zero consulta:** a tela de Imóveis já carrega o catálogo inteiro,
+  então a pendência é calculada do que está na mão. Cartão que só aparece
+  quando há pendência, pela mesma régua do contador de aba.

@@ -63,6 +63,15 @@ mais falas do cliente.
    editor. Nove dos 23 têm nome que é TÍTULO DE ANÚNCIO ("3 Dormitórios com
    Suite e 2 Vagas", "Melhor valor de metro da Região") — para esses o
    apelido não é opcional, é a única forma de o bot reconhecer o imóvel.
+   **[ENTREGUE 31/08] A lista está no painel**, na tela de Imóveis
+   (`ApelidosPendentes.tsx` + `apelidoPendente.ts`): os 23 de uma vez, com
+   os 9 títulos de anúncio abertos no topo e os 14 nomes de verdade atrás de
+   um clique, cada linha levando direto ao editor daquele imóvel. Mostra
+   bairro e construtora ao lado — para "Melhor valor de metro da Região" o
+   nome não diz nem qual imóvel é. Não custa consulta nova (a lista de
+   imóveis já está carregada na tela) e some sozinha quando a curadoria
+   acabar. **O que falta agora é só o trabalho humano: os apelidos são
+   conhecimento do corretor, não dedução do código.**
 
    *Texto original:* **Preencher `nomes_alternativos` dos cadastros reais.** A correção de
    grafia não alcança nome comercial diferente do nome do cadastro ("Dom
