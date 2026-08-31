@@ -49,8 +49,8 @@
 
 O que já está construído precisa ser PROVADO antes de escalar.
 
-- **H0.0 — [NOVO, 31/08] O número está FORA DO AR desde 28/08, e nada
-  avisou.** É o bloqueio de cima: sem WhatsApp pareado não há conversa,
+- **H0.0 — O número está FORA DO AR desde 28/08. ◑ O aviso foi construído;
+  o número continua caído** (só o corretor reconecta, pelo celular). É o bloqueio de cima: sem WhatsApp pareado não há conversa,
   não há dossiê, não há follow-up, não há piloto. A cadeia, reconstruída
   no banco:
 
@@ -73,7 +73,16 @@ O que já está construído precisa ser PROVADO antes de escalar.
      tem um problema de desenho próprio: o canal natural para avisar o
      corretor é o WhatsApp que acabou de cair.
 
-     **Decisão tomada em 31/08: faixa no painel + e-mail.** A faixa
+     **ENTREGUE em 31/08 — faixa no painel + e-mail** (`saudeDaConexao.ts`,
+     `avisoDeQueda.ts`, `FaixaConexao.tsx`, `email.ts`, migration 0065).
+     A decisão e o texto moram numa função pura só, lida pelos dois canais;
+     o e-mail sai de onde a queda é descoberta (o disparador), no máximo um
+     por queda. **Duas coisas ainda faltam para ele funcionar de verdade:**
+     `RESEND_API_KEY` na Vercel e o domínio verificado no Resend. Sem a
+     chave o envio falha fechado (registra no log e segue) — a faixa do
+     painel funciona de qualquer jeito.
+
+     **Decisão original, para o registro: faixa no painel + e-mail.** A faixa
      vermelha aparece no topo de toda tela do painel enquanto a instância
      não estiver conectada — cobre quem abre. O e-mail (provedor novo,
      tipo Resend, com env própria) alcança quem NÃO abre, que é exatamente
@@ -104,8 +113,8 @@ O que já está construído precisa ser PROVADO antes de escalar.
   liberada, (b) retenção curta com purga, ou (c) linha de trabalho dedicada
   por corretor.
 
-**Portão H0→H1:** número no ar com aviso quando cair + eval de conversa na
-v25 + 20 rótulos + decisão de privacidade tomada. *(A memória, que era o
+**Portão H0→H1:** número no ar (o aviso de queda já existe) + eval de
+conversa na v25 + 20 rótulos + decisão de privacidade tomada. *(A memória, que era o
 primeiro item deste portão, já passou.)*
 
 ### O que a medição de 31/08 acrescentou à fila

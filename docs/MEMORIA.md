@@ -2068,3 +2068,46 @@ sistema parado. A cadeia, reconstruída no banco:
 - **O `ad_id` tem dois caminhos** (`change.value.ad_id` e o `ad_id` dos
   dados do lead) e só o primeiro era lido: lead com o segundo preenchido
   nascia sem atribuição à toa.
+
+## O aviso de queda do número (0065, 31/08/2026)
+
+- **Carimbo de queda tem de ser gravado UMA VEZ, não a cada ciclo.**
+  `desconectado_em` é escrito com `.is("desconectado_em", null)` porque o
+  cron passa por ali a cada minuto: reescrevendo, um apagão de três dias
+  apareceria eternamente como "faz um minuto" — o defeito ficaria invisível
+  justamente por ser contínuo. É esse marco que sustenta o "faz 3 dias" do
+  aviso, e é a duração (não o horário) que faz o corretor entender o tamanho
+  do estrago.
+- **`conectado_em` NÃO serve para datar a queda**: é quando o número SUBIU.
+  No incidente de 28/08 os dois ficam a dois minutos de distância por
+  coincidência; em qualquer outra queda a conta sairia errada.
+- **A marca do e-mail só é gravada quando o e-mail SAIU.** Marcar em falha
+  transformaria uma indisponibilidade do provedor de e-mail em silêncio
+  permanente sobre a queda — o defeito que o recurso veio consertar.
+- **0 de 8 corretores têm `corretores.email`.** A coluna só é escrita por
+  `criarAcesso` (admin), e quase todo cadastro é anterior a ela. Sem a
+  reserva pelo e-mail do LOGIN (`auth.admin.getUserById`), o aviso por
+  e-mail nasceria sem destinatário — mais um caminho que existe e não
+  produz efeito. Só 1 dos 8 tem `user_id`, então hoje o alerta alcança uma
+  pessoa.
+- **Faixa no LAYOUT precisa de `revalidatePath(rota, "layout")`.** Layout
+  não re-executa ao navegar entre rotas irmãs: sem isso o corretor
+  reconecta e o alerta continua na tela até um recarregamento completo, e
+  "consertei e o alerta não sumiu" é a pior leitura possível de um alerta.
+- **Aviso em toda tela paga o custo em toda tela.** O caminho feliz da
+  `FaixaConexao` é UMA consulta (a linha da instância); a contagem da fila
+  só acontece quando já se sabe que há aviso. Consequência deliberada: a
+  faixa nunca mostra `fila_esperando` — esse estado não é apagão, e a tela
+  de Campanhas já o explica.
+- **Classe de Tailwind montada em tempo de execução não existe.**
+  `bg-${gravidade}-lavado` não gera classe nenhuma: o aviso sairia sem cor
+  exatamente no dia em que importa. As três variantes estão escritas por
+  extenso num `Record`.
+- **Queda de menos de 45 minutos não ganha "faz X tempo"** — oscilação de
+  internet virando alarme é como um aviso deixa de ser lido (mesma régua do
+  `evolucaoConversa`).
+- **Não existia caminho de e-mail no projeto** e a premissa que sustentava
+  isso ("todo aviso cabe na tela ou no WhatsApp") caiu junto com o número:
+  o canal natural para avisar era o que tinha caído. `email.ts` (Resend)
+  falha FECHADO sem `RESEND_API_KEY` e nunca lança — quem chama está no
+  meio de um ciclo de disparo.
