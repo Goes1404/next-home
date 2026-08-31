@@ -181,6 +181,15 @@ export type FiltroLeads = {
   arquivados?: boolean;
   /** Só faz sentido para o gestor; corretor comum já é recortado pela RLS. */
   corretorId?: string;
+  /**
+   * Leads de UMA campanha do Meta, por ID (roadmap Meta Ads, F2).
+   *
+   * Existe porque cada número da tela de Anúncios é clicável e cai aqui já
+   * recortado — número que não leva a lugar nenhum obriga o gestor a
+   * refazer o filtro à mão para ver de quem ele é feito. Por ID e nunca
+   * por nome: nome de campanha muda quando alguém renomeia no Gerenciador.
+   */
+  metaCampanhaId?: string;
   /** Datas `yyyy-mm-dd` vindas dos inputs de data da lista. */
   criadoDe?: string;
   criadoAte?: string;
@@ -278,6 +287,7 @@ export async function getPaginaDeLeads(
   if (filtro.criadoDe) query = query.gte("created_at", filtro.criadoDe);
   if (filtro.criadoAte) query = query.lte("created_at", `${filtro.criadoAte}T23:59:59`);
   if (filtro.semDono) query = query.is("corretor_id", null);
+  if (filtro.metaCampanhaId) query = query.eq("meta_campanha_id", filtro.metaCampanhaId);
   if (filtro.paradoDias && filtro.paradoDias > 0) {
     // "Parado" = a etapa não muda há N dias E o negócio ainda está em jogo.
     // Fechado/perdido parados são só história encerrada.

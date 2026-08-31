@@ -70,6 +70,11 @@ export default async function LeadsPage({
     etapas: etapaValida ? [etapaValida] : SEGMENTOS[segmento],
     recorte: !etapaValida && segmento === "hoje" ? "hoje" : undefined,
     corretorId: primeiroValor(params.corretor) || undefined,
+    // `?campanha=<id do Meta>` chega da tabela por campanha da tela de
+    // Anúncios. Sem este par, o link sairia da tela de Anúncios e a lista
+    // ignoraria o parâmetro EM SILÊNCIO, mostrando a carteira inteira —
+    // já aconteceu neste projeto com `?filtro=parados`.
+    metaCampanhaId: primeiroValor(params.campanha) || undefined,
     criadoDe: primeiroValor(params.de) || undefined,
     criadoAte: primeiroValor(params.ate) || undefined,
     semDono: semDono || undefined,

@@ -2229,3 +2229,33 @@ os itens.
 - **Custa zero consulta:** a tela de Imóveis já carrega o catálogo inteiro,
   então a pendência é calculada do que está na mão. Cartão que só aparece
   quando há pendência, pela mesma régua do contador de aba.
+
+## Meta Ads F2 — a junção por campanha (31/08/2026)
+
+- **Link de painel e filtro da lista nascem JUNTOS, ou o link é decorativo.**
+  A tabela por campanha manda para `/corretor/leads?campanha=<id>` e a lista
+  não lia esse parâmetro — teria caído na carteira inteira, em silêncio. É a
+  segunda vez neste projeto (a primeira foi `?filtro=parados` contra
+  `?parado=N`), e agora tem teste: `linksDeFiltro.test.ts` lê a tela de
+  Anúncios, extrai todo `\/corretor\/leads?<param>=` e reprova o que a
+  `leads/page.tsx` não lê.
+- **Campanha que gastou e NÃO trouxe lead precisa aparecer**, e ela some se
+  a tabela for montada a partir dos leads. Por isso a agregação parte da
+  união das duas chaves (gasto e lead), não de um lado só. O inverso também:
+  lead cuja campanha não gastou nada na janela de 30 dias continua contando
+  — o gasto pode ser anterior ao corte.
+- **Lead de anúncio SEM campanha é número de primeira classe.** Hoje é a
+  maioria por construção (o CTWA entra pelo link porteiro e nasce sem
+  `meta_campanha_id`). Somar em campanha nenhuma faz a tabela mentir para
+  baixo; esconder faz o gestor achar que a campanha rendeu menos. Fica numa
+  linha própria, com o motivo escrito.
+- **A divergência Meta × CRM só aparece quando existe.** "A Meta contou 12"
+  embaixo do nome é alerta de ingestão; se aparecesse em toda linha, mesmo
+  batendo, viraria paisagem — a régua do `evolucaoConversa` outra vez.
+- **Custo por VISITA e por FECHADO são o que justifica a tela.** A Meta sabe
+  quantos formulários foram preenchidos; o que aconteceu depois só existe
+  neste banco. Visita sai de `visita_agendada_em` (o FATO) e não da etapa,
+  que anda e volta.
+- **F2 pronta não é F2 funcionando:** `meta_ads_metricas` segue com 0 linhas
+  e nenhum lead tem `meta_campanha_id`, então a tabela não renderiza. O
+  código espera o dado, e o dado espera duas variáveis de ambiente.

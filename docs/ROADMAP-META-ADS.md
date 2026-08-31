@@ -13,7 +13,7 @@ Conferido no banco e no código de produção:
 |---|---|---|
 | **F0 — IDs do anúncio no lead** | **ENTREGUE 31/08** | migration 0070 aplicada; webhook grava os três IDs; `metaAnuncio.ts` + 7 testes |
 | F1 — gasto diário | **código no ar, NUNCA sincronizou** | `meta_ads_metricas` tem **0 linhas** (31/08). Faltam `META_ADS_ACCOUNT_ID` e `META_ADS_TOKEN` na Vercel — sem eles a rota devolve `nao_configurado` e não escreve nada (`metaAds.ts:101`) |
-| F2 — CPL do CRM | **parcial** | CPL do CRM e custo por lead quente JÁ estão na tela (`admin/anuncios/page.tsx:123-124`), mas são GLOBAIS; a junção POR CAMPANHA (`meta_campanha_id`) não é lida por consulta nenhuma |
+| F2 — CPL do CRM | **ENTREGUE 31/08** | junção por ID em `funilDeAnuncios.ts`: por campanha, custo por lead, por visita e por fechado, mais os leads sem campanha contados à parte. **Mostra vazio até a F1 sincronizar** |
 | F3 — tela do gestor | **feita, mostrando zeros** | `admin/anuncios/`; com F1 sem dado, `totalGasto = 0` e os KPIs saem como "—" |
 | F5 — link porteiro CTWA | **feita, sem tráfego real** | 11 cliques em `cliques_whatsapp`, TODOS de 26/08 numa janela de 1h (dois deles `anuncio/nao-existe`): é o teste de quem construiu. **0 leads** com `origem = 'meta/ctwa'` |
 
@@ -135,14 +135,38 @@ mostra travessão.
 - Agendar via pg_cron (`configurar_*`, mesmo padrão do disparo) ou cron da
   Vercel — 1x/dia cabe no Hobby.
 
-### F2 — O número que só o CRM tem — PARCIAL
+### F2 — O número que só o CRM tem — ENTREGUE em 31/08/2026
 
-Já está na tela (desde `f293c52` / `c7c1e98`, anteriores à F0): o KPI "Custo
-por lead (CRM)" e a seção "Qualidade dos leads de anúncio", com custo por
-lead quente e a faixa "não engajaram" que o roadmap pedia. **O que falta é o
-por CAMPANHA**: os dois CPLs da tela são globais (gasto total ÷ leads de
-anúncio), e `meta_campanha_id` — a coluna que a F0 criou — ainda não é lida
-por consulta nenhuma. Custo por visita e custo por fechado não existem.
+A junção por ID existe (`src/lib/admin/funilDeAnuncios.ts`, função pura com
+9 testes) e a tabela "Por campanha" passou a trazer o lado do CRM: leads,
+custo por lead, visitas, **custo por visita**, fechados e **custo por
+fechado** — os dois últimos a Meta não tem como calcular, porque o que
+acontece depois do clique só existe neste banco.
+
+Três decisões que a tabela carrega:
+
+- **Campanha que gastou e não trouxe lead aparece marcada** ("· sem lead").
+  É o achado que uma tela de custo existe para entregar, e ele some se a
+  lista for montada a partir dos leads.
+- **Os leads sem campanha identificada são contados À PARTE**, com o número
+  em destaque e a explicação. Hoje são a maioria por construção: o formato
+  que o cliente usa é Click-to-WhatsApp, que entra pelo link porteiro e
+  nasce sem `meta_campanha_id`. Somá-los em campanha nenhuma faria a tabela
+  mentir para baixo; escondê-los faria o gestor achar que a campanha rendeu
+  menos do que rendeu.
+- **A divergência Meta × CRM aparece só quando existe** ("a Meta contou 12"
+  embaixo do nome), porque é alerta de INGESTÃO — formulário duplicado,
+  telefone inválido, webhook fora do ar. Calado quando os dois batem, para
+  não virar ruído em toda linha.
+
+Cada número de leads leva à lista já filtrada (`?campanha=<id>`) — e o
+filtro foi implementado do outro lado junto, porque a lista não lia esse
+parâmetro e o link seria ignorado em silêncio (o defeito do `?filtro=parados`,
+que agora tem teste próprio em `linksDeFiltro.test.ts`).
+
+**A tabela mostra vazio até a F1 sincronizar**: sem `META_ADS_ACCOUNT_ID` e
+`META_ADS_TOKEN`, `meta_ads_metricas` fica em 0 linhas e não há gasto para
+juntar com nada. O código está pronto e esperando o dado.
 
 - View/consulta agregada: por campanha e por dia, `gasto ÷ leads do CRM`
   (join por `meta_campanha_id`), `gasto ÷ visitas agendadas` e

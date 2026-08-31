@@ -5,6 +5,7 @@ import { exigirGestorNaPagina } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { metaAdsConfigurado } from "@/lib/metaAds";
+import { agregarPorCampanha } from "@/lib/admin/funilDeAnuncios";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { BotaoSincronizar } from "./BotaoSincronizar";
 import { GraficoGastoDia } from "./GraficoGastoDia";
@@ -56,9 +57,15 @@ export default async function AnunciosPage() {
       .select("dia, campanha_id, campanha_nome, gasto, cliques, resultados_meta")
       .gte("dia", corteDia)
       .order("dia"),
+    /*
+     * Quatro colunas, não uma: a junção por campanha (F2) precisa do ID da
+     * campanha e dos dois FATOS do funil que só existem aqui — visita
+     * marcada e negócio fechado. Continua sendo consulta magra: nenhum
+     * join, nenhuma coluna de texto longo.
+     */
     sessao
       .from("leads")
-      .select("id")
+      .select("id, meta_campanha_id, visita_agendada_em, etapa")
       .in("origem", ["meta/leadads", "meta/ctwa"])
       .gte("created_at", corte.toISOString()),
     servico
@@ -110,15 +117,37 @@ export default async function AnunciosPage() {
     };
   });
 
-  const porCampanha = new Map<string, { nome: string; gasto: number; resultados: number }>();
+  const resultadosMetaPorCampanha = new Map<string, number>();
   for (const l of linhas) {
-    const atual = porCampanha.get(l.campanha_id) ?? { nome: l.campanha_nome, gasto: 0, resultados: 0 };
-    atual.nome = l.campanha_nome || atual.nome;
-    atual.gasto += l.gasto;
-    atual.resultados += l.resultados_meta ?? 0;
-    porCampanha.set(l.campanha_id, atual);
+    resultadosMetaPorCampanha.set(
+      l.campanha_id,
+      (resultadosMetaPorCampanha.get(l.campanha_id) ?? 0) + (l.resultados_meta ?? 0),
+    );
   }
-  const campanhas = [...porCampanha.values()].sort((a, b) => b.gasto - a.gasto);
+
+  /*
+   * A junção por ID (F2): o gasto de cada campanha encontra os leads que
+   * ela trouxe, e daí saem custo por lead, por visita e por fechado — os
+   * dois últimos a Meta não tem como calcular, porque o que acontece depois
+   * do formulário só existe neste banco.
+   */
+  const { campanhas, naoAtribuidos } = agregarPorCampanha({
+    gastos: linhas.map((l) => ({
+      campanhaId: l.campanha_id,
+      nome: l.campanha_nome ?? "",
+      gasto: l.gasto,
+    })),
+    leads: (leadsDeAnuncio ?? []).map((l) => ({
+      id: l.id,
+      metaCampanhaId: l.meta_campanha_id,
+      visitaAgendadaEm: l.visita_agendada_em,
+      etapa: l.etapa,
+    })),
+    dossies: (dossies ?? []).map((d) => ({
+      leadId: d.lead_id,
+      temperaturaLabel: d.temperatura_label,
+    })),
+  });
 
   const cplCrm = leadsCrm > 0 ? totalGasto / leadsCrm : null;
   const custoPorQuente = temperatura.quente > 0 ? totalGasto / temperatura.quente : null;
@@ -216,29 +245,106 @@ export default async function AnunciosPage() {
 
       {campanhas.length > 0 && (
         <section className="border-linha bg-superficie overflow-x-auto rounded-2xl border p-4">
-          <h2 className="text-fluid-base text-titulo mb-3 font-semibold">Por campanha (30 dias)</h2>
-          <table className="w-full min-w-[28rem] text-left text-fluid-sm">
+          <h2 className="text-fluid-base text-titulo mb-1 font-semibold">Por campanha (30 dias)</h2>
+          <p className="text-fluid-xs text-apoio mb-3">
+            Custo por visita e por fechado são o que a Meta não tem como calcular — o que acontece
+            depois do clique só existe aqui.
+          </p>
+          <table className="text-fluid-sm w-full min-w-[44rem] text-left">
             <thead>
               <tr className="text-tenue text-fluid-xs">
                 <th className="pb-2 font-medium">Campanha</th>
                 <th className="pb-2 text-right font-medium">Investido</th>
-                <th className="pb-2 text-right font-medium">Resultados (Meta)</th>
-                <th className="pb-2 text-right font-medium">Custo por resultado</th>
+                <th className="pb-2 text-right font-medium">Leads (CRM)</th>
+                <th className="pb-2 text-right font-medium">Por lead</th>
+                <th className="pb-2 text-right font-medium">Visitas</th>
+                <th className="pb-2 text-right font-medium">Por visita</th>
+                <th className="pb-2 text-right font-medium">Fechados</th>
+                <th className="pb-2 text-right font-medium">Por fechado</th>
               </tr>
             </thead>
             <tbody className="text-apoio">
               {campanhas.map((c) => (
-                <tr key={c.nome} className="border-linha border-t">
-                  <td className="text-titulo py-2 pr-3">{c.nome || "(sem nome)"}</td>
+                <tr key={c.campanhaId} className="border-linha border-t">
+                  <td className="text-titulo py-2 pr-3">
+                    {c.nome || "(sem nome)"}
+                    {/* Gasto sem lead nenhum é o achado que a tabela existe
+                        para entregar — não pode passar como uma linha igual
+                        às outras. */}
+                    {c.gasto > 0 && c.leads === 0 && (
+                      <span className="text-alerta text-fluid-xs ml-2 whitespace-nowrap">
+                        · sem lead
+                      </span>
+                    )}
+                    {/*
+                      Os DOIS números, e a diferença é informação: a Meta
+                      conta o formulário preenchido, nós contamos o lead que
+                      chegou ao banco. Divergência grande é alerta de
+                      INGESTÃO — formulário duplicado, telefone inválido,
+                      webhook fora do ar —, não detalhe. Fica calado quando
+                      os dois batem, para não virar ruído em toda linha.
+                    */}
+                    {(() => {
+                      const meta = resultadosMetaPorCampanha.get(c.campanhaId) ?? 0;
+                      if (meta === 0 || meta === c.leads) return null;
+                      return (
+                        <span className="text-tenue text-fluid-xs block">
+                          a Meta contou {meta}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="py-2 text-right tabular-nums">{formatarMoedaBRL(c.gasto)}</td>
-                  <td className="py-2 text-right tabular-nums">{c.resultados}</td>
+                  {/* Cada número leva à lista já filtrada: KPI que não leva
+                      a lugar nenhum obriga o gestor a refazer o filtro à
+                      mão para ver de quem ele é feito. */}
                   <td className="py-2 text-right tabular-nums">
-                    {c.resultados > 0 ? formatarMoedaBRL(c.gasto / c.resultados) : "—"}
+                    {c.leads > 0 ? (
+                      <Link
+                        href={`/corretor/leads?campanha=${encodeURIComponent(c.campanhaId)}`}
+                        className="hover:text-titulo underline underline-offset-2"
+                      >
+                        {c.leads}
+                      </Link>
+                    ) : (
+                      c.leads
+                    )}
+                  </td>
+                  <td className="text-titulo py-2 text-right font-medium tabular-nums">
+                    {c.custoPorLead === null ? "—" : formatarMoedaBRL(c.custoPorLead)}
+                  </td>
+                  <td className="py-2 text-right tabular-nums">{c.visitas}</td>
+                  <td className="py-2 text-right tabular-nums">
+                    {c.custoPorVisita === null ? "—" : formatarMoedaBRL(c.custoPorVisita)}
+                  </td>
+                  <td className="py-2 text-right tabular-nums">{c.fechados}</td>
+                  <td className="py-2 text-right tabular-nums">
+                    {c.custoPorFechado === null ? "—" : formatarMoedaBRL(c.custoPorFechado)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {/*
+            A honestidade da tabela. Hoje é a maioria por construção: o
+            formato que o cliente usa é Click-to-WhatsApp, que entra pelo
+            link porteiro e nasce sem ID de campanha. Somar esses leads em
+            campanha nenhuma faria a tabela mentir para baixo; escondê-los
+            faria o gestor achar que a campanha rendeu menos do que rendeu.
+          */}
+          {naoAtribuidos > 0 && (
+            <p className="text-fluid-xs text-apoio border-linha mt-3 border-t pt-3">
+              <strong className="text-titulo">
+                {naoAtribuidos} {naoAtribuidos === 1 ? "lead" : "leads"} de anúncio sem campanha
+                identificada
+              </strong>{" "}
+              — não entram em nenhuma linha acima. É o esperado para anúncios de
+              Click-to-WhatsApp: eles chegam pelo link e não pelo formulário da Meta. Para o ID
+              começar a vir, o anúncio precisa apontar para{" "}
+              <code className="text-corpo">/wa/&lt;campanha&gt;?mc=&#123;&#123;campaign.id&#125;&#125;</code>.
+            </p>
+          )}
         </section>
       )}
 
