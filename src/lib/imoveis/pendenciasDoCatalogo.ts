@@ -59,8 +59,13 @@ export interface ImovelDoCatalogo {
   bairro?: string | null;
   construtora?: string | null;
   nomesAlternativos?: string[];
-  plantas?: { id?: string }[];
-  tipologias?: { id?: string }[];
+  /*
+   * Só o TAMANHO destas listas importa — o módulo pergunta "tem alguma?",
+   * nunca "qual". A assinatura larga é deliberada: aperta-la a `{id}`
+   * obrigaria cada chamador a buscar uma coluna que ninguém lê.
+   */
+  plantas?: readonly unknown[];
+  tipologias?: readonly unknown[];
 }
 
 export interface ImovelComPendencias<T> {

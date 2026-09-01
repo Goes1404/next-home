@@ -376,7 +376,27 @@ faixas no mesmo dia.*
 Visão nas imagens recebidas (cliente manda print de anúncio → IA reconhece
 o imóvel) · ~~agenda real de visitas~~ (F0 acima; falta confirmação e
 reagendamento)
-· integração com portais · relatório semanal automático para o gestor.
+· integração com portais.
+
+**Relatório semanal do gestor — ENTREGUE em 01/09** (`relatorioSemanal.ts`,
+`/api/cron/relatorio-semanal`, 0076). Sai segunda de manhã por e-mail, e o
+assunto é o PIOR achado da semana, nunca "relatório semanal" — assunto
+genérico é o que faz o relatório não ser aberto, e relatório não aberto é
+igual a relatório que não existe. Só entra no corpo o que MUDOU ou o que
+está ruim: tempo de resposta bom não vira linha, porque repetir "9
+segundos" toda semana é o que transforma relatório em paisagem.
+
+Conferido com os números reais de 01/09, e ele produz exatamente os
+achados que custaram uma investigação manual inteira: WhatsApp fora do ar
+há 3 dias · 21% de cobertura · 88 disparos para 1 resposta · 6 visitas
+oferecidas e 1 marcada · 25 de 25 imóveis com cadastro incompleto.
+
+Agendado no **pg_cron**, não no cron da Vercel: no plano Hobby um `crons`
+acima do limite faz a Vercel recusar o deployment INTEIRO, em silêncio — o
+que já custou uma sessão aqui —, e a documentação não diz qual é o teto de
+jobs. O projeto já usa pg_cron para o disparo e os follow-ups pelo mesmo
+motivo. *Falta ligar: `select public.configurar_relatorio_semanal('<url>',
+'<CRON_SECRET>');` e a `RESEND_API_KEY`.*
 Nenhum destes entra antes de H1–H2 provarem o núcleo.
 
 ## Métricas-norte (medir toda semana, a partir de H1)

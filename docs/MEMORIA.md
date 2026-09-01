@@ -2529,3 +2529,34 @@ guarda anti-repetição.
 - **Ao auditar um item de roadmap, medir antes de aceitar o diagnóstico
   dele.** O item descrevia um problema que já tinha sido resolvido e não
   descrevia o que de fato dói hoje.
+
+## O relatório semanal do gestor (0076, 01/09/2026)
+
+- **Não foi para o cron da Vercel, e a decisão é de risco, não de gosto.**
+  A tentação era uma terceira entrada em `vercel.json`. No Hobby, um `crons`
+  acima do limite faz a Vercel **recusar o deployment inteiro** com
+  `cron_jobs_limits_reached`, sem log e sem webhook — o site só para de
+  atualizar. Isso já custou uma sessão aqui. A documentação da Vercel NÃO
+  diz o teto de jobs do plano, e "acho que são dois" não é base para
+  arriscar todos os deploys. Foi para o pg_cron, que o projeto já usa para
+  o disparo e os follow-ups exatamente por isso.
+- **O assunto do e-mail é o PIOR achado, nunca "relatório semanal".**
+  Assunto genérico é o que faz o relatório não ser aberto — e relatório não
+  aberto é igual a relatório que não existe.
+- **Número bom NÃO vira linha.** Tempo de resposta só aparece quando passa
+  de 60s; repetir "9 segundos" toda semana é o que transforma relatório em
+  paisagem. Mesma régua do `evolucaoConversa` e da faixa de queda.
+- **Piso de amostra antes de calcular porcentagem.** Cobertura só é
+  reportada com 5+ conversas: 1 de 2 vira "50%" e não significa nada —
+  relatório alarmista sobre amostra de dois queima a confiança no relatório
+  inteiro.
+- **A conta do catálogo é a MESMA função da tela** (`pendenciasDoCatalogo`).
+  Duas contas do "o que falta" divergiriam, e o número que o gestor lê no
+  e-mail tem de ser o que ele vê ao abrir o painel.
+- **Conferido com os números reais antes de subir**, e é essa a prova que
+  importa: com o estado de 01/09 ele produz os cinco achados que custaram
+  uma investigação manual inteira — queda de 3 dias, 21% de cobertura, 88
+  disparos para 1 resposta, 6 visitas para 1 marcada, catálogo incompleto.
+- **Concordância tem teste.** "1 marcadas" e "há 1 dias" num relatório
+  para o dono da empresa custam autoridade — e é o tipo de erro que passa
+  por revisão humana e não passa por `toBe`.
