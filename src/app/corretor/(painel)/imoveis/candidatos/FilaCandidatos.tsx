@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import {
   organizarFila,
@@ -152,9 +153,9 @@ export function FilaCandidatos({ candidatos }: { candidatos: readonly Candidato[
                 : `${fila.paraCadastrar.length} para cadastrar`}
             </h2>
             <p className="text-fluid-xs text-corpo mt-1.5 leading-relaxed text-pretty">
-              O cadastro em si ainda é feito fora do painel — a foto, a planta e a descrição vêm do
-              material da construtora, e é por ele que o imóvel entra na vitrine e no atendimento da
-              assistente.
+              &ldquo;Criar cadastro&rdquo; abre o editor com o essencial já preenchido. O imóvel
+              nasce despublicado: foto, planta e ficha entram lá — inclusive pela importação do PDF
+              da construtora — e ele só vai para o site quando você publicar.
             </p>
           </div>
           <ul>
@@ -164,7 +165,7 @@ export function FilaCandidatos({ candidatos }: { candidatos: readonly Candidato[
                 className="border-linha flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-5 py-3.5 last:border-b-0 sm:px-6"
               >
                 <Cabecalho c={c} />
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3">
                   <LinkDaFonte href={c.link} />
                   <button
                     type="button"
@@ -174,6 +175,12 @@ export function FilaCandidatos({ candidatos }: { candidatos: readonly Candidato[
                   >
                     voltar à fila
                   </button>
+                  <Link
+                    href={`/corretor/imoveis/novo?candidato=${c.id}`}
+                    className="border-acento-linha text-titulo hover:bg-elevado text-fluid-xs inline-flex min-h-11 items-center rounded-xl border px-4 font-medium transition-colors"
+                  >
+                    Criar cadastro
+                  </Link>
                 </div>
               </li>
             ))}

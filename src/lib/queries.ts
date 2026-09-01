@@ -37,7 +37,7 @@ import type {
 // (via `corretor_destaques`, tabela ponte many-to-many), e sem o nome do
 // FK o PostgREST recusa o embed por ambiguidade — a leitura de qualquer
 // empreendimento passa a falhar com "more than one relationship was found".
-const SELECT_EMPREENDIMENTO = `
+export const SELECT_EMPREENDIMENTO = `
   *,
   corretor:corretores!empreendimentos_corretor_id_fkey(id, nome, creci, whatsapp, foto_url, video_url),
   tipologias(*),

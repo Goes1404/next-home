@@ -30,6 +30,8 @@
  * é `candidatosDoCatalogo.ts`; aqui só mora a regra, que é o que se testa.
  */
 
+import { STATUS_LABEL, type StatusObra } from "@/lib/types";
+
 export type DecisaoCandidato = "pendente" | "cadastrar" | "descartado" | "ja_temos";
 
 export interface Candidato {
@@ -105,4 +107,48 @@ export function resumoDoCandidato(c: Candidato): string {
  */
 export function contarPendentes(candidatos: readonly Candidato[]): number {
   return candidatos.filter((c) => c.decisao === "pendente").length;
+}
+
+/**
+ * O `status_obra` da fonte virado no enum do nosso cadastro.
+ *
+ * A fonte escreve em português de gente ("Em construção", "Lançamento"), e
+ * é o mesmo texto que `STATUS_LABEL` produz — então a tradução é o rótulo
+ * ao contrário, sem tabela paralela. Comparação sem acento e sem caixa
+ * porque o levantamento não promete grafia.
+ *
+ * Sem correspondência, cai em `lancamento`, que é o default da coluna. O
+ * erro aqui é barato e visível: o formulário mostra o estágio num select e
+ * o corretor corrige antes de criar. Chutar "pronto para morar" é que seria
+ * caro — foi assim que a assistente afirmou a um cliente que um imóvel em
+ * obra estava pronto.
+ */
+export function statusDoCandidato(bruto: string | null): StatusObra {
+  const chave = (t: string) =>
+    t
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+  if (!bruto) return "lancamento";
+  const alvo = chave(bruto);
+
+  const achado = (Object.entries(STATUS_LABEL) as [StatusObra, string][]).find(
+    ([, rotulo]) => chave(rotulo) === alvo,
+  );
+
+  return achado?.[0] ?? "lancamento";
+}
+
+/**
+ * Os bairros que a fonte listou. O apto.vc devolve "Aldeia, Nova Aldeinha"
+ * numa string só — nosso cadastro tem UM bairro, porque é ele que a busca
+ * e o mapa usam. Quem escolhe é o corretor, no formulário.
+ */
+export function bairrosDoCandidato(c: Candidato): string[] {
+  return (c.bairro ?? "")
+    .split(",")
+    .map((b) => b.trim())
+    .filter(Boolean);
 }

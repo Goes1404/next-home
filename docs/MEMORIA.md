@@ -2665,3 +2665,72 @@ Revisão do próprio trabalho da noite, e ela achou coisa real.
 - **A rota mora em `/corretor/imoveis/candidatos`** para o menu casar por
   prefixo e "Imóveis" continuar aceso sem um oitavo destino. O que é
   parente vira sub-rota, não item de menu — a régua da reforma de bolso.
+
+## Criar imóvel pelo painel — e o buraco de RLS que o impedia (0081-0082)
+
+- **O painel nunca teve tela de criar imóvel, e havia uma segunda razão
+  além da tela faltando: o corretor não podia LER um imóvel não
+  publicado.** `empreendimentos` tinha policy de INSERT e de UPDATE para o
+  corretor logado e UMA de SELECT — `publicado = true`, para o público.
+  Como `publicado` nasce `false` (o certo: imóvel sem ficha não entra na
+  vitrine), o cadastro novo sumiria no mesmo instante em que fosse criado.
+  **Cria e some.** A 0081 dá ao corretor logado o SELECT de tudo.
+- **O buraco já mordia sem cadastro novo.** O editor tem o interruptor de
+  publicar/despublicar desde sempre: despublicar tornava o imóvel invisível
+  para quem despublicou, sem caminho de volta pela tela. Os dois duplicados
+  despublicados na 0046 estavam exatamente nesse estado.
+- **A tela já esperava o rascunho.** `ListaImoveisClient` tem o selo
+  "Rascunho" e o filtro "Apenas Publicados" desde antes — escritos para um
+  estado que a consulta e a RLS tornavam impossível. Código que trata um
+  caso que nunca chega é sinal de que alguém já pensou nele e a camada de
+  baixo não acompanhou.
+- **Duas leituras do catálogo, de propósito** (`catalogoDoPainel.ts`):
+  `getEmpreendimentos()` é a VITRINE (cliente anônimo, só publicado, com a
+  troca de corretor pelo link de indicação); `getEmpreendimentosDoPainel()`
+  é a EDIÇÃO (cliente de sessão, tudo, sem a troca de corretor). Misturar
+  as duas foi o que deixou o painel sem enxergar o próprio rascunho.
+- **A lista de PENDÊNCIAS continua só com os publicados.** O cartão promete
+  o que "a assistente sente na conversa", e ela só vê publicado — enchê-lo
+  de rascunho recém-criado, incompleto por definição, esvaziaria a promessa.
+- **Pré-preencher não é criar de um clique, e o bairro é a razão.** O
+  levantamento devolve "Aldeia, Nova Aldeinha, Vila Militar" numa string
+  só; o cadastro tem UM bairro, que é o que a busca e o mapa usam. Criar
+  direto poria os três no campo e o imóvel não seria achado por nenhum. O
+  formulário oferece as opções e o corretor escolhe.
+- **O formulário pede o MÍNIMO.** Foto, planta, tipologia, descrição e lazer
+  já têm editor pronto; um formulário grande seria uma segunda tela para o
+  mesmo dado, e duas telas para o mesmo dado divergem (a lição do
+  `turnoDeAtendimento`, agora no painel).
+- **Vincular o candidato não pode derrubar o cadastro.** Se o `update` em
+  `catalogo_candidatos` falhar, o imóvel já existe: devolver erro faria o
+  corretor tentar de novo e duplicar o que deu certo. Falha vira log.
+
+### A varredura de grants do `anon` (0082)
+
+- **30 das 31 tabelas do `public` davam INSERT, UPDATE, DELETE e TRUNCATE ao
+  `anon`.** `leads` era a única exceção, e só porque a 0022 já tinha feito
+  isso para ela. É o default do Supabase — o mesmo que a 0077 achou nas
+  views e a 0080 na fila de candidatos. Aqui foi a varredura inteira.
+- **Não era explorável, e essa distinção importa para não exagerar o
+  achado.** A RLS segurava: conferido em `pg_policies`, as únicas policies
+  de escrita que o `anon` alcança são duas, e as duas são o produto
+  (formulário público de lead e clique de WhatsApp). O problema é ficar com
+  UMA linha de defesa numa chave que vai no bundle por desenho — basta uma
+  policy futura sem `to authenticated` e a porta abre calada.
+- **Conferido nos DOIS sentidos**, como manda a 0077: sobra
+  `leads:INSERT, cliques_whatsapp:INSERT` e nada mais; e os dois inserts
+  públicos foram exercitados com `set local role anon` dentro de
+  `begin; … rollback;`.
+- **`pg_tables` não lista VIEW.** A primeira passada deixou as duas views de
+  métrica com grant de escrita — a 0077 tinha tirado o SELECT delas e parado
+  aí. Ao varrer grants, varrer `pg_views` também.
+- **`tabelasSeguras.test.ts` cobra o que vier DEPOIS.** A varredura é um
+  laço sobre `pg_tables` no instante em que rodou; tabela criada em
+  migration posterior herda o default de novo. A guarda foi provocada com
+  uma tabela falsa antes de entrar — guarda nova que não é provocada uma vez
+  é só otimismo.
+- **Achado de passagem, não corrigido:** `/api/webhooks/meta` faz `upsert`
+  em `leads` com o cliente ANÔNIMO, e o `anon` só tem INSERT — o caminho de
+  conflito falharia. Nunca foi exercitado porque `leads` tem zero linhas com
+  `meta_lead_id` (o cliente usa Click-to-WhatsApp). Quando o Lead Ads
+  entrar, esse upsert precisa da service key.

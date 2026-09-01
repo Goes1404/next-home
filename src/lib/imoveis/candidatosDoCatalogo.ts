@@ -66,3 +66,29 @@ export async function contarCandidatosPendentes(): Promise<number> {
 
   return count ?? 0;
 }
+
+/** Um candidato só, para pré-preencher o formulário de cadastro. */
+export async function getCandidato(id: string): Promise<Candidato | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("catalogo_candidatos")
+    .select("id, ref_externa, nome, bairro, status_obra, dormitorios, area, link, decisao, motivo")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    refExterna: data.ref_externa,
+    nome: data.nome,
+    bairro: data.bairro,
+    statusObra: data.status_obra,
+    dormitorios: data.dormitorios,
+    area: data.area,
+    link: data.link,
+    decisao: data.decisao as DecisaoCandidato,
+    motivo: data.motivo,
+  };
+}

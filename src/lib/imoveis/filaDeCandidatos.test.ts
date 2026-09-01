@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  bairrosDoCandidato,
   contarPendentes,
   organizarFila,
   precisaConferir,
   resumoDoCandidato,
+  statusDoCandidato,
   type Candidato,
 } from "./filaDeCandidatos";
 
@@ -112,5 +114,37 @@ describe("contarPendentes", () => {
         candidato({ nome: "d" }),
       ]),
     ).toBe(2);
+  });
+});
+
+describe("statusDoCandidato", () => {
+  it("traduz o texto da fonte para o enum do cadastro", () => {
+    expect(statusDoCandidato("Em construção")).toBe("em_construcao");
+    expect(statusDoCandidato("Lançamento")).toBe("lancamento");
+    expect(statusDoCandidato("Pronto para morar")).toBe("pronto_para_morar");
+  });
+
+  it("não depende de acento nem de caixa", () => {
+    expect(statusDoCandidato("EM CONSTRUCAO")).toBe("em_construcao");
+    expect(statusDoCandidato("  lancamento ")).toBe("lancamento");
+  });
+
+  it("cai no default da coluna quando não reconhece", () => {
+    // Errar aqui é barato: o formulário mostra o estágio num select e o
+    // corretor corrige antes de criar. Chutar "pronto para morar" seria caro.
+    expect(statusDoCandidato("Obras avançadas")).toBe("lancamento");
+    expect(statusDoCandidato(null)).toBe("lancamento");
+  });
+});
+
+describe("bairrosDoCandidato", () => {
+  it("separa o que a fonte manda numa string só", () => {
+    expect(
+      bairrosDoCandidato(candidato({ nome: "Royal", bairro: "Aldeia, Nova Aldeinha, Vila Militar" })),
+    ).toEqual(["Aldeia", "Nova Aldeinha", "Vila Militar"]);
+  });
+
+  it("devolve lista vazia quando não há bairro", () => {
+    expect(bairrosDoCandidato(candidato({ nome: "Sem bairro" }))).toEqual([]);
   });
 });

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getEmpreendimentos } from "@/lib/queries";
+import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { contarCandidatosPendentes } from "@/lib/imoveis/candidatosDoCatalogo";
 import { PendenciasDoCatalogo } from "./_componentes/PendenciasDoCatalogo";
 import { ListaImoveisClient } from "./ListaImoveisClient";
@@ -13,9 +13,17 @@ export const dynamic = "force-dynamic";
 
 export default async function ImoveisPage() {
   const [imoveis, candidatosPendentes] = await Promise.all([
-    getEmpreendimentos(),
+    getEmpreendimentosDoPainel(),
     contarCandidatosPendentes(),
   ]);
+
+  /*
+   * A lista mostra rascunho (é o painel); a lista de PENDÊNCIAS, não. O
+   * cartão promete o que "a assistente sente na conversa", e ela só enxerga
+   * o que está publicado — encher aquilo com rascunho recém-criado, que é
+   * incompleto por definição, esvaziaria a promessa do cartão.
+   */
+  const publicados = imoveis.filter((i) => i.publicado ?? true);
 
   return (
     <div className="space-y-6">
@@ -32,12 +40,20 @@ export default async function ImoveisPage() {
           </p>
         </div>
         {/* Links por imóvel saíram do menu (roadmap: 7 destinos); o caminho é por aqui. */}
-        <Link
-          href="/corretor/links"
-          className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo inline-flex min-h-10 items-center rounded-full border px-4 transition-colors"
-        >
-          Links por imóvel
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/corretor/imoveis/novo"
+            className="text-fluid-sm border-acento-linha text-titulo hover:bg-elevado inline-flex min-h-10 items-center rounded-full border px-4 font-medium transition-colors"
+          >
+            + Novo imóvel
+          </Link>
+          <Link
+            href="/corretor/links"
+            className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo inline-flex min-h-10 items-center rounded-full border px-4 transition-colors"
+          >
+            Links por imóvel
+          </Link>
+        </div>
       </div>
 
       {/*
@@ -45,7 +61,7 @@ export default async function ImoveisPage() {
         cartão some sozinho quando o cadastro estiver completo — e a lista de
         imóveis já está carregada aqui, então isto não custa consulta nenhuma.
       */}
-      <PendenciasDoCatalogo imoveis={imoveis} />
+      <PendenciasDoCatalogo imoveis={publicados} />
 
       {/*
         O cartão só existe enquanto há decisão pendente — contador que vive
