@@ -60,7 +60,7 @@ describe("compararRodadas", () => {
     const depois = antes.map((r) => ({ ...r, clienteRepetiu: r.clienteRepetiu - 8 }));
     const r = compararRodadas(antes, depois, { juizDecide: true });
     expect(r.conclusao).toMatch(/AVANÇO/);
-    expect(r.conclusao).toContain("o cliente teve de repetir");
+    expect(r.conclusao).toContain("conversas em que o cliente repetiu");
   });
 
   it("juiz não independente NÃO decide — só as determinísticas contam", () => {

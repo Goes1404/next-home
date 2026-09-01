@@ -48,11 +48,11 @@ export interface Metrica {
 export const METRICAS: Metrica[] = [
   {
     chave: "clienteRepetiu",
-    rotulo: "o cliente teve de repetir",
+    rotulo: "conversas em que o cliente repetiu",
     melhorQuando: "menor",
   },
-  { chave: "iaRepetiu", rotulo: "a IA repetiu pergunta", melhorQuando: "menor" },
-  { chave: "respostasRepetidas", rotulo: "respostas quase idênticas", melhorQuando: "menor" },
+  { chave: "iaRepetiu", rotulo: "conversas em que a IA repetiu", melhorQuando: "menor" },
+  { chave: "respostasRepetidas", rotulo: "conversas com resposta idêntica", melhorQuando: "menor" },
   {
     chave: "maiorSequenciaSemNovidade",
     rotulo: "turnos seguidos sem assunto novo",

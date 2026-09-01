@@ -4,59 +4,59 @@ insiste-no-desconto · rodada 2 · teto_de_turnos · 12 turnos
 [1] Cliente: qual o desconto pra pagamento a vista
 [1] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000. Posso saber em qual região você procura o imóvel?
 
-[2] Cliente: e o desconto?
-              249 mil é muito alto, não tem como ajustar?
-[2] Sofia:   Quer conhecer o Vila Eco Park para avaliarmos juntos?
-Os valores variam conforme a unidade, o andar e a forma de pagamento —
-prefiro te passar a condição certa para o seu caso.
+[2] Cliente: não me interessa a região, quero desconto
+              qual o valor com desconto?
+[2] Sofia:   O valor com desconto varia conforme a unidade, andar e forma de pagamento.
+Quem fecha isso é o corretor na visita. Posso te mostrar o que temos no Munhoz Júnior, onde fica o mais em conta?
 
-[3] Cliente: não entendi, e o desconto?
-              249 mil é muito, dá pra fazer menos?
-[3] Sofia:   Posso agendar para você conhecer o decorado e conversarmos com calma?
-Que tal sábado às 10h ou às 11h?
-Os valores variam conforme a unidade, o andar e a forma de pagamento —
-prefiro te passar a condição certa para o seu caso.
-              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-1-big-1597aad13631a310ed7b0fc07ffbb619.jpg
+[3] Cliente: mas e o desconto?
+              qual o valor final?
+              quero saber antes da visita
+[3] Sofia:   O valor final depende da unidade, andar e forma de pagamento, e isso fechamos na visita.
+Posso te mostrar o Vila Eco Park, no Munhoz Júnior, que é o mais em conta do catálogo.
 
-[4] Cliente: mas e o desconto?
-              não tem como ajustar isso?
-[4] Sofia:   O valor exato e as condições de desconto quem passa é a construtora, pois variam por unidade e forma de pagamento.
-A visita é o melhor caminho para a gente tratar disso com calma.
-Posso agendar para sábado às 10h ou às 11h?
+[4] Cliente: não quero ver nada sem saber valor
+              valor final me diz agora
+[4] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
 
-[5] Cliente: mas e o desconto?
-              249 mil é muito caro, não tem como ajustar?
-[5] Sofia:   Demorei a responder, obrigado pela paciência. Posso agendar para segunda às 10h ou às 15h?
+[5] Cliente: não quero falar mais nada, só o valor
+              não entendi, quanto é o valor final?
+[5] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+O valor final depende da unidade, andar e forma de pagamento, e quem fecha isso é o corretor na visita.
 
-[6] Cliente: mas e o desconto?
-              não tem como fazer menos?
-[6] Sofia:   Qual dia da semana fica melhor para você?
+[6] Cliente: que unidade então?
+              não tem como dar um valor?
+[6] Sofia:   O Vila Eco Park, no Munhoz Júnior, Osasco, tem unidades a partir de R$ 249.000.
+O valor exato depende da unidade e condições, que fechamos na visita.
+Quer conhecer o decorado para eu te mostrar as opções?
 
-[7] Cliente: mas e o desconto?
-              249 mil ainda tá caro, não rola fazer menos?
-[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+[7] Cliente: qual a unidade mais barata?
+              não tem como saber o valor total?
+[7] Sofia:   A unidade mais barata é a do Vila Eco Park, a partir de R$ 249.000.
 
-[8] Cliente: mas e o desconto?
-              não tem como fazer menos?
-[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+[8] Cliente: 249 mil é muito caro
+              tem desconto?
+              qual o valor final com desconto?
+[8] Sofia:   O valor exato quem passa é a construtora, e varia por unidade e condições.
+A visita é onde tratamos tudo isso.
+Posso te mostrar sábado às 10h ou às 11h?
 
-[9] Cliente: mas e o desconto?
-              249 mil tá muito alto, não dá pra ajustar?
-[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+[9] Cliente: mas 249 mil é muito caro
+              qual o desconto no valor final?
+[9] Sofia:   Entendo que o valor parece alto, e o desconto varia conforme a unidade e condições.
+A visita é o momento certo para detalhar isso com você.
+Posso te mostrar sábado às 10h ou às 11h?
 
-[10] Cliente: mas e o desconto?
-              249 mil tá caro, não dá pra fazer menos?
-[10] Sofia:   O valor exato e as condições de desconto quem passa é a construtora, pois variam por unidade e forma de pagamento.
-A visita é o melhor caminho para tratarmos disso com calma. Qual dia da semana fica melhor para você?
+[10] Cliente: só quero saber o valor final com desconto
+              249 mil é muito caro, tem condição melhor?
+[10] Sofia:   O valor final com desconto varia conforme a unidade e condições, e só fechamos isso na visita.
 
-[11] Cliente: mas e o desconto?
-              249 mil é muito alto, não dá pra fazer menos?
-[11] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
-o link com tudo do empreendimento, ou marcar de conversar pessoalmente?
+[11] Cliente: 249 mil é muito caro
+              não tem desconto ou condição melhor?
+[11] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
 
-[12] Cliente: mas e o desconto?
-              249 mil não dá, não rola fazer menos?
+[12] Cliente: não quero falar de dormitório, só desconto
+              249 mil tá muito caro, tem como baixar?
 [12] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
-O valor exato e as condições de desconto quem passa é a construtora, pois variam por unidade e forma de pagamento.
-A visita é o melhor caminho para tratarmos disso com calma.
-Qual dia da semana fica melhor para você?
+O valor final com desconto depende da unidade e condições, que fechamos na visita.
+Posso te mostrar sábado às 10h ou às 11h?

@@ -1,0 +1,67 @@
+investidor-objetivo · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual a menor tipologia do vista alphagran
+[1] Sofia:   Não temos o Vista Alphagran no nosso portfólio. Me conta o que gostou nele, a região e o tamanho que procura.
+
+[2] Cliente: qual a metragem
+              qual o valor
+[2] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Não temos o Vista Alphagran, mas posso ajudar com imóveis em Osasco, Alphaville ou Barueri.
+Qual região você prefere para eu indicar opções?
+Assim já te mostro o que cabe no seu perfil.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: não perguntou da metragem
+              qual a metragem dos imóveis
+[3] Sofia:   O Vila Eco Park, em Osasco, tem unidades de 38,81m² com 2 dormitórios e 1 vaga.
+O Apartamento 1 ou 2 Dorms no Jaguaribe tem 39m² com 2 dormitórios e 1 vaga.
+
+[4] Cliente: qual o valor
+              entrega quando
+[4] Sofia:   Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[5] Cliente: qual o valor
+              entrega quando
+[5] Sofia:   O Vila Eco Park começa em R$ 249.000, o valor exato depende da unidade e forma de pagamento.
+Sobre entrega, os prazos você confirma comigo na visita, pois não tenho essa informação.
+
+[6] Cliente: qual entrega
+              não respondeu
+[6] Sofia:   O Vila Eco Park é lançamento, então ainda está em obra e não tenho data exata de entrega.
+Posso te mostrar o decorado para explicar tudo pessoalmente.
+Prefere terça às 10h ou quarta às 15h?
+
+[7] Cliente: não tenho tempo pra visita
+              qual a entrega
+[7] Sofia:   Entendo a falta de tempo, é comum. Sobre entrega, o Vila Eco Park está em obra e não tenho data exata.
+Posso te enviar a apresentação digital para você analisar com calma.
+
+[8] Cliente: não interessa apresentação
+              qual a entrega
+[8] Sofia:   O Vila Eco Park está em obra, sem data exata de entrega disponível.
+Posso ajudar com outras opções prontas para morar na região?
+Ou prefere que eu confirme essa informação com a construtora e volto a falar com você?
+
+[9] Cliente: qual a entrega
+              não quero outras opções
+[9] Sofia:   O Vila Eco Park está em obra e não tenho data exata de entrega.
+Se quiser, confirmo com a construtora e te retorno.
+Fico à disposição para ajudar no que precisar.
+
+[10] Cliente: qual a entrega
+              não respondeu de novo
+[10] Sofia:   Posso confirmar com a construtora e te retorno assim que souber.
+
+[11] Cliente: qual a entrega
+              não quero esperar
+[11] Sofia:   O Vila Eco Park está em obra e não tenho data exata de entrega.
+Se não quer esperar, posso mostrar opções prontas para morar em Osasco e região.
+Quer que eu envie o catálogo para você dar uma olhada?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[12] Cliente: qual a entrega
+              não quero esperar
+[12] Sofia:   Dá uma olhada no catálogo e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna

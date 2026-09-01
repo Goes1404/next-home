@@ -1,0 +1,70 @@
+elogiou-o-terra-alta · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: gostei do Terra Alta, me fala mais dele
+[1] Sofia:   O Terra Alta é para quem busca conforto no Jardim Tupanci, Barueri.
+São apartamentos de 52m², 1 dormitório com suíte e 2 vagas.
+O valor começa em R$ 455.000, e varia conforme o andar e forma de pagamento.
+Posso te enviar as fotos para você conhecer melhor?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+
+[2] Cliente: manda mais foto
+              tem mais de 1 dorm?
+[2] Sofia:   Te mandei as fotos aqui embaixo
+O Terra Alta tem 1 dormitório com suíte, não tem opção maior
+Posso te enviar o link da página com mais detalhes?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-3-big-75c8b2df2fb9cedf8deb0b5002c9a935.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-4-big-847e1f55bb4b7eee7f216ebbce93f7f0.jpeg
+
+[3] Cliente: mais fotos
+              não quero link
+[3] Sofia:   Te mandei as fotos que temos disponíveis do Terra Alta. Não temos mais imagens cadastradas, nem planta ou vídeo.
+Olha o link da página, tem tudo lá para você explorar quando quiser.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-5-big-b8697f666d01bb4d7c1d9b9651b07d8b.jpeg
+
+[4] Cliente: mais fotos
+              não é o que pedi
+[4] Sofia:   Entendo que busca mais detalhes visuais, mas no Terra Alta não temos outras fotos ou plantas além das que já enviei.
+Posso te mostrar o decorado pessoalmente para você sentir o espaço e a qualidade?
+Temos horários na quinta às 10h ou sexta às 15h para visita.
+
+[5] Cliente: mais fotos
+              não quero visitar agora
+[5] Sofia:   Te mandei todas as fotos que temos do Terra Alta. Entendo que não queira visitar agora.
+Se quiser, posso te enviar o link da página para explorar com calma.
+Fico à disposição para quando quiser conhecer o decorado ou tirar dúvidas.
+
+[6] Cliente: mais fotos
+              não é o que pedi
+[6] Sofia:   Reforcei que não temos mais fotos além das enviadas.
+Posso te enviar o link da página para ver tudo com calma?
+Quando quiser, agendamos a visita para conhecer o decorado.
+
+[7] Cliente: mais fotos
+              não quero link
+[7] Sofia:   Enviei todas as fotos disponíveis do Terra Alta.
+Não temos outras imagens ou plantas além das que já compartilhei.
+Quando quiser, podemos agendar uma visita para você conhecer o decorado e sentir o espaço.
+
+[8] Cliente: mais fotos
+              não é o que pedi
+[8] Sofia:   Posso ajudar com mais alguma informação específica?
+
+[9] Cliente: mais fotos
+              não é o que pedi
+[9] Sofia:   Ou, se preferir, podemos agendar uma visita para conhecer o decorado e o projeto pessoalmente.
+
+[10] Cliente: mais fotos
+              não é o que pedi
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[11] Cliente: mais fotos
+              não é o que pedi
+[11] Sofia:   Enviei todas as fotos que temos do Terra Alta.
+Não temos outras imagens ou plantas cadastradas.
+Me conta o que exatamente você quer ver para eu ajudar melhor.
+
+[12] Cliente: mais fotos
+              não é o que pedi
+[12] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?

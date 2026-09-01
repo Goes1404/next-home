@@ -60,10 +60,23 @@ function zero(): Rodada {
   };
 }
 
+/**
+ * Conta CONVERSAS afetadas, não ocorrências.
+ *
+ * Medido na linha de base de 16 personas (01/09): somando ocorrências, duas
+ * rodadas do mesmo código deram 50 e 14 — um balanço de 3,5x. Contando
+ * conversas afetadas, 10 e 6: 1,7x. A distribuição tem cauda pesada, a
+ * maioria das conversas fica em zero e umas poucas explodem — somar deixa a
+ * cauda mandar na medição.
+ *
+ * É a mesma lição da taxonomia de falhas, onde ordenar por ocorrências
+ * fazia um caso isolado parecer padrão. A unidade que importa é a CONVERSA:
+ * o cliente não compara mensagens de conversas diferentes, ele vive a dele.
+ */
 function somar(alvo: Rodada, c: ArquivoDeConversa["conversas"][number]): void {
-  alvo.clienteRepetiu += c.medida.perguntasReaparecidas.length;
-  alvo.iaRepetiu += c.medida.perguntasRepetidasPelaIa.length;
-  alvo.respostasRepetidas += c.medida.respostasRepetidas;
+  if (c.medida.perguntasReaparecidas.length > 0) alvo.clienteRepetiu += 1;
+  if (c.medida.perguntasRepetidasPelaIa.length > 0) alvo.iaRepetiu += 1;
+  if (c.medida.respostasRepetidas > 0) alvo.respostasRepetidas += 1;
   alvo.maiorSequenciaSemNovidade += c.medida.maiorSequenciaSemNovidade;
   alvo.avancou += c.juizo?.avancou ?? 0;
   alvo.assumiria += c.juizo?.assumiria ? 1 : 0;
@@ -106,13 +119,7 @@ function rodadasDe(arquivo: ArquivoDeConversa): Rodada[] {
       mesmaPessoa: 0,
     };
 
-    atual.clienteRepetiu += c.medida.perguntasReaparecidas.length;
-    atual.iaRepetiu += c.medida.perguntasRepetidasPelaIa.length;
-    atual.respostasRepetidas += c.medida.respostasRepetidas;
-    atual.maiorSequenciaSemNovidade += c.medida.maiorSequenciaSemNovidade;
-    atual.avancou += c.juizo?.avancou ?? 0;
-    atual.assumiria += c.juizo?.assumiria ? 1 : 0;
-    atual.mesmaPessoa += c.juizo?.mesmaPessoa ?? 0;
+    somar(atual, c);
 
     porRodada.set(n, atual);
   }

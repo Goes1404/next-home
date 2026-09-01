@@ -1,0 +1,63 @@
+escreve-errado · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vcs tem o vrita alphagran ainda?
+[1] Sofia:   Não temos o Vrita Alphagran no catálogo. Me conta o que gostou nele, a região ou o tamanho?
+Posso indicar algo parecido que tenho aqui.
+
+[2] Cliente: mas eu pedi a planta do vrita alphagran
+              vc pode me mandar?
+[2] Sofia:   Não temos a planta do Vrita Alphagran, mas posso te mostrar o Vitra Alphaville, que é parecido e tem planta disponível.
+Te mandei as fotos e as plantas dele aqui.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-4437ee1f8f0ca0135bd73540a6063059.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-db60774778f5a3d788cdcb47cdd43db3.jpg
+
+[3] Cliente: mas eu pedi a planta do vrita alphagran
+[3] Sofia:   Entendo seu interesse, mas não temos a planta do Vrita Alphagran.
+Posso ajudar com o Vitra Alphaville, que é parecido e pronto para morar.
+
+[4] Cliente: mas eu pedi a planta do vrita alphagran de novo
+[4] Sofia:   Não temos a planta do Vrita Alphagran, só do Vitra Alphaville, que é pronto para morar e tem 2 suítes.
+Posso agendar uma visita para você conhecer o decorado?
+
+[5] Cliente: mas eu só quero a planta do vrita alphagran
+              não to pedindo outra coisa
+[5] Sofia:   Não tenho a planta do Vrita Alphagran, só do Vitra Alphaville, que é similar e pronto para morar.
+Posso te enviar o link da página com tudo detalhado?
+
+[6] Cliente: mas eu só quero a planta do vrita alphagran
+              não é difícil de entender
+[6] Sofia:   Olha o link da página, tem tudo detalhado para você analisar com calma.
+
+[7] Cliente: vc não entende?
+              só quero a planta do vrita alphagran
+[7] Sofia:   Entendo sua insistência, mas realmente não temos essa planta.
+Posso ajudar com o Vitra Alphaville, que é muito parecido e tem planta disponível.
+Olha o link da página dele para você analisar: https://next-home-drab.vercel.app/empreendimentos/vitra-alphaville-vt110
+Se quiser, posso agendar uma visita para conhecer o decorado e tirar todas as suas dúvidas.
+
+[8] Cliente: não to pedindo visita
+              só quero a planta do vrita alphagran
+[8] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[9] Cliente: não to pedindo outra coisa
+              só quero a planta do vrita alphagran
+[9] Sofia:   Entendo que quer a planta do Vrita Alphagran, mas não temos essa planta no catálogo.
+Posso ajudar com outro imóvel parecido ou enviar o link do Vitra Alphaville, que tem planta disponível.
+
+[10] Cliente: vc só sabe repetir?
+              quero a planta do vrita alphagran
+[10] Sofia:   Não tenho a planta do Vrita Alphagran, só do Vitra Alphaville, que é parecido e pronto para morar.
+Olha o link da página para você analisar: https://next-home-drab.vercel.app/empreendimentos/vitra-alphaville-vt110
+Se quiser, posso ajudar com outro imóvel ou agendar visita para conhecer o decorado.
+
+[11] Cliente: vc só fala a msm coisa
+              quero a planta do vrita alphagran
+[11] Sofia:   Já te mostrei o que temos do Vitra Alphaville, que é o mais próximo.
+
+[12] Cliente: vc não entendeu ainda?
+              quero a planta do vrita alphagran
+[12] Sofia:   Não temos a planta do Vrita Alphagran, realmente.
+Posso te mostrar o Vitra Alphaville, que é pronto e tem planta.
+Olha o link da página para analisar: https://next-home-drab.vercel.app/empreendimentos/vitra-alphaville-vt110

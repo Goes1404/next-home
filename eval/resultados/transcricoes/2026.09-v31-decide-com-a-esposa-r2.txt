@@ -1,0 +1,70 @@
+decide-com-a-esposa · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: to vendo apartamento pra minha familia, 2 ou 3 dorm
+[1] Sofia:   Em qual região você está procurando? Alphaville, Barueri, Osasco?
+
+[2] Cliente: tanto faz, pode ser qualquer uma dessas
+[2] Sofia:   Trabalho com opções em Alphaville, Barueri e Osasco. Tem pronto para morar e na planta, qual prefere?
+
+[3] Cliente: prefiro pronto pra morar
+              tem foto disso?
+[3] Sofia:   Tem sim, trabalho com vários prontos para morar nessas regiões.
+Posso te mandar as fotos do On The Park Alphaville e do Elos Barueri, que são ótimos para família.
+Dá uma olhada e me diz o que te agradou.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/foto-1-big-e678e7ebc51cb4e4332a322465dcf7b3.jpg
+
+[4] Cliente: manda as fotos então
+              quero ver tudo
+[4] Sofia:   Te mandei as fotos do On The Park Alphaville e do Elos Barueri aqui
+ambos são prontos para morar, ótimos para família
+dá uma olhada e me diz o que achou
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-3-big-49406f476a83a577b8907baa94fed78f.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-4-big-c927018093552dd1e44890698536515d.jpg
+
+[5] Cliente: não recebi nada
+              pode mandar de novo?
+[5] Sofia:   Te mandei as fotos do On The Park Alphaville e do Elos Barueri novamente aqui
+Ambos são prontos para morar, ótimos para família
+Dá uma olhada e me diz o que achou
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-5-big-b8ce3deb5bcf41e5d85efcda6567ddc5.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/foto-2-big-95fcb18c87f4813a0036339e5404bf0d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/foto-3-big-545b2d6348e9ee795e9b818cb278ea7c.jpg
+
+[6] Cliente: não recebi nada de novo
+              pode mandar de novo?
+[6] Sofia:   As fotos do On The Park Alphaville e do Elos Barueri já foram enviadas.
+Se quiser, posso mandar a planta do Elos Barueri, que está disponível.
+Ou o link da página com tudo sobre esses imóveis, para você ver com calma.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/planta-big-147885cd819a8f841a57b56a934b579e.jpg
+
+[7] Cliente: não recebi nada ainda
+              pode mandar de novo?
+[7] Sofia:   As fotos e a planta do Elos Barueri já foram enviadas.
+Quer que eu te envie o link agora?
+
+[8] Cliente: não recebi nada ainda
+              manda de novo
+[8] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[9] Cliente: não adianta, não recebi nada
+              manda as fotos de novo
+[9] Sofia:   Vou te mandar o link da página de cada um para você ver tudo com calma.
+
+[10] Cliente: link é melhor, manda logo
+              quero ver tudo de novo
+[10] Sofia:   Te mandei os links para você ver tudo com calma.
+On The Park Alphaville: https://next-home-drab.vercel.app/empreendimentos/on-the-park-alphaville-ne72055
+Elos Barueri:
+https://next-home-drab.vercel.app/empreendimentos/elos-barueri-ne61101
+Dá uma olhada e me diz o que te agradou.
+
+[11] Cliente: vi os links
+              vou mostrar pra ela
+[11] Sofia:   Que bom que viu os links. Me conta, qual das duas regiões você prefere para facilitar a busca? Alphaville ou Barueri?
+
+[12] Cliente: não sei ainda
+              vou conversar com ela
+[12] Sofia:   Tranquilo, fica à vontade para conversar. Quando quiser, me chama que seguimos com a busca.

@@ -3,63 +3,60 @@ familia-tres-dorm · rodada 2 · teto_de_turnos · 12 turnos
 
 [1] Cliente: oi, vi um anúncio de vocês
 [1] Sofia:   Que bom receber seu contato! Em qual região você procura o imóvel?
+Trabalho com Alphaville, Barueri, Osasco e região próxima.
 
-[2] Cliente: quero 3 dorms
+[2] Cliente: oi, estou procurando um 3 dorm
               tem que ser em Barueri ou Alphaville
-              perto da escola das crianças
-[2] Sofia:   3 dormitórios em Barueri ou Alphaville, perto da escola das crianças.
-Temos opções em Alphaville e Aldeia, que são regiões com boa estrutura escolar.
-Você prefere pronto para morar ou na planta?
-
-[3] Cliente: não perguntei isso, qual o valor?
-              quero saber os valores, por favor
-[3] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000, no Vila Eco Park, em Osasco.
-O valor depende da unidade e condições, que fechamos na visita.
-
-[4] Cliente: não é em Osasco, preciso em Barueri
-              fala o valor certo pra mim
-[4] Sofia:   O Vila Eco Park é em Osasco, não atende Barueri.
-Em Barueri, temos o Terra Alta a partir de R$ 455.000 e o More Aldeia de Barueri a partir de R$ 569.000.
-O valor exato depende da unidade e condições, que fechamos na visita.
-Quer que eu te mande o catálogo completo para você dar uma olhada e me dizer o que te agradou?
+[2] Sofia:   Você busca 3 dormitórios em Barueri ou Alphaville, ótimo.
+Prefere pronto para morar ou na planta?
+Tenho opções interessantes nessas regiões, te mando o catálogo para dar uma olhada e me diz o que te agradou.
 https://next-home-drab.vercel.app/?corretor=cristal-bruna
 
-[5] Cliente: não quero catálogo, quero o valor certo
-              fala do Terra Alta e do More
-[5] Sofia:   O Terra Alta começa em R$ 455.000, com 1 dormitório, suíte e 2 vagas. O valor exato depende da unidade e condições, que fechamos na visita.
-Os valores variam conforme a unidade, o andar e a forma de pagamento — prefiro te passar a condição certa para o seu caso.
+[3] Cliente: não quero catálogo, quero o valor
+              qual o valor dos 3 dorm?
+[3] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Para 3 dormitórios em Barueri ou Alphaville, temos o Viva RSF Vila do Conde, a partir de R$ 460.000, e o Eternity Alphaville Tamboré, a partir de R$ 1.289.900. Qual faixa de valor você tem em mente?
 
-[6] Cliente: mas eu quero 3 dorms, não 1
-              qual é o valor do More Aldeia?
-[6] Sofia:   O Terra Alta é de 1 dormitório, não fecha com o que você precisa.
-O More Aldeia não está no meu catálogo, então não tenho o valor exato.
-Me conta mais sobre o que você busca em 3 dormitórios, para eu indicar o melhor para você.
+[4] Cliente: não quero saber de catálogo
+              qual o valor do Eternity?
+[4] Sofia:   O Eternity Alphaville Tamboré começa em R$ 1.289.900, o valor varia conforme o andar e forma de pagamento
+o exato quem fecha é o corretor na visita
+posso agendar para você conhecer o decorado?
 
-[7] Cliente: não entendi, qual o valor do More Aldeia?
-              fui claro, quero 3 dorms em Barueri
-[7] Sofia:   O valor exato quem passa é a construtora, e muda por unidade, andar e forma de pagamento.
-A visita é o melhor caminho para tratar disso com detalhes.
-Posso te mostrar o Terra Alta, que é o que tenho em Barueri, sábado às 10h ou às 11h?
+[5] Cliente: quero saber o valor exato
+              posso agendar visita pro fim de semana?
+[5] Sofia:   O valor exato do Eternity Alphaville Tamboré depende do andar e da forma de pagamento, e é fechado na visita.
+Temos visita no sábado às 10h ou às 11h, qual horário prefere?
 
-[8] Cliente: não perguntei sobre visita
-              quero saber o valor do More
-[8] Sofia:   O More Aldeia não está no meu catálogo, então não tenho o valor exato.
-Posso ajudar com opções que tenho em Barueri, como o Terra Alta, que começa em R$ 455.000.
-Qual faixa de valor você tem em mente para eu indicar algo que cabe no seu bolso?
+[6] Cliente: mas eu quero o valor exato
+              tem que ser pro fim de semana
+[6] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
 
-[9] Cliente: não tô perguntando de visita
-              tô perguntando do More Aldeia
-[9] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+[7] Cliente: não quero saber mais do que procuro
+              quero o valor do apartamento
+[7] Sofia:   Posso agendar sua visita para sábado às 10h ou às 11h?
 
-[10] Cliente: não quero falar disso
-              me diz o valor do More Aldeia
-[10] Sofia:   Posso ajudar com opções em Barueri que atendam 3 dormitórios.
+[8] Cliente: não quero saber do horário
+              quero o valor do apartamento
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
 
-[11] Cliente: não quero opção, só o valor do More
-              qualquer coisa, só me diz o preço
-[11] Sofia:   Posso ajudar com imóveis que tenho em Barueri, se quiser.
+[9] Cliente: 3 dormitórios, já falei
+              não quero mais perguntas, só o valor
+[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
 
-[12] Cliente: diz logo o valor do More
-              não tô pedindo outras opções
-[12] Sofia:   O More Aldeia não está no meu catálogo, então não tenho o valor exato.
-Posso ajudar com imóveis que tenho em Barueri, se quiser.
+[10] Cliente: qual o valor do apartamento?
+              só quero saber isso!
+[10] Sofia:   O Eternity Alphaville Tamboré começa em R$ 1.289.900,
+o valor exato depende do andar e forma de pagamento, que fechamos na visita.
+Qual faixa de valor você tem em mente para eu ajudar melhor?
+
+[11] Cliente: mas eu só quero o valor!
+              não quero mais perguntas!
+[11] Sofia:   O Eternity Alphaville Tamboré começa em R$ 1.289.900,
+o valor exato depende do andar e forma de pagamento, que fechamos na visita.
+Qual dia da semana fica melhor para você conhecer o decorado?
+
+[12] Cliente: não quero saber do decorado
+              só me diz o valor!
+[12] Sofia:   O Eternity Alphaville Tamboré começa em R$ 1.289.900,
+o valor exato depende do andar e forma de pagamento, que fechamos na visita.

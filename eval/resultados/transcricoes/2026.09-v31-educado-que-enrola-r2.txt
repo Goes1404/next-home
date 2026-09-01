@@ -3,83 +3,66 @@ educado-que-enrola · rodada 2 · teto_de_turnos · 12 turnos
 
 [1] Cliente: achei lindo o empreendimento de vcs no instagram
 [1] Sofia:   Que bom que gostou! Qual região você prefere para o imóvel? Alphaville, Barueri, Osasco ou outra?
+
+[2] Cliente: ah eu gosto de alphaville
+              quais as opções lá?
+[2] Sofia:   Em Alphaville, temos o On The Park, pronto para morar, e o Eternity, em construção.
+Dá uma olhada e me diz o que te agradou.
 https://next-home-drab.vercel.app/?corretor=cristal-bruna
 
-[2] Cliente: não sei ainda, vou ver aqui
-              vocês têm mais opções?
-[2] Sofia:   Tranquilo, dá uma olhada no catálogo que tenho aqui e me diz o que te agradou
-Tem opções em Alphaville, Barueri e Osasco, todas com padrão alto
-Vou mandar o link para você ver com calma
-https://next-home-drab.vercel.app/?corretor=cristal-bruna
-
-[3] Cliente: vou olhar depois
-              quais as faixas de preço?
-[3] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
-Tem opções para todos os perfis, desde lançamentos até prontos para morar.
-Quer que eu te mostre algumas opções para a região que você prefere?
-
-[4] Cliente: ah legal, e o mais caro?
-              tem de 3 dorm?
-[4] Sofia:   O mais caro do catálogo é o Eternity Alphaville, a partir de R$ 1.289.900.
-Tem sim, temos opções de 3 dormitórios no Viva RSF Vila do Conde e no Eternity Alphaville.
-Quer que eu te envie as fotos de algum deles para você conhecer melhor?
-
-[5] Cliente: vou pensar nas fotos
-              quero saber mais sobre os 3 dorm
-[5] Sofia:   O Viva RSF Vila do Conde tem 3 dormitórios com 1 suíte, 49m² e 2 vagas.
-O Eternity Alphaville oferece 3 dormitórios com 2 suítes, 100m² e 2 vagas.
-Posso te mandar as fotos do Viva para começar? Ou prefere do Eternity?
-              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/fachada-lazer.jpg
-              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/piscina-adulto.jpg
-              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/academia.jpg
-
-[6] Cliente: manda foto do Eternity
-              quero ver mais detalhes
-[6] Sofia:   O Eternity Alphaville tem 3 dormitórios com 2 suítes, 100m² e 2 vagas
-Te mandei as fotos para você conhecer o padrão e o acabamento
-Olha o link da página, tem tudo lá,
-inclusive detalhes do lazer e da planta https://next-home-drab.vercel.app/empreendimentos/eternity-alphaville
+[3] Cliente: deixa eu ver aqui
+              quero saber mais do Eternity
+[3] Sofia:   O Eternity Alphaville Tamboré tem opções de 2 e 3 dormitórios, com até 2 vagas.
+O apartamento de 2 dorm tem 74m² e 1 suíte.
+Quer que eu te mande as fotos para você conhecer melhor?
               📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg
+
+[4] Cliente: depois te falo
+              tem mais fotos?
+[4] Sofia:   Te mandei as fotos que tenho do Eternity aqui embaixo
+Não temos mais fotos cadastradas, só essas mesmo
+Se quiser, posso te enviar o link da página com tudo sobre o projeto
               📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-02.jpg
               📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/fachada.jpg
 
-[7] Cliente: ficou show! e a planta?
-              tem tipo de acabamentos?
-[7] Sofia:   O Eternity Alphaville Tamboré tem planta de 74m² para 2 dormitórios com 1 suíte e 100m² para 3 dormitórios com 2 suítes.
-Sobre acabamentos, o padrão é alto, com detalhes sofisticados e materiais de qualidade,
-tudo pensado para um alto padrão de vida.
-Posso te enviar a planta digital pelo link da página para você analisar com calma?
-Tem tudo lá, inclusive o lazer e o padrão do imóvel.
+[5] Cliente: vou ver aqui
+              e a metragem do 3 dorm?
+[5] Sofia:   O Eternity Alphaville Tamboré tem 2 dormitórios com 74m² e 3 dormitórios com 100m², ambos com suíte e vagas.
+Quer que eu te envie o link da página com tudo sobre o projeto?
 
-[8] Cliente: legal, mas e a planta que você falou?
-              quero ver esses acabamentos também!
-[8] Sofia:   O padrão de acabamento é alto, com materiais sofisticados e detalhes que valorizam o imóvel.
-Te mandei o link da página com a planta digital e mais detalhes do acabamento para você analisar com calma.
+[6] Cliente: vou pensar
+              e a área de lazer?
+[6] Sofia:   O Eternity Alphaville Tamboré de 74 a 100 m² tem opções de 2 e 3 dormitórios, todos com suíte e vagas.
+Sobre a área de lazer, vou confirmar os detalhes e te retorno para garantir a informação correta.
 
-[9] Cliente: quero ver a planta aqui
-              quais os acabamentos?
-[9] Sofia:   O Eternity Alphaville Tamboré não tem planta digital disponível para envio direto aqui,
-mas o link da página tem tudo para você ver com calma.
-O padrão de acabamento é alto, com materiais sofisticados e detalhes que valorizam o imóvel.
-Posso te mostrar o decorado para você sentir o padrão pessoalmente?
+[7] Cliente: tá, mas e a área de lazer?
+              depois te falo
+[7] Sofia:   O Eternity Alphaville Tamboré oferece lazer completo,
+com espaços para convivência e bem-estar, tudo pensado para seu conforto e privacidade.
+Posso confirmar os detalhes exatos para você, assim que tiver a informação precisa.
+Enquanto isso, qual faixa de valor você tem em mente para o investimento?
 
-[10] Cliente: quero ver a planta aqui
-              me manda detalhes dos acabamentos
-[10] Sofia:   O Eternity Alphaville Tamboré tem planta de 74m² para 2 dormitórios com 1 suíte e 100m² para 3 dormitórios com 2 suítes.
-O padrão de acabamento é alto, com materiais sofisticados e detalhes que valorizam o imóvel.
-Não temos planta digital para envio direto aqui, mas o link da página tem tudo para você analisar com calma.
-Quer conhecer o decorado para sentir o padrão pessoalmente?
+[8] Cliente: não sei ainda
+              vou pensar sobre isso
+[8] Sofia:   Sem pressa, fique à vontade para pensar com calma.
+Se quiser, posso ajudar a esclarecer qualquer dúvida que surgir.
 
-[11] Cliente: quero conhecer o decorado sim
-              mas e a planta?
-[11] Sofia:   O Eternity Alphaville Tamboré tem planta de 74m² para 2 dormitórios com 1 suíte e 100m² para 3 dormitórios com 2 suítes.
-Não temos planta digital para envio direto aqui, mas o link da página tem tudo para você analisar com calma.
-O padrão de acabamento é alto, com materiais sofisticados e detalhes que valorizam o imóvel.
-Que tal agendar uma visita para conhecer o decorado e sentir tudo isso pessoalmente?
+[9] Cliente: e a localização exata?
+              tem piscina?
+[9] Sofia:   O Eternity Alphaville Tamboré fica no Centro Comercial Jubran, em Barueri, uma localização estratégica e valorizada.
+Tem sim, piscina faz parte do lazer completo do empreendimento, pensado para seu conforto e privacidade.
 
-[12] Cliente: quero só ver a planta aqui
-              detalhes dos acabamentos, por favor
-[12] Sofia:   O Eternity Alphaville Tamboré tem planta de 74m² para 2 dormitórios com 1 suíte e 100m² para 3 dormitórios com 2 suítes.
-Não temos planta digital para envio direto aqui, só o link da página com tudo.
-O padrão de acabamento é alto, com materiais sofisticados e detalhes que valorizam o imóvel.
-Posso agendar uma visita para você conhecer o decorado e sentir o padrão pessoalmente?
+[10] Cliente: quero saber mais da piscina
+              e a localização?
+[10] Sofia:   O Eternity Alphaville Tamboré está no Centro Comercial Jubran, em Barueri, com localização estratégica e valorizada.
+A piscina integra o lazer completo, ideal para relaxar e aproveitar o tempo livre com conforto.
+Quer que eu confirme mais detalhes da área de lazer para você?
+
+[11] Cliente: quero mais info da piscina
+              e a localização exata?
+[11] Sofia:   Posso confirmar detalhes específicos da piscina para você, se quiser.
+
+[12] Cliente: e a piscina é aquecida?
+              e tem um endereço certinho?
+[12] Sofia:   O Eternity Alphaville Tamboré está no Centro Comercial Jubran, Barueri, endereço estratégico e valorizado.
+Sobre a piscina, confirmo que faz parte do lazer completo, mas preciso checar se é aquecida e volto com essa informação.

@@ -2992,3 +2992,27 @@ somados.
   29 das 30 conversas tinham lead e apenas 1 estava marcada. Quem vira lead
   DEPOIS da conversa começar fica "desconhecido" para sempre — a menos que
   algo o marque, que é o que a correção acima passou a fazer.
+
+## A linha de base das 16 personas, e o que ela corrigiu na régua (01/09)
+
+Primeira medição com todas as 16 personas × 2 rodadas (32 conversas).
+
+- **Somar ocorrências deixa a cauda mandar.** Duas rodadas do MESMO código
+  deram `clienteRepetiu` **50 e 14** — balanço de 3,5x. Contando CONVERSAS
+  afetadas: **10 e 6**, 1,7x. A distribuição tem cauda pesada: a maioria
+  das conversas fica em zero e umas poucas explodem.
+- **O comparador passou a contar conversas, não ocorrências**, nas três
+  métricas de repetição. É a mesma lição que a taxonomia de falhas já tinha
+  registrado — ordenar por ocorrências fazia um caso isolado parecer padrão
+  — e o comparador estava do lado errado dela.
+- **A linha de base da v31:** conversas em que o cliente repetiu 8 [6–10];
+  em que a IA repetiu 6,5 [4–9]; com resposta idêntica 2 [2–2]; avançou 6,5
+  [5–8]; assumiria 5 [3–7] de 16.
+- **Antes de aceitar variância, procurar causa sistemática.** A diferença
+  entre as rodadas foi investigada: mesmo modelo de cliente (`gpt-4o-mini`
+  nas 323 chamadas), mesma distribuição de desfecho (14 e 13 batendo o teto)
+  e um único `ia_indisponivel`. Não havia deslocamento externo — o que havia
+  era agregação errada.
+- **O arquivo é por versão+dia e SOBRESCREVE**: esta rodada apagou a de 4
+  personas × 3 rodadas da mesma v31. Estava commitada, então sobreviveu no
+  git — mas é a segunda vez que esta armadilha morde.

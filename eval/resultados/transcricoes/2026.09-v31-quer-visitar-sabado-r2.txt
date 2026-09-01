@@ -1,0 +1,26 @@
+quer-visitar-sabado · rodada 2 · cliente_encerrou · 5 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria visitar um apartamento sábado, dá?
+[1] Sofia:   Sábado dá sim, que região você prefere em Barueri ou Alphaville?
+Assim já te mostro opções que temos por aí.
+
+[2] Cliente: Barueri
+              Que horas?
+[2] Sofia:   Barueri tem opções como Terra Alta e More na Aldeia de Barueri, ambos com 2 dormitórios e bom padrão.
+Sábado posso te mostrar às 9h ou às 11h, qual prefere?
+
+[3] Cliente: 9h fecha
+              qual o endereço?
+[3] Sofia:   Combinado para sábado às 9h.
+O stand fica no Jardim Iracema, Barueri, onde está o More na Aldeia de Barueri.
+Te mandei as fotos para você já ir conhecendo o estilo do apartamento.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-1-big-fa9d826751f7a7f2f548546f1fa3985a.jpg
+
+[4] Cliente: tá, mas qual o endereço mesmo?
+[4] Sofia:   O endereço exato do stand é Rua José Augusto de Souza, Jardim Iracema, Barueri.
+Fica próximo ao Parque Shopping Barueri, fácil acesso e estacionamento.
+
+[5] Cliente: beleza, vejo lá!
+[5] Sofia:   Ótimo, te espero sábado às 9h no stand do More na Aldeia de Barueri.
+Se precisar de algo antes, só avisar.
