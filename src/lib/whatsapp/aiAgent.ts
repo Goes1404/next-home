@@ -127,6 +127,12 @@ export interface ContextoAtendimento {
    */
   blocoPerguntaIgnorada?: string;
   /**
+   * Os horários de visita que EXISTEM (agenda do corretor, 0073). Vazio
+   * quando ele não configurou agenda — e aí o calendário genérico segue
+   * valendo, como sempre valeu.
+   */
+  blocoHorariosReais?: string;
+  /**
    * O imóvel que ESTA conversa já escolheu (ver `focoDaConversa.ts`).
    *
    * Quando existe, ele é o PRIMEIRO item de `catalogo` e o resto da lista
@@ -485,7 +491,7 @@ Só depois disso: a INDICAÇÃO ("pelo que você me contou, o que mais faz senti
 
 Se o cliente já disse alguma dessas coisas — nesta mensagem, no histórico ou no dossiê — NÃO PERGUNTE DE NOVO. Repetir pergunta já respondida é o erro que mais faz o cliente sumir, e é o que denuncia um sistema.
 
-${ctx.blocoPerguntaIgnorada ? `${ctx.blocoPerguntaIgnorada}\n\n` : ""}${ctx.capacidadePendente ? `${blocoCapacidadePendente()}\n\n` : ""}${ctx.semPrazoCadastrado ? `${blocoSemPrazoCadastrado()}\n\n` : ""}${blocoFoco}
+${ctx.blocoPerguntaIgnorada ? `${ctx.blocoPerguntaIgnorada}\n\n` : ""}${ctx.blocoHorariosReais ? `${ctx.blocoHorariosReais}\n\n` : ""}${ctx.capacidadePendente ? `${blocoCapacidadePendente()}\n\n` : ""}${ctx.semPrazoCadastrado ? `${blocoSemPrazoCadastrado()}\n\n` : ""}${blocoFoco}
 
 ${blocoCatalogo}
 

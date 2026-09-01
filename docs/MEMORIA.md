@@ -2424,3 +2424,33 @@ guarda anti-repetição.
   mensagens — que é exatamente o módulo que fazia o índice voltar. Foi
   reescrito para a intenção (varia quando a anterior já foi dita). **Teste
   que codifica o mecanismo em vez do efeito protege o defeito.**
+
+## A agenda de visitas (0073, 31/08/2026)
+
+- **A IA oferecia horário que ela inventava**, e nada no sistema sabia dizer
+  se aquele horário existia. O eval mediu: os mesmos dois ("terça às 10h ou
+  quarta às 15h") quatro vezes seguidas. E o funil da 0072 mostra o custo —
+  **6 conversas com visita proposta, 1 visita marcada**. Horário inventado é
+  a forma mais barata de perder a visita: o cliente aceita, o corretor não
+  pode, e alguém desmarca.
+- **A grade é SEMANAL, não um calendário por data.** Corretor não tem agenda
+  de escritório: tem "sábado de manhã eu recebo". O que se repete é a
+  semana. Calendário por data seria mais poderoso e ninguém preencheria — a
+  régua do Painel de Bolso é o mínimo de decisão possível.
+- **O dia da semana NUNCA sai de `Date.getDay()`.** Em produção o servidor
+  roda em UTC, e às 22h de Brasília já é o dia seguinte lá: a grade de
+  sábado seria aplicada a um domingo. Sai sempre de um formatador com
+  `timeZone` — é a mesma armadilha que quebrou o `calendarioProximosDias`
+  três horas por noite, e ela tem teste próprio aqui.
+- **Sem agenda configurada, o bloco sai VAZIO e o prompt segue como antes.**
+  Hoje isso vale para todos os 8 corretores. Nunca quebrar o que já funciona
+  por causa de configuração que ninguém preencheu — a mesma regra que faz o
+  link do catálogo só entrar quando existe slug.
+- **A tabela não tem policy de UPDATE, de propósito**: a tela grava a grade
+  inteira (apaga e insere). Faixa "editada" é indistinguível de faixa nova, e
+  o caminho único evita o estado em que metade da grade é velha.
+- **`unique (corretor_id, dia_semana)`**: uma faixa por dia. Duas faixas no
+  mesmo dia ("manhã e fim da tarde") são fase 1 — sem a trava, a tela
+  deixaria criar faixas sobrepostas e a geração repetiria o mesmo horário.
+- **Visita passada não ocupa vaga.** O filtro de ocupados usa o INSTANTE de
+  agora, não o dia: visita das 9h não bloqueia a vaga das 15h do mesmo dia.

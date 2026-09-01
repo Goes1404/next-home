@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
+import { blocoDeHorariosDoCorretor } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
@@ -567,6 +568,14 @@ export async function POST(req: NextRequest) {
       historico,
       dossie: dossieAnterior,
       fewShot: { corretorId: instancia.corretorId, conversaAtualId: conversa.id },
+      /*
+       * Os horários que EXISTEM na agenda do corretor (0073). Até aqui a
+       * Sofia oferecia horário de cabeça: o eval de 31/08 mediu os mesmos
+       * dois inventados quatro vezes seguidas, e o funil mostra 6 visitas
+       * propostas para 1 marcada. Vazio para quem não configurou agenda —
+       * e aí o prompt segue com o calendário genérico de sempre.
+       */
+      blocoHorariosReais: await blocoDeHorariosDoCorretor(instancia.corretorId),
     });
 
     const respostaIA = turno.resposta;

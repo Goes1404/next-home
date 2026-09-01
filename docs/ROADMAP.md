@@ -332,8 +332,21 @@ conversão lead→visita medida por 2 semanas seguidas.
 
 ## H4 — Diferenciais (mês 3+, reavaliar antes)
 
+**Agenda real de visitas — F0 ENTREGUE em 31/08** (0073,
+`agendaDeVisitas.ts`, `GradeDaSemana.tsx`). O corretor marca na tela de
+Visitas os dias e horas em que recebe; a assistente passa a oferecer só
+horário que EXISTE, já descontando o que está ocupado, com 3h de
+antecedência e horizonte de duas semanas. Antes ela oferecia horário de
+cabeça — o eval de 31/08 mediu os mesmos dois inventados quatro vezes
+seguidas, e o funil (0072) mostra **6 visitas propostas para 1 marcada**.
+Quem não configurar agenda continua com o calendário genérico de sempre:
+nunca quebrar o que funciona por causa de configuração vazia.
+*Falta na F1: confirmação do cliente reservando o horário de fato,
+reagendamento, e exceção por data ("nesse sábado não").*
+
 Visão nas imagens recebidas (cliente manda print de anúncio → IA reconhece
-o imóvel) · agenda real de visitas (slot do corretor, confirmação, lembrete)
+o imóvel) · ~~agenda real de visitas~~ (F0 acima; falta confirmação e
+reagendamento)
 · integração com portais · relatório semanal automático para o gestor.
 Nenhum destes entra antes de H1–H2 provarem o núcleo.
 

@@ -164,6 +164,41 @@ export type Database = {
           },
         ]
       }
+      corretor_disponibilidade: {
+        Row: {
+          corretor_id: string
+          criado_em: string
+          dia_semana: number
+          hora_fim: number
+          hora_inicio: number
+          id: string
+        }
+        Insert: {
+          corretor_id: string
+          criado_em?: string
+          dia_semana: number
+          hora_fim: number
+          hora_inicio: number
+          id?: string
+        }
+        Update: {
+          corretor_id?: string
+          criado_em?: string
+          dia_semana?: number
+          hora_fim?: number
+          hora_inicio?: number
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corretor_disponibilidade_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       corretor_whatsapp_instancias: {
         Row: {
           aviso_queda_enviado_em: string | null

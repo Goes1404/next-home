@@ -69,6 +69,12 @@ export type PedidoDeTurno = {
   /** Instrução de cenário (ex.: follow-up de reengajamento). */
   instrucaoExtra?: string;
   /**
+   * Horários reais da agenda do corretor (0073), já formatados. Vem de
+   * fora porque este módulo não toca no banco — é o que permite o eval
+   * medir o mesmo turno sem efeito sobre o mundo.
+   */
+  blocoHorariosReais?: string;
+  /**
    * Sobrescreve a vez do cliente. Existe para o follow-up, em que NINGUÉM
    * falou — é o silêncio que motiva a mensagem.
    */
@@ -183,6 +189,7 @@ export async function executarTurnoDeAtendimento(
       foco,
       capacidadePendente,
       blocoPerguntaIgnorada: ignorada ? blocoPerguntaIgnorada(ignorada) : undefined,
+      blocoHorariosReais: pedido.blocoHorariosReais,
       /*
        * O aviso olha o catálogo QUE FOI AO PROMPT, não o completo: é sobre
        * o que ela pode citar nesta resposta. O guardrail
