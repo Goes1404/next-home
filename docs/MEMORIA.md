@@ -2911,3 +2911,35 @@ rodadas, nenhuma delas consegue demonstrar mudança nenhuma.
   comentário que CITA `interacaoId` para explicar por que ele não existe.
   Teste que lê código-fonte precisa remover comentário antes de acusar —
   mesma solução do `escalaDoPainel`.
+
+## `liberado_por_palavra_chave` NÃO significa "nunca atendida" (01/09/2026)
+
+Erro meu, pego pela medição antes de virar apagamento de dado real.
+
+- **A trava tem TRÊS portas, e a flag é uma só.** `exigePalavraChave`
+  (`modoBot.ts`) isenta quem tem palavra-chave dita, quem já era do CRM
+  (`cliente_conhecido`) e quem veio de campanha. Filtrar só pela flag
+  inclui conversa que o bot atende todo dia.
+- **O tamanho do engano, medido antes de executar:** das 62 conversas com
+  `liberado_por_palavra_chave = false`, o bot havia falado em **26**, com
+  **15 mensagens nas últimas 24h**, e **22** eram elegíveis para o
+  few-shot. Apagar por aquele critério destruiria conversa de cliente viva
+  no mesmo dia e esvaziaria o corpus de aprendizado.
+- **`conversaEhAtendimento` espelha `exigePalavraChave` ao contrário** e é
+  a única condição usada para decidir gravação. Se as duas divergirem, o
+  sistema volta a gravar o que não deve ou a esquecer o que precisa.
+- **O critério que sobrou é minúsculo, e isso é a resposta certa:** conversa
+  não autorizada E que o sistema nunca tocou — 3 conversas, 6 mensagens.
+  O resto NÃO É SEPARÁVEL por dado: a diferença entre o contato pessoal do
+  corretor e um prospect desconhecido está no conteúdo, que é justamente o
+  que não se quer inspecionar. Para essas, o que muda é daqui para a frente.
+- **Ensaio em `begin; … rollback;` antes de qualquer DELETE em produção.**
+  Foi ele que confirmou 3/6/0 antes de apagar — e é barato o bastante para
+  ser regra, não exceção.
+- **Achado de configuração, não corrigido de propósito:**
+  `palavra_chave_ativacao` está com uma MENSAGEM DE CAMPANHA inteira colada
+  dentro ("Espero que esteja bem. Recentemente, surgiu uma oportunidade
+  exclusiva…"). Para ativar a IA por palavra, alguém teria de digitar o
+  parágrafo inteiro num chat — na prática a ativação por palavra não
+  funciona, e quem segura a trava é só a `palavra_chave_teste`. É campo de
+  painel, decisão do corretor.

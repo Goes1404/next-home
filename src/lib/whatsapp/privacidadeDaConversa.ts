@@ -15,6 +15,20 @@
  * A trava de atendimento está CERTA e continua valendo: sem liberação a IA
  * não fala. O que estava errado é que não falar nunca impediu de GRAVAR.
  *
+ * ## A condição CERTA — e a errada, que eu escrevi primeiro
+ *
+ * A primeira versão usava `liberado_por_palavra_chave = false`. Está
+ * errado, e a medição mostrou o tamanho: o bot havia falado em **26** das
+ * 62 conversas assim, **15 vezes nas últimas 24h**, e 22 delas eram
+ * elegíveis para o few-shot. Aquela flag é UMA das portas; a outra é o
+ * número já ser do CRM (`cliente_conhecido`), e campanha nunca precisa de
+ * palavra nenhuma.
+ *
+ * Guardar por aquela condição teria apagado conversa real de cliente, viva
+ * no mesmo dia, e esvaziado o corpus de aprendizado. A condição é a mesma
+ * de `exigePalavraChave` (`modoBot.ts`) — se as duas divergirem, o sistema
+ * volta a gravar o que não deve, ou a esquecer o que precisa.
+ *
  * ## A regra
  *
  * Conversa nunca liberada guarda a LINHA, não o texto. A linha é
@@ -33,6 +47,32 @@
  * Ele continua lendo no próprio celular — é o WhatsApp dele. É esse o
  * ponto: o painel não precisa de cópia da vida pessoal de ninguém.
  */
+
+/**
+ * Esta conversa é atendimento — ou seja, alguém autorizou.
+ *
+ * Espelha `exigePalavraChave` do `modoBot.ts`, ao contrário: lá se pergunta
+ * se a trava se aplica; aqui, se a conversa passou por ela. Três portas, e
+ * qualquer uma basta:
+ *
+ * 1. a palavra-chave foi dita nesta conversa;
+ * 2. o número já era do CRM antes dela (alguém o cadastrou de propósito);
+ * 3. a conversa nasceu de campanha (o disparo é decisão do corretor).
+ *
+ * Fora das três, ninguém autorizou nada — e é só aí que o texto não é
+ * guardado.
+ */
+export function conversaEhAtendimento(conversa: {
+  liberadoPorPalavraChave: boolean;
+  clienteConhecido?: boolean | null;
+  origem?: string | null;
+}): boolean {
+  return (
+    conversa.liberadoPorPalavraChave ||
+    conversa.clienteConhecido === true ||
+    conversa.origem === "campanha"
+  );
+}
 
 /**
  * Fica no lugar do texto. Não é vazio de propósito: linha em branco na tela

@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
+import { conversaEhAtendimento } from "@/lib/whatsapp/privacidadeDaConversa";
 import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
@@ -292,9 +293,10 @@ export async function POST(req: NextRequest) {
     //      desliga. A regra mora em `decidirPorFalaDoCorretor`.
     if (fromMe) {
       await gravarMensagem({
-        // Espelho do celular do corretor: sem liberação, guarda a linha e
-        // não o texto (`privacidadeDaConversa.ts`).
-        conversaLiberada: conversa.liberadoPorPalavraChave,
+        // Espelho do celular do corretor: sem NENHUMA das três portas de
+        // autorização, guarda a linha e não o texto
+        // (`privacidadeDaConversa.ts`).
+        conversaLiberada: conversaEhAtendimento(conversa),
         conversaId: conversa.id,
         remetente: "corretor",
         conteudo: text,
@@ -339,7 +341,7 @@ export async function POST(req: NextRequest) {
     }
 
     const gravacao = await gravarMensagem({
-      conversaLiberada: conversa.liberadoPorPalavraChave,
+      conversaLiberada: conversaEhAtendimento(conversa),
       conversaId: conversa.id,
       remetente: "cliente",
       conteudo: text,
@@ -706,10 +708,10 @@ export async function POST(req: NextRequest) {
      * vínculo custa uma avaliação; perder a mensagem custa o contexto.
      */
     const mensagemDoBot = await gravarMensagem({
-      // Se a IA respondeu, a conversa está liberada por definição — mas o
-      // valor vem da conversa, não de um `true` cravado: um dia a condição
-      // de atendimento muda e o `true` continuaria mentindo.
-      conversaLiberada: conversa.liberadoPorPalavraChave,
+      // Se a IA respondeu, a conversa é atendimento por definição — mas o
+      // valor vem da MESMA função que decide isso, não de um `true`
+      // cravado: um dia a condição muda e o `true` continuaria mentindo.
+      conversaLiberada: conversaEhAtendimento(conversa),
       conversaId: conversa.id,
       remetente: "bot",
       conteudo: textoParaEnviar,

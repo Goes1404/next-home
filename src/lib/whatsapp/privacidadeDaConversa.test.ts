@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   conteudoParaGravar,
+  conversaEhAtendimento,
   resumoParaGravar,
   TEXTO_NAO_GUARDADO,
 } from "./privacidadeDaConversa";
@@ -67,11 +68,56 @@ describe("todo chamador de gravarMensagem decide sobre privacidade", () => {
     ).toBe(chamadas);
   });
 
-  it("o WEBHOOK obedece à liberação, nunca crava true", () => {
-    // É o caminho do espelho do celular — o único por onde entra conversa
-    // que ninguém autorizou.
+  it("o WEBHOOK decide pela função, nunca crava true", () => {
+    /*
+     * É o caminho do espelho do celular — o único por onde entra conversa
+     * que ninguém autorizou. E a decisão vem de `conversaEhAtendimento`,
+     * não de uma flag solta: a primeira versão usava
+     * `liberado_por_palavra_chave` e teria apagado 26 conversas em que o
+     * bot ATENDE, porque aquela é só uma das três portas.
+     */
     const codigo = readFileSync("src/app/api/webhooks/whatsapp/route.ts", "utf8");
     expect(codigo).not.toMatch(/conversaLiberada:\s*true/);
-    expect(codigo).toMatch(/conversaLiberada:\s*conversa\.liberadoPorPalavraChave/);
+    expect(codigo).toMatch(/conversaLiberada:\s*conversaEhAtendimento\(/);
+  });
+});
+
+describe("conversaEhAtendimento — as três portas", () => {
+  it("palavra-chave dita libera", () => {
+    expect(conversaEhAtendimento({ liberadoPorPalavraChave: true })).toBe(true);
+  });
+
+  it("número que JÁ ERA do CRM libera, mesmo sem palavra-chave", () => {
+    /*
+     * É a porta que a primeira versão desta regra ignorou. Medido: o bot
+     * havia falado em 26 conversas com `liberado_por_palavra_chave = false`,
+     * 15 vezes nas últimas 24h. Guardar por aquela flag teria apagado
+     * conversa de cliente viva no mesmo dia.
+     */
+    expect(
+      conversaEhAtendimento({ liberadoPorPalavraChave: false, clienteConhecido: true }),
+    ).toBe(true);
+  });
+
+  it("campanha nunca precisou de palavra nenhuma", () => {
+    expect(
+      conversaEhAtendimento({ liberadoPorPalavraChave: false, origem: "campanha" }),
+    ).toBe(true);
+  });
+
+  it("fora das três, ninguém autorizou", () => {
+    expect(
+      conversaEhAtendimento({
+        liberadoPorPalavraChave: false,
+        clienteConhecido: false,
+        origem: "organica",
+      }),
+    ).toBe(false);
+  });
+
+  it("nulo não conta como autorização", () => {
+    expect(
+      conversaEhAtendimento({ liberadoPorPalavraChave: false, clienteConhecido: null }),
+    ).toBe(false);
   });
 });
