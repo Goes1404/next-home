@@ -1,0 +1,74 @@
+confuso-entre-dois · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me fala do terra alta e do more aldeia, qual compensa mais
+[1] Sofia:   O Terra Alta fica no Jardim Tupanci, Barueri, com apartamentos de 1 dormitório, 52m², 1 suíte e 2 vagas.
+É obra em construção, com preço a partir de R$ 455.000.
+More Aldeia não está no meu catálogo, mas posso te mostrar o Terra Alta com detalhes.
+Quer que eu te envie as fotos para começar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+
+[2] Cliente: mas e o more aldeia?
+              tem de 2 dorm também?
+              qual tá mais avançado?
+[2] Sofia:   O Terra Alta é 1 dormitório, 52m², 1 suíte e 2 vagas, em construção, preço a partir de R$ 455.000.
+More Aldeia não está no meu catálogo, não tenho dados para comparar.
+Quer conhecer o Terra Alta? Posso agendar uma visita para você ver o projeto e as condições.
+
+[3] Cliente: mas eu perguntei do more aldeia
+              qual a metragem?
+              e tá mais avançado ou não?
+[3] Sofia:   More Aldeia não está no meu catálogo, não tenho metragem nem estágio da obra para informar.
+O Terra Alta é 1 dormitório, 52m², em construção, preço a partir de R$ 455.000.
+Quer conhecer o Terra Alta?
+
+[4] Cliente: mas e o more aldeia? não tem nada pra me passar?
+              faz tempo que tá em construção?
+              não consigo decidir sem as infos
+[4] Sofia:   More Aldeia não está no meu catálogo, não tenho informações oficiais para te passar.
+Posso te mostrar o Terra Alta para você avaliar o projeto e as condições.
+
+[5] Cliente: mas preciso saber do more aldeia
+              não dá pra decidir assim
+[5] Sofia:   Entendo que precise dessas informações, mas não tenho dados oficiais do More Aldeia.
+Posso ajudar você a conhecer o Terra Alta, que está em construção e tem 1 dormitório, 52m², 2 vagas.
+Quer que eu te envie as fotos para começar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-3-big-75c8b2df2fb9cedf8deb0b5002c9a935.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-4-big-847e1f55bb4b7eee7f216ebbce93f7f0.jpeg
+
+[6] Cliente: mas não dá pra ajudar com o more aldeia?
+              sei que o terra alta é 1 dorm, mas e metragem do more?
+[6] Sofia:   More Aldeia não está no meu catálogo, não tenho metragem oficial nem dados para te passar.
+Posso ajudar com o Terra Alta, que tem 52m², 1 dormitório, 1 suíte e 2 vagas.
+
+[7] Cliente: mas não dá pra ter nada do more?
+              não dá pra ajudar de jeito nenhum?
+[7] Sofia:   Quer que eu te envie as fotos para você conhecer melhor?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-5-big-b8697f666d01bb4d7c1d9b9651b07d8b.jpeg
+
+[8] Cliente: mas como não tem nada do more?
+              não dá pra pedir então?
+              não consigo decidir sem info
+[8] Sofia:   More Aldeia não está no meu catálogo, não consigo pedir dados oficiais.
+Quer conhecer o decorado e as condições pessoalmente?
+
+[9] Cliente: mas como não tem nada?
+              não dá pra pedir info?
+[9] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[10] Cliente: mas não sei o que quero
+              não dá pra ajudar com o more?
+[10] Sofia:   Entendo que esteja em dúvida, e quero ajudar com o que tenho.
+More Aldeia não está no meu catálogo, não tenho dados oficiais para passar.
+Me conta o que você busca, assim posso indicar o melhor para você.
+
+[11] Cliente: mas só quero info do more
+              não tem nada mesmo?
+[11] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[12] Cliente: mas preciso de info do more
+              não dá pra conseguir nada?
+[12] Sofia:   More Aldeia não está no meu catálogo, não tenho dados oficiais para passar.
+Posso ajudar com imóveis que tenho aqui, se quiser.
+Para isso, me diz quantos dormitórios você precisa.

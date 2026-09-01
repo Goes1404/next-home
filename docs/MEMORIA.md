@@ -2811,3 +2811,41 @@ entre elas:
 - **O open coding roda sem lista de categorias, de propósito.** Dar a lista
   pronta faz o modelo confirmar as hipóteses de quem escreveu a lista, que
   é o viés que a análise existe para quebrar.
+
+## A primeira comparação legítima, e ela deu EMPATE (01/09/2026)
+
+v29 × v31, três rodadas de cada, mesmas 4 personas. As duas mudanças da
+v31: bloco determinístico de dado pedido (Fase 2) e a regra da rajada
+virando condicional (Fase 3).
+
+| | v29 | v31 |
+|---|---|---|
+| o cliente teve de repetir | 21 [19–22] | 14 [9–24] |
+| respostas quase idênticas | 3 [1–3] | 0 [0–2] |
+| turnos sem assunto novo | 34 [32–34] | 33 [29–33] |
+| avançou (juiz) | 0 [0–3] | 2 [1–2] |
+| assumiria (juiz) | 0 [0–2] | 1 [1–2] |
+
+- **Todas as medianas melhoraram e nenhuma saiu da faixa.** Pela régua do
+  `comparacaoDeRodadas` — a pior rodada da melhor tem de ganhar da melhor
+  da pior — isso é empate. Não é avanço demonstrável, e registrar como
+  avanço seria voltar ao erro que a régua veio impedir.
+- **O MECANISMO funcionou, e isso é medida separada do desfecho:** o piso
+  apareceu em **10 de 12 conversas** contra **4 de 13** na v29. O
+  `dadoPedido` entrega o dado; o que não se demonstrou é que entregar o
+  dado muda o final da conversa.
+- **Uma persona carrega quase toda a variância.** Sem a persona
+  adversarial ("não quero papo, só preço"), v29 dá [15, 8, 19] e v31 dá
+  [6, 9, 4] — quase passando a régua. Só ela: v29 [6, 11, 3] e v31
+  [3, 15, 10], oscilando 5x nas DUAS versões.
+- **E isso não autoriza excluí-la.** Tirar uma persona depois de ver o
+  resultado é escolher a resposta — o mesmo erro do dia inteiro com outro
+  nome. O que o achado diz é sobre a MEDIÇÃO, não sobre o prompt.
+- **Somar personas deixa a mais ruidosa mandar.** O comparador agrega por
+  soma, então uma persona que varia de 3 a 15 afoga três que variam de 4 a
+  9. O conserto é comparar POR PERSONA e dar mais rodadas a quem varia
+  mais — mesma lição da taxonomia, onde ordenar por ocorrências deixava um
+  caso isolado parecer padrão.
+- **Régua que não enxerga uma queda de 33% na mediana vai fazer o projeto
+  andar em círculos** — que é o problema que ela veio resolver. Consertar o
+  comparador vem antes de mexer em prompt de novo.

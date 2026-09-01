@@ -1,0 +1,69 @@
+familia-tres-dorm · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato! Em qual região você procura imóvel? Alphaville, Barueri, Osasco ou outra?
+
+[2] Cliente: barueri ou alphaville
+              quero um 3 dorms perto da escola
+[2] Sofia:   Barueri e Alphaville têm ótimas opções para 3 dormitórios. Você prefere pronto para morar ou na planta?
+Assim consigo te mostrar o que cabe melhor no seu perfil.
+
+[3] Cliente: não quero apartamento na planta
+              quero pronto pra morar mesmo
+[3] Sofia:   Pronto para morar é ótimo para quem quer agilidade e conforto imediato.
+Agora, me conta, qual faixa de valor você tem em mente para esse 3 dormitórios?
+
+[4] Cliente: qual o valor?
+              não falei sobre preço ainda
+[4] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Para 3 dormitórios prontos em Barueri ou Alphaville, temos o Viva RSF Vila do Conde, que começa em R$ 460.000.
+Qual faixa de valor você tem em mente para eu ajustar as opções?
+
+[5] Cliente: mas quanto é o total?
+              tem outras opções?
+[5] Sofia:   O valor total depende da unidade, andar e forma de pagamento, que fechamos na visita.
+Tem sim, além do Viva RSF Vila do Conde, temos o On The Park Alphaville,
+pronto, e o Vitra Alphaville, também pronto e com 3 dormitórios.
+Quer que eu te mande o catálogo para você dar uma olhada e me dizer o que te agradou?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[6] Cliente: mas e o valor total dos outros?
+              não quero só o link, me manda as opções!
+[6] Sofia:   O valor exato depende da unidade e condições, que fechamos na visita. Te mandei o catálogo para você ver com calma e me dizer o que gostou.
+Os valores variam conforme a unidade, o andar e a forma de pagamento — prefiro te passar a condição certa para o seu caso.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[7] Cliente: mas não é isso que eu perguntei
+              quero saber o valor total dos outros
+              não quero só olhar catálogo
+[7] Sofia:   Entendo que quer o valor total, mas isso varia por unidade e condições.
+O valor exato fechamos na visita, onde ajustamos o melhor para você.
+Posso ajudar a agendar um horário para conversarmos pessoalmente?
+
+[8] Cliente: mas não quero só visitar
+              quero saber os valores já
+[8] Sofia:   O valor total depende da unidade e condições, que fechamos na visita.
+Posso agendar um horário para te apresentar tudo com calma?
+
+[9] Cliente: não é isso que eu perguntei
+              quero saber os valores dos outros!
+              me manda as opções já!
+[9] Sofia:   Quer que eu te envie o catálogo completo para você avaliar com calma e me dizer o que te agradou?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[10] Cliente: mas não é isso que eu perguntei
+              quero saber o valor total dos outros imóveis!
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[11] Cliente: quero os valores totais dos imóveis!
+              não quero saber só do que eu gosto!
+[11] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+
+[12] Cliente: mas e os outros valores?
+              me manda as opções já!
+[12] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Para 3 dormitórios prontos em Barueri ou Alphaville,
+temos o Viva RSF Vila do Conde a partir de R$ 460.000 e o On The Park Alphaville a partir de R$ 800.000.
+O Vitra Alphaville também é uma opção, começando em R$ 1.000.000.
+Quer que eu te mande o catálogo para você dar uma olhada e me dizer o que te agradou?

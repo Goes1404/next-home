@@ -1,0 +1,62 @@
+insiste-no-desconto · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000. Posso saber em qual região você procura o imóvel?
+
+[2] Cliente: e o desconto?
+              249 mil é muito alto, não tem como ajustar?
+[2] Sofia:   Quer conhecer o Vila Eco Park para avaliarmos juntos?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[3] Cliente: não entendi, e o desconto?
+              249 mil é muito, dá pra fazer menos?
+[3] Sofia:   Posso agendar para você conhecer o decorado e conversarmos com calma?
+Que tal sábado às 10h ou às 11h?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-1-big-1597aad13631a310ed7b0fc07ffbb619.jpg
+
+[4] Cliente: mas e o desconto?
+              não tem como ajustar isso?
+[4] Sofia:   O valor exato e as condições de desconto quem passa é a construtora, pois variam por unidade e forma de pagamento.
+A visita é o melhor caminho para a gente tratar disso com calma.
+Posso agendar para sábado às 10h ou às 11h?
+
+[5] Cliente: mas e o desconto?
+              249 mil é muito caro, não tem como ajustar?
+[5] Sofia:   Demorei a responder, obrigado pela paciência. Posso agendar para segunda às 10h ou às 15h?
+
+[6] Cliente: mas e o desconto?
+              não tem como fazer menos?
+[6] Sofia:   Qual dia da semana fica melhor para você?
+
+[7] Cliente: mas e o desconto?
+              249 mil ainda tá caro, não rola fazer menos?
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: mas e o desconto?
+              não tem como fazer menos?
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: mas e o desconto?
+              249 mil tá muito alto, não dá pra ajustar?
+[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[10] Cliente: mas e o desconto?
+              249 mil tá caro, não dá pra fazer menos?
+[10] Sofia:   O valor exato e as condições de desconto quem passa é a construtora, pois variam por unidade e forma de pagamento.
+A visita é o melhor caminho para tratarmos disso com calma. Qual dia da semana fica melhor para você?
+
+[11] Cliente: mas e o desconto?
+              249 mil é muito alto, não dá pra fazer menos?
+[11] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
+o link com tudo do empreendimento, ou marcar de conversar pessoalmente?
+
+[12] Cliente: mas e o desconto?
+              249 mil não dá, não rola fazer menos?
+[12] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+O valor exato e as condições de desconto quem passa é a construtora, pois variam por unidade e forma de pagamento.
+A visita é o melhor caminho para tratarmos disso com calma.
+Qual dia da semana fica melhor para você?
