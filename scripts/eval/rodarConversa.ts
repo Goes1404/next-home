@@ -20,7 +20,18 @@
  * Bandeiras:
  *   --personas=id1,id2   roda só essas (padrão: todas)
  *   --turnos=8           teto de turnos (padrão: 12)
+ *   --rodadas=3          repete tudo N vezes (padrão: 1)
  *   --sem-juiz           só as medidas determinísticas
+ *
+ * ## Por que `--rodadas` existe
+ *
+ * Da v25 à v28 eu decidi quatro vezes com UMA rodada, e três dessas leituras
+ * estavam erradas — a diferença que eu chamava de avanço ou de regressão
+ * cabia dentro da variância. A memória do projeto já registrava isso duas
+ * vezes sobre outros assuntos ("três rodadas quase iguais da v17 deram 2, 4
+ * e 1 falhas duras") e mesmo assim segui com n=1, porque repetir era caro de
+ * organizar. Agora não é: uma rodada com `--rodadas=3` guarda as três no
+ * mesmo arquivo, e `npm run eval:comparar` recusa concluir com menos de duas.
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -40,6 +51,7 @@ const arg = (nome: string): string | undefined =>
 const tem = (nome: string): boolean => argv.includes(`--${nome}`);
 
 const TETO_DE_TURNOS = Number(arg("turnos") ?? 12);
+const RODADAS = Math.max(1, Number(arg("rodadas") ?? 1));
 const SEM_JUIZ = tem("sem-juiz");
 
 /**
@@ -210,9 +222,18 @@ async function principal() {
   console.log(
     `Eval de CONVERSA · prompt ${PROMPT_VERSAO} · agente=${PROVEDOR_DO_AGENTE} · cliente=${provedorDoCliente()}`,
   );
-  console.log(`${escolhidas.length} persona(s), teto de ${TETO_DE_TURNOS} turnos.\n`);
+  console.log(
+    `${escolhidas.length} persona(s), teto de ${TETO_DE_TURNOS} turnos, ${RODADAS} rodada(s).\n`,
+  );
+  if (RODADAS < 2) {
+    console.warn(
+      "[eval] UMA rodada só: serve para olhar transcrição, não para comparar versões.\n" +
+        "       Use --rodadas=3 antes de decidir se uma mudança de prompt é avanço.\n",
+    );
+  }
 
   const relatorio = [];
+  for (let rodada = 1; rodada <= RODADAS; rodada++) {
   for (const persona of escolhidas) {
     const conversa = await conversarCom(persona);
     const medida = medirConversa(conversa.turnos, {
@@ -222,12 +243,13 @@ async function principal() {
     const juizo = SEM_JUIZ ? null : await julgarConversa(conversa);
 
     console.log(
-      `\n${persona.id}: ${conversa.turnos.length} turnos · ${conversa.desfecho}` +
+      `\n${persona.id}${RODADAS > 1 ? ` (rodada ${rodada}/${RODADAS})` : ""}: ${conversa.turnos.length} turnos · ${conversa.desfecho}` +
         `${medida.reprovacoes.length ? `\n  ⚠ ${medida.reprovacoes.join("\n  ⚠ ")}` : "\n  ✓ nenhuma reprovação determinística"}` +
         `${juizo ? `\n  juiz: avançou=${juizo.avancou} mesmaPessoa=${juizo.mesmaPessoa} assumiria=${juizo.assumiria} — ${juizo.justificativa}` : ""}\n`,
     );
 
-    relatorio.push({ ...conversa, medida, juizo });
+    relatorio.push({ ...conversa, medida, juizo, rodada });
+  }
   }
 
   const hoje = new Date().toISOString().slice(0, 10);
@@ -250,9 +272,11 @@ async function principal() {
          */
         clienteIndependente,
         tetoDeTurnos: TETO_DE_TURNOS,
+        rodadas: RODADAS,
         comJuiz: !SEM_JUIZ,
-        conversas: relatorio.map(({ persona, desfecho, medida, juizo, turnos }) => ({
+        conversas: relatorio.map(({ persona, desfecho, medida, juizo, turnos, rodada }) => ({
           persona,
+          rodada,
           desfecho,
           turnos: turnos.length,
           medida,
@@ -276,8 +300,8 @@ async function principal() {
       .map((t, i) => `[${i + 1}] Cliente: ${t.cliente.join("\n              ")}\n[${i + 1}] Sofia:   ${t.bot}${t.anexos?.length ? `\n              📎 ${t.anexos.join("\n              📎 ")}` : ""}`)
       .join("\n\n");
     writeFileSync(
-      `eval/resultados/transcricoes/${PROMPT_VERSAO}-${c.persona}.txt`,
-      `${c.persona} · ${c.desfecho} · ${c.turnos.length} turnos\n${"—".repeat(60)}\n\n${texto}\n`,
+      `eval/resultados/transcricoes/${PROMPT_VERSAO}-${c.persona}${RODADAS > 1 ? `-r${c.rodada}` : ""}.txt`,
+      `${c.persona}${RODADAS > 1 ? ` · rodada ${c.rodada}` : ""} · ${c.desfecho} · ${c.turnos.length} turnos\n${"—".repeat(60)}\n\n${texto}\n`,
       "utf8",
     );
   }
