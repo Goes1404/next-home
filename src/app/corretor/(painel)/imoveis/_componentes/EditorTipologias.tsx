@@ -7,7 +7,12 @@ interface Props {
   tipologias: Tipologia[];
   onAdicionar: () => void;
   onRemover: (index: number) => void;
-  onChange: (index: number, campo: keyof Tipologia, valor: any) => void;
+  /*
+   * O valor é o do PRÓPRIO campo, não `any`: com `K extends keyof
+   * Tipologia`, passar um texto onde a tipologia espera número passa a ser
+   * erro de compilação em vez de defeito em produção.
+   */
+  onChange: <K extends keyof Tipologia>(index: number, campo: K, valor: Tipologia[K]) => void;
 }
 
 export function EditorTipologias({

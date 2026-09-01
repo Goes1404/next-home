@@ -100,10 +100,13 @@ export function EditorImovelClient({ imovel }: Props) {
       setFeedbackTipo("sucesso");
       setFeedback(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Todas as alterações foram salvas com sucesso no catálogo!</>);
       setTimeout(() => { setFeedback(null); setFeedbackTipo(null); }, 4000);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setFeedbackTipo("erro");
-      setFeedback(<>❌ Erro: {err.message || "Não foi possível salvar agora."}</>);
+      // `unknown` no catch é o padrão do TypeScript moderno; `any` aqui
+      // deixava `err.message` passar sem ninguém garantir que existe.
+      const motivo = err instanceof Error ? err.message : "";
+      setFeedback(<>❌ Erro: {motivo || "Não foi possível salvar agora."}</>);
     } finally {
       setSalvando(false);
     }

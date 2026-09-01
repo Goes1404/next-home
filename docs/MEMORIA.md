@@ -2315,6 +2315,22 @@ os itens.
 - **Catraca foi testada com dente**: introduzi um `any` de propósito, ela
   reprovou com 15/14, removi, voltou a passar. Guarda nova que não é
   provocada uma vez é só otimismo.
+- **E ela cobrou de volta no dia seguinte (01/09): 14 → 8.** Foram limpos
+  os que dava para limpar SEM exercitar a tela: `prefer-const`, dois
+  `catch (err: any)`, o setter de tipologia (virou
+  `K extends keyof Tipologia`, então passar texto onde se espera número é
+  erro de compilação agora) e os dois `Date.now()` no corpo de Server
+  Component, que saíram para `janelaDeDias.ts`. **Relógio dentro do render
+  torna o componente não idempotente** — num Server Component dinâmico
+  "agora" é o que se quer, então a saída não é fingir pureza, é tirar o
+  relógio de dentro do render; de quebra a conta dos dias virou função
+  testável.
+- **Os 8 que sobraram são a mesma forma e pedem mudança de CONTRATO:**
+  setters `(campo: string, valor: any)` em quatro editores e três `as any`
+  em `imoveis/actions.ts` que escondem atrito real com os tipos gerados.
+  Mexer neles sem conseguir abrir a tela troca um erro de lint por um
+  defeito de verdade. **Parar num número honesto e baixar o teto vale mais
+  que zerar no escuro.**
 - **A esteira NÃO roda o E2E**, e o motivo é o de sempre nesta base: os
   specs do painel exigem credencial real e o banco por trás é o de
   PRODUÇÃO. Rodar a cada push seria bater no banco de clientes de verdade a

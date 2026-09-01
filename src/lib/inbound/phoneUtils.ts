@@ -5,7 +5,7 @@ export function normalizarTelefoneBrasileiro(raw: string | null | undefined): st
   if (!raw) return null;
 
   // Remove tudo que não for dígito
-  let apenasNumeros = raw.replace(/\D/g, "");
+  const apenasNumeros = raw.replace(/\D/g, "");
 
   if (!apenasNumeros) return null;
 

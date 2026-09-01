@@ -24,12 +24,27 @@
 import { execFileSync } from "node:child_process";
 
 /**
- * Quantos erros de lint o repositório tem hoje (31/08/2026).
+ * Quantos erros de lint o repositório tem hoje.
+ *
+ * 31/08/2026: 14 (a dívida herdada, quando a catraca nasceu)
+ * 01/09/2026:  8 — limpos os que dava para limpar com segurança:
+ *   `prefer-const`, dois `catch (err: any)`, o setter de tipologia (que
+ *   virou `K extends keyof Tipologia`, então passar texto onde se espera
+ *   número agora é erro de compilação) e os dois `Date.now()` no corpo de
+ *   Server Component, que saíram para `janelaDeDias.ts` — relógio dentro
+ *   do render torna o componente não idempotente.
+ *
+ * Os 8 restantes são a MESMA forma e pedem mudança de contrato, não
+ * troca de tipo: setters `(campo: string, valor: any)` em quatro
+ * componentes de edição, e três `as any` em `imoveis/actions.ts` que
+ * escondem atrito real com os tipos gerados. Mexer neles sem conseguir
+ * exercitar a tela no navegador troca um erro de lint por um defeito de
+ * verdade.
  *
  * BAIXE este número sempre que limpar algum. Nunca suba: subir é a coisa
  * exata que a catraca existe para impedir.
  */
-const TETO = 14;
+const TETO = 8;
 
 function rodarEslint() {
   try {

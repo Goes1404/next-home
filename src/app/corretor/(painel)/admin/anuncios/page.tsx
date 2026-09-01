@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { metaAdsConfigurado } from "@/lib/metaAds";
 import { agregarPorCampanha } from "@/lib/admin/funilDeAnuncios";
+import { janelaDeDias } from "@/lib/admin/janelaDeDias";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { BotaoSincronizar } from "./BotaoSincronizar";
 import { GraficoGastoDia } from "./GraficoGastoDia";
@@ -48,8 +49,12 @@ export default async function AnunciosPage() {
   // passou pela guarda de gestor, e a service key só executa a leitura.
   const servico = createServiceClient();
 
-  const corte = new Date(Date.now() - DIAS_DA_JANELA * 86_400_000);
-  const corteDia = corte.toISOString().slice(0, 10);
+  /*
+   * O relógio mora FORA do render (`janelaDeDias`): `Date.now()` no corpo
+   * de um Server Component é impureza durante o render, e componente que
+   * não é idempotente dá resultado instável se o React renderizar de novo.
+   */
+  const { corte, corteDia, dias: diasDaJanela } = janelaDeDias(DIAS_DA_JANELA);
 
   const [{ data: metricas }, { data: leadsDeAnuncio }, { count: cliquesPorteiro }] = await Promise.all([
     sessao
@@ -108,14 +113,10 @@ export default async function AnunciosPage() {
 
   const porDia = new Map<string, number>();
   for (const l of linhas) porDia.set(l.dia, (porDia.get(l.dia) ?? 0) + l.gasto);
-  const dias = Array.from({ length: DIAS_DA_JANELA }, (_, i) => {
-    const d = new Date(Date.now() - (DIAS_DA_JANELA - 1 - i) * 86_400_000);
-    const chave = d.toISOString().slice(0, 10);
-    return {
-      rotulo: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-      valor: porDia.get(chave) ?? 0,
-    };
-  });
+  const dias = diasDaJanela.map(({ chave, rotulo }) => ({
+    rotulo,
+    valor: porDia.get(chave) ?? 0,
+  }));
 
   const resultadosMetaPorCampanha = new Map<string, number>();
   for (const l of linhas) {

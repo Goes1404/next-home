@@ -51,7 +51,7 @@ export function EditorBook({
       } else {
         setMensagem(`❌ ${res.erro || "Falha ao enviar PDF."}`);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setMensagem("❌ Erro de conexão ao enviar arquivo.");
     } finally {
