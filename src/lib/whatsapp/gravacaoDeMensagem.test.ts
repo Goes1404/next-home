@@ -75,3 +75,32 @@ describe("a mensagem do bot precisa sobreviver à telemetria", () => {
     });
   }
 });
+
+/**
+ * Guarda da reserva de visita (0074).
+ *
+ * A confirmação do cliente não pode voltar a ser um `update` direto: sem a
+ * função do banco, um horário que a IA inventasse vira compromisso no CRM, e
+ * duas conversas confirmando o mesmo horário no mesmo segundo levam as duas
+ * — a corrida que a cota anti-ban já ensinou que a aplicação perde.
+ */
+describe("a visita é reservada no banco, não gravada pela aplicação", () => {
+  const REPOSITORIO_FONTE = readFileSync("src/lib/whatsapp/repositorio.ts", "utf8");
+
+  const corpoDeAgendarVisita = (): string => {
+    const inicio = REPOSITORIO_FONTE.indexOf("export async function agendarVisitaLead");
+    return REPOSITORIO_FONTE.slice(inicio, REPOSITORIO_FONTE.indexOf("\n}", inicio));
+  };
+
+  it("chama a função de reserva", () => {
+    expect(corpoDeAgendarVisita()).toContain('rpc("reservar_horario_visita"');
+  });
+
+  it("não escreve a data direto na tabela — isso é o que a função protege", () => {
+    expect(corpoDeAgendarVisita()).not.toContain("visita_agendada_em:");
+  });
+
+  it("recusa da agenda devolve false, e não é tratada como sucesso", () => {
+    expect(corpoDeAgendarVisita()).toContain("data === true");
+  });
+});

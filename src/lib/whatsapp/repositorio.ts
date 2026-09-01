@@ -614,20 +614,50 @@ export function validarDataVisita(dataHoraISO: string, agora: Date = new Date())
 /**
  * O cliente confirmou um horário com a IA: vira compromisso de verdade —
  * data no lead E etapa do funil, o mesmo efeito de o corretor marcar à mão.
+ *
+ * ## Por que passa por uma função do banco (0074)
+ *
+ * Antes isto era um `update` direto, e tinha dois furos. O primeiro: um
+ * horário que a IA inventasse virava compromisso no CRM, e o corretor
+ * descobria na hora de não poder atender — "ofereça só o que existe" é
+ * instrução de prompt, e instrução de prompt falha justo na resposta que
+ * importa. O segundo: duas conversas confirmando o MESMO horário no mesmo
+ * segundo levavam as duas, porque ler "está livre?" e gravar são duas idas
+ * ao banco e entre elas cabe outra conversa — a mesma corrida que fez a
+ * cota anti-ban morar numa função do banco.
+ *
+ * `reservar_horario_visita` confere a grade do corretor (no fuso de São
+ * Paulo) e deixa o índice único parcial recusar o conflito. Devolve
+ * `false` quando o horário não existe ou já é de outro lead — e aí o
+ * chamador degrada para o alerta comum de "visita solicitada", que é o
+ * mesmo desfecho de uma data inválida.
+ *
+ * Corretor sem grade configurada continua como antes: aceita qualquer
+ * horário. Hoje isso vale para todos.
  */
 export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promise<boolean> {
   const supabase = createServiceClient();
 
-  const { error } = await supabase
-    .from("leads")
-    .update({
-      visita_agendada_em: dataVisita.toISOString(),
-      etapa: "visita_agendada",
-      etapa_alterada_em: new Date().toISOString(),
-    })
-    .eq("id", leadId);
+  const { data, error } = await supabase.rpc("reservar_horario_visita", {
+    p_lead_id: leadId,
+    p_quando: dataVisita.toISOString(),
+  });
 
-  return !error;
+  if (error) {
+    console.error(`[visita] não foi possível reservar para o lead ${leadId}: ${error.message}`);
+    return false;
+  }
+
+  if (data === false) {
+    // Não é erro: é a agenda funcionando. Vale log porque um recusa
+    // frequente aqui significa que a IA está oferecendo horário que não
+    // existe — e isso é defeito de prompt, não de agenda.
+    console.warn(
+      `[visita] horário recusado (fora da grade ou já ocupado) para o lead ${leadId}: ${dataVisita.toISOString()}`,
+    );
+  }
+
+  return data === true;
 }
 
 /**

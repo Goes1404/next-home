@@ -1577,6 +1577,10 @@ export type Database = {
         Args: { p_token: string; p_url: string }
         Returns: string
       }
+      reservar_horario_visita: {
+        Args: { p_lead_id: string; p_quando: string }
+        Returns: boolean
+      }
       configurar_followups_automaticos: {
         Args: { p_token: string; p_url: string }
         Returns: string

@@ -341,8 +341,18 @@ cabeça — o eval de 31/08 mediu os mesmos dois inventados quatro vezes
 seguidas, e o funil (0072) mostra **6 visitas propostas para 1 marcada**.
 Quem não configurar agenda continua com o calendário genérico de sempre:
 nunca quebrar o que funciona por causa de configuração vazia.
-*Falta na F1: confirmação do cliente reservando o horário de fato,
-reagendamento, e exceção por data ("nesse sábado não").*
+**F1 ENTREGUE em 01/09** (0074): a confirmação virou RESERVA. Antes o
+`update` era ingênuo — horário inventado pela IA virava compromisso no CRM,
+e duas conversas confirmando o mesmo horário no mesmo segundo levavam as
+duas. Agora `reservar_horario_visita` confere a grade (no fuso de SP) e o
+conflito é recusado por um ÍNDICE ÚNICO parcial, não por uma checagem que o
+código pode esquecer. Provado no banco em cinco casos, com rollback: dentro
+da grade reserva; mesmo horário para outro lead recusa; fora da faixa
+recusa; dia sem grade recusa; e o próprio lead reconfirmando é idempotente.
+Corretor sem grade continua aceitando qualquer horário — o caso dos 8 hoje.
+
+*Falta na F2: reagendamento, exceção por data ("nesse sábado não") e duas
+faixas no mesmo dia.*
 
 Visão nas imagens recebidas (cliente manda print de anúncio → IA reconhece
 o imóvel) · ~~agenda real de visitas~~ (F0 acima; falta confirmação e

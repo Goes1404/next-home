@@ -2454,3 +2454,32 @@ guarda anti-repetição.
   deixaria criar faixas sobrepostas e a geração repetiria o mesmo horário.
 - **Visita passada não ocupa vaga.** O filtro de ocupados usa o INSTANTE de
   agora, não o dia: visita das 9h não bloqueia a vaga das 15h do mesmo dia.
+
+## A reserva de visita é declarativa (0074, 01/09/2026)
+
+- **`agendarVisitaLead` era um `update` ingênuo**, com dois furos. Horário
+  que a IA inventasse virava compromisso no CRM (e o corretor descobria na
+  hora de não poder atender); e duas conversas confirmando o MESMO horário
+  no mesmo segundo levavam as duas.
+- **A trava do conflito é um ÍNDICE ÚNICO PARCIAL**, não uma checagem em
+  plpgsql. Escrever "leia se está livre, depois grave" dentro da função
+  daria a MESMA corrida um andar abaixo: sob READ COMMITTED as duas
+  transações leriam "livre" antes de qualquer uma gravar. A função só
+  traduz a violação do índice em `false`. **Quando a garantia pode ser
+  declarativa, ela não deve ser procedural.**
+- **`extract(dow)`/`extract(hour)` SEMPRE com `at time zone
+  'America/Sao_Paulo'`.** Em UTC, às 22h de Brasília já é o dia seguinte —
+  a grade de sábado seria conferida contra um domingo, e aqui isso recusaria
+  a visita CERTA. Terceira vez que esta armadilha aparece no projeto.
+- **Reconfirmar o próprio horário é idempotente**, e isso precisou ser
+  pensado: o índice compara `(corretor_id, visita_agendada_em)` e o próprio
+  lead não conflita consigo mesmo porque o `update` reescreve a mesma linha.
+- **Corretor sem grade aceita qualquer horário**, de propósito — é o
+  comportamento de hoje para os 8, e mudá-lo junto teria quebrado a
+  confirmação de visita para todo mundo em nome de uma configuração que
+  ninguém preencheu.
+- **`select f(x), (select ... from tabela)` na MESMA declaração não vê o
+  efeito da função.** Todas as subconsultas de uma declaração usam o mesmo
+  snapshot, então o teste parecia mostrar que a etapa não tinha mudado.
+  Não era bug: era artefato de medição. Conferir efeito de função em
+  declaração SEPARADA.
