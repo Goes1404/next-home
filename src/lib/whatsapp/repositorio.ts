@@ -816,7 +816,24 @@ export async function cancelarFollowupsPendentes(conversaId: string): Promise<vo
 }
 
 /** Janela padrão de silêncio do bot depois que o corretor entra na conversa. */
-const HORAS_PAUSA_HUMANA = 24;
+/**
+ * Quanto tempo a IA cala depois que o corretor fala.
+ *
+ * Era 24h, e numa linha PESSOAL isso é praticamente permanente: medido em
+ * 01/09, 448 mensagens de cliente foram puladas em 7 dias por
+ * `pausada_por_humano`, contra 32 respondidas — e o relógio reinicia a cada
+ * mensagem do corretor, que manda 373 por semana no próprio celular, para
+ * quem for.
+ *
+ * Três horas cobre o que a pausa existe para cobrir: enquanto o humano está
+ * respondendo, o bot não fala por cima. Depois disso, ou o atendimento
+ * acabou, ou o corretor falou de novo e o relógio reiniciou.
+ *
+ * O que protege a conversa pessoal NÃO é a duração — é o retravamento
+ * (`retravarPalavraChave`), que só a palavra-chave desfaz. Encurtar a pausa
+ * não afrouxa aquilo.
+ */
+const HORAS_PAUSA_HUMANA = 3;
 
 /**
  * O corretor respondeu do celular dele: a IA cala a boca nesta conversa.
@@ -825,6 +842,46 @@ const HORAS_PAUSA_HUMANA = 24;
  * resposta HTTP não pausa nada, e a próxima mensagem do cliente voltaria a
  * ser respondida pelo bot por cima do atendimento humano.
  */
+/**
+ * Nós falamos com esta pessoa por iniciativa nossa — a conversa virou
+ * atendimento.
+ *
+ * ## O defeito que isto conserta (01/09/2026)
+ *
+ * Relatado: "disparamos para a lista de leads, alguns responderam, e a IA
+ * não respondeu". Medido: **7 clientes responderam ao disparo e só 1 das
+ * conversas estava marcada como campanha.**
+ *
+ * A causa é que a isenção da trava olhava a CERTIDÃO DE NASCIMENTO da
+ * conversa. `obterOuCriarConversa` devolve a conversa existente intacta —
+ * o `origem: "campanha"` que o disparador passa só vale no INSERT. Lead que
+ * já tinha conversa orgânica recebia o disparo, respondia, e o bot via
+ * `origem = 'organica'`, sem palavra-chave, e ficava mudo.
+ *
+ * ## Por que `cliente_conhecido`, e não `origem`
+ *
+ * Reescrever `origem` apagaria de onde a conversa veio. `cliente_conhecido`
+ * significa "sabemos que este número é cliente" — e disparar para ele a
+ * partir da própria lista de leads é a prova disso. A flag só estava errada
+ * porque foi calculada no instante do INSERT, às vezes antes de a pessoa
+ * virar lead.
+ *
+ * Isso também acerta o resto por tabela: com a flag, a fala do corretor
+ * passa a PAUSAR sem retravar (`decidirPorFalaDoCorretor`), que é o
+ * comportamento certo para quem é cliente de verdade.
+ */
+export async function marcarConversaComoAtendimento(conversaId: string): Promise<void> {
+  const supabase = createServiceClient();
+
+  const { error } = await supabase
+    .from("whatsapp_conversas")
+    .update({ cliente_conhecido: true, liberado_por_palavra_chave: true })
+    .eq("id", conversaId)
+    .or("cliente_conhecido.is.false,liberado_por_palavra_chave.is.false");
+
+  if (error) console.error("[conversa] falha ao marcar como atendimento:", error.message);
+}
+
 export async function pausarBotPorAtendimentoHumano(
   conversaId: string,
   opcoes: { retravarPalavraChave?: boolean } = {},

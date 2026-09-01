@@ -2943,3 +2943,52 @@ Erro meu, pego pela medição antes de virar apagamento de dado real.
   parágrafo inteiro num chat — na prática a ativação por palavra não
   funciona, e quem segura a trava é só a `palavra_chave_teste`. É campo de
   painel, decisão do corretor.
+
+## A campanha falou, o cliente respondeu, e o bot ficou mudo (01/09/2026)
+
+Relatado pelo usuário: "disparamos para a lista de leads, alguns
+responderam, e a IA não respondeu". Estava certo, e são DOIS defeitos
+somados.
+
+### 1. A isenção olhava a certidão de nascimento da conversa
+
+- **Medido: 7 clientes responderam ao disparo e só 1 das conversas estava
+  marcada como campanha.**
+- `obterOuCriarConversa` devolve a conversa EXISTENTE intacta — o
+  `origem: 'campanha'` que o disparador passa só vale no INSERT. Lead que
+  já tinha conversa orgânica recebia o disparo, respondia, e
+  `exigePalavraChave` via `origem = 'organica'` sem palavra-chave: bot mudo.
+- **A isenção tem de seguir o FATO de termos falado, não como a conversa
+  nasceu.** `marcarConversaComoAtendimento` roda no envio, no disparador e
+  no runner de follow-up.
+- **Marca `cliente_conhecido`, não `origem`.** Reescrever `origem` apagaria
+  de onde a conversa veio; `cliente_conhecido` significa "sabemos que este
+  número é cliente", e disparar para ele a partir da própria lista de leads
+  é a prova. A flag só estava errada porque foi calculada no INSERT, às
+  vezes antes de a pessoa virar lead. De quebra acerta o retravamento: com
+  ela, a fala do corretor pausa sem retravar.
+- **16 conversas já estavam presas** e o código só valeria do próximo envio
+  em diante — daí a 0086. Recorte por quem RECEBEU (item de fila com
+  `enviado_em`), nunca por quem escreveu.
+- **Terceira vez que este projeto tropeça no mesmo lugar:** caminho novo que
+  FALA com o cliente e esquece de mexer no estado dele. A primeira foi o
+  funil (0059), a segunda o agendamento de follow-up (31/08), esta é a
+  trava. `atendimentoPorIniciativa.test.ts` lê o código dos dois caminhos —
+  e já pegou o follow-up, que tinha o mesmo defeito.
+
+### 2. A pausa de 24h numa linha pessoal é silêncio permanente
+
+- **Medido: 448 mensagens de cliente puladas em 7 dias por
+  `pausada_por_humano`, contra 32 respondidas.** 30 conversas, e **29 delas
+  com lead no CRM**.
+- A causa é o relógio: a fala do corretor cala a IA por 24h e REINICIA a
+  cada mensagem — e ele manda 373 por semana do próprio celular, para quem
+  for, porque a instância é o WhatsApp pessoal dele.
+- **3 horas cobre o que a pausa existe para cobrir** (não falar por cima de
+  um atendimento em andamento). O que protege a conversa pessoal não é a
+  duração e sim o RETRAVAMENTO, que só a palavra-chave desfaz — encurtar não
+  afrouxa aquilo.
+- **`cliente_conhecido` só é decidido no INSERT e nunca recalculado**, então
+  29 das 30 conversas tinham lead e apenas 1 estava marcada. Quem vira lead
+  DEPOIS da conversa começar fica "desconhecido" para sempre — a menos que
+  algo o marque, que é o que a correção acima passou a fazer.

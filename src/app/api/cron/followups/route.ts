@@ -18,6 +18,7 @@ import {
   travarDisparo,
   destravarDisparo,
   ultimaFalaDoCorretor,
+  marcarConversaComoAtendimento,
 } from "@/lib/whatsapp/repositorio";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
@@ -374,6 +375,14 @@ async function processarFollowup(
     providerMessageId: envio.messageId ?? null,
     statusEntrega: envio.messageId ? "enviada" : null,
   });
+
+  /*
+   * Mesmo motivo do disparador: falamos por iniciativa nossa, então a
+   * conversa é atendimento. Sem isto, o cliente responde ao follow-up e o
+   * bot fica mudo porque a isenção da trava olhava só como a conversa
+   * nasceu.
+   */
+  await marcarConversaComoAtendimento(conversa.id);
   await supabase
     .from("whatsapp_followups")
     .update({ status: "enviado", enviado_em: new Date().toISOString() })

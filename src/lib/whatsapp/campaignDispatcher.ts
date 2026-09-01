@@ -11,6 +11,7 @@ import {
   destravarDisparo,
   registrarTentativaDeContato,
   gravarMensagem,
+  marcarConversaComoAtendimento,
   obterOuCriarConversa,
   devolverCotaCampanha,
   registrarResultadoEnvio,
@@ -574,6 +575,16 @@ async function processarInstancia(ctx: {
           providerMessageId: envio.messageId ?? null,
           statusEntrega: envio.messageId ? "enviada" : null,
         });
+
+      /*
+       * A conversa virou atendimento: nós falamos com esta pessoa a partir
+       * da NOSSA lista de leads. Sem isto, lead que já tinha conversa
+       * orgânica recebia o disparo, respondia — e o bot ficava mudo, porque
+       * a isenção da trava olhava a certidão de nascimento da conversa e não
+       * o fato de termos falado. Medido em 01/09: 7 responderam ao disparo,
+       * 1 conversa marcada.
+       */
+      await marcarConversaComoAtendimento(conversa.id);
 
         if (!envio.messageId) {
           // Sem chave não há como confirmar entrega depois. Não vira erro
