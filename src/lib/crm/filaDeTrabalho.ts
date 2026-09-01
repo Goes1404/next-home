@@ -19,6 +19,7 @@ import type { Lead } from "@/lib/types";
  */
 
 export type TipoItemFila =
+  | "sem_resposta"
   | "visita_hoje"
   | "lead_novo"
   | "tarefa_vencida"
@@ -64,13 +65,26 @@ export const INDIVIDUAIS_POR_TIPO = 2;
 /** Dias sem mexer no lead até ele contar como parado. */
 const DIAS_PARA_ESFRIAR = 7;
 
+/**
+ * A ordem é a do CUSTO DE PERDER, e `sem_resposta` entra na frente de tudo.
+ *
+ * Cliente que respondeu e ficou sem resposta é a única situação em que a
+ * pessoa já levantou a mão e nós ignoramos — não há sinal mais caro de
+ * desperdiçar. Medido em 01/09, quando a trava de campanha estava quebrada:
+ * **6 responderam ao disparo e nenhum recebeu resposta**, um deles esperando
+ * desde 27/08.
+ *
+ * Fica acima até da visita de hoje: a visita já está marcada, e quem espera
+ * resposta pode desistir a qualquer momento.
+ */
 const PESO: Record<TipoItemFila, number> = {
-  visita_hoje: 0,
-  tarefa_vencida: 1,
-  lead_novo: 2,
-  tarefa_hoje: 3,
-  sem_revisao: 4,
-  lead_parado: 5,
+  sem_resposta: 0,
+  visita_hoje: 1,
+  tarefa_vencida: 2,
+  lead_novo: 3,
+  tarefa_hoje: 4,
+  sem_revisao: 5,
+  lead_parado: 6,
 };
 
 const horaCurta = new Intl.DateTimeFormat("pt-BR", {
@@ -111,7 +125,22 @@ export async function getFilaDeTrabalho(
 
   const limiteEsfriar = new Date(agora.getTime() - DIAS_PARA_ESFRIAR * 86_400_000).toISOString();
 
-  const [visitas, novos, parados, revisao] = await Promise.all([
+  const [esperando, visitas, novos, parados, revisao] = await Promise.all([
+    /*
+     * Quem falou com a gente e está esperando (0087). Primeiro item da fila
+     * porque é a única situação em que a pessoa já levantou a mão e nós
+     * ignoramos — não há sinal mais caro de desperdiçar.
+     *
+     * A view já recorta por ATENDIMENTO: sem isso a fila encheria de
+     * conversa pessoal, porque a instância roda no WhatsApp do corretor.
+     */
+    supabase
+      .from("whatsapp_esperando_resposta")
+      .select("conversa_id, lead_id, telefone_cliente, nome_cliente, esperando_desde", {
+        count: "exact",
+      })
+      .order("esperando_desde", { ascending: true })
+      .limit(TETO_DA_FILA),
     supabase
       .from("leads")
       .select("id, nome, telefone, visita_agendada_em")
@@ -149,6 +178,32 @@ export async function getFilaDeTrabalho(
   ]);
 
   const itens: ItemFila[] = [];
+
+  for (const conversa of esperando.data ?? []) {
+    const desde = new Date(conversa.esperando_desde as string);
+    const horas = Math.floor((agora.getTime() - desde.getTime()) / 3_600_000);
+
+    itens.push({
+      chave: `sem_resposta:${conversa.conversa_id}`,
+      tipo: "sem_resposta",
+      titulo: `Responder ${conversa.nome_cliente || conversa.telefone_cliente || "cliente"}`,
+      /*
+       * A espera em horas, e em DIAS quando passa de um: "há 5 dias" dói
+       * como tem de doer, e "há 47 horas" ninguém converte de cabeça.
+       */
+      detalhe:
+        horas >= 24
+          ? `Escreveu há ${Math.floor(horas / 24)} dia${horas >= 48 ? "s" : ""} e está sem resposta`
+          : horas >= 1
+            ? `Escreveu há ${horas}h e está sem resposta`
+            : "Acabou de escrever",
+      href: `/corretor/conversas?conversa=${conversa.conversa_id}`,
+      whatsapp: conversa.telefone_cliente
+        ? `https://wa.me/${String(conversa.telefone_cliente).replace(/\D/g, "")}`
+        : undefined,
+      peso: PESO.sem_resposta,
+    });
+  }
 
   for (const lead of visitas.data ?? []) {
     itens.push({

@@ -13,6 +13,8 @@ import type { ItemFila, TipoItemFila } from "@/lib/crm/filaDeTrabalho";
  */
 
 const REGUA: Record<TipoItemFila, string> = {
+  // Primeiro da fila: já levantou a mão e ficou sem resposta.
+  sem_resposta: "Esperando você",
   visita_hoje: "bg-etapa-azul",
   tarefa_vencida: "bg-etapa-areia",
   lead_novo: "bg-acento",

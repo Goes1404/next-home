@@ -8,13 +8,19 @@ import { ordenarFila, TETO_DA_FILA, type ItemFila, type TipoItemFila } from "./f
  * IA" acima de uma visita marcada para daqui a duas horas.
  */
 
+/*
+ * A ordem esperada, escrita à mão de propósito: se este arquivo importasse
+ * o PESO de produção, o teste passaria a concordar com qualquer reordenação
+ * — inclusive a errada. É a segunda cópia que dá sentido à primeira.
+ */
 const PESOS: Record<TipoItemFila, number> = {
-  visita_hoje: 0,
-  tarefa_vencida: 1,
-  lead_novo: 2,
-  tarefa_hoje: 3,
-  sem_revisao: 4,
-  lead_parado: 5,
+  sem_resposta: 0,
+  visita_hoje: 1,
+  tarefa_vencida: 2,
+  lead_novo: 3,
+  tarefa_hoje: 4,
+  sem_revisao: 5,
+  lead_parado: 6,
 };
 
 // `titulo: string` explícito: sem a anotação, o default (`= tipo`) faz o TS
@@ -106,5 +112,37 @@ describe("nome e agrupamento na fila (27/08/2026)", () => {
     // O teto de 6 não serve de nada se um assunto só puder ocupar os 6.
     expect(INDIVIDUAIS_POR_TIPO).toBeLessThan(6);
     expect(INDIVIDUAIS_POR_TIPO).toBeGreaterThan(1);
+  });
+});
+
+describe("quem esperando resposta vem primeiro", () => {
+  /*
+   * A ordem da fila é a do CUSTO DE PERDER, e esta é a única situação em
+   * que a pessoa já levantou a mão e nós ignoramos.
+   *
+   * Medido em 01/09, com a trava de campanha quebrada: 6 clientes
+   * responderam ao disparo e nenhum recebeu resposta — um deles esperando
+   * desde 27/08. A visita de hoje perde para isso porque já está marcada;
+   * quem espera resposta desiste a qualquer momento.
+   */
+  it("ganha até da visita de hoje", () => {
+    const item = (tipo: TipoItemFila): ItemFila => ({
+      chave: tipo,
+      tipo,
+      titulo: tipo,
+      detalhe: "",
+      href: "/",
+      peso: PESOS[tipo],
+    });
+
+    const ordenada = ordenarFila([
+      item("lead_parado"),
+      item("visita_hoje"),
+      item("sem_resposta"),
+      item("tarefa_vencida"),
+    ]);
+
+    expect(ordenada[0].tipo).toBe("sem_resposta");
+    expect(ordenada[1].tipo).toBe("visita_hoje");
   });
 });

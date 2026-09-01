@@ -1649,6 +1649,17 @@ export type Database = {
           },
         ]
       }
+      whatsapp_esperando_resposta: {
+        Row: {
+          conversa_id: string | null
+          corretor_id: string | null
+          esperando_desde: string | null
+          lead_id: string | null
+          nome_cliente: string | null
+          telefone_cliente: string | null
+        }
+        Relationships: []
+      }
       whatsapp_funil_metricas: {
         Row: {
           conversas: number | null
