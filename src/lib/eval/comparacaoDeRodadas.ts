@@ -171,3 +171,84 @@ export function compararRodadas(
 
   return { metricas, juizDecide: opcoes.juizDecide, conclusao };
 }
+
+/**
+ * O mesmo confronto, PERSONA A PERSONA.
+ *
+ * ## Por que a soma não bastava
+ *
+ * Na primeira comparação legítima (v29 × v31, 01/09) o agregado deu empate
+ * em tudo. Separando, apareceu a razão: a persona adversarial oscilava de
+ * 3 a 15 nas DUAS versões, enquanto as outras três iam de 4 a 9. Somando,
+ * uma persona sozinha afogava o sinal das outras — a mesma lição da
+ * taxonomia de falhas, onde ordenar por ocorrências fazia um caso isolado
+ * parecer padrão.
+ *
+ * ## O que isto NÃO faz
+ *
+ * Não substitui o veredito do agregado, e não vira desculpa para excluir a
+ * persona difícil. Tirar do cálculo o caso que não colaborou, depois de ver
+ * o resultado, é escolher a resposta — o erro que esta régua veio impedir.
+ * Aqui é DIAGNÓSTICO: mostra onde a mudança agiu e quais personas estão
+ * ruidosas demais para informar qualquer coisa com três rodadas.
+ */
+
+export interface ComparacaoDePersona {
+  persona: string;
+  metricas: ComparacaoDeMetrica[];
+  /**
+   * Amplitude sobre mediana, na versão nova.
+   *
+   * Acima de 1 significa que a faixa é maior que o próprio valor típico —
+   * três rodadas não dizem nada sobre essa persona, e mais prompt não vai
+   * ser medido por ela.
+   */
+  ruido: number | null;
+}
+
+/** A métrica que define "ruidosa": a mais instável das determinísticas. */
+const METRICA_DE_RUIDO = "clienteRepetiu";
+
+export function ruidoDe(valores: readonly number[]): number | null {
+  if (valores.length < 2) return null;
+  const med = mediana(valores);
+  if (med === null || med === 0) return null;
+  return Math.round(((Math.max(...valores) - Math.min(...valores)) / med) * 100) / 100;
+}
+
+export function compararPorPersona(
+  antes: ReadonlyMap<string, Rodada[]>,
+  depois: ReadonlyMap<string, Rodada[]>,
+): ComparacaoDePersona[] {
+  const personas = [...new Set([...antes.keys(), ...depois.keys()])].sort();
+
+  return personas.map((persona) => {
+    const a = antes.get(persona) ?? [];
+    const d = depois.get(persona) ?? [];
+
+    return {
+      persona,
+      metricas: METRICAS.map((m) =>
+        compararMetrica(
+          m,
+          a.map((r) => r[m.chave]).filter((v) => typeof v === "number"),
+          d.map((r) => r[m.chave]).filter((v) => typeof v === "number"),
+        ),
+      ),
+      ruido: ruidoDe(d.map((r) => r[METRICA_DE_RUIDO]).filter((v) => typeof v === "number")),
+    };
+  });
+}
+
+/**
+ * Quantas rodadas essa persona precisaria para a faixa ficar utilizável.
+ *
+ * Não é cálculo de poder estatístico — com n=3 não há base para isso. É uma
+ * régua grosseira e declarada: ruído até 0,5 é aceitável com 3 rodadas;
+ * acima disso, mais ou menos o dobro de rodadas por ponto de ruído. Serve
+ * para dizer "não meça esta persona com três", que é a decisão real.
+ */
+export function rodadasSugeridas(ruido: number | null, rodadasFeitas: number): number {
+  if (ruido === null || ruido <= 0.5) return rodadasFeitas;
+  return Math.min(12, Math.ceil(rodadasFeitas * (1 + ruido)));
+}

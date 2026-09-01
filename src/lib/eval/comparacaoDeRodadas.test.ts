@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   compararMetrica,
+  compararPorPersona,
+  ruidoDe,
+  rodadasSugeridas,
+  type Rodada,
   compararRodadas,
   mediana,
   METRICAS,
@@ -87,5 +91,70 @@ describe("METRICAS", () => {
     const primeiraDoJuiz = METRICAS.findIndex((m) => m.doJuiz);
     const ultimaDeterministica = METRICAS.map((m) => Boolean(m.doJuiz)).lastIndexOf(false);
     expect(ultimaDeterministica).toBeLessThan(primeiraDoJuiz);
+  });
+});
+
+describe("compararPorPersona", () => {
+  const rodada = (clienteRepetiu: number): Rodada => ({
+    clienteRepetiu,
+    iaRepetiu: 0,
+    respostasRepetidas: 0,
+    maiorSequenciaSemNovidade: 0,
+    avancou: 0,
+    assumiria: 0,
+    mesmaPessoa: 0,
+  });
+
+  it("enxerga a melhora que a SOMA escondia", () => {
+    /*
+     * O caso real de 01/09: três personas melhoraram claramente e a
+     * adversarial oscilou nas duas versões. Somando, tudo virou empate.
+     */
+    const antes = new Map([
+      ["calma", [rodada(15), rodada(14), rodada(16)]],
+      ["adversarial", [rodada(6), rodada(11), rodada(3)]],
+    ]);
+    const depois = new Map([
+      ["calma", [rodada(5), rodada(4), rodada(6)]],
+      ["adversarial", [rodada(3), rodada(15), rodada(10)]],
+    ]);
+
+    const r = compararPorPersona(antes, depois);
+    const calma = r.find((p) => p.persona === "calma")!;
+    const adversarial = r.find((p) => p.persona === "adversarial")!;
+
+    expect(calma.metricas.find((m) => m.metrica.chave === "clienteRepetiu")!.veredito).toBe(
+      "melhorou",
+    );
+    expect(adversarial.metricas.find((m) => m.metrica.chave === "clienteRepetiu")!.veredito).toBe(
+      "empate",
+    );
+  });
+
+  it("mede o ruído de cada persona", () => {
+    // Amplitude sobre mediana: acima de 1, a faixa é maior que o valor
+    // típico e três rodadas não dizem nada sobre aquela persona.
+    expect(ruidoDe([3, 15, 10])).toBeGreaterThan(1);
+    expect(ruidoDe([5, 4, 6])).toBeLessThan(0.5);
+  });
+
+  it("ruído não é calculável com mediana zero nem com uma rodada", () => {
+    expect(ruidoDe([0, 0, 0])).toBeNull();
+    expect(ruidoDe([7])).toBeNull();
+  });
+});
+
+describe("rodadasSugeridas", () => {
+  it("mantém as rodadas quando a persona é estável", () => {
+    expect(rodadasSugeridas(0.4, 3)).toBe(3);
+    expect(rodadasSugeridas(null, 3)).toBe(3);
+  });
+
+  it("pede mais rodadas para a persona ruidosa", () => {
+    expect(rodadasSugeridas(1.2, 3)).toBeGreaterThan(3);
+  });
+
+  it("tem teto — não existe orçamento infinito de API", () => {
+    expect(rodadasSugeridas(9, 3)).toBe(12);
   });
 });

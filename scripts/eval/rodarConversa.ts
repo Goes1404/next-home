@@ -23,6 +23,27 @@
  *   --rodadas=3          repete tudo N vezes (padrão: 1)
  *   --sem-juiz           só as medidas determinísticas
  *
+ * ## Personas > rodadas, e a conta é simples
+ *
+ * Medido em 01/09: com 4 personas × 3 rodadas, TODAS as quatro ficaram com
+ * ruído entre 1,0 e 3,0 — a faixa de cada uma é do tamanho do próprio valor
+ * típico, e nenhuma consegue demonstrar mudança.
+ *
+ * A causa não é defeito: o cliente simulado roda a `temperature: 0.8`
+ * (o agente roda a 0), então cada rodada é uma CONVERSA DIFERENTE. Isso é
+ * amostragem, não ruído a eliminar — baixar a temperatura para zero daria
+ * três cópias da mesma conversa, que é n=1 disfarçado de n=3.
+ *
+ * O que reduz a variância do AGREGADO é somar mais amostras independentes,
+ * e persona nova é amostra melhor que repetição da mesma: além de reduzir
+ * a faixa, cobre um pedaço diferente do espaço de conversas — que é o que
+ * de fato se quer saber. São 16 personas disponíveis; usar 4 foi economia
+ * mal colocada.
+ *
+ * **Régua: prefira TODAS as personas com 2 rodadas a poucas personas com
+ * muitas.** Duas rodadas é o mínimo para existir faixa; o resto do
+ * orçamento vai em variedade.
+ *
  * ## Por que `--rodadas` existe
  *
  * Da v25 à v28 eu decidi quatro vezes com UMA rodada, e três dessas leituras
@@ -304,7 +325,21 @@ async function principal() {
   if (RODADAS < 2) {
     console.warn(
       "[eval] UMA rodada só: serve para olhar transcrição, não para comparar versões.\n" +
-        "       Use --rodadas=3 antes de decidir se uma mudança de prompt é avanço.\n",
+        "       Use --rodadas=2 antes de decidir se uma mudança de prompt é avanço.\n",
+    );
+  }
+
+  /*
+   * Poucas personas é o erro mais caro desta medição, e o mais fácil de
+   * cometer: parece que se está economizando, e o que se perde é a
+   * capacidade de detectar qualquer coisa. Ver o cabeçalho do arquivo.
+   */
+  if (escolhidas.length < PERSONAS.length / 2) {
+    console.warn(
+      `[eval] só ${escolhidas.length} de ${PERSONAS.length} personas. O agregado de poucas\n` +
+        "       personas é ruidoso demais para comparar versões — em 01/09, com 4 personas,\n" +
+        "       TODAS ficaram com faixa maior que o próprio valor típico.\n" +
+        "       Prefira todas as personas com --rodadas=2 a poucas com muitas rodadas.\n",
     );
   }
 

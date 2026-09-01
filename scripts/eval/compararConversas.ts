@@ -13,8 +13,10 @@
 
 import { readFileSync } from "node:fs";
 import {
+  compararPorPersona,
   compararRodadas,
   mediana,
+  rodadasSugeridas,
   type Rodada,
 } from "../../src/lib/eval/comparacaoDeRodadas";
 
@@ -46,6 +48,49 @@ interface ArquivoDeConversa {
  * — dividir pelo mesmo número dos dois lados não muda comparação nenhuma e
  * esconde a grandeza ("12 repetições" diz mais que "3 por conversa").
  */
+function zero(): Rodada {
+  return {
+    clienteRepetiu: 0,
+    iaRepetiu: 0,
+    respostasRepetidas: 0,
+    maiorSequenciaSemNovidade: 0,
+    avancou: 0,
+    assumiria: 0,
+    mesmaPessoa: 0,
+  };
+}
+
+function somar(alvo: Rodada, c: ArquivoDeConversa["conversas"][number]): void {
+  alvo.clienteRepetiu += c.medida.perguntasReaparecidas.length;
+  alvo.iaRepetiu += c.medida.perguntasRepetidasPelaIa.length;
+  alvo.respostasRepetidas += c.medida.respostasRepetidas;
+  alvo.maiorSequenciaSemNovidade += c.medida.maiorSequenciaSemNovidade;
+  alvo.avancou += c.juizo?.avancou ?? 0;
+  alvo.assumiria += c.juizo?.assumiria ? 1 : 0;
+  alvo.mesmaPessoa += c.juizo?.mesmaPessoa ?? 0;
+}
+
+/** As rodadas de CADA persona — o recorte que a soma escondia. */
+function porPersona(arquivo: ArquivoDeConversa): Map<string, Rodada[]> {
+  const mapa = new Map<string, Map<number, Rodada>>();
+
+  for (const c of arquivo.conversas) {
+    const dela = mapa.get(c.persona) ?? new Map<number, Rodada>();
+    const n = c.rodada ?? 1;
+    const atual = dela.get(n) ?? zero();
+    somar(atual, c);
+    dela.set(n, atual);
+    mapa.set(c.persona, dela);
+  }
+
+  return new Map(
+    [...mapa.entries()].map(([persona, rodadas]) => [
+      persona,
+      [...rodadas.entries()].sort((a, b) => a[0] - b[0]).map(([, r]) => r),
+    ]),
+  );
+}
+
 function rodadasDe(arquivo: ArquivoDeConversa): Rodada[] {
   const porRodada = new Map<number, Rodada>();
 
@@ -130,6 +175,41 @@ function principal() {
   }
 
   console.log(`\n${r.conclusao}\n`);
+
+  /*
+   * O recorte por persona. Não muda o veredito acima — muda o que dá para
+   * APRENDER dele: onde a mudança agiu, e quais personas estão ruidosas
+   * demais para informar qualquer coisa com o número de rodadas usado.
+   */
+  const detalhe = compararPorPersona(porPersona(antes), porPersona(depois));
+  console.log("Por persona (diagnóstico, não veredito):\n");
+
+  const barulhentas: string[] = [];
+  for (const p of detalhe) {
+    const mudaram = p.metricas.filter((m) => m.veredito === "melhorou" || m.veredito === "piorou");
+    const resumo =
+      mudaram.length === 0
+        ? "nada saiu da faixa"
+        : mudaram
+            .map((m) => `${m.veredito === "melhorou" ? "▲" : "▼"} ${m.metrica.rotulo}`)
+            .join(", ");
+
+    const sugeridas = rodadasSugeridas(p.ruido, rodadasDepois.length);
+    if (sugeridas > rodadasDepois.length) barulhentas.push(`${p.persona} (${sugeridas})`);
+
+    console.log(
+      `  ${p.persona.padEnd(26)} ${resumo}${p.ruido !== null ? `  · ruído ${p.ruido}` : ""}`,
+    );
+  }
+
+  if (barulhentas.length > 0) {
+    console.log(
+      `\nRuidosas demais para ${rodadasDepois.length} rodada(s) — a faixa delas é maior que o` +
+        `\nvalor típico, então elas não medem mudança nenhuma. Rodadas sugeridas:` +
+        `\n  ${barulhentas.join(", ")}`,
+    );
+  }
+  console.log();
 }
 
 principal();

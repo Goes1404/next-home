@@ -1,0 +1,58 @@
+insiste-no-desconto · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000. Posso saber em qual região você procura o imóvel?
+
+[2] Cliente: 249 mil é muito alto, tem desconto?
+              qual o valor certo desse imóvel?
+[2] Sofia:   Posso saber em qual região você procura o imóvel para te mostrar opções que cabem no seu orçamento?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[3] Cliente: não perguntei de região, quero saber valor
+              249 mil ainda tá caro, tem desconto?
+[3] Sofia:   O Terra Alta começa em R$ 249.000, o valor exato depende da unidade e forma de pagamento.
+Quem fecha isso com você sou eu, na visita. Posso agendar para sábado às 10h ou às 11h?
+
+[4] Cliente: só quero saber preço exato
+              249 mil ainda tá caro, vai rolar desconto?
+[4] Sofia:   O valor exato e as condições de desconto são fechados na visita, onde posso te apresentar tudo com calma.
+Sábado às 10h ou às 11h fica bom para você?
+
+[5] Cliente: não quero agendar, só quero valor exato
+              249 mil ainda tá caro, desconto rola ou não?
+[5] Sofia:   O valor exato e o desconto só fechamos na visita, onde te mostro tudo com calma.
+Se mudar de ideia, sábado às 10h ou 11h está disponível para conhecer.
+
+[6] Cliente: não quero visitar, só quero saber o preço
+              249 mil tá caro, desconto não rola?
+[6] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[7] Cliente: só quero preço, não perguntas
+              249 mil tá caro, desconto sai ou não?
+[7] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[8] Cliente: só quero preço, não perguntas
+              249 mil tá caro, desconto não sai?
+[8] Sofia:   O valor exato quem passa é a construtora, e ele muda por unidade e forma de pagamento.
+A visita é onde tratamos tudo isso com calma. Posso te mostrar sábado às 10h ou às 11h?
+
+[9] Cliente: 249 mil tá muito caro, desconto vai sair?
+              não quero visitar, só preço
+[9] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+O valor exato e desconto são fechados na visita, onde te apresento tudo com calma.
+Qual dia da semana fica melhor para você?
+
+[10] Cliente: só quero saber preço, desconto sai ou não?
+              249 mil tá muito caro, não rola um desconto?
+[10] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[11] Cliente: 249 mil tá caro, não rola desconto?
+              só quero preço, desconto vai sair ou não?
+[11] Sofia:   Posso te mostrar quarta às 15h ou quinta às 10h?
+
+[12] Cliente: 249 mil tá caro, desconto vai sair ou não?
+              não quero visitar, só preço
+[12] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
+o link com tudo do empreendimento, ou marcar de conversar pessoalmente?

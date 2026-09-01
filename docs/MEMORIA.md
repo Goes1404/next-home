@@ -2849,3 +2849,30 @@ virando condicional (Fase 3).
 - **Régua que não enxerga uma queda de 33% na mediana vai fazer o projeto
   andar em círculos** — que é o problema que ela veio resolver. Consertar o
   comparador vem antes de mexer em prompt de novo.
+
+## Personas > rodadas: a variância não era defeito, era amostragem
+
+Consertando o comparador depois do empate da v31, o recorte por persona
+mostrou o problema real: **as quatro personas ficaram com ruído entre 1,0 e
+3,0** — a faixa de cada uma é do tamanho do próprio valor típico. Com três
+rodadas, nenhuma delas consegue demonstrar mudança nenhuma.
+
+- **A causa é o cliente simulado a `temperature: 0.8`** (o agente roda a 0).
+  Cada rodada é uma CONVERSA DIFERENTE — e isso é amostragem, não ruído a
+  eliminar. Baixar a temperatura para zero daria três cópias da mesma
+  conversa: n=1 disfarçado de n=3.
+- **O que reduz a variância do agregado é somar mais amostras
+  INDEPENDENTES, e persona nova é amostra melhor que repetição da mesma.**
+  Além de encolher a faixa, cobre outro pedaço do espaço de conversas — que
+  é o que se quer saber. São 16 personas; usar 4 foi economia mal colocada,
+  e ela custou a capacidade de detectar qualquer coisa.
+- **Régua: todas as personas com 2 rodadas, nunca poucas personas com
+  muitas.** Duas é o mínimo para existir faixa; o resto do orçamento vai em
+  variedade. O eval avisa quando se pede menos da metade das personas.
+- **O recorte por persona é DIAGNÓSTICO, não veredito.** Ele mostra onde a
+  mudança agiu e quais personas estão ruidosas demais para informar. O que
+  ele não pode virar é desculpa para excluir a persona que não colaborou
+  depois de ver o resultado — isso é escolher a resposta.
+- **`ruidoDe` é amplitude sobre mediana**, e `rodadasSugeridas` é régua
+  grosseira e declarada: com n=3 não há base para cálculo de poder
+  estatístico, e fingir um seria pior que assumir a régua de dedo.
