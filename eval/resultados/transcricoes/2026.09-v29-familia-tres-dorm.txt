@@ -1,0 +1,59 @@
+familia-tres-dorm · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato
+Qual região você prefere em Barueri ou Alphaville?
+Assim te mostro o que temos por aí
+
+[2] Cliente: Barueri ou Alphaville mesmo.
+              quero 3 dormitórios perto da escola.
+[2] Sofia:   Barueri e Alphaville têm ótimas opções com 3 dormitórios. Prefere pronto para morar ou na planta?
+E a vaga de garagem, é importante para você?
+
+[3] Cliente: não interessa se é na planta
+              quero saber o valor do aluguel
+[3] Sofia:   Aqui trabalho com venda, não aluguel. Posso ajudar a encontrar um imóvel para compra em Barueri ou Alphaville.
+Qual faixa de valor você tem em mente para a compra?
+
+[4] Cliente: mas quero pra alugar
+              qual o valor do aluguel?
+[4] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[5] Cliente: quero só saber o valor do aluguel
+              é só isso que quero saber
+[5] Sofia:   Entendo seu interesse pelo aluguel, mas trabalho com venda de imóveis em Barueri e Alphaville.
+Posso ajudar a encontrar algo para compra que atenda suas necessidades.
+
+[6] Cliente: mas eu só quero alugar
+              não quero comprar nada
+[6] Sofia:   Entendo que o foco é aluguel, mas trabalho só com venda em Barueri e Alphaville.
+Se mudar de ideia, posso ajudar a encontrar o imóvel ideal para compra.
+Fico à disposição.
+
+[7] Cliente: mas eu quero alugar
+              não quero comprar, só alugar!
+[7] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[8] Cliente: três dormitórios, já falei
+              e o valor do aluguel?
+[8] Sofia:   Não trabalho com aluguel, só venda em Barueri e Alphaville.
+Se quiser, posso mostrar opções de 3 dormitórios para compra, dentro da faixa que você pensa.
+
+[9] Cliente: mas eu só quero saber o valor do aluguel
+              não quero comprar, só alugar!
+[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[10] Cliente: não quero ver nada essa semana
+              quero saber só o valor do aluguel!
+[10] Sofia:   Entendo sua posição, mas trabalho exclusivamente com venda em Barueri e Alphaville.
+Se mudar de ideia, fico à disposição para ajudar na compra.
+
+[11] Cliente: mas eu só quero saber o valor do aluguel!
+              não quero comprar, só alugar!
+[11] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
+o link com tudo do empreendimento, ou marcar de conversar pessoalmente?
+
+[12] Cliente: não quero nada disso
+              só o valor do aluguel!
+[12] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.

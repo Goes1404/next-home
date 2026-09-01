@@ -1,0 +1,54 @@
+{
+  "promptVersao": "2026.09-v29",
+  "data": "2026-09-01",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "clienteIndependente": true,
+  "tetoDeTurnos": 12,
+  "rodadas": 1,
+  "comJuiz": false,
+  "conversas": [
+    {
+      "persona": "insiste-no-desconto",
+      "rodada": 1,
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Qual prefere?"
+        ],
+        "perguntasReaparecidas": [
+          "mas qual é o valor final?",
+          "mas e o valor final?",
+          "não tem como saber antes?",
+          "desconto a vista, qual é?",
+          "mas e o desconto a vista?",
+          "mas e o desconto a vista?",
+          "mas e o desconto a vista?",
+          "mas e o desconto a vista?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 7,
+        "assuntosCobertos": [
+          "estagio",
+          "visita",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 142,
+        "maiorMensagem": 268,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 8 pergunta(s) — ela não respondeu",
+          "7 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    }
+  ]
+}

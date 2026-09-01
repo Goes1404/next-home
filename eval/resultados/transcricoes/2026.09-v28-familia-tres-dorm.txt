@@ -1,0 +1,64 @@
+familia-tres-dorm · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato! Em qual região você procura o imóvel?
+
+[2] Cliente: barueri ou alphaville
+              quero 3 dorms
+              qual o valor?
+[2] Sofia:   Em Barueri e Alphaville, tenho opções com 3 dormitórios no Viva RSF Vila do Conde e no Eternity Alphaville Tamboré.
+O Viva está a partir de R$ 460.000 e o Eternity a partir de R$ 1.289.900.
+O valor exato varia conforme unidade e condições, que fechamos na visita.
+Quer que eu te envie o catálogo para dar uma olhada e me dizer o que te agradou?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: mas qual o valor do Viva?
+              e do Eternity?
+              não entendi o que você falou
+[3] Sofia:   O valor exato quem passa é a construtora e muda por unidade e condições.
+Podemos agendar uma visita para eu te apresentar tudo com calma. Que tal sábado às 10h ou segunda às 15h?
+
+[4] Cliente: mas e o valor exato?
+              quero saber quanto vai custar
+              não dá pra agendar sem essa informação
+[4] Sofia:   O valor exato depende da unidade e condições, que fechamos na visita. Posso agendar sábado às 10h ou segunda às 15h para te mostrar tudo?
+Os valores variam conforme a unidade, o andar e a forma de pagamento — prefiro te passar a condição certa para o seu caso.
+
+[5] Cliente: mas eu preciso saber o valor exato
+              não dá pra agendar sem isso
+[5] Sofia:   Entendo sua necessidade, mas o valor exato só é fechado na visita, onde ajustamos as condições para seu perfil.
+Posso te mostrar o projeto e as opções de pagamento.
+Que tal terça às 10h ou quarta às 15h para conversarmos pessoalmente?
+
+[6] Cliente: não dá pra agendar só assim
+              quero saber o valor, por favor
+[6] Sofia:   Posso agendar terça às 11h ou quinta às 14h para te apresentar o projeto e as condições?
+
+[7] Cliente: mas eu preciso do valor exato
+              não posso agendar sem isso
+[7] Sofia:   Ele tem 2 ou 3 dormitórios, com 1 ou 2 suítes, e 2 vagas.
+Me conta qual faixa de valor você tem em mente para eu te mostrar o que cabe.
+
+[8] Cliente: não é isso que eu perguntei
+              quero saber o valor exato
+[8] Sofia:   Anotei que quer o valor exato, mas só fecho isso na visita, onde ajustamos tudo para seu perfil.
+Me conta qual faixa de valor você tem em mente para eu te mostrar o que cabe.
+Assim posso indicar as melhores opções e agendar um horário que funcione para você.
+
+[9] Cliente: não é isso que eu perguntei
+              quero saber o valor exato, por favor
+[9] Sofia:   O valor exato só fechamos na visita, onde ajustamos tudo para seu perfil.
+
+[10] Cliente: mas preciso do valor exato
+              não rola agendar sem isso
+[10] Sofia:   O valor exato só é definido na visita, onde ajustamos as condições para você.
+
+[11] Cliente: não vou agendar sem saber o valor exato
+              é muito simples, me fala o valor
+[11] Sofia:   O valor varia por unidade e condições, que fechamos na visita. Me conta qual faixa de valor você tem em mente para eu te mostrar o que cabe.
+Os valores variam conforme a unidade, o andar e a forma de pagamento — prefiro te passar a condição certa para o seu caso.
+
+[12] Cliente: mas eu só quero o valor
+              não dá pra agendar sem isso
+[12] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.

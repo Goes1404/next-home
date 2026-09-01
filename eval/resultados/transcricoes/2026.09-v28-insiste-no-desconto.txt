@@ -1,0 +1,60 @@
+insiste-no-desconto · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O valor varia conforme unidade e condições, que fechamos na visita. Quer que eu te apresente o projeto pessoalmente?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-3-big-75c8b2df2fb9cedf8deb0b5002c9a935.jpeg
+
+[2] Cliente: mas qual o valor exato?
+              não to vendo desconto nenhum
+[2] Sofia:   O valor exato depende da unidade, andar e forma de pagamento, que fechamos na visita. Podemos agendar para eu te mostrar tudo?
+Os valores variam conforme a unidade, o andar e a forma de pagamento — prefiro te passar a condição certa para o seu caso.
+
+[3] Cliente: mas qual o valor exato?
+              não quero visitar sem desconto
+[3] Sofia:   O valor exato quem passa é a construtora, e ele muda por unidade e forma de pagamento.
+A visita é o momento certo para tratar disso com calma e transparência.
+Posso te mostrar sábado às 10h ou segunda às 15h?
+
+[4] Cliente: mas qual o valor exato?
+              e o desconto pra visita?
+[4] Sofia:   Demorei a responder, obrigado pela paciência. A visita é onde tratamos tudo com calma e transparência.
+
+[5] Cliente: mas qual o valor exato?
+              não quero visitar sem saber desconto
+[5] Sofia:   O valor exato e o desconto são definidos pela construtora e variam por unidade e forma de pagamento.
+A visita é o momento ideal para esclarecer tudo com transparência e calma.
+
+[6] Cliente: mas preciso do valor exato
+              não quero visitar sem saber desconto
+[6] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[7] Cliente: fala sério, qual o valor exato?
+              não quero perder tempo sem desconto
+[7] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[8] Cliente: não to procurando mais conversa, só o valor
+              qual é o valor exato e o desconto?
+[8] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[9] Cliente: não quero visitar, só quero valor e desconto
+              fala logo o valor, não vou visitar sem desconto
+[9] Sofia:   A visita é o momento ideal para tratar disso com calma e transparência.
+
+[10] Cliente: desconto tem que ter antes da visita
+              qual o valor exato, sem enrolação?
+[10] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
+o link com tudo do empreendimento, ou marcar de conversar pessoalmente?
+
+[11] Cliente: qual o valor exato?
+              não quero saber de visita, só o valor e desconto
+[11] Sofia:   O valor exato e o desconto são definidos pela construtora e variam por unidade e forma de pagamento.
+A visita é o momento ideal para tratar disso com calma e transparência.
+
+[12] Cliente: qual o valor exato e desconto?
+              não quero papo, só preço
+[12] Sofia:   Posso te mostrar sábado às 10h ou segunda às 15h?
