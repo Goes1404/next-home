@@ -2200,7 +2200,7 @@ os itens.
   uma rajada de reengajamento para gente abordada há dias — e rajada é
   exatamente o que as quatro proteções do número existem para impedir.
 
-## A lista de apelidos pendentes (31/08/2026)
+## A lista de apelidos pendentes (31/08/2026 — virou a lista de pendências do catálogo em 01/09)
 
 - **Aviso dentro do editor não moveu nada em 5 dias.** O campo "Também
   conhecido como" e o aviso de campo vazio subiram em 25 e 26/08; em 31/08
@@ -2505,3 +2505,27 @@ guarda anti-repetição.
   veio antes de o cliente dizer qualquer coisa; contá-la inflaria a
   cobertura justamente onde ela é o número que importa. A view exige
   `created_at > primeira fala do cliente`.
+
+## H3.4: o diagnóstico do roadmap estava errado (01/09/2026)
+
+- **"As pontas existem; falta virar rotina" sugeria que a ingestão não era
+  usada. Ela é.** Medido: **57 das 343 mídias têm `hash_conteudo`**, ou
+  seja, passaram por `registrarMidia` — o caminho novo (upload, PDF, Drive).
+  E zero mídias sem blur. Comparar com a nota antiga da MEMORIA ("zero
+  vieram de upload") mostra o progresso: aquilo era verdade em 08/2026 e
+  deixou de ser.
+- **O buraco real é o CATÁLOGO, não o caminho.** Dos 25 publicados: **16
+  sem planta**, 3 sem tipologia, 23 sem apelido, 0 sem foto. É o que a
+  assistente sente — ela promete a planta que não existe (o guardrail
+  bloqueia o anexo, mas o texto já prometeu) e inventa metragem quando a
+  ficha não tem.
+- **Foto ficou de fora da lista de pendências de propósito**: os 25
+  publicados têm foto. Um degrau que vive em zero só ensina a ignorar a
+  lista — a mesma régua do contador de aba e do cartão do Início.
+- **Três cartões separados competiriam; um só, ordenado pelo estrago, é uma
+  lista de trabalho.** Por isso o cartão de apelidos (31/08) foi absorvido:
+  a tela de Imóveis mostra UM cartão com o que falta em cada imóvel, e a
+  ordem é invisível-para-o-bot → sem planta → sem tipologia → sem apelido.
+- **Ao auditar um item de roadmap, medir antes de aceitar o diagnóstico
+  dele.** O item descrevia um problema que já tinha sido resolvido e não
+  descrevia o que de fato dói hoje.

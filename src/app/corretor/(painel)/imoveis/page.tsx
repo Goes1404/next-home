@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getEmpreendimentos } from "@/lib/queries";
-import { ApelidosPendentes } from "./_componentes/ApelidosPendentes";
+import { PendenciasDoCatalogo } from "./_componentes/PendenciasDoCatalogo";
 import { ListaImoveisClient } from "./ListaImoveisClient";
 
 export const metadata = {
@@ -38,10 +38,10 @@ export default async function ImoveisPage() {
 
       {/*
         Antes da lista de propósito: é trabalho pendente, não navegação. O
-        cartão some sozinho quando todos tiverem apelido — e a lista de
+        cartão some sozinho quando o cadastro estiver completo — e a lista de
         imóveis já está carregada aqui, então isto não custa consulta nenhuma.
       */}
-      <ApelidosPendentes imoveis={imoveis} />
+      <PendenciasDoCatalogo imoveis={imoveis} />
 
       <ListaImoveisClient imoveis={imoveis} />
     </div>

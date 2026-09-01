@@ -331,9 +331,23 @@ conversão lead→visita medida por 2 semanas seguidas.
   real e o banco por trás é o de PRODUÇÃO — rodar a cada commit seria bater
   no banco de clientes de verdade. Enquanto não houver ambiente separado, o
   E2E continua sendo comando de gente.
-- **H3.4 Ingestão de material fechando o ciclo.** PDF/Drive → curadoria →
-  `midias`/`tipologias` → catálogo que a IA lê. As pontas existem; falta o
-  caminho virar rotina de cadastro.
+- **H3.4 Ingestão de material fechando o ciclo. ✅ ENTREGUE em 01/09 — e o
+  diagnóstico do item estava errado.** A frase antiga dizia "as pontas
+  existem; falta o caminho virar rotina", sugerindo que a ingestão não era
+  usada. Medido: **57 das 343 mídias vieram pelo caminho novo**
+  (`hash_conteudo` preenchido, ou seja, passaram por `registrarMidia`), e
+  nenhuma mídia está sem blur. A ingestão FUNCIONA e é usada.
+
+  O buraco real é outro, e é do CATÁLOGO: dos 25 publicados, **16 não têm
+  planta** e **3 não têm tipologia** (além dos 23 sem apelido). É isso que a
+  assistente sente na conversa — ela promete a planta que não existe (o
+  guardrail bloqueia o anexo, mas o texto já prometeu e o cliente fica
+  esperando) e inventa metragem quando a ficha não tem.
+
+  A lista dos incompletos está na tela de Imóveis (`PendenciasDoCatalogo`),
+  ordenada pelo estrago: primeiro os que o bot não reconhece de jeito
+  nenhum, depois os sem planta, depois os sem tipologia. Custa zero consulta
+  — a tela já carrega o catálogo com `midias` e `tipologias`.
 
 ## H4 — Diferenciais (mês 3+, reavaliar antes)
 
