@@ -2560,3 +2560,35 @@ guarda anti-repetição.
 - **Concordância tem teste.** "1 marcadas" e "há 1 dias" num relatório
   para o dono da empresa custam autoridade — e é o tipo de erro que passa
   por revisão humana e não passa por `toBe`.
+
+## Revisão de segurança: view não herda RLS (0077, 01/09/2026)
+
+Revisão do próprio trabalho da noite, e ela achou coisa real.
+
+- **`whatsapp_funil_metricas` e `whatsapp_resposta_metricas` estavam
+  legíveis pelo papel `anon`** — a chave pública do Supabase, que POR
+  DESENHO vai no bundle JavaScript do site. Provado antes de corrigir, com
+  `set local role anon`: as duas devolviam linha. Vazava o retrato da
+  operação — conversas, quantas a IA atendeu, mediana de resposta, degraus
+  do funil. Não é PII nem conteúdo de mensagem, mas é interno.
+- **Duas causas somadas, e as duas se repetem sozinhas:**
+  1. **O grant.** View criada sem `revoke` herda o privilégio padrão do
+     schema `public` do Supabase, que inclui `anon`. E `drop view` +
+     `create view` REPÕE o problema, porque recriar zera o que havia — foi
+     assim que a 0072 desfez sem querer o que já estivesse ajustado.
+  2. **A RLS que a view NÃO herda.** View no Postgres roda com os
+     privilégios de quem a CRIOU, não de quem consulta: ela atravessa a RLS
+     das tabelas de baixo. `security_invoker = on` devolve a RLS a quem
+     consulta.
+- **Só o revoke não bastava.** Ele fecha o `anon`, mas deixaria de pé o
+  caso de um corretor comum ler o agregado de OUTRO consultando a view
+  direto pelo PostgREST, sem o `.eq("corretor_id", ...)` que as telas usam.
+  Quem resolve isso é a RLS, e é ela que deve resolver.
+- **Conferido nos DOIS sentidos antes de aplicar**: `anon` sem acesso, e o
+  corretor dono continuando a ver a linha dele com os números certos.
+  Consertar segurança quebrando a tela não é consertar — e o teste da
+  segunda metade é o que quase ninguém faz.
+- **`viewsSeguras.test.ts` lê as migrations** e cobra os dois passos de
+  toda view do schema `public`. A regressão falharia calada: build passa,
+  tela funciona, e só um `curl` com a chave pública revelaria.
+- **Ao criar view neste projeto, os dois passos são obrigatórios.**
