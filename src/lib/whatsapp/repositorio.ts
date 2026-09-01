@@ -1,5 +1,6 @@
 import "server-only";
 
+import { conteudoParaGravar, resumoParaGravar } from "./privacidadeDaConversa";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   bloqueadoAtePor,
@@ -435,6 +436,16 @@ export async function gravarMensagem(params: {
   conversaId: string;
   remetente: "cliente" | "bot" | "corretor";
   conteudo: string;
+  /**
+   * A conversa já foi liberada para atendimento?
+   *
+   * OBRIGATÓRIO, e não opcional com padrão: conversa nunca liberada guarda
+   * a LINHA, não o texto (`privacidadeDaConversa.ts`). Um padrão aqui faria
+   * o esquecimento de um chamador voltar a gravar a vida pessoal do
+   * corretor em silêncio — o número da instância é o WhatsApp pessoal dele.
+   * Mesma lição que tirou `interacaoId` destes parâmetros.
+   */
+  conversaLiberada: boolean;
   tipo?: "texto" | "audio" | "imagem" | "documento";
   midiaUrl?: string | null;
   providerMessageId?: string | null;
@@ -449,8 +460,8 @@ export async function gravarMensagem(params: {
       conversa_id: params.conversaId,
       remetente: params.remetente,
       tipo: params.tipo ?? "texto",
-      conteudo: params.conteudo,
-      midia_url: params.midiaUrl ?? null,
+      conteudo: conteudoParaGravar(params.conteudo, params.conversaLiberada),
+      midia_url: params.conversaLiberada ? (params.midiaUrl ?? null) : null,
       provider_message_id: params.providerMessageId ?? null,
       status_entrega: params.statusEntrega ?? null,
     })
@@ -468,7 +479,7 @@ export async function gravarMensagem(params: {
   await supabase
     .from("whatsapp_conversas")
     .update({
-      ultima_mensagem: params.conteudo.slice(0, 500),
+      ultima_mensagem: resumoParaGravar(params.conteudo, params.conversaLiberada),
       ultima_interacao_em: new Date().toISOString(),
     })
     .eq("id", params.conversaId);

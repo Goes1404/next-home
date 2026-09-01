@@ -25,6 +25,19 @@ import { describe, expect, it } from "vitest";
 
 const leia = (caminho: string) => readFileSync(caminho, "utf8");
 
+/**
+ * Comentário que MENCIONA o parâmetro proibido não é o parâmetro.
+ *
+ * Esta base documenta bastante o "antes", e a assinatura de
+ * `gravarMensagem` cita `interacaoId` justamente para explicar por que ele
+ * não existe mais. Sem remover comentários, a guarda acusaria o texto que
+ * a defende — foi o que aconteceu ao acrescentar `conversaLiberada`.
+ * Mesma solução de `escalaDoPainel.test.ts`.
+ */
+function semComentarios(codigo: string): string {
+  return codigo.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
 const REPOSITORIO = leia("src/lib/whatsapp/repositorio.ts");
 const WEBHOOK = leia("src/app/api/webhooks/whatsapp/route.ts");
 const FOLLOWUPS = leia("src/app/api/cron/followups/route.ts");
@@ -36,9 +49,11 @@ describe("a mensagem do bot precisa sobreviver à telemetria", () => {
      * mesma decisão que tirou `legenda` de `enviarMidiaWhatsapp`. O vínculo
      * vive em `vincularInteracaoNaMensagem`, que roda depois.
      */
-    const assinatura = REPOSITORIO.slice(
-      REPOSITORIO.indexOf("export async function gravarMensagem"),
-      REPOSITORIO.indexOf("export async function vincularInteracaoNaMensagem"),
+    const assinatura = semComentarios(
+      REPOSITORIO.slice(
+        REPOSITORIO.indexOf("export async function gravarMensagem"),
+        REPOSITORIO.indexOf("export async function vincularInteracaoNaMensagem"),
+      ),
     );
     expect(assinatura).not.toContain("interacaoId");
     expect(assinatura).not.toContain("interacao_id");

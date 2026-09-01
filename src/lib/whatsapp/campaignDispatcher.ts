@@ -566,6 +566,8 @@ async function processarInstancia(ctx: {
          * justamente o caso que não se pode afirmar como enviado.
          */
         await gravarMensagem({
+          // Mensagem que NÓS iniciamos: é atendimento por definição.
+          conversaLiberada: true,
           conversaId: conversa.id,
           remetente: "bot",
           conteudo: texto,

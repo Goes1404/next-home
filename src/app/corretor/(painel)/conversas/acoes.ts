@@ -304,6 +304,13 @@ export async function enviarMensagemDoPainel(
   // histórico uma mensagem que o cliente nunca recebeu. O id do provedor e
   // o status inicial são o que liga esta linha aos ✓✓ (0051).
   await gravarMensagem({
+    /*
+     * Escrita DELIBERADA na ferramenta de trabalho, não espelho do celular.
+     * A regra de privacidade existe para não copiar a vida pessoal de
+     * terceiros que chega pelo webhook; o que o corretor digita aqui é
+     * dele, sobre trabalho, e some do painel se não for guardado.
+     */
+    conversaLiberada: true,
     conversaId,
     remetente: "corretor",
     conteudo,
@@ -435,6 +442,13 @@ export async function enviarMidiaDoPainel(
 
   const titulo = midia.alt || midia.empreendimentos?.nome || "Imagem do imóvel";
   await gravarMensagem({
+    /*
+     * Escrita DELIBERADA na ferramenta de trabalho, não espelho do celular.
+     * A regra de privacidade existe para não copiar a vida pessoal de
+     * terceiros que chega pelo webhook; o que o corretor digita aqui é
+     * dele, sobre trabalho, e some do painel se não for guardado.
+     */
+    conversaLiberada: true,
     conversaId,
     remetente: "corretor",
     conteudo: `📎 ${titulo}: ${midia.url}`,

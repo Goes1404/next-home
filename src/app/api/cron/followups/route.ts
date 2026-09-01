@@ -366,6 +366,8 @@ async function processarFollowup(
   // de entrega do webhook (0051) não tem por onde casar, e o follow-up
   // ficaria para sempre sem confirmação de ✓✓.
   const mensagemDoBot = await gravarMensagem({
+    // Mensagem que NÓS iniciamos: é atendimento por definição.
+    conversaLiberada: true,
     conversaId: conversa.id,
     remetente: "bot",
     conteudo: balao,

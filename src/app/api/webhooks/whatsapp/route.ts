@@ -292,6 +292,9 @@ export async function POST(req: NextRequest) {
     //      desliga. A regra mora em `decidirPorFalaDoCorretor`.
     if (fromMe) {
       await gravarMensagem({
+        // Espelho do celular do corretor: sem liberação, guarda a linha e
+        // não o texto (`privacidadeDaConversa.ts`).
+        conversaLiberada: conversa.liberadoPorPalavraChave,
         conversaId: conversa.id,
         remetente: "corretor",
         conteudo: text,
@@ -336,6 +339,7 @@ export async function POST(req: NextRequest) {
     }
 
     const gravacao = await gravarMensagem({
+      conversaLiberada: conversa.liberadoPorPalavraChave,
       conversaId: conversa.id,
       remetente: "cliente",
       conteudo: text,
@@ -702,6 +706,10 @@ export async function POST(req: NextRequest) {
      * vínculo custa uma avaliação; perder a mensagem custa o contexto.
      */
     const mensagemDoBot = await gravarMensagem({
+      // Se a IA respondeu, a conversa está liberada por definição — mas o
+      // valor vem da conversa, não de um `true` cravado: um dia a condição
+      // de atendimento muda e o `true` continuaria mentindo.
+      conversaLiberada: conversa.liberadoPorPalavraChave,
       conversaId: conversa.id,
       remetente: "bot",
       conteudo: textoParaEnviar,

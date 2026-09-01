@@ -2876,3 +2876,38 @@ rodadas, nenhuma delas consegue demonstrar mudança nenhuma.
 - **`ruidoDe` é amplitude sobre mediana**, e `rodadasSugeridas` é régua
   grosseira e declarada: com n=3 não há base para cálculo de poder
   estatístico, e fingir um seria pior que assumir a régua de dedo.
+
+## Conversa nunca liberada para de guardar texto (01/09/2026)
+
+- **O número da instância é o WhatsApp PESSOAL do corretor**, e tudo que
+  chega ali era persistido. Ao conferir se um cliente das 19h48 tinha sido
+  respondido, o que apareceu foi uma conversa pessoal dele com um amigo,
+  inteira, gravada naquele mesmo dia. A memória já registrava isso desde
+  25/08 como "em aberto, decisão de produto/LGPD" — uma semana depois
+  seguia acumulando.
+- **Medido antes de mexer: 62 conversas nunca liberadas, 4.178 mensagens,
+  ~74 por dia**, desde 19/08. Gente que nunca soube que existe um sistema
+  no meio.
+- **A trava de atendimento estava CERTA** — sem liberação a IA não fala, e
+  não falou. O que faltava é que não falar nunca impediu de GRAVAR.
+- **A régua não é QUEM falou, é a ORIGEM.** A conversa pessoal tem
+  mensagens do próprio corretor, espelhadas do celular pelo webhook. Então:
+  webhook obedece à liberação; painel e campanha/follow-up são atendimento
+  por definição e guardam normalmente. Sem essa distinção, o corretor
+  perderia no painel o que ele mesmo digitou.
+- **`conversaLiberada` é parâmetro OBRIGATÓRIO de `gravarMensagem`.**
+  Opcional com padrão faria o esquecimento de um chamador voltar a gravar
+  em silêncio — mesma lição que tirou `interacaoId` dali. O compilador
+  cobrou os 6 chamadores, um a um.
+- **A linha continua sendo gravada, só o texto não.** É ela que mata
+  reentrega pelo `provider_message_id` e que diz que a conversa existe. O
+  marcador não é vazio: linha em branco na tela parece defeito.
+- **Custo declarado:** o corretor deixa de ler no Live Chat as conversas
+  ainda não liberadas. Continua lendo no próprio celular — é o WhatsApp
+  dele, e o painel não precisa de cópia da vida pessoal de ninguém.
+- **O passado ficou intacto**, por decisão do usuário: a mudança para o
+  acúmulo, apagar 4.178 mensagens é irreversível e é escolha dele.
+- **Guarda nova pegou a si mesma**: `gravacaoDeMensagem.test.ts` reprovou o
+  comentário que CITA `interacaoId` para explicar por que ele não existe.
+  Teste que lê código-fonte precisa remover comentário antes de acusar —
+  mesma solução do `escalaDoPainel`.
