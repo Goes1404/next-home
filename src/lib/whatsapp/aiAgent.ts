@@ -1,6 +1,7 @@
 import type { Empreendimento } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { chamarLlmJson, ORCAMENTO_AGENTE_MS } from "./llm";
+import { formatarReais } from "./dadoPedido";
 import { STATUS_LABEL } from "@/lib/types";
 import { linkDaPagina, linkDoCatalogo } from "./resolverMidia";
 import { ESTILO_DA_CASA } from "./estiloDaCasa";
@@ -45,16 +46,8 @@ import { blocoSemPrazoCadastrado } from "./prazoEntrega";
  * sem imóvel nomeado, ela respondeu "o imóvel do anúncio tem 3 dormitórios,
  * 3 suítes e 2 vagas" — inventou qual imóvel era, que erra tudo de uma vez.
  */
-/** "R$ 249.000" — inteiro, sem centavos: piso de tabela não tem centavo. */
-function formatarPiso(valor: number): string {
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 0,
-  });
-}
 
-export const PROMPT_VERSAO = "2026.09-v29"; // a regra 13 da v28 se ANULAVA: abria a permissão do piso e três frases depois dizia "o que NÃO pode é número" e "nunca diga quanto". Zero "R$" nas 4 transcrições da v28 — a mudança nunca aconteceu. Reescrita de 1637 para 686 caracteres, sem contradição
+export const PROMPT_VERSAO = "2026.09-v30"; // bloco determinístico de DADO PEDIDO: quando o cliente pede preço, metragem, tipologia, entrega, endereço ou lazer e o catálogo tem, a resposta é montada em código e mandada dizer — alvo da análise de erros (segurar dado permitido = 43% das falhas anotadas)
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -135,6 +128,13 @@ export interface ContextoAtendimento {
    * enquanto ela não for cumprida a conversa não anda.
    */
   blocoPerguntaIgnorada?: string;
+  /**
+   * O cliente pediu um dado que está no catálogo (`dadoPedido.ts`). Entra
+   * logo depois da pergunta ignorada: um diz "responda", o outro diz "com
+   * isto". Alvo vindo da análise de erros — segurar dado permitido é 43%
+   * das falhas anotadas.
+   */
+  blocoDadoPedido?: string;
   /**
    * Os horários de visita que EXISTEM (agenda do corretor, 0073). Vazio
    * quando ele não configurou agenda — e aí o calendário genérico segue
@@ -361,7 +361,7 @@ export function construirPromptSistema(ctx: ContextoAtendimento): string {
          * listar só o que existe fazia o modelo prometer o que não tem.
          */
         e.precoAPartir
-          ? `  A partir de: ${formatarPiso(e.precoAPartir)} (é o PISO da tabela — valor de unidade, entrada, parcela e desconto você NÃO tem e não inventa)`
+          ? `  A partir de: ${formatarReais(e.precoAPartir)} (é o PISO da tabela — valor de unidade, entrada, parcela e desconto você NÃO tem e não inventa)`
           : "  A partir de: SEM piso cadastrado — não cite valor nenhum deste imóvel",
         ficha ? `  Ficha: ${ficha}` : null,
         `  Sobre: ${e.tagline || e.descricao.slice(0, 120)}`,
@@ -519,7 +519,7 @@ Só depois disso: a INDICAÇÃO ("pelo que você me contou, o que mais faz senti
 
 Se o cliente já disse alguma dessas coisas — nesta mensagem, no histórico ou no dossiê — NÃO PERGUNTE DE NOVO. Repetir pergunta já respondida é o erro que mais faz o cliente sumir, e é o que denuncia um sistema.
 
-${ctx.blocoPerguntaIgnorada ? `${ctx.blocoPerguntaIgnorada}\n\n` : ""}${ctx.blocoNaoRepitaHorario ? `${ctx.blocoNaoRepitaHorario}\n\n` : ""}${ctx.blocoHorariosReais ? `${ctx.blocoHorariosReais}\n\n` : ""}${ctx.capacidadePendente ? `${blocoCapacidadePendente()}\n\n` : ""}${ctx.semPrazoCadastrado ? `${blocoSemPrazoCadastrado()}\n\n` : ""}${blocoFoco}
+${ctx.blocoPerguntaIgnorada ? `${ctx.blocoPerguntaIgnorada}\n\n` : ""}${ctx.blocoDadoPedido ? `${ctx.blocoDadoPedido}\n\n` : ""}${ctx.blocoNaoRepitaHorario ? `${ctx.blocoNaoRepitaHorario}\n\n` : ""}${ctx.blocoHorariosReais ? `${ctx.blocoHorariosReais}\n\n` : ""}${ctx.capacidadePendente ? `${blocoCapacidadePendente()}\n\n` : ""}${ctx.semPrazoCadastrado ? `${blocoSemPrazoCadastrado()}\n\n` : ""}${blocoFoco}
 
 ${blocoCatalogo}
 

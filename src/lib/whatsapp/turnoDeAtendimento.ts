@@ -7,6 +7,7 @@ import { buscarExemplosFewShot } from "./aprendizadoContinuo";
 import { catalogoParaAtendimento } from "./focoDaConversa";
 import { capacidadeEstaPendente } from "./funilQualificacao";
 import { blocoPerguntaIgnorada, perguntaIgnorada } from "./perguntaIgnorada";
+import { blocoDadoPedido, dadoPedido } from "./dadoPedido";
 import {
   blocoNaoRepitaHorario,
   horariosJaOferecidos,
@@ -201,6 +202,25 @@ export async function executarTurnoDeAtendimento(
    * agenda configurada — que é o caso dos 8 corretores hoje —, um bloco
    * nomeia o que saiu e manda devolver a escolha ao cliente.
    */
+  /*
+   * O cliente pediu um dado que temos?
+   *
+   * Alvo vindo da primeira análise de erros contada (16 conversas da v25):
+   * "não respondeu a pergunta" em 10 delas e "não informou dado permitido"
+   * em 43% das 134 anotações. E a permissão do piso, já no prompt, só era
+   * usada em ~30% das conversas — instrução é probabilística; isto não é.
+   *
+   * Vem DEPOIS de `perguntaIgnorada` no prompt de propósito: quando o
+   * cliente já repetiu, o que precisa ganhar é a ordem de responder o que
+   * ficou em aberto; este bloco entra logo abaixo, entregando o dado. Os
+   * dois se reforçam — um diz "responda", o outro diz "com isto".
+   */
+  const pedido_ = dadoPedido({
+    mensagem: textoDaVez,
+    imovel: foco ? (catalogoDoPrompt.find((e) => e.slug === foco.slug) ?? null) : null,
+    catalogo: catalogoDoPrompt,
+  });
+
   const oferecidos = horariosJaOferecidos(historicoAnterior);
   const blocoHorariosReais = blocoDeHorarios(
     semOsJaOferecidos(pedido.horariosReais ?? [], oferecidos.assinaturas),
@@ -217,6 +237,7 @@ export async function executarTurnoDeAtendimento(
       foco,
       capacidadePendente,
       blocoPerguntaIgnorada: ignorada ? blocoPerguntaIgnorada(ignorada) : undefined,
+      blocoDadoPedido: pedido_ ? blocoDadoPedido(pedido_) : undefined,
       blocoHorariosReais,
       blocoNaoRepitaHorario: blocoNaoRepitaHorario(oferecidos),
       /*

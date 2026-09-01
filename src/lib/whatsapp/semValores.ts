@@ -61,13 +61,20 @@ const PADROES_DE_VALOR: RegExp[] = [
 ];
 
 /**
- * "a partir de R$ 249.000", "a partir de 249 mil", "partindo de R$249mil".
+ * "a partir de R$ 249.000", "começa em R$ 249.000", "partindo de R$249mil".
+ *
+ * A lista de locuções não é enfeite: a primeira versão só conhecia
+ * "a partir de", e no dia seguinte o bloco de dado pedido passou a mandar
+ * a Sofia dizer "começa em R$ 249.000" — o guardrail cortou a frase e o
+ * cliente recebeu o desvio, exatamente o defeito que os dois existem para
+ * consertar. Ao criar frase nova que cita piso, conferir se ela casa aqui.
  *
  * Exige a locução ANTES do número, na mesma frase e a até ~20 caracteres:
  * sem essa amarra, "o valor a partir do qual financiamos é R$ 300.000"
  * passaria — e isso é condição de banco, não piso de tabela.
  */
-const FAIXA = /\b(?:a partir de|partindo de|a partir dos|desde)\s+(?:R\$\s?)?([\d.,]+)\s*(mil|milh(?:ão|ões))?/gi;
+const FAIXA =
+  /\b(?:a partir de|a partir dos|partindo de|desde|come(?:ça|çam|çando)\s+(?:em|a partir de)|sai(?:em)?\s+a partir de)\s+(?:R\$\s?)?([\d.,]+)\s*(mil|milh(?:ão|ões))?/gi;
 
 /** "249.000" → 249000; "249 mil" → 249000; "1,2 milhão" → 1200000. */
 function comoNumero(bruto: string, escala?: string): number | null {

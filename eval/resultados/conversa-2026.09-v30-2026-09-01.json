@@ -1,0 +1,50 @@
+{
+  "promptVersao": "2026.09-v30",
+  "data": "2026-09-01",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "clienteIndependente": true,
+  "tetoDeTurnos": 12,
+  "rodadas": 1,
+  "comJuiz": false,
+  "conversas": [
+    {
+      "persona": "insiste-no-desconto",
+      "rodada": 1,
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso agendar para terça às 10h ou quarta às 15h para te mostrar tudo com calma?",
+          "Qual dia da semana fica melhor para você?"
+        ],
+        "perguntasReaparecidas": [
+          "qual o valor exato desse imóvel mesmo?",
+          "mas e o desconto?",
+          "qual o preço exato da unidade?",
+          "mas qual o desconto específico?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 10,
+        "assuntosCobertos": [
+          "regiao",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 159,
+        "maiorMensagem": 232,
+        "reprovacoes": [
+          "repetiu 2 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
+          "10 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": null
+    }
+  ]
+}

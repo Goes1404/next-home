@@ -1,0 +1,64 @@
+insiste-no-desconto · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000. Posso saber em qual região você procura o imóvel?
+
+[2] Cliente: R$ 249.000? Tem desconto?
+              Qual o valor exato desse imóvel?
+[2] Sofia:   O valor a partir de R$ 249.000 é o piso do Vila Eco Park, em Osasco.
+O valor exato depende da unidade, andar e forma de pagamento, e isso fechamos na visita.
+
+[3] Cliente: mas e o desconto? precisa negociar antes da visita
+              qual o valor exato desse imóvel mesmo?
+[3] Sofia:   O valor exato eu não tenho, pois varia por unidade e forma de pagamento.
+O desconto também é negociado na visita, onde posso te mostrar tudo com calma.
+
+[4] Cliente: mas eu quero saber o valor exato antes
+              como vou visitar sem saber o preço?
+[4] Sofia:   Entendo que queira clareza no valor antes da visita. Posso agendar uma visita para te mostrar tudo com calma?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[5] Cliente: Mas como vou saber se vale a pena?
+              Qual o preço exato, por favor?
+[5] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+O valor exato depende da unidade e condições, e isso fechamos na visita.
+Posso agendar para terça às 10h ou quarta às 15h?
+
+[6] Cliente: não respondi sobre visita, só sobre preço
+              mas e o desconto pra agendar a visita?
+[6] Sofia:   O valor a partir de R$ 249.000 é o piso do Vila Eco Park, em Osasco.
+O desconto é negociado na visita, onde te mostro as condições com calma.
+
+[7] Cliente: mas eu preciso de um valor exato antes
+              qual o desconto pra essa unidade específica?
+[7] Sofia:   O valor exato e o desconto são definidos na visita, conforme a unidade e condições.
+Posso agendar para terça às 10h ou quarta às 15h para te mostrar tudo com calma?
+
+[8] Cliente: mas e o desconto? preciso saber antes
+              qual o preço exato da unidade?
+[8] Sofia:   O valor exato quem passa é a construtora, e ele muda por unidade e condições.
+A visita é o momento certo para tratar disso com calma.
+Posso agendar para quinta às 10h ou sexta às 15h?
+
+[9] Cliente: mas qual o desconto dessa unidade específica?
+              não vou visitar sem saber o preço exato!
+[9] Sofia:   O valor a partir de R$ 249.000 é o piso do Vila Eco Park, em Osasco.
+O desconto e o preço exato são definidos na visita, conforme a unidade e condições.
+Qual dia da semana fica melhor para você?
+
+[10] Cliente: mas qual o desconto?
+              não vou visitar assim!
+[10] Sofia:   Entendo sua posição, o desconto e o valor exato só consigo confirmar na visita,
+onde te mostro tudo com transparência e sem surpresas.
+Qual dia da semana fica melhor para você?
+
+[11] Cliente: mas qual o desconto específico?
+              não vou visitar sem o preço exato!
+[11] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[12] Cliente: mas e o desconto específico dessa unidade?
+              não vou visitar sem saber o preço!
+[12] Sofia:   Entendo que o desconto específico e o preço exato são importantes para você.
+Me conta o que procura: região, tipo e tamanho do imóvel, para eu te ajudar melhor.

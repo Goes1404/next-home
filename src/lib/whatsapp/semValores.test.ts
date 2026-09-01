@@ -118,3 +118,22 @@ describe("a faixa 'a partir de'", () => {
     expect(r.texto).not.toContain("620.000");
   });
 });
+
+describe("as locuções de faixa que a casa usa", () => {
+  const CATALOGO = [249000, 470000];
+
+  it("aceita 'começa em', que é o que o bloco de dado pedido manda dizer", () => {
+    /*
+     * Achado ao conferir o MECANISMO: mudei a frase do bloco para "começa
+     * em R$ 249.000" e o guardrail — que só conhecia "a partir de" — cortou
+     * a frase e devolveu o desvio ao cliente. As duas peças existem para
+     * consertar o mesmo defeito e uma anulou a outra.
+     */
+    expect(ehFaixaPermitida("O mais em conta do nosso catálogo começa em R$ 249.000", CATALOGO)).toBe(true);
+    expect(ehFaixaPermitida("as unidades começam em R$ 470.000", CATALOGO)).toBe(true);
+  });
+
+  it("continua bloqueando cifra sem locução de piso", () => {
+    expect(ehFaixaPermitida("essa unidade custa R$ 249.000", CATALOGO)).toBe(false);
+  });
+});
