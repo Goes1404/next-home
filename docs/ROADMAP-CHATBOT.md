@@ -1,38 +1,89 @@
-# Roadmap do Chatbot (Sofia) — 26/08/2026, revisto em 31/08
+# Roadmap do Chatbot (Sofia) — revisto em 01/09/2026
 
 > Prioridade decidida pela régua de sempre desta casa: primeiro o que foi
 > **medido** doendo em produção, depois o que multiplica venda, por último o
 > que é polimento. Cada item aponta o arquivo onde a mudança mora, para a
 > sessão que for implementar não começar do zero.
 
-## Estado em 31/08/2026
+## Estado em 01/09/2026 — o método mudou, e é isso que importa
 
-O prompt está na **v25** — três versões além do que este arquivo descrevia.
-A linha de base do eval de RESPOSTA está fechada e é comparável (mesmo
-juiz `gpt-4.1`, mesmos 36 casos, mesmo denominador):
+O prompt está na **v31**. Mas o número da versão deixou de ser a notícia:
+esta sessão descobriu que **nenhuma comparação entre v25 e v28 se
+sustentava**, e construiu o instrumento que faltava.
 
-| versão | score | falhas duras | julgados |
+### O que estava errado
+
+Todas as decisões da v25 à v28 foram tomadas com **4 personas e UMA
+rodada**. Três rodadas do MESMO prompt (v29), sem alterar uma linha,
+deram:
+
+| | r1 | r2 | r3 |
 |---|---|---|---|
-| v23 | 90,3 | 2 | 36/36 |
-| v24 | 92,0 | 1 | 36/36 |
-| **v25** | **92,2** | **1** | 36/36 |
+| avançou (juiz) | 3 | 0 | 0 |
+| assumiria (juiz) | 2/4 | 0/4 | 0/4 |
+| a IA repetiu pergunta | 4 | 3 | 1 |
+| o cliente teve de repetir | 21 | 19 | 22 |
 
-- **v24** consertou o detector de prazo, que reprovava a honestidade
-  ("não tenho a data de entrega, eu confirmo com você" era cortado pelo
-  guardrail — em produção, não só no eval).
-- **v25** trocou a pergunta seca de renda por uma **escada de capacidade**
-  (faixa → sozinho/conjunto → profissão → renda), e a profissão nunca vira
-  renda deduzida.
-- **Os pendentes de eval deste arquivo estão resolvidos:** as rodadas da
-  v22, v23, v24 e v25 estão em `eval/resultados/`. O que NÃO rodou é o
-  eval de **conversa**, parado na v20 — cinco versões sem a medição que
-  pega o loop de repetição. É o pendente nº 1 daqui.
+As métricas do juiz oscilam 2 a 3 pontos com o código idêntico — e foram
+elas que sustentaram "a v27 piorou" e "a v26 era melhor". Ruído.
 
-**O contexto que mudou tudo:** o número de WhatsApp está fora do ar desde
-28/08 (ver H0.0 no `ROADMAP.md`). Nenhum item deste roadmap que dependa de
-conversa real anda enquanto isso não voltar — e a medição de produção
-confirma: 55 conversas com fala do bot desde 25/08, e só **3** com duas ou
-mais falas do cliente.
+### O instrumento que passou a existir
+
+- **`npm run eval:erros`** — open coding, axial coding e CONTAGEM. A ordem
+  do conserto sai da frequência, não da transcrição que alguém abriu.
+- **`npm run eval:comparar`** + `--rodadas=N` — a diferença só conta
+  quando a pior rodada da versão melhor ganha da melhor da versão pior.
+  Faixas que se tocam são empate. Recorte por persona e ruído por persona.
+- Juiz no mesmo provedor do agente **não decide** — a nota entra como
+  descrição, com o aviso ao lado.
+
+### A taxonomia contada (16 conversas da v25, 134 anotações)
+
+| categoria | conversas | ocorrências |
+|---|---|---|
+| nao-respondeu-a-pergunta | 10 | 18 |
+| insistencia-repetitiva | 8 | 22 |
+| nao-informou-dado-permitido | 7 | 58 |
+| nao-ofereceu-alternativas | 6 | 12 |
+| mudanca-abrupta-de-assunto | 6 | 7 |
+| falta-de-contexto-ou-personalizacao | 4 | 9 |
+| informacao-proibida-ou-incorreta | 4 | 8 |
+
+**Reordena o trabalho:** o que mais acontece é ela NÃO RESPONDER e não
+entregar dado que podia entregar. Repetição é a segunda — e foi onde três
+versões foram gastas, escolhidas por anedota.
+
+### O que mudou no agente (v29 → v31)
+
+- **A Sofia passa a dar o PISO** ("a partir de R$ X", validado contra o
+  catálogo). A regra 13 da v28 se ANULAVA sozinha — permissão no começo e
+  "nunca diga quanto" no fim de 1637 caracteres — e o modelo obedecia o
+  fim. Zero "R$" nas 4 transcrições da v28: a mudança nunca aconteceu.
+- **`dadoPedido.ts`**: quando o cliente pede preço, metragem, tipologia,
+  entrega, endereço ou lazer, o código monta a resposta do catálogo e manda
+  dizê-la. Mecanismo conferido: o piso passou de 4/13 para **10/12**
+  conversas.
+- **Começo do desmonte do mega-prompt** (36.324 caracteres, 37 regras, 71%
+  em regra): `regrasCondicionais.ts` injeta a regra só quando ela se aplica.
+
+### O resultado, e ele é honesto
+
+v29 × v31, 3 rodadas de cada: **EMPATE**. Todas as medianas melhoraram
+("o cliente teve de repetir" 21 → 14) e nenhuma saiu da faixa.
+
+E o recorte por persona mostrou por quê: **as quatro personas têm ruído
+entre 1,0 e 3,0** — a faixa é do tamanho do valor típico. O cliente
+simulado roda a `temperature: 0.8`, então cada rodada é uma conversa
+diferente. Isso é amostragem, não defeito.
+
+**A régua nova: todas as 16 personas com 2 rodadas, nunca poucas personas
+com muitas.** Persona nova é amostra melhor que repetir a mesma — encolhe
+a faixa e cobre outro pedaço do espaço de conversas.
+
+### Pendente nº 1
+
+Fechar a linha de base da v31 com as 16 personas. Sem ela, a próxima
+mudança de prompt volta a ser palpite.
 
 ## Entregue em 26/08 (esta rodada)
 
