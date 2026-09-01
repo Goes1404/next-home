@@ -1,5 +1,6 @@
 "use client";
 
+import type { FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { ArrowLeft, ArrowRight, Rocket, Shield, Sparkles } from "lucide-react";
 import type { Empreendimento } from "@/lib/types";
@@ -8,7 +9,6 @@ import {
   gerarPreviewCampanha,
   listarLeadsElegiveis,
   type CampanhaListada,
-  type FiltroLeadsCampanha,
   type LeadElegivel,
 } from "../acoes";
 
@@ -32,6 +32,12 @@ const PUBLICOS: { valor: FiltroLeadsCampanha; titulo: string; descricao: string 
     valor: "novos_sem_contato",
     titulo: "Quem acabou de chegar",
     descricao: "Leads na etapa “Novo lead”, que ainda não receberam seu primeiro contato.",
+  },
+  {
+    valor: "sem_resposta",
+    titulo: "Abordado e sem resposta",
+    descricao:
+      "Quem já recebeu mensagem nossa e não respondeu — até 2 tentativas. Quem passou disso fica de fora: a terceira não converte e cansa o número.",
   },
   {
     valor: "todos",

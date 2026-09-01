@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCorretorLogado, getMeusLeads } from "@/lib/corretorSessao";
+import { elegivel, type FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
 import { createClient } from "@/lib/supabase/server";
 import type { Lead } from "@/lib/types";
 import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
@@ -29,25 +30,6 @@ import { saldoDiario, dentroDaJanela } from "@/lib/whatsapp/antiBan";
  * (`acenderCorrenteDeDisparo`): a partir daí as mensagens saem sozinhas,
  * uma a cada 35-75s, sem ninguém clicar em nada.
  */
-
-export type FiltroLeadsCampanha = "parados_15d" | "novos_sem_contato" | "todos" | "selecionados";
-
-const DIAS_PARADO = 15;
-
-/** Fechado e perdido nunca entram — reativar quem já comprou ou já disse não é o oposto do objetivo. */
-function elegivel(lead: Lead, filtro: FiltroLeadsCampanha): boolean {
-  if (!lead.telefone) return false;
-  if (lead.etapa === "fechado" || lead.etapa === "perdido") return false;
-
-  if (filtro === "novos_sem_contato") return lead.etapa === "novo";
-  if (filtro === "parados_15d") {
-    const dias = (Date.now() - new Date(lead.etapaAlteradaEm).getTime()) / 86_400_000;
-    return dias >= DIAS_PARADO;
-  }
-  // "todos" e "selecionados" usam só as regras de base: quem recorta a
-  // seleção manual é a lista de ids, mais abaixo.
-  return true;
-}
 
 export type LeadElegivel = { id: string; nome: string; telefone: string };
 

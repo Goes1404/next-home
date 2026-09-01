@@ -196,6 +196,12 @@ export type Lead = {
   empreendimento: { nome: string; slug: string; endereco: string | null } | null;
   /** Data/hora marcada quando `etapa === "visita_agendada"`; null até o corretor definir. */
   visitaAgendadaEm: string | null;
+  /**
+   * Quantas vezes NÓS falamos desde a última fala dele (0060). Zera quando
+   * ele responde — é o número que separa "insistimos e não deu" de "ele
+   * conversa com a gente".
+   */
+  tentativasSemResposta: number;
 };
 
 export type Empreendimento = {
