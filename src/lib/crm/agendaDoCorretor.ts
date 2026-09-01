@@ -2,7 +2,6 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import {
-  blocoDeHorarios,
   proximosHorarios,
   type FaixaDisponivel,
   type HorarioDeVisita,
@@ -61,23 +60,25 @@ export async function horariosDeVisita(
 }
 
 /**
- * O bloco pronto para o prompt, ou string vazia.
+ * Os horários do corretor, e nunca uma exceção.
  *
- * Vazio quando o corretor não configurou agenda — hoje, TODOS. O prompt
- * então segue com o calendário genérico de sempre: nunca quebrar o que já
- * funciona por causa de uma configuração que ninguém preencheu ainda é a
- * mesma regra que protege o link do catálogo (só entra quando há slug).
+ * Agenda é ENRIQUECIMENTO: falhar aqui não pode custar a resposta ao
+ * cliente, que é o que o webhook está no meio de produzir. Sem lista, o
+ * prompt volta ao calendário genérico — exatamente o que acontece hoje para
+ * os 8 corretores, que não configuraram grade nenhuma.
+ *
+ * Devolve a lista CRUA, não o bloco pronto: quem filtra o que já foi
+ * oferecido na conversa é o turno, que é onde o histórico está.
  */
-export async function blocoDeHorariosDoCorretor(
+export async function horariosDeVisitaSeguros(
   corretorId: string,
   agora: Date = new Date(),
-): Promise<string> {
+): Promise<HorarioDeVisita[]> {
   try {
-    return blocoDeHorarios(await horariosDeVisita(corretorId, agora));
+    return await horariosDeVisita(corretorId, agora);
   } catch (e) {
-    // Agenda é enriquecimento; falhar aqui não pode custar a resposta ao
-    // cliente. Sem bloco, o prompt volta ao calendário genérico.
-    console.error("[agenda] não foi possível montar os horários:", e);
-    return "";
+    console.error("[agenda] não foi possível ler os horários:", e);
+    return [];
   }
 }
+

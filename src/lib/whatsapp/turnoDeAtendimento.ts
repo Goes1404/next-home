@@ -7,6 +7,12 @@ import { buscarExemplosFewShot } from "./aprendizadoContinuo";
 import { catalogoParaAtendimento } from "./focoDaConversa";
 import { capacidadeEstaPendente } from "./funilQualificacao";
 import { blocoPerguntaIgnorada, perguntaIgnorada } from "./perguntaIgnorada";
+import {
+  blocoNaoRepitaHorario,
+  horariosJaOferecidos,
+  semOsJaOferecidos,
+} from "./ofertasDeVisita";
+import { blocoDeHorarios, type HorarioDeVisita } from "@/lib/crm/agendaDeVisitas";
 import { catalogoTemPrazo } from "./prazoEntrega";
 import { sanearRespostaIA } from "./guardrails";
 import { dividirEmMensagens } from "./chunking";
@@ -69,11 +75,15 @@ export type PedidoDeTurno = {
   /** Instrução de cenário (ex.: follow-up de reengajamento). */
   instrucaoExtra?: string;
   /**
-   * Horários reais da agenda do corretor (0073), já formatados. Vem de
-   * fora porque este módulo não toca no banco — é o que permite o eval
-   * medir o mesmo turno sem efeito sobre o mundo.
+   * Horários reais da agenda do corretor (0073), CRUS. Vem de fora porque
+   * este módulo não toca no banco — é o que permite o eval medir o mesmo
+   * turno sem efeito sobre o mundo.
+   *
+   * Crus, e não o bloco pronto, porque a lista precisa ser filtrada aqui:
+   * é aqui que se sabe o que já foi oferecido nesta conversa. Montar o
+   * bloco fora significaria fazer essa conta em dois lugares.
    */
-  blocoHorariosReais?: string;
+  horariosReais?: readonly HorarioDeVisita[];
   /**
    * Sobrescreve a vez do cliente. Existe para o follow-up, em que NINGUÉM
    * falou — é o silêncio que motiva a mensagem.
@@ -178,6 +188,24 @@ export async function executarTurnoDeAtendimento(
     mensagemAtual: textoDaVez,
   });
 
+  /*
+   * O que ela JÁ ofereceu de horário nesta conversa.
+   *
+   * O eval da v26 mediu a última fonte de repetição a sobrar: os mesmos
+   * "sábado às 10h ou às 11h" três vezes, contra um cliente que nem queria
+   * falar de visita. O bloco de horários já MANDAVA não repetir — instrução
+   * de prompt é probabilística.
+   *
+   * Duas defesas com a mesma conta, feita uma vez só: a lista real perde os
+   * horários já oferecidos (o que ele não vê, não oferece) e, quando não há
+   * agenda configurada — que é o caso dos 8 corretores hoje —, um bloco
+   * nomeia o que saiu e manda devolver a escolha ao cliente.
+   */
+  const oferecidos = horariosJaOferecidos(historicoAnterior);
+  const blocoHorariosReais = blocoDeHorarios(
+    semOsJaOferecidos(pedido.horariosReais ?? [], oferecidos.assinaturas),
+  );
+
   const bruta = await gerarRespostaIA(
     {
       ...pedido.identidade,
@@ -189,7 +217,8 @@ export async function executarTurnoDeAtendimento(
       foco,
       capacidadePendente,
       blocoPerguntaIgnorada: ignorada ? blocoPerguntaIgnorada(ignorada) : undefined,
-      blocoHorariosReais: pedido.blocoHorariosReais,
+      blocoHorariosReais,
+      blocoNaoRepitaHorario: blocoNaoRepitaHorario(oferecidos),
       /*
        * O aviso olha o catálogo QUE FOI AO PROMPT, não o completo: é sobre
        * o que ela pode citar nesta resposta. O guardrail

@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
-import { blocoDeHorariosDoCorretor } from "@/lib/crm/agendaDoCorretor";
+import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
@@ -574,8 +574,12 @@ export async function POST(req: NextRequest) {
        * dois inventados quatro vezes seguidas, e o funil mostra 6 visitas
        * propostas para 1 marcada. Vazio para quem não configurou agenda —
        * e aí o prompt segue com o calendário genérico de sempre.
+       *
+       * Vai CRU: quem filtra o que já foi oferecido nesta conversa é o
+       * turno, que é onde o histórico está. Montar o bloco aqui faria a
+       * mesma conta em dois lugares.
        */
-      blocoHorariosReais: await blocoDeHorariosDoCorretor(instancia.corretorId),
+      horariosReais: await horariosDeVisitaSeguros(instancia.corretorId),
     });
 
     const respostaIA = turno.resposta;

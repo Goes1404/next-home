@@ -45,7 +45,7 @@ import { blocoSemPrazoCadastrado } from "./prazoEntrega";
  * sem imóvel nomeado, ela respondeu "o imóvel do anúncio tem 3 dormitórios,
  * 3 suítes e 2 vagas" — inventou qual imóvel era, que erra tudo de uma vez.
  */
-export const PROMPT_VERSAO = "2026.08-v26"; // regra 27(b): preço insistido vira VISITA com horário concreto, não mais uma pergunta de funil (o eval de conversa da v25 mediu 12 desvios seguidos); bloco determinístico de pergunta ignorada
+export const PROMPT_VERSAO = "2026.09-v27"; // horário já oferecido e recusado não volta: a lista real perde o que saiu e, sem agenda configurada, um bloco nomeia o que ela repetiu (o eval da v26 mediu os mesmos "sábado 10h ou 11h" três vezes)
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -132,6 +132,13 @@ export interface ContextoAtendimento {
    * valendo, como sempre valeu.
    */
   blocoHorariosReais?: string;
+  /**
+   * Os horários que ela JÁ ofereceu nesta conversa e o cliente não aceitou
+   * (`ofertasDeVisita.ts`). Entra logo depois da pergunta ignorada porque
+   * as duas descrevem o mesmo defeito: insistir na jogada que não
+   * funcionou. Só aparece a partir da segunda oferta.
+   */
+  blocoNaoRepitaHorario?: string;
   /**
    * O imóvel que ESTA conversa já escolheu (ver `focoDaConversa.ts`).
    *
@@ -491,7 +498,7 @@ Só depois disso: a INDICAÇÃO ("pelo que você me contou, o que mais faz senti
 
 Se o cliente já disse alguma dessas coisas — nesta mensagem, no histórico ou no dossiê — NÃO PERGUNTE DE NOVO. Repetir pergunta já respondida é o erro que mais faz o cliente sumir, e é o que denuncia um sistema.
 
-${ctx.blocoPerguntaIgnorada ? `${ctx.blocoPerguntaIgnorada}\n\n` : ""}${ctx.blocoHorariosReais ? `${ctx.blocoHorariosReais}\n\n` : ""}${ctx.capacidadePendente ? `${blocoCapacidadePendente()}\n\n` : ""}${ctx.semPrazoCadastrado ? `${blocoSemPrazoCadastrado()}\n\n` : ""}${blocoFoco}
+${ctx.blocoPerguntaIgnorada ? `${ctx.blocoPerguntaIgnorada}\n\n` : ""}${ctx.blocoNaoRepitaHorario ? `${ctx.blocoNaoRepitaHorario}\n\n` : ""}${ctx.blocoHorariosReais ? `${ctx.blocoHorariosReais}\n\n` : ""}${ctx.capacidadePendente ? `${blocoCapacidadePendente()}\n\n` : ""}${ctx.semPrazoCadastrado ? `${blocoSemPrazoCadastrado()}\n\n` : ""}${blocoFoco}
 
 ${blocoCatalogo}
 
