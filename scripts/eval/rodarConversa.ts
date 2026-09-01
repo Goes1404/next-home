@@ -204,6 +204,82 @@ ${transcricao}`;
   return { ...(gpt.json as JuizoDaConversa), juiz: "gpt-reserva" as const };
 }
 
+/**
+ * Grava o resultado ao fim de CADA rodada, não só no fim de tudo.
+ *
+ * Uma rodada de 4 personas x 3 leva mais de uma hora, e o contêiner desta
+ * sessão foi reiniciado no meio de uma — 2 de 12 conversas pagas e
+ * perdidas, porque o arquivo só era escrito no final. Salvar por rodada
+ * transforma a perda total em perda parcial.
+ */
+type RodadaDoRelatorio = Awaited<ReturnType<typeof conversarCom>> & {
+  medida: ReturnType<typeof medirConversa>;
+  juizo: Awaited<ReturnType<typeof julgarConversa>> | null;
+  rodada: number;
+};
+
+function gravar(
+  relatorio: RodadaDoRelatorio[],
+  clienteIndependente: boolean,
+  rodadasFeitas: number,
+): string {
+  const hoje = new Date().toISOString().slice(0, 10);
+  mkdirSync("eval/resultados/transcricoes", { recursive: true });
+
+  const arquivo = `eval/resultados/conversa-${PROMPT_VERSAO}-${hoje}.json`;
+  writeFileSync(
+    arquivo,
+    JSON.stringify(
+      {
+        promptVersao: PROMPT_VERSAO,
+        data: hoje,
+        provedorDoAgente: PROVEDOR_DO_AGENTE,
+        provedorDoCliente: provedorDoCliente(),
+        /*
+         * Carimbo, na mesma régua do `juizIndependente` do eval de resposta:
+         * cliente no mesmo provedor do agente (em outro modelo) ainda enviesa
+         * para a cooperação. A nota continua útil; comparar esta rodada com
+         * uma de cliente independente é comparar réguas diferentes.
+         */
+        clienteIndependente,
+        tetoDeTurnos: TETO_DE_TURNOS,
+        rodadas: rodadasFeitas,
+        comJuiz: !SEM_JUIZ,
+        conversas: relatorio.map(({ persona, desfecho, medida, juizo, turnos, rodada }) => ({
+          persona,
+          rodada,
+          desfecho,
+          turnos: turnos.length,
+          medida,
+          juizo,
+        })),
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+
+  /*
+   * A transcrição legível não é enfeite: é o insumo da F1, em que o humano
+   * lê e rotula. Relatório com número e sem texto é inauditável — foi assim
+   * que dois modelos bons foram reprovados injustamente antes de alguém
+   * olhar a resposta.
+   */
+  for (const c of relatorio) {
+    const texto = c.turnos
+      .map((t: (typeof c.turnos)[number], i: number) => `[${i + 1}] Cliente: ${t.cliente.join("\n              ")}\n[${i + 1}] Sofia:   ${t.bot}${t.anexos?.length ? `\n              📎 ${t.anexos.join("\n              📎 ")}` : ""}`)
+      .join("\n\n");
+    writeFileSync(
+      `eval/resultados/transcricoes/${PROMPT_VERSAO}-${c.persona}${RODADAS > 1 ? `-r${c.rodada}` : ""}.txt`,
+      `${c.persona}${RODADAS > 1 ? ` · rodada ${c.rodada}` : ""} · ${c.desfecho} · ${c.turnos.length} turnos\n${"—".repeat(60)}\n\n${texto}\n`,
+      "utf8",
+    );
+  }
+
+  return arquivo;
+}
+
 async function principal() {
   // Trava ANTES de qualquer chamada: rodar e descobrir depois já custou o
   // dinheiro e produziu um relatório que parece válido.
@@ -250,61 +326,17 @@ async function principal() {
 
     relatorio.push({ ...conversa, medida, juizo, rodada });
   }
-  }
-
-  const hoje = new Date().toISOString().slice(0, 10);
-  mkdirSync("eval/resultados/transcricoes", { recursive: true });
-
-  const arquivo = `eval/resultados/conversa-${PROMPT_VERSAO}-${hoje}.json`;
-  writeFileSync(
-    arquivo,
-    JSON.stringify(
-      {
-        promptVersao: PROMPT_VERSAO,
-        data: hoje,
-        provedorDoAgente: PROVEDOR_DO_AGENTE,
-        provedorDoCliente: provedorDoCliente(),
-        /*
-         * Carimbo, na mesma régua do `juizIndependente` do eval de resposta:
-         * cliente no mesmo provedor do agente (em outro modelo) ainda enviesa
-         * para a cooperação. A nota continua útil; comparar esta rodada com
-         * uma de cliente independente é comparar réguas diferentes.
-         */
-        clienteIndependente,
-        tetoDeTurnos: TETO_DE_TURNOS,
-        rodadas: RODADAS,
-        comJuiz: !SEM_JUIZ,
-        conversas: relatorio.map(({ persona, desfecho, medida, juizo, turnos, rodada }) => ({
-          persona,
-          rodada,
-          desfecho,
-          turnos: turnos.length,
-          medida,
-          juizo,
-        })),
-      },
-      null,
-      2,
-    ),
-    "utf8",
-  );
 
   /*
-   * A transcrição legível não é enfeite: é o insumo da F1, em que o humano
-   * lê e rotula. Relatório com número e sem texto é inauditável — foi assim
-   * que dois modelos bons foram reprovados injustamente antes de alguém
-   * olhar a resposta.
+   * Salva ao fim de CADA rodada. O contêiner desta sessão reiniciou no meio
+   * de uma rodada de 12 conversas e levou as 2 já pagas junto, porque o
+   * arquivo só era escrito no final. Perda parcial em vez de total.
    */
-  for (const c of relatorio) {
-    const texto = c.turnos
-      .map((t, i) => `[${i + 1}] Cliente: ${t.cliente.join("\n              ")}\n[${i + 1}] Sofia:   ${t.bot}${t.anexos?.length ? `\n              📎 ${t.anexos.join("\n              📎 ")}` : ""}`)
-      .join("\n\n");
-    writeFileSync(
-      `eval/resultados/transcricoes/${PROMPT_VERSAO}-${c.persona}${RODADAS > 1 ? `-r${c.rodada}` : ""}.txt`,
-      `${c.persona}${RODADAS > 1 ? ` · rodada ${c.rodada}` : ""} · ${c.desfecho} · ${c.turnos.length} turnos\n${"—".repeat(60)}\n\n${texto}\n`,
-      "utf8",
-    );
+  gravar(relatorio, clienteIndependente, rodada);
+  if (RODADAS > 1) console.log(`  [salvo: ${rodada}/${RODADAS} rodada(s) até aqui]`);
   }
+
+  const arquivo = gravar(relatorio, clienteIndependente, RODADAS);
 
   const reprovadas = relatorio.filter((c) => c.medida.reprovacoes.length > 0).length;
   console.log(
