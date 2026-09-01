@@ -1,0 +1,73 @@
+decide-com-a-esposa · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: to vendo apartamento pra minha familia, 2 ou 3 dorm
+[1] Sofia:   Em qual região você está buscando? Alphaville, Barueri, Osasco ou outra?
+
+[2] Cliente: nao sei ainda, talvez alphaville
+[2] Sofia:   Alphaville tem opções interessantes, como o On The Park e o Eternity.
+Prefere pronto para morar ou na planta? Isso ajuda a direcionar melhor.
+
+[3] Cliente: pronto pra morar
+              quais sao os valores?
+[3] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+O On The Park Alphaville está pronto para morar e começa em R$ 800.000.
+O Eternity é na planta, com unidades a partir de R$ 1.289.900.
+Qual faixa de valor você tem em mente?
+
+[4] Cliente: qual a metragem do mais em conta?
+[4] Sofia:   O Vila Eco Park, que é o mais em conta, tem 38,81m² com 2 dormitórios e 1 vaga.
+Quer que eu te envie as fotos para você conhecer melhor?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-1-big-1597aad13631a310ed7b0fc07ffbb619.jpg
+
+[5] Cliente: manda as fotos então
+              quero mostrar pra minha esposa
+[5] Sofia:   Te mandei as fotos do Vila Eco Park aqui embaixo para você e sua esposa conhecerem melhor.
+Se quiser, posso te enviar o link da página com mais detalhes também.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-2-big-a9da807487ea43da180107514a2dbf8b.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-3-big-06248497c720b210e19a743a066ded5a.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-4-big-fe950ef31c0f68077e3ed1dd300bb8f3.jpg
+
+[6] Cliente: show, vou mostrar pra ela
+              tem mais opções assim?
+[6] Sofia:   Tem sim, Alphaville tem o On The Park, pronto para morar,
+com 2 ou 3 dormitórios, e o Eternity, na planta, com 2 ou 3 dormitórios também.
+Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[7] Cliente: mais detalhes do On The Park
+              preço?
+[7] Sofia:   O On The Park Alphaville começa em R$ 800.000.
+O valor varia conforme o andar e condições de pagamento, que fechamos na visita.
+Quer que eu te envie as fotos para conhecer melhor?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+
+[8] Cliente: qual a metragem do On The Park?
+              tem mais fotos?
+[8] Sofia:   O On The Park Alphaville tem opções de 2 dormitórios com 2 vagas e até 3 suítes, com 3 banheiros.
+Te mandei as fotos para você conhecer melhor.
+Quer que eu te envie o link da página com mais detalhes?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-3-big-49406f476a83a577b8907baa94fed78f.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-4-big-c927018093552dd1e44890698536515d.jpg
+
+[9] Cliente: metragem?
+              mais fotos?
+[9] Sofia:   Já te enviei as fotos disponíveis para conhecer melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-5-big-b8ce3deb5bcf41e5d85efcda6567ddc5.jpg
+
+[10] Cliente: mas e a metragem?
+              tem mais fotos do On The Park?
+[10] Sofia:   Já enviei todas as fotos disponíveis para esse empreendimento.
+
+[11] Cliente: mas e a metragem do On The Park?
+              tem mais fotos do On The Park?
+[11] Sofia:   Demorei para responder, obrigado pela paciência.
+O On The Park Alphaville tem unidades com 2 dormitórios, 3 suítes e 2 vagas, mas a metragem exata não está cadastrada.
+Já enviei todas as fotos disponíveis para esse empreendimento.
+
+[12] Cliente: mas e a metragem exata?
+              mais fotos do On The Park?
+[12] Sofia:   O On The Park Alphaville não tem a metragem exata cadastrada no sistema.
+Já enviei todas as fotos disponíveis para esse empreendimento.
+Se quiser, posso te enviar o link da página com todos os detalhes.

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { BotaoConcluirTarefa } from "./BotaoConcluirTarefa";
+import { BotaoResponderComIA } from "./BotaoResponderComIA";
 import type { ItemFila, TipoItemFila } from "@/lib/crm/filaDeTrabalho";
 
 /**
@@ -86,6 +87,12 @@ export function FilaAgora({ itens }: { itens: ItemFila[] }) {
 
             {item.tarefaId && (
               <BotaoConcluirTarefa tarefaId={item.tarefaId} titulo={item.titulo} />
+            )}
+
+            {/* Só em quem está esperando: é o único item da fila em que há
+                uma pergunta em aberto para a IA responder. */}
+            {item.tipo === "sem_resposta" && item.conversaId && (
+              <BotaoResponderComIA conversaId={item.conversaId} titulo={item.titulo} />
             )}
           </li>
         ))}

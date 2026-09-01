@@ -10,12 +10,18 @@ import {
 } from "@/lib/whatsapp/provider";
 import { decidirPorFalaDoCorretor } from "@/lib/whatsapp/modoBot";
 import {
+  buscarDossieAtual,
   gravarMensagem,
+  historicoRecente,
   liberarConversaPorPalavraChave,
   marcarConversaComoTeste,
   pausarBotPorAtendimentoHumano,
   registrarTentativaDeContato,
+  resolverInstancia,
 } from "@/lib/whatsapp/repositorio";
+import { getEmpreendimentos } from "@/lib/queries";
+import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
+import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 
 export type ResultadoConversa = { erro?: string; ok?: string };
 
@@ -263,6 +269,8 @@ export type ResultadoEnvioPainel = {
   iaPausada?: boolean;
   /** A mensagem era a palavra-chave: a IA foi LIGADA em vez de pausada. */
   iaAtivada?: boolean;
+  /** Quantos balões a IA mandou, quando o corretor pediu que ela respondesse. */
+  baloesEnviados?: number;
 };
 
 /**
@@ -550,4 +558,104 @@ export async function lerFichaDoLead(conversaId: string): Promise<FichaDoLead | 
       : null,
     resumoIA: dossie?.resumo_executivo ?? null,
   };
+}
+
+/**
+ * A IA responde ESTA conversa agora, sob comando do corretor.
+ *
+ * ## Por que existe
+ *
+ * Quando a trava de campanha estava quebrada (01/09), 6 clientes
+ * responderam ao disparo e ficaram sem resposta — um deles desde 27/08. O
+ * conserto destravou o futuro, mas quem já escreveu não volta sozinho: o
+ * webhook só age quando chega mensagem nova.
+ *
+ * Isto não é caminho paralelo: usa `executarTurnoDeAtendimento`, a MESMA
+ * função do webhook, do follow-up, do playground e do eval. Duas vezes
+ * neste projeto um caminho paralelo divergiu e o teste passou a medir um
+ * agente que não existia.
+ *
+ * ## O que ela NÃO faz
+ *
+ * Não manda nada se a última palavra já for nossa. Responder quem não
+ * perguntou nada é a definição de mensagem inconveniente — e num número
+ * que o WhatsApp observa, é também risco de denúncia.
+ */
+export async function responderComIA(conversaId: string): Promise<ResultadoEnvioPainel> {
+  const supabase = await exigirSessao();
+
+  const alvo = await carregarConversaEInstancia(supabase, conversaId);
+  if ("erro" in alvo) return { erro: alvo.erro };
+  const { conversa, instancia } = alvo;
+
+  /*
+   * A identidade (nome do corretor, CRECI, tom de voz) vem de
+   * `resolverInstancia`, a MESMA que o webhook usa. Montar aqui um objeto
+   * "parecido" é como um caminho paralelo começa.
+   */
+  const identidade = await resolverInstancia(instancia.instance_name);
+  if (!identidade) return { erro: "Número não configurado." };
+
+  const historico = await historicoRecente(conversaId);
+  const ultima = historico[historico.length - 1];
+  if (!ultima || ultima.remetente !== "cliente") {
+    return { erro: "A última mensagem não é do cliente — não há o que responder." };
+  }
+
+  const [catalogo, dossie] = await Promise.all([
+    getEmpreendimentos(),
+    conversa.lead_id ? buscarDossieAtual(conversa.lead_id) : Promise.resolve(null),
+  ]);
+
+  const turno = await executarTurnoDeAtendimento({
+    identidade: {
+      nomeCorretor: identidade.nomeCorretor,
+      slugCorretor: identidade.slugCorretor ?? undefined,
+      creciCorretor: identidade.creciCorretor,
+      telefoneCorretor: identidade.whatsappCorretor,
+      nomeAssistente: identidade.nomeAssistente,
+      tomVoz: identidade.tomVoz,
+    },
+    catalogo,
+    historico,
+    dossie,
+    fewShot: { corretorId: identidade.corretorId, conversaAtualId: conversaId },
+    horariosReais: await horariosDeVisitaSeguros(identidade.corretorId),
+  });
+
+  if (turno.baloes.length === 0) {
+    return { erro: "A IA não conseguiu gerar uma resposta agora. Tente de novo." };
+  }
+
+  /*
+   * Um balão por vez, com a mesma pausa do webhook: o WhatsApp entrega um a
+   * um, e disparar os três no mesmo segundo é o padrão que a proteção
+   * anti-ban existe para evitar.
+   */
+  for (const balao of turno.baloes) {
+    const envio = await enviarMensagemWhatsapp({
+      instanceName: instancia.instance_name,
+      telefone: conversa.telefone_cliente,
+      texto: balao,
+    });
+
+    if (!envio.enviado) {
+      console.error("[conversas] IA não conseguiu enviar:", envio.detalhe ?? envio.motivo);
+      return { erro: "A resposta foi gerada, mas o envio falhou. Tente de novo." };
+    }
+
+    await gravarMensagem({
+      // O corretor pediu a resposta: é atendimento por definição.
+      conversaLiberada: true,
+      conversaId,
+      remetente: "bot",
+      conteudo: balao,
+      providerMessageId: envio.messageId ?? null,
+      statusEntrega: envio.messageId ? "enviada" : null,
+    });
+  }
+
+  revalidatePath("/corretor/conversas");
+  revalidatePath("/corretor");
+  return { baloesEnviados: turno.baloes.length };
 }

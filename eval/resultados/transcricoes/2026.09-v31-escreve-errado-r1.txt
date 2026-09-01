@@ -1,0 +1,68 @@
+escreve-errado · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vcs tem o vrita alphagran ainda?
+[1] Sofia:   O Vitra Alphaville é pronto para morar, com 2 dormitórios e 2 suítes, a partir de R$ 1.000.000.
+Posso te mostrar as fotos para começar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+
+[2] Cliente: mas eu pedi a planta
+              manda a planta
+[2] Sofia:   O Vitra Alphaville tem planta de 2 dormitórios e 2 suítes, 107m².
+Te mandei a planta para você analisar.
+Quer que eu te envie o link da página com mais detalhes também?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-4437ee1f8f0ca0135bd73540a6063059.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-db60774778f5a3d788cdcb47cdd43db3.jpg
+
+[3] Cliente: mas mande a planta do vrita
+              não quero detalhes, só a planta
+[3] Sofia:   Te mandei as duas plantas do Vitra Alphaville que temos cadastradas.
+Se quiser, posso te enviar o link da página com tudo que tem no projeto.
+
+[4] Cliente: não é vitra, é vrita
+              manda a planta do vrita
+[4] Sofia:   O Vitra Alphaville tem planta de 2 dormitórios, 2 suítes e 107m², com 2 vagas.
+Já te enviei as plantas que temos cadastradas. O Vrita não consta no nosso catálogo.
+
+[5] Cliente: mas eu pedi do vrita
+              vc só manda o vrita?
+[5] Sofia:   O Vrita não está no nosso catálogo, só temos o Vitra Alphaville mesmo.
+Posso te mostrar o Vitra, que é pronto para morar e tem 2 suítes?
+Quer conhecer o decorado para sentir o espaço pessoalmente?
+
+[6] Cliente: mas eu pedi do vrita
+              vc só tem isso?
+[6] Sofia:   O Vitra Alphaville é o único que temos com esse nome, pronto para morar e com 2 suítes.
+Posso te enviar o link da página para você conferir a planta e fotos.
+Quer agendar uma visita para conhecer o decorado e sentir o espaço pessoalmente?
+
+[7] Cliente: mas eu pedi a planta do vrita
+              vc só tem isso de novo?
+[7] Sofia:   O Vitra Alphaville tem 2 dormitórios, até 2 suítes e 2 vagas, com 107m².
+Já te enviei as plantas que temos cadastradas.
+Posso te enviar o link da página com tudo do projeto para você conferir?
+Quer conhecer o decorado para sentir o espaço pessoalmente?
+
+[8] Cliente: vc só manda vrita ou não tem mais nada?
+[8] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[9] Cliente: vc só me manda vrita
+              não tem mais nada?
+[9] Sofia:   O Vitra Alphaville é o único do nosso catálogo com esse perfil na região.
+Se quiser, posso te mostrar outras opções, mas preciso saber o que você busca exatamente.
+Região, tamanho, pronto ou na planta? Assim te ajudo melhor.
+
+[10] Cliente: vc só manda vrita?
+              não tem mais nada?
+[10] Sofia:   Demorei a responder, desculpa. O Vitra Alphaville é o único com esse perfil no catálogo.
+Me conta o que você busca para eu ajudar melhor.
+
+[11] Cliente: vc só manda vrita mesmo?
+              não tem mais nada?
+[11] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[12] Cliente: vc só manda vrita
+              não tem mais nada?
+[12] Sofia:   O Vitra Alphaville é o único com 2 dormitórios e 2 suítes no catálogo.
+Se precisar de outra configuração, me diz quantos dormitórios quer.
+Assim te ajudo a encontrar o imóvel ideal.

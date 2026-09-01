@@ -1,0 +1,64 @@
+investidor-objetivo · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual a menor tipologia do vista alphagran
+[1] Sofia:   Não temos o Vista Alphagran no nosso catálogo. Me conta a região e o que procura que te mostro opções.
+
+[2] Cliente: não pedi opções
+              qual a metragem
+[2] Sofia:   O Vista Alphagran não está no nosso catálogo, então não tenho a metragem.
+Me conta a região onde você procura para eu te mostrar o que temos por lá.
+
+[3] Cliente: qual o valor
+              tem foto
+[3] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Me conta em qual região você procura para eu te mostrar opções com fotos.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[4] Cliente: qual a metragem
+              qual a entrega
+[4] Sofia:   A menor tipologia do nosso catálogo tem 38,81m², no Vila Eco Park, em Osasco.
+Sobre entrega, não tenho data exata, só que alguns imóveis estão prontos para morar.
+Quer que eu te mostre fotos do Vila Eco Park para avaliar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-1-big-1597aad13631a310ed7b0fc07ffbb619.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-2-big-a9da807487ea43da180107514a2dbf8b.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-3-big-06248497c720b210e19a743a066ded5a.jpg
+
+[5] Cliente: qual a metragem total
+              qual o valor de 2 dorm
+[5] Sofia:   A metragem total do Vila Eco Park é 38,81m².
+O valor para 2 dormitórios começa em R$ 249.000, o preço varia conforme o andar e forma de pagamento.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-4-big-fe950ef31c0f68077e3ed1dd300bb8f3.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-5-big-3b3bc7ded5f736a38dfbbf44ab804ebd.jpg
+
+[6] Cliente: qual o valor de 1 dorm
+              qual a metragem de 1 dorm
+[6] Sofia:   O Vila Eco Park tem unidades de 2 dormitórios com 38,81m², não temos 1 dormitório lá.
+
+[7] Cliente: qual o valor de 2 dorm
+              qual o valor de 1 dorm
+[7] Sofia:   O Vila Eco Park tem 2 dormitórios a partir de R$ 249.000, não há 1 dormitório lá.
+O valor varia conforme o andar e forma de pagamento.
+
+[8] Cliente: qual o valor de 1 dorm
+              qual a metragem de 1 dorm
+[8] Sofia:   Posso te mostrar outras opções na região?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[9] Cliente: qual a metragem de 1 dorm
+              qual o valor de 1 dorm
+[9] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Não temos 1 dormitório nessa faixa, mas posso mostrar opções com 2 dormitórios que cabem no orçamento.
+
+[10] Cliente: qual a metragem de 1 dorm
+              qual o valor de 1 dorm
+[10] Sofia:   Quer que eu te mostre opções com 2 dormitórios que cabem no seu orçamento?
+
+[11] Cliente: qual a metragem de 1 dorm
+              qual o valor de 1 dorm
+[11] Sofia:   Não temos 1 dormitório nessa faixa, só 2 dormitórios.
+
+[12] Cliente: qual a metragem de 1 dorm
+              qual o valor de 1 dorm
+[12] Sofia:   O Vila Eco Park não tem unidades de 1 dormitório, só 2 dormitórios com 38,81m² a partir de R$ 249.000.
+Posso te mostrar outras opções com 2 dormitórios que cabem no seu orçamento?

@@ -41,6 +41,8 @@ export type ItemFila = {
   whatsapp?: string;
   /** Tarefa de origem — o que permite concluí-la sem sair do Início. */
   tarefaId?: string;
+  /** Conversa de origem — permite pedir a resposta da IA sem sair do Início. */
+  conversaId?: string;
   /** Peso na ordenação; menor primeiro. */
   peso: number;
 };
@@ -186,6 +188,7 @@ export async function getFilaDeTrabalho(
     itens.push({
       chave: `sem_resposta:${conversa.conversa_id}`,
       tipo: "sem_resposta",
+      conversaId: conversa.conversa_id as string,
       titulo: `Responder ${conversa.nome_cliente || conversa.telefone_cliente || "cliente"}`,
       /*
        * A espera em horas, e em DIAS quando passa de um: "há 5 dias" dói
