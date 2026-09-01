@@ -208,6 +208,7 @@ prompt que produção nenhuma vê, o teste vira mentira.
 | [`docs/ROADMAP-CHATBOT.md`](./docs/ROADMAP-CHATBOT.md) | evolução do assistente |
 | [`docs/ROADMAP-META-ADS.md`](./docs/ROADMAP-META-ADS.md) | integração de anúncios |
 | [`docs/WHATSAPP_SETUP.md`](./docs/WHATSAPP_SETUP.md) | ligar o WhatsApp do zero |
+| [`docs/RECUPERAR-NUMERO-WHATSAPP.md`](./docs/RECUPERAR-NUMERO-WHATSAPP.md) | número restrito pelo WhatsApp: o que fazer, e como verificar que o espaçamento anti-ban está valendo |
 | [`docs/superpowers/specs/`](./docs/superpowers/specs) | design de cada funcionalidade grande |
 
 **`docs/MEMORIA.md` não é opcional.** É onde estão as armadilhas que este
