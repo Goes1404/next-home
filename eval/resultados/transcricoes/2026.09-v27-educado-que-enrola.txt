@@ -1,0 +1,78 @@
+educado-que-enrola · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: achei lindo o empreendimento de vcs no instagram
+[1] Sofia:   Que bom que gostou! Em qual região você procura o imóvel? Assim já te mostro as opções que temos por aí.
+
+[2] Cliente: obrigado! região centro, pode me mandar opções?
+              e a metragem dos imóveis?
+[2] Sofia:   No centro de Barueri, tenho opções próximas ao Parque Shopping e ao Centro Comercial Jubran.
+Dá uma olhada e me diz o que te agradou.
+Sobre metragem, varia conforme o imóvel, posso te mostrar detalhes específicos quando escolher a região exata.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: mas e a metragem dos imóveis?
+              tem de 2 dorm?
+[3] Sofia:   No centro de Barueri, tenho o Eternity Alphaville Tamboré,
+com 2 dormitórios e 74m², e o More na Aldeia de Barueri, com 2 dormitórios e 63m².
+Quer que te envie fotos?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-1-big-fa9d826751f7a7f2f548546f1fa3985a.jpg
+
+[4] Cliente: mas e a metragem do Eternity?
+              eu quero detalhes!
+[4] Sofia:   O Eternity Alphaville Tamboré tem 74m² na planta de 2 dormitórios, com 1 suíte e 2 vagas.
+O projeto é para quem busca conforto e espaço, com acabamento de alto padrão.
+Posso te enviar fotos exclusivas para você conhecer melhor o ambiente?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-02.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/fachada.jpg
+
+[5] Cliente: mas e o valor?
+              tem taxa de condomínio?
+[5] Sofia:   Sei que o valor é decisivo, mas varia por unidade e condição de pagamento.
+A taxa de condomínio também depende do andar e da unidade.
+Tenho condições flexíveis e entrada parcelada, que conversamos na visita.
+Que tal agendarmos para terça às 10h ou quarta às 15h? Posso te apresentar o projeto e as condições pessoalmente.
+
+[6] Cliente: mas quanto é isso?
+              qual taxa de condomínio?
+[6] Sofia:   Entendo que o valor é fundamental para você. O preço exato e a taxa de condomínio variam conforme a unidade e o andar.
+Na visita, apresento tudo detalhado, inclusive as condições de pagamento flexíveis.
+Posso agendar terça às 10h ou quarta às 15h para conversarmos pessoalmente?
+
+[7] Cliente: mas e o valor exato?
+              não posso decidir sem isso.
+[7] Sofia:   Sei que o valor exato é essencial para sua decisão.
+Ele varia por unidade, andar e condição de pagamento, e quem detalha isso é a construtora.
+Podemos agendar uma visita para eu te apresentar o projeto e as condições de fluxo pessoalmente.
+Qual dia da semana fica melhor para você? Posso ajustar conforme sua agenda.
+
+[8] Cliente: mas e o valor exato?
+              não entendi essa resposta.
+[8] Sofia:   O valor exato quem passa é a construtora, pois varia por unidade e condição.
+A visita é o melhor caminho para tratar disso com calma.
+Que tal sábado às 9h ou às 11h para conversarmos pessoalmente?
+
+[9] Cliente: mas e o preço da taxa?
+              não entendi seu agendamento.
+[9] Sofia:   A taxa de condomínio varia conforme a unidade e o andar, por isso só confirmo na visita.
+Sobre o agendamento, posso marcar sábado às 9h ou às 11h para conversarmos pessoalmente.
+Qual horário prefere?
+
+[10] Cliente: mas e o preço exato?
+              não consigo decidir sem isso
+[10] Sofia:   Sei que o valor exato é decisivo, mas só a construtora detalha por unidade e condição.
+Podemos agendar sábado às 9h ou às 11h para eu te mostrar tudo pessoalmente?
+Qual horário prefere?
+
+[11] Cliente: mas eu preciso do valor exato!
+              como assim só na visita?
+[11] Sofia:   Sei que o valor exato é decisivo para você. Ele depende da unidade, andar e condições que só a construtora detalha.
+Posso agendar para segunda às 14h ou quinta às 16h para te mostrar tudo pessoalmente.
+
+[12] Cliente: mas e o preço da taxa?
+              não consigo decidir sem isso
+[12] Sofia:   O valor exato e a taxa de condomínio são definidos pela construtora e variam por unidade e andar.
+A visita é o momento ideal para detalhar tudo com calma e transparência.
+Posso agendar para terça às 10h ou quarta às 15h para conversarmos pessoalmente.
+Qual desses horários fica melhor para você?

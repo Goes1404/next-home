@@ -96,11 +96,23 @@ export function sanearRespostaIA(
   );
 
   /*
-   * Valor sai do texto ANTES de qualquer outra coisa. A regra do negócio é
-   * que a IA não fala preço — e prompt sozinho vaza, principalmente quando
-   * o cliente pergunta duas ou três vezes seguidas.
+   * Valor sai do texto ANTES de qualquer outra coisa — menos o PISO.
+   *
+   * A regra do negócio deixou de ser "nunca fala preço" em 01/09: contra
+   * quem insiste em valor, a Sofia não tinha jogada nenhuma e a conversa
+   * nunca avançava (`avancou = 0` em todas as personas do eval). Agora ela
+   * pode dizer "a partir de R$ X" — e nada além.
+   *
+   * Os pisos permitidos saem do CATÁLOGO que foi ao prompt, não da boa
+   * vontade do modelo: piso inventado, ou piso do imóvel errado, é o mesmo
+   * compromisso comercial feito por um robô que esta limpeza existe para
+   * impedir. Mesma construção do `resolverAnexos` logo acima.
    */
-  const semValor = removerValores(soarHumano(resposta.textoResposta ?? ""));
+  const pisosPermitidos = catalogo
+    .map((e) => e.precoAPartir)
+    .filter((p): p is number => typeof p === "number" && p > 0);
+
+  const semValor = removerValores(soarHumano(resposta.textoResposta ?? ""), 0, pisosPermitidos);
 
   /*
    * Repetição literal do que o bot já disse. Medido: 23 das 80 mensagens
