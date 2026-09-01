@@ -15,6 +15,7 @@ import {
   agendarVisitaLead,
   aplicarAckDeEntrega,
   avancarLeadParaPrimeiroContato,
+  registrarImovelDeInteresse,
   registrarRespostaDoLead,
   botDeveResponder,
   buscarDossieAtual,
@@ -871,6 +872,19 @@ export async function POST(req: NextRequest) {
     // sozinho (só sai de "novo"; nunca volta; idempotente).
     if (envio.enviado && conversa.leadId) {
       await avancarLeadParaPrimeiroContato(conversa.leadId);
+
+      /*
+       * O imóvel de que esta conversa trata (0083). O foco já era calculado
+       * a cada mensagem e descartado; agora a ficha do CRM mostra do que o
+       * cliente está falando, que é a informação mais básica para o
+       * corretor retomar o atendimento.
+       */
+      if (turno.foco) {
+        await registrarImovelDeInteresse(
+          conversa.leadId,
+          catalogo.find((e) => e.slug === turno.foco!.slug)?.id ?? null,
+        );
+      }
     }
 
     return NextResponse.json({

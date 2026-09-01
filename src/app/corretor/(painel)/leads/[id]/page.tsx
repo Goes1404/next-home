@@ -109,6 +109,29 @@ export default async function FichaLeadPage({
           </p>
         )}
 
+        {/*
+          Do que ele está falando (0083).
+          Fica ACIMA do funil de propósito: é a primeira coisa que o
+          corretor precisa saber para retomar o atendimento, e até agora
+          não existia em lugar nenhum — 64 dos 112 leads ativos tinham
+          conversa de WhatsApp e nenhum imóvel vinculado.
+        */}
+        {lead.imovelInteresse && (
+          <p className="text-fluid-sm text-corpo mt-4">
+            Conversando sobre{" "}
+            <Link
+              href={`/empreendimentos/${lead.imovelInteresse.slug}`}
+              target="_blank"
+              className="text-titulo font-medium underline underline-offset-2"
+            >
+              {lead.imovelInteresse.nome}
+            </Link>
+            {lead.empreendimento && lead.empreendimento.slug !== lead.imovelInteresse.slug && (
+              <span className="text-tenue"> · chegou pelo {lead.empreendimento.nome}</span>
+            )}
+          </p>
+        )}
+
         {/* Onde ele está no caminho, e o único botão para andar. */}
         <PassosDoFunil etapa={lead.etapa} comRotulo className="mt-4" />
         <BotaoAvancar leadId={lead.id} etapa={lead.etapa} className="mt-3" />

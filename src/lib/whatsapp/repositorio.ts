@@ -705,6 +705,38 @@ export async function registrarRespostaDoLead(leadId: string | null): Promise<vo
   await supabase.rpc("registrar_resposta_do_lead", { p_lead_id: leadId });
 }
 
+/**
+ * Guarda o imóvel sobre o qual a conversa está acontecendo (0083).
+ *
+ * O foco já era calculado a cada mensagem por `focoDaConversa` — é ele que
+ * encolhe o catálogo do prompt para a IA parar de desfilar empreendimento —
+ * e era DESCARTADO. Medido em 01/09: 64 dos 112 leads ativos têm conversa
+ * de WhatsApp e nenhum imóvel vinculado, então o corretor abre a ficha e
+ * não sabe do que a pessoa está falando.
+ *
+ * Escreve `imovel_interesse_id`, NUNCA `empreendimento_id`: aquele é a
+ * ORIGEM do lead (de qual página ele veio) e é atribuição de marketing —
+ * reescrever destruiria a única medida de qual página traz cliente.
+ *
+ * O `neq` evita escrita à toa: o foco é o mesmo em quase toda mensagem de
+ * uma conversa, e um UPDATE por resposta encheria o WAL sem mudar nada.
+ */
+export async function registrarImovelDeInteresse(
+  leadId: string | null,
+  empreendimentoId: string | null,
+): Promise<void> {
+  if (!leadId || !empreendimentoId) return;
+
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({ imovel_interesse_id: empreendimentoId })
+    .eq("id", leadId)
+    .or(`imovel_interesse_id.is.null,imovel_interesse_id.neq.${empreendimentoId}`);
+
+  if (error) console.error("[lead] falha ao gravar imóvel de interesse:", error.message);
+}
+
 export async function avancarLeadParaPrimeiroContato(leadId: string): Promise<void> {
   const supabase = createServiceClient();
   await supabase

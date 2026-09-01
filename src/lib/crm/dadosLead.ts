@@ -21,6 +21,15 @@ export type LeadDetalhado = Lead & {
   dormitoriosMin: number | null;
   regiaoInteresse: string | null;
   empreendimentoId: string | null;
+  /**
+   * O imóvel sobre o qual a CONVERSA está acontecendo (0083).
+   *
+   * Diferente de `empreendimento`, que é a ORIGEM — de qual página o lead
+   * preencheu o formulário. Um lead pode chegar pelo Terra Alta e passar a
+   * conversa inteira falando do Vitra; os dois fatos importam e não se
+   * sobrescrevem.
+   */
+  imovelInteresse: { nome: string; slug: string } | null;
   /** Preenchido = fora das listas (0055). A ficha continua abrindo por link direto. */
   arquivadoEm: string | null;
   /** Quantas vezes NÓS já falamos com ele: campanha, follow-up, Live Chat (0060). */
@@ -36,7 +45,8 @@ const SELECT_DETALHE = `
   orcamento_min, orcamento_max, renda_mensal, dormitorios_min, regiao_interesse, empreendimento_id,
   arquivado_em, tentativas_contato, tentativas_sem_resposta, ultima_tentativa_em,
   corretor:corretores(id, nome),
-  empreendimento:empreendimentos(nome, slug, endereco)
+  empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome, slug, endereco),
+  imovel_interesse:empreendimentos!leads_imovel_interesse_id_fkey(nome, slug)
 `;
 
 type LinhaDetalhe = {
@@ -67,6 +77,7 @@ type LinhaDetalhe = {
   empreendimento_id: string | null;
   corretor: { id: string; nome: string } | null;
   empreendimento: { nome: string; slug: string; endereco: string | null } | null;
+  imovel_interesse: { nome: string; slug: string } | null;
 };
 
 /** `numeric` do Postgres chega como string no supabase-js. */
@@ -116,6 +127,7 @@ export async function getLeadDetalhado(id: string): Promise<LeadDetalhado | null
     regiaoInteresse: row.regiao_interesse,
     arquivadoEm: row.arquivado_em,
     empreendimentoId: row.empreendimento_id,
+    imovelInteresse: row.imovel_interesse,
   };
 }
 

@@ -1018,6 +1018,7 @@ export type Database = {
           etapa: string
           etapa_alterada_em: string
           id: string
+          imovel_interesse_id: string | null
           mensagem: string | null
           meta_ad_id: string | null
           meta_campanha_id: string | null
@@ -1053,6 +1054,7 @@ export type Database = {
           etapa?: string
           etapa_alterada_em?: string
           id?: string
+          imovel_interesse_id?: string | null
           mensagem?: string | null
           meta_ad_id?: string | null
           meta_campanha_id?: string | null
@@ -1088,6 +1090,7 @@ export type Database = {
           etapa?: string
           etapa_alterada_em?: string
           id?: string
+          imovel_interesse_id?: string | null
           mensagem?: string | null
           meta_ad_id?: string | null
           meta_campanha_id?: string | null
@@ -1110,6 +1113,13 @@ export type Database = {
           visita_agendada_em?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_imovel_interesse_id_fkey"
+            columns: ["imovel_interesse_id"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "leads_corretor_id_fkey"
             columns: ["corretor_id"]
