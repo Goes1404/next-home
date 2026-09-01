@@ -8,6 +8,7 @@ import { catalogoParaAtendimento } from "./focoDaConversa";
 import { capacidadeEstaPendente } from "./funilQualificacao";
 import { blocoPerguntaIgnorada, perguntaIgnorada } from "./perguntaIgnorada";
 import { blocoDadoPedido, dadoPedido } from "./dadoPedido";
+import { regrasCondicionais } from "./regrasCondicionais";
 import {
   blocoNaoRepitaHorario,
   horariosJaOferecidos,
@@ -238,6 +239,7 @@ export async function executarTurnoDeAtendimento(
       capacidadePendente,
       blocoPerguntaIgnorada: ignorada ? blocoPerguntaIgnorada(ignorada) : undefined,
       blocoDadoPedido: pedido_ ? blocoDadoPedido(pedido_) : undefined,
+      blocoRegrasCondicionais: regrasCondicionais({ baloesDaVez: vezDoCliente.length }),
       blocoHorariosReais,
       blocoNaoRepitaHorario: blocoNaoRepitaHorario(oferecidos),
       /*
