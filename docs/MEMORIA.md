@@ -2483,3 +2483,25 @@ guarda anti-repetição.
   snapshot, então o teste parecia mostrar que a etapa não tinha mudado.
   Não era bug: era artefato de medição. Conferir efeito de função em
   declaração SEPARADA.
+
+## Cobertura e tempo de resposta (0075, 01/09/2026)
+
+- **Duas métricas-norte do roadmap nunca tiveram tela**, embora o dado
+  estivesse no banco desde sempre. Medido ao construir: de **56 conversas em
+  que o cliente falou, a IA respondeu 12** (21%); quando responde, a mediana
+  é de **9 segundos** e 8 das 12 saíram em menos de um minuto.
+- **Cobertura baixa com velocidade boa é outro diagnóstico.** "A IA está
+  lenta" e "a IA não é acionada" pedem correções opostas, e sem os dois
+  números lado a lado ninguém distingue. Por isso os dois moram no mesmo
+  cartão: separados, cada um engana.
+- **Mediana, nunca média nem p90.** O p90 desta base é de quase três dias —
+  há conversa em que o bot só falou muito depois (palavra-chave liberada
+  tarde, disparo entrando em conversa antiga). Média ou p90 descreveriam um
+  sistema lento que não existe.
+- **Mediana não se soma nem se tira média entre corretores.** Mediana de
+  medianas não é mediana. O painel mostra a MAIOR das medianas — a leitura
+  conservadora, "o pior tempo da equipe".
+- **Mensagem de campanha que ABRE a conversa não conta como resposta.** Ela
+  veio antes de o cliente dizer qualquer coisa; contá-la inflaria a
+  cobertura justamente onde ela é o número que importa. A view exige
+  `created_at > primeira fala do cliente`.

@@ -1551,6 +1551,24 @@ export type Database = {
       }
     }
     Views: {
+      whatsapp_resposta_metricas: {
+        Row: {
+          atendidas_em_ate_60s: number | null
+          conversas_atendidas: number | null
+          conversas_com_fala_do_cliente: number | null
+          corretor_id: string | null
+          mediana_segundos: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversas_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_funil_metricas: {
         Row: {
           conversas: number | null

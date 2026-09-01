@@ -310,9 +310,14 @@ conversão lead→visita medida por 2 semanas seguidas.
 - **H3.1 Segundo corretor no ar.** Onboarding completo: parear número,
   configurar tom, testar no playground, abrir. O que travar aqui é o custo
   real de escala — documentar cada atrito.
-- **H3.2 Painel do gestor com o funil da IA.** Taxa de resposta, tempo até
-  primeira resposta, visitas por corretor — os agregados magros da F5 do
-  Painel de Bolso servem de modelo.
+- **H3.2 Painel do gestor com o funil da IA. ✅ ENTREGUE em 01/09** (0075).
+  As métricas-norte 1 e 3 nunca tinham tela, embora o dado estivesse no
+  banco desde sempre. Medido ao construir: **de 56 conversas em que o
+  cliente falou, a IA respondeu 12 — 21% de cobertura**; quando responde, a
+  mediana é de **9 segundos** e 8 das 12 saíram em menos de um minuto.
+  Cobertura baixa com velocidade boa é um diagnóstico completamente
+  diferente de "a IA está lenta", e nenhuma tela dizia isso.
+  Os dois números ficam juntos de propósito — separados, cada um engana.
 - **H3.3 E2E autenticado do painel — JÁ EXISTE desde 25/08.** A afirmação
   antiga ("continua sem existir") estava errada, e a auditoria de 31/08 a
   derrubou: há um projeto Playwright `painel` com `dependencies: ["setup"]` e
@@ -363,8 +368,13 @@ Nenhum destes entra antes de H1–H2 provarem o núcleo.
 ## Métricas-norte (medir toda semana, a partir de H1)
 
 1. **Leads atendidos pela IA / leads que escreveram** — a taxa de cobertura.
+   *(Na tela desde 01/09: Administração → "A IA está atendendo?". Em
+   01/09 estava em 21%.)*
 2. **Visitas marcadas pela IA / semana** — a métrica de negócio.
 3. **Tempo até a primeira resposta** — meta < 5s (motor único ~2,6s).
+   *(Na tela desde 01/09, como MEDIANA: a cauda tem conversa respondida
+   dias depois, e uma média descreveria um sistema lento que não existe.
+   Em 01/09: 9s.)*
 4. **Rótulos colhidos / semana** — o combustível do ciclo; se zerar, o
    ciclo de melhoria parou, mesmo que tudo pareça bem.
 5. **Conversas com >1 modelo** — deve ser sempre 0; se subir, a cascata de

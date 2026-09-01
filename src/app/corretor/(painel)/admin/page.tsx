@@ -59,11 +59,19 @@ export default async function AdminVisaoGeralPage() {
   const supabase = await createClient();
   const equipe = await getEquipeAtiva();
 
-  const [agregado, { data: funilWhats }] = await Promise.all([
+  const [agregado, { data: funilWhats }, { data: respostaWhats }] = await Promise.all([
     getAgregadoDaEquipe(equipe),
     supabase
       .from("whatsapp_funil_metricas")
       .select("conversas, conversas_com_lead, leads_quentes, visitas_agendadas, em_negociacao"),
+    /*
+     * As métricas-norte 1 e 3 do roadmap (cobertura e tempo até a primeira
+     * resposta), que nunca tinham tela — embora o dado estivesse no banco
+     * desde sempre. Ver 0075.
+     */
+    supabase
+      .from("whatsapp_resposta_metricas")
+      .select("conversas_com_fala_do_cliente, conversas_atendidas, mediana_segundos, atendidas_em_ate_60s"),
   ]);
 
   const whats = (funilWhats ?? []).reduce(
@@ -74,6 +82,27 @@ export default async function AdminVisaoGeralPage() {
     }),
     { conversas: 0, quentes: 0, visitas: 0 },
   );
+
+  /*
+   * Soma da equipe. A mediana NÃO se soma nem se tira média entre
+   * corretores — mediana de medianas não é mediana. Com um corretor
+   * atendendo, o valor é o dele; com vários, mostramos a MAIOR, que é a
+   * leitura conservadora: "o pior tempo de resposta da equipe".
+   */
+  const resposta = (respostaWhats ?? []).reduce(
+    (acc, l) => ({
+      escreveram: acc.escreveram + (l.conversas_com_fala_do_cliente ?? 0),
+      atendidas: acc.atendidas + (l.conversas_atendidas ?? 0),
+      ateUmMinuto: acc.ateUmMinuto + (l.atendidas_em_ate_60s ?? 0),
+      piorMediana: Math.max(acc.piorMediana, l.mediana_segundos ?? 0),
+    }),
+    { escreveram: 0, atendidas: 0, ateUmMinuto: 0, piorMediana: 0 },
+  );
+
+  const cobertura =
+    resposta.escreveram > 0
+      ? Math.round((resposta.atendidas / resposta.escreveram) * 100)
+      : null;
 
   const maxEtapa = Math.max(1, ...Object.values(agregado.porEtapa));
   const maxCorretor = Math.max(1, ...agregado.porCorretor.map((r) => r.total));
@@ -117,6 +146,55 @@ export default async function AdminVisaoGeralPage() {
           href="/corretor/conversas"
         />
       </div>
+
+      {/*
+        As duas métricas-norte do roadmap que nunca tinham tela (0075).
+        Ficam JUNTAS de propósito: separadas, cada uma engana. "Mediana de 9
+        segundos" sozinha diz que a IA é rápida e esconde que ela responde a
+        um em cada cinco; "21% de cobertura" sozinha faz parecer que ela é
+        lenta, quando o problema é outro — ela não é acionada.
+      */}
+      {resposta.escreveram > 0 && (
+        <section className="border-linha bg-superficie rounded-2xl border p-5">
+          <h2 className="text-fluid-base text-titulo font-bold">A IA está atendendo?</h2>
+          <p className="text-fluid-xs text-apoio mt-1">
+            De quem escreveu, quantos a assistente respondeu — e em quanto tempo.
+          </p>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Kpi
+              rotulo="Cobertura"
+              valor={cobertura === null ? "—" : `${cobertura}%`}
+              detalhe={`${resposta.atendidas} de ${resposta.escreveram} que escreveram`}
+              href="/corretor/conversas"
+            />
+            <Kpi
+              rotulo="Tempo até responder"
+              valor={resposta.piorMediana > 0 ? `${resposta.piorMediana}s` : "—"}
+              // Mediana, não média: a cauda desta base tem conversa
+              // respondida dias depois, e uma média descreveria um sistema
+              // lento que não existe.
+              detalhe="mediana da primeira resposta"
+            />
+            <Kpi
+              rotulo="Respondidas na hora"
+              valor={String(resposta.ateUmMinuto)}
+              detalhe="em menos de 1 minuto"
+            />
+          </div>
+
+          {cobertura !== null && cobertura < 50 && (
+            <p className="text-fluid-xs text-corpo border-alerta-linha bg-alerta-lavado mt-4 rounded-xl border px-4 py-3 leading-relaxed text-pretty">
+              <strong className="text-titulo">
+                A maior parte de quem escreve não está sendo respondida pela assistente.
+              </strong>{" "}
+              Quando ela responde, responde rápido — então o gargalo não é velocidade. Os motivos
+              costumam ser: número fora do ar, conversa esperando a palavra-chave de liberação, ou
+              o corretor tendo assumido antes.
+            </p>
+          )}
+        </section>
+      )}
 
       <section className="border-linha bg-superficie rounded-2xl border p-5">
         <h2 className="text-fluid-base text-titulo font-bold">Onde está cada contato</h2>
