@@ -41,3 +41,23 @@ export async function getEmpreendimentosDoPainel(): Promise<Empreendimento[]> {
 
   return (data as unknown as LinhaEmpreendimento[]).map(mapEmpreendimento);
 }
+
+/**
+ * UM imóvel, como o painel o vê — rascunho inclusive.
+ *
+ * A leitura pública (`getEmpreendimentoBySlug`) filtra `publicado = true`,
+ * então ela devolve null justamente para o cadastro que o corretor acabou
+ * de criar. Quem autoriza ler o não publicado é a policy da 0081.
+ */
+export async function getEmpreendimentoDoPainel(slug: string): Promise<Empreendimento | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("empreendimentos")
+    .select(SELECT_EMPREENDIMENTO)
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapEmpreendimento(data as unknown as LinhaEmpreendimento);
+}

@@ -56,6 +56,17 @@ export default async function EditarImovelPage({ params }: Props) {
             <span>📥 Importar material</span>
           </Link>
 
+          {/* O carrossel só faz sentido com foto — sem ela, os slides
+              sairiam todos em fundo chapado. */}
+          {(imovel.galeria?.length ?? 0) > 0 && (
+            <Link
+              href={`/corretor/imoveis/${imovel.slug}/carrossel`}
+              className="min-h-[44px] px-4 py-2 rounded-xl bg-vidro-forte hover:bg-vidro-mais text-corpo hover:text-titulo text-fluid-xs font-semibold transition-colors flex items-center justify-center gap-2"
+            >
+              <span>📸 Carrossel do Instagram</span>
+            </Link>
+          )}
+
           <Link
             href={`/empreendimentos/${imovel.slug}`}
             target="_blank"
