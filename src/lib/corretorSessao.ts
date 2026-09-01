@@ -77,11 +77,19 @@ export async function getEmailLogado(): Promise<string | null> {
   return user?.email ?? null;
 }
 
+/*
+ * O `!leads_empreendimento_id_fkey` NÃO é enfeite. Desde a 0083 existem
+ * DUAS chaves estrangeiras de `leads` para `empreendimentos` — a origem do
+ * lead e o imóvel de que a conversa trata — e o PostgREST se recusa a
+ * adivinhar qual usar: o embed sem nome responde PGRST201 e a consulta
+ * inteira falha. Mesma armadilha que `corretor_destaques` já criou entre
+ * `empreendimentos` e `corretores`.
+ */
 const SELECT_LEAD = `
   id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
   etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, portal_origem, anuncio_origem,
   corretor:corretores(id, nome),
-  empreendimento:empreendimentos(nome, slug, endereco)
+  empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome, slug, endereco)
 `;
 
 type LinhaLead = {

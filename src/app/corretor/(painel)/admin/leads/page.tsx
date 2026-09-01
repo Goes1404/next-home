@@ -36,7 +36,8 @@ export default async function EquipePage() {
     // quando não é, o teto evita despejar mil linhas numa seção secundária.
     supabase
       .from("leads")
-      .select("id, nome, created_at, empreendimento:empreendimentos(nome)")
+      // FK explícita: desde a 0083 há duas relações leads→empreendimentos (0083).
+      .select("id, nome, created_at, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome)")
       .is("corretor_id", null)
       .order("created_at", { ascending: false })
       .limit(20),
