@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getEmpreendimentos } from "@/lib/queries";
+import { contarCandidatosPendentes } from "@/lib/imoveis/candidatosDoCatalogo";
 import { PendenciasDoCatalogo } from "./_componentes/PendenciasDoCatalogo";
 import { ListaImoveisClient } from "./ListaImoveisClient";
 
@@ -11,7 +12,10 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function ImoveisPage() {
-  const imoveis = await getEmpreendimentos();
+  const [imoveis, candidatosPendentes] = await Promise.all([
+    getEmpreendimentos(),
+    contarCandidatosPendentes(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -42,6 +46,32 @@ export default async function ImoveisPage() {
         imóveis já está carregada aqui, então isto não custa consulta nenhuma.
       */}
       <PendenciasDoCatalogo imoveis={imoveis} />
+
+      {/*
+        O cartão só existe enquanto há decisão pendente — contador que vive
+        em zero ensina a ignorar o contador. E o número é o gancho: sem ele,
+        quem nunca abriu a fila não tem como saber que há trabalho ali.
+      */}
+      {candidatosPendentes > 0 && (
+        <Link
+          href="/corretor/imoveis/candidatos"
+          className="border-linha bg-superficie hover:border-acento-linha shadow-painel flex items-center gap-4 rounded-2xl border px-5 py-4 transition-colors sm:px-6"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="text-fluid-sm text-titulo block font-medium">
+              {candidatosPendentes === 1
+                ? "1 lançamento de Barueri esperando decisão"
+                : `${candidatosPendentes} lançamentos de Barueri esperando decisão`}
+            </span>
+            <span className="text-fluid-xs text-apoio mt-0.5 block text-pretty">
+              Levantamento do mercado: o que existe em obra na região e ainda não está no catálogo.
+            </span>
+          </span>
+          <span className="text-tenue text-fluid-sm shrink-0" aria-hidden>
+            →
+          </span>
+        </Link>
+      )}
 
       <ListaImoveisClient imoveis={imoveis} />
     </div>

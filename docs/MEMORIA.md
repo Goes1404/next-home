@@ -2608,3 +2608,60 @@ Revisão do próprio trabalho da noite, e ela achou coisa real.
   toda view do schema `public`. A regressão falharia calada: build passa,
   tela funciona, e só um `curl` com a chave pública revelaria.
 - **Ao criar view neste projeto, os dois passos são obrigatórios.**
+
+## A fila de cadastro do catálogo (0078-0080, 01/09/2026)
+
+- **Foto do mercado não é fila.** O levantamento do `apto.vc` achou 39
+  lançamentos em obra em Barueri, 30 fora do catálogo, e um arquivo JSON
+  devolve os mesmos 30 toda vez que alguém abre. `catalogo_candidatos`
+  existe para LEMBRAR a decisão — e `descartado` vale tanto quanto
+  `cadastrar`: é ele que impede o imóvel de voltar à fila no próximo
+  levantamento. Sem isso a lista vira ruído e ninguém mais abre, que é a
+  mesma régua do teto de 6 itens do Início.
+- **A tabela guarda nome, bairro, tipologia e link. Não guarda foto nem
+  descrição**, e isso é decisão comercial antes de ser técnica: 30 dos 39
+  são imóveis que a Next Home não representa. Publicar foto deles faria a
+  assistente oferecer visita que ninguém pode honrar.
+- **A CDN do apto.vc recusa download** (`403` em
+  `api.apto.vc/images/realties/...`), então nem havia como copiar. Mas a
+  razão para não copiar seria a mesma se a porta estivesse aberta.
+- **Tabela nova no `public` do Supabase NASCE aberta para `anon`.** Mesma
+  lição que a 0077 tirou das views, agora numa tabela: conferido em
+  `information_schema.column_privileges`, `anon` tinha select, insert e
+  update nas 15 colunas. A RLS já barrava (policies `to authenticated`),
+  mas a chave `anon` vai no bundle POR DESENHO e uma policy futura escrita
+  sem `to` reabriria isso calada. **Ao criar tabela, conferir o grant do
+  `anon` — não confiar só na policy.**
+- **Policy diz QUEM age sobre a linha; grant diz O QUE muda nela.** O
+  comentário da 0078 dizia "sem INSERT para authenticated" e descrevia a
+  policy — o grant contava outra história. A 0080 revoga tudo do `anon`,
+  tira o INSERT do `authenticated` e concede update só em `decisao`,
+  `motivo`, `decidido_em`, `empreendimento_id`. Sem esse recorte, um update
+  pela API reescreveria `nome`, `link` ou `ref_externa`, e a fila deixaria
+  de espelhar a fonte justamente onde ela serve para isso.
+- **Conferido nos DOIS sentidos**, como manda a 0077: `has_column_privilege`
+  devolve `false` para `nome` e `true` para `decisao`, `anon` sem select, e
+  o update de decisão exercitado com `set local role authenticated` dentro
+  de `begin; … rollback;`.
+- **A conferência vem antes na fila, e não é capricho.** Os 3 candidatos com
+  nome parecido com um do catálogo ("Dom Barueri" × "Dom Parque", "La Vista
+  Barueri" × "Vista AlphaGran", "Royal"/"Eternity") ficam no topo porque
+  este projeto já publicou o MESMO empreendimento três vezes (0046), e ali
+  o estrago foi silencioso. Conferir três nomes custa minutos.
+- **`precisaConferir` lê o motivo gravado pelo levantamento, não recalcula
+  a semelhança.** Comparar nomes de novo, em outro lugar, com outra régua,
+  é exatamente como duas contas do mesmo número passam a divergir.
+- **"Já temos" é decisão própria, não motivo de descarte.** As duas levam a
+  ações diferentes quando alguém reabrir a lista: descartado saiu do
+  mercado da Next Home; "já temos" é sinal de que o imóvel pode estar
+  cadastrado com outro NOME — e aí o que falta é apelido, não cadastro.
+- **Voltar para `pendente` limpa o motivo.** Motivo velho pendurado num
+  candidato que voltou à fila descreve uma decisão que não existe mais.
+- **O painel NÃO tem tela de criar imóvel** — descoberto ao construir isto.
+  O catálogo inteiro nasceu de seed e de edição do que já existia. Por isso
+  a seção "para cadastrar" é lista de trabalho e diz em voz alta que o
+  cadastro acontece fora do painel: prometer um botão que não existe é
+  pior que não prometer nada.
+- **A rota mora em `/corretor/imoveis/candidatos`** para o menu casar por
+  prefixo e "Imóveis" continuar aceso sem um oitavo destino. O que é
+  parente vira sub-rota, não item de menu — a régua da reforma de bolso.

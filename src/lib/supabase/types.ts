@@ -10,6 +10,7 @@
  * porque o código depende das uniões. Elas são reaplicadas à mão depois de
  * cada geração, nas três seções (Row/Insert/Update):
  *
+ *   - catalogo_candidatos.decisao (0078)
  *   - corretor_whatsapp_instancias.modo_bot
  *   - corretor_whatsapp_instancias.status_conexao
  *   - ia_interacoes.avaliacao
@@ -82,6 +83,68 @@ export type Database = {
             columns: ["ator_id"]
             isOneToOne: false
             referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogo_candidatos: {
+        Row: {
+          area: string | null
+          bairro: string | null
+          criado_em: string
+          decidido_em: string | null
+          decisao: "pendente" | "cadastrar" | "descartado" | "ja_temos"
+          dormitorios: string | null
+          empreendimento_id: string | null
+          fonte: string
+          id: string
+          link: string | null
+          motivo: string | null
+          nome: string
+          ref_externa: string
+          status_obra: string | null
+          visto_em: string
+        }
+        Insert: {
+          area?: string | null
+          bairro?: string | null
+          criado_em?: string
+          decidido_em?: string | null
+          decisao?: "pendente" | "cadastrar" | "descartado" | "ja_temos"
+          dormitorios?: string | null
+          empreendimento_id?: string | null
+          fonte?: string
+          id?: string
+          link?: string | null
+          motivo?: string | null
+          nome: string
+          ref_externa: string
+          status_obra?: string | null
+          visto_em?: string
+        }
+        Update: {
+          area?: string | null
+          bairro?: string | null
+          criado_em?: string
+          decidido_em?: string | null
+          decisao?: "pendente" | "cadastrar" | "descartado" | "ja_temos"
+          dormitorios?: string | null
+          empreendimento_id?: string | null
+          fonte?: string
+          id?: string
+          link?: string | null
+          motivo?: string | null
+          nome?: string
+          ref_externa?: string
+          status_obra?: string | null
+          visto_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_candidatos_empreendimento_id_fkey"
+            columns: ["empreendimento_id"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
             referencedColumns: ["id"]
           },
         ]

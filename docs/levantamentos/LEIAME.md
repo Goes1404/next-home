@@ -29,3 +29,19 @@ O `apto.vc` é servido pronto, libera tudo no `robots.txt` fora de
 Barueri" não é o "Vista AlphaGran". O cruzamento automático marca esses
 casos como "conferir" em vez de casar — a mesma régua do `focoDaConversa`,
 onde empate entre imóveis diferentes é descartado.
+
+## O que fazer com o levantamento
+
+Ele não é a fila. Os 39 em obra ou lançamento foram carregados em
+`catalogo_candidatos` (migrations 0078–0080) e a decisão acontece em
+**Imóveis → Fila de cadastro** (`/corretor/imoveis/candidatos`).
+
+A diferença importa: o arquivo JSON é uma foto de uma data e envelhece; a
+fila LEMBRA o que já foi decidido, e é isso que impede os mesmos 30 imóveis
+de voltarem à mesa toda vez que alguém roda o levantamento de novo. Rodar o
+script outra vez deve fazer `upsert` por `(fonte, ref_externa)` — decisão
+tomada não se apaga, só o `visto_em` é atualizado.
+
+**Só a decisão é editável pela tela** (grant da 0080): nome, link e
+`ref_externa` espelham a fonte e são recusados pelo banco se alguém tentar
+mudá-los pela API. Quem popula a fila é o levantamento, com a service key.
