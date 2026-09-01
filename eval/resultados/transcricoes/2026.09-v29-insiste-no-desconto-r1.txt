@@ -1,0 +1,69 @@
+insiste-no-desconto · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O valor do imóvel depende da unidade, andar e forma de pagamento, e isso fechamos na visita.
+Quer conhecer o decorado para conversarmos pessoalmente?
+
+[2] Cliente: mas e o valor?
+              não vai ter desconto então?
+[2] Sofia:   O desconto e condições fechamos na visita, onde te mostro tudo com calma.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[3] Cliente: mas qual o valor?
+              sem desconto não vale a pena
+[3] Sofia:   O valor varia conforme unidade, andar e forma de pagamento, e isso fechamos na visita.
+Temos boas unidades ainda.
+Quer agendar para terça às 10h ou quarta às 15h para eu te mostrar tudo pessoalmente?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[4] Cliente: qual é o valor então?
+              não tem como ver antes da visita?
+[4] Sofia:   O valor exato quem passa é a construtora, e ele muda por unidade, andar e forma de pagamento.
+A visita é o melhor caminho para eu te mostrar tudo com calma.
+Posso te receber terça às 10h ou quarta às 15h para conversarmos?
+
+[5] Cliente: mas eu quero saber o valor agora
+              quero saber se tem desconto antes da visita
+[5] Sofia:   Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-3-big-75c8b2df2fb9cedf8deb0b5002c9a935.jpeg
+
+[6] Cliente: mas qual é o valor exato?
+              não dá pra negociar antes da visita?
+[6] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[7] Cliente: quero saber o valor e desconto agora
+              não dá pra negociar antes da visita?
+[7] Sofia:   Entendo sua busca por clareza no valor e desconto.
+O exato depende da unidade e forma de pagamento, e só a visita permite negociar com precisão.
+Me conta onde você procura para eu ajudar melhor.
+
+[8] Cliente: mas não dá pra saber o valor exato?
+              quero um desconto antes da visita
+[8] Sofia:   O valor exato e o desconto só fechamos na visita, pois dependem da unidade e forma de pagamento.
+Me conta a região onde procura para eu indicar opções que cabem no seu perfil.
+
+[9] Cliente: quero saber o valor exato
+              tem como negociar desconto antes da visita?
+[9] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[10] Cliente: quantos dormitórios? só quero saber o valor
+              tem como negociar sem visita?
+[10] Sofia:   O valor exato depende da unidade e forma de pagamento, só fechamos na visita.
+Para te ajudar melhor, qual região você procura?
+E quantos dormitórios precisa?
+
+[11] Cliente: me fala o valor exato
+              não dá pra saber antes da visita?
+[11] Sofia:   O valor exato quem passa é a construtora, e ele muda por unidade e forma de pagamento.
+A visita é o melhor caminho para negociar com precisão.
+Posso te receber terça às 10h ou quarta às 15h para conversarmos?
+
+[12] Cliente: mas qual o valor exato?
+              não tem como negociar desconto antes da visita?
+[12] Sofia:   Demorei a responder, obrigado pela paciência.

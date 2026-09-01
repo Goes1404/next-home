@@ -2734,3 +2734,80 @@ Revisão do próprio trabalho da noite, e ela achou coisa real.
   conflito falharia. Nunca foi exercitado porque `leads` tem zero linhas com
   `meta_lead_id` (o cliente usa Click-to-WhatsApp). Quando o Lead Ads
   entrar, esse upsert precisa da service key.
+
+## O método estava errado, e a variância prova (01/09/2026)
+
+Três rodadas do MESMO prompt (v29), mesmas 4 personas, nada alterado
+entre elas:
+
+| | rodada 1 | rodada 2 | rodada 3 |
+|---|---|---|---|
+| avançou (juiz) | 3 | 0 | 0 |
+| assumiria (juiz) | 2/4 | 0/4 | 0/4 |
+| a IA repetiu pergunta | 4 | 3 | 1 |
+| o cliente teve de repetir | 21 | 19 | 22 |
+| turnos sem assunto novo | 34 | 32 | 34 |
+
+- **As métricas do juiz oscilam 2 a 3 pontos com o código IDÊNTICO.** Foi
+  exatamente com elas que declarei "a v27 piorou" (assumiria 1/4 → 0/4) e
+  "a v26 era melhor". As duas leituras eram ruído. **Nenhuma comparação
+  entre v25, v26, v27 e v28 deste projeto se sustenta** — todas foram
+  feitas com uma rodada.
+- **`iaRepetiu` varia de 1 a 4 sem mudança nenhuma**, e foi com ela que
+  anunciei que a guarda de ofertas "zerou a repetição" (3 → 0). Ruído.
+- **As determinísticas de conversa são bem mais estáveis** — faixa de 2 a
+  3 sobre totais de 20 a 34 — mas nem elas sustentam n=1.
+- **A régua nova** (`comparacaoDeRodadas.ts`): a diferença só conta quando
+  a PIOR rodada da versão melhor ainda ganha da MELHOR da versão pior.
+  Faixas que se tocam são empate. Com n=3 não existe teste estatístico
+  honesto, e fingir um p-valor seria pior que não ter nenhum.
+- **Juiz no mesmo provedor do agente NÃO decide.** A nota continua impressa
+  como descrição; `npm run eval:comparar` a exclui da conclusão e escreve o
+  motivo ao lado.
+
+## Conferir o MECANISMO antes do número (01/09/2026)
+
+- **A v28 nunca aconteceu.** Zero "R$" nas 4 transcrições: a Sofia jamais
+  disse um piso, embora a regra, o catálogo do prompt e o guardrail
+  estivessem todos prontos. Eu passei uma hora analisando por que uma
+  mudança "não funcionou" quando ela não tinha sido aplicada.
+- **A causa foi uma regra que se anulava sozinha.** A edição trocou a
+  primeira frase da regra 13 e deixou o resto: "VOCÊ SÓ FALA O PISO […] O
+  que NÃO pode é número: nem cifra […] Nunca diga quanto." 1637
+  caracteres, permissão no começo, proibição no fim — o modelo obedeceu o
+  fim. **Regra longa não perde só para outra regra curta: perde para si
+  mesma.** Ao editar regra de prompt, reler a regra INTEIRA, não só o
+  trecho trocado.
+- **Sonda de mecanismo precisa da persona certa.** A primeira sonda usou
+  `familia-tres-dorm`, que pergunta ALUGUEL — coisa que o catálogo não tem.
+  Ela não podia exercitar o piso, e o "zero" não queria dizer nada.
+- **Mesmo corrigida, a permissão só é usada em ~30% das conversas**: o
+  piso apareceu em 4 de 13 transcrições da v29, e na persona que insiste em
+  preço saiu em 1 de 4 rodadas. É a lição mais antiga da casa outra vez —
+  instrução de prompt é probabilística. O conserto conhecido é bloco
+  determinístico injetado no turno, como `perguntaIgnorada` e `focoDaConversa`.
+
+## A taxonomia de falhas, contada (v25, 16 conversas, 134 anotações)
+
+| categoria | conversas | ocorrências |
+|---|---|---|
+| nao-respondeu-a-pergunta | 10 | 18 |
+| insistencia-repetitiva | 8 | 22 |
+| nao-informou-dado-permitido | 7 | 58 |
+| nao-ofereceu-alternativas | 6 | 12 |
+| mudanca-abrupta-de-assunto | 6 | 7 |
+| falta-de-contexto-ou-personalizacao | 4 | 9 |
+| informacao-proibida-ou-incorreta | 4 | 8 |
+
+- **4 de 134 anotações ficaram fora da taxonomia** — ela descreve os dados.
+  Sobra grande seria sinal de categoria ruim, não de anotação ruim.
+- **A ordem do trabalho mudou.** O que mais acontece é ela NÃO RESPONDER
+  (10 das 16 conversas) e não entregar dado que podia entregar (43% das
+  ocorrências). Repetição é a segunda — e foi onde gastei três versões,
+  escolhidas por anedota.
+- **Ordenar por CONVERSAS antes de ocorrências.** Oito ocorrências numa
+  conversa é um caso; quatro em quatro conversas é padrão. Mesma régua da
+  cascata de provedores: a unidade que importa é a conversa.
+- **O open coding roda sem lista de categorias, de propósito.** Dar a lista
+  pronta faz o modelo confirmar as hipóteses de quem escreveu a lista, que
+  é o viés que a análise existe para quebrar.

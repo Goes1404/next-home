@@ -1,0 +1,60 @@
+confuso-entre-dois · rodada 3 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me fala do terra alta e do more aldeia, qual compensa mais
+[1] Sofia:   O Terra Alta é para quem busca conforto no Jardim Tupanci, com 1 dormitório e 2 vagas.
+O More Aldeia não está no meu catálogo, posso ajudar com o Terra Alta.
+
+[2] Cliente: mas eu quero saber do more aldeia também!
+              quero comparar os dois, vc não tem infos?
+[2] Sofia:   O More Aldeia não está no meu catálogo, não tenho informações oficiais para comparar.
+Posso te mostrar o Terra Alta, que é no Jardim Tupanci, com 1 dormitório e 2 vagas.
+Quer que eu te envie a apresentação digital do Terra Alta para você avaliar melhor?
+
+[3] Cliente: mas não dá pra ver o more de algum jeito?
+              quero as duas opções pra escolher!
+[3] Sofia:   O More Aldeia não faz parte do meu catálogo, não tenho dados oficiais para apresentar.
+Assim você avalia com calma e decide melhor.
+
+[4] Cliente: mas eu tô perguntando do more!
+              não entendi, só terra alta?
+[4] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[5] Cliente: mas eu só quero comparar os dois!
+              vc não pode me ajudar com o more?
+[5] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[6] Cliente: quero saber quantos dts tem o more
+              e a metragem dele?
+[6] Sofia:   Posso te passar as informações do Terra Alta, que tem 1 dormitório e 52m².
+
+[7] Cliente: mas e o more?
+              quero saber os dts e a metragem!
+[7] Sofia:   O More Aldeia não está no meu catálogo, não tenho dados oficiais sobre dormitórios ou metragem.
+
+[8] Cliente: mas eu preciso de infos do more!
+              vc não sabe nada sobre ele?
+[8] Sofia:   O More Aldeia não faz parte do meu catálogo, não tenho dados oficiais sobre ele.
+Posso ajudar com o Terra Alta, que tem 1 dormitório e 52m², e te enviar a apresentação digital para avaliar.
+
+[9] Cliente: mas e as fotos do more?
+              não tem nada sobre ele?
+[9] Sofia:   O More Aldeia não está no meu catálogo, não tenho fotos ou informações oficiais dele.
+Posso te enviar as fotos do Terra Alta, que é um excelente imóvel no Jardim Tupanci.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+
+[10] Cliente: mas e as fotos do more?
+              vc não tem nada sobre ele?
+[10] Sofia:   Demorei para responder sobre o More Aldeia, não tenho nada oficial dele no catálogo.
+Te mandei as fotos aqui embaixo para você conhecer melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+
+[11] Cliente: mas eu só quero saber do more!
+              vc não tem nada mesmo?
+[11] Sofia:   O More Aldeia não está no meu catálogo, não tenho nada oficial para passar.
+Posso continuar te mostrando o Terra Alta, que é no Jardim Tupanci, com 1 dormitório e 2 vagas.
+Quer que eu te envie a apresentação digital para você avaliar com calma?
+
+[12] Cliente: mas eu só quero saber do more!
+              vc não tem nada mesmo?
+[12] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.

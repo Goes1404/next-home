@@ -1,0 +1,68 @@
+educado-que-enrola · rodada 3 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: achei lindo o empreendimento de vcs no instagram
+[1] Sofia:   Que bom que gostou! Em qual região você procura o imóvel? Assim já te mostro as opções que temos por aí.
+
+[2] Cliente: não sei ainda a região
+              mas me conta mais sobre o empreendimento
+[2] Sofia:   Entendo, escolher a região faz toda a diferença.
+Posso te mostrar opções em Alphaville, Barueri ou Osasco, que são as áreas que trabalho.
+Sobre o empreendimento, você prefere pronto para morar ou na planta?
+Assim já te passo o que melhor encaixa no seu perfil.
+
+[3] Cliente: quero saber do empreendimento
+              pronto ou na planta?
+[3] Sofia:   Tenho o On The Park Alphaville, pronto para morar, e o Eternity Alphaville Tamboré, em construção.
+Qual desses estilos te interessa mais?
+
+[4] Cliente: na verdade, não sei
+              me conta mais do On The Park
+[4] Sofia:   O On The Park Alphaville é para quem busca conforto em Alphaville, pronto para morar com 2 ou 3 suítes e 2 vagas.
+Te mandei as fotos para você conhecer melhor.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+
+[5] Cliente: que legal, mas e os preços?
+              quais as metragems?
+[5] Sofia:   A metragem varia entre 2 dormitórios com 2 vagas e 3 suítes. O valor exato depende da unidade e forma de pagamento.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-3-big-49406f476a83a577b8907baa94fed78f.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-4-big-c927018093552dd1e44890698536515d.jpg
+
+[6] Cliente: mas e os preços?
+              quais as metragems?
+[6] Sofia:   O valor varia conforme a unidade, andar e forma de pagamento. Posso agendar uma visita para te mostrar tudo?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[7] Cliente: mas e os preços?
+              não entendi, quais as metragems?
+[7] Sofia:   O valor exato quem passa é a construtora, e muda conforme unidade e forma de pagamento.
+A metragem é de 2 dormitórios com 2 vagas ou 3 suítes, conforme a unidade.
+Tenho boas unidades no On The Park Alphaville.
+Posso agendar uma visita no stand para te mostrar o projeto e as condições. Que tal sábado às 10h ou segunda às 15h?
+
+[8] Cliente: mas e os preços?
+              não ficou claro as metragems
+[8] Sofia:   A metragem do On The Park Alphaville é 2 dormitórios com 2 vagas ou 3 suítes. Tenho boas unidades disponíveis.
+
+[9] Cliente: mas e os preços?
+              quais as metragems?
+[9] Sofia:   Posso te mostrar sábado às 10h ou segunda às 15h?
+
+[10] Cliente: só quero saber dos preços
+              não entendi as metragems
+[10] Sofia:   Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[11] Cliente: mas e os preços?
+              não entendi as metragems
+[11] Sofia:   Posso te mostrar sábado às 9h ou terça às 11h?
+
+[12] Cliente: mas e os preços?
+              não entendi as metragems ainda
+[12] Sofia:   Podemos agendar sábado às 9h ou quinta às 11h para eu te mostrar tudo?

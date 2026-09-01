@@ -1,0 +1,75 @@
+educado-que-enrola · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: achei lindo o empreendimento de vcs no instagram
+[1] Sofia:   Que bom que gostou! Qual região você prefere para o imóvel? Alphaville, Barueri, Osasco ou outra?
+
+[2] Cliente: gosto de Alphaville
+              mas vou pensar
+[2] Sofia:   Alphaville tem opções excelentes, como o On The Park e o Vitra, ambos prontos para morar.
+Dá uma olhada e me diz o que te agradou
+Posso te enviar o catálogo completo para facilitar?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: vou ver aqui
+              me manda mais detalhes dos imóveis
+[3] Sofia:   Te mando as fotos do On The Park Alphaville e do Vitra Alphaville para você conhecer melhor.
+O On The Park tem 2 e 3 suítes, pronto para morar, a partir de R$ 800.000.
+O Vitra tem 2 suítes, 107m², também pronto, a partir de R$ 1.000.000.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+
+[4] Cliente: e o Vitra tem varanda?
+              tem área de lazer?
+[4] Sofia:   O Vitra Alphaville tem varanda, sim, que amplia a área social com conforto e privacidade.
+A área de lazer é completa, pensada para quem valoriza qualidade de vida e momentos de descanso.
+Quer que eu te envie a planta para você ver como é o espaço?
+
+[5] Cliente: vou pensar na planta
+              quais são as áreas de lazer?
+[5] Sofia:   O Vitra Alphaville oferece lazer completo com piscina, academia, salão de festas e espaço gourmet.
+Tudo pensado para seu conforto e bem-estar.
+Quer que eu te envie a planta para conhecer melhor o layout?
+
+[6] Cliente: e a metragem?
+              tem mais opções de lazer?
+[6] Sofia:   O Vitra Alphaville tem 107m², com 2 dormitórios e 2 suítes.
+Além da piscina, academia, salão de festas e espaço gourmet, o lazer é completo para seu conforto.
+Posso te enviar a planta para você conhecer o layout detalhado?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-4437ee1f8f0ca0135bd73540a6063059.jpg
+
+[7] Cliente: e a garagem?
+              tem opção de 3 dorm?
+[7] Sofia:   O Vitra Alphaville tem 2 vagas de garagem, cobertas e exclusivas para cada unidade.
+Não temos opção de 3 dormitórios no Vitra, só 2 suítes mesmo.
+
+[8] Cliente: e as taxas?
+              tem alguma taxa de condomínio?
+[8] Sofia:   O condomínio do Vitra Alphaville tem taxa, sim, que cobre segurança, manutenção e lazer.
+O valor exato varia conforme a unidade e será informado na visita.
+Quer agendar para conhecer o decorado e as condições?
+
+[9] Cliente: vou pensar na visita
+              quais são os valores das taxas?
+[9] Sofia:   O valor das taxas varia conforme a unidade e o uso dos espaços comuns.
+Quem fecha esse detalhe é o corretor na visita, que também apresenta as condições.
+Podemos agendar para você conhecer o decorado e tirar todas as dúvidas pessoalmente?
+
+[10] Cliente: mas não sei ainda
+              depois te falo
+[10] Sofia:   Entendo, sem pressa. Quando quiser, posso te mostrar o decorado e as condições.
+Enquanto isso, fica à vontade para perguntar o que precisar.
+Estou por aqui para ajudar no que precisar.
+
+[11] Cliente: quais são os valores das unidades?
+              tem isenção de taxa?
+[11] Sofia:   O valor exato das unidades quem passa é a construtora, e ele varia conforme a unidade escolhida.
+Essa parte do valor, assim como as condições e taxas, fechamos na visita.
+Posso agendar para sábado às 10h ou segunda às 15h para você conhecer o decorado e tirar todas as dúvidas?
+
+[12] Cliente: vou pensar na visita
+              não sei ainda os valores
+[12] Sofia:   Quem fecha esses detalhes é o corretor na visita.
+Posso agendar sábado às 10h ou segunda às 15h para você conhecer o decorado?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.

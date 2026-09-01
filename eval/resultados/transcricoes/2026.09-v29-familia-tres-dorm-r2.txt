@@ -1,0 +1,71 @@
+familia-tres-dorm · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato
+Você já tem alguma região em mente para a busca?
+
+[2] Cliente: quero 3 dorms
+              tem algum perto da escola?
+[2] Sofia:   Trabalho com Alphaville, Barueri e Osasco. Na região da escola, qual bairro seria?
+Assim te mostro o que tem com 3 dormitórios por ali.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: perto da escola das crianças em Barueri
+              qual o valor dos imóveis?
+[3] Sofia:   Anotei que é perto da escola das crianças em Barueri e que busca 3 dormitórios.
+Qual faixa de valor você tem em mente para eu indicar opções que cabem no seu bolso?
+O valor depende da unidade, andar e forma de pagamento, que fechamos na visita.
+
+[4] Cliente: mas quanto custa?
+              não tem como me dar uma faixa?
+              quero saber o valor dos imóveis!
+[4] Sofia:   O Viva RSF Vila do Conde tem 3 dormitórios com 1 suíte, a partir de R$ 460.000.
+O valor varia conforme a unidade e condições, que fechamos na visita.
+Quer que eu te mande o link com fotos para você conhecer melhor?
+
+[5] Cliente: mas e outros imóveis?
+              tem mais opções?
+[5] Sofia:   Além do Viva RSF Vila do Conde, que é ótimo para quem busca conforto próximo ao Parque Viana,
+tenho o Eternity Alphaville Tamboré, com opções de 2 e 3 dormitórios, a partir de R$ 1.289.900.
+Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[6] Cliente: mas eu quero saber de outros imóveis em Barueri
+              qual o valor deles?
+[6] Sofia:   Em Barueri, além do Viva RSF Vila do Conde a partir de R$ 460.000, e Eternity Alphaville Tamboré a partir de R$ 1.289.900,
+temos o Terra Alta, 1 dormitório, a partir de R$ 455.000, e o More na Aldeia de Barueri, 2 dormitórios, a partir de R$ 569.000.
+O valor exato depende da unidade e condições, que fechamos na visita.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[7] Cliente: mas e os 3 dorms em Barueri?
+              não quero saber de 1 ou 2 dorms!
+[7] Sofia:   Não tenho 3 dormitórios em Barueri além do Viva RSF Vila do Conde e Eternity Alphaville Tamboré, que já mencionei.
+Quer que eu te envie o link do Viva para você ver as fotos?
+Ou prefere que eu mostre o Eternity, que é alto padrão e tem 3 dormitórios?
+
+[8] Cliente: mas e os outros 3 dorms?
+              não tem mais opção em Barueri?
+[8] Sofia:   Além do Viva RSF Vila do Conde e Eternity Alphaville Tamboré, não temos outros 3 dormitórios em Barueri no catálogo.
+Me conta o que mais você busca no imóvel para eu ajudar melhor.
+
+[9] Cliente: mas e o preço do Viva?
+              é só isso?
+[9] Sofia:   O valor exato depende da unidade e condições, que fechamos na visita. Posso te mandar o link com fotos para conhecer melhor?
+Os valores variam conforme a unidade, o andar e a forma de pagamento — prefiro te passar a condição certa para o seu caso.
+
+[10] Cliente: mas quanto custa o Viva?
+              não tem como me dar um valor?
+              só quero saber o preço!
+[10] Sofia:   O valor exato do Viva RSF Vila do Conde quem passa é a construtora, e ele muda por unidade.
+Podemos agendar uma visita no stand para eu te apresentar o projeto e as condições. Que tal sábado às 10h ou às 11h?
+
+[11] Cliente: mas e o valor do Viva?
+              não tem como saber agora?
+[11] Sofia:   Posso agendar sábado às 10h ou às 11h para te mostrar tudo?
+
+[12] Cliente: mas e o preço do Viva?
+              não tem como saber agora?
+              quero saber o valor!
+[12] Sofia:   A visita é o momento certo para tratar disso com calma.
+Posso agendar para terça às 10h ou quarta às 15h?
