@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCorretorLogado, getMeusLeads } from "@/lib/corretorSessao";
 import { elegivel, type FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
+import { resultadoAB, type ResultadoAB } from "@/lib/whatsapp/testeAB";
 import { createClient } from "@/lib/supabase/server";
 import type { Lead } from "@/lib/types";
 import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
@@ -95,6 +96,14 @@ export async function criarCampanha(params: {
   empreendimentoNome: string;
   filtro: FiltroLeadsCampanha;
   mensagemBase: string;
+  /**
+   * Segunda versão da mensagem (teste A/B, 0084).
+   *
+   * Existe porque 102 disparos entregues produziram UMA resposta: quem
+   * decide isso é a abertura, e nada permitia comparar duas. Ausente = a
+   * campanha roda com uma versão só, exatamente como antes.
+   */
+  mensagemBaseB?: string | null;
   /** Só para `filtro: "selecionados"` — os leads escolhidos um a um. */
   leadIds?: string[];
   /**
@@ -136,6 +145,8 @@ export async function criarCampanha(params: {
       titulo,
       empreendimento_id: params.empreendimentoId,
       mensagem_base: params.mensagemBase,
+      // Segunda versão do teste A/B (0084). Null = campanha de uma versão.
+      mensagem_base_b: params.mensagemBaseB?.trim() || null,
       total_leads: elegiveis.length,
       status: "em_andamento",
       ignorar_janela: params.ignorarJanela ?? false,
@@ -159,6 +170,7 @@ export async function criarCampanha(params: {
     mensagemBase: params.mensagemBase,
     empreendimentoNome: params.empreendimentoNome,
     ignorarJanela: params.ignorarJanela,
+    mensagemBaseB: params.mensagemBaseB,
   });
 
   const { error: erroFila } = await supabase.from("whatsapp_campanhas_fila").insert(
@@ -170,6 +182,7 @@ export async function criarCampanha(params: {
       personalizado_por_ia: item.personalizadoPorIA,
       status: item.status,
       agendado_para: item.agendadoPara,
+      variante: item.variante ?? null,
     })),
   );
 
@@ -188,6 +201,8 @@ export async function criarCampanha(params: {
 }
 
 export type CampanhaListada = {
+  /** Placar do teste A/B, ou null quando a campanha tem uma versão só (0084). */
+  testeAB: ResultadoAB | null;
   id: string;
   titulo: string;
   empreendimentoNome: string | null;
@@ -210,15 +225,48 @@ export async function listarCampanhas(): Promise<CampanhaListada[]> {
   const { data } = await supabase
     .from("whatsapp_campanhas")
     .select(
-      "id, titulo, total_leads, total_enviados, total_respondidos, status, created_at, empreendimento:empreendimentos(nome)",
+      "id, titulo, total_leads, total_enviados, total_respondidos, status, created_at, mensagem_base_b, empreendimento:empreendimentos(nome)",
     )
     .eq("corretor_id", corretor.id)
     .order("created_at", { ascending: false })
     .limit(20);
 
+  /*
+   * O placar do A/B, só para as campanhas que TÊM segunda versão (0084).
+   *
+   * Uma consulta agregada para todas elas, não uma por campanha: o
+   * histórico mostra 20 e a tela é aberta o tempo todo. Sem `variante`
+   * gravada não existe teste, então a leitura nem começa.
+   */
+  const comTeste = (data ?? []).filter((c) => c.mensagem_base_b).map((c) => c.id);
+  const placar = new Map<string, { a: Contagem; b: Contagem }>();
+
+  if (comTeste.length > 0) {
+    const { data: itens } = await supabase
+      .from("whatsapp_campanhas_fila")
+      .select("campanha_id, variante, status")
+      .in("campanha_id", comTeste)
+      .not("variante", "is", null);
+
+    for (const item of itens ?? []) {
+      const atual = placar.get(item.campanha_id) ?? {
+        a: { enviados: 0, respostas: 0 },
+        b: { enviados: 0, respostas: 0 },
+      };
+      const lado = item.variante === "B" ? atual.b : atual.a;
+
+      // "respondido" também já saiu — senão a taxa passaria de 100%.
+      if (item.status === "enviado" || item.status === "respondido") lado.enviados++;
+      if (item.status === "respondido") lado.respostas++;
+
+      placar.set(item.campanha_id, atual);
+    }
+  }
+
   return (data ?? []).map((c) => ({
     id: c.id,
     titulo: c.titulo,
+    testeAB: placar.has(c.id) ? resultadoAB(placar.get(c.id)!) : null,
     empreendimentoNome: (c.empreendimento as { nome: string } | null)?.nome ?? null,
     totalLeads: c.total_leads,
     totalEnviados: c.total_enviados,
@@ -227,6 +275,8 @@ export async function listarCampanhas(): Promise<CampanhaListada[]> {
     criadoEm: c.created_at,
   }));
 }
+
+type Contagem = { enviados: number; respostas: number };
 
 export type ResultadoProcessarFila =
   | {

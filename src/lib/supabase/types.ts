@@ -17,6 +17,7 @@
  *   - ia_interacoes.origem
  *   - lead_interacoes.tipo
  *   - lead_observacoes_ia.temperatura_label
+ *   - whatsapp_campanhas_fila.variante (0084)
  *   - whatsapp_campanhas.status
  *   - whatsapp_campanhas_fila.status
  *   - whatsapp_conversas.origem
@@ -1301,6 +1302,7 @@ export type Database = {
           created_at: string
           empreendimento_id: string | null
           id: string
+          mensagem_base_b: string | null
           ignorar_janela: boolean
           mensagem_base: string
           status: "rascunho" | "em_andamento" | "pausada" | "concluida"
@@ -1314,6 +1316,7 @@ export type Database = {
           created_at?: string
           empreendimento_id?: string | null
           id?: string
+          mensagem_base_b?: string | null
           ignorar_janela?: boolean
           mensagem_base: string
           status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
@@ -1327,6 +1330,7 @@ export type Database = {
           created_at?: string
           empreendimento_id?: string | null
           id?: string
+          mensagem_base_b?: string | null
           ignorar_janela?: boolean
           mensagem_base?: string
           status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
@@ -1360,6 +1364,7 @@ export type Database = {
           enviado_em: string | null
           erro_motivo: string | null
           id: string
+          variante: "A" | "B" | null
           lead_id: string | null
           mensagem_personalizada: string
           personalizado_por_ia: boolean
@@ -1375,6 +1380,7 @@ export type Database = {
           enviado_em?: string | null
           erro_motivo?: string | null
           id?: string
+          variante?: "A" | "B" | null
           lead_id?: string | null
           mensagem_personalizada: string
           personalizado_por_ia?: boolean
@@ -1390,6 +1396,7 @@ export type Database = {
           enviado_em?: string | null
           erro_motivo?: string | null
           id?: string
+          variante?: "A" | "B" | null
           lead_id?: string | null
           mensagem_personalizada?: string
           personalizado_por_ia?: boolean

@@ -73,6 +73,13 @@ export function NovaCampanha({
   const [publico, setPublico] = useState<FiltroLeadsCampanha>("parados_15d");
   const [imovelSlug, setImovelSlug] = useState(empreendimentos[0]?.slug ?? "");
   const [mensagemBase, setMensagemBase] = useState(MENSAGEM_PADRAO);
+  /*
+   * Segunda versão do teste A/B (0084). Vazia = campanha de uma versão só,
+   * que é como tudo funcionava antes. Existe porque 102 disparos entregues
+   * produziram UMA resposta, e quem decide isso é a abertura.
+   */
+  const [mensagemB, setMensagemB] = useState("");
+  const [testandoDuas, setTestandoDuas] = useState(false);
   const [titulo, setTitulo] = useState("");
   const [exemplos, setExemplos] = useState<string[]>([]);
   const [gerando, setGerando] = useState(false);
@@ -160,6 +167,7 @@ export function NovaCampanha({
         empreendimentoNome: nomeImovel,
         filtro: publico,
         mensagemBase,
+        mensagemBaseB: testandoDuas ? mensagemB : null,
         leadIds,
       });
 
@@ -177,6 +185,8 @@ export function NovaCampanha({
           totalEnviados: 0,
           totalRespondidos: 0,
           status: "em_andamento",
+        // Campanha recém-criada não tem envio nenhum, então não há placar.
+        testeAB: null,
           criadoEm: new Date().toISOString(),
         },
         `Lista de transmissão criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens já começaram a sair sozinhas — não precisa clicar em mais nada.`,
@@ -328,6 +338,49 @@ export function NovaCampanha({
                   “{msg}”
                 </p>
               ))}
+            </div>
+          )}
+
+          {/*
+            Testar duas aberturas. Fica atrás de um clique porque o caminho
+            normal é uma mensagem só — e porque a comparação só vale a pena
+            com lista grande o bastante para dar 30 envios de cada lado.
+          */}
+          {!testandoDuas ? (
+            <button
+              type="button"
+              onClick={() => setTestandoDuas(true)}
+              className="text-fluid-xs text-apoio hover:text-titulo min-h-11 underline underline-offset-2 transition-colors"
+            >
+              + Testar duas aberturas e ver qual responde mais
+            </button>
+          ) : (
+            <div className="border-linha space-y-2 rounded-xl border p-4">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-fluid-sm text-titulo font-medium">Versão B</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTestandoDuas(false);
+                    setMensagemB("");
+                  }}
+                  className="text-fluid-xs text-apoio hover:text-titulo min-h-9 transition-colors"
+                >
+                  remover
+                </button>
+              </div>
+              <p className="text-fluid-xs text-apoio">
+                Metade da lista recebe cada versão, alternadas. Depois de 30 envios de cada
+                lado, o histórico mostra qual teve mais resposta.
+              </p>
+              <textarea
+                rows={4}
+                value={mensagemB}
+                onChange={(e) => setMensagemB(e.target.value)}
+                placeholder="Escreva a segunda abertura — mude uma coisa só, senão não dá para saber o que funcionou."
+                aria-label="Segunda versão da mensagem"
+                className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento placeholder:text-tenue w-full rounded-xl border p-3.5 focus:outline-none"
+              />
             </div>
           )}
         </div>
