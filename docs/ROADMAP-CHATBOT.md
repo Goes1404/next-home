@@ -95,19 +95,36 @@ Ela consertou a régua no caminho: somar ocorrências deixava a cauda
 mandar (50 vs 14 entre duas rodadas do MESMO código); contar conversas
 afetadas dá 10 vs 6. O comparador passou a contar conversas.
 
-### Em andamento: v32 — Planner/Executor
+### v32 — Planner/Executor: construída, medida, REGREDIU; v33 em medição
 
-A jogada da mensagem (responder / perguntar / convidar / propor horário /
-devolver a escolha) passa a ser decidida em código, ANTES da chamada ao
-modelo (`jogada.ts`), e entra no topo do prompt como única tarefa. Absorve
-os quatro blocos que competiam: pergunta ignorada, dado pedido, capacidade
-pendente e ordem do funil.
+A jogada da mensagem (11 tipos: responder dado, resposta honesta,
+perguntar, convidar, propor horário, confirmar visita, tratar objeção,
+indicar alternativa, deixar porta aberta, encerrar confirmado, devolver a
+escolha) passou a ser decidida em código, ANTES da chamada ao modelo
+(`jogada.ts`), e entra no topo do prompt como única tarefa.
 
-Determinístico de propósito: a ordem do funil é fixa e foi medida numa
-corretora real; "não repita a pergunta anterior" vira comparação de
-conjuntos. Medição contra a linha de base acima: 16 personas × 2 rodadas.
+Nove defeitos do planner foram achados e corrigidos antes de medir — seis
+por traces sem API (custo zero) e três por sondas com API. Os três perfis
+de cliente (adversarial, cooperativo, objeção) fecham limpos no trace.
 
-### Depois da v32, nesta ordem
+**E a medição legítima (16 personas × 2 rodadas) deu REGRESSÃO:**
+
+| | v31 | v32 |
+|---|---|---|
+| conversas em que a IA repetiu | 6,5 [4–9] | **14 [13–15]** |
+| assumiria (juiz) | 5 [3–7] | **1 [0–2]** |
+
+Causa: "pronto para morar ou na planta?" repetida ~37 vezes. O planner
+lia a resposta do cliente por regex, cliente real responde "pronto",
+"planta", "tanto faz", e a repergunta permitida virava repetição
+garantida. O modelo sozinho lia melhor.
+
+**v33** (em medição): pergunta de funil do turno anterior conta como
+respondida quando a fala do cliente não é uma pergunta — a regra da casa
+"se ele desconversar, siga". Sem a régua, os traces limpos da v32 teriam
+virado deploy.
+
+### Depois da v33, nesta ordem
 
 1. Enxugar o núcleo fixo para ~12 regras (o executor precisa de menos regra
    por natureza, porque recebe a decisão pronta).
