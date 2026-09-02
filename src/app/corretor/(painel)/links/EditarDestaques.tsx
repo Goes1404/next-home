@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { salvarDestaques } from "@/app/corretor/actions";import { X } from 'lucide-react';
+import { salvarDestaques } from "@/app/corretor/actions";
+import { X } from 'lucide-react';
 
 
 type Item = { slug: string; nome: string };
@@ -119,7 +120,7 @@ export function EditarDestaques({
             type="button"
             onClick={adicionarItem}
             disabled={!adicionar}
-            className="text-fluid-sm rounded-lg bg-acento px-4 py-2 font-medium text-white disabled:opacity-50"
+            className="text-fluid-sm rounded-lg bg-acento px-4 py-2 font-medium text-sobre-cor disabled:opacity-50"
           >
             Adicionar
           </button>

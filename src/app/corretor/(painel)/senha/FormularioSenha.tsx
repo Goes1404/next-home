@@ -62,7 +62,7 @@ export function FormularioSenha() {
       <button
         type="submit"
         disabled={pendente}
-        className="rounded-full bg-acento px-7 py-3 text-sm font-medium text-white transition-colors hover:bg-acento-hover disabled:opacity-60"
+        className="rounded-full bg-acento px-7 py-3 text-sm font-medium text-sobre-cor transition-colors hover:bg-acento-hover disabled:opacity-60"
       >
         {pendente ? "Alterando…" : "Alterar senha"}
       </button>

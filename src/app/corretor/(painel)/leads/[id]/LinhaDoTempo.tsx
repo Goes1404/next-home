@@ -26,8 +26,8 @@ const COR: Record<TipoInteracao, string> = {
   nota: "border-linha bg-vidro text-corpo",
   mensagem: "border-acento-linha bg-acento-lavado text-acento-suave",
   ligacao: "border-linha bg-vidro text-corpo",
-  etapa: "border-etapa-azul-linha bg-etapa-azul-lavado text-etapa-azul",
-  visita: "border-etapa-azul-linha bg-etapa-azul-lavado text-etapa-azul",
+  etapa: "border-etapa-visita-linha bg-etapa-visita-lavado text-etapa-visita",
+  visita: "border-etapa-visita-linha bg-etapa-visita-lavado text-etapa-visita",
   sistema: "border-linha bg-vidro text-tenue",
 };
 
@@ -88,7 +88,7 @@ export function LinhaDoTempo({ leadId, itens }: { leadId: string; itens: Interac
             Anotar
           </button>
           {erro && (
-            <span role="alert" className="text-fluid-xs text-etapa-areia">
+            <span role="alert" className="text-fluid-xs text-alerta">
               {erro}
             </span>
           )}

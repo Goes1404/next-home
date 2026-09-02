@@ -195,7 +195,7 @@ export function EditorBook({
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <label
                 htmlFor="input-pdf-book"
-                className="w-full sm:w-auto min-h-[48px] px-6 py-2.5 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all shadow-md shadow-acento/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                className="w-full sm:w-auto min-h-[48px] px-6 py-2.5 rounded-xl bg-acento hover:bg-acento-hover text-sobre-cor text-fluid-xs font-bold transition-all shadow-md shadow-acento/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
               >
                 {enviando ? (
                   <>
@@ -238,7 +238,7 @@ export function EditorBook({
                 type="button"
                 onClick={handleSalvarLinkManual}
                 disabled={enviando}
-                className="min-h-[44px] px-4 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold cursor-pointer"
+                className="min-h-[44px] px-4 rounded-xl bg-acento hover:bg-acento-hover text-sobre-cor text-fluid-xs font-bold cursor-pointer"
               >
                 Salvar Link
               </button>

@@ -50,7 +50,7 @@ export default function ErroPainel({
       <div className="mt-8 flex items-center justify-center gap-3">
         <button
           onClick={reset}
-          className="cursor-pointer rounded-xl bg-acento px-5 py-2.5 text-fluid-xs font-bold text-white transition-colors hover:bg-acento-hover"
+          className="cursor-pointer rounded-xl bg-acento px-5 py-2.5 text-fluid-xs font-bold text-sobre-cor transition-colors hover:bg-acento-hover"
         >
           Tentar novamente
         </button>

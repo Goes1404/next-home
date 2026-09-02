@@ -203,7 +203,7 @@ function FormularioUnico({ empreendimentos }: { empreendimentos: Empreendimento[
       <button
         type="submit"
         disabled={pendente}
-        className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-7 text-sm font-medium text-white transition-colors disabled:opacity-60"
+        className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-7 text-sm font-medium text-sobre-cor transition-colors disabled:opacity-60"
       >
         {pendente ? "Salvando…" : "Adicionar ao funil"}
       </button>
@@ -335,7 +335,7 @@ function Importador({
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
             href="/corretor/funil"
-            className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-5 text-sm font-medium text-white transition-colors"
+            className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-5 text-sm font-medium text-sobre-cor transition-colors"
           >
             Abrir o funil
           </Link>
@@ -441,7 +441,7 @@ function Importador({
             type="button"
             onClick={confirmar}
             disabled={importando || selecionados.length === 0 || !consentimento}
-            className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-7 text-sm font-medium text-white transition-colors disabled:opacity-50"
+            className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-7 text-sm font-medium text-sobre-cor transition-colors disabled:opacity-50"
           >
             {importando
               ? "Importando…"
@@ -496,7 +496,7 @@ function Importador({
             type="button"
             onClick={() => analisar()}
             disabled={analisando || !texto.trim()}
-            className="bg-acento hover:bg-acento-hover mt-4 flex min-h-11 items-center rounded-full px-6 text-sm font-medium text-white transition-colors disabled:opacity-50"
+            className="bg-acento hover:bg-acento-hover mt-4 flex min-h-11 items-center rounded-full px-6 text-sm font-medium text-sobre-cor transition-colors disabled:opacity-50"
           >
             {analisando ? "Lendo…" : "Ler contatos"}
           </button>
@@ -524,7 +524,7 @@ function Importador({
           <button
             type="submit"
             disabled={analisando}
-            className="bg-acento hover:bg-acento-hover mt-4 flex min-h-11 items-center rounded-full px-6 text-sm font-medium text-white transition-colors disabled:opacity-50"
+            className="bg-acento hover:bg-acento-hover mt-4 flex min-h-11 items-center rounded-full px-6 text-sm font-medium text-sobre-cor transition-colors disabled:opacity-50"
           >
             {analisando ? "Lendo o arquivo…" : "Ler contatos"}
           </button>

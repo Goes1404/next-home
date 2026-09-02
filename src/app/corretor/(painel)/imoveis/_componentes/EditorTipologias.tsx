@@ -37,7 +37,7 @@ export function EditorTipologias({
           <button
             type="button"
             onClick={onAdicionar}
-            className="min-h-[48px] px-5 py-2 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+            className="min-h-[48px] px-5 py-2 rounded-xl bg-acento hover:bg-acento-hover text-sobre-cor text-fluid-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
           >
             <span>+ Adicionar Nova Planta</span>
           </button>

@@ -143,7 +143,7 @@ export function GradeDaSemana({ inicial }: { inicial: FaixaDaSemana[] }) {
           type="button"
           onClick={salvar}
           disabled={salvando}
-          className="bg-acento text-fundo text-fluid-sm min-h-11 cursor-pointer rounded-full px-5 font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="bg-acento text-sobre-cor text-fluid-sm min-h-11 cursor-pointer rounded-full px-5 font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {salvando ? "Salvando…" : "Salvar agenda"}
         </button>

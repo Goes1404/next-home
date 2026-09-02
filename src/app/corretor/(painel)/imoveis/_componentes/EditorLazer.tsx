@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";import { Shield, Zap, Check } from 'lucide-react';
+import { useState } from "react";
+import { Shield, Zap, Check } from 'lucide-react';
 
 
 const ITENS_LAZER_SUGERIDOS = [
@@ -69,7 +70,7 @@ export function EditorLazer({ lazerSelecionado, onToggle }: Props) {
                 <span
                   className={`h-5 w-5 rounded-full border flex items-center justify-center text-[10px] font-bold ${
                     ativo
-                      ? "bg-acento border-acento-linha text-white"
+                      ? "bg-acento border-acento-linha text-sobre-cor"
                       : "border-linha-forte text-transparent"
                   }`}
                 >
@@ -93,7 +94,7 @@ export function EditorLazer({ lazerSelecionado, onToggle }: Props) {
           <button
             type="button"
             onClick={handleAdicionarCustom}
-            className="min-h-[48px] px-5 rounded-xl bg-vidro-forte hover:bg-acento text-white text-fluid-xs font-bold transition-colors cursor-pointer"
+            className="min-h-[48px] px-5 rounded-xl bg-vidro-forte hover:bg-acento text-sobre-cor text-fluid-xs font-bold transition-colors cursor-pointer"
           >
             + Adicionar
           </button>

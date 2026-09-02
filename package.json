@@ -18,7 +18,8 @@
     "bench:openai": "tsx --conditions=react-server scripts/eval/compararModelos.ts --provedor=openai",
     "eval:comparar": "tsx scripts/eval/compararConversas.ts",
     "eval:erros": "tsx --conditions=react-server scripts/eval/analiseDeErros.ts",
-    "observatorio": "tsx scripts/observatorio.ts"
+    "observatorio": "tsx scripts/observatorio.ts",
+    "paleta": "node scripts/verificarPaleta.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

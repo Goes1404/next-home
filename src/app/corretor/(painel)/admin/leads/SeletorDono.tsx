@@ -56,7 +56,7 @@ export function SeletorDono({
         ))}
       </select>
       {erro && (
-        <span role="alert" className="text-fluid-xs text-etapa-areia">
+        <span role="alert" className="text-fluid-xs text-alerta">
           {erro}
         </span>
       )}

@@ -107,7 +107,7 @@ function DetalhesLead({ lead, gestor }: { lead: Lead; gestor: boolean }) {
         <span
           className={
             ehProprietario
-              ? "text-fluid-xs rounded-full border border-etapa-areia-linha bg-etapa-areia-lavado px-2.5 py-1 font-medium text-etapa-areia"
+              ? "text-fluid-xs rounded-full border border-alerta-linha bg-alerta-lavado px-2.5 py-1 font-medium text-alerta"
               : "text-fluid-xs rounded-full bg-acento-lavado px-2.5 py-1 font-medium text-acento-suave"
           }
         >

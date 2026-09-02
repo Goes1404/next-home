@@ -181,7 +181,7 @@ export function EnviarEmMassa({
             <div className="mt-5 flex flex-wrap gap-2 pb-2">
               <Link
                 href="/corretor/campanhas"
-                className="text-fluid-sm bg-acento flex min-h-11 items-center rounded-lg px-4 font-medium text-white"
+                className="text-fluid-sm bg-acento flex min-h-11 items-center rounded-lg px-4 font-medium text-sobre-cor"
               >
                 Acompanhar envios
               </Link>
@@ -202,7 +202,7 @@ export function EnviarEmMassa({
             </h2>
 
             {recorte && recorte.semTelefone > 0 && (
-              <p className="text-fluid-xs mt-2 text-etapa-areia">
+              <p className="text-fluid-xs mt-2 text-alerta">
                 {recorte.semTelefone} sem telefone válido — serão pulados.
               </p>
             )}
@@ -316,7 +316,7 @@ export function EnviarEmMassa({
                       type="button"
                       disabled={!templateEscolhido || pendente || comTelefoneValido.length === 0}
                       onClick={modoManual || semNumero ? dispararManual : confirmarAutomatico}
-                      className="text-fluid-sm bg-acento flex min-h-11 items-center gap-2 rounded-lg px-4 font-medium text-white disabled:opacity-50"
+                      className="text-fluid-sm bg-acento flex min-h-11 items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor disabled:opacity-50"
                     >
                       <Send className="h-4 w-4" />
                       {pendente

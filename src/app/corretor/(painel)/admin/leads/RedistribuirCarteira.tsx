@@ -121,7 +121,7 @@ export function RedistribuirCarteira({
           type="button"
           onClick={executar}
           disabled={!pronto || movendo}
-          className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-11 shrink-0 cursor-pointer items-center rounded-xl px-4 font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-11 shrink-0 cursor-pointer items-center rounded-xl px-4 font-medium text-sobre-cor transition-colors disabled:cursor-not-allowed disabled:opacity-50"
         >
           {movendo ? "Passando…" : "Passar"}
         </button>

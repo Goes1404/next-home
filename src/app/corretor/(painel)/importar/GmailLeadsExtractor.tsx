@@ -16,59 +16,36 @@ import {
 
 type Empreendimento = { id: string; nome: string };
 
+/*
+ * Portal de origem: ícone, rótulo e um ponto na cor de MARCA do portal.
+ *
+ * Antes o selo inteiro era pintado com Tailwind cru (`bg-blue-500/15`,
+ * `text-blue-400`…), o que tinha dois problemas. O primeiro é que cor crua
+ * não acompanha o tema: `-400` sobre `/15` só funciona no escuro, e no claro
+ * o selo virava texto pastel sobre branco. O segundo é mais de fundo — eram
+ * SETE cores competindo com a cor de módulo e com a rampa de etapa na mesma
+ * tela, uma terceira linguagem de cor que ninguém pediu.
+ *
+ * A cor de marca continua ali, porque é ela que faz reconhecer o portal de
+ * relance, mas num ponto de 6px: identifica sem tingir. É o mesmo desenho do
+ * `BadgePortal` em `_componentes/CartaoLead.tsx`, que já fazia certo — havia
+ * duas implementações do mesmo selo, e agora as duas falam a mesma língua.
+ */
 const PORTAL_INFO: Record<
   PortalOrigem,
-  { label: string; bg: string; text: string; border: string; icone: React.ReactNode }
+  { label: string; cor: string; icone: React.ReactNode }
 > = {
-  zap_imoveis: {
-    label: "Zap Imóveis",
-    bg: "bg-blue-500/15",
-    text: "text-blue-400",
-    border: "border-blue-500/30",
-    icone: <Zap className="w-4 h-4" />,
-  },
-  vivareal: {
-    label: "VivaReal",
-    bg: "bg-emerald-500/15",
-    text: "text-emerald-400",
-    border: "border-emerald-500/30",
-    icone: <Home className="w-4 h-4" />,
-  },
-  olx: {
-    label: "OLX",
-    bg: "bg-purple-500/15",
-    text: "text-purple-400",
-    border: "border-purple-500/30",
-    icone: <Tag className="w-4 h-4" />,
-  },
-  imovelweb: {
-    label: "Imovelweb",
-    bg: "bg-amber-500/15",
-    text: "text-amber-400",
-    border: "border-amber-500/30",
-    icone: <Building className="w-4 h-4" />,
-  },
+  zap_imoveis: { label: "Zap Imóveis", cor: "#0f5bd7", icone: <Zap className="h-4 w-4" /> },
+  vivareal: { label: "VivaReal", cor: "#e84c3d", icone: <Home className="h-4 w-4" /> },
+  olx: { label: "OLX", cor: "#6e0ad6", icone: <Tag className="h-4 w-4" /> },
+  imovelweb: { label: "Imovelweb", cor: "#e67e22", icone: <Building className="h-4 w-4" /> },
   meta_ads: {
     label: "Meta Ads (Insta/FB)",
-    bg: "bg-indigo-500/15",
-    text: "text-indigo-400",
-    border: "border-indigo-500/30",
-    icone: <Smartphone className="w-4 h-4" />,
+    cor: "#0066ff",
+    icone: <Smartphone className="h-4 w-4" />,
   },
-  site_direto: {
-    label: "Formulário do Site",
-    bg: "bg-teal-500/15",
-    text: "text-teal-400",
-    border: "border-teal-500/30",
-    icone: <Globe className="w-4 h-4" />,
-  },
-  email_outro: {
-    label: "E-mail Direto",
-    bg: "bg-slate-500/15",
-    text: "text-slate-300",
-    border: "border-slate-500/30",
-    icone: <Mail className="w-4 h-4" />,
-  },
+  site_direto: { label: "Formulário do Site", cor: "#00806c", icone: <Globe className="h-4 w-4" /> },
+  email_outro: { label: "E-mail Direto", cor: "#6d827c", icone: <Mail className="h-4 w-4" /> },
 };
 
 const EXEMPLOS_EMAIL = [
@@ -469,18 +446,16 @@ export function GmailLeadsExtractor({
                             onChange={(e) => alterarLead(idx, "incluir", e.target.checked)}
                             className="accent-brand-400 h-5 w-5 rounded cursor-pointer"
                           />
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold",
-                              portal.bg,
-                              portal.text,
-                              portal.border,
-                            )}
-                          >
-                            <span>{portal.icone}</span> {portal.label}
+                          <span className="border-linha bg-vidro text-corpo inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium">
+                            <span
+                              aria-hidden
+                              className="h-1.5 w-1.5 shrink-0 rounded-full"
+                              style={{ background: portal.cor }}
+                            />
+                            <span aria-hidden>{portal.icone}</span> {portal.label}
                           </span>
                           {lead.jaExiste && (
-                            <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[11px] font-medium text-amber-400">
+                            <span className="border-alerta-linha bg-alerta-lavado text-alerta rounded-full border px-2 py-0.5 text-[11px] font-medium">
                                <AlertTriangle className="inline-block w-5 h-5 align-text-bottom mr-1" />  Já cadastrado
                             </span>
                           )}
@@ -807,7 +782,7 @@ export function GmailLeadsExtractor({
                           className={cn(
                             "inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
                             log.status === "sucesso" && "bg-ok/15 text-ok",
-                            log.status === "ignorado" && "bg-amber-500/15 text-amber-400",
+                            log.status === "ignorado" && "bg-alerta-lavado text-alerta",
                             log.status === "erro" && "bg-perigo/15 text-perigo",
                           )}
                         >

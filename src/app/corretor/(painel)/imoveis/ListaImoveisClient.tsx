@@ -140,7 +140,7 @@ export function ListaImoveisClient({ imoveis }: Props) {
                   <div className="pt-2 flex items-center gap-2 border-t border-linha">
                     <Link
                       href={`/corretor/imoveis/${imovel.slug}`}
-                      className="flex-1 min-h-[46px] rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-acento/20 active:scale-98"
+                      className="flex-1 min-h-[46px] rounded-xl bg-acento hover:bg-acento-hover text-sobre-cor text-fluid-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-acento/20 active:scale-98"
                     >
                       <span>✏️ Editar Fotos & Dados</span>
                     </Link>

@@ -103,7 +103,7 @@ export function FolhaAcoesLead({ lead, onFechar }: { lead: Lead; onFechar: () =>
         {erro && (
           <p
             role="alert"
-            className="text-fluid-xs border-etapa-areia-linha bg-etapa-areia-lavado text-etapa-areia mt-3 rounded-xl border px-3 py-2"
+            className="text-fluid-xs border-alerta-linha bg-alerta-lavado text-alerta mt-3 rounded-xl border px-3 py-2"
           >
             {erro}
           </p>

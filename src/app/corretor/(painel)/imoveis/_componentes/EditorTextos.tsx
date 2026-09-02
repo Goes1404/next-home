@@ -140,7 +140,7 @@ export function EditorTextos({ dados, onChange, contexto }: Props) {
                 WhatsApp, dias depois, e ninguém liga a falha a este campo.
                 O aviso traz o problema para onde a correção mora. */}
             {dados.nomesAlternativos.length === 0 && (
-              <p className="text-fluid-xs rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-500">
+              <p className="text-fluid-xs rounded-lg border-alerta-linha bg-alerta-lavado text-alerta border px-3 py-2">
                 Sem apelido cadastrado: se o anúncio ou o cliente usarem um nome comercial diferente
                 do título acima, a IA não vai reconhecer este imóvel na conversa.
               </p>
@@ -203,7 +203,7 @@ export function EditorTextos({ dados, onChange, contexto }: Props) {
                       onChange("descricao", sugestao);
                       setSugestao(null);
                     }}
-                    className="text-fluid-xs min-h-[40px] cursor-pointer rounded-xl bg-acento px-4 font-bold text-white transition-colors hover:bg-acento-hover"
+                    className="text-fluid-xs min-h-[40px] cursor-pointer rounded-xl bg-acento px-4 font-bold text-sobre-cor transition-colors hover:bg-acento-hover"
                   >
                     Usar este texto
                   </button>

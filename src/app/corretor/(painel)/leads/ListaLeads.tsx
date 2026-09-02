@@ -38,8 +38,8 @@ const CHIPS: { valor: Filtro; label: string; cor?: string }[] = [
   { valor: "todos", label: "Todos" },
   { valor: "hoje", label: "Hoje" },
   { valor: "novos", label: "Novos", cor: "bg-acento" },
-  { valor: "conversa", label: "Em conversa", cor: "bg-etapa-ciano" },
-  { valor: "visitas", label: "Visitas", cor: "bg-etapa-azul" },
+  { valor: "conversa", label: "Em conversa", cor: "bg-etapa-contato" },
+  { valor: "visitas", label: "Visitas", cor: "bg-etapa-visita" },
   { valor: "frios", label: "Frios", cor: "bg-tenue/45" },
 ];
 
@@ -259,7 +259,7 @@ export function ListaLeads({
           >
             Filtros
             {filtrosAvancadosAtivos > 0 && (
-              <span className="bg-acento flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold text-white tabular-nums">
+              <span className="bg-acento flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold text-sobre-cor tabular-nums">
                 {filtrosAvancadosAtivos}
               </span>
             )}
@@ -276,7 +276,7 @@ export function ListaLeads({
               onClick={() => atualizarUrl({ filtro: valor === "todos" ? "" : valor, etapa: "" })}
               className={`flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors ${
                 ativo
-                  ? "bg-acento text-white"
+                  ? "bg-acento text-sobre-cor"
                   : "bg-superficie text-apoio hover:bg-elevado hover:text-corpo"
               }`}
             >
@@ -490,7 +490,7 @@ export function ListaLeads({
                   <button
                     type="button"
                     onClick={() => setModalAberto(true)}
-                    className="text-fluid-sm bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-lg px-4 font-medium whitespace-nowrap text-white transition-colors"
+                    className="text-fluid-sm bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-lg px-4 font-medium whitespace-nowrap text-sobre-cor transition-colors"
                   >
                     Enviar mensagem
                   </button>

@@ -112,7 +112,7 @@ export function GradeCuradoria({
                       type="button"
                       onClick={() => trocar(item.chave, { tipo })}
                       className={`flex-1 min-h-[36px] rounded-lg text-fluid-xs font-bold transition-colors ${
-                        escolha?.tipo === tipo ? "bg-acento text-white" : "bg-campo text-apoio"
+                        escolha?.tipo === tipo ? "bg-acento text-sobre-cor" : "bg-campo text-apoio"
                       }`}
                     >
                       {tipo === "foto" ? "Foto" : "Planta"}

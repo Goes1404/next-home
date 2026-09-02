@@ -50,3 +50,6 @@ e2e/.auth/
 playwright-report/
 test-results/
 .env.e2e.local
+
+# Sonda da paleta (scripts/verificarPaleta.mjs) — gerada a cada rodada
+.tmp-paleta/

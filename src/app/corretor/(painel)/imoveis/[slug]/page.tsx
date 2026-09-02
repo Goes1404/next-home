@@ -51,7 +51,7 @@ export default async function EditarImovelPage({ params }: Props) {
         <div className="flex flex-wrap gap-2 self-start sm:self-auto">
           <Link
             href={`/corretor/imoveis/${imovel.slug}/importar`}
-            className="min-h-[44px] px-4 py-2 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-colors flex items-center justify-center gap-2"
+            className="min-h-[44px] px-4 py-2 rounded-xl bg-acento hover:bg-acento-hover text-sobre-cor text-fluid-xs font-bold transition-colors flex items-center justify-center gap-2"
           >
             <span>📥 Importar material</span>
           </Link>

@@ -171,8 +171,8 @@ const SELO: Record<Estado, { texto: string; classe: string; ponto: string }> = {
   pausada_humano: { texto: "IA em pausa", classe: "text-alerta", ponto: "bg-alerta" },
   aguardando_liberacao: {
     texto: "IA aguardando liberação",
-    classe: "text-etapa-laranja",
-    ponto: "bg-etapa-laranja",
+    classe: "text-info",
+    ponto: "bg-info",
   },
   desligada: { texto: "IA desligada", classe: "text-apoio", ponto: "bg-linha-forte" },
 };
@@ -720,7 +720,7 @@ function Chat({
             "flex min-h-9 shrink-0 cursor-pointer items-center rounded-full px-3.5 text-xs font-medium transition-colors disabled:opacity-60",
             estado === "ativa"
               ? "border-linha-forte text-corpo hover:bg-vidro border"
-              : "bg-acento hover:bg-acento-hover text-white",
+              : "bg-acento hover:bg-acento-hover text-sobre-cor",
           )}
         >
           {estado === "ativa" ? "Desligar IA" : "Reativar IA"}
@@ -820,7 +820,7 @@ function Chat({
               type="submit"
               disabled={enviando || !texto.trim()}
               aria-label="Enviar mensagem"
-              className="bg-acento hover:bg-acento-hover flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-colors disabled:opacity-50"
+              className="bg-acento hover:bg-acento-hover flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-sobre-cor transition-colors disabled:opacity-50"
             >
               <svg viewBox="0 0 24 24" className="size-5 fill-current" aria-hidden>
                 <path d="M3.4 20.4 20.9 12 3.4 3.6l.01 6.53L15 12 3.41 13.87z" />

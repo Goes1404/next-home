@@ -31,7 +31,7 @@ function amanhaDeManha(): string {
 }
 
 const ESTILO_SITUACAO: Record<string, string> = {
-  atrasada: "border-etapa-areia-linha bg-etapa-areia-lavado",
+  atrasada: "border-alerta-linha bg-alerta-lavado",
   hoje: "border-acento-linha bg-acento-lavado",
   futura: "border-linha bg-vidro",
   concluida: "border-linha bg-vidro opacity-60",
@@ -132,7 +132,7 @@ export function ProximasAcoes({ leadId, tarefas }: { leadId: string; tarefas: Ta
       </div>
 
       {erro && (
-        <p role="alert" className="text-fluid-xs mt-2 text-etapa-areia">
+        <p role="alert" className="text-fluid-xs mt-2 text-alerta">
           {erro}
         </p>
       )}

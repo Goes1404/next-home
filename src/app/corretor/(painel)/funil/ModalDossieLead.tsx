@@ -69,7 +69,7 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
               onClick={() => setAba("dossie")}
               className={`px-4 py-2 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer ${
                 aba === "dossie"
-                  ? "bg-acento text-white shadow-md"
+                  ? "bg-acento text-sobre-cor shadow-md"
                   : "bg-vidro text-apoio hover:text-titulo"
               }`}
             >
@@ -79,7 +79,7 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
               onClick={() => setAba("chat")}
               className={`px-4 py-2 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
                 aba === "chat"
-                  ? "bg-acento text-white shadow-md"
+                  ? "bg-acento text-sobre-cor shadow-md"
                   : "bg-vidro text-apoio hover:text-titulo"
               }`}
             >

@@ -152,7 +152,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
           onClick={() => setAbaAtiva("importar")}
           className={`px-4 py-2 text-fluid-sm font-medium rounded-lg transition-colors ${
             abaAtiva === "importar"
-              ? "bg-acento text-white"
+              ? "bg-acento text-sobre-cor"
               : "text-apoio hover:text-titulo hover:bg-vidro"
           }`}
         >
@@ -162,7 +162,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
           onClick={() => setAbaAtiva("historico")}
           className={`px-4 py-2 text-fluid-sm font-medium rounded-lg transition-colors ${
             abaAtiva === "historico"
-              ? "bg-acento text-white"
+              ? "bg-acento text-sobre-cor"
               : "text-apoio hover:text-titulo hover:bg-vidro"
           }`}
         >
@@ -406,7 +406,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                     type="button"
                     disabled={isPending || itensSelecionadosCount === 0}
                     onClick={handleAplicarLote}
-                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-acento hover:bg-acento-hover disabled:opacity-50 text-white font-semibold text-fluid-sm transition-all shadow-lg shadow-acento/25 flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-acento hover:bg-acento-hover disabled:opacity-50 text-sobre-cor font-semibold text-fluid-sm transition-all shadow-lg shadow-acento/25 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {isPending ? (
                       <>

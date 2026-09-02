@@ -280,7 +280,7 @@ export function ConfiguracaoIA({
         <button
           onClick={salvar}
           disabled={salvando}
-          className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center rounded-xl px-6 font-medium text-white transition-colors disabled:opacity-60"
+          className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center rounded-xl px-6 font-medium text-sobre-cor transition-colors disabled:opacity-60"
         >
           {salvando ? "Salvando…" : "Salvar"}
         </button>

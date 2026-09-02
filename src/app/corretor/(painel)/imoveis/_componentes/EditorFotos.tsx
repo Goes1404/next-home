@@ -112,7 +112,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
 
           <label
             htmlFor="input-foto-upload"
-            className="w-full sm:w-auto min-h-[48px] px-5 py-2.5 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all shadow-md shadow-acento/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            className="w-full sm:w-auto min-h-[48px] px-5 py-2.5 rounded-xl bg-acento hover:bg-acento-hover text-sobre-cor text-fluid-xs font-bold transition-all shadow-md shadow-acento/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             {enviando ? (
               <>
@@ -162,7 +162,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
 
                   {/* Badge de Capa */}
                   {ehCapa && (
-                    <span className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-acento text-white text-[10px] font-bold shadow-md flex items-center gap-1">
+                    <span className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-acento text-sobre-cor text-[10px] font-bold shadow-md flex items-center gap-1">
                       ⭐ Capa Principal
                     </span>
                   )}
@@ -174,7 +174,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
                     <button
                       type="button"
                       onClick={() => handleDefinirCapa(midia)}
-                      className="px-2 py-1.5 rounded-lg bg-vidro hover:bg-acento hover:text-white text-corpo text-[11px] font-semibold transition-colors cursor-pointer"
+                      className="px-2 py-1.5 rounded-lg bg-vidro hover:bg-acento hover:text-sobre-cor text-corpo text-[11px] font-semibold transition-colors cursor-pointer"
                     >
                       Definir Capa
                     </button>

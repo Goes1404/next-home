@@ -59,7 +59,7 @@ function CartaoCredencial({ cred, aoFechar }: { cred: Credencial; aoFechar: () =
             setCopiado(true);
             setTimeout(() => setCopiado(false), 2500);
           }}
-          className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-white"
+          className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor"
         >
           <Copy className="h-4 w-4" /> {copiado ? "Copiado!" : "Copiar dados de acesso"}
         </button>
@@ -173,7 +173,7 @@ function LinhaCorretor({
         <button
           type="button"
           onClick={() => setAbrindo(true)}
-          className="text-fluid-xs bg-acento hover:bg-acento-hover mt-3 flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-white"
+          className="text-fluid-xs bg-acento hover:bg-acento-hover mt-3 flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor"
         >
           <UserPlus className="h-4 w-4" /> Criar acesso
         </button>
@@ -192,7 +192,7 @@ function LinhaCorretor({
             type="button"
             onClick={criar}
             disabled={pendente}
-            className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 shrink-0 cursor-pointer items-center rounded-lg px-4 font-bold text-white disabled:opacity-60"
+            className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 shrink-0 cursor-pointer items-center rounded-lg px-4 font-bold text-sobre-cor disabled:opacity-60"
           >
             {pendente ? "Criando…" : "Criar acesso"}
           </button>

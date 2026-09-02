@@ -66,7 +66,7 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
               onClick={() => setAba(valor)}
               aria-current={aba === valor ? "page" : undefined}
               className={`flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full px-4 text-sm transition-colors ${
-                aba === valor ? "bg-acento font-medium text-white" : "text-apoio hover:text-titulo"
+                aba === valor ? "bg-acento font-medium text-sobre-cor" : "text-apoio hover:text-titulo"
               }`}
             >
               {label}

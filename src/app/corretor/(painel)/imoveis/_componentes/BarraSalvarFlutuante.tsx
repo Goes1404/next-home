@@ -68,7 +68,7 @@ export function BarraSalvarFlutuante({
             type="button"
             onClick={onSalvar}
             disabled={salvando}
-            className="min-h-[48px] px-6 sm:px-8 py-2.5 rounded-xl bg-acento hover:bg-acento-hover disabled:opacity-50 text-white text-fluid-xs sm:text-fluid-sm font-bold transition-all shadow-lg shadow-acento/30 flex items-center gap-2 cursor-pointer active:scale-95"
+            className="min-h-[48px] px-6 sm:px-8 py-2.5 rounded-xl bg-acento hover:bg-acento-hover disabled:opacity-50 text-sobre-cor text-fluid-xs sm:text-fluid-sm font-bold transition-all shadow-lg shadow-acento/30 flex items-center gap-2 cursor-pointer active:scale-95"
           >
             {salvando ? (
               <>

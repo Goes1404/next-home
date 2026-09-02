@@ -134,7 +134,7 @@ export function EditorImovelClient({ imovel }: Props) {
           onClick={() => setAbaAtiva("fotos")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "fotos"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
@@ -149,7 +149,7 @@ export function EditorImovelClient({ imovel }: Props) {
           onClick={() => setAbaAtiva("textos")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "textos"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
@@ -161,7 +161,7 @@ export function EditorImovelClient({ imovel }: Props) {
           onClick={() => setAbaAtiva("book")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "book"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
@@ -178,7 +178,7 @@ export function EditorImovelClient({ imovel }: Props) {
           onClick={() => setAbaAtiva("midia")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "midia"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
@@ -195,7 +195,7 @@ export function EditorImovelClient({ imovel }: Props) {
           onClick={() => setAbaAtiva("lazer")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "lazer"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
@@ -208,7 +208,7 @@ export function EditorImovelClient({ imovel }: Props) {
           onClick={() => setAbaAtiva("plantas")}
           className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "plantas"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >

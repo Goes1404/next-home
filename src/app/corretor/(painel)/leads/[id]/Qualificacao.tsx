@@ -188,7 +188,7 @@ export function Qualificacao({
         {aviso && (
           <span
             role="status"
-            className={`text-fluid-xs ${aviso.tipo === "erro" ? "text-etapa-areia" : "text-ok"}`}
+            className={`text-fluid-xs ${aviso.tipo === "erro" ? "text-alerta" : "text-ok"}`}
           >
             {aviso.texto}
           </span>

@@ -155,7 +155,7 @@ export function PlaygroundIA({
             hora, e é o cenário real em que a resposta vai aparecer. */}
         <div className="border-linha flex h-[32rem] flex-col overflow-hidden rounded-2xl border">
           <div className="flex items-center gap-3 border-b border-linha bg-[#1f2c34] p-3">
-            <span className="bg-acento flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white">
+            <span className="bg-acento flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-sobre-cor">
               {nomeAssistente[0]?.toUpperCase() ?? "S"}
             </span>
             <div className="min-w-0">
@@ -235,7 +235,7 @@ export function PlaygroundIA({
             <button
               onClick={() => enviar()}
               aria-label="Enviar"
-              className="bg-acento hover:bg-acento-hover flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-white transition-colors"
+              className="bg-acento hover:bg-acento-hover flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-sobre-cor transition-colors"
             >
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="h-5 w-5">
                 <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />

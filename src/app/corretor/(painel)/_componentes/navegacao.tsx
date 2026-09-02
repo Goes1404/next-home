@@ -127,6 +127,45 @@ export function itemAtivo(atual: string | null, item: ItemNav): boolean {
   return (item.tambem ?? []).some((href) => rotaAtiva(atual, href));
 }
 
+/**
+ * O módulo em que a rota atual mora — a chave do color coding do painel.
+ *
+ * Cada módulo tem uma cor, e a cor responde "onde eu estou". Quem pinta é o
+ * CSS: `[data-modulo="leads"]` reaponta a família `--color-acento`, que
+ * cerca de 260 usos do painel já consomem, então o painel inteiro se
+ * recolore sem que nenhum componente saiba disso.
+ *
+ * Isto é derivado do MESMO mapa que acende o item do menu. Ter uma segunda
+ * lista de "rota → cor" seria uma segunda verdade para divergir da primeira:
+ * bastaria alguém acrescentar uma rota a `tambem` e esquecer da outra lista
+ * para o menu acender "Leads" numa tela pintada de outra cor.
+ *
+ * Devolve `null` fora do painel e em rota que nenhum destino reivindica —
+ * aí o CSS cai no tom padrão em vez de inventar um.
+ */
+export type Modulo = "inicio" | "leads" | "whatsapp" | "imoveis" | "conta" | "admin";
+
+const MODULO_POR_DESTINO: Record<string, Modulo> = {
+  "/corretor": "inicio",
+  "/corretor/leads": "leads",
+  "/corretor/conversas": "whatsapp",
+  "/corretor/imoveis": "imoveis",
+  "/corretor/perfil": "conta",
+  "/corretor/admin": "admin",
+};
+
+export function moduloAtivo(atual: string | null): Modulo | null {
+  if (!atual) return null;
+  const todos = GRUPOS_NAV.flatMap((g) => g.itens);
+  // O mais específico ganha: `/corretor` casa exato e os demais por prefixo,
+  // mas um item pode absorver a rota de outro via `tambem`, e aí quem tem o
+  // href mais longo é o dono legítimo.
+  const dono = todos
+    .filter((i) => itemAtivo(atual, i))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+  return dono ? (MODULO_POR_DESTINO[dono.href] ?? null) : null;
+}
+
 const traco = {
   fill: "none",
   stroke: "currentColor",

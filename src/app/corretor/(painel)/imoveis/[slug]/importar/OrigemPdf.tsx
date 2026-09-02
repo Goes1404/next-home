@@ -239,7 +239,7 @@ export function OrigemPdf({
 
         <label
           htmlFor="input-pdf-apresentacao"
-          className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-acento px-5 py-2.5 text-fluid-xs font-bold text-white shadow-md shadow-acento/20 transition-all active:scale-95 cursor-pointer"
+          className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-acento px-5 py-2.5 text-fluid-xs font-bold text-sobre-cor shadow-md shadow-acento/20 transition-all active:scale-95 cursor-pointer"
         >
           {etapa === "enviando" ? "Enviando o arquivo…" : etapa === "lendo" ? "Abrindo a apresentação…" : "Escolher PDF"}
         </label>
@@ -267,7 +267,7 @@ export function OrigemPdf({
             type="button"
             onClick={() => void gravar()}
             disabled={ocupado}
-            className="w-full min-h-[48px] rounded-xl bg-acento px-5 text-fluid-xs font-bold text-white shadow-md shadow-acento/20 transition-all active:scale-95 disabled:opacity-60"
+            className="w-full min-h-[48px] rounded-xl bg-acento px-5 text-fluid-xs font-bold text-sobre-cor shadow-md shadow-acento/20 transition-all active:scale-95 disabled:opacity-60"
           >
             {etapa === "gravando"
               ? "Adicionando ao imóvel…"

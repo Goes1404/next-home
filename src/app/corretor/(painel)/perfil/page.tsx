@@ -44,7 +44,7 @@ export default async function PerfilPage() {
           <span className="rounded-full bg-acento-lavado border border-acento-linha px-2.5 py-0.5 text-fluid-xs font-semibold text-acento-suave">
             CRECI {corretor.creci}
           </span>
-          <span className="rounded-full bg-etapa-azul-lavado border border-etapa-azul-linha px-2.5 py-0.5 text-fluid-xs font-medium text-etapa-azul">
+          <span className="rounded-full bg-ok-lavado border border-ok-linha px-2.5 py-0.5 text-fluid-xs font-medium text-ok">
             Perfil Público Ativo
           </span>
         </div>

@@ -69,13 +69,13 @@ export function ArquivarLead({
                 type="button"
                 disabled={pendente}
                 onClick={() => setConfirmando(true)}
-                className="text-fluid-sm inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-500/40 px-4 text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-60"
+                className="text-fluid-sm inline-flex min-h-11 items-center gap-2 rounded-xl border-perigo-linha text-perigo hover:bg-perigo-lavado border px-4 transition-colors disabled:opacity-60"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
                 Excluir definitivamente
               </button>
             ) : (
-              <div className="w-full rounded-xl border border-red-500/40 bg-red-500/10 p-3">
+              <div className="border-perigo-linha bg-perigo-lavado w-full rounded-xl border p-3">
                 <p className="text-fluid-sm text-titulo">
                   Excluir {nome} de vez? Isso apaga junto o dossiê da IA, as tarefas e a linha do
                   tempo dele. Não tem desfazer.
@@ -89,7 +89,7 @@ export function ArquivarLead({
                     type="button"
                     disabled={pendente}
                     onClick={() => executar(() => excluirLeadDefinitivo(leadId), true)}
-                    className="text-fluid-sm min-h-11 rounded-xl bg-red-600 px-4 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                    className="text-fluid-sm min-h-11 bg-perigo text-sobre-cor rounded-xl px-4 font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
                   >
                     {pendente ? "Excluindo…" : "Sim, excluir para sempre"}
                   </button>
@@ -121,7 +121,7 @@ export function ArquivarLead({
       {aviso && (
         <p
           role="status"
-          className={`text-fluid-xs mt-3 ${aviso.ok ? "text-apoio" : "text-red-400"}`}
+          className={`text-fluid-xs mt-3 ${aviso.ok ? "text-apoio" : "text-perigo"}`}
         >
           {aviso.texto}
         </p>

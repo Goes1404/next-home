@@ -37,7 +37,7 @@ export function FormularioLogin() {
       <button
         type="submit"
         disabled={pendente}
-        className="w-full rounded-full bg-acento px-7 py-3.5 text-sm font-medium text-white transition-colors hover:bg-acento-hover disabled:opacity-60"
+        className="w-full rounded-full bg-acento px-7 py-3.5 text-sm font-medium text-sobre-cor transition-colors hover:bg-acento-hover disabled:opacity-60"
       >
         {pendente ? "Entrando…" : "Entrar"}
       </button>

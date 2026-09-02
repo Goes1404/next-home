@@ -90,7 +90,7 @@ export function FilaCandidatos({ candidatos }: { candidatos: readonly Candidato[
   return (
     <div className="space-y-6">
       {erro && (
-        <p className="text-fluid-xs rounded-xl border border-red-500/40 bg-red-500/5 px-4 py-3 text-red-400" role="status">
+        <p className="text-fluid-xs rounded-xl border-perigo-linha bg-perigo-lavado text-perigo border px-4 py-3" role="status">
           {erro}
         </p>
       )}

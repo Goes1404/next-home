@@ -159,6 +159,73 @@
   --color-acento-intenso: #bff5e2;
   --color-acento-quente: #e8d5b0;
 
+  /*
+   * ---------------------------------------------------------------------
+   * Cores de MÓDULO do CRM
+   * ---------------------------------------------------------------------
+   * Cinco matizes para as cinco áreas do painel. São TINTA, não papel: a
+   * identidade do módulo é a mesma nos dois temas — o que muda com o tema é
+   * só a luminosidade necessária para continuar legível.
+   *
+   * As matizes foram escolhidas com o resto do círculo já ocupado: a rampa de
+   * etapa reserva a faixa azul→ciano (196–268) e os estados ocupam verde
+   * (~158, ok), âmbar (~85, alerta) e vermelho (~15, perigo). O que sobra —
+   * violeta, magenta, lima e âmbar-laranja — é onde os módulos moram, com no
+   * mínimo 48° entre vizinhos. `scripts/verificarPaleta.mjs` mede isso; sem a
+   * medida, "vibrante" vira ilegível justamente no tema claro.
+   *
+   * Administração é o único sem croma, e é decisão: é o módulo do gestor,
+   * meta em relação aos outros quatro. Cinza ao lado de quatro cores vivas é
+   * tão identificável quanto uma quinta cor, e não briga com nenhuma.
+   */
+  --color-mod-inicio: light-dark(oklch(0.52 0.19 292), oklch(0.7 0.17 292));
+  --color-mod-inicio-hover: light-dark(oklch(0.45 0.19 292), oklch(0.78 0.16 292));
+  --color-mod-inicio-suave: light-dark(oklch(0.47 0.19 292), oklch(0.84 0.13 292));
+
+  --color-mod-leads: light-dark(oklch(0.53 0.2 340), oklch(0.71 0.18 340));
+  --color-mod-leads-hover: light-dark(oklch(0.46 0.2 340), oklch(0.79 0.16 340));
+  --color-mod-leads-suave: light-dark(oklch(0.48 0.2 340), oklch(0.85 0.12 340));
+
+  --color-mod-whatsapp: light-dark(oklch(0.5 0.16 132), oklch(0.76 0.18 132));
+  --color-mod-whatsapp-hover: light-dark(oklch(0.44 0.15 132), oklch(0.83 0.17 132));
+  --color-mod-whatsapp-suave: light-dark(oklch(0.45 0.15 132), oklch(0.87 0.15 132));
+
+  --color-mod-imoveis: light-dark(oklch(0.52 0.15 41), oklch(0.78 0.16 48));
+  --color-mod-imoveis-hover: light-dark(oklch(0.45 0.14 41), oklch(0.85 0.14 48));
+  --color-mod-imoveis-suave: light-dark(oklch(0.47 0.14 41), oklch(0.87 0.12 48));
+
+  --color-mod-admin: light-dark(oklch(0.42 0.035 275), oklch(0.68 0.03 275));
+  --color-mod-admin-hover: light-dark(oklch(0.34 0.035 275), oklch(0.76 0.028 275));
+  --color-mod-admin-suave: light-dark(oklch(0.36 0.035 275), oklch(0.85 0.022 275));
+
+  /*
+   * Conta e Administração são os dois módulos META — não são trabalho, são a
+   * ferramenta se configurando. Ficam quase sem croma de propósito: as quatro
+   * cores vivas pertencem ao trabalho, e dar uma quinta e uma sexta a telas
+   * que se visita uma vez por mês roubaria distinção de quem precisa dela.
+   * Diferem entre si pela temperatura do cinza — frio na equipe, quente no
+   * pessoal — o bastante para não serem a mesma tela.
+   */
+  --color-mod-conta: light-dark(oklch(0.42 0.022 70), oklch(0.7 0.02 70));
+  --color-mod-conta-hover: light-dark(oklch(0.34 0.022 70), oklch(0.78 0.018 70));
+  --color-mod-conta-suave: light-dark(oklch(0.36 0.022 70), oklch(0.86 0.015 70));
+
+  /*
+   * A cor do texto que fica EM CIMA de qualquer cor viva — acento de módulo
+   * ou etapa, tanto faz.
+   *
+   * Existe porque o painel escrevia `bg-acento text-white` em toda ação
+   * primária, e isso só funciona enquanto o acento é escuro. Com cor vibrante
+   * a regra se inverte por tema: no escuro a cor é clara e pede texto escuro;
+   * no claro é profunda e pede texto branco. Um token resolve os dois —
+   * `text-white` chumbado quebraria metade dos botões em um dos temas.
+   *
+   * É um token só para acento e etapa de propósito: as duas famílias têm a
+   * mesma faixa de luminosidade em cada tema, e dois tokens idênticos só
+   * serviriam para divergir depois.
+   */
+  --color-sobre-cor: light-dark(oklch(0.99 0 0), oklch(0.17 0.02 275));
+
   /* Véu translúcido sobre a superfície (skeleton de carregamento) */
   --color-veu: #fff;
 
@@ -223,33 +290,61 @@
   --color-info-linha: rgb(125 211 252 / 0.34);
 
   /*
-   * Cores de etapa do funil — UMA POR ETAPA, e é isso que importa.
+   * Cores de etapa do funil — uma RAMPA, não seis matizes soltas.
    *
-   * Havia três cores para sete etapas: "proposta enviada" e "em negociação"
-   * eram a mesma areia, "novo" e "primeiro contato" o mesmo verde. Duas
-   * etapas com a mesma cor não são identificáveis de relance, que é a única
-   * razão de existir cor de status.
+   * Etapa de funil é dado ORDINAL: tem ordem. A versão anterior a codificava
+   * com seis matizes sem relação entre si (ciano, azul, areia, laranja…), o
+   * que gasta meio círculo cromático e obriga a decorar qual cor vem antes de
+   * qual — "a escala esquenta junto com a negociação" existia só no
+   * comentário, não no olho.
    *
-   * A escala segue a temperatura da negociação e vai esquentando: verde na
-   * chegada, ciano quando a conversa começa, azul quando há compromisso
-   * marcado, âmbar quando há proposta na mesa, laranja no aperto final,
-   * verde sólido no fechamento e cinza no fim da linha.
+   * Agora são quatro passos de UMA rampa (azul-índigo → ciano), com a
+   * luminosidade subindo conforme o negócio avança: a posição na rampa se lê
+   * sem decorar cor. Fora da rampa ficam os dois TERMINAIS, e ficam de
+   * propósito — fechado e perdido não são passos, são desfechos (é o mesmo
+   * recorte de `ETAPAS_DO_CAMINHO` em types.ts).
+   *
+   * Reservar a faixa azul→ciano para a etapa é o que libera o resto do
+   * círculo para a cor de MÓDULO, que responde outra pergunta ("onde estou")
+   * e nunca ocupa o mesmo lugar na tela.
+   *
+   * `light-dark()` em vez de repetir os valores nos três blocos de tema: a
+   * migration 0052 declarou ciano e laranja no bloco base e em
+   * `[data-tema=claro]` e esqueceu o `@media (prefers-color-scheme: light)`,
+   * então quem usa "seguir o sistema" com o celular no claro via pastel de
+   * tema escuro sobre fundo claro. Com uma declaração só, esse esquecimento
+   * deixa de ser possível.
    */
-  --color-etapa-ciano: #67d8d1;
-  --color-etapa-ciano-lavado: rgb(103 216 209 / 0.16);
-  --color-etapa-ciano-linha: rgb(103 216 209 / 0.34);
 
-  --color-etapa-azul: #8fb9e3;
-  --color-etapa-azul-lavado: rgb(35 116 192 / 0.25);
-  --color-etapa-azul-linha: rgb(86 149 211 / 0.3);
+  /* Passo 1 — chegou agora. */
+  --color-etapa-novo: light-dark(oklch(0.54 0.17 268), oklch(0.7 0.15 268));
+  --color-etapa-novo-lavado: light-dark(oklch(0.54 0.17 268 / 0.1), oklch(0.7 0.15 268 / 0.16));
+  --color-etapa-novo-linha: light-dark(oklch(0.54 0.17 268 / 0.28), oklch(0.7 0.15 268 / 0.36));
 
-  --color-etapa-areia: #e8d5b0;
-  --color-etapa-areia-lavado: rgb(212 180 131 / 0.22);
-  --color-etapa-areia-linha: rgb(212 180 131 / 0.35);
+  /* Passo 2 — a conversa começou. */
+  --color-etapa-contato: light-dark(oklch(0.5 0.16 245), oklch(0.76 0.14 245));
+  --color-etapa-contato-lavado: light-dark(oklch(0.5 0.16 245 / 0.1), oklch(0.76 0.14 245 / 0.16));
+  --color-etapa-contato-linha: light-dark(oklch(0.5 0.16 245 / 0.28), oklch(0.76 0.14 245 / 0.36));
 
-  --color-etapa-laranja: #f0a072;
-  --color-etapa-laranja-lavado: rgb(240 160 114 / 0.17);
-  --color-etapa-laranja-linha: rgb(240 160 114 / 0.36);
+  /* Passo 3 — há compromisso marcado. */
+  --color-etapa-visita: light-dark(oklch(0.46 0.14 220), oklch(0.82 0.13 220));
+  --color-etapa-visita-lavado: light-dark(oklch(0.46 0.14 220 / 0.1), oklch(0.82 0.13 220 / 0.16));
+  --color-etapa-visita-linha: light-dark(oklch(0.46 0.14 220 / 0.28), oklch(0.82 0.13 220 / 0.36));
+
+  /* Passo 4 — o negócio está na mesa. */
+  --color-etapa-doc: light-dark(oklch(0.42 0.12 196), oklch(0.87 0.12 196));
+  --color-etapa-doc-lavado: light-dark(oklch(0.42 0.12 196 / 0.1), oklch(0.87 0.12 196 / 0.16));
+  --color-etapa-doc-linha: light-dark(oklch(0.42 0.12 196 / 0.28), oklch(0.87 0.12 196 / 0.36));
+
+  /* Terminal: deu certo. Sai da rampa porque não é passo, é desfecho. */
+  --color-etapa-fechado: light-dark(oklch(0.46 0.14 158), oklch(0.82 0.15 158));
+  --color-etapa-fechado-lavado: light-dark(oklch(0.46 0.14 158 / 0.1), oklch(0.82 0.15 158 / 0.16));
+  --color-etapa-fechado-linha: light-dark(oklch(0.46 0.14 158 / 0.28), oklch(0.82 0.15 158 / 0.36));
+
+  /* Terminal: saiu do caminho. Sem croma — não compete com quem está vivo. */
+  --color-etapa-perdido: light-dark(oklch(0.55 0.01 275), oklch(0.62 0.012 275));
+  --color-etapa-perdido-lavado: light-dark(oklch(0.55 0.01 275 / 0.1), oklch(0.62 0.012 275 / 0.16));
+  --color-etapa-perdido-linha: light-dark(oklch(0.55 0.01 275 / 0.28), oklch(0.62 0.012 275 / 0.36));
 
   /* Tipografia */
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
@@ -423,22 +518,6 @@
     --color-info-lavado: rgb(11 99 148 / 0.09);
     --color-info-linha: rgb(11 99 148 / 0.26);
 
-    --color-etapa-ciano: #0e6b66;
-    --color-etapa-ciano-lavado: rgb(14 107 102 / 0.1);
-    --color-etapa-ciano-linha: rgb(14 107 102 / 0.26);
-
-    --color-etapa-azul: #034b8e;
-    --color-etapa-azul-lavado: rgb(3 75 142 / 0.1);
-    --color-etapa-azul-linha: rgb(3 75 142 / 0.26);
-
-    --color-etapa-areia: #8a6420;
-    --color-etapa-areia-lavado: rgb(138 100 32 / 0.11);
-    --color-etapa-areia-linha: rgb(138 100 32 / 0.28);
-
-    --color-etapa-laranja: #a84510;
-    --color-etapa-laranja-lavado: rgb(168 69 16 / 0.1);
-    --color-etapa-laranja-linha: rgb(168 69 16 / 0.27);
-
     --shadow-painel: 0 1px 2px rgb(4 43 37 / 0.06), 0 1px 1px rgb(4 43 37 / 0.04);
     --shadow-painel-alto: 0 20px 40px -24px rgb(4 43 37 / 0.35);
 
@@ -525,14 +604,6 @@
       --color-info: #0b6394;
       --color-info-lavado: rgb(11 99 148 / 0.09);
       --color-info-linha: rgb(11 99 148 / 0.26);
-
-      --color-etapa-azul: #034b8e;
-      --color-etapa-azul-lavado: rgb(3 75 142 / 0.1);
-      --color-etapa-azul-linha: rgb(3 75 142 / 0.26);
-
-      --color-etapa-areia: #8a6420;
-      --color-etapa-areia-lavado: rgb(138 100 32 / 0.11);
-      --color-etapa-areia-linha: rgb(138 100 32 / 0.28);
 
       --shadow-painel: 0 1px 2px rgb(4 43 37 / 0.06), 0 1px 1px rgb(4 43 37 / 0.04);
       --shadow-painel-alto: 0 20px 40px -24px rgb(4 43 37 / 0.35);
@@ -631,6 +702,108 @@
       transition-duration: 0.01ms !important;
     }
   }
+
+  /*
+   * =====================================================================
+   * CRM — a paleta do painel do corretor
+   * =====================================================================
+   *
+   * O painel NÃO usa a paleta do site. São dois produtos: a vitrine vende
+   * imóvel e é teal de marca; o CRM é a ferramenta de trabalho de quem passa
+   * o dia dentro dela, e aqui a cor tem função, não assinatura.
+   *
+   * Isto vive fora do `:root` de propósito. Custom property herda, então
+   * pendurar a paleta no `<main data-rota="painel">` recolore o painel inteiro
+   * sem tocar em uma linha do site público — e sem disputar cascata com
+   * `:root[data-tema="claro"]`, que sequer casa com este elemento.
+   *
+   * Superfícies mais claras que as da vitrine (0.19 contra 0.03 de
+   * luminosidade no escuro): sobre preto absoluto, cor vibrante estoura e
+   * texto de apoio some. O CRM precisa de uma base que sustente cinco matizes
+   * saturadas sem nenhuma delas gritar.
+   */
+  [data-rota="painel"] {
+    --color-fundo: light-dark(oklch(0.968 0.004 275), oklch(0.19 0.014 275));
+    --color-superficie: light-dark(oklch(1 0 0), oklch(0.235 0.016 275));
+    --color-elevado: light-dark(oklch(1 0 0), oklch(0.285 0.018 275));
+    --color-campo: light-dark(oklch(0.955 0.006 275), oklch(0.165 0.012 275));
+
+    --color-linha: light-dark(oklch(0.25 0.02 275 / 0.12), oklch(1 0 0 / 0.1));
+    --color-linha-forte: light-dark(oklch(0.25 0.02 275 / 0.22), oklch(1 0 0 / 0.19));
+    --color-vidro: light-dark(oklch(0.25 0.02 275 / 0.04), oklch(1 0 0 / 0.05));
+    --color-vidro-forte: light-dark(oklch(0.25 0.02 275 / 0.09), oklch(1 0 0 / 0.11));
+
+    --color-titulo: light-dark(oklch(0.22 0.02 275), oklch(0.98 0.004 275));
+    --color-corpo: light-dark(oklch(0.34 0.018 275), oklch(0.9 0.007 275));
+    --color-corpo-suave: light-dark(oklch(0.4 0.017 275), oklch(0.84 0.008 275));
+    --color-apoio: light-dark(oklch(0.48 0.016 275), oklch(0.73 0.011 275));
+    --color-legenda: light-dark(oklch(0.48 0.016 275), oklch(0.73 0.011 275));
+    --color-tenue: light-dark(oklch(0.56 0.014 275), oklch(0.62 0.012 275));
+
+    /* Sem módulo resolvido (rota nova, erro), o painel cai no tom do Início. */
+    --color-acento: var(--color-mod-inicio);
+    --color-acento-hover: var(--color-mod-inicio-hover);
+    --color-acento-suave: var(--color-mod-inicio-suave);
+  }
+
+  /*
+   * Cor de MÓDULO — responde "onde eu estou", e só isso.
+   *
+   * Todo componente do painel já consome a família `acento` (cerca de 260
+   * usos: botão primário, anel de foco, borda de destaque, chip). Reapontar
+   * essas variáveis por módulo recolore o painel inteiro sem editar um único
+   * componente — é o mesmo mecanismo que `[data-tema="claro"]` usa há meses.
+   *
+   * A cor de módulo NUNCA aparece dentro de um registro, e a cor de etapa
+   * nunca aparece no cromo. Como os dois nunca ocupam o mesmo lugar na tela,
+   * não competem: uma diz onde você está, a outra diz o que é aquela linha.
+   *
+   * `lavado` e `linha` são derivados por color-mix da própria base, então
+   * acompanham o tema sozinhos e não podem sair de sincronia com ela.
+   */
+  [data-modulo] {
+    --color-acento-lavado: color-mix(in oklab, var(--color-acento) 16%, transparent);
+    --color-acento-linha: color-mix(in oklab, var(--color-acento) 38%, transparent);
+    --color-acento-forte: var(--color-acento-suave);
+    --color-acento-intenso: var(--color-acento-suave);
+  }
+
+  [data-modulo="inicio"] {
+    --color-acento: var(--color-mod-inicio);
+    --color-acento-hover: var(--color-mod-inicio-hover);
+    --color-acento-suave: var(--color-mod-inicio-suave);
+  }
+
+  [data-modulo="leads"] {
+    --color-acento: var(--color-mod-leads);
+    --color-acento-hover: var(--color-mod-leads-hover);
+    --color-acento-suave: var(--color-mod-leads-suave);
+  }
+
+  [data-modulo="whatsapp"] {
+    --color-acento: var(--color-mod-whatsapp);
+    --color-acento-hover: var(--color-mod-whatsapp-hover);
+    --color-acento-suave: var(--color-mod-whatsapp-suave);
+  }
+
+  [data-modulo="imoveis"] {
+    --color-acento: var(--color-mod-imoveis);
+    --color-acento-hover: var(--color-mod-imoveis-hover);
+    --color-acento-suave: var(--color-mod-imoveis-suave);
+  }
+
+  [data-modulo="conta"] {
+    --color-acento: var(--color-mod-conta);
+    --color-acento-hover: var(--color-mod-conta-hover);
+    --color-acento-suave: var(--color-mod-conta-suave);
+  }
+
+  [data-modulo="admin"] {
+    --color-acento: var(--color-mod-admin);
+    --color-acento-hover: var(--color-mod-admin-hover);
+    --color-acento-suave: var(--color-mod-admin-suave);
+  }
+
 }
 
 @layer components {

@@ -459,7 +459,7 @@ export function NovaCampanha({
               setErro(null);
               setPasso((p) => (p === 1 ? 2 : 3));
             }}
-            className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium text-white transition-colors"
+            className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium text-sobre-cor transition-colors"
           >
             Continuar <ArrowRight className="h-4 w-4" />
           </button>
@@ -468,7 +468,7 @@ export function NovaCampanha({
             type="button"
             onClick={disparar}
             disabled={criando}
-            className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium text-white transition-colors disabled:opacity-60"
+            className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium text-sobre-cor transition-colors disabled:opacity-60"
           >
             <Rocket className="h-4 w-4" />
             {criando ? "Criando…" : "Começar a enviar"}

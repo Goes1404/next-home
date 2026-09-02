@@ -13,13 +13,27 @@ import type { ItemFila, TipoItemFila } from "@/lib/crm/filaDeTrabalho";
  * coisas que somem se ninguém agir hoje.
  */
 
+/*
+ * A régua é a única coisa que separa urgência de rotina sem depender de
+ * leitura, então cada valor aqui É uma classe — e isso precisou ser dito.
+ * Este mapa nasceu com `sem_resposta: "Esperando você"`, um texto em
+ * português no lugar da classe, interpolado direto no className: o item de
+ * MAIOR prioridade da fila era o único sem cor nenhuma. `Record<Tipo, string>`
+ * aceita qualquer string, então tipo, build e teste passaram por meses.
+ * `classesDeCor.test.ts` existe por causa disto.
+ *
+ * Nenhuma cor de MÓDULO aqui, de propósito. `acento` mudou de significado —
+ * passou a ser "onde você está" — e usá-lo dentro de uma linha faria a
+ * urgência de um item depender da tela em que ele aparece.
+ */
 const REGUA: Record<TipoItemFila, string> = {
-  // Primeiro da fila: já levantou a mão e ficou sem resposta.
-  sem_resposta: "Esperando você",
-  visita_hoje: "bg-etapa-azul",
-  tarefa_vencida: "bg-etapa-areia",
-  lead_novo: "bg-acento",
-  tarefa_hoje: "bg-acento",
+  // Primeiro da fila: já levantou a mão e ficou sem resposta. É o único que
+  // representa alguém esperando AGORA, e por isso leva a cor mais forte.
+  sem_resposta: "bg-perigo",
+  visita_hoje: "bg-etapa-visita",
+  tarefa_vencida: "bg-alerta",
+  lead_novo: "bg-etapa-novo",
+  tarefa_hoje: "bg-info",
   sem_revisao: "bg-linha-forte",
   lead_parado: "bg-linha-forte",
 };

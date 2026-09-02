@@ -96,7 +96,7 @@ export default async function VisitasPage({
                     </p>
                   </div>
                   <div>
-                    <span className="text-fluid-xs rounded-full bg-etapa-azul-lavado px-2.5 py-1 font-medium text-etapa-azul">
+                    <span className="text-fluid-xs rounded-full bg-etapa-visita-lavado px-2.5 py-1 font-medium text-etapa-visita">
                       {hora ? "Agendada" : "Sem horário"}
                     </span>
                   </div>

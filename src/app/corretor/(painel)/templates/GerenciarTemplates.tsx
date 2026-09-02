@@ -81,7 +81,7 @@ export function GerenciarTemplates({ templatesIniciais }: { templatesIniciais: T
           </label>
 
           {erro && (
-            <p role="alert" className="text-fluid-xs text-etapa-areia">
+            <p role="alert" className="text-fluid-xs text-alerta">
               {erro}
             </p>
           )}
@@ -91,7 +91,7 @@ export function GerenciarTemplates({ templatesIniciais }: { templatesIniciais: T
               type="button"
               disabled={salvando || titulo.trim().length < 2 || conteudo.trim().length < 2}
               onClick={salvar}
-              className="text-fluid-sm rounded-lg bg-acento px-4 py-2 font-medium text-white disabled:opacity-50"
+              className="text-fluid-sm rounded-lg bg-acento px-4 py-2 font-medium text-sobre-cor disabled:opacity-50"
             >
               {editando ? "Salvar" : "Criar"}
             </button>
@@ -134,7 +134,7 @@ export function GerenciarTemplates({ templatesIniciais }: { templatesIniciais: T
               <button
                 type="button"
                 onClick={() => apagar(template.id)}
-                className="text-fluid-xs text-etapa-areia underline-offset-4 hover:underline"
+                className="text-fluid-xs text-alerta underline-offset-4 hover:underline"
               >
                 Apagar
               </button>

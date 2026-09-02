@@ -81,7 +81,7 @@ export function FormularioPerfil({ corretor }: { corretor: CorretorPerfil }) {
       <button
         type="submit"
         disabled={pendente}
-        className="rounded-full bg-acento px-7 py-3 text-sm font-medium text-white transition-colors hover:bg-acento-hover disabled:opacity-60"
+        className="rounded-full bg-acento px-7 py-3 text-sm font-medium text-sobre-cor transition-colors hover:bg-acento-hover disabled:opacity-60"
       >
         {pendente ? "Salvando…" : "Salvar alterações"}
       </button>

@@ -62,7 +62,7 @@ export default async function WhatsappPainelPage() {
             [
               ["Conversas", funil.conversas, "border-linha", null],
               ["Com ficha no funil", funil.conversas_com_lead, "border-acento-linha", null],
-              ["Leads quentes", funil.leads_quentes, "border-etapa-ciano-linha", null],
+              ["Leads quentes", funil.leads_quentes, "border-etapa-contato-linha", null],
               /*
                * O degrau que faltava entre conversar e marcar: em quantas
                * conversas a IA chegou a OFERECER a visita. O dado era
@@ -71,11 +71,11 @@ export default async function WhatsappPainelPage() {
               [
                 "Visitas propostas",
                 funil.visitas_propostas,
-                "border-etapa-azul-linha",
+                "border-etapa-visita-linha",
                 "a IA ofereceu",
               ],
-              ["Visitas marcadas", funil.visitas_agendadas, "border-etapa-azul-linha", "o cliente aceitou"],
-              ["Em negociação", funil.em_negociacao, "border-etapa-laranja-linha", null],
+              ["Visitas marcadas", funil.visitas_agendadas, "border-etapa-visita-linha", "o cliente aceitou"],
+              ["Em negociação", funil.em_negociacao, "border-etapa-doc-linha", null],
             ] as const
           ).map(([rotulo, valor, borda, detalhe]) => (
             <div

@@ -44,7 +44,7 @@ export function CampoVisita({ leadId, quando }: { leadId: string; quando: string
         className="text-fluid-xs rounded-lg border border-linha-forte bg-campo px-2 py-1.5 text-corpo disabled:opacity-50"
       />
       {erro && (
-        <span role="alert" className="text-fluid-xs text-etapa-areia">
+        <span role="alert" className="text-fluid-xs text-alerta">
           {erro}
         </span>
       )}

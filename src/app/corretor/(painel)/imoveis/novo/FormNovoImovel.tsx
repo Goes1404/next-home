@@ -55,7 +55,7 @@ export function FormNovoImovel({ inicial }: { inicial: PreenchimentoInicial }) {
     <form onSubmit={enviar} className="space-y-5">
       {erro && (
         <p
-          className="text-fluid-xs rounded-xl border border-red-500/40 bg-red-500/5 px-4 py-3 text-red-400"
+          className="text-fluid-xs rounded-xl border-perigo-linha bg-perigo-lavado text-perigo border px-4 py-3"
           role="status"
         >
           {erro}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { NavPainel } from "./NavPainel";
 import { NavMobileBottom } from "./NavMobileBottom";
+import { CromaDoModulo } from "./CromaDoModulo";
 import { sair } from "@/app/corretor/actions";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorLogado } from "@/lib/corretorSessao";
@@ -28,7 +29,10 @@ export const metadata: Metadata = {
  * em vez de confiar nesta checagem.
  *
  * Toda a cor vem dos tokens de papel (`bg-fundo`, `text-apoio`, …), que
- * trocam com o tema; ver a camada semântica em `globals.css`.
+ * trocam com o tema; ver a camada semântica em `globals.css`. A casca é
+ * envolvida por `CromaDoModulo`, que escreve `data-modulo` e com isso troca a
+ * cor de acento do painel inteiro conforme a seção — ele precisa ser client
+ * justamente porque este layout NÃO re-executa ao navegar entre rotas irmãs.
  */
 export default async function PainelLayout({
   children,
@@ -39,7 +43,7 @@ export default async function PainelLayout({
   const ehGestor = corretor?.papel === "gestor";
 
   return (
-    <main data-rota="painel" className="bg-fundo flex min-h-svh flex-1 flex-col">
+    <CromaDoModulo className="bg-fundo flex min-h-svh flex-1 flex-col">
       <header className="border-linha bg-fundo/85 sticky top-0 z-40 border-b backdrop-blur-lg">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
           <Link href="/" className="font-display text-titulo text-lg">
@@ -98,7 +102,7 @@ export default async function PainelLayout({
           {/*
             A coluna de conteúdo fica em 1fr com a lateral fixa em 15rem, o
             que dá ~64rem de leitura no monitor comum — a mesma largura de
-            antes. É o que o quadro do funil (sete colunas) e a tabela da
+            antes. É o que o quadro do funil (seis colunas desde a 0045) e a tabela da
             equipe (cinco) pedem; formulários se capam por conta própria.
           */}
           <div className="mx-auto grid w-full max-w-[84rem] flex-1 grid-cols-1 gap-8 px-4 pt-6 pb-28 md:grid-cols-[15rem_minmax(0,1fr)] md:px-8 md:pb-16">
@@ -112,7 +116,7 @@ export default async function PainelLayout({
           <ContaSemVinculo />
         </div>
       )}
-    </main>
+    </CromaDoModulo>
   );
 }
 

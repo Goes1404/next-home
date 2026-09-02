@@ -52,7 +52,7 @@ export function AbasSecao({
               aria-current={atual ? "page" : undefined}
               className={cn(
                 "flex min-h-10 items-center gap-1.5 rounded-full px-4 text-sm whitespace-nowrap transition-colors",
-                atual ? "bg-acento font-medium text-white" : "text-apoio hover:text-titulo",
+                atual ? "bg-acento font-medium text-sobre-cor" : "text-apoio hover:text-titulo",
               )}
             >
               {aba.ponto && (
@@ -63,7 +63,7 @@ export function AbasSecao({
                 <span
                   className={cn(
                     "flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums",
-                    atual ? "bg-white/25 text-white" : "bg-acento-lavado text-acento-suave",
+                    atual ? "bg-sobre-cor/25 text-sobre-cor" : "bg-acento-lavado text-acento-suave",
                   )}
                 >
                   {aba.contador}
