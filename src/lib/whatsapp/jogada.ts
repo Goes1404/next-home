@@ -155,7 +155,17 @@ export function estadoDaConversa(params: {
     perguntadosNaUltima,
     perguntadosAlgumaVez,
     convidouVisita,
-    horariosOferecidos: horariosJaOferecidos(historico).frases.length,
+    /*
+     * Conta TURNOS em que a IA ofereceu horário, não frases distintas.
+     * `horariosJaOferecidos` deduplica sentenças iguais (é o certo para o
+     * bloco "não repita ESTES"), mas como porta do planner isso travava:
+     * oferta repetida com o mesmo texto contava uma vez, `< 2` nunca
+     * fechava, e `propor_horario` saía para sempre. Flagrado no trace sem
+     * API: turnos 4 a 8 iguais, com "já ofereceu 1" congelado.
+     */
+    horariosOferecidos: falasBot.filter(
+      (t) => horariosJaOferecidos([{ remetente: "bot", texto: t }]).frases.length > 0,
+    ).length,
     pedidoEmAberto: aindaNaoDado(
       dadoPedido({ mensagem: mensagemAtual, imovel: params.imovelEmFoco, catalogo: params.catalogo }),
       falasBot,

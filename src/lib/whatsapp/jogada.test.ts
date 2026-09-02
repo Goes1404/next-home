@@ -257,3 +257,33 @@ describe("dado já entregue não é pedido em aberto", () => {
     expect(planejarJogada(e).tipo).toBe("responder_dado");
   });
 });
+
+describe("a porta do horário conta TURNOS de oferta, não frases distintas", () => {
+  it("duas ofertas com o mesmo texto contam duas — e a terceira vira devolver_escolha", () => {
+    /*
+     * Trace sem API da v32: turnos 4 a 8 todos `propor_horario` com
+     * "já ofereceu 1" congelado, porque o detector deduplica sentenças
+     * iguais. Confiar na variação de redação do executor para escapar de
+     * um loop é a fragilidade que o planner existe para remover.
+     */
+    const oferta = "Posso te mostrar sábado às 10h ou terça às 15h?";
+    const e = estadoDaConversa({
+      historico: [
+        cliente("qual o valor exato?"),
+        bot("O mais em conta começa em R$ 470.000. Quer conhecer?"),
+        cliente("qual o valor exato?"),
+        bot("O valor exato depende do andar — isso o corretor fecha na visita."),
+        cliente("qual o valor exato?"),
+        bot(oferta),
+        cliente("qual o valor exato?"),
+        bot(oferta),
+      ],
+      mensagemAtual: "qual o valor exato?",
+      imovelEmFoco: null,
+      catalogo: [IMOVEL],
+    });
+
+    expect(e.horariosOferecidos).toBe(2);
+    expect(planejarJogada(e).tipo).toBe("devolver_escolha");
+  });
+});
