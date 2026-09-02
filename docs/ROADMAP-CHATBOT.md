@@ -95,7 +95,7 @@ Ela consertou a régua no caminho: somar ocorrências deixava a cauda
 mandar (50 vs 14 entre duas rodadas do MESMO código); contar conversas
 afetadas dá 10 vs 6. O comparador passou a contar conversas.
 
-### v32 — Planner/Executor: construída, medida, REGREDIU; v33 em medição
+### v32 — Planner/Executor: construída, medida, REGREDIU; v33 espera crédito
 
 A jogada da mensagem (11 tipos: responder dado, resposta honesta,
 perguntar, convidar, propor horário, confirmar visita, tratar objeção,
@@ -119,10 +119,25 @@ lia a resposta do cliente por regex, cliente real responde "pronto",
 "planta", "tanto faz", e a repergunta permitida virava repetição
 garantida. O modelo sozinho lia melhor.
 
-**v33** (em medição): pergunta de funil do turno anterior conta como
-respondida quando a fala do cliente não é uma pergunta — a regra da casa
-"se ele desconversar, siga". Sem a régua, os traces limpos da v32 teriam
-virado deploy.
+**v33**: pergunta de funil do turno anterior conta como respondida quando
+a fala do cliente não é uma pergunta — a regra da casa "se ele
+desconversar, siga". Sem a régua, os traces limpos da v32 teriam virado
+deploy.
+
+**A medição da v33 é INVÁLIDA e precisa ser refeita.** A conta da OpenAI
+ficou sem crédito na 10ª conversa (`insufficient_quota`); 22 das 32
+conversas morreram com zero turnos. O comparador chegou a tirar avanço
+disso e foi corrigido (só compara personas medidas em todas as rodadas dos
+dois arquivos; o runner agora aborta na segunda conversa morta seguida).
+
+O que as 9 conversas vivas mostram, como descrição e não veredito: o
+"pronto ou na planta?" caiu de 29 ocorrências para 4, mas a IA ainda repete
+em 7 das 9 conversas — a mesma fração da v31 nas mesmas personas. A v33
+desfez a regressão da v32; não há evidência de que passou da v31.
+
+**Para destravar: crédito na conta da OpenAI, depois
+`npm run eval:conversa -- --rodadas=2` e `npm run eval:comparar` contra a
+v31.** Produção continua em `82971e7`, sem o planner.
 
 ### Depois da v33, nesta ordem
 

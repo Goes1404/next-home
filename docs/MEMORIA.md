@@ -3190,3 +3190,42 @@ rodadas, v31 → v32.
   respostas que casavam no regex ("pode ser na planta"); as sondas com API
   eram dois personas. Só a distribuição inteira mostrou. **Trace com
   resposta bem-comportada testa o caminho feliz do próprio regex.**
+
+## A medição da v33 morreu por crédito, e o instrumento aprovou o cadáver (02/09/2026)
+
+- **A conta da OpenAI ficou sem crédito na 10ª conversa da rodada 1**
+  (`http_429` · `insufficient_quota` · `credit_balance_exhausted`). O eval
+  seguiu até o fim: 22 conversas de ZERO turnos gravadas como resultado,
+  rodada 2 com 15 de 16 mortas. Custo: as 9 conversas pagas antes ficaram
+  sem par para comparar.
+- **O comparador pintou avanço em cima disso** — "▲ o cliente repetiu
+  8 → 2". Conversa morta tem zero repetição, então quanto mais mortas, melhor
+  o número. A régua da casa já dizia "conversa que morre por falha do EVAL
+  conta como NÃO MEDIDA, nunca como aprovada" (24/08); o código nunca a
+  aplicou. Só era invisível porque nenhuma rodada tinha morrido no meio.
+- **Excluir a conversa morta não basta; o denominador tem de ser o mesmo.**
+  Somar 9 personas contra 16 é comparar réguas diferentes. Hoje entra na
+  conta só a persona medida em TODAS as rodadas dos DOIS arquivos, e o
+  veredito diz sobre quantas ("veredito sobre 15 de 16 personas; fora por
+  falha do eval: muda-a-restricao"). Abaixo da metade não há veredito.
+  Conferido nos dois sentidos: v31→v33 sai NÃO COMPARÁVEL (0 de 16);
+  v31→v32 continua REGRESSÃO em "a IA repetiu" (6 → 13), agora sobre 15.
+- **O runner para na segunda conversa seguida morta antes do primeiro
+  turno**, salva o que há e imprime o motivo tipado. Duas mortas assim nunca
+  são do agente: é chave, crédito ou rede. Antes, a rodada seguia por uma
+  hora produzindo um arquivo que parecia completo.
+- **Sonda antes de acusar o modelo**: `curl api.openai.com` com a chave
+  devolveu o JSON com `credit_balance_exhausted` em um segundo. A Groq deu
+  401 só porque `GROQ_API_KEY` não existe no `.env.local` — o "cliente=groq"
+  do cabeçalho do eval é o padrão impresso; quem conversou foi o
+  `gpt-4o-mini` de reserva, o mesmo da linha de base. Não é defeito.
+- **O que as 9 conversas vivas dizem (n=1, descrição, não veredito):** o
+  "pronto ou na planta?" caiu de 29 ocorrências (v32) para 4; as repetições
+  da IA ficaram em 11 ocorrências em 7 das 9 conversas — mesma fração da
+  v31 nas mesmas 9 personas (7 de 9, 11 ocorrências). O planner deixou de
+  martelar UMA pergunta e passou a repetir região, tipologia e convite uma
+  vez cada. Ou seja: a correção estrutural da v33 desfez a regressão da
+  v32, mas nada indica que passou da v31. Só a rodada inteira responde.
+- **Reservar crédito antes de medir.** Uma rodada 16×2 custa ~640 chamadas
+  de agente mais cliente e juiz; a chave de teste tinha saldo para uma
+  rodada e meia. Conferir o saldo é parte de "a medição está saudável".
