@@ -317,29 +317,29 @@
    */
 
   /* Passo 1 — chegou agora. */
-  --color-etapa-novo: light-dark(oklch(0.54 0.17 268), oklch(0.7 0.15 268));
-  --color-etapa-novo-lavado: light-dark(oklch(0.54 0.17 268 / 0.1), oklch(0.7 0.15 268 / 0.16));
-  --color-etapa-novo-linha: light-dark(oklch(0.54 0.17 268 / 0.28), oklch(0.7 0.15 268 / 0.36));
+  --color-etapa-novo: light-dark(oklch(0.56 0.18 265), oklch(0.64 0.16 265));
+  --color-etapa-novo-lavado: light-dark(oklch(0.56 0.18 265 / 0.1), oklch(0.64 0.16 265 / 0.16));
+  --color-etapa-novo-linha: light-dark(oklch(0.56 0.18 265 / 0.28), oklch(0.64 0.16 265 / 0.36));
 
   /* Passo 2 — a conversa começou. */
-  --color-etapa-contato: light-dark(oklch(0.5 0.16 245), oklch(0.76 0.14 245));
-  --color-etapa-contato-lavado: light-dark(oklch(0.5 0.16 245 / 0.1), oklch(0.76 0.14 245 / 0.16));
-  --color-etapa-contato-linha: light-dark(oklch(0.5 0.16 245 / 0.28), oklch(0.76 0.14 245 / 0.36));
+  --color-etapa-contato: light-dark(oklch(0.48 0.17 240), oklch(0.73 0.15 240));
+  --color-etapa-contato-lavado: light-dark(oklch(0.48 0.17 240 / 0.1), oklch(0.73 0.15 240 / 0.16));
+  --color-etapa-contato-linha: light-dark(oklch(0.48 0.17 240 / 0.28), oklch(0.73 0.15 240 / 0.36));
 
   /* Passo 3 — há compromisso marcado. */
-  --color-etapa-visita: light-dark(oklch(0.46 0.14 220), oklch(0.82 0.13 220));
-  --color-etapa-visita-lavado: light-dark(oklch(0.46 0.14 220 / 0.1), oklch(0.82 0.13 220 / 0.16));
-  --color-etapa-visita-linha: light-dark(oklch(0.46 0.14 220 / 0.28), oklch(0.82 0.13 220 / 0.36));
+  --color-etapa-visita: light-dark(oklch(0.4 0.15 213), oklch(0.82 0.14 213));
+  --color-etapa-visita-lavado: light-dark(oklch(0.4 0.15 213 / 0.1), oklch(0.82 0.14 213 / 0.16));
+  --color-etapa-visita-linha: light-dark(oklch(0.4 0.15 213 / 0.28), oklch(0.82 0.14 213 / 0.36));
 
   /* Passo 4 — o negócio está na mesa. */
-  --color-etapa-doc: light-dark(oklch(0.42 0.12 196), oklch(0.87 0.12 196));
-  --color-etapa-doc-lavado: light-dark(oklch(0.42 0.12 196 / 0.1), oklch(0.87 0.12 196 / 0.16));
-  --color-etapa-doc-linha: light-dark(oklch(0.42 0.12 196 / 0.28), oklch(0.87 0.12 196 / 0.36));
+  --color-etapa-doc: light-dark(oklch(0.32 0.12 188), oklch(0.91 0.13 188));
+  --color-etapa-doc-lavado: light-dark(oklch(0.32 0.12 188 / 0.1), oklch(0.91 0.13 188 / 0.16));
+  --color-etapa-doc-linha: light-dark(oklch(0.32 0.12 188 / 0.28), oklch(0.91 0.13 188 / 0.36));
 
   /* Terminal: deu certo. Sai da rampa porque não é passo, é desfecho. */
-  --color-etapa-fechado: light-dark(oklch(0.46 0.14 158), oklch(0.82 0.15 158));
-  --color-etapa-fechado-lavado: light-dark(oklch(0.46 0.14 158 / 0.1), oklch(0.82 0.15 158 / 0.16));
-  --color-etapa-fechado-linha: light-dark(oklch(0.46 0.14 158 / 0.28), oklch(0.82 0.15 158 / 0.36));
+  --color-etapa-fechado: light-dark(oklch(0.46 0.14 155), oklch(0.82 0.16 155));
+  --color-etapa-fechado-lavado: light-dark(oklch(0.46 0.14 155 / 0.1), oklch(0.82 0.16 155 / 0.16));
+  --color-etapa-fechado-linha: light-dark(oklch(0.46 0.14 155 / 0.28), oklch(0.82 0.16 155 / 0.36));
 
   /* Terminal: saiu do caminho. Sem croma — não compete com quem está vivo. */
   --color-etapa-perdido: light-dark(oklch(0.55 0.01 275), oklch(0.62 0.012 275));

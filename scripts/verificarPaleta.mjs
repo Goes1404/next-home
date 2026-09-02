@@ -30,6 +30,17 @@ const AA_TEXTO = 4.5;
 const AA_GRAFICO = 3;
 /** Abaixo disso, duas matizes de módulo deixam de ser distinguíveis. */
 const SEPARACAO_MINIMA = 40;
+/**
+ * Distância perceptual mínima entre dois passos VIZINHOS da rampa de etapa.
+ *
+ * Rampa troca distinção entre vizinhos por leitura de ordem, e esse é o
+ * negócio que se fez ao substituir seis matizes soltas. Mas a razão de a 0052
+ * ter criado uma cor por etapa continua valendo: "duas etapas com a mesma cor
+ * não são identificáveis de relance". Este piso é onde o negócio para de
+ * valer a pena — abaixo dele a rampa vira degradê e a etapa deixa de se ler
+ * na régua de 4px.
+ */
+const PASSO_MINIMO = 0.075;
 
 const MODULOS = ["inicio", "leads", "whatsapp", "imoveis", "conta", "admin"];
 const ETAPAS = ["novo", "contato", "visita", "doc", "fechado", "perdido"];
@@ -76,7 +87,31 @@ function contraste(frente, fundo) {
   return (a + 0.05) / (b + 0.05);
 }
 
-/** sRGB -> OKLab, só para poder falar de matiz em espaço perceptual. */
+/** sRGB -> OKLab. Espaço perceptual: distância aqui corresponde ao que o olho vê. */
+function oklab({ r, g, b }) {
+  const lin = (v) => {
+    const s = v / 255;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  const [R, G, B] = [lin(r), lin(g), lin(b)];
+  const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B);
+  const m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B);
+  const s2 = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B);
+  return {
+    L: 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s2,
+    a: 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s2,
+    b: 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s2,
+  };
+}
+
+/** Distância perceptual entre duas cores (ΔE OK). */
+function distancia(c1, c2) {
+  const x = oklab(c1);
+  const y = oklab(c2);
+  return Math.hypot(x.L - y.L, x.a - y.a, x.b - y.b);
+}
+
+/** sRGB -> matiz, para falar de identidade de módulo. */
 function matiz({ r, g, b }) {
   const lin = (v) => {
     const s = v / 255;
@@ -306,6 +341,15 @@ async function principal() {
       const texto = checar(`${t.rotulo}/${m} acento-suave como texto`, contraste(suave, superficie), AA_TEXTO);
       const marca = checar(`${t.rotulo}/${m} acento como marca`, contraste(acento, fundo), AA_GRAFICO);
       console.log(`    ${m.padEnd(9)} botão ${botao}  texto ${texto}  marca ${marca}`);
+    }
+
+    console.log("  rampa: distância perceptual entre passos vizinhos (mínimo " + PASSO_MINIMO + ")");
+    const RAMPA = ["novo", "contato", "visita", "doc"];
+    for (let i = 0; i < RAMPA.length - 1; i++) {
+      const d = distancia(cor(`t-etapa-${RAMPA[i]}`), cor(`t-etapa-${RAMPA[i + 1]}`));
+      const passa = d >= PASSO_MINIMO;
+      if (!passa) falhas.push(`${t.rotulo}/rampa ${RAMPA[i]}→${RAMPA[i + 1]}: ${d.toFixed(3)} (mínimo ${PASSO_MINIMO})`);
+      console.log(`    ${(RAMPA[i] + " → " + RAMPA[i + 1]).padEnd(20)} ${passa ? "ok   " : "FALHA"} ${d.toFixed(3)}`);
     }
 
     console.log("  etapa (texto do chip sobre o próprio lavado)");
