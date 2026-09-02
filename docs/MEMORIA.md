@@ -3159,3 +3159,34 @@ uma jogada certa:
   confirmada > pergunta sem dado (1ª vez) > alternativa > objeção (2ª
   seguida vira alternativa) > saída suave > horário pedido > funil (com
   uma repergunta permitida) > convite > horário > devolver a escolha.
+
+## A v32 REGREDIU, e a régua pegou (02/09/2026)
+
+Primeira medição legítima de uma mudança de arquitetura: 16 personas × 2
+rodadas, v31 → v32.
+
+| | v31 | v32 |
+|---|---|---|
+| conversas em que a IA repetiu | 6,5 [4–9] | **14 [13–15]** |
+| assumiria (juiz) | 5 [3–7] | **1 [0–2]** |
+| conversas em que o cliente repetiu | 8 [6–10] | 9 [8–10] |
+
+- **Faixas que não se tocam: regressão demonstrável.** Sem a régua, eu
+  teria lido os traces limpos como sucesso e subido para produção.
+- **A pergunta repetida era UMA: "pronto para morar ou na planta?", ~37
+  vezes em 32 conversas.** O planner reconhecia a resposta por regex —
+  `pronto para morar` / `na planta` — e cliente real responde "pronto",
+  "planta", "tanto faz". Não casava; a repergunta que eu tinha permitido
+  transformava cada falha de leitura em repetição garantida.
+- **O planner era mais burro que o modelo nessa leitura.** A v31, sem
+  planner, entendia "pronto" como resposta. Decidir em código é melhor que
+  no prompt SÓ quando o código lê tão bem quanto o modelo — e ler resposta
+  de cliente por regex não lê.
+- **A correção é estrutural, não mais regex:** pergunta de funil feita no
+  turno anterior conta como respondida quando a fala do cliente não é uma
+  pergunta. A repergunta só cabe quando ele perguntou outra coisa em vez de
+  responder — e aí o planner já responde a dele primeiro.
+- **Nove sondas e três traces não pegaram isto.** Os traces usavam
+  respostas que casavam no regex ("pode ser na planta"); as sondas com API
+  eram dois personas. Só a distribuição inteira mostrou. **Trace com
+  resposta bem-comportada testa o caminho feliz do próprio regex.**

@@ -1,0 +1,68 @@
+familia-tres-dorm · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato!
+Em qual região de Barueri você procura o imóvel?
+
+[2] Cliente: quero 3 dormitórios
+              perto da escola das crianças
+[2] Sofia:   3 dormitórios perto da escola é uma ótima escolha para a família. Em qual região de Barueri você procura exatamente?
+
+[3] Cliente: quero Barueri ou Alphaville
+              qual o valor?
+[3] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Você prefere imóvel pronto para morar ou na planta?
+
+[4] Cliente: pronto pra morar
+              mas e o valor mesmo?
+[4] Sofia:   O Viva RSF Vila do Conde tem 3 dormitórios e está pronto para morar. Quer conhecer o decorado?
+Olha o link com tudo: https://next-home-drab.vercel.app/empreendimentos/viva-rsf-vila-do-conde
+
+[5] Cliente: não é isso que eu perguntei
+              qual é o valor então?
+[5] Sofia:   O Viva RSF Vila do Conde começa em R$ 460.000.
+O valor varia conforme o andar e a forma de pagamento, que fechamos na visita.
+Você prefere pronto para morar ou na planta?
+
+[6] Cliente: mas eu perguntei o valor de novo
+              tem um valor fixo ou não?
+[6] Sofia:   O valor fixo não temos, pois depende do andar e condições de pagamento
+isso fechamos na visita
+prefere agendar para sábado às 10h ou às 11h?
+
+[7] Cliente: mas que valor fixo é esse?
+              não entendi, quero um preço certo
+              não posso decidir sem o valor
+[7] Sofia:   Entendo que o valor fixo é importante para você.
+O que posso garantir é o piso do empreendimento, e o valor exato fechamos na visita,
+com as condições que melhor se encaixam para você.
+Você prefere imóvel pronto para morar ou na planta?
+
+[8] Cliente: mas e o preço certo?
+              não dá pra agendar sem valor
+              quero saber o valor fixo
+[8] Sofia:   O valor exato depende da unidade e condições, que fechamos na visita. Me conta, a compra é só sua ou em conjunto?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[9] Cliente: mas não dá pra saber o valor?
+              quero um preço certo pra decidir
+[9] Sofia:   Entendo sua necessidade de um valor certo para decidir.
+Para isso, o ideal é agendarmos uma visita para eu apresentar as condições específicas para você.
+Mas antes, você prefere imóvel pronto para morar ou na planta?
+
+[10] Cliente: mas que história é essa?
+              não dá pra saber o valor?
+[10] Sofia:   Confirmo com o corretor e te trago o valor exato na visita.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[11] Cliente: não entendo essa história de valor variado
+              quero um preço certo pra decidir logo
+[11] Sofia:   Compreendo que o valor fixo é essencial para sua decisão.
+Posso ajudar melhor se souber se você prefere imóvel pronto para morar ou na planta?
+
+[12] Cliente: mas o que eu perguntei?
+              quero um preço certo agora
+[12] Sofia:   Para te ajudar melhor, qual faixa de valor você tem em mente para o imóvel?

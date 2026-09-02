@@ -1,0 +1,69 @@
+rajada-curta-e-seca · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi
+[1] Sofia:   Olá! Em qual região de Barueri você procura o imóvel?
+
+[2] Cliente: Alphaville
+              quero saber mais
+[2] Sofia:   Alphaville é uma região excelente.
+Temos opções como o On The Park Alphaville e o Eternity Alphaville Tamboré, que oferecem conforto e sofisticação.
+Quer conhecer o decorado?
+Posso te enviar o link com todas as informações para você dar uma olhada.
+
+[3] Cliente: link pra que
+              quero ver os imóveis
+[3] Sofia:   Vou te enviar o link com todas as informações para você dar uma olhada.
+Você prefere imóveis prontos para morar ou na planta?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[4] Cliente: quero ver os imóveis
+              manda foto
+[4] Sofia:   Vou mandar as fotos para você.
+Antes, me diz: prefere imóvel pronto para morar ou na planta?
+
+[5] Cliente: já falei que quero ver os imóveis
+              o que tem pra ver
+[5] Sofia:   Temos imóveis prontos e na planta em Alphaville.
+Para te mostrar o que cabe no seu perfil, quantos dormitórios você precisa?
+
+[6] Cliente: quantos dorms
+              qual valor
+[6] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Em Alphaville, o On The Park Alphaville tem unidades a partir de R$ 800.000, com 2 dormitórios e 2 vagas.
+Quer que eu te envie as fotos do On The Park Alphaville para começar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-3-big-49406f476a83a577b8907baa94fed78f.jpg
+
+[7] Cliente: não quero foto agora
+              quero saber mais sobre os imóveis
+[7] Sofia:   Alphaville tem opções de alto padrão e conforto.
+Você prefere imóveis prontos para morar ou na planta? Isso ajuda a direcionar melhor.
+
+[8] Cliente: quero saber detalhes
+              quais unidades tem
+[8] Sofia:   Alphaville tem imóveis prontos e na planta, com 2 ou 3 dormitórios. Quantos dormitórios você precisa exatamente?
+
+[9] Cliente: quero unidades disponíveis
+              qual valor de cada uma
+[9] Sofia:   Temos unidades disponíveis com 2 ou 3 dormitórios em Alphaville.
+Para te passar os valores corretos, você prefere pronto para morar ou na planta?
+
+[10] Cliente: quais valores
+              quais unidades
+[10] Sofia:   Os valores variam conforme o imóvel e a forma de pagamento.
+Para te passar o valor correto, prefere pronto para morar ou na planta?
+E quantos dormitórios você precisa?
+
+[11] Cliente: quero saber os valores
+              quais unidades que tem
+[11] Sofia:   Em Alphaville temos o On The Park com 2 dormitórios a partir de R$
+800.000 e o Eternity com 2 ou 3 dormitórios a partir de R$ 1.289.900.
+Quer que eu te envie as fotos de algum deles para começar?
+
+[12] Cliente: quero saber detalhes
+              qual valor cada um
+[12] Sofia:   O On The Park Alphaville é pronto para morar, a partir de R$ 800.000,
+e o Eternity Alphaville é na planta, a partir de R$ 1.289.900.
+Você prefere pronto para morar ou na planta?

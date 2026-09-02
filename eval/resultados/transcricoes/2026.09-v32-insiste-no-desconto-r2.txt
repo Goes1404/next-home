@@ -1,0 +1,58 @@
+insiste-no-desconto · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+O valor exato e condições fechamos na visita. Quer conhecer o decorado para entender melhor?
+
+[2] Cliente: mas e o desconto a vista?
+              249 mil tá caro, tem como melhorar?
+[2] Sofia:   Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[3] Cliente: mas quanto então?
+              quero saber o valor real antes da visita
+[3] Sofia:   Entendo sua preocupação com o valor exato. Para te ajudar melhor, em qual região de Barueri você procura o imóvel?
+
+[4] Cliente: não é região, é preço. e o desconto?
+              249 mil continua alto, me dá um valor melhor
+[4] Sofia:   O valor a partir de R$ 249.000 é o piso do Vila Eco Park, em Osasco.
+O desconto e o valor exato dependem da unidade e forma de pagamento — isso fechamos na visita.
+Posso agendar para sábado às 10h ou às 11h para te mostrar tudo?
+
+[5] Cliente: só quero saber o valor real
+              mas e o desconto da unidade?
+[5] Sofia:   O valor real e o desconto da unidade eu confirmo com o corretor e te trago na visita.
+Posso agendar para sábado às 10h ou às 11h para te mostrar tudo?
+
+[6] Cliente: mas não dá pra falar um valor?
+              não vou visitar assim, tá caro.
+[6] Sofia:   Entendo que o preço é um ponto importante para você
+o que você viu por esse valor que te parece caro?
+
+[7] Cliente: 249 tá muito alto, preciso de desconto
+              não vou visitar assim, me dá um valor
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: que desconto você consegue de verdade?
+              249 mil não rola, me fala um valor melhor
+[8] Sofia:   O desconto real depende da unidade e forma de pagamento, e isso fechamos na visita.
+
+[9] Cliente: não dá pra fechar um valor agora?
+              quero saber o desconto real
+[9] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[10] Cliente: não tô perguntando isso, e o desconto?
+              249 mil tá alto, me fala um valor
+[10] Sofia:   O valor a partir de R$ 249.000 é o piso do Vila Eco Park, em Osasco.
+O desconto real e o valor exato dependem da unidade e forma de pagamento — confirmo com o corretor e te trago na visita.
+
+[11] Cliente: mas e o desconto real?
+              não vou visitar assim, quero um preço melhor
+[11] Sofia:   O desconto real e o valor exato dependem da unidade e da forma de pagamento —
+confirmo com o corretor e te trago na visita.
+Posso agendar para sábado às 10h ou às 11h para te mostrar tudo?
+
+[12] Cliente: mas e o desconto, me fala um valor
+              não quero visitar assim, tá caro
+[12] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.

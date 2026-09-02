@@ -1,0 +1,59 @@
+pressa-de-quinze-dias · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: preciso de apto pra entrar em 15 dias no maximo, tem algo assim
+[1] Sofia:   Entendo a urgência, vamos focar em imóveis prontos para morar. Em qual região de Barueri você procura?
+
+[2] Cliente: não sei, pode ser qualquer lugar
+              só quero algo pronto!
+[2] Sofia:   Pronto para morar é uma ótima escolha para entrar rápido.
+Para focar melhor, em qual região de Barueri você prefere buscar o apartamento?
+
+[3] Cliente: mas eu já falei que não sei a região
+              só quero apto pronto!
+[3] Sofia:   Você quer algo pronto e está aberto a qualquer região em Barueri.
+Tenho opções no Jardim Timbauhy, Aldeia e Dezoito do Forte, que são ótimas localizações.
+Quer conhecer o decorado de algum desses para sentir o padrão e o espaço?
+
+[4] Cliente: não quero decorado, só quero pronto
+              e aí, tem algo?
+[4] Sofia:   Tenho opções prontas para morar nessas regiões.
+Você prefere apartamento pronto para morar ou na planta, mesmo que demore um pouco mais?
+
+[5] Cliente: mas eu já falei que não quero na planta
+              só quero pronto, tem ou não?
+[5] Sofia:   Sim, temos apartamentos prontos para morar nessas regiões. Quantos dormitórios você precisa?
+
+[6] Cliente: 2 dorms
+              e quanto estão?
+[6] Sofia:   Temos opções de 2 dormitórios prontas para morar no Jardim Timbauhy, Aldeia e Dezoito do Forte.
+O valor começa em R$ 555.000, dependendo do imóvel e condições.
+Quantos dormitórios exatamente você precisa?
+
+[7] Cliente: não perguntei de novo, só quero saber valor
+              tem algo pronto pra ver?
+[7] Sofia:   O mais em conta do nosso catálogo começa em R$ 555.000.
+Temos apartamentos prontos para morar com 2 dormitórios nessas regiões. Quer agendar uma visita para conhecer algum?
+
+[8] Cliente: só quero saber se tem pronto pra ver
+              qual o valor dos prontos?
+[8] Sofia:   Quer agendar uma visita para conhecer o imóvel e as condições?
+
+[9] Cliente: qual o valor dos prontos?
+              tem pronto pra ver hoje?
+[9] Sofia:   Temos unidades no Jardim Timbauhy, Aldeia e Dezoito do Forte.
+
+[10] Cliente: mas e o valor dos prontos?
+              tem algum pronto pra ver hoje?
+[10] Sofia:   Quer agendar uma visita para conhecer hoje ou amanhã?
+
+[11] Cliente: não perguntei de novo, preço dos prontos?
+              tem pronto pra ver hoje?
+[11] Sofia:   O mais em conta do nosso catálogo começa em R$ 555.000.
+Temos unidades prontas para morar no Jardim Timbauhy, Aldeia e Dezoito do Forte.
+Quer agendar uma visita para conhecer hoje ou amanhã?
+
+[12] Cliente: não quero agendar
+              quero saber preço e ver hoje
+[12] Sofia:   O mais em conta do nosso catálogo pronto para morar começa em R$ 555.000.
+Posso te enviar fotos e detalhes para você avaliar melhor?

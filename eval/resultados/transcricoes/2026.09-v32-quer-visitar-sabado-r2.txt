@@ -1,0 +1,24 @@
+quer-visitar-sabado · rodada 2 · cliente_encerrou · 5 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria visitar um apartamento sábado, dá?
+[1] Sofia:   Sábado pode sim. Em qual região de Barueri você procura?
+
+[2] Cliente: Barueri mesmo
+              e o horário?
+[2] Sofia:   Quer conhecer o decorado em Barueri?
+Posso te mostrar opções que temos por lá, como o More Aldeia de Barueri e o Elos Barueri.
+O sábado é ótimo para visita, depois combinamos o horário.
+
+[3] Cliente: mas e o horário?
+              não entendi sua resposta
+[3] Sofia:   O sábado está disponível para visitas o dia todo. Posso te mostrar o decorado pela manhã ou à tarde, qual prefere?
+Assim já garantimos seu horário e te mostro tudo com calma.
+
+[4] Cliente: mas que horas?
+              não quero ficar sem hora
+[4] Sofia:   Entendo a importância do horário exato para você. Prefere sábado às 9h ou às 11h para a visita?
+Assim garantimos seu horário e você aproveita tranquilo.
+
+[5] Cliente: 9h então
+[5] Sofia:   Confirmado para sábado, 05/09, às 9h. Vou confirmar o endereço certinho e te chamo na véspera para combinar os detalhes.

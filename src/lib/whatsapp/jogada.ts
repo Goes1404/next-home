@@ -213,6 +213,12 @@ const TIPOLOGIA_DE_VERDADE = /\b(dormitorio|dormitorios|quarto|quartos|suite|sui
 const PERGUNTA_DE_CAPACIDADE =
   /\b(faixa|valor em mente|orcamento|pretende investir|quanto (voce )?pretende|sozinho|em conjunto|profissao|trabalha com|renda)\b/;
 
+/**
+ * Como o cliente responde "pronto ou na planta?" de verdade: uma palavra.
+ * O regex de métricas exige a locução inteira; aqui vale a palavra.
+ */
+const RESPOSTA_DE_ESTAGIO = /\b(pronto|prontos|planta|lancamento|obra|construcao|tanto faz|qualquer um|indiferente|os dois|ambos)\b/;
+
 function assuntosDoFunil(texto: string): AssuntoDoFunil[] {
   const n = normalizar(texto);
   const achados = new Set<AssuntoDoFunil>(
@@ -223,6 +229,7 @@ function assuntosDoFunil(texto: string): AssuntoDoFunil[] {
   // Tipologia só com palavra de tipologia de verdade — "planta" não conta.
   if (achados.has("tipologia") && !TIPOLOGIA_DE_VERDADE.test(n)) achados.delete("tipologia");
   if (PERGUNTA_DE_CAPACIDADE.test(n)) achados.add("capacidade");
+  if (RESPOSTA_DE_ESTAGIO.test(n)) achados.add("estagio");
   return [...achados];
 }
 
@@ -273,6 +280,32 @@ export function estadoDaConversa(params: {
   for (const texto of [...falasCliente, mensagemAtual]) {
     for (const a of assuntosDoFunil(texto)) respondidos.add(a);
   }
+  /*
+   * A resposta à pergunta do turno anterior CONTA, mesmo quando o regex não
+   * a reconhece.
+   *
+   * A medição da v32 (16 personas × 2 rodadas) deu REGRESSÃO: "conversas em
+   * que a IA repetiu" dobrou, 6,5 → 14, e a pergunta repetida era uma só —
+   * "pronto para morar ou na planta?", ~37 vezes. O regex de estágio exige
+   * "pronto para morar" / "na planta"; cliente real responde "pronto",
+   * "planta", "tanto faz". O planner não reconhecia, achava a pergunta em
+   * aberto, e a repergunta permitida transformava cada falha de leitura em
+   * repetição garantida. O modelo sozinho (v31) entendia "pronto" como
+   * resposta — o planner era mais burro que ele nessa leitura.
+   *
+   * A regra estrutural: se a IA perguntou X no turno anterior e o cliente
+   * respondeu QUALQUER COISA que não seja uma pergunta, X foi respondido.
+   * A repergunta só cabe quando ele perguntou outra coisa em vez de
+   * responder — e nesse caso o planner já prioriza responder a dele.
+   */
+  const ultimaDoBotAntes = falasBot[falasBot.length - 1] ?? "";
+  const clienteNaoPerguntou = !mensagemAtual.includes("?");
+  if (clienteNaoPerguntou) {
+    for (const pergunta of perguntasDe(ultimaDoBotAntes)) {
+      for (const a of assuntosDoFunil(pergunta)) respondidos.add(a);
+    }
+  }
+
   // O dossiê é o que a extração já consolidou — vale mais que o regex.
   if (dossie?.regiaoInteresse) respondidos.add("regiao");
   if (dossie?.dormitoriosMin != null) respondidos.add("tipologia");

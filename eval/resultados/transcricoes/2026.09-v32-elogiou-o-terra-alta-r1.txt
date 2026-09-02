@@ -1,0 +1,59 @@
+elogiou-o-terra-alta · rodada 1 · cliente_encerrou · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: gostei do Terra Alta, me fala mais dele
+[1] Sofia:   O Terra Alta é uma ótima escolha para quem busca conforto no Jardim Tupanci.
+Em qual região de Barueri você procura exatamente?
+
+[2] Cliente: quero saber sobre o imóvel
+              tem foto?
+[2] Sofia:   O Terra Alta tem 52m², 1 dormitório com suíte e 2 vagas.
+Te mandei as fotos aqui embaixo para você conhecer melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-3-big-75c8b2df2fb9cedf8deb0b5002c9a935.jpeg
+
+[3] Cliente: manda mais foto
+              só do imóvel
+[3] Sofia:   Já te enviei as fotos externas e da área comum do Terra Alta.
+Infelizmente, não temos fotos internas do apartamento,
+mas posso te enviar o link da página com todas as informações detalhadas.
+Quer que eu mande?
+
+[4] Cliente: só quero foto do imóvel
+              não quero link
+[4] Sofia:   Entendo seu interesse nas fotos internas, mas infelizmente não temos disponíveis.
+Posso te explicar detalhes da planta e acabamento para você ter uma boa ideia.
+
+[5] Cliente: não quero saber de planta
+              manda foto do imóvel
+[5] Sofia:   O Terra Alta oferece apartamento com um dormitório, uma suíte e duas vagas.
+Não temos fotos internas, mas posso te mostrar o decorado pessoalmente. Quer agendar uma visita?
+
+[6] Cliente: manda foto do imóvel
+              não quero visita
+[6] Sofia:   Entendo que prefira fotos internas, mas não temos disponíveis.
+Posso ajudar com outras informações do Terra Alta. Em qual região de Barueri você procura?
+
+[7] Cliente: só foto do imóvel
+              porque não tem?
+              não quero outras infos
+[7] Sofia:   As fotos internas do Terra Alta não estão disponíveis porque o imóvel ainda está em construção
+Posso te ajudar com mais alguma informação?
+Você prefere imóvel pronto para morar ou na planta?
+
+[8] Cliente: não quero saber disso
+              só foto do imóvel
+[8] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[9] Cliente: só foto do imóvel
+              não quero mais info
+[9] Sofia:   Entendo sua preferência por fotos internas, mas não temos disponíveis no momento.
+Posso ajudar com outra coisa?
+Em qual região de Barueri você procura o imóvel?
+
+[10] Cliente: só foto do imóvel
+              por que não tem?
+              não quero mais nada
+[10] Sofia:   As fotos internas não existem porque o Terra Alta está em construção.
+Você prefere imóvel pronto para morar ou na planta?

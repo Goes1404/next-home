@@ -1,0 +1,58 @@
+escreve-errado · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vcs tem o vrita alphagran ainda?
+[1] Sofia:   O Vitra Alphaville é um dos nossos imóveis em Barueri. Em qual região de Barueri você procura exatamente?
+
+[2] Cliente: mas eu perguntei do vrita alphagran
+              manda a planta dele
+[2] Sofia:   Você procura nessa região ou em outra de Barueri?
+
+[3] Cliente: mas eu pedi a planta do vrita alphagran
+              pq vc não respondeu?
+[3] Sofia:   O Vitra Alphaville é um pronto para morar, não temos o Vrita Alphagran no catálogo.
+Você prefere imóvel pronto para morar ou na planta?
+
+[4] Cliente: mas eu quero a planta do vrita alphagran
+              pq não tem?
+[4] Sofia:   O Vitra Alphaville é o que temos disponível, pronto para morar.
+Posso te mostrar a planta dele, fica em Alphaville, Barueri. Em qual região de Barueri você procura?
+
+[5] Cliente: mas eu quero a planta do vrita alphagran
+              pq vc não responde?
+[5] Sofia:   Entendo sua insistência, mas o Vrita Alphagran não está no nosso catálogo.
+Posso te mostrar a planta do Vitra Alphaville, que é pronto para morar.
+
+[6] Cliente: mas eu quero a planta do vrita alphagran
+              por que não tem?
+              não tô pedindo do outro
+[6] Sofia:   O Vrita Alphagran não faz parte do nosso portfólio, por isso não tenho a planta dele.
+Me conta, em qual região de Barueri você está procurando o imóvel?
+
+[7] Cliente: mas eu só quero a planta do vrita alphagran
+              pq vc não tem?
+[7] Sofia:   Entendo que você quer a planta do Vrita Alphagran, mas não temos esse imóvel no catálogo.
+Me conta, você prefere imóvel pronto para morar ou na planta?
+
+[8] Cliente: mas eu quero a planta do vrita alphagran
+              não tô pedindo do outro
+[8] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[9] Cliente: mas eu quero a planta do vrita alphagran
+              pq vc não me manda?
+[9] Sofia:   Entendo a insistência, mas não temos essa planta. Me conta, em qual região de Barueri você procura?
+
+[10] Cliente: mas eu quero a planta do vrita alphagran
+              pq vc não manda?
+[10] Sofia:   O Vrita Alphagran não está no nosso catálogo, por isso não tenho a planta dele.
+Me conta, você prefere imóvel pronto para morar ou na planta?
+
+[11] Cliente: mas eu quero a planta do vrita alphagran
+              pq vc não manda?
+[11] Sofia:   Entendo sua insistência, mas não temos a planta do Vrita Alphagran.
+Me conta, em qual região de Barueri você procura o imóvel?
+
+[12] Cliente: mas eu quero a planta do vrita alphagran
+              pq vc não manda?
+[12] Sofia:   O Vrita Alphagran não faz parte do nosso catálogo, por isso não tenho a planta dele.
+Você prefere imóvel pronto para morar ou na planta?

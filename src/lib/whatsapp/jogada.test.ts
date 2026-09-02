@@ -34,6 +34,14 @@ function estado(over: Partial<EstadoDaConversa> = {}): EstadoDaConversa {
     oQueEleDisse: "",
     vezesPerguntado: new Map(),
     pediuHorario: false,
+    objetouPreco: false,
+    pediuAlternativa: false,
+    saidaSuave: false,
+    objecoesSeguidas: 0,
+    alternativa: null,
+    nomeDoFoco: null,
+    visitaConfirmada: false,
+    perguntaSemDado: null,
     ...over,
   };
 }
@@ -367,32 +375,29 @@ describe("os três achados do trace cooperativo", () => {
 });
 
 describe("repergunta e pedido de horário", () => {
-  it("respondeu OUTRA coisa → repergunta uma vez; ignorou duas → segue em frente", () => {
-    const base = {
-      historico: [
-        cliente("Alphaville, 2 dormitórios, na planta"),
-        // O convite já foi feito: sem ele, `convidar_visita` vence antes da
-        // repergunta — e vence CERTO, é a ordem do planner.
-        bot("Quer conhecer o decorado? Qual faixa de valor você tem em mente?"),
-      ],
-      imovelEmFoco: null, catalogo: [IMOVEL],
-    };
-    // Respondeu ao convite, não à faixa: capacidade continua devida, e pode ser reperguntada.
-    const umaVez = estadoDaConversa({ ...base, mensagemAtual: "sim, quero conhecer!" });
-    expect(umaVez.vezesPerguntado.get("capacidade")).toBe(1);
-    expect(planejarJogada({ ...umaVez, capacidadePendente: true })).toEqual({
-      tipo: "perguntar",
-      assunto: "capacidade",
-    });
+  it("desconversou sem perguntar → o assunto FECHA; só uma pergunta dele o mantém aberto", () => {
+    /*
+     * Regra da casa: "se ele desconversar em qualquer uma, siga a conversa —
+     * perder o lead por insistência é pior que ficar sem o dado". A v32
+     * reperguntava e regrediu (IA repetiu 6,5 → 14). Agora qualquer resposta
+     * sem "?" fecha a pergunta do turno anterior; a repergunta só cabe
+     * quando ele perguntou outra coisa em vez de responder.
+     */
+    const historico = [
+      cliente("Alphaville, 2 dormitórios, na planta"),
+      bot("Quer conhecer o decorado? Qual faixa de valor você tem em mente?"),
+    ];
 
-    // Já perguntou duas vezes e ele desconversou de novo: não insiste.
-    const duasVezes = estadoDaConversa({
-      ...base,
-      historico: [...base.historico, cliente("sim, quero conhecer!"), bot("Para eu te mostrar o que cabe: qual faixa de valor?")],
-      mensagemAtual: "quero só conhecer mesmo",
+    const desconversou = estadoDaConversa({
+      historico, mensagemAtual: "sim, quero conhecer!", imovelEmFoco: null, catalogo: [IMOVEL],
     });
-    expect(duasVezes.vezesPerguntado.get("capacidade")).toBe(2);
-    expect(planejarJogada({ ...duasVezes, capacidadePendente: true }).tipo).not.toBe("perguntar");
+    expect(desconversou.respondidos.has("capacidade")).toBe(true);
+    expect(planejarJogada(desconversou)).not.toEqual({ tipo: "perguntar", assunto: "capacidade" });
+
+    const perguntouOutraCoisa = estadoDaConversa({
+      historico, mensagemAtual: "tem vaga de garagem?", imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(perguntouOutraCoisa.respondidos.has("capacidade")).toBe(false);
   });
 
   it("'que horas?' é pedido de horário → propor, não convidar", () => {
@@ -578,5 +583,45 @@ describe("pergunta sem dado recebe honestidade na PRIMEIRA vez", () => {
       imovelEmFoco: IMOVEL, catalogo: [IMOVEL],
     });
     expect(planejarJogada(e).tipo).toBe("responder_dado");
+  });
+});
+
+describe("a regressão da v32: a resposta do cliente conta mesmo sem casar no regex", () => {
+  /*
+   * Medição 16 × 2: "conversas em que a IA repetiu" dobrou (6,5 → 14), e a
+   * pergunta era uma só — "pronto para morar ou na planta?", ~37 vezes.
+   * Cliente real responde "pronto", "planta", "tanto faz".
+   */
+  it.each(["pronto", "planta", "tanto faz", "prefiro pronto", "os dois servem"])(
+    "'%s' depois de 'pronto ou na planta?' encerra o assunto",
+    (resposta) => {
+      const e = estadoDaConversa({
+        historico: [cliente("Alphaville"), bot("Você prefere imóvel pronto para morar ou na planta?")],
+        mensagemAtual: resposta,
+        imovelEmFoco: null, catalogo: [IMOVEL],
+      });
+      expect(e.respondidos.has("estagio")).toBe(true);
+      expect(planejarJogada(e)).not.toEqual({ tipo: "perguntar", assunto: "estagio" });
+    },
+  );
+
+  it("qualquer resposta sem '?' fecha a pergunta do turno anterior — o regex é só reforço", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("oi"), bot("Em qual região de Barueri você procura?")],
+      mensagemAtual: "perto do parque, do lado da escola das crianças",
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(e.respondidos.has("regiao")).toBe(true);
+  });
+
+  it("mas uma PERGUNTA no lugar da resposta deixa o assunto em aberto", () => {
+    // Ele perguntou outra coisa em vez de responder: o planner responde a
+    // dele primeiro e pode reperguntar depois — a única repergunta legítima.
+    const e = estadoDaConversa({
+      historico: [cliente("oi"), bot("Em qual região de Barueri você procura?")],
+      mensagemAtual: "vocês têm em Osasco?",
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(e.respondidos.has("regiao")).toBe(false);
   });
 });
