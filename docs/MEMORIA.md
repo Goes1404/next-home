@@ -3073,3 +3073,35 @@ matar. Nenhum apareceu em teste unitário, tipo ou build.
   tem semelhança 0,50 com a pergunta anterior, abaixo do limiar de 0,6 —
   que existe de propósito. O persona real repete a MESMA frase; o fixture
   também precisa.
+
+## O trace cooperativo achou o que o adversarial não podia (01/09/2026)
+
+O persona que só repete "qual o valor exato?" exercita a troca de jogada,
+e nada mais. Um cliente que RESPONDE ao funil exercita o resto — e foi
+onde apareceram os defeitos mais caros do planner:
+
+- **Não existia `confirmar_visita`.** O cliente aceitou "sábado de manhã
+  pode ser" e o planner devolveu `propor_horario`: o bloco mandaria propor
+  OUTRO horário no exato instante em que a pessoa aceitou o primeiro. É o
+  momento da conversão. A detecção é determinística e exige as DUAS
+  metades — oferta na última fala do bot E marcador de aceite na fala do
+  cliente, com a negação vencendo ("não pode" contém "pode"). Ganha de
+  tudo, inclusive de dado pedido: confirmar não espera.
+- **"na planta" marcava tipologia como respondida.** O regex de métricas
+  inclui "planta" (a planta baixa); "pode ser na planta" é ESTÁGIO. O
+  planner pulava dormitórios e caía em `devolver_escolha` no terceiro turno
+  de uma conversa que ia bem. Tipologia agora exige palavra de tipologia de
+  verdade.
+- **"Qual faixa de valor você tem em mente?" não contava como pergunta de
+  capacidade** — o regex só conhecia renda/financiamento, e a escada da
+  casa começa pela faixa. A IA repetia a pergunta que acabara de fazer.
+- **"Ignorou a pergunta" ≠ "respondeu outra coisa".** "sim, quero conhecer"
+  respondia ao convite, não à faixa — e "nunca repita a pergunta anterior"
+  derrubava a conversa. A repergunta é permitida UMA vez (contador por
+  assunto); na segunda, o assunto sai do caminho.
+- **"Que horas?" é pedido de horário.** No caminho feliz com API foi
+  ignorado no turno 2 (o planner escolheu o convite) e o cliente repetiu.
+  Quem pergunta a hora já aceitou visitar: `propor_horario` na hora.
+- **Lição de método:** um trace por PERFIL de cliente, não só pelo pior
+  caso. O adversarial mostra se a jogada muda; o cooperativo mostra se o
+  funil anda e fecha. Os dois custam zero e rodam em um segundo.
