@@ -3478,3 +3478,83 @@ modelo mental novo — empresta o que já está no bolso de quem vai usar.**
   alcançava, e o comentário do arquivo já dizia que o gesto principal era
   outro.
 
+## O painel não estava no fluxo de trabalho (02/09/2026)
+
+Pedido: "como podemos melhorar o UX/UI". A resposta honesta veio de medir uso,
+não de olhar telas.
+
+- **Ela trabalha muito; só não trabalha no painel.** Em sete dias: 649
+  mensagens de cliente, **544 respostas dela** (~78/dia) e 27 respostas da IA.
+  A última ESCRITA no painel era de três dias antes. O trabalho acontece no
+  WhatsApp, que já está aberto na mão dela; o painel espera ser aberto e perde
+  essa disputa todo dia. **Enquanto o painel esperar, nenhuma melhoria de tela
+  é vista por ninguém** — foi isso que ordenou a lista de prioridades.
+- **Ressalva do método:** `lead_interacoes` só registra ESCRITA. Ler o painel
+  não deixa rastro, então "última ação em 30/08" não prova que ela não abriu.
+  O que prova outra coisa é o item abaixo.
+- **Três recursos com ZERO linhas na vida inteira do banco:** notas (0),
+  tarefas (0), orçamento e renda preenchidos (0 de 116). Não é leitura contra
+  escrita — são funcionalidades que nunca funcionaram para ela uma vez. A
+  ficha do lead empilhava 11 faixas, três delas formulários nunca usados.
+- **O único uso intenso do painel foi limpeza:** 46 leads marcados como
+  "Perdido" de uma vez, em 27/08. Operação, não rotina.
+- **Ao propor melhoria de UX, medir USO antes de olhar tela.** A lista que
+  sai de auditar interface e a que sai de medir comportamento não são a mesma,
+  e a segunda manda.
+
+### Construído e nunca ligado — o padrão que se repete
+
+O relatório semanal (0076) estava pronto desde 01/09 e **nunca tinha sido
+agendado**: `cron.job` tinha só `disparo-campanhas` e `followups-whatsapp`. Um
+recurso inteiro, com testes e e-mail montado, sem uma execução. Só apareceu
+porque alguém foi olhar a tabela de jobs.
+
+Corolário para qualquer coisa nova com cron: **aplicar a migration não liga
+nada** — a função `configurar_*` precisa ser CHAMADA. E o `CRON_SECRET` já
+está no Vault como `disparo_campanhas_token`, então dá para agendar sem
+ninguém digitar segredo:
+
+```sql
+select public.configurar_relatorio_semanal(
+  'https://next-home-drab.vercel.app/api/cron/relatorio-semanal',
+  (select decrypted_secret from vault.decrypted_secrets where name = 'disparo_campanhas_token')
+);
+```
+
+**Antes de agendar, conferir se a rota EXISTE em produção.** `curl` no
+endpoint: 401 é rota viva recusando sem segredo; 404 é rota que só existe na
+branch. Agendar contra 404 cria um cron que falha duas vezes por dia sem
+ninguém perceber.
+
+### Onde a notícia mora importa tanto quanto ela existir
+
+A migração para `Avisos`/`BotaoAcao` (2 → 21 componentes) achou o mesmo
+defeito em seis formas diferentes:
+
+- `SeletorEtapa` **descartava** o retorno de `moverEtapa`: com RLS negando, o
+  `useOptimistic` devolvia o valor antigo e nada explicava. A etapa "voltava
+  sozinha", e quando a única pista é a ausência de mudança, "não funcionou" e
+  "funcionou" são a mesma tela.
+- Em `ConversasClient` o erro era um parágrafo ACIMA de uma caixa de 72dvh —
+  fora do campo de visão exatamente quando disparava, porque quem tocou
+  "enviar" está olhando para o rodapé.
+- Na `FolhaAcoesLead` o erro sumia junto com a folha; em `ArquivarLead` a
+  confirmação de exclusão desaparecia com a página que a mostrava.
+- Em `BotaoResponderComIA` o motivo da falha vivia só no `title`, que **não
+  existe no celular**.
+- `ListaLeads` tinha caixa flutuante própria em `acima-da-nav` — a mesma faixa
+  da região de avisos: duas caixas disputando o lugar acima do polegar.
+- `StatusFila` e `CampanhasManager` apagavam a confirmação com `setTimeout`,
+  contra a regra do próprio `Avisos`: sucesso some sozinho, erro fica.
+
+**Todo caller migrado ganhou `catch` de rede.** Erro de conexão não devolve
+`{erro}`, devolve exceção — e sem esse ramo a tela destrava e segue muda, que
+é o pior desfecho: parece que deu certo.
+
+### Rótulo chumbado mente quando o dado é configurável
+
+"Sofia responde" estava escrito no botão da fila, e `nomeAssistente` é editável
+na tela de ajustes. Quem renomeasse a assistente veria a fila chamá-la pelo
+nome antigo. Virou "Responder com IA". Corolário: antes de escrever um nome
+próprio na interface, conferir se ele vem de configuração.
+
