@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { AlertTriangle, Send } from "lucide-react";
 import {
   enviarAgoraParaTodosOsLeads,
@@ -54,8 +55,8 @@ export function EnvioImediato({
   const [mensagem, setMensagem] = useState("");
   const [quantos, setQuantos] = useState<number | null>(null);
   const [confirmando, setConfirmando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
   const [enviando, iniciarEnvio] = useTransition();
+  const { falhar } = useAvisos();
   /* A hora só existe no cliente: calculada no servidor daria um valor no
      HTML e outro depois da hidratação. `useSyncExternalStore` é o mesmo
      mecanismo que `FundoVideoIntro` usa para isso — devolve null no
@@ -71,15 +72,14 @@ export function EnvioImediato({
     horaAgora !== null && (horaAgora < HORA_CIVIL_INICIO || horaAgora >= HORA_CIVIL_FIM);
 
   function pedirConfirmacao() {
-    setErro(null);
     if (mensagem.trim().length < 10) {
-      setErro("Escreva a mensagem que vai para os leads.");
+      falhar("Escreva a mensagem que vai para os leads.");
       return;
     }
     iniciarEnvio(async () => {
       const leads = await listarLeadsElegiveis("todos");
       if (leads.length === 0) {
-        setErro("Nenhum lead com telefone na sua carteira.");
+        falhar("Nenhum lead com telefone na sua carteira.");
         return;
       }
       setQuantos(leads.length);
@@ -88,11 +88,10 @@ export function EnvioImediato({
   }
 
   function enviar() {
-    setErro(null);
     iniciarEnvio(async () => {
       const resultado = await enviarAgoraParaTodosOsLeads({ mensagemBase: mensagem });
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       setConfirmando(false);
@@ -187,12 +186,6 @@ export function EnvioImediato({
           <Send className="h-4 w-4" />
           {enviando ? "Conferindo…" : "Enviar para todos, a qualquer hora"}
         </button>
-      )}
-
-      {erro && (
-        <p role="alert" className="text-fluid-xs text-alerta mt-3">
-          {erro}
-        </p>
       )}
     </section>
   );

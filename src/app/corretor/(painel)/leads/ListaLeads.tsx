@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TabelaLeads } from "./TabelaLeads";
@@ -104,9 +105,9 @@ export function ListaLeads({
   const [modalAberto, setModalAberto] = useState(false);
   // Segundo andar da barra de seleção: a lista de etapas para mover o lote.
   const [escolhendoEtapa, setEscolhendoEtapa] = useState(false);
-  const [avisoLote, setAvisoLote] = useState<string | null>(null);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [movendoLote, iniciarLote] = useTransition();
+  const { avisar, falhar } = useAvisos();
 
   // Páginas além da primeira, acumuladas pelo botão "carregar mais". O
   // contador é estado próprio (e não `leads.length / 30`) porque o dedup
@@ -186,33 +187,31 @@ export function ListaLeads({
     verbo: (n: number) => string,
   ) {
     const ids = [...selecionados];
-    setAvisoLote(null);
     iniciarLote(async () => {
       const resultado = await acao(ids);
       if ("erro" in resultado) {
-        setAvisoLote(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       setSelecionados(new Set());
       setConfirmandoExclusao(false);
-      setAvisoLote(verbo(resultado.afetados));
+      avisar(verbo(resultado.afetados));
       router.refresh();
     });
   }
 
   function moverLote(etapa: EtapaFunil) {
     const ids = [...selecionados];
-    setAvisoLote(null);
     iniciarLote(async () => {
       const res = await moverEtapaEmMassa(ids, etapa);
       if (res.erro) {
-        setAvisoLote(res.erro);
+        falhar(res.erro);
         return;
       }
       // O aviso diz o número que o SERVIDOR confirmou, não o da seleção:
       // um lead que trocou de dono no meio simplesmente não é movido, e a
       // tela não pode anunciar 15 quando foram 12.
-      setAvisoLote(
+      avisar(
         res.movidos === ids.length
           ? `${res.movidos} lead${res.movidos === 1 ? "" : "s"} para “${ETAPA_LABEL[etapa]}”.`
           : `${res.movidos} de ${ids.length} movidos — os demais mudaram de dono. Recarregue a lista.`,
@@ -220,7 +219,6 @@ export function ListaLeads({
       setSelecionados(new Set());
       setEscolhendoEtapa(false);
       // Some sozinho: confirmação não é alerta, não precisa de clique.
-      setTimeout(() => setAvisoLote(null), 5000);
       router.refresh();
     });
   }
@@ -565,15 +563,13 @@ export function ListaLeads({
         </div>
       )}
 
-      {/* Confirmação do lote — fora da barra, porque a barra some junto com a
-          seleção e a notícia precisa sobreviver a ela. */}
-      {avisoLote && (
-        <div className="acima-da-nav fixed inset-x-0 z-45 p-3 sm:p-4" role="status">
-          <p className="text-fluid-sm border-ok-linha bg-ok-lavado text-ok mx-auto w-fit rounded-full border px-4 py-2 font-medium backdrop-blur-md">
-            {avisoLote}
-          </p>
-        </div>
-      )}
+      {/*
+        A confirmação do lote saiu daqui para a região de avisos do shell.
+        Ela já vivia em `acima-da-nav`, exatamente a mesma faixa que a região
+        usa — eram duas caixas flutuantes disputando o mesmo lugar acima do
+        polegar, com a barra de seleção como terceira. A notícia continua
+        sobrevivendo ao sumiço da barra, que era o motivo de ela existir.
+      */}
 
       {modalAberto && (
         <EnviarEmMassa

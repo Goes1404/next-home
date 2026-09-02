@@ -2,6 +2,7 @@
 
 import type { FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { ArrowLeft, ArrowRight, Rocket, Shield, Sparkles } from "lucide-react";
 import type { Empreendimento } from "@/lib/types";
 import {
@@ -83,8 +84,8 @@ export function NovaCampanha({
   const [titulo, setTitulo] = useState("");
   const [exemplos, setExemplos] = useState<string[]>([]);
   const [gerando, setGerando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
   const [criando, iniciarCriacao] = useTransition();
+  const { falhar } = useAvisos();
 
   // ---- Seleção manual ("Escolher um por um") -------------------------
   // A carteira elegível chega UMA vez, quando a opção é escolhida (~100
@@ -132,7 +133,6 @@ export function NovaCampanha({
     : publicoEscolhido.titulo;
 
   function verExemplos() {
-    setErro(null);
     setGerando(true);
     iniciarCriacao(async () => {
       const resultado = await gerarPreviewCampanha({
@@ -144,7 +144,7 @@ export function NovaCampanha({
       setGerando(false);
 
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         setExemplos([]);
         return;
       }
@@ -158,8 +158,6 @@ export function NovaCampanha({
     const nomeCampanha =
       titulo.trim() ||
       `${rotuloPublico} · ${nomeImovel} · ${new Date().toLocaleDateString("pt-BR")}`;
-
-    setErro(null);
     iniciarCriacao(async () => {
       const resultado = await criarCampanha({
         titulo: nomeCampanha,
@@ -172,7 +170,7 @@ export function NovaCampanha({
       });
 
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
 
@@ -426,12 +424,6 @@ export function NovaCampanha({
         </div>
       )}
 
-      {erro && (
-        <p role="alert" className="text-fluid-xs text-alerta mt-3">
-          {erro}
-        </p>
-      )}
-
       {/* Navegação entre os passos, sempre no mesmo lugar. */}
       <div className="border-linha mt-5 flex items-center justify-between gap-3 border-t pt-4">
         {passo > 1 ? (
@@ -453,10 +445,9 @@ export function NovaCampanha({
               // No modo manual, seguir sem ninguém marcado geraria uma
               // campanha vazia lá no fim — melhor barrar aqui, com contexto.
               if (passo === 1 && selecaoManual && escolhidos.size === 0) {
-                setErro("Marque ao menos um lead antes de continuar.");
+                falhar("Marque ao menos um lead antes de continuar.");
                 return;
               }
-              setErro(null);
               setPasso((p) => (p === 1 ? 2 : 3));
             }}
             className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium text-sobre-cor transition-colors"

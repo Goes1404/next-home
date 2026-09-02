@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import type { Empreendimento } from "@/lib/types";
 import { EnvioImediato } from "./_componentes/EnvioImediato";
 import { HistoricoCampanhas } from "./_componentes/HistoricoCampanhas";
@@ -26,16 +26,16 @@ interface Props {
 
 export function CampanhasManager({ empreendimentos, campanhasIniciais, statusInicial }: Props) {
   const [campanhas, setCampanhas] = useState<CampanhaListada[]>(campanhasIniciais);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const { avisar } = useAvisos();
 
   return (
     <div className="space-y-6">
-      {feedback && (
-        <p className="text-fluid-sm text-ok border-ok-linha bg-ok-lavado flex items-start gap-2 rounded-xl border px-4 py-3">
-          <Check aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
-          {feedback}
-        </p>
-      )}
+      {/*
+        A confirmação saiu daqui para a região de avisos do shell.
+        Ela nascia no TOPO desta tela, e quem acabou de criar uma lista está
+        olhando para o rodapé do assistente — a confirmação aparecia acima de
+        tudo, fora do campo de visão, e sumia sozinha em 10 segundos.
+      */}
 
       <StatusFila
         statusInicial={statusInicial}
@@ -46,8 +46,7 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais, statusIni
         empreendimentos={empreendimentos}
         aoCriar={(campanha, aviso) => {
           setCampanhas((prev) => [campanha, ...prev]);
-          setFeedback(aviso);
-          setTimeout(() => setFeedback(null), 10000);
+          avisar(aviso);
         }}
       />
 
@@ -58,8 +57,7 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais, statusIni
       <EnvioImediato
         aoEnviar={(campanha, aviso) => {
           setCampanhas((prev) => [campanha, ...prev]);
-          setFeedback(aviso);
-          setTimeout(() => setFeedback(null), 10000);
+          avisar(aviso);
         }}
       />
 

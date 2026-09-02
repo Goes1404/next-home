@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { Clock, RotateCcw, Trash2, Zap } from "lucide-react";
 import {
   liberarEnvioAgora,
@@ -45,8 +46,7 @@ export function StatusFila({
 }) {
   const [status, setStatus] = useState<StatusDisparo | null>(statusInicial);
   const [mostrarAvancado, setMostrarAvancado] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
+  const { avisar, falhar } = useAvisos();
   const [processando, iniciarProcessamento] = useTransition();
   const [limpando, iniciarLimpeza] = useTransition();
   const [resetando, iniciarReset] = useTransition();
@@ -62,21 +62,19 @@ export function StatusFila({
   }
 
   function empurrar() {
-    setErro(null);
     iniciarProcessamento(async () => {
       const resultado = await processarFilaAgora();
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       await atualizar();
-      setFeedback(
+      avisar(
         resultado.processados === 0
           ? "Nada para enviar neste instante — as mensagens seguem saindo sozinhas."
           : `${resultado.enviados} mensagem${resultado.enviados === 1 ? "" : "s"} enviada${resultado.enviados === 1 ? "" : "s"} agora.` +
               (resultado.restantes > 0 ? ` Faltam ${resultado.restantes}.` : " Não sobrou nenhuma."),
       );
-      setTimeout(() => setFeedback(null), 8000);
     });
   }
 
@@ -93,21 +91,18 @@ export function StatusFila({
     ) {
       return;
     }
-
-    setErro(null);
     iniciarLimpeza(async () => {
       const resultado = await limparFilaDisparo();
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       await atualizar();
-      setFeedback(
+      avisar(
         resultado.removidos === 0
           ? "Não havia nada programado."
           : `${resultado.removidos} mensagem(ns) programada(s) cancelada(s).`,
       );
-      setTimeout(() => setFeedback(null), 8000);
     });
   }
 
@@ -126,17 +121,14 @@ export function StatusFila({
     ) {
       return;
     }
-
-    setErro(null);
     iniciarReset(async () => {
       const resultado = await resetarCotaDisparo();
       if (resultado.erro) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       await atualizar();
-      setFeedback("Envios de hoje devolvidos e bloqueios soltos. As mensagens voltam a sair.");
-      setTimeout(() => setFeedback(null), 8000);
+      avisar("Envios de hoje devolvidos e bloqueios soltos. As mensagens voltam a sair.");
     });
   }
 
@@ -158,22 +150,19 @@ export function StatusFila({
     ) {
       return;
     }
-
-    setErro(null);
     iniciarLiberacao(async () => {
       const resultado = await liberarEnvioAgora();
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       await atualizar();
-      setFeedback(
+      avisar(
         `Liberado: ${resultado.mensagens} mensagem${resultado.mensagens === 1 ? "" : "s"} saindo agora, uma a cada minuto.` +
           (resultado.retentativas > 0
             ? ` ${resultado.retentativas} que tinha${resultado.retentativas === 1 ? "" : "m"} falhado volta${resultado.retentativas === 1 ? "" : "m"} para a fila.`
             : ""),
       );
-      setTimeout(() => setFeedback(null), 10000);
     });
   }
 
@@ -233,12 +222,14 @@ export function StatusFila({
         )}
       </div>
 
-      {feedback && <p className="text-fluid-xs text-ok mt-3">{feedback}</p>}
-      {erro && (
-        <p role="alert" className="text-fluid-xs text-alerta mt-3">
-          {erro}
-        </p>
-      )}
+      {/*
+        O sucesso e o erro saíram daqui para a região de avisos do shell.
+        Este cartão fica no MEIO da tela de campanhas, abaixo do cabeçalho e
+        das abas, e acima do assistente — quem toca "Enviar agora" no rodapé
+        do assistente não via a confirmação que aparecia aqui em cima. E o
+        `setTimeout` que apagava o texto em 8s contrariava a regra do próprio
+        `Avisos`: sucesso some sozinho, erro fica até alguém fechar.
+      */}
 
       {/* Ferramentas que estragam coisa ficam atrás de uma porta. Limpar a
           fila apaga mensagens programadas; resetar a cota afrouxa a proteção

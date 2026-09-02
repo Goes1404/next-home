@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { registrarEnvio } from "@/app/corretor/actions";
 import { preencherTemplate } from "@/lib/mensagem";
 import { linkWhatsappApp } from "@/lib/site";
@@ -54,11 +55,11 @@ export function EnviarEmMassa({
   );
   const [recorte, setRecorte] = useState<RecorteDisparo | null>(null);
   const [resultado, setResultado] = useState<RecorteDisparo | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
   const [modoManual, setModoManual] = useState(false);
   const [enviandoManual, setEnviandoManual] = useState(false);
   const [progressoManual, setProgressoManual] = useState(0);
   const [pendente, iniciar] = useTransition();
+  const { falhar } = useAvisos();
   const canceladoRef = useRef(false);
 
   const templateEscolhido = templates.find((t) => t.id === templateId) ?? null;
@@ -83,7 +84,7 @@ export function EnviarEmMassa({
     let vivo = true;
     previewDisparo(leadsSelecionados.map((l) => l.id)).then((r) => {
       if (!vivo) return;
-      if ("erro" in r) setErro(r.erro);
+      if ("erro" in r) falhar(r.erro);
       else setRecorte(r);
     });
     return () => {
@@ -93,7 +94,6 @@ export function EnviarEmMassa({
 
   function confirmarAutomatico() {
     if (!templateEscolhido) return;
-    setErro(null);
     iniciar(async () => {
       const res = await dispararParaLeadsSelecionados({
         leadIds: leadsSelecionados.map((l) => l.id),
@@ -101,7 +101,7 @@ export function EnviarEmMassa({
       });
 
       if ("erro" in res) {
-        setErro(res.erro);
+        falhar(res.erro);
         if (res.podeManual) setModoManual(true);
         return;
       }
@@ -288,12 +288,6 @@ export function EnviarEmMassa({
                       Conectar meu número e deixar tudo automático →
                     </Link>
                   </div>
-                )}
-
-                {erro && !modoManual && (
-                  <p className="text-fluid-xs mt-3 rounded-lg border border-perigo-linha bg-perigo-lavado px-3 py-2 text-perigo">
-                    {erro}
-                  </p>
                 )}
 
                 {enviandoManual && (
