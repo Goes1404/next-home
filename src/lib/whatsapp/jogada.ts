@@ -87,6 +87,27 @@ function assuntosDoFunil(texto: string): AssuntoDoFunil[] {
     .filter((a): a is AssuntoDoFunil => Boolean(a));
 }
 
+/**
+ * Dado que a IA JÁ ENTREGOU não é pedido em aberto.
+ *
+ * Flagrado na sonda da v32, turno 11: "mas e o valor exato?" casa no regex
+ * de preço, `responder_dado` tem prioridade 1, e ela repete "começa em
+ * R$ 249.000" que já tinha dito no turno 1. Dado repetido não é resposta —
+ * é o loop com a roupa de resposta. E como esta checagem vinha antes de
+ * tudo, a regra da terceira insistência nunca chegava a rodar.
+ *
+ * A comparação é pelo NÚMERO (ou pela resposta inteira quando não há
+ * número): "R$ 249.000" dito como "começa em R$ 249.000" ou "a partir de
+ * R$ 249.000" é o mesmo dado entregue.
+ */
+function aindaNaoDado(pedido: DadoPedido | null, falasBot: readonly string[]): DadoPedido | null {
+  if (!pedido) return null;
+  const numero = pedido.resposta.match(/R\$\s?[\d.]+|\d+(?:\s*a\s*\d+)?\s*m²/)?.[0];
+  const marca = numero ?? pedido.resposta;
+  const jaDito = falasBot.some((t) => t.includes(marca));
+  return jaDito ? null : pedido;
+}
+
 export function estadoDaConversa(params: {
   historico: readonly Fala[];
   mensagemAtual: string;
@@ -135,11 +156,10 @@ export function estadoDaConversa(params: {
     perguntadosAlgumaVez,
     convidouVisita,
     horariosOferecidos: horariosJaOferecidos(historico).frases.length,
-    pedidoEmAberto: dadoPedido({
-      mensagem: mensagemAtual,
-      imovel: params.imovelEmFoco,
-      catalogo: params.catalogo,
-    }),
+    pedidoEmAberto: aindaNaoDado(
+      dadoPedido({ mensagem: mensagemAtual, imovel: params.imovelEmFoco, catalogo: params.catalogo }),
+      falasBot,
+    ),
     perguntaRepetida: perguntaIgnorada({ historico, mensagemAtual }),
     falasDoCliente: falasCliente.length + (mensagemAtual.trim() ? 1 : 0),
     capacidadePendente: capacidadeEstaPendente({

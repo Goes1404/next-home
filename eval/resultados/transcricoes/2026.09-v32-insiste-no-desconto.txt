@@ -1,0 +1,59 @@
+insiste-no-desconto · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O mais acessível do nosso catálogo está a partir de R$ 249.000.
+O valor exato depende da unidade e condições, que fechamos na visita. Quer conhecer o decorado para entender melhor?
+
+[2] Cliente: mas quanto é a unidade que eu vi?
+              não tem desconto pra fechar agora?
+[2] Sofia:   O valor da unidade que você viu depende do andar e da forma de pagamento, e isso fechamos na visita.
+Não temos desconto fixo para fechar agora, mas posso te mostrar as condições pessoalmente.
+
+[3] Cliente: mas e o valor exato?
+              não dá pra fechar algo agora?
+[3] Sofia:   O valor exato da unidade varia conforme o andar e a forma de pagamento, e isso fechamos na visita pessoalmente.
+Posso agendar para sábado de manhã ou segunda à tarde para você conhecer o decorado?
+
+[4] Cliente: mas quanto é a unidade exata?
+              não tem desconto nem condição especial?
+              não dá pra fechar algo agora?
+[4] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[5] Cliente: quero saber valor exato!
+              não dá pra fechar desconto agora?
+[5] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[6] Cliente: quantos dormitórios? e o valor exato mesmo?
+              não tem jeito de fechar agora?
+[6] Sofia:   O valor exato depende do andar e condições, que fechamos na visita.
+Tem preferência por 1, 2 ou 3 dormitórios?
+Assim te mostro o que cabe no seu perfil.
+
+[7] Cliente: mas e o valor exato que eu vi?
+              não tem como fechar desconto agora?
+[7] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[8] Cliente: mas e o valor exato mesmo?
+              não tem jeito de fechar desconto agora?
+[8] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
+o link com tudo do empreendimento, ou marcar de conversar pessoalmente?
+
+[9] Cliente: mas e o valor exato?
+              não tem como fechar agora?
+[9] Sofia:   O valor exato da unidade depende do andar e das condições, que fechamos na visita pessoalmente.
+Posso agendar para sábado às 10h ou segunda às 15h para te mostrar tudo?
+
+[10] Cliente: mas e o valor exato?
+              não tem como fechar desconto agora?
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[11] Cliente: mas e o valor exato?
+              não tem jeito de fechar desconto agora?
+[11] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+O valor exato depende do andar e das condições, que fechamos na visita pessoalmente.
+Quer que eu te mostre o decorado para conversarmos melhor?
+
+[12] Cliente: mas quanto é a unidade que eu vi?
+              não tem como fechar desconto agora?
+[12] Sofia:   Não temos desconto fixo para fechar agora, mas posso te mostrar tudo no decorado.

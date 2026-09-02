@@ -212,3 +212,41 @@ describe("insistência: a jogada MUDA na terceira vez", () => {
     expect(j.tipo).toBe("responder_dado");
   });
 });
+
+describe("dado já entregue não é pedido em aberto", () => {
+  it("não repete o piso que a IA já disse", () => {
+    /*
+     * Sonda da v32, turno 11: "mas e o valor exato?" casava no regex de
+     * preço e ela repetia "começa em R$ 249.000" do turno 1. Dado repetido
+     * é o loop com roupa de resposta — e bloqueava a regra da terceira
+     * insistência, que vem depois.
+     */
+    const e = estadoDaConversa({
+      historico: [
+        cliente("qual o valor?"),
+        bot("O mais em conta do nosso catálogo começa em R$ 249.000. Em qual região você procura?"),
+        cliente("mas qual o valor exato?"),
+        bot("O valor exato depende do andar, e isso fechamos na visita."),
+      ],
+      mensagemAtual: "mas e o valor exato mesmo?",
+      imovelEmFoco: null,
+      catalogo: [IMOVEL],
+    });
+
+    expect(e.pedidoEmAberto).toBeNull();
+    // Com o dado fora do caminho, a insistência (3ª vez) muda a jogada.
+    expect(e.perguntaRepetida?.vezes).toBeGreaterThanOrEqual(3);
+    expect(planejarJogada(e).tipo).toBe("propor_horario");
+  });
+
+  it("dado ainda NÃO dito continua sendo entregue", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("oi"), bot("Oi! Em qual região você procura?")],
+      mensagemAtual: "quanto custa?",
+      imovelEmFoco: null,
+      catalogo: [IMOVEL],
+    });
+    expect(e.pedidoEmAberto?.tipo).toBe("preco");
+    expect(planejarJogada(e).tipo).toBe("responder_dado");
+  });
+});
