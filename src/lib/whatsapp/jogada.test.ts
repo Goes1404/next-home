@@ -482,3 +482,45 @@ describe("objeção, alternativa e saída suave — o trace do terceiro perfil",
     expect(b).toMatch(/Não repita o imóvel/);
   });
 });
+
+describe("segunda objeção seguida vira alternativa", () => {
+  const CATALOGO = [
+    IMOVEL,
+    { ...IMOVEL, slug: "vista", nome: "Vista AlphaGran", precoAPartir: 800000 } as Empreendimento,
+    { ...IMOVEL, slug: "serenne", nome: "Serenne", precoAPartir: 320000 } as Empreendimento,
+  ];
+  const foco = CATALOGO[1];
+
+  it("primeira objeção → tratar; a segunda seguida → indicar a alternativa", () => {
+    const primeira = estadoDaConversa({
+      historico: [cliente("Alphaville"), bot("O Vista AlphaGran começa em R$ 800.000.")],
+      mensagemAtual: "nossa, tá caro",
+      imovelEmFoco: foco, catalogo: CATALOGO,
+    });
+    expect(primeira.objecoesSeguidas).toBe(1);
+    expect(planejarJogada(primeira).tipo).toBe("tratar_objecao");
+
+    const segunda = estadoDaConversa({
+      historico: [
+        cliente("Alphaville"), bot("O Vista AlphaGran começa em R$ 800.000."),
+        cliente("nossa, tá caro"), bot("Entendo. O que você viu por esse valor?"),
+      ],
+      mensagemAtual: "acho que passa do que eu queria",
+      imovelEmFoco: foco, catalogo: CATALOGO,
+    });
+    expect(segunda.objecoesSeguidas).toBe(2);
+    expect(planejarJogada(segunda).tipo).toBe("indicar_alternativa");
+  });
+
+  it("a sequência quebra na primeira fala que não é objeção", () => {
+    const e = estadoDaConversa({
+      historico: [
+        cliente("tá caro"), bot("Entendo. O que você viu por esse valor?"),
+        cliente("vi um por 500 mil"), bot("Faz sentido."),
+      ],
+      mensagemAtual: "mas o seu ainda tá caro",
+      imovelEmFoco: foco, catalogo: CATALOGO,
+    });
+    expect(e.objecoesSeguidas).toBe(1);
+  });
+});

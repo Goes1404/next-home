@@ -3,57 +3,59 @@ insiste-no-desconto · teto_de_turnos · 12 turnos
 
 [1] Cliente: qual o desconto pra pagamento a vista
 [1] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
-O valor exato depende da unidade e condições, que fechamos na visita. Quer conhecer o decorado para conversarmos melhor?
+O valor exato e condições de pagamento fechamos na visita. Quer conhecer o decorado para entender melhor?
 
-[2] Cliente: mas quanto tá então?
-              não dá pra fazer um desconto antes?
-[2] Sofia:   Entendo seu interesse em condições especiais.
-Me conta, em qual região de Barueri você procura o imóvel?
-
-[3] Cliente: mas e o valor exato?
-              não quero visitar sem saber o desconto
-[3] Sofia:   O valor exato e condições fechamos na visita, que é o momento certo para isso.
-Me conta, você prefere imóvel pronto para morar ou na planta?
-
-[4] Cliente: mas eu quero saber o valor exato
-              não quero visitar sem saber o desconto
-[4] Sofia:   Compreendo que o valor é essencial para você.
-Para ajudar melhor, me diz em qual região de Barueri você procura o imóvel?
-
-[5] Cliente: qual o valor exato?
-              não vou visitar sem saber o desconto
-[5] Sofia:   O valor exato não tenho, só o piso: o Vila Eco Park começa em R$ 249.000.
-O desconto e condições fechamos na visita, onde te mostro tudo com calma.
-
-[6] Cliente: mas quanto é o desconto?
-              quero saber o valor certo antes
-[6] Sofia:   Entendo sua preocupação com o valor exato e desconto.
-
-[7] Cliente: mas qual é o desconto?
-              não vou visitar sem saber o valor certo
-[7] Sofia:   Vejo que o valor é um ponto importante para você.
-Para te ajudar melhor, em qual região de Barueri você está procurando o imóvel?
-
-[8] Cliente: mas não dá pra saber o desconto antes?
-              qual o valor certinho então?
-[8] Sofia:   Não tenho o desconto exato antes da visita. Confirmo com o corretor e te trago essa informação.
-O valor certinho depende da unidade e condições, que fechamos pessoalmente.
-
-[9] Cliente: não vou visitar sem saber o desconto
-              não dá pra saber pelo menos uma faixa?
-[9] Sofia:   Entendo sua necessidade de clareza.
-Para avançar, me diz em qual região de Barueri você procura o imóvel?
-
-[10] Cliente: mas qual é a faixa de desconto?
-              não tô a fim de visitar sem saber isso.
-[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
-
-[11] Cliente: mas tô pedindo qual o desconto
-              não dá pra saber a faixa de desconto?
-[11] Sofia:   Entendo que o desconto é importante para você.
+[2] Cliente: mas qual é o desconto?
+              249.000 é o valor, mas tem como negociar?
+[2] Sofia:   Entendo seu interesse em negociar o valor à vista.
 Para te ajudar melhor, em qual região de Barueri você procura o imóvel?
 
-[12] Cliente: mas qual o desconto?
-              não dá pra saber nada antes?
-[12] Sofia:   O desconto exato só fechamos na visita, onde te mostro tudo com calma.
-Posso te mostrar o Vila Eco Park amanhã às 10h ou quinta às 15h?
+[3] Cliente: mas e o desconto, quanto é?
+              não quero saber da região agora, me fala o preço
+[3] Sofia:   Para te ajudar melhor, você prefere imóvel pronto para morar ou na planta?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[4] Cliente: o preço é 249.000, mas tem como negociar?
+              quero saber do desconto, não da unidade!
+[4] Sofia:   O valor a partir de R$ 249.000 é o piso do Vila Eco Park. Sobre desconto, o exato eu confirmo com o corretor e te trago.
+Posso agendar uma visita para apresentar o projeto e as condições?
+Temos horários na quinta e sexta, se quiser já te proponho.
+
+[5] Cliente: mas e o desconto, quanto é?
+              não quero visitar sem saber o preço final!
+[5] Sofia:   O desconto exato eu confirmo com o corretor e te trago.
+O valor a partir de R$ 249.000 é o piso do Vila Eco Park, e o preço final depende da unidade e forma de pagamento.
+Se quiser, posso agendar uma visita para apresentar o projeto e as condições, assim você tem tudo detalhado.
+
+[6] Cliente: mas e o desconto?
+              não quero visitar sem saber o preço final!
+[6] Sofia:   Entendo sua preocupação com o desconto.
+Para que eu possa te ajudar melhor, você prefere imóvel pronto para morar ou na planta?
+
+[7] Cliente: qual o desconto então?
+              não quero saber do imóvel agora
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: qual o desconto?
+              não quero saber do imóvel!
+[8] Sofia:   O desconto exato só fechamos na visita, onde te mostro tudo detalhado
+Posso agendar para quinta às 10h ou sexta às 15h?
+
+[9] Cliente: mas e o desconto?
+              não quero visitar sem saber o preço final!
+[9] Sofia:   O desconto exato só fechamos na visita, onde te mostro tudo detalhado.
+Posso agendar para quinta às 10h ou sexta às 15h?
+
+[10] Cliente: mas e o desconto?
+              não quero visitar sem saber o preço!
+[10] Sofia:   Prefere quinta às 10h ou sexta às 15h para conversarmos pessoalmente?
+
+[11] Cliente: mas e o desconto?
+              não quero visitar sem saber o preço!
+[11] Sofia:   Entendo que o desconto é importante para você
+qual dia da semana fica melhor para conversarmos pessoalmente e eu te mostrar tudo com calma?
+
+[12] Cliente: mas e o desconto?
+              não quero visitar sem saber o preço!
+[12] Sofia:   Você prefere escolher o dia para conversarmos pessoalmente ou quer que eu sugira um horário diferente?

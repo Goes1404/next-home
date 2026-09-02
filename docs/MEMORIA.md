@@ -3105,3 +3105,29 @@ onde apareceram os defeitos mais caros do planner:
 - **Lição de método:** um trace por PERFIL de cliente, não só pelo pior
   caso. O adversarial mostra se a jogada muda; o cooperativo mostra se o
   funil anda e fecha. Os dois custam zero e rodam em um segundo.
+
+## Objeção, alternativa e saída suave viram jogadas (v32, 01/09/2026)
+
+Terceiro perfil no trace sem API — o cliente que responde ao funil e
+depois OBJETA. O planner estava cego para as três situações, e a taxonomia
+já as apontava ("não ofereceu alternativas" em 6 de 16 conversas).
+
+- **"tá caro, vou pensar" recebia pergunta de funil.** Agora é
+  `tratar_objecao`: a regra de objeção que já estava no prompt (não defenda
+  o valor; descubra a referência ou desloque para condição), como jogada
+  escolhida pelo código.
+- **"tem algo mais em conta?" recebia "pronto ou na planta?".** Agora é
+  `indicar_alternativa`: a mais barata do catálogo FORA do foco, com o piso
+  da ficha. Um imóvel, não lista — lista é o desfile que a v18 matou.
+- **"vou ver com minha esposa" recebia pergunta de capacidade.** Agora é
+  `deixar_porta_aberta`: uma frase, o material para mostrar a quem ele
+  citou, nenhuma pergunta, nenhum horário.
+- **A segunda objeção seguida já é pedido de alternativa**, mesmo sem ele
+  pedir: tratar duas vezes com a mesma jogada é o loop com outra roupa. A
+  contagem para na primeira fala que não é objeção.
+- **Prioridade:** aceite > dado pedido > alternativa > objeção > saída suave
+  > horário pedido > funil. A mais específica vence a mais genérica.
+- **O script de trace também tem bug.** Faltou texto de bot para as
+  jogadas novas, ele empurrou `undefined` no histórico e o trace parou no
+  turno 5 — escondendo justamente os turnos que eu queria ver. Trace que
+  para cedo demais é sinal para olhar o SCRIPT antes do planner.

@@ -79,6 +79,8 @@ export interface EstadoDaConversa {
   pediuAlternativa: boolean;
   /** Saída suave ("vou pensar", "vou ver com minha esposa"). */
   saidaSuave: boolean;
+  /** Quantas falas SEGUIDAS do cliente foram objeção de preço (contando a atual). */
+  objecoesSeguidas: number;
   /** A alternativa mais em conta do catálogo, fora do foco. */
   alternativa: { slug: string; nome: string; piso: number | null } | null;
   nomeDoFoco: string | null;
@@ -140,6 +142,22 @@ const PEDIDO_DE_ALTERNATIVA =
   /\b(mais em conta|mais barato|mais barata|outra opcao|outra opção|outras opcoes|outras opções|algo (mais )?(barato|em conta|acessivel|acessível)|tem outro|outro imovel|outro imóvel|alternativa)\b/;
 const SAIDA_SUAVE =
   /\b(vou pensar|preciso pensar|vou ver com|vou conversar com|vou falar com|depois eu (vejo|falo|te falo)|te aviso|qualquer coisa eu (chamo|falo)|por enquanto nao|por enquanto não|mais pra frente|outra hora)\b/;
+
+/**
+ * Objeções de preço em sequência, contando a fala atual.
+ *
+ * Para de contar na primeira fala do cliente que NÃO é objeção: o que
+ * interessa é a insistência recente, não o histórico inteiro.
+ */
+function contarObjecoesSeguidas(falasCliente: readonly string[], atualNormalizada: string): number {
+  if (!OBJECAO_DE_PRECO.test(atualNormalizada)) return 0;
+  let n = 1;
+  for (let i = falasCliente.length - 1; i >= 0; i--) {
+    if (OBJECAO_DE_PRECO.test(normalizar(falasCliente[i]))) n++;
+    else break;
+  }
+  return n;
+}
 
 /** A opção mais em conta do catálogo que NÃO é o imóvel em foco. */
 function alternativaMaisEmConta(
@@ -303,6 +321,7 @@ export function estadoDaConversa(params: {
      */
     pediuHorario: PEDIDO_DE_HORARIO.test(nAtual),
     objetouPreco: OBJECAO_DE_PRECO.test(nAtual),
+    objecoesSeguidas: contarObjecoesSeguidas(falasCliente, nAtual),
     pediuAlternativa: PEDIDO_DE_ALTERNATIVA.test(nAtual),
     saidaSuave: SAIDA_SUAVE.test(nAtual),
     alternativa: alternativaMaisEmConta(params.catalogo, params.imovelEmFoco),
@@ -353,7 +372,19 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
       emVezDe: estado.nomeDoFoco,
     };
   }
-  if (estado.objetouPreco) return { tipo: "tratar_objecao", oQueEleDisse: estado.oQueEleDisse };
+  if (estado.objetouPreco) {
+    /*
+     * A SEGUNDA objeção seguida já é pedido de alternativa, mesmo sem ele
+     * dizer "tem algo mais em conta?". Tratar a objeção duas vezes com a
+     * mesma jogada é o loop com outra roupa — e a régua da casa para
+     * objeção de preço é justamente "não defenda o valor; ofereça outro
+     * caminho". Só cai na objeção de novo quando não há alternativa.
+     */
+    if (estado.objecoesSeguidas >= 2 && estado.alternativa) {
+      return { tipo: "indicar_alternativa", ...estado.alternativa, emVezDe: estado.nomeDoFoco };
+    }
+    return { tipo: "tratar_objecao", oQueEleDisse: estado.oQueEleDisse };
+  }
   if (estado.saidaSuave) return { tipo: "deixar_porta_aberta", oQueEleDisse: estado.oQueEleDisse };
 
   // Pediu a hora: já aceitou visitar. Propor é responder.
