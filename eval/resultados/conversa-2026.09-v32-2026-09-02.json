@@ -9,48 +9,35 @@
   "comJuiz": false,
   "conversas": [
     {
-      "persona": "insiste-no-desconto",
+      "persona": "quer-visitar-sabado",
       "rodada": 1,
-      "desfecho": "teto_de_turnos",
-      "turnos": 12,
+      "desfecho": "cliente_encerrou",
+      "turnos": 8,
       "medida": {
-        "turnos": 12,
+        "turnos": 8,
         "turnoDaOfertaDeVisita": 1,
         "midiasRepetidas": [],
         "perguntasRepetidasPelaIa": [],
         "perguntasReaparecidas": [
-          "mas quanto é a unidade exata?",
-          "não dá pra fechar algo agora?",
-          "não dá pra fechar desconto agora?",
-          "e o valor exato mesmo?",
-          "mas e o valor exato que eu vi?",
-          "não tem como fechar desconto agora?",
-          "mas e o valor exato mesmo?",
-          "não tem jeito de fechar desconto agora?",
-          "mas e o valor exato?",
-          "não tem como fechar agora?",
-          "mas e o valor exato?",
-          "não tem como fechar desconto agora?",
-          "mas e o valor exato?",
-          "não tem jeito de fechar desconto agora?",
-          "mas quanto é a unidade que eu vi?",
-          "não tem como fechar desconto agora?"
+          "Que horas?"
         ],
-        "respostasRepetidas": 1,
-        "maiorSequenciaSemNovidade": 7,
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 4,
         "assuntosCobertos": [
+          "regiao",
           "visita",
-          "tipologia"
+          "estagio",
+          "tipologia",
+          "perfil"
         ],
         "modelos": [
           "gpt-4.1-mini"
         ],
-        "mediaDeCaracteres": 129,
-        "maiorMensagem": 199,
+        "mediaDeCaracteres": 128,
+        "maiorMensagem": 219,
         "reprovacoes": [
-          "o cliente teve de repetir 16 pergunta(s) — ela não respondeu",
-          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
-          "7 turnos seguidos sem assunto novo"
+          "o cliente teve de repetir 1 pergunta(s) — ela não respondeu",
+          "4 turnos seguidos sem assunto novo"
         ]
       },
       "juizo": null

@@ -54,6 +54,7 @@ export type Jogada =
   | { tipo: "perguntar"; assunto: AssuntoDoFunil }
   | { tipo: "convidar_visita" }
   | { tipo: "propor_horario"; jaOfereceu: number }
+  | { tipo: "confirmar_visita"; oQueEleDisse: string }
   | { tipo: "devolver_escolha" };
 
 import type { Fala } from "./rajada";
@@ -71,6 +72,10 @@ export interface EstadoDaConversa {
   perguntaRepetida: PerguntaIgnorada | null;
   falasDoCliente: number;
   capacidadePendente: boolean;
+  /** A IA ofereceu horário na última fala e o cliente acabou de ACEITAR. */
+  aceitouHorario: boolean;
+  /** A fala dele, para o bloco confirmar EXATAMENTE o que ele escolheu. */
+  oQueEleDisse: string;
 }
 
 /** A leitura de "renda" e "estágio" nas falas, no vocabulário do detector de assuntos. */
@@ -81,10 +86,55 @@ const ASSUNTO_DO_FUNIL: Record<string, AssuntoDoFunil> = {
   renda: "capacidade",
 };
 
+/**
+ * "Planta" é ambígua — e o detector de métricas não precisa desfazer isso,
+ * o planner precisa.
+ *
+ * "pode ser na planta" é ESTÁGIO (imóvel em obra); "manda a planta" é
+ * pedido de MÍDIA. Nenhum dos dois diz quantos dormitórios a pessoa quer.
+ * O regex de tipologia das métricas inclui "planta" e, no trace
+ * cooperativo, "pode ser na planta" marcou tipologia como respondida — o
+ * planner pulou a pergunta de dormitórios e caiu em `devolver_escolha` no
+ * terceiro turno de uma conversa que ia bem.
+ */
+/**
+ * Como se aceita um horário no WhatsApp. Curto de propósito: "não pode"
+ * contém "pode", então a negação é checada ANTES e vence.
+ */
+const ACEITE =
+  /\b(pode ser|fechado|fechou|combinado|perfeito|otimo|beleza|bora|vamos|topo|confirmo|confirmado|pode marcar|marca|esse (horario|dia)|esse mesmo|ta bom|tá bom|ok|sim|então|entao)\b/;
+const NEGACAO = /\b(nao|não|nem|impossivel|impossível|não da|nao da|não consigo|nao consigo|outro (dia|horario)|outra hora)\b/;
+
+const TIPOLOGIA_DE_VERDADE = /\b(dormitorio|dormitorios|quarto|quartos|suite|suites|vaga|vagas|metragem|m2|metros)\b/;
+
+/**
+ * A pergunta de capacidade, como a ESCADA da casa a faz: faixa → sozinho ou
+ * em conjunto → profissão → renda. O regex de métricas só conhece "renda /
+ * financiamento"; a primeira e mais comum forma ("qual faixa de valor você
+ * tem em mente?") não casava, e o planner repetia a pergunta que a IA
+ * acabara de fazer. Flagrado no trace cooperativo, turnos 4 e 5.
+ */
+const PERGUNTA_DE_CAPACIDADE =
+  /\b(faixa|valor em mente|orcamento|pretende investir|quanto (voce )?pretende|sozinho|em conjunto|profissao|trabalha com|renda)\b/;
+
 function assuntosDoFunil(texto: string): AssuntoDoFunil[] {
-  return assuntosDe(texto)
-    .map((a) => ASSUNTO_DO_FUNIL[a])
-    .filter((a): a is AssuntoDoFunil => Boolean(a));
+  const n = normalizar(texto);
+  const achados = new Set<AssuntoDoFunil>(
+    assuntosDe(texto)
+      .map((a) => ASSUNTO_DO_FUNIL[a])
+      .filter((a): a is AssuntoDoFunil => Boolean(a)),
+  );
+  // Tipologia só com palavra de tipologia de verdade — "planta" não conta.
+  if (achados.has("tipologia") && !TIPOLOGIA_DE_VERDADE.test(n)) achados.delete("tipologia");
+  if (PERGUNTA_DE_CAPACIDADE.test(n)) achados.add("capacidade");
+  return [...achados];
+}
+
+function normalizar(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 /**
@@ -146,6 +196,24 @@ export function estadoDaConversa(params: {
     for (const a of assuntosDoFunil(pergunta)) perguntadosNaUltima.add(a);
   }
 
+  /*
+   * ACEITE: a última fala do bot ofereceu horário E a fala do cliente traz
+   * marcador de aceite. Flagrado no trace cooperativo: o cliente disse
+   * "sábado de manhã pode ser" e o planner devolveu `propor_horario` de
+   * novo — o bloco mandaria propor OUTRO horário no exato momento em que a
+   * pessoa aceitou o primeiro. É o momento da conversão; errar aqui é
+   * perder a visita que a conversa inteira construiu.
+   *
+   * Determinístico e conservador: exige as DUAS metades. Aceite sem oferta
+   * anterior ("pode ser") não é aceite de horário; oferta sem aceite é a
+   * jogada anterior ainda em aberto.
+   */
+  const ultimaDoBotOfereceu =
+    ultimaDoBot.length > 0 &&
+    horariosJaOferecidos([{ remetente: "bot", texto: ultimaDoBot }]).frases.length > 0;
+  const nAtual = normalizar(mensagemAtual);
+  const aceitouHorario = ultimaDoBotOfereceu && !NEGACAO.test(nAtual) && ACEITE.test(nAtual);
+
   const convidouVisita = falasBot.some((t) =>
     /\b(visita|visitar|conhecer|decorado|apresentar|te mostr)/i.test(t),
   );
@@ -172,6 +240,8 @@ export function estadoDaConversa(params: {
     ),
     perguntaRepetida: perguntaIgnorada({ historico, mensagemAtual }),
     falasDoCliente: falasCliente.length + (mensagemAtual.trim() ? 1 : 0),
+    aceitouHorario,
+    oQueEleDisse: mensagemAtual.trim(),
     capacidadePendente: capacidadeEstaPendente({
       dossie,
       historico: [...historico],
@@ -200,6 +270,10 @@ export function estadoDaConversa(params: {
  *    numa quarta pergunta seria o loop com outra roupa.
  */
 export function planejarJogada(estado: EstadoDaConversa): Jogada {
+  // O aceite vem ANTES de tudo: é o momento da conversão, e qualquer outra
+  // jogada aqui (até entregar um dado) adiaria a confirmação em um turno.
+  if (estado.aceitouHorario) return { tipo: "confirmar_visita", oQueEleDisse: estado.oQueEleDisse };
+
   if (estado.pedidoEmAberto) return { tipo: "responder_dado", dado: estado.pedidoEmAberto };
 
   if (estado.perguntaRepetida) {
@@ -299,6 +373,12 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
       ]
         .filter(Boolean)
         .join("\n");
+    case "confirmar_visita":
+      return [
+        `${cabecalho}: CONFIRMAR a visita que ele acabou de aceitar.`,
+        `Ele disse: "${jogada.oQueEleDisse}". Em UMA frase, confirme o dia e o horário exatos que ele escolheu, e diga o que vem a seguir (o corretor confirma o endereço / te chamo na véspera).`,
+        "Preencha \"visitaProposta\" com a data da tabela CALENDÁRIO e \"confirmadaPeloCliente\": true. Nenhuma pergunta nova, nenhum outro horário — ele já escolheu.",
+      ].join("\n");
     case "devolver_escolha":
       return [
         `${cabecalho}: devolver a escolha a ele.`,

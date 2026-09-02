@@ -287,3 +287,71 @@ describe("a porta do horário conta TURNOS de oferta, não frases distintas", ()
     expect(planejarJogada(e).tipo).toBe("devolver_escolha");
   });
 });
+
+describe("os três achados do trace cooperativo", () => {
+  it("'na planta' é ESTÁGIO, não tipologia — a pergunta de dormitórios continua devida", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("procuro em Alphaville"), bot("Quer conhecer o decorado?")],
+      mensagemAtual: "pode ser na planta",
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(e.respondidos.has("estagio")).toBe(true);
+    expect(e.respondidos.has("tipologia")).toBe(false);
+    expect(planejarJogada(e)).toEqual({ tipo: "perguntar", assunto: "tipologia" });
+  });
+
+  it("a pergunta de FAIXA do próprio bot conta como capacidade — não se repete", () => {
+    const e = estadoDaConversa({
+      historico: [
+        cliente("procuro em Alphaville, 2 dormitórios, na planta"),
+        bot("Qual faixa de valor você tem em mente?"),
+      ],
+      mensagemAtual: "sim, quero conhecer",
+      dossie: null, imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(e.perguntadosNaUltima.has("capacidade")).toBe(true);
+    expect(planejarJogada(e)).not.toEqual({ tipo: "perguntar", assunto: "capacidade" });
+  });
+
+  it("aceitou o horário → CONFIRMAR, nunca propor outro", () => {
+    /*
+     * O momento da conversão. No trace, "sábado de manhã pode ser" recebia
+     * `propor_horario` — o bloco mandaria propor OUTRO horário no instante
+     * em que a pessoa aceitou o primeiro.
+     */
+    const e = estadoDaConversa({
+      historico: [cliente("2 dorm em Alphaville"), bot("Posso te mostrar sábado às 10h ou terça às 15h?")],
+      mensagemAtual: "sábado às 10h pode ser",
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(e.aceitouHorario).toBe(true);
+    expect(planejarJogada(e).tipo).toBe("confirmar_visita");
+  });
+
+  it("aceite ganha até de dado pedido — confirmar não espera", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("oi"), bot("Posso te mostrar sábado às 10h?")],
+      mensagemAtual: "fechado, sábado às 10h. quanto custa mesmo?",
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(planejarJogada(e).tipo).toBe("confirmar_visita");
+  });
+
+  it("'não pode' NÃO é aceite — a negação vence", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("oi"), bot("Posso te mostrar sábado às 10h?")],
+      mensagemAtual: "sábado não pode, outro dia",
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(e.aceitouHorario).toBe(false);
+  });
+
+  it("'pode ser' sem oferta anterior não é aceite de horário", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("oi"), bot("Em qual região você procura?")],
+      mensagemAtual: "pode ser Alphaville",
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(e.aceitouHorario).toBe(false);
+  });
+});

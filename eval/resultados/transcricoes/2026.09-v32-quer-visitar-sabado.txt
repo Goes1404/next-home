@@ -1,0 +1,35 @@
+quer-visitar-sabado · cliente_encerrou · 8 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria visitar um apartamento sábado, dá?
+[1] Sofia:   Sábado pode sim. Em qual região de Barueri você procura o apartamento?
+
+[2] Cliente: Barueri Centro
+              Que horas?
+[2] Sofia:   Barueri Centro tem opções interessantes para você conhecer.
+Quer conhecer o decorado no sábado?
+Posso te mostrar o projeto pessoalmente e tirar todas as dúvidas.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: Quero ver o apartamento sábado.
+              Que horas?
+[3] Sofia:   Sábado posso te mostrar às 10h ou às 14h, qual horário prefere?
+Barueri Centro tem opções que valem a visita, assim você conhece tudo pessoalmente.
+
+[4] Cliente: 10h
+[4] Sofia:   Ótimo, sábado às 10h está reservado para você.
+Você prefere apartamento pronto para morar ou na planta?
+
+[5] Cliente: Pronto pra morar.
+[5] Sofia:   Sábado às 10h para apartamento pronto está anotado. Quer que eu te envie algumas opções para você já ir escolhendo?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[6] Cliente: Não quero opções, só quero ir sábado.
+[6] Sofia:   Sábado às 10h está confirmado para você conhecer os apartamentos prontos.
+Posso ajudar com mais alguma coisa antes da visita?
+
+[7] Cliente: Não, quero só ir e conhecer.
+[7] Sofia:   Sábado às 10h está reservado para você. Se surgir qualquer dúvida antes, estou à disposição.
+
+[8] Cliente: belezinha, até sábado!
+[8] Sofia:   Até sábado então! Se quiser, posso adiantar algumas informações para facilitar sua escolha no dia.
