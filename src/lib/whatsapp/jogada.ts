@@ -1,7 +1,7 @@
 import type { DossieClienteIA } from "./types";
 import type { Empreendimento } from "@/lib/types";
 import { assuntosDe, perguntasDe } from "./metricasConversa";
-import { dadoPedido, type DadoPedido } from "./dadoPedido";
+import { dadoPedido, formatarReais, type DadoPedido } from "./dadoPedido";
 import { perguntaIgnorada, type PerguntaIgnorada } from "./perguntaIgnorada";
 import { horariosJaOferecidos } from "./ofertasDeVisita";
 import { capacidadeEstaPendente } from "./funilQualificacao";
@@ -55,6 +55,9 @@ export type Jogada =
   | { tipo: "convidar_visita" }
   | { tipo: "propor_horario"; jaOfereceu: number }
   | { tipo: "confirmar_visita"; oQueEleDisse: string }
+  | { tipo: "tratar_objecao"; oQueEleDisse: string }
+  | { tipo: "indicar_alternativa"; slug: string; nome: string; piso: number | null; emVezDe: string | null }
+  | { tipo: "deixar_porta_aberta"; oQueEleDisse: string }
   | { tipo: "devolver_escolha" };
 
 import type { Fala } from "./rajada";
@@ -70,6 +73,15 @@ export interface EstadoDaConversa {
   vezesPerguntado: Map<AssuntoDoFunil, number>;
   /** O cliente pediu um HORÁRIO ("que horas?", "quando dá?"). */
   pediuHorario: boolean;
+  /** Objeção de PREÇO ("tá caro", "passa do que eu queria"). */
+  objetouPreco: boolean;
+  /** Pediu ALTERNATIVA ("tem algo mais em conta?", "outra opção?"). */
+  pediuAlternativa: boolean;
+  /** Saída suave ("vou pensar", "vou ver com minha esposa"). */
+  saidaSuave: boolean;
+  /** A alternativa mais em conta do catálogo, fora do foco. */
+  alternativa: { slug: string; nome: string; piso: number | null } | null;
+  nomeDoFoco: string | null;
   convidouVisita: boolean;
   horariosOferecidos: number;
   pedidoEmAberto: DadoPedido | null;
@@ -111,6 +123,35 @@ const NEGACAO = /\b(nao|não|nem|impossivel|impossível|não da|nao da|não cons
 
 const PEDIDO_DE_HORARIO =
   /\b(que horas|qual horario|qual o horario|que dia|quando (da|dá|posso|pode|e possivel|é possível|voces|vocês)|tem horario|horario disponivel)\b/;
+
+/**
+ * As três situações que o trace de OBJEÇÃO mostrou o planner ignorar — e
+ * que a taxonomia de falhas já apontava: "não ofereceu alternativas" está
+ * em 6 das 16 conversas.
+ *
+ * Detecção conservadora: cada regex casa o que o cliente ESCREVE nessas
+ * horas, não o que ele poderia querer dizer. Errar para "não detectou"
+ * custa uma jogada genérica; errar para "detectou" trataria como objeção
+ * uma frase que era pergunta.
+ */
+const OBJECAO_DE_PRECO =
+  /\b(ta caro|tá caro|caro demais|muito caro|salgado|acima do (meu )?(orcamento|orçamento)|passa do que|passa do meu|nao cabe|não cabe|fora do (meu )?(orcamento|orçamento|bolso))\b/;
+const PEDIDO_DE_ALTERNATIVA =
+  /\b(mais em conta|mais barato|mais barata|outra opcao|outra opção|outras opcoes|outras opções|algo (mais )?(barato|em conta|acessivel|acessível)|tem outro|outro imovel|outro imóvel|alternativa)\b/;
+const SAIDA_SUAVE =
+  /\b(vou pensar|preciso pensar|vou ver com|vou conversar com|vou falar com|depois eu (vejo|falo|te falo)|te aviso|qualquer coisa eu (chamo|falo)|por enquanto nao|por enquanto não|mais pra frente|outra hora)\b/;
+
+/** A opção mais em conta do catálogo que NÃO é o imóvel em foco. */
+function alternativaMaisEmConta(
+  catalogo: readonly Empreendimento[],
+  foco: Empreendimento | null,
+): { slug: string; nome: string; piso: number | null } | null {
+  const candidatos = catalogo
+    .filter((e) => e.slug !== foco?.slug && typeof e.precoAPartir === "number" && e.precoAPartir > 0)
+    .sort((a, b) => (a.precoAPartir ?? 0) - (b.precoAPartir ?? 0));
+  const melhor = candidatos[0];
+  return melhor ? { slug: melhor.slug, nome: melhor.nome, piso: melhor.precoAPartir } : null;
+}
 
 const TIPOLOGIA_DE_VERDADE = /\b(dormitorio|dormitorios|quarto|quartos|suite|suites|vaga|vagas|metragem|m2|metros)\b/;
 
@@ -261,6 +302,11 @@ export function estadoDaConversa(params: {
      * jogada é propor o horário, não convidar.
      */
     pediuHorario: PEDIDO_DE_HORARIO.test(nAtual),
+    objetouPreco: OBJECAO_DE_PRECO.test(nAtual),
+    pediuAlternativa: PEDIDO_DE_ALTERNATIVA.test(nAtual),
+    saidaSuave: SAIDA_SUAVE.test(nAtual),
+    alternativa: alternativaMaisEmConta(params.catalogo, params.imovelEmFoco),
+    nomeDoFoco: params.imovelEmFoco?.nome ?? null,
     capacidadePendente: capacidadeEstaPendente({
       dossie,
       historico: [...historico],
@@ -294,6 +340,21 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
   if (estado.aceitouHorario) return { tipo: "confirmar_visita", oQueEleDisse: estado.oQueEleDisse };
 
   if (estado.pedidoEmAberto) return { tipo: "responder_dado", dado: estado.pedidoEmAberto };
+
+  /*
+   * Pedido de ALTERNATIVA vence a objeção (é mais específico), e a objeção
+   * vence a saída suave. Os três vêm antes do funil: quem diz "tá caro" e
+   * recebe "pronto ou na planta?" de volta entende que não foi ouvido.
+   */
+  if (estado.pediuAlternativa && estado.alternativa) {
+    return {
+      tipo: "indicar_alternativa",
+      ...estado.alternativa,
+      emVezDe: estado.nomeDoFoco,
+    };
+  }
+  if (estado.objetouPreco) return { tipo: "tratar_objecao", oQueEleDisse: estado.oQueEleDisse };
+  if (estado.saidaSuave) return { tipo: "deixar_porta_aberta", oQueEleDisse: estado.oQueEleDisse };
 
   // Pediu a hora: já aceitou visitar. Propor é responder.
   if (estado.pediuHorario && estado.horariosOferecidos < 2) {
@@ -410,6 +471,25 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
         `${cabecalho}: CONFIRMAR a visita que ele acabou de aceitar.`,
         `Ele disse: "${jogada.oQueEleDisse}". Em UMA frase, confirme o dia e o horário exatos que ele escolheu, e diga o que vem a seguir (o corretor confirma o endereço / te chamo na véspera).`,
         "Preencha \"visitaProposta\" com a data da tabela CALENDÁRIO e \"confirmadaPeloCliente\": true. Nenhuma pergunta nova, nenhum outro horário — ele já escolheu.",
+      ].join("\n");
+    case "tratar_objecao":
+      return [
+        `${cabecalho}: tratar a OBJEÇÃO de preço — ele disse "${jogada.oQueEleDisse}".`,
+        "Nunca defenda o valor de frente e nunca cite cifra para rebater. Em UMA frase, reconheça; depois descubra a referência dele (\"o que você viu por esse valor?\") OU desloque para condição (\"entrada parcelada, financiamento pela construtora — na visita o corretor monta o fluxo\"). Uma pergunta só.",
+        "Se o catálogo tiver uma opção mais em conta, você PODE mencioná-la pelo nome, sem cifra além do piso da ficha.",
+      ].join("\n");
+    case "indicar_alternativa":
+      return [
+        `${cabecalho}: ele pediu uma opção mais em conta${jogada.emVezDe ? ` que o ${jogada.emVezDe}` : ""}. INDIQUE: ${jogada.nome}.`,
+        jogada.piso
+          ? `Diga o piso da ficha (\"a partir de ${formatarReais(jogada.piso)}\") e UMA razão de encaixe (região, tipologia). Nada de lista: um imóvel, com o link da página.`
+          : "Apresente com UMA razão de encaixe (região, tipologia) e o link da página. Sem cifra: este não tem piso cadastrado.",
+        "Não repita o imóvel que ele acabou de achar caro.",
+      ].join("\n");
+    case "deixar_porta_aberta":
+      return [
+        `${cabecalho}: ele sinalizou que vai pensar / decidir com alguém — "${jogada.oQueEleDisse}".`,
+        "Respeite. UMA frase: deixe a porta aberta e ofereça o que ajuda a decidir junto (o link da página ou as fotos, para mostrar a quem ele citou). NENHUMA pergunta de qualificação, NENHUM horário. Termine sem cobrar resposta.",
       ].join("\n");
     case "devolver_escolha":
       return [

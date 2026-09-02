@@ -410,3 +410,75 @@ describe("repergunta e pedido de horário", () => {
     expect(planejarJogada(e).tipo).toBe("propor_horario");
   });
 });
+
+describe("objeção, alternativa e saída suave — o trace do terceiro perfil", () => {
+  const CATALOGO = [
+    IMOVEL, // 470.000
+    { ...IMOVEL, slug: "vista", nome: "Vista AlphaGran", precoAPartir: 800000 } as Empreendimento,
+    { ...IMOVEL, slug: "serenne", nome: "Serenne", precoAPartir: 320000 } as Empreendimento,
+  ];
+  const foco = CATALOGO[1];
+
+  it("'tá caro' → tratar a objeção, nunca uma pergunta de funil", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("Alphaville, 2 dorm"), bot("O Vista AlphaGran começa em R$ 800.000.")],
+      mensagemAtual: "nossa, tá caro. vou pensar",
+      imovelEmFoco: foco, catalogo: CATALOGO,
+    });
+    expect(e.objetouPreco).toBe(true);
+    expect(planejarJogada(e).tipo).toBe("tratar_objecao");
+  });
+
+  it("'tem algo mais em conta?' → INDICAR a alternativa mais barata fora do foco", () => {
+    // Taxonomia: "não ofereceu alternativas" em 6 de 16 conversas.
+    const e = estadoDaConversa({
+      historico: [cliente("Alphaville"), bot("O Vista AlphaGran começa em R$ 800.000.")],
+      mensagemAtual: "tem algo mais em conta?",
+      imovelEmFoco: foco, catalogo: CATALOGO,
+    });
+    const j = planejarJogada(e);
+    expect(j.tipo).toBe("indicar_alternativa");
+    if (j.tipo === "indicar_alternativa") {
+      expect(j.slug).toBe("serenne"); // o mais barato, e não o próprio foco
+      expect(j.emVezDe).toBe("Vista AlphaGran");
+    }
+  });
+
+  it("alternativa vence a objeção quando as duas aparecem na mesma fala", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("oi"), bot("O Vista AlphaGran começa em R$ 800.000.")],
+      mensagemAtual: "tá caro, tem algo mais barato?",
+      imovelEmFoco: foco, catalogo: CATALOGO,
+    });
+    expect(planejarJogada(e).tipo).toBe("indicar_alternativa");
+  });
+
+  it("'vou ver com minha esposa' → porta aberta, sem pergunta nem horário", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("Alphaville, 2 dorm"), bot("Quer conhecer o decorado?")],
+      mensagemAtual: "hmm, vou ver com minha esposa",
+      imovelEmFoco: foco, catalogo: CATALOGO,
+    });
+    expect(e.saidaSuave).toBe(true);
+    expect(planejarJogada(e).tipo).toBe("deixar_porta_aberta");
+  });
+
+  it("aceite de horário continua ganhando de tudo isso", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("oi"), bot("Posso te mostrar sábado às 10h?")],
+      mensagemAtual: "pode ser, mas tá caro viu",
+      imovelEmFoco: foco, catalogo: CATALOGO,
+    });
+    expect(planejarJogada(e).tipo).toBe("confirmar_visita");
+  });
+
+  it("os blocos citam o imóvel certo e nunca o que ele achou caro", () => {
+    const b = blocoDaJogada(
+      { tipo: "indicar_alternativa", slug: "serenne", nome: "Serenne", piso: 320000, emVezDe: "Vista AlphaGran" },
+      { nomeDoFoco: "Vista AlphaGran" },
+    );
+    expect(b).toContain("INDIQUE: Serenne");
+    expect(b).toContain("R$ 320.000");
+    expect(b).toMatch(/Não repita o imóvel/);
+  });
+});
