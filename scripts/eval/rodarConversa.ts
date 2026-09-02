@@ -323,6 +323,22 @@ async function principal() {
     process.exit(1);
   }
 
+  /*
+   * AVISO DE CUSTO. Uma rodada de 16 personas × 2 gasta ~640 chamadas de
+   * agente, mais o cliente simulado e o juiz — e uma rodada morreu no meio
+   * em 02/09 por a conta ficar sem crédito.
+   *
+   * Desde que a Sofia entrou em produção, pagar um modelo para FINGIR de
+   * cliente compete com cliente de verdade, que é de graça. `npm run
+   * observatorio` roda as MESMAS métricas determinísticas sobre conversa
+   * real, sem uma chamada de LLM. Este eval continua existindo para o que
+   * o observatório não faz: exercitar um cenário que ainda não aconteceu
+   * com ninguém.
+   */
+  console.warn(
+    "[eval] Esta rodada é PAGA (~640 chamadas em 16×2). Para medir de graça,\n" +
+      "       em cliente real: npm run observatorio\n",
+  );
   console.log(
     `Eval de CONVERSA · prompt ${PROMPT_VERSAO} · agente=${PROVEDOR_DO_AGENTE} · cliente=${provedorDoCliente()}`,
   );

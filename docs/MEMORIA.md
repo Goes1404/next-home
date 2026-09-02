@@ -3274,3 +3274,37 @@ maior que tudo que eu vinha medindo.
   inteiro.** O `-q` sai no primeiro casamento, o vitest leva SIGPIPE, e a
   cadeia de verificação falha com os testes todos passando. Usar `grep -E`
   sem `-q`.
+
+## Parar de pagar para simular cliente (02/09/2026)
+
+Decisão do usuário — "estamos gastando muito com esses testes" — e os dados
+desta base concordam.
+
+- **O eval de conversa paga um modelo para FINGIR de cliente.** Fazia
+  sentido enquanto a Sofia não atendia ninguém. Ela está em produção desde
+  02/09 14:54 UTC: cliente real é de graça, não tem viés de família de
+  modelo, e não depende de crédito na OpenAI.
+- **O caro deu ruído; o barato achou os defeitos.** Três rodadas do MESMO
+  código variaram 2 a 3 pontos nas métricas do juiz. As duas correções que
+  de fato importaram (amnésia do planner, acabamento inventado) saíram de
+  LER TRANSCRIÇÃO, e nove dos defeitos do planner saíram de traces sem API.
+- **`npm run observatorio` roda as MESMAS métricas determinísticas sobre
+  conversa REAL, com zero chamada de LLM.** `medirConversa` não tem um
+  único import: é função pura, então serve tanto para conversa simulada
+  quanto para a do banco. Aceita `--arquivo=` (export das cinco colunas)
+  para rodar sem chave de serviço, e `--antes-e-depois=<instante>` para
+  olhar os dois lados de um deploy.
+- **A primeira leitura, em 7 conversas reais:** a IA repetiu pergunta em
+  43%, mandou resposta quase idêntica em 57%, ofereceu visita em 86%
+  (mediana no turno 2,5 — cedo, como a régua da casa manda).
+- **E um achado que só o cliente real podia dar: "o cliente teve de
+  repetir" ficou em 0%.** Era a métrica-título do eval simulado, onde as
+  personas adversariais repetiam sem parar. Gente de verdade não repete —
+  ela some. Ou seja, a métrica que guiou quatro versões de prompt media um
+  comportamento que o cliente real não tem.
+- **O que o observatório NÃO faz, e por isso o eval pago não foi apagado:**
+  exercitar cenário que ainda não aconteceu com ninguém. Ele ficou com
+  aviso de custo apontando para o caminho grátis.
+- **Os traces determinísticos foram versionados** (`scripts/traces/`). Eles
+  moravam só no scratchpad da sessão e teriam sumido — nove defeitos do
+  planner saíram deles, a custo zero.

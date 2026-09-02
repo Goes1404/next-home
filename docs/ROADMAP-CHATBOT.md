@@ -249,7 +249,7 @@ v31.** Produção continua em `82971e7`, sem o planner.
    dele, e é o pendente nº 1 deste arquivo: o eval de CONVERSA está parado
    na v20.** Cinco versões de prompt subiram sem a única medição que pega
    loop de repetição, desfile de imóveis e resposta que não responde.
-   Rodar `npm run eval:conversa` na v25, em lotes de ≤4 personas (teto de
+   Rodar `npm run eval:conversa` (PAGO) na v25, em lotes de ≤4 personas (teto de
    10 min por comando), duas rodadas — uma só não separa regressão de
    variância.
 
