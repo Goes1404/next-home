@@ -47,7 +47,7 @@ import { blocoSemPrazoCadastrado } from "./prazoEntrega";
  * 3 suítes e 2 vagas" — inventou qual imóvel era, que erra tudo de uma vez.
  */
 
-export const PROMPT_VERSAO = "2026.09-v32"; // PLANNER/EXECUTOR: a jogada da mensagem é decidida em código (jogada.ts) e entra no topo como única tarefa; absorve pergunta ignorada, dado pedido, capacidade pendente e a ordem do funil, que antes eram quatro blocos competindo
+export const PROMPT_VERSAO = "2026.09-v33"; // planner: a resposta do cliente à pergunta do turno anterior conta mesmo sem casar no regex (a v32 regrediu: "pronto ou na planta?" repetida ~37 vezes em 32 conversas)
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
