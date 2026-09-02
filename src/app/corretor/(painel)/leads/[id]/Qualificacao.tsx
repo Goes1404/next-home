@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { salvarQualificacao } from "./acoes";
 
 /**
@@ -48,31 +49,63 @@ export function Qualificacao({
   const [dorms, setDorms] = useState(inicial.dormitoriosMin?.toString() ?? "");
   const [regiao, setRegiao] = useState(inicial.regiaoInteresse ?? "");
   const [empreendimento, setEmpreendimento] = useState(inicial.empreendimentoId ?? "");
-  const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [salvando, iniciar] = useTransition();
+  const { avisar, falhar } = useAvisos();
 
   function salvar() {
-    setAviso(null);
     iniciar(async () => {
-      const r = await salvarQualificacao(leadId, {
-        orcamentoMin: paraNumero(min),
-        orcamentoMax: paraNumero(max),
-        rendaMensal: paraNumero(renda),
-        dormitoriosMin: paraNumero(dorms),
-        regiaoInteresse: regiao,
-        empreendimentoId: empreendimento || null,
-      });
-      setAviso(r.erro ? { tipo: "erro", texto: r.erro } : { tipo: "ok", texto: r.ok ?? "Salvo." });
+      try {
+        const r = await salvarQualificacao(leadId, {
+          orcamentoMin: paraNumero(min),
+          orcamentoMax: paraNumero(max),
+          rendaMensal: paraNumero(renda),
+          dormitoriosMin: paraNumero(dorms),
+          regiaoInteresse: regiao,
+          empreendimentoId: empreendimento || null,
+        });
+        if (r.erro) falhar(r.erro);
+        else avisar(r.ok ?? "Salvo");
+      } catch {
+        falhar("Não deu para salvar. Confira a conexão e tente de novo.");
+      }
     });
   }
 
   const campo =
-    "text-fluid-sm w-full rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo disabled:opacity-50";
+    "text-fluid-sm border-linha-forte bg-campo text-corpo min-h-11 w-full rounded-lg border px-3 disabled:opacity-50";
+
+  /*
+   * Nasce FECHADA quando não há nada preenchido.
+   *
+   * Medido em 02/09/2026: dos 116 leads, ZERO tinham orçamento, renda,
+   * dormitórios ou região — em toda a história do banco. A seção abria seis
+   * campos em branco, sem uma linha dizendo para que servem, no meio de um
+   * cabeçalho que já empilha outras dez faixas. Seis campos vazios que
+   * ninguém preenche não são um formulário: são ruído com aparência de
+   * trabalho pendente.
+   *
+   * Fechada ela continua a UM toque, e o resumo diz o que se ganha ao abrir.
+   * Quando houver dado, ela abre sozinha — aí o conteúdo justifica o espaço.
+   */
+  const temAlgo = Boolean(min || max || renda || dorms || regiao || empreendimento);
   const rotulo = "text-fluid-xs mb-1 block text-tenue";
 
   return (
-    <section className="rounded-2xl border border-linha bg-elevado p-4 sm:p-5">
-      <h2 className="text-fluid-base font-medium text-titulo">O que procura</h2>
+    <details open={temAlgo} className="border-linha bg-elevado rounded-2xl border p-4 sm:p-5">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
+        <h2 className="text-fluid-base text-titulo font-medium">O que procura</h2>
+        <span className="text-fluid-xs text-tenue">
+          {temAlgo ? "editar" : "preencher"}
+        </span>
+      </summary>
+
+      {!temAlgo && (
+        <p className="text-fluid-sm text-apoio mt-3">
+          Anote aqui o que este cliente procura. O que estiver preenchido a
+          assistente usa na conversa — e é o que evita oferecer imóvel fora do
+          que ele pode.
+        </p>
+      )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
@@ -177,23 +210,18 @@ export function Qualificacao({
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
+        {/* Era `bg-brand-500 text-white`: tinta da MARCA chumbada, no lugar da
+            cor do módulo — e branco sobre ela some no tema em que o acento é
+            claro. */}
         <button
           type="button"
           onClick={salvar}
           disabled={salvando}
-          className="text-fluid-sm rounded-full bg-brand-500 px-4 py-2 font-medium text-white transition-colors hover:bg-brand-400 disabled:opacity-50"
+          className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm min-h-11 rounded-full px-4 font-medium transition-colors disabled:opacity-50"
         >
           {salvando ? "Salvando…" : "Salvar"}
         </button>
-        {aviso && (
-          <span
-            role="status"
-            className={`text-fluid-xs ${aviso.tipo === "erro" ? "text-alerta" : "text-ok"}`}
-          >
-            {aviso.texto}
-          </span>
-        )}
       </div>
-    </section>
+    </details>
   );
 }

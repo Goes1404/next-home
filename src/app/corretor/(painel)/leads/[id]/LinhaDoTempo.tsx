@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { agruparPorDia, type Interacao, type TipoInteracao } from "@/lib/crm/timeline";
 import { adicionarNota } from "./acoes";
 import { ArrowRight, CalendarCheck, MessageSquare, Phone, Settings, StickyNote } from "lucide-react";
@@ -53,8 +54,8 @@ function rotuloDoDia(dia: string): string {
 
 export function LinhaDoTempo({ leadId, itens }: { leadId: string; itens: Interacao[] }) {
   const [nota, setNota] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
+  const { avisar, falhar } = useAvisos();
 
   const grupos = agruparPorDia(itens);
 
@@ -69,29 +70,33 @@ export function LinhaDoTempo({ leadId, itens }: { leadId: string; itens: Interac
           disabled={ocupado}
           onChange={(e) => setNota(e.target.value)}
           placeholder="Anotar o que foi conversado…"
-          className="text-fluid-sm w-full resize-y rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo disabled:opacity-50"
+          className="text-fluid-sm border-linha-forte bg-campo text-corpo w-full resize-y rounded-lg border px-3 py-2.5 disabled:opacity-50"
         />
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <button
             type="button"
             disabled={ocupado || !nota.trim()}
             onClick={() => {
-              setErro(null);
               iniciar(async () => {
-                const r = await adicionarNota(leadId, nota);
-                if (r.erro) setErro(r.erro);
-                else setNota("");
+                try {
+                  const r = await adicionarNota(leadId, nota);
+                  if (r.erro) {
+                    falhar(r.erro);
+                    return;
+                  }
+                  // A nota entra no histórico ABAIXO, e o campo esvaziar não
+                  // é prova de que gravou — pode ter esvaziado por engano.
+                  avisar("Anotado");
+                  setNota("");
+                } catch {
+                  falhar("Não deu para anotar. Confira a conexão e tente de novo.");
+                }
               });
             }}
-            className="text-fluid-sm rounded-full border border-linha-forte bg-vidro-forte px-4 py-1.5 font-medium text-corpo transition-colors hover:border-acento-linha disabled:opacity-50"
+            className="text-fluid-sm border-linha-forte bg-vidro-forte text-corpo hover:border-acento-linha min-h-11 rounded-full border px-4 font-medium transition-colors disabled:opacity-50"
           >
-            Anotar
+            {ocupado ? "Anotando…" : "Anotar"}
           </button>
-          {erro && (
-            <span role="alert" className="text-fluid-xs text-alerta">
-              {erro}
-            </span>
-          )}
         </div>
       </div>
 

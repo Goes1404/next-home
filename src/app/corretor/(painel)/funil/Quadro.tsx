@@ -12,6 +12,7 @@ import {
 } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import { BORDA_ETAPA, REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { BotaoAvancar } from "@/app/corretor/(painel)/_componentes/BotaoAvancar";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { ModalDossieLead } from "./ModalDossieLead";
 import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
 
@@ -59,8 +60,8 @@ export function Quadro({
   contagens?: Record<EtapaFunil, number>;
   mostrarDono: boolean;
 }) {
-  const [erro, setErro] = useState<string | null>(null);
   const [leadDossie, setLeadDossie] = useState<Lead | null>(null);
+  const { falhar } = useAvisos();
   const [, iniciarTransicao] = useTransition();
 
   // O cartão pula de coluna antes de o servidor responder. Se a resposta vier
@@ -77,11 +78,10 @@ export function Quadro({
 
   function mover(lead: Lead, etapa: EtapaFunil) {
     if (lead.etapa === etapa) return;
-    setErro(null);
     iniciarTransicao(async () => {
       aplicarMovimento({ id: lead.id, etapa });
       const resultado = await moverEtapa(lead.id, etapa);
-      if (resultado.erro) setErro(resultado.erro);
+      if (resultado.erro) falhar(resultado.erro);
     });
   }
 
@@ -98,14 +98,6 @@ export function Quadro({
 
   return (
     <div className="mt-6">
-      {erro && (
-        <p
-          role="alert"
-          className="text-fluid-sm mb-4 rounded-xl border border-alerta-linha bg-alerta-lavado px-4 py-3 text-alerta"
-        >
-          {erro}
-        </p>
-      )}
 
       <div className="space-y-4">
         {ETAPAS_FUNIL.map((etapa) => {

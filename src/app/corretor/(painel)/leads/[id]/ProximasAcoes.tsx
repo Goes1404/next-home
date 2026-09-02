@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { situacaoDaTarefa, type Tarefa } from "@/lib/crm/timeline";
 import { concluirTarefa, criarTarefa } from "./acoes";
 import { Check } from "lucide-react";
@@ -40,20 +41,28 @@ const ESTILO_SITUACAO: Record<string, string> = {
 export function ProximasAcoes({ leadId, tarefas }: { leadId: string; tarefas: Tarefa[] }) {
   const [titulo, setTitulo] = useState("");
   const [prazo, setPrazo] = useState(amanhaDeManha);
-  const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
+  const { avisar, falhar } = useAvisos();
 
   const abertas = tarefas.filter((t) => !t.concluidaEm);
   const feitas = tarefas.filter((t) => t.concluidaEm).slice(0, 5);
 
   function criar() {
-    setErro(null);
     iniciar(async () => {
-      const r = await criarTarefa(leadId, titulo, new Date(prazo).toISOString());
-      if (r.erro) setErro(r.erro);
-      else {
+      try {
+        const r = await criarTarefa(leadId, titulo, new Date(prazo).toISOString());
+        if (r.erro) {
+          falhar(r.erro);
+          return;
+        }
+        // O sucesso é anunciado porque a tarefa nova entra numa lista ACIMA
+        // do formulário: no celular, quem acabou de tocar "Agendar" está
+        // olhando para o rodapé e não vê a linha aparecer.
+        avisar("Tarefa agendada");
         setTitulo("");
         setPrazo(amanhaDeManha());
+      } catch {
+        falhar("Não deu para agendar. Confira a conexão e tente de novo.");
       }
     });
   }
@@ -82,8 +91,12 @@ export function ProximasAcoes({ leadId, tarefas }: { leadId: string; tarefas: Ta
                 disabled={ocupado}
                 onClick={() =>
                   iniciar(async () => {
-                    const r = await concluirTarefa(t.id);
-                    if (r.erro) setErro(r.erro);
+                    try {
+                      const r = await concluirTarefa(t.id);
+                      if (r.erro) falhar(r.erro);
+                    } catch {
+                      falhar("Não deu para concluir a tarefa. Confira a conexão.");
+                    }
                   })
                 }
                 /*
@@ -117,7 +130,7 @@ export function ProximasAcoes({ leadId, tarefas }: { leadId: string; tarefas: Ta
           disabled={ocupado}
           onChange={(e) => setTitulo(e.target.value)}
           placeholder="Retornar a ligação, enviar plantas…"
-          className="text-fluid-sm w-full rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo disabled:opacity-50"
+          className="text-fluid-sm border-linha-forte bg-campo text-corpo min-h-11 w-full rounded-lg border px-3 disabled:opacity-50"
         />
         <div className="flex flex-wrap gap-2">
           <input
@@ -126,24 +139,18 @@ export function ProximasAcoes({ leadId, tarefas }: { leadId: string; tarefas: Ta
             disabled={ocupado}
             aria-label="Prazo da tarefa"
             onChange={(e) => setPrazo(e.target.value)}
-            className="text-fluid-sm flex-1 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo disabled:opacity-50"
+            className="text-fluid-sm border-linha-forte bg-campo text-corpo min-h-11 flex-1 rounded-lg border px-3 disabled:opacity-50"
           />
           <button
             type="button"
             onClick={criar}
             disabled={ocupado || !titulo.trim()}
-            className="text-fluid-sm rounded-full border border-acento-linha bg-acento-lavado px-4 py-2 font-medium text-acento-suave transition-opacity hover:opacity-85 disabled:opacity-50"
+            className="text-fluid-sm border-acento-linha bg-acento-lavado text-acento-suave min-h-11 rounded-full border px-4 font-medium transition-opacity hover:opacity-85 disabled:opacity-50"
           >
             Agendar
           </button>
         </div>
       </div>
-
-      {erro && (
-        <p role="alert" className="text-fluid-xs mt-2 text-alerta">
-          {erro}
-        </p>
-      )}
 
       {feitas.length > 0 && (
         <details className="mt-4">

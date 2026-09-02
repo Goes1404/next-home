@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { Archive, RotateCcw, Trash2 } from "lucide-react";
 import { arquivarLead, excluirLeadDefinitivo, restaurarLead } from "./acoes";
 
@@ -31,14 +32,28 @@ export function ArquivarLead({
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
   const [confirmando, setConfirmando] = useState(false);
-  const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
+  const { avisar, falhar } = useAvisos();
 
   const executar = (fn: () => Promise<{ ok?: string; erro?: string }>, saindo = false) =>
     iniciar(async () => {
-      const r = await fn();
-      setAviso({ ok: Boolean(r.ok), texto: r.ok ?? r.erro ?? "" });
-      if (r.ok && saindo) router.push("/corretor/pessoas");
-      else if (r.ok) router.refresh();
+      try {
+        const r = await fn();
+        if (r.erro) {
+          // Era anunciado como `role="status"`, que o leitor de tela guarda
+          // para a próxima pausa. Falha ao EXCLUIR um lead merece
+          // interromper, e é o que `falhar` faz.
+          falhar(r.erro);
+          return;
+        }
+        avisar(r.ok ?? "Pronto");
+        // Saindo da ficha, o aviso viaja junto: a região vive no shell do
+        // painel, não nesta tela — antes, a confirmação de exclusão sumia com
+        // a própria página que a mostrava.
+        if (saindo) router.push("/corretor/pessoas");
+        else router.refresh();
+      } catch {
+        falhar("Não deu para completar. Confira a conexão e tente de novo.");
+      }
     });
 
   return (
@@ -118,14 +133,6 @@ export function ArquivarLead({
         )}
       </div>
 
-      {aviso && (
-        <p
-          role="status"
-          className={`text-fluid-xs mt-3 ${aviso.ok ? "text-apoio" : "text-perigo"}`}
-        >
-          {aviso.texto}
-        </p>
-      )}
     </section>
   );
 }

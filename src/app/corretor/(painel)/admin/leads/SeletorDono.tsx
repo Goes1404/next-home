@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { atribuirLead } from "@/app/corretor/actions";
 
 /**
@@ -20,8 +21,8 @@ export function SeletorDono({
   donoAtual: string | null;
   equipe: { id: string; nome: string }[];
 }) {
-  const [erro, setErro] = useState<string | null>(null);
   const [salvando, iniciarTransicao] = useTransition();
+  const { falhar } = useAvisos();
 
   return (
     <div className="flex flex-col items-end gap-1">
@@ -35,10 +36,9 @@ export function SeletorDono({
         onChange={(e) => {
           const destino = e.target.value;
           if (!destino) return;
-          setErro(null);
           iniciarTransicao(async () => {
             const resultado = await atribuirLead(leadId, destino);
-            if (resultado.erro) setErro(resultado.erro);
+            if (resultado.erro) falhar(resultado.erro);
           });
         }}
         className="text-fluid-xs rounded-lg border border-linha-forte bg-campo px-2 py-1.5 text-corpo disabled:opacity-50"
@@ -55,11 +55,6 @@ export function SeletorDono({
           </option>
         ))}
       </select>
-      {erro && (
-        <span role="alert" className="text-fluid-xs text-alerta">
-          {erro}
-        </span>
-      )}
     </div>
   );
 }

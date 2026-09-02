@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useAvisos } from "./Avisos";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Phone } from "lucide-react";
@@ -24,7 +25,7 @@ import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/typ
 export function FolhaAcoesLead({ lead, onFechar }: { lead: Lead; onFechar: () => void }) {
   const router = useRouter();
   const [movendo, iniciarTransicao] = useTransition();
-  const [erro, setErro] = useState<string | null>(null);
+  const { falhar } = useAvisos();
   const whatsapp = linkWhatsappLead(lead);
 
   useEffect(() => {
@@ -37,11 +38,10 @@ export function FolhaAcoesLead({ lead, onFechar }: { lead: Lead; onFechar: () =>
 
   function mover(etapa: EtapaFunil) {
     if (etapa === lead.etapa || movendo) return;
-    setErro(null);
     iniciarTransicao(async () => {
       const resultado = await moverEtapa(lead.id, etapa);
       if (resultado.erro) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       router.refresh();
@@ -99,15 +99,6 @@ export function FolhaAcoesLead({ lead, onFechar }: { lead: Lead; onFechar: () =>
             Abrir ficha <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-
-        {erro && (
-          <p
-            role="alert"
-            className="text-fluid-xs border-alerta-linha bg-alerta-lavado text-alerta mt-3 rounded-xl border px-3 py-2"
-          >
-            {erro}
-          </p>
-        )}
 
         <p className="text-tenue mt-5 pb-2 text-[11px] font-medium tracking-[0.14em] uppercase">
           Mover para

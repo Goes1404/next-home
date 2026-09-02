@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { definirVisitaEm } from "@/app/corretor/actions";
 
 /** Formato que o `<input type="datetime-local">` exige, em hora local. */
@@ -18,8 +19,8 @@ function paraInputLocal(iso: string | null): string {
  */
 export function CampoVisita({ leadId, quando }: { leadId: string; quando: string | null }) {
   const [valor, setValor] = useState(paraInputLocal(quando));
-  const [erro, setErro] = useState<string | null>(null);
   const [salvando, iniciarTransicao] = useTransition();
+  const { falhar } = useAvisos();
 
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -34,20 +35,14 @@ export function CampoVisita({ leadId, quando }: { leadId: string; quando: string
         onChange={(e) => {
           const novoValor = e.target.value;
           setValor(novoValor);
-          setErro(null);
           iniciarTransicao(async () => {
             const quandoIso = novoValor ? new Date(novoValor).toISOString() : null;
             const resultado = await definirVisitaEm(leadId, quandoIso);
-            if (resultado.erro) setErro(resultado.erro);
+            if (resultado.erro) falhar(resultado.erro);
           });
         }}
         className="text-fluid-xs rounded-lg border border-linha-forte bg-campo px-2 py-1.5 text-corpo disabled:opacity-50"
       />
-      {erro && (
-        <span role="alert" className="text-fluid-xs text-alerta">
-          {erro}
-        </span>
-      )}
     </div>
   );
 }
