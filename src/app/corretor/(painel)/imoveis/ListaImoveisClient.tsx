@@ -150,9 +150,10 @@ export function ListaImoveisClient({ imoveis }: Props) {
                       target="_blank"
                       rel="noopener noreferrer"
                       title="Ver na Vitrine Pública"
+                      aria-label={`Ver ${imovel.nome} no site`}
                       className="min-h-[46px] w-[46px] rounded-xl bg-vidro-forte hover:bg-vidro-mais text-corpo hover:text-titulo transition-colors flex items-center justify-center shrink-0"
                     >
-                      <span>👁️</span>
+                      <span aria-hidden>👁️</span>
                     </Link>
                   </div>
                 </div>

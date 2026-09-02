@@ -92,7 +92,7 @@ export function ArquivarLead({
             ) : (
               <div className="border-perigo-linha bg-perigo-lavado w-full rounded-xl border p-3">
                 <p className="text-fluid-sm text-titulo">
-                  Excluir {nome} de vez? Isso apaga junto o dossiê da IA, as tarefas e a linha do
+                  Excluir {nome} de vez? Isso apaga junto o que a IA anotou sobre ele, as tarefas e a linha do
                   tempo dele. Não tem desfazer.
                 </p>
                 <p className="text-fluid-xs text-apoio mt-1">

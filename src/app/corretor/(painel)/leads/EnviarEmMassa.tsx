@@ -174,7 +174,7 @@ export function EnviarEmMassa({
             </div>
 
             <p className="text-fluid-xs mt-3 text-tenue">
-              Quem responder é atendido na hora pela sua IA — ela qualifica, monta o dossiê e te
+              Quem responder é atendido na hora pela sua IA — ela entende o que a pessoa procura, anota, e te
               avisa quando o lead esquentar.
             </p>
 

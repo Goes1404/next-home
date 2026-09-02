@@ -201,7 +201,7 @@ export default async function ConversasPage({
 
       {modo && (
         <p className="text-fluid-sm text-apoio mt-4">
-          Modo do seu número: <span className="text-titulo font-medium">{ROTULO_MODO[modo]}</span>{" "}
+          Quando a IA responde por você: <span className="text-titulo font-medium">{ROTULO_MODO[modo]}</span>{" "}
           <Link
             href="/corretor/whatsapp"
             className="text-acento-suave underline-offset-4 hover:underline"

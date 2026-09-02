@@ -74,7 +74,7 @@ export function RevisaoRespostas({ itens }: { itens: ItemRevisao[] }) {
       </h2>
       <p className="text-fluid-xs text-apoio mt-1">
         As que já têm sinal de problema vêm primeiro — o cliente repetiu a pergunta, pediu para
-        falar com gente, ou você entrou corrigindo. Cada 👎 vira caso de teste do próximo ajuste.
+        falar com gente, ou você entrou corrigindo. Cada 👎 ensina a IA a não repetir aquilo.
       </p>
 
       {erro && (
@@ -127,7 +127,7 @@ export function RevisaoRespostas({ itens }: { itens: ItemRevisao[] }) {
                 disabled={salvando === item.interacaoId}
                 className="border-linha text-apoio hover:text-perigo flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-sm transition-colors disabled:opacity-60"
               >
-                👎 Ruim — vira caso de teste
+                👎 Ruim
               </button>
             </div>
           </li>

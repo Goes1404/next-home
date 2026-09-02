@@ -171,7 +171,7 @@ const SELO: Record<Estado, { texto: string; classe: string; ponto: string }> = {
   ativa: { texto: "IA atendendo", classe: "text-ok", ponto: "bg-ok" },
   pausada_humano: { texto: "IA em pausa", classe: "text-alerta", ponto: "bg-alerta" },
   aguardando_liberacao: {
-    texto: "IA aguardando liberação",
+    texto: "IA esperando sua liberação",
     classe: "text-info",
     ponto: "bg-info",
   },
@@ -1191,7 +1191,7 @@ function Balao({
               nota === "boa" ? "text-ok" : "text-perigo",
             )}
           >
-            {nota === "boa" ? "👍 Avaliada como boa" : "👎 Marcada como ruim — vira caso de teste"}
+            {nota === "boa" ? "👍 Você marcou como boa" : "👎 Você marcou como ruim"}
           </p>
         ) : (
           <div className="mt-1 flex items-center gap-1">
@@ -1208,7 +1208,7 @@ function Balao({
               type="button"
               onClick={() => avaliar("ruim")}
               disabled={salvando}
-              title="Esta resposta da IA foi ruim — vira caso de teste"
+              title="Marcar esta resposta como ruim — a IA aprende a não repetir"
               className="border-linha text-apoio hover:text-perigo min-h-11 cursor-pointer rounded-full border px-3 text-xs transition-colors disabled:opacity-60"
             >
               👎

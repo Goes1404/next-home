@@ -12,7 +12,7 @@ import {
 } from "../acoes";
 
 /**
- * "Como está a fila", em português de gente (roadmap F4).
+ * "Como estão os envios", em português de gente (roadmap F4).
  *
  * O painel antigo mostrava três números crus — pendentes, cota, próximo
  * envio — mais dois botões perigosos sempre à vista. Cota, fila e instância
@@ -72,9 +72,9 @@ export function StatusFila({
       await atualizar();
       setFeedback(
         resultado.processados === 0
-          ? "Nada vencido neste instante — a fila segue no ritmo dela."
+          ? "Nada para enviar neste instante — as mensagens seguem saindo sozinhas."
           : `${resultado.enviados} mensagem${resultado.enviados === 1 ? "" : "s"} enviada${resultado.enviados === 1 ? "" : "s"} agora.` +
-              (resultado.restantes > 0 ? ` Faltam ${resultado.restantes}.` : " Fila zerada."),
+              (resultado.restantes > 0 ? ` Faltam ${resultado.restantes}.` : " Não sobrou nenhuma."),
       );
       setTimeout(() => setFeedback(null), 8000);
     });
@@ -104,8 +104,8 @@ export function StatusFila({
       await atualizar();
       setFeedback(
         resultado.removidos === 0
-          ? "A fila já estava vazia."
-          : `Fila limpa: ${resultado.removidos} envio(s) removido(s).`,
+          ? "Não havia nada programado."
+          : `${resultado.removidos} mensagem(ns) programada(s) cancelada(s).`,
       );
       setTimeout(() => setFeedback(null), 8000);
     });
@@ -119,9 +119,9 @@ export function StatusFila({
   function resetarCota() {
     if (
       !confirm(
-        "Resetar a cota devolve os disparos do dia e solta qualquer bloqueio.\n\n" +
-          "A cota existe para proteger seu número: volume alto num número novo é o " +
-          "caminho mais curto para o WhatsApp bloquear a linha. Use só em teste. Confirma?",
+        "Isto devolve os envios de hoje e solta qualquer bloqueio.\n\n" +
+          "O limite diário existe para proteger o seu número: volume alto num número " +
+          "novo é o caminho mais curto para o WhatsApp bloquear a linha. Confirma?",
       )
     ) {
       return;
@@ -135,7 +135,7 @@ export function StatusFila({
         return;
       }
       await atualizar();
-      setFeedback("Cota do dia zerada e bloqueios soltos. A fila volta a andar.");
+      setFeedback("Envios de hoje devolvidos e bloqueios soltos. As mensagens voltam a sair.");
       setTimeout(() => setFeedback(null), 8000);
     });
   }
@@ -275,11 +275,14 @@ export function StatusFila({
                 type="button"
                 onClick={resetarCota}
                 disabled={resetando || processando || limpando}
-                title="Fase de teste: devolve os disparos do dia e solta bloqueios. Afrouxa a proteção anti-ban."
+                title="Devolve os envios de hoje e solta bloqueios. Afrouxa de propósito a proteção do seu número — use só quando precisar mesmo."
                 className="text-fluid-xs border-alerta-linha bg-alerta-lavado text-alerta flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 transition-opacity hover:opacity-80 disabled:opacity-60"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                {resetando ? "Resetando…" : "Liberar envios de hoje (teste)"}
+                {/* Era "(teste)": rótulo de fase de desenvolvimento visível para quem
+                    usa o produto. O que o botão faz é devolver os envios do dia; o
+                    risco está no `title` e na confirmação, onde ele é lido. */}
+                {resetando ? "Liberando…" : "Liberar envios de hoje"}
               </button>
             </div>
           )}
