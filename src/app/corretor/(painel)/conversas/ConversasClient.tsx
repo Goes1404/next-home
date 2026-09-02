@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import {
   avaliarInteracao,
   enviarMensagemDoPainel,
@@ -205,8 +206,8 @@ export function ConversasClient({
    */
   conversaInicial?: string | null;
 }) {
-  const [erro, setErro] = useState<string | null>(null);
   const [selecionadaId, setSelecionadaId] = useState<string | null>(conversaInicial ?? null);
+  const { falhar } = useAvisos();
   const [busca, setBusca] = useState("");
   const [todas, setTodas] = useState(conversas);
   const [estados, setEstados] = useState<Record<string, Estado>>(() =>
@@ -348,7 +349,6 @@ export function ConversasClient({
   }, [selecionadaId]);
 
   function abrirConversa(id: string) {
-    setErro(null);
     setSelecionadaId(id);
     setNaoLidasPor((atual) => ({ ...atual, [id]: 0 }));
     void marcarConversaLida(id);
@@ -406,13 +406,21 @@ export function ConversasClient({
 
   return (
     <div className="mt-6">
-      {erro && (
-        <p role="alert" className="text-fluid-sm text-perigo mb-3">
-          {erro}
-        </p>
-      )}
+      {/*
+        No CELULAR não existe mais caixa de altura fixa.
+        Era `h-[72dvh]` com rolagem interna dentro de uma página que também
+        rolava: dois scrolls concorrentes sob o mesmo dedo, com o cabeçalho
+        grudento em cima e a barra do polegar embaixo comendo o resto. E
+        altura fixa aqui nunca poderia estar certa — o que vem acima da caixa
+        (cabeçalho, abas, aviso de revisão) muda de tamanho conforme o dia.
 
-      <div className="border-linha bg-superficie shadow-painel flex h-[72dvh] min-h-[420px] overflow-hidden rounded-2xl border">
+        Agora: a lista de conversas é uma lista de página comum, que rola com
+        a página; e a conversa aberta vira TELA CHEIA entre o cabeçalho e a
+        barra (`fixed`, mais abaixo), como em qualquer aplicativo de mensagem.
+        A caixa de duas colunas com altura calculada fica só no computador,
+        onde ela cabe e faz sentido.
+      */}
+      <div className="border-linha bg-superficie shadow-painel flex flex-col overflow-hidden rounded-2xl border md:h-[calc(100dvh-var(--painel-header-h)-9rem)] md:min-h-[420px] md:flex-row">
         {/* Lista de conversas — no celular some quando um chat está aberto */}
         <aside
           className={cn(
@@ -426,11 +434,12 @@ export function ConversasClient({
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar conversa"
-              className="border-linha bg-elevado text-corpo placeholder:text-tenue w-full rounded-full border px-4 py-2 text-sm outline-none focus:border-linha-forte"
+              className="border-linha bg-elevado text-corpo placeholder:text-tenue focus:border-linha-forte min-h-11 w-full rounded-full border px-4 text-sm outline-none"
             />
           </div>
 
-          <ul className="flex-1 overflow-y-auto">
+          {/* Rola só no computador; no celular quem rola é a página. */}
+          <ul className="md:flex-1 md:overflow-y-auto">
             {listaOrdenada.map(({ conversa, previa, quando }) => {
               const estado = estados[conversa.id] ?? estadoDa(conversa);
               const ativa = conversa.id === selecionadaId;
@@ -502,7 +511,16 @@ export function ConversasClient({
         </aside>
 
         {/* Chat aberto */}
-        <section className={cn("min-w-0 flex-1 flex-col", selecionada ? "flex" : "hidden md:flex")}>
+        <section
+          className={cn(
+            "min-w-0 flex-1 flex-col md:static md:z-auto",
+            selecionada
+              ? // Tela cheia entre o cabeçalho e a barra do polegar. `bg-fundo`
+                // é obrigatório: sem ele o conteúdo da página aparece por trás.
+                "bg-fundo fixed inset-x-0 top-[var(--painel-header-h)] bottom-[var(--nav-mobile-h)] z-30 flex md:bottom-0"
+              : "hidden md:flex",
+          )}
+        >
           {selecionada ? (
             <Chat
               key={selecionada.id}
@@ -511,7 +529,7 @@ export function ConversasClient({
               mensagens={mensagensPor[selecionada.id] ?? null}
               podeEnviar={podeEnviar}
               onVoltar={() => setSelecionadaId(null)}
-              onErro={setErro}
+              onErro={falhar}
               onEstado={(novo) => setEstados((atual) => ({ ...atual, [selecionada.id]: novo }))}
               onMesclar={(novas) => mesclarNaConversa(selecionada.id, novas)}
               onRemover={(mensagemId) => removerDaConversa(selecionada.id, mensagemId)}
@@ -543,7 +561,13 @@ function Chat({
   mensagens: MensagemConversa[] | null;
   podeEnviar: boolean;
   onVoltar: () => void;
-  onErro: (e: string | null) => void;
+  /*
+   * Só relata falha; não existe mais "limpar o erro". Antes ele escrevia num
+   * parágrafo desta tela — que ficava ACIMA da caixa do chat e, no celular,
+   * fora do campo de visão no exato momento em que o erro disparava. Agora vai
+   * para a região de avisos do shell, que se fecha sozinha.
+   */
+  onErro: (e: string) => void;
   onEstado: (novo: Estado) => void;
   onMesclar: (novas: MensagemConversa[]) => void;
   onRemover: (mensagemId: string) => void;
@@ -577,7 +601,6 @@ function Chat({
   }
 
   function alternarBot() {
-    onErro(null);
     // Otimista: muda antes da resposta; se o servidor recusar, volta.
     const anterior = estado;
     const proximo: Estado = estado === "ativa" ? "desligada" : "ativa";
@@ -597,7 +620,6 @@ function Chat({
   async function enviar() {
     const conteudo = texto.trim();
     if (!conteudo || enviando) return;
-    onErro(null);
     setEnviando(true);
     setTexto("");
     presoNoFimRef.current = true;
@@ -638,7 +660,6 @@ function Chat({
 
   async function enviarMidia(midia: MidiaDoCatalogo) {
     if (enviando) return;
-    onErro(null);
     setEnviando(true);
     setSeletorAberto(false);
     presoNoFimRef.current = true;
@@ -688,7 +709,7 @@ function Chat({
           type="button"
           onClick={onVoltar}
           aria-label="Voltar para a lista"
-          className="text-apoio hover:text-titulo -ml-1 flex size-9 cursor-pointer items-center justify-center rounded-full md:hidden"
+          className="text-apoio hover:text-titulo -ml-1 flex size-11 cursor-pointer items-center justify-center rounded-full md:hidden"
         >
           ←
         </button>
@@ -727,7 +748,7 @@ function Chat({
           onClick={alternarBot}
           disabled={pendente}
           className={cn(
-            "flex min-h-9 shrink-0 cursor-pointer items-center rounded-full px-3.5 text-xs font-medium transition-colors disabled:opacity-60",
+            "flex min-h-11 shrink-0 cursor-pointer items-center rounded-full px-3.5 text-xs font-medium transition-colors disabled:opacity-60",
             estado === "ativa"
               ? "border-linha-forte text-corpo hover:bg-vidro border"
               : "bg-acento hover:bg-acento-hover text-sobre-cor",
@@ -751,7 +772,7 @@ function Chat({
               type="button"
               onClick={() => void carregarAnteriores()}
               disabled={carregandoAntigas}
-              className="border-linha text-apoio hover:text-titulo cursor-pointer rounded-full border px-4 py-1.5 text-xs transition-colors disabled:opacity-60"
+              className="border-linha text-apoio hover:text-titulo min-h-11 cursor-pointer rounded-full border px-4 text-xs transition-colors disabled:opacity-60"
             >
               {carregandoAntigas ? "Carregando…" : "Ver mensagens anteriores"}
             </button>
@@ -976,14 +997,15 @@ function SeletorDeMidia({
   const [imoveis, setImoveis] = useState<{ nome: string; midias: MidiaDoCatalogo[] }[] | null>(
     null,
   );
-  const [erro, setErro] = useState<string | null>(null);
   const [imovelAberto, setImovelAberto] = useState<string | null>(null);
+
+  const { falhar } = useAvisos();
 
   useEffect(() => {
     let vivo = true;
     void listarCatalogoDeMidias().then((resultado) => {
       if (!vivo) return;
-      if ("erro" in resultado) setErro(resultado.erro);
+      if ("erro" in resultado) falhar(resultado.erro);
       else setImoveis(resultado.imoveis);
     });
     return () => {
@@ -1004,7 +1026,7 @@ function SeletorDeMidia({
             <button
               type="button"
               onClick={() => setImovelAberto(null)}
-              className="text-apoio hover:text-titulo cursor-pointer rounded-full px-2 py-1 text-xs"
+              className="text-apoio hover:text-titulo min-h-11 cursor-pointer rounded-full px-3 text-xs"
             >
               ← imóveis
             </button>
@@ -1013,16 +1035,14 @@ function SeletorDeMidia({
             type="button"
             onClick={onFechar}
             aria-label="Fechar seletor"
-            className="text-apoio hover:text-titulo cursor-pointer rounded-full px-2 py-1 text-xs"
+            className="text-apoio hover:text-titulo min-h-11 cursor-pointer rounded-full px-3 text-xs"
           >
             ✕
           </button>
         </div>
       </div>
 
-      {erro ? (
-        <p className="text-perigo p-2 text-xs">{erro}</p>
-      ) : imoveis === null ? (
+      {imoveis === null ? (
         <p className="text-tenue p-2 text-xs">Carregando catálogo…</p>
       ) : aberto ? (
         <ul className="grid max-h-64 grid-cols-3 gap-2 overflow-y-auto">
@@ -1088,7 +1108,13 @@ function Balao({
   onErro,
 }: {
   mensagem: MensagemConversa;
-  onErro: (e: string | null) => void;
+  /*
+   * Só relata falha; não existe mais "limpar o erro". Antes ele escrevia num
+   * parágrafo desta tela — que ficava ACIMA da caixa do chat e, no celular,
+   * fora do campo de visão no exato momento em que o erro disparava. Agora vai
+   * para a região de avisos do shell, que se fecha sozinha.
+   */
+  onErro: (e: string) => void;
 }) {
   /*
    * Avaliação POR BALÃO — o motivo de existir do vínculo da 0040. Antes só
@@ -1101,7 +1127,6 @@ function Balao({
 
   function avaliar(valor: "boa" | "ruim") {
     if (!mensagem.interacaoId) return;
-    onErro(null);
     setSalvando(true);
     void avaliarInteracao(mensagem.interacaoId, valor).then((resultado) => {
       setSalvando(false);
@@ -1171,7 +1196,7 @@ function Balao({
               onClick={() => avaliar("boa")}
               disabled={salvando}
               title="Esta resposta da IA foi boa"
-              className="border-linha text-apoio hover:text-ok cursor-pointer rounded-full border px-2 py-0.5 text-xs transition-colors disabled:opacity-60"
+              className="border-linha text-apoio hover:text-ok min-h-11 cursor-pointer rounded-full border px-3 text-xs transition-colors disabled:opacity-60"
             >
               👍
             </button>
@@ -1180,7 +1205,7 @@ function Balao({
               onClick={() => avaliar("ruim")}
               disabled={salvando}
               title="Esta resposta da IA foi ruim — vira caso de teste"
-              className="border-linha text-apoio hover:text-perigo cursor-pointer rounded-full border px-2 py-0.5 text-xs transition-colors disabled:opacity-60"
+              className="border-linha text-apoio hover:text-perigo min-h-11 cursor-pointer rounded-full border px-3 text-xs transition-colors disabled:opacity-60"
             >
               👎
             </button>
