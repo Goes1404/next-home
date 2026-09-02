@@ -3399,3 +3399,82 @@ gerou** (pergunta ao CSS compilado, sem manter lista de utilities válidas).
 - **O Prettier não roda neste repositório:** 385 arquivos já não passavam
   nele antes desta reforma. Rodar `--write` numa mudança esconde o diff real.
 
+## O painel tem UM usuário, e a estrutura era de time (02/09/2026)
+
+Pedido: "os caminhos estão como labirintos". Antes de redesenhar, medir.
+
+- **Uma pessoa tem 107 dos 116 leads e TODAS as 127 conversas.** Os outros
+  seis corretores têm 1 ou 2 leads cada e **zero** conversas — e **só um dos
+  oito tem login** (`corretores.user_id`). O painel foi construído como CRM de
+  equipe (funil kanban, seleção em lote, distribuição de carteira,
+  administração) e é operado por uma pessoa, no celular. **Antes de tratar
+  sintoma de navegação, contar quantos usuários e quantas linhas existem de
+  verdade** — quase toda a "complexidade" era máquina sem carga.
+- **Lead e conversa eram a MESMA pessoa em 91 dos casos** (91 dos 116 leads
+  têm conversa; 91 das 127 conversas têm lead). O painel oferecia duas portas
+  para o mesmo ser humano, com ações diferentes em cada uma. A primeira
+  decisão que ele pedia era "por qual porta eu falo com o Fulano?" — a
+  pergunta que ninguém responde sem alguém explicar antes. Viraram uma lista
+  só (`pessoas_do_corretor`, 0088).
+- **O labirinto não era profundidade.** Os caminhos tinham 2 a 4 toques. Era
+  ENTULHO (dez elementos antes do primeiro lead), REDUNDÂNCIA (a gaveta
+  "Menu" renderizava o mesmo array da barra do polegar — um toque para ver o
+  que já estava na tela) e ALVO INVISÍVEL. Contar toques não teria achado
+  nada; o que achou foi listar o que vem antes do conteúdo.
+- **O celular era o desktop empilhado.** Em todo o painel havia 11 usos de
+  `md:hidden`/`sm:`. Nenhuma das quatro telas principais escondia cabeçalho,
+  descrição, abas, avisos, busca ou chips por breakpoint.
+
+### Rolagem lateral esconde navegação, e o projeto já sabia disso
+
+Medido em 360px com o CSS de produção: **117px de abas fora da tela** em
+WhatsApp e **327px** em Administração — mais da metade dos destinos, atrás de
+um gesto que a fileira não anuncia. Quebrar linha custa 44 e 88px de altura,
+uma vez. É exatamente o negócio que a barra de seleção em lote já tinha
+fechado em 27/08 ("a escolha foi QUEBRAR LINHA, não rolar"), e que voltou a
+se perder em três lugares. `naoRolaDeLado.test.ts` trava a regra com lista
+declarada de exceções — tabela larga rola, e por isso está escrita.
+
+### A régua que dispensa treino: emprestar o modelo que a pessoa já usa
+
+A lista de Pessoas é ordenada por última atividade, com prévia da mensagem,
+não lidas e hora relativa. Não é estética: é o formato do aplicativo que ela
+usa o dia inteiro. **Painel que precisa ser usado sem treino não inventa
+modelo mental novo — empresta o que já está no bolso de quem vai usar.**
+
+### Armadilhas desta rodada
+
+- **Filtrar Pessoas por ATENDIMENTO (a régua da 0087) estava ERRADO**, e a
+  primeira versão da 0088 caiu nisso: cliente novo que escreve pela primeira
+  vez não é liberado, não é conhecido e não veio de campanha — sumiria da
+  lista, porque o lead dele também não entra (o lead TEM conversa). Medido:
+  44 conversas estão fora do atendimento E TÊM LEAD, 17 ativas na semana. A
+  régua virou `tem lead OU é atendimento`. **Ao copiar o recorte de uma view
+  para outra, conferir se a pergunta é a mesma.**
+- **O `union all` mora no BANCO** porque ordenação e paginação precisam
+  acontecer sobre a lista já unida: juntar em JavaScript devolveria "as 40
+  conversas mais recentes mais os 40 leads mais recentes", que não é "as 40
+  pessoas mais recentes" — e o erro só apareceria com a carteira maior.
+- **Constante importada por componente de cliente arrasta o módulo inteiro.**
+  `ListaPessoas` é `"use client"` e importava `PESSOAS_POR_PAGINA` de um
+  módulo com `server-only`: o build reprova com "'server-only' cannot be
+  imported from a Client Component module". Mesma pedra do `limitesPdf.ts`;
+  mesma saída, `pessoasTipos.ts`. **Tipo viaja de graça (é apagado);
+  constante é valor.**
+- **View nova exige duas coisas fora do SQL:** os dois passos da 0077
+  (`revoke select from anon` + `security_invoker = on`, conferidos NOS DOIS
+  SENTIDOS) e a declaração à mão em `src/lib/supabase/types.ts` — o cliente do
+  Supabase só aceita nome de relação que exista naquele arquivo, e regerar
+  apaga as 34 uniões de CHECK.
+- **Rota nova pede `revalidatePath` nas actions que já revalidavam as
+  antigas.** Sem isso a lista de Pessoas ficaria velha depois de cada ação,
+  porque o cache é por caminho.
+- **Ao empilhar o que era coluna, o teto de rolagem muda de lugar.** No
+  kanban cada coluna rolava sozinha e 46 cartões não incomodavam; empilhados
+  viram dez mil pixels dentro de um grupo. O funil passou a mostrar 6 por
+  etapa e mandar o resto para a lista.
+- **Arrastar do HTML5 não funciona em toque.** O kanban tinha `draggable`
+  desde sempre num painel usado no celular: era enfeite que só o mouse
+  alcançava, e o comentário do arquivo já dizia que o gesto principal era
+  outro.
+
