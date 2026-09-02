@@ -375,6 +375,31 @@ describe("os três achados do trace cooperativo", () => {
 });
 
 describe("repergunta e pedido de horário", () => {
+  it("o assunto fechado CONTINUA fechado turnos depois", () => {
+    /*
+     * A primeira versão da regra olhava só a ÚLTIMA fala do bot, então o
+     * assunto fechado no turno 4 era esquecido no 5 e voltava no 7. Medido
+     * na v33 (`quer-tudo-pelo-zap`): "pronto ou na planta?" nos turnos 4, 7
+     * e 9, com o cliente respondendo entre eles. Este teste mede o EFEITO
+     * (segue fechado), não o mecanismo — teste que codifica o mecanismo
+     * protege o defeito, como já aconteceu com o anti-repetição.
+     */
+    const historico = [
+      cliente("me manda as infos por aqui"),
+      bot("Você prefere imóvel pronto para morar ou na planta?"),
+      cliente("me fala a metragem"), // responde sem usar as palavras do regex
+      bot("São 38,81m² com 2 dormitórios."),
+      cliente("tem foto"),
+      bot("Te mandei as fotos aqui embaixo."),
+    ];
+
+    const depois = estadoDaConversa({
+      historico, mensagemAtual: "quero ver mais detalhes", imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(depois.respondidos.has("estagio")).toBe(true);
+    expect(planejarJogada(depois)).not.toEqual({ tipo: "perguntar", assunto: "estagio" });
+  });
+
   it("desconversou sem perguntar → o assunto FECHA; só uma pergunta dele o mantém aberto", () => {
     /*
      * Regra da casa: "se ele desconversar em qualquer uma, siga a conversa —

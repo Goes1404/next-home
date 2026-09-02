@@ -3,6 +3,7 @@ import type { RespostaAgenteIA } from "./aiAgent";
 import { soarHumano } from "./vozHumana";
 import { limparSeparadoresOrfaos, removerValores } from "./semValores";
 import { removerPrazoInventado } from "./prazoEntrega";
+import { removerAcabamentoInventado } from "./acabamentoInventado";
 import {
   anexarLinkDoCatalogo,
   midiasJaEnviadas,
@@ -135,10 +136,21 @@ export function sanearRespostaIA(
   const semPrazo = removerPrazoInventado(semValor.texto, catalogo);
 
   /*
+   * Acabamento inventado. Mesma família do prazo, e flagrado do mesmo jeito
+   * — lendo transcrição, não por teste: na v33 a Sofia afirmou piso
+   * laminado, bancada em granito e azulejo na cozinha para um imóvel cujo
+   * cadastro não tem sequer campo de acabamento.
+   */
+  const semAcabamento = removerAcabamentoInventado(semPrazo.texto, catalogo);
+  if (semAcabamento.removeu) {
+    console.warn(`[guardrails] acabamento inventado cortado`);
+  }
+
+  /*
    * Remover a frase do preço (ou do prazo) pode deixar o separador de balão
    * sozinho — a resposta chegava ao cliente começando com "--- ".
    */
-  const semOrfaos = limparSeparadoresOrfaos(semPrazo.texto);
+  const semOrfaos = limparSeparadoresOrfaos(semAcabamento.texto);
 
   /*
    * A IA não mente sobre o que é. Flagrada respondendo "Sou humana" a uma

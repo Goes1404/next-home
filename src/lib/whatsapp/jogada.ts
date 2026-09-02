@@ -297,10 +297,27 @@ export function estadoDaConversa(params: {
    * respondeu QUALQUER COISA que não seja uma pergunta, X foi respondido.
    * A repergunta só cabe quando ele perguntou outra coisa em vez de
    * responder — e nesse caso o planner já prioriza responder a dele.
+   *
+   * A marca ACUMULA pela conversa inteira, e essa é a metade que faltou na
+   * primeira versão: ela olhava só a ÚLTIMA fala do bot, então o assunto
+   * dado como respondido no turno 4 era esquecido no turno 5 e voltava a
+   * ser perguntado no 7. Medido na v33 (`quer-tudo-pelo-zap`): "pronto ou
+   * na planta?" nos turnos 4, 7 e 9, com o cliente respondendo entre eles.
+   * Todo o resto deste arquivo varre `falasBot` inteiro; só esta regra
+   * tinha amnésia de um turno.
    */
+  for (let i = 0; i < historico.length - 1; i++) {
+    const fala = historico[i];
+    if (fala.remetente !== "bot") continue;
+    // A resposta é a próxima fala DO CLIENTE, não a próxima fala qualquer.
+    const resposta = historico.slice(i + 1).find((f) => f.remetente === "cliente");
+    if (!resposta || resposta.texto.includes("?")) continue;
+    for (const pergunta of perguntasDe(fala.texto)) {
+      for (const a of assuntosDoFunil(pergunta)) respondidos.add(a);
+    }
+  }
   const ultimaDoBotAntes = falasBot[falasBot.length - 1] ?? "";
-  const clienteNaoPerguntou = !mensagemAtual.includes("?");
-  if (clienteNaoPerguntou) {
+  if (!mensagemAtual.includes("?")) {
     for (const pergunta of perguntasDe(ultimaDoBotAntes)) {
       for (const a of assuntosDoFunil(pergunta)) respondidos.add(a);
     }

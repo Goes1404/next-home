@@ -14,6 +14,7 @@ import {
 } from "./ofertasDeVisita";
 import { blocoDeHorarios, type HorarioDeVisita } from "@/lib/crm/agendaDeVisitas";
 import { catalogoTemPrazo } from "./prazoEntrega";
+import { catalogoTemAcabamento } from "./acabamentoInventado";
 import { sanearRespostaIA } from "./guardrails";
 import { dividirEmMensagens } from "./chunking";
 import { separarRajada, type Fala } from "./rajada";
@@ -216,6 +217,7 @@ export async function executarTurnoDeAtendimento(
        * (`removerPrazoInventado`) segue como rede depois.
        */
       semPrazoCadastrado: !catalogoTemPrazo(catalogoDoPrompt),
+      semAcabamentoCadastrado: !catalogoTemAcabamento(catalogoDoPrompt),
     },
     vezDoCliente.length > 0
       ? vezDoCliente

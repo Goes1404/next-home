@@ -10,6 +10,7 @@ import type { DossieClienteIA, TomVozBot } from "./types";
 import { blocoDaVezDoCliente } from "./rajada";
 import { blocoCapacidadePendente } from "./funilQualificacao";
 import { blocoSemPrazoCadastrado } from "./prazoEntrega";
+import { blocoSemAcabamentoCadastrado } from "./acabamentoInventado";
 
 /**
  * Versão do prompt de atendimento. REGRA: qualquer mudança de conteúdo em
@@ -47,7 +48,7 @@ import { blocoSemPrazoCadastrado } from "./prazoEntrega";
  * 3 suítes e 2 vagas" — inventou qual imóvel era, que erra tudo de uma vez.
  */
 
-export const PROMPT_VERSAO = "2026.09-v33"; // planner: a resposta do cliente à pergunta do turno anterior conta mesmo sem casar no regex (a v32 regrediu: "pronto ou na planta?" repetida ~37 vezes em 32 conversas)
+export const PROMPT_VERSAO = "2026.09-v34"; // a marca de "assunto respondido" acumula pela conversa (a v33 esquecia depois de um turno) + a IA não inventa acabamento (flagrada afirmando piso laminado e bancada em granito de um cadastro sem o campo)
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -113,6 +114,8 @@ export interface ContextoAtendimento {
    * segurou, e o guardrail que corta depois deixa a resposta pobre.
    */
   semPrazoCadastrado?: boolean;
+  /** Nenhum imóvel do catálogo tem acabamento na descrição. */
+  semAcabamentoCadastrado?: boolean;
   /**
    * A capacidade de compra (faixa, composição ou renda) ainda é a próxima
    * pergunta desta conversa (`funilQualificacao.ts`). Quem decide é o
@@ -541,7 +544,7 @@ Só depois disso: a INDICAÇÃO ("pelo que você me contou, o que mais faz senti
 
 Se o cliente já disse alguma dessas coisas — nesta mensagem, no histórico ou no dossiê — NÃO PERGUNTE DE NOVO. Repetir pergunta já respondida é o erro que mais faz o cliente sumir, e é o que denuncia um sistema.
 
-${ctx.blocoPerguntaIgnorada ? `${ctx.blocoPerguntaIgnorada}\n\n` : ""}${ctx.blocoDadoPedido ? `${ctx.blocoDadoPedido}\n\n` : ""}${ctx.blocoRegrasCondicionais ? `${ctx.blocoRegrasCondicionais}\n\n` : ""}${ctx.blocoNaoRepitaHorario ? `${ctx.blocoNaoRepitaHorario}\n\n` : ""}${ctx.blocoHorariosReais ? `${ctx.blocoHorariosReais}\n\n` : ""}${ctx.capacidadePendente ? `${blocoCapacidadePendente()}\n\n` : ""}${ctx.semPrazoCadastrado ? `${blocoSemPrazoCadastrado()}\n\n` : ""}${blocoFoco}
+${ctx.blocoPerguntaIgnorada ? `${ctx.blocoPerguntaIgnorada}\n\n` : ""}${ctx.blocoDadoPedido ? `${ctx.blocoDadoPedido}\n\n` : ""}${ctx.blocoRegrasCondicionais ? `${ctx.blocoRegrasCondicionais}\n\n` : ""}${ctx.blocoNaoRepitaHorario ? `${ctx.blocoNaoRepitaHorario}\n\n` : ""}${ctx.blocoHorariosReais ? `${ctx.blocoHorariosReais}\n\n` : ""}${ctx.capacidadePendente ? `${blocoCapacidadePendente()}\n\n` : ""}${ctx.semPrazoCadastrado ? `${blocoSemPrazoCadastrado()}\n\n` : ""}${ctx.semAcabamentoCadastrado ? `${blocoSemAcabamentoCadastrado()}\n\n` : ""}${blocoFoco}
 
 ${blocoCatalogo}
 
