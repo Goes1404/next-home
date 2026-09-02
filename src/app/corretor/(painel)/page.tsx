@@ -12,6 +12,7 @@ import { getFilaDeTrabalho } from "@/lib/crm/filaDeTrabalho";
 import { getMinhasTarefas } from "@/lib/crm/dadosLead";
 import { site } from "@/lib/site";
 import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
+import { CabecalhoDeTela } from "./_componentes/CabecalhoDeTela";
 
 const ATALHOS = [
   { href: "/corretor/leads", titulo: "Meus leads", texto: "Contatos que chegaram por você." },
@@ -36,16 +37,16 @@ export default async function PainelInicio() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-titulo text-fluid-2xl">Olá, {primeiroNome}</h1>
-        {/*
-          A frase não conta mais quantos itens esperam. Isso obrigava a página
-          inteira a AGUARDAR a fila (cinco consultas) antes de pintar a
-          primeira letra — e o número já aparece no cabeçalho da própria fila,
-          um dedo abaixo. Dizer duas vezes custava a tela inteira parada.
-        */}
-        <p className="text-fluid-sm text-apoio mt-1">O que precisa de você agora.</p>
-      </div>
+      {/*
+        A frase de apoio não conta mais quantos itens esperam. Isso obrigava a
+        página inteira a AGUARDAR a fila (cinco consultas) antes de pintar a
+        primeira letra — e o número já aparece no cabeçalho da própria fila,
+        um dedo abaixo. Dizer duas vezes custava a tela inteira parada.
+      */}
+      <CabecalhoDeTela
+        titulo={`Olá, ${primeiroNome}`}
+        descricao="O que precisa de você agora."
+      />
 
       {/*
         Cada bloco busca o próprio dado atrás do seu `<Suspense>`, em vez de a

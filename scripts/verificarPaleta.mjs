@@ -108,6 +108,26 @@ const TOKENS = [
   ...ETAPAS.flatMap((e) => [`etapa-${e}`, `etapa-${e}-lavado`]),
 ];
 
+/**
+ * Prefere o CSS DE PRODUÇÃO quando ele existe.
+ *
+ * A compilação por postcss aqui embaixo não passa pelo Lightning CSS, que é
+ * quem de fato entrega o CSS no ar — e ele TRANSFORMA o que interessa: rebaixa
+ * `light-dark()` para um polyfill de duas `var()`. Conferir só o compilado de
+ * desenvolvimento aprovaria uma paleta que quebra em produção, que é a classe
+ * de defeito que este projeto mais repete.
+ *
+ * Rode `npx next build` antes para a checagem valer de verdade; sem build, ela
+ * ainda serve para iterar, e diz em voz alta o que está medindo.
+ */
+function cssDeProducao() {
+  const dir = path.join(RAIZ, ".next/static/chunks");
+  if (!fs.existsSync(dir)) return null;
+  const arquivos = fs.readdirSync(dir).filter((f) => f.endsWith(".css"));
+  if (arquivos.length === 0) return null;
+  return arquivos.map((f) => fs.readFileSync(path.join(dir, f), "utf8")).join("\n");
+}
+
 async function compilarCss() {
   const tw = (await import("@tailwindcss/postcss")).default;
   const entrada = path.join(RAIZ, ".tmp-paleta", "probe.css");
@@ -128,12 +148,21 @@ async function lerTema(css, { esquema, tema }) {
   const ctx = await nav.newContext({ colorScheme: esquema });
   const pg = await ctx.newPage();
 
-  const sondas = TOKENS.map((t) => `<i id="t-${t}" class="bg-${t}"></i>`).join("");
+  /*
+   * A sonda pinta com `style="background-color: var(--color-x)"` e não com a
+   * classe `bg-x`. É o que permite medir o CSS de PRODUÇÃO: lá o Tailwind só
+   * gerou as utilities que o app de fato usa, então metade das classes deste
+   * probe não existiria — e token sem classe lê como transparente, o que
+   * reprovaria uma paleta perfeitamente boa. Além disso é mais direto: o que
+   * está sob teste é o TOKEN, não a utility que o embrulha.
+   */
+  const pintar = (id, token) => `<i id="${id}" style="background-color: var(--color-${token})"></i>`;
+  const sondas = TOKENS.map((t) => pintar(`t-${t}`, t)).join("");
   const porModulo = MODULOS.map(
     (m) =>
       `<div data-modulo="${m}">` +
       ["acento", "acento-hover", "acento-suave", "acento-lavado", "sobre-cor"]
-        .map((t) => `<i id="m-${m}-${t}" class="bg-${t}"></i>`)
+        .map((t) => pintar(`m-${m}-${t}`, t))
         .join("") +
       `</div>`,
   ).join("");
@@ -174,6 +203,54 @@ async function lerTema(css, { esquema, tema }) {
   return cores;
 }
 
+// --- classes mortas --------------------------------------------------------
+
+/**
+ * Classe que o Tailwind não gerou é classe que não existe — e ele não avisa.
+ *
+ * Em Tailwind v4, `bg-chip` sem `--color-chip` declarado não vira erro: vira
+ * NADA. O elemento simplesmente fica sem fundo, e ninguém repara enquanto a
+ * cor faltante for sutil. Achado assim: `bg-chip` estava em quatro lugares do
+ * painel, três deles no `<code>` que explica as variáveis da mensagem de
+ * campanha, todos sem fundo desde sempre.
+ *
+ * A checagem não mantém lista de utilities válidas — isso envelheceria a cada
+ * versão do Tailwind. Ela pergunta ao CSS COMPILADO se a classe existe, que é
+ * a única fonte de verdade sobre o que foi gerado.
+ */
+function classesMortas(css) {
+  const candidatas = new Set();
+  const varrer = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const alvo = path.join(dir, e.name);
+      if (e.isDirectory()) varrer(alvo);
+      else if (/\.tsx?$/.test(e.name) && !/\.test\./.test(e.name)) {
+        const codigo = fs
+          .readFileSync(alvo, "utf8")
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .replace(/^\s*\/\/.*$/gm, "");
+        for (const m of codigo.matchAll(
+          // O `(?<![-\w])` impede casar no MEIO de outra classe: sem ele,
+          // `align-text-bottom` era lido como `text-bottom`.
+          /(?<![-\w])(bg|text|border|ring|fill|stroke|divide|outline|from|via|to|accent|caret|decoration)-([a-z][a-z0-9]*(?:-[a-z0-9]+)*)(?![-\w])/g,
+        )) {
+          candidatas.add(`${m[1]}-${m[2]}`);
+        }
+      }
+    }
+  };
+  varrer(path.join(RAIZ, "src/app/corretor"));
+
+  const mortas = [];
+  for (const classe of candidatas) {
+    // Sem o ponto na frente: com variante, o seletor gerado é
+    // `.hover\:bg-acento-hover:hover`, e procurar por `.bg-acento-hover`
+    // acusaria de morta uma classe que existe e funciona.
+    if (!css.includes(classe)) mortas.push(classe);
+  }
+  return mortas.sort();
+}
+
 // --- verificação -----------------------------------------------------------
 
 const falhas = [];
@@ -186,7 +263,13 @@ function checar(nome, valor, minimo, { critico = true } = {}) {
 }
 
 async function principal() {
-  const css = await compilarCss();
+  const producao = cssDeProducao();
+  const css = producao ?? (await compilarCss());
+  console.log(
+    producao
+      ? "\x1b[2mmedindo o CSS de PRODUÇÃO (.next/static/chunks) — com Lightning CSS\x1b[0m"
+      : "\x1b[33mmedindo o CSS compilado por postcss — rode `npx next build` para conferir o de produção\x1b[0m",
+  );
 
   const temas = [
     { rotulo: "escuro", esquema: "dark", tema: null },
@@ -261,6 +344,17 @@ async function principal() {
         if (perto[1] < 22) avisos.push(`${t.rotulo}/${m} está a ${perto[1].toFixed(0)}° de "${perto[0]}"`);
         console.log(`    ${m.padEnd(9)} ${perto[0].padEnd(7)} ${perto[1].toFixed(0)}°`);
       }
+    }
+  }
+
+  const mortas = classesMortas(css);
+  console.log(`\n\x1b[1m── classes de cor que o Tailwind não gerou ──────────\x1b[0m`);
+  if (mortas.length === 0) {
+    console.log("  ok    nenhuma");
+  } else {
+    for (const c of mortas) {
+      console.log(`  \x1b[31mFALHA\x1b[0m ${c}`);
+      falhas.push(`classe morta: ${c} (nada é pintado — token não declarado?)`);
     }
   }
 

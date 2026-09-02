@@ -136,7 +136,7 @@ export function EnvioImediato({
         className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento mt-4 w-full rounded-xl border p-3.5 focus:outline-none"
       />
       <p className="text-fluid-xs text-tenue mt-1.5">
-        <code className="bg-chip rounded px-1">{"{nome}"}</code> vira o nome da pessoa.
+        <code className="bg-vidro-forte rounded px-1">{"{nome}"}</code> vira o nome da pessoa.
       </p>
 
       {foraDoHorarioCivil && !confirmando && (

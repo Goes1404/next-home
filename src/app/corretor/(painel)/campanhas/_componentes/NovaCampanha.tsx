@@ -317,8 +317,8 @@ export function NovaCampanha({
             className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento w-full rounded-xl border p-3.5 focus:outline-none"
           />
           <p className="text-fluid-xs text-tenue">
-            <code className="bg-chip rounded px-1">{"{nome}"}</code> vira o nome da pessoa e{" "}
-            <code className="bg-chip rounded px-1">{"{imovel}"}</code> vira {nomeImovel}.
+            <code className="bg-vidro-forte rounded px-1">{"{nome}"}</code> vira o nome da pessoa e{" "}
+            <code className="bg-vidro-forte rounded px-1">{"{imovel}"}</code> vira {nomeImovel}.
           </p>
 
           <button

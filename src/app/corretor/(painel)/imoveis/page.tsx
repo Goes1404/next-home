@@ -3,6 +3,7 @@ import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { contarCandidatosPendentes } from "@/lib/imoveis/candidatosDoCatalogo";
 import { PendenciasDoCatalogo } from "./_componentes/PendenciasDoCatalogo";
 import { ListaImoveisClient } from "./ListaImoveisClient";
+import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 
 export const metadata = {
   title: "Gestão & Edição de Imóveis | Painel do Corretor",
@@ -32,12 +33,14 @@ export default async function ImoveisPage() {
           <span className="text-[11px] uppercase font-bold tracking-wider text-acento-suave">
             Catálogo & Portfólio
           </span>
-          <h1 className="text-fluid-xl font-bold text-titulo">
-            Edição & Gestão de Imóveis
-          </h1>
-          <p className="text-fluid-xs text-apoio max-w-2xl">
-            Altere fotos, textos comerciais, preços, tipologias e diferenciais de lazer diretamente pelo celular ou computador.
-          </p>
+          {/* "Edição & Gestão de Imóveis" é o nome que o sistema dá a si
+              mesmo. O corretor pensa "imóveis" antes de tocar no menu, e é
+              assim que o item do menu se chama — o título repete a palavra
+              dele, não a nossa. */}
+          <CabecalhoDeTela
+            titulo="Imóveis"
+            descricao="Fotos, textos, preços, tipologias e lazer — do celular ou do computador."
+          />
         </div>
         {/* Links por imóvel saíram do menu (roadmap: 7 destinos); o caminho é por aqui. */}
         <div className="flex flex-wrap items-center gap-2">

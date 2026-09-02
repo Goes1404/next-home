@@ -704,6 +704,16 @@
   }
 
   /*
+   * Quem pediu menos movimento continua vendo a cor do módulo trocar — ela é
+   * informação, não enfeite. O que some é o passeio entre as duas.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    [data-modulo] {
+      transition: none;
+    }
+  }
+
+  /*
    * =====================================================================
    * CRM — a paleta do painel do corretor
    * =====================================================================
@@ -762,6 +772,15 @@
    * acompanham o tema sozinhos e não podem sair de sincronia com ela.
    */
   [data-modulo] {
+    /*
+     * A transição fica aqui, no elemento em que `data-modulo` muda — não nos
+     * descendentes. Eles herdam um valor que já está animando, então um
+     * `transition` em cada um seria a mesma animação declarada cem vezes.
+     */
+    transition: --color-acento 320ms var(--ease-out-quart),
+      --color-acento-hover 320ms var(--ease-out-quart),
+      --color-acento-suave 320ms var(--ease-out-quart);
+
     --color-acento-lavado: color-mix(in oklab, var(--color-acento) 16%, transparent);
     --color-acento-linha: color-mix(in oklab, var(--color-acento) 38%, transparent);
     --color-acento-forte: var(--color-acento-suave);
@@ -804,6 +823,38 @@
     --color-acento-suave: var(--color-mod-admin-suave);
   }
 
+}
+
+/*
+ * A cor do acento é ANIMÁVEL — é isto que faz a troca de módulo ser uma
+ * transição e não um corte seco.
+ *
+ * Custom property não interpola por padrão: o navegador trata o valor como
+ * texto e troca de uma vez. Registrar com `@property` e sintaxe `<color>` diz
+ * ao navegador que aquilo é cor, e aí `transition` sabe o que fazer no meio
+ * do caminho. Medido: indo de Leads (magenta) para WhatsApp (lima), o quadro
+ * intermediário é de fato uma cor entre as duas.
+ *
+ * `inherits: true` é obrigatório: quem pinta são os descendentes, e é o valor
+ * herdado que precisa estar animando. O `initial-value` nunca é usado na
+ * prática — o `@theme` declara os três no `:root` — mas a sintaxe exige um, e
+ * `transparent` é o que falha visível em vez de falhar bonito, caso um dia
+ * algum valor deixe de ser uma cor válida.
+ */
+@property --color-acento {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --color-acento-hover {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --color-acento-suave {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
 }
 
 @layer components {

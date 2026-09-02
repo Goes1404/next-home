@@ -4,6 +4,7 @@ import Link from "next/link";
 import { garantirEventosWebhook } from "@/lib/whatsapp/provider";
 import { ConversasClient, type ConversaResumo } from "./ConversasClient";
 import { RevisaoRespostas, type ItemRevisao } from "./RevisaoRespostas";
+import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { ROTULO_MODO } from "@/lib/whatsapp/modoBot";
@@ -173,12 +174,14 @@ export default async function ConversasPage() {
 
   return (
     <div>
-      <h1 className="font-display text-titulo text-fluid-2xl">WhatsApp</h1>
-      <p className="text-fluid-sm text-apoio mt-2 max-w-2xl">
-        Quem está falando com o seu número e se a IA está atendendo. Sempre que você responde pelo
-        celular, ela se cala por 24 horas naquela conversa — aqui você devolve a palavra a ela
-        antes disso.
-      </p>
+      {/*
+        Chamava-se "WhatsApp", igual à tela de campanhas: o título não dizia
+        em qual das duas o corretor estava. Agora nomeia o que se faz aqui.
+      */}
+      <CabecalhoDeTela
+        titulo="Conversas"
+        descricao="Quem está falando com o seu número e se a IA está atendendo. Quando você responde pelo celular, ela se cala naquela conversa — aqui você devolve a palavra a ela."
+      />
 
       <div className="mt-5">
         <AbasWhatsapp

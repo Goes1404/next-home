@@ -13,6 +13,7 @@ import {
   type FiltroLeads,
 } from "@/lib/corretorSessao";
 import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
+import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Meus leads" };
 
@@ -93,51 +94,59 @@ export default async function LeadsPage({
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-fluid-2xl text-titulo">
-            {verArquivados ? "Arquivados" : gestor ? "Contatos" : "Meus leads"}
-          </h1>
-          <p className="text-fluid-sm mt-1 text-apoio max-w-2xl">
-            {verArquivados
-              ? "Leads fora das listas e do funil. Abra um deles para restaurar ou excluir de vez."
-              : gestor
-                ? "Todos os contatos recebidos pelos formulários do site e portais parceiros."
-                : "Contatos que chegaram atribuídos a você — pelo seu link pessoal, portais ou distribuição automática."}
-          </p>
-          {/* Era um texto cinza minúsculo debaixo do parágrafo — relatado
-              como "não consigo acessar os arquivados", e com razão: no
-              celular ele desaparece. Agora é um botão de verdade, e leva a
-              CONTAGEM: sem o número, quem arquivou algo não tem como saber
-              se ainda está lá. Some quando não há nada arquivado — porta
-              para uma sala vazia é ruído. */}
-          {(verArquivados || arquivados > 0) && (
-            <Link
-              href={verArquivados ? "/corretor/leads" : "/corretor/leads?arquivados=1"}
-              className="text-fluid-xs border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 transition-colors"
-            >
-              {verArquivados ? (
-                "← Voltar para os leads ativos"
-              ) : (
-                <>
-                  <Archive aria-hidden className="h-3.5 w-3.5" />
-                  Arquivados
-                  <span className="bg-chip text-apoio rounded-full px-1.5 text-[10px] font-semibold tabular-nums">
-                    {arquivados}
-                  </span>
-                </>
-              )}
-            </Link>
-          )}
-        </div>
-
-        <Link
-          href="/corretor/importar"
-          className="inline-flex items-center gap-2 rounded-full bg-brand-500 hover:bg-brand-400 px-4 py-2 text-sm font-medium text-white shadow-md transition-colors"
-        >
-          <span> <Mail className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Puxar do Gmail / Importar
-        </Link>
-      </div>
+      <CabecalhoDeTela
+        titulo={verArquivados ? "Arquivados" : gestor ? "Contatos" : "Meus leads"}
+        descricao={
+          verArquivados
+            ? "Leads fora das listas e do funil. Abra um deles para restaurar ou excluir de vez."
+            : gestor
+              ? "Todos os contatos recebidos pelos formulários do site e portais parceiros."
+              : "Contatos que chegaram atribuídos a você — pelo seu link pessoal, portais ou distribuição automática."
+        }
+        abaixo={
+          <>
+            {/* Era um texto cinza minúsculo debaixo do parágrafo — relatado
+          como "não consigo acessar os arquivados", e com razão: no
+          celular ele desaparece. Agora é um botão de verdade, e leva a
+          CONTAGEM: sem o número, quem arquivou algo não tem como saber
+          se ainda está lá. Some quando não há nada arquivado — porta
+          para uma sala vazia é ruído. */}
+            {(verArquivados || arquivados > 0) && (
+              <Link
+                href={
+                  verArquivados ? "/corretor/leads" : "/corretor/leads?arquivados=1"
+                }
+                className="text-fluid-xs border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 transition-colors"
+              >
+                {verArquivados ? (
+                  "← Voltar para os leads ativos"
+                ) : (
+                  <>
+                    <Archive aria-hidden className="h-3.5 w-3.5" />
+                    Arquivados
+                    <span className="bg-vidro-forte text-apoio rounded-full px-1.5 text-[10px] font-semibold tabular-nums">
+                      {arquivados}
+                    </span>
+                  </>
+                )}
+              </Link>
+            )}
+          </>
+        }
+        acao={
+          /* Era `bg-brand-500 text-white`: tinta da MARCA, chumbada, no
+             lugar da cor do módulo. A ação primária de cada tela é o
+             lugar mais visível do color coding — pintá-la de teal aqui
+             fazia Leads parecer a vitrine, não Leads. */
+          <Link
+            href="/corretor/importar"
+            className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 font-medium transition-colors"
+          >
+            <Mail aria-hidden className="h-4 w-4 shrink-0" />
+            Puxar do Gmail / Importar
+          </Link>
+        }
+      />
 
       <AbasLeads ativa="lista" />
 
@@ -147,8 +156,14 @@ export default async function LeadsPage({
       {(semDono || paradoDias) && (
         <p className="text-fluid-sm border-acento-linha bg-acento-lavado text-acento-suave mt-4 flex flex-wrap items-center gap-2 rounded-xl border px-4 py-2.5">
           Mostrando só{" "}
-          {semDono ? "leads sem corretor responsável" : `leads parados há ${paradoDias}+ dias`}.
-          <Link href="/corretor/leads" className="font-medium underline underline-offset-2">
+          {semDono
+            ? "leads sem corretor responsável"
+            : `leads parados há ${paradoDias}+ dias`}
+          .
+          <Link
+            href="/corretor/leads"
+            className="font-medium underline underline-offset-2"
+          >
             Ver todos
           </Link>
         </p>

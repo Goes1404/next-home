@@ -3,6 +3,7 @@ import { CampanhasManager } from "./CampanhasManager";
 import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
 import { listarCampanhas, statusDisparo } from "./acoes";
 import { getEmpreendimentos } from "@/lib/queries";
+import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = {
   title: "Listas de Transmissão de WhatsApp | Next Home",
@@ -25,11 +26,10 @@ export default async function CampanhasPainelPage() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-fluid-2xl text-titulo font-bold">WhatsApp</h1>
-        <p className="text-fluid-sm mt-1 text-apoio">
-          Crie a lista de transmissão e pronto: as mensagens saem sozinhas, uma a uma, com pausa entre elas.
-          Nada aqui depende de você ficar clicando.
-        </p>
+        <CabecalhoDeTela
+          titulo="Listas de transmissão"
+          descricao="Monte a lista e pronto: as mensagens saem sozinhas, uma a uma, com pausa entre elas. Nada aqui depende de você ficar clicando."
+        />
       </div>
 
       <AbasWhatsapp
