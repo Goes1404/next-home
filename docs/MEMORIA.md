@@ -3308,3 +3308,94 @@ desta base concordam.
 - **Os traces determinísticos foram versionados** (`scripts/traces/`). Eles
   moravam só no scratchpad da sessão e teriam sumido — nove defeitos do
   planner saíram deles, a custo zero.
+
+## A reforma visual do CRM (09/2026) — cor por módulo e o que ela expôs
+
+Pedido: color coding por módulo, feedback visual rico, carga cognitiva zero.
+O que custou tempo — e o que teria poupado uma hora se eu já soubesse:
+
+- **O painel já era token-driven, e isso mudou o tamanho da obra.** Dos 107
+  `.tsx` de `src/app/corretor/`, só **6** usavam cor crua do Tailwind; ~260
+  usos passam pela família `acento`. Colorir por módulo virou reapontar
+  `--color-acento*` num bloco `[data-modulo="x"]` — **zero componente
+  editado**. Antes de planejar reforma visual aqui, contar quantos arquivos
+  usam token e quantos usam tinta: a resposta decide se é edição de CSS ou de
+  cem arquivos.
+- **`light-dark()` torna o defeito da 0052 impossível por construção.** O
+  `color-scheme` já estava correto nos três estados (`:root`,
+  `[data-tema=claro]` e o `@media`), então uma declaração só resolve os três.
+  Todo token novo do CRM nasce assim; o esquecimento que deixou `etapa-ciano`
+  e `etapa-laranja` fora de um dos blocos não tem mais como acontecer.
+- **Mas o Lightning CSS REBAIXA `light-dark()`** para
+  `var(--lightningcss-light,X) var(--lightningcss-dark,Y)` no build de
+  produção. Funciona — medido nos três estados —, e é por isso que
+  `npm run paleta` agora prefere o CSS de `.next/static/chunks` quando existe:
+  conferir só o compilado por postcss aprovaria paleta que quebra no ar.
+- **`@property` deixa custom property animável**, e é o que faz a troca de
+  módulo ser transição em vez de corte. Riscava tudo: propriedade registrada
+  como `<color>` que recebe valor inválido cai no `initial-value`. O par
+  `@property` + polyfill do Lightning CSS foi medido e resolve.
+- **`getComputedStyle` devolve a cor no espaço em que ela foi ESCRITA.**
+  `oklch(0.68 0.15 268)`, não `rgb(...)`. Ler os três números como RGB dá lixo
+  silencioso — a primeira versão do `verificarPaleta` deu 0° de distância
+  entre TODAS as matizes e eu quase "consertei" a paleta. O jeito certo é
+  pintar num canvas 1×1 sobre preto E sobre branco: dos dois valores saem a
+  cor sólida e o alfa, exatos, já em sRGB.
+- **A cor de etapa não pode sair de `acento`.** `etapas.ts` pintava "novo" com
+  `bg-acento`; com `acento` virando cor de módulo, o mesmo lead seria violeta
+  no Início e magenta em Leads. Cor que descreve o REGISTRO não pode depender
+  de onde ele está sendo olhado.
+- **`data-modulo` não pode ser calculado no layout** — layouts não
+  re-executam entre rotas irmãs, então o atributo ficaria velho ao trocar de
+  seção. `CromaDoModulo` é client e usa `usePathname`; `moduloAtivo()` deriva
+  do MESMO mapa que acende o menu, para não existir uma segunda verdade
+  "rota → cor".
+- **Etapa de funil é dado ORDINAL e estava codificada como nominal.** Seis
+  matizes sem relação gastavam meio círculo cromático e obrigavam a decorar a
+  ordem. Virou rampa de quatro passos mais dois terminais (`fechado`,
+  `perdido`), o que libera o resto do círculo para os módulos. Régua geral:
+  **rampa para o que tem ordem, matiz para o que só tem identidade.**
+- **Há um TETO GEOMÉTRICO para separar módulo de cor de estado.** No tema
+  claro, o arco quente livre entre `perigo` (17°) e `alerta` (66°) tem 49°:
+  nenhum módulo quente passa de ~24,5° de distância dos dois. Meu limiar
+  original de 25° era inatingível por construção — e aviso que nunca apaga
+  vira paisagem. Antes de definir limiar de cor, medir o espaço que sobra.
+
+### Quatro defeitos que build, tipo e teste não pegavam
+
+1. **`etapa-ciano`/`etapa-laranja` fora do `@media (prefers-color-scheme)`**
+   (0052): quem usa "seguir o sistema" com o celular no claro via duas etapas
+   em pastel de tema escuro sobre fundo claro.
+2. **`FilaAgora.REGUA.sem_resposta = "Esperando você"`** — texto em português
+   onde ia uma classe, interpolado no `className`. O item de MAIOR prioridade
+   da fila do Início era o único sem cor. `Record<Chave, string>` aceita
+   qualquer texto.
+3. **`bg-chip` nunca existiu.** Em Tailwind v4, cor não declarada não vira
+   erro: vira NADA. Quatro elementos sem fundo desde sempre.
+4. **Alvo invisível e pequeno no celular:** `text-transparent` até o `hover`
+   em dois botões de concluir tarefa — e o painel é usado no telefone, onde
+   hover não existe. Um deles ainda tinha 20px de área tocável. E
+   `BotaoConcluirTarefa` DESCARTAVA o resultado da action: falha fazia a
+   tarefa sumir e voltar sem explicação.
+
+Guardas novas, todas provocadas antes de entrar: `tokensDeTema.test.ts`
+(paridade entre os blocos de tema), `classesDeCor.test.ts` (valor de mapa
+usado como className tem forma de classe — a maioria decide se o mapa é de
+classe, para não acusar mapa de rótulo) e, dentro de `npm run paleta`,
+contraste AA nos três temas, separação de matiz e **classe que o Tailwind não
+gerou** (pergunta ao CSS compilado, sem manter lista de utilities válidas).
+
+### Coisas de método que se repetiram
+
+- **Teste que lê código-fonte precisa tirar comentário ANTES de acusar.** O
+  `tokensDeTema` achou `:root[data-tema="claro"]` citado num comentário 340
+  linhas acima do bloco real e recortou o bloco errado. Terceira vez nesta
+  base.
+- **Guarda provocada é guarda diferente de guarda escrita.** A checagem de
+  matiz passou na primeira provocação por um furo dela mesma: só media o tema
+  escuro, e eu alterei o valor do claro. A de classe morta nasceu com falsos
+  positivos por não enxergar variantes (`hover:bg-x` vira `.hover\:bg-x:hover`
+  no CSS) e por casar no meio de `align-text-bottom`.
+- **O Prettier não roda neste repositório:** 385 arquivos já não passavam
+  nele antes desta reforma. Rodar `--write` numa mudança esconde o diff real.
+
