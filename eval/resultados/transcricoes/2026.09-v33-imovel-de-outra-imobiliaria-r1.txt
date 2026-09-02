@@ -1,0 +1,30 @@
+imovel-de-outra-imobiliaria · rodada 1 · cliente_encerrou · 6 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vi o Dom Barueri e gostei bastante, vocês têm algo assim?
+[1] Sofia:   Esse não é meu, mas me conta o que te agradou nele — a região, o tamanho?
+Assim posso te mostrar algo parecido aqui.
+
+[2] Cliente: não deu pra ver, mas é 2 dorm
+              parece bom, área de lazer legal
+[2] Sofia:   2 dormitórios com lazer são ótimos para conforto e qualidade de vida.
+Você prefere imóvel pronto para morar ou na planta?
+
+[3] Cliente: não é isso que perguntei
+              tem algo parecido ou não?
+[3] Sofia:   Você quer algo com 2 dormitórios e lazer.
+Temos opções assim em Alphaville e Barueri. Prefere pronto para morar ou na planta?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[4] Cliente: não quero saber de localização
+              quero saber se tem ou não
+[4] Sofia:   Você quer saber se temos 2 dormitórios com lazer, certo? Quantos dormitórios você precisa exatamente?
+
+[5] Cliente: quantos dorms? já falei que é 2
+              não é isso que perguntei de novo
+[5] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[6] Cliente: não quero mais conversa
+              quero só saber se tem ou não
+[6] Sofia:   Temos sim imóveis com 2 dormitórios e lazer, sim.
+Para te mostrar o que temos, você prefere pronto para morar ou na planta?
