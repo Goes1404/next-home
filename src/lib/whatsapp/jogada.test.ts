@@ -224,11 +224,18 @@ describe("dado já entregue não é pedido em aberto", () => {
     const e = estadoDaConversa({
       historico: [
         cliente("qual o valor?"),
-        bot("O mais em conta do nosso catálogo começa em R$ 249.000. Em qual região você procura?"),
+        // O piso do catálogo do TESTE é 470.000 (IMOVEL); 249.000 é o do
+        // fixture do eval — a primeira versão deste teste copiou o número
+        // errado e acusou o código por um erro do próprio fixture.
+        bot("O mais em conta do nosso catálogo começa em R$ 470.000. Em qual região você procura?"),
         cliente("mas qual o valor exato?"),
         bot("O valor exato depende do andar, e isso fechamos na visita."),
       ],
-      mensagemAtual: "mas e o valor exato mesmo?",
+      // A MESMA pergunta, como o persona real faz. "mas e o valor exato
+      // mesmo?" tem semelhança 0,50 com a anterior — abaixo do limiar de
+      // 0,6, que existe de propósito: paráfrase não é acusada como
+      // repetição. O erro assimétrico é deixar passar, não acusar demais.
+      mensagemAtual: "qual o valor exato?",
       imovelEmFoco: null,
       catalogo: [IMOVEL],
     });
