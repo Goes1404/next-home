@@ -1,0 +1,11 @@
+pressa-de-quinze-dias · rodada 1 · ia_indisponivel · 2 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: preciso de apto pra entrar em 15 dias no maximo, tem algo assim
+[1] Sofia:   Entendo a urgência, morar rápido faz toda diferença.
+Em qual região de Barueri você procura o apartamento?
+
+[2] Cliente: não falei da região, quero saber se tem apto
+[2] Sofia:   Temos opções prontas e na planta, cada uma com suas vantagens.
+Quer conhecer o decorado para sentir o padrão e o ambiente?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
