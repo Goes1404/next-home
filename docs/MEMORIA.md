@@ -3131,3 +3131,31 @@ já as apontava ("não ofereceu alternativas" em 6 de 16 conversas).
   jogadas novas, ele empurrou `undefined` no histórico e o trace parou no
   turno 5 — escondendo justamente os turnos que eu queria ver. Trace que
   para cedo demais é sinal para olhar o SCRIPT antes do planner.
+
+## O que só a sonda COM API mostrou (v32, 01/09/2026)
+
+Os traces sem API acham loop de decisão. Dois defeitos só apareceram com o
+modelo de verdade no laço, porque dependiam do que o CLIENTE faz depois de
+uma jogada certa:
+
+- **Visita confirmada e o funil continuou.** No caminho feliz a conversão
+  passou a acontecer no turno 3 ("que horas?" → 9h ou 11h → "9h reservado"
+  + endereço). Aí o planner voltou ao funil: "pronto ou na planta?". O
+  cliente: "não perguntei isso", "só quero ver o apartamento". A conversa
+  que antes encerrava no turno 8 bateu o teto de 12 — a correção da
+  conversão PIOROU o desfecho, porque faltava o estado terminal. Agora
+  `encerrar_confirmado`: confirmação no histórico do bot → resposta curta e
+  porta aberta, nada de qualificar quem já marcou.
+- **"Tem como negociar? quero saber do desconto" recebia "em qual região
+  você procura?".** `responder_honesto` só disparava na REPETIÇÃO (vezes ≥
+  2). O que não temos como responder — desconto, negociar, preço final —
+  merece honestidade na primeira vez; quem ouve "região?" depois de
+  perguntar de desconto entende que não foi ouvido. Na repetição, a regra
+  da insistência assume e muda a jogada.
+- **Régua que fica:** trace sem API para a SEQUÊNCIA de jogadas (barato,
+  determinístico); sonda com API para o que acontece DEPOIS de uma jogada
+  certa. Um não substitui o outro.
+- **Prioridade final das jogadas:** aceite > dado pedido > visita já
+  confirmada > pergunta sem dado (1ª vez) > alternativa > objeção (2ª
+  seguida vira alternativa) > saída suave > horário pedido > funil (com
+  uma repergunta permitida) > convite > horário > devolver a escolha.
