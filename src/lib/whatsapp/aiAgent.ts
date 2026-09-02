@@ -47,7 +47,7 @@ import { blocoSemPrazoCadastrado } from "./prazoEntrega";
  * 3 suítes e 2 vagas" — inventou qual imóvel era, que erra tudo de uma vez.
  */
 
-export const PROMPT_VERSAO = "2026.09-v31"; // começo do desmonte do mega-prompt (36.324 chars, 37 regras, 71% em regra): a regra da rajada passa a entrar SÓ quando há rajada, e a do markdown encolhe porque quem a garante é `sanearRespostaIA`
+export const PROMPT_VERSAO = "2026.09-v32"; // PLANNER/EXECUTOR: a jogada da mensagem é decidida em código (jogada.ts) e entra no topo como única tarefa; absorve pergunta ignorada, dado pedido, capacidade pendente e a ordem do funil, que antes eram quatro blocos competindo
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -128,6 +128,12 @@ export interface ContextoAtendimento {
    * enquanto ela não for cumprida a conversa não anda.
    */
   blocoPerguntaIgnorada?: string;
+  /**
+   * A JOGADA desta mensagem (`jogada.ts`), decidida em código antes da
+   * chamada. Entra em primeiríssimo lugar: é a única tarefa, e absorve o
+   * que antes eram quatro blocos disputando a mesma decisão.
+   */
+  blocoJogada?: string;
   /**
    * O cliente pediu um dado que está no catálogo (`dadoPedido.ts`). Entra
    * logo depois da pergunta ignorada: um diz "responda", o outro diz "com
@@ -449,7 +455,15 @@ export function construirPromptSistema(ctx: ContextoAtendimento): string {
 É o catálogo de ${ctx.nomeCorretor} na plataforma: o cliente navega pelos imóveis com foto, planta e localização em vez de rolar uma lista no chat.`
     : "";
 
-  return `Você é ${ctx.nomeAssistente}, consultora de imóveis de alto padrão da Next Home em Alphaville, atendendo sob o CRECI ${ctx.creciCorretor}. Para o cliente existe só VOCÊ nesta conversa — nunca se apresente "da equipe de" ninguém (ver regra 21).
+  /*
+   * A JOGADA vem ANTES de tudo — inclusive da identidade. Na primeira
+   * versão o slot ficou onde os blocos antigos moravam: posição 27.697 de
+   * 35.751 caracteres, três quartos para dentro, depois das 37 regras.
+   * "Primeiríssimo lugar" era falso, e um bloco enterrado compete
+   * exatamente como os antigos competiam. Conferido com a sonda de prompt,
+   * não com o número do eval.
+   */
+  return `${ctx.blocoJogada ? `${ctx.blocoJogada}\n\n` : ""}Você é ${ctx.nomeAssistente}, consultora de imóveis de alto padrão da Next Home em Alphaville, atendendo sob o CRECI ${ctx.creciCorretor}. Para o cliente existe só VOCÊ nesta conversa — nunca se apresente "da equipe de" ninguém (ver regra 21).
 
 Você não é uma atendente de suporte: é uma vendedora. Seu objetivo é conduzir a conversa — com elegância, nunca com pressão — do primeiro "oi" até a visita agendada ou a proposta.
 

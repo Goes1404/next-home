@@ -3016,3 +3016,28 @@ Primeira medição com todas as 16 personas × 2 rodadas (32 conversas).
 - **O arquivo é por versão+dia e SOBRESCREVE**: esta rodada apagou a de 4
   personas × 3 rodadas da mesma v31. Estava commitada, então sobreviveu no
   git — mas é a segunda vez que esta armadilha morde.
+
+## Planner/Executor: a jogada vira objeto (v32, 01/09/2026)
+
+- **O gargalo que três versões de prompt não moveram tinha um motivo
+  estrutural:** a jogada (responder / perguntar / convidar / propor horário)
+  estava implícita no texto. Não dá para proibir repetir o que o código não
+  enxerga — "não repita" era súplica no prompt, e súplica é probabilística.
+- **O planner é DETERMINÍSTICO (`jogada.ts`), não outro LLM.** A ordem do
+  funil é fixa e foi medida numa corretora real; decidir a próxima jogada é
+  olhar o que já foi perguntado, o que já foi respondido e o que o cliente
+  acabou de pedir. Função pura sobre o histórico: roda igual no webhook e
+  no eval, sem custar chamada, e "nunca a pergunta da mensagem anterior"
+  vira comparação de conjuntos.
+- **Absorve quatro blocos que competiam no topo** — pergunta ignorada, dado
+  pedido, capacidade pendente, ordem do funil — e devolve UMA tarefa. Quatro
+  instruções disputando a mesma decisão era a doença.
+- **O bloco caiu enterrado na primeira versão.** O slot ficou onde os
+  blocos antigos moravam: posição 27.697 de 35.751 caracteres, depois das
+  37 regras. "Primeiríssimo lugar" era falso, e enterrado ele compete
+  exatamente como os antigos. **Só a sonda de prompt pegou** — teste passava,
+  tipo passava, build passava. Agora vem antes até da identidade
+  (posição 0), e a sonda `sondaPrompt.ts` é o que confere.
+- **Regra que fica:** bloco que precisa ganhar de todas as outras
+  instruções vai ANTES de todas as outras instruções. Não "no topo da seção
+  de blocos" — no topo do prompt.

@@ -5,9 +5,7 @@ import { gerarRespostaIA, type RespostaAgenteIA } from "./aiAgent";
 import type { AnexoResolvido } from "./resolverMidia";
 import { buscarExemplosFewShot } from "./aprendizadoContinuo";
 import { catalogoParaAtendimento } from "./focoDaConversa";
-import { capacidadeEstaPendente } from "./funilQualificacao";
-import { blocoPerguntaIgnorada, perguntaIgnorada } from "./perguntaIgnorada";
-import { blocoDadoPedido, dadoPedido } from "./dadoPedido";
+import { blocoDaJogada, estadoDaConversa, planejarJogada } from "./jogada";
 import { regrasCondicionais } from "./regrasCondicionais";
 import {
   blocoNaoRepitaHorario,
@@ -164,64 +162,36 @@ export async function executarTurnoDeAtendimento(
   });
 
   /*
-   * A capacidade entra como PENDÊNCIA calculada, não como regra genérica:
-   * o eval da v22 pegou a IA indicando imóvel sem perguntá-la, com a regra
-   * do funil já no prompt. Satisfeita por faixa de valor OU renda — ver
-   * funilQualificacao. Mora aqui, no caminho único, para os quatro
-   * chamadores enxergarem a mesma conversa (a divergência playground ×
-   * webhook já custou caro duas vezes).
+   * PLANNER: a jogada desta mensagem é decidida AQUI, em código, antes de
+   * qualquer chamada ao modelo (`jogada.ts`).
+   *
+   * Ela absorve o que antes eram quatro blocos competindo no topo do
+   * prompt — pergunta ignorada, dado pedido, capacidade pendente e a ordem
+   * do funil — e devolve UMA tarefa. Quatro instruções disputando a mesma
+   * decisão era a doença: medimos que a permissão do piso, escrita no
+   * prompt, era obedecida em 30% das vezes.
+   *
+   * É determinística de propósito: roda igual no webhook e no eval, sem
+   * custar chamada, e "não repita a pergunta anterior" deixa de ser súplica
+   * e vira comparação de conjuntos. O que era medido no eval da v25 (27
+   * repetições do cliente, uma pergunta feita doze vezes) e da v26 (o mesmo
+   * horário três vezes) passa a ser impossível por construção.
    */
-  const capacidadePendente = capacidadeEstaPendente({
+  const imovelEmFoco = foco ? (catalogoDoPrompt.find((e) => e.slug === foco.slug) ?? null) : null;
+  const estado = estadoDaConversa({
+    historico: historicoAnterior,
+    mensagemAtual: textoDaVez,
     dossie: pedido.dossie,
-    historico: historicoAnterior,
-    mensagemAtual: textoDaVez,
-    catalogo: pedido.catalogo,
-  });
-
-  /*
-   * O cliente está repetindo uma pergunta que ficou sem resposta?
-   *
-   * Medido no eval da v25: 27 repetições em 16 conversas, e uma delas com
-   * a MESMA pergunta doze vezes. A régua é o comportamento dele, não uma
-   * rubrica: se ele refaz a pergunta, ela não foi respondida.
-   */
-  const ignorada = perguntaIgnorada({
-    historico: historicoAnterior,
-    mensagemAtual: textoDaVez,
-  });
-
-  /*
-   * O que ela JÁ ofereceu de horário nesta conversa.
-   *
-   * O eval da v26 mediu a última fonte de repetição a sobrar: os mesmos
-   * "sábado às 10h ou às 11h" três vezes, contra um cliente que nem queria
-   * falar de visita. O bloco de horários já MANDAVA não repetir — instrução
-   * de prompt é probabilística.
-   *
-   * Duas defesas com a mesma conta, feita uma vez só: a lista real perde os
-   * horários já oferecidos (o que ele não vê, não oferece) e, quando não há
-   * agenda configurada — que é o caso dos 8 corretores hoje —, um bloco
-   * nomeia o que saiu e manda devolver a escolha ao cliente.
-   */
-  /*
-   * O cliente pediu um dado que temos?
-   *
-   * Alvo vindo da primeira análise de erros contada (16 conversas da v25):
-   * "não respondeu a pergunta" em 10 delas e "não informou dado permitido"
-   * em 43% das 134 anotações. E a permissão do piso, já no prompt, só era
-   * usada em ~30% das conversas — instrução é probabilística; isto não é.
-   *
-   * Vem DEPOIS de `perguntaIgnorada` no prompt de propósito: quando o
-   * cliente já repetiu, o que precisa ganhar é a ordem de responder o que
-   * ficou em aberto; este bloco entra logo abaixo, entregando o dado. Os
-   * dois se reforçam — um diz "responda", o outro diz "com isto".
-   */
-  const pedido_ = dadoPedido({
-    mensagem: textoDaVez,
-    imovel: foco ? (catalogoDoPrompt.find((e) => e.slug === foco.slug) ?? null) : null,
+    imovelEmFoco,
     catalogo: catalogoDoPrompt,
   });
+  const jogada = planejarJogada(estado);
 
+  /*
+   * O que ela JÁ ofereceu de horário nesta conversa: a lista real perde os
+   * horários já oferecidos (o que ele não vê, não oferece) e, sem agenda
+   * configurada, um bloco nomeia o que saiu.
+   */
   const oferecidos = horariosJaOferecidos(historicoAnterior);
   const blocoHorariosReais = blocoDeHorarios(
     semOsJaOferecidos(pedido.horariosReais ?? [], oferecidos.assinaturas),
@@ -236,9 +206,7 @@ export async function executarTurnoDeAtendimento(
       dossie: pedido.dossie,
       instrucaoExtra: pedido.instrucaoExtra,
       foco,
-      capacidadePendente,
-      blocoPerguntaIgnorada: ignorada ? blocoPerguntaIgnorada(ignorada) : undefined,
-      blocoDadoPedido: pedido_ ? blocoDadoPedido(pedido_) : undefined,
+      blocoJogada: blocoDaJogada(jogada, { nomeDoFoco: foco?.nome ?? null }),
       blocoRegrasCondicionais: regrasCondicionais({ baloesDaVez: vezDoCliente.length }),
       blocoHorariosReais,
       blocoNaoRepitaHorario: blocoNaoRepitaHorario(oferecidos),
