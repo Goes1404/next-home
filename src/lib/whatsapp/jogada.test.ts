@@ -50,8 +50,11 @@ describe("planejarJogada — a ordem de prioridade", () => {
   });
 
   it("pergunta repetida sem dado → resposta honesta, não mais um desvio", () => {
+    // Na SEGUNDA vez. Da terceira em diante a jogada muda (ver o bloco de
+    // insistência abaixo) — este teste codificava vezes=3 e afirmava o
+    // comportamento que a sonda da v32 mostrou ser o loop.
     const j = planejarJogada(
-      estado({ perguntaRepetida: { pergunta: "tem churrasqueira?", vezes: 3, sobreDinheiro: false } }),
+      estado({ perguntaRepetida: { pergunta: "tem churrasqueira?", vezes: 2, sobreDinheiro: false } }),
     );
     expect(j.tipo).toBe("responder_honesto");
   });
@@ -171,5 +174,41 @@ describe("blocoDaJogada", () => {
   it("horário já recusado pede OUTROS, nunca os mesmos", () => {
     const b = blocoDaJogada({ tipo: "propor_horario", jaOfereceu: 1 }, { nomeDoFoco: null });
     expect(b).toMatch(/OUTROS, nunca os mesmos/);
+  });
+});
+
+describe("insistência: a jogada MUDA na terceira vez", () => {
+  const repetida = (vezes: number) => ({ pergunta: "qual o valor exato?", vezes, sobreDinheiro: true });
+
+  it("na segunda, responde com honestidade", () => {
+    expect(planejarJogada(estado({ perguntaRepetida: repetida(2) })).tipo).toBe("responder_honesto");
+  });
+
+  it("na terceira, propõe horário — a pergunta de preço é convite para a visita", () => {
+    /*
+     * Flagrado pela sonda da v32: o guardrail bloqueou três vezes a mesma
+     * frase honesta nos turnos 4, 5 e 7. Responder de novo é o loop com
+     * outra roupa; quem já ouviu a resposta quer o próximo passo.
+     */
+    expect(planejarJogada(estado({ perguntaRepetida: repetida(3), horariosOferecidos: 0 }))).toEqual({
+      tipo: "propor_horario",
+      jaOfereceu: 0,
+    });
+  });
+
+  it("com dois horários já recusados, devolve a escolha em vez de insistir", () => {
+    expect(planejarJogada(estado({ perguntaRepetida: repetida(4), horariosOferecidos: 2 })).tipo).toBe(
+      "devolver_escolha",
+    );
+  });
+
+  it("dado pedido continua ganhando: se temos o dado, entregamos, não importa quantas vezes", () => {
+    const j = planejarJogada(
+      estado({
+        perguntaRepetida: repetida(5),
+        pedidoEmAberto: { tipo: "preco", resposta: "a partir de R$ 470.000", imovel: "Terra Alta" },
+      }),
+    );
+    expect(j.tipo).toBe("responder_dado");
   });
 });

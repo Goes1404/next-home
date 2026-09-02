@@ -173,11 +173,26 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
   if (estado.pedidoEmAberto) return { tipo: "responder_dado", dado: estado.pedidoEmAberto };
 
   if (estado.perguntaRepetida) {
-    return {
-      tipo: "responder_honesto",
-      pergunta: estado.perguntaRepetida.pergunta,
-      vezes: estado.perguntaRepetida.vezes,
-    };
+    const { pergunta, vezes } = estado.perguntaRepetida;
+
+    /*
+     * Na SEGUNDA vez, responde com honestidade. Da TERCEIRA em diante, a
+     * jogada MUDA — porque responder de novo é o loop com outra roupa.
+     *
+     * Flagrado pela sonda da v32 antes mesmo de ela terminar: o guardrail
+     * bloqueou três vezes a mesma frase ("o valor exato depende do andar…")
+     * nos turnos 4, 5 e 7. A causa era esta checagem, que vinha antes de
+     * tudo em TODO turno, sem memória de já ter respondido. Quem já ouviu a
+     * resposta honesta e pergunta de novo não quer a resposta de novo —
+     * quer o próximo passo. Na regra da casa, a pergunta de preço é o
+     * convite para a visita: é lá que os números fecham.
+     */
+    if (vezes <= 2) return { tipo: "responder_honesto", pergunta, vezes };
+
+    if (estado.horariosOferecidos < 2) {
+      return { tipo: "propor_horario", jaOfereceu: estado.horariosOferecidos };
+    }
+    return { tipo: "devolver_escolha" };
   }
 
   const proximoAssunto = ORDEM_DO_FUNIL.find((a) => {
