@@ -3229,3 +3229,48 @@ rodadas, v31 → v32.
 - **Reservar crédito antes de medir.** Uma rodada 16×2 custa ~640 chamadas
   de agente mais cliente e juiz; a chave de teste tinha saldo para uma
   rodada e meia. Conferir o saldo é parte de "a medição está saudável".
+
+## A transcrição paga vale mais que a rodada que não rodou (02/09/2026, v34)
+
+A medição da v33 morreu por crédito, mas as 9 conversas que rodaram antes
+já estavam pagas e no disco. Lê-las achou dois defeitos, e o segundo é
+maior que tudo que eu vinha medindo.
+
+- **O planner tinha amnésia de UM TURNO.** A regra da v33 — "a resposta do
+  cliente à pergunta do turno anterior conta, mesmo sem casar no regex" —
+  olhava só `falasBot[length-1]`. Todo o resto de `jogada.ts` varre o
+  histórico inteiro; só ela não. Efeito medido em `quer-tudo-pelo-zap`:
+  "pronto ou na planta?" nos turnos 4, 7 e 9, com o cliente respondendo
+  entre eles — o assunto fechava e reabria. Hoje a marca acumula pela
+  conversa. **Ao escrever regra sobre histórico, conferir se ela varre o
+  mesmo tanto que as vizinhas.**
+- **A IA INVENTA ACABAMENTO.** Nos turnos 10 a 12 da mesma conversa ela
+  afirmou "piso laminado na sala e quartos", "bancadas em granito",
+  "azulejos modernos na cozinha" e "piso cerâmico de alta qualidade" no
+  banheiro. **Não existe campo de acabamento em `empreendimentos`** — os
+  quatro dados nasceram da cabeça do modelo e foram ditos como fato. É a
+  família do "1 suíte" para um cadastro com 3 e do "pronto para morar" com
+  `em_construcao`: o que não está no prompt, ela preenche.
+- **Acabamento é a promessa que o cliente CONFERE.** Prazo ele descobre
+  meses depois; piso laminado ele vê no primeiro minuto da visita — e quem
+  paga a conta é o corretor, na frente dele. Por isso entrou com a dupla
+  defesa do prazo, que é o padrão provado aqui: bloco no prompt avisando
+  ANTES e `removerAcabamentoInventado` cortando DEPOIS.
+- **O corte fica de fora quando o catálogo tem material de verdade.** Em
+  produção, 3 dos 25 publicados mencionam acabamento na descrição (um com
+  "Porcelanato" escrito). Sem essa porta, o guardrail apagaria informação
+  verdadeira — mesma escolha conservadora de `removerPrazoInventado`, e
+  medida no banco antes de escrever a regra, não suposta.
+- **O bloco diz o que ela PODE dizer.** Bloco que só proíbe empurra a IA
+  para o silêncio, e silêncio sobre acabamento também perde cliente: o
+  decorado é justamente onde se vê acabamento de perto, o que faz dele um
+  bom motivo para a visita.
+- **Nenhum dos dois apareceria em teste, tipo ou build** — e nenhuma
+  métrica do eval mede spec inventada. A repetição eu vinha medindo há
+  quatro versões; a invenção estava lá o tempo todo, sem instrumento. **Ler
+  transcrição não é o que se faz quando falta medição: é medição de outro
+  tipo.**
+- **`grep -q` no meio de um cano com `set -o pipefail` reprova o comando
+  inteiro.** O `-q` sai no primeiro casamento, o vitest leva SIGPIPE, e a
+  cadeia de verificação falha com os testes todos passando. Usar `grep -E`
+  sem `-q`.

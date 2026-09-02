@@ -135,6 +135,14 @@ O que as 9 conversas vivas mostram, como descrição e não veredito: o
 em 7 das 9 conversas — a mesma fração da v31 nas mesmas personas. A v33
 desfez a regressão da v32; não há evidência de que passou da v31.
 
+**v34** (sem medir ainda, achada lendo as 9 transcrições vivas): a marca de
+"assunto respondido" acumula pela conversa (a v33 esquecia depois de um
+turno, e "pronto ou na planta?" voltava nos turnos 4, 7 e 9); e a IA deixa
+de inventar acabamento — ela afirmou piso laminado, bancada em granito e
+azulejo na cozinha para um cadastro que não tem sequer o campo. Esse
+segundo é o defeito mais caro achado nesta sequência e **nenhuma métrica do
+eval o media**: acabamento é a promessa que o cliente confere na visita.
+
 **Para destravar: crédito na conta da OpenAI, depois
 `npm run eval:conversa -- --rodadas=2` e `npm run eval:comparar` contra a
 v31.** Produção continua em `82971e7`, sem o planner.
