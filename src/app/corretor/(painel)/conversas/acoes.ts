@@ -80,6 +80,7 @@ export async function retomarBotNaConversa(conversaId: string): Promise<Resultad
   }
 
   revalidatePath("/corretor/conversas");
+  revalidatePath("/corretor/pessoas");
   return { ok: "IA reativada nesta conversa." };
 }
 
@@ -109,6 +110,7 @@ export async function silenciarBotNaConversa(conversaId: string): Promise<Result
   }
 
   revalidatePath("/corretor/conversas");
+  revalidatePath("/corretor/pessoas");
   return { ok: "IA desligada nesta conversa." };
 }
 
@@ -227,6 +229,7 @@ export async function avaliarInteracao(
   if (!data || data.length === 0) return { erro: "Resposta não encontrada na sua carteira." };
 
   revalidatePath("/corretor/conversas");
+  revalidatePath("/corretor/pessoas");
   return { ok: avaliacao === "ruim" ? "Anotado — esta resposta vira caso de teste do próximo ajuste da IA." : "Avaliação registrada." };
 }
 
@@ -345,6 +348,7 @@ export async function enviarMensagemDoPainel(
     await liberarConversaPorPalavraChave(conversaId);
     if (decisao.marcarComoTeste) await marcarConversaComoTeste(conversaId);
     revalidatePath("/corretor/conversas");
+    revalidatePath("/corretor/pessoas");
     return { iaAtivada: true };
   }
 
@@ -353,6 +357,7 @@ export async function enviarMensagemDoPainel(
   });
 
   revalidatePath("/corretor/conversas");
+  revalidatePath("/corretor/pessoas");
   return { iaPausada: true };
 }
 
@@ -481,6 +486,7 @@ export async function enviarMidiaDoPainel(
   });
 
   revalidatePath("/corretor/conversas");
+  revalidatePath("/corretor/pessoas");
   return { iaPausada: true };
 }
 
@@ -656,6 +662,7 @@ export async function responderComIA(conversaId: string): Promise<ResultadoEnvio
   }
 
   revalidatePath("/corretor/conversas");
+  revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor");
   return { baloesEnviados: turno.baloes.length };
 }

@@ -37,7 +37,7 @@ export function ArquivarLead({
     iniciar(async () => {
       const r = await fn();
       setAviso({ ok: Boolean(r.ok), texto: r.ok ?? r.erro ?? "" });
-      if (r.ok && saindo) router.push("/corretor/leads");
+      if (r.ok && saindo) router.push("/corretor/pessoas");
       else if (r.ok) router.refresh();
     });
 

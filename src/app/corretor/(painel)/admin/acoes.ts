@@ -305,6 +305,7 @@ export async function redistribuirCarteira(
   revalidatePath("/corretor/admin/leads");
   revalidatePath("/corretor/admin");
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor/funil");
 
   return {

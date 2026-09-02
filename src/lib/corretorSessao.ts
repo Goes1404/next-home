@@ -237,7 +237,7 @@ export type PaginaDeLeads = {
  * busca viraria um segundo predicado. Busca é nome ou telefone — nada disso
  * faz falta.
  */
-function sanearBusca(busca: string): string {
+export function sanearBusca(busca: string): string {
   return busca.replace(/[,()%_]/g, " ").trim();
 }
 

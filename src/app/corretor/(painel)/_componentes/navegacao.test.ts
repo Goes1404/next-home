@@ -9,43 +9,71 @@ import {
   rotaAtiva,
 } from "./navegacao";
 
-describe("mapa de navegação (o menu tem quatro destinos, e é de propósito)", () => {
-  it("corretor comum vê no máximo 4 destinos", () => {
-    const itens = gruposVisiveis(false).flatMap((g) => g.itens);
-    expect(itens.length).toBeLessThanOrEqual(4);
-  });
-
-  it("Conta e senha NÃO são itens de menu — moram no menu do avatar", () => {
-    // Era o destino menos visitado ocupando um slot de cinco. O slot foi para
-    // Imóveis, na barra do polegar; conta e senha vivem em ITENS_DA_CONTA.
-    const itens = gruposVisiveis(true).flatMap((g) => g.itens);
-    expect(itens.some((i) => i.href === "/corretor/perfil")).toBe(false);
-    expect(itens.some((i) => i.href === "/corretor/senha")).toBe(false);
-    expect(ITENS_DA_CONTA.map((i) => i.href)).toEqual([
-      "/corretor/perfil",
-      "/corretor/senha",
+describe("mapa de navegação (três destinos no polegar, e é de propósito)", () => {
+  it("a barra do polegar leva no máximo 3 destinos", () => {
+    // Mais o botão "Menu" = 4 alvos. Medido em 320px, o pior caso real: com
+    // cinco alvos cada um fica com 62px; com quatro, 78px. Barra fixa não
+    // rola, então alvo apertado ali não fica feio, fica difícil de acertar.
+    expect(ATALHOS_MOBILE.length).toBeLessThanOrEqual(3);
+    expect(ATALHOS_MOBILE.map((i) => i.href)).toEqual([
+      "/corretor",
+      "/corretor/pessoas",
+      "/corretor/imoveis",
     ]);
   });
 
-  it("gestor vê os mesmos 4 mais Administração — nunca as telas de admin soltas", () => {
+  it("a gaveta NÃO repete a barra — ela existe para o que não cabe lá", () => {
+    /*
+     * Esta é a regra que a versão anterior violava sem que nada avisasse: a
+     * gaveta renderizava `gruposVisiveis`, que era literalmente o mesmo array
+     * de `ATALHOS_MOBILE`. Para o corretor comum ela mostrava os quatro
+     * botões que o polegar já tinha embaixo — um toque para ver o que já
+     * estava na tela. O comentário do componente prometia "o painel inteiro".
+     */
+    const naGaveta = gruposVisiveis(false).flatMap((g) => g.itens.map((i) => i.href));
+    const naBarra = new Set(ATALHOS_MOBILE.map((i) => i.href));
+    const exclusivos = naGaveta.filter((h) => !naBarra.has(h));
+    expect(exclusivos.length).toBeGreaterThan(0);
+  });
+
+  it("Pessoas é uma porta só: leads e conversas são a mesma pessoa", () => {
+    /*
+     * 91 dos 116 leads têm conversa; 91 das 127 conversas têm lead. Enquanto
+     * foram dois destinos, a primeira decisão que o painel pedia era "por
+     * qual porta eu falo com o Fulano?" — a pergunta que ninguém responde sem
+     * treino.
+     */
+    const itens = gruposVisiveis(false).flatMap((g) => g.itens);
+    const pessoas = itens.find((i) => i.href === "/corretor/pessoas");
+    expect(pessoas).toBeDefined();
+    expect(pessoas?.tambem).toContain("/corretor/leads");
+    expect(pessoas?.tambem).toContain("/corretor/conversas");
+    expect(itens.some((i) => i.href === "/corretor/leads")).toBe(false);
+    expect(itens.some((i) => i.href === "/corretor/conversas")).toBe(false);
+  });
+
+  it("o menu inteiro cabe numa olhada", () => {
+    // Sete é o teto: acima disso o menu deixa de ser lido e passa a ser
+    // procurado, que é o começo do labirinto.
+    expect(gruposVisiveis(true).flatMap((g) => g.itens).length).toBeLessThanOrEqual(7);
+  });
+
+  it("Conta e senha NÃO são itens de menu — moram no menu do avatar", () => {
+    const itens = gruposVisiveis(true).flatMap((g) => g.itens);
+    expect(itens.some((i) => i.href === "/corretor/perfil")).toBe(false);
+    expect(itens.some((i) => i.href === "/corretor/senha")).toBe(false);
+    expect(ITENS_DA_CONTA.map((i) => i.href)).toEqual(["/corretor/perfil", "/corretor/senha"]);
+  });
+
+  it("gestor vê exatamente um destino a mais, e é Administração", () => {
     const doGestor = gruposVisiveis(true).flatMap((g) => g.itens);
     const doCorretor = gruposVisiveis(false).flatMap((g) => g.itens);
 
     expect(doGestor.length).toBe(doCorretor.length + 1);
     expect(doGestor.some((i) => i.href === "/corretor/admin")).toBe(true);
-    // Contas, leads da equipe e WhatsApp da equipe são ABAS de Administração.
+    // Contas, leads da equipe e preços são ABAS de Administração.
     expect(doGestor.some((i) => i.href === "/corretor/admin/contas")).toBe(false);
     expect(doGestor.some((i) => i.href === "/corretor/admin/precos")).toBe(false);
-  });
-
-  it("WhatsApp é um destino só — conversas, campanhas e IA são abas dele", () => {
-    const itens = gruposVisiveis(false).flatMap((g) => g.itens);
-    const whatsapp = itens.find((i) => i.label === "WhatsApp");
-
-    expect(whatsapp).toBeDefined();
-    expect(whatsapp?.tambem).toContain("/corretor/campanhas");
-    expect(whatsapp?.tambem).toContain("/corretor/whatsapp");
-    expect(itens.filter((i) => i.href === "/corretor/campanhas")).toHaveLength(0);
   });
 
   it("toda rota absorvida (`tambem`) pertence a exatamente um destino", () => {
@@ -53,21 +81,7 @@ describe("mapa de navegação (o menu tem quatro destinos, e é de propósito)",
     expect(new Set(absorvidas).size).toBe(absorvidas.length);
   });
 
-  it("a barra do polegar leva os QUATRO destinos de trabalho, Imóveis incluso", () => {
-    // Imóveis não cabia no celular e só existia atrás da gaveta, embora seja
-    // a tela que o corretor abre no meio de uma conversa para mandar foto.
-    expect(ATALHOS_MOBILE.map((i) => i.href)).toEqual([
-      "/corretor",
-      "/corretor/leads",
-      "/corretor/conversas",
-      "/corretor/imoveis",
-    ]);
-  });
-
   it("a barra do polegar é DERIVADA do menu, não uma segunda lista", () => {
-    // Eram duas listas mantidas iguais à mão, com os mesmos `tambem` escritos
-    // duas vezes: bastava absorver uma rota nova em um lugar e esquecer do
-    // outro para o item apagar no celular e acender no computador.
     expect(ATALHOS_MOBILE).toBe(GRUPOS_NAV[0].itens);
   });
 });
@@ -75,16 +89,19 @@ describe("mapa de navegação (o menu tem quatro destinos, e é de propósito)",
 describe("moduloAtivo — a chave do color coding", () => {
   it("cada destino resolve para o seu módulo", () => {
     expect(moduloAtivo("/corretor")).toBe("inicio");
-    expect(moduloAtivo("/corretor/leads")).toBe("leads");
-    expect(moduloAtivo("/corretor/conversas")).toBe("whatsapp");
+    expect(moduloAtivo("/corretor/pessoas")).toBe("leads");
     expect(moduloAtivo("/corretor/imoveis")).toBe("imoveis");
+    expect(moduloAtivo("/corretor/campanhas")).toBe("whatsapp");
     expect(moduloAtivo("/corretor/perfil")).toBe("conta");
     expect(moduloAtivo("/corretor/admin")).toBe("admin");
   });
 
   it("rota absorvida herda a cor do destino que a absorveu", () => {
-    expect(moduloAtivo("/corretor/funil")).toBe("leads");
-    expect(moduloAtivo("/corretor/campanhas")).toBe("whatsapp");
+    // Leads e Conversas são Pessoas agora: mesma cor, porque é a mesma coisa.
+    expect(moduloAtivo("/corretor/leads")).toBe("leads");
+    expect(moduloAtivo("/corretor/conversas")).toBe("leads");
+    expect(moduloAtivo("/corretor/visitas")).toBe("leads");
+    expect(moduloAtivo("/corretor/templates")).toBe("whatsapp");
     expect(moduloAtivo("/corretor/links")).toBe("imoveis");
     expect(moduloAtivo("/corretor/senha")).toBe("conta");
   });
@@ -119,15 +136,15 @@ describe("rotaAtiva", () => {
 });
 
 describe("itemAtivo", () => {
-  const leads = ATALHOS_MOBILE.find((i) => i.href === "/corretor/leads")!;
+  const leads = ATALHOS_MOBILE.find((i) => i.href === "/corretor/pessoas")!;
 
   it("acende na própria rota", () => {
-    expect(itemAtivo("/corretor/leads", leads)).toBe(true);
+    expect(itemAtivo("/corretor/pessoas", leads)).toBe(true);
   });
 
-  it("acende nas rotas que absorveu (funil, visitas, importar)", () => {
-    expect(itemAtivo("/corretor/funil", leads)).toBe(true);
-    expect(itemAtivo("/corretor/visitas", leads)).toBe(true);
+  it("acende nas rotas que absorveu (leads, conversas, importar)", () => {
+    expect(itemAtivo("/corretor/leads", leads)).toBe(true);
+    expect(itemAtivo("/corretor/conversas", leads)).toBe(true);
     expect(itemAtivo("/corretor/importar", leads)).toBe(true);
   });
 

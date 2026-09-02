@@ -15,7 +15,7 @@ import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/
 import { CabecalhoDeTela } from "./_componentes/CabecalhoDeTela";
 
 const ATALHOS = [
-  { href: "/corretor/leads", titulo: "Meus leads", texto: "Contatos que chegaram por você." },
+  { href: "/corretor/pessoas", titulo: "Minhas pessoas", texto: "Quem falou com você, do mais recente para o mais antigo." },
   { href: "/corretor/links", titulo: "Links por imóvel", texto: "Link atribuído de cada empreendimento." },
   { href: "/corretor/imoveis", titulo: "Catálogo", texto: "Fotos, textos e preços dos imóveis." },
 ];

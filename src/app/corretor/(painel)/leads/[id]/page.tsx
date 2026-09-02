@@ -56,7 +56,7 @@ export default async function FichaLeadPage({
     // O respiro extra no rodapé (mobile) é o espaço da barra de ações fixa.
     <div className="space-y-4 pb-24 md:pb-0">
       <Link
-        href="/corretor/leads"
+        href="/corretor/pessoas"
         className="text-fluid-sm inline-flex items-center gap-1.5 text-apoio transition-colors hover:text-titulo"
       >
         <ArrowLeft className="h-4 w-4" /> Meus leads

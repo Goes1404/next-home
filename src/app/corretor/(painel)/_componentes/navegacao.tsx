@@ -10,17 +10,18 @@ import type { SVGProps } from "react";
  * celular: a barra de abas é `hidden md:flex`. Com a lista aqui, quem
  * adiciona uma seção adiciona em todos os lugares por construção.
  *
- * O corretor comum vê QUATRO destinos, e é de propósito: o painel tem vinte e
- * seis telas, e vinte e seis itens de menu obrigam a decidir onde procurar
- * antes de procurar. O que é parente virou aba (`AbasSecao`), não item:
+ * A barra do polegar tem TRÊS destinos, e é de propósito:
  *
- *   Início
- *   Leads      ← funil, visitas, importar
- *   WhatsApp   ← conversas, campanhas, configuração da IA, templates
+ *   Agora      ← a fila: o que precisa de você hoje
+ *   Pessoas    ← leads, conversas, importar (a MESMA pessoa, uma porta só)
  *   Imóveis    ← links por imóvel
  *
- * E, para o gestor, Administração ao lado. Perfil e senha saíram do menu:
+ * O resto — funil, campanhas, IA e, para o gestor, Administração — é o que se
+ * faz sentado, e vive na gaveta e na lateral do computador. Perfil e senha
  * moram no menu do avatar (`ITENS_DA_CONTA`), que é onde se procura por elas.
+ *
+ * As rotas antigas continuam existindo e respondendo; `tambem` mantém o
+ * destino certo aceso quando o corretor cai numa delas por link salvo.
  *
  * As rotas antigas continuam existindo — só saíram do menu; `tambem` mantém
  * o destino certo aceso quando o corretor está nelas, e nenhum link salvo
@@ -43,20 +44,20 @@ export const GRUPOS_NAV: GrupoNav[] = [
   {
     titulo: "Trabalho",
     itens: [
-      { href: "/corretor", label: "Início", icone: IconeInicio },
+      { href: "/corretor", label: "Agora", icone: IconeInicio },
       {
-        href: "/corretor/leads",
-        label: "Leads",
+        /*
+         * Pessoas absorve Leads E Conversas, e é a mudança de fundo desta
+         * navegação. Medido em 02/09/2026: 91 dos 116 leads têm conversa e 91
+         * das 127 conversas têm lead — em 91 casos a MESMA pessoa existia em
+         * dois destinos, com ações diferentes em cada um. A primeira decisão
+         * que o painel pedia era "por qual porta eu falo com o Fulano?", e
+         * essa é justamente a pergunta que ninguém responde sem treino.
+         */
+        href: "/corretor/pessoas",
+        label: "Pessoas",
         icone: IconePessoas,
-        tambem: ["/corretor/funil", "/corretor/visitas", "/corretor/importar"],
-      },
-      {
-        // Conversas, Campanhas e a configuração da IA falam do mesmo número,
-        // do mesmo cliente e da mesma IA — viraram abas de um destino só.
-        href: "/corretor/conversas",
-        label: "WhatsApp",
-        icone: IconeConversa,
-        tambem: ["/corretor/campanhas", "/corretor/whatsapp", "/corretor/templates"],
+        tambem: ["/corretor/leads", "/corretor/conversas", "/corretor/importar"],
       },
       {
         href: "/corretor/imoveis",
@@ -67,12 +68,34 @@ export const GRUPOS_NAV: GrupoNav[] = [
     ],
   },
   {
+    /*
+     * O que não se faz em pé, no corredor. Sai da barra do polegar e passa a
+     * dar CONTEÚDO à gaveta — que até aqui repetia os mesmos itens da barra e
+     * custava um toque para mostrar o que já estava na tela.
+     */
+    titulo: "Ferramentas",
+    itens: [
+      {
+        href: "/corretor/funil",
+        label: "Funil",
+        icone: IconeFunil,
+        tambem: ["/corretor/visitas"],
+      },
+      {
+        href: "/corretor/campanhas",
+        label: "Campanhas",
+        icone: IconeMegafone,
+        tambem: ["/corretor/templates"],
+      },
+      { href: "/corretor/whatsapp", label: "Minha IA", icone: IconeConversa },
+    ],
+  },
+  {
     titulo: "Equipe",
     itens: [
       {
-        // As cinco telas de administração viraram abas: o gestor também
-        // atende lead, e cinco itens de admin no menu invertem essa
-        // proporção.
+        // As cinco telas de administração viram abas: o gestor também atende
+        // lead, e cinco itens de admin no menu invertem essa proporção.
         href: "/corretor/admin",
         label: "Administração",
         icone: IconeEquipe,
@@ -108,7 +131,9 @@ export const ITENS_DA_CONTA: ItemNav[] = [
  * uma rota nova em Leads e esquecer daqui para o item apagar no celular e
  * acender no computador, na mesma rota.
  *
- * São QUATRO agora, não três: o slot que Conta liberou foi para Imóveis.
+ * São TRÊS: Agora, Pessoas e Imóveis. Leads e WhatsApp deixaram de ser
+ * dois destinos porque eram a mesma pessoa, e o que sobrou de ferramenta
+ * (funil, campanhas, IA) foi para a gaveta, que antes só repetia a barra.
  */
 export const ATALHOS_MOBILE: ItemNav[] = GRUPOS_NAV[0].itens;
 
@@ -155,9 +180,11 @@ export type Modulo = "inicio" | "leads" | "whatsapp" | "imoveis" | "conta" | "ad
 
 const MODULO_POR_DESTINO: Record<string, Modulo> = {
   "/corretor": "inicio",
-  "/corretor/leads": "leads",
-  "/corretor/conversas": "whatsapp",
+  "/corretor/pessoas": "leads",
+  "/corretor/funil": "leads",
   "/corretor/imoveis": "imoveis",
+  "/corretor/campanhas": "whatsapp",
+  "/corretor/whatsapp": "whatsapp",
   "/corretor/perfil": "conta",
   "/corretor/senha": "conta",
   "/corretor/admin": "admin",
@@ -221,6 +248,25 @@ function IconePessoa(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+/* Funil: três barras decrescentes — a carteira vista por etapa. */
+function IconeFunil(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M4 6h16M7 12h10M10 18h4" />
+    </svg>
+  );
+}
+
+/* Megafone: a mensagem que sai para muita gente de uma vez. */
+function IconeMegafone(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M4 10v4a1 1 0 0 0 1 1h2l6 4V5L7 9H5a1 1 0 0 0-1 1Z" />
+      <path d="M17.5 9a4 4 0 0 1 0 6" />
+    </svg>
+  );
+}
+
 /* Cadeado: a troca de senha, no menu do avatar. */
 function IconeChave(p: SVGProps<SVGSVGElement>) {
   return (

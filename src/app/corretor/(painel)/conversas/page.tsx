@@ -16,7 +16,15 @@ export const metadata: Metadata = { title: "Conversas do WhatsApp" };
 
 export const dynamic = "force-dynamic";
 
-export default async function ConversasPage() {
+export default async function ConversasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  // `?c=<id>` chega da lista de Pessoas, que é a porta única do painel.
+  const bruto = (await searchParams).c;
+  const conversaInicial = (Array.isArray(bruto) ? bruto[0] : bruto) ?? null;
+
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
@@ -205,7 +213,11 @@ export default async function ConversasPage() {
 
       <RevisaoRespostas itens={itensRevisao} />
 
-      <ConversasClient conversas={lista} podeEnviar={instancia?.status_conexao === "conectado"} />
+      <ConversasClient
+        conversas={lista}
+        podeEnviar={instancia?.status_conexao === "conectado"}
+        conversaInicial={conversaInicial}
+      />
     </div>
   );
 }

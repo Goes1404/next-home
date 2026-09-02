@@ -28,6 +28,11 @@
  *
  * Ou seja: gerar por cima sem reaplicar isto é regressão silenciosa de
  * tipagem, não atualização.
+ *
+ * ESCRITA À MÃO, também a reaplicar: a view `pessoas_do_corretor` (0088). Ela
+ * é posterior à última geração, e sem ela `getPaginaDePessoas` não compila —
+ * o cliente do Supabase só aceita nomes de tabela e view que existam neste
+ * arquivo.
  */
 
 export type Json =
@@ -1648,6 +1653,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pessoas_do_corretor: {
+        Row: {
+          conversa_id: string | null
+          corretor_id: string | null
+          etapa: string | null
+          lead_id: string | null
+          nao_lidas: number | null
+          nome: string | null
+          pessoa_id: string | null
+          previa: string | null
+          telefone: string | null
+          tem_conversa: boolean | null
+          ultima_atividade: string | null
+        }
+        Relationships: []
       }
       whatsapp_esperando_resposta: {
         Row: {

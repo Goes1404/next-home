@@ -191,12 +191,22 @@ const SELO: Record<Estado, { texto: string; classe: string; ponto: string }> = {
 export function ConversasClient({
   conversas,
   podeEnviar,
+  conversaInicial,
 }: {
   conversas: ConversaResumo[];
   podeEnviar: boolean;
+  /**
+   * A conversa que já vem aberta, vinda de `?c=<id>` na URL.
+   *
+   * Existe porque a lista de Pessoas é a porta única do painel: tocar em
+   * alguém tem de cair NA CONVERSA daquela pessoa, não numa lista onde é
+   * preciso encontrá-la de novo. Sem isto, fundir as duas portas teria
+   * trocado uma escolha ruim por um toque a mais.
+   */
+  conversaInicial?: string | null;
 }) {
   const [erro, setErro] = useState<string | null>(null);
-  const [selecionadaId, setSelecionadaId] = useState<string | null>(null);
+  const [selecionadaId, setSelecionadaId] = useState<string | null>(conversaInicial ?? null);
   const [busca, setBusca] = useState("");
   const [todas, setTodas] = useState(conversas);
   const [estados, setEstados] = useState<Record<string, Estado>>(() =>
