@@ -80,10 +80,41 @@ diferente. Isso é amostragem, não defeito.
 com muitas.** Persona nova é amostra melhor que repetir a mesma — encolhe
 a faixa e cobre outro pedaço do espaço de conversas.
 
-### Pendente nº 1
+### A linha de base fechou (v31, 16 personas × 2 rodadas)
 
-Fechar a linha de base da v31 com as 16 personas. Sem ela, a próxima
-mudança de prompt volta a ser palpite.
+| métrica | mediana | faixa |
+|---|---|---|
+| conversas em que o cliente repetiu | 8 | [6–10] |
+| conversas em que a IA repetiu | 6,5 | [4–9] |
+| conversas com resposta idêntica | 2 | [2–2] |
+| turnos seguidos sem assunto novo | 123 | [121–125] |
+| avançou (juiz) | 6,5 | [5–8] |
+| assumiria (juiz) | 5 de 16 | [3–7] |
+
+Ela consertou a régua no caminho: somar ocorrências deixava a cauda
+mandar (50 vs 14 entre duas rodadas do MESMO código); contar conversas
+afetadas dá 10 vs 6. O comparador passou a contar conversas.
+
+### Em andamento: v32 — Planner/Executor
+
+A jogada da mensagem (responder / perguntar / convidar / propor horário /
+devolver a escolha) passa a ser decidida em código, ANTES da chamada ao
+modelo (`jogada.ts`), e entra no topo do prompt como única tarefa. Absorve
+os quatro blocos que competiam: pergunta ignorada, dado pedido, capacidade
+pendente e ordem do funil.
+
+Determinístico de propósito: a ordem do funil é fixa e foi medida numa
+corretora real; "não repita a pergunta anterior" vira comparação de
+conjuntos. Medição contra a linha de base acima: 16 personas × 2 rodadas.
+
+### Depois da v32, nesta ordem
+
+1. Enxugar o núcleo fixo para ~12 regras (o executor precisa de menos regra
+   por natureza, porque recebe a decisão pronta).
+2. Handoff como jogada tipada (`escalar_humano`) — hoje proibido pela
+   regra 21 por bom motivo; como evento, e não como frase, deixa de ser
+   "a Bruna vai te responder".
+3. Só depois do piloto com leads reais: SFT/DPO.
 
 ## Entregue em 26/08 (esta rodada)
 
