@@ -524,3 +524,59 @@ describe("segunda objeção seguida vira alternativa", () => {
     expect(e.objecoesSeguidas).toBe(1);
   });
 });
+
+describe("depois da visita confirmada, o funil acaba", () => {
+  it("'sábado às 9h está reservado' no histórico → encerrar, sem qualificar", () => {
+    /*
+     * Sonda do caminho feliz com API: conversão no turno 3, e o funil
+     * continuou ("pronto ou na planta?"). O cliente: "não perguntei isso",
+     * "só quero ver o apartamento". Bateu o teto de 12 turnos onde antes
+     * encerrava no 8.
+     */
+    const e = estadoDaConversa({
+      historico: [
+        cliente("queria visitar sábado. que horas?"),
+        bot("Sábado às 9h ou 11h?"),
+        cliente("9h"),
+        bot("Ótimo, sábado às 9h está reservado para você."),
+      ],
+      mensagemAtual: "pronto pra morar. não perguntei isso",
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(e.visitaConfirmada).toBe(true);
+    expect(planejarJogada(e).tipo).toBe("encerrar_confirmado");
+  });
+
+  it("aceite ainda vence, e dado pedido também — confirmar/entregar antes de encerrar", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("oi"), bot("Sábado às 9h está reservado."), cliente("ok"), bot("Até lá!")],
+      mensagemAtual: "quanto custa mesmo?",
+      imovelEmFoco: IMOVEL, catalogo: [IMOVEL],
+    });
+    expect(planejarJogada(e).tipo).toBe("responder_dado");
+  });
+});
+
+describe("pergunta sem dado recebe honestidade na PRIMEIRA vez", () => {
+  it("'tem como negociar? e o desconto?' → responder_honesto já no primeiro pedido", () => {
+    // Sonda adversarial com API: isso recebia "em qual região você procura?".
+    const e = estadoDaConversa({
+      historico: [cliente("oi"), bot("O mais em conta começa em R$ 470.000. Quer conhecer?")],
+      mensagemAtual: "tem como negociar? quero saber do desconto",
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(e.perguntaSemDado).not.toBeNull();
+    const j = planejarJogada(e);
+    expect(j.tipo).toBe("responder_honesto");
+    if (j.tipo === "responder_honesto") expect(j.vezes).toBe(1);
+  });
+
+  it("dado que TEMOS continua vencendo o 'sem dado'", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("oi"), bot("Em qual região você procura?")],
+      mensagemAtual: "qual o preço e tem desconto?",
+      imovelEmFoco: IMOVEL, catalogo: [IMOVEL],
+    });
+    expect(planejarJogada(e).tipo).toBe("responder_dado");
+  });
+});

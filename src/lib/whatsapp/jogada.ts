@@ -58,6 +58,7 @@ export type Jogada =
   | { tipo: "tratar_objecao"; oQueEleDisse: string }
   | { tipo: "indicar_alternativa"; slug: string; nome: string; piso: number | null; emVezDe: string | null }
   | { tipo: "deixar_porta_aberta"; oQueEleDisse: string }
+  | { tipo: "encerrar_confirmado" }
   | { tipo: "devolver_escolha" };
 
 import type { Fala } from "./rajada";
@@ -81,6 +82,10 @@ export interface EstadoDaConversa {
   saidaSuave: boolean;
   /** Quantas falas SEGUIDAS do cliente foram objeção de preço (contando a atual). */
   objecoesSeguidas: number;
+  /** A IA JÁ confirmou uma visita nesta conversa: o funil acabou. */
+  visitaConfirmada: boolean;
+  /** Perguntou algo que NÃO temos como responder (desconto, negociar, preço final). */
+  perguntaSemDado: string | null;
   /** A alternativa mais em conta do catálogo, fora do foco. */
   alternativa: { slug: string; nome: string; piso: number | null } | null;
   nomeDoFoco: string | null;
@@ -158,6 +163,31 @@ function contarObjecoesSeguidas(falasCliente: readonly string[], atualNormalizad
   }
   return n;
 }
+
+/**
+ * A IA já confirmou a visita: "sábado às 9h está reservado".
+ *
+ * Sonda do caminho feliz com API: a conversão aconteceu no turno 3, e o
+ * funil CONTINUOU ("pronto ou na planta?"). O cliente respondeu "não
+ * perguntei isso", depois "só quero ver o apartamento", e a conversa que
+ * antes encerrava no turno 8 bateu o teto de 12. Qualificar depois de
+ * fechar é desfazer o que a conversa conquistou.
+ */
+const CONFIRMACAO =
+  /\b(reservad[oa]|confirmad[oa]|combinad[oa]|anotad[oa]|marcad[oa]|fechad[oa]|esta agendad[oa]|está agendad[oa])\b/;
+
+/**
+ * O que NÃO temos como responder — e merece resposta honesta na PRIMEIRA
+ * vez, não só na repetição.
+ *
+ * Sonda adversarial com API: "tem como negociar? quero saber do desconto"
+ * recebeu "em qual região você procura?". `responder_honesto` só disparava
+ * com a pergunta repetida (vezes ≥ 2); antes disso o planner caía no
+ * funil, e quem pergunta de desconto e ouve "região?" entende que não foi
+ * ouvido.
+ */
+const SEM_DADO =
+  /\b(desconto|negociar|negocia|abatimento|valor exato|preco final|preço final|quanto fica no final|valor final|condicao especial|condição especial)\b/;
 
 /** A opção mais em conta do catálogo que NÃO é o imóvel em foco. */
 function alternativaMaisEmConta(
@@ -324,6 +354,8 @@ export function estadoDaConversa(params: {
     objecoesSeguidas: contarObjecoesSeguidas(falasCliente, nAtual),
     pediuAlternativa: PEDIDO_DE_ALTERNATIVA.test(nAtual),
     saidaSuave: SAIDA_SUAVE.test(nAtual),
+    visitaConfirmada: falasBot.some((t) => CONFIRMACAO.test(normalizar(t))),
+    perguntaSemDado: SEM_DADO.test(nAtual) ? mensagemAtual.trim() : null,
     alternativa: alternativaMaisEmConta(params.catalogo, params.imovelEmFoco),
     nomeDoFoco: params.imovelEmFoco?.nome ?? null,
     capacidadePendente: capacidadeEstaPendente({
@@ -359,6 +391,22 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
   if (estado.aceitouHorario) return { tipo: "confirmar_visita", oQueEleDisse: estado.oQueEleDisse };
 
   if (estado.pedidoEmAberto) return { tipo: "responder_dado", dado: estado.pedidoEmAberto };
+
+  /*
+   * Visita CONFIRMADA: o funil acabou. Qualquer fala dele daqui em diante
+   * recebe uma resposta curta e a porta aberta — nada de qualificar quem
+   * já marcou.
+   */
+  if (estado.visitaConfirmada) return { tipo: "encerrar_confirmado" };
+
+  /*
+   * Perguntou algo que não temos (desconto, negociar, preço final) pela
+   * PRIMEIRA vez: honestidade na hora. Na repetição, a regra da insistência
+   * abaixo assume e muda a jogada.
+   */
+  if (estado.perguntaSemDado && !estado.perguntaRepetida) {
+    return { tipo: "responder_honesto", pergunta: estado.perguntaSemDado, vezes: 1 };
+  }
 
   /*
    * Pedido de ALTERNATIVA vence a objeção (é mais específico), e a objeção
@@ -521,6 +569,11 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
       return [
         `${cabecalho}: ele sinalizou que vai pensar / decidir com alguém — "${jogada.oQueEleDisse}".`,
         "Respeite. UMA frase: deixe a porta aberta e ofereça o que ajuda a decidir junto (o link da página ou as fotos, para mostrar a quem ele citou). NENHUMA pergunta de qualificação, NENHUM horário. Termine sem cobrar resposta.",
+      ].join("\n");
+    case "encerrar_confirmado":
+      return [
+        `${cabecalho}: a visita JÁ ESTÁ CONFIRMADA. Não qualifique mais.`,
+        "Responda o que ele disse em UMA frase curta (se perguntou endereço/horário, repita o combinado). Nenhuma pergunta de região, estágio, tipologia ou renda — isso acabou. Feche com \"qualquer dúvida até lá, me chama\".",
       ].join("\n");
     case "devolver_escolha":
       return [
