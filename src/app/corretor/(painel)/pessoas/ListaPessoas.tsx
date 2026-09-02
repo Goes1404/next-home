@@ -153,8 +153,12 @@ function LinhaPessoa({ pessoa }: { pessoa: PessoaNaLista }) {
           <span className="text-fluid-xs text-apoio min-w-0 flex-1 truncate">
             {pessoa.previa ?? (pessoa.etapa ? ETAPA_LABEL[pessoa.etapa] : "Sem conversa ainda")}
           </span>
+          {/* Verde de estado, não a cor do módulo: o contador vive DENTRO de
+              uma linha, e cor de módulo dentro de registro é justamente a
+              mistura que a régua de cor deste painel existe para evitar. De
+              quebra é a convenção do WhatsApp, que é o modelo emprestado. */}
           {pessoa.naoLidas > 0 && (
-            <span className="bg-acento text-sobre-cor flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
+            <span className="bg-ok text-sobre-cor flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
               {pessoa.naoLidas}
               <span className="so-para-leitor"> mensagens não lidas</span>
             </span>

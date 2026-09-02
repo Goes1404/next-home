@@ -28,36 +28,40 @@ export default async function ImoveisPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <span className="text-[11px] uppercase font-bold tracking-wider text-acento-suave">
-            Catálogo & Portfólio
-          </span>
-          {/* "Edição & Gestão de Imóveis" é o nome que o sistema dá a si
-              mesmo. O corretor pensa "imóveis" antes de tocar no menu, e é
-              assim que o item do menu se chama — o título repete a palavra
-              dele, não a nossa. */}
-          <CabecalhoDeTela
-            titulo="Imóveis"
-            descricao="Fotos, textos, preços, tipologias e lazer — do celular ou do computador."
-          />
-        </div>
-        {/* Links por imóvel saíram do menu (roadmap: 7 destinos); o caminho é por aqui. */}
-        <div className="flex flex-wrap items-center gap-2">
+      {/*
+        A sobrelinha "CATÁLOGO & PORTFÓLIO" saiu: era um rótulo em cima de um
+        título, dizendo a mesma coisa duas vezes — e ficava FORA do
+        `CabecalhoDeTela`, então o filete de cor do módulo começava embaixo
+        dela e a coluna nascia torta.
+
+        "Edição & Gestão de Imóveis" era o nome que o sistema dava a si mesmo.
+        O corretor pensa "imóveis" antes de tocar no menu, e é assim que o item
+        do menu se chama — o título repete a palavra dele, não a nossa.
+
+        Os dois botões estavam com `min-h-10` (40px) num painel que usa 44 em
+        todo o resto: os únicos alvos abaixo do padrão da casa.
+      */}
+      <CabecalhoDeTela
+        titulo="Imóveis"
+        descricao="Fotos, textos, preços, tipologias e lazer — do celular ou do computador."
+        acao={
           <Link
             href="/corretor/imoveis/novo"
-            className="text-fluid-sm border-acento-linha text-titulo hover:bg-elevado inline-flex min-h-10 items-center rounded-full border px-4 font-medium transition-colors"
+            className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm inline-flex min-h-11 items-center justify-center rounded-xl px-4 font-medium transition-colors"
           >
             + Novo imóvel
           </Link>
+        }
+        abaixo={
+          /* Links por imóvel saiu do menu; o caminho é por aqui. */
           <Link
             href="/corretor/links"
-            className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo inline-flex min-h-10 items-center rounded-full border px-4 transition-colors"
+            className="text-fluid-xs border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo mt-3 inline-flex min-h-11 items-center rounded-full border px-3.5 transition-colors"
           >
             Links por imóvel
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       {/*
         Antes da lista de propósito: é trabalho pendente, não navegação. O

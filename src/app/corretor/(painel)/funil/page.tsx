@@ -3,6 +3,7 @@ import { Quadro } from "./Quadro";
 import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import { getContagemPorEtapa, getLeadsDoFunil, souGestor } from "@/lib/corretorSessao";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Funil" };
 
@@ -27,12 +28,14 @@ export default async function FunilPage({
 
   return (
     <div>
-      <h1 className="text-fluid-2xl text-titulo">Funil de vendas</h1>
-      <p className="text-fluid-sm mt-2 text-apoio">
-        {gestor
-          ? "Todos os contatos da equipe, da chegada ao fechamento."
-          : "Seus contatos, da chegada ao fechamento."}
-      </p>
+      <CabecalhoDeTela
+        titulo="Funil"
+        descricao={
+          gestor
+            ? "Todos os contatos da equipe, da chegada ao fechamento."
+            : "Seus contatos, da chegada ao fechamento."
+        }
+      />
 
       <BuscaLeads className="mt-5" />
       <div className="mt-3">
@@ -43,7 +46,7 @@ export default async function FunilPage({
         <p className="text-fluid-xs text-apoio mt-3">
           {leads.length === 0
             ? `Ninguém no funil com “${busca}”.`
-            : `${leads.length} resultado${leads.length === 1 ? "" : "s"} para “${busca}”. Os números das colunas continuam sendo o total real.`}
+            : `${leads.length} resultado${leads.length === 1 ? "" : "s"} para “${busca}”. Os números dos grupos continuam sendo o total real.`}
         </p>
       )}
 

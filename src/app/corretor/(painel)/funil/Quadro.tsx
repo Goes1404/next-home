@@ -16,15 +16,37 @@ import { ModalDossieLead } from "./ModalDossieLead";
 import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
 
 /**
- * Quadro do funil.
+ * O funil — uma LISTA agrupada por etapa, não um quadro de colunas.
  *
- * Sem biblioteca de drag-and-drop de propósito. O gesto principal é o seletor
- * "Mover para" em cada cartão: funciona no celular — que é onde o corretor
- * está quando lembra de mover um lead —, é operável por teclado sem nenhum
- * código extra, e não custa 40 kB de JavaScript. Arrastar com o mouse existe
- * por cima disso, com a API nativa do HTML5 (que não funciona em toque, daí a
- * ordem de prioridade ser essa e não a inversa).
+ * Era um kanban de seis colunas com rolagem lateral e arrastar do HTML5. Três
+ * coisas o derrubaram, e as três são medidas:
+ *
+ * 1. A distribuição real (02/09/2026): perdido 62, primeiro contato 46, novo
+ *    6, fechado 1, visita 1, documentação 0. Duas colunas guardavam 108 dos
+ *    116 leads e quatro estavam praticamente vazias — muito espaço para
+ *    pouca informação.
+ * 2. Rolagem lateral sem aviso nenhum: em 360px as últimas colunas
+ *    simplesmente não existiam para quem não adivinhasse o gesto.
+ * 3. Arrastar do HTML5 NÃO FUNCIONA EM TOQUE, e o painel é usado no celular.
+ *    O gesto principal sempre foi o botão de avançar e o seletor "Mover
+ *    para"; o arrastar era enfeite que só o mouse alcançava.
+ *
+ * Agora: as etapas empilhadas na ordem do funil, cada uma com os cartões numa
+ * grade que acompanha a largura da tela. Mesma informação, sem rolagem
+ * lateral e sem gesto que metade dos aparelhos não tem. Etapa vazia vira uma
+ * linha fina — ela precisa continuar aparecendo (o funil é uma sequência, e
+ * buraco no meio dele confunde), mas não pode custar uma tela de rolagem.
+ *
+ * E cada grupo mostra no máximo `POR_ETAPA` cartões. Empilhado, "primeiro
+ * contato" com 46 pessoas viraria dez mil pixels de rolagem dentro de um
+ * grupo só — no quadro isso ficava escondido porque cada coluna rolava por
+ * conta própria. O funil responde "como está distribuída a minha carteira",
+ * não "deixa eu folhear 46 pessoas"; para folhear existe a lista, que pagina
+ * e filtra, e é para lá que o link do rodapé do grupo aponta.
  */
+
+/** Cartões visíveis por etapa antes de o grupo mandar para a lista. */
+const POR_ETAPA = 6;
 
 
 export function Quadro({
@@ -38,7 +60,6 @@ export function Quadro({
   mostrarDono: boolean;
 }) {
   const [erro, setErro] = useState<string | null>(null);
-  const [arrastando, setArrastando] = useState<string | null>(null);
   const [leadDossie, setLeadDossie] = useState<Lead | null>(null);
   const [, iniciarTransicao] = useTransition();
 
@@ -64,17 +85,12 @@ export function Quadro({
     });
   }
 
-  function soltarEm(etapa: EtapaFunil, idArrastado: string) {
-    const lead = otimista.find((l) => l.id === idArrastado);
-    if (lead) mover(lead, etapa);
-  }
-
   if (leads.length === 0) {
     return (
       <div className="mt-8 rounded-2xl border border-linha bg-superficie p-6">
         <p className="text-fluid-sm text-corpo">
-          Nenhum contato no funil ainda. Assim que alguém preencher um formulário do site, o
-          card aparece aqui na coluna “Novo lead”.
+          Ninguém no funil ainda. Assim que alguém chegar pelo seu link ou por um
+          formulário do site, aparece aqui no grupo “Leads”.
         </p>
       </div>
     );
@@ -91,64 +107,55 @@ export function Quadro({
         </p>
       )}
 
-      {/* Rola na horizontal como a barra de abas; as colunas têm largura fixa
-          para o cartão não achatar quando uma etapa esvazia. */}
-      <div className="scrollbar-none -mx-4 flex gap-3 overflow-x-auto px-4 pb-4 md:-mx-8 md:px-8">
+      <div className="space-y-4">
         {ETAPAS_FUNIL.map((etapa) => {
           const daEtapa = otimista.filter((lead) => lead.etapa === etapa);
-          // O quadro recebe no máximo `TETO_DO_QUADRO` leads; a contagem do
-          // banco é a verdade. Quando nem todo cartão coube, a coluna avisa
-          // e aponta para a lista, que é paginada.
+          // A tela recebe no máximo `TETO_DO_QUADRO` leads; a contagem do
+          // banco é a verdade. `faltando` soma os dois cortes — o do teto da
+          // consulta e o de `POR_ETAPA` — porque para quem lê é a mesma
+          // frase: "tem mais gente aqui do que estou mostrando".
           const totalReal = contagens?.[etapa] ?? daEtapa.length;
-          const faltando = Math.max(0, totalReal - daEtapa.length);
+          const visiveis = daEtapa.slice(0, POR_ETAPA);
+          const faltando = Math.max(0, totalReal - visiveis.length);
+          const vazia = totalReal === 0;
+
           return (
             <section
               key={etapa}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                soltarEm(etapa, e.dataTransfer.getData("text/plain"));
-                setArrastando(null);
-              }}
-              className={`w-72 shrink-0 rounded-2xl border bg-superficie p-3 ${BORDA_ETAPA[etapa]} ${
-                arrastando ? "border-dashed" : ""
-              }`}
+              aria-labelledby={`etapa-${etapa}`}
+              className={`rounded-2xl border bg-superficie ${BORDA_ETAPA[etapa]} ${vazia ? "px-4 py-2.5" : "p-3"}`}
             >
-              <header className="flex items-baseline justify-between px-1 pb-3">
-                <h2 className="text-fluid-sm font-medium text-titulo">
+              <header className="flex items-baseline justify-between gap-3 px-1">
+                <h2 id={`etapa-${etapa}`} className="text-fluid-sm text-titulo font-medium">
                   {ETAPA_LABEL[etapa]}
                 </h2>
-                <span className="text-fluid-xs text-tenue">{totalReal}</span>
+                <span className="text-fluid-xs text-tenue tabular-nums">
+                  {vazia ? "ninguém" : totalReal}
+                </span>
               </header>
 
-              <div className="space-y-2">
-                {daEtapa.map((lead) => (
-                  <Cartao
-                    key={lead.id}
-                    lead={lead}
-                    mostrarDono={mostrarDono}
-                    onMover={(destino) => mover(lead, destino)}
-                    onArrastar={() => setArrastando(lead.id)}
-                    onSoltar={() => setArrastando(null)}
-                    onVerDossie={() => setLeadDossie(lead)}
-                  />
-                ))}
+              {!vazia && (
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                  {visiveis.map((lead) => (
+                    <Cartao
+                      key={lead.id}
+                      lead={lead}
+                      mostrarDono={mostrarDono}
+                      onMover={(destino) => mover(lead, destino)}
+                      onVerDossie={() => setLeadDossie(lead)}
+                    />
+                  ))}
+                </div>
+              )}
 
-                {daEtapa.length === 0 && faltando === 0 && (
-                  <p className="text-fluid-xs px-1 py-6 text-center text-tenue">
-                    Vazio
-                  </p>
-                )}
-
-                {faltando > 0 && (
-                  <Link
-                    href={`/corretor/leads?etapa=${etapa}`}
-                    className="text-fluid-xs block px-1 py-2 text-center text-acento-suave underline-offset-4 hover:underline"
-                  >
-                    + {faltando} mais antigo{faltando === 1 ? "" : "s"} — ver na lista
-                  </Link>
-                )}
-              </div>
+              {faltando > 0 && (
+                <Link
+                  href={`/corretor/leads?etapa=${etapa}`}
+                  className="border-linha text-corpo hover:border-acento-linha hover:text-titulo text-fluid-xs mt-2 flex min-h-11 items-center justify-center rounded-xl border transition-colors"
+                >
+                  Ver os outros {faltando} em {ETAPA_LABEL[etapa].toLowerCase()}
+                </Link>
+              )}
             </section>
           );
         })}
@@ -166,34 +173,21 @@ function Cartao({
   lead,
   mostrarDono,
   onMover,
-  onArrastar,
-  onSoltar,
   onVerDossie,
 }: {
   lead: Lead;
   mostrarDono: boolean;
   onMover: (etapa: EtapaFunil) => void;
-  onArrastar: () => void;
-  onSoltar: () => void;
   onVerDossie: () => void;
 }) {
   const whatsapp = linkWhatsappLead(lead);
   const parado = diasParado(lead);
 
   return (
-    <article
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData("text/plain", lead.id);
-        e.dataTransfer.effectAllowed = "move";
-        onArrastar();
-      }}
-      onDragEnd={onSoltar}
-      className="rounded-xl border border-linha bg-superficie p-3 pl-4 relative group overflow-hidden"
-    >
-      {/* A régua da etapa, igual à da lista: mesmo gesto, mesma escala. No
-          quadro ela reforça a coluna; ao arrastar entre colunas, é ela que
-          confirma que o cartão mudou de etapa. */}
+    <article className="border-linha bg-elevado group relative overflow-hidden rounded-xl border p-3 pl-4">
+      {/* A régua da etapa, igual à da lista: mesmo gesto, mesma escala. Aqui
+          ela é redundante com o grupo, e isso é de propósito — o cartão viaja
+          para a lista e para a ficha, e precisa se explicar sozinho. */}
       <span
         aria-hidden
         className={`absolute inset-y-0 left-0 w-1 ${REGUA_ETAPA[lead.etapa]}`}
@@ -201,7 +195,6 @@ function Cartao({
       <div className="flex items-center justify-between gap-1 flex-wrap">
         <Link
           href={`/corretor/leads/${lead.id}`}
-          draggable={false}
           className="text-fluid-sm font-medium text-titulo underline-offset-4 hover:text-acento-suave hover:underline"
         >
           {lead.nome}

@@ -188,7 +188,7 @@ export default async function ConversasPage({
       */}
       <CabecalhoDeTela
         titulo="Conversas"
-        descricao="Quem está falando com o seu número e se a IA está atendendo. Quando você responde pelo celular, ela se cala naquela conversa — aqui você devolve a palavra a ela."
+        descricao="Quem está falando com o seu número e se a IA está atendendo."
       />
 
       <div className="mt-5">

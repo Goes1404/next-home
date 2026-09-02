@@ -48,12 +48,18 @@ export default async function PaginaPessoas({
       <CabecalhoDeTela
         titulo="Pessoas"
         descricao="Quem falou com você, de quem falou por último para quem falou há mais tempo."
-        acao={
+        abaixo={
+          /*
+           * Adicionar gente à mão é raro — 25 das 147 pessoas em produção
+           * chegaram sem conversa. Como ação primária de largura cheia ele
+           * empurrava a lista para baixo e gritava mais que o conteúdo; a
+           * ação primária desta tela é LER a lista.
+           */
           <Link
             href="/corretor/importar"
-            className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 font-medium transition-colors"
+            className="text-fluid-xs border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo mt-3 inline-flex min-h-11 items-center rounded-full border px-3.5 transition-colors"
           >
-            + Adicionar
+            + Adicionar alguém
           </Link>
         }
       />

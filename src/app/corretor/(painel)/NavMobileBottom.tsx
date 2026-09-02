@@ -69,7 +69,11 @@ export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
           aria-modal="true"
           aria-label="Todas as seções"
           className={cn(
-            "border-linha bg-superficie pb-safe absolute inset-x-0 bottom-0 max-h-[80svh] overflow-y-auto rounded-t-3xl border-t px-5 pt-3 pb-6 transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)]",
+            // O `pb` desconta a ALTURA DA BARRA, não um valor solto: a barra é
+            // `fixed` e desenhada por cima da gaveta, então sem isto o último
+            // item fica atrás dela. Passou a doer quando a gaveta deixou de
+            // repetir a barra e ganhou sete itens em vez de quatro.
+            "border-linha bg-superficie pb-safe absolute inset-x-0 bottom-0 max-h-[80svh] overflow-y-auto rounded-t-3xl border-t px-5 pt-3 pb-[calc(var(--nav-mobile-h)+1.5rem)] transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)]",
             aberta ? "translate-y-0" : "translate-y-full",
           )}
         >

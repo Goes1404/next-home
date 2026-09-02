@@ -267,7 +267,10 @@ export function ListaLeads({
         </div>
       </div>
 
-      <div className="scrollbar-none mt-2 -mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+      {/* Quebra linha em vez de rolar de lado, pelo mesmo motivo das abas e
+          da barra de seleção: chip escondido atrás de um gesto invisível é
+          filtro que existe e ninguém encontra. */}
+      <div className="mt-2 flex flex-wrap gap-2 pb-2">
         {CHIPS.map(({ valor, label, cor }) => {
           const ativo = filtro === valor && !etapaFiltro;
           return (

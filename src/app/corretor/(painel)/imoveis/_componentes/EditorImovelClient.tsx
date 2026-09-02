@@ -127,12 +127,15 @@ export function EditorImovelClient({ imovel }: Props) {
         </div>
       )}
 
-      {/* Abas Horizontais com Toque Grande para Mobile */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-2 border-b border-linha">
+      {/* Abas do editor: quebram linha, não rolam de lado. Rolagem lateral
+          aqui escondia metade das seções do imóvel atrás de um gesto que a
+          fileira não anuncia — mesma decisão de `AbasSecao` e dos chips da
+          lista. */}
+      <div className="border-linha flex flex-wrap gap-2 border-b pb-2">
         <button
           type="button"
           onClick={() => setAbaAtiva("fotos")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "fotos"
               ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
@@ -147,7 +150,7 @@ export function EditorImovelClient({ imovel }: Props) {
         <button
           type="button"
           onClick={() => setAbaAtiva("textos")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "textos"
               ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
@@ -159,7 +162,7 @@ export function EditorImovelClient({ imovel }: Props) {
         <button
           type="button"
           onClick={() => setAbaAtiva("book")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "book"
               ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
@@ -176,7 +179,7 @@ export function EditorImovelClient({ imovel }: Props) {
         <button
           type="button"
           onClick={() => setAbaAtiva("midia")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "midia"
               ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
@@ -193,7 +196,7 @@ export function EditorImovelClient({ imovel }: Props) {
         <button
           type="button"
           onClick={() => setAbaAtiva("lazer")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "lazer"
               ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
@@ -206,7 +209,7 @@ export function EditorImovelClient({ imovel }: Props) {
         <button
           type="button"
           onClick={() => setAbaAtiva("plantas")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "plantas"
               ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
