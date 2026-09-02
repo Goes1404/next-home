@@ -9,23 +9,30 @@
   "comJuiz": false,
   "conversas": [
     {
-      "persona": "quer-visitar-sabado",
+      "persona": "insiste-no-desconto",
       "rodada": 1,
-      "desfecho": "cliente_encerrou",
-      "turnos": 8,
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
       "medida": {
-        "turnos": 8,
+        "turnos": 12,
         "turnoDaOfertaDeVisita": 1,
         "midiasRepetidas": [],
-        "perguntasRepetidasPelaIa": [],
+        "perguntasRepetidasPelaIa": [
+          "Para te ajudar melhor, em qual região de Barueri você está procurando o imóvel?",
+          "Para avançar, me diz em qual região de Barueri você procura o imóvel?",
+          "Para te ajudar melhor, em qual região de Barueri você procura o imóvel?"
+        ],
         "perguntasReaparecidas": [
-          "Que horas?"
+          "qual o valor exato?",
+          "mas não dá pra saber o desconto antes?",
+          "mas qual é a faixa de desconto?",
+          "mas qual o desconto?"
         ],
         "respostasRepetidas": 0,
-        "maiorSequenciaSemNovidade": 4,
+        "maiorSequenciaSemNovidade": 9,
         "assuntosCobertos": [
-          "regiao",
           "visita",
+          "regiao",
           "estagio",
           "tipologia",
           "perfil"
@@ -33,11 +40,12 @@
         "modelos": [
           "gpt-4.1-mini"
         ],
-        "mediaDeCaracteres": 128,
-        "maiorMensagem": 219,
+        "mediaDeCaracteres": 122,
+        "maiorMensagem": 176,
         "reprovacoes": [
-          "o cliente teve de repetir 1 pergunta(s) — ela não respondeu",
-          "4 turnos seguidos sem assunto novo"
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
+          "9 turnos seguidos sem assunto novo"
         ]
       },
       "juizo": null

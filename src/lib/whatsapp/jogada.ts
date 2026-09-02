@@ -66,6 +66,10 @@ export interface EstadoDaConversa {
   perguntadosNaUltima: Set<AssuntoDoFunil>;
   /** Assuntos que a IA já perguntou em qualquer momento. */
   perguntadosAlgumaVez: Set<AssuntoDoFunil>;
+  /** Quantas vezes cada assunto foi perguntado — a repergunta é permitida UMA vez. */
+  vezesPerguntado: Map<AssuntoDoFunil, number>;
+  /** O cliente pediu um HORÁRIO ("que horas?", "quando dá?"). */
+  pediuHorario: boolean;
   convidouVisita: boolean;
   horariosOferecidos: number;
   pedidoEmAberto: DadoPedido | null;
@@ -104,6 +108,9 @@ const ASSUNTO_DO_FUNIL: Record<string, AssuntoDoFunil> = {
 const ACEITE =
   /\b(pode ser|fechado|fechou|combinado|perfeito|otimo|beleza|bora|vamos|topo|confirmo|confirmado|pode marcar|marca|esse (horario|dia)|esse mesmo|ta bom|tá bom|ok|sim|então|entao)\b/;
 const NEGACAO = /\b(nao|não|nem|impossivel|impossível|não da|nao da|não consigo|nao consigo|outro (dia|horario)|outra hora)\b/;
+
+const PEDIDO_DE_HORARIO =
+  /\b(que horas|qual horario|qual o horario|que dia|quando (da|dá|posso|pode|e possivel|é possível|voces|vocês)|tem horario|horario disponivel)\b/;
 
 const TIPOLOGIA_DE_VERDADE = /\b(dormitorio|dormitorios|quarto|quartos|suite|suites|vaga|vagas|metragem|m2|metros)\b/;
 
@@ -185,9 +192,13 @@ export function estadoDaConversa(params: {
   }
 
   const perguntadosAlgumaVez = new Set<AssuntoDoFunil>();
+  const vezesPerguntado = new Map<AssuntoDoFunil, number>();
   for (const texto of falasBot) {
     for (const pergunta of perguntasDe(texto)) {
-      for (const a of assuntosDoFunil(pergunta)) perguntadosAlgumaVez.add(a);
+      for (const a of assuntosDoFunil(pergunta)) {
+        perguntadosAlgumaVez.add(a);
+        vezesPerguntado.set(a, (vezesPerguntado.get(a) ?? 0) + 1);
+      }
     }
   }
   const perguntadosNaUltima = new Set<AssuntoDoFunil>();
@@ -242,6 +253,14 @@ export function estadoDaConversa(params: {
     falasDoCliente: falasCliente.length + (mensagemAtual.trim() ? 1 : 0),
     aceitouHorario,
     oQueEleDisse: mensagemAtual.trim(),
+    vezesPerguntado,
+    /*
+     * "Que horas?" / "quando dá?" é pedido de HORÁRIO, e no caminho feliz
+     * com API ele foi ignorado no turno 2 (o planner escolheu o convite) e o
+     * cliente teve de repetir. Quem pergunta a hora já aceitou visitar — a
+     * jogada é propor o horário, não convidar.
+     */
+    pediuHorario: PEDIDO_DE_HORARIO.test(nAtual),
     capacidadePendente: capacidadeEstaPendente({
       dossie,
       historico: [...historico],
@@ -276,6 +295,11 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
 
   if (estado.pedidoEmAberto) return { tipo: "responder_dado", dado: estado.pedidoEmAberto };
 
+  // Pediu a hora: já aceitou visitar. Propor é responder.
+  if (estado.pediuHorario && estado.horariosOferecidos < 2) {
+    return { tipo: "propor_horario", jaOfereceu: estado.horariosOferecidos };
+  }
+
   if (estado.perguntaRepetida) {
     const { pergunta, vezes } = estado.perguntaRepetida;
 
@@ -301,7 +325,15 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
 
   const proximoAssunto = ORDEM_DO_FUNIL.find((a) => {
     if (estado.respondidos.has(a)) return false;
-    if (estado.perguntadosNaUltima.has(a)) return false;
+    /*
+     * "Ignorou a pergunta" e "respondeu outra coisa" são diferentes. No
+     * trace cooperativo, "sim, quero conhecer" respondia ao CONVITE, não à
+     * pergunta de capacidade do turno anterior — e a regra "nunca repita a
+     * pergunta da última mensagem" derrubava a conversa em
+     * `devolver_escolha`. A repergunta é permitida UMA vez; na segunda, o
+     * assunto sai do caminho (ele não quer responder, e insistir afasta).
+     */
+    if (estado.perguntadosNaUltima.has(a) && (estado.vezesPerguntado.get(a) ?? 0) >= 2) return false;
     if (a === "capacidade") return estado.capacidadePendente;
     return true;
   });

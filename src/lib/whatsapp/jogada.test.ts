@@ -30,6 +30,10 @@ function estado(over: Partial<EstadoDaConversa> = {}): EstadoDaConversa {
     perguntaRepetida: null,
     falasDoCliente: 1,
     capacidadePendente: false,
+    aceitouHorario: false,
+    oQueEleDisse: "",
+    vezesPerguntado: new Map(),
+    pediuHorario: false,
     ...over,
   };
 }
@@ -67,13 +71,19 @@ describe("planejarJogada — a ordem de prioridade", () => {
     });
   });
 
-  it("NUNCA repete a pergunta que acabou de fazer", () => {
+  it("não insiste na pergunta que já fez DUAS vezes", () => {
     /*
      * É o que três versões de prompt não conseguiram: "não repita" era uma
-     * súplica no texto. Aqui é comparação de conjuntos.
+     * súplica no texto. Aqui é comparação de conjuntos — com a nuance de
+     * que UMA repergunta é permitida (o cliente pode ter respondido outra
+     * coisa); na segunda, o assunto sai do caminho.
      */
     const j = planejarJogada(
-      estado({ perguntadosNaUltima: new Set(["regiao"]), falasDoCliente: 1 }),
+      estado({
+        perguntadosNaUltima: new Set(["regiao"]),
+        vezesPerguntado: new Map([["regiao", 2]]),
+        falasDoCliente: 1,
+      }),
     );
     expect(j).not.toEqual({ tipo: "perguntar", assunto: "regiao" });
     expect(j).toEqual({ tipo: "perguntar", assunto: "estagio" });
@@ -353,5 +363,50 @@ describe("os três achados do trace cooperativo", () => {
       imovelEmFoco: null, catalogo: [IMOVEL],
     });
     expect(e.aceitouHorario).toBe(false);
+  });
+});
+
+describe("repergunta e pedido de horário", () => {
+  it("respondeu OUTRA coisa → repergunta uma vez; ignorou duas → segue em frente", () => {
+    const base = {
+      historico: [
+        cliente("Alphaville, 2 dormitórios, na planta"),
+        // O convite já foi feito: sem ele, `convidar_visita` vence antes da
+        // repergunta — e vence CERTO, é a ordem do planner.
+        bot("Quer conhecer o decorado? Qual faixa de valor você tem em mente?"),
+      ],
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    };
+    // Respondeu ao convite, não à faixa: capacidade continua devida, e pode ser reperguntada.
+    const umaVez = estadoDaConversa({ ...base, mensagemAtual: "sim, quero conhecer!" });
+    expect(umaVez.vezesPerguntado.get("capacidade")).toBe(1);
+    expect(planejarJogada({ ...umaVez, capacidadePendente: true })).toEqual({
+      tipo: "perguntar",
+      assunto: "capacidade",
+    });
+
+    // Já perguntou duas vezes e ele desconversou de novo: não insiste.
+    const duasVezes = estadoDaConversa({
+      ...base,
+      historico: [...base.historico, cliente("sim, quero conhecer!"), bot("Para eu te mostrar o que cabe: qual faixa de valor?")],
+      mensagemAtual: "quero só conhecer mesmo",
+    });
+    expect(duasVezes.vezesPerguntado.get("capacidade")).toBe(2);
+    expect(planejarJogada({ ...duasVezes, capacidadePendente: true }).tipo).not.toBe("perguntar");
+  });
+
+  it("'que horas?' é pedido de horário → propor, não convidar", () => {
+    /*
+     * Caminho feliz com API, turno 2: "Que horas?" foi ignorado (o planner
+     * escolheu o convite) e o cliente teve de repetir. Quem pergunta a hora
+     * já aceitou visitar.
+     */
+    const e = estadoDaConversa({
+      historico: [cliente("queria visitar sábado"), bot("Em qual região você procura?")],
+      mensagemAtual: "Barueri Centro. Que horas?",
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(e.pediuHorario).toBe(true);
+    expect(planejarJogada(e).tipo).toBe("propor_horario");
   });
 });

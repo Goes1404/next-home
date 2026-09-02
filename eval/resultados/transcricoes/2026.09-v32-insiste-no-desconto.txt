@@ -2,58 +2,58 @@ insiste-no-desconto · teto_de_turnos · 12 turnos
 ————————————————————————————————————————————————————————————
 
 [1] Cliente: qual o desconto pra pagamento a vista
-[1] Sofia:   O mais acessível do nosso catálogo está a partir de R$ 249.000.
-O valor exato depende da unidade e condições, que fechamos na visita. Quer conhecer o decorado para entender melhor?
+[1] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+O valor exato depende da unidade e condições, que fechamos na visita. Quer conhecer o decorado para conversarmos melhor?
 
-[2] Cliente: mas quanto é a unidade que eu vi?
-              não tem desconto pra fechar agora?
-[2] Sofia:   O valor da unidade que você viu depende do andar e da forma de pagamento, e isso fechamos na visita.
-Não temos desconto fixo para fechar agora, mas posso te mostrar as condições pessoalmente.
+[2] Cliente: mas quanto tá então?
+              não dá pra fazer um desconto antes?
+[2] Sofia:   Entendo seu interesse em condições especiais.
+Me conta, em qual região de Barueri você procura o imóvel?
 
 [3] Cliente: mas e o valor exato?
-              não dá pra fechar algo agora?
-[3] Sofia:   O valor exato da unidade varia conforme o andar e a forma de pagamento, e isso fechamos na visita pessoalmente.
-Posso agendar para sábado de manhã ou segunda à tarde para você conhecer o decorado?
+              não quero visitar sem saber o desconto
+[3] Sofia:   O valor exato e condições fechamos na visita, que é o momento certo para isso.
+Me conta, você prefere imóvel pronto para morar ou na planta?
 
-[4] Cliente: mas quanto é a unidade exata?
-              não tem desconto nem condição especial?
-              não dá pra fechar algo agora?
-[4] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+[4] Cliente: mas eu quero saber o valor exato
+              não quero visitar sem saber o desconto
+[4] Sofia:   Compreendo que o valor é essencial para você.
+Para ajudar melhor, me diz em qual região de Barueri você procura o imóvel?
 
-[5] Cliente: quero saber valor exato!
-              não dá pra fechar desconto agora?
-[5] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+[5] Cliente: qual o valor exato?
+              não vou visitar sem saber o desconto
+[5] Sofia:   O valor exato não tenho, só o piso: o Vila Eco Park começa em R$ 249.000.
+O desconto e condições fechamos na visita, onde te mostro tudo com calma.
 
-[6] Cliente: quantos dormitórios? e o valor exato mesmo?
-              não tem jeito de fechar agora?
-[6] Sofia:   O valor exato depende do andar e condições, que fechamos na visita.
-Tem preferência por 1, 2 ou 3 dormitórios?
-Assim te mostro o que cabe no seu perfil.
+[6] Cliente: mas quanto é o desconto?
+              quero saber o valor certo antes
+[6] Sofia:   Entendo sua preocupação com o valor exato e desconto.
 
-[7] Cliente: mas e o valor exato que eu vi?
-              não tem como fechar desconto agora?
-[7] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+[7] Cliente: mas qual é o desconto?
+              não vou visitar sem saber o valor certo
+[7] Sofia:   Vejo que o valor é um ponto importante para você.
+Para te ajudar melhor, em qual região de Barueri você está procurando o imóvel?
 
-[8] Cliente: mas e o valor exato mesmo?
-              não tem jeito de fechar desconto agora?
-[8] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
-o link com tudo do empreendimento, ou marcar de conversar pessoalmente?
+[8] Cliente: mas não dá pra saber o desconto antes?
+              qual o valor certinho então?
+[8] Sofia:   Não tenho o desconto exato antes da visita. Confirmo com o corretor e te trago essa informação.
+O valor certinho depende da unidade e condições, que fechamos pessoalmente.
 
-[9] Cliente: mas e o valor exato?
-              não tem como fechar agora?
-[9] Sofia:   O valor exato da unidade depende do andar e das condições, que fechamos na visita pessoalmente.
-Posso agendar para sábado às 10h ou segunda às 15h para te mostrar tudo?
+[9] Cliente: não vou visitar sem saber o desconto
+              não dá pra saber pelo menos uma faixa?
+[9] Sofia:   Entendo sua necessidade de clareza.
+Para avançar, me diz em qual região de Barueri você procura o imóvel?
 
-[10] Cliente: mas e o valor exato?
-              não tem como fechar desconto agora?
+[10] Cliente: mas qual é a faixa de desconto?
+              não tô a fim de visitar sem saber isso.
 [10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
 
-[11] Cliente: mas e o valor exato?
-              não tem jeito de fechar desconto agora?
-[11] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
-O valor exato depende do andar e das condições, que fechamos na visita pessoalmente.
-Quer que eu te mostre o decorado para conversarmos melhor?
+[11] Cliente: mas tô pedindo qual o desconto
+              não dá pra saber a faixa de desconto?
+[11] Sofia:   Entendo que o desconto é importante para você.
+Para te ajudar melhor, em qual região de Barueri você procura o imóvel?
 
-[12] Cliente: mas quanto é a unidade que eu vi?
-              não tem como fechar desconto agora?
-[12] Sofia:   Não temos desconto fixo para fechar agora, mas posso te mostrar tudo no decorado.
+[12] Cliente: mas qual o desconto?
+              não dá pra saber nada antes?
+[12] Sofia:   O desconto exato só fechamos na visita, onde te mostro tudo com calma.
+Posso te mostrar o Vila Eco Park amanhã às 10h ou quinta às 15h?
