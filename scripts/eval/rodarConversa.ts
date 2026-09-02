@@ -99,6 +99,8 @@ export type ConversaSimulada = {
   turnos: TurnoRegistrado[];
   /** Por que o laço parou: o cliente encerrou, ou o teto foi atingido. */
   desfecho: "cliente_encerrou" | "teto_de_turnos" | "cliente_mudo" | "ia_indisponivel";
+  /** Só em `ia_indisponivel`: o motivo tipado do motor (`http_429`, `timeout`…). */
+  motivo?: string;
 };
 
 async function conversarCom(persona: Persona): Promise<ConversaSimulada> {
@@ -132,7 +134,12 @@ async function conversarCom(persona: Persona): Promise<ConversaSimulada> {
     });
 
     if (turno.resposta.meta.fallback) {
-      return { persona: persona.id, turnos, desfecho: "ia_indisponivel" };
+      return {
+        persona: persona.id,
+        turnos,
+        desfecho: "ia_indisponivel",
+        motivo: turno.resposta.meta.motivoFalha ?? undefined,
+      };
     }
 
     /*
@@ -344,9 +351,30 @@ async function principal() {
   }
 
   const relatorio = [];
+  /*
+   * Duas conversas seguidas mortas ANTES do primeiro turno nunca são do
+   * agente: é chave, crédito ou rede. Em 02/09 a conta da OpenAI ficou sem
+   * crédito na 10ª conversa e o eval seguiu até o fim — 22 conversas de zero
+   * turnos, todas "medidas", e o comparador tirou avanço disso. Parar cedo
+   * salva o que foi pago e não deixa um arquivo que parece rodada completa.
+   */
+  let mortasSeguidas = 0;
   for (let rodada = 1; rodada <= RODADAS; rodada++) {
   for (const persona of escolhidas) {
     const conversa = await conversarCom(persona);
+    const morreuNoInicio =
+      conversa.turnos.length === 0 &&
+      (conversa.desfecho === "ia_indisponivel" || conversa.desfecho === "cliente_mudo");
+    mortasSeguidas = morreuNoInicio ? mortasSeguidas + 1 : 0;
+    if (mortasSeguidas >= 2) {
+      gravar(relatorio, clienteIndependente, rodada);
+      console.error(
+        `\n[eval] ABORTADO na rodada ${rodada}: duas conversas seguidas mortas antes do primeiro turno` +
+          ` (${conversa.desfecho}${conversa.motivo ? ` · ${conversa.motivo}` : ""}). Isso é chave, crédito ou rede,` +
+          ` não o agente. O que foi medido até aqui está salvo; a rodada NÃO está completa.`,
+      );
+      process.exit(2);
+    }
     const medida = medirConversa(conversa.turnos, {
       conversaCompleta:
         conversa.desfecho === "cliente_encerrou" || conversa.desfecho === "teto_de_turnos",

@@ -30,6 +30,8 @@ interface ArquivoDeConversa {
   conversas: {
     persona: string;
     rodada?: number;
+    /** Ausente em arquivo antigo; ausente = medida. */
+    desfecho?: string;
     medida: {
       perguntasReaparecidas: string[];
       perguntasRepetidasPelaIa: string[];
@@ -38,6 +40,49 @@ interface ArquivoDeConversa {
     };
     juizo?: { avancou?: number; assumiria?: boolean; mesmaPessoa?: number } | null;
   }[];
+}
+
+/**
+ * Conversa que morreu por falha do EVAL — IA sem crédito, cliente simulado
+ * mudo — NÃO É MEDIDA. Ela tem zero turnos, logo zero repetição, e somada
+ * ao resto vira avanço de mentira: em 02/09 uma rodada com 15 de 16
+ * conversas mortas por `insufficient_quota` saiu do comparador como
+ * "▲ o cliente repetiu 8 → 2". A régua da casa já dizia isso ("conta como
+ * NÃO MEDIDA, nunca como aprovada"); o código não.
+ */
+const DESFECHOS_MEDIDOS = new Set(["cliente_encerrou", "teto_de_turnos"]);
+
+function foiMedida(c: ArquivoDeConversa["conversas"][number]): boolean {
+  return c.desfecho === undefined || DESFECHOS_MEDIDOS.has(c.desfecho);
+}
+
+/** Por rodada: quantas conversas foram medidas de quantas rodaram. */
+function cobertura(arquivo: ArquivoDeConversa): { rodada: number; medidas: number; total: number }[] {
+  const mapa = new Map<number, { medidas: number; total: number }>();
+  for (const c of arquivo.conversas) {
+    const n = c.rodada ?? 1;
+    const atual = mapa.get(n) ?? { medidas: 0, total: 0 };
+    atual.total += 1;
+    if (foiMedida(c)) atual.medidas += 1;
+    mapa.set(n, atual);
+  }
+  return [...mapa.entries()].sort((a, b) => a[0] - b[0]).map(([rodada, v]) => ({ rodada, ...v }));
+}
+
+/** Personas medidas em TODAS as rodadas dos dois arquivos. */
+function personasComuns(a: ArquivoDeConversa, b: ArquivoDeConversa): Set<string> {
+  const rodadasDe = (arq: ArquivoDeConversa) => new Set(arq.conversas.map((c) => c.rodada ?? 1));
+  const medidaEm = (arq: ArquivoDeConversa, persona: string, rodada: number) =>
+    arq.conversas.some((c) => c.persona === persona && (c.rodada ?? 1) === rodada && foiMedida(c));
+  const todas = new Set([...a.conversas, ...b.conversas].map((c) => c.persona));
+  const comuns = new Set<string>();
+  for (const p of todas) {
+    const ok =
+      [...rodadasDe(a)].every((r) => medidaEm(a, p, r)) &&
+      [...rodadasDe(b)].every((r) => medidaEm(b, p, r));
+    if (ok) comuns.add(p);
+  }
+  return comuns;
 }
 
 /**
@@ -88,6 +133,7 @@ function porPersona(arquivo: ArquivoDeConversa): Map<string, Rodada[]> {
   const mapa = new Map<string, Map<number, Rodada>>();
 
   for (const c of arquivo.conversas) {
+    if (!foiMedida(c)) continue;
     const dela = mapa.get(c.persona) ?? new Map<number, Rodada>();
     const n = c.rodada ?? 1;
     const atual = dela.get(n) ?? zero();
@@ -108,6 +154,7 @@ function rodadasDe(arquivo: ArquivoDeConversa): Rodada[] {
   const porRodada = new Map<number, Rodada>();
 
   for (const c of arquivo.conversas) {
+    if (!foiMedida(c)) continue;
     const n = c.rodada ?? 1;
     const atual: Rodada = porRodada.get(n) ?? {
       clienteRepetiu: 0,
@@ -138,8 +185,12 @@ function principal() {
     process.exit(1);
   }
 
-  const antes = ler(caminhoA);
-  const depois = ler(caminhoB);
+  const antesCru = ler(caminhoA);
+  const depoisCru = ler(caminhoB);
+
+  const comuns = personasComuns(antesCru, depoisCru);
+  const antes = { ...antesCru, conversas: antesCru.conversas.filter((c) => comuns.has(c.persona)) };
+  const depois = { ...depoisCru, conversas: depoisCru.conversas.filter((c) => comuns.has(c.persona)) };
 
   const rodadasAntes = rodadasDe(antes);
   const rodadasDepois = rodadasDe(depois);
@@ -159,8 +210,24 @@ function principal() {
 
   const r = compararRodadas(rodadasAntes, rodadasDepois, { juizDecide });
 
-  console.log(`\n${antes.promptVersao} (${rodadasAntes.length} rodada(s), ${antes.data})`);
-  console.log(`  →  ${depois.promptVersao} (${rodadasDepois.length} rodada(s), ${depois.data})\n`);
+  /*
+   * Veredito sobre o MESMO denominador. Conversa morta por falha do eval
+   * fica fora da soma (`foiMedida`), mas excluir de um lado só troca um
+   * erro por outro: somar 9 personas contra 16 é comparar denominadores
+   * diferentes — o defeito recorrente desta base. Então entra na conta
+   * apenas a persona medida em TODAS as rodadas dos DOIS arquivos, e o
+   * veredito diz sobre quantas foi tirado. Abaixo da metade não há veredito.
+   */
+  const cobAntes = cobertura(antesCru);
+  const cobDepois = cobertura(depoisCru);
+  const fmtCob = (cob: ReturnType<typeof cobertura>) =>
+    cob.map((c) => `r${c.rodada}: ${c.medidas}/${c.total}`).join(" · ");
+  const todas = new Set([...antesCru.conversas, ...depoisCru.conversas].map((c) => c.persona));
+  const excluidas = [...todas].filter((p) => !comuns.has(p)).sort();
+  const comparavel = comuns.size >= Math.ceil(todas.size / 2);
+
+  console.log(`\n${antes.promptVersao} (${rodadasAntes.length} rodada(s), ${antes.data}) — medidas ${fmtCob(cobAntes)}`);
+  console.log(`  →  ${depois.promptVersao} (${rodadasDepois.length} rodada(s), ${depois.data}) — medidas ${fmtCob(cobDepois)}\n`);
 
   const simbolo = { melhorou: "▲", piorou: "▼", empate: "=", sem_dados: "?" } as const;
 
@@ -181,7 +248,19 @@ function principal() {
     );
   }
 
-  console.log(`\n${r.conclusao}\n`);
+  const denominador = `${comuns.size} de ${todas.size} personas`;
+  if (!comparavel) {
+    console.log(
+      `\nNÃO COMPARÁVEL: só ${denominador} foram medidas em todas as rodadas dos dois\n` +
+        "arquivos (o resto morreu por falha do eval: IA sem crédito, cliente mudo).\n" +
+        "As faixas acima são só descrição — repita a rodada inteira antes de tirar veredito.\n",
+    );
+  } else {
+    console.log(`\n${r.conclusao}`);
+    console.log(
+      `(veredito sobre ${denominador}${excluidas.length ? `; fora por falha do eval: ${excluidas.join(", ")}` : ""})\n`,
+    );
+  }
 
   /*
    * O recorte por persona. Não muda o veredito acima — muda o que dá para
