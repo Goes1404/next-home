@@ -10,15 +10,17 @@ import type { SVGProps } from "react";
  * celular: a barra de abas é `hidden md:flex`. Com a lista aqui, quem
  * adiciona uma seção adiciona em todos os lugares por construção.
  *
- * O corretor comum vê CINCO destinos, e é de propósito: o painel tem treze
- * telas, e treze itens de menu obrigam a decidir onde procurar antes de
- * procurar. O que é parente virou aba (`AbasSecao`), não item:
+ * O corretor comum vê QUATRO destinos, e é de propósito: o painel tem vinte e
+ * seis telas, e vinte e seis itens de menu obrigam a decidir onde procurar
+ * antes de procurar. O que é parente virou aba (`AbasSecao`), não item:
  *
  *   Início
  *   Leads      ← funil, visitas, importar
  *   WhatsApp   ← conversas, campanhas, configuração da IA, templates
  *   Imóveis    ← links por imóvel
- *   Conta      ← senha; e, para o gestor, Administração ao lado
+ *
+ * E, para o gestor, Administração ao lado. Perfil e senha saíram do menu:
+ * moram no menu do avatar (`ITENS_DA_CONTA`), que é onde se procura por elas.
  *
  * As rotas antigas continuam existindo — só saíram do menu; `tambem` mantém
  * o destino certo aceso quando o corretor está nelas, e nenhum link salvo
@@ -65,14 +67,8 @@ export const GRUPOS_NAV: GrupoNav[] = [
     ],
   },
   {
-    titulo: "Conta",
+    titulo: "Equipe",
     itens: [
-      {
-        href: "/corretor/perfil",
-        label: "Conta",
-        icone: IconePessoa,
-        tambem: ["/corretor/senha"],
-      },
       {
         // As cinco telas de administração viraram abas: o gestor também
         // atende lead, e cinco itens de admin no menu invertem essa
@@ -80,29 +76,41 @@ export const GRUPOS_NAV: GrupoNav[] = [
         href: "/corretor/admin",
         label: "Administração",
         icone: IconeEquipe,
-        tambem: ["/corretor/precos"],
+        tambem: ["/corretor/admin/precos"],
         gestor: true,
       },
     ],
   },
 ];
 
-/** Os destinos do polegar, na barra inferior do celular (mais o botão Menu). */
-export const ATALHOS_MOBILE: ItemNav[] = [
-  { href: "/corretor", label: "Início", icone: IconeInicio },
-  {
-    href: "/corretor/leads",
-    label: "Leads",
-    icone: IconePessoas,
-    tambem: ["/corretor/funil", "/corretor/visitas", "/corretor/importar"],
-  },
-  {
-    href: "/corretor/conversas",
-    label: "WhatsApp",
-    icone: IconeConversa,
-    tambem: ["/corretor/campanhas", "/corretor/whatsapp", "/corretor/templates"],
-  },
+/**
+ * Conta e senha saíram do menu e foram para o menu do avatar, no cabeçalho.
+ *
+ * Não é economia de espaço por si: era o destino MENOS visitado ocupando um
+ * dos cinco slots, enquanto Imóveis — que o corretor abre para mandar foto no
+ * meio de uma conversa — não cabia na barra do polegar e só existia atrás da
+ * gaveta. Trocar os dois de lugar põe o que se usa todo dia a um toque e o
+ * que se usa uma vez por mês onde já se procura por ele: o próprio avatar.
+ *
+ * As rotas continuam as mesmas; só o caminho até elas mudou.
+ */
+export const ITENS_DA_CONTA: ItemNav[] = [
+  { href: "/corretor/perfil", label: "Meu perfil", icone: IconePessoa },
+  { href: "/corretor/senha", label: "Trocar senha", icone: IconeChave },
 ];
+
+/**
+ * Os destinos do polegar, na barra inferior do celular (mais o botão Menu).
+ *
+ * Derivado do grupo "Trabalho" em vez de repetido: esta lista era uma cópia
+ * literal dos mesmos itens, com os mesmos `tambem` escritos de novo — duas
+ * listas que precisavam ser mantidas iguais à mão. Bastava alguém absorver
+ * uma rota nova em Leads e esquecer daqui para o item apagar no celular e
+ * acender no computador, na mesma rota.
+ *
+ * São QUATRO agora, não três: o slot que Conta liberou foi para Imóveis.
+ */
+export const ATALHOS_MOBILE: ItemNav[] = GRUPOS_NAV[0].itens;
 
 export function gruposVisiveis(ehGestor: boolean): GrupoNav[] {
   return GRUPOS_NAV.map((g) => ({
@@ -151,12 +159,13 @@ const MODULO_POR_DESTINO: Record<string, Modulo> = {
   "/corretor/conversas": "whatsapp",
   "/corretor/imoveis": "imoveis",
   "/corretor/perfil": "conta",
+  "/corretor/senha": "conta",
   "/corretor/admin": "admin",
 };
 
 export function moduloAtivo(atual: string | null): Modulo | null {
   if (!atual) return null;
-  const todos = GRUPOS_NAV.flatMap((g) => g.itens);
+  const todos = [...GRUPOS_NAV.flatMap((g) => g.itens), ...ITENS_DA_CONTA];
   // O mais específico ganha: `/corretor` casa exato e os demais por prefixo,
   // mas um item pode absorver a rota de outro via `tambem`, e aí quem tem o
   // href mais longo é o dono legítimo.
@@ -212,6 +221,16 @@ function IconePessoa(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+/* Cadeado: a troca de senha, no menu do avatar. */
+function IconeChave(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <rect x="4.5" y="10.5" width="15" height="9.5" rx="2" />
+      <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+    </svg>
+  );
+}
+
 function IconeEquipe(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>

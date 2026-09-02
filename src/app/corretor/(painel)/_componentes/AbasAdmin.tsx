@@ -14,7 +14,7 @@ const ABAS = [
   { chave: "contas", href: "/corretor/admin/contas", label: "Contas" },
   { chave: "whatsapp", href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe" },
   { chave: "anuncios", href: "/corretor/admin/anuncios", label: "Anúncios" },
-  { chave: "precos", href: "/corretor/precos", label: "Preços" },
+  { chave: "precos", href: "/corretor/admin/precos", label: "Preços" },
 ] as const;
 
 export type AbaAdmin = (typeof ABAS)[number]["chave"];

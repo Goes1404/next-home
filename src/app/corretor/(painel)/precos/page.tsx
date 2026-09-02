@@ -1,42 +1,18 @@
-import type { Metadata } from "next";
-import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
-import { buscarCatalogoAtualParaConciliacao, buscarHistoricoLotes } from "./actions";
-import { PrecosManager } from "./PrecosManager";
-import { exigirGestorNaPagina } from "@/lib/guardas";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Atualização de Preços em Massa" };
-
-export default async function PrecosPage() {
-  /*
-   * Reajuste em massa mexe no preço de TODO o catálogo de uma vez. O item já
-   * era gestor-only no menu, mas a página só calculava `souGestor()` e
-   * ignorava o resultado — quem digitasse a URL entrava. Aqui a guarda é de
-   * verdade; as policies da 0031 fecham o mesmo buraco no banco.
-   */
-  await exigirGestorNaPagina();
-
-  const [catalogo, historico] = await Promise.all([
-    buscarCatalogoAtualParaConciliacao(),
-    buscarHistoricoLotes(),
-  ]);
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-fluid-2xl font-bold text-titulo">Administração</h1>
-        <p className="text-fluid-sm text-apoio mt-1">Preços do catálogo, atualizados em lote.</p>
-      </div>
-
-      <AbasAdmin ativa="precos" />
-
-      <div>
-        <h2 className="text-fluid-lg font-bold text-titulo">Atualização de Preços em Massa</h2>
-        <p className="text-fluid-sm mt-1 text-apoio">
-          Concilie tabelas mensais de incorporadoras (Excel / Google Sheets) e atualize os valores do catálogo com preview visual e rollback.
-        </p>
-      </div>
-
-      <PrecosManager catalogoInicial={catalogo} historicoInicial={historico} />
-    </div>
-  );
+/**
+ * Preços mudou de endereço: agora mora em `/corretor/admin/precos`, junto com
+ * as outras telas do gestor.
+ *
+ * Ela era a única aba de Administração fora de `/admin/`, e isso tinha um
+ * custo concreto: a navegação de abas não podia morar em `admin/layout.tsx`,
+ * porque o layout não envolve uma rota irmã. Cada página do segmento precisava
+ * desenhar a própria barra de abas.
+ *
+ * O endereço antigo continua respondendo, e é regra da casa: link salvo, aba
+ * aberta há semanas e favorito não podem virar 404 por uma reorganização de
+ * menu. É o mesmo caminho que `/corretor/equipe` já faz.
+ */
+export default async function PrecosAntigo() {
+  redirect("/corretor/admin/precos");
 }

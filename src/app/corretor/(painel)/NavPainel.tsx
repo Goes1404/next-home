@@ -24,9 +24,15 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
       <div className="sticky top-[calc(var(--painel-header-h)+1.5rem)] space-y-6">
         {grupos.map((grupo) => (
           <div key={grupo.titulo}>
-            <p className="text-tenue px-3 pb-2 text-[11px] font-medium tracking-[0.14em] uppercase">
-              {grupo.titulo}
-            </p>
+            {/* Título de grupo só quando há mais de um grupo. Para o corretor
+                comum sobrou um só, e um rótulo "TRABALHO" sozinho em cima de
+                tudo não separa nada de nada — é ruído com aparência de
+                estrutura. O gestor, que tem dois, continua vendo os dois. */}
+            {grupos.length > 1 && (
+              <p className="text-tenue px-3 pb-2 text-[11px] font-medium tracking-[0.14em] uppercase">
+                {grupo.titulo}
+              </p>
+            )}
             <ul className="space-y-0.5">
               {grupo.itens.map((item) => {
                 const ativa = itemAtivo(atual, item);

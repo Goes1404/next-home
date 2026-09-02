@@ -132,7 +132,7 @@ export async function aplicarLotePrecos(
   revalidatePath("/portfolio");
   revalidatePath("/empreendimentos");
   revalidatePath("/mapa");
-  revalidatePath("/corretor/precos");
+  revalidatePath("/corretor/admin/precos");
 
   return { ok: true, loteId, totalAlterados: aplicados };
 }
@@ -200,7 +200,7 @@ export async function reverterLotePrecos(loteId: string): Promise<{ ok: boolean;
   revalidatePath("/");
   revalidatePath("/portfolio");
   revalidatePath("/empreendimentos");
-  revalidatePath("/corretor/precos");
+  revalidatePath("/corretor/admin/precos");
 
   return { ok: true };
 }

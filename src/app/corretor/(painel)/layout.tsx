@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { NavPainel } from "./NavPainel";
 import { NavMobileBottom } from "./NavMobileBottom";
 import { CromaDoModulo } from "./CromaDoModulo";
+import { MenuDaConta } from "./MenuDaConta";
 import { sair } from "@/app/corretor/actions";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorLogado } from "@/lib/corretorSessao";
@@ -54,37 +54,28 @@ export default async function PainelLayout({
             <SeletorTema atual={tema} />
 
             {corretor && (
-              <span className="flex items-center gap-2.5">
-                {corretor.fotoUrl ? (
-                  <Image
-                    src={corretor.fotoUrl}
-                    alt=""
-                    width={32}
-                    height={32}
-                    className="ring-linha h-8 w-8 rounded-full object-cover ring-1"
-                  />
-                ) : (
-                  <span
-                    aria-hidden
-                    className="bg-acento-lavado text-acento-suave flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-semibold"
-                  >
-                    {iniciais(corretor.nome)}
-                  </span>
-                )}
-                {/* O nome cabe no desktop; no celular a inicial já identifica
-                    a conta e o espaço vale mais para o botão de sair. */}
-                <span className="text-fluid-sm text-corpo hidden sm:inline">{corretor.nome}</span>
-              </span>
+              <MenuDaConta
+                nome={corretor.nome}
+                fotoUrl={corretor.fotoUrl}
+                iniciais={iniciais(corretor.nome)}
+                formularioSair={
+                  <form action={sair}>
+                    <button
+                      type="submit"
+                      className="text-fluid-sm text-apoio hover:bg-vidro hover:text-titulo flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 transition-colors"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M15 17l5-5-5-5" />
+                        <path d="M20 12H9" />
+                        <path d="M13 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7" />
+                      </svg>
+                      Sair
+                    </button>
+                  </form>
+                }
+              />
             )}
 
-            <form action={sair}>
-              <button
-                type="submit"
-                className="border-linha text-apoio hover:border-linha-forte hover:text-titulo cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition-colors"
-              >
-                Sair
-              </button>
-            </form>
           </div>
         </div>
       </header>

@@ -7,14 +7,19 @@ import { cn } from "@/lib/utils";
 import { ATALHOS_MOBILE, gruposVisiveis, itemAtivo } from "./_componentes/navegacao";
 
 /**
- * Navegação do celular: quatro atalhos no polegar mais uma gaveta com o
- * painel inteiro.
+ * Navegação do celular: os quatro destinos de trabalho no polegar mais uma
+ * gaveta com o painel inteiro.
  *
  * A gaveta existe porque a barra inferior só cabe cinco alvos e o painel tem
- * treze seções. Antes as outras oito simplesmente não tinham como ser
+ * vinte e seis telas. Antes as demais simplesmente não tinham como ser
  * abertas no celular — a barra de abas do topo é `hidden md:flex` —, o que
  * deixava o corretor sem acesso a Imóveis, WhatsApp e Campanhas justamente
  * no aparelho em que ele trabalha.
+ *
+ * Imóveis entrou no polegar quando Conta saiu do menu para o avatar. Medido
+ * em 320px, o pior caso real: cinco alvos de 62px, nada cortado e nenhum
+ * rótulo em duas linhas — barra fixa que estoura não fica feia, fica
+ * inalcançável, porque ali não há rolagem.
  */
 export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
   const atual = usePathname();
