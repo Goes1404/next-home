@@ -86,7 +86,15 @@ export function ProximasAcoes({ leadId, tarefas }: { leadId: string; tarefas: Ta
                     if (r.erro) setErro(r.erro);
                   })
                 }
-                className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-linha-forte text-transparent transition-colors hover:border-ok hover:text-ok disabled:opacity-50"
+                /*
+                  A caixa continua com 20px porque é uma marca de tarefa e não
+                  um botão — mas o ALVO cresce para 44px por um pseudo-elemento
+                  invisível. Antes eram 20px de área tocável mostrando um
+                  ícone `text-transparent`, visível só no hover: no celular,
+                  onde este painel é usado, isso é um quadrado vazio que erra
+                  o dedo. Ícone visível sempre; o hover só reforça.
+                */
+                className="border-linha-forte text-apoio hover:border-ok hover:text-ok relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors before:absolute before:-inset-3 before:content-[''] disabled:opacity-50"
               >
                 <Check className="h-3.5 w-3.5" />
               </button>

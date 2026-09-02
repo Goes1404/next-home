@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { moverEtapa } from "@/app/corretor/actions";
 import { AVANCO_ETAPA } from "./etapas";
 import { cn } from "@/lib/utils";
+import { BotaoAcao } from "./BotaoAcao";
 import { PROXIMA_ETAPA, type EtapaFunil } from "@/lib/types";
 
 /**
@@ -37,51 +36,31 @@ export function BotaoAvancar({
   tamanho?: "normal" | "compacto";
   className?: string;
 }) {
-  const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
-  const [movendo, iniciar] = useTransition();
-
   const proxima = PROXIMA_ETAPA[etapa];
   // Fechado e perdido não avançam: um botão ali seria armadilha.
   if (!proxima) return null;
 
-  function avancar() {
-    if (movendo || !proxima) return;
-    setErro(null);
-    iniciar(async () => {
-      const resultado = await moverEtapa(leadId, proxima.etapa);
-      if (resultado.erro) {
-        setErro(resultado.erro);
-        return;
-      }
-      router.refresh();
-    });
-  }
-
   return (
-    <span className={cn("inline-flex flex-col items-stretch gap-1", className)}>
-      <button
-        type="button"
-        onClick={avancar}
-        disabled={movendo}
-        title={`Avançar para ${proxima.acao.toLowerCase()}`}
-        className={cn(
-          "flex cursor-pointer items-center justify-center gap-1.5 rounded-xl font-medium transition-colors disabled:opacity-60",
-          AVANCO_ETAPA[proxima.etapa],
-          tamanho === "compacto"
-            ? "text-fluid-xs min-h-11 px-3"
-            : "text-fluid-sm min-h-12 px-4",
-        )}
-      >
-        <Check aria-hidden className="h-4 w-4 shrink-0" />
-        {movendo ? "Salvando…" : proxima.acao}
-      </button>
-
-      {erro && (
-        <span role="alert" className="text-fluid-xs text-alerta">
-          {erro}
-        </span>
+    <BotaoAcao
+      acao={() => moverEtapa(leadId, proxima.etapa)}
+      // O sucesso é anunciado porque na LISTA ele não se vê: a linha some do
+      // recorte atual ou muda uma régua de 4px na borda, longe do dedo que
+      // acabou de tocar. Na ficha do lead a mudança é óbvia, mas o mesmo
+      // botão serve os dois lugares, e errar para o lado de avisar é barato.
+      sucesso={`Movido para ${proxima.acao.toLowerCase()}`}
+      rotulopendente="Salvando…"
+      title={`Avançar para ${proxima.acao.toLowerCase()}`}
+      className={cn(
+        // Vem depois da variante de propósito: `cn` usa twMerge, então a cor
+        // da etapa de DESTINO vence o acento do módulo. É o que faz o botão
+        // dizer para onde o lead vai antes de ser tocado.
+        AVANCO_ETAPA[proxima.etapa],
+        tamanho === "compacto" ? "text-fluid-xs min-h-11 px-3" : "text-fluid-sm min-h-12 px-4",
+        className,
       )}
-    </span>
+    >
+      <Check aria-hidden className="h-4 w-4 shrink-0" />
+      {proxima.acao}
+    </BotaoAcao>
   );
 }

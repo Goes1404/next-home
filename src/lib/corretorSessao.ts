@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 
 import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -36,8 +37,18 @@ export type CorretorSessao = CorretorPerfil & {
   ativo: boolean;
 };
 
-/** Corretor da sessão atual, ou `null` se não há sessão/vínculo. */
-export async function getCorretorLogado(): Promise<CorretorSessao | null> {
+/**
+ * Corretor da sessão atual, ou `null` se não há sessão/vínculo.
+ *
+ * Embrulhado em `cache()` do React: são 68 chamadas espalhadas pelo painel, e
+ * numa única requisição o layout, a página e `souGestor()` costumam pedir a
+ * mesma coisa duas ou três vezes — cada uma custando um `auth.getUser()` mais
+ * uma consulta a `corretores`. O cache vale só para a requisição em curso, e é
+ * exatamente o recorte certo: dentro dela a sessão não muda, e entre elas
+ * nada é lembrado (sessão em cache atravessando requisição serviria dado de um
+ * corretor para outro).
+ */
+export const getCorretorLogado = cache(async function getCorretorLogado(): Promise<CorretorSessao | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -55,7 +66,7 @@ export async function getCorretorLogado(): Promise<CorretorSessao | null> {
   if (!data?.slug) return null;
 
   return { ...mapCorretor(data), papel: data.papel, ativo: data.ativo };
-}
+});
 
 /**
  * Se a sessão atual enxerga o funil da equipe inteira.

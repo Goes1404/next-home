@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { moduloAtivo } from "./_componentes/navegacao";
+import { ProvedorDeAvisos } from "./_componentes/Avisos";
 
 /**
  * Pendura no painel o atributo que decide a cor do módulo.
@@ -18,6 +19,10 @@ import { moduloAtivo } from "./_componentes/navegacao";
  * Sem módulo reconhecido o atributo não é escrito, e o CSS cai no tom padrão
  * do painel. Escrever `data-modulo=""` acenderia o seletor `[data-modulo]`
  * com valor nenhum, que é pior que não escrever.
+ *
+ * A região de avisos entra aqui junto, e não num segundo wrapper: já é a
+ * fronteira de cliente do painel, e duas fronteiras para o mesmo lugar da
+ * árvore custam o dobro sem entregar nada.
  */
 export function CromaDoModulo({
   className,
@@ -29,7 +34,7 @@ export function CromaDoModulo({
   const modulo = moduloAtivo(usePathname());
   return (
     <main data-rota="painel" data-modulo={modulo ?? undefined} className={className}>
-      {children}
+      <ProvedorDeAvisos>{children}</ProvedorDeAvisos>
     </main>
   );
 }
