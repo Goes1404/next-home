@@ -3041,3 +3041,35 @@ Primeira medição com todas as 16 personas × 2 rodadas (32 conversas).
 - **Regra que fica:** bloco que precisa ganhar de todas as outras
   instruções vai ANTES de todas as outras instruções. Não "no topo da seção
   de blocos" — no topo do prompt.
+
+## Três bugs do planner, e a sonda barata achou dois (01/09/2026)
+
+A v32 nasceu com três defeitos que produziam o MESMO loop que ela veio
+matar. Nenhum apareceu em teste unitário, tipo ou build.
+
+1. **`responder_honesto` sem memória.** `perguntaRepetida` vinha antes de
+   tudo, em todo turno — para quem insiste em preço, a IA respondia com
+   honestidade doze vezes. Flagrado pela sonda COM API (guardrail bloqueando
+   a mesma frase nos turnos 4, 5 e 7). Agora: 2ª vez honesto, 3ª em diante a
+   jogada muda.
+2. **Dado já entregue contava como pedido em aberto.** "valor exato" casa
+   no regex de preço; `responder_dado` tem prioridade 1; ela repetia o piso
+   do turno 1 no turno 11. Flagrado pela sonda SEM API (`sondaInsistencia`).
+   `aindaNaoDado` compara o número com o que a IA já disse.
+3. **A porta do horário contava frases distintas.** O detector deduplica
+   sentenças iguais — certo para "não repita ESTES", errado como porta:
+   oferta repetida contava uma vez e `< 2` nunca fechava. Flagrado pelo
+   trace SEM API (`traceJogadas`): turnos 4 a 8 iguais. Agora conta TURNOS
+   de oferta.
+
+- **Dois dos três saíram da sonda sem API**, que custa zero e roda em um
+  segundo. A com API custou dois minutos e dinheiro por rodada. **Antes de
+  gastar chamada, rodar o trace determinístico da sequência de jogadas** —
+  ele mostra o loop sem precisar de modelo nenhum.
+- **Um `&&` com `grep` no meio mascara falha de teste.** O commit da
+  correção 2 entrou com um teste vermelho porque `grep` depois do vitest
+  devolvia sucesso. `set -o pipefail` + exigir a linha "Tests N passed (N)".
+- **Fixture parafraseado não é repetição.** "mas e o valor exato mesmo?"
+  tem semelhança 0,50 com a pergunta anterior, abaixo do limiar de 0,6 —
+  que existe de propósito. O persona real repete a MESMA frase; o fixture
+  também precisa.
