@@ -764,7 +764,11 @@ function Chat({
       <div
         ref={corpoRef}
         onScroll={aoRolar}
-        className="bg-elevado/40 flex-1 space-y-1.5 overflow-y-auto px-3 py-4 md:px-6"
+        /* `overscroll-contain`: no celular o chat é `fixed` e a página segue
+           atrás dele. Sem isto, chegar ao topo da conversa passa a rolagem
+           adiante e a página de trás se mexe — o "scroll chaining" que faz a
+           tela pular quando se lê a conversa até o começo. */
+        className="bg-elevado/40 flex-1 space-y-1.5 overflow-y-auto overscroll-contain px-3 py-4 md:px-6"
       >
         {mensagens !== null && mensagens.length >= 100 && !esgotado && (
           <p className="pb-2 text-center">
