@@ -6,12 +6,14 @@ import { medirImagem } from "@/lib/imoveis/imagemDerivada";
 import { gerarImagem, imagensConfiguradas } from "@/lib/imagens/gerarImagem";
 import { getTetoDeHoje, registrarImagem } from "@/lib/imagens/galeria";
 import { TAMANHOS, type ChaveQualidade, type ChaveTamanho } from "@/lib/imagens/imagensTipos";
+import { montarPedido, receitaPor } from "@/lib/imagens/receitas";
 
 export const runtime = "nodejs";
 /**
  * 60s é o teto do plano Hobby, e não dá para esticar. `gerarImagem` aborta aos
- * 55s de propósito: melhor devolver "demorou demais" com o motivo escrito do
- * que a função ser morta pela plataforma e a tela receber um erro genérico.
+ * 45s de propósito, deixando 15s para o upload dos 1-3 MB e a linha da
+ * galeria: melhor devolver "demorou demais" com o motivo escrito do que a
+ * função ser morta pela plataforma DEPOIS de a imagem já ter sido paga.
  */
 export const maxDuration = 60;
 
@@ -42,6 +44,7 @@ export async function POST(req: NextRequest) {
     prompt?: string;
     tamanho?: ChaveTamanho;
     qualidade?: ChaveQualidade;
+    receita?: string;
     referenciaPath?: string | null;
   } | null;
 
@@ -49,6 +52,12 @@ export async function POST(req: NextRequest) {
   if (!prompt) {
     return NextResponse.json({ erro: "Escreva o que você quer na imagem." }, { status: 400 });
   }
+
+  // A espinha da receita entra por CÓDIGO, aqui, antes de qualquer IA: quem
+  // escolheu "mobiliar ambiente vazio" já leva junto o "mantenha a mesma
+  // arquitetura e o mesmo ângulo" sem ter de saber que isso se pede.
+  const receita = receitaPor(corpo?.receita);
+  const pedidoCompleto = montarPedido(prompt, receita);
 
   // O teto é conferido ANTES de gastar a chamada — é a única coisa do painel
   // que custa dinheiro por clique.
@@ -85,7 +94,7 @@ export async function POST(req: NextRequest) {
   }
 
   const resultado = await gerarImagem({
-    prompt,
+    prompt: pedidoCompleto,
     referencia,
     largura: formato.largura,
     altura: formato.altura,
@@ -120,6 +129,10 @@ export async function POST(req: NextRequest) {
 
   const imagem = await registrarImagem({
     corretorId: corretor.id,
+    // A galeria guarda o que o CORRETOR escreveu, não o pedido montado. Ela é
+    // lista de trabalho — o cartão precisa dizer "sala de estar, tons claros"
+    // e não um parágrafo de lente e temperatura de luz. A espinha é
+    // determinística e ele a recupera escolhendo a mesma receita de novo.
     prompt,
     modelo: resultado.modelo,
     url,

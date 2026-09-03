@@ -5,6 +5,7 @@ import { useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { excluirImagem } from "./acoes";
+import { RECEITAS, RECEITA_PADRAO, receitaPor } from "@/lib/imagens/receitas";
 import {
   QUALIDADES,
   TAMANHOS,
@@ -18,6 +19,18 @@ import {
  * O laço do ChatGPT: escreve o que quer → sai a imagem → "usar como
  * referência" leva a imagem de volta ao campo, e a próxima geração parte dela.
  * É essa volta que transforma uma ferramenta de sorteio em uma de trabalho.
+ *
+ * Só que o corretor não é quem escreve prompt — ele vende imóvel. Por isso a
+ * primeira coisa da tela não é o campo de texto, é a ESCOLHA DO TRABALHO
+ * ("mobiliar ambiente vazio", "melhorar a luz da foto"). Campo em branco pede
+ * que a pessoa saiba o que pedir; lista de trabalhos pede que ela reconheça o
+ * que já faz. E a receita escolhida injeta por código a espinha técnica que
+ * ninguém tem motivo para saber de cor.
+ *
+ * O botão de melhorar a descrição é o degrau de cima, e ele REESCREVE O CAMPO
+ * à vista, com volta em um toque. Melhorar escondido, por dentro da geração,
+ * pouparia um toque e tiraria as duas coisas que importam: poder corrigir
+ * antes de gastar a imagem, e aprender vendo.
  *
  * A foto de referência sobe DIRETO do navegador para o Storage e só o caminho
  * vai para a rota. Server Action tem teto de 12 MB e afrouxá-lo valeria para
@@ -37,7 +50,12 @@ export function CriarImagemClient({
   tetoInicial: EstadoDoTeto;
 }) {
   const [prompt, setPrompt] = useState("");
-  const [tamanho, setTamanho] = useState<ChaveTamanho>("quadrado");
+  const [receita, setReceita] = useState(RECEITA_PADRAO);
+  const [antesDeMelhorar, setAntesDeMelhorar] = useState<string | null>(null);
+  const [melhorando, setMelhorando] = useState(false);
+  const [tamanho, setTamanho] = useState<ChaveTamanho>(
+    receitaPor(RECEITA_PADRAO).tamanhoSugerido,
+  );
   const [qualidade, setQualidade] = useState<ChaveQualidade>("low");
   const [imagens, setImagens] = useState(iniciais);
   const [teto, setTeto] = useState(tetoInicial);
@@ -49,7 +67,54 @@ export function CriarImagemClient({
   const campoArquivo = useRef<HTMLInputElement>(null);
 
   const restam = Math.max(0, teto.teto - teto.usadasHoje);
-  const podeGerar = prompt.trim().length > 0 && restam > 0 && !gerando;
+  const receitaAtual = receitaPor(receita);
+  // Receita que parte de uma foto SEM foto anexada não é um resultado pior: é
+  // uma imagem aleatória, paga, que não tem nada a ver com o imóvel. Barrar
+  // aqui protege o bolso, e a linha abaixo do campo diz o motivo — botão que
+  // some sem explicação é pior que botão que recusa falando.
+  const faltaFoto = receitaAtual.precisaFoto && !referencia;
+  const podeGerar =
+    prompt.trim().length > 0 && restam > 0 && !gerando && !melhorando && !faltaFoto;
+  const podeMelhorar = prompt.trim().length > 0 && !melhorando && !gerando;
+
+  function escolherReceita(chave: string) {
+    setReceita(chave);
+    // Trocar o trabalho troca o formato junto: quem escolheu "fundo para post"
+    // quer retrato, e pedir que ele descubra isso num segundo select é
+    // exatamente a decisão que esta tela existe para tirar da frente dele. O
+    // select continua ali para quem quiser outro.
+    setTamanho(receitaPor(chave).tamanhoSugerido);
+  }
+
+  async function melhorar() {
+    if (!podeMelhorar) return;
+    setMelhorando(true);
+    const original = prompt.trim();
+    try {
+      const r = await fetch("/api/imagens/melhorar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: original, receita }),
+      });
+      const corpo = await r.json();
+      if (!r.ok) {
+        falhar(corpo.erro ?? "Não deu para melhorar a descrição.");
+        return;
+      }
+      if (!corpo.melhorado) {
+        // O texto voltou como veio. Dizer isso é melhor que fingir sucesso: a
+        // pessoa clicaria de novo esperando algo diferente.
+        avisar("A IA não respondeu agora. Sua descrição continua como estava.");
+        return;
+      }
+      setAntesDeMelhorar(original);
+      setPrompt(corpo.texto);
+    } catch {
+      falhar("Não deu para melhorar a descrição. Confira a conexão.");
+    } finally {
+      setMelhorando(false);
+    }
+  }
 
   async function subirReferencia(arquivo: File) {
     if (arquivo.size > TETO_REFERENCIA_BYTES) {
@@ -88,6 +153,7 @@ export function CriarImagemClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: prompt.trim(),
+          receita,
           tamanho,
           qualidade,
           referenciaPath: referencia?.path ?? null,
@@ -112,17 +178,82 @@ export function CriarImagemClient({
   return (
     <div className="space-y-5">
       <section className="border-linha bg-superficie shadow-painel space-y-3 rounded-2xl border p-4 sm:p-5">
+        {/* A primeira decisão da tela, e a mais barata: reconhecer o trabalho
+            em vez de inventar um pedido. */}
+        <fieldset className="space-y-2">
+          <legend className="text-fluid-xs text-apoio mb-1.5">O que você quer fazer</legend>
+          <div className="flex flex-wrap gap-2">
+            {RECEITAS.map((r) => {
+              const ativa = r.chave === receita;
+              return (
+                <button
+                  key={r.chave}
+                  type="button"
+                  aria-pressed={ativa}
+                  disabled={gerando || melhorando}
+                  onClick={() => escolherReceita(r.chave)}
+                  className={`text-fluid-xs min-h-11 cursor-pointer rounded-full border px-3.5 transition-colors disabled:opacity-50 ${
+                    ativa
+                      ? "border-acento-linha bg-acento text-sobre-cor font-medium"
+                      : "border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo"
+                  }`}
+                >
+                  {r.rotulo}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-fluid-xs text-tenue">{receitaAtual.ajuda}</p>
+        </fieldset>
+
         <label className="block">
           <span className="so-para-leitor">O que você quer na imagem</span>
           <textarea
             value={prompt}
             rows={3}
-            disabled={gerando}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Sala de estar ampla, mobiliada em tons claros, luz natural da tarde"
+            disabled={gerando || melhorando}
+            onChange={(e) => {
+              setPrompt(e.target.value);
+              // Editou à mão: a volta deixa de fazer sentido, porque o texto
+              // já não é o que a IA escreveu.
+              if (antesDeMelhorar) setAntesDeMelhorar(null);
+            }}
+            placeholder={receitaAtual.exemplo}
             className="text-fluid-sm border-linha-forte bg-campo text-corpo placeholder:text-tenue focus:border-acento-linha w-full resize-y rounded-xl border px-3 py-2.5 outline-none transition-colors disabled:opacity-50"
           />
         </label>
+
+        {/* O degrau de cima. Fica ao lado do campo, não escondido dentro do
+            botão de gerar: o corretor vê o texto mudar e é assim que ele
+            aprende a pedir — que é o objetivo, não o efeito colateral. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <button
+            type="button"
+            onClick={() => void melhorar()}
+            disabled={!podeMelhorar}
+            aria-busy={melhorando}
+            className="text-fluid-xs border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo min-h-11 cursor-pointer rounded-full border px-3.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {melhorando ? "Escrevendo…" : "Melhorar descrição com IA"}
+          </button>
+          {antesDeMelhorar && (
+            <button
+              type="button"
+              onClick={() => {
+                setPrompt(antesDeMelhorar);
+                setAntesDeMelhorar(null);
+              }}
+              className="text-fluid-xs text-apoio hover:text-titulo min-h-11 cursor-pointer px-1 underline underline-offset-4"
+            >
+              Voltar ao que eu escrevi
+            </button>
+          )}
+          {!antesDeMelhorar && !melhorando && (
+            <span className="text-fluid-xs text-tenue">
+              Não gasta imagem do seu limite.
+            </span>
+          )}
+        </div>
 
         {referencia && (
           <div className="border-acento-linha bg-acento-lavado flex items-center gap-3 rounded-xl border p-2">
@@ -217,6 +348,13 @@ export function CriarImagemClient({
             {restam > 0 ? `${restam} de ${teto.teto} hoje` : "Limite de hoje atingido"}
           </span>
         </div>
+
+        {faltaFoto && (
+          <p className="text-fluid-xs text-alerta">
+            {receitaAtual.rotulo} parte de uma foto sua — anexe uma acima. Sem
+            ela sairia um ambiente qualquer, sem relação com o imóvel.
+          </p>
+        )}
 
         {/* Medido na primeira geração de verdade (03/09/2026): pedida uma
             "fachada de edifício residencial", o modelo desenhou uma PLACA com

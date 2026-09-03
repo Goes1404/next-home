@@ -3648,3 +3648,59 @@ e `followups-whatsapp`.
   imagem custa por imagem e bem mais que texto — daí o teto de 20/dia por
   corretor e `low` como padrão.
 
+## Receitas de imagem: o corretor não escreve prompt (03/09/2026)
+
+Pedido do usuário: "os corretores não são pessoas que sabem criar um prompt
+bom". A resposta tem DOIS degraus, e o de baixo não usa IA nenhuma.
+
+- **A receita é CÓDIGO, não instrução.** `receitas.ts` guarda a espinha técnica
+  de cada trabalho (lente, altura de câmera, hora do dia, qualidade de luz, o
+  que não pode mudar da foto original) e `montarPedido` junta com o que o
+  corretor escreveu, na rota, antes de qualquer LLM. Escolher a receita já
+  melhora o resultado com o motor de texto fora do ar — a IA é o degrau de
+  cima, não o piso.
+- **MEDIDO com o mesmo pedido pobre ("sala moderna"), três tratamentos:**
+  cru saiu uma sala NOTURNA de LED quente virada para a TV; **só a receita**
+  (zero chamada de LLM) saiu luz do dia, janela ampla com vista urbana, câmera
+  na altura dos olhos — cara de foto de anúncio; receita + IA seguiu a cena
+  descrita (piso de madeira clara, sofá cinza, mesa de vidro e metal preto).
+  **O salto de QUALIDADE está na receita; o que a IA acrescenta é CONTROLE.**
+  Vale registrar porque a leitura fácil seria o contrário.
+- **Controle é o que economiza cota.** Nenhuma das três é feia. A diferença é
+  que com "sala moderna" quem escolhe noite-ou-dia, TV-ou-janela é o modelo, e
+  imagem fora do que se queria vira regeneração — que custa do teto de 20/dia.
+- **A cláusula anti-invenção mora em `gerarImagem.ts`, não no prompt.** Toda
+  geração leva, por código, a proibição de texto, placa, letreiro, logo e selo
+  de preço. É o ponto único por onde os dois caminhos passam (criação em JSON e
+  edição em multipart), então chamador novo não tem como esquecer — mesma razão
+  de `normalizarTelefoneBr` morar no `provider.ts`. Nasceu do "VISTA ALTO"
+  desenhado numa fachada que ninguém batizou.
+- **A guarda que trava isso LÊ O CÓDIGO-FONTE** (`receitas.test.ts`), porque a
+  regressão falha calada: basta um dos dois caminhos voltar a ler
+  `pedido.prompt` cru e as imagens dele voltam a nascer com placa inventada —
+  com build verde e a imagem chegando bonita na tela. Provocada com dente antes
+  de entrar.
+- **Ela pegou um falso positivo instrutivo:** o parâmetro de `corpoDeEdicao`
+  também se chamava `pedido`, então o corpo lia `pedido.prompt` e ficava
+  indistinguível do caminho cru. Renomear para `tratado` conserta a guarda E
+  faz o código dizer que o que chega ali já passou pela cláusula. **Quando uma
+  guarda de código-fonte acusa demais, às vezes o conserto é o NOME.**
+- **Melhorar a descrição é botão à vista, não passo escondido dentro do
+  gerar.** Ele reescreve o campo com volta em um toque. Escondido pouparia um
+  toque e tiraria as duas coisas que importam: corrigir antes de gastar a
+  imagem, e aprender vendo — que é o pedido original.
+- **A melhoria NÃO consome o teto diário.** O teto existe porque imagem custa
+  caro por clique; a reescrita mediu **3,4s e 100 tokens de saída** no
+  `gpt-4.1-mini`. Cobrá-la do mesmo balde faria o corretor economizar
+  justamente o passo que melhora o resultado.
+- **Falha da IA é degradação, nunca bloqueio**: sem motor, com timeout ou com
+  JSON torto, o texto do corretor segue como está e a tela diz isso em uma
+  linha. E `textoDoJson` RECUSA resposta com menos de 40 caracteres — substituir
+  o que a pessoa escreveu por duas palavras é pior que não ter tentado.
+- **Receita que parte de foto BARRA a geração sem foto**, com o motivo escrito.
+  Não é rigor: sem a foto sairia um ambiente aleatório, pago, sem relação com o
+  imóvel. Botão que some sem explicação seria pior.
+- **Tudo em português, inclusive a espinha.** Modelo de imagem costuma responder
+  um pouco melhor em inglês, mas o prompt final aparece na tela para o corretor
+  ler e corrigir — e prompt que ele não lê é prompt que ele não conserta.
+

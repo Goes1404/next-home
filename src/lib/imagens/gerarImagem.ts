@@ -40,6 +40,49 @@ const URL_EDITAR = "https://api.openai.com/v1/images/edits";
 const MODELO_IMAGEM_PADRAO = "gpt-image-2";
 
 /**
+ * A cláusula que toda geração leva, sem exceção e sem depender de ninguém
+ * lembrar.
+ *
+ * Na PRIMEIRA geração de verdade desta tela, pedida apenas uma "fachada de
+ * edifício residencial", o modelo desenhou uma placa com o nome
+ * **"VISTA ALTO"** na entrada do prédio. Ninguém pediu nome nenhum. É a versão
+ * visual do defeito que esta base conhece de cor — o "1 suíte" para um cadastro
+ * com 3, o "pronto para morar" com `em_construcao`: o que não está no pedido,
+ * o modelo preenche, e preenche plausível.
+ *
+ * O estrago aqui é maior que uma resposta errada. Arte com nome de
+ * empreendimento inventado, metragem escrita ou selo de "a partir de R$" vira
+ * PROMESSA quando chega ao cliente, e quem paga a conta é o corretor na frente
+ * dele. É a mesma família do acabamento inventado e do prazo de entrega.
+ *
+ * Mora AQUI, e não no prompt da receita nem numa instrução ao motor de texto,
+ * pelo motivo mais repetido deste projeto: **instrução é probabilística e
+ * falha justo no caso que importa; código vale sempre.** Este é o ponto único
+ * por onde os dois caminhos passam (criação e edição), então nenhum chamador
+ * novo pode esquecer — a mesma razão de `normalizarTelefoneBr` morar no
+ * `provider.ts`.
+ *
+ * Vale inclusive para "fundo de post": modelo de imagem escreve texto torto, e
+ * o corretor põe a chamada por cima na ferramenta dele. Imagem sem letra é uma
+ * base melhor que imagem com letra errada.
+ */
+const SEM_TEXTO_NA_ARTE =
+  "Não escreva nada na imagem: sem texto, letras, números, placas, letreiros, " +
+  "logotipos, marcas, selos de preço ou marca d'água. Nenhuma superfície da " +
+  "cena deve conter escrita.";
+
+/**
+ * O prompt que de fato vai para o provedor.
+ *
+ * Exportada para ser testável sem rede: a garantia que interessa é que NENHUM
+ * caminho chegue ao provedor sem a cláusula, e isso se prova em teste, não
+ * olhando a tela.
+ */
+export function promptFinal(pedido: string): string {
+  return `${pedido.trim()} ${SEM_TEXTO_NA_ARTE}`;
+}
+
+/**
  * Teto de espera, com FOLGA para o que vem depois.
  *
  * A rota vive sob o limite de 60s do plano Hobby, e o orçamento não é só a
@@ -122,6 +165,9 @@ export async function gerarImagem(pedido: PedidoDeImagem): Promise<ResultadoImag
 
   const modelo = modeloDeImagem();
   const tamanho = `${pedido.largura}x${pedido.altura}`;
+  // A partir daqui ninguém mais vê o texto cru: os dois caminhos abaixo leem
+  // deste objeto, então a cláusula não tem como ser pulada por um deles.
+  const comClausula: PedidoDeImagem = { ...pedido, prompt: promptFinal(pedido.prompt) };
   const controle = new AbortController();
   const alarme = setTimeout(() => controle.abort(), pedido.timeoutMs ?? TIMEOUT_PADRAO_MS);
 
@@ -133,7 +179,7 @@ export async function gerarImagem(pedido: PedidoDeImagem): Promise<ResultadoImag
       ? await fetch(URL_EDITAR, {
           method: "POST",
           headers: { Authorization: `Bearer ${apiKey}` },
-          body: corpoDeEdicao(pedido, modelo, tamanho),
+          body: corpoDeEdicao(comClausula, modelo, tamanho),
           signal: controle.signal,
         })
       : await fetch(URL_GERAR, {
@@ -144,7 +190,7 @@ export async function gerarImagem(pedido: PedidoDeImagem): Promise<ResultadoImag
           },
           body: JSON.stringify({
             model: modelo,
-            prompt: pedido.prompt,
+            prompt: comClausula.prompt,
             size: tamanho,
             quality: pedido.qualidade,
             output_format: "png",
@@ -210,14 +256,20 @@ export async function gerarImagem(pedido: PedidoDeImagem): Promise<ResultadoImag
   }
 }
 
-function corpoDeEdicao(pedido: PedidoDeImagem, modelo: string, tamanho: string): FormData {
+/**
+ * O parâmetro se chama `tratado` e não `pedido` de propósito: o que chega aqui
+ * JÁ passou por `promptFinal`. Com o nome antigo, o corpo desta função lia
+ * `pedido.prompt` e ficava indistinguível — para quem lê e para a guarda — do
+ * caminho que manda o texto cru.
+ */
+function corpoDeEdicao(tratado: PedidoDeImagem, modelo: string, tamanho: string): FormData {
   const forma = new FormData();
   forma.append("model", modelo);
-  forma.append("prompt", pedido.prompt);
+  forma.append("prompt", tratado.prompt);
   forma.append("size", tamanho);
-  forma.append("quality", pedido.qualidade);
+  forma.append("quality", tratado.qualidade);
   forma.append("n", "1");
-  const ref = pedido.referencia!;
+  const ref = tratado.referencia!;
   forma.append("image", new Blob([new Uint8Array(ref.bytes)], { type: ref.mime }), "referencia.png");
   return forma;
 }
