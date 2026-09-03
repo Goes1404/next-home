@@ -27,15 +27,15 @@ import { join } from "node:path";
 
 const DIR = join(process.cwd(), "supabase", "migrations");
 
-function ultimaDefinicaoDaRoleta(): string {
+function ultimaDefinicaoDe(nome: string): string {
   const arquivos = readdirSync(DIR)
     .filter((n) => n.endsWith(".sql"))
     .sort();
 
   let ultima = "";
-  for (const nome of arquivos) {
-    const sql = readFileSync(join(DIR, nome), "utf8");
-    const i = sql.toLowerCase().lastIndexOf("function public.distribuir_lead()");
+  for (const arquivo of arquivos) {
+    const sql = readFileSync(join(DIR, arquivo), "utf8");
+    const i = sql.toLowerCase().lastIndexOf(`function public.${nome}(`);
     if (i === -1) continue;
     // Do início da função até o fim do corpo: `$function$;` ou `$$;`.
     const resto = sql.slice(i);
@@ -46,7 +46,7 @@ function ultimaDefinicaoDaRoleta(): string {
 }
 
 describe("a roleta distribui para quem consegue atender", () => {
-  const corpo = ultimaDefinicaoDaRoleta();
+  const corpo = ultimaDefinicaoDe("distribuir_lead");
 
   it("a função existe nas migrations", () => {
     expect(corpo, "Nenhuma migration define distribuir_lead().").not.toBe("");
@@ -104,6 +104,40 @@ describe("a roleta distribui para quem consegue atender", () => {
           `nasce órfão — pior que mal distribuído. Isso é ordem, não recorte.`,
       ).toBe(false);
     }
+  });
+});
+
+/*
+ * O porteiro `/wa/<campanha>` — o destino do anúncio Click-to-WhatsApp — usa
+ * `sortear_corretor_whatsapp`, que é OUTRA função. O comentário da rota diz
+ * "a mesma régua da roleta de leads", e é justamente essa promessa que
+ * envelhece calada: a 0093 mudou a conta de carga de um lado só, e por
+ * algumas horas as duas divergiram. Aqui o clique já foi PAGO.
+ */
+describe("o porteiro do anúncio conta carga igual à roleta", () => {
+  const corpo = ultimaDefinicaoDe("sortear_corretor_whatsapp");
+
+  it("a função existe nas migrations", () => {
+    expect(corpo).not.toBe("");
+  });
+
+  it("usa a mesma conta de carga da roleta de leads", () => {
+    expect(
+      /l\.arquivado_em\s+is\s+null/.test(corpo) &&
+        /l\.etapa\s+not\s+in\s*\(\s*'perdido'\s*,\s*'fechado'\s*\)/.test(corpo),
+      "A carga do porteiro divergiu da roleta de leads. Duas contas de " +
+        "'quem recebe o próximo' divergem, e esta decide para quem vai o " +
+        "clique pago do anúncio.",
+    ).toBe(true);
+  });
+
+  it("continua EXIGINDO WhatsApp conectado — aqui é filtro, não preferência", () => {
+    expect(
+      /i\.status_conexao\s*=\s*'conectado'/.test(corpo),
+      "Diferente da roleta de leads, esta função devolve o NÚMERO para onde " +
+        "redirecionar: corretor sem WhatsApp conectado não tem destino. A rota " +
+        "já degrada para a página do imóvel quando não vem ninguém.",
+    ).toBe(true);
   });
 });
 

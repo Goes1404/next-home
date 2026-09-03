@@ -3915,3 +3915,36 @@ diagnóstico é a parte que vale.
   falso positivo próprio: `indexOf(" where ")` pegava o `where` da
   subconsulta de cidade e enxergava o LEFT JOIN como filtro — **quinta vez
   que uma guarda de código-fonte tropeça no próprio recorte.**
+
+## O anúncio não usa a roleta de leads — usa o porteiro (0094, 03/09/2026)
+
+- **São DOIS caminhos e DUAS funções, e é fácil consertar o errado.** O
+  anúncio Click-to-WhatsApp aponta para `/wa/<campanha>`, que chama
+  `sortear_corretor_whatsapp` e devolve o NÚMERO para redirecionar; o lead
+  só nasce depois, quando a pessoa escreve no WhatsApp. O trigger
+  `distribuir_lead` (a roleta da 0093) só entra em INSERT de lead — Lead Ads
+  pelo webhook, formulário do site, importação.
+- **O comentário da rota `/wa/` prometia "a mesma régua da roleta de
+  leads", e a 0093 tornou isso falso** por algumas horas: mudei a conta de
+  carga de um lado só. Duas contas do mesmo número divergem — e esta decide
+  para quem vai o clique que foi PAGO. **Ao mexer numa régua que um
+  comentário diz ser compartilhada, procurar quem mais a implementa.**
+- **A conexão é FILTRO aqui e PREFERÊNCIA na roleta, de propósito.** Esta
+  função devolve destino: corretor sem WhatsApp conectado não tem para onde
+  mandar ninguém. A roleta escolhe DONO, e ali filtrar produziria lead órfão.
+  A mesma coluna, papéis opostos, e as duas decisões estão sob teste.
+- **O porteiro foi exercitado em produção**: `/wa/eternity-alphaville`
+  devolve 302 para `wa.me/<numero>` com a mensagem pronta; slug inexistente
+  degrada para a home, como o código promete. **O slug do link é o do
+  cadastro, e vários não são adivinháveis** (`eternity-alphaville`,
+  `lancamento-ao-lado-do-parque-ne51970`) — `nomes_alternativos` também
+  resolve, então "Manacá" chega ao `more-na-aldeia-de-barueri-mac238`.
+- **A roleta de leads foi provada ponta a ponta pelo formulário público**
+  (`POST /api/leads` com `consentimentoLgpd: true`), não só por
+  `begin; … rollback;`: o lead nasceu com `origem_atribuicao = 'roleta'` no
+  dono certo. O lead de teste foi apagado depois.
+- **Renomear parâmetro é como se cria sombra**: ao generalizar o leitor de
+  migrations da guarda para `ultimaDefinicaoDe(nome)`, o `nome` do laço
+  (`for (const nome of arquivos)`) passou a sombrear o parâmetro e a busca
+  virou `function public.<arquivo>.sql(`. Onze testes vermelhos de uma vez —
+  barulhento, ao contrário das falhas caladas que esta guarda persegue.
