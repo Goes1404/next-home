@@ -33,6 +33,8 @@ export function OficinaDeMarketing({
   linkDeIndicacao,
   temSlug,
   imoveisParaCarrossel,
+  videosDisponiveis,
+  videosNoMes,
 }: {
   artesFeitas: number;
   artesHoje: { usadas: number; teto: number };
@@ -42,6 +44,8 @@ export function OficinaDeMarketing({
   linkDeIndicacao: string;
   temSlug: boolean;
   imoveisParaCarrossel: ImovelCurto[];
+  videosDisponiveis: number;
+  videosNoMes: number;
 }) {
   const restamHoje = Math.max(0, artesHoje.teto - artesHoje.usadas);
 
@@ -97,6 +101,36 @@ export function OficinaDeMarketing({
             </ul>
           </div>
         )}
+      </section>
+
+      {/* ---- A segunda de produção, ainda sem histórico próprio ---- */}
+      <section className="border-linha bg-superficie shadow-painel min-w-0 rounded-2xl border p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 space-y-1.5">
+            <div className="flex items-center gap-2.5">
+              <span className="bg-acento-lavado text-acento flex size-9 shrink-0 items-center justify-center rounded-xl">
+                <IconePlay />
+              </span>
+              <h2 className="font-display text-titulo text-fluid-lg">Criar vídeo</h2>
+            </div>
+            <p className="text-fluid-sm text-apoio max-w-md text-pretty">
+              Um Reel montado das fotos do imóvel, com movimento de câmera por
+              tipo de plano e legenda queimada. Sai mudo, para você pôr o áudio
+              em alta do Instagram na hora de postar.
+            </p>
+            <p className="text-fluid-xs text-tenue tabular-nums">
+              {videosDisponiveis > 0
+                ? `${videosDisponiveis} de ${videosNoMes} disponíveis este mês`
+                : "Seus vídeos do mês acabaram"}
+            </p>
+          </div>
+          <Link
+            href="/corretor/marketing/video"
+            className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm inline-flex min-h-12 w-full items-center justify-center rounded-xl px-5 font-medium transition-colors sm:w-auto"
+          >
+            Criar vídeo
+          </Link>
+        </div>
       </section>
 
       {/* ---- As de vez em quando ---- */}
@@ -266,6 +300,15 @@ function IconeElo() {
     <svg viewBox="0 0 24 24" className="size-[18px]" aria-hidden="true" {...traco}>
       <path d="M10 13.5a4 4 0 0 0 5.7.4l2.6-2.6a4 4 0 0 0-5.7-5.7l-1.5 1.5" />
       <path d="M14 10.5a4 4 0 0 0-5.7-.4l-2.6 2.6a4 4 0 0 0 5.7 5.7l1.5-1.5" />
+    </svg>
+  );
+}
+
+function IconePlay() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-5" aria-hidden="true" {...traco}>
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <path d="m11 10 3.5 2-3.5 2Z" />
     </svg>
   );
 }

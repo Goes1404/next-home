@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getMinhasImagens, getTetoDeHoje } from "@/lib/imagens/galeria";
+import { getSaldo } from "@/lib/video/fila";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { linkDeIndicacao } from "@/lib/social/linkDeIndicacao";
 import { OficinaDeMarketing } from "./OficinaDeMarketing";
@@ -37,10 +38,11 @@ export default async function PaginaMarketing() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
-  const [imagens, teto, catalogo] = await Promise.all([
+  const [imagens, teto, catalogo, saldoVideo] = await Promise.all([
     getMinhasImagens(),
     getTetoDeHoje(corretor.id),
     getEmpreendimentosDoPainel(),
+    getSaldo(corretor.id),
   ]);
 
   const publicados = catalogo.filter((i) => i.publicado !== false);
@@ -72,6 +74,8 @@ export default async function PaginaMarketing() {
           nome: i.nome,
           lugar: `${i.bairro}, ${i.cidade}`,
         }))}
+        videosDisponiveis={saldoVideo.disponiveis}
+        videosNoMes={saldoVideo.cotaMensal}
       />
 
       <p className="text-fluid-xs text-tenue">
