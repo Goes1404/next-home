@@ -2,19 +2,21 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  candidatosDeEmail,
   DOMINIO_ACESSO,
   ehEmailDeAcesso,
   emailInicial,
+  normalizarParaEmail,
   senhaInicial,
 } from "./credenciaisIniciais";
 
 describe("e-mail de acesso", () => {
-  it("sai do slug, que já é único no banco", () => {
-    expect(emailInicial("graziele-santos")).toBe(`graziele-santos@${DOMINIO_ACESSO}`);
+  it("monta a partir da parte local escolhida", () => {
+    expect(emailInicial("graziele")).toBe(`graziele@${DOMINIO_ACESSO}`);
   });
 
   it("normaliza para minúsculas e apara espaço", () => {
-    expect(emailInicial("  Miro-Araujo  ")).toBe(`miro-araujo@${DOMINIO_ACESSO}`);
+    expect(emailInicial("  Miro  ")).toBe(`miro@${DOMINIO_ACESSO}`);
   });
 
   it("passa na validação de formato da action", () => {
@@ -23,9 +25,46 @@ describe("e-mail de acesso", () => {
     expect(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInicial("ramos"))).toBe(true);
   });
 
-  it("lança sem slug, em vez de montar '@dominio'", () => {
+  it("lança com parte local vazia, em vez de montar '@dominio'", () => {
     expect(() => emailInicial("")).toThrow();
     expect(() => emailInicial("   ")).toThrow();
+  });
+});
+
+describe("candidatos de e-mail", () => {
+  it("o primeiro é só o primeiro nome", () => {
+    expect(candidatosDeEmail("Carolini Ivina Maia", "carolini-ivina-maia")[0]).toBe("carolini");
+    expect(candidatosDeEmail("Renan Azael", "renan-azael")[0]).toBe("renan");
+  });
+
+  it("degrada do mais curto para o mais específico", () => {
+    expect(candidatosDeEmail("Carolini Ivina Maia", "carolini-ivina-maia")).toEqual([
+      "carolini",
+      "carolini-ivina",
+      "carolini-ivina-maia",
+    ]);
+  });
+
+  it("não repete quando o nome é uma palavra só", () => {
+    // "Ramos" geraria os três candidatos iguais; sem o dedupe, o laço de
+    // escolha tentaria o mesmo endereço três vezes e nunca acharia um livre.
+    expect(candidatosDeEmail("Ramos", "ramos")).toEqual(["ramos"]);
+  });
+
+  it("tira acento e pontuação do nome", () => {
+    expect(candidatosDeEmail("Antônio JOSÉ", "antonio-jose")[0]).toBe("antonio");
+    expect(candidatosDeEmail("Cristal - Bruna", "cristal-bruna")[0]).toBe("cristal");
+  });
+
+  it("o último candidato é sempre o slug, que é UNIQUE no banco", () => {
+    const c = candidatosDeEmail("Eduardo Cezar", "eduardo-cezar");
+    expect(c[c.length - 1]).toBe("eduardo-cezar");
+  });
+
+  it("cada candidato produz um e-mail válido", () => {
+    for (const local of candidatosDeEmail("Graziele Santos", "graziele-santos")) {
+      expect(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInicial(local))).toBe(true);
+    }
   });
 });
 
@@ -127,5 +166,40 @@ describe("o botão promete o mesmo número que cria", () => {
     const lote = action.slice(action.indexOf("export async function criarAcessosQueFaltam"));
     expect(lote.includes('.eq("ativo", true)')).toBe(true);
     expect(lote.includes('.is("user_id", null)')).toBe(true);
+  });
+});
+
+/*
+ * O slug e o e-mail de acesso saem do MESMO nome. Enquanto `acoes.ts` tinha
+ * a própria cópia da normalização, bastava alguém mexer numa para o corretor
+ * "Antônio" receber slug `antonio` e e-mail `antnio` — e a divergência só
+ * apareceria no primeiro nome com acento a entrar na equipe.
+ */
+describe("uma normalização só para slug e e-mail", () => {
+  const action = readFileSync(
+    join(process.cwd(), "src", "app", "corretor", "(painel)", "admin", "acoes.ts"),
+    "utf8",
+  );
+
+  it("slugificar delega para normalizarParaEmail", () => {
+    const corpo = action.slice(
+      action.indexOf("function slugificar"),
+      action.indexOf("async function slugDisponivel"),
+    );
+    expect(
+      corpo.includes("normalizarParaEmail"),
+      "`slugificar` voltou a ter cópia própria da normalização. Slug e e-mail " +
+        "passam a discordar em nome com acento, e só no primeiro que entrar.",
+    ).toBe(true);
+    expect(
+      corpo.includes("normalize(\"NFD\")"),
+      "A cópia da regra voltou para dentro de `slugificar`.",
+    ).toBe(false);
+  });
+
+  it("a normalização compartilhada produz o slug esperado", () => {
+    expect(normalizarParaEmail("Carolini Ivina Maia")).toBe("carolini-ivina-maia");
+    expect(normalizarParaEmail("Cristal - Bruna")).toBe("cristal-bruna");
+    expect(normalizarParaEmail("Antônio José")).toBe("antonio-jose");
   });
 });

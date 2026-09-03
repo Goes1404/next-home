@@ -5,7 +5,12 @@ import { revalidatePath } from "next/cache";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { emailInicial, senhaInicial } from "@/lib/corretores/credenciaisIniciais";
+import {
+  candidatosDeEmail,
+  emailInicial,
+  normalizarParaEmail,
+  senhaInicial,
+} from "@/lib/corretores/credenciaisIniciais";
 
 /**
  * Ações administrativas do gestor.
@@ -42,13 +47,10 @@ function senhaTemporaria(tamanho = 12): string {
 
 /** "Cristal - Bruna" → "cristal-bruna". Mesma forma dos slugs já no banco. */
 function slugificar(nome: string): string {
-  return nome
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
+  // Delega para a normalização compartilhada: o slug e o e-mail de acesso
+  // saem do MESMO nome, e duas cópias da regra divergiriam no primeiro
+  // "Antônio" — o slug com acento removido de um jeito e o e-mail de outro.
+  return normalizarParaEmail(nome);
 }
 
 async function slugDisponivel(
@@ -206,6 +208,17 @@ export async function criarAcessosQueFaltam(): Promise<ResultadoLoteAcessos> {
 
   if (error) return { criados: [], falhas: [], erro: "Não foi possível ler a equipe." };
 
+  /*
+   * Os endereços que já existem, para o primeiro nome não colidir. O slug era
+   * UNIQUE no banco e dava a unicidade de graça; primeiro nome não dá, e
+   * e-mail no Auth é único — um segundo "Eduardo" derrubaria a criação dele.
+   */
+  const { data: jaUsados } = await supabase
+    .from("corretores")
+    .select("email")
+    .not("email", "is", null);
+  const ocupados = new Set((jaUsados ?? []).map((c) => (c.email ?? "").toLowerCase()));
+
   const criados: AcessoEmLote[] = [];
   const falhas: { nome: string; motivo: string }[] = [];
 
@@ -228,7 +241,10 @@ export async function criarAcessosQueFaltam(): Promise<ResultadoLoteAcessos> {
     let email: string;
     let senha: string;
     try {
-      email = emailInicial(corretor.slug);
+      // Primeiro nome livre; se estiver tomado, cai para nome+sobrenome e
+      // depois para o slug inteiro. O último candidato sempre existe.
+      const candidatos = candidatosDeEmail(corretor.nome, corretor.slug).map(emailInicial);
+      email = candidatos.find((e) => !ocupados.has(e.toLowerCase())) ?? candidatos[0];
       senha = senhaInicial(corretor.whatsapp);
     } catch (e) {
       falhas.push({ nome: corretor.nome, motivo: e instanceof Error ? e.message : String(e) });
@@ -236,7 +252,12 @@ export async function criarAcessosQueFaltam(): Promise<ResultadoLoteAcessos> {
     }
 
     const r = await criarAcessoCorretor(corretor.id, email, senha);
-    if (r.ok) criados.push({ nome: corretor.nome, email: r.email, senha: r.senha, slug: r.slug });
+    if (r.ok) {
+      // Dentro do MESMO lote dois "Eduardo" colidiriam: a consulta acima é de
+      // antes do laço, e o e-mail recém-criado ainda não estava lá.
+      ocupados.add(r.email.toLowerCase());
+      criados.push({ nome: corretor.nome, email: r.email, senha: r.senha, slug: r.slug });
+    }
     else falhas.push({ nome: corretor.nome, motivo: r.erro });
   }
 

@@ -3989,6 +3989,21 @@ diagnóstico é a parte que vale.
 - **Falha de um corretor não aborta o lote.** Parar no primeiro erro
   deixaria metade criada e metade não, sem ninguém saber onde parou. Quem
   fica de fora volta nomeado, com o motivo.
+- **O e-mail passou a ser só o PRIMEIRO NOME, e isso custa a unicidade de
+  graça.** O slug é UNIQUE por constraint (`corretores_slug_key`), então
+  `carolini-ivina-maia@` nascia único sem lógica nenhuma. `carolini@` não tem
+  essa garantia: um segundo "Eduardo" derrubaria a criação dele, porque
+  e-mail no Auth é único. Hoje os 8 primeiros nomes são distintos (medido),
+  mas a regra degrada — primeiro nome → nome+sobrenome → slug inteiro, que
+  recupera a garantia do banco. **Ao trocar uma chave derivada por uma mais
+  curta, procurar de onde vinha a unicidade.**
+- **Dentro do MESMO lote a consulta de ocupados fica velha.** Ela roda antes
+  do laço, então dois "Eduardo" na mesma leva escolheriam o mesmo endereço; o
+  e-mail criado é acrescentado ao conjunto a cada volta.
+- **`slugificar` tinha cópia própria da normalização.** Slug e e-mail saem do
+  MESMO nome, e duas cópias divergem no primeiro "Antônio" que entrar — slug
+  de um jeito, e-mail de outro, e só aparece quando essa pessoa é cadastrada.
+  Hoje há uma função só (`normalizarParaEmail`), com guarda que lê o código.
 - **O aviso da tela prometia 7 e o lote criava 6.** `getCorretoresParaAdmin`
   carrega TODO corretor, inclusive inativo, e o aviso contava `!temLogin`
   sem olhar `ativo`; a action recorta por `ativo`. A diferença não apareceria

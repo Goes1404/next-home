@@ -30,17 +30,61 @@ const PREFIXO_SENHA = "nexthome";
 const DIGITOS_DA_SENHA = 4;
 
 /**
- * `graziele-santos` → `graziele-santos@nexthome.com`.
+ * Normalização de nome para endereço: sem acento, minúsculo, só `a-z0-9-`.
  *
- * Sai do SLUG, não do nome: `corretores.slug` já é UNIQUE no banco, então o
- * e-mail nasce único sem nenhuma lógica nova — e o Auth exige unicidade.
- * Derivar do telefone teria colidido: "Eduardo Cezar" e "Equipe Next Home"
- * compartilham o mesmo número.
+ * Mora aqui, e não em `admin/acoes.ts`, porque é a MESMA regra que gera o
+ * `slug` — e duas normalizações do mesmo nome divergem no primeiro "Antônio"
+ * que aparecer. Esta base já pagou por conta duplicada em `montarResumo` e no
+ * porteiro do anúncio (0094).
  */
-export function emailInicial(slug: string): string {
-  const limpo = slug.trim().toLowerCase();
-  if (!limpo) throw new Error("Corretor sem slug: o e-mail de acesso sai dele.");
+export function normalizarParaEmail(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+/**
+ * `carolini@nexthome.com`.
+ *
+ * Recebe a PARTE LOCAL já escolhida (ver `candidatosDeEmail`), não o nome —
+ * quem decide entre "carolini" e "carolini-ivina" precisa saber o que já está
+ * ocupado, e isso é consulta ao banco, que não cabe num módulo puro.
+ */
+export function emailInicial(parteLocal: string): string {
+  const limpo = parteLocal.trim().toLowerCase();
+  if (!limpo) throw new Error("Parte local vazia: não dá para montar o e-mail de acesso.");
   return `${limpo}@${DOMINIO_ACESSO}`;
+}
+
+/**
+ * As partes locais aceitáveis, da mais curta para a mais específica.
+ *
+ * O primeiro nome é o que se dita por WhatsApp e se digita no celular, então
+ * vem primeiro. Mas ele NÃO é único como o slug era (`corretores_slug_key`):
+ * um segundo "Eduardo" faria a criação falhar, porque e-mail no Auth é único.
+ * Por isso a lista degrada — primeiro nome, depois com o sobrenome, e por fim
+ * o slug inteiro, que volta a ter a garantia do banco.
+ *
+ * Degradar não é escolher em silêncio: o e-mail de fato criado aparece no
+ * cartão de credenciais que o gestor copia.
+ */
+export function candidatosDeEmail(nome: string, slug: string): string[] {
+  const partes = normalizarParaEmail(nome).split("-").filter(Boolean);
+  const slugLimpo = normalizarParaEmail(slug);
+
+  const brutos = [
+    partes[0] ?? "",
+    partes.slice(0, 2).join("-"),
+    slugLimpo,
+  ];
+
+  // Nome de uma palavra só ("Ramos") gera os três iguais; sem o dedupe, o
+  // laço de escolha tentaria o mesmo endereço três vezes.
+  return [...new Set(brutos.filter(Boolean))];
 }
 
 /**
