@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import {
   TETO_DIARIO,
   inicioDoDiaEmSaoPaulo,
+  type BriefingGravado,
   type EstadoDoTeto,
   type ImagemGerada,
 } from "./imagensTipos";
@@ -29,6 +30,8 @@ type Linha = {
   largura: number | null;
   altura: number | null;
   referencia_url: string | null;
+  arte_url?: string | null;
+  briefing?: unknown;
   created_at: string;
 };
 
@@ -40,6 +43,8 @@ function paraImagem(l: Linha): ImagemGerada {
     largura: l.largura,
     altura: l.altura,
     referenciaUrl: l.referencia_url,
+    arteUrl: l.arte_url ?? null,
+    briefing: briefingGravado(l.briefing),
     criadaEm: l.created_at,
   };
 }
@@ -49,7 +54,7 @@ export async function getMinhasImagens(): Promise<ImagemGerada[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("imagens_geradas")
-    .select("id, prompt, url, largura, altura, referencia_url, created_at")
+    .select("id, prompt, url, largura, altura, referencia_url, arte_url, briefing, created_at")
     .order("created_at", { ascending: false })
     .limit(POR_PAGINA)
     .returns<Linha[]>();
@@ -89,6 +94,8 @@ export async function registrarImagem(dados: {
   altura: number | null;
   referenciaUrl: string | null;
   latenciaMs: number;
+  arteUrl?: string | null;
+  briefing?: BriefingGravado | null;
 }): Promise<ImagemGerada | null> {
   const supabase = createServiceClient();
   const { data, error } = await supabase
@@ -101,9 +108,11 @@ export async function registrarImagem(dados: {
       largura: dados.largura,
       altura: dados.altura,
       referencia_url: dados.referenciaUrl,
+      arte_url: dados.arteUrl ?? null,
+      briefing: dados.briefing ?? null,
       latencia_ms: dados.latenciaMs,
     })
-    .select("id, prompt, url, largura, altura, referencia_url, created_at")
+    .select("id, prompt, url, largura, altura, referencia_url, arte_url, briefing, created_at")
     .single<Linha>();
 
   if (error) {
@@ -116,3 +125,25 @@ export async function registrarImagem(dados: {
 }
 
 /** O dia corrente em São Paulo, como instante ISO para comparar no banco. */
+
+/**
+ * O jsonb volta como `unknown` e o que a tela lê precisa ter forma. Linha
+ * antiga (sem briefing) e lixo qualquer viram `null`, nunca um objeto meio
+ * preenchido.
+ */
+function briefingGravado(v: unknown): BriefingGravado | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const t = (x: unknown) => (typeof x === "string" ? x : "");
+  if (!t(o.objetivo) || !t(o.canal)) return null;
+  return {
+    objetivo: t(o.objetivo),
+    canal: t(o.canal),
+    publico: t(o.publico),
+    imovelSlug: typeof o.imovelSlug === "string" ? o.imovelSlug : null,
+    imovelNome: typeof o.imovelNome === "string" ? o.imovelNome : null,
+    titulo: t(o.titulo),
+    apoio: t(o.apoio),
+    cta: t(o.cta),
+  };
+}

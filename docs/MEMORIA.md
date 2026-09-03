@@ -3741,3 +3741,63 @@ a US$ 1 = R$ 5,139:
 - **A conta divide o mesmo saldo do atendimento no WhatsApp.** Sem crédito, a
   Sofia cai junto — conferir saldo é parte de operar isto.
 
+## Arte de marketing: o que separa esta tela de um ChatGPT (03/09/2026)
+
+Feedback do usuário depois de ver as receitas: "a IA só está reescrevendo de
+forma genérica; a funcionalidade principal é gerar arte PARA PUBLICAR, para
+campanha". Estava certo — e a resposta não é prompt melhor, é o que o ChatGPT
+não tem.
+
+- **O diferencial é dado real + regra de marketing como código + arte
+  composta com a marca.** `marketing.ts` (puro) guarda OBJETIVOS (lançamento,
+  decorado, últimas unidades, pronto para morar, investimento, vida no
+  bairro), CANAIS (story, feed, anúncio, WhatsApp, com zona morta e tamanho de
+  saída) e PÚBLICOS (família, investidor, casal jovem, alto padrão). Cada um
+  decide assunto-herói, luz, composição e clima. `montarBriefing` junta isso
+  com a FICHA do imóvel — estágio com rótulo humano, lazer que EXISTE,
+  tipologias — numa cena já decidida. A IA (`diretorCriativo.ts`) recebe a
+  cena decidida e escreve: detalhe concreto e a copy (título, apoio, chamada
+  entre as permitidas). `compor.ts` põe logo real, copy, rodapé e ressalva
+  ("Imagem gerada por IA, meramente ilustrativa.") no tamanho do canal.
+- **Medido com imóvel real (Eternity Alphaville Tamboré, 11 itens de lazer,
+  em construção):** briefing → diretor 2,5–4,3s → geração 15–17s → composição
+  0,5s. Feed/lançamento saiu publicável na primeira: fachada golden hour,
+  logo, nome e estágio da ficha, CTA permitida, sem placa inventada.
+  Story/decorado idem, com copy inteira da IA ("Eternity Alphaville: Seu novo
+  começo" / "Apartamentos de 2 e 3 dormitórios no Centro Comercial Jubran").
+- **A copy é validada por regex de LEI, não de estilo** (`problemasDaCopy`):
+  valor e condição de pagamento, promessa de valorização/renda (CDC/CONAR),
+  prazo não cadastrado, superlativo sem prova. Vale na saída da IA E de novo na
+  rota, porque o corretor pode editar — a régua é o serviço, e a rota recusa
+  com o motivo escrito. Guarda que lê o código (`gerar/arte.test.ts`).
+- **Reserva POR CAMPO, não tudo ou nada.** Na primeira medição a IA escreveu
+  título de 40 caracteres e a copy INTEIRA caiu para a ficha, jogando fora um
+  apoio certo. `problemasDaCopy` nomeia o campo; só ele volta para a reserva.
+- **A foto de referência é escolhida pelo ALT, por objetivo.** A primeira
+  arte de LANÇAMENTO partiu de `living-03.jpg` — a capa — para desenhar uma
+  fachada. Hoje cada objetivo tem regex de alt (fachada/perspectiva para
+  exterior; living/varanda para interior; piscina/lazer para vida no bairro)
+  e política `senao`: interior aceita a capa, exterior fica SEM referência.
+  Living como pista de fachada é pior que pista nenhuma.
+- **Limite de CARACTERES não é limite de LARGURA.** O apoio de 62 caracteres a
+  34px vazou pela direita do story ("…Centro Comercial Jub"): 62 × 34 × 0,56
+  ≈ 1.160px numa caixa de 936. O compositor agora deriva o orçamento de
+  caracteres da largura (`cabem(tamanho)`) e quebra em até duas linhas. Só a
+  IMAGEM composta mostrou — teste de dimensão passava.
+- **Recompor não gera de novo.** A imagem crua fica salva à parte
+  (`url`) e a arte em `arte_url` (0091). Para conferir uma mudança do
+  compositor, recompõe-se a crua — custo zero — em vez de pagar outra
+  geração. Foi assim que a correção do apoio foi verificada.
+- **`tsx --conditions=react-server` + `.env.local` sem Supabase.** O
+  `.env.local` local só tem `OPENAI_API_KEY`; a leitura do catálogo fora do
+  Next usou a chave PUBLICÁVEL obtida pelo MCP (é pública por desenho). E
+  exportar o `.env.local` no shell antes do vitest fez UM teste de campanha
+  falhar ("quando a variação por IA não acontece" passou a ter IA): rodar a
+  cadeia com `env -u OPENAI_API_KEY`.
+- **A tela tem duas portas e a de marketing é a primeira.** "Imagem livre"
+  (receitas) continua existindo — mobiliar cômodo vazio não é peça de
+  marketing e é útil do mesmo jeito.
+- **Fonte é a do runtime (DejaVu), como no carrossel.** Tipografia própria
+  exigiria `fontconfig` na Vercel; fica anotado como o próximo degrau visual,
+  não como pendência.
+

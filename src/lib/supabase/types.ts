@@ -827,6 +827,8 @@ export type Database = {
       imagens_geradas: {
         Row: {
           altura: number | null
+          arte_url: string | null
+          briefing: Json | null
           corretor_id: string
           created_at: string
           id: string
@@ -839,6 +841,8 @@ export type Database = {
         }
         Insert: {
           altura?: number | null
+          arte_url?: string | null
+          briefing?: Json | null
           corretor_id: string
           created_at?: string
           id?: string
@@ -851,6 +855,8 @@ export type Database = {
         }
         Update: {
           altura?: number | null
+          arte_url?: string | null
+          briefing?: Json | null
           corretor_id?: string
           created_at?: string
           id?: string

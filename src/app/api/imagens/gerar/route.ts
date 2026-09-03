@@ -7,6 +7,12 @@ import { gerarImagem, imagensConfiguradas } from "@/lib/imagens/gerarImagem";
 import { getTetoDeHoje, registrarImagem } from "@/lib/imagens/galeria";
 import { TAMANHOS, type ChaveQualidade, type ChaveTamanho } from "@/lib/imagens/imagensTipos";
 import { montarPedido, receitaPor } from "@/lib/imagens/receitas";
+import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
+import { comporArte } from "@/lib/imagens/compor";
+import { restricoesDuras } from "@/lib/imagens/diretorCriativo";
+import { montarBriefing, problemasDaCopy, type Copy } from "@/lib/imagens/marketing";
+import { site } from "@/lib/site";
+import type { BriefingGravado } from "@/lib/imagens/imagensTipos";
 
 export const runtime = "nodejs";
 /**
@@ -46,18 +52,86 @@ export async function POST(req: NextRequest) {
     qualidade?: ChaveQualidade;
     receita?: string;
     referenciaPath?: string | null;
+    // Modo "arte": peça de marketing composta, decidida pelo briefing.
+    modo?: "livre" | "arte";
+    imovelSlug?: string | null;
+    objetivo?: string;
+    canal?: string;
+    publico?: string;
+    cena?: string;
+    titulo?: string;
+    apoio?: string;
+    cta?: string;
+    usarFotoReal?: boolean;
   } | null;
 
-  const prompt = corpo?.prompt?.trim();
-  if (!prompt) {
-    return NextResponse.json({ erro: "Escreva o que você quer na imagem." }, { status: 400 });
-  }
+  const modoArte = corpo?.modo === "arte";
 
-  // A espinha da receita entra por CÓDIGO, aqui, antes de qualquer IA: quem
-  // escolheu "mobiliar ambiente vazio" já leva junto o "mantenha a mesma
-  // arquitetura e o mesmo ângulo" sem ter de saber que isso se pede.
-  const receita = receitaPor(corpo?.receita);
-  const pedidoCompleto = montarPedido(prompt, receita);
+  // ---- Modo arte: o briefing decide tamanho, referência e o que a copy pode dizer
+  let arte: {
+    canal: ReturnType<typeof montarBriefing>["canal"];
+    copy: Copy;
+    briefingGravado: BriefingGravado;
+    fotoReal: string | null;
+  } | null = null;
+
+  let prompt: string;
+  let pedidoCompleto: string;
+
+  if (modoArte) {
+    const cena = corpo?.cena?.trim();
+    if (!cena || !corpo?.objetivo || !corpo.canal || !corpo.publico) {
+      return NextResponse.json({ erro: "Monte o briefing antes de criar a arte." }, { status: 400 });
+    }
+    const imovel = corpo.imovelSlug ? await getEmpreendimentoDoPainel(corpo.imovelSlug) : null;
+    const briefing = montarBriefing({
+      imovel,
+      objetivo: corpo.objetivo as never,
+      canal: corpo.canal as never,
+      publico: corpo.publico as never,
+    });
+    const copy: Copy = {
+      titulo: corpo.titulo?.trim() ?? "",
+      apoio: corpo.apoio?.trim() ?? "",
+      cta: corpo.cta?.trim() ?? "",
+    };
+    // O corretor pode ter editado a copy — e é aqui que a régua de
+    // publicidade vale de novo. Recusar com o motivo escrito é o serviço.
+    const problemas = problemasDaCopy(copy);
+    if (problemas.length > 0) {
+      return NextResponse.json(
+        { erro: `A copy não pode ir assim: ${problemas.join("; ")}.`, problemas },
+        { status: 400 },
+      );
+    }
+    prompt = cena;
+    // O rabo determinístico vai de novo aqui porque a pessoa pode ter
+    // editado a cena e apagado a restrição sem querer.
+    pedidoCompleto = `${cena} ${restricoesDuras(briefing)}`;
+    arte = {
+      canal: briefing.canal,
+      copy,
+      fotoReal: corpo.usarFotoReal === false ? null : briefing.fotoDeReferencia,
+      briefingGravado: {
+        objetivo: briefing.objetivo.chave,
+        canal: briefing.canal.chave,
+        publico: briefing.publico.chave,
+        imovelSlug: imovel?.slug ?? null,
+        imovelNome: imovel?.nome ?? null,
+        ...copy,
+      },
+    };
+  } else {
+    const p = corpo?.prompt?.trim();
+    if (!p) {
+      return NextResponse.json({ erro: "Escreva o que você quer na imagem." }, { status: 400 });
+    }
+    prompt = p;
+    // A espinha da receita entra por CÓDIGO, aqui, antes de qualquer IA: quem
+    // escolheu "mobiliar ambiente vazio" já leva junto o "mantenha a mesma
+    // arquitetura e o mesmo ângulo" sem ter de saber que isso se pede.
+    pedidoCompleto = montarPedido(p, receitaPor(corpo?.receita));
+  }
 
   // O teto é conferido ANTES de gastar a chamada — é a única coisa do painel
   // que custa dinheiro por clique.
@@ -72,12 +146,30 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const formato = TAMANHOS.find((t) => t.chave === corpo?.tamanho) ?? TAMANHOS[0];
+  const formato = arte
+    ? { largura: arte.canal.geracao.largura, altura: arte.canal.geracao.altura }
+    : (TAMANHOS.find((t) => t.chave === corpo?.tamanho) ?? TAMANHOS[0]);
   const supabase = createServiceClient();
 
   let referencia: { bytes: Buffer; mime: string } | null = null;
   let referenciaUrl: string | null = null;
-  if (corpo?.referenciaPath) {
+  if (arte?.fotoReal) {
+    // A foto real do imóvel como ponto de partida: é o que faz a arte mostrar
+    // ESTE prédio, e não um prédio qualquer. Se o download falhar, a geração
+    // segue sem referência — arte sem a foto é melhor que arte nenhuma.
+    try {
+      const r = await fetch(arte.fotoReal);
+      if (r.ok) {
+        referencia = {
+          bytes: Buffer.from(await r.arrayBuffer()),
+          mime: r.headers.get("content-type") || "image/jpeg",
+        };
+        referenciaUrl = arte.fotoReal;
+      }
+    } catch {
+      /* segue sem referência */
+    }
+  } else if (corpo?.referenciaPath) {
     // O caminho vem do cliente, então é preciso confinar: só a pasta do
     // PRÓPRIO corretor. Sem isso, um caminho forjado leria arquivo alheio no
     // bucket e o mandaria para o modelo.
@@ -127,6 +219,24 @@ export async function POST(req: NextRequest) {
   const url = supabase.storage.from(BUCKET).getPublicUrl(caminho).data.publicUrl;
   const medida = await medirImagem(resultado.bytes);
 
+  // ---- A arte composta: marca + copy + ressalva, no tamanho do canal.
+  let arteUrl: string | null = null;
+  if (arte) {
+    try {
+      const rodape = `${corretor.nome} · ${site.url.replace(/^https?:\/\//, "")}`;
+      const png = await comporArte({ imagem: resultado.bytes, canal: arte.canal, copy: arte.copy, rodape });
+      const caminhoArte = `corretores/${corretor.id}/criacoes/${hash}-${arte.canal.chave}.png`;
+      const { error: erroArte } = await supabase.storage
+        .from(BUCKET)
+        .upload(caminhoArte, png, { contentType: "image/png", upsert: true });
+      if (!erroArte) arteUrl = supabase.storage.from(BUCKET).getPublicUrl(caminhoArte).data.publicUrl;
+      else console.error("[imagens] arte não guardada:", erroArte.message);
+    } catch (e) {
+      // A imagem crua já está salva e paga. Compor falhar não pode apagar isso.
+      console.error("[imagens] falha ao compor a arte:", e instanceof Error ? e.message : e);
+    }
+  }
+
   const imagem = await registrarImagem({
     corretorId: corretor.id,
     // A galeria guarda o que o CORRETOR escreveu, não o pedido montado. Ela é
@@ -140,6 +250,8 @@ export async function POST(req: NextRequest) {
     altura: medida?.altura ?? formato.altura,
     referenciaUrl,
     latenciaMs: resultado.latenciaMs,
+    arteUrl,
+    briefing: arte?.briefingGravado ?? null,
   });
 
   return NextResponse.json({
@@ -148,6 +260,8 @@ export async function POST(req: NextRequest) {
       id: hash,
       prompt,
       url,
+      arteUrl,
+      briefing: arte?.briefingGravado ?? null,
       largura: formato.largura,
       altura: formato.altura,
       referenciaUrl,

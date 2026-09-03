@@ -59,10 +59,27 @@ export const QUALIDADES = [
 
 export type ChaveQualidade = (typeof QUALIDADES)[number]["chave"];
 
+/** O que a galeria guarda de uma peça de marketing — o suficiente para a
+ * tela dizer o que é e para o corretor repetir a receita. */
+export type BriefingGravado = {
+  objetivo: string;
+  canal: string;
+  publico: string;
+  imovelSlug: string | null;
+  imovelNome: string | null;
+  titulo: string;
+  apoio: string;
+  cta: string;
+};
+
 export type ImagemGerada = {
   id: string;
   prompt: string;
+  /** A imagem CRUA do modelo, sem texto. */
   url: string;
+  /** A arte composta (marca + copy). Nula na imagem livre. */
+  arteUrl: string | null;
+  briefing: BriefingGravado | null;
   largura: number | null;
   altura: number | null;
   referenciaUrl: string | null;
