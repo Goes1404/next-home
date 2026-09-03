@@ -110,3 +110,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ erro: "falha ao montar o relatório" }, { status: 500 });
   }
 }
+
+/**
+ * Mesma coisa por POST — o `net.http_post` do pg_cron é mais simples de
+ * assinar, e é o verbo que `configurar_*` usa.
+ *
+ * Sem esta linha o cron responde **405 para sempre, em silêncio**: o job roda
+ * no horário, a Vercel recusa o método, e nada em `cron.job_run_details`
+ * parece errado porque a requisição foi enviada com sucesso. Foi assim que se
+ * descobriu aqui — disparando a rota à mão depois de agendar, em vez de
+ * confiar no "agendado com sucesso".
+ */
+export const POST = GET;
