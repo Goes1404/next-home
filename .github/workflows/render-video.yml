@@ -1,0 +1,65 @@
+# O worker de render de vídeo.
+#
+# Roda aqui, e não na Vercel, por medição: 174 s para um vídeo de 17 s em 4
+# CPUs, contra o teto de 60 s por função do plano Hobby. A rota do painel
+# enfileira; este workflow esvazia a fila.
+#
+# ## Por que só `workflow_dispatch` por enquanto
+#
+# Ligar o agendamento é decisão de produto, não técnica: enquanto o portão da
+# F0 (a prova de que vídeo move a conversão) não passar, não faz sentido moer
+# CPU sozinho. Para ligar depois, descomente o bloco `schedule`.
+#
+# ## Os segredos que ele precisa
+#
+#   SUPABASE_SECRET_KEY      — quem escreve na fila é o servidor
+#   NEXT_PUBLIC_SUPABASE_URL — o projeto
+#
+# Sem eles o worker falha na primeira linha, e falhar cedo é o certo: um
+# worker que roda sem poder gravar consumiria a fila em silêncio.
+
+name: Render de vídeo
+
+on:
+  workflow_dispatch:
+    inputs:
+      quantos:
+        description: "Quantos vídeos processar nesta execução"
+        required: false
+        default: "3"
+  # schedule:
+  #   - cron: "*/15 * * * *"
+
+concurrency:
+  # Nunca dois workers ao mesmo tempo. A trava no banco já impede que dois
+  # peguem o MESMO job, mas duas execuções concorrendo por 2 CPUs cada tornam
+  # as duas mais lentas que uma.
+  group: render-video
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    # O render é lento por natureza. 30 min cobre um lote de 3 com folga; sem
+    # teto explícito, um job travado segura o runner por 6 horas.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar ffmpeg
+        # `--no-install-recommends` evita drivers de vídeo que não existem no
+        # runner e fazem o apt falhar com 404.
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - run: npm ci
+
+      - name: Esvaziar a fila
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        run: npx tsx --conditions=react-server scripts/video/worker.ts "${{ inputs.quantos || '3' }}"
