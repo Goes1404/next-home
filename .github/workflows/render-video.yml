@@ -4,11 +4,23 @@
 # CPUs, contra o teto de 60 s por função do plano Hobby. A rota do painel
 # enfileira; este workflow esvazia a fila.
 #
-# ## Por que só `workflow_dispatch` por enquanto
+# ## Dois gatilhos, e os papéis são diferentes
 #
-# Ligar o agendamento é decisão de produto, não técnica: enquanto o portão da
-# F0 (a prova de que vídeo move a conversão) não passar, não faz sentido moer
-# CPU sozinho. Para ligar depois, descomente o bloco `schedule`.
+# `workflow_dispatch` é o CAMINHO PRINCIPAL: o painel aciona por API assim que
+# o vídeo entra na fila (`src/lib/video/acionarRender.ts`), e o render começa
+# em segundos.
+#
+# `schedule` é REDE DE SEGURANÇA, não o caminho principal — por isso de hora
+# em hora, e não a cada 15 min. Ele existe porque o acionamento direto tem um
+# ponto único de falha: token expirado, GitHub fora, env var perdida num
+# redeploy. Em 03/09/2026 um vídeo ficou preso na fila justamente porque nada
+# acionava o worker, e o sintoma foi silêncio — o pior desfecho possível.
+#
+# A decisão anterior era não agendar até o portão da F0 passar, para não moer
+# CPU à toa. Ela foi revista em 03/09/2026: com o acionamento direto no lugar,
+# a execução agendada quase sempre encontra fila vazia e sai em segundos, e o
+# repositório é público (minuto de Actions gratuito). O custo de moer CPU à
+# toa ficou menor que o de perder um vídeo em silêncio.
 #
 # ## Os segredos que ele precisa
 #
@@ -27,8 +39,10 @@ on:
         description: "Quantos vídeos processar nesta execução"
         required: false
         default: "3"
-  # schedule:
-  #   - cron: "*/15 * * * *"
+  schedule:
+    # De hora em hora: rede de segurança para o que o acionamento direto
+    # perdeu. Encontrar a fila vazia é o caso NORMAL aqui, não desperdício.
+    - cron: "0 * * * *"
 
 concurrency:
   # Nunca dois workers ao mesmo tempo. A trava no banco já impede que dois

@@ -58,9 +58,38 @@ describe("o workflow de render", () => {
     expect(yml).toMatch(/cancel-in-progress:\s*false/);
   });
 
-  it("não está agendado — ligar é decisão de produto, depois do portão da F0", () => {
-    const linhasAtivas = yml.split("\n").filter((l) => !l.trimStart().startsWith("#"));
-    expect(linhasAtivas.join("\n")).not.toMatch(/^\s*schedule:/m);
-    expect(yml).toMatch(/workflow_dispatch:/);
+  /*
+   * Esta guarda AFIRMAVA O CONTRÁRIO até 03/09/2026: que o `schedule` estava
+   * desligado, porque "ligar é decisão de produto, depois do portão da F0".
+   *
+   * A decisão foi revista — e a guarda cumpriu o papel dela: obrigou a
+   * reversão a ser explícita em vez de silenciosa. O que a mudou foi um
+   * defeito medido, não conveniência: um vídeo ficou preso na fila porque
+   * NADA acionava o worker (0 execuções na vida), e o sintoma foi silêncio.
+   *
+   * Hoje os dois gatilhos são obrigatórios e têm papéis distintos. Perder
+   * qualquer um dos dois falha CALADO — a tela segue dizendo "na fila".
+   */
+  it("tem os DOIS gatilhos: acionamento direto e rede de segurança", () => {
+    const linhasAtivas = yml
+      .split("\n")
+      .filter((l) => !l.trimStart().startsWith("#"))
+      .join("\n");
+
+    // Sem ele, `acionarRender` não tem o que acionar e o vídeo só sai na hora cheia.
+    expect(linhasAtivas).toMatch(/^\s*workflow_dispatch:/m);
+    // Sem ele, uma falha do acionamento deixa o vídeo preso para sempre.
+    expect(linhasAtivas).toMatch(/^\s*schedule:/m);
+  });
+
+  it("o schedule é rede de segurança, não o caminho principal", () => {
+    /*
+     * Intervalo curto aqui é sinal de que alguém passou a CONTAR com o
+     * schedule em vez do acionamento — e aí o vídeo volta a demorar minutos
+     * por desenho. Minuto de hora cheia (`0 * * * *`) ou mais espaçado.
+     */
+    const cron = yml.match(/-\s*cron:\s*"([^"]+)"/)?.[1] ?? "";
+    expect(cron).toBeTruthy();
+    expect(cron.split(/\s+/)[0], `cron "${cron}" dispara mais de uma vez por hora`).toBe("0");
   });
 });

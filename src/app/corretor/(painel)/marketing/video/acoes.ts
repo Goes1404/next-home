@@ -13,6 +13,7 @@ import {
   type Copy,
 } from "@/lib/imagens/marketing";
 import { enfileirarVideo, getMeusVideos, getSaldo } from "@/lib/video/fila";
+import { acionarRender } from "@/lib/video/acionarRender";
 import { duracaoTotal, montarRoteiro } from "@/lib/video/roteiro";
 import { regraDoTipo, type TipoDePlano } from "@/lib/video/gramatica";
 import { classificarFotos } from "@/lib/video/classificarFotos";
@@ -229,6 +230,19 @@ export async function criarVideo(pedido: PedidoDeVideo): Promise<{ erro?: string
           : "Não deu para entrar na fila. Tente de novo em instantes.",
     };
   }
+
+  /*
+   * Acende o worker AGORA, sem `await`.
+   *
+   * Sem esta linha o job fica na fila até alguém acionar o GitHub Actions à
+   * mão — foi exatamente o que aconteceu em 03/09/2026: vídeo pedido às
+   * 14h15, `tentativas = 0`, e o workflow com zero execuções na vida.
+   *
+   * Sem `await` de propósito: quem clicou não pode esperar o GitHub
+   * responder, e o acionamento é só um atalho — o `schedule` do workflow
+   * varre a fila de hora em hora se isto falhar. Ver `acionarRender.ts`.
+   */
+  acionarRender();
 
   revalidatePath("/corretor/marketing/video");
   return { jobId: r.jobId };
