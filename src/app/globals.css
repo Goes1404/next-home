@@ -194,6 +194,16 @@
   --color-mod-imoveis-hover: light-dark(oklch(0.45 0.14 41), oklch(0.85 0.14 48));
   --color-mod-imoveis-suave: light-dark(oklch(0.47 0.14 41), oklch(0.87 0.12 48));
 
+  /*
+   * Marketing em ciano. O arco estava livre: 73° do WhatsApp (132), 87° do
+   * Início (292) e mais ainda de Leads (340) e Imóveis (41). O arco QUENTE já
+   * está apertado — entre `perigo` (17) e `alerta` (66) sobram 49° —, então
+   * módulo novo entra pelo lado frio ou nasce indistinguível de um estado.
+   */
+  --color-mod-marketing: light-dark(oklch(0.5 0.13 205), oklch(0.74 0.13 205));
+  --color-mod-marketing-hover: light-dark(oklch(0.43 0.13 205), oklch(0.82 0.12 205));
+  --color-mod-marketing-suave: light-dark(oklch(0.45 0.13 205), oklch(0.86 0.1 205));
+
   --color-mod-admin: light-dark(oklch(0.42 0.035 275), oklch(0.68 0.03 275));
   --color-mod-admin-hover: light-dark(oklch(0.34 0.035 275), oklch(0.76 0.028 275));
   --color-mod-admin-suave: light-dark(oklch(0.36 0.035 275), oklch(0.85 0.022 275));
@@ -809,6 +819,12 @@
     --color-acento: var(--color-mod-imoveis);
     --color-acento-hover: var(--color-mod-imoveis-hover);
     --color-acento-suave: var(--color-mod-imoveis-suave);
+  }
+
+  [data-modulo="marketing"] {
+    --color-acento: var(--color-mod-marketing);
+    --color-acento-hover: var(--color-mod-marketing-hover);
+    --color-acento-suave: var(--color-mod-marketing-suave);
   }
 
   [data-modulo="conta"] {

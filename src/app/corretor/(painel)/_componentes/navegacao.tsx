@@ -63,7 +63,6 @@ export const GRUPOS_NAV: GrupoNav[] = [
         href: "/corretor/imoveis",
         label: "Imóveis",
         icone: IconePredio,
-        tambem: ["/corretor/links"],
       },
     ],
   },
@@ -82,10 +81,22 @@ export const GRUPOS_NAV: GrupoNav[] = [
         tambem: ["/corretor/visitas"],
       },
       {
-        href: "/corretor/campanhas",
-        label: "Campanhas",
+        /*
+         * Marketing reúne o que PRODUZ e o que DISPARA peça: arte, vídeo,
+         * carrossel, links de indicação e a fila de campanha. Antes estava
+         * espalhado — arte e links dentro de Imóveis, campanha num destino
+         * próprio —, e o corretor precisava saber onde cada coisa mora para
+         * achá-la.
+         *
+         * Ela absorve Campanhas em vez de somar ao menu: disparo é peça de
+         * saída, é marketing por definição, e o teto de sete destinos existe
+         * porque acima disso o menu deixa de ser lido e passa a ser
+         * procurado. As rotas antigas continuam respondendo.
+         */
+        href: "/corretor/marketing",
+        label: "Marketing",
         icone: IconeMegafone,
-        tambem: ["/corretor/templates"],
+        tambem: ["/corretor/campanhas", "/corretor/templates", "/corretor/links"],
       },
       { href: "/corretor/whatsapp", label: "Minha IA", icone: IconeConversa },
     ],
@@ -176,14 +187,21 @@ export function itemAtivo(atual: string | null, item: ItemNav): boolean {
  * Devolve `null` fora do painel e em rota que nenhum destino reivindica —
  * aí o CSS cai no tom padrão em vez de inventar um.
  */
-export type Modulo = "inicio" | "leads" | "whatsapp" | "imoveis" | "conta" | "admin";
+export type Modulo =
+  | "inicio"
+  | "leads"
+  | "whatsapp"
+  | "imoveis"
+  | "marketing"
+  | "conta"
+  | "admin";
 
 const MODULO_POR_DESTINO: Record<string, Modulo> = {
   "/corretor": "inicio",
   "/corretor/pessoas": "leads",
   "/corretor/funil": "leads",
   "/corretor/imoveis": "imoveis",
-  "/corretor/campanhas": "whatsapp",
+  "/corretor/marketing": "marketing",
   "/corretor/whatsapp": "whatsapp",
   "/corretor/perfil": "conta",
   "/corretor/senha": "conta",

@@ -91,7 +91,11 @@ describe("moduloAtivo — a chave do color coding", () => {
     expect(moduloAtivo("/corretor")).toBe("inicio");
     expect(moduloAtivo("/corretor/pessoas")).toBe("leads");
     expect(moduloAtivo("/corretor/imoveis")).toBe("imoveis");
-    expect(moduloAtivo("/corretor/campanhas")).toBe("whatsapp");
+    // Campanhas mudou de dono: disparo é peça de saída, e Marketing reúne o
+    // que produz com o que dispara. A rota continua respondendo; só a cor e o
+    // item de menu que a acende mudaram.
+    expect(moduloAtivo("/corretor/campanhas")).toBe("marketing");
+    expect(moduloAtivo("/corretor/marketing")).toBe("marketing");
     expect(moduloAtivo("/corretor/perfil")).toBe("conta");
     expect(moduloAtivo("/corretor/admin")).toBe("admin");
   });
@@ -101,8 +105,9 @@ describe("moduloAtivo — a chave do color coding", () => {
     expect(moduloAtivo("/corretor/leads")).toBe("leads");
     expect(moduloAtivo("/corretor/conversas")).toBe("leads");
     expect(moduloAtivo("/corretor/visitas")).toBe("leads");
-    expect(moduloAtivo("/corretor/templates")).toBe("whatsapp");
-    expect(moduloAtivo("/corretor/links")).toBe("imoveis");
+    // Templates e Links foram junto: os dois são insumo de peça, não de ficha.
+    expect(moduloAtivo("/corretor/templates")).toBe("marketing");
+    expect(moduloAtivo("/corretor/links")).toBe("marketing");
     expect(moduloAtivo("/corretor/senha")).toBe("conta");
   });
 
