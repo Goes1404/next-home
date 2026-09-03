@@ -19,6 +19,7 @@ import {
   registrarImovelDeInteresse,
   registrarRespostaDoLead,
   botDeveResponder,
+  motivoDoSilencio,
   buscarDossieAtual,
   cancelarFollowupsPendentes,
   gravarMensagem,
@@ -460,18 +461,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, action: "audio_nao_transcrito", sender });
     }
 
-    if (!botDeveResponder(conversa)) {
-      // Silêncio também é dado: sem registrar, "o bot respondeu pouco" e
-      // "o bot está quebrado" são indistinguíveis no painel.
+    const silencio = motivoDoSilencio(conversa);
+    if (silencio) {
+      /*
+       * Silêncio também é dado: sem registrar, "o bot respondeu pouco" e "o
+       * bot está quebrado" são indistinguíveis no painel.
+       *
+       * E o MOTIVO é o dado que importa. Até 03/09/2026 as três causas
+       * saíam daqui carimbadas como `pausada_por_humano`, e a medição de
+       * produção mostrou o estrago: 335 mensagens puladas em três dias, a
+       * pausa apontada como culpada em todas, e culpada de nenhuma (ver
+       * `motivoDoSilencio`). Cada causa tem conserto diferente — desligado
+       * é decisão do corretor, pausa é o humano atendendo, e trava é o
+       * cliente esperando uma palavra que talvez ninguém vá digitar.
+       */
       await registrarInteracao({
         conversaId: conversa.id,
         corretorId: instancia.corretorId,
         origem: "webhook",
         eTeste: conversa.eTeste,
         promptVersao: PROMPT_VERSAO,
-        acao: "pausada_por_humano",
+        acao: silencio,
       });
-      return NextResponse.json({ ok: true, action: "bot_pausado_nesta_conversa", sender });
+      return NextResponse.json({ ok: true, action: "bot_calado_nesta_conversa", motivo: silencio, sender });
     }
 
     /*

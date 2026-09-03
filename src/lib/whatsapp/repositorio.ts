@@ -927,11 +927,48 @@ export async function ultimaFalaDoCorretor(conversaId: string): Promise<string |
 }
 
 /** Se o bot pode responder agora nesta conversa. */
+/**
+ * POR QUE o bot está calado nesta conversa — ou `null` se ele pode falar.
+ *
+ * ## O defeito que isto conserta (03/09/2026)
+ *
+ * `botDeveResponder` responde SIM ou NÃO, e o webhook carimbava todo NÃO
+ * como `pausada_por_humano`. São três causas diferentes, com conserto
+ * diferente cada uma, indistinguíveis no banco.
+ *
+ * Medido em produção: em três dias, **335 mensagens de cliente** foram
+ * puladas e TODAS registradas como pausa humana. Conferindo o estado real
+ * das conversas, a pausa não era a causa de NENHUMA delas: 9 estavam
+ * travadas pela palavra-chave, 1 tinha o bot desligado, e 7 já tinham a
+ * pausa vencida. Ou seja, o rótulo mandava consertar a única coisa que não
+ * estava quebrada.
+ *
+ * É a mesma família de defeito que esta base já pagou cinco vezes — texto
+ * de erro desatualizado apontando o diagnóstico para o lugar errado — e a
+ * mesma da coluna `modelo`, que carimbava um modelo nunca chamado.
+ *
+ * A ORDEM importa e é a de precedência real do `botDeveResponder`: bot
+ * desligado ganha da pausa, que ganha da trava. Sem isso, uma conversa
+ * desligada E travada seria contada duas vezes, dependendo de quem
+ * perguntasse.
+ */
+export type MotivoDoSilencio = "bot_desligado" | "pausada_por_humano" | "aguardando_palavra_chave";
+
+export function motivoDoSilencio(conversa: ConversaPersistida): MotivoDoSilencio | null {
+  if (!conversa.botAtivo) return "bot_desligado";
+  if (conversa.pausadoHumanoAte && new Date(conversa.pausadoHumanoAte) > new Date())
+    return "pausada_por_humano";
+  if (!conversa.liberadoPorPalavraChave) return "aguardando_palavra_chave";
+  return null;
+}
+
+/**
+ * Mantida como a pergunta de SIM ou NÃO que a maioria dos chamadores faz.
+ * Deriva de `motivoDoSilencio` de propósito: duas listas de condições para
+ * a mesma decisão divergem, e esta decide se o cliente é atendido.
+ */
 export function botDeveResponder(conversa: ConversaPersistida): boolean {
-  if (!conversa.botAtivo) return false;
-  if (conversa.pausadoHumanoAte && new Date(conversa.pausadoHumanoAte) > new Date()) return false;
-  if (!conversa.liberadoPorPalavraChave) return false;
-  return true;
+  return motivoDoSilencio(conversa) === null;
 }
 
 /**
