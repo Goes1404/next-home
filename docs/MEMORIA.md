@@ -4015,3 +4015,64 @@ diagnóstico é a parte que vale.
   `redefinirSenhaCorretor`, com a linha seguinte igual. O `assert count == 1`
   pegou antes de escrever — âncora de edição precisa incluir algo único da
   função (aqui, a linha do slug).
+
+## A pausa DESCARTAVA a mensagem, e a telemetria culpava a pausa (03/09/2026)
+
+Dois defeitos empilhados, e o segundo escondia o primeiro.
+
+- **O webhook é o ÚNICO gatilho do atendimento.** Quando ele decide
+  "pausado", a mensagem do cliente morre ali: não há fila, não há
+  reagendamento, e quando a pausa vence nada volta para respondê-la. Medido:
+  **17 conversas com lead real** com a última fala do cliente sem resposta de
+  ninguém, esperando de 22 a 52 horas.
+- **Encurtar a pausa não resolve, e isso é medível.** A correção de 01/09
+  (24h → 3h) não moveu o número porque **80% das mensagens de cliente chegam
+  a menos de 3h da última fala da corretora** na mesma conversa — ela responde
+  544 por semana do próprio celular. Encurtar mais é o bot falando por cima
+  dela. O que faltava era a segunda chance, não uma janela menor.
+- **A telemetria mandava consertar o que não estava quebrado.**
+  `botDeveResponder` responde SIM ou NÃO por três razões, e o webhook
+  carimbava todo NÃO como `pausada_por_humano`: **335 mensagens em três dias**
+  com o motivo errado. Conferindo o estado real das conversas, a pausa não era
+  a causa de NENHUMA delas — 9 travadas pela palavra-chave, 1 com o bot
+  desligado, 7 já com a pausa vencida. Mesma família da coluna `modelo`, que
+  carimbava um modelo nunca chamado. **Antes de acreditar num contador de
+  `ia_interacoes`, conferir se ele distingue as causas ou só tem um rótulo.**
+- **A varredura roda ANTES da janela de horário, e a regra já estava escrita.**
+  O webhook diz: "responder quem nos escreveu não passa por cota nem por
+  janela de horário — deixá-lo no vácuo é pior para o número do que responder
+  de madrugada". Pendurar a varredura depois do `dentroDaJanela` a faria calar
+  das 21h às 9h justamente para quem esperou a noite inteira — o defeito do
+  aviso de queda, que herdou as saídas antecipadas do disparador. **Ao pendurar
+  código novo num runner existente, conferir de quais `return` ele passa a
+  depender.**
+- **Mora no cron de follow-ups porque ele JÁ roda** (2.719 execuções sem
+  falha). Cron novo exige `configurar_*` ser CHAMADA à mão, e esta base tem
+  quatro recursos completos que produziram zero linhas por causa disso.
+- **Sem marca de "já respondida".** Quando o balão é gravado, a última fala
+  deixa de ser do cliente e a view (0087) para de devolver a conversa. O
+  critério de parada é o próprio dado — contador novo divergiria dele.
+- **Teto de 2 por tique é orçamento de TEMPO, não anti-ban:** cada resposta
+  custa uma chamada do agente (20s) mais os envios, e a função tem 60s, com os
+  follow-ups na mesma invocação.
+- **Guarda de código-fonte quebra quando o arquivo ganha um SEGUNDO caminho.**
+  `gravacaoDeMensagem` comparava `lastIndexOf("registrarInteracao({")` com
+  `indexOf("vincularInteracaoNaMensagem(")` — o último registro contra o
+  primeiro vínculo. Com um caminho de envio funcionava por sorte; com dois,
+  passou a parear a telemetria de um com o vínculo do outro e reprovou código
+  correto. Hoje recorta por FUNÇÃO. **Sexta vez que uma guarda desta base
+  tropeça no próprio recorte.**
+- **E a primeira correção que escrevi para ela era TAUTOLÓGICA**: filtrava as
+  ocorrências pela mesma condição que depois afirmava. Passava sempre. Critério
+  decorativo é o defeito recorrente daqui — ao consertar guarda, provocar a
+  versão nova com o defeito real antes de acreditar no verde.
+- **Verificado em produção**, não por teste: duas respostas saíram no primeiro
+  tique, ambas abrindo com "Desculpa a demora!" (a instrução muda acima de
+  24h), com `provider_message_id` e status `enviada`. O `---` que aparece no
+  `conteudo` é o marcador de corte — o CRM guarda o texto inteiro, o cliente
+  recebeu os balões separados.
+- **A branch de produção voltou a ser a documentada.** A anomalia de 31/08
+  (`ingestao-de-midia` promovida pelo painel) acabou: os últimos deploys com
+  `target: production` saem de `claude/modernizar-plataforma-imobiliaria-2tm13q`,
+  e `main` está no mesmo commit. A regra de conferir antes de afirmar "está no
+  ar" continua valendo — foi conferindo que se soube.
