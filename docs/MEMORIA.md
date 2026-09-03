@@ -3801,3 +3801,57 @@ não tem.
   exigiria `fontconfig` na Vercel; fica anotado como o próximo degrau visual,
   não como pendência.
 
+## O motor de vídeo (F1 e F2, 03/09/2026)
+
+- **Não existe IA de vídeo no caminho padrão, e é isso que faz o custo ser
+  zero.** O vídeo é montado das fotos que já estão no catálogo, por FFmpeg, na
+  nossa máquina. A única chamada de API é a que escreve a legenda: **~R$
+  0,002**. Um vídeo inteiro no Veo Fast custaria R$ 16,44, e no Veo Standard
+  R$ 65,78 — medido contra o preço de tabela da Gemini API.
+- **O render NÃO cabe na Vercel, e agora está medido duas vezes:** 86,9 s no
+  protótipo e 174 s pelo motor de produção, ambos em 4 CPUs, contra o teto de
+  60 s do plano Hobby. `render.ts` é para o worker; a rota enfileira.
+- **A variação sai do DADO, não de sorteio.** O `alt` da foto decide o tipo do
+  plano e o tipo decide o movimento: fachada sobe (tilt), interior aproxima
+  (push), lazer percorre (pan), implantação afasta (pull). Sorteio produziria
+  aleatoriedade, que depois de dez vídeos parece igual do mesmo jeito — há
+  teste travando `Math.random` fora de `gramatica.ts` e `roteiro.ts`.
+- **Movimento LINEAR é o que denuncia slideshow.** Toda curva usa ease-out
+  cúbico (`pow(1-on/n,3)`), e há teste exigindo o `pow()` nas quatro. Foi a
+  diferença mais visível e mais barata de toda a exploração.
+- **No `drawtext` do FFmpeg, `y` é o TOPO do texto, não a linha de base.**
+  Calcular como baseline empilha tudo para baixo: o bloco sai espremido e o
+  título encosta no apoio. Custou uma renderização de 3 minutos descobrir.
+- **A variável por quadro do `zoompan` é `on`, não `n`.** `n` não existe nesse
+  filtro e a expressão falha com "Undefined constant". O mesmo vale para o
+  `perspective`, que também só conhece `on`.
+- **`zoompan` treme sem upscale grande antes** (`scale=-1:3200`): ele trabalha
+  em pixel inteiro. E o fundo borrado precisa de
+  `force_original_aspect_ratio=increase` — escalar pela largura estoura o crop,
+  porque as fotos do catálogo são ~1000x512 e não cobrem 1920 de altura.
+- **"gourmet" sozinho não identifica área de lazer.** "Cozinha gourmet" é o
+  interior do apartamento; "espaço gourmet" é a área comum. Sem a palavra que
+  especifica, um living ganha PAN onde devia ganhar PUSH — é a mesma trava que
+  `lazerFotos.ts` precisou ter depois que "Espaço Gourmet" abriu a foto do
+  espaço PET. O teste pegou na primeira rodada.
+- **O crédito é debitado no MESMO UPDATE que reserva a vaga**
+  (`reservar_credito_video`, `security definer`, com `FOR UPDATE`). É a lição
+  do espaçamento anti-ban outra vez: cota que a aplicação soma perde a corrida.
+- **Reservar antes do trabalho cria uma dívida.** Uma falha nossa cobraria um
+  vídeo que não existiu, então há devolução em DOIS pontos: job que não chega a
+  ser inserido, e render que falha em definitivo. Mesma lógica de
+  `devolver_cota_campanha`.
+- **O ciclo de cota vira no fuso de São Paulo.** Em UTC, das 21h à meia-noite
+  de Brasília já é o dia (e às vezes o mês) seguinte — o ciclo viraria cedo e
+  daria cota de graça. Quinta vez que esta armadilha aparece no projeto.
+- **`getSaldo` precisa repetir a virada de ciclo na LEITURA.** Só a reserva
+  zera o contador no banco; sem a mesma conta na exibição, a tela diz "sem
+  saldo" no dia 1º para quem tem a cota inteira.
+- **Tabela nova precisa ser declarada À MÃO em `types.ts`** — foi o compilador
+  que cobrou. Regenerar apagaria as 34 uniões de CHECK.
+- **Provocar a guarda com dente ERRADO passa despercebido.** A primeira
+  provocação da guarda "reserva antes de inserir" renomeou
+  `reservar_credito_video` para `XXreservar_credito_videoXX` — que ainda contém
+  a substring, então o `indexOf` achou e o teste passou. Ao morder uma guarda
+  que procura texto, conferir que a mordida de fato tira o texto.
+
