@@ -824,6 +824,96 @@ export type Database = {
         }
         Relationships: []
       }
+      video_jobs: {
+        Row: {
+          altura: number | null
+          briefing: Json
+          cobranca: "cota" | "credito"
+          concluido_em: string | null
+          corretor_id: string
+          created_at: string
+          duracao_s: number | null
+          empreendimento_id: string | null
+          erro_motivo: string | null
+          id: string
+          largura: number | null
+          render_ms: number | null
+          roteiro: Json
+          status: "pendente" | "renderizando" | "pronto" | "erro" | "cancelado"
+          tentativas: number
+          travado_ate: string | null
+          travado_por: string | null
+          url: string | null
+        }
+        Insert: {
+          altura?: number | null
+          briefing?: Json
+          cobranca?: "cota" | "credito"
+          concluido_em?: string | null
+          corretor_id: string
+          created_at?: string
+          duracao_s?: number | null
+          empreendimento_id?: string | null
+          erro_motivo?: string | null
+          id?: string
+          largura?: number | null
+          render_ms?: number | null
+          roteiro?: Json
+          status?: "pendente" | "renderizando" | "pronto" | "erro" | "cancelado"
+          tentativas?: number
+          travado_ate?: string | null
+          travado_por?: string | null
+          url?: string | null
+        }
+        Update: {
+          altura?: number | null
+          briefing?: Json
+          cobranca?: "cota" | "credito"
+          concluido_em?: string | null
+          corretor_id?: string
+          created_at?: string
+          duracao_s?: number | null
+          empreendimento_id?: string | null
+          erro_motivo?: string | null
+          id?: string
+          largura?: number | null
+          render_ms?: number | null
+          roteiro?: Json
+          status?: "pendente" | "renderizando" | "pronto" | "erro" | "cancelado"
+          tentativas?: number
+          travado_ate?: string | null
+          travado_por?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
+      video_creditos: {
+        Row: {
+          atualizado_em: string
+          ciclo_inicio: string
+          corretor_id: string
+          cota_mensal: number
+          creditos_avulsos: number
+          usados_no_ciclo: number
+        }
+        Insert: {
+          atualizado_em?: string
+          ciclo_inicio?: string
+          corretor_id: string
+          cota_mensal?: number
+          creditos_avulsos?: number
+          usados_no_ciclo?: number
+        }
+        Update: {
+          atualizado_em?: string
+          ciclo_inicio?: string
+          corretor_id?: string
+          cota_mensal?: number
+          creditos_avulsos?: number
+          usados_no_ciclo?: number
+        }
+        Relationships: []
+      }
       imagens_geradas: {
         Row: {
           altura: number | null
@@ -1756,6 +1846,14 @@ export type Database = {
       }
     }
     Functions: {
+      reservar_credito_video: {
+        Args: { p_corretor: string }
+        Returns: "cota" | "credito" | null
+      }
+      devolver_credito_video: {
+        Args: { p_corretor: string; p_cobranca: string }
+        Returns: boolean
+      }
       configurar_disparo_automatico: {
         Args: { p_token: string; p_url: string }
         Returns: string
