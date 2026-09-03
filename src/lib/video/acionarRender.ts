@@ -75,9 +75,21 @@ export function acionarRender(): void {
     return;
   }
 
-  // A `ref` decide QUAL CÓDIGO do worker roda, não só onde o workflow existe.
-  // Padrão em `main` para acompanhar o que está publicado.
-  const ref = process.env.GITHUB_RENDER_REF || "main";
+  /*
+   * A `ref` decide QUAL CÓDIGO do worker roda, não só onde o workflow existe.
+   *
+   * O padrão precisa ser a branch PADRÃO do repositório, porque é dela que o
+   * GitHub roda o `schedule`. Se as duas divergirem, o acionamento direto e a
+   * rede de segurança passam a executar versões diferentes do worker — dois
+   * caminhos, dois comportamentos, e a diferença só apareceria num render
+   * errado que ninguém saberia explicar.
+   *
+   * Aqui a branch padrão NÃO é `main` (é a de produção, herdada de quando o
+   * projeto foi conectado à Vercel). A MEMORIA registra que qual branch é a
+   * de produção já mudou sozinha uma vez — por isso a variável de ambiente
+   * existe: quando mudar de novo, muda aqui sem deploy de código.
+   */
+  const ref = process.env.GITHUB_RENDER_REF || "claude/modernizar-plataforma-imobiliaria-2tm13q";
   const url = `https://api.github.com/repos/${repo}/actions/workflows/${WORKFLOW}/dispatches`;
 
   after(async () => {
