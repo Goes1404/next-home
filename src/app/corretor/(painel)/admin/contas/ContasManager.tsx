@@ -333,7 +333,13 @@ export function ContasManager({
   const [criandoLote, iniciarLote] = useTransition();
   const [aviso, setAviso] = useState<{ msg: string; erro: boolean } | null>(null);
 
-  const semAcesso = corretores.filter((c) => !c.temLogin).length;
+  /*
+   * Só quem está ATIVO conta como pendência, e o filtro tem de ser o mesmo
+   * de `criarAcessosQueFaltam` — que também recorta por `ativo`. Contando os
+   * inativos, o botão prometia 7 e criava 6: quem está desativado não tem
+   * acesso ao painel porque não deve ter, e isso não é uma pendência.
+   */
+  const semAcesso = corretores.filter((c) => c.ativo && !c.temLogin).length;
 
   return (
     <div>

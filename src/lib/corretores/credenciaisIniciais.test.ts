@@ -98,3 +98,34 @@ describe("e-mail nunca sai para um endereço de acesso", () => {
     ).toBe(true);
   });
 });
+
+/*
+ * O aviso da tela de Contas e a action do lote recortam a MESMA população.
+ * Enquanto contavam diferente, o botão prometia 7 e criava 6 — e a diferença
+ * só apareceria depois do clique, sem erro nenhum, porque quem sobrou é
+ * exatamente quem está desativado de propósito.
+ */
+describe("o botão promete o mesmo número que cria", () => {
+  const tela = readFileSync(
+    join(process.cwd(), "src", "app", "corretor", "(painel)", "admin", "contas", "ContasManager.tsx"),
+    "utf8",
+  );
+  const action = readFileSync(
+    join(process.cwd(), "src", "app", "corretor", "(painel)", "admin", "acoes.ts"),
+    "utf8",
+  );
+
+  it("a tela conta só corretor ativo sem login", () => {
+    expect(
+      /const semAcesso = corretores\.filter\(\(c\) => c\.ativo && !c\.temLogin\)/.test(tela),
+      "O aviso voltou a contar corretor inativo. Ele promete um número que o " +
+        "lote não cria, e a diferença não aparece como erro.",
+    ).toBe(true);
+  });
+
+  it("a action recorta pela mesma condição", () => {
+    const lote = action.slice(action.indexOf("export async function criarAcessosQueFaltam"));
+    expect(lote.includes('.eq("ativo", true)')).toBe(true);
+    expect(lote.includes('.is("user_id", null)')).toBe(true);
+  });
+});

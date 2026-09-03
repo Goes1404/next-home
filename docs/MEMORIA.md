@@ -3989,6 +3989,12 @@ diagnóstico é a parte que vale.
 - **Falha de um corretor não aborta o lote.** Parar no primeiro erro
   deixaria metade criada e metade não, sem ninguém saber onde parou. Quem
   fica de fora volta nomeado, com o motivo.
+- **O aviso da tela prometia 7 e o lote criava 6.** `getCorretoresParaAdmin`
+  carrega TODO corretor, inclusive inativo, e o aviso contava `!temLogin`
+  sem olhar `ativo`; a action recorta por `ativo`. A diferença não apareceria
+  como erro — quem sobra é exatamente quem está desativado de propósito.
+  **Botão que promete um número precisa contar com o MESMO filtro de quem
+  executa**, e agora há guarda lendo as duas pontas.
 - **Duas linhas idênticas em dois lugares quebram `str.replace`**: o
   `const senha = senhaTemporaria();` aparece em `criarAcessoCorretor` e em
   `redefinirSenhaCorretor`, com a linha seguinte igual. O `assert count == 1`
