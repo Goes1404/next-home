@@ -16,8 +16,13 @@
 --
 --   1. Quem tem WhatsApp no ar primeiro — é por ele que o contato acontece.
 --   2. Quem tem login no painel — é onde o lead é visto.
---   3. A carga passa a contar só lead ATIVO. Carteira arquivada não dá
---      trabalho a ninguém, e contá-la faria a roleta evitar quem está livre.
+--   3. A carga passa a contar só lead EM ANDAMENTO — nem arquivado, nem
+--      `perdido`, nem `fechado`. Carteira morta não dá trabalho a ninguém, e
+--      contá-la faz a roleta evitar quem está livre. Isso não é hipótese:
+--      54 dos 107 leads da Bruna na janela de 30 dias estão em `perdido`,
+--      da limpeza de 27/08 que marcou sem arquivar. Metade da "carga" dela
+--      é trabalho que não existe — e é justamente no dia em que o segundo
+--      corretor entrar que esse número decide para onde vai todo lead novo.
 --
 -- E o `slug is not null` deixa de ser filtro e vira preferência, pelo mesmo
 -- motivo dos outros: hoje ele barra "Equipe Next Home", e num cenário em que
@@ -62,11 +67,13 @@ begin
      (c.user_id is null),
      -- 3. Tem link pessoal (era filtro até a 0093).
      (c.slug is null),
-     -- 4. Menos carregado nos últimos 30 dias, só contando lead ATIVO.
+     -- 4. Menos carregado nos últimos 30 dias, contando só lead EM
+     --    ANDAMENTO: `perdido` e `fechado` não pedem mais nada de ninguém.
      (select count(*)
         from leads l
        where l.corretor_id = c.id
          and l.arquivado_em is null
+         and l.etapa not in ('perdido', 'fechado')
          and l.created_at > now() - interval '30 days') asc,
      -- 5. Desempate: quem faz mais tempo que não recebe.
      coalesce((select max(l.created_at) from leads l where l.corretor_id = c.id),

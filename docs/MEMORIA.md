@@ -3880,10 +3880,18 @@ diagnóstico é a parte que vale.
   viraram preferências; filtro devolveria `alvo` nulo e o lead nasceria
   órfão de verdade. `slug is not null`, que ERA filtro desde a 0007, virou
   preferência pelo mesmo motivo.
-- **A carga passou a contar só lead ATIVO** (`arquivado_em is null`).
-  Carteira arquivada não dá trabalho a ninguém, e contá-la faz a roleta
-  evitar justamente quem está livre. O `leadArquivado.test.ts` cobra esse
-  filtro em TypeScript e não enxerga SQL — a função do banco escapava.
+- **A carga passou a contar só lead EM ANDAMENTO** — nem `arquivado_em`, nem
+  `perdido`, nem `fechado`. Só arquivado não bastava, e o número prova:
+  **54 dos 107 leads da corretora que atende estavam em `perdido`**, da
+  limpeza de 27/08 que marcou sem arquivar. Metade da carga dela era
+  trabalho que não existe. O `leadArquivado.test.ts` cobra o filtro de
+  arquivado em TypeScript e não enxerga SQL — a função do banco escapava.
+- **Esse número só decide alguma coisa no DIA DA VIRADA, e é aí que ele
+  importa.** Com um corretor só atendendo, a preferência de WhatsApp resolve
+  tudo e a carga é decorativa. No instante em que o segundo parear o número,
+  a carga passa a decidir para onde vai TODO lead novo: simulado, a Bruna
+  entra nessa comparação com 53 e não com 107. **Ao consertar um critério
+  que hoje não é exercitado, simular o dia em que ele passa a ser.**
 - **Quase criei uma segunda régua de distribuição.** A primeira versão desta
   correção era uma `sortear_corretor_para_lead()` chamada pelos webhooks —
   duas contas de "quem recebe o próximo lead" para divergir, que é o defeito

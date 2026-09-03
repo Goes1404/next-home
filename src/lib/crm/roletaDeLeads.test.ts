@@ -14,8 +14,11 @@ import { join } from "node:path";
  *    trabalhava, menos lead recebia — até o lead ir parar com quem não
  *    consegue abrir a tela para vê-lo.
  *
- * 2. Contar carteira arquivada. Lead arquivado não dá trabalho a ninguém, e
- *    contá-lo faz a roleta evitar justamente quem está livre.
+ * 2. Contar carteira MORTA como carga. Lead arquivado, `perdido` ou
+ *    `fechado` não pede mais nada de ninguém, e contá-lo faz a roleta evitar
+ *    justamente quem está livre. Medido: 54 dos 107 leads da corretora que
+ *    atende, na janela de 30 dias, estavam em `perdido` — metade da "carga"
+ *    dela era trabalho que não existe.
  *
  * Este teste lê a ÚLTIMA definição da função nas migrations, que é a que
  * vale no banco — reescrever a função numa migration futura sem as
@@ -70,6 +73,15 @@ describe("a roleta distribui para quem consegue atender", () => {
       /l\.arquivado_em\s+is\s+null/.test(corpo),
       "A conta de carga voltou a incluir lead arquivado. Carteira morta não dá " +
         "trabalho, e contá-la faz a roleta evitar quem está livre.",
+    ).toBe(true);
+  });
+
+  it("não conta lead perdido nem fechado como carga", () => {
+    expect(
+      /l\.etapa\s+not\s+in\s*\(\s*'perdido'\s*,\s*'fechado'\s*\)/.test(corpo),
+      "A conta de carga voltou a incluir lead `perdido`/`fechado`. Eles não " +
+        "pedem mais nada de ninguém — e metade da carteira de quem atende é " +
+        "feita deles, então isso dobra a carga aparente da pessoa errada.",
     ).toBe(true);
   });
 
