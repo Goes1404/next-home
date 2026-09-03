@@ -67,20 +67,16 @@ export default async function PaginaVideo() {
         }
       />
 
-      {imoveis.length === 0 ? (
-        <p
-          role="status"
-          className="text-fluid-sm border-alerta-linha bg-alerta-lavado text-alerta rounded-2xl border px-4 py-3"
-        >
-          Nenhum imóvel publicado tem foto ainda — e sem foto não há vídeo.
-        </p>
-      ) : (
-        <EstudioDeVideo
-          imoveis={imoveis}
-          iniciais={videos}
-          saldoInicial={{ disponiveis: saldo.disponiveis, cotaMensal: saldo.cotaMensal }}
-        />
-      )}
+      {/*
+        Catálogo vazio NÃO bloqueia mais: o corretor pode subir as próprias
+        fotos. O aviso vira informação, não porta fechada.
+      */}
+      <EstudioDeVideo
+        corretorId={corretor.id}
+        imoveis={imoveis}
+        iniciais={videos}
+        saldoInicial={{ disponiveis: saldo.disponiveis, cotaMensal: saldo.cotaMensal }}
+      />
     </div>
   );
 }

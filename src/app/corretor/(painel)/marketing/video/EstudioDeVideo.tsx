@@ -5,7 +5,9 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { CANAIS, OBJETIVOS, type ChaveCanal, type ChaveObjetivo } from "@/lib/imagens/marketing";
 import { ROTULO_STATUS, type VideoJob } from "@/lib/video/videoTipos";
-import { criarVideo, statusDosVideos, verRoteiro, type Roteiro } from "./acoes";
+import { createClient } from "@/lib/supabase/client";
+import { STATUS_LABEL, type StatusObra } from "@/lib/types";
+import { criarVideo, statusDosVideos, verRoteiro, type PedidoDeVideo, type Roteiro } from "./acoes";
 
 /**
  * O estúdio: escolher → ver o roteiro → criar → acompanhar.
@@ -25,6 +27,9 @@ import { criarVideo, statusDosVideos, verRoteiro, type Roteiro } from "./acoes";
  */
 
 const INTERVALO_MS = 6000;
+const BUCKET = "empreendimentos";
+const TETO_FOTO_BYTES = 15 * 1024 * 1024;
+const MAX_FOTOS = 10;
 
 export type ImovelDoEstudio = {
   slug: string;
@@ -42,14 +47,30 @@ const chip = (ativo: boolean) =>
   }`;
 
 export function EstudioDeVideo({
+  corretorId,
   imoveis,
   iniciais,
   saldoInicial,
 }: {
+  corretorId: string;
   imoveis: ImovelDoEstudio[];
   iniciais: VideoJob[];
   saldoInicial: { disponiveis: number; cotaMensal: number };
 }) {
+  /*
+   * Duas fontes de foto. O catálogo é o caminho rico — traz `alt` descrito por
+   * visão e a ficha inteira. "Minhas fotos" é o caminho que funciona para
+   * imóvel que não está cadastrado aqui, e é o que o produto precisa para
+   * atender imobiliária de fora. Quando não há catálogo, ele nem aparece.
+   */
+  const [fonte, setFonte] = useState<"catalogo" | "minhas">(
+    imoveis.length > 0 ? "catalogo" : "minhas",
+  );
+  const [fotos, setFotos] = useState<string[]>([]);
+  const [subindo, setSubindo] = useState(false);
+  const [nome, setNome] = useState("");
+  const [lugar, setLugar] = useState("");
+  const [estagio, setEstagio] = useState<StatusObra>("lancamento");
   const [slug, setSlug] = useState(imoveis[0]?.slug ?? "");
   const [objetivo, setObjetivo] = useState<ChaveObjetivo>("lancamento");
   const [canal, setCanal] = useState<ChaveCanal>("story");
@@ -62,6 +83,14 @@ export function EstudioDeVideo({
   const { avisar, falhar } = useAvisos();
 
   const imovel = imoveis.find((i) => i.slug === slug) ?? null;
+
+  const pedido: PedidoDeVideo =
+    fonte === "catalogo"
+      ? { fonte: "catalogo", slug, objetivo, canal }
+      : { fonte: "minhas", fotos: fotos.map((url) => ({ url })), nome, lugar, estagio, objetivo, canal };
+
+  const prontoParaMontar =
+    fonte === "catalogo" ? Boolean(slug) : fotos.length >= 3 && nome.trim().length > 0;
   const emAndamento = videos.some((v) => v.status === "pendente" || v.status === "renderizando");
   const podeCriar = Boolean(roteiro) && roteiro?.problemas.length === 0 && saldo.disponiveis > 0 && !criando;
 
@@ -108,11 +137,48 @@ export function EstudioDeVideo({
     };
   }, [emAndamento, atualizar]);
 
+  async function subirFotos(arquivos: FileList) {
+    const cabem = MAX_FOTOS - fotos.length;
+    if (cabem <= 0) {
+      falhar(`São no máximo ${MAX_FOTOS} fotos.`);
+      return;
+    }
+    setSubindo(true);
+    try {
+      const supabase = createClient();
+      const novas: string[] = [];
+      for (const arquivo of Array.from(arquivos).slice(0, cabem)) {
+        if (arquivo.size > TETO_FOTO_BYTES) {
+          falhar(`"${arquivo.name}" passa de 15 MB.`);
+          continue;
+        }
+        const ext = arquivo.name.split(".").pop()?.toLowerCase() || "jpg";
+        // Nome aleatório: o bucket é público, então a URL é o segredo. Mesma
+        // razão do UUID no PDF de staging da importação.
+        const caminho = `corretores/${corretorId}/video-fotos/${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage
+          .from(BUCKET)
+          .upload(caminho, arquivo, { contentType: arquivo.type || "image/jpeg", upsert: true });
+        if (error) {
+          falhar(`Não deu para enviar "${arquivo.name}".`);
+          continue;
+        }
+        novas.push(supabase.storage.from(BUCKET).getPublicUrl(caminho).data.publicUrl);
+      }
+      if (novas.length > 0) {
+        setFotos((atuais) => [...atuais, ...novas]);
+        setRoteiro(null);
+      }
+    } finally {
+      setSubindo(false);
+    }
+  }
+
   async function ver() {
-    if (!slug || vendo) return;
+    if (!prontoParaMontar || vendo) return;
     setVendo(true);
     try {
-      const r = await verRoteiro(slug, objetivo, canal);
+      const r = await verRoteiro(pedido);
       if (r.erro || !r.roteiro) {
         falhar(r.erro ?? "Não deu para montar o roteiro.");
         return;
@@ -129,7 +195,7 @@ export function EstudioDeVideo({
     if (!podeCriar) return;
     setCriando(true);
     try {
-      const r = await criarVideo(slug, objetivo, canal);
+      const r = await criarVideo(pedido);
       if (r.erro) {
         falhar(r.erro);
         return;
@@ -147,22 +213,150 @@ export function EstudioDeVideo({
   return (
     <div className="space-y-5">
       <section className="border-linha bg-superficie shadow-painel min-w-0 space-y-4 rounded-2xl border p-4 sm:p-5">
-        <label className="block space-y-1.5">
-          <span className="text-fluid-xs text-apoio">Imóvel</span>
-          <select
-            value={slug}
-            disabled={criando}
-            onChange={(e) => escolher(setSlug)(e.target.value)}
-            className="text-fluid-sm border-linha-forte bg-campo text-corpo focus:border-acento-linha min-h-11 w-full cursor-pointer rounded-xl border px-3 outline-none transition-colors"
-          >
-            {imoveis.map((i) => (
-              <option key={i.slug} value={i.slug}>
-                {i.nome} · {i.lugar} · {i.fotos} fotos
-              </option>
+        {imoveis.length > 0 && (
+          <div role="tablist" className="flex gap-2">
+            {(
+              [
+                ["catalogo", "Imóvel do catálogo"],
+                ["minhas", "Minhas fotos"],
+              ] as const
+            ).map(([chave, rotulo]) => (
+              <button
+                key={chave}
+                role="tab"
+                type="button"
+                aria-selected={fonte === chave}
+                disabled={criando}
+                onClick={() => {
+                  setFonte(chave);
+                  setRoteiro(null);
+                }}
+                className={chip(fonte === chave)}
+              >
+                {rotulo}
+              </button>
             ))}
-          </select>
-          {imovel && <span className="text-fluid-xs text-tenue">{imovel.estagio}</span>}
-        </label>
+          </div>
+        )}
+
+        {fonte === "catalogo" ? (
+          <label className="block space-y-1.5">
+            <span className="text-fluid-xs text-apoio">Imóvel</span>
+            <select
+              value={slug}
+              disabled={criando}
+              onChange={(e) => escolher(setSlug)(e.target.value)}
+              className="text-fluid-sm border-linha-forte bg-campo text-corpo focus:border-acento-linha min-h-11 w-full cursor-pointer rounded-xl border px-3 outline-none transition-colors"
+            >
+              {imoveis.map((i) => (
+                <option key={i.slug} value={i.slug}>
+                  {i.nome} · {i.lugar} · {i.fotos} fotos
+                </option>
+              ))}
+            </select>
+            {imovel && <span className="text-fluid-xs text-tenue">{imovel.estagio}</span>}
+          </label>
+        ) : (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <span className="text-fluid-xs text-apoio">
+                Fotos {fotos.length > 0 && `· ${fotos.length} de ${MAX_FOTOS}`}
+              </span>
+              {fotos.length > 0 && (
+                <ul className="flex flex-wrap gap-2">
+                  {fotos.map((url, i) => (
+                    <li key={url} className="relative">
+                      <Image
+                        src={url}
+                        alt=""
+                        width={72}
+                        height={72}
+                        unoptimized
+                        className="border-linha size-[72px] rounded-lg border object-cover"
+                      />
+                      <button
+                        type="button"
+                        aria-label={`Tirar a foto ${i + 1}`}
+                        onClick={() => {
+                          setFotos((f) => f.filter((u) => u !== url));
+                          setRoteiro(null);
+                        }}
+                        className="bg-fundo/85 text-corpo hover:text-perigo border-linha absolute -top-1.5 -right-1.5 flex size-6 cursor-pointer items-center justify-center rounded-full border text-xs leading-none"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <label className="border-linha-forte text-corpo hover:border-acento-linha inline-flex min-h-11 cursor-pointer items-center rounded-xl border px-3.5 text-fluid-sm transition-colors">
+                {subindo ? "Enviando…" : fotos.length > 0 ? "Adicionar mais" : "Escolher fotos"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  disabled={subindo || criando}
+                  onChange={(e) => {
+                    if (e.target.files?.length) void subirFotos(e.target.files);
+                    e.target.value = "";
+                  }}
+                  className="sr-only"
+                />
+              </label>
+              <p className="text-fluid-xs text-tenue">
+                A ordem não importa: o sistema reconhece o que é fachada, ambiente
+                interno, lazer e implantação, e dá o movimento de câmera certo a
+                cada um.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block space-y-1.5">
+                <span className="text-fluid-xs text-apoio">Nome do imóvel</span>
+                <input
+                  value={nome}
+                  disabled={criando}
+                  onChange={(e) => escolher(setNome)(e.target.value)}
+                  placeholder="ex.: Residencial Alphaville"
+                  className="text-fluid-sm border-linha-forte bg-campo text-corpo placeholder:text-tenue focus:border-acento-linha min-h-11 w-full rounded-xl border px-3 outline-none transition-colors"
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-fluid-xs text-apoio">Bairro e cidade</span>
+                <input
+                  value={lugar}
+                  disabled={criando}
+                  onChange={(e) => escolher(setLugar)(e.target.value)}
+                  placeholder="ex.: Alphaville, Barueri"
+                  className="text-fluid-sm border-linha-forte bg-campo text-corpo placeholder:text-tenue focus:border-acento-linha min-h-11 w-full rounded-xl border px-3 outline-none transition-colors"
+                />
+              </label>
+            </div>
+
+            <label className="block space-y-1.5">
+              <span className="text-fluid-xs text-apoio">Estágio da obra</span>
+              <select
+                value={estagio}
+                disabled={criando}
+                onChange={(e) => escolher(setEstagio)(e.target.value as StatusObra)}
+                className="text-fluid-sm border-linha-forte bg-campo text-corpo focus:border-acento-linha min-h-11 w-full cursor-pointer rounded-xl border px-3 outline-none transition-colors"
+              >
+                {Object.entries(STATUS_LABEL).map(([chave, rotulo]) => (
+                  <option key={chave} value={chave}>
+                    {rotulo}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {fotos.length > 0 && fotos.length < 3 && (
+              <p className="text-fluid-xs text-alerta">
+                Faltam {3 - fotos.length} foto{3 - fotos.length > 1 ? "s" : ""}: com menos de
+                três planos não sai vídeo, sai slideshow — e gastaria um crédito do mesmo jeito.
+              </p>
+            )}
+          </div>
+        )}
 
         <fieldset className="space-y-1.5">
           <legend className="text-fluid-xs text-apoio mb-1.5">Objetivo</legend>
@@ -204,7 +398,7 @@ export function EstudioDeVideo({
           <button
             type="button"
             onClick={() => void ver()}
-            disabled={vendo || criando}
+            disabled={vendo || criando || !prontoParaMontar}
             aria-busy={vendo}
             className={`text-fluid-sm min-h-12 cursor-pointer rounded-xl px-4 font-medium transition-colors disabled:cursor-wait disabled:opacity-60 ${
               roteiro

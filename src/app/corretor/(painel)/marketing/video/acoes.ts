@@ -14,7 +14,9 @@ import {
 } from "@/lib/imagens/marketing";
 import { enfileirarVideo, getMeusVideos, getSaldo } from "@/lib/video/fila";
 import { duracaoTotal, montarRoteiro } from "@/lib/video/roteiro";
-import { regraDoTipo } from "@/lib/video/gramatica";
+import { regraDoTipo, type TipoDePlano } from "@/lib/video/gramatica";
+import { classificarFotos } from "@/lib/video/classificarFotos";
+import { STATUS_LABEL, type Midia, type StatusObra } from "@/lib/types";
 import type { VideoJob } from "@/lib/video/videoTipos";
 
 /**
@@ -27,6 +29,51 @@ import type { VideoJob } from "@/lib/video/videoTipos";
  * um crédito. É a mesma razão pela qual "melhorar a descrição" ficou fora do
  * teto diário da arte — o passo que evita o desperdício não pode custar.
  */
+
+
+/**
+ * De onde vêm as fotos.
+ *
+ * O catálogo continua sendo o caminho rico — ele traz `alt` descrito por visão
+ * e a ficha inteira. As fotos do corretor são o caminho que funciona para
+ * imóvel que não está cadastrado aqui, e é o que o produto precisa para
+ * atender imobiliária de fora.
+ */
+export type FotoEnviada = { url: string };
+
+export type PedidoDeVideo =
+  | { fonte: "catalogo"; slug: string; objetivo: ChaveObjetivo; canal: ChaveCanal }
+  | {
+      fonte: "minhas";
+      fotos: FotoEnviada[];
+      nome: string;
+      lugar: string;
+      estagio: StatusObra;
+      objetivo: ChaveObjetivo;
+      canal: ChaveCanal;
+    };
+
+/**
+ * Fotos enviadas viram `Midia` com `alt` SINTÉTICO, montado da classificação
+ * por visão. É esse `alt` que a gramática lê para escolher o movimento — sem
+ * ele todo plano viraria PUSH e a variedade morreria justo no caminho novo.
+ */
+function comoMidias(fotos: FotoEnviada[], tipos: TipoDePlano[]): Midia[] {
+  const ALT_POR_TIPO: Record<TipoDePlano, string> = {
+    fachada: "Fachada do empreendimento",
+    interior: "Living integrado do apartamento",
+    lazer: "Piscina e área de lazer do condomínio",
+    implantacao: "Vista aérea da implantação do condomínio",
+  };
+  return fotos.map((f, i) => ({
+    tipo: "foto" as const,
+    url: f.url,
+    alt: ALT_POR_TIPO[tipos[i] ?? "interior"],
+    largura: 0,
+    altura: 0,
+    blurDataUrl: null,
+  }));
+}
 
 export type PlanoNaTela = {
   url: string;
@@ -49,101 +96,127 @@ export type Roteiro = {
   problemas: string[];
 };
 
-function montar(params: {
-  imovel: NonNullable<Awaited<ReturnType<typeof getEmpreendimentoDoPainel>>>;
-  objetivo: ChaveObjetivo;
-  canal: ChaveCanal;
-}) {
+async function preparar(pedido: PedidoDeVideo) {
+  if (pedido.fonte === "catalogo") {
+    const imovel = await getEmpreendimentoDoPainel(pedido.slug);
+    if (!imovel) return { erro: "Imóvel não encontrado." as const };
+    const briefing = montarBriefing({
+      imovel,
+      objetivo: pedido.objetivo,
+      canal: pedido.canal,
+      publico: "familia",
+    });
+    return {
+      fotos: imovel.galeria,
+      copy: {
+        titulo: imovel.nome,
+        apoio: `${imovel.bairro}, ${imovel.cidade}`,
+        cta: briefing.objetivo.ctas[0],
+      } satisfies Copy,
+      imovelId: imovel.id ?? null,
+      imovelNome: imovel.nome,
+      imovelSlug: imovel.slug,
+    };
+  }
+
+  const nome = pedido.nome.trim();
+  if (!nome) return { erro: "Dê um nome ao imóvel." as const };
+  if (pedido.fotos.length < 3) {
+    // Menos de três planos não é vídeo, é slideshow curto — e ainda gastaria
+    // um crédito. Barrar aqui é mais honesto que entregar algo pobre.
+    return { erro: "Envie pelo menos 3 fotos." as const };
+  }
+
+  const tipos = await classificarFotos(pedido.fotos.map((f) => f.url));
   const briefing = montarBriefing({
-    imovel: params.imovel,
-    objetivo: params.objetivo,
-    canal: params.canal,
+    imovel: null,
+    objetivo: pedido.objetivo,
+    canal: pedido.canal,
     publico: "familia",
   });
-  const copy: Copy = {
-    titulo: params.imovel.nome,
-    apoio: `${params.imovel.bairro}, ${params.imovel.cidade}`,
-    cta: briefing.objetivo.ctas[0],
+  const lugar = pedido.lugar.trim();
+  return {
+    fotos: comoMidias(pedido.fotos, tipos),
+    copy: {
+      titulo: nome,
+      // Sem lugar, o apoio vira o estágio da obra: linha vazia num vídeo é
+      // buraco, e o estágio é o fato que sempre existe.
+      apoio: lugar ? `${lugar} · ${STATUS_LABEL[pedido.estagio]}` : STATUS_LABEL[pedido.estagio],
+      cta: briefing.objetivo.ctas[0],
+    } satisfies Copy,
+    imovelId: null as string | null,
+    imovelNome: nome,
+    imovelSlug: null as string | null,
   };
-  const planos = montarRoteiro({ fotos: params.imovel.galeria, objetivo: params.objetivo });
-  return { briefing, copy, planos };
 }
 
 export async function verRoteiro(
-  slug: string,
-  objetivo: ChaveObjetivo,
-  canal: ChaveCanal,
+  pedido: PedidoDeVideo,
 ): Promise<{ roteiro?: Roteiro; erro?: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
 
-  const imovel = await getEmpreendimentoDoPainel(slug);
-  if (!imovel) return { erro: "Imóvel não encontrado." };
+  const p = await preparar(pedido);
+  if ("erro" in p) return { erro: p.erro };
 
-  const { copy, planos } = montar({ imovel, objetivo, canal });
-  if (planos.length === 0) {
-    return { erro: "Este imóvel ainda não tem foto — sem foto não há vídeo." };
-  }
+  const planos = montarRoteiro({ fotos: p.fotos, objetivo: pedido.objetivo });
+  if (planos.length === 0) return { erro: "Nenhuma foto utilizável — sem foto não há vídeo." };
 
-  const c = canalPor(canal);
+  const c = canalPor(pedido.canal);
   return {
     roteiro: {
-      planos: planos.map((p) => {
-        const regra = regraDoTipo(p.tipo);
+      planos: planos.map((plano) => {
+        const regra = regraDoTipo(plano.tipo);
         return {
-          url: p.foto.url,
-          tipo: p.tipo,
+          url: plano.foto.url,
+          tipo: plano.tipo,
           rotuloTipo: regra.rotulo,
-          movimento: p.movimento,
+          movimento: plano.movimento,
           ajuda: regra.ajuda,
-          duracao: p.duracao,
-          legenda: p.legenda,
+          duracao: plano.duracao,
+          legenda: plano.legenda,
         };
       }),
       duracaoS: duracaoTotal(planos),
-      copy,
+      copy: p.copy,
       canalRotulo: c.rotulo,
       largura: c.arte.largura,
       altura: c.arte.altura,
-      problemas: problemasDaCopy(copy),
+      problemas: problemasDaCopy(p.copy),
     },
   };
 }
 
-export async function criarVideo(
-  slug: string,
-  objetivo: ChaveObjetivo,
-  canal: ChaveCanal,
-): Promise<{ erro?: string; jobId?: string }> {
+export async function criarVideo(pedido: PedidoDeVideo): Promise<{ erro?: string; jobId?: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
 
-  const imovel = await getEmpreendimentoDoPainel(slug);
-  if (!imovel) return { erro: "Imóvel não encontrado." };
+  const p = await preparar(pedido);
+  if ("erro" in p) return { erro: p.erro };
 
-  const { copy, planos } = montar({ imovel, objetivo, canal });
-  if (planos.length === 0) return { erro: "Este imóvel ainda não tem foto." };
+  const planos = montarRoteiro({ fotos: p.fotos, objetivo: pedido.objetivo });
+  if (planos.length === 0) return { erro: "Nenhuma foto utilizável." };
 
   // A régua de publicidade vale de novo aqui, e não só na montagem: entre ver
-  // o roteiro e criar o vídeo o cadastro pode ter mudado. É o serviço, não
-  // formalidade.
-  const problemas = problemasDaCopy(copy);
+  // o roteiro e criar o vídeo o cadastro (ou o texto digitado) pode ter mudado.
+  const problemas = problemasDaCopy(p.copy);
   if (problemas.length > 0) {
     return { erro: `A copy não pode ir assim: ${problemas.join("; ")}.` };
   }
 
   const r = await enfileirarVideo({
     corretorId: corretor.id,
-    empreendimentoId: imovel.id ?? null,
+    empreendimentoId: p.imovelId,
     briefing: {
-      objetivo,
-      canal,
+      objetivo: pedido.objetivo,
+      canal: pedido.canal,
       publico: "familia",
-      imovelSlug: imovel.slug,
-      imovelNome: imovel.nome,
+      fonte: pedido.fonte,
+      imovelSlug: p.imovelSlug,
+      imovelNome: p.imovelNome,
       corretorId: corretor.id,
       rodape: `${corretor.nome} · ${linkDeIndicacao(corretor.slug)}`,
-      ...copy,
+      ...p.copy,
     },
     roteiro: planos,
   });
