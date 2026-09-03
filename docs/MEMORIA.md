@@ -3558,3 +3558,41 @@ na tela de ajustes. Quem renomeasse a assistente veria a fila chamá-la pelo
 nome antigo. Virou "Responder com IA". Corolário: antes de escrever um nome
 próprio na interface, conferir se ele vem de configuração.
 
+## Cron que "agendou com sucesso" e responde 405 (03/09/2026)
+
+Ligar o aviso de espera achou um defeito que valia para duas rotas e que é
+invisível por construção.
+
+- **`net.http_post` é o verbo que as funções `configurar_*` usam** — é o mais
+  simples de assinar com o segredo do Vault. Rota que só exporta `GET`
+  responde **405 no horário agendado, para sempre**, e nada parece errado: o
+  job roda, a requisição é enviada com sucesso, e `cron.job_run_details` diz
+  "succeeded". O erro só existe na resposta, que ninguém lê.
+- `campanhas` e `followups` já tinham `export const POST = GET;` com o
+  comentário certo. `relatorio-semanal` e `quem-esta-esperando` não tinham — o
+  padrão morava no EXEMPLO de duas rotas, não numa guarda.
+- **Como se descobre:** disparar a rota à mão depois de agendar, em vez de
+  confiar no "agendado com sucesso". Medido: 432 respostas 200 em 48h (os dois
+  crons antigos) e exatamente uma 405 — a chamada de teste.
+  `select status_code, content::text from net._http_response where id = <id>`
+  é onde a verdade está; `cron.job_run_details` não serve para isto.
+- `cronAceitaPost.test.ts` cobra a regra, com `meta-ads` como exceção
+  declarada (quem a chama é o cron da VERCEL, que usa GET).
+
+### E a segunda metade: "enviados: 0" não é o mesmo que "falhou"
+
+Com o 405 corrigido, a rota devolveu `{ok:true, enviados:0, silenciosos:0}`.
+A causa não estava no cron nem no destinatário — o log de runtime da Vercel
+disse em uma linha o que três consultas não diriam:
+
+    [email] RESEND_API_KEY ausente — não enviado: "8 pessoas esperando…"
+
+Ou seja: view, rota, resolução do destinatário (pelo e-mail do LOGIN, já que
+`corretores.email` está vazio para os 8) e montagem do assunto funcionam. Falta
+só a variável de ambiente. `email.ts` falha FECHADA de propósito — loga e nunca
+lança —, então o sintoma seria eterno silêncio se ninguém lesse o log.
+
+**Ao ligar qualquer coisa que manda e-mail neste projeto, a verificação é o
+log de runtime, não o status HTTP.** 200 com `enviados: 0` é o desfecho normal
+de ambiente sem chave.
+
