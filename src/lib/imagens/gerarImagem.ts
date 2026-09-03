@@ -40,46 +40,55 @@ const URL_EDITAR = "https://api.openai.com/v1/images/edits";
 const MODELO_IMAGEM_PADRAO = "gpt-image-2";
 
 /**
- * A cláusula que toda geração leva, sem exceção e sem depender de ninguém
- * lembrar.
+ * O que o modelo pode escrever na cena — e o que ele NUNCA escreve.
  *
- * Na PRIMEIRA geração de verdade desta tela, pedida apenas uma "fachada de
- * edifício residencial", o modelo desenhou uma placa com o nome
- * **"VISTA ALTO"** na entrada do prédio. Ninguém pediu nome nenhum. É a versão
- * visual do defeito que esta base conhece de cor — o "1 suíte" para um cadastro
- * com 3, o "pronto para morar" com `em_construcao`: o que não está no pedido,
- * o modelo preenche, e preenche plausível.
+ * ## A cláusula nasceu absoluta, e a medição a abriu
  *
- * O estrago aqui é maior que uma resposta errada. Arte com nome de
- * empreendimento inventado, metragem escrita ou selo de "a partir de R$" vira
- * PROMESSA quando chega ao cliente, e quem paga a conta é o corretor na frente
- * dele. É a mesma família do acabamento inventado e do prazo de entrega.
+ * Na primeira geração de verdade desta tela o modelo desenhou uma placa com o
+ * nome **"VISTA ALTO"** numa fachada que ninguém batizou. A reação foi proibir
+ * todo texto — o que resolveu a invenção e custou uma capacidade real.
  *
- * Mora AQUI, e não no prompt da receita nem numa instrução ao motor de texto,
- * pelo motivo mais repetido deste projeto: **instrução é probabilística e
- * falha justo no caso que importa; código vale sempre.** Este é o ponto único
- * por onde os dois caminhos passam (criação e edição), então nenhum chamador
- * novo pode esquecer — a mesma razão de `normalizarTelefoneBr` morar no
- * `provider.ts`.
+ * Medido em 03/09/2026, quatro renders com texto em português pedido
+ * literalmente: **acento correto em 4 de 4** (ç, é, ã), inclusive na qualidade
+ * Rápida a R$ 0,027. Texto literal em 3 de 4 — uma trocou "o" por "O". Ou
+ * seja: o modelo escreve português bem, mas trata o texto como sugestão
+ * forte, não como literal.
  *
- * Vale inclusive para "fundo de post": modelo de imagem escreve texto torto, e
- * o corretor põe a chamada por cima na ferramenta dele. Imagem sem letra é uma
- * base melhor que imagem com letra errada.
+ * ## Daí o recorte
+ *
+ * `textoNaCena` permite o que o corretor DIGITOU, e só isso. O que ele não
+ * digitou continua proibido — é a invenção que a cláusula veio impedir, e ela
+ * não deixou de existir por o modelo saber escrever.
+ *
+ * O que precisa ser EXATO nunca vem por aqui: a ressalva legal de imagem
+ * ilustrativa, o link e o telefone são compostos por código em `compor.ts`,
+ * com fonte de verdade. Três em quatro é ótimo para uma manchete e inaceitável
+ * para um número de telefone.
  */
-const SEM_TEXTO_NA_ARTE =
+const SEM_TEXTO_ALGUM =
   "Não escreva nada na imagem: sem texto, letras, números, placas, letreiros, " +
   "logotipos, marcas, selos de preço ou marca d'água. Nenhuma superfície da " +
   "cena deve conter escrita.";
+
+function soOTextoPedido(texto: string): string {
+  return (
+    `A ÚNICA escrita permitida na imagem é exatamente esta, com a grafia e os ` +
+    `acentos idênticos: "${texto}". Reproduza caractere por caractere, sem ` +
+    `traduzir, sem reescrever e sem mudar maiúsculas. Nenhuma outra palavra, ` +
+    `placa, letreiro, logotipo, marca ou selo de preço pode aparecer.`
+  );
+}
 
 /**
  * O prompt que de fato vai para o provedor.
  *
  * Exportada para ser testável sem rede: a garantia que interessa é que NENHUM
- * caminho chegue ao provedor sem a cláusula, e isso se prova em teste, não
- * olhando a tela.
+ * caminho chegue ao provedor sem uma das duas cláusulas, e isso se prova em
+ * teste, não olhando a tela.
  */
-export function promptFinal(pedido: string): string {
-  return `${pedido.trim()} ${SEM_TEXTO_NA_ARTE}`;
+export function promptFinal(pedido: string, textoNaCena?: string | null): string {
+  const texto = textoNaCena?.trim();
+  return `${pedido.trim()} ${texto ? soOTextoPedido(texto) : SEM_TEXTO_ALGUM}`;
 }
 
 /**
@@ -130,6 +139,12 @@ export type PedidoDeImagem = {
   largura: number;
   altura: number;
   qualidade: ChaveQualidade;
+  /**
+   * O texto que o corretor digitou para aparecer DENTRO da cena. Vazio ou
+   * ausente mantém a proibição total — o padrão continua sendo a arte sem
+   * escrita, com a copy composta por cima.
+   */
+  textoNaCena?: string | null;
   timeoutMs?: number;
 };
 
@@ -167,7 +182,10 @@ export async function gerarImagem(pedido: PedidoDeImagem): Promise<ResultadoImag
   const tamanho = `${pedido.largura}x${pedido.altura}`;
   // A partir daqui ninguém mais vê o texto cru: os dois caminhos abaixo leem
   // deste objeto, então a cláusula não tem como ser pulada por um deles.
-  const comClausula: PedidoDeImagem = { ...pedido, prompt: promptFinal(pedido.prompt) };
+  const comClausula: PedidoDeImagem = {
+    ...pedido,
+    prompt: promptFinal(pedido.prompt, pedido.textoNaCena),
+  };
   const controle = new AbortController();
   const alarme = setTimeout(() => controle.abort(), pedido.timeoutMs ?? TIMEOUT_PADRAO_MS);
 

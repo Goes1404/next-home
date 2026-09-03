@@ -51,11 +51,35 @@ describe("receitas", () => {
 });
 
 describe("a cláusula anti-invenção", () => {
-  it("entra em toda geração, inclusive na receita livre", () => {
+  it("sem texto pedido, proíbe TODA escrita — inclusive na receita livre", () => {
     for (const r of RECEITAS) {
       const final = promptFinal(montarPedido("uma varanda", r));
       expect(final.toLowerCase(), r.chave).toContain("não escreva nada na imagem");
       expect(final.toLowerCase(), r.chave).toContain("letreiros");
+    }
+  });
+
+  it("com texto pedido, permite SÓ ele e segue proibindo o resto", () => {
+    /*
+     * A cláusula abriu depois da medição de 03/09: acento correto em 4 de 4
+     * renders. Mas o que o corretor NÃO digitou continua proibido — a placa
+     * "VISTA ALTO" que o modelo inventou é o defeito que a cláusula existe
+     * para impedir, e ele não sumiu por o modelo saber escrever português.
+     */
+    const final = promptFinal("uma fachada", "Conheça o decorado");
+    expect(final).toContain('"Conheça o decorado"');
+    expect(final.toLowerCase()).toContain("única escrita permitida");
+    expect(final.toLowerCase()).toContain("nenhuma outra palavra");
+    // E o pedido literal precisa ser explícito, senão o modelo reescreve.
+    expect(final.toLowerCase()).toMatch(/caractere por caractere|id[êe]nticos/);
+  });
+
+  it("texto vazio ou só espaço volta a proibir tudo", () => {
+    // Campo em branco não pode virar "pode escrever o que quiser".
+    for (const vazio of ["", "   ", null, undefined]) {
+      expect(promptFinal("uma varanda", vazio).toLowerCase()).toContain(
+        "não escreva nada na imagem",
+      );
     }
   });
 
@@ -73,16 +97,34 @@ describe("a cláusula anti-invenção", () => {
    * imagem chega bonita na tela, e só o cliente vê o nome de um
    * empreendimento que não existe.
    */
+  it("a ressalva legal nunca depende do modelo — ela é composta por código", () => {
+    /*
+     * Três em quatro renders literais é ótimo para uma manchete e inaceitável
+     * para um aviso legal. A ressalva de imagem ilustrativa vive em
+     * `marketing.ts` e é desenhada por `compor.ts` com fonte de verdade.
+     */
+    const compor = readFileSync(join(process.cwd(), "src/lib/imagens/compor.ts"), "utf8");
+    expect(compor).toMatch(/RESSALVA/);
+    const motor = readFileSync(join(process.cwd(), "src/lib/imagens/gerarImagem.ts"), "utf8");
+    expect(motor).not.toMatch(/meramente ilustrativa/i);
+  });
+
   it("nenhum caminho manda o prompt cru ao provedor", () => {
     const fonte = readFileSync(join(process.cwd(), "src/lib/imagens/gerarImagem.ts"), "utf8")
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/^\s*\/\/.*$/gm, "");
 
-    // Depois de montado o objeto com a cláusula, `pedido.prompt` não pode mais
-    // ser lido por ninguém. O corte é DEPOIS da linha que monta o objeto — ela
-    // é a única que pode (e deve) ler o texto cru.
+    /*
+     * A montagem do objeto é a ÚNICA que pode ler o texto cru — então ela sai
+     * inteira antes da checagem, e o que sobra não pode conter `pedido.prompt`.
+     *
+     * Cortar "até a primeira quebra de linha" já falhou aqui: bastou a
+     * construção virar multilinha para a guarda acusar código correto. Terceira
+     * vez que uma guarda desta base tropeça na FORMATAÇÃO do que ela lê.
+     */
     const montagem = fonte.indexOf("const comClausula");
-    const depois = fonte.slice(fonte.indexOf("\n", montagem));
+    const fimDaMontagem = fonte.indexOf("};", montagem) + 2;
+    const depois = fonte.slice(fimDaMontagem);
     expect(depois).not.toMatch(/pedido\.prompt/);
 
     // E os dois caminhos precisam ler do objeto tratado.
