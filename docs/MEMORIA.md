@@ -4076,3 +4076,46 @@ Dois defeitos empilhados, e o segundo escondia o primeiro.
   `target: production` saem de `claude/modernizar-plataforma-imobiliaria-2tm13q`,
   e `main` está no mesmo commit. A regra de conferir antes de afirmar "está no
   ar" continua valendo — foi conferindo que se soube.
+
+## O vídeo entrava na fila e ninguém o chamava (03/09/2026)
+
+- **`video_jobs` com `tentativas = 0` é a assinatura de "ninguém tentou".**
+  Um vídeo pedido às 14h15 nunca renderizou, e a leitura fácil seria culpar o
+  render. O job estava `pendente`, sem trava, com zero tentativas: não houve
+  falha, houve AUSÊNCIA. `criarVideo` inseria na fila e encerrava; o workflow
+  do GitHub Actions só aceitava acionamento manual e tinha **zero execuções
+  na vida**. Quinto caso do padrão "construído e nunca ligado" desta base.
+- **O elo que faltava já existia em outro lugar do projeto.**
+  `whatsapp/autoDisparo.ts` ("acender o pavio") faz exatamente isto para a
+  campanha desde agosto: `after()` para não segurar a resposta, falha FECHADA
+  sem a variável de ambiente, timeout curto, chamada sem `await`. Antes de
+  escrever integração nova, procurar quem já resolve a mesma forma.
+- **Acionamento direto e rede de segurança são papéis DIFERENTES, e a
+  distinção precisa estar no código.** O `workflow_dispatch` dá segundos; o
+  `schedule` de hora em hora existe porque o acionamento tem ponto único de
+  falha (token expirado, GitHub fora, env var perdida num redeploy) e o
+  sintoma é SILÊNCIO. A guarda reprova cron mais frequente que a hora cheia:
+  intervalo curto é sinal de que alguém passou a contar com o schedule em vez
+  do acionamento, e aí o vídeo volta a demorar por desenho.
+- **A branch padrão deste repositório NÃO é `main`** — é
+  `claude/modernizar-plataforma-imobiliaria-2tm13q`, a mesma de produção. Isso
+  tem consequência prática que quase virou defeito: **o GitHub só roda
+  `schedule` a partir da branch padrão**, então a `ref` do acionamento direto
+  precisa ser a MESMA, senão os dois caminhos executam versões diferentes do
+  worker — e a divergência só apareceria num render errado que ninguém saberia
+  explicar. Conferir com `git remote show origin | grep "HEAD branch"`, não
+  presumir `main`.
+- **Guarda que protege decisão de produto deve ser REESCRITA, nunca apagada.**
+  `worker.test.ts` afirmava que o `schedule` estava desligado ("ligar é decisão
+  de produto, depois do portão da F0"). Quando a decisão mudou, a guarda
+  cumpriu o papel dela: obrigou a reversão a ser explícita em vez de
+  silenciosa. O comentário novo registra o que mudou e por quê, para a próxima
+  pessoa não achar que foi afrouxamento por conveniência.
+- **Ao provocar uma guarda, conferir que a mordida ALTEROU o arquivo.** Já
+  houve provocação nesta base que não mudou nada e fez a guarda parecer
+  aprovada. O laço de provocação desta rodada compara o md5 antes e depois e
+  recusa a mordida que não muda o arquivo.
+- **O que continua sem prova:** o render em si nunca rodou de ponta a ponta.
+  Os secrets `SUPABASE_SECRET_KEY` e `NEXT_PUBLIC_SUPABASE_URL` do GitHub
+  nunca foram exercitados — como o workflow tinha zero execuções, ninguém sabe
+  se existem. É o candidato nº 1 a falhar na primeira execução real.
