@@ -67,26 +67,59 @@ describe("a mensagem do bot precisa sobreviver à telemetria", () => {
     ["webhook", WEBHOOK],
     ["follow-up", FOLLOWUPS],
   ] as const) {
-    it(`no ${nome}, o vínculo vem DEPOIS de registrarInteracao`, () => {
+    /*
+     * As duas guardas abaixo verificam a ordem DENTRO de cada função que
+     * envia, nunca por posição global do arquivo.
+     *
+     * A versão antiga media `lastIndexOf("registrarInteracao({")` contra
+     * `indexOf("vincularInteracaoNaMensagem(")` — o ÚLTIMO registro contra o
+     * PRIMEIRO vínculo. Com um caminho de envio por arquivo funcionava por
+     * sorte; quando o runner de follow-ups ganhou um segundo (a varredura de
+     * respostas atrasadas, 03/09/2026), ela passou a parear a telemetria de
+     * um caminho com o vínculo do outro e reprovou código correto. Sexta vez
+     * que uma guarda de código-fonte deste projeto tropeça no próprio recorte.
+     *
+     * Recortar por função é o que torna a guarda verdadeira com N caminhos:
+     * cada um responde pela própria ordem.
+     */
+    const funcoesDe = (texto: string): string[] =>
+      texto
+        .split(/\n(?=(?:export )?(?:async )?function )/)
+        .filter((f) => f.includes("registrarInteracao({") || f.includes("vincularInteracaoNaMensagem("));
+
+    it(`no ${nome}, todo vínculo vem DEPOIS da telemetria, na mesma função`, () => {
       // A ordem é a regra inteira: a FK exige que a linha de telemetria
       // exista antes de a mensagem apontar para ela.
-      const telemetria = arquivo.lastIndexOf("registrarInteracao({");
-      const vinculo = arquivo.indexOf("vincularInteracaoNaMensagem(");
-      expect(telemetria).toBeGreaterThan(-1);
-      expect(vinculo).toBeGreaterThan(telemetria);
+      const comVinculo = funcoesDe(arquivo).filter((f) =>
+        f.includes("vincularInteracaoNaMensagem("),
+      );
+      expect(comVinculo.length).toBeGreaterThan(0);
+      for (const f of comVinculo) {
+        const vinculo = f.indexOf("vincularInteracaoNaMensagem(");
+        // Algum registrarInteracao ANTES deste vínculo — não o primeiro da
+        // função, que no webhook é o do silêncio.
+        expect(f.lastIndexOf("registrarInteracao({", vinculo)).toBeGreaterThan(-1);
+      }
     });
 
-    it(`no ${nome}, a mensagem é gravada ANTES da telemetria`, () => {
+    it(`no ${nome}, quem envia grava a mensagem ANTES da telemetria`, () => {
       /*
        * Gravar no fim seria mais simples e é a troca errada: se a função
        * estourar o tempo no dossiê (12s) ou num aviso ao corretor, a
        * conversa precisa já estar salva. Perder o vínculo custa uma
        * avaliação; perder a mensagem custa o contexto de toda a conversa.
+       *
+       * Só as funções que GRAVAM fala do bot entram: o webhook também
+       * registra silêncio (bot pausado, travado) e ali não há mensagem
+       * nenhuma para gravar antes.
        */
-      const gravacao = arquivo.indexOf('remetente: "bot"');
-      const telemetria = arquivo.lastIndexOf("registrarInteracao({");
-      expect(gravacao).toBeGreaterThan(-1);
-      expect(gravacao).toBeLessThan(telemetria);
+      const queGravam = funcoesDe(arquivo).filter((f) => f.includes('remetente: "bot"'));
+      expect(queGravam.length).toBeGreaterThan(0);
+      for (const f of queGravam) {
+        // A telemetria DO ENVIO é a última da função: o webhook é uma função
+        // só e as primeiras são as de silêncio, onde não há o que gravar.
+        expect(f.indexOf('remetente: "bot"')).toBeLessThan(f.lastIndexOf("registrarInteracao({"));
+      }
     });
   }
 });

@@ -19,9 +19,15 @@ import {
   destravarDisparo,
   ultimaFalaDoCorretor,
   marcarConversaComoAtendimento,
+  motivoDoSilencio,
 } from "@/lib/whatsapp/repositorio";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
+import { separarRajada } from "@/lib/whatsapp/rajada";
+import {
+  decidirRespostaAtrasada,
+  instrucaoDaRespostaAtrasada,
+} from "@/lib/whatsapp/respostaAtrasada";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -42,6 +48,23 @@ export const maxDuration = 60;
  */
 
 const MAX_POR_TIQUE = 10;
+
+/**
+ * Quantas respostas atrasadas por tique.
+ *
+ * Dois, e o limite é de TEMPO, não de anti-ban: cada uma custa uma chamada
+ * do agente (teto de 20s) mais os envios, e esta função tem 60s. Os
+ * follow-ups rodam na mesma invocação.
+ *
+ * Com o cron de 5 em 5 minutos, dois por tique dá 24 por hora — as 17
+ * conversas represadas saem em menos de uma hora, e sem rajada: os envios
+ * ficam naturalmente a minutos de distância, muito acima da faixa de
+ * 35-75s que a proteção do número pede.
+ */
+const MAX_RESPOSTAS_ATRASADAS = 2;
+
+/** Margem para não estourar os 60s da função no meio de um envio. */
+const ORCAMENTO_VARREDURA_MS = 30_000;
 
 function segredoConfere(recebido: string, esperado: string): boolean {
   const a = Buffer.from(recebido);
@@ -143,6 +166,232 @@ async function agendarLembretesDeVisita(
   return agendados;
 }
 
+/**
+ * A varredura das respostas que o webhook DESCARTOU.
+ *
+ * ## Por que ela existe
+ *
+ * A pausa humana não adia a mensagem do cliente — ela a joga fora. O
+ * webhook é o único gatilho do atendimento; quando decide "pausado", a
+ * mensagem morre ali, e quando a pausa vence nada volta para respondê-la.
+ * Medido em 03/09/2026: 17 conversas com lead real esperando de 22 a 52
+ * horas, 7 delas com o bot já liberado havia horas. Ver `respostaAtrasada.ts`.
+ *
+ * ## Por que mora AQUI, e não num cron próprio
+ *
+ * Porque este cron já roda. Quatro recursos desta base subiram completos e
+ * produziram zero linhas por falta de agendamento — o relatório semanal
+ * ficou pronto e nunca foi agendado, e os dois crons de e-mail foram
+ * desligados depois. Aplicar migration não liga nada; `configurar_*`
+ * precisa ser CHAMADA. Pendurar numa varredura provada (2.719 execuções sem
+ * falha) tira esse passo do caminho.
+ *
+ * ## Por que ANTES da janela de horário
+ *
+ * Decisão que este projeto já tomou, no webhook: "responder quem nos
+ * escreveu não passa por cota nem por janela de horário — deixá-lo no vácuo
+ * é pior para o número do que responder de madrugada". A conversa foi
+ * iniciada pelo CLIENTE; isto é resposta, não propaganda.
+ *
+ * Chamá-la depois do `dentroDaJanela` faria ela herdar aquela saída
+ * antecipada e contradizer a regra — exatamente o defeito do aviso de
+ * queda, que ficou pendurado no caminho feliz do disparador e por isso não
+ * disparava justamente quando o disjuntor abria.
+ */
+async function varrerRespostasAtrasadas(
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<{ respondidas: number; puladas: number }> {
+  const comecou = Date.now();
+  const saldo = { respondidas: 0, puladas: 0 };
+
+  /*
+   * A MESMA view da fila do Início (0087). Usar outra fonte faria a tela
+   * dizer que alguém espera enquanto o bot já teria respondido — duas
+   * contas do mesmo número divergem, e esta decide quem é atendido.
+   *
+   * Ela já recorta o que importa: última fala é do cliente, tem lead, e é
+   * ATENDIMENTO (liberada, cliente conhecido ou campanha). O que ela não
+   * sabe é se o bot pode falar agora — isso é `motivoDoSilencio`, abaixo.
+   */
+  const { data: esperando } = await supabase
+    .from("whatsapp_esperando_resposta")
+    .select("conversa_id, corretor_id, lead_id, telefone_cliente, esperando_desde")
+    .order("esperando_desde", { ascending: true })
+    .limit(20);
+
+  for (const linha of esperando ?? []) {
+    if (saldo.respondidas >= MAX_RESPOSTAS_ATRASADAS) break;
+    if (Date.now() - comecou > ORCAMENTO_VARREDURA_MS) break;
+    if (!linha.conversa_id || !linha.corretor_id || !linha.esperando_desde) continue;
+
+    const decisao = decidirRespostaAtrasada({ esperandoDesde: linha.esperando_desde });
+    if (!decisao.responder) {
+      saldo.puladas++;
+      continue;
+    }
+
+    const desfecho = await responderAtrasada(supabase, {
+      conversaId: linha.conversa_id,
+      corretorId: linha.corretor_id,
+      horas: decisao.horas,
+    });
+    if (desfecho === "respondida") saldo.respondidas++;
+    else saldo.puladas++;
+  }
+
+  return saldo;
+}
+
+async function responderAtrasada(
+  supabase: ReturnType<typeof createServiceClient>,
+  params: { conversaId: string; corretorId: string; horas: number },
+): Promise<"respondida" | "pulada"> {
+  const { data: conversa } = await supabase
+    .from("whatsapp_conversas")
+    .select(
+      "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido",
+    )
+    .eq("id", params.conversaId)
+    .maybeSingle();
+  if (!conversa) return "pulada";
+
+  /*
+   * A MESMA função que o webhook usa para decidir o silêncio. É o que
+   * garante que a varredura nunca fale onde o webhook calaria — se ela
+   * tivesse régua própria, uma conversa pausada de propósito poderia ser
+   * respondida por aqui, que é o pior desfecho possível: o bot por cima do
+   * humano que está atendendo.
+   */
+  const silencio = motivoDoSilencio({
+    id: conversa.id,
+    leadId: conversa.lead_id,
+    telefoneCliente: conversa.telefone_cliente,
+    botAtivo: conversa.bot_ativo,
+    pausadoHumanoAte: conversa.pausado_humano_ate,
+    liberadoPorPalavraChave: conversa.liberado_por_palavra_chave,
+    clienteConhecido: conversa.cliente_conhecido ?? false,
+    eTeste: conversa.e_teste,
+    origem: conversa.origem,
+  });
+  if (silencio) return "pulada";
+
+  const { data: instancia } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, conectado_em, bloqueado_ate")
+    .eq("corretor_id", params.corretorId)
+    .maybeSingle();
+  if (!instancia || !instancia.conectado_em) return "pulada";
+  if (instancia.bloqueado_ate && new Date(instancia.bloqueado_ate) > new Date()) return "pulada";
+
+  const decisaoModo = decidirPorModo(
+    instancia.modo_bot as "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado",
+    {
+      ultimaFalaCorretorEm:
+        instancia.modo_bot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
+    },
+  );
+  if (!decisaoModo.pode) return "pulada";
+
+  const { data: corretor } = await supabase
+    .from("corretores")
+    .select("nome, creci, whatsapp, slug")
+    .eq("id", instancia.corretor_id)
+    .single();
+  if (!corretor) return "pulada";
+
+  const [catalogo, historicoCompleto, dossie] = await Promise.all([
+    getEmpreendimentos().catch(() => []),
+    historicoRecente(conversa.id),
+    conversa.lead_id ? buscarDossieAtual(conversa.lead_id) : Promise.resolve(null),
+  ]);
+
+  /*
+   * Os balões que ficaram sem resposta são exatamente o que `separarRajada`
+   * chama de pendentes — ela corta o histórico na última fala nossa. Aqui
+   * isso não é otimização: sem separar, as perguntas do cliente entrariam
+   * no meio do histórico, indistinguíveis de fala de ontem, e a IA
+   * responderia só a última. É a mesma correção da v16 do prompt.
+   */
+  const { historico, pendentes } = separarRajada(historicoCompleto);
+  // A view garante que a última fala é do cliente; lista vazia aqui só
+  // aconteceria numa corrida com o webhook. Não inventar resposta.
+  if (pendentes.length === 0) return "pulada";
+
+  const turno = await executarTurnoDeAtendimento({
+    identidade: {
+      nomeCorretor: corretor.nome,
+      slugCorretor: corretor.slug ?? undefined,
+      creciCorretor: corretor.creci,
+      telefoneCorretor: corretor.whatsapp,
+      nomeAssistente: instancia.nome_assistente,
+      tomVoz: instancia.tom_voz,
+    },
+    catalogo,
+    historico,
+    dossie,
+    vezDoCliente: pendentes,
+    instrucaoExtra: instrucaoDaRespostaAtrasada({ horas: params.horas }),
+  });
+
+  // Contingência não vira mensagem: o cliente já esperou horas, e receber
+  // "estou verificando e já te respondo" depois disso é pior que o silêncio
+  // — ele esperaria de novo. Fica para o próximo tique.
+  if (turno.resposta.meta.fallback) return "pulada";
+
+  const baloes = turno.baloes.length > 0 ? turno.baloes : [turno.resposta.textoResposta];
+  let idDoPrimeiro: string | undefined;
+  let todosEnviados = true;
+
+  for (let i = 0; i < baloes.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 900 + Math.floor(Math.random() * 800)));
+    const envio = await enviarMensagemWhatsapp({
+      instanceName: instancia.instance_name,
+      telefone: conversa.telefone_cliente,
+      texto: baloes[i],
+    });
+    if (!envio.enviado) todosEnviados = false;
+    if (i === 0) idDoPrimeiro = envio.messageId;
+  }
+
+  await registrarResultadoEnvio(instancia.id, todosEnviados);
+  /*
+   * Nada de marcar "já respondida" em lugar nenhum: assim que o balão é
+   * gravado, a última fala da conversa deixa de ser do cliente e a view
+   * para de devolvê-la. O critério de parada é o próprio dado, não um
+   * contador que poderia divergir dele.
+   *
+   * Se o envio falhar, a conversa volta no tique seguinte — e é o
+   * disjuntor de falhas seguidas que impede a insistência infinita.
+   */
+  if (!todosEnviados) return "pulada";
+
+  const interacaoId = crypto.randomUUID();
+  const mensagemDoBot = await gravarMensagem({
+    conversaLiberada: true,
+    conversaId: conversa.id,
+    remetente: "bot",
+    conteudo: turno.resposta.textoResposta,
+    providerMessageId: idDoPrimeiro ?? null,
+    statusEntrega: idDoPrimeiro ? "enviada" : null,
+  });
+
+  await registrarInteracao({
+    id: interacaoId,
+    conversaId: conversa.id,
+    corretorId: instancia.corretor_id,
+    origem: "webhook",
+    eTeste: conversa.e_teste,
+    promptVersao: PROMPT_VERSAO,
+    acao: "respondida",
+    modelo: turno.resposta.meta.modelo,
+    latenciaMs: turno.resposta.meta.latenciaMs,
+    fallback: false,
+  });
+  if (mensagemDoBot.id) await vincularInteracaoNaMensagem(mensagemDoBot.id, interacaoId);
+
+  return "respondida";
+}
+
 export async function GET(req: NextRequest) {
   if (!requisicaoAutenticada(req)) {
     return NextResponse.json({ ok: false, error: "Não autorizado." }, { status: 401 });
@@ -151,11 +400,20 @@ export async function GET(req: NextRequest) {
   const supabase = createServiceClient();
   const resultado = { processados: 0, enviados: 0, descartados: 0 };
 
+  /*
+   * ANTES da janela de propósito. Isto é RESPOSTA a quem nos escreveu, não
+   * disparo nosso — e a regra desta casa, escrita no webhook, é que
+   * responder quem escreveu não passa por cota nem por horário comercial.
+   * Pôr a varredura depois do `return` abaixo a faria calar das 21h às 9h
+   * justamente para quem já esperou a noite inteira.
+   */
+  const atrasadas = await varrerRespostasAtrasadas(supabase);
+
   // Fora do horário comercial nada sai — e nada é descartado: o item
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -181,7 +439,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "descartado") resultado.descartados++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas });
   } finally {
     await destravarDisparo("followups", dono);
   }
