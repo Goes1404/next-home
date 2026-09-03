@@ -2,13 +2,15 @@
 
 import { useState, useTransition } from "react";
 import type { CorretorAdmin } from "@/lib/corretorSessao";
-import { Check, Copy, KeyRound, ShieldCheck, TriangleAlert, UserPlus } from "lucide-react";
+import { Check, Copy, KeyRound, ShieldCheck, TriangleAlert, UserPlus, Users } from "lucide-react";
 import {
   alterarPapelCorretor,
   alternarAtivoCorretor,
   criarAcessoCorretor,
+  criarAcessosQueFaltam,
   redefinirSenhaCorretor,
 } from "../acoes";
+import type { ResultadoLoteAcessos } from "../acoes";
 
 /**
  * Contas de acesso da equipe.
@@ -239,6 +241,86 @@ function LinhaCorretor({
   );
 }
 
+/**
+ * As credenciais do lote, mostradas UMA vez — mesma regra do cartão avulso.
+ *
+ * Uma lista e não N cartões: o gestor vai mandar tudo de uma vez, e um botão
+ * de copiar por pessoa transformaria seis envios em doze cliques. O texto
+ * copiado sai pronto para colar no WhatsApp, uma pessoa por bloco.
+ */
+function CartaoLote({ lote, aoFechar }: { lote: ResultadoLoteAcessos; aoFechar: () => void }) {
+  const [copiado, setCopiado] = useState(false);
+  const origem = typeof window !== "undefined" ? window.location.origin : "";
+
+  const texto = lote.criados
+    .map(
+      (c) =>
+        `${c.nome}\nSite: ${origem}/corretor/entrar\nE-mail: ${c.email}\nSenha provisória: ${c.senha}`,
+    )
+    .join("\n\n");
+
+  return (
+    <div className="border-ok-linha bg-ok-lavado mb-6 rounded-2xl border p-5">
+      <h3 className="text-fluid-sm flex items-center gap-2 font-bold text-titulo">
+        <Check className="h-4 w-4 text-ok" /> {lote.criados.length} acesso
+        {lote.criados.length === 1 ? "" : "s"} criado{lote.criados.length === 1 ? "" : "s"}
+      </h3>
+      <p className="text-fluid-xs mt-1 text-corpo">
+        Copie e mande para cada pessoa agora — <strong>estas senhas não aparecem de novo</strong>.
+        No primeiro acesso o sistema pede para trocar.
+      </p>
+
+      {lote.criados.length > 0 && (
+        <ul className="text-fluid-sm bg-superficie border-linha mt-3 space-y-2 rounded-xl border p-3">
+          {lote.criados.map((c) => (
+            <li key={c.email} className="border-linha border-b pb-2 last:border-0 last:pb-0">
+              <p className="font-medium text-titulo">{c.nome}</p>
+              <p className="text-corpo break-all">{c.email}</p>
+              <p className="font-mono font-bold text-acento-suave">{c.senha}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {lote.falhas.length > 0 && (
+        <div className="border-alerta-linha bg-alerta-lavado mt-3 rounded-xl border p-3">
+          <p className="text-fluid-xs font-medium text-titulo">Ficaram de fora:</p>
+          <ul className="text-fluid-xs text-corpo mt-1 space-y-1">
+            {lote.falhas.map((f) => (
+              <li key={f.nome}>
+                <strong>{f.nome}</strong> — {f.motivo}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {lote.criados.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(texto);
+              setCopiado(true);
+              setTimeout(() => setCopiado(false), 2500);
+            }}
+            className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor"
+          >
+            <Copy className="h-4 w-4" /> {copiado ? "Copiado!" : "Copiar todos os acessos"}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={aoFechar}
+          className="text-fluid-xs border-linha-forte text-corpo flex min-h-11 cursor-pointer items-center rounded-lg border px-4"
+        >
+          Já enviei, fechar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ContasManager({
   corretores,
   meuId,
@@ -247,6 +329,8 @@ export function ContasManager({
   meuId: string;
 }) {
   const [credencial, setCredencial] = useState<Credencial | null>(null);
+  const [lote, setLote] = useState<ResultadoLoteAcessos | null>(null);
+  const [criandoLote, iniciarLote] = useTransition();
   const [aviso, setAviso] = useState<{ msg: string; erro: boolean } | null>(null);
 
   const semAcesso = corretores.filter((c) => !c.temLogin).length;
@@ -256,6 +340,8 @@ export function ContasManager({
       {credencial && (
         <CartaoCredencial cred={credencial} aoFechar={() => setCredencial(null)} />
       )}
+
+      {lote && <CartaoLote lote={lote} aoFechar={() => setLote(null)} />}
 
       {aviso && aviso.msg && (
         <p
@@ -272,12 +358,37 @@ export function ContasManager({
       {semAcesso > 0 && (
         <div className="border-alerta-linha bg-alerta-lavado mb-5 flex items-start gap-2 rounded-2xl border p-4">
           <TriangleAlert className="text-alerta mt-0.5 h-4 w-4 shrink-0" />
-          <p className="text-fluid-xs text-corpo">
-            <strong className="text-titulo">
-              {semAcesso} pessoa{semAcesso === 1 ? "" : "s"} sem acesso ao painel.
-            </strong>{" "}
-            Elas aparecem no site e podem receber leads, mas não conseguem entrar para atender.
-          </p>
+          <div>
+            <p className="text-fluid-xs text-corpo">
+              <strong className="text-titulo">
+                {semAcesso} pessoa{semAcesso === 1 ? "" : "s"} sem acesso ao painel.
+              </strong>{" "}
+              Elas aparecem no site e podem receber leads, mas não conseguem entrar para atender.
+            </p>
+            {/*
+             * O botão mora DENTRO do aviso: a régua da casa é que o cartão só
+             * aparece quando há pendência, e um botão permanente para uma ação
+             * que quase sempre não tem o que fazer vira ruído no topo da tela.
+             */}
+            <button
+              type="button"
+              disabled={criandoLote}
+              onClick={() =>
+                iniciarLote(async () => {
+                  const r = await criarAcessosQueFaltam();
+                  if (r.erro) return setAviso({ msg: r.erro, erro: true });
+                  setAviso(null);
+                  setLote(r);
+                })
+              }
+              className="text-fluid-xs bg-acento hover:bg-acento-hover mt-3 flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor disabled:opacity-60"
+            >
+              <Users className="h-4 w-4" />
+              {criandoLote
+                ? "Criando…"
+                : `Criar acesso para ${semAcesso === 1 ? "essa pessoa" : `as ${semAcesso}`}`}
+            </button>
+          </div>
         </div>
       )}
 

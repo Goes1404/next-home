@@ -1,5 +1,7 @@
 import "server-only";
 
+import { ehEmailDeAcesso } from "@/lib/corretores/credenciaisIniciais";
+
 /**
  * O único caminho de e-mail do projeto.
  *
@@ -33,7 +35,11 @@ const REMETENTE_PADRAO = "Next Home <avisos@nexthomeimobiliaria.com.br>";
 
 export type ResultadoEmail =
   | { enviado: true; id: string | null }
-  | { enviado: false; motivo: "sem_chave" | "sem_destinatario" | "recusado" | "rede"; detalhe?: string };
+  | {
+      enviado: false;
+      motivo: "sem_chave" | "sem_destinatario" | "endereco_de_acesso" | "recusado" | "rede";
+      detalhe?: string;
+    };
 
 export interface Email {
   para: string;
@@ -50,6 +56,23 @@ export async function enviarEmail(email: Email): Promise<ResultadoEmail> {
 
   if (!email.para?.includes("@")) {
     return { enviado: false, motivo: "sem_destinatario" };
+  }
+
+  /*
+   * Endereço de ACESSO ao painel não é caixa de mensagem — e o domínio é de
+   * TERCEIRO (`nexthome.com` resolve para 72.20.123.54). Sem esta recusa, no
+   * dia em que alguém religar os crons de e-mail, o aviso de queda do número
+   * e o relatório semanal do gestor sairiam para um estranho, com contagem
+   * de lead e retrato da operação dentro.
+   *
+   * Recusa em vez de lançar: o chamador está no meio de um ciclo de disparo,
+   * mesmo contrato de falha fechada do resto desta função.
+   */
+  if (ehEmailDeAcesso(email.para)) {
+    console.warn(
+      `[email] destinatário é endereço de acesso ao painel, não enviado: "${email.assunto}" para ${email.para}`,
+    );
+    return { enviado: false, motivo: "endereco_de_acesso" };
   }
 
   if (!chave) {

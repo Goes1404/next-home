@@ -3948,3 +3948,49 @@ diagnóstico é a parte que vale.
   (`for (const nome of arquivos)`) passou a sombrear o parâmetro e a busca
   virou `function public.<arquivo>.sql(`. Onze testes vermelhos de uma vez —
   barulhento, ao contrário das falhas caladas que esta guarda persegue.
+
+## Acesso em lote para a equipe (0095, 03/09/2026)
+
+- **A coluna é `whatsapp`, não `telefone`**, e é NOT NULL: os 8 corretores
+  têm número, todos com 13 dígitos. Vale conferir o schema antes de aceitar
+  uma premissa que soa óbvia — a primeira consulta desta sessão morreu em
+  `column c.telefone does not exist`.
+- **Quase tudo já existia e ninguém tinha reparado.** `criarAcessoCorretor`
+  gera slug antes do login, usa `email_confirm: true`, vincula, grava
+  `admin_eventos` e apaga o usuário do Auth se o vínculo falhar; e
+  `deve_trocar_senha` já força `/corretor/senha` no primeiro login
+  (`actions.ts:67`). O que faltava era só o lote e a regra da credencial.
+  **Antes de construir "senha temporária", procurar se o mecanismo já está
+  lá** — aqui estava, inteiro.
+- **E-mail derivado do TELEFONE colidiria**, e o dado mostrou: "Eduardo
+  Cezar" e "Equipe Next Home" compartilham `5511972207204`, e e-mail no Auth
+  é único. Derivar do `slug` resolve de graça — ele já é UNIQUE no banco,
+  então o e-mail nasce único sem nenhuma lógica nova.
+- **4 dígitos de senha não passam**: o mínimo do Supabase é 6 e a troca no
+  painel exige 8. `nexthome` + 4 dígitos chega a 12. A parte fixa é pública
+  por construção; quem fecha a janela é a troca forçada, não a senha.
+- **`nexthome.com` NÃO é da Next Home** — resolve para 72.20.123.54, de
+  terceiro. Endereço de acesso escrito em `corretores.email` seria destino
+  real no dia em que alguém religasse os crons de e-mail: o aviso de queda
+  do número e o relatório semanal iriam para um estranho, com contagem de
+  lead dentro. Por isso `enviarEmail` RECUSA o domínio, com motivo tipado
+  (`endereco_de_acesso`) e sem lançar — o chamador está no meio de um ciclo
+  de disparo. **Ao usar domínio de fachada para credencial, conferir se ele
+  é de alguém.**
+- **Criar login NÃO redistribui lead nenhum.** A ordem da roleta é
+  `(sem WhatsApp)` → `(sem login)` → carga, e a Bruna é a única com número
+  no ar: ela continua ganhando o primeiro critério. A distribuição só se
+  move no dia em que um segundo número for pareado — o que é bom saber
+  antes de acusar a roleta de não funcionar.
+- **"Equipe Next Home" foi desativada** (0095). Não é pessoa: slug nulo, 0
+  leads, e o WhatsApp é o mesmo do Eduardo. Ativa e com carga zero, ela
+  seria a primeira a subir na roleta assim que os corretores de verdade
+  começassem a receber — lead para um cadastro que ninguém abre.
+- **Falha de um corretor não aborta o lote.** Parar no primeiro erro
+  deixaria metade criada e metade não, sem ninguém saber onde parou. Quem
+  fica de fora volta nomeado, com o motivo.
+- **Duas linhas idênticas em dois lugares quebram `str.replace`**: o
+  `const senha = senhaTemporaria();` aparece em `criarAcessoCorretor` e em
+  `redefinirSenhaCorretor`, com a linha seguinte igual. O `assert count == 1`
+  pegou antes de escrever — âncora de edição precisa incluir algo único da
+  função (aqui, a linha do slug).
