@@ -29,10 +29,10 @@
  * Ou seja: gerar por cima sem reaplicar isto é regressão silenciosa de
  * tipagem, não atualização.
  *
- * ESCRITA À MÃO, também a reaplicar: a view `pessoas_do_corretor` (0088). Ela
- * é posterior à última geração, e sem ela `getPaginaDePessoas` não compila —
- * o cliente do Supabase só aceita nomes de tabela e view que existam neste
- * arquivo.
+ * ESCRITA À MÃO, também a reaplicar: a view `pessoas_do_corretor` (0088) e a
+ * tabela `imagens_geradas` (0090). As duas são posteriores à última geração, e
+ * sem elas `getPaginaDePessoas` e a galeria de imagens não compilam — o
+ * cliente do Supabase só aceita nomes de relação que existam neste arquivo.
  */
 
 export type Json =
@@ -823,6 +823,53 @@ export type Database = {
           nome?: string
         }
         Relationships: []
+      }
+      imagens_geradas: {
+        Row: {
+          altura: number | null
+          corretor_id: string
+          created_at: string
+          id: string
+          largura: number | null
+          latencia_ms: number | null
+          modelo: string
+          prompt: string
+          referencia_url: string | null
+          url: string
+        }
+        Insert: {
+          altura?: number | null
+          corretor_id: string
+          created_at?: string
+          id?: string
+          largura?: number | null
+          latencia_ms?: number | null
+          modelo: string
+          prompt: string
+          referencia_url?: string | null
+          url: string
+        }
+        Update: {
+          altura?: number | null
+          corretor_id?: string
+          created_at?: string
+          id?: string
+          largura?: number | null
+          latencia_ms?: number | null
+          modelo?: string
+          prompt?: string
+          referencia_url?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagens_geradas_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lead_interacoes: {
         Row: {

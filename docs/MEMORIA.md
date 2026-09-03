@@ -3596,3 +3596,55 @@ lança —, então o sintoma seria eterno silêncio se ninguém lesse o log.
 log de runtime, não o status HTTP.** 200 com `enviados: 0` é o desfecho normal
 de ambiente sem chave.
 
+## Gerar imagem no painel (0090, 03/09/2026) — e o e-mail congelado
+
+**Os dois crons de e-mail foram DESAGENDADOS** (aviso de espera e relatório
+semanal), a pedido: e-mail não se mostrou canal eficiente aqui. Código, rotas e
+testes ficam onde estão — religar é chamar `configurar_aviso_de_espera` /
+`configurar_relatorio_semanal` de novo, com o segredo já guardado no Vault
+(receita na seção do cron acima). `cron.job` ativo hoje: só `disparo-campanhas`
+e `followups-whatsapp`.
+
+- **`high` NÃO EXISTE na tela, e o motivo é o teto de 60s do Hobby.** Medido
+  contra o mesmo pedido, em retrato 1024x1536: `low` **14,5s** (1,2 MB, 196
+  tokens de saída), `medium` **37,4s** (2,5 MB, 1.372 tokens), `high` **95,0s**
+  (2,4 MB, 5.488 tokens). O botão de "caprichada" falharia SEMPRE — e botão que
+  sempre falha é pior que botão que não existe. Caberia como trabalho
+  assíncrono, e isso não se constrói antes de alguém pedir. Repare que `high`
+  gasta 4x os tokens de `medium` para produzir um arquivo MENOR: **tamanho de
+  arquivo não mede custo aqui, token de saída mede.**
+- **O teto interno é 45s, não 55s, e a diferença é a imagem já paga.** Depois
+  da chamada ainda sobem 1-3 MB para o Storage e grava-se a linha da galeria.
+  Com 55s, uma geração de 50s mataria a função DEPOIS de pagar pela imagem, e a
+  corretora receberia erro genérico. 45s deixa 15s para o upload, e a mensagem
+  do estouro manda tentar em "Rápida" — que é a saída de verdade.
+- **A IA INVENTA LETREIRO.** Na primeira geração de verdade, pedida uma
+  "fachada de edifício residencial", ela desenhou uma placa com o nome
+  **"VISTA ALTO"** na entrada. É a versão visual do defeito que esta base
+  conhece de cor (o "1 suíte" para um cadastro com 3, o "pronto para morar" com
+  `em_construcao`): o que não está no pedido, o modelo preenche, e preenche
+  plausível. Arte com nome de empreendimento que não existe, ou com metragem
+  escrita nela, vira promessa quando chega ao cliente. Por isso o aviso na tela
+  é FIXO — o risco é de toda geração, não de algumas.
+- **Nada entra em `midias`**, e é isso que garante que a imagem não apareça na
+  vitrine e que o guardrail siga impedindo a IA de anexá-la: ele só libera o
+  que está no catálogo. Quem quiser mandar a arte para um cliente anexa à mão
+  no Live Chat — aí quem decide é uma pessoa que sabe o que a imagem é.
+  Conferido: `midias` seguia com 343 linhas depois das gerações.
+- **`imagens_geradas` dá SELECT e DELETE ao `authenticated`, nunca INSERT nem
+  UPDATE.** Quem escreve é o servidor, com a service key, senão o teto diário
+  se forja pela API. Conferido nos dois sentidos (a régua da 0077): `anon` sem
+  privilégio nenhum, dono enxergando as dele, corretor vizinho zero.
+- **`column_privileges` NÃO lista DELETE** — é privilégio de TABELA. A primeira
+  conferência deu "SELECT e mais nada" e eu quase fui atrás de um grant que já
+  existia. Para DELETE/TRUNCATE, olhar `information_schema.table_privileges`.
+- **A conta do teto diário mora em módulo PURO, não em `galeria.ts`.** Ela usa
+  o dia de São Paulo (`Intl` + `-03:00` fixo), e função de fuso enterrada em
+  módulo `server-only` não tem teste — justo a que mais precisa. Das 21h à
+  meia-noite de Brasília o servidor UTC já virou o dia: o teto zeraria três
+  horas cedo e quem tivesse gerado vinte à noite ganharia vinte de novo. Quarta
+  vez que esta armadilha aparece no projeto.
+- **A chave da OpenAI voltou a ter crédito** (ficou sem em 02/09). Geração de
+  imagem custa por imagem e bem mais que texto — daí o teto de 20/dia por
+  corretor e `low` como padrão.
+

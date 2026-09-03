@@ -53,13 +53,22 @@ export default async function ImoveisPage() {
           </Link>
         }
         abaixo={
-          /* Links por imóvel saiu do menu; o caminho é por aqui. */
-          <Link
-            href="/corretor/links"
-            className="text-fluid-xs border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo mt-3 inline-flex min-h-11 items-center rounded-full border px-3.5 transition-colors"
-          >
-            Links por imóvel
-          </Link>
+          /* Links por imóvel e Criar imagem saíram do menu (teto de sete
+             destinos); o caminho é por aqui. */
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href="/corretor/links"
+              className="text-fluid-xs border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo inline-flex min-h-11 items-center rounded-full border px-3.5 transition-colors"
+            >
+              Links por imóvel
+            </Link>
+            <Link
+              href="/corretor/imoveis/criar-imagem"
+              className="text-fluid-xs border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo inline-flex min-h-11 items-center rounded-full border px-3.5 transition-colors"
+            >
+              Criar imagem
+            </Link>
+          </div>
         }
       />
 
