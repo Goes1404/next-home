@@ -3704,3 +3704,40 @@ bom". A resposta tem DOIS degraus, e o de baixo não usa IA nenhuma.
   um pouco melhor em inglês, mas o prompt final aparece na tela para o corretor
   ler e corrigir — e prompt que ele não lê é prompt que ele não conserta.
 
+## Quanto custa uma imagem (medido em 03/09/2026)
+
+Preço do `gpt-image-2` na fonte oficial: **US$ 5,00/1M** tokens de texto de
+entrada e **US$ 30,00/1M** tokens de imagem de saída. Não há tabela por imagem
+— o que se paga sai do `usage` que a própria resposta devolve.
+
+Medido com o prompt REAL da tela (receita + cláusula = 109 tokens de entrada),
+a US$ 1 = R$ 5,139:
+
+| formato | qualidade | tokens de saída | US$ | R$ |
+|---|---|---|---|---|
+| Quadrado 1024×1024 | Rápida | 196 | 0,0064 | 0,033 |
+| Retrato 1024×1536 | Rápida | 158 | 0,0053 | 0,027 |
+| Paisagem 1536×1024 | Rápida | 158 | 0,0053 | 0,027 |
+| Retrato 1024×1536 | Boa | 1.372 | 0,0417 | 0,214 |
+| Retrato 1024×1536 | (`high`, não existe) | 5.488 | 0,1652 | 0,849 |
+
+- **Token de saída NÃO escala com a área.** Em "Rápida", retrato e paisagem
+  gastam 158 e o quadrado gasta 196 — o formato maior custa MENOS. A conta é
+  por faixa de qualidade, não por pixel, e qualquer estimativa por regra de
+  três sai errada.
+- **O tamanho do PROMPT é irrelevante no custo.** A mesma imagem deu 196 tokens
+  de saída com prompt de 28 e de 109 tokens de entrada; a entrada custa 6x
+  menos por token. Receita e cláusula, que engordam o texto, somam frações de
+  centavo.
+- **"Boa" custa ~8x "Rápida"** (R$ 0,21 contra R$ 0,027). É o maior botão de
+  custo da tela, e é por isso que "Rápida" é o padrão.
+- **O teto de 20/dia vale, por corretor:** R$ 0,54/dia tudo em Rápida
+  (~R$ 16/mês) e R$ 4,29/dia tudo em Boa (~R$ 129/mês). Com os 8 cadastros
+  estourando o teto em Boa, o pior caso é ~R$ 1.030/mês — é esse o número que
+  o teto existe para limitar.
+- **Melhorar a descrição custa R$ 0,0015** (260 tokens de entrada + 112 de
+  saída no `gpt-4.1-mini`). São ~18 melhorias para o preço de UMA imagem
+  Rápida: cobrá-la do teto diário seria economizar centavo e gastar real.
+- **A conta divide o mesmo saldo do atendimento no WhatsApp.** Sem crédito, a
+  Sofia cai junto — conferir saldo é parte de operar isto.
+
