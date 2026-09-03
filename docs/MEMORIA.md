@@ -3855,3 +3855,55 @@ não tem.
   a substring, então o `indexOf` achou e o teste passou. Ao morder uma guarda
   que procura texto, conferir que a mordida de fato tira o texto.
 
+
+## A roleta empurrava o lead para longe de quem podia atender (0093, 03/09/2026)
+
+Investigação que começou com o diagnóstico ERRADO, e a correção do
+diagnóstico é a parte que vale.
+
+- **Eu afirmei que o lead da Meta nascia sem dono, e não nascia.** O webhook
+  grava `corretor_id: null`, mas existe `leads_distribuir` (BEFORE INSERT,
+  0007) que escolhe o dono quando o campo chega nulo — ativo e funcionando
+  (`origem_atribuicao = 'roleta'` em 9 leads). O único órfão do banco é um
+  "Maria Teste QA" de 09/08. **Antes de consertar ausência de mecanismo,
+  procurar o TRIGGER** — comportamento que mora no banco não aparece em
+  `grep` no `src/`.
+- **O defeito real era o oposto e mais difícil de ver: a roleta distribuía
+  para quem NÃO PODE ATENDER.** Medido: dos 9 leads da roleta, **8 foram
+  para 6 corretores sem login no painel e sem WhatsApp conectado**; a única
+  pessoa que atende — login, número no ar — recebeu 1. Com carga como
+  critério único, quanto mais alguém trabalha, menos lead recebe, até o lead
+  ir parar com quem não consegue abrir a tela para vê-lo.
+- **Lead parado com quem não pode agir é pior que lead órfão**, justamente
+  porque parece resolvido: ele aparece atribuído, e ninguém vai procurar.
+- **A correção é ORDEM, nunca filtro novo.** WhatsApp no ar, login e slug
+  viraram preferências; filtro devolveria `alvo` nulo e o lead nasceria
+  órfão de verdade. `slug is not null`, que ERA filtro desde a 0007, virou
+  preferência pelo mesmo motivo.
+- **A carga passou a contar só lead ATIVO** (`arquivado_em is null`).
+  Carteira arquivada não dá trabalho a ninguém, e contá-la faz a roleta
+  evitar justamente quem está livre. O `leadArquivado.test.ts` cobra esse
+  filtro em TypeScript e não enxerga SQL — a função do banco escapava.
+- **Quase criei uma segunda régua de distribuição.** A primeira versão desta
+  correção era uma `sortear_corretor_para_lead()` chamada pelos webhooks —
+  duas contas de "quem recebe o próximo lead" para divergir, que é o defeito
+  que este projeto registra desde `montarResumo`. O comentário de
+  `/api/leads/route.ts` já dizia por que a distribuição mora no banco: "para
+  que nenhuma porta de entrada futura precise lembrar de fazê-la". **Ler o
+  comentário do código vizinho antes de duplicar o mecanismo.**
+- **O que sobrou do outro defeito é real:** o webhook do Meta fazia `upsert`
+  com o cliente ANÔNIMO, e `anon` só tem INSERT em `leads`. Passava por
+  acidente — `ignoreDuplicates: true` transforma o conflito em no-op e nunca
+  pede UPDATE. Bastaria alguém tirar essa opção para o webhook falhar em
+  silêncio, com a Meta recebendo 200. Trocado para a chave de serviço, e o
+  `ignoreDuplicates` virou decisão escrita (a Meta reentrega, e um upsert de
+  verdade sobrescreveria o que o corretor editou na ficha).
+- **Ensaio em `begin; … rollback;` nos dois sentidos**, como manda a 0077:
+  lead sem dono cai na Bruna (login + WhatsApp); lead com dono do link de
+  indicação é respeitado e marcado `'link'`.
+- **`roletaDeLeads.test.ts` lê a ÚLTIMA definição da função nas migrations**
+  e cobra as três preferências mais a ausência de filtro novo. As cinco
+  mordidas foram provocadas uma a uma. A primeira versão da guarda tinha
+  falso positivo próprio: `indexOf(" where ")` pegava o `where` da
+  subconsulta de cidade e enxergava o LEFT JOIN como filtro — **quinta vez
+  que uma guarda de código-fonte tropeça no próprio recorte.**

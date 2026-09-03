@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { assinaturaValida } from "@/lib/metaWebhookSignature";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
-import { createClient } from "@/lib/supabase/public";
+import { createServiceClient } from "@/lib/supabase/service";
 import { CAMPOS_DO_ANUNCIO, extrairIdsDoAnuncio, SEM_ANUNCIO } from "@/lib/metaAnuncio";
 
 export const runtime = "nodejs";
@@ -122,7 +122,14 @@ export async function POST(req: Request) {
   }
 
   const token = process.env.META_PAGE_ACCESS_TOKEN ?? "";
-  const supabase = createClient();
+  /*
+   * Chave de SERVIÇO, não a publicável. As policies de `leads` são todas
+   * `to authenticated`, e o `anon` tem só INSERT na tabela — o `upsert`
+   * abaixo passava por acidente, porque `ignoreDuplicates: true` transforma
+   * o conflito em no-op e nunca chega a pedir UPDATE. Equilíbrio frágil:
+   * bastaria alguém tirar essa opção para o webhook falhar em silêncio.
+   */
+  const supabase = createServiceClient();
 
   const changes =
     evento.entry?.flatMap((entry) => entry.changes ?? []).filter((c) => c.field === "leadgen") ??
@@ -166,8 +173,21 @@ export async function POST(req: Request) {
           meta_conjunto_id: anuncio.conjuntoId,
           meta_campanha_id: anuncio.campanhaId,
           consentimento_lgpd: true,
+          /*
+           * Deliberadamente nulo: quem escolhe o dono é o trigger
+           * `leads_distribuir` (0007), no BEFORE INSERT. A distribuição mora
+           * no banco para que nenhuma porta de entrada precise lembrar de
+           * fazê-la — e para não existir uma segunda régua de "quem recebe o
+           * próximo lead" para divergir da primeira.
+           */
           corretor_id: null,
         },
+        /*
+         * `ignoreDuplicates` fica: a Meta reentrega o mesmo evento quando a
+         * resposta demora, e com a chave de serviço um upsert de verdade
+         * sobrescreveria o que o corretor já editou na ficha. Primeira
+         * gravação vence.
+         */
         { onConflict: "meta_lead_id", ignoreDuplicates: true },
       );
 
