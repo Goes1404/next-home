@@ -115,6 +115,14 @@ export const GRUPOS_NAV: GrupoNav[] = [
         subitens: [
           { href: "/corretor/imoveis", label: "Catálogo", icone: IconePredio },
           { href: "/corretor/imoveis/candidatos", label: "Fila de cadastro", icone: IconeFila },
+          /*
+           * "Links por imóvel" era um chip no cabeçalho do Catálogo e um
+           * subtópico de Marketing ao mesmo tempo — duas portas, e nenhuma
+           * delas onde o corretor pensa nela. Passou a subtópico de Imóveis
+           * (04/09/2026, decisão do usuário): o link É por imóvel, e é aqui
+           * que se olha imóvel. A rota não muda, então nada salvo quebra.
+           */
+          { href: "/corretor/links", label: "Links por imóvel", icone: IconeLink },
         ],
       },
     ],
@@ -168,7 +176,6 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/marketing/video", label: "Criar vídeo", icone: IconeClaquete },
           { href: "/corretor/campanhas", label: "Listas de transmissão", icone: IconeAntena },
           { href: "/corretor/templates", label: "Modelos", icone: IconeModelo },
-          { href: "/corretor/links", label: "Meus links", icone: IconeLink },
         ],
       },
     ],

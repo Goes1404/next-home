@@ -13,8 +13,14 @@ import {
  * Substitui o cartão que só falava de apelido (31/08). A razão é a mesma
  * que criou aquele: aviso dentro do editor do imóvel não moveu nada em
  * cinco dias, porque só é visto por quem já abriu aquela tela — e quem abre
- * um imóvel foi lá fazer outra coisa. A lista vem para a tela de Imóveis,
- * por onde o corretor passa.
+ * um imóvel foi lá fazer outra coisa. A lista precisa morar onde alguém
+ * passa, não dentro do registro que ela critica.
+ *
+ * Desde 04/09/2026 ela mora em "Fila de cadastro" (decisão do usuário), e
+ * não mais em cima da lista de Imóveis: a fila é o subtópico dedicado a
+ * "o que falta cadastrar", e ali a ficha incompleta fica ao lado dos
+ * lançamentos do mercado — os dois são o mesmo trabalho. A tela de Imóveis
+ * voltou a ser só o catálogo, para editar.
  *
  * O que mudou é o ESCOPO. Medido em 01/09 sobre os 25 publicados: 16 sem
  * planta, 3 sem tipologia, 23 sem apelido. Três cartões separados
@@ -23,9 +29,9 @@ import {
  *
  * ## Custo zero
  *
- * A tela de Imóveis já carrega o catálogo inteiro com `midias` e
- * `tipologias`. A pendência é calculada do que está na mão — nenhuma
- * consulta nova numa tela que o corretor abre o tempo todo.
+ * A pendência é calculada do catálogo que a tela já carrega, com `midias` e
+ * `tipologias` — nenhuma consulta a mais do que a página faria de qualquer
+ * jeito.
  */
 
 const RESUMO: { chave: keyof ReturnType<typeof contarPorTipo>; rotulo: string }[] = [

@@ -122,9 +122,15 @@ describe("moduloAtivo — a chave do color coding", () => {
     expect(moduloAtivo("/corretor/visitas")).toBe("leads");
     // Conversas mudou de dono em 04/09: é o canal, não a carteira.
     expect(moduloAtivo("/corretor/conversas")).toBe("whatsapp");
-    // Templates e Links foram junto: os dois são insumo de peça, não de ficha.
+    // Templates foi junto: é insumo de peça, não de ficha.
     expect(moduloAtivo("/corretor/templates")).toBe("marketing");
-    expect(moduloAtivo("/corretor/links")).toBe("marketing");
+    /*
+     * Links mudou de dono em 04/09 (decisão do usuário): o link É por
+     * imóvel, e quem o procura está olhando imóvel. Saiu de Marketing e
+     * virou subtópico de Imóveis — a rota é a mesma, só o pai mudou, então
+     * a cor tem de acompanhar.
+     */
+    expect(moduloAtivo("/corretor/links")).toBe("imoveis");
     expect(moduloAtivo("/corretor/senha")).toBe("conta");
   });
 
@@ -241,8 +247,15 @@ describe("subtópicos: uma hierarquia só", () => {
   });
 
   it("`/corretor/links` tem um pai — era a única tela sem nenhum", () => {
-    expect(destinoAtivo("/corretor/links")?.href).toBe("/corretor/marketing");
-    expect(subitensDe("/corretor/marketing").map((s) => s.href)).toContain("/corretor/links");
+    /*
+     * Já foi de Marketing; desde 04/09 é de Imóveis, e nunca de ninguém: era
+     * a única tela do painel sem item de menu NEM aba, alcançável só por um
+     * chip no cabeçalho do Catálogo. O que a guarda protege é o TER pai —
+     * o pai em si é decisão de produto e pode mudar de novo.
+     */
+    expect(destinoAtivo("/corretor/links")?.href).toBe("/corretor/imoveis");
+    expect(subitensDe("/corretor/imoveis").map((s) => s.href)).toContain("/corretor/links");
+    expect(subitensDe("/corretor/marketing").map((s) => s.href)).not.toContain("/corretor/links");
   });
 
   it("a cor da tela concorda com o item aceso", () => {
@@ -267,7 +280,13 @@ describe("as barras de abas DERIVAM do menu", () => {
     readFileSync(join(process.cwd(), "src/app/corretor/(painel)/_componentes", arq), "utf8")
       .replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
 
-  const BARRAS = ["AbasLeads.tsx", "AbasWhatsapp.tsx", "AbasMarketing.tsx", "AbasAdmin.tsx"];
+  const BARRAS = [
+    "AbasLeads.tsx",
+    "AbasWhatsapp.tsx",
+    "AbasMarketing.tsx",
+    "AbasAdmin.tsx",
+    "AbasImoveis.tsx",
+  ];
 
   it.each(BARRAS)("%s monta as abas com subitensDe", (arq) => {
     expect(fonte(arq)).toMatch(/subitensDe\(/);

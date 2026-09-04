@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AbasMarketing } from "@/app/corretor/(painel)/_componentes/AbasMarketing";
+import { AbasImoveis } from "@/app/corretor/(painel)/_componentes/AbasImoveis";
 import { EditarDestaques } from "./EditarDestaques";
 import { ListaLinks } from "./ListaLinks";
 import { CopiarLink } from "../CopiarLink";
@@ -21,7 +21,7 @@ export default async function LinksPage() {
 
   return (
     <div>
-      <CabecalhoDeTela secao="Marketing" titulo="Seus links" descricao={<>Qualquer um destes links atribui o atendimento a você — inclusive em imóveis de outro
+      <CabecalhoDeTela secao="Imóveis" titulo="Links por imóvel" descricao={<>Qualquer um destes links atribui o atendimento a você — inclusive em imóveis de outro
         corretor responsável. A exceção é o <span className="text-titulo">link de anúncio (Meta)</span>:
         ele é o destino da campanha paga e distribui cada clique em rodízio entre os corretores com
         WhatsApp conectado — quem clica cai direto no WhatsApp do corretor da vez, com a mensagem
@@ -34,7 +34,7 @@ export default async function LinksPage() {
         alcançável só por um cartão em Imóveis.
       */}
       <div className="mt-5">
-        <AbasMarketing ativa="/corretor/links" />
+        <AbasImoveis ativa="/corretor/links" />
       </div>
 
       <section className="cartao mt-8 p-6">
