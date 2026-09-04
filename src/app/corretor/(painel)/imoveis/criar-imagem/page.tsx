@@ -4,9 +4,8 @@ import { AbasMarketing } from "@/app/corretor/(painel)/_componentes/AbasMarketin
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getMinhasImagens, getTetoDeHoje } from "@/lib/imagens/galeria";
 import { imagensConfiguradas } from "@/lib/imagens/gerarImagem";
-import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
-import { STATUS_LABEL } from "@/lib/types";
-import { CriarImagemClient, type ImovelDaLista } from "./CriarImagemClient";
+import { ChatDeArte } from "./ChatDeArte";
+import { listarConversasDoEstudio } from "@/app/corretor/(painel)/estudio/acoes";
 
 export const metadata: Metadata = { title: "Criar arte" };
 
@@ -25,29 +24,17 @@ export default async function PaginaCriarImagem() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
-  const [imagens, teto, catalogo] = await Promise.all([
+  const [imagens, teto, conversas] = await Promise.all([
     getMinhasImagens(),
     getTetoDeHoje(corretor.id),
-    getEmpreendimentosDoPainel(),
+    listarConversasDoEstudio("arte"),
   ]);
-
-  // Só o que a lista precisa: mandar o catálogo inteiro para o cliente
-  // arrastaria descrição, mídias e tipologias de 25 imóveis por nada.
-  const imoveis: ImovelDaLista[] = catalogo
-    .filter((i) => i.publicado !== false)
-    .map((i) => ({
-      slug: i.slug,
-      nome: i.nome,
-      lugar: `${i.bairro}, ${i.cidade}`,
-      estagio: STATUS_LABEL[i.status],
-      temFoto: Boolean(i.capa?.url || i.galeria[0]?.url),
-    }));
 
   return (
     <div className="space-y-5">
       <CabecalhoDeTela
         titulo="Criar arte"
-        descricao="Peça pronta para publicar: escolha o imóvel, o objetivo e o canal. O briefing sai da ficha real; a IA escreve dentro da régua."
+        descricao="Diz o que você quer, com suas palavras. A IA da casa pergunta o que faltar, mostra como vai ficar e só gera quando você aprovar."
       />
 
       <AbasMarketing ativa="/corretor/imoveis/criar-imagem" />
@@ -60,12 +47,7 @@ export default async function PaginaCriarImagem() {
           A geração de imagens ainda não está configurada neste ambiente.
         </p>
       ) : (
-        <CriarImagemClient
-          corretorId={corretor.id}
-          imoveis={imoveis}
-          iniciais={imagens}
-          tetoInicial={teto}
-        />
+        <ChatDeArte conversasIniciais={conversas} tetoInicial={teto} galeriaInicial={imagens} />
       )}
     </div>
   );

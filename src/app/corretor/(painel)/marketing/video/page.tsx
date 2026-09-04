@@ -3,10 +3,9 @@ import Link from "next/link";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { AbasMarketing } from "@/app/corretor/(painel)/_componentes/AbasMarketing";
 import { getCorretorLogado } from "@/lib/corretorSessao";
-import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { getMeusVideos, getSaldo } from "@/lib/video/fila";
-import { STATUS_LABEL } from "@/lib/types";
-import { EstudioDeVideo, type ImovelDoEstudio } from "./EstudioDeVideo";
+import { ChatDeVideo } from "./ChatDeVideo";
+import { listarConversasDoEstudio } from "@/app/corretor/(painel)/estudio/acoes";
 
 export const metadata: Metadata = { title: "Criar vídeo" };
 export const dynamic = "force-dynamic";
@@ -36,28 +35,17 @@ export default async function PaginaVideo() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
 
-  const [catalogo, videos, saldo] = await Promise.all([
-    getEmpreendimentosDoPainel(),
+  const [videos, saldo, conversas] = await Promise.all([
     getMeusVideos(),
     getSaldo(corretor.id),
+    listarConversasDoEstudio("video"),
   ]);
-
-  // Só imóvel com foto vira vídeo. Oferecer os outros seria botão que falha.
-  const imoveis: ImovelDoEstudio[] = catalogo
-    .filter((i) => i.publicado !== false && (i.capa?.url || i.galeria[0]?.url))
-    .map((i) => ({
-      slug: i.slug,
-      nome: i.nome,
-      lugar: `${i.bairro}, ${i.cidade}`,
-      estagio: STATUS_LABEL[i.status],
-      fotos: i.galeria.length,
-    }));
 
   return (
     <div className="space-y-5">
       <CabecalhoDeTela
         titulo="Criar vídeo"
-        descricao="Um Reel montado das fotos do imóvel, com movimento de câmera e legenda queimada."
+        descricao="Diz o imóvel e a ideia. A IA monta o roteiro das fotos, mostra os planos e só gera quando você aprovar."
         abaixo={
           <Link
             href="/corretor/marketing"
@@ -70,14 +58,9 @@ export default async function PaginaVideo() {
 
       <AbasMarketing ativa="/corretor/marketing/video" />
 
-      {/*
-        Catálogo vazio NÃO bloqueia mais: o corretor pode subir as próprias
-        fotos. O aviso vira informação, não porta fechada.
-      */}
-      <EstudioDeVideo
-        corretorId={corretor.id}
-        imoveis={imoveis}
-        iniciais={videos}
+      <ChatDeVideo
+        conversasIniciais={conversas}
+        videosIniciais={videos}
         saldoInicial={{ disponiveis: saldo.disponiveis, cotaMensal: saldo.cotaMensal }}
       />
     </div>

@@ -914,6 +914,96 @@ export type Database = {
         }
         Relationships: []
       }
+      estudio_conversas: {
+        Row: {
+          atualizado_em: string
+          corretor_id: string
+          created_at: string
+          id: string
+          tipo: "arte" | "video"
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          corretor_id: string
+          created_at?: string
+          id?: string
+          tipo: "arte" | "video"
+          titulo?: string
+        }
+        Update: {
+          atualizado_em?: string
+          corretor_id?: string
+          created_at?: string
+          id?: string
+          tipo?: "arte" | "video"
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estudio_conversas_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estudio_mensagens: {
+        Row: {
+          conteudo: string
+          conversa_id: string
+          created_at: string
+          dados: Json | null
+          id: string
+          imagem_id: string | null
+          papel: "corretor" | "ia"
+          video_job_id: string | null
+        }
+        Insert: {
+          conteudo: string
+          conversa_id: string
+          created_at?: string
+          dados?: Json | null
+          id?: string
+          imagem_id?: string | null
+          papel: "corretor" | "ia"
+          video_job_id?: string | null
+        }
+        Update: {
+          conteudo?: string
+          conversa_id?: string
+          created_at?: string
+          dados?: Json | null
+          id?: string
+          imagem_id?: string | null
+          papel?: "corretor" | "ia"
+          video_job_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estudio_mensagens_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "estudio_conversas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estudio_mensagens_imagem_id_fkey"
+            columns: ["imagem_id"]
+            isOneToOne: false
+            referencedRelation: "imagens_geradas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estudio_mensagens_video_job_id_fkey"
+            columns: ["video_job_id"]
+            isOneToOne: false
+            referencedRelation: "video_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       imagens_geradas: {
         Row: {
           altura: number | null
