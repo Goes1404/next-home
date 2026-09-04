@@ -394,7 +394,7 @@ function IconeAgora(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconePessoas(p: SVGProps<SVGSVGElement>) {
+export function IconePessoas(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20" />
@@ -403,14 +403,14 @@ function IconePessoas(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconePredio(p: SVGProps<SVGSVGElement>) {
+export function IconePredio(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M4 21V6l7-3v18M11 21h9V11l-9-3M15 12h1.5M15 15.5h1.5M15 19h1.5M7 9h1M7 12.5h1M7 16h1" />
     </svg>
   );
 }
-function IconeWhatsapp(p: SVGProps<SVGSVGElement>) {
+export function IconeWhatsapp(p: SVGProps<SVGSVGElement>) {
   // O balão com o telefone dentro — a forma que todo mundo reconhece.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
@@ -419,7 +419,7 @@ function IconeWhatsapp(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconeMegafone(p: SVGProps<SVGSVGElement>) {
+export function IconeMegafone(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M4 10v4a1 1 0 0 0 1 1h2l6 4V5L7 9H5a1 1 0 0 0-1 1Z" />
@@ -518,7 +518,7 @@ function IconeConversas(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconeRobo(p: SVGProps<SVGSVGElement>) {
+export function IconeRobo(p: SVGProps<SVGSVGElement>) {
   // Robô com antena: a IA, sem precisar ler.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
@@ -571,7 +571,7 @@ function IconeModelo(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconeLink(p: SVGProps<SVGSVGElement>) {
+export function IconeLink(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />

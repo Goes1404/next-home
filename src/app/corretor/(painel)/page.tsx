@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, type SVGProps } from "react";
 import Link from "next/link";
 import { CopiarLink } from "./CopiarLink";
 import { FilaAgora } from "./_componentes/FilaAgora";
@@ -13,11 +13,42 @@ import { getMinhasTarefas } from "@/lib/crm/dadosLead";
 import { site } from "@/lib/site";
 import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
 import { CabecalhoDeTela } from "./_componentes/CabecalhoDeTela";
+import { cn } from "@/lib/utils";
+import {
+  IconeLink,
+  IconeMegafone,
+  IconePessoas,
+  IconePredio,
+  IconeRobo,
+  type Modulo,
+} from "./_componentes/navegacao";
 
-const ATALHOS = [
-  { href: "/corretor/pessoas", titulo: "Minhas pessoas", texto: "Quem falou com você, do mais recente para o mais antigo." },
-  { href: "/corretor/links", titulo: "Links por imóvel", texto: "Link atribuído de cada empreendimento." },
-  { href: "/corretor/imoveis", titulo: "Catálogo", texto: "Fotos, textos e preços dos imóveis." },
+/**
+ * Os atalhos do Início — cartões grandes, coloridos pelo MÓDULO de destino.
+ *
+ * Pedido do usuário (04/09/2026), com referência visual: grade "bento" de
+ * cartões com fundo em gradiente, ícone num chip translúcido, título forte e
+ * subtítulo. A cor NÃO é arbitrária: cada cartão recebe `data-modulo` da
+ * seção para onde leva, e `[data-modulo]` reaponta `--color-acento` dentro
+ * dele — o cartão de Pessoas é magenta porque Pessoas É magenta no resto do
+ * painel. É o color coding da casa servindo de legenda antes do clique.
+ *
+ * `largo` faz o cartão ocupar as duas colunas: o destaque vai para a IA, que
+ * é o que diferencia este painel.
+ */
+const ATALHOS: {
+  href: string;
+  modulo: Modulo;
+  titulo: string;
+  texto: string;
+  icone: (p: SVGProps<SVGSVGElement>) => React.ReactElement;
+  largo?: boolean;
+}[] = [
+  { href: "/corretor/pessoas", modulo: "leads", titulo: "Pessoas", texto: "quem falou com você, do mais recente ao mais antigo", icone: IconePessoas },
+  { href: "/corretor/imoveis", modulo: "imoveis", titulo: "Imóveis", texto: "fotos, textos e preços do catálogo", icone: IconePredio },
+  { href: "/corretor/whatsapp", modulo: "whatsapp", titulo: "Minha IA", texto: "atende, qualifica e marca visita enquanto você não está", icone: IconeRobo, largo: true },
+  { href: "/corretor/imoveis/criar-imagem", modulo: "marketing", titulo: "Criar arte", texto: "peça pronta para publicar, conversando com a IA", icone: IconeMegafone },
+  { href: "/corretor/links", modulo: "marketing", titulo: "Meus links", texto: "link atribuído de cada imóvel e do anúncio", icone: IconeLink },
 ];
 
 /**
@@ -79,17 +110,42 @@ export default async function PainelInicio() {
         </Suspense>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        {ATALHOS.map((a) => (
-          <Link
-            key={a.href}
-            href={a.href}
-            className="border-linha bg-superficie shadow-painel hover:border-acento-linha rounded-2xl border p-5 transition-colors"
-          >
-            <p className="font-display text-titulo">{a.titulo}</p>
-            <p className="text-fluid-sm text-apoio mt-1">{a.texto}</p>
-          </Link>
-        ))}
+      <section aria-label="Atalhos" className="grid grid-cols-2 gap-3 md:gap-4">
+        {ATALHOS.map((a) => {
+          const Icone = a.icone;
+          return (
+            <Link
+              key={a.href}
+              href={a.href}
+              // O `data-modulo` no próprio cartão é o que o pinta com a cor da
+              // seção de destino: `bg-acento` aqui já é a cor DAQUELE módulo.
+              data-modulo={a.modulo}
+              className={cn(
+                "from-acento to-acento-hover text-sobre-cor shadow-painel group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br p-4 transition-transform hover:-translate-y-0.5 motion-reduce:transition-none md:min-h-40 md:p-5",
+                a.largo && "col-span-2 flex-row items-center gap-4",
+              )}
+            >
+              <span
+                aria-hidden
+                className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/20 md:size-14"
+              >
+                <Icone className="size-6 md:size-7" />
+              </span>
+              <span className={cn("min-w-0", a.largo && "flex-1")}>
+                <span className="font-display block text-lg leading-tight italic md:text-xl">{a.titulo}</span>
+                <span className="mt-1 block text-[13px] leading-snug opacity-80 md:text-sm">{a.texto}</span>
+              </span>
+              {a.largo && (
+                <span
+                  aria-hidden
+                  className="grid size-11 shrink-0 place-items-center rounded-full bg-white/15 ring-1 ring-white/20 transition-transform group-hover:translate-x-0.5"
+                >
+                  →
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </section>
 
       {/*

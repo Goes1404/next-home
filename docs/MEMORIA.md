@@ -4265,3 +4265,18 @@ no topo, "Sair" no rodapé. O que eu tinha feito era folha de baixo.
 - **No celular, o histórico vai embaixo do chat.** Medido: ocupava ~380px
   acima da conversa em 360px. Quem abre no telefone veio conversar, não
   folhear.
+
+### Atalhos do Início em cartões coloridos (04/09/2026, noite)
+
+- **A cor do cartão é a cor do MÓDULO de destino, não uma paleta própria.**
+  Cada `<Link>` leva `data-modulo` da seção para onde aponta, e o
+  `[data-modulo]` do `globals.css` reaponta `--color-acento` dentro dele —
+  `bg-acento`/`from-acento` ali já são a cor daquela seção. Pessoas magenta,
+  Imóveis laranja, IA verde, Marketing ciano: o color coding vira legenda antes
+  do clique, e o dia em que a paleta mudar, os cartões mudam junto. Dois
+  cartões do mesmo módulo saem iguais de propósito (Criar arte e Meus links).
+- **Gradiente `from-acento to-acento-hover`** usa dois tokens que já existem
+  por módulo — nenhum token novo. `text-sobre-cor` garante contraste sobre
+  qualquer acento nos dois temas.
+- A fila "Agora" desceu para o fim da tela (decisão do usuário): a ordem é
+  funil → link pessoal → atalhos → fila.
