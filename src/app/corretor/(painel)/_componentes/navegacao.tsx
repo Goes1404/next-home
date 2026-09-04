@@ -70,7 +70,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
   {
     titulo: "Trabalho",
     itens: [
-      { href: "/corretor", label: "Agora", icone: IconeInicio },
+      { href: "/corretor", label: "Agora", icone: IconeAgora },
       {
         /*
          * Pessoas absorve Leads, e é a mudança de fundo desta navegação.
@@ -92,9 +92,9 @@ export const GRUPOS_NAV: GrupoNav[] = [
         label: "Pessoas",
         icone: IconePessoas,
         subitens: [
-          { href: "/corretor/leads", label: "Lista", icone: IconeLista },
+          { href: "/corretor/leads", label: "Lista", icone: IconeListaContatos },
           { href: "/corretor/funil", label: "Funil", icone: IconeFunil },
-          { href: "/corretor/visitas", label: "Visitas", icone: IconeCalendario },
+          { href: "/corretor/visitas", label: "Visitas", icone: IconeVisitas },
           { href: "/corretor/importar", label: "Adicionar", icone: IconeAdicionarPessoa },
         ],
       },
@@ -125,10 +125,10 @@ export const GRUPOS_NAV: GrupoNav[] = [
          */
         href: "/corretor/whatsapp",
         label: "WhatsApp",
-        icone: IconeConversa,
+        icone: IconeWhatsapp,
         subitens: [
-          { href: "/corretor/conversas", label: "Conversas", icone: IconeBalao },
-          { href: "/corretor/whatsapp", label: "Minha IA", icone: IconeFaisca },
+          { href: "/corretor/conversas", label: "Conversas", icone: IconeConversas },
+          { href: "/corretor/whatsapp", label: "Minha IA", icone: IconeRobo },
         ],
       },
       {
@@ -149,9 +149,9 @@ export const GRUPOS_NAV: GrupoNav[] = [
         label: "Marketing",
         icone: IconeMegafone,
         subitens: [
-          { href: "/corretor/imoveis/criar-imagem", label: "Criar arte", icone: IconeImagem },
-          { href: "/corretor/marketing/video", label: "Criar vídeo", icone: IconeVideo },
-          { href: "/corretor/campanhas", label: "Listas de transmissão", icone: IconeTransmissao },
+          { href: "/corretor/imoveis/criar-imagem", label: "Criar arte", icone: IconePaleta },
+          { href: "/corretor/marketing/video", label: "Criar vídeo", icone: IconeClaquete },
+          { href: "/corretor/campanhas", label: "Listas de transmissão", icone: IconeAntena },
           { href: "/corretor/templates", label: "Modelos", icone: IconeModelo },
           { href: "/corretor/links", label: "Meus links", icone: IconeLink },
         ],
@@ -167,13 +167,13 @@ export const GRUPOS_NAV: GrupoNav[] = [
         // essa proporção.
         href: "/corretor/admin",
         label: "Administração",
-        icone: IconeEquipe,
+        icone: IconeEngrenagem,
         gestor: true,
         subitens: [
-          { href: "/corretor/admin", label: "Visão geral", icone: IconePainelGeral },
-          { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeFunil },
-          { href: "/corretor/admin/contas", label: "Contas", icone: IconePessoa },
-          { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeConversa },
+          { href: "/corretor/admin", label: "Visão geral", icone: IconeVelocimetro },
+          { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeDistribuir },
+          { href: "/corretor/admin/contas", label: "Contas", icone: IconeCracha },
+          { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeSmartphone },
           { href: "/corretor/admin/anuncios", label: "Anúncios", icone: IconeAlvo },
           { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta },
         ],
@@ -370,10 +370,27 @@ const traco = {
   strokeLinejoin: "round",
 } as const;
 
-function IconeInicio(p: SVGProps<SVGSVGElement>) {
+/*
+ * Ícones do painel — cada um desenha O QUE a tela é, não uma abstração.
+ *
+ * Pedido de 04/09/2026: "símbolos referentes àquele tópico, para ficar bem
+ * visual". A versão anterior tinha três linhas para Funil, uma faísca para a
+ * IA, duas pessoas para Administração — formas que só dizem algo depois de
+ * ler o rótulo ao lado. Numa gaveta de vinte linhas, o ícone tem de dizer
+ * antes: robô é IA, claquete é vídeo, crachá é conta, funil é funil.
+ *
+ * Todos em 24×24, traço 1.7, sem preenchimento além de pontos e pupilas —
+ * mesma família visual, para que o CONJUNTO pareça desenhado por uma mão só.
+ */
+
+/* ── Tópicos ── */
+
+function IconeAgora(p: SVGProps<SVGSVGElement>) {
+  // Relógio: "o que precisa de você AGORA".
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="m3 9.5 9-6.5 9 6.5V20a1 1 0 0 1-1 1h-4v-7H8v7H4a1 1 0 0 1-1-1z" />
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
     </svg>
   );
 }
@@ -386,13 +403,6 @@ function IconePessoas(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconeConversa(p: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z" />
-    </svg>
-  );
-}
 function IconePredio(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
@@ -400,24 +410,15 @@ function IconePredio(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconePessoa(p: SVGProps<SVGSVGElement>) {
+function IconeWhatsapp(p: SVGProps<SVGSVGElement>) {
+  // O balão com o telefone dentro — a forma que todo mundo reconhece.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M19 20v-1.5a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4V20" />
-      <circle cx="12" cy="7.5" r="3.5" />
+      <path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3z" />
+      <path d="M8.6 8.9c.4 3.1 3.4 6.1 6.5 6.5l1.4-1.6-2-1.2-1 1a6.2 6.2 0 0 1-3.1-3.1l1-1-1.2-2z" />
     </svg>
   );
 }
-/* Funil: três barras decrescentes — a carteira vista por etapa. */
-function IconeFunil(p: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M4 6h16M7 12h10M10 18h4" />
-    </svg>
-  );
-}
-
-/* Megafone: a mensagem que sai para muita gente de uma vez. */
 function IconeMegafone(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
@@ -426,44 +427,62 @@ function IconeMegafone(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconeEngrenagem(p: SVGProps<SVGSVGElement>) {
+  // Engrenagem: o sinal universal de "administração".
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M12 2.5v2.3M12 19.2v2.3M2.5 12h2.3M19.2 12h2.3M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" />
+    </svg>
+  );
+}
 
-/* Cadeado: a troca de senha, no menu do avatar. */
+/* ── Conta ── */
+
+function IconePessoa(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M19 20v-1.5a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4V20" />
+      <circle cx="12" cy="7.5" r="3.5" />
+    </svg>
+  );
+}
 function IconeChave(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <rect x="4.5" y="10.5" width="15" height="9.5" rx="2" />
       <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+      <circle cx="12" cy="15.5" r="1" fill="currentColor" />
     </svg>
   );
 }
 
-function IconeEquipe(p: SVGProps<SVGSVGElement>) {
+/* ── Subtópicos de Pessoas ── */
+
+function IconeListaContatos(p: SVGProps<SVGSVGElement>) {
+  // Prancheta com linhas: a lista de quem está na carteira.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <circle cx="8" cy="8" r="3" />
-      <circle cx="17" cy="9.5" r="2.4" />
-      <path d="M3 20v-1a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v1M15 20v-1a3.5 3.5 0 0 1 3-3.4h.5a3 3 0 0 1 3 3V20" />
+      <rect x="5" y="4" width="14" height="17" rx="2" />
+      <path d="M9 4V2.8h6V4M9 10h6M9 14h6M9 18h3.5" />
     </svg>
   );
 }
-
-/* ── Ícones dos subtópicos: menores em peso visual, mesma linha de 1.7 ── */
-
-function IconeLista(p: SVGProps<SVGSVGElement>) {
+function IconeFunil(p: SVGProps<SVGSVGElement>) {
+  // Um funil de verdade, não três linhas.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M8 6h13M8 12h13M8 18h13" />
-      <circle cx="4" cy="6" r=".9" fill="currentColor" />
-      <circle cx="4" cy="12" r=".9" fill="currentColor" />
-      <circle cx="4" cy="18" r=".9" fill="currentColor" />
+      <path d="M3 4h18l-7 8.5V19l-4 2v-8.5z" />
     </svg>
   );
 }
-function IconeCalendario(p: SVGProps<SVGSVGElement>) {
+function IconeVisitas(p: SVGProps<SVGSVGElement>) {
+  // Calendário com o check: visita MARCADA.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <rect x="3" y="5" width="18" height="16" rx="2" />
       <path d="M3 10h18M8 3v4M16 3v4" />
+      <path d="m9 15.5 2 2 4-4" />
     </svg>
   );
 }
@@ -475,59 +494,80 @@ function IconeAdicionarPessoa(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+/* ── Subtópico de Imóveis ── */
+
 function IconeFila(p: SVGProps<SVGSVGElement>) {
+  // Bandeja de entrada: o que chegou e espera decisão.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M4 6h16M4 12h10M4 18h7" />
-      <path d="m15 17 2 2 4-4" />
+      <path d="M4 13l2.5-8h11L20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+      <path d="M4 13h4l1.5 3h5L16 13h4" />
     </svg>
   );
 }
-function IconeBalao(p: SVGProps<SVGSVGElement>) {
+
+/* ── Subtópicos de WhatsApp ── */
+
+function IconeConversas(p: SVGProps<SVGSVGElement>) {
+  // Dois balões: uma conversa, não um aviso.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
+      <path d="M3 6a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H8l-3.5 3V13H5a2 2 0 0 1-2-2z" />
+      <path d="M19 8.5h.5A1.5 1.5 0 0 1 21 10v5.5a1.5 1.5 0 0 1-1.5 1.5H19V20l-3-3h-4" />
     </svg>
   );
 }
-function IconeFaisca(p: SVGProps<SVGSVGElement>) {
+function IconeRobo(p: SVGProps<SVGSVGElement>) {
+  // Robô com antena: a IA, sem precisar ler.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
-      <path d="M19 17l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z" />
+      <rect x="4" y="8.5" width="16" height="11.5" rx="3" />
+      <path d="M12 8.5V5.8M2.5 13v3.5M21.5 13v3.5M9.5 17h5" />
+      <circle cx="12" cy="4.4" r="1.3" />
+      <circle cx="9" cy="13.5" r="1.2" fill="currentColor" />
+      <circle cx="15" cy="13.5" r="1.2" fill="currentColor" />
     </svg>
   );
 }
-function IconeImagem(p: SVGProps<SVGSVGElement>) {
+
+/* ── Subtópicos de Marketing ── */
+
+function IconePaleta(p: SVGProps<SVGSVGElement>) {
+  // Paleta de tintas: arte.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <circle cx="9" cy="10" r="2" />
-      <path d="m21 16-5-5-9 9" />
+      <path d="M12 3a9 9 0 1 0 0 18c1.5 0 2.2-.9 2.2-1.8 0-.9-.7-1.2-.7-2.1 0-.9.8-1.6 1.7-1.6H17a4 4 0 0 0 4-4A8.8 8.8 0 0 0 12 3z" />
+      <circle cx="7.5" cy="11" r="1.2" fill="currentColor" />
+      <circle cx="10" cy="7" r="1.2" fill="currentColor" />
+      <circle cx="14.5" cy="6.5" r="1.2" fill="currentColor" />
     </svg>
   );
 }
-function IconeVideo(p: SVGProps<SVGSVGElement>) {
+function IconeClaquete(p: SVGProps<SVGSVGElement>) {
+  // Claquete de cinema: vídeo.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <rect x="3" y="6" width="13" height="12" rx="2" />
-      <path d="m16 10 5-3v10l-5-3z" />
+      <rect x="3" y="9.5" width="18" height="11" rx="2" />
+      <path d="M3.5 9.5 5 4.8l14.6 2.6-.6 2.1M8.3 5.4l1.8 4.1M12.8 6.2l1.8 3.3" />
     </svg>
   );
 }
-function IconeTransmissao(p: SVGProps<SVGSVGElement>) {
+function IconeAntena(p: SVGProps<SVGSVGElement>) {
+  // Antena irradiando: transmissão para muitos.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <circle cx="12" cy="12" r="2" />
-      <path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" />
+      <circle cx="12" cy="9" r="2" />
+      <path d="M12 11v10M8.5 21h7M8.5 5.5a5 5 0 0 0 0 7M15.5 5.5a5 5 0 0 1 0 7M5.6 2.9a9 9 0 0 0 0 12.2M18.4 2.9a9 9 0 0 1 0 12.2" />
     </svg>
   );
 }
 function IconeModelo(p: SVGProps<SVGSVGElement>) {
+  // Molde de página: um modelo que se reaproveita.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-      <path d="M14 3v5h5M9 13h6M9 17h6" />
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 9h18M9 9v11" />
     </svg>
   );
 }
@@ -539,26 +579,62 @@ function IconeLink(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconePainelGeral(p: SVGProps<SVGSVGElement>) {
+
+/* ── Subtópicos de Administração ── */
+
+function IconeVelocimetro(p: SVGProps<SVGSVGElement>) {
+  // Velocímetro: a visão geral, o retrato do negócio num ponteiro.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      <path d="M4 16a8 8 0 1 1 16 0M3.5 16H6M18 16h2.5" />
+      <path d="M12 16l4.2-5.2" />
+      <circle cx="12" cy="16" r="1.4" fill="currentColor" />
+    </svg>
+  );
+}
+function IconeDistribuir(p: SVGProps<SVGSVGElement>) {
+  // Uma pessoa se ramificando em duas: distribuir a carteira.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <circle cx="12" cy="5.5" r="2.5" />
+      <path d="M12 8v4.5M12 12.5 6.5 16M12 12.5l5.5 3.5" />
+      <circle cx="6" cy="18.5" r="2" />
+      <circle cx="18" cy="18.5" r="2" />
+    </svg>
+  );
+}
+function IconeCracha(p: SVGProps<SVGSVGElement>) {
+  // Crachá: quem tem acesso.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <rect x="4" y="5.5" width="16" height="15" rx="2" />
+      <path d="M9.5 5.5V3.5h5v2" />
+      <circle cx="12" cy="11.5" r="2.2" />
+      <path d="M8 17.5a4 4 0 0 1 8 0" />
+    </svg>
+  );
+}
+function IconeSmartphone(p: SVGProps<SVGSVGElement>) {
+  // Aparelho: o WhatsApp de cada um da equipe.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <rect x="7" y="2.5" width="10" height="19" rx="2.2" />
+      <path d="M10.5 18.5h3" />
     </svg>
   );
 }
 function IconeAlvo(p: SVGProps<SVGSVGElement>) {
+  // Alvo: anúncio é mirar em quem interessa.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <circle cx="12" cy="12" r="9" />
       <circle cx="12" cy="12" r="5" />
-      <circle cx="12" cy="12" r="1" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.2" fill="currentColor" />
     </svg>
   );
 }
 function IconeEtiqueta(p: SVGProps<SVGSVGElement>) {
+  // Etiqueta de preço.
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M20 12l-8 8-9-9V4h7l10 8z" />
