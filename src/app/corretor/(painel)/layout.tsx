@@ -3,6 +3,8 @@ import Link from "next/link";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { NavPainel } from "./NavPainel";
 import { NavMobileBottom } from "./NavMobileBottom";
+import { GavetaLateral } from "./GavetaLateral";
+import { BotaoGaveta } from "./BotaoGaveta";
 import { CromaDoModulo } from "./CromaDoModulo";
 import { MenuDaConta } from "./MenuDaConta";
 import { sair } from "@/app/corretor/actions";
@@ -46,9 +48,14 @@ export default async function PainelLayout({
     <CromaDoModulo className="bg-fundo flex min-h-svh flex-1 flex-col">
       <header className="border-linha bg-fundo/85 sticky top-0 z-40 border-b backdrop-blur-lg">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
-          <Link href="/" className="font-display text-titulo text-lg">
-            Next<span className="text-acento-suave">Home</span>
-          </Link>
+          <div className="flex items-center gap-1">
+            {/* O hambúrguer só existe no celular e só quando há sessão: sem
+                corretor não há gaveta para abrir. */}
+            {corretor && <BotaoGaveta />}
+            <Link href="/" className="font-display text-titulo text-lg">
+              Next<span className="text-acento-suave">Home</span>
+            </Link>
+          </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             <SeletorTema atual={tema} />
@@ -100,7 +107,8 @@ export default async function PainelLayout({
             <NavPainel ehGestor={ehGestor} />
             <div className="min-w-0">{children}</div>
           </div>
-          <NavMobileBottom ehGestor={ehGestor} />
+          <NavMobileBottom />
+          <GavetaLateral ehGestor={ehGestor} />
         </>
       ) : (
         <div className="mx-auto w-full max-w-2xl px-4 py-12">

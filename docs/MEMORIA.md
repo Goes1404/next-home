@@ -4178,3 +4178,33 @@ o subtópico — e a falta dele tinha causado dois defeitos medidos.
 - **`aria-current="page"` duplo** aparece toda vez que tópico e subtópico
   compartilham href (`/corretor/whatsapp` é o tópico e é "Minha IA"). A regra:
   com subtópico aberto, é ELE a página; o tópico não leva `aria-current`.
+
+### A gaveta virou lateral, com acordeão (04/09/2026, tarde)
+
+O usuário mandou a referência de um app que ele usa: gaveta pela esquerda,
+página escurecida atrás, acordeão por tópico, ícone em cada subtópico, marca
+no topo, "Sair" no rodapé. O que eu tinha feito era folha de baixo.
+
+- **Folha de baixo esconde o TOPO da lista.** Cabia com sete itens planos;
+  com tópicos e subtópicos a lista fica alta, e o que some é justamente Agora,
+  Pessoas e Imóveis — os três mais usados. Lateral não tem esse problema.
+- **Acordeão CONTROLADO, não só derivado da rota.** A versão anterior só abria
+  o tópico da rota atual; espiar outro exigia navegar até ele. Agora a seta
+  abre/fecha e o rótulo navega — separados, como na referência. O tópico
+  aberto à mão é guardado COM a rota: ao navegar, volta ao da rota nova sem
+  efeito nem setState em cascata.
+- **Dois gatilhos, um estado.** Hambúrguer no topo (onde todo app põe) e o
+  botão Menu da barra do polegar (que já existia). Moram em irmãos sob um
+  layout de servidor — sem pai cliente para `useState` — então `gavetaStore`
+  é um store externo de 40 linhas com `useSyncExternalStore`. Guarda a ROTA
+  em que abriu, não booleano: fecha sozinha ao navegar.
+- **Tópico ativo SÓLIDO** (`bg-acento text-sobre-cor`), não lavado: é a
+  resposta a "onde estou" e tem de ser lida de relance no celular ao sol. Na
+  cor do módulo, não num laranja fixo — a paleta do painel muda com a seção.
+- **Subtópico ganhou ícone**, revertendo a decisão da manhã. Com vinte linhas
+  na gaveta, ler cada rótulo é o que cansa; o ícone diz o que é antes de ler.
+- **Antes de usar token novo, `grep` no `globals.css`.** Classe de cor que não
+  existe vira NADA em silêncio (a lição do `bg-chip`). Conferi os sete que
+  usei — todos existem.
+- Medido em 320/360/390 com o CSS de produção: sem estouro, todo alvo ≥44px,
+  "Listas de transmissão" cabe sem truncar até em 320px.

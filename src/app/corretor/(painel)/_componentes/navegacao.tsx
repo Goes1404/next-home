@@ -31,17 +31,16 @@ import type { SVGProps } from "react";
 /**
  * Um subtópico: uma tela DENTRO de um destino.
  *
- * Não tem ícone de propósito. Ícone repetido em cinco linhas recuadas vira
- * ruído — o que diz "isto pertence àquilo" é o recuo, não um segundo símbolo.
- *
- * `contador` e `ponto` existem porque os subtópicos são a MESMA lista que as
- * abas de seção desenham, e as abas já mostram "3 sem revisão" e o pontinho
- * de conexão. Sem eles aqui, mover a hierarquia para o menu perderia
- * informação que hoje está na tela.
+ * Leva ícone próprio, menor que o do tópico. O recuo e a régua vertical já
+ * dizem "isto pertence àquilo"; o ícone diz O QUE é cada um antes de ler —
+ * e numa gaveta com vinte linhas, ler cada rótulo é o que cansa. A referência
+ * de produto (04/09/2026) tem ícone em todo subtópico, e é o padrão dos apps
+ * que o corretor já usa.
  */
 export type SubItemNav = {
   href: string;
   label: string;
+  icone?: (props: SVGProps<SVGSVGElement>) => React.ReactElement;
 };
 
 export type ItemNav = {
@@ -93,10 +92,10 @@ export const GRUPOS_NAV: GrupoNav[] = [
         label: "Pessoas",
         icone: IconePessoas,
         subitens: [
-          { href: "/corretor/leads", label: "Lista" },
-          { href: "/corretor/funil", label: "Funil" },
-          { href: "/corretor/visitas", label: "Visitas" },
-          { href: "/corretor/importar", label: "Adicionar" },
+          { href: "/corretor/leads", label: "Lista", icone: IconeLista },
+          { href: "/corretor/funil", label: "Funil", icone: IconeFunil },
+          { href: "/corretor/visitas", label: "Visitas", icone: IconeCalendario },
+          { href: "/corretor/importar", label: "Adicionar", icone: IconeAdicionarPessoa },
         ],
       },
       {
@@ -105,7 +104,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
         icone: IconePredio,
         // A fila de cadastro virou sub-rota justamente porque o menu estava no
         // teto; era alcançável só pelo cartão da tela de Imóveis.
-        subitens: [{ href: "/corretor/imoveis/candidatos", label: "Fila de cadastro" }],
+        subitens: [{ href: "/corretor/imoveis/candidatos", label: "Fila de cadastro", icone: IconeFila }],
       },
     ],
   },
@@ -128,8 +127,8 @@ export const GRUPOS_NAV: GrupoNav[] = [
         label: "WhatsApp",
         icone: IconeConversa,
         subitens: [
-          { href: "/corretor/conversas", label: "Conversas" },
-          { href: "/corretor/whatsapp", label: "Minha IA" },
+          { href: "/corretor/conversas", label: "Conversas", icone: IconeBalao },
+          { href: "/corretor/whatsapp", label: "Minha IA", icone: IconeFaisca },
         ],
       },
       {
@@ -150,11 +149,11 @@ export const GRUPOS_NAV: GrupoNav[] = [
         label: "Marketing",
         icone: IconeMegafone,
         subitens: [
-          { href: "/corretor/imoveis/criar-imagem", label: "Criar arte" },
-          { href: "/corretor/marketing/video", label: "Criar vídeo" },
-          { href: "/corretor/campanhas", label: "Listas de transmissão" },
-          { href: "/corretor/templates", label: "Modelos" },
-          { href: "/corretor/links", label: "Meus links" },
+          { href: "/corretor/imoveis/criar-imagem", label: "Criar arte", icone: IconeImagem },
+          { href: "/corretor/marketing/video", label: "Criar vídeo", icone: IconeVideo },
+          { href: "/corretor/campanhas", label: "Listas de transmissão", icone: IconeTransmissao },
+          { href: "/corretor/templates", label: "Modelos", icone: IconeModelo },
+          { href: "/corretor/links", label: "Meus links", icone: IconeLink },
         ],
       },
     ],
@@ -171,12 +170,12 @@ export const GRUPOS_NAV: GrupoNav[] = [
         icone: IconeEquipe,
         gestor: true,
         subitens: [
-          { href: "/corretor/admin", label: "Visão geral" },
-          { href: "/corretor/admin/leads", label: "Leads da equipe" },
-          { href: "/corretor/admin/contas", label: "Contas" },
-          { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe" },
-          { href: "/corretor/admin/anuncios", label: "Anúncios" },
-          { href: "/corretor/admin/precos", label: "Preços" },
+          { href: "/corretor/admin", label: "Visão geral", icone: IconePainelGeral },
+          { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeFunil },
+          { href: "/corretor/admin/contas", label: "Contas", icone: IconePessoa },
+          { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeConversa },
+          { href: "/corretor/admin/anuncios", label: "Anúncios", icone: IconeAlvo },
+          { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta },
         ],
       },
     ],
@@ -444,6 +443,126 @@ function IconeEquipe(p: SVGProps<SVGSVGElement>) {
       <circle cx="8" cy="8" r="3" />
       <circle cx="17" cy="9.5" r="2.4" />
       <path d="M3 20v-1a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v1M15 20v-1a3.5 3.5 0 0 1 3-3.4h.5a3 3 0 0 1 3 3V20" />
+    </svg>
+  );
+}
+
+/* ── Ícones dos subtópicos: menores em peso visual, mesma linha de 1.7 ── */
+
+function IconeLista(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M8 6h13M8 12h13M8 18h13" />
+      <circle cx="4" cy="6" r=".9" fill="currentColor" />
+      <circle cx="4" cy="12" r=".9" fill="currentColor" />
+      <circle cx="4" cy="18" r=".9" fill="currentColor" />
+    </svg>
+  );
+}
+function IconeCalendario(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </svg>
+  );
+}
+function IconeAdicionarPessoa(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M3 20a6 6 0 0 1 12 0M19 8v6M16 11h6" />
+    </svg>
+  );
+}
+function IconeFila(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M4 6h16M4 12h10M4 18h7" />
+      <path d="m15 17 2 2 4-4" />
+    </svg>
+  );
+}
+function IconeBalao(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
+    </svg>
+  );
+}
+function IconeFaisca(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
+      <path d="M19 17l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z" />
+    </svg>
+  );
+}
+function IconeImagem(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="2" />
+      <path d="m21 16-5-5-9 9" />
+    </svg>
+  );
+}
+function IconeVideo(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <rect x="3" y="6" width="13" height="12" rx="2" />
+      <path d="m16 10 5-3v10l-5-3z" />
+    </svg>
+  );
+}
+function IconeTransmissao(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <circle cx="12" cy="12" r="2" />
+      <path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" />
+    </svg>
+  );
+}
+function IconeModelo(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5M9 13h6M9 17h6" />
+    </svg>
+  );
+}
+function IconeLink(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+      <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+    </svg>
+  );
+}
+function IconePainelGeral(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </svg>
+  );
+}
+function IconeAlvo(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+function IconeEtiqueta(p: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M20 12l-8 8-9-9V4h7l10 8z" />
+      <circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" />
     </svg>
   );
 }
