@@ -226,7 +226,7 @@ export function GmailLeadsExtractor({
   return (
     <div className="space-y-6">
       {/* Barra de Sub-Navegação Visual */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-linha bg-superficie p-3 shadow-painel">
+      <div className="cartao flex flex-wrap items-center justify-between gap-3 p-3">
         <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
@@ -276,7 +276,7 @@ export function GmailLeadsExtractor({
       {secao === "extrator" && (
         <div className="space-y-6">
           {/* Card de Entrada */}
-          <div className="rounded-2xl border border-linha bg-superficie p-6 shadow-painel">
+          <div className="cartao p-6">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div>
                 <h2 className="font-display text-titulo text-lg font-semibold flex items-center gap-2">
@@ -627,7 +627,7 @@ export function GmailLeadsExtractor({
       {/* SEÇÃO 2: GUIA DE AUTOMAÇÃO E WEBHOOK */}
       {secao === "automacao" && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-linha bg-superficie p-6 shadow-painel space-y-6">
+          <div className="cartao p-6 space-y-6">
             <div>
               <h2 className="font-display text-titulo text-lg font-semibold flex items-center gap-2">
                 <span> <Zap className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Sincronização Automática com Gmail & Portais
@@ -726,7 +726,7 @@ export function GmailLeadsExtractor({
 
       {/* SEÇÃO 3: HISTÓRICO DE AUDITORIA */}
       {secao === "historico" && (
-        <div className="rounded-2xl border border-linha bg-superficie p-6 shadow-painel space-y-4">
+        <div className="cartao p-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-titulo text-lg font-semibold flex items-center gap-2">

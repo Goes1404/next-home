@@ -91,7 +91,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
       )}
 
       {/* Botões de Ação para Celular */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-linha bg-superficie">
+      <div className="cartao flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5">
         <div>
           <h3 className="text-fluid-base font-bold text-titulo">Galeria de Fotos do Imóvel</h3>
           <p className="text-fluid-xs text-apoio mt-0.5">

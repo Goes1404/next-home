@@ -116,7 +116,7 @@ export function EnvioImediato({
   }
 
   return (
-    <section className="border-linha bg-superficie rounded-2xl border p-5 sm:p-6">
+    <section className="cartao p-5 sm:p-6">
       <h2 className="text-fluid-base text-titulo font-medium">Enviar agora para todos os leads</h2>
       <p className="text-fluid-xs text-apoio mt-1.5">
         Vai para a carteira inteira a qualquer hora, sem esperar o horário comercial. O intervalo

@@ -185,7 +185,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
       {abaAtiva === "importar" ? (
         <div className="space-y-6">
           {/* Caixa de Entrada (Paste ou Upload) */}
-          <div className="rounded-2xl border border-linha bg-superficie p-5 backdrop-blur">
+          <div className="cartao p-5 backdrop-blur">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <div>
                 <h3 className="text-fluid-base font-semibold text-titulo">
@@ -253,7 +253,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
               </div>
 
               {/* Tabela de Diff */}
-              <div className="rounded-2xl border border-linha bg-superficie overflow-hidden backdrop-blur">
+              <div className="cartao overflow-hidden backdrop-blur">
                 <div className="p-4 border-b border-linha flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-elevado">
                   <div className="flex items-center gap-3">
                     <h3 className="text-fluid-base font-semibold text-titulo">
@@ -427,7 +427,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
         </div>
       ) : (
         /* Aba Histórico de Reajustes */
-        <div className="rounded-2xl border border-linha bg-superficie overflow-hidden backdrop-blur">
+        <div className="cartao overflow-hidden backdrop-blur">
           <div className="p-4 border-b border-linha bg-elevado">
             <h3 className="text-fluid-base font-semibold text-titulo">
               Histórico de Tabelas Mensais Aplicadas

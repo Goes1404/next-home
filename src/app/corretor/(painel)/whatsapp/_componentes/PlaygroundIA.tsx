@@ -247,7 +247,7 @@ export function PlaygroundIA({
         {/* O que a IA entendeu do cliente. Começa vazio de propósito: um
             dossiê fictício faria o corretor validar uma leitura que a IA
             nunca fez. */}
-        <div className="border-linha bg-superficie rounded-2xl border p-5">
+        <div className="cartao p-5">
           <div className="flex items-baseline justify-between gap-2">
             <h3 className="text-fluid-sm text-titulo font-medium">O que a IA entendeu</h3>
             {dossie.temperatura !== null && (

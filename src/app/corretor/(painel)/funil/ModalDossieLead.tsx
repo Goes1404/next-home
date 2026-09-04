@@ -109,7 +109,7 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
           <div className="space-y-6 duration-200">
             {/* Resumo em Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl border border-linha bg-superficie space-y-1">
+              <div className="cartao p-4 space-y-1">
                 <span className="text-fluid-xs font-bold text-acento-suave">💰 Orçamento & Pagamento</span>
                 <p className="text-fluid-sm font-bold text-titulo">
                   ~{formatarMoedaBRL(orcamentoEstimado)}
@@ -119,7 +119,7 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl border border-linha bg-superficie space-y-1">
+              <div className="cartao p-4 space-y-1">
                 <span className="text-fluid-xs font-bold text-acento-suave">👨‍👩‍👧 Perfil Familiar</span>
                 <p className="text-fluid-sm font-bold text-titulo">
                   {temFilhos ? "Casal com Filhos em Idade Escolar" : "Casal / Investidor de Alto Padrão"}

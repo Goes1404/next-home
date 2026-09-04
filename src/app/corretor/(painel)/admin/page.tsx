@@ -6,6 +6,7 @@ import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getAgregadoDaEquipe } from "@/lib/admin/agregados";
 import { createClient } from "@/lib/supabase/server";
 import { ETAPA_LABEL, ETAPAS_FUNIL } from "@/lib/types";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Visão geral" };
 
@@ -40,13 +41,13 @@ function Kpi({
   );
 
   if (!href) {
-    return <div className="border-linha bg-superficie rounded-2xl border p-4">{conteudo}</div>;
+    return <div className="cartao p-4">{conteudo}</div>;
   }
 
   return (
     <Link
       href={href}
-      className="border-linha bg-superficie hover:border-acento-linha rounded-2xl border p-4 transition-colors"
+      className="cartao hover:border-acento-linha p-4 transition-colors"
     >
       {conteudo}
     </Link>
@@ -110,10 +111,7 @@ export default async function AdminVisaoGeralPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-fluid-2xl text-titulo font-bold">Administração</h1>
-        <p className="text-fluid-sm text-apoio mt-1">
-          O retrato da operação. Todo número aqui abre a lista por trás dele.
-        </p>
+        <CabecalhoDeTela secao="Administração" titulo="Visão geral" descricao="O retrato da operação. Todo número aqui abre a lista por trás dele." />
       </div>
 
       <AbasAdmin ativa="/corretor/admin" />
@@ -155,7 +153,7 @@ export default async function AdminVisaoGeralPage() {
         lenta, quando o problema é outro — ela não é acionada.
       */}
       {resposta.escreveram > 0 && (
-        <section className="border-linha bg-superficie rounded-2xl border p-5">
+        <section className="cartao p-5">
           <h2 className="text-fluid-base text-titulo font-bold">A IA está atendendo?</h2>
           <p className="text-fluid-xs text-apoio mt-1">
             De quem escreveu, quantos a assistente respondeu — e em quanto tempo.
@@ -196,7 +194,7 @@ export default async function AdminVisaoGeralPage() {
         </section>
       )}
 
-      <section className="border-linha bg-superficie rounded-2xl border p-5">
+      <section className="cartao p-5">
         <h2 className="text-fluid-base text-titulo font-bold">Onde está cada contato</h2>
         <ul className="mt-4 space-y-2.5">
           {ETAPAS_FUNIL.map((etapa) => {
@@ -226,7 +224,7 @@ export default async function AdminVisaoGeralPage() {
         </ul>
       </section>
 
-      <section className="border-linha bg-superficie rounded-2xl border p-5">
+      <section className="cartao p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-fluid-base text-titulo font-bold">Carga por corretor</h2>
           <Link

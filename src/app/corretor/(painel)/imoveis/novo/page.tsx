@@ -4,6 +4,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getCandidato } from "@/lib/imoveis/candidatosDoCatalogo";
 import { bairrosDoCandidato, statusDoCandidato } from "@/lib/imoveis/filaDeCandidatos";
 import { FormNovoImovel, type PreenchimentoInicial } from "./FormNovoImovel";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata = {
   title: "Novo imóvel | Painel do Corretor",
@@ -53,15 +54,11 @@ export default async function NovoImovelPage({
         >
           ← {candidato ? "Fila de cadastro" : "Imóveis"}
         </Link>
-        <h1 className="text-fluid-xl text-titulo font-bold">Novo imóvel</h1>
-        <p className="text-fluid-xs text-apoio max-w-2xl text-pretty">
-          Só o essencial aqui. Foto, planta, tipologia, descrição e lazer entram no editor, que abre
-          logo depois — inclusive pela importação de PDF da construtora e do Google Drive.
-        </p>
+        <CabecalhoDeTela secao="Imóveis" titulo="Novo imóvel" descricao="Só o essencial aqui. Foto, planta, tipologia, descrição e lazer entram no editor, que abre logo depois — inclusive pela importação de PDF da construtora e do Google Drive." />
       </div>
 
       {candidato && (
-        <p className="text-fluid-xs text-corpo border-linha bg-superficie rounded-2xl border px-5 py-4">
+        <p className="cartao text-fluid-xs text-corpo px-5 py-4">
           Vindo da fila de cadastro:{" "}
           <strong className="text-titulo">{candidato.nome}</strong>
           {candidato.dormitorios || candidato.area ? (
@@ -71,7 +68,7 @@ export default async function NovoImovelPage({
         </p>
       )}
 
-      <div className="border-linha bg-superficie shadow-painel rounded-2xl border px-5 py-6 sm:px-6">
+      <div className="cartao px-5 py-6 sm:px-6">
         <FormNovoImovel inicial={inicial} />
       </div>
     </div>

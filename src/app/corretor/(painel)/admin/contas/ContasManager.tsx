@@ -398,7 +398,7 @@ export function ContasManager({
         </div>
       )}
 
-      <ul className="border-linha bg-superficie rounded-2xl border px-5">
+      <ul className="cartao px-5">
         {corretores.map((c) => (
           <LinhaCorretor
             key={c.id}

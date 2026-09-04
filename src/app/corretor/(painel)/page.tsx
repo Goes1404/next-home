@@ -102,7 +102,7 @@ export default async function PainelInicio() {
         usou. Separados em cartões distantes, o número perdia a causa.
       */}
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
-        <div className="border-linha bg-superficie shadow-painel rounded-2xl border p-5 sm:p-6">
+        <div className="cartao p-5 sm:p-6">
           <p className="text-fluid-sm text-titulo font-medium">Seu link pessoal</p>
           <p className="text-fluid-sm text-apoio mt-1">
             Enquanto um cliente navegar por ele, todo botão de WhatsApp do site — em qualquer
@@ -212,7 +212,7 @@ function CartaoDeCliques({
   carregando?: boolean;
 }) {
   return (
-    <div className="border-linha bg-superficie shadow-painel flex flex-col justify-center rounded-2xl border p-5 sm:p-6">
+    <div className="cartao flex flex-col justify-center p-5 sm:p-6">
       <span className="text-tenue text-[11px] font-medium tracking-[0.14em] uppercase">
         Cliques hoje
       </span>

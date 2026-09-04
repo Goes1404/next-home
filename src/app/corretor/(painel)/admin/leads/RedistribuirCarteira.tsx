@@ -60,7 +60,7 @@ export function RedistribuirCarteira({
   }
 
   return (
-    <section className="border-linha bg-superficie rounded-2xl border p-5">
+    <section className="cartao p-5">
       <h2 className="text-fluid-sm text-titulo font-medium">Passar carteira</h2>
       <p className="text-fluid-xs text-apoio mt-1">
         Todos os leads de um corretor (ou os sem dono) passam para outro, de uma vez — para

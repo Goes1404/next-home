@@ -324,7 +324,7 @@ export function PainelConexao({
       </div>
 
       {metodo === "codigo" && (
-        <div className="border-linha bg-superficie space-y-2 rounded-2xl border p-4">
+        <div className="cartao space-y-2 p-4">
           <label className="text-fluid-xs text-apoio block" htmlFor="tel-pareamento">
             Número do WhatsApp que você quer conectar
           </label>

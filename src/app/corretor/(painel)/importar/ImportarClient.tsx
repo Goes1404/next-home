@@ -110,7 +110,7 @@ function FormularioUnico({ empreendimentos }: { empreendimentos: Empreendimento[
         // tem outro na sequência.
         formRef.current?.reset();
       }}
-      className="border-linha bg-superficie shadow-painel max-w-2xl space-y-4 rounded-2xl border p-6"
+      className="cartao max-w-2xl space-y-4 p-6"
     >
       <div>
         <label htmlFor="nome" className={ROTULO}>
@@ -354,7 +354,7 @@ function Importador({
   if (etapa === "revisao") {
     return (
       <div className="space-y-5">
-        <div className="border-linha bg-superficie shadow-painel rounded-2xl border p-5">
+        <div className="cartao p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <p className="font-display text-titulo text-lg">
               {linhas.length === 1
@@ -382,7 +382,7 @@ function Importador({
 
         <ListaRevisao linhas={linhas} onChange={setLinhas} />
 
-        <div className="border-linha bg-superficie shadow-painel space-y-4 rounded-2xl border p-5">
+        <div className="cartao space-y-4 p-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="imovel-lote" className={ROTULO}>
@@ -455,7 +455,7 @@ function Importador({
   }
 
   return (
-    <div className="border-linha bg-superficie shadow-painel max-w-2xl rounded-2xl border p-6">
+    <div className="cartao max-w-2xl p-6">
       <div className="flex gap-1">
         {(["colar", "arquivo"] as const).map((m) => (
           <button
@@ -560,7 +560,7 @@ function ListaRevisao({
   }
 
   return (
-    <div className="border-linha bg-superficie shadow-painel overflow-hidden rounded-2xl border">
+    <div className="cartao overflow-hidden">
       <label className="border-linha text-fluid-sm text-corpo flex min-h-12 cursor-pointer items-center gap-2.5 border-b px-5">
         <input
           type="checkbox"

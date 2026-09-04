@@ -75,7 +75,7 @@ export function GradeDaSemana({ inicial }: { inicial: FaixaDaSemana[] }) {
     comecarSalvar(async () => setAviso(await salvarDisponibilidade(faixas)));
 
   return (
-    <section className="border-linha bg-superficie shadow-painel rounded-2xl border p-5 sm:p-6">
+    <section className="cartao p-5 sm:p-6">
       <h2 className="font-display text-titulo text-lg">Quando você recebe visita</h2>
       <p className="text-fluid-xs text-apoio mt-1.5 leading-relaxed text-pretty">
         A assistente só oferece horário que está aqui. Sem esta grade, ela fala de horário de forma

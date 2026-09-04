@@ -198,7 +198,7 @@ export function TabelaLeads({
   const alternar = (id: string) => setAbertoId((atual) => (atual === id ? null : id));
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-linha bg-superficie">
+    <div className="cartao overflow-hidden">
       {/* ---------------------------------------------------------------
           Telefone: lista densa. O nome expande os detalhes; a ação primária
           (WhatsApp) fica sempre à mostra e o "⋯" abre a folha de ações —

@@ -69,13 +69,13 @@ export function ListaPessoas({
       </label>
 
       {pessoas.length === 0 ? (
-        <p className="text-fluid-sm text-apoio border-linha bg-superficie rounded-2xl border p-6 text-center">
+        <p className="cartao text-fluid-sm text-apoio p-6 text-center">
           {busca
             ? `Ninguém com "${busca}".`
             : "Ninguém por aqui ainda. Quem chegar pelo seu link aparece nesta lista."}
         </p>
       ) : (
-        <ul className="border-linha bg-superficie shadow-painel divide-linha divide-y overflow-hidden rounded-2xl border">
+        <ul className="cartao divide-linha divide-y overflow-hidden">
           {pessoas.map((p) => (
             <LinhaPessoa key={p.id} pessoa={p} />
           ))}

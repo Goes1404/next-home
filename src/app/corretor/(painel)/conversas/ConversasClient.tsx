@@ -398,7 +398,7 @@ export function ConversasClient({
 
   if (todas.length === 0) {
     return (
-      <div className="border-linha bg-superficie shadow-painel mt-8 rounded-2xl border p-6">
+      <div className="cartao mt-8 p-6">
         <p className="text-fluid-sm text-corpo">
           Nenhuma conversa ainda. Assim que alguém escrever para o número conectado, ela aparece
           aqui — e você vê na hora se a IA respondeu ou ficou de fora.
@@ -1043,7 +1043,7 @@ function SeletorDeMidia({
   const aberto = imoveis?.find((i) => i.nome === imovelAberto) ?? null;
 
   return (
-    <div className="border-linha bg-superficie shadow-painel absolute bottom-full left-2 z-10 mb-2 w-[min(28rem,calc(100%-1rem))] rounded-2xl border p-3">
+    <div className="cartao absolute bottom-full left-2 z-10 mb-2 w-[min(28rem,calc(100%-1rem))] p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-titulo text-sm font-medium">
           {aberto ? aberto.nome : "Enviar foto do catálogo"}

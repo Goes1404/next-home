@@ -10,6 +10,7 @@ import { janelaDeDias } from "@/lib/admin/janelaDeDias";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { BotaoSincronizar } from "./BotaoSincronizar";
 import { GraficoGastoDia } from "./GraficoGastoDia";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Anúncios" };
 
@@ -23,9 +24,9 @@ function Kpi({ rotulo, valor, detalhe, href }: { rotulo: string; valor: string; 
       {detalhe && <p className="text-fluid-xs text-apoio mt-0.5">{detalhe}</p>}
     </>
   );
-  if (!href) return <div className="border-linha bg-superficie rounded-2xl border p-4">{conteudo}</div>;
+  if (!href) return <div className="cartao p-4">{conteudo}</div>;
   return (
-    <Link href={href} className="border-linha bg-superficie hover:border-acento-linha rounded-2xl border p-4 transition-colors">
+    <Link href={href} className="cartao hover:border-acento-linha p-4 transition-colors">
       {conteudo}
     </Link>
   );
@@ -165,10 +166,7 @@ export default async function AnunciosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-fluid-2xl text-titulo font-bold">Anúncios</h1>
-        <p className="text-fluid-sm text-apoio mt-1">
-          Quanto cada campanha do Meta custou e o que ela virou — atualizado uma vez por dia.
-        </p>
+        <CabecalhoDeTela secao="Administração" titulo="Anúncios" descricao="Quanto cada campanha do Meta custou e o que ela virou — atualizado uma vez por dia." />
       </div>
 
       <AbasAdmin ativa="/corretor/admin/anuncios" />
@@ -189,7 +187,7 @@ export default async function AnunciosPage() {
         />
       </div>
 
-      <section className="border-linha bg-superficie rounded-2xl border p-4">
+      <section className="cartao p-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-fluid-base text-titulo font-semibold">Investimento por dia</h2>
           <p className="text-fluid-xs text-tenue tabular-nums">
@@ -202,7 +200,7 @@ export default async function AnunciosPage() {
       </section>
 
       {leadsCrm > 0 && (
-        <section className="border-linha bg-superficie rounded-2xl border p-4">
+        <section className="cartao p-4">
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-fluid-base text-titulo font-semibold">
               Qualidade dos leads de anúncio (nota da IA)
@@ -245,7 +243,7 @@ export default async function AnunciosPage() {
       )}
 
       {campanhas.length > 0 && (
-        <section className="border-linha bg-superficie overflow-x-auto rounded-2xl border p-4">
+        <section className="cartao overflow-x-auto p-4">
           <h2 className="text-fluid-base text-titulo mb-1 font-semibold">Por campanha (30 dias)</h2>
           <p className="text-fluid-xs text-apoio mb-3">
             Custo por visita e por fechado são o que a Meta não tem como calcular — o que acontece
@@ -353,7 +351,7 @@ export default async function AnunciosPage() {
 
       {/* O passo a passo mora AQUI, abaixo do gráfico, a pedido (26/08):
           quem for conectar depois encontra o caminho na própria tela. */}
-      <section className="border-linha bg-superficie rounded-2xl border p-4">
+      <section className="cartao p-4">
         <h2 className="text-fluid-base text-titulo font-semibold">
           {conectado ? "Como esta tela foi conectada ao Meta" : "Como conectar o Meta a esta tela"}
         </h2>

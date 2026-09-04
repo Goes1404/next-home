@@ -87,7 +87,7 @@ export default async function ImoveisPage() {
       {candidatosPendentes > 0 && (
         <Link
           href="/corretor/imoveis/candidatos"
-          className="border-linha bg-superficie hover:border-acento-linha shadow-painel flex items-center gap-4 rounded-2xl border px-5 py-4 transition-colors sm:px-6"
+          className="cartao hover:border-acento-linha flex items-center gap-4 px-5 py-4 transition-colors sm:px-6"
         >
           <span className="min-w-0 flex-1">
             <span className="text-fluid-sm text-titulo block font-medium">

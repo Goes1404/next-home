@@ -23,7 +23,7 @@ export function TermometroFunil({ contagens }: { contagens: Record<EtapaFunil, n
   const total = porEtapa.reduce((soma, { total: quantos }) => soma + quantos, 0);
 
   return (
-    <section className="border-linha bg-superficie shadow-painel rounded-2xl border p-5 sm:p-6">
+    <section className="cartao p-5 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="font-display text-titulo text-lg">Seu funil agora</h2>
         <Link

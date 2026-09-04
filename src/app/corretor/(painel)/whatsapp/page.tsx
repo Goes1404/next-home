@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ModoBotWhatsapp, StatusConexaoWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { WhatsappManager } from "./WhatsappManager";
 import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = {
   title: "Meu Assistente WhatsApp IA | Next Home",
@@ -38,11 +39,7 @@ export default async function WhatsappPainelPage() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-fluid-2xl text-titulo font-bold">WhatsApp</h1>
-        <p className="text-fluid-sm mt-1 text-apoio">
-          Conecte seu número para a IA atender, mandar fotos e plantas e qualificar seus leads
-          enquanto você não está.
-        </p>
+        <CabecalhoDeTela secao="WhatsApp" titulo="Minha IA" descricao="Conecte seu número para a IA atender, mandar fotos e plantas e qualificar seus leads enquanto você não está." />
       </div>
 
       <AbasWhatsapp

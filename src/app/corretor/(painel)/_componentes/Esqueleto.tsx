@@ -24,7 +24,7 @@ export function Esqueleto({ className = "" }: { className?: string }) {
 /** Uma seção em cartão, com título e algumas linhas. */
 export function EsqueletoCartao({ linhas = 3 }: { linhas?: number }) {
   return (
-    <div className="border-linha bg-superficie shadow-painel rounded-2xl border p-5 sm:p-6">
+    <div className="cartao p-5 sm:p-6">
       <Esqueleto className="h-5 w-32" />
       <div className="mt-4 space-y-3">
         {Array.from({ length: linhas }, (_, i) => (

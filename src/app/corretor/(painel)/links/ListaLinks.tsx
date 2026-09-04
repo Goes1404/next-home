@@ -91,7 +91,7 @@ export function ListaLinks({
             return (
               <li
                 key={item.slug}
-                className="rounded-2xl border border-linha bg-superficie p-4"
+                className="cartao p-4"
               >
                 <p className="font-display text-titulo">{item.nome}</p>
                 <p className="text-fluid-xs mt-0.5 text-apoio">

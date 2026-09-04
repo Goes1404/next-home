@@ -87,7 +87,7 @@ export function Quadro({
 
   if (leads.length === 0) {
     return (
-      <div className="mt-8 rounded-2xl border border-linha bg-superficie p-6">
+      <div className="cartao mt-8 p-6">
         <p className="text-fluid-sm text-corpo">
           Ninguém no funil ainda. Assim que alguém chegar pelo seu link ou por um
           formulário do site, aparece aqui no grupo “Leads”.

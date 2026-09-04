@@ -3,6 +3,7 @@ import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { buscarCatalogoAtualParaConciliacao, buscarHistoricoLotes } from "./actions";
 import { PrecosManager } from "./PrecosManager";
 import { exigirGestorNaPagina } from "@/lib/guardas";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Atualização de Preços em Massa" };
 
@@ -23,8 +24,7 @@ export default async function PrecosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-fluid-2xl font-bold text-titulo">Administração</h1>
-        <p className="text-fluid-sm text-apoio mt-1">Preços do catálogo, atualizados em lote.</p>
+        <CabecalhoDeTela secao="Administração" titulo="Preços" descricao="Preços do catálogo, atualizados em lote." />
       </div>
 
       <AbasAdmin ativa="/corretor/admin/precos" />

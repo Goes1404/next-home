@@ -45,7 +45,19 @@ export default async function PainelLayout({
   const ehGestor = corretor?.papel === "gestor";
 
   return (
-    <CromaDoModulo className="bg-fundo flex min-h-svh flex-1 flex-col">
+    <CromaDoModulo className="bg-fundo relative isolate flex min-h-svh flex-1 flex-col">
+      {/*
+        Dois brilhos na cor do módulo, fixos atrás de todo o painel. São o que
+        os cartões translúcidos e o vidro do cabeçalho deixam transparecer —
+        sem eles, vidro sobre fundo liso é só cinza (lição do HeroInicio).
+        Acompanham `--color-acento`, então mudam de cor com a seção, com a
+        transição que `@property` já dá ao token. `isolate` no <main> segura o
+        `-z-10` dentro deste contexto: ficam sobre o fundo e sob o conteúdo.
+      */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="from-acento/25 absolute -top-40 right-[-12%] h-[30rem] w-[30rem] rounded-full bg-gradient-to-br to-transparent blur-3xl" />
+        <div className="from-acento/15 absolute bottom-[-10rem] left-[-8rem] h-[26rem] w-[26rem] rounded-full bg-gradient-to-tr to-transparent blur-3xl" />
+      </div>
       <header className="border-linha bg-fundo/85 sticky top-0 z-40 border-b backdrop-blur-lg">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
           <div className="flex items-center gap-1">
@@ -126,7 +138,7 @@ export default async function PainelLayout({
  */
 function ContaSemVinculo() {
   return (
-    <div className="border-linha bg-superficie shadow-painel rounded-2xl border p-7">
+    <div className="cartao p-7">
       <h1 className="font-display text-titulo text-lg">Conta ainda não vinculada</h1>
       <p className="text-fluid-sm text-corpo mt-2">
         Seu acesso está ativo, mas ainda não foi ligado a um cadastro de corretor. Fale com

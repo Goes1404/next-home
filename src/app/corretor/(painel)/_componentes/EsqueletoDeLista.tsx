@@ -29,7 +29,7 @@ export function EsqueletoDeLista({
         </div>
       )}
 
-      <div className="border-linha bg-superficie shadow-painel divide-linha divide-y rounded-2xl border">
+      <div className="cartao divide-linha divide-y">
         {Array.from({ length: linhas }, (_, i) => (
           <div key={i} className="flex items-center gap-3 p-4">
             <Esqueleto className="h-11 w-1 shrink-0 rounded-r-full" />

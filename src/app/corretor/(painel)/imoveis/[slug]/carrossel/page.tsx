@@ -6,6 +6,7 @@ import { montarCarrossel } from "@/lib/social/carrossel";
 import { legendaDoPost } from "@/lib/social/legenda";
 import { linkDeIndicacao } from "@/lib/social/linkDeIndicacao";
 import { CopiarLegenda } from "./CopiarLegenda";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata = {
   title: "Carrossel para Instagram | Painel do Corretor",
@@ -50,11 +51,8 @@ export default async function CarrosselPage({
         >
           ← {imovel.nome}
         </Link>
-        <h1 className="text-fluid-xl text-titulo font-bold">Carrossel para Instagram</h1>
-        <p className="text-fluid-xs text-apoio max-w-2xl text-pretty">
-          {slides.length} slides montados com as fotos e a ficha deste imóvel. No celular, segure
-          cada imagem para salvar na galeria — elas já vêm na ordem de postagem.
-        </p>
+        <CabecalhoDeTela secao="Marketing" titulo="Carrossel para Instagram" descricao={<>{slides.length} slides montados com as fotos e a ficha deste imóvel. No celular, segure
+          cada imagem para salvar na galeria — elas já vêm na ordem de postagem.</>} />
       </div>
 
       {!corretor.slug && (
@@ -64,7 +62,7 @@ export default async function CarrosselPage({
         </p>
       )}
 
-      <section className="border-linha bg-superficie shadow-painel rounded-2xl border px-5 py-5 sm:px-6">
+      <section className="cartao px-5 py-5 sm:px-6">
         <h2 className="font-display text-titulo text-lg">Legenda do post</h2>
         <p className="text-fluid-xs text-apoio mt-1">
           Sem valores e sem prazo não cadastrado — post fica no ar e a imagem não se edita depois.

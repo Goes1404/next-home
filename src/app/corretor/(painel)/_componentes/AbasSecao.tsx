@@ -58,7 +58,7 @@ export function AbasSecao({
      * é pílula.
      */
     <nav aria-label={rotulo}>
-      <div className="border-linha bg-superficie flex flex-wrap gap-1 rounded-2xl border p-1">
+      <div className="cartao flex flex-wrap gap-1 p-1">
         {abas.map((aba) => {
           const atual = aba.href === ativa;
           return (

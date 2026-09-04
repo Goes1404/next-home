@@ -3,6 +3,7 @@ import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { getCorretoresParaAdmin } from "@/lib/corretorSessao";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { ContasManager } from "./ContasManager";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Contas da equipe" };
 
@@ -14,10 +15,7 @@ export default async function ContasPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-fluid-2xl text-titulo font-bold">Administração</h1>
-        <p className="text-fluid-sm text-apoio mt-1">
-          Quem entra no painel, com qual papel, e quem está na escala de distribuição.
-        </p>
+        <CabecalhoDeTela secao="Administração" titulo="Contas e papéis" descricao="Quem entra no painel, com qual papel, e quem está na escala de distribuição." />
       </div>
 
       <AbasAdmin ativa="/corretor/admin/contas" />

@@ -49,7 +49,7 @@ function IconeWhatsapp({ className }: { className?: string }) {
 export function FilaAgora({ itens }: { itens: ItemFila[] }) {
   if (itens.length === 0) {
     return (
-      <section className="border-linha bg-superficie shadow-painel rounded-2xl border p-5 sm:p-6">
+      <section className="cartao p-5 sm:p-6">
         <h2 className="font-display text-titulo text-lg">Tudo em dia</h2>
         <p className="text-fluid-sm text-apoio mt-1">
           Nenhuma visita, lead novo ou tarefa esperando por você. Bom momento para divulgar seu

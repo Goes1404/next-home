@@ -85,7 +85,7 @@ export function ChatBase({
       : null;
 
   return (
-    <div className="border-linha bg-superficie flex h-[72dvh] min-h-[28rem] flex-col overflow-hidden rounded-2xl border">
+    <div className="cartao flex h-[72dvh] min-h-[28rem] flex-col overflow-hidden">
       <div
         ref={corpoRef}
         onScroll={aoRolar}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCandidatosDoCatalogo } from "@/lib/imoveis/candidatosDoCatalogo";
 import { FilaCandidatos } from "./FilaCandidatos";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata = {
   title: "Fila de cadastro | Painel do Corretor",
@@ -27,12 +28,7 @@ export default async function CandidatosPage() {
         >
           ← Imóveis
         </Link>
-        <h1 className="text-fluid-xl text-titulo font-bold">Fila de cadastro</h1>
-        <p className="text-fluid-xs text-apoio max-w-2xl text-pretty">
-          Levantamento de 01/09/2026: os lançamentos e obras de Barueri que aparecem no mercado.
-          Aqui só existe nome, bairro, tipologia e o link da fonte — nada disto aparece na vitrine
-          nem no atendimento da assistente enquanto não virar cadastro de verdade.
-        </p>
+        <CabecalhoDeTela secao="Imóveis" titulo="Fila de cadastro" descricao="Levantamento de 01/09/2026: os lançamentos e obras de Barueri que aparecem no mercado. Aqui só existe nome, bairro, tipologia e o link da fonte — nada disto aparece na vitrine nem no atendimento da assistente enquanto não virar cadastro de verdade." />
       </div>
 
       <FilaCandidatos candidatos={candidatos} />

@@ -170,7 +170,7 @@ export function ConfiguracaoIA({
       </button>
 
       {mostrarAvancado && (
-        <div className="border-linha bg-superficie space-y-5 rounded-2xl border p-5">
+        <div className="cartao space-y-5 p-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-fluid-xs text-apoio block" htmlFor="nome-assistente">

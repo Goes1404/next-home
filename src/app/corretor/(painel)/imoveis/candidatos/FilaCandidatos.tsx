@@ -96,7 +96,7 @@ export function FilaCandidatos({ candidatos }: { candidatos: readonly Candidato[
       )}
 
       {fila.pendentes.length > 0 && (
-        <section className="border-linha bg-superficie shadow-painel overflow-hidden rounded-2xl border">
+        <section className="cartao overflow-hidden">
           <div className="border-linha border-b px-5 py-4 sm:px-6">
             <h2 className="font-display text-titulo text-lg">
               {fila.pendentes.length === 1
@@ -189,7 +189,7 @@ export function FilaCandidatos({ candidatos }: { candidatos: readonly Candidato[
       )}
 
       {fila.resolvidos.length > 0 && (
-        <details className="border-linha bg-superficie overflow-hidden rounded-2xl border">
+        <details className="cartao overflow-hidden">
           <summary className="text-fluid-sm text-apoio hover:text-titulo cursor-pointer list-none px-5 py-4 transition-colors select-none sm:px-6">
             Já decididos ({fila.resolvidos.length})
           </summary>
@@ -221,7 +221,7 @@ export function FilaCandidatos({ candidatos }: { candidatos: readonly Candidato[
       )}
 
       {candidatos.length === 0 && (
-        <p className="text-fluid-sm text-apoio border-linha bg-superficie rounded-2xl border px-5 py-8 text-center">
+        <p className="cartao text-fluid-sm text-apoio px-5 py-8 text-center">
           Nenhum candidato na fila.
         </p>
       )}

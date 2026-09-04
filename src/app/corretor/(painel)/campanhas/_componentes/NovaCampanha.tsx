@@ -200,7 +200,7 @@ export function NovaCampanha({
   }
 
   return (
-    <section className="border-linha bg-superficie rounded-2xl border p-5 sm:p-6">
+    <section className="cartao p-5 sm:p-6">
       <div className="flex items-baseline gap-2.5">
         <span className="text-tenue text-[11px] font-medium tracking-[0.14em] uppercase tabular-nums">
           Passo {passo} de 3

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "WhatsApp & IA da equipe" };
 
@@ -98,15 +99,12 @@ export default async function AdminWhatsappPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-fluid-2xl text-titulo font-bold">Administração</h1>
-        <p className="text-fluid-sm text-apoio mt-1">
-          Os números da equipe e como a IA está atendendo em cada um deles.
-        </p>
+        <CabecalhoDeTela secao="Administração" titulo="WhatsApp da equipe" descricao="Os números da equipe e como a IA está atendendo em cada um deles." />
       </div>
 
       <AbasAdmin ativa="/corretor/admin/whatsapp" />
 
-      <section className="border-linha bg-superficie rounded-2xl border p-5">
+      <section className="cartao p-5">
         <h2 className="text-fluid-base font-bold text-titulo">Números da equipe</h2>
         <p className="text-fluid-xs text-apoio mt-1">
           Quem está pareado, em que modo a IA está e se algum número foi bloqueado por falhas.
@@ -157,7 +155,7 @@ export default async function AdminWhatsappPage() {
         )}
       </section>
 
-      <section className="border-linha bg-superficie rounded-2xl border p-5">
+      <section className="cartao p-5">
         <h2 className="text-fluid-base font-bold text-titulo">Qualidade da IA</h2>
         <p className="text-fluid-xs text-apoio mt-1">
           As últimas {total} respostas da IA
@@ -187,7 +185,7 @@ export default async function AdminWhatsappPage() {
         </div>
       </section>
 
-      <section className="border-linha bg-superficie rounded-2xl border p-5">
+      <section className="cartao p-5">
         <h2 className="text-fluid-base font-bold text-titulo">Registro de ações</h2>
         <p className="text-fluid-xs text-apoio mt-1">
           Quem criou conta, redefiniu senha ou mudou papel — cada ação administrativa fica

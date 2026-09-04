@@ -50,7 +50,7 @@ export function EditarDestaques({
   }
 
   return (
-    <div className="rounded-2xl border border-linha bg-superficie p-6">
+    <div className="cartao p-6">
       <p className="font-display text-titulo">Destaques do seu link</p>
       <p className="text-fluid-sm mt-1 mb-4 text-apoio">
         Quem entra pelo seu link vê estes primeiro, nesta ordem. O resto do

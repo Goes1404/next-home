@@ -55,7 +55,7 @@ export function GerenciarTemplates({ templatesIniciais }: { templatesIniciais: T
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-linha bg-superficie p-5">
+      <div className="cartao p-5">
         <h2 className="text-fluid-sm font-medium text-titulo">
           {editando ? "Editar template" : "Novo template"}
         </h2>

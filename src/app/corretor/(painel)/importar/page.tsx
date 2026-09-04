@@ -3,6 +3,7 @@ import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import { ImportarClient } from "./ImportarClient";
 import { getCorretorLogado, souGestor } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Adicionar & Importar Leads (Gmail / IA)" };
 
@@ -14,11 +15,8 @@ export default async function ImportarPage() {
 
   return (
     <div>
-      <h1 className="font-display text-titulo text-fluid-2xl">Meus leads</h1>
-      <p className="text-fluid-sm text-apoio mt-2 max-w-2xl">
-        Puxe leads do seu <strong>Gmail</strong> (Zap Imóveis, VivaReal, OLX, Imovelweb), importe
-        uma planilha ou PDF, ou cadastre um contato na hora.
-      </p>
+      <CabecalhoDeTela secao="Pessoas" titulo="Importar leads" descricao={<>Puxe leads do seu <strong>Gmail</strong> (Zap Imóveis, VivaReal, OLX, Imovelweb), importe
+        uma planilha ou PDF, ou cadastre um contato na hora.</>} />
 
       <div className="mt-5">
         <AbasLeads ativa="/corretor/importar" />

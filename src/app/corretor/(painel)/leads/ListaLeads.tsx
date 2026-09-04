@@ -351,7 +351,7 @@ export function ListaLeads({
       )}
 
       {semNenhumLead ? (
-        <div className="mt-8 rounded-2xl border border-linha bg-superficie p-6">
+        <div className="cartao mt-8 p-6">
           <p className="text-fluid-sm text-corpo">
             Nenhum contato ainda. Compartilhe seu link pessoal — todo formulário preenchido a
             partir dele chega aqui com seu nome.
@@ -364,7 +364,7 @@ export function ListaLeads({
           </Link>
         </div>
       ) : leads.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-linha bg-superficie p-6 text-center">
+        <div className="cartao mt-8 p-6 text-center">
           <p className="text-fluid-sm text-apoio">Nenhum lead encontrado neste filtro.</p>
         </div>
       ) : (

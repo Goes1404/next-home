@@ -4355,3 +4355,38 @@ no topo, "Sair" no rodapé. O que eu tinha feito era folha de baixo.
   propriedade arbitrária (`[stroke-opacity:0.5]`). Mesma família do `bg-chip`.
 - **O nome da assistente é configurável, então o balão diz só "IA"** — em
   verde, na posição em que o app mostra o nome do remetente no grupo.
+
+## O estilo do Início virou a base de todas as telas (04/09/2026)
+
+Pedido: "tendo o estilo da home como base, atualize o layout de todas as
+outras telas". Antes de tocar em tela, contar onde a mudança mora.
+
+- **A assinatura do Início são três coisas**: vidro com brilhos na cor do
+  módulo e título editorial em itálico com o ponto colorido; atalhos em
+  degradê do módulo; cartões com sombra. Levar isso a 30 telas uma a uma
+  seria o labirinto de sempre. O que valeu foi achar as DUAS alavancas
+  compartilhadas: `CabecalhoDeTela` (9 telas já o usavam) e a classe de
+  cartão repetida em 43 arquivos com variações.
+- **`CabecalhoDeTela` virou o cartão-herói** e as 16 telas que ainda
+  escreviam `<h1>` na mão passaram a usá-lo (as seis de Administração ganharam
+  a seção em versalete e um título que diz QUAL tela é — antes as seis se
+  chamavam "Administração"). Sobraram fora `imoveis/[slug]` e `leads/[id]`:
+  são cabeçalhos de REGISTRO (nome do imóvel, nome do lead, com ações), não de
+  tela, e a anatomia é outra.
+- **`cartao` é a única classe de cartão do painel** (`@utility` no
+  `globals.css`, 41 arquivos trocados por regex sobre a string de classes).
+  Translúcida (84%), fio de luz na borda de cima, raio 1.25rem. A próxima
+  mudança de linguagem custa uma linha.
+- **`backdrop-filter` só no cabeçalho-herói, NUNCA no `cartao`.** Cinco
+  componentes com `position: fixed` nascem dentro de cartão (folha de ações,
+  modal do dossiê, barra de salvar, seleção em lote, avisos) — o filtro
+  criaria containing block e quebraria todos de uma vez, a armadilha que este
+  projeto já pisou seis vezes. A transparência sozinha já deixa o fundo passar.
+- **Os brilhos do módulo moram no `<main>` do painel, fixos atrás de tudo.**
+  Vidro sobre fundo liso é só cinza; com os brilhos, todo cartão translúcido
+  ganha profundidade sem custo por tela. Seguem `--color-acento`, então mudam
+  de cor com a seção (magenta em Pessoas, ciano em Marketing). `isolate` no
+  `<main>` segura o `-z-10` deles dentro do contexto: ficam sobre o fundo e
+  sob o conteúdo — sem o `isolate`, `-z-10` os jogaria para trás do `<body>`.
+- **Medido com o CSS de produção em 360px**, claro e escuro, em dois módulos:
+  sem estouro; cartão a 84% de opacidade nos dois temas.

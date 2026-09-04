@@ -1361,3 +1361,29 @@
   background: var(--color-wa-saida);
   clip-path: polygon(0 0, 100% 0, 0 100%);
 }
+
+/*
+ * `cartao`: a superfície de todo cartão do painel (04/09/2026).
+ *
+ * Nasceu do pedido "tendo o estilo da home como base, atualize todas as
+ * telas". O Início é feito de vidro sobre brilhos na cor do módulo; antes,
+ * o resto do painel repetia `border-linha bg-superficie shadow-painel
+ * rounded-2xl border` em 43 arquivos, com variações. Uma classe só faz a
+ * troca de linguagem num lugar — e faz a próxima troca custar uma linha.
+ *
+ * Translúcida, com fio de luz na borda de cima, SEM `backdrop-filter`:
+ * esse filtro cria containing block e este painel tem cinco componentes com
+ * `position: fixed` que nascem dentro de cartão (folha de ações, modal do
+ * dossiê, barra de salvar, seleção em lote). O vidro desfocado fica só no
+ * cabeçalho-herói, que não contém nada disso. A transparência já deixa os
+ * brilhos do fundo passarem — é o que dá a leitura de material.
+ */
+@utility cartao {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-linha);
+  background: color-mix(in srgb, var(--color-superficie) 84%, transparent);
+  box-shadow:
+    var(--shadow-painel),
+    inset 0 1px 0 color-mix(in srgb, white 7%, transparent);
+}

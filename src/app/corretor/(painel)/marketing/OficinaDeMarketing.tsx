@@ -52,7 +52,7 @@ export function OficinaDeMarketing({
   return (
     <div className="space-y-5">
       {/* ---- A ferramenta principal, com o trabalho recente à vista ---- */}
-      <section className="border-linha bg-superficie shadow-painel overflow-hidden rounded-2xl border">
+      <section className="cartao overflow-hidden">
         <div className="flex flex-wrap items-start justify-between gap-4 p-5 sm:p-6">
           <div className="min-w-0 space-y-1.5">
             <div className="flex items-center gap-2.5">
@@ -104,7 +104,7 @@ export function OficinaDeMarketing({
       </section>
 
       {/* ---- A segunda de produção, ainda sem histórico próprio ---- */}
-      <section className="border-linha bg-superficie shadow-painel min-w-0 rounded-2xl border p-5 sm:p-6">
+      <section className="cartao min-w-0 p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-1.5">
             <div className="flex items-center gap-2.5">
@@ -203,7 +203,7 @@ export function OficinaDeMarketing({
       </div>
 
       {/* ---- O passo seguinte à peça pronta ---- */}
-      <section className="border-linha bg-superficie shadow-painel rounded-2xl border p-5 sm:p-6">
+      <section className="cartao p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-1.5">
             <div className="flex items-center gap-2.5">
@@ -252,7 +252,7 @@ function Ferramenta({
      * age depois que a largura está decidida. Medido com scrollWidth contra
      * clientWidth; a olho o cartão parecia normal.
      */
-    <section className="border-linha bg-superficie shadow-painel flex min-w-0 flex-col gap-3 rounded-2xl border p-5">
+    <section className="cartao flex min-w-0 flex-col gap-3 p-5">
       <div className="space-y-1.5">
         <div className="flex items-center gap-2.5">
           <span className="bg-acento-lavado text-acento flex size-8 shrink-0 items-center justify-center rounded-lg">

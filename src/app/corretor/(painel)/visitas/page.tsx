@@ -4,6 +4,7 @@ import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import { getCorretorLogado, getLeadsDeVisita } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import { GradeDaSemana } from "./_componentes/GradeDaSemana";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Minhas Visitas" };
 
@@ -42,10 +43,7 @@ export default async function VisitasPage({
 
   return (
     <div>
-      <h1 className="text-fluid-2xl text-titulo">Agenda de Visitas</h1>
-      <p className="text-fluid-sm mt-2 text-apoio">
-        Leads com visita marcada, ordenados pelo horário.
-      </p>
+      <CabecalhoDeTela secao="Pessoas" titulo="Visitas" descricao="Leads com visita marcada, ordenados pelo horário." />
 
       <div className="mt-6">
         <GradeDaSemana
@@ -63,7 +61,7 @@ export default async function VisitasPage({
       </div>
 
       {visitas.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-linha bg-superficie p-6">
+        <div className="cartao mt-8 p-6">
           <p className="text-fluid-sm text-corpo">
             {busca
               ? `Nenhuma visita marcada para “${busca}”.`
@@ -84,7 +82,7 @@ export default async function VisitasPage({
             return (
               <article
                 key={lead.id}
-                className="rounded-2xl border border-linha bg-superficie p-5"
+                className="cartao p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
