@@ -195,6 +195,29 @@
   --color-mod-imoveis-suave: light-dark(oklch(0.47 0.14 41), oklch(0.87 0.12 48));
 
   /*
+   * Paleta do WhatsApp para o Live Chat (04/09/2026). Pedido: "bem parecido
+   * com o WhatsApp". A régua já estava na MEMORIA — painel que dispensa
+   * treino empresta o modelo mental que a pessoa já usa o dia inteiro — e a
+   * lista de conversas já seguia o app; agora o chat aberto também. Valores
+   * são os do próprio app (tema claro e escuro), não aproximações da nossa
+   * paleta: o que se quer é o reconhecimento imediato. `light-dark()` resolve
+   * os dois temas numa declaração só (o defeito da 0052 não tem como voltar).
+   */
+  --color-wa-fundo: light-dark(#efeae2, #0b141a);
+  --color-wa-barra: light-dark(#f0f2f5, #202c33);
+  --color-wa-campo: light-dark(#ffffff, #2a3942);
+  --color-wa-lista: light-dark(#ffffff, #111b21);
+  --color-wa-divisor: light-dark(#e9edef, #222d34);
+  --color-wa-entrada: light-dark(#ffffff, #202c33);
+  --color-wa-saida: light-dark(#d9fdd3, #005c4b);
+  --color-wa-texto: light-dark(#111b21, #e9edef);
+  --color-wa-meta: light-dark(#667781, #8696a0);
+  --color-wa-lida: light-dark(#53bdeb, #53bdeb);
+  --color-wa-verde: light-dark(#008069, #00a884);
+  --color-wa-nome: light-dark(#1fa855, #06cf9c);
+  --color-wa-dia: light-dark(#ffffff, #182229);
+
+  /*
    * Marketing em ciano. O arco estava livre: 73° do WhatsApp (132), 87° do
    * Início (292) e mais ainda de Leads (340) e Imóveis (41). O arco QUENTE já
    * está apertado — entre `perigo` (17) e `alerta` (66) sobram 49° —, então
@@ -1300,4 +1323,41 @@
   .funil-banda:hover {
     transform: none;
   }
+}
+
+/*
+ * Live Chat com cara de WhatsApp (04/09/2026).
+ *
+ * `.wa-papel` é o papel de parede: a cor do app mais um rabisco discreto
+ * (casinhas, círculos, traços) em cinza médio, que aparece igual sobre o
+ * fundo claro e o escuro — por isso a opacidade está no SVG, fixa, e não em
+ * light-dark(), que só aceita cor.
+ *
+ * `.wa-rabo-*` é o rabinho do balão, só no PRIMEIRO de cada sequência do
+ * mesmo lado — como no app. Pseudo-elemento com a cor do próprio balão e um
+ * recorte triangular; o canto do balão daquele lado fica reto (a classe
+ * `rounded-tl-none`/`rounded-tr-none` vai junto no componente).
+ */
+.wa-papel {
+  background-color: var(--color-wa-fundo);
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420' fill='none' stroke='%238696a0' stroke-opacity='.11' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='40' cy='60' r='9'/><path d='M120 30h20M130 20v20'/><path d='M200 70q10-12 20 0t20 0'/><rect x='300' y='40' width='22' height='22' rx='4'/><path d='M60 180l12-14 12 14v16H60z'/><circle cx='210' cy='190' r='14'/><path d='M330 170l10 10-10 10-10-10z'/><path d='M150 260q8-10 16 0t16 0'/><path d='M30 330h18M39 321v18'/><rect x='250' y='300' width='26' height='18' rx='3'/><path d='M370 310q-12 0-12 12t12 12'/><circle cx='110' cy='380' r='7'/><path d='M200 360l8 14h-16z'/><path d='M320 395h24'/><path d='M395 120l8-9 8 9v10h-16z'/></svg>");
+  background-size: 420px 420px;
+}
+.wa-rabo-entrada::before,
+.wa-rabo-saida::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 13px;
+}
+.wa-rabo-entrada::before {
+  left: -8px;
+  background: var(--color-wa-entrada);
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+}
+.wa-rabo-saida::before {
+  right: -8px;
+  background: var(--color-wa-saida);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
 }

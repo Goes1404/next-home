@@ -423,22 +423,29 @@ export function ConversasClient({
         A caixa de duas colunas com altura calculada fica só no computador,
         onde ela cabe e faz sentido.
       */}
-      <div className="border-linha bg-superficie shadow-painel flex flex-col overflow-hidden rounded-2xl border md:h-[calc(100dvh-var(--painel-header-h)-9rem)] md:min-h-[420px] md:flex-row">
+      <div className="border-linha bg-wa-lista shadow-painel flex flex-col overflow-hidden rounded-2xl border md:h-[calc(100dvh-var(--painel-header-h)-9rem)] md:min-h-[420px] md:flex-row">
         {/* Lista de conversas — no celular some quando um chat está aberto */}
         <aside
           className={cn(
-            "border-linha flex w-full shrink-0 flex-col md:w-80 md:border-r lg:w-96",
+            "border-wa-divisor bg-wa-lista flex w-full shrink-0 flex-col md:w-80 md:border-r lg:w-96",
             selecionada && "hidden md:flex",
           )}
         >
-          <div className="border-linha border-b p-3">
-            <input
-              type="search"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar conversa"
-              className="border-linha bg-elevado text-corpo placeholder:text-tenue focus:border-linha-forte min-h-11 w-full rounded-full border px-4 text-sm outline-none"
-            />
+          <div className="border-wa-divisor border-b p-2">
+            <label className="bg-wa-barra text-wa-meta flex min-h-10 items-center gap-3 rounded-lg px-3">
+              <svg viewBox="0 0 24 24" className="size-5 shrink-0 fill-none stroke-current" strokeWidth="2" aria-hidden>
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <input
+                type="search"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Pesquisar ou começar uma nova conversa"
+                aria-label="Buscar conversa"
+                className="text-wa-texto placeholder:text-wa-meta min-w-0 flex-1 bg-transparent text-sm outline-none"
+              />
+            </label>
           </div>
 
           {/* Rola só no computador; no celular quem rola é a página. */}
@@ -453,16 +460,16 @@ export function ConversasClient({
                     type="button"
                     onClick={() => abrirConversa(conversa.id)}
                     className={cn(
-                      "border-linha hover:bg-vidro flex w-full cursor-pointer items-center gap-3 border-b px-3 py-3 text-left transition-colors",
-                      ativa && "bg-vidro-forte",
+                      "border-wa-divisor hover:bg-wa-barra flex w-full cursor-pointer items-center gap-3 border-b px-3 py-2.5 text-left transition-colors",
+                      ativa && "bg-wa-barra",
                     )}
                   >
-                    <span className="bg-acento-lavado text-acento-suave relative flex size-11 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
+                    <span className="bg-wa-divisor text-wa-meta relative flex size-12 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
                       {iniciais(conversa)}
                       <span
                         title={SELO[estado].texto}
                         className={cn(
-                          "border-superficie absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2",
+                          "border-wa-lista absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2",
                           SELO[estado].ponto,
                         )}
                       />
@@ -472,16 +479,16 @@ export function ConversasClient({
                       <span className="flex items-baseline justify-between gap-2">
                         <span
                           className={cn(
-                            "text-titulo truncate text-sm",
-                            naoLidas > 0 ? "font-semibold" : "font-medium",
+                            "text-wa-texto truncate text-[15px]",
+                            naoLidas > 0 ? "font-semibold" : "font-normal",
                           )}
                         >
                           {conversa.nome || telefoneLegivel(conversa.telefone)}
                         </span>
                         <span
                           className={cn(
-                            "shrink-0 text-[11px]",
-                            naoLidas > 0 ? "text-ok font-semibold" : "text-tenue",
+                            "shrink-0 text-[12px]",
+                            naoLidas > 0 ? "text-wa-verde font-medium" : "text-wa-meta",
                           )}
                         >
                           {quandoNaLista(quando)}
@@ -490,14 +497,14 @@ export function ConversasClient({
                       <span className="mt-0.5 flex items-center justify-between gap-2">
                         <span
                           className={cn(
-                            "block truncate text-xs",
-                            naoLidas > 0 ? "text-corpo" : "text-apoio",
+                            "block truncate text-[13px]",
+                            naoLidas > 0 ? "text-wa-texto" : "text-wa-meta",
                           )}
                         >
                           {previa ?? "Sem mensagens"}
                         </span>
                         {naoLidas > 0 && (
-                          <span className="bg-ok text-superficie flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-bold">
+                          <span className="bg-wa-verde flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white">
                             {naoLidas > 99 ? "99+" : naoLidas}
                           </span>
                         )}
@@ -508,7 +515,7 @@ export function ConversasClient({
               );
             })}
             {listaOrdenada.length === 0 && (
-              <li className="text-tenue px-4 py-6 text-center text-sm">Nada com essa busca.</li>
+              <li className="text-wa-meta px-4 py-6 text-center text-sm">Nada com essa busca.</li>
             )}
           </ul>
         </aside>
@@ -520,7 +527,7 @@ export function ConversasClient({
             selecionada
               ? // Tela cheia entre o cabeçalho e a barra do polegar. `bg-fundo`
                 // é obrigatório: sem ele o conteúdo da página aparece por trás.
-                "bg-fundo fixed inset-x-0 top-[var(--painel-header-h)] bottom-[var(--nav-mobile-h)] z-30 flex md:bottom-0"
+                "bg-wa-fundo fixed inset-x-0 top-[var(--painel-header-h)] bottom-[var(--nav-mobile-h)] z-30 flex md:bottom-0"
               : "hidden md:flex",
           )}
         >
@@ -538,7 +545,7 @@ export function ConversasClient({
               onRemover={(mensagemId) => removerDaConversa(selecionada.id, mensagemId)}
             />
           ) : (
-            <div className="text-tenue flex flex-1 items-center justify-center p-8 text-center text-sm">
+            <div className="wa-papel text-wa-meta flex flex-1 items-center justify-center p-8 text-center text-sm">
               Escolha uma conversa ao lado para ler e responder por aqui.
             </div>
           )}
@@ -706,15 +713,23 @@ function Chat({
 
   return (
     <>
-      {/* Cabeçalho do chat */}
-      <header className="border-linha flex items-center gap-3 border-b px-3 py-2.5 md:px-4">
+      {/*
+        Cabeçalho, corpo e teclado na linguagem do WhatsApp (04/09/2026):
+        barras cinza, papel de parede com rabisco, balões verde/cinza com
+        rabinho, hora e ✓✓ dentro do balão, botão de enviar verde e redondo.
+        A corretora vive no app o dia inteiro; o painel não deve exigir que
+        ela aprenda um segundo jeito de ler uma conversa.
+      */}
+      <header className="bg-wa-barra flex items-center gap-2 px-2 py-2 md:px-4">
         <button
           type="button"
           onClick={onVoltar}
           aria-label="Voltar para a lista"
-          className="text-apoio hover:text-titulo -ml-1 flex size-11 cursor-pointer items-center justify-center rounded-full md:hidden"
+          className="text-wa-meta hover:text-wa-texto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full md:hidden"
         >
-          ←
+          <svg viewBox="0 0 24 24" className="size-6 fill-none stroke-current" strokeWidth="2" aria-hidden>
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
         </button>
 
         <button
@@ -727,21 +742,23 @@ function Chat({
             conversa.temLead && "cursor-pointer",
           )}
         >
-          <span className="bg-acento-lavado text-acento-suave flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
+          <span className="bg-wa-divisor text-wa-meta flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
             {iniciais(conversa)}
           </span>
 
           <span className="min-w-0 flex-1">
-            <span className="text-titulo block truncate text-sm font-medium">
+            <span className="text-wa-texto block truncate text-[16px] font-medium">
               {conversa.nome || telefoneLegivel(conversa.telefone)}
-              {conversa.temLead && <span className="text-tenue ml-1 text-xs">{fichaAberta ? "▴" : "▾"}</span>}
+              {conversa.temLead && <span className="text-wa-meta ml-1 text-xs">{fichaAberta ? "▴" : "▾"}</span>}
             </span>
-            <span className="text-fluid-xs block truncate">
+            <span className="block truncate text-[13px]">
+              {/* No celular o telefone empurrava o status para fora ("IA a…");
+                  o que a corretora precisa ler de relance é o status. */}
               {conversa.nome && (
-                <span className="text-tenue">{telefoneLegivel(conversa.telefone)} · </span>
+                <span className="text-wa-meta hidden sm:inline">{telefoneLegivel(conversa.telefone)} · </span>
               )}
               <span className={selo.classe}>{selo.texto}</span>
-              {!conversa.temLead && <span className="text-tenue"> · sem ficha no funil</span>}
+              {!conversa.temLead && <span className="text-wa-meta"> · sem ficha no funil</span>}
             </span>
           </span>
         </button>
@@ -753,8 +770,8 @@ function Chat({
           className={cn(
             "flex min-h-11 shrink-0 cursor-pointer items-center rounded-full px-3.5 text-xs font-medium transition-colors disabled:opacity-60",
             estado === "ativa"
-              ? "border-linha-forte text-corpo hover:bg-vidro border"
-              : "bg-acento hover:bg-acento-hover text-sobre-cor",
+              ? "border-wa-divisor text-wa-texto hover:bg-wa-divisor border"
+              : "bg-wa-verde text-white hover:opacity-90",
           )}
         >
           {estado === "ativa" ? "Desligar IA" : "Reativar IA"}
@@ -763,7 +780,7 @@ function Chat({
 
       {fichaAberta && conversa.temLead && <FichaLead conversaId={conversa.id} />}
 
-      {/* Corpo com os balões */}
+      {/* Corpo com os balões, sobre o papel de parede */}
       <div
         ref={corpoRef}
         onScroll={aoRolar}
@@ -771,7 +788,7 @@ function Chat({
            atrás dele. Sem isto, chegar ao topo da conversa passa a rolagem
            adiante e a página de trás se mexe — o "scroll chaining" que faz a
            tela pular quando se lê a conversa até o começo. */
-        className="bg-elevado/40 flex-1 space-y-1.5 overflow-y-auto overscroll-contain px-3 py-4 md:px-6"
+        className="wa-papel flex-1 overflow-y-auto overscroll-contain px-[4%] py-3 md:px-[7%]"
       >
         {mensagens !== null && mensagens.length >= 100 && !esgotado && (
           <p className="pb-2 text-center">
@@ -779,32 +796,35 @@ function Chat({
               type="button"
               onClick={() => void carregarAnteriores()}
               disabled={carregandoAntigas}
-              className="border-linha text-apoio hover:text-titulo min-h-11 cursor-pointer rounded-full border px-4 text-xs transition-colors disabled:opacity-60"
+              className="bg-wa-dia text-wa-meta hover:text-wa-texto min-h-11 cursor-pointer rounded-lg px-4 text-xs shadow-sm transition-colors disabled:opacity-60"
             >
               {carregandoAntigas ? "Carregando…" : "Ver mensagens anteriores"}
             </button>
           </p>
         )}
         {mensagens === null ? (
-          <p className="text-tenue py-8 text-center text-xs">Carregando conversa…</p>
+          <p className="text-wa-meta py-8 text-center text-xs">Carregando conversa…</p>
         ) : mensagens.length === 0 ? (
-          <p className="text-tenue py-8 text-center text-xs">Sem mensagens registradas.</p>
+          <p className="text-wa-meta py-8 text-center text-xs">Sem mensagens registradas.</p>
         ) : (
           mensagens.map((m, i) => {
             const anterior = mensagens[i - 1];
             const trocouDia =
               !anterior ||
               new Date(anterior.criadoEm).toDateString() !== new Date(m.criadoEm).toDateString();
+            // Rabinho só no primeiro balão de uma sequência do mesmo lado —
+            // e os seguintes ficam colados, como no app.
+            const mesmoLado = !!anterior && !trocouDia && ladoDo(anterior) === ladoDo(m);
             return (
-              <div key={m.id}>
+              <div key={m.id} className={mesmoLado ? "mt-0.5" : "mt-2.5"}>
                 {trocouDia && (
                   <p className="my-3 text-center">
-                    <span className="bg-vidro-forte border-linha text-tenue rounded-full border px-3 py-1 text-[11px]">
+                    <span className="bg-wa-dia text-wa-meta rounded-lg px-3 py-1.5 text-[12px] uppercase shadow-sm">
                       {rotuloDoDia(m.criadoEm)}
                     </span>
                   </p>
                 )}
-                <Balao mensagem={m} onErro={onErro} />
+                <Balao mensagem={m} comRabo={!mesmoLado} onErro={onErro} />
               </div>
             );
           })
@@ -812,7 +832,7 @@ function Chat({
       </div>
 
       {/* Teclado */}
-      <footer className="border-linha relative border-t p-2.5 md:p-3">
+      <footer className="bg-wa-barra relative px-2 py-2 md:px-3">
         {seletorAberto && (
           <SeletorDeMidia onEscolher={enviarMidia} onFechar={() => setSeletorAberto(false)} />
         )}
@@ -823,7 +843,7 @@ function Chat({
               e.preventDefault();
               void enviar();
             }}
-            className="flex items-end gap-2"
+            className="flex items-end gap-1.5"
           >
             <button
               type="button"
@@ -832,11 +852,11 @@ function Chat({
               aria-label="Anexar foto do catálogo"
               title="Enviar foto ou planta de um imóvel"
               className={cn(
-                "border-linha text-apoio hover:text-titulo flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors disabled:opacity-50",
-                seletorAberto && "bg-vidro-forte text-titulo",
+                "text-wa-meta hover:text-wa-texto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors disabled:opacity-50",
+                seletorAberto && "bg-wa-divisor text-wa-texto",
               )}
             >
-              <svg viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="1.8" aria-hidden>
+              <svg viewBox="0 0 24 24" className="size-6 fill-none stroke-current" strokeWidth="1.8" aria-hidden>
                 <path d="m21.4 11.05-8.79 8.79a5.5 5.5 0 0 1-7.78-7.78l8.79-8.79a3.67 3.67 0 0 1 5.19 5.19l-8.8 8.79a1.83 1.83 0 0 1-2.59-2.6l8.12-8.11" />
               </svg>
             </button>
@@ -851,14 +871,14 @@ function Chat({
                 }
               }}
               rows={1}
-              placeholder="Escreva uma mensagem"
-              className="border-linha bg-elevado text-corpo placeholder:text-tenue max-h-32 min-h-11 w-full resize-none rounded-2xl border px-4 py-2.5 text-sm outline-none focus:border-linha-forte"
+              placeholder="Mensagem"
+              className="bg-wa-campo text-wa-texto placeholder:text-wa-meta max-h-32 min-h-11 w-full resize-none rounded-3xl px-4 py-2.5 text-[15px] outline-none"
             />
             <button
               type="submit"
               disabled={enviando || !texto.trim()}
               aria-label="Enviar mensagem"
-              className="bg-acento hover:bg-acento-hover flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-sobre-cor transition-colors disabled:opacity-50"
+              className="bg-wa-verde flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               <svg viewBox="0 0 24 24" className="size-5 fill-current" aria-hidden>
                 <path d="M3.4 20.4 20.9 12 3.4 3.6l.01 6.53L15 12 3.41 13.87z" />
@@ -866,11 +886,11 @@ function Chat({
             </button>
           </form>
         ) : (
-          <p className="text-fluid-xs text-apoio px-2 py-1.5">
+          <p className="text-fluid-xs text-wa-meta px-2 py-1.5">
             O número não está conectado — conecte o WhatsApp em{" "}
             <a
               href="/corretor/whatsapp"
-              className="text-acento-suave underline-offset-4 hover:underline"
+              className="text-wa-verde underline-offset-4 hover:underline"
             >
               Conexão
             </a>{" "}
@@ -878,7 +898,7 @@ function Chat({
           </p>
         )}
         {estado === "pausada_humano" && conversa.pausadoAte && (
-          <p className="text-fluid-xs text-tenue mt-1.5 px-2">
+          <p className="text-fluid-xs text-wa-meta mt-1.5 px-2">
             Você assumiu esta conversa; a IA volta sozinha em até 24h — ou agora, pelo botão acima.
           </p>
         )}
@@ -1094,10 +1114,15 @@ function SeletorDeMidia({
   );
 }
 
-const ESTILO_BALAO: Record<MensagemConversa["remetente"], string> = {
-  cliente: "bg-superficie border-linha mr-auto",
-  bot: "bg-acento-lavado border-acento-linha ml-auto",
-  corretor: "bg-ok-lavado border-ok-linha ml-auto",
+/** De que lado da tela o balão fica: o cliente à esquerda; IA e corretor (nós) à direita. */
+function ladoDo(m: MensagemConversa): "entrada" | "saida" {
+  return m.remetente === "cliente" ? "entrada" : "saida";
+}
+
+/** A cor do balão, pela régua do app: quem escreveu de fora é cinza, o que saiu daqui é verde. */
+const ESTILO_BALAO: Record<"entrada" | "saida", string> = {
+  entrada: "bg-wa-entrada",
+  saida: "bg-wa-saida",
 };
 
 /** Áudio dá para tocar quando a URL é pública; a do WhatsApp criptografada (.enc) não é. */
@@ -1110,11 +1135,19 @@ function audioTocavel(m: MensagemConversa): boolean {
   );
 }
 
+/** Imagem que dá para mostrar inline — as nossas, do catálogo, têm URL pública. */
+function imagemVisivel(m: MensagemConversa): boolean {
+  return m.tipo === "imagem" && !!m.midiaUrl && /^https?:\/\//.test(m.midiaUrl) && !/\.enc([?#]|$)/.test(m.midiaUrl);
+}
+
 function Balao({
   mensagem,
+  comRabo,
   onErro,
 }: {
   mensagem: MensagemConversa;
+  /** Primeiro balão de uma sequência do mesmo lado: leva o rabinho e o canto reto. */
+  comRabo: boolean;
   /*
    * Só relata falha; não existe mais "limpar o erro". Antes ele escrevia num
    * parágrafo desta tela — que ficava ACIMA da caixa do chat e, no celular,
@@ -1133,6 +1166,7 @@ function Balao({
   // Reabriu os dois botões para trocar a avaliação já dada.
   const [trocando, setTrocando] = useState(false);
   const avaliavel = mensagem.remetente === "bot" && mensagem.interacaoId !== null;
+  const lado = ladoDo(mensagem);
 
   function avaliar(valor: "boa" | "ruim") {
     if (!mensagem.interacaoId) return;
@@ -1150,76 +1184,92 @@ function Balao({
   return (
     <div
       className={cn(
-        "w-fit max-w-[85%] rounded-2xl border px-3.5 py-2 md:max-w-[70%]",
-        ESTILO_BALAO[mensagem.remetente],
+        "flex w-fit max-w-[85%] flex-col md:max-w-[65%]",
+        lado === "entrada" ? "mr-auto items-start" : "ml-auto items-end",
       )}
     >
-      {mensagem.remetente === "bot" && (
-        <p className="text-acento-suave text-[10px] font-semibold tracking-wide uppercase">IA</p>
-      )}
-
-      {mensagem.tipo === "audio" && (
-        <p className="text-tenue text-[10px] font-medium tracking-wide uppercase">🎙 Áudio</p>
-      )}
-      {audioTocavel(mensagem) && (
-        <audio controls preload="none" src={mensagem.midiaUrl ?? undefined} className="my-1 h-10 w-56 max-w-full" />
-      )}
-
-      <p
+      <div
         className={cn(
-          "text-fluid-sm whitespace-pre-line",
-          mensagem.tipo === "audio" ? "text-apoio text-xs italic" : "text-corpo",
+          // 8px de raio, sombra rasa e o rabinho: a anatomia do balão do app.
+          "relative rounded-lg px-2 pt-1.5 pb-1 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)]",
+          ESTILO_BALAO[lado],
+          comRabo && (lado === "entrada" ? "wa-rabo-entrada rounded-tl-none" : "wa-rabo-saida rounded-tr-none"),
         )}
       >
-        {mensagem.conteudo}
-      </p>
-      <p className="text-tenue mt-0.5 text-right text-[10px]">
-        {hora.format(new Date(mensagem.criadoEm))}
-        {mensagem.statusEntrega && (
-          <span
-            title={
-              mensagem.statusEntrega === "lida"
-                ? "Lida"
-                : mensagem.statusEntrega === "entregue"
-                  ? "Entregue"
-                  : "Enviada"
-            }
-            className={cn("ml-1", mensagem.statusEntrega === "lida" ? "text-acento-suave" : "text-tenue")}
-          >
-            {mensagem.statusEntrega === "enviada" ? "✓" : "✓✓"}
-          </span>
+        {/* Nome do remetente em verde, como o app faz em grupo: aqui só quando é a IA. */}
+        {mensagem.remetente === "bot" && (
+          <p className="text-wa-nome text-[12.5px] font-medium">IA</p>
         )}
-      </p>
+
+        {imagemVisivel(mensagem) && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={mensagem.midiaUrl ?? undefined}
+            alt=""
+            className="mb-1 max-h-72 w-auto max-w-full rounded-md"
+          />
+        )}
+        {mensagem.tipo === "audio" && (
+          <p className="text-wa-meta text-[10px] font-medium tracking-wide uppercase">🎙 Áudio</p>
+        )}
+        {audioTocavel(mensagem) && (
+          <audio controls preload="none" src={mensagem.midiaUrl ?? undefined} className="my-1 h-10 w-56 max-w-full" />
+        )}
+
+        {/* O espaçador no fim do texto reserva o canto para a hora, que fica em
+            absoluto embaixo à direita — a última linha corre ao lado dela. */}
+        <p
+          className={cn(
+            "text-[14.2px] leading-[19px] whitespace-pre-line",
+            mensagem.tipo === "audio" ? "text-wa-meta text-xs italic" : "text-wa-texto",
+          )}
+        >
+          {mensagem.conteudo}
+          <span aria-hidden className={cn("inline-block", mensagem.statusEntrega ? "w-[68px]" : "w-12")} />
+        </p>
+        <p className="text-wa-meta absolute right-2 bottom-1 flex items-center gap-1 text-[11px] leading-none">
+          {hora.format(new Date(mensagem.criadoEm))}
+          {mensagem.statusEntrega && (
+            <span
+              title={
+                mensagem.statusEntrega === "lida"
+                  ? "Lida"
+                  : mensagem.statusEntrega === "entregue"
+                    ? "Entregue"
+                    : "Enviada"
+              }
+              className={cn("text-[12px]", mensagem.statusEntrega === "lida" ? "text-wa-lida" : "text-wa-meta")}
+            >
+              {mensagem.statusEntrega === "enviada" ? "✓" : "✓✓"}
+            </span>
+          )}
+        </p>
+      </div>
 
       {/*
-        A avaliação como REAÇÃO, do jeito que o WhatsApp faz com emoji numa
-        mensagem (pedido de 04/09/2026): dois botões redondos grudados na borda
-        de baixo do balão, sempre visíveis — no celular não existe hover.
-        Depois de avaliar, o emoji escolhido fica como um selo no canto, e
-        tocar nele reabre os dois: avaliação errada tem de poder ser trocada
-        (antes virava texto fixo, sem volta).
+        A avaliação como REAÇÃO, do jeito que o app mostra o emoji numa
+        mensagem: uma pílula sobreposta ao pé do balão. Dois toques possíveis
+        (👍/👎), sempre visíveis — no celular não existe hover. Depois de
+        avaliar, o emoji escolhido fica na pílula, e tocar nela reabre os dois:
+        avaliação errada tem de poder ser trocada.
 
+        A pílula tem 28px de altura para parecer a do app; os botões dentro
+        dela têm 44px de área tocável (margem negativa), que é a régua da casa.
         Só balão da IA com `interacaoId` é avaliável: é o vínculo da 0040 que
         liga o balão à interação, e é isso que alimenta o aprendizado.
       */}
       {avaliavel && (
-        <div className="-mb-1 mt-1.5 flex items-center justify-end gap-1">
+        <div className="relative z-[1] -mt-2 mr-2 flex h-7 items-center rounded-full bg-wa-entrada px-1 shadow-[0_1px_2px_rgba(11,20,26,0.3)] ring-1 ring-wa-divisor">
           {nota && !trocando ? (
             <button
               type="button"
               onClick={() => setTrocando(true)}
               title={nota === "boa" ? "Você marcou como boa — toque para trocar" : "Você marcou como ruim — toque para trocar"}
               aria-label={nota === "boa" ? "Avaliada como boa. Trocar avaliação" : "Avaliada como ruim. Trocar avaliação"}
-              className={cn(
-                // 44px também aqui: o selo é alvo de toque (reabre a escolha), não enfeite.
-                "bg-superficie flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1 rounded-full border px-3 text-sm shadow-sm transition-transform hover:scale-105",
-                nota === "boa" ? "border-ok-linha" : "border-perigo-linha",
-              )}
+              className="-my-2 flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1 px-1.5 text-[15px] transition-transform hover:scale-110"
             >
               <span aria-hidden>{nota === "boa" ? "👍" : "👎"}</span>
-              <span className={cn("text-[10px] font-semibold", nota === "boa" ? "text-ok" : "text-perigo")}>
-                {nota === "boa" ? "boa" : "ruim"}
-              </span>
+              <span className="text-wa-meta text-[11px] font-medium">{nota === "boa" ? "boa" : "ruim"}</span>
             </button>
           ) : (
             <>
@@ -1230,8 +1280,8 @@ function Balao({
                 aria-label="Marcar esta resposta da IA como boa"
                 title="Esta resposta da IA foi boa"
                 className={cn(
-                  "bg-superficie border-linha hover:border-ok-linha hover:bg-ok-lavado grid size-11 cursor-pointer place-items-center rounded-full border text-base shadow-sm transition-all hover:scale-110 disabled:opacity-60",
-                  nota === "boa" && "border-ok-linha bg-ok-lavado",
+                  "-my-2 grid size-11 cursor-pointer place-items-center text-[17px] transition-transform hover:scale-125 disabled:opacity-60",
+                  nota === "boa" && "scale-110",
                 )}
               >
                 <span aria-hidden>👍</span>
@@ -1243,8 +1293,8 @@ function Balao({
                 aria-label="Marcar esta resposta da IA como ruim — ela aprende a não repetir"
                 title="Marcar como ruim — a IA aprende a não repetir"
                 className={cn(
-                  "bg-superficie border-linha hover:border-perigo-linha hover:bg-perigo-lavado grid size-11 cursor-pointer place-items-center rounded-full border text-base shadow-sm transition-all hover:scale-110 disabled:opacity-60",
-                  nota === "ruim" && "border-perigo-linha bg-perigo-lavado",
+                  "-my-2 grid size-11 cursor-pointer place-items-center text-[17px] transition-transform hover:scale-125 disabled:opacity-60",
+                  nota === "ruim" && "scale-110",
                 )}
               >
                 <span aria-hidden>👎</span>

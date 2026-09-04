@@ -143,7 +143,7 @@ export function FunilVisual({ contagens }: { contagens: Record<EtapaFunil, numbe
                   strokeOpacity="0.22"
                   strokeWidth="1"
                   strokeLinejoin="round"
-                  className="transition-opacity group-hover:stroke-opacity-50"
+                  className="transition-opacity group-hover:[stroke-opacity:0.5]"
                 />
               </g>
               <text

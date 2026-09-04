@@ -4332,3 +4332,26 @@ no topo, "Sair" no rodapé. O que eu tinha feito era folha de baixo.
 - **A tela "Atendimento da IA" continua**, como FILA de revisão ("N respostas
   sem revisão") que leva à conversa. O que mudou é onde o toque acontece: na
   conversa, não numa lista separada.
+
+## O Live Chat virou WhatsApp (04/09/2026)
+
+- **A régua já estava escrita e valia só para a lista.** "Painel que dispensa
+  treino empresta o modelo mental que a pessoa já usa" — a lista de conversas
+  seguia o app desde a reforma de Pessoas; o chat aberto tinha balões da nossa
+  paleta, hora fora do balão e botão de enviar na cor do módulo. Agora as
+  cores são as do próprio app nos dois temas (`--color-wa-*`, com
+  `light-dark()`), papel de parede com rabisco, balões de 8px com rabinho só
+  no primeiro da sequência, hora e ✓✓ DENTRO do balão (azul quando lida),
+  separador HOJE/ONTEM, teclado em pílula com botão verde redondo.
+- **A hora dentro do balão é um truque, não um layout.** Um espaçador
+  invisível no fim do texto reserva o canto; a hora fica em `absolute` embaixo
+  à direita e a última linha corre ao lado dela — exatamente como o app faz.
+  Sem o espaçador, texto curto e hora se sobrepõem.
+- **A reação (👍/👎) é uma pílula de 28px sobreposta ao pé do balão**, como o
+  emoji de reação do app — mas cada botão dentro dela tem 44px de área tocável
+  por margem negativa. Aparência do app, régua da casa.
+- **`stroke-opacity-50` não existe no Tailwind v4.** Saiu no commit do funil e
+  a classe não gerava CSS nenhum; `npm run paleta` pegou. O caminho é a
+  propriedade arbitrária (`[stroke-opacity:0.5]`). Mesma família do `bg-chip`.
+- **O nome da assistente é configurável, então o balão diz só "IA"** — em
+  verde, na posição em que o app mostra o nome do remetente no grupo.
