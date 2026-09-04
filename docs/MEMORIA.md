@@ -4208,3 +4208,24 @@ no topo, "Sair" no rodapé. O que eu tinha feito era folha de baixo.
   usei — todos existem.
 - Medido em 320/360/390 com o CSS de produção: sem estouro, todo alvo ≥44px,
   "Listas de transmissão" cabe sem truncar até em 320px.
+
+### Portal tira o elemento da árvore — e a cor viaja pela árvore (04/09/2026, noite)
+
+- **`createPortal` resolve a armadilha do `backdrop-filter` e cria outra.** A
+  gaveta lateral foi para o `<body>` para escapar do containing block do
+  header. Só que a paleta do painel (`[data-rota="painel"]`) e a cor do módulo
+  (`[data-modulo]`) são custom properties penduradas no `<main>` — e custom
+  property só herda pela árvore do DOM. No body, a gaveta nasceu com a paleta
+  do SITE e o acento padrão: o painel inteiro mudava de cor ao trocar de
+  seção, a gaveta não. **Falha calada: tudo funcionava, só a cor mentia.** O
+  usuário viu antes de mim ("quero que aquelas mudanças de cores continuem").
+- **Regra:** todo nó portalado do painel repete `data-rota="painel"` e
+  `data-modulo={moduloAtivo(atual)}` na própria raiz — o módulo vindo da MESMA
+  função que pinta o `<main>`, senão gaveta e painel podem discordar sobre a
+  cor da mesma rota. Guarda em `navegacao.test.ts` lê o código de cada
+  componente portalado; provocada removendo o atributo, mordida conferida por
+  md5.
+- **Por que a reprodução não pegou:** o HTML de teste tinha `data-modulo` no
+  `<main>` E a gaveta DENTRO dele — o oposto do que o portal faz. Reprodução
+  que não reproduz a árvore do DOM não reproduz herança de CSS. Ao validar
+  componente portalado, montar a gaveta como irmã do main, não filha.
