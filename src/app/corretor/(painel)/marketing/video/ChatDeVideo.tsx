@@ -134,7 +134,7 @@ export function ChatDeVideo({
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-[14rem_minmax(0,1fr)]">
       <ListaDeConversas
         conversas={conversas}
         ativa={estado?.conversa.id ?? null}

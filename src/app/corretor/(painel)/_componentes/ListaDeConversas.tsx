@@ -27,7 +27,12 @@ export function ListaDeConversas({
   onExcluir: (id: string) => void | Promise<void>;
 }) {
   return (
-    <aside aria-label="Conversas salvas" className="space-y-2">
+    /*
+     * No celular a lista vem DEPOIS do chat (`order-2`): medido no render de
+     * 360px, ela ocupava ~380px acima da conversa, e quem abre a tela no
+     * telefone veio conversar, não folhear histórico. No computador é lateral.
+     */
+    <aside aria-label="Conversas salvas" className="order-2 space-y-2 md:order-none">
       <button
         type="button"
         onClick={onNova}
@@ -42,15 +47,19 @@ export function ListaDeConversas({
 
       {conversas.length > 0 && (
         <ul className="flex flex-wrap gap-1.5 md:block md:space-y-0.5">
+          {/* `max-w-full` no item: numa fileira que quebra linha ele não tem largura
+              imposta, e sem teto o título longo define a dele — 5px de vazamento
+              medidos em 320/360px. É o `min-width: auto` do item de flex/grid, a
+              mesma armadilha do link de indicação no hub de Marketing. */}
           {conversas.map((c) => (
-            <li key={c.id} className="group flex min-w-0 items-stretch md:w-full">
+            <li key={c.id} className="group flex max-w-full min-w-0 items-stretch md:w-full">
               <button
                 type="button"
                 onClick={() => onAbrir(c.id)}
                 aria-current={ativa === c.id ? "true" : undefined}
                 title={c.titulo}
                 className={cn(
-                  "min-h-11 min-w-0 cursor-pointer truncate rounded-xl px-3 text-left text-sm transition-colors md:flex-1",
+                  "max-w-[70vw] min-h-11 min-w-0 cursor-pointer truncate rounded-xl px-3 text-left text-sm transition-colors md:max-w-none md:flex-1",
                   ativa === c.id
                     ? "bg-acento-lavado text-acento-suave font-medium"
                     : "text-apoio hover:bg-vidro hover:text-titulo",

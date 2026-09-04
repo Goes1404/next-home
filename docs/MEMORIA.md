@@ -4229,3 +4229,39 @@ no topo, "Sair" no rodapé. O que eu tinha feito era folha de baixo.
   `<main>` E a gaveta DENTRO dele — o oposto do que o portal faz. Reprodução
   que não reproduz a árvore do DOM não reproduz herança de CSS. Ao validar
   componente portalado, montar a gaveta como irmã do main, não filha.
+
+## O Estúdio virou chat, e o motor já estava pronto e desligado (04/09/2026)
+
+- **`engenheiroDePrompt.ts` existia sem NENHUM importador** — perguntas com
+  alternativas tocáveis, prompt final com explicação em português, reserva
+  determinística quando o motor cai. Era exatamente o miolo do "chat que
+  melhora o pedido". Sexto caso de recurso completo sem ninguém o chamando;
+  **antes de escrever motor novo, `grep` por quem já resolve a forma.**
+- **O pré-treinamento mora no código, não num prompt gigante.** O que separa
+  este chat de um ChatGPT é o que o código injeta e impõe: catálogo real
+  (a IA só escolhe slug que existe), receitas, régua de marketing, cláusula
+  anti-invenção (segue em `gerarImagem.ts`, o chat não a toca) e régua de lei
+  na copy. Vídeo nem usa LLM para o roteiro — é determinístico; a IA só
+  ENTENDE o pedido.
+- **Uma pergunta por turno.** O engenheiro devolve até três de uma vez; no
+  chat isso é formulário disfarçado. A adaptação foi de RITMO, não de motor.
+- **Os dois verbos pagos continuam sendo dois** (`/api/imagens/gerar`,
+  `criarVideo`), e a guarda lê o código para garantir que o chat não vira um
+  segundo motor. A primeira versão da guarda "confirmar vídeo exige proposta
+  na conversa" **aceitou `void propostaValida`** — a mordida não mordeu.
+  Reescrita para exigir o `if (!propostaValida) return { erro` ANTES do
+  gasto. Critério que só confere se a variável existe é decorativo.
+- **Sem chave da OpenAI no contêiner, sondar a DEGRADAÇÃO é o teste barato**:
+  arte sem motor vira proposta honesta (`daIa=false`), "story" vira retrato,
+  vídeo acha o imóvel pelo apelido e pergunta só o que falta. É o caminho que
+  não pode falhar; o caminho feliz se prova em produção, onde a chave existe.
+- **`min-width: auto` de novo, agora na lista de conversas**: título longo num
+  item de flex sem teto de largura definiu a largura da coluna — 5px de
+  vazamento em 320/360px, medido com o CSS de produção. `max-w-full` no item
+  resolve; a mesma armadilha do link de indicação no hub de Marketing.
+- **Comentário JSX não pode ser irmão do elemento retornado em
+  `map(() => ( … ))`** — derruba o build do Turbopack com um erro genérico.
+  Comentário vai fora do parêntese ou dentro do elemento.
+- **No celular, o histórico vai embaixo do chat.** Medido: ocupava ~380px
+  acima da conversa em 360px. Quem abre no telefone veio conversar, não
+  folhear.
