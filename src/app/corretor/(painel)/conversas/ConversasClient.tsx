@@ -129,7 +129,10 @@ function deMensagemRow(row: MensagemRow): MensagemConversa {
     midiaUrl: row.midia_url,
     statusEntrega: row.status_entrega,
     interacaoId: row.interacao_id,
-    // A avaliação mora em ia_interacoes; o reconcílio periódico a traz.
+    // Só para mensagem que CHEGA por realtime — nova, portanto sem avaliação.
+    // Na carga da conversa quem traz a avaliação é `lerMensagens`, com uma
+    // segunda consulta em ia_interacoes. (O comentário antigo falava de um
+    // "reconcílio periódico" que não existe; enganou uma investigação.)
     avaliacao: null,
   };
 }
@@ -1127,6 +1130,8 @@ function Balao({
    */
   const [nota, setNota] = useState<"boa" | "ruim" | null>(mensagem.avaliacao);
   const [salvando, setSalvando] = useState(false);
+  // Reabriu os dois botões para trocar a avaliação já dada.
+  const [trocando, setTrocando] = useState(false);
   const avaliavel = mensagem.remetente === "bot" && mensagem.interacaoId !== null;
 
   function avaliar(valor: "boa" | "ruim") {
@@ -1135,7 +1140,10 @@ function Balao({
     void avaliarInteracao(mensagem.interacaoId, valor).then((resultado) => {
       setSalvando(false);
       if (resultado.erro) onErro(resultado.erro);
-      else setNota(valor);
+      else {
+        setNota(valor);
+        setTrocando(false);
+      }
     });
   }
 
@@ -1183,38 +1191,68 @@ function Balao({
         )}
       </p>
 
-      {avaliavel &&
-        (nota ? (
-          <p
-            className={cn(
-              "mt-1 text-[11px] font-medium",
-              nota === "boa" ? "text-ok" : "text-perigo",
-            )}
-          >
-            {nota === "boa" ? "👍 Você marcou como boa" : "👎 Você marcou como ruim"}
-          </p>
-        ) : (
-          <div className="mt-1 flex items-center gap-1">
+      {/*
+        A avaliação como REAÇÃO, do jeito que o WhatsApp faz com emoji numa
+        mensagem (pedido de 04/09/2026): dois botões redondos grudados na borda
+        de baixo do balão, sempre visíveis — no celular não existe hover.
+        Depois de avaliar, o emoji escolhido fica como um selo no canto, e
+        tocar nele reabre os dois: avaliação errada tem de poder ser trocada
+        (antes virava texto fixo, sem volta).
+
+        Só balão da IA com `interacaoId` é avaliável: é o vínculo da 0040 que
+        liga o balão à interação, e é isso que alimenta o aprendizado.
+      */}
+      {avaliavel && (
+        <div className="-mb-1 mt-1.5 flex items-center justify-end gap-1">
+          {nota && !trocando ? (
             <button
               type="button"
-              onClick={() => avaliar("boa")}
-              disabled={salvando}
-              title="Esta resposta da IA foi boa"
-              className="border-linha text-apoio hover:text-ok min-h-11 cursor-pointer rounded-full border px-3 text-xs transition-colors disabled:opacity-60"
+              onClick={() => setTrocando(true)}
+              title={nota === "boa" ? "Você marcou como boa — toque para trocar" : "Você marcou como ruim — toque para trocar"}
+              aria-label={nota === "boa" ? "Avaliada como boa. Trocar avaliação" : "Avaliada como ruim. Trocar avaliação"}
+              className={cn(
+                // 44px também aqui: o selo é alvo de toque (reabre a escolha), não enfeite.
+                "bg-superficie flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1 rounded-full border px-3 text-sm shadow-sm transition-transform hover:scale-105",
+                nota === "boa" ? "border-ok-linha" : "border-perigo-linha",
+              )}
             >
-              👍
+              <span aria-hidden>{nota === "boa" ? "👍" : "👎"}</span>
+              <span className={cn("text-[10px] font-semibold", nota === "boa" ? "text-ok" : "text-perigo")}>
+                {nota === "boa" ? "boa" : "ruim"}
+              </span>
             </button>
-            <button
-              type="button"
-              onClick={() => avaliar("ruim")}
-              disabled={salvando}
-              title="Marcar esta resposta como ruim — a IA aprende a não repetir"
-              className="border-linha text-apoio hover:text-perigo min-h-11 cursor-pointer rounded-full border px-3 text-xs transition-colors disabled:opacity-60"
-            >
-              👎
-            </button>
-          </div>
-        ))}
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => avaliar("boa")}
+                disabled={salvando}
+                aria-label="Marcar esta resposta da IA como boa"
+                title="Esta resposta da IA foi boa"
+                className={cn(
+                  "bg-superficie border-linha hover:border-ok-linha hover:bg-ok-lavado grid size-11 cursor-pointer place-items-center rounded-full border text-base shadow-sm transition-all hover:scale-110 disabled:opacity-60",
+                  nota === "boa" && "border-ok-linha bg-ok-lavado",
+                )}
+              >
+                <span aria-hidden>👍</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => avaliar("ruim")}
+                disabled={salvando}
+                aria-label="Marcar esta resposta da IA como ruim — ela aprende a não repetir"
+                title="Marcar como ruim — a IA aprende a não repetir"
+                className={cn(
+                  "bg-superficie border-linha hover:border-perigo-linha hover:bg-perigo-lavado grid size-11 cursor-pointer place-items-center rounded-full border text-base shadow-sm transition-all hover:scale-110 disabled:opacity-60",
+                  nota === "ruim" && "border-perigo-linha bg-perigo-lavado",
+                )}
+              >
+                <span aria-hidden>👎</span>
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
