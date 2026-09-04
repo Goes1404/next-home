@@ -12,7 +12,7 @@ import { getFilaDeTrabalho } from "@/lib/crm/filaDeTrabalho";
 import { getMinhasTarefas } from "@/lib/crm/dadosLead";
 import { site } from "@/lib/site";
 import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
-import { CabecalhoDeTela } from "./_componentes/CabecalhoDeTela";
+import { HeroInicio } from "./_componentes/HeroInicio";
 import { cn } from "@/lib/utils";
 import {
   IconeLink,
@@ -74,10 +74,16 @@ export default async function PainelInicio() {
         primeira letra — e o número já aparece no cabeçalho da própria fila,
         um dedo abaixo. Dizer duas vezes custava a tela inteira parada.
       */}
-      <CabecalhoDeTela
-        titulo={`Olá, ${primeiroNome}`}
-        descricao="O que precisa de você agora."
-      />
+      {/*
+        O cartão de abertura substitui o cabeçalho simples (pedido de
+        04/09/2026, com referência visual). Ele precisa das contagens do
+        funil, então mora atrás do próprio Suspense: o esqueleto aparece de
+        imediato e o cartão chega quando a contagem responde — sem segurar o
+        resto da tela.
+      */}
+      <Suspense fallback={<EsqueletoCartao linhas={3} />}>
+        <BlocoDoHero nome={primeiroNome} />
+      </Suspense>
 
       {/*
         Cada bloco busca o próprio dado atrás do seu `<Suspense>`, em vez de a
@@ -171,6 +177,11 @@ async function BlocoDaFila() {
   const tarefas = await getMinhasTarefas();
   const fila = await getFilaDeTrabalho(tarefas);
   return <FilaAgora itens={fila} />;
+}
+
+async function BlocoDoHero({ nome }: { nome: string }) {
+  const contagens = await getContagemPorEtapa();
+  return <HeroInicio nome={nome} contagens={contagens} />;
 }
 
 async function BlocoDoFunil() {
