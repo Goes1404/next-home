@@ -127,24 +127,34 @@ export default async function PainelInicio() {
               // seção de destino: `bg-acento` aqui já é a cor DAQUELE módulo.
               data-modulo={a.modulo}
               className={cn(
-                "from-acento to-acento-hover text-sobre-cor shadow-painel group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br p-4 transition-transform hover:-translate-y-0.5 motion-reduce:transition-none md:min-h-40 md:p-5",
+                "from-acento to-acento-hover text-sobre-cor shadow-painel group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-[1.75rem] bg-gradient-to-br p-4 ring-1 ring-white/10 transition-transform ring-inset hover:-translate-y-0.5 motion-reduce:transition-none md:min-h-40 md:p-5",
                 a.largo && "col-span-2 flex-row items-center gap-4",
               )}
             >
+              {/* Reflexo de vidro: um véu branco que some para baixo. É o que faz
+                  o cartão parecer material, e não um retângulo pintado. */}
               <span
                 aria-hidden
-                className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/20 md:size-14"
+                className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/20 via-white/5 to-transparent"
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/20 blur-2xl"
+              />
+              <span
+                aria-hidden
+                className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/15 backdrop-blur-md md:size-14"
               >
                 <Icone className="size-6 md:size-7" />
               </span>
-              <span className={cn("min-w-0", a.largo && "flex-1")}>
-                <span className="font-display block text-lg leading-tight italic md:text-xl">{a.titulo}</span>
+              <span className={cn("relative min-w-0", a.largo && "flex-1")}>
+                <span className="font-display block text-lg leading-tight font-bold tracking-[-0.02em] italic md:text-xl">{a.titulo}</span>
                 <span className="mt-1 block text-[13px] leading-snug opacity-80 md:text-sm">{a.texto}</span>
               </span>
               {a.largo && (
                 <span
                   aria-hidden
-                  className="grid size-11 shrink-0 place-items-center rounded-full bg-white/15 ring-1 ring-white/20 transition-transform group-hover:translate-x-0.5"
+                  className="relative grid size-11 shrink-0 place-items-center rounded-full border border-white/25 bg-white/15 backdrop-blur-md transition-transform group-hover:translate-x-0.5"
                 >
                   →
                 </span>
