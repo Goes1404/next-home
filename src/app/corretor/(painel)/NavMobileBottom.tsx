@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,48 @@ import { ATALHOS_MOBILE, destinoAtivo, gruposVisiveis, subitemAtivo } from "./_c
  * em 320px, o pior caso real: cinco alvos de 62px, nada cortado e nenhum
  * rótulo em duas linhas — barra fixa que estoura não fica feia, fica
  * inalcançável, porque ali não há rolagem.
+ *
+ * ## A gaveta vai para um PORTAL
+ *
+ * Ela é `position: fixed`, e `backdrop-filter` cria containing block: um
+ * `fixed` dentro de um ancestral com blur fica preso a ele em vez da viewport.
+ * Hoje ela nasce dentro do `<main>`, que não tem blur — mas o header do
+ * painel TEM, e esta armadilha já mordeu quatro vezes neste projeto (Lightbox,
+ * Lazer, MenuMobile, header condensado). O portal para `document.body` torna
+ * a gaveta imune a qualquer ancestral que ganhe `backdrop-filter` depois.
+ *
+ * Com o portal veio a armadilha de foco (copiada de `MenuMobile.tsx`): antes
+ * havia Escape e `inert`, mas o Tab saía da gaveta e passeava pela página
+ * atrás do escurecido — onde o dedo não alcança e o olho não vê.
  */
+
+const semInscricao = () => () => {};
+
+/** `false` no servidor; `true` depois de hidratar — o portal precisa de `document`. */
+function useMontado(): boolean {
+  return useSyncExternalStore(semInscricao, () => true, () => false);
+}
+
+/** Seta que diz "isto abre": gira quando o tópico está aberto. */
+function Chevron({ aberto }: { aberto: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn(
+        "ml-auto h-3.5 w-3.5 shrink-0 opacity-60 transition-transform motion-reduce:transition-none",
+        aberto && "rotate-90",
+      )}
+    >
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
 export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
   const atual = usePathname();
   const grupos = gruposVisiveis(ehGestor);
@@ -36,27 +78,73 @@ export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
   const aberta = abertaEm !== null && abertaEm === atual;
   const setAberta = (valor: boolean) => setAbertaEm(valor ? atual : null);
 
+  const montado = useMontado();
+  const painel = useRef<HTMLDivElement>(null);
+  const botao = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     if (!aberta) return;
+    const alvo = painel.current;
+
+    const focaveis = () =>
+      Array.from(alvo?.querySelectorAll<HTMLElement>("a[href], button:not([disabled])") ?? []).filter(
+        (el) => el.offsetParent !== null,
+      );
+
+    focaveis()[0]?.focus();
+
     const aoTeclar = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") setAbertaEm(null);
+      if (ev.key === "Escape") {
+        setAbertaEm(null);
+        return;
+      }
+      if (ev.key !== "Tab") return;
+
+      // Armadilha de foco: sem isto o Tab sai da gaveta e passeia por trás
+      // dela, onde o dedo não alcança e o olho não vê.
+      const lista = focaveis();
+      if (lista.length === 0) return;
+      const primeiro = lista[0];
+      const ultimo = lista[lista.length - 1];
+      if (ev.shiftKey && document.activeElement === primeiro) {
+        ev.preventDefault();
+        ultimo.focus();
+      } else if (!ev.shiftKey && document.activeElement === ultimo) {
+        ev.preventDefault();
+        primeiro.focus();
+      }
     };
+
     document.addEventListener("keydown", aoTeclar);
-    return () => document.removeEventListener("keydown", aoTeclar);
+    // A página atrás não rola enquanto a gaveta está aberta: rolar o fundo
+    // com o polegar em cima do escurecido é o gesto mais comum de "fechar"
+    // que dá errado.
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    // Guardado agora: na limpeza, `botao.current` já pode ser outro nó.
+    const abridor = botao.current;
+
+    return () => {
+      document.removeEventListener("keydown", aoTeclar);
+      document.body.style.overflow = overflowAnterior;
+      abridor?.focus();
+    };
   }, [aberta]);
 
-  return (
-    <div className="md:hidden">
-      <div
-        // `inert` tira o conteúdo fechado do foco e do leitor de tela; só
-        // `opacity-0` deixaria treze links tabuláveis atrás da página.
-        inert={!aberta}
-        aria-hidden={!aberta}
-        className={cn(
-          "fixed inset-0 z-60 transition-opacity duration-200",
-          aberta ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-      >
+  const gaveta = (
+    <div
+      // `inert` tira o conteúdo fechado do foco e do leitor de tela; só
+      // `opacity-0` deixaria treze links tabuláveis atrás da página.
+      // `md:hidden` fica AQUI, e não só no wrapper: com o portal a gaveta mora
+      // no `<body>`, fora do wrapper — sem isto, abrir no celular e alargar a
+      // janela deixaria o escurecido por cima do desktop.
+      inert={!aberta}
+      aria-hidden={!aberta}
+      className={cn(
+        "fixed inset-0 z-60 transition-opacity duration-200 md:hidden",
+        aberta ? "opacity-100" : "pointer-events-none opacity-0",
+      )}
+    >
         <button
           type="button"
           tabIndex={-1}
@@ -66,6 +154,8 @@ export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
         />
 
         <div
+          ref={painel}
+          id="gaveta-do-painel"
           role="dialog"
           aria-modal="true"
           aria-label="Todas as seções"
@@ -110,6 +200,12 @@ export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
                         >
                           <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
                           {item.label}
+                          {/* Só quem tem subtópico ganha a seta: é a pista de
+                              que há mais ali dentro, antes de tocar. Fechado, a
+                              gaveta não mostra os subtópicos dos outros — sem
+                              a seta, "Criar vídeo" seria invisível até alguém
+                              abrir Marketing por acaso. */}
+                          {(item.subitens?.length ?? 0) > 0 && <Chevron aberto={ativa} />}
                         </Link>
 
                         {subs.length > 0 && (
@@ -147,6 +243,11 @@ export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
           </div>
         </div>
       </div>
+  );
+
+  return (
+    <div className="md:hidden">
+      {montado && createPortal(gaveta, document.body)}
 
       <nav
         aria-label="Atalhos do painel"
@@ -176,9 +277,11 @@ export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
         })}
 
         <button
+          ref={botao}
           type="button"
           onClick={() => setAberta(!aberta)}
           aria-expanded={aberta}
+          aria-controls="gaveta-do-painel"
           aria-label="Todas as seções"
           className={cn(
             "flex w-full cursor-pointer flex-col items-center justify-center gap-1 transition-colors",

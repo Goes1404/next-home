@@ -55,7 +55,10 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      aria-current={ativa ? "page" : undefined}
+                      // Com um subtópico aberto, é ELE a página atual — dois
+                      // `aria-current="page"` na mesma tela fazem o leitor
+                      // anunciar duas páginas. Mesma regra da gaveta.
+                      aria-current={ativa && !subAtivo ? "page" : undefined}
                       className={cn(
                         "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors",
                         ativa
@@ -74,6 +77,26 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                       />
                       <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
                       {item.label}
+                      {/* A seta diz "isto abre" antes do clique — sem ela um
+                          tópico com cinco telas dentro é indistinguível de um
+                          sem nenhuma. */}
+                      {(item.subitens?.length ?? 0) > 0 && (
+                        <svg
+                          viewBox="0 0 24 24"
+                          aria-hidden
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={cn(
+                            "ml-auto h-3.5 w-3.5 shrink-0 opacity-60 transition-transform motion-reduce:transition-none",
+                            ativa && "rotate-90",
+                          )}
+                        >
+                          <path d="M9 6l6 6-6 6" />
+                        </svg>
+                      )}
                     </Link>
 
                     {subs.length > 0 && (
