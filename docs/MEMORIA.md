@@ -4313,3 +4313,22 @@ no topo, "Sair" no rodapé. O que eu tinha feito era folha de baixo.
   anomalia de 31/08. Não quebrou nada porque a dev estava à frente e o push
   seguinte a superou, mas a regra continua: **antes de afirmar "está no ar",
   listar deployments com `target = production` e olhar o `action`.**
+
+## Avaliar a resposta da IA virou reação no balão (03/09/2026)
+
+- **O mecanismo já existia desde a 0040 e ninguém usava**: cada balão da IA
+  carrega o `interacaoId`, e o 👍/👎 estava lá — como dois links pequenos de
+  texto embaixo da mensagem, que no celular ninguém acha. O pedido foi "como
+  se coloca emoji numa mensagem do WhatsApp": dois botões redondos de 44px
+  sempre visíveis, e o escolhido vira selo. **Tocar no selo reabre a
+  escolha** — a versão antiga travava num texto fixo ("Você marcou como
+  boa"), e avaliação errada sem volta ensina a não avaliar.
+- **Um comentário errado custou uma investigação.** `deMensagemRow` dizia que
+  a avaliação vinha de um "reconcílio periódico"; li isso e concluí que o
+  rótulo nunca era carregado. Falso: `lerMensagens` faz uma segunda consulta
+  em `ia_interacoes` e traz tudo. O `null` ali é só para mensagem que CHEGA
+  por realtime — nova, sem avaliação por definição. **Comentário que descreve
+  mecanismo inexistente é pior que comentário nenhum**; corrigido no lugar.
+- **A tela "Atendimento da IA" continua**, como FILA de revisão ("N respostas
+  sem revisão") que leva à conversa. O que mudou é onde o toque acontece: na
+  conversa, não numa lista separada.
