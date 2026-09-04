@@ -10,6 +10,7 @@ import {
   ITENS_DA_CONTA,
   destinoAtivo,
   gruposVisiveis,
+  moduloAtivo,
   subitemAtivo,
   type ItemNav,
 } from "./_componentes/navegacao";
@@ -84,6 +85,7 @@ export function GavetaLateral({ ehGestor }: { ehGestor: boolean }) {
   const montado = useMontado();
   const grupos = gruposVisiveis(ehGestor);
   const dono = destinoAtivo(atual);
+  const modulo = moduloAtivo(atual);
 
   /*
    * Acordeão: o tópico expandido é o da rota, a menos que a pessoa tenha
@@ -148,6 +150,20 @@ export function GavetaLateral({ ehGestor }: { ehGestor: boolean }) {
 
   return createPortal(
     <div
+      /*
+       * A gaveta mora no `<body>`, FORA do `<main data-rota="painel"
+       * data-modulo>` que carrega a paleta do painel e a cor do módulo. Sem
+       * repetir os dois atributos aqui, ela nasce com a paleta do SITE e o
+       * acento padrão — o tópico ativo deixa de acompanhar a seção. Foi
+       * exatamente isso que aconteceu na primeira versão portalada
+       * (04/09/2026): o resto do painel mudava de cor, a gaveta não.
+       *
+       * O portal tira a gaveta da árvore do DOM; a cor viaja por CSS
+       * custom property, que só herda pela árvore. Todo elemento portalado
+       * deste painel precisa carregar os dois atributos por conta própria.
+       */
+      data-rota="painel"
+      data-modulo={modulo ?? undefined}
       // `inert` tira o conteúdo fechado do foco e do leitor de tela; só
       // `opacity-0` deixaria vinte links tabuláveis atrás da página.
       inert={!aberta}

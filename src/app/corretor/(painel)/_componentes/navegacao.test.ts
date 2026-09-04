@@ -302,3 +302,29 @@ describe("as barras de abas DERIVAM do menu", () => {
     expect(subitensDe("/corretor/admin")).toHaveLength(6);
   });
 });
+
+
+/**
+ * Elemento PORTALADO sai da árvore que carrega a cor.
+ *
+ * `[data-rota="painel"]` redefine a paleta do painel e `[data-modulo]` a cor
+ * do módulo, por custom property — que só herda pela árvore do DOM. A gaveta
+ * lateral nasce em `createPortal(…, document.body)`, fora do `<main>` que tem
+ * os dois. Na primeira versão portalada (04/09/2026) ela ficou com a paleta
+ * do site e o acento padrão: o painel inteiro mudava de cor com a seção, a
+ * gaveta não. Falha calada — tudo funciona, só a cor mente.
+ */
+describe("todo portal do painel carrega a paleta e o módulo", () => {
+  const portalados = ["GavetaLateral.tsx"];
+
+  it.each(portalados)("%s repete data-rota e data-modulo no nó portalado", (arq) => {
+    const fonte = readFileSync(join(process.cwd(), "src/app/corretor/(painel)", arq), "utf8")
+      .replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+    expect(fonte).toContain("createPortal(");
+    expect(fonte).toMatch(/data-rota="painel"/);
+    expect(fonte).toMatch(/data-modulo=\{modulo \?\? undefined\}/);
+    // E o módulo tem de vir da MESMA função que pinta o <main>, senão a
+    // gaveta e o painel podem discordar sobre a cor da mesma rota.
+    expect(fonte).toMatch(/moduloAtivo\(atual\)/);
+  });
+});
