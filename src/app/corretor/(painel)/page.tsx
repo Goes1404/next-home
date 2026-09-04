@@ -55,10 +55,6 @@ export default async function PainelInicio() {
         só existia quando a última respondesse. Agora o cabeçalho e a cor do
         módulo aparecem de imediato e cada seção chega quando fica pronta.
       */}
-      <Suspense fallback={<EsqueletoCartao linhas={4} />}>
-        <BlocoDaFila />
-      </Suspense>
-
       <Suspense fallback={<EsqueletoCartao linhas={1} />}>
         <BlocoDoFunil />
       </Suspense>
@@ -95,6 +91,17 @@ export default async function PainelInicio() {
           </Link>
         ))}
       </section>
+
+      {/*
+        A fila vem POR ÚLTIMO — decisão de produto do usuário (04/09/2026), que
+        inverteu a da F3. A ordem da tela é: funil → link pessoal → atalhos →
+        fila. O que NÃO mudou: a ordem DENTRO da fila (visita de hoje, tarefa
+        vencida, lead novo…) continua sendo a do custo de perder, e
+        `filaDeTrabalho.test.ts` segue travando isso.
+      */}
+      <Suspense fallback={<EsqueletoCartao linhas={4} />}>
+        <BlocoDaFila />
+      </Suspense>
     </div>
   );
 }
