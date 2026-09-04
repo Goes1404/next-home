@@ -4390,3 +4390,43 @@ outras telas". Antes de tocar em tela, contar onde a mudança mora.
   sob o conteúdo — sem o `isolate`, `-z-10` os jogaria para trás do `<body>`.
 - **Medido com o CSS de produção em 360px**, claro e escuro, em dois módulos:
   sem estouro; cartão a 84% de opacidade nos dois temas.
+
+## Criar e excluir imóvel: dois defeitos que se escondiam um no outro (04/09/2026)
+
+Relatado junto: "não é possível excluir um imóvel, e está dando erro na
+criação". Eram problemas separados, e o segundo não era o que parecia.
+
+- **A criação FUNCIONAVA; quem quebrava era a tela seguinte.** O editor
+  (`imoveis/[slug]/page.tsx`) lia por `getEmpreendimentoBySlug`, de
+  `lib/queries` — a consulta da VITRINE, que filtra `publicado = true`. Como
+  imóvel novo nasce despublicado de propósito, o redirect depois de criar
+  caía em `notFound()`: formulário preenchido, linha gravada no banco, e a
+  tela dizendo que não existe. A prova estava no banco — um rascunho
+  chamado "teste" de 03/09, órfão de uma tentativa. **Ao investigar "deu
+  erro ao criar", conferir se a linha entrou antes de procurar o erro na
+  criação.**
+- **A função certa existia desde a 0081, com o comentário explicando isto
+  no corpo, e nunca foi ligada.** `getEmpreendimentoDoPainel` foi escrita na
+  mesma migration que abriu a RLS para o corretor ler rascunho. Sétimo caso
+  do padrão "construído e nunca chamado" nesta base.
+- **Excluir não existia por DOIS motivos empilhados**: nem action/botão, nem
+  policy. O grant de DELETE para `authenticated` estava lá (default do
+  Supabase); sem policy, com RLS ligada, o delete afeta zero linhas em
+  silêncio — a mesma armadilha da 0055 em `leads`. Policy e grant são coisas
+  diferentes, e faltar um dos dois falha calado.
+- **Só apaga o DESPUBLICADO, e a trava mora na policy.** É a regra de dois
+  passos de `leads` com o estado que o cadastro já tinha: despublicar tira da
+  vitrine na hora e é reversível. Conferir em JavaScript e apagar depois
+  seria a corrida de sempre — entre a leitura e o delete, outra aba
+  republica.
+- **A ordem do delete importa por causa do bucket.** As URLs vivem em
+  `midias`, que o CASCADE apaga junto: são lidas ANTES da linha do imóvel,
+  senão não há como saber que arquivo remover e sobra órfão para sempre — o
+  alerta que fez a 0046 despublicar duplicados em vez de apagá-los.
+- **Excluir por SLUG, não por id**: no tipo `Empreendimento` o id é opcional
+  (nem toda leitura o traz) e a tela sempre tem o slug, que é único no banco.
+- **A guarda nova mora em `escalaDoPainel.test.ts`** e é da mesma família das
+  outras: lê o código e reprova tela do painel que chame a consulta da
+  vitrine. A regressão falhava calada — build, tipos e a tela funcionando
+  para os publicados, que são a maioria; só o rascunho quebrava, e rascunho é
+  justamente o que se acabou de criar.

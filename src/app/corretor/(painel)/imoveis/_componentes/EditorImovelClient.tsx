@@ -9,6 +9,7 @@ import { EditorTipologias } from "./EditorTipologias";
 import { EditorBook } from "./EditorBook";
 import { EditorMidiasExternas } from "./EditorMidiasExternas";
 import { BarraSalvarFlutuante } from "./BarraSalvarFlutuante";
+import { ExcluirImovel } from "./ExcluirImovel";
 import { salvarDadosGerais, salvarLazerEmpreendimento } from "../actions";
 import { Check } from "lucide-react";
 
@@ -276,6 +277,18 @@ export function EditorImovelClient({ imovel }: Props) {
           />
         )}
       </div>
+
+      {/*
+        A exclusão fica no FIM, depois de todo o conteúdo: é a última coisa
+        que se procura, e ninguém tropeça nela ao editar. O estado que ela lê
+        é o `publicado` DA TELA, não o do banco, para o bloco reagir no mesmo
+        toque em que o corretor despublica.
+      */}
+      <ExcluirImovel
+        slug={imovel.slug}
+        nome={imovel.nome}
+        publicado={dadosGerais.publicado}
+      />
 
       {/* Barra de Salvar Fixa no Rodapé (Mobile Sticky Bar) */}
       <BarraSalvarFlutuante

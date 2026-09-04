@@ -91,6 +91,33 @@ describe("escala do painel", () => {
     ).toEqual([]);
   });
 
+  /*
+   * A leitura do painel NÃO é a leitura da vitrine.
+   *
+   * `getEmpreendimentoBySlug` (lib/queries) filtra `publicado = true`: é o
+   * site. O editor do imóvel a usava, e com isso o cadastro recém-criado —
+   * que nasce despublicado de propósito — caía em `notFound()`. O corretor
+   * preenchia o formulário, o imóvel ENTRAVA no banco, e a tela seguinte
+   * dizia que não existia; foi assim que o cadastro "teste" ficou preso lá.
+   * Relatado em 04/09/2026 como "erro na criação do imóvel".
+   *
+   * A regressão falha calada: build passa, tipos passam, a tela até abre
+   * para os imóveis publicados — que são a maioria. Só o rascunho quebra, e
+   * rascunho é justamente o que se acabou de criar.
+   */
+  it("o painel lê imóvel pelo catálogo do painel, nunca pela consulta da vitrine", () => {
+    const infratores = arquivos
+      .filter((caminho) => codigoSemComentarios(caminho).includes("getEmpreendimentoBySlug"))
+      .map(relativo);
+
+    expect(
+      infratores,
+      `Estas telas do painel leem o imóvel pela consulta da VITRINE, que só ` +
+        `devolve publicado — o rascunho recém-criado cai em notFound(). Use ` +
+        `getEmpreendimentoDoPainel (lib/imoveis/catalogoDoPainel).`,
+    ).toEqual([]);
+  });
+
   it("as telas do gestor contam pelo agregado, não pela consulta do quadro", () => {
     // `getLeadsDoFunil` tem teto (TETO_DO_QUADRO) e serve para DESENHAR o
     // quadro. Usá-la para somar números faz a conta parar no teto.

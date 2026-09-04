@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getEmpreendimentoBySlug } from "@/lib/queries";
+import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { EditorImovelClient } from "../_componentes/EditorImovelClient";
 import Link from "next/link";
 
@@ -7,9 +7,23 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+/*
+ * Lê pelo catálogo DO PAINEL, nunca pela consulta da vitrine.
+ *
+ * `getEmpreendimentoBySlug` (lib/queries) filtra `publicado = true` — é a
+ * leitura do site. Usá-la aqui fazia o imóvel recém-criado, que nasce
+ * despublicado de propósito, cair em `notFound()`: o corretor preenchia o
+ * formulário, o cadastro ENTRAVA no banco e a tela seguinte dizia que não
+ * existia. Relatado em 04/09/2026 como "erro na criação do imóvel"; o
+ * cadastro "teste" de 03/09 ficou no banco por causa disso.
+ *
+ * `getEmpreendimentoDoPainel` existe desde a 0081 com esse comentário no
+ * corpo — só nunca foi ligada aqui. Quem autoriza ler o não publicado é a
+ * policy daquela migration.
+ */
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const imovel = await getEmpreendimentoBySlug(slug);
+  const imovel = await getEmpreendimentoDoPainel(slug);
   return {
     title: imovel ? `Editar: ${imovel.nome} | Painel do Corretor` : "Editar Imóvel",
   };
@@ -19,7 +33,7 @@ export const dynamic = "force-dynamic";
 
 export default async function EditarImovelPage({ params }: Props) {
   const { slug } = await params;
-  const imovel = await getEmpreendimentoBySlug(slug);
+  const imovel = await getEmpreendimentoDoPainel(slug);
 
   if (!imovel) {
     notFound();
