@@ -43,13 +43,22 @@ const PREENCHIMENTO: Record<EtapaFunil, string> = {
 const LARGURA = 400;
 const ALTURA_BANDA = 44;
 const VAO = 6;
-/** Meia-largura do topo de cada banda, do mais largo ao bico. */
-const MEIAS = [196, 160, 124, 88, 52];
+/**
+ * Meia-largura do topo de cada banda, do mais largo ao bico.
+ *
+ * O bico NÃO pode ser fino como o da referência: "Documentação 0" e
+ * "Fechado 1" precisam caber DENTRO da banda. Na primeira versão (52 de
+ * meia-largura no fim) o texto vazava pelas bordas — medido, não a olho. Um
+ * funil em que o rótulo sai da banda é pior que um funil menos pontudo.
+ */
+const MEIAS = [196, 170, 144, 118, 92];
+/** Meia-largura da base da última banda. */
+const BICO = 70;
 
 function banda(i: number): { d: string; y: number; cx: number } {
   const y = i * (ALTURA_BANDA + VAO);
   const topo = MEIAS[i];
-  const base = MEIAS[i + 1] ?? MEIAS[i] - 30;
+  const base = MEIAS[i + 1] ?? BICO;
   const cx = LARGURA / 2;
   // Trapézio com cantos levemente arredondados via traço largo (stroke-linejoin).
   return {
