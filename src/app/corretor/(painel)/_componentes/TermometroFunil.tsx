@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { BARRA_ETAPA } from "./etapas";
-import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil } from "@/lib/types";
+import { FunilVisual } from "./FunilVisual";
+import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 
 /**
  * O funil inteiro em uma faixa.
@@ -38,43 +38,15 @@ export function TermometroFunil({ contagens }: { contagens: Record<EtapaFunil, n
         fechamento.
       </p>
 
-      <div className="border-linha mt-5 flex h-3 gap-0.5 overflow-hidden rounded-full border">
-        {porEtapa.map(({ etapa, total: quantos }) =>
-          quantos === 0 ? null : (
-            <div
-              key={etapa}
-              style={{ flexGrow: quantos }}
-              // O `title` é o que dá o nome da etapa a quem usa mouse; o
-              // texto da legenda abaixo serve leitor de tela e toque.
-              title={`${ETAPA_LABEL[etapa]}: ${quantos}`}
-              className={`min-w-1.5 ${BARRA_ETAPA[etapa]}`}
-            />
-          ),
-        )}
+      {/*
+        O desenho de funil substitui a barra horizontal + legenda (04/09/2026,
+        pedido com referência visual). A barra proporcional era honesta como
+        gráfico e ilegível como funil: com 46 em "contatei" e 1 em "visita", a
+        faixa de visita virava um fio. Ver `FunilVisual`.
+      */}
+      <div className="mt-5">
+        <FunilVisual contagens={contagens} />
       </div>
-
-      <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-4">
-        {porEtapa.map(({ etapa, total: quantos }) => (
-          <li key={etapa} className="flex items-center gap-2">
-            <span
-              aria-hidden
-              className={`h-2 w-2 shrink-0 rounded-full ${BARRA_ETAPA[etapa]} ${
-                quantos === 0 ? "opacity-35" : ""
-              }`}
-            />
-            <span className={`text-fluid-xs truncate ${quantos === 0 ? "text-tenue" : "text-corpo"}`}>
-              {ETAPA_LABEL[etapa]}
-            </span>
-            <span
-              className={`text-fluid-xs ml-auto tabular-nums ${
-                quantos === 0 ? "text-tenue" : "text-titulo font-medium"
-              }`}
-            >
-              {quantos}
-            </span>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }
