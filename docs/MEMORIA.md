@@ -4280,3 +4280,36 @@ no topo, "Sair" no rodapé. O que eu tinha feito era folha de baixo.
   qualquer acento nos dois temas.
 - A fila "Agora" desceu para o fim da tela (decisão do usuário): a ordem é
   funil → link pessoal → atalhos → fila.
+
+### O cartão de abertura do Início, e o que ele ensinou (04/09/2026, noite)
+
+- **Saudação pela hora de SÃO PAULO, reusando `momentoEmSaoPaulo`** — não uma
+  sexta cópia de `Intl.DateTimeFormat`. Teste com 23:30 UTC esperando "Boa
+  noite": um `getHours()` no servidor daria "bom dia" para quem está jantando.
+- **O medidor é "% da carteira em andamento"** (dos contatos no caminho,
+  quantos saíram de "novo"; perdido fora; fechado conta). É o número que sobe
+  quando a corretora trabalha. Carteira vazia → 0 e a frase diz por quê, em vez
+  de dividir por zero. **Pílulas com o que MUDA** (em conversa, visitas,
+  fechados), não totais que só crescem.
+- **Zero consulta nova**: reaproveita `getContagemPorEtapa`, que o funil já
+  buscava, atrás do próprio `Suspense`. O Início é a tela mais aberta do
+  painel; consulta ali custa em toda abertura.
+- **Três pílulas com ícone AO LADO não cabem em 320–390px** — "em conversa"
+  cortava, medido com o CSS de produção. No celular o ícone fica em cima do
+  número; lado a lado só a partir de `md`.
+- **Vidro sobre fundo liso é só cinza.** `backdrop-blur` precisa de algo atrás
+  para desfocar: os dois brilhos de acento nos cantos existem para isso, não
+  por enfeite. E `backdrop-filter` cria containing block — nada `fixed` dentro
+  desses cartões (sexta vez que a armadilha aparece; aqui prevenida).
+- **A cor dos atalhos é a cor do módulo** (`data-modulo` no próprio `<Link>`),
+  nunca paleta própria: Pessoas é magenta porque Pessoas É magenta no resto.
+- **Ao validar por reprodução, usar os ÍCONES REAIS** — extrair os `<path>` do
+  código em vez de um placeholder. O usuário pediu "coloque símbolos nos
+  cards" olhando uma reprodução em que os símbolos eram placeholders MEUS; o
+  código já tinha os certos. Reprodução que mente na parte visual gera pedido
+  para consertar o que não está quebrado.
+- **Alguém promoveu um commit da branch de DEV para produção pelo painel da
+  Vercel** (`e9a5805`, `action: "promote"`, ~23h40 UTC de 04/09) — a mesma
+  anomalia de 31/08. Não quebrou nada porque a dev estava à frente e o push
+  seguinte a superou, mas a regra continua: **antes de afirmar "está no ar",
+  listar deployments com `target = production` e olhar o `action`.**
