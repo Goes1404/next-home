@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { destinoAtivo, gruposVisiveis, subitemAtivo } from "./_componentes/navegacao";
+import { useState } from "react";
+import { destinoAtivo, ehPasta, gruposVisiveis, subitemAtivo } from "./_componentes/navegacao";
 
 /**
  * Barra lateral do painel (desktop).
@@ -29,6 +30,11 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
   const grupos = gruposVisiveis(ehGestor);
   const dono = destinoAtivo(atual);
 
+  // Pasta aberta à mão nesta rota; ao navegar, volta a ser a da rota nova.
+  const [manual, setManual] = useState<{ rota: string | null; href: string | null } | null>(null);
+  const expandido = manual && manual.rota === atual ? manual.href : (dono?.href ?? null);
+  const alternar = (href: string) => setManual({ rota: atual, href: expandido === href ? null : href });
+
   return (
     <nav aria-label="Seções do painel" className="hidden md:block">
       {/* Desconta a altura do cabeçalho grudente (`--painel-header-h`): com
@@ -49,55 +55,67 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
               {grupo.itens.map((item) => {
                 const ativa = dono?.href === item.href;
                 const Icone = item.icone;
-                const subs = ativa ? (item.subitens ?? []) : [];
+                const pasta = ehPasta(item);
+                const aberta = pasta && expandido === item.href;
+                const subs = aberta ? (item.subitens ?? []) : [];
                 const subAtivo = ativa ? subitemAtivo(atual, item) : null;
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      // Com um subtópico aberto, é ELE a página atual — dois
-                      // `aria-current="page"` na mesma tela fazem o leitor
-                      // anunciar duas páginas. Mesma regra da gaveta.
-                      aria-current={ativa && !subAtivo ? "page" : undefined}
-                      className={cn(
-                        "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors",
+                const classes = cn(
+                  "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors",
                         ativa
                           ? "bg-acento-lavado text-acento-suave font-medium"
                           : "text-apoio hover:bg-vidro hover:text-titulo",
+                  pasta && "w-full cursor-pointer text-left",
+                );
+                const miolo = (
+                  <>
+                    {/* Régua à esquerda: marca a seção aberta sem depender
+                        só da cor, que some para quem não distingue verde. */}
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "bg-acento absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full transition-opacity",
+                        ativa ? "opacity-100" : "opacity-0",
                       )}
-                    >
-                      {/* Régua à esquerda: marca a seção aberta sem depender
-                          só da cor, que some para quem não distingue verde. */}
-                      <span
+                    />
+                    <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
+                    {item.label}
+                    {pasta && (
+                      <svg
+                        viewBox="0 0 24 24"
                         aria-hidden
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                         className={cn(
-                          "bg-acento absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full transition-opacity",
-                          ativa ? "opacity-100" : "opacity-0",
+                          "ml-auto h-3.5 w-3.5 shrink-0 opacity-60 transition-transform motion-reduce:transition-none",
+                          aberta && "rotate-90",
                         )}
-                      />
-                      <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
-                      {item.label}
-                      {/* A seta diz "isto abre" antes do clique — sem ela um
-                          tópico com cinco telas dentro é indistinguível de um
-                          sem nenhuma. */}
-                      {(item.subitens?.length ?? 0) > 0 && (
-                        <svg
-                          viewBox="0 0 24 24"
-                          aria-hidden
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.7"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className={cn(
-                            "ml-auto h-3.5 w-3.5 shrink-0 opacity-60 transition-transform motion-reduce:transition-none",
-                            ativa && "rotate-90",
-                          )}
-                        >
-                          <path d="M9 6l6 6-6 6" />
-                        </svg>
-                      )}
-                    </Link>
+                      >
+                        <path d="M9 6l6 6-6 6" />
+                      </svg>
+                    )}
+                  </>
+                );
+                return (
+                  <li key={item.href}>
+                    {pasta ? (
+                      /* Pasta: tocar ABRE, não navega. Quem tem página é o
+                         subtópico (o primeiro deles é a própria tela do tópico). */
+                      <button
+                        type="button"
+                        onClick={() => alternar(item.href)}
+                        aria-expanded={aberta}
+                        className={classes}
+                      >
+                        {miolo}
+                      </button>
+                    ) : (
+                      <Link href={item.href} aria-current={ativa ? "page" : undefined} className={classes}>
+                        {miolo}
+                      </Link>
+                    )}
 
                     {subs.length > 0 && (
                       /* Recuo alinhado ao rótulo do pai (ícone 18px + gap 12px)

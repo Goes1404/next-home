@@ -318,14 +318,30 @@ function Topico({
           ativo ? "bg-acento text-sobre-cor" : "text-corpo hover:bg-vidro",
         )}
       >
-        <Link
-          href={item.href}
-          aria-current={ativo && !subAtivo ? "page" : undefined}
-          className="flex min-h-12 min-w-0 flex-1 items-center gap-3 px-4 text-[15px] font-medium"
-        >
-          <Icone aria-hidden className="h-5 w-5 shrink-0" />
-          <span className="truncate">{item.label}</span>
-        </Link>
+        {temSubs ? (
+          /* Pasta: o rótulo também só ABRE — regra de 04/09: tópico com
+             subtópicos não é destino. Quem tem página é o subtópico, e o
+             primeiro deles é a própria tela do tópico. */
+          <button
+            type="button"
+            onClick={aoAlternar}
+            aria-expanded={expandido}
+            aria-controls={idSubs}
+            className="flex min-h-12 min-w-0 flex-1 cursor-pointer items-center gap-3 px-4 text-left text-[15px] font-medium"
+          >
+            <Icone aria-hidden className="h-5 w-5 shrink-0" />
+            <span className="truncate">{item.label}</span>
+          </button>
+        ) : (
+          <Link
+            href={item.href}
+            aria-current={ativo ? "page" : undefined}
+            className="flex min-h-12 min-w-0 flex-1 items-center gap-3 px-4 text-[15px] font-medium"
+          >
+            <Icone aria-hidden className="h-5 w-5 shrink-0" />
+            <span className="truncate">{item.label}</span>
+          </Link>
+        )}
 
         {temSubs && (
           /* Seta separada do rótulo: tocar no nome NAVEGA, tocar na seta só

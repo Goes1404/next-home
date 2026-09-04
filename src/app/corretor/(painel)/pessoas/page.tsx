@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
+import { AbasLeads } from "../_componentes/AbasLeads";
 import { EsqueletoDeLista } from "../_componentes/EsqueletoDeLista";
 import { ListaPessoas } from "./ListaPessoas";
 import { getPaginaDePessoas } from "@/lib/crm/pessoas";
@@ -63,6 +64,10 @@ export default async function PaginaPessoas({
           </Link>
         }
       />
+
+      {/* Pessoas virou subtópico ("Conversas") de 04/09: a barra é a mesma
+          hierarquia do menu, derivada de `subitensDe`. */}
+      <AbasLeads ativa="/corretor/pessoas" />
 
       <Suspense key={busca} fallback={<EsqueletoDeLista linhas={7} titulo="Carregando pessoas…" />}>
         <Conteudo busca={busca} />

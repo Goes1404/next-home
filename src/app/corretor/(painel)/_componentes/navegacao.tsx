@@ -91,7 +91,15 @@ export const GRUPOS_NAV: GrupoNav[] = [
         href: "/corretor/pessoas",
         label: "Pessoas",
         icone: IconePessoas,
+        /*
+         * A página de Pessoas É um subtópico — "Conversas", a lista que parece
+         * o WhatsApp. Regra de 04/09/2026 (usuário): tópico com subtópicos não
+         * é destino, é a pasta; tocar nele abre a lista, e quem tem página é o
+         * subtópico. O href do tópico continua sendo o do primeiro subtópico
+         * para a barra do polegar e os atalhos do Início terem onde cair.
+         */
         subitens: [
+          { href: "/corretor/pessoas", label: "Conversas", icone: IconeConversas },
           { href: "/corretor/leads", label: "Lista", icone: IconeListaContatos },
           { href: "/corretor/funil", label: "Funil", icone: IconeFunil },
           { href: "/corretor/visitas", label: "Visitas", icone: IconeVisitas },
@@ -104,7 +112,10 @@ export const GRUPOS_NAV: GrupoNav[] = [
         icone: IconePredio,
         // A fila de cadastro virou sub-rota justamente porque o menu estava no
         // teto; era alcançável só pelo cartão da tela de Imóveis.
-        subitens: [{ href: "/corretor/imoveis/candidatos", label: "Fila de cadastro", icone: IconeFila }],
+        subitens: [
+          { href: "/corretor/imoveis", label: "Catálogo", icone: IconePredio },
+          { href: "/corretor/imoveis/candidatos", label: "Fila de cadastro", icone: IconeFila },
+        ],
       },
     ],
   },
@@ -127,8 +138,11 @@ export const GRUPOS_NAV: GrupoNav[] = [
         label: "WhatsApp",
         icone: IconeWhatsapp,
         subitens: [
-          { href: "/corretor/conversas", label: "Conversas", icone: IconeConversas },
           { href: "/corretor/whatsapp", label: "Minha IA", icone: IconeRobo },
+          // Era "Conversas", mas Pessoas ganhou um subtópico com esse nome (a
+          // lista de quem falou). Esta tela é outra coisa: o que a IA
+          // respondeu e a revisão 👍/👎. O nome diz isso.
+          { href: "/corretor/conversas", label: "Atendimento da IA", icone: IconeBalaoCheck },
         ],
       },
       {
@@ -149,6 +163,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
         label: "Marketing",
         icone: IconeMegafone,
         subitens: [
+          { href: "/corretor/marketing", label: "Painel", icone: IconeMegafone },
           { href: "/corretor/imoveis/criar-imagem", label: "Criar arte", icone: IconePaleta },
           { href: "/corretor/marketing/video", label: "Criar vídeo", icone: IconeClaquete },
           { href: "/corretor/campanhas", label: "Listas de transmissão", icone: IconeAntena },
@@ -230,6 +245,16 @@ export const ATALHOS_MOBILE: ItemNav[] = GRUPOS_NAV[0].itens;
 export function subitensDe(href: string): SubItemNav[] {
   const item = GRUPOS_NAV.flatMap((g) => g.itens).find((i) => i.href === href);
   return item?.subitens ?? [];
+}
+
+/**
+ * Tópico com subtópicos é PASTA, não destino: tocar nele abre a lista; quem
+ * tem página é o subtópico. Regra de 04/09/2026. O tópico continua tendo
+ * `href` (o do primeiro subtópico) para a barra do polegar e os atalhos do
+ * Início terem onde cair — e `destinoAtivo` continua acendendo o tópico certo.
+ */
+export function ehPasta(item: ItemNav): boolean {
+  return (item.subitens?.length ?? 0) > 0;
 }
 
 export function gruposVisiveis(ehGestor: boolean): GrupoNav[] {
@@ -527,6 +552,16 @@ export function IconeRobo(p: SVGProps<SVGSVGElement>) {
       <circle cx="12" cy="4.4" r="1.3" />
       <circle cx="9" cy="13.5" r="1.2" fill="currentColor" />
       <circle cx="15" cy="13.5" r="1.2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function IconeBalaoCheck(p: SVGProps<SVGSVGElement>) {
+  // Balão com check: o que a IA respondeu, revisado.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
+      <path d="m9 12 2 2 4-4" />
     </svg>
   );
 }

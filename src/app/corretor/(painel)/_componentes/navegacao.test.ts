@@ -290,14 +290,15 @@ describe("as barras de abas DERIVAM do menu", () => {
 
   it("as abas de cada seção SÃO os subtópicos dela", () => {
     expect(subitensDe("/corretor/pessoas").map((s) => s.label)).toEqual([
+      "Conversas",
       "Lista",
       "Funil",
       "Visitas",
       "Adicionar",
     ]);
     expect(subitensDe("/corretor/whatsapp").map((s) => s.href)).toEqual([
-      "/corretor/conversas",
       "/corretor/whatsapp",
+      "/corretor/conversas",
     ]);
     expect(subitensDe("/corretor/admin")).toHaveLength(6);
   });
@@ -326,5 +327,40 @@ describe("todo portal do painel carrega a paleta e o módulo", () => {
     // E o módulo tem de vir da MESMA função que pinta o <main>, senão a
     // gaveta e o painel podem discordar sobre a cor da mesma rota.
     expect(fonte).toMatch(/moduloAtivo\(atual\)/);
+  });
+});
+
+
+/**
+ * Tópico com subtópicos é PASTA, não destino (regra do usuário, 04/09/2026).
+ *
+ * Tocar no tópico abre a lista; quem tem página é o subtópico. Para isso
+ * funcionar sem link morto, a PRÓPRIA tela do tópico precisa constar como um
+ * dos subtópicos — é nela que a barra do polegar e os atalhos do Início caem
+ * ao usar o `href` do tópico. Sem esta guarda, alguém acrescentaria um
+ * tópico com subtópicos e a página dele sumiria do menu em silêncio.
+ */
+describe("tópico com subtópicos é pasta", () => {
+  it("a própria tela do tópico é um dos seus subtópicos", () => {
+    for (const t of GRUPOS_NAV.flatMap((g) => g.itens)) {
+      if (!(t.subitens?.length)) continue;
+      expect(
+        t.subitens.some((s) => s.href === t.href),
+        `${t.label}: ${t.href} não está entre os próprios subtópicos`,
+      ).toBe(true);
+    }
+  });
+
+  it("a página de Pessoas é o subtópico Conversas", () => {
+    expect(subitensDe("/corretor/pessoas")[0]).toMatchObject({ href: "/corretor/pessoas", label: "Conversas" });
+  });
+
+  it("no sidebar e na gaveta, pasta é botão que abre — não link", () => {
+    for (const arq of ["src/app/corretor/(painel)/NavPainel.tsx", "src/app/corretor/(painel)/GavetaLateral.tsx"]) {
+      const f = readFileSync(join(process.cwd(), arq), "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+      expect(f, arq).toMatch(/aria-expanded=\{/);
+      // O botão que abre a pasta não pode carregar href: seria navegação.
+      expect(f, arq).not.toMatch(/<button[^>]*href=/);
+    }
   });
 });
