@@ -4119,3 +4119,62 @@ Dois defeitos empilhados, e o segundo escondia o primeiro.
   Os secrets `SUPABASE_SECRET_KEY` e `NEXT_PUBLIC_SUPABASE_URL` do GitHub
   nunca foram exercitados — como o workflow tinha zero execuções, ninguém sabe
   se existem. É o candidato nº 1 a falhar na primeira execução real.
+
+## Subtópicos na navegação, e as duas hierarquias que discordavam (04/09/2026)
+
+Pedido: "menu lateral com tópicos e subtópicos, off-canvas pelo hambúrguer".
+O levantamento mostrou que sidebar e off-canvas JÁ existiam; o que faltava era
+o subtópico — e a falta dele tinha causado dois defeitos medidos.
+
+- **O painel tinha DUAS hierarquias, e elas discordavam.** `/corretor/campanhas`
+  e `/corretor/templates` eram absorvidos por Marketing no MENU e desenhavam
+  abas de WhatsApp na TELA; `/corretor/conversas` era Pessoas no menu e também
+  mostrava WhatsApp. O sidebar acendia magenta e a barra dizia outra seção, na
+  mesma tela. Causa estrutural: cada barra de abas mantinha a própria lista,
+  escrita à mão, longe de `navegacao.tsx`. Hoje `AbasLeads`/`AbasWhatsapp`/
+  `AbasMarketing`/`AbasAdmin` derivam de `subitensDe()`. **Uma fonte, três
+  renderizações** — a mesma jogada que transformou `ATALHOS_MOBILE` de cópia
+  em derivação. A guarda que impede a volta procura `label: "` nas barras: a
+  versão derivada nunca escreve rótulo, a escrita à mão sempre escreve.
+- **O teto de 7 destinos escondia tela.** Ele é afirmado em quatro arquivos e
+  estava ocupado por exatos 7. Cada tela nova virou sub-rota alcançável só por
+  deep link (Fila de cadastro, Criar arte, Criar vídeo, Carrossel), e
+  `/corretor/links` não tinha item de menu NEM aba — a única tela do painel sem
+  pai, com breadcrumb dizendo "← Imóveis" e menu dizendo Marketing. **Teto de
+  menu sem lugar para a hierarquia morar produz tela invisível.** O subtópico
+  é esse lugar. Funil desceu de destino para subtópico de Pessoas (era item E
+  aba, o pai duplo mais visível): 6 tópicos, folga de volta.
+- **Subtópico cria rota com DOIS donos por prefixo.** `/imoveis/criar-imagem` é
+  subtópico de Marketing e casa com `/imoveis`. `itemAtivo` responde "acende?"
+  e dois acendem; `destinoAtivo` escolhe o mais específico, e sidebar, gaveta
+  e barra do polegar usam o MESMO dono — senão o polegar diria uma seção e o
+  menu outra. `MODULO_POR_SUBITEM` é a exceção declarada para a cor.
+- **Subtópicos só sob o tópico ABERTO**, nos dois lugares. Abrir todos
+  devolveria a lista de treze que a reforma desfez, só que na vertical. O
+  custo é descoberta — e é por isso que **só quem tem subtópico ganha a
+  seta**: sem ela "Criar vídeo" seria invisível até alguém abrir Marketing por
+  acaso.
+- **A gaveta foi para `createPortal`.** Funcionava porque o `<main>` não tem
+  `backdrop-filter`, mas o header do painel tem — quinta vez que essa
+  armadilha aparece aqui. Com o portal, `md:hidden` precisa ficar NA GAVETA:
+  no body ela sai do wrapper que o tinha, e abrir no celular e alargar a
+  janela deixaria o escurecido sobre o desktop. Armadilha de foco e trava de
+  rolagem copiadas de `MenuMobile.tsx`.
+- **Guarda que protege decisão de produto é REESCRITA, não apagada.** Conversas
+  passou de Pessoas para WhatsApp — muda a invariante "Pessoas, uma porta só"
+  (91 casos medidos). A régua: Pessoas responde "com quem eu falo agora";
+  Conversas responde "o que a IA andou dizendo" (é onde vive a revisão 👍/👎).
+  O teste foi reescrito com essa explicação, como o do `schedule` do vídeo.
+- **Medido com o CSS de produção, não presumido**: gaveta e sidebar não
+  estouram em 320/360/390px nem nos 240px da coluna, nenhum texto corta, todo
+  alvo tem 44px — subtópicos inclusive (`min-h-11`). E olhado: screenshot do
+  render, porque medida que passa não diz se a hierarquia LÊ.
+- **Uma mordida de guarda não alterou o arquivo.** Mirei em
+  `"/corretor/conversas": "whatsapp"` em `MODULO_POR_DESTINO`, linha que não
+  existe — conversas herda a cor do pai. O laço de provocação compara md5 antes
+  e depois e recusou; refeita movendo o subtópico de volta para Pessoas: 5
+  testes reprovaram. **É a segunda vez que o md5 pega mordida vazia nesta
+  base.**
+- **`aria-current="page"` duplo** aparece toda vez que tópico e subtópico
+  compartilham href (`/corretor/whatsapp` é o tópico e é "Minha IA"). A regra:
+  com subtópico aberto, é ELE a página; o tópico não leva `aria-current`.
