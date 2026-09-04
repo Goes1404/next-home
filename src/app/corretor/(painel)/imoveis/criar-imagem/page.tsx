@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
+import { AbasMarketing } from "@/app/corretor/(painel)/_componentes/AbasMarketing";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getMinhasImagens, getTetoDeHoje } from "@/lib/imagens/galeria";
 import { imagensConfiguradas } from "@/lib/imagens/gerarImagem";
@@ -48,6 +49,8 @@ export default async function PaginaCriarImagem() {
         titulo="Criar arte"
         descricao="Peça pronta para publicar: escolha o imóvel, o objetivo e o canal. O briefing sai da ficha real; a IA escreve dentro da régua."
       />
+
+      <AbasMarketing ativa="/corretor/imoveis/criar-imagem" />
 
       {!imagensConfiguradas() ? (
         <p

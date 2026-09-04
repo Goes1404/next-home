@@ -59,7 +59,7 @@ export default async function VisitasPage({
 
       <BuscaLeads className="mt-6" />
       <div className="mt-3">
-        <AbasLeads ativa="visitas" visitas={busca ? undefined : visitas.length} />
+        <AbasLeads ativa="/corretor/visitas" visitas={busca ? undefined : visitas.length} />
       </div>
 
       {visitas.length === 0 ? (

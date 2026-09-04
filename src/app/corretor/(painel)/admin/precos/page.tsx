@@ -27,7 +27,7 @@ export default async function PrecosPage() {
         <p className="text-fluid-sm text-apoio mt-1">Preços do catálogo, atualizados em lote.</p>
       </div>
 
-      <AbasAdmin ativa="precos" />
+      <AbasAdmin ativa="/corretor/admin/precos" />
 
       <div>
         <h2 className="text-fluid-lg font-bold text-titulo">Atualização de Preços em Massa</h2>

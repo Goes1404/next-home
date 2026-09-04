@@ -53,7 +53,7 @@ export default async function EquipePage() {
         </p>
       </div>
 
-      <AbasAdmin ativa="leads" />
+      <AbasAdmin ativa="/corretor/admin/leads" />
 
       <RedistribuirCarteira
         equipe={agregado.porCorretor.map((linha) => ({

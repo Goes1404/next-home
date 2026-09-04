@@ -116,7 +116,7 @@ export default async function AdminVisaoGeralPage() {
         </p>
       </div>
 
-      <AbasAdmin ativa="geral" />
+      <AbasAdmin ativa="/corretor/admin" />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi

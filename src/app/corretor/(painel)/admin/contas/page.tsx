@@ -20,7 +20,7 @@ export default async function ContasPage() {
         </p>
       </div>
 
-      <AbasAdmin ativa="contas" />
+      <AbasAdmin ativa="/corretor/admin/contas" />
 
       <ContasManager corretores={corretores} meuId={eu.id} />
     </div>

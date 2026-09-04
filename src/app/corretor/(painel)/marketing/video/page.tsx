@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
+import { AbasMarketing } from "@/app/corretor/(painel)/_componentes/AbasMarketing";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { getMeusVideos, getSaldo } from "@/lib/video/fila";
@@ -66,6 +67,8 @@ export default async function PaginaVideo() {
           </Link>
         }
       />
+
+      <AbasMarketing ativa="/corretor/marketing/video" />
 
       {/*
         Catálogo vazio NÃO bloqueia mais: o corretor pode subir as próprias

@@ -104,7 +104,7 @@ export default async function AdminWhatsappPage() {
         </p>
       </div>
 
-      <AbasAdmin ativa="whatsapp" />
+      <AbasAdmin ativa="/corretor/admin/whatsapp" />
 
       <section className="border-linha bg-superficie rounded-2xl border p-5">
         <h2 className="text-fluid-base font-bold text-titulo">Números da equipe</h2>

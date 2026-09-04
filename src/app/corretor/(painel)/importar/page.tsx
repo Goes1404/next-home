@@ -21,7 +21,7 @@ export default async function ImportarPage() {
       </p>
 
       <div className="mt-5">
-        <AbasLeads ativa="adicionar" />
+        <AbasLeads ativa="/corretor/importar" />
       </div>
 
       <ImportarClient

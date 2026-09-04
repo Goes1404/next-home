@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ATALHOS_MOBILE, gruposVisiveis, itemAtivo } from "./_componentes/navegacao";
+import { ATALHOS_MOBILE, destinoAtivo, gruposVisiveis, subitemAtivo } from "./_componentes/navegacao";
 
 /**
  * Navegação do celular: os quatro destinos de trabalho no polegar mais uma
@@ -24,6 +24,7 @@ import { ATALHOS_MOBILE, gruposVisiveis, itemAtivo } from "./_componentes/navega
 export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
   const atual = usePathname();
   const grupos = gruposVisiveis(ehGestor);
+  const dono = destinoAtivo(atual);
 
   /*
    * A gaveta guarda em que rota foi aberta, em vez de um booleano. Assim ela
@@ -85,15 +86,21 @@ export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
                 <p className="text-tenue pb-2 text-[11px] font-medium tracking-[0.14em] uppercase">
                   {grupo.titulo}
                 </p>
-                <ul className="grid grid-cols-2 gap-2">
+                {/* Empilhado, não em duas colunas: com subtópicos, a grade
+                    de dois deixaria as listas de tamanhos diferentes lado a
+                    lado e a leitura pularia entre colunas. Em pé, cada
+                    destino leva os seus embaixo. */}
+                <ul className="space-y-2">
                   {grupo.itens.map((item) => {
-                    const ativa = itemAtivo(atual, item);
+                    const ativa = dono?.href === item.href;
                     const Icone = item.icone;
+                    const subs = ativa ? (item.subitens ?? []) : [];
+                    const subAtivo = ativa ? subitemAtivo(atual, item) : null;
                     return (
                       <li key={item.href}>
                         <Link
                           href={item.href}
-                          aria-current={ativa ? "page" : undefined}
+                          aria-current={ativa && !subAtivo ? "page" : undefined}
                           className={cn(
                             "flex min-h-12 items-center gap-2.5 rounded-xl border px-3 text-sm transition-colors",
                             ativa
@@ -104,6 +111,33 @@ export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
                           <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
                           {item.label}
                         </Link>
+
+                        {subs.length > 0 && (
+                          <ul className="border-linha mt-1 ml-[1.65rem] space-y-1 border-l pl-3">
+                            {subs.map((sub) => {
+                              const aberto = subAtivo?.href === sub.href;
+                              return (
+                                <li key={sub.href}>
+                                  <Link
+                                    href={sub.href}
+                                    aria-current={aberto ? "page" : undefined}
+                                    className={cn(
+                                      // min-h-11 ≈ 44px: o alvo mínimo de toque.
+                                      // Subtópico não pode ser mais difícil de
+                                      // acertar que o tópico.
+                                      "flex min-h-11 items-center rounded-lg px-2 text-[13px] transition-colors",
+                                      aberto
+                                        ? "text-acento-suave font-medium"
+                                        : "text-apoio",
+                                    )}
+                                  >
+                                    {sub.label}
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
                       </li>
                     );
                   })}
@@ -119,7 +153,11 @@ export function NavMobileBottom({ ehGestor }: { ehGestor: boolean }) {
         className="border-linha bg-fundo/85 h-nav-safe pb-safe fixed inset-x-0 bottom-0 z-50 flex items-stretch justify-around border-t px-1 backdrop-blur-lg"
       >
         {ATALHOS_MOBILE.map((item) => {
-          const ativa = itemAtivo(atual, item);
+          /* Mesmo dono que a gaveta e o sidebar usam. Com `itemAtivo`, a
+             barra acenderia "Imóveis" em `/corretor/imoveis/criar-imagem`,
+             que é subtópico de Marketing — o polegar diria uma seção e o
+             menu diria outra, na mesma tela. */
+          const ativa = dono?.href === item.href;
           const Icone = item.icone;
           return (
             <Link

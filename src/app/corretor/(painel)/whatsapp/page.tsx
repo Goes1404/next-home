@@ -46,7 +46,7 @@ export default async function WhatsappPainelPage() {
       </div>
 
       <AbasWhatsapp
-        ativa="ia"
+        ativa="/corretor/whatsapp"
         conectado={instancia?.status_conexao === "conectado"}
       />
 

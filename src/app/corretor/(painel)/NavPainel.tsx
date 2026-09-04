@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { gruposVisiveis, itemAtivo } from "./_componentes/navegacao";
+import { destinoAtivo, gruposVisiveis, subitemAtivo } from "./_componentes/navegacao";
 
 /**
  * Barra lateral do painel (desktop).
@@ -12,10 +12,22 @@ import { gruposVisiveis, itemAtivo } from "./_componentes/navegacao";
  * sétima aba o destino ficava fora da tela sem nenhum sinal de que existia,
  * e "Equipe" — a última — era invisível para o gestor que nunca arrastou a
  * barra. Empilhado e agrupado, o painel inteiro cabe de uma vez.
+ *
+ * ## Os subtópicos só aparecem sob o destino ABERTO
+ *
+ * Abrir todos de uma vez devolveria a lista de treze que esta barra veio
+ * desfazer — só que na vertical. Aberto um por vez, o menu continua cabendo
+ * numa olhada e a hierarquia aparece onde ela importa: onde a pessoa está.
+ *
+ * Quem decide o destino aberto é `destinoAtivo`, e não `itemAtivo`: com
+ * subtópicos passou a haver rota em que dois itens acendem
+ * (`/corretor/imoveis/criar-imagem` é subtópico de Marketing e casa por
+ * prefixo com Imóveis), e dois itens acesos não dizem onde a pessoa está.
  */
 export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
   const atual = usePathname();
   const grupos = gruposVisiveis(ehGestor);
+  const dono = destinoAtivo(atual);
 
   return (
     <nav aria-label="Seções do painel" className="hidden md:block">
@@ -35,8 +47,10 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
             )}
             <ul className="space-y-0.5">
               {grupo.itens.map((item) => {
-                const ativa = itemAtivo(atual, item);
+                const ativa = dono?.href === item.href;
                 const Icone = item.icone;
+                const subs = ativa ? (item.subitens ?? []) : [];
+                const subAtivo = ativa ? subitemAtivo(atual, item) : null;
                 return (
                   <li key={item.href}>
                     <Link
@@ -61,6 +75,34 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                       <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
                       {item.label}
                     </Link>
+
+                    {subs.length > 0 && (
+                      /* Recuo alinhado ao rótulo do pai (ícone 18px + gap 12px)
+                         e uma régua vertical: é o recuo que diz "isto pertence
+                         àquilo", por isso subtópico não leva ícone — cinco
+                         símbolos repetidos seriam ruído, não hierarquia. */
+                      <ul className="border-linha mt-0.5 ml-[1.65rem] space-y-px border-l pl-3">
+                        {subs.map((sub) => {
+                          const aberto = subAtivo?.href === sub.href;
+                          return (
+                            <li key={sub.href}>
+                              <Link
+                                href={sub.href}
+                                aria-current={aberto ? "page" : undefined}
+                                className={cn(
+                                  "block rounded-lg px-2 py-1.5 text-[13px] transition-colors",
+                                  aberto
+                                    ? "text-acento-suave font-medium"
+                                    : "text-apoio hover:text-titulo hover:bg-vidro",
+                                )}
+                              >
+                                {sub.label}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </li>
                 );
               })}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { AbasMarketing } from "@/app/corretor/(painel)/_componentes/AbasMarketing";
 import { EditarDestaques } from "./EditarDestaques";
 import { ListaLinks } from "./ListaLinks";
 import { CopiarLink } from "../CopiarLink";
@@ -20,14 +20,7 @@ export default async function LinksPage() {
 
   return (
     <div>
-      {/* A tela saiu do menu e passou a morar dentro de Imóveis. */}
-      <Link
-        href="/corretor/imoveis"
-        className="text-fluid-sm inline-flex items-center gap-1.5 text-apoio transition-colors hover:text-titulo"
-      >
-        ← Imóveis
-      </Link>
-      <h1 className="text-fluid-2xl mt-3 text-titulo">Seus links</h1>
+      <h1 className="text-fluid-2xl text-titulo">Seus links</h1>
       <p className="text-fluid-sm mt-2 text-apoio">
         Qualquer um destes links atribui o atendimento a você — inclusive em imóveis de outro
         corretor responsável. A exceção é o <span className="text-titulo">link de anúncio (Meta)</span>:
@@ -35,6 +28,16 @@ export default async function LinksPage() {
         WhatsApp conectado — quem clica cai direto no WhatsApp do corretor da vez, com a mensagem
         pronta.
       </p>
+
+      {/*
+        Marketing, e não Imóveis: o breadcrumb daqui dizia "← Imóveis" enquanto
+        o menu acendia Marketing — dois pais para a mesma tela. Pior: até
+        04/09/2026 esta era a ÚNICA tela do painel sem item de menu e sem aba,
+        alcançável só por um cartão em Imóveis.
+      */}
+      <div className="mt-5">
+        <AbasMarketing ativa="/corretor/links" />
+      </div>
 
       <section className="mt-8 rounded-2xl border border-linha bg-superficie p-6">
         <p className="font-display text-titulo">Portfólio completo</p>

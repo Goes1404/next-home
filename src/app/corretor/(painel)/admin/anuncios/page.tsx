@@ -171,7 +171,7 @@ export default async function AnunciosPage() {
         </p>
       </div>
 
-      <AbasAdmin ativa="anuncios" />
+      <AbasAdmin ativa="/corretor/admin/anuncios" />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi rotulo="Investido (30 dias)" valor={formatarMoedaBRL(totalGasto)} detalhe={conectado ? undefined : "Meta ainda não conectado"} />

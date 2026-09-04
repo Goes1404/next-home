@@ -148,7 +148,7 @@ export default async function LeadsPage({
         }
       />
 
-      <AbasLeads ativa="lista" />
+      <AbasLeads ativa="/corretor/leads" />
 
       {/* Recorte vindo de um KPI da administração. Precisa estar ESCRITO na
           tela: filtro invisível filtrando é a pior surpresa de uma lista —

@@ -193,7 +193,7 @@ export default async function ConversasPage({
 
       <div className="mt-5">
         <AbasWhatsapp
-          ativa="conversas"
+          ativa="/corretor/conversas"
           semRevisao={itensRevisao.length}
           conectado={instancia?.status_conexao === "conectado"}
         />

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
+import { AbasMarketing } from "@/app/corretor/(painel)/_componentes/AbasMarketing";
 import { GerenciarTemplates } from "./GerenciarTemplates";
 import { getMeusTemplates } from "@/lib/corretorSessao";
 
@@ -16,7 +16,7 @@ export default async function TemplatesPage() {
       </p>
 
       <div className="mt-5">
-        <AbasWhatsapp ativa="templates" />
+        <AbasMarketing ativa="/corretor/templates" />
       </div>
       <div className="mt-6">
         <GerenciarTemplates templatesIniciais={templates} />

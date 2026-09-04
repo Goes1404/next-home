@@ -39,7 +39,7 @@ export default async function FunilPage({
 
       <BuscaLeads className="mt-5" />
       <div className="mt-3">
-        <AbasLeads ativa="funil" />
+        <AbasLeads ativa="/corretor/funil" />
       </div>
 
       {busca && (

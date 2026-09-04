@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CampanhasManager } from "./CampanhasManager";
-import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
+import { AbasMarketing } from "@/app/corretor/(painel)/_componentes/AbasMarketing";
 import { listarCampanhas, statusDisparo } from "./acoes";
 import { getEmpreendimentos } from "@/lib/queries";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
@@ -32,11 +32,12 @@ export default async function CampanhasPainelPage() {
         />
       </div>
 
-      <AbasWhatsapp
-        ativa="campanhas"
-        naFila={status?.pendentes}
-        conectado={status ? status.statusConexao === "conectado" : undefined}
-      />
+      {/*
+        Marketing, não WhatsApp: disparo é peça de saída. Até 04/09/2026 esta
+        tela desenhava abas de WhatsApp enquanto o menu a acendia em Marketing
+        — o sidebar dizia magenta e a barra dizia outra seção.
+      */}
+      <AbasMarketing ativa="/corretor/campanhas" naFila={status?.pendentes} />
 
       <CampanhasManager
         empreendimentos={empreendimentos}
