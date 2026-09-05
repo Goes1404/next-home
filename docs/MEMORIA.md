@@ -4430,3 +4430,60 @@ criação". Eram problemas separados, e o segundo não era o que parecia.
   vitrine. A regressão falhava calada — build, tipos e a tela funcionando
   para os publicados, que são a maioria; só o rascunho quebrava, e rascunho é
   justamente o que se acabou de criar.
+
+## O site estava mais largo que o celular, e o CSS estava inocente (04/09/2026)
+
+Relato: "não está fixa nas laterais, dá para dar zoom, fica tudo grande". Era
+estouro horizontal — e a investigação teve duas fases porque a primeira
+respondeu "não há nada".
+
+- **HTML + CSS de produção, sem JavaScript, não estouram em nenhuma
+  largura.** Zero elementos fora em 360/390/412, na home e na listagem.
+  Quem estoura só existe com JS rodando. **Para medir largura de página
+  neste projeto, medir com o build de pé e o navegador executando, rolando
+  a página inteira** — o estático passa limpo e mente.
+- **A causa: `CartaoTilt` escalava um nó EM FLUXO a 1.18, e `clip-path` não
+  corta layout.** A cortina de entrada é `clip-path` no wrapper sobre um
+  zoom-out (1.18 → 1) no `firstElementChild`; sem camada, esse filho era o
+  próprio `<a>` do cartão, em fluxo. `clip-path` esconde a pintura, mas
+  transform estende a área rolável: cartão de 328px a 1.18 contava 387. E
+  como o `scale` é gravado na montagem e só volta a 1 quando o cartão entra
+  na tela, TODO cartão abaixo da dobra deixava a home 14-19px mais larga o
+  tempo inteiro. A conta fechou com a medição: 360 → 374, 390 → 406.
+- **O header cortado na direita era sintoma.** `fixed inset-x-0` resolve
+  contra a viewport; com o documento mais largo, ao arrastar ele fica preso
+  em x=0 e parece sair pela direita. Consertar a largura consertou o header
+  sem tocar nele.
+- **A correção é por construção**: o zoom mira um wrapper interno próprio
+  (dois refs — registrar o wrapper como camada faria o controlador escrever
+  `y: 0` todo frame por cima do `scale`), e o nó do tilt tem
+  `overflow-clip`. `clip`, não `hidden`: não vira contêiner de rolagem, não
+  cria containing block para `fixed`, não é propriedade de agrupamento (o
+  `preserve-3d` sobrevive) e gira junto com o tilt em vez de raspar canto.
+- **Rede de segurança `html, body { overflow-x: clip }`**, e a razão de ser
+  `clip`: `hidden` no body vira contêiner de rolagem, quebra `position:
+  sticky` (o Sobre usa) e o scroller do Lenis. Não existia NENHUMA regra de
+  `overflow-x` no `globals.css` — tudo o que vazasse virava rolagem lateral.
+- **Provocação em duas rodadas, e a segunda é a que ensina.** (1) Sem a
+  correção e sem a rede: a home falha com `374 > 360` e `406 > 390`; a
+  listagem e a página do imóvel PASSAM — não há segunda causa. (2) Com a
+  correção e a rede COMENTADA: passa — o componente basta. Rede que esconde
+  regressão futura é exatamente por que a rodada 2 existe; sem ela, ninguém
+  saberia se o conserto de verdade aconteceu.
+- **A guarda MEDE, não lê código** (`e2e/publico/largura-mobile.spec.ts`):
+  abre as três páginas com JS, rola em passos e afirma `scrollWidth <=
+  clientWidth` (não `innerWidth`: os 15px da barra do headless acusariam
+  falso). Na falha, lista os culpados — e o filtro precisa ignorar quem tem
+  ancestral fixo ou com overflow cortado, senão a lista vem cheia de brilho
+  e vídeo de fundo já contidos, e o cartão escalado nem aparece.
+- **Não bloquear o pinch (`maximumScale: 1`).** O usuário não estava dando
+  zoom: o navegador afastava a câmera sozinho para caber a página larga.
+  Bloquear não consertaria a causa, o iOS ignora, e tira de quem tem visão
+  reduzida o zoom que todo site permite.
+- **`pkill -f "next start"` mata o próprio shell** — a linha de comando do
+  bash contém o texto. Usar `pkill -f "[n]ext-server"`: o colchete faz o
+  padrão não casar consigo mesmo.
+- **O Playwright deste sandbox não tem o `chromium_headless_shell` que a
+  versão pinada pede.** `E2E_CHROMIUM=/opt/pw-browsers/chromium-1194/…`
+  aponta o Chromium completo (o config lê a variável); nunca rodar
+  `playwright install`.

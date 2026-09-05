@@ -303,7 +303,7 @@ export default async function HomeInstitucional() {
             {/* CartaoTilt no lugar do Reveal: ele traz o brilho que segue o
                 ponteiro e já faz a própria entrada. Somar o Reveal daria dois
                 donos da opacidade. */}
-            <CartaoTilt indice={0} className="mx-auto w-full max-w-4xl">
+            <CartaoTilt indice={0} className="rounded-glass mx-auto w-full max-w-4xl">
               <Link href={VENDEDOR.href} className="rounded-glass block">
                 <GlassSurface preset="card" className="group flex flex-col gap-4 px-6 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-10">
                   <div>

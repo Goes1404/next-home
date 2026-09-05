@@ -674,6 +674,21 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /*
+   * Rede de segurança contra página mais larga que a tela (04/09/2026). No
+   * celular, um único nó em fluxo com `scale()` fora de um corte deixava o
+   * documento 14-19px mais largo — o navegador afastava a câmera e deixava
+   * arrastar de lado. A causa foi consertada no componente; isto garante que
+   * a próxima não vire rolagem lateral. `clip`, não `hidden`: hidden faria do
+   * body um contêiner de rolagem, quebrando `position: sticky` (o Sobre usa)
+   * e o scroller do Lenis; clip só corta. Não cria containing block — os
+   * portais `fixed` (menu, lightbox) seguem iguais.
+   */
+  html,
+  body {
+    overflow-x: clip;
+  }
+
   /* Lenis assume o scroll; a suavização nativa atrapalharia */
   html.lenis,
   html.lenis body {

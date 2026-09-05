@@ -34,7 +34,7 @@ export default async function VitrineLayout({ children }: { children: React.Reac
           da página enquanto fontes e o vídeo de fundo ainda carregam. */}
       <Preloader />
 
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-fundo-marca via-fundo to-fundo">
+      <div className="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-br from-fundo-marca via-fundo to-fundo">
         {usaFotoDeFundo ? (
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : (

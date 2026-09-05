@@ -52,7 +52,9 @@ export default async function InstitucionalLayout({
           passa a receber transform a cada quadro. */}
       <div
         data-fundo-parallax
-        className="fixed inset-0 -z-10 will-change-transform bg-gradient-to-br from-fundo-marca via-fundo to-fundo"
+        // `overflow-hidden` como no painel: o parallax escreve `scale()` aqui e a
+        // abertura escala o vídeo a 1.22 — o que crescer fica dentro da caixa.
+        className="fixed inset-0 -z-10 overflow-hidden will-change-transform bg-gradient-to-br from-fundo-marca via-fundo to-fundo"
       >
         {/* O fundo é a VINHETA, em toda tela: a peça que o Preloader acabou
             de mostrar recua para trás do conteúdo e congela no último quadro.
