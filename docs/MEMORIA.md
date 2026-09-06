@@ -4523,3 +4523,14 @@ estavam certos, e eram defeitos DIFERENTES:
 - O texto da tela de configuração dizia "Em branco, a IA responde
   normalmente" — sexta vez que texto desatualizado apontaria o diagnóstico
   para o lugar errado; reescrito junto.
+
+- **Branch mergeada ≠ migrations aplicadas (06/09/2026).** O merge de
+  `ingestao-de-midia` em `main` levou junto as migrations 0064–0069, e o
+  deploy saiu LENDO objetos que não existiam no banco (touchpoints,
+  outbox, consentimentos, view do SLA) — a 0099 falhou com "relation does
+  not exist" e foi ela que denunciou. Depois de todo merge que traz
+  migrations, conferir os OBJETOS reais via `information_schema` antes de
+  considerar o deploy completo — `list_migrations` continua não servindo.
+  Aplicadas em ordem via Management API (`/database/query` com
+  `SUPABASE_PAT`); o Python local falha o TLS dessa API
+  (CERTIFICATE_VERIFY_FAILED), o curl passa.
