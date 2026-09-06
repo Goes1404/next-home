@@ -35,6 +35,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[recuperar-por-relevancia]]
 - [[calendario-misturava-dois-fusos]]
 - [[catalogo-do-corretor-e-a-pagina-dele]]
+- [[referencia-no-chat-do-estudio]] — Estúdio: clipe de anexo, arte e vídeo
 
 ## Conversa e estado
 - [[rajada-agrupar-conteudo-nao-so-invocacoes]]
