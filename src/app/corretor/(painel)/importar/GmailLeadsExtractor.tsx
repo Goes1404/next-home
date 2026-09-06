@@ -209,7 +209,7 @@ export function GmailLeadsExtractor({
   function alterarLead(
     idx: number,
     campo: keyof LeadEmailRevisado | "incluir",
-    valor: any,
+    valor: string | boolean | null,
   ) {
     setLeadsExtraidos((atuais) =>
       atuais.map((lead, i) => (i === idx ? { ...lead, [campo]: valor } : lead)),

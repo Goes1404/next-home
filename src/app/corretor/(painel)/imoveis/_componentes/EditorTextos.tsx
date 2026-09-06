@@ -22,7 +22,7 @@ interface Props {
     endereco: string;
     entregaPrevista: string | null;
   };
-  onChange: (campo: string, valor: any) => void;
+  onChange: (campo: string, valor: string | number | boolean | string[] | null) => void;
   /**
    * O que a IA precisa saber e que não é editado nesta aba. Vem do
    * formulário aberto (tipologias e lazer que o corretor acabou de mexer),

@@ -19,6 +19,7 @@ import {
   type EstadoDoChat,
 } from "@/app/corretor/(painel)/estudio/acoes";
 import { enviarFotoDeReferencia } from "@/app/corretor/(painel)/estudio/uploadReferencia";
+import { supabaseUrl } from "@/lib/supabase/env";
 import { ListaDeConversas } from "@/app/corretor/(painel)/_componentes/ListaDeConversas";
 
 /**
@@ -280,9 +281,26 @@ function CartaoDeProposta({
 }) {
   const tamanho = TAMANHOS.find((t) => t.chave === proposta.tamanho)?.rotulo ?? proposta.tamanho;
   const qualidade = QUALIDADES.find((q) => q.chave === proposta.qualidade)?.rotulo ?? proposta.qualidade;
+  // A foto que sustenta esta proposta, visível no cartão: sem a miniatura, o
+  // "vou partir da sua foto" era só uma frase — e proposta antiga com foto
+  // antiga ficava indistinguível da atual.
+  const referenciaUrl = proposta.referenciaPath
+    ? `${supabaseUrl()}/storage/v1/object/public/empreendimentos/${proposta.referenciaPath}`
+    : null;
   return (
     <div className="border-linha bg-superficie mt-2 space-y-2 rounded-xl border p-3">
       <p className="text-tenue text-[10px] font-medium tracking-[0.14em] uppercase">Como vai ficar</p>
+      {referenciaUrl && (
+        <div className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={referenciaUrl}
+            alt="Foto de referência desta proposta"
+            className="border-linha h-14 w-14 rounded-lg border object-cover"
+          />
+          <span className="text-tenue text-[11px]">Partindo desta foto</span>
+        </div>
+      )}
       {/* O prompt em inglês fica visível mas discreto: é o que vai para o
           provedor, e esconder do corretor seria tirar dele a chance de
           corrigir. A explicação em português já veio no balão. */}

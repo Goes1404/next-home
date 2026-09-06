@@ -129,7 +129,19 @@ export async function uploadFotoOuPlanta(
   empreendimentoId: string,
   slug: string,
   formData: FormData,
-): Promise<{ ok: boolean; midia?: any; erro?: string }> {
+): Promise<{
+  ok: boolean;
+  midia?: {
+    id: string | null;
+    url: string;
+    tipo: "foto" | "planta";
+    alt: string;
+    largura: number | null;
+    altura: number | null;
+    blur_data_url: string | null;
+  };
+  erro?: string;
+}> {
   const corretor = await getCorretorLogado();
   if (!corretor) {
     return { ok: false, erro: "Sessão expirada." };
@@ -361,7 +373,7 @@ export async function uploadBookDigital(
       book_url: urlPublica.publicUrl,
       book_titulo: titulo.trim(),
       updated_at: new Date().toISOString(),
-    } as any)
+    })
     .eq("id", empreendimentoId);
 
   if (erroUpdate) {
@@ -396,7 +408,7 @@ export async function salvarLinkBookDigital(
       book_url: url?.trim() || null,
       book_titulo: titulo?.trim() || null,
       updated_at: new Date().toISOString(),
-    } as any)
+    })
     .eq("id", empreendimentoId);
 
   if (error) {
@@ -427,7 +439,7 @@ export async function removerBookDigital(
       book_url: null,
       book_titulo: null,
       updated_at: new Date().toISOString(),
-    } as any)
+    })
     .eq("id", empreendimentoId);
 
   if (error) {

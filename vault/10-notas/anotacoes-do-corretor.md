@@ -39,6 +39,12 @@ https://claude.ai/code/artifact/52ceae23-be2f-4026-baab-473838609ffe
   `revoke all ... from anon`.
 - **Filtro `?empreendimento=`** entrou também na lista de Leads
   (`FiltroLeads.empreendimentoId`, grupo `.or()` próprio → AND com a busca).
+- **Costura (06/09, tarde)**: a FICHA do lead lista as anotações vinculadas
+  (leitura aqui, gesto lá — regra do historico_envios) e o botão "Anotar"
+  abre `/corretor/anotacoes?lead=<id>` com o chip do lead JÁ preenchido no
+  composer. No Estúdio, a proposta de arte mostra a miniatura da referência
+  ("Partindo desta foto") — sem ela, proposta antiga com foto antiga era
+  indistinguível da atual.
 
 ## Relacionadas
 - [[fila-do-inicio-e-uma-fila]]

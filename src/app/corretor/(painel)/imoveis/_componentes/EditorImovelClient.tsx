@@ -46,7 +46,7 @@ export function EditorImovelClient({ imovel }: Props) {
   const [lazer, setLazer] = useState<string[]>(imovel.lazer || []);
   const [tipologias, setTipologias] = useState<Tipologia[]>(imovel.tipologias || []);
 
-  const handleCampoGeralChange = (campo: string, valor: any) => {
+  const handleCampoGeralChange = (campo: string, valor: string | number | boolean | string[] | null) => {
     setDadosGerais((prev) => ({ ...prev, [campo]: valor }));
   };
 
@@ -76,7 +76,7 @@ export function EditorImovelClient({ imovel }: Props) {
     setTipologias((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleTipologiaChange = (index: number, campo: keyof Tipologia, valor: any) => {
+  const handleTipologiaChange = (index: number, campo: keyof Tipologia, valor: Tipologia[keyof Tipologia]) => {
     setTipologias((prev) => {
       const copy = [...prev];
       copy[index] = { ...copy[index], [campo]: valor };

@@ -60,6 +60,7 @@ export function AnotacoesClient({
   empreendimentos,
   gestor,
   filtros,
+  leadInicial = null,
 }: {
   anotacoes: AnotacaoNaTela[];
   equipe: { id: string; nome: string }[];
@@ -71,8 +72,13 @@ export function AnotacoesClient({
     colega: string | null;
     pendentes: boolean;
   };
+  /** Chega preenchido quando a tela abre por ?lead= (vindo da ficha). */
+  leadInicial?: LeadParaVincular | null;
 }) {
   const { avisar, falhar } = useAvisos();
+  // Congelado no primeiro render (regra de pureza): o "Venceu" não precisa
+  // de relógio vivo — o refresh pós-ação já re-renderiza com a hora nova.
+  const [agora] = useState(() => Date.now());
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -80,7 +86,7 @@ export function AnotacoesClient({
 
   // ---- composer ----
   const [texto, setTexto] = useState("");
-  const [leadVinculado, setLeadVinculado] = useState<LeadParaVincular | null>(null);
+  const [leadVinculado, setLeadVinculado] = useState<LeadParaVincular | null>(leadInicial);
   const [buscaLead, setBuscaLead] = useState("");
   const [sugestoes, setSugestoes] = useState<LeadParaVincular[]>([]);
   const [buscandoLead, setBuscandoLead] = useState(false);
@@ -357,7 +363,7 @@ export function AnotacoesClient({
                   {a.lembreteEm && !a.concluidaEm && (
                     <span
                       className={`inline-flex min-h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium ${
-                        new Date(a.lembreteEm).getTime() <= Date.now()
+                        new Date(a.lembreteEm).getTime() <= agora
                           ? "border-alerta-linha bg-alerta-lavado text-alerta"
                           : "border-linha-forte text-apoio"
                       }`}
@@ -367,7 +373,7 @@ export function AnotacoesClient({
                       ) : (
                         <BellOff aria-hidden className="h-3 w-3" />
                       )}
-                      {new Date(a.lembreteEm).getTime() <= Date.now() ? "Venceu · " : ""}
+                      {new Date(a.lembreteEm).getTime() <= agora ? "Venceu · " : ""}
                       {dataHora.format(new Date(a.lembreteEm))}
                       {a.lembreteEnviadoEm && !a.lembreteErro && " · WhatsApp enviado"}
                       {a.lembreteErro === "sem_whatsapp" && " · só no painel"}

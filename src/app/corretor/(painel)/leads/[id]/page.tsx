@@ -47,13 +47,24 @@ export default async function FichaLeadPage({
   if (!lead) notFound();
 
   const supabase = await createClient();
-  const [tarefas, timeline, touchpoints, preferencias, { data: empreendimentos }] = await Promise.all([
-    getTarefasDoLead(id),
-    getTimelineDoLead(id),
-    getTouchpointsDoLead(id),
-    getPreferenciasDoLead(id),
-    supabase.from("empreendimentos").select("id, nome").order("nome"),
-  ]);
+  const [tarefas, timeline, touchpoints, preferencias, { data: empreendimentos }, { data: notasDoLead }] =
+    await Promise.all([
+      getTarefasDoLead(id),
+      getTimelineDoLead(id),
+      getTouchpointsDoLead(id),
+      getPreferenciasDoLead(id),
+      supabase.from("empreendimentos").select("id, nome").order("nome"),
+      // Anotações vinculadas (0100): sem esta leitura, a nota escrita sobre o
+      // lead só existiria na página de Anotações — dado gravado sem tela na
+      // ficha é a régua do historico_envios de novo. Abertas primeiro.
+      supabase
+        .from("anotacoes")
+        .select("id, texto, lembrete_em, concluida_em, created_at")
+        .eq("lead_id", id)
+        .order("concluida_em", { ascending: true, nullsFirst: true })
+        .order("created_at", { ascending: false })
+        .limit(5),
+    ]);
 
   const whatsapp = linkWhatsappLead(lead);
   const parado = diasParado(lead);
@@ -215,6 +226,47 @@ export default async function FichaLeadPage({
           <div id="proximas-acoes" className="scroll-mt-24">
             <ProximasAcoes leadId={lead.id} tarefas={tarefas} />
           </div>
+
+          {/* Anotações vinculadas (0100). Leitura aqui, gesto lá: escrever e
+              concluir moram na página de Anotações, já com o chip do lead
+              preenchido pelo ?lead=. */}
+          <section className="cartao space-y-2.5 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-fluid-sm text-titulo font-medium">Anotações</h2>
+              <Link
+                href={`/corretor/anotacoes?lead=${lead.id}`}
+                className="text-fluid-xs border-acento-linha bg-acento-lavado text-acento-suave inline-flex min-h-9 items-center rounded-full border px-3 transition-opacity hover:opacity-85"
+              >
+                {notasDoLead && notasDoLead.length > 0 ? "Ver e anotar" : "Anotar"}
+              </Link>
+            </div>
+            {!notasDoLead || notasDoLead.length === 0 ? (
+              <p className="text-fluid-xs text-tenue">
+                Nada anotado sobre {lead.nome.split(" ")[0]} ainda — o que você combinar com ele
+                merece uma nota.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {notasDoLead.map((n) => (
+                  <li
+                    key={n.id}
+                    className={`border-linha border-l-2 pl-3 ${n.concluida_em ? "opacity-55" : ""}`}
+                  >
+                    <p className="text-fluid-xs text-corpo line-clamp-2 whitespace-pre-wrap">
+                      {n.texto}
+                    </p>
+                    <p className="text-tenue mt-0.5 text-[11px]">
+                      {dataHora.format(new Date(n.created_at))}
+                      {n.lembrete_em && !n.concluida_em && (
+                        <> · ⏰ {dataHora.format(new Date(n.lembrete_em))}</>
+                      )}
+                      {n.concluida_em && " · concluída"}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
 
         <LinhaDoTempo leadId={lead.id} itens={timeline} />

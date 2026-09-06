@@ -39,8 +39,10 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
             tipo: res.midia.tipo,
             url: res.midia.url,
             alt: res.midia.alt,
-            largura: res.midia.largura,
-            altura: res.midia.altura,
+            // null = o sharp não conseguiu medir (o pior caso documentado é
+            // foto sem medida); 0 mantém o contrato de Midia sem inventar.
+            largura: res.midia.largura ?? 0,
+            altura: res.midia.altura ?? 0,
             blurDataUrl: res.midia.blur_data_url,
           };
           setMidias((prev) => [...prev, nova]);

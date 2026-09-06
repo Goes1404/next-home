@@ -57,10 +57,15 @@ export default async function AnotacoesPage({
   if (colegaFiltro) query = query.eq("destinatario_id", colegaFiltro);
   if (soPendentes) query = query.is("concluida_em", null).not("lembrete_em", "is", null);
 
-  const [{ data: linhas }, gestor, empreendimentos] = await Promise.all([
+  const [{ data: linhas }, gestor, empreendimentos, { data: leadDoFiltro }] = await Promise.all([
     query,
     souGestor(),
     getEmpreendimentosParaFiltro(),
+    // Para o composer nascer com o chip do lead quando a tela chega da
+    // ficha (?lead=): anotar sobre alguém não pode exigir buscá-lo de novo.
+    leadFiltro
+      ? supabase.from("leads").select("id, nome, telefone").eq("id", leadFiltro).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
   const notas = linhas ?? [];
 
@@ -139,6 +144,7 @@ export default async function AnotacoesPage({
         equipe={equipe}
         empreendimentos={empreendimentos}
         gestor={gestor}
+        leadInicial={leadDoFiltro ?? null}
         filtros={{
           lead: leadFiltro,
           empreendimento: empreendimentoFiltro,
