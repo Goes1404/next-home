@@ -236,7 +236,7 @@ async function carregarConversaEInstancia(
 ) {
   const { data: conversa } = await supabase
     .from("whatsapp_conversas")
-    .select("id, corretor_id, telefone_cliente, origem, cliente_conhecido, lead_id")
+    .select("id, corretor_id, telefone_cliente, origem, cliente_conhecido, lead_id, e_teste")
     .eq("id", conversaId)
     .maybeSingle();
 
@@ -244,7 +244,9 @@ async function carregarConversaEInstancia(
 
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("instance_name, status_conexao, palavra_chave_ativacao, palavra_chave_teste")
+    .select(
+      "id, corretor_id, instance_name, status_conexao, palavra_chave_ativacao, palavra_chave_teste, nome_assistente, tom_voz, conectado_em",
+    )
     .eq("corretor_id", conversa.corretor_id)
     .maybeSingle();
 

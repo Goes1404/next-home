@@ -23,6 +23,7 @@ import { ArquivarLead } from "./ArquivarLead";
 import { SeletorEtapa } from "./SeletorEtapa";
 import { OrigemJornada } from "./OrigemJornada";
 import { PreferenciasContato } from "./PreferenciasContato";
+import { IniciarConversaIA } from "./IniciarConversaIA";
 
 export const metadata: Metadata = { title: "Lead" };
 
@@ -147,6 +148,7 @@ export default async function FichaLeadPage({
               <span className="truncate">{lead.email}</span>
             </a>
           )}
+          <IniciarConversaIA leadId={lead.id} temTelefone={Boolean(lead.telefone)} />
         </div>
 
         {lead.etapa === "visita_agendada" && (

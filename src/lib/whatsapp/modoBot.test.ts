@@ -8,7 +8,7 @@ import {
   decidirPorFalaDoCorretor,
   listarPalavrasChave,
   clienteTrouxeFraseDeEntrada,
-  exigePalavraChave,
+  exigeLiberacaoExplicita,
 } from "./modoBot";
 
 /** Datas fixas em UTC; o módulo converte para America/Sao_Paulo (UTC-3). */
@@ -111,16 +111,9 @@ describe("Ativação por palavra-chave", () => {
     expect(contemPalavraChave("pode continuar", "   ")).toBe(false);
   });
 
-  it("só exige palavra-chave quando há uma cadastrada e a conversa é orgânica", () => {
-    expect(
-      exigePalavraChave({ palavraChaveConfigurada: "pode continuar", origemConversa: "organica" }),
-    ).toBe(true);
-    expect(exigePalavraChave({ palavraChaveConfigurada: null, origemConversa: "organica" })).toBe(
-      false,
-    );
-    expect(
-      exigePalavraChave({ palavraChaveConfigurada: "pode continuar", origemConversa: "campanha" }),
-    ).toBe(false);
+  it("conversa orgânica de desconhecido exige liberação; campanha não", () => {
+    expect(exigeLiberacaoExplicita({ origemConversa: "organica" })).toBe(true);
+    expect(exigeLiberacaoExplicita({ origemConversa: "campanha" })).toBe(false);
   });
 });
 
@@ -191,18 +184,19 @@ describe("Fala do corretor — a palavra-chave só liga, qualquer outra fala des
   });
 
   /*
-   * Sem palavra-chave cadastrada o recurso está DESLIGADO. Retravar aqui
-   * emudeceria a IA para sempre: não haveria palavra nenhuma para
-   * destravá-la depois.
+   * Desde 05/09/2026 retrava MESMO sem palavra-chave cadastrada: o botão
+   * "IA assume" do painel é o caminho de destravar que sempre existe, então
+   * retravar nunca mais emudece a IA sem saída — e não retravar era um dos
+   * buracos do "a IA responde todo mundo".
    */
-  it("não retrava quando não há palavra-chave cadastrada", () => {
+  it("retrava mesmo sem palavra-chave cadastrada — o botão do painel destrava", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "qualquer coisa",
         palavraChaveConfigurada: null,
         origemConversa: "organica",
       }),
-    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: false });
+    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
   });
 
   /** Campanha nunca exigiu palavra-chave — logo, não há o que retravar. */
@@ -299,15 +293,7 @@ describe("Palavra-chave de TESTE", () => {
     ).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
   });
 
-  /* Ter só a de teste também liga a trava — o recurso está ligado. */
-  it("só a palavra de teste cadastrada já exige ativação", () => {
-    expect(
-      exigePalavraChave({
-        palavraChaveConfigurada: null,
-        palavraChaveTeste: TESTE,
-        origemConversa: "organica",
-      }),
-    ).toBe(true);
+  it("fala comum do corretor retrava mesmo só com a palavra de teste cadastrada", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "qualquer coisa",
@@ -330,7 +316,7 @@ describe("Palavra-chave de TESTE", () => {
   });
 });
 
-describe("quem já é do CRM não espera palavra-chave (F3)", () => {
+describe("quem já é do CRM não espera liberação (F3)", () => {
   it("lead que já existia antes da conversa é atendido na hora", () => {
     /*
      * A trava existe porque a instância roda no WhatsApp PESSOAL do
@@ -339,43 +325,27 @@ describe("quem já é do CRM não espera palavra-chave (F3)", () => {
      * ZERO respostas. Quem foi cadastrado de propósito é cliente conhecido.
      */
     expect(
-      exigePalavraChave({
-        palavraChaveConfigurada: "pode continuar",
-        origemConversa: "organica",
-        jaEraDoCrm: true,
-      }),
+      exigeLiberacaoExplicita({ origemConversa: "organica", jaEraDoCrm: true }),
     ).toBe(false);
   });
 
   it("número desconhecido continua esperando — é o que protege a família", () => {
     expect(
-      exigePalavraChave({
-        palavraChaveConfigurada: "pode continuar",
-        origemConversa: "organica",
-        jaEraDoCrm: false,
-      }),
+      exigeLiberacaoExplicita({ origemConversa: "organica", jaEraDoCrm: false }),
     ).toBe(true);
   });
 
-  it("sem palavra-chave cadastrada, nada disso importa", () => {
-    // O recurso inteiro está desligado; ninguém espera por nada.
+  it("desconhecido fica travado MESMO sem palavra-chave cadastrada (05/09/2026)", () => {
+    /*
+     * A regra antiga era o inverso ("sem chave, recurso desligado, ninguém
+     * espera") e foi a causa relatada de a IA responder todo mundo: campo
+     * vazio fazia toda conversa nova de desconhecido nascer liberada. O
+     * botão "IA assume" do painel é o caminho de liberação que sempre
+     * existe — travar nunca mais emudece a IA sem saída.
+     */
+    expect(exigeLiberacaoExplicita({ origemConversa: "organica" })).toBe(true);
     expect(
-      exigePalavraChave({
-        palavraChaveConfigurada: null,
-        origemConversa: "organica",
-        jaEraDoCrm: false,
-      }),
-    ).toBe(false);
-  });
-
-  it("a palavra de TESTE também liga a trava", () => {
-    expect(
-      exigePalavraChave({
-        palavraChaveConfigurada: null,
-        palavraChaveTeste: "modo teste",
-        origemConversa: "organica",
-        jaEraDoCrm: false,
-      }),
+      exigeLiberacaoExplicita({ origemConversa: "organica", jaEraDoCrm: false }),
     ).toBe(true);
   });
 });
@@ -443,14 +413,12 @@ describe("Várias palavras-chave no mesmo campo (26/08/2026)", () => {
     expect(listarPalavrasChave("a, ok, pode assumir")).toEqual(["pode assumir"]);
   });
 
-  it("campo só com chaves inválidas NÃO liga a trava — senão nada destravaria", () => {
+  it("campo só com chaves inválidas não muda a trava — ela independe do campo", () => {
+    // Desde 05/09/2026 a trava vale para todo desconhecido, com ou sem
+    // chave cadastrada; chave curta continua incapaz de ATIVAR (acima).
     expect(
-      exigePalavraChave({
-        palavraChaveConfigurada: "a, ok",
-        origemConversa: "organica",
-        jaEraDoCrm: false,
-      }),
-    ).toBe(false);
+      exigeLiberacaoExplicita({ origemConversa: "organica", jaEraDoCrm: false }),
+    ).toBe(true);
   });
 
   it("uma chave só continua funcionando como antes", () => {

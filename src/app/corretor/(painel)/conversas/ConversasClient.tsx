@@ -11,12 +11,12 @@ import {
   lerMensagens,
   listarCatalogoDeMidias,
   marcarConversaLida,
-  retomarBotNaConversa,
   silenciarBotNaConversa,
   type FichaDoLead,
   type MensagemConversa,
   type MidiaDoCatalogo,
 } from "./acoes";
+import { assumirConversaComIA } from "./acoesIA";
 import { ETAPA_LABEL, type EtapaFunil } from "@/lib/types";
 
 export type ConversaResumo = {
@@ -573,10 +573,23 @@ function Chat({
     const proximo: Estado = estado === "ativa" ? "desligada" : "ativa";
     onEstado(proximo);
     iniciar(async () => {
-      const resultado =
-        proximo === "ativa"
-          ? await retomarBotNaConversa(conversa.id)
-          : await silenciarBotNaConversa(conversa.id);
+      if (proximo === "ativa") {
+        // "IA assume agora": liga as três condições E responde a pendência
+        // do cliente na hora, se houver (ver acoesIA.ts).
+        const resultado = await assumirConversaComIA(conversa.id);
+        if (resultado.erro && !resultado.ok) {
+          onEstado(anterior);
+          onErro(resultado.erro);
+          return;
+        }
+        if (resultado.erro) onErro(resultado.erro);
+        if (resultado.respondeu) {
+          presoNoFimRef.current = true;
+          onMesclar(await lerMensagens(conversa.id));
+        }
+        return;
+      }
+      const resultado = await silenciarBotNaConversa(conversa.id);
       if (resultado.erro) {
         onEstado(anterior);
         onErro(resultado.erro);
@@ -723,7 +736,7 @@ function Chat({
               : "bg-acento hover:bg-acento-hover text-white",
           )}
         >
-          {estado === "ativa" ? "Desligar IA" : "Reativar IA"}
+          {estado === "ativa" ? "Desligar IA" : "IA assume agora"}
         </button>
       </header>
 

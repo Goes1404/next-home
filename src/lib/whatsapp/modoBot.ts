@@ -169,49 +169,39 @@ export function contemPalavraChave(mensagem: string, palavraChave: string | null
 }
 
 /**
- * Se esta conversa precisa aguardar a palavra-chave antes da IA poder
+ * Se esta conversa precisa aguardar liberação EXPLÍCITA antes da IA poder
  * responder ao cliente.
  *
- * Só existe trava quando o corretor cadastrou uma palavra-chave — sem uma
- * configurada, o recurso está desligado e ninguém fica esperando por nada.
+ * A regra mudou em 05/09/2026, e mudou de POLARIDADE: número desconhecido
+ * fica travado SEMPRE, exista palavra-chave cadastrada ou não. A versão
+ * anterior desligava a trava quando nenhuma palavra estava configurada
+ * ("recurso desligado, ninguém espera") — e esse padrão-aberto era a causa
+ * relatada de "a IA está respondendo todo mundo": bastava o campo estar
+ * vazio para toda conversa nova de desconhecido nascer liberada. Numa
+ * instância que roda no WhatsApp PESSOAL do corretor, padrão-aberto é o
+ * lado errado do erro.
  *
- * Duas isenções, e as duas significam a mesma coisa: **nós já sabemos que
- * este número é cliente.**
+ * O que abre a porta, hoje, são atos deliberados:
  *
  * 1. **Campanha.** Quem dispara em massa pelo próprio CRM já decidiu que a
  *    IA participa.
- * 2. **O número já era do CRM antes desta conversa** (`jaEraDoCrm`). Ele foi
- *    importado, veio de formulário do site ou foi cadastrado à mão — em
- *    todos os casos alguém o pôs lá de propósito.
+ * 2. **O número já era do CRM antes desta conversa** (`jaEraDoCrm`). Foi
+ *    importado, veio de formulário ou foi cadastrado à mão — alguém o pôs
+ *    lá de propósito. É o que faz a trava virar incentivo para cadastrar.
+ * 3. Palavra-chave do corretor no chat, frase de entrada do cliente,
+ *    mensagem pronta de anúncio, ou o botão "IA assume" do painel — todos
+ *    caminhos que chamam `liberarConversaPorPalavraChave` depois.
  *
- * A segunda isenção é o que faz a trava parar de ser silêncio e virar
- * incentivo. Medido em 24/08/2026: a instância roda no WhatsApp PESSOAL do
- * corretor, então a trava tem razão de existir — mas do jeito antigo ela
- * travava cliente junto com cunhado, e o resultado foi 172 mensagens de
- * cliente e ZERO respostas. Agora quem cadastra o lead é atendido; quem não
- * cadastra continua esperando a palavra.
- *
- * O detalhe que faz a regra funcionar: "já era do CRM" significa que o lead
- * existia ANTES desta conversa. O webhook CRIA o lead de quem escreve (foi a
- * correção da 0026, sem a qual nenhum lead nascia de WhatsApp), então "tem
- * lead" seria verdade para todo mundo no instante em que a pessoa manda a
- * primeira mensagem — e a checagem passaria sempre, valendo nada.
+ * O detalhe que faz a regra 2 funcionar: "já era do CRM" significa que o
+ * lead existia ANTES desta conversa. O webhook CRIA o lead de quem escreve
+ * (0026), então "tem lead" seria verdade para todo mundo no instante em que
+ * a pessoa manda a primeira mensagem — e a checagem passaria sempre.
  */
-export function exigePalavraChave(params: {
-  palavraChaveConfigurada: string | null | undefined;
-  /** A de teste também liga a trava: ter qualquer uma cadastrada é ter o recurso ligado. */
-  palavraChaveTeste?: string | null;
+export function exigeLiberacaoExplicita(params: {
   origemConversa: "organica" | "campanha";
   /** O telefone já tinha lead no CRM ANTES desta conversa começar. */
   jaEraDoCrm?: boolean;
 }): boolean {
-  // Pela LISTA, não pelo campo: um campo com "a, ok" (chaves curtas demais,
-  // todas descartadas) não pode ligar a trava — travaria a IA sem existir
-  // palavra nenhuma capaz de destravá-la.
-  const temAlguma =
-    listarPalavrasChave(params.palavraChaveConfigurada).length > 0 ||
-    listarPalavrasChave(params.palavraChaveTeste).length > 0;
-  if (!temAlguma) return false;
   if (params.origemConversa === "campanha") return false;
   if (params.jaEraDoCrm) return false;
   return true;
@@ -237,9 +227,9 @@ export function exigePalavraChave(params: {
  * corretor nessas conversas as devolve ao estado bloqueado — sem
  * backfill.
  *
- * O retravamento só vale quando há palavra-chave cadastrada: sem ela o
- * recurso está desligado, e travar seria emudecer a IA sem nenhum jeito
- * de destravá-la.
+ * Desde 05/09/2026 o retravamento vale mesmo SEM palavra-chave cadastrada:
+ * o botão "IA assume" do painel é o caminho de destravar que sempre existe,
+ * então travar nunca mais emudece a IA sem saída.
  */
 export type DecisaoFalaDoCorretor =
   | { acao: "ativar_ia"; marcarComoTeste: boolean }
@@ -287,9 +277,7 @@ export function decidirPorFalaDoCorretor(params: {
 
   return {
     acao: "pausar_ia",
-    retravarPalavraChave: exigePalavraChave({
-      palavraChaveConfigurada: params.palavraChaveConfigurada,
-      palavraChaveTeste: params.palavraChaveTeste,
+    retravarPalavraChave: exigeLiberacaoExplicita({
       origemConversa: params.origemConversa,
       jaEraDoCrm: params.clienteConhecido,
     }),

@@ -9,7 +9,7 @@ import {
   INTERVALO_MINIMO_SEGUNDOS,
   INTERVALO_MAXIMO_SEGUNDOS,
 } from "./antiBan";
-import { exigePalavraChave } from "./modoBot";
+import { exigeLiberacaoExplicita } from "./modoBot";
 import { consultarEstadoConexao } from "./provider";
 import { resetPorTrocaDeNumero } from "./trocaDeNumero";
 import type { DossieClienteIA } from "./types";
@@ -281,10 +281,6 @@ export async function obterOuCriarConversa(params: {
   corretorId: string;
   telefoneCliente: string;
   nomeCliente?: string | null;
-  /** Palavra-chave cadastrada na instância — decide se a conversa NASCE aguardando ativação. */
-  palavraChaveConfigurada?: string | null;
-  /** A de teste também liga a trava: ter qualquer uma cadastrada é ter o recurso ligado. */
-  palavraChaveTeste?: string | null;
   origem?: "organica" | "campanha";
 }): Promise<ConversaPersistida | null> {
   const supabase = createServiceClient();
@@ -315,14 +311,12 @@ export async function obterOuCriarConversa(params: {
   const origem = params.origem ?? "organica";
   /*
    * Quem já era do CRM antes desta conversa é atendido na hora; número
-   * desconhecido espera a palavra-chave. É o que faz a trava deixar de ser
-   * silêncio e virar incentivo para cadastrar o lead — ver
-   * `exigePalavraChave`, e a medição de 24/08 que motivou isto: 172
-   * mensagens de cliente, zero respostas.
+   * desconhecido espera liberação EXPLÍCITA (palavra-chave, frase de
+   * entrada, anúncio ou o botão do painel) — independente de haver
+   * palavra-chave cadastrada. O padrão-aberto antigo ("sem chave, sem
+   * trava") era a causa de a IA responder todo mundo (05/09/2026).
    */
-  const precisaDePalavraChave = exigePalavraChave({
-    palavraChaveConfigurada: params.palavraChaveConfigurada,
-    palavraChaveTeste: params.palavraChaveTeste,
+  const precisaDeLiberacao = exigeLiberacaoExplicita({
     origemConversa: origem,
     jaEraDoCrm,
   });
@@ -335,7 +329,7 @@ export async function obterOuCriarConversa(params: {
       nome_cliente: params.nomeCliente ?? null,
       lead_id: leadId,
       origem,
-      liberado_por_palavra_chave: !precisaDePalavraChave,
+      liberado_por_palavra_chave: !precisaDeLiberacao,
       cliente_conhecido: jaEraDoCrm,
     })
     .select(SELECT_CONVERSA)
@@ -387,11 +381,23 @@ export async function marcarLeadVindoDeAnuncio(leadId: string, nomeImovel: strin
     .eq("origem", "whatsapp/organico");
 }
 
+/**
+ * Ativa a IA nesta conversa — palavra-chave do corretor, frase de entrada
+ * do cliente, mensagem de anúncio ou o botão "IA assume" do painel.
+ *
+ * Escreve as TRÊS condições de `botDeveResponder`, não só a trava. A versão
+ * anterior setava apenas `liberado_por_palavra_chave`, e no fluxo real —
+ * corretor atendendo pessoalmente (cada fala dele pausa por 24h) e depois
+ * digitando "pode assumir" — a pausa continuava valendo e a IA seguia muda.
+ * Era exatamente a queixa "a palavra-chave não funciona como ativação":
+ * o gesto de entrega liberava a porta e esquecia de abrir as outras duas.
+ * Mesmo defeito que o botão do painel já teve (ver `retomarBotNaConversa`).
+ */
 export async function liberarConversaPorPalavraChave(conversaId: string): Promise<void> {
   const supabase = createServiceClient();
   await supabase
     .from("whatsapp_conversas")
-    .update({ liberado_por_palavra_chave: true })
+    .update({ liberado_por_palavra_chave: true, bot_ativo: true, pausado_humano_ate: null })
     .eq("id", conversaId);
 }
 

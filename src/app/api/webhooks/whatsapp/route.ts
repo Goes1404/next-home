@@ -269,8 +269,6 @@ export async function POST(req: NextRequest) {
       corretorId: instancia.corretorId,
       telefoneCliente: sender,
       nomeCliente: payload.senderName || null,
-      palavraChaveConfigurada: instancia.palavraChaveAtivacao,
-      palavraChaveTeste: instancia.palavraChaveTeste,
     });
 
     if (!conversa) {

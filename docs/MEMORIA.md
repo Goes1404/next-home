@@ -1968,3 +1968,40 @@ Duas lições que valem além do `sharp`:
   `clientWidth` e o `getBoundingClientRect().right` de cada botão contra
   `window.innerWidth`. Sem o CSS o teste passa sempre — a primeira medição
   desta sessão saiu com o arquivo errado e deu "cabe tudo".
+
+## A trava era aberta por padrão, e a palavra-chave não ativava (05/09/2026)
+
+Relatado: "a IA está respondendo todo mundo, não só quem está no nosso
+banco" e "a palavra-chave não está funcionando como ativação". Os dois
+estavam certos, e eram defeitos DIFERENTES:
+
+- **`exigePalavraChave` devolvia `false` sem palavra cadastrada** — conversa
+  nova de desconhecido nascia `liberado = true`. E como a decisão é
+  congelada no INSERT, toda conversa criada antes da trava existir (0023)
+  ficou liberada para sempre. Padrão-aberto numa instância que roda no
+  WhatsApp PESSOAL do corretor. Hoje `exigeLiberacaoExplicita`: desconhecido
+  trava SEMPRE; o que abre é ato deliberado (cliente já no CRM antes da
+  conversa, campanha, anúncio, frase de entrada, palavra-chave, botão). A
+  0070 retrava o passado — inclusive quem foi liberado de propósito, de
+  olhos abertos: reativar é um clique.
+- **A palavra-chave só escrevia UMA das três condições de
+  `botDeveResponder`** (`liberado_por_palavra_chave`). No fluxo real — o
+  corretor atendendo (cada fala dele pausa 24h) e então digitando "pode
+  assumir" — a pausa continuava valendo e a IA seguia muda. Segunda vez que
+  um caminho de ativação escreve menos colunas que o gate lê (a primeira
+  foi o botão "reativar"). `ativacaoIa.test.ts` lê o código e trava os três
+  campos em TODO caminho de ativação.
+- **Botões novos**: "IA assume agora" (Conversas) liga as três condições e,
+  se a última fala é do cliente, responde NA HORA — assumir e ficar mudo
+  parecia botão quebrado. "Iniciar conversa com IA" (ficha do lead) abre a
+  conversa e manda a apresentação. Abertura é iniciativa nossa: passa por
+  `reservarCotaCampanha` (cota + espaçamento), conta tentativa de contato e
+  avança o funil (`etapaAutomatica.test.ts` ganhou o quarto arquivo). A
+  janela de horário NÃO barra o clique: corretor logado olhando para a
+  conversa é a mesma classe do Live Chat manual.
+- **`ia_interacoes.origem` ganhou 'painel'** (0070 altera o CHECK; types.ts
+  atualizado à mão — é uma das 10 colunas de vocabulário fechado). Sem o
+  CHECK novo o insert falharia CALADO pelo try/catch de registrarInteracao.
+- O texto da tela de configuração dizia "Em branco, a IA responde
+  normalmente" — sexta vez que texto desatualizado apontaria o diagnóstico
+  para o lugar errado; reescrito junto.

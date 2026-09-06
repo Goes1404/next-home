@@ -219,8 +219,8 @@ export function ConfiguracaoIA({
             />
             <p className="text-fluid-xs text-apoio leading-snug">
               {chavesAtivacao.length > 0
-                ? `A IA fica em silêncio em conversas novas até você digitar ${listarEmTexto(chavesAtivacao)} no próprio chat do WhatsApp — aí ela assume, sem o cliente perceber a troca.`
-                : "Em branco, a IA responde normalmente. Se preencher, ela só entra em ação depois que você digitar uma destas frases no chat — útil para atender pessoalmente o início e só depois passar a bola."}
+                ? `Digitar ${listarEmTexto(chavesAtivacao)} no próprio chat do WhatsApp entrega a conversa para a IA na hora — sem o cliente perceber a troca. O botão "IA assume agora" das Conversas faz o mesmo.`
+                : "Número que não está no seu CRM nunca é atendido sozinho: a IA espera você liberar. Cadastre frases aqui para liberar digitando no próprio chat — ou use o botão \"IA assume agora\" na tela de Conversas."}
             </p>
             <p className="text-fluid-xs text-tenue leading-snug">
               Separe por vírgula para cadastrar mais de uma — no meio do atendimento ninguém lembra

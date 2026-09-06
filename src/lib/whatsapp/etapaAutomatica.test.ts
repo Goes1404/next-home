@@ -14,6 +14,7 @@ import { describe, expect, it } from "vitest";
 const REPOSITORIO = readFileSync("src/lib/whatsapp/repositorio.ts", "utf8");
 const WEBHOOK = readFileSync("src/app/api/webhooks/whatsapp/route.ts", "utf8");
 const DISPARADOR = readFileSync("src/lib/whatsapp/campaignDispatcher.ts", "utf8");
+const ACOES_IA = readFileSync("src/app/corretor/(painel)/conversas/acoesIA.ts", "utf8");
 
 describe("novo → primeiro_contato automático", () => {
   it("o update só alcança quem ainda está em 'novo' — o termostato do funil", () => {
@@ -55,8 +56,14 @@ describe("novo → primeiro_contato automático", () => {
     expect(avanco).toBeGreaterThan(gravouEnvio);
   });
 
+  // "Ao criar caminho novo que FALA com o cliente, procurar quem mexe no
+  // funil" — os botões de IA do painel (05/09/2026) são o quarto caminho.
+  it("os botões de IA do painel também avançam o lead", () => {
+    expect(ACOES_IA).toContain("avancarLeadParaPrimeiroContato(");
+  });
+
   it("nenhum caminho escreve etapa de julgamento (negociação etc.) automaticamente", () => {
-    for (const arquivo of [REPOSITORIO, WEBHOOK, DISPARADOR]) {
+    for (const arquivo of [REPOSITORIO, WEBHOOK, DISPARADOR, ACOES_IA]) {
       expect(arquivo).not.toContain('etapa: "documentacao"');
       expect(arquivo).not.toContain('etapa: "fechado"');
       expect(arquivo).not.toContain('etapa: "perdido"');
