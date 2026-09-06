@@ -29,6 +29,21 @@ export type PerguntaDoEstudio = {
   alternativas: string[];
 };
 
+/**
+ * Uma foto de referência anexada pelo corretor — o clipe do chat (06/09/2026).
+ *
+ * `path` é o caminho no bucket (`corretores/<id>/referencias/...`), a moeda
+ * que a rota de geração aceita e confina; `url` é a pública, só para a tela
+ * mostrar a miniatura. O upload é direto do navegador para o Storage (mesma
+ * razão do PDF de book: Server Action tem teto de corpo), e a action valida o
+ * prefixo antes de gravar — caminho fora da pasta do corretor não entra.
+ */
+export type ReferenciaDoEstudio = {
+  tipo: "referencia";
+  path: string;
+  url: string;
+};
+
 /** O que a IA propõe gerar. Legível — o corretor lê ISTO, não o inglês. */
 export type PropostaDeArte = {
   tipo: "proposta";
@@ -42,6 +57,13 @@ export type PropostaDeArte = {
   qualidade: "low" | "medium";
   /** `false` quando o motor caiu e o prompt é o texto do próprio corretor. */
   daIa: boolean;
+  /**
+   * A foto de referência que sustenta ESTA proposta (a mais recente da
+   * conversa na hora em que ela nasceu). É o que "Gerar assim" manda para a
+   * rota — a proposta carrega a foto para o vínculo sobreviver a mensagens
+   * novas.
+   */
+  referenciaPath?: string | null;
 };
 
 export type PropostaDeVideo = {
@@ -58,6 +80,13 @@ export type PropostaDeVideo = {
   copy: { titulo: string; apoio: string; cta: string };
   /** O que a régua de lei barrou, se barrou. Vazio = pode gerar. */
   problemas: string[];
+  /**
+   * Fotos anexadas na conversa que entram na seleção do roteiro, além da
+   * galeria do imóvel. São URLs públicas do bucket do corretor; a action de
+   * confirmar compara com a proposta GRAVADA — lista forjada pela tela não
+   * gera.
+   */
+  fotosExtras?: string[];
 };
 
 export type PropostaDoEstudio = PropostaDeArte | PropostaDeVideo;
@@ -82,7 +111,8 @@ export type DadosDaMensagem =
   | PerguntaDoEstudio
   | PropostaDoEstudio
   | EscolhaDoEstudio
-  | ResultadoDoEstudio;
+  | ResultadoDoEstudio
+  | ReferenciaDoEstudio;
 
 export type MensagemDoEstudio = {
   id: string;
@@ -133,6 +163,7 @@ export function dadosDaMensagem(bruto: unknown): DadosDaMensagem | null {
           tamanho: texto(d.tamanho) || "1024x1024",
           qualidade: d.qualidade === "medium" ? "medium" : "low",
           daIa: d.daIa === true,
+          referenciaPath: texto(d.referenciaPath) || null,
         };
       }
       if (d.modo === "video") {
@@ -149,6 +180,9 @@ export function dadosDaMensagem(bruto: unknown): DadosDaMensagem | null {
           planos: Array.isArray(d.planos) ? d.planos.map(texto).filter(Boolean) : [],
           copy: { titulo: texto(copy.titulo), apoio: texto(copy.apoio), cta: texto(copy.cta) },
           problemas: Array.isArray(d.problemas) ? d.problemas.map(texto).filter(Boolean) : [],
+          fotosExtras: Array.isArray(d.fotosExtras)
+            ? d.fotosExtras.map(texto).filter(Boolean).slice(0, 8)
+            : [],
         };
       }
       return null;
@@ -167,9 +201,40 @@ export function dadosDaMensagem(bruto: unknown): DadosDaMensagem | null {
         modo: d.modo === "video" ? "video" : "arte",
         url: texto(d.url) || null,
       };
+    case "referencia":
+      if (!texto(d.path) || !texto(d.url)) return null;
+      return { tipo: "referencia", path: texto(d.path), url: texto(d.url) };
     default:
       return null;
   }
+}
+
+/**
+ * A foto de referência que vale AGORA: a última anexada pelo corretor.
+ *
+ * Uma por vez, de propósito — o motor de edição de imagem aceita uma, e
+ * "qual das cinco fotos ele quis?" é ambiguidade que nenhuma pergunta boa
+ * resolve. Quem anexa outra está trocando a referência.
+ */
+export function referenciaAtiva(historico: MensagemDoEstudio[]): ReferenciaDoEstudio | null {
+  for (let i = historico.length - 1; i >= 0; i--) {
+    const m = historico[i];
+    if (m.papel === "corretor" && m.dados?.tipo === "referencia") return m.dados;
+  }
+  return null;
+}
+
+/** Todas as referências da conversa, na ordem — o vídeo usa várias. */
+export function referenciasDaConversa(historico: MensagemDoEstudio[]): ReferenciaDoEstudio[] {
+  const vistas = new Set<string>();
+  const lista: ReferenciaDoEstudio[] = [];
+  for (const m of historico) {
+    if (m.papel !== "corretor" || m.dados?.tipo !== "referencia") continue;
+    if (vistas.has(m.dados.path)) continue;
+    vistas.add(m.dados.path);
+    lista.push(m.dados);
+  }
+  return lista;
 }
 
 /** Título curto para a lista lateral, a partir do primeiro pedido. */

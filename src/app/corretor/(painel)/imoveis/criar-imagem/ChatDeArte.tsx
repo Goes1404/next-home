@@ -18,6 +18,7 @@ import {
   registrarArteGerada,
   type EstadoDoChat,
 } from "@/app/corretor/(painel)/estudio/acoes";
+import { enviarFotoDeReferencia } from "@/app/corretor/(painel)/estudio/uploadReferencia";
 import { ListaDeConversas } from "@/app/corretor/(painel)/_componentes/ListaDeConversas";
 
 /**
@@ -37,10 +38,12 @@ import { ListaDeConversas } from "@/app/corretor/(painel)/_componentes/ListaDeCo
  */
 
 export function ChatDeArte({
+  corretorId,
   conversasIniciais,
   tetoInicial,
   galeriaInicial,
 }: {
+  corretorId: string;
   conversasIniciais: ConversaDoEstudio[];
   tetoInicial: EstadoDoTeto;
   galeriaInicial: ImagemGerada[];
@@ -48,11 +51,12 @@ export function ChatDeArte({
   const { avisar, falhar } = useAvisos();
   const [conversas, setConversas] = useState(conversasIniciais);
   const [estado, setEstado] = useState<EstadoDoChat | null>(null);
-  const [pendente, setPendente] = useState<{ id: string; conteudo: string } | null>(null);
+  const [pendente, setPendente] = useState<{ id: string; conteudo: string; previewUrl?: string | null } | null>(null);
   const [pensando, setPensando] = useState(false);
   const [gerando, setGerando] = useState<string | null>(null);
   const [teto, setTeto] = useState(tetoInicial);
   const [galeria, setGaleria] = useState(galeriaInicial);
+  const [anexo, setAnexo] = useState<{ file: File; previewUrl: string } | null>(null);
   const [, iniciar] = useTransition();
 
   const restam = Math.max(0, teto.teto - teto.usadasHoje);
@@ -71,16 +75,39 @@ export function ChatDeArte({
   };
 
   const enviar = async (texto: string, escolha?: { perguntaId: string; pergunta: string }) => {
-    setPendente({ id: `temp-${Date.now()}`, conteudo: texto });
+    const fotoDaVez = escolha ? null : anexo;
+    setPendente({
+      id: `temp-${Date.now()}`,
+      conteudo: texto || "📎 Foto de referência",
+      previewUrl: fotoDaVez?.previewUrl ?? null,
+    });
     setPensando(true);
     try {
+      // A foto sobe ANTES da mensagem: se o upload falhar, nada é gravado e o
+      // corretor tenta de novo — mensagem apontando para foto que não subiu
+      // seria referência quebrada gravada para sempre.
+      let referencia: { path: string; url: string } | null = null;
+      if (fotoDaVez) {
+        const up = await enviarFotoDeReferencia(corretorId, fotoDaVez.file);
+        if ("erro" in up) {
+          falhar(up.erro);
+          throw new Error(up.erro);
+        }
+        referencia = up;
+      }
+
       const r = await enviarMensagemDoEstudio({
         tipo: "arte",
         conversaId: estado?.conversa.id ?? null,
         texto,
         escolha: escolha ?? null,
+        referencia,
       });
       if (!aplicar(r)) throw new Error(r && "erro" in r ? r.erro : "falhou");
+      if (fotoDaVez) {
+        URL.revokeObjectURL(fotoDaVez.previewUrl);
+        setAnexo(null);
+      }
     } catch (e) {
       if (!(e instanceof Error && e.message)) falhar("Sem conexão. Tente de novo.");
       throw e;
@@ -115,6 +142,8 @@ export function ChatDeArte({
           receita: p.receita,
           tamanho: p.tamanho,
           qualidade: p.qualidade,
+          // A foto anexada na conversa: a rota confina à pasta do corretor.
+          referenciaPath: p.referenciaPath ?? undefined,
         }),
       });
       const corpo = (await resp.json().catch(() => null)) as
@@ -181,6 +210,19 @@ export function ChatDeArte({
             }
             onEnviar={enviar}
             onEscolher={escolher}
+            anexo={anexo ? { previewUrl: anexo.previewUrl, nome: anexo.file.name } : null}
+            onAnexar={(file) => {
+              setAnexo((atual) => {
+                if (atual) URL.revokeObjectURL(atual.previewUrl);
+                return { file, previewUrl: URL.createObjectURL(file) };
+              });
+            }}
+            onRemoverAnexo={() => {
+              setAnexo((atual) => {
+                if (atual) URL.revokeObjectURL(atual.previewUrl);
+                return null;
+              });
+            }}
             renderProposta={(m) => (
               <CartaoDeProposta
                 proposta={m.dados as PropostaDeArte}

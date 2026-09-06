@@ -18,7 +18,10 @@ import type { MensagemDoEstudio, PerguntaDoEstudio } from "@/lib/estudio/contrat
  * `if (modo === …)` a cada linha.
  */
 
-export type EnvioPendente = { id: string; conteudo: string };
+export type EnvioPendente = { id: string; conteudo: string; previewUrl?: string | null };
+
+/** O anexo escolhido e ainda não enviado — vive no composer, como no ChatGPT. */
+export type AnexoDoComposer = { previewUrl: string; nome: string };
 
 export function ChatBase({
   mensagens,
@@ -30,6 +33,9 @@ export function ChatBase({
   onEscolher,
   renderProposta,
   renderResultado,
+  anexo,
+  onAnexar,
+  onRemoverAnexo,
 }: {
   mensagens: MensagemDoEstudio[];
   /** A fala do corretor ainda não confirmada pelo servidor (otimismo). */
@@ -43,8 +49,14 @@ export function ChatBase({
   onEscolher: (pergunta: PerguntaDoEstudio, escolha: string) => Promise<void>;
   renderProposta: (m: MensagemDoEstudio) => ReactNode;
   renderResultado: (m: MensagemDoEstudio) => ReactNode;
+  /** Foto escolhida e ainda não enviada; a tela dona decide o upload. */
+  anexo?: AnexoDoComposer | null;
+  /** Presente = o clipe aparece. A tela dona valida tipo/tamanho e sobe. */
+  onAnexar?: (file: File) => void;
+  onRemoverAnexo?: () => void;
 }) {
   const [texto, setTexto] = useState("");
+  const arquivoRef = useRef<HTMLInputElement>(null);
   const corpoRef = useRef<HTMLDivElement>(null);
   const presoNoFimRef = useRef(true);
 
@@ -66,7 +78,8 @@ export function ChatBase({
 
   const enviar = async () => {
     const t = texto.trim();
-    if (!t || pensando) return;
+    // Com anexo, mandar sem texto vale: "aqui está a foto" já é a mensagem.
+    if ((!t && !anexo) || pensando) return;
     setTexto("");
     presoNoFimRef.current = true;
     try {
@@ -98,6 +111,14 @@ export function ChatBase({
 
         {mensagens.map((m) => (
           <Balao key={m.id} papel={m.papel}>
+            {m.dados?.tipo === "referencia" && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={m.dados.url}
+                alt="Foto de referência anexada"
+                className="border-linha mb-1.5 max-h-44 w-auto max-w-full rounded-lg border"
+              />
+            )}
             <p className="text-fluid-sm text-corpo whitespace-pre-line">{m.conteudo}</p>
             {m.dados?.tipo === "proposta" && renderProposta(m)}
             {m.dados?.tipo === "resultado" && renderResultado(m)}
@@ -106,6 +127,14 @@ export function ChatBase({
 
         {pendente && (
           <Balao papel="corretor" apagado>
+            {pendente.previewUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={pendente.previewUrl}
+                alt=""
+                className="border-linha mb-1.5 max-h-44 w-auto max-w-full rounded-lg border"
+              />
+            )}
             <p className="text-fluid-sm text-corpo whitespace-pre-line">{pendente.conteudo}</p>
           </Balao>
         )}
@@ -142,6 +171,23 @@ export function ChatBase({
         </div>
       )}
 
+      {/* A foto escolhida, antes do envio — dá para tirar sem mandar. */}
+      {anexo && (
+        <div className="border-linha flex items-center gap-2 border-t px-3 py-2 md:px-5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={anexo.previewUrl} alt="" className="border-linha h-12 w-12 rounded-lg border object-cover" />
+          <span className="text-apoio min-w-0 flex-1 truncate text-xs">{anexo.nome}</span>
+          <button
+            type="button"
+            onClick={onRemoverAnexo}
+            aria-label="Remover foto"
+            className="text-tenue hover:text-corpo min-h-11 cursor-pointer px-2 text-sm"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -149,6 +195,36 @@ export function ChatBase({
         }}
         className="border-linha flex items-end gap-2 border-t px-3 py-3 md:px-5"
       >
+        {onAnexar && (
+          <>
+            <input
+              ref={arquivoRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onAnexar(f);
+                // Permite escolher o MESMO arquivo de novo depois de remover.
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => arquivoRef.current?.click()}
+              disabled={pensando}
+              aria-label="Anexar foto de referência"
+              className="border-linha text-apoio hover:border-linha-forte hover:text-corpo flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors disabled:opacity-50"
+            >
+              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path
+                  strokeLinecap="round"
+                  d="M21 12.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8L13 4.9a3.7 3.7 0 0 1 5.2 5.2l-8.4 8.4a1.9 1.9 0 0 1-2.7-2.7L15 8"
+                />
+              </svg>
+            </button>
+          </>
+        )}
         <textarea
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
@@ -165,7 +241,7 @@ export function ChatBase({
         />
         <button
           type="submit"
-          disabled={pensando || !texto.trim()}
+          disabled={pensando || (!texto.trim() && !anexo)}
           aria-label="Enviar"
           className="bg-acento hover:bg-acento-hover text-sobre-cor flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors disabled:opacity-50"
         >

@@ -4534,3 +4534,15 @@ estavam certos, e eram defeitos DIFERENTES:
   Aplicadas em ordem via Management API (`/database/query` com
   `SUPABASE_PAT`); o Python local falha o TLS dessa API
   (CERTIFICATE_VERIFY_FAILED), o curl passa.
+
+- **O clipe do Estúdio (06/09/2026): o motor de referência já existia
+  inteiro, sem UI.** `gerarImagem` já chamava `images/edits` com foto;
+  a rota já aceitava `referenciaPath` confinado; o engenheiro já recebia
+  `temReferencia`; as receitas `precisaFoto` (ambientar decorado, melhorar
+  luz) eram INALCANÇÁVEIS pelo chat — o turno cravava `false` e as pulava.
+  Segunda vez que um pedaço pronto vivia desligado (a primeira foi o
+  próprio engenheiro de prompt). Antes de construir, procurar o que o motor
+  já sabe fazer sem ninguém chamar. O anexo sobe direto do navegador para
+  `corretores/<id>/referencias/<hash>` e viaja DENTRO da proposta
+  (`referenciaPath` na arte, `fotosExtras` no vídeo) — a action valida o
+  prefixo e o vídeo só usa a lista da proposta GRAVADA, nunca a do POST.

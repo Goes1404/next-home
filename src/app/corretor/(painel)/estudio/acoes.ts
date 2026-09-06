@@ -83,11 +83,23 @@ export async function enviarMensagemDoEstudio(params: {
   texto: string;
   /** Quando a fala é o toque numa alternativa de pergunta. */
   escolha?: { perguntaId: string; pergunta: string } | null;
+  /**
+   * Foto de referência anexada (o clipe do chat). O upload já aconteceu
+   * direto do navegador para o Storage; aqui chega só o caminho — validado
+   * contra a pasta do PRÓPRIO corretor, a mesma guarda da rota de gerar:
+   * caminho forjado leria arquivo alheio e o mandaria para o modelo.
+   */
+  referencia?: { path: string; url: string } | null;
 }): Promise<EstadoDoChat | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
 
-  const texto = params.texto.trim().slice(0, 2000);
+  let referencia = params.referencia ?? null;
+  if (referencia && !referencia.path.startsWith(`corretores/${corretor.id}/`)) {
+    referencia = null;
+  }
+
+  const texto = params.texto.trim().slice(0, 2000) || (referencia ? "📎 Foto de referência" : "");
   if (!texto) return { erro: "Escreva alguma coisa." };
 
   let conversaId = params.conversaId;
@@ -108,7 +120,9 @@ export async function enviarMensagemDoEstudio(params: {
     conteudo: texto,
     dados: params.escolha
       ? { tipo: "escolha", perguntaId: params.escolha.perguntaId, pergunta: params.escolha.pergunta, escolha: texto }
-      : null,
+      : referencia
+        ? { tipo: "referencia", path: referencia.path, url: referencia.url }
+        : null,
   });
 
   const antes = await carregarConversa(conversaId);
@@ -190,9 +204,11 @@ export async function confirmarPropostaDeVideo(params: {
   if (!dona || dona.tipo !== "video") return { erro: "Conversa não encontrada." };
 
   // Só o que veio de uma proposta gravada pela IA pode ser gerado: a
-  // conversa tem de conter uma proposta com este slug/objetivo/canal.
+  // conversa tem de conter uma proposta com este slug/objetivo/canal — e as
+  // fotos extras saem da proposta GRAVADA, nunca da tela: lista forjada no
+  // POST mandaria URL alheia para o render.
   const atual = await carregarConversa(params.conversaId);
-  const propostaValida = (atual?.mensagens ?? []).some(
+  const gravada = (atual?.mensagens ?? []).find(
     (m) =>
       m.papel === "ia" &&
       m.dados?.tipo === "proposta" &&
@@ -201,13 +217,19 @@ export async function confirmarPropostaDeVideo(params: {
       m.dados.objetivo === params.proposta.objetivo &&
       m.dados.canal === params.proposta.canal,
   );
+  const propostaValida = Boolean(gravada);
   if (!propostaValida) return { erro: "Essa proposta não está nesta conversa." };
+  const fotosExtras =
+    gravada?.dados?.tipo === "proposta" && gravada.dados.modo === "video"
+      ? (gravada.dados.fotosExtras ?? [])
+      : [];
 
   const r = await criarVideo({
     fonte: "catalogo",
     slug: params.proposta.slug,
     objetivo: params.proposta.objetivo,
     canal: params.proposta.canal,
+    fotosExtras: fotosExtras.map((url) => ({ url })),
   });
   if (r.erro || !r.jobId) return { erro: r.erro ?? "Não deu para entrar na fila." };
 

@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { dadosDaMensagem, ehConfirmacao, tituloDaConversa } from "./contrato";
+import {
+  dadosDaMensagem,
+  ehConfirmacao,
+  referenciaAtiva,
+  referenciasDaConversa,
+  tituloDaConversa,
+  type MensagemDoEstudio,
+} from "./contrato";
 
 /**
  * O Estúdio em forma de chat — o que NÃO pode regredir.
@@ -109,5 +116,79 @@ describe("contrato", () => {
     const longo = tituloDaConversa("a".repeat(80));
     expect(longo.length).toBeLessThanOrEqual(48);
     expect(longo.endsWith("…")).toBe(true);
+  });
+});
+
+describe("foto de referência no chat (06/09/2026)", () => {
+  const msg = (papel: "corretor" | "ia", dados: unknown): MensagemDoEstudio => ({
+    id: crypto.randomUUID(),
+    papel,
+    conteudo: "x",
+    dados: dadosDaMensagem(dados),
+    imagemId: null,
+    videoJobId: null,
+    createdAt: "2026-09-06T00:00:00Z",
+  });
+
+  it("o contrato aceita referência com forma e recusa sem", () => {
+    expect(dadosDaMensagem({ tipo: "referencia", path: "corretores/x/referencias/a.jpg", url: "https://u" }))
+      .toMatchObject({ tipo: "referencia", path: "corretores/x/referencias/a.jpg" });
+    expect(dadosDaMensagem({ tipo: "referencia", path: "", url: "https://u" })).toBeNull();
+    expect(dadosDaMensagem({ tipo: "referencia", path: "a.jpg" })).toBeNull();
+  });
+
+  it("a proposta de arte carrega o referenciaPath pelo parse", () => {
+    expect(
+      dadosDaMensagem({ tipo: "proposta", modo: "arte", promptEn: "a", referenciaPath: "corretores/x/r/a.jpg" }),
+    ).toMatchObject({ referenciaPath: "corretores/x/r/a.jpg" });
+    expect(dadosDaMensagem({ tipo: "proposta", modo: "arte", promptEn: "a" })).toMatchObject({
+      referenciaPath: null,
+    });
+  });
+
+  it("a proposta de vídeo carrega fotosExtras pelo parse", () => {
+    expect(
+      dadosDaMensagem({ tipo: "proposta", modo: "video", slug: "s", fotosExtras: ["https://a", "", "https://b"] }),
+    ).toMatchObject({ fotosExtras: ["https://a", "https://b"] });
+  });
+
+  it("a referência ativa é a ÚLTIMA anexada — anexar outra é trocar", () => {
+    const h = [
+      msg("corretor", { tipo: "referencia", path: "corretores/x/r/1.jpg", url: "u1" }),
+      msg("ia", null),
+      msg("corretor", { tipo: "referencia", path: "corretores/x/r/2.jpg", url: "u2" }),
+    ];
+    expect(referenciaAtiva(h)?.path).toBe("corretores/x/r/2.jpg");
+    expect(referenciaAtiva([msg("ia", null)])).toBeNull();
+  });
+
+  it("as referências da conversa deduplicam por path, na ordem", () => {
+    const h = [
+      msg("corretor", { tipo: "referencia", path: "p1", url: "u1" }),
+      msg("corretor", { tipo: "referencia", path: "p2", url: "u2" }),
+      msg("corretor", { tipo: "referencia", path: "p1", url: "u1" }),
+    ];
+    expect(referenciasDaConversa(h).map((r) => r.path)).toEqual(["p1", "p2"]);
+  });
+
+  it("a action valida o prefixo da pasta do corretor — caminho forjado não entra", () => {
+    const a = ler(ACOES);
+    expect(a).toMatch(/referencia\.path\.startsWith\(`corretores\/\$\{corretor\.id\}\/`\)/);
+  });
+
+  it("o upload do navegador só escreve na pasta do próprio corretor", () => {
+    const u = ler("src/app/corretor/(painel)/estudio/uploadReferencia.ts");
+    expect(u).toMatch(/corretores\/\$\{corretorId\}\/referencias\//);
+  });
+
+  it("'Gerar assim' manda o referenciaPath da PROPOSTA, não um caminho solto", () => {
+    const tela = ler(TELAS[0]);
+    expect(tela).toMatch(/referenciaPath: p\.referenciaPath/);
+  });
+
+  it("as fotos extras do vídeo saem da proposta GRAVADA, nunca do POST da tela", () => {
+    const a = ler(ACOES);
+    expect(a).toMatch(/gravada\.dados\.fotosExtras/);
+    expect(a).not.toMatch(/params\.proposta\.fotosExtras/);
   });
 });

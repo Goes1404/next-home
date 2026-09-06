@@ -59,6 +59,7 @@ export default async function PaginaVideo() {
       <AbasMarketing ativa="/corretor/marketing/video" />
 
       <ChatDeVideo
+        corretorId={corretor.id}
         conversasIniciais={conversas}
         videosIniciais={videos}
         saldoInicial={{ disponiveis: saldo.disponiveis, cotaMensal: saldo.cotaMensal }}

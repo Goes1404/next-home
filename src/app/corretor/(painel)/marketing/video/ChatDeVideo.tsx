@@ -19,6 +19,7 @@ import {
   excluirConversaDoEstudio,
   type EstadoDoChat,
 } from "@/app/corretor/(painel)/estudio/acoes";
+import { enviarFotoDeReferencia } from "@/app/corretor/(painel)/estudio/uploadReferencia";
 import { statusDosVideos } from "./acoes";
 
 /**
@@ -35,10 +36,12 @@ import { statusDosVideos } from "./acoes";
 const INTERVALO_MS = 6000;
 
 export function ChatDeVideo({
+  corretorId,
   conversasIniciais,
   videosIniciais,
   saldoInicial,
 }: {
+  corretorId: string;
   conversasIniciais: ConversaDoEstudio[];
   videosIniciais: VideoJob[];
   saldoInicial: { disponiveis: number; cotaMensal: number };
@@ -46,7 +49,8 @@ export function ChatDeVideo({
   const { avisar, falhar } = useAvisos();
   const [conversas, setConversas] = useState(conversasIniciais);
   const [estado, setEstado] = useState<EstadoDoChat | null>(null);
-  const [pendente, setPendente] = useState<{ id: string; conteudo: string } | null>(null);
+  const [pendente, setPendente] = useState<{ id: string; conteudo: string; previewUrl?: string | null } | null>(null);
+  const [anexo, setAnexo] = useState<{ file: File; previewUrl: string } | null>(null);
   const [pensando, setPensando] = useState(false);
   const [gerando, setGerando] = useState<string | null>(null);
   const [videos, setVideos] = useState(videosIniciais);
@@ -64,16 +68,37 @@ export function ChatDeVideo({
   };
 
   const enviar = async (texto: string, escolha?: { perguntaId: string; pergunta: string }) => {
-    setPendente({ id: `temp-${Date.now()}`, conteudo: texto });
+    const fotoDaVez = escolha ? null : anexo;
+    setPendente({
+      id: `temp-${Date.now()}`,
+      conteudo: texto || "📎 Foto de referência",
+      previewUrl: fotoDaVez?.previewUrl ?? null,
+    });
     setPensando(true);
     try {
+      // Sobe a foto antes de gravar a mensagem — referência quebrada não entra.
+      let referencia: { path: string; url: string } | null = null;
+      if (fotoDaVez) {
+        const up = await enviarFotoDeReferencia(corretorId, fotoDaVez.file);
+        if ("erro" in up) {
+          falhar(up.erro);
+          throw new Error("falhou");
+        }
+        referencia = up;
+      }
+
       const r = await enviarMensagemDoEstudio({
         tipo: "video",
         conversaId: estado?.conversa.id ?? null,
         texto,
         escolha: escolha ?? null,
+        referencia,
       });
       if (!aplicar(r)) throw new Error("falhou");
+      if (fotoDaVez) {
+        URL.revokeObjectURL(fotoDaVez.previewUrl);
+        setAnexo(null);
+      }
     } catch (e) {
       if (!(e instanceof Error && e.message === "falhou")) falhar("Sem conexão. Tente de novo.");
       throw e;
@@ -160,6 +185,19 @@ export function ChatDeVideo({
           }
           onEnviar={enviar}
           onEscolher={escolher}
+          anexo={anexo ? { previewUrl: anexo.previewUrl, nome: anexo.file.name } : null}
+          onAnexar={(file) => {
+            setAnexo((atual) => {
+              if (atual) URL.revokeObjectURL(atual.previewUrl);
+              return { file, previewUrl: URL.createObjectURL(file) };
+            });
+          }}
+          onRemoverAnexo={() => {
+            setAnexo((atual) => {
+              if (atual) URL.revokeObjectURL(atual.previewUrl);
+              return null;
+            });
+          }}
           renderProposta={(m) => (
             <CartaoDeRoteiro
               proposta={m.dados as PropostaDeVideo}

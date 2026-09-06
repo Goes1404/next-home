@@ -15,6 +15,8 @@ import type { Empreendimento } from "@/lib/types";
 import { verRoteiro, type PedidoDeVideo } from "@/app/corretor/(painel)/marketing/video/acoes";
 import {
   ehConfirmacao,
+  referenciaAtiva,
+  referenciasDaConversa,
   type MensagemDoEstudio,
   type PerguntaDoEstudio,
   type PropostaDeArte,
@@ -96,11 +98,21 @@ function tamanhoDoTexto(ideia: string): ChaveTamanho {
   return "quadrado";
 }
 
-function receitaDoTexto(ideia: string): string {
+function receitaDoTexto(ideia: string, temFoto: boolean): string {
   const t = ideia.toLowerCase();
+  /*
+   * Com foto anexada, as receitas que EXIGEM foto destravam — elas existiam
+   * inalcançáveis pelo chat até 06/09/2026, porque nada aqui sabia anexar.
+   * O casamento é por intenção, não pelo rótulo: "mobiliar/decorar o quarto
+   * vazio" é ambientar; "clarear/melhorar a luz" é tratamento.
+   */
+  if (temFoto) {
+    if (/\b(ambientar|mobiliar|decorar|moveis|móveis|vazio)\b/.test(t)) return "ambientar_decorado";
+    if (/\b(melhorar|clarear|iluminar|luz|escura|nublado)\b/.test(t)) return "melhorar_foto";
+  }
   for (const r of RECEITAS) {
-    // Receita que exige foto não pode ser inferida do texto: sem foto ela barra.
-    if (r.precisaFoto) continue;
+    // Sem foto, receita que exige foto não pode ser inferida do texto: barra.
+    if (r.precisaFoto && !temFoto) continue;
     if (t.includes(r.rotulo.toLowerCase().split(" ")[0])) return r.chave;
   }
   return "livre";
@@ -115,8 +127,18 @@ export async function turnoDeArte(params: {
   const respostas = respostasDadas(historicoCompleto);
   const feitas = perguntasJaFeitas(historicoCompleto);
   const jaPropos = historicoCompleto.some((m) => m.papel === "ia" && m.dados?.tipo === "proposta");
+  // A foto anexada muda tudo: as perguntas, as receitas alcançáveis e o
+  // motor por baixo (edição em vez de geração do zero).
+  const referencia = referenciaAtiva(historicoCompleto);
 
   if (!ideia) {
+    if (referencia) {
+      return {
+        tipo: "texto",
+        texto:
+          "Recebi a foto. Me diz o que fazer com ela — \"mobiliar esse quarto vazio\", \"melhorar a luz\", ou \"usar de inspiração para uma arte de feed\".",
+      };
+    }
     return {
       tipo: "texto",
       texto: "Me conta o que você quer criar. Pode ser simples: \"fachada do Eternity ao pôr do sol para o feed\".",
@@ -141,7 +163,7 @@ export async function turnoDeArte(params: {
       ideia,
       objetivo: "peça de marketing de um imóvel",
       formato: TAMANHOS.find((t) => t.chave === tamanho)?.rotulo ?? tamanho,
-      temReferencia: false,
+      temReferencia: Boolean(referencia),
     });
     const proxima = perguntas.find((p) => !feitas.includes(p.texto));
     if (proxima) {
@@ -158,7 +180,7 @@ export async function turnoDeArte(params: {
   // Ajuste em texto depois de uma proposta ("mais claro", "tira a piscina")
   // já entrou na ideia acumulada: a proposta abaixo nasce com ele.
   const tamanho = tamanhoDoTexto(ideia);
-  const receita = receitaDoTexto(ideia);
+  const receita = receitaDoTexto(ideia, Boolean(referencia));
   const pronto = await montarPromptFinal({
     ideia,
     respostas,
@@ -175,11 +197,13 @@ export async function turnoDeArte(params: {
     tamanho,
     qualidade: "low",
     daIa: pronto.daIa,
+    referenciaPath: referencia?.path ?? null,
   };
 
+  const notaDaFoto = referencia ? " Vou partir da foto que você anexou." : "";
   const texto = pronto.daIa
     ? soarHumano(
-        `Montei assim: ${pronto.explicacaoPt} Se estiver bom, toca em "Gerar assim". Se quiser mudar algo, me escreve.`,
+        `Montei assim: ${pronto.explicacaoPt}${notaDaFoto} Se estiver bom, toca em "Gerar assim". Se quiser mudar algo, me escreve.`,
       )
     : "Não consegui melhorar o pedido agora, mas dá para gerar com o que você escreveu — a receita técnica continua valendo por baixo. Quer seguir assim?";
 
@@ -341,7 +365,16 @@ export async function turnoDeVideo(params: {
     };
   }
 
-  const pedido: PedidoDeVideo = { fonte: "catalogo", slug: e.slug, objetivo: e.objetivo, canal: e.canal };
+  // Fotos anexadas na conversa entram na seleção do roteiro, além da galeria
+  // do imóvel — é o clipe do chat servindo ao vídeo (06/09/2026).
+  const fotosExtras = referenciasDaConversa(params.historico).map((f) => f.url);
+  const pedido: PedidoDeVideo = {
+    fonte: "catalogo",
+    slug: e.slug,
+    objetivo: e.objetivo,
+    canal: e.canal,
+    fotosExtras: fotosExtras.map((url) => ({ url })),
+  };
   const r = await verRoteiro(pedido);
   if (!r.roteiro) {
     return { tipo: "texto", texto: r.erro ?? "Não consegui montar o roteiro agora. Tenta de novo em instantes." };
@@ -360,6 +393,7 @@ export async function turnoDeVideo(params: {
     planos: rot.planos.map((p) => `${p.rotuloTipo} — ${p.ajuda}, ${p.duracao}`),
     copy: rot.copy,
     problemas: rot.problemas,
+    fotosExtras,
   };
 
   const texto2 =

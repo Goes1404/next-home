@@ -43,7 +43,18 @@ import type { VideoJob } from "@/lib/video/videoTipos";
 export type FotoEnviada = { url: string };
 
 export type PedidoDeVideo =
-  | { fonte: "catalogo"; slug: string; objetivo: ChaveObjetivo; canal: ChaveCanal }
+  | {
+      fonte: "catalogo";
+      slug: string;
+      objetivo: ChaveObjetivo;
+      canal: ChaveCanal;
+      /**
+       * Fotos anexadas no chat do Estúdio (06/09/2026): somam-se à galeria do
+       * imóvel na seleção de planos. Classificadas por visão como as de
+       * "minhas" — sem o alt sintético todo plano viraria PUSH.
+       */
+      fotosExtras?: FotoEnviada[];
+    }
   | {
       fonte: "minhas";
       fotos: FotoEnviada[];
@@ -107,8 +118,13 @@ async function preparar(pedido: PedidoDeVideo) {
       canal: pedido.canal,
       publico: "familia",
     });
+    // As anexadas vêm DEPOIS da galeria: a régua de seleção do roteiro
+    // continua mandando, e a extra entra quando ganha o lugar.
+    const extras = (pedido.fotosExtras ?? []).slice(0, 8);
+    const fotosExtras =
+      extras.length > 0 ? comoMidias(extras, await classificarFotos(extras.map((f) => f.url))) : [];
     return {
-      fotos: imovel.galeria,
+      fotos: [...imovel.galeria, ...fotosExtras],
       copy: {
         titulo: imovel.nome,
         apoio: `${imovel.bairro}, ${imovel.cidade}`,

@@ -47,7 +47,7 @@ export default async function PaginaCriarImagem() {
           A geração de imagens ainda não está configurada neste ambiente.
         </p>
       ) : (
-        <ChatDeArte conversasIniciais={conversas} tetoInicial={teto} galeriaInicial={imagens} />
+        <ChatDeArte corretorId={corretor.id} conversasIniciais={conversas} tetoInicial={teto} galeriaInicial={imagens} />
       )}
     </div>
   );
