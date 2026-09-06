@@ -70,7 +70,9 @@ export const GRUPOS_NAV: GrupoNav[] = [
   {
     titulo: "Trabalho",
     itens: [
-      { href: "/corretor", label: "Agora", icone: IconeAgora },
+      // "Agora" era o nome interno da fila; o rótulo que a pessoa procura na
+      // barra do polegar é o da casa (pedido de 06/09/2026).
+      { href: "/corretor", label: "Home", icone: IconeAgora },
       {
         /*
          * Pessoas absorve Leads, e é a mudança de fundo desta navegação.
@@ -89,7 +91,13 @@ export const GRUPOS_NAV: GrupoNav[] = [
          * de `AbasLeads` ao mesmo tempo — o pai duplo mais visível do painel.
          */
         href: "/corretor/pessoas",
-        label: "Pessoas",
+        /*
+         * O rótulo é "Leads" (06/09/2026, decisão do usuário): é a palavra
+         * que a equipe usa entre si. A ROTA continua `/corretor/pessoas` e a
+         * seção continua sendo a mesma carteira — só o nome no menu mudou,
+         * então nada salvo quebra.
+         */
+        label: "Leads",
         icone: IconePessoas,
         /*
          * A página de Pessoas É um subtópico — "Conversas", a lista que parece

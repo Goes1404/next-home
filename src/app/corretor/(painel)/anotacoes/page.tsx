@@ -134,11 +134,15 @@ export default async function AnotacoesPage({
   return (
     <div>
       <CabecalhoDeTela
-        secao="Pessoas"
+        secao="Leads"
         titulo="Anotações"
         descricao="Seu bloco de notas: vincule a um lead, mande para um colega, e receba o lembrete no WhatsApp e na fila do Início."
       />
-      <AbasLeads ativa="/corretor/anotacoes" />
+      {/* Mesmo respiro da Lista: a barra de abas não encosta no cartão de
+          "Anotações". */}
+      <div className="mt-6">
+        <AbasLeads ativa="/corretor/anotacoes" />
+      </div>
       <AnotacoesClient
         anotacoes={anotacoes}
         equipe={equipe}

@@ -15,7 +15,7 @@ export default async function ImportarPage() {
 
   return (
     <div>
-      <CabecalhoDeTela secao="Pessoas" titulo="Importar leads" descricao={<>Puxe leads do seu <strong>Gmail</strong> (Zap Imóveis, VivaReal, OLX, Imovelweb), importe
+      <CabecalhoDeTela secao="Leads" titulo="Importar leads" descricao={<>Puxe leads do seu <strong>Gmail</strong> (Zap Imóveis, VivaReal, OLX, Imovelweb), importe
         uma planilha ou PDF, ou cadastre um contato na hora.</>} />
 
       <div className="mt-5">

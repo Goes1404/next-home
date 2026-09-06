@@ -11,6 +11,7 @@ import {
 import { getFilaDeTrabalho } from "@/lib/crm/filaDeTrabalho";
 import { getMinhasTarefas } from "@/lib/crm/dadosLead";
 import { site } from "@/lib/site";
+import { primeiroNome } from "@/lib/format";
 import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
 import { HeroInicio } from "./_componentes/HeroInicio";
 import { cn } from "@/lib/utils";
@@ -64,7 +65,13 @@ export default async function PainelInicio() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
-  const primeiroNome = corretor.nome.split(" ")[0];
+  /*
+   * O nome de quem abriu o painel, não o da casa. O cadastro vem como
+   * "Cristal - Bruna" e o `split(" ")[0]` de antes saudava "Boa tarde,
+   * Cristal" — a imobiliária. `primeiroNome` mora em `format.ts` junto de
+   * `iniciais()`, que já tratava esse mesmo hífen.
+   */
+  const nomeNaSaudacao = primeiroNome(corretor.nome);
 
   return (
     <div className="space-y-8">
@@ -82,7 +89,7 @@ export default async function PainelInicio() {
         resto da tela.
       */}
       <Suspense fallback={<EsqueletoCartao linhas={3} />}>
-        <BlocoDoHero nome={primeiroNome} />
+        <BlocoDoHero nome={nomeNaSaudacao} />
       </Suspense>
 
       {/*
