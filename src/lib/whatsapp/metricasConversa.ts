@@ -135,7 +135,7 @@ export function perguntasDe(texto: string): string[] {
  * nenhum: se três turnos passam sem nenhum assunto novo e sem convite, ela
  * está girando.
  */
-const ASSUNTOS: { nome: string; termos: RegExp }[] = [
+export const ASSUNTOS: { nome: string; termos: RegExp }[] = [
   { nome: "regiao", termos: /\b(regiao|bairro|cidade|onde|barueri|alphaville|localiza)/ },
   { nome: "estagio", termos: /\b(pronto para morar|na planta|lancamento|entrega|obra|construcao)/ },
   { nome: "tipologia", termos: /\b(dormitorio|quarto|suite|metragem|m2|metros|vaga|planta)/ },
@@ -144,7 +144,7 @@ const ASSUNTOS: { nome: string; termos: RegExp }[] = [
   { nome: "perfil", termos: /\b(filho|crianca|pet|familia|morar|investir|investimento)/ },
 ];
 
-function assuntosDe(texto: string): string[] {
+export function assuntosDe(texto: string): string[] {
   const n = normalizar(texto);
   return ASSUNTOS.filter((a) => a.termos.test(n)).map((a) => a.nome);
 }

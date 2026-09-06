@@ -61,7 +61,7 @@ const IMOVEL_MOCK: Empreendimento = {
 };
 
 describe("Agente IA — prompt com RAG do catálogo", () => {
-  it("injeta corretor, assistente e imóveis reais — mas NUNCA o preço", () => {
+  it("injeta corretor, assistente, imóveis reais — e o PISO, só o piso", () => {
     const contexto: ContextoAtendimento = {
       nomeCorretor: "Carlos Silva",
       creciCorretor: "123456-F",
@@ -80,16 +80,27 @@ describe("Agente IA — prompt com RAG do catálogo", () => {
     expect(prompt).toContain("Canvas Alphaville");
 
     /*
-     * O preço NÃO entra no prompt, e isso é a primeira linha de defesa da
-     * regra "a IA não fala valores": o que o modelo não vê, ele não
-     * repete. A segunda é `semValores.ts`, que limpa o texto de saída.
+     * MUDOU EM 01/09/2026 (v28). A regra era "o preço não entra no prompt —
+     * o que o modelo não vê, ele não repete", e ela custava caro: sem
+     * nenhum número para dar, a Sofia não tinha jogada contra quem insiste
+     * em valor, e `avancou` ficou 0 em todas as personas do eval de
+     * conversa, da v25 à v27.
+     *
+     * Agora o PISO entra, e só ele. O que o modelo continua sem ver — e
+     * portanto não repete — é valor de unidade, entrada, parcela e
+     * desconto. `semValores.ts` segue como segunda linha, validando
+     * qualquer cifra da saída contra os pisos do próprio catálogo.
+     *
+     * Este teste guardava a regra ANTIGA. Reescrevê-lo é o passo que este
+     * projeto já esqueceu cinco vezes ao mudar regra de negócio: o critério
+     * que media a regra velha passa a reprovar o comportamento certo.
      */
-    expect(prompt).not.toContain("1.450.000");
+    expect(prompt).toContain("A partir de:");
+    expect(prompt).toMatch(/R\$\s?1\.450\.000/);
+
+    // O piso é o ÚNICO número de dinheiro do imóvel no prompt: a ficha não
+    // ganhou condomínio, IPTU nem preço de tipologia junto.
     expect(prompt).not.toContain("Preço a partir");
-    // O `R$` que sobra no prompt é o da própria REGRA ("nem R$ 850.000"),
-    // que existe para o modelo reconhecer o formato proibido. O que não
-    // pode existir é preço do catálogo.
-    expect(prompt).not.toMatch(/R\$\s?1\.450/);
 
     // Em compensação, ele precisa ter o que permite responder de verdade:
     // o slug (para pedir mídia) e o link da página do imóvel.
@@ -495,5 +506,34 @@ describe("Transcrição de áudio: conteúdo de verdade", () => {
   it("fala curta de verdade passa", () => {
     expect(transcricaoTemConteudo("oi")).toBe(true);
     expect(transcricaoTemConteudo("Quero visitar sábado de manhã.")).toBe(true);
+  });
+});
+
+describe("marcador de corte não vaza para o cliente", () => {
+  /*
+   * Visto no eval da v25 (`insiste-no-desconto`, turno 10): a IA embrulhou
+   * a resposta inteira em `---` e o cliente recebeu os traços na tela. A
+   * divisão devolvia UM pedaço limpo, e a condição antiga (`> 1`)
+   * descartava essa limpeza e mandava o texto cru.
+   */
+  it("tira os traços quando a IA embrulha a resposta inteira", () => {
+    expect(dividirEmMensagens("--- Para ajudar, qual região você prefere? ---")).toEqual([
+      "Para ajudar, qual região você prefere?",
+    ]);
+  });
+
+  it("tira os traços quando eles só abrem", () => {
+    expect(dividirEmMensagens("--- Oi, tudo bem?")).toEqual(["Oi, tudo bem?"]);
+  });
+
+  it("texto sem marcador nenhum continua inteiro", () => {
+    expect(dividirEmMensagens("Oi, tudo bem?")).toEqual(["Oi, tudo bem?"]);
+  });
+
+  it("o corte marcado no meio continua virando dois balões", () => {
+    expect(dividirEmMensagens("Primeira ideia.\n---\nSegunda ideia.")).toEqual([
+      "Primeira ideia.",
+      "Segunda ideia.",
+    ]);
   });
 });

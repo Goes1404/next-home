@@ -32,7 +32,7 @@ export function ImportarClient({
       onClick={() => setOrigem(valor)}
       aria-pressed={origem === valor}
       className={`min-h-[44px] flex-1 rounded-xl px-4 text-fluid-xs font-bold transition-colors ${
-        origem === valor ? "bg-acento text-white" : "bg-campo text-apoio"
+        origem === valor ? "bg-acento text-sobre-cor" : "bg-campo text-apoio"
       }`}
     >
       {rotulo}

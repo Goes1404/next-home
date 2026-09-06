@@ -324,7 +324,7 @@ export function PainelConexao({
       </div>
 
       {metodo === "codigo" && (
-        <div className="border-linha bg-superficie space-y-2 rounded-2xl border p-4">
+        <div className="cartao space-y-2 p-4">
           <label className="text-fluid-xs text-apoio block" htmlFor="tel-pareamento">
             Número do WhatsApp que você quer conectar
           </label>
@@ -341,7 +341,7 @@ export function PainelConexao({
             <button
               onClick={() => parear(true)}
               disabled={conectando}
-              className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl px-4 font-medium text-white transition-colors disabled:opacity-60"
+              className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl px-4 font-medium text-sobre-cor transition-colors disabled:opacity-60"
             >
               {conectando ? "Gerando…" : "Gerar código"}
               {!conectando && <ArrowRight className="h-4 w-4" />}

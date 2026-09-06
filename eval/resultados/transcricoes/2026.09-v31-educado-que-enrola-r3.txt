@@ -1,0 +1,70 @@
+educado-que-enrola · rodada 3 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: achei lindo o empreendimento de vcs no instagram
+[1] Sofia:   Que bom que gostou! Em qual região você procura o imóvel? Assim te mostro opções que combinam com o que você quer.
+
+[2] Cliente: ah, to pensando na zona sul
+              mas depois te falo
+[2] Sofia:   Zona Sul não é onde atuo, mas me conta o que te agradou lá — localização, tamanho, estilo?
+Posso indicar algo parecido aqui em Alphaville ou Barueri.
+
+[3] Cliente: não sei sobre isso, depois te falo
+[3] Sofia:   Entendo, sem pressa. Quando quiser, me conta o que é prioridade para você no imóvel.
+
+[4] Cliente: ah, legal, vou ver aqui
+              mas não sei ainda o que quero
+[4] Sofia:   Sem pressa, pode ir pensando no que é essencial para você no imóvel.
+Quando quiser, me conta que eu te ajudo a filtrar as melhores opções.
+
+[5] Cliente: obrigado pela ajuda
+              mas vou pensar mais
+[5] Sofia:   Fico à disposição para quando quiser retomar a conversa.
+Sem pressa, pensar com calma é essencial.
+Quando decidir, me chama que te ajudo a encontrar o imóvel ideal.
+
+[6] Cliente: obrigado, depois te falo
+              mas não sei o que quero ainda
+[6] Sofia:   Tranquilo, fico aqui para quando quiser retomar.
+Pensar com calma é o melhor caminho.
+
+[7] Cliente: quais opções vocês têm?
+              tem alguma coisa nova?
+[7] Sofia:   Trabalho com imóveis em Alphaville e Barueri, com opções prontas e na planta. Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[8] Cliente: não consigo abrir o link
+              pode me mandar algumas fotos?
+[8] Sofia:   Te mandei as fotos do More Aldeia de Bareuri e do On The Park Alphaville aqui embaixo
+São opções em Barueri e Alphaville, com bom padrão e localização
+Dá uma olhada e me diz o que achou
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-1-big-1fed6dfac329a4107d85c4e67b48f0b5.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+
+[9] Cliente: adorei as fotos!
+              mas vou pensar mais.
+[9] Sofia:   Que bom que gostou das fotos!
+Fique à vontade para pensar com calma.
+Quando quiser, posso te mostrar mais detalhes ou agendar uma visita para conhecer pessoalmente.
+
+[10] Cliente: legal, depois te falo
+              mas não sei ainda o que quero
+[10] Sofia:   Sem pressa, pensar com calma é essencial para uma boa escolha.
+Quando quiser, me chama que te ajudo a definir o que faz sentido para você.
+
+[11] Cliente: obrigado pelas fotos!
+              mas vou pensar mais.
+[11] Sofia:   Fico feliz que tenha gostado das fotos!
+Sem pressa, pensar com calma é o melhor caminho.
+Quando quiser, estou aqui para ajudar no que precisar.
+
+[12] Cliente: quais são as opções na planta?
+              tem alguma coisa nova pra ver?
+[12] Sofia:   Temos o Terra Alta e o More na Aldeia de Barueri, ambos em construção e com padrão moderno.
+Dá uma olhada e me diz o que te agrada.
+Te mandei as fotos do More na Aldeia de Barueri e do Terra Alta para você conhecer melhor.
+Olha o link da página, tem tudo lá: https://next-home-drab.vercel.app/empreendimentos/more-na-aldeia-de-barueri-mac238
+https://next-home-drab.vercel.app/empreendimentos/terra-alta-ta141
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-1-big-fa9d826751f7a7f2f548546f1fa3985a.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-2-big-5d61ecbe0596294db5e89af22bc6814c.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-3-big-b113766a6aef5b7e10ea66673cd2a78c.jpg

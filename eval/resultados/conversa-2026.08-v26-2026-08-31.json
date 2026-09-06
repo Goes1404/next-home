@@ -1,0 +1,177 @@
+{
+  "promptVersao": "2026.08-v26",
+  "data": "2026-08-31",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "openai",
+  "clienteIndependente": false,
+  "tetoDeTurnos": 12,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "insiste-no-desconto",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 4,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso te mostrar sábado às 10h ou às 11h?",
+          "Posso te mostrar sábado às 10h ou às 11h, qual prefere?",
+          "Posso te mostrar sábado às 10h ou às 11h, qual prefere?"
+        ],
+        "perguntasReaparecidas": [
+          "mas qual é o valor?",
+          "desconto pra visita?",
+          "mas qual é o preço?",
+          "qual o valor exato?",
+          "qual o valor da unidade?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 149,
+        "maiorMensagem": 230,
+        "reprovacoes": [
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 5 pergunta(s) — ela não respondeu",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem qualificação efetiva. A assistente foi consistente, mas não avançou nem extraiu informações relevantes do cliente.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "educado-que-enrola",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "tem mais fotos do Vila?",
+          "tem mais fotos do Vila?",
+          "tem mais fotos?",
+          "tem mais fotos?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 7,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "estagio",
+          "tipologia",
+          "renda"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 188,
+        "maiorMensagem": 284,
+        "reprovacoes": [
+          "o cliente teve de repetir 4 pergunta(s) — ela não respondeu",
+          "7 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A conversa foi consistente, qualificou parcialmente e convidou para visita. Faltou aprofundar tipologia e renda, mas não comprometeu o atendimento.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "confuso-entre-dois",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "mas e o preço do more aldeia?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 10,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "visita",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 195,
+        "maiorMensagem": 329,
+        "reprovacoes": [
+          "o cliente teve de repetir 1 pergunta(s) — ela não respondeu",
+          "10 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem qualificação ou avanço real. A assistente foi consistente, mas não conduziu nem qualificou o cliente.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "familia-tres-dorm",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "mas e o valor específico?",
+          "mas e o valor específico?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 10,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia",
+          "visita",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 155,
+        "maiorMensagem": 296,
+        "reprovacoes": [
+          "o cliente teve de repetir 2 pergunta(s) — ela não respondeu",
+          "10 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem avanço real. Faltou qualificação e insistiu no convite sem abordar outras necessidades do cliente.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

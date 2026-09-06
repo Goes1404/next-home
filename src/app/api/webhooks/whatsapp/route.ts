@@ -2,6 +2,8 @@ import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
+import { conversaEhAtendimento } from "@/lib/whatsapp/privacidadeDaConversa";
+import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
@@ -14,8 +16,10 @@ import {
   agendarVisitaLead,
   aplicarAckDeEntrega,
   avancarLeadParaPrimeiroContato,
+  registrarImovelDeInteresse,
   registrarRespostaDoLead,
   botDeveResponder,
+  motivoDoSilencio,
   buscarDossieAtual,
   cancelarFollowupsPendentes,
   gravarMensagem,
@@ -288,6 +292,10 @@ export async function POST(req: NextRequest) {
     //      desliga. A regra mora em `decidirPorFalaDoCorretor`.
     if (fromMe) {
       await gravarMensagem({
+        // Espelho do celular do corretor: sem NENHUMA das três portas de
+        // autorização, guarda a linha e não o texto
+        // (`privacidadeDaConversa.ts`).
+        conversaLiberada: conversaEhAtendimento(conversa),
         conversaId: conversa.id,
         remetente: "corretor",
         conteudo: text,
@@ -332,6 +340,7 @@ export async function POST(req: NextRequest) {
     }
 
     const gravacao = await gravarMensagem({
+      conversaLiberada: conversaEhAtendimento(conversa),
       conversaId: conversa.id,
       remetente: "cliente",
       conteudo: text,
@@ -450,18 +459,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, action: "audio_nao_transcrito", sender });
     }
 
-    if (!botDeveResponder(conversa)) {
-      // Silêncio também é dado: sem registrar, "o bot respondeu pouco" e
-      // "o bot está quebrado" são indistinguíveis no painel.
+    const silencio = motivoDoSilencio(conversa);
+    if (silencio) {
+      /*
+       * Silêncio também é dado: sem registrar, "o bot respondeu pouco" e "o
+       * bot está quebrado" são indistinguíveis no painel.
+       *
+       * E o MOTIVO é o dado que importa. Até 03/09/2026 as três causas
+       * saíam daqui carimbadas como `pausada_por_humano`, e a medição de
+       * produção mostrou o estrago: 335 mensagens puladas em três dias, a
+       * pausa apontada como culpada em todas, e culpada de nenhuma (ver
+       * `motivoDoSilencio`). Cada causa tem conserto diferente — desligado
+       * é decisão do corretor, pausa é o humano atendendo, e trava é o
+       * cliente esperando uma palavra que talvez ninguém vá digitar.
+       */
       await registrarInteracao({
         conversaId: conversa.id,
         corretorId: instancia.corretorId,
         origem: "webhook",
         eTeste: conversa.eTeste,
         promptVersao: PROMPT_VERSAO,
-        acao: "pausada_por_humano",
+        acao: silencio,
       });
-      return NextResponse.json({ ok: true, action: "bot_pausado_nesta_conversa", sender });
+      return NextResponse.json({ ok: true, action: "bot_calado_nesta_conversa", motivo: silencio, sender });
     }
 
     /*
@@ -565,6 +585,18 @@ export async function POST(req: NextRequest) {
       historico,
       dossie: dossieAnterior,
       fewShot: { corretorId: instancia.corretorId, conversaAtualId: conversa.id },
+      /*
+       * Os horários que EXISTEM na agenda do corretor (0073). Até aqui a
+       * Sofia oferecia horário de cabeça: o eval de 31/08 mediu os mesmos
+       * dois inventados quatro vezes seguidas, e o funil mostra 6 visitas
+       * propostas para 1 marcada. Vazio para quem não configurou agenda —
+       * e aí o prompt segue com o calendário genérico de sempre.
+       *
+       * Vai CRU: quem filtra o que já foi oferecido nesta conversa é o
+       * turno, que é onde o histórico está. Montar o bloco aqui faria a
+       * mesma conta em dois lugares.
+       */
+      horariosReais: await horariosDeVisitaSeguros(instancia.corretorId),
     });
 
     const respostaIA = turno.resposta;
@@ -686,6 +718,10 @@ export async function POST(req: NextRequest) {
      * vínculo custa uma avaliação; perder a mensagem custa o contexto.
      */
     const mensagemDoBot = await gravarMensagem({
+      // Se a IA respondeu, a conversa é atendimento por definição — mas o
+      // valor vem da MESMA função que decide isso, não de um `true`
+      // cravado: um dia a condição muda e o `true` continuaria mentindo.
+      conversaLiberada: conversaEhAtendimento(conversa),
       conversaId: conversa.id,
       remetente: "bot",
       conteudo: textoParaEnviar,
@@ -856,6 +892,19 @@ export async function POST(req: NextRequest) {
     // sozinho (só sai de "novo"; nunca volta; idempotente).
     if (envio.enviado && conversa.leadId) {
       await avancarLeadParaPrimeiroContato(conversa.leadId);
+
+      /*
+       * O imóvel de que esta conversa trata (0083). O foco já era calculado
+       * a cada mensagem e descartado; agora a ficha do CRM mostra do que o
+       * cliente está falando, que é a informação mais básica para o
+       * corretor retomar o atendimento.
+       */
+      if (turno.foco) {
+        await registrarImovelDeInteresse(
+          conversa.leadId,
+          catalogo.find((e) => e.slug === turno.foco!.slug)?.id ?? null,
+        );
+      }
     }
 
     return NextResponse.json({

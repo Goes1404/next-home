@@ -33,6 +33,17 @@ export function instrucaoDoFollowup(params: {
   dossie?: Pick<DossieClienteIA, "regiaoInteresse" | "dormitoriosMin"> | null;
   /** Data/hora da visita, já formatada em São Paulo (só para lembrete). */
   visitaFormatada?: string;
+  /**
+   * O cliente NUNCA falou nesta conversa — recebeu um disparo e não
+   * respondeu. É o caso que passou a existir em 31/08, quando a campanha
+   * finalmente começou a agendar follow-up (antes, os 87 disparos entregues
+   * não geravam nenhum).
+   *
+   * Precisa de instrução própria porque a linguagem de retomada MENTE aqui:
+   * "voltando ao que conversamos" para quem nunca disse uma palavra é a
+   * primeira coisa que entrega um robô — não houve conversa nenhuma.
+   */
+  clienteNuncaFalou?: boolean;
 }): string {
   if (params.tipo === "lembrete_visita") {
     return (
@@ -40,6 +51,30 @@ export function instrucaoDoFollowup(params: {
       "Lembre com simpatia, em UMA frase curta, e pergunte se está confirmado — sem tom de cobrança. " +
       "Se fizer sentido, inclua um detalhe útil (ponto de encontro, o que ele vai conhecer). " +
       "NÃO reofereça outros imóveis nem reabra qualificação: a mensagem é só sobre a visita."
+    );
+  }
+
+  /*
+   * Quem recebeu disparo e não respondeu não é "cliente que sumiu": é
+   * alguém que ainda não entrou na conversa. Tratar os dois igual produz a
+   * frase mais falsa possível — retomar algo que nunca aconteceu.
+   */
+  if (params.clienteNuncaFalou) {
+    if (params.tentativa >= 2) {
+      return (
+        "Este cliente recebeu DUAS mensagens nossas e nunca respondeu. " +
+        "Mande UMA linha só, leve, com uma porta aberta — sem cobrar resposta, " +
+        "sem perguntar se recebeu, e sem dizer que é a última tentativa. " +
+        "NUNCA diga \"retomando\", \"voltando ao nosso papo\" ou equivalente: não houve conversa."
+      );
+    }
+    return (
+      "Este cliente recebeu UMA mensagem nossa sobre um imóvel e não respondeu — " +
+      "ele ainda não falou nada nesta conversa. " +
+      "Mande uma mensagem curta acrescentando UMA informação concreta e nova sobre o imóvel " +
+      "que foi oferecido (algo que valha o segundo toque), e termine com uma pergunta fácil de responder. " +
+      "NUNCA diga \"retomando nossa conversa\", \"como falamos\" ou equivalente: não houve conversa, " +
+      "e fingir que houve é a forma mais rápida de entregar que é um robô."
     );
   }
 

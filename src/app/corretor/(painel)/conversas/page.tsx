@@ -4,6 +4,7 @@ import Link from "next/link";
 import { garantirEventosWebhook } from "@/lib/whatsapp/provider";
 import { ConversasClient, type ConversaResumo } from "./ConversasClient";
 import { RevisaoRespostas, type ItemRevisao } from "./RevisaoRespostas";
+import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { ROTULO_MODO } from "@/lib/whatsapp/modoBot";
@@ -15,7 +16,15 @@ export const metadata: Metadata = { title: "Conversas do WhatsApp" };
 
 export const dynamic = "force-dynamic";
 
-export default async function ConversasPage() {
+export default async function ConversasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  // `?c=<id>` chega da lista de Pessoas, que é a porta única do painel.
+  const bruto = (await searchParams).c;
+  const conversaInicial = (Array.isArray(bruto) ? bruto[0] : bruto) ?? null;
+
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
@@ -173,16 +182,18 @@ export default async function ConversasPage() {
 
   return (
     <div>
-      <h1 className="font-display text-titulo text-fluid-2xl">WhatsApp</h1>
-      <p className="text-fluid-sm text-apoio mt-2 max-w-2xl">
-        Quem está falando com o seu número e se a IA está atendendo. Sempre que você responde pelo
-        celular, ela se cala por 24 horas naquela conversa — aqui você devolve a palavra a ela
-        antes disso.
-      </p>
+      {/*
+        Chamava-se "WhatsApp", igual à tela de campanhas: o título não dizia
+        em qual das duas o corretor estava. Agora nomeia o que se faz aqui.
+      */}
+      <CabecalhoDeTela
+        titulo="Conversas"
+        descricao="Quem está falando com o seu número e se a IA está atendendo."
+      />
 
       <div className="mt-5">
         <AbasWhatsapp
-          ativa="conversas"
+          ativa="/corretor/conversas"
           semRevisao={itensRevisao.length}
           conectado={instancia?.status_conexao === "conectado"}
         />
@@ -190,7 +201,7 @@ export default async function ConversasPage() {
 
       {modo && (
         <p className="text-fluid-sm text-apoio mt-4">
-          Modo do seu número: <span className="text-titulo font-medium">{ROTULO_MODO[modo]}</span>{" "}
+          Quando a IA responde por você: <span className="text-titulo font-medium">{ROTULO_MODO[modo]}</span>{" "}
           <Link
             href="/corretor/whatsapp"
             className="text-acento-suave underline-offset-4 hover:underline"
@@ -202,7 +213,11 @@ export default async function ConversasPage() {
 
       <RevisaoRespostas itens={itensRevisao} />
 
-      <ConversasClient conversas={lista} podeEnviar={instancia?.status_conexao === "conectado"} />
+      <ConversasClient
+        conversas={lista}
+        podeEnviar={instancia?.status_conexao === "conectado"}
+        conversaInicial={conversaInicial}
+      />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
+import type { FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { ArrowLeft, ArrowRight, Rocket, Shield, Sparkles } from "lucide-react";
 import type { Empreendimento } from "@/lib/types";
 import {
@@ -8,7 +10,6 @@ import {
   gerarPreviewCampanha,
   listarLeadsElegiveis,
   type CampanhaListada,
-  type FiltroLeadsCampanha,
   type LeadElegivel,
 } from "../acoes";
 
@@ -32,6 +33,12 @@ const PUBLICOS: { valor: FiltroLeadsCampanha; titulo: string; descricao: string 
     valor: "novos_sem_contato",
     titulo: "Quem acabou de chegar",
     descricao: "Leads na etapa “Novo lead”, que ainda não receberam seu primeiro contato.",
+  },
+  {
+    valor: "sem_resposta",
+    titulo: "Abordado e sem resposta",
+    descricao:
+      "Quem já recebeu mensagem nossa e não respondeu — até 2 tentativas. Quem passou disso fica de fora: a terceira não converte e cansa o número.",
   },
   {
     valor: "todos",
@@ -67,11 +74,18 @@ export function NovaCampanha({
   const [publico, setPublico] = useState<FiltroLeadsCampanha>("parados_15d");
   const [imovelSlug, setImovelSlug] = useState(empreendimentos[0]?.slug ?? "");
   const [mensagemBase, setMensagemBase] = useState(MENSAGEM_PADRAO);
+  /*
+   * Segunda versão do teste A/B (0084). Vazia = campanha de uma versão só,
+   * que é como tudo funcionava antes. Existe porque 102 disparos entregues
+   * produziram UMA resposta, e quem decide isso é a abertura.
+   */
+  const [mensagemB, setMensagemB] = useState("");
+  const [testandoDuas, setTestandoDuas] = useState(false);
   const [titulo, setTitulo] = useState("");
   const [exemplos, setExemplos] = useState<string[]>([]);
   const [gerando, setGerando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
   const [criando, iniciarCriacao] = useTransition();
+  const { falhar } = useAvisos();
 
   // ---- Seleção manual ("Escolher um por um") -------------------------
   // A carteira elegível chega UMA vez, quando a opção é escolhida (~100
@@ -119,7 +133,6 @@ export function NovaCampanha({
     : publicoEscolhido.titulo;
 
   function verExemplos() {
-    setErro(null);
     setGerando(true);
     iniciarCriacao(async () => {
       const resultado = await gerarPreviewCampanha({
@@ -131,7 +144,7 @@ export function NovaCampanha({
       setGerando(false);
 
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         setExemplos([]);
         return;
       }
@@ -145,8 +158,6 @@ export function NovaCampanha({
     const nomeCampanha =
       titulo.trim() ||
       `${rotuloPublico} · ${nomeImovel} · ${new Date().toLocaleDateString("pt-BR")}`;
-
-    setErro(null);
     iniciarCriacao(async () => {
       const resultado = await criarCampanha({
         titulo: nomeCampanha,
@@ -154,11 +165,12 @@ export function NovaCampanha({
         empreendimentoNome: nomeImovel,
         filtro: publico,
         mensagemBase,
+        mensagemBaseB: testandoDuas ? mensagemB : null,
         leadIds,
       });
 
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
 
@@ -171,6 +183,8 @@ export function NovaCampanha({
           totalEnviados: 0,
           totalRespondidos: 0,
           status: "em_andamento",
+        // Campanha recém-criada não tem envio nenhum, então não há placar.
+        testeAB: null,
           criadoEm: new Date().toISOString(),
         },
         `Lista de transmissão criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens já começaram a sair sozinhas — não precisa clicar em mais nada.`,
@@ -186,7 +200,7 @@ export function NovaCampanha({
   }
 
   return (
-    <section className="border-linha bg-superficie rounded-2xl border p-5 sm:p-6">
+    <section className="cartao p-5 sm:p-6">
       <div className="flex items-baseline gap-2.5">
         <span className="text-tenue text-[11px] font-medium tracking-[0.14em] uppercase tabular-nums">
           Passo {passo} de 3
@@ -301,8 +315,8 @@ export function NovaCampanha({
             className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento w-full rounded-xl border p-3.5 focus:outline-none"
           />
           <p className="text-fluid-xs text-tenue">
-            <code className="bg-chip rounded px-1">{"{nome}"}</code> vira o nome da pessoa e{" "}
-            <code className="bg-chip rounded px-1">{"{imovel}"}</code> vira {nomeImovel}.
+            <code className="bg-vidro-forte rounded px-1">{"{nome}"}</code> vira o nome da pessoa e{" "}
+            <code className="bg-vidro-forte rounded px-1">{"{imovel}"}</code> vira {nomeImovel}.
           </p>
 
           <button
@@ -322,6 +336,49 @@ export function NovaCampanha({
                   “{msg}”
                 </p>
               ))}
+            </div>
+          )}
+
+          {/*
+            Testar duas aberturas. Fica atrás de um clique porque o caminho
+            normal é uma mensagem só — e porque a comparação só vale a pena
+            com lista grande o bastante para dar 30 envios de cada lado.
+          */}
+          {!testandoDuas ? (
+            <button
+              type="button"
+              onClick={() => setTestandoDuas(true)}
+              className="text-fluid-xs text-apoio hover:text-titulo min-h-11 underline underline-offset-2 transition-colors"
+            >
+              + Testar duas aberturas e ver qual responde mais
+            </button>
+          ) : (
+            <div className="border-linha space-y-2 rounded-xl border p-4">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-fluid-sm text-titulo font-medium">Versão B</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTestandoDuas(false);
+                    setMensagemB("");
+                  }}
+                  className="text-fluid-xs text-apoio hover:text-titulo min-h-9 transition-colors"
+                >
+                  remover
+                </button>
+              </div>
+              <p className="text-fluid-xs text-apoio">
+                Metade da lista recebe cada versão, alternadas. Depois de 30 envios de cada
+                lado, o histórico mostra qual teve mais resposta.
+              </p>
+              <textarea
+                rows={4}
+                value={mensagemB}
+                onChange={(e) => setMensagemB(e.target.value)}
+                placeholder="Escreva a segunda abertura — mude uma coisa só, senão não dá para saber o que funcionou."
+                aria-label="Segunda versão da mensagem"
+                className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento placeholder:text-tenue w-full rounded-xl border p-3.5 focus:outline-none"
+              />
             </div>
           )}
         </div>
@@ -367,12 +424,6 @@ export function NovaCampanha({
         </div>
       )}
 
-      {erro && (
-        <p role="alert" className="text-fluid-xs text-alerta mt-3">
-          {erro}
-        </p>
-      )}
-
       {/* Navegação entre os passos, sempre no mesmo lugar. */}
       <div className="border-linha mt-5 flex items-center justify-between gap-3 border-t pt-4">
         {passo > 1 ? (
@@ -394,13 +445,12 @@ export function NovaCampanha({
               // No modo manual, seguir sem ninguém marcado geraria uma
               // campanha vazia lá no fim — melhor barrar aqui, com contexto.
               if (passo === 1 && selecaoManual && escolhidos.size === 0) {
-                setErro("Marque ao menos um lead antes de continuar.");
+                falhar("Marque ao menos um lead antes de continuar.");
                 return;
               }
-              setErro(null);
               setPasso((p) => (p === 1 ? 2 : 3));
             }}
-            className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium text-white transition-colors"
+            className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium text-sobre-cor transition-colors"
           >
             Continuar <ArrowRight className="h-4 w-4" />
           </button>
@@ -409,7 +459,7 @@ export function NovaCampanha({
             type="button"
             onClick={disparar}
             disabled={criando}
-            className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium text-white transition-colors disabled:opacity-60"
+            className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium text-sobre-cor transition-colors disabled:opacity-60"
           >
             <Rocket className="h-4 w-4" />
             {criando ? "Criando…" : "Começar a enviar"}

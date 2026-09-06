@@ -1,0 +1,33 @@
+muda-a-restricao · rodada 2 · ia_indisponivel · 5 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: boa tarde! procuro apartamento de 4 dormitórios
+[1] Sofia:   Não tenho apartamento de 4 dormitórios no catálogo.
+O maior são 3 dormitórios, como no Viva RSF Vila do Conde, em Barueri. Quer que eu te mostre?
+
+[2] Cliente: não quero 3, tem algo menor?
+              algo pronto pra morar.
+[2] Sofia:   O Viva RSF Vila do Conde tem 3 dormitórios,
+mas pronto para morar temos o More Aldeia de Barueri, com 2 dormitórios e 64m².
+Quer que eu te envie as fotos?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-1-big-1fed6dfac329a4107d85c4e67b48f0b5.jpeg
+
+[3] Cliente: tem foto?
+              preço também?
+[3] Sofia:   Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-1-big-fa9d826751f7a7f2f548546f1fa3985a.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-2-big-5d61ecbe0596294db5e89af22bc6814c.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-3-big-b113766a6aef5b7e10ea66673cd2a78c.jpg
+
+[4] Cliente: quero saber o preço
+              quais as opções de pagamento?
+[4] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Sobre o pagamento, as condições variam conforme a unidade e forma de pagamento, e isso fechamos na visita.
+Quer conhecer o More Aldeia de Barueri? Posso agendar para terça às 10h ou quarta às 15h?
+
+[5] Cliente: mas e os preços das outras unidades?
+              quero mais opções
+[5] Sofia:   O More Aldeia de Barueri começa em R$ 569.000, o valor varia conforme a unidade e pagamento.
+Posso te mostrar também o Elos Barueri, pronto para morar, com 2 dormitórios e 56m².
+Dá uma olhada e me diz o que te agradou.

@@ -1,0 +1,64 @@
+insiste-no-desconto · rodada 3 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000. Posso saber em qual região você procura o imóvel?
+
+[2] Cliente: mas e o desconto?
+              249 mil tá caro, tem como fazer melhor?
+[2] Sofia:   Posso te mostrar esse ou outro que tenha interesse?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[3] Cliente: mas e o valor?
+              qual desconto pra fechar logo?
+[3] Sofia:   Quem fecha isso com você sou eu, pessoalmente, na visita. Posso agendar para te mostrar tudo?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[4] Cliente: mas qual o valor exato?
+              tem desconto ou não?
+[4] Sofia:   O valor exato depende da unidade e condições, quem fecha isso é na visita.
+Temos boas opções para o que você procura.
+Quer agendar para eu te mostrar tudo? Posso sábado às 10h ou às 11h.
+
+[5] Cliente: mas não tem como fazer um desconto melhor?
+              valor exato e desconto, me ajuda!
+[5] Sofia:   Entendo a importância do desconto para você.
+O valor exato e as condições especiais só consigo fechar pessoalmente, na visita.
+Posso agendar sábado às 10h ou às 11h para conversarmos com calma?
+
+[6] Cliente: mas eu quero saber o valor exato
+              não tem como fazer um desconto melhor?
+[6] Sofia:   O valor exato quem passa é a construtora, e ele muda por unidade.
+A visita é o momento certo para tratar disso com calma. Posso agendar para terça às 10h ou quarta às 15h?
+
+[7] Cliente: mas preciso de valor exato pra decidir
+              desconto ou não? como fica?
+[7] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+O valor exato e desconto variam por unidade e condições, e só fecho isso pessoalmente na visita.
+Qual dia da semana fica melhor pra você?
+
+[8] Cliente: mas preciso de um desconto pra fechar
+              qual o valor exato? já pedi!
+[8] Sofia:   O desconto para fechar é negociado na visita, onde apresento as condições reais.
+O valor exato muda conforme a unidade e forma de pagamento.
+Qual dia da semana fica melhor para você agendar a visita?
+
+[9] Cliente: mas o desconto?
+              me ajuda com o valor exato!
+[9] Sofia:   O valor exato e o desconto são definidos na visita, onde apresento as condições reais.
+Posso agendar para quinta às 10h ou sexta às 15h?
+
+[10] Cliente: mas não tem como liberar um desconto já?
+              qual o valor exato de novo?
+[10] Sofia:   O valor exato quem passa é a construtora, e ele muda por unidade.
+A visita é onde trato disso com calma. Qual dia da semana fica melhor pra você agendar?
+
+[11] Cliente: não tem como liberar um desconto já?
+              qual valor exato de novo?
+[11] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[12] Cliente: mas e o desconto?
+              qual o valor exato?
+[12] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?

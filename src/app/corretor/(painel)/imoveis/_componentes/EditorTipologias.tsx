@@ -7,7 +7,12 @@ interface Props {
   tipologias: Tipologia[];
   onAdicionar: () => void;
   onRemover: (index: number) => void;
-  onChange: (index: number, campo: keyof Tipologia, valor: any) => void;
+  /*
+   * O valor é o do PRÓPRIO campo, não `any`: com `K extends keyof
+   * Tipologia`, passar um texto onde a tipologia espera número passa a ser
+   * erro de compilação em vez de defeito em produção.
+   */
+  onChange: <K extends keyof Tipologia>(index: number, campo: K, valor: Tipologia[K]) => void;
 }
 
 export function EditorTipologias({
@@ -32,7 +37,7 @@ export function EditorTipologias({
           <button
             type="button"
             onClick={onAdicionar}
-            className="min-h-[48px] px-5 py-2 rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+            className="min-h-[48px] px-5 py-2 rounded-xl bg-acento hover:bg-acento-hover text-sobre-cor text-fluid-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
           >
             <span>+ Adicionar Nova Planta</span>
           </button>

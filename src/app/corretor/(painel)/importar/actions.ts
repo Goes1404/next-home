@@ -269,6 +269,7 @@ export async function importarLeads(
   }
 
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor");
 
@@ -317,6 +318,7 @@ export async function criarLeadUnico(
   }
 
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor");
 
@@ -472,6 +474,7 @@ export async function salvarLeadsDoGmail(
   }
 
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor/importar");
   revalidatePath("/corretor");

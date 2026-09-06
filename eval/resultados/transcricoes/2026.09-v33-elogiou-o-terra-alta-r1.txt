@@ -1,0 +1,63 @@
+elogiou-o-terra-alta · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: gostei do Terra Alta, me fala mais dele
+[1] Sofia:   O Terra Alta fica no Jardim Tupanci, uma região muito valorizada de Barueri.
+Em qual região de Barueri você procura exatamente?
+
+[2] Cliente: não perguntei de região
+              quero saber do imóvel
+[2] Sofia:   O Terra Alta tem apartamentos de 1 dormitório com 52m², 1 suíte e 2 vagas.
+Quer conhecer o decorado?
+Olha o link com tudo sobre o projeto: https://next-home-drab.vercel.app/empreendimentos/terra-alta-ta141
+
+[3] Cliente: e a planta?
+              quero mais fotos
+[3] Sofia:   O Terra Alta oferece planta de 52m² com 1 dormitório, 1 suíte e 2 vagas.
+Te mandei as fotos aqui embaixo para você ver melhor. Quer agendar para conhecer o decorado?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+
+[4] Cliente: manda mais fotos
+              e a planta de novo
+[4] Sofia:   Já te mandei as fotos disponíveis e o link do projeto.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-3-big-75c8b2df2fb9cedf8deb0b5002c9a935.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-4-big-847e1f55bb4b7eee7f216ebbce93f7f0.jpeg
+
+[5] Cliente: mais fotos
+              planta de novo
+[5] Sofia:   O Terra Alta tem 1 dormitório, 1 suíte e 2 vagas.
+Já enviei todas as fotos disponíveis e o link do projeto.
+A planta não está disponível, mas o link tem tudo detalhado.
+Quer agendar para conhecer o decorado e ver tudo pessoalmente?
+
+[6] Cliente: mais fotos
+              planta de novo
+[6] Sofia:   A planta não está disponível, mas o link do projeto tem todos os detalhes.
+
+[7] Cliente: manda mais fotos
+              planta de novo
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: mais fotos
+              planta de novo
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: mais fotos
+              planta de novo
+[9] Sofia:   O Terra Alta oferece apartamentos com um dormitório, uma suíte e duas vagas.
+
+[10] Cliente: mais fotos
+              planta de novo
+[10] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[11] Cliente: mais fotos
+              planta de novo
+[11] Sofia:   O Terra Alta tem apartamentos com um dormitório, uma suíte e duas vagas.
+A planta não está disponível, mas o link do projeto tem todos os detalhes.
+Quer agendar para conhecer o decorado esta semana?
+
+[12] Cliente: mais fotos
+              planta de novo
+[12] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
+o link com tudo do empreendimento, ou marcar de conversar pessoalmente?

@@ -6,7 +6,6 @@ import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import { dataHora, diasParado, linkWhatsappLead } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import { REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { BotaoAvancar } from "@/app/corretor/(painel)/_componentes/BotaoAvancar";
-import { PassosDoFunil } from "@/app/corretor/(painel)/_componentes/PassosDoFunil";
 import { createClient } from "@/lib/supabase/server";
 import {
   getLeadDetalhado,
@@ -63,10 +62,12 @@ export default async function FichaLeadPage({
     // O respiro extra no rodapé (mobile) é o espaço da barra de ações fixa.
     <div className="space-y-4 pb-24 md:pb-0">
       <Link
-        href="/corretor/leads"
-        className="text-fluid-sm inline-flex items-center gap-1.5 text-apoio transition-colors hover:text-titulo"
+        href="/corretor/pessoas"
+        /* Rótulo e destino batem: dizia "Meus leads" e levava para Pessoas.
+           Link que promete um lugar e leva a outro é o começo do labirinto. */
+        className="text-fluid-sm text-apoio hover:text-titulo inline-flex min-h-11 items-center gap-1.5 transition-colors"
       >
-        <ArrowLeft className="h-4 w-4" /> Meus leads
+        <ArrowLeft className="h-4 w-4" /> Pessoas
       </Link>
 
       {/* Cabeçalho: quem é, em que pé está e como falar com ele. A régua de
@@ -116,9 +117,39 @@ export default async function FichaLeadPage({
           </p>
         )}
 
-        {/* Onde ele está no caminho, e o único botão para andar. */}
-        <PassosDoFunil etapa={lead.etapa} comRotulo className="mt-4" />
-        <BotaoAvancar leadId={lead.id} etapa={lead.etapa} className="mt-3" />
+        {/*
+          Do que ele está falando (0083).
+          Fica ACIMA do funil de propósito: é a primeira coisa que o
+          corretor precisa saber para retomar o atendimento, e até agora
+          não existia em lugar nenhum — 64 dos 112 leads ativos tinham
+          conversa de WhatsApp e nenhum imóvel vinculado.
+        */}
+        {lead.imovelInteresse && (
+          <p className="text-fluid-sm text-corpo mt-4">
+            Conversando sobre{" "}
+            <Link
+              href={`/empreendimentos/${lead.imovelInteresse.slug}`}
+              target="_blank"
+              className="text-titulo font-medium underline underline-offset-2"
+            >
+              {lead.imovelInteresse.nome}
+            </Link>
+            {lead.empreendimento && lead.empreendimento.slug !== lead.imovelInteresse.slug && (
+              <span className="text-tenue"> · chegou pelo {lead.empreendimento.nome}</span>
+            )}
+          </p>
+        )}
+
+        {/*
+          O único botão para andar no funil.
+          `PassosDoFunil` saiu daqui: a etapa já era dita QUATRO vezes no
+          mesmo cabeçalho — a régua de cor na borda, o seletor no canto
+          direito, a barra de passos e o próprio rótulo do botão ("Falei com
+          ele" nomeia a etapa de destino). Num cabeçalho que empilha até onze
+          faixas no celular, a quarta repetição custa uma faixa e não
+          acrescenta nada.
+        */}
+        <BotaoAvancar leadId={lead.id} etapa={lead.etapa} className="mt-4" />
 
         <div className="mt-4 flex flex-wrap gap-2">
           {whatsapp && (
@@ -126,7 +157,10 @@ export default async function FichaLeadPage({
               href={whatsapp}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-fluid-sm inline-flex items-center gap-2 rounded-full bg-[#25D366]/15 px-4 py-2 font-medium text-[#25D366] transition-colors hover:bg-[#25D366] hover:text-white"
+              /* Verde do WhatsApp, que é marca de terceiro e não token nosso — mas o
+                 texto do hover sai de `sobre-cor`: `text-white` sobre esse verde
+                 tem 1,9:1 e some. */
+              className="text-fluid-sm hover:text-sobre-cor inline-flex min-h-11 items-center gap-2 rounded-full bg-[#25D366]/15 px-4 font-medium text-[#25D366] transition-colors hover:bg-[#25D366]"
             >
               WhatsApp
             </a>
@@ -134,7 +168,7 @@ export default async function FichaLeadPage({
           {lead.telefone && (
             <a
               href={`tel:${lead.telefone}`}
-              className="text-fluid-sm inline-flex items-center gap-2 rounded-full border border-acento-linha bg-acento-lavado px-4 py-2 font-medium text-acento-suave transition-opacity hover:opacity-85"
+              className="text-fluid-sm border-acento-linha bg-acento-lavado text-acento-suave inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-medium transition-opacity hover:opacity-85"
             >
               <Phone className="h-4 w-4" /> {lead.telefone}
             </a>
@@ -142,7 +176,7 @@ export default async function FichaLeadPage({
           {lead.email && (
             <a
               href={`mailto:${lead.email}`}
-              className="text-fluid-sm inline-flex max-w-full items-center gap-2 truncate rounded-full border border-linha bg-vidro px-4 py-2 text-corpo transition-colors hover:border-linha-forte"
+              className="text-fluid-sm border-linha bg-vidro text-corpo hover:border-linha-forte inline-flex min-h-11 max-w-full items-center gap-2 truncate rounded-full border px-4 transition-colors"
             >
               <Mail className="h-4 w-4 shrink-0" />
               <span className="truncate">{lead.email}</span>

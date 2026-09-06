@@ -2,6 +2,7 @@ import { dentroDaJanela } from "./antiBan";
 import { nomeUtilDoLead } from "@/lib/leads/nomeExibido";
 import { algumProvedorConfigurado, chamarLlmJson } from "./llm";
 import type { ItemFilaCampanha } from "./types";
+import { comecoAleatorio, distribuirVariantes, type Variante } from "./testeAB";
 
 /**
  * Piso e teto do intervalo humanizado entre disparos, em segundos.
@@ -141,6 +142,13 @@ export function montarFilaCampanha(params: {
    * O que sai é só o adiamento para a próxima janela.
    */
   ignorarJanela?: boolean;
+  /**
+   * Segunda versão da mensagem (teste A/B, 0084). Ausente = campanha de uma
+   * versão só, e a fila sai exatamente como antes.
+   */
+  mensagemBaseB?: string | null;
+  /** Fixa o começo do rodízio. Só o teste passa isto; produção sorteia. */
+  comecarVarianteEm?: Variante;
 }): ItemFilaCampanha[] {
   const { campanhaId, leads, mensagemBase, empreendimentoNome } = params;
   const ignorarJanela = params.ignorarJanela ?? false;
@@ -163,7 +171,18 @@ export function montarFilaCampanha(params: {
   // anterior + intervalo humanizado.
   let anteriorMs = 0;
 
-  for (const lead of leads) {
+  /*
+   * As letras do A/B, alternadas a partir de um começo sorteado (0084).
+   * Alternar importa: a ordem da fila é a ordem do disparo e o horário
+   * também influencia a resposta — dar a primeira metade para a versão A
+   * misturaria os dois efeitos e a comparação mediria o relógio.
+   */
+  const mensagemB = params.mensagemBaseB?.trim() || null;
+  const variantes = mensagemB
+    ? distribuirVariantes(leads.length, params.comecarVarianteEm ?? comecoAleatorio())
+    : [];
+
+  for (const [indice, lead] of leads.entries()) {
     const janela = Math.max(1, INTERVALO_MAXIMO_SEGUNDOS - intervaloSegundosMinimo);
     const atrasoSegundos = intervaloSegundosMinimo + Math.floor(Math.random() * janela);
 
@@ -188,8 +207,9 @@ export function montarFilaCampanha(params: {
       campanhaId,
       leadId: lead.id,
       telefone: lead.telefone,
+      variante: mensagemB ? variantes[indice] : null,
       mensagemPersonalizada: aplicarTemplate({
-        mensagemBase,
+        mensagemBase: mensagemB && variantes[indice] === "B" ? mensagemB : mensagemBase,
         nomeLead: lead.nome,
         empreendimentoNome,
       }),

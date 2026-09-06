@@ -127,11 +127,53 @@ const SAIDAS: string[] = [
   "Prefere conhecer pessoalmente? Consigo te mostrar essa semana.",
 ];
 
+/**
+ * O último recurso do último recurso.
+ *
+ * Quando as saídas acabaram, insistir numa quarta pergunta de qualificação
+ * é o próprio loop com outra roupa. O que sobra é a única jogada que ainda
+ * não foi feita: reconhecer o impasse e devolver a ESCOLHA para o cliente.
+ */
+const SAIDA_FINAL =
+  "Me diz o que te ajudaria mais agora: ver as fotos, o link com tudo do empreendimento, ou marcar de conversar pessoalmente?";
+
+/**
+ * O que vai no lugar da repetição — nunca uma frase que já foi dita.
+ *
+ * ## O defeito que isto conserta
+ *
+ * A versão anterior escolhia por `totalDeMensagensDoBot % 3`. Com três
+ * saídas, o resto do módulo faz o índice VOLTAR, e a guarda anti-loop
+ * virou o loop: no eval da v26, a persona `insiste-no-desconto` recebeu
+ * "Me conta um pouco mais do que você procura" nos turnos 7 e 10, palavra
+ * por palavra, além de outras duas saídas alternadas. Quatro dos doze
+ * turnos daquela conversa eram texto desta lista.
+ *
+ * O comentário da lista já prometia "varia para não virar, ela mesma, um
+ * segundo loop" — e o módulo derrotava a promessa. A promessa agora é
+ * cumprida por construção: a saída escolhida é a primeira AINDA NÃO DITA
+ * nesta conversa.
+ */
 export function textoNoLugarDaRepeticao(
   historico?: { remetente: string; texto: string }[],
 ): string {
-  const jaRepetiu = (historico ?? []).filter((m) => m.remetente === "bot").length;
-  return SAIDAS[jaRepetiu % SAIDAS.length];
+  const ditas = (historico ?? [])
+    .filter((m) => m.remetente === "bot")
+    .map((m) => normalizarParaRepeticao(m.texto));
+
+  const jaDita = (candidata: string): boolean => {
+    const n = normalizarParaRepeticao(candidata);
+    return ditas.some((d) => d === n || d.includes(n) || semelhanca(d, n) >= 0.6);
+  };
+
+  const inedita = SAIDAS.find((s) => !jaDita(s));
+  if (inedita) return inedita;
+
+  // Todas usadas: a conversa está travada de verdade. Uma quarta pergunta
+  // de qualificação seria o loop de novo — devolver a escolha é o que ainda
+  // não foi tentado. Se nem ela sobrou, a primeira saída volta: é melhor
+  // que texto vazio, que o chamador mandaria como mensagem em branco.
+  return jaDita(SAIDA_FINAL) ? SAIDAS[0] : SAIDA_FINAL;
 }
 
 /**

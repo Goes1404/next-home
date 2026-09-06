@@ -1,0 +1,592 @@
+[
+  {
+    "nome": "Terra Alta Barueri",
+    "status": "Em construção",
+    "bairro": "Jardim Tupanci, Jardim Esperança, Vila Porto",
+    "dormitorios": "1 a 3 quartos",
+    "area": "50 a 168 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 464.915,03",
+    "link": "https://apto.vc/br/sp/barueri/jardim-tupanci/terra-alta-barueri"
+  },
+  {
+    "nome": "Vitta Barueri",
+    "status": "Em construção",
+    "bairro": "Vila Universal",
+    "dormitorios": "studio",
+    "area": "126 m²",
+    "vagas": "sem vagas",
+    "precoAnunciado": "R$ 239.274,00",
+    "link": "https://apto.vc/br/sp/barueri/vila-universal/vitta-barueri"
+  },
+  {
+    "nome": "Nova Califórnia",
+    "status": "Lançamento",
+    "bairro": "Jardim Califórnia",
+    "dormitorios": "2 quartos",
+    "area": "46 a 92 m²",
+    "vagas": "1 vaga",
+    "precoAnunciado": "R$ 335.355,00",
+    "link": "https://apto.vc/br/sp/barueri/jardim-california/nova-california"
+  },
+  {
+    "nome": "La Vista Barueri",
+    "status": "Em construção",
+    "bairro": "Vila Universal",
+    "dormitorios": "1 e 2 quartos",
+    "area": "48 a 60 m²",
+    "vagas": "1 vaga",
+    "precoAnunciado": "R$ 349.036,96",
+    "link": "https://apto.vc/br/sp/barueri/vila-universal/la-vista-barueri"
+  },
+  {
+    "nome": "Breeze Home Clube",
+    "status": "Em construção",
+    "bairro": "Votupoca, Jardim do Líbano",
+    "dormitorios": "2 e 3 quartos",
+    "area": "49 a 65 m²",
+    "vagas": "1 vaga",
+    "precoAnunciado": "R$ 375.861,19",
+    "link": "https://apto.vc/br/sp/barueri/votupoca/breeze-home-clube"
+  },
+  {
+    "nome": "Dom Barueri",
+    "status": "Lançamento",
+    "bairro": "Jardim Tupanci",
+    "dormitorios": "1 a 3 quartos",
+    "area": "47 a 77 m²",
+    "vagas": "até 2 vagas",
+    "precoAnunciado": "R$ 420.000,00",
+    "link": "https://apto.vc/br/sp/barueri/jardim-tupanci/dom-barueri"
+  },
+  {
+    "nome": "Griffe Barueri",
+    "status": "Em construção",
+    "bairro": "Votupoca",
+    "dormitorios": "2 quartos",
+    "area": "52 m²",
+    "vagas": "1 vaga",
+    "precoAnunciado": "R$ 437.000,00",
+    "link": "https://apto.vc/br/sp/barueri/votupoca/griffe-barueri"
+  },
+  {
+    "nome": "Viva RSF Vila do Conde",
+    "status": "Em construção",
+    "bairro": "Vila do Conde",
+    "dormitorios": "1 a 3 quartos",
+    "area": "49 a 71 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 449.279,00",
+    "link": "https://apto.vc/br/sp/barueri/vila-do-conde/viva-rsf-vila-do-conde"
+  },
+  {
+    "nome": "Specialle Barueri Residencial",
+    "status": "Pronto para morar",
+    "bairro": "Jardim Silveira",
+    "dormitorios": "2 quartos",
+    "area": "54 m²",
+    "vagas": "1 vaga",
+    "precoAnunciado": "R$ 449.450,00",
+    "link": "https://apto.vc/br/sp/barueri/jardim-silveira/specialle-barueri-residencial"
+  },
+  {
+    "nome": "Serenne",
+    "status": "Em construção",
+    "bairro": "Vila Nossa Senhora da Escada",
+    "dormitorios": "2 quartos",
+    "area": "49 e 53 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 467.071,70",
+    "link": "https://apto.vc/br/sp/barueri/vila-nossa-senhora-da-escada/serenne"
+  },
+  {
+    "nome": "ELOS Residencial Barueri",
+    "status": "Pronto para morar",
+    "bairro": "Aldeia",
+    "dormitorios": "2 quartos",
+    "area": "48 a 58 m²",
+    "vagas": "1 vaga",
+    "precoAnunciado": "R$ 468.000,00",
+    "link": "https://apto.vc/br/sp/barueri/aldeia/elos-residencial-barueri"
+  },
+  {
+    "nome": "Acqua Park Bethaville",
+    "status": "Pronto para morar",
+    "bairro": "Bethaville I",
+    "dormitorios": "1 e 2 quartos",
+    "area": "45 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 480.000,00",
+    "link": "https://apto.vc/br/sp/barueri/bethaville-i/acqua-park-bethaville"
+  },
+  {
+    "nome": "Reserva Urano EcoPark Barueri",
+    "status": "Pronto para morar",
+    "bairro": "Jardim Tupanci",
+    "dormitorios": "1 e 2 quartos",
+    "area": "55 m²",
+    "vagas": "1 vaga",
+    "precoAnunciado": "R$ 525.795,52",
+    "link": "https://apto.vc/br/sp/barueri/jardim-tupanci/reserva-urano-ecopark-barueri"
+  },
+  {
+    "nome": "Acqua Park Barueri",
+    "status": "Pronto para morar",
+    "bairro": "Dom José, Jardim Barueri, Jardim Esperança, Alphaville",
+    "dormitorios": "1 quarto",
+    "area": "49 m²",
+    "vagas": "1 vaga",
+    "precoAnunciado": "R$ 534.665,60",
+    "link": "https://apto.vc/br/sp/barueri/dom-jose/acqua-park-barueri"
+  },
+  {
+    "nome": "Liv Stay Residence",
+    "status": "Em construção",
+    "bairro": "Centro Comercial",
+    "dormitorios": "1 quarto",
+    "area": "35 m²",
+    "vagas": "até 1 vaga",
+    "precoAnunciado": "R$ 559.363,69",
+    "link": "https://apto.vc/br/sp/barueri/centro-comercial/liv-stay-residence"
+  },
+  {
+    "nome": "Joy Barueri",
+    "status": "Em construção",
+    "bairro": "Cruz Preta",
+    "dormitorios": "2 e 3 quartos",
+    "area": "65 a 167 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 636.353,35",
+    "link": "https://apto.vc/br/sp/barueri/cruz-preta/joy-barueri"
+  },
+  {
+    "nome": "Manacá Barueri",
+    "status": "Em construção",
+    "bairro": "Aldeia",
+    "dormitorios": "2 e 3 quartos",
+    "area": "63 e 81 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 572.776,58",
+    "link": "https://apto.vc/br/sp/barueri/aldeia/manaca-barueri"
+  },
+  {
+    "nome": "Alpha Park View",
+    "status": "Em construção",
+    "bairro": "Aldeia, Nova Aldeinha",
+    "dormitorios": "2 e 3 quartos",
+    "area": "67 e 84 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 599.000,00",
+    "link": "https://apto.vc/br/sp/barueri/aldeia/alpha-park-view"
+  },
+  {
+    "nome": "Beyond Residence",
+    "status": "Lançamento",
+    "bairro": "Alphaville, Centro Comercial",
+    "dormitorios": "1 a 3 quartos",
+    "area": "43 a 79 m²",
+    "vagas": "até 1 vaga",
+    "precoAnunciado": "R$ 661.118,09",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/beyond-residence"
+  },
+  {
+    "nome": "Royal Barueri",
+    "status": "Em construção",
+    "bairro": "Aldeia, Nova Aldeinha, Vila Militar",
+    "dormitorios": "1 a 3 quartos",
+    "area": "57 a 86 m²",
+    "vagas": "2 vagas",
+    "precoAnunciado": "R$ 665.441,94",
+    "link": "https://apto.vc/br/sp/barueri/aldeia/royal-barueri"
+  },
+  {
+    "nome": "Bless RSF Parque Barueri",
+    "status": "Pronto para morar",
+    "bairro": "Jardim Barueri, Jardim Esperança, Cruz Preta",
+    "dormitorios": "2 e 3 quartos",
+    "area": "73 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 666.867,19",
+    "link": "https://apto.vc/br/sp/barueri/jardim-barueri/bless-rsf-parque-barueri"
+  },
+  {
+    "nome": "Bless RSF Shopping Barueri",
+    "status": "Pronto para morar",
+    "bairro": "Aldeia",
+    "dormitorios": "2 e 3 quartos",
+    "area": "59 e 75 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 693.038,99",
+    "link": "https://apto.vc/br/sp/barueri/aldeia/bless-rsf-shopping-barueri"
+  },
+  {
+    "nome": "Bosque Alphagran",
+    "status": "Em construção",
+    "bairro": "Alphagran",
+    "dormitorios": "1 a 3 quartos",
+    "area": "52 a 335 m²",
+    "vagas": "1 a 3 vagas",
+    "precoAnunciado": "R$ 800.500,00",
+    "link": "https://apto.vc/br/sp/barueri/alphagran/bosque-alphagran"
+  },
+  {
+    "nome": "Bless RSF Jardim Esperança",
+    "status": "Pronto para morar",
+    "bairro": "Cruz Preta, Vila Engenho Novo",
+    "dormitorios": "3 quartos",
+    "area": "73 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 713.881,31",
+    "link": "https://apto.vc/br/sp/barueri/cruz-preta/bless-rsf-jardim-esperanca"
+  },
+  {
+    "nome": "On The Park",
+    "status": "Pronto para morar",
+    "bairro": "Alphaville Empresarial, Alphaville",
+    "dormitorios": "2 e 3 quartos",
+    "area": "64 a 94 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 742.900,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville-empresarial/on-the-park"
+  },
+  {
+    "nome": "Royal Barueri II",
+    "status": "Em construção",
+    "bairro": "Aldeia, Nova Aldeinha, Vila Militar",
+    "dormitorios": "2 e 3 quartos",
+    "area": "74 a 105 m²",
+    "vagas": "2 vagas",
+    "precoAnunciado": "R$ 777.814,62",
+    "link": "https://apto.vc/br/sp/barueri/aldeia/royal-barueri-ii"
+  },
+  {
+    "nome": "NID Alphaville",
+    "status": "Em construção",
+    "bairro": "Alphaville, Tamboré",
+    "dormitorios": "2 a 4 quartos",
+    "area": "75 a 153 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 830.053,40",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/nid-alphaville"
+  },
+  {
+    "nome": "Symmetry Residence",
+    "status": "Em construção",
+    "bairro": "Alphaville, Tamboré, Centro Comercial Jubran",
+    "dormitorios": "1 a 3 quartos",
+    "area": "65 a 118 m²",
+    "vagas": "2 e 3 vagas",
+    "precoAnunciado": "R$ 958.982,23",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/symmetry-residence"
+  },
+  {
+    "nome": "Vitra Alphaville",
+    "status": "Pronto para morar",
+    "bairro": "Alphaville, Empresarial 18 do Forte",
+    "dormitorios": "2 e 3 quartos",
+    "area": "84 e 107 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 1.002.396,60",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/vitra-alphaville"
+  },
+  {
+    "nome": "Eternity Residence",
+    "status": "Em construção",
+    "bairro": "Alphaville",
+    "dormitorios": "2 e 3 quartos",
+    "area": "88 a 122 m²",
+    "vagas": "2 vagas",
+    "precoAnunciado": "R$ 1.106.000,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/eternity-residence"
+  },
+  {
+    "nome": "Estação 267",
+    "status": "Pronto para morar",
+    "bairro": "Vila Militar",
+    "dormitorios": "2 quartos",
+    "area": "107 m²",
+    "vagas": "sem vagas",
+    "precoAnunciado": "R$ 1.168.707,29",
+    "link": "https://apto.vc/br/sp/barueri/vila-militar/estacao-267"
+  },
+  {
+    "nome": "Amáz Alphaville",
+    "status": "Em construção",
+    "bairro": "Alphaville",
+    "dormitorios": "2 e 3 quartos",
+    "area": "89 a 226 m²",
+    "vagas": "2 e 3 vagas",
+    "precoAnunciado": "R$ 1.175.415,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/amaz-alphaville"
+  },
+  {
+    "nome": "Dellagio",
+    "status": "Em construção",
+    "bairro": "Empresarial 18 do Forte",
+    "dormitorios": "2 e 3 quartos",
+    "area": "94 a 120 m²",
+    "vagas": "2 vagas",
+    "precoAnunciado": "R$ 1.185.156,00",
+    "link": "https://apto.vc/br/sp/barueri/empresarial-18-do-forte/dellagio"
+  },
+  {
+    "nome": "Oásis Home Resort",
+    "status": "Em construção",
+    "bairro": "Alphaville",
+    "dormitorios": "2 e 3 quartos",
+    "area": "74 e 90 m²",
+    "vagas": "2 vagas",
+    "precoAnunciado": "R$ 1.260.163,74",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/oasis-home-resort"
+  },
+  {
+    "nome": "Square Design Residence",
+    "status": "Lançamento",
+    "bairro": "Residencial 18 do Forte",
+    "dormitorios": "2 e 3 quartos",
+    "area": "94 a 121 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "R$ 1.263.734,12",
+    "link": "https://apto.vc/br/sp/barueri/residencial-18-do-forte/square-design-residence"
+  },
+  {
+    "nome": "Open View 47",
+    "status": "Em construção",
+    "bairro": "Alphaville Residencial Zero",
+    "dormitorios": "2 e 3 quartos",
+    "area": "119 a 233 m²",
+    "vagas": "2 e 3 vagas",
+    "precoAnunciado": "R$ 1.399.000,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville-residencial-zero/open-view-47"
+  },
+  {
+    "nome": "Acervo Apartments",
+    "status": "Em construção",
+    "bairro": "Alphaville",
+    "dormitorios": "2 quartos",
+    "area": "95 e 99 m²",
+    "vagas": "até 2 vagas",
+    "precoAnunciado": "R$ 1.366.364,68",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/acervo-apartments"
+  },
+  {
+    "nome": "Gran Alphaville",
+    "status": "Pronto para morar",
+    "bairro": "Alphaville Empresarial, Alphaville",
+    "dormitorios": "2 quartos",
+    "area": "86 e 111 m²",
+    "vagas": "2 vagas",
+    "precoAnunciado": "R$ 1.559.688,07",
+    "link": "https://apto.vc/br/sp/barueri/alphaville-empresarial/gran-alphaville"
+  },
+  {
+    "nome": "KA’A Home Boutique",
+    "status": "Em construção",
+    "bairro": "Alphaville, Alphaville Empresarial, Alphagran",
+    "dormitorios": "3 quartos",
+    "area": "130 e 268 m²",
+    "vagas": "3 e 4 vagas",
+    "precoAnunciado": "R$ 1.680.870,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/kaa-home-boutique"
+  },
+  {
+    "nome": "Andromêda by MPD",
+    "status": "Em construção",
+    "bairro": "Alphaville, Alphaville Empresarial",
+    "dormitorios": "1 e 2 quartos",
+    "area": "95 m²",
+    "vagas": "2 vagas",
+    "precoAnunciado": "R$ 1.690.000,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/andromeda-by-mpd"
+  },
+  {
+    "nome": "Level Alphaville",
+    "status": "Pronto para morar",
+    "bairro": "Alphaville Conde II, Alphaville",
+    "dormitorios": "2 e 3 quartos",
+    "area": "95 e 123 m²",
+    "vagas": "2 vagas",
+    "precoAnunciado": "R$ 1.690.000,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville-conde-ii/level-alphaville"
+  },
+  {
+    "nome": "Infinity Alphaville",
+    "status": "Pronto para morar",
+    "bairro": "Alphaville, Alphaville Empresarial, Alphagran",
+    "dormitorios": "3 e 4 quartos",
+    "area": "110 e 142 m²",
+    "vagas": "2 e 3 vagas",
+    "precoAnunciado": "R$ 1.780.000,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/infinity-alphaville"
+  },
+  {
+    "nome": "Vedara Alphaville",
+    "status": "Pronto para morar",
+    "bairro": "Alphaville, Centro Comercial Jubran",
+    "dormitorios": "3 quartos",
+    "area": "325 m²",
+    "vagas": "3 vagas",
+    "precoAnunciado": "R$ 1.800.000,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/vedara-alphaville"
+  },
+  {
+    "nome": "Parc Athénée",
+    "status": "Pronto para morar",
+    "bairro": "Alphaville, Green Valley",
+    "dormitorios": "3 e 4 quartos",
+    "area": "110 m²",
+    "vagas": "2 e 3 vagas",
+    "precoAnunciado": "R$ 1.990.000,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/parc-athenee"
+  },
+  {
+    "nome": "Acervo Residences",
+    "status": "Em construção",
+    "bairro": "Alphaville Conde I",
+    "dormitorios": "3 e 4 quartos",
+    "area": "188 e 299 m²",
+    "vagas": "3 vagas",
+    "precoAnunciado": "R$ 2.655.990,54",
+    "link": "https://apto.vc/br/sp/barueri/alphaville-conde-i/acervo-residences"
+  },
+  {
+    "nome": "Copa 18 do Forte",
+    "status": "Em construção",
+    "bairro": "Empresarial 18 do Forte",
+    "dormitorios": "2 e 3 quartos",
+    "area": "117 e 120 m²",
+    "vagas": "2 vagas",
+    "precoAnunciado": "R$ 2.043.790,32",
+    "link": "https://apto.vc/br/sp/barueri/empresarial-18-do-forte/copa-18-do-forte"
+  },
+  {
+    "nome": "Neo Alphaville",
+    "status": "Pronto para morar",
+    "bairro": "Alphaville, Alphaville Conde II",
+    "dormitorios": "2 e 3 quartos",
+    "area": "175 e 185 m²",
+    "vagas": "3 vagas",
+    "precoAnunciado": "R$ 2.222.500,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/neo-alphaville"
+  },
+  {
+    "nome": "Singular",
+    "status": "Pronto para morar",
+    "bairro": "Alphaville, Tamboré",
+    "dormitorios": "3 e 4 quartos",
+    "area": "230 e 310 m²",
+    "vagas": "3 e 4 vagas",
+    "precoAnunciado": "R$ 3.229.000,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/singular"
+  },
+  {
+    "nome": "Arbórea Alphagran",
+    "status": "Lançamento",
+    "bairro": "Alphaville",
+    "dormitorios": "3 e 4 quartos",
+    "area": "231 a 578 m²",
+    "vagas": "3 a 5 vagas",
+    "precoAnunciado": "R$ 3.135.300,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/arborea-alphagran"
+  },
+  {
+    "nome": "Authoria por Dubai",
+    "status": "Lançamento",
+    "bairro": "Alphaville",
+    "dormitorios": "4 quartos",
+    "area": "272 m²",
+    "vagas": "4 vagas",
+    "precoAnunciado": "R$ 3.503.566,55",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/authoria-por-dubai"
+  },
+  {
+    "nome": "Vista Alphagran",
+    "status": "Em construção",
+    "bairro": "Alphaville Industrial, Alphaville, Alphagran",
+    "dormitorios": "3 e 4 quartos",
+    "area": "247 a 417 m²",
+    "vagas": "3 e 4 vagas",
+    "precoAnunciado": "R$ 4.472.900,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville-industrial/vista-alphagran"
+  },
+  {
+    "nome": "Terrah",
+    "status": "Em construção",
+    "bairro": "Alphaville, Alphagran, Alphaville Empresarial",
+    "dormitorios": "3 e 4 quartos",
+    "area": "330 m²",
+    "vagas": "4 e 5 vagas",
+    "precoAnunciado": "R$ 4.649.000,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/terrah"
+  },
+  {
+    "nome": "Signature Alphaville",
+    "status": "Em construção",
+    "bairro": "Alphaville, Alphagran, Alphaville Empresarial",
+    "dormitorios": "4 quartos",
+    "area": "365 m²",
+    "vagas": "5 vagas",
+    "precoAnunciado": "R$ 5.600.000,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/signature-alphaville"
+  },
+  {
+    "nome": "Florà Alphaville",
+    "status": "Em construção",
+    "bairro": "Alphaville, Alphaville Empresarial, Alphagran",
+    "dormitorios": "3 a 5 quartos",
+    "area": "420 e 565 m²",
+    "vagas": "6 vagas",
+    "precoAnunciado": "R$ 7.690.667,00",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/flora-alphaville"
+  },
+  {
+    "nome": "Reserva da Mata",
+    "status": "Lançamento",
+    "bairro": "Jardim do Líbano",
+    "dormitorios": "2 e 3 quartos",
+    "area": "60 a 120 m²",
+    "vagas": "1 e 2 vagas",
+    "precoAnunciado": "Sob Consulta",
+    "link": "https://apto.vc/br/sp/barueri/jardim-do-libano/reserva-da-mata1"
+  },
+  {
+    "nome": "Chateau Jardin",
+    "status": "Lançamento",
+    "bairro": "Centro Comercial Jubran",
+    "dormitorios": "studio e 2 quartos",
+    "area": "32 a 112 m²",
+    "vagas": "",
+    "precoAnunciado": "Sob Consulta",
+    "link": "https://apto.vc/br/sp/barueri/centro-comercial-jubran/chateau-jardin"
+  },
+  {
+    "nome": "Gran",
+    "status": "Pronto para morar",
+    "bairro": "Alphaville",
+    "dormitorios": "3 quartos",
+    "area": "86 e 112 m²",
+    "vagas": "2 e 3 vagas",
+    "precoAnunciado": "Sob Consulta",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/gran"
+  },
+  {
+    "nome": "Sunset Itapecuru",
+    "status": "Em construção",
+    "bairro": "Alphaville, Alphaville Industrial",
+    "dormitorios": "3 e 4 quartos",
+    "area": "228 e 418 m²",
+    "vagas": "3 e 4 vagas",
+    "precoAnunciado": "Sob Consulta",
+    "link": "https://apto.vc/br/sp/barueri/alphaville/sunset-itapecuru"
+  },
+  {
+    "nome": "Oiapoque Vertical Home",
+    "status": "Pronto para morar",
+    "bairro": "Alphaville Industrial",
+    "dormitorios": "4 quartos",
+    "area": "360 m²",
+    "vagas": "5 vagas",
+    "precoAnunciado": "Sob Consulta",
+    "link": "https://apto.vc/br/sp/barueri/alphaville-industrial/oiapoque-vertical-home"
+  }
+]

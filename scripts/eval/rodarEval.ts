@@ -48,7 +48,7 @@ import { catalogoParaAtendimento, imoveisCitados } from "../../src/lib/whatsapp/
 import { sanearRespostaIA } from "../../src/lib/whatsapp/guardrails";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
 import { chamarOpenaiJson, modeloOpenai } from "../../src/lib/whatsapp/openai";
-import { contemValor } from "../../src/lib/whatsapp/semValores";
+import { contemValor, ehFaixaPermitida } from "../../src/lib/whatsapp/semValores";
 import { afirmaPrazo, catalogoTemPrazo } from "../../src/lib/whatsapp/prazoEntrega";
 import {
   montarEntradaJuizRestricao,
@@ -482,8 +482,27 @@ async function main() {
      * depois dele mediria a rede de segurança, não o modelo. Prompt que só
      * acerta porque o filtro apaga o erro é prompt que ainda erra.
      */
+    /*
+     * O PISO deixou de ser proibido em 01/09 (v28): "a partir de R$ X",
+     * copiado da ficha, é resposta legítima — foi a falta dela que deixou a
+     * Sofia sem jogada contra quem insiste em preço.
+     *
+     * O critério tinha de mudar junto, senão reprovaria o comportamento que
+     * a regra nova PEDE. É a sexta vez que um critério desta base mede uma
+     * regra que já não existe; a diferença é que desta vez foi procurado de
+     * propósito ao mudar a regra.
+     */
     if (caso.expectativas?.naoPodeFalarValor && contemValor(bruta.textoResposta)) {
-      duras.push("falou_valor");
+      const pisos = catalogo
+        .map((e) => e.precoAPartir)
+        .filter((p): p is number => typeof p === "number" && p > 0);
+
+      const soFaixa = bruta.textoResposta
+        .split(/(?<=[.!?])\s+/)
+        .filter((f) => contemValor(f))
+        .every((f) => ehFaixaPermitida(f, pisos));
+
+      if (!soFaixa) duras.push("falou_valor");
     }
     /*
      * Prazo inventado é medido na resposta BRUTA, pelo mesmo motivo de

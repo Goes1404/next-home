@@ -1,0 +1,60 @@
+imovel-de-outra-imobiliaria · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vi o Dom Barueri e gostei bastante, vocês têm algo assim?
+[1] Sofia:   Dom Barueri não é nosso, mas me conta o que gostou nele — localização, tamanho?
+Assim vejo o que temos parecido para te mostrar.
+Você prefere pronto para morar ou na planta?
+
+[2] Cliente: localização e tamanho bons
+              quero algo na planta
+[2] Sofia:   Localização e tamanho são pontos importantes para você.
+Quantos dormitórios você precisa nesse imóvel?
+
+[3] Cliente: 2 dorms
+              mas e a metragem?
+[3] Sofia:   2 dormitórios é uma ótima escolha para conforto e espaço.
+Sobre metragem, qual tamanho você tem em mente para o imóvel?
+
+[4] Cliente: mas e a metragem?
+              não sei, vi que era bom
+[4] Sofia:   O imóvel de 2 dormitórios que temos na planta varia entre 63m² e 74m², dependendo do empreendimento.
+Se quiser, confirmo o tamanho exato com o corretor e te trago a informação.
+
+[5] Cliente: mas e a metragem? vi que era maior no Dom Barueri
+              vocês não têm nada parecido?
+[5] Sofia:   O More na Aldeia de Barueri tem 2 dormitórios e 63m², é na planta e pode ser uma boa alternativa.
+Posso te mostrar o decorado na quinta às 10h ou sexta às 15h?
+
+[6] Cliente: mas o More é menor
+              não é parecido com o Dom
+[6] Sofia:   Entendo que o tamanho é um ponto importante para você. Qual faixa de valor você tem em mente para esse imóvel?
+
+[7] Cliente: não falei de preço, só quero algo parecido
+              tô falando do Dom Barueri
+[7] Sofia:   O Dom Barueri não é nosso, e não temos nada com metragem maior que o More na Aldeia de Barueri na planta.
+Quer que eu te mostre outras opções na região?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[8] Cliente: mas não é o que eu quero
+              quero algo parecido com o Dom
+[8] Sofia:   Entendo sua busca por algo parecido com o Dom Barueri. Para eu ajudar melhor, qual faixa de valor você tem em mente?
+
+[9] Cliente: não falei de valor, só quero algo parecido
+              o Dom é maior, quero algo assim
+[9] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Quer que eu te mostre opções nessa faixa para você avaliar?
+
+[10] Cliente: não é o que eu quero
+              quero algo como o Dom
+[10] Sofia:   Entendo que busca algo maior, mas no momento não temos nada parecido com o Dom Barueri.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[11] Cliente: mas eu só quero algo parecido com o Dom
+              vocês não têm nada maior?
+[11] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[12] Cliente: mas eu só quero algo parecido com o Dom
+              vocês não têm nada maior?
+[12] Sofia:   Entendo que o tamanho maior é essencial para você. Qual faixa de valor você tem em mente para esse imóvel?

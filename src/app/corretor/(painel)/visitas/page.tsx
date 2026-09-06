@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
-import { getLeadsDeVisita } from "@/lib/corretorSessao";
+import { getCorretorLogado, getLeadsDeVisita } from "@/lib/corretorSessao";
+import { createClient } from "@/lib/supabase/server";
+import { GradeDaSemana } from "./_componentes/GradeDaSemana";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Minhas Visitas" };
 
@@ -25,20 +28,40 @@ export default async function VisitasPage({
   // tela baixava a carteira inteira para filtrar meia dúzia de visitas.
   const visitas = await getLeadsDeVisita(busca);
 
+  /*
+   * A grade semanal de disponibilidade (0073). É o que a assistente lê
+   * para oferecer horário que EXISTE — sem ela, ela fala de horário de
+   * cabeça, e o eval de 31/08 mediu o custo disso.
+   */
+  const corretor = await getCorretorLogado();
+  const { data: grade } = corretor
+    ? await (await createClient())
+        .from("corretor_disponibilidade")
+        .select("dia_semana, hora_inicio, hora_fim")
+        .eq("corretor_id", corretor.id)
+    : { data: null };
+
   return (
     <div>
-      <h1 className="text-fluid-2xl text-titulo">Agenda de Visitas</h1>
-      <p className="text-fluid-sm mt-2 text-apoio">
-        Leads com visita marcada, ordenados pelo horário.
-      </p>
+      <CabecalhoDeTela secao="Pessoas" titulo="Visitas" descricao="Leads com visita marcada, ordenados pelo horário." />
 
-      <BuscaLeads className="mt-5" />
+      <div className="mt-6">
+        <GradeDaSemana
+          inicial={(grade ?? []).map((f) => ({
+            diaSemana: f.dia_semana,
+            horaInicio: f.hora_inicio,
+            horaFim: f.hora_fim,
+          }))}
+        />
+      </div>
+
+      <BuscaLeads className="mt-6" />
       <div className="mt-3">
-        <AbasLeads ativa="visitas" visitas={busca ? undefined : visitas.length} />
+        <AbasLeads ativa="/corretor/visitas" visitas={busca ? undefined : visitas.length} />
       </div>
 
       {visitas.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-linha bg-superficie p-6">
+        <div className="cartao mt-8 p-6">
           <p className="text-fluid-sm text-corpo">
             {busca
               ? `Nenhuma visita marcada para “${busca}”.`
@@ -59,7 +82,7 @@ export default async function VisitasPage({
             return (
               <article
                 key={lead.id}
-                className="rounded-2xl border border-linha bg-superficie p-5"
+                className="cartao p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -71,7 +94,7 @@ export default async function VisitasPage({
                     </p>
                   </div>
                   <div>
-                    <span className="text-fluid-xs rounded-full bg-etapa-azul-lavado px-2.5 py-1 font-medium text-etapa-azul">
+                    <span className="text-fluid-xs rounded-full bg-etapa-visita-lavado px-2.5 py-1 font-medium text-etapa-visita">
                       {hora ? "Agendada" : "Sem horário"}
                     </span>
                   </div>

@@ -182,6 +182,9 @@ async function gerarEEnviarPelaIA(params: {
     conversaId: conversa.id,
     remetente: "bot",
     conteudo: texto,
+    // Os dois botões só chegam aqui com a conversa recém-liberada — o
+    // conteúdo pode ser gravado inteiro (ver privacidadeDaConversa.ts).
+    conversaLiberada: true,
     providerMessageId: idDoPrimeiroBalao,
     statusEntrega: "enviada",
   });

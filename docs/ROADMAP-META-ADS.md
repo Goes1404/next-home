@@ -1,9 +1,36 @@
-# Roadmap — Custo por lead do Meta Ads no CRM (26/08/2026)
+# Roadmap — Custo por lead do Meta Ads no CRM (26/08/2026, revisto em 31/08)
 
 > Objetivo: o gestor abre o painel e vê quanto cada campanha do Meta custou,
 > quantos leads trouxe, e o custo por lead — sem abrir o Gerenciador de
 > Anúncios. E, melhor que a Meta consegue: custo por VISITA e por VENDA,
 > porque o funil mora aqui.
+
+## Estado em 31/08/2026 — a fase 0 ficou para trás das outras
+
+Conferido no banco e no código de produção:
+
+| fase | estado | como se sabe |
+|---|---|---|
+| **F0 — IDs do anúncio no lead** | **ENTREGUE 31/08** | migration 0070 aplicada; webhook grava os três IDs; `metaAnuncio.ts` + 7 testes |
+| F1 — gasto diário | **código no ar, NUNCA sincronizou** | `meta_ads_metricas` tem **0 linhas** (31/08). Faltam `META_ADS_ACCOUNT_ID` e `META_ADS_TOKEN` na Vercel — sem eles a rota devolve `nao_configurado` e não escreve nada (`metaAds.ts:101`) |
+| F2 — CPL do CRM | **ENTREGUE 31/08** | junção por ID em `funilDeAnuncios.ts`: por campanha, custo por lead, por visita e por fechado, mais os leads sem campanha contados à parte. **Mostra vazio até a F1 sincronizar** |
+| F3 — tela do gestor | **feita, mostrando zeros** | `admin/anuncios/`; com F1 sem dado, `totalGasto = 0` e os KPIs saem como "—" |
+| F5 — link porteiro CTWA | **feita, sem tráfego real** | 11 cliques em `cliques_whatsapp`, TODOS de 26/08 numa janela de 1h (dois deles `anuncio/nao-existe`): é o teste de quem construiu. **0 leads** com `origem = 'meta/ctwa'` |
+
+> **Auditado em 31/08 por uma rodada de agentes, contra código e banco.**
+> Três das quatro fases marcadas como entregues não produziram uma linha de
+> dado. O padrão é o mesmo da casa: código no ar ≠ código exercitado.
+
+**A ordem se inverteu, e o efeito é que a tela existe e não pode mostrar o
+número principal.** F1 trouxe o lado do dinheiro (gasto por campanha por
+dia) e F3 trouxe onde exibir; o lado do lead continua ligado à campanha
+pelo NOME do anúncio, que muda quando alguém renomeia no Gerenciador. O
+CPL do CRM — o número que só nós temos — depende da F0 e de mais nada.
+
+**F0 é pequena e desbloqueia a F2 inteira:** uma migration com três
+colunas de texto, um `fields=name,adset{id,name},campaign{id,name}` a mais
+na chamada que o webhook já faz, e um backfill dos leads com `meta_lead_id`
+preenchido (a Graph API responde por leads de até 90 dias).
 
 ## O que já existe (e o que falta nele)
 
@@ -12,8 +39,9 @@
   `anuncio_origem` é o NOME do anúncio, e nome muda quando alguém renomeia
   no Gerenciador. **Falta guardar os IDs** (anúncio, conjunto, campanha),
   que são a chave de junção estável com o gasto.
-- O lado do dinheiro não existe: nada consulta a Marketing API
-  (`/act_<id>/insights`), e não há onde guardar gasto por campanha por dia.
+- ~~O lado do dinheiro não existe~~ — **existe desde a F1**: `metaAds.ts`
+  consulta `/act_<id>/insights` e `meta_ads_metricas` guarda gasto por
+  campanha por dia. O que falta é o outro lado da junção (F0).
 
 ## A arquitetura recomendada (decidida, não em aberto)
 
@@ -35,18 +63,64 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
 
 ## Fases
 
-### F0 — Guardar os IDs do anúncio no lead (pré-requisito de tudo)
+### F0 — Guardar os IDs do anúncio no lead — ENTREGUE em 31/08/2026
 
 - Migration: `leads.meta_ad_id`, `leads.meta_conjunto_id`,
   `leads.meta_campanha_id` (text, null).
 - No webhook, a busca do anúncio passa a pedir
   `fields=name,adset{id,name},campaign{id,name}` — uma chamada só, mesma
   latência.
-- Backfill dos leads existentes com `meta_lead_id` preenchido (a Graph API
-  ainda responde para leads de até 90 dias).
+- ~~Backfill dos leads existentes~~ — **não há o que preencher**: medido em
+  31/08, `leads` tem **ZERO** linhas com `meta_lead_id`. O webhook de Lead
+  Ads nunca produziu um lead, porque o cliente escolheu (26/08) o formato
+  Click-to-WhatsApp. Escrever um backfill para zero linhas seria código
+  especulativo; se um dia entrarem leads de formulário, a Graph API
+  responde por 90 dias e o backfill se escreve então.
 - A partir daqui, todo lead novo do Meta já nasce ligado à campanha.
 
-### F1 — Sincronizar o gasto diário
+**Como ficou** (`0070`, `src/lib/metaAnuncio.ts`, `webhooks/meta/route.ts`):
+
+- Três colunas de texto em `leads` + índice PARCIAL em `meta_campanha_id`
+  (a maioria dos leads nunca virá de anúncio; índice total indexaria nulo).
+- Uma chamada só à Graph API, com `fields=name,adset{id,name},campaign{id,name}`.
+  Há teste afirmando que `adset` e `campaign` continuam na lista: se alguém
+  "simplificar" de volta para `fields=name`, a API segue devolvendo 200, o
+  lead segue nascendo, e só o CPL some — sem erro nenhum no caminho.
+- **Grants deliberadamente ausentes.** Em `leads` o INSERT é grant de tabela,
+  então o webhook já escreve nas colunas novas; o UPDATE foi revogado na
+  0007 e concedido coluna a coluna, e estas três ficam de fora — ninguém
+  edita atribuição de anúncio à mão, e permitir isso seria permitir
+  reescrever de onde veio um lead pago. Conferido em produção:
+  `anon` insere = true, `authenticated` atualiza = false.
+- **O ad_id passou a ter dois caminhos.** Ele chega em `change.value.ad_id`
+  e também nos dados do lead; antes só o primeiro era lido, então quando
+  ele vinha ausente o lead nascia sem atribuição mesmo com a Graph API
+  sabendo a origem.
+- **Nada disso lança.** Resposta ausente, JSON de outro formato ou ID que
+  não é dígito viram `null` — perder os IDs é recuperável, perder o LEAD
+  não é.
+
+**O que a F0 NÃO resolve, e é o que falta para o CPL de CTWA.** O formato
+que o cliente escolhe é o link porteiro `/wa/<campanha>`, que não passa
+pelo webhook de Lead Ads. Para esse caminho, a boa notícia é que
+`cliques_whatsapp.url_origem` já guarda a query string inteira: basta o
+anúncio apontar para
+
+    https://<site>/wa/<campanha>?mc={{campaign.id}}&ma={{ad.id}}
+
+(a Meta substitui as chaves no clique) e o ID da campanha passa a ser
+guardado **hoje, sem código novo**. O que falta é casar o clique com a
+conversa que nasce em seguida — proximidade temporal + a mensagem pronta,
+que é única por campanha (F5, item 3). Enquanto isso não existir, o CPL
+por ID vale para Lead Ads e o de CTWA continua por nome.
+
+### F1 — Sincronizar o gasto diário — CÓDIGO ENTREGUE, NUNCA EXECUTADO
+
+**O que falta é configuração, não código:** `META_ADS_ACCOUNT_ID` e um token
+de System User com `ads_read` nas variáveis de ambiente da Vercel — e o
+redeploy que as faz valer (env var nova só existe depois do build). Enquanto
+isso, `meta_ads_metricas` fica em 0 linhas e a tela de Anúncios inteira
+mostra travessão.
 
 - Tabela `meta_ads_metricas`: `dia`, `campanha_id`, `campanha_nome`,
   `gasto`, `impressoes`, `cliques`, `leads_meta`, unique em
@@ -61,7 +135,38 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
 - Agendar via pg_cron (`configurar_*`, mesmo padrão do disparo) ou cron da
   Vercel — 1x/dia cabe no Hobby.
 
-### F2 — O número que só o CRM tem
+### F2 — O número que só o CRM tem — ENTREGUE em 31/08/2026
+
+A junção por ID existe (`src/lib/admin/funilDeAnuncios.ts`, função pura com
+9 testes) e a tabela "Por campanha" passou a trazer o lado do CRM: leads,
+custo por lead, visitas, **custo por visita**, fechados e **custo por
+fechado** — os dois últimos a Meta não tem como calcular, porque o que
+acontece depois do clique só existe neste banco.
+
+Três decisões que a tabela carrega:
+
+- **Campanha que gastou e não trouxe lead aparece marcada** ("· sem lead").
+  É o achado que uma tela de custo existe para entregar, e ele some se a
+  lista for montada a partir dos leads.
+- **Os leads sem campanha identificada são contados À PARTE**, com o número
+  em destaque e a explicação. Hoje são a maioria por construção: o formato
+  que o cliente usa é Click-to-WhatsApp, que entra pelo link porteiro e
+  nasce sem `meta_campanha_id`. Somá-los em campanha nenhuma faria a tabela
+  mentir para baixo; escondê-los faria o gestor achar que a campanha rendeu
+  menos do que rendeu.
+- **A divergência Meta × CRM aparece só quando existe** ("a Meta contou 12"
+  embaixo do nome), porque é alerta de INGESTÃO — formulário duplicado,
+  telefone inválido, webhook fora do ar. Calado quando os dois batem, para
+  não virar ruído em toda linha.
+
+Cada número de leads leva à lista já filtrada (`?campanha=<id>`) — e o
+filtro foi implementado do outro lado junto, porque a lista não lia esse
+parâmetro e o link seria ignorado em silêncio (o defeito do `?filtro=parados`,
+que agora tem teste próprio em `linksDeFiltro.test.ts`).
+
+**A tabela mostra vazio até a F1 sincronizar**: sem `META_ADS_ACCOUNT_ID` e
+`META_ADS_TOKEN`, `meta_ads_metricas` fica em 0 linhas e não há gasto para
+juntar com nada. O código está pronto e esperando o dado.
 
 - View/consulta agregada: por campanha e por dia, `gasto ÷ leads do CRM`
   (join por `meta_campanha_id`), `gasto ÷ visitas agendadas` e
@@ -82,7 +187,7 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
   diferentes** (`admin/agregados.ts`) — a agregação é uma query magra
   própria, nunca derivada da lista do quadro.
 
-### F3 — O gráfico no painel do gestor
+### F3 — O gráfico no painel do gestor — ENTREGUE (sem o CPL, que espera a F0)
 
 - Tela em Administração (aba nova ou seção no painel do gestor), com
   `exigirGestorNaPagina()` como toda page do segmento.
@@ -95,7 +200,7 @@ divergirem muito, isso é um alerta de ingestão, não um detalhe.
   esta tela precisa; se a área de gráficos crescer (F4+), aí sim avaliar
   recharts.
 
-### F4 — Alertas e refinamentos
+### F4 — Alertas e refinamentos — NÃO COMEÇOU (confirmado: nenhum alerta no código)
 
 - CPL da campanha fugiu da própria média (mesmo termostato com folga do
   `evolucaoConversa`) → aviso ao gestor.

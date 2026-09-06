@@ -1,0 +1,69 @@
+familia-tres-dorm · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato
+Qual região você procura para investir ou morar?
+
+[2] Cliente: barueri ou alphaville
+              quero 3 dorms, perto da escola
+[2] Sofia:   Barueri e Alphaville têm ótimas opções. Em Barueri, o Viva RSF tem 3 dormitórios e é ótimo para famílias.
+Em Alphaville, o Vitra tem 3 dormitórios e fica perto de escolas. Quer que eu te envie as fotos para dar uma olhada?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/fachada-lazer.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+
+[3] Cliente: tô perguntando do preço
+              é só isso que quero saber
+[3] Sofia:   O valor varia conforme andar, metragem e forma de pagamento.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[4] Cliente: mas e o preço?
+              não entendi essa resposta.
+[4] Sofia:   O valor exato depende da unidade e condições, que fechamos na visita.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[5] Cliente: tô perguntando do preço!
+              não tô pedindo detalhes, só quero saber!
+[5] Sofia:   O valor da unidade depende do andar e da forma de pagamento, que fechamos na visita.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[6] Cliente: mas que preço é esse?
+              não entendi nada do que você falou!
+[6] Sofia:   Quer agendar para eu te mostrar pessoalmente?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[7] Cliente: mas qual o preço exato?
+              não dá pra ficar nessa dúvida.
+[7] Sofia:   Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[8] Cliente: não quero agendar, só quero saber o preço!
+              não dá pra ficar assim.
+[8] Sofia:   Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[9] Cliente: só quero saber o preço!
+              não consegui entender nada!
+[9] Sofia:   Posso te mostrar o decorado e as opções pessoalmente.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/piscina-adulto.jpg
+
+[10] Cliente: como assim, não tem preço?
+              não entendi essa resposta de novo!
+[10] Sofia:   O valor varia conforme a unidade e condições, que fechamos na visita. Posso agendar para você conhecer o decorado e esclarecer tudo?
+Os valores variam conforme a unidade, o andar e a forma de pagamento — prefiro te passar a condição certa para o seu caso.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/viva-rsf-vila-do-conde/academia.jpg
+
+[11] Cliente: como não tem preço?
+              só quero saber o valor!
+[11] Sofia:   O valor exato quem passa é a construtora, e ele muda por unidade, andar e forma de pagamento. A visita é o melhor caminho para tratar disso com calma e clareza.
+Posso agendar sábado às 10h ou segunda às 15h para você conhecer o decorado e tirar todas as dúvidas?
+
+[12] Cliente: não quero agendar!
+              só quero saber o preço exato!
+[12] Sofia:   O valor exato depende da unidade e condições, que fechamos na visita.

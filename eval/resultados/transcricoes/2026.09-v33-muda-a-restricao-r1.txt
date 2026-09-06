@@ -1,0 +1,75 @@
+muda-a-restricao · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: boa tarde! procuro apartamento de 4 dormitórios
+[1] Sofia:   4 dormitórios é uma busca mais rara aqui, não temos essa opção no catálogo.
+Em qual região de Barueri você procura o apartamento?
+
+[2] Cliente: mas eu quero ver opções
+              tem algo menor?
+[2] Sofia:   Entendo, opções menores temos sim. Em qual região de Barueri você procura?
+
+[3] Cliente: quero algo menor e pronto pra morar
+              mas ainda em Barueri, né?
+[3] Sofia:   Temos opções prontas para morar em Barueri, como o Elos Barueri e o Vitra Alphaville. Quer conhecer o decorado?
+Olha o link da página,
+tem tudo lá para você conferir https://next-home-drab.vercel.app/empreendimentos/elos-barueri-ne61101
+
+[4] Cliente: não, não quero link
+              quero opções reais
+              tem algo pronto?
+[4] Sofia:   Temos o Elos Barueri e o Vitra Alphaville prontos para morar, com 2 dormitórios.
+Qual faixa de valor você tem em mente para eu te mostrar o que cabe no bolso?
+
+[5] Cliente: 2 dormitórios ainda?
+              qual o valor?
+              tem fotos?
+[5] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Temos opções de 2 dormitórios prontas para morar em Barueri, como o Elos Barueri e o Vitra Alphaville.
+Te mandei as fotos do Elos Barueri para você ver.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/elos-barueri-ne61101/foto-1-big-e678e7ebc51cb4e4332a322465dcf7b3.jpg
+
+[6] Cliente: mas e o valor do Vitra?
+              tem fotos dele?
+[6] Sofia:   O Vitra Alphaville tem unidades a partir de R$ 1.000.000.
+Te mandei as fotos dele para você conhecer o padrão e acabamento.
+Quer que eu envie a planta também?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-2-big-56cbd63eb7afb430e0e17e65af38778d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-3-big-6ee6905482a046988bde5334ff1b4877.jpg
+
+[7] Cliente: mas é muito caro
+              tem algo mais em conta?
+[7] Sofia:   O Elos Barueri é uma opção mais em conta, a partir de R$ 555.000
+fica em Aldeia, Barueri, com 2 dormitórios e suíte
+olha o link para detalhes https://next-home-drab.vercel.app/empreendimentos/elos-barueri-ne61101
+
+[8] Cliente: mas ainda assim tá caro
+              tem algo por menos?
+[8] Sofia:   Entendo que o valor é um ponto importante. O que você viu por esse valor?
+Ou podemos conversar sobre entrada parcelada e financiamento direto com a construtora,
+que o corretor monta o fluxo na visita.
+
+[9] Cliente: mas e abaixo de 500 mil?
+              tem algo assim?
+[9] Sofia:   Quer que eu te mostre as condições de pagamento do Elos Barueri, que é o mais acessível?
+Ou prefere agendar uma visita para conversarmos pessoalmente?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[10] Cliente: não quero visitar
+              quero algo pronto e abaixo de 500 mil
+[10] Sofia:   O Vitra Alphaville é pronto para morar, com 2 dormitórios e padrão alto, mas o valor começa em R$ 1.000.000.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[11] Cliente: mas tem algo menor que 500 mil?
+              alguma coisa pronta pra morar?
+[11] Sofia:   Confirmo com o corretor e te trago essa informação.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[12] Cliente: mas e aquele de 1 dorm?
+              tem algo assim?
+[12] Sofia:   O Vitra Alphaville tem 2 dormitórios, até 2 suítes, e 2 vagas.
+Não temos opção de 1 dormitório pronta para morar no catálogo. Quer conhecer o decorado para ver de perto?

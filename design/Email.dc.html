@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap">
+  <style>
+    /* E-mail e sempre CLARO: modo escuro em cliente de e-mail e inconsistente
+       (cada cliente inverte de um jeito), entao o desenho nao aposta nele.
+       Fontes com fallback metrico proximo — Google Fonts nao chega em
+       Outlook nem no app do Gmail. */
+    :root {
+      --papel: #ffffff; --fora: #edf2f0;
+      --titulo: #05211c; --corpo: #183630; --apoio: #4a6a63; --tenue: #5f7c76;
+      --linha: rgb(0 63 55 / 0.14);
+      --perigo: #be123c; --perigo-lavado: rgb(190 18 60 / 0.08); --perigo-linha: rgb(190 18 60 / 0.26);
+      --acento: #00594f;
+    }
+    body { margin: 0; background: var(--fora); font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+           -webkit-font-smoothing: antialiased; }
+    a { color: var(--acento); } a:hover { color: #00443c; }
+    .disp { font-family: Fraunces, Georgia, "Times New Roman", serif; }
+  </style>
+</helmet>
+
+<div style="padding: 24px 20px 32px">
+
+  <!-- Tira de cabecalho: e o que a pessoa ve ANTES de abrir, e e onde o
+       aviso ganha ou perde. Assunto diz o fato e a consequencia. -->
+  <div style="border: 1px solid var(--linha); border-radius: 12px; background: var(--papel); padding: 14px 16px; margin-bottom: 18px">
+    <p style="margin: 0; font-size: 12px; color: var(--tenue)">De <strong style="color: var(--corpo); font-weight: 600">Next Home · avisos</strong> &nbsp;·&nbsp; hoje, 06h30</p>
+    <p style="margin: 6px 0 0; font-size: 15px; color: var(--titulo); font-weight: 600; line-height: 1.35">Seu WhatsApp saiu do ar — a Sofia parou de atender</p>
+    <p style="margin: 4px 0 0; font-size: 13px; color: var(--apoio); line-height: 1.5">Faz 3 dias. 15 mensagens estão paradas e ninguém está sendo respondido.</p>
+  </div>
+
+  <!-- O corpo -->
+  <div style="border: 1px solid var(--linha); border-radius: 16px; background: var(--papel); overflow: hidden">
+
+    <div style="padding: 24px 28px 0">
+      <span class="disp" style="font-size: 17px; color: var(--titulo)">Next<span style="color: var(--acento)">Home</span></span>
+    </div>
+
+    <div style="padding: 18px 28px 0">
+      <div style="border-left: 3px solid var(--perigo); background: var(--perigo-lavado); border-radius: 0 10px 10px 0; padding: 14px 16px">
+        <p style="margin: 0; font-size: 15px; font-weight: 600; color: var(--titulo); line-height: 1.35">Seu número não está mais conectado</p>
+        <p style="margin: 6px 0 0; font-size: 14px; color: var(--corpo); line-height: 1.6">
+          A conexão caiu em <strong style="color: var(--titulo); font-weight: 600">sexta, 28/08 às 16h22</strong>.
+        </p>
+      </div>
+    </div>
+
+    <div style="padding: 20px 28px 0">
+      <p style="margin: 0; font-size: 14px; color: var(--corpo); line-height: 1.65; text-wrap: pretty">
+        Desde então, o que parou:
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px">
+        <div style="display: flex; align-items: baseline; gap: 10px">
+          <span style="width: 6px; height: 6px; border-radius: 999px; background: var(--perigo); flex-shrink: 0; transform: translateY(-2px)"></span>
+          <span style="font-size: 14px; color: var(--corpo); line-height: 1.5">Mensagem que chega não é respondida — nem pela Sofia, nem por você.</span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 10px">
+          <span style="width: 6px; height: 6px; border-radius: 999px; background: var(--perigo); flex-shrink: 0; transform: translateY(-2px)"></span>
+          <span style="font-size: 14px; color: var(--corpo); line-height: 1.5"><strong style="color: var(--titulo); font-weight: 600">15 disparos</strong> de campanha estão parados na fila.</span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 10px">
+          <span style="width: 6px; height: 6px; border-radius: 999px; background: var(--perigo); flex-shrink: 0; transform: translateY(-2px)"></span>
+          <span style="font-size: 14px; color: var(--corpo); line-height: 1.5">Lembrete de visita não sai — quem tem visita marcada não será avisado.</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding: 24px 28px 0">
+      <a href="#" style="display: inline-block; background: var(--acento); color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 24px; border-radius: 999px">Reconectar meu número</a>
+      <p style="margin: 12px 0 0; font-size: 13px; color: var(--apoio); line-height: 1.55">
+        Leva um minuto: o painel mostra um código de 8 caracteres para você digitar em
+        <em style="font-style: normal; color: var(--corpo)">Aparelhos conectados</em> no WhatsApp do celular.
+      </p>
+    </div>
+
+    <!-- A razao de existir deste e-mail, dita em uma linha. Sem isso ele
+         parece redundante com o painel; com isso, fica obvio. -->
+    <div style="margin: 24px 28px 28px 28px; border-top: 1px solid var(--linha); padding-top: 16px">
+      <p style="margin: 0; font-size: 12.5px; color: var(--tenue); line-height: 1.6; text-wrap: pretty">
+        Você está recebendo por e-mail porque o canal que caiu foi justamente o WhatsApp —
+        avisar por lá seria avisar num telefone mudo. O painel mostra o mesmo aviso quando você abre.
+      </p>
+    </div>
+
+  </div>
+
+  <p style="margin: 16px 4px 0; font-size: 12px; color: var(--tenue); line-height: 1.6">
+    Next Home Negócios Imobiliários · Barueri, SP &nbsp;·&nbsp; <a href="#" style="color: var(--tenue)">não quero mais estes avisos</a>
+  </p>
+
+</div>
+</x-dc>
+</body>
+</html>

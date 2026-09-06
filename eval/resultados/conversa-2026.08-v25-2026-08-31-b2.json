@@ -1,0 +1,173 @@
+{
+  "promptVersao": "2026.08-v25",
+  "data": "2026-08-31",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "openai",
+  "clienteIndependente": false,
+  "tetoDeTurnos": 12,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "elogiou-o-terra-alta",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso mandar o link da página com tudo sobre o empreendimento para você explorar com calma?",
+          "Posso mandar o link da página com tudo sobre o empreendimento para você explorar com calma?"
+        ],
+        "perguntasReaparecidas": [
+          "tem mais ou não?"
+        ],
+        "respostasRepetidas": 3,
+        "maiorSequenciaSemNovidade": 11,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "renda",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 133,
+        "maiorMensagem": 233,
+        "reprovacoes": [
+          "repetiu 2 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 1 pergunta(s) — ela não respondeu",
+          "mandou 3 resposta(s) quase idêntica(s) a uma anterior",
+          "11 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem qualificação ou condução ao próximo passo. Faltou direcionamento e convite claro para visita.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "imovel-de-outra-imobiliaria",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Me diz o que mais valoriza: acabamento, espaço, lazer?",
+          "Me diz o que mais valoriza nele: acabamento, espaço ou lazer?",
+          "Quer que eu te envie o catálogo para você avaliar e me dizer o que te agrada?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 10,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 184,
+        "maiorMensagem": 325,
+        "reprovacoes": [
+          "nunca ofereceu visita",
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "10 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem avanço real. A assistente foi repetitiva e não conseguiu qualificar ou conduzir ao próximo passo.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "muda-a-restricao",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 3,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "não tem outro?",
+          "tem mais 1 dormitório?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 9,
+        "assuntosCobertos": [
+          "tipologia",
+          "regiao",
+          "estagio",
+          "visita",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 142,
+        "maiorMensagem": 270,
+        "reprovacoes": [
+          "o cliente teve de repetir 2 pergunta(s) — ela não respondeu",
+          "9 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem qualificação efetiva nem condução clara ao próximo passo. Faltou controle e direcionamento do atendimento.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "escreve-errado",
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 9,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "vc ta de sacanagem?",
+          "vc ta de sacanagem?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 7,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 116,
+        "maiorMensagem": 172,
+        "reprovacoes": [
+          "ofereceu visita só no turno 9",
+          "o cliente teve de repetir 2 pergunta(s) — ela não respondeu",
+          "7 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, sem avanço real. A assistente foi consistente, mas não atendeu ao pedido do cliente nem qualificou adequadamente.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

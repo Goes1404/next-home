@@ -6,7 +6,7 @@ import type { FundoTipo } from "@/lib/types";
 import { SeletorArquivo } from "./SeletorArquivo";
 
 const BOTAO_BASE = "text-fluid-sm rounded-full px-4 py-2 font-medium transition-colors";
-const BOTAO_ATIVO = "bg-acento text-white";
+const BOTAO_ATIVO = "bg-acento text-sobre-cor";
 const BOTAO_INATIVO = "border border-linha-forte text-corpo hover:border-linha-forte";
 
 export function FundoLink({ fundoTipo }: { fundoTipo: FundoTipo }) {

@@ -79,12 +79,16 @@ export function FiltroForm({
       )}
 
       {/* 6 colunas só a partir de lg: em telas médias os selects ficariam
-          estreitos demais e cortariam o rótulo da opção escolhida. */}
+          estreitos demais e cortariam o rótulo da opção escolhida.
+          `[&>*]:min-w-0`: item de grid tem `min-width: auto`, e a largura
+          mínima de um <select> é a da opção mais larga ("Até R$ 1,2 milhão",
+          "Santana de Parnaíba") — em 360px isso empurrava a coluna além da
+          metade e o GlassSurface cortava o campo em silêncio. */}
       <div
         className={
           compacto
-            ? "grid grid-cols-2 gap-3 sm:grid-cols-3"
-            : "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
+            ? "grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*]:min-w-0"
+            : "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 [&>*]:min-w-0"
         }
       >
         <div>

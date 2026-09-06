@@ -5,8 +5,16 @@ import { gerarRespostaIA, type RespostaAgenteIA } from "./aiAgent";
 import type { AnexoResolvido } from "./resolverMidia";
 import { buscarExemplosFewShot } from "./aprendizadoContinuo";
 import { catalogoParaAtendimento } from "./focoDaConversa";
-import { capacidadeEstaPendente } from "./funilQualificacao";
+import { blocoDaJogada, estadoDaConversa, planejarJogada } from "./jogada";
+import { regrasCondicionais } from "./regrasCondicionais";
+import {
+  blocoNaoRepitaHorario,
+  horariosJaOferecidos,
+  semOsJaOferecidos,
+} from "./ofertasDeVisita";
+import { blocoDeHorarios, type HorarioDeVisita } from "@/lib/crm/agendaDeVisitas";
 import { catalogoTemPrazo } from "./prazoEntrega";
+import { catalogoTemAcabamento } from "./acabamentoInventado";
 import { sanearRespostaIA } from "./guardrails";
 import { dividirEmMensagens } from "./chunking";
 import { separarRajada, type Fala } from "./rajada";
@@ -67,6 +75,16 @@ export type PedidoDeTurno = {
   dossie?: DossieClienteIA | null;
   /** Instrução de cenário (ex.: follow-up de reengajamento). */
   instrucaoExtra?: string;
+  /**
+   * Horários reais da agenda do corretor (0073), CRUS. Vem de fora porque
+   * este módulo não toca no banco — é o que permite o eval medir o mesmo
+   * turno sem efeito sobre o mundo.
+   *
+   * Crus, e não o bloco pronto, porque a lista precisa ser filtrada aqui:
+   * é aqui que se sabe o que já foi oferecido nesta conversa. Montar o
+   * bloco fora significaria fazer essa conta em dois lugares.
+   */
+  horariosReais?: readonly HorarioDeVisita[];
   /**
    * Sobrescreve a vez do cliente. Existe para o follow-up, em que NINGUÉM
    * falou — é o silêncio que motiva a mensagem.
@@ -145,19 +163,40 @@ export async function executarTurnoDeAtendimento(
   });
 
   /*
-   * A capacidade entra como PENDÊNCIA calculada, não como regra genérica:
-   * o eval da v22 pegou a IA indicando imóvel sem perguntá-la, com a regra
-   * do funil já no prompt. Satisfeita por faixa de valor OU renda — ver
-   * funilQualificacao. Mora aqui, no caminho único, para os quatro
-   * chamadores enxergarem a mesma conversa (a divergência playground ×
-   * webhook já custou caro duas vezes).
+   * PLANNER: a jogada desta mensagem é decidida AQUI, em código, antes de
+   * qualquer chamada ao modelo (`jogada.ts`).
+   *
+   * Ela absorve o que antes eram quatro blocos competindo no topo do
+   * prompt — pergunta ignorada, dado pedido, capacidade pendente e a ordem
+   * do funil — e devolve UMA tarefa. Quatro instruções disputando a mesma
+   * decisão era a doença: medimos que a permissão do piso, escrita no
+   * prompt, era obedecida em 30% das vezes.
+   *
+   * É determinística de propósito: roda igual no webhook e no eval, sem
+   * custar chamada, e "não repita a pergunta anterior" deixa de ser súplica
+   * e vira comparação de conjuntos. O que era medido no eval da v25 (27
+   * repetições do cliente, uma pergunta feita doze vezes) e da v26 (o mesmo
+   * horário três vezes) passa a ser impossível por construção.
    */
-  const capacidadePendente = capacidadeEstaPendente({
-    dossie: pedido.dossie,
+  const imovelEmFoco = foco ? (catalogoDoPrompt.find((e) => e.slug === foco.slug) ?? null) : null;
+  const estado = estadoDaConversa({
     historico: historicoAnterior,
     mensagemAtual: textoDaVez,
-    catalogo: pedido.catalogo,
+    dossie: pedido.dossie,
+    imovelEmFoco,
+    catalogo: catalogoDoPrompt,
   });
+  const jogada = planejarJogada(estado);
+
+  /*
+   * O que ela JÁ ofereceu de horário nesta conversa: a lista real perde os
+   * horários já oferecidos (o que ele não vê, não oferece) e, sem agenda
+   * configurada, um bloco nomeia o que saiu.
+   */
+  const oferecidos = horariosJaOferecidos(historicoAnterior);
+  const blocoHorariosReais = blocoDeHorarios(
+    semOsJaOferecidos(pedido.horariosReais ?? [], oferecidos.assinaturas),
+  );
 
   const bruta = await gerarRespostaIA(
     {
@@ -168,13 +207,17 @@ export async function executarTurnoDeAtendimento(
       dossie: pedido.dossie,
       instrucaoExtra: pedido.instrucaoExtra,
       foco,
-      capacidadePendente,
+      blocoJogada: blocoDaJogada(jogada, { nomeDoFoco: foco?.nome ?? null }),
+      blocoRegrasCondicionais: regrasCondicionais({ baloesDaVez: vezDoCliente.length }),
+      blocoHorariosReais,
+      blocoNaoRepitaHorario: blocoNaoRepitaHorario(oferecidos),
       /*
        * O aviso olha o catálogo QUE FOI AO PROMPT, não o completo: é sobre
        * o que ela pode citar nesta resposta. O guardrail
        * (`removerPrazoInventado`) segue como rede depois.
        */
       semPrazoCadastrado: !catalogoTemPrazo(catalogoDoPrompt),
+      semAcabamentoCadastrado: !catalogoTemAcabamento(catalogoDoPrompt),
     },
     vezDoCliente.length > 0
       ? vezDoCliente

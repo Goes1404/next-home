@@ -41,8 +41,24 @@ export function AbasSecao({
   rotulo: string;
 }) {
   return (
-    <nav aria-label={rotulo} className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <div className="border-linha bg-superficie inline-flex rounded-full border p-1">
+    /*
+     * Quebra linha, não rola de lado.
+     *
+     * Rolagem lateral aqui escondia navegação sem dizer que existia: medido
+     * em 360px, ficavam 117px de abas fora da tela em WhatsApp e 327px em
+     * Administração — mais da metade dos destinos daquela seção, atrás de um
+     * gesto que ninguém adivinha numa fileira que parece completa.
+     *
+     * O custo de quebrar é 44px de altura no primeiro caso e 88px no segundo,
+     * uma vez, no topo. É o mesmo negócio que a barra de seleção em lote já
+     * tinha fechado: alvo escondido atrás de um gesto invisível é quase tão
+     * ruim quanto alvo cortado.
+     *
+     * O contêiner deixa de ser `rounded-full` porque pílula de três linhas não
+     * é pílula.
+     */
+    <nav aria-label={rotulo}>
+      <div className="cartao flex flex-wrap gap-1 p-1">
         {abas.map((aba) => {
           const atual = aba.href === ativa;
           return (
@@ -52,7 +68,7 @@ export function AbasSecao({
               aria-current={atual ? "page" : undefined}
               className={cn(
                 "flex min-h-10 items-center gap-1.5 rounded-full px-4 text-sm whitespace-nowrap transition-colors",
-                atual ? "bg-acento font-medium text-white" : "text-apoio hover:text-titulo",
+                atual ? "bg-acento font-medium text-sobre-cor" : "text-apoio hover:text-titulo",
               )}
             >
               {aba.ponto && (
@@ -63,7 +79,7 @@ export function AbasSecao({
                 <span
                   className={cn(
                     "flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums",
-                    atual ? "bg-white/25 text-white" : "bg-acento-lavado text-acento-suave",
+                    atual ? "bg-sobre-cor/25 text-sobre-cor" : "bg-acento-lavado text-acento-suave",
                   )}
                 >
                   {aba.contador}

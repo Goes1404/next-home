@@ -196,6 +196,7 @@ export async function arquivarLead(leadId: string): Promise<ResultadoCrm> {
   if (error || !data?.length) return { erro: "Não foi possível arquivar este lead." };
 
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   revalidatePath(`/corretor/leads/${leadId}`);
   return { ok: "Lead arquivado. Ele sai das listas e do funil, e dá para restaurar quando quiser." };
 }
@@ -213,6 +214,7 @@ export async function restaurarLead(leadId: string): Promise<ResultadoCrm> {
   if (error || !data?.length) return { erro: "Não foi possível restaurar este lead." };
 
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   revalidatePath(`/corretor/leads/${leadId}`);
   return { ok: "Lead restaurado." };
 }
@@ -246,5 +248,6 @@ export async function excluirLeadDefinitivo(leadId: string): Promise<ResultadoCr
   if (error || !data?.length) return { erro: "Não foi possível excluir este lead." };
 
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   return { ok: "Lead excluído definitivamente." };
 }

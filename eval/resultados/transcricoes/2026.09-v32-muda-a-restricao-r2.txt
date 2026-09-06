@@ -1,0 +1,69 @@
+muda-a-restricao · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: boa tarde! procuro apartamento de 4 dormitórios
+[1] Sofia:   Entendo sua necessidade por espaço maior. Em qual região de Barueri você procura o apartamento?
+
+[2] Cliente: região central
+              só que melhor se for menor
+[2] Sofia:   No centro de Barueri, não temos 4 dormitórios e o menor que temos é 3 dormitórios.
+Quer conhecer o decorado do Viva RSF Vila do Conde?
+Fica próximo e tem 3 dormitórios com suíte
+Olha o link da página para você ver mais detalhes.
+
+[3] Cliente: 3 dormitórios? me diz mais
+              tem pronto pra morar?
+[3] Sofia:   O Viva RSF Vila do Conde tem 3 dormitórios com suíte, 49m² e 2 vagas.
+Você prefere imóvel pronto para morar ou na planta?
+
+[4] Cliente: tem pronto pra morar?
+              qual o valor?
+[4] Sofia:   O Viva RSF Vila do Conde é pronto para morar.
+O valor começa em R$ 460.000, e varia conforme o andar e forma de pagamento.
+Quer conhecer o decorado para sentir o espaço?
+
+[5] Cliente: tem 2 dorm?
+              qual o valor?
+[5] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[6] Cliente: quero 2 dorm
+              pronto pra morar, quanto?
+[6] Sofia:   O Viva RSF Vila do Conde tem 3 dormitórios, não 2.
+Para 2 dormitórios, posso mostrar o More Aldeia de Barueri, que é pronto para morar.
+Quer que eu te envie as informações?
+
+[7] Cliente: 3 dorm? não é isso que quero
+              me manda info do 2 dorm
+[7] Sofia:   Você prefere 2 dormitórios e pronto para morar.
+Vou te enviar as informações do More Aldeia de Barueri para você avaliar.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-1-big-1fed6dfac329a4107d85c4e67b48f0b5.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-2-big-4157f723f5d95731b87a582d2da35adc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-3-big-cc95e85e4862cc5c7044a92fc5cc2c1e.jpeg
+
+[8] Cliente: e o valor do 2 dorm?
+              tem outras opções?
+[8] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Para 2 dormitórios pronto para morar, o More Aldeia de Barueri começa em R$ 600.000.
+Quer que eu te envie as fotos do More Aldeia ou do Vila Eco Park, que é lançamento em Osasco?
+
+[9] Cliente: 600 mil? muito caro
+              quais outras opções mesmo?
+[9] Sofia:   O Vila Eco Park, lançamento em Osasco, é mais em conta, a partir de R$ 249.000.
+Tem 2 dormitórios e fica no Munhoz Júnior, região com boa infraestrutura. Olha o link da página para ver mais detalhes.
+
+[10] Cliente: 600 mil? não dá
+              qual o valor do Vila Eco Park?
+[10] Sofia:   O Vila Eco Park começa em R$ 249.000.
+O valor varia conforme a unidade e forma de pagamento, e quem fecha isso é o corretor na visita.
+Confirmo com o corretor e te trago mais detalhes.
+
+[11] Cliente: e tem pronto pra morar?
+              manda mais info
+[11] Sofia:   O Vila Eco Park é um lançamento em Osasco, com apartamentos de 2 dormitórios, 38,81m², 1 vaga e 1 banheiro.
+Não está pronto para morar, é na planta. Olha o link da página, tem tudo lá
+Quer conhecer o decorado para entender melhor o projeto?
+
+[12] Cliente: não quero na planta
+              tem pronto pra morar?
+[12] Sofia:   O Vila Eco Park tem apartamentos de 2 dormitórios com uma vaga de garagem.
+Quer conhecer o decorado para sentir o espaço?

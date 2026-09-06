@@ -1,0 +1,73 @@
+confuso-entre-dois · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me fala do terra alta e do more aldeia, qual compensa mais
+[1] Sofia:   O Terra Alta fica no Jardim Tupanci, com 1 dormitório, 52m², 2 vagas.
+É ideal para quem busca conforto e praticidade em Barueri.
+Está em construção, com condições flexíveis de pagamento.
+Posso te enviar as fotos para você conhecer melhor?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+
+[2] Cliente: mas e o more aldeia?
+              tem 2 dorm?
+              e o preço?
+[2] Sofia:   O More Aldeia tem 2 dormitórios e 1 vaga, pronto para morar em Barueri.
+Sobre preço, varia por unidade e condição de pagamento. Posso te enviar as fotos do Terra Alta para começar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+
+[3] Cliente: mas e o preço do more aldeia?
+              tô esperando a resposta!
+[3] Sofia:   O valor exato quem passa é a construtora e varia por unidade e condição de pagamento.
+A visita é o melhor momento para tratar valores, fluxo e condições.
+Tenho sábado de manhã disponível para te mostrar tudo no stand, fica bom para você?
+Assim já aproveita para conhecer o Terra Alta também, que tem 1 dormitório, 52m² e 2 vagas.
+
+[4] Cliente: não é isso que perguntei
+              mas quero o valor do more!
+[4] Sofia:   Sei que o valor decide, mas varia por unidade e condição de pagamento.
+O melhor é agendar uma visita para eu te apresentar tudo com detalhes.
+Posso te mostrar sábado às 10h ou às 11h?
+
+[5] Cliente: mas e o valor?
+              não vai me ajudar com isso?
+[5] Sofia:   Entendo que o valor é importante, mas ele varia conforme unidade e condições.
+O melhor caminho é a visita, onde apresento tudo com detalhes e flexibilidade.
+Posso agendar sábado às 10h ou às 11h para você conhecer o Terra Alta e esclarecer isso?
+
+[6] Cliente: mas não tem como ver o preço?
+              quero saber do more!
+              tô esperando!
+[6] Sofia:   O valor do More Aldeia depende da unidade e condições, por isso só confirmo na visita.
+Tenho sábado às 10h ou 11h para te mostrar o Terra Alta e esclarecer tudo.
+Qual horário prefere?
+
+[7] Cliente: mas não é isso que eu quero
+              quero o preço do more!
+[7] Sofia:   O More Aldeia é pronto para morar, com 2 dormitórios e 1 vaga, e o valor varia conforme unidade e condições.
+O preço exato só confirmo na visita, onde apresento tudo com detalhes.
+
+[8] Cliente: mas eu quero o valor!
+              pode me passar isso?
+[8] Sofia:   Sei que o valor é decisivo, mas ele depende da unidade e das condições de pagamento.
+Posso te mostrar sábado às 10h ou às 11h no stand do Terra Alta, que fica perto do More Aldeia.
+
+[9] Cliente: quero saber o valor do more!
+              isso é muito importante!
+[9] Sofia:   Sei que o valor é muito importante para você.
+Ele varia conforme a unidade e as condições de pagamento. Sábado às 10h ou às 11h, qual horário prefere?
+
+[10] Cliente: qual é o preço então?
+              tô esperando!
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[11] Cliente: não tô pedindo isso
+              quero saber o preço do more!
+[11] Sofia:   Sei que o preço do More Aldeia é importante, mas varia por unidade e condição.
+O melhor é agendar uma visita para eu te mostrar tudo com detalhes.
+Posso te receber sábado às 10h ou às 11h para esclarecer isso?
+
+[12] Cliente: mas eu só quero o preço!
+              não quero saber de visita!
+[12] Sofia:   Sei que o preço é decisivo, mas varia por unidade e condições.
+Posso te enviar o link da página do More Aldeia para você ver as informações completas?
+Assim você tem tudo detalhado direto da fonte.

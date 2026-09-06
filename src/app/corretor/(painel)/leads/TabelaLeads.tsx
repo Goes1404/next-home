@@ -107,7 +107,7 @@ function DetalhesLead({ lead, gestor }: { lead: Lead; gestor: boolean }) {
         <span
           className={
             ehProprietario
-              ? "text-fluid-xs rounded-full border border-etapa-areia-linha bg-etapa-areia-lavado px-2.5 py-1 font-medium text-etapa-areia"
+              ? "text-fluid-xs rounded-full border border-alerta-linha bg-alerta-lavado px-2.5 py-1 font-medium text-alerta"
               : "text-fluid-xs rounded-full bg-acento-lavado px-2.5 py-1 font-medium text-acento-suave"
           }
         >
@@ -198,7 +198,7 @@ export function TabelaLeads({
   const alternar = (id: string) => setAbertoId((atual) => (atual === id ? null : id));
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-linha bg-superficie">
+    <div className="cartao overflow-hidden">
       {/* ---------------------------------------------------------------
           Telefone: lista densa. O nome expande os detalhes; a ação primária
           (WhatsApp) fica sempre à mostra e o "⋯" abre a folha de ações —

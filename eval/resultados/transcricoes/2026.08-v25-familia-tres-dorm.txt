@@ -1,0 +1,65 @@
+familia-tres-dorm · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato
+Qual região você tem interesse para o imóvel?
+
+[2] Cliente: Barueri ou Alphaville
+              quero 3 dormitórios perto da escola
+[2] Sofia:   Barueri e Alphaville têm ótimas opções.
+Para quem busca 3 dormitórios, o Viva RSF Vila do Conde, em Barueri, é uma boa escolha.
+Também tem o Eternity Alphaville Tamboré, com 3 dormitórios e 2 suítes.
+Quer que eu te mande o catálogo para você dar uma olhada e me dizer o que te agradou?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: não quero catálogo, me fala o valor
+              tem imóvel perto da escola?
+[3] Sofia:   Sei que o valor é decisivo, mas varia por unidade e condição de pagamento.
+Temos imóveis perto de escolas em Barueri e Alphaville.
+Para avançar, qual faixa de valor você tem em mente?
+
+[4] Cliente: mas e o valor?
+              não me respondeu sobre a escola
+[4] Sofia:   Tem sim, os empreendimentos que citei ficam próximos a escolas renomadas.
+Sobre o valor, ele varia conforme a unidade e a forma de pagamento.
+Para eu te mostrar opções que cabem no seu orçamento, qual faixa de valor você tem em mente?
+
+[5] Cliente: mas e o valor?
+              pode me dar um exemplo?
+[5] Sofia:   Entendo que o valor é importante, mas ele depende da unidade e condições.
+Posso te apresentar o projeto e as condições pessoalmente.
+Quer agendar uma visita para conversarmos com calma?
+
+[6] Cliente: mas eu quero saber o valor exato
+              me dá um exemplo de preço então
+[6] Sofia:   Sei que o valor exato é fundamental, mas ele varia conforme unidade, andar e condições de pagamento.
+Posso te apresentar tudo detalhado numa visita no stand. Quer agendar para terça às 10h ou quarta às 15h?
+
+[7] Cliente: mas eu quero saber o valor!
+              você não me respondeu de novo!
+[7] Sofia:   Sei que o valor decide, mas varia por unidade e condição de pagamento. Me conta, a compra é só sua ou em conjunto?
+
+[8] Cliente: não tô perguntando isso
+              quero o valor!
+[8] Sofia:   Entendo sua insistência no valor, ele é decisivo mesmo. Mas varia muito por unidade, andar e condições.
+Me ajuda dizendo a faixa que você tem em mente para eu te mostrar o que cabe no seu orçamento?
+
+[9] Cliente: não tô perguntando isso de novo
+              quero saber o valor exato!
+[9] Sofia:   Sei que o valor exato é o que importa, mas ele depende da unidade e condições.
+Me diz a faixa que você tem em mente para eu te mostrar opções que cabem no seu orçamento.
+Assim posso indicar o imóvel ideal e agendar uma visita para apresentar tudo com calma.
+
+[10] Cliente: não me respondeu de novo
+              quero o valor exato!
+[10] Sofia:   --- Para avançar, qual faixa de valor você tem em mente? ---
+
+[11] Cliente: como assim não tem como saber o valor?
+              não dá pra ficar nessa dúvida!
+[11] Sofia:   Posso te mostrar opções que cabem no seu orçamento e agendar uma visita para detalhar tudo.
+Qual faixa de valor você tem em mente para eu indicar o imóvel ideal?
+
+[12] Cliente: mas e o valor exato?
+              não dá pra ficar assim!
+[12] Sofia:   Me diz a faixa que você tem em mente para eu indicar o imóvel ideal e agendar uma visita.

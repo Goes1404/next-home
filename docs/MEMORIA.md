@@ -10,8 +10,21 @@
 - **Projeto:** `next-home` (`prj_53ntT4KUJ6whucua5l2aMQO1cs9e`), no time
   `sq1matheusgsilva-7306's projects` (`team_z5rGXQYGDIY2WL5NadGucSBJ`).
 - **Domínio de produção:** `next-home-drab.vercel.app`.
-- **A branch de produção real NÃO é `main`.** É
-  `claude/modernizar-plataforma-imobiliaria-2tm13q` — provavelmente porque
+- **[ATUALIZADO 31/08] A "branch de produção" já não é uma só, e conferir
+  isso agora é obrigatório.** O último deploy com `target: production` é de
+  **29/08 05h19, commit `4c1359c`, da branch `ingestao-de-midia`** — nem a
+  `main`, nem a branch abaixo. Alguém promoveu um preview pelo painel, e a
+  regra escrita aqui deixou de descrever a realidade sem que nada avisasse.
+  **Antes de afirmar "está no ar", listar os deployments e filtrar por
+  `target = production`** (`list_deployments` do MCP da Vercel); `git
+  merge-base --is-ancestor <sha> <sha-em-producao>` responde se um commit
+  chegou lá. Duas consequências medidas em 31/08: `ingestao-de-midia` está
+  **3 commits à frente** da branch documentada (traz `0064`–`0069`, código de
+  atribuição de marketing e outbox de eventos), e o código no ar espera
+  tabelas que o banco NÃO tem (`marketing_touchpoints`, `event_outbox`) —
+  ou seja, o cron `/api/cron/event-outbox` chama uma função inexistente.
+- **A branch de produção documentada (e que ainda recebe deploy) NÃO é
+  `main`.** É `claude/modernizar-plataforma-imobiliaria-2tm13q` — provavelmente porque
   foi a branch usada quando o projeto foi conectado ao GitHub, e ninguém
   trocou depois. Push só em `main` gera preview, nunca produção. Até
   alguém trocar isso em Settings → Git → Production Branch no painel da
@@ -1969,6 +1982,2511 @@ Duas lições que valem além do `sharp`:
   `window.innerWidth`. Sem o CSS o teste passa sempre — a primeira medição
   desta sessão saiu com o arquivo errado e deu "cabe tudo".
 
+## O número caiu e nada avisou — três dias de silêncio (31/08/2026)
+
+Investigação que começou com "atualiza os roadmaps" e terminou achando o
+sistema parado. A cadeia, reconstruída no banco:
+
+| quando (SP) | o quê |
+|---|---|
+| 28/08 16h21 | a instância reconecta (`conectado_em` carimbado) |
+| 28/08 16h22 | 5 disparos saem em rajada (3 a 8s entre eles) |
+| 28/08 16h23 | 3 envios morrem com `This operation was aborted` |
+| 28/08 16h23 | disjuntor abre: `falhas_seguidas = 3`, bloqueio de 12h |
+| 28/08 → 31/08 | `status_conexao = 'desconectado'`, 15 itens parados, zero mensagem, zero aviso |
+
+- **O sistema tem QUATRO proteções do número e nenhum aviso de que ele
+  saiu do ar.** Espaçamento, cota, disjuntor e janela impedem o estrago;
+  nada conta que o número caiu. Três dias passaram por normalidade. E o
+  aviso tem um problema de desenho próprio, que é por que ele ainda não
+  existe: **o canal natural para avisar o corretor é o WhatsApp que
+  acabou de cair**. Não há SMTP no projeto; sobra a tela do painel, que só
+  é vista por quem abre.
+- **`erro_motivo` num item PENDENTE é a pista mais valiosa da fila**, e é
+  fácil não olhar para ela. Os 8 itens em `erro` diziam todos "Número não
+  está no WhatsApp" — que NÃO alimenta o disjuntor (`ehDestinatarioInexistente`
+  faz a separação, e fez certo). Quem abriu o disjuntor foram 3 timeouts
+  que estavam escondidos nos itens ainda `pendente`, esperando retentativa.
+  **Ao diagnosticar disjuntor aberto, os erros definitivos raramente são a
+  causa — a causa está nos pendentes.**
+- **Disjuntor expirado não é fila destravada.** `bloqueado_ate` venceu em
+  29/08 04h23 e nada voltou a sair: o que segura desde então é
+  `status_conexao`. Conferir as duas coisas, na ordem da MEMORIA.
+- **A 0062 está no ar e NUNCA foi exercitada.** As duas funções existem em
+  produção e as duas conhecem `proximo_envio_permitido_em`; o código está
+  na branch de produção. Mas o último disparo é de 28/08 16h22 e a correção
+  subiu às 20h14 do mesmo dia — a rajada medida (16 de 18 intervalos
+  abaixo de 30s, mediana 4s) é toda ANTERIOR. **Correção de segurança que
+  não encontrou tráfego é hipótese, não fato.** A prova é a consulta do
+  bloco 3 de `scripts/estadoDoCiclo.sql` dar zero depois que o número
+  voltar.
+- **A campanha fala e ninguém responde: 88 entregues, 1 resposta (1,1%).**
+  Isso não é defeito da IA — ela não chega a conversar. É a mensagem de
+  abertura, a lista ou o horário, e se mede como marketing.
+- **O que a medição do ciclo provou de bom:** a correção da memória
+  (`7cde0d4`) segurou — **81 mensagens do bot gravadas** contra 0 em
+  25/08. O que ela mostrou de ruim é o outro lado da mesma moeda: das 55
+  conversas em que o bot falou desde 25/08, **53 são disparo de campanha**
+  e só **3** têm duas ou mais falas do cliente. O bot está falando, quase
+  ninguém está conversando.
+- **`scripts/estadoDoCiclo.sql` existe para isto não custar uma terceira
+  sessão.** Sete blocos, só leitura, na ordem de diagnóstico: número no ar
+  → há quanto tempo nada acontece → espaçamento valendo → por que a fila
+  parou → métricas-norte → conversão da campanha → contingência por versão
+  de prompt. Rodar antes de investigar qualquer "parou de funcionar".
+- **Cuidado com a contagem de conversa com fala do cliente**: na vida
+  inteira são 46, e isso engana — quase todas são anteriores ao bot
+  atender (eram conversas do corretor). Recortar por período é obrigatório.
+
+## Meta Ads F0 — os IDs do anúncio no lead (31/08/2026)
+
+- **Nome de anúncio não junta com gasto.** O webhook guardava
+  `anuncio_origem` (o NOME), e o gasto vive em `meta_ads_metricas` chaveado
+  por `campanha_id`. Renomear o anúncio no Gerenciador quebrava a
+  atribuição do passado sem ninguém saber. A 0070 põe `meta_ad_id`,
+  `meta_conjunto_id` e `meta_campanha_id` em `leads`.
+- **Em `leads`, INSERT é grant de TABELA e UPDATE é coluna a coluna.**
+  (`anon=arxtm`, sem `w`; 12 colunas com grant próprio de update.) Ou seja:
+  coluna nova nasce insertável — o webhook funciona sem grant nenhum — e
+  NÃO nasce editável pelo painel, que aqui é o comportamento desejado.
+  A regra da MEMORIA ("coluna nova editável precisa de grant") vale para o
+  UPDATE; para o INSERT o oposto é verdade. Conferir com
+  `has_column_privilege` antes de escrever grant que não precisa existir.
+- **Não conceder update em atribuição de anúncio** foi decisão, não
+  esquecimento: é o dado que diz de onde veio um lead PAGO, e tela que o
+  edita é tela que o falsifica.
+- **A F0 chegou depois da F1 e da F3.** O gasto (0053) e a tela de Anúncios
+  já existiam; faltava justamente a metade barata, e sem ela a tela não
+  podia mostrar o número principal. **Ao construir por fases, conferir se a
+  fase que é PRÉ-REQUISITO das outras foi de fato feita** — "F1 e F3
+  prontas" soa como progresso e escondia que o CPL era impossível.
+- **`leads` tem ZERO linhas com `meta_lead_id`.** O webhook de Lead Ads
+  nunca produziu um lead: o cliente escolheu Click-to-WhatsApp em 26/08. Por
+  isso o backfill previsto no roadmap NÃO foi escrito — backfill de zero
+  linhas é código especulativo. E é o alerta maior: a F0 sozinha não produz
+  dado nenhum no formato de anúncio que o cliente usa.
+- **Para o CTWA, a atribuição por ID sai de graça** e ninguém tinha
+  reparado: `cliques_whatsapp.url_origem` já grava `pathname + search`.
+  Basta o anúncio apontar para `/wa/<campanha>?mc={{campaign.id}}&ma={{ad.id}}`
+  — a Meta substitui as chaves no clique — e o ID passa a ser guardado sem
+  uma linha de código. Falta só casar clique ↔ conversa (F5, item 3).
+- **Regressão calada que o teste trava:** se alguém simplificar a chamada
+  de volta para `fields=name`, a Graph API responde 200, o lead nasce, e só
+  o CPL some. Por isso `CAMPOS_DO_ANUNCIO` é constante exportada e há teste
+  afirmando que `adset{id` e `campaign{id` continuam nela.
+- **ID da Meta às vezes vem number, às vezes string**, e a coluna é `text`:
+  sem validar, `null` viraria a string "null" e um objeto viraria
+  "[object Object]" — lixo que casa com nenhuma linha de gasto e só aparece
+  meses depois. `idValido` exige dígitos e devolve `null` para o resto.
+- **O `ad_id` tem dois caminhos** (`change.value.ad_id` e o `ad_id` dos
+  dados do lead) e só o primeiro era lido: lead com o segundo preenchido
+  nascia sem atribuição à toa.
+
+## O aviso de queda do número (0071, 31/08/2026)
+
+- **Carimbo de queda tem de ser gravado UMA VEZ, não a cada ciclo.**
+  `desconectado_em` é escrito com `.is("desconectado_em", null)` porque o
+  cron passa por ali a cada minuto: reescrevendo, um apagão de três dias
+  apareceria eternamente como "faz um minuto" — o defeito ficaria invisível
+  justamente por ser contínuo. É esse marco que sustenta o "faz 3 dias" do
+  aviso, e é a duração (não o horário) que faz o corretor entender o tamanho
+  do estrago.
+- **`conectado_em` NÃO serve para datar a queda**: é quando o número SUBIU.
+  No incidente de 28/08 os dois ficam a dois minutos de distância por
+  coincidência; em qualquer outra queda a conta sairia errada.
+- **A marca do e-mail só é gravada quando o e-mail SAIU.** Marcar em falha
+  transformaria uma indisponibilidade do provedor de e-mail em silêncio
+  permanente sobre a queda — o defeito que o recurso veio consertar.
+- **0 de 8 corretores têm `corretores.email`.** A coluna só é escrita por
+  `criarAcesso` (admin), e quase todo cadastro é anterior a ela. Sem a
+  reserva pelo e-mail do LOGIN (`auth.admin.getUserById`), o aviso por
+  e-mail nasceria sem destinatário — mais um caminho que existe e não
+  produz efeito. Só 1 dos 8 tem `user_id`, então hoje o alerta alcança uma
+  pessoa.
+- **Faixa no LAYOUT precisa de `revalidatePath(rota, "layout")`.** Layout
+  não re-executa ao navegar entre rotas irmãs: sem isso o corretor
+  reconecta e o alerta continua na tela até um recarregamento completo, e
+  "consertei e o alerta não sumiu" é a pior leitura possível de um alerta.
+- **Aviso em toda tela paga o custo em toda tela.** O caminho feliz da
+  `FaixaConexao` é UMA consulta (a linha da instância); a contagem da fila
+  só acontece quando já se sabe que há aviso. Consequência deliberada: a
+  faixa nunca mostra `fila_esperando` — esse estado não é apagão, e a tela
+  de Campanhas já o explica.
+- **Classe de Tailwind montada em tempo de execução não existe.**
+  `bg-${gravidade}-lavado` não gera classe nenhuma: o aviso sairia sem cor
+  exatamente no dia em que importa. As três variantes estão escritas por
+  extenso num `Record`.
+- **Queda de menos de 45 minutos não ganha "faz X tempo"** — oscilação de
+  internet virando alarme é como um aviso deixa de ser lido (mesma régua do
+  `evolucaoConversa`).
+- **Não existia caminho de e-mail no projeto** e a premissa que sustentava
+  isso ("todo aviso cabe na tela ou no WhatsApp") caiu junto com o número:
+  o canal natural para avisar era o que tinha caído. `email.ts` (Resend)
+  falha FECHADO sem `RESEND_API_KEY` e nunca lança — quem chama está no
+  meio de um ciclo de disparo.
+
+## Auditar o roadmap com agentes — o que a rodada de 31/08 ensinou
+
+Quinze agentes verificaram sete afirmações dos roadmaps contra o código e o
+banco, cada veredito contestado por um cético. **Três dos sete vereditos
+foram derrubados pelo cético** — e a lição maior é sobre o método, não sobre
+os itens.
+
+- **A etapa do cético pagou por si.** Ela derrubou "métricas de funil"
+  (a tela já existia), "E2E autenticado" (existia desde 25/08) e corrigiu a
+  evidência de `nomes_alternativos`. Sem ela, três correções erradas teriam
+  entrado no roadmap com aparência de rigor.
+- **Roadmap envelhece para os DOIS lados.** O padrão que se esperava — item
+  marcado como entregue e que não está — apareceu (F1 do Meta Ads, 0 linhas);
+  mas o inverso apareceu tanto quanto: itens marcados como pendentes que já
+  existiam. **Ao auditar, procurar as duas direções.**
+- **"Feito" e "produziu dado" são perguntas diferentes, e a segunda é a que
+  importa.** Meta Ads F1 (0 linhas), F5 (11 cliques, todos do smoke test de
+  quem construiu), `lembrete_visita` (0 linhas em ~1.400 execuções), o campo
+  "Também conhecido como" (nenhum empreendimento editado desde 25/08 01h55,
+  antes de o campo existir): quatro caminhos no ar, zero efeito. **A consulta
+  que resolve é sempre `count(*)`, e ela quase nunca é feita.**
+- **Cron que roda e acerta parece cron quebrado quando o resultado é zero.**
+  O `followups-whatsapp` tem 2.719 execuções sem falha respondendo
+  `{"processados":0}` — o roadmap insinuava que ele era o suspeito. O
+  culpado estava três camadas acima: `agendarFollowup` só é chamado pelo
+  webhook, e a campanha (87 disparos entregues, a população que existe para
+  reengajar) não agenda nada. **Antes de culpar o runner, conferir quem
+  ENFILEIRA.**
+- **Colisão de número de migration é pior que buraco.** Esta branch nasceu
+  com `0064`/`0065` e a branch em produção já tinha `0064`–`0069` com outro
+  conteúdo. Renumerar para `0070`/`0071` abre um buraco que se fecha sozinho
+  no merge; manter a colisão só se revelaria no merge, quando o número — a
+  única coisa que define a ordem de execução aqui — já estaria mentindo.
+  `migrations.test.ts` ganhou uma lista `RESERVADOS` declarada, e um teste
+  que reprova reserva já ocupada, para ela não virar comentário morto.
+- **Aviso pendurado no caminho feliz herda todas as saídas antecipadas dele.**
+  A primeira versão do aviso de queda (escrita horas antes, na mesma sessão)
+  chamava o alerta de dentro do disparador, no ponto em que a conexão falha.
+  Só que `processarInstancia` devolve `numero_bloqueado` ANTES disso — e no
+  incidente de 28/08 o disjuntor abriu no MESMO MINUTO da queda: nas 12 horas
+  de bloqueio, nenhum e-mail sairia, justamente no caso que o recurso existe
+  para cobrir. Fora da janela comercial havia uma segunda saída antes ainda.
+  Hoje a varredura roda antes de tudo, a cada tique, sem depender de fila,
+  janela ou número liberado.
+
+## A campanha falava e nunca voltava (31/08/2026)
+
+- **`agendarFollowup` tinha UM chamador, e era o errado para o volume.** Só
+  o webhook agendava, e ainda sob `temperaturaScore >= 40` — ou seja, só
+  ganhava reengajamento quem JÁ estava conversando. Quem recebeu disparo e
+  ficou calado, não. Medido: **87 disparos entregues, 0 follow-ups criados
+  para eles**; as 16 linhas da vida inteira nasceram em conversa ativa e
+  foram todas canceladas pela resposta do cliente antes de vencer.
+- **O sintoma apontava para o lugar errado.** O `followups-whatsapp`
+  acumulou 2.719 execuções sem uma falha respondendo `{"processados":0}` —
+  cron saudável, fila vazia. **Antes de culpar o runner, conferir quem
+  ENFILEIRA.** É a irmã da lição do funil (0059): ao criar caminho que FALA
+  com o cliente, procurar quem agenda o retorno, não só quem move a etapa.
+- **"Retomando nossa conversa" para quem nunca falou é o defeito que o caso
+  novo criou.** Follow-up de campanha alcança gente que não disse uma
+  palavra; a instrução de retomada mentiria na primeira frase. Por isso
+  `instrucaoDoFollowup` ganhou `clienteNuncaFalou`, que proíbe a linguagem
+  de retomada e pede uma informação NOVA sobre o imóvel. O runner já sabia
+  a resposta sem consulta nova: ele busca a última fala do cliente para
+  revalidar, e a ausência dela É o sinal.
+- **O runner exige `liberado_por_palavra_chave`, e isso quase matou a
+  correção.** A isenção de conversa de campanha mora em `modoBot.ts`, não
+  no runner, que lê a coluna crua. Conferido antes de escrever: as 59
+  conversas de campanha estão todas com a coluna `true` (o insert de
+  `obterOuCriarConversa` já libera), então o follow-up roda. Se um dia a
+  regra de liberação mudar, este caminho para calado.
+- **Sem backfill, de propósito.** Agendar para os 87 disparos antigos seria
+  uma rajada de reengajamento para gente abordada há dias — e rajada é
+  exatamente o que as quatro proteções do número existem para impedir.
+
+## A lista de apelidos pendentes (31/08/2026 — virou a lista de pendências do catálogo em 01/09)
+
+- **Aviso dentro do editor não moveu nada em 5 dias.** O campo "Também
+  conhecido como" e o aviso de campo vazio subiram em 25 e 26/08; em 31/08
+  **nenhum empreendimento tinha sido editado desde 25/08 01h55** — antes do
+  próprio aviso. Aviso só é visto por quem já abriu aquela tela, e quem abre
+  um imóvel foi lá fazer outra coisa. **Quando um aviso não produz dado,
+  mudar o LUGAR vale mais que reforçar o texto**: a lista foi para a tela de
+  Imóveis, por onde o corretor passa.
+- **A urgência não é igual para todos, e a diferença é medível.** Dos 23
+  publicados sem apelido, **9 têm nome que é título de anúncio** ("Melhor
+  valor de metro da Região", "3 Dormitórios com Suite e 2 Vagas"): para
+  esses não existe nome que o cliente possa acertar, e o imóvel é invisível
+  para o bot. Os outros 14 têm nome de verdade e a perda é pequena. Por isso
+  a lista abre os 9 e esconde os 14 atrás de um clique — 23 linhas é lista, e
+  lista ninguém lê.
+- **A heurística foi calibrada contra os 23 nomes REAIS**, não imaginada:
+  quatro assinaturas (tipologia com unidade, chamada de oferta, substantivo
+  comum na abertura, referência a lugar vizinho) acertam os 9 e não acusam
+  nenhum dos 14. O caso que quase quebrou a regra é "Estação 267": tem
+  número, mas sem unidade depois — sem exigir `\b<dorm|vaga|m2>\b` ele
+  viraria falso positivo.
+- **A lista mostra bairro e construtora ao lado do nome**, e isso não é
+  enfeite: para "Melhor valor de metro da Região" o nome não diz nem qual
+  imóvel é. Sem essa âncora o corretor teria de abrir um por um para
+  descobrir de qual está falando.
+- **Custa zero consulta:** a tela de Imóveis já carrega o catálogo inteiro,
+  então a pendência é calculada do que está na mão. Cartão que só aparece
+  quando há pendência, pela mesma régua do contador de aba.
+
+## Meta Ads F2 — a junção por campanha (31/08/2026)
+
+- **Link de painel e filtro da lista nascem JUNTOS, ou o link é decorativo.**
+  A tabela por campanha manda para `/corretor/leads?campanha=<id>` e a lista
+  não lia esse parâmetro — teria caído na carteira inteira, em silêncio. É a
+  segunda vez neste projeto (a primeira foi `?filtro=parados` contra
+  `?parado=N`), e agora tem teste: `linksDeFiltro.test.ts` lê a tela de
+  Anúncios, extrai todo `\/corretor\/leads?<param>=` e reprova o que a
+  `leads/page.tsx` não lê.
+- **Campanha que gastou e NÃO trouxe lead precisa aparecer**, e ela some se
+  a tabela for montada a partir dos leads. Por isso a agregação parte da
+  união das duas chaves (gasto e lead), não de um lado só. O inverso também:
+  lead cuja campanha não gastou nada na janela de 30 dias continua contando
+  — o gasto pode ser anterior ao corte.
+- **Lead de anúncio SEM campanha é número de primeira classe.** Hoje é a
+  maioria por construção (o CTWA entra pelo link porteiro e nasce sem
+  `meta_campanha_id`). Somar em campanha nenhuma faz a tabela mentir para
+  baixo; esconder faz o gestor achar que a campanha rendeu menos. Fica numa
+  linha própria, com o motivo escrito.
+- **A divergência Meta × CRM só aparece quando existe.** "A Meta contou 12"
+  embaixo do nome é alerta de ingestão; se aparecesse em toda linha, mesmo
+  batendo, viraria paisagem — a régua do `evolucaoConversa` outra vez.
+- **Custo por VISITA e por FECHADO são o que justifica a tela.** A Meta sabe
+  quantos formulários foram preenchidos; o que aconteceu depois só existe
+  neste banco. Visita sai de `visita_agendada_em` (o FATO) e não da etapa,
+  que anda e volta.
+- **F2 pronta não é F2 funcionando:** `meta_ads_metricas` segue com 0 linhas
+  e nenhum lead tem `meta_campanha_id`, então a tabela não renderiza. O
+  código espera o dado, e o dado espera duas variáveis de ambiente.
+
+## O funil do bot ganhou o degrau da visita proposta (0072, 31/08/2026)
+
+- **46 interações são 6 CONVERSAS**, e a diferença é de oito vezes. A
+  auditoria encontrou `ia_interacoes.sugeriu_visita` com 46 linhas vivas e
+  zero leitores; a tentação era escrever 46 na tela. A unidade do funil é a
+  conversa — o cliente não compara mensagens de conversas diferentes, ele
+  vive a dele. **Ao acender um contador de `ia_interacoes`, decidir primeiro
+  se a unidade é a resposta ou a conversa.**
+- **O degrau da visita contava a etapa ATUAL, e por isso caía quando o
+  negócio melhorava.** `etapa = 'visita_agendada'` some quando o lead vai
+  para documentação: um funil em que o número de visitas DIMINUI conforme a
+  venda avança. Agora é cumulativo — `visita_agendada_em` (o fato) OU etapa
+  de visita em diante.
+- **Nenhuma das duas fontes de visita conta certo sozinha**, e isso é dado,
+  não teoria: os 2 leads com `visita_agendada_em` não têm conversa de
+  WhatsApp e já estão em `perdido`; o único lead na etapa de visita NÃO tem
+  a data (o corretor moveu o cartão à mão). Por isso o OR.
+- **`create or replace view` recusa coluna nova no MEIO da lista**
+  ("cannot change name of view column"). Como a ordem das colunas é a ordem
+  do funil, o caminho é `drop view` + `create view` na mesma migration.
+- **Zero honesto não é zero quebrado.** `leads_quentes` e `em_negociacao`
+  seguem em 0 e ficaram como estão: não há dossiê (6 para 112 leads) nem
+  negócio em andamento. Mexer neles para "melhorar o número" seria maquiar
+  a tela — o que se conserta é a CONTA errada, não o resultado baixo.
+
+## A esteira de CI (31/08/2026) — e por que ela demorou a existir
+
+- **867 testes e nenhuma esteira.** Tudo rodava só quando alguém digitava o
+  comando. Isso pesa mais aqui do que na média porque boa parte dos testes
+  desta base é de uma classe específica: guardas que LEEM O CÓDIGO-FONTE
+  (`escalaDoPainel`, `camadasGuardas`, `etapaAutomatica`,
+  `gravacaoDeMensagem`, `linksDeFiltro`, `migrations`, `seo`, `funilDoBot`).
+  Cada uma nasceu de um defeito que já aconteceu e falhou CALADO — build
+  passando, tipos passando, tela abrindo. **Guarda que só roda quando alguém
+  lembra é indistinguível de guarda que não existe**, a mesma régua que o
+  projeto aplica a dado gravado e não exibido.
+- **`next build` entra na esteira e não precisa de segredo nenhum**: todas
+  as rotas do projeto são dinâmicas, então nada consulta o Supabase em tempo
+  de build (conferido rodando). Vale a pena porque o build pega o que teste
+  e tipo não pegam — foi exatamente o caso do `sharp`, em que um componente
+  `"use client"` importava uma CONSTANTE de um módulo com dependência nativa
+  e arrastava o binário para o grafo do cliente. Se um dia alguma rota virar
+  estática, é aqui que isso aparece.
+- **Lint entrou como CATRACA, não como porta** (`scripts/lintTeto.mjs`). São
+  14 erros herdados (11 `no-explicit-any` nos editores de imóvel, 2
+  `Date.now()` em corpo de Server Component, 1 `prefer-const`) em arquivo de
+  ninguém. Pôr `eslint` puro como porta deixaria a esteira VERMELHA no
+  primeiro dia — e esteira vermelha por padrão é esteira que ninguém olha,
+  do mesmo jeito que alerta sempre aceso vira paisagem. A catraca reprova
+  acima do teto e avisa para BAIXAR o teto quando alguém limpa. Mesma ideia
+  da lista `RESERVADOS` de `migrations.test.ts`: exceção declarada, com
+  número, que reclama quando fica obsoleta.
+- **Catraca foi testada com dente**: introduzi um `any` de propósito, ela
+  reprovou com 15/14, removi, voltou a passar. Guarda nova que não é
+  provocada uma vez é só otimismo.
+- **E ela cobrou de volta no dia seguinte (01/09): 14 → 8.** Foram limpos
+  os que dava para limpar SEM exercitar a tela: `prefer-const`, dois
+  `catch (err: any)`, o setter de tipologia (virou
+  `K extends keyof Tipologia`, então passar texto onde se espera número é
+  erro de compilação agora) e os dois `Date.now()` no corpo de Server
+  Component, que saíram para `janelaDeDias.ts`. **Relógio dentro do render
+  torna o componente não idempotente** — num Server Component dinâmico
+  "agora" é o que se quer, então a saída não é fingir pureza, é tirar o
+  relógio de dentro do render; de quebra a conta dos dias virou função
+  testável.
+- **Os 8 que sobraram são a mesma forma e pedem mudança de CONTRATO:**
+  setters `(campo: string, valor: any)` em quatro editores e três `as any`
+  em `imoveis/actions.ts` que escondem atrito real com os tipos gerados.
+  Mexer neles sem conseguir abrir a tela troca um erro de lint por um
+  defeito de verdade. **Parar num número honesto e baixar o teto vale mais
+  que zerar no escuro.**
+- **A esteira NÃO roda o E2E**, e o motivo é o de sempre nesta base: os
+  specs do painel exigem credencial real e o banco por trás é o de
+  PRODUÇÃO. Rodar a cada push seria bater no banco de clientes de verdade a
+  cada commit. Nem os evals: custam LLM pago e consomem a MESMA cota do
+  atendimento.
+- **Conferido antes de subir**: `npm ci` do zero, tipos, testes, build e
+  catraca, na ordem exata do arquivo. Esteira que nasce vermelha ensina a
+  ignorar esteira.
+
+## O eval de conversa da v25 — o número que o eval de resposta escondia
+
+Rodado em 31/08/2026, 16 personas × até 12 turnos, com a chave da OpenAI.
+
+- **92,2 no eval de RESPOSTA e 1 conversa aproveitável em 16 no de
+  CONVERSA.** A distância entre os dois números é o achado, não um deles: o
+  eval de resposta mede um turno congelado e não pode ver o que quebra
+  ENTRE turnos. Quem só olha o primeiro conclui que o prompt está ótimo.
+- **15 das 16 com `avancou = 0` e 14 batendo o teto de 12 turnos.** O loop,
+  medido: 27 vezes o cliente teve de repetir uma pergunta que a IA não
+  respondeu, 14 perguntas repetidas pela própria IA, média de 7,5 turnos
+  seguidos sem assunto novo.
+- **A guarda anti-eco funciona e não basta.** O log mostra
+  `[guardrails] repetição bloqueada` várias vezes na MESMA frase de desvio
+  de preço: o modelo insiste, o código segura. Guarda determinística
+  compensa o sintoma; o prompt continua produzindo o comportamento.
+- **`mesmaPessoa` 1,88 com um único zero** — a voz não troca. O motor único
+  entregou o que prometeu, e esse é o único indicador que não regrediu.
+- **Cliente simulado no mesmo provedor do agente é ADMISSÍVEL, mas
+  carimbado.** Com só uma chave, agente e cliente caem na OpenAI e a trava
+  abortava a rodada — deixando o eval impossível justamente para quem
+  desenvolve. A fresta é a mesma que o juiz já usava (`juizIndependente`):
+  passa com MODELO diferente (`gpt-4.1-mini` × `gpt-4o-mini`) e o resultado
+  grava `clienteIndependente: false`. O que continua abortando é o mesmo
+  modelo dos dois lados. **Família igual enviesa PARA A COOPERAÇÃO**, então
+  o número real tende a ser pior — e comparar 1/16 com os 5/16 da v17
+  (cliente independente) é comparar réguas diferentes.
+- **`tsx` não carrega `.env.local`** — isso é do Next. O eval precisa das
+  variáveis exportadas no shell (`set -a; . ./.env.local; set +a`), senão
+  ele roda inteiro, não avisa nada e devolve `ia_indisponivel` em toda
+  conversa: uma rodada que parece medida e não mediu nada.
+- **O arquivo de saída é por versão+dia e SOBRESCREVE.** Rodada em lotes
+  precisa copiar o JSON entre lotes (`-b1`, `-b2`, …), senão o último lote
+  apaga os anteriores e a rodada "completa" some.
+
+## Onda 2, primeira tentativa (v26): o loop não é da JOGADA, é de não trocar de jogada
+
+- **A regra 27(b) do prompt MANDAVA fazer o errado**, e ninguém tinha notado:
+  diante de insistência em preço, ela dizia "avance o funil com UMA pergunta
+  nova". Foi exatamente isso doze vezes seguidas na persona
+  `insiste-no-desconto` da v25. E contradizia a própria memória desta casa,
+  que resolveu a tensão do preço em agosto: **a pergunta de preço é o
+  convite para a visita**. Ao medir um defeito de conversa, ler a regra que
+  governa aquele momento — ela pode ser a causa, não a vítima.
+- **Corrigir a jogada não desfez o loop.** Com a 27(b) apontando para a
+  visita e o bloco determinístico de `perguntaIgnorada` no topo do prompt, a
+  v26 parou de devolver pergunta de funil e passou a oferecer horário
+  concreto — e ofereceu **os mesmos dois horários quatro vezes seguidas**,
+  contra um cliente que escrevia "não faz sentido visitar sem saber o
+  preço". Medido nas mesmas 4 personas: "cliente teve de repetir" 22 na v25
+  e **22 na v26**; perguntas repetidas pela IA, 7 e 7. Um juiz a mais
+  assumiria (0/4 → 1/4), dentro do ruído.
+- **A lição:** o defeito não é QUAL jogada ela escolhe, é que ela não troca
+  de jogada quando a escolhida não funciona. A regra 27 já diz "oferta que o
+  cliente IGNOROU duas vezes não volta" — e a oferta voltou quatro vezes.
+  Enquanto o que o código injeta for "responda isto agora", o modelo repete
+  a mesma resposta; falta o bloco saber **o que já foi oferecido e recusado**
+  e proibir nominalmente aquela jogada.
+- **`perguntaIgnorada.ts` é a métrica do eval virando pendência do prompt.**
+  O eval mede "o cliente teve de repetir" desde sempre; a produção não
+  detectava nada. A régua é o comportamento dele, não uma rubrica: se ele
+  refaz a pergunta, ela não foi respondida.
+- **Um bug que chegou ao cliente:** quando a IA embrulha a resposta inteira
+  em `---`, a divisão de balões devolvia UM pedaço limpo e a condição
+  (`marcado.length > 1`) descartava a limpeza, mandando o texto CRU. O
+  cliente recebeu literalmente `--- Para ajudar, qual região você prefere?
+  ---`. Achado lendo transcrição do eval, não teste.
+
+## A guarda anti-loop ERA o loop (31/08/2026)
+
+O achado que finalmente moveu o número da Onda 2, e o mais instrutivo da
+sessão: quatro dos doze turnos da pior conversa eram texto da PRÓPRIA
+guarda anti-repetição.
+
+- **`textoNoLugarDaRepeticao` escolhia por `totalDeMensagensDoBot % 3`.**
+  Com três frases na lista, o resto do módulo faz o índice VOLTAR: o
+  cliente recebeu "Me conta um pouco mais do que você procura" nos turnos 7
+  e 10, palavra por palavra, e as outras duas saídas alternadas no meio. O
+  comentário da lista prometia "varia para não virar, ela mesma, um segundo
+  loop" — e o mecanismo derrotava a promessa. **Comentário que promete não
+  é guarda; o que vale é o que o código faz.**
+- **A escolha agora é pela primeira frase AINDA NÃO DITA na conversa**, e
+  quando as três acabam ela muda de GÊNERO: devolve a escolha ao cliente em
+  vez de insistir numa quarta pergunta de qualificação. Insistir seria o
+  loop de novo com outra roupa.
+- **O efeito, medido nas mesmas 4 personas:** "o cliente teve de repetir"
+  caiu de 22 (v25 e v26-só-prompt) para **12**; perguntas repetidas pela IA,
+  de 7 para **3**; respostas quase idênticas, de 2-3 para **0**. O veredito
+  do juiz ("assumiria") ficou em 1/4 — n=4 e uma rodada só não separam sinal
+  de ruído nesse indicador, mas as métricas determinísticas são bem menos
+  ruidosas e as três andaram na mesma direção.
+- **Corrigir a JOGADA não bastou; corrigir a REPETIÇÃO bastou.** A v26
+  trocou a pergunta de funil pela oferta de visita (regra 27(b)) e o número
+  não mudou — ela passou a oferecer os mesmos dois horários quatro vezes.
+  Foi só quando o texto parou de se repetir que o cliente parou de repetir.
+- **Um teste afirmava o mecanismo quebrado**: "varia, para não virar ela
+  mesma um segundo loop" testava que a saída muda conforme a CONTAGEM de
+  mensagens — que é exatamente o módulo que fazia o índice voltar. Foi
+  reescrito para a intenção (varia quando a anterior já foi dita). **Teste
+  que codifica o mecanismo em vez do efeito protege o defeito.**
+
+## A agenda de visitas (0073, 31/08/2026)
+
+- **A IA oferecia horário que ela inventava**, e nada no sistema sabia dizer
+  se aquele horário existia. O eval mediu: os mesmos dois ("terça às 10h ou
+  quarta às 15h") quatro vezes seguidas. E o funil da 0072 mostra o custo —
+  **6 conversas com visita proposta, 1 visita marcada**. Horário inventado é
+  a forma mais barata de perder a visita: o cliente aceita, o corretor não
+  pode, e alguém desmarca.
+- **A grade é SEMANAL, não um calendário por data.** Corretor não tem agenda
+  de escritório: tem "sábado de manhã eu recebo". O que se repete é a
+  semana. Calendário por data seria mais poderoso e ninguém preencheria — a
+  régua do Painel de Bolso é o mínimo de decisão possível.
+- **O dia da semana NUNCA sai de `Date.getDay()`.** Em produção o servidor
+  roda em UTC, e às 22h de Brasília já é o dia seguinte lá: a grade de
+  sábado seria aplicada a um domingo. Sai sempre de um formatador com
+  `timeZone` — é a mesma armadilha que quebrou o `calendarioProximosDias`
+  três horas por noite, e ela tem teste próprio aqui.
+- **Sem agenda configurada, o bloco sai VAZIO e o prompt segue como antes.**
+  Hoje isso vale para todos os 8 corretores. Nunca quebrar o que já funciona
+  por causa de configuração que ninguém preencheu — a mesma regra que faz o
+  link do catálogo só entrar quando existe slug.
+- **A tabela não tem policy de UPDATE, de propósito**: a tela grava a grade
+  inteira (apaga e insere). Faixa "editada" é indistinguível de faixa nova, e
+  o caminho único evita o estado em que metade da grade é velha.
+- **`unique (corretor_id, dia_semana)`**: uma faixa por dia. Duas faixas no
+  mesmo dia ("manhã e fim da tarde") são fase 1 — sem a trava, a tela
+  deixaria criar faixas sobrepostas e a geração repetiria o mesmo horário.
+- **Visita passada não ocupa vaga.** O filtro de ocupados usa o INSTANTE de
+  agora, não o dia: visita das 9h não bloqueia a vaga das 15h do mesmo dia.
+
+## A reserva de visita é declarativa (0074, 01/09/2026)
+
+- **`agendarVisitaLead` era um `update` ingênuo**, com dois furos. Horário
+  que a IA inventasse virava compromisso no CRM (e o corretor descobria na
+  hora de não poder atender); e duas conversas confirmando o MESMO horário
+  no mesmo segundo levavam as duas.
+- **A trava do conflito é um ÍNDICE ÚNICO PARCIAL**, não uma checagem em
+  plpgsql. Escrever "leia se está livre, depois grave" dentro da função
+  daria a MESMA corrida um andar abaixo: sob READ COMMITTED as duas
+  transações leriam "livre" antes de qualquer uma gravar. A função só
+  traduz a violação do índice em `false`. **Quando a garantia pode ser
+  declarativa, ela não deve ser procedural.**
+- **`extract(dow)`/`extract(hour)` SEMPRE com `at time zone
+  'America/Sao_Paulo'`.** Em UTC, às 22h de Brasília já é o dia seguinte —
+  a grade de sábado seria conferida contra um domingo, e aqui isso recusaria
+  a visita CERTA. Terceira vez que esta armadilha aparece no projeto.
+- **Reconfirmar o próprio horário é idempotente**, e isso precisou ser
+  pensado: o índice compara `(corretor_id, visita_agendada_em)` e o próprio
+  lead não conflita consigo mesmo porque o `update` reescreve a mesma linha.
+- **Corretor sem grade aceita qualquer horário**, de propósito — é o
+  comportamento de hoje para os 8, e mudá-lo junto teria quebrado a
+  confirmação de visita para todo mundo em nome de uma configuração que
+  ninguém preencheu.
+- **`select f(x), (select ... from tabela)` na MESMA declaração não vê o
+  efeito da função.** Todas as subconsultas de uma declaração usam o mesmo
+  snapshot, então o teste parecia mostrar que a etapa não tinha mudado.
+  Não era bug: era artefato de medição. Conferir efeito de função em
+  declaração SEPARADA.
+
+## Cobertura e tempo de resposta (0075, 01/09/2026)
+
+- **Duas métricas-norte do roadmap nunca tiveram tela**, embora o dado
+  estivesse no banco desde sempre. Medido ao construir: de **56 conversas em
+  que o cliente falou, a IA respondeu 12** (21%); quando responde, a mediana
+  é de **9 segundos** e 8 das 12 saíram em menos de um minuto.
+- **Cobertura baixa com velocidade boa é outro diagnóstico.** "A IA está
+  lenta" e "a IA não é acionada" pedem correções opostas, e sem os dois
+  números lado a lado ninguém distingue. Por isso os dois moram no mesmo
+  cartão: separados, cada um engana.
+- **Mediana, nunca média nem p90.** O p90 desta base é de quase três dias —
+  há conversa em que o bot só falou muito depois (palavra-chave liberada
+  tarde, disparo entrando em conversa antiga). Média ou p90 descreveriam um
+  sistema lento que não existe.
+- **Mediana não se soma nem se tira média entre corretores.** Mediana de
+  medianas não é mediana. O painel mostra a MAIOR das medianas — a leitura
+  conservadora, "o pior tempo da equipe".
+- **Mensagem de campanha que ABRE a conversa não conta como resposta.** Ela
+  veio antes de o cliente dizer qualquer coisa; contá-la inflaria a
+  cobertura justamente onde ela é o número que importa. A view exige
+  `created_at > primeira fala do cliente`.
+
+## H3.4: o diagnóstico do roadmap estava errado (01/09/2026)
+
+- **"As pontas existem; falta virar rotina" sugeria que a ingestão não era
+  usada. Ela é.** Medido: **57 das 343 mídias têm `hash_conteudo`**, ou
+  seja, passaram por `registrarMidia` — o caminho novo (upload, PDF, Drive).
+  E zero mídias sem blur. Comparar com a nota antiga da MEMORIA ("zero
+  vieram de upload") mostra o progresso: aquilo era verdade em 08/2026 e
+  deixou de ser.
+- **O buraco real é o CATÁLOGO, não o caminho.** Dos 25 publicados: **16
+  sem planta**, 3 sem tipologia, 23 sem apelido, 0 sem foto. É o que a
+  assistente sente — ela promete a planta que não existe (o guardrail
+  bloqueia o anexo, mas o texto já prometeu) e inventa metragem quando a
+  ficha não tem.
+- **Foto ficou de fora da lista de pendências de propósito**: os 25
+  publicados têm foto. Um degrau que vive em zero só ensina a ignorar a
+  lista — a mesma régua do contador de aba e do cartão do Início.
+- **Três cartões separados competiriam; um só, ordenado pelo estrago, é uma
+  lista de trabalho.** Por isso o cartão de apelidos (31/08) foi absorvido:
+  a tela de Imóveis mostra UM cartão com o que falta em cada imóvel, e a
+  ordem é invisível-para-o-bot → sem planta → sem tipologia → sem apelido.
+- **Ao auditar um item de roadmap, medir antes de aceitar o diagnóstico
+  dele.** O item descrevia um problema que já tinha sido resolvido e não
+  descrevia o que de fato dói hoje.
+
+## O relatório semanal do gestor (0076, 01/09/2026)
+
+- **Não foi para o cron da Vercel, e a decisão é de risco, não de gosto.**
+  A tentação era uma terceira entrada em `vercel.json`. No Hobby, um `crons`
+  acima do limite faz a Vercel **recusar o deployment inteiro** com
+  `cron_jobs_limits_reached`, sem log e sem webhook — o site só para de
+  atualizar. Isso já custou uma sessão aqui. A documentação da Vercel NÃO
+  diz o teto de jobs do plano, e "acho que são dois" não é base para
+  arriscar todos os deploys. Foi para o pg_cron, que o projeto já usa para
+  o disparo e os follow-ups exatamente por isso.
+- **O assunto do e-mail é o PIOR achado, nunca "relatório semanal".**
+  Assunto genérico é o que faz o relatório não ser aberto — e relatório não
+  aberto é igual a relatório que não existe.
+- **Número bom NÃO vira linha.** Tempo de resposta só aparece quando passa
+  de 60s; repetir "9 segundos" toda semana é o que transforma relatório em
+  paisagem. Mesma régua do `evolucaoConversa` e da faixa de queda.
+- **Piso de amostra antes de calcular porcentagem.** Cobertura só é
+  reportada com 5+ conversas: 1 de 2 vira "50%" e não significa nada —
+  relatório alarmista sobre amostra de dois queima a confiança no relatório
+  inteiro.
+- **A conta do catálogo é a MESMA função da tela** (`pendenciasDoCatalogo`).
+  Duas contas do "o que falta" divergiriam, e o número que o gestor lê no
+  e-mail tem de ser o que ele vê ao abrir o painel.
+- **Conferido com os números reais antes de subir**, e é essa a prova que
+  importa: com o estado de 01/09 ele produz os cinco achados que custaram
+  uma investigação manual inteira — queda de 3 dias, 21% de cobertura, 88
+  disparos para 1 resposta, 6 visitas para 1 marcada, catálogo incompleto.
+- **Concordância tem teste.** "1 marcadas" e "há 1 dias" num relatório
+  para o dono da empresa custam autoridade — e é o tipo de erro que passa
+  por revisão humana e não passa por `toBe`.
+
+## Revisão de segurança: view não herda RLS (0077, 01/09/2026)
+
+Revisão do próprio trabalho da noite, e ela achou coisa real.
+
+- **`whatsapp_funil_metricas` e `whatsapp_resposta_metricas` estavam
+  legíveis pelo papel `anon`** — a chave pública do Supabase, que POR
+  DESENHO vai no bundle JavaScript do site. Provado antes de corrigir, com
+  `set local role anon`: as duas devolviam linha. Vazava o retrato da
+  operação — conversas, quantas a IA atendeu, mediana de resposta, degraus
+  do funil. Não é PII nem conteúdo de mensagem, mas é interno.
+- **Duas causas somadas, e as duas se repetem sozinhas:**
+  1. **O grant.** View criada sem `revoke` herda o privilégio padrão do
+     schema `public` do Supabase, que inclui `anon`. E `drop view` +
+     `create view` REPÕE o problema, porque recriar zera o que havia — foi
+     assim que a 0072 desfez sem querer o que já estivesse ajustado.
+  2. **A RLS que a view NÃO herda.** View no Postgres roda com os
+     privilégios de quem a CRIOU, não de quem consulta: ela atravessa a RLS
+     das tabelas de baixo. `security_invoker = on` devolve a RLS a quem
+     consulta.
+- **Só o revoke não bastava.** Ele fecha o `anon`, mas deixaria de pé o
+  caso de um corretor comum ler o agregado de OUTRO consultando a view
+  direto pelo PostgREST, sem o `.eq("corretor_id", ...)` que as telas usam.
+  Quem resolve isso é a RLS, e é ela que deve resolver.
+- **Conferido nos DOIS sentidos antes de aplicar**: `anon` sem acesso, e o
+  corretor dono continuando a ver a linha dele com os números certos.
+  Consertar segurança quebrando a tela não é consertar — e o teste da
+  segunda metade é o que quase ninguém faz.
+- **`viewsSeguras.test.ts` lê as migrations** e cobra os dois passos de
+  toda view do schema `public`. A regressão falharia calada: build passa,
+  tela funciona, e só um `curl` com a chave pública revelaria.
+- **Ao criar view neste projeto, os dois passos são obrigatórios.**
+
+## A fila de cadastro do catálogo (0078-0080, 01/09/2026)
+
+- **Foto do mercado não é fila.** O levantamento do `apto.vc` achou 39
+  lançamentos em obra em Barueri, 30 fora do catálogo, e um arquivo JSON
+  devolve os mesmos 30 toda vez que alguém abre. `catalogo_candidatos`
+  existe para LEMBRAR a decisão — e `descartado` vale tanto quanto
+  `cadastrar`: é ele que impede o imóvel de voltar à fila no próximo
+  levantamento. Sem isso a lista vira ruído e ninguém mais abre, que é a
+  mesma régua do teto de 6 itens do Início.
+- **A tabela guarda nome, bairro, tipologia e link. Não guarda foto nem
+  descrição**, e isso é decisão comercial antes de ser técnica: 30 dos 39
+  são imóveis que a Next Home não representa. Publicar foto deles faria a
+  assistente oferecer visita que ninguém pode honrar.
+- **A CDN do apto.vc recusa download** (`403` em
+  `api.apto.vc/images/realties/...`), então nem havia como copiar. Mas a
+  razão para não copiar seria a mesma se a porta estivesse aberta.
+- **Tabela nova no `public` do Supabase NASCE aberta para `anon`.** Mesma
+  lição que a 0077 tirou das views, agora numa tabela: conferido em
+  `information_schema.column_privileges`, `anon` tinha select, insert e
+  update nas 15 colunas. A RLS já barrava (policies `to authenticated`),
+  mas a chave `anon` vai no bundle POR DESENHO e uma policy futura escrita
+  sem `to` reabriria isso calada. **Ao criar tabela, conferir o grant do
+  `anon` — não confiar só na policy.**
+- **Policy diz QUEM age sobre a linha; grant diz O QUE muda nela.** O
+  comentário da 0078 dizia "sem INSERT para authenticated" e descrevia a
+  policy — o grant contava outra história. A 0080 revoga tudo do `anon`,
+  tira o INSERT do `authenticated` e concede update só em `decisao`,
+  `motivo`, `decidido_em`, `empreendimento_id`. Sem esse recorte, um update
+  pela API reescreveria `nome`, `link` ou `ref_externa`, e a fila deixaria
+  de espelhar a fonte justamente onde ela serve para isso.
+- **Conferido nos DOIS sentidos**, como manda a 0077: `has_column_privilege`
+  devolve `false` para `nome` e `true` para `decisao`, `anon` sem select, e
+  o update de decisão exercitado com `set local role authenticated` dentro
+  de `begin; … rollback;`.
+- **A conferência vem antes na fila, e não é capricho.** Os 3 candidatos com
+  nome parecido com um do catálogo ("Dom Barueri" × "Dom Parque", "La Vista
+  Barueri" × "Vista AlphaGran", "Royal"/"Eternity") ficam no topo porque
+  este projeto já publicou o MESMO empreendimento três vezes (0046), e ali
+  o estrago foi silencioso. Conferir três nomes custa minutos.
+- **`precisaConferir` lê o motivo gravado pelo levantamento, não recalcula
+  a semelhança.** Comparar nomes de novo, em outro lugar, com outra régua,
+  é exatamente como duas contas do mesmo número passam a divergir.
+- **"Já temos" é decisão própria, não motivo de descarte.** As duas levam a
+  ações diferentes quando alguém reabrir a lista: descartado saiu do
+  mercado da Next Home; "já temos" é sinal de que o imóvel pode estar
+  cadastrado com outro NOME — e aí o que falta é apelido, não cadastro.
+- **Voltar para `pendente` limpa o motivo.** Motivo velho pendurado num
+  candidato que voltou à fila descreve uma decisão que não existe mais.
+- **O painel NÃO tem tela de criar imóvel** — descoberto ao construir isto.
+  O catálogo inteiro nasceu de seed e de edição do que já existia. Por isso
+  a seção "para cadastrar" é lista de trabalho e diz em voz alta que o
+  cadastro acontece fora do painel: prometer um botão que não existe é
+  pior que não prometer nada.
+- **A rota mora em `/corretor/imoveis/candidatos`** para o menu casar por
+  prefixo e "Imóveis" continuar aceso sem um oitavo destino. O que é
+  parente vira sub-rota, não item de menu — a régua da reforma de bolso.
+
+## Criar imóvel pelo painel — e o buraco de RLS que o impedia (0081-0082)
+
+- **O painel nunca teve tela de criar imóvel, e havia uma segunda razão
+  além da tela faltando: o corretor não podia LER um imóvel não
+  publicado.** `empreendimentos` tinha policy de INSERT e de UPDATE para o
+  corretor logado e UMA de SELECT — `publicado = true`, para o público.
+  Como `publicado` nasce `false` (o certo: imóvel sem ficha não entra na
+  vitrine), o cadastro novo sumiria no mesmo instante em que fosse criado.
+  **Cria e some.** A 0081 dá ao corretor logado o SELECT de tudo.
+- **O buraco já mordia sem cadastro novo.** O editor tem o interruptor de
+  publicar/despublicar desde sempre: despublicar tornava o imóvel invisível
+  para quem despublicou, sem caminho de volta pela tela. Os dois duplicados
+  despublicados na 0046 estavam exatamente nesse estado.
+- **A tela já esperava o rascunho.** `ListaImoveisClient` tem o selo
+  "Rascunho" e o filtro "Apenas Publicados" desde antes — escritos para um
+  estado que a consulta e a RLS tornavam impossível. Código que trata um
+  caso que nunca chega é sinal de que alguém já pensou nele e a camada de
+  baixo não acompanhou.
+- **Duas leituras do catálogo, de propósito** (`catalogoDoPainel.ts`):
+  `getEmpreendimentos()` é a VITRINE (cliente anônimo, só publicado, com a
+  troca de corretor pelo link de indicação); `getEmpreendimentosDoPainel()`
+  é a EDIÇÃO (cliente de sessão, tudo, sem a troca de corretor). Misturar
+  as duas foi o que deixou o painel sem enxergar o próprio rascunho.
+- **A lista de PENDÊNCIAS continua só com os publicados.** O cartão promete
+  o que "a assistente sente na conversa", e ela só vê publicado — enchê-lo
+  de rascunho recém-criado, incompleto por definição, esvaziaria a promessa.
+- **Pré-preencher não é criar de um clique, e o bairro é a razão.** O
+  levantamento devolve "Aldeia, Nova Aldeinha, Vila Militar" numa string
+  só; o cadastro tem UM bairro, que é o que a busca e o mapa usam. Criar
+  direto poria os três no campo e o imóvel não seria achado por nenhum. O
+  formulário oferece as opções e o corretor escolhe.
+- **O formulário pede o MÍNIMO.** Foto, planta, tipologia, descrição e lazer
+  já têm editor pronto; um formulário grande seria uma segunda tela para o
+  mesmo dado, e duas telas para o mesmo dado divergem (a lição do
+  `turnoDeAtendimento`, agora no painel).
+- **Vincular o candidato não pode derrubar o cadastro.** Se o `update` em
+  `catalogo_candidatos` falhar, o imóvel já existe: devolver erro faria o
+  corretor tentar de novo e duplicar o que deu certo. Falha vira log.
+
+### A varredura de grants do `anon` (0082)
+
+- **30 das 31 tabelas do `public` davam INSERT, UPDATE, DELETE e TRUNCATE ao
+  `anon`.** `leads` era a única exceção, e só porque a 0022 já tinha feito
+  isso para ela. É o default do Supabase — o mesmo que a 0077 achou nas
+  views e a 0080 na fila de candidatos. Aqui foi a varredura inteira.
+- **Não era explorável, e essa distinção importa para não exagerar o
+  achado.** A RLS segurava: conferido em `pg_policies`, as únicas policies
+  de escrita que o `anon` alcança são duas, e as duas são o produto
+  (formulário público de lead e clique de WhatsApp). O problema é ficar com
+  UMA linha de defesa numa chave que vai no bundle por desenho — basta uma
+  policy futura sem `to authenticated` e a porta abre calada.
+- **Conferido nos DOIS sentidos**, como manda a 0077: sobra
+  `leads:INSERT, cliques_whatsapp:INSERT` e nada mais; e os dois inserts
+  públicos foram exercitados com `set local role anon` dentro de
+  `begin; … rollback;`.
+- **`pg_tables` não lista VIEW.** A primeira passada deixou as duas views de
+  métrica com grant de escrita — a 0077 tinha tirado o SELECT delas e parado
+  aí. Ao varrer grants, varrer `pg_views` também.
+- **`tabelasSeguras.test.ts` cobra o que vier DEPOIS.** A varredura é um
+  laço sobre `pg_tables` no instante em que rodou; tabela criada em
+  migration posterior herda o default de novo. A guarda foi provocada com
+  uma tabela falsa antes de entrar — guarda nova que não é provocada uma vez
+  é só otimismo.
+- **Achado de passagem, não corrigido:** `/api/webhooks/meta` faz `upsert`
+  em `leads` com o cliente ANÔNIMO, e o `anon` só tem INSERT — o caminho de
+  conflito falharia. Nunca foi exercitado porque `leads` tem zero linhas com
+  `meta_lead_id` (o cliente usa Click-to-WhatsApp). Quando o Lead Ads
+  entrar, esse upsert precisa da service key.
+
+## O método estava errado, e a variância prova (01/09/2026)
+
+Três rodadas do MESMO prompt (v29), mesmas 4 personas, nada alterado
+entre elas:
+
+| | rodada 1 | rodada 2 | rodada 3 |
+|---|---|---|---|
+| avançou (juiz) | 3 | 0 | 0 |
+| assumiria (juiz) | 2/4 | 0/4 | 0/4 |
+| a IA repetiu pergunta | 4 | 3 | 1 |
+| o cliente teve de repetir | 21 | 19 | 22 |
+| turnos sem assunto novo | 34 | 32 | 34 |
+
+- **As métricas do juiz oscilam 2 a 3 pontos com o código IDÊNTICO.** Foi
+  exatamente com elas que declarei "a v27 piorou" (assumiria 1/4 → 0/4) e
+  "a v26 era melhor". As duas leituras eram ruído. **Nenhuma comparação
+  entre v25, v26, v27 e v28 deste projeto se sustenta** — todas foram
+  feitas com uma rodada.
+- **`iaRepetiu` varia de 1 a 4 sem mudança nenhuma**, e foi com ela que
+  anunciei que a guarda de ofertas "zerou a repetição" (3 → 0). Ruído.
+- **As determinísticas de conversa são bem mais estáveis** — faixa de 2 a
+  3 sobre totais de 20 a 34 — mas nem elas sustentam n=1.
+- **A régua nova** (`comparacaoDeRodadas.ts`): a diferença só conta quando
+  a PIOR rodada da versão melhor ainda ganha da MELHOR da versão pior.
+  Faixas que se tocam são empate. Com n=3 não existe teste estatístico
+  honesto, e fingir um p-valor seria pior que não ter nenhum.
+- **Juiz no mesmo provedor do agente NÃO decide.** A nota continua impressa
+  como descrição; `npm run eval:comparar` a exclui da conclusão e escreve o
+  motivo ao lado.
+
+## Conferir o MECANISMO antes do número (01/09/2026)
+
+- **A v28 nunca aconteceu.** Zero "R$" nas 4 transcrições: a Sofia jamais
+  disse um piso, embora a regra, o catálogo do prompt e o guardrail
+  estivessem todos prontos. Eu passei uma hora analisando por que uma
+  mudança "não funcionou" quando ela não tinha sido aplicada.
+- **A causa foi uma regra que se anulava sozinha.** A edição trocou a
+  primeira frase da regra 13 e deixou o resto: "VOCÊ SÓ FALA O PISO […] O
+  que NÃO pode é número: nem cifra […] Nunca diga quanto." 1637
+  caracteres, permissão no começo, proibição no fim — o modelo obedeceu o
+  fim. **Regra longa não perde só para outra regra curta: perde para si
+  mesma.** Ao editar regra de prompt, reler a regra INTEIRA, não só o
+  trecho trocado.
+- **Sonda de mecanismo precisa da persona certa.** A primeira sonda usou
+  `familia-tres-dorm`, que pergunta ALUGUEL — coisa que o catálogo não tem.
+  Ela não podia exercitar o piso, e o "zero" não queria dizer nada.
+- **Mesmo corrigida, a permissão só é usada em ~30% das conversas**: o
+  piso apareceu em 4 de 13 transcrições da v29, e na persona que insiste em
+  preço saiu em 1 de 4 rodadas. É a lição mais antiga da casa outra vez —
+  instrução de prompt é probabilística. O conserto conhecido é bloco
+  determinístico injetado no turno, como `perguntaIgnorada` e `focoDaConversa`.
+
+## A taxonomia de falhas, contada (v25, 16 conversas, 134 anotações)
+
+| categoria | conversas | ocorrências |
+|---|---|---|
+| nao-respondeu-a-pergunta | 10 | 18 |
+| insistencia-repetitiva | 8 | 22 |
+| nao-informou-dado-permitido | 7 | 58 |
+| nao-ofereceu-alternativas | 6 | 12 |
+| mudanca-abrupta-de-assunto | 6 | 7 |
+| falta-de-contexto-ou-personalizacao | 4 | 9 |
+| informacao-proibida-ou-incorreta | 4 | 8 |
+
+- **4 de 134 anotações ficaram fora da taxonomia** — ela descreve os dados.
+  Sobra grande seria sinal de categoria ruim, não de anotação ruim.
+- **A ordem do trabalho mudou.** O que mais acontece é ela NÃO RESPONDER
+  (10 das 16 conversas) e não entregar dado que podia entregar (43% das
+  ocorrências). Repetição é a segunda — e foi onde gastei três versões,
+  escolhidas por anedota.
+- **Ordenar por CONVERSAS antes de ocorrências.** Oito ocorrências numa
+  conversa é um caso; quatro em quatro conversas é padrão. Mesma régua da
+  cascata de provedores: a unidade que importa é a conversa.
+- **O open coding roda sem lista de categorias, de propósito.** Dar a lista
+  pronta faz o modelo confirmar as hipóteses de quem escreveu a lista, que
+  é o viés que a análise existe para quebrar.
+
+## A primeira comparação legítima, e ela deu EMPATE (01/09/2026)
+
+v29 × v31, três rodadas de cada, mesmas 4 personas. As duas mudanças da
+v31: bloco determinístico de dado pedido (Fase 2) e a regra da rajada
+virando condicional (Fase 3).
+
+| | v29 | v31 |
+|---|---|---|
+| o cliente teve de repetir | 21 [19–22] | 14 [9–24] |
+| respostas quase idênticas | 3 [1–3] | 0 [0–2] |
+| turnos sem assunto novo | 34 [32–34] | 33 [29–33] |
+| avançou (juiz) | 0 [0–3] | 2 [1–2] |
+| assumiria (juiz) | 0 [0–2] | 1 [1–2] |
+
+- **Todas as medianas melhoraram e nenhuma saiu da faixa.** Pela régua do
+  `comparacaoDeRodadas` — a pior rodada da melhor tem de ganhar da melhor
+  da pior — isso é empate. Não é avanço demonstrável, e registrar como
+  avanço seria voltar ao erro que a régua veio impedir.
+- **O MECANISMO funcionou, e isso é medida separada do desfecho:** o piso
+  apareceu em **10 de 12 conversas** contra **4 de 13** na v29. O
+  `dadoPedido` entrega o dado; o que não se demonstrou é que entregar o
+  dado muda o final da conversa.
+- **Uma persona carrega quase toda a variância.** Sem a persona
+  adversarial ("não quero papo, só preço"), v29 dá [15, 8, 19] e v31 dá
+  [6, 9, 4] — quase passando a régua. Só ela: v29 [6, 11, 3] e v31
+  [3, 15, 10], oscilando 5x nas DUAS versões.
+- **E isso não autoriza excluí-la.** Tirar uma persona depois de ver o
+  resultado é escolher a resposta — o mesmo erro do dia inteiro com outro
+  nome. O que o achado diz é sobre a MEDIÇÃO, não sobre o prompt.
+- **Somar personas deixa a mais ruidosa mandar.** O comparador agrega por
+  soma, então uma persona que varia de 3 a 15 afoga três que variam de 4 a
+  9. O conserto é comparar POR PERSONA e dar mais rodadas a quem varia
+  mais — mesma lição da taxonomia, onde ordenar por ocorrências deixava um
+  caso isolado parecer padrão.
+- **Régua que não enxerga uma queda de 33% na mediana vai fazer o projeto
+  andar em círculos** — que é o problema que ela veio resolver. Consertar o
+  comparador vem antes de mexer em prompt de novo.
+
+## Personas > rodadas: a variância não era defeito, era amostragem
+
+Consertando o comparador depois do empate da v31, o recorte por persona
+mostrou o problema real: **as quatro personas ficaram com ruído entre 1,0 e
+3,0** — a faixa de cada uma é do tamanho do próprio valor típico. Com três
+rodadas, nenhuma delas consegue demonstrar mudança nenhuma.
+
+- **A causa é o cliente simulado a `temperature: 0.8`** (o agente roda a 0).
+  Cada rodada é uma CONVERSA DIFERENTE — e isso é amostragem, não ruído a
+  eliminar. Baixar a temperatura para zero daria três cópias da mesma
+  conversa: n=1 disfarçado de n=3.
+- **O que reduz a variância do agregado é somar mais amostras
+  INDEPENDENTES, e persona nova é amostra melhor que repetição da mesma.**
+  Além de encolher a faixa, cobre outro pedaço do espaço de conversas — que
+  é o que se quer saber. São 16 personas; usar 4 foi economia mal colocada,
+  e ela custou a capacidade de detectar qualquer coisa.
+- **Régua: todas as personas com 2 rodadas, nunca poucas personas com
+  muitas.** Duas é o mínimo para existir faixa; o resto do orçamento vai em
+  variedade. O eval avisa quando se pede menos da metade das personas.
+- **O recorte por persona é DIAGNÓSTICO, não veredito.** Ele mostra onde a
+  mudança agiu e quais personas estão ruidosas demais para informar. O que
+  ele não pode virar é desculpa para excluir a persona que não colaborou
+  depois de ver o resultado — isso é escolher a resposta.
+- **`ruidoDe` é amplitude sobre mediana**, e `rodadasSugeridas` é régua
+  grosseira e declarada: com n=3 não há base para cálculo de poder
+  estatístico, e fingir um seria pior que assumir a régua de dedo.
+
+## Conversa nunca liberada para de guardar texto (01/09/2026)
+
+- **O número da instância é o WhatsApp PESSOAL do corretor**, e tudo que
+  chega ali era persistido. Ao conferir se um cliente das 19h48 tinha sido
+  respondido, o que apareceu foi uma conversa pessoal dele com um amigo,
+  inteira, gravada naquele mesmo dia. A memória já registrava isso desde
+  25/08 como "em aberto, decisão de produto/LGPD" — uma semana depois
+  seguia acumulando.
+- **Medido antes de mexer: 62 conversas nunca liberadas, 4.178 mensagens,
+  ~74 por dia**, desde 19/08. Gente que nunca soube que existe um sistema
+  no meio.
+- **A trava de atendimento estava CERTA** — sem liberação a IA não fala, e
+  não falou. O que faltava é que não falar nunca impediu de GRAVAR.
+- **A régua não é QUEM falou, é a ORIGEM.** A conversa pessoal tem
+  mensagens do próprio corretor, espelhadas do celular pelo webhook. Então:
+  webhook obedece à liberação; painel e campanha/follow-up são atendimento
+  por definição e guardam normalmente. Sem essa distinção, o corretor
+  perderia no painel o que ele mesmo digitou.
+- **`conversaLiberada` é parâmetro OBRIGATÓRIO de `gravarMensagem`.**
+  Opcional com padrão faria o esquecimento de um chamador voltar a gravar
+  em silêncio — mesma lição que tirou `interacaoId` dali. O compilador
+  cobrou os 6 chamadores, um a um.
+- **A linha continua sendo gravada, só o texto não.** É ela que mata
+  reentrega pelo `provider_message_id` e que diz que a conversa existe. O
+  marcador não é vazio: linha em branco na tela parece defeito.
+- **Custo declarado:** o corretor deixa de ler no Live Chat as conversas
+  ainda não liberadas. Continua lendo no próprio celular — é o WhatsApp
+  dele, e o painel não precisa de cópia da vida pessoal de ninguém.
+- **O passado ficou intacto**, por decisão do usuário: a mudança para o
+  acúmulo, apagar 4.178 mensagens é irreversível e é escolha dele.
+- **Guarda nova pegou a si mesma**: `gravacaoDeMensagem.test.ts` reprovou o
+  comentário que CITA `interacaoId` para explicar por que ele não existe.
+  Teste que lê código-fonte precisa remover comentário antes de acusar —
+  mesma solução do `escalaDoPainel`.
+
+## `liberado_por_palavra_chave` NÃO significa "nunca atendida" (01/09/2026)
+
+Erro meu, pego pela medição antes de virar apagamento de dado real.
+
+- **A trava tem TRÊS portas, e a flag é uma só.** `exigePalavraChave`
+  (`modoBot.ts`) isenta quem tem palavra-chave dita, quem já era do CRM
+  (`cliente_conhecido`) e quem veio de campanha. Filtrar só pela flag
+  inclui conversa que o bot atende todo dia.
+- **O tamanho do engano, medido antes de executar:** das 62 conversas com
+  `liberado_por_palavra_chave = false`, o bot havia falado em **26**, com
+  **15 mensagens nas últimas 24h**, e **22** eram elegíveis para o
+  few-shot. Apagar por aquele critério destruiria conversa de cliente viva
+  no mesmo dia e esvaziaria o corpus de aprendizado.
+- **`conversaEhAtendimento` espelha `exigePalavraChave` ao contrário** e é
+  a única condição usada para decidir gravação. Se as duas divergirem, o
+  sistema volta a gravar o que não deve ou a esquecer o que precisa.
+- **O critério que sobrou é minúsculo, e isso é a resposta certa:** conversa
+  não autorizada E que o sistema nunca tocou — 3 conversas, 6 mensagens.
+  O resto NÃO É SEPARÁVEL por dado: a diferença entre o contato pessoal do
+  corretor e um prospect desconhecido está no conteúdo, que é justamente o
+  que não se quer inspecionar. Para essas, o que muda é daqui para a frente.
+- **Ensaio em `begin; … rollback;` antes de qualquer DELETE em produção.**
+  Foi ele que confirmou 3/6/0 antes de apagar — e é barato o bastante para
+  ser regra, não exceção.
+- **Achado de configuração, não corrigido de propósito:**
+  `palavra_chave_ativacao` está com uma MENSAGEM DE CAMPANHA inteira colada
+  dentro ("Espero que esteja bem. Recentemente, surgiu uma oportunidade
+  exclusiva…"). Para ativar a IA por palavra, alguém teria de digitar o
+  parágrafo inteiro num chat — na prática a ativação por palavra não
+  funciona, e quem segura a trava é só a `palavra_chave_teste`. É campo de
+  painel, decisão do corretor.
+
+## A campanha falou, o cliente respondeu, e o bot ficou mudo (01/09/2026)
+
+Relatado pelo usuário: "disparamos para a lista de leads, alguns
+responderam, e a IA não respondeu". Estava certo, e são DOIS defeitos
+somados.
+
+### 1. A isenção olhava a certidão de nascimento da conversa
+
+- **Medido: 7 clientes responderam ao disparo e só 1 das conversas estava
+  marcada como campanha.**
+- `obterOuCriarConversa` devolve a conversa EXISTENTE intacta — o
+  `origem: 'campanha'` que o disparador passa só vale no INSERT. Lead que
+  já tinha conversa orgânica recebia o disparo, respondia, e
+  `exigePalavraChave` via `origem = 'organica'` sem palavra-chave: bot mudo.
+- **A isenção tem de seguir o FATO de termos falado, não como a conversa
+  nasceu.** `marcarConversaComoAtendimento` roda no envio, no disparador e
+  no runner de follow-up.
+- **Marca `cliente_conhecido`, não `origem`.** Reescrever `origem` apagaria
+  de onde a conversa veio; `cliente_conhecido` significa "sabemos que este
+  número é cliente", e disparar para ele a partir da própria lista de leads
+  é a prova. A flag só estava errada porque foi calculada no INSERT, às
+  vezes antes de a pessoa virar lead. De quebra acerta o retravamento: com
+  ela, a fala do corretor pausa sem retravar.
+- **16 conversas já estavam presas** e o código só valeria do próximo envio
+  em diante — daí a 0086. Recorte por quem RECEBEU (item de fila com
+  `enviado_em`), nunca por quem escreveu.
+- **Terceira vez que este projeto tropeça no mesmo lugar:** caminho novo que
+  FALA com o cliente e esquece de mexer no estado dele. A primeira foi o
+  funil (0059), a segunda o agendamento de follow-up (31/08), esta é a
+  trava. `atendimentoPorIniciativa.test.ts` lê o código dos dois caminhos —
+  e já pegou o follow-up, que tinha o mesmo defeito.
+
+### 2. A pausa de 24h numa linha pessoal é silêncio permanente
+
+- **Medido: 448 mensagens de cliente puladas em 7 dias por
+  `pausada_por_humano`, contra 32 respondidas.** 30 conversas, e **29 delas
+  com lead no CRM**.
+- A causa é o relógio: a fala do corretor cala a IA por 24h e REINICIA a
+  cada mensagem — e ele manda 373 por semana do próprio celular, para quem
+  for, porque a instância é o WhatsApp pessoal dele.
+- **3 horas cobre o que a pausa existe para cobrir** (não falar por cima de
+  um atendimento em andamento). O que protege a conversa pessoal não é a
+  duração e sim o RETRAVAMENTO, que só a palavra-chave desfaz — encurtar não
+  afrouxa aquilo.
+- **`cliente_conhecido` só é decidido no INSERT e nunca recalculado**, então
+  29 das 30 conversas tinham lead e apenas 1 estava marcada. Quem vira lead
+  DEPOIS da conversa começar fica "desconhecido" para sempre — a menos que
+  algo o marque, que é o que a correção acima passou a fazer.
+
+## A linha de base das 16 personas, e o que ela corrigiu na régua (01/09)
+
+Primeira medição com todas as 16 personas × 2 rodadas (32 conversas).
+
+- **Somar ocorrências deixa a cauda mandar.** Duas rodadas do MESMO código
+  deram `clienteRepetiu` **50 e 14** — balanço de 3,5x. Contando CONVERSAS
+  afetadas: **10 e 6**, 1,7x. A distribuição tem cauda pesada: a maioria
+  das conversas fica em zero e umas poucas explodem.
+- **O comparador passou a contar conversas, não ocorrências**, nas três
+  métricas de repetição. É a mesma lição que a taxonomia de falhas já tinha
+  registrado — ordenar por ocorrências fazia um caso isolado parecer padrão
+  — e o comparador estava do lado errado dela.
+- **A linha de base da v31:** conversas em que o cliente repetiu 8 [6–10];
+  em que a IA repetiu 6,5 [4–9]; com resposta idêntica 2 [2–2]; avançou 6,5
+  [5–8]; assumiria 5 [3–7] de 16.
+- **Antes de aceitar variância, procurar causa sistemática.** A diferença
+  entre as rodadas foi investigada: mesmo modelo de cliente (`gpt-4o-mini`
+  nas 323 chamadas), mesma distribuição de desfecho (14 e 13 batendo o teto)
+  e um único `ia_indisponivel`. Não havia deslocamento externo — o que havia
+  era agregação errada.
+- **O arquivo é por versão+dia e SOBRESCREVE**: esta rodada apagou a de 4
+  personas × 3 rodadas da mesma v31. Estava commitada, então sobreviveu no
+  git — mas é a segunda vez que esta armadilha morde.
+
+## Planner/Executor: a jogada vira objeto (v32, 01/09/2026)
+
+- **O gargalo que três versões de prompt não moveram tinha um motivo
+  estrutural:** a jogada (responder / perguntar / convidar / propor horário)
+  estava implícita no texto. Não dá para proibir repetir o que o código não
+  enxerga — "não repita" era súplica no prompt, e súplica é probabilística.
+- **O planner é DETERMINÍSTICO (`jogada.ts`), não outro LLM.** A ordem do
+  funil é fixa e foi medida numa corretora real; decidir a próxima jogada é
+  olhar o que já foi perguntado, o que já foi respondido e o que o cliente
+  acabou de pedir. Função pura sobre o histórico: roda igual no webhook e
+  no eval, sem custar chamada, e "nunca a pergunta da mensagem anterior"
+  vira comparação de conjuntos.
+- **Absorve quatro blocos que competiam no topo** — pergunta ignorada, dado
+  pedido, capacidade pendente, ordem do funil — e devolve UMA tarefa. Quatro
+  instruções disputando a mesma decisão era a doença.
+- **O bloco caiu enterrado na primeira versão.** O slot ficou onde os
+  blocos antigos moravam: posição 27.697 de 35.751 caracteres, depois das
+  37 regras. "Primeiríssimo lugar" era falso, e enterrado ele compete
+  exatamente como os antigos. **Só a sonda de prompt pegou** — teste passava,
+  tipo passava, build passava. Agora vem antes até da identidade
+  (posição 0), e a sonda `sondaPrompt.ts` é o que confere.
+- **Regra que fica:** bloco que precisa ganhar de todas as outras
+  instruções vai ANTES de todas as outras instruções. Não "no topo da seção
+  de blocos" — no topo do prompt.
+
+## Três bugs do planner, e a sonda barata achou dois (01/09/2026)
+
+A v32 nasceu com três defeitos que produziam o MESMO loop que ela veio
+matar. Nenhum apareceu em teste unitário, tipo ou build.
+
+1. **`responder_honesto` sem memória.** `perguntaRepetida` vinha antes de
+   tudo, em todo turno — para quem insiste em preço, a IA respondia com
+   honestidade doze vezes. Flagrado pela sonda COM API (guardrail bloqueando
+   a mesma frase nos turnos 4, 5 e 7). Agora: 2ª vez honesto, 3ª em diante a
+   jogada muda.
+2. **Dado já entregue contava como pedido em aberto.** "valor exato" casa
+   no regex de preço; `responder_dado` tem prioridade 1; ela repetia o piso
+   do turno 1 no turno 11. Flagrado pela sonda SEM API (`sondaInsistencia`).
+   `aindaNaoDado` compara o número com o que a IA já disse.
+3. **A porta do horário contava frases distintas.** O detector deduplica
+   sentenças iguais — certo para "não repita ESTES", errado como porta:
+   oferta repetida contava uma vez e `< 2` nunca fechava. Flagrado pelo
+   trace SEM API (`traceJogadas`): turnos 4 a 8 iguais. Agora conta TURNOS
+   de oferta.
+
+- **Dois dos três saíram da sonda sem API**, que custa zero e roda em um
+  segundo. A com API custou dois minutos e dinheiro por rodada. **Antes de
+  gastar chamada, rodar o trace determinístico da sequência de jogadas** —
+  ele mostra o loop sem precisar de modelo nenhum.
+- **Um `&&` com `grep` no meio mascara falha de teste.** O commit da
+  correção 2 entrou com um teste vermelho porque `grep` depois do vitest
+  devolvia sucesso. `set -o pipefail` + exigir a linha "Tests N passed (N)".
+- **Fixture parafraseado não é repetição.** "mas e o valor exato mesmo?"
+  tem semelhança 0,50 com a pergunta anterior, abaixo do limiar de 0,6 —
+  que existe de propósito. O persona real repete a MESMA frase; o fixture
+  também precisa.
+
+## O trace cooperativo achou o que o adversarial não podia (01/09/2026)
+
+O persona que só repete "qual o valor exato?" exercita a troca de jogada,
+e nada mais. Um cliente que RESPONDE ao funil exercita o resto — e foi
+onde apareceram os defeitos mais caros do planner:
+
+- **Não existia `confirmar_visita`.** O cliente aceitou "sábado de manhã
+  pode ser" e o planner devolveu `propor_horario`: o bloco mandaria propor
+  OUTRO horário no exato instante em que a pessoa aceitou o primeiro. É o
+  momento da conversão. A detecção é determinística e exige as DUAS
+  metades — oferta na última fala do bot E marcador de aceite na fala do
+  cliente, com a negação vencendo ("não pode" contém "pode"). Ganha de
+  tudo, inclusive de dado pedido: confirmar não espera.
+- **"na planta" marcava tipologia como respondida.** O regex de métricas
+  inclui "planta" (a planta baixa); "pode ser na planta" é ESTÁGIO. O
+  planner pulava dormitórios e caía em `devolver_escolha` no terceiro turno
+  de uma conversa que ia bem. Tipologia agora exige palavra de tipologia de
+  verdade.
+- **"Qual faixa de valor você tem em mente?" não contava como pergunta de
+  capacidade** — o regex só conhecia renda/financiamento, e a escada da
+  casa começa pela faixa. A IA repetia a pergunta que acabara de fazer.
+- **"Ignorou a pergunta" ≠ "respondeu outra coisa".** "sim, quero conhecer"
+  respondia ao convite, não à faixa — e "nunca repita a pergunta anterior"
+  derrubava a conversa. A repergunta é permitida UMA vez (contador por
+  assunto); na segunda, o assunto sai do caminho.
+- **"Que horas?" é pedido de horário.** No caminho feliz com API foi
+  ignorado no turno 2 (o planner escolheu o convite) e o cliente repetiu.
+  Quem pergunta a hora já aceitou visitar: `propor_horario` na hora.
+- **Lição de método:** um trace por PERFIL de cliente, não só pelo pior
+  caso. O adversarial mostra se a jogada muda; o cooperativo mostra se o
+  funil anda e fecha. Os dois custam zero e rodam em um segundo.
+
+## Objeção, alternativa e saída suave viram jogadas (v32, 01/09/2026)
+
+Terceiro perfil no trace sem API — o cliente que responde ao funil e
+depois OBJETA. O planner estava cego para as três situações, e a taxonomia
+já as apontava ("não ofereceu alternativas" em 6 de 16 conversas).
+
+- **"tá caro, vou pensar" recebia pergunta de funil.** Agora é
+  `tratar_objecao`: a regra de objeção que já estava no prompt (não defenda
+  o valor; descubra a referência ou desloque para condição), como jogada
+  escolhida pelo código.
+- **"tem algo mais em conta?" recebia "pronto ou na planta?".** Agora é
+  `indicar_alternativa`: a mais barata do catálogo FORA do foco, com o piso
+  da ficha. Um imóvel, não lista — lista é o desfile que a v18 matou.
+- **"vou ver com minha esposa" recebia pergunta de capacidade.** Agora é
+  `deixar_porta_aberta`: uma frase, o material para mostrar a quem ele
+  citou, nenhuma pergunta, nenhum horário.
+- **A segunda objeção seguida já é pedido de alternativa**, mesmo sem ele
+  pedir: tratar duas vezes com a mesma jogada é o loop com outra roupa. A
+  contagem para na primeira fala que não é objeção.
+- **Prioridade:** aceite > dado pedido > alternativa > objeção > saída suave
+  > horário pedido > funil. A mais específica vence a mais genérica.
+- **O script de trace também tem bug.** Faltou texto de bot para as
+  jogadas novas, ele empurrou `undefined` no histórico e o trace parou no
+  turno 5 — escondendo justamente os turnos que eu queria ver. Trace que
+  para cedo demais é sinal para olhar o SCRIPT antes do planner.
+
+## O que só a sonda COM API mostrou (v32, 01/09/2026)
+
+Os traces sem API acham loop de decisão. Dois defeitos só apareceram com o
+modelo de verdade no laço, porque dependiam do que o CLIENTE faz depois de
+uma jogada certa:
+
+- **Visita confirmada e o funil continuou.** No caminho feliz a conversão
+  passou a acontecer no turno 3 ("que horas?" → 9h ou 11h → "9h reservado"
+  + endereço). Aí o planner voltou ao funil: "pronto ou na planta?". O
+  cliente: "não perguntei isso", "só quero ver o apartamento". A conversa
+  que antes encerrava no turno 8 bateu o teto de 12 — a correção da
+  conversão PIOROU o desfecho, porque faltava o estado terminal. Agora
+  `encerrar_confirmado`: confirmação no histórico do bot → resposta curta e
+  porta aberta, nada de qualificar quem já marcou.
+- **"Tem como negociar? quero saber do desconto" recebia "em qual região
+  você procura?".** `responder_honesto` só disparava na REPETIÇÃO (vezes ≥
+  2). O que não temos como responder — desconto, negociar, preço final —
+  merece honestidade na primeira vez; quem ouve "região?" depois de
+  perguntar de desconto entende que não foi ouvido. Na repetição, a regra
+  da insistência assume e muda a jogada.
+- **Régua que fica:** trace sem API para a SEQUÊNCIA de jogadas (barato,
+  determinístico); sonda com API para o que acontece DEPOIS de uma jogada
+  certa. Um não substitui o outro.
+- **Prioridade final das jogadas:** aceite > dado pedido > visita já
+  confirmada > pergunta sem dado (1ª vez) > alternativa > objeção (2ª
+  seguida vira alternativa) > saída suave > horário pedido > funil (com
+  uma repergunta permitida) > convite > horário > devolver a escolha.
+
+## A v32 REGREDIU, e a régua pegou (02/09/2026)
+
+Primeira medição legítima de uma mudança de arquitetura: 16 personas × 2
+rodadas, v31 → v32.
+
+| | v31 | v32 |
+|---|---|---|
+| conversas em que a IA repetiu | 6,5 [4–9] | **14 [13–15]** |
+| assumiria (juiz) | 5 [3–7] | **1 [0–2]** |
+| conversas em que o cliente repetiu | 8 [6–10] | 9 [8–10] |
+
+- **Faixas que não se tocam: regressão demonstrável.** Sem a régua, eu
+  teria lido os traces limpos como sucesso e subido para produção.
+- **A pergunta repetida era UMA: "pronto para morar ou na planta?", ~37
+  vezes em 32 conversas.** O planner reconhecia a resposta por regex —
+  `pronto para morar` / `na planta` — e cliente real responde "pronto",
+  "planta", "tanto faz". Não casava; a repergunta que eu tinha permitido
+  transformava cada falha de leitura em repetição garantida.
+- **O planner era mais burro que o modelo nessa leitura.** A v31, sem
+  planner, entendia "pronto" como resposta. Decidir em código é melhor que
+  no prompt SÓ quando o código lê tão bem quanto o modelo — e ler resposta
+  de cliente por regex não lê.
+- **A correção é estrutural, não mais regex:** pergunta de funil feita no
+  turno anterior conta como respondida quando a fala do cliente não é uma
+  pergunta. A repergunta só cabe quando ele perguntou outra coisa em vez de
+  responder — e aí o planner já responde a dele primeiro.
+- **Nove sondas e três traces não pegaram isto.** Os traces usavam
+  respostas que casavam no regex ("pode ser na planta"); as sondas com API
+  eram dois personas. Só a distribuição inteira mostrou. **Trace com
+  resposta bem-comportada testa o caminho feliz do próprio regex.**
+
+## A medição da v33 morreu por crédito, e o instrumento aprovou o cadáver (02/09/2026)
+
+- **A conta da OpenAI ficou sem crédito na 10ª conversa da rodada 1**
+  (`http_429` · `insufficient_quota` · `credit_balance_exhausted`). O eval
+  seguiu até o fim: 22 conversas de ZERO turnos gravadas como resultado,
+  rodada 2 com 15 de 16 mortas. Custo: as 9 conversas pagas antes ficaram
+  sem par para comparar.
+- **O comparador pintou avanço em cima disso** — "▲ o cliente repetiu
+  8 → 2". Conversa morta tem zero repetição, então quanto mais mortas, melhor
+  o número. A régua da casa já dizia "conversa que morre por falha do EVAL
+  conta como NÃO MEDIDA, nunca como aprovada" (24/08); o código nunca a
+  aplicou. Só era invisível porque nenhuma rodada tinha morrido no meio.
+- **Excluir a conversa morta não basta; o denominador tem de ser o mesmo.**
+  Somar 9 personas contra 16 é comparar réguas diferentes. Hoje entra na
+  conta só a persona medida em TODAS as rodadas dos DOIS arquivos, e o
+  veredito diz sobre quantas ("veredito sobre 15 de 16 personas; fora por
+  falha do eval: muda-a-restricao"). Abaixo da metade não há veredito.
+  Conferido nos dois sentidos: v31→v33 sai NÃO COMPARÁVEL (0 de 16);
+  v31→v32 continua REGRESSÃO em "a IA repetiu" (6 → 13), agora sobre 15.
+- **O runner para na segunda conversa seguida morta antes do primeiro
+  turno**, salva o que há e imprime o motivo tipado. Duas mortas assim nunca
+  são do agente: é chave, crédito ou rede. Antes, a rodada seguia por uma
+  hora produzindo um arquivo que parecia completo.
+- **Sonda antes de acusar o modelo**: `curl api.openai.com` com a chave
+  devolveu o JSON com `credit_balance_exhausted` em um segundo. A Groq deu
+  401 só porque `GROQ_API_KEY` não existe no `.env.local` — o "cliente=groq"
+  do cabeçalho do eval é o padrão impresso; quem conversou foi o
+  `gpt-4o-mini` de reserva, o mesmo da linha de base. Não é defeito.
+- **O que as 9 conversas vivas dizem (n=1, descrição, não veredito):** o
+  "pronto ou na planta?" caiu de 29 ocorrências (v32) para 4; as repetições
+  da IA ficaram em 11 ocorrências em 7 das 9 conversas — mesma fração da
+  v31 nas mesmas 9 personas (7 de 9, 11 ocorrências). O planner deixou de
+  martelar UMA pergunta e passou a repetir região, tipologia e convite uma
+  vez cada. Ou seja: a correção estrutural da v33 desfez a regressão da
+  v32, mas nada indica que passou da v31. Só a rodada inteira responde.
+- **Reservar crédito antes de medir.** Uma rodada 16×2 custa ~640 chamadas
+  de agente mais cliente e juiz; a chave de teste tinha saldo para uma
+  rodada e meia. Conferir o saldo é parte de "a medição está saudável".
+
+## A transcrição paga vale mais que a rodada que não rodou (02/09/2026, v34)
+
+A medição da v33 morreu por crédito, mas as 9 conversas que rodaram antes
+já estavam pagas e no disco. Lê-las achou dois defeitos, e o segundo é
+maior que tudo que eu vinha medindo.
+
+- **O planner tinha amnésia de UM TURNO.** A regra da v33 — "a resposta do
+  cliente à pergunta do turno anterior conta, mesmo sem casar no regex" —
+  olhava só `falasBot[length-1]`. Todo o resto de `jogada.ts` varre o
+  histórico inteiro; só ela não. Efeito medido em `quer-tudo-pelo-zap`:
+  "pronto ou na planta?" nos turnos 4, 7 e 9, com o cliente respondendo
+  entre eles — o assunto fechava e reabria. Hoje a marca acumula pela
+  conversa. **Ao escrever regra sobre histórico, conferir se ela varre o
+  mesmo tanto que as vizinhas.**
+- **A IA INVENTA ACABAMENTO.** Nos turnos 10 a 12 da mesma conversa ela
+  afirmou "piso laminado na sala e quartos", "bancadas em granito",
+  "azulejos modernos na cozinha" e "piso cerâmico de alta qualidade" no
+  banheiro. **Não existe campo de acabamento em `empreendimentos`** — os
+  quatro dados nasceram da cabeça do modelo e foram ditos como fato. É a
+  família do "1 suíte" para um cadastro com 3 e do "pronto para morar" com
+  `em_construcao`: o que não está no prompt, ela preenche.
+- **Acabamento é a promessa que o cliente CONFERE.** Prazo ele descobre
+  meses depois; piso laminado ele vê no primeiro minuto da visita — e quem
+  paga a conta é o corretor, na frente dele. Por isso entrou com a dupla
+  defesa do prazo, que é o padrão provado aqui: bloco no prompt avisando
+  ANTES e `removerAcabamentoInventado` cortando DEPOIS.
+- **O corte fica de fora quando o catálogo tem material de verdade.** Em
+  produção, 3 dos 25 publicados mencionam acabamento na descrição (um com
+  "Porcelanato" escrito). Sem essa porta, o guardrail apagaria informação
+  verdadeira — mesma escolha conservadora de `removerPrazoInventado`, e
+  medida no banco antes de escrever a regra, não suposta.
+- **O bloco diz o que ela PODE dizer.** Bloco que só proíbe empurra a IA
+  para o silêncio, e silêncio sobre acabamento também perde cliente: o
+  decorado é justamente onde se vê acabamento de perto, o que faz dele um
+  bom motivo para a visita.
+- **Nenhum dos dois apareceria em teste, tipo ou build** — e nenhuma
+  métrica do eval mede spec inventada. A repetição eu vinha medindo há
+  quatro versões; a invenção estava lá o tempo todo, sem instrumento. **Ler
+  transcrição não é o que se faz quando falta medição: é medição de outro
+  tipo.**
+- **`grep -q` no meio de um cano com `set -o pipefail` reprova o comando
+  inteiro.** O `-q` sai no primeiro casamento, o vitest leva SIGPIPE, e a
+  cadeia de verificação falha com os testes todos passando. Usar `grep -E`
+  sem `-q`.
+
+## Parar de pagar para simular cliente (02/09/2026)
+
+Decisão do usuário — "estamos gastando muito com esses testes" — e os dados
+desta base concordam.
+
+- **O eval de conversa paga um modelo para FINGIR de cliente.** Fazia
+  sentido enquanto a Sofia não atendia ninguém. Ela está em produção desde
+  02/09 14:54 UTC: cliente real é de graça, não tem viés de família de
+  modelo, e não depende de crédito na OpenAI.
+- **O caro deu ruído; o barato achou os defeitos.** Três rodadas do MESMO
+  código variaram 2 a 3 pontos nas métricas do juiz. As duas correções que
+  de fato importaram (amnésia do planner, acabamento inventado) saíram de
+  LER TRANSCRIÇÃO, e nove dos defeitos do planner saíram de traces sem API.
+- **`npm run observatorio` roda as MESMAS métricas determinísticas sobre
+  conversa REAL, com zero chamada de LLM.** `medirConversa` não tem um
+  único import: é função pura, então serve tanto para conversa simulada
+  quanto para a do banco. Aceita `--arquivo=` (export das cinco colunas)
+  para rodar sem chave de serviço, e `--antes-e-depois=<instante>` para
+  olhar os dois lados de um deploy.
+- **A primeira leitura, em 7 conversas reais:** a IA repetiu pergunta em
+  43%, mandou resposta quase idêntica em 57%, ofereceu visita em 86%
+  (mediana no turno 2,5 — cedo, como a régua da casa manda).
+- **E um achado que só o cliente real podia dar: "o cliente teve de
+  repetir" ficou em 0%.** Era a métrica-título do eval simulado, onde as
+  personas adversariais repetiam sem parar. Gente de verdade não repete —
+  ela some. Ou seja, a métrica que guiou quatro versões de prompt media um
+  comportamento que o cliente real não tem.
+- **O que o observatório NÃO faz, e por isso o eval pago não foi apagado:**
+  exercitar cenário que ainda não aconteceu com ninguém. Ele ficou com
+  aviso de custo apontando para o caminho grátis.
+- **Os traces determinísticos foram versionados** (`scripts/traces/`). Eles
+  moravam só no scratchpad da sessão e teriam sumido — nove defeitos do
+  planner saíram deles, a custo zero.
+
+## A reforma visual do CRM (09/2026) — cor por módulo e o que ela expôs
+
+Pedido: color coding por módulo, feedback visual rico, carga cognitiva zero.
+O que custou tempo — e o que teria poupado uma hora se eu já soubesse:
+
+- **O painel já era token-driven, e isso mudou o tamanho da obra.** Dos 107
+  `.tsx` de `src/app/corretor/`, só **6** usavam cor crua do Tailwind; ~260
+  usos passam pela família `acento`. Colorir por módulo virou reapontar
+  `--color-acento*` num bloco `[data-modulo="x"]` — **zero componente
+  editado**. Antes de planejar reforma visual aqui, contar quantos arquivos
+  usam token e quantos usam tinta: a resposta decide se é edição de CSS ou de
+  cem arquivos.
+- **`light-dark()` torna o defeito da 0052 impossível por construção.** O
+  `color-scheme` já estava correto nos três estados (`:root`,
+  `[data-tema=claro]` e o `@media`), então uma declaração só resolve os três.
+  Todo token novo do CRM nasce assim; o esquecimento que deixou `etapa-ciano`
+  e `etapa-laranja` fora de um dos blocos não tem mais como acontecer.
+- **Mas o Lightning CSS REBAIXA `light-dark()`** para
+  `var(--lightningcss-light,X) var(--lightningcss-dark,Y)` no build de
+  produção. Funciona — medido nos três estados —, e é por isso que
+  `npm run paleta` agora prefere o CSS de `.next/static/chunks` quando existe:
+  conferir só o compilado por postcss aprovaria paleta que quebra no ar.
+- **`@property` deixa custom property animável**, e é o que faz a troca de
+  módulo ser transição em vez de corte. Riscava tudo: propriedade registrada
+  como `<color>` que recebe valor inválido cai no `initial-value`. O par
+  `@property` + polyfill do Lightning CSS foi medido e resolve.
+- **`getComputedStyle` devolve a cor no espaço em que ela foi ESCRITA.**
+  `oklch(0.68 0.15 268)`, não `rgb(...)`. Ler os três números como RGB dá lixo
+  silencioso — a primeira versão do `verificarPaleta` deu 0° de distância
+  entre TODAS as matizes e eu quase "consertei" a paleta. O jeito certo é
+  pintar num canvas 1×1 sobre preto E sobre branco: dos dois valores saem a
+  cor sólida e o alfa, exatos, já em sRGB.
+- **A cor de etapa não pode sair de `acento`.** `etapas.ts` pintava "novo" com
+  `bg-acento`; com `acento` virando cor de módulo, o mesmo lead seria violeta
+  no Início e magenta em Leads. Cor que descreve o REGISTRO não pode depender
+  de onde ele está sendo olhado.
+- **`data-modulo` não pode ser calculado no layout** — layouts não
+  re-executam entre rotas irmãs, então o atributo ficaria velho ao trocar de
+  seção. `CromaDoModulo` é client e usa `usePathname`; `moduloAtivo()` deriva
+  do MESMO mapa que acende o menu, para não existir uma segunda verdade
+  "rota → cor".
+- **Etapa de funil é dado ORDINAL e estava codificada como nominal.** Seis
+  matizes sem relação gastavam meio círculo cromático e obrigavam a decorar a
+  ordem. Virou rampa de quatro passos mais dois terminais (`fechado`,
+  `perdido`), o que libera o resto do círculo para os módulos. Régua geral:
+  **rampa para o que tem ordem, matiz para o que só tem identidade.**
+- **Há um TETO GEOMÉTRICO para separar módulo de cor de estado.** No tema
+  claro, o arco quente livre entre `perigo` (17°) e `alerta` (66°) tem 49°:
+  nenhum módulo quente passa de ~24,5° de distância dos dois. Meu limiar
+  original de 25° era inatingível por construção — e aviso que nunca apaga
+  vira paisagem. Antes de definir limiar de cor, medir o espaço que sobra.
+
+### Quatro defeitos que build, tipo e teste não pegavam
+
+1. **`etapa-ciano`/`etapa-laranja` fora do `@media (prefers-color-scheme)`**
+   (0052): quem usa "seguir o sistema" com o celular no claro via duas etapas
+   em pastel de tema escuro sobre fundo claro.
+2. **`FilaAgora.REGUA.sem_resposta = "Esperando você"`** — texto em português
+   onde ia uma classe, interpolado no `className`. O item de MAIOR prioridade
+   da fila do Início era o único sem cor. `Record<Chave, string>` aceita
+   qualquer texto.
+3. **`bg-chip` nunca existiu.** Em Tailwind v4, cor não declarada não vira
+   erro: vira NADA. Quatro elementos sem fundo desde sempre.
+4. **Alvo invisível e pequeno no celular:** `text-transparent` até o `hover`
+   em dois botões de concluir tarefa — e o painel é usado no telefone, onde
+   hover não existe. Um deles ainda tinha 20px de área tocável. E
+   `BotaoConcluirTarefa` DESCARTAVA o resultado da action: falha fazia a
+   tarefa sumir e voltar sem explicação.
+
+Guardas novas, todas provocadas antes de entrar: `tokensDeTema.test.ts`
+(paridade entre os blocos de tema), `classesDeCor.test.ts` (valor de mapa
+usado como className tem forma de classe — a maioria decide se o mapa é de
+classe, para não acusar mapa de rótulo) e, dentro de `npm run paleta`,
+contraste AA nos três temas, separação de matiz e **classe que o Tailwind não
+gerou** (pergunta ao CSS compilado, sem manter lista de utilities válidas).
+
+### Coisas de método que se repetiram
+
+- **Teste que lê código-fonte precisa tirar comentário ANTES de acusar.** O
+  `tokensDeTema` achou `:root[data-tema="claro"]` citado num comentário 340
+  linhas acima do bloco real e recortou o bloco errado. Terceira vez nesta
+  base.
+- **Guarda provocada é guarda diferente de guarda escrita.** A checagem de
+  matiz passou na primeira provocação por um furo dela mesma: só media o tema
+  escuro, e eu alterei o valor do claro. A de classe morta nasceu com falsos
+  positivos por não enxergar variantes (`hover:bg-x` vira `.hover\:bg-x:hover`
+  no CSS) e por casar no meio de `align-text-bottom`.
+- **O Prettier não roda neste repositório:** 385 arquivos já não passavam
+  nele antes desta reforma. Rodar `--write` numa mudança esconde o diff real.
+
+## O painel tem UM usuário, e a estrutura era de time (02/09/2026)
+
+Pedido: "os caminhos estão como labirintos". Antes de redesenhar, medir.
+
+- **Uma pessoa tem 107 dos 116 leads e TODAS as 127 conversas.** Os outros
+  seis corretores têm 1 ou 2 leads cada e **zero** conversas — e **só um dos
+  oito tem login** (`corretores.user_id`). O painel foi construído como CRM de
+  equipe (funil kanban, seleção em lote, distribuição de carteira,
+  administração) e é operado por uma pessoa, no celular. **Antes de tratar
+  sintoma de navegação, contar quantos usuários e quantas linhas existem de
+  verdade** — quase toda a "complexidade" era máquina sem carga.
+- **Lead e conversa eram a MESMA pessoa em 91 dos casos** (91 dos 116 leads
+  têm conversa; 91 das 127 conversas têm lead). O painel oferecia duas portas
+  para o mesmo ser humano, com ações diferentes em cada uma. A primeira
+  decisão que ele pedia era "por qual porta eu falo com o Fulano?" — a
+  pergunta que ninguém responde sem alguém explicar antes. Viraram uma lista
+  só (`pessoas_do_corretor`, 0088).
+- **O labirinto não era profundidade.** Os caminhos tinham 2 a 4 toques. Era
+  ENTULHO (dez elementos antes do primeiro lead), REDUNDÂNCIA (a gaveta
+  "Menu" renderizava o mesmo array da barra do polegar — um toque para ver o
+  que já estava na tela) e ALVO INVISÍVEL. Contar toques não teria achado
+  nada; o que achou foi listar o que vem antes do conteúdo.
+- **O celular era o desktop empilhado.** Em todo o painel havia 11 usos de
+  `md:hidden`/`sm:`. Nenhuma das quatro telas principais escondia cabeçalho,
+  descrição, abas, avisos, busca ou chips por breakpoint.
+
+### Rolagem lateral esconde navegação, e o projeto já sabia disso
+
+Medido em 360px com o CSS de produção: **117px de abas fora da tela** em
+WhatsApp e **327px** em Administração — mais da metade dos destinos, atrás de
+um gesto que a fileira não anuncia. Quebrar linha custa 44 e 88px de altura,
+uma vez. É exatamente o negócio que a barra de seleção em lote já tinha
+fechado em 27/08 ("a escolha foi QUEBRAR LINHA, não rolar"), e que voltou a
+se perder em três lugares. `naoRolaDeLado.test.ts` trava a regra com lista
+declarada de exceções — tabela larga rola, e por isso está escrita.
+
+### A régua que dispensa treino: emprestar o modelo que a pessoa já usa
+
+A lista de Pessoas é ordenada por última atividade, com prévia da mensagem,
+não lidas e hora relativa. Não é estética: é o formato do aplicativo que ela
+usa o dia inteiro. **Painel que precisa ser usado sem treino não inventa
+modelo mental novo — empresta o que já está no bolso de quem vai usar.**
+
+### Armadilhas desta rodada
+
+- **Filtrar Pessoas por ATENDIMENTO (a régua da 0087) estava ERRADO**, e a
+  primeira versão da 0088 caiu nisso: cliente novo que escreve pela primeira
+  vez não é liberado, não é conhecido e não veio de campanha — sumiria da
+  lista, porque o lead dele também não entra (o lead TEM conversa). Medido:
+  44 conversas estão fora do atendimento E TÊM LEAD, 17 ativas na semana. A
+  régua virou `tem lead OU é atendimento`. **Ao copiar o recorte de uma view
+  para outra, conferir se a pergunta é a mesma.**
+- **O `union all` mora no BANCO** porque ordenação e paginação precisam
+  acontecer sobre a lista já unida: juntar em JavaScript devolveria "as 40
+  conversas mais recentes mais os 40 leads mais recentes", que não é "as 40
+  pessoas mais recentes" — e o erro só apareceria com a carteira maior.
+- **Constante importada por componente de cliente arrasta o módulo inteiro.**
+  `ListaPessoas` é `"use client"` e importava `PESSOAS_POR_PAGINA` de um
+  módulo com `server-only`: o build reprova com "'server-only' cannot be
+  imported from a Client Component module". Mesma pedra do `limitesPdf.ts`;
+  mesma saída, `pessoasTipos.ts`. **Tipo viaja de graça (é apagado);
+  constante é valor.**
+- **View nova exige duas coisas fora do SQL:** os dois passos da 0077
+  (`revoke select from anon` + `security_invoker = on`, conferidos NOS DOIS
+  SENTIDOS) e a declaração à mão em `src/lib/supabase/types.ts` — o cliente do
+  Supabase só aceita nome de relação que exista naquele arquivo, e regerar
+  apaga as 34 uniões de CHECK.
+- **Rota nova pede `revalidatePath` nas actions que já revalidavam as
+  antigas.** Sem isso a lista de Pessoas ficaria velha depois de cada ação,
+  porque o cache é por caminho.
+- **Ao empilhar o que era coluna, o teto de rolagem muda de lugar.** No
+  kanban cada coluna rolava sozinha e 46 cartões não incomodavam; empilhados
+  viram dez mil pixels dentro de um grupo. O funil passou a mostrar 6 por
+  etapa e mandar o resto para a lista.
+- **Arrastar do HTML5 não funciona em toque.** O kanban tinha `draggable`
+  desde sempre num painel usado no celular: era enfeite que só o mouse
+  alcançava, e o comentário do arquivo já dizia que o gesto principal era
+  outro.
+
+## O painel não estava no fluxo de trabalho (02/09/2026)
+
+Pedido: "como podemos melhorar o UX/UI". A resposta honesta veio de medir uso,
+não de olhar telas.
+
+- **Ela trabalha muito; só não trabalha no painel.** Em sete dias: 649
+  mensagens de cliente, **544 respostas dela** (~78/dia) e 27 respostas da IA.
+  A última ESCRITA no painel era de três dias antes. O trabalho acontece no
+  WhatsApp, que já está aberto na mão dela; o painel espera ser aberto e perde
+  essa disputa todo dia. **Enquanto o painel esperar, nenhuma melhoria de tela
+  é vista por ninguém** — foi isso que ordenou a lista de prioridades.
+- **Ressalva do método:** `lead_interacoes` só registra ESCRITA. Ler o painel
+  não deixa rastro, então "última ação em 30/08" não prova que ela não abriu.
+  O que prova outra coisa é o item abaixo.
+- **Três recursos com ZERO linhas na vida inteira do banco:** notas (0),
+  tarefas (0), orçamento e renda preenchidos (0 de 116). Não é leitura contra
+  escrita — são funcionalidades que nunca funcionaram para ela uma vez. A
+  ficha do lead empilhava 11 faixas, três delas formulários nunca usados.
+- **O único uso intenso do painel foi limpeza:** 46 leads marcados como
+  "Perdido" de uma vez, em 27/08. Operação, não rotina.
+- **Ao propor melhoria de UX, medir USO antes de olhar tela.** A lista que
+  sai de auditar interface e a que sai de medir comportamento não são a mesma,
+  e a segunda manda.
+
+### Construído e nunca ligado — o padrão que se repete
+
+O relatório semanal (0076) estava pronto desde 01/09 e **nunca tinha sido
+agendado**: `cron.job` tinha só `disparo-campanhas` e `followups-whatsapp`. Um
+recurso inteiro, com testes e e-mail montado, sem uma execução. Só apareceu
+porque alguém foi olhar a tabela de jobs.
+
+Corolário para qualquer coisa nova com cron: **aplicar a migration não liga
+nada** — a função `configurar_*` precisa ser CHAMADA. E o `CRON_SECRET` já
+está no Vault como `disparo_campanhas_token`, então dá para agendar sem
+ninguém digitar segredo:
+
+```sql
+select public.configurar_relatorio_semanal(
+  'https://next-home-drab.vercel.app/api/cron/relatorio-semanal',
+  (select decrypted_secret from vault.decrypted_secrets where name = 'disparo_campanhas_token')
+);
+```
+
+**Antes de agendar, conferir se a rota EXISTE em produção.** `curl` no
+endpoint: 401 é rota viva recusando sem segredo; 404 é rota que só existe na
+branch. Agendar contra 404 cria um cron que falha duas vezes por dia sem
+ninguém perceber.
+
+### Onde a notícia mora importa tanto quanto ela existir
+
+A migração para `Avisos`/`BotaoAcao` (2 → 21 componentes) achou o mesmo
+defeito em seis formas diferentes:
+
+- `SeletorEtapa` **descartava** o retorno de `moverEtapa`: com RLS negando, o
+  `useOptimistic` devolvia o valor antigo e nada explicava. A etapa "voltava
+  sozinha", e quando a única pista é a ausência de mudança, "não funcionou" e
+  "funcionou" são a mesma tela.
+- Em `ConversasClient` o erro era um parágrafo ACIMA de uma caixa de 72dvh —
+  fora do campo de visão exatamente quando disparava, porque quem tocou
+  "enviar" está olhando para o rodapé.
+- Na `FolhaAcoesLead` o erro sumia junto com a folha; em `ArquivarLead` a
+  confirmação de exclusão desaparecia com a página que a mostrava.
+- Em `BotaoResponderComIA` o motivo da falha vivia só no `title`, que **não
+  existe no celular**.
+- `ListaLeads` tinha caixa flutuante própria em `acima-da-nav` — a mesma faixa
+  da região de avisos: duas caixas disputando o lugar acima do polegar.
+- `StatusFila` e `CampanhasManager` apagavam a confirmação com `setTimeout`,
+  contra a regra do próprio `Avisos`: sucesso some sozinho, erro fica.
+
+**Todo caller migrado ganhou `catch` de rede.** Erro de conexão não devolve
+`{erro}`, devolve exceção — e sem esse ramo a tela destrava e segue muda, que
+é o pior desfecho: parece que deu certo.
+
+### Rótulo chumbado mente quando o dado é configurável
+
+"Sofia responde" estava escrito no botão da fila, e `nomeAssistente` é editável
+na tela de ajustes. Quem renomeasse a assistente veria a fila chamá-la pelo
+nome antigo. Virou "Responder com IA". Corolário: antes de escrever um nome
+próprio na interface, conferir se ele vem de configuração.
+
+## Cron que "agendou com sucesso" e responde 405 (03/09/2026)
+
+Ligar o aviso de espera achou um defeito que valia para duas rotas e que é
+invisível por construção.
+
+- **`net.http_post` é o verbo que as funções `configurar_*` usam** — é o mais
+  simples de assinar com o segredo do Vault. Rota que só exporta `GET`
+  responde **405 no horário agendado, para sempre**, e nada parece errado: o
+  job roda, a requisição é enviada com sucesso, e `cron.job_run_details` diz
+  "succeeded". O erro só existe na resposta, que ninguém lê.
+- `campanhas` e `followups` já tinham `export const POST = GET;` com o
+  comentário certo. `relatorio-semanal` e `quem-esta-esperando` não tinham — o
+  padrão morava no EXEMPLO de duas rotas, não numa guarda.
+- **Como se descobre:** disparar a rota à mão depois de agendar, em vez de
+  confiar no "agendado com sucesso". Medido: 432 respostas 200 em 48h (os dois
+  crons antigos) e exatamente uma 405 — a chamada de teste.
+  `select status_code, content::text from net._http_response where id = <id>`
+  é onde a verdade está; `cron.job_run_details` não serve para isto.
+- `cronAceitaPost.test.ts` cobra a regra, com `meta-ads` como exceção
+  declarada (quem a chama é o cron da VERCEL, que usa GET).
+
+### E a segunda metade: "enviados: 0" não é o mesmo que "falhou"
+
+Com o 405 corrigido, a rota devolveu `{ok:true, enviados:0, silenciosos:0}`.
+A causa não estava no cron nem no destinatário — o log de runtime da Vercel
+disse em uma linha o que três consultas não diriam:
+
+    [email] RESEND_API_KEY ausente — não enviado: "8 pessoas esperando…"
+
+Ou seja: view, rota, resolução do destinatário (pelo e-mail do LOGIN, já que
+`corretores.email` está vazio para os 8) e montagem do assunto funcionam. Falta
+só a variável de ambiente. `email.ts` falha FECHADA de propósito — loga e nunca
+lança —, então o sintoma seria eterno silêncio se ninguém lesse o log.
+
+**Ao ligar qualquer coisa que manda e-mail neste projeto, a verificação é o
+log de runtime, não o status HTTP.** 200 com `enviados: 0` é o desfecho normal
+de ambiente sem chave.
+
+## Gerar imagem no painel (0090, 03/09/2026) — e o e-mail congelado
+
+**Os dois crons de e-mail foram DESAGENDADOS** (aviso de espera e relatório
+semanal), a pedido: e-mail não se mostrou canal eficiente aqui. Código, rotas e
+testes ficam onde estão — religar é chamar `configurar_aviso_de_espera` /
+`configurar_relatorio_semanal` de novo, com o segredo já guardado no Vault
+(receita na seção do cron acima). `cron.job` ativo hoje: só `disparo-campanhas`
+e `followups-whatsapp`.
+
+- **`high` NÃO EXISTE na tela, e o motivo é o teto de 60s do Hobby.** Medido
+  contra o mesmo pedido, em retrato 1024x1536: `low` **14,5s** (1,2 MB, 196
+  tokens de saída), `medium` **37,4s** (2,5 MB, 1.372 tokens), `high` **95,0s**
+  (2,4 MB, 5.488 tokens). O botão de "caprichada" falharia SEMPRE — e botão que
+  sempre falha é pior que botão que não existe. Caberia como trabalho
+  assíncrono, e isso não se constrói antes de alguém pedir. Repare que `high`
+  gasta 4x os tokens de `medium` para produzir um arquivo MENOR: **tamanho de
+  arquivo não mede custo aqui, token de saída mede.**
+- **O teto interno é 45s, não 55s, e a diferença é a imagem já paga.** Depois
+  da chamada ainda sobem 1-3 MB para o Storage e grava-se a linha da galeria.
+  Com 55s, uma geração de 50s mataria a função DEPOIS de pagar pela imagem, e a
+  corretora receberia erro genérico. 45s deixa 15s para o upload, e a mensagem
+  do estouro manda tentar em "Rápida" — que é a saída de verdade.
+- **A IA INVENTA LETREIRO.** Na primeira geração de verdade, pedida uma
+  "fachada de edifício residencial", ela desenhou uma placa com o nome
+  **"VISTA ALTO"** na entrada. É a versão visual do defeito que esta base
+  conhece de cor (o "1 suíte" para um cadastro com 3, o "pronto para morar" com
+  `em_construcao`): o que não está no pedido, o modelo preenche, e preenche
+  plausível. Arte com nome de empreendimento que não existe, ou com metragem
+  escrita nela, vira promessa quando chega ao cliente. Por isso o aviso na tela
+  é FIXO — o risco é de toda geração, não de algumas.
+- **Nada entra em `midias`**, e é isso que garante que a imagem não apareça na
+  vitrine e que o guardrail siga impedindo a IA de anexá-la: ele só libera o
+  que está no catálogo. Quem quiser mandar a arte para um cliente anexa à mão
+  no Live Chat — aí quem decide é uma pessoa que sabe o que a imagem é.
+  Conferido: `midias` seguia com 343 linhas depois das gerações.
+- **`imagens_geradas` dá SELECT e DELETE ao `authenticated`, nunca INSERT nem
+  UPDATE.** Quem escreve é o servidor, com a service key, senão o teto diário
+  se forja pela API. Conferido nos dois sentidos (a régua da 0077): `anon` sem
+  privilégio nenhum, dono enxergando as dele, corretor vizinho zero.
+- **`column_privileges` NÃO lista DELETE** — é privilégio de TABELA. A primeira
+  conferência deu "SELECT e mais nada" e eu quase fui atrás de um grant que já
+  existia. Para DELETE/TRUNCATE, olhar `information_schema.table_privileges`.
+- **A conta do teto diário mora em módulo PURO, não em `galeria.ts`.** Ela usa
+  o dia de São Paulo (`Intl` + `-03:00` fixo), e função de fuso enterrada em
+  módulo `server-only` não tem teste — justo a que mais precisa. Das 21h à
+  meia-noite de Brasília o servidor UTC já virou o dia: o teto zeraria três
+  horas cedo e quem tivesse gerado vinte à noite ganharia vinte de novo. Quarta
+  vez que esta armadilha aparece no projeto.
+- **A chave da OpenAI voltou a ter crédito** (ficou sem em 02/09). Geração de
+  imagem custa por imagem e bem mais que texto — daí o teto de 20/dia por
+  corretor e `low` como padrão.
+
+## Receitas de imagem: o corretor não escreve prompt (03/09/2026)
+
+Pedido do usuário: "os corretores não são pessoas que sabem criar um prompt
+bom". A resposta tem DOIS degraus, e o de baixo não usa IA nenhuma.
+
+- **A receita é CÓDIGO, não instrução.** `receitas.ts` guarda a espinha técnica
+  de cada trabalho (lente, altura de câmera, hora do dia, qualidade de luz, o
+  que não pode mudar da foto original) e `montarPedido` junta com o que o
+  corretor escreveu, na rota, antes de qualquer LLM. Escolher a receita já
+  melhora o resultado com o motor de texto fora do ar — a IA é o degrau de
+  cima, não o piso.
+- **MEDIDO com o mesmo pedido pobre ("sala moderna"), três tratamentos:**
+  cru saiu uma sala NOTURNA de LED quente virada para a TV; **só a receita**
+  (zero chamada de LLM) saiu luz do dia, janela ampla com vista urbana, câmera
+  na altura dos olhos — cara de foto de anúncio; receita + IA seguiu a cena
+  descrita (piso de madeira clara, sofá cinza, mesa de vidro e metal preto).
+  **O salto de QUALIDADE está na receita; o que a IA acrescenta é CONTROLE.**
+  Vale registrar porque a leitura fácil seria o contrário.
+- **Controle é o que economiza cota.** Nenhuma das três é feia. A diferença é
+  que com "sala moderna" quem escolhe noite-ou-dia, TV-ou-janela é o modelo, e
+  imagem fora do que se queria vira regeneração — que custa do teto de 20/dia.
+- **A cláusula anti-invenção mora em `gerarImagem.ts`, não no prompt.** Toda
+  geração leva, por código, a proibição de texto, placa, letreiro, logo e selo
+  de preço. É o ponto único por onde os dois caminhos passam (criação em JSON e
+  edição em multipart), então chamador novo não tem como esquecer — mesma razão
+  de `normalizarTelefoneBr` morar no `provider.ts`. Nasceu do "VISTA ALTO"
+  desenhado numa fachada que ninguém batizou.
+- **A guarda que trava isso LÊ O CÓDIGO-FONTE** (`receitas.test.ts`), porque a
+  regressão falha calada: basta um dos dois caminhos voltar a ler
+  `pedido.prompt` cru e as imagens dele voltam a nascer com placa inventada —
+  com build verde e a imagem chegando bonita na tela. Provocada com dente antes
+  de entrar.
+- **Ela pegou um falso positivo instrutivo:** o parâmetro de `corpoDeEdicao`
+  também se chamava `pedido`, então o corpo lia `pedido.prompt` e ficava
+  indistinguível do caminho cru. Renomear para `tratado` conserta a guarda E
+  faz o código dizer que o que chega ali já passou pela cláusula. **Quando uma
+  guarda de código-fonte acusa demais, às vezes o conserto é o NOME.**
+- **Melhorar a descrição é botão à vista, não passo escondido dentro do
+  gerar.** Ele reescreve o campo com volta em um toque. Escondido pouparia um
+  toque e tiraria as duas coisas que importam: corrigir antes de gastar a
+  imagem, e aprender vendo — que é o pedido original.
+- **A melhoria NÃO consome o teto diário.** O teto existe porque imagem custa
+  caro por clique; a reescrita mediu **3,4s e 100 tokens de saída** no
+  `gpt-4.1-mini`. Cobrá-la do mesmo balde faria o corretor economizar
+  justamente o passo que melhora o resultado.
+- **Falha da IA é degradação, nunca bloqueio**: sem motor, com timeout ou com
+  JSON torto, o texto do corretor segue como está e a tela diz isso em uma
+  linha. E `textoDoJson` RECUSA resposta com menos de 40 caracteres — substituir
+  o que a pessoa escreveu por duas palavras é pior que não ter tentado.
+- **Receita que parte de foto BARRA a geração sem foto**, com o motivo escrito.
+  Não é rigor: sem a foto sairia um ambiente aleatório, pago, sem relação com o
+  imóvel. Botão que some sem explicação seria pior.
+- **Tudo em português, inclusive a espinha.** Modelo de imagem costuma responder
+  um pouco melhor em inglês, mas o prompt final aparece na tela para o corretor
+  ler e corrigir — e prompt que ele não lê é prompt que ele não conserta.
+
+## Quanto custa uma imagem (medido em 03/09/2026)
+
+Preço do `gpt-image-2` na fonte oficial: **US$ 5,00/1M** tokens de texto de
+entrada e **US$ 30,00/1M** tokens de imagem de saída. Não há tabela por imagem
+— o que se paga sai do `usage` que a própria resposta devolve.
+
+Medido com o prompt REAL da tela (receita + cláusula = 109 tokens de entrada),
+a US$ 1 = R$ 5,139:
+
+| formato | qualidade | tokens de saída | US$ | R$ |
+|---|---|---|---|---|
+| Quadrado 1024×1024 | Rápida | 196 | 0,0064 | 0,033 |
+| Retrato 1024×1536 | Rápida | 158 | 0,0053 | 0,027 |
+| Paisagem 1536×1024 | Rápida | 158 | 0,0053 | 0,027 |
+| Retrato 1024×1536 | Boa | 1.372 | 0,0417 | 0,214 |
+| Retrato 1024×1536 | (`high`, não existe) | 5.488 | 0,1652 | 0,849 |
+
+- **Token de saída NÃO escala com a área.** Em "Rápida", retrato e paisagem
+  gastam 158 e o quadrado gasta 196 — o formato maior custa MENOS. A conta é
+  por faixa de qualidade, não por pixel, e qualquer estimativa por regra de
+  três sai errada.
+- **O tamanho do PROMPT é irrelevante no custo.** A mesma imagem deu 196 tokens
+  de saída com prompt de 28 e de 109 tokens de entrada; a entrada custa 6x
+  menos por token. Receita e cláusula, que engordam o texto, somam frações de
+  centavo.
+- **"Boa" custa ~8x "Rápida"** (R$ 0,21 contra R$ 0,027). É o maior botão de
+  custo da tela, e é por isso que "Rápida" é o padrão.
+- **O teto de 20/dia vale, por corretor:** R$ 0,54/dia tudo em Rápida
+  (~R$ 16/mês) e R$ 4,29/dia tudo em Boa (~R$ 129/mês). Com os 8 cadastros
+  estourando o teto em Boa, o pior caso é ~R$ 1.030/mês — é esse o número que
+  o teto existe para limitar.
+- **Melhorar a descrição custa R$ 0,0015** (260 tokens de entrada + 112 de
+  saída no `gpt-4.1-mini`). São ~18 melhorias para o preço de UMA imagem
+  Rápida: cobrá-la do teto diário seria economizar centavo e gastar real.
+- **A conta divide o mesmo saldo do atendimento no WhatsApp.** Sem crédito, a
+  Sofia cai junto — conferir saldo é parte de operar isto.
+
+## Arte de marketing: o que separa esta tela de um ChatGPT (03/09/2026)
+
+Feedback do usuário depois de ver as receitas: "a IA só está reescrevendo de
+forma genérica; a funcionalidade principal é gerar arte PARA PUBLICAR, para
+campanha". Estava certo — e a resposta não é prompt melhor, é o que o ChatGPT
+não tem.
+
+- **O diferencial é dado real + regra de marketing como código + arte
+  composta com a marca.** `marketing.ts` (puro) guarda OBJETIVOS (lançamento,
+  decorado, últimas unidades, pronto para morar, investimento, vida no
+  bairro), CANAIS (story, feed, anúncio, WhatsApp, com zona morta e tamanho de
+  saída) e PÚBLICOS (família, investidor, casal jovem, alto padrão). Cada um
+  decide assunto-herói, luz, composição e clima. `montarBriefing` junta isso
+  com a FICHA do imóvel — estágio com rótulo humano, lazer que EXISTE,
+  tipologias — numa cena já decidida. A IA (`diretorCriativo.ts`) recebe a
+  cena decidida e escreve: detalhe concreto e a copy (título, apoio, chamada
+  entre as permitidas). `compor.ts` põe logo real, copy, rodapé e ressalva
+  ("Imagem gerada por IA, meramente ilustrativa.") no tamanho do canal.
+- **Medido com imóvel real (Eternity Alphaville Tamboré, 11 itens de lazer,
+  em construção):** briefing → diretor 2,5–4,3s → geração 15–17s → composição
+  0,5s. Feed/lançamento saiu publicável na primeira: fachada golden hour,
+  logo, nome e estágio da ficha, CTA permitida, sem placa inventada.
+  Story/decorado idem, com copy inteira da IA ("Eternity Alphaville: Seu novo
+  começo" / "Apartamentos de 2 e 3 dormitórios no Centro Comercial Jubran").
+- **A copy é validada por regex de LEI, não de estilo** (`problemasDaCopy`):
+  valor e condição de pagamento, promessa de valorização/renda (CDC/CONAR),
+  prazo não cadastrado, superlativo sem prova. Vale na saída da IA E de novo na
+  rota, porque o corretor pode editar — a régua é o serviço, e a rota recusa
+  com o motivo escrito. Guarda que lê o código (`gerar/arte.test.ts`).
+- **Reserva POR CAMPO, não tudo ou nada.** Na primeira medição a IA escreveu
+  título de 40 caracteres e a copy INTEIRA caiu para a ficha, jogando fora um
+  apoio certo. `problemasDaCopy` nomeia o campo; só ele volta para a reserva.
+- **A foto de referência é escolhida pelo ALT, por objetivo.** A primeira
+  arte de LANÇAMENTO partiu de `living-03.jpg` — a capa — para desenhar uma
+  fachada. Hoje cada objetivo tem regex de alt (fachada/perspectiva para
+  exterior; living/varanda para interior; piscina/lazer para vida no bairro)
+  e política `senao`: interior aceita a capa, exterior fica SEM referência.
+  Living como pista de fachada é pior que pista nenhuma.
+- **Limite de CARACTERES não é limite de LARGURA.** O apoio de 62 caracteres a
+  34px vazou pela direita do story ("…Centro Comercial Jub"): 62 × 34 × 0,56
+  ≈ 1.160px numa caixa de 936. O compositor agora deriva o orçamento de
+  caracteres da largura (`cabem(tamanho)`) e quebra em até duas linhas. Só a
+  IMAGEM composta mostrou — teste de dimensão passava.
+- **Recompor não gera de novo.** A imagem crua fica salva à parte
+  (`url`) e a arte em `arte_url` (0091). Para conferir uma mudança do
+  compositor, recompõe-se a crua — custo zero — em vez de pagar outra
+  geração. Foi assim que a correção do apoio foi verificada.
+- **`tsx --conditions=react-server` + `.env.local` sem Supabase.** O
+  `.env.local` local só tem `OPENAI_API_KEY`; a leitura do catálogo fora do
+  Next usou a chave PUBLICÁVEL obtida pelo MCP (é pública por desenho). E
+  exportar o `.env.local` no shell antes do vitest fez UM teste de campanha
+  falhar ("quando a variação por IA não acontece" passou a ter IA): rodar a
+  cadeia com `env -u OPENAI_API_KEY`.
+- **A tela tem duas portas e a de marketing é a primeira.** "Imagem livre"
+  (receitas) continua existindo — mobiliar cômodo vazio não é peça de
+  marketing e é útil do mesmo jeito.
+- **Fonte é a do runtime (DejaVu), como no carrossel.** Tipografia própria
+  exigiria `fontconfig` na Vercel; fica anotado como o próximo degrau visual,
+  não como pendência.
+
+## O motor de vídeo (F1 e F2, 03/09/2026)
+
+- **Não existe IA de vídeo no caminho padrão, e é isso que faz o custo ser
+  zero.** O vídeo é montado das fotos que já estão no catálogo, por FFmpeg, na
+  nossa máquina. A única chamada de API é a que escreve a legenda: **~R$
+  0,002**. Um vídeo inteiro no Veo Fast custaria R$ 16,44, e no Veo Standard
+  R$ 65,78 — medido contra o preço de tabela da Gemini API.
+- **O render NÃO cabe na Vercel, e agora está medido duas vezes:** 86,9 s no
+  protótipo e 174 s pelo motor de produção, ambos em 4 CPUs, contra o teto de
+  60 s do plano Hobby. `render.ts` é para o worker; a rota enfileira.
+- **A variação sai do DADO, não de sorteio.** O `alt` da foto decide o tipo do
+  plano e o tipo decide o movimento: fachada sobe (tilt), interior aproxima
+  (push), lazer percorre (pan), implantação afasta (pull). Sorteio produziria
+  aleatoriedade, que depois de dez vídeos parece igual do mesmo jeito — há
+  teste travando `Math.random` fora de `gramatica.ts` e `roteiro.ts`.
+- **Movimento LINEAR é o que denuncia slideshow.** Toda curva usa ease-out
+  cúbico (`pow(1-on/n,3)`), e há teste exigindo o `pow()` nas quatro. Foi a
+  diferença mais visível e mais barata de toda a exploração.
+- **No `drawtext` do FFmpeg, `y` é o TOPO do texto, não a linha de base.**
+  Calcular como baseline empilha tudo para baixo: o bloco sai espremido e o
+  título encosta no apoio. Custou uma renderização de 3 minutos descobrir.
+- **A variável por quadro do `zoompan` é `on`, não `n`.** `n` não existe nesse
+  filtro e a expressão falha com "Undefined constant". O mesmo vale para o
+  `perspective`, que também só conhece `on`.
+- **`zoompan` treme sem upscale grande antes** (`scale=-1:3200`): ele trabalha
+  em pixel inteiro. E o fundo borrado precisa de
+  `force_original_aspect_ratio=increase` — escalar pela largura estoura o crop,
+  porque as fotos do catálogo são ~1000x512 e não cobrem 1920 de altura.
+- **"gourmet" sozinho não identifica área de lazer.** "Cozinha gourmet" é o
+  interior do apartamento; "espaço gourmet" é a área comum. Sem a palavra que
+  especifica, um living ganha PAN onde devia ganhar PUSH — é a mesma trava que
+  `lazerFotos.ts` precisou ter depois que "Espaço Gourmet" abriu a foto do
+  espaço PET. O teste pegou na primeira rodada.
+- **O crédito é debitado no MESMO UPDATE que reserva a vaga**
+  (`reservar_credito_video`, `security definer`, com `FOR UPDATE`). É a lição
+  do espaçamento anti-ban outra vez: cota que a aplicação soma perde a corrida.
+- **Reservar antes do trabalho cria uma dívida.** Uma falha nossa cobraria um
+  vídeo que não existiu, então há devolução em DOIS pontos: job que não chega a
+  ser inserido, e render que falha em definitivo. Mesma lógica de
+  `devolver_cota_campanha`.
+- **O ciclo de cota vira no fuso de São Paulo.** Em UTC, das 21h à meia-noite
+  de Brasília já é o dia (e às vezes o mês) seguinte — o ciclo viraria cedo e
+  daria cota de graça. Quinta vez que esta armadilha aparece no projeto.
+- **`getSaldo` precisa repetir a virada de ciclo na LEITURA.** Só a reserva
+  zera o contador no banco; sem a mesma conta na exibição, a tela diz "sem
+  saldo" no dia 1º para quem tem a cota inteira.
+- **Tabela nova precisa ser declarada À MÃO em `types.ts`** — foi o compilador
+  que cobrou. Regenerar apagaria as 34 uniões de CHECK.
+- **Provocar a guarda com dente ERRADO passa despercebido.** A primeira
+  provocação da guarda "reserva antes de inserir" renomeou
+  `reservar_credito_video` para `XXreservar_credito_videoXX` — que ainda contém
+  a substring, então o `indexOf` achou e o teste passou. Ao morder uma guarda
+  que procura texto, conferir que a mordida de fato tira o texto.
+
+
+## A roleta empurrava o lead para longe de quem podia atender (0093, 03/09/2026)
+
+Investigação que começou com o diagnóstico ERRADO, e a correção do
+diagnóstico é a parte que vale.
+
+- **Eu afirmei que o lead da Meta nascia sem dono, e não nascia.** O webhook
+  grava `corretor_id: null`, mas existe `leads_distribuir` (BEFORE INSERT,
+  0007) que escolhe o dono quando o campo chega nulo — ativo e funcionando
+  (`origem_atribuicao = 'roleta'` em 9 leads). O único órfão do banco é um
+  "Maria Teste QA" de 09/08. **Antes de consertar ausência de mecanismo,
+  procurar o TRIGGER** — comportamento que mora no banco não aparece em
+  `grep` no `src/`.
+- **O defeito real era o oposto e mais difícil de ver: a roleta distribuía
+  para quem NÃO PODE ATENDER.** Medido: dos 9 leads da roleta, **8 foram
+  para 6 corretores sem login no painel e sem WhatsApp conectado**; a única
+  pessoa que atende — login, número no ar — recebeu 1. Com carga como
+  critério único, quanto mais alguém trabalha, menos lead recebe, até o lead
+  ir parar com quem não consegue abrir a tela para vê-lo.
+- **Lead parado com quem não pode agir é pior que lead órfão**, justamente
+  porque parece resolvido: ele aparece atribuído, e ninguém vai procurar.
+- **A correção é ORDEM, nunca filtro novo.** WhatsApp no ar, login e slug
+  viraram preferências; filtro devolveria `alvo` nulo e o lead nasceria
+  órfão de verdade. `slug is not null`, que ERA filtro desde a 0007, virou
+  preferência pelo mesmo motivo.
+- **A carga passou a contar só lead EM ANDAMENTO** — nem `arquivado_em`, nem
+  `perdido`, nem `fechado`. Só arquivado não bastava, e o número prova:
+  **54 dos 107 leads da corretora que atende estavam em `perdido`**, da
+  limpeza de 27/08 que marcou sem arquivar. Metade da carga dela era
+  trabalho que não existe. O `leadArquivado.test.ts` cobra o filtro de
+  arquivado em TypeScript e não enxerga SQL — a função do banco escapava.
+- **Esse número só decide alguma coisa no DIA DA VIRADA, e é aí que ele
+  importa.** Com um corretor só atendendo, a preferência de WhatsApp resolve
+  tudo e a carga é decorativa. No instante em que o segundo parear o número,
+  a carga passa a decidir para onde vai TODO lead novo: simulado, a Bruna
+  entra nessa comparação com 53 e não com 107. **Ao consertar um critério
+  que hoje não é exercitado, simular o dia em que ele passa a ser.**
+- **Quase criei uma segunda régua de distribuição.** A primeira versão desta
+  correção era uma `sortear_corretor_para_lead()` chamada pelos webhooks —
+  duas contas de "quem recebe o próximo lead" para divergir, que é o defeito
+  que este projeto registra desde `montarResumo`. O comentário de
+  `/api/leads/route.ts` já dizia por que a distribuição mora no banco: "para
+  que nenhuma porta de entrada futura precise lembrar de fazê-la". **Ler o
+  comentário do código vizinho antes de duplicar o mecanismo.**
+- **O que sobrou do outro defeito é real:** o webhook do Meta fazia `upsert`
+  com o cliente ANÔNIMO, e `anon` só tem INSERT em `leads`. Passava por
+  acidente — `ignoreDuplicates: true` transforma o conflito em no-op e nunca
+  pede UPDATE. Bastaria alguém tirar essa opção para o webhook falhar em
+  silêncio, com a Meta recebendo 200. Trocado para a chave de serviço, e o
+  `ignoreDuplicates` virou decisão escrita (a Meta reentrega, e um upsert de
+  verdade sobrescreveria o que o corretor editou na ficha).
+- **Ensaio em `begin; … rollback;` nos dois sentidos**, como manda a 0077:
+  lead sem dono cai na Bruna (login + WhatsApp); lead com dono do link de
+  indicação é respeitado e marcado `'link'`.
+- **`roletaDeLeads.test.ts` lê a ÚLTIMA definição da função nas migrations**
+  e cobra as três preferências mais a ausência de filtro novo. As cinco
+  mordidas foram provocadas uma a uma. A primeira versão da guarda tinha
+  falso positivo próprio: `indexOf(" where ")` pegava o `where` da
+  subconsulta de cidade e enxergava o LEFT JOIN como filtro — **quinta vez
+  que uma guarda de código-fonte tropeça no próprio recorte.**
+
+## O anúncio não usa a roleta de leads — usa o porteiro (0094, 03/09/2026)
+
+- **São DOIS caminhos e DUAS funções, e é fácil consertar o errado.** O
+  anúncio Click-to-WhatsApp aponta para `/wa/<campanha>`, que chama
+  `sortear_corretor_whatsapp` e devolve o NÚMERO para redirecionar; o lead
+  só nasce depois, quando a pessoa escreve no WhatsApp. O trigger
+  `distribuir_lead` (a roleta da 0093) só entra em INSERT de lead — Lead Ads
+  pelo webhook, formulário do site, importação.
+- **O comentário da rota `/wa/` prometia "a mesma régua da roleta de
+  leads", e a 0093 tornou isso falso** por algumas horas: mudei a conta de
+  carga de um lado só. Duas contas do mesmo número divergem — e esta decide
+  para quem vai o clique que foi PAGO. **Ao mexer numa régua que um
+  comentário diz ser compartilhada, procurar quem mais a implementa.**
+- **A conexão é FILTRO aqui e PREFERÊNCIA na roleta, de propósito.** Esta
+  função devolve destino: corretor sem WhatsApp conectado não tem para onde
+  mandar ninguém. A roleta escolhe DONO, e ali filtrar produziria lead órfão.
+  A mesma coluna, papéis opostos, e as duas decisões estão sob teste.
+- **O porteiro foi exercitado em produção**: `/wa/eternity-alphaville`
+  devolve 302 para `wa.me/<numero>` com a mensagem pronta; slug inexistente
+  degrada para a home, como o código promete. **O slug do link é o do
+  cadastro, e vários não são adivinháveis** (`eternity-alphaville`,
+  `lancamento-ao-lado-do-parque-ne51970`) — `nomes_alternativos` também
+  resolve, então "Manacá" chega ao `more-na-aldeia-de-barueri-mac238`.
+- **A roleta de leads foi provada ponta a ponta pelo formulário público**
+  (`POST /api/leads` com `consentimentoLgpd: true`), não só por
+  `begin; … rollback;`: o lead nasceu com `origem_atribuicao = 'roleta'` no
+  dono certo. O lead de teste foi apagado depois.
+- **Renomear parâmetro é como se cria sombra**: ao generalizar o leitor de
+  migrations da guarda para `ultimaDefinicaoDe(nome)`, o `nome` do laço
+  (`for (const nome of arquivos)`) passou a sombrear o parâmetro e a busca
+  virou `function public.<arquivo>.sql(`. Onze testes vermelhos de uma vez —
+  barulhento, ao contrário das falhas caladas que esta guarda persegue.
+
+## Acesso em lote para a equipe (0095, 03/09/2026)
+
+- **A coluna é `whatsapp`, não `telefone`**, e é NOT NULL: os 8 corretores
+  têm número, todos com 13 dígitos. Vale conferir o schema antes de aceitar
+  uma premissa que soa óbvia — a primeira consulta desta sessão morreu em
+  `column c.telefone does not exist`.
+- **Quase tudo já existia e ninguém tinha reparado.** `criarAcessoCorretor`
+  gera slug antes do login, usa `email_confirm: true`, vincula, grava
+  `admin_eventos` e apaga o usuário do Auth se o vínculo falhar; e
+  `deve_trocar_senha` já força `/corretor/senha` no primeiro login
+  (`actions.ts:67`). O que faltava era só o lote e a regra da credencial.
+  **Antes de construir "senha temporária", procurar se o mecanismo já está
+  lá** — aqui estava, inteiro.
+- **E-mail derivado do TELEFONE colidiria**, e o dado mostrou: "Eduardo
+  Cezar" e "Equipe Next Home" compartilham `5511972207204`, e e-mail no Auth
+  é único. Derivar do `slug` resolve de graça — ele já é UNIQUE no banco,
+  então o e-mail nasce único sem nenhuma lógica nova.
+- **4 dígitos de senha não passam**: o mínimo do Supabase é 6 e a troca no
+  painel exige 8. `nexthome` + 4 dígitos chega a 12. A parte fixa é pública
+  por construção; quem fecha a janela é a troca forçada, não a senha.
+- **`nexthome.com` NÃO é da Next Home** — resolve para 72.20.123.54, de
+  terceiro. Endereço de acesso escrito em `corretores.email` seria destino
+  real no dia em que alguém religasse os crons de e-mail: o aviso de queda
+  do número e o relatório semanal iriam para um estranho, com contagem de
+  lead dentro. Por isso `enviarEmail` RECUSA o domínio, com motivo tipado
+  (`endereco_de_acesso`) e sem lançar — o chamador está no meio de um ciclo
+  de disparo. **Ao usar domínio de fachada para credencial, conferir se ele
+  é de alguém.**
+- **Criar login NÃO redistribui lead nenhum.** A ordem da roleta é
+  `(sem WhatsApp)` → `(sem login)` → carga, e a Bruna é a única com número
+  no ar: ela continua ganhando o primeiro critério. A distribuição só se
+  move no dia em que um segundo número for pareado — o que é bom saber
+  antes de acusar a roleta de não funcionar.
+- **"Equipe Next Home" foi desativada** (0095). Não é pessoa: slug nulo, 0
+  leads, e o WhatsApp é o mesmo do Eduardo. Ativa e com carga zero, ela
+  seria a primeira a subir na roleta assim que os corretores de verdade
+  começassem a receber — lead para um cadastro que ninguém abre.
+- **Falha de um corretor não aborta o lote.** Parar no primeiro erro
+  deixaria metade criada e metade não, sem ninguém saber onde parou. Quem
+  fica de fora volta nomeado, com o motivo.
+- **O e-mail passou a ser só o PRIMEIRO NOME, e isso custa a unicidade de
+  graça.** O slug é UNIQUE por constraint (`corretores_slug_key`), então
+  `carolini-ivina-maia@` nascia único sem lógica nenhuma. `carolini@` não tem
+  essa garantia: um segundo "Eduardo" derrubaria a criação dele, porque
+  e-mail no Auth é único. Hoje os 8 primeiros nomes são distintos (medido),
+  mas a regra degrada — primeiro nome → nome+sobrenome → slug inteiro, que
+  recupera a garantia do banco. **Ao trocar uma chave derivada por uma mais
+  curta, procurar de onde vinha a unicidade.**
+- **Dentro do MESMO lote a consulta de ocupados fica velha.** Ela roda antes
+  do laço, então dois "Eduardo" na mesma leva escolheriam o mesmo endereço; o
+  e-mail criado é acrescentado ao conjunto a cada volta.
+- **`slugificar` tinha cópia própria da normalização.** Slug e e-mail saem do
+  MESMO nome, e duas cópias divergem no primeiro "Antônio" que entrar — slug
+  de um jeito, e-mail de outro, e só aparece quando essa pessoa é cadastrada.
+  Hoje há uma função só (`normalizarParaEmail`), com guarda que lê o código.
+- **O aviso da tela prometia 7 e o lote criava 6.** `getCorretoresParaAdmin`
+  carrega TODO corretor, inclusive inativo, e o aviso contava `!temLogin`
+  sem olhar `ativo`; a action recorta por `ativo`. A diferença não apareceria
+  como erro — quem sobra é exatamente quem está desativado de propósito.
+  **Botão que promete um número precisa contar com o MESMO filtro de quem
+  executa**, e agora há guarda lendo as duas pontas.
+- **Duas linhas idênticas em dois lugares quebram `str.replace`**: o
+  `const senha = senhaTemporaria();` aparece em `criarAcessoCorretor` e em
+  `redefinirSenhaCorretor`, com a linha seguinte igual. O `assert count == 1`
+  pegou antes de escrever — âncora de edição precisa incluir algo único da
+  função (aqui, a linha do slug).
+
+## A pausa DESCARTAVA a mensagem, e a telemetria culpava a pausa (03/09/2026)
+
+Dois defeitos empilhados, e o segundo escondia o primeiro.
+
+- **O webhook é o ÚNICO gatilho do atendimento.** Quando ele decide
+  "pausado", a mensagem do cliente morre ali: não há fila, não há
+  reagendamento, e quando a pausa vence nada volta para respondê-la. Medido:
+  **17 conversas com lead real** com a última fala do cliente sem resposta de
+  ninguém, esperando de 22 a 52 horas.
+- **Encurtar a pausa não resolve, e isso é medível.** A correção de 01/09
+  (24h → 3h) não moveu o número porque **80% das mensagens de cliente chegam
+  a menos de 3h da última fala da corretora** na mesma conversa — ela responde
+  544 por semana do próprio celular. Encurtar mais é o bot falando por cima
+  dela. O que faltava era a segunda chance, não uma janela menor.
+- **A telemetria mandava consertar o que não estava quebrado.**
+  `botDeveResponder` responde SIM ou NÃO por três razões, e o webhook
+  carimbava todo NÃO como `pausada_por_humano`: **335 mensagens em três dias**
+  com o motivo errado. Conferindo o estado real das conversas, a pausa não era
+  a causa de NENHUMA delas — 9 travadas pela palavra-chave, 1 com o bot
+  desligado, 7 já com a pausa vencida. Mesma família da coluna `modelo`, que
+  carimbava um modelo nunca chamado. **Antes de acreditar num contador de
+  `ia_interacoes`, conferir se ele distingue as causas ou só tem um rótulo.**
+- **A varredura roda ANTES da janela de horário, e a regra já estava escrita.**
+  O webhook diz: "responder quem nos escreveu não passa por cota nem por
+  janela de horário — deixá-lo no vácuo é pior para o número do que responder
+  de madrugada". Pendurar a varredura depois do `dentroDaJanela` a faria calar
+  das 21h às 9h justamente para quem esperou a noite inteira — o defeito do
+  aviso de queda, que herdou as saídas antecipadas do disparador. **Ao pendurar
+  código novo num runner existente, conferir de quais `return` ele passa a
+  depender.**
+- **Mora no cron de follow-ups porque ele JÁ roda** (2.719 execuções sem
+  falha). Cron novo exige `configurar_*` ser CHAMADA à mão, e esta base tem
+  quatro recursos completos que produziram zero linhas por causa disso.
+- **Sem marca de "já respondida".** Quando o balão é gravado, a última fala
+  deixa de ser do cliente e a view (0087) para de devolver a conversa. O
+  critério de parada é o próprio dado — contador novo divergiria dele.
+- **Teto de 2 por tique é orçamento de TEMPO, não anti-ban:** cada resposta
+  custa uma chamada do agente (20s) mais os envios, e a função tem 60s, com os
+  follow-ups na mesma invocação.
+- **Guarda de código-fonte quebra quando o arquivo ganha um SEGUNDO caminho.**
+  `gravacaoDeMensagem` comparava `lastIndexOf("registrarInteracao({")` com
+  `indexOf("vincularInteracaoNaMensagem(")` — o último registro contra o
+  primeiro vínculo. Com um caminho de envio funcionava por sorte; com dois,
+  passou a parear a telemetria de um com o vínculo do outro e reprovou código
+  correto. Hoje recorta por FUNÇÃO. **Sexta vez que uma guarda desta base
+  tropeça no próprio recorte.**
+- **E a primeira correção que escrevi para ela era TAUTOLÓGICA**: filtrava as
+  ocorrências pela mesma condição que depois afirmava. Passava sempre. Critério
+  decorativo é o defeito recorrente daqui — ao consertar guarda, provocar a
+  versão nova com o defeito real antes de acreditar no verde.
+- **Verificado em produção**, não por teste: duas respostas saíram no primeiro
+  tique, ambas abrindo com "Desculpa a demora!" (a instrução muda acima de
+  24h), com `provider_message_id` e status `enviada`. O `---` que aparece no
+  `conteudo` é o marcador de corte — o CRM guarda o texto inteiro, o cliente
+  recebeu os balões separados.
+- **A branch de produção voltou a ser a documentada.** A anomalia de 31/08
+  (`ingestao-de-midia` promovida pelo painel) acabou: os últimos deploys com
+  `target: production` saem de `claude/modernizar-plataforma-imobiliaria-2tm13q`,
+  e `main` está no mesmo commit. A regra de conferir antes de afirmar "está no
+  ar" continua valendo — foi conferindo que se soube.
+
+## O vídeo entrava na fila e ninguém o chamava (03/09/2026)
+
+- **`video_jobs` com `tentativas = 0` é a assinatura de "ninguém tentou".**
+  Um vídeo pedido às 14h15 nunca renderizou, e a leitura fácil seria culpar o
+  render. O job estava `pendente`, sem trava, com zero tentativas: não houve
+  falha, houve AUSÊNCIA. `criarVideo` inseria na fila e encerrava; o workflow
+  do GitHub Actions só aceitava acionamento manual e tinha **zero execuções
+  na vida**. Quinto caso do padrão "construído e nunca ligado" desta base.
+- **O elo que faltava já existia em outro lugar do projeto.**
+  `whatsapp/autoDisparo.ts` ("acender o pavio") faz exatamente isto para a
+  campanha desde agosto: `after()` para não segurar a resposta, falha FECHADA
+  sem a variável de ambiente, timeout curto, chamada sem `await`. Antes de
+  escrever integração nova, procurar quem já resolve a mesma forma.
+- **Acionamento direto e rede de segurança são papéis DIFERENTES, e a
+  distinção precisa estar no código.** O `workflow_dispatch` dá segundos; o
+  `schedule` de hora em hora existe porque o acionamento tem ponto único de
+  falha (token expirado, GitHub fora, env var perdida num redeploy) e o
+  sintoma é SILÊNCIO. A guarda reprova cron mais frequente que a hora cheia:
+  intervalo curto é sinal de que alguém passou a contar com o schedule em vez
+  do acionamento, e aí o vídeo volta a demorar por desenho.
+- **A branch padrão deste repositório NÃO é `main`** — é
+  `claude/modernizar-plataforma-imobiliaria-2tm13q`, a mesma de produção. Isso
+  tem consequência prática que quase virou defeito: **o GitHub só roda
+  `schedule` a partir da branch padrão**, então a `ref` do acionamento direto
+  precisa ser a MESMA, senão os dois caminhos executam versões diferentes do
+  worker — e a divergência só apareceria num render errado que ninguém saberia
+  explicar. Conferir com `git remote show origin | grep "HEAD branch"`, não
+  presumir `main`.
+- **Guarda que protege decisão de produto deve ser REESCRITA, nunca apagada.**
+  `worker.test.ts` afirmava que o `schedule` estava desligado ("ligar é decisão
+  de produto, depois do portão da F0"). Quando a decisão mudou, a guarda
+  cumpriu o papel dela: obrigou a reversão a ser explícita em vez de
+  silenciosa. O comentário novo registra o que mudou e por quê, para a próxima
+  pessoa não achar que foi afrouxamento por conveniência.
+- **Ao provocar uma guarda, conferir que a mordida ALTEROU o arquivo.** Já
+  houve provocação nesta base que não mudou nada e fez a guarda parecer
+  aprovada. O laço de provocação desta rodada compara o md5 antes e depois e
+  recusa a mordida que não muda o arquivo.
+- **O que continua sem prova:** o render em si nunca rodou de ponta a ponta.
+  Os secrets `SUPABASE_SECRET_KEY` e `NEXT_PUBLIC_SUPABASE_URL` do GitHub
+  nunca foram exercitados — como o workflow tinha zero execuções, ninguém sabe
+  se existem. É o candidato nº 1 a falhar na primeira execução real.
+
+## Subtópicos na navegação, e as duas hierarquias que discordavam (04/09/2026)
+
+Pedido: "menu lateral com tópicos e subtópicos, off-canvas pelo hambúrguer".
+O levantamento mostrou que sidebar e off-canvas JÁ existiam; o que faltava era
+o subtópico — e a falta dele tinha causado dois defeitos medidos.
+
+- **O painel tinha DUAS hierarquias, e elas discordavam.** `/corretor/campanhas`
+  e `/corretor/templates` eram absorvidos por Marketing no MENU e desenhavam
+  abas de WhatsApp na TELA; `/corretor/conversas` era Pessoas no menu e também
+  mostrava WhatsApp. O sidebar acendia magenta e a barra dizia outra seção, na
+  mesma tela. Causa estrutural: cada barra de abas mantinha a própria lista,
+  escrita à mão, longe de `navegacao.tsx`. Hoje `AbasLeads`/`AbasWhatsapp`/
+  `AbasMarketing`/`AbasAdmin` derivam de `subitensDe()`. **Uma fonte, três
+  renderizações** — a mesma jogada que transformou `ATALHOS_MOBILE` de cópia
+  em derivação. A guarda que impede a volta procura `label: "` nas barras: a
+  versão derivada nunca escreve rótulo, a escrita à mão sempre escreve.
+- **O teto de 7 destinos escondia tela.** Ele é afirmado em quatro arquivos e
+  estava ocupado por exatos 7. Cada tela nova virou sub-rota alcançável só por
+  deep link (Fila de cadastro, Criar arte, Criar vídeo, Carrossel), e
+  `/corretor/links` não tinha item de menu NEM aba — a única tela do painel sem
+  pai, com breadcrumb dizendo "← Imóveis" e menu dizendo Marketing. **Teto de
+  menu sem lugar para a hierarquia morar produz tela invisível.** O subtópico
+  é esse lugar. Funil desceu de destino para subtópico de Pessoas (era item E
+  aba, o pai duplo mais visível): 6 tópicos, folga de volta.
+- **Subtópico cria rota com DOIS donos por prefixo.** `/imoveis/criar-imagem` é
+  subtópico de Marketing e casa com `/imoveis`. `itemAtivo` responde "acende?"
+  e dois acendem; `destinoAtivo` escolhe o mais específico, e sidebar, gaveta
+  e barra do polegar usam o MESMO dono — senão o polegar diria uma seção e o
+  menu outra. `MODULO_POR_SUBITEM` é a exceção declarada para a cor.
+- **Subtópicos só sob o tópico ABERTO**, nos dois lugares. Abrir todos
+  devolveria a lista de treze que a reforma desfez, só que na vertical. O
+  custo é descoberta — e é por isso que **só quem tem subtópico ganha a
+  seta**: sem ela "Criar vídeo" seria invisível até alguém abrir Marketing por
+  acaso.
+- **A gaveta foi para `createPortal`.** Funcionava porque o `<main>` não tem
+  `backdrop-filter`, mas o header do painel tem — quinta vez que essa
+  armadilha aparece aqui. Com o portal, `md:hidden` precisa ficar NA GAVETA:
+  no body ela sai do wrapper que o tinha, e abrir no celular e alargar a
+  janela deixaria o escurecido sobre o desktop. Armadilha de foco e trava de
+  rolagem copiadas de `MenuMobile.tsx`.
+- **Guarda que protege decisão de produto é REESCRITA, não apagada.** Conversas
+  passou de Pessoas para WhatsApp — muda a invariante "Pessoas, uma porta só"
+  (91 casos medidos). A régua: Pessoas responde "com quem eu falo agora";
+  Conversas responde "o que a IA andou dizendo" (é onde vive a revisão 👍/👎).
+  O teste foi reescrito com essa explicação, como o do `schedule` do vídeo.
+- **Medido com o CSS de produção, não presumido**: gaveta e sidebar não
+  estouram em 320/360/390px nem nos 240px da coluna, nenhum texto corta, todo
+  alvo tem 44px — subtópicos inclusive (`min-h-11`). E olhado: screenshot do
+  render, porque medida que passa não diz se a hierarquia LÊ.
+- **Uma mordida de guarda não alterou o arquivo.** Mirei em
+  `"/corretor/conversas": "whatsapp"` em `MODULO_POR_DESTINO`, linha que não
+  existe — conversas herda a cor do pai. O laço de provocação compara md5 antes
+  e depois e recusou; refeita movendo o subtópico de volta para Pessoas: 5
+  testes reprovaram. **É a segunda vez que o md5 pega mordida vazia nesta
+  base.**
+- **`aria-current="page"` duplo** aparece toda vez que tópico e subtópico
+  compartilham href (`/corretor/whatsapp` é o tópico e é "Minha IA"). A regra:
+  com subtópico aberto, é ELE a página; o tópico não leva `aria-current`.
+
+### A gaveta virou lateral, com acordeão (04/09/2026, tarde)
+
+O usuário mandou a referência de um app que ele usa: gaveta pela esquerda,
+página escurecida atrás, acordeão por tópico, ícone em cada subtópico, marca
+no topo, "Sair" no rodapé. O que eu tinha feito era folha de baixo.
+
+- **Folha de baixo esconde o TOPO da lista.** Cabia com sete itens planos;
+  com tópicos e subtópicos a lista fica alta, e o que some é justamente Agora,
+  Pessoas e Imóveis — os três mais usados. Lateral não tem esse problema.
+- **Acordeão CONTROLADO, não só derivado da rota.** A versão anterior só abria
+  o tópico da rota atual; espiar outro exigia navegar até ele. Agora a seta
+  abre/fecha e o rótulo navega — separados, como na referência. O tópico
+  aberto à mão é guardado COM a rota: ao navegar, volta ao da rota nova sem
+  efeito nem setState em cascata.
+- **Dois gatilhos, um estado.** Hambúrguer no topo (onde todo app põe) e o
+  botão Menu da barra do polegar (que já existia). Moram em irmãos sob um
+  layout de servidor — sem pai cliente para `useState` — então `gavetaStore`
+  é um store externo de 40 linhas com `useSyncExternalStore`. Guarda a ROTA
+  em que abriu, não booleano: fecha sozinha ao navegar.
+- **Tópico ativo SÓLIDO** (`bg-acento text-sobre-cor`), não lavado: é a
+  resposta a "onde estou" e tem de ser lida de relance no celular ao sol. Na
+  cor do módulo, não num laranja fixo — a paleta do painel muda com a seção.
+- **Subtópico ganhou ícone**, revertendo a decisão da manhã. Com vinte linhas
+  na gaveta, ler cada rótulo é o que cansa; o ícone diz o que é antes de ler.
+- **Antes de usar token novo, `grep` no `globals.css`.** Classe de cor que não
+  existe vira NADA em silêncio (a lição do `bg-chip`). Conferi os sete que
+  usei — todos existem.
+- Medido em 320/360/390 com o CSS de produção: sem estouro, todo alvo ≥44px,
+  "Listas de transmissão" cabe sem truncar até em 320px.
+
+### Portal tira o elemento da árvore — e a cor viaja pela árvore (04/09/2026, noite)
+
+- **`createPortal` resolve a armadilha do `backdrop-filter` e cria outra.** A
+  gaveta lateral foi para o `<body>` para escapar do containing block do
+  header. Só que a paleta do painel (`[data-rota="painel"]`) e a cor do módulo
+  (`[data-modulo]`) são custom properties penduradas no `<main>` — e custom
+  property só herda pela árvore do DOM. No body, a gaveta nasceu com a paleta
+  do SITE e o acento padrão: o painel inteiro mudava de cor ao trocar de
+  seção, a gaveta não. **Falha calada: tudo funcionava, só a cor mentia.** O
+  usuário viu antes de mim ("quero que aquelas mudanças de cores continuem").
+- **Regra:** todo nó portalado do painel repete `data-rota="painel"` e
+  `data-modulo={moduloAtivo(atual)}` na própria raiz — o módulo vindo da MESMA
+  função que pinta o `<main>`, senão gaveta e painel podem discordar sobre a
+  cor da mesma rota. Guarda em `navegacao.test.ts` lê o código de cada
+  componente portalado; provocada removendo o atributo, mordida conferida por
+  md5.
+- **Por que a reprodução não pegou:** o HTML de teste tinha `data-modulo` no
+  `<main>` E a gaveta DENTRO dele — o oposto do que o portal faz. Reprodução
+  que não reproduz a árvore do DOM não reproduz herança de CSS. Ao validar
+  componente portalado, montar a gaveta como irmã do main, não filha.
+
+## O Estúdio virou chat, e o motor já estava pronto e desligado (04/09/2026)
+
+- **`engenheiroDePrompt.ts` existia sem NENHUM importador** — perguntas com
+  alternativas tocáveis, prompt final com explicação em português, reserva
+  determinística quando o motor cai. Era exatamente o miolo do "chat que
+  melhora o pedido". Sexto caso de recurso completo sem ninguém o chamando;
+  **antes de escrever motor novo, `grep` por quem já resolve a forma.**
+- **O pré-treinamento mora no código, não num prompt gigante.** O que separa
+  este chat de um ChatGPT é o que o código injeta e impõe: catálogo real
+  (a IA só escolhe slug que existe), receitas, régua de marketing, cláusula
+  anti-invenção (segue em `gerarImagem.ts`, o chat não a toca) e régua de lei
+  na copy. Vídeo nem usa LLM para o roteiro — é determinístico; a IA só
+  ENTENDE o pedido.
+- **Uma pergunta por turno.** O engenheiro devolve até três de uma vez; no
+  chat isso é formulário disfarçado. A adaptação foi de RITMO, não de motor.
+- **Os dois verbos pagos continuam sendo dois** (`/api/imagens/gerar`,
+  `criarVideo`), e a guarda lê o código para garantir que o chat não vira um
+  segundo motor. A primeira versão da guarda "confirmar vídeo exige proposta
+  na conversa" **aceitou `void propostaValida`** — a mordida não mordeu.
+  Reescrita para exigir o `if (!propostaValida) return { erro` ANTES do
+  gasto. Critério que só confere se a variável existe é decorativo.
+- **Sem chave da OpenAI no contêiner, sondar a DEGRADAÇÃO é o teste barato**:
+  arte sem motor vira proposta honesta (`daIa=false`), "story" vira retrato,
+  vídeo acha o imóvel pelo apelido e pergunta só o que falta. É o caminho que
+  não pode falhar; o caminho feliz se prova em produção, onde a chave existe.
+- **`min-width: auto` de novo, agora na lista de conversas**: título longo num
+  item de flex sem teto de largura definiu a largura da coluna — 5px de
+  vazamento em 320/360px, medido com o CSS de produção. `max-w-full` no item
+  resolve; a mesma armadilha do link de indicação no hub de Marketing.
+- **Comentário JSX não pode ser irmão do elemento retornado em
+  `map(() => ( … ))`** — derruba o build do Turbopack com um erro genérico.
+  Comentário vai fora do parêntese ou dentro do elemento.
+- **No celular, o histórico vai embaixo do chat.** Medido: ocupava ~380px
+  acima da conversa em 360px. Quem abre no telefone veio conversar, não
+  folhear.
+
+### Atalhos do Início em cartões coloridos (04/09/2026, noite)
+
+- **A cor do cartão é a cor do MÓDULO de destino, não uma paleta própria.**
+  Cada `<Link>` leva `data-modulo` da seção para onde aponta, e o
+  `[data-modulo]` do `globals.css` reaponta `--color-acento` dentro dele —
+  `bg-acento`/`from-acento` ali já são a cor daquela seção. Pessoas magenta,
+  Imóveis laranja, IA verde, Marketing ciano: o color coding vira legenda antes
+  do clique, e o dia em que a paleta mudar, os cartões mudam junto. Dois
+  cartões do mesmo módulo saem iguais de propósito (Criar arte e Meus links).
+- **Gradiente `from-acento to-acento-hover`** usa dois tokens que já existem
+  por módulo — nenhum token novo. `text-sobre-cor` garante contraste sobre
+  qualquer acento nos dois temas.
+- A fila "Agora" desceu para o fim da tela (decisão do usuário): a ordem é
+  funil → link pessoal → atalhos → fila.
+
+### O cartão de abertura do Início, e o que ele ensinou (04/09/2026, noite)
+
+- **Saudação pela hora de SÃO PAULO, reusando `momentoEmSaoPaulo`** — não uma
+  sexta cópia de `Intl.DateTimeFormat`. Teste com 23:30 UTC esperando "Boa
+  noite": um `getHours()` no servidor daria "bom dia" para quem está jantando.
+- **O medidor é "% da carteira em andamento"** (dos contatos no caminho,
+  quantos saíram de "novo"; perdido fora; fechado conta). É o número que sobe
+  quando a corretora trabalha. Carteira vazia → 0 e a frase diz por quê, em vez
+  de dividir por zero. **Pílulas com o que MUDA** (em conversa, visitas,
+  fechados), não totais que só crescem.
+- **Zero consulta nova**: reaproveita `getContagemPorEtapa`, que o funil já
+  buscava, atrás do próprio `Suspense`. O Início é a tela mais aberta do
+  painel; consulta ali custa em toda abertura.
+- **Três pílulas com ícone AO LADO não cabem em 320–390px** — "em conversa"
+  cortava, medido com o CSS de produção. No celular o ícone fica em cima do
+  número; lado a lado só a partir de `md`.
+- **Vidro sobre fundo liso é só cinza.** `backdrop-blur` precisa de algo atrás
+  para desfocar: os dois brilhos de acento nos cantos existem para isso, não
+  por enfeite. E `backdrop-filter` cria containing block — nada `fixed` dentro
+  desses cartões (sexta vez que a armadilha aparece; aqui prevenida).
+- **A cor dos atalhos é a cor do módulo** (`data-modulo` no próprio `<Link>`),
+  nunca paleta própria: Pessoas é magenta porque Pessoas É magenta no resto.
+- **Ao validar por reprodução, usar os ÍCONES REAIS** — extrair os `<path>` do
+  código em vez de um placeholder. O usuário pediu "coloque símbolos nos
+  cards" olhando uma reprodução em que os símbolos eram placeholders MEUS; o
+  código já tinha os certos. Reprodução que mente na parte visual gera pedido
+  para consertar o que não está quebrado.
+- **Alguém promoveu um commit da branch de DEV para produção pelo painel da
+  Vercel** (`e9a5805`, `action: "promote"`, ~23h40 UTC de 04/09) — a mesma
+  anomalia de 31/08. Não quebrou nada porque a dev estava à frente e o push
+  seguinte a superou, mas a regra continua: **antes de afirmar "está no ar",
+  listar deployments com `target = production` e olhar o `action`.**
+
+## Avaliar a resposta da IA virou reação no balão (03/09/2026)
+
+- **O mecanismo já existia desde a 0040 e ninguém usava**: cada balão da IA
+  carrega o `interacaoId`, e o 👍/👎 estava lá — como dois links pequenos de
+  texto embaixo da mensagem, que no celular ninguém acha. O pedido foi "como
+  se coloca emoji numa mensagem do WhatsApp": dois botões redondos de 44px
+  sempre visíveis, e o escolhido vira selo. **Tocar no selo reabre a
+  escolha** — a versão antiga travava num texto fixo ("Você marcou como
+  boa"), e avaliação errada sem volta ensina a não avaliar.
+- **Um comentário errado custou uma investigação.** `deMensagemRow` dizia que
+  a avaliação vinha de um "reconcílio periódico"; li isso e concluí que o
+  rótulo nunca era carregado. Falso: `lerMensagens` faz uma segunda consulta
+  em `ia_interacoes` e traz tudo. O `null` ali é só para mensagem que CHEGA
+  por realtime — nova, sem avaliação por definição. **Comentário que descreve
+  mecanismo inexistente é pior que comentário nenhum**; corrigido no lugar.
+- **A tela "Atendimento da IA" continua**, como FILA de revisão ("N respostas
+  sem revisão") que leva à conversa. O que mudou é onde o toque acontece: na
+  conversa, não numa lista separada.
+
+## O Live Chat virou WhatsApp (04/09/2026)
+
+- **A régua já estava escrita e valia só para a lista.** "Painel que dispensa
+  treino empresta o modelo mental que a pessoa já usa" — a lista de conversas
+  seguia o app desde a reforma de Pessoas; o chat aberto tinha balões da nossa
+  paleta, hora fora do balão e botão de enviar na cor do módulo. Agora as
+  cores são as do próprio app nos dois temas (`--color-wa-*`, com
+  `light-dark()`), papel de parede com rabisco, balões de 8px com rabinho só
+  no primeiro da sequência, hora e ✓✓ DENTRO do balão (azul quando lida),
+  separador HOJE/ONTEM, teclado em pílula com botão verde redondo.
+- **A hora dentro do balão é um truque, não um layout.** Um espaçador
+  invisível no fim do texto reserva o canto; a hora fica em `absolute` embaixo
+  à direita e a última linha corre ao lado dela — exatamente como o app faz.
+  Sem o espaçador, texto curto e hora se sobrepõem.
+- **A reação (👍/👎) é uma pílula de 28px sobreposta ao pé do balão**, como o
+  emoji de reação do app — mas cada botão dentro dela tem 44px de área tocável
+  por margem negativa. Aparência do app, régua da casa.
+- **`stroke-opacity-50` não existe no Tailwind v4.** Saiu no commit do funil e
+  a classe não gerava CSS nenhum; `npm run paleta` pegou. O caminho é a
+  propriedade arbitrária (`[stroke-opacity:0.5]`). Mesma família do `bg-chip`.
+- **O nome da assistente é configurável, então o balão diz só "IA"** — em
+  verde, na posição em que o app mostra o nome do remetente no grupo.
+
+## O estilo do Início virou a base de todas as telas (04/09/2026)
+
+Pedido: "tendo o estilo da home como base, atualize o layout de todas as
+outras telas". Antes de tocar em tela, contar onde a mudança mora.
+
+- **A assinatura do Início são três coisas**: vidro com brilhos na cor do
+  módulo e título editorial em itálico com o ponto colorido; atalhos em
+  degradê do módulo; cartões com sombra. Levar isso a 30 telas uma a uma
+  seria o labirinto de sempre. O que valeu foi achar as DUAS alavancas
+  compartilhadas: `CabecalhoDeTela` (9 telas já o usavam) e a classe de
+  cartão repetida em 43 arquivos com variações.
+- **`CabecalhoDeTela` virou o cartão-herói** e as 16 telas que ainda
+  escreviam `<h1>` na mão passaram a usá-lo (as seis de Administração ganharam
+  a seção em versalete e um título que diz QUAL tela é — antes as seis se
+  chamavam "Administração"). Sobraram fora `imoveis/[slug]` e `leads/[id]`:
+  são cabeçalhos de REGISTRO (nome do imóvel, nome do lead, com ações), não de
+  tela, e a anatomia é outra.
+- **`cartao` é a única classe de cartão do painel** (`@utility` no
+  `globals.css`, 41 arquivos trocados por regex sobre a string de classes).
+  Translúcida (84%), fio de luz na borda de cima, raio 1.25rem. A próxima
+  mudança de linguagem custa uma linha.
+- **`backdrop-filter` só no cabeçalho-herói, NUNCA no `cartao`.** Cinco
+  componentes com `position: fixed` nascem dentro de cartão (folha de ações,
+  modal do dossiê, barra de salvar, seleção em lote, avisos) — o filtro
+  criaria containing block e quebraria todos de uma vez, a armadilha que este
+  projeto já pisou seis vezes. A transparência sozinha já deixa o fundo passar.
+- **Os brilhos do módulo moram no `<main>` do painel, fixos atrás de tudo.**
+  Vidro sobre fundo liso é só cinza; com os brilhos, todo cartão translúcido
+  ganha profundidade sem custo por tela. Seguem `--color-acento`, então mudam
+  de cor com a seção (magenta em Pessoas, ciano em Marketing). `isolate` no
+  `<main>` segura o `-z-10` deles dentro do contexto: ficam sobre o fundo e
+  sob o conteúdo — sem o `isolate`, `-z-10` os jogaria para trás do `<body>`.
+- **Medido com o CSS de produção em 360px**, claro e escuro, em dois módulos:
+  sem estouro; cartão a 84% de opacidade nos dois temas.
+
+## Criar e excluir imóvel: dois defeitos que se escondiam um no outro (04/09/2026)
+
+Relatado junto: "não é possível excluir um imóvel, e está dando erro na
+criação". Eram problemas separados, e o segundo não era o que parecia.
+
+- **A criação FUNCIONAVA; quem quebrava era a tela seguinte.** O editor
+  (`imoveis/[slug]/page.tsx`) lia por `getEmpreendimentoBySlug`, de
+  `lib/queries` — a consulta da VITRINE, que filtra `publicado = true`. Como
+  imóvel novo nasce despublicado de propósito, o redirect depois de criar
+  caía em `notFound()`: formulário preenchido, linha gravada no banco, e a
+  tela dizendo que não existe. A prova estava no banco — um rascunho
+  chamado "teste" de 03/09, órfão de uma tentativa. **Ao investigar "deu
+  erro ao criar", conferir se a linha entrou antes de procurar o erro na
+  criação.**
+- **A função certa existia desde a 0081, com o comentário explicando isto
+  no corpo, e nunca foi ligada.** `getEmpreendimentoDoPainel` foi escrita na
+  mesma migration que abriu a RLS para o corretor ler rascunho. Sétimo caso
+  do padrão "construído e nunca chamado" nesta base.
+- **Excluir não existia por DOIS motivos empilhados**: nem action/botão, nem
+  policy. O grant de DELETE para `authenticated` estava lá (default do
+  Supabase); sem policy, com RLS ligada, o delete afeta zero linhas em
+  silêncio — a mesma armadilha da 0055 em `leads`. Policy e grant são coisas
+  diferentes, e faltar um dos dois falha calado.
+- **Só apaga o DESPUBLICADO, e a trava mora na policy.** É a regra de dois
+  passos de `leads` com o estado que o cadastro já tinha: despublicar tira da
+  vitrine na hora e é reversível. Conferir em JavaScript e apagar depois
+  seria a corrida de sempre — entre a leitura e o delete, outra aba
+  republica.
+- **A ordem do delete importa por causa do bucket.** As URLs vivem em
+  `midias`, que o CASCADE apaga junto: são lidas ANTES da linha do imóvel,
+  senão não há como saber que arquivo remover e sobra órfão para sempre — o
+  alerta que fez a 0046 despublicar duplicados em vez de apagá-los.
+- **Excluir por SLUG, não por id**: no tipo `Empreendimento` o id é opcional
+  (nem toda leitura o traz) e a tela sempre tem o slug, que é único no banco.
+- **A guarda nova mora em `escalaDoPainel.test.ts`** e é da mesma família das
+  outras: lê o código e reprova tela do painel que chame a consulta da
+  vitrine. A regressão falhava calada — build, tipos e a tela funcionando
+  para os publicados, que são a maioria; só o rascunho quebrava, e rascunho é
+  justamente o que se acabou de criar.
+
+## O site estava mais largo que o celular, e o CSS estava inocente (04/09/2026)
+
+Relato: "não está fixa nas laterais, dá para dar zoom, fica tudo grande". Era
+estouro horizontal — e a investigação teve duas fases porque a primeira
+respondeu "não há nada".
+
+- **HTML + CSS de produção, sem JavaScript, não estouram em nenhuma
+  largura.** Zero elementos fora em 360/390/412, na home e na listagem.
+  Quem estoura só existe com JS rodando. **Para medir largura de página
+  neste projeto, medir com o build de pé e o navegador executando, rolando
+  a página inteira** — o estático passa limpo e mente.
+- **A causa: `CartaoTilt` escalava um nó EM FLUXO a 1.18, e `clip-path` não
+  corta layout.** A cortina de entrada é `clip-path` no wrapper sobre um
+  zoom-out (1.18 → 1) no `firstElementChild`; sem camada, esse filho era o
+  próprio `<a>` do cartão, em fluxo. `clip-path` esconde a pintura, mas
+  transform estende a área rolável: cartão de 328px a 1.18 contava 387. E
+  como o `scale` é gravado na montagem e só volta a 1 quando o cartão entra
+  na tela, TODO cartão abaixo da dobra deixava a home 14-19px mais larga o
+  tempo inteiro. A conta fechou com a medição: 360 → 374, 390 → 406.
+- **O header cortado na direita era sintoma.** `fixed inset-x-0` resolve
+  contra a viewport; com o documento mais largo, ao arrastar ele fica preso
+  em x=0 e parece sair pela direita. Consertar a largura consertou o header
+  sem tocar nele.
+- **A correção é por construção**: o zoom mira um wrapper interno próprio
+  (dois refs — registrar o wrapper como camada faria o controlador escrever
+  `y: 0` todo frame por cima do `scale`), e o nó do tilt tem
+  `overflow-clip`. `clip`, não `hidden`: não vira contêiner de rolagem, não
+  cria containing block para `fixed`, não é propriedade de agrupamento (o
+  `preserve-3d` sobrevive) e gira junto com o tilt em vez de raspar canto.
+- **Rede de segurança `html, body { overflow-x: clip }`**, e a razão de ser
+  `clip`: `hidden` no body vira contêiner de rolagem, quebra `position:
+  sticky` (o Sobre usa) e o scroller do Lenis. Não existia NENHUMA regra de
+  `overflow-x` no `globals.css` — tudo o que vazasse virava rolagem lateral.
+- **Provocação em duas rodadas, e a segunda é a que ensina.** (1) Sem a
+  correção e sem a rede: a home falha com `374 > 360` e `406 > 390`; a
+  listagem e a página do imóvel PASSAM — não há segunda causa. (2) Com a
+  correção e a rede COMENTADA: passa — o componente basta. Rede que esconde
+  regressão futura é exatamente por que a rodada 2 existe; sem ela, ninguém
+  saberia se o conserto de verdade aconteceu.
+- **A guarda MEDE, não lê código** (`e2e/publico/largura-mobile.spec.ts`):
+  abre as três páginas com JS, rola em passos e afirma `scrollWidth <=
+  clientWidth` (não `innerWidth`: os 15px da barra do headless acusariam
+  falso). Na falha, lista os culpados — e o filtro precisa ignorar quem tem
+  ancestral fixo ou com overflow cortado, senão a lista vem cheia de brilho
+  e vídeo de fundo já contidos, e o cartão escalado nem aparece.
+- **Não bloquear o pinch (`maximumScale: 1`).** O usuário não estava dando
+  zoom: o navegador afastava a câmera sozinho para caber a página larga.
+  Bloquear não consertaria a causa, o iOS ignora, e tira de quem tem visão
+  reduzida o zoom que todo site permite.
+- **`pkill -f "next start"` mata o próprio shell** — a linha de comando do
+  bash contém o texto. Usar `pkill -f "[n]ext-server"`: o colchete faz o
+  padrão não casar consigo mesmo.
+- **O Playwright deste sandbox não tem o `chromium_headless_shell` que a
+  versão pinada pede.** `E2E_CHROMIUM=/opt/pw-browsers/chromium-1194/…`
+  aponta o Chromium completo (o config lê a variável); nunca rodar
+  `playwright install`.
 ## A trava era aberta por padrão, e a palavra-chave não ativava (05/09/2026)
 
 Relatado: "a IA está respondendo todo mundo, não só quem está no nosso
@@ -1982,7 +4500,7 @@ estavam certos, e eram defeitos DIFERENTES:
   WhatsApp PESSOAL do corretor. Hoje `exigeLiberacaoExplicita`: desconhecido
   trava SEMPRE; o que abre é ato deliberado (cliente já no CRM antes da
   conversa, campanha, anúncio, frase de entrada, palavra-chave, botão). A
-  0070 retrava o passado — inclusive quem foi liberado de propósito, de
+  0098 retrava o passado — inclusive quem foi liberado de propósito, de
   olhos abertos: reativar é um clique.
 - **A palavra-chave só escrevia UMA das três condições de
   `botDeveResponder`** (`liberado_por_palavra_chave`). No fluxo real — o
@@ -1999,7 +4517,7 @@ estavam certos, e eram defeitos DIFERENTES:
   avança o funil (`etapaAutomatica.test.ts` ganhou o quarto arquivo). A
   janela de horário NÃO barra o clique: corretor logado olhando para a
   conversa é a mesma classe do Live Chat manual.
-- **`ia_interacoes.origem` ganhou 'painel'** (0070 altera o CHECK; types.ts
+- **`ia_interacoes.origem` ganhou 'painel'** (0098 altera o CHECK; types.ts
   atualizado à mão — é uma das 10 colunas de vocabulário fechado). Sem o
   CHECK novo o insert falharia CALADO pelo try/catch de registrarInteracao.
 - O texto da tela de configuração dizia "Em branco, a IA responde

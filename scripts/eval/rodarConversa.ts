@@ -20,7 +20,39 @@
  * Bandeiras:
  *   --personas=id1,id2   roda só essas (padrão: todas)
  *   --turnos=8           teto de turnos (padrão: 12)
+ *   --rodadas=3          repete tudo N vezes (padrão: 1)
  *   --sem-juiz           só as medidas determinísticas
+ *
+ * ## Personas > rodadas, e a conta é simples
+ *
+ * Medido em 01/09: com 4 personas × 3 rodadas, TODAS as quatro ficaram com
+ * ruído entre 1,0 e 3,0 — a faixa de cada uma é do tamanho do próprio valor
+ * típico, e nenhuma consegue demonstrar mudança.
+ *
+ * A causa não é defeito: o cliente simulado roda a `temperature: 0.8`
+ * (o agente roda a 0), então cada rodada é uma CONVERSA DIFERENTE. Isso é
+ * amostragem, não ruído a eliminar — baixar a temperatura para zero daria
+ * três cópias da mesma conversa, que é n=1 disfarçado de n=3.
+ *
+ * O que reduz a variância do AGREGADO é somar mais amostras independentes,
+ * e persona nova é amostra melhor que repetição da mesma: além de reduzir
+ * a faixa, cobre um pedaço diferente do espaço de conversas — que é o que
+ * de fato se quer saber. São 16 personas disponíveis; usar 4 foi economia
+ * mal colocada.
+ *
+ * **Régua: prefira TODAS as personas com 2 rodadas a poucas personas com
+ * muitas.** Duas rodadas é o mínimo para existir faixa; o resto do
+ * orçamento vai em variedade.
+ *
+ * ## Por que `--rodadas` existe
+ *
+ * Da v25 à v28 eu decidi quatro vezes com UMA rodada, e três dessas leituras
+ * estavam erradas — a diferença que eu chamava de avanço ou de regressão
+ * cabia dentro da variância. A memória do projeto já registrava isso duas
+ * vezes sobre outros assuntos ("três rodadas quase iguais da v17 deram 2, 4
+ * e 1 falhas duras") e mesmo assim segui com n=1, porque repetir era caro de
+ * organizar. Agora não é: uma rodada com `--rodadas=3` guarda as três no
+ * mesmo arquivo, e `npm run eval:comparar` recusa concluir com menos de duas.
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -40,6 +72,7 @@ const arg = (nome: string): string | undefined =>
 const tem = (nome: string): boolean => argv.includes(`--${nome}`);
 
 const TETO_DE_TURNOS = Number(arg("turnos") ?? 12);
+const RODADAS = Math.max(1, Number(arg("rodadas") ?? 1));
 const SEM_JUIZ = tem("sem-juiz");
 
 /**
@@ -66,6 +99,8 @@ export type ConversaSimulada = {
   turnos: TurnoRegistrado[];
   /** Por que o laço parou: o cliente encerrou, ou o teto foi atingido. */
   desfecho: "cliente_encerrou" | "teto_de_turnos" | "cliente_mudo" | "ia_indisponivel";
+  /** Só em `ia_indisponivel`: o motivo tipado do motor (`http_429`, `timeout`…). */
+  motivo?: string;
 };
 
 async function conversarCom(persona: Persona): Promise<ConversaSimulada> {
@@ -99,7 +134,12 @@ async function conversarCom(persona: Persona): Promise<ConversaSimulada> {
     });
 
     if (turno.resposta.meta.fallback) {
-      return { persona: persona.id, turnos, desfecho: "ia_indisponivel" };
+      return {
+        persona: persona.id,
+        turnos,
+        desfecho: "ia_indisponivel",
+        motivo: turno.resposta.meta.motivoFalha ?? undefined,
+      };
     }
 
     /*
@@ -192,44 +232,25 @@ ${transcricao}`;
   return { ...(gpt.json as JuizoDaConversa), juiz: "gpt-reserva" as const };
 }
 
-async function principal() {
-  // Trava ANTES de qualquer chamada: rodar e descobrir depois já custou o
-  // dinheiro e produziu um relatório que parece válido.
-  conferirProvedores(PROVEDOR_DO_AGENTE);
+/**
+ * Grava o resultado ao fim de CADA rodada, não só no fim de tudo.
+ *
+ * Uma rodada de 4 personas x 3 leva mais de uma hora, e o contêiner desta
+ * sessão foi reiniciado no meio de uma — 2 de 12 conversas pagas e
+ * perdidas, porque o arquivo só era escrito no final. Salvar por rodada
+ * transforma a perda total em perda parcial.
+ */
+type RodadaDoRelatorio = Awaited<ReturnType<typeof conversarCom>> & {
+  medida: ReturnType<typeof medirConversa>;
+  juizo: Awaited<ReturnType<typeof julgarConversa>> | null;
+  rodada: number;
+};
 
-  const ids = arg("personas")?.split(",").map((s) => s.trim());
-  const escolhidas = ids
-    ? ids.map((id) => personaPorId(id)).filter((p): p is Persona => Boolean(p))
-    : PERSONAS;
-
-  if (escolhidas.length === 0) {
-    console.error("Nenhuma persona encontrada. Ids válidos:", PERSONAS.map((p) => p.id).join(", "));
-    process.exit(1);
-  }
-
-  console.log(
-    `Eval de CONVERSA · prompt ${PROMPT_VERSAO} · agente=${PROVEDOR_DO_AGENTE} · cliente=${provedorDoCliente()}`,
-  );
-  console.log(`${escolhidas.length} persona(s), teto de ${TETO_DE_TURNOS} turnos.\n`);
-
-  const relatorio = [];
-  for (const persona of escolhidas) {
-    const conversa = await conversarCom(persona);
-    const medida = medirConversa(conversa.turnos, {
-      conversaCompleta:
-        conversa.desfecho === "cliente_encerrou" || conversa.desfecho === "teto_de_turnos",
-    });
-    const juizo = SEM_JUIZ ? null : await julgarConversa(conversa);
-
-    console.log(
-      `\n${persona.id}: ${conversa.turnos.length} turnos · ${conversa.desfecho}` +
-        `${medida.reprovacoes.length ? `\n  ⚠ ${medida.reprovacoes.join("\n  ⚠ ")}` : "\n  ✓ nenhuma reprovação determinística"}` +
-        `${juizo ? `\n  juiz: avançou=${juizo.avancou} mesmaPessoa=${juizo.mesmaPessoa} assumiria=${juizo.assumiria} — ${juizo.justificativa}` : ""}\n`,
-    );
-
-    relatorio.push({ ...conversa, medida, juizo });
-  }
-
+function gravar(
+  relatorio: RodadaDoRelatorio[],
+  clienteIndependente: boolean,
+  rodadasFeitas: number,
+): string {
   const hoje = new Date().toISOString().slice(0, 10);
   mkdirSync("eval/resultados/transcricoes", { recursive: true });
 
@@ -242,10 +263,19 @@ async function principal() {
         data: hoje,
         provedorDoAgente: PROVEDOR_DO_AGENTE,
         provedorDoCliente: provedorDoCliente(),
+        /*
+         * Carimbo, na mesma régua do `juizIndependente` do eval de resposta:
+         * cliente no mesmo provedor do agente (em outro modelo) ainda enviesa
+         * para a cooperação. A nota continua útil; comparar esta rodada com
+         * uma de cliente independente é comparar réguas diferentes.
+         */
+        clienteIndependente,
         tetoDeTurnos: TETO_DE_TURNOS,
+        rodadas: rodadasFeitas,
         comJuiz: !SEM_JUIZ,
-        conversas: relatorio.map(({ persona, desfecho, medida, juizo, turnos }) => ({
+        conversas: relatorio.map(({ persona, desfecho, medida, juizo, turnos, rodada }) => ({
           persona,
+          rodada,
           desfecho,
           turnos: turnos.length,
           medida,
@@ -266,14 +296,126 @@ async function principal() {
    */
   for (const c of relatorio) {
     const texto = c.turnos
-      .map((t, i) => `[${i + 1}] Cliente: ${t.cliente.join("\n              ")}\n[${i + 1}] Sofia:   ${t.bot}${t.anexos?.length ? `\n              📎 ${t.anexos.join("\n              📎 ")}` : ""}`)
+      .map((t: (typeof c.turnos)[number], i: number) => `[${i + 1}] Cliente: ${t.cliente.join("\n              ")}\n[${i + 1}] Sofia:   ${t.bot}${t.anexos?.length ? `\n              📎 ${t.anexos.join("\n              📎 ")}` : ""}`)
       .join("\n\n");
     writeFileSync(
-      `eval/resultados/transcricoes/${PROMPT_VERSAO}-${c.persona}.txt`,
-      `${c.persona} · ${c.desfecho} · ${c.turnos.length} turnos\n${"—".repeat(60)}\n\n${texto}\n`,
+      `eval/resultados/transcricoes/${PROMPT_VERSAO}-${c.persona}${RODADAS > 1 ? `-r${c.rodada}` : ""}.txt`,
+      `${c.persona}${RODADAS > 1 ? ` · rodada ${c.rodada}` : ""} · ${c.desfecho} · ${c.turnos.length} turnos\n${"—".repeat(60)}\n\n${texto}\n`,
       "utf8",
     );
   }
+
+  return arquivo;
+}
+
+async function principal() {
+  // Trava ANTES de qualquer chamada: rodar e descobrir depois já custou o
+  // dinheiro e produziu um relatório que parece válido.
+  const { clienteIndependente } = conferirProvedores(PROVEDOR_DO_AGENTE);
+
+  const ids = arg("personas")?.split(",").map((s) => s.trim());
+  const escolhidas = ids
+    ? ids.map((id) => personaPorId(id)).filter((p): p is Persona => Boolean(p))
+    : PERSONAS;
+
+  if (escolhidas.length === 0) {
+    console.error("Nenhuma persona encontrada. Ids válidos:", PERSONAS.map((p) => p.id).join(", "));
+    process.exit(1);
+  }
+
+  /*
+   * AVISO DE CUSTO. Uma rodada de 16 personas × 2 gasta ~640 chamadas de
+   * agente, mais o cliente simulado e o juiz — e uma rodada morreu no meio
+   * em 02/09 por a conta ficar sem crédito.
+   *
+   * Desde que a Sofia entrou em produção, pagar um modelo para FINGIR de
+   * cliente compete com cliente de verdade, que é de graça. `npm run
+   * observatorio` roda as MESMAS métricas determinísticas sobre conversa
+   * real, sem uma chamada de LLM. Este eval continua existindo para o que
+   * o observatório não faz: exercitar um cenário que ainda não aconteceu
+   * com ninguém.
+   */
+  console.warn(
+    "[eval] Esta rodada é PAGA (~640 chamadas em 16×2). Para medir de graça,\n" +
+      "       em cliente real: npm run observatorio\n",
+  );
+  console.log(
+    `Eval de CONVERSA · prompt ${PROMPT_VERSAO} · agente=${PROVEDOR_DO_AGENTE} · cliente=${provedorDoCliente()}`,
+  );
+  console.log(
+    `${escolhidas.length} persona(s), teto de ${TETO_DE_TURNOS} turnos, ${RODADAS} rodada(s).\n`,
+  );
+  if (RODADAS < 2) {
+    console.warn(
+      "[eval] UMA rodada só: serve para olhar transcrição, não para comparar versões.\n" +
+        "       Use --rodadas=2 antes de decidir se uma mudança de prompt é avanço.\n",
+    );
+  }
+
+  /*
+   * Poucas personas é o erro mais caro desta medição, e o mais fácil de
+   * cometer: parece que se está economizando, e o que se perde é a
+   * capacidade de detectar qualquer coisa. Ver o cabeçalho do arquivo.
+   */
+  if (escolhidas.length < PERSONAS.length / 2) {
+    console.warn(
+      `[eval] só ${escolhidas.length} de ${PERSONAS.length} personas. O agregado de poucas\n` +
+        "       personas é ruidoso demais para comparar versões — em 01/09, com 4 personas,\n" +
+        "       TODAS ficaram com faixa maior que o próprio valor típico.\n" +
+        "       Prefira todas as personas com --rodadas=2 a poucas com muitas rodadas.\n",
+    );
+  }
+
+  const relatorio = [];
+  /*
+   * Duas conversas seguidas mortas ANTES do primeiro turno nunca são do
+   * agente: é chave, crédito ou rede. Em 02/09 a conta da OpenAI ficou sem
+   * crédito na 10ª conversa e o eval seguiu até o fim — 22 conversas de zero
+   * turnos, todas "medidas", e o comparador tirou avanço disso. Parar cedo
+   * salva o que foi pago e não deixa um arquivo que parece rodada completa.
+   */
+  let mortasSeguidas = 0;
+  for (let rodada = 1; rodada <= RODADAS; rodada++) {
+  for (const persona of escolhidas) {
+    const conversa = await conversarCom(persona);
+    const morreuNoInicio =
+      conversa.turnos.length === 0 &&
+      (conversa.desfecho === "ia_indisponivel" || conversa.desfecho === "cliente_mudo");
+    mortasSeguidas = morreuNoInicio ? mortasSeguidas + 1 : 0;
+    if (mortasSeguidas >= 2) {
+      gravar(relatorio, clienteIndependente, rodada);
+      console.error(
+        `\n[eval] ABORTADO na rodada ${rodada}: duas conversas seguidas mortas antes do primeiro turno` +
+          ` (${conversa.desfecho}${conversa.motivo ? ` · ${conversa.motivo}` : ""}). Isso é chave, crédito ou rede,` +
+          ` não o agente. O que foi medido até aqui está salvo; a rodada NÃO está completa.`,
+      );
+      process.exit(2);
+    }
+    const medida = medirConversa(conversa.turnos, {
+      conversaCompleta:
+        conversa.desfecho === "cliente_encerrou" || conversa.desfecho === "teto_de_turnos",
+    });
+    const juizo = SEM_JUIZ ? null : await julgarConversa(conversa);
+
+    console.log(
+      `\n${persona.id}${RODADAS > 1 ? ` (rodada ${rodada}/${RODADAS})` : ""}: ${conversa.turnos.length} turnos · ${conversa.desfecho}` +
+        `${medida.reprovacoes.length ? `\n  ⚠ ${medida.reprovacoes.join("\n  ⚠ ")}` : "\n  ✓ nenhuma reprovação determinística"}` +
+        `${juizo ? `\n  juiz: avançou=${juizo.avancou} mesmaPessoa=${juizo.mesmaPessoa} assumiria=${juizo.assumiria} — ${juizo.justificativa}` : ""}\n`,
+    );
+
+    relatorio.push({ ...conversa, medida, juizo, rodada });
+  }
+
+  /*
+   * Salva ao fim de CADA rodada. O contêiner desta sessão reiniciou no meio
+   * de uma rodada de 12 conversas e levou as 2 já pagas junto, porque o
+   * arquivo só era escrito no final. Perda parcial em vez de total.
+   */
+  gravar(relatorio, clienteIndependente, rodada);
+  if (RODADAS > 1) console.log(`  [salvo: ${rodada}/${RODADAS} rodada(s) até aqui]`);
+  }
+
+  const arquivo = gravar(relatorio, clienteIndependente, RODADAS);
 
   const reprovadas = relatorio.filter((c) => c.medida.reprovacoes.length > 0).length;
   console.log(

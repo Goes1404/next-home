@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { AlertTriangle, Send } from "lucide-react";
 import {
   enviarAgoraParaTodosOsLeads,
@@ -54,8 +55,8 @@ export function EnvioImediato({
   const [mensagem, setMensagem] = useState("");
   const [quantos, setQuantos] = useState<number | null>(null);
   const [confirmando, setConfirmando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
   const [enviando, iniciarEnvio] = useTransition();
+  const { falhar } = useAvisos();
   /* A hora só existe no cliente: calculada no servidor daria um valor no
      HTML e outro depois da hidratação. `useSyncExternalStore` é o mesmo
      mecanismo que `FundoVideoIntro` usa para isso — devolve null no
@@ -71,15 +72,14 @@ export function EnvioImediato({
     horaAgora !== null && (horaAgora < HORA_CIVIL_INICIO || horaAgora >= HORA_CIVIL_FIM);
 
   function pedirConfirmacao() {
-    setErro(null);
     if (mensagem.trim().length < 10) {
-      setErro("Escreva a mensagem que vai para os leads.");
+      falhar("Escreva a mensagem que vai para os leads.");
       return;
     }
     iniciarEnvio(async () => {
       const leads = await listarLeadsElegiveis("todos");
       if (leads.length === 0) {
-        setErro("Nenhum lead com telefone na sua carteira.");
+        falhar("Nenhum lead com telefone na sua carteira.");
         return;
       }
       setQuantos(leads.length);
@@ -88,11 +88,10 @@ export function EnvioImediato({
   }
 
   function enviar() {
-    setErro(null);
     iniciarEnvio(async () => {
       const resultado = await enviarAgoraParaTodosOsLeads({ mensagemBase: mensagem });
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       setConfirmando(false);
@@ -107,6 +106,8 @@ export function EnvioImediato({
           totalEnviados: 0,
           totalRespondidos: 0,
           status: "em_andamento",
+        // Campanha recém-criada não tem envio nenhum, então não há placar.
+        testeAB: null,
           criadoEm: new Date().toISOString(),
         },
         `Saindo para ${resultado.totalLeads} lead${resultado.totalLeads === 1 ? "" : "s"}, uma mensagem a cada minuto — independente do horário.`,
@@ -115,7 +116,7 @@ export function EnvioImediato({
   }
 
   return (
-    <section className="border-linha bg-superficie rounded-2xl border p-5 sm:p-6">
+    <section className="cartao p-5 sm:p-6">
       <h2 className="text-fluid-base text-titulo font-medium">Enviar agora para todos os leads</h2>
       <p className="text-fluid-xs text-apoio mt-1.5">
         Vai para a carteira inteira a qualquer hora, sem esperar o horário comercial. O intervalo
@@ -134,7 +135,7 @@ export function EnvioImediato({
         className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento mt-4 w-full rounded-xl border p-3.5 focus:outline-none"
       />
       <p className="text-fluid-xs text-tenue mt-1.5">
-        <code className="bg-chip rounded px-1">{"{nome}"}</code> vira o nome da pessoa.
+        <code className="bg-vidro-forte rounded px-1">{"{nome}"}</code> vira o nome da pessoa.
       </p>
 
       {foraDoHorarioCivil && !confirmando && (
@@ -185,12 +186,6 @@ export function EnvioImediato({
           <Send className="h-4 w-4" />
           {enviando ? "Conferindo…" : "Enviar para todos, a qualquer hora"}
         </button>
-      )}
-
-      {erro && (
-        <p role="alert" className="text-fluid-xs text-alerta mt-3">
-          {erro}
-        </p>
       )}
     </section>
   );

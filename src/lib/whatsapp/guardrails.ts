@@ -3,6 +3,7 @@ import type { RespostaAgenteIA } from "./aiAgent";
 import { soarHumano } from "./vozHumana";
 import { limparSeparadoresOrfaos, removerValores } from "./semValores";
 import { removerPrazoInventado } from "./prazoEntrega";
+import { removerAcabamentoInventado } from "./acabamentoInventado";
 import {
   anexarLinkDoCatalogo,
   midiasJaEnviadas,
@@ -96,11 +97,23 @@ export function sanearRespostaIA(
   );
 
   /*
-   * Valor sai do texto ANTES de qualquer outra coisa. A regra do negócio é
-   * que a IA não fala preço — e prompt sozinho vaza, principalmente quando
-   * o cliente pergunta duas ou três vezes seguidas.
+   * Valor sai do texto ANTES de qualquer outra coisa — menos o PISO.
+   *
+   * A regra do negócio deixou de ser "nunca fala preço" em 01/09: contra
+   * quem insiste em valor, a Sofia não tinha jogada nenhuma e a conversa
+   * nunca avançava (`avancou = 0` em todas as personas do eval). Agora ela
+   * pode dizer "a partir de R$ X" — e nada além.
+   *
+   * Os pisos permitidos saem do CATÁLOGO que foi ao prompt, não da boa
+   * vontade do modelo: piso inventado, ou piso do imóvel errado, é o mesmo
+   * compromisso comercial feito por um robô que esta limpeza existe para
+   * impedir. Mesma construção do `resolverAnexos` logo acima.
    */
-  const semValor = removerValores(soarHumano(resposta.textoResposta ?? ""));
+  const pisosPermitidos = catalogo
+    .map((e) => e.precoAPartir)
+    .filter((p): p is number => typeof p === "number" && p > 0);
+
+  const semValor = removerValores(soarHumano(resposta.textoResposta ?? ""), 0, pisosPermitidos);
 
   /*
    * Repetição literal do que o bot já disse. Medido: 23 das 80 mensagens
@@ -123,10 +136,21 @@ export function sanearRespostaIA(
   const semPrazo = removerPrazoInventado(semValor.texto, catalogo);
 
   /*
+   * Acabamento inventado. Mesma família do prazo, e flagrado do mesmo jeito
+   * — lendo transcrição, não por teste: na v33 a Sofia afirmou piso
+   * laminado, bancada em granito e azulejo na cozinha para um imóvel cujo
+   * cadastro não tem sequer campo de acabamento.
+   */
+  const semAcabamento = removerAcabamentoInventado(semPrazo.texto, catalogo);
+  if (semAcabamento.removeu) {
+    console.warn(`[guardrails] acabamento inventado cortado`);
+  }
+
+  /*
    * Remover a frase do preço (ou do prazo) pode deixar o separador de balão
    * sozinho — a resposta chegava ao cliente começando com "--- ".
    */
-  const semOrfaos = limparSeparadoresOrfaos(semPrazo.texto);
+  const semOrfaos = limparSeparadoresOrfaos(semAcabamento.texto);
 
   /*
    * A IA não mente sobre o que é. Flagrada respondendo "Sou humana" a uma

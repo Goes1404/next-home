@@ -1,5 +1,6 @@
 import "server-only";
 
+import { conteudoParaGravar, resumoParaGravar } from "./privacidadeDaConversa";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   bloqueadoAtePor,
@@ -441,6 +442,16 @@ export async function gravarMensagem(params: {
   conversaId: string;
   remetente: "cliente" | "bot" | "corretor";
   conteudo: string;
+  /**
+   * A conversa já foi liberada para atendimento?
+   *
+   * OBRIGATÓRIO, e não opcional com padrão: conversa nunca liberada guarda
+   * a LINHA, não o texto (`privacidadeDaConversa.ts`). Um padrão aqui faria
+   * o esquecimento de um chamador voltar a gravar a vida pessoal do
+   * corretor em silêncio — o número da instância é o WhatsApp pessoal dele.
+   * Mesma lição que tirou `interacaoId` destes parâmetros.
+   */
+  conversaLiberada: boolean;
   tipo?: "texto" | "audio" | "imagem" | "documento";
   midiaUrl?: string | null;
   providerMessageId?: string | null;
@@ -455,8 +466,8 @@ export async function gravarMensagem(params: {
       conversa_id: params.conversaId,
       remetente: params.remetente,
       tipo: params.tipo ?? "texto",
-      conteudo: params.conteudo,
-      midia_url: params.midiaUrl ?? null,
+      conteudo: conteudoParaGravar(params.conteudo, params.conversaLiberada),
+      midia_url: params.conversaLiberada ? (params.midiaUrl ?? null) : null,
       provider_message_id: params.providerMessageId ?? null,
       status_entrega: params.statusEntrega ?? null,
     })
@@ -474,7 +485,7 @@ export async function gravarMensagem(params: {
   await supabase
     .from("whatsapp_conversas")
     .update({
-      ultima_mensagem: params.conteudo.slice(0, 500),
+      ultima_mensagem: resumoParaGravar(params.conteudo, params.conversaLiberada),
       ultima_interacao_em: new Date().toISOString(),
     })
     .eq("id", params.conversaId);
@@ -620,20 +631,50 @@ export function validarDataVisita(dataHoraISO: string, agora: Date = new Date())
 /**
  * O cliente confirmou um horário com a IA: vira compromisso de verdade —
  * data no lead E etapa do funil, o mesmo efeito de o corretor marcar à mão.
+ *
+ * ## Por que passa por uma função do banco (0074)
+ *
+ * Antes isto era um `update` direto, e tinha dois furos. O primeiro: um
+ * horário que a IA inventasse virava compromisso no CRM, e o corretor
+ * descobria na hora de não poder atender — "ofereça só o que existe" é
+ * instrução de prompt, e instrução de prompt falha justo na resposta que
+ * importa. O segundo: duas conversas confirmando o MESMO horário no mesmo
+ * segundo levavam as duas, porque ler "está livre?" e gravar são duas idas
+ * ao banco e entre elas cabe outra conversa — a mesma corrida que fez a
+ * cota anti-ban morar numa função do banco.
+ *
+ * `reservar_horario_visita` confere a grade do corretor (no fuso de São
+ * Paulo) e deixa o índice único parcial recusar o conflito. Devolve
+ * `false` quando o horário não existe ou já é de outro lead — e aí o
+ * chamador degrada para o alerta comum de "visita solicitada", que é o
+ * mesmo desfecho de uma data inválida.
+ *
+ * Corretor sem grade configurada continua como antes: aceita qualquer
+ * horário. Hoje isso vale para todos.
  */
 export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promise<boolean> {
   const supabase = createServiceClient();
 
-  const { error } = await supabase
-    .from("leads")
-    .update({
-      visita_agendada_em: dataVisita.toISOString(),
-      etapa: "visita_agendada",
-      etapa_alterada_em: new Date().toISOString(),
-    })
-    .eq("id", leadId);
+  const { data, error } = await supabase.rpc("reservar_horario_visita", {
+    p_lead_id: leadId,
+    p_quando: dataVisita.toISOString(),
+  });
 
-  return !error;
+  if (error) {
+    console.error(`[visita] não foi possível reservar para o lead ${leadId}: ${error.message}`);
+    return false;
+  }
+
+  if (data === false) {
+    // Não é erro: é a agenda funcionando. Vale log porque um recusa
+    // frequente aqui significa que a IA está oferecendo horário que não
+    // existe — e isso é defeito de prompt, não de agenda.
+    console.warn(
+      `[visita] horário recusado (fora da grade ou já ocupado) para o lead ${leadId}: ${dataVisita.toISOString()}`,
+    );
+  }
+
+  return data === true;
 }
 
 /**
@@ -679,6 +720,38 @@ export async function registrarRespostaDoLead(leadId: string | null): Promise<vo
   if (!leadId) return;
   const supabase = createServiceClient();
   await supabase.rpc("registrar_resposta_do_lead", { p_lead_id: leadId });
+}
+
+/**
+ * Guarda o imóvel sobre o qual a conversa está acontecendo (0083).
+ *
+ * O foco já era calculado a cada mensagem por `focoDaConversa` — é ele que
+ * encolhe o catálogo do prompt para a IA parar de desfilar empreendimento —
+ * e era DESCARTADO. Medido em 01/09: 64 dos 112 leads ativos têm conversa
+ * de WhatsApp e nenhum imóvel vinculado, então o corretor abre a ficha e
+ * não sabe do que a pessoa está falando.
+ *
+ * Escreve `imovel_interesse_id`, NUNCA `empreendimento_id`: aquele é a
+ * ORIGEM do lead (de qual página ele veio) e é atribuição de marketing —
+ * reescrever destruiria a única medida de qual página traz cliente.
+ *
+ * O `neq` evita escrita à toa: o foco é o mesmo em quase toda mensagem de
+ * uma conversa, e um UPDATE por resposta encheria o WAL sem mudar nada.
+ */
+export async function registrarImovelDeInteresse(
+  leadId: string | null,
+  empreendimentoId: string | null,
+): Promise<void> {
+  if (!leadId || !empreendimentoId) return;
+
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({ imovel_interesse_id: empreendimentoId })
+    .eq("id", leadId)
+    .or(`imovel_interesse_id.is.null,imovel_interesse_id.neq.${empreendimentoId}`);
+
+  if (error) console.error("[lead] falha ao gravar imóvel de interesse:", error.message);
 }
 
 export async function avancarLeadParaPrimeiroContato(leadId: string): Promise<void> {
@@ -749,7 +822,24 @@ export async function cancelarFollowupsPendentes(conversaId: string): Promise<vo
 }
 
 /** Janela padrão de silêncio do bot depois que o corretor entra na conversa. */
-const HORAS_PAUSA_HUMANA = 24;
+/**
+ * Quanto tempo a IA cala depois que o corretor fala.
+ *
+ * Era 24h, e numa linha PESSOAL isso é praticamente permanente: medido em
+ * 01/09, 448 mensagens de cliente foram puladas em 7 dias por
+ * `pausada_por_humano`, contra 32 respondidas — e o relógio reinicia a cada
+ * mensagem do corretor, que manda 373 por semana no próprio celular, para
+ * quem for.
+ *
+ * Três horas cobre o que a pausa existe para cobrir: enquanto o humano está
+ * respondendo, o bot não fala por cima. Depois disso, ou o atendimento
+ * acabou, ou o corretor falou de novo e o relógio reiniciou.
+ *
+ * O que protege a conversa pessoal NÃO é a duração — é o retravamento
+ * (`retravarPalavraChave`), que só a palavra-chave desfaz. Encurtar a pausa
+ * não afrouxa aquilo.
+ */
+const HORAS_PAUSA_HUMANA = 3;
 
 /**
  * O corretor respondeu do celular dele: a IA cala a boca nesta conversa.
@@ -758,6 +848,46 @@ const HORAS_PAUSA_HUMANA = 24;
  * resposta HTTP não pausa nada, e a próxima mensagem do cliente voltaria a
  * ser respondida pelo bot por cima do atendimento humano.
  */
+/**
+ * Nós falamos com esta pessoa por iniciativa nossa — a conversa virou
+ * atendimento.
+ *
+ * ## O defeito que isto conserta (01/09/2026)
+ *
+ * Relatado: "disparamos para a lista de leads, alguns responderam, e a IA
+ * não respondeu". Medido: **7 clientes responderam ao disparo e só 1 das
+ * conversas estava marcada como campanha.**
+ *
+ * A causa é que a isenção da trava olhava a CERTIDÃO DE NASCIMENTO da
+ * conversa. `obterOuCriarConversa` devolve a conversa existente intacta —
+ * o `origem: "campanha"` que o disparador passa só vale no INSERT. Lead que
+ * já tinha conversa orgânica recebia o disparo, respondia, e o bot via
+ * `origem = 'organica'`, sem palavra-chave, e ficava mudo.
+ *
+ * ## Por que `cliente_conhecido`, e não `origem`
+ *
+ * Reescrever `origem` apagaria de onde a conversa veio. `cliente_conhecido`
+ * significa "sabemos que este número é cliente" — e disparar para ele a
+ * partir da própria lista de leads é a prova disso. A flag só estava errada
+ * porque foi calculada no instante do INSERT, às vezes antes de a pessoa
+ * virar lead.
+ *
+ * Isso também acerta o resto por tabela: com a flag, a fala do corretor
+ * passa a PAUSAR sem retravar (`decidirPorFalaDoCorretor`), que é o
+ * comportamento certo para quem é cliente de verdade.
+ */
+export async function marcarConversaComoAtendimento(conversaId: string): Promise<void> {
+  const supabase = createServiceClient();
+
+  const { error } = await supabase
+    .from("whatsapp_conversas")
+    .update({ cliente_conhecido: true, liberado_por_palavra_chave: true })
+    .eq("id", conversaId)
+    .or("cliente_conhecido.is.false,liberado_por_palavra_chave.is.false");
+
+  if (error) console.error("[conversa] falha ao marcar como atendimento:", error.message);
+}
+
 export async function pausarBotPorAtendimentoHumano(
   conversaId: string,
   opcoes: { retravarPalavraChave?: boolean } = {},
@@ -803,11 +933,48 @@ export async function ultimaFalaDoCorretor(conversaId: string): Promise<string |
 }
 
 /** Se o bot pode responder agora nesta conversa. */
+/**
+ * POR QUE o bot está calado nesta conversa — ou `null` se ele pode falar.
+ *
+ * ## O defeito que isto conserta (03/09/2026)
+ *
+ * `botDeveResponder` responde SIM ou NÃO, e o webhook carimbava todo NÃO
+ * como `pausada_por_humano`. São três causas diferentes, com conserto
+ * diferente cada uma, indistinguíveis no banco.
+ *
+ * Medido em produção: em três dias, **335 mensagens de cliente** foram
+ * puladas e TODAS registradas como pausa humana. Conferindo o estado real
+ * das conversas, a pausa não era a causa de NENHUMA delas: 9 estavam
+ * travadas pela palavra-chave, 1 tinha o bot desligado, e 7 já tinham a
+ * pausa vencida. Ou seja, o rótulo mandava consertar a única coisa que não
+ * estava quebrada.
+ *
+ * É a mesma família de defeito que esta base já pagou cinco vezes — texto
+ * de erro desatualizado apontando o diagnóstico para o lugar errado — e a
+ * mesma da coluna `modelo`, que carimbava um modelo nunca chamado.
+ *
+ * A ORDEM importa e é a de precedência real do `botDeveResponder`: bot
+ * desligado ganha da pausa, que ganha da trava. Sem isso, uma conversa
+ * desligada E travada seria contada duas vezes, dependendo de quem
+ * perguntasse.
+ */
+export type MotivoDoSilencio = "bot_desligado" | "pausada_por_humano" | "aguardando_palavra_chave";
+
+export function motivoDoSilencio(conversa: ConversaPersistida): MotivoDoSilencio | null {
+  if (!conversa.botAtivo) return "bot_desligado";
+  if (conversa.pausadoHumanoAte && new Date(conversa.pausadoHumanoAte) > new Date())
+    return "pausada_por_humano";
+  if (!conversa.liberadoPorPalavraChave) return "aguardando_palavra_chave";
+  return null;
+}
+
+/**
+ * Mantida como a pergunta de SIM ou NÃO que a maioria dos chamadores faz.
+ * Deriva de `motivoDoSilencio` de propósito: duas listas de condições para
+ * a mesma decisão divergem, e esta decide se o cliente é atendido.
+ */
 export function botDeveResponder(conversa: ConversaPersistida): boolean {
-  if (!conversa.botAtivo) return false;
-  if (conversa.pausadoHumanoAte && new Date(conversa.pausadoHumanoAte) > new Date()) return false;
-  if (!conversa.liberadoPorPalavraChave) return false;
-  return true;
+  return motivoDoSilencio(conversa) === null;
 }
 
 /**
@@ -1249,6 +1416,19 @@ export async function sincronizarConexaoInstancia(params: {
       .update({ status_conexao: estado.estado === "connecting" ? "conectando" : "desconectado" })
       .eq("id", params.instanciaId);
 
+    /*
+     * Carimba o marco da queda UMA VEZ (0065). O `is(..., null)` é a parte
+     * que importa: este caminho roda a cada ciclo do cron, e reescrever a
+     * cada passagem faria um apagão de três dias aparecer eternamente como
+     * "faz um minuto" — o defeito ficaria invisível justamente por ser
+     * contínuo. É este marco que sustenta o "faz 3 dias" do aviso.
+     */
+    await supabase
+      .from("corretor_whatsapp_instancias")
+      .update({ desconectado_em: new Date().toISOString() })
+      .eq("id", params.instanciaId)
+      .is("desconectado_em", null);
+
     return { conectado: false, estado: estado.estado, conectadoEm: null };
   }
 
@@ -1267,6 +1447,11 @@ export async function sincronizarConexaoInstancia(params: {
       // Um número que responde "open" não está mais em falha: zera o
       // contador para o disjuntor não abrir por histórico velho.
       falhas_seguidas: 0,
+      // O número voltou: apaga o marco da queda e a marca do aviso (0065).
+      // É o que arma o alerta da PRÓXIMA vez — queda nova é notícia nova,
+      // mesmo que a anterior tenha sido ontem.
+      desconectado_em: null,
+      aviso_queda_enviado_em: null,
       ...(reset
         ? {
             envios_campanha_contador: reset.envios_campanha_contador,

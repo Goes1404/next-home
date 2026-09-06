@@ -1,0 +1,59 @@
+insiste-no-desconto · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O valor do imóvel é a partir de R$ 249.000, o desconto e condições fechamos na visita.
+Quer conhecer o Vila Eco Park, que é lançamento em Osasco?
+
+[2] Cliente: mas qual o desconto mesmo?
+              não quero visitar sem saber o valor real.
+[2] Sofia:   Posso agendar para você conhecer o decorado e tirar todas as dúvidas pessoalmente?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[3] Cliente: mas qual o valor final?
+              não quero visitar antes de saber.
+[3] Sofia:   O valor final depende da unidade e condições, que fechamos na visita. Posso agendar para você conhecer o decorado e esclarecer tudo pessoalmente?
+Os valores variam conforme a unidade, o andar e a forma de pagamento — prefiro te passar a condição certa para o seu caso.
+
+[4] Cliente: mas qual é o valor final?
+              não quero visitar sem saber o desconto.
+[4] Sofia:   O valor exato quem passa é a construtora, e ele muda por unidade e condições.
+A visita é o momento ideal para acertar tudo isso com você.
+Tenho horários sábado de manhã, às 9h ou às 11h, para te mostrar o decorado e as condições. Qual prefere?
+
+[5] Cliente: mas não tem como saber o desconto antes?
+              só quero saber o valor final, não me enrola.
+[5] Sofia:   O desconto e o valor final são definidos pela construtora e variam por unidade e condições.
+A visita é o momento certo para acertar isso com você.
+Sábado às 9h ou às 11h para conhecer o decorado, qual prefere?
+
+[6] Cliente: mas e o valor final? não tem como saber antes?
+              desconto a vista, qual é? não quero visitar assim.
+[6] Sofia:   Demorei a responder, obrigado pela paciência.
+O valor exato e desconto são da construtora e mudam por unidade e condições.
+
+[7] Cliente: desconto a vista, qual é?
+              não quero visitar assim sem saber.
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: mas e o desconto a vista?
+              não quero visitar sem saber o valor final.
+[8] Sofia:   Posso agendar sábado às 9h ou às 11h para te mostrar o decorado e as condições. Qual prefere?
+
+[9] Cliente: mas e o desconto?
+              não quero visitar sem saber o valor final.
+[9] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[10] Cliente: mas e o desconto a vista?
+              não quero visitar sem saber o valor final.
+[10] Sofia:   Posso agendar para terça às 10h ou quarta às 15h?
+
+[11] Cliente: mas e o desconto a vista?
+              não quero visitar sem saber o valor final.
+[11] Sofia:   O valor exato e o desconto são definidos pela construtora e variam por unidade e condições.
+A visita é o momento ideal para acertar tudo isso com você. Posso agendar para quinta às 10h ou sexta às 15h?
+
+[12] Cliente: mas e o desconto a vista?
+              não quero visitar sem saber o valor final.
+[12] Sofia:   Qual dia da semana fica melhor para você?

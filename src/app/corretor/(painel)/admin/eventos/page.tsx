@@ -70,7 +70,7 @@ export default async function MonitorEventosPage() {
         </p>
       </div>
 
-      <AbasAdmin ativa="eventos" />
+      <AbasAdmin ativa="/corretor/admin/eventos" />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi titulo="Eventos registrados" valor={eventos.count ?? 0} icone={RefreshCw} />

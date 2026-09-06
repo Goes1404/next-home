@@ -2,13 +2,16 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { dentroDaJanela, ehDestinatarioInexistente } from "./antiBan";
+import { varrerQuedasDeNumero } from "./avisoDeQueda";
 import { variarMensagemComIA } from "./campaignQueue";
 import { enviarMensagemWhatsapp } from "./provider";
 import {
+  agendarFollowup,
   avancarLeadParaPrimeiroContato,
   destravarDisparo,
   registrarTentativaDeContato,
   gravarMensagem,
+  marcarConversaComoAtendimento,
   obterOuCriarConversa,
   devolverCotaCampanha,
   registrarResultadoEnvio,
@@ -174,6 +177,19 @@ export async function processarFilaCampanhas(params?: {
   // nenhuma. Estreitar em vez de sair é o que impede o pior desfecho — um
   // disparo urgente ficar parado porque outra campanha comum estava na
   // fila do mesmo número.
+  /*
+   * O aviso de queda vem ANTES de tudo, e é deliberado.
+   *
+   * Abaixo há três saídas antecipadas — fora da janela sem campanha urgente,
+   * número com disjuntor aberto, nenhuma campanha ativa — e um aviso
+   * pendurado depois delas herdaria todas. O incidente que criou este
+   * recurso é exatamente esse caso: em 28/08 o disjuntor abriu no mesmo
+   * minuto da queda, e nas 12 horas seguintes nenhum aviso sairia.
+   *
+   * A varredura não lança e sai barata quando não há o que avisar.
+   */
+  await varrerQuedasDeNumero();
+
   const janelaAberta = dentroDaJanela(new Date());
   if (!janelaAberta) {
     resultado.dentroDaJanela = false;
@@ -551,12 +567,24 @@ async function processarInstancia(ctx: {
          * justamente o caso que não se pode afirmar como enviado.
          */
         await gravarMensagem({
+          // Mensagem que NÓS iniciamos: é atendimento por definição.
+          conversaLiberada: true,
           conversaId: conversa.id,
           remetente: "bot",
           conteudo: texto,
           providerMessageId: envio.messageId ?? null,
           statusEntrega: envio.messageId ? "enviada" : null,
         });
+
+      /*
+       * A conversa virou atendimento: nós falamos com esta pessoa a partir
+       * da NOSSA lista de leads. Sem isto, lead que já tinha conversa
+       * orgânica recebia o disparo, respondia — e o bot ficava mudo, porque
+       * a isenção da trava olhava a certidão de nascimento da conversa e não
+       * o fato de termos falado. Medido em 01/09: 7 responderam ao disparo,
+       * 1 conversa marcada.
+       */
+      await marcarConversaComoAtendimento(conversa.id);
 
         if (!envio.messageId) {
           // Sem chave não há como confirmar entrega depois. Não vira erro
@@ -565,6 +593,27 @@ async function processarInstancia(ctx: {
             `[campanha] provedor respondeu 2xx SEM id de mensagem para ${item.telefone} — envio não confirmável.`,
           );
         }
+
+        /*
+         * O disparo agenda o REENGAJAMENTO. Até 31/08/2026 ele não fazia
+         * isso, e o buraco só apareceu numa auditoria: `agendarFollowup`
+         * era chamado em UM lugar só — o webhook, e ainda sob a condição de
+         * a temperatura passar de 40. Ou seja, só ganhava follow-up quem já
+         * estava conversando; quem recebeu um disparo e ficou calado, não.
+         *
+         * Medido no dia: 87 disparos entregues, ZERO follow-ups criados
+         * para eles — exatamente a população que a fila de reengajamento
+         * existe para alcançar. As 16 linhas que a tabela teve na vida
+         * nasceram todas dentro de conversa ativa e foram todas canceladas
+         * pela resposta do cliente antes de vencer.
+         *
+         * As proteções que importam já estão em `agendarFollowup` e no
+         * runner, e nenhuma foi afrouxada: teto de 2 por conversa, nunca
+         * dois pendentes ao mesmo tempo, cancelamento automático assim que
+         * o cliente responde, cota anti-ban consumida no envio e janela
+         * comercial respeitada. O primeiro toque cai em +24h.
+         */
+        await agendarFollowup(conversa.id, instancia.id);
       }
 
       /*

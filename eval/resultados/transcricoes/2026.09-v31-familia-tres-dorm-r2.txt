@@ -1,0 +1,62 @@
+familia-tres-dorm · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato! Em qual região você procura o imóvel?
+Trabalho com Alphaville, Barueri, Osasco e região próxima.
+
+[2] Cliente: oi, estou procurando um 3 dorm
+              tem que ser em Barueri ou Alphaville
+[2] Sofia:   Você busca 3 dormitórios em Barueri ou Alphaville, ótimo.
+Prefere pronto para morar ou na planta?
+Tenho opções interessantes nessas regiões, te mando o catálogo para dar uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: não quero catálogo, quero o valor
+              qual o valor dos 3 dorm?
+[3] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Para 3 dormitórios em Barueri ou Alphaville, temos o Viva RSF Vila do Conde, a partir de R$ 460.000, e o Eternity Alphaville Tamboré, a partir de R$ 1.289.900. Qual faixa de valor você tem em mente?
+
+[4] Cliente: não quero saber de catálogo
+              qual o valor do Eternity?
+[4] Sofia:   O Eternity Alphaville Tamboré começa em R$ 1.289.900, o valor varia conforme o andar e forma de pagamento
+o exato quem fecha é o corretor na visita
+posso agendar para você conhecer o decorado?
+
+[5] Cliente: quero saber o valor exato
+              posso agendar visita pro fim de semana?
+[5] Sofia:   O valor exato do Eternity Alphaville Tamboré depende do andar e da forma de pagamento, e é fechado na visita.
+Temos visita no sábado às 10h ou às 11h, qual horário prefere?
+
+[6] Cliente: mas eu quero o valor exato
+              tem que ser pro fim de semana
+[6] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[7] Cliente: não quero saber mais do que procuro
+              quero o valor do apartamento
+[7] Sofia:   Posso agendar sua visita para sábado às 10h ou às 11h?
+
+[8] Cliente: não quero saber do horário
+              quero o valor do apartamento
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: 3 dormitórios, já falei
+              não quero mais perguntas, só o valor
+[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[10] Cliente: qual o valor do apartamento?
+              só quero saber isso!
+[10] Sofia:   O Eternity Alphaville Tamboré começa em R$ 1.289.900,
+o valor exato depende do andar e forma de pagamento, que fechamos na visita.
+Qual faixa de valor você tem em mente para eu ajudar melhor?
+
+[11] Cliente: mas eu só quero o valor!
+              não quero mais perguntas!
+[11] Sofia:   O Eternity Alphaville Tamboré começa em R$ 1.289.900,
+o valor exato depende do andar e forma de pagamento, que fechamos na visita.
+Qual dia da semana fica melhor para você conhecer o decorado?
+
+[12] Cliente: não quero saber do decorado
+              só me diz o valor!
+[12] Sofia:   O Eternity Alphaville Tamboré começa em R$ 1.289.900,
+o valor exato depende do andar e forma de pagamento, que fechamos na visita.

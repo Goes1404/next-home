@@ -386,6 +386,7 @@ export async function moverEtapa(leadId: string, etapa: string): Promise<Resulta
   revalidatePath(`/corretor/leads/${leadId}`);
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor");
   return {};
 }
@@ -470,6 +471,7 @@ export async function moverEtapaEmMassa(
 
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor");
   return { movidos };
 }
@@ -521,6 +523,7 @@ export async function atribuirLead(
   revalidatePath(`/corretor/leads/${leadId}`);
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   // As telas do gestor que exibem dono e carga. `/corretor/equipe` (que já
   // esteve aqui) hoje é só um redirect — revalidá-la não redesenha nada, e
   // foi por isso que o seletor de dono parecia não salvar.
@@ -611,6 +614,7 @@ export async function definirVisitaEm(
   revalidatePath(`/corretor/leads/${leadId}`);
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor/visitas");
   revalidatePath("/corretor");
   return {};

@@ -9,6 +9,7 @@ import { EditorTipologias } from "./EditorTipologias";
 import { EditorBook } from "./EditorBook";
 import { EditorMidiasExternas } from "./EditorMidiasExternas";
 import { BarraSalvarFlutuante } from "./BarraSalvarFlutuante";
+import { ExcluirImovel } from "./ExcluirImovel";
 import { salvarDadosGerais, salvarLazerEmpreendimento } from "../actions";
 import { Check } from "lucide-react";
 
@@ -100,10 +101,13 @@ export function EditorImovelClient({ imovel }: Props) {
       setFeedbackTipo("sucesso");
       setFeedback(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Todas as alterações foram salvas com sucesso no catálogo!</>);
       setTimeout(() => { setFeedback(null); setFeedbackTipo(null); }, 4000);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setFeedbackTipo("erro");
-      setFeedback(<>❌ Erro: {err.message || "Não foi possível salvar agora."}</>);
+      // `unknown` no catch é o padrão do TypeScript moderno; `any` aqui
+      // deixava `err.message` passar sem ninguém garantir que existe.
+      const motivo = err instanceof Error ? err.message : "";
+      setFeedback(<>❌ Erro: {motivo || "Não foi possível salvar agora."}</>);
     } finally {
       setSalvando(false);
     }
@@ -124,14 +128,17 @@ export function EditorImovelClient({ imovel }: Props) {
         </div>
       )}
 
-      {/* Abas Horizontais com Toque Grande para Mobile */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-2 border-b border-linha">
+      {/* Abas do editor: quebram linha, não rolam de lado. Rolagem lateral
+          aqui escondia metade das seções do imóvel atrás de um gesto que a
+          fileira não anuncia — mesma decisão de `AbasSecao` e dos chips da
+          lista. */}
+      <div className="border-linha flex flex-wrap gap-2 border-b pb-2">
         <button
           type="button"
           onClick={() => setAbaAtiva("fotos")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "fotos"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
@@ -144,9 +151,9 @@ export function EditorImovelClient({ imovel }: Props) {
         <button
           type="button"
           onClick={() => setAbaAtiva("textos")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "textos"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
@@ -156,9 +163,9 @@ export function EditorImovelClient({ imovel }: Props) {
         <button
           type="button"
           onClick={() => setAbaAtiva("book")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "book"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
@@ -173,9 +180,9 @@ export function EditorImovelClient({ imovel }: Props) {
         <button
           type="button"
           onClick={() => setAbaAtiva("midia")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "midia"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
@@ -190,9 +197,9 @@ export function EditorImovelClient({ imovel }: Props) {
         <button
           type="button"
           onClick={() => setAbaAtiva("lazer")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "lazer"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
@@ -203,9 +210,9 @@ export function EditorImovelClient({ imovel }: Props) {
         <button
           type="button"
           onClick={() => setAbaAtiva("plantas")}
-          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
+          className={`min-h-[44px] px-5 py-2.5 rounded-xl text-fluid-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             abaAtiva === "plantas"
-              ? "bg-acento text-white shadow-md shadow-acento/20"
+              ? "bg-acento text-sobre-cor shadow-md shadow-acento/20"
               : "bg-vidro text-apoio hover:text-titulo"
           }`}
         >
@@ -270,6 +277,18 @@ export function EditorImovelClient({ imovel }: Props) {
           />
         )}
       </div>
+
+      {/*
+        A exclusão fica no FIM, depois de todo o conteúdo: é a última coisa
+        que se procura, e ninguém tropeça nela ao editar. O estado que ela lê
+        é o `publicado` DA TELA, não o do banco, para o bloco reagir no mesmo
+        toque em que o corretor despublica.
+      */}
+      <ExcluirImovel
+        slug={imovel.slug}
+        nome={imovel.nome}
+        publicado={dadosGerais.publicado}
+      />
 
       {/* Barra de Salvar Fixa no Rodapé (Mobile Sticky Bar) */}
       <BarraSalvarFlutuante

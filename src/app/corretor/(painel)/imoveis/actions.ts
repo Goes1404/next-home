@@ -555,3 +555,83 @@ export async function melhorarDescricaoComIA(
 
   return { ok: true, descricao };
 }
+
+/**
+ * Apaga um imóvel DESPUBLICADO, e os arquivos dele no bucket.
+ *
+ * ## Por que só despublicado
+ *
+ * É a regra de dois passos de `leads` (0055) com o estado que este cadastro
+ * já tem: despublicar tira da vitrine na hora e é reversível; excluir não.
+ * A trava mora na POLICY (0097), não aqui: conferir em JavaScript e apagar
+ * depois é uma corrida — entre a leitura e o delete, outra aba pode ter
+ * republicado. Aqui só se traduz "zero linhas afetadas" para uma frase.
+ *
+ * ## A ordem importa
+ *
+ * As URLs dos arquivos vivem em `midias`, que o CASCADE apaga junto com o
+ * imóvel. Por isso elas são lidas ANTES; depois de apagar a linha não há
+ * como saber o que remover, e sobra arquivo órfão no bucket para sempre —
+ * exatamente o motivo que fez a 0046 despublicar duplicados em vez de
+ * apagá-los.
+ *
+ * Falha ao remover ARQUIVO não vira erro na tela: o cadastro já saiu, e
+ * mandar o corretor "tentar de novo" só faria ele tentar apagar o que não
+ * existe mais. Vai para o log.
+ */
+export async function excluirImovel(slug: string): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+
+  const supabase = await createClient();
+
+  /*
+   * Por SLUG, não por id: no tipo `Empreendimento` o id é opcional (nem toda
+   * leitura o traz), e a tela sempre tem o slug — é o endereço dela. No banco
+   * ele é único, então identifica igual.
+   */
+  const { data: imovel } = await supabase
+    .from("empreendimentos")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!imovel) return { ok: false, erro: "Imóvel não encontrado." };
+
+  const { data: midias } = await supabase
+    .from("midias")
+    .select("url")
+    .eq("empreendimento_id", imovel.id);
+
+  const { data: apagados, error } = await supabase
+    .from("empreendimentos")
+    .delete()
+    .eq("id", imovel.id)
+    .select("id");
+
+  if (error) {
+    console.error("[imóvel] falha ao excluir:", error.message);
+    return { ok: false, erro: "Não foi possível excluir agora. Tente de novo." };
+  }
+  if (!apagados || apagados.length === 0) {
+    return {
+      ok: false,
+      erro: "Só dá para excluir um imóvel despublicado. Despublique primeiro, e o botão volta.",
+    };
+  }
+
+  const caminhos = (midias ?? [])
+    .map((m) => m.url?.split("/empreendimentos/")[1])
+    .filter((c): c is string => Boolean(c));
+  if (caminhos.length > 0) {
+    const { error: erroArquivos } = await supabase.storage
+      .from("empreendimentos")
+      .remove(caminhos);
+    if (erroArquivos) console.error("[imóvel] arquivos órfãos no bucket:", erroArquivos.message);
+  }
+
+  revalidatePath("/corretor/imoveis");
+  revalidatePath("/corretor/imoveis/candidatos");
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidatePath("/empreendimentos", "layout");
+  return { ok: true };
+}

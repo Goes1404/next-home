@@ -1,0 +1,66 @@
+rajada-curta-e-seca · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi
+[1] Sofia:   Olá! Em qual região de Barueri você procura o imóvel?
+
+[2] Cliente: Alphaville
+              quero saber opções
+[2] Sofia:   Trabalho com Alphaville e tenho opções como On The Park e Eternity. Dá uma olhada e me diz o que te agradou.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: não entendi
+              quero mais opções
+[3] Sofia:   Posso te mostrar mais opções em Alphaville. Quer conhecer o decorado do On The Park Alphaville?
+Fica a cinco minutos e é uma ótima referência para o padrão da região.
+
+[4] Cliente: eu quero ver as casas
+              qual o valor
+              tem foto
+[4] Sofia:   O mais em conta do nosso catálogo em Alphaville começa em R$ 800.000.
+Temos fotos do On The Park Alphaville para você ver. Quer que eu te envie?
+Posso agendar uma visita para você conhecer o decorado e as condições.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-3-big-49406f476a83a577b8907baa94fed78f.jpg
+
+[5] Cliente: quero ver outras casas
+              qual o valor delas
+[5] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000. Quer que eu te mostre as opções que cabem nesse perfil?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[6] Cliente: quero ver essas casas
+              tem foto delas
+              qual a localização
+[6] Sofia:   Temos lançamentos em Osasco, como o Vila Eco Park e o Apartamento 1 ou 2 Dorms 39 M2, ambos com fotos disponíveis.
+Você prefere imóvel pronto para morar ou na planta?
+
+[7] Cliente: não quero Osasco
+              quero casas em Alphaville
+[7] Sofia:   Casas em Alphaville são raras no nosso catálogo, mas posso ajudar com apartamentos de alto padrão na região.
+Quantos dormitórios você precisa?
+
+[8] Cliente: quero casas
+              não quero apartamento
+              qual valor casas
+[8] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[9] Cliente: quero casas em Alphaville
+              qual o valor dessas casas
+[9] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[10] Cliente: quero casas em Alphaville
+              qual valor casas
+[10] Sofia:   Casas em Alphaville são muito raras no nosso catálogo, que é focado em apartamentos de alto padrão.
+Você prefere apartamento pronto para morar ou na planta?
+
+[11] Cliente: quero casas
+              qual o valor delas
+[11] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[12] Cliente: quero casas
+              qual valor casas
+              tem foto
+              localização
+[12] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
+o link com tudo do empreendimento, ou marcar de conversar pessoalmente?

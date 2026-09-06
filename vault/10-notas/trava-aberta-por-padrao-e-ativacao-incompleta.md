@@ -5,7 +5,7 @@ tags: [ia, whatsapp, armadilha]
 type: nota
 status: evergreen
 custou: alto
-codigo: [src/lib/whatsapp/modoBot.ts, src/lib/whatsapp/repositorio.ts, src/app/corretor/(painel)/conversas/acoesIA.ts, supabase/migrations/0070_ia_so_para_cliente_conhecido.sql, src/lib/whatsapp/ativacaoIa.test.ts]
+codigo: [src/lib/whatsapp/modoBot.ts, src/lib/whatsapp/repositorio.ts, src/app/corretor/(painel)/conversas/acoesIA.ts, supabase/migrations/0098_ia_so_para_cliente_conhecido.sql, src/lib/whatsapp/ativacaoIa.test.ts]
 created: 2026-09-06
 updated: 2026-09-06
 fonte: incidente de produção, 05-06/09/2026
@@ -50,7 +50,7 @@ ativação ([[testes-que-leem-o-codigo]]).
   tentativa de contato e avanço de funil
   ([[campanha-tambem-mexe-no-funil]] — 4º arquivo no teste). A janela de
   horário não barra o clique: corretor logado é a classe do Live Chat.
-- `ia_interacoes.origem` ganhou `'painel'` (CHECK na 0070 + types.ts à mão
+- `ia_interacoes.origem` ganhou `'painel'` (CHECK na 0098 + types.ts à mão
   — [[regenerar-types-nao-e-so-rodar-o-gerador]]).
 
 E o texto "Em branco, a IA responde normalmente" da tela de configuração —

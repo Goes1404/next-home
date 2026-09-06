@@ -2,50 +2,42 @@
 
 import { useSearchParams } from "next/navigation";
 import { AbasSecao } from "./AbasSecao";
+import { subitensDe } from "./navegacao";
 
 /**
  * As visões da mesma carteira — lista, quadro, agenda e entrada — como abas
  * de uma tela só.
  *
- * Existe porque a navegação encolheu: Funil, Visitas e Adicionar saíram do
- * menu e passaram a morar "dentro" de Leads. As rotas continuam as mesmas
- * (nenhum link salvo quebra); o que muda é como o corretor chega.
+ * A lista de abas vem de `subitensDe`, não daqui: até 04/09/2026 cada barra
+ * de abas mantinha a própria cópia, e as cópias divergiram do menu. Agora
+ * quem acrescenta um subtópico em `navegacao.tsx` o vê aparecer nos dois
+ * lugares, por construção.
  *
  * Client component por um motivo só: LEVAR A BUSCA ADIANTE. Quem procurou
  * "Juliana" na lista e abre o funil está atrás da mesma pessoa — perder o
  * termo na troca de aba transformaria a busca num trabalho a refazer.
  */
-const ABAS = [
-  { chave: "lista", href: "/corretor/leads", label: "Lista" },
-  { chave: "funil", href: "/corretor/funil", label: "Funil" },
-  { chave: "visitas", href: "/corretor/visitas", label: "Visitas" },
-  // Adicionar lead é rotina de quem trabalha a carteira, não visita rara:
-  // vira aba junto com as visões, em vez de um "← voltar" próprio.
-  { chave: "adicionar", href: "/corretor/importar", label: "Adicionar" },
-] as const;
-
-export type AbaLeads = (typeof ABAS)[number]["chave"];
 
 /** A aba de entrada não filtra nada — levar a busca até ela seria ruído. */
-const ABAS_QUE_BUSCAM: readonly AbaLeads[] = ["lista", "funil", "visitas"];
+const NAO_BUSCAM = new Set(["/corretor/importar"]);
 
-export function AbasLeads({ ativa, visitas }: { ativa: AbaLeads; visitas?: number }) {
+export function AbasLeads({ ativa, visitas }: { ativa: string; visitas?: number }) {
   const params = useSearchParams();
   const busca = params.get("busca") ?? "";
 
-  const abas = ABAS.map((aba) => ({
+  const abas = subitensDe("/corretor/pessoas").map((sub) => ({
     href:
-      busca && ABAS_QUE_BUSCAM.includes(aba.chave)
-        ? `${aba.href}?busca=${encodeURIComponent(busca)}`
-        : aba.href,
-    label: aba.label,
+      busca && !NAO_BUSCAM.has(sub.href)
+        ? `${sub.href}?busca=${encodeURIComponent(busca)}`
+        : sub.href,
+    label: sub.label,
     // Só a agenda ganha contador: é a única em que "quantos" muda o que o
     // corretor faz agora — três visitas hoje é um dia diferente de nenhuma.
-    contador: aba.chave === "visitas" ? visitas : undefined,
+    contador: sub.href === "/corretor/visitas" ? visitas : undefined,
   }));
 
-  const indiceAtivo = ABAS.findIndex((a) => a.chave === ativa);
-  const ativaHref = abas[indiceAtivo === -1 ? 0 : indiceAtivo].href;
+  // A busca entra no href, então comparar por prefixo é o que casa a aba ativa.
+  const ativaHref = abas.find((a) => a.href.startsWith(ativa))?.href ?? abas[0]?.href;
 
   return <AbasSecao abas={abas} ativa={ativaHref} rotulo="Visões dos leads" />;
 }

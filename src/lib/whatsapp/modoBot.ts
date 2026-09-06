@@ -110,7 +110,7 @@ export function decidirPorModo(modo: ModoBotWhatsapp, ctx: Contexto = {}): Decis
 export const ROTULO_MODO: Record<ModoBotWhatsapp, string> = {
   "24_7": "Sempre ativa",
   noturno_e_fds: `Fora do expediente (após ${EXPEDIENTE.fimHora}h, antes das ${EXPEDIENTE.inicioHora}h e fins de semana)`,
-  co_piloto_3min: `Co-piloto (entra após ${MINUTOS_COPILOTO} min de silêncio seu)`,
+  co_piloto_3min: `Só se você demorar (entra após ${MINUTOS_COPILOTO} min sem você responder)`,
   desativado: "Desligada",
 };
 

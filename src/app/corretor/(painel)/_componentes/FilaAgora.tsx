@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { BotaoConcluirTarefa } from "./BotaoConcluirTarefa";
+import { BotaoResponderComIA } from "./BotaoResponderComIA";
 import type { ItemFila, TipoItemFila } from "@/lib/crm/filaDeTrabalho";
 
 /**
@@ -12,11 +13,27 @@ import type { ItemFila, TipoItemFila } from "@/lib/crm/filaDeTrabalho";
  * coisas que somem se ninguém agir hoje.
  */
 
+/*
+ * A régua é a única coisa que separa urgência de rotina sem depender de
+ * leitura, então cada valor aqui É uma classe — e isso precisou ser dito.
+ * Este mapa nasceu com `sem_resposta: "Esperando você"`, um texto em
+ * português no lugar da classe, interpolado direto no className: o item de
+ * MAIOR prioridade da fila era o único sem cor nenhuma. `Record<Tipo, string>`
+ * aceita qualquer string, então tipo, build e teste passaram por meses.
+ * `classesDeCor.test.ts` existe por causa disto.
+ *
+ * Nenhuma cor de MÓDULO aqui, de propósito. `acento` mudou de significado —
+ * passou a ser "onde você está" — e usá-lo dentro de uma linha faria a
+ * urgência de um item depender da tela em que ele aparece.
+ */
 const REGUA: Record<TipoItemFila, string> = {
-  visita_hoje: "bg-etapa-azul",
-  tarefa_vencida: "bg-etapa-areia",
-  lead_novo: "bg-acento",
-  tarefa_hoje: "bg-acento",
+  // Primeiro da fila: já levantou a mão e ficou sem resposta. É o único que
+  // representa alguém esperando AGORA, e por isso leva a cor mais forte.
+  sem_resposta: "bg-perigo",
+  visita_hoje: "bg-etapa-visita",
+  tarefa_vencida: "bg-alerta",
+  lead_novo: "bg-etapa-novo",
+  tarefa_hoje: "bg-info",
   sem_revisao: "bg-linha-forte",
   lead_parado: "bg-linha-forte",
 };
@@ -32,7 +49,7 @@ function IconeWhatsapp({ className }: { className?: string }) {
 export function FilaAgora({ itens }: { itens: ItemFila[] }) {
   if (itens.length === 0) {
     return (
-      <section className="border-linha bg-superficie shadow-painel rounded-2xl border p-5 sm:p-6">
+      <section className="cartao p-5 sm:p-6">
         <h2 className="font-display text-titulo text-lg">Tudo em dia</h2>
         <p className="text-fluid-sm text-apoio mt-1">
           Nenhuma visita, lead novo ou tarefa esperando por você. Bom momento para divulgar seu
@@ -84,6 +101,12 @@ export function FilaAgora({ itens }: { itens: ItemFila[] }) {
 
             {item.tarefaId && (
               <BotaoConcluirTarefa tarefaId={item.tarefaId} titulo={item.titulo} />
+            )}
+
+            {/* Só em quem está esperando: é o único item da fila em que há
+                uma pergunta em aberto para a IA responder. */}
+            {item.tipo === "sem_resposta" && item.conversaId && (
+              <BotaoResponderComIA conversaId={item.conversaId} titulo={item.titulo} />
             )}
           </li>
         ))}

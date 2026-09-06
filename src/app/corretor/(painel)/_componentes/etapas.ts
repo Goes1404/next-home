@@ -3,51 +3,58 @@ import type { EtapaFunil } from "@/lib/types";
 /**
  * Vocabulário visual das etapas do funil, em um lugar só.
  *
- * UMA COR POR ETAPA. Antes eram três cores para sete etapas — "proposta
- * enviada" e "em negociação" eram a mesma areia, "novo" e "primeiro contato"
- * o mesmo verde — e duas etapas com a mesma cor não são identificáveis de
- * relance, que é a única razão de existir cor de status.
+ * A etapa é dado ORDINAL — tem ordem — e por isso a cor aqui é uma RAMPA, não
+ * seis matizes soltas. A versão anterior usava ciano, azul, areia e laranja
+ * sem relação entre si: gastava meio círculo cromático e obrigava a decorar
+ * qual cor vem antes de qual. "A escala esquenta junto com a negociação"
+ * existia só no comentário; no olho eram quatro cores quaisquer.
  *
- * A escala esquenta junto com a negociação: verde na chegada, ciano quando a
- * conversa começa, azul quando há visita marcada, laranja na documentação,
- * verde sólido no fechamento. Perdido é cinza — sai da escala porque saiu do
- * caminho.
+ * Agora são quatro passos de uma rampa só (azul-índigo → ciano), com o peso
+ * visual crescendo conforme o negócio avança, e dois TERMINAIS fora dela:
+ * fechado e perdido não são passos, são desfechos — o mesmo recorte que
+ * `ETAPAS_DO_CAMINHO` faz em `types.ts`.
  *
- * Todos os tokens aqui são de PAPEL, não de tinta: mudam com o tema. A
- * versão anterior usava `text-azure-200` e `text-sand-300` direto, que no
- * tema claro viravam texto pastel sobre branco — ilegível.
+ * Nada aqui usa `acento`. Isso é regra, não detalhe: `acento` passou a ser a
+ * cor do MÓDULO (reapontada por `[data-modulo]` em globals.css), então uma
+ * etapa pintada com ele mudaria de cor conforme a tela em que o lead
+ * aparecesse — o mesmo lead seria violeta no Início e magenta em Leads. Cor
+ * de etapa descreve o registro e não pode depender de onde ele está sendo
+ * olhado.
+ *
+ * Todos os tokens são de PAPEL e resolvem os dois temas via `light-dark()`.
  */
 
 /** Etiqueta arredondada do cartão e da lista. */
 export const ETIQUETA_ETAPA: Record<EtapaFunil, string> = {
   // Sólido só aqui: "novo" é a única etapa que cobra uma ação hoje.
-  novo: "bg-acento text-white",
-  primeiro_contato: "bg-etapa-ciano-lavado text-etapa-ciano border border-etapa-ciano-linha",
-  visita_agendada: "bg-etapa-azul-lavado text-etapa-azul border border-etapa-azul-linha",
+  novo: "bg-etapa-novo text-sobre-cor",
+  primeiro_contato:
+    "bg-etapa-contato-lavado text-etapa-contato border border-etapa-contato-linha",
+  visita_agendada: "bg-etapa-visita-lavado text-etapa-visita border border-etapa-visita-linha",
   documentacao:
-    "bg-etapa-laranja-lavado text-etapa-laranja border border-etapa-laranja-linha font-semibold",
-  fechado: "bg-ok-lavado text-ok border border-ok-linha",
-  perdido: "bg-vidro-forte text-apoio border border-linha",
+    "bg-etapa-doc-lavado text-etapa-doc border border-etapa-doc-linha font-semibold",
+  fechado: "bg-etapa-fechado-lavado text-etapa-fechado border border-etapa-fechado-linha",
+  perdido: "bg-etapa-perdido-lavado text-etapa-perdido border border-etapa-perdido-linha",
 };
 
 /** Borda superior da coluna do quadro. */
 export const BORDA_ETAPA: Record<EtapaFunil, string> = {
-  novo: "border-acento-linha",
-  primeiro_contato: "border-etapa-ciano-linha",
-  visita_agendada: "border-etapa-azul-linha",
-  documentacao: "border-etapa-laranja-linha",
-  fechado: "border-ok-linha",
-  perdido: "border-linha",
+  novo: "border-etapa-novo-linha",
+  primeiro_contato: "border-etapa-contato-linha",
+  visita_agendada: "border-etapa-visita-linha",
+  documentacao: "border-etapa-doc-linha",
+  fechado: "border-etapa-fechado-linha",
+  perdido: "border-etapa-perdido-linha",
 };
 
 /** Preenchimento do segmento no termômetro do funil. */
 export const BARRA_ETAPA: Record<EtapaFunil, string> = {
-  novo: "bg-acento",
-  primeiro_contato: "bg-etapa-ciano",
-  visita_agendada: "bg-etapa-azul",
-  documentacao: "bg-etapa-laranja",
-  fechado: "bg-ok",
-  perdido: "bg-tenue/45",
+  novo: "bg-etapa-novo",
+  primeiro_contato: "bg-etapa-contato",
+  visita_agendada: "bg-etapa-visita",
+  documentacao: "bg-etapa-doc",
+  fechado: "bg-etapa-fechado",
+  perdido: "bg-etapa-perdido",
 };
 
 /**
@@ -57,25 +64,29 @@ export const BARRA_ETAPA: Record<EtapaFunil, string> = {
  *
  * Sólido, e não lavado: é a ação primária da tela, e ação primária que se
  * confunde com etiqueta não é apertada.
+ *
+ * O texto sai de `sobre-cor` e não de `text-fundo`: no escuro a cor da etapa
+ * é clara e pede texto escuro, no claro é profunda e pede texto branco. Um
+ * valor chumbado acertaria um tema e sumiria no outro.
  */
 export const AVANCO_ETAPA: Record<EtapaFunil, string> = {
-  novo: "bg-acento text-white hover:bg-acento-hover",
-  primeiro_contato: "bg-etapa-ciano text-fundo hover:opacity-90",
-  visita_agendada: "bg-etapa-azul text-fundo hover:opacity-90",
-  documentacao: "bg-etapa-laranja text-fundo hover:opacity-90",
-  fechado: "bg-ok text-fundo hover:opacity-90",
-  perdido: "bg-tenue text-fundo hover:opacity-90",
+  novo: "bg-etapa-novo text-sobre-cor hover:opacity-90",
+  primeiro_contato: "bg-etapa-contato text-sobre-cor hover:opacity-90",
+  visita_agendada: "bg-etapa-visita text-sobre-cor hover:opacity-90",
+  documentacao: "bg-etapa-doc text-sobre-cor hover:opacity-90",
+  fechado: "bg-etapa-fechado text-sobre-cor hover:opacity-90",
+  perdido: "bg-etapa-perdido text-sobre-cor hover:opacity-90",
 };
 
 /**
  * A régua de cor — o elemento que amarra o painel inteiro.
  *
  * Uma barra vertical na borda esquerda do cartão, da linha da lista e do
- * cabeçalho da ficha. É o mesmo gesto em toda tela, então a etapa se lê
- * antes de qualquer texto: o corretor rola a lista e vê a distribuição do
- * funil sem ler uma palavra. Usa a mesma escala de `BARRA_ETAPA` de
- * propósito — duas escalas de cor para a mesma informação seria o mesmo erro
- * que ter uma cor para duas etapas.
+ * cabeçalho da ficha. É o mesmo gesto em toda tela, então a etapa se lê antes
+ * de qualquer texto: o corretor rola a lista e vê a distribuição do funil sem
+ * ler uma palavra. Usa a mesma escala de `BARRA_ETAPA` de propósito — duas
+ * escalas de cor para a mesma informação seria o mesmo erro que ter uma cor
+ * para duas etapas.
  */
 export const REGUA_ETAPA = BARRA_ETAPA;
 

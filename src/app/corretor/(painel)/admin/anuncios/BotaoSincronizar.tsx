@@ -23,7 +23,7 @@ export function BotaoSincronizar() {
         {pendente ? "Sincronizando…" : "Sincronizar agora"}
       </button>
       {mensagem && (
-        <p className={`text-fluid-xs ${mensagem.ok ? "text-apoio" : "text-red-400"}`} role="status">
+        <p className={`text-fluid-xs ${mensagem.ok ? "text-apoio" : "text-perigo"}`} role="status">
           {mensagem.texto}
         </p>
       )}

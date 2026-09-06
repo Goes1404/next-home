@@ -1,0 +1,61 @@
+confuso-entre-dois · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me fala do terra alta e do more aldeia, qual compensa mais
+[1] Sofia:   O Terra Alta fica no Jardim Tupanci, uma região muito valorizada de Barueri.
+Em qual região de Barueri você procura exatamente?
+
+[2] Cliente: não é sobre região, quero comparar os dois
+              quais as diferenças entre eles?
+[2] Sofia:   O Terra Alta tem apartamentos de 1 dormitório, 52m², com 2 vagas, ideal para quem busca conforto e praticidade no Jardim Tupanci.
+Quer conhecer o decorado? Olha o link com tudo lá: https://next-home-drab.vercel.app/empreendimentos/terra-alta-ta141
+
+[3] Cliente: mas e o more aldeia?
+              quero saber das vantagens dele
+[3] Sofia:   O More Aldeia não está no nosso catálogo, mas posso te ajudar com o Terra Alta, que é uma ótima opção.
+Você prefere imóvel pronto para morar ou na planta?
+
+[4] Cliente: mas eu quero saber do more aldeia
+              não me manda link, fala as vantagens
+[4] Sofia:   O More Aldeia não é um imóvel do nosso catálogo, por isso não tenho detalhes precisos para comparar.
+Posso focar no Terra Alta, que é na planta e tem condições especiais.
+
+[5] Cliente: mas eu quero saber as vantagens do more aldeia
+              não posso comparar se não souber como é
+              não entendi por que não tem detalhes
+[5] Sofia:   Entendo sua dúvida sobre o More Aldeia, mas não temos informações oficiais dele.
+Posso te mostrar o Terra Alta, que é na planta e tem ótimas condições.
+Você prefere imóvel pronto para morar ou na planta?
+
+[6] Cliente: como assim não tem info do more aldeia?
+              não consigo decidir assim!
+[6] Sofia:   O More Aldeia não está no nosso catálogo, por isso não tenho dados oficiais para te passar.
+Quantos dormitórios você precisa?
+
+[7] Cliente: mas eu quero comparar os dois, não só o terra alta
+              não tem como decidir assim
+[7] Sofia:   Entendo que comparar é importante para você.
+Para seguir, me diz: prefere imóvel pronto para morar ou na planta?
+
+[8] Cliente: mas eu quero saber do more aldeia
+              não posso decidir só com info do terra alta
+[8] Sofia:   O Terra Alta é na planta, com 1 dormitório e 2 vagas. Para te ajudar melhor, quantos dormitórios você precisa?
+
+[9] Cliente: mas eu quero saber do more aldeia
+              não tá certo isso, não tem info dele?
+[9] Sofia:   O More Aldeia não faz parte do nosso catálogo, por isso não tenho informações oficiais dele.
+
+[10] Cliente: mas e as vantagens?
+              não tem como decidir assim!
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[11] Cliente: mas eu quero saber do more aldeia
+              não dá pra decidir assim sem info
+[11] Sofia:   Entendo que a falta de informações dificulta sua decisão.
+Para avançar, você prefere imóvel pronto para morar ou na planta?
+
+[12] Cliente: mas eu quero saber do more aldeia
+              não dá pra decidir sem info dele
+[12] Sofia:   O More Aldeia não está no nosso catálogo, por isso não tenho detalhes oficiais para te passar.
+Vamos focar no Terra Alta, que é na planta e tem ótimas condições.
+Quantos dormitórios você precisa?

@@ -140,7 +140,7 @@ export function ListaImoveisClient({ imoveis }: Props) {
                   <div className="pt-2 flex items-center gap-2 border-t border-linha">
                     <Link
                       href={`/corretor/imoveis/${imovel.slug}`}
-                      className="flex-1 min-h-[46px] rounded-xl bg-acento hover:bg-acento-hover text-white text-fluid-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-acento/20 active:scale-98"
+                      className="flex-1 min-h-[46px] rounded-xl bg-acento hover:bg-acento-hover text-sobre-cor text-fluid-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-acento/20 active:scale-98"
                     >
                       <span>✏️ Editar Fotos & Dados</span>
                     </Link>
@@ -150,9 +150,10 @@ export function ListaImoveisClient({ imoveis }: Props) {
                       target="_blank"
                       rel="noopener noreferrer"
                       title="Ver na Vitrine Pública"
+                      aria-label={`Ver ${imovel.nome} no site`}
                       className="min-h-[46px] w-[46px] rounded-xl bg-vidro-forte hover:bg-vidro-mais text-corpo hover:text-titulo transition-colors flex items-center justify-center shrink-0"
                     >
-                      <span>👁️</span>
+                      <span aria-hidden>👁️</span>
                     </Link>
                   </div>
                 </div>

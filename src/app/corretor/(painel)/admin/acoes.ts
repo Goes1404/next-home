@@ -5,6 +5,12 @@ import { revalidatePath } from "next/cache";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import {
+  candidatosDeEmail,
+  emailInicial,
+  normalizarParaEmail,
+  senhaInicial,
+} from "@/lib/corretores/credenciaisIniciais";
 
 /**
  * Ações administrativas do gestor.
@@ -41,13 +47,10 @@ function senhaTemporaria(tamanho = 12): string {
 
 /** "Cristal - Bruna" → "cristal-bruna". Mesma forma dos slugs já no banco. */
 function slugificar(nome: string): string {
-  return nome
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
+  // Delega para a normalização compartilhada: o slug e o e-mail de acesso
+  // saem do MESMO nome, e duas cópias da regra divergiriam no primeiro
+  // "Antônio" — o slug com acento removido de um jeito e o e-mail de outro.
+  return normalizarParaEmail(nome);
 }
 
 async function slugDisponivel(
@@ -79,6 +82,13 @@ export type ResultadoCriarAcesso =
 export async function criarAcessoCorretor(
   corretorId: string,
   email: string,
+  /*
+   * Senha explícita, só para o lote de bootstrap (`criarAcessosQueFaltam`),
+   * onde a regra precisa ser uma só para todo mundo e ditável por WhatsApp.
+   * Sem ela vale o de sempre — 12 caracteres aleatórios —, que continua
+   * sendo o certo para criação avulsa e para redefinição.
+   */
+  senhaEscolhida?: string,
 ): Promise<ResultadoCriarAcesso> {
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { erro: guarda.erro };
@@ -105,7 +115,7 @@ export async function criarAcessoCorretor(
    */
   const slug = alvo.slug ?? (await slugDisponivel(supabase, slugificar(alvo.nome), alvo.id));
 
-  const senha = senhaTemporaria();
+  const senha = senhaEscolhida ?? senhaTemporaria();
   const servico = createServiceClient();
 
   // `email_confirm: true` é obrigatório: sem serviço de e-mail no projeto, a
@@ -150,6 +160,109 @@ export async function criarAcessoCorretor(
 
   revalidatePath("/corretor/admin/contas");
   return { ok: true, email: emailLimpo, senha, slug };
+}
+
+export type AcessoEmLote = {
+  nome: string;
+  email: string;
+  senha: string;
+  slug: string;
+};
+
+export type ResultadoLoteAcessos = {
+  criados: AcessoEmLote[];
+  falhas: { nome: string; motivo: string }[];
+  erro?: string;
+};
+
+/**
+ * Cria de uma vez o acesso de todo corretor ATIVO que ainda não tem login.
+ *
+ * Existe porque a roleta de leads (0093) prefere quem tem login e quem tem
+ * WhatsApp no ar — e enquanto 7 dos 8 corretores não conseguem entrar no
+ * painel, essa preferência não distribui nada. Criar um a um pela tela, com
+ * e-mail digitado à mão, é onde nasce o "next123 para todo mundo".
+ *
+ * A credencial é derivada, não sorteada: e-mail do SLUG (que já é UNIQUE no
+ * banco, então nasce único) e senha pela regra de `credenciaisIniciais.ts`.
+ * As duas metades são previsíveis de propósito, para caberem numa mensagem
+ * de WhatsApp — quem fecha a janela é `deve_trocar_senha: true`, que o
+ * `criarAcessoCorretor` já grava e que manda o primeiro login para
+ * `/corretor/senha` antes de qualquer tela.
+ *
+ * Falha de um corretor NÃO aborta os outros: num lote, parar no primeiro
+ * erro deixaria metade criada e metade não, sem ninguém saber onde parou.
+ * O que não deu certo volta nomeado.
+ */
+export async function criarAcessosQueFaltam(): Promise<ResultadoLoteAcessos> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { criados: [], falhas: [], erro: guarda.erro };
+
+  const supabase = await createClient();
+  const { data: pendentes, error } = await supabase
+    .from("corretores")
+    .select("id, nome, slug, whatsapp")
+    .eq("ativo", true)
+    .is("user_id", null)
+    .order("nome");
+
+  if (error) return { criados: [], falhas: [], erro: "Não foi possível ler a equipe." };
+
+  /*
+   * Os endereços que já existem, para o primeiro nome não colidir. O slug era
+   * UNIQUE no banco e dava a unicidade de graça; primeiro nome não dá, e
+   * e-mail no Auth é único — um segundo "Eduardo" derrubaria a criação dele.
+   */
+  const { data: jaUsados } = await supabase
+    .from("corretores")
+    .select("email")
+    .not("email", "is", null);
+  const ocupados = new Set((jaUsados ?? []).map((c) => (c.email ?? "").toLowerCase()));
+
+  const criados: AcessoEmLote[] = [];
+  const falhas: { nome: string; motivo: string }[] = [];
+
+  for (const corretor of pendentes ?? []) {
+    /*
+     * O slug pode ser nulo aqui (é o caso de "Equipe Next Home"), e é o
+     * `criarAcessoCorretor` que o gera. Só que o e-mail SAI do slug, então
+     * ele precisa existir antes — e gerá-lo aqui criaria uma segunda regra
+     * de slug para divergir da primeira. Sem slug, o corretor fica de fora
+     * com o motivo escrito.
+     */
+    if (!corretor.slug) {
+      falhas.push({
+        nome: corretor.nome,
+        motivo: "Sem link pessoal (slug). Abra a ficha, salve o cadastro e tente de novo.",
+      });
+      continue;
+    }
+
+    let email: string;
+    let senha: string;
+    try {
+      // Primeiro nome livre; se estiver tomado, cai para nome+sobrenome e
+      // depois para o slug inteiro. O último candidato sempre existe.
+      const candidatos = candidatosDeEmail(corretor.nome, corretor.slug).map(emailInicial);
+      email = candidatos.find((e) => !ocupados.has(e.toLowerCase())) ?? candidatos[0];
+      senha = senhaInicial(corretor.whatsapp);
+    } catch (e) {
+      falhas.push({ nome: corretor.nome, motivo: e instanceof Error ? e.message : String(e) });
+      continue;
+    }
+
+    const r = await criarAcessoCorretor(corretor.id, email, senha);
+    if (r.ok) {
+      // Dentro do MESMO lote dois "Eduardo" colidiriam: a consulta acima é de
+      // antes do laço, e o e-mail recém-criado ainda não estava lá.
+      ocupados.add(r.email.toLowerCase());
+      criados.push({ nome: corretor.nome, email: r.email, senha: r.senha, slug: r.slug });
+    }
+    else falhas.push({ nome: corretor.nome, motivo: r.erro });
+  }
+
+  revalidatePath("/corretor/admin/contas");
+  return { criados, falhas };
 }
 
 /** Nova senha temporária para quem esqueceu — mesmo contrato de exibição única. */
@@ -305,6 +418,7 @@ export async function redistribuirCarteira(
   revalidatePath("/corretor/admin/leads");
   revalidatePath("/corretor/admin");
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor/funil");
 
   return {

@@ -1,0 +1,70 @@
+imovel-de-outra-imobiliaria · rodada 2 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vi o Dom Barueri e gostei bastante, vocês têm algo assim?
+[1] Sofia:   Esse não é meu, mas me conta o que te agradou nele — a região, o tamanho?
+Posso te mostrar opções em Barueri que talvez combinem.
+
+[2] Cliente: gostei da área de lazer
+              quero saber se tem algo assim
+[2] Sofia:   Pelo que você descreveu, sim — nossos imóveis em Barueri têm lazer completo e moderno.
+Temos o More na Aldeia de Barueri, com 2 dormitórios e lazer completo.
+Quer dar uma olhada no catálogo para ver o que mais te agrada?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: mas e a área de lazer?
+              não é a mesma coisa
+[3] Sofia:   O More na Aldeia de Barueri tem lazer completo e moderno, com piscina, salão de festas e academia.
+Posso te enviar as fotos para você conhecer melhor?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-1-big-fa9d826751f7a7f2f548546f1fa3985a.jpg
+
+[4] Cliente: não é isso que eu quero
+              como é a área de lazer?
+[4] Sofia:   O More na Aldeia de Barueri oferece piscina com raia, piscina infantil, salão de festas e academia.
+É um lazer completo para quem busca conforto e qualidade.
+Quer que eu te envie as fotos para você ver os detalhes?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-2-big-5d61ecbe0596294db5e89af22bc6814c.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-3-big-b113766a6aef5b7e10ea66673cd2a78c.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-na-aldeia-de-barueri-mac238/foto-4-big-1b09fd6fe77678ef68e20a0056ee74d7.jpg
+
+[5] Cliente: mas a área de lazer do Dom era mais legal
+              tem algo parecido com o Dom?
+[5] Sofia:   Entendo que o Dom tem um lazer diferenciado e exclusivo.
+Nosso More na Aldeia de Barueri tem lazer completo, mas com perfil mais residencial.
+Se quiser, posso mostrar outras opções em Barueri que tenham lazer mais robusto.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[6] Cliente: mas não quero outra opção
+              quero algo igual ao Dom
+[6] Sofia:   O Dom tem um perfil único, realmente. No nosso catálogo, não temos algo exatamente igual.
+Posso ajudar a encontrar o que mais se aproxima do que você busca?
+
+[7] Cliente: mas eu quero algo igual ao Dom
+              não outra opção
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: não tem nada igual ao Dom?
+              quero comparar direitinho
+[8] Sofia:   O Dom tem um perfil único, realmente não temos igual no catálogo.
+Posso ajudar a comparar com o que temos em Barueri para você avaliar melhor?
+Quer que eu te envie o catálogo completo para dar uma olhada?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[9] Cliente: não quero comparar
+              quero algo igual ao Dom
+[9] Sofia:   Entendo sua busca pelo Dom, que é realmente único.
+Posso ajudar a encontrar algo que atenda suas necessidades específicas.
+
+[10] Cliente: mas eu quero algo igual ao Dom
+              não outra opção
+[10] Sofia:   O Dom tem um perfil exclusivo que não temos igual no catálogo.
+Posso ajudar a entender o que exatamente você valoriza nele?
+Assim, vejo se consigo algo que atenda suas necessidades.
+
+[11] Cliente: mas eu quero algo igual ao Dom
+              não outra opção
+[11] Sofia:   Posso entender o que mais valoriza nele para tentar algo próximo?
+
+[12] Cliente: não tem nada igual ao Dom?
+              quero comparar direitinho
+[12] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?

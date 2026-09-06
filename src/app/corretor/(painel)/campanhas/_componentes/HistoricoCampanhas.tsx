@@ -130,6 +130,34 @@ export function HistoricoCampanhas({
               {c.status === "em_andamento" && c.totalEnviados < c.totalLeads && (
                 <BotaoLiberar campanhaId={c.id} aoLiberar={aoLiberar} />
               )}
+
+              {/*
+                O placar do teste A/B (0084). Ocupa a linha inteira porque a
+                leitura é uma frase, não um número — e é a frase que evita
+                trocar a mensagem certa por causa de uma amostra de cinco.
+              */}
+              {c.testeAB && (
+                <div className="border-linha bg-elevado w-full rounded-xl border p-3">
+                  <div className="text-fluid-xs flex flex-wrap gap-x-6 gap-y-1 tabular-nums">
+                    {[c.testeAB.a, c.testeAB.b].map((lado) => (
+                      <span key={lado.variante}>
+                        <span className="text-tenue">Versão {lado.variante}: </span>
+                        <span className="text-titulo font-medium">
+                          {lado.respostas}/{lado.enviados}
+                        </span>
+                        {lado.taxa !== null && <span className="text-apoio"> ({lado.taxa}%)</span>}
+                      </span>
+                    ))}
+                  </div>
+                  <p
+                    className={`text-fluid-xs mt-1.5 leading-relaxed ${
+                      c.testeAB.temVencedor ? "text-corpo" : "text-apoio"
+                    }`}
+                  >
+                    {c.testeAB.leitura}
+                  </p>
+                </div>
+              )}
             </li>
           );
         })}

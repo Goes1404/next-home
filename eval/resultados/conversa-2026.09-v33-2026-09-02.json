@@ -1,0 +1,906 @@
+{
+  "promptVersao": "2026.09-v33",
+  "data": "2026-09-02",
+  "provedorDoAgente": "openai",
+  "provedorDoCliente": "groq",
+  "clienteIndependente": true,
+  "tetoDeTurnos": 12,
+  "rodadas": 2,
+  "comJuiz": true,
+  "conversas": [
+    {
+      "persona": "familia-tres-dorm",
+      "rodada": 1,
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "tem outros valores?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia",
+          "visita",
+          "perfil",
+          "estagio"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 164,
+        "maiorMensagem": 239,
+        "reprovacoes": [
+          "o cliente teve de repetir 1 pergunta(s) — ela não respondeu",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa andou com tropeços, repetiu perguntas, não qualificou renda e insistiu em links. Faltou condução clara ao próximo passo.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "elogiou-o-terra-alta",
+      "rodada": 1,
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Quer agendar para conhecer o decorado?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 10,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 120,
+        "maiorMensagem": 231,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "10 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa ficou repetitiva, sem qualificação real do cliente e sem condução efetiva ao próximo passo. Faltou controle e direcionamento.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "imovel-de-outra-imobiliaria",
+      "rodada": 1,
+      "desfecho": "cliente_encerrou",
+      "turnos": 6,
+      "medida": {
+        "turnos": 6,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Prefere pronto para morar ou na planta?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 4,
+        "assuntosCobertos": [
+          "regiao",
+          "estagio",
+          "tipologia",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 119,
+        "maiorMensagem": 183,
+        "reprovacoes": [
+          "nunca ofereceu visita",
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "4 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, não qualificou direito e irritou o cliente. Faltou objetividade e escuta ativa, dificultando o avanço.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "muda-a-restricao",
+      "rodada": 1,
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 3,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Em qual região de Barueri você procura?",
+          "Quer conhecer o decorado para ver de perto?"
+        ],
+        "perguntasReaparecidas": [
+          "tem fotos dele?",
+          "mas tem algo menor que 500 mil?",
+          "tem algo assim?"
+        ],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 4,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia",
+          "visita",
+          "perfil",
+          "renda",
+          "estagio"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 185,
+        "maiorMensagem": 273,
+        "reprovacoes": [
+          "repetiu 2 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 3 pergunta(s) — ela não respondeu",
+          "4 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em torno de valores, não qualificou renda, tipologia ou estágio da obra, e não convidou para visita cedo.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "escreve-errado",
+      "rodada": 1,
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Só para confirmar, em qual região de Barueri você procura o imóvel?"
+        ],
+        "perguntasReaparecidas": [
+          "qnto dorms?",
+          "qnto dorms?",
+          "qnto dorms?",
+          "qnto dorms?",
+          "qnto dorms?",
+          "qnto dorms?"
+        ],
+        "respostasRepetidas": 1,
+        "maiorSequenciaSemNovidade": 10,
+        "assuntosCobertos": [
+          "regiao",
+          "tipologia",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 123,
+        "maiorMensagem": 222,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "o cliente teve de repetir 6 pergunta(s) — ela não respondeu",
+          "mandou 1 resposta(s) quase idêntica(s) a uma anterior",
+          "10 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A assistente não enviou a planta solicitada repetidas vezes, ignorando o pedido do cliente e insistindo em visita, sem qualificar adequadamente.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "quer-visitar-sabado",
+      "rodada": 1,
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [
+          "que endereço?"
+        ],
+        "respostasRepetidas": 3,
+        "maiorSequenciaSemNovidade": 5,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "tipologia"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 97,
+        "maiorMensagem": 170,
+        "reprovacoes": [
+          "o cliente teve de repetir 1 pergunta(s) — ela não respondeu",
+          "mandou 3 resposta(s) quase idêntica(s) a uma anterior",
+          "5 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, não forneceu o endereço e ignorou repetidamente a solicitação do cliente, frustrando o atendimento.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "rajada-curta-e-seca",
+      "rodada": 1,
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 3,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Para eu te indicar certo: quantos dormitórios você precisa?",
+          "Você prefere apartamento pronto para morar ou na planta?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 6,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "estagio",
+          "tipologia",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 129,
+        "maiorMensagem": 215,
+        "reprovacoes": [
+          "repetiu 2 pergunta(s) que já tinha feito",
+          "6 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa girou em círculos, não qualificou renda, tipologia ou estágio da obra, e não conduziu ao próximo passo efetivo.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "insiste-no-desconto",
+      "rodada": 1,
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 1,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Posso agendar para sábado de manhã para te mostrar o decorado e as opções?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 4,
+        "assuntosCobertos": [
+          "visita",
+          "regiao",
+          "estagio",
+          "tipologia",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 166,
+        "maiorMensagem": 284,
+        "reprovacoes": [
+          "repetiu 1 pergunta(s) que já tinha feito",
+          "4 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": true,
+        "justificativa": "A assistente manteve consistência, insistiu na visita e tentou qualificar, mas o cliente não colaborou. Não houve erro grave, só resistência do cliente.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "quer-tudo-pelo-zap",
+      "rodada": 1,
+      "desfecho": "teto_de_turnos",
+      "turnos": 12,
+      "medida": {
+        "turnos": 12,
+        "turnoDaOfertaDeVisita": 3,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [
+          "Você prefere imóvel pronto para morar ou na planta?",
+          "Você prefere imóvel pronto para morar ou na planta?",
+          "Prefere que eu te envie mais fotos e a planta para analisar melhor ou quer seguir de outra forma?"
+        ],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 8,
+        "assuntosCobertos": [
+          "regiao",
+          "visita",
+          "tipologia",
+          "estagio",
+          "perfil"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 173,
+        "maiorMensagem": 240,
+        "reprovacoes": [
+          "repetiu 3 pergunta(s) que já tinha feito",
+          "8 turnos seguidos sem assunto novo"
+        ]
+      },
+      "juizo": {
+        "avancou": 1,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa não qualificou renda, tipologia ou estágio da obra. Assistente insistiu em visita e links, não conduziu ao próximo passo.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "pressa-de-quinze-dias",
+      "rodada": 1,
+      "desfecho": "ia_indisponivel",
+      "turnos": 2,
+      "medida": {
+        "turnos": 2,
+        "turnoDaOfertaDeVisita": 2,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [
+          "regiao",
+          "perfil",
+          "estagio",
+          "tipologia",
+          "visita"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 143,
+        "maiorMensagem": 180,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "decide-com-a-esposa",
+      "rodada": 1,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "sem-perfil-de-renda",
+      "rodada": 1,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "pergunta-se-e-robo-no-meio",
+      "rodada": 1,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "investidor-objetivo",
+      "rodada": 1,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "confuso-entre-dois",
+      "rodada": 1,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "educado-que-enrola",
+      "rodada": 1,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "familia-tres-dorm",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "elogiou-o-terra-alta",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "imovel-de-outra-imobiliaria",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa não avançou, faltou qualificação e convite para visita. Apesar de consistente, não houve progresso relevante para o corretor assumir.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "muda-a-restricao",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa não avançou, faltou qualificação e convite para visita. Apesar de consistente, não houve condução adequada para o próximo passo.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "escreve-errado",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "quer-visitar-sabado",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "rajada-curta-e-seca",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "insiste-no-desconto",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "quer-tudo-pelo-zap",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "pressa-de-quinze-dias",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "decide-com-a-esposa",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "sem-perfil-de-renda",
+      "rodada": 2,
+      "desfecho": "cliente_mudo",
+      "turnos": 1,
+      "medida": {
+        "turnos": 1,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [
+          "regiao",
+          "renda"
+        ],
+        "modelos": [
+          "gpt-4.1-mini"
+        ],
+        "mediaDeCaracteres": 96,
+        "maiorMensagem": 96,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "pergunta-se-e-robo-no-meio",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "investidor-objetivo",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": null
+    },
+    {
+      "persona": "confuso-entre-dois",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa não avançou, faltou qualificação e convite para visita. Apesar de consistente, não houve progresso relevante para o corretor assumir.",
+        "juiz": "gpt-reserva"
+      }
+    },
+    {
+      "persona": "educado-que-enrola",
+      "rodada": 2,
+      "desfecho": "ia_indisponivel",
+      "turnos": 0,
+      "medida": {
+        "turnos": 0,
+        "turnoDaOfertaDeVisita": null,
+        "midiasRepetidas": [],
+        "perguntasRepetidasPelaIa": [],
+        "perguntasReaparecidas": [],
+        "respostasRepetidas": 0,
+        "maiorSequenciaSemNovidade": 0,
+        "assuntosCobertos": [],
+        "modelos": [],
+        "mediaDeCaracteres": 0,
+        "maiorMensagem": 0,
+        "reprovacoes": []
+      },
+      "juizo": {
+        "avancou": 0,
+        "mesmaPessoa": 2,
+        "assumiria": false,
+        "justificativa": "A conversa não avançou, faltou qualificação e convite para visita. Apesar de consistente, não houve progresso relevante para o corretor assumir.",
+        "juiz": "gpt-reserva"
+      }
+    }
+  ]
+}

@@ -1,0 +1,944 @@
+{
+  "categorias": [
+    {
+      "nome": "nao-respondeu-a-pergunta",
+      "definicao": "Usar quando a assistente ignora pedidos ou perguntas diretas do cliente, desviando o assunto ou não fornecendo a informação solicitada. Não usar quando a resposta foi dada, mas de forma incompleta ou imprecisa."
+    },
+    {
+      "nome": "insistencia-repetitiva",
+      "definicao": "Usar quando a assistente repete perguntas ou ofertas já respondidas ou recusadas pelo cliente, sem adaptar a abordagem. Não usar quando há apenas uma repetição pontual ou necessária para esclarecimento."
+    },
+    {
+      "nome": "informacao-proibida-ou-incorreta",
+      "definicao": "Usar quando a assistente fornece informações que não deveria (ex: condições de pagamento não permitidas) ou confunde empreendimentos. Não usar para respostas incompletas ou evasivas."
+    },
+    {
+      "nome": "nao-ofereceu-alternativas",
+      "definicao": "Usar quando a assistente não busca alternativas, encaminhamentos ou soluções diante de limitações, encerrando o assunto sem tentar ajudar. Não usar quando alternativas foram sugeridas, mesmo que insuficientes."
+    },
+    {
+      "nome": "nao-informou-dado-permitido",
+      "definicao": "Usar quando a assistente deixa de fornecer informações básicas permitidas pelo catálogo (ex: valor 'a partir de', metragem), mesmo após solicitação clara. Não usar quando a informação não é permitida ou não foi solicitada."
+    },
+    {
+      "nome": "falta-de-contexto-ou-personalizacao",
+      "definicao": "Usar quando a assistente não demonstra atenção ao histórico da conversa, não reconhece frustração, insatisfação ou repete respostas automáticas sem adaptação. Não usar quando há tentativa de personalização, mesmo que insuficiente."
+    },
+    {
+      "nome": "mudanca-abrupta-de-assunto",
+      "definicao": "Usar quando a assistente muda de tema sem transição ou sem resolver a solicitação anterior, causando quebra na experiência do cliente. Não usar quando a mudança é justificada ou feita após encerrar adequadamente o tópico anterior."
+    }
+  ],
+  "anotacoes": [
+    {
+      "origem": "2026.08-v25-confuso-entre-dois",
+      "turno": 2,
+      "nota": "Disse que não trabalha diretamente com o More Aldeia, mas não tentou buscar nenhuma informação mínima ou direcionar o cliente para alguém que possa ajudar, encerrando o assunto de forma abrupta.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-confuso-entre-dois",
+      "turno": 3,
+      "nota": "Ignorou o pedido do cliente por fotos e informações do More Aldeia e continuou insistindo apenas no Terra Alta, sem oferecer alternativas ou demonstrar esforço para ajudar.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-confuso-entre-dois",
+      "turno": 4,
+      "nota": "Repetiu que não tem informações do More Aldeia sem tentar buscar alternativas para ajudar o cliente, como sugerir contato com outro especialista ou direcionar para um canal onde possa obter informações.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-confuso-entre-dois",
+      "turno": 6,
+      "nota": "Perguntou sobre faixa de valor, o que não é permitido, já que não pode pedir simulação ou detalhar valores além do 'a partir de'.",
+      "categoria": "informacao-proibida-ou-incorreta"
+    },
+    {
+      "origem": "2026.08-v25-confuso-entre-dois",
+      "turno": 7,
+      "nota": "Repetiu a pergunta sobre faixa de valor, novamente solicitando informação que não deveria pedir.",
+      "categoria": "informacao-proibida-ou-incorreta"
+    },
+    {
+      "origem": "2026.08-v25-confuso-entre-dois",
+      "turno": 8,
+      "nota": "Repetiu a pergunta sobre quantidade de dormitórios, mesmo após o cliente já ter respondido anteriormente que não sabia, demonstrando falta de atenção ao histórico da conversa.",
+      "categoria": "falta-de-contexto-ou-personalizacao"
+    },
+    {
+      "origem": "2026.08-v25-confuso-entre-dois",
+      "turno": 9,
+      "nota": "Ignorou o pedido do cliente por informações do More Aldeia e apenas repetiu a oferta do Terra Alta, sem tentar avançar na qualificação ou oferecer alternativas.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-confuso-entre-dois",
+      "turno": 11,
+      "nota": "Repetiu a pergunta sobre quantidade de dormitórios pela terceira vez, mesmo já tendo recebido essa resposta do cliente, mostrando insistência desnecessária e falta de personalização.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-confuso-entre-dois",
+      "turno": 12,
+      "nota": "Ignorou novamente o pedido do cliente por informações do More Aldeia e apenas repetiu a oferta do Terra Alta, sem tentar encaminhar ou ajudar de outra forma.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-decide-com-a-esposa",
+      "turno": 5,
+      "nota": "Mencionou condições flexíveis, entrada parcelada e financiamento pela construtora, o que não é permitido.",
+      "categoria": "informacao-proibida-ou-incorreta"
+    },
+    {
+      "origem": "2026.08-v25-decide-com-a-esposa",
+      "turno": 6,
+      "nota": "Repetiu menção a condições flexíveis, entrada parcelada e financiamento pela construtora, o que não é permitido.",
+      "categoria": "informacao-proibida-ou-incorreta"
+    },
+    {
+      "origem": "2026.08-v25-decide-com-a-esposa",
+      "turno": 9,
+      "nota": "Repetiu menção a condições flexíveis, entrada parcelada e financiamento pela construtora, o que não é permitido.",
+      "categoria": "informacao-proibida-ou-incorreta"
+    },
+    {
+      "origem": "2026.08-v25-decide-com-a-esposa",
+      "turno": 10,
+      "nota": "Ignorou o pedido direto do cliente pelas plantas e desviou o assunto para uma pergunta genérica sobre o que o cliente procura.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-decide-com-a-esposa",
+      "turno": 11,
+      "nota": "Ignorou novamente o pedido direto do cliente pelas plantas e fez uma pergunta sobre dormitórios, sem atender à solicitação.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-educado-que-enrola",
+      "turno": 5,
+      "nota": "Disse que iria confirmar sobre a churrasqueira e retornar, mas já deveria ter buscado essa informação antes de insistir em enviar fotos."
+    },
+    {
+      "origem": "2026.08-v25-educado-que-enrola",
+      "turno": 6,
+      "nota": "Repetiu que vai checar sobre a churrasqueira, mas não trouxe nenhuma novidade ou tentativa de resposta concreta, apenas desviou para metragem e link.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-educado-que-enrola",
+      "turno": 7,
+      "nota": "Repetiu que não há opção confirmada de churrasqueira e novamente disse que vai confirmar, sem trazer resposta nova, e insistiu em agendar visita mesmo após o cliente recusar.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-educado-que-enrola",
+      "turno": 8,
+      "nota": "Ignorou a pergunta direta sobre churrasqueira e ofereceu link, sem responder à dúvida do cliente.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-educado-que-enrola",
+      "turno": 9,
+      "nota": "Ignorou novamente a pergunta sobre churrasqueira e insistiu em visita, sem responder à dúvida principal do cliente.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-educado-que-enrola",
+      "turno": 10,
+      "nota": "Ignorou a pergunta sobre churrasqueira e não trouxe nenhuma informação nova, apenas desviou para outras dúvidas.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-educado-que-enrola",
+      "turno": 11,
+      "nota": "Repetiu que não há churrasqueira confirmada e que vai confirmar com a construtora, sem trazer resposta definitiva ou encaminhamento concreto.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-educado-que-enrola",
+      "turno": 12,
+      "nota": "Reconheceu a insistência do cliente, mas não respondeu à pergunta sobre churrasqueira e não trouxe solução ou encaminhamento.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 1,
+      "nota": "Mencionou condições flexíveis, entrada parcelada e financiamento pela construtora, o que não é permitido.",
+      "categoria": "informacao-proibida-ou-incorreta"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 2,
+      "nota": "Ofereceu o link da página do empreendimento, sendo que o cliente pediu apenas fotos.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 3,
+      "nota": "Insistiu em oferecer o link da página mesmo após o cliente pedir apenas fotos.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 4,
+      "nota": "Repetiu a oferta do link da página, ignorando o pedido claro do cliente por mais fotos.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 5,
+      "nota": "Repetiu a oferta do link da página e não reconheceu a frustração do cliente.",
+      "categoria": "falta-de-contexto-ou-personalizacao"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 6,
+      "nota": "Não tentou avançar a conversa para qualificação ou visita após esgotar as fotos, apenas informou que não há mais fotos.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 7,
+      "nota": "Mudou abruptamente de assunto para qualificação sem reconhecer a insatisfação do cliente e sem transição adequada.",
+      "categoria": "mudanca-abrupta-de-assunto"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 8,
+      "nota": "Usou resposta automática e truncada ('---'), sem personalização ou explicação, e sugeriu visita ao decorado sem tratar a insatisfação do cliente.",
+      "categoria": "falta-de-contexto-ou-personalizacao"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 9,
+      "nota": "Insistiu na visita presencial sem reconhecer a frustração do cliente ou explicar a limitação de fotos.",
+      "categoria": "falta-de-contexto-ou-personalizacao"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 10,
+      "nota": "Repetiu a tentativa de qualificação sem reconhecer a insistência do cliente por fotos.",
+      "categoria": "falta-de-contexto-ou-personalizacao"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 11,
+      "nota": "Repetiu a oferta do link da página, ignorando o pedido do cliente para não receber links.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-elogiou-o-terra-alta",
+      "turno": 12,
+      "nota": "Enviou o link da página mesmo após o cliente ter recusado anteriormente, ignorando o pedido explícito de não querer links.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 1,
+      "nota": "Enviou foto do empreendimento sem o cliente pedir, quando o pedido era apenas sobre disponibilidade."
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 2,
+      "nota": "Enviou duas plantas sem esclarecer se ambas são do Vitra Alphaville, apesar da dúvida do cliente.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 3,
+      "nota": "Repetiu que enviou as plantas sem explicar claramente que são do Vitra Alphaville, não esclarecendo a dúvida do cliente.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 4,
+      "nota": "Apenas reafirmou que são as únicas plantas, sem detalhar a fonte ou explicar por que não há outras plantas, não sanando a desconfiança do cliente.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 5,
+      "nota": "Repetiu a mesma informação sem tentar entender por que o cliente acha que não é a planta correta ou oferecer outro tipo de esclarecimento.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 6,
+      "nota": "Reforçou a limitação do catálogo sem buscar entender o motivo da insatisfação do cliente ou oferecer alternativa de esclarecimento.",
+      "categoria": "falta-de-contexto-ou-personalizacao"
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 7,
+      "nota": "Ofereceu o link da página sem explicar o que o cliente encontrará lá, mantendo o padrão repetitivo e sem resolver a dúvida.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 8,
+      "nota": "Ofereceu novamente o link da página sem explicar se há diferença entre o que já enviou e o que está no link, mantendo a repetição.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 9,
+      "nota": "Mudou abruptamente para convite de visita sem resolver a solicitação do cliente sobre a planta, ignorando a frustração expressa.",
+      "categoria": "mudanca-abrupta-de-assunto"
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 10,
+      "nota": "Enviou apenas o link do empreendimento sem contextualizar ou explicar se há algo diferente ali, mantendo a comunicação fria.",
+      "categoria": "falta-de-contexto-ou-personalizacao"
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 11,
+      "nota": "Mudou o foco para qualificação (dormitórios) sem resolver a solicitação insistente do cliente sobre a planta, ignorando o pedido direto.",
+      "categoria": "mudanca-abrupta-de-assunto"
+    },
+    {
+      "origem": "2026.08-v25-escreve-errado",
+      "turno": 12,
+      "nota": "Repetiu a oferta do link e informações básicas do empreendimento sem responder diretamente ao pedido do cliente, mantendo o ciclo de respostas insatisfatórias.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-familia-tres-dorm",
+      "turno": 3,
+      "nota": "Não informou o preço 'a partir de' do catálogo, que é permitido, e ficou apenas dizendo que o valor varia.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-familia-tres-dorm",
+      "turno": 4,
+      "nota": "Repetiu que o valor varia sem dar o preço 'a partir de', que poderia ser informado.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-familia-tres-dorm",
+      "turno": 5,
+      "nota": "Insistiu em não dar nenhum valor, mesmo podendo informar o preço 'a partir de' do catálogo.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-familia-tres-dorm",
+      "turno": 6,
+      "nota": "Novamente não informou o preço 'a partir de', mesmo após várias solicitações diretas do cliente.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-familia-tres-dorm",
+      "turno": 7,
+      "nota": "Mudou o assunto para perguntar sobre a compra ser individual ou conjunta, ignorando a solicitação insistente do valor.",
+      "categoria": "mudanca-abrupta-de-assunto"
+    },
+    {
+      "origem": "2026.08-v25-familia-tres-dorm",
+      "turno": 8,
+      "nota": "Continuou pedindo a faixa de valor do cliente e não informou o preço 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-familia-tres-dorm",
+      "turno": 9,
+      "nota": "Repetiu a solicitação da faixa de valor do cliente e não informou o preço 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-familia-tres-dorm",
+      "turno": 10,
+      "nota": "Respondeu apenas com uma frase repetitiva e não forneceu o preço 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-familia-tres-dorm",
+      "turno": 11,
+      "nota": "Insistiu em pedir a faixa de valor do cliente e não informou o preço 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-familia-tres-dorm",
+      "turno": 12,
+      "nota": "Mais uma vez pediu a faixa de valor do cliente e não informou o preço 'a partir de', mesmo após o cliente insistir várias vezes.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-imovel-de-outra-imobiliaria",
+      "turno": 2,
+      "nota": "Repetiu a oferta do Eternity Alphaville sem tentar entender melhor o que o cliente busca, mesmo após o cliente já ter dito que quer algo parecido com o Dom Barueri.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-imovel-de-outra-imobiliaria",
+      "turno": 4,
+      "nota": "Insistiu novamente no Eternity Alphaville e no envio do catálogo, sem apresentar nenhuma alternativa nova ou demonstrar esforço para entender o que o cliente considera 'parecido'.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-imovel-de-outra-imobiliaria",
+      "turno": 5,
+      "nota": "Repetiu a oferta do Eternity Alphaville sem trazer nenhuma novidade ou alternativa, ignorando a insatisfação do cliente.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-imovel-de-outra-imobiliaria",
+      "turno": 6,
+      "nota": "Repetiu que não tem o padrão do Dom Barueri e pediu novamente para o cliente explicar o que gosta, mesmo após o cliente já ter dito que não sabe o que mais dizer.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-imovel-de-outra-imobiliaria",
+      "turno": 7,
+      "nota": "Pediu novamente para o cliente detalhar o que valoriza no Dom Barueri, mesmo após o cliente já ter demonstrado cansaço e dito que só quer algo parecido.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-imovel-de-outra-imobiliaria",
+      "turno": 8,
+      "nota": "Repetiu a mesma pergunta sobre o que o cliente valoriza, ignorando a frustração do cliente e não oferecendo nenhuma alternativa concreta.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-imovel-de-outra-imobiliaria",
+      "turno": 9,
+      "nota": "Repetiu a mesma abordagem de pedir detalhes sobre o que o cliente valoriza, sem apresentar nenhuma nova opção ou abordagem.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-imovel-de-outra-imobiliaria",
+      "turno": 10,
+      "nota": "Pediu novamente para o cliente explicar o que procura, sem reconhecer a insatisfação do cliente ou tentar uma abordagem diferente.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-imovel-de-outra-imobiliaria",
+      "turno": 11,
+      "nota": "Insistiu em pedir para o cliente escolher entre espaço, localização ou lazer, mesmo após o cliente já ter rejeitado essa linha de questionamento.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-imovel-de-outra-imobiliaria",
+      "turno": 12,
+      "nota": "Repetiu a oferta do Eternity Alphaville e o envio do catálogo, sem apresentar nenhuma alternativa nova ou reconhecer a frustração do cliente.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-insiste-no-desconto",
+      "turno": 1,
+      "nota": "Não informou o valor 'a partir de' do catálogo, que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-insiste-no-desconto",
+      "turno": 3,
+      "nota": "Repetiu justificativa sem informar o valor 'a partir de', que pode ser dito.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-insiste-no-desconto",
+      "turno": 4,
+      "nota": "Insistiu em não informar o valor 'a partir de', desviando para tipologia sem dar nenhuma referência de preço.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-insiste-no-desconto",
+      "turno": 5,
+      "nota": "Reforçou que não pode informar valor exato ou desconto, mas não ofereceu o valor 'a partir de', que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-insiste-no-desconto",
+      "turno": 6,
+      "nota": "Respondeu de forma vaga e repetitiva, sem informar o valor 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-insiste-no-desconto",
+      "turno": 7,
+      "nota": "Repetiu justificativa sem informar o valor 'a partir de', mantendo padrão evasivo.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-insiste-no-desconto",
+      "turno": 8,
+      "nota": "Ignorou completamente o pedido de valor, desviando para tipologia sem dar nenhuma referência de preço.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-insiste-no-desconto",
+      "turno": 9,
+      "nota": "Repetiu justificativa e desviou para perguntas de tipologia, sem informar o valor 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-insiste-no-desconto",
+      "turno": 10,
+      "nota": "Ignorou o pedido de valor e respondeu apenas com uma pergunta sobre região, sem referência de preço.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-insiste-no-desconto",
+      "turno": 11,
+      "nota": "Repetiu justificativa sem informar o valor 'a partir de', mantendo padrão evasivo.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-insiste-no-desconto",
+      "turno": 12,
+      "nota": "Ignorou o pedido de valor e desviou para agendamento de visita sem dar nenhuma referência de preço.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 1,
+      "nota": "Afirmou não ter o Vista Alphagran no catálogo, mas o cliente perguntou sobre 'Vista Alphagran' e ela respondeu depois sobre 'Vitra Alphaville', sugerindo confusão entre os empreendimentos.",
+      "categoria": "informacao-proibida-ou-incorreta"
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 2,
+      "nota": "Ofereceu fotos e link sem o cliente pedir, mesmo após o cliente ter dito explicitamente que não queria outra sugestão nem fotos."
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 2,
+      "nota": "Mencionou condições de pagamento e sugeriu conversar sobre isso na visita, o que não é permitido.",
+      "categoria": "informacao-proibida-ou-incorreta"
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 3,
+      "nota": "Repetiu que o valor varia por unidade e condição de pagamento sem informar o preço 'a partir de', que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 4,
+      "nota": "Repetiu que o valor varia por unidade e condição de pagamento sem informar o preço 'a partir de', que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 5,
+      "nota": "Repetiu que o valor varia conforme unidade e condições de pagamento sem informar o preço 'a partir de', que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 6,
+      "nota": "Disse que pode confirmar o número exato de unidades apenas na visita, evitando dar qualquer dado, mesmo que pudesse dar uma estimativa ou dizer que são poucas unidades.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 7,
+      "nota": "Ignorou completamente a pergunta sobre valor e quantidade de unidades, desviando para qualificação sem responder minimamente ao que foi perguntado.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 8,
+      "nota": "Repetiu que o valor varia por unidade e condições sem informar o preço 'a partir de', que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 9,
+      "nota": "Repetiu que o valor é decisivo e que as unidades são poucas, mas não informou o preço 'a partir de', que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 11,
+      "nota": "Disse que só pode confirmar o número exato de unidades na visita, evitando dar qualquer informação, mesmo que pudesse dar uma estimativa ou dizer que são poucas unidades.",
+      "categoria": "nao-ofereceu-alternativas"
+    },
+    {
+      "origem": "2026.08-v25-investidor-objetivo",
+      "turno": 12,
+      "nota": "Repetiu que o valor varia conforme unidade e condições, sem informar o preço 'a partir de', que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-muda-a-restricao",
+      "turno": 9,
+      "nota": "Respondeu apenas com '--- Quer que eu mande também as fotos para você conhecer melhor?', sem contextualizar, o que parece um erro de sistema ou resposta incompleta.",
+      "categoria": "falta-de-contexto-ou-personalizacao"
+    },
+    {
+      "origem": "2026.08-v25-muda-a-restricao",
+      "turno": 10,
+      "nota": "Pediu para o cliente contar mais sobre o que procura, mesmo já estando claro que o cliente quer mais opções de 1 dormitório, o que pode soar como falta de atenção ao histórico da conversa.",
+      "categoria": "falta-de-contexto-ou-personalizacao"
+    },
+    {
+      "origem": "2026.08-v25-muda-a-restricao",
+      "turno": 11,
+      "nota": "Perguntou novamente quantos dormitórios o cliente precisa, apesar do cliente já ter repetido várias vezes que quer 1 dormitório, demonstrando falta de acompanhamento do contexto.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-muda-a-restricao",
+      "turno": 12,
+      "nota": "Mudou abruptamente o foco para agendar uma visita sem responder à solicitação do cliente por mais opções de 1 dormitório, ignorando o pedido direto do cliente.",
+      "categoria": "mudanca-abrupta-de-assunto"
+    },
+    {
+      "origem": "2026.08-v25-pergunta-se-e-robo-no-meio",
+      "turno": 3,
+      "nota": "Evitou responder diretamente se é um robô, desviando para o papel de assistente digital e repetindo oferta de fotos e link.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-pergunta-se-e-robo-no-meio",
+      "turno": 4,
+      "nota": "Novamente evitou responder diretamente à pergunta se é um robô, repetindo a apresentação como assistente digital e insistindo na oferta de fotos e link.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-pergunta-se-e-robo-no-meio",
+      "turno": 5,
+      "nota": "Ignorou a reclamação do cliente sobre não responder e mudou de assunto para qualificação sem esclarecer a dúvida anterior.",
+      "categoria": "mudanca-abrupta-de-assunto"
+    },
+    {
+      "origem": "2026.08-v25-pressa-de-quinze-dias",
+      "turno": 6,
+      "nota": "Informou detalhes de tipologia (dormitórios, suítes, vagas) de cada empreendimento, mas não informou o preço 'a partir de', que é permitido pelo catálogo.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-pressa-de-quinze-dias",
+      "turno": 7,
+      "nota": "Repetiu que o valor varia por unidade e condição de pagamento, mas não informou o preço 'a partir de', que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-pressa-de-quinze-dias",
+      "turno": 8,
+      "nota": "Repetiu que o valor varia por unidade, andar e condições de pagamento, mas não informou o preço 'a partir de', que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-pressa-de-quinze-dias",
+      "turno": 9,
+      "nota": "Repetiu que o valor varia por unidade e condições, mas não informou o preço 'a partir de', que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-pressa-de-quinze-dias",
+      "turno": 11,
+      "nota": "Repetiu que o valor varia por unidade e condições de pagamento, mas não informou o preço 'a partir de', que é permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-pressa-de-quinze-dias",
+      "turno": 12,
+      "nota": "Ignorou o pedido do cliente por preços e fotos, e desviou para agendamento de visita sem responder à solicitação.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 1,
+      "nota": "Negou compartilhar informações básicas (valor 'a partir de' e metragem) que poderia fornecer, insistindo na visita e no envio de link, sem tentar ao menos dar um valor inicial do catálogo.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 2,
+      "nota": "Não informou o valor 'a partir de' nem a menor metragem disponível, mesmo sendo permitido, e repetiu a necessidade de visita e envio de link, ignorando o pedido direto do cliente.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 3,
+      "nota": "Reforçou que só apresenta valores na visita, sem dar nenhuma faixa de preço ou metragem, e desviou para qualificação sem entregar o mínimo solicitado.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 4,
+      "nota": "Repetiu que não pode passar informações sem saber a região, mesmo após o cliente dizer que não é da região e só quer dados, e não ofereceu nenhuma informação objetiva.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 5,
+      "nota": "Ignorou o pedido direto do cliente por valor e metragem, insistindo para o cliente informar região, sem entregar nenhum dado do catálogo.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 6,
+      "nota": "Repetiu que não pode passar informações sem dados do cliente, sem oferecer valor 'a partir de' ou metragem mínima, e não avançou na conversa.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 7,
+      "nota": "Repetiu a negativa de passar informações, insistindo na visita e qualificação, sem dar nenhum dado objetivo do catálogo.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 8,
+      "nota": "Repetiu que só pode passar informações na visita, sem fornecer valor 'a partir de' ou metragem mínima, e insistiu em agendar visita mesmo após o cliente recusar várias vezes.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 9,
+      "nota": "Repetiu que não pode passar informações sem dados do cliente, não forneceu nenhum valor ou metragem, e sugeriu que o cliente mude de ideia, sem avançar.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 10,
+      "nota": "Repetiu a negativa de passar informações, insistindo na visita, sem fornecer nenhum dado objetivo do catálogo.",
+      "categoria": "insistencia-repetitiva"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 11,
+      "nota": "Ignorou o pedido direto do cliente e voltou a tentar qualificar (dormitórios), sem entregar nenhum dado solicitado.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-quer-tudo-pelo-zap",
+      "turno": 12,
+      "nota": "Repetiu que não pode passar valor e metragem sem qualificação, sem oferecer nenhuma informação objetiva do catálogo, mesmo após múltiplos pedidos diretos.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-quer-visitar-sabado",
+      "turno": 4,
+      "nota": "Enviou plantas do apartamento sem o cliente ter solicitado, mesmo após o cliente ter dito que não queria nada além do pedido original."
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 3,
+      "nota": "Não informou o valor 'a partir de' do catálogo, apenas disse que varia por unidade e condição, o que não é o padrão permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 3,
+      "nota": "Disse que só conversaria sobre condições de pagamento na visita, quando poderia ao menos citar o valor inicial do catálogo.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 4,
+      "nota": "Repetiu que só trata de valor na visita, sem informar o valor 'a partir de' permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 4,
+      "nota": "Afirmou que as fotos enviadas incluem o salão gourmet, mas não confirmou se realmente enviou uma foto específica do salão gourmet, o que o cliente pediu várias vezes.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 5,
+      "nota": "Novamente não informou o valor 'a partir de' do catálogo, apenas repetiu que varia por unidade, andar e condição de pagamento.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 6,
+      "nota": "Repetiu que só detalha valor na visita, sem citar o valor 'a partir de' do catálogo.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 7,
+      "nota": "Repetiu a resposta sobre valor ser variável e só detalhar na visita, sem citar o valor 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 8,
+      "nota": "Repetiu que o valor é variável e só detalha na visita, sem citar o valor 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 9,
+      "nota": "Repetiu que o valor é variável conforme unidade e condições, sem citar o valor 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 10,
+      "nota": "Ignorou o pedido de valor e desviou para perguntar o que o cliente procura, sem citar o valor 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 11,
+      "nota": "Repetiu que o valor varia por unidade, andar e condição, sem citar o valor 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-rajada-curta-e-seca",
+      "turno": 12,
+      "nota": "Repetiu que o valor varia conforme unidade e condições, sem citar o valor 'a partir de'.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-sem-perfil-de-renda",
+      "turno": 2,
+      "nota": "Disse que o valor varia por unidade e condição de pagamento, mas não informou o preço 'a partir de' conforme permitido pelo catálogo.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-sem-perfil-de-renda",
+      "turno": 3,
+      "nota": "Repetiu que o valor varia conforme unidade e condições, mas novamente não informou o valor 'a partir de' permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-sem-perfil-de-renda",
+      "turno": 4,
+      "nota": "Mais uma vez, não informou o valor 'a partir de', apenas repetiu que varia por unidade e condição de pagamento.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-sem-perfil-de-renda",
+      "turno": 5,
+      "nota": "Reforçou que o valor varia por unidade, andar e condição de pagamento, mas não informou o valor 'a partir de' permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-sem-perfil-de-renda",
+      "turno": 6,
+      "nota": "Repetiu que o valor depende da unidade e condições, sem informar o valor 'a partir de' permitido.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-sem-perfil-de-renda",
+      "turno": 7,
+      "nota": "Não informou o valor 'a partir de' e repetiu a informação genérica sobre localização, sem detalhar endereços ou proximidades.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-sem-perfil-de-renda",
+      "turno": 8,
+      "nota": "Repetiu que o valor exato varia, sem informar o valor 'a partir de' permitido e não detalhou localização de cada empreendimento.",
+      "categoria": "nao-informou-dado-permitido"
+    },
+    {
+      "origem": "2026.08-v25-sem-perfil-de-renda",
+      "turno": 9,
+      "nota": "Ignorou a pergunta sobre valor e localização, mudando abruptamente para oferta de visita sem responder ao que foi solicitado.",
+      "categoria": "mudanca-abrupta-de-assunto"
+    },
+    {
+      "origem": "2026.08-v25-sem-perfil-de-renda",
+      "turno": 10,
+      "nota": "Ofereceu agendamento de visita sem responder sobre valor 'a partir de' e localização específica de cada empreendimento.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-sem-perfil-de-renda",
+      "turno": 11,
+      "nota": "Ignorou novamente o pedido de valor e localização, desviando para perguntar sobre dormitórios sem responder ao que foi solicitado.",
+      "categoria": "nao-respondeu-a-pergunta"
+    },
+    {
+      "origem": "2026.08-v25-sem-perfil-de-renda",
+      "turno": 12,
+      "nota": "Não informou o valor 'a partir de' e não detalhou a localização de cada empreendimento, apenas repetiu informações genéricas.",
+      "categoria": "nao-informou-dado-permitido"
+    }
+  ],
+  "linhas": [
+    {
+      "categoria": "nao-respondeu-a-pergunta",
+      "definicao": "Usar quando a assistente ignora pedidos ou perguntas diretas do cliente, desviando o assunto ou não fornecendo a informação solicitada. Não usar quando a resposta foi dada, mas de forma incompleta ou imprecisa.",
+      "ocorrencias": 18,
+      "conversas": 10,
+      "fatia": 13.4,
+      "exemplos": [
+        "2026.08-v25-decide-com-a-esposa t10: Ignorou o pedido direto do cliente pelas plantas e desviou o assunto para uma pergunta genérica sobre o que o cliente procura.",
+        "2026.08-v25-decide-com-a-esposa t11: Ignorou novamente o pedido direto do cliente pelas plantas e fez uma pergunta sobre dormitórios, sem atender à solicitação.",
+        "2026.08-v25-educado-que-enrola t6: Repetiu que vai checar sobre a churrasqueira, mas não trouxe nenhuma novidade ou tentativa de resposta concreta, apenas desviou para metragem e link."
+      ]
+    },
+    {
+      "categoria": "insistencia-repetitiva",
+      "definicao": "Usar quando a assistente repete perguntas ou ofertas já respondidas ou recusadas pelo cliente, sem adaptar a abordagem. Não usar quando há apenas uma repetição pontual ou necessária para esclarecimento.",
+      "ocorrencias": 22,
+      "conversas": 8,
+      "fatia": 16.4,
+      "exemplos": [
+        "2026.08-v25-confuso-entre-dois t11: Repetiu a pergunta sobre quantidade de dormitórios pela terceira vez, mesmo já tendo recebido essa resposta do cliente, mostrando insistência desnecessária e falta de personalização.",
+        "2026.08-v25-educado-que-enrola t7: Repetiu que não há opção confirmada de churrasqueira e novamente disse que vai confirmar, sem trazer resposta nova, e insistiu em agendar visita mesmo após o cliente recusar.",
+        "2026.08-v25-educado-que-enrola t11: Repetiu que não há churrasqueira confirmada e que vai confirmar com a construtora, sem trazer resposta definitiva ou encaminhamento concreto."
+      ]
+    },
+    {
+      "categoria": "nao-informou-dado-permitido",
+      "definicao": "Usar quando a assistente deixa de fornecer informações básicas permitidas pelo catálogo (ex: valor 'a partir de', metragem), mesmo após solicitação clara. Não usar quando a informação não é permitida ou não foi solicitada.",
+      "ocorrencias": 58,
+      "conversas": 7,
+      "fatia": 43.3,
+      "exemplos": [
+        "2026.08-v25-familia-tres-dorm t3: Não informou o preço 'a partir de' do catálogo, que é permitido, e ficou apenas dizendo que o valor varia.",
+        "2026.08-v25-familia-tres-dorm t4: Repetiu que o valor varia sem dar o preço 'a partir de', que poderia ser informado.",
+        "2026.08-v25-familia-tres-dorm t5: Insistiu em não dar nenhum valor, mesmo podendo informar o preço 'a partir de' do catálogo."
+      ]
+    },
+    {
+      "categoria": "nao-ofereceu-alternativas",
+      "definicao": "Usar quando a assistente não busca alternativas, encaminhamentos ou soluções diante de limitações, encerrando o assunto sem tentar ajudar. Não usar quando alternativas foram sugeridas, mesmo que insuficientes.",
+      "ocorrencias": 12,
+      "conversas": 6,
+      "fatia": 9,
+      "exemplos": [
+        "2026.08-v25-confuso-entre-dois t2: Disse que não trabalha diretamente com o More Aldeia, mas não tentou buscar nenhuma informação mínima ou direcionar o cliente para alguém que possa ajudar, encerrando o assunto de forma abrupta.",
+        "2026.08-v25-confuso-entre-dois t3: Ignorou o pedido do cliente por fotos e informações do More Aldeia e continuou insistindo apenas no Terra Alta, sem oferecer alternativas ou demonstrar esforço para ajudar.",
+        "2026.08-v25-confuso-entre-dois t4: Repetiu que não tem informações do More Aldeia sem tentar buscar alternativas para ajudar o cliente, como sugerir contato com outro especialista ou direcionar para um canal onde possa obter informações."
+      ]
+    },
+    {
+      "categoria": "mudanca-abrupta-de-assunto",
+      "definicao": "Usar quando a assistente muda de tema sem transição ou sem resolver a solicitação anterior, causando quebra na experiência do cliente. Não usar quando a mudança é justificada ou feita após encerrar adequadamente o tópico anterior.",
+      "ocorrencias": 7,
+      "conversas": 6,
+      "fatia": 5.2,
+      "exemplos": [
+        "2026.08-v25-elogiou-o-terra-alta t7: Mudou abruptamente de assunto para qualificação sem reconhecer a insatisfação do cliente e sem transição adequada.",
+        "2026.08-v25-escreve-errado t9: Mudou abruptamente para convite de visita sem resolver a solicitação do cliente sobre a planta, ignorando a frustração expressa.",
+        "2026.08-v25-escreve-errado t11: Mudou o foco para qualificação (dormitórios) sem resolver a solicitação insistente do cliente sobre a planta, ignorando o pedido direto."
+      ]
+    },
+    {
+      "categoria": "falta-de-contexto-ou-personalizacao",
+      "definicao": "Usar quando a assistente não demonstra atenção ao histórico da conversa, não reconhece frustração, insatisfação ou repete respostas automáticas sem adaptação. Não usar quando há tentativa de personalização, mesmo que insuficiente.",
+      "ocorrencias": 9,
+      "conversas": 4,
+      "fatia": 6.7,
+      "exemplos": [
+        "2026.08-v25-confuso-entre-dois t8: Repetiu a pergunta sobre quantidade de dormitórios, mesmo após o cliente já ter respondido anteriormente que não sabia, demonstrando falta de atenção ao histórico da conversa.",
+        "2026.08-v25-elogiou-o-terra-alta t5: Repetiu a oferta do link da página e não reconheceu a frustração do cliente.",
+        "2026.08-v25-elogiou-o-terra-alta t8: Usou resposta automática e truncada ('---'), sem personalização ou explicação, e sugeriu visita ao decorado sem tratar a insatisfação do cliente."
+      ]
+    },
+    {
+      "categoria": "informacao-proibida-ou-incorreta",
+      "definicao": "Usar quando a assistente fornece informações que não deveria (ex: condições de pagamento não permitidas) ou confunde empreendimentos. Não usar para respostas incompletas ou evasivas.",
+      "ocorrencias": 8,
+      "conversas": 4,
+      "fatia": 6,
+      "exemplos": [
+        "2026.08-v25-confuso-entre-dois t6: Perguntou sobre faixa de valor, o que não é permitido, já que não pode pedir simulação ou detalhar valores além do 'a partir de'.",
+        "2026.08-v25-confuso-entre-dois t7: Repetiu a pergunta sobre faixa de valor, novamente solicitando informação que não deveria pedir.",
+        "2026.08-v25-decide-com-a-esposa t5: Mencionou condições flexíveis, entrada parcelada e financiamento pela construtora, o que não é permitido."
+      ]
+    }
+  ]
+}

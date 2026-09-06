@@ -1,0 +1,70 @@
+confuso-entre-dois · rodada 3 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me fala do terra alta e do more aldeia, qual compensa mais
+[1] Sofia:   O Terra Alta fica no Jardim Tupanci, Barueri, com apartamentos de 1 dormitório, 52m², 1 suíte e 2 vagas.
+É uma boa opção para quem busca conforto e praticidade na região.
+O More Aldeia não está no meu catálogo, mas posso te mostrar o Terra Alta com detalhes e condições.
+Quer que eu te envie as fotos do Terra Alta para você conhecer melhor?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+
+[2] Cliente: mas e o more aldeia, tem info?
+              tem mais metragem que o terra alta?
+[2] Sofia:   O More Aldeia não está no meu catálogo, então não tenho dados oficiais sobre metragem ou valores.
+O Terra Alta tem 52m², 1 dormitório, 1 suíte e 2 vagas, ideal para quem busca conforto e praticidade.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-3-big-75c8b2df2fb9cedf8deb0b5002c9a935.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-4-big-847e1f55bb4b7eee7f216ebbce93f7f0.jpeg
+
+[3] Cliente: mas e as fotos do more aldeia?
+              não tem nada disso no site?
+[3] Sofia:   O More Aldeia não está no meu catálogo, então não tenho fotos oficiais para enviar.
+Para conhecer o Terra Alta, posso mandar as fotos que tenho e o link da página com tudo detalhado.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-5-big-b8697f666d01bb4d7c1d9b9651b07d8b.jpeg
+
+[4] Cliente: mas como assim não tem nada do more aldeia?
+              quero comparar os dois!
+[4] Sofia:   O More Aldeia não é um imóvel do nosso catálogo, por isso não tenho informações oficiais ou fotos para enviar.
+Posso ajudar a comparar com o Terra Alta, que tem 52m², 1 dormitório, suíte e 2 vagas, no Jardim Tupanci, Barueri.
+
+[5] Cliente: não estou pedindo só do terra alta
+              quero info do more aldeia
+[5] Sofia:   O More Aldeia não está no meu catálogo, então não tenho informações oficiais para compartilhar.
+Posso ajudar a encontrar algo que atenda suas necessidades aqui em Barueri.
+Quer me contar o que mais te interessa no More Aldeia? Região, metragem, ou algo específico?
+
+[6] Cliente: como não tem info? quero comparar tudo!
+              não faz sentido isso
+[6] Sofia:   Entendo seu interesse em comparar, mas não tenho dados oficiais do More Aldeia.
+Posso ajudar a encontrar algo em Barueri que atenda o que você busca.
+Me conta o que mais te interessa no More Aldeia, assim vejo o que temos para comparar.
+
+[7] Cliente: mas quero saber sobre o more aldeia!
+              não to pedindo outra coisa!
+[7] Sofia:   Posso ajudar com o Terra Alta, que é uma ótima opção no Jardim Tupanci.
+Quer que eu te envie o link da página com todos os detalhes?
+
+[8] Cliente: não quero saber do terra alta
+              quero info do more aldeia
+[8] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[9] Cliente: não quero contar nada do que procuro
+              quero comparar os dois, manda info do more aldeia
+[9] Sofia:   O More Aldeia não é do nosso catálogo, então não tenho dados oficiais para enviar.
+Posso ajudar com imóveis em Barueri que atendam seu perfil, se quiser.
+
+[10] Cliente: não entendi, não é possível ver nada do more aldeia?
+              quero comparar os dois, isso é frustrante!
+[10] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[11] Cliente: não quero falar de dormitórios
+              quero info do more aldeia!
+[11] Sofia:   O Terra Alta tem 1 dormitório, 1 suíte e 2 vagas, com 52m².
+É uma opção prática e confortável no Jardim Tupanci, Barueri.
+Posso te enviar o link da página com todos os detalhes e as fotos que tenho.
+Quer conhecer o decorado para sentir o espaço pessoalmente?
+Os valores variam conforme a unidade, o andar e a forma de pagamento — prefiro te passar a condição certa para o seu caso.
+
+[12] Cliente: não quero saber do terra alta
+              quero info do more aldeia!
+[12] Sofia:   Quer que eu te mostre opções que temos por aqui?

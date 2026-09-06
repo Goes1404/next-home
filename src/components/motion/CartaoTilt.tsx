@@ -18,6 +18,23 @@ import { useCamada } from "./Camada";
  * Tudo em transform/clip-path — nenhuma propriedade que peça relayout. Com
  * `prefers-reduced-motion` o componente é uma div comum: o conteúdo aparece
  * inteiro, sem cortina e sem tilt.
+ *
+ * ## O nó escalado vive dentro de um corte de LAYOUT (04/09/2026)
+ *
+ * O zoom de entrada (1.18 → 1) escalava o `firstElementChild` — sem camada,
+ * o próprio `<a>` do cartão, em fluxo. `clip-path` esconde a PINTURA, não o
+ * layout: transform não muda a caixa, mas estende a área rolável, e um
+ * cartão de 328px a 1.18 contava 387. Como o `scale` é gravado na montagem e
+ * só volta a 1 quando o cartão entra na tela, todo cartão abaixo da dobra
+ * deixava a home 14-19px mais larga que o celular — o navegador afastava a
+ * câmera e deixava arrastar de lado. Medido em 360/390/412 com JS rodando.
+ *
+ * Hoje o zoom mira um wrapper interno próprio e o nó do tilt tem
+ * `overflow-clip`: `clip` (não `hidden`) não vira contêiner de rolagem, não
+ * cria containing block para `fixed` e não é propriedade de agrupamento —
+ * o `preserve-3d` sobrevive. E o corte é no espaço do próprio nó, então gira
+ * junto com o tilt em vez de raspar canto. Como o `clip-path: inset(0)` já
+ * cortava a pintura à caixa, nada muda na tela; muda o que a página mede.
  */
 export function CartaoTilt({
   children,
@@ -40,9 +57,13 @@ export function CartaoTilt({
   velocidadeCamada?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const interno = useRef<HTMLDivElement>(null);
+  // Dois refs, um por ramo: registrar o wrapper do zoom como camada (mesmo a
+  // velocidade 0) faria o controlador escrever `y: 0` nele todo frame, por
+  // cima do `scale` do GSAP.
+  const camada = useRef<HTMLDivElement>(null);
+  const zoom = useRef<HTMLDivElement>(null);
 
-  useCamada(interno, { velocidade: velocidadeCamada });
+  useCamada(camada, { velocidade: velocidadeCamada });
 
   useEffect(() => {
     const el = ref.current;
@@ -57,22 +78,20 @@ export function CartaoTilt({
     gsap.registerPlugin(ScrollTrigger);
 
     /**
-     * O zoom de entrada é PULADO quando há camada: ali o primeiro filho é o
-     * nó da camada, cuja `scale-110` é a folga contra borda vazia. Animar a
-     * escala dele até 1 apagaria essa folga para sempre, e o deslocamento
-     * passaria a mostrar o fundo da moldura. A cortina do `clip-path`
-     * continua, que é o que dá a entrada.
+     * O zoom de entrada é PULADO quando há camada: o nó da camada tem a
+     * `scale-110` como folga contra borda vazia, e animar a escala dele até 1
+     * apagaria essa folga para sempre. Sem camada, o alvo é o wrapper `zoom`
+     * — nunca um filho arbitrário: é o único jeito de garantir que o nó
+     * escalado está dentro do `overflow-clip` do próprio cartão.
      */
-    const primeiroFilho = velocidadeCamada
-      ? null
-      : (el.firstElementChild as HTMLElement | null);
+    const alvoZoom = velocidadeCamada ? null : zoom.current;
 
     const contexto = gsap.context(() => {
       // Assume a opacidade ANTES de soltar a classe (contrato do Reveal): a
       // cortina do clip-path é quem esconde daqui em diante.
       gsap.set(el, { opacity: 1, clipPath: "inset(100% 0% 0% 0%)" });
       el.classList.remove("gsap-pending");
-      if (primeiroFilho) gsap.set(primeiroFilho, { scale: 1.18 });
+      if (alvoZoom) gsap.set(alvoZoom, { scale: 1.18 });
 
       const tl = gsap.timeline({
         scrollTrigger: { trigger: el, start: "top 88%", once: true },
@@ -80,8 +99,8 @@ export function CartaoTilt({
       });
 
       tl.to(el, { clipPath: "inset(0% 0% 0% 0%)", duration: 1.05, ease: "power3.inOut" }, 0);
-      if (primeiroFilho) {
-        tl.to(primeiroFilho, { scale: 1, duration: 1.4, ease: "power2.out" }, 0);
+      if (alvoZoom) {
+        tl.to(alvoZoom, { scale: 1, duration: 1.4, ease: "power2.out" }, 0);
       }
     }, el);
 
@@ -132,17 +151,20 @@ export function CartaoTilt({
       ref={ref}
       // `opacity-0` inicial pelo mesmo motivo do `.gsap-pending`: sem JS a
       // regra `.no-js`/`.motion-off` do globals.css devolve a opacidade.
-      className={`gsap-pending group/tilt relative [transform-style:preserve-3d] [perspective:1000px] ${className ?? ""}`}
+      // `overflow-clip` é o corte de LAYOUT que a cortina de clip-path não
+      // dá: sem ele, o filho a 1.18 alargava a página (ver cabeçalho).
+      className={`gsap-pending group/tilt relative overflow-clip [transform-style:preserve-3d] [perspective:1000px] ${className ?? ""}`}
     >
-      {/* Com camada, o conteúdo ganha um nó próprio (e a folga do `scale-110`
-          contra borda vazia). Sem ela, os filhos ficam onde sempre estiveram
-          — inclusive para o `firstElementChild` que a cortina amplia. */}
+      {/* O conteúdo SEMPRE ganha um nó próprio. Com camada, o nó absoluto com a
+          folga do `scale-110`; sem ela, o wrapper em fluxo que a entrada
+          amplia — sem `will-change-transform`, que criaria containing block
+          para filhos arbitrários (o GSAP promove durante o tween). */}
       {velocidadeCamada ? (
-        <div ref={interno} className="absolute inset-0 scale-110 will-change-transform">
+        <div ref={camada} className="absolute inset-0 scale-110 will-change-transform">
           {children}
         </div>
       ) : (
-        children
+        <div ref={zoom}>{children}</div>
       )}
       {/* Brilho que segue o cursor. `pointer-events-none` para nunca roubar o
           clique do botão que abre o Lightbox. */}

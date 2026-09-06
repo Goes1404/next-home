@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { avaliarInteracao } from "./acoes";
 
 /*
@@ -50,17 +51,16 @@ const dataHora = new Intl.DateTimeFormat("pt-BR", {
 
 export function RevisaoRespostas({ itens }: { itens: ItemRevisao[] }) {
   const [pendentes, setPendentes] = useState(itens);
-  const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState<string | null>(null);
+  const { falhar } = useAvisos();
 
   if (pendentes.length === 0) return null;
 
   function avaliar(item: ItemRevisao, nota: "boa" | "ruim") {
-    setErro(null);
     setSalvando(item.interacaoId);
     void avaliarInteracao(item.interacaoId, nota).then((resultado) => {
       setSalvando(null);
-      if (resultado.erro) setErro(resultado.erro);
+      if (resultado.erro) falhar(resultado.erro);
       else setPendentes((atuais) => atuais.filter((p) => p.interacaoId !== item.interacaoId));
     });
   }
@@ -74,14 +74,8 @@ export function RevisaoRespostas({ itens }: { itens: ItemRevisao[] }) {
       </h2>
       <p className="text-fluid-xs text-apoio mt-1">
         As que já têm sinal de problema vêm primeiro — o cliente repetiu a pergunta, pediu para
-        falar com gente, ou você entrou corrigindo. Cada 👎 vira caso de teste do próximo ajuste.
+        falar com gente, ou você entrou corrigindo. Cada 👎 ensina a IA a não repetir aquilo.
       </p>
-
-      {erro && (
-        <p role="alert" className="text-fluid-sm text-perigo mt-3">
-          {erro}
-        </p>
-      )}
 
       <ul className="mt-4 space-y-3">
         {pendentes.map((item) => (
@@ -127,7 +121,7 @@ export function RevisaoRespostas({ itens }: { itens: ItemRevisao[] }) {
                 disabled={salvando === item.interacaoId}
                 className="border-linha text-apoio hover:text-perigo flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-sm transition-colors disabled:opacity-60"
               >
-                👎 Ruim — vira caso de teste
+                👎 Ruim
               </button>
             </div>
           </li>

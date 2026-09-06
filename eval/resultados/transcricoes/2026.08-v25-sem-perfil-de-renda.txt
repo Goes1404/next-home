@@ -1,0 +1,75 @@
+sem-perfil-de-renda · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria sair do aluguel, pago 900 hoje, da pra financiar
+[1] Sofia:   Sair do aluguel é um passo importante. Em qual região de Barueri você procura o imóvel?
+Trabalho com opções em Alphaville, Aldeia e Parque Viana.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[2] Cliente: não sei onde é
+              qual o valor
+              tem foto
+[2] Sofia:   Entendo a dúvida sobre valor, varia por unidade e condição de pagamento.
+Tenho fotos para te mostrar, vou mandar já.
+Qual região você gostaria de conhecer? Alphaville, Aldeia ou Parque Viana?
+
+[3] Cliente: não disse onde fica
+              qual o valor e onde é
+[3] Sofia:   Os imóveis que trabalho ficam em Alphaville, Aldeia e Parque Viana, em Barueri.
+O valor varia conforme unidade e condições, que apresento na visita. Vou mandar fotos para você conhecer melhor.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[4] Cliente: não entendi
+              qual o valor?
+              onde fica exatamente?
+[4] Sofia:   O valor varia por unidade e condição de pagamento, que apresento na visita.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[5] Cliente: mas qual o valor exato
+              e onde fica isso direito?
+[5] Sofia:   Sei que o valor decide, mas varia por unidade, andar e condição de pagamento.
+Posso te mostrar opções em Alphaville, Aldeia ou Parque Viana.
+Qual região te interessa mais para eu indicar o melhor?
+Assim já te envio fotos e detalhes.
+
+[6] Cliente: qual o valor exato por unidade
+              onde fica exatamente isso
+              não entendi ainda
+[6] Sofia:   O valor exato depende da unidade e condições, que apresento na visita.
+Os imóveis ficam em Alphaville, Aldeia e Parque Viana, Barueri.
+Qual dessas regiões você prefere para eu te mostrar opções e fotos?
+
+[7] Cliente: mas qual é o valor exato
+              e onde fica cada um
+[7] Sofia:   Os imóveis estão em Alphaville, Aldeia e Parque Viana, cada um com localização específica.
+Me diz qual região prefere para eu te enviar fotos e detalhes.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[8] Cliente: mas qual o valor exato
+              quero saber onde fica cada um
+[8] Sofia:   Sei que o valor exato é importante, mas varia por unidade e condições.
+Os imóveis ficam em Alphaville, Aldeia e Parque Viana, cada um com localização própria.
+Posso te enviar fotos e detalhes de cada região para facilitar sua escolha.
+Qual dessas regiões você prefere para eu começar?
+
+[9] Cliente: mas qual o valor exato
+              quero saber onde fica cada um
+[9] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[10] Cliente: mas qual o valor exato
+              quero saber onde fica cada um
+[10] Sofia:   Se quiser, podemos agendar uma visita para eu te mostrar as unidades e as condições de pagamento.
+Assim você vê de perto a localização e o padrão.
+Prefere terça às 10h ou quarta às 15h?
+
+[11] Cliente: mas e o valor exato
+              onde é cada um
+[11] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[12] Cliente: mas qual o valor exato
+              quero saber onde é cada um
+[12] Sofia:   Tenho opções em Alphaville, Aldeia e Parque Viana, cada uma com localização própria e características únicas.
+Quantos dormitórios você busca para eu te mostrar as melhores opções?
+Dá para eu te enviar fotos e detalhes das regiões para facilitar sua escolha.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna

@@ -1,0 +1,80 @@
+sem-perfil-de-renda · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria sair do aluguel, pago 900 hoje, da pra financiar
+[1] Sofia:   Sair do aluguel é um passo importante. Para começar, em qual região de Barueri você procura o imóvel?
+Assim já te mostro opções que cabem no seu perfil.
+
+[2] Cliente: não sei a região
+              qual o valor
+              tem foto
+[2] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+Para te mostrar opções, me diz: prefere pronto para morar ou na planta?
+Já te mando as fotos do que tiver interesse.
+
+[3] Cliente: pronto pra morar
+              tem foto
+              qual a localização
+[3] Sofia:   Temos opções prontas em Barueri e Osasco.
+O More Aldeia de Barueri e o Elos Barueri são ótimos, com fotos que vou te mandar agora.
+O More tem 2 dormitórios e 63m², o Elos tem 56m² e 2 dormitórios também.
+Te mandei as fotos para você conhecer melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-1-big-1fed6dfac329a4107d85c4e67b48f0b5.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-2-big-4157f723f5d95731b87a582d2da35adc.jpeg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/more-aldeia-de-bareuri-var064/foto-3-big-cc95e85e4862cc5c7044a92fc5cc2c1e.jpeg
+
+[4] Cliente: onde fica o more
+              qual o valor de entrada
+              já vi as fotos
+[4] Sofia:   O More Aldeia de Barueri fica no Jardim Iracema, Barueri.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[5] Cliente: qual o valor da entrada
+              qual a metragem
+              preciso de mais informações
+[5] Sofia:   O More Aldeia de Barueri tem 63m², 2 dormitórios com 1 suíte e 1 banheiro, além de vaga para 1 carro.
+O valor da entrada depende da unidade e forma de pagamento, que fechamos na visita.
+Quer que eu te envie o link da página com tudo detalhado?
+
+[6] Cliente: qual o valor da entrada
+              como faço pra visitar
+[6] Sofia:   O valor da entrada varia conforme a unidade e forma de pagamento, fechamos isso na visita.
+Quer conhecer o decorado para ver tudo de perto? Posso agendar para terça ou quarta.
+
+[7] Cliente: qual o valor da entrada
+              não entendi como agendar visita
+[7] Sofia:   O valor da entrada depende da unidade e da forma de pagamento, que fechamos na visita.
+Para agendar, posso reservar para terça às 10h ou quarta às 15h, qual prefere?
+
+[8] Cliente: qual o valor da entrada
+              não sei agendar visita
+[8] Sofia:   O valor da entrada é definido na visita, conforme a unidade e forma de pagamento.
+Para agendar, me diz qual dia da semana fica melhor para você?
+Assim já deixo reservado e te explico tudo pessoalmente.
+
+[9] Cliente: qual o valor da entrada
+              não pedi pra agendar
+[9] Sofia:   Se quiser, posso te mostrar o decorado para esclarecer tudo pessoalmente.
+
+[10] Cliente: qual o valor da entrada
+              não entendi nada
+              quero saber antes de visitar
+[10] Sofia:   O valor da entrada varia conforme a unidade e a forma de pagamento,
+e só fechamos isso na visita, para garantir a melhor condição para você.
+Entendo que queira clareza antes,
+por isso posso te enviar o link da página com todos os detalhes do More Aldeia de Barueri.
+Quer que eu mande para você agora? Assim já pode analisar com calma.
+
+[11] Cliente: qual o valor da entrada
+              não pedi link
+              quero saber agora
+[11] Sofia:   Posso te mostrar o decorado e explicar tudo pessoalmente,
+ou se preferir, me diz qual dia da semana fica melhor para agendar.
+
+[12] Cliente: qual o valor da entrada
+              não quero visitar agora
+              quero saber antes
+[12] Sofia:   O valor da entrada varia conforme a unidade e forma de pagamento,
+e só fechamos isso na visita para garantir a melhor condição para você.
+Posso te enviar o link da página com todos os detalhes para analisar com calma.

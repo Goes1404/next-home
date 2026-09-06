@@ -40,7 +40,7 @@ export default async function SlaPage() {
         <h1 className="text-fluid-2xl font-bold text-titulo">SLA de atendimento</h1>
         <p className="text-fluid-sm mt-1 text-apoio">Primeira resposta automática e humana nos últimos 30 dias.</p>
       </div>
-      <AbasAdmin ativa="sla" />
+      <AbasAdmin ativa="/corretor/admin/sla" />
       {error ? (
         <p className="rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-fluid-sm text-red-200">Não foi possível ler o SLA. Confirme a migration 0068.</p>
       ) : (

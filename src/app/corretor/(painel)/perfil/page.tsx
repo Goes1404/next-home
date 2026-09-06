@@ -4,6 +4,7 @@ import { EditorAvatar } from "./EditorAvatar";
 import { FormularioPerfil } from "./FormularioPerfil";
 import { FundoLink } from "./FundoLink";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Meu perfil" };
 
@@ -17,17 +18,14 @@ export default async function PerfilPage() {
     <div className="max-w-2xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-fluid-2xl text-titulo">Meu perfil</h1>
-          <p className="text-fluid-sm mt-2 text-apoio">
-            O que o cliente vê na sua{" "}
+          <CabecalhoDeTela secao="Conta" titulo="Meu perfil" descricao={<>O que o cliente vê na sua{" "}
             <Link
               href={`/corretores/${corretor.slug}`}
               className="text-acento-suave underline-offset-4 hover:underline"
             >
               página pública
             </Link>
-            .
-          </p>
+            .</>} />
         </div>
         {/* Senha saiu do menu (roadmap: 7 destinos — "Conta" cobre as duas). */}
         <Link
@@ -44,7 +42,7 @@ export default async function PerfilPage() {
           <span className="rounded-full bg-acento-lavado border border-acento-linha px-2.5 py-0.5 text-fluid-xs font-semibold text-acento-suave">
             CRECI {corretor.creci}
           </span>
-          <span className="rounded-full bg-etapa-azul-lavado border border-etapa-azul-linha px-2.5 py-0.5 text-fluid-xs font-medium text-etapa-azul">
+          <span className="rounded-full bg-ok-lavado border border-ok-linha px-2.5 py-0.5 text-fluid-xs font-medium text-ok">
             Perfil Público Ativo
           </span>
         </div>
@@ -53,11 +51,11 @@ export default async function PerfilPage() {
         </p>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-linha bg-superficie p-6 sm:p-7">
+      <div className="cartao mt-6 p-6 sm:p-7">
         <FundoLink fundoTipo={corretor.fundoTipo} />
       </div>
 
-      <div className="mt-6 rounded-2xl border border-linha bg-superficie p-6 sm:p-7">
+      <div className="cartao mt-6 p-6 sm:p-7">
         <FormularioPerfil corretor={corretor} />
       </div>
     </div>

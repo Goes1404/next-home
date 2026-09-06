@@ -1,0 +1,63 @@
+insiste-no-desconto · rodada 1 · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000.
+O valor exato e condições de pagamento fechamos na visita. Quer conhecer o decorado para entender melhor?
+
+[2] Cliente: mas e o desconto?
+              pode me passar o valor certinho?
+[2] Sofia:   O valor do imóvel começa em R$ 249.000, o desconto e o valor exato fechamos na visita com o corretor.
+Posso agendar para sábado de manhã para te mostrar tudo?
+
+[3] Cliente: mas e o desconto, hein?
+              R$ 249 mil é muito caro!
+[3] Sofia:   O desconto e condições fechamos na visita, que é onde tudo fica claro e personalizado. Posso agendar para sábado de manhã para te mostrar o decorado e as opções?
+Os valores variam conforme a unidade, o andar e a forma de pagamento — prefiro te passar a condição certa para o seu caso.
+
+[4] Cliente: desconto tem que ter, né?
+              quero saber do valor real!
+[4] Sofia:   O valor real depende da unidade, andar e forma de pagamento, e o desconto é negociado na visita com o corretor.
+Confirmo com o corretor e te trago essa informação.
+Enquanto isso, posso te mostrar as opções que temos no Munhoz Júnior, a partir de R$ 249.000.
+
+[5] Cliente: mas não dá pra passar um valor real agora?
+              quero saber do desconto já!
+[5] Sofia:   O valor real e o desconto são definidos na visita, pois dependem da unidade e forma de pagamento.
+Confirmo com o corretor e te trago essa informação.
+
+[6] Cliente: mas não dá pra saber nada mesmo?
+              não entendi essa de visita primeiro
+[6] Sofia:   Entendo sua dúvida, é importante ter clareza.
+Para te ajudar melhor, em qual região de Barueri você procura o imóvel?
+
+[7] Cliente: não é região, é valor!
+              quero saber do desconto agora!
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: não entendi ainda, quanto vai ficar no final?
+              tô esperando um valor real!
+[8] Sofia:   Compreendo que o valor é essencial para você.
+Para alinhar tudo certinho, você prefere imóvel pronto para morar ou na planta?
+
+[9] Cliente: não interessa, quero saber do desconto!
+              o valor é muito alto, quero um real agora!
+[9] Sofia:   O valor do imóvel começa em R$ 249.000, o desconto e o valor exato só fechamos na visita com o corretor.
+Posso agendar para quarta às 15h ou quinta às 10h para te mostrar tudo?
+
+[10] Cliente: mas e o preço real?
+              quero um valor agora, qual é?
+[10] Sofia:   Entendo sua urgência em ter um valor real e o desconto.
+O valor exato depende da unidade e forma de pagamento, e só fechamos na visita.
+Me diz uma coisa: você prefere imóvel pronto para morar ou na planta?
+
+[11] Cliente: não quero saber de visita, quero preço já!
+              não dá pra passar nada disso agora?
+[11] Sofia:   Compreendo sua urgência, mas o valor exato só fechamos na visita.
+Para ajudar, quantos dormitórios você precisa no imóvel?
+
+[12] Cliente: quero saber do desconto, sério!
+              não tô entendendo, quanto vai ficar mesmo?
+[12] Sofia:   O valor do imóvel começa em R$ 249.000.
+O desconto e o valor final só fechamos na visita, pois dependem da unidade e forma de pagamento.
+Confirmo com o corretor e te trago.

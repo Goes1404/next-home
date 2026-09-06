@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { Clock, RotateCcw, Trash2, Zap } from "lucide-react";
 import {
   liberarEnvioAgora,
@@ -12,7 +13,7 @@ import {
 } from "../acoes";
 
 /**
- * "Como está a fila", em português de gente (roadmap F4).
+ * "Como estão os envios", em português de gente (roadmap F4).
  *
  * O painel antigo mostrava três números crus — pendentes, cota, próximo
  * envio — mais dois botões perigosos sempre à vista. Cota, fila e instância
@@ -45,8 +46,7 @@ export function StatusFila({
 }) {
   const [status, setStatus] = useState<StatusDisparo | null>(statusInicial);
   const [mostrarAvancado, setMostrarAvancado] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
+  const { avisar, falhar } = useAvisos();
   const [processando, iniciarProcessamento] = useTransition();
   const [limpando, iniciarLimpeza] = useTransition();
   const [resetando, iniciarReset] = useTransition();
@@ -62,21 +62,19 @@ export function StatusFila({
   }
 
   function empurrar() {
-    setErro(null);
     iniciarProcessamento(async () => {
       const resultado = await processarFilaAgora();
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       await atualizar();
-      setFeedback(
+      avisar(
         resultado.processados === 0
-          ? "Nada vencido neste instante — a fila segue no ritmo dela."
+          ? "Nada para enviar neste instante — as mensagens seguem saindo sozinhas."
           : `${resultado.enviados} mensagem${resultado.enviados === 1 ? "" : "s"} enviada${resultado.enviados === 1 ? "" : "s"} agora.` +
-              (resultado.restantes > 0 ? ` Faltam ${resultado.restantes}.` : " Fila zerada."),
+              (resultado.restantes > 0 ? ` Faltam ${resultado.restantes}.` : " Não sobrou nenhuma."),
       );
-      setTimeout(() => setFeedback(null), 8000);
     });
   }
 
@@ -93,21 +91,18 @@ export function StatusFila({
     ) {
       return;
     }
-
-    setErro(null);
     iniciarLimpeza(async () => {
       const resultado = await limparFilaDisparo();
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       await atualizar();
-      setFeedback(
+      avisar(
         resultado.removidos === 0
-          ? "A fila já estava vazia."
-          : `Fila limpa: ${resultado.removidos} envio(s) removido(s).`,
+          ? "Não havia nada programado."
+          : `${resultado.removidos} mensagem(ns) programada(s) cancelada(s).`,
       );
-      setTimeout(() => setFeedback(null), 8000);
     });
   }
 
@@ -119,24 +114,21 @@ export function StatusFila({
   function resetarCota() {
     if (
       !confirm(
-        "Resetar a cota devolve os disparos do dia e solta qualquer bloqueio.\n\n" +
-          "A cota existe para proteger seu número: volume alto num número novo é o " +
-          "caminho mais curto para o WhatsApp bloquear a linha. Use só em teste. Confirma?",
+        "Isto devolve os envios de hoje e solta qualquer bloqueio.\n\n" +
+          "O limite diário existe para proteger o seu número: volume alto num número " +
+          "novo é o caminho mais curto para o WhatsApp bloquear a linha. Confirma?",
       )
     ) {
       return;
     }
-
-    setErro(null);
     iniciarReset(async () => {
       const resultado = await resetarCotaDisparo();
       if (resultado.erro) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       await atualizar();
-      setFeedback("Cota do dia zerada e bloqueios soltos. A fila volta a andar.");
-      setTimeout(() => setFeedback(null), 8000);
+      avisar("Envios de hoje devolvidos e bloqueios soltos. As mensagens voltam a sair.");
     });
   }
 
@@ -158,22 +150,19 @@ export function StatusFila({
     ) {
       return;
     }
-
-    setErro(null);
     iniciarLiberacao(async () => {
       const resultado = await liberarEnvioAgora();
       if ("erro" in resultado) {
-        setErro(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       await atualizar();
-      setFeedback(
+      avisar(
         `Liberado: ${resultado.mensagens} mensagem${resultado.mensagens === 1 ? "" : "s"} saindo agora, uma a cada minuto.` +
           (resultado.retentativas > 0
             ? ` ${resultado.retentativas} que tinha${resultado.retentativas === 1 ? "" : "m"} falhado volta${resultado.retentativas === 1 ? "" : "m"} para a fila.`
             : ""),
       );
-      setTimeout(() => setFeedback(null), 10000);
     });
   }
 
@@ -233,12 +222,14 @@ export function StatusFila({
         )}
       </div>
 
-      {feedback && <p className="text-fluid-xs text-ok mt-3">{feedback}</p>}
-      {erro && (
-        <p role="alert" className="text-fluid-xs text-alerta mt-3">
-          {erro}
-        </p>
-      )}
+      {/*
+        O sucesso e o erro saíram daqui para a região de avisos do shell.
+        Este cartão fica no MEIO da tela de campanhas, abaixo do cabeçalho e
+        das abas, e acima do assistente — quem toca "Enviar agora" no rodapé
+        do assistente não via a confirmação que aparecia aqui em cima. E o
+        `setTimeout` que apagava o texto em 8s contrariava a regra do próprio
+        `Avisos`: sucesso some sozinho, erro fica até alguém fechar.
+      */}
 
       {/* Ferramentas que estragam coisa ficam atrás de uma porta. Limpar a
           fila apaga mensagens programadas; resetar a cota afrouxa a proteção
@@ -275,11 +266,14 @@ export function StatusFila({
                 type="button"
                 onClick={resetarCota}
                 disabled={resetando || processando || limpando}
-                title="Fase de teste: devolve os disparos do dia e solta bloqueios. Afrouxa a proteção anti-ban."
+                title="Devolve os envios de hoje e solta bloqueios. Afrouxa de propósito a proteção do seu número — use só quando precisar mesmo."
                 className="text-fluid-xs border-alerta-linha bg-alerta-lavado text-alerta flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 transition-opacity hover:opacity-80 disabled:opacity-60"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                {resetando ? "Resetando…" : "Liberar envios de hoje (teste)"}
+                {/* Era "(teste)": rótulo de fase de desenvolvimento visível para quem
+                    usa o produto. O que o botão faz é devolver os envios do dia; o
+                    risco está no `title` e na confirmação, onde ele é lido. */}
+                {resetando ? "Liberando…" : "Liberar envios de hoje"}
               </button>
             </div>
           )}

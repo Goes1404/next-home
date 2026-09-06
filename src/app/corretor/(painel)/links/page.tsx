@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { AbasImoveis } from "@/app/corretor/(painel)/_componentes/AbasImoveis";
 import { EditarDestaques } from "./EditarDestaques";
 import { ListaLinks } from "./ListaLinks";
 import { CopiarLink } from "../CopiarLink";
 import { getCorretorLogado, getMeusDestaques } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
 import { site } from "@/lib/site";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Links" };
 
@@ -20,23 +21,23 @@ export default async function LinksPage() {
 
   return (
     <div>
-      {/* A tela saiu do menu e passou a morar dentro de Imóveis. */}
-      <Link
-        href="/corretor/imoveis"
-        className="text-fluid-sm inline-flex items-center gap-1.5 text-apoio transition-colors hover:text-titulo"
-      >
-        ← Imóveis
-      </Link>
-      <h1 className="text-fluid-2xl mt-3 text-titulo">Seus links</h1>
-      <p className="text-fluid-sm mt-2 text-apoio">
-        Qualquer um destes links atribui o atendimento a você — inclusive em imóveis de outro
+      <CabecalhoDeTela secao="Imóveis" titulo="Links por imóvel" descricao={<>Qualquer um destes links atribui o atendimento a você — inclusive em imóveis de outro
         corretor responsável. A exceção é o <span className="text-titulo">link de anúncio (Meta)</span>:
         ele é o destino da campanha paga e distribui cada clique em rodízio entre os corretores com
         WhatsApp conectado — quem clica cai direto no WhatsApp do corretor da vez, com a mensagem
-        pronta.
-      </p>
+        pronta.</>} />
 
-      <section className="mt-8 rounded-2xl border border-linha bg-superficie p-6">
+      {/*
+        Marketing, e não Imóveis: o breadcrumb daqui dizia "← Imóveis" enquanto
+        o menu acendia Marketing — dois pais para a mesma tela. Pior: até
+        04/09/2026 esta era a ÚNICA tela do painel sem item de menu e sem aba,
+        alcançável só por um cartão em Imóveis.
+      */}
+      <div className="mt-5">
+        <AbasImoveis ativa="/corretor/links" />
+      </div>
+
+      <section className="cartao mt-8 p-6">
         <p className="font-display text-titulo">Portfólio completo</p>
         <p className="text-fluid-sm mt-1 text-apoio">
           Para quando o cliente ainda não sabe o que procura.

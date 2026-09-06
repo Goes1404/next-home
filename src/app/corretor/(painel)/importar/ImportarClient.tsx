@@ -110,7 +110,7 @@ function FormularioUnico({ empreendimentos }: { empreendimentos: Empreendimento[
         // tem outro na sequência.
         formRef.current?.reset();
       }}
-      className="border-linha bg-superficie shadow-painel max-w-2xl space-y-4 rounded-2xl border p-6"
+      className="cartao max-w-2xl space-y-4 p-6"
     >
       <div>
         <label htmlFor="nome" className={ROTULO}>
@@ -203,7 +203,7 @@ function FormularioUnico({ empreendimentos }: { empreendimentos: Empreendimento[
       <button
         type="submit"
         disabled={pendente}
-        className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-7 text-sm font-medium text-white transition-colors disabled:opacity-60"
+        className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-7 text-sm font-medium text-sobre-cor transition-colors disabled:opacity-60"
       >
         {pendente ? "Salvando…" : "Adicionar ao funil"}
       </button>
@@ -335,7 +335,7 @@ function Importador({
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
             href="/corretor/funil"
-            className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-5 text-sm font-medium text-white transition-colors"
+            className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-5 text-sm font-medium text-sobre-cor transition-colors"
           >
             Abrir o funil
           </Link>
@@ -354,7 +354,7 @@ function Importador({
   if (etapa === "revisao") {
     return (
       <div className="space-y-5">
-        <div className="border-linha bg-superficie shadow-painel rounded-2xl border p-5">
+        <div className="cartao p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <p className="font-display text-titulo text-lg">
               {linhas.length === 1
@@ -382,7 +382,7 @@ function Importador({
 
         <ListaRevisao linhas={linhas} onChange={setLinhas} />
 
-        <div className="border-linha bg-superficie shadow-painel space-y-4 rounded-2xl border p-5">
+        <div className="cartao space-y-4 p-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="imovel-lote" className={ROTULO}>
@@ -441,7 +441,7 @@ function Importador({
             type="button"
             onClick={confirmar}
             disabled={importando || selecionados.length === 0 || !consentimento}
-            className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-7 text-sm font-medium text-white transition-colors disabled:opacity-50"
+            className="bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-full px-7 text-sm font-medium text-sobre-cor transition-colors disabled:opacity-50"
           >
             {importando
               ? "Importando…"
@@ -455,7 +455,7 @@ function Importador({
   }
 
   return (
-    <div className="border-linha bg-superficie shadow-painel max-w-2xl rounded-2xl border p-6">
+    <div className="cartao max-w-2xl p-6">
       <div className="flex gap-1">
         {(["colar", "arquivo"] as const).map((m) => (
           <button
@@ -496,7 +496,7 @@ function Importador({
             type="button"
             onClick={() => analisar()}
             disabled={analisando || !texto.trim()}
-            className="bg-acento hover:bg-acento-hover mt-4 flex min-h-11 items-center rounded-full px-6 text-sm font-medium text-white transition-colors disabled:opacity-50"
+            className="bg-acento hover:bg-acento-hover mt-4 flex min-h-11 items-center rounded-full px-6 text-sm font-medium text-sobre-cor transition-colors disabled:opacity-50"
           >
             {analisando ? "Lendo…" : "Ler contatos"}
           </button>
@@ -524,7 +524,7 @@ function Importador({
           <button
             type="submit"
             disabled={analisando}
-            className="bg-acento hover:bg-acento-hover mt-4 flex min-h-11 items-center rounded-full px-6 text-sm font-medium text-white transition-colors disabled:opacity-50"
+            className="bg-acento hover:bg-acento-hover mt-4 flex min-h-11 items-center rounded-full px-6 text-sm font-medium text-sobre-cor transition-colors disabled:opacity-50"
           >
             {analisando ? "Lendo o arquivo…" : "Ler contatos"}
           </button>
@@ -560,7 +560,7 @@ function ListaRevisao({
   }
 
   return (
-    <div className="border-linha bg-superficie shadow-painel overflow-hidden rounded-2xl border">
+    <div className="cartao overflow-hidden">
       <label className="border-linha text-fluid-sm text-corpo flex min-h-12 cursor-pointer items-center gap-2.5 border-b px-5">
         <input
           type="checkbox"

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { Archive, RotateCcw, Trash2 } from "lucide-react";
 import { arquivarLead, excluirLeadDefinitivo, restaurarLead } from "./acoes";
 
@@ -31,14 +32,28 @@ export function ArquivarLead({
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
   const [confirmando, setConfirmando] = useState(false);
-  const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
+  const { avisar, falhar } = useAvisos();
 
   const executar = (fn: () => Promise<{ ok?: string; erro?: string }>, saindo = false) =>
     iniciar(async () => {
-      const r = await fn();
-      setAviso({ ok: Boolean(r.ok), texto: r.ok ?? r.erro ?? "" });
-      if (r.ok && saindo) router.push("/corretor/leads");
-      else if (r.ok) router.refresh();
+      try {
+        const r = await fn();
+        if (r.erro) {
+          // Era anunciado como `role="status"`, que o leitor de tela guarda
+          // para a próxima pausa. Falha ao EXCLUIR um lead merece
+          // interromper, e é o que `falhar` faz.
+          falhar(r.erro);
+          return;
+        }
+        avisar(r.ok ?? "Pronto");
+        // Saindo da ficha, o aviso viaja junto: a região vive no shell do
+        // painel, não nesta tela — antes, a confirmação de exclusão sumia com
+        // a própria página que a mostrava.
+        if (saindo) router.push("/corretor/pessoas");
+        else router.refresh();
+      } catch {
+        falhar("Não deu para completar. Confira a conexão e tente de novo.");
+      }
     });
 
   return (
@@ -69,15 +84,15 @@ export function ArquivarLead({
                 type="button"
                 disabled={pendente}
                 onClick={() => setConfirmando(true)}
-                className="text-fluid-sm inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-500/40 px-4 text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-60"
+                className="text-fluid-sm inline-flex min-h-11 items-center gap-2 rounded-xl border-perigo-linha text-perigo hover:bg-perigo-lavado border px-4 transition-colors disabled:opacity-60"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
                 Excluir definitivamente
               </button>
             ) : (
-              <div className="w-full rounded-xl border border-red-500/40 bg-red-500/10 p-3">
+              <div className="border-perigo-linha bg-perigo-lavado w-full rounded-xl border p-3">
                 <p className="text-fluid-sm text-titulo">
-                  Excluir {nome} de vez? Isso apaga junto o dossiê da IA, as tarefas e a linha do
+                  Excluir {nome} de vez? Isso apaga junto o que a IA anotou sobre ele, as tarefas e a linha do
                   tempo dele. Não tem desfazer.
                 </p>
                 <p className="text-fluid-xs text-apoio mt-1">
@@ -89,7 +104,7 @@ export function ArquivarLead({
                     type="button"
                     disabled={pendente}
                     onClick={() => executar(() => excluirLeadDefinitivo(leadId), true)}
-                    className="text-fluid-sm min-h-11 rounded-xl bg-red-600 px-4 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                    className="text-fluid-sm min-h-11 bg-perigo text-sobre-cor rounded-xl px-4 font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
                   >
                     {pendente ? "Excluindo…" : "Sim, excluir para sempre"}
                   </button>
@@ -118,14 +133,6 @@ export function ArquivarLead({
         )}
       </div>
 
-      {aviso && (
-        <p
-          role="status"
-          className={`text-fluid-xs mt-3 ${aviso.ok ? "text-apoio" : "text-red-400"}`}
-        >
-          {aviso.texto}
-        </p>
-      )}
     </section>
   );
 }

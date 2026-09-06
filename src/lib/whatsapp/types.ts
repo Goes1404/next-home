@@ -58,6 +58,8 @@ export interface CampanhaWhatsapp {
 }
 
 export interface ItemFilaCampanha {
+  /** Qual versão da mensagem este item usou (teste A/B, 0084). Null = campanha de uma versão. */
+  variante?: "A" | "B" | null;
   id: string;
   campanhaId: string;
   leadId: string | null;

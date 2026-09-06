@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TabelaLeads } from "./TabelaLeads";
@@ -38,8 +39,8 @@ const CHIPS: { valor: Filtro; label: string; cor?: string }[] = [
   { valor: "todos", label: "Todos" },
   { valor: "hoje", label: "Hoje" },
   { valor: "novos", label: "Novos", cor: "bg-acento" },
-  { valor: "conversa", label: "Em conversa", cor: "bg-etapa-ciano" },
-  { valor: "visitas", label: "Visitas", cor: "bg-etapa-azul" },
+  { valor: "conversa", label: "Em conversa", cor: "bg-etapa-contato" },
+  { valor: "visitas", label: "Visitas", cor: "bg-etapa-visita" },
   { valor: "frios", label: "Frios", cor: "bg-tenue/45" },
 ];
 
@@ -104,9 +105,9 @@ export function ListaLeads({
   const [modalAberto, setModalAberto] = useState(false);
   // Segundo andar da barra de seleção: a lista de etapas para mover o lote.
   const [escolhendoEtapa, setEscolhendoEtapa] = useState(false);
-  const [avisoLote, setAvisoLote] = useState<string | null>(null);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [movendoLote, iniciarLote] = useTransition();
+  const { avisar, falhar } = useAvisos();
 
   // Páginas além da primeira, acumuladas pelo botão "carregar mais". O
   // contador é estado próprio (e não `leads.length / 30`) porque o dedup
@@ -186,33 +187,31 @@ export function ListaLeads({
     verbo: (n: number) => string,
   ) {
     const ids = [...selecionados];
-    setAvisoLote(null);
     iniciarLote(async () => {
       const resultado = await acao(ids);
       if ("erro" in resultado) {
-        setAvisoLote(resultado.erro);
+        falhar(resultado.erro);
         return;
       }
       setSelecionados(new Set());
       setConfirmandoExclusao(false);
-      setAvisoLote(verbo(resultado.afetados));
+      avisar(verbo(resultado.afetados));
       router.refresh();
     });
   }
 
   function moverLote(etapa: EtapaFunil) {
     const ids = [...selecionados];
-    setAvisoLote(null);
     iniciarLote(async () => {
       const res = await moverEtapaEmMassa(ids, etapa);
       if (res.erro) {
-        setAvisoLote(res.erro);
+        falhar(res.erro);
         return;
       }
       // O aviso diz o número que o SERVIDOR confirmou, não o da seleção:
       // um lead que trocou de dono no meio simplesmente não é movido, e a
       // tela não pode anunciar 15 quando foram 12.
-      setAvisoLote(
+      avisar(
         res.movidos === ids.length
           ? `${res.movidos} lead${res.movidos === 1 ? "" : "s"} para “${ETAPA_LABEL[etapa]}”.`
           : `${res.movidos} de ${ids.length} movidos — os demais mudaram de dono. Recarregue a lista.`,
@@ -220,7 +219,6 @@ export function ListaLeads({
       setSelecionados(new Set());
       setEscolhendoEtapa(false);
       // Some sozinho: confirmação não é alerta, não precisa de clique.
-      setTimeout(() => setAvisoLote(null), 5000);
       router.refresh();
     });
   }
@@ -259,7 +257,7 @@ export function ListaLeads({
           >
             Filtros
             {filtrosAvancadosAtivos > 0 && (
-              <span className="bg-acento flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold text-white tabular-nums">
+              <span className="bg-acento flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold text-sobre-cor tabular-nums">
                 {filtrosAvancadosAtivos}
               </span>
             )}
@@ -267,7 +265,10 @@ export function ListaLeads({
         </div>
       </div>
 
-      <div className="scrollbar-none mt-2 -mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+      {/* Quebra linha em vez de rolar de lado, pelo mesmo motivo das abas e
+          da barra de seleção: chip escondido atrás de um gesto invisível é
+          filtro que existe e ninguém encontra. */}
+      <div className="mt-2 flex flex-wrap gap-2 pb-2">
         {CHIPS.map(({ valor, label, cor }) => {
           const ativo = filtro === valor && !etapaFiltro;
           return (
@@ -276,7 +277,7 @@ export function ListaLeads({
               onClick={() => atualizarUrl({ filtro: valor === "todos" ? "" : valor, etapa: "" })}
               className={`flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors ${
                 ativo
-                  ? "bg-acento text-white"
+                  ? "bg-acento text-sobre-cor"
                   : "bg-superficie text-apoio hover:bg-elevado hover:text-corpo"
               }`}
             >
@@ -350,7 +351,7 @@ export function ListaLeads({
       )}
 
       {semNenhumLead ? (
-        <div className="mt-8 rounded-2xl border border-linha bg-superficie p-6">
+        <div className="cartao mt-8 p-6">
           <p className="text-fluid-sm text-corpo">
             Nenhum contato ainda. Compartilhe seu link pessoal — todo formulário preenchido a
             partir dele chega aqui com seu nome.
@@ -363,7 +364,7 @@ export function ListaLeads({
           </Link>
         </div>
       ) : leads.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-linha bg-superficie p-6 text-center">
+        <div className="cartao mt-8 p-6 text-center">
           <p className="text-fluid-sm text-apoio">Nenhum lead encontrado neste filtro.</p>
         </div>
       ) : (
@@ -490,7 +491,7 @@ export function ListaLeads({
                   <button
                     type="button"
                     onClick={() => setModalAberto(true)}
-                    className="text-fluid-sm bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-lg px-4 font-medium whitespace-nowrap text-white transition-colors"
+                    className="text-fluid-sm bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-lg px-4 font-medium whitespace-nowrap text-sobre-cor transition-colors"
                   >
                     Enviar mensagem
                   </button>
@@ -562,15 +563,13 @@ export function ListaLeads({
         </div>
       )}
 
-      {/* Confirmação do lote — fora da barra, porque a barra some junto com a
-          seleção e a notícia precisa sobreviver a ela. */}
-      {avisoLote && (
-        <div className="acima-da-nav fixed inset-x-0 z-45 p-3 sm:p-4" role="status">
-          <p className="text-fluid-sm border-ok-linha bg-ok-lavado text-ok mx-auto w-fit rounded-full border px-4 py-2 font-medium backdrop-blur-md">
-            {avisoLote}
-          </p>
-        </div>
-      )}
+      {/*
+        A confirmação do lote saiu daqui para a região de avisos do shell.
+        Ela já vivia em `acima-da-nav`, exatamente a mesma faixa que a região
+        usa — eram duas caixas flutuantes disputando o mesmo lugar acima do
+        polegar, com a barra de seleção como terceira. A notícia continua
+        sobrevivendo ao sumiço da barra, que era o motivo de ela existir.
+      */}
 
       {modalAberto && (
         <EnviarEmMassa

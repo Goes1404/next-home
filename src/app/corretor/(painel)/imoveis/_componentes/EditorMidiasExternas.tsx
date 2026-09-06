@@ -117,7 +117,7 @@ function FormularioLink({
         <button
           type="submit"
           disabled={salvando}
-          className="text-fluid-xs shrink-0 cursor-pointer rounded-xl bg-acento px-4 py-2.5 font-bold text-white transition-colors hover:bg-acento-hover disabled:opacity-60"
+          className="text-fluid-xs shrink-0 cursor-pointer rounded-xl bg-acento px-4 py-2.5 font-bold text-sobre-cor transition-colors hover:bg-acento-hover disabled:opacity-60"
         >
           {salvando ? "Salvando…" : rotulos.botao}
         </button>

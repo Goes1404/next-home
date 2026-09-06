@@ -30,3 +30,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, processados: data });
 }
+
+// O pg_cron chama com POST (mesma razão de campanhas e follow-ups): sem
+// isto a rota responderia 405 no horário agendado, sem erro visível.
+export const POST = GET;

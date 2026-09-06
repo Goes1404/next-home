@@ -1,0 +1,75 @@
+confuso-entre-dois · teto_de_turnos · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me fala do terra alta e do more aldeia, qual compensa mais
+[1] Sofia:   O Terra Alta tem 1 dormitório, 52m², 2 vagas, ideal para quem busca conforto e praticidade no Jardim Tupanci.
+Está em construção, com condições flexíveis de pagamento.
+Posso te enviar as fotos e o link da apresentação digital para você conhecer melhor?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-1-big-90795a4bede62a1d4488511b4fa90d62.jpeg
+
+[2] Cliente: mais info do more aldeia
+              e o preço dos dois?
+[2] Sofia:   O More Aldeia não é um imóvel que trabalho, mas o Terra Alta é uma ótima opção para quem busca conforto e praticidade em Barueri.
+Poderíamos agendar uma visita para eu te apresentar o projeto e as condições de pagamento, que são flexíveis e variam conforme a unidade. Você consegue passar no stand durante a semana?
+
+[3] Cliente: mas e o more aldeia?
+              não tem preço?
+              não entendi a resposta
+[3] Sofia:   O More Aldeia não é um imóvel que trabalho, por isso não tenho dados precisos dele.
+O Terra Alta tem 1 dormitório, 52m², 2 vagas, em construção, com condições flexíveis.
+O valor exato varia por unidade e forma de pagamento, e só a construtora informa.
+Podemos agendar uma visita para eu te mostrar tudo e esclarecer as condições. Você consegue durante a semana?
+
+[4] Cliente: mas e o preço do more aldeia?
+              não tem foto dele?
+[4] Sofia:   O valor exato do More Aldeia quem passa é a construtora, e varia por unidade e condição de pagamento.
+A visita é o melhor caminho para tratar disso com detalhes.
+Posso te mostrar o Terra Alta sábado de manhã, às 10h, ou segunda às 15h?
+Também te mandei as fotos do Terra Alta para você conhecer melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-2-big-9b86dbba80b0b7047f87d0323ca141dc.jpeg
+
+[5] Cliente: mas não dá pra ver nada do more aldeia?
+              quero saber preço e foto
+              qual deles vale mais a pena?
+[5] Sofia:   O More Aldeia não é um imóvel que trabalho, por isso não tenho fotos ou preço precisos.
+O Terra Alta é uma opção sólida, com 1 dormitório e 2 vagas, em construção, com condições flexíveis.
+Posso te mostrar o Terra Alta sábado às 10h ou segunda às 15h, para apresentar o projeto e as condições.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/terra-alta-ta141/foto-3-big-75c8b2df2fb9cedf8deb0b5002c9a935.jpeg
+
+[6] Cliente: mas e o preço?
+              quero ver foto do more aldeia
+[6] Sofia:   O valor exato do Terra Alta varia por unidade e condição de pagamento, só a construtora informa isso.
+Já te mandei as fotos do Terra Alta para conhecer melhor.
+More Aldeia não trabalho, não tenho fotos nem preço.
+Quer agendar sábado às 10h ou segunda às 15h para eu te mostrar o Terra Alta e as condições?
+
+[7] Cliente: mas você não tem nada do more aldeia?
+              qual o preço dele?
+              qual compensa mais?
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: não entendi ainda qual vale mais
+              quero uma comparação certa
+[8] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[9] Cliente: não sei, mas quero saber qual é melhor
+              quero detalhes dos dois
+[9] Sofia:   O Terra Alta tem 1 dormitório, 52m², 2 vagas, em construção, com condições flexíveis.
+More Aldeia não trabalho, não tenho dados precisos para comparação.
+Se quiser, posso te mostrar o Terra Alta e as condições pessoalmente.
+Qual a região que você prefere para morar ou investir?
+
+[10] Cliente: quero detalhes do more aldeia
+              não dá pra ver nada dele?
+[10] Sofia:   Quer conhecer o Terra Alta para avaliar melhor?
+
+[11] Cliente: não quero o terra alta
+              quero detalhes do more aldeia
+[11] Sofia:   O More Aldeia não é um imóvel que trabalho, por isso não tenho detalhes ou fotos dele.
+Posso ajudar a encontrar algo que atenda suas necessidades aqui em Barueri.
+Me conta o que você busca em tamanho e localização para eu indicar o melhor.
+
+[12] Cliente: mas quero detalhes do more aldeia
+              não tem nada mesmo?
+              não dá pra ajudar?
+[12] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.

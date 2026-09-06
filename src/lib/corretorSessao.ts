@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 
 import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -36,8 +37,18 @@ export type CorretorSessao = CorretorPerfil & {
   ativo: boolean;
 };
 
-/** Corretor da sessão atual, ou `null` se não há sessão/vínculo. */
-export async function getCorretorLogado(): Promise<CorretorSessao | null> {
+/**
+ * Corretor da sessão atual, ou `null` se não há sessão/vínculo.
+ *
+ * Embrulhado em `cache()` do React: são 68 chamadas espalhadas pelo painel, e
+ * numa única requisição o layout, a página e `souGestor()` costumam pedir a
+ * mesma coisa duas ou três vezes — cada uma custando um `auth.getUser()` mais
+ * uma consulta a `corretores`. O cache vale só para a requisição em curso, e é
+ * exatamente o recorte certo: dentro dela a sessão não muda, e entre elas
+ * nada é lembrado (sessão em cache atravessando requisição serviria dado de um
+ * corretor para outro).
+ */
+export const getCorretorLogado = cache(async function getCorretorLogado(): Promise<CorretorSessao | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -55,7 +66,7 @@ export async function getCorretorLogado(): Promise<CorretorSessao | null> {
   if (!data?.slug) return null;
 
   return { ...mapCorretor(data), papel: data.papel, ativo: data.ativo };
-}
+});
 
 /**
  * Se a sessão atual enxerga o funil da equipe inteira.
@@ -77,11 +88,20 @@ export async function getEmailLogado(): Promise<string | null> {
   return user?.email ?? null;
 }
 
+/*
+ * O `!leads_empreendimento_id_fkey` NÃO é enfeite. Desde a 0083 existem
+ * DUAS chaves estrangeiras de `leads` para `empreendimentos` — a origem do
+ * lead e o imóvel de que a conversa trata — e o PostgREST se recusa a
+ * adivinhar qual usar: o embed sem nome responde PGRST201 e a consulta
+ * inteira falha. Mesma armadilha que `corretor_destaques` já criou entre
+ * `empreendimentos` e `corretores`.
+ */
 const SELECT_LEAD = `
   id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
   etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, portal_origem, anuncio_origem,
+  tentativas_sem_resposta,
   corretor:corretores(id, nome),
-  empreendimento:empreendimentos(nome, slug, endereco)
+  empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome, slug, endereco)
 `;
 
 type LinhaLead = {
@@ -100,6 +120,7 @@ type LinhaLead = {
   etapa_alterada_em: string;
   origem_atribuicao: OrigemAtribuicao | null;
   visita_agendada_em: string | null;
+  tentativas_sem_resposta: number | null;
   corretor: { id: string; nome: string } | null;
   empreendimento: { nome: string; slug: string; endereco: string | null } | null;
 };
@@ -123,6 +144,7 @@ function mapLead(row: LinhaLead): Lead {
     visitaAgendadaEm: row.visita_agendada_em,
     corretor: row.corretor,
     empreendimento: row.empreendimento,
+    tentativasSemResposta: row.tentativas_sem_resposta ?? 0,
   };
 }
 
@@ -181,6 +203,15 @@ export type FiltroLeads = {
   arquivados?: boolean;
   /** Só faz sentido para o gestor; corretor comum já é recortado pela RLS. */
   corretorId?: string;
+  /**
+   * Leads de UMA campanha do Meta, por ID (roadmap Meta Ads, F2).
+   *
+   * Existe porque cada número da tela de Anúncios é clicável e cai aqui já
+   * recortado — número que não leva a lugar nenhum obriga o gestor a
+   * refazer o filtro à mão para ver de quem ele é feito. Por ID e nunca
+   * por nome: nome de campanha muda quando alguém renomeia no Gerenciador.
+   */
+  metaCampanhaId?: string;
   /** Datas `yyyy-mm-dd` vindas dos inputs de data da lista. */
   criadoDe?: string;
   criadoAte?: string;
@@ -206,7 +237,7 @@ export type PaginaDeLeads = {
  * busca viraria um segundo predicado. Busca é nome ou telefone — nada disso
  * faz falta.
  */
-function sanearBusca(busca: string): string {
+export function sanearBusca(busca: string): string {
   return busca.replace(/[,()%_]/g, " ").trim();
 }
 
@@ -278,6 +309,7 @@ export async function getPaginaDeLeads(
   if (filtro.criadoDe) query = query.gte("created_at", filtro.criadoDe);
   if (filtro.criadoAte) query = query.lte("created_at", `${filtro.criadoAte}T23:59:59`);
   if (filtro.semDono) query = query.is("corretor_id", null);
+  if (filtro.metaCampanhaId) query = query.eq("meta_campanha_id", filtro.metaCampanhaId);
   if (filtro.paradoDias && filtro.paradoDias > 0) {
     // "Parado" = a etapa não muda há N dias E o negócio ainda está em jogo.
     // Fechado/perdido parados são só história encerrada.

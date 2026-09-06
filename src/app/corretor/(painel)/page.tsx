@@ -1,3 +1,4 @@
+import { Suspense, type SVGProps } from "react";
 import Link from "next/link";
 import { CopiarLink } from "./CopiarLink";
 import { FilaAgora } from "./_componentes/FilaAgora";
@@ -10,11 +11,44 @@ import {
 import { getFilaDeTrabalho } from "@/lib/crm/filaDeTrabalho";
 import { getMinhasTarefas } from "@/lib/crm/dadosLead";
 import { site } from "@/lib/site";
+import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
+import { HeroInicio } from "./_componentes/HeroInicio";
+import { cn } from "@/lib/utils";
+import {
+  IconeLink,
+  IconeMegafone,
+  IconePessoas,
+  IconePredio,
+  IconeRobo,
+  type Modulo,
+} from "./_componentes/navegacao";
 
-const ATALHOS = [
-  { href: "/corretor/leads", titulo: "Meus leads", texto: "Contatos que chegaram por você." },
-  { href: "/corretor/links", titulo: "Links por imóvel", texto: "Link atribuído de cada empreendimento." },
-  { href: "/corretor/imoveis", titulo: "Catálogo", texto: "Fotos, textos e preços dos imóveis." },
+/**
+ * Os atalhos do Início — cartões grandes, coloridos pelo MÓDULO de destino.
+ *
+ * Pedido do usuário (04/09/2026), com referência visual: grade "bento" de
+ * cartões com fundo em gradiente, ícone num chip translúcido, título forte e
+ * subtítulo. A cor NÃO é arbitrária: cada cartão recebe `data-modulo` da
+ * seção para onde leva, e `[data-modulo]` reaponta `--color-acento` dentro
+ * dele — o cartão de Pessoas é magenta porque Pessoas É magenta no resto do
+ * painel. É o color coding da casa servindo de legenda antes do clique.
+ *
+ * `largo` faz o cartão ocupar as duas colunas: o destaque vai para a IA, que
+ * é o que diferencia este painel.
+ */
+const ATALHOS: {
+  href: string;
+  modulo: Modulo;
+  titulo: string;
+  texto: string;
+  icone: (p: SVGProps<SVGSVGElement>) => React.ReactElement;
+  largo?: boolean;
+}[] = [
+  { href: "/corretor/pessoas", modulo: "leads", titulo: "Pessoas", texto: "quem falou com você, do mais recente ao mais antigo", icone: IconePessoas },
+  { href: "/corretor/imoveis", modulo: "imoveis", titulo: "Imóveis", texto: "fotos, textos e preços do catálogo", icone: IconePredio },
+  { href: "/corretor/whatsapp", modulo: "whatsapp", titulo: "Minha IA", texto: "atende, qualifica e marca visita enquanto você não está", icone: IconeRobo, largo: true },
+  { href: "/corretor/imoveis/criar-imagem", modulo: "marketing", titulo: "Criar arte", texto: "peça pronta para publicar, conversando com a IA", icone: IconeMegafone },
+  { href: "/corretor/links", modulo: "marketing", titulo: "Meus links", texto: "link atribuído de cada imóvel e do anúncio", icone: IconeLink },
 ];
 
 /**
@@ -30,31 +64,37 @@ export default async function PainelInicio() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
-  // Contagens no banco, não a carteira: com ~100 leads por corretor (e a
-  // equipe inteira para o gestor), o Início não tem por que baixar linhas.
-  const [tarefas, contagens, cliques] = await Promise.all([
-    getMinhasTarefas(),
-    getContagemPorEtapa(),
-    getCliquesWhatsappCorretor(),
-  ]);
-
-  const fila = await getFilaDeTrabalho(tarefas);
   const primeiroNome = corretor.nome.split(" ")[0];
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-titulo text-fluid-2xl">Olá, {primeiroNome}</h1>
-        <p className="text-fluid-sm text-apoio mt-1">
-          {fila.length === 0
-            ? "Nada pendente por aqui."
-            : `${fila.length} ${fila.length === 1 ? "coisa esperando" : "coisas esperando"} por você.`}
-        </p>
-      </div>
+      {/*
+        A frase de apoio não conta mais quantos itens esperam. Isso obrigava a
+        página inteira a AGUARDAR a fila (cinco consultas) antes de pintar a
+        primeira letra — e o número já aparece no cabeçalho da própria fila,
+        um dedo abaixo. Dizer duas vezes custava a tela inteira parada.
+      */}
+      {/*
+        O cartão de abertura substitui o cabeçalho simples (pedido de
+        04/09/2026, com referência visual). Ele precisa das contagens do
+        funil, então mora atrás do próprio Suspense: o esqueleto aparece de
+        imediato e o cartão chega quando a contagem responde — sem segurar o
+        resto da tela.
+      */}
+      <Suspense fallback={<EsqueletoCartao linhas={3} />}>
+        <BlocoDoHero nome={primeiroNome} />
+      </Suspense>
 
-      <FilaAgora itens={fila} />
-
-      <TermometroFunil contagens={contagens} />
+      {/*
+        Cada bloco busca o próprio dado atrás do seu `<Suspense>`, em vez de a
+        página esperar tudo antes de pintar qualquer coisa. Antes eram três
+        leituras em paralelo E DEPOIS, em série, a fila com mais cinco: a tela
+        só existia quando a última respondesse. Agora o cabeçalho e a cor do
+        módulo aparecem de imediato e cada seção chega quando fica pronta.
+      */}
+      <Suspense fallback={<EsqueletoCartao linhas={1} />}>
+        <BlocoDoFunil />
+      </Suspense>
 
       {/*
         O link e os cliques ficam lado a lado porque são a mesma história: o
@@ -62,7 +102,7 @@ export default async function PainelInicio() {
         usou. Separados em cartões distantes, o número perdia a causa.
       */}
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
-        <div className="border-linha bg-superficie shadow-painel rounded-2xl border p-5 sm:p-6">
+        <div className="cartao p-5 sm:p-6">
           <p className="text-fluid-sm text-titulo font-medium">Seu link pessoal</p>
           <p className="text-fluid-sm text-apoio mt-1">
             Enquanto um cliente navegar por ele, todo botão de WhatsApp do site — em qualquer
@@ -71,35 +111,131 @@ export default async function PainelInicio() {
           <CopiarLink link={`${site.url}/?corretor=${corretor.slug}`} />
         </div>
 
-        <div className="border-linha bg-superficie shadow-painel flex flex-col justify-center rounded-2xl border p-5 sm:p-6">
-          <span className="text-tenue text-[11px] font-medium tracking-[0.14em] uppercase">
-            Cliques hoje
-          </span>
+        <Suspense fallback={<CartaoDeCliques carregando />}>
+          <BlocoDeCliques />
+        </Suspense>
+      </section>
+
+      <section aria-label="Atalhos" className="grid grid-cols-2 gap-3 md:gap-4">
+        {ATALHOS.map((a) => {
+          const Icone = a.icone;
+          return (
+            <Link
+              key={a.href}
+              href={a.href}
+              // O `data-modulo` no próprio cartão é o que o pinta com a cor da
+              // seção de destino: `bg-acento` aqui já é a cor DAQUELE módulo.
+              data-modulo={a.modulo}
+              className={cn(
+                "from-acento to-acento-hover text-sobre-cor shadow-painel group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-[1.75rem] bg-gradient-to-br p-4 ring-1 ring-white/10 transition-transform ring-inset hover:-translate-y-0.5 motion-reduce:transition-none md:min-h-40 md:p-5",
+                a.largo && "col-span-2 flex-row items-center gap-4",
+              )}
+            >
+              {/* Reflexo de vidro: um véu branco que some para baixo. É o que faz
+                  o cartão parecer material, e não um retângulo pintado. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/20 via-white/5 to-transparent"
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/20 blur-2xl"
+              />
+              <span
+                aria-hidden
+                className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/15 backdrop-blur-md md:size-14"
+              >
+                <Icone className="size-6 md:size-7" />
+              </span>
+              <span className={cn("relative min-w-0", a.largo && "flex-1")}>
+                <span className="font-display block text-lg leading-tight font-bold tracking-[-0.02em] italic md:text-xl">{a.titulo}</span>
+                <span className="mt-1 block text-[13px] leading-snug opacity-80 md:text-sm">{a.texto}</span>
+              </span>
+              {a.largo && (
+                <span
+                  aria-hidden
+                  className="relative grid size-11 shrink-0 place-items-center rounded-full border border-white/25 bg-white/15 backdrop-blur-md transition-transform group-hover:translate-x-0.5"
+                >
+                  →
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </section>
+
+      {/*
+        A fila vem POR ÚLTIMO — decisão de produto do usuário (04/09/2026), que
+        inverteu a da F3. A ordem da tela é: funil → link pessoal → atalhos →
+        fila. O que NÃO mudou: a ordem DENTRO da fila (visita de hoje, tarefa
+        vencida, lead novo…) continua sendo a do custo de perder, e
+        `filaDeTrabalho.test.ts` segue travando isso.
+      */}
+      <Suspense fallback={<EsqueletoCartao linhas={4} />}>
+        <BlocoDaFila />
+      </Suspense>
+    </div>
+  );
+}
+
+/**
+ * A fila. É o bloco mais caro do Início (cinco consultas, mais as tarefas
+ * antes delas) e o mais importante — por isso ele espera atrás do próprio
+ * limite em vez de segurar a página.
+ */
+async function BlocoDaFila() {
+  const tarefas = await getMinhasTarefas();
+  const fila = await getFilaDeTrabalho(tarefas);
+  return <FilaAgora itens={fila} />;
+}
+
+async function BlocoDoHero({ nome }: { nome: string }) {
+  const contagens = await getContagemPorEtapa();
+  return <HeroInicio nome={nome} contagens={contagens} />;
+}
+
+async function BlocoDoFunil() {
+  const contagens = await getContagemPorEtapa();
+  return <TermometroFunil contagens={contagens} />;
+}
+
+async function BlocoDeCliques() {
+  const cliques = await getCliquesWhatsappCorretor();
+  return <CartaoDeCliques cliques={cliques} />;
+}
+
+function CartaoDeCliques({
+  cliques,
+  carregando,
+}: {
+  cliques?: { hoje: number; total: number } | null;
+  carregando?: boolean;
+}) {
+  return (
+    <div className="cartao flex flex-col justify-center p-5 sm:p-6">
+      <span className="text-tenue text-[11px] font-medium tracking-[0.14em] uppercase">
+        Cliques hoje
+      </span>
+      {carregando ? (
+        <>
+          <AvisoDeCarregamento>Contando os cliques do seu link…</AvisoDeCarregamento>
+          <Esqueleto className="mt-2 h-9 w-16" />
+          <Esqueleto className="mt-2 h-3 w-40" />
+        </>
+      ) : (
+        <>
           {/* `null` = a contagem falhou. Mostrar "0" aqui faria o corretor
               achar que o link parou de converter. */}
           <p className="font-display text-titulo mt-1 text-4xl tabular-nums">
             {cliques ? cliques.hoje : "—"}
           </p>
           <p className="text-fluid-xs text-apoio mt-1">
-            {cliques === null
+            {cliques == null
               ? "Contagem indisponível — tente recarregar em instantes"
               : `${cliques.total} no total acumulado`}
           </p>
-        </div>
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-3">
-        {ATALHOS.map((a) => (
-          <Link
-            key={a.href}
-            href={a.href}
-            className="border-linha bg-superficie shadow-painel hover:border-acento-linha rounded-2xl border p-5 transition-colors"
-          >
-            <p className="font-display text-titulo">{a.titulo}</p>
-            <p className="text-fluid-sm text-apoio mt-1">{a.texto}</p>
-          </Link>
-        ))}
-      </section>
+        </>
+      )}
     </div>
   );
 }

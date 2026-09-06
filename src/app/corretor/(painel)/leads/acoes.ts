@@ -78,6 +78,7 @@ export async function arquivarLeadsEmLote(leadIds: string[]): Promise<ResultadoL
   if (error) return { erro: "Não foi possível arquivar agora." };
 
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   return { ok: true, afetados: data?.length ?? 0 };
 }
 
@@ -99,6 +100,7 @@ export async function restaurarLeadsEmLote(leadIds: string[]): Promise<Resultado
   if (error) return { erro: "Não foi possível restaurar agora." };
 
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   return { ok: true, afetados: data?.length ?? 0 };
 }
 
@@ -130,6 +132,7 @@ export async function excluirLeadsEmLote(leadIds: string[]): Promise<ResultadoLo
   if (error) return { erro: "Não foi possível excluir agora." };
 
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   return { ok: true, afetados: data?.length ?? 0 };
 }
 
@@ -340,6 +343,7 @@ export async function dispararParaLeadsSelecionados(params: {
   acenderCorrenteDeDisparo();
 
   revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor/campanhas");
 
   return {

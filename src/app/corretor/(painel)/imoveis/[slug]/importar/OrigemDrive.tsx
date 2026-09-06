@@ -139,7 +139,7 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
             type="button"
             onClick={() => void buscar()}
             disabled={buscando || link.trim().length === 0}
-            className="min-h-[48px] rounded-xl bg-acento px-5 text-fluid-xs font-bold text-white shadow-md shadow-acento/20 transition-all active:scale-95 disabled:opacity-60"
+            className="min-h-[48px] rounded-xl bg-acento px-5 text-fluid-xs font-bold text-sobre-cor shadow-md shadow-acento/20 transition-all active:scale-95 disabled:opacity-60"
           >
             {buscando ? "Abrindo a pasta…" : "Ver o que tem"}
           </button>
@@ -172,7 +172,7 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
             type="button"
             onClick={() => void trazer()}
             disabled={transferindo}
-            className="w-full min-h-[48px] rounded-xl bg-acento px-5 text-fluid-xs font-bold text-white shadow-md shadow-acento/20 transition-all active:scale-95 disabled:opacity-60"
+            className="w-full min-h-[48px] rounded-xl bg-acento px-5 text-fluid-xs font-bold text-sobre-cor shadow-md shadow-acento/20 transition-all active:scale-95 disabled:opacity-60"
           >
             {transferindo ? `Trazendo… ${progresso.feitos} de ${progresso.total}` : "Trazer as selecionadas"}
           </button>

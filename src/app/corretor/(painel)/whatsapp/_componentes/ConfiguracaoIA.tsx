@@ -170,7 +170,7 @@ export function ConfiguracaoIA({
       </button>
 
       {mostrarAvancado && (
-        <div className="border-linha bg-superficie space-y-5 rounded-2xl border p-5">
+        <div className="cartao space-y-5 p-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-fluid-xs text-apoio block" htmlFor="nome-assistente">
@@ -280,7 +280,7 @@ export function ConfiguracaoIA({
         <button
           onClick={salvar}
           disabled={salvando}
-          className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center rounded-xl px-6 font-medium text-white transition-colors disabled:opacity-60"
+          className="bg-acento hover:bg-acento-hover text-fluid-sm flex min-h-12 cursor-pointer items-center rounded-xl px-6 font-medium text-sobre-cor transition-colors disabled:opacity-60"
         >
           {salvando ? "Salvando…" : "Salvar"}
         </button>

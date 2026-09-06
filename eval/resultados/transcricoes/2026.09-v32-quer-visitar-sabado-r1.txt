@@ -1,0 +1,51 @@
+quer-visitar-sabado · rodada 1 · cliente_encerrou · 12 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria visitar um apartamento sábado, dá?
+[1] Sofia:   Sábado é ótimo para visita. Em qual região de Barueri você procura?
+
+[2] Cliente: Barueri Centro
+              que horas?
+[2] Sofia:   Sábado posso às 9h ou às 11h, qual fica melhor para você?
+Assim já aproveita para conhecer o decorado e as condições.
+
+[3] Cliente: 11h tá bom
+              tem mais horário?
+[3] Sofia:   Combinado, sábado às 11h está confirmado para a visita.
+Vou confirmar o endereço certinho para você.
+Te chamo na véspera para lembrar e ajustar o que precisar.
+
+[4] Cliente: tem mais horários?
+              quero saber logo.
+[4] Sofia:   Sábado às 11h está confirmado para a visita no endereço combinado. Qualquer dúvida até lá, me chama.
+
+[5] Cliente: quero saber os horários
+              não é só isso
+[5] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[6] Cliente: quero saber os horários que tem
+              só isso que quero saber!
+[6] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[7] Cliente: quantos horários tem?
+              não quero falar de apartamentos
+[7] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[8] Cliente: só quero horários
+              manda logo
+[8] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
+o link com tudo do empreendimento, ou marcar de conversar pessoalmente?
+
+[9] Cliente: quantos horários tem?
+              quero saber logo!
+[9] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[10] Cliente: quero saber horários agora!
+              não quero mais conversa!
+[10] Sofia:   Sábado às 9h e às 11h são os horários disponíveis para visita no endereço combinado. Qualquer dúvida até lá, me chama.
+
+[11] Cliente: 9h ou 11h? Só isso.
+[11] Sofia:   Sábado às 9h ou às 11h está confirmado para a visita no endereço combinado.
+
+[12] Cliente: 9h então
+[12] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.

@@ -1,0 +1,6 @@
+sem-perfil-de-renda · rodada 2 · cliente_mudo · 1 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria sair do aluguel, pago 900 hoje, da pra financiar
+[1] Sofia:   Entendo, sair do aluguel é um passo importante.
+Em qual região de Barueri você procura o imóvel?

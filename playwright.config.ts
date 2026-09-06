@@ -32,6 +32,10 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
     trace: "retain-on-failure",
     locale: "pt-BR",
+    // Sandbox sem o `chromium_headless_shell` que esta versão pede, mas com o
+    // Chromium completo instalado: aponte o binário em vez de baixar
+    // (E2E_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome).
+    ...(process.env.E2E_CHROMIUM ? { launchOptions: { executablePath: process.env.E2E_CHROMIUM } } : {}),
   },
   webServer: {
     command: "npm run dev",

@@ -10,6 +10,7 @@ import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getAgregadoDaEquipe } from "@/lib/admin/agregados";
 import { createClient } from "@/lib/supabase/server";
 import { ETAPAS_FUNIL, ETAPA_LABEL, ORIGEM_ATRIBUICAO_LABEL, type Lead } from "@/lib/types";
+import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Leads da equipe" };
 
@@ -36,7 +37,8 @@ export default async function EquipePage() {
     // quando não é, o teto evita despejar mil linhas numa seção secundária.
     supabase
       .from("leads")
-      .select("id, nome, created_at, empreendimento:empreendimentos(nome)")
+      // FK explícita: desde a 0083 há duas relações leads→empreendimentos (0083).
+      .select("id, nome, created_at, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome)")
       .is("corretor_id", null)
       .order("created_at", { ascending: false })
       .limit(20),
@@ -45,14 +47,11 @@ export default async function EquipePage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-fluid-2xl text-titulo font-bold">Administração</h1>
-        <p className="text-fluid-sm text-apoio mt-2">
-          {agregado.total} contato{agregado.total === 1 ? "" : "s"} no total. A distribuição
-          automática entrega o lead a quem recebeu menos nos últimos 30 dias.
-        </p>
+        <CabecalhoDeTela secao="Administração" titulo="Leads da equipe" descricao={<>{agregado.total} contato{agregado.total === 1 ? "" : "s"} no total. A distribuição
+          automática entrega o lead a quem recebeu menos nos últimos 30 dias.</>} />
       </div>
 
-      <AbasAdmin ativa="leads" />
+      <AbasAdmin ativa="/corretor/admin/leads" />
 
       <RedistribuirCarteira
         equipe={agregado.porCorretor.map((linha) => ({
