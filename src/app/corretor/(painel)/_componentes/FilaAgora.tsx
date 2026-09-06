@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { BotaoConcluirTarefa } from "./BotaoConcluirTarefa";
+import { BotaoConcluirAnotacao } from "./BotaoConcluirAnotacao";
 import { BotaoResponderComIA } from "./BotaoResponderComIA";
 import type { ItemFila, TipoItemFila } from "@/lib/crm/filaDeTrabalho";
 
@@ -32,8 +33,11 @@ const REGUA: Record<TipoItemFila, string> = {
   sem_resposta: "bg-perigo",
   visita_hoje: "bg-etapa-visita",
   tarefa_vencida: "bg-alerta",
+  // Lembrete de anotação (0100) pesa como tarefa — e leva a mesma cor.
+  lembrete_vencido: "bg-alerta",
   lead_novo: "bg-etapa-novo",
   tarefa_hoje: "bg-info",
+  lembrete_hoje: "bg-info",
   sem_revisao: "bg-linha-forte",
   lead_parado: "bg-linha-forte",
 };
@@ -101,6 +105,10 @@ export function FilaAgora({ itens }: { itens: ItemFila[] }) {
 
             {item.tarefaId && (
               <BotaoConcluirTarefa tarefaId={item.tarefaId} titulo={item.titulo} />
+            )}
+
+            {item.anotacaoId && (
+              <BotaoConcluirAnotacao anotacaoId={item.anotacaoId} titulo={item.titulo} />
             )}
 
             {/* Só em quem está esperando: é o único item da fila em que há

@@ -313,6 +313,7 @@ describe("as barras de abas DERIVAM do menu", () => {
       "Lista",
       "Funil",
       "Visitas",
+      "Anotações",
       "Adicionar",
     ]);
     expect(subitensDe("/corretor/whatsapp").map((s) => s.href)).toEqual([

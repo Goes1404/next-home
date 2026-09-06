@@ -4546,3 +4546,16 @@ estavam certos, e eram defeitos DIFERENTES:
   `corretores/<id>/referencias/<hash>` e viaja DENTRO da proposta
   (`referenciaPath` na arte, `fotosExtras` no vídeo) — a action valida o
   prefixo e o vídeo só usa a lista da proposta GRAVADA, nunca a do POST.
+
+- **Anotações do corretor (0100, 06/09/2026)** — bloco de notas em
+  `/corretor/anotacoes` (subitem de Pessoas): nota livre, vínculo opcional
+  a lead, direcionável a colega via `destinatario_id` (default = autor — é
+  o que evita segunda tabela), lembrete com hora que chega no WhatsApp do
+  PRÓPRIO corretor (carona no tique dos follow-ups, claim atômico, sem
+  cota anti-ban — não é contato com cliente) e na fila do Início com o
+  peso das tarefas. Empreendimento vem do LEAD vinculado, nunca de coluna
+  própria. `?empreendimento=` também entrou na lista de Leads
+  (`FiltroLeads.empreendimentoId`). `tabelasSeguras.test.ts` pegou de
+  primeira o grant herdado de `anon` — todo `create table` novo leva
+  `revoke all ... from anon`. Spec:
+  docs/superpowers/specs/2026-09-06-anotacoes-do-corretor-design.md

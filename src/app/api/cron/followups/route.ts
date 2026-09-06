@@ -23,6 +23,7 @@ import {
 } from "@/lib/whatsapp/repositorio";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
+import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
 import { separarRajada } from "@/lib/whatsapp/rajada";
 import {
   decidirRespostaAtrasada,
@@ -423,6 +424,9 @@ export async function GET(req: NextRequest) {
 
   try {
     await agendarLembretesDeVisita(supabase);
+    // Lembretes das anotações (0100): mensagem para o PRÓPRIO corretor, não
+    // para cliente — por isso não passa por cota anti-ban nem pela janela.
+    await processarLembretesDeAnotacao(supabase);
 
     const { data: vencidos } = await supabase
       .from("whatsapp_followups")
@@ -446,6 +450,86 @@ export async function GET(req: NextRequest) {
 }
 
 export const POST = GET;
+
+/**
+ * Lembretes das anotações vencidos → WhatsApp do próprio corretor (0100).
+ *
+ * Roda no MESMO tique (e sob a mesma trava) dos follow-ups: o pg_cron já
+ * bate aqui a cada 5 min, e criar um segundo cron para meia dúzia de
+ * lembretes seria configuração nova em produção sem ganho nenhum.
+ *
+ * O claim é atômico (`lembrete_enviado_em is null` no próprio UPDATE):
+ * entre dois tiques concorrentes, só um manda. Falha de envio carimba
+ * `lembrete_erro` e NÃO devolve o claim — lembrete é aviso, não campanha:
+ * insistir num número quebrado a cada 5 min viraria spam de erro, e o
+ * painel continua mostrando o lembrete até o corretor concluir.
+ */
+const LEMBRETES_POR_TIQUE = 10;
+
+async function processarLembretesDeAnotacao(
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<void> {
+  const { data: vencidos } = await supabase
+    .from("anotacoes")
+    .select("id, destinatario_id, corretor_id, texto, lead_id")
+    .eq("lembrete_whatsapp", true)
+    .is("lembrete_enviado_em", null)
+    .is("concluida_em", null)
+    .not("lembrete_em", "is", null)
+    .lte("lembrete_em", new Date().toISOString())
+    .order("lembrete_em", { ascending: true })
+    .limit(LEMBRETES_POR_TIQUE);
+
+  for (const nota of vencidos ?? []) {
+    // Claim atômico antes de qualquer rede.
+    const { data: claim } = await supabase
+      .from("anotacoes")
+      .update({ lembrete_enviado_em: new Date().toISOString() })
+      .eq("id", nota.id)
+      .is("lembrete_enviado_em", null)
+      .select("id");
+    if (!claim || claim.length === 0) continue;
+
+    const [{ data: instancia }, { data: destinatario }, { data: autor }, { data: lead }] =
+      await Promise.all([
+        supabase
+          .from("corretor_whatsapp_instancias")
+          .select("instance_name, status_conexao")
+          .eq("corretor_id", nota.destinatario_id)
+          .maybeSingle(),
+        supabase.from("corretores").select("whatsapp").eq("id", nota.destinatario_id).maybeSingle(),
+        nota.corretor_id !== nota.destinatario_id
+          ? supabase.from("corretores").select("nome").eq("id", nota.corretor_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+        nota.lead_id
+          ? supabase.from("leads").select("nome").eq("id", nota.lead_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+
+    if (!instancia || instancia.status_conexao !== "conectado" || !destinatario?.whatsapp) {
+      // Sem canal: o lembrete segue vivo no painel; só o WhatsApp não sai.
+      await supabase.from("anotacoes").update({ lembrete_erro: "sem_whatsapp" }).eq("id", nota.id);
+      continue;
+    }
+
+    const envio = await enviarMensagemWhatsapp({
+      instanceName: instancia.instance_name,
+      telefone: destinatario.whatsapp,
+      texto: formatarLembreteWhatsapp({
+        texto: nota.texto,
+        leadNome: lead?.nome ?? null,
+        autorNome: autor?.nome ?? null,
+      }),
+    });
+
+    if (!envio.enviado) {
+      await supabase
+        .from("anotacoes")
+        .update({ lembrete_erro: `erro_envio:${envio.motivo ?? "desconhecido"}` })
+        .eq("id", nota.id);
+    }
+  }
+}
 
 async function descartar(
   supabase: ReturnType<typeof createServiceClient>,

@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { situacaoDaTarefa, type Tarefa } from "@/lib/crm/timeline";
+import { horaDoLembrete, situacaoDoLembrete } from "@/lib/crm/lembretes";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import type { Lead } from "@/lib/types";
 
@@ -24,6 +25,8 @@ export type TipoItemFila =
   | "lead_novo"
   | "tarefa_vencida"
   | "tarefa_hoje"
+  | "lembrete_vencido"
+  | "lembrete_hoje"
   | "sem_revisao"
   | "lead_parado";
 
@@ -41,6 +44,8 @@ export type ItemFila = {
   whatsapp?: string;
   /** Tarefa de origem — o que permite concluí-la sem sair do Início. */
   tarefaId?: string;
+  /** Anotação de origem — permite concluir o lembrete sem sair do Início. */
+  anotacaoId?: string;
   /** Conversa de origem — permite pedir a resposta da IA sem sair do Início. */
   conversaId?: string;
   /** Peso na ordenação; menor primeiro. */
@@ -82,9 +87,15 @@ const DIAS_PARA_ESFRIAR = 7;
 const PESO: Record<TipoItemFila, number> = {
   sem_resposta: 0,
   visita_hoje: 1,
+  // Lembrete de anotação (0100) pesa como TAREFA: os dois são compromissos
+  // que o próprio corretor marcou — vencido dói igual, "para hoje" espera
+  // igual. Peso repetido é deliberado: dentro do mesmo peso vale a ordem de
+  // chegada (mais urgente primeiro).
   tarefa_vencida: 2,
+  lembrete_vencido: 2,
   lead_novo: 3,
   tarefa_hoje: 4,
+  lembrete_hoje: 4,
   sem_revisao: 5,
   lead_parado: 6,
 };
@@ -115,6 +126,12 @@ function diasDesde(iso: string, agora: Date): number {
 export async function getFilaDeTrabalho(
   tarefas: Tarefa[],
   agora: Date = new Date(),
+  /**
+   * Id do corretor logado — recorta os lembretes por DESTINATÁRIO. A RLS
+   * devolveria também as notas que ele mandou para colegas, e lembrete de
+   * colega na fila do autor é ruído: quem age é quem recebe.
+   */
+  corretorId?: string | null,
 ): Promise<ItemFila[]> {
   const supabase = await createClient();
 
@@ -127,7 +144,22 @@ export async function getFilaDeTrabalho(
 
   const limiteEsfriar = new Date(agora.getTime() - DIAS_PARA_ESFRIAR * 86_400_000).toISOString();
 
-  const [esperando, visitas, novos, parados, revisao] = await Promise.all([
+  /*
+   * Lembretes das anotações (0100): abertos, com hora marcada, cujo dia em
+   * SP já chegou. A situação exata (vencido × hoje) é decidida em memória
+   * por `situacaoDoLembrete` — a mesma régua de fuso do resto do painel.
+   */
+  let consultaLembretes = supabase
+    .from("anotacoes")
+    .select("id, texto, lembrete_em, lead_id")
+    .is("concluida_em", null)
+    .not("lembrete_em", "is", null)
+    .lte("lembrete_em", `${dia}T23:59:59-03:00`)
+    .order("lembrete_em", { ascending: true })
+    .limit(TETO_DA_FILA);
+  if (corretorId) consultaLembretes = consultaLembretes.eq("destinatario_id", corretorId);
+
+  const [esperando, visitas, novos, parados, revisao, lembretes] = await Promise.all([
     /*
      * Quem falou com a gente e está esperando (0087). Primeiro item da fila
      * porque é a única situação em que a pessoa já levantou a mão e nós
@@ -177,6 +209,7 @@ export async function getFilaDeTrabalho(
       .in("acao", ["respondida", "visita_confirmada"])
       .is("avaliacao", null)
       .not("conversa_id", "is", null),
+    consultaLembretes,
   ]);
 
   const itens: ItemFila[] = [];
@@ -264,6 +297,24 @@ export async function getFilaDeTrabalho(
       href: tarefa.lead ? `/corretor/leads/${tarefa.lead.id}` : "/corretor/leads",
       tarefaId: tarefa.id,
       peso: situacao === "atrasada" ? PESO.tarefa_vencida : PESO.tarefa_hoje,
+    });
+  }
+
+  for (const nota of lembretes.data ?? []) {
+    const situacao = situacaoDoLembrete(nota.lembrete_em as string, agora);
+    if (situacao === "futuro") continue;
+    const resumo = String(nota.texto).replace(/\s+/g, " ").trim();
+    itens.push({
+      chave: `lembrete:${nota.id}`,
+      tipo: situacao === "vencido" ? "lembrete_vencido" : "lembrete_hoje",
+      titulo: resumo.length > 64 ? `${resumo.slice(0, 63).trimEnd()}…` : resumo,
+      detalhe:
+        situacao === "vencido"
+          ? `Lembrete das ${horaDoLembrete(nota.lembrete_em as string)}`
+          : `Lembrete para hoje, ${horaDoLembrete(nota.lembrete_em as string)}`,
+      href: nota.lead_id ? `/corretor/leads/${nota.lead_id}` : "/corretor/anotacoes",
+      anotacaoId: nota.id,
+      peso: situacao === "vencido" ? PESO.lembrete_vencido : PESO.lembrete_hoje,
     });
   }
 

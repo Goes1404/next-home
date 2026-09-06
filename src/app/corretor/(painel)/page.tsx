@@ -185,7 +185,8 @@ export default async function PainelInicio() {
  */
 async function BlocoDaFila() {
   const tarefas = await getMinhasTarefas();
-  const fila = await getFilaDeTrabalho(tarefas);
+  const corretor = await getCorretorLogado();
+  const fila = await getFilaDeTrabalho(tarefas, new Date(), corretor?.id ?? null);
   return <FilaAgora itens={fila} />;
 }
 

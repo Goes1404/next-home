@@ -67,6 +67,7 @@ export function ListaLeads({
   nomeCorretor,
   whatsappCorretor,
   verArquivados = false,
+  empreendimentos = [],
 }: {
   leadsIniciais: Lead[];
   total: number;
@@ -85,6 +86,8 @@ export function ListaLeads({
    * um toque a mais onde antes se arquivava.
    */
   verArquivados?: boolean;
+  /** Para o select de filtro por empreendimento (06/09/2026). */
+  empreendimentos?: { id: string; nome: string }[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -93,6 +96,7 @@ export function ListaLeads({
   const filtro = (params.get("filtro") ?? "todos") as Filtro;
   const etapaFiltro = params.get("etapa") ?? "";
   const corretorFiltro = params.get("corretor") ?? "";
+  const empreendimentoFiltro = params.get("empreendimento") ?? "";
   const dataDe = params.get("de") ?? "";
   const dataAte = params.get("ate") ?? "";
 
@@ -226,9 +230,13 @@ export function ListaLeads({
   // Filtros "avançados" = os que não cabem no dia a dia do polegar. Ficam
   // recolhidos (progressive disclosure), mas abrem sozinhos quando algum está
   // ativo — filtro invisível filtrando é a pior surpresa da tela.
-  const filtrosAvancadosAtivos = [etapaFiltro, corretorFiltro, dataDe, dataAte].filter(
-    Boolean,
-  ).length;
+  const filtrosAvancadosAtivos = [
+    etapaFiltro,
+    corretorFiltro,
+    empreendimentoFiltro,
+    dataDe,
+    dataAte,
+  ].filter(Boolean).length;
   const [mostrarFiltros, setMostrarFiltros] = useState(filtrosAvancadosAtivos > 0);
 
   const temFiltroAtivo = Boolean(
@@ -309,6 +317,19 @@ export function ListaLeads({
               ))}
             </select>
           )}
+          <select
+            value={empreendimentoFiltro}
+            onChange={(e) => atualizarUrl({ empreendimento: e.target.value })}
+            aria-label="Filtrar por empreendimento"
+            className="text-fluid-xs min-h-11 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
+          >
+            <option value="">Todos os empreendimentos</option>
+            {empreendimentos.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.nome}
+              </option>
+            ))}
+          </select>
           <select
             value={etapaFiltro}
             onChange={(e) => atualizarUrl({ etapa: e.target.value, filtro: "" })}

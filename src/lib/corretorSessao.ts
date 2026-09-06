@@ -201,6 +201,12 @@ export type FiltroLeads = {
    * régua da casa é que dado guardado sem tela é dado perdido.
    */
   arquivados?: boolean;
+  /**
+   * Recorte por empreendimento (06/09/2026): casa "chegou por"
+   * (`empreendimento_id`) OU "conversando sobre" (`imovel_interesse_id`).
+   * Vem de `?empreendimento=` na lista e na página de anotações.
+   */
+  empreendimentoId?: string;
   /** Só faz sentido para o gestor; corretor comum já é recortado pela RLS. */
   corretorId?: string;
   /**
@@ -306,6 +312,13 @@ export async function getPaginaDeLeads(
   }
   if (filtro.etapas && filtro.etapas.length > 0) query = query.in("etapa", filtro.etapas);
   if (filtro.corretorId) query = query.eq("corretor_id", filtro.corretorId);
+  if (filtro.empreendimentoId) {
+    // "Chegou por" OU "conversando sobre" — as duas colunas que o lead já
+    // tem. Grupo `.or()` próprio: combina por AND com o da busca acima.
+    query = query.or(
+      `empreendimento_id.eq.${filtro.empreendimentoId},imovel_interesse_id.eq.${filtro.empreendimentoId}`,
+    );
+  }
   if (filtro.criadoDe) query = query.gte("created_at", filtro.criadoDe);
   if (filtro.criadoAte) query = query.lte("created_at", `${filtro.criadoAte}T23:59:59`);
   if (filtro.semDono) query = query.is("corretor_id", null);
@@ -336,6 +349,17 @@ export async function getPaginaDeLeads(
  * termômetro do Início e os cabeçalhos das colunas do quadro. Sete queries
  * de contagem em paralelo custam menos que uma que trafega a carteira.
  */
+/**
+ * Empreendimentos para SELECTS de filtro (06/09/2026): só id e nome, todos —
+ * inclusive despublicados, porque lead antigo pode apontar para um. Não é a
+ * consulta do catálogo; é o vocabulário do filtro.
+ */
+export async function getEmpreendimentosParaFiltro(): Promise<{ id: string; nome: string }[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("empreendimentos").select("id, nome").order("nome");
+  return (data ?? []) as { id: string; nome: string }[];
+}
+
 export async function getContagemPorEtapa(): Promise<Record<EtapaFunil, number>> {
   const supabase = await createClient();
   const pares = await Promise.all(

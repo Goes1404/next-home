@@ -4,7 +4,7 @@ tags: [moc, crm, painel]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-06
 summary: Leads, funil, fila de trabalho, telas do corretor e do gestor.
 ---
 # CRM e Painel — Map of Content
@@ -20,6 +20,7 @@ F0–F6.
 
 ## Telas
 - [[navegacao-do-painel-tem-regua]]
+- [[anotacoes-do-corretor]] — bloco de notas com lembretes (06/09)
 - [[fila-do-inicio-e-uma-fila]]
 - [[nome-util-do-lead-e-modulo-puro]]
 - [[alerta-sempre-aceso-vira-paisagem]]

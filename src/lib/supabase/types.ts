@@ -93,6 +93,73 @@ export type Database = {
           },
         ]
       }
+      anotacoes: {
+        Row: {
+          id: string
+          corretor_id: string
+          destinatario_id: string
+          lead_id: string | null
+          texto: string
+          lembrete_em: string | null
+          lembrete_whatsapp: boolean
+          lembrete_enviado_em: string | null
+          lembrete_erro: string | null
+          concluida_em: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          corretor_id: string
+          destinatario_id: string
+          lead_id?: string | null
+          texto: string
+          lembrete_em?: string | null
+          lembrete_whatsapp?: boolean
+          lembrete_enviado_em?: string | null
+          lembrete_erro?: string | null
+          concluida_em?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          corretor_id?: string
+          destinatario_id?: string
+          lead_id?: string | null
+          texto?: string
+          lembrete_em?: string | null
+          lembrete_whatsapp?: boolean
+          lembrete_enviado_em?: string | null
+          lembrete_erro?: string | null
+          concluida_em?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anotacoes_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anotacoes_destinatario_id_fkey"
+            columns: ["destinatario_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anotacoes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogo_candidatos: {
         Row: {
           area: string | null

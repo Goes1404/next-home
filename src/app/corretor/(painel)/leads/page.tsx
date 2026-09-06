@@ -8,6 +8,7 @@ import {
   getEquipeAtiva,
   getMeusTemplates,
   getPaginaDeLeads,
+  getEmpreendimentosParaFiltro,
   contarLeadsArquivados,
   souGestor,
   type FiltroLeads,
@@ -78,17 +79,20 @@ export default async function LeadsPage({
     metaCampanhaId: primeiroValor(params.campanha) || undefined,
     criadoDe: primeiroValor(params.de) || undefined,
     criadoAte: primeiroValor(params.ate) || undefined,
+    // `?empreendimento=` — chegou por OU conversando sobre (06/09/2026).
+    empreendimentoId: primeiroValor(params.empreendimento) || undefined,
     semDono: semDono || undefined,
     paradoDias,
     arquivados: verArquivados || undefined,
   };
 
-  const [pagina, gestor, corretor, templates, arquivados] = await Promise.all([
+  const [pagina, gestor, corretor, templates, arquivados, empreendimentos] = await Promise.all([
     getPaginaDeLeads(filtro),
     souGestor(),
     getCorretorLogado(),
     getMeusTemplates(),
     contarLeadsArquivados(),
+    getEmpreendimentosParaFiltro(),
   ]);
   const equipe = gestor ? await getEquipeAtiva() : [];
 
@@ -179,6 +183,7 @@ export default async function LeadsPage({
         nomeCorretor={corretor?.nome ?? ""}
         whatsappCorretor={corretor?.whatsapp ?? ""}
         verArquivados={verArquivados}
+        empreendimentos={empreendimentos}
       />
     </div>
   );

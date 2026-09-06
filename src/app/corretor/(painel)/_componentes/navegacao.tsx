@@ -103,6 +103,9 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/leads", label: "Lista", icone: IconeListaContatos },
           { href: "/corretor/funil", label: "Funil", icone: IconeFunil },
           { href: "/corretor/visitas", label: "Visitas", icone: IconeVisitas },
+          // Bloco de notas com lembretes (0100): nota livre, vínculo a lead,
+          // direcionável a colega — mora em Pessoas porque é sobre gente.
+          { href: "/corretor/anotacoes", label: "Anotações", icone: IconeNota },
           { href: "/corretor/importar", label: "Adicionar", icone: IconeAdicionarPessoa },
         ],
       },
@@ -510,6 +513,17 @@ function IconeFunil(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconeNota(p: SVGProps<SVGSVGElement>) {
+  // Bloco de notas com o lápis: anotação.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M8 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8" />
+      <path d="M4 7h4M4 12h4M4 17h4" />
+      <path d="M11.5 13.8 17 8.3l1.8 1.8-5.5 5.5-2.5.7z" />
+    </svg>
+  );
+}
+
 function IconeVisitas(p: SVGProps<SVGSVGElement>) {
   // Calendário com o check: visita MARCADA.
   return (

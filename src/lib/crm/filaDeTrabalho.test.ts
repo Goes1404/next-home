@@ -16,9 +16,13 @@ import { ordenarFila, TETO_DA_FILA, type ItemFila, type TipoItemFila } from "./f
 const PESOS: Record<TipoItemFila, number> = {
   sem_resposta: 0,
   visita_hoje: 1,
+  // Lembrete de anotação (0100) pesa como tarefa — os dois são compromissos
+  // que o próprio corretor marcou.
   tarefa_vencida: 2,
+  lembrete_vencido: 2,
   lead_novo: 3,
   tarefa_hoje: 4,
+  lembrete_hoje: 4,
   sem_revisao: 5,
   lead_parado: 6,
 };
