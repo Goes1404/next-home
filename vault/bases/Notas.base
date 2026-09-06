@@ -1,0 +1,54 @@
+views:
+  - type: table
+    name: Todas as notas
+    filters:
+      and:
+        - file.inFolder("10-notas")
+    order:
+      - file.name
+      - type
+      - status
+      - custou
+      - summary
+      - updated
+    sort:
+      - property: custou
+        direction: ASC
+  - type: table
+    name: Custou caro
+    filters:
+      and:
+        - file.inFolder("10-notas")
+        - custou == "alto"
+    order:
+      - file.name
+      - summary
+      - updated
+  - type: table
+    name: Decisões
+    filters:
+      and:
+        - type == "decisao"
+    order:
+      - file.name
+      - summary
+      - updated
+  - type: table
+    name: Runbooks
+    filters:
+      and:
+        - type == "runbook"
+    order:
+      - file.name
+      - summary
+      - updated
+  - type: table
+    name: Pendentes (não evergreen)
+    filters:
+      and:
+        - status != "evergreen"
+        - file.inFolder("10-notas")
+    order:
+      - file.name
+      - status
+      - summary
