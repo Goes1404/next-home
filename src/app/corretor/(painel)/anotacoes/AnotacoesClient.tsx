@@ -213,8 +213,14 @@ export function AnotacoesClient({
                         }}
                         className="text-corpo hover:bg-vidro flex min-h-11 w-full items-center justify-between gap-2 rounded-lg px-3 text-left text-sm"
                       >
-                        <span className="truncate">{l.nome}</span>
-                        {l.telefone && <span className="text-tenue text-xs">{l.telefone.slice(-4)}</span>}
+                        {/* `truncate` sozinho não corta dentro de um flex:
+                            item de flex tem largura mínima de conteúdo, então
+                            o nome comprido empurrava os quatro dígitos do
+                            telefone para fora do botão em vez de virar "…". */}
+                        <span className="min-w-0 flex-1 truncate">{l.nome}</span>
+                        {l.telefone && (
+                          <span className="text-tenue shrink-0 text-xs">{l.telefone.slice(-4)}</span>
+                        )}
                       </button>
                     </li>
                   ))}

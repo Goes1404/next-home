@@ -330,7 +330,7 @@ function Topico({
             className="flex min-h-12 min-w-0 flex-1 cursor-pointer items-center gap-3 px-4 text-left text-[15px] font-medium"
           >
             <Icone aria-hidden className="h-5 w-5 shrink-0" />
-            <span className="truncate">{item.label}</span>
+            <span className="min-w-0 truncate">{item.label}</span>
           </button>
         ) : (
           <Link
@@ -339,7 +339,7 @@ function Topico({
             className="flex min-h-12 min-w-0 flex-1 items-center gap-3 px-4 text-[15px] font-medium"
           >
             <Icone aria-hidden className="h-5 w-5 shrink-0" />
-            <span className="truncate">{item.label}</span>
+            <span className="min-w-0 truncate">{item.label}</span>
           </Link>
         )}
 

@@ -70,7 +70,12 @@ export function HeroInicio({
           <p className="text-tenue text-[11px] font-medium tracking-[0.22em] uppercase">
             {saudacao},
           </p>
-          <h1 className="font-display text-titulo mt-1 text-[2.75rem] leading-[0.92] font-bold tracking-[-0.03em] italic md:text-6xl">
+          {/* `break-words`: 44px no celular e 60px no monitor não perdoam nome
+              comprido — "Maria-Fernanda" numa palavra só passava da largura do
+              cartão em 360px, e `overflow-hidden` do cartão comia o fim em
+              vez de quebrar. Nome de gente é o único texto desta tela que o
+              projeto não controla. */}
+          <h1 className="font-display text-titulo mt-1 text-[2.75rem] leading-[0.92] font-bold tracking-[-0.03em] break-words italic md:text-6xl">
             {nome}
             <span className="text-acento">.</span>
           </h1>

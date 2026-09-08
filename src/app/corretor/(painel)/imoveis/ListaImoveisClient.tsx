@@ -114,7 +114,12 @@ export function ListaImoveisClient({ imoveis }: Props) {
                       {imovel.publicado ?? true ? "Publicado" : "Rascunho"}
                     </span>
 
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-black/60 text-titulo border border-linha-forte backdrop-blur-md">
+                    {/* `text-white`, não `text-titulo`: o token de título é
+                        #05211c no tema claro, e sobre `bg-black/60` isso é
+                        preto sobre preto. O selo flutua sobre a FOTO, que é
+                        escura nos dois temas — quem manda na cor aqui é o
+                        fundo do selo, não o tema. */}
+                    <span className="rounded-full border border-white/25 bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md">
                       {imovel.midias?.length || imovel.galeria?.length || 0} fotos
                     </span>
                   </div>
@@ -123,13 +128,23 @@ export function ListaImoveisClient({ imoveis }: Props) {
                 {/* Conteúdo do Card */}
                 <div className="p-4 sm:p-5 space-y-3 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-fluid-base font-bold text-titulo leading-tight">
+                    <div className="flex min-w-0 items-center justify-between gap-2">
+                      {/* `min-w-0` + `break-words`: item de flex tem largura
+                          mínima de conteúdo por padrão, então um nome de uma
+                          palavra só ("ResidencialAlphaville") empurrava o
+                          cartão para fora da coluna em vez de quebrar. */}
+                      <h3 className="text-fluid-base text-titulo min-w-0 leading-tight font-bold break-words">
                         {imovel.nome}
                       </h3>
                     </div>
-                    <p className="text-fluid-xs text-apoio">
-                       <MapPin className="inline-block w-5 h-5 align-text-bottom mr-1" />  {imovel.bairro}, {imovel.cidade}
+                    {/* O alfinete estava em 20px numa linha de ~12px: ícone
+                        maior que o texto que ele acompanha desalinha a linha
+                        inteira e come a largura do endereço. */}
+                    <p className="text-fluid-xs text-apoio flex items-start gap-1.5">
+                      <MapPin aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span className="min-w-0 break-words">
+                        {imovel.bairro}, {imovel.cidade}
+                      </span>
                     </p>
                     <p className="text-fluid-xs font-bold text-acento-suave pt-1">
                       A partir de: {precoFormatado}

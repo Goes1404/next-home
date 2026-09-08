@@ -237,9 +237,9 @@ export function TabelaLeads({
                     <span className="text-fluid-sm block truncate font-medium text-titulo">
                       {lead.nome}
                     </span>
-                    <span className="text-fluid-xs mt-0.5 flex items-center gap-1.5 text-tenue">
+                    <span className="text-fluid-xs text-tenue mt-0.5 flex min-w-0 items-center gap-1.5">
                       <EtiquetaEtapa etapa={lead.etapa} />
-                      <span className="truncate">{dataDoCartao(lead)}</span>
+                      <span className="min-w-0 truncate">{dataDoCartao(lead)}</span>
                     </span>
                   </span>
                   <ChevronDown

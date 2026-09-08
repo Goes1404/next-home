@@ -190,7 +190,7 @@ export default async function FichaLeadPage({
               className="text-fluid-sm border-linha bg-vidro text-corpo hover:border-linha-forte inline-flex min-h-11 max-w-full items-center gap-2 truncate rounded-full border px-4 transition-colors"
             >
               <Mail className="h-4 w-4 shrink-0" />
-              <span className="truncate">{lead.email}</span>
+              <span className="min-w-0 truncate">{lead.email}</span>
             </a>
           )}
           <IniciarConversaIA leadId={lead.id} temTelefone={Boolean(lead.telefone)} />

@@ -45,7 +45,7 @@ const ATALHOS: {
   icone: (p: SVGProps<SVGSVGElement>) => React.ReactElement;
   largo?: boolean;
 }[] = [
-  { href: "/corretor/pessoas", modulo: "leads", titulo: "Pessoas", texto: "quem falou com você, do mais recente ao mais antigo", icone: IconePessoas },
+  { href: "/corretor/pessoas", modulo: "leads", titulo: "Leads", texto: "quem falou com você, do mais recente ao mais antigo", icone: IconePessoas },
   { href: "/corretor/imoveis", modulo: "imoveis", titulo: "Imóveis", texto: "fotos, textos e preços do catálogo", icone: IconePredio },
   { href: "/corretor/whatsapp", modulo: "whatsapp", titulo: "Minha IA", texto: "atende, qualifica e marca visita enquanto você não está", icone: IconeRobo, largo: true },
   { href: "/corretor/imoveis/criar-imagem", modulo: "marketing", titulo: "Criar arte", texto: "peça pronta para publicar, conversando com a IA", icone: IconeMegafone },

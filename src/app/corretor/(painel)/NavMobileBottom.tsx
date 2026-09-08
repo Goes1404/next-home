@@ -41,12 +41,30 @@ export function NavMobileBottom() {
             href={item.href}
             aria-current={ativa ? "page" : undefined}
             className={cn(
-              "flex w-full flex-col items-center justify-center gap-1 transition-colors",
+              "flex w-full min-w-0 flex-col items-center justify-center gap-0.5 transition-colors",
               ativa ? "text-acento-suave" : "text-tenue",
             )}
           >
-            <Icone aria-hidden className="h-[22px] w-[22px]" />
-            <span className="text-[10px] font-medium tracking-wide">{item.label}</span>
+            {/*
+              A pílula atrás do ÍCONE é o que marca o destino atual
+              (06/09/2026: "deixe mais visível qual está selecionado"). Antes
+              só o rótulo trocava de cor — dois tons de cinza-esverdeado a
+              10px de altura, que ninguém distingue de relance no sol.
+              Envolve o ícone e não o alvo inteiro de propósito: a barra tem
+              quatro alvos de 78px em 320px, e uma pílula de largura cheia
+              não caberia sem cortar rótulo.
+            */}
+            <span
+              className={cn(
+                "grid h-7 w-14 place-items-center rounded-full transition-colors",
+                ativa && "bg-acento-lavado",
+              )}
+            >
+              <Icone aria-hidden className="h-[22px] w-[22px]" />
+            </span>
+            <span className="max-w-full truncate text-[10px] font-medium tracking-wide">
+              {item.label}
+            </span>
           </Link>
         );
       })}
@@ -58,22 +76,29 @@ export function NavMobileBottom() {
         aria-controls="gaveta-do-painel"
         aria-label="Todas as seções"
         className={cn(
-          "flex w-full cursor-pointer flex-col items-center justify-center gap-1 transition-colors",
+          "flex w-full min-w-0 cursor-pointer flex-col items-center justify-center gap-0.5 transition-colors",
           aberta ? "text-acento-suave" : "text-tenue",
         )}
       >
-        <svg
-          viewBox="0 0 24 24"
-          aria-hidden
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-          className="h-[22px] w-[22px]"
+        <span
+          className={cn(
+            "grid h-7 w-14 place-items-center rounded-full transition-colors",
+            aberta && "bg-acento-lavado",
+          )}
         >
-          <path d="M4 7h16M4 12h16M4 17h16" />
-        </svg>
-        <span className="text-[10px] font-medium tracking-wide">Menu</span>
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            className="h-[22px] w-[22px]"
+          >
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </span>
+        <span className="max-w-full truncate text-[10px] font-medium tracking-wide">Menu</span>
       </button>
     </nav>
   );

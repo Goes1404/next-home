@@ -156,7 +156,7 @@ function CartaoMidia({ midia, onRemover }: { midia: Midia; onRemover: () => void
           rel="noopener noreferrer"
           className="text-fluid-xs inline-flex max-w-full items-center gap-1 truncate text-acento-suave hover:underline"
         >
-          <span className="truncate">{midia.url}</span>
+          <span className="min-w-0 truncate">{midia.url}</span>
           <ExternalLink className="h-3 w-3 shrink-0" />
         </a>
       </div>
