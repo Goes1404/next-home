@@ -100,12 +100,16 @@ export function HeroInicio({
               strokeLinecap="round"
               strokeDasharray={`${ARCO} ${CIRC}`}
             />
+            {/* `medidor-enche`: o arco sobe do zero até o valor — o único
+                movimento de carga do painel, e é o número que muda quando a
+                corretora trabalha. Termina no valor do atributo, então com
+                movimento reduzido ele simplesmente já nasce cheio. */}
             <circle
               cx="50"
               cy="50"
               r={RAIO}
               fill="none"
-              className="stroke-acento"
+              className="stroke-acento medidor-enche"
               strokeWidth="7"
               strokeLinecap="round"
               strokeDasharray={`${preenchido} ${CIRC}`}

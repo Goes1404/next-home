@@ -4691,3 +4691,28 @@ Vault: [[fundo-16-9-em-tela-mais-larga-vira-faixa]].
   regra da casa ("comentário vai fora do parêntese ou dentro do elemento")
   vale também para ternário: `cond ? ( {/* … */} <X/> ) : …` são duas
   expressões e o TS reprova com `')' expected`.
+
+## Movimento do painel ganhou régua (07/09/2026)
+
+Vault: [[movimento-do-painel-tem-regua]]. Quatro animações novas em
+`globals.css`, e a regra que as governa importa mais que elas:
+
+- **UM momento orquestrado por carga** — o medidor do Início enchendo do
+  zero até o valor. É o número que muda quando a corretora trabalha, então o
+  movimento mostra conteúdo. Entrada animada em toda seção é o tell de
+  página gerada; não acrescentar a segunda.
+- **Todo o resto responde a GESTO**: `surgir` (cartões que a expansão do
+  funil revelou, escalonados com teto de 8), `menu-abre` (menu de três
+  pontos, origem no canto do toque), `aviso-entra` (toast subindo de perto
+  do polegar).
+- **Animação de entrada só declara o `from`** — o interruptor global de
+  `prefers-reduced-motion` encurta as durações para 0.01ms e a animação
+  SALTA para o fim, que precisa ser o valor real do elemento.
+- **Toque é gesto**: o realce nativo está desligado
+  (`-webkit-tap-highlight-color`), então tudo que navega ganhou `active:`
+  próprio — linhas de Pessoas e da fila do Início (`active:bg-vidro-forte`),
+  atalhos do Início (`active:scale-[0.98]`). Sem isso, no celular, tocar
+  parece não registrar.
+- **`grep -c` em CSS minificado conta linhas, não ocorrências** — tudo
+  "aparece 1x" porque o arquivo é uma linha. Conferir regra compilada com
+  `grep -o` e contexto.

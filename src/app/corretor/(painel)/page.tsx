@@ -134,7 +134,7 @@ export default async function PainelInicio() {
               // seção de destino: `bg-acento` aqui já é a cor DAQUELE módulo.
               data-modulo={a.modulo}
               className={cn(
-                "from-acento to-acento-hover text-sobre-cor shadow-painel group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-[1.75rem] bg-gradient-to-br p-4 ring-1 ring-white/10 transition-transform ring-inset hover:-translate-y-0.5 motion-reduce:transition-none md:min-h-40 md:p-5",
+                "from-acento to-acento-hover text-sobre-cor shadow-painel group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-[1.75rem] bg-gradient-to-br p-4 ring-1 ring-white/10 transition-transform ring-inset hover:-translate-y-0.5 active:scale-[0.98] motion-reduce:transition-none md:min-h-40 md:p-5",
                 a.largo && "col-span-2 flex-row items-center gap-4",
               )}
             >

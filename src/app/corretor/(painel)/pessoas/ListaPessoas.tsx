@@ -144,7 +144,7 @@ function LinhaPessoa({ pessoa }: { pessoa: PessoaNaLista }) {
         className={`w-1 shrink-0 ${pessoa.etapa ? REGUA_ETAPA[pessoa.etapa] : "bg-linha-forte"}`}
       />
 
-      <Link href={destino} className="hover:bg-vidro min-w-0 flex-1 px-3 py-3 transition-colors">
+      <Link href={destino} className="hover:bg-vidro active:bg-vidro-forte min-w-0 flex-1 px-3 py-3 transition-colors">
         <span className="flex items-baseline gap-2">
           <span className="text-fluid-sm text-titulo min-w-0 flex-1 truncate font-medium">
             {pessoa.nome}

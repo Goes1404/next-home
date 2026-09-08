@@ -1341,6 +1341,70 @@
 }
 
 /*
+ * Movimento do painel (07/09/2026) — três animações, cada uma com um dono.
+ *
+ * A régua: UM momento orquestrado por carga (o medidor do Início enchendo) e
+ * o resto do movimento só RESPONDENDO a gesto — menu que abre, cartões que a
+ * expansão revelou, aviso que chega. Entrada animada em toda seção é o
+ * caminho para a tela parecer template; movimento que responde mostra o que
+ * mudou.
+ *
+ * Todas caem no interruptor global de `prefers-reduced-motion` (as durações
+ * viram 0.01ms), então cada uma precisa terminar no ESTADO FINAL correto —
+ * animação de entrada sempre parte do invisível para o valor do elemento,
+ * nunca o contrário.
+ */
+
+/* O medidor do Início enche do zero até o valor — o único movimento de
+   carga do painel. O `from` usa a circunferência real do arco (r=44). */
+@keyframes medidor-enche {
+  from {
+    stroke-dasharray: 0 276.46;
+  }
+}
+.medidor-enche {
+  animation: medidor-enche 900ms cubic-bezier(0.22, 1, 0.36, 1) 150ms backwards;
+}
+
+/* Resposta a gesto: o que um clique revelou surge de leve, de baixo. O
+   escalonamento vem de `--surgir-ordem` (teto no chamador — atraso de lista
+   longa vira espera, não charme). */
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.surgir {
+  animation: surgir 240ms ease-out backwards;
+  animation-delay: calc(var(--surgir-ordem, 0) * 25ms);
+}
+
+/* Menu suspenso abrindo a partir de onde o dedo tocou (os menus do painel
+   abrem para CIMA, então a origem é o canto de baixo). */
+@keyframes menu-abre {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+}
+.menu-abre {
+  transform-origin: bottom right;
+  animation: menu-abre 140ms ease-out backwards;
+}
+
+/* Aviso chega deslizando de baixo — ele nasce perto do polegar. */
+@keyframes aviso-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.aviso-entra {
+  animation: aviso-entra 220ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/*
  * O encaixe do vídeo de fundo da home (06/09/2026).
  *
  * ## O defeito

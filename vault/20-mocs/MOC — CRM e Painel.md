@@ -20,6 +20,7 @@ F0–F6.
 
 ## Telas
 - [[navegacao-do-painel-tem-regua]]
+- [[movimento-do-painel-tem-regua]] — um momento de carga; o resto responde a gesto (07/09)
 - [[anotacoes-do-corretor]] — bloco de notas com lembretes (06/09)
 - [[fila-do-inicio-e-uma-fila]]
 - [[nome-util-do-lead-e-modulo-puro]]

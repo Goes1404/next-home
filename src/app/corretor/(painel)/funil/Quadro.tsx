@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useOptimistic, useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition, type CSSProperties } from "react";
 import { moverEtapa } from "@/app/corretor/actions";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import {
@@ -149,15 +149,34 @@ export function Quadro({
 
               {!vazia && (
                 <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                  {visiveis.map((lead) => (
-                    <Cartao
-                      key={lead.id}
-                      lead={lead}
-                      mostrarDono={mostrarDono}
-                      onMover={(destino) => mover(lead, destino)}
-                      onVerDossie={() => setLeadDossie(lead)}
-                    />
-                  ))}
+                  {visiveis.map((lead, indice) => {
+                    /*
+                     * Só o que a EXPANSÃO revelou surge animado — movimento
+                     * que responde ao clique e mostra o que mudou. Os seis
+                     * primeiros não se mexem: eles já estavam na tela.
+                     * O escalonamento tem teto: numa etapa com 60 cartões,
+                     * atraso crescente viraria espera, não charme.
+                     */
+                    const revelado = expandida && indice >= POR_ETAPA;
+                    return (
+                      <div
+                        key={lead.id}
+                        className={revelado ? "surgir" : undefined}
+                        style={
+                          revelado
+                            ? ({ "--surgir-ordem": Math.min(indice - POR_ETAPA, 8) } as CSSProperties)
+                            : undefined
+                        }
+                      >
+                        <Cartao
+                          lead={lead}
+                          mostrarDono={mostrarDono}
+                          onMover={(destino) => mover(lead, destino)}
+                          onVerDossie={() => setLeadDossie(lead)}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -166,7 +185,7 @@ export function Quadro({
                   type="button"
                   onClick={() => alternarExpansao(etapa)}
                   aria-expanded={false}
-                  className="border-linha text-corpo hover:border-acento-linha hover:text-titulo text-fluid-xs mt-2 flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border transition-colors"
+                  className="border-linha text-corpo hover:border-acento-linha hover:text-titulo text-fluid-xs mt-2 flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border transition-all active:scale-[0.99] motion-reduce:transition-none"
                 >
                   Mostrar os outros {ocultosAqui} aqui
                   <SetaParaBaixo aberta={false} />
@@ -178,7 +197,7 @@ export function Quadro({
                   type="button"
                   onClick={() => alternarExpansao(etapa)}
                   aria-expanded
-                  className="border-linha text-apoio hover:border-acento-linha hover:text-titulo text-fluid-xs mt-2 flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border transition-colors"
+                  className="border-linha text-apoio hover:border-acento-linha hover:text-titulo text-fluid-xs mt-2 flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border transition-all active:scale-[0.99] motion-reduce:transition-none"
                 >
                   Recolher {ETAPA_LABEL[etapa].toLowerCase()}
                   <SetaParaBaixo aberta />
@@ -240,7 +259,7 @@ function Cartao({
   const parado = diasParado(lead);
 
   return (
-    <article className="border-linha bg-elevado group relative overflow-hidden rounded-xl border p-3 pl-4">
+    <article className="border-linha bg-elevado hover:border-acento-linha group relative h-full overflow-hidden rounded-xl border p-3 pl-4 transition-colors">
       {/* A régua da etapa, igual à da lista: mesmo gesto, mesma escala. Aqui
           ela é redundante com o grupo, e isso é de propósito — o cartão viaja
           para a lista e para a ficha, e precisa se explicar sozinho. */}

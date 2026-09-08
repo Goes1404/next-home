@@ -96,7 +96,7 @@ function CartaoAviso({ aviso, aoFechar }: { aviso: Aviso; aoFechar: () => void }
       // `alert` interrompe o leitor de tela, `status` espera a vez. Erro
       // merece interromper; confirmação de que deu certo, não.
       role={aviso.tipo === "erro" ? "alert" : "status"}
-      className={`bg-superficie shadow-painel-alto text-fluid-sm pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-2xl border px-4 py-3 ${ESTILO[aviso.tipo]}`}
+      className={`bg-superficie shadow-painel-alto text-fluid-sm aviso-entra pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-2xl border px-4 py-3 ${ESTILO[aviso.tipo]}`}
     >
       <span className="flex-1 text-pretty">{aviso.texto}</span>
       <button

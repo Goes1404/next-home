@@ -302,7 +302,7 @@ function MenuDoCard({ imovel }: { imovel: Empreendimento }) {
       {aberto && (
         <div
           role="menu"
-          className="border-linha-forte bg-superficie shadow-painel absolute right-0 bottom-[calc(100%+0.5rem)] z-20 w-56 rounded-xl border p-1.5"
+          className="border-linha-forte bg-superficie shadow-painel menu-abre absolute right-0 bottom-[calc(100%+0.5rem)] z-20 w-56 rounded-xl border p-1.5"
         >
           {!confirmando ? (
             <>

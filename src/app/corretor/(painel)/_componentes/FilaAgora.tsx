@@ -79,7 +79,7 @@ export function FilaAgora({ itens }: { itens: ItemFila[] }) {
 
             <Link
               href={item.href}
-              className="flex min-w-0 flex-1 items-center gap-2 py-3.5 transition-opacity hover:opacity-80"
+              className="hover:bg-vidro active:bg-vidro-forte flex min-w-0 flex-1 items-center gap-2 rounded-lg py-3.5 pr-1 pl-2 transition-colors"
             >
               <span className="min-w-0 flex-1">
                 <span className="text-fluid-sm text-titulo block truncate font-medium">
