@@ -9,9 +9,15 @@ import { MapPin } from 'lucide-react';
 
 interface Props {
   imoveis: Empreendimento[];
+  /**
+   * Arte de IA por id de imóvel, para servir de capa a quem não tem foto
+   * (0101). Objeto simples e não `Map` porque atravessa a fronteira
+   * servidor→cliente, e `Map` não sobrevive à serialização do React.
+   */
+  artePorImovel?: Record<string, string>;
 }
 
-export function ListaImoveisClient({ imoveis }: Props) {
+export function ListaImoveisClient({ imoveis, artePorImovel = {} }: Props) {
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
 
@@ -80,22 +86,46 @@ export function ListaImoveisClient({ imoveis }: Props) {
             const precoFormatado = imovel.precoAPartir
               ? formatarMoedaBRL(imovel.precoAPartir)
               : "Sob Consulta";
+            /*
+             * `capa` NUNCA é nula: `mapEmpreendimento` devolve o logotipo da
+             * NextHome quando não há foto. Por isso o ramo "Sem Foto de Capa"
+             * abaixo era código morto desde sempre, e o cartão de um imóvel
+             * sem foto mostrava o logotipo esticado em `object-cover`. Quem
+             * responde "tem foto?" é a GALERIA, que só tem mídia do tipo foto.
+             */
+            const capaUrl = imovel.galeria?.[0]?.url ?? null;
+            const arte = capaUrl || !imovel.id ? null : artePorImovel[imovel.id];
 
             return (
               <div
                 key={imovel.slug}
                 className="rounded-3xl border border-linha bg-superficie overflow-hidden shadow-lg hover:border-linha-forte transition-all flex flex-col justify-between"
               >
-                {/* Imagem de Capa */}
+                {/* Imagem de Capa. Sem foto, a arte de IA do imóvel entra no
+                    lugar — SEMPRE com selo, porque um render que se passa por
+                    foto é a única coisa que este empréstimo não pode fazer. */}
                 <div className="relative aspect-[16/9] bg-campo">
-                  {imovel.capa?.url ? (
+                  {capaUrl ? (
                     <Image
-                      src={imovel.capa.url}
+                      src={capaUrl}
                       alt={imovel.nome}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover"
                     />
+                  ) : arte ? (
+                    <>
+                      <Image
+                        src={arte}
+                        alt={`Arte de IA de ${imovel.nome}`}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover"
+                      />
+                      <span className="absolute bottom-2 left-3 rounded-full border border-white/25 bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-md">
+                        arte de IA · não é foto
+                      </span>
+                    </>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-tenue text-fluid-xs font-semibold">
                       Sem Foto de Capa

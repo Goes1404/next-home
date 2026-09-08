@@ -83,6 +83,15 @@ export type ImagemGerada = {
   largura: number | null;
   altura: number | null;
   referenciaUrl: string | null;
+  /**
+   * O imóvel a que a arte pertence (0101), ou nulo quando é avulsa.
+   *
+   * NÃO é mídia do catálogo: não entra na vitrine e a assistente não pode
+   * enviá-la. O vínculo existe para o editor e o cartão do catálogo saberem
+   * de que imóvel é cada peça — antes disso a única pista era um slug solto
+   * dentro do `briefing`, que some quando o imóvel é renomeado.
+   */
+  empreendimentoId: string | null;
   criadaEm: string;
 };
 

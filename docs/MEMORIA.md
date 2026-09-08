@@ -4559,3 +4559,54 @@ estavam certos, e eram defeitos DIFERENTES:
   primeira o grant herdado de `anon` — todo `create table` novo leva
   `revoke all ... from anon`. Spec:
   docs/superpowers/specs/2026-09-06-anotacoes-do-corretor-design.md
+
+## A arte de IA ganhou dono, e o cartão do catálogo mentia (0101, 06/09/2026)
+
+Spec: `docs/superpowers/specs/2026-09-06-arte-de-ia-no-cadastro-design.md`.
+Vault: [[arte-de-ia-nao-e-midia-do-catalogo]], [[capa-de-empreendimento-nunca-e-nula]].
+
+- **`imagens_geradas` gravava o imóvel dentro do jsonb `briefing`, e isso não
+  é vínculo.** Sem integridade referencial, o `imovelSlug` guardado ali fica
+  errado no dia em que alguém renomeia o imóvel, e "quais artes são deste
+  imóvel" só se responde varrendo a tabela. A 0101 acrescentou
+  `empreendimento_id` com índice parcial. O `briefing` continua: ele é o
+  registro do PEDIDO, não o vínculo.
+- **A arte NÃO entra em `midias`, e a decisão foi reconfirmada.** `midias` é
+  a vitrine pública e a única fonte de anexo que a assistente pode mandar
+  para um cliente. Render de modelo chegando no WhatsApp de quem vai visitar
+  o imóvel é o defeito de sempre: quem visita confere. A arte fica visível
+  para o corretor (editor e cartão interno, sempre com selo) e para de viver
+  solta numa galeria onde ninguém lembra de que imóvel era.
+- **`capa` de empreendimento NUNCA é nula, e isso escondia um defeito.**
+  `mapEmpreendimento` faz `capa: fotos[0] ?? CAPA_PADRAO`, e `CAPA_PADRAO` é
+  o logotipo da NextHome (257×107). Logo: `imovel.capa?.url` é sempre
+  verdadeiro, o ramo "Sem Foto de Capa" do cartão do catálogo NUNCA rodou, e
+  imóvel sem foto aparecia com o logotipo esticado num quadro 16/9 em
+  `object-cover`. Quem responde "tem foto?" é `galeria.length`.
+- **Criar o imóvel primeiro, a arte depois — e nunca ao contrário.** A
+  geração leva 15-40s e pode falhar (sem crédito, teto do dia, tempo
+  esgotado). Se falhasse antes do cadastro, o corretor perderia o formulário
+  inteiro por causa de um extra. Falhando depois, o imóvel já existe e a tela
+  oferece o link do editor — não um "tentar de novo", que criaria um segundo
+  cadastro.
+- **Botão que demora precisa dizer em que passo está.** "Criando o imóvel…"
+  e "Gerando a imagem… (até 40s)" existem porque botão parado por 40s parece
+  travado: o corretor clica de novo e paga a geração duas vezes.
+
+## Duas armadilhas de layout que cortavam texto no painel (06/09/2026)
+
+Travadas em `src/app/corretor/naoCortaTexto.test.ts`, no mesmo formato
+declarativo de `naoRolaDeLado.test.ts`.
+
+- **`truncate` em item de flex sem `min-w-0` não trunca — vaza.** Item de
+  flex tem `min-width: auto`, que é a largura do CONTEÚDO: ele se recusa a
+  encolher, o `text-overflow` nunca chega a agir, e o texto empurra o irmão
+  para fora da caixa. Encontrado em sete lugares numa varredura: sugestão de
+  lead das Anotações (o nome expulsava os dígitos do telefone), rótulo da
+  gaveta, nome na lista de conversas, seletor de imóvel do chat, e-mail da
+  ficha do lead, link de mídia externa e a oficina de marketing.
+- **Token de tema sobre fundo que não é do tema.** O selo "N fotos" do cartão
+  do catálogo era `bg-black/60 text-titulo`, e `--color-titulo` é `#f6faf9`
+  no escuro mas `#05211c` no CLARO — preto sobre preto. Ninguém percebeu
+  porque quem desenvolveu estava no tema escuro. Fundo que não acompanha o
+  tema precisa de texto que também não acompanhe.

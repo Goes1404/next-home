@@ -25,6 +25,8 @@ F0–F6.
 - [[nome-util-do-lead-e-modulo-puro]]
 - [[alerta-sempre-aceso-vira-paisagem]]
 - [[barra-fixa-que-estoura-a-largura]]
+- [[arte-de-ia-nao-e-midia-do-catalogo]] — a 0101 liga a arte ao imóvel sem tocar em `midias` (06/09)
+- [[capa-de-empreendimento-nunca-e-nula]] — o `else` de "sem foto" era código morto (06/09)
 - [[botoes-perigosos-atras-de-avancado]]
 
 ## Dados do lead
