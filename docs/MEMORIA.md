@@ -4610,3 +4610,41 @@ declarativo de `naoRolaDeLado.test.ts`.
   no escuro mas `#05211c` no CLARO — preto sobre preto. Ninguém percebeu
   porque quem desenvolveu estava no tema escuro. Fundo que não acompanha o
   tema precisa de texto que também não acompanhe.
+
+## O fundo 16:9 virava faixa escura na janela do desktop (06/09/2026)
+
+Vault: [[fundo-16-9-em-tela-mais-larga-vira-faixa]].
+
+- **A vinheta é 1280x720 (1,778) e a viewport de um navegador maximizado NÃO
+  é 16:9.** Num monitor 1920x1080, a barra de endereço come altura e sobra
+  ~1920x910 — proporção **2,11**. Com `object-contain`, o quadro cabe pela
+  altura e sobram **143px vazios de cada lado**, medido no ar: quadro pintado
+  de 1618px numa caixa de 1905. Ou seja, o pillarbox é o caso COMUM no
+  desktop, não a exceção.
+- **O que apareceu na faixa foi a camada de preenchimento a 60% de
+  opacidade**, e é o degrau de luz contra o quadro nítido que desenha duas
+  linhas verticais retas. A régua já estava escrita para a base do vídeo no
+  celular: linha reta no meio de uma imagem não se lê como composição, se lê
+  como defeito.
+- **A correção é uma consulta de PROPORÇÃO, não uma troca cega de
+  `object-fit`.** Acima de 16:9 o corte de `cover` é em cima e embaixo (8,8%
+  de cada lado em 1920x910) e a marca, que mora no meio do quadro, escapa.
+  Abaixo — celular em pé, janela dividida ao meio — `cover` cortaria as
+  LATERAIS, que é onde "Next Home" se escreve; ali o `contain` continua.
+- **Regra fora de `@layer` ganha de utility do Tailwind.** `object-contain`
+  vive em `@layer utilities`; CSS sem camada vence independente da ordem. Foi
+  conferido no navegador com o CSS de PRODUÇÃO e sem `!important`: 1920x910
+  resolve `cover`, 390x844 resolve `contain`.
+- **A guarda lê o cabeçalho do MP4** e compara com o número da consulta —
+  trocar a vinheta por uma de outra proporção sem mexer no CSS traz a faixa
+  de volta, e traz calada (build, tipos e testes seguem verdes).
+- **A primeira versão da guarda passou numa mordida por comparar
+  SUBSTRING**: `.fundo-encaixa-na-telaXX` contém `.fundo-encaixa-na-tela`.
+  É a mesma armadilha já registrada aqui em 03/09 ("ao morder uma guarda que
+  procura texto, conferir que a mordida de fato tira o texto") — e desta vez
+  ela apareceu do lado da GUARDA, não da mordida. Seletor agora é casado com
+  fronteira (`/\.classe\s*\{/`).
+- **Diagnóstico**: para este tipo de queixa ("o fundo não fica 100%"), medir
+  no navegador `getBoundingClientRect()` do vídeo contra `videoWidth/Height`
+  e calcular a faixa vazia. O número sai em uma consulta e dispensa palpite
+  sobre CSS.

@@ -17,6 +17,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 
 ## Vídeo e peso
 - [[video-controlado-por-scroll-precisa-de-keyframes-densos]]
+- [[fundo-16-9-em-tela-mais-larga-vira-faixa]] — 143px de faixa vazia no desktop (06/09)
 - [[dynamic-ssr-false-nao-adia-por-visibilidade]]
 
 ## Mapas

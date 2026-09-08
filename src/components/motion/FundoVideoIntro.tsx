@@ -238,7 +238,16 @@ export function FundoVideoIntro({
       {/* A camada da MARCA. `contain` no 16:9 (a logo inteira, com o
           desfoque preenchendo em volta); `cover` no vertical, que já tem a
           proporção da tela — ali `contain` deixaria tarja em cima e
-          embaixo justamente onde não precisa. */}
+          embaixo justamente onde não precisa.
+
+          `fundo-encaixa-na-tela` vira o `contain` em `cover` quando a JANELA
+          é mais larga que 16:9 — o caso do desktop comum, em que a barra de
+          endereço deixa a viewport em ~2,1 e sobravam 143px de faixa vazia de
+          cada lado (medido no ar em 06/09). Acima dessa proporção o corte é
+          em cima e embaixo, e a marca, que mora no meio do quadro, escapa
+          dele; abaixo, a classe não vale e o `contain` continua protegendo as
+          laterais, que é onde "Next Home" se escreve. Ver o comentário longo
+          da regra em `globals.css`. */}
       <video
         autoPlay
         muted
@@ -247,7 +256,9 @@ export function FundoVideoIntro({
         onLoadedData={() => setPronto(true)}
         onTimeUpdate={congelarNoPonto}
         onEnded={pararNoFim}
-        className={`absolute inset-0 h-full w-full ${vertical ? "object-cover" : "object-contain"}`}
+        className={`absolute inset-0 h-full w-full ${
+          vertical ? "object-cover" : "object-contain fundo-encaixa-na-tela"
+        }`}
         style={
           deslocarY
             ? {

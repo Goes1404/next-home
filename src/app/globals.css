@@ -1341,6 +1341,45 @@
 }
 
 /*
+ * O encaixe do vídeo de fundo da home (06/09/2026).
+ *
+ * ## O defeito
+ *
+ * A vinheta (`public/video/intro.*`) é 1280x720 — 16:9, medido no cabeçalho
+ * do arquivo. A janela de um navegador de desktop quase nunca é: a barra de
+ * endereço come altura, então 1920x1080 de monitor vira ~1920x910 de
+ * viewport, proporção 2,11. Com `object-contain` o quadro cabe pela ALTURA e
+ * sobra faixa dos dois lados — medido no ar em 06/09: **143px vazios de cada
+ * lado**, com o quadro pintado em 1618px de uma caixa de 1905.
+ *
+ * O que aparecia nessas faixas era só a camada de preenchimento, que é o
+ * MESMO vídeo desfocado a 60% de opacidade. O degrau de luz entre ela e o
+ * quadro nítido desenha duas linhas verticais retas na tela — e linha reta no
+ * meio de uma imagem não se lê como composição, se lê como defeito. Relatado
+ * assim: "em algumas partes do pc esse fundo fica feio, fica cortando uma
+ * parte, não fica 100%".
+ *
+ * ## Por que `cover` só ACIMA de 16:9
+ *
+ * Quando a tela é mais larga que o vídeo, `cover` corta em CIMA e EMBAIXO —
+ * 8,8% de cada lado em 1920x910, medido. A marca está no meio do quadro e
+ * sobrevive a isso. Quando a tela é mais ESTREITA (celular em pé, janela
+ * dividida ao meio), `cover` cortaria as LATERAIS, que é justamente onde
+ * "Next Home" se escreve: num 9:19,5 resta cerca de um quarto da largura e a
+ * marca chega partida. Por isso a regra é uma consulta de proporção e não uma
+ * troca cega — abaixo dela o `contain` continua valendo, com o desfoque
+ * preenchendo a borda como sempre.
+ *
+ * A consulta compara com a proporção do ARQUIVO. Trocar a vinheta por uma de
+ * outra proporção sem mexer aqui traz a faixa de volta.
+ */
+@media (min-aspect-ratio: 16 / 9) {
+  .fundo-encaixa-na-tela {
+    object-fit: cover;
+  }
+}
+
+/*
  * Live Chat com cara de WhatsApp (04/09/2026).
  *
  * `.wa-papel` é o papel de parede: a cor do app mais um rabisco discreto
