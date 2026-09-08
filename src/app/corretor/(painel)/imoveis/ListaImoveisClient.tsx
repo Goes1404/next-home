@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import type { Empreendimento } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
-import { MapPin } from 'lucide-react';
+import { MapPin, MoreVertical, Pencil, Eye, Trash2 } from "lucide-react";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
+import { excluirImovel } from "./actions";
 
 interface Props {
   imoveis: Empreendimento[];
@@ -99,19 +102,25 @@ export function ListaImoveisClient({ imoveis, artePorImovel = {} }: Props) {
             return (
               <div
                 key={imovel.slug}
-                className="rounded-3xl border border-linha bg-superficie overflow-hidden shadow-lg hover:border-linha-forte transition-all flex flex-col justify-between"
+                className="group rounded-3xl border border-linha bg-superficie shadow-lg hover:border-acento-linha hover:shadow-xl hover:-translate-y-0.5 transition-all motion-reduce:transition-none flex flex-col justify-between"
               >
                 {/* Imagem de Capa. Sem foto, a arte de IA do imóvel entra no
                     lugar — SEMPRE com selo, porque um render que se passa por
                     foto é a única coisa que este empréstimo não pode fazer. */}
-                <div className="relative aspect-[16/9] bg-campo">
+                {/* O corte mora AQUI, não na raiz do cartão: com
+                    `overflow-hidden` na raiz, o menu de três pontos — que abre
+                    para cima, em `absolute` — sairia decapitado pela borda.
+                    O raio desconta o fio da borda para os cantos casarem. */}
+                <div className="relative aspect-[16/9] bg-campo overflow-hidden rounded-t-[calc(1.5rem-1px)]">
+                  {/* O zoom lento no hover é o mesmo vocabulário da vitrine
+                      pública: diz "isto abre" sem uma palavra. */}
                   {capaUrl ? (
                     <Image
                       src={capaUrl}
                       alt={imovel.nome}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover"
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.04] motion-reduce:transition-none"
                     />
                   ) : arte ? (
                     <>
@@ -190,21 +199,187 @@ export function ListaImoveisClient({ imoveis, artePorImovel = {} }: Props) {
                       <span>✏️ Editar Fotos & Dados</span>
                     </Link>
 
-                    <Link
-                      href={`/empreendimentos/${imovel.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Ver na Vitrine Pública"
-                      aria-label={`Ver ${imovel.nome} no site`}
-                      className="min-h-[46px] w-[46px] rounded-xl bg-vidro-forte hover:bg-vidro-mais text-corpo hover:text-titulo transition-colors flex items-center justify-center shrink-0"
-                    >
-                      <span aria-hidden>👁️</span>
-                    </Link>
+                    {/* O menu de três pontos (07/09/2026): editar, ver no
+                        site e excluir num lugar só. O olho solto saiu — era
+                        um botão sem rótulo que ninguém decifrava, e excluir
+                        não tinha porta nenhuma nesta tela. */}
+                    <MenuDoCard imovel={imovel} />
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * O menu de três pontos de um cartão do catálogo.
+ *
+ * Três ações, na ordem do uso: editar (a mesma do botão grande — repetida
+ * aqui porque o menu é a lista COMPLETA do que dá para fazer), ver a página
+ * pública, e excluir.
+ *
+ * ## Excluir segue a regra de dois passos, e ela mora na POLICY
+ *
+ * A 0097 só deixa apagar imóvel DESPUBLICADO — despublicar é o primeiro
+ * passo, reversível, feito no editor. Para o publicado o item explica o
+ * caminho em vez de sumir: botão que some sem dizer por quê é a pior versão
+ * de um botão desabilitado (a régua de `ExcluirImovel`, que é o irmão deste
+ * menu dentro do editor). A confirmação acontece NO menu, com o nome do
+ * imóvel — o `confirm()` do navegador é fácil de despachar sem ler.
+ */
+function MenuDoCard({ imovel }: { imovel: Empreendimento }) {
+  const router = useRouter();
+  const { avisar, falhar } = useAvisos();
+  const [aberto, setAberto] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+  const [pendente, iniciar] = useTransition();
+  const raiz = useRef<HTMLDivElement>(null);
+
+  const publicado = imovel.publicado ?? true;
+
+  // Fecha ao tocar fora e no Esc — um menu que só fecha no próprio botão
+  // vira um post-it esquecido na tela.
+  useEffect(() => {
+    if (!aberto) return;
+    const aoTocarFora = (e: PointerEvent) => {
+      if (raiz.current && !raiz.current.contains(e.target as Node)) fechar();
+    };
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === "Escape") fechar();
+    };
+    document.addEventListener("pointerdown", aoTocarFora);
+    document.addEventListener("keydown", aoTeclar);
+    return () => {
+      document.removeEventListener("pointerdown", aoTocarFora);
+      document.removeEventListener("keydown", aoTeclar);
+    };
+  }, [aberto]);
+
+  function fechar() {
+    setAberto(false);
+    setConfirmando(false);
+  }
+
+  function apagar() {
+    iniciar(async () => {
+      try {
+        const r = await excluirImovel(imovel.slug);
+        if (!r.ok) {
+          falhar(r.erro ?? "Não deu para excluir o imóvel.");
+          fechar();
+          return;
+        }
+        avisar(`"${imovel.nome}" foi excluído.`);
+        fechar();
+        router.refresh();
+      } catch {
+        falhar("A conexão caiu no meio da exclusão. Confira a lista antes de tentar de novo.");
+        fechar();
+      }
+    });
+  }
+
+  const ITEM =
+    "text-fluid-xs flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 text-left transition-colors";
+
+  return (
+    <div ref={raiz} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => (aberto ? fechar() : setAberto(true))}
+        aria-expanded={aberto}
+        aria-haspopup="menu"
+        aria-label={`Mais ações para ${imovel.nome}`}
+        className="bg-vidro-forte hover:bg-vidro-mais text-corpo hover:text-titulo flex min-h-[46px] w-[46px] shrink-0 cursor-pointer items-center justify-center rounded-xl transition-colors"
+      >
+        <MoreVertical aria-hidden className="h-5 w-5" />
+      </button>
+
+      {aberto && (
+        <div
+          role="menu"
+          className="border-linha-forte bg-superficie shadow-painel absolute right-0 bottom-[calc(100%+0.5rem)] z-20 w-56 rounded-xl border p-1.5"
+        >
+          {!confirmando ? (
+            <>
+              <Link
+                role="menuitem"
+                href={`/corretor/imoveis/${imovel.slug}`}
+                className={`${ITEM} text-corpo hover:bg-vidro hover:text-titulo`}
+              >
+                <Pencil aria-hidden className="h-4 w-4 shrink-0" />
+                Editar
+              </Link>
+              {/* Rascunho não tem página pública: a vitrine filtra
+                  `publicado`, e mandar para um 404 com a marca em cima é pior
+                  que explicar. */}
+              {publicado ? (
+                <a
+                  role="menuitem"
+                  href={`/empreendimentos/${imovel.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${ITEM} text-corpo hover:bg-vidro hover:text-titulo`}
+                >
+                  <Eye aria-hidden className="h-4 w-4 shrink-0" />
+                  Ver no site
+                </a>
+              ) : (
+                <p className={`${ITEM} text-tenue cursor-default`}>
+                  <Eye aria-hidden className="h-4 w-4 shrink-0" />
+                  Sem página — é rascunho
+                </p>
+              )}
+              {publicado ? (
+                <p className={`${ITEM} text-tenue cursor-default items-start py-2`}>
+                  <Trash2 aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    Para excluir, primeiro <strong className="text-apoio">despublique</strong> no
+                    editor.
+                  </span>
+                </p>
+              ) : (
+                <button
+                  role="menuitem"
+                  type="button"
+                  onClick={() => setConfirmando(true)}
+                  className={`${ITEM} text-perigo hover:bg-perigo-lavado`}
+                >
+                  <Trash2 aria-hidden className="h-4 w-4 shrink-0" />
+                  Excluir…
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="space-y-2 p-1.5">
+              <p className="text-fluid-xs text-corpo">
+                Apagar <strong className="text-titulo">{imovel.nome}</strong> de vez? Fotos,
+                plantas e tipologias vão junto, sem volta.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={apagar}
+                  disabled={pendente}
+                  className="bg-perigo text-sobre-cor text-fluid-xs min-h-10 flex-1 cursor-pointer rounded-lg px-3 font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
+                >
+                  {pendente ? "Excluindo…" : "Excluir de vez"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmando(false)}
+                  disabled={pendente}
+                  className="border-linha-forte text-fluid-xs text-corpo min-h-10 flex-1 cursor-pointer rounded-lg border px-3 transition-colors hover:bg-vidro"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

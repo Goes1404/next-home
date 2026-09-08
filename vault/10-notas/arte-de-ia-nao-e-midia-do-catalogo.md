@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [supabase/migrations/0101_arte_de_ia_por_imovel.sql, src/lib/imagens/galeria.ts, src/lib/imagens/pedidoDoCadastro.ts]
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-09-07
 fonte: docs/superpowers/specs/2026-09-06-arte-de-ia-no-cadastro-design.md
 summary: A 0101 liga a imagem gerada ao empreendimento, mas `midias` continua intocada — é a única fonte de anexo que a assistente pode mandar, e render de modelo não pode chegar no WhatsApp de quem vai visitar o imóvel.
 ---
@@ -32,6 +32,19 @@ dizendo que não há foto.
 
 `on delete set null`, não `cascade`: excluir o imóvel não apaga a imagem —
 ela já foi paga e volta a ser peça avulsa da galeria.
+
+## O dia em que ela faltou (07/09/2026)
+
+O código subiu em 06/09 e a migration ficou para trás. Resultado: TRÊS erros
+relatados como se fossem bugs diferentes — "criar arte", "marketing painel" e
+a geração no cadastro de imóvel — todos a MESMA consulta
+(`select ... empreendimento_id`) contra uma coluna inexistente. O catálogo
+sobreviveu porque `getArtePorImovel` degrada para mapa vazio; as telas que
+lançam (`getMinhasImagens`, `getArtesDoImovel`) caíram na página de erro.
+Aplicada via `apply_migration` do MCP em 07/09. É a lição de
+[[atualizar-o-vault-e-obrigatorio]] com outra roupa: **deploy com migration no
+repositório não é migration no banco** — a MEMORIA já registrava isso para o
+merge de `ingestao-de-midia`.
 
 Ver também [[ficha-do-prompt-completa-e-com-ausencias]] (o mesmo cuidado do lado
 do texto) e [[capa-de-empreendimento-nunca-e-nula]] (o defeito encontrado ao

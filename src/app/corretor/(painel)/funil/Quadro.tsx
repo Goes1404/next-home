@@ -61,6 +61,23 @@ export function Quadro({
   mostrarDono: boolean;
 }) {
   const [leadDossie, setLeadDossie] = useState<Lead | null>(null);
+  /*
+   * Etapas expandidas à mão. Pedido de 07/09/2026: o "ver os outros" mandava
+   * para a lista, e quem estava olhando o funil PERDIA o funil — queria ver
+   * os perdidos logo ali embaixo. Expandir mostra tudo o que a consulta
+   * trouxe; o link para a lista só sobra quando o TETO da consulta cortou
+   * gente que nem chegou à tela.
+   */
+  const [expandidas, setExpandidas] = useState<Set<EtapaFunil>>(new Set());
+
+  function alternarExpansao(etapa: EtapaFunil) {
+    setExpandidas((atual) => {
+      const novo = new Set(atual);
+      if (novo.has(etapa)) novo.delete(etapa);
+      else novo.add(etapa);
+      return novo;
+    });
+  }
   const { falhar } = useAvisos();
   const [, iniciarTransicao] = useTransition();
 
@@ -107,8 +124,12 @@ export function Quadro({
           // consulta e o de `POR_ETAPA` — porque para quem lê é a mesma
           // frase: "tem mais gente aqui do que estou mostrando".
           const totalReal = contagens?.[etapa] ?? daEtapa.length;
-          const visiveis = daEtapa.slice(0, POR_ETAPA);
-          const faltando = Math.max(0, totalReal - visiveis.length);
+          const expandida = expandidas.has(etapa);
+          const visiveis = expandida ? daEtapa : daEtapa.slice(0, POR_ETAPA);
+          // O que a expansão AINDA não alcança: leads que o teto da consulta
+          // (TETO_DO_QUADRO) deixou no banco. Só para esses a lista é o caminho.
+          const foraDaConsulta = Math.max(0, totalReal - daEtapa.length);
+          const ocultosAqui = daEtapa.length - visiveis.length;
           const vazia = totalReal === 0;
 
           return (
@@ -140,12 +161,38 @@ export function Quadro({
                 </div>
               )}
 
-              {faltando > 0 && (
+              {ocultosAqui > 0 && (
+                <button
+                  type="button"
+                  onClick={() => alternarExpansao(etapa)}
+                  aria-expanded={false}
+                  className="border-linha text-corpo hover:border-acento-linha hover:text-titulo text-fluid-xs mt-2 flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border transition-colors"
+                >
+                  Mostrar os outros {ocultosAqui} aqui
+                  <SetaParaBaixo aberta={false} />
+                </button>
+              )}
+
+              {expandida && ocultosAqui === 0 && daEtapa.length > POR_ETAPA && (
+                <button
+                  type="button"
+                  onClick={() => alternarExpansao(etapa)}
+                  aria-expanded
+                  className="border-linha text-apoio hover:border-acento-linha hover:text-titulo text-fluid-xs mt-2 flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border transition-colors"
+                >
+                  Recolher {ETAPA_LABEL[etapa].toLowerCase()}
+                  <SetaParaBaixo aberta />
+                </button>
+              )}
+
+              {/* Só o que o TETO da consulta cortou continua atrás da lista:
+                  esses nem chegaram à tela, e a lista pagina no banco. */}
+              {expandida && foraDaConsulta > 0 && (
                 <Link
                   href={`/corretor/leads?etapa=${etapa}`}
                   className="border-linha text-corpo hover:border-acento-linha hover:text-titulo text-fluid-xs mt-2 flex min-h-11 items-center justify-center rounded-xl border transition-colors"
                 >
-                  Ver os outros {faltando} em {ETAPA_LABEL[etapa].toLowerCase()}
+                  Ver mais {foraDaConsulta} na lista — é mais do que o funil carrega de uma vez
                 </Link>
               )}
             </section>
@@ -158,6 +205,23 @@ export function Quadro({
         <ModalDossieLead lead={leadDossie} onFechar={() => setLeadDossie(null)} />
       )}
     </div>
+  );
+}
+
+function SetaParaBaixo({ aberta }: { aberta: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`h-3.5 w-3.5 transition-transform motion-reduce:transition-none ${aberta ? "rotate-180" : ""}`}
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
   );
 }
 

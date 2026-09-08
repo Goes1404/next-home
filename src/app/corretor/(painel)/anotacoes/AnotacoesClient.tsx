@@ -425,7 +425,7 @@ export function AnotacoesClient({
               {a.lead && (
                 <Link
                   href={`/corretor/leads/${a.lead.id}`}
-                  className="flex min-h-11 w-fit items-center gap-2"
+                  className="group flex min-h-11 w-fit items-center gap-2"
                 >
                   {/* A mesma régua de cor da lista e do quadro: a etapa se lê
                       antes do texto, em toda tela de lead. */}
@@ -433,7 +433,9 @@ export function AnotacoesClient({
                     aria-hidden
                     className={`h-4 w-1 rounded-full ${REGUA_ETAPA[a.lead.etapa as EtapaFunil] ?? "bg-linha-forte"}`}
                   />
-                  <span className="text-titulo text-sm font-medium">{a.lead.nome}</span>
+                  <span className="text-titulo group-hover:text-acento-suave text-sm font-medium underline decoration-transparent underline-offset-4 transition-colors group-hover:decoration-current">
+                    {a.lead.nome}
+                  </span>
                   <span className="text-tenue text-xs">
                     {ETAPA_LABEL[a.lead.etapa as EtapaFunil] ?? a.lead.etapa}
                   </span>

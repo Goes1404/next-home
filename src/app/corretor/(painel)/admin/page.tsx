@@ -21,6 +21,29 @@ export const metadata: Metadata = { title: "Visão geral" };
  * KPI que não leva a lugar nenhum obriga o gestor a refazer o filtro à mão
  * para ver de quem o número é feito.
  */
+/**
+ * A seta que diz "esta linha navega". Os números clicáveis da administração
+ * eram invisíveis como link (07/09/2026): só um hover de opacidade separava a
+ * barra clicável de uma barra decorativa. Aparece no hover para não poluir a
+ * leitura; no toque (sem hover) a linha inteira já responde ao dedo.
+ */
+function SetaDeLink() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-tenue h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+    >
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
 function Kpi({
   rotulo,
   valor,
@@ -44,11 +67,24 @@ function Kpi({
     return <div className="cartao p-4">{conteudo}</div>;
   }
 
+  /*
+   * KPI clicável PARECE clicável: seta fixa no canto (não só no hover — no
+   * celular hover não existe e era lá que o link sumia por completo) e o
+   * cartão levanta ao passar o mouse, o mesmo gesto dos atalhos do Início.
+   */
   return (
     <Link
       href={href}
-      className="cartao hover:border-acento-linha p-4 transition-colors"
+      className="cartao hover:border-acento-linha group relative block p-4 transition-all hover:-translate-y-0.5 motion-reduce:transition-none"
     >
+      <span
+        aria-hidden
+        className="text-tenue group-hover:text-acento-suave absolute top-3 right-3 transition-colors"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+          <path d="M7 17L17 7M9 7h8v8" />
+        </svg>
+      </span>
       {conteudo}
     </Link>
   );
@@ -203,7 +239,7 @@ export default async function AdminVisaoGeralPage() {
               <li key={etapa}>
                 <Link
                   href={`/corretor/leads?etapa=${etapa}`}
-                  className="flex items-center gap-3 transition-opacity hover:opacity-80"
+                  className="group hover:bg-vidro -mx-2 flex items-center gap-3 rounded-lg px-2 py-1 transition-colors"
                 >
                   <span className="text-fluid-xs text-apoio w-36 shrink-0">
                     {ETAPA_LABEL[etapa]}
@@ -217,6 +253,10 @@ export default async function AdminVisaoGeralPage() {
                   <span className="text-fluid-xs text-titulo w-8 shrink-0 text-right font-bold tabular-nums">
                     {total}
                   </span>
+                  {/* A seta diz "isto navega" — o número clicável era invisível
+                      como link (07/09/2026). Aparece no hover para não poluir a
+                      leitura das barras. */}
+                  <SetaDeLink />
                 </Link>
               </li>
             );
@@ -239,7 +279,7 @@ export default async function AdminVisaoGeralPage() {
             <li key={linha.id}>
               <Link
                 href={`/corretor/leads?corretor=${linha.id}`}
-                className="flex items-center gap-3 transition-opacity hover:opacity-80"
+                className="group hover:bg-vidro -mx-2 flex items-center gap-3 rounded-lg px-2 py-1 transition-colors"
               >
                 <span className="text-fluid-xs text-apoio w-36 shrink-0 truncate">
                   {linha.nome}
@@ -254,6 +294,7 @@ export default async function AdminVisaoGeralPage() {
                 <span className="text-fluid-xs text-titulo w-8 shrink-0 text-right font-bold tabular-nums">
                   {linha.total}
                 </span>
+                <SetaDeLink />
               </Link>
             </li>
           ))}

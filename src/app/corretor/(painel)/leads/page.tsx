@@ -15,6 +15,7 @@ import {
 } from "@/lib/corretorSessao";
 import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
+import { BotaoVoltarAoTopo } from "../_componentes/BotaoVoltarAoTopo";
 
 export const metadata: Metadata = { title: "Meus leads" };
 
@@ -190,6 +191,8 @@ export default async function LeadsPage({
         verArquivados={verArquivados}
         empreendimentos={empreendimentos}
       />
+
+      <BotaoVoltarAoTopo />
     </div>
   );
 }

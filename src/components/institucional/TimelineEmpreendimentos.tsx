@@ -3,7 +3,8 @@
 import { useRef } from "react";
 import { Camada } from "@/components/motion/Camada";
 import Image from "next/image";
-import Link from "next/link";import { Map, Home, MapPin } from 'lucide-react';
+import Link from "next/link";
+import { Map, Home, MapPin } from 'lucide-react';
 
 
 interface MarcoHistorico {
@@ -181,9 +182,12 @@ export function TimelineEmpreendimentos() {
                   <h3 className="text-fluid-base font-bold text-mist-50 group-hover:text-brand-300 transition-colors">
                     {item.nome}
                   </h3>
-                  <div className="flex items-center gap-1.5 text-fluid-xs text-mist-300">
-                    <span> <MapPin className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
-                    <span className="truncate">{item.bairro}</span>
+                  {/* `min-w-0`: item de flex não encolhe sozinho, e sem ele o
+                      bairro comprido vazava em vez de virar "…". O alfinete
+                      desceu de 20px para o tamanho da própria linha. */}
+                  <div className="text-fluid-xs text-mist-300 flex min-w-0 items-center gap-1.5">
+                    <MapPin aria-hidden className="h-3.5 w-3.5 shrink-0" />
+                    <span className="min-w-0 truncate">{item.bairro}</span>
                   </div>
                   <p className="text-[11px] text-mist-400 font-light line-clamp-1 border-t border-white/10 pt-2">
                     {item.destaque}

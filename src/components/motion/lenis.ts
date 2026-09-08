@@ -51,3 +51,18 @@ export function recalcularRolagem(): void {
   if (!instancia) return;
   requestAnimationFrame(() => instancia?.resize());
 }
+
+/**
+ * Volta ao topo da página, suave, respeitando quem controla o scroll.
+ *
+ * Com o Lenis ativo é ELE quem tem de conduzir — `window.scrollTo` por fora
+ * briga com o laço dele e a subida sai aos trancos. Sem Lenis (movimento
+ * reduzido, ou antes da hidratação), o nativo resolve.
+ */
+export function rolarAoTopo(): void {
+  if (instancia) {
+    instancia.scrollTo(0, { duration: 0.9 });
+    return;
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}

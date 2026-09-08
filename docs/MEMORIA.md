@@ -4648,3 +4648,46 @@ Vault: [[fundo-16-9-em-tela-mais-larga-vira-faixa]].
   no navegador `getBoundingClientRect()` do vídeo contra `videoWidth/Height`
   e calcular a faixa vazia. O número sai em uma consulta e dispensa palpite
   sobre CSS.
+
+## Três erros, uma migration esquecida — e a rodada de UX do painel (07/09/2026)
+
+- **"Criar arte", "Marketing painel" e a geração no cadastro caíram JUNTOS, e
+  eram UM defeito**: a 0101 (coluna `empreendimento_id` em `imagens_geradas`)
+  subiu no código em 06/09 e nunca foi aplicada no banco. Toda tela que chama
+  `getMinhasImagens`/`getArtesDoImovel` lançava "relation/column does not
+  exist" e virava a página de erro genérica; só o catálogo sobreviveu, porque
+  `getArtePorImovel` degrada para mapa vazio de propósito. Conferido em
+  `information_schema.columns` antes de mexer; aplicada via `apply_migration`
+  em 07/09. **É a mesma lição do merge de `ingestao-de-midia` (06/09): deploy
+  com migration no repositório não é migration no banco. Ao subir migration
+  nova, aplicá-la faz parte do deploy, não é passo separado.**
+- **Erros com códigos (digest) diferentes NÃO são defeitos diferentes.** O
+  digest do Next muda por rota; três telas relatadas com três códigos tinham
+  uma causa. Antes de tratar como três bugs, procurar a consulta em comum.
+- **`BotaoVoltarAoTopo`** (Conversas de Leads, Lista e Funil): o gatilho é a
+  DISTÂNCIA do topo (600px), nunca a direção do gesto — direção some quando a
+  pessoa para de rolar, que é justamente quando ela decide subir. A subida
+  passa pelo Lenis quando ele está ativo (`rolarAoTopo` em `lenis.ts`):
+  `window.scrollTo` por fora do laço dele sai aos trancos.
+- **O funil expande no lugar** (07/09, pedido): "ver os outros N" mandava
+  para a lista e quem olhava o funil PERDIA o funil. Agora expande o que a
+  consulta já trouxe; o link para a lista só sobra para o que o
+  `TETO_DO_QUADRO` cortou — esses nem chegaram à tela.
+- **Menu de três pontos no cartão do catálogo** (editar / ver no site /
+  excluir). Duas regras herdadas: excluir só despublicado (a trava é a policy
+  0097; para o publicado o item EXPLICA o caminho em vez de sumir) e rascunho
+  não ganha "ver no site" (a vitrine filtra `publicado`; mandar para 404 com
+  a marca em cima é pior que explicar). Cuidado novo: o cartão tinha
+  `overflow-hidden` na raiz, que decapitaria o menu — o corte desceu para o
+  contêiner da foto, com raio descontando o fio da borda.
+- **Link tem de PARECER link** (07/09: "são links mas não parece"). As barras
+  clicáveis da administração só tinham hover de opacidade; os KPIs, só troca
+  de borda — e no celular, onde hover não existe, nada. Régua aplicada: linha
+  clicável ganha fundo no hover E uma seta; KPI clicável ganha seta FIXA no
+  canto (visível sem hover) e levanta como os atalhos do Início; link de
+  texto ganha sublinhado que acende no hover (`decoration-transparent` →
+  `hover:decoration-current`).
+- **Comentário JSX dentro de ramo de ternário quebra o parse** — de novo. A
+  regra da casa ("comentário vai fora do parêntese ou dentro do elemento")
+  vale também para ternário: `cond ? ( {/* … */} <X/> ) : …` são duas
+  expressões e o TS reprova com `')' expected`.
