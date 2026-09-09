@@ -1420,6 +1420,21 @@
   animation: cartao-chega 700ms ease-out;
 }
 
+/* A seta do convite de rolagem DERIVA, não quica. `animate-bounce` chama
+   atenção para si; o que se quer é sugerir a direção sem competir com o
+   conteúdo do herói. Amplitude de 3px e volta longa. */
+@keyframes descer {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(3px);
+    opacity: 1;
+  }
+}
+
 /* Aviso chega deslizando de baixo — ele nasce perto do polegar. */
 @keyframes aviso-entra {
   from {

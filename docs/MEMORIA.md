@@ -4716,3 +4716,41 @@ Vault: [[movimento-do-painel-tem-regua]]. Quatro animações novas em
 - **`grep -c` em CSS minificado conta linhas, não ocorrências** — tudo
   "aparece 1x" porque o arquivo é uma linha. Conferir regra compilada com
   `grep -o` e contexto.
+
+## Auditoria da home pública, e o falso alarme que ela quase produziu (09/09/2026)
+
+- **Screenshot de PÁGINA INTEIRA não dispara ScrollTrigger.** O `fullPage:
+  true` do Playwright devolveu uma home com o herói e mais três mil pixels de
+  vazio: "Selecionados", "A região" e "Atendimento" com o rótulo e nenhum
+  conteúdo. Parecia o defeito clássico desta base (`.gsap-pending` preso em
+  `opacity: 0`). **Não era.** Rolando de verdade, em passos de 400px, sobraram
+  8 elementos invisíveis — todos `pointer-events-none absolute inset-0`, que
+  são véus de hover e devem mesmo ser `opacity-0`. Antes de consertar uma tela
+  "vazia" num screenshot, rolar a página e remedir.
+- **O que a auditoria achou de verdade foi INCONSISTÊNCIA, não bug.** Medido
+  no ar: títulos de seção em 64px, 44px, 44px, 44px, 30px e 44px, com
+  alinhamentos esquerda, centro, esquerda, esquerda, esquerda, centro. Seções
+  irmãs com tamanhos e eixos diferentes é o que faz a página parecer montada
+  aos pedaços — e é invisível para teste, tipo e build.
+- **Rótulo em versalete acima de todo título é decoração com aparência de
+  estrutura.** "SELECIONADOS", "A REGIÃO", "ATENDIMENTO" não diziam nada que o
+  título abaixo já não dissesse, e eram três iguais em sequência. Viraram
+  CONTAGEM real, que o servidor já tinha na mão: "3 de 25 imóveis, escolhidos
+  a dedo", "18 bairros em 4 cidades", "8 corretores com CRECI, na região".
+  Mesma altura na página, informação no lugar de enfeite.
+- **`animate-bounce` é movimento em REPOUSO**, e a régua do painel (07/09) já
+  tinha descartado isso: movimento sem gesto compete com o conteúdo. O convite
+  de rolagem passou a derivar 3px (`@keyframes descer`), com o rótulo dizendo
+  o que há embaixo em vez de mandar rolar.
+- **`ScrollCue` existia desde sempre e a HOME nunca o usou** — só o portfólio.
+  Oitavo caso do padrão "construído e nunca ligado" nesta base. O herói
+  terminava num vão escuro de meia tela sem dizer que havia página abaixo.
+- **Classe arbitrária de animação precisa ser CONFERIDA no CSS compilado.**
+  `animate-[descer_2.4s_ease-in-out_infinite]` só funciona se o Tailwind gerar
+  a classe E o `@keyframes` existir; classe não gerada vira NADA em silêncio
+  (a lição de `bg-chip` e `stroke-opacity-50`). Conferido: 3 ocorrências no
+  bundle — a classe, o uso e o keyframe.
+- **Achado de DADO, não corrigido**: o catálogo tem "More Aldeia de Bareuri"
+  (com o "Barueri" trocado). A MEMORIA já registra que ele e "More na Aldeia
+  de Barueri" são imóveis DIFERENTES, então não é duplicata — mas o visitante
+  lê como erro de digitação na home. É edição de cadastro, decisão do usuário.

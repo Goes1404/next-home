@@ -24,15 +24,23 @@ export function Regioes() {
     // as manchas vazam e criam barra de rolagem horizontal.
     <section className="relative overflow-hidden px-4 pb-16 sm:pb-24">
       <FundoEmCamadas />
-      <div className="mx-auto w-full max-w-3xl text-center">
+      {/* Alinhado à ESQUERDA como as outras seções (09/09/2026). A página
+          alternava entre esquerda e centro sem critério — quatro títulos à
+          esquerda e dois centrados —, e alinhamento que não se decide é o que
+          faz uma página parecer montada aos pedaços. O centro ficou só onde
+          é escolha: o painel de fechamento (`CtaFinal`), que é um convite
+          isolado e não um título no fluxo. */}
+      <div className="mx-auto w-full max-w-3xl">
         <Reveal>
-          <h2 className="text-fluid-2xl text-titulo">As Melhores Regiões para Morar ou Investir</h2>
-          <p className="text-fluid-base mt-3 text-apoio">
+          <h2 className="text-fluid-2xl text-titulo">
+            As melhores regiões para morar ou investir
+          </h2>
+          <p className="text-fluid-base text-apoio mt-3 max-w-xl">
             Encontre opções nos principais bairros e cidades com infraestrutura completa, mobilidade e alta valorização.
           </p>
         </Reveal>
 
-        <Reveal stagger={0.08} className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <Reveal stagger={0.08} className="mt-8 flex flex-wrap items-center gap-3">
           {REGIOES.map((r) => (
             <Link
               key={r.nome}
