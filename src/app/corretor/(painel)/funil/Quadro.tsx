@@ -69,6 +69,12 @@ export function Quadro({
    * gente que nem chegou à tela.
    */
   const [expandidas, setExpandidas] = useState<Set<EtapaFunil>>(new Set());
+  /*
+   * O cartão que acabou de trocar de etapa. O movimento otimista o TELETRANSPORTA
+   * para outro grupo — sem marca, o olho perde o cartão e "mover" parece
+   * "sumir". O pulso (`cartao-chega`) roda quando ele remonta no grupo novo.
+   */
+  const [recemMovido, setRecemMovido] = useState<string | null>(null);
 
   function alternarExpansao(etapa: EtapaFunil) {
     setExpandidas((atual) => {
@@ -95,6 +101,16 @@ export function Quadro({
 
   function mover(lead: Lead, etapa: EtapaFunil) {
     if (lead.etapa === etapa) return;
+    setRecemMovido(lead.id);
+    /*
+     * Se o grupo de destino já mostra os 6 do teto, o cartão movido cairia
+     * numa posição ESCONDIDA — "mover" viraria "sumir", e o pulso pulsaria
+     * para ninguém. Expandir o destino garante que o cartão aterrissa à
+     * vista.
+     */
+    if (otimista.filter((l) => l.etapa === etapa).length >= POR_ETAPA) {
+      setExpandidas((atual) => new Set(atual).add(etapa));
+    }
     iniciarTransicao(async () => {
       aplicarMovimento({ id: lead.id, etapa });
       const resultado = await moverEtapa(lead.id, etapa);
@@ -158,10 +174,15 @@ export function Quadro({
                      * atraso crescente viraria espera, não charme.
                      */
                     const revelado = expandida && indice >= POR_ETAPA;
+                    const chegou = lead.id === recemMovido;
                     return (
                       <div
                         key={lead.id}
-                        className={revelado ? "surgir" : undefined}
+                        className={
+                          [revelado && "surgir", chegou && "cartao-chega"]
+                            .filter(Boolean)
+                            .join(" ") || undefined
+                        }
                         style={
                           revelado
                             ? ({ "--surgir-ordem": Math.min(indice - POR_ETAPA, 8) } as CSSProperties)

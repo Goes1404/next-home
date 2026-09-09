@@ -22,6 +22,20 @@ Quatro animações, cada uma com um dono, todas em `globals.css`:
 | `menu-abre` | menu de três pontos do catálogo | o toque no botão |
 | `aviso-entra` | toast de Avisos | a ação que gerou o aviso |
 
+A segunda rodada (mesmo dia) somou duas peças pela mesma régua:
+
+- **A troca de módulo virou ONDA**: os três tokens transicionam com tempos
+  diferentes (`acento` 340ms, `hover` 420ms+40, `suave` 540ms+80). As
+  superfícies mudam primeiro e os realces de texto chegam por último — o olho
+  lê "a seção virou" em vez de "a tela piscou". Zero JS: é a transição de
+  `@property` que já existia, com o tempo contando uma ordem.
+- **`cartao-chega`**: o cartão que trocou de etapa no funil pulsa um anel na
+  cor do módulo ao aterrissar. O movimento otimista TELETRANSPORTA o cartão;
+  sem marca, mover parecia sumir. E se o grupo de destino já mostra os 6 do
+  teto, ele é expandido junto — pulso numa posição escondida pulsaria para
+  ninguém. O anel termina transparente de propósito: com movimento reduzido a
+  animação salta para o fim, e o fim não deixa nada na tela.
+
 ## As regras que valem para a próxima animação
 
 - **Um momento orquestrado por carga, não um por seção.** Fade-and-slide em

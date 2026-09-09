@@ -825,9 +825,17 @@
      * descendentes. Eles herdam um valor que já está animando, então um
      * `transition` em cada um seria a mesma animação declarada cem vezes.
      */
-    transition: --color-acento 320ms var(--ease-out-quart),
-      --color-acento-hover 320ms var(--ease-out-quart),
-      --color-acento-suave 320ms var(--ease-out-quart);
+    /*
+     * Os três tempos são DIFERENTES de propósito (07/09/2026): a troca de
+     * seção deixa de ser um corte uniforme e vira uma onda — as superfícies
+     * (`acento`, e com elas os brilhos do fundo e tudo que é `lavado`/`linha`
+     * por color-mix) mudam primeiro, o hover logo atrás, e os realces de
+     * texto (`suave`) chegam por último. O olho lê "a seção virou" em vez de
+     * "a tela piscou". Com movimento reduzido, o bloco acima desliga tudo.
+     */
+    transition: --color-acento 340ms var(--ease-out-quart),
+      --color-acento-hover 420ms var(--ease-out-quart) 40ms,
+      --color-acento-suave 540ms var(--ease-out-quart) 80ms;
 
     --color-acento-lavado: color-mix(in oklab, var(--color-acento) 16%, transparent);
     --color-acento-linha: color-mix(in oklab, var(--color-acento) 38%, transparent);
@@ -1391,6 +1399,25 @@
 .menu-abre {
   transform-origin: bottom right;
   animation: menu-abre 140ms ease-out backwards;
+}
+
+/* O cartão que ACABOU de trocar de etapa no funil pulsa um anel na cor do
+   módulo: o olho acha onde ele aterrissou sem procurar. Termina transparente,
+   então com movimento reduzido (salto para o fim) não sobra nada na tela. */
+@keyframes cartao-chega {
+  0% {
+    box-shadow: 0 0 0 0 var(--color-acento);
+  }
+  35% {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-acento) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+.cartao-chega {
+  border-radius: 0.75rem; /* o raio do cartão, para o anel abraçar a forma */
+  animation: cartao-chega 700ms ease-out;
 }
 
 /* Aviso chega deslizando de baixo — ele nasce perto do polegar. */
