@@ -4754,3 +4754,54 @@ Vault: [[movimento-do-painel-tem-regua]]. Quatro animações novas em
   (com o "Barueri" trocado). A MEMORIA já registra que ele e "More na Aldeia
   de Barueri" são imóveis DIFERENTES, então não é duplicata — mas o visitante
   lê como erro de digitação na home. É edição de cadastro, decisão do usuário.
+
+## `\b` de Python vira BACKSPACE no arquivo, e o grep não mostra (09/09/2026)
+
+A guarda nova de `whitespace-pre-*` nasceu **cega** e levou meia hora para se
+explicar. O script que a escreveu usou `'/\bwhitespace-pre-.../'` numa string
+Python comum; o que foi para o disco não foi `\b` (barra + b) e sim `\x08`, o
+CARACTERE de controle backspace. O regex passou a exigir um controle que
+nenhuma classe contém, então casava zero — e o teste ficava verde.
+
+O que fez perder tempo: **`grep` imprime o backspace como nada**, então
+`grep -n` mostrava `/whitespace-pre-(line|wrap)/` — exatamente o que se
+esperava ver. A mesma lógica rodada no Node acusava o defeito; o vitest, não.
+A diferença só apareceu com `repr()` da linha em Python.
+
+Régua que fica:
+
+- **Ao gerar código por script, escrever regex sem `\b`** ou usar string RAW
+  (`r'...'`). Vale para `\n`, `\t`, `\f` e `\v` também.
+- **Conferir com `repr()`, não com `grep`**, quando um teste passa e a mesma
+  lógica falha fora dele. `python -c "print(repr(linha))"` mostra o byte.
+- **Provocar a guarda continua sendo o único jeito de saber que ela vê.** Esta
+  passou em TODAS as mordidas antes da correção — e é a terceira guarda desta
+  base a nascer cega (as outras: a mordida vazia do vídeo, e o `toContain` que
+  aceitava sufixo).
+
+Corrigida, ela achou de primeira um caso que a varredura automática tinha
+deixado passar: a anotação do corretor (`AnotacoesClient:423`).
+
+## Cortes no celular, chips de recomendação e a agenda que ninguém preencheu (09/09/2026)
+
+- **`whitespace-pre-line`/`pre-wrap` preserva quebra de linha e NÃO quebra
+  dentro da palavra.** Relatado como "no celular o chat de criar arte corta as
+  palavras" — e eram ONZE lugares, todos renderizando texto de fora: balão do
+  estúdio (arte e vídeo), balão do WhatsApp, anotação, sugestão da IA, corpo
+  do e-mail importado, prévia do disparo, linha do tempo e observação do lead.
+  No celular o balão tem ~310px: qualquer URL estoura. O balão do estúdio
+  também precisou de `min-w-0` — sem ele o `max-w-[88%]` não segura.
+- **Campo de chat em branco não ensina formato.** O estúdio de arte e o de
+  vídeo ganharam chips com pedidos COMPLETOS ("Fachada ao pôr do sol para o
+  feed"), que preenchem e mandam. Somem depois da primeira mensagem: aí a
+  conversa já tem assunto e eles competiriam com ela.
+- **A agenda do WhatsApp já fazia tudo o que foi pedido, e estava sem DADO.**
+  `proximosHorarios` + `blocoDeHorarios` (0073) montam a lista real, o prompt
+  manda oferecer no máximo dois por vez e, se o cliente recusar, oferecer os
+  DOIS SEGUINTES — nunca os mesmos; `reservar_visita` (0074) grava com trava
+  de conflito por índice único. O webhook passa `horariosReais`. Medido em
+  09/09: **1 faixa cadastrada para 7 corretores ativos** (Bruna, quarta
+  15h-19h). Para todos os outros o bloco sai vazio e a IA não tem o que
+  oferecer — nada a construir, o que faltava era o aviso. `GradeDaSemana`
+  passou a dizer, quando a grade está vazia, que a assistente NÃO consegue
+  marcar visita. Some assim que existe uma faixa.

@@ -29,6 +29,7 @@ export function ChatBase({
   pensando,
   placeholder,
   vazio,
+  sugestoes,
   onEnviar,
   onEscolher,
   renderProposta,
@@ -45,6 +46,18 @@ export function ChatBase({
   placeholder: string;
   /** O que aparece antes da primeira mensagem — o convite. */
   vazio: ReactNode;
+  /**
+   * Pedidos prontos, mostrados ENQUANTO a conversa está vazia.
+   *
+   * O campo em branco é o problema real destas telas: quem nunca escreveu
+   * um pedido de imagem não sabe o que cabe ali, e o cursor piscando não
+   * ensina. Cada chip é um pedido de verdade, que preenche o campo e manda
+   * — a pessoa vê a IA responder e aprende o formato pelo exemplo.
+   *
+   * Somem depois da primeira mensagem: aí a conversa já tem assunto e eles
+   * competiriam com ela.
+   */
+  sugestoes?: readonly string[];
   onEnviar: (texto: string) => Promise<void>;
   onEscolher: (pergunta: PerguntaDoEstudio, escolha: string) => Promise<void>;
   renderProposta: (m: MensagemDoEstudio) => ReactNode;
@@ -76,8 +89,12 @@ export function ChatBase({
     presoNoFimRef.current = c.scrollHeight - c.scrollTop - c.clientHeight < 120;
   };
 
-  const enviar = async () => {
-    const t = texto.trim();
+  /**
+   * Manda o que está no campo — ou o texto que vier por parâmetro, que é
+   * como os chips de sugestão entram sem passar pelo `textarea`.
+   */
+  const enviar = async (textoPronto?: string) => {
+    const t = (textoPronto ?? texto).trim();
     // Com anexo, mandar sem texto vale: "aqui está a foto" já é a mensagem.
     if ((!t && !anexo) || pensando) return;
     setTexto("");
@@ -106,7 +123,28 @@ export function ChatBase({
         aria-live="polite"
       >
         {mensagens.length === 0 && !pendente && (
-          <div className="text-apoio mx-auto max-w-md py-10 text-center text-sm">{vazio}</div>
+          <div className="mx-auto max-w-md py-10">
+            <div className="text-apoio text-center text-sm">{vazio}</div>
+            {sugestoes && sugestoes.length > 0 && (
+              <div className="mt-6">
+                <p className="text-tenue mb-2 text-center text-xs">Ou comece por um destes:</p>
+                <ul className="flex flex-wrap justify-center gap-2">
+                  {sugestoes.map((sugestao) => (
+                    <li key={sugestao}>
+                      <button
+                        type="button"
+                        disabled={pensando}
+                        onClick={() => void enviar(sugestao)}
+                        className="border-linha text-corpo hover:border-acento-linha hover:text-titulo hover:bg-vidro min-h-9 cursor-pointer rounded-full border px-3.5 py-1.5 text-left text-xs break-words transition-colors disabled:opacity-60"
+                      >
+                        {sugestao}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         )}
 
         {mensagens.map((m) => (
@@ -119,7 +157,7 @@ export function ChatBase({
                 className="border-linha mb-1.5 max-h-44 w-auto max-w-full rounded-lg border"
               />
             )}
-            <p className="text-fluid-sm text-corpo whitespace-pre-line">{m.conteudo}</p>
+            <p className="text-fluid-sm text-corpo break-words whitespace-pre-line">{m.conteudo}</p>
             {m.dados?.tipo === "proposta" && renderProposta(m)}
             {m.dados?.tipo === "resultado" && renderResultado(m)}
           </Balao>
@@ -135,7 +173,7 @@ export function ChatBase({
                 className="border-linha mb-1.5 max-h-44 w-auto max-w-full rounded-lg border"
               />
             )}
-            <p className="text-fluid-sm text-corpo whitespace-pre-line">{pendente.conteudo}</p>
+            <p className="text-fluid-sm text-corpo break-words whitespace-pre-line">{pendente.conteudo}</p>
           </Balao>
         )}
 
@@ -271,7 +309,14 @@ function Balao({
   return (
     <div
       className={cn(
-        "w-fit max-w-[88%] rounded-2xl border px-3.5 py-2.5 md:max-w-[72%]",
+        /*
+         * `min-w-0` + `break-words` (09/09/2026): `whitespace-pre-line`
+         * preserva a quebra de linha mas NÃO quebra dentro da palavra. Uma
+         * URL, um slug ou um nome comprido esticava o balão além do
+         * `max-w-[88%]` e o texto saía cortado pela borda do chat — no
+         * celular, onde 88% são ~310px, isso acontece com qualquer link.
+         */
+        "w-fit max-w-[88%] min-w-0 rounded-2xl border px-3.5 py-2.5 break-words md:max-w-[72%]",
         ESTILO_BALAO[papel],
         apagado && "opacity-60",
       )}

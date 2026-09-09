@@ -201,7 +201,7 @@ export default async function FichaLeadPage({
         )}
 
         {lead.mensagem && (
-          <blockquote className="text-fluid-sm mt-4 rounded-xl border-l-2 border-acento-linha bg-vidro px-4 py-3 whitespace-pre-wrap text-corpo">
+          <blockquote className="text-fluid-sm mt-4 rounded-xl border-l-2 border-acento-linha bg-vidro px-4 py-3 whitespace-pre-wrap text-corpo break-words">
             {lead.mensagem}
           </blockquote>
         )}
@@ -252,7 +252,7 @@ export default async function FichaLeadPage({
                     key={n.id}
                     className={`border-linha border-l-2 pl-3 ${n.concluida_em ? "opacity-55" : ""}`}
                   >
-                    <p className="text-fluid-xs text-corpo line-clamp-2 whitespace-pre-wrap">
+                    <p className="text-fluid-xs text-corpo line-clamp-2 whitespace-pre-wrap break-words">
                       {n.texto}
                     </p>
                     <p className="text-tenue mt-0.5 text-[11px]">

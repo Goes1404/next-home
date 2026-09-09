@@ -160,7 +160,7 @@ function DetalhesLead({ lead, gestor }: { lead: Lead; gestor: boolean }) {
       {lead.etapa === "visita_agendada" && <CampoVisita leadId={lead.id} quando={lead.visitaAgendadaEm} />}
 
       {lead.mensagem && (
-        <p className="text-fluid-sm rounded-xl border border-linha bg-elevado px-4 py-3 whitespace-pre-line text-corpo">
+        <p className="text-fluid-sm rounded-xl border border-linha bg-elevado px-4 py-3 whitespace-pre-line text-corpo break-words">
           {lead.mensagem}
         </p>
       )}

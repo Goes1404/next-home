@@ -554,7 +554,7 @@ export function GmailLeadsExtractor({
                           <span className="text-[11px] text-tenue uppercase tracking-wider block mb-1">
                             Mensagem / Dúvida do Lead:
                           </span>
-                          <p className="text-fluid-xs text-corpo whitespace-pre-wrap">
+                          <p className="text-fluid-xs text-corpo whitespace-pre-wrap break-words">
                             {lead.mensagemOriginal}
                           </p>
                         </div>

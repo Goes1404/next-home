@@ -1283,7 +1283,9 @@ function Balao({
             absoluto embaixo à direita — a última linha corre ao lado dela. */}
         <p
           className={cn(
-            "text-[14.2px] leading-[19px] whitespace-pre-line",
+            // `break-words`: cliente manda link o tempo todo, e URL nao
+            // quebra sozinha — ela esticava o balao alem do proprio limite.
+            "text-[14.2px] leading-[19px] break-words whitespace-pre-line",
             mensagem.tipo === "audio" ? "text-wa-meta text-xs italic" : "text-wa-texto",
           )}
         >

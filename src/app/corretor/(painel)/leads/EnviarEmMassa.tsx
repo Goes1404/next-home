@@ -238,7 +238,7 @@ export function EnviarEmMassa({
                 </select>
 
                 {previa && (
-                  <p className="text-fluid-sm mt-3 rounded-xl border border-linha bg-elevado px-4 py-3 whitespace-pre-line text-corpo">
+                  <p className="text-fluid-sm mt-3 rounded-xl border border-linha bg-elevado px-4 py-3 whitespace-pre-line text-corpo break-words">
                     {previa}
                   </p>
                 )}

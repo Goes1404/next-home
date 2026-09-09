@@ -195,7 +195,7 @@ export function EditorTextos({ dados, onChange, contexto }: Props) {
                 <p className="text-fluid-xs font-bold text-acento-suave uppercase tracking-wider">
                   Sugestão da IA — confira antes de usar
                 </p>
-                <p className="text-fluid-sm whitespace-pre-line text-corpo">{sugestao}</p>
+                <p className="text-fluid-sm whitespace-pre-line text-corpo break-words">{sugestao}</p>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"

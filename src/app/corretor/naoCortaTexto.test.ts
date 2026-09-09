@@ -81,6 +81,32 @@ describe("o painel não corta nem apaga texto", () => {
     expect(erros, `ilegível no tema claro: ${erros.join(", ")}`).toEqual([]);
   });
 
+  /*
+   * `whitespace-pre-line`/`pre-wrap` preserva a QUEBRA DE LINHA que veio no
+   * texto, e só. Ele não quebra dentro da palavra — então uma URL, um slug ou
+   * um nome comprido estica a caixa e o texto sai cortado pela borda.
+   *
+   * Relatado em 09/09/2026 ("no celular o chat de criar arte corta as
+   * palavras"), e eram ONZE lugares, todos renderizando texto que vem de
+   * fora: balão do estúdio, balão do WhatsApp, anotação, sugestão da IA,
+   * corpo do e-mail importado, prévia do disparo em massa, linha do tempo e
+   * observação do lead. `<pre>` fica de fora — ele tem rolagem própria, e
+   * quebrar dentro da palavra estragaria a legenda que a pessoa vai copiar.
+   */
+  it("todo texto com quebra preservada também quebra palavra comprida", () => {
+    const erros = todos.flatMap((arq) =>
+      elementos(arq)
+        .filter(
+          (e) =>
+            /whitespace-pre-(line|wrap)/.test(e.classes) &&
+            !/break-words/.test(e.classes) &&
+            e.tag !== "pre",
+        )
+        .map((e) => `${path.relative(RAIZ, arq)}:${e.linha} <${e.tag}>`),
+    );
+    expect(erros, `whitespace-pre sem break-words: ${erros.join(", ")}`).toEqual([]);
+  });
+
   it("não usa truncate em elemento inline sem largura para encolher", () => {
     const erros = todos.flatMap((arq) =>
       elementos(arq)

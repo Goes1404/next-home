@@ -179,7 +179,7 @@ export function PlaygroundIA({
                       : "rounded-bl-none bg-[#202c33] text-white"
                   }`}
                 >
-                  <p className="leading-relaxed whitespace-pre-wrap">{m.texto}</p>
+                  <p className="leading-relaxed whitespace-pre-wrap break-words">{m.texto}</p>
 
                   {m.anexos && m.anexos.length > 0 && (
                     <div className="space-y-1.5 border-t border-white/10 pt-2">
@@ -258,7 +258,7 @@ export function PlaygroundIA({
           </div>
 
           {dossie.resumo ? (
-            <p className="text-fluid-xs text-corpo mt-3 leading-relaxed whitespace-pre-line">
+            <p className="text-fluid-xs text-corpo mt-3 leading-relaxed whitespace-pre-line break-words">
               {dossie.resumo}
             </p>
           ) : (

@@ -420,7 +420,7 @@ export function AnotacoesClient({
                 </div>
               </div>
 
-              <p className="text-fluid-sm text-corpo whitespace-pre-wrap">{a.texto}</p>
+              <p className="text-fluid-sm text-corpo break-words whitespace-pre-wrap">{a.texto}</p>
 
               {a.lead && (
                 <Link
