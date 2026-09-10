@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Empreendimento } from "@/lib/types";
-import { catalogoComFoco, detectarFoco } from "./focoDaConversa";
+import { catalogoComFoco, catalogoParaAtendimento, detectarFoco } from "./focoDaConversa";
 import { construirPromptSistema, type ContextoAtendimento } from "./aiAgent";
 
 /**
@@ -227,6 +227,27 @@ describe("detectarFoco", () => {
     }
   });
 
+  it("n-grama que TERMINA em conjunção não é nome — 'que bom que' não é o Bosque", () => {
+    // Medido no histórico real: "bom que" está a UMA letra de "bosque", e a
+    // tolerância desse tamanho permite uma. Como "Que bom que..." é a
+    // abertura mais comum da assistente, o catálogo inteiro do prompt
+    // encolhia para um imóvel que ninguém tinha citado.
+    const catalogo = [imovel("Bosque AlphaGran", "bosque-alphagran-ne55087")];
+
+    for (const texto of [
+      "que bom que você entendeu",
+      "Que bom que fez o orçamento",
+      "que bom que voltou a falar comigo",
+    ]) {
+      expect(detectarFoco({ catalogo, mensagemAtual: texto })).toBeNull();
+    }
+
+    // E o nome de verdade continua sendo reconhecido.
+    expect(detectarFoco({ catalogo, mensagemAtual: "gostei do Bosque" })?.imovel.slug).toBe(
+      "bosque-alphagran-ne55087",
+    );
+  });
+
   it("não casa pedaço de palavra", () => {
     // "Viva" está no catálogo; "vivarium" não é ele.
     expect(detectarFoco({ catalogo: CATALOGO, mensagemAtual: "vi no vivarium ontem" })).toBeNull();
@@ -234,6 +255,133 @@ describe("detectarFoco", () => {
 
   it("sem imóvel citado, não há foco — é a conversa que ainda está se apresentando", () => {
     expect(detectarFoco({ catalogo: CATALOGO, mensagemAtual: "oi, tudo bem?" })).toBeNull();
+  });
+});
+
+/**
+ * O buraco que este bloco fecha, medido em produção (10/09/2026):
+ *
+ * A IA oferece UM imóvel, o cliente se interessa — "essa tá massa", "gostei",
+ * "quantos quartos tem?" — e não repete o nome, porque ninguém repete o nome
+ * de quem acabou de falar. Como só a fala do cliente definia o foco, a
+ * conversa seguia SEM foco: o prompt voltava a mostrar dez fichas e a
+ * resposta seguinte desfilava outros empreendimentos. Nas conversas reais,
+ * 31 respostas do bot caíram nesse estado.
+ *
+ * A trava original ("só a fala do cliente conta") existe para o foco não se
+ * realimentar do que a própria IA empurrou — e ela continua valendo onde
+ * importa: oferta com DOIS ou mais imóveis não vira foco nenhum, que é
+ * justamente o desfile. O que passa a contar é a oferta SOLITÁRIA, em que a
+ * IA se comprometeu com um imóvel só e o cliente ficou nele.
+ */
+describe("a oferta solitária da IA vira foco quando o cliente fica nela", () => {
+  const ofereceu = (texto: string) => [{ remetente: "bot" as const, texto }];
+
+  it("o cliente se interessa sem repetir o nome — o foco é o imóvel oferecido", () => {
+    const foco = detectarFoco({
+      catalogo: CATALOGO,
+      mensagemAtual: "essa tá massa! quantos quartos tem?",
+      historico: ofereceu("O Terra Alta fica no Jardim Tupanci, pronto para morar."),
+    });
+
+    expect(foco?.imovel.slug).toBe("terra-alta-ta141");
+    expect(foco?.origem).toBe("oferta");
+  });
+
+  it("desfile não vira foco: com dois imóveis na mesma fala, ela não escolheu nenhum", () => {
+    const foco = detectarFoco({
+      catalogo: CATALOGO,
+      mensagemAtual: "legal",
+      historico: ofereceu("Temos o Terra Alta e o Vitra Alphaville, quer ver?"),
+    });
+
+    expect(foco).toBeNull();
+  });
+
+  it("recusa da oferta não vira foco — insistir no que ele acabou de descartar é o defeito ao contrário", () => {
+    const foco = detectarFoco({
+      catalogo: CATALOGO,
+      mensagemAtual: "não gostei",
+      historico: ofereceu("O Terra Alta fica no Jardim Tupanci."),
+    });
+
+    expect(foco).toBeNull();
+  });
+
+  it("pedido de outra opção não vira foco — é ele saindo do imóvel, não ficando nele", () => {
+    for (const texto of ["tem outra opção?", "tem algo mais em conta?", "tem outro imóvel?"]) {
+      expect(
+        detectarFoco({
+          catalogo: CATALOGO,
+          mensagemAtual: texto,
+          historico: ofereceu("O Terra Alta fica no Jardim Tupanci."),
+        }),
+      ).toBeNull();
+    }
+  });
+
+  it("o nome dito pelo CLIENTE continua vencendo a oferta da IA", () => {
+    const foco = detectarFoco({
+      catalogo: CATALOGO,
+      mensagemAtual: "na verdade me fala do Vitra Alphaville",
+      historico: ofereceu("O Terra Alta fica no Jardim Tupanci."),
+    });
+
+    expect(foco?.imovel.slug).toBe("vitra-alphaville-vt110");
+    expect(foco?.origem).toBe("mensagem");
+  });
+
+  it("e o nome dito ANTES pelo cliente também vence — ele escolheu, ela só ofereceu", () => {
+    const foco = detectarFoco({
+      catalogo: CATALOGO,
+      mensagemAtual: "e o lazer?",
+      historico: [
+        { remetente: "cliente", texto: "quero saber do Vitra Alphaville" },
+        { remetente: "bot", texto: "O Terra Alta fica no Jardim Tupanci." },
+      ],
+    });
+
+    expect(foco?.imovel.slug).toBe("vitra-alphaville-vt110");
+  });
+
+  it("vale a oferta mais recente: ela trocou de imóvel, a conversa troca junto", () => {
+    const foco = detectarFoco({
+      catalogo: CATALOGO,
+      mensagemAtual: "manda foto",
+      historico: [
+        { remetente: "bot", texto: "O Terra Alta fica no Jardim Tupanci." },
+        { remetente: "cliente", texto: "hum" },
+        { remetente: "bot", texto: "O Vitra Alphaville está pronto para morar." },
+      ],
+    });
+
+    expect(foco?.imovel.slug).toBe("vitra-alphaville-vt110");
+  });
+
+  it("desfile RECENTE apaga a oferta antiga — ela voltou a mostrar vitrine", () => {
+    const foco = detectarFoco({
+      catalogo: CATALOGO,
+      mensagemAtual: "legal",
+      historico: [
+        { remetente: "bot", texto: "O Terra Alta fica no Jardim Tupanci." },
+        { remetente: "cliente", texto: "hum" },
+        { remetente: "bot", texto: "Temos também o Vitra Alphaville e o Eternity." },
+      ],
+    });
+
+    expect(foco).toBeNull();
+  });
+
+  it("com o foco vindo da oferta, o catálogo do prompt encolhe igual", () => {
+    const { catalogo, foco } = catalogoParaAtendimento({
+      catalogo: CATALOGO,
+      mensagemAtual: "gostei, quanto custa?",
+      historico: [{ remetente: "bot", texto: "O Terra Alta fica no Jardim Tupanci." }],
+    });
+
+    expect(foco?.slug).toBe("terra-alta-ta141");
+    expect(catalogo).toHaveLength(1 + 2);
+    expect(catalogo[0].slug).toBe("terra-alta-ta141");
   });
 });
 

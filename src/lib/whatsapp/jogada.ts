@@ -143,10 +143,20 @@ const PEDIDO_DE_HORARIO =
  */
 const OBJECAO_DE_PRECO =
   /\b(ta caro|tá caro|caro demais|muito caro|salgado|acima do (meu )?(orcamento|orçamento)|passa do que|passa do meu|nao cabe|não cabe|fora do (meu )?(orcamento|orçamento|bolso))\b/;
+/**
+ * Exportado porque `focoDaConversa` precisa da MESMA régua: "tem outra
+ * opção?" é o cliente SAINDO do imóvel que a IA ofereceu, e por isso aquela
+ * oferta não pode virar foco. Duas cópias desta lista divergiriam, e o par
+ * (foco, jogada) passaria a discordar sobre o que o cliente pediu.
+ */
 const PEDIDO_DE_ALTERNATIVA =
   /\b(mais em conta|mais barato|mais barata|outra opcao|outra opção|outras opcoes|outras opções|algo (mais )?(barato|em conta|acessivel|acessível)|tem outro|outro imovel|outro imóvel|alternativa)\b/;
 const SAIDA_SUAVE =
   /\b(vou pensar|preciso pensar|vou ver com|vou conversar com|vou falar com|depois eu (vejo|falo|te falo)|te aviso|qualquer coisa eu (chamo|falo)|por enquanto nao|por enquanto não|mais pra frente|outra hora)\b/;
+
+export function pediuOutraOpcao(texto: string): boolean {
+  return PEDIDO_DE_ALTERNATIVA.test(normalizar(texto));
+}
 
 /**
  * Objeções de preço em sequência, contando a fala atual.

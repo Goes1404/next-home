@@ -76,7 +76,10 @@ const PERGUNTAS: Record<TipoDeDado, RegExp> = {
   metragem: /\b(metragem|metros|m2|area|tamanho|quantos metros|qual o tamanho)\b/,
   dormitorios: /\b(dormitorio|dormitorios|quarto|quartos|dorm|suite|suites|planta|tipologia|tipologias)\b/,
   entrega: /\b(entrega|entregue|pronto|prazo|quando fica pronto|quando entrega|previsao)\b/,
-  endereco: /\b(endereco|onde fica|onde e|localizacao|fica em que|qual rua|bairro)\b/,
+  // "onde fica" E "fica onde": quem pergunta inverte a ordem o tempo todo,
+  // e a ordem das palavras não pode decidir se a pergunta é respondida.
+  endereco:
+    /\b(endereco|onde fica|onde que fica|fica onde|onde e|onde que e|localizacao|localizado|fica em que|fica em qual|em que bairro|qual rua|bairro)\b/,
   lazer: /\b(lazer|piscina|academia|churrasqueira|salao|playground|quadra|pet|coworking|espaco gourmet|area comum)\b/,
 };
 

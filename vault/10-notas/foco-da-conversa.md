@@ -7,7 +7,7 @@ status: evergreen
 custou: alto
 codigo: [src/lib/whatsapp/focoDaConversa.ts, src/lib/whatsapp/catalogoRelevante.ts]
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-10
 fonte: docs/MEMORIA.md — Chatbot (24/08/2026)
 summary: O cliente pedia a planta do Terra Alta e recebia lista com outros três. A causa não era só o prompt — a IA via DEZ fichas em toda mensagem, e o que ela vê, ela oferece.
 ---
@@ -21,6 +21,11 @@ A causa não era só o prompt — **a IA via dez fichas completas em toda mensag
 e o que ela vê, ela oferece**. Hoje, quando o **cliente** cita um imóvel, o
 catálogo do prompt encolhe para ele mais DUAS reservas rotuladas como tal, e um
 bloco FOCO manda aprofundar.
+
+> [!update] 10/09/2026
+> Citar o nome não era suficiente: **quem se interessa não repete o nome** do
+> imóvel que a IA acabou de oferecer. A oferta SOLITÁRIA dela passou a valer
+> como foco — ver [[o-foco-precisava-da-oferta-solitaria]].
 
 ## Decisões que custaram
 

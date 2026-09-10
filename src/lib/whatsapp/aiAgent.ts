@@ -46,9 +46,17 @@ import { blocoSemAcabamentoCadastrado } from "./acabamentoInventado";
  * atende) e um do primeiro eval de CONVERSA: com "vi um anúncio de vocês",
  * sem imóvel nomeado, ela respondeu "o imóvel do anúncio tem 3 dormitórios,
  * 3 suítes e 2 vagas" — inventou qual imóvel era, que erra tudo de uma vez.
+ *
+ * v35: o texto do prompt não mudou — mudou o que ele RECEBE. O foco passa a
+ * ser reconhecido também quando a IA ofereceu UM imóvel e o cliente ficou
+ * nele sem repetir o nome ("essa tá massa", "quantos quartos tem?"), que era
+ * o buraco por onde a conversa voltava a ver dez fichas e a resposta desfilava
+ * outros empreendimentos em cima de quem tinha acabado de se interessar. A
+ * marca de versão sobe mesmo assim: é ela que separa o antes e o depois em
+ * `ia_interacoes`, e sem isso a medição do efeito não existe.
  */
 
-export const PROMPT_VERSAO = "2026.09-v34"; // a marca de "assunto respondido" acumula pela conversa (a v33 esquecia depois de um turno) + a IA não inventa acabamento (flagrada afirmando piso laminado e bancada em granito de um cadastro sem o campo)
+export const PROMPT_VERSAO = "2026.09-v35"; // a oferta solitária da IA passa a definir o FOCO: quem se interessa pelo imóvel oferecido não repete o nome dele, e sem foco o prompt voltava a dez fichas e desfilava por cima do interesse // a marca de "assunto respondido" acumula pela conversa (a v33 esquecia depois de um turno) + a IA não inventa acabamento (flagrada afirmando piso laminado e bancada em granito de um cadastro sem o campo)
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.

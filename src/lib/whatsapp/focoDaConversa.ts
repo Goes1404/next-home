@@ -1,6 +1,7 @@
 import type { Empreendimento } from "@/lib/types";
 import type { DossieClienteIA } from "./types";
 import { ranquearCatalogo } from "./catalogoRelevante";
+import { pediuOutraOpcao } from "./jogada";
 
 /**
  * Qual imóvel esta conversa está tratando AGORA.
@@ -330,15 +331,24 @@ const ABRE_FRASE = new Set([
 function candidatos(frase: string): string[] {
   const palavras = frase.split(/[^a-z0-9]+/).filter(Boolean);
   const saida: string[] = [palavras.join(" ")];
+  /*
+   * Preposição e conjunção também não FECHAM um nome, e o custo de ignorar
+   * isso foi medido: "bom que" está a uma letra de "bosque", e a tolerância
+   * desse tamanho permite uma. Como "Que bom que..." é a abertura mais comum
+   * da assistente, toda mensagem calorosa dela virava uma citação do Bosque
+   * AlphaGran — e o catálogo do prompt encolhia para um imóvel que ninguém
+   * tinha mencionado.
+   */
+  const fecha = (palavra: string) => ABRE_FRASE.has(palavra);
 
   for (let i = 0; i < palavras.length; i++) {
     if (ABRE_FRASE.has(palavras[i])) continue;
     saida.push(palavras[i]);
-    if (i + 1 < palavras.length) {
+    if (i + 1 < palavras.length && !fecha(palavras[i + 1])) {
       saida.push(`${palavras[i]} ${palavras[i + 1]}`);
       saida.push(`${palavras[i]}${palavras[i + 1]}`);
     }
-    if (i + 2 < palavras.length) {
+    if (i + 2 < palavras.length && !fecha(palavras[i + 2])) {
       saida.push(`${palavras[i]} ${palavras[i + 1]} ${palavras[i + 2]}`);
       saida.push(`${palavras[i]}${palavras[i + 1]}${palavras[i + 2]}`);
     }
@@ -443,9 +453,57 @@ export function imoveisCitados(texto: string, catalogo: Empreendimento[]): strin
 
 export type FocoDaConversa = {
   imovel: Empreendimento;
-  /** De onde veio: a mensagem de agora ou uma fala anterior do cliente. */
-  origem: "mensagem" | "historico";
+  /**
+   * De onde veio, do mais forte para o mais fraco: o nome na mensagem de
+   * agora, o nome numa fala anterior do cliente, ou a oferta solitária da
+   * própria IA que o cliente não recusou (ver `ofertaSolitaria`).
+   */
+  origem: "mensagem" | "historico" | "oferta";
 };
+
+/**
+ * O imóvel que a IA ofereceu SOZINHA na fala mais recente em que citou algum.
+ *
+ * Existe por um estado medido em produção (10/09/2026): em 31 respostas, a IA
+ * tinha oferecido um imóvel, o cliente se interessou — "essa tá massa",
+ * "gostei", "quantos quartos tem?" — e a conversa seguiu SEM foco, porque
+ * ninguém repete o nome de quem acabou de falar. Sem foco, o prompt volta a
+ * mostrar dez fichas, e o que ela vê, ela oferece: a resposta seguinte
+ * desfilava outros empreendimentos justamente em cima do interesse.
+ *
+ * A trava de origem ("só a fala do CLIENTE define o foco") continua valendo
+ * onde ela foi escrita para valer. O que ela evita é o foco se realimentar do
+ * desfile — e desfile é exatamente a fala com DOIS ou mais imóveis, que aqui
+ * não vira foco nenhum e ainda APAGA a oferta anterior: se ela voltou a
+ * mostrar vitrine, a conversa não tem mais um imóvel escolhido.
+ *
+ * O que passa a contar é o compromisso: uma fala com UM imóvel só.
+ */
+function ofertaSolitaria(
+  historico: { remetente: string; texto: string }[],
+  indice: Indice,
+): string | null {
+  for (let i = historico.length - 1; i >= 0; i--) {
+    const fala = historico[i];
+    if (fala.remetente !== "bot") continue;
+
+    /*
+     * A nota de auditoria do anexo (clipe + título + url) é registro para o
+     * corretor ler no Live Chat, não fala com o cliente. Contá-la faria a
+     * FOTO de um imóvel parecer OFERTA dele — e uma resposta com duas fotos
+     * viraria "desfile" sem a IA ter citado dois nomes.
+     */
+    const dito = fala.texto.split(NOTA_DE_ANEXO)[0];
+    const citados = citadosNoTexto(dito, indice, { ignorarRecusa: true });
+    if (citados.length === 0) continue;
+    return citados.length === 1 ? citados[0] : null;
+  }
+
+  return null;
+}
+
+/** O clipe que abre a nota de auditoria de anexo, gravada pelo webhook. */
+const NOTA_DE_ANEXO = String.fromCodePoint(0x1f4ce);
 
 export function detectarFoco(params: {
   catalogo: Empreendimento[];
@@ -472,6 +530,24 @@ export function detectarFoco(params: {
     if (!slug) continue;
     const imovel = acharImovel(slug);
     if (imovel) return { imovel, origem: "historico" };
+  }
+
+  /*
+   * Última linha: o imóvel que a IA ofereceu sozinha e o cliente NÃO recusou.
+   *
+   * As duas saídas dizem a mesma coisa por caminhos diferentes: "não gostei"
+   * é a recusa dita, "tem outra opção?" é a recusa em forma de pedido. Nos
+   * dois casos ele saiu do imóvel, e travar foco ali seria insistir no que
+   * ele acabou de descartar — a regra 22 do prompt ao contrário. Sem foco, o
+   * catálogo volta inteiro, que é o certo para quem pediu alternativa.
+   */
+  const oferecido = ofertaSolitaria(params.historico ?? [], indice);
+  if (oferecido) {
+    const recusou = frases(mensagemAtual ?? "").some((f) => RECUSA.test(f));
+    if (!recusou && !pediuOutraOpcao(mensagemAtual ?? "")) {
+      const imovel = acharImovel(oferecido);
+      if (imovel) return { imovel, origem: "oferta" };
+    }
   }
 
   return null;

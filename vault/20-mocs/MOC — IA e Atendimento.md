@@ -4,7 +4,7 @@ tags: [moc, ia, prompt]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-06
+updated: 2026-09-10
 summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 ---
 # IA e Atendimento (Sofia) — Map of Content
@@ -28,6 +28,9 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[quebra-de-mensagens-chunking]]
 - [[funil-de-qualificacao-tem-ordem]]
 - [[foco-da-conversa]]
+- [[o-foco-precisava-da-oferta-solitaria]] — quem se interessa não repete o nome
+- [[o-contexto-que-a-ia-realmente-ve]] ⚠️ as sete camadas e os três buracos
+- [[privacidade-apaga-o-que-a-ia-depois-precisa]]
 - [[reconhecer-nome-do-imovel]]
 - [[ficha-do-prompt-completa-e-com-ausencias]]
 - [[detector-de-prazo-acusava-a-honestidade]]

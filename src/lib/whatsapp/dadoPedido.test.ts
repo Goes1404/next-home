@@ -100,3 +100,25 @@ describe("blocoDadoPedido", () => {
     expect(bloco).toMatch(/^"?O mais em conta/m);
   });
 });
+
+describe("a ordem das palavras não pode decidir se a pergunta é respondida", () => {
+  /*
+   * "onde fica" estava na lista; "fica onde" não. O trace do cliente
+   * INTERESSADO (10/09/2026) mostrou o custo: "gostei mesmo, fica onde?"
+   * não virava dado nenhum, o planner caía no funil e a resposta era
+   * "pronto para morar ou na planta?" — que é, do lado do cliente,
+   * exatamente a queixa de "ele não responde e muda de assunto".
+   */
+  it("reconhece o pedido de endereço em qualquer ordem", () => {
+    for (const texto of [
+      "onde fica?",
+      "fica onde?",
+      "gostei mesmo, fica onde?",
+      "onde que fica esse?",
+      "fica em qual bairro?",
+      "qual a localização?",
+    ]) {
+      expect(pedir(texto)?.tipo, texto).toBe("endereco");
+    }
+  });
+});
