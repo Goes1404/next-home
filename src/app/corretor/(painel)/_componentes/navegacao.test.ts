@@ -67,6 +67,27 @@ describe("mapa de navegação (três destinos no polegar, e é de propósito)", 
     }
   });
 
+  it("Consultor é destino de menu, e o teto de sete continua valendo", () => {
+    /*
+     * O sétimo tópico bate EXATAMENTE no teto, e a escolha é deliberada:
+     * ferramenta de uso diário atrás de um clique extra não é usada — foi o
+     * que aconteceu com o aviso de apelidos, que não moveu nada em cinco dias
+     * porque morava dentro do editor de imóvel.
+     *
+     * O próximo destino que alguém quiser criar NÃO cabe: vira subtópico.
+     */
+    const itens = gruposVisiveis(true).flatMap((g) => g.itens);
+    expect(itens.some((i) => i.href === "/corretor/consultor")).toBe(true);
+    expect(itens.length).toBeLessThanOrEqual(7);
+  });
+
+  it("o Consultor pinta com a cor de Imóveis — o círculo cromático está cheio", () => {
+    // Matiz própria colidiria: todo valor livre pelos 40° entre módulos cai
+    // em cima da rampa de etapa (248° fica a 4° de `etapa-contato`) ou
+    // encosta em `alerta`. Emprestar a cor do domínio é honesto.
+    expect(moduloAtivo("/corretor/consultor")).toBe("imoveis");
+  });
+
   it("o menu inteiro cabe numa olhada", () => {
     // Sete é o teto: acima disso o menu deixa de ser lido e passa a ser
     // procurado, que é o começo do labirinto.

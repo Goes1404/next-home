@@ -42,7 +42,7 @@ const SEPARACAO_MINIMA = 40;
  */
 const PASSO_MINIMO = 0.075;
 
-const MODULOS = ["inicio", "leads", "whatsapp", "imoveis", "conta", "admin"];
+const MODULOS = ["inicio", "leads", "whatsapp", "imoveis", "marketing", "conta", "admin"];
 const ETAPAS = ["novo", "contato", "visita", "doc", "fechado", "perdido"];
 
 // --- cor -------------------------------------------------------------------

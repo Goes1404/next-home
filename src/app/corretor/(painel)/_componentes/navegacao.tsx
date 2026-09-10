@@ -140,6 +140,19 @@ export const GRUPOS_NAV: GrupoNav[] = [
     itens: [
       {
         /*
+         * O sétimo destino, e o TETO da régua de menu. Mora em Ferramentas, e
+         * não na barra do polegar: aquela leva três, e são as três coisas que
+         * se fazem EM PÉ, no corredor (o que precisa de você agora, com quem
+         * falar, qual imóvel). Perguntar ao consultor é coisa de sentar.
+         *
+         * O próximo destino que alguém quiser criar NÃO cabe: vira subtópico.
+         */
+        href: "/corretor/consultor",
+        label: "Consultor",
+        icone: IconeConsultor,
+      },
+      {
+        /*
          * WhatsApp é o CANAL: a conexão, o que a IA respondeu, e o ajuste
          * dela. Antes "Minha IA" era o destino e Conversas vivia absorvida por
          * Pessoas — o que produzia o defeito de 04/09: a tela de Conversas
@@ -358,6 +371,18 @@ const MODULO_POR_DESTINO: Record<string, Modulo> = {
   "/corretor": "inicio",
   "/corretor/pessoas": "leads",
   "/corretor/imoveis": "imoveis",
+  /*
+   * O consultor é tópico PRÓPRIO no menu e pinta com a cor de IMÓVEIS, e isso
+   * não é economia: o círculo cromático está cheio. Seis módulos coloridos
+   * mais a rampa ordinal de etapa (270° a 192°) já o ocupam, e todo matiz
+   * livre que passa nos 40° de separação entre módulos cai em cima da rampa
+   * (248° fica a 4° de `etapa-contato`) ou encosta em `alerta` (66°).
+   *
+   * Emprestar a cor de Imóveis é honesto: o consultor é o assistente DO
+   * PORTFÓLIO. E já há precedente do inverso — `criar-imagem` mora sob
+   * /imoveis e pinta de Marketing.
+   */
+  "/corretor/consultor": "imoveis",
   "/corretor/marketing": "marketing",
   "/corretor/whatsapp": "whatsapp",
   "/corretor/perfil": "conta",
@@ -422,6 +447,16 @@ const traco = {
 
 /* ── Tópicos ── */
 
+function IconeConsultor(p: SVGProps<SVGSVGElement>) {
+  // Balão de conversa com uma casa dentro: perguntar sobre imóvel.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M21 12a8 8 0 0 1-8 8H8l-4 3v-4.6A8 8 0 1 1 21 12Z" />
+      <path d="M9.5 12.5 12.5 10l3 2.5" />
+      <path d="M10.5 12v3h4v-3" />
+    </svg>
+  );
+}
 function IconeAgora(p: SVGProps<SVGSVGElement>) {
   // Relógio: "o que precisa de você AGORA".
   return (
