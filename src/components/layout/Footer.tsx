@@ -7,6 +7,7 @@ import { getTemaEscolhido } from "@/lib/tema";
 
 const LINKS_RAPIDOS = [
   { href: "/empreendimentos", label: "Empreendimentos" },
+  { href: "/financiamento", label: "Financiamento" },
   { href: "/sobre", label: "Sobre" },
   { href: "/contato", label: "Contato" },
   { href: "/privacidade", label: "Privacidade" },

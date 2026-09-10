@@ -28,7 +28,7 @@ export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento })
             {e.tagline}
           </TituloEditorial>
           <Reveal from="nenhuma" delay={0.25}>
-            <p className="text-fluid-lg mt-8 leading-relaxed whitespace-pre-line text-corpo-suave">
+            <p className="text-fluid-lg text-corpo-suave mt-8 leading-relaxed break-words whitespace-pre-line">
               {e.descricao}
             </p>
           </Reveal>

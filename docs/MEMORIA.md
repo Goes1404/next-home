@@ -5354,3 +5354,29 @@ aparecia em tsc, teste ou build.
   o que preserva a premissa de que nada consulta o Supabase em tempo de
   build. Conferir no output do build, não no código.
 
+
+## A página de financiamento, e a guarda que passou a ver o site público (10/09/2026)
+
+- **A conta do financiamento já existia, pura e testada** (`lib/consultor/
+  financiamento.ts`, do consultor do painel). A página pública REUSA a mesma
+  função em vez de reimplementar: duas contas do mesmo financiamento
+  divergiriam, e o cliente ouviria um número no site e outro do corretor — o
+  jeito mais rápido de perder a conversa que o site conquistou.
+- **A simulação roda no NAVEGADOR e nada é enviado.** A pessoa declara renda
+  antes de confiar na empresa; guardar isso não serve a ninguém. Os parâmetros
+  de crédito (`getParametrosCredito`) vêm prontos do servidor, e a página
+  mostra a DATA da última conferência — número de crédito sem data é número em
+  que ninguém pode confiar.
+- **Os atalhos de faixa saem do CATÁLOGO.** Um chip "até R$ 300 mil" que
+  devolve lista vazia é o defeito que a seção de regiões tinha; aqui cada
+  corte só aparece se houver imóvel dentro dele, e o parâmetro é `precoMax`, o
+  MESMO que a listagem lê (a lição do `?filtro=parados`, que já mordeu duas
+  vezes).
+- **Rota nova só vale ligada**: cabeçalho, rodapé e sitemap na mesma mudança.
+  Página sem link de entrada é página que só o sitemap conhece.
+- **A guarda de cortes só varria o PAINEL, e o site público nunca tinha
+  passado por ela.** Estendida para `src/components`, `(institucional)` e
+  `(vitrine)`, achou três na primeira execução — e nos textos mais longos que
+  um visitante lê: legenda do vídeo do imóvel, descrição do empreendimento e
+  apresentação do corretor. Os três vêm do CADASTRO, que é de onde vêm palavra
+  comprida e URL colada. Provocada depois de estendida.
