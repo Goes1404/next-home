@@ -44,7 +44,7 @@ export default async function ImportarMaterialPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <Link href={`/corretor/imoveis/${slug}`} className="text-fluid-xs text-apoio">
+      <Link href={`/corretor/imoveis/${slug}`} className="text-fluid-xs text-apoio hover:text-titulo inline-flex min-h-9 items-center underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current">
         ← Voltar para o imóvel
       </Link>
 

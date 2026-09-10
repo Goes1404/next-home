@@ -17,6 +17,7 @@ import { moverEtapaEmMassa } from "@/app/corretor/actions";
 import { PONTO_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import type { FiltroLeads } from "@/lib/corretorSessao";
+import { recalcularRolagem } from "@/components/motion/lenis";
 import {
   ETAPAS_FUNIL,
   ETAPA_LABEL,
@@ -158,6 +159,9 @@ export function ListaLeads({
         return [...atuais, ...pagina.leads.filter((l) => !vistos.has(l.id))];
       });
       setPaginasCarregadas(proximaPagina + 1);
+      // Mesmo motivo da lista de Pessoas: o documento cresceu sem recarregar,
+      // e o Lenis precisa remedir o limite de rolagem.
+      recalcularRolagem();
     });
   }
 

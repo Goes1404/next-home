@@ -39,7 +39,7 @@ export default async function WhatsappPainelPage() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <CabecalhoDeTela secao="WhatsApp" titulo="Minha IA" descricao="Conecte seu número para a IA atender, mandar fotos e plantas e qualificar seus leads enquanto você não está." />
+        <CabecalhoDeTela secao="Assistente" titulo="Minha IA" descricao="Conecte seu número para a IA atender, mandar fotos e plantas e qualificar seus leads enquanto você não está." />
       </div>
 
       <AbasWhatsapp

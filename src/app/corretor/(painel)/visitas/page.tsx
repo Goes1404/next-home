@@ -43,8 +43,21 @@ export default async function VisitasPage({
 
   return (
     <div>
-      <CabecalhoDeTela secao="Pessoas" titulo="Visitas" descricao="Leads com visita marcada, ordenados pelo horário." />
+      <CabecalhoDeTela secao="Leads" titulo="Visitas" descricao="Leads com visita marcada, ordenados pelo horário." />
 
+      <BuscaLeads className="mt-6" />
+      <div className="mt-3">
+        <AbasLeads ativa="/corretor/visitas" visitas={busca ? undefined : visitas.length} />
+      </div>
+
+      {/*
+        A grade de disponibilidade desceu para DEPOIS da busca e das abas
+        (06/09/2026, pedido do usuário). Ela é configuração — "quando eu
+        recebo visitas" —, e estava entre o cabeçalho e a navegação da seção,
+        empurrando as abas para fora da primeira tela no celular. Quem abre
+        Visitas vem ver as visitas de hoje; ajustar horário é o que se faz
+        depois.
+      */}
       <div className="mt-6">
         <GradeDaSemana
           inicial={(grade ?? []).map((f) => ({
@@ -53,11 +66,6 @@ export default async function VisitasPage({
             horaFim: f.hora_fim,
           }))}
         />
-      </div>
-
-      <BuscaLeads className="mt-6" />
-      <div className="mt-3">
-        <AbasLeads ativa="/corretor/visitas" visitas={busca ? undefined : visitas.length} />
       </div>
 
       {visitas.length === 0 ? (

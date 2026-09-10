@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { AbasLeads } from "../_componentes/AbasLeads";
+import { BotaoVoltarAoTopo } from "../_componentes/BotaoVoltarAoTopo";
 import { EsqueletoDeLista } from "../_componentes/EsqueletoDeLista";
 import { ListaPessoas } from "./ListaPessoas";
 import { getPaginaDePessoas } from "@/lib/crm/pessoas";
@@ -72,6 +73,10 @@ export default async function PaginaPessoas({
       <Suspense key={busca} fallback={<EsqueletoDeLista linhas={7} titulo="Carregando pessoas…" />}>
         <Conteudo busca={busca} />
       </Suspense>
+
+      {/* A lista cresce 40 por clique e volta longa; subir arrastando é o
+          cansaço relatado em 07/09. */}
+      <BotaoVoltarAoTopo />
     </div>
   );
 }

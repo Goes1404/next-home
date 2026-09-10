@@ -15,6 +15,7 @@ import {
 } from "@/lib/corretorSessao";
 import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
+import { BotaoVoltarAoTopo } from "../_componentes/BotaoVoltarAoTopo";
 
 export const metadata: Metadata = { title: "Meus leads" };
 
@@ -152,7 +153,12 @@ export default async function LeadsPage({
         }
       />
 
-      <AbasLeads ativa="/corretor/leads" />
+      {/* A barra de abas encostava no cartão-herói: dois blocos de vidro
+          colados leem como um só, e a régua de abas some dentro do cabeçalho.
+          O respiro é o mesmo `mt-6` que Visitas já usava. */}
+      <div className="mt-6">
+        <AbasLeads ativa="/corretor/leads" />
+      </div>
 
       {/* Recorte vindo de um KPI da administração. Precisa estar ESCRITO na
           tela: filtro invisível filtrando é a pior surpresa de uma lista —
@@ -185,6 +191,8 @@ export default async function LeadsPage({
         verArquivados={verArquivados}
         empreendimentos={empreendimentos}
       />
+
+      <BotaoVoltarAoTopo />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -78,8 +78,19 @@ describe("o turno entrega os fatos que a telemetria grava", () => {
 });
 
 describe("a migration abriu a origem", () => {
+  /*
+   * Procurada pelo NOME, nunca pelo número.
+   *
+   * Esta guarda quebrou em 10/09/2026 ao renumerar 0103 → 0104 por causa de
+   * uma colisão de prefixo entre branches: o teste reprovava com ENOENT, o
+   * que acusa "a migration sumiu" quando ela só mudou de número. Prefixo é
+   * ordem de execução e pode legitimamente mudar num merge; o nome é a
+   * identidade.
+   */
   it("`consultor` é valor aceito em ia_interacoes.origem", () => {
-    const sql = readFileSync(join(MIGRATIONS, "0103_telemetria_do_consultor.sql"), "utf8");
+    const arquivo = readdirSync(MIGRATIONS).find((n) => n.endsWith("_telemetria_do_consultor.sql"));
+    expect(arquivo, "migration da telemetria do consultor não encontrada").toBeDefined();
+    const sql = readFileSync(join(MIGRATIONS, arquivo!), "utf8");
     expect(sql).toContain("'consultor'");
     expect(sql.toLowerCase()).toContain("ia_interacoes_origem_check");
   });

@@ -160,7 +160,7 @@ function DetalhesLead({ lead, gestor }: { lead: Lead; gestor: boolean }) {
       {lead.etapa === "visita_agendada" && <CampoVisita leadId={lead.id} quando={lead.visitaAgendadaEm} />}
 
       {lead.mensagem && (
-        <p className="text-fluid-sm rounded-xl border border-linha bg-elevado px-4 py-3 whitespace-pre-line text-corpo">
+        <p className="text-fluid-sm rounded-xl border border-linha bg-elevado px-4 py-3 whitespace-pre-line text-corpo break-words">
           {lead.mensagem}
         </p>
       )}
@@ -237,9 +237,9 @@ export function TabelaLeads({
                     <span className="text-fluid-sm block truncate font-medium text-titulo">
                       {lead.nome}
                     </span>
-                    <span className="text-fluid-xs mt-0.5 flex items-center gap-1.5 text-tenue">
+                    <span className="text-fluid-xs text-tenue mt-0.5 flex min-w-0 items-center gap-1.5">
                       <EtiquetaEtapa etapa={lead.etapa} />
-                      <span className="truncate">{dataDoCartao(lead)}</span>
+                      <span className="min-w-0 truncate">{dataDoCartao(lead)}</span>
                     </span>
                   </span>
                   <ChevronDown

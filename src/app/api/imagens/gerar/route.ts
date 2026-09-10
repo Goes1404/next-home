@@ -77,6 +77,15 @@ export async function POST(req: NextRequest) {
 
   let prompt: string;
   let pedidoCompleto: string;
+  /*
+   * O imóvel a que esta arte pertence (0101). Até aqui o vínculo existia só
+   * como texto dentro do `briefing` (`imovelSlug`), o que não é vínculo: slug
+   * muda quando o imóvel é renomeado e ninguém consegue perguntar ao banco
+   * "quais artes são deste imóvel". Resolvido pelo cliente COM sessão, então
+   * a RLS já responde por quem pode ver o quê — slug de imóvel alheio volta
+   * nulo e a imagem nasce avulsa, sem vazar nada.
+   */
+  let empreendimentoId: string | null = null;
 
   if (modoArte) {
     const cena = corpo?.cena?.trim();
@@ -84,6 +93,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ erro: "Monte o briefing antes de criar a arte." }, { status: 400 });
     }
     const imovel = corpo.imovelSlug ? await getEmpreendimentoDoPainel(corpo.imovelSlug) : null;
+    empreendimentoId = imovel?.id ?? null;
     const briefing = montarBriefing({
       imovel,
       objetivo: corpo.objetivo as never,
@@ -131,6 +141,11 @@ export async function POST(req: NextRequest) {
     // escolheu "mobiliar ambiente vazio" já leva junto o "mantenha a mesma
     // arquitetura e o mesmo ângulo" sem ter de saber que isso se pede.
     pedidoCompleto = montarPedido(p, receitaPor(corpo?.receita));
+    // O cadastro de imóvel (`/corretor/imoveis/novo`) gera no modo livre e
+    // manda o slug que acabou de nascer — é o que amarra a arte ao imóvel.
+    if (corpo?.imovelSlug) {
+      empreendimentoId = (await getEmpreendimentoDoPainel(corpo.imovelSlug))?.id ?? null;
+    }
   }
 
   // O teto é conferido ANTES de gastar a chamada — é a única coisa do painel
@@ -252,6 +267,7 @@ export async function POST(req: NextRequest) {
     latenciaMs: resultado.latenciaMs,
     arteUrl,
     briefing: arte?.briefingGravado ?? null,
+    empreendimentoId,
   });
 
   return NextResponse.json({
@@ -265,6 +281,7 @@ export async function POST(req: NextRequest) {
       largura: formato.largura,
       altura: formato.altura,
       referenciaUrl,
+      empreendimentoId,
       criadaEm: new Date().toISOString(),
     },
     teto: { usadasHoje: teto.usadasHoje + 1, teto: teto.teto },

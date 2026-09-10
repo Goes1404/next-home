@@ -8,6 +8,7 @@ import { ETAPA_LABEL } from "@/lib/types";
 import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
 import { linkWhatsappPara } from "@/lib/site";
 import { carregarMaisPessoas } from "./acoes";
+import { recalcularRolagem } from "@/components/motion/lenis";
 // Do módulo PURO, não de `pessoas.ts`: aquele tem `server-only` e uma
 // constante importada dele arrasta o servidor inteiro para o cliente.
 import { PESSOAS_POR_PAGINA, type PessoaNaLista } from "@/lib/crm/pessoasTipos";
@@ -98,6 +99,10 @@ export function ListaPessoas({
                 return [...atuais, ...novas.filter((n) => !vistos.has(n.id))];
               });
               setPagina(proxima);
+              // A página cresceu sem recarregar: o Lenis precisa remedir, ou
+              // a rolagem trava no fim ANTIGO e as linhas novas ficam
+              // visíveis e inalcançáveis (relatado em 06/09/2026).
+              recalcularRolagem();
             })
           }
           className="border-linha text-corpo hover:border-acento-linha hover:text-titulo text-fluid-sm min-h-12 w-full cursor-pointer rounded-xl border transition-colors disabled:opacity-60"
@@ -139,7 +144,7 @@ function LinhaPessoa({ pessoa }: { pessoa: PessoaNaLista }) {
         className={`w-1 shrink-0 ${pessoa.etapa ? REGUA_ETAPA[pessoa.etapa] : "bg-linha-forte"}`}
       />
 
-      <Link href={destino} className="hover:bg-vidro min-w-0 flex-1 px-3 py-3 transition-colors">
+      <Link href={destino} className="hover:bg-vidro active:bg-vidro-forte min-w-0 flex-1 px-3 py-3 transition-colors">
         <span className="flex items-baseline gap-2">
           <span className="text-fluid-sm text-titulo min-w-0 flex-1 truncate font-medium">
             {pessoa.nome}

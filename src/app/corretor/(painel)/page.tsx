@@ -11,6 +11,7 @@ import {
 import { getFilaDeTrabalho } from "@/lib/crm/filaDeTrabalho";
 import { getMinhasTarefas } from "@/lib/crm/dadosLead";
 import { site } from "@/lib/site";
+import { primeiroNome } from "@/lib/format";
 import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
 import { HeroInicio } from "./_componentes/HeroInicio";
 import { cn } from "@/lib/utils";
@@ -44,7 +45,7 @@ const ATALHOS: {
   icone: (p: SVGProps<SVGSVGElement>) => React.ReactElement;
   largo?: boolean;
 }[] = [
-  { href: "/corretor/pessoas", modulo: "leads", titulo: "Pessoas", texto: "quem falou com você, do mais recente ao mais antigo", icone: IconePessoas },
+  { href: "/corretor/pessoas", modulo: "leads", titulo: "Leads", texto: "quem falou com você, do mais recente ao mais antigo", icone: IconePessoas },
   { href: "/corretor/imoveis", modulo: "imoveis", titulo: "Imóveis", texto: "fotos, textos e preços do catálogo", icone: IconePredio },
   { href: "/corretor/whatsapp", modulo: "whatsapp", titulo: "Minha IA", texto: "atende, qualifica e marca visita enquanto você não está", icone: IconeRobo, largo: true },
   { href: "/corretor/imoveis/criar-imagem", modulo: "marketing", titulo: "Criar arte", texto: "peça pronta para publicar, conversando com a IA", icone: IconeMegafone },
@@ -64,7 +65,13 @@ export default async function PainelInicio() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
-  const primeiroNome = corretor.nome.split(" ")[0];
+  /*
+   * O nome de quem abriu o painel, não o da casa. O cadastro vem como
+   * "Cristal - Bruna" e o `split(" ")[0]` de antes saudava "Boa tarde,
+   * Cristal" — a imobiliária. `primeiroNome` mora em `format.ts` junto de
+   * `iniciais()`, que já tratava esse mesmo hífen.
+   */
+  const nomeNaSaudacao = primeiroNome(corretor.nome);
 
   return (
     <div className="space-y-8">
@@ -82,7 +89,7 @@ export default async function PainelInicio() {
         resto da tela.
       */}
       <Suspense fallback={<EsqueletoCartao linhas={3} />}>
-        <BlocoDoHero nome={primeiroNome} />
+        <BlocoDoHero nome={nomeNaSaudacao} />
       </Suspense>
 
       {/*
@@ -127,7 +134,7 @@ export default async function PainelInicio() {
               // seção de destino: `bg-acento` aqui já é a cor DAQUELE módulo.
               data-modulo={a.modulo}
               className={cn(
-                "from-acento to-acento-hover text-sobre-cor shadow-painel group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-[1.75rem] bg-gradient-to-br p-4 ring-1 ring-white/10 transition-transform ring-inset hover:-translate-y-0.5 motion-reduce:transition-none md:min-h-40 md:p-5",
+                "from-acento to-acento-hover text-sobre-cor shadow-painel group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-[1.75rem] bg-gradient-to-br p-4 ring-1 ring-white/10 transition-transform ring-inset hover:-translate-y-0.5 active:scale-[0.98] motion-reduce:transition-none md:min-h-40 md:p-5",
                 a.largo && "col-span-2 flex-row items-center gap-4",
               )}
             >

@@ -30,9 +30,12 @@
  * tipagem, não atualização.
  *
  * ESCRITA À MÃO, também a reaplicar: a view `pessoas_do_corretor` (0088) e a
- * tabela `imagens_geradas` (0090). As duas são posteriores à última geração, e
- * sem elas `getPaginaDePessoas` e a galeria de imagens não compilam — o
- * cliente do Supabase só aceita nomes de relação que existam neste arquivo.
+ * tabela `imagens_geradas` (0090), inclusive a coluna `empreendimento_id` que
+ * a 0101 acrescentou a ela. As duas são posteriores à última geração, e sem
+ * elas `getPaginaDePessoas` e a galeria de imagens não compilam — o cliente
+ * do Supabase só aceita nomes de coluna e de relação que existam AQUI, e uma
+ * coluna que existe no banco mas falta neste arquivo vira erro de tipo no
+ * `.select()`, não no banco.
  */
 
 export type Json =
@@ -1192,6 +1195,7 @@ export type Database = {
           briefing: Json | null
           corretor_id: string
           created_at: string
+          empreendimento_id: string | null
           id: string
           largura: number | null
           latencia_ms: number | null
@@ -1206,6 +1210,7 @@ export type Database = {
           briefing?: Json | null
           corretor_id: string
           created_at?: string
+          empreendimento_id?: string | null
           id?: string
           largura?: number | null
           latencia_ms?: number | null
@@ -1220,6 +1225,7 @@ export type Database = {
           briefing?: Json | null
           corretor_id?: string
           created_at?: string
+          empreendimento_id?: string | null
           id?: string
           largura?: number | null
           latencia_ms?: number | null
@@ -1234,6 +1240,13 @@ export type Database = {
             columns: ["corretor_id"]
             isOneToOne: false
             referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_geradas_empreendimento_id_fkey"
+            columns: ["empreendimento_id"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
             referencedColumns: ["id"]
           },
         ]

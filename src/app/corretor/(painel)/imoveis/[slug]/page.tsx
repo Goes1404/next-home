@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { EditorImovelClient } from "../_componentes/EditorImovelClient";
+import { ArtesDeIA } from "../_componentes/ArtesDeIA";
+import { Suspense } from "react";
 import Link from "next/link";
 
 interface Props {
@@ -92,6 +94,15 @@ export default async function EditarImovelPage({ params }: Props) {
           </Link>
         </div>
       </div>
+
+      {/* As artes que o corretor pediu no cadastro (0101). Devolve null
+          quando não há nenhuma, e espera atrás do próprio limite para não
+          segurar o editor — que é o trabalho de verdade desta tela. */}
+      {imovel.id && (
+        <Suspense fallback={null}>
+          <ArtesDeIA empreendimentoId={imovel.id} />
+        </Suspense>
+      )}
 
       <EditorImovelClient imovel={imovel} />
     </div>

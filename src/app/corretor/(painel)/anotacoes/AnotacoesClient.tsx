@@ -213,8 +213,14 @@ export function AnotacoesClient({
                         }}
                         className="text-corpo hover:bg-vidro flex min-h-11 w-full items-center justify-between gap-2 rounded-lg px-3 text-left text-sm"
                       >
-                        <span className="truncate">{l.nome}</span>
-                        {l.telefone && <span className="text-tenue text-xs">{l.telefone.slice(-4)}</span>}
+                        {/* `truncate` sozinho não corta dentro de um flex:
+                            item de flex tem largura mínima de conteúdo, então
+                            o nome comprido empurrava os quatro dígitos do
+                            telefone para fora do botão em vez de virar "…". */}
+                        <span className="min-w-0 flex-1 truncate">{l.nome}</span>
+                        {l.telefone && (
+                          <span className="text-tenue shrink-0 text-xs">{l.telefone.slice(-4)}</span>
+                        )}
                       </button>
                     </li>
                   ))}
@@ -414,12 +420,12 @@ export function AnotacoesClient({
                 </div>
               </div>
 
-              <p className="text-fluid-sm text-corpo whitespace-pre-wrap">{a.texto}</p>
+              <p className="text-fluid-sm text-corpo break-words whitespace-pre-wrap">{a.texto}</p>
 
               {a.lead && (
                 <Link
                   href={`/corretor/leads/${a.lead.id}`}
-                  className="flex min-h-11 w-fit items-center gap-2"
+                  className="group flex min-h-11 w-fit items-center gap-2"
                 >
                   {/* A mesma régua de cor da lista e do quadro: a etapa se lê
                       antes do texto, em toda tela de lead. */}
@@ -427,7 +433,9 @@ export function AnotacoesClient({
                     aria-hidden
                     className={`h-4 w-1 rounded-full ${REGUA_ETAPA[a.lead.etapa as EtapaFunil] ?? "bg-linha-forte"}`}
                   />
-                  <span className="text-titulo text-sm font-medium">{a.lead.nome}</span>
+                  <span className="text-titulo group-hover:text-acento-suave text-sm font-medium underline decoration-transparent underline-offset-4 transition-colors group-hover:decoration-current">
+                    {a.lead.nome}
+                  </span>
                   <span className="text-tenue text-xs">
                     {ETAPA_LABEL[a.lead.etapa as EtapaFunil] ?? a.lead.etapa}
                   </span>

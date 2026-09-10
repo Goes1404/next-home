@@ -90,6 +90,16 @@ export function Quadro({
   const [, iniciarTransicao] = useTransition();
 
   const [arrasto, setArrasto] = useState<Arrasto | null>(null);
+  /*
+   * O cartão que ACABOU de trocar de etapa, para o anel de aterrissagem.
+   *
+   * Sem isto o movimento é instantâneo e mudo: o cartão some de uma coluna e
+   * aparece na outra, e quem arrastou com o dedo não vê onde ele caiu — no
+   * celular a coluna de destino pode nem estar inteira na tela. O pulso é a
+   * confirmação, e some sozinho porque estado que não expira vira sujeira: o
+   * mesmo cartão ficaria marcado até a próxima navegação.
+   */
+  const [recemMovido, setRecemMovido] = useState<string | null>(null);
   const [alvo, setAlvo] = useState<EtapaFunil | null>(null);
   const faixaRef = useRef<HTMLDivElement | null>(null);
   const posRef = useRef({ x: 0, y: 0 });
@@ -129,12 +139,22 @@ export function Quadro({
 
   function mover(lead: Lead, etapa: EtapaFunil) {
     if (lead.etapa === etapa) return;
+    setRecemMovido(lead.id);
     iniciarTransicao(async () => {
       aplicarMovimento({ id: lead.id, etapa });
       const resultado = await moverEtapa(lead.id, etapa);
       if (resultado.erro) falhar(resultado.erro);
     });
   }
+
+  // 700ms é a duração de `.cartao-chega` no globals.css. Limpar por efeito, e
+  // não dentro da transição, porque o pulso é sobre o que a PESSOA vê — ele
+  // não deve esperar a resposta do servidor para começar nem para acabar.
+  useEffect(() => {
+    if (!recemMovido) return;
+    const t = setTimeout(() => setRecemMovido(null), 700);
+    return () => clearTimeout(t);
+  }, [recemMovido]);
 
   function pegar(evento: React.PointerEvent<HTMLElement>, lead: Lead) {
     // Sem isto o navegador entende o gesto como seleção de texto (mouse) ou
@@ -238,6 +258,7 @@ export function Quadro({
                       lead={lead}
                       mostrarDono={mostrarDono}
                       arrastado={arrasto?.id === lead.id}
+                      chegou={recemMovido === lead.id}
                       onMover={(destino) => mover(lead, destino)}
                       onVerDossie={() => setLeadDossie(lead)}
                       onPegar={(evento) => pegar(evento, lead)}
@@ -289,6 +310,7 @@ function Cartao({
   lead,
   mostrarDono,
   arrastado,
+  chegou,
   onMover,
   onVerDossie,
   onPegar,
@@ -299,6 +321,7 @@ function Cartao({
   lead: Lead;
   mostrarDono: boolean;
   arrastado: boolean;
+  chegou: boolean;
   onMover: (etapa: EtapaFunil) => void;
   onVerDossie: () => void;
   onPegar: (evento: React.PointerEvent<HTMLElement>) => void;
@@ -313,7 +336,7 @@ function Cartao({
     <article
       className={`border-linha bg-elevado group relative overflow-hidden rounded-xl border p-3 pl-4 transition-opacity ${
         arrastado ? "opacity-40" : ""
-      }`}
+      } ${chegou ? "cartao-chega" : ""}`}
     >
       {/* A régua da etapa, igual à da lista: mesmo gesto, mesma escala. Aqui
           ela é redundante com a coluna, e isso é de propósito — o cartão
@@ -348,7 +371,7 @@ function Cartao({
           </button>
           <Link
             href={`/corretor/leads/${lead.id}`}
-            className="text-fluid-sm text-titulo hover:text-acento-suave truncate font-medium underline-offset-4 hover:underline"
+            className="text-fluid-sm text-titulo hover:text-acento-suave min-w-0 truncate font-medium underline-offset-4 hover:underline"
           >
             {lead.nome}
           </Link>

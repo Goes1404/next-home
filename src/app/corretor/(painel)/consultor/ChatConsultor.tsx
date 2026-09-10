@@ -215,7 +215,7 @@ function QuadroDeSimulacao({ dados }: { dados: SimulacaoNaMensagem }) {
       <dl className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
         {linhas.map(([rotulo, valor]) => (
           <div key={rotulo} className="flex min-w-0 justify-between gap-2 text-xs">
-            <dt className="text-apoio truncate">{rotulo}</dt>
+            <dt className="text-apoio min-w-0 truncate">{rotulo}</dt>
             <dd className="text-corpo shrink-0 font-medium">{valor}</dd>
           </div>
         ))}
@@ -245,7 +245,7 @@ function QuadroDeSimulacao({ dados }: { dados: SimulacaoNaMensagem }) {
 function TextoParaCliente({ texto, onCopiar }: { texto: string; onCopiar: () => void }) {
   return (
     <div className="border-linha bg-fundo mt-2 min-w-0 space-y-2 rounded-xl border p-3">
-      <p className="text-corpo text-fluid-sm whitespace-pre-line">{texto}</p>
+      <p className="text-corpo text-fluid-sm break-words whitespace-pre-line">{texto}</p>
       <button
         type="button"
         onClick={onCopiar}

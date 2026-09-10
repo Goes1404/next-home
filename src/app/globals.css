@@ -851,9 +851,17 @@
      * descendentes. Eles herdam um valor que já está animando, então um
      * `transition` em cada um seria a mesma animação declarada cem vezes.
      */
-    transition: --color-acento 320ms var(--ease-out-quart),
-      --color-acento-hover 320ms var(--ease-out-quart),
-      --color-acento-suave 320ms var(--ease-out-quart);
+    /*
+     * Os três tempos são DIFERENTES de propósito (07/09/2026): a troca de
+     * seção deixa de ser um corte uniforme e vira uma onda — as superfícies
+     * (`acento`, e com elas os brilhos do fundo e tudo que é `lavado`/`linha`
+     * por color-mix) mudam primeiro, o hover logo atrás, e os realces de
+     * texto (`suave`) chegam por último. O olho lê "a seção virou" em vez de
+     * "a tela piscou". Com movimento reduzido, o bloco acima desliga tudo.
+     */
+    transition: --color-acento 340ms var(--ease-out-quart),
+      --color-acento-hover 420ms var(--ease-out-quart) 40ms,
+      --color-acento-suave 540ms var(--ease-out-quart) 80ms;
 
     --color-acento-lavado: color-mix(in oklab, var(--color-acento) 16%, transparent);
     --color-acento-linha: color-mix(in oklab, var(--color-acento) 38%, transparent);
@@ -1363,6 +1371,143 @@
   }
   .funil-banda:hover {
     transform: none;
+  }
+}
+
+/*
+ * Movimento do painel (07/09/2026) — três animações, cada uma com um dono.
+ *
+ * A régua: UM momento orquestrado por carga (o medidor do Início enchendo) e
+ * o resto do movimento só RESPONDENDO a gesto — menu que abre, cartões que a
+ * expansão revelou, aviso que chega. Entrada animada em toda seção é o
+ * caminho para a tela parecer template; movimento que responde mostra o que
+ * mudou.
+ *
+ * Todas caem no interruptor global de `prefers-reduced-motion` (as durações
+ * viram 0.01ms), então cada uma precisa terminar no ESTADO FINAL correto —
+ * animação de entrada sempre parte do invisível para o valor do elemento,
+ * nunca o contrário.
+ */
+
+/* O medidor do Início enche do zero até o valor — o único movimento de
+   carga do painel. O `from` usa a circunferência real do arco (r=44). */
+@keyframes medidor-enche {
+  from {
+    stroke-dasharray: 0 276.46;
+  }
+}
+.medidor-enche {
+  animation: medidor-enche 900ms cubic-bezier(0.22, 1, 0.36, 1) 150ms backwards;
+}
+
+/* Resposta a gesto: o que um clique revelou surge de leve, de baixo. O
+   escalonamento vem de `--surgir-ordem` (teto no chamador — atraso de lista
+   longa vira espera, não charme). */
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.surgir {
+  animation: surgir 240ms ease-out backwards;
+  animation-delay: calc(var(--surgir-ordem, 0) * 25ms);
+}
+
+/* Menu suspenso abrindo a partir de onde o dedo tocou (os menus do painel
+   abrem para CIMA, então a origem é o canto de baixo). */
+@keyframes menu-abre {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+}
+.menu-abre {
+  transform-origin: bottom right;
+  animation: menu-abre 140ms ease-out backwards;
+}
+
+/* O cartão que ACABOU de trocar de etapa no funil pulsa um anel na cor do
+   módulo: o olho acha onde ele aterrissou sem procurar. Termina transparente,
+   então com movimento reduzido (salto para o fim) não sobra nada na tela. */
+@keyframes cartao-chega {
+  0% {
+    box-shadow: 0 0 0 0 var(--color-acento);
+  }
+  35% {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-acento) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+.cartao-chega {
+  border-radius: 0.75rem; /* o raio do cartão, para o anel abraçar a forma */
+  animation: cartao-chega 700ms ease-out;
+}
+
+/* A seta do convite de rolagem DERIVA, não quica. `animate-bounce` chama
+   atenção para si; o que se quer é sugerir a direção sem competir com o
+   conteúdo do herói. Amplitude de 3px e volta longa. */
+@keyframes descer {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(3px);
+    opacity: 1;
+  }
+}
+
+/* Aviso chega deslizando de baixo — ele nasce perto do polegar. */
+@keyframes aviso-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.aviso-entra {
+  animation: aviso-entra 220ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/*
+ * O encaixe do vídeo de fundo da home (06/09/2026).
+ *
+ * ## O defeito
+ *
+ * A vinheta (`public/video/intro.*`) é 1280x720 — 16:9, medido no cabeçalho
+ * do arquivo. A janela de um navegador de desktop quase nunca é: a barra de
+ * endereço come altura, então 1920x1080 de monitor vira ~1920x910 de
+ * viewport, proporção 2,11. Com `object-contain` o quadro cabe pela ALTURA e
+ * sobra faixa dos dois lados — medido no ar em 06/09: **143px vazios de cada
+ * lado**, com o quadro pintado em 1618px de uma caixa de 1905.
+ *
+ * O que aparecia nessas faixas era só a camada de preenchimento, que é o
+ * MESMO vídeo desfocado a 60% de opacidade. O degrau de luz entre ela e o
+ * quadro nítido desenha duas linhas verticais retas na tela — e linha reta no
+ * meio de uma imagem não se lê como composição, se lê como defeito. Relatado
+ * assim: "em algumas partes do pc esse fundo fica feio, fica cortando uma
+ * parte, não fica 100%".
+ *
+ * ## Por que `cover` só ACIMA de 16:9
+ *
+ * Quando a tela é mais larga que o vídeo, `cover` corta em CIMA e EMBAIXO —
+ * 8,8% de cada lado em 1920x910, medido. A marca está no meio do quadro e
+ * sobrevive a isso. Quando a tela é mais ESTREITA (celular em pé, janela
+ * dividida ao meio), `cover` cortaria as LATERAIS, que é justamente onde
+ * "Next Home" se escreve: num 9:19,5 resta cerca de um quarto da largura e a
+ * marca chega partida. Por isso a regra é uma consulta de proporção e não uma
+ * troca cega — abaixo dela o `contain` continua valendo, com o desfoque
+ * preenchendo a borda como sempre.
+ *
+ * A consulta compara com a proporção do ARQUIVO. Trocar a vinheta por uma de
+ * outra proporção sem mexer aqui traz a faixa de volta.
+ */
+@media (min-aspect-ratio: 16 / 9) {
+  .fundo-encaixa-na-tela {
+    object-fit: cover;
   }
 }
 

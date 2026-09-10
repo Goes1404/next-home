@@ -162,8 +162,8 @@ export function OficinaDeMarketing({
                      */
                     className="text-fluid-xs text-corpo hover:text-titulo hover:bg-fundo/60 -mx-2 flex min-h-11 min-w-0 flex-col justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-2"
                   >
-                    <span className="truncate">{i.nome}</span>
-                    <span className="text-tenue truncate sm:shrink-0">{i.lugar}</span>
+                    <span className="min-w-0 truncate">{i.nome}</span>
+                    <span className="text-tenue min-w-0 truncate sm:shrink-0">{i.lugar}</span>
                   </Link>
                 </li>
               ))}

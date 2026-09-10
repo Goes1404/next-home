@@ -122,7 +122,7 @@ export function LinhaDoTempo({ leadId, itens }: { leadId: string; itens: Interac
                         <Icone className="h-3.5 w-3.5" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-fluid-sm whitespace-pre-wrap text-corpo">
+                        <p className="text-fluid-sm whitespace-pre-wrap text-corpo break-words">
                           {item.conteudo}
                         </p>
                         <p className="text-fluid-xs text-tenue">

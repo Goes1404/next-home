@@ -70,7 +70,12 @@ export function HeroInicio({
           <p className="text-tenue text-[11px] font-medium tracking-[0.22em] uppercase">
             {saudacao},
           </p>
-          <h1 className="font-display text-titulo mt-1 text-[2.75rem] leading-[0.92] font-bold tracking-[-0.03em] italic md:text-6xl">
+          {/* `break-words`: 44px no celular e 60px no monitor não perdoam nome
+              comprido — "Maria-Fernanda" numa palavra só passava da largura do
+              cartão em 360px, e `overflow-hidden` do cartão comia o fim em
+              vez de quebrar. Nome de gente é o único texto desta tela que o
+              projeto não controla. */}
+          <h1 className="font-display text-titulo mt-1 text-[2.75rem] leading-[0.92] font-bold tracking-[-0.03em] break-words italic md:text-6xl">
             {nome}
             <span className="text-acento">.</span>
           </h1>
@@ -95,12 +100,16 @@ export function HeroInicio({
               strokeLinecap="round"
               strokeDasharray={`${ARCO} ${CIRC}`}
             />
+            {/* `medidor-enche`: o arco sobe do zero até o valor — o único
+                movimento de carga do painel, e é o número que muda quando a
+                corretora trabalha. Termina no valor do atributo, então com
+                movimento reduzido ele simplesmente já nasce cheio. */}
             <circle
               cx="50"
               cy="50"
               r={RAIO}
               fill="none"
-              className="stroke-acento"
+              className="stroke-acento medidor-enche"
               strokeWidth="7"
               strokeLinecap="round"
               strokeDasharray={`${preenchido} ${CIRC}`}

@@ -102,3 +102,20 @@ export function entregaPrevista(data: string | null | undefined): string | null 
   if (!ano || !mes) return null;
   return `${MESES[mes - 1]} de ${ano}`;
 }
+
+/**
+ * O primeiro nome de QUEM usa a conta — o que entra na saudação do Início.
+ *
+ * `corretores.nome` guarda o cadastro como a imobiliária o escreve, e o
+ * padrão desta base é "Casa - Pessoa" ("Cristal - Bruna"); `iniciais()` acima
+ * já convive com esse hífen. Um `nome.split(" ")[0]` cru saudava "Boa tarde,
+ * Cristal" — o nome da casa, não o da vendedora que abriu o painel. Depois do
+ * hífen está a pessoa; sem hífen, o nome inteiro já é dela.
+ *
+ * O hífen só conta como separador quando vem cercado de espaço: "Ana-Maria"
+ * é um nome só, e cortá-lo devolveria "Maria" para quem se chama Ana-Maria.
+ */
+export function primeiroNome(nome: string): string {
+  const pessoal = nome.split(/\s+[-–—]\s+/).pop() ?? nome;
+  return pessoal.trim().split(/\s+/)[0] || nome;
+}

@@ -82,6 +82,25 @@ export function GradeDaSemana({ inicial }: { inicial: FaixaDaSemana[] }) {
         genérica — e horário que o cliente aceita e você não pode atender custa a visita inteira.
       </p>
 
+      {/*
+        Grade vazia é o estado em que a assistente NÃO consegue marcar nada, e
+        até 09/09/2026 nada dizia isso: o parágrafo acima explica a regra, mas
+        explicação não é diagnóstico. Medido no banco naquele dia: 1 faixa
+        cadastrada para 7 corretores ativos — ou seja, para quase todo mundo o
+        bloco de horários do prompt saía VAZIO e a IA não tinha o que oferecer.
+        O aviso some assim que existe uma faixa; alerta que fica aceso depois
+        de resolvido vira paisagem.
+      */}
+      {faixas.length === 0 && (
+        <p
+          role="status"
+          className="text-fluid-xs border-alerta-linha bg-alerta-lavado text-alerta mt-4 rounded-xl border px-3.5 py-2.5"
+        >
+          Sua agenda está vazia, então a assistente <strong>não consegue marcar visita</strong> — ela
+          só sabe conversar sobre horário. Ligue pelo menos um dia abaixo.
+        </p>
+      )}
+
       <ul className="mt-5 flex flex-col gap-2">
         {DIAS.map(({ n, curto, longo }) => {
           const faixa = doDia(n);

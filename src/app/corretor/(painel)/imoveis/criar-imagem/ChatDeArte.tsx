@@ -38,6 +38,20 @@ import { ListaDeConversas } from "@/app/corretor/(painel)/_componentes/ListaDeCo
  * (`registrarArteGerada`). Nenhuma outra chamada paga sai desta tela.
  */
 
+/**
+ * Os pedidos que abrem a conversa quando ela está vazia.
+ *
+ * Não são "ideias": são pedidos completos, com imóvel e canal, porque é isso
+ * que a IA precisa para não perguntar três vezes antes de propor. Tocar num
+ * deles manda a mensagem — a pessoa aprende o formato vendo a resposta.
+ */
+const SUGESTOES = [
+  "Fachada ao pôr do sol para o feed",
+  "Story de lançamento, público família",
+  "Ambiente decorado do zero: sala integrada",
+  "Fundo para post com espaço para texto",
+] as const;
+
 export function ChatDeArte({
   corretorId,
   conversasIniciais,
@@ -200,6 +214,10 @@ export function ChatDeArte({
             pendente={pendente}
             pensando={pensando}
             placeholder='Ex.: "fachada do Eternity ao pôr do sol, para o feed"'
+            /* Pedidos de VERDADE, no formato que funciona: o quê, de qual
+               imóvel, para qual canal. Campo em branco não ensina formato;
+               ver a IA responder a um exemplo, sim. */
+            sugestoes={SUGESTOES}
             vazio={
               <>
                 <p className="text-titulo font-medium">O que você quer criar?</p>

@@ -70,7 +70,14 @@ export const GRUPOS_NAV: GrupoNav[] = [
   {
     titulo: "Trabalho",
     itens: [
-      { href: "/corretor", label: "Agora", icone: IconeAgora },
+      /*
+       * "Agora" era o nome interno da fila; o rótulo que a pessoa procura na
+       * barra do polegar é o da casa (pedido de 06/09/2026), e o símbolo que
+       * diz "casa" é uma CASA. `IconeAgora` (o relógio) continua existindo
+       * porque o subtópico SLA da administração é dele: lá o assunto é
+       * mesmo tempo de resposta, e trocar por uma casa mentiria.
+       */
+      { href: "/corretor", label: "Home", icone: IconeCasa },
       {
         /*
          * Pessoas absorve Leads, e é a mudança de fundo desta navegação.
@@ -89,7 +96,13 @@ export const GRUPOS_NAV: GrupoNav[] = [
          * de `AbasLeads` ao mesmo tempo — o pai duplo mais visível do painel.
          */
         href: "/corretor/pessoas",
-        label: "Pessoas",
+        /*
+         * O rótulo é "Leads" (06/09/2026, decisão do usuário): é a palavra
+         * que a equipe usa entre si. A ROTA continua `/corretor/pessoas` e a
+         * seção continua sendo a mesma carteira — só o nome no menu mudou,
+         * então nada salvo quebra.
+         */
+        label: "Leads",
         icone: IconePessoas,
         /*
          * A página de Pessoas É um subtópico — "Conversas", a lista que parece
@@ -153,16 +166,25 @@ export const GRUPOS_NAV: GrupoNav[] = [
       },
       {
         /*
-         * WhatsApp é o CANAL: a conexão, o que a IA respondeu, e o ajuste
-         * dela. Antes "Minha IA" era o destino e Conversas vivia absorvida por
-         * Pessoas — o que produzia o defeito de 04/09: a tela de Conversas
-         * desenhava abas de WhatsApp enquanto o menu acendia Pessoas.
+         * A seção é a ASSISTENTE: a conexão do número, o que ela respondeu, e
+         * o ajuste dela. Antes "Minha IA" era o destino e Conversas vivia
+         * absorvida por Pessoas — o que produzia o defeito de 04/09: a tela de
+         * Conversas desenhava abas de WhatsApp enquanto o menu acendia Pessoas.
+         *
+         * O rótulo deixou de ser "WhatsApp" em 06/09/2026, a pedido: o que
+         * mora aqui dentro é tudo sobre a IA, e nomear a seção pelo APLICATIVO
+         * fazia procurar a assistente em Marketing. O ícone acompanha — robô,
+         * não balão. A rota (`/corretor/whatsapp`), o módulo de cor e as
+         * telas continuam os mesmos; nada salvo quebra.
          */
         href: "/corretor/whatsapp",
-        label: "WhatsApp",
-        icone: IconeWhatsapp,
+        label: "Assistente",
+        icone: IconeRobo,
         subitens: [
-          { href: "/corretor/whatsapp", label: "Minha IA", icone: IconeRobo },
+          // O balão é DESTA tela: é onde o número do WhatsApp se conecta. O
+          // robô subiu para o tópico, que agora se chama Assistente — repetir
+          // o mesmo símbolo no pai e no filho não diria hierarquia nenhuma.
+          { href: "/corretor/whatsapp", label: "Minha IA", icone: IconeWhatsapp },
           // Era "Conversas", mas Pessoas ganhou um subtópico com esse nome (a
           // lista de quem falou). Esta tela é outra coisa: o que a IA
           // respondeu e a revisão 👍/👎. O nome diz isso.
@@ -458,6 +480,18 @@ function IconeConsultor(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+function IconeCasa(p: SVGProps<SVGSVGElement>) {
+  // Uma casa: o destino "Home". Telhado, corpo e porta — a forma que todo
+  // aplicativo usa para "começo", e que se lê antes do rótulo.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M3.5 10.2 12 3.5l8.5 6.7V20a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z" />
+      <path d="M9.5 21v-6h5v6" />
+    </svg>
+  );
+}
+
 function IconeAgora(p: SVGProps<SVGSVGElement>) {
   // Relógio: "o que precisa de você AGORA".
   return (

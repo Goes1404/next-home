@@ -4560,6 +4560,252 @@ estavam certos, e eram defeitos DIFERENTES:
   `revoke all ... from anon`. Spec:
   docs/superpowers/specs/2026-09-06-anotacoes-do-corretor-design.md
 
+## A arte de IA ganhou dono, e o cartão do catálogo mentia (0101, 06/09/2026)
+
+Spec: `docs/superpowers/specs/2026-09-06-arte-de-ia-no-cadastro-design.md`.
+Vault: [[arte-de-ia-nao-e-midia-do-catalogo]], [[capa-de-empreendimento-nunca-e-nula]].
+
+- **`imagens_geradas` gravava o imóvel dentro do jsonb `briefing`, e isso não
+  é vínculo.** Sem integridade referencial, o `imovelSlug` guardado ali fica
+  errado no dia em que alguém renomeia o imóvel, e "quais artes são deste
+  imóvel" só se responde varrendo a tabela. A 0101 acrescentou
+  `empreendimento_id` com índice parcial. O `briefing` continua: ele é o
+  registro do PEDIDO, não o vínculo.
+- **A arte NÃO entra em `midias`, e a decisão foi reconfirmada.** `midias` é
+  a vitrine pública e a única fonte de anexo que a assistente pode mandar
+  para um cliente. Render de modelo chegando no WhatsApp de quem vai visitar
+  o imóvel é o defeito de sempre: quem visita confere. A arte fica visível
+  para o corretor (editor e cartão interno, sempre com selo) e para de viver
+  solta numa galeria onde ninguém lembra de que imóvel era.
+- **`capa` de empreendimento NUNCA é nula, e isso escondia um defeito.**
+  `mapEmpreendimento` faz `capa: fotos[0] ?? CAPA_PADRAO`, e `CAPA_PADRAO` é
+  o logotipo da NextHome (257×107). Logo: `imovel.capa?.url` é sempre
+  verdadeiro, o ramo "Sem Foto de Capa" do cartão do catálogo NUNCA rodou, e
+  imóvel sem foto aparecia com o logotipo esticado num quadro 16/9 em
+  `object-cover`. Quem responde "tem foto?" é `galeria.length`.
+- **Criar o imóvel primeiro, a arte depois — e nunca ao contrário.** A
+  geração leva 15-40s e pode falhar (sem crédito, teto do dia, tempo
+  esgotado). Se falhasse antes do cadastro, o corretor perderia o formulário
+  inteiro por causa de um extra. Falhando depois, o imóvel já existe e a tela
+  oferece o link do editor — não um "tentar de novo", que criaria um segundo
+  cadastro.
+- **Botão que demora precisa dizer em que passo está.** "Criando o imóvel…"
+  e "Gerando a imagem… (até 40s)" existem porque botão parado por 40s parece
+  travado: o corretor clica de novo e paga a geração duas vezes.
+
+## Duas armadilhas de layout que cortavam texto no painel (06/09/2026)
+
+Travadas em `src/app/corretor/naoCortaTexto.test.ts`, no mesmo formato
+declarativo de `naoRolaDeLado.test.ts`.
+
+- **`truncate` em item de flex sem `min-w-0` não trunca — vaza.** Item de
+  flex tem `min-width: auto`, que é a largura do CONTEÚDO: ele se recusa a
+  encolher, o `text-overflow` nunca chega a agir, e o texto empurra o irmão
+  para fora da caixa. Encontrado em sete lugares numa varredura: sugestão de
+  lead das Anotações (o nome expulsava os dígitos do telefone), rótulo da
+  gaveta, nome na lista de conversas, seletor de imóvel do chat, e-mail da
+  ficha do lead, link de mídia externa e a oficina de marketing.
+- **Token de tema sobre fundo que não é do tema.** O selo "N fotos" do cartão
+  do catálogo era `bg-black/60 text-titulo`, e `--color-titulo` é `#f6faf9`
+  no escuro mas `#05211c` no CLARO — preto sobre preto. Ninguém percebeu
+  porque quem desenvolveu estava no tema escuro. Fundo que não acompanha o
+  tema precisa de texto que também não acompanhe.
+
+## O fundo 16:9 virava faixa escura na janela do desktop (06/09/2026)
+
+Vault: [[fundo-16-9-em-tela-mais-larga-vira-faixa]].
+
+- **A vinheta é 1280x720 (1,778) e a viewport de um navegador maximizado NÃO
+  é 16:9.** Num monitor 1920x1080, a barra de endereço come altura e sobra
+  ~1920x910 — proporção **2,11**. Com `object-contain`, o quadro cabe pela
+  altura e sobram **143px vazios de cada lado**, medido no ar: quadro pintado
+  de 1618px numa caixa de 1905. Ou seja, o pillarbox é o caso COMUM no
+  desktop, não a exceção.
+- **O que apareceu na faixa foi a camada de preenchimento a 60% de
+  opacidade**, e é o degrau de luz contra o quadro nítido que desenha duas
+  linhas verticais retas. A régua já estava escrita para a base do vídeo no
+  celular: linha reta no meio de uma imagem não se lê como composição, se lê
+  como defeito.
+- **A correção é uma consulta de PROPORÇÃO, não uma troca cega de
+  `object-fit`.** Acima de 16:9 o corte de `cover` é em cima e embaixo (8,8%
+  de cada lado em 1920x910) e a marca, que mora no meio do quadro, escapa.
+  Abaixo — celular em pé, janela dividida ao meio — `cover` cortaria as
+  LATERAIS, que é onde "Next Home" se escreve; ali o `contain` continua.
+- **Regra fora de `@layer` ganha de utility do Tailwind.** `object-contain`
+  vive em `@layer utilities`; CSS sem camada vence independente da ordem. Foi
+  conferido no navegador com o CSS de PRODUÇÃO e sem `!important`: 1920x910
+  resolve `cover`, 390x844 resolve `contain`.
+- **A guarda lê o cabeçalho do MP4** e compara com o número da consulta —
+  trocar a vinheta por uma de outra proporção sem mexer no CSS traz a faixa
+  de volta, e traz calada (build, tipos e testes seguem verdes).
+- **A primeira versão da guarda passou numa mordida por comparar
+  SUBSTRING**: `.fundo-encaixa-na-telaXX` contém `.fundo-encaixa-na-tela`.
+  É a mesma armadilha já registrada aqui em 03/09 ("ao morder uma guarda que
+  procura texto, conferir que a mordida de fato tira o texto") — e desta vez
+  ela apareceu do lado da GUARDA, não da mordida. Seletor agora é casado com
+  fronteira (`/\.classe\s*\{/`).
+- **Diagnóstico**: para este tipo de queixa ("o fundo não fica 100%"), medir
+  no navegador `getBoundingClientRect()` do vídeo contra `videoWidth/Height`
+  e calcular a faixa vazia. O número sai em uma consulta e dispensa palpite
+  sobre CSS.
+
+## Três erros, uma migration esquecida — e a rodada de UX do painel (07/09/2026)
+
+- **"Criar arte", "Marketing painel" e a geração no cadastro caíram JUNTOS, e
+  eram UM defeito**: a 0101 (coluna `empreendimento_id` em `imagens_geradas`)
+  subiu no código em 06/09 e nunca foi aplicada no banco. Toda tela que chama
+  `getMinhasImagens`/`getArtesDoImovel` lançava "relation/column does not
+  exist" e virava a página de erro genérica; só o catálogo sobreviveu, porque
+  `getArtePorImovel` degrada para mapa vazio de propósito. Conferido em
+  `information_schema.columns` antes de mexer; aplicada via `apply_migration`
+  em 07/09. **É a mesma lição do merge de `ingestao-de-midia` (06/09): deploy
+  com migration no repositório não é migration no banco. Ao subir migration
+  nova, aplicá-la faz parte do deploy, não é passo separado.**
+- **Erros com códigos (digest) diferentes NÃO são defeitos diferentes.** O
+  digest do Next muda por rota; três telas relatadas com três códigos tinham
+  uma causa. Antes de tratar como três bugs, procurar a consulta em comum.
+- **`BotaoVoltarAoTopo`** (Conversas de Leads, Lista e Funil): o gatilho é a
+  DISTÂNCIA do topo (600px), nunca a direção do gesto — direção some quando a
+  pessoa para de rolar, que é justamente quando ela decide subir. A subida
+  passa pelo Lenis quando ele está ativo (`rolarAoTopo` em `lenis.ts`):
+  `window.scrollTo` por fora do laço dele sai aos trancos.
+- **O funil expande no lugar** (07/09, pedido): "ver os outros N" mandava
+  para a lista e quem olhava o funil PERDIA o funil. Agora expande o que a
+  consulta já trouxe; o link para a lista só sobra para o que o
+  `TETO_DO_QUADRO` cortou — esses nem chegaram à tela.
+- **Menu de três pontos no cartão do catálogo** (editar / ver no site /
+  excluir). Duas regras herdadas: excluir só despublicado (a trava é a policy
+  0097; para o publicado o item EXPLICA o caminho em vez de sumir) e rascunho
+  não ganha "ver no site" (a vitrine filtra `publicado`; mandar para 404 com
+  a marca em cima é pior que explicar). Cuidado novo: o cartão tinha
+  `overflow-hidden` na raiz, que decapitaria o menu — o corte desceu para o
+  contêiner da foto, com raio descontando o fio da borda.
+- **Link tem de PARECER link** (07/09: "são links mas não parece"). As barras
+  clicáveis da administração só tinham hover de opacidade; os KPIs, só troca
+  de borda — e no celular, onde hover não existe, nada. Régua aplicada: linha
+  clicável ganha fundo no hover E uma seta; KPI clicável ganha seta FIXA no
+  canto (visível sem hover) e levanta como os atalhos do Início; link de
+  texto ganha sublinhado que acende no hover (`decoration-transparent` →
+  `hover:decoration-current`).
+- **Comentário JSX dentro de ramo de ternário quebra o parse** — de novo. A
+  regra da casa ("comentário vai fora do parêntese ou dentro do elemento")
+  vale também para ternário: `cond ? ( {/* … */} <X/> ) : …` são duas
+  expressões e o TS reprova com `')' expected`.
+
+## Movimento do painel ganhou régua (07/09/2026)
+
+Vault: [[movimento-do-painel-tem-regua]]. Quatro animações novas em
+`globals.css`, e a regra que as governa importa mais que elas:
+
+- **UM momento orquestrado por carga** — o medidor do Início enchendo do
+  zero até o valor. É o número que muda quando a corretora trabalha, então o
+  movimento mostra conteúdo. Entrada animada em toda seção é o tell de
+  página gerada; não acrescentar a segunda.
+- **Todo o resto responde a GESTO**: `surgir` (cartões que a expansão do
+  funil revelou, escalonados com teto de 8), `menu-abre` (menu de três
+  pontos, origem no canto do toque), `aviso-entra` (toast subindo de perto
+  do polegar).
+- **Animação de entrada só declara o `from`** — o interruptor global de
+  `prefers-reduced-motion` encurta as durações para 0.01ms e a animação
+  SALTA para o fim, que precisa ser o valor real do elemento.
+- **Toque é gesto**: o realce nativo está desligado
+  (`-webkit-tap-highlight-color`), então tudo que navega ganhou `active:`
+  próprio — linhas de Pessoas e da fila do Início (`active:bg-vidro-forte`),
+  atalhos do Início (`active:scale-[0.98]`). Sem isso, no celular, tocar
+  parece não registrar.
+- **`grep -c` em CSS minificado conta linhas, não ocorrências** — tudo
+  "aparece 1x" porque o arquivo é uma linha. Conferir regra compilada com
+  `grep -o` e contexto.
+
+## Auditoria da home pública, e o falso alarme que ela quase produziu (09/09/2026)
+
+- **Screenshot de PÁGINA INTEIRA não dispara ScrollTrigger.** O `fullPage:
+  true` do Playwright devolveu uma home com o herói e mais três mil pixels de
+  vazio: "Selecionados", "A região" e "Atendimento" com o rótulo e nenhum
+  conteúdo. Parecia o defeito clássico desta base (`.gsap-pending` preso em
+  `opacity: 0`). **Não era.** Rolando de verdade, em passos de 400px, sobraram
+  8 elementos invisíveis — todos `pointer-events-none absolute inset-0`, que
+  são véus de hover e devem mesmo ser `opacity-0`. Antes de consertar uma tela
+  "vazia" num screenshot, rolar a página e remedir.
+- **O que a auditoria achou de verdade foi INCONSISTÊNCIA, não bug.** Medido
+  no ar: títulos de seção em 64px, 44px, 44px, 44px, 30px e 44px, com
+  alinhamentos esquerda, centro, esquerda, esquerda, esquerda, centro. Seções
+  irmãs com tamanhos e eixos diferentes é o que faz a página parecer montada
+  aos pedaços — e é invisível para teste, tipo e build.
+- **Rótulo em versalete acima de todo título é decoração com aparência de
+  estrutura.** "SELECIONADOS", "A REGIÃO", "ATENDIMENTO" não diziam nada que o
+  título abaixo já não dissesse, e eram três iguais em sequência. Viraram
+  CONTAGEM real, que o servidor já tinha na mão: "3 de 25 imóveis, escolhidos
+  a dedo", "18 bairros em 4 cidades", "8 corretores com CRECI, na região".
+  Mesma altura na página, informação no lugar de enfeite.
+- **`animate-bounce` é movimento em REPOUSO**, e a régua do painel (07/09) já
+  tinha descartado isso: movimento sem gesto compete com o conteúdo. O convite
+  de rolagem passou a derivar 3px (`@keyframes descer`), com o rótulo dizendo
+  o que há embaixo em vez de mandar rolar.
+- **`ScrollCue` existia desde sempre e a HOME nunca o usou** — só o portfólio.
+  Oitavo caso do padrão "construído e nunca ligado" nesta base. O herói
+  terminava num vão escuro de meia tela sem dizer que havia página abaixo.
+- **Classe arbitrária de animação precisa ser CONFERIDA no CSS compilado.**
+  `animate-[descer_2.4s_ease-in-out_infinite]` só funciona se o Tailwind gerar
+  a classe E o `@keyframes` existir; classe não gerada vira NADA em silêncio
+  (a lição de `bg-chip` e `stroke-opacity-50`). Conferido: 3 ocorrências no
+  bundle — a classe, o uso e o keyframe.
+- **Achado de DADO, não corrigido**: o catálogo tem "More Aldeia de Bareuri"
+  (com o "Barueri" trocado). A MEMORIA já registra que ele e "More na Aldeia
+  de Barueri" são imóveis DIFERENTES, então não é duplicata — mas o visitante
+  lê como erro de digitação na home. É edição de cadastro, decisão do usuário.
+
+## `\b` de Python vira BACKSPACE no arquivo, e o grep não mostra (09/09/2026)
+
+A guarda nova de `whitespace-pre-*` nasceu **cega** e levou meia hora para se
+explicar. O script que a escreveu usou `'/\bwhitespace-pre-.../'` numa string
+Python comum; o que foi para o disco não foi `\b` (barra + b) e sim `\x08`, o
+CARACTERE de controle backspace. O regex passou a exigir um controle que
+nenhuma classe contém, então casava zero — e o teste ficava verde.
+
+O que fez perder tempo: **`grep` imprime o backspace como nada**, então
+`grep -n` mostrava `/whitespace-pre-(line|wrap)/` — exatamente o que se
+esperava ver. A mesma lógica rodada no Node acusava o defeito; o vitest, não.
+A diferença só apareceu com `repr()` da linha em Python.
+
+Régua que fica:
+
+- **Ao gerar código por script, escrever regex sem `\b`** ou usar string RAW
+  (`r'...'`). Vale para `\n`, `\t`, `\f` e `\v` também.
+- **Conferir com `repr()`, não com `grep`**, quando um teste passa e a mesma
+  lógica falha fora dele. `python -c "print(repr(linha))"` mostra o byte.
+- **Provocar a guarda continua sendo o único jeito de saber que ela vê.** Esta
+  passou em TODAS as mordidas antes da correção — e é a terceira guarda desta
+  base a nascer cega (as outras: a mordida vazia do vídeo, e o `toContain` que
+  aceitava sufixo).
+
+Corrigida, ela achou de primeira um caso que a varredura automática tinha
+deixado passar: a anotação do corretor (`AnotacoesClient:423`).
+
+## Cortes no celular, chips de recomendação e a agenda que ninguém preencheu (09/09/2026)
+
+- **`whitespace-pre-line`/`pre-wrap` preserva quebra de linha e NÃO quebra
+  dentro da palavra.** Relatado como "no celular o chat de criar arte corta as
+  palavras" — e eram ONZE lugares, todos renderizando texto de fora: balão do
+  estúdio (arte e vídeo), balão do WhatsApp, anotação, sugestão da IA, corpo
+  do e-mail importado, prévia do disparo, linha do tempo e observação do lead.
+  No celular o balão tem ~310px: qualquer URL estoura. O balão do estúdio
+  também precisou de `min-w-0` — sem ele o `max-w-[88%]` não segura.
+- **Campo de chat em branco não ensina formato.** O estúdio de arte e o de
+  vídeo ganharam chips com pedidos COMPLETOS ("Fachada ao pôr do sol para o
+  feed"), que preenchem e mandam. Somem depois da primeira mensagem: aí a
+  conversa já tem assunto e eles competiriam com ela.
+- **A agenda do WhatsApp já fazia tudo o que foi pedido, e estava sem DADO.**
+  `proximosHorarios` + `blocoDeHorarios` (0073) montam a lista real, o prompt
+  manda oferecer no máximo dois por vez e, se o cliente recusar, oferecer os
+  DOIS SEGUINTES — nunca os mesmos; `reservar_visita` (0074) grava com trava
+  de conflito por índice único. O webhook passa `horariosReais`. Medido em
+  09/09: **1 faixa cadastrada para 7 corretores ativos** (Bruna, quarta
+  15h-19h). Para todos os outros o bloco sai vazio e a IA não tem o que
+  oferecer — nada a construir, o que faltava era o aviso. `GradeDaSemana`
+  passou a dizer, quando a grade está vazia, que a assistente NÃO consegue
+  marcar visita. Some assim que existe uma faixa.
+
 ## O funil voltou a ser kanban lateral (09/09/2026)
 
 - **Reverter decisão documentada não é apagá-la: é responder aos motivos

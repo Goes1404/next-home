@@ -24,11 +24,14 @@ F0–F6.
 - [[rampa-de-etapa-e-o-teto-da-gama]] — paleta das etapas (09/09)
 - [[tela-de-entrar-e-dividida]] — login em duas metades (09/09)
 - [[consultor-imobiliario-no-painel]] — chat de portfólio e crédito para o corretor (09/09)
+- [[movimento-do-painel-tem-regua]] — um momento de carga; o resto responde a gesto (07/09)
 - [[anotacoes-do-corretor]] — bloco de notas com lembretes (06/09)
 - [[fila-do-inicio-e-uma-fila]]
 - [[nome-util-do-lead-e-modulo-puro]]
 - [[alerta-sempre-aceso-vira-paisagem]]
 - [[barra-fixa-que-estoura-a-largura]]
+- [[arte-de-ia-nao-e-midia-do-catalogo]] — a 0101 liga a arte ao imóvel sem tocar em `midias` (06/09)
+- [[capa-de-empreendimento-nunca-e-nula]] — o `else` de "sem foto" era código morto (06/09)
 - [[botoes-perigosos-atras-de-avancado]]
 
 ## Dados do lead

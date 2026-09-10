@@ -25,8 +25,24 @@ function Kpi({ rotulo, valor, detalhe, href }: { rotulo: string; valor: string; 
     </>
   );
   if (!href) return <div className="cartao p-4">{conteudo}</div>;
+  /*
+   * Mesmo tratamento do KPI da visão geral (07/09): seta FIXA no canto — no
+   * celular não existe hover, e era lá que o link sumia por completo — e o
+   * cartão levanta ao passar o mouse. Só trocar a borda não diz que navega.
+   */
   return (
-    <Link href={href} className="cartao hover:border-acento-linha p-4 transition-colors">
+    <Link
+      href={href}
+      className="cartao hover:border-acento-linha group relative block p-4 transition-all hover:-translate-y-0.5 motion-reduce:transition-none"
+    >
+      <span
+        aria-hidden
+        className="text-tenue group-hover:text-acento-suave absolute top-3 right-3 transition-colors"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+          <path d="M7 17L17 7M9 7h8v8" />
+        </svg>
+      </span>
       {conteudo}
     </Link>
   );

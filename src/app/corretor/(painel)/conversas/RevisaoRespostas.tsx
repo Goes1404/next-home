@@ -96,7 +96,7 @@ export function RevisaoRespostas({ itens }: { itens: ItemRevisao[] }) {
               </p>
             )}
 
-            <p className="text-fluid-sm text-corpo mt-2 line-clamp-4 whitespace-pre-line">
+            <p className="text-fluid-sm text-corpo mt-2 line-clamp-4 whitespace-pre-line break-words">
               {item.respostaBot}
             </p>
 

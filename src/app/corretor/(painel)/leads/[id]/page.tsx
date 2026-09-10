@@ -191,7 +191,7 @@ export default async function FichaLeadPage({
               className="text-fluid-sm border-linha bg-vidro text-corpo hover:border-linha-forte inline-flex min-h-11 max-w-full items-center gap-2 truncate rounded-full border px-4 transition-colors"
             >
               <Mail className="h-4 w-4 shrink-0" />
-              <span className="truncate">{lead.email}</span>
+              <span className="min-w-0 truncate">{lead.email}</span>
             </a>
           )}
           <IniciarConversaIA leadId={lead.id} temTelefone={Boolean(lead.telefone)} />
@@ -202,7 +202,7 @@ export default async function FichaLeadPage({
         )}
 
         {lead.mensagem && (
-          <blockquote className="text-fluid-sm mt-4 rounded-xl border-l-2 border-acento-linha bg-vidro px-4 py-3 whitespace-pre-wrap text-corpo">
+          <blockquote className="text-fluid-sm mt-4 rounded-xl border-l-2 border-acento-linha bg-vidro px-4 py-3 whitespace-pre-wrap text-corpo break-words">
             {lead.mensagem}
           </blockquote>
         )}
@@ -255,7 +255,7 @@ export default async function FichaLeadPage({
                     key={n.id}
                     className={`border-linha border-l-2 pl-3 ${n.concluida_em ? "opacity-55" : ""}`}
                   >
-                    <p className="text-fluid-xs text-corpo line-clamp-2 whitespace-pre-wrap">
+                    <p className="text-fluid-xs text-corpo line-clamp-2 whitespace-pre-wrap break-words">
                       {n.texto}
                     </p>
                     <p className="text-tenue mt-0.5 text-[11px]">

@@ -60,21 +60,32 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                 const subs = aberta ? (item.subitens ?? []) : [];
                 const subAtivo = ativa ? subitemAtivo(atual, item) : null;
                 const classes = cn(
-                  "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors",
-                        ativa
-                          ? "bg-acento-lavado text-acento-suave font-medium"
-                          : "text-apoio hover:bg-vidro hover:text-titulo",
+                  "group relative flex items-center gap-3 overflow-hidden rounded-xl px-3 py-2 text-sm transition-colors",
+                  /*
+                   * Tópico ativo é SÓLIDO, igual ao da gaveta do celular
+                   * (06/09/2026, pedido do usuário: "deixe mais visível qual
+                   * está selecionado"). O `bg-acento-lavado` de antes era
+                   * acento a ~10% sobre um fundo já translúcido — no claro
+                   * ele praticamente empatava com o hover, e a barra inteira
+                   * parecia não ter seleção nenhuma. A gaveta e as abas já
+                   * eram sólidas; era a lateral que destoava das duas.
+                   */
+                  ativa
+                    ? "bg-acento text-sobre-cor font-medium"
+                    : "text-apoio hover:bg-vidro hover:text-titulo",
                   pasta && "w-full cursor-pointer text-left",
                 );
                 const miolo = (
                   <>
                     {/* Régua à esquerda: marca a seção aberta sem depender
-                        só da cor, que some para quem não distingue verde. */}
+                        só da cor, que some para quem não distingue verde.
+                        Sobre o fundo sólido ela é CLARA — em `bg-acento` uma
+                        régua `bg-acento` seria invisível. */}
                     <span
                       aria-hidden
                       className={cn(
-                        "bg-acento absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full transition-opacity",
-                        ativa ? "opacity-100" : "opacity-0",
+                        "absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full transition-opacity",
+                        ativa ? "bg-sobre-cor opacity-90" : "bg-acento opacity-0",
                       )}
                     />
                     <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
@@ -132,8 +143,12 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                                 aria-current={aberto ? "page" : undefined}
                                 className={cn(
                                   "block rounded-lg px-2 py-1.5 text-[13px] transition-colors",
+                                  /* O subtópico aberto ganhou FUNDO: só a cor
+                                     do texto não vencia a régua vertical ao
+                                     lado, e numa lista de seis a linha atual
+                                     se perdia. Mesmo lavado da gaveta. */
                                   aberto
-                                    ? "text-acento-suave font-medium"
+                                    ? "bg-acento-lavado text-acento-suave font-medium"
                                     : "text-apoio hover:text-titulo hover:bg-vidro",
                                 )}
                               >

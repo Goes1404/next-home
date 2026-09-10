@@ -5,6 +5,7 @@ import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { AbasImoveis } from "../_componentes/AbasImoveis";
 import { contarCandidatosPendentes } from "@/lib/imoveis/candidatosDoCatalogo";
 import { pendenciasDoCatalogo } from "@/lib/imoveis/pendenciasDoCatalogo";
+import { getArtePorImovel } from "@/lib/imagens/galeria";
 
 export const metadata = {
   title: "Gestão & Edição de Imóveis | Painel do Corretor",
@@ -27,6 +28,25 @@ export default async function ImoveisPage() {
    */
   const aCadastrar =
     pendenciasDoCatalogo(imoveis.filter((i) => i.publicado ?? true)).length + candidatosPendentes;
+
+  /*
+   * Capa emprestada da arte de IA (0101), SÓ para quem não tem foto.
+   *
+   * Imóvel recém-cadastrado nasce sem mídia, e "Sem Foto de Capa" numa grade
+   * de doze cartões apaga justamente os que precisam de atenção. Uma consulta
+   * para a página inteira, e só com os ids que de fato precisam — pedir arte
+   * de imóvel que já tem foto seria trabalho para jogar fora.
+   *
+   * Isto NÃO publica nada: a arte segue fora de `midias`, então a vitrine
+   * continua mostrando "sem foto" e a assistente continua sem poder enviá-la.
+   * O empréstimo vale para esta grade, que é tela de trabalho interna.
+   */
+  const artePorImovel = await getArtePorImovel(
+    imoveis
+      .filter((i) => (i.galeria?.length ?? 0) === 0)
+      .map((i) => i.id)
+      .filter((id): id is string => Boolean(id)),
+  );
 
   return (
     <div className="space-y-6">
@@ -67,7 +87,7 @@ export default async function ImoveisPage() {
         para editar. "Links por imóvel" também saiu do cabeçalho pelo mesmo
         motivo: virou aba.
       */}
-      <ListaImoveisClient imoveis={imoveis} />
+      <ListaImoveisClient imoveis={imoveis} artePorImovel={Object.fromEntries(artePorImovel)} />
     </div>
   );
 }

@@ -35,6 +35,13 @@ import { statusDosVideos } from "./acoes";
 
 const INTERVALO_MS = 6000;
 
+/** Os pedidos que abrem a conversa vazia. Ver o comentário em `ChatDeArte`. */
+const SUGESTOES = [
+  "Story de lançamento com as fotos do imóvel",
+  "Vídeo para o feed, público investidor",
+  "Tour rápido do decorado",
+] as const;
+
 export function ChatDeVideo({
   corretorId,
   conversasIniciais,
@@ -174,6 +181,7 @@ export function ChatDeVideo({
           pendente={pendente}
           pensando={pensando}
           placeholder='Ex.: "um story do Eternity, de lançamento"'
+          sugestoes={SUGESTOES}
           vazio={
             <>
               <p className="text-titulo font-medium">Qual vídeo você quer?</p>

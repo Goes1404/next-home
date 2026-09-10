@@ -480,7 +480,7 @@ export function ConversasClient({
                       <span className="flex items-baseline justify-between gap-2">
                         <span
                           className={cn(
-                            "text-wa-texto truncate text-[15px]",
+                            "text-wa-texto min-w-0 flex-1 truncate text-[15px]",
                             naoLidas > 0 ? "font-semibold" : "font-normal",
                           )}
                         >
@@ -611,6 +611,14 @@ function Chat({
   const [pendente, iniciar] = useTransition();
   const corpoRef = useRef<HTMLDivElement>(null);
   const presoNoFimRef = useRef(true);
+  /*
+   * "Rolei demais para baixo e quero voltar lá para cima" (06/09/2026).
+   * Conversa de meses tem centenas de balões e o único caminho de volta era
+   * arrastar tudo de novo. O gatilho é a DISTÂNCIA do topo, não a direção do
+   * gesto: direção some quando a pessoa para de rolar, e o botão sumiria
+   * justamente no instante em que ela decide usá-lo.
+   */
+  const [longeDoTopo, setLongeDoTopo] = useState(false);
   const selo = SELO[estado];
 
   // Rola para o fim quando chegam mensagens — mas só se o corretor já
@@ -622,10 +630,24 @@ function Chat({
     if (corpo && presoNoFimRef.current) corpo.scrollTop = corpo.scrollHeight;
   }, [idUltimaMensagem]);
 
+  const DISTANCIA_PARA_MOSTRAR_TOPO = 600;
+
   function aoRolar() {
     const corpo = corpoRef.current;
     if (!corpo) return;
     presoNoFimRef.current = corpo.scrollHeight - corpo.scrollTop - corpo.clientHeight < 120;
+    // `setState` com o MESMO booleano não re-renderiza no React, então isto
+    // custa uma comparação por evento de rolagem, não uma árvore nova.
+    setLongeDoTopo(corpo.scrollTop > DISTANCIA_PARA_MOSTRAR_TOPO);
+  }
+
+  function voltarAoTopo() {
+    const corpo = corpoRef.current;
+    if (!corpo) return;
+    // Sair do fim é o que impede o efeito de mensagem nova puxar a leitura
+    // de volta para baixo no meio da subida.
+    presoNoFimRef.current = false;
+    corpo.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function alternarBot() {
@@ -833,55 +855,83 @@ function Chat({
 
       {fichaAberta && conversa.temLead && <FichaLead conversaId={conversa.id} />}
 
-      {/* Corpo com os balões, sobre o papel de parede */}
-      <div
-        ref={corpoRef}
-        onScroll={aoRolar}
-        /* `overscroll-contain`: no celular o chat é `fixed` e a página segue
-           atrás dele. Sem isto, chegar ao topo da conversa passa a rolagem
-           adiante e a página de trás se mexe — o "scroll chaining" que faz a
-           tela pular quando se lê a conversa até o começo. */
-        className="wa-papel flex-1 overflow-y-auto overscroll-contain px-[4%] py-3 md:px-[7%]"
-      >
-        {mensagens !== null && mensagens.length >= 100 && !esgotado && (
-          <p className="pb-2 text-center">
-            <button
-              type="button"
-              onClick={() => void carregarAnteriores()}
-              disabled={carregandoAntigas}
-              className="bg-wa-dia text-wa-meta hover:text-wa-texto min-h-11 cursor-pointer rounded-lg px-4 text-xs shadow-sm transition-colors disabled:opacity-60"
-            >
-              {carregandoAntigas ? "Carregando…" : "Ver mensagens anteriores"}
-            </button>
-          </p>
-        )}
-        {mensagens === null ? (
-          <p className="text-wa-meta py-8 text-center text-xs">Carregando conversa…</p>
-        ) : mensagens.length === 0 ? (
-          <p className="text-wa-meta py-8 text-center text-xs">Sem mensagens registradas.</p>
-        ) : (
-          mensagens.map((m, i) => {
-            const anterior = mensagens[i - 1];
-            const trocouDia =
-              !anterior ||
-              new Date(anterior.criadoEm).toDateString() !== new Date(m.criadoEm).toDateString();
-            // Rabinho só no primeiro balão de uma sequência do mesmo lado —
-            // e os seguintes ficam colados, como no app.
-            const mesmoLado = !!anterior && !trocouDia && ladoDo(anterior) === ladoDo(m);
-            return (
-              <div key={m.id} className={mesmoLado ? "mt-0.5" : "mt-2.5"}>
-                {trocouDia && (
-                  <p className="my-3 text-center">
-                    <span className="bg-wa-dia text-wa-meta rounded-lg px-3 py-1.5 text-[12px] uppercase shadow-sm">
-                      {rotuloDoDia(m.criadoEm)}
-                    </span>
-                  </p>
-                )}
-                <Balao mensagem={m} comRabo={!mesmoLado} onErro={onErro} />
-              </div>
-            );
-          })
-        )}
+      {/*
+        Corpo com os balões, sobre o papel de parede. O invólucro `relative`
+        existe só para ancorar o botão de voltar ao topo: o corpo é o
+        contêiner de rolagem, e botão flutuante DENTRO dele rolaria junto.
+      */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          ref={corpoRef}
+          onScroll={aoRolar}
+          /* `overscroll-contain`: no celular o chat é `fixed` e a página segue
+             atrás dele. Sem isto, chegar ao topo da conversa passa a rolagem
+             adiante e a página de trás se mexe — o "scroll chaining" que faz a
+             tela pular quando se lê a conversa até o começo. */
+          className="wa-papel flex-1 overflow-y-auto overscroll-contain px-[4%] py-3 md:px-[7%]"
+        >
+          {mensagens !== null && mensagens.length >= 100 && !esgotado && (
+            <p className="pb-2 text-center">
+              <button
+                type="button"
+                onClick={() => void carregarAnteriores()}
+                disabled={carregandoAntigas}
+                className="bg-wa-dia text-wa-meta hover:text-wa-texto min-h-11 cursor-pointer rounded-lg px-4 text-xs shadow-sm transition-colors disabled:opacity-60"
+              >
+                {carregandoAntigas ? "Carregando…" : "Ver mensagens anteriores"}
+              </button>
+            </p>
+          )}
+          {mensagens === null ? (
+            <p className="text-wa-meta py-8 text-center text-xs">Carregando conversa…</p>
+          ) : mensagens.length === 0 ? (
+            <p className="text-wa-meta py-8 text-center text-xs">Sem mensagens registradas.</p>
+          ) : (
+            mensagens.map((m, i) => {
+              const anterior = mensagens[i - 1];
+              const trocouDia =
+                !anterior ||
+                new Date(anterior.criadoEm).toDateString() !== new Date(m.criadoEm).toDateString();
+              // Rabinho só no primeiro balão de uma sequência do mesmo lado —
+              // e os seguintes ficam colados, como no app.
+              const mesmoLado = !!anterior && !trocouDia && ladoDo(anterior) === ladoDo(m);
+              return (
+                <div key={m.id} className={mesmoLado ? "mt-0.5" : "mt-2.5"}>
+                  {trocouDia && (
+                    <p className="my-3 text-center">
+                      <span className="bg-wa-dia text-wa-meta rounded-lg px-3 py-1.5 text-[12px] uppercase shadow-sm">
+                        {rotuloDoDia(m.criadoEm)}
+                      </span>
+                    </p>
+                  )}
+                  <Balao mensagem={m} comRabo={!mesmoLado} onErro={onErro} />
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/*
+          Sobe até o começo do histórico JÁ CARREGADO — e é lá que mora o
+          "Ver mensagens anteriores", então a subida entrega a pessoa
+          exatamente no botão que traz o resto. Não persegue: a paginação
+          desta tela é por clique, não por rolagem, então chegar ao topo não
+          dispara carga nova nem faz o topo fugir.
+        */}
+        <button
+          type="button"
+          onClick={voltarAoTopo}
+          aria-label="Voltar ao começo da conversa"
+          title="Voltar ao começo da conversa"
+          className={cn(
+            "bg-wa-barra text-wa-texto absolute top-3 right-3 z-10 flex size-10 cursor-pointer items-center justify-center rounded-full shadow-md transition-opacity",
+            longeDoTopo ? "opacity-90 hover:opacity-100" : "pointer-events-none opacity-0",
+          )}
+        >
+          <svg viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M12 19V5M5 12l7-7 7 7" />
+          </svg>
+        </button>
       </div>
 
       {/* Teclado */}
@@ -1153,7 +1203,7 @@ function SeletorDeMidia({
                 onClick={() => setImovelAberto(imovel.nome)}
                 className="hover:bg-vidro text-corpo flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors"
               >
-                <span className="truncate">{imovel.nome}</span>
+                <span className="min-w-0 flex-1 truncate">{imovel.nome}</span>
                 <span className="text-tenue shrink-0 text-xs">{imovel.midias.length} fotos</span>
               </button>
             </li>
@@ -1273,7 +1323,9 @@ function Balao({
             absoluto embaixo à direita — a última linha corre ao lado dela. */}
         <p
           className={cn(
-            "text-[14.2px] leading-[19px] whitespace-pre-line",
+            // `break-words`: cliente manda link o tempo todo, e URL nao
+            // quebra sozinha — ela esticava o balao alem do proprio limite.
+            "text-[14.2px] leading-[19px] break-words whitespace-pre-line",
             mensagem.tipo === "audio" ? "text-wa-meta text-xs italic" : "text-wa-texto",
           )}
         >

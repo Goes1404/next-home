@@ -12,6 +12,7 @@ import { Camada } from "@/components/motion/Camada";
 import { ParallaxFundoHome } from "@/components/motion/ParallaxFundoHome";
 import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { Reveal } from "@/components/motion/Reveal";
+import { ScrollCue } from "@/components/home/ScrollCue";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
@@ -176,6 +177,22 @@ export default async function HomeInstitucional() {
               </GlassSurface>
             </div>
           </Camada>
+
+          {/* A ponte para o conteúdo (09/09/2026). O herói terminava num vão
+              escuro de meia tela e nada dizia que havia página embaixo — quem
+              não rolava por hábito via uma busca e o fim. O rótulo conta o
+              que há lá: é informação, não "role para baixo".
+
+              `data-abertura` + `gsap-pending` pelo mesmo contrato dos irmãos:
+              a AberturaHome é dona da opacidade (ela varre `[data-abertura]`)
+              e o elemento nasce invisível, voltando sozinho se o JS falhar. */}
+          <div data-abertura className="gsap-pending">
+            <ScrollCue
+              alvo="destaques"
+              posicao="fluxo"
+              label={`${destaques.length} em destaque, logo abaixo`}
+            />
+          </div>
         </section>
 
         {/* Do primeiro conteúdo em diante o fundo é OPACO, como na página do
@@ -186,12 +203,20 @@ export default async function HomeInstitucional() {
               de rolagem, atrás de três cards institucionais. Numa imobiliária
               o produto é a foto do imóvel — ela abre o conteúdo. */}
           {destaques.length > 0 && (
-            <section className="px-4 pb-24 sm:px-8 sm:pb-28">
+            <section id="destaques" className="scroll-mt-24 px-4 pb-24 sm:px-8 sm:pb-28">
               <div className="mx-auto w-full max-w-5xl">
-                <p className="text-fluid-xs mb-3 tracking-[0.22em] text-acento-suave uppercase">
-                  Selecionados
+                {/* O rótulo acima do título passou a CONTAR (09/09/2026).
+                    "Selecionados" em versalete não dizia nada que o título já
+                    não dissesse — era decoração com aparência de estrutura, e
+                    igual em três seções seguidas. A fração diz o tamanho do
+                    catálogo e por que estes três estão aqui. */}
+                <p className="text-fluid-xs text-apoio mb-3">
+                  <span className="text-acento-suave font-semibold tabular-nums">
+                    {destaques.length}
+                  </span>{" "}
+                  de {todos.length} imóveis, escolhidos a dedo
                 </p>
-                <TituloEditorial className="text-fluid-3xl text-titulo">
+                <TituloEditorial className="text-fluid-2xl text-titulo">
                   Oportunidades em destaque
                 </TituloEditorial>
 
@@ -230,8 +255,11 @@ export default async function HomeInstitucional() {
           {todos.length > 0 && (
           <section className="px-4 py-16 sm:px-8 sm:py-24">
             <div className="mx-auto w-full max-w-6xl">
-              <p className="text-fluid-xs mb-3 tracking-[0.22em] text-acento-suave uppercase">
-                A região
+              <p className="text-fluid-xs text-apoio mb-3">
+                <span className="text-acento-suave font-semibold tabular-nums">
+                  {regioes.bairros.length}
+                </span>{" "}
+                bairros em {regioes.cidades.length} cidades
               </p>
               <TituloEditorial className="text-fluid-2xl text-titulo">
                 Onde cada imóvel está
@@ -265,8 +293,11 @@ export default async function HomeInstitucional() {
           {equipe.length > 0 && (
             <section className="bg-superficie/40 px-4 py-16 sm:px-8 sm:py-24">
               <div className="mx-auto w-full max-w-4xl">
-                <p className="text-fluid-xs mb-3 tracking-[0.22em] text-acento-suave uppercase">
-                  Atendimento
+                <p className="text-fluid-xs text-apoio mb-3">
+                  <span className="text-acento-suave font-semibold tabular-nums">
+                    {corretores.length}
+                  </span>{" "}
+                  {corretores.length === 1 ? "corretor" : "corretores"} com CRECI, na região
                 </p>
                 <TituloEditorial className="text-fluid-2xl text-titulo">
                   Equipe pronta para negociar

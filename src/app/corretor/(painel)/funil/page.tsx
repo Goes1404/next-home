@@ -4,6 +4,7 @@ import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import { getContagemPorEtapa, getLeadsDoFunil, souGestor } from "@/lib/corretorSessao";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
+import { BotaoVoltarAoTopo } from "@/app/corretor/(painel)/_componentes/BotaoVoltarAoTopo";
 
 export const metadata: Metadata = { title: "Funil" };
 
@@ -58,6 +59,8 @@ export default async function FunilPage({
         contagens={busca ? undefined : contagens}
         mostrarDono={gestor}
       />
+
+      <BotaoVoltarAoTopo />
     </div>
   );
 }
