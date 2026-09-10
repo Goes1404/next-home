@@ -1,6 +1,7 @@
 import "server-only";
 
 import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
+import { mesclarDossie } from "./mesclarDossie";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   bloqueadoAtePor,
@@ -1367,9 +1368,44 @@ export async function buscarDossieAtual(leadId: string): Promise<DossieClienteIA
 export async function salvarDossie(leadId: string, dossie: DossieClienteIA): Promise<void> {
   const supabase = createServiceClient();
 
-  await supabase.from("lead_observacoes_ia").upsert(
+  /*
+   * O dossiê se apagava sozinho: o upsert grava TODAS as colunas, e a
+   * extração só enxerga a janela do histórico — assunto que sai da janela
+   * volta `null` e o null sobrescrevia o que o cliente já tinha dito. Medido
+   * antes: 16 dossiês para 131 leads, orçamento 0/16.
+   *
+   * A leitura da linha anterior acontece AQUI, não no chamador. O webhook tem
+   * um `dossieAnterior` em mãos, mas passá-lo faria a guarda depender de o
+   * chamador lembrar — e é o esquecimento de um chamador que este projeto já
+   * pagou caro (foi o que tirou `interacaoId` dos parâmetros de
+   * `gravarMensagem`). Uma consulta a mais por resposta, e a regra passa a
+   * valer para todo chamador que existir depois.
+   */
+  const { data: linhaAnterior } = await supabase
+    .from("lead_observacoes_ia")
+    .select(
+      "orcamento_min, orcamento_max, forma_pagamento, perfil_familiar, urgencia_mudanca, exigencias_especificas, objecoes_identificadas, temperatura_score, temperatura_label, resumo_executivo, proximo_passo_sugerido",
+    )
+    .eq("lead_id", leadId)
+    .maybeSingle();
+
+  const mesclado = mesclarDossie(
+    linhaAnterior
+      ? {
+          orcamento_min: linhaAnterior.orcamento_min,
+          orcamento_max: linhaAnterior.orcamento_max,
+          forma_pagamento: linhaAnterior.forma_pagamento,
+          perfil_familiar: linhaAnterior.perfil_familiar,
+          urgencia_mudanca: linhaAnterior.urgencia_mudanca,
+          exigencias_especificas: apenasTextos(linhaAnterior.exigencias_especificas),
+          objecoes_identificadas: apenasTextos(linhaAnterior.objecoes_identificadas),
+          temperatura_score: linhaAnterior.temperatura_score,
+          temperatura_label: linhaAnterior.temperatura_label,
+          resumo_executivo: linhaAnterior.resumo_executivo,
+          proximo_passo_sugerido: linhaAnterior.proximo_passo_sugerido,
+        }
+      : null,
     {
-      lead_id: leadId,
       orcamento_min: dossie.orcamentoMin,
       orcamento_max: dossie.orcamentoMax,
       forma_pagamento: dossie.formaPagamento,
@@ -1381,8 +1417,11 @@ export async function salvarDossie(leadId: string, dossie: DossieClienteIA): Pro
       temperatura_label: dossie.temperaturaLabel,
       resumo_executivo: dossie.resumoExecutivo,
       proximo_passo_sugerido: dossie.proximoPassoSugerido,
-      updated_at: new Date().toISOString(),
     },
+  );
+
+  await supabase.from("lead_observacoes_ia").upsert(
+    { lead_id: leadId, ...mesclado, updated_at: new Date().toISOString() },
     { onConflict: "lead_id" },
   );
 

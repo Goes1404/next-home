@@ -12,7 +12,7 @@ import { separarRajada, type Fala } from "../../src/lib/whatsapp/rajada";
 import { catalogoParaAtendimento } from "../../src/lib/whatsapp/focoDaConversa";
 import type { Empreendimento } from "../../src/lib/types";
 
-const JANELA = 20; // `historicoRecente(conversaId, limite = 20)`
+const JANELA = 40; // `historicoRecente(conversaId, limite = 40)` (0106)
 const SEM_TEXTO = "[mensagem não gravada — conversa sem atendimento liberado]";
 
 type Linha = { conversa_id: string; remetente: string; conteudo: string; created_at: string };
@@ -59,7 +59,14 @@ for (const [id, msgs] of porConversa) {
   if (!msgs.some((m) => m.remetente === "bot")) continue;
   if (msgs.length < 4) continue;
 
-  const janela = msgs.slice(-JANELA);
+  /*
+   * Espelha a consulta desde a 0106: a marca de mensagem não gravada é
+   * DESCARTADA antes do corte, não depois. Filtrar depois mediria uma janela
+   * que a produção não usa — a mesma armadilha que fez o eval medir um
+   * catálogo cru que webhook nenhum via.
+   */
+  const comTexto = msgs.filter((m) => m.conteudo !== SEM_TEXTO);
+  const janela = comTexto.slice(-JANELA);
   const historico: Fala[] = janela.map((m) => ({
     remetente: m.remetente as Fala["remetente"],
     texto: m.conteudo,
@@ -77,7 +84,7 @@ for (const [id, msgs] of porConversa) {
     id: id.slice(0, 8),
     total: msgs.length,
     naJanela: janela.length,
-    foraDaJanela: Math.max(0, msgs.length - JANELA),
+    foraDaJanela: Math.max(0, comTexto.length - JANELA),
     doCorretor: anterior.filter((m) => m.remetente === "corretor").length,
     doBot: anterior.filter((m) => m.remetente === "bot").length,
     doCliente: anterior.filter((m) => m.remetente === "cliente").length,
