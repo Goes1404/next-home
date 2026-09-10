@@ -39,6 +39,11 @@ const ROLAGEM_DECLARADA = [
   // etapas continuam alcançáveis sem rolar: a lista (`/corretor/leads?etapa=`)
   // e o seletor "Mover para" de cada cartão chegam às seis.
   "(painel)/funil/Quadro.tsx",
+  // Faixa de fotos do imóvel no Estúdio (10/09/2026): a rolagem é o CONTEÚDO —
+  // são as fotos entre as quais se escolhe a base da geração, não destinos. E
+  // nenhuma delas é alcançável só por ali: o teto é de 8, todas aparecem na
+  // tela do imóvel, e não escolher nenhuma é o comportamento padrão.
+  "(painel)/imoveis/criar-imagem/ChatDeArte.tsx",
 ];
 
 const RAIZ = path.join(process.cwd(), "src/app/corretor");

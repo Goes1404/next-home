@@ -55,6 +55,7 @@ describe("as fotos candidatas", () => {
   it("devolve até 8, e só as do tipo foto", async () => {
     const { fotosParaReferencia } = await import("./imovelNaArte");
     const midias = Array.from({ length: 12 }, (_, i) => ({
+      id: `m${i}`,
       url: `https://x/${i}.jpg`,
       alt: `foto ${i}`,
       tipo: i === 0 ? "planta" : "foto",

@@ -140,7 +140,7 @@ export function ChatDeArte({
    * "Gerar assim": a única chamada paga. A rota responde 429 com o teto quando
    * o dia acabou — o contador da tela se atualiza com o que ela devolver.
    */
-  const gerar = async (m: MensagemDoEstudio, promptEditado: string) => {
+  const gerar = async (m: MensagemDoEstudio, promptEditado: string, midiaId: string | null) => {
     const p = m.dados as PropostaDeArte;
     if (!estado || gerando) return;
     if (restam <= 0) {
@@ -161,7 +161,11 @@ export function ChatDeArte({
           tamanho: p.tamanho,
           qualidade: p.qualidade,
           // A foto anexada na conversa: a rota confina à pasta do corretor.
-          referenciaPath: p.referenciaPath ?? undefined,
+          referenciaPath: midiaId ? undefined : (p.referenciaPath ?? undefined),
+          // A foto DO IMÓVEL escolhida na faixa. Vai como id, nunca como URL:
+          // quem decide o acesso é a RLS sobre `midias`, e mandar URL faria o
+          // servidor baixar um endereço escolhido pelo cliente.
+          midiaId: midiaId ?? undefined,
         }),
       });
       const corpo = (await resp.json().catch(() => null)) as
@@ -262,7 +266,7 @@ export function ChatDeArte({
                     proposta={m.dados as PropostaDeArte}
                     gerando={gerando === m.id}
                     bloqueada={restam <= 0 || Boolean(gerando)}
-                    onGerar={(texto) => void gerar(m, texto)}
+                    onGerar={(texto, midiaId) => void gerar(m, texto, midiaId)}
                   />
                 );
               }
@@ -310,7 +314,7 @@ function CartaoDeProposta({
   proposta: PropostaDeArte;
   gerando: boolean;
   bloqueada: boolean;
-  onGerar: (prompt: string) => void;
+  onGerar: (prompt: string, midiaId: string | null) => void;
 }) {
   /*
    * O prompt é EDITÁVEL, e é ele que vai.
@@ -327,6 +331,14 @@ function CartaoDeProposta({
   useEffect(() => setTexto(proposta.prompt), [proposta.prompt]);
 
   const curto = texto.trim().length < PISO_DE_PROMPT;
+
+  /*
+   * Qual foto do imóvel serve de base. `null` = a foto anexada na conversa
+   * (ou nenhuma), que é o comportamento de sempre.
+   */
+  const fotos = proposta.fotosDoImovel ?? [];
+  const [base, setBase] = useState<string | null>(null);
+  useEffect(() => setBase(null), [proposta.prompt]);
   const tamanho = TAMANHOS.find((t) => t.chave === proposta.tamanho)?.rotulo ?? proposta.tamanho;
   const qualidade = QUALIDADES.find((q) => q.chave === proposta.qualidade)?.rotulo ?? proposta.qualidade;
   // A foto que sustenta esta proposta, visível no cartão: sem a miniatura, o
@@ -349,6 +361,36 @@ function CartaoDeProposta({
           <span className="text-tenue text-[11px]">Partindo desta foto</span>
         </div>
       )}
+      {fotos.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-apoio text-[11px]">
+            Partir de qual foto? A imagem é <strong>reinterpretada</strong> a partir dela — não sai
+            idêntica.
+          </p>
+          {/* Rolagem lateral aqui é o CONTEÚDO (a faixa de fotos), não navegação
+              escondida — por isso entra declarada em ROLAGEM_DECLARADA. */}
+          <ul className="flex gap-2 overflow-x-auto pb-1">
+            {fotos.map((f) => (
+              <li key={f.id}>
+                <button
+                  type="button"
+                  onClick={() => setBase(base === f.id ? null : f.id)}
+                  aria-pressed={base === f.id}
+                  title={f.alt}
+                  className={cn(
+                    "h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2",
+                    base === f.id ? "border-acento" : "border-linha",
+                  )}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={f.url} alt={f.alt} className="h-full w-full object-cover" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <label className="text-apoio block text-xs font-medium" htmlFor={`prompt-${proposta.tamanho}`}>
         O pedido que vai para o gerador — pode editar
       </label>
@@ -388,7 +430,7 @@ function CartaoDeProposta({
       </p>
       <button
         type="button"
-        onClick={() => onGerar(texto)}
+        onClick={() => onGerar(texto, base)}
         disabled={bloqueada || curto}
         aria-busy={gerando}
         className={cn(

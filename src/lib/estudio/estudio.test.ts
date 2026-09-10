@@ -176,14 +176,28 @@ describe("foto de referência no chat (06/09/2026)", () => {
     expect(a).toMatch(/referencia\.path\.startsWith\(`corretores\/\$\{corretor\.id\}\/`\)/);
   });
 
+  it("a foto do catálogo viaja como ID, nunca como URL", () => {
+    const tela = ler(TELAS[0]);
+    // URL escolhida pelo cliente faria o servidor baixar qualquer endereço da
+    // internet. Com o id, quem recorta é a RLS sobre `midias`.
+    expect(tela).toMatch(/midiaId: midiaId/);
+    expect(tela).not.toMatch(/midiaUrl|fotoUrl:/);
+  });
+
   it("o upload do navegador só escreve na pasta do próprio corretor", () => {
     const u = ler("src/app/corretor/(painel)/estudio/uploadReferencia.ts");
     expect(u).toMatch(/corretores\/\$\{corretorId\}\/referencias\//);
   });
 
+  /*
+   * Reescrita em 10/09/2026, não afrouxada. A invariante continua a MESMA — o
+   * caminho sai da proposta, nunca de uma variável solta —, mas a linha ganhou
+   * o caso da foto do catálogo: quando o corretor escolhe uma foto do imóvel
+   * na faixa, ela substitui a anexada, e aí o `referenciaPath` não vai.
+   */
   it("'Gerar assim' manda o referenciaPath da PROPOSTA, não um caminho solto", () => {
     const tela = ler(TELAS[0]);
-    expect(tela).toMatch(/referenciaPath: p\.referenciaPath/);
+    expect(tela).toMatch(/referenciaPath:[^;]*p\.referenciaPath/);
   });
 
   it("as fotos extras do vídeo saem da proposta GRAVADA, nunca do POST da tela", () => {

@@ -71,7 +71,7 @@ export type PropostaDeArte = {
    * rejeição por nome). A tela precisa dizer isso — prometer "a mesma foto, só
    * melhor" seria mentira que o corretor descobre na frente do cliente.
    */
-  fotosDoImovel?: { url: string; alt: string }[];
+  fotosDoImovel?: { id: string; url: string; alt: string }[];
   receita: string;
   tamanho: string;
   qualidade: "low" | "medium";
@@ -183,8 +183,14 @@ export function dadosDaMensagem(bruto: unknown): DadosDaMensagem | null {
           imovelSlug: texto(d.imovelSlug) || null,
           fotosDoImovel: Array.isArray(d.fotosDoImovel)
             ? d.fotosDoImovel
-                .filter((f): f is { url: string; alt?: string } => Boolean(f) && typeof f === "object" && typeof (f as { url?: unknown }).url === "string")
-                .map((f) => ({ url: f.url, alt: typeof f.alt === "string" ? f.alt : "" }))
+                .filter(
+                  (f): f is { id: string; url: string; alt?: string } =>
+                    Boolean(f) &&
+                    typeof f === "object" &&
+                    typeof (f as { id?: unknown }).id === "string" &&
+                    typeof (f as { url?: unknown }).url === "string",
+                )
+                .map((f) => ({ id: f.id, url: f.url, alt: typeof f.alt === "string" ? f.alt : "" }))
             : [],
           receita: texto(d.receita) || "livre",
           tamanho: texto(d.tamanho) || "1024x1024",

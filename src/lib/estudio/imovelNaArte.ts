@@ -40,14 +40,22 @@ export function fatosDoImovelCitado(imovel: Empreendimento): string[] {
   });
 }
 
-export type FotoCandidata = { url: string; alt: string };
+export type FotoCandidata = { id: string; url: string; alt: string };
 
 const TETO_DE_FOTOS = 8;
 
+/**
+ * O `id` é obrigatório aqui, e não é detalhe: é ele que a rota recebe.
+ *
+ * Mandar a URL faria o servidor baixar um endereço escolhido pelo cliente —
+ * a porta para ler qualquer coisa da internet. Com o id, quem decide o acesso
+ * é a RLS sobre `midias`, que é a fonte de verdade. Mídia sem id (placeholder,
+ * que não veio do banco) simplesmente não entra na faixa.
+ */
 export function fotosParaReferencia(imovel: Empreendimento): FotoCandidata[] {
   const midias: Midia[] = imovel.midias ?? imovel.galeria ?? [];
   return midias
-    .filter((m) => (m as { tipo?: string }).tipo === "foto")
+    .filter((m) => (m as { tipo?: string }).tipo === "foto" && typeof m.id === "string")
     .slice(0, TETO_DE_FOTOS)
-    .map((m) => ({ url: m.url, alt: m.alt ?? "" }));
+    .map((m) => ({ id: m.id as string, url: m.url, alt: m.alt ?? "" }));
 }

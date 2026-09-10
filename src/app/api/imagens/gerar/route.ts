@@ -52,6 +52,16 @@ export async function POST(req: NextRequest) {
     qualidade?: ChaveQualidade;
     receita?: string;
     referenciaPath?: string | null;
+    /**
+     * Uma foto do CATÁLOGO como base, escolhida na faixa do chat.
+     *
+     * Separado de `referenciaPath` de propósito: aquele é caminho de arquivo e
+     * precisa ser confinado à pasta do corretor, porque um caminho forjado
+     * leria arquivo alheio. Aqui vem um ID de linha, e quem decide o acesso é
+     * a RLS — o `select` roda com o cliente de SESSÃO, então mídia de imóvel
+     * que ele não pode ver simplesmente volta vazia.
+     */
+    midiaId?: string | null;
     // Modo "arte": peça de marketing composta, decidida pelo briefing.
     modo?: "livre" | "arte";
     imovelSlug?: string | null;
@@ -184,6 +194,34 @@ export async function POST(req: NextRequest) {
     } catch {
       /* segue sem referência */
     }
+  } else if (corpo?.midiaId) {
+    /*
+     * A foto do imóvel como base. Nenhuma confinação de caminho aqui: o
+     * recorte é a RLS, que é fonte de verdade e não precisa ser repetida em
+     * JavaScript. Mídia de imóvel que este corretor não enxerga volta nula.
+     */
+    const { data: midia } = await supabase
+      .from("midias")
+      .select("url, empreendimento_id")
+      .eq("id", corpo.midiaId)
+      .maybeSingle();
+
+    if (!midia?.url) {
+      return NextResponse.json({ erro: "Essa foto não está disponível." }, { status: 400 });
+    }
+
+    const baixada = await fetch(midia.url);
+    if (!baixada.ok) {
+      return NextResponse.json({ erro: "Não deu para ler a foto do imóvel." }, { status: 400 });
+    }
+    referencia = {
+      bytes: Buffer.from(await baixada.arrayBuffer()),
+      mime: baixada.headers.get("content-type") || "image/jpeg",
+    };
+    referenciaUrl = midia.url;
+    // A arte nasce ligada ao imóvel da foto — é o vínculo que a 0101 criou e
+    // que estava nulo nas 8 gerações da vida inteira.
+    empreendimentoId = empreendimentoId ?? midia.empreendimento_id ?? null;
   } else if (corpo?.referenciaPath) {
     // O caminho vem do cliente, então é preciso confinar: só a pasta do
     // PRÓPRIO corretor. Sem isso, um caminho forjado leria arquivo alheio no
