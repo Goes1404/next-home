@@ -18,6 +18,7 @@ import {
 } from "./acoes";
 import { assumirConversaComIA } from "./acoesIA";
 import { ETAPA_LABEL, type EtapaFunil } from "@/lib/types";
+import { agruparNaoGravadas, todasSemTexto } from "@/lib/whatsapp/conversaSemTexto";
 
 /**
  * O chat de UMA conversa — os balões, o teclado, a ficha do lead e a
@@ -562,9 +563,39 @@ export function Chat({
             <p className="text-wa-meta py-8 text-center text-xs">Carregando conversa…</p>
           ) : mensagens.length === 0 ? (
             <p className="text-wa-meta py-8 text-center text-xs">Sem mensagens registradas.</p>
+          ) : todasSemTexto(mensagens) ? (
+            /*
+             * Nada aqui tem texto: em vez de uma parede do mesmo marcador
+             * repetida até o fim da tela, a conversa explica o que houve e
+             * oferece a saída. O placeholder existe para a linha em branco não
+             * parecer defeito — repetido, ele deixa de informar.
+             */
+            <ConversaNaoGuardada aoLiberar={alternarBot} liberando={pendente} />
           ) : (
-            mensagens.map((m, i) => {
-              const anterior = mensagens[i - 1];
+            agruparNaoGravadas(mensagens).map((item, i, itens) => {
+              /*
+               * Conversa mista (liberada no meio): o buraco é INFORMAÇÃO — é
+               * ele que explica por que a IA parece ter perdido o fio — mas
+               * cabe numa linha, não em vinte balões iguais.
+               */
+              if ("naoGravadas" in item) {
+                return (
+                  <p key={`lacuna-${i}`} className="my-3 text-center">
+                    <span className="bg-wa-dia text-wa-meta rounded-lg px-3 py-1.5 text-[12px] shadow-sm">
+                      {item.naoGravadas === 1
+                        ? "1 mensagem não gravada"
+                        : `${item.naoGravadas} mensagens não gravadas`}
+                    </span>
+                  </p>
+                );
+              }
+
+              const m = item;
+              const vizinho = itens[i - 1];
+              // Lacuna quebra a sequência de propósito: depois de um buraco o
+              // rabinho volta, senão o balão seguinte pareceria continuação de
+              // uma fala que a tela não mostrou.
+              const anterior = vizinho && !("naoGravadas" in vizinho) ? vizinho : undefined;
               const trocouDia =
                 !anterior ||
                 new Date(anterior.criadoEm).toDateString() !== new Date(m.criadoEm).toDateString();
@@ -683,6 +714,52 @@ export function Chat({
         )}
       </footer>
     </>
+  );
+}
+
+/**
+ * A conversa que nunca foi liberada, explicada.
+ *
+ * O texto não está escondido nem perdido: ele nunca chegou ao banco. O número
+ * da instância é o WhatsApp pessoal do corretor, e a regra de 01/09 guarda a
+ * linha sem guardar o conteúdo de quem ninguém autorizou — foram 4.178
+ * mensagens de vida particular gravadas antes dela existir.
+ *
+ * Por isso o cartão diz as três coisas na ordem em que a pergunta nasce: por
+ * que está vazia, o que muda ao liberar, e que o passado continua sem texto.
+ * A terceira é a que evita a decepção de liberar esperando que a conversa
+ * apareça.
+ *
+ * O botão é o MESMO `alternarBot` do cabeçalho, não uma segunda chamada: dois
+ * caminhos para a mesma ação divergem no dia em que um deles ganha uma etapa.
+ */
+function ConversaNaoGuardada({
+  aoLiberar,
+  liberando,
+}: {
+  aoLiberar: () => void;
+  liberando: boolean;
+}) {
+  return (
+    <div className="bg-wa-entrada mx-auto my-8 max-w-sm rounded-xl p-4 text-center shadow-[0_1px_2px_rgba(11,20,26,0.2)]">
+      <p className="text-wa-texto text-[14.2px] font-medium">Esta conversa não foi guardada</p>
+      <p className="text-wa-meta mt-2 text-[13px] leading-relaxed">
+        O número é o seu WhatsApp pessoal. Enquanto ninguém autoriza uma conversa, o sistema
+        registra que ela existe e <strong>não guarda o texto</strong>.
+      </p>
+      <p className="text-wa-meta mt-2 text-[13px] leading-relaxed">
+        Ao liberar, a IA passa a responder e o que vier daqui em diante fica gravado. O que já
+        passou continua sem texto — ele nunca chegou ao banco.
+      </p>
+      <button
+        type="button"
+        onClick={aoLiberar}
+        disabled={liberando}
+        className="bg-wa-verde mt-3 inline-flex min-h-11 cursor-pointer items-center rounded-full px-4 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+      >
+        {liberando ? "Liberando…" : "IA assume agora"}
+      </button>
+    </div>
   );
 }
 
