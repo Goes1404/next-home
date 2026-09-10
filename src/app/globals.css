@@ -750,6 +750,15 @@
     text-wrap: pretty;
   }
 
+  /* O Edge desenha um olho PRÓPRIO dentro de todo `input[type=password]`
+     (`::-ms-reveal`, herdado do IE). Com o nosso botão de mostrar/ocultar
+     ao lado, apareceriam dois — e o nativo não segue tema, tamanho de alvo
+     nem estado. Ver `components/ui/CampoSenha.tsx`. */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none;
+  }
+
   ::selection {
     background-color: var(--color-brand-400);
     color: var(--color-ink-950);

@@ -5578,3 +5578,11 @@ Nota: [[uma-piscada-do-banco-derrubava-a-home]].
   equipe. Provocada tirando a retentativa, falha com a mensagem literal que a
   produção mostrou.
 
+- **O olho de ver a senha** (`components/ui/CampoSenha.tsx`, 10/09/2026):
+  `type="button"` é obrigatório — dentro de um `<form>` o padrão é `submit`,
+  e tocar no olho enviaria o login. O campo ganha `pr-14` para o texto parar
+  antes do ícone, e o botão ocupa 48x56px (alvo de polegar, não um ícone de
+  16px). Nasce sempre OCULTO: revelado que sobrevive ao recarregamento vira
+  senha à mostra na tela de quem está ao lado. E o Edge desenha um olho
+  PRÓPRIO em `input[type=password]` (`::-ms-reveal`) — sem escondê-lo no
+  `globals.css` aparecem dois.
