@@ -341,7 +341,11 @@ describe("as barras de abas DERIVAM do menu", () => {
       "/corretor/whatsapp",
       "/corretor/conversas",
     ]);
-    expect(subitensDe("/corretor/admin")).toHaveLength(8);
+    // 9 desde 09/09/2026: "Crédito" entrou com os parâmetros que o consultor
+    // cita. O número é atualizado com o motivo escrito, nunca afrouxado em
+    // silêncio — a guarda existe para a barra de abas e o menu não voltarem a
+    // discordar sobre o que é subtópico de quê.
+    expect(subitensDe("/corretor/admin")).toHaveLength(9);
   });
 });
 

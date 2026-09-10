@@ -1,5 +1,6 @@
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
 import type { ParametrosCredito } from "@/lib/credito/tipos";
+import { diasDesdeConferencia, estaEnvelhecido } from "@/lib/credito/idade";
 import type { CartaoDeImovel } from "./contrato";
 
 /**
@@ -103,9 +104,6 @@ export function blocoDoCatalogo(imoveis: Empreendimento[]): string {
   return `CATÁLOGO COMPLETO (${imoveis.length} imóveis publicados). Só existe o que está aqui — imóvel que não está nesta lista, nós não temos:\n\n${fichas}`;
 }
 
-/** Acima disso, os parâmetros deixam de ser afirmação e viram lembrete. */
-const DIAS_ATE_ENVELHECER = 120;
-
 /**
  * Os números de crédito, com data.
  *
@@ -127,11 +125,9 @@ export function blocoDeCredito(params: ParametrosCredito, hoje: Date): string {
     .map(([cidade, aliquota]) => `${cidade} ${(aliquota * 100).toFixed(1)}%`)
     .join(", ");
 
-  const dias = Math.floor(
-    (hoje.getTime() - new Date(`${params.conferidoEm}T12:00:00Z`).getTime()) / 86_400_000,
-  );
+  const dias = diasDesdeConferencia(params.conferidoEm, hoje);
   const idade =
-    dias > DIAS_ATE_ENVELHECER
+    estaEnvelhecido(params.conferidoEm, hoje)
       ? `\nATENÇÃO: estes números foram conferidos há ${dias} dias e podem estar DESATUALIZADOS. Diga isso ao corretor e mande conferir na fonte antes de repassar ao cliente.`
       : "";
 

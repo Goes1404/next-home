@@ -216,6 +216,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/admin/sla", label: "SLA", icone: IconeAgora },
           { href: "/corretor/admin/eventos", label: "Eventos", icone: IconeAntena },
           { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta },
+          { href: "/corretor/admin/credito", label: "Crédito", icone: IconeEtiqueta },
         ],
       },
     ],
