@@ -40,6 +40,7 @@ F0–F6.
 - [[campanha-tambem-mexe-no-funil]]
 - [[arquivar-e-excluir-sao-lugares-diferentes]]
 - [[dado-gravado-e-nao-exibido-e-dado-perdido]]
+- [[o-contexto-da-decisao-da-ia]] — a conversa em gaveta sobre a lista de Pessoas
 - [[numeric-chega-como-string]]
 - [[telefone-e164-e-coluna-gerada]]
 

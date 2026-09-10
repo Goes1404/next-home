@@ -1186,7 +1186,10 @@ function Balao({
           onToggle={(e) => setPorQueAberto(e.currentTarget.open)}
           className="mr-1 mt-1 max-w-full min-w-0"
         >
-          <summary className="text-wa-meta hover:text-wa-texto inline-flex min-h-8 cursor-pointer items-center text-[12px] underline-offset-4 hover:underline">
+          {/* 44px de área tocável com 32 de espaço ocupado — a margem negativa
+              é o mesmo truque da pílula de avaliação: a régua de toque da casa
+              sem quatro linhas de ar embaixo de cada balão. */}
+          <summary className="text-wa-meta hover:text-wa-texto -my-1.5 inline-flex min-h-11 cursor-pointer items-center text-[12px] underline-offset-4 hover:underline">
             por quê?
           </summary>
           <div className="bg-wa-entrada mt-1 rounded-lg px-2.5 py-2 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)]">

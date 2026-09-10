@@ -54,6 +54,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[aviso-por-evolucao-nao-por-mensagem]]
 - [[visita-e-gravada-com-validacao]]
 - [[conversa-pessoal-do-corretor-e-gravada]] (LGPD, em aberto)
+- [[o-contexto-da-decisao-da-ia]] — por que ela disse aquilo, no balão
 
 ## Conexão do número
 - [[pareamento-decide-pelo-estado]]

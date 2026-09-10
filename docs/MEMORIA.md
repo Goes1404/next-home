@@ -5586,3 +5586,74 @@ Nota: [[uma-piscada-do-banco-derrubava-a-home]].
   senha à mostra na tela de quem está ao lado. E o Edge desenha um olho
   PRÓPRIO em `input[type=password]` (`::-ms-reveal`) — sem escondê-lo no
   `globals.css` aparecem dois.
+
+## Metade do pedido já estava no ar, e ninguém sabia (10/09/2026)
+
+Pedido: *"ao clicar no card das mensagens, abra a conversa dentro da minha
+aplicação, e ele consiga avaliar as respostas da IA através dela, vendo o
+contexto da IA"*.
+
+- **O clique JÁ abria o chat interno**, com 👍/👎 por balão, deep link e fila
+  de revisão — tudo desde a reforma de Pessoas (02/09) e a 0040. A obra que
+  parecia "construir um chat" era, medida, "mudar onde ele aparece e o que ele
+  explica". **Antes de construir o que o usuário pede, medir o que já responde
+  ao pedido** — é a irmã da lição do "construído e nunca ligado", ao
+  contrário: aqui o recurso estava ligado e quem o pediu não sabia que
+  existia. Corolário: **recurso que o dono do produto não sabe que existe é
+  indistinguível de recurso que não existe.**
+- **O pedido dizia "conversa do instagram" e era engano.** Não existe
+  integração de Instagram neste projeto (só links de perfil no rodapé e no
+  marketing). Confirmar o canal antes de desenhar poupou uma spec inteira.
+- **`ia_interacoes` media a MECÂNICA da resposta e nunca a DECISÃO.** Modelo,
+  latência, versão do prompt e contadores de anexo dizem COMO ela foi
+  produzida; nada dizia POR QUE foi aquela. Quem dá 👍/👎 julgava o texto
+  sozinho — e a mesma frase é ótima quando a IA sabia o orçamento e péssima
+  quando o cliente já tinha dito a região três vezes. A **0105** acrescenta
+  `contexto jsonb`: foco, jogada do planner, dossiê do momento, a contagem da
+  janela de histórico e o few-shot.
+- **Não é o prompt, e a recusa é deliberada:** 35 mil caracteres por resposta
+  são caros, ilegíveis no celular e não respondem à pergunta do corretor. O
+  que ele precisa é da decisão.
+- **O campo que mais explica é `emBranco`.** Sem ele, "a IA não considerou o
+  que eu disse" e "a IA não RECEBEU o que você disse" são a mesma frase na
+  tela — e pedem correções opostas. (32% das falas do cliente estão gravadas
+  em branco por retravamento; 44% da janela é fala do corretor.)
+- **O dossiê gravado é o ANTERIOR**, o que a IA tinha na mão, nunca o
+  reextraído depois da resposta. O erro seria invisível — os dois campos têm a
+  mesma forma e estão no mesmo escopo. Tem guarda de código-fonte por isso.
+- **A jogada sai do TURNO**, que é onde ela foi calculada; chamar
+  `planejarJogada` de novo do lado de fora daria uma segunda conta da mesma
+  decisão (o defeito do `montarResumo`).
+- **Contexto nulo é resposta honesta**, e é o desfecho comum: playground, eval
+  e consultor não têm conversa real para descrever, e resposta antiga nunca vai
+  ter contexto — reconstruir com o histórico de hoje mostraria uma razão que
+  não foi a real. Mesma regra de `modelo`, que já mentiu duas vezes por não
+  poder ser nulo.
+- **A extração de componente vem em commit próprio.** `ConversasClient` tinha
+  1.444 linhas com o chat dentro; montá-lo na gaveta de Pessoas exigiria
+  arrastar lista, Realtime e reconcílio junto. Ele saiu para `Chat.tsx` sem uma
+  linha de lógica alterada (1.444 → 404 + 1.090) — misturar mudança de
+  comportamento com mudança de arquivo torna impossível saber qual das duas
+  quebrou.
+- **A gaveta assina o Realtime de UMA conversa**, com o id no NOME do canal:
+  dois canais homônimos no mesmo cliente Supabase falham calados quando as
+  duas telas estão abertas em abas irmãs.
+- **A conversa do deep link é carregada NO SERVIDOR** e vira estado inicial.
+  Buscá-la num efeito faria a lista piscar antes da conversa — e o lint desta
+  base reprova `setState` dentro de efeito, que foi como o defeito apareceu.
+- **Discriminador de união precisa ser exclusivo de um lado.** `{ tipo:
+  "lacuna" }` não estreitava nada porque `MensagemConversa` JÁ tem `tipo`
+  (texto/audio/imagem/documento). Virou `naoGravadas`; quem pegou foi o
+  compilador.
+- **Âncora de guarda de código-fonte tem de ser ÚNICA.** A guarda nova usou
+  `temperaturaScore: dossie.temperaturaScore`, que aparece 2x no webhook (a
+  outra é o aviso ao corretor): o recorte pegou a chamada errada e reprovou
+  código correto. **Sétima vez** que uma guarda desta base tropeça no próprio
+  recorte — hoje ela afirma `ocorrencias === 1` antes de recortar.
+- **A conversa travada explicava repetindo.** O corpo do chat de uma conversa
+  nunca liberada era uma parede de `[mensagem não gravada]`: o placeholder
+  existe para a linha em branco não parecer defeito, e repetido cinquenta vezes
+  ele deixa de informar. Hoje é um cartão que diz por que está vazia, o que
+  muda ao liberar e que **o passado continua sem texto** — essa terceira frase
+  é a que evita a decepção de liberar esperando a conversa aparecer. Conversa
+  mista colapsa cada sequência numa linha com a contagem.
