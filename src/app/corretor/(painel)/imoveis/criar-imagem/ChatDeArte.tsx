@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { ChatBase } from "@/app/corretor/(painel)/_componentes/ChatBase";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { QUALIDADES, TAMANHOS, type EstadoDoTeto, type ImagemGerada } from "@/lib/imagens/imagensTipos";
+import { PISO_DE_PROMPT, SECOES } from "@/lib/imagens/gramatica";
 import type {
   ConversaDoEstudio,
   MensagemDoEstudio,
@@ -139,7 +140,7 @@ export function ChatDeArte({
    * "Gerar assim": a única chamada paga. A rota responde 429 com o teto quando
    * o dia acabou — o contador da tela se atualiza com o que ela devolver.
    */
-  const gerar = async (m: MensagemDoEstudio) => {
+  const gerar = async (m: MensagemDoEstudio, promptEditado: string) => {
     const p = m.dados as PropostaDeArte;
     if (!estado || gerando) return;
     if (restam <= 0) {
@@ -153,7 +154,9 @@ export function ChatDeArte({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           modo: "livre",
-          prompt: p.prompt,
+          // O texto do CAMPO, não o da proposta: se o corretor editou, foi a
+          // versão dele que ele aprovou — e é ela que tem de gerar a imagem.
+          prompt: promptEditado,
           receita: p.receita,
           tamanho: p.tamanho,
           qualidade: p.qualidade,
@@ -259,7 +262,7 @@ export function ChatDeArte({
                     proposta={m.dados as PropostaDeArte}
                     gerando={gerando === m.id}
                     bloqueada={restam <= 0 || Boolean(gerando)}
-                    onGerar={() => void gerar(m)}
+                    onGerar={(texto) => void gerar(m, texto)}
                   />
                 );
               }
@@ -307,8 +310,23 @@ function CartaoDeProposta({
   proposta: PropostaDeArte;
   gerando: boolean;
   bloqueada: boolean;
-  onGerar: () => void;
+  onGerar: (prompt: string) => void;
 }) {
+  /*
+   * O prompt é EDITÁVEL, e é ele que vai.
+   *
+   * A versão anterior mostrava o texto num <p> — e em inglês. O comentário
+   * daquele código dizia "esconder do corretor seria tirar dele a chance de
+   * corrigir", o que estava certo; só que dar a chance num idioma que ele não
+   * escreve, num elemento onde não se digita, é o mesmo que não dar.
+   */
+  const [texto, setTexto] = useState(proposta.prompt);
+
+  // Proposta NOVA reinicia o campo; enquanto for a mesma, o que ele digitou
+  // fica — inclusive depois de um erro de geração.
+  useEffect(() => setTexto(proposta.prompt), [proposta.prompt]);
+
+  const curto = texto.trim().length < PISO_DE_PROMPT;
   const tamanho = TAMANHOS.find((t) => t.chave === proposta.tamanho)?.rotulo ?? proposta.tamanho;
   const qualidade = QUALIDADES.find((q) => q.chave === proposta.qualidade)?.rotulo ?? proposta.qualidade;
   // A foto que sustenta esta proposta, visível no cartão: sem a miniatura, o
@@ -331,18 +349,47 @@ function CartaoDeProposta({
           <span className="text-tenue text-[11px]">Partindo desta foto</span>
         </div>
       )}
-      {/* O prompt em inglês fica visível mas discreto: é o que vai para o
-          provedor, e esconder do corretor seria tirar dele a chance de
-          corrigir. A explicação em português já veio no balão. */}
-      <p className="text-apoio text-xs leading-relaxed">{proposta.prompt}</p>
+      <label className="text-apoio block text-xs font-medium" htmlFor={`prompt-${proposta.tamanho}`}>
+        O pedido que vai para o gerador — pode editar
+      </label>
+      <textarea
+        id={`prompt-${proposta.tamanho}`}
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        rows={5}
+        className="border-linha bg-fundo text-corpo min-h-32 w-full rounded-xl border p-3 text-xs leading-relaxed"
+      />
+
+      {!proposta.daIa && (
+        <p className="text-alerta text-[11px]">
+          Não consegui melhorar seu pedido agora — este texto é o seu, como você escreveu.
+        </p>
+      )}
+
+      {proposta.naoCobriu.length > 0 && (
+        <p className="text-apoio text-[11px]">
+          Ficou faltando dizer:{" "}
+          {proposta.naoCobriu
+            .map((c) => SECOES.find((s) => s.chave === c)?.pede)
+            .filter(Boolean)
+            .join("; ")}
+          .
+        </p>
+      )}
+
+      {curto && (
+        <p className="text-alerta text-[11px]">
+          Está curto demais para render uma imagem boa — e gerar custa. Descreva a cena antes.
+        </p>
+      )}
+
       <p className="text-tenue text-[11px]">
         {tamanho} · {qualidade}
-        {!proposta.daIa && " · sem melhoria da IA"}
       </p>
       <button
         type="button"
-        onClick={onGerar}
-        disabled={bloqueada}
+        onClick={() => onGerar(texto)}
+        disabled={bloqueada || curto}
         aria-busy={gerando}
         className={cn(
           "bg-acento text-sobre-cor hover:bg-acento-hover min-h-11 w-full cursor-pointer rounded-xl px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
