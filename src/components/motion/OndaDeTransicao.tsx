@@ -1,13 +1,25 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 const semInscricao = () => () => {};
 
-/** O painel do corretor não ondula. */
-const SEM_ONDA = "/corretor";
+/**
+ * O painel do corretor não ondula — e a comparação é por SEGMENTO, não por
+ * prefixo de texto.
+ *
+ * `caminho.startsWith("/corretor")` engolia `/corretores` e
+ * `/corretores/<slug>`, que são páginas PÚBLICAS da equipe: a onda sumia
+ * nelas e, pior, o `data-entrando` ficava preso, porque nada renderizava
+ * para disparar o `animationend` que o limpa. Passou na verificação porque
+ * as navegações medidas eram para `/sobre`, `/financiamento` e
+ * `/empreendimentos`.
+ */
+function ehPainel(caminho: string): boolean {
+  return caminho === "/corretor" || caminho.startsWith("/corretor/");
+}
 
 /** `false` no servidor; `true` depois de hidratar — o portal precisa de `document`. */
 function useMontado(): boolean {
@@ -68,7 +80,31 @@ export function OndaDeTransicao() {
     setAtiva(true);
   }
 
-  if (!montado || !ativa || caminho.startsWith(SEM_ONDA)) return null;
+  /*
+   * Marca a RAIZ enquanto a onda passa, para o CSS revelar o conteúdo da
+   * página nova atrás dela (ver `[data-entrando]` no globals.css).
+   *
+   * O atributo é escrito direto no DOM, não em estado: quem lê é só o CSS, e
+   * um `setState` aqui custaria uma renderização a mais bem no meio da
+   * transição — o momento em que o quadro é mais disputado.
+   *
+   * A limpeza roda no desmonte E na troca de caminho, então uma navegação
+   * em cima da outra não deixa o atributo preso.
+   */
+  const mostrar = montado && ativa && !ehPainel(caminho);
+
+  useEffect(() => {
+    // Preso ao que de fato RENDERIZA: marcar a raiz sem a onda na tela
+    // deixaria o atributo sem ninguém para limpá-lo.
+    if (!mostrar) return;
+    const raiz = document.documentElement;
+    raiz.dataset.entrando = "sim";
+    return () => {
+      delete raiz.dataset.entrando;
+    };
+  }, [mostrar, caminho]);
+
+  if (!mostrar) return null;
 
   return createPortal(
     <div aria-hidden className="pointer-events-none fixed inset-0 z-[45]">

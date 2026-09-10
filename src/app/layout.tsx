@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Alex_Brush, Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
+import { Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
 import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
 import { Footer } from "@/components/layout/Footer";
 import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
@@ -23,21 +23,29 @@ const fraunces = Fraunces({
   axes: ["SOFT", "opsz"],
 });
 
-/** Mono para dado gravado — registro CRECI, credencial, o que precisa ler como número de série. */
+/**
+ * Mono para dado gravado — credencial, senha temporária, o que precisa ler
+ * como número de série. `preload: false` porque ela só aparece em TRÊS telas
+ * do painel: pré-carregá-la fazia todo visitante da vitrine baixar uma fonte
+ * que ele nunca vê. Sem preload ela continua chegando, só que quando alguém
+ * de fato abre aquelas telas.
+ */
 const plexMono = IBM_Plex_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
   display: "swap",
   weight: ["500"],
+  preload: false,
 });
 
-/** Script — a assinatura pessoal do corretor na própria página. Uso raro, de propósito. */
-const alexBrush = Alex_Brush({
-  variable: "--font-script",
-  subsets: ["latin"],
-  display: "swap",
-  weight: "400",
-});
+/*
+ * A Alex Brush (script) SAIU em 10/09/2026. Ela existia para "a assinatura
+ * pessoal do corretor na própria página" e nenhum componente jamais a usou —
+ * `grep font-script` só encontrava a própria declaração. O `next/font`
+ * pré-carrega por padrão, então era um arquivo de fonte baixado em toda
+ * página do site para não desenhar uma única letra. Se a assinatura voltar a
+ * ser desenhada, ela volta junto.
+ */
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -156,7 +164,7 @@ export default async function RootLayout({
       // de propósito (o `no-js` abaixo e o `data-intro-ativa` do Preloader);
       // sem isto, o dev console acusa mismatch a cada carga.
       suppressHydrationWarning
-      className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} ${alexBrush.variable} no-js h-full antialiased`}
+      className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} no-js h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         {/* Primeiro parável do documento: quem navega por teclado pula o

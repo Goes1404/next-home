@@ -161,7 +161,34 @@ function cssDeProducao() {
   if (!fs.existsSync(dir)) return null;
   const arquivos = fs.readdirSync(dir).filter((f) => f.endsWith(".css"));
   if (arquivos.length === 0) return null;
-  return arquivos.map((f) => fs.readFileSync(path.join(dir, f), "utf8")).join("\n");
+  const conteudos = arquivos.map((f) => ({ f, css: fs.readFileSync(path.join(dir, f), "utf8") }));
+
+  /*
+   * `.next/static/chunks` ACUMULA: o Next não limpa o diretório entre
+   * builds e o nome do arquivo muda com o conteúdo. Concatenar tudo — que
+   * era o que esta função fazia — juntava a folha de estilo de HOJE com as
+   * de builds anteriores, e na cascata a última a aparecer ganha.
+   *
+   * O sintoma foi fácil de reconhecer e difícil de descobrir: em
+   * 10/09/2026 a paleta do tema claro mudou DUAS vezes e os contrastes
+   * saíram idênticos nas três rodadas, casa decimal por casa decimal. A
+   * guarda estava medindo uma paleta que já não existia — e aprovando.
+   *
+   * Duas folhas definindo `--color-fundo` significam estado velho no
+   * diretório, e aí a medição inteira deixa de valer. Melhor parar e dizer
+   * isso do que devolver um número que descreve outro site.
+   */
+  const comTema = conteudos.filter((c) => c.css.includes("--color-fundo:"));
+  if (comTema.length > 1) {
+    throw new Error(
+      `há ${comTema.length} folhas definindo --color-fundo em .next/static/chunks ` +
+        `(${comTema.map((c) => c.f).join(", ")}). São builds acumulados, e a cascata ` +
+        `faria a medição valer para a paleta errada. Rode: rm -rf .next && npx next build`,
+    );
+  }
+  // Quebra por template literal para não depender de escape nenhum.
+  return conteudos.map((c) => c.css).join(`
+`);
 }
 
 async function compilarCss() {
