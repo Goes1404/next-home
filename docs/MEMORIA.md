@@ -4559,3 +4559,250 @@ estavam certos, e eram defeitos DIFERENTES:
   primeira o grant herdado de `anon` — todo `create table` novo leva
   `revoke all ... from anon`. Spec:
   docs/superpowers/specs/2026-09-06-anotacoes-do-corretor-design.md
+
+## O funil voltou a ser kanban lateral (09/09/2026)
+
+- **Reverter decisão documentada não é apagá-la: é responder aos motivos
+  dela.** O empilhamento de 02/09 nasceu de três medições (distribuição
+  torta, rolagem lateral invisível em 360px, arrastar do HTML5 que não pega
+  em toque). O pedido do usuário — colunas laterais em toda tela — foi
+  atendido respondendo aos três: coluna VAZIA encolhe para 160px, coluna
+  cheia mede 78vw para a PRÓXIMA espiar na borda (é o gesto se anunciando
+  por geometria, o que faltava quando as colunas terminavam exatamente na
+  dobra), e o arrastar virou **pointer events**, o mesmo código para dedo,
+  caneta e mouse.
+- **A régua da guarda estava com o nome errado, e o nome importava.**
+  `naoRolaDeLado.test.ts` chamava a lista de exceções de `TABELAS_LARGAS`, e
+  a pergunta certa nunca foi "é tabela?" — é **"a rolagem é o CONTEÚDO ou é
+  alvo escondido?"**. Virou `ROLAGEM_DECLARADA`. Navegação, chip e filtro
+  continuam proibidos de rolar; quadro kanban e tabela larga entram com o
+  motivo escrito. Provocada com dente: tirar a entrada do `Quadro.tsx`
+  reprova o arquivo, e o md5 confirmou que a mordida mordeu.
+- **Arrastar continua sendo ATALHO, nunca a única porta.** Botão de avançar e
+  seletor "Mover para" seguem em cada cartão — são eles que funcionam no
+  teclado e no leitor de tela. Só a alça leva `touch-none`, senão o cartão
+  inteiro deixaria de rolar a coluna com o dedo.
+- **`<link href="file://…">` NÃO carrega o CSS numa reprodução por
+  `setContent`** e a medição aprova qualquer coisa: a primeira rodada deu
+  todas as colunas com a largura da tela e botões de 21px de altura, o que
+  parecia layout quebrado e era CSS ausente. Com o `.css` de produção
+  EMBUTIDO em `<style>`: coluna de 250px em 320, 281 em 360, 288 daí para
+  cima; a próxima espiando 26/35/58px; página nunca rolando de lado (quem
+  rola é a faixa); todo alvo ≥44px.
+- **Coluna que rola por dentro dispensa o teto de cartões.** O teto de 6
+  existia porque, empilhado, "primeiro contato" com 46 pessoas virava dez mil
+  pixels de página. O teto que sobra é o da CONSULTA (`TETO_DO_QUADRO`, 300),
+  e é ele que o rodapé da coluna traduz em "ver os outros N".
+- **Autoscroll de borda em `rAF`, não em `pointermove`.** Com o dedo parado na
+  borda não chega evento nenhum — sem o laço de quadro, arrastar para uma
+  coluna fora da tela seria impossível.
+- **O fantasma que segue o dedo é `fixed` e mora FORA das colunas** — dentro,
+  o `overflow-y-auto` da coluna o cortaria ao sair. Sem portal, e conferido:
+  nenhum ancestral do quadro tem `backdrop-filter` nem `transform` (o
+  `<main>` só tem `isolate`, que não cria containing block).
+- **`execFileSync("npx", …)` do `scripts/lintTeto.mjs` não roda no Windows**
+  (`spawnSync npx ENOENT`) — precisa de `npx.cmd` ou `shell: true`. A catraca
+  fica muda na máquina de quem desenvolve; rodar `npx eslint <arquivos>`
+  direto é o contorno até alguém consertar.
+
+## A paleta das etapas e o teto da gama (09/09/2026)
+
+- **Guarda verde não é paleta boa.** `npm run paleta` aprovava tudo e a rampa
+  fazia o CONTRÁRIO do que o próprio comentário prometia: no claro a luz caía
+  de 0.56 a 0.32 e o croma de 0.18 a 0.12 — quanto mais perto do dinheiro,
+  mais escura e apagada a etapa. `documentacao` era petróleo sujo no claro e
+  quase branco no escuro (L 0.91). E `lavado` a 0.10 deixava todo chip cinza:
+  a cor vivia só na tinta minúscula do texto.
+- **Croma crescente até o ciano é IMPOSSÍVEL em sRGB** — o teto em H≈190 fica
+  perto de 0.13. A queda de croma não era descuido, era a gama. Rampa que
+  "esquenta" de verdade teria de sair do arco frio, e lá fora esbarra em
+  `alerta` (66°), que aparece no MESMO cartão ("parado há N dias"): etiqueta
+  cor de alerta ao lado de texto de alerta é pior que etiqueta apagada.
+- **O que resolveu foi presença, não matiz nova:** luz que para de despencar
+  (claro 0.56 → 0.385; escuro 0.68 → 0.875), `lavado` 0.10/0.16 → 0.16/0.22 e
+  `linha` 0.28/0.36 → 0.45/0.50 — é esta última que faz a borda da coluna do
+  quadro existir de longe. Passos ficaram parelhos (.085/.091/.093 no claro
+  contra .080/.098/.105) em vez de irregulares.
+- **Subir a luz no claro derruba o contraste do chip**, porque a MESMA cor é
+  a tinta do texto e o preenchimento da régua. A primeira tentativa reprovou
+  em `contato` (3.85:1) e `visita` (4.09:1). No claro a rampa é obrigada a
+  descer; o que se escolhe é o quanto.
+- **Matiz 180° lê como VERDE, não como turquesa.** Alarguei o arco até 180
+  para ganhar distância entre passos e a régua de `documentacao` ficou
+  indistinguível da de `fechado` — os números aprovaram, só a captura de tela
+  mostrou. Voltou para 192. **Medir aprova; olhar reprova — precisa dos dois.**
+- **`fechado` virou etiqueta SÓLIDA**, junto com `novo`: entrada e vitória são
+  os extremos do caminho e são os únicos que gritam. O meio do funil fica
+  lavado — se tudo gritasse, nada gritaria.
+- **`npm run paleta` tem caminho de Chromium chumbado do sandbox**
+  (`/opt/pw-browsers/…`). Na máquina local, `CHROMIUM_PATH=$(node -e
+  "console.log(require('@playwright/test').chromium.executablePath())")`.
+
+## A tela de entrar virou duas metades (09/09/2026)
+
+- **Três camadas apagando a mesma foto.** O login tinha `opacity-50` +
+  `mix-blend-overlay` + um véu `bg-fundo/70` por cima: 757 KB de imagem para
+  entregar um fundo cinza com sombra de prédio. Agora é split — foto inteira
+  em metade da tela com UM gradiente que existe só para o texto ter contraste,
+  cartão de entrada na outra; no celular, faixa de 34svh e o cartão subindo
+  `-mt-8` para encostar nela.
+- **Sobre foto, cor de TEMA não vale**, e eu escrevi isso no comentário e
+  mordi a pedra três linhas abaixo: o "Home" do logotipo continuou em
+  `text-acento-suave`, que no tema claro é escuro, e sumia dentro do prédio.
+  Só a captura no tema CLARO mostrou. Tinta sobre imagem fixa tem de ser fixa
+  (`brand-200`), como já era o véu em `black/…`.
+- **Não há link de "esqueci minha senha" porque não há esse fluxo** — quem
+  redefine é o gestor. Link para lugar nenhum é pior que a ausência dele.
+- O `<Footer />` do site continua aparecendo abaixo do login: é do layout
+  raiz e vale para toda rota. Mexer ali muda o site inteiro — ficou como está.
+
+## Quem se interessa NÃO repete o nome do imóvel (10/09/2026)
+
+Relatado assim: "ele oferece um produto, o cliente se interessa e faz
+perguntas sobre o imóvel, e ele tenta redirecionar para outro em vez de
+tentar vender o que o cliente já gostou". Estava certo, e a causa é
+estrutural.
+
+- **O foco só nascia do nome dito pelo CLIENTE, e ninguém repete o nome de
+  quem acabou de falar.** Quem gosta responde "essa tá massa", "gostei",
+  "quantos quartos tem?" — sem nome, `detectarFoco` devolvia `null`, o
+  catálogo do prompt voltava aos DEZ e vale a lição de sempre: **o que ela
+  vê, ela oferece**. Medido num export de 45 dias (5.744 mensagens, 153
+  respostas do bot a uma fala do cliente): **31 respostas estavam sem foco
+  embora a IA já tivesse oferecido um imóvel**. Hoje é 1, e a cobertura de
+  foco subiu de 81 para 107 das 153.
+- **O caso inteiro numa linha, de 19/08**: a IA oferece o Bosque AlphaGran, o
+  cliente responde *"Essa tá massa"*, e a resposta seguinte pede o perfil
+  dele e cita Vitra e Eternity.
+- **A trava antiga ("só a fala do cliente define o foco") não foi desfeita —
+  foi lida direito.** Ela existe para o foco não se realimentar do que a
+  própria IA empurrou, e isso continua valendo onde importa: fala com DOIS
+  ou mais imóveis não vira foco nenhum (é o desfile) e ainda APAGA a oferta
+  anterior — voltou a vitrine, acabou o imóvel escolhido. O que passa a
+  contar é o COMPROMISSO: uma fala da IA com UM imóvel só. E ela é a fonte
+  mais fraca: o nome dito pelo cliente, agora ou antes, sempre vence.
+- **Duas saídas cancelam o foco da oferta, e as duas dizem a mesma coisa:**
+  recusa dita ("não gostei") e recusa em forma de pedido ("tem outra
+  opção?"). A segunda reusa `pediuOutraOpcao` de `jogada.ts` em vez de uma
+  segunda lista — duas cópias da régua fariam foco e jogada discordarem
+  sobre o que o cliente pediu.
+- **De graça, a pergunta volta a ser respondida.** `dadoPedido` só responde
+  dado de imóvel QUANDO HÁ FOCO ("sem foco, só preço responde"). Sem foco,
+  "quantos quartos tem?" não virava dado nenhum, o planner caía no funil e
+  devolvia "pronto para morar ou na planta?" — que, do lado do cliente, é a
+  mesma queixa com outra roupa.
+- **Dar mais poder a um detector encarece os falsos positivos que ele já
+  tinha.** "Que bom que" está a UMA letra de "bosque", e é a abertura mais
+  comum da assistente: com a oferta valendo como foco, toda mensagem
+  carinhosa dela viraria uma oferta do Bosque AlphaGran. O conserto é geral
+  e já valia antes — **preposição e conjunção não FECHAM um nome**, do mesmo
+  jeito que já não o abriam (`ABRE_FRASE`).
+- **A nota de auditoria do anexo (clipe + título + url) não é fala.** Contá-la
+  faria a FOTO de um imóvel parecer OFERTA dele, e uma resposta com duas
+  fotos viraria "desfile" sem a IA ter citado dois nomes.
+- **Faltava um PERFIL de trace, e era justamente este.** Havia adversarial,
+  cooperativo e objeção; nenhum exercitava o cliente que se interessa pelo
+  imóvel oferecido — nos três, o imóvel é pano de fundo.
+  `scripts/traces/traceInteressado.ts` imprime o par (foco, jogada) turno a
+  turno, custa zero, e foi ele que mostrou "gostei mesmo, fica onde?" caindo
+  no funil: o regex de endereço conhecia "onde fica" e não "fica onde". **A
+  ordem das palavras não pode decidir se a pergunta é respondida.**
+- **`scripts/traces/medirFoco.ts` mede isso em conversa REAL**, sem LLM, a
+  partir de um export de `whatsapp_mensagens` — é dele que saem os números
+  acima, e é ele que diz se a próxima mudança de foco andou para frente.
+- **Ainda em aberto, de propósito**: "quero ver ao vivo" devolve
+  `devolver_escolha`. Aceitar o convite não é pedir a hora, e a régua da casa
+  (v8) manda o horário concreto vir só depois do funil. É decisão de produto,
+  não defeito.
+
+## Quanto contexto a IA REALMENTE tem (medido em 10/09/2026)
+
+Pergunta do usuário: "parece que ela quase não tem contexto". A resposta não
+sai de ler código — sai de reconstruir, sobre a conversa de verdade, o que
+chega ao prompt (`scripts/traces/medirContexto.ts`, zero chamada de LLM).
+
+São SETE camadas: histórico cru (`historicoRecente`, **20** mensagens),
+rajada, dossiê (`lead_observacoes_ia`), few-shot (`recuperacao.ts`), foco
+(`focoDaConversa.ts`), estado do funil (`jogada.ts`) e mídias já enviadas. E
+três buracos, sobre 25 conversas atendidas / 5.744 mensagens:
+
+- **93% das mensagens ficam FORA da janela de 20** (5.337 de 5.744). Para a
+  mediana isso não importa (metade das conversas tem 2 mensagens), mas 14
+  conversas passam de 20 — e são justamente as que estavam indo bem.
+- **44% do que entra na janela é fala do CORRETOR** (140 de 315). A instância
+  roda no WhatsApp PESSOAL dele: numa conversa longa, a janela da IA é ocupada
+  pela conversa humana, não pelo atendimento.
+- **32% das falas do cliente estão gravadas EM BRANCO** — 1.007 de 3.181, em
+  10 conversas que o bot atende. Causa: a regra de privacidade de 01/09 está
+  certa, mas ninguém previu o VAIVÉM. `decidirPorFalaDoCorretor` RETRAVA a
+  conversa a cada fala do corretor que não é a palavra-chave, e ele manda ~373
+  por semana do próprio celular; enquanto travada, tudo que o cliente escreve
+  vira `[mensagem não gravada]`, para sempre. Quando destrava, a IA lê um
+  histórico furado — e furado de um lado só, porque a fala do BOT nunca fica
+  em branco (ele só fala liberado). Numa conversa, 53 de 209; noutra, **14 de
+  21**. As cinco conversas com mais respostas do bot e `cliente_conhecido =
+  false` estão todas retravadas hoje, e todas têm lead no CRM.
+- **A marca ainda OCUPA lugar no prompt**: 88 das 315 falas medidas eram o
+  próprio texto "[mensagem não gravada …]". Ela gasta linha da janela de 20 e
+  não ensina nada.
+
+E a memória longa, que deveria sobreviver à janela, **se apaga sozinha**:
+`salvarDossie` faz `upsert` com TODAS as colunas, e a extração só enxerga as
+mesmas 20 mensagens — quando o assunto sai da janela o campo volta `null` e o
+upsert sobrescreve o que o cliente já tinha dito. `leads` tem a guarda contra
+null (foi escrita para a renda e o orçamento); `lead_observacoes_ia` **não
+tem**. Estado hoje: **16 dossiês para 131 leads**, com orçamento 0/16, forma
+de pagamento 0/16 e perfil familiar 1/16.
+
+**A régua que fica**: ao medir "a IA não tem contexto", não olhe o tamanho da
+janela — olhe QUEM ocupa a janela e se o que está lá tem texto.
+
+## O consultor imobiliário (0101-0102, 09/09/2026)
+
+Chat no painel que responde "qual imóvel serve para esta pessoa?" e "isso
+fecha?". Nota completa em `vault/10-notas/consultor-imobiliario-no-painel.md`.
+
+- **O preço ENTRA no prompt deste chat, e isso precisa estar escrito.** Quem
+  lê é o CORRETOR; `semValores.ts` protege a conversa com o cliente e não vale
+  nesta superfície. Está no código e em teste para ninguém "consertar" depois.
+- **O guardrail cortava a frase CERTA, por dois motivos, e só a TRANSCRIÇÃO
+  mostrou.** (1) O extrator lia **"350 mil" como 350**, comparava com os
+  350.000 do bloco e cortava a frase inteira — ninguém escreve "R$ 350.000,00"
+  numa conversa. (2) Os números que o **corretor acabou de dar** (renda,
+  entrada, FGTS, valor) não estavam nos permitidos, então repetir o que ele
+  disse era tratado como invenção. **Sexta vez que uma régua desta base
+  reprovaria o comportamento certo**, e nenhum caso escrito à mão usava a
+  forma que gente usa. Ler transcrição não é o que se faz quando falta
+  medição: é medição de outro tipo.
+- **Numa alternação de regex, `milh…` vem ANTES de `mil`** — senão "milhão"
+  casa como "mil" e a escala sai mil vezes menor. Mordeu depois do primeiro
+  conserto, com um teste passando pelo motivo errado.
+- **A taxa mensal é a EFETIVA, nunca a anual dividida por 12.** Dividir
+  subestima a parcela e infla o quanto a renda sustenta — o erro que faz a
+  simulação dizer "fecha" para quem não fecha, que é o pior desfecho possível
+  (manda alguém para uma visita que termina em não). E o **FGTS tem teto de
+  VALOR DO IMÓVEL**, não de renda.
+- **O círculo cromático do painel está CHEIO.** Consultor pinta com a cor de
+  Imóveis porque todo matiz livre pelos 40° de separação entre módulos cai em
+  cima da rampa de etapa (248° fica a **4°** de `etapa-contato`) ou encosta em
+  `alerta` (66°). Antes de criar módulo colorido novo, medir o vão — e medir
+  contra a rampa de etapa também, que `verificarPaleta.mjs` NÃO compara.
+- **`marketing` nunca esteve na lista que `verificarPaleta.mjs` checa**, desde
+  que o módulo existe. Entrou junto, e passa em tudo.
+- **`ChatBase` conhecia o vocabulário do Estúdio**, e foi o segundo chat que
+  revelou. O genérico tem de ser a MENSAGEM inteira, não só o `dados`:
+  parametrizar só o vocabulário obriga cada tela a um cast de volta — que é o
+  cast que a generalização veio tirar.
+- **DUAS sessões do Claude editando o mesmo repositório quebram o build.**
+  `MODULE_NOT_FOUND` em `.next/server/app/...` durante o export: dois
+  `next build` no mesmo `.next`, um apagando o que o export worker do outro
+  tenta carregar. Não é o seu código. Diagnóstico: comparar o mtime de
+  `.next/BUILD_ID` com o horário do seu build, e `git status` — arquivo que
+  você não tocou aparecendo como modificado é a pista.
+- **Script Python que escreve TypeScript transforma `\b` em BACKSPACE.** A
+  regex virou `/<BS>mil<BS>/` e nunca casou; dois testes falharam de formas
+  opostas e o código "parecia certo" no `sed`. `cat -A` foi o que mostrou.
+  Usar string crua (`r"..."`) ao gerar regex por script.
+- **`anon` não lê `parametros_credito`, e isso foi provado por acidente**: a
+  primeira sonda fora do Next levou 401 do próprio banco ao tentar ler a
+  tabela com a chave publicável. Segurança conferida sem querer.
