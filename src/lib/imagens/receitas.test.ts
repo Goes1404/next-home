@@ -97,16 +97,29 @@ describe("a cláusula anti-invenção", () => {
    * imagem chega bonita na tela, e só o cliente vê o nome de um
    * empreendimento que não existe.
    */
-  it("a ressalva legal nunca depende do modelo — ela é composta por código", () => {
-    /*
-     * Três em quatro renders literais é ótimo para uma manchete e inaceitável
-     * para um aviso legal. A ressalva de imagem ilustrativa vive em
-     * `marketing.ts` e é desenhada por `compor.ts` com fonte de verdade.
-     */
-    const compor = readFileSync(join(process.cwd(), "src/lib/imagens/compor.ts"), "utf8");
-    expect(compor).toMatch(/RESSALVA/);
+  /*
+   * Reescrita em 10/09/2026, e a metade que importa NÃO mudou.
+   *
+   * `compor.ts` foi apagado junto com o caminho de marketing, que nunca
+   * produziu uma peça (`arte_url` nulo nas 8 gerações da vida inteira). Com
+   * ele saiu o desenho da ressalva por código — e o carimbo que a devolve é
+   * decisão tomada, mas de outra onda.
+   *
+   * O que esta guarda continua travando é a regra que nunca pode cair: a
+   * ressalva legal NÃO se pede ao modelo generativo. Ele acerta o texto
+   * literal 3 em 4 (medido nesta base; 2 em 2 com aspas e soletração, medido
+   * na F0) — ótimo para uma manchete, inaceitável para um aviso legal, onde
+   * uma palavra trocada muda o que a peça está afirmando ao consumidor.
+   *
+   * Enquanto o carimbo não existe, o desfecho correto é a imagem sair SEM
+   * ressalva e o corretor pôr a dele — não uma ressalva aproximada que
+   * parece oficial.
+   */
+  it("a ressalva legal nunca é pedida ao modelo", () => {
     const motor = readFileSync(join(process.cwd(), "src/lib/imagens/gerarImagem.ts"), "utf8");
     expect(motor).not.toMatch(/meramente ilustrativa/i);
+    const rota = readFileSync(join(process.cwd(), "src/app/api/imagens/gerar/route.ts"), "utf8");
+    expect(rota).not.toMatch(/meramente ilustrativa/i);
   });
 
   it("nenhum caminho manda o prompt cru ao provedor", () => {
