@@ -5,7 +5,7 @@ import { gerarRespostaIA, type RespostaAgenteIA } from "./aiAgent";
 import type { AnexoResolvido } from "./resolverMidia";
 import { buscarExemplosFewShot } from "./aprendizadoContinuo";
 import { catalogoParaAtendimento } from "./focoDaConversa";
-import { blocoDaJogada, estadoDaConversa, planejarJogada } from "./jogada";
+import { blocoDaJogada, estadoDaConversa, planejarJogada, type Jogada } from "./jogada";
 import { regrasCondicionais } from "./regrasCondicionais";
 import {
   blocoNaoRepitaHorario,
@@ -126,6 +126,18 @@ export type TurnoDeAtendimento = {
   historicoAnterior: Fala[];
   /** Anexos e slugs que o guardrail recusou. Zero é o esperado. */
   bloqueios: number;
+  /**
+   * A jogada que o planner escolheu para esta mensagem.
+   *
+   * Ela já era calculada aqui e morria aqui. Sai para que a telemetria possa
+   * dizer POR QUE a IA respondeu o que respondeu — e sai DAQUI, não de um
+   * `planejarJogada` chamado de novo lá fora: duas contas da mesma decisão
+   * divergem, e essa divergência já custou uma sessão neste projeto
+   * (`montarResumo`).
+   */
+  jogada: Jogada;
+  /** Quantos exemplos de conversa real entraram no prompt. */
+  fewShot: number;
 };
 
 export async function executarTurnoDeAtendimento(
@@ -249,5 +261,7 @@ export async function executarTurnoDeAtendimento(
     vezDoCliente,
     historicoAnterior,
     bloqueios: saneada.anexosBloqueados + saneada.slugsBloqueados,
+    jogada,
+    fewShot: exemplosFewShot?.length ?? 0,
   };
 }

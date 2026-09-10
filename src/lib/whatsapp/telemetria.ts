@@ -1,6 +1,8 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
+import type { ContextoDaInteracao } from "./contextoDaInteracao";
+import type { Json } from "@/lib/supabase/types";
 
 /**
  * Registro de cada interação da IA (tabela ia_interacoes, migration 0029).
@@ -45,7 +47,28 @@ export type InteracaoIA = {
    * provedores em produção.
    */
   modelo?: string | null;
+  /**
+   * Por que a IA disse isso (0105): foco, jogada, dossiê do momento e a
+   * contagem da janela de histórico.
+   *
+   * Opcional de propósito. Playground, eval e consultor não têm conversa real
+   * para descrever, e forçá-los a inventar um contexto encheria a coluna de
+   * ruído — a mesma regra de `modelo`, que já mentiu duas vezes nesta base
+   * justamente por receber um padrão onde a resposta honesta era nada.
+   */
+  contexto?: ContextoDaInteracao | null;
 };
+
+/**
+ * O `Json` gerado pelo Supabase exige assinatura de índice; o contexto é um
+ * objeto FECHADO, e isso é o que se quer — campo novo lá vira erro de
+ * compilação em quem o lê, em vez de um `any` silencioso. A conversão
+ * acontece uma vez, aqui, na fronteira com o banco, e não vaza para o resto
+ * do código.
+ */
+function comoJson(contexto: ContextoDaInteracao | null): Json | null {
+  return contexto as unknown as Json | null;
+}
 
 export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
   try {
@@ -102,6 +125,7 @@ export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
       temperatura_score: dados.temperaturaScore ?? null,
       tokens_entrada: dados.tokensEntrada ?? null,
       tokens_saida: dados.tokensSaida ?? null,
+      contexto: comoJson(dados.contexto ?? null),
     });
   } catch (err) {
     console.warn("Telemetria de IA falhou (seguindo sem ela):", err);

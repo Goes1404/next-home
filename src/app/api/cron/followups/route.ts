@@ -22,6 +22,7 @@ import {
   motivoDoSilencio,
 } from "@/lib/whatsapp/repositorio";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
+import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
 import { separarRajada } from "@/lib/whatsapp/rajada";
@@ -387,6 +388,13 @@ async function responderAtrasada(
     modelo: turno.resposta.meta.modelo,
     latenciaMs: turno.resposta.meta.latenciaMs,
     fallback: false,
+    contexto: montarContextoDaInteracao({
+      foco: turno.foco,
+      jogada: turno.jogada,
+      dossie,
+      historico: turno.historicoAnterior,
+      fewShot: turno.fewShot,
+    }),
   });
   if (mensagemDoBot.id) await vincularInteracaoNaMensagem(mensagemDoBot.id, interacaoId);
 
@@ -763,6 +771,13 @@ async function processarFollowup(
     acao: "respondida",
     anexosEnviados: 0,
     anexosBloqueados: turno.bloqueios,
+    contexto: montarContextoDaInteracao({
+      foco: turno.foco,
+      jogada: turno.jogada,
+      dossie,
+      historico: turno.historicoAnterior,
+      fewShot: turno.fewShot,
+    }),
   });
 
   await vincularInteracaoNaMensagem(mensagemDoBot.id, interacaoId);

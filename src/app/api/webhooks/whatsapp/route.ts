@@ -6,6 +6,7 @@ import { conversaEhAtendimento } from "@/lib/whatsapp/privacidadeDaConversa";
 import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
+import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
 import { detectarEvolucao, podeAvisarAgora } from "@/lib/whatsapp/evolucaoConversa";
 import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
@@ -883,6 +884,18 @@ export async function POST(req: NextRequest) {
       tokensEntrada: respostaIA.meta.tokensEntrada,
       tokensSaida: respostaIA.meta.tokensSaida,
       modelo: respostaIA.meta.modelo,
+      /*
+       * Por que ela disse isso (0105). O dossiê é o ANTERIOR — o que a IA
+       * tinha na mão — e não o `dossie` reextraído logo acima: julgar com o
+       * de depois seria julgar com informação que ela não tinha.
+       */
+      contexto: montarContextoDaInteracao({
+        foco: turno.foco,
+        jogada: turno.jogada,
+        dossie: dossieAnterior,
+        historico: turno.historicoAnterior,
+        fewShot: turno.fewShot,
+      }),
     });
 
     // Agora a linha de telemetria existe: a FK aceita o vínculo.
