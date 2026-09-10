@@ -17,8 +17,22 @@ const FAIXAS_DORMITORIOS = [
   { valor: "4", label: "4+ dormitórios" },
 ];
 
+/*
+ * O campo tem de PARECER um campo.
+ *
+ * Era `border-linha/10` (uma linha a 1,4% de opacidade no tema claro),
+ * `bg-superficie` — a mesma cor do cartão em volta — e `text-corpo`. Numa
+ * página clara isso vira uma caixa sem borda visível, do tom do fundo, com
+ * o texto em cinza-esverdeado: relatado como "deixe esses três campos
+ * escrito Qualquer escuro, para a pessoa saber que é para selecionar".
+ *
+ * As três coisas que fazem um controle ser reconhecido como controle:
+ * fundo mais claro que o painel (`bg-elevado`, o degrau de cima), borda que
+ * se enxerga (`border-linha-forte`) e o texto no tom de TÍTULO — é ele que
+ * diz "isto aqui tem um valor, e o valor pode mudar".
+ */
 const CAMPO =
-  "w-full appearance-none rounded-xl border border-linha/10 bg-superficie px-3.5 py-2.5 text-sm text-corpo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte";
+  "w-full appearance-none rounded-xl border border-linha-forte bg-elevado px-3.5 py-2.5 text-sm font-medium text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte";
 
 export type FiltroFormProps = {
   filtrosAtuais: FiltrosEmpreendimento;

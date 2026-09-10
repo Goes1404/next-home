@@ -134,7 +134,16 @@ export function GloboOuMapa({
 
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-2xl border border-linha bg-superficie/40 ${alturaClasse}`}
+      /*
+        Painel ESCURO nos dois temas, como o globo e como os tiles do mapa
+        (ver `temaDoMapa.ts`). Com `bg-superficie/40` o quadro ficava claro
+        no tema claro e a esfera escura boiava num vazio pálido — a mesma
+        razão pela qual a própria esfera é escura nos dois temas: o que dá
+        destaque a um artefato geográfico é o contraste com a página, não a
+        combinação com ela. Tinta fixa (`ink-950`, `white/10`) porque este
+        fundo não acompanha o tema.
+      */
+      className={`relative w-full overflow-hidden rounded-2xl border border-white/10 bg-ink-950 ${alturaClasse}`}
     >
       {/*
         O mapa entra POR BAIXO, já montado e voando para o enquadramento

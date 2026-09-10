@@ -5895,3 +5895,17 @@ aprovada e parada — e cujo número (`0103`) já tinha sido tomado por
   3,7:1 — acima dos 4,5 e 3,0 da WCAG, com pouca folga. **O próximo degrau
   de escuro reprova o texto de apoio**, então daqui em diante o que muda é o
   TOM (mais verde, mais quente), não a luz.
+- **Campo que não parece campo** (10/09/2026). Os três selects do herói eram
+  `border-linha/10` (1,4% de opacidade no tema claro), `bg-superficie` — a
+  MESMA cor do cartão em volta — e `text-corpo`: uma caixa sem borda
+  visível, do tom do fundo, com texto cinza-esverdeado. Relatado como
+  "deixe esses três campos escrito Qualquer escuro, para a pessoa saber que
+  é para selecionar". São três coisas juntas que fazem um controle ser
+  reconhecido: fundo mais CLARO que o painel (`bg-elevado`), borda que se
+  enxerga (`border-linha-forte`) e texto no tom de TÍTULO — é ele que diz
+  "isto tem um valor, e o valor pode mudar".
+- **O painel do globo também é escuro nos dois temas.** Escurecer só os
+  tiles do mapa não bastou: o quadro em volta seguia `bg-superficie/40` e,
+  na página clara, a esfera escura boiava num vazio pálido. Mesma regra do
+  mapa e do globo — o que destaca um artefato geográfico é o contraste com
+  a página, não a combinação com ela.
