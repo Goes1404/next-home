@@ -38,9 +38,13 @@ O módulo que deveria consertar isso existe e não funciona, por quatro motivos
 somados:
 
 - **`engenheiroDePrompt.ts` devolve `promptEn` (o que é enviado) e
-  `explicacaoPt` (uma paráfrase que o corretor lê).** Ele aprova no escuro.
-- **Não existe editar.** O fluxo é perguntas → proposta → "Gerar assim". Não
-  há caminho para mudar uma palavra do prompt melhorado.
+  `explicacaoPt` (uma paráfrase que o corretor lê).**
+- **A intenção estava certa e a execução falhou nas duas pontas.** O prompt
+  final *é* mostrado na tela — o comentário do `ChatDeArte.tsx` diz "esconder
+  do corretor seria tirar dele a chance de corrigir". Só que ele aparece **em
+  inglês**, dentro de um `<p>` que **não é editável**. Dar a chance de
+  corrigir num idioma que ele não escreve, num elemento onde não se digita, é
+  o mesmo que não dar.
 - **`/api/imagens/melhorar` não tem chamador nenhum na UI.** O módulo
   `melhorarPedido.ts` existe, é testado, e nenhum `.tsx` o chama. Nono caso de
   "construído e nunca ligado".
@@ -70,6 +74,29 @@ em português → gera**. Sem templates, sem layout pré-definido, sem briefing.
 | Carimbo de logo/telefone/ressalva | Botão **opcional** no fim, por código. Sem layout. |
 | Trocar a foto de referência | Faixa com as fotos do imóvel, trocável a qualquer momento. |
 | "Saída esperada" | Segundo anexo, papel de **estilo**, com o papel dito no prompt. |
+| O prompt depois de gerar | **Fica visível no histórico, com botão de reaproveitar.** |
+
+## O prompt é ativo, não registro
+
+`imagens_geradas.prompt` é gravado desde sempre e **nenhuma tela o mostra**: o
+histórico são 8 miniaturas com `alt=""`. Décimo caso do padrão que esta base
+já registrou nove vezes — dado guardado e não exibido é indistinguível de dado
+perdido.
+
+Com o tradutor, esse campo deixa de ser log e vira o ativo mais valioso da
+tela: é a receita que funcionou. O histórico passa a mostrar o prompt de cada
+arte com **"gerar outra assim"**, que reabre o turno com aquele texto já no
+campo editável — "igual, mas de noite" custa uma edição, não uma conversa
+inteira do zero.
+
+Duas consequências de desenho:
+
+- **O que se guarda é o prompt APROVADO, não o que a LLM propôs.** Se o
+  corretor editou, o que gerou a imagem foi a versão dele — e é essa que ele
+  vai querer de volta.
+- **Reaproveitar não regenera sozinho.** Cai no mesmo portão de sempre: texto
+  no campo, ele lê, ajusta, aprova. Um botão que gera direto do histórico
+  seria a única porta do sistema que pula a revisão.
 
 ## O que a API de fato aceita (sondado, custo zero)
 
