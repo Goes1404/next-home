@@ -11,7 +11,7 @@ import {
 /**
  * O diretor de criação — a IA com rubrica, não a IA solta.
  *
- * O `melhorarPedido` reescrevia "sala moderna" em parágrafo bonito. Bonito e
+ * O antigo `melhorarPedido` (removido em 10/09) reescrevia "sala moderna" em parágrafo bonito. Bonito e
  * GENÉRICO, porque não sabia de que imóvel se tratava, para quem, nem onde a
  * peça ia ser vista. Aqui a IA recebe o briefing já decidido pelo código
  * (`montarBriefing`) e faz só o que exige linguagem: escrever a cena com

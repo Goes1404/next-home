@@ -25,7 +25,7 @@ import { REGRAS_DE_PLANO, type TipoDePlano } from "./gramatica";
  * Sem chave, com timeout ou com JSON torto, cai numa heurística de ORDEM:
  * corretor põe a fachada primeiro quase sempre, e alternar depois é melhor que
  * marcar tudo como interior. Vídeo com movimento imperfeito é melhor que vídeo
- * nenhum — a mesma escolha do `melhorarPedido`.
+ * nenhum — a mesma escolha do `tradutor`, que degrada em vez de bloquear.
  */
 
 const BASE_URL = "https://api.openai.com/v1/chat/completions";

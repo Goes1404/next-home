@@ -15,9 +15,9 @@ import { receitaPor, type Receita } from "./receitas";
  * de LED quente virada para a TV; decidido, saiu luz do dia com vista urbana.
  *
  * Perguntar custa dois toques e evita uma geração descartada — que custa do
- * teto diário. Por isso este passo NÃO consome cota, pela mesma razão que
- * `melhorarPedido` não consome: o passo que evita o desperdício não pode ser
- * o passo que custa.
+ * teto diário. Por isso este passo NÃO consome cota, pela mesma razão que o
+ * `tradutor` não consome: o passo que evita o desperdício não pode ser o
+ * passo que custa.
  *
  * ## Por que a espinha continua fora daqui
  *
@@ -198,7 +198,7 @@ Responda apenas com JSON: {"prompt_en":"...","explicacao_pt":"..."}`;
   const promptEn = limpar(j.prompt_en);
   const explicacaoPt = limpar(j.explicacao_pt);
 
-  // Piso de tamanho pelo mesmo motivo de `textoDoJson` em melhorarPedido:
+  // Piso de tamanho pelo mesmo motivo de `textoDoJson` no `tradutor`:
   // substituir o pedido da pessoa por duas palavras é pior que não ter tentado.
   if (promptEn.length < 60) return reserva;
 
