@@ -12,6 +12,7 @@ import { Camada } from "@/components/motion/Camada";
 import { ParallaxFundoHome } from "@/components/motion/ParallaxFundoHome";
 import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { Reveal } from "@/components/motion/Reveal";
+import { NumeroQueConta } from "@/components/motion/NumeroQueConta";
 import { ScrollCue } from "@/components/home/ScrollCue";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
@@ -203,8 +204,8 @@ export default async function HomeInstitucional() {
               de rolagem, atrás de três cards institucionais. Numa imobiliária
               o produto é a foto do imóvel — ela abre o conteúdo. */}
           {destaques.length > 0 && (
-            <section id="destaques" className="scroll-mt-24 px-4 pb-24 sm:px-8 sm:pb-28">
-              <div className="mx-auto w-full max-w-5xl">
+            <section id="destaques" className="scroll-mt-24 px-4 pb-16 sm:px-8 sm:pb-24">
+              <div className="mx-auto w-full max-w-6xl">
                 {/* O rótulo acima do título passou a CONTAR (09/09/2026).
                     "Selecionados" em versalete não dizia nada que o título já
                     não dissesse — era decoração com aparência de estrutura, e
@@ -243,10 +244,38 @@ export default async function HomeInstitucional() {
             </section>
           )}
 
+          {/*
+            A FAIXA DE PROVA. Numa imobiliária a moeda é confiança, e a home
+            não trazia nenhum número verificável — só promessa em prosa.
+
+            Todos os quatro saem do banco nesta requisição (nenhuma consulta
+            nova): estoque publicado, alcance geográfico e quantas pessoas com
+            registro atendem. Se um dia o catálogo encolher, o número encolhe
+            junto — é isso que o separa de um "+500 clientes felizes", que
+            ninguém pode conferir e que este site não vai ter.
+          */}
+          <Reveal className="px-4 sm:px-8">
+            <div className="border-linha/60 mx-auto grid w-full max-w-6xl grid-cols-2 gap-px overflow-hidden rounded-2xl border bg-linha/60 sm:grid-cols-4">
+              {[
+                { valor: todos.length, rotulo: todos.length === 1 ? "imóvel no catálogo" : "imóveis no catálogo" },
+                { valor: regioes.bairros.length, rotulo: "bairros atendidos" },
+                { valor: regioes.cidades.length, rotulo: regioes.cidades.length === 1 ? "cidade" : "cidades" },
+                { valor: corretores.length, rotulo: "com CRECI ativo" },
+              ].map((n) => (
+                <div key={n.rotulo} className="bg-fundo px-5 py-7 text-center sm:py-8">
+                  <p className="font-display text-titulo text-4xl font-bold tabular-nums sm:text-5xl">
+                    <NumeroQueConta valor={n.valor} />
+                  </p>
+                  <p className="text-fluid-xs text-apoio mt-1.5 text-pretty">{n.rotulo}</p>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+
           {/* Regioes é compartilhado com o portfólio do corretor — a banda vem
               do embrulho, não de dentro do componente. */}
-          <div className="bg-superficie/40">
-            <Regioes />
+          <div className="bg-superficie/40 mt-16 sm:mt-24">
+            <Regioes catalogo={todos} />
           </div>
 
           {/* Mapa geral: todos os imóveis com pin de localização; o clique
@@ -292,7 +321,7 @@ export default async function HomeInstitucional() {
 
           {equipe.length > 0 && (
             <section className="bg-superficie/40 px-4 py-16 sm:px-8 sm:py-24">
-              <div className="mx-auto w-full max-w-4xl">
+              <div className="mx-auto w-full max-w-6xl">
                 <p className="text-fluid-xs text-apoio mb-3">
                   <span className="text-acento-suave font-semibold tabular-nums">
                     {corretores.length}
@@ -329,12 +358,72 @@ export default async function HomeInstitucional() {
             </section>
           )}
 
+          {/*
+            COMO FUNCIONA. A home explicava o que a Next Home tem (imóveis,
+            regiões, equipe) e nunca o que ACONTECE depois do clique — quem
+            chega pelo Google não sabe se vai cair num formulário, numa
+            ligação ou numa fila.
+
+            Numerado porque isto é de fato uma SEQUÊNCIA: um passo depende do
+            anterior. Numeração em conteúdo que não é sequência vira enfeite,
+            e é justamente onde ela costuma aparecer sem razão.
+
+            Os três passos descrevem o produto que existe hoje: o filtro do
+            herói, o WhatsApp direto (sem formulário, é a decisão de sempre
+            desta casa) e a visita marcada pela agenda do corretor.
+          */}
+          <section className="px-4 py-16 sm:px-8 sm:py-24">
+            <div className="mx-auto w-full max-w-6xl">
+              <p className="text-fluid-xs text-apoio mb-3">Três passos, sem formulário</p>
+              <TituloEditorial className="text-fluid-2xl text-titulo">
+                Do primeiro clique à visita
+              </TituloEditorial>
+
+              <ol className="mt-8 grid gap-4 sm:grid-cols-3">
+                {[
+                  {
+                    titulo: "Escolha o imóvel",
+                    texto:
+                      "Filtre por tipo, cidade e valor. Cada ficha traz fotos, plantas, lazer e o mapa da região.",
+                  },
+                  {
+                    titulo: "Fale no WhatsApp",
+                    texto:
+                      "Sem formulário e sem espera: o botão abre a conversa com um corretor da equipe, com CRECI.",
+                  },
+                  {
+                    titulo: "Visite",
+                    texto:
+                      "A gente marca no horário que o corretor de fato tem livre — e confirma a data com você.",
+                  },
+                ].map((passo, i) => (
+                  <Reveal key={passo.titulo} delay={i * 0.1} from="baixo">
+                    <li className="border-linha bg-superficie/50 h-full rounded-2xl border p-5">
+                      <span
+                        aria-hidden
+                        className="border-acento-linha text-acento-suave font-display flex size-9 items-center justify-center rounded-full border text-sm font-bold tabular-nums"
+                      >
+                        {i + 1}
+                      </span>
+                      <h3 className="font-display text-titulo mt-4 text-lg">{passo.titulo}</h3>
+                      <p className="text-fluid-sm text-apoio mt-2 text-pretty">{passo.texto}</p>
+                    </li>
+                  </Reveal>
+                ))}
+              </ol>
+            </div>
+          </section>
+
           {/* A porta do vendedor — única rota da home para /anunciar-imovel. */}
-          <section className="px-4 py-16 sm:px-8 sm:py-20">
+          <section className="px-4 py-16 sm:px-8 sm:py-24">
             {/* CartaoTilt no lugar do Reveal: ele traz o brilho que segue o
                 ponteiro e já faz a própria entrada. Somar o Reveal daria dois
-                donos da opacidade. */}
-            <CartaoTilt indice={0} className="rounded-glass mx-auto w-full max-w-4xl">
+                donos da opacidade.
+
+                `max-w-6xl` como o resto: até 09/09 esta seção era 4xl e a
+                caixa nascia 128px mais para dentro que a de cima — a margem
+                esquerda da página PULAVA a cada rolagem. */}
+            <CartaoTilt indice={0} className="rounded-glass mx-auto w-full max-w-6xl">
               <Link href={VENDEDOR.href} className="rounded-glass block">
                 <GlassSurface preset="card" className="group flex flex-col gap-4 px-6 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-10">
                   <div>

@@ -5254,3 +5254,58 @@ Detalhe em `docs/medicoes/2026-09-10-f0-imagem.md`.
 - **Sondar a API sem gerar custa zero**: mandar o pedido com uma sentinela
   inválida num campo de validação conhecida (`quality=ZZZ`) e ler de qual campo
   ela reclama. `size` é validado antes de tudo e mascara o resto.
+
+## A margem que pulava, e o que faltava de CONTEÚDO na home (10/09/2026)
+
+- **Seções irmãs com quatro larguras de caixa diferentes.** Medido no código:
+  `max-w-5xl` nos destaques, `6xl` no mapa, `4xl` nos corretores e no cartão
+  do vendedor, `3xl` no componente de regiões. A margem esquerda do conteúdo
+  PULAVA a cada seção rolada — é o "tipo margem" relatado. Uma largura só
+  (`max-w-6xl`) e um ritmo vertical só (`py-16 sm:py-24`) resolvem; a leitura
+  estreita, quando precisa, vira `max-w-xl` no PARÁGRAFO, nunca na caixa da
+  seção, senão o título anda junto.
+- **`Regioes` ainda não tinha `sm:px-8`** como as vizinhas: no tablet a
+  margem lateral dela era metade da das outras.
+- **Três imóveis abriam o conteúdo, e três é uma fileira só.** Numa
+  imobiliária o produto é a foto: passaram a seis, que fecham duas fileiras no
+  computador e continuam empilhando no celular. Zero mecanismo novo — a grade
+  já era responsiva.
+- **A home não tinha NENHUM número verificável.** Ganhou a faixa de prova com
+  quatro que saem do banco na mesma requisição (estoque, bairros, cidades,
+  corretores com CRECI). A régua: número que encolhe quando a realidade
+  encolhe. "+500 clientes felizes" é o oposto disso e não entra.
+- **E não dizia o que ACONTECE depois do clique.** "Do primeiro clique à
+  visita" descreve o produto real: filtro, WhatsApp sem formulário, visita na
+  agenda do corretor. Numerado porque é uma sequência de verdade — numeração
+  em conteúdo que não é sequência é enfeite, e é onde ela costuma aparecer.
+
+## As regiões saíram de chip para página (10/09/2026)
+
+- **Dois dos cinco chips prometiam uma região e entregavam o catálogo
+  inteiro.** "Santana de Parnaíba" e "Itapevi" apontavam para
+  `/empreendimentos` sem filtro porque não havia cadastro nelas — e o
+  comentário do arquivo dizia isso em voz alta, como se fosse aceitável. Quem
+  clica não descobre que a região está vazia: ele acha que o filtro quebrou.
+  Agora a região é DERIVADA do catálogo (`lib/regioes.ts`): região sem imóvel
+  some da tela e devolve 404 na própria página, por construção.
+- **Região não é bairro, e a diferença é a que decide se há conteúdo.** A
+  medição que descarta página por bairro continua valendo (~25 imóveis em 18
+  bairros, a maioria com um). O agrupamento que TEM inventário é Alphaville,
+  Barueri, Aldeia e as cidades — seis rotas, não dezoito.
+- **Alphaville e Aldeia contam DENTRO de Barueri, de propósito.** Quem procura
+  "Alphaville" e quem procura "Barueri" fazem buscas diferentes e as duas
+  precisam achar o imóvel. O cartão mostra a contagem de cada recorte, então
+  nada é afirmado a mais.
+- **A capa do cartão de região sai de `galeria[0]`, nunca de `capa`.**
+  `mapEmpreendimento` devolve o logotipo da casa quando não há foto (ver
+  `capa-de-empreendimento-nunca-e-nula`), e cartão de região com o logotipo
+  esticado é pior que cartão sem foto.
+- **Rota nova só vale com o sitemap junto.** As seis regiões entraram em
+  `sitemap.ts` — e só as que têm estoque: sitemap apontando para 404 é o jeito
+  mais rápido de o Google desconfiar do arquivo inteiro.
+- **`NumeroQueConta`**: o único movimento não pedido da home, e ele PARA. Uma
+  vez por carga, `IntersectionObserver` (não laço de scroll), 900ms, nenhum
+  timer vivo depois. O valor final vem no HTML do servidor e a contagem só
+  rola por cima — sem JS, com movimento reduzido ou em leitor de tela, o
+  número certo já está lá. Abaixo de 4 não conta: de 0 a 3 é piscada, não
+  animação.

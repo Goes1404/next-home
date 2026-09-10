@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { getCorretores, getSlugsEmpreendimentos } from "@/lib/queries";
+import { getCorretores, getEmpreendimentos, getSlugsEmpreendimentos } from "@/lib/queries";
+import { regioesComEstoque } from "@/lib/regioes";
 import { site } from "@/lib/site";
 
 /** Revalida junto com o conteúdo: um lançamento novo entra no sitemap em 5 min. */
@@ -14,10 +15,18 @@ const url = (caminho: string) => `${site.url}${caminho}`;
  * institucional, e as duas competiriam pela mesma intenção de busca.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [slugs, corretores] = await Promise.all([
+  const [slugs, corretores, catalogo] = await Promise.all([
     getSlugsEmpreendimentos(),
     getCorretores(),
+    getEmpreendimentos(),
   ]);
+
+  /*
+   * Só as regiões COM imóvel entram. `regioesComEstoque` já filtra as vazias,
+   * e a página delas devolve 404 — sitemap apontando para 404 é o jeito mais
+   * rápido de o Google desconfiar do resto do arquivo.
+   */
+  const regioes = regioesComEstoque(catalogo);
 
   const agora = new Date();
 
@@ -37,6 +46,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     })),
 
+    ...regioes.map((r) => ({
+      url: url(`/regioes/${r.slug}`),
+      lastModified: agora,
+      changeFrequency: "weekly" as const,
+      // Acima de /sobre e /contato: é página de ESTOQUE, com intenção de
+      // busca real ("apartamento em Alphaville"), e abaixo da listagem geral.
+      priority: 0.8,
+    })),
     ...corretores.map((c) => ({
       url: url(`/corretores/${c.slug}`),
       lastModified: agora,

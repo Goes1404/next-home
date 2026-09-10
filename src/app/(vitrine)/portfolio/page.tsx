@@ -168,7 +168,7 @@ export default async function Home() {
           </Reveal>
         </section>
 
-        <Regioes />
+        <Regioes catalogo={todos} />
 
         <CtaFinal />
       </main>
