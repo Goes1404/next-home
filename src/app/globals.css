@@ -161,6 +161,30 @@
 
   /*
    * ---------------------------------------------------------------------
+   * REALCE — o azul do logotipo, a segunda cor da marca
+   * ---------------------------------------------------------------------
+   * A paleta nasceu do logotipo com DUAS cores (ver o topo deste arquivo):
+   * teal petróleo em "Next" e na casa, azul #034B8E em "Home". A escala
+   * `azure` existe desde o começo — e o site inteiro foi construído usando
+   * só a metade verde. Daí a leitura de quem abre: "está só preto e verde".
+   *
+   * `realce` é essa metade esquecida virando papel, para o azul poder ser
+   * usado sem ninguém precisar escolher um degrau da escala à mão: no claro
+   * é o azul cheio do logotipo (8,2:1 sobre a página), no escuro sobe para
+   * o `azure-300`, que ainda passa em AA (6,0:1) sobre o quase-preto.
+   *
+   * Ele NÃO compete com a rampa de etapa do funil, que também mora no azul:
+   * etapa é vocabulário do PAINEL e nunca aparece no site público, e realce
+   * é o contrário. As duas famílias não se encontram em tela nenhuma.
+   */
+  --color-realce: light-dark(#034b8e, #5695d3);
+  --color-realce-suave: light-dark(#023a6f, #8fb9e3);
+  --color-realce-lavado: light-dark(rgb(3 75 142 / 0.08), rgb(86 149 211 / 0.16));
+  --color-realce-linha: light-dark(rgb(3 75 142 / 0.3), rgb(86 149 211 / 0.34));
+
+
+  /*
+   * ---------------------------------------------------------------------
    * Cores de MÓDULO do CRM
    * ---------------------------------------------------------------------
    * Cinco matizes para as cinco áreas do painel. São TINTA, não papel: a
@@ -1174,6 +1198,49 @@
     .menu-item {
       animation: none;
     }
+  }
+
+  /*
+   * A onda entre páginas (ver components/motion/OndaDeTransicao.tsx).
+   *
+   * Sobe de baixo, cobre a tela por um instante e sai por cima. A pausa no
+   * meio é o que faz a peça ser lida como uma onda que PASSA, e não como um
+   * piscar: sem ela, entrar e sair viram o mesmo movimento e o olho só
+   * registra um borrão.
+   *
+   * ## A conta da cobertura, que a primeira versão errou
+   *
+   * A caixa cobrir a tela NÃO é a peça cobrir a tela: o desenho tem as duas
+   * bordas onduladas, então a área pintada começa depois da crista. Na
+   * primeira versão (140svh, parando em 0%) a caixa media "cobre" e a
+   * captura mostrava o header aparecendo por cima do vazio acima da onda —
+   * medir aprovou, olhar reprovou.
+   *
+   * A conta certa usa o ponto mais BAIXO da crista de cima (23% da altura
+   * do desenho) e o mais ALTO da onda de baixo (77%):
+   *   topo + 0,23·h ≤ 0        e        topo + 0,77·h ≥ altura da tela
+   * Com h = 200svh isso dá topo entre -54svh e -46svh; -50svh (ou seja,
+   * -25% de 200svh) fica no meio da faixa e sobra folga para a barra de
+   * endereço do celular entrar e sair.
+   */
+  @keyframes onda-passa {
+    0% {
+      transform: translate3d(0, 50%, 0);
+    }
+    42% {
+      transform: translate3d(0, -25%, 0);
+    }
+    58% {
+      transform: translate3d(0, -25%, 0);
+    }
+    100% {
+      transform: translate3d(0, -110%, 0);
+    }
+  }
+
+  .onda-transicao {
+    animation: onda-passa 900ms cubic-bezier(0.65, 0, 0.35, 1) both;
+    will-change: transform;
   }
 
   .edge-fade-b {

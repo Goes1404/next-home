@@ -28,6 +28,9 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[conteudo-do-site-regras]]
 - [[seo-a-regua-de-titulo]]
 
+## Cor e movimento
+- [[a-paleta-tinha-duas-cores-e-o-site-usava-uma]]
+
 ## Estrutura das páginas
 - [[pagina-institucional-tem-uma-casca-so]]
 

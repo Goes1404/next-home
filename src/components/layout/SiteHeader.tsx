@@ -22,7 +22,7 @@ export function SiteHeader() {
           href="/"
           className="font-display shrink-0 text-lg leading-none font-medium tracking-tight whitespace-nowrap text-titulo"
         >
-          Next<span className="text-acento-forte">Home</span>
+          Next<span className="text-realce">Home</span>
         </Link>
 
         <ul className="hidden items-center gap-6 text-sm text-corpo sm:flex">

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Alex_Brush, Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
 import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
 import { Footer } from "@/components/layout/Footer";
+import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { site } from "@/lib/site";
 import { COR_DA_BARRA, getTemaEscolhido } from "@/lib/tema";
@@ -167,6 +168,13 @@ export default async function RootLayout({
         />
         <GlassSvgDefs />
         <SmoothScroll />
+        {/* A onda entre páginas mora AQUI, e não nos layouts de grupo: ir da
+            home para o catálogo troca de grupo de rota, o layout inteiro é
+            desmontado e um componente que compara "caminho anterior" nasce
+            sem passado — foi exatamente assim que a primeira versão não
+            disparou nenhuma vez. O layout raiz é o único que sobrevive a
+            toda navegação. Ele mesmo decide onde não aparecer. */}
+        <OndaDeTransicao />
         {children}
         <Footer />
       </body>

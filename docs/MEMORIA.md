@@ -5586,3 +5586,58 @@ Nota: [[uma-piscada-do-banco-derrubava-a-home]].
   senha à mostra na tela de quem está ao lado. E o Edge desenha um olho
   PRÓPRIO em `input[type=password]` (`::-ms-reveal`) — sem escondê-lo no
   `globals.css` aparecem dois.
+
+## A paleta tinha DUAS cores desde sempre, e o site usava uma (10/09/2026)
+
+Relatado como "o site está só com a cor preta e verde; coloque cores que
+combinem com a logo".
+
+- **O logotipo é teal + AZUL** — o cabeçalho do `globals.css` diz isso desde
+  o primeiro dia ("teal petróleo #00594F na casa e em Next, azul #034B8E em
+  Home"), a escala `azure` existe inteira, e o site inteiro foi construído
+  com a metade verde. Até o wordmark na tela escrevia "Home" em verde. Não
+  faltava paleta: faltava USAR a que já havia. `--color-realce` é essa
+  metade virando papel, com `light-dark()` (azul cheio no claro, `azure-300`
+  no escuro — 8,8:1 e 5,3:1, medidos).
+- **Token de `@theme` que nenhuma classe usa é REMOVIDO pelo Tailwind**, e a
+  sonda da guarda de paleta então o lê como transparente: 1,00:1 contra a
+  superfície. Foi assim que um `--color-quente` criado sem consumidor foi
+  pego antes de subir — e apagado, porque token sem uso é a mesma dívida de
+  "construído e nunca ligado". **Ao criar token, criar o consumidor junto.**
+- **A guarda de paleta media contraste de uma lista FIXA de tokens**, e pôr
+  o token novo em `TOKENS` só o fazia ser lido, não conferido: critério
+  decorativo, o defeito recorrente daqui. Agora há uma seção "cores da
+  marca" que mede `realce` nos três temas — provocada com um azul escuro
+  demais (1,01:1, FALHA) antes de valer.
+- **Cor que INFORMA espalha paleta sem virar enfeite:** o selo de estágio da
+  obra é o elemento colorido mais repetido do site (todo cartão, todo herói,
+  o cartão do mapa) e passou a ter a cor do estágio — azul para o que ainda
+  vai sair, verde para o que está pronto, areia para "últimas unidades".
+  Quatro grupos para seis estágios: seis tons num selo de 11px ninguém
+  distingue, e estágios que significam o mesmo para quem compra dividem a
+  mesma cor. Tinta fixa, nunca token de tema: o selo flutua sobre a foto.
+
+## A onda entre páginas, e a cobertura que a medição aprovou errado
+
+- **Ela é uma REVELAÇÃO, não uma cortina.** Dispara quando o caminho muda —
+  ou seja, com a página nova já montada — então varre a tela e descobre o
+  conteúdo novo. Fazer as duas metades exigiria interceptar o clique de todo
+  link do site, e um caso esquecido (tecla modificadora, `target=_blank`,
+  âncora, link externo) quebraria a navegação inteira. Este componente não
+  intercepta nada: se falhar, o site navega igual.
+- **Layout de GRUPO não sobrevive à travessia entre grupos.** A primeira
+  versão vivia em `(institucional)/layout` e `(vitrine)/layout`; ir da home
+  para o catálogo desmonta o layout e um componente que compara "caminho
+  anterior" renasce sem passado — não disparou uma vez sequer. Só o layout
+  RAIZ sobrevive a toda navegação. Ele mesmo se cala em `/corretor`.
+- **A caixa cobrir a tela não é a peça cobrir a tela.** O desenho tem as
+  duas bordas onduladas, então a área pintada começa depois da crista: a
+  medição dizia `cobre: true` pelo `getBoundingClientRect` da caixa e a
+  CAPTURA mostrava o header por cima do vazio acima da onda. Medir aprovou,
+  olhar reprovou — de novo. A conta certa usa o ponto mais baixo da crista
+  (23% da altura) e o mais alto da onda de baixo (77%); com 200svh o repouso
+  fica em -25%. Hoje a medição lê o `getBoundingClientRect` do PATH, não o
+  da caixa.
+- **Fotografar 145ms de animação perde a janela**: a própria captura demora
+  mais que isso. Para olhar, congelar o quadro (injetar o mesmo markup com
+  `transform` fixo) em vez de tentar acertar o instante.

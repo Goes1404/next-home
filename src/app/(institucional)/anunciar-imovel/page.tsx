@@ -80,7 +80,7 @@ export default async function AnunciarImovelPage() {
               >
                 <span
                   aria-hidden
-                  className="border-acento-linha text-acento-suave font-display flex size-9 items-center justify-center rounded-full border text-sm font-bold tabular-nums"
+                  className="border-realce-linha bg-realce-lavado text-realce-suave font-display flex size-9 items-center justify-center rounded-full border text-sm font-bold tabular-nums"
                 >
                   {i + 1}
                 </span>

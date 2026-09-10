@@ -5,6 +5,7 @@ import { GlassSurface } from "@/components/glass/GlassSurface";
 import { BrilhoCarro } from "@/components/motion/BrilhoCarro";
 import { Camada } from "@/components/motion/Camada";
 import { ehRecente, precoAPartirDe } from "@/lib/format";
+import { STATUS_PONTO, STATUS_TINTA } from "@/lib/statusCor";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
 
 /**
@@ -68,11 +69,19 @@ export function CardEmpreendimento({
 
           {/* Cor literal nas DUAS pontas: o selo flutua sobre a capa, e o que
               precisa contrastar com ele é a foto — não a superfície da
-              página. A tinta era `text-acento-suave`, que no tema CLARO é
-              verde-escuro sobre o fundo escuro fixo do selo: "Pronto para
+              página. Token de tema aqui é o defeito que a guarda
+              `naoCortaTexto` persegue: `text-acento-suave` no tema CLARO é
+              verde-escuro sobre o fundo escuro fixo do selo, e "Pronto para
               morar" sumia (visto na captura de /regioes em 10/09/2026).
-              `brand-200` é fixa nos dois temas, como no logotipo do login. */}
-          <span className="text-fluid-xs absolute top-3 left-3 rounded-full bg-ink-950/80 px-3 py-1 font-medium tracking-wide text-brand-200 uppercase backdrop-blur-sm">
+
+              A tinta agora vem do ESTÁGIO (`statusCor.ts`): azul da marca
+              para o que ainda vai sair, verde para o que está pronto, areia
+              para as últimas unidades. É a cor mais repetida do site, e ela
+              informa em vez de decorar. */}
+          <span
+            className={`text-fluid-xs absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-ink-950/80 px-3 py-1 font-medium tracking-wide uppercase backdrop-blur-sm ${STATUS_TINTA[e.status]}`}
+          >
+            <span aria-hidden className={`size-1.5 rounded-full ${STATUS_PONTO[e.status]}`} />
             {STATUS_LABEL[e.status]}
           </span>
 

@@ -5,6 +5,7 @@ import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { precoAPartirDe } from "@/lib/format";
 import { linkWhatsappPara } from "@/lib/site";
+import { STATUS_PONTO, STATUS_TINTA } from "@/lib/statusCor";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
 
 /**
@@ -30,10 +31,15 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
           <VoltarLink href="/empreendimentos">Empreendimentos</VoltarLink>
         </Reveal>
 
-        {/* Cores literais (mist/sand) em todo o hero: o contraste aqui é
-            sempre contra a foto escurecida, nos dois temas. */}
-        <p className="text-fluid-sm mt-6 mb-4 flex items-center gap-2 font-medium tracking-[0.22em] text-sand-300 uppercase">
-          <span className="h-1.5 w-1.5 rounded-full bg-sand-400" />
+        {/* Cores literais em todo o hero: o contraste aqui é sempre contra a
+            foto escurecida, nos dois temas. A areia fixa deu lugar à cor do
+            ESTÁGIO (`statusCor.ts`) — a mesma do selo no cartão que trouxe o
+            visitante até aqui, então a página de dentro confirma o que ele
+            leu na de fora em vez de trocar a cor no meio do caminho. */}
+        <p
+          className={`text-fluid-sm mt-6 mb-4 flex items-center gap-2 font-medium tracking-[0.22em] uppercase ${STATUS_TINTA[e.status]}`}
+        >
+          <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${STATUS_PONTO[e.status]}`} />
           {STATUS_LABEL[e.status]} · {e.bairro}, {e.cidade}
         </p>
 
