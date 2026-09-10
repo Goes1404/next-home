@@ -608,6 +608,13 @@ function Chat({
   // incompleta — é o que apaga o botão "ver mensagens anteriores".
   const [esgotado, setEsgotado] = useState(false);
   const [carregandoAntigas, setCarregandoAntigas] = useState(false);
+  /*
+   * O guarda de "já estou carregando" precisa ser REF, não estado: `aoRolar`
+   * dispara a cada evento de rolagem e o `setState` só chega no render
+   * seguinte — dois eventos seguidos pediriam a mesma página duas vezes.
+   * Mesmo motivo de `presoNoFimRef` logo acima.
+   */
+  const carregandoRef = useRef(false);
   const [pendente, iniciar] = useTransition();
   const corpoRef = useRef<HTMLDivElement>(null);
   const presoNoFimRef = useRef(true);
@@ -631,6 +638,8 @@ function Chat({
   }, [idUltimaMensagem]);
 
   const DISTANCIA_PARA_MOSTRAR_TOPO = 600;
+  /** Perto o bastante do topo para buscar antes de a pessoa bater nele. */
+  const DISTANCIA_PARA_BUSCAR_ANTIGAS = 400;
 
   function aoRolar() {
     const corpo = corpoRef.current;
@@ -639,6 +648,26 @@ function Chat({
     // `setState` com o MESMO booleano não re-renderiza no React, então isto
     // custa uma comparação por evento de rolagem, não uma árvore nova.
     setLongeDoTopo(corpo.scrollTop > DISTANCIA_PARA_MOSTRAR_TOPO);
+
+    /*
+     * Chegou perto do topo: traz as anteriores SOZINHO.
+     *
+     * O botão continua ali — ele é a explicação e o indicador de carga —, mas
+     * depender dele significa que ver o contexto de uma conversa longa exige
+     * descobrir um botão. Oito conversas desta base passam de 100 mensagens
+     * (a maior tem 3.801), e é justamente nelas que o contexto importa para
+     * avaliar resposta por resposta.
+     *
+     * `carregandoRef` (e não o estado) é o que impede dois eventos de
+     * rolagem seguidos pedirem a mesma página.
+     */
+    if (
+      corpo.scrollTop < DISTANCIA_PARA_BUSCAR_ANTIGAS &&
+      !esgotado &&
+      (mensagens?.length ?? 0) >= 100
+    ) {
+      void carregarAnteriores();
+    }
   }
 
   function voltarAoTopo() {
@@ -740,7 +769,8 @@ function Chat({
 
   async function carregarAnteriores() {
     const primeira = mensagens?.[0];
-    if (!primeira || carregandoAntigas) return;
+    if (!primeira || carregandoRef.current) return;
+    carregandoRef.current = true;
     setCarregandoAntigas(true);
 
     // Âncora de rolagem: guardar a altura antes e devolver a diferença
@@ -761,6 +791,7 @@ function Chat({
         }
       });
     }
+    carregandoRef.current = false;
     setCarregandoAntigas(false);
   }
 

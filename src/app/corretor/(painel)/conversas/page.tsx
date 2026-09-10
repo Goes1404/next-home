@@ -3,6 +3,7 @@ import { after } from "next/server";
 import Link from "next/link";
 import { garantirEventosWebhook } from "@/lib/whatsapp/provider";
 import { ConversasClient, type ConversaResumo } from "./ConversasClient";
+import { faltaNaLista, garantirNaLista } from "./listaDeConversas";
 import { RevisaoRespostas, type ItemRevisao } from "./RevisaoRespostas";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
@@ -85,6 +86,45 @@ export default async function ConversasPage({
     temLead: Boolean(c.lead_id),
     naoLidas: c.nao_lidas,
   }));
+
+  /*
+   * O deep link tem de abrir a conversa, mesmo fora das 100 carregadas.
+   *
+   * São 140 conversas em produção e a lista traz 100: tocar numa das 40 mais
+   * antigas pela lista de Pessoas mandava `?c=<id>`, ela não estava aqui, e no
+   * celular o painel é `hidden md:flex` — a tela simplesmente não mudava.
+   *
+   * Uma consulta a mais, e SÓ quando falta: `faltaNaLista` é a porta.
+   */
+  let listaFinal = lista;
+  if (faltaNaLista(lista, conversaInicial)) {
+    const { data: solta } = await supabase
+      .from("whatsapp_conversas")
+      .select(
+        "id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas",
+      )
+      .eq("id", conversaInicial as string)
+      // A RLS já recorta pelo dono; o filtro explícito é a segunda linha, pela
+      // mesma razão da 0031 (policy aberta para o gestor faz `maybeSingle`
+      // receber N linhas quando ninguém esperava).
+      .eq("corretor_id", corretor.id)
+      .maybeSingle();
+
+    if (solta) {
+      listaFinal = garantirNaLista(lista, {
+        id: solta.id,
+        telefone: solta.telefone_cliente,
+        nome: solta.nome_cliente,
+        botAtivo: solta.bot_ativo,
+        liberada: solta.liberado_por_palavra_chave,
+        pausadoAte: solta.pausado_humano_ate,
+        ultimaMensagem: solta.ultima_mensagem,
+        ultimaInteracaoEm: solta.ultima_interacao_em,
+        temLead: Boolean(solta.lead_id),
+        naoLidas: solta.nao_lidas,
+      });
+    }
+  }
 
   const modo = (instancia?.modo_bot ?? null) as ModoBotWhatsapp | null;
 
@@ -214,7 +254,7 @@ export default async function ConversasPage({
       <RevisaoRespostas itens={itensRevisao} />
 
       <ConversasClient
-        conversas={lista}
+        conversas={listaFinal}
         podeEnviar={instancia?.status_conexao === "conectado"}
         conversaInicial={conversaInicial}
       />
