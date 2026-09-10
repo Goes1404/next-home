@@ -22,7 +22,7 @@ export function Regioes() {
     // Os chips são alvo de clique e por isso NÃO se movem. Quem dá
     // profundidade aqui é o fundo. `overflow-hidden` é obrigatório: sem ele
     // as manchas vazam e criam barra de rolagem horizontal.
-    <section className="relative overflow-hidden px-4 pb-16 sm:pb-24">
+    <section className="relative overflow-hidden px-4 pb-16 sm:px-8 sm:pb-24">
       <FundoEmCamadas />
       {/* Alinhado à ESQUERDA como as outras seções (09/09/2026). A página
           alternava entre esquerda e centro sem critério — quatro títulos à
@@ -30,7 +30,7 @@ export function Regioes() {
           faz uma página parecer montada aos pedaços. O centro ficou só onde
           é escolha: o painel de fechamento (`CtaFinal`), que é um convite
           isolado e não um título no fluxo. */}
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-6xl">
         <Reveal>
           <h2 className="text-fluid-2xl text-titulo">
             As melhores regiões para morar ou investir

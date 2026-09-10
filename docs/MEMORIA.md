@@ -5070,3 +5070,27 @@ fecha?". Nota completa em `vault/10-notas/consultor-imobiliario-no-painel.md`.
 - **`anon` não lê `parametros_credito`, e isso foi provado por acidente**: a
   primeira sonda fora do Next levou 401 do próprio banco ao tentar ler a
   tabela com a chave publicável. Segurança conferida sem querer.
+
+## A margem que pulava, e o que faltava de CONTEÚDO na home (10/09/2026)
+
+- **Seções irmãs com quatro larguras de caixa diferentes.** Medido no código:
+  `max-w-5xl` nos destaques, `6xl` no mapa, `4xl` nos corretores e no cartão
+  do vendedor, `3xl` no componente de regiões. A margem esquerda do conteúdo
+  PULAVA a cada seção rolada — é o "tipo margem" relatado. Uma largura só
+  (`max-w-6xl`) e um ritmo vertical só (`py-16 sm:py-24`) resolvem; a leitura
+  estreita, quando precisa, vira `max-w-xl` no PARÁGRAFO, nunca na caixa da
+  seção, senão o título anda junto.
+- **`Regioes` ainda não tinha `sm:px-8`** como as vizinhas: no tablet a
+  margem lateral dela era metade da das outras.
+- **Três imóveis abriam o conteúdo, e três é uma fileira só.** Numa
+  imobiliária o produto é a foto: passaram a seis, que fecham duas fileiras no
+  computador e continuam empilhando no celular. Zero mecanismo novo — a grade
+  já era responsiva.
+- **A home não tinha NENHUM número verificável.** Ganhou a faixa de prova com
+  quatro que saem do banco na mesma requisição (estoque, bairros, cidades,
+  corretores com CRECI). A régua: número que encolhe quando a realidade
+  encolhe. "+500 clientes felizes" é o oposto disso e não entra.
+- **E não dizia o que ACONTECE depois do clique.** "Do primeiro clique à
+  visita" descreve o produto real: filtro, WhatsApp sem formulário, visita na
+  agenda do corretor. Numerado porque é uma sequência de verdade — numeração
+  em conteúdo que não é sequência é enfeite, e é onde ela costuma aparecer.
