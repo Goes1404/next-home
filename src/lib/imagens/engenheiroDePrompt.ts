@@ -1,7 +1,6 @@
 import "server-only";
 
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
-import { receitaPor, type Receita } from "./receitas";
 
 /**
  * O engenheiro de prompt: pergunta o que falta, depois escreve o pedido.

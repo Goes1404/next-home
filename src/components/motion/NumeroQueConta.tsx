@@ -35,6 +35,13 @@ export function NumeroQueConta({ valor, className }: { valor: number; className?
     // Contar de 0 até 3 é mais piscada que animação; abaixo disso não vale.
     if (valor < 4) return;
 
+    // Desligar o observador NÃO para um quadro já agendado: sem guardar o id,
+    // sair da página no meio da contagem deixa a cadeia de `rAF` viva por até
+    // 900ms, escrevendo estado num componente que não existe mais. O
+    // comentário acima promete "nenhum timer vivo depois"; é este id que
+    // cumpre a promessa.
+    let quadro = 0;
+
     const observador = new IntersectionObserver(
       ([entrada]) => {
         if (!entrada.isIntersecting) return;
@@ -51,15 +58,18 @@ export function NumeroQueConta({ valor, className }: { valor: number; className?
           // posto de gasolina.
           const suave = 1 - Math.pow(1 - t, 3);
           setExibido(Math.round(valor * suave));
-          if (t < 1) requestAnimationFrame(passo);
+          quadro = t < 1 ? requestAnimationFrame(passo) : 0;
         };
-        requestAnimationFrame(passo);
+        quadro = requestAnimationFrame(passo);
       },
       { threshold: 0.4 },
     );
 
     observador.observe(no);
-    return () => observador.disconnect();
+    return () => {
+      observador.disconnect();
+      if (quadro) cancelAnimationFrame(quadro);
+    };
   }, [valor]);
 
   return (

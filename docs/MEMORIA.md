@@ -5309,3 +5309,42 @@ Detalhe em `docs/medicoes/2026-09-10-f0-imagem.md`.
   rola por cima — sem JS, com movimento reduzido ou em leitor de tela, o
   número certo já está lá. Abaixo de 4 não conta: de 0 a 3 é piscada, não
   animação.
+
+## Validando o trabalho das outras sessões (10/09/2026)
+
+Três sessões commitaram no mesmo repositório no mesmo dia. A validação achou
+uma regressão minha, um vazamento alheio e uma guarda muda — nenhum dos três
+aparecia em tsc, teste ou build.
+
+- **A resposta de chip do Estúdio era coletada e JOGADA FORA**, e o único
+  sinal era um `no-unused-vars`. Ao trocar `montarPromptFinal` por
+  `traduzirPedido`, `respostas` ficou órfã: o corretor tocava a alternativa
+  ("Pôr do sol", "Story") e nada mudava — nem o prompt, nem o formato, porque
+  `tamanhoDoTexto` lê texto e a escolha fica fora de `ideiaAcumulada` por
+  construção. **O caminho de VÍDEO já fazia certo**; só o de arte não. Nota:
+  [[a-resposta-de-chip-era-jogada-fora]]. **Ao apagar uma função, procurar o
+  que ela CONSUMIA** — o compilador cobra o chamador, não o argumento órfão.
+- **Warning de lint em refatoração grande é dedo apontando.** Este vivia entre
+  32 warnings herdados e era o único que descrevia COMPORTAMENTO. Vale ler os
+  que ficam em arquivo que você acabou de mexer.
+- **`NumeroQueConta` prometia "nenhum timer vivo depois" e não cancelava o
+  `requestAnimationFrame`.** Desligar o `IntersectionObserver` não para um
+  quadro já agendado: sair da página no meio da contagem deixava a cadeia
+  viva por até 900ms escrevendo estado em componente desmontado. Sétima vez
+  que um comentário promete garantia que o código entrega pela metade.
+- **A catraca de lint não roda no Windows, e eu tinha medido o exit code
+  errado.** `execFileSync("npx", …)` dá `spawnSync npx ENOENT` (lá o
+  executável é `npx.cmd`, e `execFile` não passa por shell). Ela FALHA
+  FECHADA (exit 2), que é o lado certo de errar — meu `EXIT=0` era do `tail`
+  no fim do cano. **Exit code depois de `| tail` é do `tail`; use
+  `${PIPESTATUS[0]}` ou redirecione.** Hoje resolve o bin pelo
+  `eslint/package.json` (o `./bin/eslint.js` não está no `exports` do pacote
+  e `require.resolve` o recusa com `ERR_PACKAGE_PATH_NOT_EXPORTED`).
+- **Colisão de branch foi só em `docs/MEMORIA.md`** — as duas sessões
+  apendaram seção nova no fim. União resolve. Vale como padrão: enquanto
+  duas sessões trabalharem em paralelo, o arquivo que colide é sempre este.
+- **`generateStaticParams` numa rota que lê cookie NÃO a torna estática.**
+  `/regioes/[slug]` saiu `ƒ` no build porque `getCorretorAtivo()` lê cookie —
+  o que preserva a premissa de que nada consulta o Supabase em tempo de
+  build. Conferir no output do build, não no código.
+

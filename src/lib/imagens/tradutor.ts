@@ -54,6 +54,14 @@ export type EntradaDoTradutor = {
   pedido: string;
   /** Fatos do catálogo, de `fatosDoImovel`. Lista vazia é normal e esperado. */
   fatos: string[];
+  /**
+   * O que o corretor respondeu aos chips do engenheiro, em pares.
+   *
+   * Vai como PAR e não como texto solto porque "Pôr do sol" sozinho não diz a
+   * que pergunta responde — e o motor precisa saber que aquilo é a hora do dia
+   * e não a cor de um móvel. Lista vazia é o caso comum (ele foi direto).
+   */
+  respostas?: { pergunta: string; escolha: string }[];
   /** O prompt aprovado da rodada anterior, quando isto é um ajuste. */
   promptAnterior?: string | null;
   /** Há foto de referência? Muda a instrução: é edição, não criação. */
@@ -86,6 +94,15 @@ function montarPromptDoMotor(e: EntradaDoTradutor): string {
       "",
       "MUDE APENAS o que o corretor pediu agora e repita todo o resto como está.",
       "Edição repetida muda detalhe que ninguém pediu — restate o que fica.",
+    );
+  }
+
+  const respostas = (e.respostas ?? []).filter((r) => r.escolha.trim());
+  if (respostas.length > 0) {
+    blocos.push(
+      "",
+      "O corretor já respondeu isto — respeite, não contrarie:",
+      ...respostas.map((r) => `- ${r.pergunta.trim()} ${r.escolha.trim()}`),
     );
   }
 

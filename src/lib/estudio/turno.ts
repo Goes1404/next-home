@@ -195,8 +195,17 @@ export async function turnoDeArte(params: {
 
   // Ajuste em texto depois de uma proposta ("mais claro", "tira a piscina")
   // já entrou na ideia acumulada: a proposta abaixo nasce com ele.
-  const tamanho = tamanhoDoTexto(ideia);
-  const receita = receitaDoTexto(ideia, Boolean(referencia));
+  /*
+   * As heurísticas leem a ideia MAIS as escolhas de chip. Sem isso, quem
+   * responde "Story" tocando na alternativa recebia uma peça quadrada: a
+   * escolha ficava fora de `ideiaAcumulada` por construção, e `tamanhoDoTexto`
+   * nunca a via. Só o que o corretor DIGITOU continua servindo para achar o
+   * imóvel — alternativa curta ("Manhã", "Alta") casaria com nome de
+   * empreendimento por acidente, que é um falso positivo já medido nesta base.
+   */
+  const textoDaHeuristica = [ideia, ...respostas.map((r) => r.escolha)].join(". ");
+  const tamanho = tamanhoDoTexto(textoDaHeuristica);
+  const receita = receitaDoTexto(textoDaHeuristica, Boolean(referencia));
   /*
    * O imóvel que o corretor CITOU. Sem LLM: `imovelPorTexto` casa por nome e
    * por apelido, então "Manacá" acha o "More na Aldeia de Barueri". É o único
@@ -207,6 +216,7 @@ export async function turnoDeArte(params: {
   const traduzido = await traduzirPedido({
     pedido: ideia,
     fatos: imovelCitado ? fatosDoImovelCitado(imovelCitado) : [],
+    respostas,
     promptAnterior: propostaAnterior?.prompt ?? null,
     temReferencia: Boolean(referencia),
   });

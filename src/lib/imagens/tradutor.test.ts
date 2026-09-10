@@ -39,6 +39,35 @@ describe("o tradutor devolve português, e é ele que vai", () => {
     expect(chamarLlmJson.mock.calls[0][0]).toContain("Dom Parque");
   });
 
+  /*
+   * Regressão de 10/09/2026, achada por um `no-unused-vars`. O caminho antigo
+   * (`montarPromptFinal`) consumia as escolhas de chip; ao trocá-lo pelo
+   * tradutor, elas passaram a ser coletadas e JOGADAS FORA — o corretor
+   * respondia a pergunta e a resposta não chegava a lugar nenhum. Pergunta que
+   * não muda o resultado é pior que pergunta nenhuma: cobra um toque e mente.
+   */
+  it("as escolhas de chip entram no prompt DO MOTOR, com a pergunta junto", async () => {
+    chamarLlmJson.mockResolvedValue(respostaOk(BOM));
+    await traduzirPedido({
+      pedido: "fachada do Dom Parque",
+      fatos: [],
+      respostas: [{ pergunta: "Que hora do dia?", escolha: "Pôr do sol" }],
+    });
+    const enviado = String(chamarLlmJson.mock.calls[0][0]);
+    expect(enviado).toContain("Pôr do sol");
+    expect(enviado).toContain("Que hora do dia?");
+  });
+
+  it("escolha em branco não vira linha no prompt", async () => {
+    chamarLlmJson.mockResolvedValue(respostaOk(BOM));
+    await traduzirPedido({
+      pedido: "fachada",
+      fatos: [],
+      respostas: [{ pergunta: "Que hora do dia?", escolha: "   " }],
+    });
+    expect(String(chamarLlmJson.mock.calls[0][0])).not.toContain("já respondeu");
+  });
+
   it("a instrução da gramática viaja junto — senão o modelo não sabe o que cobrir", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
     await traduzirPedido({ pedido: "fachada", fatos: [] });

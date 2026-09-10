@@ -84,6 +84,37 @@ describe("a voz da IA passa pelo saneamento da casa", () => {
   });
 });
 
+/*
+ * Regressão de 10/09/2026. A escolha de chip é gravada como `dados.tipo ===
+ * "escolha"`, e `ideiaAcumulada` a EXCLUI de propósito (senão o texto solto
+ * "Pôr do sol" viraria uma frase do corretor). Enquanto `montarPromptFinal`
+ * existia, ela voltava por `respostas`; ao trocá-lo pelo tradutor, a coleta
+ * ficou e o consumo sumiu — o corretor respondia e nada mudava.
+ *
+ * Falha CALADA: a tela continua perguntando, o chip continua sendo tocado, a
+ * imagem continua saindo. Só o resultado ignora a resposta.
+ */
+describe("a resposta de chip não pode ser coletada e jogada fora", () => {
+  it("o turno de arte manda as respostas ao tradutor", () => {
+    const t = ler(LIB[0]);
+    expect(t).toMatch(/traduzirPedido\(\{[\s\S]*?respostas,[\s\S]*?\}\)/);
+  });
+
+  it("as heurísticas de tamanho e receita leem a escolha, não só o que foi digitado", () => {
+    const t = ler(LIB[0]);
+    // "Story" tocado no chip tem de virar retrato; lendo só `ideia`, virava quadrado.
+    expect(t).toMatch(/tamanhoDoTexto\(textoDaHeuristica\)/);
+    expect(t).toMatch(/receitaDoTexto\(textoDaHeuristica,/);
+  });
+
+  it("o imóvel continua saindo do que o corretor DIGITOU", () => {
+    // Alternativa curta ("Alta", "Manhã") casaria com nome de empreendimento
+    // por acidente — falso positivo já medido nesta base.
+    const t = ler(LIB[0]);
+    expect(t).toMatch(/imovelPorTexto\(ideia,/);
+  });
+});
+
 describe("contrato", () => {
   it("recusa dados sem forma em vez de derrubar a conversa", () => {
     expect(dadosDaMensagem(null)).toBeNull();

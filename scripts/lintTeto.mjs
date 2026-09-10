@@ -22,6 +22,28 @@
  */
 
 import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
+
+/*
+ * O eslint é chamado pelo BIN dele com o node atual, não por `npx`.
+ *
+ * `execFileSync("npx", ...)` não acha o executável no Windows (`spawnSync npx
+ * ENOENT`): lá o que existe é `npx.cmd`, e `execFile` não passa pelo shell. O
+ * efeito era a catraca sair 2 na máquina de quem desenvolve — falha fechada,
+ * que é o lado certo de errar, mas ninguém consegue exercitá-la antes do CI.
+ * Resolvendo pelo `require.resolve` não há nome de plataforma envolvido, e de
+ * quebra some uma camada de processo.
+ */
+const requerer = createRequire(import.meta.url);
+/*
+ * Pelo `package.json` e não pelo caminho do bin: `eslint/bin/eslint.js` não
+ * está no `exports` do pacote e `resolve` o recusa
+ * (`ERR_PACKAGE_PATH_NOT_EXPORTED`). O `./package.json` está, e é dele que
+ * sai o caminho oficial do executável — sem chumbar `node_modules/`, que
+ * quebraria se o pacote fosse içado para outro nível.
+ */
+const eslintBin = join(dirname(requerer.resolve("eslint/package.json")), "bin/eslint.js");
 
 /**
  * Quantos erros de lint o repositório tem hoje.
@@ -51,7 +73,7 @@ function rodarEslint() {
     // O eslint sai com código 1 quando há erro — o que aqui é o caso
     // normal, não uma falha da ferramenta. O JSON vem no stdout de qualquer
     // forma; só um estouro de verdade deixa o stdout vazio.
-    return execFileSync("npx", ["eslint", "--format", "json"], {
+    return execFileSync(process.execPath, [eslintBin, "--format", "json"], {
       encoding: "utf8",
       maxBuffer: 64 * 1024 * 1024,
     });
