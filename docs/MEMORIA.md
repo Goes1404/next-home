@@ -5343,6 +5343,12 @@ aparecia em tsc, teste ou build.
 - **Colisão de branch foi só em `docs/MEMORIA.md`** — as duas sessões
   apendaram seção nova no fim. União resolve. Vale como padrão: enquanto
   duas sessões trabalharem em paralelo, o arquivo que colide é sempre este.
+- **`<Reveal>` dentro de `<ol>` quebra a lista.** O padrão dele é `div`, então
+  a seção "Do primeiro clique à visita" saiu `<ol><div><li>` — aninhamento que
+  o navegador tolera e o leitor de tela não: ele deixa de anunciar "lista de 3
+  itens", que é exatamente o que a numeração diz a quem enxerga. O componente
+  já aceitava `as="li"`. **Ao embrulhar item de lista num componente de
+  movimento, conferir que tag ele renderiza.**
 - **`generateStaticParams` numa rota que lê cookie NÃO a torna estática.**
   `/regioes/[slug]` saiu `ƒ` no build porque `getCorretorAtivo()` lê cookie —
   o que preserva a premissa de que nada consulta o Supabase em tempo de

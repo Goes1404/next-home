@@ -397,17 +397,25 @@ export default async function HomeInstitucional() {
                       "A gente marca no horário que o corretor de fato tem livre — e confirma a data com você.",
                   },
                 ].map((passo, i) => (
-                  <Reveal key={passo.titulo} delay={i * 0.1} from="baixo">
-                    <li className="border-linha bg-superficie/50 h-full rounded-2xl border p-5">
-                      <span
-                        aria-hidden
-                        className="border-acento-linha text-acento-suave font-display flex size-9 items-center justify-center rounded-full border text-sm font-bold tabular-nums"
-                      >
-                        {i + 1}
-                      </span>
-                      <h3 className="font-display text-titulo mt-4 text-lg">{passo.titulo}</h3>
-                      <p className="text-fluid-sm text-apoio mt-2 text-pretty">{passo.texto}</p>
-                    </li>
+                  /* `as="li"` e não um `<li>` dentro do Reveal: o padrão dele
+                     é `div`, e `<ol><div><li>` é aninhamento inválido — o
+                     leitor de tela deixa de anunciar "lista de 3 itens", que é
+                     justamente o que a numeração está dizendo aos que enxergam. */
+                  <Reveal
+                    key={passo.titulo}
+                    as="li"
+                    delay={i * 0.1}
+                    from="baixo"
+                    className="border-linha bg-superficie/50 h-full rounded-2xl border p-5"
+                  >
+                    <span
+                      aria-hidden
+                      className="border-acento-linha text-acento-suave font-display flex size-9 items-center justify-center rounded-full border text-sm font-bold tabular-nums"
+                    >
+                      {i + 1}
+                    </span>
+                    <h3 className="font-display text-titulo mt-4 text-lg">{passo.titulo}</h3>
+                    <p className="text-fluid-sm text-apoio mt-2 text-pretty">{passo.texto}</p>
                   </Reveal>
                 ))}
               </ol>
