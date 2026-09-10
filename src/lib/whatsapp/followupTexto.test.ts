@@ -89,3 +89,40 @@ describe("follow-up de quem nunca falou", () => {
     expect(conversou).not.toContain("não houve conversa");
   });
 });
+
+describe("o lembrete de véspera não inventa onde encontrar", () => {
+  /*
+   * A instrução anterior dizia "se fizer sentido, inclua um detalhe útil
+   * (ponto de encontro...)" — um convite para inventar, no pior lugar
+   * possível: o cliente lê na noite anterior, sai de casa e vai para onde a
+   * mensagem mandou.
+   */
+  const lembrete = (extra: Parameters<typeof instrucaoDoFollowup>[0]) =>
+    instrucaoDoFollowup({ tipo: "lembrete_visita", tentativa: 1, ...extra });
+
+  it("com endereço cadastrado, manda copiar EXATAMENTE", () => {
+    const texto = lembrete({
+      tipo: "lembrete_visita",
+      tentativa: 1,
+      visitaFormatada: "segunda-feira, 14/09 às 9h",
+      enderecoDoImovel: "Rua das Palmeiras, 100 — Jardim Tupanci",
+      nomeDoImovel: "Terra Alta",
+    });
+
+    expect(texto).toContain("Rua das Palmeiras, 100 — Jardim Tupanci");
+    expect(texto).toContain("EXATAMENTE");
+    expect(texto).toContain("no Terra Alta");
+  });
+
+  it("sem endereço cadastrado, PROÍBE dizer qualquer um", () => {
+    const texto = lembrete({ tipo: "lembrete_visita", tentativa: 1, enderecoDoImovel: null });
+
+    expect(texto).toContain("NÃO diga endereço");
+    expect(texto).toContain("corretor confirma o ponto de encontro");
+  });
+
+  it("continua sendo só sobre a visita", () => {
+    const texto = lembrete({ tipo: "lembrete_visita", tentativa: 1 });
+    expect(texto).toContain("NÃO reofereça outros imóveis");
+  });
+});

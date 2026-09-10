@@ -34,6 +34,16 @@ export function instrucaoDoFollowup(params: {
   /** Data/hora da visita, já formatada em São Paulo (só para lembrete). */
   visitaFormatada?: string;
   /**
+   * O endereço do imóvel, do CADASTRO (só para lembrete).
+   *
+   * Vem por parâmetro e não da cabeça do modelo pela mesma razão do link da
+   * página: o cliente lê o lembrete na véspera, sai de casa e vai para onde
+   * a mensagem mandou. Sem endereço cadastrado, a instrução PROÍBE inventar.
+   */
+  enderecoDoImovel?: string | null;
+  /** Nome do empreendimento, do cadastro (só para lembrete). */
+  nomeDoImovel?: string | null;
+  /**
    * O cliente NUNCA falou nesta conversa — recebeu um disparo e não
    * respondeu. É o caso que passou a existir em 31/08, quando a campanha
    * finalmente começou a agendar follow-up (antes, os 87 disparos entregues
@@ -46,10 +56,25 @@ export function instrucaoDoFollowup(params: {
   clienteNuncaFalou?: boolean;
 }): string {
   if (params.tipo === "lembrete_visita") {
+    /*
+     * O ENDEREÇO vem daqui, do cadastro — nunca da cabeça do modelo.
+     *
+     * A versão anterior dizia "se fizer sentido, inclua um detalhe útil
+     * (ponto de encontro...)", que é um convite para inventar. Endereço
+     * inventado num lembrete de véspera é o pior lugar possível para a
+     * invenção acontecer: o cliente lê na noite anterior, sai de casa e vai
+     * para o lugar errado. É a mesma razão pela qual o link da página é
+     * montado por código e a IA nunca o escreve.
+     */
+    const ondeEncontrar = params.enderecoDoImovel?.trim()
+      ? `O endereço é: ${params.enderecoDoImovel.trim()} — escreva-o EXATAMENTE assim, sem mudar nem completar nada.`
+      : "NÃO diga endereço, ponto de encontro nem número de unidade: eles não estão cadastrados, e endereço inventado manda o cliente para o lugar errado. Diga que o corretor confirma o ponto de encontro.";
+
     return (
-      `Este é um LEMBRETE DE VISITA: o cliente tem visita marcada para ${params.visitaFormatada ?? "amanhã"}. ` +
+      `Este é um LEMBRETE DE VISITA: o cliente tem visita marcada para ${params.visitaFormatada ?? "amanhã"}` +
+      `${params.nomeDoImovel ? ` no ${params.nomeDoImovel}` : ""}. ` +
       "Lembre com simpatia, em UMA frase curta, e pergunte se está confirmado — sem tom de cobrança. " +
-      "Se fizer sentido, inclua um detalhe útil (ponto de encontro, o que ele vai conhecer). " +
+      `${ondeEncontrar} ` +
       "NÃO reofereça outros imóveis nem reabra qualificação: a mensagem é só sobre a visita."
     );
   }

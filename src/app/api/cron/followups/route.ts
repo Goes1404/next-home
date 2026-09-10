@@ -622,11 +622,21 @@ async function processarFollowup(
   // visita pode ter sido desmarcada ou movida desde o agendamento, e
   // lembrar de uma visita que não existe é pior que não lembrar.
   let visitaFormatada: string | undefined;
+  let enderecoDoImovel: string | null = null;
+  let nomeDoImovel: string | null = null;
   if (item.tipo === "lembrete_visita") {
+    /*
+     * O endereço vem daqui, do CADASTRO, e viaja até a instrução — a IA
+     * nunca o escreve de cabeça. O lembrete de véspera é o pior lugar
+     * possível para endereço inventado: o cliente lê à noite, sai de casa e
+     * vai para onde a mensagem mandou. Mesma razão do link da página.
+     */
     const { data: lead } = conversa.lead_id
       ? await supabase
           .from("leads")
-          .select("visita_agendada_em")
+          .select(
+            "visita_agendada_em, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome, endereco)",
+          )
           .eq("id", conversa.lead_id)
           .maybeSingle()
       : { data: null };
@@ -635,6 +645,12 @@ async function processarFollowup(
       return descartar(supabase, item.id, "visita_desmarcada_ou_passou");
     }
     visitaFormatada = formatarVisitaSP(visita);
+    // O join do PostgREST vem como objeto ou array conforme a cardinalidade.
+    const imovel = Array.isArray(lead?.empreendimento)
+      ? lead.empreendimento[0]
+      : lead?.empreendimento;
+    enderecoDoImovel = imovel?.endereco ?? null;
+    nomeDoImovel = imovel?.nome ?? null;
   }
 
   // Gera o texto de reengajamento com o MESMO agente e guardrails da
@@ -675,6 +691,8 @@ async function processarFollowup(
       tentativa: item.tentativa,
       dossie,
       visitaFormatada,
+      enderecoDoImovel,
+      nomeDoImovel,
       // `ultimaCliente` já foi buscada acima para a revalidação de resposta:
       // ausência dela significa que o cliente nunca falou — o caso do
       // disparo de campanha que ninguém respondeu.
