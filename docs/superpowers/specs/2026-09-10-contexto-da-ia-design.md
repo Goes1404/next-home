@@ -1,5 +1,20 @@
 # O contexto da IA — fechar os três buracos medidos (10/09/2026)
 
+> **IMPLEMENTADA em 10/09/2026.** A migration saiu como **0106**, não 0103:
+> este documento reservou um número que já estava ocupado por
+> `0103_parametros_credito.sql` (colisão entre sessões paralelas — só
+> aparece no merge, quando o número, que é a única coisa que define a ordem
+> de execução, já está mentindo).
+>
+> Medido depois, sobre as mesmas 15 conversas longas: **8,8 → 20,8 falas
+> úteis** por conversa (2,36x). A previsão era 9,5 → 21,8.
+>
+> Uma consequência que este documento não podia prever, porque o recurso
+> vizinho subiu no mesmo dia: com a janela descartando a marca,
+> `ia_interacoes.contexto.emBranco` (0105) passaria a viver em zero. Ele
+> passou a contar a CONVERSA, via `contarFalasNaoGravadas` — número que vive
+> em zero ensina a ignorar o número.
+
 Aprovado em chat. Duas decisões do usuário, tomadas sobre número medido:
 
 1. **Separar FATO de PERMISSÃO** — a conversa continua retravando (o
@@ -29,7 +44,7 @@ para sempre. Quando destrava, a IA lê um histórico furado — e furado de um
 lado só, porque a fala do BOT nunca fica em branco (ele só fala liberado).
 Numa conversa real, 53 de 209; noutra, 14 de 21.
 
-## 1. O fato "esta conversa é atendimento" ganha coluna própria (0103)
+## 1. O fato "esta conversa é atendimento" ganha coluna própria (0106)
 
 `whatsapp_conversas.atendida_em timestamptz null`, escrita UMA vez, no
 instante em que a IA envia a primeira mensagem — `update … where id = ? and
@@ -120,7 +135,7 @@ Duas exceções deliberadas:
 
 ## Ordem de implementação
 
-1. 0103 — coluna + backfill, conferida nos dois sentidos (`begin; … rollback;`).
+1. 0106 — coluna + backfill, conferida nos dois sentidos (`begin; … rollback;`).
 2. `conversaEhAtendimento` ganha a quarta porta (+ testes).
 3. O webhook carimba `atendida_em` ao enviar.
 4. `historicoRecente`: 40 e sem a marca.

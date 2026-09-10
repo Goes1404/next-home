@@ -36,6 +36,8 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 - [[tentativas-de-contato-sao-duas-contagens]]
 - [[pg-cron-e-o-relogio-de-verdade]]
 
+- [[fato-e-permissao-moram-em-campos-diferentes]] — coluna nova porque dois conceitos precisam poder discordar
+
 ## Migrations: numeração e ordem
 - [[colisao-de-migration-entre-branches]] — a guarda só enxerga a própria branch
 

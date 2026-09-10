@@ -5657,3 +5657,59 @@ contexto da IA"*.
   muda ao liberar e que **o passado continua sem texto** — essa terceira frase
   é a que evita a decepção de liberar esperando a conversa aparecer. Conversa
   mista colapsa cada sequência numa linha com a contagem.
+
+## O retravamento tirava a permissão E o fato (0106, 10/09/2026)
+
+Implementação da spec `2026-09-10-contexto-da-ia-design.md`, que estava
+aprovada e parada — e cujo número (`0103`) já tinha sido tomado por
+`parametros_credito`. Saiu como **0106**.
+
+- **Dois conceitos só podem DISCORDAR se morarem em campos diferentes.** O
+  retravamento (a fala do corretor cala a IA) é o que impede a IA de assumir a
+  conversa da família dele; o efeito colateral era a conversa parar de GUARDAR
+  o texto do cliente. Medido: **2.431 falas gravadas em branco**, e o buraco é
+  de um lado só — a fala do BOT nunca fica em branco, porque ele só fala
+  liberado, então a IA lê um histórico furado E assimétrico.
+  `whatsapp_conversas.atendida_em` guarda o FATO; a PERMISSÃO segue em
+  `liberado_por_palavra_chave`. **A tentação era reusar `cliente_conhecido` —
+  e teria desligado o retravamento junto**, que é a opção descartada. Quando o
+  recurso É a discordância, reusar campo não é economia: é desfazer o recurso.
+- **O teste central prova o PAR, não uma metade:** a mesma conversa continua
+  retravada E continua guardando texto. Um teste de um lado só não distingue
+  esta correção daquela que o usuário recusou. Há também um teste explícito de
+  que `exigeLiberacaoExplicita` NÃO lê a coluna nova — é a regressão que
+  traria a opção descartada de volta.
+- **Carimbo de fato é escrito uma vez só** (`where atendida_em is null`), pela
+  mesma razão de `desconectado_em` (0071): reescrever a cada resposta faria a
+  marca mentir sobre QUANDO o atendimento começou. Backfill: 90 das 140
+  conversas; conferido nos dois sentidos — **12 delas seguem retravadas** e as
+  78 liberadas continuam 78.
+- **A janela foi de 20 para 40 falas e passou a descartar a marca NA
+  CONSULTA.** A marca existe para a tela não parecer defeito; no prompt gasta
+  linha para dizer "aqui havia algo que você não pode ler", e havia conversa
+  com 53 delas em 209 mensagens. Medido no banco, sobre as mesmas 15 conversas
+  longas: **8,8 → 20,8 falas úteis** (2,36x). A spec previa 9,5 → 21,8.
+- **Ao mudar o que uma consulta traz, procurar quem CONTA em cima dela.** Com
+  a janela sem a marca, `ia_interacoes.contexto.emBranco` (0105, do mesmo dia)
+  passaria a viver em ZERO — e número que vive em zero ensina a ignorar o
+  número. Ele passou a contar a CONVERSA (`contarFalasNaoGravadas`, head:true).
+- **O dossiê se apagava sozinho**, pelo mesmo defeito que `leads` já tinha
+  corrigido em 24/08: upsert com todas as colunas + extração que só vê a
+  janela = `null` sobrescrevendo o que o cliente disse. Eram **16 dossiês para
+  131 leads**, orçamento 0/16. A regra é "null não apaga", com duas exceções
+  declaradas: temperatura e resumo SEMPRE sobrescrevem (são leitura do
+  momento, e o termostato do `evolucaoConversa` compara faixas — lead que
+  esfriou tem de aparecer esfriando); lista vazia não apaga, lista cheia
+  SUBSTITUI (união guardaria objeção já superada, e objeção morta manda a IA
+  tratar problema que o cliente esqueceu).
+- **A leitura da linha anterior mora DENTRO de `salvarDossie`.** O webhook tem
+  um `dossieAnterior` em mãos e passá-lo economizaria uma consulta — ao custo
+  de a guarda depender de o chamador lembrar. É o esquecimento de chamador que
+  tirou `interacaoId` dos parâmetros de `gravarMensagem`.
+- **Oitava vez que uma guarda tropeça no próprio recorte.** A do dossiê ia do
+  `.upsert(` até o fim da função e reprovava a gravação legítima do orçamento
+  em `leads`, que fica logo abaixo. Recortar a CHAMADA, não o resto.
+- **Colisão de número de migration outra vez, e desta vez num documento
+  APROVADO** escrito antes de o número ser tomado. Spec não é código: ninguém
+  a compila, e o número envelhece sozinho. Ao implementar spec antiga,
+  conferir o número contra `origin/*` antes de qualquer coisa.
