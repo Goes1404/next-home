@@ -1,11 +1,15 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { ConversaDoEstudio } from "@/lib/estudio/contrato";
+import type { ConversaDeChat } from "./chatTipos";
 
 /**
- * As conversas salvas do Estúdio — a lateral no computador, uma fileira que
- * quebra linha no celular.
+ * As conversas salvas de um chat do painel — a lateral no computador, uma
+ * fileira que quebra linha no celular.
+ *
+ * Serve ao Estúdio e ao consultor: lê `ConversaDeChat` (id, título, quando),
+ * o mínimo que uma lista precisa. `ConversaDoEstudio` tem `tipo` a mais e
+ * continua atribuível.
  *
  * Existe porque o histórico é salvo (decisão de 04/09/2026), e dado gravado
  * sem tela é indistinguível de dado perdido. Ordenada por `atualizado_em`,
@@ -20,7 +24,7 @@ export function ListaDeConversas({
   onNova,
   onExcluir,
 }: {
-  conversas: ConversaDoEstudio[];
+  conversas: ConversaDeChat[];
   ativa: string | null;
   onAbrir: (id: string) => void;
   onNova: () => void;

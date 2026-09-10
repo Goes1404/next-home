@@ -198,15 +198,28 @@ export function ChatDeVideo({
               return null;
             });
           }}
-          renderProposta={(m) => (
-            <CartaoDeRoteiro
-              proposta={m.dados as PropostaDeVideo}
-              gerando={gerando === m.id}
-              bloqueada={Boolean(gerando) || saldo.disponiveis <= 0}
-              onGerar={() => void gerar(m)}
-            />
-          )}
-          renderResultado={(m) => {
+          renderAcima={(m) =>
+            m.dados?.tipo === "referencia" ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={m.dados.url}
+                alt="Foto de referência anexada"
+                className="border-linha mb-1.5 max-h-44 w-auto max-w-full rounded-lg border"
+              />
+            ) : null
+          }
+          renderAbaixo={(m) => {
+            if (m.dados?.tipo === "proposta") {
+              return (
+                <CartaoDeRoteiro
+                  proposta={m.dados as PropostaDeVideo}
+                  gerando={gerando === m.id}
+                  bloqueada={Boolean(gerando) || saldo.disponiveis <= 0}
+                  onGerar={() => void gerar(m)}
+                />
+              );
+            }
+            if (m.dados?.tipo !== "resultado") return null;
             const v = videoDe(m);
             if (!v) return null;
             if (v.status === "pronto" && v.url) {

@@ -224,15 +224,27 @@ export function ChatDeArte({
                 return null;
               });
             }}
-            renderProposta={(m) => (
-              <CartaoDeProposta
-                proposta={m.dados as PropostaDeArte}
-                gerando={gerando === m.id}
-                bloqueada={restam <= 0 || Boolean(gerando)}
-                onGerar={() => void gerar(m)}
-              />
-            )}
-            renderResultado={(m) => {
+            renderAcima={(m) =>
+              m.dados?.tipo === "referencia" ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={m.dados.url}
+                  alt="Foto de referência anexada"
+                  className="border-linha mb-1.5 max-h-44 w-auto max-w-full rounded-lg border"
+                />
+              ) : null
+            }
+            renderAbaixo={(m) => {
+              if (m.dados?.tipo === "proposta") {
+                return (
+                  <CartaoDeProposta
+                    proposta={m.dados as PropostaDeArte}
+                    gerando={gerando === m.id}
+                    bloqueada={restam <= 0 || Boolean(gerando)}
+                    onGerar={() => void gerar(m)}
+                  />
+                );
+              }
               const url = m.dados?.tipo === "resultado" ? m.dados.url : null;
               return url ? (
                 // eslint-disable-next-line @next/next/no-img-element

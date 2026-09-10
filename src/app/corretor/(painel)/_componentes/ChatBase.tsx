@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import type { MensagemDoEstudio, PerguntaDoEstudio } from "@/lib/estudio/contrato";
+import type { MensagemDeChat, PerguntaDeChat } from "./chatTipos";
 
 /**
- * A casca de chat do Estúdio — balões, composer, rolagem e chips.
+ * A casca de chat do painel — balões, composer, rolagem e chips.
  *
  * Extraída do que o Live Chat (`conversas/ConversasClient.tsx`) já fazia bem:
  * rolagem que só acompanha quando a pessoa está presa no fim, envio otimista
@@ -13,9 +13,22 @@ import type { MensagemDoEstudio, PerguntaDoEstudio } from "@/lib/estudio/contrat
  * substitui o Live Chat — ele fala com CLIENTE por WhatsApp e tem regras
  * próprias (áudio, ack, 👍/👎). Aqui o interlocutor é a IA da casa.
  *
- * O que ela NÃO sabe: o que é uma proposta de arte ou de vídeo. Isso chega
- * por `renderProposta`, para a mesma casca servir aos dois chats sem virar um
- * `if (modo === …)` a cada linha.
+ * ## O que ela NÃO sabe, e por quê
+ *
+ * Nada de domínio. Ela nasceu servindo só ao Estúdio e conhecia por nome a
+ * proposta, o resultado e a foto de referência; quando o consultor
+ * imobiliário chegou com outro vocabulário (cartão de imóvel, simulação,
+ * texto pronto para o cliente), ficou claro que cada chat novo somaria um
+ * `if` aqui dentro.
+ *
+ * Hoje ela conhece UM tipo de `dados`: `"pergunta"` — porque responder num
+ * toque é mecanismo do chat, não do domínio. Todo o resto entra por
+ * `renderAcima` (antes do texto do balão) e `renderAbaixo` (depois).
+ *
+ * O genérico é a MENSAGEM inteira, não só o `dados`: as telas do Estúdio
+ * precisam de `imagemId`/`videoJobId` dentro do render, e parametrizar só o
+ * vocabulário obrigaria cada uma a um cast de volta — que é o cast que esta
+ * generalização veio tirar.
  */
 
 export type EnvioPendente = { id: string; conteudo: string; previewUrl?: string | null };
@@ -23,7 +36,7 @@ export type EnvioPendente = { id: string; conteudo: string; previewUrl?: string 
 /** O anexo escolhido e ainda não enviado — vive no composer, como no ChatGPT. */
 export type AnexoDoComposer = { previewUrl: string; nome: string };
 
-export function ChatBase({
+export function ChatBase<M extends MensagemDeChat>({
   mensagens,
   pendente,
   pensando,
@@ -31,13 +44,13 @@ export function ChatBase({
   vazio,
   onEnviar,
   onEscolher,
-  renderProposta,
-  renderResultado,
+  renderAcima,
+  renderAbaixo,
   anexo,
   onAnexar,
   onRemoverAnexo,
 }: {
-  mensagens: MensagemDoEstudio[];
+  mensagens: M[];
   /** A fala do corretor ainda não confirmada pelo servidor (otimismo). */
   pendente: EnvioPendente | null;
   /** A IA está "digitando". */
@@ -46,9 +59,11 @@ export function ChatBase({
   /** O que aparece antes da primeira mensagem — o convite. */
   vazio: ReactNode;
   onEnviar: (texto: string) => Promise<void>;
-  onEscolher: (pergunta: PerguntaDoEstudio, escolha: string) => Promise<void>;
-  renderProposta: (m: MensagemDoEstudio) => ReactNode;
-  renderResultado: (m: MensagemDoEstudio) => ReactNode;
+  onEscolher: (pergunta: PerguntaDeChat, escolha: string) => Promise<void>;
+  /** Desenhado ANTES do texto do balão — a foto de referência do Estúdio. */
+  renderAcima?: (m: M) => ReactNode;
+  /** Desenhado DEPOIS do texto — proposta, resultado, cartão, simulação. */
+  renderAbaixo?: (m: M) => ReactNode;
   /** Foto escolhida e ainda não enviada; a tela dona decide o upload. */
   anexo?: AnexoDoComposer | null;
   /** Presente = o clipe aparece. A tela dona valida tipo/tamanho e sobe. */
@@ -94,7 +109,7 @@ export function ChatBase({
   const ultima = mensagens.at(-1);
   const perguntaAberta =
     !pendente && !pensando && ultima?.papel === "ia" && ultima.dados?.tipo === "pergunta"
-      ? (ultima.dados as PerguntaDoEstudio)
+      ? (ultima.dados as unknown as PerguntaDeChat)
       : null;
 
   return (
@@ -111,17 +126,9 @@ export function ChatBase({
 
         {mensagens.map((m) => (
           <Balao key={m.id} papel={m.papel}>
-            {m.dados?.tipo === "referencia" && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={m.dados.url}
-                alt="Foto de referência anexada"
-                className="border-linha mb-1.5 max-h-44 w-auto max-w-full rounded-lg border"
-              />
-            )}
+            {renderAcima?.(m)}
             <p className="text-fluid-sm text-corpo whitespace-pre-line">{m.conteudo}</p>
-            {m.dados?.tipo === "proposta" && renderProposta(m)}
-            {m.dados?.tipo === "resultado" && renderResultado(m)}
+            {renderAbaixo?.(m)}
           </Balao>
         ))}
 
