@@ -19,6 +19,7 @@ import {
 import { assumirConversaComIA } from "./acoesIA";
 import { ETAPA_LABEL, type EtapaFunil } from "@/lib/types";
 import { agruparNaoGravadas, todasSemTexto } from "@/lib/whatsapp/conversaSemTexto";
+import { PorQue } from "./PorQue";
 
 /**
  * O chat de UMA conversa — os balões, o teclado, a ficha do lead e a
@@ -155,6 +156,9 @@ export function deMensagemRow(row: MensagemRow): MensagemConversa {
     // segunda consulta em ia_interacoes. (O comentário antigo falava de um
     // "reconcílio periódico" que não existe; enganou uma investigação.)
     avaliacao: null,
+    // Pelo mesmo motivo, sem contexto: a linha de telemetria é escrita DEPOIS
+    // do envio, e é o reconcílio de 15s que a traz.
+    contexto: null,
   };
 }
 
@@ -376,6 +380,7 @@ export function Chat({
       statusEntrega: null,
       interacaoId: null,
       avaliacao: null,
+      contexto: null,
     };
     onMesclar([temporaria]);
 
@@ -1021,6 +1026,12 @@ function Balao({
   const [salvando, setSalvando] = useState(false);
   // Reabriu os dois botões para trocar a avaliação já dada.
   const [trocando, setTrocando] = useState(false);
+  /*
+   * O "por quê?" abre sozinho ao marcar 👎 — é o instante exato em que a
+   * pergunta existe. Fechado por padrão porque, quando a resposta está boa,
+   * quatro linhas de diagnóstico embaixo de cada balão viram ruído.
+   */
+  const [porQueAberto, setPorQueAberto] = useState(false);
   const avaliavel = mensagem.remetente === "bot" && mensagem.interacaoId !== null;
   const lado = ladoDo(mensagem);
 
@@ -1033,6 +1044,7 @@ function Balao({
       else {
         setNota(valor);
         setTrocando(false);
+        if (valor === "ruim") setPorQueAberto(true);
       }
     });
   }
@@ -1160,6 +1172,27 @@ function Balao({
             </>
           )}
         </div>
+      )}
+
+      {/*
+        O contexto da decisão, atrás de um toque.
+        `<details>` de propósito: abre e fecha sem estado próprio, funciona
+        sem JavaScript e o leitor de tela já anuncia que há conteúdo dentro.
+        O `open` controlado existe só para o 👎 poder abri-lo sozinho.
+      */}
+      {avaliavel && (
+        <details
+          open={porQueAberto}
+          onToggle={(e) => setPorQueAberto(e.currentTarget.open)}
+          className="mr-1 mt-1 max-w-full min-w-0"
+        >
+          <summary className="text-wa-meta hover:text-wa-texto inline-flex min-h-8 cursor-pointer items-center text-[12px] underline-offset-4 hover:underline">
+            por quê?
+          </summary>
+          <div className="bg-wa-entrada mt-1 rounded-lg px-2.5 py-2 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)]">
+            <PorQue contexto={mensagem.contexto} />
+          </div>
+        </details>
       )}
     </div>
   );

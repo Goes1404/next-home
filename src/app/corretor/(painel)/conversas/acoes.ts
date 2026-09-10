@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { ContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -128,6 +129,12 @@ export type MensagemConversa = {
   interacaoId: string | null;
   /** Avaliação já dada a esta resposta, se houver. */
   avaliacao: "boa" | "ruim" | null;
+  /**
+   * Por que a IA respondeu isso (0105). Nulo em resposta anterior à coluna —
+   * e é assim que a tela diz "contexto não registrado" em vez de inventar uma
+   * razão que não foi a real.
+   */
+  contexto: ContextoDaInteracao | null;
 };
 
 /**
@@ -163,12 +170,18 @@ export async function lerMensagens(
    */
   const idsInteracao = (data ?? []).map((m) => m.interacao_id).filter((v): v is string => v !== null);
   const avaliacoes = new Map<string, "boa" | "ruim" | null>();
+  const contextos = new Map<string, ContextoDaInteracao | null>();
   if (idsInteracao.length > 0) {
     const { data: interacoes } = await supabase
       .from("ia_interacoes")
-      .select("id, avaliacao")
+      .select("id, avaliacao, contexto")
       .in("id", idsInteracao);
-    for (const i of interacoes ?? []) avaliacoes.set(i.id, i.avaliacao);
+    for (const i of interacoes ?? []) {
+      avaliacoes.set(i.id, i.avaliacao);
+      // O jsonb volta como `Json`; o formato é o que `montarContextoDaInteracao`
+      // gravou, e a conversão fica nesta fronteira em vez de vazar para a tela.
+      contextos.set(i.id, (i.contexto as ContextoDaInteracao | null) ?? null);
+    }
   }
 
   return (data ?? [])
@@ -182,6 +195,7 @@ export async function lerMensagens(
       statusEntrega: m.status_entrega,
       interacaoId: m.interacao_id,
       avaliacao: m.interacao_id ? (avaliacoes.get(m.interacao_id) ?? null) : null,
+      contexto: m.interacao_id ? (contextos.get(m.interacao_id) ?? null) : null,
     }))
     .reverse();
 }
