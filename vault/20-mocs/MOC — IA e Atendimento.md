@@ -39,6 +39,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[calendario-misturava-dois-fusos]]
 - [[catalogo-do-corretor-e-a-pagina-dele]]
 - [[referencia-no-chat-do-estudio]] — Estúdio: clipe de anexo, arte e vídeo
+- [[o-contrato-real-do-gpt-image-2]] — sondar a API sem gastar imagem; `input_fidelity` não existe (10/09)
 
 ## Conversa e estado
 - [[rajada-agrupar-conteudo-nao-so-invocacoes]]
