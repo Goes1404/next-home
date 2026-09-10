@@ -72,6 +72,14 @@ export function ChatDeArte({
   const [gerando, setGerando] = useState<string | null>(null);
   const [teto, setTeto] = useState(tetoInicial);
   const [galeria, setGaleria] = useState(galeriaInicial);
+  /*
+   * O prompt que o corretor mandou de volta ao composer pelo histórico.
+   *
+   * Reaproveitar NÃO gera e nem envia sozinho: o texto cai no campo, ele lê,
+   * ajusta ("igual, mas de noite") e manda. Um botão que gerasse direto seria
+   * a única porta do sistema que pula a revisão — e a revisão é o produto.
+   */
+  const [reaproveitado, setReaproveitado] = useState("");
   const [anexo, setAnexo] = useState<{ file: File; previewUrl: string } | null>(null);
   const [, iniciar] = useTransition();
 
@@ -221,6 +229,7 @@ export function ChatDeArte({
             pendente={pendente}
             pensando={pensando}
             placeholder='Ex.: "fachada do Eternity ao pôr do sol, para o feed"'
+            textoInicial={reaproveitado}
             /* Pedidos de VERDADE, no formato que funciona: o quê, de qual
                imóvel, para qual canal. Campo em branco não ensina formato;
                ver a IA responder a um exemplo, sim. */
@@ -291,11 +300,25 @@ export function ChatDeArte({
       {galeria.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-fluid-sm text-apoio font-medium">Suas últimas imagens</h2>
-          <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {galeria.slice(0, 8).map((img) => (
-              <li key={img.id} className="border-linha overflow-hidden rounded-xl border">
+              <li key={img.id} className="border-linha flex gap-3 overflow-hidden rounded-xl border p-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.arteUrl ?? img.url} alt="" className="aspect-square w-full object-cover" />
+                <img
+                  src={img.arteUrl ?? img.url}
+                  alt=""
+                  className="h-20 w-20 shrink-0 rounded-lg object-cover"
+                />
+                <div className="flex min-w-0 flex-col gap-1">
+                  <p className="text-apoio line-clamp-3 min-w-0 text-xs break-words">{img.prompt}</p>
+                  <button
+                    type="button"
+                    onClick={() => setReaproveitado(img.prompt)}
+                    className="text-acento-suave min-h-11 cursor-pointer self-start text-xs underline-offset-4 hover:underline"
+                  >
+                    Gerar outra assim
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
