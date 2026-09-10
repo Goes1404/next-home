@@ -17,7 +17,18 @@ import { expect, test } from "@playwright/test";
  *   transform — para a próxima causa ser achada, não suposta.
  */
 
-const PAGINAS = ["/", "/empreendimentos", "/empreendimentos/estacao-267-ne67774"];
+const PAGINAS = [
+  "/",
+  "/empreendimentos",
+  "/empreendimentos/estacao-267-ne67774",
+  // As institucionais entraram em 10/09/2026, quando ganharam a mesma casca
+  // (`Pagina` + `Secao`) — regressão de largura nelas passa a ser regressão
+  // em todas.
+  "/sobre",
+  "/contato",
+  "/financiamento",
+  "/corretores",
+];
 const LARGURAS = [360, 390];
 const CHAVE_VINHETA = "nh-intro-vista";
 

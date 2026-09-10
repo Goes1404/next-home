@@ -28,5 +28,12 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[conteudo-do-site-regras]]
 - [[seo-a-regua-de-titulo]]
 
+## Estrutura das páginas
+- [[pagina-institucional-tem-uma-casca-so]]
+
+## Movimento e listas
+- [[reveal-dentro-de-lista-vira-div]]
+- [[fundo-fixo-no-celular-usa-lvh]]
+
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]

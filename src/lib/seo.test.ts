@@ -71,8 +71,10 @@ const PAGINAS_PUBLICAS = [
   "src/app/(institucional)/corretores/page.tsx",
   "src/app/(vitrine)/empreendimentos/page.tsx",
   "src/app/(vitrine)/mapa/page.tsx",
-  "src/app/sobre/page.tsx",
-  "src/app/contato/page.tsx",
+  "src/app/(institucional)/sobre/page.tsx",
+  "src/app/(institucional)/contato/page.tsx",
+  "src/app/(institucional)/privacidade/page.tsx",
+  "src/app/(institucional)/financiamento/page.tsx",
 ];
 
 describe("os títulos escritos à mão cabem na SERP", () => {

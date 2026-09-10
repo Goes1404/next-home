@@ -34,7 +34,11 @@ export default async function VitrineLayout({ children }: { children: React.Reac
           da página enquanto fontes e o vídeo de fundo ainda carregam. */}
       <Preloader />
 
-      <div className="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-br from-fundo-marca via-fundo to-fundo">
+      {/* `h-lvh` e não `inset-0`: a barra de endereço do celular redimensiona
+          a viewport visível ao rolar, e a caixa (com o vídeo em `cover`)
+          reescalava a cada gesto. Ver o mesmo comentário no layout do
+          institucional. */}
+      <div className="fixed inset-x-0 top-0 -z-10 h-lvh overflow-hidden bg-gradient-to-br from-fundo-marca via-fundo to-fundo">
         {usaFotoDeFundo ? (
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : (

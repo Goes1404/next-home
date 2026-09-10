@@ -7,6 +7,7 @@ import { getTemaEscolhido } from "@/lib/tema";
 
 const LINKS = [
   { href: "/empreendimentos", label: "Imóveis" },
+  { href: "/financiamento", label: "Financiamento" },
   { href: "/corretores", label: "Corretores" },
   { href: "/sobre", label: "Sobre" },
   { href: "/contato", label: "Contato" },

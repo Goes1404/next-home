@@ -66,9 +66,13 @@ export function CardEmpreendimento({
             </ViewTransition>
           </Camada>
 
-          {/* Cor literal: o selo flutua sobre a capa, e o que precisa
-              contrastar com ele é a foto — não a superfície da página. */}
-          <span className="text-fluid-xs absolute top-3 left-3 rounded-full bg-ink-950/80 px-3 py-1 font-medium tracking-wide text-acento-suave uppercase backdrop-blur-sm">
+          {/* Cor literal nas DUAS pontas: o selo flutua sobre a capa, e o que
+              precisa contrastar com ele é a foto — não a superfície da
+              página. A tinta era `text-acento-suave`, que no tema CLARO é
+              verde-escuro sobre o fundo escuro fixo do selo: "Pronto para
+              morar" sumia (visto na captura de /regioes em 10/09/2026).
+              `brand-200` é fixa nos dois temas, como no logotipo do login. */}
+          <span className="text-fluid-xs absolute top-3 left-3 rounded-full bg-ink-950/80 px-3 py-1 font-medium tracking-wide text-brand-200 uppercase backdrop-blur-sm">
             {STATUS_LABEL[e.status]}
           </span>
 

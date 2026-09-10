@@ -54,7 +54,14 @@ export default async function InstitucionalLayout({
         data-fundo-parallax
         // `overflow-hidden` como no painel: o parallax escreve `scale()` aqui e a
         // abertura escala o vídeo a 1.22 — o que crescer fica dentro da caixa.
-        className="fixed inset-0 -z-10 overflow-hidden will-change-transform bg-gradient-to-br from-fundo-marca via-fundo to-fundo"
+        //
+        // `h-lvh` e não `inset-0`: no celular a barra de endereço do navegador
+        // some e volta ao rolar, e `inset-0` acompanha a viewport VISÍVEL —
+        // a caixa mudava de altura a cada gesto e o vídeo em `cover`
+        // reescalava junto ("o fundo fica maior, menor", 10/09/2026). A
+        // altura da viewport MAIOR é estável: a caixa nasce do tamanho da
+        // tela sem barra e não mexe mais.
+        className="fixed inset-x-0 top-0 -z-10 h-lvh overflow-hidden will-change-transform bg-gradient-to-br from-fundo-marca via-fundo to-fundo"
       >
         {/* O fundo é a VINHETA, em toda tela: a peça que o Preloader acabou
             de mostrar recua para trás do conteúdo e congela no último quadro.

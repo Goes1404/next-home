@@ -195,7 +195,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
                   </ul>
                 )}
 
-                <p className="text-fluid-base mt-5 whitespace-pre-line text-apoio">
+                <p className="text-fluid-base text-apoio mt-5 break-words whitespace-pre-line">
                   {apresentacao(corretor, empreendimentos)}
                 </p>
 

@@ -31,6 +31,19 @@ export function ParallaxFundoHome() {
     // O medidor não se move: ele só informa o progresso. Daí velocidade 0.
     velocidade: 0,
     aoAtualizar: (progresso, fator) => {
+      /*
+       * No CELULAR este parallax está desligado (10/09/2026). Relatado como
+       * "o fundo fica travando, fica maior, menor": o fundo é um nó `fixed`
+       * com dois vídeos decodificando, e escrever `translate3d` + `scale`
+       * nele a cada quadro, por cima do scroll nativo do toque (o Lenis não
+       * assume o toque, ver SmoothScroll), é o que engasgava — e o `scale`
+       * é exatamente o "maior, menor". A outra metade do sintoma era a
+       * barra de endereço redimensionando a caixa (ver `h-lvh` no layout).
+       * O desktop continua com o efeito: lá o fundo tem um vídeo só e o
+       * scroll passa pelo Lenis, no mesmo relógio deste callback.
+       */
+      if (window.innerWidth < 768) return;
+
       const fundo = document.querySelector<HTMLElement>("[data-fundo-parallax]");
       if (!fundo) return;
 

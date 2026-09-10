@@ -32,7 +32,27 @@ import path from "node:path";
  * Quem declara largura própria (`w-36`, `flex-1`, `max-w-*`, `block`) passa.
  */
 
-const RAIZ = path.join(process.cwd(), "src/app/corretor");
+/*
+ * As três regras valem para o SITE PÚBLICO também (10/09/2026).
+ *
+ * Elas nasceram varrendo só o painel, e a varredura do público achou os
+ * mesmos defeitos onde o estrago é maior: a legenda do vídeo do imóvel, a
+ * descrição do empreendimento e a apresentação do corretor — os três textos
+ * mais longos que um visitante lê, e os três vindos do CADASTRO, que é
+ * justamente de onde vêm palavra comprida e URL colada.
+ */
+const RAIZES = [
+  path.join(process.cwd(), "src/app/corretor"),
+  path.join(process.cwd(), "src/components"),
+  path.join(process.cwd(), "src/app/(institucional)"),
+  path.join(process.cwd(), "src/app/(vitrine)"),
+];
+
+/** Para o rótulo do erro sair curto: a raiz de quem o arquivo pertence. */
+function relativo(arq: string): string {
+  const raiz = RAIZES.find((r) => arq.startsWith(r)) ?? process.cwd();
+  return path.relative(raiz, arq);
+}
 
 function arquivos(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -55,9 +75,15 @@ function elementos(arq: string): Uso[] {
   }));
 }
 
-const TOKENS_DE_TEMA = /\btext-(titulo|corpo|apoio|tenue)\b/;
+/*
+ * `acento-suave` entrou na lista em 10/09/2026: no tema claro ela é
+ * verde-ESCURO, e o selo de status do cartão do catálogo (`bg-ink-950/80
+ * text-acento-suave`) sumia — visto na captura de /regioes, não pela guarda,
+ * que só olhava `bg-black`. `ink-9xx` é o mesmo preto fixo com outro nome.
+ */
+const TOKENS_DE_TEMA = /\btext-(titulo|corpo|apoio|tenue|acento-suave)\b/;
 /** De 40% para cima o preto já esconde o fundo do tema. */
-const PRETO_OPACO = /\bbg-black\/(4\d|5\d|6\d|7\d|8\d|9\d|100)\b/;
+const PRETO_OPACO = /\bbg-(black|ink-9\d\d)\/(4\d|5\d|6\d|7\d|8\d|9\d|100)\b/;
 
 const TAGS_DE_BLOCO = new Set([
   "p", "div", "li", "ul", "ol", "h1", "h2", "h3", "h4", "h5", "h6",
@@ -66,7 +92,7 @@ const TAGS_DE_BLOCO = new Set([
 const TEM_LARGURA = /(min-w-0|flex-1|basis-|w-\d|w-\[|w-full|max-w-|\bblock\b|\bgrid\b)/;
 
 describe("o painel não corta nem apaga texto", () => {
-  const todos = arquivos(RAIZ);
+  const todos = RAIZES.flatMap(arquivos);
 
   it("acha os arquivos do painel", () => {
     expect(todos.length).toBeGreaterThan(20);
@@ -76,7 +102,7 @@ describe("o painel não corta nem apaga texto", () => {
     const erros = todos.flatMap((arq) =>
       elementos(arq)
         .filter((e) => PRETO_OPACO.test(e.classes) && TOKENS_DE_TEMA.test(e.classes))
-        .map((e) => `${path.relative(RAIZ, arq)}:${e.linha}`),
+        .map((e) => `${relativo(arq)}:${e.linha}`),
     );
     expect(erros, `ilegível no tema claro: ${erros.join(", ")}`).toEqual([]);
   });
@@ -102,7 +128,7 @@ describe("o painel não corta nem apaga texto", () => {
             !/break-words/.test(e.classes) &&
             e.tag !== "pre",
         )
-        .map((e) => `${path.relative(RAIZ, arq)}:${e.linha} <${e.tag}>`),
+        .map((e) => `${relativo(arq)}:${e.linha} <${e.tag}>`),
     );
     expect(erros, `whitespace-pre sem break-words: ${erros.join(", ")}`).toEqual([]);
   });
@@ -116,7 +142,7 @@ describe("o painel não corta nem apaga texto", () => {
             !TAGS_DE_BLOCO.has(e.tag) &&
             !TEM_LARGURA.test(e.classes),
         )
-        .map((e) => `${path.relative(RAIZ, arq)}:${e.linha} <${e.tag}>`),
+        .map((e) => `${relativo(arq)}:${e.linha} <${e.tag}>`),
     );
     expect(erros, `truncate sem largura para encolher: ${erros.join(", ")}`).toEqual([]);
   });

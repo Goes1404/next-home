@@ -1040,7 +1040,6 @@ trilho+IA, follow-up, métricas de funil).
   monotonicidade em `montarFilaCampanha`; o teste que pegou só falhava
   entre ~1h e ~9h.
 
-
 ## O eval de CONVERSA e a ativação da IA (F0-F7, 24/08/2026)
 
 - **O eval media RESPOSTA, nunca CONVERSA, e isso era um teto.** Cada um dos
@@ -3855,7 +3854,6 @@ não tem.
   a substring, então o `indexOf` achou e o teste passou. Ao morder uma guarda
   que procura texto, conferir que a mordida de fato tira o texto.
 
-
 ## A roleta empurrava o lead para longe de quem podia atender (0093, 03/09/2026)
 
 Investigação que começou com o diagnóstico ERRADO, e a correção do
@@ -5386,3 +5384,155 @@ Nota: [[a-ressalva-legal-volta-por-codigo]].
   pixel mais escuro da faixa (o próprio véu) com o mais claro (o branco ACIMA
   dela) e deu "6,10:1 — ok". O par certo é letra × véu na MESMA linha.
 
+## A página de financiamento, e a guarda que passou a ver o site público (10/09/2026)
+
+- **A conta do financiamento já existia, pura e testada** (`lib/consultor/
+  financiamento.ts`, do consultor do painel). A página pública REUSA a mesma
+  função em vez de reimplementar: duas contas do mesmo financiamento
+  divergiriam, e o cliente ouviria um número no site e outro do corretor — o
+  jeito mais rápido de perder a conversa que o site conquistou.
+- **A simulação roda no NAVEGADOR e nada é enviado.** A pessoa declara renda
+  antes de confiar na empresa; guardar isso não serve a ninguém. Os parâmetros
+  de crédito (`getParametrosCredito`) vêm prontos do servidor, e a página
+  mostra a DATA da última conferência — número de crédito sem data é número em
+  que ninguém pode confiar.
+- **Os atalhos de faixa saem do CATÁLOGO.** Um chip "até R$ 300 mil" que
+  devolve lista vazia é o defeito que a seção de regiões tinha; aqui cada
+  corte só aparece se houver imóvel dentro dele, e o parâmetro é `precoMax`, o
+  MESMO que a listagem lê (a lição do `?filtro=parados`, que já mordeu duas
+  vezes).
+- **Rota nova só vale ligada**: cabeçalho, rodapé e sitemap na mesma mudança.
+  Página sem link de entrada é página que só o sitemap conhece.
+- **A guarda de cortes só varria o PAINEL, e o site público nunca tinha
+  passado por ela.** Estendida para `src/components`, `(institucional)` e
+  `(vitrine)`, achou três na primeira execução — e nos textos mais longos que
+  um visitante lê: legenda do vídeo do imóvel, descrição do empreendimento e
+  apresentação do corretor. Os três vêm do CADASTRO, que é de onde vêm palavra
+  comprida e URL colada. Provocada depois de estendida.
+
+## O mesmo aninhamento inválido, três vezes, no mesmo dia (10/09/2026)
+
+- **A outra sessão corrigiu `<ol><div><li>` na seção de passos — e eu tinha
+  acabado de repetir o padrão em TRÊS lugares novos** (cartões de região,
+  lista de imóveis da página de região, sugestões da página de
+  financiamento). `<Reveal>` renderiza `div` por padrão; embrulhar um `<li>`
+  nele produz `<ul><div><li>`, que o navegador tolera e o leitor de tela não:
+  ele para de anunciar "lista de N itens". O componente já aceita `as="li"`.
+  **Ao embrulhar item de lista num componente de movimento, conferir a tag
+  que ele renderiza** — e depois de ler uma correção alheia, procurar o mesmo
+  defeito no que se escreveu na mesma hora.
+- **`.next/types/validator.ts` envelhece com a árvore de rotas.** Depois de a
+  outra sessão apagar `api/imagens/briefing` e `melhorar`, o `tsc` acusava
+  módulo inexistente em arquivo GERADO — não é erro do código-fonte. `rm -rf
+  .next/types` + build regenera. Sintoma reconhecível: erro TS2307 cujo
+  caminho começa em `.next/`.
+
+## Três páginas fora do grupo, e a Sobre feita de conteúdo inventado (10/09/2026)
+
+Pedido: "qualidade absurda em todas as páginas". O levantamento achou o que
+nenhuma tela mostra sozinha — só navegando de uma para a outra.
+
+- **`/sobre`, `/contato` e `/privacidade` viviam FORA de `(institucional)`.**
+  Usavam o `SiteHeader` do portfólio (menu Empreendimentos/Mapa/Sobre/Contato)
+  em vez do `HeaderInstitucional` (Imóveis/Financiamento/Corretores/…), sem
+  o fundo em vídeo e sem o Preloader. Ir da home para Sobre trocava a
+  navegação inteira. Movidas para o grupo; `seo.test.ts` lê os arquivos por
+  caminho e precisou acompanhar.
+- **A `/sobre` era conteúdo INVENTADO.** Linha do tempo com seis
+  empreendimentos "entregues desde 2016" que não existem no catálogo nem no
+  mundo, fotos do Unsplash, links para `/mapa?imovel=` de slugs falsos, um
+  simulador prometendo "11,5% ao ano" (a promessa de rentabilidade que o
+  próprio `problemasDaCopy` proíbe nas peças de marketing), vídeo de banco
+  de imagens e um WhatsApp chumbado como fallback. Reescrita só com o que
+  sai do banco e de `lib/site.ts`. **Página institucional segue a mesma
+  régua da home: número que encolhe quando a realidade encolhe.**
+- **Cada página escrevia o próprio `<h1>` e a própria caixa** — centrado em
+  `2xl`, à esquerda em `4xl`, versalete tracked, pílula com ícone. Página a
+  página parecia razoável; o site parecia montado por pessoas diferentes.
+  Alavancas compartilhadas, como o `CabecalhoDeTela` do painel:
+  `Pagina` (casca), `Secao` (caixa `6xl` + ritmo), `CabecalhoDePagina`
+  (trilha + rótulo que conta + título editorial + lead), `FaixaDeProva`
+  (os números da home, reusados na Sobre), `MapaDaSede` (Contato e Sobre).
+- **Data de "última atualização" gerada com `new Date()`** na política de
+  privacidade: parecia revisada todo mês sem ninguém a ter tocado. Virou
+  constante escrita à mão — data que mente sobre revisão é pior que nenhuma.
+- **`dd` antes de `dt`** nas faixas de número: HTML inválido que eu mesmo
+  escrevi em duas páginas. `flex-col-reverse` põe o número em cima só na
+  tela e o DOM fica na ordem certa.
+- **Heredoc com `<<'EOF'` no Bash desta máquina falha com "unexpected EOF
+  while looking for matching `''"** quando o conteúdo é TSX longo (mesmo
+  entre aspas simples, mesmo com outro delimitador funcionando ao lado).
+  Para arquivo inteiro, usar a ferramenta Write; heredoc só para trechos
+  curtos e para Python.
+- **A guarda de "token de tema sobre preto" só olhava `bg-black`.** O selo de
+  status do cartão do catálogo era `bg-ink-950/80 text-acento-suave` — no tema
+  claro, verde-escuro sobre preto: "Pronto para morar" invisível. Só a
+  CAPTURA de `/regioes` no claro mostrou (medir aprova, olhar reprova, de
+  novo). A guarda passou a cobrir `bg-ink-9xx/` e `text-acento-suave`, foi
+  mordida, e achou um segundo caso (`Tipologias.tsx`, "Ver planta" em
+  `corpo-suave`). Tinta sobre preto fixo é `brand-200`, como no login.
+
+## O celular: fundo que "fica maior, menor", menu, botão flutuante e login (10/09/2026)
+
+- **"O fundo fica travando, fica maior, menor" eram DUAS causas somadas.**
+  (1) O fundo era `fixed inset-0`, e no celular a barra de endereço some e
+  volta ao rolar: `inset-0` acompanha a viewport VISÍVEL, a caixa mudava de
+  altura a cada gesto e o vídeo em `cover` reescalava junto. `h-lvh`
+  (viewport MAIOR) é estável — a caixa nasce do tamanho da tela sem barra e
+  não mexe mais. (2) `ParallaxFundoHome` escrevia `translate3d` + `scale`
+  no nó fixo com dois vídeos decodificando, por cima do scroll nativo do
+  toque (o Lenis não assume o toque) — o `scale` É o "maior, menor".
+  Desligado abaixo de 768px; o desktop mantém.
+- **Header e botão flutuante somem ao rolar para BAIXO e voltam ao rolar
+  para CIMA**, só no celular (`data-oculto` no header, `data-flutuante` no
+  botão). É a "animação ao arrastar" pedida — responde ao gesto, não roda
+  sozinha. Transform no header passou a ser seguro porque o painel do
+  MenuMobile mora num portal no `<body>` desde antes; o comentário antigo
+  do CSS ("nada de transform") descrevia a arquitetura anterior.
+- **O botão flutuante "sobrepõe textos"**: some também com o RODAPÉ na tela
+  (é onde estão os telefones por extenso) e com um campo em foco (o teclado
+  já ocupa a base). Virou verde sólido com símbolo branco, sem vidro: sobre
+  foto clara o vidro virava um borrão.
+- **Menu do celular virou painel lateral** com véu, cabeçalho próprio,
+  destinos com seta, WhatsApp e anunciar, e a porta "Área do corretor ·
+  Acesso restrito · CRM" no pé — antes ela só existia no rodapé. Fechar
+  também anima: o desmonte espera o recolhimento (`data-fechando`).
+- **Login no celular: "a imagem divide e sobrepõe a tela".** A faixa de
+  34svh + cartão subindo 2rem cobria a frase e cortava o prédio numa linha.
+  Agora a foto é o FUNDO da tela inteira e o cartão opaco mora no pé — não
+  há costura porque não há duas metades.
+- **A trilha das páginas vira UM botão "Voltar ao site" no celular** (44px):
+  "Início / Corretores" em 12px é legível e não é alvo de polegar.
+- **Diagnóstico**: `dataset.oculto`/`dataset.flutuante` lidos num Playwright
+  com `devices["Pixel 7"]` depois de rolar 4 passos para baixo e 2 para cima
+  — e `getBoundingClientRect().height` do fundo contra `innerHeight`. A
+  captura estática não mostra nada disto.
+- **`TaskStop` não mata o `next start` no Windows** — o processo fica no
+  3000 e o build seguinte "sobe" servindo o anterior (`EADDRINUSE` só no
+  log). `netstat -ano | grep :3000` + `taskkill //PID <pid> //F`.
+
+## A caixa de "salvar meu e-mail" no login (10/09/2026)
+
+- **Guarda o E-MAIL, nunca a senha, e o rótulo diz isso.** "Lembrar de mim"
+  sem dizer o quê é justamente o texto que faz alguém supor que a senha
+  ficou num servidor nosso. Quem guarda senha é o gerenciador do aparelho —
+  o `autoComplete="current-password"` do campo já o convida.
+- **Gravar acontece no ENVIO, e não há segunda chance.** `entrar` termina em
+  `redirect`, então o componente NUNCA volta a montar depois de um login bem
+  sucedido: qualquer código que dependesse do "depois" nunca rodaria. O
+  `onSubmit` roda antes da Server Action e não a impede (conferido no
+  navegador, não suposto).
+- **Três estados numa CHAVE SÓ** (`nh-corretor-email`): ausente = nunca
+  decidiu (a caixa nasce marcada), `""` = decidiu que não (nasce
+  desmarcada), e-mail = preenche o campo. Duas chaves — uma para o valor,
+  outra para a preferência — permitem divergir, e aí a tela mostra uma coisa
+  e o aparelho guarda outra.
+- **Lido em efeito e escrito direto no DOM**, com os campos não-controlados:
+  ler `localStorage` na renderização daria divergência de hidratação (o
+  servidor não sabe o que este aparelho guardou), e `setState` em efeito é o
+  que a regra de lint desta base reprova.
+- **Verificado no navegador, em Pixel 7**, os seis passos: primeira visita
+  sem nada guardado; envio com a caixa marcada grava o e-mail; ao voltar o
+  campo vem preenchido e **a senha vem vazia**; desmarcar e enviar grava a
+  recusa; ao voltar a caixa está desmarcada e o campo vazio; alvo de toque
+  de 44px, sem estouro de largura.

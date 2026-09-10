@@ -43,7 +43,7 @@ export function PlayerVideo({ url, titulo }: { url: string; titulo: string }) {
         >
           <Play className="ml-1 h-7 w-7 fill-ink-950 text-ink-950" />
         </span>
-        <span className="absolute right-4 bottom-3 left-4 truncate text-left text-sm font-medium text-white drop-shadow">
+        <span className="absolute right-4 bottom-3 left-4 min-w-0 truncate text-left text-sm font-medium text-white drop-shadow">
           {titulo}
         </span>
       </button>
