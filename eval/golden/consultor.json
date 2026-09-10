@@ -1,0 +1,243 @@
+[
+  {
+    "id": "portfolio-barueri-1dorm",
+    "pergunta": "Cliente quer 1 dormitório em Barueri. O que temos?",
+    "escopo": "portfolio",
+    "espera": {
+      "indicaImovel": true,
+      "semPrazo": true
+    }
+  },
+  {
+    "id": "portfolio-barueri-2dorm",
+    "pergunta": "Cliente quer 2 dormitórios em Barueri. O que temos?",
+    "escopo": "portfolio",
+    "espera": {
+      "indicaImovel": true,
+      "semPrazo": true
+    }
+  },
+  {
+    "id": "portfolio-barueri-3dorm",
+    "pergunta": "Cliente quer 3 dormitórios em Barueri. O que temos?",
+    "escopo": "portfolio",
+    "espera": {
+      "indicaImovel": true,
+      "semPrazo": true
+    }
+  },
+  {
+    "id": "portfolio-osasco-1dorm",
+    "pergunta": "Cliente quer 1 dormitório em Osasco. O que temos?",
+    "escopo": "portfolio",
+    "espera": {
+      "indicaImovel": true,
+      "semPrazo": true
+    }
+  },
+  {
+    "id": "portfolio-osasco-2dorm",
+    "pergunta": "Cliente quer 2 dormitórios em Osasco. O que temos?",
+    "escopo": "portfolio",
+    "espera": {
+      "indicaImovel": true,
+      "semPrazo": true
+    }
+  },
+  {
+    "id": "portfolio-osasco-3dorm",
+    "pergunta": "Cliente quer 3 dormitórios em Osasco. O que temos?",
+    "escopo": "portfolio",
+    "espera": {
+      "indicaImovel": true,
+      "semPrazo": true
+    }
+  },
+  {
+    "id": "portfolio-estagio-em_construcao",
+    "pergunta": "Tem alguma coisa Em construção pra mostrar hoje?",
+    "escopo": "portfolio",
+    "espera": {
+      "indicaImovel": true
+    }
+  },
+  {
+    "id": "portfolio-estagio-ultimas_unidades",
+    "pergunta": "Tem alguma coisa Últimas unidades pra mostrar hoje?",
+    "escopo": "portfolio",
+    "espera": {
+      "indicaImovel": true
+    }
+  },
+  {
+    "id": "portfolio-estagio-pronto_para_morar",
+    "pergunta": "Tem alguma coisa Pronto para morar pra mostrar hoje?",
+    "escopo": "portfolio",
+    "espera": {
+      "indicaImovel": true
+    }
+  },
+  {
+    "id": "portfolio-mais-barato",
+    "pergunta": "Qual é o mais em conta que a gente tem?",
+    "escopo": "portfolio",
+    "espera": {
+      "indicaImovel": true,
+      "semCorteDeCredito": true
+    }
+  },
+  {
+    "id": "portfolio-ficha-do-imovel",
+    "pergunta": "Me passa a ficha do Vila Eco Park: quantos dormitórios e o que tem de lazer?",
+    "escopo": "portfolio",
+    "espera": {
+      "semPrazo": true
+    }
+  },
+  {
+    "id": "credito-faixa-1",
+    "pergunta": "Cliente com renda de R$ 2.565, entrada de R$ 30.000, olhando o Eternity Alphaville Tamboré de R$ 1.289.900. Fecha?",
+    "escopo": "credito",
+    "espera": {
+      "simula": true,
+      "semCorteDeCredito": true
+    }
+  },
+  {
+    "id": "credito-faixa-2",
+    "pergunta": "Cliente com renda de R$ 4.230, entrada de R$ 30.000, olhando o Eternity Alphaville Tamboré de R$ 1.289.900. Fecha?",
+    "escopo": "credito",
+    "espera": {
+      "simula": true,
+      "semCorteDeCredito": true
+    }
+  },
+  {
+    "id": "credito-faixa-3",
+    "pergunta": "Cliente com renda de R$ 7.200, entrada de R$ 30.000, olhando o Eternity Alphaville Tamboré de R$ 1.289.900. Fecha?",
+    "escopo": "credito",
+    "espera": {
+      "simula": true,
+      "semCorteDeCredito": true
+    }
+  },
+  {
+    "id": "credito-faixa-4",
+    "pergunta": "Cliente com renda de R$ 10.800, entrada de R$ 30.000, olhando o Eternity Alphaville Tamboré de R$ 1.289.900. Fecha?",
+    "escopo": "credito",
+    "espera": {
+      "simula": true,
+      "semCorteDeCredito": true
+    }
+  },
+  {
+    "id": "credito-acima-das-faixas",
+    "pergunta": "Renda de R$ 24.000, quer financiar R$ 800.000. Como fica?",
+    "escopo": "credito",
+    "espera": {
+      "simula": true,
+      "semCorteDeCredito": true
+    }
+  },
+  {
+    "id": "credito-fgts-acima-do-teto",
+    "pergunta": "Ele tem R$ 60.000 de FGTS e quer um de R$ 450.000. Dá pra usar o fundo?",
+    "escopo": "credito",
+    "espera": {
+      "simula": true,
+      "semCorteDeCredito": true
+    }
+  },
+  {
+    "id": "credito-nao-fecha",
+    "pergunta": "Renda de R$ 2.000, sem entrada, quer um de R$ 400.000. Fecha?",
+    "escopo": "credito",
+    "espera": {
+      "simula": true
+    }
+  },
+  {
+    "id": "objecao-caro",
+    "pergunta": "Cliente disse que tá caro. O que eu respondo?",
+    "escopo": "objecao",
+    "espera": {
+      "semCorteDeCredito": true
+    }
+  },
+  {
+    "id": "objecao-vou-pensar",
+    "pergunta": "Ele falou \"vou pensar\" e sumiu. Como eu volto?",
+    "escopo": "objecao",
+    "espera": {
+      "semCorteDeCredito": true
+    }
+  },
+  {
+    "id": "objecao-desconto",
+    "pergunta": "Ele quer 10% de desconto. O que eu falo?",
+    "escopo": "objecao",
+    "espera": {
+      "semCorteDeCredito": true
+    }
+  },
+  {
+    "id": "objecao-esposa",
+    "pergunta": "Disse que precisa ver com a esposa. Isso é \"não\"?",
+    "escopo": "objecao",
+    "espera": {
+      "semCorteDeCredito": true
+    }
+  },
+  {
+    "id": "juridico-itbi",
+    "pergunta": "Quanto é o ITBI e quem paga?",
+    "escopo": "juridico",
+    "espera": {}
+  },
+  {
+    "id": "juridico-documentos",
+    "pergunta": "Que documento o cliente precisa pra dar entrada no financiamento?",
+    "escopo": "juridico",
+    "espera": {}
+  },
+  {
+    "id": "juridico-escritura",
+    "pergunta": "Escritura e registro são a mesma coisa? Quanto custa?",
+    "escopo": "juridico",
+    "espera": {}
+  },
+  {
+    "id": "juridico-distrato",
+    "pergunta": "Se ele desistir depois de assinar, perde tudo?",
+    "escopo": "juridico",
+    "espera": {}
+  },
+  {
+    "id": "borda-imovel-que-nao-e-nosso",
+    "pergunta": "Cliente perguntou do Dom Barueri, que não é da gente. O que eu falo?",
+    "escopo": "portfolio",
+    "espera": {
+      "indicaImovel": false
+    }
+  },
+  {
+    "id": "borda-planta-que-nao-existe",
+    "pergunta": "Manda a planta do Eternity Alphaville Tamboré.",
+    "escopo": "portfolio",
+    "espera": {}
+  },
+  {
+    "id": "borda-prazo-nao-cadastrado",
+    "pergunta": "Quando entrega o More Aldeia de Bareuri? Cliente precisa das chaves em 6 meses.",
+    "escopo": "portfolio",
+    "espera": {
+      "semPrazo": true
+    }
+  },
+  {
+    "id": "borda-acabamento-nao-cadastrado",
+    "pergunta": "Qual o piso e a bancada da cozinha do Eternity Alphaville Tamboré?",
+    "escopo": "portfolio",
+    "espera": {}
+  }
+]

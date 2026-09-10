@@ -20,7 +20,8 @@
     "eval:erros": "tsx --conditions=react-server scripts/eval/analiseDeErros.ts",
     "observatorio": "tsx scripts/observatorio.ts",
     "paleta": "node scripts/verificarPaleta.mjs",
-    "observatorio:consultor": "tsx scripts/observatorioConsultor.ts"
+    "observatorio:consultor": "tsx scripts/observatorioConsultor.ts",
+    "eval:consultor": "tsx --conditions=react-server scripts/eval/casosDoConsultor.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
