@@ -12,6 +12,7 @@ import { Camada } from "@/components/motion/Camada";
 import { ParallaxFundoHome } from "@/components/motion/ParallaxFundoHome";
 import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { Reveal } from "@/components/motion/Reveal";
+import { NumeroQueConta } from "@/components/motion/NumeroQueConta";
 import { ScrollCue } from "@/components/home/ScrollCue";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
@@ -263,7 +264,7 @@ export default async function HomeInstitucional() {
               ].map((n) => (
                 <div key={n.rotulo} className="bg-fundo px-5 py-7 text-center sm:py-8">
                   <p className="font-display text-titulo text-4xl font-bold tabular-nums sm:text-5xl">
-                    {n.valor}
+                    <NumeroQueConta valor={n.valor} />
                   </p>
                   <p className="text-fluid-xs text-apoio mt-1.5 text-pretty">{n.rotulo}</p>
                 </div>
@@ -274,7 +275,7 @@ export default async function HomeInstitucional() {
           {/* Regioes é compartilhado com o portfólio do corretor — a banda vem
               do embrulho, não de dentro do componente. */}
           <div className="bg-superficie/40 mt-16 sm:mt-24">
-            <Regioes />
+            <Regioes catalogo={todos} />
           </div>
 
           {/* Mapa geral: todos os imóveis com pin de localização; o clique

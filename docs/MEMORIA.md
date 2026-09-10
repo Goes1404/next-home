@@ -5094,3 +5094,34 @@ fecha?". Nota completa em `vault/10-notas/consultor-imobiliario-no-painel.md`.
   visita" descreve o produto real: filtro, WhatsApp sem formulário, visita na
   agenda do corretor. Numerado porque é uma sequência de verdade — numeração
   em conteúdo que não é sequência é enfeite, e é onde ela costuma aparecer.
+
+## As regiões saíram de chip para página (10/09/2026)
+
+- **Dois dos cinco chips prometiam uma região e entregavam o catálogo
+  inteiro.** "Santana de Parnaíba" e "Itapevi" apontavam para
+  `/empreendimentos` sem filtro porque não havia cadastro nelas — e o
+  comentário do arquivo dizia isso em voz alta, como se fosse aceitável. Quem
+  clica não descobre que a região está vazia: ele acha que o filtro quebrou.
+  Agora a região é DERIVADA do catálogo (`lib/regioes.ts`): região sem imóvel
+  some da tela e devolve 404 na própria página, por construção.
+- **Região não é bairro, e a diferença é a que decide se há conteúdo.** A
+  medição que descarta página por bairro continua valendo (~25 imóveis em 18
+  bairros, a maioria com um). O agrupamento que TEM inventário é Alphaville,
+  Barueri, Aldeia e as cidades — seis rotas, não dezoito.
+- **Alphaville e Aldeia contam DENTRO de Barueri, de propósito.** Quem procura
+  "Alphaville" e quem procura "Barueri" fazem buscas diferentes e as duas
+  precisam achar o imóvel. O cartão mostra a contagem de cada recorte, então
+  nada é afirmado a mais.
+- **A capa do cartão de região sai de `galeria[0]`, nunca de `capa`.**
+  `mapEmpreendimento` devolve o logotipo da casa quando não há foto (ver
+  `capa-de-empreendimento-nunca-e-nula`), e cartão de região com o logotipo
+  esticado é pior que cartão sem foto.
+- **Rota nova só vale com o sitemap junto.** As seis regiões entraram em
+  `sitemap.ts` — e só as que têm estoque: sitemap apontando para 404 é o jeito
+  mais rápido de o Google desconfiar do arquivo inteiro.
+- **`NumeroQueConta`**: o único movimento não pedido da home, e ele PARA. Uma
+  vez por carga, `IntersectionObserver` (não laço de scroll), 900ms, nenhum
+  timer vivo depois. O valor final vem no HTML do servidor e a contagem só
+  rola por cima — sem JS, com movimento reduzido ou em leitor de tela, o
+  número certo já está lá. Abaixo de 4 não conta: de 0 a 3 é piscada, não
+  animação.
