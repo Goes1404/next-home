@@ -5536,3 +5536,45 @@ nenhuma tela mostra sozinha — só navegando de uma para a outra.
   campo vem preenchido e **a senha vem vazia**; desmarcar e enviar grava a
   recusa; ao voltar a caixa está desmarcada e o campo vazio; alvo de toque
   de 44px, sem estouro de largura.
+
+## Uma piscada do banco derrubava a home (10/09/2026)
+
+Nota: [[uma-piscada-do-banco-derrubava-a-home]].
+
+- **Achado num smoke de rotina, não por relato.** Depois de um deploy, `/` e
+  `/sitemap.xml` voltaram 500 enquanto todas as outras rotas davam 200. O log
+  de runtime da Vercel mostrou `Gateway Timeout` do Supabase em três rotas no
+  mesmo minuto (18:00:09 `/`, 18:00:19 o webhook do WhatsApp, 18:00:22 o
+  sitemap), e 3/3 em 200 nas rodadas seguintes. **A falha era INTERMITENTE** —
+  no mesmo minuto, `/regioes/alphaville` respondeu 200.
+- **A saída é REPETIR, nunca degradar para lista vazia**, e os dois motivos são
+  medidos: (1) a home tem faixa de prova com os números reais do catálogo, e
+  vazia ela anunciaria "0 imóveis no catálogo" na primeira dobra — página de
+  erro é ruim, página que MENTE é pior; (2) o sitemap encolheria de ~39 URLs
+  para meia dúzia, e o Google ACREDITA num sitemap que encolheu, tratando o que
+  sumiu como removido. Um 500 faz o robô voltar depois.
+- **Erro de CONSULTA nunca é repetido.** Coluna inexistente, permissão negada,
+  ambiguidade de relacionamento (o `PGRST201` que já derrubou o site inteiro
+  aqui) vêm com `code` do PostgREST e não melhoram na segunda vez: repetir só
+  dobra a espera antes do mesmo erro. Falha SEM `code` é a que ganha chance.
+- **A retentativa recebe uma FÁBRICA, não a consulta pronta.** O construtor do
+  `postgrest-js` é um thenable de USO ÚNICO: aguardá-lo de novo devolve o
+  resultado já resolvido, sem tocar na rede. Com a consulta pronta, a
+  retentativa repetiria o mesmo erro de graça e **pareceria funcionar**.
+- **O genérico tem de ser a RESPOSTA inteira, não o `data`.** O Supabase tipa o
+  retorno como união discriminada, e é ela que faz `if (error) throw` estreitar
+  `data` para não-nulo depois. Reconstruir como `{ data: T; error: E | null }`
+  achata a união e o chamador passa a ver `data` possivelmente nulo — dois
+  erros de compilação apareceram exatamente assim.
+- **Teto de TEMPO, não só de tentativas.** Se a falha é timeout, cada tentativa
+  custa o timeout inteiro; três empilhadas estouram o limite da função e trocam
+  um 500 rápido por um 504 lento — pior para o visitante e para o robô.
+- **Personalização opcional fica de fora**: `buscarDestaquesCorretorAtivo` já
+  degrada sozinha (nem lê o `error`). Uma piscada ali custa a ORDEM preferida
+  do corretor, não a página — fazer o visitante esperar por um enfeite é trocar
+  custo invisível por visível.
+- **A guarda REPRODUZ o incidente** (`retentativaNaHome.test.ts`): finge o
+  timeout na primeira chamada e afirma que `getCorretores` ainda devolve a
+  equipe. Provocada tirando a retentativa, falha com a mensagem literal que a
+  produção mostrou.
+

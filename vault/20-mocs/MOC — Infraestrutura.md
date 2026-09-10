@@ -21,6 +21,7 @@ Vercel (plano Hobby), deploy e runtime.
 - [[sharp-na-vercel-o-binario-nao-chega]]
 - [[constante-compartilhada-mora-em-modulo-sem-nativo]]
 - [[erro-que-so-existe-no-runtime-se-investiga-no-runtime]]
+- [[uma-piscada-do-banco-derrubava-a-home]] — Gateway Timeout de segundos virava 500 na home; repetir, nunca degradar (10/09)
 
 ## Relacionados
 - [[MOC — Banco de Dados]] · [[Home]]

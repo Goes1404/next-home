@@ -1,5 +1,6 @@
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { createClient } from "@/lib/supabase/public";
+import { comRetentativa } from "@/lib/supabase/retentativa";
 import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
 import type {
   CorretorPerfil,
@@ -61,7 +62,9 @@ function aplicarCorretorAtivo(
 async function buscarPublicados(): Promise<Empreendimento[]> {
   const supabase = createClient();
   const [{ data, error }, corretorAtivo] = await Promise.all([
-    supabase.from("empreendimentos").select(SELECT_EMPREENDIMENTO).eq("publicado", true).order("ordem"),
+    comRetentativa("empreendimentos publicados", () =>
+      supabase.from("empreendimentos").select(SELECT_EMPREENDIMENTO).eq("publicado", true).order("ordem"),
+    ),
     getCorretorAtivo(),
   ]);
 
@@ -170,6 +173,12 @@ async function buscarDestaquesCorretorAtivo(): Promise<Map<string, number> | und
   const corretorAtivo = await getCorretorAtivo();
   if (!corretorAtivo) return undefined;
 
+  /*
+   * Sem retentativa, de propósito: isto é personalização opcional e já degrada
+   * sozinho (o `error` nem é lido). Uma piscada do banco aqui custa a ORDEM
+   * preferida do corretor, não a página — e fazer o visitante esperar por um
+   * enfeite é trocar um custo invisível por um visível.
+   */
   const supabase = createClient();
   const { data } = await supabase
     .from("corretor_destaques")
@@ -230,7 +239,14 @@ export async function getEmpreendimentoBySlug(
 ): Promise<Empreendimento | null> {
   const supabase = createClient();
   const [{ data, error }, corretorAtivo] = await Promise.all([
-    supabase.from("empreendimentos").select(SELECT_EMPREENDIMENTO).eq("slug", slug).eq("publicado", true).maybeSingle(),
+    comRetentativa("empreendimento por slug", () =>
+      supabase
+        .from("empreendimentos")
+        .select(SELECT_EMPREENDIMENTO)
+        .eq("slug", slug)
+        .eq("publicado", true)
+        .maybeSingle(),
+    ),
     getCorretorAtivo(),
   ]);
 
@@ -243,10 +259,9 @@ export async function getEmpreendimentoBySlug(
 
 export async function getSlugsEmpreendimentos(): Promise<string[]> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("empreendimentos")
-    .select("slug")
-    .eq("publicado", true);
+  const { data, error } = await comRetentativa("slugs", () =>
+    supabase.from("empreendimentos").select("slug").eq("publicado", true),
+  );
 
   if (error) throw new Error(`Falha ao listar slugs: ${error.message}`);
   return data.map((row) => row.slug);
@@ -299,11 +314,9 @@ export function mapCorretor(row: LinhaCorretor): CorretorPerfil {
  */
 export async function getCorretores(): Promise<CorretorPerfil[]> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("corretores")
-    .select(SELECT_CORRETOR)
-    .not("slug", "is", null)
-    .order("nome");
+  const { data, error } = await comRetentativa("corretores", () =>
+    supabase.from("corretores").select(SELECT_CORRETOR).not("slug", "is", null).order("nome"),
+  );
 
   if (error) throw new Error(`Falha ao listar corretores: ${error.message}`);
   return (data as LinhaCorretor[]).map(mapCorretor);
@@ -311,11 +324,9 @@ export async function getCorretores(): Promise<CorretorPerfil[]> {
 
 export async function getCorretorPorSlug(slug: string): Promise<CorretorPerfil | null> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("corretores")
-    .select(SELECT_CORRETOR)
-    .eq("slug", slug)
-    .maybeSingle();
+  const { data, error } = await comRetentativa("corretor por slug", () =>
+    supabase.from("corretores").select(SELECT_CORRETOR).eq("slug", slug).maybeSingle(),
+  );
 
   if (error) throw new Error(`Falha ao buscar corretor "${slug}": ${error.message}`);
   return data ? mapCorretor(data as LinhaCorretor) : null;
@@ -328,10 +339,9 @@ export type AtuacaoCorretor = {
 
 export async function getAtuacaoPorCorretor(): Promise<Record<string, AtuacaoCorretor>> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("empreendimentos")
-    .select("corretor_id, cidade")
-    .eq("publicado", true);
+  const { data, error } = await comRetentativa("atuação dos corretores", () =>
+    supabase.from("empreendimentos").select("corretor_id, cidade").eq("publicado", true),
+  );
 
   if (error) throw new Error(`Falha ao apurar atuação dos corretores: ${error.message}`);
 
@@ -355,12 +365,14 @@ export async function getEmpreendimentosPorCorretor(
   corretorId: string,
 ): Promise<Empreendimento[]> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("empreendimentos")
-    .select(SELECT_EMPREENDIMENTO)
-    .eq("corretor_id", corretorId)
-    .eq("publicado", true)
-    .order("ordem");
+  const { data, error } = await comRetentativa("empreendimentos do corretor", () =>
+    supabase
+      .from("empreendimentos")
+      .select(SELECT_EMPREENDIMENTO)
+      .eq("corretor_id", corretorId)
+      .eq("publicado", true)
+      .order("ordem"),
+  );
 
   if (error) {
     throw new Error(`Falha ao buscar empreendimentos do corretor: ${error.message}`);
