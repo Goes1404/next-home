@@ -663,10 +663,26 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
         .filter(Boolean)
         .join("\n");
     case "confirmar_visita":
+      /*
+       * O RESUMO DO COMBINADO, e não só um "confirmado".
+       *
+       * Relatado em 10/09/2026: "quando as visitas estiverem salvas, a IA
+       * precisa mandar mais mensagem, confirmando mais informações". Na
+       * conversa 2cff42f6 ela respondeu "Segunda-feira, 14/09, às 9h está
+       * confirmado" e parou. Quem marcou visita quer o print para guardar —
+       * dia, hora, QUAL imóvel e COM QUEM. É o que reduz o não-comparecimento,
+       * e é a informação que o cliente relê no dia.
+       *
+       * O que ela NÃO pode escrever é endereço: o endereço vem do cadastro, e
+       * endereço inventado leva o cliente ao lugar errado no dia da visita —
+       * mesma razão pela qual o link da página é montado por código.
+       */
       return [
-        `${cabecalho}: CONFIRMAR a visita que ele acabou de aceitar.`,
-        `Ele disse: "${jogada.oQueEleDisse}". Em UMA frase, confirme o dia e o horário exatos que ele escolheu, e diga o que vem a seguir (o corretor confirma o endereço / te chamo na véspera).`,
-        "Preencha \"visitaProposta\" com a data da tabela CALENDÁRIO e \"confirmadaPeloCliente\": true. Nenhuma pergunta nova, nenhum outro horário — ele já escolheu.",
+        `${cabecalho}: CONFIRMAR a visita que ele acabou de aceitar, com o resumo do combinado.`,
+        `Ele disse: "${jogada.oQueEleDisse}".`,
+        `Escreva o combinado inteiro, em duas mensagens curtas: (1) o dia e o horário exatos que ele escolheu${contexto.nomeDoFoco ? `, e que a visita é no ${contexto.nomeDoFoco}` : ""}, e com quem ele vai falar (diga o nome do corretor); (2) que o endereço certinho chega antes, e que se precisar remarcar é só responder aqui.`,
+        "NUNCA escreva o endereço nem o número da unidade: eles vêm do cadastro, e endereço errado leva o cliente ao lugar errado no dia.",
+        'Preencha "visitaProposta" com a data da tabela CALENDÁRIO e "confirmadaPeloCliente": true. Nenhuma pergunta nova, nenhum outro horário — ele já escolheu.',
       ].join("\n");
     case "agendar": {
       /*

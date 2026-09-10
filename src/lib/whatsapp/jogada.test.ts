@@ -718,3 +718,28 @@ describe("quem está marcando já passou do funil", () => {
     expect(texto).toContain("NÃO pergunte o dia de novo");
   });
 });
+
+describe("a confirmação manda o combinado, não só um 'confirmado'", () => {
+  /*
+   * Relatado em 10/09/2026. Na conversa 2cff42f6 ela disse "Segunda-feira,
+   * 14/09, às 9h está confirmado" e parou — quem marcou visita quer o print
+   * para guardar: dia, hora, qual imóvel e com quem.
+   */
+  const texto = (nomeDoFoco: string | null) =>
+    blocoDaJogada({ tipo: "confirmar_visita", oQueEleDisse: "Pode ser esse mesmo" }, { nomeDoFoco });
+
+  it("pede o imóvel e o nome do corretor no resumo", () => {
+    expect(texto("Vista AlphaGran")).toContain("no Vista AlphaGran");
+    expect(texto("Vista AlphaGran")).toContain("nome do corretor");
+  });
+
+  it("sem foco, não inventa imóvel nenhum", () => {
+    expect(texto(null)).not.toContain("no null");
+    expect(texto(null)).toContain("nome do corretor");
+  });
+
+  it("proíbe a IA de escrever endereço — ele vem do cadastro", () => {
+    // Endereço inventado leva o cliente ao lugar errado NO DIA da visita.
+    expect(texto("Vista AlphaGran")).toContain("NUNCA escreva o endereço");
+  });
+});
