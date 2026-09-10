@@ -5104,3 +5104,57 @@ fecha?". Nota completa em `vault/10-notas/consultor-imobiliario-no-painel.md`.
   produção) e commitou trabalho meu que estava pendente. Depois de um merge
   assim, conferir os OBJETOS no banco contra os arquivos — a lição de 06/09
   vale nos dois sentidos.
+
+## O agendamento estava quebrado em duas frentes (10/09/2026)
+
+Relatado assim: *"quando eu falo que consigo tal horário ele marca em outro,
+e quando falo que consigo segunda, ela me pergunta novamente se eu não
+consigo outro dia. E como minha agenda tava vazia segunda, era pra ir
+normal."* Estava certo, e eram DOIS defeitos somados. Os dois foram
+reproduzidos passando a conversa REAL (`2cff42f6`) pelo planner, sem uma
+chamada de LLM (`scripts/traces/traceVisita.ts`).
+
+- **A lista de horários nunca saía do PRIMEIRO DIA.** A grade real é 9h-22h
+  todos os dias; `proximosHorarios` pegava os SEIS primeiros em ordem
+  cronológica, que não chegam nem ao fim do primeiro dia. Reproduzido com o
+  instante exato (quinta 10/09 01h21), o prompt dizia "HORÁRIOS REAIS DE
+  VISITA — só estes existem" e listava **seis horários da quinta**, mais
+  "é proibido inventar outro horário". Ele pediu "amanhã" (sexta) e depois
+  "segunda": **nenhum dos dois existia na lista**. A IA teve de escolher
+  entre desobedecer o bloco e recusar o cliente, e fez as duas coisas em
+  turnos diferentes — inventou sábado, depois voltou para sexta. Hoje são
+  **dois por dia ao longo de sete dias**, agrupados por dia; o segundo sai
+  do MEIO da faixa e não da hora seguinte, porque "9h ou 10h" não é escolha
+  e "9h ou 15h" é manhã ou tarde.
+- **O planner não tinha estado de AGENDAMENTO.** Ele tinha `pediuHorario`
+  ("que horas?"), `aceitouHorario` e `confirmar_visita`, e nada para o meio
+  do caminho. Medido: "Quero marcar uma visita no amanhã" → `perguntar:estagio`;
+  "Sábado eu não consigo, pode ser segunda?" → `perguntar:estagio`; "9h" e
+  "Segunda feira" → `devolver_escolha`, que é literalmente "me conta o que
+  te ajudaria mais agora". Cinco turnos para marcar o que ele disse na
+  primeira frase.
+- **A regra que fica: quem está MARCANDO já passou do funil.** A ordem da
+  casa manda o horário concreto vir depois da qualificação — e isso vale
+  quando é a IA que puxa. Quando é o CLIENTE que puxa, interromper para
+  perguntar "pronto ou na planta?" é perder a visita que ele estava
+  entregando. A jogada `agendar` ganha do funil, da objeção e da saída
+  suave; perde só para confirmar o que já foi aceito e para responder
+  pergunta em aberto.
+- **Três guardas que este caso exigiu**: a contraproposta escolhe o dia NOVO
+  ("sábado eu não consigo, pode ser segunda?" marcaria sábado sem a negação
+  por frase); número não é hora ("2 reais" era a resposta de faixa de valor
+  na mesma conversa — só conta com `h`/`horas`/`às` e teto de 23); e
+  **"pode ser na planta" NÃO é aceite de convite**, embora case em `ACEITE`
+  pelo "pode ser" — o aceite exige TRÊS metades (o bot convidou, ele não
+  negou, e a fala dele não traz assunto do funil). O teste que já existia
+  pegou essa terceira na primeira rodada.
+- **A confirmação virou o COMBINADO.** Ela dizia "Segunda-feira, 14/09, às
+  9h está confirmado" e parava. Quem marcou visita quer o print para
+  guardar: dia, hora, QUAL imóvel e COM QUEM. O endereço continua proibido
+  no texto da IA — ele vem do cadastro, e endereço inventado leva o cliente
+  ao lugar errado no dia da visita (mesma razão do link montado por código).
+- **O trace saiu de uma TRANSCRIÇÃO DE PRODUÇÃO, não de um roteiro
+  imaginado**, e é a primeira vez nesta base. Os quatro perfis anteriores
+  (adversarial, cooperativo, objeção, interessado) foram escritos por mim; o
+  quinto é a conversa que o usuário viveu. Roteiro imaginado testa o caminho
+  feliz de quem o escreveu.

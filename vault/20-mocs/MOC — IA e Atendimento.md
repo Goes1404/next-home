@@ -31,6 +31,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[o-foco-precisava-da-oferta-solitaria]] — quem se interessa não repete o nome
 - [[o-contexto-que-a-ia-realmente-ve]] ⚠️ as sete camadas e os três buracos
 - [[privacidade-apaga-o-que-a-ia-depois-precisa]]
+- [[o-agendamento-estava-quebrado-em-duas-frentes]] ⚠️ a lista de horários e o planner
 - [[reconhecer-nome-do-imovel]]
 - [[ficha-do-prompt-completa-e-com-ausencias]]
 - [[detector-de-prazo-acusava-a-honestidade]]
