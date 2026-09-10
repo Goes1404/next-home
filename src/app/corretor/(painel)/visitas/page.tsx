@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import { getCorretorLogado, getLeadsDeVisita } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import { GradeDaSemana } from "./_componentes/GradeDaSemana";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
+import { linkWhatsappPara } from "@/lib/site";
+import {
+  etiquetasDoPreparo,
+  objecaoEmAberto,
+  resumoCurto,
+  temPreparo,
+  type DadosDoPreparo,
+} from "@/lib/crm/preparoDaVisita";
 
 export const metadata: Metadata = { title: "Minhas Visitas" };
 
@@ -34,12 +43,60 @@ export default async function VisitasPage({
    * cabeça, e o eval de 31/08 mediu o custo disso.
    */
   const corretor = await getCorretorLogado();
+  const supabase = await createClient();
   const { data: grade } = corretor
-    ? await (await createClient())
+    ? await supabase
         .from("corretor_disponibilidade")
         .select("dia_semana, hora_inicio, hora_fim")
         .eq("corretor_id", corretor.id)
     : { data: null };
+
+  /*
+   * O PREPARO da visita, numa consulta à parte.
+   *
+   * Não entra em `SELECT_LEAD` de propósito: aquele select é lido por toda
+   * tela de lead do painel, e engordá-lo por causa desta cobraria a coluna
+   * extra na lista paginada e no quadro de até 300 cartões. Aqui são poucas
+   * linhas — as visitas marcadas de um corretor — e só quando há visita.
+   *
+   * `numeric` do Postgres chega como STRING no supabase-js: sem o `Number`,
+   * a formatação de moeda sai quebrada sem erro nenhum.
+   */
+  const ids = visitas.map((v) => v.id);
+  const [{ data: perfis }, { data: dossies }] = ids.length
+    ? await Promise.all([
+        supabase
+          .from("leads")
+          .select("id, regiao_interesse, dormitorios_min, orcamento_min, orcamento_max, renda_mensal")
+          .in("id", ids),
+        supabase
+          .from("lead_observacoes_ia")
+          .select("lead_id, resumo_executivo, objecoes_identificadas")
+          .in("lead_id", ids),
+      ])
+    : [{ data: null }, { data: null }];
+
+  const numero = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+  const preparoPorLead = new Map<string, DadosDoPreparo>();
+  for (const p of perfis ?? []) {
+    preparoPorLead.set(p.id, {
+      regiaoInteresse: p.regiao_interesse,
+      dormitoriosMin: numero(p.dormitorios_min),
+      orcamentoMin: numero(p.orcamento_min),
+      orcamentoMax: numero(p.orcamento_max),
+      rendaMensal: numero(p.renda_mensal),
+    });
+  }
+  for (const d of dossies ?? []) {
+    const atual = preparoPorLead.get(d.lead_id) ?? {};
+    preparoPorLead.set(d.lead_id, {
+      ...atual,
+      resumoExecutivo: d.resumo_executivo,
+      objecoes: Array.isArray(d.objecoes_identificadas)
+        ? d.objecoes_identificadas.filter((o): o is string => typeof o === "string")
+        : null,
+    });
+  }
 
   return (
     <div>
@@ -82,6 +139,7 @@ export default async function VisitasPage({
             const hora = lead.visitaAgendadaEm
               ? horaFormatada.format(new Date(lead.visitaAgendadaEm))
               : null;
+            const preparo = preparoPorLead.get(lead.id) ?? {};
             const endereco = lead.empreendimento?.endereco ?? lead.empreendimento?.nome;
             const linkMaps = endereco
               ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`
@@ -108,25 +166,86 @@ export default async function VisitasPage({
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                {/*
+                  O endereço, por extenso. O botão de GPS já existia, mas o
+                  corretor não conseguia LER para onde ia sem sair do painel —
+                  e no dia da visita a rua é a informação, não o link.
+                */}
+                {lead.empreendimento?.endereco && (
+                  <p className="text-fluid-sm mt-2 text-corpo">{lead.empreendimento.endereco}</p>
+                )}
+
+                {/*
+                  O PREPARO: o que ele procura, e a objeção que ficou aberta.
+                  Só aparece quando há o que mostrar — seção que vive vazia
+                  ensina a pular a seção.
+                */}
+                {temPreparo(preparo) && (
+                  <div className="mt-3 border-t border-linha pt-3">
+                    {etiquetasDoPreparo(preparo).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {etiquetasDoPreparo(preparo).map((etiqueta) => (
+                          <span
+                            key={etiqueta}
+                            className="text-fluid-xs rounded-full bg-elevado px-2.5 py-1 text-corpo"
+                          >
+                            {etiqueta}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {objecaoEmAberto(preparo) && (
+                      <p className="text-fluid-xs mt-2 text-apoio">
+                        <span className="font-medium text-alerta">Atenção:</span>{" "}
+                        {objecaoEmAberto(preparo)}
+                      </p>
+                    )}
+                    {resumoCurto(preparo.resumoExecutivo) && (
+                      <p className="text-fluid-xs mt-2 text-apoio">
+                        {resumoCurto(preparo.resumoExecutivo)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {lead.telefone && (
+                    <a
+                      href={linkWhatsappPara(
+                        lead.telefone.replace(/\D/g, ""),
+                        `Oi, ${lead.nome.split(" ")[0]}! Passando para confirmar nossa visita${hora ? ` às ${hora}` : ""}.`,
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="min-w-32 flex-1 rounded-xl border border-acento-linha bg-acento-lavado px-4 py-2.5 text-center text-sm font-medium text-acento-suave transition-colors hover:opacity-85"
+                    >
+                      WhatsApp
+                    </a>
+                  )}
                   {linkMaps && (
                     <a
                       href={linkMaps}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 rounded-xl bg-elevado px-4 py-2.5 text-center text-sm font-medium text-corpo transition-colors hover:bg-vidro-forte"
+                      className="min-w-32 flex-1 rounded-xl bg-elevado px-4 py-2.5 text-center text-sm font-medium text-corpo transition-colors hover:bg-vidro-forte"
                     >
-                      Ir para o imóvel (GPS)
+                      Ir (GPS)
                     </a>
                   )}
                   {lead.telefone && (
                     <a
                       href={`tel:${lead.telefone}`}
-                      className="flex-1 rounded-xl border border-acento-linha bg-acento-lavado px-4 py-2.5 text-center text-sm font-medium text-acento-suave transition-colors hover:opacity-85"
+                      className="min-w-32 flex-1 rounded-xl bg-elevado px-4 py-2.5 text-center text-sm font-medium text-corpo transition-colors hover:bg-vidro-forte"
                     >
                       Ligar
                     </a>
                   )}
+                  <Link
+                    href={`/corretor/leads/${lead.id}`}
+                    className="min-w-32 flex-1 rounded-xl bg-elevado px-4 py-2.5 text-center text-sm font-medium text-corpo transition-colors hover:bg-vidro-forte"
+                  >
+                    Abrir ficha
+                  </Link>
                 </div>
               </article>
             );
