@@ -5881,3 +5881,17 @@ aprovada e parada — e cujo número (`0103`) já tinha sido tomado por
   cartão começa a abrir antes de estar no meio da tela). **A régua: quando
   vários elementos entram na mesma dobra, a soma dos tempos é o que o
   visitante sente, não a duração de um.**
+- **Sobreposição só é segura contra espaço VAZIO** (10/09/2026). A curva
+  entre faixas da home subia 3,5rem para "morder" a seção anterior, e o que
+  ela mordeu foi CONTEÚDO: os rótulos da faixa de números apareceram
+  cortados ao meio ("imóveis no catálogo", "com CRECI ativo"). Nenhuma seção
+  garante ter 3,5rem vazios no rodapé. Sem margem negativa, o arredondamento
+  sozinho já deixa o fundo aparecer nos cantos — é a mesma curva, e nada
+  cobre texto. **Ao sobrepor duas faixas, medir o que existe embaixo antes
+  de puxar a de cima.** A guarda é uma medida: o topo da curva tem de ficar
+  abaixo do último `dt` da seção anterior.
+- **O tema claro desceu ao último degrau útil**: página #cfd9c2 (81% de
+  luz), cartão #e5ebda. Medido na página servida, o apoio dá 4,9:1 e o tênue
+  3,7:1 — acima dos 4,5 e 3,0 da WCAG, com pouca folga. **O próximo degrau
+  de escuro reprova o texto de apoio**, então daqui em diante o que muda é o
+  TOM (mais verde, mais quente), não a luz.
