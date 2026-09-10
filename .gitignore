@@ -53,3 +53,12 @@ test-results/
 
 # Sonda da paleta (scripts/verificarPaleta.mjs) — gerada a cada rodada
 .tmp-paleta/
+
+# Config local de ferramentas de agente — pertence à máquina, não ao produto.
+# Entra aqui porque reaparece em todo clone e não descreve o Next Home.
+.claude/
+.agents/
+skills-lock.json
+
+# Medição de sessão: nasce descartável, como .tmp-paleta/ acima.
+medir-tmp.mjs
