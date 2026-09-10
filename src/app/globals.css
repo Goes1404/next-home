@@ -541,9 +541,27 @@
   :root[data-tema="claro"] {
     color-scheme: light;
 
-    --color-fundo: #edf2f0;
-    --color-superficie: #ffffff;
-    --color-elevado: #f4f8f7;
+    /*
+     * SAGE, MARFIM, BRANCO — e nessa ordem de profundidade.
+     *
+     * A versão anterior era `fundo #edf2f0` (quase branco, e frio) com
+     * `superficie #ffffff` (branco puro): duas camadas separadas por 3% de
+     * luz, então página e cartão viravam a mesma coisa e o site inteiro
+     * lia como uma folha de papel — a queixa foi exatamente "está muito
+     * branco".
+     *
+     * Agora a página é um verde-sage claro de viés quente, o cartão é
+     * marfim (não branco puro) e o branco fica reservado ao degrau mais
+     * alto: campo de formulário e superfície elevada. É isso que devolve a
+     * hierarquia — o cartão FLUTUA sobre a página em vez de se fundir com
+     * ela, e sobra um branco de verdade para o que precisa saltar.
+     *
+     * O verde não é decoração: é o teal do logotipo diluído, a mesma
+     * família do resto da paleta. Bege puro brigaria com ele.
+     */
+    --color-fundo: #e9ede1;
+    --color-superficie: #fafbf6;
+    --color-elevado: #ffffff;
     --color-campo: #ffffff;
 
     --color-linha: rgb(0 63 55 / 0.14);
@@ -640,9 +658,11 @@
     :root:not([data-tema="escuro"]) {
       color-scheme: light;
 
-      --color-fundo: #edf2f0;
-      --color-superficie: #ffffff;
-      --color-elevado: #f4f8f7;
+      /* Os MESMOS valores do bloco de `[data-tema=claro]` — o comentário
+         longo está lá. */
+      --color-fundo: #e9ede1;
+      --color-superficie: #fafbf6;
+      --color-elevado: #ffffff;
       --color-campo: #ffffff;
 
       --color-linha: rgb(0 63 55 / 0.14);

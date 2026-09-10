@@ -5679,3 +5679,12 @@ combinem com a logo".
   declaração; aninhada numa função de gradiente, a peça quebra no build de
   produção. Nas cores da aurora e da banda de seção usa-se `color-mix` sobre
   tokens que já mudam com o tema.
+- **"No tema claro está muito branco" era falta de DEGRAU, não de cor**
+  (10/09/2026). `fundo #edf2f0` e `superficie #ffffff` estão a 3% de luz um
+  do outro: página e cartão viravam a mesma superfície e o site lia como uma
+  folha de papel. Hoje são três degraus de verdade — página em sage claro
+  (`#e9ede1`, o teal do logotipo diluído), cartão em marfim (`#fafbf6`) e o
+  BRANCO reservado ao topo (campo de formulário, superfície elevada). O
+  cartão passa a flutuar sobre a página, e sobra um branco de verdade para o
+  que precisa saltar. `COR_DA_BARRA.claro` acompanha o fundo novo — senão a
+  moldura do navegador fica de um tema e o conteúdo de outro.
