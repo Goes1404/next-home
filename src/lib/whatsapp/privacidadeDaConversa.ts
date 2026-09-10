@@ -49,28 +49,51 @@
  */
 
 /**
- * Esta conversa é atendimento — ou seja, alguém autorizou.
+ * Esta conversa é atendimento — ou seja, alguém autorizou em algum momento.
  *
  * Espelha `exigePalavraChave` do `modoBot.ts`, ao contrário: lá se pergunta
- * se a trava se aplica; aqui, se a conversa passou por ela. Três portas, e
+ * se a trava se aplica; aqui, se a conversa passou por ela. Quatro portas, e
  * qualquer uma basta:
  *
  * 1. a palavra-chave foi dita nesta conversa;
  * 2. o número já era do CRM antes dela (alguém o cadastrou de propósito);
- * 3. a conversa nasceu de campanha (o disparo é decisão do corretor).
+ * 3. a conversa nasceu de campanha (o disparo é decisão do corretor);
+ * 4. a IA JÁ ATENDEU esta conversa alguma vez (`atendida_em`, 0106).
  *
- * Fora das três, ninguém autorizou nada — e é só aí que o texto não é
- * guardado.
+ * ## Por que a quarta porta existe
+ *
+ * As três primeiras respondem "alguém autorizou AGORA?". Faltava "alguém já
+ * autorizou ALGUM DIA?" — e é essa que o retravamento apagava. A cada fala do
+ * corretor que não é a palavra-chave, `decidirPorFalaDoCorretor` retrava a
+ * conversa; ele manda ~373 por semana do próprio celular, porque a instância
+ * roda no WhatsApp pessoal dele. Enquanto travada, tudo que o cliente escreve
+ * vira marcador.
+ *
+ * Medido antes da 0106: **2.431 falas gravadas em branco**. E o buraco é de um
+ * lado só — a fala do BOT nunca fica em branco, porque ele só fala liberado.
+ * Quando a conversa destrava, a IA lê um histórico furado e assimétrico.
+ *
+ * ## O que esta função NÃO decide
+ *
+ * Se a IA pode falar. Isso é `exigeLiberacaoExplicita` + `motivoDoSilencio`,
+ * e continua trancado: conversa retravada segue muda até alguém liberar. É a
+ * separação entre FATO e PERMISSÃO — e ela só se sustenta porque os dois
+ * moram em campos diferentes. Reusar `cliente_conhecido` para isto desligaria
+ * o retravamento junto, que é a opção descartada em 10/09/2026 (a IA
+ * assumindo a conversa da família do corretor tem caso real).
  */
 export function conversaEhAtendimento(conversa: {
   liberadoPorPalavraChave: boolean;
   clienteConhecido?: boolean | null;
   origem?: string | null;
+  /** Quando a IA atendeu esta conversa pela primeira vez (0106). */
+  atendidaEm?: string | null;
 }): boolean {
   return (
     conversa.liberadoPorPalavraChave ||
     conversa.clienteConhecido === true ||
-    conversa.origem === "campanha"
+    conversa.origem === "campanha" ||
+    Boolean(conversa.atendidaEm)
   );
 }
 

@@ -17,6 +17,8 @@ import {
   agendarVisitaLead,
   aplicarAckDeEntrega,
   avancarLeadParaPrimeiroContato,
+  contarFalasNaoGravadas,
+  marcarConversaAtendida,
   registrarImovelDeInteresse,
   registrarRespostaDoLead,
   botDeveResponder,
@@ -718,6 +720,23 @@ export async function POST(req: NextRequest) {
      * no dossiê (12s) ou num aviso, a conversa já está salva. Perder o
      * vínculo custa uma avaliação; perder a mensagem custa o contexto.
      */
+    /*
+     * O FATO, carimbado uma vez só (0106): a IA atendeu esta conversa.
+     *
+     * Vem ANTES de gravar o balão de propósito. `conversa` foi lida no início
+     * da requisição, e é ela que decide se a PRÓXIMA fala do cliente será
+     * guardada — carimbar depois deixaria uma janela em que a conversa já foi
+     * atendida e o texto ainda se perde. O objeto em memória é atualizado
+     * junto, senão as duas metades desta mesma requisição discordariam.
+     *
+     * NÃO destrava nada: o retravamento continua valendo, e a IA segue muda
+     * até alguém liberar. É só o texto que volta a ser guardado.
+     */
+    if (envio.enviado && !conversa.atendidaEm) {
+      await marcarConversaAtendida(conversa.id);
+      conversa.atendidaEm = new Date().toISOString();
+    }
+
     const mensagemDoBot = await gravarMensagem({
       // Se a IA respondeu, a conversa é atendimento por definição — mas o
       // valor vem da MESMA função que decide isso, não de um `true`
@@ -894,6 +913,7 @@ export async function POST(req: NextRequest) {
         jogada: turno.jogada,
         dossie: dossieAnterior,
         historico: turno.historicoAnterior,
+        falasNaoGravadas: await contarFalasNaoGravadas(conversa.id),
         fewShot: turno.fewShot,
       }),
     });

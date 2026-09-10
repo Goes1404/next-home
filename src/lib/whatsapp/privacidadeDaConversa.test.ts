@@ -6,6 +6,7 @@ import {
   resumoParaGravar,
   TEXTO_NAO_GUARDADO,
 } from "./privacidadeDaConversa";
+import { exigeLiberacaoExplicita } from "./modoBot";
 
 describe("conversa nunca liberada não guarda texto", () => {
   const pessoal = "Estou indo, amor. Só quando acabar o expediente aqui";
@@ -82,7 +83,7 @@ describe("todo chamador de gravarMensagem decide sobre privacidade", () => {
   });
 });
 
-describe("conversaEhAtendimento — as três portas", () => {
+describe("conversaEhAtendimento — as quatro portas", () => {
   it("palavra-chave dita libera", () => {
     expect(conversaEhAtendimento({ liberadoPorPalavraChave: true })).toBe(true);
   });
@@ -119,5 +120,77 @@ describe("conversaEhAtendimento — as três portas", () => {
     expect(
       conversaEhAtendimento({ liberadoPorPalavraChave: false, clienteConhecido: null }),
     ).toBe(false);
+  });
+
+  /*
+   * A quarta porta: a IA JÁ atendeu esta conversa alguma vez (0106).
+   *
+   * Sem ela, o retravamento — que acontece a cada fala do corretor que não é
+   * a palavra-chave, e ele manda ~373 por semana do próprio celular — fazia a
+   * conversa VOLTAR a perder texto depois de já ter sido atendida. Medido:
+   * 2.431 falas gravadas em branco, e o buraco é de um lado só, porque a fala
+   * do bot nunca fica em branco.
+   */
+  it("conversa que a IA já atendeu continua guardando texto, mesmo retravada", () => {
+    expect(
+      conversaEhAtendimento({
+        liberadoPorPalavraChave: false,
+        clienteConhecido: false,
+        origem: "organica",
+        atendidaEm: "2026-09-01T12:00:00Z",
+      }),
+    ).toBe(true);
+  });
+
+  it("nunca atendida continua sem guardar", () => {
+    expect(
+      conversaEhAtendimento({
+        liberadoPorPalavraChave: false,
+        clienteConhecido: false,
+        origem: "organica",
+        atendidaEm: null,
+      }),
+    ).toBe(false);
+  });
+});
+
+/**
+ * A guarda CENTRAL desta correção: o par que prova a separação.
+ *
+ * Fato e permissão são coisas diferentes, e só podem discordar se morarem em
+ * campos diferentes. A opção que o usuário DESCARTOU era reusar
+ * `cliente_conhecido` — que desligaria o retravamento junto, deixando a IA
+ * assumir a conversa da família do corretor (o caso real da conversa da mãe
+ * dele).
+ *
+ * Um teste só de um dos lados não distingue esta correção daquela.
+ */
+describe("fato e permissão discordam, e é isso que o recurso é", () => {
+  const jaAtendidaERetravada = {
+    liberadoPorPalavraChave: false,
+    clienteConhecido: false,
+    origem: "organica" as const,
+    atendidaEm: "2026-09-01T12:00:00Z",
+  };
+
+  it("o FATO é reconhecido: o texto volta a ser guardado", () => {
+    expect(conversaEhAtendimento(jaAtendidaERetravada)).toBe(true);
+  });
+
+  it("a PERMISSÃO segue trancada: quem decide se a IA fala não lê atendida_em", () => {
+    /*
+     * `exigeLiberacaoExplicita` é quem responde "a IA pode falar?". Ela não
+     * recebe nem lê `atendidaEm` — e é este teste que impede alguém de
+     * "simplificar" a separação juntando as duas de novo.
+     */
+    const codigo = readFileSync("src/lib/whatsapp/modoBot.ts", "utf8");
+    const inicio = codigo.indexOf("export function exigeLiberacaoExplicita");
+    const fim = codigo.indexOf("\n}", inicio);
+    const corpo = codigo.slice(inicio, fim);
+
+    expect(corpo).not.toMatch(/atendidaEm|atendida_em/);
+    expect(
+      exigeLiberacaoExplicita({ origemConversa: "organica", jaEraDoCrm: false }),
+    ).toBe(true);
   });
 });

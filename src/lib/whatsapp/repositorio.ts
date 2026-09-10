@@ -1,6 +1,6 @@
 import "server-only";
 
-import { conteudoParaGravar, resumoParaGravar } from "./privacidadeDaConversa";
+import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   bloqueadoAtePor,
@@ -110,10 +110,16 @@ export type ConversaPersistida = {
    * sempre pela primeira mensagem que o corretor digitou.
    */
   clienteConhecido: boolean;
+  /**
+   * Quando a IA atendeu esta conversa pela primeira vez (0106). É a quarta
+   * porta de `conversaEhAtendimento` — o FATO, que sobrevive ao
+   * retravamento da PERMISSÃO.
+   */
+  atendidaEm: string | null;
 };
 
 const SELECT_CONVERSA =
-  "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido";
+  "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido, atendida_em";
 
 function mapConversa(row: {
   id: string;
@@ -125,6 +131,7 @@ function mapConversa(row: {
   origem: "organica" | "campanha";
   e_teste: boolean;
   cliente_conhecido?: boolean;
+  atendida_em?: string | null;
 }): ConversaPersistida {
   return {
     id: row.id,
@@ -134,6 +141,7 @@ function mapConversa(row: {
     pausadoHumanoAte: row.pausado_humano_ate,
     liberadoPorPalavraChave: row.liberado_por_palavra_chave,
     clienteConhecido: row.cliente_conhecido ?? false,
+    atendidaEm: row.atendida_em ?? null,
     eTeste: row.e_teste,
     origem: row.origem,
   };
@@ -888,6 +896,57 @@ export async function marcarConversaComoAtendimento(conversaId: string): Promise
   if (error) console.error("[conversa] falha ao marcar como atendimento:", error.message);
 }
 
+/**
+ * Carimba o FATO: a IA atendeu esta conversa (0106).
+ *
+ * Uma vez só — `where atendida_em is null`. Reescrever a cada resposta faria
+ * a marca mentir sobre QUANDO o atendimento começou, o mesmo motivo pelo qual
+ * `desconectado_em` (0071) é gravado uma vez e não a cada ciclo do cron.
+ *
+ * É o que faz o texto voltar a ser guardado depois de um retravamento. NÃO
+ * desliga o retravamento: quem decide se a IA fala continua sendo
+ * `exigeLiberacaoExplicita` + `motivoDoSilencio`, e nenhum dos dois lê esta
+ * coluna. Fato e permissão em campos diferentes é o recurso inteiro.
+ *
+ * Falha vira log, como o resto da telemetria de conversa: perder o carimbo
+ * custa o texto das próximas mensagens até a resposta seguinte carimbar de
+ * novo; derrubar a resposta ao cliente custa o cliente.
+ */
+/**
+ * Quantas falas desta conversa foram gravadas SEM texto.
+ *
+ * É o número que separa "a IA não considerou o que eu disse" de "a IA não
+ * RECEBEU o que você disse" — duas queixas idênticas na tela do corretor que
+ * pedem correções opostas. Aparece no "por quê?" de cada balão (0105).
+ *
+ * Precisa vir de uma consulta própria porque a janela do histórico DESCARTA a
+ * marca desde a 0106: contá-la lá daria zero para sempre. `head: true`, então
+ * volta só o número — nenhuma linha trafega.
+ */
+export async function contarFalasNaoGravadas(conversaId: string): Promise<number> {
+  const supabase = createServiceClient();
+
+  const { count } = await supabase
+    .from("whatsapp_mensagens")
+    .select("id", { count: "exact", head: true })
+    .eq("conversa_id", conversaId)
+    .eq("conteudo", TEXTO_NAO_GUARDADO);
+
+  return count ?? 0;
+}
+
+export async function marcarConversaAtendida(conversaId: string): Promise<void> {
+  const supabase = createServiceClient();
+
+  const { error } = await supabase
+    .from("whatsapp_conversas")
+    .update({ atendida_em: new Date().toISOString() })
+    .eq("id", conversaId)
+    .is("atendida_em", null);
+
+  if (error) console.error("[conversa] falha ao carimbar atendida_em:", error.message);
+}
+
 export async function pausarBotPorAtendimentoHumano(
   conversaId: string,
   opcoes: { retravarPalavraChave?: boolean } = {},
@@ -990,7 +1049,7 @@ export function botDeveResponder(conversa: ConversaPersistida): boolean {
  */
 export async function historicoRecente(
   conversaId: string,
-  limite = 20,
+  limite = 40,
 ): Promise<{ remetente: "cliente" | "bot" | "corretor"; texto: string }[]> {
   const supabase = createServiceClient();
 
@@ -998,6 +1057,20 @@ export async function historicoRecente(
     .from("whatsapp_mensagens")
     .select("remetente, conteudo")
     .eq("conversa_id", conversaId)
+    /*
+     * A marca de mensagem não gravada NÃO ocupa linha da janela.
+     *
+     * Ela existe para a TELA não parecer defeito (`privacidadeDaConversa`).
+     * No prompt não ensina nada e gasta um dos 40 lugares para dizer "aqui
+     * havia algo que você não pode ler" — e havia conversa com 53 delas em
+     * 209 mensagens. Filtrar na CONSULTA, e não depois, é o que faz o corte
+     * trazer 40 falas ÚTEIS em vez de 40 linhas das quais metade é
+     * placeholder.
+     *
+     * A comparação sai da constante, nunca de um literal copiado: duas
+     * cópias do mesmo texto divergem no dia em que alguém melhora a frase.
+     */
+    .neq("conteudo", TEXTO_NAO_GUARDADO)
     .order("created_at", { ascending: false })
     .limit(limite);
 

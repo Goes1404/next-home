@@ -2055,6 +2055,7 @@ export type Database = {
       whatsapp_conversas: {
         Row: {
           alerta_quente_em: string | null
+          atendida_em: string | null
           bot_ativo: boolean
           cliente_conhecido: boolean
           corretor_id: string
@@ -2075,6 +2076,7 @@ export type Database = {
         }
         Insert: {
           alerta_quente_em?: string | null
+          atendida_em?: string | null
           bot_ativo?: boolean
           cliente_conhecido?: boolean
           corretor_id: string
@@ -2095,6 +2097,7 @@ export type Database = {
         }
         Update: {
           alerta_quente_em?: string | null
+          atendida_em?: string | null
           bot_ativo?: boolean
           cliente_conhecido?: boolean
           corretor_id?: string

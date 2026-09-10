@@ -1,7 +1,6 @@
 import type { Jogada } from "./jogada";
 import type { Fala } from "./rajada";
 import type { DossieClienteIA } from "./types";
-import { naoFoiGravada } from "./conversaSemTexto";
 
 /**
  * Por que a IA disse aquilo — o que falta para o corretor julgar um balão.
@@ -16,11 +15,17 @@ import { naoFoiGravada } from "./conversaSemTexto";
  * ilegível no celular e — o que decide — não responde à pergunta dele. Ele
  * quer a decisão, não a transcrição da instrução.
  *
- * `emBranco` é o campo que costuma explicar a queixa. `medirContexto.ts`
- * mediu 32% das falas do cliente gravadas em branco (conversa retravada, o
- * texto nunca chegou ao banco) e 44% da janela ocupada por fala do corretor.
- * Sem esse número, "a IA não considerou o que eu disse" e "a IA não RECEBEU o
- * que você disse" são a mesma frase na tela — e pedem correções opostas.
+ * `emBranco` é o campo que costuma explicar a queixa: falas gravadas sem
+ * texto, que a IA não teve como ler (conversa retravada — ver
+ * `privacidadeDaConversa.ts`). Sem esse número, "a IA não considerou o que eu
+ * disse" e "a IA não RECEBEU o que você disse" são a mesma frase na tela — e
+ * pedem correções opostas.
+ *
+ * Ele conta a CONVERSA inteira, não a janela, e desde a 0106 isso é o único
+ * jeito de ele significar alguma coisa: a consulta da janela passou a
+ * DESCARTAR a marca (ela gastava linha sem ensinar nada), então contá-la
+ * dentro da janela daria zero para sempre — e número que vive em zero ensina
+ * a ignorar o número.
  *
  * Módulo PURO: nenhum import de servidor, nada de banco. É o que permite
  * testá-lo sem ambiente e o que garante que a conta da tela e a conta da
@@ -49,7 +54,10 @@ export type ContextoDaInteracao = {
     doCliente: number;
     doBot: number;
     doCorretor: number;
-    /** Falas gravadas sem texto — a IA não as recebeu. */
+    /**
+     * Falas desta CONVERSA gravadas sem texto — a IA não as recebeu. Não é um
+     * recorte da janela: a janela não as traz mais (0106).
+     */
     emBranco: number;
   };
   /** Quantos exemplos de conversa real entraram no prompt. */
@@ -66,6 +74,12 @@ export function montarContextoDaInteracao(params: {
    */
   dossie: DossieClienteIA | null;
   historico: Fala[];
+  /**
+   * Quantas falas desta conversa estão gravadas sem texto. Vem de fora porque
+   * a resposta está no banco e este módulo é puro — o que também o mantém
+   * testável sem ambiente.
+   */
+  falasNaoGravadas: number;
   fewShot: number;
 }): ContextoDaInteracao {
   const { historico } = params;
@@ -87,7 +101,9 @@ export function montarContextoDaInteracao(params: {
       doCliente: historico.filter((f) => f.remetente === "cliente").length,
       doBot: historico.filter((f) => f.remetente === "bot").length,
       doCorretor: historico.filter((f) => f.remetente === "corretor").length,
-      emBranco: historico.filter((f) => naoFoiGravada(f.texto)).length,
+      // A janela não traz mais a marca (0106); o que sobra ali seria sempre
+      // zero. Quem sabe quantas se perderam é o banco.
+      emBranco: params.falasNaoGravadas,
     },
     fewShot: params.fewShot,
   };

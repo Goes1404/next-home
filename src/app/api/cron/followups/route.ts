@@ -18,6 +18,8 @@ import {
   travarDisparo,
   destravarDisparo,
   ultimaFalaDoCorretor,
+  contarFalasNaoGravadas,
+  marcarConversaAtendida,
   marcarConversaComoAtendimento,
   motivoDoSilencio,
 } from "@/lib/whatsapp/repositorio";
@@ -251,7 +253,7 @@ async function responderAtrasada(
   const { data: conversa } = await supabase
     .from("whatsapp_conversas")
     .select(
-      "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido",
+      "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido, atendida_em",
     )
     .eq("id", params.conversaId)
     .maybeSingle();
@@ -272,6 +274,7 @@ async function responderAtrasada(
     pausadoHumanoAte: conversa.pausado_humano_ate,
     liberadoPorPalavraChave: conversa.liberado_por_palavra_chave,
     clienteConhecido: conversa.cliente_conhecido ?? false,
+    atendidaEm: conversa.atendida_em ?? null,
     eTeste: conversa.e_teste,
     origem: conversa.origem,
   });
@@ -367,6 +370,10 @@ async function responderAtrasada(
    */
   if (!todosEnviados) return "pulada";
 
+  // O mesmo carimbo do webhook (0106): a IA falou, então a conversa é
+  // atendimento — e continua sujeita ao retravamento.
+  await marcarConversaAtendida(conversa.id);
+
   const interacaoId = crypto.randomUUID();
   const mensagemDoBot = await gravarMensagem({
     conversaLiberada: true,
@@ -393,6 +400,7 @@ async function responderAtrasada(
       jogada: turno.jogada,
       dossie,
       historico: turno.historicoAnterior,
+      falasNaoGravadas: await contarFalasNaoGravadas(conversa.id),
       fewShot: turno.fewShot,
     }),
   });
@@ -751,6 +759,9 @@ async function processarFollowup(
    * nasceu.
    */
   await marcarConversaComoAtendimento(conversa.id);
+  // E o FATO da 0106, que sobrevive ao retravamento: sem ele, a fala do
+  // corretor depois do follow-up voltaria a apagar o texto do cliente.
+  await marcarConversaAtendida(conversa.id);
   await supabase
     .from("whatsapp_followups")
     .update({ status: "enviado", enviado_em: new Date().toISOString() })
@@ -776,6 +787,7 @@ async function processarFollowup(
       jogada: turno.jogada,
       dossie,
       historico: turno.historicoAnterior,
+      falasNaoGravadas: await contarFalasNaoGravadas(conversa.id),
       fewShot: turno.fewShot,
     }),
   });

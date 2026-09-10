@@ -112,11 +112,15 @@ export function PorQue({ contexto }: { contexto: ContextoDaInteracao | null }) {
         Só aparece quando existe. Número bom não vira linha — repetir "0 sem
         texto" em toda resposta é como um aviso deixa de ser lido, a mesma
         régua do `evolucaoConversa` e da faixa de queda de conexão.
+
+        Conta a CONVERSA inteira, não a janela: desde a 0106 a janela descarta
+        a marca, então contá-la ali daria zero para sempre.
       */}
       {h.emBranco > 0 && (
         <p className="text-alerta mt-1">
-          {h.emBranco} {h.emBranco === 1 ? "fala não foi guardada" : "falas não foram guardadas"}{" "}
-          (conversa travada na época) — a IA não recebeu {h.emBranco === 1 ? "ela" : "elas"}.
+          {h.emBranco} {h.emBranco === 1 ? "fala desta conversa" : "falas desta conversa"} não{" "}
+          {h.emBranco === 1 ? "foi guardada" : "foram guardadas"} (enquanto ela estava travada) — a
+          IA nunca {h.emBranco === 1 ? "a" : "as"} recebeu.
         </p>
       )}
     </dl>

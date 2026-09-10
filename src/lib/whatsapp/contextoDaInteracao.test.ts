@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
 import { montarContextoDaInteracao } from "./contextoDaInteracao";
 import type { DossieClienteIA } from "./types";
 
@@ -8,6 +7,7 @@ const base = {
   jogada: { tipo: "devolver_escolha" } as const,
   dossie: null,
   historico: [],
+  falasNaoGravadas: 0,
   fewShot: 0,
 };
 
@@ -27,20 +27,16 @@ function dossieCom(parcial: Partial<DossieClienteIA>): DossieClienteIA {
 }
 
 describe("montarContextoDaInteracao", () => {
-  /*
-   * O par que separa "a IA não considerou o que eu disse" de "a IA não
-   * RECEBEU o que você disse" — duas queixas idênticas na tela que pedem
-   * correções opostas.
-   */
-  it("conta a janela por remetente, e conta as falas sem texto à parte", () => {
+  it("conta a janela por remetente", () => {
     const ctx = montarContextoDaInteracao({
       ...base,
       historico: [
         { remetente: "cliente" as const, texto: "quero em Alphaville" },
         { remetente: "bot" as const, texto: "ótimo, pronto ou na planta?" },
         { remetente: "corretor" as const, texto: "te ligo já" },
-        { remetente: "cliente" as const, texto: TEXTO_NAO_GUARDADO },
+        { remetente: "cliente" as const, texto: "e tem vaga?" },
       ],
+      falasNaoGravadas: 0,
     });
 
     expect(ctx.historico).toEqual({
@@ -48,8 +44,29 @@ describe("montarContextoDaInteracao", () => {
       doCliente: 2,
       doBot: 1,
       doCorretor: 1,
-      emBranco: 1,
+      emBranco: 0,
     });
+  });
+
+  /*
+   * `emBranco` conta a CONVERSA, não a janela — e é essa a única contagem
+   * que significa alguma coisa desde a 0106, porque a consulta da janela
+   * passou a descartar a marca. Contá-la dentro da janela daria zero para
+   * sempre, e número que vive em zero ensina a ignorar o número.
+   *
+   * É o par que separa "a IA não considerou o que eu disse" de "a IA não
+   * RECEBEU o que você disse": duas queixas idênticas na tela que pedem
+   * correções opostas.
+   */
+  it("as falas sem texto vêm da conversa, não do que sobrou na janela", () => {
+    const ctx = montarContextoDaInteracao({
+      ...base,
+      historico: [{ remetente: "cliente" as const, texto: "oi" }],
+      falasNaoGravadas: 53,
+    });
+
+    expect(ctx.historico.total).toBe(1);
+    expect(ctx.historico.emBranco).toBe(53);
   });
 
   it("histórico vazio conta zero, não quebra", () => {

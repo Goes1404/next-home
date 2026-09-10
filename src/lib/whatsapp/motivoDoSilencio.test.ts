@@ -28,6 +28,8 @@ const conversa = (over: Partial<Conversa>): Conversa => ({
   telefoneCliente: "5511999999999",
   botAtivo: true,
   pausadoHumanoAte: null,
+  // O FATO da 0106: quem decide o SILÊNCIO não o lê, e há teste provando.
+  atendidaEm: null,
   liberadoPorPalavraChave: true,
   clienteConhecido: false,
   eTeste: false,
