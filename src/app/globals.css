@@ -433,7 +433,7 @@
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-display), ui-serif, Georgia, serif;
   --font-mono: var(--font-mono), ui-monospace, "SF Mono", monospace;
-  --font-script: var(--font-script), cursive;
+  /* A fonte script saiu em 10/09/2026 — ver o comentário em app/layout.tsx. */
 
   /* Escala tipográfica fluida — mobile-first, sem breakpoints */
   --text-fluid-xs: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);
@@ -542,7 +542,7 @@
     color-scheme: light;
 
     /*
-     * SAGE, MARFIM, BRANCO — e nessa ordem de profundidade.
+     * SAGE FUNDO, SAGE CLARO, MARFIM, BRANCO — quatro degraus.
      *
      * A versão anterior era `fundo #edf2f0` (quase branco, e frio) com
      * `superficie #ffffff` (branco puro): duas camadas separadas por 3% de
@@ -550,18 +550,23 @@
      * lia como uma folha de papel — a queixa foi exatamente "está muito
      * branco".
      *
-     * Agora a página é um verde-sage claro de viés quente, o cartão é
-     * marfim (não branco puro) e o branco fica reservado ao degrau mais
-     * alto: campo de formulário e superfície elevada. É isso que devolve a
-     * hierarquia — o cartão FLUTUA sobre a página em vez de se fundir com
-     * ela, e sobra um branco de verdade para o que precisa saltar.
+     * A primeira correção (sage #e9ede1 + marfim #fafbf6) devolveu a
+     * hierarquia mas ainda lia como "claro demais" — a página continuava a
+     * 91% de luz. Os valores desceram de novo: a PÁGINA é um sage fundo
+     * (#dbe3d1, 86%), o CARTÃO é sage claro (#eef2e7), a superfície elevada
+     * é marfim e o BRANCO fica só no campo de formulário, onde o que se
+     * digita precisa do fundo mais limpo possível.
+     *
+     * O piso é o contraste, não o gosto: com o cartão em #eef2e7 o texto
+     * tênue ainda dá 4,3:1 (mínimo 3,0 para gráfico) e o corpo, 11,3:1.
+     * Descer mais que isto começa a cobrar do texto de apoio.
      *
      * O verde não é decoração: é o teal do logotipo diluído, a mesma
      * família do resto da paleta. Bege puro brigaria com ele.
      */
-    --color-fundo: #e9ede1;
-    --color-superficie: #fafbf6;
-    --color-elevado: #ffffff;
+    --color-fundo: #dbe3d1;
+    --color-superficie: #eef2e7;
+    --color-elevado: #f9fbf5;
     --color-campo: #ffffff;
 
     --color-linha: rgb(0 63 55 / 0.14);
@@ -660,9 +665,9 @@
 
       /* Os MESMOS valores do bloco de `[data-tema=claro]` — o comentário
          longo está lá. */
-      --color-fundo: #e9ede1;
-      --color-superficie: #fafbf6;
-      --color-elevado: #ffffff;
+      --color-fundo: #dbe3d1;
+      --color-superficie: #eef2e7;
+      --color-elevado: #f9fbf5;
       --color-campo: #ffffff;
 
       --color-linha: rgb(0 63 55 / 0.14);
@@ -1290,6 +1295,40 @@
    */
   .secao-banda {
     background-color: color-mix(in srgb, var(--color-acento) 7%, var(--color-superficie));
+  }
+
+  /*
+   * A entrada da página nova, atrás da onda que sai.
+   *
+   * A onda cobre a tela por ~150ms; é embaixo dela que o conteúdo aparece,
+   * em cascata, de modo que a página não "pisca" pronta quando a cortina
+   * levanta. Os atrasos somam pouco de propósito — a onda inteira dura
+   * 900ms e a entrada tem de terminar ANTES, senão o visitante fica olhando
+   * conteúdo aparecendo numa tela já descoberta.
+   *
+   * Só OPACIDADE, sem `transform`, e isso não é preguiça: transform num
+   * ancestral cria containing block, e o site tem `position: sticky` dentro
+   * de `main` (o resultado do simulador de financiamento) — que pararia de
+   * grudar durante a animação. Opacidade cria contexto de empilhamento e
+   * mais nada.
+   */
+  :root[data-entrando] main > * {
+    animation: pagina-entra 520ms var(--ease-out-expo) both;
+  }
+  :root[data-entrando] main > *:nth-child(2) {
+    animation-delay: 70ms;
+  }
+  :root[data-entrando] main > *:nth-child(n + 3) {
+    animation-delay: 130ms;
+  }
+
+  @keyframes pagina-entra {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .fundo-aurora {

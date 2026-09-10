@@ -5689,6 +5689,42 @@ combinem com a logo".
   que precisa saltar. `COR_DA_BARRA.claro` acompanha o fundo novo — senão a
   moldura do navegador fica de um tema e o conteúdo de outro.
 
+## `/corretores` começa com `/corretor`, e a guarda de paleta mente (10/09/2026)
+
+- **Comparar rota por PREFIXO DE TEXTO engole a rota vizinha.** A onda entre
+  páginas se cala no painel com `caminho.startsWith("/corretor")` — e
+  `/corretores` e `/corretores/<slug>`, que são páginas PÚBLICAS da equipe,
+  começam com essa string. Nelas a onda sumia e o `data-entrando` ficava
+  PRESO na raiz, porque nada renderizava para disparar o `animationend` que
+  o limpa. Passou na verificação porque as três navegações medidas eram
+  `/sobre`, `/financiamento` e `/empreendimentos`. Hoje a comparação é por
+  segmento (`=== "/corretor" || startsWith("/corretor/")`), e o marcador da
+  raiz está preso ao que de fato renderiza, não à intenção de renderizar.
+- **`npm run paleta` reportou os MESMOS contrastes para três paletas
+  diferentes** do tema claro, casa decimal por casa decimal (título 17,33:1
+  em todas). Medido na página SERVIDA, com o mesmo cálculo, o valor real é
+  **14,9:1** — os números do tema claro da guarda não descrevem o site. Duas
+  causas encontradas, e só a primeira está corrigida:
+  1. `cssDeProducao()` concatenava TODOS os `.css` de `.next/static/chunks`,
+     que o Next não limpa entre builds — na cascata, a folha de um build
+     antigo podia ganhar. Agora ela recusa medir quando duas folhas
+     declaram `--color-fundo`, dizendo para limpar o `.next`.
+  2. Mesmo com uma folha só, o número continua o de `superficie: #ffffff`.
+     **Causa não encontrada, e fica registrado como tal.** Enquanto isso, o
+     contraste do tema claro se confere NA PÁGINA (`getComputedStyle` +
+     a fórmula da WCAG), não pela guarda.
+- **Fonte pré-carregada que ninguém usa é peso puro.** A Alex Brush estava
+  no `next/font` do layout raiz — pré-carregada em toda página — para
+  desenhar a "assinatura do corretor", e `grep font-script` só encontrava a
+  própria declaração: nenhum componente jamais a usou. Removida. A IBM Plex
+  Mono ficou com `preload: false`: ela só aparece em três telas do painel, e
+  pré-carregá-la fazia todo visitante da vitrine baixar uma fonte que nunca
+  vê.
+- **A entrada da página é só OPACIDADE, e isso é decisão.** `transform` num
+  ancestral cria containing block, e há `position: sticky` dentro de `main`
+  (o resultado do simulador) — que pararia de grudar durante a animação.
+  Opacidade cria contexto de empilhamento e mais nada.
+
 ## Metade do pedido já estava no ar, e ninguém sabia (10/09/2026)
 
 Pedido: *"ao clicar no card das mensagens, abra a conversa dentro da minha
