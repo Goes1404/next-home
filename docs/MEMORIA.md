@@ -5380,3 +5380,20 @@ aparecia em tsc, teste ou build.
   um visitante lê: legenda do vídeo do imóvel, descrição do empreendimento e
   apresentação do corretor. Os três vêm do CADASTRO, que é de onde vêm palavra
   comprida e URL colada. Provocada depois de estendida.
+
+## O mesmo aninhamento inválido, três vezes, no mesmo dia (10/09/2026)
+
+- **A outra sessão corrigiu `<ol><div><li>` na seção de passos — e eu tinha
+  acabado de repetir o padrão em TRÊS lugares novos** (cartões de região,
+  lista de imóveis da página de região, sugestões da página de
+  financiamento). `<Reveal>` renderiza `div` por padrão; embrulhar um `<li>`
+  nele produz `<ul><div><li>`, que o navegador tolera e o leitor de tela não:
+  ele para de anunciar "lista de N itens". O componente já aceita `as="li"`.
+  **Ao embrulhar item de lista num componente de movimento, conferir a tag
+  que ele renderiza** — e depois de ler uma correção alheia, procurar o mesmo
+  defeito no que se escreveu na mesma hora.
+- **`.next/types/validator.ts` envelhece com a árvore de rotas.** Depois de a
+  outra sessão apagar `api/imagens/briefing` e `melhorar`, o `tsc` acusava
+  módulo inexistente em arquivo GERADO — não é erro do código-fonte. `rm -rf
+  .next/types` + build regenera. Sintoma reconhecível: erro TS2307 cujo
+  caminho começa em `.next/`.

@@ -46,8 +46,7 @@ export function Regioes({ catalogo }: { catalogo: Empreendimento[] }) {
 
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {regioes.map((regiao, i) => (
-            <Reveal key={regiao.slug} delay={(i % 3) * 0.08} from="baixo">
-              <li className="h-full">
+            <Reveal key={regiao.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
                 <Link
                   href={`/regioes/${regiao.slug}`}
                   className="border-linha bg-superficie/60 hover:border-acento-linha group flex h-full flex-col overflow-hidden rounded-2xl border transition-all hover:-translate-y-0.5 hover:shadow-xl motion-reduce:transition-none"
@@ -90,7 +89,6 @@ export function Regioes({ catalogo }: { catalogo: Empreendimento[] }) {
                     </p>
                   </div>
                 </Link>
-              </li>
             </Reveal>
           ))}
         </ul>

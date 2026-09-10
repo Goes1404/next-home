@@ -143,10 +143,8 @@ export default async function PaginaDaRegiao({ params }: Props) {
           <div className="mx-auto w-full max-w-6xl">
             <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {imoveis.map((e, i) => (
-                <Reveal key={e.slug} delay={(i % 3) * 0.08} from="baixo">
-                  <li className="h-full">
-                    <CardEmpreendimento empreendimento={e} prioridade={i < 3} />
-                  </li>
+                <Reveal key={e.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
+                  <CardEmpreendimento empreendimento={e} prioridade={i < 3} />
                 </Reveal>
               ))}
             </ul>
