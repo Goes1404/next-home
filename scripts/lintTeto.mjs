@@ -44,7 +44,7 @@ import { execFileSync } from "node:child_process";
  * BAIXE este número sempre que limpar algum. Nunca suba: subir é a coisa
  * exata que a catraca existe para impedir.
  */
-const TETO = 8;
+const TETO = 0;
 
 function rodarEslint() {
   try {

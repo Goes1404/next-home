@@ -8,7 +8,6 @@ import { getTetoDeHoje, registrarImagem } from "@/lib/imagens/galeria";
 import { TAMANHOS, type ChaveQualidade, type ChaveTamanho } from "@/lib/imagens/imagensTipos";
 import { montarPedido, receitaPor } from "@/lib/imagens/receitas";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
-import { site } from "@/lib/site";
 
 export const runtime = "nodejs";
 /**
@@ -61,8 +60,6 @@ export async function POST(req: NextRequest) {
     imovelSlug?: string | null;
   } | null;
 
-  let prompt: string;
-  let pedidoCompleto: string;
   /*
    * O imóvel a que esta arte pertence (0101). Até aqui o vínculo existia só
    * como texto dentro do `briefing` (`imovelSlug`), o que não é vínculo: slug
@@ -77,11 +74,11 @@ export async function POST(req: NextRequest) {
   if (!p) {
     return NextResponse.json({ erro: "Escreva o que você quer na imagem." }, { status: 400 });
   }
-  prompt = p;
+  const prompt = p;
   // A espinha da receita entra por CÓDIGO, aqui, antes de qualquer IA: quem
   // escolheu "mobiliar ambiente vazio" já leva junto o "mantenha a mesma
   // arquitetura e o mesmo ângulo" sem ter de saber que isso se pede.
-  pedidoCompleto = montarPedido(p, receitaPor(corpo?.receita));
+  const pedidoCompleto = montarPedido(p, receitaPor(corpo?.receita));
   // O cadastro de imóvel (`/corretor/imoveis/novo`) gera no modo livre e
   // manda o slug que acabou de nascer — é o que amarra a arte ao imóvel.
   if (corpo?.imovelSlug) {

@@ -41,6 +41,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[catalogo-do-corretor-e-a-pagina-dele]]
 - [[referencia-no-chat-do-estudio]] — Estúdio: clipe de anexo, arte e vídeo
 - [[o-contrato-real-do-gpt-image-2]] — sondar a API sem gastar imagem; `input_fidelity` não existe (10/09)
+- [[o-tradutor-de-prompt-de-imagem]] — um prompt só, em português, editável antes de gastar (10/09)
 
 ## Conversa e estado
 - [[rajada-agrupar-conteudo-nao-so-invocacoes]]

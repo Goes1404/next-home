@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { ChatBase } from "@/app/corretor/(painel)/_componentes/ChatBase";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
@@ -349,19 +349,29 @@ function CartaoDeProposta({
    */
   const [texto, setTexto] = useState(proposta.prompt);
 
-  // Proposta NOVA reinicia o campo; enquanto for a mesma, o que ele digitou
-  // fica — inclusive depois de um erro de geração.
-  useEffect(() => setTexto(proposta.prompt), [proposta.prompt]);
-
-  const curto = texto.trim().length < PISO_DE_PROMPT;
-
   /*
    * Qual foto do imóvel serve de base. `null` = a foto anexada na conversa
    * (ou nenhuma), que é o comportamento de sempre.
    */
   const fotos = proposta.fotosDoImovel ?? [];
   const [base, setBase] = useState<string | null>(null);
-  useEffect(() => setBase(null), [proposta.prompt]);
+
+  /*
+   * Proposta NOVA reinicia campo e escolha; enquanto for a mesma, o que o
+   * corretor digitou fica — inclusive depois de um erro de geração.
+   *
+   * Comparado DURANTE o render, não num efeito: `setState` síncrono dentro de
+   * efeito pinta a tela com o valor velho e força um segundo render (o React
+   * avisa disso). Aqui o mesmo render já sai com o valor certo.
+   */
+  const [propostaAnterior, setPropostaAnterior] = useState(proposta.prompt);
+  if (proposta.prompt !== propostaAnterior) {
+    setPropostaAnterior(proposta.prompt);
+    setTexto(proposta.prompt);
+    setBase(null);
+  }
+
+  const curto = texto.trim().length < PISO_DE_PROMPT;
   const tamanho = TAMANHOS.find((t) => t.chave === proposta.tamanho)?.rotulo ?? proposta.tamanho;
   const qualidade = QUALIDADES.find((q) => q.chave === proposta.qualidade)?.rotulo ?? proposta.qualidade;
   // A foto que sustenta esta proposta, visível no cartão: sem a miniatura, o

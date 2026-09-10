@@ -5189,3 +5189,68 @@ chamada de LLM (`scripts/traces/traceVisita.ts`).
   `novo/contato/visita/proposta/doc/fechado/perdido`, e o de alerta é
   `alerta`. Classe de cor que não existe vira NADA em silêncio (a lição do
   `bg-chip`): **antes de usar token de cor, `grep` no `globals.css`.**
+
+## O tradutor de prompt de imagem (10/09/2026)
+
+Relatado como "nossa IA de geração de imagem não está funcionando bem, está
+muito ruim e longe do que eu quero". Estava. Spec:
+`docs/superpowers/specs/2026-09-10-geracao-de-imagem-tradutor-design.md`.
+Vault: [[o-contrato-real-do-gpt-image-2]], [[o-tradutor-de-prompt-de-imagem]].
+
+- **Os números que abriram a investigação:** 8 imagens geradas na vida
+  inteira, 1 corretor, **ZERO artes compostas** (`arte_url` nulo em todas) e
+  **ZERO com imóvel do catálogo** (`empreendimento_id` nulo). As ~900 linhas
+  de marketing — objetivo, canal, público, copy validada por lei, logo,
+  rodapé — nunca entregaram uma peça a ninguém.
+- **Dois prompts pagos que dizem tudo:** a palavra `Torre.` (seis caracteres)
+  e `Apartamento chamado "." em ., Barueri no estágio "Lançamento"` — nome e
+  bairro do cadastro eram um ponto final, e o montador interpolou sem olhar.
+  Daí `catalogoNoPrompt.ts` exigir letra-ou-número, não `!!valor`: `"."` é
+  string não vazia e passa por qualquer checagem preguiçosa.
+- **A intenção estava certa e a execução falhou nas DUAS pontas.** O prompt
+  final JÁ era mostrado na tela, e o comentário do código dizia *"esconder do
+  corretor seria tirar dele a chance de corrigir"*. Só que aparecia **em
+  inglês**, dentro de um `<p>` onde não se digita. Dar a chance de corrigir
+  num idioma que ele não escreve, num elemento onde não se escreve, é o mesmo
+  que não dar. **Ao ler um comentário que promete uma garantia, conferir se o
+  código a entrega** — aqui ele entregava metade.
+- **O ChatGPT usa o MESMO modelo que nós.** A diferença de resultado não era o
+  modelo: é que ele reescreve o pedido antes de mandar. A hipótese era do
+  usuário e estava certa.
+- **`melhorarPedido.ts` e `/api/imagens/melhorar` não tinham UM chamador na
+  interface.** Módulo escrito, testado, documentado, e nenhum `.tsx` o
+  invocava — nono caso de "construído e nunca ligado" nesta base.
+- **`marketing.ts` NÃO podia ser apagado, e o plano dizia que sim.** Ele é
+  compartilhado com o motor de VÍDEO (`render.ts`, `roteiro.ts`,
+  `video/acoes.ts`, o caminho de vídeo do `turno.ts`). Conferir os
+  importadores antes do `git rm` foi o que evitou derrubar o vídeo junto com
+  a arte. **Módulo com nome de domínio não é prova de que ele serve a um
+  domínio só.**
+- **A ressalva legal ficou temporariamente sem dono, e isso está escrito.**
+  Ela era desenhada por `compor.ts`; com ele foi embora. A guarda de
+  `receitas.test.ts` foi reescrita para a metade que não muda — a ressalva
+  **nunca** se pede ao modelo generativo. Ele acerta o literal 3 em 4, o que é
+  ótimo para manchete e inaceitável para aviso legal. Até o carimbo por código
+  existir, o certo é a imagem sair SEM ressalva, e não com uma aproximada que
+  parece oficial.
+
+### O que a F0 mediu, por R$ 0,20
+
+Detalhe em `docs/medicoes/2026-09-10-f0-imagem.md`.
+
+- **A segunda imagem de referência custa ZERO tempo.** 14,0 s contra 13,6 s em
+  `low`; 33,2 contra 33,4 em `medium`. A doc oficial adverte "até 2 minutos em
+  prompt complexo" e era o risco nº 1 da spec — com o nosso prompt não se
+  materializa. O caminho de duas referências fica **síncrono**; não precisa do
+  worker.
+- **`input_fidelity` NÃO EXISTE no `gpt-image-2`** (rejeitado por nome). A foto
+  de referência é **reinterpretada**, nunca preservada pixel a pixel — e a tela
+  precisa dizer isso, porque "a mesma foto, só melhor" é mentira que o corretor
+  descobre na frente do cliente.
+- **Texto literal: 2 em 2 com a técnica documentada** (entre aspas, soletrado
+  letra a letra, com posição e tipografia ditas), contra a linha de base de 3
+  em 4 sem ela. Duas amostras não provam superioridade; provam que vale ser
+  obrigatória na gramática.
+- **Sondar a API sem gerar custa zero**: mandar o pedido com uma sentinela
+  inválida num campo de validação conhecida (`quality=ZZZ`) e ler de qual campo
+  ela reclama. `size` é validado antes de tudo e mascara o resto.

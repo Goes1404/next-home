@@ -99,12 +99,19 @@ export function ChatBase<M extends MensagemDeChat>({
    * Ele nasceu para quem chega de outra tela com a pergunta pronta, e por isso
    * só era lido uma vez. Desde 10/09 o histórico do Estúdio reaproveita um
    * prompt com o chat já aberto — sem isto, o campo não mudaria e o botão
-   * pareceria quebrado. Só sobrescreve quando o valor muda e não é vazio,
-   * senão a prop apagaria o que a pessoa está digitando a cada re-render.
+   * pareceria quebrado.
+   *
+   * O ajuste acontece DURANTE o render, comparando com o valor anterior, e não
+   * num efeito: `setState` síncrono dentro de efeito dispara um segundo render
+   * com a tela já pintada (o React avisa disso). Comparar aqui reaproveita o
+   * mesmo render. Só sobrescreve com valor não vazio, senão a prop apagaria o
+   * que a pessoa está digitando.
    */
-  useEffect(() => {
-    if (textoInicial) setTexto(textoInicial);
-  }, [textoInicial]);
+  const [inicialAnterior, setInicialAnterior] = useState(textoInicial ?? "");
+  if (textoInicial && textoInicial !== inicialAnterior) {
+    setInicialAnterior(textoInicial);
+    setTexto(textoInicial);
+  }
   const arquivoRef = useRef<HTMLInputElement>(null);
   const corpoRef = useRef<HTMLDivElement>(null);
   const presoNoFimRef = useRef(true);
