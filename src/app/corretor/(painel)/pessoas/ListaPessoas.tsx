@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { REGUA_ETAPA } from "../_componentes/etapas";
 import { ETAPA_LABEL } from "@/lib/types";
 import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
 import { linkWhatsappPara } from "@/lib/site";
-import { carregarMaisPessoas } from "./acoes";
+import { carregarConversaDaPessoa, carregarMaisPessoas } from "./acoes";
+import { GavetaConversa } from "./GavetaConversa";
+import type { ConversaResumo } from "../conversas/Chat";
 import { recalcularRolagem } from "@/components/motion/lenis";
 // Do módulo PURO, não de `pessoas.ts`: aquele tem `server-only` e uma
 // constante importada dele arrasta o servidor inteiro para o cliente.
@@ -26,10 +28,24 @@ export function ListaPessoas({
   iniciais,
   total,
   busca,
+  conversaInicial,
+  podeEnviar,
 }: {
   iniciais: PessoaNaLista[];
   total: number;
   busca: string;
+  /**
+   * A conversa de `?c=<id>`, JÁ CARREGADA pelo servidor.
+   *
+   * Vem pronta em vez do id porque o deep link tem de abrir a gaveta no
+   * primeiro quadro: buscá-la num efeito custaria uma ida ao servidor depois
+   * da tela montada, e quem chegou pelo link veria a lista piscar antes da
+   * conversa. De quebra evita o `setState` dentro de efeito que a regra desta
+   * base reprova.
+   */
+  conversaInicial: ConversaResumo | null;
+  /** O número está pareado — é o que habilita o teclado do chat. */
+  podeEnviar: boolean;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -37,6 +53,35 @@ export function ListaPessoas({
   const [pagina, setPagina] = useState(0);
   const [carregando, iniciarCarga] = useTransition();
   const [termo, setTermo] = useState(busca);
+  const [aberta, setAberta] = useState<ConversaResumo | null>(conversaInicial);
+
+  /*
+   * A URL continua sendo a verdade: abrir escreve `?c=`, fechar apaga, e o
+   * F5 reabre a mesma conversa. É o que mantém o deep link de
+   * `/corretor/conversas?c=` valendo e não quebra nenhum link salvo.
+   *
+   * `replace` e não `push`: cada conversa aberta virando uma entrada no
+   * histórico faria o botão voltar percorrer as sete últimas em vez de sair
+   * da lista.
+   */
+  const abrir = useCallback(
+    async (conversaId: string) => {
+      const novo = new URLSearchParams(params.toString());
+      novo.set("c", conversaId);
+      router.replace(`/corretor/pessoas?${novo}`, { scroll: false });
+      const conversa = await carregarConversaDaPessoa(conversaId);
+      if (conversa) setAberta(conversa);
+    },
+    [params, router],
+  );
+
+  const fechar = useCallback(() => {
+    const novo = new URLSearchParams(params.toString());
+    novo.delete("c");
+    const busca = novo.toString();
+    router.replace(`/corretor/pessoas${busca ? `?${busca}` : ""}`, { scroll: false });
+    setAberta(null);
+  }, [params, router]);
 
   // Reset ao trocar a busca: o servidor manda uma primeira página nova, e
   // acumular por cima dela misturaria dois recortes.
@@ -78,7 +123,7 @@ export function ListaPessoas({
       ) : (
         <ul className="cartao divide-linha divide-y overflow-hidden">
           {pessoas.map((p) => (
-            <LinhaPessoa key={p.id} pessoa={p} />
+            <LinhaPessoa key={p.id} pessoa={p} aoAbrir={abrir} />
           ))}
         </ul>
       )}
@@ -114,14 +159,59 @@ export function ListaPessoas({
       <p className="text-fluid-xs text-tenue text-center tabular-nums">
         {pessoas.length} de {total}
       </p>
+
+      {aberta && (
+        <GavetaConversa conversa={aberta} podeEnviar={podeEnviar} aoFechar={fechar} />
+      )}
     </div>
   );
 }
 
-function LinhaPessoa({ pessoa }: { pessoa: PessoaNaLista }) {
-  const destino = pessoa.conversaId
-    ? `/corretor/conversas?c=${pessoa.conversaId}`
-    : `/corretor/leads/${pessoa.leadId}`;
+/**
+ * O corpo da linha — o mesmo desenho, dois papéis.
+ *
+ * Quem tem conversa abre a gaveta (botão); quem não tem vai para a ficha
+ * (link). São elementos diferentes de propósito: `<a>` que não navega mente
+ * para o leitor de tela e oferece "abrir em nova aba" para algo que não é
+ * página, e `<button>` que navega perde o clique do meio e o menu de contexto.
+ */
+function Conteudo(
+  props: { children: React.ReactNode } & (
+    | { como: "link"; destino: string }
+    | { como: "botao"; aoTocar: () => void }
+  ),
+) {
+  const classe =
+    "hover:bg-vidro active:bg-vidro-forte min-w-0 flex-1 px-3 py-3 text-left transition-colors";
+
+  if (props.como === "link") {
+    return (
+      <Link href={props.destino} className={classe}>
+        {props.children}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={props.aoTocar} className={`${classe} cursor-pointer`}>
+      {props.children}
+    </button>
+  );
+}
+
+function LinhaPessoa({
+  pessoa,
+  aoAbrir,
+}: {
+  pessoa: PessoaNaLista;
+  aoAbrir: (conversaId: string) => void;
+}) {
+  /*
+   * Com conversa, a linha ABRE a gaveta e a pessoa não sai da lista. Sem
+   * conversa vai para a ficha, porque não há chat para abrir — gaveta vazia
+   * seria pior que a ficha, que ao menos tem o telefone e o funil.
+   */
+  const conversaId = pessoa.conversaId;
+  const destino = `/corretor/leads/${pessoa.leadId}`;
   /*
    * `linkWhatsappLead` monta a mensagem de primeira abordagem a partir do
    * portal de origem, e precisa do `Lead` inteiro — aqui a linha tem só
@@ -144,7 +234,11 @@ function LinhaPessoa({ pessoa }: { pessoa: PessoaNaLista }) {
         className={`w-1 shrink-0 ${pessoa.etapa ? REGUA_ETAPA[pessoa.etapa] : "bg-linha-forte"}`}
       />
 
-      <Link href={destino} className="hover:bg-vidro active:bg-vidro-forte min-w-0 flex-1 px-3 py-3 transition-colors">
+      <Conteudo
+        {...(conversaId
+          ? { como: "botao" as const, aoTocar: () => aoAbrir(conversaId) }
+          : { como: "link" as const, destino })}
+      >
         <span className="flex items-baseline gap-2">
           <span className="text-fluid-sm text-titulo min-w-0 flex-1 truncate font-medium">
             {pessoa.nome}
@@ -169,7 +263,7 @@ function LinhaPessoa({ pessoa }: { pessoa: PessoaNaLista }) {
             </span>
           )}
         </span>
-      </Link>
+      </Conteudo>
 
       {zap && (
         <a

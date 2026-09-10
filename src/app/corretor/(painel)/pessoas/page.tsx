@@ -5,8 +5,10 @@ import { AbasLeads } from "../_componentes/AbasLeads";
 import { BotaoVoltarAoTopo } from "../_componentes/BotaoVoltarAoTopo";
 import { EsqueletoDeLista } from "../_componentes/EsqueletoDeLista";
 import { ListaPessoas } from "./ListaPessoas";
+import { carregarConversaDaPessoa } from "./acoes";
 import { getPaginaDePessoas } from "@/lib/crm/pessoas";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Pessoas" };
 
@@ -41,6 +43,9 @@ export default async function PaginaPessoas({
 }) {
   const params = await searchParams;
   const busca = primeiroValor(params.busca);
+  // `?c=<id>`: o deep link da conversa. Fica na URL para o F5 reabrir a
+  // gaveta e para o link continuar podendo ser compartilhado.
+  const conversaInicial = primeiroValor(params.c) || null;
 
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
@@ -70,8 +75,11 @@ export default async function PaginaPessoas({
           hierarquia do menu, derivada de `subitensDe`. */}
       <AbasLeads ativa="/corretor/pessoas" />
 
-      <Suspense key={busca} fallback={<EsqueletoDeLista linhas={7} titulo="Carregando pessoas…" />}>
-        <Conteudo busca={busca} />
+      <Suspense
+        key={`${busca}:${conversaInicial ?? ""}`}
+        fallback={<EsqueletoDeLista linhas={7} titulo="Carregando pessoas…" />}
+      >
+        <Conteudo busca={busca} conversaInicial={conversaInicial} corretorId={corretor.id} />
       </Suspense>
 
       {/* A lista cresce 40 por clique e volta longa; subir arrastando é o
@@ -81,7 +89,38 @@ export default async function PaginaPessoas({
   );
 }
 
-async function Conteudo({ busca }: { busca: string }) {
-  const { pessoas, total } = await getPaginaDePessoas({ busca: busca || undefined });
-  return <ListaPessoas iniciais={pessoas} total={total} busca={busca} />;
+async function Conteudo({
+  busca,
+  conversaInicial,
+  corretorId,
+}: {
+  busca: string;
+  conversaInicial: string | null;
+  corretorId: string;
+}) {
+  const supabase = await createClient();
+  /*
+   * O estado da conexão decide se o teclado do chat funciona. Sem número
+   * pareado o `Chat` troca o campo por uma frase que leva à tela de Conexão —
+   * melhor que um campo que aceita texto e não entrega nada.
+   */
+  const [{ pessoas, total }, { data: instancia }, conversa] = await Promise.all([
+    getPaginaDePessoas({ busca: busca || undefined }),
+    supabase
+      .from("corretor_whatsapp_instancias")
+      .select("status_conexao")
+      .eq("corretor_id", corretorId)
+      .maybeSingle(),
+    conversaInicial ? carregarConversaDaPessoa(conversaInicial) : Promise.resolve(null),
+  ]);
+
+  return (
+    <ListaPessoas
+      iniciais={pessoas}
+      total={total}
+      busca={busca}
+      conversaInicial={conversa}
+      podeEnviar={instancia?.status_conexao === "conectado"}
+    />
+  );
 }

@@ -361,7 +361,9 @@ describe("as barras de abas DERIVAM do menu", () => {
  * gaveta não. Falha calada — tudo funciona, só a cor mente.
  */
 describe("todo portal do painel carrega a paleta e o módulo", () => {
-  const portalados = ["GavetaLateral.tsx"];
+  // A gaveta da conversa (10/09) entrou aqui no mesmo dia em que nasceu: ela
+  // é o segundo portal do painel, e o defeito de cor é exatamente o mesmo.
+  const portalados = ["GavetaLateral.tsx", "pessoas/GavetaConversa.tsx"];
 
   it.each(portalados)("%s repete data-rota e data-modulo no nó portalado", (arq) => {
     const fonte = readFileSync(join(process.cwd(), "src/app/corretor/(painel)", arq), "utf8")
