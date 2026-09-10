@@ -5641,3 +5641,41 @@ combinem com a logo".
 - **Fotografar 145ms de animação perde a janela**: a própria captura demora
   mais que isso. Para olhar, congelar o quadro (injetar o mesmo markup com
   `transform` fixo) em vez de tentar acertar o instante.
+
+## O touchpad, o tema claro e os 15 MB de vídeo (10/09/2026)
+
+- **"Não consigo arrastar para baixo com o touchpad" era o LENIS, não um
+  bloqueio.** No headless a roda rolava normalmente — o defeito é de
+  SENSAÇÃO: touchpad não manda um clique de roda, manda dezenas de eventos
+  minúsculos por segundo com a inércia que o sistema já calculou, e
+  `smoothWheel: true` descartava essa inércia para reinterpolar tudo com o
+  lerp. Num mouse de rodinha o mesmo código parece bom, e foi por isso que
+  passou meses. Hoje `smoothWheel: false`: a roda é nativa e o Lenis segue
+  fazendo o que só ele faz (o `scrollTo` suave de âncora e do voltar-ao-topo,
+  e o relógio compartilhado com o ScrollTrigger). **Ao medir rolagem, medir
+  no dispositivo que reclamou — `mouse.wheel` do Playwright não reproduz a
+  cadência de um trackpad.**
+- **Todo visitante de DESKTOP baixava 15 MB em qualquer página da vitrine.**
+  `hero-scroll-fluido` (15 MB por codec) era o fundo padrão do grupo
+  `(vitrine)` — catálogo, ficha, mapa, portfólio. O bundle inteiro do site
+  dá 2,6 MB, ou seja, o fundo pesava seis vezes o site. Substituído pela
+  aurora em CSS (três manchas de luz nas cores da marca): medido depois, a
+  home baixa 0,7 MB de vídeo e a listagem, ZERO. Vídeo próprio do corretor
+  continua tendo precedência — é escolha dele.
+- **O site não era escuro: o PADRÃO é que era.** O tema claro existe
+  completo e verificado em AA desde sempre; sem cookie, nada era carimbado e
+  quem decidia era o `prefers-color-scheme` do aparelho — metade do mundo
+  com o celular no escuro abria a vitrine escura sem nunca ter pedido. Hoje
+  o padrão é `claro` (`data-tema={tema ?? "claro"}` no layout raiz); o
+  seletor do rodapé continua inteiro e grava cookie. Reverter é trocar por
+  `tema ?? undefined` e desfazer duas linhas de `generateViewport`.
+- **Uma cortina só se lê como retângulo, por mais curva que seja a borda.**
+  A onda entre páginas virou DUAS camadas defasadas em 90ms, a de trás
+  espelhada — é o par que faz a curvatura aparecer, porque em cada instante
+  há duas cristas em alturas diferentes. A amplitude também dobrou: esticada
+  para a largura de um monitor, a curva anterior chegava quase reta.
+- **`light-dark()` não sobrevive dentro de `radial-gradient()`.** O
+  Lightning CSS rebaixa a função para um par de `var()` no valor INTEIRO da
+  declaração; aninhada numa função de gradiente, a peça quebra no build de
+  produção. Nas cores da aurora e da banda de seção usa-se `color-mix` sobre
+  tokens que já mudam com o tema.

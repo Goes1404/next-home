@@ -71,45 +71,74 @@ export function OndaDeTransicao() {
   if (!montado || !ativa || caminho.startsWith(SEM_ONDA)) return null;
 
   return createPortal(
-    <div
-      key={caminho}
-      aria-hidden
-      onAnimationEnd={() => setAtiva(false)}
-      className="onda-transicao pointer-events-none fixed inset-x-0 top-0 z-[45] h-[200svh]"
-    >
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-[45]">
       {/*
-        Uma FIGURA só, com as duas bordas onduladas, em vez de um bloco
-        reto com dois SVGs colados nas pontas: assim o degradê atravessa a
-        peça inteira sem emenda — duas peças teriam que casar o degradê na
-        junta, e não casam quando a tela muda de proporção.
+        DUAS ondas, defasadas: a de trás sai na frente e a da marca chega
+        logo atrás. Uma cortina só, por mais curva que seja a borda, ainda
+        se lê como um retângulo passando — é o par defasado que faz a
+        curvatura aparecer, porque em cada instante existem DUAS cristas em
+        alturas diferentes na tela.
 
-        `preserveAspectRatio="none"` porque isto é uma cortina, não um
-        desenho: ela deve esticar para a tela, e a onda fica mais aberta no
-        computador e mais fechada no celular, que é o desejado.
+        A `key` é o caminho: caminho novo, elementos novos, animação do
+        começo. Sem isso a segunda navegação não tocaria a animação de novo.
       */}
+      <Camada key={`fundo-${caminho}`} atraso="0ms" opacidade={0.55} inverter />
+      <Camada key={caminho} atraso="90ms" opacidade={1} aoTerminar={() => setAtiva(false)} />
+    </div>,
+    document.body,
+  );
+}
+
+/**
+ * Uma das duas ondas. `inverter` espelha o desenho na horizontal, para as
+ * cristas das duas nunca coincidirem — coincidindo, o par vira uma peça só
+ * e a defasagem se perde.
+ */
+function Camada({
+  atraso,
+  opacidade,
+  inverter = false,
+  aoTerminar,
+}: {
+  atraso: string;
+  opacidade: number;
+  inverter?: boolean;
+  aoTerminar?: () => void;
+}) {
+  return (
+    <div
+      onAnimationEnd={aoTerminar}
+      style={{ animationDelay: atraso, opacity: opacidade }}
+      className="onda-transicao absolute inset-x-0 top-0 h-[200svh]"
+    >
       <svg
         viewBox="0 0 1440 1000"
         preserveAspectRatio="none"
-        className="h-full w-full"
         focusable="false"
+        className={`h-full w-full ${inverter ? "-scale-x-100" : ""}`}
       >
         <defs>
-          <linearGradient id="onda-marca" x1="0" y1="0" x2="1" y2="1">
-            {/* As duas cores do logotipo, nesta ordem: o teal abre, o azul
-                fecha. Tinta fixa, não token de tema — a onda é um momento de
-                marca em tela cheia, como a vinheta de abertura, e tem de ser
-                a mesma peça no tema claro e no escuro. */}
+          <linearGradient id={`onda-marca-${inverter ? "b" : "a"}`} x1="0" y1="0" x2="1" y2="1">
+            {/* As duas cores do logotipo: o teal abre, o azul fecha. Tinta
+                fixa, não token de tema — a onda é um momento de marca em
+                tela cheia, como a vinheta de abertura, e é a mesma peça no
+                tema claro e no escuro. */}
             <stop offset="0%" stopColor="var(--color-brand-600)" />
             <stop offset="55%" stopColor="var(--color-brand-800)" />
             <stop offset="100%" stopColor="var(--color-azure-600)" />
           </linearGradient>
         </defs>
+        {/*
+          A curvatura é FUNDA de propósito: as cristas vão de y=10 a y=250 num
+          desenho de 1000 de altura. A primeira versão oscilava metade disso e,
+          esticada para a largura de um monitor, a borda chegava quase reta —
+          que foi exatamente a queixa ("não é só algo reto, tem curvaturas").
+        */}
         <path
-          fill="url(#onda-marca)"
-          d="M0,120 C240,10 480,230 720,120 C960,10 1200,230 1440,120 L1440,880 C1200,990 960,770 720,880 C480,990 240,770 0,880 Z"
+          fill={`url(#onda-marca-${inverter ? "b" : "a"})`}
+          d="M0,140 C220,-40 470,270 720,130 C970,-10 1210,260 1440,110 L1440,880 C1210,1040 970,740 720,870 C470,1010 220,730 0,860 Z"
         />
       </svg>
-    </div>,
-    document.body,
+    </div>
   );
 }

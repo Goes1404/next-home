@@ -89,10 +89,9 @@ export default function EntrarPage() {
 }
 
 /**
- * A marca sobre a foto. Tinta FIXA (`azure-200`), não o token `realce` que o
- * resto do site usa: sobre a foto o tema não vale, e o `realce` no claro é o
- * azul cheio do logotipo — escuro demais para o prédio atrás. O azul é o
- * mesmo do logotipo, só no degrau que sobrevive à foto.
+ * A marca sobre a foto. Tinta FIXA (`brand-200`), não `acento-suave`: sobre a
+ * foto o tema não vale, e no claro o acento-suave é escuro — "Home" sumia
+ * dentro do prédio.
  */
 function Marca({ grande = false }: { grande?: boolean }) {
   return (
@@ -102,7 +101,7 @@ function Marca({ grande = false }: { grande?: boolean }) {
         grande ? "text-[clamp(3rem,5vw,4.5rem)]" : "text-fluid-2xl"
       }`}
     >
-      Next<span className="text-azure-200">Home</span>
+      Next<span className="text-brand-200">Home</span>
     </Link>
   );
 }

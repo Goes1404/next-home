@@ -267,7 +267,7 @@ export default async function HomeInstitucional() {
 
           {/* Regioes é compartilhado com o portfólio do corretor — a banda vem
               do embrulho, não de dentro do componente. */}
-          <div className="bg-superficie/40 mt-16 sm:mt-24">
+          <div className="secao-banda mt-16 sm:mt-24">
             <Regioes catalogo={todos} />
           </div>
 
@@ -313,7 +313,7 @@ export default async function HomeInstitucional() {
           )}
 
           {equipe.length > 0 && (
-            <section className="bg-superficie/40 px-4 py-16 sm:px-8 sm:py-24">
+            <section className="secao-banda px-4 py-16 sm:px-8 sm:py-24">
               <div className="mx-auto w-full max-w-6xl">
                 <p className="text-fluid-xs text-apoio mb-3">
                   <span className="text-acento-suave font-semibold tabular-nums">

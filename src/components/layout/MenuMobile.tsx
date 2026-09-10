@@ -175,7 +175,7 @@ export function MenuMobile({ links }: { links: LinkMenu[] }) {
                   onClick={fechar}
                   className="font-display text-titulo text-lg leading-none font-medium tracking-tight"
                 >
-                  Next<span className="text-realce">Home</span>
+                  Next<span className="text-acento-forte">Home</span>
                 </Link>
                 <button
                   type="button"

@@ -1243,6 +1243,54 @@
     will-change: transform;
   }
 
+  /*
+   * AURORA — três manchas de luz nas cores da marca, atrás de tudo.
+   *
+   * É a resposta ao "o site está muito escuro, dá mais cor às páginas": no
+   * tema claro uma página inteira de branco com texto preto é o oposto de
+   * escura e igualmente sem cor, e encher as seções de blocos coloridos
+   * brigaria com as FOTOS, que são o produto. Manchas largas e diluídas
+   * dão temperatura ao fundo sem disputar nada em primeiro plano.
+   *
+   * Custa zero de rede e zero de decodificação — foi ela que substituiu os
+   * 15 MB de vídeo de fundo da vitrine.
+   *
+   * As cores saem dos tokens que já mudam com o tema (`acento`, `realce`),
+   * via `color-mix`, em vez de `light-dark()` aninhado dentro do gradiente:
+   * o Lightning CSS rebaixa `light-dark()` para um par de `var()` no valor
+   * INTEIRO da declaração, e dentro de uma função de gradiente esse truque
+   * não sobrevive ao build de produção.
+   */
+  /*
+   * A banda de seção, tingida. `bg-superficie/40` puro deixava a alternância
+   * entre seções quase invisível no tema claro — branco sobre branco —, e a
+   * queixa era justamente falta de cor. 7% de acento é o bastante para a
+   * faixa existir e pouco o bastante para não disputar com as fotos, que são
+   * o produto. Acompanha o tema porque sai do próprio token de acento.
+   */
+  .secao-banda {
+    background-color: color-mix(in srgb, var(--color-acento) 7%, var(--color-superficie));
+  }
+
+  .fundo-aurora {
+    background-image:
+      radial-gradient(
+        55rem 38rem at 8% -10%,
+        color-mix(in srgb, var(--color-acento) 16%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        48rem 34rem at 94% 4%,
+        color-mix(in srgb, var(--color-realce) 14%, transparent),
+        transparent 68%
+      ),
+      radial-gradient(
+        44rem 32rem at 58% 106%,
+        color-mix(in srgb, var(--color-sand-500) 13%, transparent),
+        transparent 70%
+      );
+  }
+
   .edge-fade-b {
     mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
   }
