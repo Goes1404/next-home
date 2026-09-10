@@ -5481,3 +5481,29 @@ nenhuma tela mostra sozinha — só navegando de uma para a outra.
 - **`TaskStop` não mata o `next start` no Windows** — o processo fica no
   3000 e o build seguinte "sobe" servindo o anterior (`EADDRINUSE` só no
   log). `netstat -ano | grep :3000` + `taskkill //PID <pid> //F`.
+
+## A caixa de "salvar meu e-mail" no login (10/09/2026)
+
+- **Guarda o E-MAIL, nunca a senha, e o rótulo diz isso.** "Lembrar de mim"
+  sem dizer o quê é justamente o texto que faz alguém supor que a senha
+  ficou num servidor nosso. Quem guarda senha é o gerenciador do aparelho —
+  o `autoComplete="current-password"` do campo já o convida.
+- **Gravar acontece no ENVIO, e não há segunda chance.** `entrar` termina em
+  `redirect`, então o componente NUNCA volta a montar depois de um login bem
+  sucedido: qualquer código que dependesse do "depois" nunca rodaria. O
+  `onSubmit` roda antes da Server Action e não a impede (conferido no
+  navegador, não suposto).
+- **Três estados numa CHAVE SÓ** (`nh-corretor-email`): ausente = nunca
+  decidiu (a caixa nasce marcada), `""` = decidiu que não (nasce
+  desmarcada), e-mail = preenche o campo. Duas chaves — uma para o valor,
+  outra para a preferência — permitem divergir, e aí a tela mostra uma coisa
+  e o aparelho guarda outra.
+- **Lido em efeito e escrito direto no DOM**, com os campos não-controlados:
+  ler `localStorage` na renderização daria divergência de hidratação (o
+  servidor não sabe o que este aparelho guardou), e `setState` em efeito é o
+  que a regra de lint desta base reprova.
+- **Verificado no navegador, em Pixel 7**, os seis passos: primeira visita
+  sem nada guardado; envio com a caixa marcada grava o e-mail; ao voltar o
+  campo vem preenchido e **a senha vem vazia**; desmarcar e enviar grava a
+  recusa; ao voltar a caixa está desmarcada e o campo vazio; alvo de toque
+  de 44px, sem estouro de largura.
