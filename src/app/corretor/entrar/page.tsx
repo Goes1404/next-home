@@ -89,8 +89,8 @@ export default function EntrarPage() {
 }
 
 /**
- * A marca sobre a foto. Tinta FIXA (`brand-200`), não `acento-suave`: sobre
- * a foto o tema não vale, e no claro o acento-suave é escuro — "Home" sumia
+ * A marca sobre a foto. Tinta FIXA (`brand-200`), não `acento-suave`: sobre a
+ * foto o tema não vale, e no claro o acento-suave é escuro — "Home" sumia
  * dentro do prédio.
  */
 function Marca({ grande = false }: { grande?: boolean }) {

@@ -6,6 +6,7 @@ import type { Empreendimento } from "@/lib/types";
 import { STATUS_LABEL, TIPO_LABEL } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
+import { STATUS_TINTA } from "@/lib/statusCor";
 import { MapPin } from 'lucide-react';
 
 
@@ -45,7 +46,13 @@ export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
 
           {/* Badges superiores */}
           <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
-            <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-brand-500/90 text-white backdrop-blur shadow-md">
+            {/* A cor do ESTÁGIO, a mesma do cartão do catálogo — quem vem
+                do mapa e quem vem da listagem têm de ver o mesmo código de
+                cor para o mesmo imóvel. Fundo preto fixo porque isto
+                flutua sobre a foto (ver statusCor.ts). */}
+            <span
+              className={`px-2.5 py-1 rounded-full text-[11px] font-semibold bg-ink-950/85 backdrop-blur shadow-md ${STATUS_TINTA[imovel.status]}`}
+            >
               {STATUS_LABEL[imovel.status] || imovel.status}
             </span>
             {/* Selo sobre a foto de capa: fundo preto sólido, mesmo nos dois temas. */}

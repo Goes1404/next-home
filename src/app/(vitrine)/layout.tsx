@@ -3,7 +3,6 @@ import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
-import { HERO_VIDEO_URL, HERO_VIDEO_WEBM_URL } from "@/lib/site";
 
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 
@@ -26,7 +25,21 @@ import { getCorretorAtivo } from "@/lib/corretorAtivo";
 export default async function VitrineLayout({ children }: { children: React.ReactNode }) {
   const corretorAtivo = await getCorretorAtivo();
   const usaFotoDeFundo = corretorAtivo?.fundoTipo === "foto" && corretorAtivo.fundoFotoUrl;
-  const videoUrl = corretorAtivo?.videoUrl || HERO_VIDEO_URL;
+  /*
+   * O vídeo da casa SAIU daqui em 10/09/2026, e o número é o motivo:
+   * `hero-scroll-fluido` pesa 15 MB (por codec), e ele era baixado por todo
+   * visitante de desktop em QUALQUER página da vitrine — catálogo, ficha de
+   * imóvel, mapa, portfólio. Era, de longe, o maior peso do site inteiro
+   * (o bundle todo dá 2,6 MB).
+   *
+   * O que fica no lugar é a aurora em CSS: três manchas de luz nas cores da
+   * marca, custo zero de rede e nenhuma decodificação. A home institucional
+   * mantém a vinheta de 0,7 MB, que é o momento de marca de verdade.
+   *
+   * Vídeo PRÓPRIO do corretor continua tendo precedência: é personalização
+   * explícita dele, feita no painel, e não é a casa impondo peso a ninguém.
+   */
+  const videoUrl = corretorAtivo?.videoUrl || null;
 
   return (
     <GlassBackgroundProvider>
@@ -38,16 +51,13 @@ export default async function VitrineLayout({ children }: { children: React.Reac
           a viewport visível ao rolar, e a caixa (com o vídeo em `cover`)
           reescalava a cada gesto. Ver o mesmo comentário no layout do
           institucional. */}
-      <div className="fixed inset-x-0 top-0 -z-10 h-lvh overflow-hidden bg-gradient-to-br from-fundo-marca via-fundo to-fundo">
+      <div className="fixed inset-x-0 top-0 -z-10 h-lvh fundo-aurora overflow-hidden bg-fundo">
         {usaFotoDeFundo ? (
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : (
           <>
             {videoUrl && (
-              <HeroVideoBackground
-                src={videoUrl}
-                srcWebm={videoUrl === HERO_VIDEO_URL ? HERO_VIDEO_WEBM_URL : undefined}
-              />
+              <HeroVideoBackground src={videoUrl} />
             )}
             {/* O hero-scroll não monta no celular (14,8 MB antes de qualquer
                 interação), e sem par o fundo aqui era um gradiente liso. A

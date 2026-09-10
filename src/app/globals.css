@@ -161,6 +161,30 @@
 
   /*
    * ---------------------------------------------------------------------
+   * REALCE — o azul do logotipo, a segunda cor da marca
+   * ---------------------------------------------------------------------
+   * A paleta nasceu do logotipo com DUAS cores (ver o topo deste arquivo):
+   * teal petróleo em "Next" e na casa, azul #034B8E em "Home". A escala
+   * `azure` existe desde o começo — e o site inteiro foi construído usando
+   * só a metade verde. Daí a leitura de quem abre: "está só preto e verde".
+   *
+   * `realce` é essa metade esquecida virando papel, para o azul poder ser
+   * usado sem ninguém precisar escolher um degrau da escala à mão: no claro
+   * é o azul cheio do logotipo (8,2:1 sobre a página), no escuro sobe para
+   * o `azure-300`, que ainda passa em AA (6,0:1) sobre o quase-preto.
+   *
+   * Ele NÃO compete com a rampa de etapa do funil, que também mora no azul:
+   * etapa é vocabulário do PAINEL e nunca aparece no site público, e realce
+   * é o contrário. As duas famílias não se encontram em tela nenhuma.
+   */
+  --color-realce: light-dark(#034b8e, #5695d3);
+  --color-realce-suave: light-dark(#023a6f, #8fb9e3);
+  --color-realce-lavado: light-dark(rgb(3 75 142 / 0.08), rgb(86 149 211 / 0.16));
+  --color-realce-linha: light-dark(rgb(3 75 142 / 0.3), rgb(86 149 211 / 0.34));
+
+
+  /*
+   * ---------------------------------------------------------------------
    * Cores de MÓDULO do CRM
    * ---------------------------------------------------------------------
    * Cinco matizes para as cinco áreas do painel. São TINTA, não papel: a
@@ -517,9 +541,27 @@
   :root[data-tema="claro"] {
     color-scheme: light;
 
-    --color-fundo: #edf2f0;
-    --color-superficie: #ffffff;
-    --color-elevado: #f4f8f7;
+    /*
+     * SAGE, MARFIM, BRANCO — e nessa ordem de profundidade.
+     *
+     * A versão anterior era `fundo #edf2f0` (quase branco, e frio) com
+     * `superficie #ffffff` (branco puro): duas camadas separadas por 3% de
+     * luz, então página e cartão viravam a mesma coisa e o site inteiro
+     * lia como uma folha de papel — a queixa foi exatamente "está muito
+     * branco".
+     *
+     * Agora a página é um verde-sage claro de viés quente, o cartão é
+     * marfim (não branco puro) e o branco fica reservado ao degrau mais
+     * alto: campo de formulário e superfície elevada. É isso que devolve a
+     * hierarquia — o cartão FLUTUA sobre a página em vez de se fundir com
+     * ela, e sobra um branco de verdade para o que precisa saltar.
+     *
+     * O verde não é decoração: é o teal do logotipo diluído, a mesma
+     * família do resto da paleta. Bege puro brigaria com ele.
+     */
+    --color-fundo: #e9ede1;
+    --color-superficie: #fafbf6;
+    --color-elevado: #ffffff;
     --color-campo: #ffffff;
 
     --color-linha: rgb(0 63 55 / 0.14);
@@ -616,9 +658,11 @@
     :root:not([data-tema="escuro"]) {
       color-scheme: light;
 
-      --color-fundo: #edf2f0;
-      --color-superficie: #ffffff;
-      --color-elevado: #f4f8f7;
+      /* Os MESMOS valores do bloco de `[data-tema=claro]` — o comentário
+         longo está lá. */
+      --color-fundo: #e9ede1;
+      --color-superficie: #fafbf6;
+      --color-elevado: #ffffff;
       --color-campo: #ffffff;
 
       --color-linha: rgb(0 63 55 / 0.14);
@@ -1174,6 +1218,97 @@
     .menu-item {
       animation: none;
     }
+  }
+
+  /*
+   * A onda entre páginas (ver components/motion/OndaDeTransicao.tsx).
+   *
+   * Sobe de baixo, cobre a tela por um instante e sai por cima. A pausa no
+   * meio é o que faz a peça ser lida como uma onda que PASSA, e não como um
+   * piscar: sem ela, entrar e sair viram o mesmo movimento e o olho só
+   * registra um borrão.
+   *
+   * ## A conta da cobertura, que a primeira versão errou
+   *
+   * A caixa cobrir a tela NÃO é a peça cobrir a tela: o desenho tem as duas
+   * bordas onduladas, então a área pintada começa depois da crista. Na
+   * primeira versão (140svh, parando em 0%) a caixa media "cobre" e a
+   * captura mostrava o header aparecendo por cima do vazio acima da onda —
+   * medir aprovou, olhar reprovou.
+   *
+   * A conta certa usa o ponto mais BAIXO da crista de cima (23% da altura
+   * do desenho) e o mais ALTO da onda de baixo (77%):
+   *   topo + 0,23·h ≤ 0        e        topo + 0,77·h ≥ altura da tela
+   * Com h = 200svh isso dá topo entre -54svh e -46svh; -50svh (ou seja,
+   * -25% de 200svh) fica no meio da faixa e sobra folga para a barra de
+   * endereço do celular entrar e sair.
+   */
+  @keyframes onda-passa {
+    0% {
+      transform: translate3d(0, 50%, 0);
+    }
+    42% {
+      transform: translate3d(0, -25%, 0);
+    }
+    58% {
+      transform: translate3d(0, -25%, 0);
+    }
+    100% {
+      transform: translate3d(0, -110%, 0);
+    }
+  }
+
+  .onda-transicao {
+    animation: onda-passa 900ms cubic-bezier(0.65, 0, 0.35, 1) both;
+    will-change: transform;
+  }
+
+  /*
+   * AURORA — três manchas de luz nas cores da marca, atrás de tudo.
+   *
+   * É a resposta ao "o site está muito escuro, dá mais cor às páginas": no
+   * tema claro uma página inteira de branco com texto preto é o oposto de
+   * escura e igualmente sem cor, e encher as seções de blocos coloridos
+   * brigaria com as FOTOS, que são o produto. Manchas largas e diluídas
+   * dão temperatura ao fundo sem disputar nada em primeiro plano.
+   *
+   * Custa zero de rede e zero de decodificação — foi ela que substituiu os
+   * 15 MB de vídeo de fundo da vitrine.
+   *
+   * As cores saem dos tokens que já mudam com o tema (`acento`, `realce`),
+   * via `color-mix`, em vez de `light-dark()` aninhado dentro do gradiente:
+   * o Lightning CSS rebaixa `light-dark()` para um par de `var()` no valor
+   * INTEIRO da declaração, e dentro de uma função de gradiente esse truque
+   * não sobrevive ao build de produção.
+   */
+  /*
+   * A banda de seção, tingida. `bg-superficie/40` puro deixava a alternância
+   * entre seções quase invisível no tema claro — branco sobre branco —, e a
+   * queixa era justamente falta de cor. 7% de acento é o bastante para a
+   * faixa existir e pouco o bastante para não disputar com as fotos, que são
+   * o produto. Acompanha o tema porque sai do próprio token de acento.
+   */
+  .secao-banda {
+    background-color: color-mix(in srgb, var(--color-acento) 7%, var(--color-superficie));
+  }
+
+  .fundo-aurora {
+    background-image:
+      radial-gradient(
+        55rem 38rem at 8% -10%,
+        color-mix(in srgb, var(--color-acento) 16%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        48rem 34rem at 94% 4%,
+        color-mix(in srgb, var(--color-realce) 14%, transparent),
+        transparent 68%
+      ),
+      radial-gradient(
+        44rem 32rem at 58% 106%,
+        color-mix(in srgb, var(--color-sand-500) 13%, transparent),
+        transparent 70%
+      );
   }
 
   .edge-fade-b {

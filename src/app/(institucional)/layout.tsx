@@ -61,7 +61,7 @@ export default async function InstitucionalLayout({
         // reescalava junto ("o fundo fica maior, menor", 10/09/2026). A
         // altura da viewport MAIOR é estável: a caixa nasce do tamanho da
         // tela sem barra e não mexe mais.
-        className="fixed inset-x-0 top-0 -z-10 h-lvh overflow-hidden will-change-transform bg-gradient-to-br from-fundo-marca via-fundo to-fundo"
+        className="fixed inset-x-0 top-0 -z-10 h-lvh overflow-hidden fundo-aurora will-change-transform bg-fundo"
       >
         {/* O fundo é a VINHETA, em toda tela: a peça que o Preloader acabou
             de mostrar recua para trás do conteúdo e congela no último quadro.

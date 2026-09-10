@@ -20,7 +20,8 @@ const ESPACO: Record<Espaco, string> = {
  * `5xl` e `7xl`. Leitura estreita, quando precisa, é `max-w-2xl` no
  * PARÁGRAFO — nunca na caixa da seção, senão o título anda junto.
  *
- * `banda` pinta o fundo de superfície para alternar com o fundo da página;
+ * `banda` pinta a faixa tingida (`.secao-banda`) para alternar com o fundo
+ * da página;
  * `fundo` acrescenta as manchas de luz em parallax (exige `overflow-hidden`,
  * senão elas vazam e criam rolagem lateral).
  */
@@ -45,7 +46,7 @@ export function Secao({
       className={[
         "px-4 sm:px-8",
         ESPACO[espaco],
-        banda && "bg-superficie/40",
+        banda && "secao-banda",
         fundo && "relative overflow-hidden",
         id && "scroll-mt-24",
         className,

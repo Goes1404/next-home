@@ -39,5 +39,5 @@ export async function getTemaEscolhido(): Promise<Tema | null> {
  */
 export const COR_DA_BARRA: Record<Tema, string> = {
   escuro: "#040b0a",
-  claro: "#edf2f0",
+  claro: "#e9ede1",
 };

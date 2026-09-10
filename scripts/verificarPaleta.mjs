@@ -139,6 +139,7 @@ const TOKENS = [
   "fundo", "superficie", "elevado", "campo", "linha", "linha-forte",
   "titulo", "corpo", "apoio", "tenue", "sobre-cor",
   "acento", "acento-hover", "acento-suave", "acento-lavado", "acento-linha",
+  "realce", "realce-suave",
   "ok", "alerta", "perigo",
   ...ETAPAS.flatMap((e) => [`etapa-${e}`, `etapa-${e}-lavado`]),
 ];
@@ -329,6 +330,28 @@ async function principal() {
       console.log(`    ${nome.padEnd(14)} ${checar(`${t.rotulo}/${nome} sobre superfície`, contraste(cor(`t-${nome}`), superficie), min)}`);
     }
     console.log(`    ${"linha".padEnd(14)} ${checar(`${t.rotulo}/linha sobre superfície`, contraste(cor("t-linha"), superficie), 1.2, { critico: false })}`);
+
+    /*
+     * As DUAS cores da marca além do verde. Elas nasceram em 10/09/2026,
+     * quando o site "só preto e verde" ganhou de volta o azul do logotipo.
+     * Medido nos três temas porque é onde uma cor de marca some: o azul
+     * cheio do logo desaparece sobre fundo escuro, e o degrau claro dele
+     * desaparece sobre branco — cada tema usa um, via `light-dark()`.
+     *
+     * `realce-suave` é o degrau que aparece dentro de chip lavado (o número
+     * dos passos numerados), então mede-se contra a superfície também.
+     *
+     * NOTA de quem escrever token novo aqui: o Tailwind REMOVE variável de
+     * `@theme` que nenhuma classe usa, e a sonda então lê transparente —
+     * 1,00:1 contra a superfície. Foi assim que um token criado sem
+     * consumidor foi pego, em 10/09/2026, antes de subir.
+     */
+    console.log("  cores da marca (realce = o azul do logotipo)");
+    for (const [nome, min] of [["realce", AA_TEXTO], ["realce-suave", AA_TEXTO]]) {
+      console.log(
+        `    ${nome.padEnd(14)} ${checar(`${t.rotulo}/${nome} como texto`, contraste(cor(`t-${nome}`), superficie), min)}`,
+      );
+    }
 
     console.log("  módulo");
     const matizes = {};

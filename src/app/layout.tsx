@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Alex_Brush, Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
 import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
 import { Footer } from "@/components/layout/Footer";
+import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { site } from "@/lib/site";
 import { COR_DA_BARRA, getTemaEscolhido } from "@/lib/tema";
@@ -106,14 +107,10 @@ export async function generateViewport(): Promise<Viewport> {
   const tema = await getTemaEscolhido();
 
   return {
-    themeColor:
-      tema === null
-        ? [
-            { media: "(prefers-color-scheme: light)", color: COR_DA_BARRA.claro },
-            { media: "(prefers-color-scheme: dark)", color: COR_DA_BARRA.escuro },
-          ]
-        : COR_DA_BARRA[tema],
-    colorScheme: tema === null ? "dark light" : tema === "claro" ? "light" : "dark",
+    // Sem cookie, o padrão é CLARO (ver o comentário do `data-tema` abaixo),
+    // então a barra do navegador acompanha em vez de consultar o sistema.
+    themeColor: COR_DA_BARRA[tema ?? "claro"],
+    colorScheme: tema === "escuro" ? "dark" : "light",
     width: "device-width",
     initialScale: 1,
     viewportFit: "cover",
@@ -138,7 +135,23 @@ export default async function RootLayout({
   return (
     <html
       lang="pt-BR"
-      data-tema={tema ?? undefined}
+      /*
+       * Sem cookie, o padrão é CLARO — e isso mudou em 10/09/2026.
+       *
+       * Antes nada era carimbado e quem decidia era o sistema operacional
+       * do visitante (`prefers-color-scheme`). O relato foi "o site está
+       * muito escuro", com uma referência de site claro: com o celular no
+       * escuro, que é a metade do mundo, a vitrine abria escura para quem
+       * nunca pediu isso — e escolher o tema de uma IMOBILIÁRIA pela
+       * preferência de leitura noturna do aparelho nunca foi uma decisão de
+       * marca, era o padrão do CSS decidindo por nós.
+       *
+       * O seletor no rodapé continua inteiro, e quem escolher "escuro"
+       * grava o cookie e nada aqui interfere. Para voltar ao comportamento
+       * antigo (o sistema decide), é trocar por `tema ?? undefined` aqui e
+       * desfazer as duas linhas de `generateViewport` acima.
+       */
+      data-tema={tema ?? "claro"}
       // Dois scripts inline mexem em atributos do <html> antes da hidratação
       // de propósito (o `no-js` abaixo e o `data-intro-ativa` do Preloader);
       // sem isto, o dev console acusa mismatch a cada carga.
@@ -167,6 +180,13 @@ export default async function RootLayout({
         />
         <GlassSvgDefs />
         <SmoothScroll />
+        {/* A onda entre páginas mora AQUI, e não nos layouts de grupo: ir da
+            home para o catálogo troca de grupo de rota, o layout inteiro é
+            desmontado e um componente que compara "caminho anterior" nasce
+            sem passado — foi exatamente assim que a primeira versão não
+            disparou nenhuma vez. O layout raiz é o único que sobrevive a
+            toda navegação. Ele mesmo decide onde não aparecer. */}
+        <OndaDeTransicao />
         {children}
         <Footer />
       </body>

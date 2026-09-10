@@ -29,7 +29,27 @@ export function SmoothScroll() {
 
     const lenis = new Lenis({
       lerp: 0.11,
-      smoothWheel: true,
+      /*
+       * O SCROLL DA RODA É O NATIVO desde 10/09/2026, e isso é correção de
+       * defeito, não preferência.
+       *
+       * Relatado como "não consigo arrastar para baixo com o touchpad do
+       * notebook". Touchpad não manda um "clique" de roda: manda dezenas de
+       * eventos minúsculos por segundo, com a inércia que o próprio sistema
+       * já calcula. Com `smoothWheel`, o Lenis descartava essa inércia e
+       * reinterpolava tudo com o lerp dele — o dedo andava e a página
+       * respondia com atraso e em degraus, que é o que se sente como
+       * "travado". Num mouse de rodinha o mesmo código parece bom, e foi por
+       * isso que passou.
+       *
+       * O que o Lenis continua fazendo é o que ele faz bem e ninguém mais
+       * faz: `scrollTo` suave para âncora e para o botão de voltar ao topo
+       * (ver lenis.ts), e o relógio compartilhado com o ScrollTrigger.
+       *
+       * De quebra some o trabalho por quadro em toda rolagem — parte do
+       * "deixe o site leve" do mesmo pedido.
+       */
+      smoothWheel: false,
       // No toque, o scroll nativo é mais previsível e não briga com o
       // gesto de "puxar para atualizar".
       syncTouch: false,
