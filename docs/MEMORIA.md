@@ -5909,3 +5909,34 @@ aprovada e parada — e cujo número (`0103`) já tinha sido tomado por
   na página clara, a esfera escura boiava num vazio pálido. Mesma regra do
   mapa e do globo — o que destaca um artefato geográfico é o contraste com
   a página, não a combinação com ela.
+
+## A varredura de saúde virou guarda, e ela achou o simulador cego (10/09/2026)
+
+- **`e2e/publico/saude-do-site.spec.ts`** passa por TODA página pública, em
+  desktop e celular, e pergunta quatro coisas — cada uma nascida de um
+  defeito real desta base: responde 200 (a 0101 não aplicada derrubou três
+  telas em 07/09), cabe na tela (o estouro do `CartaoTilt`), não sobrou
+  `.gsap-pending` preso (conteúdo invisível para sempre, com a página
+  "funcionando") e o console ficou limpo. 12 rotas, tudo verde na primeira
+  execução.
+- **A guarda NÃO mede contraste, e isso é decisão.** A varredura manual
+  tentou e o medidor deu falso positivo em massa: `color-mix()` e `oklab()`
+  chegam ao `getComputedStyle` como `color(srgb 0.72 0.81 0.77)`, e um
+  parser ingênuo lê `0.72` como se fosse `0.72/255` — todo texto ESCURO vira
+  "1,2:1". Ao medir cor lida do navegador, converter pelo canvas (como faz
+  `verificarPaleta.mjs`), nunca por regex de dígitos.
+- **O achado veio do LOG do servidor, não de uma asserção**: `[crédito]
+  falha ao ler parâmetros; usando o padrão do código: permission denied for
+  table parametros_credito`. A 0103 fechou a tabela para `anon` — certo na
+  época, quando só o consultor do painel lia. Depois nasceu `/financiamento`,
+  que é PÚBLICA, e desde então ela nunca leu uma linha: caía no padrão do
+  código a cada requisição. O estrago era zero porque o padrão é cópia fiel
+  do seed — e começaria no dia em que o gestor editasse as taxas no painel:
+  a tela dele mostraria o valor novo, o site o antigo, com "conferidas em
+  <data do seed>" impresso embaixo. **Divergência que nenhum teste pegaria,
+  porque as duas telas "funcionam".** Corrigido na 0107 (grant + policy de
+  SELECT para `anon`; a escrita continua só pelo gestor), aplicada e
+  conferida com `set local role anon`.
+- **Ao ler o resultado de um teste E2E, ler também o que o servidor
+  imprimiu.** Os 12 testes passaram; o defeito estava numa linha de
+  `console.warn` no meio do log.
