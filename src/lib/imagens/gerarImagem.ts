@@ -61,9 +61,9 @@ const MODELO_IMAGEM_PADRAO = "gpt-image-2";
  * não deixou de existir por o modelo saber escrever.
  *
  * O que precisa ser EXATO nunca vem por aqui: a ressalva legal de imagem
- * ilustrativa, o link e o telefone são compostos por código em `compor.ts`,
- * com fonte de verdade. Três em quatro é ótimo para uma manchete e inaceitável
- * para um número de telefone.
+ * ilustrativa é escrita por código em `carimbo.ts`, sobre a imagem pronta, a
+ * partir da constante `RESSALVA`. Três em quatro é ótimo para uma manchete e
+ * inaceitável para um aviso legal — e o mesmo valeria para um telefone.
  */
 const SEM_TEXTO_ALGUM =
   "Não escreva nada na imagem: sem texto, letras, números, placas, letreiros, " +

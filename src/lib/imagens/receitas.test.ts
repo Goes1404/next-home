@@ -98,28 +98,54 @@ describe("a cláusula anti-invenção", () => {
    * empreendimento que não existe.
    */
   /*
-   * Reescrita em 10/09/2026, e a metade que importa NÃO mudou.
+   * A ressalva legal tem DUAS metades, e as duas são travadas aqui.
    *
-   * `compor.ts` foi apagado junto com o caminho de marketing, que nunca
-   * produziu uma peça (`arte_url` nulo nas 8 gerações da vida inteira). Com
-   * ele saiu o desenho da ressalva por código — e o carimbo que a devolve é
-   * decisão tomada, mas de outra onda.
+   * (1) Ela nunca se pede ao modelo generativo. Ele acerta o texto literal
+   *     3 em 4 (medido nesta base; 2 em 2 com aspas e soletração, medido na
+   *     F0) — ótimo para uma manchete, inaceitável para um aviso legal, onde
+   *     uma palavra trocada muda o que a peça afirma ao consumidor.
    *
-   * O que esta guarda continua travando é a regra que nunca pode cair: a
-   * ressalva legal NÃO se pede ao modelo generativo. Ele acerta o texto
-   * literal 3 em 4 (medido nesta base; 2 em 2 com aspas e soletração, medido
-   * na F0) — ótimo para uma manchete, inaceitável para um aviso legal, onde
-   * uma palavra trocada muda o que a peça está afirmando ao consumidor.
+   * (2) Ela SAI, por código. `compor.ts` a desenhava e foi apagado em
+   *     10/09/2026 junto com o caminho de marketing; por algumas horas toda
+   *     arte saiu sem aviso nenhum, e nada nesta esteira reclamou. Hoje quem
+   *     a escreve é `carimbo.ts`, chamado pela rota antes do upload.
    *
-   * Enquanto o carimbo não existe, o desfecho correto é a imagem sair SEM
-   * ressalva e o corretor pôr a dele — não uma ressalva aproximada que
-   * parece oficial.
+   * A parte (2) é a que falha CALADA: build passa, tipo passa, a imagem chega
+   * bonita na tela, e só o cliente recebe uma perspectiva de IA sem saber que
+   * é ilustrativa.
    */
   it("a ressalva legal nunca é pedida ao modelo", () => {
     const motor = readFileSync(join(process.cwd(), "src/lib/imagens/gerarImagem.ts"), "utf8");
     expect(motor).not.toMatch(/meramente ilustrativa/i);
+  });
+
+  it("a rota CARIMBA a ressalva, e antes de guardar o arquivo", () => {
     const rota = readFileSync(join(process.cwd(), "src/app/api/imagens/gerar/route.ts"), "utf8");
-    expect(rota).not.toMatch(/meramente ilustrativa/i);
+
+    expect(rota).toMatch(/carimbarRessalva\(/);
+
+    /*
+     * Antes do upload, não depois: carimbar depois deixaria no bucket uma
+     * versão sem aviso, e é o arquivo do bucket que a galeria mostra e que o
+     * corretor baixa. O hash também sai dos bytes JÁ carimbados, senão dois
+     * pedidos iguais gerariam nomes diferentes do conteúdo guardado.
+     */
+    expect(rota.indexOf("carimbarRessalva(")).toBeLessThan(rota.indexOf(".upload("));
+    expect(rota).toMatch(/createHash\("sha256"\)\.update\(marcada\.bytes\)/);
+    expect(rota).toMatch(/\.upload\(caminho, marcada\.bytes/);
+  });
+
+  it("carimbo que falha NÃO sai calado — a tela é obrigada a avisar", () => {
+    // A imagem já foi paga, então ela é entregue de qualquer forma. O que não
+    // pode é sair achando que tem a ressalva.
+    const rota = readFileSync(join(process.cwd(), "src/app/api/imagens/gerar/route.ts"), "utf8");
+    expect(rota).toMatch(/comRessalva: marcada\.carimbada/);
+
+    const tela = readFileSync(
+      join(process.cwd(), "src/app/corretor/(painel)/imoveis/criar-imagem/ChatDeArte.tsx"),
+      "utf8",
+    );
+    expect(tela).toMatch(/comRessalva === false/);
   });
 
   it("nenhum caminho manda o prompt cru ao provedor", () => {

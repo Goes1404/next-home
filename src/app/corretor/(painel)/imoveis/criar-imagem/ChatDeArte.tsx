@@ -177,7 +177,7 @@ export function ChatDeArte({
         }),
       });
       const corpo = (await resp.json().catch(() => null)) as
-        | { ok: true; imagem: ImagemGerada; teto: EstadoDoTeto }
+        | { ok: true; imagem: ImagemGerada; teto: EstadoDoTeto; comRessalva?: boolean }
         | { erro?: string; teto?: EstadoDoTeto }
         | null;
 
@@ -195,7 +195,22 @@ export function ChatDeArte({
         url: corpo.imagem.arteUrl ?? corpo.imagem.url,
       });
       aplicar(r);
-      avisar("Imagem pronta.");
+      /*
+       * A ressalva legal é carimbada por código na rota. Quando o carimbo
+       * falha, a imagem ainda é entregue — ela já foi paga, e recusar seria
+       * queimar dinheiro de quem não errou —, mas o corretor PRECISA saber:
+       * publicar peça de IA sem dizer que é ilustrativa é problema dele com o
+       * cliente, não nosso com o servidor. Silêncio aqui seria o pior
+       * desfecho, porque a ausência do aviso é invisível na miniatura.
+       */
+      if (corpo.comRessalva === false) {
+        falhar(
+          "A imagem saiu SEM a ressalva “imagem meramente ilustrativa”. " +
+            "Escreva a sua antes de publicar.",
+        );
+      } else {
+        avisar("Imagem pronta.");
+      }
     } catch {
       falhar("Sem conexão. A imagem pode ter sido gerada — confira a galeria.");
     } finally {

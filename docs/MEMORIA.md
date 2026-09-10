@@ -5354,3 +5354,35 @@ aparecia em tsc, teste ou build.
   o que preserva a premissa de que nada consulta o Supabase em tempo de
   build. Conferir no output do build, não no código.
 
+## A ressalva legal volta por código, e o contraste dela é medido (10/09/2026)
+
+Nota: [[a-ressalva-legal-volta-por-codigo]].
+
+- **A ressalva ficou sem dono e nada reclamou.** `compor.ts` a desenhava e foi
+  apagado com o caminho de arte composta (que nunca produziu peça); com ele
+  saiu o ÚNICO lugar do sistema que escrevia "Imagem gerada por IA, meramente
+  ilustrativa." numa imagem. O motor de VÍDEO nunca perdeu a dele — de novo,
+  dois caminhos irmãos e um só corrigido. Hoje quem escreve é `carimbo.ts`,
+  chamado pela rota ANTES do upload, e `receitas.test.ts` cobra as duas
+  metades: nunca pedir ao modelo, e de fato sair.
+- **Ela é SEMPRE carimbada, não um botão.** Logo e telefone são decoração e
+  cabem num botão; a ressalva separa perspectiva ilustrativa de promessa ao
+  cliente, e aviso legal opcional é aviso legal esquecido.
+- **A MINHA primeira versão dava 2,08:1 sobre foto branca — abaixo de AA.**
+  Véu até 0,62 e texto no MEIO da faixa. Sobre céu estourado, que é o
+  enquadramento mais comum desta tela, o aviso não se lia. **E passou no
+  olho**, porque a amostra que desenhei tinha fundo cinza-claro. Só compor
+  sobre BRANCO PURO e calcular a luminância mostrou. Corrigido para 9,46:1
+  (véu 0 → 0,72 → 0,82 e linha de base a 62% da faixa). **Ninguém julga
+  contraste de olho: para contraste, medir vem antes de olhar.**
+- **A imagem já foi paga quando o carimbo roda**, então falhar fecha seria
+  queimar dinheiro de quem não errou. Degrada com `carimbada: false`, e a tela
+  é obrigada a avisar — mesma lógica do teto de 45s da geração.
+- **Guarda de contraste é barata e roda no vitest**: `sharp` compõe sobre
+  branco, extrai UMA linha de 1px na altura do miolo das letras e compara a
+  luminância do pixel mais claro (a letra) com a do mais escuro (o véu).
+  Provocada com o desenho antigo: reprova com o número na mensagem.
+- **Medição errada aponta para o lugar errado.** A primeira leitura comparou o
+  pixel mais escuro da faixa (o próprio véu) com o mais claro (o branco ACIMA
+  dela) e deu "6,10:1 — ok". O par certo é letra × véu na MESMA linha.
+

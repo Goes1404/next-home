@@ -7,6 +7,7 @@ import { gerarImagem, imagensConfiguradas } from "@/lib/imagens/gerarImagem";
 import { getTetoDeHoje, registrarImagem } from "@/lib/imagens/galeria";
 import { TAMANHOS, type ChaveQualidade, type ChaveTamanho } from "@/lib/imagens/imagensTipos";
 import { montarPedido, receitaPor } from "@/lib/imagens/receitas";
+import { carimbarRessalva } from "@/lib/imagens/carimbo";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 
 export const runtime = "nodejs";
@@ -162,15 +163,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  /*
+   * A ressalva legal entra AQUI, por código, antes de a imagem existir como
+   * arquivo. É o que separa uma perspectiva ilustrativa de uma promessa ao
+   * cliente, e não se pede ao modelo: ele acerta o literal 3 em 4, ótimo para
+   * manchete e inaceitável para aviso legal.
+   *
+   * Carimbar antes do hash é de propósito — o que é guardado, o que a galeria
+   * mostra e o que o corretor baixa passam a ser o MESMO arquivo, já marcado.
+   * Carimbar depois deixaria uma versão sem aviso no bucket.
+   */
+  const marcada = await carimbarRessalva(resultado.bytes, resultado.mime);
+
   // Mesmo esquema de nome de `registrarMidia`: hash do conteúdo, o que torna o
   // upload idempotente. O prefixo `corretores/<id>/` já é coberto pela policy
   // de storage da 0015 — nenhum bucket novo, nenhuma policy nova.
-  const hash = createHash("sha256").update(resultado.bytes).digest("hex").slice(0, 16);
+  const hash = createHash("sha256").update(marcada.bytes).digest("hex").slice(0, 16);
   const caminho = `corretores/${corretor.id}/criacoes/${hash}.png`;
 
   const { error: erroUpload } = await supabase.storage
     .from(BUCKET)
-    .upload(caminho, resultado.bytes, { contentType: resultado.mime, upsert: true });
+    .upload(caminho, marcada.bytes, { contentType: marcada.mime, upsert: true });
   if (erroUpload) {
     return NextResponse.json(
       { erro: "A imagem foi criada mas não deu para guardar. Tente de novo." },
@@ -179,7 +192,7 @@ export async function POST(req: NextRequest) {
   }
 
   const url = supabase.storage.from(BUCKET).getPublicUrl(caminho).data.publicUrl;
-  const medida = await medirImagem(resultado.bytes);
+  const medida = await medirImagem(marcada.bytes);
 
   const imagem = await registrarImagem({
     corretorId: corretor.id,
@@ -203,12 +216,18 @@ export async function POST(req: NextRequest) {
       id: hash,
       prompt,
       url,
-          largura: formato.largura,
+      largura: formato.largura,
       altura: formato.altura,
       referenciaUrl,
       empreendimentoId,
       criadaEm: new Date().toISOString(),
     },
+    /*
+     * `false` só quando o carimbo falhou — e a tela é OBRIGADA a dizer isso.
+     * A imagem já foi paga, então recusar a entrega seria queimar dinheiro de
+     * quem não errou; o que não pode é ela sair achando que tem a ressalva.
+     */
+    comRessalva: marcada.carimbada,
     teto: { usadasHoje: teto.usadasHoje + 1, teto: teto.teto },
     latenciaMs: resultado.latenciaMs,
   });
