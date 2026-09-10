@@ -28,9 +28,12 @@ import {
 export function ChatConsultor({
   conversasIniciais,
   conferidoEm,
+  perguntaInicial,
 }: {
   conversasIniciais: ConversaDoConsultor[];
   conferidoEm: string;
+  /** Veio de outra tela (`?pergunta=`), já no composer e editável. */
+  perguntaInicial?: string;
 }) {
   const { avisar, falhar } = useAvisos();
   const [conversas, setConversas] = useState(conversasIniciais);
@@ -112,6 +115,7 @@ export function ChatConsultor({
               </p>
             </>
           }
+          textoInicial={perguntaInicial}
           onEnviar={(t) => enviar(t)}
           onEscolher={(p: PerguntaDeChat, escolha) =>
             enviar(escolha, { perguntaId: p.id, pergunta: p.texto })

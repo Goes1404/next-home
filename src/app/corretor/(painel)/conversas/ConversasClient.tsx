@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
@@ -583,6 +584,23 @@ function Chat({
   onRemover: (mensagemId: string) => void;
 }) {
   const [texto, setTexto] = useState("");
+
+  /*
+   * A última fala do CLIENTE é o que vai para o consultor.
+   *
+   * O consultor existe desde 09/09 e ninguém o abriu: ele é a sétima tela do
+   * menu, e esta base já mediu que ferramenta atrás de um clique extra não é
+   * usada (o aviso de apelidos não moveu nada em cinco dias porque morava
+   * dentro do editor). Aqui ele fica a UM toque da pergunta que o corretor
+   * não sabe responder — o uso vira efeito colateral do trabalho que ela já
+   * faz, em vez de depender de alguém lembrar.
+   *
+   * Vai a fala do cliente, não a do bot: o que precisa de resposta é o que
+   * ELE perguntou.
+   */
+  const ultimaDoCliente = [...(mensagens ?? [])]
+    .reverse()
+    .find((m) => m.remetente === "cliente" && m.conteudo.trim().length > 2);
   const [enviando, setEnviando] = useState(false);
   const [seletorAberto, setSeletorAberto] = useState(false);
   const [fichaAberta, setFichaAberta] = useState(false);
@@ -775,6 +793,28 @@ function Chat({
             </span>
           </span>
         </button>
+
+        {ultimaDoCliente && (
+          <Link
+            href={`/corretor/consultor?pergunta=${encodeURIComponent(ultimaDoCliente.conteudo.slice(0, 400))}`}
+            title="Perguntar ao consultor"
+            aria-label="Perguntar ao consultor sobre a última mensagem do cliente"
+            className="text-wa-meta hover:text-wa-texto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full"
+          >
+            {/* Balão com uma casa dentro — o mesmo ícone do destino no menu. */}
+            <svg
+              viewBox="0 0 24 24"
+              className="size-6 fill-none stroke-current"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              aria-hidden
+            >
+              <path d="M21 12a8 8 0 0 1-8 8H8l-4 3v-4.6A8 8 0 1 1 21 12Z" />
+              <path d="M9.5 12.5 12.5 10l3 2.5" />
+              <path d="M10.5 12v3h4v-3" />
+            </svg>
+          </Link>
+        )}
 
         <button
           type="button"

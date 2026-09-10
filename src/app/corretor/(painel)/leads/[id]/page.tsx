@@ -23,6 +23,7 @@ import { SeletorEtapa } from "./SeletorEtapa";
 import { OrigemJornada } from "./OrigemJornada";
 import { PreferenciasContato } from "./PreferenciasContato";
 import { IniciarConversaIA } from "./IniciarConversaIA";
+import { perguntaDoLead } from "@/lib/consultor/perguntaDoLead";
 
 export const metadata: Metadata = { title: "Lead" };
 
@@ -223,6 +224,8 @@ export default async function FichaLeadPage({
             }}
             empreendimentos={empreendimentos ?? []}
           />
+
+          <AtalhoDoConsultor lead={lead} />
           <div id="proximas-acoes" className="scroll-mt-24">
             <ProximasAcoes leadId={lead.id} tarefas={tarefas} />
           </div>
@@ -309,5 +312,41 @@ export default async function FichaLeadPage({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * "Com isso, o que serve?" — a ficha a um toque do consultor.
+ *
+ * Fica logo abaixo da qualificação porque é ali que os dados que sustentam a
+ * pergunta acabaram de ser lidos, e some quando não há nenhum: botão que
+ * leva a lugar nenhum é pior que a ausência dele.
+ *
+ * O consultor é a sétima tela do menu, e esta base já mediu que ferramenta
+ * atrás de um clique extra não é usada. Mudar o LUGAR vale mais que reforçar
+ * o texto.
+ */
+function AtalhoDoConsultor({
+  lead,
+}: {
+  lead: {
+    nome: string;
+    rendaMensal: number | null;
+    orcamentoMin: number | null;
+    orcamentoMax: number | null;
+    dormitoriosMin: number | null;
+    regiaoInteresse: string | null;
+  };
+}) {
+  const pergunta = perguntaDoLead(lead);
+  if (!pergunta) return null;
+
+  return (
+    <Link
+      href={`/corretor/consultor?pergunta=${encodeURIComponent(pergunta)}`}
+      className="border-acento-linha bg-acento-lavado text-acento-suave hover:bg-acento hover:text-sobre-cor flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-center text-sm font-medium transition-colors"
+    >
+      Com isso, que imóvel serve?
+    </Link>
   );
 }

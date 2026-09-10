@@ -44,6 +44,7 @@ export function ChatBase<M extends MensagemDeChat>({
   vazio,
   onEnviar,
   onEscolher,
+  textoInicial,
   renderAcima,
   renderAbaixo,
   anexo,
@@ -60,6 +61,13 @@ export function ChatBase<M extends MensagemDeChat>({
   vazio: ReactNode;
   onEnviar: (texto: string) => Promise<void>;
   onEscolher: (pergunta: PerguntaDeChat, escolha: string) => Promise<void>;
+  /**
+   * O composer nasce com este texto — quem chegou de outra tela trazendo uma
+   * pergunta pronta. Fica EDITÁVEL de propósito: mandar sozinho gastaria uma
+   * chamada que ninguém confirmou, e a pergunta do cliente quase sempre
+   * precisa de um ajuste antes de virar a pergunta do corretor.
+   */
+  textoInicial?: string;
   /** Desenhado ANTES do texto do balão — a foto de referência do Estúdio. */
   renderAcima?: (m: M) => ReactNode;
   /** Desenhado DEPOIS do texto — proposta, resultado, cartão, simulação. */
@@ -70,7 +78,7 @@ export function ChatBase<M extends MensagemDeChat>({
   onAnexar?: (file: File) => void;
   onRemoverAnexo?: () => void;
 }) {
-  const [texto, setTexto] = useState("");
+  const [texto, setTexto] = useState(textoInicial ?? "");
   const arquivoRef = useRef<HTMLInputElement>(null);
   const corpoRef = useRef<HTMLDivElement>(null);
   const presoNoFimRef = useRef(true);
