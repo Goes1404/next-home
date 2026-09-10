@@ -5,6 +5,7 @@ import { RECEITAS, receitaPor } from "@/lib/imagens/receitas";
 import { TAMANHOS, type ChaveTamanho } from "@/lib/imagens/imagensTipos";
 import { MAX_PERGUNTAS, perguntarOQueFalta, type Resposta } from "@/lib/imagens/engenheiroDePrompt";
 import { traduzirPedido } from "@/lib/imagens/tradutor";
+import { fatosDoImovelCitado, fotosParaReferencia } from "./imovelNaArte";
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
 import { soarHumano } from "@/lib/whatsapp/vozHumana";
 import type { Empreendimento } from "@/lib/types";
@@ -121,6 +122,12 @@ function receitaDoTexto(ideia: string, temFoto: boolean): string {
 export async function turnoDeArte(params: {
   historico: MensagemDoEstudio[];
   mensagem: string;
+  /*
+   * O catálogo, para reconhecer o imóvel citado. Chega por parâmetro, e não
+   * por consulta aqui dentro, para o turno continuar sendo testável sem
+   * Supabase — a mesma razão de `turnoDeVideo` recebê-lo.
+   */
+  imoveis: Empreendimento[];
 }): Promise<RespostaDoTurno> {
   const historicoCompleto = params.historico;
   const ideia = ideiaAcumulada(historicoCompleto) || params.mensagem.trim();
@@ -190,9 +197,16 @@ export async function turnoDeArte(params: {
   // já entrou na ideia acumulada: a proposta abaixo nasce com ele.
   const tamanho = tamanhoDoTexto(ideia);
   const receita = receitaDoTexto(ideia, Boolean(referencia));
+  /*
+   * O imóvel que o corretor CITOU. Sem LLM: `imovelPorTexto` casa por nome e
+   * por apelido, então "Manacá" acha o "More na Aldeia de Barueri". É o único
+   * diferencial real sobre o ChatGPT — ele não tem esta ficha nem estas fotos.
+   */
+  const imovelCitado = imovelPorTexto(ideia, params.imoveis);
+
   const traduzido = await traduzirPedido({
     pedido: ideia,
-    fatos: [],
+    fatos: imovelCitado ? fatosDoImovelCitado(imovelCitado) : [],
     promptAnterior: propostaAnterior?.prompt ?? null,
     temReferencia: Boolean(referencia),
   });
@@ -207,6 +221,8 @@ export async function turnoDeArte(params: {
     tamanho,
     qualidade: "low",
     daIa: traduzido.daIa,
+    imovelSlug: imovelCitado?.slug ?? null,
+    fotosDoImovel: imovelCitado ? fotosParaReferencia(imovelCitado) : [],
     referenciaPath: referencia?.path ?? null,
   };
 

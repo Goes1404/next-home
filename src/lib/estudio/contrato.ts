@@ -61,6 +61,17 @@ export type PropostaDeArte = {
   naoCobriu: string[];
   /** Curto demais: a tela exige confirmação antes de gastar. */
   abaixoDoPiso: boolean;
+  /** O imóvel que o corretor citou, quando citou algum. */
+  imovelSlug?: string | null;
+  /**
+   * As fotos DESTE imóvel, para trocar a base sem sair do chat.
+   *
+   * A imagem é REINTERPRETADA a partir da escolhida, nunca preservada:
+   * `input_fidelity` não existe no `gpt-image-2` (sondado em 10/09/2026, com
+   * rejeição por nome). A tela precisa dizer isso — prometer "a mesma foto, só
+   * melhor" seria mentira que o corretor descobre na frente do cliente.
+   */
+  fotosDoImovel?: { url: string; alt: string }[];
   receita: string;
   tamanho: string;
   qualidade: "low" | "medium";
@@ -169,6 +180,12 @@ export function dadosDaMensagem(bruto: unknown): DadosDaMensagem | null {
           prompt: texto(d.prompt),
           naoCobriu: Array.isArray(d.naoCobriu) ? d.naoCobriu.filter((c): c is string => typeof c === "string") : [],
           abaixoDoPiso: d.abaixoDoPiso === true,
+          imovelSlug: texto(d.imovelSlug) || null,
+          fotosDoImovel: Array.isArray(d.fotosDoImovel)
+            ? d.fotosDoImovel
+                .filter((f): f is { url: string; alt?: string } => Boolean(f) && typeof f === "object" && typeof (f as { url?: unknown }).url === "string")
+                .map((f) => ({ url: f.url, alt: typeof f.alt === "string" ? f.alt : "" }))
+            : [],
           receita: texto(d.receita) || "livre",
           tamanho: texto(d.tamanho) || "1024x1024",
           qualidade: d.qualidade === "medium" ? "medium" : "low",
