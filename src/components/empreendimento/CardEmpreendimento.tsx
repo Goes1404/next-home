@@ -5,6 +5,7 @@ import { GlassSurface } from "@/components/glass/GlassSurface";
 import { BrilhoCarro } from "@/components/motion/BrilhoCarro";
 import { Camada } from "@/components/motion/Camada";
 import { ehRecente, precoAPartirDe } from "@/lib/format";
+import { resumoTipologias } from "@/lib/resumoTipologias";
 import { STATUS_PONTO, STATUS_TINTA } from "@/lib/statusCor";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
 
@@ -39,6 +40,8 @@ export function CardEmpreendimento({
    */
   velocidadeCapa?: number;
 }) {
+  const ficha = resumoTipologias(e.tipologias);
+
   return (
     <Link
       href={`/empreendimentos/${e.slug}`}
@@ -108,7 +111,24 @@ export function CardEmpreendimento({
           <p className="text-fluid-sm mt-0.5 text-legenda">
             {e.bairro}, {e.cidade}
           </p>
-          <p className="text-fluid-sm mt-2 font-medium text-acento-suave">
+
+          {/*
+            A ficha curta — "2 e 3 dorms · 55–78 m²". O dado já vinha na
+            consulta da listagem e não era mostrado: sem ele, comparar dois
+            imóveis exigia abrir e voltar em cada um. Ver `resumoTipologias`
+            para as regras (dois valores são listados, três ou mais viram
+            faixa, ausência é silêncio).
+          */}
+          {ficha && (
+            <p className="text-fluid-xs text-apoio mt-2 tabular-nums">{ficha}</p>
+          )}
+
+          {/*
+            O preço fecha o cartão, separado por um fio: é o número que
+            decide se a pessoa abre a ficha, e ele estava com o mesmo peso
+            do endereço logo acima.
+          */}
+          <p className="border-linha/60 text-fluid-base text-acento-suave mt-3 border-t pt-3 font-semibold">
             {precoAPartirDe(e.precoAPartir)}
           </p>
         </div>

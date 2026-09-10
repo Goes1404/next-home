@@ -5940,3 +5940,13 @@ aprovada e parada — e cujo número (`0103`) já tinha sido tomado por
 - **Ao ler o resultado de um teste E2E, ler também o que o servidor
   imprimiu.** Os 12 testes passaram; o defeito estava numa linha de
   `console.warn` no meio do log.
+- **O cartão do catálogo escondia o que faz alguém escolher** (10/09/2026).
+  Ele mostrava nome, bairro e preço — e ninguém escolhe imóvel por NOME.
+  Quantos dormitórios e quantos metros decidem, e para descobrir isso era
+  preciso abrir a ficha e voltar, 25 vezes numa listagem de 25. O dado já
+  vinha na consulta (`tipologias(*)` em `queries.ts`): só não era mostrado.
+  `resumoTipologias` monta "2 e 3 dorms · 55–78 m²". Duas regras que valem
+  além dele: **dois valores são LISTADOS, não viram faixa** (com plantas de
+  2 e 4, escrever "2 a 4" oferece um imóvel de 3 que não existe), e ausência
+  é silêncio — sem área cadastrada, a metade correspondente some, em vez de
+  a interface inventar.
