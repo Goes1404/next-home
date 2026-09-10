@@ -62,3 +62,6 @@ skills-lock.json
 
 # Medição de sessão: nasce descartável, como .tmp-paleta/ acima.
 medir-tmp.mjs
+
+# Bytes da medicao F0 — entrada e saida de imagem, nao codigo.
+scripts/imagens/f0/
