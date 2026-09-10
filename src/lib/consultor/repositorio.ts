@@ -14,7 +14,7 @@ import {
  *
  * LEITURA com o cliente de SESSÃO (a RLS recorta pelo corretor logado);
  * ESCRITA com a service key, porque `authenticated` não tem insert nem update
- * (0101). A decisão de QUEM pode é sempre da sessão; a service key só executa
+ * (0102). A decisão de QUEM pode é sempre da sessão; a service key só executa
  * — mesma regra de `admin/acoes.ts` e do repositório do Estúdio.
  */
 

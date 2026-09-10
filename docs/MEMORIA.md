@@ -4757,10 +4757,28 @@ de pagamento 0/16 e perfil familiar 1/16.
 **A régua que fica**: ao medir "a IA não tem contexto", não olhe o tamanho da
 janela — olhe QUEM ocupa a janela e se o que está lá tem texto.
 
-## O consultor imobiliário (0101-0102, 09/09/2026)
+## O consultor imobiliário (0102-0104, 09/09/2026)
 
 Chat no painel que responde "qual imóvel serve para esta pessoa?" e "isso
 fecha?". Nota completa em `vault/10-notas/consultor-imobiliario-no-painel.md`.
+
+- **A colisão de migration ACONTECEU, e só apareceu na hora de subir
+  (10/09).** O consultor nasceu como `0101`-`0103` na branch
+  `ingestao-de-midia` enquanto a branch de produção já tinha ganhado outra
+  `0101` (`arte_de_ia_por_imovel`, de 07/09, de outro autor). As duas
+  estavam aplicadas no banco; **só o git colidia**. Renumeradas para
+  `0102`-`0104`. É a segunda vez que este projeto tropeça aqui, e a lição
+  nova é sobre a GUARDA: `migrations.test.ts` reprova prefixo duplicado
+  **dentro de uma branch** e não enxerga a branch vizinha — passa verde nas
+  duas ao mesmo tempo. Enquanto duas sessões trabalharem em paralelo, o
+  número livre precisa ser conferido contra `origin/main`, não contra
+  `ls supabase/migrations/`.
+- **Renumerar não basta: o número está escrito por extenso no meio do
+  texto.** Além do nome do arquivo, ele aparece no cabeçalho da própria
+  migration, no `comment on column`, em dois arquivos de `src/lib/consultor/`
+  e nesta MEMORIA. Número renomeado e comentário velho é a forma mais barata
+  de fazer o diagnóstico apontar para o lugar errado — o defeito recorrente
+  nº 5 desta base.
 
 - **O preço ENTRA no prompt deste chat, e isso precisa estar escrito.** Quem
   lê é o CORRETOR; `semValores.ts` protege a conversa com o cliente e não vale

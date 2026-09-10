@@ -36,5 +36,8 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 - [[tentativas-de-contato-sao-duas-contagens]]
 - [[pg-cron-e-o-relogio-de-verdade]]
 
+## Migrations: numeração e ordem
+- [[colisao-de-migration-entre-branches]] — a guarda só enxerga a própria branch
+
 ## Relacionados
 - [[MOC — Infraestrutura]] · [[MOC — CRM e Painel]] · [[Home]]

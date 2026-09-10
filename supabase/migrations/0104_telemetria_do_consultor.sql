@@ -1,8 +1,8 @@
--- 0103 — O consultor passa a deixar rastro
+-- 0104 — O consultor passa a deixar rastro
 --
 -- ## O buraco, medido
 --
--- O consultor (0101) subiu sem telemetria nenhuma: `ia_interacoes.origem` não
+-- O consultor (0102) subiu sem telemetria nenhuma: `ia_interacoes.origem` não
 -- aceitava 'consultor', então cada turno rodava e não deixava linha. Sem isso
 -- não se sabe se a tela foi usada, quanto custou, nem quantas vezes o
 -- guardrail cortou — e "ninguém usou" fica indistinguível de "usaram e estava
@@ -38,4 +38,4 @@ alter table public.ia_interacoes
   check (origem in ('webhook', 'playground', 'followup', 'eval', 'painel', 'consultor'));
 
 comment on column public.ia_interacoes.origem is
-  'De onde veio a interacao. `consultor` e o chat de portfolio e credito do painel (0103); `painel` sao as acoes de atendimento disparadas pelo corretor (0098).';
+  'De onde veio a interacao. `consultor` e o chat de portfolio e credito do painel (0102); `painel` sao as acoes de atendimento disparadas pelo corretor (0098).';

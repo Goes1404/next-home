@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
  *
  * ## Por que ela existe
  *
- * O consultor subiu na 0101 sem telemetria nenhuma — `ia_interacoes.origem`
+ * O consultor subiu na 0102 sem telemetria nenhuma — `ia_interacoes.origem`
  * nem aceitava `'consultor'`. Cada turno rodava, custava dinheiro e não
  * deixava linha; "ninguém usou" ficava indistinguível de "usaram e estava
  * quebrado". É a sétima vez que esta base tropeça nessa família (recurso

@@ -1,4 +1,4 @@
--- 0101 — O consultor imobiliário: a conversa fica salva
+-- 0102 — O consultor imobiliário: a conversa fica salva
 --
 -- ## Por que tabela nova, e não `estudio.tipo = 'consultor'`
 --
