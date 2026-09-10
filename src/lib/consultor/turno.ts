@@ -5,7 +5,7 @@ import { soarHumano } from "@/lib/whatsapp/vozHumana";
 import type { Empreendimento } from "@/lib/types";
 import type { ParametrosCredito } from "@/lib/credito/tipos";
 import { blocoDeCredito, blocoDeObjecoes, blocoDoCatalogo, cartaoDoImovel } from "./conhecimento";
-import { cortarCreditoInventado, numerosPermitidos, slugsValidos } from "./guardrails";
+import { cortarCreditoInventado, houveCorte, numerosPermitidos, slugsValidos } from "./guardrails";
 import { montarPromptDoConsultor } from "./prompt";
 import { simularFinanciamento, type EntradaSimulacao } from "./financiamento";
 import type { DadosDoConsultor, MensagemDoConsultor } from "./contrato";
@@ -30,6 +30,21 @@ export type RespostaDoConsultor = {
   textoCliente: string | null;
   /** `true` = o motor caiu ou devolveu fora do contrato. */
   falhou: boolean;
+  /**
+   * O que a telemetria precisa saber, e que só existe aqui dentro.
+   *
+   * Vai para `ia_interacoes` (origem `consultor`, 0103). `tokens` é o que
+   * responde quanto custa um turno — a conta divide o mesmo saldo da OpenAI
+   * do atendimento, então sem crédito a Sofia cai junto.
+   */
+  telemetria: {
+    acao: "respondida" | "respondida_com_corte" | "contingencia" | "fora_do_contrato";
+    latenciaMs: number;
+    tokensEntrada: number | null;
+    tokensSaida: number | null;
+    /** Quem DE FATO respondeu, ou nada. Nunca um palpite. */
+    modelo: string | null;
+  };
 };
 
 const CONTINGENCIA =
@@ -104,13 +119,40 @@ export async function turnoDoConsultor(params: {
   const r = await chamarLlmJson(prompt, { temperature: 0, orcamentoMs: ORCAMENTO_MS });
   if (!r.ok) {
     console.warn(`[consultor] motor falhou: ${r.erro}`);
-    return { texto: CONTINGENCIA, dados: null, textoCliente: null, falhou: true };
+    return {
+      texto: CONTINGENCIA,
+      dados: null,
+      textoCliente: null,
+      falhou: true,
+      // Ninguém respondeu: modelo é `null`, nunca o padrão. Esta coluna já
+      // mentiu duas vezes nesta base, e a segunda produziu uma conclusão
+      // inteira errada sobre a cascata.
+      telemetria: {
+        acao: "contingencia",
+        latenciaMs: r.latenciaMs,
+        tokensEntrada: null,
+        tokensSaida: null,
+        modelo: null,
+      },
+    };
   }
 
   const bruta = lerRespostaDaIa(r.json);
   if (!bruta) {
     console.warn("[consultor] resposta fora do contrato");
-    return { texto: CONTINGENCIA, dados: null, textoCliente: null, falhou: true };
+    return {
+      texto: CONTINGENCIA,
+      dados: null,
+      textoCliente: null,
+      falhou: true,
+      telemetria: {
+        acao: "fora_do_contrato",
+        latenciaMs: r.latenciaMs,
+        tokensEntrada: r.tokensEntrada,
+        tokensSaida: r.tokensSaida,
+        modelo: r.modelo,
+      },
+    };
   }
 
   // A conta acontece ANTES do corte: os números dela entram nos permitidos,
@@ -143,5 +185,15 @@ export async function turnoDoConsultor(params: {
     dados,
     textoCliente: bruta.textoCliente ? soarHumano(bruta.textoCliente) : null,
     falhou: false,
+    telemetria: {
+      // O corte separado da resposta normal: é ele que diz com que frequência
+      // a IA tenta citar crédito que não tem, e sem o número não dá para
+      // distinguir prompt bom de guardrail trabalhando dobrado.
+      acao: houveCorte(texto) ? "respondida_com_corte" : "respondida",
+      latenciaMs: r.latenciaMs,
+      tokensEntrada: r.tokensEntrada,
+      tokensSaida: r.tokensSaida,
+      modelo: r.modelo,
+    },
   };
 }

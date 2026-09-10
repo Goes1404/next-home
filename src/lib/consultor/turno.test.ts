@@ -156,6 +156,55 @@ describe("turnoDoConsultor", () => {
     expect(r.textoCliente).toContain("Separei uma opção");
   });
 
+  it("carimba a telemetria de um turno normal", async () => {
+    chamarLlmJson.mockResolvedValue(respondeu({ resposta: "ok." }));
+    const r = await turnoDoConsultor(base);
+    expect(r.telemetria).toEqual({
+      acao: "respondida",
+      latenciaMs: 10,
+      tokensEntrada: 1,
+      tokensSaida: 1,
+      modelo: "gpt-4.1-mini",
+    });
+  });
+
+  it("separa o turno em que o guardrail CORTOU", async () => {
+    // É este número que diz com que frequência a IA tenta citar crédito que
+    // não tem. Sem separar, prompt bom e guardrail trabalhando dobrado ficam
+    // indistinguíveis no contador.
+    chamarLlmJson.mockResolvedValue(
+      respondeu({ resposta: "O subsídio da Faixa 1 chega a R$ 91.000 hoje." }),
+    );
+    const r = await turnoDoConsultor(base);
+    expect(r.telemetria.acao).toBe("respondida_com_corte");
+  });
+
+  it("contingência NÃO carimba modelo — ninguém respondeu", async () => {
+    /*
+     * Esta coluna já mentiu duas vezes nesta base, e a segunda produziu uma
+     * conclusão inteira errada sobre a cascata: 1.443 de 1.496 linhas com um
+     * modelo que nunca foi chamado.
+     */
+    chamarLlmJson.mockResolvedValue({ ok: false, erro: "http_429", latenciaMs: 42 });
+    const r = await turnoDoConsultor(base);
+    expect(r.telemetria).toEqual({
+      acao: "contingencia",
+      latenciaMs: 42,
+      tokensEntrada: null,
+      tokensSaida: null,
+      modelo: null,
+    });
+  });
+
+  it("JSON torto é 'fora_do_contrato', e o modelo QUE respondeu fica", async () => {
+    // Aqui alguém respondeu — só respondeu torto. Apagar o modelo esconderia
+    // qual deles produz JSON fora do contrato.
+    chamarLlmJson.mockResolvedValue(respondeu({ coisa: "errada" }));
+    const r = await turnoDoConsultor(base);
+    expect(r.telemetria.acao).toBe("fora_do_contrato");
+    expect(r.telemetria.modelo).toBe("gpt-4.1-mini");
+  });
+
   it("manda UMA chamada de LLM por turno", async () => {
     chamarLlmJson.mockResolvedValue(respondeu({ resposta: "ok." }));
     await turnoDoConsultor(base);

@@ -14,6 +14,8 @@ import {
   listarConversasDoConsultor,
 } from "@/lib/consultor/repositorio";
 import { turnoDoConsultor } from "@/lib/consultor/turno";
+import { VERSAO_DO_PROMPT } from "@/lib/consultor/prompt";
+import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import {
   tituloDaConversa,
   type ConversaDoConsultor,
@@ -130,6 +132,30 @@ export async function enviarMensagemDoConsultor(params: {
     papel: "ia",
     conteudo: r.texto,
     dados: r.dados,
+  });
+
+  /*
+   * O rastro do turno (0103). Fire-and-forget por contrato — telemetria que
+   * derruba a resposta é pior que telemetria nenhuma.
+   *
+   * Sem isto o consultor rodava sem deixar linha: não dava para saber se foi
+   * usado, quanto custou, nem quantas vezes o guardrail cortou — e "ninguém
+   * usou" ficava indistinguível de "usaram e estava quebrado". Sétima vez que
+   * esta base tropeça nessa família.
+   *
+   * `conversaId` NÃO vai: a coluna referencia `whatsapp_conversas`, e a
+   * conversa daqui é de outra tabela. Preencher apontaria para linha alheia.
+   */
+  void registrarInteracao({
+    corretorId: corretor.id,
+    origem: "consultor",
+    promptVersao: VERSAO_DO_PROMPT,
+    acao: r.telemetria.acao,
+    fallback: r.falhou,
+    latenciaMs: r.telemetria.latenciaMs,
+    tokensEntrada: r.telemetria.tokensEntrada,
+    tokensSaida: r.telemetria.tokensSaida,
+    modelo: r.telemetria.modelo,
   });
 
   // O texto pronto para o cliente vira mensagem PRÓPRIA: ele tem botão de

@@ -109,8 +109,18 @@ function estaPermitido(n: number, permitidos: number[]): boolean {
   return permitidos.some((p) => Math.abs(p - n) <= Math.max(1, p * 0.01));
 }
 
-const DESVIO =
+/**
+ * Exportado porque a TELEMETRIA precisa saber que houve corte: é o número que
+ * responde "com que frequência a IA tenta citar crédito que não tem", e sem
+ * ele não dá para distinguir prompt bom de guardrail trabalhando dobrado.
+ */
+export const DESVIO_DE_CREDITO =
   "Esse número eu não tenho conferido aqui — confira na fonte antes de passar pro cliente.";
+
+/** O texto já cortado terminou no desvio? Só quem cortou o acrescenta. */
+export function houveCorte(texto: string): boolean {
+  return texto.endsWith(DESVIO_DE_CREDITO);
+}
 
 /**
  * Corta a FRASE inteira quando ela afirma número de crédito que não confere.
@@ -137,6 +147,6 @@ export function cortarCreditoInventado(texto: string, permitidos: number[]): str
     return ok;
   });
 
-  if (cortou) saida.push(DESVIO);
+  if (cortou) saida.push(DESVIO_DE_CREDITO);
   return saida.join(" ").replace(/[ \t]+/g, " ").trim();
 }

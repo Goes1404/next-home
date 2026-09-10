@@ -10,6 +10,16 @@
  * não "no topo da seção de blocos", no topo do prompt.
  */
 
+/**
+ * Versão do prompt do consultor — BUMP MANUAL a cada mudança de texto.
+ *
+ * É por ela que se agrupa a telemetria: sem isso, um defeito já corrigido
+ * continua aparecendo nos contadores acumulados como se fosse de hoje (foi o
+ * que aconteceu com os 12 anexos "barrados" do agente, todos de versões
+ * antigas).
+ */
+export const VERSAO_DO_PROMPT = "consultor-v1";
+
 export type PedidoDoPrompt = {
   blocoCatalogo: string;
   blocoCredito: string;
