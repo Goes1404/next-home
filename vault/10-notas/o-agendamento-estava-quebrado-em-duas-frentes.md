@@ -7,6 +7,7 @@ status: growing
 custou: medio
 codigo:
   - src/lib/crm/agendaDeVisitas.ts
+  - src/lib/crm/preparoDaVisita.ts
   - src/lib/whatsapp/pedidoDeAgendamento.ts
   - src/lib/whatsapp/jogada.ts
   - scripts/traces/traceVisita.ts
@@ -73,6 +74,30 @@ planta?" é perder a visita que ele estava entregando.
   "pode ser" e é resposta de ESTÁGIO. O aceite do convite exige três metades:
   o bot convidou, ele não negou, e a fala dele não traz assunto do funil. O
   teste que já existia pegou isso na primeira rodada.
+
+## E o depois da visita salva
+
+Três coisas mudaram no que acontece DEPOIS de a visita ficar gravada:
+
+- **A confirmação virou o COMBINADO.** Ela dizia "14/09 às 9h está
+  confirmado" e parava. Agora manda dia, hora, QUAL imóvel e COM QUEM — o
+  print que o cliente guarda, e o que reduz o não-comparecimento.
+- **O card da visita prepara, não só avisa.** Ele tinha hora, nome, imóvel,
+  etiqueta e "ligar". Ganhou o endereço por extenso (o botão de GPS existia,
+  mas não dava para LER para onde se ia), WhatsApp com mensagem pronta,
+  atalho para a ficha, e o preparo: região, tipologia, orçamento, renda, a
+  objeção em aberto e o resumo do dossiê. O preparo sai de consulta à parte,
+  não de `SELECT_LEAD` — aquele select é lido por toda tela de lead, e
+  engordá-lo cobraria a coluna extra na lista paginada e no quadro de 300
+  cartões.
+- **O lembrete de véspera já existia** (`agendarLembretesDeVisita`, janela de
+  8 a 30 horas antes) e nunca tinha produzido linha nenhuma — não por
+  defeito, mas por falta de entrada: não havia visita futura no banco. O que
+  ele tinha de errado era o TEXTO: *"se fizer sentido, inclua um detalhe útil
+  (ponto de encontro...)"*, um convite para inventar no pior lugar possível.
+  O cliente lê o lembrete na noite anterior, sai de casa e vai para onde a
+  mensagem mandou. Hoje o endereço vem do CADASTRO e viaja até a instrução;
+  sem endereço cadastrado, ela proíbe dizer qualquer um.
 
 ## O método
 

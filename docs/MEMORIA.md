@@ -5158,3 +5158,34 @@ chamada de LLM (`scripts/traces/traceVisita.ts`).
   (adversarial, cooperativo, objeção, interessado) foram escritos por mim; o
   quinto é a conversa que o usuário viveu. Roteiro imaginado testa o caminho
   feliz de quem o escreveu.
+
+### O depois da visita salva (10/09/2026)
+
+- **O card da visita preparava nada.** Tinha hora, nome, imóvel, etiqueta e
+  "ligar" — serve para saber QUE existe uma visita, não para chegar nela
+  preparado. Ganhou endereço por extenso (o botão de GPS já existia, mas não
+  dava para LER para onde se ia), WhatsApp com mensagem pronta, atalho para a
+  ficha, e o preparo: região, tipologia, orçamento, renda, a objeção em
+  aberto e o resumo do dossiê. **O preparo sai de consulta à parte, não de
+  `SELECT_LEAD`** — aquele select é lido por toda tela de lead do painel, e
+  engordá-lo por causa desta cobraria a coluna extra na lista paginada e no
+  quadro de até 300 cartões. Seção sem conteúdo não aparece.
+- **O lembrete de véspera JÁ EXISTIA e nunca tinha rodado** —
+  `agendarLembretesDeVisita`, janela de 8 a 30 horas antes, dentro do tique
+  dos follow-ups. Zero linhas não era defeito: **era falta de entrada**, não
+  havia visita futura no banco (as duas existentes eram passadas e
+  `perdido`). Vale como régua: antes de consertar um caminho que produz zero,
+  conferir se ele já teve o que processar.
+- **O que ele tinha de errado era o TEXTO.** A instrução dizia "se fizer
+  sentido, inclua um detalhe útil (ponto de encontro...)" — um convite para
+  inventar, e no pior lugar possível: o cliente lê o lembrete na noite
+  anterior, sai de casa e vai para onde a mensagem mandou. Hoje o endereço
+  vem do CADASTRO e viaja por parâmetro até a instrução, que manda copiá-lo
+  exatamente; **sem endereço cadastrado, ela PROÍBE dizer qualquer um** e
+  manda avisar que o corretor confirma o ponto de encontro. Mesma razão pela
+  qual o link da página é montado por código e a IA nunca o escreve.
+- **`--color-etapa-laranja` não existe.** Escrevi a classe de cabeça para o
+  aviso de objeção do card; os tokens de etapa reais são
+  `novo/contato/visita/proposta/doc/fechado/perdido`, e o de alerta é
+  `alerta`. Classe de cor que não existe vira NADA em silêncio (a lição do
+  `bg-chip`): **antes de usar token de cor, `grep` no `globals.css`.**
