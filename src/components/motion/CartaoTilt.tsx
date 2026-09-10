@@ -93,14 +93,27 @@ export function CartaoTilt({
       el.classList.remove("gsap-pending");
       if (alvoZoom) gsap.set(alvoZoom, { scale: 1.18 });
 
+      /*
+       * Tempos encurtados em 10/09/2026. Relatado como "quando aparecem os
+       * corretores parece que fica bugado, demora pra aparecer tudo": a
+       * cortina levava 1,05s, o zoom 1,4s e o escalonamento somava mais
+       * 0,18s — quase um segundo e meio até a grade inteira existir. Numa
+       * grade de seis cartões que entram JUNTOS na tela, isso não se lê
+       * como entrada elegante, se lê como página carregando devagar.
+       *
+       * A cortina virou o gesto principal (0,55s) e o zoom acompanha sem
+       * sobrar depois dela. O `start` também subiu: a 92% o cartão começa a
+       * abrir antes de estar no meio da tela, então quando o olho chega ele
+       * já está pronto.
+       */
       const tl = gsap.timeline({
-        scrollTrigger: { trigger: el, start: "top 88%", once: true },
-        delay: (indice % 3) * 0.09,
+        scrollTrigger: { trigger: el, start: "top 92%", once: true },
+        delay: (indice % 3) * 0.05,
       });
 
-      tl.to(el, { clipPath: "inset(0% 0% 0% 0%)", duration: 1.05, ease: "power3.inOut" }, 0);
+      tl.to(el, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.55, ease: "power3.out" }, 0);
       if (alvoZoom) {
-        tl.to(alvoZoom, { scale: 1, duration: 1.4, ease: "power2.out" }, 0);
+        tl.to(alvoZoom, { scale: 1, duration: 0.75, ease: "power2.out" }, 0);
       }
     }, el);
 

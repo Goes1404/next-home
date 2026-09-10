@@ -267,7 +267,7 @@ export default async function HomeInstitucional() {
 
           {/* Regioes é compartilhado com o portfólio do corretor — a banda vem
               do embrulho, não de dentro do componente. */}
-          <div className="secao-banda mt-16 sm:mt-24">
+          <div className="secao-banda secao-curva secao-curva-fim mt-16 sm:mt-24">
             <Regioes catalogo={todos} />
           </div>
 
@@ -275,7 +275,7 @@ export default async function HomeInstitucional() {
               abre o card com as características básicas e o botão de ver o
               imóvel (CardFlutuanteImovel, o mesmo da página /mapa). */}
           {todos.length > 0 && (
-          <section className="px-4 py-16 sm:px-8 sm:py-24">
+          <section className="secao-funda secao-curva secao-curva-fim px-4 py-16 sm:px-8 sm:py-24">
             <div className="mx-auto w-full max-w-6xl">
               <p className="text-fluid-xs text-apoio mb-3">
                 <span className="text-acento-suave font-semibold tabular-nums">
@@ -313,7 +313,7 @@ export default async function HomeInstitucional() {
           )}
 
           {equipe.length > 0 && (
-            <section className="secao-banda px-4 py-16 sm:px-8 sm:py-24">
+            <section className="secao-banda secao-curva secao-curva-fim px-4 py-16 sm:px-8 sm:py-24">
               <div className="mx-auto w-full max-w-6xl">
                 <p className="text-fluid-xs text-apoio mb-3">
                   <span className="text-acento-suave font-semibold tabular-nums">

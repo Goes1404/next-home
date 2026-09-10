@@ -1331,6 +1331,55 @@
     }
   }
 
+  /*
+   * TOM FUNDO — a faixa escura entre duas claras.
+   *
+   * A home lia "muito seca" porque todas as seções tinham a mesma
+   * profundidade: uma sequência de faixas quase idênticas não cria ritmo
+   * nenhum. Este é o degrau abaixo da `.secao-banda`, para alternar
+   * clara → tingida → FUNDA e o olho ter onde descansar.
+   *
+   * 22% de acento sobre a superfície ainda deixa o texto de título e de
+   * corpo confortáveis (o cálculo está em `--color-titulo`, que é
+   * quase-preto); o que NÃO cabe aqui é texto `tenue`, que já vive no
+   * limite do mínimo sobre a superfície clara.
+   */
+  .secao-funda {
+    background-color: color-mix(in srgb, var(--color-acento) 22%, var(--color-superficie));
+  }
+
+  /*
+   * A CURVA no limite entre uma seção e a seguinte.
+   *
+   * Era isto que faltava quando o pedido dizia "efeitos no limite da
+   * primeira página para a segunda": não a troca de rota, e sim a emenda
+   * entre as faixas da mesma página, que era uma linha reta de ponta a
+   * ponta — e linha reta entre dois blocos de cor é o que faz uma página
+   * parecer montada com régua.
+   *
+   * O raio é ELÍPTICO (`50% / 3.5rem`): 50% da largura por 3,5rem de
+   * altura. Isso mantém a mesma curva suave em qualquer largura de tela —
+   * um raio em pixels viraria um quase-círculo no celular e um corte
+   * imperceptível no monitor.
+   *
+   * A margem negativa é o que faz a curva MORDER a seção anterior em vez
+   * de deixar uma fatia do fundo aparecendo entre as duas.
+   */
+  .secao-curva {
+    border-start-start-radius: 50% 3.5rem;
+    border-start-end-radius: 50% 3.5rem;
+    margin-top: -3.5rem;
+    padding-top: 5.5rem;
+  }
+
+  .secao-curva-fim {
+    border-end-start-radius: 50% 3.5rem;
+    border-end-end-radius: 50% 3.5rem;
+    margin-bottom: -3.5rem;
+    padding-bottom: 5.5rem;
+    position: relative;
+  }
+
   .fundo-aurora {
     background-image:
       radial-gradient(

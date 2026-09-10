@@ -29,6 +29,7 @@ export function Secao({
   id,
   espaco = "normal",
   banda = false,
+  tom,
   fundo = false,
   className,
   children,
@@ -36,6 +37,12 @@ export function Secao({
   id?: string;
   espaco?: Espaco;
   banda?: boolean;
+  /**
+   * Profundidade da faixa. `banda` é o degrau claro (7% de acento) e
+   * `funda`, o escuro (22%) — alternar os dois é o que dá ritmo a uma
+   * página longa. `curva` arredonda o limite com a seção ANTERIOR.
+   */
+  tom?: "funda";
   fundo?: boolean;
   className?: string;
   children: React.ReactNode;
@@ -47,6 +54,7 @@ export function Secao({
         "px-4 sm:px-8",
         ESPACO[espaco],
         banda && "secao-banda",
+        tom === "funda" && "secao-funda",
         fundo && "relative overflow-hidden",
         id && "scroll-mt-24",
         className,

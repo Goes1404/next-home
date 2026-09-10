@@ -17,10 +17,22 @@ export const TILES_MAPA: Record<TemaMapa, string> = {
 /** Exigência de licença dos dados (OSM) e dos tiles (CARTO). */
 export const ATRIBUICAO_MAPA = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
+/**
+ * O mapa é ESCURO nos dois temas, desde 10/09/2026.
+ *
+ * Os tiles `light_all` da CARTO são cinza-claro sobre cinza-claro: num tema
+ * de página clara o mapa deixava de ser um objeto e virava uma mancha, com
+ * os pins de acento boiando sem base. É a mesma lição já registrada para o
+ * GLOBO da home ("globo claro sobre página clara SOME... a esfera é escura
+ * nos dois temas"): o que dá destaque a um artefato geográfico é o
+ * contraste com a página, não a combinação com ela.
+ *
+ * A função continua existindo — e o observador de troca de tema também —
+ * porque o dia em que um mapa claro fizer sentido em alguma superfície, o
+ * lugar de decidir isso é aqui, e não espalhado por três componentes.
+ */
 export function temaDoMapa(): TemaMapa {
-  const explicito = document.documentElement.dataset.tema;
-  if (explicito === "claro" || explicito === "escuro") return explicito;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "escuro" : "claro";
+  return "escuro";
 }
 
 /** Observa troca de tema (atributo ou preferência do SO). Devolve o desligamento. */

@@ -5851,3 +5851,33 @@ aprovada e parada — e cujo número (`0103`) já tinha sido tomado por
   APROVADO** escrito antes de o número ser tomado. Spec não é código: ninguém
   a compila, e o número envelhece sozinho. Ao implementar spec antiga,
   conferir o número contra `origin/*` antes de qualquer coisa.
+## Ritmo na home, mapa escuro e o cartão que demorava (10/09/2026)
+
+- **"Transições entre páginas" era o limite entre SEÇÕES, não entre rotas.**
+  O pedido dizia "efeitos no limite da primeira página para a segunda, da
+  segunda para a terceira" — e a home emendava faixa em faixa com uma linha
+  reta de ponta a ponta, que é o que faz uma página parecer montada com
+  régua. `.secao-curva` / `.secao-curva-fim` arredondam a emenda com raio
+  ELÍPTICO (`50% / 3.5rem`): a curva fica igual em qualquer largura, o que
+  um raio em pixels não dá — viraria quase-círculo no celular e corte
+  imperceptível no monitor. A margem negativa é o que faz a curva MORDER a
+  faixa anterior em vez de deixar uma fatia do fundo entre as duas.
+- **Faixas todas na mesma profundidade não fazem ritmo.** `.secao-funda`
+  (22% de acento) é o degrau abaixo da `.secao-banda` (7%), e a home passou
+  a alternar clara → tingida → FUNDA. A faixa funda ficou no MAPA de
+  propósito: o mapa é escuro, então a moldura escura é a coerente.
+- **O mapa é escuro nos dois temas agora.** Os tiles `light_all` da CARTO
+  são cinza-claro sobre cinza-claro: com a página clara, o mapa deixava de
+  ser objeto e virava mancha, com os pins boiando sem base. É a mesma lição
+  já registrada para o GLOBO ("globo claro sobre página clara SOME") — o que
+  destaca um artefato geográfico é o contraste com a página, não a
+  combinação com ela. `temaDoMapa()` continua existindo como o lugar único
+  dessa decisão.
+- **Entrada de cartão que passa de um segundo lê como carregamento, não
+  como animação.** O `CartaoTilt` levava 1,05s de cortina + 1,4s de zoom +
+  0,18s de escalonamento; numa grade de seis corretores que entram JUNTOS na
+  tela, o relato foi "parece bugado, demora pra aparecer tudo". Hoje: 0,55s
+  de cortina, 0,75s de zoom, escalonamento de 0,05s e `start` a 92% (o
+  cartão começa a abrir antes de estar no meio da tela). **A régua: quando
+  vários elementos entram na mesma dobra, a soma dos tempos é o que o
+  visitante sente, não a duração de um.**
