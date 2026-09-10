@@ -153,7 +153,7 @@ export function ChatDeArte({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           modo: "livre",
-          prompt: p.promptEn,
+          prompt: p.prompt,
           receita: p.receita,
           tamanho: p.tamanho,
           qualidade: p.qualidade,
@@ -334,7 +334,7 @@ function CartaoDeProposta({
       {/* O prompt em inglês fica visível mas discreto: é o que vai para o
           provedor, e esconder do corretor seria tirar dele a chance de
           corrigir. A explicação em português já veio no balão. */}
-      <p className="text-apoio text-xs leading-relaxed">{proposta.promptEn}</p>
+      <p className="text-apoio text-xs leading-relaxed">{proposta.prompt}</p>
       <p className="text-tenue text-[11px]">
         {tamanho} · {qualidade}
         {!proposta.daIa && " · sem melhoria da IA"}

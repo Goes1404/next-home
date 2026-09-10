@@ -97,7 +97,10 @@ describe("o lembrete de véspera não inventa onde encontrar", () => {
    * possível: o cliente lê na noite anterior, sai de casa e vai para onde a
    * mensagem mandou.
    */
-  const lembrete = (extra: Parameters<typeof instrucaoDoFollowup>[0]) =>
+  // `Partial` porque `tipo` e `tentativa` são os PADRÕES do atalho: com o tipo
+  // completo eles seriam obrigatórios no `extra` e sobrescreveriam sempre,
+  // deixando os defaults como enfeite — que é o que `tsc` acusava (TS2783).
+  const lembrete = (extra: Partial<Parameters<typeof instrucaoDoFollowup>[0]> = {}) =>
     instrucaoDoFollowup({ tipo: "lembrete_visita", tentativa: 1, ...extra });
 
   it("com endereço cadastrado, manda copiar EXATAMENTE", () => {

@@ -44,14 +44,23 @@ export type ReferenciaDoEstudio = {
   url: string;
 };
 
-/** O que a IA propõe gerar. Legível — o corretor lê ISTO, não o inglês. */
+/** O que a IA propõe gerar. O corretor lê e EDITA isto — é o que vai. */
 export type PropostaDeArte = {
   tipo: "proposta";
   modo: "arte";
-  /** O pedido em inglês que vai para o provedor (antes da espinha e da cláusula). */
-  promptEn: string;
-  /** Por que cada escolha está ali — o que ensina a pedir melhor. */
-  explicacaoPt: string;
+  /**
+   * O pedido em PORTUGUÊS que vai para o provedor (antes da espinha e da
+   * cláusula anti-letreiro).
+   *
+   * Não há segunda versão. Até 10/09/2026 existiam duas — `promptEn`, que era
+   * enviada, e `explicacaoPt`, que era lida —, então ninguém nunca leu o que
+   * de fato chegava à OpenAI.
+   */
+  prompt: string;
+  /** Seções da gramática que o texto não cobriu; a tela mostra como dica. */
+  naoCobriu: string[];
+  /** Curto demais: a tela exige confirmação antes de gastar. */
+  abaixoDoPiso: boolean;
   receita: string;
   tamanho: string;
   qualidade: "low" | "medium";
@@ -153,12 +162,13 @@ export function dadosDaMensagem(bruto: unknown): DadosDaMensagem | null {
     }
     case "proposta": {
       if (d.modo === "arte") {
-        if (!texto(d.promptEn)) return null;
+        if (!texto(d.prompt)) return null;
         return {
           tipo: "proposta",
           modo: "arte",
-          promptEn: texto(d.promptEn),
-          explicacaoPt: texto(d.explicacaoPt),
+          prompt: texto(d.prompt),
+          naoCobriu: Array.isArray(d.naoCobriu) ? d.naoCobriu.filter((c): c is string => typeof c === "string") : [],
+          abaixoDoPiso: d.abaixoDoPiso === true,
           receita: texto(d.receita) || "livre",
           tamanho: texto(d.tamanho) || "1024x1024",
           qualidade: d.qualidade === "medium" ? "medium" : "low",

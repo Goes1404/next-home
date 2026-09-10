@@ -26,16 +26,23 @@ import { receitaPor, type Receita } from "./receitas";
  * virasse instrução para o modelo de texto, viraria probabilística; hoje ela é
  * determinística e vale mesmo com o motor fora do ar.
  *
- * ## O prompt final é em inglês, a explicação em português
+ * ## Este módulo já NÃO monta o prompt final
  *
- * Inglês porque é o idioma nativo dos modelos de imagem. Português ao lado
- * porque prompt que o corretor não lê é prompt que ele não conserta — e a
- * explicação é o que o ensina a pedir melhor da próxima vez.
+ * Até 10/09/2026 ele devolvia `promptEn` (o que ia para o provedor) e
+ * `explicacaoPt` (uma paráfrase que o corretor lia). O raciocínio escrito aqui
+ * era "inglês porque é o idioma nativo dos modelos de imagem, português ao
+ * lado porque prompt que o corretor não lê é prompt que ele não conserta" — e
+ * a segunda metade se anulava sozinha: ele lia a paráfrase, nunca o que era
+ * enviado, e não havia onde editar.
+ *
+ * Hoje o prompt final sai de `tradutor.ts`, em português, num campo editável,
+ * e é literalmente esse texto que o provedor recebe. O que sobrou aqui são as
+ * PERGUNTAS com alternativas, que continuam boas: elas evitam a geração
+ * descartada, que é a que custa.
  */
 
 /** Curto: isto acontece com a pessoa parada olhando para a tela. */
 const ORCAMENTO_PERGUNTAS_MS = 12_000;
-const ORCAMENTO_PROMPT_MS = 15_000;
 
 /** Teto do pedido. Acima de três, deixa de ser refino e vira formulário. */
 export const MAX_PERGUNTAS = 3;
@@ -50,14 +57,6 @@ export type Pergunta = {
 
 export type Resposta = { pergunta: string; escolha: string };
 
-export type PromptPronto = {
-  /** O que vai para o provedor, antes da espinha e da cláusula. */
-  promptEn: string;
-  /** Por que cada escolha está ali. O corretor lê isto, não o inglês. */
-  explicacaoPt: string;
-  /** `false` quando o motor não respondeu e caiu no caminho determinístico. */
-  daIa: boolean;
-};
 
 function limpar(v: unknown): string {
   return typeof v === "string" ? v.trim().replace(/\s+/g, " ") : "";
@@ -134,77 +133,4 @@ Responda apenas com JSON:
   });
   // Falha aqui não bloqueia: sem perguntas, o fluxo segue direto para o prompt.
   return r.ok ? perguntasDoJson(r.json) : [];
-}
-
-/**
- * O prompt final, na estrutura de alta conversão dos geradores de imagem:
- * sujeito e ação, ambiente, estilo, luz e atmosfera, detalhe técnico.
- */
-export async function montarPromptFinal(params: {
-  ideia: string;
-  respostas: Resposta[];
-  receita: string;
-  formato: string;
-}): Promise<PromptPronto> {
-  const ideia = params.ideia.trim();
-  const receita: Receita = receitaPor(params.receita);
-
-  // A reserva é o caminho de hoje: o pedido do corretor, em português, que a
-  // rota vai compor com a espinha da receita. Funciona sem motor nenhum.
-  const reserva: PromptPronto = {
-    promptEn: ideia,
-    explicacaoPt:
-      "A IA não respondeu agora, então o pedido segue como você escreveu — a " +
-      "receita técnica continua sendo aplicada por baixo.",
-    daIa: false,
-  };
-  if (!ideia) return reserva;
-
-  const escolhas = params.respostas
-    .filter((r) => r.escolha.trim())
-    .map((r) => `- ${r.pergunta}: ${r.escolha}`)
-    .join("\n");
-
-  const prompt = `Você é engenheiro de prompt sênior para geradores de imagem
-(Midjourney, DALL·E, gpt-image). Trabalha para uma imobiliária brasileira.
-
-Ideia do corretor: "${ideia}"
-Trabalho escolhido: ${receita.rotulo} — ${receita.ajuda}
-Formato: ${params.formato}
-${escolhas ? `\nRespostas dele ao refinamento:\n${escolhas}` : ""}
-
-Escreva o prompt final EM INGLÊS, seguindo exatamente esta ordem:
-[subject and action] + [environment] + [artistic style / medium] +
-[lighting and atmosphere] + [technical camera and render details]
-
-Regras do prompt:
-- Um parágrafo corrido, 40 a 90 palavras. Sem listas, sem cabeçalhos.
-- Concreto: materiais, cores, hora do dia, lente, altura da câmera.
-- NUNCA inclua texto, letreiro, placa, logotipo ou qualquer palavra a ser
-  desenhada na cena. O texto da peça é composto depois, por fora.
-- Nunca invente metragem, número de dormitórios, andar ou preço.
-- Sem pessoas com rosto reconhecível.
-
-E escreva uma EXPLICAÇÃO EM PORTUGUÊS, de 2 a 4 frases, dizendo por que você
-escolheu aquelas palavras-chave — o que cada bloco está controlando. Escreva
-para um corretor, não para um técnico.
-
-Responda apenas com JSON: {"prompt_en":"...","explicacao_pt":"..."}`;
-
-  const r = await chamarLlmJson(prompt, { temperature: 0.6, orcamentoMs: ORCAMENTO_PROMPT_MS });
-  if (!r.ok || !r.json || typeof r.json !== "object") return reserva;
-
-  const j = r.json as Record<string, unknown>;
-  const promptEn = limpar(j.prompt_en);
-  const explicacaoPt = limpar(j.explicacao_pt);
-
-  // Piso de tamanho pelo mesmo motivo de `textoDoJson` no `tradutor`:
-  // substituir o pedido da pessoa por duas palavras é pior que não ter tentado.
-  if (promptEn.length < 60) return reserva;
-
-  return {
-    promptEn: promptEn.slice(0, 1400),
-    explicacaoPt: explicacaoPt || "Prompt montado a partir das suas escolhas.",
-    daIa: true,
-  };
 }

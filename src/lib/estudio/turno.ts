@@ -3,12 +3,8 @@ import "server-only";
 import { CANAIS, OBJETIVOS, type ChaveCanal, type ChaveObjetivo } from "@/lib/imagens/marketing";
 import { RECEITAS, receitaPor } from "@/lib/imagens/receitas";
 import { TAMANHOS, type ChaveTamanho } from "@/lib/imagens/imagensTipos";
-import {
-  MAX_PERGUNTAS,
-  montarPromptFinal,
-  perguntarOQueFalta,
-  type Resposta,
-} from "@/lib/imagens/engenheiroDePrompt";
+import { MAX_PERGUNTAS, perguntarOQueFalta, type Resposta } from "@/lib/imagens/engenheiroDePrompt";
+import { traduzirPedido } from "@/lib/imagens/tradutor";
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
 import { soarHumano } from "@/lib/whatsapp/vozHumana";
 import type { Empreendimento } from "@/lib/types";
@@ -41,13 +37,17 @@ import {
  * `gerarImagem.ts`, fora daqui) e a régua de lei na copy (`problemasDaCopy`,
  * aplicada por `verRoteiro`).
  *
- * ## Arte reusa o engenheiro de prompt que estava pronto e desligado
+ * ## Arte: perguntas do engenheiro, prompt do tradutor
  *
- * `engenheiroDePrompt.ts` (perguntas com alternativas → prompt final com
- * explicação em português) existia sem nenhum importador. O chat é o primeiro
- * a ligá-lo. A adaptação é de RITMO: ele devolve até três perguntas de uma
- * vez; aqui sai UMA por turno — três perguntas de uma vez é formulário
- * disfarçado de chat.
+ * De `engenheiroDePrompt.ts` sobraram as PERGUNTAS com alternativas, e a
+ * adaptação delas é de RITMO: ele devolve até três de uma vez; aqui sai UMA
+ * por turno — três perguntas juntas é formulário disfarçado de chat.
+ *
+ * O prompt final passou a sair de `tradutor.ts` (10/09/2026). O que o
+ * engenheiro devolvia era `promptEn` mais uma paráfrase em português: o
+ * corretor lia a paráfrase e o provedor recebia o inglês, então ninguém nunca
+ * leu o que de fato era enviado. Agora existe UM texto, em português, e é ele
+ * que a tela mostra num campo editável.
  *
  * ## Vídeo não precisa de LLM para o roteiro
  *
@@ -127,6 +127,15 @@ export async function turnoDeArte(params: {
   const respostas = respostasDadas(historicoCompleto);
   const feitas = perguntasJaFeitas(historicoCompleto);
   const jaPropos = historicoCompleto.some((m) => m.papel === "ia" && m.dados?.tipo === "proposta");
+  /*
+   * A última proposta de ARTE da conversa. É dela que um ajuste parte —
+   * "mais claro" precisa reescrever o pedido anterior, não inventar outro do
+   * zero, senão cada retoque perde o que já estava bom.
+   */
+  const propostaAnterior = [...historicoCompleto]
+    .reverse()
+    .map((m) => m.dados)
+    .find((d): d is PropostaDeArte => d?.tipo === "proposta" && d.modo === "arte");
   // A foto anexada muda tudo: as perguntas, as receitas alcançáveis e o
   // motor por baixo (edição em vez de geração do zero).
   const referencia = referenciaAtiva(historicoCompleto);
@@ -181,31 +190,39 @@ export async function turnoDeArte(params: {
   // já entrou na ideia acumulada: a proposta abaixo nasce com ele.
   const tamanho = tamanhoDoTexto(ideia);
   const receita = receitaDoTexto(ideia, Boolean(referencia));
-  const pronto = await montarPromptFinal({
-    ideia,
-    respostas,
-    receita,
-    formato: TAMANHOS.find((t) => t.chave === tamanho)?.rotulo ?? tamanho,
+  const traduzido = await traduzirPedido({
+    pedido: ideia,
+    fatos: [],
+    promptAnterior: propostaAnterior?.prompt ?? null,
+    temReferencia: Boolean(referencia),
   });
 
   const proposta: PropostaDeArte = {
     tipo: "proposta",
     modo: "arte",
-    promptEn: pronto.promptEn,
-    explicacaoPt: pronto.explicacaoPt,
+    prompt: traduzido.prompt,
+    naoCobriu: traduzido.naoCobriu,
+    abaixoDoPiso: traduzido.abaixoDoPiso,
     receita: receitaPor(receita).chave,
     tamanho,
     qualidade: "low",
-    daIa: pronto.daIa,
+    daIa: traduzido.daIa,
     referenciaPath: referencia?.path ?? null,
   };
 
+  /*
+   * O texto do balão não REPETE o prompt: ele fica logo abaixo, num campo
+   * editável. Repetir aqui faria a pessoa ler duas vezes a mesma coisa e
+   * ainda daria a impressão de que o de cima é o que vale.
+   */
   const notaDaFoto = referencia ? " Vou partir da foto que você anexou." : "";
-  const texto = pronto.daIa
+  const texto = traduzido.daIa
     ? soarHumano(
-        `Montei assim: ${pronto.explicacaoPt}${notaDaFoto} Se estiver bom, toca em "Gerar assim". Se quiser mudar algo, me escreve.`,
+        `Escrevi assim.${notaDaFoto} Leia e ajuste o que quiser — é exatamente esse texto ` +
+          `que vai para o gerador. Quando estiver bom, toca em "Gerar assim".`,
       )
-    : "Não consegui melhorar o pedido agora, mas dá para gerar com o que você escreveu — a receita técnica continua valendo por baixo. Quer seguir assim?";
+    : "Não consegui melhorar seu pedido agora, então o texto abaixo é o SEU, como você escreveu. " +
+      "Dá para gerar assim mesmo — mas leia antes, porque é ele que vai.";
 
   return { tipo: "proposta", texto, proposta };
 }

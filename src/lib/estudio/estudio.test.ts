@@ -96,11 +96,11 @@ describe("contrato", () => {
     expect(
       dadosDaMensagem({ tipo: "pergunta", id: "p0", texto: "Que hora do dia?", alternativas: ["Manhã", "Pôr do sol"] }),
     ).toMatchObject({ tipo: "pergunta", alternativas: ["Manhã", "Pôr do sol"] });
-    expect(dadosDaMensagem({ tipo: "proposta", modo: "arte", promptEn: "a facade", qualidade: "medium" })).toMatchObject({
+    expect(dadosDaMensagem({ tipo: "proposta", modo: "arte", prompt: "uma fachada", qualidade: "medium" })).toMatchObject({
       modo: "arte",
       qualidade: "medium",
     });
-    expect(dadosDaMensagem({ tipo: "proposta", modo: "arte", promptEn: "a", qualidade: "high" })).toMatchObject({
+    expect(dadosDaMensagem({ tipo: "proposta", modo: "arte", prompt: "uma fachada", qualidade: "high" })).toMatchObject({
       qualidade: "low",
     });
   });
@@ -139,9 +139,9 @@ describe("foto de referência no chat (06/09/2026)", () => {
 
   it("a proposta de arte carrega o referenciaPath pelo parse", () => {
     expect(
-      dadosDaMensagem({ tipo: "proposta", modo: "arte", promptEn: "a", referenciaPath: "corretores/x/r/a.jpg" }),
+      dadosDaMensagem({ tipo: "proposta", modo: "arte", prompt: "uma fachada", referenciaPath: "corretores/x/r/a.jpg" }),
     ).toMatchObject({ referenciaPath: "corretores/x/r/a.jpg" });
-    expect(dadosDaMensagem({ tipo: "proposta", modo: "arte", promptEn: "a" })).toMatchObject({
+    expect(dadosDaMensagem({ tipo: "proposta", modo: "arte", prompt: "uma fachada" })).toMatchObject({
       referenciaPath: null,
     });
   });
