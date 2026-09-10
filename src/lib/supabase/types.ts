@@ -981,6 +981,120 @@ export type Database = {
         }
         Relationships: []
       }
+      consultor_conversas: {
+        Row: {
+          atualizado_em: string
+          corretor_id: string
+          created_at: string
+          id: string
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          corretor_id: string
+          created_at?: string
+          id?: string
+          titulo?: string
+        }
+        Update: {
+          atualizado_em?: string
+          corretor_id?: string
+          created_at?: string
+          id?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultor_conversas_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultor_mensagens: {
+        Row: {
+          conteudo: string
+          conversa_id: string
+          created_at: string
+          dados: Json | null
+          id: string
+          papel: "corretor" | "ia"
+        }
+        Insert: {
+          conteudo: string
+          conversa_id: string
+          created_at?: string
+          dados?: Json | null
+          id?: string
+          papel: "corretor" | "ia"
+        }
+        Update: {
+          conteudo?: string
+          conversa_id?: string
+          created_at?: string
+          dados?: Json | null
+          id?: string
+          papel?: "corretor" | "ia"
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultor_mensagens_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "consultor_conversas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parametros_credito: {
+        Row: {
+          atualizado_em: string
+          comprometimento_maximo: number
+          conferido_em: string
+          conferido_por: string | null
+          faixas: Json
+          id: boolean
+          itbi_por_cidade: Json
+          prazo_maximo_meses: number
+          taxa_sbpe_anual: number
+          teto_fgts_imovel: number
+        }
+        Insert: {
+          atualizado_em?: string
+          comprometimento_maximo: number
+          conferido_em: string
+          conferido_por?: string | null
+          faixas: Json
+          id?: boolean
+          itbi_por_cidade: Json
+          prazo_maximo_meses: number
+          taxa_sbpe_anual: number
+          teto_fgts_imovel: number
+        }
+        Update: {
+          atualizado_em?: string
+          comprometimento_maximo?: number
+          conferido_em?: string
+          conferido_por?: string | null
+          faixas?: Json
+          id?: boolean
+          itbi_por_cidade?: Json
+          prazo_maximo_meses?: number
+          taxa_sbpe_anual?: number
+          teto_fgts_imovel?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parametros_credito_conferido_por_fkey"
+            columns: ["conferido_por"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estudio_conversas: {
         Row: {
           atualizado_em: string
@@ -2211,6 +2325,18 @@ export type Database = {
       }
     }
     Functions: {
+      atualizar_parametros_credito: {
+        Args: {
+          p_comprometimento_maximo: number
+          p_conferido_em: string
+          p_faixas: Json
+          p_itbi_por_cidade: Json
+          p_prazo_maximo_meses: number
+          p_taxa_sbpe_anual: number
+          p_teto_fgts_imovel: number
+        }
+        Returns: boolean
+      }
       definir_preferencia_contato: {
         Args: { p_canal: string; p_lead_id: string; p_permitido: boolean }
         Returns: boolean
