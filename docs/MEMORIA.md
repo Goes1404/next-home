@@ -5442,3 +5442,42 @@ nenhuma tela mostra sozinha — só navegando de uma para a outra.
   novo). A guarda passou a cobrir `bg-ink-9xx/` e `text-acento-suave`, foi
   mordida, e achou um segundo caso (`Tipologias.tsx`, "Ver planta" em
   `corpo-suave`). Tinta sobre preto fixo é `brand-200`, como no login.
+
+## O celular: fundo que "fica maior, menor", menu, botão flutuante e login (10/09/2026)
+
+- **"O fundo fica travando, fica maior, menor" eram DUAS causas somadas.**
+  (1) O fundo era `fixed inset-0`, e no celular a barra de endereço some e
+  volta ao rolar: `inset-0` acompanha a viewport VISÍVEL, a caixa mudava de
+  altura a cada gesto e o vídeo em `cover` reescalava junto. `h-lvh`
+  (viewport MAIOR) é estável — a caixa nasce do tamanho da tela sem barra e
+  não mexe mais. (2) `ParallaxFundoHome` escrevia `translate3d` + `scale`
+  no nó fixo com dois vídeos decodificando, por cima do scroll nativo do
+  toque (o Lenis não assume o toque) — o `scale` É o "maior, menor".
+  Desligado abaixo de 768px; o desktop mantém.
+- **Header e botão flutuante somem ao rolar para BAIXO e voltam ao rolar
+  para CIMA**, só no celular (`data-oculto` no header, `data-flutuante` no
+  botão). É a "animação ao arrastar" pedida — responde ao gesto, não roda
+  sozinha. Transform no header passou a ser seguro porque o painel do
+  MenuMobile mora num portal no `<body>` desde antes; o comentário antigo
+  do CSS ("nada de transform") descrevia a arquitetura anterior.
+- **O botão flutuante "sobrepõe textos"**: some também com o RODAPÉ na tela
+  (é onde estão os telefones por extenso) e com um campo em foco (o teclado
+  já ocupa a base). Virou verde sólido com símbolo branco, sem vidro: sobre
+  foto clara o vidro virava um borrão.
+- **Menu do celular virou painel lateral** com véu, cabeçalho próprio,
+  destinos com seta, WhatsApp e anunciar, e a porta "Área do corretor ·
+  Acesso restrito · CRM" no pé — antes ela só existia no rodapé. Fechar
+  também anima: o desmonte espera o recolhimento (`data-fechando`).
+- **Login no celular: "a imagem divide e sobrepõe a tela".** A faixa de
+  34svh + cartão subindo 2rem cobria a frase e cortava o prédio numa linha.
+  Agora a foto é o FUNDO da tela inteira e o cartão opaco mora no pé — não
+  há costura porque não há duas metades.
+- **A trilha das páginas vira UM botão "Voltar ao site" no celular** (44px):
+  "Início / Corretores" em 12px é legível e não é alvo de polegar.
+- **Diagnóstico**: `dataset.oculto`/`dataset.flutuante` lidos num Playwright
+  com `devices["Pixel 7"]` depois de rolar 4 passos para baixo e 2 para cima
+  — e `getBoundingClientRect().height` do fundo contra `innerHeight`. A
+  captura estática não mostra nada disto.
+- **`TaskStop` não mata o `next start` no Windows** — o processo fica no
+  3000 e o build seguinte "sobe" servindo o anterior (`EADDRINUSE` só no
+  log). `netstat -ano | grep :3000` + `taskkill //PID <pid> //F`.

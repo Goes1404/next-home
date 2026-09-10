@@ -33,6 +33,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 
 ## Movimento e listas
 - [[reveal-dentro-de-lista-vira-div]]
+- [[fundo-fixo-no-celular-usa-lvh]]
 
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]

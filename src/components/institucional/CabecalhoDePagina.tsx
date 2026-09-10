@@ -53,10 +53,28 @@ export function CabecalhoDePagina({
     <header>
       {(temTrilha || rotulo) && (
         <Reveal from="nenhuma">
+          {/* No celular a trilha vira UM botão de voltar, com 44px de alvo:
+              "Início / Corretores" em 12px é legível, mas não é algo em que
+              o polegar acerta — e foi pedido um botão para voltar ao site
+              (10/09/2026). Volta para o passo anterior da trilha, não sempre
+              para a home: de uma região, volta para Imóveis. */}
+          {temTrilha && (
+            <Link
+              href={(trilha ?? [{ href: "/", label: "Início" }]).at(-1)!.href}
+              className="border-linha bg-superficie/60 text-corpo active:bg-superficie mb-5 inline-flex min-h-11 items-center gap-2 rounded-full border pr-4 pl-3 text-sm font-medium transition-colors sm:hidden"
+            >
+              <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" aria-hidden className="size-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 5l-7 7 7 7" />
+              </svg>
+              {(trilha ?? [{ href: "/", label: "Início" }]).at(-1)!.label === "Início"
+                ? "Voltar ao site"
+                : `Voltar para ${(trilha ?? []).at(-1)!.label}`}
+            </Link>
+          )}
           {temTrilha && (
             <nav
               aria-label="Você está aqui"
-              className="text-fluid-xs text-apoio mb-4 flex flex-wrap items-center gap-x-2 gap-y-1"
+              className="text-fluid-xs text-apoio mb-4 hidden flex-wrap items-center gap-x-2 gap-y-1 sm:flex"
             >
               {(trilha ?? [{ href: "/", label: "Início" }]).map((passo) => (
                 <span key={passo.href} className="inline-flex items-center gap-x-2">
