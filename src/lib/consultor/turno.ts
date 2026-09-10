@@ -116,7 +116,7 @@ export async function turnoDoConsultor(params: {
   // A conta acontece ANTES do corte: os números dela entram nos permitidos,
   // senão a rede de segurança apagaria a simulação que o código fez.
   const simulacao = bruta.simular ? simularFinanciamento(bruta.simular, params.credito) : null;
-  const permitidos = numerosPermitidos(params.credito, simulacao);
+  const permitidos = numerosPermitidos(params.credito, simulacao, bruta.simular);
   const texto = cortarCreditoInventado(soarHumano(bruta.resposta), permitidos);
 
   /*

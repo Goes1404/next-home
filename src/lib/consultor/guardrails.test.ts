@@ -82,6 +82,67 @@ describe("cortarCreditoInventado", () => {
     expect(cortarCreditoInventado(comSim ? t : t, comSim)).toBe(t);
   });
 
+  it("NÃO corta os números que o próprio corretor acabou de dar", () => {
+    /*
+     * Achado da sonda com API (09/09/2026): perguntado "tem 40 mil de entrada
+     * e 30 de FGTS, renda 6 mil", a IA repetiu esses números na resposta e a
+     * frase inteira foi cortada — eles não estavam no bloco de crédito.
+     *
+     * Repetir o que o corretor disse é o contrário de inventar, e é o que faz
+     * a resposta parecer que ouviu. Sexta vez que uma régua desta base
+     * reprovaria o comportamento CERTO se ninguém lesse a transcrição.
+     */
+    const comPedido = numerosPermitidos(PARAMS, null, {
+      rendaMensal: 6000,
+      entrada: 40000,
+      fgts: 30000,
+      valorImovel: 350000,
+    });
+    const t = "Com R$ 40.000 de entrada e R$ 30.000 de FGTS, sobra financiar R$ 280.000.";
+    expect(cortarCreditoInventado(t, comPedido)).toBe(t);
+  });
+
+  it("mas continua cortando o que ele NÃO disse e não está no bloco", () => {
+    const comPedido = numerosPermitidos(PARAMS, null, {
+      rendaMensal: 6000,
+      entrada: 40000,
+      fgts: 0,
+      valorImovel: 350000,
+    });
+    const t = "O subsídio dessa faixa chega a R$ 91.000.";
+    expect(cortarCreditoInventado(t, comPedido)).not.toContain("91.000");
+  });
+
+  it('entende "350 mil" — é como se escreve valor em português', () => {
+    /*
+     * Achado da sonda de 09/09/2026, e o defeito mais caro do guardrail: o
+     * extrator lia "350 mil" como 350, comparava com os 350.000 do bloco e
+     * cortava a frase CERTA. Ninguém escreve "R$ 350.000,00" numa conversa;
+     * escreve "350 mil" — inclusive o corretor, e a IA repete como ele falou.
+     */
+    const comPedido = numerosPermitidos(PARAMS, null, {
+      rendaMensal: 6000,
+      entrada: 40000,
+      fgts: 30000,
+      valorImovel: 350000,
+    });
+    const t = "Com 40 mil de entrada e 30 mil de FGTS, para um imóvel de 350 mil, dá para usar o FGTS.";
+    expect(cortarCreditoInventado(t, comPedido)).toBe(t);
+  });
+
+  it('"1,2 milhão" também é valor, e "mil" solto não é', () => {
+    const permite = [1_200_000];
+    expect(cortarCreditoInventado("A entrada é de 1,2 milhão.", permite)).toContain("1,2 milhão");
+    // "mil" que não vem depois de número não multiplica nada.
+    const t = "A taxa da faixa é 4,5% e mil detalhes ficam para a proposta.";
+    expect(cortarCreditoInventado(t, [4.5])).toBe(t);
+  });
+
+  it('"350 mil" inventado continua caindo', () => {
+    const t = "O subsídio dessa faixa chega a 91 mil.";
+    expect(cortarCreditoInventado(t, numerosPermitidos(PARAMS, null))).not.toContain("91 mil");
+  });
+
   it("texto sem assunto de crédito passa intacto", () => {
     const t = "O Eternity fica no Jubran e tem piscina.";
     expect(cortarCreditoInventado(t, permitidos)).toBe(t);

@@ -33,6 +33,16 @@ const ASSUNTO_DE_CREDITO =
 export function numerosPermitidos(
   params: ParametrosCredito,
   simulacao: { parcelaEstimada?: number; itbi?: number; subsidio?: number } | null,
+  /**
+   * O que o CORRETOR acabou de informar (renda, entrada, FGTS, valor).
+   *
+   * Repetir o número que ele deu é o contrário de inventar — é o que faz a
+   * resposta parecer que ouviu. Sem isto, a sonda com API de 09/09/2026
+   * mostrou a frase "com R$ 40.000 de entrada e R$ 30.000 de FGTS" sendo
+   * cortada inteira: a rede de segurança reprovando o comportamento CERTO,
+   * que é o defeito mais antigo desta base.
+   */
+  doCorretor?: Partial<Record<"rendaMensal" | "entrada" | "fgts" | "valorImovel", number>> | null,
 ): number[] {
   const doBloco = [
     ...params.faixas.flatMap((f) => [f.rendaMax, f.subsidioMaximo, f.taxaAnual * 100]),
@@ -51,14 +61,46 @@ export function numerosPermitidos(
   const daConta = simulacao
     ? [simulacao.parcelaEstimada ?? 0, simulacao.itbi ?? 0, simulacao.subsidio ?? 0]
     : [];
-  return [...doBloco, ...daConta].filter((n) => Number.isFinite(n) && n > 0);
+  const dele = doCorretor ? Object.values(doCorretor) : [];
+  /*
+   * O saldo a financiar também é dele: sai de uma subtração entre números que
+   * ele deu, e é a frase mais natural que existe ("sobra financiar X").
+   */
+  const saldo =
+    doCorretor?.valorImovel !== undefined
+      ? [
+          doCorretor.valorImovel -
+            (doCorretor.entrada ?? 0) -
+            (doCorretor.fgts ?? 0),
+        ]
+      : [];
+
+  return [...doBloco, ...daConta, ...dele, ...saldo].filter(
+    (n): n is number => typeof n === "number" && Number.isFinite(n) && n > 0,
+  );
 }
 
-/** "R$ 55.000" → 55000; "4,5%" → 4.5. */
+/**
+ * "R$ 55.000" → 55000; "4,5%" → 4.5; **"350 mil" → 350000**.
+ *
+ * A escala por extenso não é detalhe: ninguém escreve "R$ 350.000,00" numa
+ * conversa, escreve "350 mil" — inclusive o corretor, e a IA repete como ele
+ * falou. Sem isto o extrator lia 350, comparava com os 350.000 do bloco e
+ * cortava a frase CERTA. Achado lendo a transcrição de uma sonda com API,
+ * não em teste: nenhum caso escrito à mão usava a forma que gente usa.
+ */
 function numerosDaFrase(frase: string): number[] {
-  const achados = frase.match(/\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:,\d+)?/g) ?? [];
+  const achados =
+    frase.match(
+      /(\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:,\d+)?)(\s*(?:milh(?:ão|ões|ao|oes)|mil))?/gi,
+    ) ?? [];
+
   return achados
-    .map((t) => Number(t.replace(/\./g, "").replace(",", ".")))
+    .map((t) => {
+      const escala = /milh/i.test(t) ? 1_000_000 : /\bmil\b/i.test(t) ? 1_000 : 1;
+      const so = t.replace(/\s*(?:milh(?:ão|ões|ao|oes)|mil)/i, "");
+      return Number(so.replace(/\./g, "").replace(",", ".")) * escala;
+    })
     .filter((n) => Number.isFinite(n));
 }
 
