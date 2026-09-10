@@ -1,107 +1,255 @@
 import type { Metadata } from "next";
-import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
-import { SiteHeader } from "@/components/layout/SiteHeader";
+import Link from "next/link";
+import { WhatsappLink } from "@/components/analytics/WhatsappLink";
+import { CardCorretor } from "@/components/corretores/CardCorretor";
+import { CtaFinal } from "@/components/home/CtaFinal";
+import { Regioes } from "@/components/home/Regioes";
+import { CabecalhoDePagina } from "@/components/institucional/CabecalhoDePagina";
+import { FaixaDeProva } from "@/components/institucional/FaixaDeProva";
+import { MapaDaSede } from "@/components/institucional/MapaDaSede";
+import { Pagina } from "@/components/institucional/Pagina";
+import { Secao } from "@/components/institucional/Secao";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
+import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { Reveal } from "@/components/motion/Reveal";
-import { VideoInstitucionalFrame } from "@/components/institucional/VideoInstitucionalFrame";
-import { TimelineEmpreendimentos } from "@/components/institucional/TimelineEmpreendimentos";
-import { NossaEssencia } from "@/components/institucional/NossaEssencia";
-import { SimuladorInvestimentoAlphaville } from "@/components/institucional/SimuladorInvestimentoAlphaville";
-import { SeloSegurancaJuridica } from "@/components/institucional/SeloSegurancaJuridica";
-import { VitrineOportunidadesSobre } from "@/components/institucional/VitrineOportunidadesSobre";
-import { HubContatoSegmentado } from "@/components/institucional/HubContatoSegmentado";
-import { VoltarLink } from "@/components/ui/VoltarLink";
+import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { getEmpreendimentos } from "@/lib/queries";
-import { linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
-import { DoorOpen } from "lucide-react";
+import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
+import { enderecoLinha, linkWhatsapp, site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Sobre a Next Home",
-  description: `Assessoria imobiliária completa em Alphaville, Barueri e região — CRECI ${site.creci}. Negociação facilitada e segurança jurídica do começo ao fim.`,
+  description: `Imobiliária de Alphaville com CRECI ${site.creci}: lançamentos e imóveis prontos em Alphaville, Barueri e região, com atendimento direto no WhatsApp.`,
   alternates: { canonical: "/sobre" },
   openGraph: {
-    title: `Sobre a Next Home | Negócios Imobiliários`,
-    description: "Conheça nossa trajetória, compromisso com a segurança jurídica e foco em encontrar o melhor negócio para você.",
+    title: `Sobre a ${site.nomeCompleto}`,
+    description: site.descricao,
     url: `${site.url}/sobre`,
   },
 };
 
+/**
+ * A página Sobre — refeita em 10/09/2026 só com o que dá para conferir.
+ *
+ * ## O que saiu, e por quê
+ *
+ * A versão anterior tinha uma "linha do tempo" com seis empreendimentos
+ * entregues desde 2016 que NÃO EXISTEM no catálogo nem no mundo (fotos do
+ * Unsplash, links para `/mapa?imovel=` de slugs inventados), um simulador
+ * prometendo "11,5% ao ano de valorização" — exatamente a promessa de
+ * rentabilidade que o validador de copy desta casa proíbe nas peças de
+ * marketing — e um vídeo institucional de banco de imagens. Numa página cujo
+ * único trabalho é dar confiança, conteúdo inventado é o pior conteúdo
+ * possível: quem conferir uma coisa e não achar, desconfia de todas.
+ *
+ * ## O que entrou
+ *
+ * Tudo abaixo sai do banco ou de `lib/site.ts` na mesma requisição: quantos
+ * imóveis, em quantos bairros e cidades, quantos corretores com CRECI, as
+ * regiões que TÊM estoque, a equipe, e o endereço com mapa. E quatro fatos
+ * sobre COMO o atendimento acontece — cada um descreve um mecanismo que
+ * existe no produto (WhatsApp sem formulário, agenda real de visitas, o
+ * simulador com a mesma conta do painel, ficha completa por imóvel).
+ */
+const COMO_FUNCIONA = [
+  {
+    titulo: "Sem formulário",
+    texto:
+      "Todo botão de contato abre o WhatsApp. Você escreve, a conversa começa ali — sem cadastro, sem fila, sem ligação de retorno.",
+  },
+  {
+    titulo: "Visita em horário que existe",
+    texto:
+      "O horário oferecido sai da agenda real do corretor. Ninguém marca uma visita que depois precisa ser desmarcada.",
+    href: "/corretores",
+    chamada: "Conhecer a equipe",
+  },
+  {
+    titulo: "A conta é a mesma",
+    texto:
+      "O simulador de financiamento do site usa o mesmo cálculo que o corretor usa no painel. O número que você vê aqui é o que ouve depois.",
+    href: "/financiamento",
+    chamada: "Simular agora",
+  },
+  {
+    titulo: "Ficha completa, sem enfeite",
+    texto:
+      "Fotos, plantas, lazer, entrega e mapa de cada imóvel. O que não está cadastrado, a gente diz que não está — em vez de inventar.",
+    href: "/empreendimentos",
+    chamada: "Ver os imóveis",
+  },
+];
+
 export default async function SobrePage() {
-  const [corretorAtivo, empreendimentos] = await Promise.all([
-    getCorretorAtivo(),
+  const [catalogo, regioes, corretores, corretorAtivo] = await Promise.all([
     getEmpreendimentos(),
+    getRegioesDisponiveis(),
+    getCorretores(),
+    getCorretorAtivo(),
   ]);
 
-  const linkWhatsappGeral = corretorAtivo
-    ? linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pela página institucional da Next Home e quero conhecer as oportunidades disponíveis.`)
-    : linkWhatsapp("Olá! Gostaria de conversar com um corretor da Next Home.");
+  const equipe = corretores.slice(0, 6);
 
   return (
-    <GlassBackgroundProvider>
-      <SiteHeader />
-      <WhatsappCta corretor={corretorAtivo ?? undefined} />
+    <>
+      <Pagina>
+        <Secao espaco="abertura">
+          <CabecalhoDePagina
+            atual="Sobre"
+            rotulo={
+              <>
+                CRECI <span className="text-corpo font-medium tabular-nums">{site.creci}</span> ·{" "}
+                {site.endereco.bairro}, {site.endereco.cidade}
+              </>
+            }
+            titulo="Quem está do outro lado do WhatsApp"
+            lead={
+              <>
+                A {site.nomeCompleto} é uma imobiliária de Alphaville, com registro no CRECI,
+                especializada em lançamentos e imóveis prontos em Alphaville, Barueri e região.
+                O atendimento acontece no WhatsApp, com corretores registrados — e esta página
+                mostra o que dá para conferir.
+              </>
+            }
+          />
+        </Secao>
 
-      <main className="flex flex-1 flex-col bg-fundo px-4 pt-28 sm:pt-36 pb-16 overflow-hidden">
-        {/* 1. HERO INSTITUCIONAL ACOLHEDOR */}
-        <section className="max-w-4xl mx-auto text-center space-y-6 mb-12 sm:mb-16">
-          <Reveal>
-            <div className="mb-2 text-left">
-              <VoltarLink href="/">Início</VoltarLink>
-            </div>
+        <Secao espaco="final">
+          <FaixaDeProva
+            numeros={[
+              {
+                valor: catalogo.length,
+                rotulo: catalogo.length === 1 ? "imóvel no catálogo" : "imóveis no catálogo",
+              },
+              { valor: regioes.bairros.length, rotulo: "bairros atendidos" },
+              {
+                valor: regioes.cidades.length,
+                rotulo: regioes.cidades.length === 1 ? "cidade" : "cidades",
+              },
+              { valor: corretores.length, rotulo: "com CRECI ativo" },
+            ]}
+          />
+        </Secao>
 
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/15 text-corpo text-fluid-xs font-semibold backdrop-blur shadow-sm mb-2">
-              <span> <DoorOpen className="inline-block w-5 h-5 align-text-bottom mr-1" />  Sua casa e seu investimento começam aqui</span>
-            </div>
-            <h1 className="text-fluid-3xl sm:text-fluid-4xl font-bold text-titulo tracking-tight leading-tight">
-              A Next Home Negócios Imobiliários
-            </h1>
-            <p className="text-fluid-base sm:text-fluid-lg text-apoio font-normal leading-relaxed max-w-3xl mx-auto mt-4">
-              Nascemos para tornar a compra, venda e o investimento em imóveis um processo simples, transparente e vantajoso. Conectamos você às melhores oportunidades da região com atendimento humanizado, negociação justa e total segurança do início ao fim.
+        <Secao banda>
+          <p className="text-fluid-xs text-apoio mb-3">Quatro coisas que valem em toda conversa</p>
+          <TituloEditorial className="text-fluid-2xl text-titulo">
+            Como a gente trabalha
+          </TituloEditorial>
+
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+            {COMO_FUNCIONA.map((item, i) => (
+              <Reveal
+                key={item.titulo}
+                as="li"
+                delay={(i % 2) * 0.1}
+                from="baixo"
+                className="border-linha bg-superficie/50 flex h-full flex-col rounded-2xl border p-5 sm:p-6"
+              >
+                <h3 className="font-display text-titulo text-lg">{item.titulo}</h3>
+                <p className="text-fluid-sm text-apoio mt-2 text-pretty">{item.texto}</p>
+                {item.href && (
+                  <Link
+                    href={item.href}
+                    className="text-fluid-sm text-acento-suave mt-auto inline-flex min-h-11 items-center gap-1 pt-3 font-medium underline-offset-4 hover:underline"
+                  >
+                    {item.chamada}
+                    <span aria-hidden>→</span>
+                  </Link>
+                )}
+              </Reveal>
+            ))}
+          </ul>
+        </Secao>
+
+        {/* Regioes traz a própria seção e o próprio fundo; o respiro de cima
+            vem daqui para casar com o ritmo das vizinhas. */}
+        <div className="pt-16 sm:pt-24">
+          <Regioes catalogo={catalogo} />
+        </div>
+
+        {equipe.length > 0 && (
+          <Secao banda>
+            <p className="text-fluid-xs text-apoio mb-3">
+              <span className="text-acento-suave font-semibold tabular-nums">{corretores.length}</span>{" "}
+              {corretores.length === 1 ? "corretor" : "corretores"} com CRECI, na região
             </p>
-          </Reveal>
-        </section>
+            <TituloEditorial className="text-fluid-2xl text-titulo">
+              A equipe, pelo nome
+            </TituloEditorial>
 
-        {/* 2. VÍDEO INSTITUCIONAL CINEMA GLASS */}
-        <section className="mb-16 sm:mb-24">
-          <Reveal delay={0.15}>
-            <VideoInstitucionalFrame
-              videoUrl={corretorAtivo?.videoUrl || undefined}
-              titulo={`Next Home — ${corretorAtivo?.nome || "Oportunidades em Alphaville"}`}
-            />
-          </Reveal>
-        </section>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* CartaoTilt no lugar do Reveal: o tilt já faz a própria entrada
+                  e assume a opacidade — somar os dois é ter dois donos dela. */}
+              {equipe.map((c, i) => (
+                <CartaoTilt key={c.slug} indice={i} className="rounded-glass">
+                  <CardCorretor corretor={c} compacto />
+                </CartaoTilt>
+              ))}
+            </div>
 
-        {/* 3. LINHA DO TEMPO VISUAL DOS EMPREENDIMENTOS */}
-        <Reveal delay={0.1}>
-          <TimelineEmpreendimentos />
-        </Reveal>
+            <Reveal className="mt-8">
+              <Link
+                href="/corretores"
+                className="text-fluid-sm text-acento-suave inline-flex min-h-11 items-center font-medium underline-offset-4 hover:underline"
+              >
+                {corretores.length > equipe.length
+                  ? `Ver toda a equipe (${corretores.length}) →`
+                  : "Ver perfis e falar direto →"}
+              </Link>
+            </Reveal>
+          </Secao>
+        )}
 
-        {/* 4. NOSSA ESSÊNCIA (MISSÃO, VISÃO E VALORES) */}
-        <Reveal delay={0.1}>
-          <NossaEssencia />
-        </Reveal>
+        <Secao>
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-start lg:gap-12">
+            <div>
+              <p className="text-fluid-xs text-apoio mb-3">Escritório</p>
+              <TituloEditorial className="text-fluid-2xl text-titulo">
+                Onde a gente está
+              </TituloEditorial>
 
-        {/* 5. SIMULADOR DE VALORIZAÇÃO & RENTABILIDADE */}
-        <Reveal delay={0.1}>
-          <SimuladorInvestimentoAlphaville corretorWhatsapp={corretorAtivo?.whatsapp} />
-        </Reveal>
+              <Reveal from="nenhuma" delay={0.2}>
+                <address className="text-fluid-base text-apoio mt-5 space-y-1 not-italic">
+                  <p className="text-corpo">{site.endereco.logradouro}</p>
+                  <p>
+                    {site.endereco.bairro}, {site.endereco.cidade}/{site.endereco.uf}
+                  </p>
+                  <p className="text-fluid-sm text-tenue">CEP {site.endereco.cep}</p>
+                </address>
 
-        {/* 6. SELO DE SEGURANÇA JURÍDICA E CRECI-J */}
-        <Reveal delay={0.1}>
-          <SeloSegurancaJuridica />
-        </Reveal>
+                <ul className="mt-6 flex flex-wrap gap-3">
+                  {site.whatsapp.map((w, i) => (
+                    <li key={w.numero}>
+                      <WhatsappLink
+                        href={linkWhatsapp(undefined, i)}
+                        origem="sobre"
+                        className="border-linha bg-superficie/60 text-corpo hover:border-acento-linha hover:text-acento-suave inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors"
+                      >
+                        <span aria-hidden className="bg-ok size-2 rounded-full" />
+                        {w.label}
+                      </WhatsappLink>
+                    </li>
+                  ))}
+                </ul>
 
-        {/* 6. VITRINE DE OPORTUNIDADES DINÂMICAS (SEM DEAD-ENDS) */}
-        <Reveal delay={0.1}>
-          <VitrineOportunidadesSobre empreendimentos={empreendimentos} />
-        </Reveal>
+                <p className="text-fluid-xs text-tenue mt-6">
+                  {site.nomeCompleto} · CRECI {site.creci}
+                </p>
+                <p className="sr-only">{enderecoLinha}</p>
+              </Reveal>
+            </div>
 
-        {/* 7. HUB DE CONTATO SEGMENTADO */}
-        <Reveal delay={0.1}>
-          <HubContatoSegmentado linkWhatsapp={linkWhatsappGeral} />
-        </Reveal>
-      </main>
-    </GlassBackgroundProvider>
+            <Reveal delay={0.1} from="baixo">
+              <MapaDaSede />
+            </Reveal>
+          </div>
+        </Secao>
+
+        <CtaFinal />
+      </Pagina>
+
+      <WhatsappCta corretor={corretorAtivo ?? undefined} />
+    </>
   );
 }

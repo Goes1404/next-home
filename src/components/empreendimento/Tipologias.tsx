@@ -91,9 +91,11 @@ export function Tipologias({
                         className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
                       />
                     </Camada>
-                    {/* Literal como os demais selos sobre imagem: o fundo
-                        aqui é a planta, não a página. */}
-                    <span className="text-fluid-xs absolute right-2 bottom-2 rounded-full bg-ink-950/80 px-2.5 py-1 text-corpo-suave">
+                    {/* Literal nas duas pontas, como os demais selos sobre
+                        imagem: o fundo aqui é a planta, não a página — e a
+                        tinta era `corpo-suave`, que no tema claro é escura
+                        sobre este preto fixo (pego pela guarda em 10/09/2026). */}
+                    <span className="text-fluid-xs absolute right-2 bottom-2 rounded-full bg-ink-950/80 px-2.5 py-1 text-brand-200">
                       Ver planta
                     </span>
                   </button>

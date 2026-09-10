@@ -12,7 +12,7 @@ import { Camada } from "@/components/motion/Camada";
 import { ParallaxFundoHome } from "@/components/motion/ParallaxFundoHome";
 import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { Reveal } from "@/components/motion/Reveal";
-import { NumeroQueConta } from "@/components/motion/NumeroQueConta";
+import { FaixaDeProva } from "@/components/institucional/FaixaDeProva";
 import { ScrollCue } from "@/components/home/ScrollCue";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
@@ -67,11 +67,11 @@ export default async function HomeInstitucional() {
     getCorretorAtivo(),
   ]);
 
-  let destaques = todos.filter((e) => e.destaque).slice(0, 3);
-  if (destaques.length < 3) {
+  let destaques = todos.filter((e) => e.destaque).slice(0, 6);
+  if (destaques.length < 6) {
     const slugsDestaque = new Set(destaques.map((e) => e.slug));
     const restantes = todos.filter((e) => !slugsDestaque.has(e.slug));
-    destaques = [...destaques, ...restantes.slice(0, 3 - destaques.length)];
+    destaques = [...destaques, ...restantes.slice(0, 6 - destaques.length)];
   }
   const equipe = corretores.slice(0, 4);
 
@@ -223,7 +223,7 @@ export default async function HomeInstitucional() {
 
                 <div className="mt-10 grid w-full gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {destaques.map((e, i) => (
-                    <Reveal key={e.slug} delay={(i % 3) * 0.1} from="baixo">
+                    <Reveal key={e.slug} delay={(i % 3) * 0.1} from="baixo" className="h-full">
                       <CardEmpreendimento
                         empreendimento={e}
                         velocidadeCapa={0.08 + (i % 3) * 0.05}
@@ -249,28 +249,21 @@ export default async function HomeInstitucional() {
             não trazia nenhum número verificável — só promessa em prosa.
 
             Todos os quatro saem do banco nesta requisição (nenhuma consulta
-            nova): estoque publicado, alcance geográfico e quantas pessoas com
-            registro atendem. Se um dia o catálogo encolher, o número encolhe
-            junto — é isso que o separa de um "+500 clientes felizes", que
-            ninguém pode conferir e que este site não vai ter.
+            nova). A régua está em `FaixaDeProva`, que a página Sobre também
+            usa — os mesmos números, a mesma peça.
           */}
-          <Reveal className="px-4 sm:px-8">
-            <div className="border-linha/60 mx-auto grid w-full max-w-6xl grid-cols-2 gap-px overflow-hidden rounded-2xl border bg-linha/60 sm:grid-cols-4">
-              {[
-                { valor: todos.length, rotulo: todos.length === 1 ? "imóvel no catálogo" : "imóveis no catálogo" },
-                { valor: regioes.bairros.length, rotulo: "bairros atendidos" },
-                { valor: regioes.cidades.length, rotulo: regioes.cidades.length === 1 ? "cidade" : "cidades" },
-                { valor: corretores.length, rotulo: "com CRECI ativo" },
-              ].map((n) => (
-                <div key={n.rotulo} className="bg-fundo px-5 py-7 text-center sm:py-8">
-                  <p className="font-display text-titulo text-4xl font-bold tabular-nums sm:text-5xl">
-                    <NumeroQueConta valor={n.valor} />
-                  </p>
-                  <p className="text-fluid-xs text-apoio mt-1.5 text-pretty">{n.rotulo}</p>
-                </div>
-              ))}
+          <div className="px-4 sm:px-8">
+            <div className="mx-auto w-full max-w-6xl">
+              <FaixaDeProva
+                numeros={[
+                  { valor: todos.length, rotulo: todos.length === 1 ? "imóvel no catálogo" : "imóveis no catálogo" },
+                  { valor: regioes.bairros.length, rotulo: "bairros atendidos" },
+                  { valor: regioes.cidades.length, rotulo: regioes.cidades.length === 1 ? "cidade" : "cidades" },
+                  { valor: corretores.length, rotulo: "com CRECI ativo" },
+                ]}
+              />
             </div>
-          </Reveal>
+          </div>
 
           {/* Regioes é compartilhado com o portfólio do corretor — a banda vem
               do embrulho, não de dentro do componente. */}

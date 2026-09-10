@@ -3,6 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimento";
 import { CtaFinal } from "@/components/home/CtaFinal";
+import { CabecalhoDePagina } from "@/components/institucional/CabecalhoDePagina";
+import { Pagina } from "@/components/institucional/Pagina";
+import { Secao } from "@/components/institucional/Secao";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
@@ -27,8 +30,9 @@ import { site } from "@/lib/site";
  * ## O que ela responde, que a listagem filtrada não responde
  *
  * A listagem mostra cards. Esta página abre com o que alguém quer saber ANTES
- * de olhar imóvel: quantos há, a partir de quanto, e em que bairros. São três
- * números do próprio catálogo — nada aqui é escrito à mão sobre estoque.
+ * de olhar imóvel: quantos há, a partir de quanto, quantos estão prontos e
+ * em que bairros. São números do próprio catálogo — nada aqui é escrito à
+ * mão sobre estoque.
  */
 
 type Props = { params: Promise<{ slug: string }> };
@@ -73,57 +77,53 @@ export default async function PaginaDaRegiao({ params }: Props) {
 
   const { imoveis, precoMinimo } = comEstoque;
   const bairros = [...new Set(imoveis.map((e) => e.bairro).filter(Boolean))].sort();
+  const prontos = imoveis.filter((e) => e.status === "pronto_para_morar").length;
+  const emObra = imoveis.length - prontos;
   const outras = todasComEstoque.filter((r) => r.slug !== slug);
 
   return (
-    <main id="conteudo" className="flex flex-1 flex-col">
-      <div className="bg-fundo relative pt-28 sm:pt-32">
-        <section className="px-4 pb-12 sm:px-8 sm:pb-16">
-          <div className="mx-auto w-full max-w-6xl">
-            <Reveal>
-              <nav aria-label="Você está aqui" className="text-fluid-xs text-apoio mb-4">
-                <Link
-                  href="/empreendimentos"
-                  className="hover:text-titulo underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current"
-                >
-                  Imóveis
-                </Link>
-                <span aria-hidden className="text-tenue mx-2">
-                  /
-                </span>
-                <span className="text-corpo">{regiao.nome}</span>
-              </nav>
-
-              <TituloEditorial className="text-fluid-3xl text-titulo">
-                Imóveis em {regiao.nome}
-              </TituloEditorial>
-              <p className="text-fluid-base text-apoio mt-4 max-w-2xl text-pretty">
-                {regiao.chamada}
-              </p>
-            </Reveal>
-
-            {/* Os três números que decidem se vale rolar. Todos do catálogo. */}
+    <>
+      <Pagina>
+        <Secao espaco="abertura">
+          <CabecalhoDePagina
+            trilha={[
+              { href: "/", label: "Início" },
+              { href: "/empreendimentos", label: "Imóveis" },
+            ]}
+            atual={regiao.nome}
+            rotulo={
+              <>
+                <span className="text-acento-suave font-semibold tabular-nums">{imoveis.length}</span>{" "}
+                {imoveis.length === 1 ? "empreendimento" : "empreendimentos"} em{" "}
+                <span className="tabular-nums">{bairros.length}</span>{" "}
+                {bairros.length === 1 ? "bairro" : "bairros"}
+              </>
+            }
+            titulo={`Imóveis em ${regiao.nome}`}
+            lead={regiao.chamada}
+          >
+            {/* Os números que decidem se vale rolar. Todos do catálogo. */}
             <Reveal delay={0.1}>
               <dl className="border-linha bg-linha/60 mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border sm:grid-cols-3">
                 {[
-                  {
-                    valor: String(imoveis.length),
-                    rotulo: imoveis.length === 1 ? "empreendimento" : "empreendimentos",
-                  },
                   {
                     valor: precoMinimo ? formatarMoedaBRL(precoMinimo) : "Sob consulta",
                     rotulo: "a partir de",
                   },
                   {
-                    valor: String(bairros.length),
-                    rotulo: bairros.length === 1 ? "bairro" : "bairros",
+                    valor: String(prontos),
+                    rotulo: prontos === 1 ? "pronto para morar" : "prontos para morar",
+                  },
+                  {
+                    valor: String(emObra),
+                    rotulo: emObra === 1 ? "na planta ou em obras" : "na planta ou em obras",
                   },
                 ].map((n) => (
-                  <div key={n.rotulo} className="bg-fundo px-5 py-6">
-                    <dd className="font-display text-titulo text-2xl font-bold sm:text-3xl">
+                  <div key={n.rotulo} className="bg-fundo flex flex-col-reverse px-5 py-6">
+                    <dt className="text-fluid-xs text-apoio mt-1">{n.rotulo}</dt>
+                    <dd className="font-display text-titulo text-2xl font-bold tabular-nums sm:text-3xl">
                       {n.valor}
                     </dd>
-                    <dt className="text-fluid-xs text-apoio mt-1">{n.rotulo}</dt>
                   </div>
                 ))}
               </dl>
@@ -136,57 +136,53 @@ export default async function PaginaDaRegiao({ params }: Props) {
                 </p>
               </Reveal>
             )}
-          </div>
-        </section>
+          </CabecalhoDePagina>
+        </Secao>
 
-        <section className="px-4 pb-16 sm:px-8 sm:pb-24">
-          <div className="mx-auto w-full max-w-6xl">
-            <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {imoveis.map((e, i) => (
-                <Reveal key={e.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
-                  <CardEmpreendimento empreendimento={e} prioridade={i < 3} />
-                </Reveal>
-              ))}
-            </ul>
+        <Secao espaco="final">
+          <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {imoveis.map((e, i) => (
+              <Reveal key={e.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
+                <CardEmpreendimento empreendimento={e} prioridade={i < 3} />
+              </Reveal>
+            ))}
+          </ul>
 
-            <Reveal delay={0.1}>
-              <Link
-                href={regiao.filtro}
-                className="text-fluid-base text-acento-suave mt-8 inline-flex min-h-11 items-center font-medium underline-offset-4 hover:underline"
-              >
-                Filtrar {regiao.nome} na busca completa
-              </Link>
-            </Reveal>
-          </div>
-        </section>
+          <Reveal delay={0.1}>
+            <Link
+              href={regiao.filtro}
+              className="text-fluid-base text-acento-suave mt-8 inline-flex min-h-11 items-center font-medium underline-offset-4 hover:underline"
+            >
+              Filtrar {regiao.nome} na busca completa →
+            </Link>
+          </Reveal>
+        </Secao>
 
         {outras.length > 0 && (
-          <section className="bg-superficie/40 px-4 py-16 sm:px-8 sm:py-24">
-            <div className="mx-auto w-full max-w-6xl">
-              <TituloEditorial className="text-fluid-2xl text-titulo">
-                Outras regiões
-              </TituloEditorial>
-              <ul className="mt-6 flex flex-wrap gap-3">
-                {outras.map((r) => (
-                  <li key={r.slug}>
-                    <Link
-                      href={`/regioes/${r.slug}`}
-                      className="border-linha bg-superficie/60 text-corpo hover:border-acento-linha hover:text-acento-suave inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm transition-colors"
-                    >
-                      {r.nome}
-                      <span className="text-tenue text-xs tabular-nums">{r.imoveis.length}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
+          <Secao banda>
+            <TituloEditorial className="text-fluid-2xl text-titulo">
+              Outras regiões
+            </TituloEditorial>
+            <ul className="mt-6 flex flex-wrap gap-3">
+              {outras.map((r) => (
+                <li key={r.slug}>
+                  <Link
+                    href={`/regioes/${r.slug}`}
+                    className="border-linha bg-superficie/60 text-corpo hover:border-acento-linha hover:text-acento-suave inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm transition-colors"
+                  >
+                    {r.nome}
+                    <span className="text-tenue text-xs tabular-nums">{r.imoveis.length}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Secao>
         )}
 
         <CtaFinal />
-      </div>
+      </Pagina>
 
       <WhatsappCta corretor={corretorAtivo ?? undefined} />
-    </main>
+    </>
   );
 }

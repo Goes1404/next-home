@@ -30,9 +30,9 @@ export async function Footer() {
   const [corretorAtivo, tema] = await Promise.all([getCorretorAtivo(), getTemaEscolhido()]);
 
   return (
-    <footer className="relative overflow-hidden border-t border-linha/10 bg-superficie px-4 py-14">
+    <footer className="relative overflow-hidden border-t border-linha/10 bg-superficie px-4 py-14 sm:px-8">
       <FundoEmCamadas intensidade={0.5} />
-      <div className="mx-auto grid w-full max-w-5xl gap-10 sm:grid-cols-3">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 sm:grid-cols-3">
         <div>
           <p className="font-display text-lg text-titulo">
             Next<span className="text-acento-forte">Home</span>
@@ -105,7 +105,7 @@ export async function Footer() {
         </div>
       </div>
 
-      <div className="text-fluid-xs mx-auto mt-12 flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 border-t border-linha/5 pt-6 text-tenue">
+      <div className="text-fluid-xs mx-auto mt-12 flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-linha/5 pt-6 text-tenue">
         <p>
           © {new Date().getFullYear()} {site.nomeCompleto}. CRECI {site.creci}.
         </p>

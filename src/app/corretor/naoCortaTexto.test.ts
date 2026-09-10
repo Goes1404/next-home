@@ -75,9 +75,15 @@ function elementos(arq: string): Uso[] {
   }));
 }
 
-const TOKENS_DE_TEMA = /\btext-(titulo|corpo|apoio|tenue)\b/;
+/*
+ * `acento-suave` entrou na lista em 10/09/2026: no tema claro ela é
+ * verde-ESCURO, e o selo de status do cartão do catálogo (`bg-ink-950/80
+ * text-acento-suave`) sumia — visto na captura de /regioes, não pela guarda,
+ * que só olhava `bg-black`. `ink-9xx` é o mesmo preto fixo com outro nome.
+ */
+const TOKENS_DE_TEMA = /\btext-(titulo|corpo|apoio|tenue|acento-suave)\b/;
 /** De 40% para cima o preto já esconde o fundo do tema. */
-const PRETO_OPACO = /\bbg-black\/(4\d|5\d|6\d|7\d|8\d|9\d|100)\b/;
+const PRETO_OPACO = /\bbg-(black|ink-9\d\d)\/(4\d|5\d|6\d|7\d|8\d|9\d|100)\b/;
 
 const TAGS_DE_BLOCO = new Set([
   "p", "div", "li", "ul", "ol", "h1", "h2", "h3", "h4", "h5", "h6",

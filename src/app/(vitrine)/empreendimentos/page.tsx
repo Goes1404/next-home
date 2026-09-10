@@ -94,8 +94,8 @@ export default async function EmpreendimentosPage({
       <SiteHeader />
       <WhatsappCta />
 
-      <main className="flex flex-1 flex-col px-4 pt-28 pb-20">
-        <div className="mx-auto w-full max-w-5xl">
+      <main className="flex flex-1 flex-col px-4 pt-28 pb-20 sm:px-8">
+        <div className="mx-auto w-full max-w-6xl">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <TituloEditorial as="h1" className="text-fluid-3xl tracking-tight text-titulo">
@@ -139,7 +139,7 @@ export default async function EmpreendimentosPage({
         </div>
 
         {empreendimentos.length === 0 ? (
-          <Reveal className="mx-auto mt-16 w-full max-w-5xl text-center">
+          <Reveal className="mx-auto mt-16 w-full max-w-6xl text-center">
             <p className="text-fluid-lg text-corpo">Nenhum empreendimento encontrado com esses filtros.</p>
             <Link
               href="/empreendimentos"
@@ -149,7 +149,7 @@ export default async function EmpreendimentosPage({
             </Link>
           </Reveal>
         ) : (
-          <div className="mx-auto mt-10 grid w-full max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto mt-10 grid w-full max-w-6xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {empreendimentos.map((e, i) => {
               // O primeiro resultado sem filtro é a vitrine da vitrine:
               // ocupa duas colunas com capa panorâmica.

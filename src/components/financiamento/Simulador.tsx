@@ -131,7 +131,11 @@ export function Simulador({
       </form>
 
       <div
-        className="cartao flex flex-col p-5 sm:p-6"
+        // `sticky` no desktop: o resultado fica à vista enquanto a pessoa
+        // ajusta a entrada no formulário ao lado — sem isso, no fim do
+        // formulário o número já saiu da tela e ela rola para cima a cada
+        // tentativa. `self-start`, senão o item da grade estica e não gruda.
+        className="cartao flex flex-col p-5 sm:p-6 lg:sticky lg:top-28 lg:self-start"
         // A conta muda enquanto a pessoa digita; `polite` conta o resultado
         // sem atropelar quem está no meio de preencher.
         aria-live="polite"
@@ -161,6 +165,8 @@ export function Simulador({
                 ? `Parcela estimada em ${Math.round(resultado.prazoMeses / 12)} anos.`
                 : "É o que falta somando entrada, FGTS e o que a renda financia."}
             </p>
+
+            <ComposicaoDoValor resultado={resultado} valorImovel={numeros.valorImovel} />
 
             <dl className="border-linha mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-5">
               {[
@@ -224,6 +230,63 @@ export function Simulador({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * O valor do imóvel dividido em barra: recursos próprios, financiamento e —
+ * quando não fecha — o que falta.
+ *
+ * É a MESMA conta do resultado, só que visível de relance. Responde "por
+ * que não fecha?" sem exigir que a pessoa some os quatro números da lista
+ * abaixo: a fatia vermelha É a resposta. Quando fecha, o financiamento
+ * completa o que os recursos não cobrem, e a barra fecha inteira.
+ */
+function ComposicaoDoValor({
+  resultado,
+  valorImovel,
+}: {
+  resultado: ReturnType<typeof simularFinanciamento>;
+  valorImovel: number;
+}) {
+  if (valorImovel <= 0) return null;
+
+  const proprios = Math.min(resultado.recursosProprios, valorImovel);
+  const restante = Math.max(valorImovel - proprios, 0);
+  const financiado = resultado.fecha ? restante : Math.min(resultado.valorFinanciavel, restante);
+  const faltam = Math.max(restante - financiado, 0);
+
+  const partes = [
+    { rotulo: "Recursos próprios", valor: proprios, cor: "bg-acento-suave" },
+    { rotulo: "Financiamento", valor: financiado, cor: "bg-acento" },
+    { rotulo: "Falta", valor: faltam, cor: "bg-alerta" },
+  ].filter((p) => p.valor > 0);
+
+  return (
+    <div className="mt-5">
+      <div
+        role="img"
+        aria-label={partes.map((p) => `${p.rotulo}: ${formatarMoedaBRL(p.valor)}`).join("; ")}
+        className="bg-linha flex h-2.5 w-full overflow-hidden rounded-full"
+      >
+        {partes.map((p) => (
+          <span
+            key={p.rotulo}
+            className={`${p.cor} h-full transition-[width] duration-500 ease-out motion-reduce:transition-none`}
+            style={{ width: `${(p.valor / valorImovel) * 100}%` }}
+          />
+        ))}
+      </div>
+      <ul className="text-fluid-xs text-apoio mt-2 flex flex-wrap gap-x-4 gap-y-1">
+        {partes.map((p) => (
+          <li key={p.rotulo} className="inline-flex items-center gap-1.5">
+            <span aria-hidden className={`${p.cor} size-2 shrink-0 rounded-full`} />
+            {p.rotulo}{" "}
+            <span className="text-corpo tabular-nums">{formatarMoedaBRL(p.valor)}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

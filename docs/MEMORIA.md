@@ -5397,3 +5397,48 @@ aparecia em tsc, teste ou build.
   módulo inexistente em arquivo GERADO — não é erro do código-fonte. `rm -rf
   .next/types` + build regenera. Sintoma reconhecível: erro TS2307 cujo
   caminho começa em `.next/`.
+
+## Três páginas fora do grupo, e a Sobre feita de conteúdo inventado (10/09/2026)
+
+Pedido: "qualidade absurda em todas as páginas". O levantamento achou o que
+nenhuma tela mostra sozinha — só navegando de uma para a outra.
+
+- **`/sobre`, `/contato` e `/privacidade` viviam FORA de `(institucional)`.**
+  Usavam o `SiteHeader` do portfólio (menu Empreendimentos/Mapa/Sobre/Contato)
+  em vez do `HeaderInstitucional` (Imóveis/Financiamento/Corretores/…), sem
+  o fundo em vídeo e sem o Preloader. Ir da home para Sobre trocava a
+  navegação inteira. Movidas para o grupo; `seo.test.ts` lê os arquivos por
+  caminho e precisou acompanhar.
+- **A `/sobre` era conteúdo INVENTADO.** Linha do tempo com seis
+  empreendimentos "entregues desde 2016" que não existem no catálogo nem no
+  mundo, fotos do Unsplash, links para `/mapa?imovel=` de slugs falsos, um
+  simulador prometendo "11,5% ao ano" (a promessa de rentabilidade que o
+  próprio `problemasDaCopy` proíbe nas peças de marketing), vídeo de banco
+  de imagens e um WhatsApp chumbado como fallback. Reescrita só com o que
+  sai do banco e de `lib/site.ts`. **Página institucional segue a mesma
+  régua da home: número que encolhe quando a realidade encolhe.**
+- **Cada página escrevia o próprio `<h1>` e a própria caixa** — centrado em
+  `2xl`, à esquerda em `4xl`, versalete tracked, pílula com ícone. Página a
+  página parecia razoável; o site parecia montado por pessoas diferentes.
+  Alavancas compartilhadas, como o `CabecalhoDeTela` do painel:
+  `Pagina` (casca), `Secao` (caixa `6xl` + ritmo), `CabecalhoDePagina`
+  (trilha + rótulo que conta + título editorial + lead), `FaixaDeProva`
+  (os números da home, reusados na Sobre), `MapaDaSede` (Contato e Sobre).
+- **Data de "última atualização" gerada com `new Date()`** na política de
+  privacidade: parecia revisada todo mês sem ninguém a ter tocado. Virou
+  constante escrita à mão — data que mente sobre revisão é pior que nenhuma.
+- **`dd` antes de `dt`** nas faixas de número: HTML inválido que eu mesmo
+  escrevi em duas páginas. `flex-col-reverse` põe o número em cima só na
+  tela e o DOM fica na ordem certa.
+- **Heredoc com `<<'EOF'` no Bash desta máquina falha com "unexpected EOF
+  while looking for matching `''"** quando o conteúdo é TSX longo (mesmo
+  entre aspas simples, mesmo com outro delimitador funcionando ao lado).
+  Para arquivo inteiro, usar a ferramenta Write; heredoc só para trechos
+  curtos e para Python.
+- **A guarda de "token de tema sobre preto" só olhava `bg-black`.** O selo de
+  status do cartão do catálogo era `bg-ink-950/80 text-acento-suave` — no tema
+  claro, verde-escuro sobre preto: "Pronto para morar" invisível. Só a
+  CAPTURA de `/regioes` no claro mostrou (medir aprova, olhar reprova, de
+  novo). A guarda passou a cobrir `bg-ink-9xx/` e `text-acento-suave`, foi
+  mordida, e achou um segundo caso (`Tipologias.tsx`, "Ver planta" em
+  `corpo-suave`). Tinta sobre preto fixo é `brand-200`, como no login.

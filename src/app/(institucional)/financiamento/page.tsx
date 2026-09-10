@@ -3,6 +3,9 @@ import Link from "next/link";
 import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimento";
 import { AtalhosDeFaixa, Simulador } from "@/components/financiamento/Simulador";
 import { CtaFinal } from "@/components/home/CtaFinal";
+import { CabecalhoDePagina } from "@/components/institucional/CabecalhoDePagina";
+import { Pagina } from "@/components/institucional/Pagina";
+import { Secao } from "@/components/institucional/Secao";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
@@ -117,102 +120,89 @@ export default async function PaginaFinanciamento() {
   };
 
   return (
-    <main id="conteudo" className="flex flex-1 flex-col">
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <div className="bg-fundo relative pt-28 sm:pt-32">
-        <section className="px-4 pb-12 sm:px-8 sm:pb-16">
-          <div className="mx-auto w-full max-w-6xl">
-            <Reveal>
-              <p className="text-fluid-xs text-apoio mb-3">Gratuito e sem cadastro</p>
-              <TituloEditorial className="text-fluid-3xl text-titulo">
-                Quanto cabe no seu bolso
-              </TituloEditorial>
-              <p className="text-fluid-base text-apoio mt-4 max-w-2xl text-pretty">
-                Informe quatro números e veja na hora a parcela estimada, quanto dá para
-                financiar e se você entra no Minha Casa Minha Vida. Nada é enviado para a
-                gente — a conta acontece no seu próprio navegador.
-              </p>
-            </Reveal>
-          </div>
-        </section>
+      <Pagina>
+        <Secao espaco="abertura">
+          <CabecalhoDePagina
+            atual="Financiamento"
+            rotulo="Gratuito e sem cadastro"
+            titulo="Quanto cabe no seu bolso"
+            lead="Informe quatro números e veja na hora a parcela estimada, quanto dá para financiar e se você entra no Minha Casa Minha Vida. Nada é enviado para a gente — a conta acontece no seu próprio navegador."
+          />
+        </Secao>
 
-        <section className="px-4 pb-16 sm:px-8 sm:pb-24">
-          <div className="mx-auto w-full max-w-6xl">
-            <Reveal>
-              <Simulador parametros={parametros} whatsapp={linkWhatsapp()} />
-            </Reveal>
+        <Secao espaco="final">
+          <Reveal>
+            <Simulador parametros={parametros} whatsapp={linkWhatsapp()} />
+          </Reveal>
 
-            <p className="text-fluid-xs text-tenue mt-5">
-              Taxas e faixas conferidas em {conferidoEm}.
-            </p>
-          </div>
-        </section>
+          <p className="text-fluid-xs text-tenue mt-5">
+            Taxas e faixas conferidas em {conferidoEm}.
+          </p>
+        </Secao>
 
         {acessiveis.length > 0 && (
-          <section className="bg-superficie/40 px-4 py-16 sm:px-8 sm:py-24">
-            <div className="mx-auto w-full max-w-6xl">
-              <p className="text-fluid-xs text-apoio mb-3">Os mais acessíveis do catálogo</p>
-              <TituloEditorial className="text-fluid-2xl text-titulo">
-                Comece por estes
-              </TituloEditorial>
-
-              <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {acessiveis.map((e, i) => (
-                  <Reveal key={e.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
-                    <CardEmpreendimento empreendimento={e} />
-                  </Reveal>
-                ))}
-              </ul>
-
-              {faixas.length > 0 && (
-                <Reveal delay={0.1}>
-                  <AtalhosDeFaixa faixas={faixas} />
-                </Reveal>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-4 py-16 sm:px-8 sm:py-24">
-          <div className="mx-auto w-full max-w-6xl">
+          <Secao banda>
+            <p className="text-fluid-xs text-apoio mb-3">Os mais acessíveis do catálogo</p>
             <TituloEditorial className="text-fluid-2xl text-titulo">
-              Perguntas que todo mundo faz
+              Comece por estes
             </TituloEditorial>
 
-            <dl className="mt-8 grid gap-4 sm:grid-cols-2">
-              {perguntas.map((q, i) => (
-                <Reveal key={q.p} delay={(i % 2) * 0.08} from="baixo">
-                  <div className="border-linha bg-superficie/50 h-full rounded-2xl border p-5">
-                    <dt className="font-display text-titulo text-lg text-pretty">{q.p}</dt>
-                    <dd className="text-fluid-sm text-apoio mt-2 text-pretty">{q.r}</dd>
-                  </div>
+            <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {acessiveis.map((e, i) => (
+                <Reveal key={e.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
+                  <CardEmpreendimento empreendimento={e} />
                 </Reveal>
               ))}
-            </dl>
+            </ul>
 
-            <Reveal delay={0.1}>
-              <p className="text-fluid-sm text-apoio mt-8 text-pretty">
-                Ainda com dúvida?{" "}
-                <Link
-                  href="/corretores"
-                  className="text-acento-suave font-medium underline-offset-4 hover:underline"
-                >
-                  Fale com um corretor da equipe
-                </Link>{" "}
-                — todos com CRECI, sem custo nenhum para você.
-              </p>
-            </Reveal>
-          </div>
-        </section>
+            {faixas.length > 0 && (
+              <Reveal delay={0.1}>
+                <AtalhosDeFaixa faixas={faixas} />
+              </Reveal>
+            )}
+          </Secao>
+        )}
+
+        <Secao>
+          <TituloEditorial className="text-fluid-2xl text-titulo">
+            Perguntas que todo mundo faz
+          </TituloEditorial>
+
+          <dl className="mt-8 grid gap-4 sm:grid-cols-2">
+            {perguntas.map((q, i) => (
+              <Reveal key={q.p} delay={(i % 2) * 0.08} from="baixo">
+                <div className="border-linha bg-superficie/50 h-full rounded-2xl border p-5">
+                  <dt className="font-display text-titulo text-lg text-pretty">{q.p}</dt>
+                  <dd className="text-fluid-sm text-apoio mt-2 text-pretty">{q.r}</dd>
+                </div>
+              </Reveal>
+            ))}
+          </dl>
+
+          <Reveal delay={0.1}>
+            <p className="text-fluid-sm text-apoio mt-8 text-pretty">
+              Ainda com dúvida?{" "}
+              <Link
+                href="/corretores"
+                className="text-acento-suave font-medium underline-offset-4 hover:underline"
+              >
+                Fale com um corretor da equipe
+              </Link>{" "}
+              — todos com CRECI, sem custo nenhum para você.
+            </p>
+          </Reveal>
+        </Secao>
 
         <CtaFinal />
-      </div>
+      </Pagina>
 
       <WhatsappCta corretor={corretorAtivo ?? undefined} />
-    </main>
+    </>
   );
 }
