@@ -16,13 +16,16 @@ import path from "node:path";
  * vez, no topo da tela. Alvo escondido atrás de um gesto invisível é quase
  * tão ruim quanto alvo cortado — e pior, porque parece que a lista acabou.
  *
- * TABELA é a exceção legítima: uma tabela larga não tem como quebrar linha
- * sem deixar de ser tabela, e ali a rolagem é esperada por quem usa. A lista
- * abaixo é declarada de propósito, para que acrescentar um caso exija
- * escrever por que — do mesmo jeito que `RESERVADOS` em `migrations.test.ts`.
+ * A exceção legítima é o container em que a rolagem É O CONTEÚDO, não um
+ * alvo escondido: uma tabela larga não tem como quebrar linha sem deixar de
+ * ser tabela, e um quadro kanban não tem como ser kanban com as colunas
+ * empilhadas. Nos dois casos quem usa espera rolar, e o próximo item fica
+ * espiando na borda em vez de terminar exatamente na dobra. A lista abaixo é
+ * declarada de propósito, para que acrescentar um caso exija escrever por que
+ * — do mesmo jeito que `RESERVADOS` em `migrations.test.ts`.
  */
 
-const TABELAS_LARGAS = [
+const ROLAGEM_DECLARADA = [
   "(painel)/admin/leads/page.tsx",
   "(painel)/admin/precos/PrecosManager.tsx",
   "(painel)/admin/anuncios/page.tsx",
@@ -30,6 +33,12 @@ const TABELAS_LARGAS = [
   // Faixa de sugestões dentro da simulação de conversa: são atalhos de teste,
   // não navegação, e a caixa imita a janela do WhatsApp de propósito.
   "(painel)/whatsapp/_componentes/PlaygroundIA.tsx",
+  // Quadro do funil (09/09/2026): kanban de colunas laterais, por decisão do
+  // usuário. Aqui a rolagem é o conteúdo, não navegação — a coluna mede 78vw
+  // justamente para a próxima ficar espiando na borda e anunciar o gesto. As
+  // etapas continuam alcançáveis sem rolar: a lista (`/corretor/leads?etapa=`)
+  // e o seletor "Mover para" de cada cartão chegam às seis.
+  "(painel)/funil/Quadro.tsx",
 ];
 
 const RAIZ = path.join(process.cwd(), "src/app/corretor");
@@ -58,16 +67,17 @@ describe("navegação e filtro não rolam de lado", () => {
     expect(arquivos(RAIZ).length).toBeGreaterThan(20);
   });
 
-  it("só tabela larga rola na horizontal", () => {
+  it("só o que está declarado rola na horizontal", () => {
     const fora = encontrados
       .map((a) => path.relative(RAIZ, a).split(path.sep).join("/"))
-      .filter((rel) => !TABELAS_LARGAS.includes(rel))
+      .filter((rel) => !ROLAGEM_DECLARADA.includes(rel))
       .sort();
     expect(
       fora,
       "Estes contêineres rolam de lado. Se for navegação, chip ou filtro, use " +
         "`flex-wrap`: rolagem lateral esconde alvo sem avisar que ele existe. " +
-        "Se for tabela larga, acrescente o arquivo a TABELAS_LARGAS com o motivo.",
+        "Se a rolagem for o CONTEÚDO (tabela larga, quadro kanban), acrescente o " +
+        "arquivo a ROLAGEM_DECLARADA com o motivo.",
     ).toEqual([]);
   });
 
@@ -75,7 +85,7 @@ describe("navegação e filtro não rolam de lado", () => {
     // Exceção declarada que deixou de existir é comentário mentindo sobre o
     // código — o mesmo cuidado que `RESERVADOS` recebeu.
     const presentes = new Set(encontrados.map((a) => path.relative(RAIZ, a).split(path.sep).join("/")));
-    const orfas = TABELAS_LARGAS.filter((t) => !presentes.has(t));
-    expect(orfas, "Estes arquivos não rolam mais; tire-os de TABELAS_LARGAS.").toEqual([]);
+    const orfas = ROLAGEM_DECLARADA.filter((t) => !presentes.has(t));
+    expect(orfas, "Estes arquivos não rolam mais; tire-os de ROLAGEM_DECLARADA.").toEqual([]);
   });
 });

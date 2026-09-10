@@ -33,7 +33,10 @@ export const ETIQUETA_ETAPA: Record<EtapaFunil, string> = {
   visita_agendada: "bg-etapa-visita-lavado text-etapa-visita border border-etapa-visita-linha",
   documentacao:
     "bg-etapa-doc-lavado text-etapa-doc border border-etapa-doc-linha font-semibold",
-  fechado: "bg-etapa-fechado-lavado text-etapa-fechado border border-etapa-fechado-linha",
+  // Sólido também: entrada e vitória são os dois extremos do caminho, e são
+  // os únicos momentos em que a etiqueta grita. O meio do funil é lavado —
+  // se tudo gritasse, nada gritaria.
+  fechado: "bg-etapa-fechado text-sobre-cor",
   perdido: "bg-etapa-perdido-lavado text-etapa-perdido border border-etapa-perdido-linha",
 };
 

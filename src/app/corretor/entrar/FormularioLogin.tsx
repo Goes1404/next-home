@@ -3,8 +3,10 @@
 import { useActionState } from "react";
 import { entrar } from "@/app/corretor/actions";
 
+// Campo alto e texto em tamanho de leitura: este formulário é digitado no
+// celular, quase sempre com uma senha temporária vinda de outro aplicativo.
 const CAMPO_BASE =
-  "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3 text-titulo placeholder:text-tenue outline-none transition-colors focus:border-acento";
+  "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3.5 text-fluid-base text-titulo placeholder:text-tenue outline-none transition-colors focus:border-acento";
 
 export function FormularioLogin() {
   const [estado, action, pendente] = useActionState(entrar, undefined);
@@ -37,7 +39,7 @@ export function FormularioLogin() {
       <button
         type="submit"
         disabled={pendente}
-        className="w-full rounded-full bg-acento px-7 py-3.5 text-sm font-medium text-sobre-cor transition-colors hover:bg-acento-hover disabled:opacity-60"
+        className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-base w-full rounded-full px-7 py-3.5 font-semibold transition-colors disabled:opacity-60"
       >
         {pendente ? "Entrando…" : "Entrar"}
       </button>

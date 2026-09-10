@@ -223,6 +223,8 @@
    * está apertado — entre `perigo` (17) e `alerta` (66) sobram 49° —, então
    * módulo novo entra pelo lado frio ou nasce indistinguível de um estado.
    */
+
+
   --color-mod-marketing: light-dark(oklch(0.5 0.13 205), oklch(0.74 0.13 205));
   --color-mod-marketing-hover: light-dark(oklch(0.43 0.13 205), oklch(0.82 0.12 205));
   --color-mod-marketing-suave: light-dark(oklch(0.45 0.13 205), oklch(0.86 0.1 205));
@@ -341,6 +343,28 @@
    * círculo para a cor de MÓDULO, que responde outra pergunta ("onde estou")
    * e nunca ocupa o mesmo lugar na tela.
    *
+   * REVISÃO 09/09/2026 — "não está bonito nem chamativo", e estava certo. A
+   * rampa fazia o CONTRÁRIO do que o parágrafo acima promete: no tema claro a
+   * luz caía de 0.56 a 0.32 e o croma de 0.18 a 0.12, ou seja, quanto mais
+   * perto do dinheiro, mais escura e mais apagada a etapa — documentação
+   * virava petróleo sujo e, no escuro, quase branco (L 0.91). E o `lavado` a
+   * 0.10 deixava todo chip cinza: a cor vivia só na tinta minúscula do texto.
+   *
+   * O que a revisão NÃO conseguiu, e vale registrar para ninguém tentar de
+   * novo: fazer o croma SUBIR até o fim da rampa. Em sRGB o ciano tem teto de
+   * croma perto de 0.13 — a queda de croma não era descuido, era a GAMA. Uma
+   * rampa que "esquenta" de verdade precisaria sair do arco frio, e lá fora
+   * ela esbarra em `alerta` (66°), que aparece no MESMO cartão ("parado há N
+   * dias"): etiqueta cor de alerta ao lado de texto de alerta é pior que
+   * etiqueta apagada.
+   *
+   * Então a leitura ordinal passou a vir de LUZ, e a presença de PESO:
+   * luminosidade agora sobe monotonicamente no escuro (0.68 → 0.875) e desce
+   * de forma suave e controlada no claro (0.56 → 0.395, em vez de despencar até 0.32);
+   * `lavado` foi de 0.10/0.16 para 0.16/0.22 (chip com cor, não cinza) e a
+   * `linha` de 0.28/0.36 para 0.45/0.50, que é o que a borda da coluna do
+   * quadro precisava para existir de longe.
+   *
    * `light-dark()` em vez de repetir os valores nos três blocos de tema: a
    * migration 0052 declarou ciano e laranja no bloco base e em
    * `[data-tema=claro]` e esqueceu o `@media (prefers-color-scheme: light)`,
@@ -350,34 +374,36 @@
    */
 
   /* Passo 1 — chegou agora. */
-  --color-etapa-novo: light-dark(oklch(0.56 0.18 265), oklch(0.64 0.16 265));
-  --color-etapa-novo-lavado: light-dark(oklch(0.56 0.18 265 / 0.1), oklch(0.64 0.16 265 / 0.16));
-  --color-etapa-novo-linha: light-dark(oklch(0.56 0.18 265 / 0.28), oklch(0.64 0.16 265 / 0.36));
+  --color-etapa-novo: light-dark(oklch(0.56 0.19 270), oklch(0.68 0.17 270));
+  --color-etapa-novo-lavado: light-dark(oklch(0.56 0.19 270 / 0.16), oklch(0.68 0.17 270 / 0.22));
+  --color-etapa-novo-linha: light-dark(oklch(0.56 0.19 270 / 0.45), oklch(0.68 0.17 270 / 0.5));
 
   /* Passo 2 — a conversa começou. */
-  --color-etapa-contato: light-dark(oklch(0.48 0.17 240), oklch(0.73 0.15 240));
-  --color-etapa-contato-lavado: light-dark(oklch(0.48 0.17 240 / 0.1), oklch(0.73 0.15 240 / 0.16));
-  --color-etapa-contato-linha: light-dark(oklch(0.48 0.17 240 / 0.28), oklch(0.73 0.15 240 / 0.36));
+  --color-etapa-contato: light-dark(oklch(0.485 0.175 244), oklch(0.745 0.155 244));
+  --color-etapa-contato-lavado: light-dark(oklch(0.485 0.175 244 / 0.16), oklch(0.745 0.155 244 / 0.22));
+  --color-etapa-contato-linha: light-dark(oklch(0.485 0.175 244 / 0.45), oklch(0.745 0.155 244 / 0.5));
 
   /* Passo 3 — há compromisso marcado. */
-  --color-etapa-visita: light-dark(oklch(0.4 0.15 213), oklch(0.82 0.14 213));
-  --color-etapa-visita-lavado: light-dark(oklch(0.4 0.15 213 / 0.1), oklch(0.82 0.14 213 / 0.16));
-  --color-etapa-visita-linha: light-dark(oklch(0.4 0.15 213 / 0.28), oklch(0.82 0.14 213 / 0.36));
+  --color-etapa-visita: light-dark(oklch(0.45 0.15 214), oklch(0.81 0.145 214));
+  --color-etapa-visita-lavado: light-dark(oklch(0.45 0.15 214 / 0.16), oklch(0.81 0.145 214 / 0.22));
+  --color-etapa-visita-linha: light-dark(oklch(0.45 0.15 214 / 0.45), oklch(0.81 0.145 214 / 0.5));
 
   /* Passo 4 — o negócio está na mesa. */
-  --color-etapa-doc: light-dark(oklch(0.32 0.12 188), oklch(0.91 0.13 188));
-  --color-etapa-doc-lavado: light-dark(oklch(0.32 0.12 188 / 0.1), oklch(0.91 0.13 188 / 0.16));
-  --color-etapa-doc-linha: light-dark(oklch(0.32 0.12 188 / 0.28), oklch(0.91 0.13 188 / 0.36));
+  --color-etapa-doc: light-dark(oklch(0.385 0.125 192), oklch(0.875 0.135 192));
+  --color-etapa-doc-lavado: light-dark(oklch(0.385 0.125 192 / 0.16), oklch(0.875 0.135 192 / 0.22));
+  --color-etapa-doc-linha: light-dark(oklch(0.385 0.125 192 / 0.45), oklch(0.875 0.135 192 / 0.5));
 
-  /* Terminal: deu certo. Sai da rampa porque não é passo, é desfecho. */
-  --color-etapa-fechado: light-dark(oklch(0.46 0.14 155), oklch(0.82 0.16 155));
-  --color-etapa-fechado-lavado: light-dark(oklch(0.46 0.14 155 / 0.1), oklch(0.82 0.16 155 / 0.16));
-  --color-etapa-fechado-linha: light-dark(oklch(0.46 0.14 155 / 0.28), oklch(0.82 0.16 155 / 0.36));
+  /* Terminal: deu certo. Sai da rampa porque não é passo, é desfecho — e é o
+     verde mais vivo do painel, porque é a única etapa que se comemora. */
+  --color-etapa-fechado: light-dark(oklch(0.5 0.17 152), oklch(0.8 0.19 152));
+  --color-etapa-fechado-lavado: light-dark(oklch(0.5 0.17 152 / 0.16), oklch(0.8 0.19 152 / 0.22));
+  --color-etapa-fechado-linha: light-dark(oklch(0.5 0.17 152 / 0.45), oklch(0.8 0.19 152 / 0.5));
 
-  /* Terminal: saiu do caminho. Sem croma — não compete com quem está vivo. */
+  /* Terminal: saiu do caminho. Sem croma — não compete com quem está vivo, e
+     por isso é o único que NÃO acompanha o ganho de presença dos outros. */
   --color-etapa-perdido: light-dark(oklch(0.55 0.01 275), oklch(0.62 0.012 275));
-  --color-etapa-perdido-lavado: light-dark(oklch(0.55 0.01 275 / 0.1), oklch(0.62 0.012 275 / 0.16));
-  --color-etapa-perdido-linha: light-dark(oklch(0.55 0.01 275 / 0.28), oklch(0.62 0.012 275 / 0.36));
+  --color-etapa-perdido-lavado: light-dark(oklch(0.55 0.01 275 / 0.09), oklch(0.62 0.012 275 / 0.14));
+  --color-etapa-perdido-linha: light-dark(oklch(0.55 0.01 275 / 0.3), oklch(0.62 0.012 275 / 0.36));
 
   /* Tipografia */
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
