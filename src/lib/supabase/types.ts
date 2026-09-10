@@ -764,6 +764,7 @@ export type Database = {
           anexos_bloqueados: number | null
           anexos_enviados: number | null
           avaliacao: "boa" | "ruim" | null
+          contexto: Json | null
           conversa_id: string | null
           corretor_id: string | null
           created_at: string
@@ -785,6 +786,7 @@ export type Database = {
           anexos_bloqueados?: number | null
           anexos_enviados?: number | null
           avaliacao?: "boa" | "ruim" | null
+          contexto?: Json | null
           conversa_id?: string | null
           corretor_id?: string | null
           created_at?: string
@@ -806,6 +808,7 @@ export type Database = {
           anexos_bloqueados?: number | null
           anexos_enviados?: number | null
           avaliacao?: "boa" | "ruim" | null
+          contexto?: Json | null
           conversa_id?: string | null
           corretor_id?: string | null
           created_at?: string
