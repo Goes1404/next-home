@@ -113,6 +113,22 @@ function somarDias(dia: string, quantos: number): string {
  *  que um cliente aceita — "daqui a três semanas" ninguém marca. */
 const DIAS_DE_HORIZONTE = 14;
 
+/**
+ * Quantos horários por DIA, e por que dois.
+ *
+ * Medido em 10/09/2026 (conversa 2cff42f6): a grade real da corretora é
+ * 9h-22h TODOS OS DIAS. Como a lista pegava os seis primeiros horários em
+ * ordem cronológica, ela não chegava nem ao fim do primeiro dia — e o bloco
+ * do prompt afirma "só estes existem, é proibido inventar outro". O cliente
+ * pediu "amanhã" e depois "segunda"; nenhum dos dois estava na lista. A IA
+ * teve de escolher entre desobedecer o bloco e recusar o cliente, e fez as
+ * duas coisas em turnos diferentes.
+ *
+ * Um por dia não dá escolha de horário; três viram lista. Dois, um de manhã
+ * e um mais tarde, é como uma pessoa oferece.
+ */
+const POR_DIA = 2;
+
 /** Antecedência mínima: ninguém marca visita para daqui a dez minutos. */
 const HORAS_DE_ANTECEDENCIA = 3;
 
@@ -132,19 +148,38 @@ export function proximosHorarios(params: {
 
   const horarios: HorarioDeVisita[] = [];
   const hoje = emSaoPaulo(params.agora).dia;
+  const teto = params.quantos ?? POR_DIA * 7;
 
-  for (let i = 0; i <= DIAS_DE_HORIZONTE; i++) {
+  for (let i = 0; i <= DIAS_DE_HORIZONTE && horarios.length < teto; i++) {
     const dia = somarDias(hoje, i);
     const faixa = porDia.get(new Date(`${dia}T12:00:00Z`).getUTCDay());
     if (!faixa) continue;
 
+    const livres: { quando: Date; hora: number }[] = [];
     for (let hora = faixa.horaInicio; hora < faixa.horaFim; hora++) {
       const quando = instanteEmSaoPaulo(dia, hora);
       if (quando < limite) continue;
       if (tomados.has(quando.toISOString())) continue;
+      livres.push({ quando, hora });
+    }
+    if (livres.length === 0) continue;
 
+    /*
+     * O primeiro livre e o do MEIO da faixa — não dois seguidos. Com uma
+     * grade de 9h às 22h, "9h ou 10h" não é escolha nenhuma; "9h ou 15h" é
+     * manhã ou tarde, que é a pergunta que o cliente sabe responder.
+     *
+     * `floor` e não `round` porque a faixa 9h-12h tem de continuar dando
+     * 9h e 10h — é o caso do teste que já existia.
+     */
+    const meio = Math.floor((faixa.horaInicio + faixa.horaFim) / 2);
+    const escolhidos = [livres[0]];
+    const daTarde = livres.find((l) => l.hora >= meio && l.hora !== livres[0].hora);
+    if (daTarde) escolhidos.push(daTarde);
+
+    for (const { quando, hora } of escolhidos.slice(0, POR_DIA)) {
       horarios.push({ quando, rotulo: rotuloDe(quando, hora) });
-      if (horarios.length >= (params.quantos ?? 6)) return horarios;
+      if (horarios.length >= teto) break;
     }
   }
 
@@ -162,9 +197,20 @@ export function proximosHorarios(params: {
 export function blocoDeHorarios(horarios: readonly HorarioDeVisita[]): string {
   if (horarios.length === 0) return "";
 
+  /*
+   * Agrupado por DIA, e não uma lista corrida: com a semana inteira à vista
+   * são quatorze linhas, e quatorze linhas soltas ninguém lê — nem modelo.
+   * Agrupado, a pergunta "que dia fica melhor?" tem a resposta na cara.
+   */
+  const porDia = new Map<string, string[]>();
+  for (const h of horarios) {
+    const [dia, hora] = h.rotulo.split(" às ");
+    porDia.set(dia, [...(porDia.get(dia) ?? []), hora]);
+  }
+
   return [
     "HORÁRIOS REAIS DE VISITA — só estes existem:",
-    ...horarios.map((h) => `- ${h.rotulo}`),
+    ...[...porDia].map(([dia, horas]) => `- ${dia}: ${horas.join(", ")}`),
     "",
     "Ofereça no máximo DOIS por vez, e SEMPRE desta lista.",
     "É proibido inventar outro horário: o que não está aqui, o corretor não pode receber — o cliente aceitaria e alguém teria de desmarcar, gastando a única coisa que a conversa conquistou.",

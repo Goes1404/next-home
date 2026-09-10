@@ -42,6 +42,7 @@ function estado(over: Partial<EstadoDaConversa> = {}): EstadoDaConversa {
     nomeDoFoco: null,
     visitaConfirmada: false,
     perguntaSemDado: null,
+    agendamento: { dia: null, hora: null, pediuVisita: false },
     ...over,
   };
 }
@@ -648,5 +649,72 @@ describe("a regressão da v32: a resposta do cliente conta mesmo sem casar no re
       imovelEmFoco: null, catalogo: [IMOVEL],
     });
     expect(e.respondidos.has("regiao")).toBe(false);
+  });
+});
+
+/**
+ * A conversa 2cff42f6 (10/09/2026), relatada assim: "quando eu falo que
+ * consigo tal horário ele marca em outro, e quando falo que consigo segunda,
+ * ela me pergunta novamente se eu não consigo outro dia".
+ *
+ * Passada pelo planner, ela mostrou o buraco: quatro falas de agendamento
+ * caíram em `perguntar` e `devolver_escolha` — a IA perguntando de novo o que
+ * ele acabou de responder. Foram cinco turnos para marcar o que ele disse na
+ * primeira frase.
+ */
+describe("quem está marcando já passou do funil", () => {
+  const convite = "Quer conhecer o decorado do Vista AlphaGran?";
+
+  const jogadaPara = (mensagemAtual: string, historico: Fala[] = []) =>
+    planejarJogada(
+      estadoDaConversa({ historico, mensagemAtual, imovelEmFoco: null, catalogo: [IMOVEL] }),
+    );
+
+  it("pedir visita na primeira frase não vira pergunta de estágio", () => {
+    expect(jogadaPara("Quero marcar uma visita no amanhã")).toEqual({
+      tipo: "agendar",
+      dia: "amanhã",
+      hora: null,
+    });
+  });
+
+  it("a contraproposta de dia é agendamento, com o dia NOVO", () => {
+    expect(jogadaPara("Sábado eu não consigo, pode ser segunda?")).toEqual({
+      tipo: "agendar",
+      dia: "segunda-feira",
+      hora: null,
+    });
+  });
+
+  it("dia solto e hora solta param de cair em devolver_escolha", () => {
+    expect(jogadaPara("Segunda feira").tipo).toBe("agendar");
+    expect(jogadaPara("9h")).toEqual({ tipo: "agendar", dia: null, hora: 9 });
+  });
+
+  it("'sim' depois do convite é aceite, não conversa fiada", () => {
+    expect(jogadaPara("Sim", [bot(convite)]).tipo).toBe("agendar");
+  });
+
+  it("mas resposta de FUNIL que começa com 'pode ser' continua sendo funil", () => {
+    // "pode ser na planta" casa em ACEITE pelo "pode ser", e é resposta de
+    // estágio. Sem esta guarda, todo o funil viraria agendamento.
+    expect(jogadaPara("pode ser na planta", [bot(convite)]).tipo).not.toBe("agendar");
+  });
+
+  it("o bloco proíbe qualificar e nomeia o que ele já deu", () => {
+    const texto = blocoDaJogada(
+      { tipo: "agendar", dia: "segunda-feira", hora: 9 },
+      { nomeDoFoco: "Vista AlphaGran" },
+    );
+    expect(texto).toContain("segunda-feira às 9h");
+    expect(texto).toContain("NENHUMA pergunta de qualificação");
+  });
+
+  it("com o dia só, manda oferecer os horários DAQUELE dia", () => {
+    const texto = blocoDaJogada(
+      { tipo: "agendar", dia: "segunda-feira", hora: null },
+      { nomeDoFoco: null },
+    );
+    expect(texto).toContain("NÃO pergunte o dia de novo");
   });
 });

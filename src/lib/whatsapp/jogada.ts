@@ -5,6 +5,7 @@ import { dadoPedido, formatarReais, type DadoPedido } from "./dadoPedido";
 import { perguntaIgnorada, type PerguntaIgnorada } from "./perguntaIgnorada";
 import { horariosJaOferecidos } from "./ofertasDeVisita";
 import { capacidadeEstaPendente } from "./funilQualificacao";
+import { estaMarcando, pedidoDeAgendamento, type PedidoDeAgendamento } from "./pedidoDeAgendamento";
 
 /**
  * A JOGADA: o que esta mensagem vai fazer, decidido ANTES de escrever.
@@ -55,6 +56,7 @@ export type Jogada =
   | { tipo: "convidar_visita" }
   | { tipo: "propor_horario"; jaOfereceu: number }
   | { tipo: "confirmar_visita"; oQueEleDisse: string }
+  | { tipo: "agendar"; dia: string | null; hora: number | null }
   | { tipo: "tratar_objecao"; oQueEleDisse: string }
   | { tipo: "indicar_alternativa"; slug: string; nome: string; piso: number | null; emVezDe: string | null }
   | { tipo: "deixar_porta_aberta"; oQueEleDisse: string }
@@ -99,6 +101,13 @@ export interface EstadoDaConversa {
   aceitouHorario: boolean;
   /** A fala dele, para o bloco confirmar EXATAMENTE o que ele escolheu. */
   oQueEleDisse: string;
+  /**
+   * O cliente está MARCANDO, e o que ele já entregou de dia e hora.
+   *
+   * Sem isto, "Segunda feira" e "9h" caíam em `devolver_escolha` — a IA
+   * perguntando de novo o que ele acabou de responder (conversa 2cff42f6).
+   */
+  agendamento: PedidoDeAgendamento;
 }
 
 /** A leitura de "renda" e "estágio" nas falas, no vocabulário do detector de assuntos. */
@@ -378,6 +387,33 @@ export function estadoDaConversa(params: {
     /\b(visita|visitar|conhecer|decorado|apresentar|te mostr)/i.test(t),
   );
 
+  /*
+   * ACEITE DO CONVITE: a última fala do bot convidou ("quer conhecer o
+   * decorado?") e ele respondeu "sim". Um "sim" solto não casa em nenhum
+   * regex de agendamento, e na conversa 2cff42f6 ele virou uma pergunta de
+   * estágio — a IA convidou, ele aceitou, e ela mudou de assunto.
+   *
+   * Mesma forma do `aceitouHorario` logo acima: exige as DUAS metades, e a
+   * negação vence ("não, ainda não quero conhecer").
+   */
+  const agendamento = pedidoDeAgendamento(mensagemAtual);
+  const ultimaDoBotConvidou = /\b(visita|visitar|conhecer|decorado|te mostr)/i.test(ultimaDoBot);
+  /*
+   * A terceira metade, que a primeira versão esqueceu: a fala dele não pode
+   * trazer assunto do FUNIL. "pode ser na planta" casa em `ACEITE` por causa
+   * do "pode ser" — e é resposta de ESTÁGIO, não aceite de convite. Sem esta
+   * guarda, toda resposta de funil que comece com "pode ser" viraria
+   * agendamento, e o teste que já existia pegou na primeira rodada.
+   */
+  if (
+    ultimaDoBotConvidou &&
+    !NEGACAO.test(nAtual) &&
+    ACEITE.test(nAtual) &&
+    assuntosDoFunil(mensagemAtual).length === 0
+  ) {
+    agendamento.pediuVisita = true;
+  }
+
   return {
     respondidos,
     perguntadosNaUltima,
@@ -402,6 +438,7 @@ export function estadoDaConversa(params: {
     falasDoCliente: falasCliente.length + (mensagemAtual.trim() ? 1 : 0),
     aceitouHorario,
     oQueEleDisse: mensagemAtual.trim(),
+    agendamento,
     vezesPerguntado,
     /*
      * "Que horas?" / "quando dá?" é pedido de HORÁRIO, e no caminho feliz
@@ -458,6 +495,26 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
    * já marcou.
    */
   if (estado.visitaConfirmada) return { tipo: "encerrar_confirmado" };
+
+  /*
+   * ELE ESTÁ MARCANDO. Ganha do funil, da objeção e da saída suave — de
+   * tudo, menos de confirmar o que já foi aceito e de responder uma
+   * pergunta em aberto.
+   *
+   * A ordem da casa manda o horário concreto vir depois da qualificação, e
+   * isso vale quando é a IA que puxa. Quando é o CLIENTE que puxa,
+   * interromper para perguntar "pronto ou na planta?" é perder a visita que
+   * ele estava entregando — foi exatamente o que aconteceu na conversa
+   * 2cff42f6, em que "Quero marcar uma visita no amanhã" foi respondido com
+   * uma pergunta de estágio e ele levou cinco turnos para marcar.
+   */
+  if (estaMarcando(estado.agendamento)) {
+    return {
+      tipo: "agendar",
+      dia: estado.agendamento.dia,
+      hora: estado.agendamento.hora,
+    };
+  }
 
   /*
    * Perguntou algo que não temos (desconto, negociar, preço final) pela
@@ -611,6 +668,42 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
         `Ele disse: "${jogada.oQueEleDisse}". Em UMA frase, confirme o dia e o horário exatos que ele escolheu, e diga o que vem a seguir (o corretor confirma o endereço / te chamo na véspera).`,
         "Preencha \"visitaProposta\" com a data da tabela CALENDÁRIO e \"confirmadaPeloCliente\": true. Nenhuma pergunta nova, nenhum outro horário — ele já escolheu.",
       ].join("\n");
+    case "agendar": {
+      /*
+       * O bloco muda com o que ele JÁ deu. Repetir a pergunta que ele acabou
+       * de responder é o defeito que este caminho existe para matar: na
+       * conversa 2cff42f6 ele disse "9h" e ouviu "qual dia da semana fica
+       * melhor?", disse "Segunda feira" e ouviu "prefere outro horário na
+       * segunda?".
+       */
+      const passos: string[] = [`${cabecalho}: fechar a visita. Ele está marcando AGORA.`];
+
+      if (jogada.dia && jogada.hora !== null) {
+        passos.push(
+          `Ele escolheu ${jogada.dia} às ${jogada.hora}h. Confirme ESSE dia e ESSA hora, se estiverem em HORÁRIOS REAIS DE VISITA. Se não estiverem, diga o mais próximo que existe naquele dia — nunca outro dia.`,
+          'Preencha "visitaProposta" com a data da tabela CALENDÁRIO e "confirmadaPeloCliente": true.',
+        );
+      } else if (jogada.dia) {
+        passos.push(
+          `Ele escolheu ${jogada.dia}. Ofereça os horários DESSE DIA que estão em HORÁRIOS REAIS DE VISITA — no máximo dois.`,
+          "NÃO pergunte o dia de novo, e não ofereça outro dia: ele já respondeu.",
+        );
+      } else if (jogada.hora !== null) {
+        passos.push(
+          `Ele escolheu ${jogada.hora}h. Ofereça esse horário no primeiro dia de HORÁRIOS REAIS DE VISITA que o tenha.`,
+          "NÃO pergunte a hora de novo: ele já respondeu.",
+        );
+      } else {
+        passos.push(
+          "Ofereça DOIS horários de HORÁRIOS REAIS DE VISITA, em dias diferentes, e peça para ele escolher.",
+        );
+      }
+
+      passos.push(
+        "NENHUMA pergunta de qualificação nesta mensagem (região, estágio, dormitórios, valor). Quem está marcando já passou disso — perguntar agora é perder a visita que ele estava entregando.",
+      );
+      return passos.join("\n");
+    }
     case "tratar_objecao":
       return [
         `${cabecalho}: tratar a OBJEÇÃO de preço — ele disse "${jogada.oQueEleDisse}".`,
