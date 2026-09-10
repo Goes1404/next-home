@@ -10,10 +10,13 @@ codigo:
   - src/lib/credito/
   - src/app/corretor/(painel)/consultor/
   - src/app/corretor/(painel)/admin/credito/
-  - supabase/migrations/0101_consultor_conversas.sql
-  - supabase/migrations/0102_parametros_credito.sql
+  - supabase/migrations/0102_consultor_conversas.sql
+  - supabase/migrations/0103_parametros_credito.sql
+  - supabase/migrations/0104_telemetria_do_consultor.sql
+  - scripts/observatorioConsultor.ts
+  - scripts/eval/casosDoConsultor.ts
 created: 2026-09-09
-updated: 2026-09-09
+updated: 2026-09-10
 fonte: pedido do usuário ("um assistente de produtos, especialista em negócios imobiliários") + sonda com API
 summary: Chat no painel que responde as duas perguntas que o corretor faz todo dia — qual imóvel serve e se fecha. O catálogo inteiro entra no prompt COM preço; a conta é de código; e o guardrail cortava a frase certa porque não entendia "350 mil".
 ---
@@ -96,6 +99,10 @@ Emprestar a cor do domínio é honesto, e já há precedente do inverso:
   (`MODULE_NOT_FOUND` no export). Dois `next build` no mesmo `.next`: um
   apaga o que o export worker do outro tenta carregar. Diagnóstico: comparar
   o mtime de `.next/BUILD_ID` com o horário do seu build.
+- **As migrations foram RENUMERADAS** (0101→0102, 0102→0103, 0103→0104): a
+  branch de produção já tinha uma 0101. Colisão de número entre branches é
+  pior que buraco — só se revelaria no merge, quando o número, que é a única
+  coisa que define a ordem, já estaria mentindo.
 - **Script Python que escreve TypeScript transforma `\b` em backspace.** A
   regex virou `/<BS>mil<BS>/` e nunca casou — dois testes falharam de formas
   opostas. `cat -A` foi o que mostrou.
@@ -110,6 +117,63 @@ vazias barrados no banco).
 
 De passagem: `marketing` entrou na lista que `verificarPaleta.mjs` checa —
 estava de fora desde que o módulo existe.
+
+## A etapa 5: por que ela não rodava, e o que destravou (10/09)
+
+**O diagnóstico estava errado.** Eu disse que faltavam transcrições. Faltava
+antes disso: o consultor **rodava sem deixar linha**. `ia_interacoes.origem`
+nem aceitava `'consultor'` (0104), então não dava para saber se foi usado,
+quanto custou, nem quantas vezes o guardrail cortou — e "ninguém usou" ficava
+indistinguível de "usaram e estava quebrado". Sétima vez que esta base tropeça
+na família "construído e nunca ligado", e a primeira em que o zero seria
+INVISÍVEL. Ver [[dado-gravado-e-nao-exibido]].
+
+Três degraus, nesta ordem, porque cada um destrava o seguinte:
+
+1. **Rastro** (0104 + `npm run observatorio:consultor`, zero LLM). Responde a
+   pergunta que vem ANTES da análise de erro: existe material? Hoje diz
+   "nenhum turno registrado" com todas as letras.
+2. **Tráfego, mudando o LUGAR.** O consultor é a sétima tela do menu, e esta
+   base já mediu que ferramenta atrás de um clique extra não é usada. Agora
+   ele fica a um toque: ícone no cabeçalho do Live Chat levando a última fala
+   do CLIENTE, e um "com isso, que imóvel serve?" na ficha do lead, com a
+   pergunta já montada da qualificação (`perguntaDoLead.ts`, que devolve
+   `null` com ficha vazia — botão que leva a lugar nenhum é pior que a
+   ausência dele). Medido com o CSS de produção: cabeçalho sem rolagem lateral
+   em 320/360/390, alvos de 44px.
+3. **Casos derivados do CATÁLOGO** (`npm run eval:consultor`).
+
+### O corpus de conversa real NÃO serve, e isso é LGPD
+
+A ideia era minerar as perguntas de cliente: 369 com "?" em 90 dias. Medido, o
+corpus está **contaminado** — o número da instância é o WhatsApp pessoal do
+corretor, e a maioria dessas perguntas é da vida privada dele. **Não existe
+filtro estrutural**: `cliente_conhecido` e `lead_id` são verdade para as duas
+(o webhook cria lead de quem escreve, 0026), e o recorte de atendimento deixa
+passar **367 das 369**. A conclusão já estava escrita em 01/09 e vale aqui:
+a diferença está no CONTEÚDO, que é justamente o que não se quer inspecionar.
+Ver [[conversa-pessoal-do-corretor-no-banco]].
+
+Os 30 casos saem, então, das dimensões do nosso próprio dado — faixas do MCMV
+cadastradas, dormitórios que o catálogo tem, cidades onde há imóvel, estágios
+que existem — mais as bordas que esta base já pagou para aprender. Mede
+COBERTURA, e diz isso em voz alta.
+
+### O que a primeira rodada achou
+
+Cinco falhas, e quatro eram a MESMA: **quando o modelo conclui "não fecha",
+ele responde direto e pula a simulação**. E sem `simular`, os números que o
+corretor deu não entram nos permitidos do guardrail, então a frase que os
+repete leva corte — dois sintomas, uma causa.
+
+"Não fecha" é justamente onde o número mais importa: o corretor precisa saber
+QUANTO falta, porque é isso que decide entre pedir mais entrada e mostrar
+outro imóvel. A regra 3 passou a dizer isso (prompt **v2**).
+
+Duas rodadas da v2 deram 4 e 2 falhas contra 5 da v1 — mas a v1 tem UMA
+rodada, e pela régua de [[uma-rodada-nao-separa-sinal-de-ruido]] isso não é
+linha de base. O que moveu de forma legível é o mecanismo: "não simulou" caiu
+de 4 casos para 1-2, e a simulação passou a sair em 5-6 contra 3.
 
 ## O que ficou de fora
 

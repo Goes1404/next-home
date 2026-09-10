@@ -5070,3 +5070,37 @@ fecha?". Nota completa em `vault/10-notas/consultor-imobiliario-no-painel.md`.
 - **`anon` não lê `parametros_credito`, e isso foi provado por acidente**: a
   primeira sonda fora do Next levou 401 do próprio banco ao tentar ler a
   tabela com a chave publicável. Segurança conferida sem querer.
+
+## A etapa de qualidade do consultor: o diagnóstico estava errado (10/09/2026)
+
+- **"Faltam transcrições" era o sintoma; a causa era que o consultor NÃO
+  DEIXAVA RASTRO.** `ia_interacoes.origem` não aceitava `'consultor'`, então
+  cada turno rodava, custava dinheiro e não gravava linha. Antes de dizer que
+  falta dado para analisar, conferir se o caminho GRAVA — sétima vez desta
+  família aqui, e a primeira em que o zero seria invisível porque nem a tabela
+  conhecia a origem.
+- **O corpus de perguntas reais de cliente NÃO É UTILIZÁVEL, e é LGPD.** São
+  369 mensagens com "?" em 90 dias, e a maioria é da vida PRIVADA do corretor
+  — o número da instância é o WhatsApp pessoal dele. **Não há filtro
+  estrutural**: `cliente_conhecido` e `lead_id` são verdade para as conversas
+  pessoais também (o webhook cria lead de quem escreve, 0026), e o recorte de
+  atendimento deixa passar 367 das 369. Quem for minerar conversa para virar
+  corpus de eval nesta base vai levar conversa íntima junto.
+- **Conjunto de casos derivado do CATÁLOGO é o que sobra, e é honesto**
+  (`npm run eval:consultor`): faixas do MCMV cadastradas, dormitórios que
+  existem, cidades onde há imóvel, estágios reais, mais as bordas conhecidas.
+  Mede COBERTURA do nosso dado — não substitui análise de erro sobre uso real,
+  e o script diz isso na saída.
+- **O defeito que ele achou:** quando o modelo conclui "não fecha", ele
+  responde direto e **pula a simulação** — e sem `simular` os números que o
+  corretor deu não entram nos permitidos, então a frase que os repete leva
+  corte do guardrail. Dois sintomas, uma causa. "Não fecha" é justamente onde
+  o número mais importa: o corretor precisa saber QUANTO falta.
+- **`await import()` com alias do tsconfig NÃO resolve no tsx** — só os
+  imports de topo passam pelo resolvedor de paths. `Cannot find package '@/lib'`
+  num script que já importava `@/lib` estaticamente é isto.
+- **Duas sessões de agente no mesmo repositório também COMMITAM por cima.** Uma
+  renumerou as migrations do consultor (colisão de 0101 com a branch de
+  produção) e commitou trabalho meu que estava pendente. Depois de um merge
+  assim, conferir os OBJETOS no banco contra os arquivos — a lição de 06/09
+  vale nos dois sentidos.
