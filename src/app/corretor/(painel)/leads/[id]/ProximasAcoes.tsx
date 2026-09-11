@@ -129,7 +129,7 @@ export function ProximasAcoes({ leadId, tarefas }: { leadId: string; tarefas: Ta
           value={titulo}
           disabled={ocupado}
           onChange={(e) => setTitulo(e.target.value)}
-          placeholder="Retornar a ligação, enviar plantas…"
+          placeholder="Retornar a ligação…"
           className="text-fluid-sm border-linha-forte bg-campo text-corpo min-h-11 w-full rounded-lg border px-3 disabled:opacity-50"
         />
         <div className="flex flex-wrap gap-2">

@@ -48,7 +48,7 @@ export function ListaImoveisClient({ imoveis, artePorImovel = {} }: Props) {
             type="text"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por nome, bairro ou cidade..."
+            placeholder="Buscar imóvel"
             className="min-h-[48px] w-full rounded-2xl border border-linha-forte bg-campo px-4 pl-11 text-fluid-xs sm:text-fluid-sm text-titulo placeholder:text-tenue focus:border-acento focus:outline-none"
           />
           <svg

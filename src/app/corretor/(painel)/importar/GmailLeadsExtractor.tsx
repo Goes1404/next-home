@@ -314,7 +314,7 @@ export function GmailLeadsExtractor({
                     type="text"
                     value={assuntoEmail}
                     onChange={(e) => setAssuntoEmail(e.target.value)}
-                    placeholder="Ex: Novo lead interessado no Canvas..."
+                    placeholder="Ex: Novo lead no Canvas"
                     className="w-full rounded-xl border border-linha-forte bg-campo px-3.5 py-2 text-sm text-titulo outline-none focus:border-brand-400"
                   />
                 </div>

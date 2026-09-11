@@ -5950,3 +5950,37 @@ aprovada e parada — e cujo número (`0103`) já tinha sido tomado por
   2 e 4, escrever "2 a 4" oferece um imóvel de 3 que não existe), e ausência
   é silêncio — sem área cadastrada, a metade correspondente some, em vez de
   a interface inventar.
+
+## O placeholder cortava, e meu primeiro teto também cortava (11/09/2026)
+
+Relatado nos três chats do painel: "está cortando 'ex.: renda de 8 mil…'" e
+"nas partes de criar arte, vídeo está acontecendo igual".
+
+- **Placeholder de campo de UMA LINHA não quebra: o que não cabe some**, e
+  some cortado no meio da palavra. Os três chats nasceram com um exemplo
+  inteiro ali dentro (58, 53 e 42 caracteres), e a varredura achou mais sete
+  `<input>` iguais.
+- **Meu primeiro teto foi CHUTADO e continuava cortando.** Escrevi 32
+  caracteres olhando para 360px; medido no navegador com o CSS de produção, o
+  composer tem **136px úteis aos 320px** e `O que o cliente precisa?` mede
+  148px. A guarda passava e o defeito seguia na tela. Os números que valem:
+  composer **136px / 176px** (320 e 360) e input de largura inteira **234px /
+  274px** — daí os tetos de **20** e **32** caracteres. Contar caractere é
+  aproximação; o que corta é a LARGURA.
+- **O exemplo comprido tem lugar melhor**: os chips de `sugestoes` do
+  `ChatBase`, que quebram linha, mandam com um toque e ensinam o formato
+  mostrando a IA responder. O consultor não tinha nenhum e ganhou quatro.
+- **`textarea` com 2+ linhas fica fora da régua** — ali o placeholder quebra,
+  e o texto longo é o que ensina (a caixa de colar planilha do reajuste).
+- **O campo do chat passou a crescer com o texto** (até `max-h-32`): com
+  `rows={1}` fixo, escrever três linhas no celular era redigir às cegas.
+  Zerar a altura antes de ler `scrollHeight` é o que permite ENCOLHER de
+  volta — sem isso a caixa só cresce e apagar deixa um vão.
+- **O histórico de conversas não dizia QUANDO**, e `atualizadoEm` já vinha do
+  banco: `quandoCurto` ("agora / 14:32 / ontem / sex / 20 ago") cabe na coluna
+  de 14rem, que "há 3 dias" não cabe. No celular ele deixou de ser fileira de
+  pastilhas truncadas em `70vw` e virou lista com teto de 4 e "ver todas"; o ×
+  de apagar saiu de sempre-aceso para dois toques com confirmação.
+- **Na home saíram a faixa de números e os "três passos"**, a pedido. O ritmo
+  de curvas sobrevive porque as duas eram seções sem banda — conferido na
+  captura, não presumido.

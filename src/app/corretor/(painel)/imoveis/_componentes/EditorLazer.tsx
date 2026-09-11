@@ -88,7 +88,7 @@ export function EditorLazer({ lazerSelecionado, onToggle }: Props) {
             value={novoItem}
             onChange={(e) => setNovoItem(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdicionarCustom()}
-            placeholder="Outro diferencial (ex: Gerador full para 100% das unidades)..."
+            placeholder="Outro diferencial"
             className="min-h-[48px] flex-1 rounded-xl border border-linha-forte bg-campo px-4 text-fluid-xs text-titulo focus:border-acento focus:outline-none"
           />
           <button

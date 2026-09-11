@@ -288,7 +288,7 @@ export function ConversasClient({
                 type="search"
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
-                placeholder="Pesquisar ou começar uma nova conversa"
+                placeholder="Pesquisar conversa"
                 aria-label="Buscar conversa"
                 className="text-wa-texto placeholder:text-wa-meta min-w-0 flex-1 bg-transparent text-sm outline-none"
               />

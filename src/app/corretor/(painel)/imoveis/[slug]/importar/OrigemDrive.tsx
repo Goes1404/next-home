@@ -132,7 +132,7 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
             type="url"
             value={link}
             onChange={(e) => setLink(e.target.value)}
-            placeholder="https://drive.google.com/drive/folders/…"
+            placeholder="https://drive.google.com/…"
             className="flex-1 min-h-[48px] rounded-xl border border-linha bg-campo px-4 text-fluid-xs text-corpo"
           />
           <button

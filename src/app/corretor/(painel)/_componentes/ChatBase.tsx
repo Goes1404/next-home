@@ -57,6 +57,22 @@ export function ChatBase<M extends MensagemDeChat>({
   pendente: EnvioPendente | null;
   /** A IA está "digitando". */
   pensando: boolean;
+  /**
+   * O convite dentro do campo. **Até 20 caracteres**, e o guarda
+   * `naoCortaTexto.test.ts` cobra.
+   *
+   * O composer é a caixa mais ESTREITA do painel: numa tela de 320px ele
+   * perde ~100px para o clipe e o botão de enviar, e sobram 136px de texto
+   * — medido no navegador com o CSS de produção.
+   * Os três chats nasceram com um exemplo inteiro ali dentro ("Ex.: renda de
+   * 8 mil, quer 2 dorm em Barueri — o que serve?") e o corretor lia metade
+   * da frase, cortada no meio da palavra — o defeito que o dono do painel
+   * relatou em 11/09/2026.
+   *
+   * Placeholder de campo de uma linha não quebra: o que não cabe some. O
+   * exemplo longo tem lugar próprio, e melhor — os chips de `sugestoes`, que
+   * cabem em duas linhas, mandam com um toque e ensinam o formato.
+   */
   placeholder: string;
   /** O que aparece antes da primeira mensagem — o convite. */
   vazio: ReactNode;
@@ -114,7 +130,24 @@ export function ChatBase<M extends MensagemDeChat>({
   }
   const arquivoRef = useRef<HTMLInputElement>(null);
   const corpoRef = useRef<HTMLDivElement>(null);
+  const campoRef = useRef<HTMLTextAreaElement>(null);
   const presoNoFimRef = useRef(true);
+
+  /*
+   * O campo cresce com o texto, até o teto de `max-h-32` (8 linhas).
+   *
+   * Com `rows={1}` fixo, escrever três linhas no celular significava redigir
+   * às cegas: só a última ficava visível, e reler antes de mandar exigia
+   * rolar dentro de uma caixa de 44px. Zerar a altura antes de ler
+   * `scrollHeight` é o que permite ENCOLHER de volta — sem isso a caixa só
+   * cresce, e apagar o texto deixa um vão.
+   */
+  useEffect(() => {
+    const campo = campoRef.current;
+    if (!campo) return;
+    campo.style.height = "0px";
+    campo.style.height = `${campo.scrollHeight}px`;
+  }, [texto]);
 
   const ultimaId = mensagens.at(-1)?.id ?? pendente?.id ?? null;
 
@@ -299,6 +332,7 @@ export function ChatBase<M extends MensagemDeChat>({
           </>
         )}
         <textarea
+          ref={campoRef}
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) => {
@@ -310,7 +344,7 @@ export function ChatBase<M extends MensagemDeChat>({
           rows={1}
           placeholder={placeholder}
           aria-label="Sua mensagem"
-          className="border-linha bg-elevado text-corpo placeholder:text-tenue focus:border-linha-forte max-h-32 min-h-11 w-full resize-none rounded-2xl border px-4 py-2.5 text-sm outline-none"
+          className="border-linha bg-elevado text-corpo placeholder:text-tenue focus:border-acento-linha max-h-32 min-h-11 w-full min-w-0 resize-none overflow-y-auto rounded-2xl border px-4 py-2.5 text-sm transition-colors outline-none"
         />
         <button
           type="submit"

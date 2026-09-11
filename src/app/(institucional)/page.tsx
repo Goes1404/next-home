@@ -12,7 +12,6 @@ import { Camada } from "@/components/motion/Camada";
 import { ParallaxFundoHome } from "@/components/motion/ParallaxFundoHome";
 import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { Reveal } from "@/components/motion/Reveal";
-import { FaixaDeProva } from "@/components/institucional/FaixaDeProva";
 import { ScrollCue } from "@/components/home/ScrollCue";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
@@ -244,27 +243,6 @@ export default async function HomeInstitucional() {
             </section>
           )}
 
-          {/*
-            A FAIXA DE PROVA. Numa imobiliária a moeda é confiança, e a home
-            não trazia nenhum número verificável — só promessa em prosa.
-
-            Todos os quatro saem do banco nesta requisição (nenhuma consulta
-            nova). A régua está em `FaixaDeProva`, que a página Sobre também
-            usa — os mesmos números, a mesma peça.
-          */}
-          <div className="px-4 sm:px-8">
-            <div className="mx-auto w-full max-w-6xl">
-              <FaixaDeProva
-                numeros={[
-                  { valor: todos.length, rotulo: todos.length === 1 ? "imóvel no catálogo" : "imóveis no catálogo" },
-                  { valor: regioes.bairros.length, rotulo: "bairros atendidos" },
-                  { valor: regioes.cidades.length, rotulo: regioes.cidades.length === 1 ? "cidade" : "cidades" },
-                  { valor: corretores.length, rotulo: "com CRECI ativo" },
-                ]}
-              />
-            </div>
-          </div>
-
           {/* Regioes é compartilhado com o portfólio do corretor — a banda vem
               do embrulho, não de dentro do componente. */}
           <div className="secao-banda secao-curva secao-curva-fim mt-16 sm:mt-24">
@@ -350,70 +328,6 @@ export default async function HomeInstitucional() {
               </div>
             </section>
           )}
-
-          {/*
-            COMO FUNCIONA. A home explicava o que a Next Home tem (imóveis,
-            regiões, equipe) e nunca o que ACONTECE depois do clique — quem
-            chega pelo Google não sabe se vai cair num formulário, numa
-            ligação ou numa fila.
-
-            Numerado porque isto é de fato uma SEQUÊNCIA: um passo depende do
-            anterior. Numeração em conteúdo que não é sequência vira enfeite,
-            e é justamente onde ela costuma aparecer sem razão.
-
-            Os três passos descrevem o produto que existe hoje: o filtro do
-            herói, o WhatsApp direto (sem formulário, é a decisão de sempre
-            desta casa) e a visita marcada pela agenda do corretor.
-          */}
-          <section className="px-4 py-16 sm:px-8 sm:py-24">
-            <div className="mx-auto w-full max-w-6xl">
-              <p className="text-fluid-xs text-apoio mb-3">Três passos, sem formulário</p>
-              <TituloEditorial className="text-fluid-2xl text-titulo">
-                Do primeiro clique à visita
-              </TituloEditorial>
-
-              <ol className="mt-8 grid gap-4 sm:grid-cols-3">
-                {[
-                  {
-                    titulo: "Escolha o imóvel",
-                    texto:
-                      "Filtre por tipo, cidade e valor. Cada ficha traz fotos, plantas, lazer e o mapa da região.",
-                  },
-                  {
-                    titulo: "Fale no WhatsApp",
-                    texto:
-                      "Sem formulário e sem espera: o botão abre a conversa com um corretor da equipe, com CRECI.",
-                  },
-                  {
-                    titulo: "Visite",
-                    texto:
-                      "A gente marca no horário que o corretor de fato tem livre — e confirma a data com você.",
-                  },
-                ].map((passo, i) => (
-                  /* `as="li"` e não um `<li>` dentro do Reveal: o padrão dele
-                     é `div`, e `<ol><div><li>` é aninhamento inválido — o
-                     leitor de tela deixa de anunciar "lista de 3 itens", que é
-                     justamente o que a numeração está dizendo aos que enxergam. */
-                  <Reveal
-                    key={passo.titulo}
-                    as="li"
-                    delay={i * 0.1}
-                    from="baixo"
-                    className="border-linha bg-superficie/50 h-full rounded-2xl border p-5"
-                  >
-                    <span
-                      aria-hidden
-                      className="border-realce-linha bg-realce-lavado text-realce-suave font-display flex size-9 items-center justify-center rounded-full border text-sm font-bold tabular-nums"
-                    >
-                      {i + 1}
-                    </span>
-                    <h3 className="font-display text-titulo mt-4 text-lg">{passo.titulo}</h3>
-                    <p className="text-fluid-sm text-apoio mt-2 text-pretty">{passo.texto}</p>
-                  </Reveal>
-                ))}
-              </ol>
-            </div>
-          </section>
 
           {/* A porta do vendedor — única rota da home para /anunciar-imovel. */}
           <section className="px-4 py-16 sm:px-8 sm:py-24">

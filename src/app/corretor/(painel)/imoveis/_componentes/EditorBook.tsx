@@ -128,7 +128,7 @@ export function EditorBook({
             type="text"
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
-            placeholder="Ex: Book Oficial de Lançamento — Next Home"
+            placeholder="Ex: Book de Lançamento"
             className="min-h-[48px] w-full rounded-xl border border-linha-forte bg-campo px-4 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
           />
         </div>
@@ -231,7 +231,7 @@ export function EditorBook({
                 type="url"
                 value={linkManual}
                 onChange={(e) => setLinkManual(e.target.value)}
-                placeholder="https://meudrive.com/book-alphaville.pdf"
+                placeholder="https://exemplo.com/book.pdf"
                 className="min-h-[44px] flex-1 rounded-xl border border-linha-forte bg-superficie px-3 text-fluid-xs text-titulo focus:border-acento focus:outline-none"
               />
               <button

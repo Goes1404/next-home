@@ -214,7 +214,7 @@ export function ConfiguracaoIA({
               type="text"
               value={palavraChaveAtivacao}
               onChange={(e) => setPalavraChaveAtivacao(e.target.value)}
-              placeholder="ex: pode continuar, assume aí, sofia entra"
+              placeholder="ex: pode continuar, assume aí"
               className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-11 w-full rounded-xl border px-3.5 focus:outline-none"
             />
             <p className="text-fluid-xs text-apoio leading-snug">
@@ -259,7 +259,7 @@ export function ConfiguracaoIA({
               type="text"
               value={palavrasEntradaCliente}
               onChange={(e) => setPalavrasEntradaCliente(e.target.value)}
-              placeholder="ex: vim pelo anúncio, quero informações, vi no instagram"
+              placeholder="ex: vim pelo anúncio"
               className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-11 w-full rounded-xl border px-3.5 focus:outline-none"
             />
             <p className="text-fluid-xs text-apoio leading-snug">

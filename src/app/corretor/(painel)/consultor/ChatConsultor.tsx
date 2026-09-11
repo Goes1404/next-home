@@ -18,6 +18,20 @@ import {
   type EstadoDoChatConsultor,
 } from "./acoes";
 
+/*
+ * Os pedidos de verdade, no formato que funciona: quem é o cliente, quanto
+ * ganha, o que quer. Até 11/09/2026 o exemplo morava no placeholder — e no
+ * celular o campo cortava a frase no meio. Aqui ele cabe inteiro, quebra
+ * linha, e um toque manda: ver a IA responder ensina o formato melhor que
+ * qualquer instrução.
+ */
+const SUGESTOES = [
+  "Renda de 8 mil, 2 dorm em Barueri: o que serve?",
+  "Cliente tem 60 mil de entrada — até quanto ele fecha?",
+  "Simula o financiamento do imóvel mais barato do catálogo",
+  "Escreve a resposta pro cliente que sumiu depois da visita",
+] as const;
+
 /**
  * O consultor imobiliário, em forma de chat.
  *
@@ -105,7 +119,8 @@ export function ChatConsultor({
           mensagens={estado?.mensagens ?? []}
           pendente={pendente}
           pensando={pensando}
-          placeholder="Ex.: renda de 8 mil, quer 2 dorm em Barueri — o que serve?"
+          placeholder="O que você precisa?"
+          sugestoes={SUGESTOES}
           vazio={
             <>
               <p className="text-titulo font-medium">Pergunte como perguntaria a um gerente experiente.</p>

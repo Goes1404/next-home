@@ -180,7 +180,7 @@ export function ChatDeVideo({
           mensagens={estado?.mensagens ?? []}
           pendente={pendente}
           pensando={pensando}
-          placeholder='Ex.: "um story do Eternity, de lançamento"'
+          placeholder="Qual vídeo?"
           sugestoes={SUGESTOES}
           vazio={
             <>

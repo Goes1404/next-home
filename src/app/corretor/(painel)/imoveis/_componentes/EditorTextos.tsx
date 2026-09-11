@@ -129,7 +129,7 @@ export function EditorTextos({ dados, onChange, contexto }: Props) {
                     .filter(Boolean),
                 )
               }
-              placeholder="Ex: Dom Parque, Residencial Dom Parque"
+              placeholder="Ex: Dom Parque, Manacá"
               className="min-h-[48px] w-full rounded-xl border border-linha-forte bg-campo px-4 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
             />
             <p className="text-fluid-xs text-legenda">
@@ -155,7 +155,7 @@ export function EditorTextos({ dados, onChange, contexto }: Props) {
               type="text"
               value={dados.tagline}
               onChange={(e) => onChange("tagline", e.target.value)}
-              placeholder="Ex: O ápice do design contemporâneo no coração de Alphaville"
+              placeholder="Ex: O ápice do design"
               className="min-h-[48px] w-full rounded-xl border border-linha-forte bg-campo px-4 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
             />
           </div>
@@ -297,7 +297,7 @@ export function EditorTextos({ dados, onChange, contexto }: Props) {
               type="text"
               value={dados.bairro}
               onChange={(e) => onChange("bairro", e.target.value)}
-              placeholder="Ex: Alphaville, Tamboré, Green Valley"
+              placeholder="Ex: Alphaville, Tamboré"
               className="min-h-[48px] w-full rounded-xl border border-linha-forte bg-campo px-4 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
             />
           </div>
@@ -323,7 +323,7 @@ export function EditorTextos({ dados, onChange, contexto }: Props) {
               type="text"
               value={dados.endereco}
               onChange={(e) => onChange("endereco", e.target.value)}
-              placeholder="Av. Marcos Penteado de Ulhôa Rodrigues, 1000"
+              placeholder="Av. Marcos Penteado, 1000"
               className="min-h-[48px] w-full rounded-xl border border-linha-forte bg-campo px-4 text-fluid-sm text-titulo focus:border-acento focus:outline-none"
             />
           </div>

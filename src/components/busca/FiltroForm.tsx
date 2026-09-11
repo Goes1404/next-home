@@ -84,7 +84,7 @@ export function FiltroForm({
             type="search"
             name="busca"
             defaultValue={filtrosAtuais.busca ?? ""}
-            placeholder="Ex.: Vista AlphaGran, Dom Parque, Terra Alta…"
+            placeholder="Ex.: Vista AlphaGran…"
             maxLength={80}
             autoComplete="off"
             className={`${CAMPO} placeholder:text-tenue`}

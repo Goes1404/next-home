@@ -133,6 +133,56 @@ describe("o painel não corta nem apaga texto", () => {
     expect(erros, `whitespace-pre sem break-words: ${erros.join(", ")}`).toEqual([]);
   });
 
+  /*
+   * Placeholder de campo de UMA LINHA não quebra: o que não cabe some, e some
+   * cortado no meio da palavra.
+   *
+   * Relatado em 11/09/2026 pelo dono do painel, nos três chats (consultor,
+   * criar arte, criar vídeo) — todos com um exemplo inteiro dentro do campo
+   * ("Ex.: renda de 8 mil, quer 2 dorm em Barueri — o que serve?", 58
+   * caracteres). A varredura achou mais sete `<input>` na mesma situação.
+   *
+   * Os dois tetos foram MEDIDOS no navegador, com o CSS de produção, na tela
+   * mais estreita que este painel atende (320px) — não estimados:
+   *
+   *  - **composer de chat (20)**: o clipe e o botão de enviar levam ~100px, e
+   *    sobram **136px** de texto. A 14px isso dá ~21 caracteres; "O que o
+   *    cliente precisa?" mede 148px e ainda cortava com o teto de 32 que eu
+   *    tinha chutado antes de medir.
+   *  - **input comum (32)**: um campo de largura inteira tem **234px** úteis
+   *    aos 320px; o teto deixa ~30px de folga para quem divide a linha com
+   *    ícone de busca ou botão de "adicionar".
+   *
+   * Contar caracteres é aproximação — o que corta é a LARGURA. Ao criar campo
+   * novo em linha apertada, medir em vez de confiar no número.
+   *
+   * `textarea` com duas ou mais linhas fica de fora: ali o placeholder QUEBRA
+   * e o texto longo é justamente o que ensina o formato (a caixa de colar
+   * planilha do reajuste, o modelo de mensagem da campanha).
+   *
+   * O exemplo comprido não se perde: ele tem lugar melhor — os chips de
+   * `sugestoes` do `ChatBase`, que cabem em duas linhas, mandam com um toque
+   * e ensinam o formato vendo a IA responder.
+   */
+  it("placeholder de campo de uma linha cabe na tela do celular", () => {
+    const TETO = { ChatBase: 20, input: 32 } as const;
+    const erros = todos.flatMap((arq) => {
+      const fonte = fs.readFileSync(arq, "utf8");
+      const padrao = /placeholder=(?:"([^"]*)"|'([^']*)'|\{"([^"]*)"\})/g;
+      return [...fonte.matchAll(padrao)].flatMap((m) => {
+        const texto = m[1] ?? m[2] ?? m[3] ?? "";
+        const antes = fonte.slice(0, m.index);
+        // A tag que abre o elemento: é ela que diz se o campo tem uma linha.
+        const tag = fonte.slice(antes.lastIndexOf("<") + 1).match(/^[\w.]+/)?.[0] ?? "";
+        const teto = TETO[tag as keyof typeof TETO];
+        if (teto === undefined || texto.length <= teto) return [];
+        const linha = antes.split("\n").length;
+        return [`${relativo(arq)}:${linha} <${tag}> ${texto.length}/${teto}`];
+      });
+    });
+    expect(erros, `placeholder cortado no celular: ${erros.join(", ")}`).toEqual([]);
+  });
+
   it("não usa truncate em elemento inline sem largura para encolher", () => {
     const erros = todos.flatMap((arq) =>
       elementos(arq)

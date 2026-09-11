@@ -67,7 +67,7 @@ export function ListaLinks({
         type="search"
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
-        placeholder="Buscar por nome, bairro ou cidade…"
+        placeholder="Buscar imóvel"
         className={CAMPO}
       />
 

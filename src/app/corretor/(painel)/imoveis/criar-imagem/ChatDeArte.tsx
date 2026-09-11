@@ -243,7 +243,7 @@ export function ChatDeArte({
             mensagens={estado?.mensagens ?? []}
             pendente={pendente}
             pensando={pensando}
-            placeholder='Ex.: "fachada do Eternity ao pôr do sol, para o feed"'
+            placeholder="O que quer criar?"
             textoInicial={reaproveitado}
             /* Pedidos de VERDADE, no formato que funciona: o quê, de qual
                imóvel, para qual canal. Campo em branco não ensina formato;
