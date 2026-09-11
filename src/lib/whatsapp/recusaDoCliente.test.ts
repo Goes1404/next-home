@@ -82,3 +82,39 @@ describe("detectarRecusa", () => {
     expect(detectarRecusa("olha, no momento não tenho interesse")?.trecho).toContain("interesse");
   });
 });
+
+/**
+ * O "não" seco, e por que ele precisa de contexto.
+ *
+ * Achado pelo trace na PRIMEIRA execução, e é o turno que mais importa: ela
+ * acolhe o "não tenho interesse", pergunta o motivo, ele responde "não,
+ * obrigada" — e ela convidava para visita. Nenhum padrão casava, porque
+ * sozinha essa fala não é recusa: respondendo a "pronto ou na planta?", ela
+ * é só uma resposta. O que a torna recusa é o que veio antes.
+ */
+describe("o não seco só conta depois de uma recusa", () => {
+  const depois = { jaRecusouAntes: true };
+
+  it("sem contexto, um não seco é só uma resposta", () => {
+    expect(detectarRecusa("não")).toBeNull();
+    expect(detectarRecusa("não, obrigada")).toBeNull();
+    expect(detectarRecusa("obrigada")).toBeNull();
+  });
+
+  it("depois de ele já ter recusado, é a confirmação", () => {
+    expect(detectarRecusa("não", depois)?.familia).toBe("desinteresse");
+    expect(detectarRecusa("não, obrigada", depois)?.familia).toBe("desinteresse");
+    expect(detectarRecusa("já falei que não", depois)?.familia).toBe("desinteresse");
+    expect(detectarRecusa("nada disso", depois)?.familia).toBe("desinteresse");
+  });
+
+  /*
+   * E mesmo COM o contexto, fala com conteúdo continua sendo conversa: quem
+   * responde o motivo está conversando, e às vezes é aí que a venda volta.
+   */
+  it("resposta COM conteúdo não é confirmação de recusa", () => {
+    expect(detectarRecusa("foi o preço mesmo", depois)).toBeNull();
+    expect(detectarRecusa("não, é que eu queria em Alphaville", depois)).toBeNull();
+    expect(detectarRecusa("na verdade me manda o de 2 dorm", depois)).toBeNull();
+  });
+});

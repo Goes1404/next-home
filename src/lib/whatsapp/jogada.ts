@@ -61,10 +61,13 @@ export type Jogada =
   | { tipo: "indicar_alternativa"; slug: string; nome: string; piso: number | null; emVezDe: string | null }
   | { tipo: "deixar_porta_aberta"; oQueEleDisse: string }
   | { tipo: "encerrar_confirmado" }
+  | { tipo: "acolher_recusa"; familia: FamiliaDeRecusa; oQueEleDisse: string }
+  | { tipo: "encerrar_recusado"; familia: FamiliaDeRecusa }
   | { tipo: "devolver_escolha" };
 
 import type { Fala } from "./rajada";
 import { normalizar } from "./normalizarFala";
+import { detectarRecusa, type FamiliaDeRecusa, type Recusa } from "./recusaDoCliente";
 
 export interface EstadoDaConversa {
   /** Assuntos do funil que o cliente já cobriu (na fala ou no dossiê). */
@@ -109,6 +112,17 @@ export interface EstadoDaConversa {
    * perguntando de novo o que ele acabou de responder (conversa 2cff42f6).
    */
   agendamento: PedidoDeAgendamento;
+  /** O cliente está dizendo que NÃO quer — e de qual das três formas. */
+  recusa: Recusa | null;
+  /** Quantas vezes ele já recusou ANTES desta fala. */
+  recusasAnteriores: number;
+  /**
+   * Horas desde a última fala de qualquer um nesta conversa.
+   *
+   * Vem de FORA: este módulo não toca no relógio nem no banco, e é isso que
+   * deixa o eval medir o mesmo turno sem efeito sobre o mundo.
+   */
+  horasDesdeAUltimaFala: number;
 }
 
 /** A leitura de "renda" e "estágio" nas falas, no vocabulário do detector de assuntos. */
@@ -284,11 +298,30 @@ export function estadoDaConversa(params: {
   > | null;
   imovelEmFoco: Empreendimento | null;
   catalogo: readonly Empreendimento[];
+  /**
+   * Horas desde a última fala desta conversa. Opcional porque o eval e o
+   * playground não têm relógio de conversa — ausente vale 0, que é "agora",
+   * e nenhuma jogada de retomada dispara.
+   */
+  horasDesdeAUltimaFala?: number;
 }): EstadoDaConversa {
   const { historico, mensagemAtual, dossie } = params;
 
   const falasCliente = historico.filter((f) => f.remetente === "cliente").map((f) => f.texto);
   const falasBot = historico.filter((f) => f.remetente === "bot").map((f) => f.texto);
+
+  /*
+   * A recusa é lida da fala ATUAL; as anteriores contam quantas vezes ele já
+   * tinha dito não. Uma recusa é acolhida com uma pergunta; a segunda
+   * encerra — insistir depois de dois nãos é o que gera denúncia.
+   */
+  const recusasAnteriores = falasCliente.filter((f) => detectarRecusa(f) !== null).length;
+  /*
+   * O contexto muda o que "não" significa. Depois de ele já ter recusado, um
+   * "não, obrigada" é a confirmação; antes disso, é resposta a uma pergunta
+   * fechada do funil — e o funil é feito de perguntas fechadas.
+   */
+  const recusa = detectarRecusa(mensagemAtual, { jaRecusouAntes: recusasAnteriores > 0 });
 
   const respondidos = new Set<AssuntoDoFunil>();
   for (const texto of [...falasCliente, mensagemAtual]) {
@@ -434,6 +467,9 @@ export function estadoDaConversa(params: {
     aceitouHorario,
     oQueEleDisse: mensagemAtual.trim(),
     agendamento,
+    recusa,
+    recusasAnteriores,
+    horasDesdeAUltimaFala: params.horasDesdeAUltimaFala ?? 0,
     vezesPerguntado,
     /*
      * "Que horas?" / "quando dá?" é pedido de HORÁRIO, e no caminho feliz
@@ -478,7 +514,36 @@ export function estadoDaConversa(params: {
  *    numa quarta pergunta seria o loop com outra roupa.
  */
 export function planejarJogada(estado: EstadoDaConversa): Jogada {
-  // O aceite vem ANTES de tudo: é o momento da conversão, e qualquer outra
+  /*
+   * A RECUSA vem primeiro, antes até do aceite de horário.
+   *
+   * Quem escreve "não tenho interesse, pode parar" depois de a IA oferecer
+   * horário está recusando, não aceitando — e `ACEITE` casaria em "pode
+   * parar". Ordem errada aqui marca visita para quem acabou de pedir para
+   * ser deixado em paz, que é o pior desfecho possível desta conversa.
+   *
+   * Quem encerra na PRIMEIRA:
+   *   - `parada`: ele pediu para parar. Perguntar o motivo é insistir, e
+   *     insistir com quem pediu para sair gera denúncia — o sinal mais
+   *     forte que existe contra o número.
+   *   - `ja_resolvido`: ele já comprou. Não há motivo a descobrir nem o que
+   *     reofertar.
+   * Só `desinteresse` ganha a pergunta do motivo, e só uma vez: a resposta
+   * dele vira informação de verdade no CRM, e às vezes reabre a conversa.
+   */
+  if (estado.recusa) {
+    const encerra =
+      estado.recusa.familia !== "desinteresse" || estado.recusasAnteriores >= 1;
+    return encerra
+      ? { tipo: "encerrar_recusado", familia: estado.recusa.familia }
+      : {
+          tipo: "acolher_recusa",
+          familia: estado.recusa.familia,
+          oQueEleDisse: estado.oQueEleDisse,
+        };
+  }
+
+  // O aceite vem antes do resto: é o momento da conversão, e qualquer outra
   // jogada aqui (até entregar um dado) adiaria a confirmação em um turno.
   if (estado.aceitouHorario) return { tipo: "confirmar_visita", oQueEleDisse: estado.oQueEleDisse };
 
@@ -739,6 +804,25 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
         `${cabecalho}: a visita JÁ ESTÁ CONFIRMADA. Não qualifique mais.`,
         "Responda o que ele disse em UMA frase curta (se perguntou endereço/horário, repita o combinado). Nenhuma pergunta de região, estágio, tipologia ou renda — isso acabou. Feche com \"qualquer dúvida até lá, me chama\".",
       ].join("\n");
+    case "acolher_recusa":
+      return [
+        `${cabecalho}: ele disse que NÃO tem interesse ("${jogada.oQueEleDisse.slice(0, 80)}").`,
+        "Acolha em UMA frase curta, sem insistir e sem oferecer nada.",
+        "Depois faça UMA pergunta só, leve, para entender o motivo: foi o preço, a região, ou ele já resolveu de outro jeito?",
+        "NÃO ofereça visita, NÃO mande foto, NÃO pergunte nada do funil, NÃO tente convencer.",
+      ].join("\n");
+    case "encerrar_recusado":
+      return jogada.familia === "parada"
+        ? [
+            `${cabecalho}: ele pediu para não receber mais mensagens.`,
+            "Responda UMA frase: confirme que ele não será mais procurado e agradeça.",
+            "Nenhuma pergunta, nenhuma oferta, nenhum convite. Nunca pergunte o motivo — ele já pediu para parar.",
+          ].join("\n")
+        : [
+            `${cabecalho}: ele confirmou que não quer seguir.`,
+            "Despeça-se em UMA frase, agradecendo e deixando a porta aberta para quando ele quiser voltar.",
+            "Nenhuma pergunta, nenhuma oferta.",
+          ].join("\n");
     case "devolver_escolha":
       return [
         `${cabecalho}: devolver a escolha a ele.`,

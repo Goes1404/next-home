@@ -43,6 +43,9 @@ function estado(over: Partial<EstadoDaConversa> = {}): EstadoDaConversa {
     visitaConfirmada: false,
     perguntaSemDado: null,
     agendamento: { dia: null, hora: null, pediuVisita: false },
+    recusa: null,
+    recusasAnteriores: 0,
+    horasDesdeAUltimaFala: 0,
     ...over,
   };
 }
@@ -741,5 +744,117 @@ describe("a confirmação manda o combinado, não só um 'confirmado'", () => {
   it("proíbe a IA de escrever endereço — ele vem do cadastro", () => {
     // Endereço inventado leva o cliente ao lugar errado NO DIA da visita.
     expect(texto("Vista AlphaGran")).toContain("NUNCA escreva o endereço");
+  });
+});
+
+
+/**
+ * A recusa — a jogada que faltava, e a que o planner fazia ao contrário.
+ *
+ * Medido em produção: "No momento não tenho interesse. Obrigada" (01/09
+ * 13:25) foi respondido com "Me conta, em qual região de Barueri você
+ * procura?". A fala não classificada caía no funil, e recusa não era
+ * classificada por ninguém.
+ */
+describe("a recusa ganha de tudo", () => {
+  it("recusa explícita NUNCA cai no funil", () => {
+    const e = estadoDaConversa({
+      historico: [bot("Oi! Temos apartamentos em Barueri.")],
+      mensagemAtual: "No momento não tenho interesse. Obrigada",
+      imovelEmFoco: null,
+      catalogo: [],
+    });
+    const j = planejarJogada(e);
+    expect(j.tipo).toBe("acolher_recusa");
+    if (j.tipo === "acolher_recusa") expect(j.familia).toBe("desinteresse");
+  });
+
+  it("pedido de parada encerra na hora, sem tentar entender o motivo", () => {
+    const e = estadoDaConversa({
+      historico: [bot("Quer conhecer o decorado?")],
+      mensagemAtual: "me tira da lista",
+      imovelEmFoco: null,
+      catalogo: [],
+    });
+    expect(planejarJogada(e).tipo).toBe("encerrar_recusado");
+  });
+
+  it("quem JÁ RESOLVEU também não é perguntado — não há o que reofertar", () => {
+    const e = estadoDaConversa({
+      historico: [bot("Tenho uma opção em Alphaville.")],
+      mensagemAtual: "já comprei outro, obrigado",
+      imovelEmFoco: null,
+      catalogo: [],
+    });
+    expect(planejarJogada(e).tipo).toBe("encerrar_recusado");
+  });
+
+  it("a SEGUNDA recusa encerra", () => {
+    const e = estadoDaConversa({
+      historico: [
+        cliente("não tenho interesse"),
+        bot("Entendi! Só pra eu saber: foi preço ou região?"),
+      ],
+      mensagemAtual: "já falei que não quero",
+      imovelEmFoco: null,
+      catalogo: [],
+    });
+    expect(planejarJogada(e).tipo).toBe("encerrar_recusado");
+  });
+
+  /*
+   * A ordem importa mais aqui do que em qualquer outro lugar do planner: o
+   * detector de ACEITE casaria em "pode parar", e marcar visita para quem
+   * acabou de pedir para ser deixado em paz é o pior desfecho possível.
+   */
+  it("ganha até do aceite de horário", () => {
+    const e = estadoDaConversa({
+      historico: [bot("Tenho sábado às 10h ou domingo às 11h.")],
+      mensagemAtual: "não tenho interesse, pode parar",
+      imovelEmFoco: null,
+      catalogo: [],
+    });
+    expect(planejarJogada(e).tipo).toBe("encerrar_recusado");
+  });
+
+  it("mas preferência continua sendo conversa", () => {
+    const e = estadoDaConversa({
+      historico: [bot("Temos pronto e na planta.")],
+      mensagemAtual: "não quero na planta",
+      imovelEmFoco: null,
+      catalogo: [],
+    });
+    expect(planejarJogada(e).tipo).not.toBe("acolher_recusa");
+    expect(planejarJogada(e).tipo).not.toBe("encerrar_recusado");
+  });
+});
+
+describe("o bloco da recusa", () => {
+  it("acolher: pergunta o motivo e não oferece nada", () => {
+    const t = blocoDaJogada(
+      { tipo: "acolher_recusa", familia: "desinteresse", oQueEleDisse: "não tenho interesse" },
+      { nomeDoFoco: null },
+    );
+    expect(t).toContain("motivo");
+    expect(t).toContain("NÃO ofereça visita");
+  });
+
+  it("parada: nem pergunta o motivo — ele pediu para parar", () => {
+    const t = blocoDaJogada({ tipo: "encerrar_recusado", familia: "parada" }, { nomeDoFoco: null });
+    expect(t.toLowerCase()).toContain("não será mais procurado");
+    /*
+     * A primeira versão deste caso exigia que a palavra "motivo" NÃO
+     * aparecesse — e reprovava o texto certo, que diz "nunca pergunte o
+     * motivo". Critério que mede a palavra em vez do comportamento é
+     * decorativo, e esta base já perdeu tempo com cinco deles.
+     */
+    expect(t).toContain("Nunca pergunte o motivo");
+    expect(t).toContain("Nenhuma pergunta");
+  });
+
+  it("desinteresse confirmado: despedida com porta aberta, sem pergunta", () => {
+    const t = blocoDaJogada({ tipo: "encerrar_recusado", familia: "desinteresse" }, { nomeDoFoco: null });
+    expect(t).toContain("porta aberta");
+    expect(t).toContain("Nenhuma pergunta");
   });
 });

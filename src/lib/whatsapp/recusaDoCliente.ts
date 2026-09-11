@@ -41,7 +41,7 @@ export type Recusa = {
  * razão pela qual a janela de horário comercial existe.
  */
 const PARADA =
-  /\b(me tira da lista|tira meu numero|nao quero mais receber|para de (mandar|enviar|me mandar)|pare de (mandar|enviar|me mandar)|nao me mand\w*|descadastr\w*|sair da lista|numero errado|pessoa errada|nao era eu|nao sou eu|nao conheco (voces|essa empresa))\b/;
+  /\b(me tira da lista|tira meu numero|nao quero mais receber|para de (mandar|enviar|me mandar)|pare de (mandar|enviar|me mandar)|(pode|podem) parar|para com isso|nao me mand\w*|descadastr\w*|sair da lista|numero errado|pessoa errada|nao era eu|nao sou eu|nao conheco (voces|essa empresa))\b/;
 
 /** Fim de jornada: ele resolveu, e não há o que reofertar. */
 const JA_RESOLVIDO =
@@ -74,9 +74,35 @@ const COMPLEMENTO_QUE_DESARMA =
 /** Quantos caracteres depois do casamento contam como "o complemento". */
 const JANELA_DO_COMPLEMENTO = 40;
 
-export function detectarRecusa(texto: string): Recusa | null {
+/**
+ * O "não" seco — que só é recusa DEPOIS de uma recusa.
+ *
+ * Achado pelo trace na primeira execução (11/09/2026), e é o turno que
+ * importa: ela acolhe o "não tenho interesse", pergunta o motivo, ele
+ * responde "não, obrigada" — e ela CONVIDA PARA VISITA. Nenhum padrão de
+ * recusa casa em "não, obrigada", porque sozinha essa fala não é recusa
+ * nenhuma: respondendo a "pronto ou na planta?", ela é só uma resposta.
+ *
+ * O que a torna recusa é o CONTEXTO, então o contexto é parâmetro. Sem esse
+ * gate, "não" viraria fim de atendimento em qualquer pergunta fechada do
+ * funil — e o funil é feito de perguntas fechadas.
+ */
+const NEGATIVA_SECA =
+  /^(nao|nada|nada disso|nada nao|nenhum|nenhuma|so isso|ja falei que nao|nao mesmo|nao quero|obrigad\w*)([\s,.!]+(obrigad\w*|mesmo|nao|valeu|tchau|por enquanto|por hora))*[\s,.!]*$/;
+
+export function detectarRecusa(
+  texto: string,
+  contexto?: {
+    /** Ele já recusou antes nesta conversa — muda o que "não" significa. */
+    jaRecusouAntes?: boolean;
+  },
+): Recusa | null {
   const t = normalizar(texto).trim();
   if (!t || t.startsWith("[mensagem")) return null;
+
+  if (contexto?.jaRecusouAntes && NEGATIVA_SECA.test(t)) {
+    return { familia: "desinteresse", trecho: t };
+  }
 
   const paradaAchada = t.match(PARADA);
   // O pedido de parada NÃO se desarma por complemento: quem pede para parar
