@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/event-outbox",
       "schedule": "15 10 * * *"
+    },
+    {
+      "path": "/api/cron/limpar-artes-ia",
+      "schedule": "0 3 * * *"
     }
   ]
 }

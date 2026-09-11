@@ -2078,7 +2078,7 @@ export type Database = {
           created_at: string
           e_teste: boolean
           id: string
-          lead_id: string | null
+          lead_id: string
           liberado_por_palavra_chave: boolean
           nao_lidas: number
           nome_cliente: string | null
@@ -2102,7 +2102,7 @@ export type Database = {
           created_at?: string
           e_teste?: boolean
           id?: string
-          lead_id?: string | null
+          lead_id: string
           liberado_por_palavra_chave?: boolean
           nao_lidas?: number
           nome_cliente?: string | null
@@ -2126,7 +2126,7 @@ export type Database = {
           created_at?: string
           e_teste?: boolean
           id?: string
-          lead_id?: string | null
+          lead_id?: string
           liberado_por_palavra_chave?: boolean
           nao_lidas?: number
           nome_cliente?: string | null

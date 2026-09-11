@@ -17,6 +17,8 @@ Três origens (upload, PDF, Drive), um caminho único de gravação.
 - [[sharp-na-vercel-o-binario-nao-chega]]
 - [[constante-compartilhada-mora-em-modulo-sem-nativo]]
 - [[bucket-nao-se-apaga-por-sql]]
+- [[artes-de-ia-expiram-em-48-horas]] ⚠️ arte gerada não é acervo: 48h no banco, 48–72h no Storage
+- [[storage-da-arte-de-ia-tem-teto]]
 
 ## Relacionados
 - [[MOC — Front Público]] · [[MOC — Banco de Dados]] · [[Home]]

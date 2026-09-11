@@ -21,7 +21,7 @@ import path from "node:path";
  * (`vercel.json`), que usa GET.
  */
 
-const SO_GET = ["meta-ads"];
+const SO_GET = ["meta-ads", "limpar-artes-ia"];
 const DIR = path.join(process.cwd(), "src/app/api/cron");
 
 function rotasDeCron(): string[] {
