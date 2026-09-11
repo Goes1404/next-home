@@ -1,3 +1,5 @@
+import type { EstagioDeCompra } from "@/lib/estagioDeCompra";
+
 /**
  * Modelo de domínio dos empreendimentos.
  *
@@ -278,4 +280,10 @@ export type FiltrosEmpreendimento = {
   precoMax?: number;
   /** A tipologia mais compacta do empreendimento tem pelo menos isso de dormitórios. */
   dormitoriosMin?: number;
+  /**
+   * Chave na mão agora (`pronto`) ou obra por vir (`obra`) — os dois grupos
+   * de `estagioDeCompra.ts`. É o eixo que as duas portas da home usam, e o
+   * filtro existe para que o link delas seja de verdade.
+   */
+  estagio?: EstagioDeCompra;
 };

@@ -1,4 +1,5 @@
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { estagioDe } from "@/lib/estagioDeCompra";
 import { createClient } from "@/lib/supabase/public";
 import { comRetentativa } from "@/lib/supabase/retentativa";
 import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
@@ -111,6 +112,7 @@ export function bate(e: Empreendimento, f: FiltrosEmpreendimento): boolean {
   if (f.precoMax != null && e.precoAPartir != null && e.precoAPartir > f.precoMax) {
     return false;
   }
+  if (f.estagio && estagioDe(e.status) !== f.estagio) return false;
   if (f.dormitoriosMin != null) {
     const maiorOuIgual = e.tipologias.some((t) => t.dormitorios >= f.dormitoriosMin!);
     if (!maiorOuIgual) return false;

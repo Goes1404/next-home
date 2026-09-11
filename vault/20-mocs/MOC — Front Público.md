@@ -38,5 +38,9 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[reveal-dentro-de-lista-vira-div]]
 - [[fundo-fixo-no-celular-usa-lvh]]
 
+## Home
+- [[as-duas-portas-da-home]] — prazo e dinheiro, os dois eixos que faltavam (11/09)
+- [[estagio-de-compra-e-o-que-o-cadastro-diz]] — "últimas unidades" não é pronto (11/09)
+
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]

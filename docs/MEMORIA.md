@@ -5984,3 +5984,43 @@ Relatado nos três chats do painel: "está cortando 'ex.: renda de 8 mil…'" e
 - **Na home saíram a faixa de números e os "três passos"**, a pedido. O ritmo
   de curvas sobrevive porque as duas eram seções sem banda — conferido na
   captura, não presumido.
+
+## As duas seções novas da home (11/09/2026)
+
+No lugar da faixa de números e dos "três passos", duas seções escolhidas
+MEDINDO o catálogo antes de desenhar — e não por gosto.
+
+- **A home tinha UM eixo de navegação: o lugar.** As regiões respondiam
+  "onde", e nada respondia as outras duas perguntas que decidem uma compra:
+  **quando** (prazo) e **quanto** (dinheiro).
+- **"Quando você quer morar?"** — duas portas com a contagem real
+  (9 prontos, 16 em obra). O agrupamento está em `estagioDeCompra.ts`:
+  `pronto_para_morar` de um lado, os outros cinco do outro. **`ultimas_unidades`
+  fica do lado da OBRA**, e isso foi conferido no banco: o único imóvel
+  nesse estado tem entrega prevista para 2027 — ela descreve o estágio da
+  VENDA, não o da obra. O erro aqui é assimétrico: chamar de "em obra" algo
+  pronto custa uma visita; chamar de "pronto" algo em obra quebra a
+  conversa na frente do cliente.
+- **O link só vale com o FILTRO atrás dele.** A listagem não tinha filtro
+  de estágio; as portas seriam decoração sem levá-lo pela pilha inteira
+  (tipo, `bate()`, `parseFiltros`, chip de filtro ativo, select do
+  formulário). Terceira vez que este projeto encosta nesse defeito
+  (`?filtro=parados`, `?campanha=`). Conferido no ar: 25 / 9 / 16 cartões,
+  e valor inválido devolve a lista inteira em vez de errar.
+- **"Cabe no seu bolso?"** — dois campos (renda e entrada) e a resposta em
+  IMÓVEIS, não em parcela: "6 imóveis cabem, de 21 com preço publicado". A
+  conta é `simularFinanciamento`, o mesmo módulo puro do consultor e da
+  página `/financiamento`, rodando uma vez por imóvel. Regra de três sobre
+  a parcela ignoraria subsídio, ITBI e teto de FGTS — e o corretor
+  desmentiria o número na primeira conversa.
+- **Denominador honesto**: só entram os imóveis com preço publicado (21 de
+  25), e a frase diz quantos estão sob consulta. "Sob consulta" não é nem
+  caro nem barato.
+- **Placeholder que parece VALOR é pior que campo vazio.** A primeira
+  versão trazia "50.000" como placeholder com o "R$" desenhado à esquerda:
+  indistinguível de um valor preenchido, e a pessoa leria uma entrada que
+  não tem. O exemplo foi para a linha de ajuda e o que se digita passa a
+  ser formatado — a lição do placeholder do painel, agora no site público.
+- **Nada de consulta nova na home**: a contagem sai do catálogo já
+  carregado e só os PREÇOS viajam para o cliente, não os 25 objetos com
+  mídia e tipologia.

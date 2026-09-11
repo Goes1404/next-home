@@ -4,7 +4,9 @@ import { FiltroForm } from "@/components/busca/FiltroForm";
 import { CardCorretor } from "@/components/corretores/CardCorretor";
 import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimento";
 import { GlassSurface } from "@/components/glass/GlassSurface";
+import { CabeNoBolso } from "@/components/home/CabeNoBolso";
 import { CtaFinal } from "@/components/home/CtaFinal";
+import { EscolhaDeEstagio } from "@/components/home/EscolhaDeEstagio";
 import { Regioes } from "@/components/home/Regioes";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { AberturaHome } from "@/components/motion/AberturaHome";
@@ -15,6 +17,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { ScrollCue } from "@/components/home/ScrollCue";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { getParametrosCredito } from "@/lib/credito/parametros";
 import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
 import { GloboOuMapa } from "@/components/mapa/GloboOuMapa";
 import { enderecoLinha, site } from "@/lib/site";
@@ -59,12 +62,20 @@ const VENDEDOR = {
  * detecta o `?corretor=` na raiz e manda direto ao catálogo.
  */
 export default async function HomeInstitucional() {
-  const [todos, regioes, corretores, corretorAtivo] = await Promise.all([
+  const [todos, regioes, corretores, corretorAtivo, parametrosCredito] = await Promise.all([
     getEmpreendimentos(),
     getRegioesDisponiveis(),
     getCorretores(),
     getCorretorAtivo(),
+    getParametrosCredito(),
   ]);
+
+  /* Só os preços viajam para o cliente, não o catálogo inteiro: a conta do
+     "cabe no bolso" precisa de números, e mandar 25 objetos com mídia e
+     tipologia para o navegador seria pagar o dobro do HTML por nada. */
+  const precosPublicados = todos
+    .map((e) => e.precoAPartir)
+    .filter((p): p is number => typeof p === "number" && p > 0);
 
   let destaques = todos.filter((e) => e.destaque).slice(0, 6);
   if (destaques.length < 6) {
@@ -243,6 +254,10 @@ export default async function HomeInstitucional() {
             </section>
           )}
 
+          {/* A primeira escolha de quem compra não é ONDE, é QUANDO — e a home
+              só oferecia o eixo do lugar (as regiões, logo abaixo). */}
+          <EscolhaDeEstagio catalogo={todos} />
+
           {/* Regioes é compartilhado com o portfólio do corretor — a banda vem
               do embrulho, não de dentro do componente. */}
           <div className="secao-banda secao-curva secao-curva-fim mt-16 sm:mt-24">
@@ -328,6 +343,48 @@ export default async function HomeInstitucional() {
               </div>
             </section>
           )}
+
+          {/*
+            O DINHEIRO, que era o eixo que faltava. A home tinha lugar (as
+            regiões) e prazo (as duas portas de estágio) e nenhuma entrada
+            por preço — o filtro que de fato decide. O select "até R$ X" da
+            busca não serve para isso: ele pede a resposta que a pessoa veio
+            procurar.
+
+            `precoMax` é o MESMO parâmetro que a listagem lê, e os parâmetros
+            de crédito saem do banco (0107) com a data da última conferência.
+          */}
+          <section id="cabe-no-bolso" className="secao-funda secao-curva secao-curva-fim scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
+            <div className="mx-auto w-full max-w-6xl">
+              <p className="text-fluid-xs text-apoio mb-3">Sem formulário, sem cadastro</p>
+              <TituloEditorial className="text-fluid-2xl text-titulo">
+                Cabe no seu bolso?
+              </TituloEditorial>
+              <Reveal from="nenhuma" delay={0.15}>
+                <p className="text-fluid-base text-apoio mt-3 max-w-xl text-pretty">
+                  A mesma conta que o corretor faz — faixas do Minha Casa Minha Vida, subsídio e
+                  ITBI — respondendo quantos imóveis do catálogo fecham com a sua renda.
+                </p>
+              </Reveal>
+
+              <Reveal delay={0.1} from="baixo" className="mt-8">
+                <CabeNoBolso
+                  parametros={parametrosCredito}
+                  precos={precosPublicados}
+                  totalCatalogo={todos.length}
+                />
+              </Reveal>
+
+              <Reveal className="mt-6">
+                <Link
+                  href="/financiamento"
+                  className="text-fluid-sm text-acento-suave font-medium underline-offset-4 hover:underline"
+                >
+                  Simular com entrada, FGTS e prazo →
+                </Link>
+              </Reveal>
+            </div>
+          </section>
 
           {/* A porta do vendedor — única rota da home para /anunciar-imovel. */}
           <section className="px-4 py-16 sm:px-8 sm:py-24">

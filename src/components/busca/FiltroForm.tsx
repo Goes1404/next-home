@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ESTAGIO_LABEL, ESTAGIOS } from "@/lib/estagioDeCompra";
 import type { FiltrosEmpreendimento, Ordenacao } from "@/lib/types";
 import { ORDENACAO_LABEL, TIPO_LABEL } from "@/lib/types";
 
@@ -207,6 +208,30 @@ export function FiltroForm({
               {FAIXAS_DORMITORIOS.map((f) => (
                 <option key={f.valor} value={f.valor}>
                   {f.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Estágio é o eixo das duas portas da home ("pronto" / "obra"): sem o
+            select, o link delas filtraria e a pessoa não teria como desfazer
+            pelo formulário — filtro que só a URL conhece é filtro invisível. */}
+        {!compacto && (
+          <div>
+            <label htmlFor={`${idPrefixo}-estagio`} className="text-fluid-xs mb-1 block text-legenda">
+              Quando quer morar
+            </label>
+            <select
+              id={`${idPrefixo}-estagio`}
+              name="estagio"
+              defaultValue={filtrosAtuais.estagio ?? ""}
+              className={CAMPO}
+            >
+              <option value="">Qualquer</option>
+              {ESTAGIOS.map((e) => (
+                <option key={e} value={e}>
+                  {ESTAGIO_LABEL[e]}
                 </option>
               ))}
             </select>

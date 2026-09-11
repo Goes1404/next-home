@@ -9,6 +9,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
+import { ehEstagio } from "@/lib/estagioDeCompra";
 import { site } from "@/lib/site";
 import { getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
 import { Map } from "lucide-react";
@@ -49,6 +50,7 @@ function numero(v: string | undefined): number | undefined {
 
 function parseFiltros(sp: SearchParams): FiltrosEmpreendimento {
   const tipo = primeiro(sp.tipo);
+  const estagio = primeiro(sp.estagio);
 
   return {
     // Teto de 80 chars: é campo de nome, não de redação — e a URL vai para
@@ -59,6 +61,9 @@ function parseFiltros(sp: SearchParams): FiltrosEmpreendimento {
     bairro: primeiro(sp.bairro) || undefined,
     precoMax: numero(primeiro(sp.precoMax)),
     dormitoriosMin: numero(primeiro(sp.dormitoriosMin)),
+    // As duas portas da home entram por aqui. Valor fora do vocabulário é
+    // ignorado, não erra: link velho compartilhado devolve a lista inteira.
+    estagio: ehEstagio(estagio) ? estagio : undefined,
   };
 }
 

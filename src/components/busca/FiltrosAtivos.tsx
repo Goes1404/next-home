@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ESTAGIO_LABEL } from "@/lib/estagioDeCompra";
 import { precoBRL } from "@/lib/format";
 import {
   ORDENACAO_LABEL,
@@ -21,6 +22,7 @@ function chips(f: FiltrosEmpreendimento): Chip[] {
   if (f.dormitoriosMin != null) {
     lista.push({ chave: "dormitoriosMin", label: `${f.dormitoriosMin}+ dorm.` });
   }
+  if (f.estagio) lista.push({ chave: "estagio", label: ESTAGIO_LABEL[f.estagio] });
   return lista;
 }
 
@@ -32,6 +34,7 @@ function comFiltros(f: FiltrosEmpreendimento, ordenacao: Ordenacao): URLSearchPa
   if (f.bairro) p.set("bairro", f.bairro);
   if (f.precoMax != null) p.set("precoMax", String(f.precoMax));
   if (f.dormitoriosMin != null) p.set("dormitoriosMin", String(f.dormitoriosMin));
+  if (f.estagio) p.set("estagio", f.estagio);
   if (ordenacao !== "destaque") p.set("ordenar", ordenacao);
   return p;
 }

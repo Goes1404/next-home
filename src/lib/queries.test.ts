@@ -78,6 +78,35 @@ describe("ordenar — modo destaque com destaques de corretor", () => {
   });
 });
 
+/*
+ * As duas portas da home mandam para cá. O filtro precisa existir no MESMO
+ * lugar que o resto — a listagem filtra em memória, sobre o publicado — senão
+ * o link delas seria decoração, que é o defeito que este projeto já cometeu
+ * duas vezes (`?filtro=parados` e `?campanha=`).
+ */
+describe("bate — estágio de compra", () => {
+  const pronto = item({ slug: "pronto", status: "pronto_para_morar" });
+  const obra = item({ slug: "obra", status: "em_construcao" });
+  const ultimas = item({ slug: "ultimas", status: "ultimas_unidades" });
+
+  it("a porta de pronto só traz o que está pronto", () => {
+    expect(bate(pronto, { estagio: "pronto" })).toBe(true);
+    expect(bate(obra, { estagio: "pronto" })).toBe(false);
+    expect(bate(ultimas, { estagio: "pronto" })).toBe(false);
+  });
+
+  it("a porta de obra traz o que ainda vai ser entregue, inclusive últimas unidades", () => {
+    expect(bate(obra, { estagio: "obra" })).toBe(true);
+    expect(bate(ultimas, { estagio: "obra" })).toBe(true);
+    expect(bate(pronto, { estagio: "obra" })).toBe(false);
+  });
+
+  it("sem estágio no filtro, os dois passam", () => {
+    expect(bate(pronto, {})).toBe(true);
+    expect(bate(obra, {})).toBe(true);
+  });
+});
+
 describe("bate — busca por nome", () => {
   const vista = item({
     slug: "vista",
