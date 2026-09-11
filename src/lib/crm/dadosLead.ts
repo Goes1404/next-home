@@ -69,13 +69,14 @@ const SELECT_DETALHE = `
   id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
   etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, portal_origem, anuncio_origem,
   orcamento_min, orcamento_max, renda_mensal, dormitorios_min, regiao_interesse, empreendimento_id,
-  arquivado_em, tentativas_contato, tentativas_sem_resposta, ultima_tentativa_em,
+  arquivado_em, tentativas_contato, tentativas_sem_resposta, ultima_tentativa_em, nao_contatar_em,
   corretor:corretores(id, nome),
   empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome, slug, endereco),
   imovel_interesse:empreendimentos!leads_imovel_interesse_id_fkey(nome, slug)
 `;
 
 type LinhaDetalhe = {
+  nao_contatar_em?: string | null;
   id: string;
   nome: string;
   email: string | null;
@@ -152,6 +153,7 @@ export async function getLeadDetalhado(id: string): Promise<LeadDetalhado | null
     dormitoriosMin: row.dormitorios_min,
     regiaoInteresse: row.regiao_interesse,
     arquivadoEm: row.arquivado_em,
+    naoContatarEm: row.nao_contatar_em ?? null,
     empreendimentoId: row.empreendimento_id,
     imovelInteresse: row.imovel_interesse,
   };

@@ -286,10 +286,24 @@ export async function iniciarConversaPelaIA(leadId: string): Promise<ResultadoIA
   // RLS recorta: lead de outro corretor simplesmente não vem.
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, nome, telefone_e164, corretor_id, regiao_interesse")
+    .select("id, nome, telefone_e164, corretor_id, regiao_interesse, nao_contatar_em")
     .eq("id", leadId)
     .maybeSingle();
   if (!lead) return { erro: "Lead não encontrado na sua carteira." };
+  /*
+   * Ele pediu para não ser procurado (0110). Este é o terceiro caminho que
+   * fala por iniciativa nossa — os outros dois são a campanha (`elegivel`)
+   * e o runner de follow-up.
+   *
+   * Barra a IA, não o corretor: mandar mensagem à mão pelo Live Chat
+   * continua liberado, porque ali é uma pessoa decidindo, com o histórico
+   * na frente. O que não pode é a máquina reabrir sozinha.
+   */
+  if (lead.nao_contatar_em) {
+    return {
+      erro: "Este cliente pediu para não receber mais mensagens. Se quiser retomar, fale com ele pelo Live Chat.",
+    };
+  }
   if (!lead.telefone_e164) return { erro: "Este lead está sem telefone válido no cadastro." };
   if (!lead.corretor_id) return { erro: "Este lead está sem corretor responsável." };
 

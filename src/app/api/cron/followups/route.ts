@@ -572,6 +572,26 @@ async function processarFollowup(
   if (!conversa || !conversa.bot_ativo || !conversa.liberado_por_palavra_chave) {
     return descartar(supabase, item.id, "bot_inativo");
   }
+
+  /*
+   * Revalidação 0: ele PEDIU para não ser procurado (0110).
+   *
+   * `registrarRecusaDoCliente` já cancela os follow-ups pendentes no
+   * instante da recusa; isto cobre a corrida e o item antigo — e é o
+   * terceiro dos três caminhos que falam por iniciativa nossa (os outros
+   * são a campanha, via `elegivel`, e a abertura pela IA).
+   *
+   * DESCARTA, não pula: quem pediu para sair não volta a ser elegível
+   * amanhã, e um item pulado ficaria na fila para sempre tentando.
+   */
+  if (conversa.lead_id) {
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("nao_contatar_em")
+      .eq("id", conversa.lead_id)
+      .maybeSingle();
+    if (lead?.nao_contatar_em) return descartar(supabase, item.id, "cliente_recusou");
+  }
   if (conversa.pausado_humano_ate && new Date(conversa.pausado_humano_ate) > new Date()) {
     return descartar(supabase, item.id, "corretor_assumiu");
   }

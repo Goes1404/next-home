@@ -46,6 +46,41 @@ describe("caminho que fala com o cliente marca a conversa como atendimento", () 
   });
 });
 
+/**
+ * E quem fala por iniciativa nossa OLHA o não-perturbe (0110).
+ *
+ * São três caminhos, e os três precisam ler o mesmo campo — é a quarta vez
+ * que este projeto tropeça em "criei um caminho que fala com o cliente e
+ * esqueci de olhar o estado dele". A regressão é calada e cara: o cliente
+ * pediu para sair, recebeu uma despedida educada, e continua recebendo
+ * disparo — que é o caminho curto para a denúncia.
+ *
+ * A etapa `perdido` NÃO substitui esta checagem: etapa anda e volta, e
+ * bastaria alguém arrastar o cartão de volta para "Novo".
+ */
+describe("os três caminhos de iniciativa olham o não-perturbe", () => {
+  const CAMINHOS = [
+    // Campanha: a régua mora em `elegivel`, que o disparo inteiro usa.
+    "src/lib/crm/publicoDaCampanha.ts",
+    // Follow-up: a revalidação no runner, antes de mandar.
+    "src/app/api/cron/followups/route.ts",
+    // Abertura por iniciativa da IA, pelo painel.
+    "src/app/corretor/(painel)/conversas/acoesIA.ts",
+  ];
+
+  it.each(CAMINHOS)("%s lê nao_contatar_em / naoContatarEm", (arquivo) => {
+    const codigo = readFileSync(arquivo, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+    expect(
+      /na[o|ó]_?[cC]ontatar[_]?[eE]m/.test(codigo),
+      `${arquivo} fala com o cliente por iniciativa nossa e não olha o não-perturbe. ` +
+        "Quem pediu para sair recebe a despedida e continua recebendo disparo.",
+    ).toBe(true);
+  });
+});
+
 describe("a pausa por fala do corretor", () => {
   it("é curta — numa linha pessoal, 24h é silêncio permanente", () => {
     /*

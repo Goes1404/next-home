@@ -62,12 +62,44 @@ describe("novo → primeiro_contato automático", () => {
     expect(ACOES_IA).toContain("avancarLeadParaPrimeiroContato(");
   });
 
-  it("nenhum caminho escreve etapa de julgamento (negociação etc.) automaticamente", () => {
+  /**
+   * Etapa que a MÁQUINA não escreve — e a exceção de 11/09/2026.
+   *
+   * A regra continua a mesma: `documentacao`, `fechado` e `negociacao` são
+   * LEITURA do corretor sobre onde o negócio está, e a máquina não tem como
+   * saber isso. Escrevê-las automaticamente encheria o funil de julgamento
+   * que ninguém fez.
+   *
+   * `perdido` saiu dessa lista para UM caminho, e por um motivo que a
+   * distingue das outras: quando o cliente DIZ "não tenho interesse", não
+   * há julgamento nenhum a fazer — ele é um fato que ele mesmo declarou.
+   * O usuário pediu isso explicitamente (11/09), junto com cancelar os
+   * follow-ups, tirar das campanhas e avisar o corretor; sem a etapa, o
+   * lead continuaria na fila de trabalho como oportunidade aberta.
+   *
+   * A exceção é NOMEADA (`registrarRecusaDoCliente`) e o resto do
+   * repositório continua proibido: é isso que impede a próxima pessoa a
+   * mexer aqui de achar que `perdido` virou escrita livre.
+   */
+  it("nenhum caminho escreve etapa de julgamento automaticamente", () => {
     for (const arquivo of [REPOSITORIO, WEBHOOK, DISPARADOR, ACOES_IA]) {
       expect(arquivo).not.toContain('etapa: "documentacao"');
       expect(arquivo).not.toContain('etapa: "fechado"');
+      expect(arquivo).not.toContain('etapa: "negociacao"');
+    }
+    for (const arquivo of [WEBHOOK, DISPARADOR, ACOES_IA]) {
       expect(arquivo).not.toContain('etapa: "perdido"');
     }
+  });
+
+  it('"perdido" só é escrito pela recusa DITA pelo cliente', () => {
+    const ocorrencias = REPOSITORIO.split('etapa: "perdido"').length - 1;
+    expect(ocorrencias, "perdido deveria ser escrito em um lugar só").toBe(1);
+
+    const inicio = REPOSITORIO.indexOf("export async function registrarRecusaDoCliente(");
+    expect(inicio, "registrarRecusaDoCliente não encontrada").toBeGreaterThan(-1);
+    const fim = REPOSITORIO.indexOf("export ", inicio + 10);
+    expect(REPOSITORIO.slice(inicio, fim)).toContain('etapa: "perdido"');
   });
 });
 

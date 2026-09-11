@@ -28,6 +28,7 @@ function lead(over: Partial<Lead> = {}): Lead {
     corretor: null,
     empreendimento: null,
     visitaAgendadaEm: null,
+    naoContatarEm: null,
     tentativasSemResposta: 1,
     ...over,
   } as Lead;
@@ -73,5 +74,38 @@ describe("público: abordado e sem resposta", () => {
     expect(elegivel(abordadoOntem, "novos_sem_contato")).toBe(false);
     expect(elegivel(abordadoOntem, "parados_15d")).toBe(false);
     expect(elegivel(abordadoOntem, "sem_resposta")).toBe(true);
+  });
+});
+
+/**
+ * Quem PEDIU para não ser procurado (0110).
+ *
+ * A régua vem antes de qualquer filtro, e é separada da etapa de propósito:
+ * etapa ANDA E VOLTA. Bastaria alguém arrastar o cartão para "Novo" — coisa
+ * que se faz sem pensar ao revisar o funil — para o número de quem pediu
+ * para sair voltar à lista de transmissão.
+ */
+describe("não-perturbe", () => {
+  const FILTROS = ["todos", "novos_sem_contato", "parados_15d", "sem_resposta", "selecionados"] as const;
+
+  it("fica fora de TODOS os filtros", () => {
+    const recusou = lead({ naoContatarEm: "2026-09-11T12:00:00Z", etapa: "novo", tentativasSemResposta: 1 });
+    for (const filtro of FILTROS) {
+      expect(elegivel(recusou, filtro), filtro).toBe(false);
+    }
+  });
+
+  it("e continua fora mesmo se alguém devolver a etapa para novo", () => {
+    const voltouParaNovo = lead({
+      naoContatarEm: "2026-09-11T12:00:00Z",
+      etapa: "novo",
+      etapaAlteradaEm: new Date().toISOString(),
+    });
+    expect(elegivel(voltouParaNovo, "todos")).toBe(false);
+    expect(elegivel(voltouParaNovo, "novos_sem_contato")).toBe(false);
+  });
+
+  it("quem não pediu nada continua entrando", () => {
+    expect(elegivel(lead({ naoContatarEm: null, etapa: "novo" }), "novos_sem_contato")).toBe(true);
   });
 });

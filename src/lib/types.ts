@@ -204,6 +204,19 @@ export type Lead = {
    * conversa com a gente".
    */
   tentativasSemResposta: number;
+  /**
+   * O cliente pediu para NÃO ser mais procurado (0110).
+   *
+   * Separado de `etapa === "perdido"` de propósito: etapa anda e volta, e
+   * bastaria alguém arrastar o cartão para "Novo" para o número de quem
+   * pediu para sair voltar à lista de transmissão. Fato e permissão moram
+   * em campos diferentes — a etapa é julgamento do funil, isto é um fato
+   * dito pelo cliente.
+   *
+   * Não barra o CORRETOR: ele é uma pessoa decidindo, e às vezes é ele
+   * quem reabre. Barra o que fala por iniciativa nossa.
+   */
+  naoContatarEm: string | null;
 };
 
 export type Empreendimento = {

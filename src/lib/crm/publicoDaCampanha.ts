@@ -42,6 +42,18 @@ export const TETO_DE_INSISTENCIA = 3;
 /** Fechado e perdido nunca entram — reativar quem já comprou ou já disse não é o oposto do objetivo. */
 export function elegivel(lead: Lead, filtro: FiltroLeadsCampanha): boolean {
   if (!lead.telefone) return false;
+  /*
+   * Quem PEDIU para não ser procurado não entra em campanha nenhuma, e
+   * isto vem antes de qualquer filtro.
+   *
+   * A etapa `perdido` abaixo não cobre este caso, e é aí que está a
+   * armadilha: etapa ANDA E VOLTA. Bastaria alguém arrastar o cartão de
+   * volta para "Novo" — coisa que se faz sem pensar, ao revisar o funil —
+   * para o número de quem pediu para sair voltar à lista de transmissão.
+   * Disparar para ele de novo é o caminho curto para a denúncia, que é o
+   * sinal mais forte que existe contra o número.
+   */
+  if (lead.naoContatarEm) return false;
   if (lead.etapa === "fechado" || lead.etapa === "perdido") return false;
 
   if (filtro === "novos_sem_contato") return lead.etapa === "novo";

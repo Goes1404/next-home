@@ -44,6 +44,7 @@ import {
   registrarResultadoEnvio,
   resolverInstancia,
   salvarDossie,
+  registrarRecusaDoCliente,
   salvarMemoriaDaConversa,
   ultimaExtracaoDoLead,
   ultimaFalaDoCorretor,
@@ -897,6 +898,20 @@ export async function POST(req: NextRequest) {
      * `text` no fim, como se fazia, duplicava a última fala do cliente na
      * transcrição — e fala repetida pesa mais na extração do que deveria.
      */
+    /*
+     * O cliente RECUSOU e a jogada foi encerrar: o sistema inteiro para de
+     * procurá-lo. Vem antes da ficha porque é o efeito que não pode ser
+     * perdido se algo abaixo falhar — despedida sem os quatro efeitos é
+     * uma frase bonita antes de a máquina continuar cutucando.
+     */
+    if (turno.jogada.tipo === "encerrar_recusado") {
+      await registrarRecusaDoCliente({
+        conversaId: conversa.id,
+        leadId: conversa.leadId,
+        familia: turno.jogada.familia,
+      });
+    }
+
     const dossie =
       (await atualizarFichaEMemoria({ conversa, historico, telefone: sender, iaRespondeu: true })) ??
       /*

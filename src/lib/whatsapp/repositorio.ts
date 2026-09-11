@@ -801,6 +801,82 @@ export async function cancelarFollowupsPendentes(conversaId: string): Promise<vo
     .eq("tipo", "reengajamento");
 }
 
+/**
+ * O cliente disse que não quer — e o sistema inteiro para de procurá-lo.
+ *
+ * Quatro efeitos, e eles não são alternativas: sem os quatro, a despedida
+ * é só uma frase bonita antes de a máquina continuar cutucando.
+ *
+ *   1. a IA silencia NESTA conversa (`bot_ativo = false`);
+ *   2. os follow-ups pendentes são cancelados — sem isso ela se despede e
+ *      volta a cutucar em 24h, que é o defeito com outra roupa;
+ *   3. o lead ganha o NÃO-PERTURBE, que é o que sobrevive à etapa;
+ *   4. a etapa vira `perdido`, com o motivo na linha do tempo.
+ *
+ * Quem NÃO é barrado: o corretor. Live Chat e disparo manual continuam
+ * livres — ele é uma pessoa decidindo, e às vezes é justamente ele quem
+ * reabre a conversa.
+ *
+ * Best effort por partes: cada efeito é independente, e falhar num não
+ * pode impedir os outros. O mais importante é o 3 — é ele que atravessa
+ * campanha, follow-up e abertura por iniciativa da IA.
+ */
+export async function registrarRecusaDoCliente(params: {
+  conversaId: string;
+  leadId: string | null;
+  familia: "desinteresse" | "ja_resolvido" | "parada";
+}): Promise<void> {
+  const supabase = createServiceClient();
+  const agora = new Date().toISOString();
+
+  const { error: erroConversa } = await supabase
+    .from("whatsapp_conversas")
+    .update({ bot_ativo: false })
+    .eq("id", params.conversaId);
+  if (erroConversa) console.error("[recusa] falha ao silenciar a IA:", erroConversa.message);
+
+  const { error: erroFollowups } = await supabase
+    .from("whatsapp_followups")
+    .update({ status: "cancelado", motivo: "cliente_recusou" })
+    .eq("conversa_id", params.conversaId)
+    .eq("status", "pendente");
+  if (erroFollowups) console.error("[recusa] falha ao cancelar follow-ups:", erroFollowups.message);
+
+  if (!params.leadId) return;
+
+  const { error: erroLead } = await supabase
+    .from("leads")
+    .update({
+      nao_contatar_em: agora,
+      nao_contatar_motivo: params.familia,
+      etapa: "perdido",
+      etapa_alterada_em: agora,
+    })
+    .eq("id", params.leadId);
+  if (erroLead) console.error("[recusa] falha ao marcar o lead:", erroLead.message);
+
+  /*
+   * A linha do tempo registra UMA linha, com o motivo. É o que o corretor
+   * lê para entender por que aquele lead saiu da fila — e o que permite
+   * reabrir com conhecimento de causa, em vez de achar que foi engano.
+   */
+  const texto =
+    params.familia === "parada"
+      ? "O cliente pediu para não receber mais mensagens. A IA foi silenciada e ele saiu das campanhas."
+      : params.familia === "ja_resolvido"
+        ? "O cliente disse que já resolveu (comprou/alugou em outro lugar). A IA foi silenciada."
+        : "O cliente disse que não tem interesse. A IA foi silenciada e ele saiu das campanhas.";
+
+  const { error: erroTimeline } = await supabase.from("lead_interacoes").insert({
+    lead_id: params.leadId,
+    corretor_id: null,
+    tipo: "sistema",
+    conteudo: texto,
+    detalhes: { familia: params.familia, conversa_id: params.conversaId },
+  });
+  if (erroTimeline) console.error("[recusa] falha ao registrar na linha do tempo:", erroTimeline.message);
+}
+
 /** Janela padrão de silêncio do bot depois que o corretor entra na conversa. */
 /**
  * Quanto tempo a IA cala depois que o corretor fala.
