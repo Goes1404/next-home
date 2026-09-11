@@ -419,11 +419,11 @@ Reforma guiada por pesquisa de mercado + gap-analysis (plano em
 imediata, qualificação estruturada, AGENDAR visita como ação, híbrido
 trilho+IA, follow-up, métricas de funil).
 
-- **Vínculo conversa↔lead**: `obterOuCriarConversa` casa por
-  `telefone_e164` (SÓ DÍGITOS, sem '+') com variantes de nono dígito
-  (`candidatosTelefone`), e CRIA o lead se não existir. Antes o match era
-  igualdade exata com o telefone digitado à mão: 0 de 32 conversas tinham
-  lead, 0 dossiês persistidos, few-shot morto. Backfill na 0026.
+- **Vínculo conversa↔lead (ALTERADO em 11/09):** `obterOuCriarConversa` casa
+  por `telefone_e164` (SÓ DÍGITOS, sem '+') com variantes de nono dígito
+  (`candidatosTelefone`), mas **não cria mais lead**. Sem cadastro prévio na
+  carteira do corretor, o webhook não cria conversa, não grava mensagem e
+  nem transcreve áudio. A 0111 torna `lead_id` obrigatório.
 - **O MOTOR DE IA É UM SÓ desde 24/08/2026: a OpenAI (`gpt-4.1-mini`), que
   é paga** (`llm.ts` → `ordemDosProvedores`). A cascata de quatro provedores
   foi desmontada, e o motivo não é técnico: cada provedor escreve de um
@@ -1191,6 +1191,13 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
 - **O quadro do funil tem teto de 300 cartões** (`TETO_DO_QUADRO`): kanban
   não pagina. O cabeçalho da coluna mostra a contagem REAL do banco e, quando
   nem todo cartão coube, a coluna aponta para a lista filtrada por etapa.
+- **Filtros do kanban são um recorte cliente dos cartões carregados**
+  (`Quadro.tsx`, 11/09/2026): situação (parado há 3+ dias, aguardando
+  resposta ou com visita), origem e responsável para gestor podem ser
+  combinados. Como a consulta tem teto de 300, com qualquer filtro ativo os
+  contadores passam a dizer quantos cartões estão visíveis, não o total do
+  banco. As colunas vazias permanecem para preservar a sequência e o alvo do
+  drag; filtro não transforma o kanban em lista.
 - **A busca do `.or()` do PostgREST precisa de saneamento**: vírgula e
   parênteses digitados na busca virariam sintaxe de predicado
   (`sanearBusca` remove `,()%_`). Não passar input cru para `.or()`.
@@ -1855,11 +1862,10 @@ Duas lições que valem além do `sharp`:
   Supabase), e o Postgres recusa ANTES de avaliar a policy — "permission
   denied for table leads". Build e vitest passam; só o teste no banco
   pega. Mesma família da armadilha de `grant update (coluna)`.
-- **Excluir leva por CASCADE** o dossiê da IA, as tarefas e a linha do
-  tempo; a conversa de WhatsApp fica sem lead (`set null`) e as mensagens
-  continuam. E quem foi excluído VOLTA como lead novo se escrever de novo
-  (`obterOuCriarConversa` cria, 0026) — o que se apaga é o registro, não o
-  futuro.
+- **Excluir leva por CASCADE** o dossiê da IA, as tarefas, a linha do tempo
+  e, desde a 0111, também a conversa de WhatsApp, mensagens e follow-ups.
+  Quem foi excluído não volta ao escrever: sem lead cadastrado, o webhook
+  ignora o número.
 - **A regra de dois passos virou LUGAR, não só ordem** (27/08/2026). Com
   arquivar e excluir em lote, a trava "arquive antes de excluir" deixou de
   poder ser só uma checagem: agora arquivar só existe na lista ATIVA e
@@ -5077,13 +5083,11 @@ fecha?". Nota completa em `vault/10-notas/consultor-imobiliario-no-painel.md`.
   falta dado para analisar, conferir se o caminho GRAVA — sétima vez desta
   família aqui, e a primeira em que o zero seria invisível porque nem a tabela
   conhecia a origem.
-- **O corpus de perguntas reais de cliente NÃO É UTILIZÁVEL, e é LGPD.** São
-  369 mensagens com "?" em 90 dias, e a maioria é da vida PRIVADA do corretor
-  — o número da instância é o WhatsApp pessoal dele. **Não há filtro
-  estrutural**: `cliente_conhecido` e `lead_id` são verdade para as conversas
-  pessoais também (o webhook cria lead de quem escreve, 0026), e o recorte de
-  atendimento deixa passar 367 das 369. Quem for minerar conversa para virar
-  corpus de eval nesta base vai levar conversa íntima junto.
+- **O corpus histórico de perguntas reais NÃO É UTILIZÁVEL, e é LGPD.** São
+  369 mensagens com "?" em 90 dias, e a maioria é da vida PRIVADA do corretor.
+  Naquele estoque, `cliente_conhecido` e `lead_id` foram contaminados porque o
+  webhook criava lead de quem escrevia. A 0111 impede novos casos, mas não
+  transforma automaticamente o histórico já cadastrado em corpus confiável.
 - **Conjunto de casos derivado do CATÁLOGO é o que sobra, e é honesto**
   (`npm run eval:consultor`): faixas do MCMV cadastradas, dormitórios que
   existem, cidades onde há imóvel, estágios reais, mais as bordas conhecidas.
@@ -6025,6 +6029,166 @@ MEDINDO o catálogo antes de desenhar — e não por gosto.
   carregado e só os PREÇOS viajam para o cliente, não os 25 objetos com
   mídia e tipologia.
 
+## Foto de referência da IA — `image` não é `image[]` (11/09/2026)
+
+- **A foto podia subir e ainda assim não chegar ao modelo.** O chat aceitava
+  uma referência, gravava-a corretamente em `corretores/<id>/referencias/` e
+  a rota a baixava do Storage. Mas `gerarImagem` mandava o multipart com o
+  campo `image`; o contrato de edição do `gpt-image-2` usa **`image[]`**,
+  inclusive quando só existe UMA foto. A geração ainda podia sair do zero, o
+  que transformava a entrada ignorada numa falha calada.
+- **Referências múltiplas são uma mensagem, não quatro turnos.** Mandar cada
+  arquivo como uma mensagem faria a IA responder quatro vezes e a última foto
+  apagar as outras da proposta. Agora o composer aceita até quatro JPG, PNG ou
+  WebP (8 MB cada), sobe todas antes de gravar uma única fala e carrega a lista
+  na proposta. A rota deduplica, limita a quatro e confina TODOS os caminhos à
+  pasta do corretor antes de baixar e enviar um `image[]` por arquivo.
+- **Compatibilidade é deliberada:** a primeira referência segue em
+  `referencia_url` para a galeria antiga; `referenciaPaths` é a fonte completa
+  da proposta nova. O contrato antigo `{path,url}` continua sendo lido como
+  lista de uma foto.
+- **Guarda:** `gerarImagem.test.ts` monta o multipart e exige `image[]` (zero
+  `image`) com duas fotos; `estudio.test.ts` verifica que a proposta preserva
+  múltiplas referências. Tipo, lint e os testes focados passaram em 11/09.
+
+## Arte de IA — gerar não basta, e pergunta não é formulário (11/09/2026)
+
+- **A imagem pode ser criada e ainda faltar o produto.** Depois de a OpenAI
+  devolver bytes, a rota ainda carimba a ressalva, envia ao Storage e grava a
+  galeria. A mensagem antiga escondia toda recusa do bucket — o crédito era
+  gasto e ninguém sabia se era tamanho, MIME ou permissão. A rota agora loga
+  mensagem/código/tamanho/MIME/caminho, e a migration **0108** declara no
+  bucket `empreendimentos` JPEG, PNG e WebP até 16 MB. A arte só conta como
+  pronta quando essa sequência inteira termina.
+- **Pergunta genérica não melhora imagem; ausência mecânica de pergunta
+  também não.** A primeira correção pulou a LLM quando detectava uma cena
+  pronta, mas isso tiraria dela justamente o julgamento de contexto que o
+  corretor pediu. A decisão é da LLM: ela recebe o pedido inteiro e devolve
+  zero a três perguntas apenas quando uma decisão mudaria materialmente a
+  peça. A instrução proíbe formulário de lente/paleta/iluminação e exige uma
+  pergunta que não serviria igual para qualquer imagem. Com referência, ela
+  não finge enxergar a foto: pergunta o que preservar, mudar ou comunicar.
+  O plano de entrega (F0 confiabilidade → F4 medição) está em
+  `docs/ROADMAP-IMAGEM-IA.md`.
+
+## Sem lead cadastrado, não existe conversa no CRM (0111, 11/09/2026)
+
+- **Mensagem recebida não cadastra pessoa.** O comportamento anterior de
+  `obterOuCriarConversa` criava automaticamente um lead para qualquer número
+  que escrevesse ao WhatsApp do corretor. Agora ele só casa com um lead já
+  existente por `telefone_e164`, incluindo a variante brasileira do nono
+  dígito. Sem casamento, o webhook responde internamente
+  `numero_sem_lead_cadastrado` e encerra.
+- **O porteiro vem antes de qualquer processamento pessoal.** Número
+  desconhecido não cria linha em `whatsapp_conversas`, não grava mensagem,
+  não gera dossiê ou telemetria, não chama a IA e nem envia áudio para
+  transcrição. Retornar HTTP 200 é deliberado: o provedor não precisa repetir
+  eternamente um evento que a regra decidiu ignorar.
+- **A regra também mora no banco.** A 0111 apaga telemetria, conversas,
+  mensagens e follow-ups do estoque cujo `lead_id` está nulo; depois torna a
+  coluna `not null` e troca a FK para `on delete cascade`. Excluir um lead
+  passa a excluir seu histórico de WhatsApp, e escrever novamente não o
+  recria. As telas de Conversas e Pessoas também filtram `lead_id is not
+  null` durante a transição.
+
+## O perfil do lead abre dentro da conversa, como no direct (11/09/2026)
+
+- **Conversa e ficha não são jornadas separadas.** No Live Chat, tocar no
+  avatar ou nome de um contato vinculado a lead abre `Detalhes` na própria
+  área da conversa. Voltar devolve o histórico no mesmo estado; no desktop a
+  lista continua ao lado, e no celular o perfil ocupa a tela do chat.
+- **Resumo lê; ficha completa edita.** O perfil mostra identidade, etapa,
+  orçamento, renda, região, dormitórios, visita e leitura da IA, além de ligar,
+  anotar e abrir a ficha. Duplicar os formulários do CRM ali criaria duas
+  implementações para divergir; as alterações continuam em
+  `/corretor/leads/<id>`.
+- **Interação de aplicativo precisa ser tocável e reversível.** Os alvos têm
+  ao menos 44 px, o botão de voltar recebe foco quando a tela abre e `Esc`
+  também retorna à conversa. Contato sem `lead_id` não promete perfil: o
+  cabeçalho informa que não há ficha no funil e não abre uma tela vazia.
+
+## Artes de IA são temporárias: 48h no banco, 48–72h no Storage (11/09/2026)
+
+- **A imagem gerada não é acervo.** Para não transformar a galeria e o bucket
+  em custo permanente, a 0109 grava `expira_em = created_at + 48 hours` em
+  `imagens_geradas`. A rotina `/api/cron/limpar-artes-ia`, agendada uma vez ao
+  dia no Vercel Hobby, torna a janela efetiva de remoção em **48 a 72 horas**.
+- **Storage antes do banco é a ordem que preserva rastreabilidade.** O cron
+  só aceita URL que se resolve em `corretores/<uuid>/criacoes/`; remove esse
+  objeto no bucket `empreendimentos` e só depois apaga a linha. Falha de
+  Storage deixa a linha intacta para nova tentativa, em vez de deixar arquivo
+  órfão e invisível. `arte_url` e `url` são deduplicadas e removidas juntas.
+- **Referência não é arte descartável ainda.** Fotos que o corretor anexa ao
+  chat podem sustentar proposta ou conversa; esta primeira retenção trata só
+  resultados em `imagens_geradas`. O balão da conversa deixa de tentar
+  carregar uma URL removida e informa que a arte expirou.
+- **Teto de bucket se ELEVA, nunca se crava (aplicação da 0108, 11/09/2026).**
+  A migration escrita cravava `file_size_limit = 16777216`; a produção já
+  estava em **50 MB**, com os cinco mime types idênticos aos que ela declara —
+  ou seja, ela não tinha efeito benéfico nenhum e BAIXARIA o teto em 3x. E o
+  bucket `empreendimentos` não é só da imagem: `scripts/video/worker.ts` sobe
+  o mp4 renderizado nele. Cravar 16 MB faria o render rodar inteiro, pagar o
+  tempo de CPU do GitHub Actions e morrer no upload. Reescrita como
+  `greatest(coalesce(file_size_limit, 0), 16777216)` — cumpre a intenção, é
+  idempotente e não regride o que outro caminho já precisou. **Ao mexer em
+  configuração compartilhada de bucket, ler o estado real antes de escrever o
+  valor, e procurar quem MAIS escreve ali.**
+## "404 nas telas" e "500 ao clicar" eram aba velha (11/09/2026)
+
+- **A imagem NUNCA foi o problema.** O log do `next dev` fechou em uma linha o
+  que uma varredura de 50 rotas e 13 APIs não fechou:
+  `POST /api/imagens/gerar 200 in 24.4s` seguido de
+  `Failed to find Server Action "4001bb…"` e
+  `POST /corretor/imoveis/criar-imagem 404`. A arte saiu carimbada, 2,58 MB no
+  Storage, linha na galeria com `expira_em` — o que falhou foi
+  `registrarArteGerada`, a etapa seguinte.
+- **Toda build gera um ID por Server Action.** Aba aberta durante um
+  `npm run build` (ou um deploy) manda o ID antigo, e o servidor responde
+  **404 no POST da própria rota da página** — daí o sintoma parecer "404 na
+  tela" e, noutra rodada, "500 ao clicar". Recarregar é o único conserto; a
+  aba não se atualiza sozinha.
+- **O `catch` genérico dizia "Sem conexão", e essa frase custou a
+  investigação inteira.** É falsa (a rede estava boa) e manda tentar de novo,
+  que é justamente o que não resolve enquanto a aba não recarregar. No
+  Estúdio o custo é pior: a arte já foi PAGA antes dessa etapa, então "sem
+  conexão" faz alguém pagar de novo por uma imagem que já está na galeria.
+  `ehActionDeOutroBuild` separa o caso e a mensagem passa a dizer as três
+  coisas que faltavam — o trabalho não se perdeu, insistir não adianta,
+  recarregue. **`catch` que NOMEIA uma causa sem ter checado está
+  adivinhando** — mesma família do texto de erro desatualizado, o defeito
+  recorrente nº 5 desta base.
+- **Diagnóstico**: para "404/500 ao clicar", subir `next dev` com o stdout
+  capturado em arquivo e pedir para repetir o clique. Custa um minuto e
+  responde o que varrer rota não responde. Varri 50 rotas com `page`, 13
+  rotas de API (as mesmas 13 compiladas no `.next`) e todos os hrefs,
+  literais e interpolados: tudo limpo, e nada disso apontava para a causa.
+- **Cuidado com o PID**: no Windows, `taskkill` no processo anotado pode
+  falhar porque o usuário já reiniciou o servidor no meio da investigação
+  (16732 → 10632 → 8972 nesta sessão). Conferir `netstat -ano | grep :3000`
+  antes de concluir que o servidor morreu.
+
+- **"O Storage recusou o arquivo" não reproduziu, e o que estava quebrado era
+  a TELA.** Medido contra o bucket de produção com a chave de serviço: PNG de
+  ruído de 4,5 MB sobe em 3 s; o caminho de criação (`gerarImagem` → carimbo →
+  upload) fecha em 18 s com o carimbo aplicado; o caminho de EDIÇÃO com DUAS
+  referências (`image[]`, código novo) fecha em 15 s. Produção não tinha log da
+  rota em 24 h e a frase do relato **não está no HEAD** — veio do `next dev`
+  local. **Antes de acusar o Storage, reproduzir o upload com a chave e o
+  caminho reais**; quatro consertos diferentes (limite, tipo, permissão, rede)
+  moravam atrás de uma frase só, o que obriga quem investiga a abrir o terminal
+  do servidor. `classificarFalhaDeStorage` tipa os quatro e diz se insistir
+  adianta — `rede` é o único transitório, e é ele que o `fetch failed` local
+  produz (a mesma armadilha que já fez a OpenAI levar a culpa da rede da
+  máquina).
+- **As duas foram aplicadas em 11/09/2026** e conferidas depois: teto 50 MB,
+  cinco mime types, `expira_em` `not null` com default de 48h, índice criado,
+  zero linhas sem prazo e `anon` sem select na coluna nova. Das 9 artes
+  existentes, **7 já nascem vencidas** — o primeiro tique do cron remove
+  arquivo e linha delas. E `vercel.json` passou a ter **4 crons no Hobby**: o
+  teto de jobs do plano não é documentado, e estourá-lo faz a Vercel recusar o
+  deployment INTEIRO com `cron_jobs_limits_reached`, sem log. Conferir o
+  próximo deploy em `list_deployments` em vez de supor que saiu.
+
 ## O balão do consultor, e a primeira consulta de contêiner (11/09/2026)
 
 Nota: [[o-consultor-em-balao-flutuante]].
@@ -6099,3 +6263,98 @@ Nota: [[navegacao-do-painel-tem-regua]].
   últimas artes. São atalhos, não um segundo PAI — a ambiguidade do menu é que
   foi desfeita. Se um dia o painel de Marketing ficar oco por causa disso, é
   decisão de produto, não conserto de navegação.
+
+## Conectar o Meta Ads travou no passo que nenhum texto resolve (11/09/2026)
+
+- **O passo a passo estava na tela desde 26/08 e a conexão travou de todo
+  jeito.** Os dois pontos cegos eram os mesmos de sempre num serviço de
+  terceiro: **qual dos números da Meta é o ID da conta de anúncios** e **se
+  o token na mão serve**. As duas respostas só existiam DEPOIS de gravar a
+  env var na Vercel e redeployar — e token errado tem o mesmo sintoma de
+  "não configurado": `meta_ads_metricas` em zero.
+- **Sondar a Graph API sem token não desempata NADA.** Com o número na mão,
+  tanto `/<id>` quanto `/act_<id>` devolvem `access token required` — a
+  resposta é idêntica para o ID certo e para o errado. Foi por isso que nem
+  eu nem o usuário conseguimos dizer o que era `1852235209038533`.
+- **`npm run meta:diag -- <token>` inverte a ordem**: `/debug_token` diz
+  tipo (usuário / Usuário do Sistema / página), validade e escopos, e
+  `/me/adaccounts` traz **a lista das contas com NOME**, com o
+  `META_ADS_ACCOUNT_ID` já formatado. O ID deixa de ser adivinhado — vem da
+  Meta. Era o passo 5 das instruções, o único que nenhum texto torna fácil,
+  porque o número não diz o que é.
+- **Quatro casos enganam, e todos têm teste** (`metaDiagnostico.test.ts`):
+  `expires_at: 0` significa "NÃO vence" (é justo o token de Usuário do
+  Sistema — tratar como epoch condenaria o token definitivo); `ads_read`
+  pode vir só em `granular_scopes` desde a migração da Meta para escopo por
+  conta, e olhar só `scopes` reprova token bom; token de PÁGINA é válido e
+  não lê investimento; e token válido com `ads_read` e **zero contas** é o
+  Usuário do Sistema criado sem ativo atribuído — diagnóstico próprio, não
+  "token ruim".
+- **Só dígitos não é token**, e é o engano que de fato aconteceu. O script
+  recusa antes de gastar chamada.
+- **O menu "Usuários do sistema" não aparece para quem não é admin do
+  PORTFÓLIO**, ou quando a conta de anúncios não está dentro de um. Não é
+  a Meta esconder o menu: é requisito. Enquanto isso não se resolve, o
+  Graph API Explorer entrega token de 60 dias, e as instruções da tela
+  passaram a liderar por ele.
+- **Token de 60 dias cria caminho que expira em SILÊNCIO** — o defeito
+  recorrente desta base. Por isso a tela de Anúncios ganhou a faixa "o
+  gasto não é atualizado há N dias": token vencido e campanha parada
+  desenham o MESMO gráfico plano, e sem a faixa não há como distinguir.
+  Tolerância de 2 dias (o cron é 1x/dia no Hobby e a Meta ajusta gasto
+  retroativamente), e **"nunca sincronizou" é estado próprio**, não "muito
+  velho" — configuração que nunca rodou pede outra ação que token vencido
+  no meio do caminho.
+- **A consulta da última sincronização NÃO usa a janela de 30 dias.** Com
+  o `max(atualizado_em)` recortado pela janela, uma parada de 40 dias
+  voltaria nula e a tela diria "nunca sincronizou" — trocando um
+  diagnóstico pelo outro. É uma linha, sem filtro de data.
+- **A saída do diagnóstico mascara o token por padrão.** Ele já está no
+  histórico do shell de quem rodou, então imprimir não acrescenta risco
+  local — mas saída de diagnóstico é exatamente o texto que se cola numa
+  conversa para pedir ajuda, e aí a credencial vaza. `--mostrar-token` é
+  ato explícito.
+- **Régua geral: credencial de terceiro se confere ANTES de virar env
+  var.** Enquanto o julgamento acontece depois do redeploy, todo erro de
+  configuração custa um ciclo de deploy e chega disfarçado de "não
+  configurado".
+
+## A 0111 quase apagou 30 clientes por causa de um DDI (11/09/2026)
+
+A migration `0111` começava com `delete from whatsapp_conversas where
+lead_id is null` — a regra "sem lead cadastrado, não existe conversa". Medido
+em produção **antes** de aplicar: eram 37 conversas, 68 mensagens. Só que
+**30 delas tinham lead do mesmo corretor**; o que faltava era o vínculo.
+
+- **A causa é a armadilha do DDI, agora do lado da CONVERSA.** O envio
+  normaliza desde 27/08 (`normalizarTelefoneBr` no `provider.ts`), mas
+  `campaignDispatcher` abria a conversa com `item.telefone` cru. Sem o `55`,
+  `candidatosTelefone` não casa com `leads.telefone_e164`, e a conversa
+  nasce sem lead — **ao lado** da orgânica, porque a busca era por igualdade
+  exata. Resultado: **24 conversas FANTASMA com 34 mensagens de campanha**
+  que o Live Chat nunca mostrou junto do atendimento.
+- **A ordem da migration virou: fundir → religar → normalizar → apagar.** Os
+  UPDATEs de `whatsapp_mensagens`, `whatsapp_followups` e `ia_interacoes`
+  vêm ANTES do delete da fantasma — o cascade os levaria junto. Aplicada em
+  11/09: 140 → 110 conversas, 7.373 → 7.352 mensagens. Ou seja, **21
+  apagadas em vez de 68**, e as 21 são o alvo de verdade (número que não
+  está na carteira de ninguém).
+- **Normalizar dentro de `candidatosTelefone` é o conserto ERRADO**, e o
+  teste da casa pegou: `14155552671` é um número dos EUA com 11 dígitos, e
+  prefixar `55` inventaria `5514155552671`. O erro é assimétrico — não casar
+  custa um vínculo, casar errado manda a conversa de um cliente para a ficha
+  de outro. Quem normaliza é o chamador que tem telefone de **cadastro**; o
+  que recebe o JID usa cru.
+- **`obterOuCriarConversa` passou a procurar por TODAS as variantes**
+  (`.in`), não por igualdade. O `unique (corretor, telefone)` não impede a
+  duplicata quando as duas strings diferem, e com a 0111 a antiga (sem lead)
+  seria apagada com o histórico dentro.
+- **`viewsSeguras.test.ts` reprovou a view auxiliar da migration**, e com
+  razão: view no `public` sem revoke + `security_invoker` é porta aberta,
+  mesmo que a migration a dropasse no fim. O par (fantasma, canônica) virou
+  subquery repetida em cada comando — verboso, e não deixa objeto para trás.
+  A função auxiliar (`e164_migracao_0111`) é dropada ao final e foi
+  conferida: zero resíduo em `pg_proc` e `pg_views`.
+- **Régua geral: antes de aplicar migration destrutiva, medir o que morreria
+  E perguntar quantos daqueles são o alvo de verdade.** Aqui 30 de 37 não
+  eram, e nenhum teste, tipo ou build diria isso — só o `count(*)`.

@@ -256,6 +256,25 @@ export async function POST(req: NextRequest) {
      * quantos foram entendidos. Agora o desfecho é carimbado na telemetria
      * e o cliente ouve a verdade em vez de uma resposta inventada.
      */
+    if (!sender || (!text && !ehAudio)) {
+      return NextResponse.json({ ok: true, ignored: "Mensagem vazia ou sem remetente" });
+    }
+
+    /*
+     * Porteiro de persistência: sem lead cadastrado, nada desta conversa
+     * entra no CRM. Ele vem ANTES da transcrição para áudio desconhecido não
+     * ser enviado a outro serviço e antes de qualquer gravação/telemetria.
+     */
+    const conversa = await obterOuCriarConversa({
+      corretorId: instancia.corretorId,
+      telefoneCliente: sender,
+      nomeCliente: payload.senderName || null,
+    });
+
+    if (!conversa) {
+      return NextResponse.json({ ok: true, ignored: "numero_sem_lead_cadastrado" });
+    }
+
     let audioFalhou = false;
     if (ehAudio) {
       const resultadoAudio = await transcreverAudioWhatsapp(audioUrlOrBase64);
@@ -268,18 +287,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!sender || !text) {
+    if (!text) {
       return NextResponse.json({ ok: true, ignored: "Mensagem vazia ou sem remetente" });
-    }
-
-    const conversa = await obterOuCriarConversa({
-      corretorId: instancia.corretorId,
-      telefoneCliente: sender,
-      nomeCliente: payload.senderName || null,
-    });
-
-    if (!conversa) {
-      return NextResponse.json({ ok: false, error: "Falha ao registrar a conversa." }, { status: 500 });
     }
 
     // O corretor respondeu do celular dele: registra a fala. Duas leituras
@@ -295,9 +304,9 @@ export async function POST(req: NextRequest) {
     //      desliga. A regra mora em `decidirPorFalaDoCorretor`.
     if (fromMe) {
       await gravarMensagem({
-        // Espelho do celular do corretor: sem NENHUMA das três portas de
-        // autorização, guarda a linha e não o texto
-        // (`privacidadeDaConversa.ts`).
+        // O porteiro acima já garantiu o vínculo com um lead. A função
+        // central continua decidindo a gravação para manter o mesmo contrato
+        // dos demais caminhos de atendimento.
         conversaLiberada: conversaEhAtendimento(conversa),
         conversaId: conversa.id,
         remetente: "corretor",

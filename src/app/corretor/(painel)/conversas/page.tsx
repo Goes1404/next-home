@@ -48,6 +48,9 @@ export default async function ConversasPage({
       .from("whatsapp_conversas")
       .select("id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas")
       .eq("corretor_id", corretor.id)
+      // Defesa durante a transição até a 0111 ser aplicada: conversa sem
+      // cadastro não aparece nem por estoque antigo.
+      .not("lead_id", "is", null)
       .order("ultima_interacao_em", { ascending: false })
       .limit(100),
     supabase
@@ -104,6 +107,7 @@ export default async function ConversasPage({
         "id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas",
       )
       .eq("id", conversaInicial as string)
+      .not("lead_id", "is", null)
       // A RLS já recorta pelo dono; o filtro explícito é a segunda linha, pela
       // mesma razão da 0031 (policy aberta para o gestor faz `maybeSingle`
       // receber N linhas quando ninguém esperava).

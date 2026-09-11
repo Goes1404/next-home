@@ -5,6 +5,7 @@ import { dentroDaJanela, ehDestinatarioInexistente } from "./antiBan";
 import { varrerQuedasDeNumero } from "./avisoDeQueda";
 import { variarMensagemComIA } from "./campaignQueue";
 import { enviarMensagemWhatsapp } from "./provider";
+import { normalizarTelefoneBr } from "./telefone";
 import {
   agendarFollowup,
   avancarLeadParaPrimeiroContato,
@@ -542,9 +543,20 @@ async function processarInstancia(ctx: {
       // palavra-chave, ver modoBot.ts) e a mensagem enviada, para o
       // corretor ver no Live Chat e para o webhook reconhecer a resposta do
       // cliente quando ela chegar (marcarRespostaCampanha).
+      /*
+       * O telefone do CADASTRO, normalizado — nunca `item.telefone` cru.
+       *
+       * O envio já normalizava (o provider chama `normalizarTelefoneBr`
+       * desde 27/08), mas a CONVERSA era criada com a string do cadastro:
+       * `11981480402` ao lado do mesmo celular com DDI na conversa
+       * orgânica. Medido em produção: 24 conversas FANTASMA, com 34
+       * mensagens de campanha que o Live Chat nunca mostrou junto do
+       * atendimento — e, sob a regra da 0111, sem lead e portanto
+       * descartáveis. A 0111 funde o estoque; isto impede o próximo.
+       */
       const conversa = await obterOuCriarConversa({
         corretorId: instancia.corretor_id,
-        telefoneCliente: item.telefone,
+        telefoneCliente: normalizarTelefoneBr(item.telefone) ?? item.telefone,
         origem: "campanha",
       });
       if (conversa) {

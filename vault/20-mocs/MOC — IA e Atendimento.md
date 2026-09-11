@@ -4,7 +4,7 @@ tags: [moc, ia, prompt]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-10
+updated: 2026-09-11
 summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 ---
 # IA e Atendimento (Sofia) — Map of Content
@@ -40,6 +40,9 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[calendario-misturava-dois-fusos]]
 - [[catalogo-do-corretor-e-a-pagina-dele]]
 - [[referencia-no-chat-do-estudio]] — Estúdio: clipe de anexo, arte e vídeo
+- [[storage-da-arte-de-ia-tem-teto]] — geração paga só termina quando a arte foi guardada
+- [[artes-de-ia-expiram-em-48-horas]] — Storage e galeria temporários; limpeza segura após o prazo
+- [[llm-conduz-o-briefing-da-imagem]] — intenção → perguntas → plano → geração
 - [[o-contrato-real-do-gpt-image-2]] — sondar a API sem gastar imagem; `input_fidelity` não existe (10/09)
 - [[o-tradutor-de-prompt-de-imagem]] — um prompt só, em português, editável antes de gastar (10/09)
 - [[a-resposta-de-chip-era-jogada-fora]] — o corretor respondia e nada mudava; achado por um warning de lint (10/09)
@@ -50,6 +53,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[trava-aberta-por-padrao-e-ativacao-incompleta]] ⚠️ regra atual da trava (06/09)
 - [[trava-de-palavra-chave-e-cliente-conhecido]]
 - [[conversa-casa-com-lead-por-telefone]]
+- [[a-conversa-fantasma-do-disparo-sem-ddi]] ⚠️ o disparo abria conversa paralela sem DDI (11/09)
 - [[gravar-mensagem-antes-do-vinculo]]
 - [[aviso-por-evolucao-nao-por-mensagem]]
 - [[visita-e-gravada-com-validacao]]

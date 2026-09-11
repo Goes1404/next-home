@@ -10,6 +10,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 # Campanhas e Anti-ban — Map of Content
 
 ## Arquitetura
+- [[a-conversa-fantasma-do-disparo-sem-ddi]] ⚠️ o disparo abria conversa paralela sem DDI (11/09)
 - [[fluxo-de-campanhas]] ⚠️ o mapa do caminho inteiro
 - [[pg-cron-e-o-relogio-de-verdade]]
 - [[travar-disparo-e-por-instancia]]

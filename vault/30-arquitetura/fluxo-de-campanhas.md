@@ -36,7 +36,9 @@ Cada envio passa por:
    ([[quatro-protecoes-anti-ban-defendem-coisas-diferentes]]);
 4. cota + espaçamento no MESMO update atômico
    ([[espacamento-anti-ban-so-existia-no-papel]]);
-5. telefone normalizado no provedor ([[envio-mandava-telefone-sem-ddi]]);
+5. telefone normalizado no provedor ([[envio-mandava-telefone-sem-ddi]])
+   **e também ao abrir a conversa** — com o telefone cru ela nascia sem
+   lead, em paralelo à orgânica ([[a-conversa-fantasma-do-disparo-sem-ddi]]);
 6. destinatário inexistente = erro definitivo + cota devolvida
    ([[numero-sem-whatsapp-nao-e-falha-nossa]]);
 7. gravação na conversa + avanço de etapa
@@ -47,4 +49,5 @@ Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
 
 ## Relacionadas
 - [[fluxo-do-webhook-whatsapp]]
+- [[a-conversa-fantasma-do-disparo-sem-ddi]]
 - [[botoes-perigosos-atras-de-avancado]]

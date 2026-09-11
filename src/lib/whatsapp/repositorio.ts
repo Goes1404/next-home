@@ -11,7 +11,6 @@ import {
   INTERVALO_MINIMO_SEGUNDOS,
   INTERVALO_MAXIMO_SEGUNDOS,
 } from "./antiBan";
-import { exigeLiberacaoExplicita } from "./modoBot";
 import { consultarEstadoConexao } from "./provider";
 import { resetPorTrocaDeNumero } from "./trocaDeNumero";
 import type { DossieClienteIA } from "./types";
@@ -93,6 +92,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
 
 export type ConversaPersistida = {
   id: string;
+  /** Nulo apenas em objetos legados/testes; a 0111 torna impossível no banco. */
   leadId: string | null;
   telefoneCliente: string;
   botAtivo: boolean;
@@ -179,31 +179,19 @@ function apenasTextos(valor: unknown): string[] {
 }
 
 /**
- * Acha o lead deste telefone — ou o CRIA.
+ * Encontra um lead JÁ cadastrado pelo telefone normalizado.
  *
- * Criar é deliberado: em produção, ZERO conversas tinham lead (o match era
- * por igualdade exata com o telefone digitado à mão) e, sem lead, o dossiê
- * extraído a cada mensagem era descartado em silêncio. Quem chama no
- * WhatsApp é um contato comercial por definição — merece um card no funil,
- * mesmo que nunca tenha preenchido formulário.
+ * Mensagem recebida não é consentimento para criar cadastro. Sem lead, não
+ * nasce conversa, mensagem, dossiê ou telemetria. Erro de banco sobe em vez
+ * de parecer "desconhecido" e descartar a mensagem de um lead real.
  */
-/**
- * Devolve o lead deste telefone, criando se não houver — e diz QUAL dos
- * dois aconteceu.
- *
- * `jaEraDoCrm` é o que a F3 precisa: quem já estava cadastrado antes desta
- * conversa é cliente conhecido e a IA atende na hora; número desconhecido
- * espera a palavra-chave. Sem essa distinção a regra não existiria — o
- * lead é criado aqui mesmo, então "tem lead" passa a ser verdade para todo
- * mundo no instante em que a pessoa escreve.
- */
-async function encontrarOuCriarLead(
+async function encontrarLeadCadastrado(
   supabase: ReturnType<typeof createServiceClient>,
-  params: { corretorId: string; telefoneCliente: string; nomeCliente?: string | null; origem?: "organica" | "campanha" },
-): Promise<{ leadId: string | null; jaEraDoCrm: boolean }> {
+  params: { corretorId: string; telefoneCliente: string },
+): Promise<string | null> {
   const candidatos = candidatosTelefone(params.telefoneCliente);
 
-  const { data: lead } = await supabase
+  const { data: lead, error } = await supabase
     .from("leads")
     .select("id")
     .eq("corretor_id", params.corretorId)
@@ -212,46 +200,8 @@ async function encontrarOuCriarLead(
     .limit(1)
     .maybeSingle();
 
-  if (lead) return { leadId: lead.id, jaEraDoCrm: true };
-
-  // Conversa de campanha sempre nasce de um lead existente (a fila é montada
-  // a partir deles) — se não achou, é melhor não criar um duplicado.
-  if (params.origem === "campanha") return { leadId: null, jaEraDoCrm: false };
-
-  /*
-   * `telefone_e164` NÃO entra no insert: é coluna GERADA
-   * (`normalizar_telefone_br(telefone)`). Mandá-la fazia o Postgres recusar
-   * a linha inteira com "cannot insert a non-DEFAULT value into column",
-   * e como o erro era ignorado, a função devolvia null em silêncio.
-   *
-   * O efeito disso foi grande e invisível: NENHUM lead nascia de conversa
-   * de WhatsApp. Em produção, 30 conversas com fala real de cliente — 721
-   * mensagens — ficaram sem cadastro no CRM. E como o dossiê e o few-shot
-   * de aprendizado dependem do vínculo conversa↔lead, os dois estavam
-   * mortos por consequência.
-   */
-  const { data: criado, error } = await supabase
-    .from("leads")
-    .insert({
-      corretor_id: params.corretorId,
-      nome: params.nomeCliente?.trim() || `WhatsApp ${params.telefoneCliente.slice(-4)}`,
-      telefone: params.telefoneCliente,
-      etapa: "novo",
-      origem: "whatsapp/organico",
-      origem_atribuicao: "manual",
-      tipo: "comprador",
-    })
-    .select("id")
-    .single();
-
-  // Falhar aqui não pode ser silencioso de novo: sem lead, a conversa
-  // acontece mas não vira nada no funil.
-  if (error) {
-    console.error("[whatsapp] não consegui criar o lead da conversa:", error.message);
-    return { leadId: null, jaEraDoCrm: false };
-  }
-
-  return { leadId: criado?.id ?? null, jaEraDoCrm: false };
+  if (error) throw new Error(`Falha ao conferir o lead do WhatsApp: ${error.message}`);
+  return lead?.id ?? null;
 }
 
 /**
@@ -259,9 +209,8 @@ async function encontrarOuCriarLead(
  * WhatsApp manda em toda mensagem.
  *
  * O nome era capturado só na CRIAÇÃO da conversa: quem escreveu antes de o
- * provedor entregar o pushName ficava sem nome para sempre, e o lead
- * nascia "WhatsApp 4567" e nunca mais mudava — impossível de localizar na
- * lista. As duas guardas são deliberadas: a conversa só recebe nome quando
+ * provedor entregar o pushName ficava sem nome para sempre. As duas guardas
+ * são deliberadas: a conversa só recebe nome quando
  * está NULA (nome digitado pelo corretor nunca é sobrescrito por pushName,
  * que é texto livre do cliente), e o lead só troca quando ainda carrega o
  * placeholder `WhatsApp %` — lead com nome de verdade no CRM fica quieto.
@@ -295,41 +244,49 @@ export async function obterOuCriarConversa(params: {
 }): Promise<ConversaPersistida | null> {
   const supabase = createServiceClient();
 
-  const { data: existente } = await supabase
+  /*
+   * Procura por TODAS as variantes do telefone, nunca pela string crua.
+   *
+   * O estoque tem conversa gravada sem DDI (`11981480402`) ao lado do mesmo
+   * celular com DDI no lead. Casar por igualdade simples criaria uma SEGUNDA
+   * conversa para a mesma pessoa — o `unique (corretor, telefone)` não
+   * impede, porque as duas strings são diferentes — e a antiga, sem lead,
+   * seria apagada com o histórico dentro.
+   */
+  const variantes = candidatosTelefone(params.telefoneCliente);
+
+  const { data: encontradas } = await supabase
     .from("whatsapp_conversas")
     .select(SELECT_CONVERSA)
     .eq("corretor_id", params.corretorId)
-    .eq("telefone_cliente", params.telefoneCliente)
-    .maybeSingle();
+    .in("telefone_cliente", variantes)
+    .order("created_at", { ascending: true })
+    .limit(1);
+
+  const existente = encontradas?.[0] ?? null;
 
   if (existente) {
     // Conversa antiga sem lead (criada antes do vínculo por e164 existir, ou
     // antes de o lead ser cadastrado): tenta religar agora. É barato e é o
     // que permite ao dossiê desta mensagem ter um destino.
     if (!existente.lead_id) {
-      const { leadId } = await encontrarOuCriarLead(supabase, params);
+      const leadId = await encontrarLeadCadastrado(supabase, params);
       if (leadId) {
         await supabase.from("whatsapp_conversas").update({ lead_id: leadId }).eq("id", existente.id);
         return mapConversa({ ...existente, lead_id: leadId });
       }
+      // Estoque anterior à 0111: sem lead não pode continuar visível nem
+      // reter mensagens. O cascade remove mensagens e follow-ups.
+      await supabase.from("whatsapp_conversas").delete().eq("id", existente.id);
+      return null;
     }
     return mapConversa(existente);
   }
 
-  const { leadId, jaEraDoCrm } = await encontrarOuCriarLead(supabase, params);
+  const leadId = await encontrarLeadCadastrado(supabase, params);
+  if (!leadId) return null;
 
   const origem = params.origem ?? "organica";
-  /*
-   * Quem já era do CRM antes desta conversa é atendido na hora; número
-   * desconhecido espera liberação EXPLÍCITA (palavra-chave, frase de
-   * entrada, anúncio ou o botão do painel) — independente de haver
-   * palavra-chave cadastrada. O padrão-aberto antigo ("sem chave, sem
-   * trava") era a causa de a IA responder todo mundo (05/09/2026).
-   */
-  const precisaDeLiberacao = exigeLiberacaoExplicita({
-    origemConversa: origem,
-    jaEraDoCrm,
-  });
 
   const { data: criada, error } = await supabase
     .from("whatsapp_conversas")
@@ -339,8 +296,8 @@ export async function obterOuCriarConversa(params: {
       nome_cliente: params.nomeCliente ?? null,
       lead_id: leadId,
       origem,
-      liberado_por_palavra_chave: !precisaDeLiberacao,
-      cliente_conhecido: jaEraDoCrm,
+      liberado_por_palavra_chave: true,
+      cliente_conhecido: true,
     })
     .select(SELECT_CONVERSA)
     .single();
@@ -377,9 +334,9 @@ export async function marcarConversaComoTeste(conversaId: string): Promise<void>
  * O lead chegou pela mensagem pronta de um anúncio (link porteiro
  * /wa/<campanha>): carimba a origem e o anúncio na ficha do CRM.
  *
- * O gate por `origem = 'whatsapp/organico'` é deliberado: só promove o
- * lead que o PRÓPRIO webhook acabou de criar como genérico. Lead que já
- * era do CRM (importado, formulário do Lead Ads, manual) mantém a origem
+ * O gate por `origem = 'whatsapp/organico'` é deliberado: só promove um
+ * cadastro cuja origem ainda é o WhatsApp orgânico. Lead importado, vindo
+ * de formulário do Lead Ads ou cadastrado manualmente mantém a origem
  * verdadeira — sobrescrever apagaria de onde ele veio de fato.
  */
 export async function marcarLeadVindoDeAnuncio(leadId: string, nomeImovel: string): Promise<void> {

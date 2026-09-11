@@ -3,18 +3,22 @@ title: A privacidade apaga o texto que a IA depois vai precisar ler
 aliases: [mensagem não gravada, retravamento, buraco no histórico]
 tags: [ia, lgpd, medicao]
 type: nota
-status: seedling
+status: evergreen
 custou: medio
 codigo:
   - src/lib/whatsapp/privacidadeDaConversa.ts
   - src/lib/whatsapp/modoBot.ts
   - src/lib/whatsapp/repositorio.ts
 created: 2026-09-10
-updated: 2026-09-10
+updated: 2026-09-11
 fonte: medição de 10/09/2026 sobre conversas atendidas pelo bot
 summary: Conversa que trava e destrava várias vezes acumula falas do cliente gravadas em branco. Depois de liberada, a IA lê um histórico furado — 32% das falas do cliente em conversas atendidas.
 ---
 # A privacidade apaga o que a IA depois precisa
+
+> **Superada para números desconhecidos pela 0111.** Eles não geram mais nem
+> linha de conversa. O histórico abaixo explica o desenho anterior e ainda é
+> útil para compreender marcas legadas e testes do contrato de gravação.
 
 A regra de 01/09 está certa e continua valendo: conversa nunca liberada guarda
 a LINHA, não o texto. O que ninguém previu é o **vaivém**.

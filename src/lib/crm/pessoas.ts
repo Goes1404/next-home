@@ -56,7 +56,10 @@ export async function getPaginaDePessoas(
     .select(
       "pessoa_id, conversa_id, lead_id, nome, telefone, etapa, ultima_atividade, previa, nao_lidas, tem_conversa",
       { count: "exact" },
-    );
+    )
+    // A view antiga admitia conversa atendida sem lead. Enquanto a 0111 não
+    // estiver aplicada, este filtro impede que esse estoque reapareça.
+    .not("lead_id", "is", null);
 
   const busca = filtro.busca ? sanearBusca(filtro.busca) : "";
   // Sem saneamento, vírgula e parênteses digitados na busca viram sintaxe de
@@ -82,9 +85,7 @@ function paraPessoa(linha: LinhaPessoa): PessoaNaLista {
     id: linha.pessoa_id,
     conversaId: linha.conversa_id,
     leadId: linha.lead_id,
-    // 31 das 147 pessoas em produção não têm nome nenhum — conversa de número
-    // que ainda não virou cadastro. `nomeParaExibir` cai no telefone, que é o
-    // que distingue uma linha da outra e o que o corretor reconhece.
+    // Nome pode faltar em importação; o telefone continua sendo o fallback.
     nome: nomeParaExibir({ nome: linha.nome, telefone: linha.telefone }),
     telefone: linha.telefone,
     etapa: (linha.etapa as EtapaFunil | null) ?? null,

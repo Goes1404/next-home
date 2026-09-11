@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/corretor/(painel)/leads/acoes.ts, supabase/migrations/0055_arquivar_e_excluir_lead.sql, src/lib/crm/leadArquivado.test.ts]
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-11
 fonte: docs/MEMORIA.md — Excluir lead (0055, 27/08)
 summary: Arquivar só existe na lista ATIVA; excluir só na de ARQUIVADOS — nunca o mesmo botão no mesmo lugar. A trava do lote é not("arquivado_em","is",null) no próprio DELETE.
 ---
@@ -30,9 +30,9 @@ novo reescreveria a data: histórico que o próprio sistema falsifica.
 
 ## O que a exclusão leva
 
-CASCADE: dossiê da IA, tarefas, linha do tempo. A conversa de WhatsApp fica sem
-lead (`set null`) e as mensagens continuam. Quem foi excluído **volta** como
-lead novo se escrever de novo ([[conversa-casa-com-lead-por-telefone]]).
+CASCADE: dossiê da IA, tarefas, linha do tempo e, desde a 0111, conversa de
+WhatsApp, mensagens e follow-ups. Quem foi excluído não volta sozinho: uma
+mensagem de número sem lead é ignorada ([[conversa-casa-com-lead-por-telefone]]).
 
 ## O botão dos arquivados
 
