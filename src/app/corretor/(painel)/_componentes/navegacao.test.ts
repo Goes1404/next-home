@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
   ATALHOS_MOBILE,
@@ -258,9 +258,16 @@ describe("subtópicos: uma hierarquia só", () => {
   });
 
   it("toda rota tem UM dono, mesmo quando dois casam por prefixo", () => {
-    // `/corretor/imoveis/criar-imagem` é subtópico de Marketing e casa por
-    // prefixo com Imóveis. Sem desempate o menu acenderia os dois.
-    expect(destinoAtivo("/corretor/imoveis/criar-imagem")?.href).toBe("/corretor/marketing");
+    /*
+     * `/corretor/imoveis/criar-imagem` é subtópico da Assistente e casa por
+     * prefixo com Imóveis. Sem desempate o menu acenderia os dois.
+     *
+     * O pai mudou em 11/09/2026 (era Marketing) por decisão do usuário: quem
+     * gera a peça é a IA da casa. A ROTA continua onde estava — é justamente
+     * por isso que este desempate precisa existir.
+     */
+    expect(destinoAtivo("/corretor/imoveis/criar-imagem")?.href).toBe("/corretor/whatsapp");
+    expect(destinoAtivo("/corretor/marketing/video")?.href).toBe("/corretor/whatsapp");
     expect(destinoAtivo("/corretor/imoveis")?.href).toBe("/corretor/imoveis");
     expect(destinoAtivo("/corretor/imoveis/candidatos")?.href).toBe("/corretor/imoveis");
     expect(destinoAtivo("/corretor/conversas")?.href).toBe("/corretor/whatsapp");
@@ -283,8 +290,11 @@ describe("subtópicos: uma hierarquia só", () => {
     // O defeito original em uma linha: menu magenta, abas de WhatsApp.
     expect(moduloAtivo("/corretor/campanhas")).toBe("marketing");
     expect(moduloAtivo("/corretor/templates")).toBe("marketing");
-    expect(moduloAtivo("/corretor/imoveis/criar-imagem")).toBe("marketing");
-    expect(moduloAtivo("/corretor/marketing/video")).toBe("marketing");
+    // As duas telas de geração pintam da Assistente, dona delas desde
+    // 11/09 — e nenhuma exceção de cor participa disso: quem resolve é o
+    // href mais específico, a mesma regra que acende o item do menu.
+    expect(moduloAtivo("/corretor/imoveis/criar-imagem")).toBe("whatsapp");
+    expect(moduloAtivo("/corretor/marketing/video")).toBe("whatsapp");
     expect(moduloAtivo("/corretor/conversas")).toBe("whatsapp");
     expect(moduloAtivo("/corretor/imoveis/candidatos")).toBe("imoveis");
   });
@@ -340,6 +350,15 @@ describe("as barras de abas DERIVAM do menu", () => {
     expect(subitensDe("/corretor/whatsapp").map((s) => s.href)).toEqual([
       "/corretor/whatsapp",
       "/corretor/conversas",
+      // Criar arte e Criar vídeo entraram em 11/09/2026, vindas de Marketing.
+      "/corretor/imoveis/criar-imagem",
+      "/corretor/marketing/video",
+    ]);
+    // E saíram de lá: sobrou o que DISPARA a peça, não o que a produz.
+    expect(subitensDe("/corretor/marketing").map((s) => s.href)).toEqual([
+      "/corretor/marketing",
+      "/corretor/campanhas",
+      "/corretor/templates",
     ]);
     // 9 desde 09/09/2026: "Crédito" entrou com os parâmetros que o consultor
     // cita. O número é atualizado com o motivo escrito, nunca afrouxado em
@@ -349,6 +368,68 @@ describe("as barras de abas DERIVAM do menu", () => {
   });
 });
 
+
+/**
+ * A barra de abas da TELA é a do dono da rota — a divergência de novo.
+ *
+ * O defeito de 04/09/2026 em uma linha: `/corretor/campanhas` era Marketing
+ * no menu e desenhava abas de WhatsApp; o sidebar acendia magenta e a tela
+ * dizia outra seção. A correção de então derivou as abas do mapa
+ * (`subitensDe`), o que acabou com DUAS listas — mas não com a possibilidade
+ * de uma tela chamar a barra da seção ERRADA.
+ *
+ * E aconteceu de novo em 11/09/2026: Criar arte e Criar vídeo mudaram de pai
+ * para a Assistente e continuaram desenhando `AbasMarketing`. Falha calada —
+ * build verde, tela funcionando, e só a barra mentindo sobre onde a pessoa
+ * está. Esta guarda lê o código das telas e compara com `destinoAtivo`.
+ */
+describe("a barra de abas da tela é a do DONO da rota", () => {
+  const TOPICO_DA_BARRA: Record<string, string> = {
+    AbasLeads: "/corretor/pessoas",
+    AbasImoveis: "/corretor/imoveis",
+    AbasWhatsapp: "/corretor/whatsapp",
+    AbasMarketing: "/corretor/marketing",
+    AbasAdmin: "/corretor/admin",
+  };
+
+  /** Toda `page.tsx` do painel — a convenção de varredura das outras guardas. */
+  const telasDo = (dir: string): string[] =>
+    readdirSync(join(process.cwd(), dir), { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory()
+        ? telasDo(`${dir}/${e.name}`)
+        : e.name === "page.tsx"
+          ? [`${dir}/${e.name}`]
+          : [],
+    );
+  const telas = telasDo("src/app/corretor/(painel)").sort();
+
+  it("nenhuma tela desenha a barra de outra seção", () => {
+    // Comentário fora antes de acusar: é a terceira vez nesta base que uma
+    // guarda de código-fonte recorta um trecho citado em comentário.
+    const usos: string[] = [];
+    for (const arq of telas) {
+      const fonte = readFileSync(join(process.cwd(), arq), "utf8").replace(
+        /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
+        "",
+      );
+      for (const m of fonte.matchAll(/<(Abas[A-Za-z]+)([\s\S]{0,300}?)\/?>/g)) {
+        const barra = m[1];
+        const topico = TOPICO_DA_BARRA[barra];
+        if (!topico) continue;
+        const rota = m[2].match(/ativa=\{?"([^"]+)"/)?.[1];
+        if (!rota) continue;
+        usos.push(`${arq} ${barra} ${rota}`);
+        expect(
+          destinoAtivo(rota)?.href,
+          `${arq} desenha ${barra} numa rota cujo dono é outro`,
+        ).toBe(topico);
+      }
+    }
+    // Se o casamento parar de achar tela nenhuma, a guarda passa a aprovar
+    // tudo em silêncio — que é o defeito que ela persegue.
+    expect(usos.length).toBeGreaterThan(15);
+  });
+});
 
 /**
  * Elemento PORTALADO sai da árvore que carrega a cor.

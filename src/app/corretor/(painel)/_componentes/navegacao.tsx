@@ -189,6 +189,20 @@ export const GRUPOS_NAV: GrupoNav[] = [
           // lista de quem falou). Esta tela é outra coisa: o que a IA
           // respondeu e a revisão 👍/👎. O nome diz isso.
           { href: "/corretor/conversas", label: "Atendimento da IA", icone: IconeBalaoCheck },
+          /*
+           * Criar arte e Criar vídeo moraram em Marketing até 11/09/2026, e
+           * mudaram de pai por decisão do usuário: quem gera a peça é a IA
+           * da casa, e é aqui que ele procura por ela. Marketing continua
+           * sendo onde a peça é DISPARADA (listas de transmissão, modelos).
+           *
+           * As ROTAS não mudam (`/corretor/imoveis/criar-imagem` e
+           * `/corretor/marketing/video`): mover arquivo quebraria todo link
+           * salvo e os atalhos que já apontam para elas. Rota morando sob um
+           * prefixo e pertencendo a outro destino já é o normal aqui — quem
+           * desempata é `destinoAtivo`, pelo href mais específico.
+           */
+          { href: "/corretor/imoveis/criar-imagem", label: "Criar arte", icone: IconePaleta },
+          { href: "/corretor/marketing/video", label: "Criar vídeo", icone: IconeClaquete },
         ],
       },
       {
@@ -210,8 +224,6 @@ export const GRUPOS_NAV: GrupoNav[] = [
         icone: IconeMegafone,
         subitens: [
           { href: "/corretor/marketing", label: "Painel", icone: IconeMegafone },
-          { href: "/corretor/imoveis/criar-imagem", label: "Criar arte", icone: IconePaleta },
-          { href: "/corretor/marketing/video", label: "Criar vídeo", icone: IconeClaquete },
           { href: "/corretor/campanhas", label: "Listas de transmissão", icone: IconeAntena },
           { href: "/corretor/templates", label: "Modelos", icone: IconeModelo },
         ],
@@ -403,7 +415,7 @@ const MODULO_POR_DESTINO: Record<string, Modulo> = {
    *
    * Emprestar a cor de Imóveis é honesto: o consultor é o assistente DO
    * PORTFÓLIO. E já há precedente do inverso — `criar-imagem` mora sob
-   * /imoveis e pinta de Marketing.
+   * /imoveis e pinta da Assistente, dona dela desde 11/09/2026.
    */
   "/corretor/consultor": "imoveis",
   "/corretor/marketing": "marketing",
@@ -413,29 +425,21 @@ const MODULO_POR_DESTINO: Record<string, Modulo> = {
   "/corretor/admin": "admin",
 };
 
-/**
- * Subtópico cuja cor NÃO é a do pai.
+/*
+ * Houve aqui um mapa de exceção — `MODULO_POR_SUBITEM` —, para subtópico cuja
+ * cor não é a do pai. Ele existia por causa de `criar-imagem`, que mora sob
+ * `/corretor/imoveis` e pintava de Marketing. Saiu em 11/09/2026 vazio, e
+ * mapa vazio com comentário descrevendo um caso que não existe mais é o
+ * defeito recorrente nº 5 desta base.
  *
- * Só existe por causa de duas rotas que moram sob `/corretor/imoveis` mas são
- * peça de marketing: criar arte e o carrossel. Sem esta exceção o painel
- * pintaria de Imóveis uma tela que o menu acende em Marketing — a divergência
- * entre item aceso e cor da tela que esta reforma veio acabar.
- *
- * O resto dos subtópicos herda o módulo do pai, e é assim que se quer: são a
- * mesma seção.
+ * Quem resolve o caso é `destinoAtivo`, pelo href mais ESPECÍFICO: o
+ * subtópico `/corretor/imoveis/criar-imagem` (30 caracteres) ganha do prefixo
+ * `/corretor/imoveis` (17), então o dono é Assistente e a cor sai de lá. Uma
+ * regra em vez de regra mais exceção — e a mesma que acende o item do menu,
+ * que é o que impede item aceso e cor da tela de discordarem.
  */
-const MODULO_POR_SUBITEM: Record<string, Modulo> = {
-  "/corretor/imoveis/criar-imagem": "marketing",
-};
-
 export function moduloAtivo(atual: string | null): Modulo | null {
   if (!atual) return null;
-
-  // Exceção primeiro: ela existe justamente para ganhar do prefixo do pai.
-  const excecao = Object.keys(MODULO_POR_SUBITEM)
-    .filter((href) => rotaAtiva(atual, href))
-    .sort((a, b) => b.length - a.length)[0];
-  if (excecao) return MODULO_POR_SUBITEM[excecao];
 
   const dono = destinoAtivo(atual);
   if (dono) return MODULO_POR_DESTINO[dono.href] ?? null;

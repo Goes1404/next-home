@@ -21,7 +21,7 @@ import {
   IconePessoas,
   IconePredio,
   IconeRobo,
-  type Modulo,
+  moduloAtivo,
 } from "./_componentes/navegacao";
 
 /**
@@ -34,22 +34,28 @@ import {
  * dele — o cartão de Pessoas é magenta porque Pessoas É magenta no resto do
  * painel. É o color coding da casa servindo de legenda antes do clique.
  *
+ * A cor é DERIVADA de `moduloAtivo(href)`, a mesma função que pinta o
+ * `<main>` e acende o item do menu. Escrita à mão, ela era uma segunda
+ * verdade sobre "rota → cor" — e já discordava: "Meus links" ia para Imóveis
+ * e o cartão era de Marketing, e "Criar arte" continuou magenta quando a
+ * tela virou da Assistente (11/09/2026). Cartão que promete uma cor e abre
+ * outra é o mesmo defeito do menu que acende uma seção com a tela de outra.
+ *
  * `largo` faz o cartão ocupar as duas colunas: o destaque vai para a IA, que
  * é o que diferencia este painel.
  */
 const ATALHOS: {
   href: string;
-  modulo: Modulo;
   titulo: string;
   texto: string;
   icone: (p: SVGProps<SVGSVGElement>) => React.ReactElement;
   largo?: boolean;
 }[] = [
-  { href: "/corretor/pessoas", modulo: "leads", titulo: "Leads", texto: "quem falou com você, do mais recente ao mais antigo", icone: IconePessoas },
-  { href: "/corretor/imoveis", modulo: "imoveis", titulo: "Imóveis", texto: "fotos, textos e preços do catálogo", icone: IconePredio },
-  { href: "/corretor/whatsapp", modulo: "whatsapp", titulo: "Minha IA", texto: "atende, qualifica e marca visita enquanto você não está", icone: IconeRobo, largo: true },
-  { href: "/corretor/imoveis/criar-imagem", modulo: "marketing", titulo: "Criar arte", texto: "peça pronta para publicar, conversando com a IA", icone: IconeMegafone },
-  { href: "/corretor/links", modulo: "marketing", titulo: "Meus links", texto: "link atribuído de cada imóvel e do anúncio", icone: IconeLink },
+  { href: "/corretor/pessoas", titulo: "Leads", texto: "quem falou com você, do mais recente ao mais antigo", icone: IconePessoas },
+  { href: "/corretor/imoveis", titulo: "Imóveis", texto: "fotos, textos e preços do catálogo", icone: IconePredio },
+  { href: "/corretor/whatsapp", titulo: "Minha IA", texto: "atende, qualifica e marca visita enquanto você não está", icone: IconeRobo, largo: true },
+  { href: "/corretor/imoveis/criar-imagem", titulo: "Criar arte", texto: "peça pronta para publicar, conversando com a IA", icone: IconeMegafone },
+  { href: "/corretor/links", titulo: "Meus links", texto: "link atribuído de cada imóvel e do anúncio", icone: IconeLink },
 ];
 
 /**
@@ -132,7 +138,7 @@ export default async function PainelInicio() {
               href={a.href}
               // O `data-modulo` no próprio cartão é o que o pinta com a cor da
               // seção de destino: `bg-acento` aqui já é a cor DAQUELE módulo.
-              data-modulo={a.modulo}
+              data-modulo={moduloAtivo(a.href) ?? undefined}
               className={cn(
                 "from-acento to-acento-hover text-sobre-cor shadow-painel group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-[1.75rem] bg-gradient-to-br p-4 ring-1 ring-white/10 transition-transform ring-inset hover:-translate-y-0.5 active:scale-[0.98] motion-reduce:transition-none md:min-h-40 md:p-5",
                 a.largo && "col-span-2 flex-row items-center gap-4",

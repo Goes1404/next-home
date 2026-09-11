@@ -22,7 +22,7 @@ import { destinoAtivo, ehPasta, gruposVisiveis, subitemAtivo } from "./_componen
  *
  * Quem decide o destino aberto é `destinoAtivo`, e não `itemAtivo`: com
  * subtópicos passou a haver rota em que dois itens acendem
- * (`/corretor/imoveis/criar-imagem` é subtópico de Marketing e casa por
+ * (`/corretor/imoveis/criar-imagem` é subtópico da Assistente e casa por
  * prefixo com Imóveis), e dois itens acesos não dizem onde a pessoa está.
  */
 export function NavPainel({ ehGestor }: { ehGestor: boolean }) {

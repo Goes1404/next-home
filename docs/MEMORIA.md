@@ -6063,3 +6063,39 @@ Nota: [[o-consultor-em-balao-flutuante]].
   balão. A saída foi não tocar nela: o painel impõe a própria altura por
   sobreposição de `>div`, porque `h-[72dvh] min-h-[28rem]` é a medida da tela
   cheia.
+
+## Gerar arte e vídeo mudou de pai: Marketing → Assistente (11/09/2026)
+
+Nota: [[navegacao-do-painel-tem-regua]].
+
+- **Decisão do usuário**: quem GERA a peça é a IA da casa, e é na Assistente
+  que ele a procura. Marketing ficou com o que DISPARA (listas de transmissão,
+  modelos). As rotas não mudaram — `/corretor/imoveis/criar-imagem` e
+  `/corretor/marketing/video` continuam onde estavam, senão todo link salvo e
+  os atalhos quebrariam.
+- **Mudar o pai de uma rota obriga TRÊS coisas, e as três falham caladas.**
+  (1) A barra de ABAS da tela: as duas continuavam desenhando `AbasMarketing`
+  com o menu já acendendo Assistente — o defeito de 04/09 de volta pelo outro
+  lado. (2) A COR: o mapa de exceção `MODULO_POR_SUBITEM` existia só por causa
+  de `criar-imagem` e ficaria vazio. (3) Os ATALHOS do Início, cuja cor era
+  escrita à mão.
+- **Mapa de exceção vazio se apaga.** `destinoAtivo` já resolve os dois casos
+  pelo href mais específico (`/corretor/imoveis/criar-imagem`, 30 caracteres,
+  ganha de `/corretor/imoveis`, 17) — uma regra em vez de regra mais exceção.
+  Mapa vazio com comentário descrevendo um caso extinto é o defeito recorrente
+  nº 5 desta base.
+- **A cor do atalho do Início virou DERIVADA** (`moduloAtivo(href)`), e a
+  escrita à mão já mentia antes desta mudança: "Meus links" leva para Imóveis
+  e o cartão era de Marketing. Segunda verdade sobre "rota → cor" é exatamente
+  o que a reforma de 04/09 veio desfazer.
+- **Guarda nova**: `navegacao.test.ts` lê cada `page.tsx` do painel, extrai a
+  `<Abas* ativa="…">` e exige que `destinoAtivo` daquela rota seja o dono da
+  barra. Provocada com md5 antes/depois — reprova com o arquivo e o nome da
+  barra na mensagem. Ela também afirma um piso de ocorrências: casamento que
+  para de achar tela nenhuma aprova tudo em silêncio, que é o defeito que ela
+  persegue.
+- **Ficou de fora, declarado:** o painel de Marketing (`OficinaDeMarketing`)
+  continua liderando com os cartões de Criar arte e Criar vídeo, com cota e
+  últimas artes. São atalhos, não um segundo PAI — a ambiguidade do menu é que
+  foi desfeita. Se um dia o painel de Marketing ficar oco por causa disso, é
+  decisão de produto, não conserto de navegação.

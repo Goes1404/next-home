@@ -31,7 +31,7 @@ export function NavMobileBottom() {
       {ATALHOS_MOBILE.map((item) => {
         /* Mesmo dono que a gaveta e o sidebar usam. Com `itemAtivo`, a barra
            acenderia "Imóveis" em `/corretor/imoveis/criar-imagem`, que é
-           subtópico de Marketing — o polegar diria uma seção e o menu diria
+           subtópico da Assistente — o polegar diria uma seção e o menu diria
            outra, na mesma tela. */
         const ativa = dono?.href === item.href;
         const Icone = item.icone;

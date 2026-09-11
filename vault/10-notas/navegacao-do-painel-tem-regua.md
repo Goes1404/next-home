@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/corretor/(painel)/_componentes/navegacao.tsx, src/app/corretor/(painel)/_componentes/AbasSecao.tsx, src/app/corretor/(painel)/_componentes/navegacao.test.ts]
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-11
 fonte: docs/MEMORIA.md — Painel de Bolso F0/0052
 summary: Máx 5 destinos no menu; o que é parente vira aba (rota de verdade, com endereço próprio). Rotas antigas continuam existindo — só saíram do menu. navegacao.test.ts trava.
 ---
@@ -40,6 +40,36 @@ não voltaram.
 - No celular, o cartão mostra **só a ação primária** (WhatsApp); o resto na
   `FolhaAcoesLead`. Filtros recolhidos, mas abrem sozinhos quando algum está
   ativo — filtro invisível filtrando é a pior surpresa da tela.
+
+## Quem é o pai de uma rota (11/09/2026)
+
+Criar arte e Criar vídeo mudaram de **Marketing** para **Assistente**, por
+decisão do usuário: quem gera a peça é a IA da casa, e é ali que ele a
+procura. Marketing ficou com o que DISPARA — listas de transmissão e modelos.
+
+As **rotas não mudaram** (`/corretor/imoveis/criar-imagem`,
+`/corretor/marketing/video`): mover arquivo quebraria link salvo e os atalhos
+que já apontam para elas. Rota morando sob um prefixo e pertencendo a outro
+destino é o normal aqui — quem desempata é `destinoAtivo`, pelo href mais
+específico.
+
+Três coisas que a mudança de pai obriga, e as três falham CALADAS:
+
+1. **A barra de abas da tela.** As duas telas continuavam desenhando
+   `AbasMarketing` enquanto o menu já acendia Assistente — o defeito de
+   04/09 de volta, agora pelo outro lado. Guarda nova em `navegacao.test.ts`
+   compara a barra que cada `page.tsx` desenha com `destinoAtivo` da rota;
+   provocada com md5 antes e depois.
+2. **A cor.** Existia um mapa de exceção (`MODULO_POR_SUBITEM`) só por causa
+   de `criar-imagem`. Com o pai novo ele ficaria VAZIO, e mapa vazio com
+   comentário descrevendo um caso extinto é o defeito recorrente nº 5 —
+   saiu. `destinoAtivo` já resolve os dois casos pelo href mais específico:
+   **uma regra em vez de regra mais exceção**.
+3. **Os atalhos do Início.** A cor do cartão era escrita à mão (`modulo:
+   "marketing"`), uma segunda verdade sobre "rota → cor" — e já discordava
+   antes desta mudança: "Meus links" leva para Imóveis e o cartão era de
+   Marketing. Passou a ser DERIVADA de `moduloAtivo(href)`, a mesma função
+   que pinta o `<main>`.
 
 ## Relacionadas
 - [[fila-do-inicio-e-uma-fila]]

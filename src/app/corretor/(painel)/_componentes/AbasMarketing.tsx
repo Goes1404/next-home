@@ -10,8 +10,10 @@ import { subitensDe } from "./navegacao";
  * arte e os links não tinham barra nenhuma — `/corretor/links` chegou a não
  * ter item de menu NEM aba, a única tela do painel sem pai.
  *
- * A ordem é a de uso, e é a mesma do sidebar: arte e vídeo primeiro, que é o
- * que se faz; disparo depois, que é o passo seguinte à peça pronta.
+ * Em 11/09/2026 ela perdeu Criar arte e Criar vídeo para a Assistente, por
+ * decisão do usuário: quem GERA a peça é a IA da casa. O que sobrou aqui é o
+ * que a DISPARA — listas de transmissão e modelos —, mais o painel, que
+ * continua mostrando as cotas e as últimas artes.
  */
 export function AbasMarketing({ ativa, naFila }: { ativa: string; naFila?: number }) {
   const abas = subitensDe("/corretor/marketing").map((sub) => ({
