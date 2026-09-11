@@ -106,6 +106,32 @@ export interface DossieClienteIA {
    * quando a extração acha valor.
    */
   dormitoriosMin: number | null;
+  /**
+   * O nome que o CLIENTE disse na conversa.
+   *
+   * Existe porque a ficha dele está vazia: medido em 11/09/2026, os 55
+   * leads que conversaram com a IA se chamam todos "WhatsApp 2461". O
+   * caminho que renomeava o lead pelo nome do contato do WhatsApp
+   * (`whatsapp_conversas.nome_cliente`) está em 0 de 140 e nunca rodou —
+   * então o nome tem de vir da conversa.
+   *
+   * A régua é APERTADA de propósito, e mora no prompt: só apresentação
+   * inequívoca ("meu nome é", "sou o/a", assinatura). "Vou ver com o João"
+   * não é o nome dele, e um lead renomeado errado é pior que um lead sem
+   * nome — o corretor chama a pessoa pelo nome errado na primeira frase.
+   */
+  nomeCliente: string | null;
+  /** O e-mail, quando ELE escreve. Nunca deduzido. */
+  email: string | null;
+  /**
+   * A MEMÓRIA da conversa: o estado da negociação em prosa curta.
+   *
+   * Não é transcrição nem resumo executivo (que é leitura do momento, para
+   * o corretor ler). É o que a IA carrega para a próxima mensagem quando a
+   * janela de 40 falas já não alcança o que foi dito — e nas conversas
+   * ativas até 27 dessas 40 são do corretor.
+   */
+  memoria: string | null;
   formaPagamento: string | null;
   /**
    * Com o que o cliente trabalha, nas palavras dele. Serve para o corretor

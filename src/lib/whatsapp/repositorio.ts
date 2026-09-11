@@ -1296,6 +1296,17 @@ export async function buscarDossieAtual(leadId: string): Promise<DossieClienteIA
     // Como a renda: moram em `leads`, não no dossiê.
     regiaoInteresse: null,
     dormitoriosMin: null,
+    /*
+     * Nome e e-mail também moram em `leads` — a extração os descobre e
+     * `salvarDossie` os escreve lá, que é de onde a ficha do CRM lê.
+     *
+     * A MEMÓRIA mora em `whatsapp_conversas`, não aqui: ela é da CONVERSA,
+     * não do lead. O mesmo telefone pode ter duas conversas, e misturar as
+     * duas memórias faria a IA falar de um imóvel que foi assunto da outra.
+     */
+    nomeCliente: null,
+    email: null,
+    memoria: null,
     formaPagamento: data.forma_pagamento,
     // Ainda sem coluna própria: chegam na extração e entram no prompt da
     // mesma conversa. Persistir exigiria migration, e o valor deles é
