@@ -64,6 +64,7 @@ export type Jogada =
   | { tipo: "devolver_escolha" };
 
 import type { Fala } from "./rajada";
+import { normalizar } from "./normalizarFala";
 
 export interface EstadoDaConversa {
   /** Assuntos do funil que o cliente já cobriu (na fala ou no dossiê). */
@@ -252,12 +253,6 @@ function assuntosDoFunil(texto: string): AssuntoDoFunil[] {
   return [...achados];
 }
 
-function normalizar(texto: string): string {
-  return texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
 
 /**
  * Dado que a IA JÁ ENTREGOU não é pedido em aberto.
