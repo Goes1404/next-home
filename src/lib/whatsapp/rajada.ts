@@ -27,7 +27,16 @@
  * é uma fonte de erro a mais.
  */
 
-export type Fala = { remetente: "cliente" | "bot" | "corretor"; texto: string };
+export type Fala = {
+  remetente: "cliente" | "bot" | "corretor";
+  texto: string;
+  /**
+   * Quando ela foi dita (ISO). Opcional porque o eval, o playground e os
+   * traces montam falas à mão e não têm relógio — e é justamente isso que
+   * os torna reproduzíveis. Quem usa: `horasDesdeAUltimaFala`.
+   */
+  em?: string | null;
+};
 
 /**
  * Teto de balões numa rajada só.

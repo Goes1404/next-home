@@ -8,6 +8,7 @@ import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
+import { horasDesdeAUltimaFala } from "@/lib/whatsapp/tempoDaConversa";
 import { detectarEvolucao, podeAvisarAgora } from "@/lib/whatsapp/evolucaoConversa";
 import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
 import { notificarAtualizacaoCorretor, notificarCorretorLeadQuente } from "@/lib/whatsapp/brokerNotifier";
@@ -596,6 +597,19 @@ export async function POST(req: NextRequest) {
       catalogo,
       historico,
       dossie: dossieAnterior,
+      /*
+       * A MEMÓRIA (0110): o estado da negociação que sobrevive à janela de
+       * 40 falas. Nas conversas ativas, até 27 dessas 40 são do CORRETOR —
+       * o número é o WhatsApp pessoal dele —, então sem ela a IA lê a
+       * conversa humana e perde a própria.
+       */
+      memoria: conversa.memoria,
+      /*
+       * Quanto tempo passou desde a última fala de qualquer um. Acima de
+       * 72h a jogada vira `retomar`: confirma se ainda vale antes de seguir.
+       * O cálculo mora aqui porque `turnoDeAtendimento` não toca no relógio.
+       */
+      horasDesdeAUltimaFala: horasDesdeAUltimaFala(historico),
       fewShot: { corretorId: instancia.corretorId, conversaAtualId: conversa.id },
       /*
        * Os horários que EXISTEM na agenda do corretor (0073). Até aqui a

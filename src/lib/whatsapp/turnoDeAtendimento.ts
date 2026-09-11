@@ -6,6 +6,7 @@ import type { AnexoResolvido } from "./resolverMidia";
 import { buscarExemplosFewShot } from "./aprendizadoContinuo";
 import { catalogoParaAtendimento } from "./focoDaConversa";
 import { blocoDaJogada, estadoDaConversa, planejarJogada, type Jogada } from "./jogada";
+import { blocoDaMemoria } from "./memoriaDaConversa";
 import { regrasCondicionais } from "./regrasCondicionais";
 import {
   blocoNaoRepitaHorario,
@@ -74,6 +75,15 @@ export type PedidoDeTurno = {
   historico: Fala[];
   dossie?: DossieClienteIA | null;
   /** Instrução de cenário (ex.: follow-up de reengajamento). */
+  /**
+   * A MEMÓRIA da conversa (0110). Vem de fora porque este módulo não toca no
+   * banco — é o que permite o eval medir o mesmo turno sem efeito sobre o
+   * mundo, e é por isso que ele existe.
+   */
+  memoria?: string | null;
+  /** Horas desde a última fala. De fora pelo mesmo motivo: relógio aqui
+   * dentro tornaria o turno não reproduzível. */
+  horasDesdeAUltimaFala?: number;
   instrucaoExtra?: string;
   /**
    * Horários reais da agenda do corretor (0073), CRUS. Vem de fora porque
@@ -197,6 +207,7 @@ export async function executarTurnoDeAtendimento(
     dossie: pedido.dossie,
     imovelEmFoco,
     catalogo: catalogoDoPrompt,
+    horasDesdeAUltimaFala: pedido.horasDesdeAUltimaFala,
   });
   const jogada = planejarJogada(estado);
 
@@ -219,6 +230,7 @@ export async function executarTurnoDeAtendimento(
       dossie: pedido.dossie,
       instrucaoExtra: pedido.instrucaoExtra,
       foco,
+      blocoMemoria: blocoDaMemoria(pedido.memoria ?? null),
       blocoJogada: blocoDaJogada(jogada, { nomeDoFoco: foco?.nome ?? null }),
       blocoRegrasCondicionais: regrasCondicionais({ baloesDaVez: vezDoCliente.length }),
       blocoHorariosReais,

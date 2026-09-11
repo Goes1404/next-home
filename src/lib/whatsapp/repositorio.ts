@@ -1022,12 +1022,12 @@ export function botDeveResponder(conversa: ConversaPersistida): boolean {
 export async function historicoRecente(
   conversaId: string,
   limite = 40,
-): Promise<{ remetente: "cliente" | "bot" | "corretor"; texto: string }[]> {
+): Promise<{ remetente: "cliente" | "bot" | "corretor"; texto: string; em: string }[]> {
   const supabase = createServiceClient();
 
   const { data } = await supabase
     .from("whatsapp_mensagens")
-    .select("remetente, conteudo")
+    .select("remetente, conteudo, created_at")
     .eq("conversa_id", conversaId)
     /*
      * A marca de mensagem não gravada NÃO ocupa linha da janela.
@@ -1046,7 +1046,14 @@ export async function historicoRecente(
     .order("created_at", { ascending: false })
     .limit(limite);
 
-  return (data ?? []).reverse().map((m) => ({ remetente: m.remetente, texto: m.conteudo }));
+  /*
+   * O horário vem junto (coluna a mais na MESMA consulta, custo zero) e é o
+   * que permite saber quanto tempo a conversa ficou parada — a jogada
+   * `retomar` precisa disso, e `Fala` não carregava nada de relógio.
+   */
+  return (data ?? [])
+    .reverse()
+    .map((m) => ({ remetente: m.remetente, texto: m.conteudo, em: m.created_at }));
 }
 
 export type VezDeDisparar =

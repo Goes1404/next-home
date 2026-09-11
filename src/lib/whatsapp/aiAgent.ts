@@ -56,7 +56,7 @@ import { blocoSemAcabamentoCadastrado } from "./acabamentoInventado";
  * `ia_interacoes`, e sem isso a medição do efeito não existe.
  */
 
-export const PROMPT_VERSAO = "2026.09-v35"; // a oferta solitária da IA passa a definir o FOCO: quem se interessa pelo imóvel oferecido não repete o nome dele, e sem foco o prompt voltava a dez fichas e desfilava por cima do interesse // a marca de "assunto respondido" acumula pela conversa (a v33 esquecia depois de um turno) + a IA não inventa acabamento (flagrada afirmando piso laminado e bancada em granito de um cadastro sem o campo)
+export const PROMPT_VERSAO = "2026.09-v36"; // a conversa ganha MEMORIA: o estado da negociacao entra antes de tudo no prompt e sobrevive a janela de 40 falas (ate 27 delas sao do corretor) + a recusa vira jogada em vez de cair no funil + pergunta nao classificada passa a ser respondida + quem some por 72h volta sendo perguntado se ainda vale // // a oferta solitária da IA passa a definir o FOCO: quem se interessa pelo imóvel oferecido não repete o nome dele, e sem foco o prompt voltava a dez fichas e desfilava por cima do interesse // a marca de "assunto respondido" acumula pela conversa (a v33 esquecia depois de um turno) + a IA não inventa acabamento (flagrada afirmando piso laminado e bancada em granito de um cadastro sem o campo)
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -144,6 +144,15 @@ export interface ContextoAtendimento {
    * chamada. Entra em primeiríssimo lugar: é a única tarefa, e absorve o
    * que antes eram quatro blocos disputando a mesma decisão.
    */
+  /**
+   * A MEMÓRIA da conversa (0110) — o que sobrevive à janela de 40 falas.
+   *
+   * Vem ANTES de tudo, inclusive do bloco da jogada e da identidade. É a
+   * regra que a v32 pagou caro para aprender: bloco que precisa ganhar de
+   * todas as outras instruções vai antes de todas as outras instruções —
+   * enterrado no meio, ele compete como qualquer uma delas.
+   */
+  blocoMemoria?: string;
   blocoJogada?: string;
   /**
    * O cliente pediu um dado que está no catálogo (`dadoPedido.ts`). Entra
@@ -474,7 +483,7 @@ export function construirPromptSistema(ctx: ContextoAtendimento): string {
    * exatamente como os antigos competiam. Conferido com a sonda de prompt,
    * não com o número do eval.
    */
-  return `${ctx.blocoJogada ? `${ctx.blocoJogada}\n\n` : ""}Você é ${ctx.nomeAssistente}, consultora de imóveis de alto padrão da Next Home em Alphaville, atendendo sob o CRECI ${ctx.creciCorretor}. Para o cliente existe só VOCÊ nesta conversa — nunca se apresente "da equipe de" ninguém (ver regra 21).
+  return `${ctx.blocoMemoria ? `${ctx.blocoMemoria}\n\n` : ""}${ctx.blocoJogada ? `${ctx.blocoJogada}\n\n` : ""}Você é ${ctx.nomeAssistente}, consultora de imóveis de alto padrão da Next Home em Alphaville, atendendo sob o CRECI ${ctx.creciCorretor}. Para o cliente existe só VOCÊ nesta conversa — nunca se apresente "da equipe de" ninguém (ver regra 21).
 
 Você não é uma atendente de suporte: é uma vendedora. Seu objetivo é conduzir a conversa — com elegância, nunca com pressão — do primeiro "oi" até a visita agendada ou a proposta.
 
