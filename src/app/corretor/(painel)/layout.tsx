@@ -5,6 +5,7 @@ import { NavPainel } from "./NavPainel";
 import { NavMobileBottom } from "./NavMobileBottom";
 import { GavetaLateral } from "./GavetaLateral";
 import { BotaoGaveta } from "./BotaoGaveta";
+import { BalaoConsultor } from "./BalaoConsultor";
 import { CromaDoModulo } from "./CromaDoModulo";
 import { MenuDaConta } from "./MenuDaConta";
 import { sair } from "@/app/corretor/actions";
@@ -121,6 +122,13 @@ export default async function PainelLayout({
           </div>
           <NavMobileBottom />
           <GavetaLateral ehGestor={ehGestor} />
+          {/*
+            O consultor a um toque, de qualquer tela. Mora aqui, e não em
+            cada página, porque layout não re-executa entre rotas irmãs: a
+            conversa aberta em Pessoas continua aberta em Imóveis, sem store
+            e sem URL. Ele mesmo se cala na tela do consultor.
+          */}
+          <BalaoConsultor />
         </>
       ) : (
         <div className="mx-auto w-full max-w-2xl px-4 py-12">

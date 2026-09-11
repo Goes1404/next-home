@@ -1,7 +1,7 @@
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
-import { listarConversas } from "./acoes";
+import { abrirConversaDoConsultor, listarConversas } from "./acoes";
 import { ChatConsultor } from "./ChatConsultor";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export default async function ConsultorPage({
   searchParams,
 }: {
-  searchParams: Promise<{ pergunta?: string }>;
+  searchParams: Promise<{ pergunta?: string; conversa?: string }>;
 }) {
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
@@ -34,6 +34,17 @@ export default async function ConsultorPage({
    */
   const perguntaInicial = params.pergunta?.trim().slice(0, 400) || undefined;
 
+  /*
+   * `?conversa=` é como o balão flutuante entrega a conversa a esta tela.
+   * Carregada NO SERVIDOR e passada como estado inicial: buscar num efeito
+   * faria a tela piscar vazia antes de preencher, e a regra de lint desta
+   * base reprova `setState` dentro de efeito — que é como esse defeito
+   * costuma aparecer. Id que não é do corretor devolve erro, e a tela abre
+   * como sempre abriu: vazia, com o histórico ao lado.
+   */
+  const aberta = params.conversa ? await abrirConversaDoConsultor(params.conversa) : null;
+  const estadoInicial = aberta && !("erro" in aberta) ? aberta : undefined;
+
   return (
     <div className="space-y-4">
       <CabecalhoDeTela
@@ -45,6 +56,7 @@ export default async function ConsultorPage({
         conversasIniciais={conversas}
         conferidoEm={credito.conferidoEm}
         perguntaInicial={perguntaInicial}
+        estadoInicial={estadoInicial}
       />
     </div>
   );

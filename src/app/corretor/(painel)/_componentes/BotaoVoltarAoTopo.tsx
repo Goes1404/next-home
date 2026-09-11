@@ -45,7 +45,15 @@ export function BotaoVoltarAoTopo() {
       aria-hidden={!longe}
       tabIndex={longe ? 0 : -1}
       className={cn(
-        "bg-acento text-sobre-cor shadow-painel fixed right-4 bottom-[calc(var(--nav-mobile-h)+1rem)] z-30 flex size-11 cursor-pointer items-center justify-center rounded-full ring-1 ring-white/20 transition-all ring-inset hover:-translate-y-0.5 md:right-6 md:bottom-6",
+        /*
+         * Um degrau ACIMA do canto, que desde 11/09/2026 é do balão do
+         * consultor (`BalaoConsultor`). A altura é fixa, nunca condicional à
+         * presença da bolha: dois botões que sobem e descem conforme o outro
+         * aparece é pior que um degrau constante — e a bolha some enquanto o
+         * painel do consultor está aberto, o que faria este pular no meio da
+         * leitura.
+         */
+        "bg-acento text-sobre-cor shadow-painel fixed right-4 bottom-[calc(var(--nav-mobile-h)+5rem)] z-30 flex size-11 cursor-pointer items-center justify-center rounded-full ring-1 ring-white/20 transition-all ring-inset hover:-translate-y-0.5 md:right-6 md:bottom-[5.5rem]",
         longe ? "opacity-90 hover:opacity-100" : "pointer-events-none translate-y-2 opacity-0",
       )}
     >

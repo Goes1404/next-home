@@ -363,7 +363,10 @@ describe("as barras de abas DERIVAM do menu", () => {
 describe("todo portal do painel carrega a paleta e o módulo", () => {
   // A gaveta da conversa (10/09) entrou aqui no mesmo dia em que nasceu: ela
   // é o segundo portal do painel, e o defeito de cor é exatamente o mesmo.
-  const portalados = ["GavetaLateral.tsx", "pessoas/GavetaConversa.tsx"];
+  // O balão do consultor (11/09) é o terceiro, e nasce com a mesma regra: ele
+  // vive no LAYOUT, então aparece em toda tela do painel — uma cor errada ali
+  // seria a mais visível de todas.
+  const portalados = ["GavetaLateral.tsx", "pessoas/GavetaConversa.tsx", "BalaoConsultor.tsx"];
 
   it.each(portalados)("%s repete data-rota e data-modulo no nó portalado", (arq) => {
     const fonte = readFileSync(join(process.cwd(), "src/app/corretor/(painel)", arq), "utf8")

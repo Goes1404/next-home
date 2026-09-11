@@ -6024,3 +6024,42 @@ MEDINDO o catálogo antes de desenhar — e não por gosto.
 - **Nada de consulta nova na home**: a contagem sai do catálogo já
   carregado e só os PREÇOS viajam para o cliente, não os 25 objetos com
   mídia e tipologia.
+
+## O balão do consultor, e a primeira consulta de contêiner (11/09/2026)
+
+Nota: [[o-consultor-em-balao-flutuante]].
+
+- **`@container` NÃO vale para o próprio elemento que a declara.** Os cartões
+  de imóvel do consultor eram `sm:grid-cols-2`, e `sm` é medida da JANELA:
+  num painel flutuante de 380px no desktop, dois cartões lado a lado
+  truncariam nome, bairro e ficha. Viraram consulta de contêiner — a primeira
+  desta base. Com `@container` e `@sm:grid-cols-2` no MESMO nó, a grade de
+  duas colunas nunca acenderia, calada, como toda classe que o Tailwind não
+  gera. O `@container` fica no PAI. Conferido no CSS compilado
+  (`container-type:inline-size` + `@container (min-width:24rem)`), não
+  suposto: `@sm` é 24rem, então o balão fica em 1 coluna e a tela cheia em 2.
+- **Dois botões flutuantes no mesmo canto: o degrau é FIXO.** A bolha tomou o
+  canto (`nav+1rem` / `bottom-6`) e o `BotaoVoltarAoTopo` subiu um degrau
+  (`nav+5rem` / `5.5rem`), sem depender da presença dela — a bolha some
+  enquanto o painel está aberto, e um degrau condicional faria o outro botão
+  pular no meio da leitura.
+- **Componente no LAYOUT do painel não desmonta entre rotas irmãs**, e isso é
+  recurso, não detalhe: a conversa aberta em Pessoas continua aberta em
+  Imóveis, sem store, sem URL e sem recarregar. É a mesma propriedade que
+  obriga `CromaDoModulo` a ser client, agora a favor.
+- **Terceiro portal do painel, mesma cobrança.** `data-rota` + `data-modulo`
+  repetidos na raiz portalada, módulo saindo de `moduloAtivo(atual)`; a
+  guarda de `navegacao.test.ts` ganhou o arquivo e foi provocada com md5
+  antes/depois. Medido nos dois temas em 320/360/390/1280: `--color-acento`
+  do portal idêntico ao do `<main>`.
+- **Sem credencial de E2E nesta máquina**, então a medição do painel é por
+  reprodução — CSS de produção EMBUTIDO em `<style>` e o nó portalado como
+  IRMÃO do `<main>`, nunca filho (foi montá-lo dentro que fez a reprodução da
+  gaveta não reproduzir a herança de cor em 04/09). Detalhe operacional:
+  script fora do repositório não resolve `@playwright/test` — copiar para a
+  raiz, rodar, apagar.
+- **Duas sessões no mesmo repositório de novo:** `ChatBase` estava sendo
+  editada por outra sessão (anexos múltiplos) enquanto esta construía o
+  balão. A saída foi não tocar nela: o painel impõe a própria altura por
+  sobreposição de `>div`, porque `h-[72dvh] min-h-[28rem]` é a medida da tela
+  cheia.
