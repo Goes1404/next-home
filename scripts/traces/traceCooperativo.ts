@@ -38,5 +38,14 @@ for (const [i, fala] of roteiroDoCliente.entries()) {
   const extra = j.tipo === "perguntar" ? `(${j.assunto})` : j.tipo === "propor_horario" ? `(já ofereceu ${j.jaOfereceu})` : "";
   console.log(`turno ${i + 1}: cliente "${fala}"  →  ${j.tipo} ${extra}`);
   historico.push({ remetente: "cliente", texto: fala });
-  historico.push({ remetente: "bot", texto: falasDoBot[chave] ?? falasDoBot[j.tipo] });
+  /*
+   * O fallback não é preguiça: sem ele, uma jogada que não está no mapa
+   * empurra `undefined` no histórico e o trace morre no meio, escondendo
+   * justamente os turnos que se queria ver. Aconteceu em 10/09 com outro
+   * trace e de novo em 11/09 aqui, quando `agendar` passou a ser alcançada.
+   */
+  historico.push({
+    remetente: "bot",
+    texto: falasDoBot[chave] ?? falasDoBot[j.tipo] ?? "(sem texto de exemplo para esta jogada)",
+  });
 }

@@ -61,6 +61,7 @@ export type Jogada =
   | { tipo: "indicar_alternativa"; slug: string; nome: string; piso: number | null; emVezDe: string | null }
   | { tipo: "deixar_porta_aberta"; oQueEleDisse: string }
   | { tipo: "encerrar_confirmado" }
+  | { tipo: "responder_pergunta_aberta"; oQueEleDisse: string }
   | { tipo: "acolher_recusa"; familia: FamiliaDeRecusa; oQueEleDisse: string }
   | { tipo: "encerrar_recusado"; familia: FamiliaDeRecusa }
   | { tipo: "devolver_escolha" };
@@ -68,6 +69,7 @@ export type Jogada =
 import type { Fala } from "./rajada";
 import { normalizar } from "./normalizarFala";
 import { detectarRecusa, type FamiliaDeRecusa, type Recusa } from "./recusaDoCliente";
+import { forcaDaPergunta } from "./ehPergunta";
 
 export interface EstadoDaConversa {
   /** Assuntos do funil que o cliente já cobriu (na fala ou no dossiê). */
@@ -116,6 +118,14 @@ export interface EstadoDaConversa {
   recusa: Recusa | null;
   /** Quantas vezes ele já recusou ANTES desta fala. */
   recusasAnteriores: number;
+  /**
+   * A fala ATUAL responde algum assunto do funil?
+   *
+   * É o que separa pergunta de resposta quando as duas usam as mesmas
+   * palavras: "pode ser na planta" tem "pode", mas está RESPONDENDO o
+   * estágio — e tratá-la como pergunta aberta trava o funil no lugar.
+   */
+  falaAtualRespondeFunil: boolean;
   /**
    * Horas desde a última fala de qualquer um nesta conversa.
    *
@@ -316,6 +326,7 @@ export function estadoDaConversa(params: {
    * encerra — insistir depois de dois nãos é o que gera denúncia.
    */
   const recusasAnteriores = falasCliente.filter((f) => detectarRecusa(f) !== null).length;
+  const falaAtualRespondeFunil = assuntosDoFunil(mensagemAtual).length > 0;
   /*
    * O contexto muda o que "não" significa. Depois de ele já ter recusado, um
    * "não, obrigada" é a confirmação; antes disso, é resposta a uma pergunta
@@ -469,6 +480,7 @@ export function estadoDaConversa(params: {
     agendamento,
     recusa,
     recusasAnteriores,
+    falaAtualRespondeFunil,
     horasDesdeAUltimaFala: params.horasDesdeAUltimaFala ?? 0,
     vezesPerguntado,
     /*
@@ -640,6 +652,23 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
     return { tipo: "devolver_escolha" };
   }
 
+  /*
+   * Chegou aqui = o planner NÃO soube classificar a fala.
+   *
+   * Se ela é uma pergunta, responder é o certo; avançar o funil é trocar de
+   * assunto na cara de quem perguntou — a queixa "muda de assunto sozinha"
+   * (11/09/2026), e a mesma família do "em qual região você procura?" que
+   * respondeu a uma recusa.
+   *
+   * Fica DEPOIS de `responder_dado`, `confirmar_visita` e da recusa de
+   * propósito: a pergunta que o planner JÁ sabe responder continua tendo
+   * caminho próprio, com o dado do catálogo junto.
+   */
+  const forca = forcaDaPergunta(estado.oQueEleDisse);
+  if (forca === "forte" || (forca === "fraca" && !estado.falaAtualRespondeFunil)) {
+    return { tipo: "responder_pergunta_aberta", oQueEleDisse: estado.oQueEleDisse };
+  }
+
   const proximoAssunto = ORDEM_DO_FUNIL.find((a) => {
     if (estado.respondidos.has(a)) return false;
     /*
@@ -804,6 +833,12 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
         `${cabecalho}: a visita JÁ ESTÁ CONFIRMADA. Não qualifique mais.`,
         "Responda o que ele disse em UMA frase curta (se perguntou endereço/horário, repita o combinado). Nenhuma pergunta de região, estágio, tipologia ou renda — isso acabou. Feche com \"qualquer dúvida até lá, me chama\".",
       ].join("\n");
+    case "responder_pergunta_aberta":
+      return [
+        `${cabecalho}: responder a pergunta que ele acabou de fazer ("${jogada.oQueEleDisse.slice(0, 100)}"), e só ela.`,
+        "Se você não tem o dado, diga que não tem e que vai confirmar com o corretor — nunca invente, nunca troque de assunto, nunca devolva com uma pergunta de qualificação.",
+        "Só depois de responder, se couber, dê UM passo adiante.",
+      ].join(QUEBRA);
     case "acolher_recusa":
       return [
         `${cabecalho}: ele disse que NÃO tem interesse ("${jogada.oQueEleDisse.slice(0, 80)}").`,
@@ -830,6 +865,17 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
       ].join("\n");
   }
 }
+
+/**
+ * A quebra de linha dos blocos, como constante.
+ *
+ * Não é preciosismo: gerar estes blocos por script transformou `
+` em
+ * quebra de linha DE VERDADE dentro da string duas vezes em 11/09/2026, e o
+ * arquivo só não compilava por sorte — a mesma família do `barra-b` que vira
+ * BACKSPACE. Com a constante, não há escape para escapar.
+ */
+const QUEBRA = String.fromCharCode(10);
 
 function maiuscula(t: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);

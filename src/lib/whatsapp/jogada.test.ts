@@ -45,6 +45,7 @@ function estado(over: Partial<EstadoDaConversa> = {}): EstadoDaConversa {
     agendamento: { dia: null, hora: null, pediuVisita: false },
     recusa: null,
     recusasAnteriores: 0,
+    falaAtualRespondeFunil: false,
     horasDesdeAUltimaFala: 0,
     ...over,
   };
@@ -856,5 +857,73 @@ describe("o bloco da recusa", () => {
     const t = blocoDaJogada({ tipo: "encerrar_recusado", familia: "desinteresse" }, { nomeDoFoco: null });
     expect(t).toContain("porta aberta");
     expect(t).toContain("Nenhuma pergunta");
+  });
+});
+
+/**
+ * "Muda de assunto sozinha" — a terceira queixa de 11/09/2026.
+ *
+ * Fala que o planner não classifica cai no funil. É daí que sai "em qual
+ * região você procura?" na cara de quem acabou de perguntar outra coisa —
+ * e, do lado do cliente, isso é a mesma sensação de não ter sido ouvido.
+ */
+describe("quando não entende, responde ELE", () => {
+  it("pergunta que o planner não classifica NÃO vira pergunta de funil", () => {
+    const e = estadoDaConversa({
+      historico: [bot("Temos ótimas opções em Barueri.")],
+      mensagemAtual: "o condomínio aceita cachorro de porte grande?",
+      imovelEmFoco: null,
+      catalogo: [],
+    });
+    expect(planejarJogada(e).tipo).toBe("responder_pergunta_aberta");
+  });
+
+  /*
+   * A régua de "é pergunta" não pode depender da ORDEM das palavras: "onde
+   * fica" e "fica onde" são a mesma pergunta, e foi exatamente isso que fez
+   * a IA ignorar um cliente em 10/09.
+   */
+  it("não depende da ordem das palavras nem da interrogação", () => {
+    const pergunta = (texto: string) =>
+      planejarJogada(
+        estadoDaConversa({
+          historico: [bot("Oi!")],
+          mensagemAtual: texto,
+          imovelEmFoco: null,
+          catalogo: [],
+        }),
+      ).tipo;
+
+    expect(pergunta("fica onde o condomínio")).toBe("responder_pergunta_aberta");
+    expect(pergunta("me manda a ficha completa")).toBe("responder_pergunta_aberta");
+  });
+
+  it("afirmação sem pergunta continua deixando o funil andar", () => {
+    const e = estadoDaConversa({
+      historico: [bot("Oi!")],
+      mensagemAtual: "bom dia",
+      imovelEmFoco: null,
+      catalogo: [],
+    });
+    expect(planejarJogada(e).tipo).toBe("perguntar");
+  });
+
+  it("e a recusa continua ganhando dela", () => {
+    const e = estadoDaConversa({
+      historico: [bot("Oi!")],
+      mensagemAtual: "não tenho interesse, pode me tirar da lista?",
+      imovelEmFoco: null,
+      catalogo: [],
+    });
+    expect(planejarJogada(e).tipo).toBe("encerrar_recusado");
+  });
+
+  it("o bloco manda responder e proíbe trocar de assunto", () => {
+    const t = blocoDaJogada(
+      { tipo: "responder_pergunta_aberta", oQueEleDisse: "aceita pet?" },
+      { nomeDoFoco: null },
+    );
+    expect(t).toContain("aceita pet?");
+    expect(t).toContain("nunca invente");
   });
 });

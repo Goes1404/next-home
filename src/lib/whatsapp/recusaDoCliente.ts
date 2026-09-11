@@ -41,7 +41,7 @@ export type Recusa = {
  * razão pela qual a janela de horário comercial existe.
  */
 const PARADA =
-  /\b(me tira da lista|tira meu numero|nao quero mais receber|para de (mandar|enviar|me mandar)|pare de (mandar|enviar|me mandar)|(pode|podem) parar|para com isso|nao me mand\w*|descadastr\w*|sair da lista|numero errado|pessoa errada|nao era eu|nao sou eu|nao conheco (voces|essa empresa))\b/;
+  /\b(me tirar? da lista|tirar da lista|tira meu numero|nao quero mais receber|para de (mandar|enviar|me mandar)|pare de (mandar|enviar|me mandar)|(pode|podem) parar|para com isso|nao me mand\w*|descadastr\w*|sair da lista|numero errado|pessoa errada|nao era eu|nao sou eu|nao conheco (voces|essa empresa))\b/;
 
 /** Fim de jornada: ele resolveu, e não há o que reofertar. */
 const JA_RESOLVIDO =
