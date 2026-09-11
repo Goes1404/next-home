@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
+import { marcarCamposDoCorretor } from "@/lib/crm/camposDoCorretor";
 
 /**
  * Ações da ficha do lead: nota, tarefa e qualificação.
@@ -150,6 +151,23 @@ export async function salvarQualificacao(
     return { erro: "O orçamento mínimo está maior que o máximo." };
   }
 
+  /*
+   * O que uma PESSOA edita aqui fica protegido da IA (0110).
+   *
+   * A IA preenche a ficha a partir da conversa; sem esta marca, a primeira
+   * correção manual seria desfeita na mensagem seguinte — e é assim que
+   * alguém para de corrigir a ficha.
+   *
+   * A marca vai no MESMO update que grava o valor. Em dois updates, uma
+   * falha no segundo deixaria o valor sem proteção e a IA o desfaria na
+   * mensagem seguinte, sem nada acusando.
+   */
+  const { data: antes } = await ctx.supabase
+    .from("leads")
+    .select("campos_do_corretor")
+    .eq("id", leadId)
+    .maybeSingle();
+
   const { data, error } = await ctx.supabase
     .from("leads")
     .update({
@@ -159,6 +177,13 @@ export async function salvarQualificacao(
       dormitorios_min: dados.dormitoriosMin,
       regiao_interesse: dados.regiaoInteresse?.trim() || null,
       empreendimento_id: dados.empreendimentoId,
+      campos_do_corretor: marcarCamposDoCorretor(antes?.campos_do_corretor, [
+        "orcamento_min",
+        "orcamento_max",
+        "renda_mensal",
+        "dormitorios_min",
+        "regiao_interesse",
+      ]),
     })
     .eq("id", leadId)
     .select("id");
