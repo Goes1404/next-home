@@ -26,6 +26,8 @@ const conversa = (over: Partial<Conversa>): Conversa => ({
   id: "c1",
   leadId: null,
   telefoneCliente: "5511999999999",
+  memoria: null,
+  memoriaDoCorretor: false,
   botAtivo: true,
   pausadoHumanoAte: null,
   // O FATO da 0106: quem decide o SILÊNCIO não o lê, e há teste provando.

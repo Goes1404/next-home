@@ -147,3 +147,59 @@ describe("salvarDossie passa pela mescla, nunca grava direto", () => {
     expect(upsert).not.toMatch(/dossie\.orcamentoMax/);
   });
 });
+
+/**
+ * Guarda de código-fonte: o update da FICHA não volta a ser montado à mão.
+ *
+ * A regressão aqui falha calada e é a pior do conjunto: alguém acrescenta um
+ * campo ao objeto de update, esquece a marca `campos_do_corretor`, e a
+ * primeira correção manual do corretor é desfeita na mensagem seguinte — sem
+ * erro, sem teste vermelho, sem nada na tela. É assim que alguém para de
+ * corrigir a ficha.
+ */
+describe("salvarDossie escreve a ficha por camposDaFicha", () => {
+  const FONTE = readFileSync("src/lib/whatsapp/repositorio.ts", "utf8");
+
+  function corpoDeSalvarDossie(): string {
+    const inicio = FONTE.indexOf("export async function salvarDossie(");
+    expect(inicio, "salvarDossie não encontrada").toBeGreaterThan(-1);
+    const fim = FONTE.indexOf(String.fromCharCode(10) + "}", inicio);
+    return FONTE.slice(inicio, fim);
+  }
+
+  it("passa a marca do corretor PARA camposDaFicha, não só cita a coluna", () => {
+    const corpo = corpoDeSalvarDossie();
+    /*
+     * A segunda mordida passou na versão anterior desta guarda: trocar o
+     * argumento por `[]` deixava a IA escrever por cima de tudo que o
+     * corretor tivesse corrigido, e o teste continuava verde porque a
+     * palavra `campos_do_corretor` seguia aparecendo no `.select`.
+     *
+     * Recortar a CHAMADA — e afirmar que ela é única antes de recortar, que
+     * é a lição das sete vezes em que uma guarda desta base tropeçou no
+     * próprio recorte.
+     */
+    const ocorrencias = corpo.split("camposDaFicha(").length - 1;
+    expect(ocorrencias, "camposDaFicha deveria ser chamada uma vez").toBe(1);
+
+    const inicio = corpo.indexOf("camposDaFicha(");
+    const chamada = corpo.slice(inicio, corpo.indexOf(");", inicio));
+    expect(chamada).toMatch(/campos_do_corretor/);
+  });
+
+  it("o update de leads grava o RESULTADO dela, não um objeto montado aqui", () => {
+    const corpo = corpoDeSalvarDossie();
+    /*
+     * A primeira versão desta guarda checava só a PRESENÇA de
+     * `camposDaFicha(` no corpo — e passou na mordida: bastou manter a
+     * chamada num `const naoUsado` e montar o update à mão ao lado. Guarda
+     * que confere que a função foi citada, e não que o resultado dela é o
+     * que vai para o banco, é decorativa. Quarta guarda desta base a nascer
+     * cega; por isso agora a exigência é o VÍNCULO.
+     */
+    expect(corpo).toMatch(/const doLead = camposDaFicha\(/);
+    expect(corpo).toMatch(/\.from\("leads"\)\.update\(doLead\)/);
+    // E nada de campo escrito à mão no objeto que vai para o update.
+    expect(corpo).not.toMatch(/doLead\w*\.\w+ = /);
+  });
+});

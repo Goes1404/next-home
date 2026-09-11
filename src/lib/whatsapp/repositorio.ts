@@ -13,6 +13,7 @@ import {
 } from "./antiBan";
 import { consultarEstadoConexao } from "./provider";
 import { resetPorTrocaDeNumero } from "./trocaDeNumero";
+import { camposDaFicha } from "./fichaDoLead";
 import type { DossieClienteIA } from "./types";
 
 /**
@@ -94,6 +95,15 @@ export type ConversaPersistida = {
   id: string;
   /** Nulo apenas em objetos legados/testes; a 0111 torna impossível no banco. */
   leadId: string | null;
+  /**
+   * A MEMÓRIA da conversa (0110) — o estado da negociação em prosa.
+   *
+   * É o que sobrevive à janela de 40 falas, das quais até 27 são do
+   * corretor nas conversas ativas (o número é o WhatsApp pessoal dele).
+   */
+  memoria: string | null;
+  /** A memória atual foi escrita por uma PESSOA: a IA não a reescreve. */
+  memoriaDoCorretor: boolean;
   telefoneCliente: string;
   botAtivo: boolean;
   pausadoHumanoAte: string | null;
@@ -120,7 +130,7 @@ export type ConversaPersistida = {
 };
 
 const SELECT_CONVERSA =
-  "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido, atendida_em";
+  "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido, atendida_em, memoria, memoria_do_corretor";
 
 function mapConversa(row: {
   id: string;
@@ -133,6 +143,8 @@ function mapConversa(row: {
   e_teste: boolean;
   cliente_conhecido?: boolean;
   atendida_em?: string | null;
+  memoria?: string | null;
+  memoria_do_corretor?: boolean;
 }): ConversaPersistida {
   return {
     id: row.id,
@@ -143,6 +155,8 @@ function mapConversa(row: {
     liberadoPorPalavraChave: row.liberado_por_palavra_chave,
     clienteConhecido: row.cliente_conhecido ?? false,
     atendidaEm: row.atendida_em ?? null,
+    memoria: row.memoria ?? null,
+    memoriaDoCorretor: row.memoria_do_corretor ?? false,
     eTeste: row.e_teste,
     origem: row.origem,
   };
@@ -1394,50 +1408,71 @@ export async function salvarDossie(leadId: string, dossie: DossieClienteIA): Pro
   );
 
   /*
-   * A renda também vai para `leads`, e não só para o dossiê, porque é lá
-   * que a ficha do CRM lê — e dado gravado que nenhuma tela mostra é
-   * indistinguível de dado perdido (foi o que aconteceu com
-   * `historico_envios`, 53 linhas e zero leitores).
+   * A ficha do lead.
    *
-   * Só escreve quando há valor: um dossiê reextraído sem a renda na
-   * conversa não pode APAGAR o que o cliente já disse antes.
+   * Renda, orçamento, região e dormitórios vão para `leads` porque é de lá
+   * que a ficha do CRM lê — dado gravado que nenhuma tela mostra é
+   * indistinguível de dado perdido (a lição do `historico_envios`, 53
+   * linhas e zero leitores). Nome e e-mail entraram em 11/09/2026, quando
+   * se mediu que os 55 leads que conversaram com a IA se chamavam todos
+   * "WhatsApp 2461".
+   *
+   * As três regras (null não apaga, o cliente pode mudar de ideia, o
+   * corretor vence) moram em `camposDaFicha`, que é PURA e testada. Montar
+   * o objeto à mão aqui foi o que fez este bloco crescer sem régua — e
+   * acrescentar um campo era exatamente o momento em que alguém esqueceria
+   * a marca do corretor e desfaria a correção de uma pessoa.
    */
-  /*
-   * Renda E orçamento vão para `leads`, não só para o dossiê.
-   *
-   * A renda já ia; o orçamento ficava só em `lead_observacoes_ia` — e a
-   * ficha do CRM lê de `leads.orcamento_min/max`. Resultado medido em
-   * 24/08/2026: **0 de 58 leads com orçamento**, num sistema que extrai
-   * orçamento de toda conversa. Mesmo defeito de `historico_envios`: dado
-   * gravado que nenhuma tela mostra é indistinguível de dado perdido.
-   *
-   * `renda_mensal` e `orcamento_*` são coisas diferentes e as duas
-   * importam: orçamento é quanto a pessoa quer gastar no imóvel; renda é
-   * quanto entra por mês, e é ela que define o que o banco financia.
-   *
-   * Campo sem valor NÃO é escrito. Um dossiê reextraído de uma conversa em
-   * que o assunto não voltou viria com null, e null sobrescrevendo apagaria
-   * o que o cliente já disse dez mensagens atrás. Por isso o objeto é
-   * montado campo a campo, e o update só acontece se sobrou alguma coisa.
-   */
-  const doLead: {
-    renda_mensal?: number;
-    orcamento_min?: number;
-    orcamento_max?: number;
-    regiao_interesse?: string;
-    dormitorios_min?: number;
-  } = {};
-  if (dossie.rendaMensal !== null) doLead.renda_mensal = dossie.rendaMensal;
-  if (dossie.orcamentoMin !== null) doLead.orcamento_min = dossie.orcamentoMin;
-  if (dossie.orcamentoMax !== null) doLead.orcamento_max = dossie.orcamentoMax;
-  // A região que o cliente disser no WhatsApp entra sozinha na ficha do CRM
-  // (pedido de 25/08/2026) — o corretor recebe o lead já com ela preenchida.
-  if (dossie.regiaoInteresse !== null) doLead.regiao_interesse = dossie.regiaoInteresse;
-  if (dossie.dormitoriosMin !== null) doLead.dormitorios_min = dossie.dormitoriosMin;
+  const { data: leadAtual } = await supabase
+    .from("leads")
+    .select("nome, email, campos_do_corretor")
+    .eq("id", leadId)
+    .maybeSingle();
+
+  const doLead = camposDaFicha(
+    dossie,
+    apenasTextos(leadAtual?.campos_do_corretor),
+    leadAtual?.nome ?? "",
+    leadAtual?.email,
+  );
 
   if (Object.keys(doLead).length > 0) {
     await supabase.from("leads").update(doLead).eq("id", leadId);
   }
+}
+
+/**
+ * Grava a MEMÓRIA da conversa (0110).
+ *
+ * A mescla mora em `mesclarMemoria`, que é pura e testada; aqui só se
+ * persiste. `porCorretor` carimba `memoria_do_corretor`, e é isso que faz a
+ * extração seguinte preservar o texto dele em vez de reescrevê-lo.
+ *
+ * Falha só loga: a memória é melhoria de contexto, e derrubar o ciclo de
+ * atendimento por causa dela seria trocar um contexto melhor por nenhuma
+ * resposta. Mesma escolha de `registrarInteracao`.
+ */
+export async function salvarMemoriaDaConversa(
+  conversaId: string,
+  texto: string | null,
+  porCorretor = false,
+): Promise<void> {
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from("whatsapp_conversas")
+    .update({
+      memoria: texto,
+      memoria_atualizada_em: new Date().toISOString(),
+      /*
+       * Só SOBE para true. A IA gravando por cima não apaga a marca: se
+       * apagasse, a mensagem seguinte voltaria a reescrever o texto do
+       * corretor, que é exatamente o que a marca existe para impedir.
+       */
+      ...(porCorretor ? { memoria_do_corretor: true } : {}),
+    })
+    .eq("id", conversaId);
+
+  if (error) console.error("[conversa] falha ao gravar memória:", error.message);
 }
 
 // ---------------------------------------------------------------------------

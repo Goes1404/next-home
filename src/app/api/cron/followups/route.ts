@@ -253,7 +253,7 @@ async function responderAtrasada(
   const { data: conversa } = await supabase
     .from("whatsapp_conversas")
     .select(
-      "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido, atendida_em",
+      "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido, atendida_em, memoria, memoria_do_corretor",
     )
     .eq("id", params.conversaId)
     .maybeSingle();
@@ -273,6 +273,8 @@ async function responderAtrasada(
     botAtivo: conversa.bot_ativo,
     pausadoHumanoAte: conversa.pausado_humano_ate,
     liberadoPorPalavraChave: conversa.liberado_por_palavra_chave,
+    memoria: conversa.memoria ?? null,
+    memoriaDoCorretor: conversa.memoria_do_corretor ?? false,
     clienteConhecido: conversa.cliente_conhecido ?? false,
     atendidaEm: conversa.atendida_em ?? null,
     eTeste: conversa.e_teste,
