@@ -1240,6 +1240,12 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
   "público · imóvel · data" quando o campo fica vazio. A action continua
   exigindo título não-vazio (validação de endpoint), então quem chamar
   `criarCampanha` de outro lugar precisa mandar um.
+- **A seleção manual é a última revisão antes do disparo** (11/09/2026):
+  `LeadElegivel` leva etapa para a interface; a busca combina nome/telefone
+  com etapa; “Selecionar resultados” marca só o recorte visível; e o resumo
+  permite remover destinatários antes de avançar. A segurança não mudou: a
+  action ainda intersecta os IDs recebidos com a carteira permitida por RLS e
+  `elegivel()`, portanto dado enviado pelo navegador não vira autorização.
 - **Status da fila em português de gente**: "Hoje saem 15 mensagens; as
   outras 32 continuam amanhã, sozinhas" no lugar de pendentes/cota/próximo
   envio. Cota, fila e instância são vocabulário de quem construiu o sistema.
@@ -6358,3 +6364,37 @@ em produção **antes** de aplicar: eram 37 conversas, 68 mensagens. Só que
 - **Régua geral: antes de aplicar migration destrutiva, medir o que morreria
   E perguntar quantos daqueles são o alvo de verdade.** Aqui 30 de 37 não
   eram, e nenhum teste, tipo ou build diria isso — só o `count(*)`.
+
+## O Hobby ACEITA 4 cron jobs — e como saber sem adivinhar (11/09/2026)
+
+O teto de jobs do plano nunca esteve na documentação da Vercel, e a dúvida
+já tinha custado uma decisão inteira: o relatório semanal (0076) foi para o
+pg_cron em 01/09 justamente para não arriscar um `cron_jobs_limits_reached`,
+que **recusa o deployment inteiro, sem log e sem webhook**.
+
+- **Medido em 11/09: `vercel.json` com QUATRO crons** (campanhas, meta-ads,
+  event-outbox, limpar-artes-ia) **foi aceito** — deployment `dpl_4mB6HoMv`,
+  `target: production`, READY. O número não é 2 nem 3.
+- **Como diagnosticar sem `list_deployments`** (que o classificador do Claude
+  Code costuma bloquear): a **API de deployments do GitHub**. Para cada push
+  a Vercel cria um registro `Preview` e outro `Production`:
+
+  ```
+  curl -s "https://api.github.com/repos/<org>/<repo>/deployments?per_page=6"
+  ```
+
+  **Preview sem o Production correspondente é a assinatura da recusa.** O
+  commit anterior tinha os dois; se o novo ficar só com o Preview depois de
+  ~2 minutos, o deployment de produção não nasceu. Foi assim que a dúvida se
+  resolveu em duas consultas, em vez de por palpite.
+- **Cuidado com a janela de tempo.** O Production aparece cerca de UM MINUTO
+  depois do Preview; consultar antes disso mostra exatamente o mesmo quadro
+  de uma recusa. Medir duas vezes, com intervalo, antes de acusar.
+- **`get_deployment` pelo alias NÃO serve para isso**: ele devolve o que está
+  SERVINDO o domínio, não o que está sendo construído — durante todo o build
+  ele segue mostrando o deployment anterior, o que também imita uma recusa.
+  Para julgar um deployment novo, consultar pela URL DELE.
+- **Rota de cron viva se confere por HTTP, não pelo build**: 401 com
+  `x-matched-path` batendo é rota no ar recusando sem segredo; 404 é rota que
+  só existe na branch. `web_fetch_vercel_url` do MCP da Vercel faz isso
+  quando o `curl` está bloqueado.
