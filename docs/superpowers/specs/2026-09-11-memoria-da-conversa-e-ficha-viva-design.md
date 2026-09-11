@@ -175,8 +175,34 @@ demora" acima de 24h continua valendo).
 **Resolve:** o pedido do usuário — "atualizar todos os pontos quando
 necessário".
 
-**Uma extração, dois destinos.** A chamada do dossiê passa a devolver também
-os campos da FICHA. Zero chamada nova.
+**O motivo real da ficha vazia não é o que parecia.** `salvarDossie` JÁ
+escreve `renda_mensal`, `orcamento_min/max`, `regiao_interesse` e
+`dormitorios_min` em `leads` — o código está lá desde 24/08, com a guarda de
+"campo sem valor não é escrito". O que não acontece é a EXTRAÇÃO: ela só
+roda quando a IA responde. Medido em 7 dias, em conversas de atendimento:
+**191 falas de cliente, 80 respostas da IA e 127 do corretor**. As falas que
+o corretor atendeu não geram extração nenhuma — e são a maioria.
+
+Então a frente 5 tem duas metades:
+
+**(a) A extração passa a rodar mesmo quando a IA não responde.** No fim do
+webhook, independentemente de o bot ter falado, com três travas:
+
+- **só em conversa de atendimento** (`conversaEhAtendimento`) — a linha é o
+  WhatsApp pessoal do corretor, e extrair ficha da conversa da família dele
+  é exatamente o que a 0087 veio impedir;
+- **só com lead vinculado** — sem `lead_id` não há ficha para escrever;
+- **debounce de 10 minutos por conversa**, medido contra
+  `lead_observacoes_ia.updated_at`: uma rajada de cinco balões é UMA
+  extração, não cinco.
+
+Custo medido: as 111 falas/semana que hoje não extraem custariam cerca de
+**R$ 0,22 por semana** no `gpt-4.1-mini`. A extração roda depois da
+resposta, com orçamento próprio de 12s, e ninguém está esperando por ela.
+
+**(b) Uma extração, dois destinos.** A chamada do dossiê passa a devolver
+também a memória e os campos de ficha que ela ainda não traz (nome, e-mail,
+imóvel de interesse). Zero chamada nova.
 
 **O que a IA escreve em `leads`:** `nome`, `email`, `regiao_interesse`,
 `dormitorios_min`, `orcamento_min`, `orcamento_max`, `renda_mensal`,
