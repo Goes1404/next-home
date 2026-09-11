@@ -927,3 +927,52 @@ describe("quando não entende, responde ELE", () => {
     expect(t).toContain("nunca invente");
   });
 });
+
+/**
+ * "Não retoma depois de dias" — a quarta queixa de 11/09/2026.
+ *
+ * O cliente some, volta a escrever, e ela segue como se a conversa nunca
+ * tivesse parado. A decisão do usuário foi CONFIRMAR se ainda vale, citando
+ * o que já se sabe, com uma pergunta só — mais seguro que emendar no
+ * assunto, porque muita coisa muda numa semana.
+ */
+describe("a retomada depois de dias", () => {
+  const voltou = (texto: string, horas: number) =>
+    planejarJogada(
+      estadoDaConversa({
+        historico: [cliente("procuro em Alphaville"), bot("Te mando a planta hoje.")],
+        mensagemAtual: texto,
+        horasDesdeAUltimaFala: horas,
+        imovelEmFoco: null,
+        catalogo: [],
+      }),
+    );
+
+  it("acima de 72h, confirma se ainda vale", () => {
+    expect(voltou("oi", 96).tipo).toBe("retomar");
+  });
+
+  it("abaixo de 72h a conversa segue como sempre", () => {
+    expect(voltou("oi", 20).tipo).not.toBe("retomar");
+  });
+
+  /*
+   * Quem volta PERGUNTANDO já disse que ainda vale. Responder "você ainda
+   * está procurando?" a quem perguntou a planta é a mesma troca de assunto
+   * que a jogada anterior veio consertar.
+   */
+  it("mas pergunta em aberto ganha da retomada", () => {
+    expect(voltou("conseguiu ver a planta do 3 dorm?", 96).tipo).not.toBe("retomar");
+  });
+
+  it("e a recusa também ganha — ele voltou para dizer que não quer", () => {
+    expect(voltou("não tenho interesse mais", 96).tipo).toBe("acolher_recusa");
+  });
+
+  it("o bloco diz os dias e proíbe recomeçar a qualificação", () => {
+    const t = blocoDaJogada({ tipo: "retomar", horas: 96 }, { nomeDoFoco: "Terra Alta" });
+    expect(t).toContain("4 dias");
+    expect(t).toContain("MEMÓRIA");
+    expect(t).toContain("UMA pergunta");
+  });
+});

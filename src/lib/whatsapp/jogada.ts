@@ -49,6 +49,17 @@ export type AssuntoDoFunil = "regiao" | "estagio" | "tipologia" | "capacidade";
 /** A ordem é a da corretora real. Não é configurável de propósito. */
 export const ORDEM_DO_FUNIL: AssuntoDoFunil[] = ["regiao", "estagio", "tipologia", "capacidade"];
 
+/**
+ * A partir de quantas horas de silêncio a volta do cliente vira RETOMADA.
+ *
+ * 72h e não 24h: a instrução de "desculpa a demora" acima de 24h já existe
+ * e cobre o atraso de um dia. O que o usuário pediu é outra coisa —
+ * confirmar se ainda vale —, e isso só faz sentido quando passou tempo
+ * suficiente para a situação dele ter mudado. Perguntar "ainda está
+ * procurando?" para quem sumiu por uma tarde é fazer a IA parecer distraída.
+ */
+const HORAS_PARA_RETOMAR = 72;
+
 export type Jogada =
   | { tipo: "responder_dado"; dado: DadoPedido }
   | { tipo: "responder_honesto"; pergunta: string; vezes: number }
@@ -62,6 +73,7 @@ export type Jogada =
   | { tipo: "deixar_porta_aberta"; oQueEleDisse: string }
   | { tipo: "encerrar_confirmado" }
   | { tipo: "responder_pergunta_aberta"; oQueEleDisse: string }
+  | { tipo: "retomar"; horas: number }
   | { tipo: "acolher_recusa"; familia: FamiliaDeRecusa; oQueEleDisse: string }
   | { tipo: "encerrar_recusado"; familia: FamiliaDeRecusa }
   | { tipo: "devolver_escolha" };
@@ -664,7 +676,19 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
    * propósito: a pergunta que o planner JÁ sabe responder continua tendo
    * caminho próprio, com o dado do catálogo junto.
    */
+  /*
+   * Ele sumiu por dias e voltou.
+   *
+   * Vem depois da recusa, do dado pedido e do aceite — quem volta dizendo
+   * algo concreto merece resposta ao que disse, não uma pergunta sobre se
+   * ainda vale. E vem ANTES do funil, que é o que recomeçaria a
+   * qualificação do zero.
+   */
   const forca = forcaDaPergunta(estado.oQueEleDisse);
+  if (estado.horasDesdeAUltimaFala >= HORAS_PARA_RETOMAR && forca === "nao") {
+    return { tipo: "retomar", horas: estado.horasDesdeAUltimaFala };
+  }
+
   if (forca === "forte" || (forca === "fraca" && !estado.falaAtualRespondeFunil)) {
     return { tipo: "responder_pergunta_aberta", oQueEleDisse: estado.oQueEleDisse };
   }
@@ -833,6 +857,12 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
         `${cabecalho}: a visita JÁ ESTÁ CONFIRMADA. Não qualifique mais.`,
         "Responda o que ele disse em UMA frase curta (se perguntou endereço/horário, repita o combinado). Nenhuma pergunta de região, estágio, tipologia ou renda — isso acabou. Feche com \"qualquer dúvida até lá, me chama\".",
       ].join("\n");
+    case "retomar":
+      return [
+        `${cabecalho}: ele sumiu por ${Math.round(jogada.horas / 24)} dias e voltou agora.`,
+        "Cumprimente rápido, diga em meia frase de onde vocês pararam — use a MEMÓRIA DA CONVERSA, nunca invente — e faça UMA pergunta só: se ele ainda está procurando.",
+        "Nada de recomeçar a qualificação, nada de oferecer imóvel novo antes de ele responder.",
+      ].join(QUEBRA);
     case "responder_pergunta_aberta":
       return [
         `${cabecalho}: responder a pergunta que ele acabou de fazer ("${jogada.oQueEleDisse.slice(0, 100)}"), e só ela.`,
