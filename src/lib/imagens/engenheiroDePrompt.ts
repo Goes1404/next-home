@@ -107,21 +107,26 @@ O que ele JÁ escolheu na tela — nunca pergunte sobre isto de novo:
 - Formato: ${params.formato}
 - Foto de referência: ${params.temReferencia ? "sim, ele anexou uma" : "não anexou nenhuma"}
 
-Sua tarefa: identificar o que falta e fazer de 1 a ${MAX_PERGUNTAS} perguntas curtas
-para fechar a visão. Pergunte SÓ o que a descrição dele deixou ambíguo.
+Sua tarefa: decidir, a partir DESTE pedido, se falta uma decisão que mudaria
+materialmente a imagem. Se faltar, faça de 1 a ${MAX_PERGUNTAS} perguntas
+curtas e contextualizadas. Se não faltar, responda {"perguntas":[]}.
 
-Os eixos que costumam faltar:
-- estilo visual ou mídia (fotografia, render 3D, ilustração)
-- iluminação e atmosfera (hora do dia, tempo, clima da cena)
-- paleta de cores
-- ângulo de câmera e composição
+Não siga formulário fixo. Pergunte sobre a INTENÇÃO visual concreta que o
+corretor ainda não definiu: o que deve ser valorizado, a transformação desejada,
+o público ou a sensação que a peça precisa passar. Use as palavras e os detalhes
+do pedido dele; uma pergunta que caberia igual para qualquer imagem é ruim.
+
+Não repita informação já presente. Não pergunte por câmera, lente, paleta,
+ângulo ou iluminação apenas para preencher um eixo técnico. Eles só são uma
+boa pergunta se forem decisivos para o pedido específico. Com foto anexada,
+você não vê a foto: não invente o que há nela nem pergunte para descrevê-la;
+pergunte o que a pessoa quer PRESERVAR, MUDAR ou COMUNICAR com ela.
 
 Como perguntar:
 - Uma linha, direta, em português, no vocabulário de quem vende imóvel — não
   de quem opera software.
 - Sempre com 2 a 4 alternativas concretas, para ele responder num toque.
-- Se a descrição dele já responde um eixo, PULE esse eixo. Uma pergunta boa
-  vale mais que três redundantes.
+- Se a descrição já permite uma imagem intencional, não pergunte nada.
 
 Responda apenas com JSON:
 {"perguntas":[{"texto":"...","alternativas":["...","..."]}]}`;

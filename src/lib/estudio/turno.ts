@@ -13,6 +13,7 @@ import { verRoteiro, type PedidoDeVideo } from "@/app/corretor/(painel)/marketin
 import {
   ehConfirmacao,
   referenciaAtiva,
+  referenciasAtivas,
   referenciasDaConversa,
   type MensagemDoEstudio,
   type PerguntaDoEstudio,
@@ -146,6 +147,7 @@ export async function turnoDeArte(params: {
   // A foto anexada muda tudo: as perguntas, as receitas alcançáveis e o
   // motor por baixo (edição em vez de geração do zero).
   const referencia = referenciaAtiva(historicoCompleto);
+  const referencias = referenciasAtivas(historicoCompleto);
 
   if (!ideia) {
     if (referencia) {
@@ -179,7 +181,7 @@ export async function turnoDeArte(params: {
       ideia,
       objetivo: "peça de marketing de um imóvel",
       formato: TAMANHOS.find((t) => t.chave === tamanho)?.rotulo ?? tamanho,
-      temReferencia: Boolean(referencia),
+      temReferencia: referencias.length > 0,
     });
     const proxima = perguntas.find((p) => !feitas.includes(p.texto));
     if (proxima) {
@@ -205,7 +207,7 @@ export async function turnoDeArte(params: {
    */
   const textoDaHeuristica = [ideia, ...respostas.map((r) => r.escolha)].join(". ");
   const tamanho = tamanhoDoTexto(textoDaHeuristica);
-  const receita = receitaDoTexto(textoDaHeuristica, Boolean(referencia));
+  const receita = receitaDoTexto(textoDaHeuristica, referencias.length > 0);
   /*
    * O imóvel que o corretor CITOU. Sem LLM: `imovelPorTexto` casa por nome e
    * por apelido, então "Manacá" acha o "More na Aldeia de Barueri". É o único
@@ -218,7 +220,7 @@ export async function turnoDeArte(params: {
     fatos: imovelCitado ? fatosDoImovelCitado(imovelCitado) : [],
     respostas,
     promptAnterior: propostaAnterior?.prompt ?? null,
-    temReferencia: Boolean(referencia),
+    temReferencia: referencias.length > 0,
   });
 
   const proposta: PropostaDeArte = {
@@ -233,7 +235,8 @@ export async function turnoDeArte(params: {
     daIa: traduzido.daIa,
     imovelSlug: imovelCitado?.slug ?? null,
     fotosDoImovel: imovelCitado ? fotosParaReferencia(imovelCitado) : [],
-    referenciaPath: referencia?.path ?? null,
+    referenciaPath: referencias[0]?.path ?? null,
+    referenciaPaths: referencias.map((referencia) => referencia.path),
   };
 
   /*
@@ -241,7 +244,9 @@ export async function turnoDeArte(params: {
    * editável. Repetir aqui faria a pessoa ler duas vezes a mesma coisa e
    * ainda daria a impressão de que o de cima é o que vale.
    */
-  const notaDaFoto = referencia ? " Vou partir da foto que você anexou." : "";
+  const notaDaFoto = referencias.length > 0
+    ? ` Vou partir de ${referencias.length === 1 ? "uma foto que você anexou" : `${referencias.length} fotos que você anexou`}.`
+    : "";
   const texto = traduzido.daIa
     ? soarHumano(
         `Escrevi assim.${notaDaFoto} Leia e ajuste o que quiser — é exatamente esse texto ` +

@@ -20,6 +20,7 @@ import {
   type EstadoDoChat,
 } from "@/app/corretor/(painel)/estudio/acoes";
 import { enviarFotoDeReferencia } from "@/app/corretor/(painel)/estudio/uploadReferencia";
+import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { statusDosVideos } from "./acoes";
 
 /**
@@ -56,8 +57,8 @@ export function ChatDeVideo({
   const { avisar, falhar } = useAvisos();
   const [conversas, setConversas] = useState(conversasIniciais);
   const [estado, setEstado] = useState<EstadoDoChat | null>(null);
-  const [pendente, setPendente] = useState<{ id: string; conteudo: string; previewUrl?: string | null } | null>(null);
-  const [anexo, setAnexo] = useState<{ file: File; previewUrl: string } | null>(null);
+  const [pendente, setPendente] = useState<{ id: string; conteudo: string; previewUrls?: string[] } | null>(null);
+  const [anexos, setAnexos] = useState<{ file: File; previewUrl: string }[]>([]);
   const [pensando, setPensando] = useState(false);
   const [gerando, setGerando] = useState<string | null>(null);
   const [videos, setVideos] = useState(videosIniciais);
@@ -75,23 +76,23 @@ export function ChatDeVideo({
   };
 
   const enviar = async (texto: string, escolha?: { perguntaId: string; pergunta: string }) => {
-    const fotoDaVez = escolha ? null : anexo;
+    const fotosDaVez = escolha ? [] : anexos;
     setPendente({
       id: `temp-${Date.now()}`,
       conteudo: texto || "📎 Foto de referência",
-      previewUrl: fotoDaVez?.previewUrl ?? null,
+      previewUrls: fotosDaVez.map((foto) => foto.previewUrl),
     });
     setPensando(true);
     try {
       // Sobe a foto antes de gravar a mensagem — referência quebrada não entra.
-      let referencia: { path: string; url: string } | null = null;
-      if (fotoDaVez) {
-        const up = await enviarFotoDeReferencia(corretorId, fotoDaVez.file);
+      const referencias: { path: string; url: string }[] = [];
+      for (const foto of fotosDaVez) {
+        const up = await enviarFotoDeReferencia(corretorId, foto.file);
         if ("erro" in up) {
           falhar(up.erro);
           throw new Error("falhou");
         }
-        referencia = up;
+        referencias.push(up);
       }
 
       const r = await enviarMensagemDoEstudio({
@@ -99,15 +100,16 @@ export function ChatDeVideo({
         conversaId: estado?.conversa.id ?? null,
         texto,
         escolha: escolha ?? null,
-        referencia,
+        referencias,
       });
       if (!aplicar(r)) throw new Error("falhou");
-      if (fotoDaVez) {
-        URL.revokeObjectURL(fotoDaVez.previewUrl);
-        setAnexo(null);
+      if (fotosDaVez.length > 0) {
+        fotosDaVez.forEach((foto) => URL.revokeObjectURL(foto.previewUrl));
+        setAnexos([]);
       }
     } catch (e) {
-      if (!(e instanceof Error && e.message === "falhou")) falhar("Sem conexão. Tente de novo.");
+      if (ehActionDeOutroBuild(e)) falhar(avisoDePaginaVelha());
+      else if (!(e instanceof Error && e.message === "falhou")) falhar("Sem conexão. Tente de novo.");
       throw e;
     } finally {
       setPendente(null);
@@ -130,8 +132,8 @@ export function ChatDeVideo({
         avisar("Na fila. O vídeo aparece aqui quando ficar pronto.");
         void atualizar();
       }
-    } catch {
-      falhar("Sem conexão. Tente de novo.");
+    } catch (e) {
+      falhar(ehActionDeOutroBuild(e) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
     } finally {
       setGerando(null);
     }
@@ -193,17 +195,19 @@ export function ChatDeVideo({
           }
           onEnviar={enviar}
           onEscolher={escolher}
-          anexo={anexo ? { previewUrl: anexo.previewUrl, nome: anexo.file.name } : null}
-          onAnexar={(file) => {
-            setAnexo((atual) => {
-              if (atual) URL.revokeObjectURL(atual.previewUrl);
-              return { file, previewUrl: URL.createObjectURL(file) };
+          anexos={anexos.map((anexo) => ({ previewUrl: anexo.previewUrl, nome: anexo.file.name }))}
+          onAnexar={(files) => {
+            setAnexos((atuais) => {
+              const novos = files.slice(0, Math.max(0, 4 - atuais.length)).map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+              if (files.length > novos.length) falhar("Você pode usar até 4 fotos como referência.");
+              return [...atuais, ...novos];
             });
           }}
-          onRemoverAnexo={() => {
-            setAnexo((atual) => {
-              if (atual) URL.revokeObjectURL(atual.previewUrl);
-              return null;
+          onRemoverAnexo={(indice) => {
+            setAnexos((atuais) => {
+              const alvo = atuais[indice];
+              if (alvo) URL.revokeObjectURL(alvo.previewUrl);
+              return atuais.filter((_, i) => i !== indice);
             });
           }}
           renderAcima={(m) =>

@@ -49,7 +49,10 @@ export function aplicarTemplate(params: {
 }): string {
   return params.mensagemBase
     .replace(/{nome}/gi, nomeUtilDoLead(params.nomeLead) || "Tudo bem?")
-    .replace(/{imovel}/gi, params.empreendimentoNome || "nossos lançamentos em Alphaville");
+    .replace(
+      /{imovel}/gi,
+      params.empreendimentoNome || "nossos lançamentos em Alphaville",
+    );
 }
 
 /**
@@ -84,7 +87,7 @@ export async function variarMensagemComIA(params: {
   if (!algumProvedorConfigurado()) return semVariacao;
 
   const promptVariacao = `Você é um redator imobiliário sênior da Next Home.
-Reescreva a mensagem abaixo ${nome ? `para o cliente "${nome}"` : "SEM CITAR NOME NENHUM (não sabemos o nome desta pessoa — cumprimente sem nome, e nunca escreva algo como \"Contato sem nome\", \"prezado cliente\" ou um nome inventado)"}, mantendo o objetivo de negócio e o tom consultivo e elegante, mas variando a saudação e vocabulário para torná-la 100% natural, humana e única.
+Reescreva a mensagem abaixo ${nome ? `para o cliente "${nome}"` : 'SEM CITAR NOME NENHUM (não sabemos o nome desta pessoa — cumprimente sem nome, e nunca escreva algo como "Contato sem nome", "prezado cliente" ou um nome inventado)'}, mantendo o objetivo de negócio e o tom consultivo e elegante, mas variando a saudação e vocabulário para torná-la 100% natural, humana e única.
 Nunca use emojis em excesso. Máximo 2 parágrafos curtos.
 
 Mensagem Original:
@@ -110,7 +113,9 @@ Responda em JSON: {"mensagem": "o texto reescrito"}`;
   });
 
   if (!resultado.ok) {
-    console.warn(`[campanha] variação por IA indisponível (${resultado.erro}); mantendo o texto base.`);
+    console.warn(
+      `[campanha] variação por IA indisponível (${resultado.erro}); mantendo o texto base.`,
+    );
     return semVariacao;
   }
 
@@ -135,6 +140,8 @@ export function montarFilaCampanha(params: {
   mensagemBase: string;
   empreendimentoNome?: string;
   intervaloSegundosMinimo?: number;
+  /** Primeiro instante desejado. A fila nunca começa no passado. */
+  iniciarEm?: Date | string;
   /**
    * Agenda em qualquer horário, sem empurrar para o comercial.
    *
@@ -152,8 +159,15 @@ export function montarFilaCampanha(params: {
 }): ItemFilaCampanha[] {
   const { campanhaId, leads, mensagemBase, empreendimentoNome } = params;
   const ignorarJanela = params.ignorarJanela ?? false;
-  const intervaloSegundosMinimo = params.intervaloSegundosMinimo ?? INTERVALO_MINIMO_SEGUNDOS;
-  const agora = Date.now();
+  const intervaloSegundosMinimo =
+    params.intervaloSegundosMinimo ?? INTERVALO_MINIMO_SEGUNDOS;
+  const inicioSolicitado = params.iniciarEm
+    ? new Date(params.iniciarEm).getTime()
+    : Date.now();
+  const agora = Math.max(
+    Date.now(),
+    Number.isFinite(inicioSolicitado) ? inicioSolicitado : 0,
+  );
 
   const itens: ItemFilaCampanha[] = [];
 
@@ -239,7 +253,12 @@ export function montarFilaCampanha(params: {
  */
 export async function gerarMensagensCampanhaPersonalizadas(params: {
   campanhaId: string;
-  leads: { id: string; nome: string; telefone: string; historicoOuInteresse?: string }[];
+  leads: {
+    id: string;
+    nome: string;
+    telefone: string;
+    historicoOuInteresse?: string;
+  }[];
   mensagemBase: string;
   empreendimentoNome?: string;
   intervaloSegundosMinimo?: number;

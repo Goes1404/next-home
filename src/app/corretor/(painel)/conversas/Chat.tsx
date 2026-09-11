@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { ArrowLeft, ExternalLink, NotebookPen, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import {
@@ -54,6 +55,15 @@ export type ConversaResumo = {
   ultimaInteracaoEm: string;
   temLead: boolean;
   naoLidas: number;
+  /**
+   * A MEMÓRIA da conversa (0110) — o estado da negociação que a IA carrega.
+   *
+   * Fica VISÍVEL e editável porque resumo errado que ninguém conserta vira
+   * erro repetido em toda mensagem; e porque, sem ver o que ela lembra, o
+   * 👍/👎 julga o texto sozinho.
+   */
+  memoria: string | null;
+  memoriaDoCorretor: boolean;
 };
 
 /** A linha crua que o Realtime entrega no INSERT/UPDATE de whatsapp_mensagens. */
@@ -81,9 +91,14 @@ export type ConversaRow = {
   ultima_interacao_em: string;
   lead_id: string | null;
   nao_lidas: number;
+  memoria?: string | null;
+  memoria_do_corretor?: boolean;
 };
 
-export const hora = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" });
+export const hora = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
 const diaCurto = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" });
 const diaLongo = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -105,7 +120,9 @@ export function telefoneLegivel(e164: string): string {
 export function quandoNaLista(iso: string): string {
   const data = new Date(iso);
   const agora = new Date();
-  return data.toDateString() === agora.toDateString() ? hora.format(data) : diaCurto.format(data);
+  return data.toDateString() === agora.toDateString()
+    ? hora.format(data)
+    : diaCurto.format(data);
 }
 
 /** "Hoje", "Ontem" ou a data por extenso — o separador entre blocos de dias. */
@@ -138,6 +155,8 @@ export function deRow(row: ConversaRow): ConversaResumo {
     ultimaInteracaoEm: row.ultima_interacao_em,
     temLead: Boolean(row.lead_id),
     naoLidas: row.nao_lidas ?? 0,
+    memoria: row.memoria ?? null,
+    memoriaDoCorretor: row.memoria_do_corretor ?? false,
   };
 }
 
@@ -176,7 +195,13 @@ export function mesclar(
   for (const m of atual ?? []) porId.set(m.id, m);
   for (const m of novas) porId.set(m.id, m);
   return [...porId.values()].sort((a, b) =>
-    a.criadoEm === b.criadoEm ? (a.id < b.id ? -1 : 1) : a.criadoEm < b.criadoEm ? -1 : 1,
+    a.criadoEm === b.criadoEm
+      ? a.id < b.id
+        ? -1
+        : 1
+      : a.criadoEm < b.criadoEm
+        ? -1
+        : 1,
   );
 }
 
@@ -189,7 +214,8 @@ export type Estado = "ativa" | "pausada_humano" | "aguardando_liberacao" | "desl
  */
 export function estadoDa(conversa: ConversaResumo): Estado {
   if (!conversa.botAtivo) return "desligada";
-  const pausada = conversa.pausadoAte && new Date(conversa.pausadoAte).getTime() > Date.now();
+  const pausada =
+    conversa.pausadoAte && new Date(conversa.pausadoAte).getTime() > Date.now();
   if (pausada) return "pausada_humano";
   if (!conversa.liberada) return "aguardando_liberacao";
   return "ativa";
@@ -294,7 +320,8 @@ export function Chat({
   function aoRolar() {
     const corpo = corpoRef.current;
     if (!corpo) return;
-    presoNoFimRef.current = corpo.scrollHeight - corpo.scrollTop - corpo.clientHeight < 120;
+    presoNoFimRef.current =
+      corpo.scrollHeight - corpo.scrollTop - corpo.clientHeight < 120;
     // `setState` com o MESMO booleano não re-renderiza no React, então isto
     // custa uma comparação por evento de rolagem, não uma árvore nova.
     setLongeDoTopo(corpo.scrollTop > DISTANCIA_PARA_MOSTRAR_TOPO);
@@ -446,6 +473,10 @@ export function Chat({
     setCarregandoAntigas(false);
   }
 
+  if (fichaAberta && conversa.temLead) {
+    return <PerfilLead conversa={conversa} onFechar={() => setFichaAberta(false)} />;
+  }
+
   return (
     <>
       {/*
@@ -462,16 +493,26 @@ export function Chat({
           aria-label="Voltar para a lista"
           className="text-wa-meta hover:text-wa-texto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full md:hidden"
         >
-          <svg viewBox="0 0 24 24" className="size-6 fill-none stroke-current" strokeWidth="2" aria-hidden>
+          <svg
+            viewBox="0 0 24 24"
+            className="size-6 fill-none stroke-current"
+            strokeWidth="2"
+            aria-hidden
+          >
             <path d="M15 5l-7 7 7 7" />
           </svg>
         </button>
 
         <button
           type="button"
-          onClick={() => conversa.temLead && setFichaAberta((v) => !v)}
+          onClick={() => conversa.temLead && setFichaAberta(true)}
           disabled={!conversa.temLead}
-          title={conversa.temLead ? "Ver ficha do lead" : undefined}
+          aria-label={
+            conversa.temLead
+              ? `Abrir perfil de ${conversa.nome ?? conversa.telefone}`
+              : undefined
+          }
+          title={conversa.temLead ? "Abrir perfil do lead" : undefined}
           className={cn(
             "flex min-w-0 flex-1 items-center gap-3 text-left",
             conversa.temLead && "cursor-pointer",
@@ -484,16 +525,19 @@ export function Chat({
           <span className="min-w-0 flex-1">
             <span className="text-wa-texto block truncate text-[16px] font-medium">
               {conversa.nome || telefoneLegivel(conversa.telefone)}
-              {conversa.temLead && <span className="text-wa-meta ml-1 text-xs">{fichaAberta ? "▴" : "▾"}</span>}
             </span>
             <span className="block truncate text-[13px]">
               {/* No celular o telefone empurrava o status para fora ("IA a…");
                   o que a corretora precisa ler de relance é o status. */}
               {conversa.nome && (
-                <span className="text-wa-meta hidden sm:inline">{telefoneLegivel(conversa.telefone)} · </span>
+                <span className="text-wa-meta hidden sm:inline">
+                  {telefoneLegivel(conversa.telefone)} ·{" "}
+                </span>
               )}
               <span className={selo.classe}>{selo.texto}</span>
-              {!conversa.temLead && <span className="text-wa-meta"> · sem ficha no funil</span>}
+              {!conversa.temLead && (
+                <span className="text-wa-meta"> · sem ficha no funil</span>
+              )}
             </span>
           </span>
         </button>
@@ -535,8 +579,6 @@ export function Chat({
         </button>
       </header>
 
-      {fichaAberta && conversa.temLead && <FichaLead conversaId={conversa.id} />}
-
       {/*
         Corpo com os balões, sobre o papel de parede. O invólucro `relative`
         existe só para ancorar o botão de voltar ao topo: o corpo é o
@@ -565,9 +607,13 @@ export function Chat({
             </p>
           )}
           {mensagens === null ? (
-            <p className="text-wa-meta py-8 text-center text-xs">Carregando conversa…</p>
+            <p className="text-wa-meta py-8 text-center text-xs">
+              Carregando conversa…
+            </p>
           ) : mensagens.length === 0 ? (
-            <p className="text-wa-meta py-8 text-center text-xs">Sem mensagens registradas.</p>
+            <p className="text-wa-meta py-8 text-center text-xs">
+              Sem mensagens registradas.
+            </p>
           ) : todasSemTexto(mensagens) ? (
             /*
              * Nada aqui tem texto: em vez de uma parede do mesmo marcador
@@ -600,13 +646,16 @@ export function Chat({
               // Lacuna quebra a sequência de propósito: depois de um buraco o
               // rabinho volta, senão o balão seguinte pareceria continuação de
               // uma fala que a tela não mostrou.
-              const anterior = vizinho && !("naoGravadas" in vizinho) ? vizinho : undefined;
+              const anterior =
+                vizinho && !("naoGravadas" in vizinho) ? vizinho : undefined;
               const trocouDia =
                 !anterior ||
-                new Date(anterior.criadoEm).toDateString() !== new Date(m.criadoEm).toDateString();
+                new Date(anterior.criadoEm).toDateString() !==
+                  new Date(m.criadoEm).toDateString();
               // Rabinho só no primeiro balão de uma sequência do mesmo lado —
               // e os seguintes ficam colados, como no app.
-              const mesmoLado = !!anterior && !trocouDia && ladoDo(anterior) === ladoDo(m);
+              const mesmoLado =
+                !!anterior && !trocouDia && ladoDo(anterior) === ladoDo(m);
               return (
                 <div key={m.id} className={mesmoLado ? "mt-0.5" : "mt-2.5"}>
                   {trocouDia && (
@@ -637,10 +686,19 @@ export function Chat({
           title="Voltar ao começo da conversa"
           className={cn(
             "bg-wa-barra text-wa-texto absolute top-3 right-3 z-10 flex size-10 cursor-pointer items-center justify-center rounded-full shadow-md transition-opacity",
-            longeDoTopo ? "opacity-90 hover:opacity-100" : "pointer-events-none opacity-0",
+            longeDoTopo
+              ? "opacity-90 hover:opacity-100"
+              : "pointer-events-none opacity-0",
           )}
         >
-          <svg viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <svg
+            viewBox="0 0 24 24"
+            className="size-5 fill-none stroke-current"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
             <path d="M12 19V5M5 12l7-7 7 7" />
           </svg>
         </button>
@@ -649,7 +707,10 @@ export function Chat({
       {/* Teclado */}
       <footer className="bg-wa-barra relative px-2 py-2 md:px-3">
         {seletorAberto && (
-          <SeletorDeMidia onEscolher={enviarMidia} onFechar={() => setSeletorAberto(false)} />
+          <SeletorDeMidia
+            onEscolher={enviarMidia}
+            onFechar={() => setSeletorAberto(false)}
+          />
         )}
 
         {podeEnviar ? (
@@ -671,7 +732,12 @@ export function Chat({
                 seletorAberto && "bg-wa-divisor text-wa-texto",
               )}
             >
-              <svg viewBox="0 0 24 24" className="size-6 fill-none stroke-current" strokeWidth="1.8" aria-hidden>
+              <svg
+                viewBox="0 0 24 24"
+                className="size-6 fill-none stroke-current"
+                strokeWidth="1.8"
+                aria-hidden
+              >
                 <path d="m21.4 11.05-8.79 8.79a5.5 5.5 0 0 1-7.78-7.78l8.79-8.79a3.67 3.67 0 0 1 5.19 5.19l-8.8 8.79a1.83 1.83 0 0 1-2.59-2.6l8.12-8.11" />
               </svg>
             </button>
@@ -714,7 +780,8 @@ export function Chat({
         )}
         {estado === "pausada_humano" && conversa.pausadoAte && (
           <p className="text-fluid-xs text-wa-meta mt-1.5 px-2">
-            Você assumiu esta conversa; a IA volta sozinha em até 24h — ou agora, pelo botão acima.
+            Você assumiu esta conversa; a IA volta sozinha em até 24h — ou agora, pelo
+            botão acima.
           </p>
         )}
       </footer>
@@ -747,14 +814,16 @@ function ConversaNaoGuardada({
 }) {
   return (
     <div className="bg-wa-entrada mx-auto my-8 max-w-sm rounded-xl p-4 text-center shadow-[0_1px_2px_rgba(11,20,26,0.2)]">
-      <p className="text-wa-texto text-[14.2px] font-medium">Esta conversa não foi guardada</p>
-      <p className="text-wa-meta mt-2 text-[13px] leading-relaxed">
-        O número é o seu WhatsApp pessoal. Enquanto ninguém autoriza uma conversa, o sistema
-        registra que ela existe e <strong>não guarda o texto</strong>.
+      <p className="text-wa-texto text-[14.2px] font-medium">
+        Esta conversa não foi guardada
       </p>
       <p className="text-wa-meta mt-2 text-[13px] leading-relaxed">
-        Ao liberar, a IA passa a responder e o que vier daqui em diante fica gravado. O que já
-        passou continua sem texto — ele nunca chegou ao banco.
+        O número é o seu WhatsApp pessoal. Enquanto ninguém autoriza uma conversa, o
+        sistema registra que ela existe e <strong>não guarda o texto</strong>.
+      </p>
+      <p className="text-wa-meta mt-2 text-[13px] leading-relaxed">
+        Ao liberar, a IA passa a responder e o que vier daqui em diante fica gravado. O
+        que já passou continua sem texto — ele nunca chegou ao banco.
       </p>
       <button
         type="button"
@@ -788,34 +857,71 @@ const COR_TEMPERATURA: Record<"quente" | "morno" | "frio", string> = {
 };
 
 /**
- * A gaveta da ficha: o essencial do lead sem sair da conversa — funil,
- * orçamento, leitura da IA e o atalho para a ficha completa. Conversa e
- * CRM eram mundos separados; decidir a resposta olhando a etapa é o
- * motivo de a gaveta morar AQUI.
+ * O perfil do lead dentro da conversa: como no direct do Instagram, tocar
+ * no cabeçalho troca o histórico por uma tela de detalhes e voltar devolve
+ * exatamente o chat. Funil, orçamento e leitura da IA ficam a um toque;
+ * edição profunda continua na ficha completa, que segue sendo a fonte única.
  */
-function FichaLead({ conversaId }: { conversaId: string }) {
+function PerfilLead({
+  conversa,
+  onFechar,
+}: {
+  conversa: ConversaResumo;
+  onFechar: () => void;
+}) {
   const [ficha, setFicha] = useState<FichaDoLead | null | "carregando">("carregando");
+  const voltarRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let vivo = true;
-    void lerFichaDoLead(conversaId).then((resultado) => {
+    void lerFichaDoLead(conversa.id).then((resultado) => {
       if (vivo) setFicha(resultado);
     });
     return () => {
       vivo = false;
     };
-  }, [conversaId]);
+  }, [conversa.id]);
 
-  if (ficha === "carregando") {
-    return <p className="border-linha text-tenue border-b px-4 py-3 text-xs">Carregando ficha…</p>;
-  }
-  if (ficha === null) {
+  useEffect(() => {
+    voltarRef.current?.focus();
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key === "Escape") onFechar();
+    };
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+  }, [onFechar]);
+
+  const cabecalho = (
+    <header className="border-linha bg-superficie flex min-h-15 shrink-0 items-center border-b px-2 md:px-4">
+      <button
+        ref={voltarRef}
+        type="button"
+        onClick={onFechar}
+        aria-label="Voltar para a conversa"
+        className="text-corpo hover:bg-vidro flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors"
+      >
+        <ArrowLeft aria-hidden className="h-5 w-5" />
+      </button>
+      <h2 className="text-titulo ml-1 text-base font-semibold">Detalhes</h2>
+    </header>
+  );
+
+  if (ficha === "carregando")
     return (
-      <p className="border-linha text-tenue border-b px-4 py-3 text-xs">
-        Este contato ainda não tem ficha no funil.
-      </p>
+      <div className="bg-superficie flex min-h-0 flex-1 flex-col">
+        {cabecalho}
+        <p className="text-tenue px-5 py-6 text-sm">Carregando perfil…</p>
+      </div>
     );
-  }
+  if (ficha === null)
+    return (
+      <div className="bg-superficie flex min-h-0 flex-1 flex-col">
+        {cabecalho}
+        <p className="text-tenue px-5 py-6 text-sm">
+          Este contato ainda não tem ficha no funil.
+        </p>
+      </div>
+    );
 
   const etapa = ETAPA_LABEL[ficha.etapa as EtapaFunil] ?? ficha.etapa;
   const orcamento =
@@ -829,43 +935,120 @@ function FichaLead({ conversaId }: { conversaId: string }) {
   const fatos: { rotulo: string; valor: string }[] = [
     { rotulo: "Etapa", valor: etapa },
     ...(orcamento ? [{ rotulo: "Orçamento", valor: orcamento }] : []),
-    ...(ficha.rendaMensal ? [{ rotulo: "Renda", valor: `${moeda.format(ficha.rendaMensal)}/mês` }] : []),
-    ...(ficha.regiaoInteresse ? [{ rotulo: "Região", valor: ficha.regiaoInteresse }] : []),
-    ...(ficha.dormitoriosMin ? [{ rotulo: "Dorm.", valor: `${ficha.dormitoriosMin}+` }] : []),
+    ...(ficha.rendaMensal
+      ? [{ rotulo: "Renda", valor: `${moeda.format(ficha.rendaMensal)}/mês` }]
+      : []),
+    ...(ficha.regiaoInteresse
+      ? [{ rotulo: "Região", valor: ficha.regiaoInteresse }]
+      : []),
+    ...(ficha.dormitoriosMin
+      ? [{ rotulo: "Dorm.", valor: `${ficha.dormitoriosMin}+` }]
+      : []),
     ...(ficha.visitaAgendadaEm
-      ? [{ rotulo: "Visita", valor: dataVisita.format(new Date(ficha.visitaAgendadaEm)) }]
+      ? [
+          {
+            rotulo: "Visita",
+            valor: dataVisita.format(new Date(ficha.visitaAgendadaEm)),
+          },
+        ]
       : []),
   ];
 
   return (
-    <div className="border-linha bg-superficie border-b px-4 py-3">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        {fatos.map((f) => (
-          <p key={f.rotulo} className="text-xs">
-            <span className="text-tenue">{f.rotulo}:</span>{" "}
-            <span className="text-corpo font-medium">{f.valor}</span>
+    <div
+      aria-label={`Perfil de ${ficha.nome}`}
+      className="bg-superficie flex min-h-0 flex-1 flex-col"
+    >
+      {cabecalho}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6">
+        <section className="mx-auto w-full max-w-lg text-center">
+          <span className="bg-acento-lavado text-acento-suave mx-auto flex size-24 items-center justify-center rounded-full text-2xl font-semibold">
+            {iniciais(conversa)}
+          </span>
+          <h1 className="text-titulo mt-3 text-xl font-semibold">{ficha.nome}</h1>
+          <p className="text-tenue mt-1 text-sm">
+            {telefoneLegivel(conversa.telefone)}
           </p>
-        ))}
-        {ficha.temperatura && (
-          <p className="text-xs">
-            <span className="text-tenue">Temperatura:</span>{" "}
-            <span className={cn("font-medium", COR_TEMPERATURA[ficha.temperatura.label])}>
-              {ficha.temperatura.label} ({ficha.temperatura.score})
-            </span>
-          </p>
+
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <a
+              href={`tel:${conversa.telefone}`}
+              className="text-corpo group hover:bg-vidro focus-visible:bg-vidro flex min-h-18 flex-col items-center justify-center gap-1.5 rounded-2xl transition-colors"
+            >
+              <span className="border-linha group-hover:border-linha-forte flex size-11 items-center justify-center rounded-full border transition-colors">
+                <Phone aria-hidden className="h-5 w-5" />
+              </span>
+              <span className="text-xs">Ligar</span>
+            </a>
+            <Link
+              href={`/corretor/anotacoes?lead=${ficha.leadId}`}
+              className="text-corpo group hover:bg-vidro focus-visible:bg-vidro flex min-h-18 flex-col items-center justify-center gap-1.5 rounded-2xl transition-colors"
+            >
+              <span className="border-linha group-hover:border-linha-forte flex size-11 items-center justify-center rounded-full border transition-colors">
+                <NotebookPen aria-hidden className="h-5 w-5" />
+              </span>
+              <span className="text-xs">Anotar</span>
+            </Link>
+            <Link
+              href={`/corretor/leads/${ficha.leadId}`}
+              className="text-corpo group hover:bg-vidro focus-visible:bg-vidro flex min-h-18 flex-col items-center justify-center gap-1.5 rounded-2xl transition-colors"
+            >
+              <span className="border-linha group-hover:border-linha-forte flex size-11 items-center justify-center rounded-full border transition-colors">
+                <ExternalLink aria-hidden className="h-5 w-5" />
+              </span>
+              <span className="text-xs">Ficha</span>
+            </Link>
+          </div>
+        </section>
+
+        <section className="border-linha mx-auto mt-6 w-full max-w-lg overflow-hidden rounded-2xl border text-left">
+          <h2 className="text-titulo border-linha border-b px-4 py-3 text-sm font-semibold">
+            Sobre este lead
+          </h2>
+          <dl className="divide-linha divide-y">
+            {fatos.map((f) => (
+              <div
+                key={f.rotulo}
+                className="flex min-h-11 items-center justify-between gap-4 px-4 py-2.5 text-sm"
+              >
+                <dt className="text-tenue">{f.rotulo}</dt>
+                <dd className="text-corpo min-w-0 text-right font-medium break-words">
+                  {f.valor}
+                </dd>
+              </div>
+            ))}
+            {ficha.temperatura && (
+              <div className="flex min-h-11 items-center justify-between gap-4 px-4 py-2.5 text-sm">
+                <dt className="text-tenue">Temperatura</dt>
+                <dd
+                  className={cn(
+                    "font-medium capitalize",
+                    COR_TEMPERATURA[ficha.temperatura.label],
+                  )}
+                >
+                  {ficha.temperatura.label} · {ficha.temperatura.score}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </section>
+
+        {ficha.resumoIA && (
+          <section className="border-linha bg-vidro mx-auto mt-3 w-full max-w-lg rounded-2xl border p-4 text-left">
+            <h2 className="text-titulo text-sm font-semibold">Leitura da IA</h2>
+            <p className="text-apoio mt-1.5 text-sm leading-relaxed">
+              {ficha.resumoIA}
+            </p>
+          </section>
         )}
+
+        <Link
+          href={`/corretor/leads/${ficha.leadId}`}
+          className="border-acento-linha bg-acento-lavado text-acento-suave mx-auto mt-4 flex min-h-12 w-full max-w-lg items-center justify-center gap-2 rounded-xl border px-4 text-sm font-medium transition-opacity hover:opacity-85"
+        >
+          Abrir ficha completa <ExternalLink aria-hidden className="h-4 w-4" />
+        </Link>
       </div>
-      {ficha.resumoIA && (
-        <p className="text-apoio mt-1.5 line-clamp-2 text-xs">
-          <span className="text-tenue">Leitura da IA:</span> {ficha.resumoIA}
-        </p>
-      )}
-      <a
-        href={`/corretor/leads/${ficha.leadId}`}
-        className="text-acento-suave mt-1.5 inline-block text-xs underline-offset-4 hover:underline"
-      >
-        Abrir ficha completa →
-      </a>
     </div>
   );
 }
@@ -882,9 +1065,9 @@ function SeletorDeMidia({
   onEscolher: (midia: MidiaDoCatalogo) => void;
   onFechar: () => void;
 }) {
-  const [imoveis, setImoveis] = useState<{ nome: string; midias: MidiaDoCatalogo[] }[] | null>(
-    null,
-  );
+  const [imoveis, setImoveis] = useState<
+    { nome: string; midias: MidiaDoCatalogo[] }[] | null
+  >(null);
   const [imovelAberto, setImovelAberto] = useState<string | null>(null);
 
   const { falhar } = useAvisos();
@@ -943,7 +1126,12 @@ function SeletorDeMidia({
                 className="border-linha hover:border-acento-linha block w-full cursor-pointer overflow-hidden rounded-lg border transition-colors"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element -- miniatura de URL externa do storage, sem otimização do Next de propósito */}
-                <img src={midia.url} alt={midia.titulo} loading="lazy" className="aspect-square w-full object-cover" />
+                <img
+                  src={midia.url}
+                  alt={midia.titulo}
+                  loading="lazy"
+                  className="aspect-square w-full object-cover"
+                />
                 <span className="text-apoio block truncate px-1.5 py-1 text-left text-[10px]">
                   {midia.tipo === "planta" ? "📐 " : ""}
                   {midia.titulo}
@@ -962,12 +1150,16 @@ function SeletorDeMidia({
                 className="hover:bg-vidro text-corpo flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors"
               >
                 <span className="min-w-0 flex-1 truncate">{imovel.nome}</span>
-                <span className="text-tenue shrink-0 text-xs">{imovel.midias.length} fotos</span>
+                <span className="text-tenue shrink-0 text-xs">
+                  {imovel.midias.length} fotos
+                </span>
               </button>
             </li>
           ))}
           {imoveis.length === 0 && (
-            <li className="text-tenue p-2 text-xs">Nenhum imóvel publicado com fotos.</li>
+            <li className="text-tenue p-2 text-xs">
+              Nenhum imóvel publicado com fotos.
+            </li>
           )}
         </ul>
       )}
@@ -998,7 +1190,12 @@ function audioTocavel(m: MensagemConversa): boolean {
 
 /** Imagem que dá para mostrar inline — as nossas, do catálogo, têm URL pública. */
 function imagemVisivel(m: MensagemConversa): boolean {
-  return m.tipo === "imagem" && !!m.midiaUrl && /^https?:\/\//.test(m.midiaUrl) && !/\.enc([?#]|$)/.test(m.midiaUrl);
+  return (
+    m.tipo === "imagem" &&
+    !!m.midiaUrl &&
+    /^https?:\/\//.test(m.midiaUrl) &&
+    !/\.enc([?#]|$)/.test(m.midiaUrl)
+  );
 }
 
 function Balao({
@@ -1061,7 +1258,10 @@ function Balao({
           // 8px de raio, sombra rasa e o rabinho: a anatomia do balão do app.
           "relative rounded-lg px-2 pt-1.5 pb-1 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)]",
           ESTILO_BALAO[lado],
-          comRabo && (lado === "entrada" ? "wa-rabo-entrada rounded-tl-none" : "wa-rabo-saida rounded-tr-none"),
+          comRabo &&
+            (lado === "entrada"
+              ? "wa-rabo-entrada rounded-tl-none"
+              : "wa-rabo-saida rounded-tr-none"),
         )}
       >
         {/* Nome do remetente em verde, como o app faz em grupo: aqui só quando é a IA. */}
@@ -1078,10 +1278,17 @@ function Balao({
           />
         )}
         {mensagem.tipo === "audio" && (
-          <p className="text-wa-meta text-[10px] font-medium tracking-wide uppercase">🎙 Áudio</p>
+          <p className="text-wa-meta text-[10px] font-medium tracking-wide uppercase">
+            🎙 Áudio
+          </p>
         )}
         {audioTocavel(mensagem) && (
-          <audio controls preload="none" src={mensagem.midiaUrl ?? undefined} className="my-1 h-10 w-56 max-w-full" />
+          <audio
+            controls
+            preload="none"
+            src={mensagem.midiaUrl ?? undefined}
+            className="my-1 h-10 w-56 max-w-full"
+          />
         )}
 
         {/* O espaçador no fim do texto reserva o canto para a hora, que fica em
@@ -1095,7 +1302,10 @@ function Balao({
           )}
         >
           {mensagem.conteudo}
-          <span aria-hidden className={cn("inline-block", mensagem.statusEntrega ? "w-[68px]" : "w-12")} />
+          <span
+            aria-hidden
+            className={cn("inline-block", mensagem.statusEntrega ? "w-[68px]" : "w-12")}
+          />
         </p>
         <p className="text-wa-meta absolute right-2 bottom-1 flex items-center gap-1 text-[11px] leading-none">
           {hora.format(new Date(mensagem.criadoEm))}
@@ -1108,7 +1318,10 @@ function Balao({
                     ? "Entregue"
                     : "Enviada"
               }
-              className={cn("text-[12px]", mensagem.statusEntrega === "lida" ? "text-wa-lida" : "text-wa-meta")}
+              className={cn(
+                "text-[12px]",
+                mensagem.statusEntrega === "lida" ? "text-wa-lida" : "text-wa-meta",
+              )}
             >
               {mensagem.statusEntrega === "enviada" ? "✓" : "✓✓"}
             </span>
@@ -1129,17 +1342,27 @@ function Balao({
         liga o balão à interação, e é isso que alimenta o aprendizado.
       */}
       {avaliavel && (
-        <div className="relative z-[1] -mt-2 mr-2 flex h-7 items-center rounded-full bg-wa-entrada px-1 shadow-[0_1px_2px_rgba(11,20,26,0.3)] ring-1 ring-wa-divisor">
+        <div className="bg-wa-entrada ring-wa-divisor relative z-[1] -mt-2 mr-2 flex h-7 items-center rounded-full px-1 shadow-[0_1px_2px_rgba(11,20,26,0.3)] ring-1">
           {nota && !trocando ? (
             <button
               type="button"
               onClick={() => setTrocando(true)}
-              title={nota === "boa" ? "Você marcou como boa — toque para trocar" : "Você marcou como ruim — toque para trocar"}
-              aria-label={nota === "boa" ? "Avaliada como boa. Trocar avaliação" : "Avaliada como ruim. Trocar avaliação"}
+              title={
+                nota === "boa"
+                  ? "Você marcou como boa — toque para trocar"
+                  : "Você marcou como ruim — toque para trocar"
+              }
+              aria-label={
+                nota === "boa"
+                  ? "Avaliada como boa. Trocar avaliação"
+                  : "Avaliada como ruim. Trocar avaliação"
+              }
               className="-my-2 flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1 px-1.5 text-[15px] transition-transform hover:scale-110"
             >
               <span aria-hidden>{nota === "boa" ? "👍" : "👎"}</span>
-              <span className="text-wa-meta text-[11px] font-medium">{nota === "boa" ? "boa" : "ruim"}</span>
+              <span className="text-wa-meta text-[11px] font-medium">
+                {nota === "boa" ? "boa" : "ruim"}
+              </span>
             </button>
           ) : (
             <>
@@ -1184,7 +1407,7 @@ function Balao({
         <details
           open={porQueAberto}
           onToggle={(e) => setPorQueAberto(e.currentTarget.open)}
-          className="mr-1 mt-1 max-w-full min-w-0"
+          className="mt-1 mr-1 max-w-full min-w-0"
         >
           {/* 44px de área tocável com 32 de espaço ocupado — a margem negativa
               é o mesmo truque da pílula de avaliação: a régua de toque da casa
@@ -1200,4 +1423,3 @@ function Balao({
     </div>
   );
 }
-

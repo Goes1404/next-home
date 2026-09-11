@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
+import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { excluirImovel } from "../actions";
 
 /**
@@ -53,9 +54,9 @@ export function ExcluirImovel({
         }
         router.push("/corretor/imoveis");
         router.refresh();
-      } catch {
+      } catch (e) {
         setConfirmando(false);
-        falhar("Sem conexão. Tente de novo.");
+        falhar(ehActionDeOutroBuild(e) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
       }
     });
   }

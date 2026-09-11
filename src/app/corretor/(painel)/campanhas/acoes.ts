@@ -5,7 +5,7 @@ import { getCorretorLogado, getMeusLeads } from "@/lib/corretorSessao";
 import { elegivel, type FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
 import { resultadoAB, type ResultadoAB } from "@/lib/whatsapp/testeAB";
 import { createClient } from "@/lib/supabase/server";
-import type { Lead } from "@/lib/types";
+import type { EtapaFunil } from "@/lib/types";
 import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
 import { processarFilaCampanhas } from "@/lib/whatsapp/campaignDispatcher";
 import {
@@ -32,14 +32,78 @@ import { saldoDiario, dentroDaJanela } from "@/lib/whatsapp/antiBan";
  * uma a cada 35-75s, sem ninguém clicar em nada.
  */
 
-export type LeadElegivel = { id: string; nome: string; telefone: string };
+export type LeadElegivel = {
+  id: string;
+  nome: string;
+  telefone: string;
+  etapa: EtapaFunil;
+};
+
+export type PreviaPublicoCampanha = {
+  total: number;
+  protegidos: number;
+};
+
+/** Evita repetir propaganda para a mesma pessoa dentro da mesma semana. */
+const DIAS_SEM_REPETIR_CAMPANHA = 7;
+
+async function idsProtegidosDeNovaCampanha(corretorId: string): Promise<Set<string>> {
+  const supabase = await createClient();
+  // O filtro explícito mantém esta tela pessoal mesmo quando a policy do
+  // gestor permite enxergar campanhas da equipe inteira.
+  const limite = new Date(
+    Date.now() - DIAS_SEM_REPETIR_CAMPANHA * 86_400_000,
+  ).toISOString();
+  const { data: itens, error: erroFila } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .select("lead_id, campanha:whatsapp_campanhas!inner(corretor_id)")
+    .eq("campanha.corretor_id", corretorId)
+    .not("lead_id", "is", null)
+    // Pendente em outra lista nunca duplica. Enviado/respondido só protege
+    // pela janela de sete dias; erro definitivo não bloqueia nova tentativa.
+    .or(`status.eq.pendente,enviado_em.gte.${limite}`);
+  if (erroFila) {
+    throw new Error(`Falha ao conferir contatos recentes: ${erroFila.message}`);
+  }
+  return new Set((itens ?? []).flatMap((item) => (item.lead_id ? [item.lead_id] : [])));
+}
+
+async function publicoComProtecao(filtro: FiltroLeadsCampanha): Promise<{
+  elegiveis: LeadElegivel[];
+  protegidos: number;
+}> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { elegiveis: [], protegidos: 0 };
+
+  const leads = await getMeusLeads();
+  const base = leads.filter((lead) => elegivel(lead, filtro));
+  const protegidos = await idsProtegidosDeNovaCampanha(corretor.id);
+  return {
+    elegiveis: base
+      .filter((lead) => !protegidos.has(lead.id))
+      .map((lead) => ({
+        id: lead.id,
+        nome: lead.nome,
+        telefone: lead.telefone as string,
+        etapa: lead.etapa,
+      })),
+    protegidos: base.filter((lead) => protegidos.has(lead.id)).length,
+  };
+}
 
 /** `getMeusLeads` já vem filtrado por RLS (0007) — aqui só decide QUAIS desses entram na campanha. */
-export async function listarLeadsElegiveis(filtro: FiltroLeadsCampanha): Promise<LeadElegivel[]> {
-  const leads = await getMeusLeads();
-  return leads
-    .filter((lead) => elegivel(lead, filtro))
-    .map((lead) => ({ id: lead.id, nome: lead.nome, telefone: lead.telefone as string }));
+export async function listarLeadsElegiveis(
+  filtro: FiltroLeadsCampanha,
+): Promise<LeadElegivel[]> {
+  return (await publicoComProtecao(filtro)).elegiveis;
+}
+
+/** Contagem informativa; criar a campanha refaz a mesma proteção no servidor. */
+export async function preverPublicoCampanha(
+  filtro: FiltroLeadsCampanha,
+): Promise<PreviaPublicoCampanha> {
+  const publico = await publicoComProtecao(filtro);
+  return { total: publico.elegiveis.length, protegidos: publico.protegidos };
 }
 
 /**
@@ -51,7 +115,10 @@ export async function listarLeadsElegiveis(filtro: FiltroLeadsCampanha): Promise
  * fechado/perdido). Id alheio ou inventado simplesmente não sobrevive ao
  * filtro — nunca vira mensagem.
  */
-function recortarPorSelecao(elegiveis: LeadElegivel[], leadIds: string[] | undefined): LeadElegivel[] {
+function recortarPorSelecao(
+  elegiveis: LeadElegivel[],
+  leadIds: string[] | undefined,
+): LeadElegivel[] {
   const escolhidos = new Set(leadIds ?? []);
   return elegiveis.filter((lead) => escolhidos.has(lead.id));
 }
@@ -65,9 +132,15 @@ export async function gerarPreviewCampanha(params: {
 }): Promise<{ mensagens: string[] } | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
-  if (!params.mensagemBase.trim()) return { erro: "Escreva uma mensagem base primeiro." };
+  if (!params.mensagemBase.trim())
+    return { erro: "Escreva uma mensagem base primeiro." };
 
-  let elegiveis = await listarLeadsElegiveis(params.filtro);
+  let elegiveis: LeadElegivel[];
+  try {
+    elegiveis = await listarLeadsElegiveis(params.filtro);
+  } catch {
+    return { erro: "Não foi possível conferir os contatos recentes agora." };
+  }
   if (params.filtro === "selecionados") {
     elegiveis = recortarPorSelecao(elegiveis, params.leadIds);
     if (elegiveis.length === 0) return { erro: "Escolha ao menos um lead primeiro." };
@@ -88,7 +161,8 @@ export async function gerarPreviewCampanha(params: {
   return { mensagens: fila.map((item) => item.mensagemPersonalizada) };
 }
 
-export type ResultadoCriarCampanha = { ok: true; campanhaId: string; totalLeads: number } | { erro: string };
+export type ResultadoCriarCampanha =
+  { ok: true; campanhaId: string; totalLeads: number } | { erro: string };
 
 export async function criarCampanha(params: {
   titulo: string;
@@ -104,6 +178,8 @@ export async function criarCampanha(params: {
    * campanha roda com uma versão só, exatamente como antes.
    */
   mensagemBaseB?: string | null;
+  /** ISO absoluto; a interface envia o horário de Brasília já com offset. */
+  iniciarEm?: string | null;
   /** Só para `filtro: "selecionados"` — os leads escolhidos um a um. */
   leadIds?: string[];
   /**
@@ -121,13 +197,35 @@ export async function criarCampanha(params: {
   if (!titulo) return { erro: "Dê um título para a lista de transmissão." };
   if (!params.mensagemBase.trim()) return { erro: "Escreva a mensagem base." };
 
+  const inicio = params.iniciarEm ? new Date(params.iniciarEm) : null;
+  if (inicio && Number.isNaN(inicio.getTime())) {
+    return { erro: "Escolha uma data válida para o envio." };
+  }
+  if (inicio && inicio.getTime() < Date.now() - 60_000) {
+    return { erro: "O horário escolhido já passou. Escolha um horário futuro." };
+  }
+  if (inicio && !params.ignorarJanela && !dentroDaJanela(inicio)) {
+    return {
+      erro: "Agende entre 9h e 20h59, de segunda a sábado, no horário de Brasília.",
+    };
+  }
+
   if (!provedorConfigurado()) {
     return {
       erro: "Nenhum provedor de WhatsApp está conectado a este ambiente. Conecte seu número em /corretor/whatsapp primeiro.",
     };
   }
 
-  let elegiveis = await listarLeadsElegiveis(params.filtro);
+  let elegiveis: LeadElegivel[];
+  try {
+    elegiveis = await listarLeadsElegiveis(params.filtro);
+  } catch {
+    // Falha fechada: sem provar quem recebeu campanha recentemente, ninguém
+    // entra na fila. Repetir propaganda é pior do que pedir nova tentativa.
+    return {
+      erro: "Não foi possível conferir os contatos recentes agora. Tente de novo.",
+    };
+  }
   if (params.filtro === "selecionados") {
     elegiveis = recortarPorSelecao(elegiveis, params.leadIds);
     if (elegiveis.length === 0) return { erro: "Escolha ao menos um lead primeiro." };
@@ -154,7 +252,8 @@ export async function criarCampanha(params: {
     .select("id")
     .single();
 
-  if (erroCampanha || !campanha) return { erro: "Não foi possível criar a lista de transmissão agora." };
+  if (erroCampanha || !campanha)
+    return { erro: "Não foi possível criar a lista de transmissão agora." };
 
   // Fila montada SEM chamar a IA: só interpolação de template e cálculo de
   // horários. A variação anti-ban por IA acontece no envio, um item por vez
@@ -171,6 +270,7 @@ export async function criarCampanha(params: {
     empreendimentoNome: params.empreendimentoNome,
     ignorarJanela: params.ignorarJanela,
     mensagemBaseB: params.mensagemBaseB,
+    iniciarEm: inicio ?? undefined,
   });
 
   const { error: erroFila } = await supabase.from("whatsapp_campanhas_fila").insert(
@@ -339,8 +439,7 @@ export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
 }
 
 export type ResultadoEnvioImediato =
-  | { ok: true; campanhaId: string; totalLeads: number }
-  | { erro: string };
+  { ok: true; campanhaId: string; totalLeads: number } | { erro: string };
 
 /**
  * Dispara UMA mensagem para todos os leads, a qualquer hora.
@@ -466,9 +565,12 @@ export async function liberarEnvioAgora(params?: {
   for (const item of pendentes ?? []) {
     await supabase
       .from("whatsapp_campanhas_fila")
-      .update({ agendado_para: new Date(Date.now() + deslocamentoSegundos * 1000).toISOString() })
+      .update({
+        agendado_para: new Date(Date.now() + deslocamentoSegundos * 1000).toISOString(),
+      })
       .eq("id", item.id);
-    deslocamentoSegundos += INTERVALO_MINIMO_SEGUNDOS + Math.floor(Math.random() * janela);
+    deslocamentoSegundos +=
+      INTERVALO_MINIMO_SEGUNDOS + Math.floor(Math.random() * janela);
   }
 
   acenderCorrenteDeDisparo();
@@ -483,8 +585,7 @@ export async function liberarEnvioAgora(params?: {
 }
 
 export type ResultadoLimparFila =
-  | { ok: true; removidos: number; campanhasFechadas: number }
-  | { erro: string };
+  { ok: true; removidos: number; campanhasFechadas: number } | { erro: string };
 
 /**
  * Esvazia a fila de disparo deste corretor.
@@ -630,7 +731,9 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
 
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("status_conexao, telefone_conectado, conectado_em, bloqueado_ate, envios_campanha_contador, envios_campanha_data")
+    .select(
+      "status_conexao, telefone_conectado, conectado_em, bloqueado_ate, envios_campanha_contador, envios_campanha_data",
+    )
     .eq("corretor_id", corretor.id)
     .maybeSingle();
 
@@ -666,23 +769,31 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
 
   const conectadoEm = instancia?.conectado_em ? new Date(instancia.conectado_em) : null;
   const hoje = new Date().toISOString().slice(0, 10);
-  const enviosHoje = instancia?.envios_campanha_data === hoje ? instancia.envios_campanha_contador : 0;
+  const enviosHoje =
+    instancia?.envios_campanha_data === hoje ? instancia.envios_campanha_contador : 0;
 
-  const saldoHoje = conectadoEm ? saldoDiario({ conectadoEm, enviosCampanhaHoje: enviosHoje }) : null;
+  const saldoHoje = conectadoEm
+    ? saldoDiario({ conectadoEm, enviosCampanhaHoje: enviosHoje })
+    : null;
   const janelaAberta = dentroDaJanela(new Date());
-  const bloqueado = instancia?.bloqueado_ate && new Date(instancia.bloqueado_ate) > new Date();
+  const bloqueado =
+    instancia?.bloqueado_ate && new Date(instancia.bloqueado_ate) > new Date();
 
   let impedimento: string | null = null;
   if (!instancia) {
-    impedimento = "Nenhum número de WhatsApp cadastrado. Conecte o seu em Configurações do WhatsApp.";
+    impedimento =
+      "Nenhum número de WhatsApp cadastrado. Conecte o seu em Configurações do WhatsApp.";
   } else if (bloqueado) {
     impedimento = `Envios pausados automaticamente até ${new Date(instancia.bloqueado_ate as string).toLocaleString("pt-BR")} após falhas seguidas do provedor.`;
   } else if (instancia.status_conexao !== "conectado" || !conectadoEm) {
-    impedimento = "O número ainda não está pareado. Leia o QR Code em Configurações do WhatsApp — sem isso nenhum disparo é autorizado.";
+    impedimento =
+      "O número ainda não está pareado. Leia o QR Code em Configurações do WhatsApp — sem isso nenhum disparo é autorizado.";
   } else if (saldoHoje === 0) {
-    impedimento = "Cota diária de disparos deste número atingida. A fila continua sozinha amanhã.";
+    impedimento =
+      "Cota diária de disparos deste número atingida. A fila continua sozinha amanhã.";
   } else if (!janelaAberta) {
-    impedimento = "Fora do horário comercial (9h às 20h59, de segunda a sábado). A fila retoma sozinha na próxima janela.";
+    impedimento =
+      "Fora do horário comercial (9h às 20h59, de segunda a sábado). A fila retoma sozinha na próxima janela.";
   }
 
   return {

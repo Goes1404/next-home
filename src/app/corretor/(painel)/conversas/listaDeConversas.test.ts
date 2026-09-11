@@ -11,6 +11,8 @@ const c = (id: string, quando: string): ConversaResumo => ({
   botAtivo: true,
   liberada: true,
   pausadoAte: null,
+  memoria: null,
+  memoriaDoCorretor: false,
   ultimaMensagem: "oi",
   ultimaInteracaoEm: quando,
   temLead: true,

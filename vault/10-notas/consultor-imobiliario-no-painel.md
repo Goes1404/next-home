@@ -16,7 +16,7 @@ codigo:
   - scripts/observatorioConsultor.ts
   - scripts/eval/casosDoConsultor.ts
 created: 2026-09-09
-updated: 2026-09-10
+updated: 2026-09-11
 fonte: pedido do usuário ("um assistente de produtos, especialista em negócios imobiliários") + sonda com API
 summary: Chat no painel que responde as duas perguntas que o corretor faz todo dia — qual imóvel serve e se fecha. O catálogo inteiro entra no prompt COM preço; a conta é de código; e o guardrail cortava a frase certa porque não entendia "350 mil".
 ---
@@ -149,8 +149,10 @@ A ideia era minerar as perguntas de cliente: 369 com "?" em 90 dias. Medido, o
 corpus está **contaminado** — o número da instância é o WhatsApp pessoal do
 corretor, e a maioria dessas perguntas é da vida privada dele. **Não existe
 filtro estrutural**: `cliente_conhecido` e `lead_id` são verdade para as duas
-(o webhook cria lead de quem escreve, 0026), e o recorte de atendimento deixa
-passar **367 das 369**. A conclusão já estava escrita em 01/09 e vale aqui:
+(o webhook criava lead de quem escrevia antes da 0111), e o recorte de
+atendimento deixava passar **367 das 369**. Esse estoque histórico segue
+impróprio; a 0111 impede que novas conversas desconhecidas entrem. A conclusão
+já estava escrita em 01/09 e vale para o passado:
 a diferença está no CONTEÚDO, que é justamente o que não se quer inspecionar.
 Ver [[conversa-pessoal-do-corretor-no-banco]].
 

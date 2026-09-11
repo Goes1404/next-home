@@ -22,6 +22,7 @@ import {
 import { enviarFotoDeReferencia } from "@/app/corretor/(painel)/estudio/uploadReferencia";
 import { supabaseUrl } from "@/lib/supabase/env";
 import { ListaDeConversas } from "@/app/corretor/(painel)/_componentes/ListaDeConversas";
+import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 
 /**
  * Criar arte, em forma de chat.
@@ -67,7 +68,7 @@ export function ChatDeArte({
   const { avisar, falhar } = useAvisos();
   const [conversas, setConversas] = useState(conversasIniciais);
   const [estado, setEstado] = useState<EstadoDoChat | null>(null);
-  const [pendente, setPendente] = useState<{ id: string; conteudo: string; previewUrl?: string | null } | null>(null);
+  const [pendente, setPendente] = useState<{ id: string; conteudo: string; previewUrls?: string[] } | null>(null);
   const [pensando, setPensando] = useState(false);
   const [gerando, setGerando] = useState<string | null>(null);
   const [teto, setTeto] = useState(tetoInicial);
@@ -80,7 +81,7 @@ export function ChatDeArte({
    * a única porta do sistema que pula a revisão — e a revisão é o produto.
    */
   const [reaproveitado, setReaproveitado] = useState("");
-  const [anexo, setAnexo] = useState<{ file: File; previewUrl: string } | null>(null);
+  const [anexos, setAnexos] = useState<{ file: File; previewUrl: string }[]>([]);
   const [, iniciar] = useTransition();
 
   const restam = Math.max(0, teto.teto - teto.usadasHoje);
@@ -99,25 +100,25 @@ export function ChatDeArte({
   };
 
   const enviar = async (texto: string, escolha?: { perguntaId: string; pergunta: string }) => {
-    const fotoDaVez = escolha ? null : anexo;
+    const fotosDaVez = escolha ? [] : anexos;
     setPendente({
       id: `temp-${Date.now()}`,
       conteudo: texto || "📎 Foto de referência",
-      previewUrl: fotoDaVez?.previewUrl ?? null,
+      previewUrls: fotosDaVez.map((foto) => foto.previewUrl),
     });
     setPensando(true);
     try {
       // A foto sobe ANTES da mensagem: se o upload falhar, nada é gravado e o
       // corretor tenta de novo — mensagem apontando para foto que não subiu
       // seria referência quebrada gravada para sempre.
-      let referencia: { path: string; url: string } | null = null;
-      if (fotoDaVez) {
-        const up = await enviarFotoDeReferencia(corretorId, fotoDaVez.file);
+      const referencias: { path: string; url: string }[] = [];
+      for (const foto of fotosDaVez) {
+        const up = await enviarFotoDeReferencia(corretorId, foto.file);
         if ("erro" in up) {
           falhar(up.erro);
           throw new Error(up.erro);
         }
-        referencia = up;
+        referencias.push(up);
       }
 
       const r = await enviarMensagemDoEstudio({
@@ -125,15 +126,16 @@ export function ChatDeArte({
         conversaId: estado?.conversa.id ?? null,
         texto,
         escolha: escolha ?? null,
-        referencia,
+        referencias,
       });
       if (!aplicar(r)) throw new Error(r && "erro" in r ? r.erro : "falhou");
-      if (fotoDaVez) {
-        URL.revokeObjectURL(fotoDaVez.previewUrl);
-        setAnexo(null);
+      if (fotosDaVez.length > 0) {
+        fotosDaVez.forEach((foto) => URL.revokeObjectURL(foto.previewUrl));
+        setAnexos([]);
       }
     } catch (e) {
-      if (!(e instanceof Error && e.message)) falhar("Sem conexão. Tente de novo.");
+      if (ehActionDeOutroBuild(e)) falhar(avisoDePaginaVelha());
+      else if (!(e instanceof Error && e.message)) falhar("Sem conexão. Tente de novo.");
       throw e;
     } finally {
       setPendente(null);
@@ -169,7 +171,7 @@ export function ChatDeArte({
           tamanho: p.tamanho,
           qualidade: p.qualidade,
           // A foto anexada na conversa: a rota confina à pasta do corretor.
-          referenciaPath: midiaId ? undefined : (p.referenciaPath ?? undefined),
+          referenciaPaths: midiaId ? undefined : p.referenciaPaths,
           // A foto DO IMÓVEL escolhida na faixa. Vai como id, nunca como URL:
           // quem decide o acesso é a RLS sobre `midias`, e mandar URL faria o
           // servidor baixar um endereço escolhido pelo cliente.
@@ -211,8 +213,18 @@ export function ChatDeArte({
       } else {
         avisar("Imagem pronta.");
       }
-    } catch {
-      falhar("Sem conexão. A imagem pode ter sido gerada — confira a galeria.");
+    } catch (e) {
+      /*
+       * Chegar aqui DEPOIS do 200 da rota significa que a arte já foi gerada,
+       * carimbada, guardada e paga — só o registro na conversa falhou. Culpar
+       * a rede faria o corretor pagar de novo por uma imagem que já está na
+       * galeria (o `setGaleria` acima já a colocou lá).
+       */
+      falhar(
+        ehActionDeOutroBuild(e)
+          ? avisoDePaginaVelha("A imagem FOI gerada e já está na sua galeria.")
+          : "A imagem foi gerada e está na galeria, mas não deu para registrá-la nesta conversa.",
+      );
     } finally {
       setGerando(null);
     }
@@ -260,17 +272,19 @@ export function ChatDeArte({
             }
             onEnviar={enviar}
             onEscolher={escolher}
-            anexo={anexo ? { previewUrl: anexo.previewUrl, nome: anexo.file.name } : null}
-            onAnexar={(file) => {
-              setAnexo((atual) => {
-                if (atual) URL.revokeObjectURL(atual.previewUrl);
-                return { file, previewUrl: URL.createObjectURL(file) };
+            anexos={anexos.map((anexo) => ({ previewUrl: anexo.previewUrl, nome: anexo.file.name }))}
+            onAnexar={(files) => {
+              setAnexos((atuais) => {
+                const novos = files.slice(0, Math.max(0, 4 - atuais.length)).map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+                if (files.length > novos.length) falhar("Você pode usar até 4 fotos como referência.");
+                return [...atuais, ...novos];
               });
             }}
-            onRemoverAnexo={() => {
-              setAnexo((atual) => {
-                if (atual) URL.revokeObjectURL(atual.previewUrl);
-                return null;
+            onRemoverAnexo={(indice) => {
+              setAnexos((atuais) => {
+                const alvo = atuais[indice];
+                if (alvo) URL.revokeObjectURL(alvo.previewUrl);
+                return atuais.filter((_, i) => i !== indice);
               });
             }}
             renderAcima={(m) =>
@@ -295,13 +309,18 @@ export function ChatDeArte({
                 );
               }
               const url = m.dados?.tipo === "resultado" ? m.dados.url : null;
-              return url ? (
+              // `imagem_id` vira null quando a retenção de 48h remove a arte.
+              // Não deixar um <img> quebrado fingir que ela ainda existe.
+              const arteExpirada = Boolean(url && !m.imagemId);
+              return url && !arteExpirada ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={url}
                   alt="Arte gerada"
                   className="border-linha mt-2 max-h-80 w-auto max-w-full rounded-xl border"
                 />
+              ) : arteExpirada ? (
+                <p className="text-tenue mt-2 text-sm">Esta arte expirou após 48 horas para liberar espaço.</p>
               ) : null;
             }}
           />

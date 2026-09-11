@@ -5,6 +5,7 @@ import {
   dadosDaMensagem,
   ehConfirmacao,
   referenciaAtiva,
+  referenciasAtivas,
   referenciasDaConversa,
   tituloDaConversa,
   type MensagemDoEstudio,
@@ -174,6 +175,7 @@ describe("foto de referência no chat (06/09/2026)", () => {
     ).toMatchObject({ referenciaPath: "corretores/x/r/a.jpg" });
     expect(dadosDaMensagem({ tipo: "proposta", modo: "arte", prompt: "uma fachada" })).toMatchObject({
       referenciaPath: null,
+      referenciaPaths: [],
     });
   });
 
@@ -191,6 +193,21 @@ describe("foto de referência no chat (06/09/2026)", () => {
     ];
     expect(referenciaAtiva(h)?.path).toBe("corretores/x/r/2.jpg");
     expect(referenciaAtiva([msg("ia", null)])).toBeNull();
+  });
+
+  it("um único anexo pode carregar até quatro fotos para a mesma proposta", () => {
+    const h = [
+      msg("corretor", {
+        tipo: "referencia",
+        path: "corretores/x/r/1.jpg",
+        url: "u1",
+        referencias: [
+          { path: "corretores/x/r/1.jpg", url: "u1" },
+          { path: "corretores/x/r/2.jpg", url: "u2" },
+        ],
+      }),
+    ];
+    expect(referenciasAtivas(h).map((r) => r.path)).toEqual(["corretores/x/r/1.jpg", "corretores/x/r/2.jpg"]);
   });
 
   it("as referências da conversa deduplicam por path, na ordem", () => {
@@ -226,9 +243,9 @@ describe("foto de referência no chat (06/09/2026)", () => {
    * o caso da foto do catálogo: quando o corretor escolhe uma foto do imóvel
    * na faixa, ela substitui a anexada, e aí o `referenciaPath` não vai.
    */
-  it("'Gerar assim' manda o referenciaPath da PROPOSTA, não um caminho solto", () => {
+  it("'Gerar assim' manda as referencias da PROPOSTA, não um caminho solto", () => {
     const tela = ler(TELAS[0]);
-    expect(tela).toMatch(/referenciaPath:[^;]*p\.referenciaPath/);
+    expect(tela).toMatch(/referenciaPaths:[^;]*p\.referenciaPaths/);
   });
 
   it("as fotos extras do vídeo saem da proposta GRAVADA, nunca do POST da tela", () => {

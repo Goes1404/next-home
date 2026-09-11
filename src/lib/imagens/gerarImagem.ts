@@ -134,8 +134,11 @@ export type ResultadoImagem =
 
 export type PedidoDeImagem = {
   prompt: string;
-  /** Foto de referência: quando existe, o caminho vira EDIÇÃO em vez de criação. */
-  referencia?: { bytes: Buffer; mime: string } | null;
+  /**
+   * Fotos de referência: quando existem, o caminho vira EDIÇÃO em vez de
+   * criação. O endpoint aceita `image[]`, inclusive para uma única foto.
+   */
+  referencias?: { bytes: Buffer; mime: string }[];
   largura: number;
   altura: number;
   qualidade: ChaveQualidade;
@@ -192,7 +195,7 @@ export async function gerarImagem(pedido: PedidoDeImagem): Promise<ResultadoImag
   try {
     // Com referência a chamada é multipart (o arquivo vai no corpo); sem
     // referência é JSON. São dois endpoints diferentes, não um parâmetro.
-    const comReferencia = Boolean(pedido.referencia);
+    const comReferencia = (pedido.referencias?.length ?? 0) > 0;
     const resposta = comReferencia
       ? await fetch(URL_EDITAR, {
           method: "POST",
@@ -280,15 +283,20 @@ export async function gerarImagem(pedido: PedidoDeImagem): Promise<ResultadoImag
  * `pedido.prompt` e ficava indistinguível — para quem lê e para a guarda — do
  * caminho que manda o texto cru.
  */
-function corpoDeEdicao(tratado: PedidoDeImagem, modelo: string, tamanho: string): FormData {
+export function corpoDeEdicao(tratado: PedidoDeImagem, modelo: string, tamanho: string): FormData {
   const forma = new FormData();
   forma.append("model", modelo);
   forma.append("prompt", tratado.prompt);
   forma.append("size", tamanho);
   forma.append("quality", tratado.qualidade);
   forma.append("n", "1");
-  const ref = tratado.referencia!;
-  forma.append("image", new Blob([new Uint8Array(ref.bytes)], { type: ref.mime }), "referencia.png");
+  for (const [indice, ref] of (tratado.referencias ?? []).entries()) {
+    forma.append(
+      "image[]",
+      new Blob([new Uint8Array(ref.bytes)], { type: ref.mime }),
+      `referencia-${indice + 1}.png`,
+    );
+  }
   return forma;
 }
 

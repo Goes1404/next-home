@@ -5,6 +5,7 @@ import { exigirGestorNaPagina } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { metaAdsConfigurado } from "@/lib/metaAds";
+import { idadeDaSincronizacao } from "@/lib/metaDiagnostico";
 import { agregarPorCampanha } from "@/lib/admin/funilDeAnuncios";
 import { janelaDeDias } from "@/lib/admin/janelaDeDias";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
@@ -49,6 +50,51 @@ function Kpi({ rotulo, valor, detalhe, href }: { rotulo: string; valor: string; 
 }
 
 /**
+ * A faixa que diz que o gráfico congelou.
+ *
+ * Existe porque a tela não tinha como distinguir "a campanha gastou assim"
+ * de "a sincronização parou" — os dois desenham o mesmo gráfico plano. Com
+ * token de usuário, que vence em 60 dias, o segundo caso é questão de
+ * tempo, e o sintoma seria eterno silêncio.
+ *
+ * Só aparece fora do caminho feliz (`estado !== "em_dia"`), pela régua da
+ * `FaixaConexao`: aviso que aparece o tempo todo deixa de ser lido. E as
+ * duas classes de cor estão escritas por extenso — `bg-${x}-lavado`
+ * montado em tempo de execução não gera classe nenhuma no Tailwind, e o
+ * aviso sairia sem cor justo no dia em que importa.
+ */
+function FaixaDeSincronizacao({ estado, texto }: { estado: "nunca" | "atrasado"; texto: string }) {
+  const estilo =
+    estado === "atrasado"
+      ? { caixa: "border-alerta-linha bg-alerta-lavado", icone: "text-alerta" }
+      : { caixa: "border-info-linha bg-info-lavado", icone: "text-info" };
+
+  return (
+    <div role="status" className={`flex items-start gap-3 rounded-xl border p-3 ${estilo.caixa}`}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={`mt-0.5 h-4 w-4 shrink-0 ${estilo.icone}`}
+        aria-hidden
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+      <p className="text-fluid-sm text-apoio min-w-0">
+        <strong className="text-titulo">{texto}</strong>{" "}
+        {estado === "atrasado"
+          ? "A causa mais comum é o token ter vencido — token de usuário dura 60 dias. Confira com npm run meta:diag e, se preciso, gere outro pelo passo a passo abaixo."
+          : "Clique em Sincronizar agora, ou confira o token com npm run meta:diag antes."}
+      </p>
+    </div>
+  );
+}
+
+/**
  * Quanto cada campanha do Meta custou e o que ela virou — sem abrir o
  * Gerenciador de Anúncios (roadmap Meta Ads, F1-F3).
  *
@@ -73,7 +119,12 @@ export default async function AnunciosPage() {
    */
   const { corte, corteDia, dias: diasDaJanela } = janelaDeDias(DIAS_DA_JANELA);
 
-  const [{ data: metricas }, { data: leadsDeAnuncio }, { count: cliquesPorteiro }] = await Promise.all([
+  const [
+    { data: metricas },
+    { data: leadsDeAnuncio },
+    { count: cliquesPorteiro },
+    { data: ultimaSincronizacao },
+  ] = await Promise.all([
     sessao
       .from("meta_ads_metricas")
       .select("dia, campanha_id, campanha_nome, gasto, cliques, resultados_meta")
@@ -95,6 +146,19 @@ export default async function AnunciosPage() {
       .select("id", { count: "exact", head: true })
       .like("origem", "anuncio/%")
       .gte("created_at", corte.toISOString()),
+    /*
+     * Quando o gasto foi atualizado pela última vez — UMA linha, sem
+     * janela de data: se a sincronização parou há 40 dias, o `max` dentro
+     * da janela de 30 seria nulo e a tela diria "nunca sincronizou", que é
+     * outro diagnóstico (configuração que nunca rodou × token que venceu
+     * no meio do caminho).
+     */
+    sessao
+      .from("meta_ads_metricas")
+      .select("atualizado_em")
+      .order("atualizado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   // `numeric` do Postgres chega como STRING no supabase-js — sem a
@@ -170,6 +234,7 @@ export default async function AnunciosPage() {
   const cplCrm = leadsCrm > 0 ? totalGasto / leadsCrm : null;
   const custoPorQuente = temperatura.quente > 0 ? totalGasto / temperatura.quente : null;
   const conectado = metaAdsConfigurado();
+  const sincronizacao = idadeDaSincronizacao(ultimaSincronizacao?.atualizado_em ?? null);
 
   const faixasDeQualidade = [
     { rotulo: "Quentes", valor: temperatura.quente, cor: "var(--color-sand-400)" },
@@ -186,6 +251,16 @@ export default async function AnunciosPage() {
       </div>
 
       <AbasAdmin ativa="/corretor/admin/anuncios" />
+
+      {conectado && sincronizacao.estado !== "em_dia" && (
+        <FaixaDeSincronizacao
+          estado={sincronizacao.estado}
+          texto={
+            sincronizacao.texto ??
+            "O Meta está configurado, mas o gasto nunca foi sincronizado nem uma vez."
+          }
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi rotulo="Investido (30 dias)" valor={formatarMoedaBRL(totalGasto)} detalhe={conectado ? undefined : "Meta ainda não conectado"} />
@@ -377,34 +452,22 @@ export default async function AnunciosPage() {
         </p>
         <ol className="text-fluid-sm text-apoio mt-3 list-decimal space-y-2 pl-5">
           <li>
-            Abra <span className="text-titulo">business.facebook.com</span> → Configurações do
-            negócio.
+            Abra <span className="text-titulo">developers.facebook.com/tools/explorer</span>,
+            escolha o aplicativo da empresa, marque a permissão{" "}
+            <span className="text-titulo">ads_read</span> e clique em gerar token de acesso.
           </li>
           <li>
-            Em <span className="text-titulo">Usuários → Usuários do sistema</span>, crie um usuário
-            do sistema (ex.: &quot;crm-next-home&quot;, função Funcionário).
-          </li>
-          <li>
-            Em <span className="text-titulo">Adicionar ativos</span>, dê a ele acesso à conta de
-            anúncios do cliente com a permissão de <span className="text-titulo">visualizar
-            desempenho</span> (leitura — ele nunca edita campanha).
-          </li>
-          <li>
-            Clique em <span className="text-titulo">Gerar token</span>: escolha o aplicativo da
-            empresa (o mesmo do webhook de leads, se já existir), marque a permissão{" "}
-            <span className="text-titulo">ads_read</span> e expiração &quot;nunca&quot;. Copie o
-            token — ele só aparece uma vez.
-          </li>
-          <li>
-            Anote o <span className="text-titulo">ID da conta de anúncios</span>: no Gerenciador de
-            Anúncios, é o número ao lado do nome da conta (use só os dígitos, sem o
-            &quot;act_&quot;).
+            No terminal do projeto, rode{" "}
+            <code className="text-titulo">npm run meta:diag -- &lt;o token&gt;</code>. Ele diz se o
+            token serve e <span className="text-titulo">lista as suas contas de anúncios com o
+            nome de cada uma</span> — o ID sai pronto para colar, sem ninguém precisar adivinhar
+            qual dos números da Meta é o certo.
           </li>
           <li>
             Na <span className="text-titulo">Vercel</span> → projeto next-home → Settings →
-            Environment Variables (Production), crie:{" "}
-            <code className="text-titulo">META_ADS_TOKEN</code> (o token do passo 4) e{" "}
-            <code className="text-titulo">META_ADS_ACCOUNT_ID</code> (o número do passo 5).
+            Environment Variables (Production), cole as duas linhas que o comando imprimiu:{" "}
+            <code className="text-titulo">META_ADS_ACCOUNT_ID</code> e{" "}
+            <code className="text-titulo">META_ADS_TOKEN</code>.
           </li>
           <li>
             Faça um <span className="text-titulo">redeploy</span> — variável nova só vale depois
@@ -416,6 +479,17 @@ export default async function AnunciosPage() {
             automática.
           </li>
         </ol>
+        <p className="text-fluid-xs text-apoio border-linha mt-3 border-t pt-3">
+          <strong className="text-titulo">O token acima vence em 60 dias.</strong> Quando vencer, a
+          sincronização para e o gráfico congela — esta tela avisa quando isso acontecer. O caminho
+          definitivo é um token de <span className="text-titulo">Usuário do Sistema</span>, que não
+          vence: em <span className="text-titulo">business.facebook.com/settings/system-users</span>{" "}
+          crie o usuário, em <span className="text-titulo">Adicionar ativos</span> dê a ele a conta
+          de anúncios com permissão de ver desempenho, e gere o token com{" "}
+          <span className="text-titulo">ads_read</span> e expiração &quot;nunca&quot;. Se esse menu
+          não aparecer, é porque a conta de anúncios não está dentro de um Portfólio de Negócios ou
+          você não é administrador do portfólio — e aí o caminho de cima resolve enquanto isso.
+        </p>
       </section>
     </div>
   );

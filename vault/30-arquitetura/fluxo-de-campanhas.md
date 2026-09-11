@@ -5,9 +5,9 @@ tags: [campanhas, anti-ban, arquitetura]
 type: nota
 status: evergreen
 custou: medio
-codigo: [src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
+codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-11
 fonte: leitura do código + docs/MEMORIA.md
 summary: Criação monta a fila com agendado_para; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, cota/espaçamento no banco e variação por IA.
 ---
@@ -17,6 +17,16 @@ summary: Criação monta a fila com agendado_para; disparo é batido por pg_cron
 
 - Quem recebe → o que dizer → confirmar; título opcional (a action ainda exige
   título não-vazio — quem chamar `criarCampanha` de fora precisa mandar um).
+- Em “Escolher um por um”, a carteira traz nome, telefone e etapa. Busca e
+  filtro de etapa são combináveis; selecionar em lote atua só nos resultados
+  visíveis e o resumo dos escolhidos é a revisão antes de avançar
+  ([[selecao-manual-da-transmissao-e-a-ultima-revisao]]).
+- Antes da prévia e novamente na criação, ficam fora leads com campanha
+  entregue nos últimos 7 dias e leads já pendentes em outra lista do corretor
+  ([[campanha-protege-quem-ja-foi-contatado]]).
+- O início opcional vira o primeiro `agendado_para` da própria fila; não há
+  tabela nem cron paralelo. Action valida futuro, fuso de Brasília e janela
+  de segunda a sábado, 9h–20h59 ([[agendamento-comeca-na-propria-fila]]).
 - Fila gravada com `agendado_para` espaçado (35-75s) e guarda de
   monotonicidade ([[e2e-contra-producao|flake didático]]).
 - **Sem chamada de IA na criação** — a variação anti-ban acontece no ENVIO

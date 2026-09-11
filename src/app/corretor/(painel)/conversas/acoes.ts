@@ -23,6 +23,7 @@ import {
 import { getEmpreendimentos } from "@/lib/queries";
 import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
+import { TETO_DA_MEMORIA } from "@/lib/whatsapp/memoriaDaConversa";
 
 export type ResultadoConversa = { erro?: string; ok?: string };
 
@@ -681,4 +682,54 @@ export async function responderComIA(conversaId: string): Promise<ResultadoEnvio
   revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor");
   return { baloesEnviados: turno.baloes.length };
+}
+
+/**
+ * O corretor corrige a MEMÓRIA da conversa (0110).
+ *
+ * A memória é o que a IA carrega para a próxima mensagem — o estado da
+ * negociação em prosa, que sobrevive à janela de 40 falas. Deixá-la
+ * editável não é enfeite: resumo errado que ninguém conserta vira erro
+ * repetido em TODA mensagem seguinte.
+ *
+ * Gravar por aqui carimba `memoria_do_corretor`, e a partir daí a extração
+ * PRESERVA o texto dele e só acrescenta o que for novo. Sem esse carimbo, a
+ * correção seria desfeita na mensagem seguinte — e é assim que alguém para
+ * de corrigir.
+ *
+ * Quem recorta é a RLS: conversa de outro corretor simplesmente não é
+ * atualizada, e o `.select()` de volta é o que separa "não pude" de "não
+ * havia" (sem ele, um id alheio devolveria sucesso sem ter mudado nada).
+ */
+export async function salvarMemoriaDaConversaNoPainel(
+  conversaId: string,
+  texto: string,
+): Promise<{ ok: string } | { erro: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { erro: "Sessão expirada. Entre de novo." };
+
+  const limpo = texto.trim().slice(0, TETO_DA_MEMORIA);
+
+  const { data, error } = await supabase
+    .from("whatsapp_conversas")
+    .update({
+      // Texto vazio APAGA a memória, de propósito: é o jeito de dizer "o
+      // que estava aqui não vale". A marca continua, então a IA volta a
+      // escrever do zero em vez de ressuscitar o texto errado.
+      memoria: limpo || null,
+      memoria_atualizada_em: new Date().toISOString(),
+      memoria_do_corretor: true,
+    })
+    .eq("id", conversaId)
+    .select("id");
+
+  if (error) return { erro: "Não foi possível salvar agora." };
+  if (!data?.length) return { erro: "Sem permissão para editar esta conversa." };
+
+  revalidatePath("/corretor/conversas");
+  revalidatePath("/corretor/pessoas");
+  return { ok: "Memória atualizada. A IA passa a usar o seu texto." };
 }

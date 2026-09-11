@@ -31,7 +31,7 @@ import type { MensagemDeChat, PerguntaDeChat } from "./chatTipos";
  * generalização veio tirar.
  */
 
-export type EnvioPendente = { id: string; conteudo: string; previewUrl?: string | null };
+export type EnvioPendente = { id: string; conteudo: string; previewUrls?: string[] };
 
 /** O anexo escolhido e ainda não enviado — vive no composer, como no ChatGPT. */
 export type AnexoDoComposer = { previewUrl: string; nome: string };
@@ -48,7 +48,7 @@ export function ChatBase<M extends MensagemDeChat>({
   textoInicial,
   renderAcima,
   renderAbaixo,
-  anexo,
+  anexos,
   onAnexar,
   onRemoverAnexo,
 }: {
@@ -102,10 +102,10 @@ export function ChatBase<M extends MensagemDeChat>({
   /** Desenhado DEPOIS do texto — proposta, resultado, cartão, simulação. */
   renderAbaixo?: (m: M) => ReactNode;
   /** Foto escolhida e ainda não enviada; a tela dona decide o upload. */
-  anexo?: AnexoDoComposer | null;
+  anexos?: AnexoDoComposer[];
   /** Presente = o clipe aparece. A tela dona valida tipo/tamanho e sobe. */
-  onAnexar?: (file: File) => void;
-  onRemoverAnexo?: () => void;
+  onAnexar?: (files: File[]) => void;
+  onRemoverAnexo?: (indice: number) => void;
 }) {
   const [texto, setTexto] = useState(textoInicial ?? "");
 
@@ -172,7 +172,7 @@ export function ChatBase<M extends MensagemDeChat>({
   const enviar = async (textoPronto?: string) => {
     const t = (textoPronto ?? texto).trim();
     // Com anexo, mandar sem texto vale: "aqui está a foto" já é a mensagem.
-    if ((!t && !anexo) || pensando) return;
+    if ((!t && (!anexos || anexos.length === 0)) || pensando) return;
     setTexto("");
     presoNoFimRef.current = true;
     try {
@@ -233,13 +233,18 @@ export function ChatBase<M extends MensagemDeChat>({
 
         {pendente && (
           <Balao papel="corretor" apagado>
-            {pendente.previewUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={pendente.previewUrl}
-                alt=""
-                className="border-linha mb-1.5 max-h-44 w-auto max-w-full rounded-lg border"
-              />
+            {pendente.previewUrls && pendente.previewUrls.length > 0 && (
+              <div className="mb-1.5 flex flex-wrap gap-1.5">
+                {pendente.previewUrls.map((previewUrl) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={previewUrl}
+                    src={previewUrl}
+                    alt=""
+                    className="border-linha max-h-24 w-auto max-w-full rounded-lg border"
+                  />
+                ))}
+              </div>
             )}
             <p className="text-fluid-sm text-corpo break-words whitespace-pre-line">{pendente.conteudo}</p>
           </Balao>
@@ -278,19 +283,24 @@ export function ChatBase<M extends MensagemDeChat>({
       )}
 
       {/* A foto escolhida, antes do envio — dá para tirar sem mandar. */}
-      {anexo && (
+      {anexos && anexos.length > 0 && (
         <div className="border-linha flex items-center gap-2 border-t px-3 py-2 md:px-5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={anexo.previewUrl} alt="" className="border-linha h-12 w-12 rounded-lg border object-cover" />
-          <span className="text-apoio min-w-0 flex-1 truncate text-xs">{anexo.nome}</span>
-          <button
-            type="button"
-            onClick={onRemoverAnexo}
-            aria-label="Remover foto"
-            className="text-tenue hover:text-corpo min-h-11 cursor-pointer px-2 text-sm"
-          >
-            ✕
-          </button>
+          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto">
+            {anexos.map((anexo, indice) => (
+              <div key={anexo.previewUrl} className="relative shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={anexo.previewUrl} alt={anexo.nome} className="border-linha h-12 w-12 rounded-lg border object-cover" />
+                <button
+                  type="button"
+                  onClick={() => onRemoverAnexo?.(indice)}
+                  aria-label={`Remover ${anexo.nome}`}
+                  className="bg-fundo text-corpo absolute -top-2 -right-2 flex size-5 cursor-pointer items-center justify-center rounded-full border text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -307,10 +317,11 @@ export function ChatBase<M extends MensagemDeChat>({
               ref={arquivoRef}
               type="file"
               accept="image/jpeg,image/png,image/webp"
+              multiple
               className="hidden"
               onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) onAnexar(f);
+                const files = Array.from(e.target.files ?? []);
+                if (files.length > 0) onAnexar(files);
                 // Permite escolher o MESMO arquivo de novo depois de remover.
                 e.target.value = "";
               }}
@@ -348,7 +359,7 @@ export function ChatBase<M extends MensagemDeChat>({
         />
         <button
           type="submit"
-          disabled={pensando || (!texto.trim() && !anexo)}
+          disabled={pensando || (!texto.trim() && (!anexos || anexos.length === 0))}
           aria-label="Enviar"
           className="bg-acento hover:bg-acento-hover text-sobre-cor flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors disabled:opacity-50"
         >

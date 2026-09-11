@@ -19,6 +19,7 @@
     "eval:comparar": "tsx scripts/eval/compararConversas.ts",
     "eval:erros": "tsx --conditions=react-server scripts/eval/analiseDeErros.ts",
     "observatorio": "tsx scripts/observatorio.ts",
+    "meta:diag": "tsx scripts/metaDiagnostico.ts",
     "paleta": "node scripts/verificarPaleta.mjs",
     "observatorio:consultor": "tsx scripts/observatorioConsultor.ts",
     "eval:consultor": "tsx --conditions=react-server scripts/eval/casosDoConsultor.ts"

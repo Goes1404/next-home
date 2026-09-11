@@ -44,6 +44,10 @@ const ROLAGEM_DECLARADA = [
   // nenhuma delas é alcançável só por ali: o teto é de 8, todas aparecem na
   // tela do imóvel, e não escolher nenhuma é o comportamento padrão.
   "(painel)/imoveis/criar-imagem/ChatDeArte.tsx",
+  // Miniaturas de fotos já escolhidas no composer: são conteúdo removível,
+  // não destinos. No máximo quatro; quebrar linha roubaria a altura do campo
+  // e a rolagem só aparece quando há mais de uma referência real.
+  "(painel)/_componentes/ChatBase.tsx",
 ];
 
 const RAIZ = path.join(process.cwd(), "src/app/corretor");

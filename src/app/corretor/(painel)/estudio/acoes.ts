@@ -89,17 +89,17 @@ export async function enviarMensagemDoEstudio(params: {
    * contra a pasta do PRÓPRIO corretor, a mesma guarda da rota de gerar:
    * caminho forjado leria arquivo alheio e o mandaria para o modelo.
    */
-  referencia?: { path: string; url: string } | null;
+  referencias?: { path: string; url: string }[];
 }): Promise<EstadoDoChat | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
 
-  let referencia = params.referencia ?? null;
-  if (referencia && !referencia.path.startsWith(`corretores/${corretor.id}/`)) {
-    referencia = null;
-  }
+  const referencias = (params.referencias ?? [])
+    .filter((referencia) => referencia.path.startsWith(`corretores/${corretor.id}/`))
+    .filter((referencia, indice, lista) => lista.findIndex((outra) => outra.path === referencia.path) === indice)
+    .slice(0, 4);
 
-  const texto = params.texto.trim().slice(0, 2000) || (referencia ? "📎 Foto de referência" : "");
+  const texto = params.texto.trim().slice(0, 2000) || (referencias.length > 0 ? "📎 Foto de referência" : "");
   if (!texto) return { erro: "Escreva alguma coisa." };
 
   let conversaId = params.conversaId;
@@ -120,8 +120,8 @@ export async function enviarMensagemDoEstudio(params: {
     conteudo: texto,
     dados: params.escolha
       ? { tipo: "escolha", perguntaId: params.escolha.perguntaId, pergunta: params.escolha.pergunta, escolha: texto }
-      : referencia
-        ? { tipo: "referencia", path: referencia.path, url: referencia.url }
+      : referencias.length > 0
+        ? { tipo: "referencia", path: referencias[0].path, url: referencias[0].url, referencias }
         : null,
   });
 

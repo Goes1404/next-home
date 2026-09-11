@@ -1246,6 +1246,17 @@ artifact "Painel de Bolso"; fases F0–F6. F0+F1 aplicadas na 0045.
   permite remover destinatários antes de avançar. A segurança não mudou: a
   action ainda intersecta os IDs recebidos com a carteira permitida por RLS e
   `elegivel()`, portanto dado enviado pelo navegador não vira autorização.
+- **Prévia do público + proteção de 7 dias** (11/09/2026): o assistente conta
+  o público escolhido e informa quantos ficaram de fora. Uma campanha nova
+  exclui quem recebeu campanha nos últimos 7 dias e quem ainda está pendente
+  em outra lista pessoal do corretor. A criação refaz a consulta no servidor;
+  a prévia é informação, nunca autorização nem reserva.
+- **Agendar começa em `agendado_para`, não em outro relógio** (11/09/2026):
+  `montarFilaCampanha` aceita `iniciarEm`; o primeiro item nasce no instante
+  escolhido e os seguintes mantêm 35–75s, monotonicidade e janela segura. A
+  interface usa horário de Brasília e a action recusa passado, domingo ou
+  horário fora de 9h–20h59. O dispatcher existente já respeita cada item,
+  portanto não há nova tabela, migration ou cron para divergir.
 - **Status da fila em português de gente**: "Hoje saem 15 mensagens; as
   outras 32 continuam amanhã, sozinhas" no lugar de pendentes/cota/próximo
   envio. Cota, fila e instância são vocabulário de quem construiu o sistema.

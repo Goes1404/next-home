@@ -7,11 +7,12 @@ status: growing
 custou: medio
 codigo:
   - src/app/corretor/(painel)/funil/Quadro.tsx
+  - src/app/corretor/(painel)/funil/filtrosDoQuadro.test.ts
   - src/app/corretor/naoRolaDeLado.test.ts
 created: 2026-09-09
-updated: 2026-09-09
+updated: 2026-09-11
 fonte: pedido do usuário em 09/09/2026 + medição com o CSS de produção
-summary: O funil voltou a ser kanban de colunas laterais em toda tela — inclusive celular. Os três motivos que o derrubaram em 02/09 continuam válidos e cada um ganhou uma resposta; a rolagem lateral virou exceção DECLARADA na guarda.
+summary: O funil é um kanban lateral inclusive no celular; filtros combináveis de situação, origem e responsável recortam os cartões sem esconder as etapas do processo.
 ---
 # O quadro do funil voltou a ser lateral
 
@@ -74,6 +75,21 @@ Quem rola é a FAIXA, nunca o documento. Todo alvo tocável ≥44px (a alça é
   46 cartões viravam dez mil pixels de página.
 - **Arrastar do HTML5**: o motivo pelo qual o quadro antigo tinha um gesto
   que metade dos aparelhos não alcança.
+
+## Filtros e acabamento visual (11/09/2026)
+
+O quadro ganhou filtros combináveis por **situação** (parados há 3+ dias,
+aguardando resposta ou com visita), **origem** e, para o gestor,
+**responsável**. O recorte acontece nos até 300 leads já entregues ao kanban;
+com filtro ativo, os contadores descrevem o que está visível e não o total
+geral do banco.
+
+Filtrar não remove colunas vazias: as etapas continuam desenhadas para
+preservar a sequência do processo e os alvos de arraste. O estado vazio
+explica o recorte e oferece limpar filtros. A barra quebra em grade no celular
+e os controles têm ao menos 44px. Cabeçalhos ganharam número ordinal, régua
+cromática e contador; cards ganharam profundidade e resposta de foco/hover
+sem introduzir uma segunda paleta para as etapas.
 
 ## Consequências
 

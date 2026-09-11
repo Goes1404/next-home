@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { motivoDoErro } from "./gerarImagem";
+import { corpoDeEdicao, motivoDoErro } from "./gerarImagem";
 import { inicioDoDiaEmSaoPaulo } from "./imagensTipos";
 
 /**
@@ -44,6 +44,28 @@ describe("motivoDoErro", () => {
 
   it("a classificação não depende de caixa alta ou baixa", () => {
     expect(motivoDoErro(429, '{"error":{"code":"INSUFFICIENT_QUOTA"}}')).toBe("sem_credito");
+  });
+});
+
+describe("referências de imagem", () => {
+  it("manda image[] mesmo com uma foto e preserva referências múltiplas", () => {
+    const form = corpoDeEdicao(
+      {
+        prompt: "fachada ao pôr do sol",
+        largura: 1024,
+        altura: 1024,
+        qualidade: "low",
+        referencias: [
+          { bytes: Buffer.from("primeira"), mime: "image/jpeg" },
+          { bytes: Buffer.from("segunda"), mime: "image/png" },
+        ],
+      },
+      "gpt-image-2",
+      "1024x1024",
+    );
+
+    expect(form.getAll("image[]")).toHaveLength(2);
+    expect(form.getAll("image")).toHaveLength(0);
   });
 });
 

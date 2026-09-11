@@ -8,6 +8,7 @@ import { getTetoDeHoje, registrarImagem } from "@/lib/imagens/galeria";
 import { TAMANHOS, type ChaveQualidade, type ChaveTamanho } from "@/lib/imagens/imagensTipos";
 import { montarPedido, receitaPor } from "@/lib/imagens/receitas";
 import { carimbarRessalva } from "@/lib/imagens/carimbo";
+import { classificarFalhaDeStorage } from "@/lib/imagens/falhaDeStorage";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 
 export const runtime = "nodejs";
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
     tamanho?: ChaveTamanho;
     qualidade?: ChaveQualidade;
     receita?: string;
-    referenciaPath?: string | null;
+    referenciaPaths?: string[] | null;
     /**
      * Uma foto do CATÁLOGO como base, escolhida na faixa do chat.
      *
@@ -102,8 +103,8 @@ export async function POST(req: NextRequest) {
   const formato = TAMANHOS.find((t) => t.chave === corpo?.tamanho) ?? TAMANHOS[0];
   const supabase = createServiceClient();
 
-  let referencia: { bytes: Buffer; mime: string } | null = null;
-  let referenciaUrl: string | null = null;
+  const referencias: { bytes: Buffer; mime: string }[] = [];
+  const referenciasUrl: string[] = [];
   if (corpo?.midiaId) {
     /*
      * A foto do imóvel como base. Nenhuma confinação de caminho aqui: o
@@ -124,33 +125,36 @@ export async function POST(req: NextRequest) {
     if (!baixada.ok) {
       return NextResponse.json({ erro: "Não deu para ler a foto do imóvel." }, { status: 400 });
     }
-    referencia = {
+    referencias.push({
       bytes: Buffer.from(await baixada.arrayBuffer()),
       mime: baixada.headers.get("content-type") || "image/jpeg",
-    };
-    referenciaUrl = midia.url;
+    });
+    referenciasUrl.push(midia.url);
     // A arte nasce ligada ao imóvel da foto — é o vínculo que a 0101 criou e
     // que estava nulo nas 8 gerações da vida inteira.
     empreendimentoId = empreendimentoId ?? midia.empreendimento_id ?? null;
-  } else if (corpo?.referenciaPath) {
+  } else if (Array.isArray(corpo?.referenciaPaths) && corpo.referenciaPaths.length > 0) {
     // O caminho vem do cliente, então é preciso confinar: só a pasta do
     // PRÓPRIO corretor. Sem isso, um caminho forjado leria arquivo alheio no
     // bucket e o mandaria para o modelo.
     const prefixo = `corretores/${corretor.id}/`;
-    if (!corpo.referenciaPath.startsWith(prefixo)) {
+    const paths = [...new Set(corpo.referenciaPaths)].slice(0, 4);
+    if (paths.length !== corpo.referenciaPaths.length || paths.some((path) => !path.startsWith(prefixo))) {
       return NextResponse.json({ erro: "Referência inválida." }, { status: 400 });
     }
-    const { data, error } = await supabase.storage.from(BUCKET).download(corpo.referenciaPath);
-    if (error || !data) {
-      return NextResponse.json({ erro: "Não deu para ler a foto de referência." }, { status: 400 });
+    for (const path of paths) {
+      const { data, error } = await supabase.storage.from(BUCKET).download(path);
+      if (error || !data) {
+        return NextResponse.json({ erro: "Não deu para ler uma das fotos de referência." }, { status: 400 });
+      }
+      referencias.push({ bytes: Buffer.from(await data.arrayBuffer()), mime: data.type || "image/png" });
+      referenciasUrl.push(supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
     }
-    referencia = { bytes: Buffer.from(await data.arrayBuffer()), mime: data.type || "image/png" };
-    referenciaUrl = supabase.storage.from(BUCKET).getPublicUrl(corpo.referenciaPath).data.publicUrl;
   }
 
   const resultado = await gerarImagem({
     prompt: pedidoCompleto,
-    referencia,
+    referencias,
     largura: formato.largura,
     altura: formato.altura,
     qualidade: corpo?.qualidade ?? "low",
@@ -185,8 +189,23 @@ export async function POST(req: NextRequest) {
     .from(BUCKET)
     .upload(caminho, marcada.bytes, { contentType: marcada.mime, upsert: true });
   if (erroUpload) {
+    /*
+     * A arte já foi PAGA quando se chega aqui, e uma frase só obrigaria quem
+     * investiga a abrir o terminal do servidor para saber se o caso é limite,
+     * tipo, permissão ou uma piscada de rede — quatro consertos diferentes
+     * atrás da mesma tela. O motivo é tipado e vai junto para o cliente.
+     */
+    const falha = classificarFalhaDeStorage(erroUpload.message, erroUpload.statusCode);
+    console.error("[imagens] falha ao guardar arte gerada", {
+      motivo: falha.motivo,
+      mensagem: erroUpload.message,
+      status: erroUpload.statusCode,
+      caminho,
+      bytes: marcada.bytes.length,
+      mime: marcada.mime,
+    });
     return NextResponse.json(
-      { erro: "A imagem foi criada mas não deu para guardar. Tente de novo." },
+      { erro: falha.mensagem, motivo: falha.motivo, valeTentarDeNovo: falha.valeTentarDeNovo },
       { status: 500 },
     );
   }
@@ -205,7 +224,7 @@ export async function POST(req: NextRequest) {
     url,
     largura: medida?.largura ?? formato.largura,
     altura: medida?.altura ?? formato.altura,
-    referenciaUrl,
+    referenciaUrl: referenciasUrl[0] ?? null,
     latenciaMs: resultado.latenciaMs,
     empreendimentoId,
   });
@@ -218,7 +237,7 @@ export async function POST(req: NextRequest) {
       url,
       largura: formato.largura,
       altura: formato.altura,
-      referenciaUrl,
+      referenciaUrl: referenciasUrl[0] ?? null,
       empreendimentoId,
       criadaEm: new Date().toISOString(),
     },

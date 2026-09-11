@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { Filter, RotateCcw } from "lucide-react";
 import { moverEtapa } from "@/app/corretor/actions";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import {
@@ -62,6 +70,28 @@ const ALTURA_COLUNA = "max-h-[68svh]";
 const MARGEM_AUTOSCROLL = 56;
 
 type Arrasto = { id: string; nome: string; origem: EtapaFunil; x: number; y: number };
+type FiltroSituacao = "todos" | "parados" | "sem_retorno" | "com_visita";
+
+function chaveDaOrigem(lead: Lead): string {
+  return lead.portalOrigem || lead.origem || "sem_origem";
+}
+
+function rotuloDaOrigem(origem: string): string {
+  const conhecidos: Record<string, string> = {
+    zap_imoveis: "Zap Imóveis",
+    vivareal: "VivaReal",
+    olx: "OLX",
+    imovelweb: "Imovelweb",
+    meta_ads: "Instagram / Facebook",
+    "painel/manual": "Cadastro manual",
+    sem_origem: "Sem origem",
+  };
+  if (conhecidos[origem]) return conhecidos[origem];
+  const ultimoTrecho = origem.split("/").at(-1) ?? origem;
+  return ultimoTrecho
+    .replaceAll("_", " ")
+    .replace(/^./, (letra) => letra.toUpperCase());
+}
 
 /**
  * Qual coluna está debaixo do ponteiro. O fantasma é `pointer-events-none`,
@@ -86,6 +116,9 @@ export function Quadro({
   mostrarDono: boolean;
 }) {
   const [leadDossie, setLeadDossie] = useState<Lead | null>(null);
+  const [situacao, setSituacao] = useState<FiltroSituacao>("todos");
+  const [origem, setOrigem] = useState("todas");
+  const [responsavel, setResponsavel] = useState("todos");
   const { falhar } = useAvisos();
   const [, iniciarTransicao] = useTransition();
 
@@ -116,6 +149,56 @@ export function Quadro({
         lead.id === movimento.id ? { ...lead, etapa: movimento.etapa } : lead,
       ),
   );
+
+  const origens = useMemo(
+    () =>
+      [...new Set(otimista.map(chaveDaOrigem))]
+        .map((valor) => ({ valor, rotulo: rotuloDaOrigem(valor) }))
+        .sort((a, b) => a.rotulo.localeCompare(b.rotulo, "pt-BR")),
+    [otimista],
+  );
+  const responsaveis = useMemo(
+    () =>
+      [
+        ...new Map(
+          otimista.map((lead) => [
+            lead.corretor?.id ?? "sem_responsavel",
+            lead.corretor?.nome ?? "Sem responsável",
+          ]),
+        ),
+      ]
+        .map(([id, nome]) => ({ id, nome }))
+        .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
+    [otimista],
+  );
+  const filtrosAtivos =
+    situacao !== "todos" || origem !== "todas" || responsavel !== "todos";
+  const visiveis = useMemo(
+    () =>
+      otimista.filter((lead) => {
+        if (origem !== "todas" && chaveDaOrigem(lead) !== origem) return false;
+        if (
+          responsavel !== "todos" &&
+          (lead.corretor?.id ?? "sem_responsavel") !== responsavel
+        ) {
+          return false;
+        }
+        if (situacao === "parados") {
+          const dias = diasParado(lead);
+          return dias !== null && dias >= 3;
+        }
+        if (situacao === "sem_retorno") return lead.tentativasSemResposta > 0;
+        if (situacao === "com_visita") return Boolean(lead.visitaAgendadaEm);
+        return true;
+      }),
+    [otimista, origem, responsavel, situacao],
+  );
+
+  function limparFiltros() {
+    setSituacao("todos");
+    setOrigem("todas");
+    setResponsavel("todos");
+  }
 
   // Arrastar para uma coluna fora da tela seria impossível sem isto: com o
   // dedo parado na borda não chega `pointermove` nenhum, então quem empurra o
@@ -210,17 +293,117 @@ export function Quadro({
 
   return (
     <div className="mt-6">
+      <section
+        aria-label="Filtros do funil"
+        className="border-linha bg-superficie mb-4 rounded-2xl border p-3 shadow-sm sm:p-4"
+      >
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <div className="text-titulo flex items-center gap-2">
+              <span className="bg-acento-lavado text-acento-suave flex h-9 w-9 items-center justify-center rounded-xl">
+                <Filter aria-hidden className="h-4 w-4" />
+              </span>
+              <div>
+                <h2 className="text-fluid-sm font-semibold">Filtrar oportunidades</h2>
+                <p aria-live="polite" className="text-fluid-xs text-apoio">
+                  {visiveis.length} de {otimista.length} lead
+                  {otimista.length === 1 ? "" : "s"} no quadro
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
+            <label className="text-fluid-xs text-apoio flex min-w-0 flex-col gap-1">
+              Situação
+              <select
+                value={situacao}
+                onChange={(evento) =>
+                  setSituacao(evento.target.value as FiltroSituacao)
+                }
+                className="border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 min-w-0 rounded-xl border px-3 outline-none lg:w-44"
+              >
+                <option value="todos">Todos os leads</option>
+                <option value="parados">Parados há 3+ dias</option>
+                <option value="sem_retorno">Aguardando resposta</option>
+                <option value="com_visita">Com visita marcada</option>
+              </select>
+            </label>
+
+            <label className="text-fluid-xs text-apoio flex min-w-0 flex-col gap-1">
+              Origem
+              <select
+                value={origem}
+                onChange={(evento) => setOrigem(evento.target.value)}
+                className="border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 min-w-0 rounded-xl border px-3 outline-none lg:w-44"
+              >
+                <option value="todas">Todas as origens</option>
+                {origens.map((item) => (
+                  <option key={item.valor} value={item.valor}>
+                    {item.rotulo}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {mostrarDono && (
+              <label className="text-fluid-xs text-apoio flex min-w-0 flex-col gap-1">
+                Responsável
+                <select
+                  value={responsavel}
+                  onChange={(evento) => setResponsavel(evento.target.value)}
+                  className="border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 min-w-0 rounded-xl border px-3 outline-none lg:w-44"
+                >
+                  <option value="todos">Toda a equipe</option>
+                  {responsaveis.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {filtrosAtivos && (
+              <button
+                type="button"
+                onClick={limparFiltros}
+                className="border-linha text-corpo hover:border-acento-linha hover:text-titulo flex min-h-11 items-center justify-center gap-2 self-end rounded-xl border px-3 text-sm transition-colors sm:col-span-2 lg:w-auto"
+              >
+                <RotateCcw aria-hidden className="h-4 w-4" />
+                Limpar
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {filtrosAtivos && visiveis.length === 0 && (
+        <div className="border-linha bg-elevado text-corpo mb-4 rounded-2xl border border-dashed p-5 text-center text-sm">
+          Nenhum lead combina com esses filtros.
+          <button
+            type="button"
+            onClick={limparFiltros}
+            className="text-acento-suave ml-1 font-semibold hover:underline"
+          >
+            Limpar filtros
+          </button>
+        </div>
+      )}
+
       <div
         ref={faixaRef}
         className={`flex snap-x gap-3 overflow-x-auto pb-3 ${arrastando ? "select-none" : ""}`}
       >
         {ETAPAS_FUNIL.map((etapa) => {
-          const daEtapa = otimista.filter((lead) => lead.etapa === etapa);
+          const daEtapa = visiveis.filter((lead) => lead.etapa === etapa);
           // A tela recebe no máximo `TETO_DO_QUADRO` leads; a contagem do
           // banco é a verdade. `faltando` é o que a consulta cortou — para
           // quem lê é uma frase só: "tem mais gente aqui do que estou
           // mostrando".
-          const totalReal = contagens?.[etapa] ?? daEtapa.length;
+          const totalReal = filtrosAtivos
+            ? daEtapa.length
+            : (contagens?.[etapa] ?? daEtapa.length);
           const faltando = Math.max(0, totalReal - daEtapa.length);
           const vazia = daEtapa.length === 0;
           const mirada = arrastando && alvo === etapa && arrasto.origem !== etapa;
@@ -230,19 +413,28 @@ export function Quadro({
               key={etapa}
               data-etapa={etapa}
               aria-labelledby={`etapa-${etapa}`}
-              className={`bg-superficie flex shrink-0 snap-start flex-col rounded-2xl border transition-colors ${ALTURA_COLUNA} ${
+              className={`bg-superficie relative flex shrink-0 snap-start flex-col overflow-hidden rounded-2xl border shadow-sm transition-all ${ALTURA_COLUNA} ${
                 vazia ? LARGURA_VAZIA : LARGURA_COLUNA
               } ${mirada ? "border-acento bg-acento-lavado" : BORDA_ETAPA[etapa]}`}
             >
-              <header className="flex items-baseline justify-between gap-2 px-3 pt-3">
-                <h2
-                  id={`etapa-${etapa}`}
-                  className="text-fluid-sm text-titulo truncate font-medium"
-                >
-                  {ETAPA_LABEL[etapa]}
-                </h2>
-                <span className="text-fluid-xs text-tenue tabular-nums">
-                  {totalReal === 0 ? "—" : totalReal}
+              <span
+                aria-hidden
+                className={`h-1 w-full shrink-0 ${REGUA_ETAPA[etapa]}`}
+              />
+              <header className="border-linha flex items-center justify-between gap-2 border-b px-3 py-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="bg-vidro text-tenue flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-semibold tabular-nums">
+                    {ETAPAS_FUNIL.indexOf(etapa) + 1}
+                  </span>
+                  <h2
+                    id={`etapa-${etapa}`}
+                    className="text-fluid-sm text-titulo truncate font-semibold"
+                  >
+                    {ETAPA_LABEL[etapa]}
+                  </h2>
+                </div>
+                <span className="bg-vidro text-apoio min-w-7 rounded-full px-2 py-1 text-center text-[11px] font-semibold tabular-nums">
+                  {totalReal}
                 </span>
               </header>
 
@@ -292,7 +484,11 @@ export function Quadro({
         <div
           aria-hidden
           className="border-acento bg-elevado text-titulo text-fluid-xs pointer-events-none fixed z-50 max-w-56 truncate rounded-xl border px-3 py-2 shadow-lg"
-          style={{ left: arrasto.x, top: arrasto.y, transform: "translate(-50%, -140%)" }}
+          style={{
+            left: arrasto.x,
+            top: arrasto.y,
+            transform: "translate(-50%, -140%)",
+          }}
         >
           {arrasto.nome}
         </div>
@@ -334,7 +530,7 @@ function Cartao({
 
   return (
     <article
-      className={`border-linha bg-elevado group relative overflow-hidden rounded-xl border p-3 pl-4 transition-opacity ${
+      className={`border-linha bg-elevado group hover:border-acento-linha focus-within:border-acento-linha relative overflow-hidden rounded-xl border p-3 pl-4 shadow-sm transition-[border-color,box-shadow,opacity,transform] hover:-translate-y-0.5 hover:shadow-md ${
         arrastado ? "opacity-40" : ""
       } ${chegou ? "cartao-chega" : ""}`}
     >
@@ -360,7 +556,12 @@ function Cartao({
             onPointerCancel={onCancelar}
             className="text-tenue hover:text-corpo -my-2 -ml-3 flex h-11 w-10 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
           >
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="h-4 w-4">
+            <svg
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden
+              className="h-4 w-4"
+            >
               <circle cx="9" cy="6" r="1.6" />
               <circle cx="15" cy="6" r="1.6" />
               <circle cx="9" cy="12" r="1.6" />
@@ -412,11 +613,15 @@ function Cartao({
       </p>
 
       {mostrarDono && (
-        <p className="text-fluid-xs text-apoio mt-1">{lead.corretor?.nome ?? "Sem dono"}</p>
+        <p className="text-fluid-xs text-apoio mt-1">
+          {lead.corretor?.nome ?? "Sem dono"}
+        </p>
       )}
 
       {lead.empreendimento && (
-        <p className="text-fluid-xs text-apoio mt-1 truncate">{lead.empreendimento.nome}</p>
+        <p className="text-fluid-xs text-apoio mt-1 truncate">
+          {lead.empreendimento.nome}
+        </p>
       )}
 
       {lead.etapa === "visita_agendada" && (
@@ -427,7 +632,12 @@ function Cartao({
           secundário: ele resolve o caso raro (pular etapa, voltar, perder) e
           por isso não precisa mais ser a primeira coisa que o dedo encontra. */}
       <div className="mt-3">
-        <BotaoAvancar leadId={lead.id} etapa={lead.etapa} tamanho="compacto" className="w-full" />
+        <BotaoAvancar
+          leadId={lead.id}
+          etapa={lead.etapa}
+          tamanho="compacto"
+          className="w-full"
+        />
       </div>
 
       <div className="mt-2 flex items-center gap-2">
@@ -456,7 +666,12 @@ function Cartao({
             title={`Falar com ${lead.nome} no WhatsApp`}
             className="bg-acento hover:bg-acento-hover text-sobre-cor flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors"
           >
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="h-5 w-5">
+            <svg
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden
+              className="h-5 w-5"
+            >
               <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.11.82.83-3.04-.2-.31a8.17 8.17 0 0 1-1.25-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.41a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.25 8.23Zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.15-.25-.02-.38.11-.5.11-.11.25-.29.37-.44.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.84-.2-.49-.4-.42-.55-.43h-.47c-.16 0-.43.06-.65.31-.22.25-.85.83-.85 2.03s.87 2.35.99 2.51c.12.16 1.71 2.61 4.15 3.66.58.25 1.03.4 1.39.51.58.19 1.11.16 1.53.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.11-.22-.17-.47-.29Z" />
             </svg>
           </a>

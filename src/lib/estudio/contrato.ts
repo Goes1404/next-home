@@ -42,6 +42,8 @@ export type ReferenciaDoEstudio = {
   tipo: "referencia";
   path: string;
   url: string;
+  /** Até quatro fotos enviadas no mesmo balão; `path`/`url` mantêm compatibilidade com o histórico. */
+  referencias?: { path: string; url: string }[];
 };
 
 /** O que a IA propõe gerar. O corretor lê e EDITA isto — é o que vai. */
@@ -84,6 +86,8 @@ export type PropostaDeArte = {
    * novas.
    */
   referenciaPath?: string | null;
+  /** Referências que sustentam esta proposta; a primeira mantém o preview legado. */
+  referenciaPaths?: string[];
 };
 
 export type PropostaDeVideo = {
@@ -197,6 +201,11 @@ export function dadosDaMensagem(bruto: unknown): DadosDaMensagem | null {
           qualidade: d.qualidade === "medium" ? "medium" : "low",
           daIa: d.daIa === true,
           referenciaPath: texto(d.referenciaPath) || null,
+          referenciaPaths: Array.isArray(d.referenciaPaths)
+            ? d.referenciaPaths.map(texto).filter(Boolean).slice(0, 4)
+            : texto(d.referenciaPath)
+              ? [texto(d.referenciaPath)]
+              : [],
         };
       }
       if (d.modo === "video") {
@@ -234,9 +243,19 @@ export function dadosDaMensagem(bruto: unknown): DadosDaMensagem | null {
         modo: d.modo === "video" ? "video" : "arte",
         url: texto(d.url) || null,
       };
-    case "referencia":
+    case "referencia": {
       if (!texto(d.path) || !texto(d.url)) return null;
-      return { tipo: "referencia", path: texto(d.path), url: texto(d.url) };
+      const referencias = Array.isArray(d.referencias)
+        ? d.referencias
+            .filter(
+              (r): r is { path: string; url: string } =>
+                Boolean(r) && typeof r === "object" && texto((r as { path?: unknown }).path) !== "" && texto((r as { url?: unknown }).url) !== "",
+            )
+            .map((r) => ({ path: texto(r.path), url: texto(r.url) }))
+            .slice(0, 4)
+        : [];
+      return { tipo: "referencia", path: texto(d.path), url: texto(d.url), referencias };
+    }
     default:
       return null;
   }
@@ -257,15 +276,29 @@ export function referenciaAtiva(historico: MensagemDoEstudio[]): ReferenciaDoEst
   return null;
 }
 
+/** Fotos do último anexo, na ordem em que foram escolhidas. */
+export function referenciasAtivas(historico: MensagemDoEstudio[]): { path: string; url: string }[] {
+  const ultima = referenciaAtiva(historico);
+  if (!ultima) return [];
+  return ultima.referencias && ultima.referencias.length > 0
+    ? ultima.referencias
+    : [{ path: ultima.path, url: ultima.url }];
+}
+
 /** Todas as referências da conversa, na ordem — o vídeo usa várias. */
 export function referenciasDaConversa(historico: MensagemDoEstudio[]): ReferenciaDoEstudio[] {
   const vistas = new Set<string>();
   const lista: ReferenciaDoEstudio[] = [];
   for (const m of historico) {
     if (m.papel !== "corretor" || m.dados?.tipo !== "referencia") continue;
-    if (vistas.has(m.dados.path)) continue;
-    vistas.add(m.dados.path);
-    lista.push(m.dados);
+    const doBalao = m.dados.referencias && m.dados.referencias.length > 0
+      ? m.dados.referencias
+      : [{ path: m.dados.path, url: m.dados.url }];
+    for (const referencia of doBalao) {
+      if (vistas.has(referencia.path)) continue;
+      vistas.add(referencia.path);
+      lista.push({ tipo: "referencia", ...referencia });
+    }
   }
   return lista;
 }
