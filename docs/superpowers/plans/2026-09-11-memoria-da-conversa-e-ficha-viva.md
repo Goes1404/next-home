@@ -25,10 +25,14 @@ TypeScript. Migrations por `apply_migration` do MCP da Supabase.
   o `anon` é conferido em `information_schema.column_privileges` (0082).
 - **`src/lib/supabase/types.ts` é editado À MÃO.** Regenerar destrói as 34
   uniões de CHECK.
-- **Número de migration**: conferir contra `origin/*` antes de escolher. A
-  última desta branch é `0108`; este plano usa **`0109`**. Se `origin` já
-  tiver uma 0109, renumerar ANTES de começar — e o número aparece também no
-  cabeçalho do arquivo e nos comentários.
+- **Número de migration**: conferir contra `origin/*` E contra a árvore
+  local antes de escolher. O plano nasceu com `0109` e a colisão ACONTECEU
+  no mesmo dia: outra sessão criou `0108_storage_de_artes_ia.sql` e
+  `0109_expiracao_das_artes_ia.sql` sem commitar, então `git ls-tree` de
+  `origin` não os mostrava. Esta migration é a **`0110`**. O número aparece
+  também no cabeçalho do arquivo e nos comentários — renomear e deixar o
+  comentário velho é a forma mais barata de mandar o diagnóstico para o
+  lugar errado.
 - **Guarda provocada é guarda diferente de guarda escrita.** Toda guarda
   nova deste plano é mordida uma vez, com md5 antes/depois para provar que a
   mordida mordeu.
@@ -40,10 +44,10 @@ TypeScript. Migrations por `apply_migration` do MCP da Supabase.
 
 ---
 
-## Task 1: A migration 0109
+## Task 1: A migration 0110
 
 **Files:**
-- Create: `supabase/migrations/0109_memoria_da_conversa_e_ficha_viva.sql`
+- Create: `supabase/migrations/0110_memoria_da_conversa_e_ficha_viva.sql`
 - Modify: `src/lib/supabase/types.ts` (3 blocos: Row, Insert, Update de
   `whatsapp_conversas` e de `leads`)
 - Test: `src/lib/whatsapp/migrations.test.ts` (já existe; só conferir que
@@ -73,7 +77,7 @@ Esperado: zero colunas novas, e a lista de update SEM `nome` e `email`.
 - [ ] **Passo 2: escrever a migration**
 
 ```sql
--- 0109 — a memória da conversa e a ficha viva (11/09/2026)
+-- 0110 — a memória da conversa e a ficha viva (11/09/2026)
 --
 -- Spec: docs/superpowers/specs/2026-09-11-memoria-da-conversa-e-ficha-viva-design.md
 --
@@ -172,8 +176,8 @@ Em `Insert` e `Update`, os três primeiros e os três últimos são opcionais
 
 ```bash
 npx tsc --noEmit && npx vitest run src/lib/whatsapp/migrations.test.ts
-git add supabase/migrations/0109_memoria_da_conversa_e_ficha_viva.sql src/lib/supabase/types.ts
-git commit -m "feat(0109): memória da conversa, não-perturbe do lead e o grant que faltava"
+git add supabase/migrations/0110_memoria_da_conversa_e_ficha_viva.sql src/lib/supabase/types.ts
+git commit -m "feat(0110): memória da conversa, não-perturbe do lead e o grant que faltava"
 ```
 
 ---

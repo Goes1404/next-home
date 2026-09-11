@@ -1199,6 +1199,7 @@ export type Database = {
           corretor_id: string
           created_at: string
           empreendimento_id: string | null
+          expira_em: string
           id: string
           largura: number | null
           latencia_ms: number | null
@@ -1214,6 +1215,7 @@ export type Database = {
           corretor_id: string
           created_at?: string
           empreendimento_id?: string | null
+          expira_em?: string
           id?: string
           largura?: number | null
           latencia_ms?: number | null
@@ -1229,6 +1231,7 @@ export type Database = {
           corretor_id?: string
           created_at?: string
           empreendimento_id?: string | null
+          expira_em?: string
           id?: string
           largura?: number | null
           latencia_ms?: number | null
@@ -1608,6 +1611,7 @@ export type Database = {
         Row: {
           anuncio_origem: string | null
           arquivado_em: string | null
+          campos_do_corretor: Json
           consentimento_lgpd: boolean
           corretor_id: string | null
           created_at: string
@@ -1628,6 +1632,8 @@ export type Database = {
           meta_campanha_id: string | null
           meta_conjunto_id: string | null
           meta_lead_id: string | null
+          nao_contatar_em: string | null
+          nao_contatar_motivo: string | null
           nome: string
           orcamento_max: number | null
           orcamento_min: number | null
@@ -1654,6 +1660,7 @@ export type Database = {
         Insert: {
           anuncio_origem?: string | null
           arquivado_em?: string | null
+          campos_do_corretor?: Json
           consentimento_lgpd?: boolean
           corretor_id?: string | null
           created_at?: string
@@ -1674,6 +1681,8 @@ export type Database = {
           meta_campanha_id?: string | null
           meta_conjunto_id?: string | null
           meta_lead_id?: string | null
+          nao_contatar_em?: string | null
+          nao_contatar_motivo?: string | null
           nome: string
           orcamento_max?: number | null
           orcamento_min?: number | null
@@ -1700,6 +1709,7 @@ export type Database = {
         Update: {
           anuncio_origem?: string | null
           arquivado_em?: string | null
+          campos_do_corretor?: Json
           consentimento_lgpd?: boolean
           corretor_id?: string | null
           created_at?: string
@@ -1720,6 +1730,8 @@ export type Database = {
           meta_campanha_id?: string | null
           meta_conjunto_id?: string | null
           meta_lead_id?: string | null
+          nao_contatar_em?: string | null
+          nao_contatar_motivo?: string | null
           nome?: string
           orcamento_max?: number | null
           orcamento_min?: number | null
@@ -2056,6 +2068,9 @@ export type Database = {
         Row: {
           alerta_quente_em: string | null
           atendida_em: string | null
+          memoria: string | null
+          memoria_atualizada_em: string | null
+          memoria_do_corretor: boolean
           bot_ativo: boolean
           cliente_conhecido: boolean
           corretor_id: string
@@ -2077,6 +2092,9 @@ export type Database = {
         Insert: {
           alerta_quente_em?: string | null
           atendida_em?: string | null
+          memoria?: string | null
+          memoria_atualizada_em?: string | null
+          memoria_do_corretor?: boolean
           bot_ativo?: boolean
           cliente_conhecido?: boolean
           corretor_id: string
@@ -2098,6 +2116,9 @@ export type Database = {
         Update: {
           alerta_quente_em?: string | null
           atendida_em?: string | null
+          memoria?: string | null
+          memoria_atualizada_em?: string | null
+          memoria_do_corretor?: boolean
           bot_ativo?: boolean
           cliente_conhecido?: boolean
           corretor_id?: string
