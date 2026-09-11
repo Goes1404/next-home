@@ -1459,6 +1459,24 @@ export async function salvarDossie(leadId: string, dossie: DossieClienteIA): Pro
  * atendimento por causa dela seria trocar um contexto melhor por nenhuma
  * resposta. Mesma escolha de `registrarInteracao`.
  */
+/**
+ * Quando o dossiê deste lead foi extraído pela última vez.
+ *
+ * É o relógio do debounce de `devoExtrair`: uma rajada de cinco balões é
+ * UMA extração, não cinco. Uma consulta magra (uma coluna) contra cinco
+ * chamadas de LLM evitadas.
+ */
+export async function ultimaExtracaoDoLead(leadId: string): Promise<Date | null> {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("lead_observacoes_ia")
+    .select("updated_at")
+    .eq("lead_id", leadId)
+    .maybeSingle();
+
+  return data?.updated_at ? new Date(data.updated_at) : null;
+}
+
 export async function salvarMemoriaDaConversa(
   conversaId: string,
   texto: string | null,

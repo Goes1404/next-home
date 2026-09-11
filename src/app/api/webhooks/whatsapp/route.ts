@@ -7,8 +7,11 @@ import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
-import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
+import { extrairDossieCliente, normalizarSaidaDoDossie } from "@/lib/whatsapp/dossierExtractor";
+import type { DossieClienteIA } from "@/lib/whatsapp/types";
 import { horasDesdeAUltimaFala } from "@/lib/whatsapp/tempoDaConversa";
+import { devoExtrair } from "@/lib/whatsapp/quandoExtrair";
+import { mesclarMemoria } from "@/lib/whatsapp/memoriaDaConversa";
 import { detectarEvolucao, podeAvisarAgora } from "@/lib/whatsapp/evolucaoConversa";
 import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
 import { notificarAtualizacaoCorretor, notificarCorretorLeadQuente } from "@/lib/whatsapp/brokerNotifier";
@@ -41,11 +44,14 @@ import {
   registrarResultadoEnvio,
   resolverInstancia,
   salvarDossie,
+  salvarMemoriaDaConversa,
+  ultimaExtracaoDoLead,
   ultimaFalaDoCorretor,
   destravarDisparo,
   travarDisparo,
   ultimaMensagemClienteId,
   validarDataVisita,
+  type ConversaPersistida,
   type InstanciaResolvida,
   ultimoAvisoEvolucao,
   marcarAvisoEvolucao,
@@ -69,6 +75,91 @@ const ESPERA_RAJADA_MS = 6000;
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Comparação em tempo constante — evita descobrir o segredo por medição. */
+/**
+ * Extrai o dossiê e a memória — e roda MESMO quando a IA não responde.
+ *
+ * Até 11/09/2026 a extração vivia só no fim do caminho de resposta. Medido
+ * em 7 dias, nas conversas de atendimento: 191 falas de cliente, 80
+ * respostas da IA e 127 do CORRETOR. As falas que ele atendeu não geravam
+ * extração nenhuma — e são a maioria. É por isso que a ficha estava vazia
+ * (0 nome, 0 renda, 1 orçamento em 55 leads que conversaram), não por
+ * faltar código de escrita: `salvarDossie` já escrevia desde 24/08.
+ *
+ * As três travas moram em `devoExtrair`, pura e testada. A que mais importa
+ * é a primeira: a linha é o WhatsApp PESSOAL do corretor, e extrair ficha
+ * da conversa da família dele é o que a 0087 veio impedir.
+ *
+ * Falha só loga. Isto roda depois de a mensagem já ter sido gravada (e, no
+ * caminho feliz, já enviada): derrubar o ciclo por causa da memória seria
+ * trocar contexto melhor por nenhuma resposta.
+ */
+async function atualizarFichaEMemoria(params: {
+  conversa: ConversaPersistida;
+  historico: { remetente: "cliente" | "bot" | "corretor"; texto: string }[];
+  telefone: string;
+  /**
+   * A IA acabou de responder.
+   *
+   * Nesse caso o debounce NÃO se aplica: uma extração por resposta da IA é
+   * exatamente a taxa que já existia antes desta mudança, e manter isso
+   * preserva o comportamento do caminho feliz — inclusive o dossiê que o
+   * aviso de evolução ao corretor compara logo depois. O debounce existe
+   * para os caminhos NOVOS, em que quem atende é o corretor e a rajada dele
+   * geraria cinco extrações do mesmo assunto.
+   */
+  iaRespondeu?: boolean;
+}): Promise<DossieClienteIA | null> {
+  const { conversa, historico } = params;
+  try {
+    const ehAtendimento = conversaEhAtendimento({
+      liberadoPorPalavraChave: conversa.liberadoPorPalavraChave,
+      clienteConhecido: conversa.clienteConhecido,
+      origem: conversa.origem,
+      atendidaEm: conversa.atendidaEm,
+    });
+
+    const permitido = devoExtrair({
+      ehAtendimento,
+      temLead: Boolean(conversa.leadId),
+      ultimaExtracaoEm: params.iaRespondeu
+        ? null
+        : conversa.leadId
+          ? await ultimaExtracaoDoLead(conversa.leadId)
+          : null,
+    });
+    if (!permitido) return null;
+
+    const transcricao = historico
+      .map(
+        (m) =>
+          `${m.remetente === "cliente" ? "Cliente" : m.remetente === "corretor" ? "Corretor" : "Assistente"}: ${m.texto}`,
+      )
+      .join(String.fromCharCode(10));
+
+    const dossie = await extrairDossieCliente(
+      transcricao,
+      conversa.leadId ?? params.telefone,
+      conversa.memoria,
+    );
+    if (conversa.leadId) await salvarDossie(conversa.leadId, dossie);
+
+    /*
+     * A memória é da CONVERSA, não do lead: o mesmo telefone pode ter duas
+     * conversas, e misturar as memórias faria a IA falar de um imóvel que
+     * foi assunto da outra.
+     */
+    const memoria = mesclarMemoria(
+      { texto: conversa.memoria, doCorretor: conversa.memoriaDoCorretor },
+      dossie.memoria,
+    );
+    if (memoria !== conversa.memoria) await salvarMemoriaDaConversa(conversa.id, memoria);
+    return dossie;
+  } catch (erro) {
+    console.error("[ficha] falha ao atualizar ficha/memória:", erro);
+    return null;
+  }
+}
+
 function segredoConfere(recebido: string, esperado: string): boolean {
   const a = Buffer.from(recebido);
   const b = Buffer.from(esperado);
@@ -494,6 +585,22 @@ export async function POST(req: NextRequest) {
         promptVersao: PROMPT_VERSAO,
         acao: silencio,
       });
+      /*
+       * A ficha é atualizada MESMO com a IA calada — e este é o caminho
+       * mais comum: medido em 7 dias, 127 das 191 falas de cliente foram
+       * atendidas pelo CORRETOR, e nenhuma delas gerava extração. Daí a
+       * ficha vazia.
+       *
+       * Fica DEPOIS da telemetria e ANTES do return, nunca no começo do
+       * handler: aqui já se sabe que a mensagem é de cliente, já foi
+       * gravada e já passou pelo dedupe. As travas de privacidade e de
+       * debounce moram em `devoExtrair`.
+       */
+      await atualizarFichaEMemoria({
+        conversa,
+        historico: await historicoRecente(conversa.id),
+        telefone: sender,
+      });
       return NextResponse.json({ ok: true, action: "bot_calado_nesta_conversa", motivo: silencio, sender });
     }
 
@@ -516,6 +623,12 @@ export async function POST(req: NextRequest) {
         eTeste: conversa.eTeste,
         promptVersao: PROMPT_VERSAO,
         acao: "silenciada_por_modo",
+      });
+      // Mesma razão do bloco acima: o corretor atende, a ficha aprende.
+      await atualizarFichaEMemoria({
+        conversa,
+        historico: await historicoRecente(conversa.id),
+        telefone: sender,
       });
       return NextResponse.json({ ok: true, action: "bot_silenciado_por_modo", motivo: decisao.motivo, modo: instancia.modoBot, sender });
     }
@@ -784,13 +897,23 @@ export async function POST(req: NextRequest) {
      * `text` no fim, como se fazia, duplicava a última fala do cliente na
      * transcrição — e fala repetida pesa mais na extração do que deveria.
      */
-    const transcricao = historico
-      .map((m) => `${m.remetente === "cliente" ? "Cliente" : m.remetente === "corretor" ? "Corretor" : "Assistente"}: ${m.texto}`)
-      .join("\n");
-    const dossie = await extrairDossieCliente(transcricao, conversa.leadId ?? sender);
-    if (conversa.leadId) {
-      await salvarDossie(conversa.leadId, dossie);
-    }
+    const dossie =
+      (await atualizarFichaEMemoria({ conversa, historico, telefone: sender, iaRespondeu: true })) ??
+      /*
+       * A extração pode ter sido pulada (conversa sem lead, por exemplo).
+       * O que vem abaixo compara dossiê novo com anterior para avisar o
+       * corretor; sem extração, o anterior é o retrato mais atual que
+       * existe — e comparar algo consigo mesmo não gera aviso nenhum, que
+       * é o desfecho certo.
+       */
+      dossieAnterior ??
+      /*
+       * Sem extração e sem dossiê anterior (conversa sem lead), o retrato
+       * neutro — que é exatamente o que `extrairDossieCliente` devolvia
+       * neste caso antes desta mudança. Um objeto vazio aqui quebraria as
+       * linhas abaixo; um dossiê inventado mentiria.
+       */
+      normalizarSaidaDoDossie({}, conversa.leadId ?? sender);
 
     /*
      * Visita confirmada pela IA vira compromisso REAL: data no lead e etapa
