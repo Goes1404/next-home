@@ -124,6 +124,36 @@ Como distinguir a piscada de credencial ruim: **senha errada devolve 400
 `Invalid login credentials` sempre**, nunca 504. Erro que muda a cada tentativa
 não é erro de senha.
 
+## Promover a gestor fora do painel falsifica o log, se feito errado
+
+O Eduardo virou `gestor` no mesmo dia. A função da casa
+(`definir_papel_corretor`, 0030) é `security definer` e começa com
+`if not eh_gestor()` — que lê `auth.uid()`. Rodando como `postgres`, sem
+JWT, `auth.uid()` é nulo e ela **recusa**, corretamente.
+
+A saída aparente era fingir a sessão da gestora
+(`set local request.jwt.claims = '{"sub":"<user_id dela>"}'`), o mesmo
+truque que esta base usa para exercitar policy. **E ela está errada aqui**,
+por um motivo que não é técnico: a função grava `ator_id = corretor_atual()`
+em `admin_eventos`. Fingir a identidade dela escreveria, no log, que ELA
+promoveu alguém — e a regra da 0030 é que "log que o ator pode forjar não é
+log". Fingir sessão para TESTAR policy dentro de `rollback` é legítimo;
+fingir sessão para GRAVAR ato de outra pessoa não é.
+
+O caminho honesto foi `update` direto com o evento escrito à mão,
+`ator_id` nulo e `origem` dizendo que veio de fora do painel. Perde-se a
+validação da função; ganha-se um log que descreve o que de fato aconteceu.
+
+**A verificação é `eh_gestor()` na sessão DELE**, não a coluna: dentro de
+`begin; set local role authenticated; set local request.jwt.claims = …;
+rollback;` a função devolveu `true` e ele passou a enxergar as 131 linhas de
+`leads` e as 110 de `whatsapp_conversas` — que é o que `papel` realmente
+significa. Coluna gravada prova o `update`; a RLS prova o acesso.
+
+`garantir_gestor_remanescente` não estorva aqui: ela só barra DESPROMOVER
+ou desativar o último gestor. Promover é sempre seguro, e de quebra tira a
+operação do estado de gestor único.
+
 Relacionadas: [[papel-nunca-ganha-grant-update]] ·
 [[dado-gravado-e-nao-exibido-e-dado-perdido]] ·
 [[medir-producao-nao-confiar-em-parece-funcionar]]

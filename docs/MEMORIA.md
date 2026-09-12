@@ -6450,3 +6450,16 @@ Nota: [[acesso-de-corretor-so-existia-para-um]].
   Supabase já registrada em 10/09. Senha ERRADA devolve **400 `Invalid login
   credentials` sempre**. É esse contraste que separa credencial ruim de
   instabilidade, e sem ele o 504 acusaria a conta recém-criada.
+- **Promover a gestor fora do painel: fingir sessão FALSIFICARIA o log.**
+  `definir_papel_corretor` (0030) exige `eh_gestor()`, que lê `auth.uid()` —
+  como `postgres` ela recusa, e com razão. Fingir o JWT da gestora faria a
+  própria função gravar `ator_id` = ELA em `admin_eventos`, ou seja, um log
+  dizendo que ela promoveu alguém. **Fingir sessão para TESTAR policy dentro
+  de `rollback` é legítimo; para GRAVAR ato de outra pessoa, não.** O caminho
+  honesto é `update` direto com o evento escrito à mão, `ator_id` nulo e
+  `origem` declarada.
+- **A prova de que `papel` pegou é `eh_gestor()` na sessão DELE**, não a
+  coluna: dentro de `begin; set local role authenticated; set local
+  request.jwt.claims = …; rollback;` ele passou a enxergar as 131 linhas de
+  `leads` e as 110 de `whatsapp_conversas`. Coluna gravada prova o `update`;
+  a RLS prova o acesso — e é a RLS que define o que gestor significa.
