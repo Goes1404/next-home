@@ -126,7 +126,11 @@ não é erro de senha.
 
 ## Promover a gestor fora do painel falsifica o log, se feito errado
 
-O Eduardo virou `gestor` no mesmo dia. A função da casa
+> **REVERTIDO no mesmo dia.** Ele voltou a `corretor` assim que a
+> consequência ficou clara — ver a seção seguinte. O que continua valendo
+> aqui é COMO se promove sem mentir no log.
+
+O Eduardo virou `gestor` por algumas horas. A função da casa
 (`definir_papel_corretor`, 0030) é `security definer` e começa com
 `if not eh_gestor()` — que lê `auth.uid()`. Rodando como `postgres`, sem
 JWT, `auth.uid()` é nulo e ela **recusa**, corretamente.
@@ -157,3 +161,38 @@ operação do estado de gestor único.
 Relacionadas: [[papel-nunca-ganha-grant-update]] ·
 [[dado-gravado-e-nao-exibido-e-dado-perdido]] ·
 [[medir-producao-nao-confiar-em-parece-funcionar]]
+
+
+## "Contas separadas" e "papéis separados" são coisas diferentes
+
+Reação do usuário ao entender o alcance de gestor: *"então praticamente
+eles são o mesmo usuário?"*. **Não eram.** Medido no instante da pergunta:
+
+| | Bruna | Eduardo |
+|---|---|---|
+| login próprio | sim | sim |
+| leads de que é dono | 122 | 2 |
+| conversas próprias | 110 | 0 |
+| instância de WhatsApp | 1, conectada | 0 |
+
+As contas sempre foram separadas. O que as igualou por algumas horas foi o
+PAPEL: `eh_gestor()` aparece no `qual` das policies de `leads`,
+`whatsapp_conversas`, `whatsapp_mensagens`, `ia_interacoes`,
+`lead_observacoes_ia` e `anotacoes` — e em
+`corretor_whatsapp_instancias` com `ALL`, não só leitura. Gestor não é
+"corretor com mais botões": é uma identidade que lê a operação inteira.
+
+**A régua: ao promover alguém, dizer o que ele passa a LER, não o que ele
+passa a poder fazer.** "Vira admin" soa como permissão; o que muda de
+verdade é o alcance da RLS, e é isso que a pessoa precisa aprovar.
+
+E o que o papel NÃO resolve: não existe "gestor que vê o funil da equipe
+mas não as conversas". São dois níveis por decisão de produto
+(`corretor` e `gestor`), então o recorte intermediário exigiria policies
+novas — migration, não configuração.
+
+**Verificação depois de reverter, nos dois sentidos:** na sessão do
+Eduardo, `eh_gestor()` devolve `false` e ele enxerga 2 leads, 0 conversas,
+0 mensagens e 0 instâncias; na da Bruna, `true` com 131 e 110. Conferir só
+o lado que se mexeu deixaria passar uma despromoção que também quebrasse a
+gestora.

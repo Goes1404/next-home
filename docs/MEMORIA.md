@@ -6463,3 +6463,25 @@ Nota: [[acesso-de-corretor-so-existia-para-um]].
   request.jwt.claims = …; rollback;` ele passou a enxergar as 131 linhas de
   `leads` e as 110 de `whatsapp_conversas`. Coluna gravada prova o `update`;
   a RLS prova o acesso — e é a RLS que define o que gestor significa.
+- **A promoção foi REVERTIDA no mesmo dia, e o porquê é a lição.** Ao ver o
+  alcance, o usuário perguntou *"então praticamente eles são o mesmo
+  usuário?"*. Não eram: contas, logins e carteiras sempre foram separados
+  (Bruna 122 leads / 110 conversas / 1 instância conectada; Eduardo 2 leads /
+  0 / 0). **O que os igualou foi o PAPEL, não a conta.** `eh_gestor()`
+  aparece no `qual` das policies de `leads`, `whatsapp_conversas`,
+  `whatsapp_mensagens`, `ia_interacoes`, `lead_observacoes_ia` e
+  `anotacoes` — e em `corretor_whatsapp_instancias` com **ALL**, então
+  gestor também DESCONECTA o número de outro e edita o tom de voz dele.
+- **Ao promover alguém, dizer o que ele passa a LER, não o que passa a poder
+  fazer.** "Vira admin" soa como permissão; o que muda é o alcance da RLS —
+  e é isso que a pessoa precisa aprovar antes, não depois.
+- **Medido antes de decidir, sem abrir conteúdo:** das 110 conversas (todas
+  com lead, depois da 0111), **30 nunca atendidas ainda guardam 541 mensagens
+  com texto**, de 19/08 a 06/09 — só 10 posteriores à regra de privacidade de
+  01/09. É o resíduo da era em que tudo era gravado, e como o webhook CRIAVA
+  lead de quem escrevia, contato pessoal pode ter ganhado lead e sobrevivido à
+  limpeza. **Contar basta para decidir; ler seria justamente o que a regra
+  existe para evitar.**
+- **Não existe "gestor que vê o funil e não as conversas".** São dois papéis
+  por decisão de produto, então o recorte intermediário é migration com
+  policies novas, não configuração — vale saber antes de prometer.
