@@ -6518,3 +6518,64 @@ números na frente.
 - **O que NÃO é tocado**: catálogo (25 publicados, 339 mídias), corretores, e
   a instância de WhatsApp — o número segue `conectado`. Limpar CRM não
   desconecta número.
+
+## A importação de leads aceita o .zip do WhatsApp (12/09/2026)
+
+Nota: [[importar-conversa-do-whatsapp]].
+
+- **O que o export NÃO tem decide o desenho inteiro.** Contato salvo na
+  agenda aparece pelo NOME, e o número dele não está em lugar nenhum do
+  arquivo — nem no texto, nem no nome do `.txt`. Contato desconhecido
+  aparece como `+55 11 99123-4567`, e é esse o caso de quase todo cliente,
+  porque cliente novo não está na agenda de ninguém. As duas saídas ruins
+  eram **adivinhar** (número digitado no meio de um chat é do cônjuge, do
+  síndico, de um terceiro — mandaria a ficha de um cliente para o telefone
+  de outro) e **descartar calado** ("nenhum contato encontrado" para um
+  arquivo que tem exatamente um). Ficou a terceira: o candidato vem com o
+  telefone EM BRANCO, desmarcado, com etiqueta própria e um aviso dizendo
+  de onde vem a falta. **Campo vazio sozinho é indistinguível de defeito** —
+  é a etiqueta que diz que a falta é do ARQUIVO e que o conserto é digitar.
+- **O DDI se confere ANTES de normalizar.** `+1 415 555 2671` tem onze
+  dígitos, exatamente como um celular brasileiro com DDD, e
+  `normalizarTelefoneBrasileiro` carimbaria um `55` na frente — criando um
+  número que existe e é de outra pessoa. Mesma armadilha da 0111 (11/09),
+  agora do lado da importação. Rótulo com `+` só normaliza começando em
+  `55`; sem `+`, só com 10 ou 11 dígitos.
+- **Quem exportou não vira lead, e o nome do arquivo resolve de graça.**
+  "Conversa do WhatsApp com Ana Prado" diz quem é o OUTRO lado numa conversa
+  de duas pessoas, então o dono é o que sobra — sem depender de o cadastro
+  do corretor estar escrito igual ao WhatsApp dele. Em GRUPO não há resposta
+  no arquivo e quem completa é o cadastro da sessão (nome + `whatsapp`).
+  Palpite ("o que mais falou é o dono") tiraria do funil justamente o
+  participante mais engajado.
+- **Fixture sem as marcas invisíveis testa um formato que não existe.** O
+  iPhone injeta `U+200E` no começo de cada linha e antes de cada aviso de
+  mídia; o Android usa `U+202F` antes de AM/PM. Os fixtures do teste trazem
+  os invisíveis de propósito — foi assim que a regex de repetição desta base
+  passou meses cega.
+- **`.zip` não é sinônimo de conversa**: um `.csv` compactado segue para
+  `extrairDeTexto` em vez de morrer com "formato não suportado" por causa do
+  envelope. E só `.txt`/`.csv`/`.tsv` são descomprimidos — a mídia é quase
+  todo o peso e não tem contato dentro.
+- **O leitor de ZIP é caseiro, como o de PDF**: diretório central mais o
+  `inflateRaw` do Node. Duas armadilhas do formato, as duas com teste: o
+  campo `extra` do cabeçalho LOCAL costuma DIFERIR do que o diretório
+  central declara (alinhamento, carimbo de hora), e usar o número do central
+  entrega bytes deslocados com um erro de `inflate` que não diz nada sobre a
+  causa; e o registro de fim se procura de TRÁS para frente, porque o
+  comentário final do ZIP pode conter a própria assinatura.
+- **`git checkout --` num laço de provocação apaga trabalho não
+  commitado.** A rotina de provocar guarda desta base restaura o arquivo com
+  `git checkout` — e num arquivo TRACKED com mudanças ainda não commitadas,
+  isso reverte a mudança inteira, não só a mordida. Perdi o extrator inteiro
+  de `importacao.ts` assim, depois de o teste já estar verde. **Provocar
+  guarda só depois de commitar**, ou restaurar de uma cópia feita antes da
+  mordida. (O `git checkout` em arquivo NOVO falha em voz alta — "pathspec
+  did not match" — e a mordida fica no disco; o caso perigoso é justamente o
+  que não reclama.)
+- **Fica de fora, declarado:** a conversa não é restaurada em
+  `whatsapp_conversas`/`whatsapp_mensagens`. Isso reconstruiria o corpus de
+  few-shot zerado na limpeza do mesmo dia, mas é outra obra — a 0111 exige
+  `lead_id`, a conversa pertence à instância de um corretor e `e_teste`
+  pediria decisão própria. O que sobrevive do conteúdo são as primeiras
+  cinco falas do cliente, que viram o campo "mensagem" da ficha.

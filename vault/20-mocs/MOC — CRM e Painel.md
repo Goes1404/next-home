@@ -37,6 +37,9 @@ F0–F6.
 - [[capa-de-empreendimento-nunca-e-nula]] — o `else` de "sem foto" era código morto (06/09)
 - [[botoes-perigosos-atras-de-avancado]]
 
+## Importar e cadastrar
+- [[importar-conversa-do-whatsapp]] — o .zip de "Exportar conversa" vira lead; contato salvo na agenda vem sem telefone, de propósito (12/09)
+
 ## Dados do lead
 - [[perfil-do-lead-abre-dentro-da-conversa]] — detalhes e ações sem abandonar o chat
 - [[conversa-casa-com-lead-por-telefone]]
