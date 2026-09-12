@@ -6485,3 +6485,36 @@ Nota: [[acesso-de-corretor-so-existia-para-um]].
 - **Não existe "gestor que vê o funil e não as conversas".** São dois papéis
   por decisão de produto, então o recorte intermediário é migration com
   policies novas, não configuração — vale saber antes de prometer.
+
+## Limpeza total do CRM antes do teste com a equipe (12/09/2026)
+
+Nota: [[apagar-leads-leva-a-conversa-junto]]. Pedido do dono da conta:
+zerar leads e conversas para entregar a plataforma aos corretores. Feito em
+produção, irreversível, **sem exportação prévia** — escolha dele, com os
+números na frente.
+
+- **`delete from leads` derruba a conversa junto**, desde a 0111. Cascata
+  completa: conversas, mensagens, follow-ups, dossiê, tarefas, linha do
+  tempo, `marketing_*` e `sla_leads`. Medido: 131 / 110 / 8.125 → zero.
+- **"Apaguei os leads" NÃO é "o banco está limpo".** Três FKs são
+  `on delete set null` e sobrevivem órfãs: `ia_interacoes` (4.187, com
+  `conversa_id` nulo), `whatsapp_campanhas_fila` (113) + `whatsapp_campanhas`
+  (18), e `historico_envios` (53). A telemetria órfã continua alimentando o
+  contador "N respostas sem revisão" do painel.
+- **Antes de limpeza assim, conferir fila PENDENTE e campanha VIVA.** Item
+  `pendente` sobrevive ao delete com `lead_id` nulo, e campanha ativa
+  dispararia para número de lead que deixou de existir — mensagem indevida
+  para cliente real. Aqui deu 0 e 0; era a única coisa capaz de transformar
+  uma limpeza em incidente.
+- **A consequência menos óbvia é o CORPUS DO FEW-SHOT.** `recuperacao.ts`
+  injeta trecho de conversa REAL no prompt a cada resposta — eram **46
+  conversas elegíveis, 2.998 falas de cliente**. Zerar faz a assistente soar
+  mais genérica exatamente na semana em que a equipe vai julgá-la, e ninguém
+  liga uma coisa à outra depois. **Ao apagar histórico de conversa, dizer em
+  voz alta o que isso tira da IA** — não é só CRM.
+- **Uma visita futura morreu junto** (14/09, 9h). Lead apagado é compromisso
+  apagado do CRM; a pessoa aparece no imóvel do mesmo jeito. Listar
+  `visita_agendada_em >= now()` faz parte de medir o estrago.
+- **O que NÃO é tocado**: catálogo (25 publicados, 339 mídias), corretores, e
+  a instância de WhatsApp — o número segue `conectado`. Limpar CRM não
+  desconecta número.

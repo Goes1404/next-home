@@ -43,3 +43,4 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 
 ## Relacionados
 - [[MOC — Infraestrutura]] · [[MOC — CRM e Painel]] · [[Home]]
+- [[apagar-leads-leva-a-conversa-junto]] — o mapa de cascata de `delete from leads`, e as três FKs `set null` que sobrevivem órfãs (12/09)
