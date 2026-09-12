@@ -7,6 +7,7 @@ import {
   LIMITE_POR_IMPORTACAO,
   extrairDePdf,
   extrairDeTexto,
+  extrairDeZipWhatsapp,
   type CandidatoLead,
 } from "@/lib/leads/importacao";
 import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
@@ -54,7 +55,7 @@ export type ResultadoAnaliseEmail = {
 
 export type ResultadoAnalise = {
   candidatos?: CandidatoRevisado[];
-  metodo?: "tabela" | "texto" | "ia";
+  metodo?: "tabela" | "texto" | "ia" | "whatsapp";
   erro?: string;
   aviso?: string;
 };
@@ -72,6 +73,13 @@ export type EstadoLeadUnico = { erro?: string; ok?: string } | undefined;
 const LIMITE_ARQUIVO = 10 * 1024 * 1024;
 
 const TIPOS_TEXTO = ["text/csv", "text/plain", "text/tab-separated-values", "application/csv"];
+
+/**
+ * O `.zip` que o WhatsApp gera chega com um destes três tipos, conforme o
+ * navegador e o sistema. Nenhum é confiável sozinho — daí a checagem por
+ * extensão ao lado.
+ */
+const TIPOS_ZIP = ["application/zip", "application/x-zip-compressed", "multipart/x-zip"];
 
 /**
  * Server Action é POST na rota, não navegação: o `proxy.ts` não cobre isto.
@@ -148,18 +156,23 @@ export async function analisarTexto(conteudo: string): Promise<ResultadoAnalise>
 }
 
 export async function analisarArquivo(formData: FormData): Promise<ResultadoAnalise> {
-  const { supabase } = await exigirCorretor();
+  const { supabase, corretor } = await exigirCorretor();
 
   const arquivo = formData.get("arquivo");
   if (!(arquivo instanceof File) || arquivo.size === 0) {
     return { erro: "Escolha um arquivo para enviar." };
   }
   if (arquivo.size > LIMITE_ARQUIVO) {
-    return { erro: "Arquivo acima de 10 MB. Exporte um trecho menor." };
+    return {
+      erro: arquivo.name.toLowerCase().endsWith(".zip")
+        ? "Arquivo acima de 10 MB. Ao exportar a conversa no WhatsApp, escolha “Sem mídia” — é a mídia que pesa."
+        : "Arquivo acima de 10 MB. Exporte um trecho menor.",
+    };
   }
 
   const nome = arquivo.name.toLowerCase();
   const ehPdf = arquivo.type === "application/pdf" || nome.endsWith(".pdf");
+  const ehZip = TIPOS_ZIP.includes(arquivo.type) || nome.endsWith(".zip");
   const ehTexto =
     TIPOS_TEXTO.includes(arquivo.type) ||
     [".csv", ".tsv", ".txt"].some((ext) => nome.endsWith(ext));
@@ -171,13 +184,24 @@ export async function analisarArquivo(formData: FormData): Promise<ResultadoAnal
     };
   }
 
-  if (!ehPdf && !ehTexto) {
-    return { erro: "Formato não suportado. Envie PDF, CSV, TSV ou TXT." };
+  if (!ehPdf && !ehZip && !ehTexto) {
+    return { erro: "Formato não suportado. Envie PDF, CSV, TSV, TXT ou o .zip da conversa do WhatsApp." };
   }
 
   const resultado = ehPdf
     ? await extrairDePdf(Buffer.from(await arquivo.arrayBuffer()))
-    : await extrairDeTexto(await arquivo.text());
+    : ehZip
+      ? /*
+         * Quem exportou é o dono do aparelho, e a fala dele não pode virar
+         * lead. O nome do arquivo já resolve isso numa conversa de duas
+         * pessoas; em GRUPO, o único jeito é o cadastro do corretor da
+         * sessão — e é por isso que ele viaja daqui.
+         */
+        await extrairDeZipWhatsapp(Buffer.from(await arquivo.arrayBuffer()), {
+          nome: corretor.nome,
+          telefone: corretor.whatsapp,
+        })
+      : await extrairDeTexto(await arquivo.text());
 
   if (resultado.candidatos.length === 0) {
     return { erro: resultado.aviso ?? "Nenhum contato com telefone foi encontrado no arquivo." };
