@@ -6409,3 +6409,44 @@ que **recusa o deployment inteiro, sem log e sem webhook**.
   `x-matched-path` batendo é rota no ar recusando sem segredo; 404 é rota que
   só existe na branch. `web_fetch_vercel_url` do MCP da Vercel faz isso
   quando o `curl` está bloqueado.
+
+## "Trocar o e-mail do Eduardo" era criar o login dele (12/09/2026)
+
+Nota: [[acesso-de-corretor-so-existia-para-um]].
+
+- **O verbo do pedido descrevia um estado que não existia.** Medido antes de
+  mexer: `auth.users` com **UMA** linha (a Bruna), **1 de 8** corretores com
+  `user_id`, **0 de 8** com `corretores.email`, e o e-mail do Eduardo `null`.
+  Não havia e-mail para atualizar. Aceitar o verbo ao pé da letra levaria a
+  caçar defeito num `update` que nunca teve linha para afetar. **Ao receber
+  "mude X para Y", conferir que X existe** — é a irmã da régua de medir antes
+  de aceitar o diagnóstico de um item de roadmap.
+- **O lote de acessos da 0095 nunca rodou, e tem botão na tela de Contas.**
+  `criarAcessosQueFaltam` faz exatamente o que faltava — login para todo
+  corretor ativo sem `user_id` — e tem zero execuções na vida. **Décimo caso
+  do padrão "construído e nunca ligado" desta base.** O sintoma é silencioso
+  porque a roleta (0093) só PREFERE quem tem login: ela seguia mandando tudo
+  para a Bruna, o que parece a roleta funcionando em vez de sete pessoas sem
+  conseguir entrar.
+- **Não existe caminho de UI para trocar e-mail nem para definir senha
+  escolhida.** `criarAcessoCorretor` deixa o gestor digitar o e-mail e sorteia
+  a senha; `redefinirSenhaCorretor` sorteia outra. A senha sorteada é DECISÃO
+  (o comentário de `senhaTemporaria` diz por que), não limitação — antes de
+  construir "o gestor digita a senha", reler aquela decisão.
+- **Molde de `auth.users` se COPIA de uma linha que já loga, nunca se escreve
+  de cabeça.** O que custaria tempo: `pgcrypto` mora em `extensions` (`crypt()`
+  sem prefixo não resolve); `gen_salt('bf', 10)` para casar o custo que o
+  GoTrue escreve (`$2a$10$`, e sem o `10` o pgcrypto usa 6); `confirmed_at` é
+  coluna GERADA e inserir nela é erro; os quatro tokens vão como `''` e não
+  `null`; e a linha em `auth.identities` (provider `email`, `provider_id` = id
+  do usuário) NÃO é opcional. Depois: `user_id`, `email` e `slug` em
+  `corretores` — **sem slug, `getCorretorLogado()` devolve `null`** e a pessoa
+  entra com a senha certa e cai em "Conta sem vínculo".
+- **`crypt(senha, hash) = hash` prova o hash, não o login.** A prova é
+  `POST /auth/v1/token?grant_type=password` devolvendo 200 com `access_token`,
+  mais `last_sign_in_at` carimbado e linha em `auth.sessions`.
+- **Erro que muda a cada tentativa não é erro de senha.** A senha correta deu
+  **504** na primeira chamada e 200 na seguinte — a piscada de gateway do
+  Supabase já registrada em 10/09. Senha ERRADA devolve **400 `Invalid login
+  credentials` sempre**. É esse contraste que separa credencial ruim de
+  instabilidade, e sem ele o 504 acusaria a conta recém-criada.

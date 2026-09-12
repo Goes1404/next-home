@@ -4,7 +4,7 @@ tags: [moc, crm, painel]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-09-12
 summary: Leads, funil, fila de trabalho, telas do corretor e do gestor.
 ---
 # CRM e Painel — Map of Content
@@ -50,6 +50,7 @@ F0–F6.
 
 ## Administração (gestor)
 - [[papel-nunca-ganha-grant-update]]
+- [[acesso-de-corretor-so-existia-para-um]] — o lote da 0095 nunca rodou: 1 usuário no Auth para 8 corretores, e nenhum caminho de UI para trocar e-mail ou definir senha escolhida (12/09)
 
 ## Relacionados
 - [[MOC — Banco de Dados]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]
