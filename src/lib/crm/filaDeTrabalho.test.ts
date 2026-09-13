@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 import { ordenarFila, TETO_DA_FILA, type ItemFila, type TipoItemFila } from "./filaDeTrabalho";
 
 /**
@@ -8,23 +10,50 @@ import { ordenarFila, TETO_DA_FILA, type ItemFila, type TipoItemFila } from "./f
  * IA" acima de uma visita marcada para daqui a duas horas.
  */
 
+/**
+ * A fonte de `filaDeTrabalho.ts`, lida uma vez.
+ *
+ * Serve às guardas que precisam olhar o CÓDIGO: a regressão delas falharia
+ * calada — a fila continuaria montando, só com a linha errada.
+ */
+const FONTE = fs.readFileSync(
+  path.join(process.cwd(), "src/lib/crm/filaDeTrabalho.ts"),
+  "utf8",
+);
+
 /*
  * A ordem esperada, escrita à mão de propósito: se este arquivo importasse
  * o PESO de produção, o teste passaria a concordar com qualquer reordenação
  * — inclusive a errada. É a segunda cópia que dá sentido à primeira.
+ *
+ * Mas segunda cópia só dá sentido se alguém as COMPARAR, e desde a F3
+ * ninguém comparava: `ordenarFila` ordena pelo `peso` que o próprio ITEM
+ * carrega, e este arquivo monta os itens com os SEUS números — ou seja,
+ * aprovava qualquer renumeração da produção. Provado em 11/09/2026: mudar
+ * `cliente_recusou` de 2 para 4 no código deixou os cinco testes de ordem
+ * verdes. Quem fecha isso é `peloCodigo`, logo abaixo.
  */
 const PESOS: Record<TipoItemFila, number> = {
   sem_resposta: 0,
   visita_hoje: 1,
+  /*
+   * A recusa (0110) desceu a tarefa vencida um degrau, e o motivo está
+   * escrito porque a régua desta fila é decisão de produto, não numeração:
+   * é a única linha em que o SISTEMA agiu sozinho (calou o bot, cancelou os
+   * follow-ups, marcou perdido, tirou das campanhas), a partir de um regex
+   * sobre a fala do cliente. Tarefa vencida JÁ está atrasada e uma hora a
+   * mais não muda nada; recusa só se reverte enquanto está fresca.
+   */
+  cliente_recusou: 2,
   // Lembrete de anotação (0100) pesa como tarefa — os dois são compromissos
   // que o próprio corretor marcou.
-  tarefa_vencida: 2,
-  lembrete_vencido: 2,
-  lead_novo: 3,
-  tarefa_hoje: 4,
-  lembrete_hoje: 4,
-  sem_revisao: 5,
-  lead_parado: 6,
+  tarefa_vencida: 3,
+  lembrete_vencido: 3,
+  lead_novo: 4,
+  tarefa_hoje: 5,
+  lembrete_hoje: 5,
+  sem_revisao: 6,
+  lead_parado: 7,
 };
 
 // `titulo: string` explícito: sem a anotação, o default (`= tipo`) faz o TS
@@ -41,7 +70,35 @@ function item(tipo: TipoItemFila, titulo: string = tipo): ItemFila {
   };
 }
 
+/**
+ * O `PESO` de produção, lido do código-fonte.
+ *
+ * Não é exportado de propósito (é detalhe de implementação da fila), e
+ * importá-lo faria este arquivo concordar com qualquer reordenação. Ler o
+ * texto é o que permite COMPARAR as duas cópias sem fundir uma na outra.
+ */
+function peloCodigo(): Record<string, number> {
+  const abre = FONTE.indexOf("const PESO: Record<TipoItemFila, number> = {");
+  expect(abre, "o mapa PESO sumiu do código — o recorte não vale").toBeGreaterThan(0);
+  const fecha = FONTE.indexOf("\n};", abre);
+  expect(fecha, "o fim do mapa PESO sumiu").toBeGreaterThan(abre);
+  const corpo = FONTE.slice(abre, fecha)
+    // Comentário dentro do mapa é a norma aqui (cada peso carrega o porquê),
+    // e um `// tarefa_vencida: 2` velho viraria entrada falsa.
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/[^\n]*/g, "");
+  const pesos: Record<string, number> = {};
+  for (const [, tipo, valor] of corpo.matchAll(/(\w+):\s*(\d+),/g)) {
+    pesos[tipo!] = Number(valor);
+  }
+  return pesos;
+}
+
 describe("ordem da fila de trabalho", () => {
+  it("o PESO do código é o mesmo que este teste declara", () => {
+    expect(peloCodigo()).toEqual(PESOS);
+  });
+
   it("visita de hoje vem antes de tudo", () => {
     const ordenada = ordenarFila([
       item("lead_parado"),
@@ -116,6 +173,71 @@ describe("nome e agrupamento na fila (27/08/2026)", () => {
     // O teto de 6 não serve de nada se um assunto só puder ocupar os 6.
     expect(INDIVIDUAIS_POR_TIPO).toBeLessThan(6);
     expect(INDIVIDUAIS_POR_TIPO).toBeGreaterThan(1);
+  });
+});
+
+describe("a recusa do cliente avisa o corretor (0110)", () => {
+  const item = (tipo: TipoItemFila): ItemFila => ({
+    chave: tipo,
+    tipo,
+    titulo: tipo,
+    detalhe: "",
+    href: "/",
+    peso: PESOS[tipo],
+  });
+
+  /*
+   * Quatro consequências caem sobre o lead sem ninguém conferir — bot
+   * silenciado, follow-ups cancelados, etapa "perdido", fora das campanhas —
+   * e quem as dispara é um regex sobre a fala do cliente. O aviso existe
+   * para que um erro do detector custe uma linha na fila, não um lead.
+   */
+  it("vem depois de quem espera e da visita de hoje, e antes da tarefa vencida", () => {
+    const ordenada = ordenarFila([
+      item("tarefa_vencida"),
+      item("cliente_recusou"),
+      item("visita_hoje"),
+      item("sem_resposta"),
+    ]);
+    expect(ordenada.map((i) => i.tipo)).toEqual([
+      "sem_resposta",
+      "visita_hoje",
+      "cliente_recusou",
+      "tarefa_vencida",
+    ]);
+  });
+
+  /*
+   * As duas regras abaixo falhariam CALADAS: a fila continuaria montando,
+   * só com a linha errada. Por isso a guarda lê o código — mesma classe de
+   * `escalaDoPainel` e `etapaAutomatica`.
+   */
+
+  /** O corpo do laço que monta o item, recortado por âncoras ÚNICAS. */
+  function corpoDoLaco(): string {
+    const inicio = FONTE.indexOf("for (const lead of (recusas.data");
+    const fim = FONTE.indexOf("for (const lead of (novos.data");
+    expect(inicio, "a âncora de início sumiu — o recorte não vale").toBeGreaterThan(0);
+    expect(fim, "a âncora de fim sumiu — o recorte não vale").toBeGreaterThan(inicio);
+    return FONTE.slice(inicio, fim);
+  }
+
+  it("a fonte é o FATO (`nao_contatar_em`), nunca a etapa — etapa anda e volta", () => {
+    const inicio = FONTE.indexOf('.select("id, nome, telefone, nao_contatar_em');
+    expect(inicio, "a consulta da recusa sumiu").toBeGreaterThan(0);
+    const consulta = FONTE.slice(inicio, FONTE.indexOf(".limit(TETO_DA_FILA)", inicio));
+    expect(consulta).toContain('.gte("nao_contatar_em"');
+    // Arrastar o cartão de volta para "Novo" não pode apagar o aviso: o
+    // cliente continua tendo pedido para não ser procurado.
+    expect(consulta).not.toContain('"etapa"');
+  });
+
+  it("quem pediu para PARAR não ganha botão de WhatsApp na fila", () => {
+    const corpo = corpoDoLaco();
+    expect(corpo).toMatch(/motivo === "parada"\s*\?\s*undefined/);
+    // E os outros dois ganham: a recusa pode ter sido da OFERTA, e o
+    // corretor nunca foi barrado pelo `nao_contatar_em`.
+    expect(corpo).toContain("whatsappDoLead(lead)");
   });
 });
 

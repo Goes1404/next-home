@@ -32,6 +32,9 @@ const REGUA: Record<TipoItemFila, string> = {
   // representa alguém esperando AGORA, e por isso leva a cor mais forte.
   sem_resposta: "bg-perigo",
   visita_hoje: "bg-etapa-visita",
+  // Recusa (0110): a cor de quem SAIU do funil, a mesma da etapa "perdido" —
+  // o corretor reconhece o estado antes de ler a linha.
+  cliente_recusou: "bg-etapa-perdido",
   tarefa_vencida: "bg-alerta",
   // Lembrete de anotação (0100) pesa como tarefa — e leva a mesma cor.
   lembrete_vencido: "bg-alerta",

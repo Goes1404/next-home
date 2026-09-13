@@ -22,6 +22,7 @@ import type { Lead } from "@/lib/types";
 export type TipoItemFila =
   | "sem_resposta"
   | "visita_hoje"
+  | "cliente_recusou"
   | "lead_novo"
   | "tarefa_vencida"
   | "tarefa_hoje"
@@ -87,17 +88,56 @@ const DIAS_PARA_ESFRIAR = 7;
 const PESO: Record<TipoItemFila, number> = {
   sem_resposta: 0,
   visita_hoje: 1,
+  /*
+   * A recusa (0110) entra em terceiro, e é a única linha da fila em que o
+   * SISTEMA agiu sozinho: calou o bot, cancelou os follow-ups, marcou o lead
+   * como perdido e o tirou das campanhas — quatro consequências que ninguém
+   * conferiu. Decisão automática sem revisão humana é o que mais merece um
+   * olho, e o detector é um regex sobre a fala do cliente: quando ele erra,
+   * quem paga é um lead de verdade.
+   *
+   * Acima da tarefa vencida porque a tarefa JÁ está atrasada e uma hora a
+   * mais não muda nada, enquanto a recusa só se reverte enquanto está
+   * fresca — uma ligação hoje recupera quem uma ligação na semana que vem
+   * não recupera mais.
+   */
+  cliente_recusou: 2,
   // Lembrete de anotação (0100) pesa como TAREFA: os dois são compromissos
   // que o próprio corretor marcou — vencido dói igual, "para hoje" espera
   // igual. Peso repetido é deliberado: dentro do mesmo peso vale a ordem de
   // chegada (mais urgente primeiro).
-  tarefa_vencida: 2,
-  lembrete_vencido: 2,
-  lead_novo: 3,
-  tarefa_hoje: 4,
-  lembrete_hoje: 4,
-  sem_revisao: 5,
-  lead_parado: 6,
+  tarefa_vencida: 3,
+  lembrete_vencido: 3,
+  lead_novo: 4,
+  tarefa_hoje: 5,
+  lembrete_hoje: 5,
+  sem_revisao: 6,
+  lead_parado: 7,
+};
+
+/**
+ * Por quanto tempo uma recusa fica na fila.
+ *
+ * Não existe marca de "já vi" nesta tela, então a JANELA é o mecanismo de
+ * saída — e ela precisa existir: item que não sai vira paisagem, a mesma
+ * régua do contador que vive em zero e do alerta sempre aceso. Dois dias é o
+ * prazo em que uma ligação ainda reverte; depois disso a linha só ocuparia
+ * uma das seis vagas para contar uma notícia velha.
+ */
+const HORAS_DE_AVISO_DA_RECUSA = 48;
+
+/**
+ * O que o cliente disse, em uma linha — a família da recusa em português.
+ *
+ * Três frases porque as três pedem coisas diferentes do corretor: quem
+ * "já resolveu" comprou em outro lugar e não volta; quem "não tem interesse"
+ * pode ter recusado a OFERTA, não a imobiliária; e quem pediu para parar não
+ * deve ser procurado de novo.
+ */
+const FRASE_DA_RECUSA: Record<string, string> = {
+  parada: "pediu para não receber mais mensagens",
+  ja_resolvido: "disse que já resolveu em outro lugar",
+  desinteresse: "disse que não tem interesse",
 };
 
 const horaCurta = new Intl.DateTimeFormat("pt-BR", {
@@ -159,7 +199,11 @@ export async function getFilaDeTrabalho(
     .limit(TETO_DA_FILA);
   if (corretorId) consultaLembretes = consultaLembretes.eq("destinatario_id", corretorId);
 
-  const [esperando, visitas, novos, parados, revisao, lembretes] = await Promise.all([
+  const limiteRecusa = new Date(
+    agora.getTime() - HORAS_DE_AVISO_DA_RECUSA * 3_600_000,
+  ).toISOString();
+
+  const [esperando, visitas, recusas, novos, parados, revisao, lembretes] = await Promise.all([
     /*
      * Quem falou com a gente e está esperando (0087). Primeiro item da fila
      * porque é a única situação em que a pessoa já levantou a mão e nós
@@ -183,6 +227,19 @@ export async function getFilaDeTrabalho(
       .gte("visita_agendada_em", `${dia}T00:00:00-03:00`)
       .lte("visita_agendada_em", `${dia}T23:59:59-03:00`)
       .order("visita_agendada_em", { ascending: true })
+      .limit(TETO_DA_FILA),
+    /*
+     * Quem recusou nas últimas 48h (0110). A fonte é `nao_contatar_em`, o
+     * FATO — não a etapa, que anda e volta: bastaria alguém arrastar o
+     * cartão de volta para "Novo" e o aviso sumiria sem nada ter mudado do
+     * lado do cliente.
+     */
+    supabase
+      .from("leads")
+      .select("id, nome, telefone, nao_contatar_em, nao_contatar_motivo", { count: "exact" })
+      .is("arquivado_em", null)
+      .gte("nao_contatar_em", limiteRecusa)
+      .order("nao_contatar_em", { ascending: false })
       .limit(TETO_DA_FILA),
     supabase
       .from("leads")
@@ -252,6 +309,48 @@ export async function getFilaDeTrabalho(
       href: `/corretor/leads/${lead.id}`,
       whatsapp: whatsappDoLead(lead),
       peso: PESO.visita_hoje,
+    });
+  }
+
+  for (const lead of (recusas.data ?? []).slice(0, INDIVIDUAIS_POR_TIPO)) {
+    const motivo = String(lead.nao_contatar_motivo ?? "desinteresse");
+    const horas = Math.floor(
+      (agora.getTime() - new Date(lead.nao_contatar_em as string).getTime()) / 3_600_000,
+    );
+    itens.push({
+      chave: `cliente_recusou:${lead.id}`,
+      tipo: "cliente_recusou",
+      titulo: `${nomeParaExibir(lead)} ${FRASE_DA_RECUSA[motivo] ?? FRASE_DA_RECUSA.desinteresse}`,
+      detalhe:
+        horas >= 1
+          ? `Há ${horas}h · a IA encerrou e ele saiu das campanhas`
+          : "Agora há pouco · a IA encerrou e ele saiu das campanhas",
+      href: `/corretor/leads/${lead.id}`,
+      /*
+       * Só quem NÃO pediu para parar leva o botão de WhatsApp. Para os
+       * outros dois o toque é o caminho de resgate — a recusa pode ter sido
+       * da OFERTA, não da imobiliária, e o corretor nunca foi barrado pelo
+       * `nao_contatar_em` (decisão da spec: ele é uma pessoa decidindo).
+       * Para quem pediu para sair, um botão de conversa a um toque do nome é
+       * o caminho curto para a denúncia, que é o sinal mais forte que existe
+       * contra o número.
+       */
+      whatsapp: motivo === "parada" ? undefined : whatsappDoLead(lead),
+      peso: PESO.cliente_recusou,
+    });
+  }
+
+  const recusasAlem = (recusas.count ?? 0) - INDIVIDUAIS_POR_TIPO;
+  if (recusasAlem > 0) {
+    itens.push({
+      chave: "cliente_recusou:resto",
+      tipo: "cliente_recusou",
+      titulo: `Mais ${recusasAlem} cliente${recusasAlem === 1 ? "" : "s"} recusou o contato`,
+      detalhe: "Abrir a lista dos perdidos para conferir",
+      href: "/corretor/leads?etapa=perdido",
+      // Sem WhatsApp, como no agrupado de leads novos: o item aponta para
+      // várias pessoas, e abriria a conversa de quem?
+      peso: PESO.cliente_recusou,
     });
   }
 

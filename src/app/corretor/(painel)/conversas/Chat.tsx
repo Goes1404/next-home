@@ -235,6 +235,195 @@ export const SELO: Record<Estado, { texto: string; classe: string; ponto: string
   desligada: { texto: "IA desligada", classe: "text-apoio", ponto: "bg-linha-forte" },
 };
 
+/**
+ * A MEMÓRIA da conversa, no alto do chat — visível e editável (0110).
+ *
+ * ## Por que ela aparece
+ *
+ * A memória é o que a IA carrega para a próxima mensagem: o estado da
+ * negociação em prosa, que sobrevive à janela de 40 falas. Deixá-la
+ * escondida no banco tem dois custos medidos nesta base. Resumo errado que
+ * ninguém conserta vira erro repetido em TODA mensagem seguinte — e o 👍/👎
+ * por balão julga o texto sozinho, sem saber o que ela tinha na mão (a
+ * mesma lacuna que `ia_interacoes.contexto` veio fechar na 0105).
+ *
+ * ## Por que recolhida por padrão
+ *
+ * O que a corretora abre esta tela para fazer é CONVERSAR. Um parágrafo de
+ * até 1.200 caracteres aberto empurraria os balões para fora da tela do
+ * celular a cada abertura — e bloco que sempre está lá vira paisagem, a
+ * mesma régua do aviso de evolução e da faixa de queda do número.
+ *
+ * ## O que o corretor ganha ao corrigir
+ *
+ * Gravar por aqui carimba `memoria_do_corretor`, e a partir daí a extração
+ * PRESERVA o texto dele e só acrescenta o que for novo. Sem esse carimbo, a
+ * correção seria desfeita na mensagem seguinte — e é assim que alguém para
+ * de corrigir. A linha embaixo do botão diz isso em português, porque a
+ * diferença entre "a IA escreveu" e "você escreveu" muda o que acontece
+ * depois e não se lê em lugar nenhum.
+ */
+function TiraDaMemoria({ conversa }: { conversa: ConversaResumo }) {
+  const { avisar, falhar } = useAvisos();
+  const [aberta, setAberta] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [memoria, setMemoria] = useState(conversa.memoria?.trim() ?? "");
+  const [doCorretor, setDoCorretor] = useState(conversa.memoriaDoCorretor);
+  const [rascunho, setRascunho] = useState("");
+
+  function abrirEdicao() {
+    setRascunho(memoria);
+    setEditando(true);
+    setAberta(true);
+  }
+
+  async function salvar() {
+    if (salvando) return;
+    setSalvando(true);
+    const texto = rascunho.trim().slice(0, TETO_DA_MEMORIA);
+    try {
+      const resultado = await salvarMemoriaDaConversaNoPainel(conversa.id, texto);
+      if ("erro" in resultado) {
+        falhar(resultado.erro);
+        return;
+      }
+      setMemoria(texto);
+      setDoCorretor(true);
+      setEditando(false);
+      avisar(resultado.ok);
+    } catch {
+      /*
+       * Erro de rede NÃO devolve `{erro}` — devolve exceção. Sem este ramo a
+       * tela destrava muda, e "não aconteceu nada" é indistinguível de "deu
+       * certo", que é o pior desfecho possível para quem acabou de corrigir.
+       */
+      falhar("Sem conexão. A memória não foi salva — o seu texto continua aí.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <section className="bg-wa-barra border-wa-divisor border-b">
+      <button
+        type="button"
+        onClick={() => setAberta((a) => !a)}
+        aria-expanded={aberta}
+        className="flex min-h-11 w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left md:px-4"
+      >
+        {/* Marcador de livro: é o que a IA guardou desta pessoa. */}
+        <svg
+          viewBox="0 0 24 24"
+          className="text-wa-verde size-5 shrink-0 fill-none stroke-current"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M6 4h12v16l-6-4-6 4V4Z" />
+        </svg>
+
+        {/*
+          Uma linha só, e tudo em `wa-texto`. Duas decisões medidas:
+
+          Duas linhas (rótulo em versalete + prévia) empurravam os balões 51px
+          para baixo em toda abertura do chat, e o que a corretora vem fazer
+          aqui é conversar.
+
+          E o rótulo NÃO leva `wa-meta`: medido com o CSS de produção, no tema
+          claro ele dá 4,14:1 sobre `wa-barra` — abaixo de AA. O número é da
+          paleta do próprio WhatsApp, que esta tela copia de propósito e o
+          cabeçalho já usa; o que não se faz é acrescentar texto NOVO, e ainda
+          menor, na mesma dívida. Quem separa rótulo de conteúdo aqui é o
+          PESO, como o "Você:" da lista do app — não uma cor mais fraca.
+        */}
+        <span className="text-wa-texto min-w-0 flex-1 truncate text-[13px]">
+          <span className="font-semibold">
+            {doCorretor ? "Sua memória" : "Memória da IA"}
+          </span>
+          {" · "}
+          {memoria || "nada anotado ainda"}
+        </span>
+
+        <svg
+          viewBox="0 0 24 24"
+          className={cn(
+            "text-wa-meta size-5 shrink-0 fill-none stroke-current transition-transform",
+            aberta && "rotate-180",
+          )}
+          strokeWidth="2"
+          strokeLinecap="round"
+          aria-hidden
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+
+      {aberta && (
+        <div className="px-3 pb-3 md:px-4">
+          {editando ? (
+            <>
+              <textarea
+                value={rascunho}
+                onChange={(e) => setRascunho(e.target.value.slice(0, TETO_DA_MEMORIA))}
+                rows={6}
+                autoFocus
+                placeholder="O que a IA precisa lembrar na próxima mensagem: o que ele procura, quanto pode pagar, qual imóvel escolheu, o que já ofereceram e ele recusou, e o que ficou combinado."
+                className="bg-wa-campo text-wa-texto border-wa-divisor w-full rounded-lg border p-3 text-[14px] leading-relaxed break-words"
+              />
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void salvar()}
+                  disabled={salvando}
+                  className="bg-wa-verde min-h-11 cursor-pointer rounded-full px-4 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                >
+                  {salvando ? "Salvando…" : "Salvar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditando(false)}
+                  disabled={salvando}
+                  className="border-wa-divisor text-wa-texto hover:bg-wa-divisor min-h-11 cursor-pointer rounded-full border px-4 text-xs font-medium transition-colors disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+                <span className="text-wa-texto text-[11px]">
+                  {rascunho.trim().length}/{TETO_DA_MEMORIA}
+                  {/* Texto vazio APAGA, e isso é decisão: é o jeito de dizer
+                      "o que estava aqui não vale". */}
+                  {!rascunho.trim() && " · salvar vazio apaga a memória"}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-wa-texto text-[14px] leading-relaxed break-words whitespace-pre-line">
+                {memoria || "A IA ainda não anotou nada desta conversa."}
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={abrirEdicao}
+                  className="border-wa-divisor text-wa-texto hover:bg-wa-divisor min-h-11 cursor-pointer rounded-full border px-4 text-xs font-medium transition-colors"
+                >
+                  {memoria ? "Corrigir" : "Escrever"}
+                </button>
+                <span className="text-wa-texto min-w-0 flex-1 text-[11px] break-words">
+                  {doCorretor
+                    ? "Seu texto fica: a IA só acrescenta o que for novo."
+                    : "Escrito pela IA. Ao corrigir, o seu texto passa a ser preservado."}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function Chat({
   conversa,
   estado,
