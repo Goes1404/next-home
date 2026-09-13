@@ -137,16 +137,44 @@ describe("o texto na cena", () => {
     expect(motor).not.toMatch(/meramente ilustrativa/i);
   });
 
+  it("a rota carimba a ressalva quando a peça é de um imóvel, e antes de guardar", () => {
+    const rota = readFileSync(join(process.cwd(), "src/app/api/imagens/gerar/route.ts"), "utf8");
+
+    /*
+     * A ressalva passou a ser CONDICIONAL em 11/09/2026: numa imagem sem
+     * vínculo com empreendimento (um cachorro de Papai Noel) ela é ruído, e
+     * aviso que aparece onde não se aplica ensina a ignorar aviso. Em peça de
+     * imóvel ela continua obrigatória — é o que separa perspectiva
+     * ilustrativa de promessa ao consumidor.
+     */
+    expect(rota).toMatch(/empreendimentoId\s*\r?\n?\s*\?\s*await carimbarRessalva\(/);
+
+    /*
+     * Antes do upload, não depois: carimbar depois deixaria no bucket uma
+     * versão sem aviso, e é o arquivo do bucket que a galeria mostra e que o
+     * corretor baixa. O hash também sai dos bytes JÁ carimbados.
+     */
+    expect(rota.indexOf("carimbarRessalva(")).toBeLessThan(rota.indexOf(".upload("));
+    expect(rota.indexOf("carimbarRessalva(")).toBeLessThan(rota.indexOf('createHash("sha256")'));
+  });
+
   it("carimbo que falha NÃO sai calado — a tela é obrigada a avisar", () => {
     // A imagem já foi paga, então ela é entregue de qualquer forma. O que não
     // pode é sair achando que tem a ressalva.
     const rota = readFileSync(join(process.cwd(), "src/app/api/imagens/gerar/route.ts"), "utf8");
-    expect(rota).toMatch(/comRessalva: marcada\.carimbada/);
+    expect(rota).toMatch(/"aplicada" \| "nao_se_aplica" \| "falhou"/);
+    expect(rota).toMatch(/^\s*ressalva,$/m);
 
     const tela = readFileSync(
       join(process.cwd(), "src/app/corretor/(painel)/imoveis/criar-imagem/ChatDeArte.tsx"),
       "utf8",
     );
-    expect(tela).toMatch(/comRessalva === false/);
+    /*
+     * TRÊS desfechos: aplicada, não se aplica e falhou. Colapsá-los num
+     * booleano faria a imagem livre (que não leva ressalva por desenho)
+     * nascer com aviso de FALHA — e aviso onde não se aplica ensina a
+     * ignorar aviso, que é o oposto do que esta guarda protege.
+     */
+    expect(tela).toMatch(/ressalva === "falhou"/);
   });
 });

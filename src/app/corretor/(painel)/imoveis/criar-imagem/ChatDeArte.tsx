@@ -179,7 +179,12 @@ export function ChatDeArte({
         }),
       });
       const corpo = (await resp.json().catch(() => null)) as
-        | { ok: true; imagem: ImagemGerada; teto: EstadoDoTeto; comRessalva?: boolean }
+        | {
+            ok: true;
+            imagem: ImagemGerada;
+            teto: EstadoDoTeto;
+            ressalva?: "aplicada" | "nao_se_aplica" | "falhou";
+          }
         | { erro?: string; teto?: EstadoDoTeto }
         | null;
 
@@ -205,12 +210,17 @@ export function ChatDeArte({
        * cliente, não nosso com o servidor. Silêncio aqui seria o pior
        * desfecho, porque a ausência do aviso é invisível na miniatura.
        */
-      if (corpo.comRessalva === false) {
+      if (corpo.ressalva === "falhou") {
         falhar(
           "A imagem saiu SEM a ressalva “imagem meramente ilustrativa”. " +
             "Escreva a sua antes de publicar.",
         );
       } else {
+        /*
+         * "nao_se_aplica" NÃO é falha: a ressalva só é carimbada em peça
+         * vinculada a um empreendimento. Soar alarme numa imagem livre
+         * ensinaria a ignorar o alarme justamente quando ele importa.
+         */
         avisar("Imagem pronta.");
       }
     } catch (e) {
