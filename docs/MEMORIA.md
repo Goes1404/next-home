@@ -6174,6 +6174,16 @@ MEDINDO o catálogo antes de desenhar — e não por gosto.
   recarregue. **`catch` que NOMEIA uma causa sem ter checado está
   adivinhando** — mesma família do texto de erro desatualizado, o defeito
   recorrente nº 5 desta base.
+- **E o `.then()` SEM `.catch()` é a mesma dívida pelo avesso** (13/09): o
+  seletor de mídia do Live Chat (`Chat.tsx`) carregava o catálogo e só
+  tratava o `{erro}` devolvido. Rede e aba velha REJEITAM a promessa, então
+  `imoveis` ficava `null` para sempre e a grade dizia "Carregando…" sem fim —
+  pior que a mensagem errada, porque parece que ainda vai chegar. O helper e
+  a régua já existiam e três telas os usavam (`ChatDeArte`, `ChatDeVideo`,
+  `ExcluirImovel`); este caller ficou de fora. **Ao migrar callers para um
+  padrão de erro, o `grep` tem de achar TODOS — quem ficou fora não acusa em
+  tipo, teste nem build.** Achado por um `warning` de `exhaustive-deps` em
+  arquivo recém-mexido, exatamente como a lição de 10/09 previa.
 - **Diagnóstico**: para "404/500 ao clicar", subir `next dev` com o stdout
   capturado em arquivo e pedir para repetir o clique. Custa um minuto e
   responde o que varrer rota não responde. Varri 50 rotas com `page`, 13

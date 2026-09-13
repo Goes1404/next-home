@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, NotebookPen, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import {
   avaliarInteracao,
@@ -12,6 +13,7 @@ import {
   lerFichaDoLead,
   lerMensagens,
   listarCatalogoDeMidias,
+  salvarMemoriaDaConversaNoPainel,
   silenciarBotNaConversa,
   type FichaDoLead,
   type MensagemConversa,
@@ -20,6 +22,7 @@ import {
 import { assumirConversaComIA } from "./acoesIA";
 import { ETAPA_LABEL, type EtapaFunil } from "@/lib/types";
 import { agruparNaoGravadas, todasSemTexto } from "@/lib/whatsapp/conversaSemTexto";
+import { TETO_DA_MEMORIA } from "@/lib/whatsapp/memoriaDaConversa";
 import { PorQue } from "./PorQue";
 
 /**
@@ -580,6 +583,18 @@ export function Chat({
       </header>
 
       {/*
+        A memória vem ANTES dos balões, e é a primeira coisa abaixo do nome.
+        Ela é o que a IA carrega para a próxima mensagem; quem vai avaliar o
+        que ela disse precisa ver isso antes de ler o que ela disse.
+
+        `key` por conversa: o texto é estado LOCAL desta tira (a lista não
+        recebe o valor de volta), e sem a chave trocar de conversa mostraria
+        a memória da anterior — um efeito de sincronização faria o mesmo e
+        cairia na regra de lint desta base contra `setState` em efeito.
+      */}
+      <TiraDaMemoria key={conversa.id} conversa={conversa} />
+
+      {/*
         Corpo com os balões, sobre o papel de parede. O invólucro `relative`
         existe só para ancorar o botão de voltar ao topo: o corpo é o
         contêiner de rolagem, e botão flutuante DENTRO dele rolaria junto.
@@ -1074,15 +1089,27 @@ function SeletorDeMidia({
 
   useEffect(() => {
     let vivo = true;
-    void listarCatalogoDeMidias().then((resultado) => {
-      if (!vivo) return;
-      if ("erro" in resultado) falhar(resultado.erro);
-      else setImoveis(resultado.imoveis);
-    });
+    void listarCatalogoDeMidias()
+      .then((resultado) => {
+        if (!vivo) return;
+        if ("erro" in resultado) falhar(resultado.erro);
+        else setImoveis(resultado.imoveis);
+      })
+      /*
+       * Rede e aba velha REJEITAM a promessa em vez de devolver `{erro}`.
+       * Sem este ramo o seletor fica em "Carregando…" para sempre, que é o
+       * pior desfecho: parece que ainda vai chegar. A aba velha é o caso
+       * provável aqui — Server Action de outro build responde 404, e aí
+       * insistir não adianta: só recarregar.
+       */
+      .catch((e) => {
+        if (!vivo) return;
+        falhar(ehActionDeOutroBuild(e) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
+      });
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [falhar]);
 
   const aberto = imoveis?.find((i) => i.nome === imovelAberto) ?? null;
 
