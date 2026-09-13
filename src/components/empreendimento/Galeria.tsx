@@ -6,7 +6,7 @@ import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { ParallaxImagem } from "@/components/motion/ParallaxImagem";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
-import { Lightbox } from "@/components/ui/Lightbox";
+import { LightboxAdiado } from "@/components/ui/LightboxAdiado";
 import type { Midia } from "@/lib/types";
 
 /**
@@ -132,7 +132,7 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
         </Reveal>
       )}
 
-      <Lightbox
+      <LightboxAdiado
         itens={fotos}
         indice={aberta}
         origem={origem}

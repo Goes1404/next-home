@@ -6,38 +6,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
-import type { Empreendimento, Midia } from "@/lib/types";
-
-type Cena = { foto: Midia; frase: string; rotulo: string };
-
-/**
- * As frases saem do que o imóvel TEM cadastrado — nada inventado. Cada uma
- * ganha a foto seguinte da galeria (a capa já dominou o hero).
- */
-function cenasDe(e: Empreendimento): Cena[] {
-  const fotos = e.galeria.filter((f) => f.url !== e.capa.url).slice(0, 3);
-  if (fotos.length < 3) return [];
-
-  const frases: Array<{ frase: string; rotulo: string }> = [
-    { frase: e.tagline, rotulo: "O projeto" },
-  ];
-
-  if (e.lazer.length >= 3) {
-    frases.push({
-      frase: `${e.lazer.slice(0, 3).join(", ")} — e mais ${Math.max(e.lazer.length - 3, 0) || "outros"} itens de lazer.`,
-      rotulo: "Viver bem",
-    });
-  } else {
-    frases.push({ frase: `${e.bairro}, ${e.cidade}.`, rotulo: "O endereço" });
-  }
-
-  frases.push({
-    frase: e.construtora ? `Assinado por ${e.construtora}.` : `${e.bairro}, ${e.cidade}.`,
-    rotulo: "A entrega",
-  });
-
-  return fotos.map((foto, i) => ({ foto, ...frases[i] }));
-}
+import type { Cena } from "./cenasDoShowcase";
 
 /**
  * Seção-vitrine pinada: a página para, e três cenas (foto + uma frase)
@@ -48,9 +17,8 @@ function cenasDe(e: Empreendimento): Cena[] {
  * vindo de link de WhatsApp — pin + scrub brigam com o gesto de rolagem;
  * lá as cenas viram uma sequência empilhada com Reveal.
  */
-export function CenaShowcase({ empreendimento: e }: { empreendimento: Empreendimento }) {
+export function CenaShowcase({ cenas }: { cenas: Cena[] }) {
   const raiz = useRef<HTMLDivElement>(null);
-  const cenas = cenasDe(e);
 
   useEffect(() => {
     const el = raiz.current;
