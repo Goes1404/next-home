@@ -46,6 +46,7 @@ export default async function VitrineLayout({ children }: { children: React.Reac
       {/* Vinheta da logo na primeira visita da sessão — cobre a montagem
           da página enquanto fontes e o vídeo de fundo ainda carregam. */}
       <Preloader />
+      <div className="barra-progresso" aria-hidden />
 
       {/* `h-lvh` e não `inset-0`: a barra de endereço do celular redimensiona
           a viewport visível ao rolar, e a caixa (com o vídeo em `cover`)

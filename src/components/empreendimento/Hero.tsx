@@ -100,7 +100,7 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand-500 px-7 text-sm font-medium text-white transition-[background-color,transform] duration-300 hover:scale-[1.03] hover:bg-brand-400"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand-500 px-7 text-sm font-medium text-white transition-[background-color,transform] duration-300 hover:scale-[1.03] hover:bg-brand-400 botao-vivo"
             >
               Falar com corretor
             </a>

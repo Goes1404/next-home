@@ -64,7 +64,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
               origem="localizacao"
               corretorId={"id" in e.corretor ? (e.corretor as { id?: string }).id : undefined}
               empreendimentoSlug={e.slug}
-              className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-brand-500 px-6 text-sm font-medium text-white transition-colors hover:bg-brand-400 sm:w-auto"
+              className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-brand-500 px-6 text-sm font-medium text-white transition-colors hover:bg-brand-400 sm:w-auto botao-vivo"
             >
               Agendar visita com o corretor
             </WhatsappLink>

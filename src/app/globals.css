@@ -2002,6 +2002,108 @@
  * cabeçalho-herói, que não contém nada disso. A transparência já deixa os
  * brilhos do fundo passarem — é o que dá a leitura de material.
  */
+/*
+ * =====================================================================
+ * Movimento do site público (13/09/2026) — quatro efeitos, ZERO JavaScript
+ * =====================================================================
+ *
+ * A régua da casa vale aqui como no painel: movimento responde a GESTO
+ * (hover, toque, rolagem) ou mostra CONTEÚDO; nada roda sozinho em repouso
+ * — a única exceção declarada é o anel do WhatsApp, que pulsa a cada 6s
+ * porque é o botão de conversão e some ao rolar no celular. Tudo é CSS:
+ * a barra de progresso usa `animation-timeline: scroll()` (quem não
+ * suporta não vê barra nenhuma, e não vê erro), e `prefers-reduced-motion`
+ * já zera duração de animação e transição no bloco global acima.
+ */
+
+/* Botão de ação: levanta 2px no hover com sombra, afunda no toque. */
+@utility botao-vivo {
+  transition:
+    transform 0.25s var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+    box-shadow 0.25s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+  will-change: transform;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -12px rgb(0 0 0 / 0.45);
+  }
+  &:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: none;
+  }
+}
+
+/* Link de navegação: sublinhado que cresce da esquerda; fixo na rota atual. */
+@utility link-nav {
+  position: relative;
+  padding-bottom: 2px;
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 1.5px;
+    border-radius: 999px;
+    background: var(--color-acento-forte);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+  }
+  &:hover::after,
+  &[aria-current="page"]::after {
+    transform: scaleX(1);
+  }
+}
+
+/* Barra de progresso de leitura no topo, guiada pela rolagem do documento. */
+.barra-progresso {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  z-index: 60;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--color-acento), var(--color-realce));
+  transform-origin: left;
+  transform: scaleX(0);
+}
+@supports (animation-timeline: scroll()) {
+  .barra-progresso {
+    animation: barra-cresce linear both;
+    animation-timeline: scroll(root);
+  }
+}
+@keyframes barra-cresce {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Anel do botão do WhatsApp: expande e some, uma vez a cada 6s. */
+@utility anel-pulso {
+  animation: anel-pulso 6s ease-out infinite;
+}
+@keyframes anel-pulso {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  22% {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+}
+
 @utility cartao {
   position: relative;
   border-radius: 1.25rem;

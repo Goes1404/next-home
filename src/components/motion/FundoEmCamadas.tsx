@@ -24,13 +24,13 @@ export function FundoEmCamadas({ intensidade = 1 }: { intensidade?: number }) {
     >
       <Camada
         velocidade={0.35 * intensidade}
-        className="absolute -top-32 -left-24 h-96 w-96 rounded-full bg-brand-500/10 blur-3xl"
+        className="absolute -top-32 -left-24 h-96 w-96 rounded-full bg-brand-500/10 blur-3xl botao-vivo"
       >
         <span />
       </Camada>
       <Camada
         velocidade={-0.22 * intensidade}
-        className="absolute -right-32 -bottom-40 h-[28rem] w-[28rem] rounded-full bg-acento-forte/10 blur-3xl"
+        className="absolute -right-32 -bottom-40 h-[28rem] w-[28rem] rounded-full bg-acento-forte/10 blur-3xl botao-vivo"
       >
         <span />
       </Camada>

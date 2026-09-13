@@ -162,7 +162,7 @@ export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps)
             href={whatsapp}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-brand-500 hover:bg-brand-400 inline-flex min-h-11 items-center justify-center gap-2 rounded-full text-sm font-medium text-white transition-colors"
+            className="bg-brand-500 hover:bg-brand-400 inline-flex min-h-11 items-center justify-center gap-2 rounded-full text-sm font-medium text-white transition-colors botao-vivo"
             aria-label={`Falar com ${corretor.nome} no WhatsApp`}
           >
             {ICONE_WHATSAPP}

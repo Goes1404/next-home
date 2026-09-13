@@ -101,7 +101,7 @@ export default async function CorretoresPage() {
                 <WhatsappLink
                   href={linkWhatsapp()}
                   origem="corretores"
-                  className="bg-acento text-sobre-cor hover:bg-acento-hover mt-6 inline-flex min-h-12 items-center rounded-full px-7 text-sm font-medium transition-colors"
+                  className="bg-acento text-sobre-cor hover:bg-acento-hover mt-6 inline-flex min-h-12 items-center rounded-full px-7 text-sm font-medium transition-colors botao-vivo"
                 >
                   Falar no WhatsApp
                 </WhatsappLink>
@@ -137,7 +137,7 @@ export default async function CorretoresPage() {
                     <WhatsappLink
                       href={linkWhatsapp()}
                       origem="corretores"
-                      className="bg-acento text-sobre-cor hover:bg-acento-hover inline-flex min-h-12 items-center rounded-full px-6 text-sm font-medium transition-colors"
+                      className="bg-acento text-sobre-cor hover:bg-acento-hover inline-flex min-h-12 items-center rounded-full px-6 text-sm font-medium transition-colors botao-vivo"
                     >
                       Falar no WhatsApp
                     </WhatsappLink>

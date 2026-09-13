@@ -97,7 +97,7 @@ export default async function ContatoPage({
                         )}
                         origem="contato"
                         corretorId={corretorAtivo.id}
-                        className="bg-acento text-sobre-cor hover:bg-acento-hover inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-sm font-medium transition-colors"
+                        className="bg-acento text-sobre-cor hover:bg-acento-hover inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-sm font-medium transition-colors botao-vivo"
                       >
                         Falar com {corretorAtivo.nome}
                       </WhatsappLink>

@@ -6889,3 +6889,24 @@ Vault: [[o-globo-recebe-pontos-e-nada-roda-sozinho]] e
   com três fatos verificáveis (CRECI da imobiliária, corretores, imóveis
   acompanhados — a soma das atuações, sem consulta nova). O `compacto` da
   home não mudou.
+
+## Movimento do site público em CSS puro (13/09/2026)
+
+Vault: [[movimento-do-site-publico-e-css-puro]].
+
+- **Quatro efeitos, zero JavaScript**: `botao-vivo` (CTA levanta 2px no
+  hover, afunda no toque), `link-nav` (sublinhado que cresce no menu),
+  `.barra-progresso` (barra de leitura por `animation-timeline: scroll()`,
+  em `@supports`) e `anel-pulso` (anel do WhatsApp a cada 6s). Mesma régua
+  do painel: movimento responde a gesto ou mostra conteúdo; o anel é a
+  exceção declarada.
+- **`motion-safe:` só funciona em `@utility`.** `.anel-pulso` como classe
+  comum fazia `motion-safe:anel-pulso` virar nada, calado — a família do
+  `bg-chip`. Conferido no CSS compilado antes de subir.
+- **Regex de className precisa de filtro de TAG.** "cor de marca +
+  arredondado" pegou um selo, um ponto decorativo e um parágrafo além dos
+  21 botões. A sonda no navegador (`[...querySelectorAll(".botao-vivo")]`
+  com tag) é o que mostrou.
+- **404 de `/_vercel/insights` e `/_vercel/speed-insights` em `next start`
+  local NÃO é defeito** — são os scripts de analytics que a F0 de
+  performance injeta e que só existem na Vercel.

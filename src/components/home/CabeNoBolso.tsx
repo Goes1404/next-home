@@ -168,7 +168,7 @@ export function CabeNoBolso({
             {resultado.quantos > 0 ? (
               <Link
                 href={`/empreendimentos?precoMax=${resultado.tetoQueFecha}`}
-                className="bg-acento text-sobre-cor hover:bg-acento-hover mt-6 inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors"
+                className="bg-acento text-sobre-cor hover:bg-acento-hover mt-6 inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors botao-vivo"
               >
                 Ver {resultado.quantos === 1 ? "o imóvel" : `os ${resultado.quantos}`}
                 <svg
@@ -239,7 +239,7 @@ function Barra({ parte, total }: { parte: number; total: number }) {
       role="presentation"
     >
       <div
-        className="bg-acento h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none"
+        className="bg-acento h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none botao-vivo"
         style={{ width: `${Math.round(fracao * 100)}%` }}
       />
     </div>

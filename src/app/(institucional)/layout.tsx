@@ -43,6 +43,7 @@ export default async function InstitucionalLayout({
           grupo (vitrine); o sessionStorage garante que aparece uma vez só,
           por qualquer porta que o visitante entre. */}
       <Preloader />
+      <div className="barra-progresso" aria-hidden />
 
       <HeaderInstitucional />
 

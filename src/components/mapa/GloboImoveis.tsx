@@ -418,7 +418,7 @@ export function GloboImoveis({
         <span
           key={i}
           aria-hidden
-          className="pointer-events-none absolute h-[3px] w-[3px] rounded-full bg-acento-forte/70 motion-safe:animate-[cintilar_var(--dur)_ease-in-out_infinite]"
+          className="pointer-events-none absolute h-[3px] w-[3px] rounded-full bg-acento-forte/70 motion-safe:animate-[cintilar_var(--dur)_ease-in-out_infinite] botao-vivo"
           style={
             {
               top: `${p.y}%`,

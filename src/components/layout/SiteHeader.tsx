@@ -28,7 +28,7 @@ export function SiteHeader() {
         <ul className="hidden items-center gap-6 text-sm text-corpo sm:flex">
           {LINKS.map((link) => (
             <li key={link.href}>
-              <Link href={link.href} className="transition-colors hover:text-acento-suave">
+              <Link href={link.href} className="link-nav transition-colors hover:text-acento-suave">
                 {link.label}
               </Link>
             </li>
@@ -40,7 +40,7 @@ export function SiteHeader() {
         <Link
           href="/empreendimentos"
           aria-label="Ver empreendimentos"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-colors hover:bg-brand-400 sm:hidden"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-colors hover:bg-brand-400 sm:hidden botao-vivo"
         >
           <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

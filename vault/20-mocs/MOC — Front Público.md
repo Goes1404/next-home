@@ -53,5 +53,8 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 ## Fundo
 - [[fundo-em-video-saiu-de-todas-as-paginas]] — a vinheta congelada deixou de ser papel de parede; fica a aurora em CSS (13/09)
 
+## Movimento
+- [[movimento-do-site-publico-e-css-puro]] — botão vivo, sublinhado do menu, barra de progresso por scroll-timeline e anel do WhatsApp, zero JS (13/09)
+
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]

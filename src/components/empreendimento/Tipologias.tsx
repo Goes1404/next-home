@@ -137,7 +137,7 @@ export function Tipologias({
             href={contatoWhatsapp}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-acento-linha bg-acento-lavado px-6 text-sm font-medium text-acento-suave transition-colors hover:bg-acento hover:text-sobre-cor sm:w-auto"
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-acento-linha bg-acento-lavado px-6 text-sm font-medium text-acento-suave transition-colors hover:bg-acento hover:text-sobre-cor sm:w-auto botao-vivo"
           >
             Pedir tabela de valores e plantas no WhatsApp
           </a>
