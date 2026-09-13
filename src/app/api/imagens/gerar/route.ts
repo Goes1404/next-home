@@ -7,6 +7,7 @@ import { gerarImagem, imagensConfiguradas } from "@/lib/imagens/gerarImagem";
 import { getTetoDeHoje, registrarImagem } from "@/lib/imagens/galeria";
 import { TAMANHOS, type ChaveQualidade, type ChaveTamanho } from "@/lib/imagens/imagensTipos";
 import { montarPedido, receitaPor } from "@/lib/imagens/receitas";
+import { textosEntreAspas } from "@/lib/imagens/textoNaCena";
 import { carimbarRessalva } from "@/lib/imagens/carimbo";
 import { classificarFalhaDeStorage } from "@/lib/imagens/falhaDeStorage";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
@@ -154,6 +155,13 @@ export async function POST(req: NextRequest) {
 
   const resultado = await gerarImagem({
     prompt: pedidoCompleto,
+    /*
+     * O texto ditado sai do PROMPT QUE VAI SER GERADO, não da proposta do
+     * chat: se o corretor editou o campo antes de clicar em gerar, foi a
+     * versão dele que ele aprovou — e derivar aqui é o que garante que as
+     * duas coisas nunca divirjam (a lição do `turnoDeAtendimento`).
+     */
+    textosNaCena: textosEntreAspas(prompt),
     referencias,
     largura: formato.largura,
     altura: formato.altura,
