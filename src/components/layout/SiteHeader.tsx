@@ -40,7 +40,7 @@ export function SiteHeader() {
         <Link
           href="/empreendimentos"
           aria-label="Ver empreendimentos"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-colors hover:bg-brand-400 sm:hidden botao-vivo"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-colors hover:bg-brand-400 sm:hidden botao-vivo"
         >
           <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

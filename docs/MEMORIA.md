@@ -6910,3 +6910,37 @@ Vault: [[movimento-do-site-publico-e-css-puro]].
 - **404 de `/_vercel/insights` e `/_vercel/speed-insights` em `next start`
   local NÃO é defeito** — são os scripts de analytics que a F0 de
   performance injeta e que só existem na Vercel.
+
+## Auditoria de qualidade do site público (13/09/2026)
+
+Pedido: "invista mais na qualidade". Antes de mexer, medir — um script de
+Playwright passou por 12 rotas em desktop e 360px e listou por página:
+título único, saltos de nível de heading, `<img>` sem alt, imagem ampliada
+além do original, alvo de toque abaixo de 40px, fonte abaixo de 12px,
+campo sem label, botão sem nome, tamanho de título/descrição, estouro de
+largura, erro de console e link interno quebrado.
+
+- **As fotos dos corretores têm 120×120 e as do catálogo "foto-1-big" têm
+  320×320.** Medido baixando os originais do Storage. O cartão de equipe
+  em 4:3 (da manhã do mesmo dia) esticava 120px para 370 — foto embaçada
+  num cartão de "profissional". Virou retrato CIRCULAR de 128px sobre faixa
+  de marca: mostra a foto no tamanho que ela tem. **O catálogo continua
+  com originais de 320px em vários imóveis** — é dado; código não inventa
+  pixel. Pendência de cadastro: subir fotos maiores.
+- **A listagem e a página de região pulavam de h1 para h3** — o cartão do
+  imóvel cravava `<h3>`. Virou prop `nivel` (padrão h3; h2 onde o cartão é
+  a primeira subdivisão sob o h1). Leitor de tela anuncia o salto; olho não.
+- **Alvos de toque abaixo de 40px** em oito lugares: links do rodapé
+  (navegação, telefones, redes, "Área do corretor"), links de texto com
+  seta na home, pílulas do filtro do mapa, controles de zoom do Leaflet
+  (30px de fábrica), "Como chegar", nome do corretor. Todos com `min-h-11`
+  ou 40px; o Leaflet via CSS global.
+- **Textos abaixo de 12px**: CRECI no cartão, rótulo da página do mapa,
+  contagem nos cartões de região, atribuição do Leaflet (10px, o menor do
+  site). Todos para 12px, a atribuição para 11px.
+- **Os únicos 404 locais são `/_vercel/insights` e `/_vercel/speed-insights`**
+  — scripts que só existem na Vercel. Filtrar antes de acusar.
+- **Régua:** auditar por MEDIÇÃO, não por olhar tela a tela; a lista do
+  que sai de um script em 60 s é diferente da que sai de uma inspeção
+  visual, e a primeira achou o que a segunda tinha deixado passar na
+  mesma manhã (o cartão 4:3).

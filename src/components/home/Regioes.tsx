@@ -75,7 +75,7 @@ export function Regioes({ catalogo }: { catalogo: Empreendimento[] }) {
                       <h3 className="font-display min-w-0 text-lg leading-tight font-bold break-words text-white">
                         {regiao.nome}
                       </h3>
-                      <span className="shrink-0 rounded-full border border-white/25 bg-black/55 px-2.5 py-0.5 text-[11px] font-semibold text-white tabular-nums backdrop-blur-md">
+                      <span className="shrink-0 rounded-full border border-white/25 bg-black/55 px-2.5 py-0.5 text-xs font-semibold text-white tabular-nums backdrop-blur-md">
                         {regiao.imoveis.length}
                       </span>
                     </div>

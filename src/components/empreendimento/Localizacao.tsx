@@ -40,7 +40,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
                 href={comoChegar}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-fluid-sm inline-flex items-center gap-1.5 font-medium text-acento-suave underline-offset-4 hover:underline"
+                className="text-fluid-sm inline-flex min-h-11 items-center gap-1.5 font-medium text-acento-suave underline-offset-4 hover:underline"
               >
                 <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-4 w-4">
                   <path

@@ -190,7 +190,7 @@ export default async function PaginaFinanciamento() {
               Ainda com dúvida?{" "}
               <Link
                 href="/corretores"
-                className="text-acento-suave font-medium underline-offset-4 hover:underline"
+                className="text-acento-suave font-medium underline-offset-4 hover:underline inline-flex min-h-11 items-center"
               >
                 Fale com um corretor da equipe
               </Link>{" "}

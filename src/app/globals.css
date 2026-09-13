@@ -1656,6 +1656,17 @@
   box-shadow: var(--shadow-painel-alto) !important;
 }
 
+/* Alvo de 40px no toque (auditoria de 13/09: o Leaflet nasce com 30px) e
+   atribuição legível — 10px era o menor texto do site inteiro. */
+.leaflet-touch .leaflet-bar a,
+.leaflet-bar a {
+  width: 40px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+}
+.leaflet-control-attribution {
+  font-size: 11px !important;
+}
 .leaflet-control-zoom-in,
 .leaflet-control-zoom-out {
   background: transparent !important;

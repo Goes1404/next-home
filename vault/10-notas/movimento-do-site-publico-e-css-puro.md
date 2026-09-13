@@ -52,6 +52,15 @@ apertando o bundle (`bundle:teto`). Tudo aqui é CSS.
 - Sem estouro de largura; os únicos 404 locais são `/_vercel/insights` e
   `/_vercel/speed-insights`, que só existem na Vercel.
 
+## A auditoria do mesmo dia
+
+Depois do movimento, uma varredura por script (12 rotas × 2 viewports)
+achou o que a inspeção visual não tinha visto: fotos de corretor de 120px
+esticadas a 370 (cartão virou retrato circular no tamanho da foto), salto
+de h1 para h3 na listagem (o cartão ganhou prop `nivel`), oito alvos de
+toque abaixo de 40px e quatro textos abaixo de 12px. Detalhe em
+`docs/MEMORIA.md` ("Auditoria de qualidade do site público").
+
 ## Relacionadas
 - [[movimento-do-painel-tem-regua]]
 - [[o-conteudo-aparece-antes-do-javascript]]

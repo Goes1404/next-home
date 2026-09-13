@@ -56,12 +56,11 @@ const ICONE_WHATSAPP = (
  *
  * `compacto` (home): uma linha com avatar, nome e CRECI — porta para o perfil.
  *
- * Completo (equipe, 13/09/2026, "deixar mais profissional"): a FOTO vira o
- * herói do cartão, em 4:3 no topo, com o CRECI como selo sobre ela; embaixo,
- * nome, atuação (número de imóveis + cidades) e a bio em duas linhas quando
- * existe. Duas saídas de tamanho de polegar: WhatsApp (primária) e perfil.
- * Sem foto, o retrato é um monograma sobre degradê da marca — nunca um
- * quadro vazio nem um ícone genérico de pessoa.
+ * Completo (equipe, 13/09/2026, "deixar mais profissional"): faixa de marca
+ * com o retrato CIRCULAR de 128px (as fotos cadastradas têm 120px — em 4:3
+ * elas embaçavam), nome, CRECI, atuação (número de imóveis + cidades) e a
+ * bio em duas linhas quando existe. Duas saídas de tamanho de polegar:
+ * WhatsApp (primária) e perfil. Sem foto, monograma no mesmo círculo.
  */
 export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps) {
   if (compacto) {
@@ -101,40 +100,47 @@ export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps)
 
   return (
     <article className="cartao group flex h-full flex-col overflow-hidden transition-transform duration-300 ease-[var(--ease-out-quart)] hover:-translate-y-0.5">
-      {/* Retrato: 4:3, com o selo do CRECI sobre a foto. Tinta fixa no selo
-          (fundo escuro, texto claro) porque ele flutua sobre imagem, e token
-          de tema sobre foto some no tema claro. */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-elevado">
-        {corretor.fotoUrl ? (
-          <Image
-            src={corretor.fotoUrl}
-            alt={`Foto de ${corretor.nome}`}
-            fill
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover object-top transition-transform duration-700 ease-[var(--ease-out-quart)] group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div
-            aria-hidden
-            className="font-display from-brand-500 via-brand-600 to-brand-800 flex h-full w-full items-center justify-center bg-gradient-to-br text-5xl text-mist-50"
-          >
-            {iniciais(corretor.nome)}
-          </div>
-        )}
-        <span className="absolute top-3 left-3 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold tracking-[0.12em] text-mist-50 uppercase backdrop-blur">
-          CRECI {corretor.creci}
+      {/* Retrato CIRCULAR de 128px sobre uma faixa de marca, não foto 4:3.
+          Medido em 13/09/2026: as fotos cadastradas têm 120×120 — esticadas
+          a 370px de largura ficavam embaçadas, e foto embaçada num cartão de
+          "profissional" é o oposto do pedido. O círculo mostra a foto no
+          tamanho que ela tem; a faixa em degradê dá o peso visual que a foto
+          grande daria. Sem foto: monograma no mesmo círculo. */}
+      <div className="from-brand-600 via-brand-700 to-brand-900 relative flex h-40 items-end justify-center bg-gradient-to-br">
+        <span
+          aria-hidden
+          className="bg-acento-forte/25 pointer-events-none absolute -top-10 -right-10 size-40 rounded-full blur-2xl"
+        />
+        <span className="ring-superficie relative -mb-12 flex size-32 items-center justify-center overflow-hidden rounded-full bg-elevado shadow-lg ring-4">
+          {corretor.fotoUrl ? (
+            <Image
+              src={corretor.fotoUrl}
+              alt={`Foto de ${corretor.nome}`}
+              width={128}
+              height={128}
+              sizes="128px"
+              className="size-full object-cover"
+            />
+          ) : (
+            <span aria-hidden className="font-display from-brand-500 to-brand-700 flex size-full items-center justify-center bg-gradient-to-br text-4xl text-mist-50">
+              {iniciais(corretor.nome)}
+            </span>
+          )}
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 px-5 pt-5 pb-5">
-        <h2 className="font-display text-fluid-lg text-titulo leading-tight">
-          <Link
-            href={`/corretores/${corretor.slug}`}
-            className="group-hover:text-acento-suave transition-colors"
-          >
-            {corretor.nome}
-          </Link>
-        </h2>
+      <div className="flex flex-1 flex-col gap-3 px-5 pt-16 pb-5 text-center">
+        <div>
+          <h2 className="font-display text-fluid-lg text-titulo leading-tight">
+            <Link
+              href={`/corretores/${corretor.slug}`}
+              className="group-hover:text-acento-suave inline-block py-2 transition-colors"
+            >
+              {corretor.nome}
+            </Link>
+          </h2>
+          <p className="text-xs text-legenda mt-1 tracking-[0.12em] uppercase">CRECI {corretor.creci}</p>
+        </div>
 
         {/* Atuação: número em destaque e cidades em seguida — o que se lê
             mais rápido varrendo sete cartões. Sem atuação apurada, a frase
@@ -150,6 +156,7 @@ export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps)
         </p>
 
         {bio && <p className="text-fluid-sm text-corpo-suave line-clamp-2 text-pretty">{bio}</p>}
+
 
         <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
           <Link

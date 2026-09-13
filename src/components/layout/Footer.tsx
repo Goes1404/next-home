@@ -48,7 +48,7 @@ export async function Footer() {
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="text-fluid-sm text-legenda transition-colors hover:text-acento-suave"
+                  className="text-fluid-sm text-legenda inline-flex min-h-11 items-center transition-colors hover:text-acento-suave"
                 >
                   {link.label}
                 </Link>
@@ -67,7 +67,7 @@ export async function Footer() {
                   href={linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pelo site.`)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-fluid-sm text-legenda transition-colors hover:text-acento-suave"
+                  className="text-fluid-sm text-legenda inline-flex min-h-11 items-center transition-colors hover:text-acento-suave"
                 >
                   Falar com {corretorAtivo.nome}
                 </a>
@@ -79,7 +79,7 @@ export async function Footer() {
                     href={linkWhatsapp(undefined, i)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-fluid-sm text-legenda transition-colors hover:text-acento-suave"
+                    className="text-fluid-sm text-legenda inline-flex min-h-11 items-center transition-colors hover:text-acento-suave"
                   >
                     {w.label}
                   </a>
@@ -96,7 +96,7 @@ export async function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={rede.label}
-                className="text-fluid-xs text-tenue transition-colors hover:text-acento-suave"
+                className="text-fluid-xs text-tenue inline-flex min-h-11 items-center transition-colors hover:text-acento-suave"
               >
                 {rede.label}
               </a>
@@ -126,7 +126,7 @@ export async function Footer() {
         */}
         <Link
           href="/corretor"
-          className="inline-flex items-center gap-2 rounded-full border border-linha/15 px-4 py-2 text-corpo-suave transition-colors hover:border-brand-300/50 hover:text-acento-suave"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-linha/15 px-4 py-2 text-corpo-suave transition-colors hover:border-brand-300/50 hover:text-acento-suave"
         >
           <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" aria-hidden className="h-3.5 w-3.5">
             <path
