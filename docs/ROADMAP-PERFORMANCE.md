@@ -20,16 +20,20 @@ de planejar" e "uma rodada não separa regressão de variância".
 | F2 — Cache e servidor | feita em 13/09 (menos a casca estática) | `72f6424` + 0112 | cache por etiqueta, proxy sem Auth no público, poster do fundo no SSR, prefetch com intenção, 23 índices e 27 policies no banco |
 | F2b — Casca estática (Cache Components / PPR) | pendente | — | exige `cacheComponents`, que muda o contrato das 50 rotas; fazer com o painel verificável (credencial de E2E) |
 | F3 — Menos JavaScript | feita em 13/09 (RSC e laços; o bundle em si fica para a F3b) | `77959b5` | HTML da home 96 → 27 KB gz (`PontoDoMapa`), globo só nasce perto da viewport e dorme fora dela, laços das camadas e do header só trabalham quando algo rolou, cards sem backdrop-filter |
-| F4 — Painel como app | parte segura feita em 13/09 | ver commit | Chat e painel do consultor por `next/dynamic` no toque (Pessoas 1.030 → ~600 KB de JS pelo manifesto), sessão por `getClaims()`, contagem do funil deduplicada, `loading.tsx` em Pessoas. Conversas em 2 estágios, janela de 60 mensagens, `revalidateTag` e `useOptimistic` ficam para uma sessão com login |
-| F5 — Fluidez percebida | pendente | — | |
+| F3b — O bundle em si | pendente | — | supabase-js (245 KB) e GSAP (111 KB) saem das rotas que não os usam (o layout raiz monta SmoothScroll/GSAP até no painel); Reveal por CSS + IntersectionObserver se o INP de campo pedir |
+| F4 — Painel como app | parte segura feita em 13/09 | `4b34a2f` | Chat e painel do consultor por `next/dynamic` no toque (Pessoas 1.030 → 991 KB pelo manifesto; o que sobra é supabase-js e GSAP do layout raiz), sessão por `getClaims()`, contagem do funil deduplicada, `loading.tsx` em Pessoas |
+| F4b — Painel, o que exige abrir a tela | pendente | — | Conversas em 2 estágios e janela de 60 mensagens, Realtime OU polling, `revalidateTag` por entidade, `useOptimistic` no lugar dos `router.refresh()`, `useLinkStatus` + `<ViewTransition>` — precisa de credencial de E2E |
+| F5 — Fluidez percebida | pendente | — | inclui a decisão da Fraunces (`display: optional` ou subset): é ela que repinta o `h1` do imóvel aos 4,2 s no celular |
 
-Resultado até aqui (produção, celular, primeira visita — a régua do
-Google): LCP da home **7,39 → 4,53 s**, da listagem **4,59 → 3,21 s**; no
-desktop a home foi de **3,43 → 1,58 s**. TTFB da home de 0,9–2,9 s para
-0,37–0,54 s. Tabela completa em
+Resultado até aqui (produção, funções aquecidas, celular em primeira
+visita — a régua do Google): LCP da home **7,39 → 3,17 s**, da listagem
+**4,59 → 3,67 s**; no desktop a home foi de **3,43 → 1,30 s**. TTFB da home
+de 0,9–2,9 s para ~120 ms; HTML da home de 96 para 27 KB gz. Tabela
+completa em
 [docs/medicoes/2026-09-13-f0-a-f2-antes-e-depois.md](medicoes/2026-09-13-f0-a-f2-antes-e-depois.md).
-O que segura a home em 4,5 s no celular agora é BANDA (783 KB de JS
-disputando 1,6 Mbps com o poster) — é a F3.
+O que ainda segura o celular acima de 2,5 s é BANDA (745–944 KB de JS
+disputando 1,6 Mbps com a imagem do LCP) e a fonte de display chegando
+depois do texto — F3b e F5.
 
 ## Onde estamos
 

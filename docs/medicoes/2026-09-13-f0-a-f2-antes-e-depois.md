@@ -1,4 +1,4 @@
-# F0 a F2 do roadmap de performance — antes e depois (13/09/2026)
+# F0 a F4 do roadmap de performance — antes e depois (13/09/2026)
 
 Produção (`next-home-drab.vercel.app`), medido com `npm run perf`
 (`scripts/perf/medir.ts`): Playwright, celular = Pixel 7 + Slow 4G (150 ms
@@ -86,3 +86,32 @@ navegação; é dentro do ruído da catraca (teto 790 KB pelo manifesto).
 Conferido nos dois sentidos: a corretora com número pareado continua vendo
 a própria instância (1), a própria linha (1) e os 26 empreendimentos; o
 corretor sem instância vê 0 instâncias e a própria linha.
+
+## Depois da F4, com as funções aquecidas (a medição que vale)
+
+As rodadas "depois da F3" acima foram feitas minutos depois do deploy, e
+pagaram função fria e cache frio (o imóvel deu 6,17 s com TTFB de 1,9 s).
+Esta rodada aqueceu cada rota com dois `curl` antes de medir — é o que o
+segundo visitante do dia vê. Celular: 3 rodadas; desktop: 2.
+
+| página | perfil | antes (13/09, manhã) | depois da F4 | elemento LCP |
+|---|---|---|---|---|
+| `/` | celular | 7,39 s | **3,17 s** | poster do fundo |
+| `/empreendimentos` | celular | 4,59 s | **3,67 s** | capa do 1º card |
+| `/empreendimentos/eternity-alphaville` | celular | 4,04 s | 4,20 s | `h1` (repintado quando a Fraunces chega) |
+| `/` | desktop | 3,43 s | **1,30 s** | vinheta (poster) |
+| `/empreendimentos` | desktop | — | **1,67 s** | vinheta (poster) |
+
+TTFB nesta rodada (celular, mediana): home 118 ms, listagem 115 ms, imóvel
+109 ms — contra 0,9–2,9 s na linha de base. HTML da home: 96 → 27 KB gz.
+
+O que ainda segura o celular acima de 2,5 s é BANDA: 745–944 KB de
+JavaScript decodificado disputando 1,6 Mbps com a imagem que é o LCP, e a
+fonte de display (Fraunces, 118 KB) chegando depois do texto e repintando o
+`h1` maior — é o que faz o LCP do imóvel ser o `h1` aos 4,2 s. As duas
+frentes são a F3b (o bundle em si: supabase-js e GSAP fora do que a rota
+não usa) e a F5 (`display: optional` ou subset menor para a Fraunces —
+decisão de marca, porque muda a primeira visita em rede lenta).
+
+Os arquivos brutos desta rodada: `perf-2026-09-13-celular-final-aquecido.*`
+e `perf-2026-09-13-desktop-final-aquecido.*`.

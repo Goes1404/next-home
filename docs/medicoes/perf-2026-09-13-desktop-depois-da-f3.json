@@ -1,0 +1,284 @@
+[
+  {
+    "pagina": "/",
+    "perfil": "desktop",
+    "rodadas": [
+      {
+        "lcp": 1404,
+        "lcpElemento": "video.h-full.w-full",
+        "cls": 0,
+        "ttfb": 124.5,
+        "domContentLoaded": 1073.5999999940395,
+        "load": 1131.0999999940395,
+        "tarefasLongasMs": 80,
+        "html": {
+          "transfer": 28036,
+          "decoded": 190219
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "css": {
+            "n": 2,
+            "transfer": 30351,
+            "decoded": 182702
+          },
+          "imagem": {
+            "n": 7,
+            "transfer": 131794,
+            "decoded": 129694
+          },
+          "js": {
+            "n": 17,
+            "transfer": 264461,
+            "decoded": 798446
+          },
+          "rsc-prefetch": {
+            "n": 13,
+            "transfer": 17333,
+            "decoded": 43708
+          },
+          "midia": {
+            "n": 3,
+            "transfer": 737168,
+            "decoded": 736268
+          }
+        }
+      },
+      {
+        "lcp": 1464,
+        "lcpElemento": "video.h-full.w-full",
+        "cls": 0,
+        "ttfb": 114,
+        "domContentLoaded": 1072.1000000238419,
+        "load": 1224.300000011921,
+        "tarefasLongasMs": 172,
+        "html": {
+          "transfer": 27849,
+          "decoded": 190219
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "css": {
+            "n": 2,
+            "transfer": 30351,
+            "decoded": 182702
+          },
+          "imagem": {
+            "n": 7,
+            "transfer": 131794,
+            "decoded": 129694
+          },
+          "js": {
+            "n": 17,
+            "transfer": 264461,
+            "decoded": 798446
+          },
+          "rsc-prefetch": {
+            "n": 13,
+            "transfer": 17329,
+            "decoded": 43708
+          },
+          "midia": {
+            "n": 3,
+            "transfer": 737168,
+            "decoded": 736268
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 1434,
+      "lcpElemento": "video.h-full.w-full",
+      "cls": 0,
+      "ttfb": 119.25,
+      "domContentLoaded": 1072.8500000089407,
+      "load": 1177.7000000029802,
+      "tarefasLongasMs": 126,
+      "html": {
+        "transfer": 27942.5,
+        "decoded": 190219
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "css": {
+          "n": 2,
+          "transfer": 30351,
+          "decoded": 182702
+        },
+        "imagem": {
+          "n": 7,
+          "transfer": 131794,
+          "decoded": 129694
+        },
+        "js": {
+          "n": 17,
+          "transfer": 264461,
+          "decoded": 798446
+        },
+        "rsc-prefetch": {
+          "n": 13,
+          "transfer": 17331,
+          "decoded": 43708
+        },
+        "midia": {
+          "n": 3,
+          "transfer": 737168,
+          "decoded": 736268
+        }
+      }
+    }
+  },
+  {
+    "pagina": "/empreendimentos",
+    "perfil": "desktop",
+    "rodadas": [
+      {
+        "lcp": 2092,
+        "lcpElemento": "video.h-full.w-full",
+        "cls": 0,
+        "ttfb": 145.80000001192093,
+        "domContentLoaded": 1313.0999999940395,
+        "load": 1508.800000011921,
+        "tarefasLongasMs": 28,
+        "html": {
+          "transfer": 27788,
+          "decoded": 308540
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "css": {
+            "n": 2,
+            "transfer": 30351,
+            "decoded": 182702
+          },
+          "js": {
+            "n": 16,
+            "transfer": 250919,
+            "decoded": 762960
+          },
+          "imagem": {
+            "n": 21,
+            "transfer": 408198,
+            "decoded": 401898
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 736568,
+            "decoded": 736268
+          },
+          "rsc-prefetch": {
+            "n": 9,
+            "transfer": 10586,
+            "decoded": 21009
+          }
+        }
+      },
+      {
+        "lcp": 1636,
+        "lcpElemento": "video.h-full.w-full",
+        "cls": 0,
+        "ttfb": 117.59999999403954,
+        "domContentLoaded": 1064.8999999761581,
+        "load": 1766.3999999761581,
+        "tarefasLongasMs": 169,
+        "html": {
+          "transfer": 27751,
+          "decoded": 308540
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "css": {
+            "n": 2,
+            "transfer": 30351,
+            "decoded": 182702
+          },
+          "js": {
+            "n": 16,
+            "transfer": 250919,
+            "decoded": 762960
+          },
+          "imagem": {
+            "n": 21,
+            "transfer": 408198,
+            "decoded": 401898
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 736568,
+            "decoded": 736268
+          },
+          "rsc-prefetch": {
+            "n": 9,
+            "transfer": 10581,
+            "decoded": 21009
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 1864,
+      "lcpElemento": "video.h-full.w-full",
+      "cls": 0,
+      "ttfb": 131.70000000298023,
+      "domContentLoaded": 1188.9999999850988,
+      "load": 1637.5999999940395,
+      "tarefasLongasMs": 98.5,
+      "html": {
+        "transfer": 27769.5,
+        "decoded": 308540
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "css": {
+          "n": 2,
+          "transfer": 30351,
+          "decoded": 182702
+        },
+        "js": {
+          "n": 16,
+          "transfer": 250919,
+          "decoded": 762960
+        },
+        "imagem": {
+          "n": 21,
+          "transfer": 408198,
+          "decoded": 401898
+        },
+        "midia": {
+          "n": 1,
+          "transfer": 736568,
+          "decoded": 736268
+        },
+        "rsc-prefetch": {
+          "n": 9,
+          "transfer": 10583.5,
+          "decoded": 21009
+        }
+      }
+    }
+  }
+]
