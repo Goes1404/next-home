@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
+import { estaNaTela } from "./estaNaTela";
 
 type Tag = "h1" | "h2" | "h3" | "p";
 
@@ -15,9 +16,11 @@ type Tag = "h1" | "h2" | "h3" | "p";
  * `document.fonts.ready`: dividir antes de a fonte display carregar mede
  * linhas com a fonte errada e as quebras ficam nos lugares errados.
  *
- * Segue o contrato de `.gsap-pending` do Reveal: nasce invisível via CSS e
- * só aparece quando o GSAP assume — com `motion-off`, o CSS devolve a
- * opacidade e o título simplesmente está lá.
+ * Nasce VISÍVEL, como o Reveal (regra de 13/09/2026, ver estaNaTela.ts): o
+ * título que já está na tela quando o JS chega fica como o servidor o
+ * entregou — é ele o LCP de várias páginas, e escondê-lo até o SplitText
+ * rodar custava segundos. Só o título ainda fora da viewport ganha a subida
+ * de dentro da máscara.
  */
 export function TituloEditorial({
   children,
@@ -44,10 +47,8 @@ export function TituloEditorial({
     const el = ref.current;
     if (!el) return;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      el.classList.remove("gsap-pending");
-      return;
-    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (estaNaTela(el)) return;
 
     gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -70,8 +71,6 @@ export function TituloEditorial({
           mask: porPalavra ? "words" : "lines",
         });
 
-        el.classList.remove("gsap-pending");
-
         gsap.from(porPalavra ? split.words : split.lines, {
           yPercent: 110,
           duration: porPalavra ? 0.9 : 1.1,
@@ -91,9 +90,9 @@ export function TituloEditorial({
   }, [delay, por]);
 
   return (
-    // Junção crua de propósito: o twMerge do `cn` não conhece os utilitários
+    // `className` cru, sem `cn`: o twMerge não conhece os utilitários
     // customizados `text-fluid-*` e os descarta ao ver um `text-<cor>` junto.
-    <TagName ref={ref as never} className={["gsap-pending", className].filter(Boolean).join(" ")}>
+    <TagName ref={ref as never} className={className}>
       {children}
     </TagName>
   );

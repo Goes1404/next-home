@@ -140,20 +140,21 @@ export default async function HomeInstitucional() {
               ROLE (esta seção, agora `relative`) — o fundo é `fixed` e não
               serve de referência de scroll. */}
           <ParallaxFundoHome />
-          {/* `data-abertura`: quem a AberturaHome conduz quando a vinheta
-              sai de cena. Estes itens NÃO usam Reveal — dois donos da mesma
-              opacidade é o caminho curto para o elemento sumir. A classe
-              `gsap-pending` mantém o contrato de sempre: nascem invisíveis e
-              voltam sozinhos se o JS falhar (`.no-js`/`.motion-off`). */}
-          {/* Camada POR FORA dos `data-abertura`: a AberturaHome é dona da
-              opacidade deles, a camada só escreve transform, e os dois nunca
-              dividem o mesmo nó. Título a -0.22 e busca a -0.10 — o título
+          {/* `data-abertura="n"`: a chegada é CSS puro (`@keyframes chegada`
+              em globals.css), escalonada pelo número — roda antes de qualquer
+              JavaScript e fica pausada só enquanto a vinheta cobre a tela.
+              Estes itens NÃO usam Reveal — dois donos da mesma opacidade é o
+              caminho curto para o elemento sumir. Até 13/09/2026 nasciam
+              invisíveis (`.gsap-pending`) esperando o GSAP: 10,6 s de LCP. */}
+          {/* Camada POR FORA dos `data-abertura`: o CSS de chegada é dono da
+              opacidade e do transform deles, a camada só escreve transform
+              no PRÓPRIO nó, e os dois nunca dividem o mesmo nó. Título a -0.22 e busca a -0.10 — o título
               escapa da tela antes, e é essa diferença que se lê como planos
               separados em vez de um bloco só subindo. */}
           <Camada velocidade={-0.22} className="w-full max-w-4xl text-center">
             <p
-              data-abertura
-              className="gsap-pending so-para-leitor text-fluid-xs sm:mb-4 font-medium tracking-[0.2em] text-acento-suave uppercase"
+              data-abertura="0"
+              className="so-para-leitor text-fluid-xs sm:mb-4 font-medium tracking-[0.2em] text-acento-suave uppercase"
             >
               Imóveis & Oportunidades · Alphaville, Barueri e Região
             </p>
@@ -161,14 +162,14 @@ export default async function HomeInstitucional() {
                 77 caracteres — seis linhas de display num celular — e não dizia
                 nada verificável. A promessa longa desceu para o subtítulo. */}
             <h1
-              data-abertura
-              className="gsap-pending so-para-leitor text-fluid-4xl leading-[1.05] tracking-tight text-titulo"
+              data-abertura="1"
+              className="so-para-leitor text-fluid-4xl leading-[1.05] tracking-tight text-titulo"
             >
               {todos.length} imóveis em Alphaville, Barueri e região.
             </h1>
             <p
-              data-abertura
-              className="gsap-pending so-para-leitor text-fluid-base mx-auto sm:mt-6 max-w-xl text-corpo-suave"
+              data-abertura="2"
+              className="so-para-leitor text-fluid-base mx-auto sm:mt-6 max-w-xl text-corpo-suave"
             >
               Lançamentos na planta e prontos para morar, com condições
               facilitadas e atendimento direto no WhatsApp.
@@ -176,7 +177,7 @@ export default async function HomeInstitucional() {
           </Camada>
 
           <Camada velocidade={-0.1} className="mt-8 w-full max-w-3xl sm:mt-10">
-            <div data-abertura className="gsap-pending">
+            <div data-abertura="3">
               <GlassSurface preset="painel" className="px-5 py-5 sm:px-7 sm:py-7">
                 <FiltroForm
                   compacto
@@ -194,10 +195,9 @@ export default async function HomeInstitucional() {
               não rolava por hábito via uma busca e o fim. O rótulo conta o
               que há lá: é informação, não "role para baixo".
 
-              `data-abertura` + `gsap-pending` pelo mesmo contrato dos irmãos:
-              a AberturaHome é dona da opacidade (ela varre `[data-abertura]`)
-              e o elemento nasce invisível, voltando sozinho se o JS falhar. */}
-          <div data-abertura className="gsap-pending">
+              `data-abertura="4"` pelo mesmo contrato dos irmãos: chega por
+              CSS, por último, e está lá mesmo sem JavaScript. */}
+          <div data-abertura="4">
             <ScrollCue
               alvo="destaques"
               posicao="fluxo"

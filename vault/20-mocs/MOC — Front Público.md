@@ -47,6 +47,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 
 ## Performance
 - [[o-site-e-lento-por-desenho-nao-por-peso]] — LCP de 10,6 s no celular medido em 13/09; três causas estruturais e o roadmap em `docs/ROADMAP-PERFORMANCE.md`
+- [[o-conteudo-aparece-antes-do-javascript]] — F1: o contrato `.gsap-pending` invertido (nasce visível, `estaNaTela` decide), hero por CSS, vinheta só desktop e dispensável por rolagem (13/09)
 
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]

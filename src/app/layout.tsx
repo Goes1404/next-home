@@ -22,7 +22,12 @@ const fraunces = Fraunces({
   subsets: ["latin"],
   display: "swap",
   weight: "variable",
-  axes: ["SOFT", "opsz"],
+  // Só `opsz` (tamanho óptico, que o navegador aplica sozinho pelo
+  // `font-optical-sizing: auto`). O eixo `SOFT` saiu em 13/09/2026: nenhuma
+  // regra do CSS o usava (`grep SOFT src/app/globals.css` = zero) e ele
+  // engordava a fonte pré-carregada em toda página — 118 KB, o maior
+  // arquivo do primeiro carregamento depois do próprio JS.
+  axes: ["opsz"],
 });
 
 /**
@@ -162,11 +167,11 @@ export default async function RootLayout({
        * desfazer as duas linhas de `generateViewport` acima.
        */
       data-tema={tema ?? "claro"}
-      // Dois scripts inline mexem em atributos do <html> antes da hidratação
-      // de propósito (o `no-js` abaixo e o `data-intro-ativa` do Preloader);
-      // sem isto, o dev console acusa mismatch a cada carga.
+      // O script inline do Preloader carimba `data-intro-ativa` no <html>
+      // antes da hidratação, de propósito; sem isto, o dev console acusa
+      // mismatch a cada carga.
       suppressHydrationWarning
-      className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} no-js h-full antialiased`}
+      className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         {/* Primeiro parável do documento: quem navega por teclado pula o
@@ -178,16 +183,10 @@ export default async function RootLayout({
         >
           Pular para o conteúdo
         </a>
-        {/* A regra `.no-js .gsap-pending` do globals.css existia sem ninguém
-            aplicar a classe: sem JS, todo conteúdo animado ficava invisível
-            para sempre (opacity 0). O contrato correto é o clássico: o HTML
-            nasce `no-js` e o primeiro script remove — roda antes da pintura,
-            então com JS ligado a classe nunca chega a valer. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `document.documentElement.classList.remove("no-js")`,
-          }}
-        />
+        {/* O contrato `.no-js` (HTML nasce com a classe, o primeiro script
+            remove) saiu em 13/09/2026 junto com o `.gsap-pending` que ele
+            servia: nenhum conteúdo nasce mais invisível esperando
+            JavaScript, então não há o que devolver quando ele falta. */}
         <GlassSvgDefs />
         <SmoothScroll />
         {/* A onda entre páginas mora AQUI, e não nos layouts de grupo: ir da

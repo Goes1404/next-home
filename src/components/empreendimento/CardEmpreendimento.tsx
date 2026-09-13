@@ -63,6 +63,12 @@ export function CardEmpreendimento({
                 fill
                 sizes={sizes}
                 priority={prioridade}
+                // `priority` sozinho só gera o <link rel="preload">; o
+                // atributo no <img> é o que faz o Chrome buscar a capa ANTES
+                // dos scripts. A listagem reprovava na checagem de LCP
+                // ("fetchpriority=high: FAILED", 13/09/2026) com `priority`
+                // ligado — o que dá a prioridade é este.
+                fetchPriority={prioridade ? "high" : undefined}
                 placeholder={e.capa.blurDataUrl ? "blur" : "empty"}
                 blurDataURL={e.capa.blurDataUrl ?? undefined}
                 className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"

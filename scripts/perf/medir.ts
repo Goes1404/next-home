@@ -36,6 +36,11 @@
  *   npm run perf -- --base=http://localhost:3000
  *   npm run perf -- --rodadas=5 --perfil=celular --sem-vinheta
  *   npm run perf -- --paginas=/,/empreendimentos --sem-gravar
+ *   npm run perf -- --rotulo=antes-da-f2    # nome do arquivo ganha o rótulo
+ *
+ * O arquivo de saída é por data — duas rodadas no mesmo dia se SOBRESCREVEM
+ * (a armadilha que o eval de conversa já mordeu três vezes). `--rotulo` é o
+ * que separa "antes" de "depois" quando os dois cabem numa tarde.
  *
  * No Git Bash do Windows, `--paginas=/` vira `C:/Program Files/Git/` (a
  * conversão de caminho do MSYS) — rode com `MSYS_NO_PATHCONV=1` na frente
@@ -90,6 +95,7 @@ function lerArgs() {
     perfis,
     semVinheta: args.has("sem-vinheta"),
     gravar: !args.has("sem-gravar"),
+    rotulo: args.get("rotulo") ?? "",
   };
 }
 
@@ -273,7 +279,7 @@ async function main() {
 
   if (cfg.gravar) {
     const data = new Date().toISOString().slice(0, 10);
-    const sufixo = cfg.semVinheta ? "-sem-vinheta" : "";
+    const sufixo = (cfg.semVinheta ? "-sem-vinheta" : "") + (cfg.rotulo ? `-${cfg.rotulo}` : "");
     const dir = join(process.cwd(), "docs", "medicoes");
     mkdirSync(dir, { recursive: true });
     const nome = `perf-${data}${sufixo}`;

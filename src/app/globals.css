@@ -1091,14 +1091,43 @@
     }
   }
 
-  /* Elementos animados pelo GSAP começam invisíveis; a classe é removida
-     assim que o ScrollTrigger assume, e some sozinha se o JS falhar. */
-  .gsap-pending {
-    opacity: 0;
+  /*
+   * A chegada do hero da home SEM JavaScript (13/09/2026).
+   *
+   * Até aqui os elementos do hero nasciam com `.gsap-pending` (opacidade 0)
+   * e esperavam o GSAP hidratar para aparecer — medido no celular de
+   * referência, 10,6 s de LCP, 99% "atraso de renderização". Agora a
+   * entrada é animação CSS: roda assim que a folha chega, antes de qualquer
+   * script, e `both` garante o estado final se o JS nunca vier.
+   *
+   * Enquanto a vinheta cobre a tela (`data-intro-ativa`, só desktop e só na
+   * primeira visita) a animação fica PAUSADA no primeiro quadro; a queda do
+   * atributo a solta — é o mesmo gatilho que o `main > *` acima usa.
+   * `--ordem` escalona a chegada (título, subtítulo, busca, pista de
+   * rolagem), 0,16 s entre irmãos, começando 0,45 s depois de o fundo
+   * começar a recuar (ver AberturaHome).
+   */
+  [data-abertura] {
+    animation: chegada 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(0.45s + var(--ordem, 0) * 0.16s);
   }
-  .no-js .gsap-pending,
-  .motion-off .gsap-pending {
-    opacity: 1;
+  [data-abertura="1"] { --ordem: 1; }
+  [data-abertura="2"] { --ordem: 2; }
+  [data-abertura="3"] { --ordem: 3; }
+  [data-abertura="4"] { --ordem: 4; }
+  :root[data-intro-ativa] [data-abertura] {
+    animation-play-state: paused;
+  }
+  @keyframes chegada {
+    from {
+      opacity: 0;
+      transform: translateY(42px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-abertura] {
+      animation: none;
+    }
   }
 
   /* FORA DA TELA, DENTRO DO HTML.

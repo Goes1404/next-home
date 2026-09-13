@@ -110,6 +110,12 @@ export const HERO_VIDEO_WEBM_URL: string | null = null;
 /** Vinheta da logo exibida como preloader na primeira visita da sessão (ver Preloader.tsx). */
 export const INTRO_VIDEO_URL = "/video/intro.mp4";
 export const INTRO_VIDEO_WEBM_URL = "/video/intro.webm";
+/**
+ * Primeiro quadro da vinheta (JPEG, 12 KB, `ffmpeg -ss 0.15 -frames:v 1`).
+ * É o que o navegador pinta antes de o WebM chegar — e o que o Chrome mede
+ * como LCP da primeira visita no desktop, em vez de uma tela em branco.
+ */
+export const INTRO_POSTER_URL = "/video/intro-poster.jpg";
 
 /**
  * Vinheta institucional usada como fundo da home NO CELULAR (26/08/2026).

@@ -18,8 +18,9 @@ export function SmoothScroll() {
     const reduzido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     gsap.registerPlugin(ScrollTrigger);
-    // Sinaliza para o CSS que as animações estão desligadas, para que os
-    // elementos com `.gsap-pending` apareçam mesmo sem GSAP atuando.
+    // Sinaliza para o resto do JS que as animações estão desligadas (o
+    // controlador de camadas lê a classe). O CSS não depende mais dela desde
+    // 13/09/2026: nenhum conteúdo nasce invisível esperando o GSAP.
     document.documentElement.classList.toggle("motion-off", reduzido);
 
     if (reduzido) {
