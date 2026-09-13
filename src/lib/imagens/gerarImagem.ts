@@ -40,55 +40,61 @@ const URL_EDITAR = "https://api.openai.com/v1/images/edits";
 const MODELO_IMAGEM_PADRAO = "gpt-image-2";
 
 /**
- * O que o modelo pode escrever na cena — e o que ele NUNCA escreve.
+ * O que o modelo escreve na cena.
  *
- * ## A cláusula nasceu absoluta, e a medição a abriu
+ * ## A cláusula existiu, e foi RETIRADA por decisão de produto (11/09/2026)
  *
  * Na primeira geração de verdade desta tela o modelo desenhou uma placa com o
  * nome **"VISTA ALTO"** numa fachada que ninguém batizou. A reação foi proibir
- * todo texto — o que resolveu a invenção e custou uma capacidade real.
+ * todo texto — e isso resolveu a invenção matando uma capacidade central: peça
+ * publicitária é feita de texto. Medido em 11/09: `textoNaCena`, a única
+ * fresta que permitia escrita, **nunca teve um chamador**, então 100% das
+ * imagens saíam sob a proibição e anúncio nenhum era possível.
  *
- * Medido em 03/09/2026, quatro renders com texto em português pedido
- * literalmente: **acento correto em 4 de 4** (ç, é, ã), inclusive na qualidade
- * Rápida a R$ 0,027. Texto literal em 3 de 4 — uma trocou "o" por "O". Ou
- * seja: o modelo escreve português bem, mas trata o texto como sugestão
- * forte, não como literal.
+ * Hoje o modelo escreve livremente. O risco está registrado na spec e foi
+ * aceito pelo dono do produto: ele vai inventar nome, metragem e preço quando
+ * achar que a peça pede, e **quem publica responde pelo que está escrito**.
  *
- * ## Daí o recorte
+ * ## O que sobrou aqui, e por que sobrou
  *
- * `textoNaCena` permite o que o corretor DIGITOU, e só isso. O que ele não
- * digitou continua proibido — é a invenção que a cláusula veio impedir, e ela
- * não deixou de existir por o modelo saber escrever.
+ * Quando o corretor DITA o texto (entre aspas, no próprio pedido), a
+ * soletração entra. Não é preciosismo: medido na F0 de 10/09, com o texto
+ * entre aspas e soletrado o modelo acertou **2 em 2**, contra 3 em 4 sem a
+ * técnica. É a diferença entre a manchete sair certa e sair com letras
+ * trocadas.
  *
- * O que precisa ser EXATO nunca vem por aqui: a ressalva legal de imagem
- * ilustrativa é escrita por código em `carimbo.ts`, sobre a imagem pronta, a
- * partir da constante `RESSALVA`. Três em quatro é ótimo para uma manchete e
- * inaceitável para um aviso legal — e o mesmo valeria para um telefone.
+ * O que precisa ser EXATO continua não vindo por aqui: a ressalva legal de
+ * imagem ilustrativa é escrita por código em `carimbo.ts`, sobre a imagem
+ * pronta. Três em quatro é ótimo para uma manchete e inaceitável para um
+ * aviso legal.
  */
-const SEM_TEXTO_ALGUM =
-  "Não escreva nada na imagem: sem texto, letras, números, placas, letreiros, " +
-  "logotipos, marcas, selos de preço ou marca d'água. Nenhuma superfície da " +
-  "cena deve conter escrita.";
-
-function soOTextoPedido(texto: string): string {
+function soOsTextosPedidos(textos: string[]): string {
+  /*
+   * Cada texto entre aspas, separados por ponto e vírgula. Juntar por barra
+   * ou por espaço faz o modelo DESENHAR o separador dentro da peça — o
+   * defeito aparece na imagem, onde custa uma geração paga para descobrir.
+   */
+  const lista = textos.map((t) => `"${t}"`).join("; ");
+  const umSo = textos.length === 1;
   return (
-    `A ÚNICA escrita permitida na imagem é exatamente esta, com a grafia e os ` +
-    `acentos idênticos: "${texto}". Reproduza caractere por caractere, sem ` +
-    `traduzir, sem reescrever e sem mudar maiúsculas. Nenhuma outra palavra, ` +
-    `placa, letreiro, logotipo, marca ou selo de preço pode aparecer.`
+    `Escreva na imagem exatamente ${umSo ? "este texto" : "estes textos"}, com a ` +
+    `grafia e os acentos idênticos: ${lista}. Reproduza caractere por caractere, ` +
+    `sem traduzir, sem reescrever e sem mudar maiúsculas.`
   );
 }
 
 /**
  * O prompt que de fato vai para o provedor.
  *
- * Exportada para ser testável sem rede: a garantia que interessa é que NENHUM
- * caminho chegue ao provedor sem uma das duas cláusulas, e isso se prova em
- * teste, não olhando a tela.
+ * Exportada para ser testável sem rede, e é o ponto ÚNICO por onde os dois
+ * caminhos passam (criação em JSON e edição em multipart) — chamador novo não
+ * tem como escapar dela, que é a mesma razão de `normalizarTelefoneBr` morar
+ * no `provider.ts`.
  */
-export function promptFinal(pedido: string, textoNaCena?: string | null): string {
-  const texto = textoNaCena?.trim();
-  return `${pedido.trim()} ${texto ? soOTextoPedido(texto) : SEM_TEXTO_ALGUM}`;
+export function promptFinal(pedido: string, textosNaCena?: string[] | null): string {
+  const textos = (textosNaCena ?? []).map((t) => t.trim()).filter(Boolean);
+  if (textos.length === 0) return pedido.trim();
+  return `${pedido.trim()} ${soOsTextosPedidos(textos)}`;
 }
 
 /**
@@ -143,11 +149,17 @@ export type PedidoDeImagem = {
   altura: number;
   qualidade: ChaveQualidade;
   /**
-   * O texto que o corretor digitou para aparecer DENTRO da cena. Vazio ou
-   * ausente mantém a proibição total — o padrão continua sendo a arte sem
-   * escrita, com a copy composta por cima.
+   * Os textos que devem aparecer DENTRO da cena, soletrados.
+   *
+   * Plural porque uma peça real tem manchete e apoio ("MUDE AINDA ESTE ANO" e
+   * "63 e 81 m²"), e colá-los numa string só faria o modelo desenhar o
+   * separador. Vazio é o caso comum: aí o modelo escreve o que quiser.
+   *
+   * Quem preenche é a ROTA, a partir do texto entre aspas do prompt que o
+   * corretor aprovou — nunca a proposta do chat, que pode estar velha se ele
+   * editou o campo antes de gerar.
    */
-  textoNaCena?: string | null;
+  textosNaCena?: string[] | null;
   timeoutMs?: number;
 };
 
@@ -185,9 +197,9 @@ export async function gerarImagem(pedido: PedidoDeImagem): Promise<ResultadoImag
   const tamanho = `${pedido.largura}x${pedido.altura}`;
   // A partir daqui ninguém mais vê o texto cru: os dois caminhos abaixo leem
   // deste objeto, então a cláusula não tem como ser pulada por um deles.
-  const comClausula: PedidoDeImagem = {
+  const pedidoFinal: PedidoDeImagem = {
     ...pedido,
-    prompt: promptFinal(pedido.prompt, pedido.textoNaCena),
+    prompt: promptFinal(pedido.prompt, pedido.textosNaCena),
   };
   const controle = new AbortController();
   const alarme = setTimeout(() => controle.abort(), pedido.timeoutMs ?? TIMEOUT_PADRAO_MS);
@@ -200,7 +212,7 @@ export async function gerarImagem(pedido: PedidoDeImagem): Promise<ResultadoImag
       ? await fetch(URL_EDITAR, {
           method: "POST",
           headers: { Authorization: `Bearer ${apiKey}` },
-          body: corpoDeEdicao(comClausula, modelo, tamanho),
+          body: corpoDeEdicao(pedidoFinal, modelo, tamanho),
           signal: controle.signal,
         })
       : await fetch(URL_GERAR, {
@@ -211,7 +223,7 @@ export async function gerarImagem(pedido: PedidoDeImagem): Promise<ResultadoImag
           },
           body: JSON.stringify({
             model: modelo,
-            prompt: comClausula.prompt,
+            prompt: pedidoFinal.prompt,
             size: tamanho,
             quality: pedido.qualidade,
             output_format: "png",

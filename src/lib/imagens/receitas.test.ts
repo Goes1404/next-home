@@ -50,36 +50,58 @@ describe("receitas", () => {
   });
 });
 
-describe("a cláusula anti-invenção", () => {
-  it("sem texto pedido, proíbe TODA escrita — inclusive na receita livre", () => {
+/*
+ * Esta guarda MUDOU DE LADO em 11/09/2026, e o registro importa mais que o
+ * teste: até aqui ela exigia a cláusula `SEM_TEXTO_ALGUM` em toda geração.
+ *
+ * A decisão de produto (spec 2026-09-11-estudio-de-imagem-livre) é texto
+ * LIVRE na imagem: as peças que o corretor usa como referência são
+ * majoritariamente texto, e com a cláusula elas eram impossíveis por
+ * construção. O risco aceito está escrito na spec — a IA vai inventar nome,
+ * metragem e preço quando achar que a peça pede, e a revisão passa a ser
+ * humana.
+ *
+ * O que a guarda protege AGORA é o que sobrou de invariante: nenhum dos dois
+ * caminhos até o provedor manda `pedido.prompt` cru, porque é por
+ * `promptFinal` que passa a soletração do texto ditado — e é ela que faz a
+ * manchete sair com as palavras certas.
+ */
+describe("o texto na cena", () => {
+  it("sem texto ditado, o prompt vai exatamente como o corretor aprovou", () => {
+    // Nada é acrescentado: é isto que faz a ferramenta se comportar como o
+    // ChatGPT, que foi o pedido.
+    expect(promptFinal("um cachorro vestido de Papai Noel")).toBe(
+      "um cachorro vestido de Papai Noel",
+    );
+  });
+
+  it("não sobrou nenhuma proibição de escrita no prompt", () => {
     for (const r of RECEITAS) {
-      const final = promptFinal(montarPedido("uma varanda", r));
-      expect(final.toLowerCase(), r.chave).toContain("não escreva nada na imagem");
-      expect(final.toLowerCase(), r.chave).toContain("letreiros");
+      const final = promptFinal(montarPedido("uma varanda", r)).toLowerCase();
+      expect(final, r.chave).not.toContain("não escreva nada na imagem");
+      expect(final, r.chave).not.toContain("letreiros");
     }
   });
 
-  it("com texto pedido, permite SÓ ele e segue proibindo o resto", () => {
-    /*
-     * A cláusula abriu depois da medição de 03/09: acento correto em 4 de 4
-     * renders. Mas o que o corretor NÃO digitou continua proibido — a placa
-     * "VISTA ALTO" que o modelo inventou é o defeito que a cláusula existe
-     * para impedir, e ele não sumiu por o modelo saber escrever português.
-     */
-    const final = promptFinal("uma fachada", "Conheça o decorado");
-    expect(final).toContain('"Conheça o decorado"');
-    expect(final.toLowerCase()).toContain("única escrita permitida");
-    expect(final.toLowerCase()).toContain("nenhuma outra palavra");
-    // E o pedido literal precisa ser explícito, senão o modelo reescreve.
+  it("com texto ditado, manda soletrar — é a técnica que mediu 2 em 2", () => {
+    const final = promptFinal("fachada ao pôr do sol", ["MUDE AINDA ESTE ANO"]);
+    expect(final).toContain('"MUDE AINDA ESTE ANO"');
     expect(final.toLowerCase()).toMatch(/caractere por caractere|id[êe]nticos/);
   });
 
-  it("texto vazio ou só espaço volta a proibir tudo", () => {
-    // Campo em branco não pode virar "pode escrever o que quiser".
-    for (const vazio of ["", "   ", null, undefined]) {
-      expect(promptFinal("uma varanda", vazio).toLowerCase()).toContain(
-        "não escreva nada na imagem",
-      );
+  it("dois textos ditados saem como LISTA, nunca colados", () => {
+    // Juntar por barra ou por espaço faria o modelo desenhar o separador
+    // dentro da peça — o defeito aparece na imagem, não no teste.
+    const final = promptFinal("arte de feed", ["MANACÁ BARUERI", "63 e 81 m²"]);
+    expect(final).toContain('"MANACÁ BARUERI"');
+    expect(final).toContain('"63 e 81 m²"');
+    expect(final).not.toContain("MANACÁ BARUERI / 63");
+    expect(final).not.toContain("MANACÁ BARUERI 63");
+  });
+
+  it("lista vazia, texto em branco ou nulo não acrescenta nada", () => {
+    for (const nada of [[], ["", "   "], null, undefined]) {
+      expect(promptFinal("uma varanda", nada)).toBe("uma varanda");
     }
   });
 
@@ -88,51 +110,31 @@ describe("a cláusula anti-invenção", () => {
   });
 
   /*
-   * Esta guarda LÊ O CÓDIGO-FONTE, como `gravacaoDeMensagem.test.ts` e
-   * `escalaDoPainel.test.ts`. O motivo é o mesmo: a regressão falha CALADA.
-   *
-   * São dois caminhos até o provedor — criação (JSON) e edição (multipart) —
-   * e basta um deles voltar a ler `pedido.prompt` cru para as imagens daquele
-   * caminho voltarem a nascer com placa inventada. Build passa, tipo passa, a
-   * imagem chega bonita na tela, e só o cliente vê o nome de um
-   * empreendimento que não existe.
+   * As guardas abaixo LEEM O CÓDIGO-FONTE, como `gravacaoDeMensagem.test.ts`
+   * e `escalaDoPainel.test.ts`, porque a regressão falha CALADA: build passa,
+   * tipo passa, a imagem chega bonita na tela.
    */
-  /*
-   * A ressalva legal tem DUAS metades, e as duas são travadas aqui.
-   *
-   * (1) Ela nunca se pede ao modelo generativo. Ele acerta o texto literal
-   *     3 em 4 (medido nesta base; 2 em 2 com aspas e soletração, medido na
-   *     F0) — ótimo para uma manchete, inaceitável para um aviso legal, onde
-   *     uma palavra trocada muda o que a peça afirma ao consumidor.
-   *
-   * (2) Ela SAI, por código. `compor.ts` a desenhava e foi apagado em
-   *     10/09/2026 junto com o caminho de marketing; por algumas horas toda
-   *     arte saiu sem aviso nenhum, e nada nesta esteira reclamou. Hoje quem
-   *     a escreve é `carimbo.ts`, chamado pela rota antes do upload.
-   *
-   * A parte (2) é a que falha CALADA: build passa, tipo passa, a imagem chega
-   * bonita na tela, e só o cliente recebe uma perspectiva de IA sem saber que
-   * é ilustrativa.
-   */
+  it("nenhum dos dois caminhos manda o prompt cru ao provedor", () => {
+    const motor = readFileSync(join(process.cwd(), "src/lib/imagens/gerarImagem.ts"), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+
+    // São dois endpoints: criação (JSON) e edição (multipart). Basta um deles
+    // voltar a ler `pedido.prompt` para a soletração do texto ditado sumir
+    // daquele caminho, e a manchete sair embaralhada só na edição de foto.
+    const montagem = motor.indexOf("const pedidoFinal");
+    expect(montagem, "a montagem do pedido final sumiu do motor").toBeGreaterThan(-1);
+    const depois = motor.slice(motor.indexOf("};", montagem) + 2);
+    expect(depois).not.toMatch(/pedido\.prompt/);
+
+    expect(motor).toMatch(/promptFinal\(pedido\.prompt,\s*pedido\.textosNaCena\)/);
+    expect(motor).toMatch(/corpoDeEdicao\(\s*pedidoFinal/);
+    expect(motor).toMatch(/prompt:\s*pedidoFinal\.prompt/);
+  });
+
   it("a ressalva legal nunca é pedida ao modelo", () => {
     const motor = readFileSync(join(process.cwd(), "src/lib/imagens/gerarImagem.ts"), "utf8");
     expect(motor).not.toMatch(/meramente ilustrativa/i);
-  });
-
-  it("a rota CARIMBA a ressalva, e antes de guardar o arquivo", () => {
-    const rota = readFileSync(join(process.cwd(), "src/app/api/imagens/gerar/route.ts"), "utf8");
-
-    expect(rota).toMatch(/carimbarRessalva\(/);
-
-    /*
-     * Antes do upload, não depois: carimbar depois deixaria no bucket uma
-     * versão sem aviso, e é o arquivo do bucket que a galeria mostra e que o
-     * corretor baixa. O hash também sai dos bytes JÁ carimbados, senão dois
-     * pedidos iguais gerariam nomes diferentes do conteúdo guardado.
-     */
-    expect(rota.indexOf("carimbarRessalva(")).toBeLessThan(rota.indexOf(".upload("));
-    expect(rota).toMatch(/createHash\("sha256"\)\.update\(marcada\.bytes\)/);
-    expect(rota).toMatch(/\.upload\(caminho, marcada\.bytes/);
   });
 
   it("carimbo que falha NÃO sai calado — a tela é obrigada a avisar", () => {
@@ -146,28 +148,5 @@ describe("a cláusula anti-invenção", () => {
       "utf8",
     );
     expect(tela).toMatch(/comRessalva === false/);
-  });
-
-  it("nenhum caminho manda o prompt cru ao provedor", () => {
-    const fonte = readFileSync(join(process.cwd(), "src/lib/imagens/gerarImagem.ts"), "utf8")
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/^\s*\/\/.*$/gm, "");
-
-    /*
-     * A montagem do objeto é a ÚNICA que pode ler o texto cru — então ela sai
-     * inteira antes da checagem, e o que sobra não pode conter `pedido.prompt`.
-     *
-     * Cortar "até a primeira quebra de linha" já falhou aqui: bastou a
-     * construção virar multilinha para a guarda acusar código correto. Terceira
-     * vez que uma guarda desta base tropeça na FORMATAÇÃO do que ela lê.
-     */
-    const montagem = fonte.indexOf("const comClausula");
-    const fimDaMontagem = fonte.indexOf("};", montagem) + 2;
-    const depois = fonte.slice(fimDaMontagem);
-    expect(depois).not.toMatch(/pedido\.prompt/);
-
-    // E os dois caminhos precisam ler do objeto tratado.
-    expect(fonte).toMatch(/corpoDeEdicao\(\s*comClausula/);
-    expect(fonte).toMatch(/prompt:\s*comClausula\.prompt/);
   });
 });
