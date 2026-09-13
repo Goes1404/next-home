@@ -48,10 +48,13 @@ import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOu
  * deles manda a mensagem — a pessoa aprende o formato vendo a resposta.
  */
 const SUGESTOES = [
+  // A primeira ensina a convenção das aspas sem nenhum texto de ajuda: tocar
+  // nela, ver a manchete sair certa, e a regra fica aprendida. A última diz,
+  // sem explicar, que o assunto não precisa ser imóvel.
+  'Arte de feed com a manchete "MUDE AINDA ESTE ANO"',
   "Fachada ao pôr do sol para o feed",
-  "Story de lançamento, público família",
   "Ambiente decorado do zero: sala integrada",
-  "Fundo para post com espaço para texto",
+  "Um cachorro vestido de Papai Noel, foto de estúdio",
 ] as const;
 
 export function ChatDeArte({
@@ -501,6 +504,17 @@ function CartaoDeProposta({
           Está curto demais para render uma imagem boa — e gerar custa. Descreva a cena antes.
         </p>
       )}
+
+      {/*
+        Fixo, não condicional: o risco vale para TODA geração, e aviso que
+        aparece só às vezes ensina que a ausência dele é garantia. Com texto
+        livre na imagem (11/09/2026), nenhuma régua de código alcança o que o
+        modelo desenhou — ninguém lê texto dentro de PNG sem OCR.
+      */}
+      <p className="text-apoio text-[11px]">
+        A IA pode escrever texto na imagem — inclusive nome, metragem e preço que ela inventou.{" "}
+        <strong className="text-titulo">Confira o que está escrito antes de publicar.</strong>
+      </p>
 
       <p className="text-tenue text-[11px]">
         {tamanho} · {qualidade}
