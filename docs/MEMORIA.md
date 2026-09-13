@@ -6502,3 +6502,65 @@ Vault: [[carto-passou-a-exigir-chave-e-o-mapa-virou-claro]].
   pedido "na equipe de corretores, faça um botão para voltar ao site" numa
   página que JÁ tinha o botão, só que escondido por breakpoint. Aparece em
   todo tamanho agora; a trilha continua no desktop.
+
+## A cláusula anti-texto impedia o produto existir (11/09/2026)
+
+Relatado como "quero que funcione exatamente como o ChatGPT — se eu pedir
+uma foto de um cachorro do Papai Noel, ele cria". O Estúdio não produzia
+peça publicitária, e o motivo não era o modelo: é o MESMO `gpt-image-2`.
+
+- **`textoNaCena` — a única fresta que permitia escrita na imagem — NÃO
+  TINHA UM ÚNICO CHAMADOR.** Nenhum `.tsx`, nenhuma rota, nenhum módulo o
+  preenchia. Logo, **100% das gerações levavam `SEM_TEXTO_ALGUM`**: "sem
+  texto, letras, números, placas, letreiros, logotipos, marcas, selos de
+  preço". As peças de referência do corretor (manchete, metragem, voucher,
+  logo) eram **impossíveis por construção** — e nada no build, no tipo ou
+  no teste dizia isso. Décimo caso de "construído e nunca ligado" aqui, e o
+  primeiro em que o desligado era a válvula de escape de uma proibição.
+- **A proibição foi RETIRADA por decisão de produto, com o risco aceito e
+  escrito**: a IA vai inventar nome, metragem e preço quando achar que a
+  peça pede — foi isso que desenhou a placa "VISTA ALTO" em 03/09. Quem
+  publica responde pelo que está escrito.
+- **O que sobrou de código é a soletração.** Texto entre aspas no pedido
+  vira `textosNaCena` e a instrução manda reproduzir caractere por
+  caractere — 2 em 2 na F0 de 10/09, contra 3 em 4 sem. Quem deriva é a
+  ROTA, do prompt APROVADO: derivar da proposta do chat divergiria quando o
+  corretor editasse o campo antes de gerar.
+- **Aspas simples ficam de fora de propósito**: "marca d'água" e "sala
+  'moderna'" virariam texto para desenhar. Erro assimétrico — não
+  reconhecer custa precisão; reconhecer errado suja a imagem paga. E dois
+  textos saem como LISTA (`"A"; "B"`), nunca colados: juntar por barra faz
+  o modelo DESENHAR o separador dentro da arte.
+- **Outras duas travas acusavam o comportamento CERTO.** O objetivo do
+  briefing era literal chumbado (`"peça de marketing de um imóvel"`) e o
+  preâmbulo do engenheiro afirmava "trabalhando para uma imobiliária" em
+  TODO pedido — era isso que fazia um cachorro de Papai Noel receber
+  perguntas sobre apartamento. E a gramática exigia sujeito da lista
+  `fachada|prédio|sala|piscina…` mais uma negação em "restrições": sobraram
+  as duas conferências que servem a QUALQUER imagem (enquadramento e luz).
+  Sexto e sétimo casos de critério que reprova o certo nesta base.
+- **`imovelCitado` subiu para ANTES do bloco de perguntas.** É puro e sem
+  LLM, então não custa nada — e é dele que sai o domínio do briefing.
+- **A ressalva legal virou condicional, e `carimbada: false` significava
+  DUAS coisas opostas.** "Não se aplica" (imagem livre) e "o carimbo
+  falhou" (peça de imóvel) eram o mesmo booleano; colapsados, toda imagem
+  livre nasceria com aviso VERMELHO de falha — o "aviso onde não se aplica"
+  que a mudança veio evitar. Viraram três desfechos tipados
+  (`aplicada` / `nao_se_aplica` / `falhou`), como o `desfecho` do pareamento.
+  **Ao tornar um efeito condicional, conferir se o booleano que o relatava
+  passou a ter dois significados.**
+- **A conferência de lei saiu do código, e está declarado.**
+  `problemasDaCopy` só lê texto que o corretor escreveu, não pixels —
+  ninguém lê texto dentro de PNG sem OCR. A tela diz isso, FIXO em toda
+  proposta: aviso que aparece só às vezes ensina que a ausência dele é
+  garantia.
+- **Uma guarda minha reprovou código correto e foi reescrita duas vezes.**
+  A primeira proibia a frase "trabalhando para uma imobiliária" no arquivo
+  — e ela é legítima no ramo de imóvel; a segunda acusou a mesma frase no
+  COMENTÁRIO do módulo. Guarda afirma a INTENÇÃO (o preâmbulo é escolhido
+  pelo domínio) e remove comentário antes de recortar. Quarta vez que uma
+  guarda desta base precisa tirar comentário, e a segunda em que ela nasce
+  proibindo um texto que tem caso certo.
+- **Comentário de módulo prometia duas garantias que deixaram de existir**
+  (a cláusula anti-invenção e a régua de copy no caminho da imagem).
+  Corrigido junto — é o defeito recorrente nº 5 daqui.
