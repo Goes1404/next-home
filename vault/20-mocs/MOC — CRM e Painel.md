@@ -47,6 +47,7 @@ F0–F6.
 - [[o-contexto-da-decisao-da-ia]] — a conversa em gaveta sobre a lista de Pessoas
 - [[numeric-chega-como-string]]
 - [[telefone-e164-e-coluna-gerada]]
+- [[memoria-da-conversa-e-ficha-viva]] — a IA preenche a ficha, e o que o corretor edita fica protegido (0110)
 
 ## Administração (gestor)
 - [[papel-nunca-ganha-grant-update]]

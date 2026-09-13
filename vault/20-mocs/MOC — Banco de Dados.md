@@ -38,6 +38,9 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 
 - [[fato-e-permissao-moram-em-campos-diferentes]] — coluna nova porque dois conceitos precisam poder discordar
 
+## Dados de produção
+- [[a-base-de-producao-foi-zerada-em-12-09]] — leads, conversas e mensagens apagados de propósito; o catálogo ficou
+
 ## Migrations: numeração e ordem
 - [[colisao-de-migration-entre-branches]] — a guarda só enxerga a própria branch
 

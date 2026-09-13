@@ -61,7 +61,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[conversa-pessoal-do-corretor-e-gravada]] (LGPD, em aberto)
 - [[o-contexto-da-decisao-da-ia]] — por que ela disse aquilo, no balão
 - [[fato-e-permissao-moram-em-campos-diferentes]] — o retravamento parou de apagar o texto (0106)
-- [[fato-e-permissao-moram-em-campos-diferentes]] — o retravamento parou de apagar o texto (0106)
+- [[memoria-da-conversa-e-ficha-viva]] — memória em prosa, recusa com consequência e pergunta antes do funil (0110)
 
 ## Conexão do número
 - [[pareamento-decide-pelo-estado]]

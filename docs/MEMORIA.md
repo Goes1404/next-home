@@ -6564,3 +6564,89 @@ peça publicitária, e o motivo não era o modelo: é o MESMO `gpt-image-2`.
 - **Comentário de módulo prometia duas garantias que deixaram de existir**
   (a cláusula anti-invenção e a régua de copy no caminho da imagem).
   Corrigido junto — é o defeito recorrente nº 5 daqui.
+
+## A IA que lembra, entende o "não" e preenche a ficha (0110, 11-13/09/2026)
+
+Pedido: *"ela não está conseguindo manter uma conversa e nem entender quando o
+cliente não quer"*, mais, na aprovação, *"faça a nossa IA atualizar a ficha do
+usuário melhor"*. Nota: [[memoria-da-conversa-e-ficha-viva]].
+
+- **O que estava medido antes de desenhar** — a recusa era literalmente
+  respondida com pergunta de funil ("No momento não tenho interesse" →
+  qualificação); a extração do dossiê só rodava quando a IA RESPONDIA (191
+  mensagens de cliente contra 80 respostas da IA e 127 do corretor em sete
+  dias, ou seja, a ficha não aprendia nada quando quem responde é a pessoa —
+  e consertar custa ~R$ 0,22 por semana); `nome` e `email` **não tinham
+  `grant update`**, então o corretor nunca conseguiu renomear um lead pelo
+  painel; e `nome_cliente` era 0 em 140 conversas, o que obriga o nome a vir
+  da CONVERSA.
+- **`revoke` de COLUNA não desfaz `grant` de TABELA.** A migration ia levar um
+  `revoke all (coluna) ... from anon` que é NO-OP: o `anon` tem SELECT de
+  tabela e o Postgres não o retira por coluna. Saiu, e no lugar ficou escrito
+  o que de fato protege.
+- **Fato e permissão moram em campos diferentes**, agora pela terceira vez
+  nesta base. `leads.nao_contatar_em` é o FATO dito pelo cliente; a ETAPA é
+  julgamento do funil e anda e volta — com a etapa como fonte, bastaria
+  arrastar o cartão para "Novo" para o número de quem pediu para sair voltar à
+  lista de transmissão.
+- **Detector de recusa é regex sobre a fala do cliente, e ele erra.** Por isso
+  as quatro consequências (bot mudo, follow-ups cancelados, lead perdido, fora
+  das campanhas) ganharam um aviso na fila do Início: quando o detector erra,
+  quem paga é um lead de verdade, e decisão automática que ninguém confere é
+  justamente a que merece um olho humano. Janela de 48h — não existe marca de
+  "já vi", então a JANELA é o mecanismo de saída, e item que não sai vira
+  paisagem.
+- **Booleano de pergunta roubou uma RESPOSTA do funil.** A primeira versão de
+  `ehPergunta` era `true`/`false`, e "pode ser na planta" (que tem "pode")
+  virou pergunta, travando a qualificação no lugar. Virou
+  `forcaDaPergunta` forte/fraca: forte é pergunta sempre; fraca só quando a
+  fala não responde nenhum assunto do funil.
+- **Trace por PERFIL achou defeito de produto na primeira execução.**
+  `scripts/traces/traceRecusa.ts` mostrou que, depois de `acolher_recusa`, um
+  "não, obrigada" voltava a `convidar_visita`. Custo zero, um segundo, antes
+  de qualquer chamada paga.
+- **Guarda de ordem da fila era CEGA, e parecia rigorosa.**
+  `filaDeTrabalho.test.ts` escreve os pesos à mão "de propósito, para não
+  concordar com qualquer reordenação" — só que nada comparava as duas cópias:
+  `ordenarFila` usa o peso que o próprio ITEM carrega, e o teste monta os itens
+  com os SEUS números. Provado em 11/09: mudar `cliente_recusou` de 2 para 4 no
+  código deixou os cinco testes de ordem verdes. `peloCodigo` lê o `PESO` da
+  fonte e compara — é isso que dá sentido à segunda cópia.
+- **Não acrescente texto novo à dívida de contraste herdada.** A tira da
+  memória vive na paleta copiada do WhatsApp, em que `text-wa-meta` sobre
+  `bg-wa-barra` dá **4,14:1** no tema claro — abaixo de AA. O cabeçalho já vive
+  nisso por fidelidade ao app; texto NOVO, e menor, não entra na mesma dívida.
+  Rótulo e conteúdo passaram a se separar pelo PESO (como o "Você:" da lista do
+  app), e a tira inteira ficou em 12:1 ou mais. Medido com o CSS de produção em
+  320/360/390, nos dois temas, nos três estados.
+
+## A base de produção foi zerada em 12/09/2026
+
+Descoberto em 13/09 ao rodar `npm run observatorio` para a medição final da
+0110: **0 conversas mensuráveis**. Não era defeito do script. Nota:
+[[a-base-de-producao-foi-zerada-em-12-09]].
+
+- **Foi deliberado, e está registrado.** `admin_eventos` de 12/09 17h28 UTC:
+  `"limpeza total antes do teste com corretores"`, 131 leads, 110 conversas,
+  8.125 mensagens, `"autorizado_por": "dono da conta, sem exportacao previa"`.
+- **O catálogo ficou inteiro** — 26 empreendimentos, 339 mídias, 346 itens de
+  lazer. Quem morreu foi `leads` (268 linhas), `whatsapp_conversas` (310),
+  `whatsapp_mensagens` (16.329 contando as já apagadas antes),
+  `lead_interacoes` (265) e os follow-ups.
+- **O cascade da 0111 fez o resto, e fez certo**: conferido depois, zero
+  órfãos — nenhuma linha de `whatsapp_campanhas_fila` aponta para lead
+  inexistente, nenhuma de `ia_interacoes` para conversa inexistente, e a fila
+  não tem nada `pendente` (104 enviados, 8 erro, 1 respondido). `ia_interacoes`
+  sobreviveu com 5.461 linhas porque não é filha do lead: virou telemetria
+  órfã, boa para contar modelo e latência, inútil para reconstituir conversa.
+- **Diagnóstico**: observatório devolvendo zero se confere com
+  `select count(*) from whatsapp_mensagens` ANTES de procurar defeito no
+  script. E `SUPABASE_SECRET_KEY` numa tabela sem policy para `anon` devolve
+  `count: 0` **sem erro** — a prova de que a base está vazia (e não a chave
+  errada) sai da Management API com o `SUPABASE_PAT`, que roda como `postgres`
+  e ignora RLS.
+- **Toda linha de base de atendimento anterior a 12/09 deixou de ser
+  verificável** — 21% de cobertura, mediana de 9s, 2.431 falas em branco, 16
+  dossiês para 131 leads, 0 nome / 0 renda / 1 orçamento em 55. Continuam
+  valendo como história; não dá mais para reconferir. A próxima medição começa
+  de uma safra limpa, com o atendimento dos corretores de verdade.
