@@ -1,5 +1,6 @@
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
+import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
@@ -112,6 +113,7 @@ export default async function InstitucionalLayout({
       </div>
 
       {children}
+      <VoltarAoTopo />
     </GlassBackgroundProvider>
   );
 }

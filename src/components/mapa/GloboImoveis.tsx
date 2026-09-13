@@ -79,16 +79,29 @@ function paleta() {
     && (document.documentElement.matches('[data-tema="claro"]')
       || !window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-  // Nos DOIS temas o globo é ESCURO: uma esfera de teal profundo com os
-  // continentes desenhados em pontos claros. A primeira tentativa deixava o
-  // globo claro no tema claro para "combinar" com a página — e o resultado
-  // foi um disco lavado, sem massa nem contorno, que sumia no fundo. Uma
-  // esfera escura sobre página clara é justamente o que dá o destaque: vira
-  // objeto, não mancha.
+  /*
+   * Globo CLARO no tema claro (12/09/2026), a pedido: "o planeta está
+   * escuro, e o fundo também". A tentativa antiga de globo claro deu "disco
+   * lavado" porque só clareava a esfera e deixava os pontos claros também.
+   * No cobe, `dark: 0` liga o modo claro de verdade: a esfera nasce em
+   * `baseColor` iluminada e os pontos do mapa saem ESCUROS sobre ela — é o
+   * contraste dos continentes, mais a atmosfera (halo, órbitas) e o pino em
+   * teal escuro, que dão massa e contorno. No tema escuro nada muda.
+   */
+  if (claro) {
+    return {
+      dark: 0,
+      base: [0.86, 0.91, 0.88] as [number, number, number],
+      brilho: [0.78, 0.9, 0.86] as [number, number, number],
+      mapa: 5.5,
+      marca: lerCor("--color-acento", "#00594f"),
+      difusa: 1.2,
+    };
+  }
   return {
     dark: 1,
     base: [0.02, 0.15, 0.13] as [number, number, number],
-    brilho: (claro ? [0.11, 0.5, 0.4] : [0.06, 0.36, 0.29]) as [number, number, number],
+    brilho: [0.06, 0.36, 0.29] as [number, number, number],
     // Brilho do mapa alto: é o que faz os continentes aparecerem como pontos
     // luminosos em vez de um chuvisco cinza.
     mapa: 14,
@@ -334,16 +347,25 @@ export function GloboImoveis({
           transform/opacity puros (nada que peça layout). Sem elas o globo
           flutuava sozinho num retângulo vazio e parecia um recorte. */}
 
-      {/* 1. Halo: o brilho que sai de trás da esfera e respira devagar. */}
+      {/* 1. Halo: o brilho que sai de trás da esfera e respira devagar.
+             Mesmo PAR das órbitas: o pai centraliza (flex), o filho só
+             respira. Com posicionamento e animação no mesmo nó, o halo
+             aparecia deslocado para o canto do painel — invisível no painel
+             escuro, uma mancha verde no claro (medido em 12/09/2026:
+             top -251px, left 46px, para um painel de 556px). */}
       <span
         aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 aspect-square h-[95%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl motion-safe:animate-[respirar_7s_ease-in-out_infinite]"
-        style={{
-          opacity: "calc(var(--atmosfera) * 0.9)",
-          background:
-            "radial-gradient(circle, var(--color-acento-forte) 0%, color-mix(in oklab, var(--color-acento-forte) 45%, transparent) 38%, transparent 66%)",
-        }}
-      />
+        className="pointer-events-none absolute inset-0 flex items-center justify-center"
+        style={{ opacity: "calc(var(--atmosfera) * 0.55)" }}
+      >
+        <span
+          className="block aspect-square h-[95%] rounded-full blur-2xl motion-safe:animate-[respirar_7s_ease-in-out_infinite]"
+          style={{
+            background:
+              "radial-gradient(circle, var(--color-acento-forte) 0%, color-mix(in oklab, var(--color-acento-forte) 45%, transparent) 38%, transparent 66%)",
+          }}
+        />
+      </span>
 
       {/* 2. Órbitas: dois anéis finos inclinados, girando em ritmos
              diferentes — dão escala e movimento sem competir com o globo.
@@ -416,7 +438,7 @@ export function GloboImoveis({
         // parado sobre uma câmera em movimento é o que denuncia efeito
         // colado por cima.
         style={{ opacity: mergulhando ? 0 : 1, pointerEvents: mergulhando ? "none" : undefined }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 transition-opacity duration-300 rounded-full border border-linha/20 bg-fundo/85 px-6 py-3 text-fluid-sm font-medium text-titulo shadow-lg backdrop-blur-md transition-transform duration-300 hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-linha-forte bg-superficie/90 px-5 py-3 text-fluid-sm font-medium text-titulo shadow-lg backdrop-blur-md transition-[opacity,transform] duration-300 hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
       >
         Ver o mapa de perto
       </button>

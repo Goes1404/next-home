@@ -14,7 +14,7 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
   );
 
   return (
-    <section id="contato" className="scroll-mt-24 bg-superficie/40 px-4 py-16 sm:py-24">
+    <section id="contato" className="scroll-mt-24 bg-superficie/40 px-4 py-16 sm:px-8 sm:py-24">
       <Reveal className="mx-auto max-w-xl text-center">
         <h2 className="text-fluid-2xl text-titulo">Quer saber valores e condições deste imóvel?</h2>
         <p className="text-fluid-base mt-3 text-apoio">

@@ -35,6 +35,14 @@ const FAIXAS_DORMITORIOS = [
 const CAMPO =
   "w-full appearance-none rounded-xl border border-linha-forte bg-elevado px-3.5 py-2.5 text-sm font-medium text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte";
 
+/**
+ * `appearance-none` apaga a seta nativa do `<select>` — e sem seta o campo
+ * "Todos" parecia um texto parado (pedido de 12/09/2026: "coloque uma seta
+ * para baixo"). `select-seta` (globals.css) desenha o chevron por
+ * background-image, no tom do tema; o `pr-10` reserva o lugar dele.
+ */
+const SELECT = `${CAMPO} select-seta pr-10`;
+
 export type FiltroFormProps = {
   filtrosAtuais: FiltrosEmpreendimento;
   ordenacaoAtual: Ordenacao;
@@ -114,7 +122,7 @@ export function FiltroForm({
             id={`${idPrefixo}-tipo`}
             name="tipo"
             defaultValue={filtrosAtuais.tipo ?? ""}
-            className={CAMPO}
+            className={SELECT}
           >
             <option value="">Todos</option>
             {/* Só tipos com estoque: oferecer "Casa" com zero casas manda o
@@ -137,7 +145,7 @@ export function FiltroForm({
             id={`${idPrefixo}-cidade`}
             name="cidade"
             defaultValue={filtrosAtuais.cidade ?? ""}
-            className={CAMPO}
+            className={SELECT}
           >
             <option value="">Todos</option>
             {regioes.cidades.map((c) => (
@@ -157,7 +165,7 @@ export function FiltroForm({
               id={`${idPrefixo}-bairro`}
               name="bairro"
               defaultValue={filtrosAtuais.bairro ?? ""}
-              className={CAMPO}
+              className={SELECT}
             >
               <option value="">Todos</option>
               {regioes.bairros.map((b) => (
@@ -180,7 +188,7 @@ export function FiltroForm({
             id={`${idPrefixo}-preco`}
             name="precoMax"
             defaultValue={filtrosAtuais.precoMax ? String(filtrosAtuais.precoMax) : ""}
-            className={CAMPO}
+            className={SELECT}
           >
             <option value="">Todos</option>
             {FAIXAS_PRECO.map((f) => (
@@ -202,7 +210,7 @@ export function FiltroForm({
               defaultValue={
                 filtrosAtuais.dormitoriosMin ? String(filtrosAtuais.dormitoriosMin) : ""
               }
-              className={CAMPO}
+              className={SELECT}
             >
               <option value="">Todos</option>
               {FAIXAS_DORMITORIOS.map((f) => (
@@ -226,7 +234,7 @@ export function FiltroForm({
               id={`${idPrefixo}-estagio`}
               name="estagio"
               defaultValue={filtrosAtuais.estagio ?? ""}
-              className={CAMPO}
+              className={SELECT}
             >
               <option value="">Todos</option>
               {ESTAGIOS.map((e) => (
@@ -250,7 +258,7 @@ export function FiltroForm({
               id={`${idPrefixo}-ordenar`}
               name="ordenar"
               defaultValue={ordenacaoAtual}
-              className={CAMPO}
+              className={SELECT}
             >
               {Object.entries(ORDENACAO_LABEL).map(([valor, label]) => (
                 <option key={valor} value={valor}>

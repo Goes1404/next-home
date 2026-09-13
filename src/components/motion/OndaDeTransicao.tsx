@@ -119,7 +119,7 @@ export function OndaDeTransicao() {
         começo. Sem isso a segunda navegação não tocaria a animação de novo.
       */}
       <Camada key={`fundo-${caminho}`} atraso="0ms" opacidade={0.55} inverter />
-      <Camada key={caminho} atraso="90ms" opacidade={1} aoTerminar={() => setAtiva(false)} />
+      <Camada key={caminho} atraso="60ms" opacidade={1} aoTerminar={() => setAtiva(false)} />
     </div>,
     document.body,
   );

@@ -442,11 +442,11 @@
   --text-fluid-lg: clamp(1.125rem, 1.05rem + 0.38vw, 1.375rem);
   --text-fluid-xl: clamp(1.375rem, 1.2rem + 0.85vw, 1.875rem);
   --text-fluid-2xl: clamp(1.75rem, 1.4rem + 1.75vw, 2.75rem);
-  --text-fluid-3xl: clamp(2.25rem, 1.6rem + 3.2vw, 4rem);
-  --text-fluid-4xl: clamp(2.75rem, 1.7rem + 5.2vw, 5.5rem);
+  --text-fluid-3xl: clamp(2rem, 1.5rem + 2.6vw, 3.25rem);
+  --text-fluid-4xl: clamp(2.5rem, 1.6rem + 4.2vw, 4.5rem);
   /* Display editorial — o nome do imóvel no hero. Sobe até 7.5rem no desktop
      mas nunca passa de ~11vw, senão nome longo estoura a viewport no meio. */
-  --text-fluid-5xl: clamp(3rem, 1.2rem + 8.5vw, 7.5rem);
+  --text-fluid-5xl: clamp(2.75rem, 1.3rem + 6vw, 5.5rem);
 
   /* Movimento — curvas compartilhadas entre CSS e GSAP */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -1267,7 +1267,7 @@
   }
 
   .onda-transicao {
-    animation: onda-passa 900ms cubic-bezier(0.65, 0, 0.35, 1) both;
+    animation: onda-passa 640ms cubic-bezier(0.6, 0, 0.3, 1) both;
     will-change: transform;
   }
 
@@ -1316,13 +1316,13 @@
    * mais nada.
    */
   :root[data-entrando] main > * {
-    animation: pagina-entra 520ms var(--ease-out-expo) both;
+    animation: pagina-entra 380ms var(--ease-out-expo) both;
   }
   :root[data-entrando] main > *:nth-child(2) {
-    animation-delay: 70ms;
+    animation-delay: 40ms;
   }
   :root[data-entrando] main > *:nth-child(n + 3) {
-    animation-delay: 130ms;
+    animation-delay: 80ms;
   }
 
   @keyframes pagina-entra {
@@ -1528,9 +1528,10 @@
 
 .map-pulse-marker:hover .map-pulse-dot,
 .map-pulse-marker.active .map-pulse-dot {
-  transform: scale(1.45);
-  background: #00594f;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+  transform: scale(1.7);
+  background: #05211c;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(5, 33, 28, 0.22), 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
 .map-pulse-price {
@@ -1553,10 +1554,15 @@
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.map-pulse-marker:hover .map-pulse-price {
-  transform: translateX(-50%) translateY(-3px) scale(1.05);
-  border-color: #2fd6a4;
+.map-pulse-marker:hover .map-pulse-price,
+.map-pulse-marker.active .map-pulse-price {
+  transform: translateX(-50%) translateY(-3px) scale(1.08);
+  background: #05211c;
+  border-color: #ffffff;
   color: #ffffff;
+}
+.map-pulse-marker.active {
+  z-index: 10;
 }
 
 @keyframes pulse-ring {
@@ -1622,12 +1628,12 @@
 @keyframes respirar {
   0%,
   100% {
-    opacity: 0.55;
-    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.7;
+    transform: scale(1);
   }
   50% {
-    opacity: 0.85;
-    transform: translate(-50%, -50%) scale(1.06);
+    opacity: 1;
+    transform: scale(1.06);
   }
 }
 
@@ -1641,6 +1647,70 @@
   to {
     transform: rotateZ(360deg);
   }
+}
+
+/*
+ * Seta do <select> (12/09/2026). `appearance-none` apaga a nativa; esta é
+ * um chevron por background-image, no tom do TEXTO de cada tema — cor
+ * dentro de url() não aceita `light-dark()` nem `currentColor`, então são
+ * duas regras. `data-tema` está sempre carimbado no <html> pelo layout raiz.
+ */
+.select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2305211c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.05rem 1.05rem;
+}
+:root[data-tema="escuro"] .select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f6faf9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+}
+
+/*
+ * Seta do <select> (12/09/2026). `appearance-none` apaga a nativa; esta é
+ * um chevron por background-image, no tom do TEXTO de cada tema — cor
+ * dentro de url() não aceita `light-dark()` nem `currentColor`, então são
+ * duas regras. `data-tema` está sempre carimbado no <html> pelo layout raiz.
+ */
+.select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2305211c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.05rem 1.05rem;
+}
+:root[data-tema="escuro"] .select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f6faf9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+}
+
+/*
+ * Seta do <select> (12/09/2026). `appearance-none` apaga a nativa; esta é
+ * um chevron por background-image, no tom do TEXTO de cada tema — cor
+ * dentro de url() não aceita `light-dark()` nem `currentColor`, então são
+ * duas regras. `data-tema` está sempre carimbado no <html> pelo layout raiz.
+ */
+.select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2305211c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.05rem 1.05rem;
+}
+:root[data-tema="escuro"] .select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f6faf9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+}
+
+/*
+ * Seta do <select> (12/09/2026). `appearance-none` apaga a nativa; esta é
+ * um chevron por background-image, no tom do TEXTO de cada tema — cor
+ * dentro de url() não aceita `light-dark()` nem `currentColor`, então são
+ * duas regras. `data-tema` está sempre carimbado no <html> pelo layout raiz.
+ */
+.select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2305211c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.05rem 1.05rem;
+}
+:root[data-tema="escuro"] .select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f6faf9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
 }
 
 @keyframes cintilar {

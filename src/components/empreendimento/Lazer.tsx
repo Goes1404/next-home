@@ -83,11 +83,11 @@ export function Lazer({ itens, fotos = [] }: { itens: string[]; fotos?: Midia[] 
     // pode ganhar transform. Quem dá profundidade é o fundo.
     <section
       id="lazer"
-      className="relative overflow-hidden scroll-mt-24 bg-superficie/40 px-4 py-16 sm:px-8 sm:py-28"
+      className="relative overflow-hidden scroll-mt-24 bg-superficie/40 px-4 py-16 sm:px-8 sm:py-24"
     >
       <FundoEmCamadas intensidade={0.7} />
-      <div className="mx-auto max-w-7xl">
-        <TituloEditorial className="text-fluid-3xl text-titulo">Lazer</TituloEditorial>
+      <div className="mx-auto max-w-6xl">
+        <TituloEditorial className="text-fluid-2xl text-titulo">Lazer</TituloEditorial>
         <Reveal from="nenhuma" delay={0.2}>
           <p className="text-fluid-base mt-3 text-apoio">
             {itens.length} itens de lazer no condomínio.

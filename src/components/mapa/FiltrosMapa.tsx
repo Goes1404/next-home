@@ -72,7 +72,7 @@ export function FiltrosMapa({
           <select
             value={bairroFiltro}
             onChange={(e) => onMudarBairro(e.target.value)}
-            className="rounded-xl border border-linha-forte bg-superficie px-3 py-1.5 text-fluid-xs text-corpo cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
+            className="select-seta appearance-none rounded-xl border border-linha-forte bg-superficie py-1.5 pr-8 pl-3 text-fluid-xs text-corpo cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
             aria-label="Filtrar por bairro"
           >
             <option value="todos">Todos os Bairros</option>

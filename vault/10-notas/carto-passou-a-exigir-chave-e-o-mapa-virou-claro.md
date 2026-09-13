@@ -50,6 +50,25 @@ ponto `#00897b` com aro branco de 2px e sombra, anel de pulso a 35% —
 a receita de qualquer app de mapa sobre fundo claro. A etiqueta de preço
 continua escura: é ela que faz contraste contra o tile.
 
+## O globo acompanhou (mesmo dia, tarde)
+
+Pedido: *"aplique o mesmo conceito para o planeta 3D, porque o planeta está
+escuro, e o fundo também"*. A nota antiga do globo dizia que globo claro
+sobre página clara vira "disco lavado" — e era verdade **do jeito que foi
+tentado**: só clareava a esfera e deixava os pontos claros também. No cobe,
+`dark: 0` é o modo claro de verdade: a esfera nasce em `baseColor`
+iluminada e os pontos dos continentes saem ESCUROS sobre ela. `paleta()`
+em `GloboImoveis.tsx` devolve isso no tema claro (esfera sage, pontos e
+pino em teal escuro) e mantém o globo escuro no tema escuro. O painel em
+volta (`GloboOuMapa.tsx`) saiu de `bg-ink-950` para a superfície do tema.
+
+## O pino ATIVO no mapa
+
+Pino selecionado era o mesmo teal, só maior — sobre tile claro, entre 25
+pinos, o clique não se distinguia. Hoje `.map-pulse-marker.active`: ponto
+em `#05211c` (o ink do texto), aro branco, halo, `scale(1.7)`, etiqueta de
+preço invertida (fundo ink, texto branco) e `z-index` acima dos vizinhos.
+
 ## Se um dia voltar a CARTO (com chave)
 
 `TILES_MAPA` continua sendo um `Record<TemaMapa, string>` e `aoMudarTema`

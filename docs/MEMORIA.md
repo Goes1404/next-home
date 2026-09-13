@@ -6453,3 +6453,42 @@ Vault: [[carto-passou-a-exigir-chave-e-o-mapa-virou-claro]].
   é `npm ci` faltando. E `.env.local` também não: para rodar o site público
   local bastam `NEXT_PUBLIC_SUPABASE_URL` e a chave PUBLICÁVEL (o MCP da
   Supabase devolve as duas; são públicas por desenho).
+
+## Segunda rodada de 12/09: globo claro, escala de texto e a página do imóvel
+
+- **Globo claro de verdade é `dark: 0` no cobe**, não "clarear a esfera".
+  A nota antiga ("globo claro sobre página clara SOME") descrevia a
+  tentativa errada: só a esfera clareava e os pontos ficavam claros também.
+  Com `dark: 0` os continentes saem ESCUROS sobre a esfera clara, e o
+  contraste volta. `paleta()` decide por tema; painel em volta na
+  superfície do tema. Vault: [[carto-passou-a-exigir-chave-e-o-mapa-virou-claro]].
+- **`appearance-none` num `<select>` apaga a seta e ninguém repõe.** Os
+  campos "Todos" pareciam texto parado. `.select-seta` (globals.css) desenha
+  o chevron por `background-image` — cor dentro de `url()` não aceita
+  `light-dark()` nem `currentColor`, então são DUAS regras, por `data-tema`
+  (que o layout raiz sempre carimba).
+- **A escala fluida tinha teto alto demais para o desktop**: 3xl chegava a
+  4rem, 4xl a 5,5rem e o display do hero a 7,5rem — "Empreendimentos &
+  Oportunidades" ocupava a largura inteira em 1440px. Tetos novos: 3,25 /
+  4,5 / 5,5rem. Mudar o TOKEN, não a classe de cada título: é o que mantém
+  a hierarquia igual em todas as páginas.
+- **A página do imóvel tinha QUATRO larguras de caixa** (7xl, 5xl, 4xl, xl)
+  e dois tamanhos de título de seção (3xl e 2xl) — a margem esquerda pulava
+  a cada seção rolada, o mesmo defeito medido na home em 10/09. Hoje todas
+  as seções são `max-w-6xl`, título `text-fluid-2xl`, ritmo `py-16
+  sm:py-24`. E o painel do Book Digital deixou de ser um bloco preto fixo
+  (era a única coisa preta entre Sobre e Tipologias no tema claro).
+- **Transição entre páginas: 900 → 640ms na onda, 520 → 380ms na entrada.**
+  A régua: a onda precisa cobrir a tela por um instante (é a revelação),
+  mas acima de ~600ms ela vira espera, e o visitante já leu o que estava
+  embaixo antes de ela terminar.
+- **"Voltar ao topo" público** (`components/layout/VoltarAoTopo.tsx`) mora
+  nos DOIS layouts de grupo, um degrau acima do botão do WhatsApp, com
+  degrau FIXO — o WhatsApp some ao rolar para baixo no celular, e um degrau
+  condicional faria este pular. Gatilho por distância (700px), nunca por
+  direção do gesto; subida pelo Lenis (`rolarAoTopo`).
+- **O botão "Voltar ao site" do `CabecalhoDePagina` era `sm:hidden`.** No
+  desktop sobrava a trilha em 12px, que ninguém lê como botão — daí o
+  pedido "na equipe de corretores, faça um botão para voltar ao site" numa
+  página que JÁ tinha o botão, só que escondido por breakpoint. Aparece em
+  todo tamanho agora; a trilha continua no desktop.
