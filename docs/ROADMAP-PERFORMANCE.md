@@ -19,8 +19,8 @@ de planejar" e "uma rodada não separa regressão de variância".
 | F1 — Conteúdo antes do JS | feita em 13/09 | `d502267` | `.gsap-pending` invertido (`estaNaTela`), hero por CSS, vinheta só desktop/3,8 s/dispensável por rolagem, `fetchPriority` nas capas, Fraunces −52 KB |
 | F2 — Cache e servidor | feita em 13/09 (menos a casca estática) | `72f6424` + 0112 | cache por etiqueta, proxy sem Auth no público, poster do fundo no SSR, prefetch com intenção, 23 índices e 27 policies no banco |
 | F2b — Casca estática (Cache Components / PPR) | pendente | — | exige `cacheComponents`, que muda o contrato das 50 rotas; fazer com o painel verificável (credencial de E2E) |
-| F3 — Menos JavaScript | pendente | — | |
-| F4 — Painel como app | pendente | — | |
+| F3 — Menos JavaScript | feita em 13/09 (RSC e laços; o bundle em si fica para a F3b) | `77959b5` | HTML da home 96 → 27 KB gz (`PontoDoMapa`), globo só nasce perto da viewport e dorme fora dela, laços das camadas e do header só trabalham quando algo rolou, cards sem backdrop-filter |
+| F4 — Painel como app | parte segura feita em 13/09 | ver commit | Chat e painel do consultor por `next/dynamic` no toque (Pessoas 1.030 → ~600 KB de JS pelo manifesto), sessão por `getClaims()`, contagem do funil deduplicada, `loading.tsx` em Pessoas. Conversas em 2 estágios, janela de 60 mensagens, `revalidateTag` e `useOptimistic` ficam para uma sessão com login |
 | F5 — Fluidez percebida | pendente | — | |
 
 Resultado até aqui (produção, celular, primeira visita — a régua do

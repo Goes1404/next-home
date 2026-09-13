@@ -38,10 +38,14 @@ const TETOS_KB = {
   // porque `Chat.tsx` e `ChatBase` entram estáticos — é a F4 que os move
   // para `next/dynamic`, e aí este número desce.
   "*": 800,
-  "/corretor/(painel)/pessoas/page": 1040,
-  "/corretor/(painel)/conversas/page": 1040,
-  "/corretor/(painel)/imoveis/criar-imagem/page": 1010,
-  "/corretor/(painel)/imoveis/[slug]/importar/page": 1010,
+  // As cinco telas de chat: `Chat` e `ChatBase` já vão por `next/dynamic`
+  // (F4); o que sobra é o supabase-js (245 KB, Realtime) e o GSAP (111 KB)
+  // que o layout RAIZ monta em toda rota — inclusive no painel. Tirar os
+  // dois do painel é a F4b.
+  "/corretor/(painel)/pessoas/page": 1000,
+  "/corretor/(painel)/conversas/page": 1020,
+  "/corretor/(painel)/imoveis/criar-imagem/page": 1000,
+  "/corretor/(painel)/imoveis/[slug]/importar/page": 1000,
   "/corretor/(painel)/marketing/video/page": 1000,
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.

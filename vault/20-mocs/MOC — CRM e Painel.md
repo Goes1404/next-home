@@ -54,6 +54,7 @@ F0–F6.
 
 ## Performance
 - [[o-site-e-lento-por-desenho-nao-por-peso]] — Início abre com 22 consultas (12 idênticas), 3 `getUser()` por requisição, Realtime + polling juntos; fase 4 do roadmap de performance (13/09)
+- [[o-painel-carrega-por-rota-so-o-que-a-rota-usa]] — F4: Chat e ChatBase por next/dynamic no toque, sessão por getClaims(), contagem do funil deduplicada; o que ficou de fora e por quê (13/09)
 
 ## Relacionados
 - [[MOC — Banco de Dados]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]

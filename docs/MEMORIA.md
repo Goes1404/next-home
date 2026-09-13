@@ -6819,3 +6819,41 @@ Executadas na mesma sessão que mediu a linha de base. Números em
 - **Arquivo de medição por data sobrescreve** (a armadilha do eval, de
   novo): `--rotulo=` e o perfil no nome. A rodada do celular da F1 e da F2
   sobreviveu só no terminal; a tabela consolidada foi transcrita à mão.
+
+## F3 e F4 do roadmap de performance (13/09/2026)
+
+Vault: [[o-globo-recebe-pontos-e-nada-roda-sozinho]] e
+[[o-painel-carrega-por-rota-so-o-que-a-rota-usa]].
+
+- **O HTML da home tinha 96 KB de gzip, e 252 KB brutos eram o catálogo
+  inteiro para um globo desenhar 25 pinos.** `GloboOuMapa` é client e
+  recebia `empreendimentos={todos}`. `PontoDoMapa` (12 campos) desceu o
+  HTML para 27 KB gz. **Os nomes dos campos são os de `Empreendimento` de
+  propósito** — nenhum chamador quebra — e é exatamente por isso que a
+  regressão passaria calada; a guarda `pontoDoMapa.test.ts` lê as páginas.
+  O `grep` de campos usados errou por UM (`imovel.endereco`): grep é
+  hipótese, o `tsc` é a prova.
+- **`next/dynamic` com `ssr: false` não adia por visibilidade** — a lição
+  do Leaflet, agora no globo: o `cobe` baixava e o WebGL rodava a 60 fps
+  quatro telas acima da seção. `IntersectionObserver` para montar, outro
+  para o laço pular o `update()` fora da tela.
+- **Laço que roda a cada quadro tem de saber se algo mudou.** O
+  `controladorCamadas` lia `getBoundingClientRect` de toda camada visível
+  60 vezes por segundo com a página PARADA (811 ms de forced reflow na
+  home): agora compara rolagem e tamanho com o quadro anterior e sai.
+- **Importar um utilitário de um arquivo de componente é importar o
+  componente.** A gaveta de Pessoas importava `estadoDa` de `./Chat` e com
+  isso o `Chat` inteiro (1.600 linhas) entrava no JS da lista. Os
+  utilitários saíram para `chatModelo.ts`; o `Chat` vai por `next/dynamic`
+  no toque. O mesmo com a bolha do consultor no LAYOUT: `ChatBase` em toda
+  rota do painel, aberta ou não.
+- **`getClaims()` no lugar de `getUser()` para LER sessão** no painel: JWT
+  verificado localmente; rede só para renovar. Quem MUDA dado continua com
+  `getUser()` na action.
+- **Medir logo depois do deploy mede função fria + cache frio.** A rodada
+  da F3 deu o imóvel a 6,17 s com TTFB de 1,9 s — a primeira visita de cada
+  rota numa função nova. Antes de medir, aquecer cada rota com um `curl`.
+- **Feito × pendente na F4, declarado:** Conversas em 2 estágios, janela de
+  60 mensagens, Realtime OU polling, `revalidateTag`/`useOptimistic` e
+  `useLinkStatus` exigem abrir o painel — esta máquina não tem credencial
+  de E2E. Ficaram escritos como pendência, não fingidos como feitos.

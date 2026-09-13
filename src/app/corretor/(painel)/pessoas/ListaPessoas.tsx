@@ -9,7 +9,7 @@ import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
 import { linkWhatsappPara } from "@/lib/site";
 import { carregarConversaDaPessoa, carregarMaisPessoas } from "./acoes";
 import { GavetaConversa } from "./GavetaConversa";
-import type { ConversaResumo } from "../conversas/Chat";
+import type { ConversaResumo } from "../conversas/chatModelo";
 import { recalcularRolagem } from "@/components/motion/lenis";
 // Do módulo PURO, não de `pessoas.ts`: aquele tem `server-only` e uma
 // constante importada dele arrasta o servidor inteiro para o cliente.

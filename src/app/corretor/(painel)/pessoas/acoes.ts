@@ -3,7 +3,7 @@
 import { getPaginaDePessoas, type PessoaNaLista } from "@/lib/crm/pessoas";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
-import type { ConversaResumo } from "../conversas/Chat";
+import type { ConversaResumo } from "../conversas/chatModelo";
 
 /**
  * A próxima página da lista.
