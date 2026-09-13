@@ -18,7 +18,7 @@ export type LinkMenu = { href: string; label: string };
  * PAINEL LATERAL que desliza da direita sobre um véu escuro — o padrão que
  * todo app do telefone usa, e que a pessoa já sabe fechar tocando fora. O
  * painel tem cabeçalho próprio (marca + fechar), os destinos com seta, as
- * duas ações da casa (WhatsApp e anunciar) e, no pé, a porta da equipe:
+ * a ação da casa (WhatsApp) e, no pé, a porta da equipe:
  * "Área do corretor", com cadeado, dizendo em voz alta que é acesso
  * restrito. Antes essa porta só existia no rodapé, e o corretor no celular
  * rolava a página inteira para achá-la.
@@ -229,13 +229,6 @@ export function MenuMobile({ links }: { links: LinkMenu[] }) {
                   </svg>
                   Falar no WhatsApp
                 </a>
-                <Link
-                  href="/anunciar-imovel"
-                  onClick={fechar}
-                  className="border-linha text-corpo hover:border-acento-linha hover:text-titulo active:bg-superficie flex min-h-12 items-center justify-center rounded-full border text-sm font-medium transition-colors"
-                >
-                  Anunciar meu imóvel
-                </Link>
               </div>
 
               {/* A porta da equipe. Aponta para `/corretor`, não para

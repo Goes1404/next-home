@@ -6857,3 +6857,24 @@ Vault: [[o-globo-recebe-pontos-e-nada-roda-sozinho]] e
   60 mensagens, Realtime OU polling, `revalidateTag`/`useOptimistic` e
   `useLinkStatus` exigem abrir o painel — esta máquina não tem credencial
   de E2E. Ficaram escritos como pendência, não fingidos como feitos.
+## Fundo em vídeo fora de todas as páginas, menu sem "anunciar", equipe (13/09/2026)
+
+- **A vinheta congelada atrás do conteúdo SAIU de todo o site.** Nos dois
+  layouts de grupo ela era o fundo padrão (no institucional em todo tamanho,
+  na vitrine só no celular); o quadro parado do logotipo lia como imagem
+  aleatória e, no celular, aparecia inteiro entre a CTA final e o rodapé
+  (print do usuário). O que fica é a aurora em CSS (`fundo-aurora`), que já
+  cobria a vitrine no desktop. A vinheta continua no `Preloader` — abertura,
+  não papel de parede. `AberturaHome` já tratava `[data-fundo-video]`
+  ausente (`if (video)`); `ParallaxFundoHome` escreve no invólucro, que
+  ficou. Foto/vídeo PRÓPRIO do corretor continuam tendo precedência.
+- **"Anunciar meu imóvel" saiu do menu** (header desktop e gaveta do
+  celular), a pedido. A página `/anunciar-imovel` continua — chega pelo
+  cartão do vendedor na home; `seo.test.ts` e o E2E de saúde ainda a listam.
+- **Cartão de corretor completo virou cartão com FOTO-HERÓI** (4:3 no topo,
+  CRECI como selo sobre a foto em tinta fixa, bio em duas linhas quando
+  existe, dois botões de 44px: perfil e WhatsApp). Sem foto: monograma sobre
+  degradê da marca, nunca ícone genérico. A página ganhou faixa de confiança
+  com três fatos verificáveis (CRECI da imobiliária, corretores, imóveis
+  acompanhados — a soma das atuações, sem consulta nova). O `compacto` da
+  home não mudou.

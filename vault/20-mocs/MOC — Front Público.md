@@ -50,6 +50,8 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[o-conteudo-aparece-antes-do-javascript]] — F1: o contrato `.gsap-pending` invertido (nasce visível, `estaNaTela` decide), hero por CSS, vinheta só desktop e dispensável por rolagem (13/09)
 - [[o-site-publico-nao-vai-mais-ao-banco-por-requisicao]] — F2: cache de dados por etiqueta, proxy sem Auth no público, poster no SSR; TTFB da home 0,9–2,9 s → 0,37–0,54 s (13/09)
 - [[o-globo-recebe-pontos-e-nada-roda-sozinho]] — F3: HTML da home 96 → 27 KB gz; globo só nasce perto da viewport; laços dormem com a página parada; cards sem backdrop-filter (13/09)
+## Fundo
+- [[fundo-em-video-saiu-de-todas-as-paginas]] — a vinheta congelada deixou de ser papel de parede; fica a aurora em CSS (13/09)
 
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]
