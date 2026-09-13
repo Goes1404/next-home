@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
 import { Footer } from "@/components/layout/Footer";
 import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
@@ -197,6 +199,16 @@ export default async function RootLayout({
         <OndaDeTransicao />
         {children}
         <Footer />
+        {/* Dado de CAMPO (F0 do roadmap de performance, 13/09/2026). Até
+            aqui todo número de velocidade deste site era de laboratório: sem
+            Speed Insights não há LCP/INP p75 de gente de verdade, e sem Web
+            Analytics não se sabe nem a divisão celular × desktop. Os dois
+            precisam estar LIGADOS no painel da Vercel (Analytics e Speed
+            Insights, um clique cada) — o componente sozinho não grava nada,
+            e "construído e nunca ligado" é o padrão que esta base mais
+            repete. */}
+        <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );

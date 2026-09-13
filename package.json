@@ -21,6 +21,8 @@
     "observatorio": "tsx scripts/observatorio.ts",
     "meta:diag": "tsx scripts/metaDiagnostico.ts",
     "paleta": "node scripts/verificarPaleta.mjs",
+    "perf": "tsx scripts/perf/medir.ts",
+    "bundle:teto": "node scripts/bundleTeto.mjs",
     "observatorio:consultor": "tsx scripts/observatorioConsultor.ts",
     "eval:consultor": "tsx --conditions=react-server scripts/eval/casosDoConsultor.ts"
   },
@@ -28,6 +30,8 @@
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.111.0",
     "@types/leaflet": "^1.9.22",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "clsx": "^2.1.1",
     "cobe": "^2.0.1",
     "gsap": "^3.15.0",
@@ -61,7 +65,7 @@
     "vitest": "^4.1.10"
   },
   "optionalDependencies": {
-    "@img/sharp-linux-x64": "0.35.3",
-    "@img/sharp-libvips-linux-x64": "1.3.2"
+    "@img/sharp-libvips-linux-x64": "1.3.2",
+    "@img/sharp-linux-x64": "0.35.3"
   }
 }
