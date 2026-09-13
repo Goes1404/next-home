@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/components/mapa/MapaInterativoClient.tsx, src/components/mapa/MapaLocalClient.tsx]
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-12
 fonte: docs/MEMORIA.md — Mapas (Leaflet)
 summary: leaflet.css precisa de import explícito; tiles acompanham o tema; nunca inventar coordenada de pin; touch-action none engole a rolagem — modo compacto nasce travado.
 ---
@@ -39,5 +39,6 @@ via curl. E o mesmo Chromium não decodifica H.264
 ([[video-controlado-por-scroll-precisa-de-keyframes-densos]]).
 
 ## Relacionadas
+- [[carto-passou-a-exigir-chave-e-o-mapa-virou-claro]] — a CARTO exige chave desde 09/2026; os tiles são do OSM
 - [[globo-cobe-armadilhas]]
 - [[dynamic-ssr-false-nao-adia-por-visibilidade]]

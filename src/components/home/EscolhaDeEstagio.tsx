@@ -35,13 +35,20 @@ import type { Empreendimento } from "@/lib/types";
  * - **A cor é a do estágio**, a mesma escala do selo que aparece em todo
  *   cartão do catálogo (`statusCor.ts`): azul para o que ainda vai sair do
  *   papel, verde para o que já está de pé. A seção não inventa paleta.
+ * - **Superfície do TEMA, não tinta escura fixa (12/09/2026).** A primeira
+ *   versão era `bg-ink-950` com texto branco — desenhada quando o padrão do
+ *   site era escuro. Com o tema claro como padrão, dois blocos pretos no
+ *   meio de uma página sage liam como banner de outro site. Hoje o cartão
+ *   é `cartao` (superfície translúcida do tema) e só o NÚMERO e a seta
+ *   levam a cor do estágio: `acento` (teal) para pronto, `realce` (azul)
+ *   para obra — os dois tokens já têm contraste AA medido nos dois temas.
  */
 
 type Porta = {
   estagio: EstagioDeCompra;
   titulo: string;
   texto: string;
-  /** Tinta fixa: estes cartões têm fundo próprio, não a superfície do tema. */
+  /** Tokens do tema (mudam com claro/escuro): a cor do estágio, só no número e na seta. */
   tinta: string;
   brilho: string;
   borda: string;
@@ -52,17 +59,17 @@ const PORTAS: Porta[] = [
     estagio: "pronto",
     titulo: "Pronto para morar",
     texto: "Chave na mão: dá para visitar a unidade de verdade e mudar sem esperar obra.",
-    tinta: "text-brand-100",
-    brilho: "from-brand-500/25",
-    borda: "border-brand-400/30 hover:border-brand-300/60",
+    tinta: "text-acento-suave",
+    brilho: "from-acento/20",
+    borda: "hover:border-acento-linha",
   },
   {
     estagio: "obra",
     titulo: "Na planta ou em obra",
     texto: "Preço de lançamento e pagamento diluído durante a construção, direto com a construtora.",
-    tinta: "text-azure-100",
-    brilho: "from-azure-500/25",
-    borda: "border-azure-400/30 hover:border-azure-300/60",
+    tinta: "text-realce",
+    brilho: "from-realce/20",
+    borda: "hover:border-realce-linha",
   },
 ];
 
@@ -93,27 +100,23 @@ export function EscolhaDeEstagio({ catalogo }: { catalogo: Empreendimento[] }) {
             <CartaoTilt key={porta.estagio} indice={i} className="rounded-glass">
               <Link
                 href={`/empreendimentos?estagio=${porta.estagio}`}
-                className="rounded-glass bg-ink-950 group relative block h-full overflow-hidden border border-transparent p-6 sm:p-8"
+                className={`cartao group relative block h-full overflow-hidden p-6 transition-[border-color,transform] duration-300 hover:-translate-y-0.5 sm:p-8 ${porta.borda}`}
               >
                 <span
                   aria-hidden
-                  className={`pointer-events-none absolute -top-24 -right-16 size-56 rounded-full bg-gradient-to-br to-transparent blur-2xl transition-opacity duration-500 group-hover:opacity-90 ${porta.brilho} opacity-60`}
-                />
-                <span
-                  aria-hidden
-                  className={`rounded-glass pointer-events-none absolute inset-0 border ${porta.borda} transition-colors`}
+                  className={`pointer-events-none absolute -top-24 -right-16 size-56 rounded-full bg-gradient-to-br to-transparent blur-2xl transition-opacity duration-500 group-hover:opacity-100 ${porta.brilho} opacity-70`}
                 />
 
                 <span className="relative flex h-full flex-col">
                   <span className={`font-display block text-5xl leading-none sm:text-6xl ${porta.tinta}`}>
                     <NumeroQueConta valor={conta[porta.estagio]} className="tabular-nums" />
                   </span>
-                  <span className="text-brand-100/70 mt-1 block text-xs tracking-[0.14em] uppercase">
+                  <span className="text-apoio mt-1 block text-xs tracking-[0.14em] uppercase">
                     {conta[porta.estagio] === 1 ? "imóvel" : "imóveis"}
                   </span>
 
-                  <span className="font-display mt-5 block text-2xl text-white">{porta.titulo}</span>
-                  <span className="text-brand-100/80 mt-2 block text-sm text-pretty">
+                  <span className="font-display mt-5 block text-2xl text-titulo">{porta.titulo}</span>
+                  <span className="text-apoio mt-2 block text-sm text-pretty">
                     {porta.texto}
                   </span>
 

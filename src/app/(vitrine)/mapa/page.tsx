@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CtaFinal } from "@/components/home/CtaFinal";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { MapaEmpreendimentos } from "@/components/mapa/MapaEmpreendimentos";
+import { VoltarLink } from "@/components/ui/VoltarLink";
 import { getEmpreendimentos } from "@/lib/queries";
 import { site } from "@/lib/site";
 import { ClipboardList } from 'lucide-react';
@@ -14,7 +17,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/mapa" },
   openGraph: {
     title: `Mapa de Imóveis em Alphaville | ${site.nome}`,
-    description: "Navegue pelo mapa noturno interativo e descubra os melhores endereços de alto padrão.",
+    description: "Navegue pelo mapa interativo e descubra os melhores endereços de alto padrão.",
     url: `${site.url}/mapa`,
   },
 };
@@ -30,12 +33,21 @@ export default async function MapaPage({
   ]);
 
   return (
-    <main className="relative min-h-screen pt-20 pb-8 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col justify-between">
+    <main className="relative min-h-screen pt-24 pb-8 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col">
       <SiteHeader />
+      <WhatsappCta />
 
       <div className="space-y-4">
+        {/* Botão de voltar (12/09/2026): o mapa em tela cheia não tinha
+            caminho de volta além da logo. */}
+        <div className="pt-2">
+          <VoltarLink href="/" variante="pilula">
+            Voltar ao site
+          </VoltarLink>
+        </div>
+
         {/* Cabeçalho da Página do Mapa */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-[11px] uppercase tracking-widest font-bold text-acento-forte">
               Geolocalização & Arquitetura
@@ -63,9 +75,13 @@ export default async function MapaPage({
           <MapaEmpreendimentos
             empreendimentos={todosEmpreendimentos}
             imovelInicialSlug={params.imovel}
-            alturaClasse="h-[76vh] min-h-[520px]"
+            alturaClasse="h-[70svh] min-h-[420px] sm:h-[76vh] sm:min-h-[520px]"
           />
         </div>
+      </div>
+
+      <div className="mt-12 sm:mt-16">
+        <CtaFinal />
       </div>
     </main>
   );

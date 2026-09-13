@@ -3,6 +3,7 @@ import "server-only";
 import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
 import { mesclarDossie } from "./mesclarDossie";
 import { createServiceClient } from "@/lib/supabase/service";
+import { comRetentativa } from "@/lib/supabase/retentativa";
 import {
   bloqueadoAtePor,
   deveAbrirDisjuntor,
@@ -205,14 +206,22 @@ async function encontrarLeadCadastrado(
 ): Promise<string | null> {
   const candidatos = candidatosTelefone(params.telefoneCliente);
 
-  const { data: lead, error } = await supabase
-    .from("leads")
-    .select("id")
-    .eq("corretor_id", params.corretorId)
-    .in("telefone_e164", candidatos)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Com retentativa (12/09/2026): esta é a PRIMEIRA consulta do webhook, e
+  // um "Gateway Timeout" do Supabase aqui derrubava a requisição inteira —
+  // 8 vezes em 24h, todas em minutos redondos (00:00, 00:30), que é quando
+  // o pg_cron e os crons da Vercel batem no mesmo banco. O provedor recebe
+  // 500 e reentrega, mas a mensagem do cliente espera a reentrega para ser
+  // respondida. Erro COM código (consulta errada) continua sem repetição.
+  const { data: lead, error } = await comRetentativa("lead do WhatsApp", () =>
+    supabase
+      .from("leads")
+      .select("id")
+      .eq("corretor_id", params.corretorId)
+      .in("telefone_e164", candidatos)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  );
 
   if (error) throw new Error(`Falha ao conferir o lead do WhatsApp: ${error.message}`);
   return lead?.id ?? null;

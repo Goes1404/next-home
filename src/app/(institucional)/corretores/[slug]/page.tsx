@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimento";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
+import { VoltarLink } from "@/components/ui/VoltarLink";
 import { iniciais, telefoneBR } from "@/lib/format";
 import { getCorretorPorSlug, getEmpreendimentosPorCorretor } from "@/lib/queries";
 import { linkWhatsappPara, site } from "@/lib/site";
@@ -144,12 +145,9 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
             direto aqui e precisa de um caminho para o resto da equipe sem ter
             de rolar a página inteira. */}
         <nav aria-label="Trilha" className="mx-auto w-full max-w-5xl">
-          <Link
-            href="/corretores"
-            className="text-fluid-sm hover:text-acento-suave inline-flex items-center gap-1.5 text-legenda transition-colors"
-          >
-            <span aria-hidden>←</span> Toda a equipe
-          </Link>
+          <VoltarLink href="/corretores" variante="pilula">
+            Voltar para a equipe
+          </VoltarLink>
         </nav>
 
         <Reveal className="mx-auto mt-4 w-full max-w-5xl">

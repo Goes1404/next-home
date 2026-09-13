@@ -25,7 +25,7 @@ const FAIXAS_DORMITORIOS = [
  * `bg-superficie` — a mesma cor do cartão em volta — e `text-corpo`. Numa
  * página clara isso vira uma caixa sem borda visível, do tom do fundo, com
  * o texto em cinza-esverdeado: relatado como "deixe esses três campos
- * escrito Qualquer escuro, para a pessoa saber que é para selecionar".
+ * escrito "Todos" escuro, para a pessoa saber que é para selecionar".
  *
  * As três coisas que fazem um controle ser reconhecido como controle:
  * fundo mais claro que o painel (`bg-elevado`, o degrau de cima), borda que
@@ -116,7 +116,7 @@ export function FiltroForm({
             defaultValue={filtrosAtuais.tipo ?? ""}
             className={CAMPO}
           >
-            <option value="">Qualquer</option>
+            <option value="">Todos</option>
             {/* Só tipos com estoque: oferecer "Casa" com zero casas manda o
                 visitante para uma listagem vazia na primeira interação. */}
             {Object.entries(TIPO_LABEL)
@@ -139,7 +139,7 @@ export function FiltroForm({
             defaultValue={filtrosAtuais.cidade ?? ""}
             className={CAMPO}
           >
-            <option value="">Qualquer</option>
+            <option value="">Todos</option>
             {regioes.cidades.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -159,7 +159,7 @@ export function FiltroForm({
               defaultValue={filtrosAtuais.bairro ?? ""}
               className={CAMPO}
             >
-              <option value="">Qualquer</option>
+              <option value="">Todos</option>
               {regioes.bairros.map((b) => (
                 <option key={b} value={b}>
                   {b}
@@ -182,7 +182,7 @@ export function FiltroForm({
             defaultValue={filtrosAtuais.precoMax ? String(filtrosAtuais.precoMax) : ""}
             className={CAMPO}
           >
-            <option value="">Qualquer</option>
+            <option value="">Todos</option>
             {FAIXAS_PRECO.map((f) => (
               <option key={f.valor} value={f.valor}>
                 {f.label}
@@ -204,7 +204,7 @@ export function FiltroForm({
               }
               className={CAMPO}
             >
-              <option value="">Qualquer</option>
+              <option value="">Todos</option>
               {FAIXAS_DORMITORIOS.map((f) => (
                 <option key={f.valor} value={f.valor}>
                   {f.label}
@@ -228,7 +228,7 @@ export function FiltroForm({
               defaultValue={filtrosAtuais.estagio ?? ""}
               className={CAMPO}
             >
-              <option value="">Qualquer</option>
+              <option value="">Todos</option>
               {ESTAGIOS.map((e) => (
                 <option key={e} value={e}>
                   {ESTAGIO_LABEL[e]}

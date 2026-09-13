@@ -47,6 +47,24 @@ export type Simulacao = {
   /** A parcela do financiamento realmente necessário. Zero se não fecha. */
   parcelaEstimada: number;
   itbi: number;
+  /**
+   * Três números acrescentados em 12/09/2026 para a simulação pública
+   * responder o que o cliente pergunta em seguida:
+   *
+   * - `rendaNecessaria`: quando NÃO fecha, quanto de renda faria fechar
+   *   (a parcela que o financiamento necessário exige, dividida pelo
+   *   comprometimento máximo). "Falta R$ 120 mil" é abstrato; "com R$ 9.800
+   *   de renda fecha" é acionável — e é o número que o corretor pede.
+   * - `precoMaximo`: o maior valor de imóvel que os mesmos recursos e renda
+   *   sustentam. É o que liga a simulação ao catálogo (`?precoMax=`).
+   * - `totalPago` / `jurosTotais`: parcela × prazo e a diferença para o
+   *   principal. Prazo mais longo baixa a parcela e sobe o juro; sem esse
+   *   número o simulador só mostrava o lado bom do prazo maior.
+   */
+  rendaNecessaria: number;
+  precoMaximo: number;
+  totalPago: number;
+  jurosTotais: number;
   /** O que a conta assumiu, em português. */
   premissas: string[];
   /** O que o corretor precisa saber que foi desconsiderado. */
@@ -124,6 +142,14 @@ export function simularFinanciamento(
   const faltam = fecha ? 0 : Math.round(necessario - valorFinanciavel);
   const parcelaEstimada = fecha ? parcelaDe(necessario, i, prazoMeses) : 0;
 
+  const rendaNecessaria =
+    params.comprometimentoMaximo > 0
+      ? Math.ceil(parcelaDe(necessario, i, prazoMeses) / params.comprometimentoMaximo)
+      : 0;
+  const precoMaximo = Math.floor(recursosProprios + valorFinanciavel);
+  const totalPago = fecha ? Math.round(parcelaEstimada * prazoMeses) : 0;
+  const jurosTotais = fecha ? Math.max(0, totalPago - Math.round(necessario)) : 0;
+
   const cidade = entrada.cidade?.trim();
   const aliquota = (cidade ? params.itbiPorCidade[cidade] : undefined) ?? ALIQUOTA_ITBI_PADRAO;
   if (cidade && params.itbiPorCidade[cidade] === undefined) {
@@ -153,6 +179,10 @@ export function simularFinanciamento(
     fecha,
     parcelaEstimada,
     itbi,
+    rendaNecessaria,
+    precoMaximo,
+    totalPago,
+    jurosTotais,
     premissas,
     avisos,
   };

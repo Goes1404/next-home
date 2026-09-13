@@ -6409,3 +6409,47 @@ que **recusa o deployment inteiro, sem log e sem webhook**.
   `x-matched-path` batendo é rota no ar recusando sem segredo; 404 é rota que
   só existe na branch. `web_fetch_vercel_url` do MCP da Vercel faz isso
   quando o `curl` está bloqueado.
+
+## A CARTO passou a exigir chave, e o mapa virou claro (12/09/2026)
+
+Vault: [[carto-passou-a-exigir-chave-e-o-mapa-virou-claro]].
+
+- **O mapa de produção amanheceu com "API KEY REQUIRED" em diagonal em todo
+  tile, sem deploy nenhum.** A CARTO mudou a política dos basemaps gratuitos
+  (`basemaps.cartocdn.com/{dark,light}_all`). Build, tipos, testes e o E2E
+  de saúde passavam: o tile chega com HTTP 200 e a marca d'água está DENTRO
+  da imagem. Defeito que nasce fora do repositório só aparece olhando.
+- **Trocado pelo tile padrão do OpenStreetMap** (`tile.openstreetmap.org`,
+  sem chave, sem `{s}` nem `{r}`), em `temaDoMapa.ts` — nenhum componente
+  mudou. Atribuição visível continua obrigatória (política de uso do OSM).
+- **O mapa é CLARO nos dois temas**, a pedido do usuário. A decisão de 10/09
+  ("escuro nos dois temas, pela lição do globo") caiu: com o tema padrão
+  claro, o mapa escuro lia como buraco preto. Os pinos (`.map-pulse-*`)
+  foram redesenhados para tile claro — teal escuro com aro branco; o teal
+  neon de antes sumia sobre o OSM.
+- **Os dois cartões "Quando você quer morar?" eram `bg-ink-950` fixo** —
+  desenhados quando o padrão do site era escuro. Viraram `cartao`
+  (superfície do tema), com a cor do estágio só no número e na seta
+  (`acento` / `realce`). Regra que fica: tinta escura fixa num componente
+  da home só quando ele flutua sobre FOTO.
+- **`VoltarLink` ganhou a variante `pilula`** (44px, fundo, `sobreFoto` para
+  tinta fixa sobre capa). Está no hero do imóvel, em `/empreendimentos`,
+  `/mapa`, `/portfolio` e na página do corretor. O link discreto de 12px
+  sem fundo sumia na capa escura e era a única saída da página.
+- **Simulador público**: prazo escolhido em botões (10 a 35 anos, recortado
+  pelo teto dos parâmetros), "com renda de R$ X fecharia", teto de imóvel
+  que renda + entrada sustentam (`precoMaximo`, ligado a `?precoMax=`),
+  total pago e juros no período, e o botão do WhatsApp leva a simulação
+  DENTRO da mensagem. Os três números novos moram no módulo puro
+  (`financiamento.ts`), não na tela — o consultor do painel os herda.
+- **O webhook tinha 8 erros em 24h, todos `Gateway Timeout` do Supabase em
+  minutos redondos (00:00, 00:30)** — quando o pg_cron e os crons da Vercel
+  batem no banco juntos. A primeira consulta do webhook
+  (`encontrarLeadCadastrado`) passou por `comRetentativa`; erro COM código
+  continua sem repetição. O "This page couldn't load" do print era rede do
+  navegador: todas as rotas públicas responderam 200 durante a investigação.
+- **`node_modules` não existia nesta máquina.** `npx tsc` sem ele devolve
+  "This is not the tsc command you are looking for" — não é o projeto,
+  é `npm ci` faltando. E `.env.local` também não: para rodar o site público
+  local bastam `NEXT_PUBLIC_SUPABASE_URL` e a chave PUBLICÁVEL (o MCP da
+  Supabase devolve as duas; são públicas por desenho).

@@ -1501,12 +1501,16 @@
   cursor: pointer;
 }
 
+/* Pinos desenhados para tile CLARO (OSM) desde 12/09/2026: o teal claro
+   com brilho neon era legível sobre o tile escuro da CARTO e sumia sobre o
+   OSM. Hoje: ponto em teal escuro com aro branco — a receita de qualquer
+   app de mapa sobre fundo claro. */
 .map-pulse-ring {
   position: absolute;
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(47, 214, 164, 0.45);
+  background: rgba(0, 137, 123, 0.35);
   animation: pulse-ring 2.2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
@@ -1515,8 +1519,9 @@
   width: 13px;
   height: 13px;
   border-radius: 50%;
-  background: #2fd6a4;
-  box-shadow: 0 0 10px #2fd6a4, 0 0 20px rgba(47, 214, 164, 0.6);
+  background: #00897b;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
   border: 2px solid #ffffff;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease;
 }
@@ -1524,8 +1529,8 @@
 .map-pulse-marker:hover .map-pulse-dot,
 .map-pulse-marker.active .map-pulse-dot {
   transform: scale(1.45);
-  background: #6fe7c0;
-  box-shadow: 0 0 14px #6fe7c0, 0 0 28px rgba(111, 231, 192, 0.9);
+  background: #00594f;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
 }
 
 .map-pulse-price {

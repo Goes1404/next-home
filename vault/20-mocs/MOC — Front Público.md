@@ -42,5 +42,8 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[as-duas-portas-da-home]] — prazo e dinheiro, os dois eixos que faltavam (11/09)
 - [[estagio-de-compra-e-o-que-o-cadastro-diz]] — "últimas unidades" não é pronto (11/09)
 
+## Mapa
+- [[carto-passou-a-exigir-chave-e-o-mapa-virou-claro]] — tiles OSM sem chave, mapa claro nos dois temas, pinos para tile claro (12/09)
+
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]

@@ -21,10 +21,13 @@ const LIMIAR_POUCAS_UNIDADES = 10;
 export function Tipologias({
   tipologias,
   plantasGerais = [],
+  contatoWhatsapp,
 }: {
   tipologias: Tipologia[];
   /** Plantas cadastradas no empreendimento (não atreladas a uma tipologia). */
   plantasGerais?: Midia[];
+  /** Link do WhatsApp do corretor, já com a mensagem — o CTA da seção. */
+  contatoWhatsapp?: string;
 }) {
   const [aberta, setAberta] = useState<number | null>(null);
 
@@ -127,6 +130,19 @@ export function Tipologias({
           );
         })}
       </div>
+
+      {contatoWhatsapp && (
+        <Reveal className="mt-8">
+          <a
+            href={contatoWhatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-acento-linha bg-acento-lavado px-6 text-sm font-medium text-acento-suave transition-colors hover:bg-acento hover:text-sobre-cor sm:w-auto"
+          >
+            Pedir tabela de valores e plantas no WhatsApp
+          </a>
+        </Reveal>
+      )}
 
       <Lightbox
         itens={plantas}

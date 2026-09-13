@@ -18,7 +18,7 @@ import { Video } from "@/components/empreendimento/Video";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { precoAPartirDe } from "@/lib/format";
-import { site } from "@/lib/site";
+import { linkWhatsappPara, site } from "@/lib/site";
 import {
   getEmpreendimentoBySlug,
   getSimilares,
@@ -175,7 +175,14 @@ export default async function EmpreendimentoPage({
           <Sobre empreendimento={e} />
           <CenaShowcase empreendimento={e} />
           <BookDigital empreendimento={e} />
-          <Tipologias tipologias={e.tipologias} plantasGerais={e.plantas} />
+          <Tipologias
+            tipologias={e.tipologias}
+            plantasGerais={e.plantas}
+            contatoWhatsapp={linkWhatsappPara(
+              e.corretor.whatsapp,
+              `Olá, ${e.corretor.nome}! Vim pelo site e quero a tabela de valores e as plantas do ${e.nome}.`,
+            )}
+          />
           <Lazer itens={e.lazer} fotos={e.galeria} />
           <Galeria fotos={e.galeria} />
           <Video videos={e.videos} />

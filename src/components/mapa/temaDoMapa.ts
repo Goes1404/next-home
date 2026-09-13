@@ -9,30 +9,45 @@
 
 export type TemaMapa = "claro" | "escuro";
 
+/**
+ * Tiles do OpenStreetMap, sem chave, nos dois temas (12/09/2026).
+ *
+ * A CARTO passou a exigir API key nos basemaps gratuitos: em produção os
+ * tiles vinham carimbados com "API KEY REQUIRED" em diagonal, sobre o mapa
+ * inteiro. O tile padrão do OSM não pede chave, é claro (que é o que o
+ * site pede desde que o tema padrão virou claro) e tem a mesma projeção —
+ * nada mais muda nos componentes.
+ *
+ * Sem `{s}` nem `{r}`: o OSM não tem subdomínios nem versão @2x. E a
+ * política de uso do OSM exige atribuição visível — está ligada em todo
+ * mapa e não deve ser desligada.
+ */
+const TILE_OSM = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+
 export const TILES_MAPA: Record<TemaMapa, string> = {
-  escuro: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-  claro: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+  escuro: TILE_OSM,
+  claro: TILE_OSM,
 };
 
-/** Exigência de licença dos dados (OSM) e dos tiles (CARTO). */
-export const ATRIBUICAO_MAPA = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+/** Exigência de licença dos dados e dos tiles (OSM). */
+export const ATRIBUICAO_MAPA =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 /**
- * O mapa é ESCURO nos dois temas, desde 10/09/2026.
+ * O mapa é CLARO nos dois temas, desde 12/09/2026 (pedido do usuário: com
+ * o tema padrão claro, o mapa escuro virava um buraco preto na página).
  *
- * Os tiles `light_all` da CARTO são cinza-claro sobre cinza-claro: num tema
- * de página clara o mapa deixava de ser um objeto e virava uma mancha, com
- * os pins de acento boiando sem base. É a mesma lição já registrada para o
- * GLOBO da home ("globo claro sobre página clara SOME... a esfera é escura
- * nos dois temas"): o que dá destaque a um artefato geográfico é o
- * contraste com a página, não a combinação com ela.
+ * Entre 10/09 e 12/09 ele foi escuro nos dois temas, pela lição do globo
+ * ("o que dá destaque a um artefato geográfico é o contraste com a
+ * página"). O que segura o destaque agora é a MOLDURA (borda + sombra do
+ * contêiner) e os pinos em teal sobre o tile claro, não o fundo do tile.
  *
  * A função continua existindo — e o observador de troca de tema também —
- * porque o dia em que um mapa claro fizer sentido em alguma superfície, o
- * lugar de decidir isso é aqui, e não espalhado por três componentes.
+ * porque o lugar de decidir isso é aqui, e não espalhado por três
+ * componentes.
  */
 export function temaDoMapa(): TemaMapa {
-  return "escuro";
+  return "claro";
 }
 
 /** Observa troca de tema (atributo ou preferência do SO). Devolve o desligamento. */
