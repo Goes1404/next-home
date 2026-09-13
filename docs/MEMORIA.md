@@ -6756,3 +6756,66 @@ planejar, medir — e a medição mudou o plano. Linha de base em
   'TiraDaMemoria'`. A branch de produção parou em `3c49999`; a definição do
   componente está em `299396b`, que só existe em `ingestao-de-midia`. A
   produção serve o deploy anterior, e nada sobe até isso ser mergeado.
+
+## F0, F1 e F2 do roadmap de performance (13/09/2026)
+
+Executadas na mesma sessão que mediu a linha de base. Números em
+`docs/medicoes/2026-09-13-f0-a-f2-antes-e-depois.md`; vault:
+[[o-conteudo-aparece-antes-do-javascript]] e
+[[o-site-publico-nao-vai-mais-ao-banco-por-requisicao]].
+
+| celular, primeira visita | antes | depois da F2 |
+|---|---|---|
+| LCP da home | 7,39 s | **4,53 s** |
+| LCP da listagem | 4,59 s | **3,21 s** |
+| TTFB da home (Brasil) | 0,9–2,9 s | 0,37–0,54 s |
+| LCP da home no desktop | 3,43 s | **1,58 s** |
+
+- **O `priority` do `next/image` NÃO põe `fetchpriority` no `<img>`** nesta
+  versão: gera só o `<link rel="preload">`. O Chrome reprovava a listagem
+  na checagem de LCP com `priority` ligado. `fetchPriority="high"` explícito.
+- **A F1 sozinha não moveu o LCP do celular, e o motivo ensina.** Com o hero
+  visível na hora, o maior elemento passou a ser o VÍDEO de fundo (607 KB),
+  cujo primeiro quadro chegava aos 8,3 s. O `FundoVideoIntro` não emite
+  nada no SSR e nasce `opacity-0` até ter dados. O que moveu foi o POSTER
+  no HTML do servidor (`<picture>` + `preload` no head): 32 KB, o mesmo
+  quadro em que o vídeo congela. **Ao trocar um elemento invisível por um
+  visível, conferir quem vira o maior — o LCP troca de dono.**
+- **`.gsap-pending` saiu; a regra é `estaNaTela`.** O que já está na
+  viewport quando o JS chega fica como o servidor entregou; só o que está
+  fora ganha entrada. O hero chega por CSS (`@keyframes chegada`, `both`),
+  pausado só sob a vinheta. Guarda `conteudoVisivelSemJs.test.ts`.
+- **A vinheta é só desktop, 3,8 s, e rolar a dispensa.** No celular o fundo
+  já é ela; 3,8 s é onde a logo fecha (menos é o "soluço" da versão de
+  4,2 s); um `<video>` em vez de dois; `poster`.
+- **`unstable_cache` proíbe `cookies()` dentro** — e `buscarPublicados`
+  chamava `getCorretorAtivo()` por dentro. A consulta (cacheável) e a
+  personalização (cookie) tiveram de ser separadas: `catalogo/cache.ts` e
+  um `map` em memória. `'use cache'` exigiria `cacheComponents`, que muda o
+  contrato das 50 rotas — F2b, com o painel verificável.
+- **"Invariant: incrementalCache missing in unstable_cache"** no vitest:
+  `vi.mock("next/cache", () => ({ unstable_cache: (fn) => fn }))`.
+- **`revalidateTag(tag)` com um argumento está deprecated**; é
+  `revalidateTag(tag, "max")`. E `revalidatePath` limpa a ROTA, a etiqueta
+  limpa o DADO — sem as duas, a rota é recalculada com o dado velho.
+- **O `proxy.ts` chamava `getUser()` (rede) em TODA requisição**, inclusive
+  arquivo de `public/`; o comentário dizia o contrário. Agora Auth só em
+  `/corretor/*`, `getClaims()` (JWT local), matcher sem caminhos com ponto.
+- **Cold start + cache frio: o primeiro acesso depois do deploy custa ~1 s.**
+  Medir TTFB logo depois de subir dá uma amostra alta por rota.
+- **27 policies reescritas num bloco `do` a partir de `pg_policies`**
+  (`auth.uid()` → `(select auth.uid())`), 23 índices de FK, 1 índice
+  duplicado fora. Advisors: `auth_rls_initplan` 27 → 0. Conferido nos dois
+  sentidos como manda a 0077.
+- **`tsx` embrulha função nomeada em `__name(...)`** e a serialização do
+  Playwright leva o embrulho para a página ("`__name is not defined`"). O
+  coletor de métricas vai como `String.raw` — e a barra do regex some se
+  for template literal comum.
+- **Git Bash converte `--paginas=/` em `C:/Program Files/Git/`**:
+  `MSYS_NO_PATHCONV=1` na frente de `npm run perf`.
+- **O `polyfillFiles` do manifesto é o chunk `nomodule`**: contá-lo inflava
+  toda rota em 110 KB na catraca de bundle. Fora, o manifesto casa com o
+  navegador (729 KB contra 740 medidos).
+- **Arquivo de medição por data sobrescreve** (a armadilha do eval, de
+  novo): `--rotulo=` e o perfil no nome. A rodada do celular da F1 e da F2
+  sobreviveu só no terminal; a tabela consolidada foi transcrita à mão.

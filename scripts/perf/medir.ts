@@ -279,7 +279,11 @@ async function main() {
 
   if (cfg.gravar) {
     const data = new Date().toISOString().slice(0, 10);
-    const sufixo = (cfg.semVinheta ? "-sem-vinheta" : "") + (cfg.rotulo ? `-${cfg.rotulo}` : "");
+    // O perfil entra no nome quando é UM só: `--perfil=celular` e depois
+    // `--perfil=desktop` com o mesmo rótulo sobrescreviam o mesmo arquivo —
+    // aconteceu na F2, e a rodada do celular sobreviveu só no terminal.
+    const perfil = cfg.perfis.length === 1 ? `-${cfg.perfis[0]}` : "";
+    const sufixo = perfil + (cfg.semVinheta ? "-sem-vinheta" : "") + (cfg.rotulo ? `-${cfg.rotulo}` : "");
     const dir = join(process.cwd(), "docs", "medicoes");
     mkdirSync(dir, { recursive: true });
     const nome = `perf-${data}${sufixo}`;

@@ -11,6 +11,26 @@ Toda afirmação deste roadmap aponta para um número daquele arquivo. Quando um
 número mudar, é lá que se atualiza, com a data — a régua da casa é "medir antes
 de planejar" e "uma rodada não separa regressão de variância".
 
+## Andamento
+
+| fase | estado | commit | medido |
+|---|---|---|---|
+| F0 — Instrumentar | feita em 13/09 | `1306397` | Speed Insights e Analytics no layout (**ligar no painel da Vercel**), `npm run perf`, catraca de bundle na esteira, 29,8 MB de vídeo morto fora, deploy de produção consertado |
+| F1 — Conteúdo antes do JS | feita em 13/09 | `d502267` | `.gsap-pending` invertido (`estaNaTela`), hero por CSS, vinheta só desktop/3,8 s/dispensável por rolagem, `fetchPriority` nas capas, Fraunces −52 KB |
+| F2 — Cache e servidor | feita em 13/09 (menos a casca estática) | `72f6424` + 0112 | cache por etiqueta, proxy sem Auth no público, poster do fundo no SSR, prefetch com intenção, 23 índices e 27 policies no banco |
+| F2b — Casca estática (Cache Components / PPR) | pendente | — | exige `cacheComponents`, que muda o contrato das 50 rotas; fazer com o painel verificável (credencial de E2E) |
+| F3 — Menos JavaScript | pendente | — | |
+| F4 — Painel como app | pendente | — | |
+| F5 — Fluidez percebida | pendente | — | |
+
+Resultado até aqui (produção, celular, primeira visita — a régua do
+Google): LCP da home **7,39 → 4,53 s**, da listagem **4,59 → 3,21 s**; no
+desktop a home foi de **3,43 → 1,58 s**. TTFB da home de 0,9–2,9 s para
+0,37–0,54 s. Tabela completa em
+[docs/medicoes/2026-09-13-f0-a-f2-antes-e-depois.md](medicoes/2026-09-13-f0-a-f2-antes-e-depois.md).
+O que segura a home em 4,5 s no celular agora é BANDA (783 KB de JS
+disputando 1,6 Mbps com o poster) — é a F3.
+
 ## Onde estamos
 
 | o quê | medido | régua do Google |

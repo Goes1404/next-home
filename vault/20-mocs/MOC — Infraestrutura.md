@@ -28,6 +28,7 @@ Vercel (plano Hobby), deploy e runtime.
 
 ## Performance
 - [[o-site-e-lento-por-desenho-nao-por-peso]] — `proxy.ts` chama `getUser()` em toda requisição; `cookies()` no layout raiz torna tudo dinâmico; função em iad1, banco em ca-central-1 (13/09)
+- [[o-site-publico-nao-vai-mais-ao-banco-por-requisicao]] — F2: cache de dados por etiqueta, proxy sem Auth no público, poster no SSR; TTFB da home 0,9–2,9 s → 0,37–0,54 s (13/09)
 
 ## Relacionados
 - [[MOC — Banco de Dados]] · [[Home]]

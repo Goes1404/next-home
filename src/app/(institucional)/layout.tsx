@@ -1,3 +1,4 @@
+import { preload } from "react-dom";
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
@@ -42,6 +43,15 @@ export default async function InstitucionalLayout({
   // é personalização explícita dele, e trocá-la pela peça da casa apagaria
   // uma escolha que ele fez no painel.
   const videoDoCorretor = corretorAtivo?.videoUrl || null;
+
+  // O poster é o candidato a LCP: avisar o navegador no <head>, antes de
+  // ele chegar ao <img> no meio do body — na rede lenta, os 14 chunks de JS
+  // pré-carregados disputam a banda com ele, e o `<link rel="preload">` com
+  // `fetchPriority="high"` é o que o põe na frente da fila.
+  if (!usaFotoDeFundo && !videoDoCorretor) {
+    preload(FUNDO_HOME_POSTER_URL, { as: "image", fetchPriority: "high", media: "(max-width: 767.98px)" });
+    preload(INTRO_POSTER_URL, { as: "image", fetchPriority: "high", media: "(min-width: 768px)" });
+  }
 
   return (
     <GlassBackgroundProvider>
