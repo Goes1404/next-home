@@ -6868,6 +6868,17 @@ Vault: [[o-globo-recebe-pontos-e-nada-roda-sozinho]] e
   não papel de parede. `AberturaHome` já tratava `[data-fundo-video]`
   ausente (`if (video)`); `ParallaxFundoHome` escreve no invólucro, que
   ficou. Foto/vídeo PRÓPRIO do corretor continuam tendo precedência.
+- **A outra sessão do mesmo dia pôs um POSTER da vinheta como LCP (F2 de
+  performance) enquanto esta a tirava do fundo.** O push foi rejeitado
+  (19 commits remotos), o rebase conflitou em `layout.tsx`, `MEMORIA.md` e
+  no MOC — e a resolução não podia ser "aceitar os dois": o poster era o
+  MESMO quadro do logotipo que o usuário pediu para remover. Saiu o
+  `<picture>`, os dois `preload()` e os quatro imports de URL; o LCP passa a
+  ser o conteúdo do herói, que já nasce visível pela F1 deles. **Duas
+  sessões no mesmo repositório: antes de resolver conflito por união,
+  perguntar se as duas mudanças ainda fazem sentido JUNTAS.** E `npm ci`
+  depois do rebase: o lock trouxe `@vercel/analytics` e `speed-insights`,
+  sem os quais o `tsc` acusa módulo inexistente no layout raiz.
 - **"Anunciar meu imóvel" saiu do menu** (header desktop e gaveta do
   celular), a pedido. A página `/anunciar-imovel` continua — chega pelo
   cartão do vendedor na home; `seo.test.ts` e o E2E de saúde ainda a listam.
