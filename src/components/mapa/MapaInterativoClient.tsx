@@ -7,13 +7,14 @@ import L from "leaflet";
 // perdem o z-index e os controles ficam soltos — era exatamente o "mapa
 // feio e desajustado". Nenhum outro arquivo importava isto.
 import "leaflet/dist/leaflet.css";
-import type { Empreendimento, StatusObra } from "@/lib/types";
+import type { StatusObra } from "@/lib/types";
+import type { PontoDoMapa } from "@/lib/mapa/ponto";
 import { CardFlutuanteImovel } from "./CardFlutuanteImovel";
 import { FiltrosMapa } from "./FiltrosMapa";
 import { temaDoMapa, TILES_MAPA, ATRIBUICAO_MAPA, aoMudarTema } from "./temaDoMapa";
 
 interface Props {
-  empreendimentos: Empreendimento[];
+  empreendimentos: PontoDoMapa[];
   imovelInicialSlug?: string;
   alturaClasse?: string;
   /** Mapa embutido no meio de página rolável: gestos de toque só depois de
@@ -57,7 +58,7 @@ export default function MapaInterativoClient({
   const [bairroFiltro, setBairroFiltro] = useState<string>("todos");
   // Seleção inicial (link /mapa?imovel=slug) resolvida na montagem do
   // estado — um efeito para isso seria um re-render a mais sem motivo.
-  const [imovelSelecionado, setImovelSelecionado] = useState<Empreendimento | null>(() =>
+  const [imovelSelecionado, setImovelSelecionado] = useState<PontoDoMapa | null>(() =>
     imovelInicialSlug ? (empreendimentos.find((e) => e.slug === imovelInicialSlug) ?? null) : null,
   );
 

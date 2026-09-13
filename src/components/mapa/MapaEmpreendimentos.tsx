@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import type { Empreendimento } from "@/lib/types";
+import type { PontoDoMapa } from "@/lib/mapa/ponto";
 
 // Dynamic import com SSR desativado para garantir compatibilidade 100% com o Leaflet no Next.js
 const MapaClient = dynamic(() => import("./MapaInterativoClient"), {
@@ -25,7 +25,7 @@ const MapaClient = dynamic(() => import("./MapaInterativoClient"), {
 });
 
 interface Props {
-  empreendimentos: Empreendimento[];
+  empreendimentos: PontoDoMapa[];
   imovelInicialSlug?: string;
   alturaClasse?: string;
   /**

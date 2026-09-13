@@ -20,6 +20,7 @@ import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
 import { GloboOuMapa } from "@/components/mapa/GloboOuMapa";
+import { pontosDoMapa } from "@/lib/mapa/ponto";
 import { enderecoLinha, site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -287,8 +288,11 @@ export default async function HomeInstitucional() {
               </Reveal>
 
               <Reveal delay={0.1} from="baixo" className="mt-8 w-full">
+                {/* Pontos, não o catálogo (F3): os 25 imóveis inteiros — galeria,
+                    descrição, 335 blurs em base64 — eram 252 KB de RSC no HTML
+                    da home para desenhar 25 pinos. */}
                 <GloboOuMapa
-                  empreendimentos={todos}
+                  empreendimentos={pontosDoMapa(todos)}
                   alturaClasse="h-[62vh] min-h-[440px] max-h-[640px]"
                 />
               </Reveal>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import type { Empreendimento } from "@/lib/types";
+import type { PontoDoMapa } from "@/lib/mapa/ponto";
 import { STATUS_LABEL, TIPO_LABEL } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
@@ -11,7 +11,7 @@ import { MapPin } from 'lucide-react';
 
 
 interface Props {
-  imovel: Empreendimento;
+  imovel: PontoDoMapa;
   onFechar: () => void;
 }
 

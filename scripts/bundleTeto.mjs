@@ -37,7 +37,12 @@ const TETOS_KB = {
   // Painel: as telas de chat (Pessoas, Conversas, Estúdio) carregam ~1.030 KB
   // porque `Chat.tsx` e `ChatBase` entram estáticos — é a F4 que os move
   // para `next/dynamic`, e aí este número desce.
-  "*": 1040,
+  "*": 800,
+  "/corretor/(painel)/pessoas/page": 1040,
+  "/corretor/(painel)/conversas/page": 1040,
+  "/corretor/(painel)/imoveis/criar-imagem/page": 1010,
+  "/corretor/(painel)/imoveis/[slug]/importar/page": 1010,
+  "/corretor/(painel)/marketing/video/page": 1000,
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
   "/(institucional)/page": 750,

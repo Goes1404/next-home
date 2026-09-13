@@ -152,6 +152,20 @@ export function GloboImoveis({
   const mergulho = useRef<{ inicio: number } | null>(null);
   const fimDoMergulho = useRef(aoFimDoMergulho);
   const aoAproximarRef = useRef(aoAproximar);
+  // O laço de animação lê isto a cada quadro: fora da tela, o globo não
+  // pede um `update()` ao WebGL (F3, 13/09/2026). Antes ele renderizava a
+  // 60 fps quatro telas abaixo da dobra, para ninguém.
+  const visivel = useRef(true);
+
+  useEffect(() => {
+    const el = molduraRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observador = new IntersectionObserver((registros) => {
+      for (const r of registros) visivel.current = r.isIntersecting;
+    });
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, []);
 
   const aoPressionar = useCallback((e: React.PointerEvent) => {
     // No toque não existe "passar o ponteiro por cima": o aviso de intenção
@@ -253,6 +267,14 @@ export function GloboImoveis({
       let terminou = false;
 
       const animar = () => {
+        // Fora da viewport e sem mergulho em curso: só agenda o próximo
+        // quadro, sem tocar no WebGL. O mergulho continua porque quem o pediu
+        // está olhando.
+        if (!visivel.current && !mergulho.current) {
+          quadro = requestAnimationFrame(animar);
+          return;
+        }
+
         // A rotação livre é uma respiração lenta em torno do foco, não uma
         // volta ao mundo: o assunto da página é esta região.
         if (!parado.current && !reduzido && !mergulho.current) {

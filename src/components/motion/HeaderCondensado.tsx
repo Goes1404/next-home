@@ -49,9 +49,17 @@ export function HeaderCondensado({
     let condensado: boolean | null = null;
     let oculto = false;
     let ultimoY = window.scrollY;
+    // Quadro sem rolagem nem redimensionamento não faz nada: o tique do GSAP
+    // continua chamando, mas o custo vira duas comparações (F3, 13/09/2026).
+    let ultimoLido = -1;
+    let ultimaLargura = -1;
 
     const conferir = () => {
       const y = window.scrollY;
+      const largura = window.innerWidth;
+      if (y === ultimoLido && largura === ultimaLargura) return;
+      ultimoLido = y;
+      ultimaLargura = largura;
 
       const agora = y > LIMIAR_PX;
       if (agora !== condensado) {

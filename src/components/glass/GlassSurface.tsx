@@ -82,7 +82,25 @@ export function GlassSurface({
         // As utilities do Tailwind (não CSS à mão) porque o Lightning CSS
         // descarta `backdrop-filter` sem prefixo em produção quando escrito
         // manualmente em globals.css — ver comentário em `.vidro-css`.
-        usaWebgl ? "vidro-webgl" : ["vidro-css", opaco ? "backdrop-blur-2xl backdrop-saturate-150" : "backdrop-blur-xl backdrop-saturate-150"],
+        //
+        // `card` fica SEM `backdrop-filter` (F3, 13/09/2026): a home tinha 13
+        // superfícies com blur visíveis ao rolar — 6 cards de imóvel, 4 de
+        // corretor e os painéis — e cada uma obriga o compositor a
+        // reprocessar o que está atrás a cada quadro. O cabeçalho e os
+        // painéis mantêm o vidro (é onde ele se vê: conteúdo passando por
+        // baixo); o card guarda a translucidez e o fio de luz, que é o que
+        // se lê como vidro numa grade parada. Mesma régua que o painel do
+        // corretor adotou em 04/09.
+        usaWebgl
+          ? "vidro-webgl"
+          : [
+              "vidro-css",
+              preset === "card"
+                ? null
+                : opaco
+                  ? "backdrop-blur-2xl backdrop-saturate-150"
+                  : "backdrop-blur-xl backdrop-saturate-150",
+            ],
         // Nav e pill ficam fixos na tela com conteúdo passando por baixo o
         // tempo todo ao rolar; precisam de mais opacidade para não brigar
         // visualmente com o que está sendo rolado.

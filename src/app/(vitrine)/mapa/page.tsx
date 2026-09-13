@@ -6,6 +6,7 @@ import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { MapaEmpreendimentos } from "@/components/mapa/MapaEmpreendimentos";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { getEmpreendimentos } from "@/lib/queries";
+import { pontosDoMapa } from "@/lib/mapa/ponto";
 import { site } from "@/lib/site";
 import { ClipboardList } from 'lucide-react';
 
@@ -73,7 +74,7 @@ export default async function MapaPage({
         {/* Mapa Interativo */}
         <div className="w-full">
           <MapaEmpreendimentos
-            empreendimentos={todosEmpreendimentos}
+            empreendimentos={pontosDoMapa(todosEmpreendimentos)}
             imovelInicialSlug={params.imovel}
             alturaClasse="h-[70svh] min-h-[420px] sm:h-[76vh] sm:min-h-[520px]"
           />

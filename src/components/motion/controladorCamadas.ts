@@ -47,6 +47,19 @@ const entradas = new Set<Entrada>();
 const porElemento = new WeakMap<Element, Entrada>();
 let observador: IntersectionObserver | null = null;
 let ligado = false;
+/*
+ * O tique só trabalha quando ALGO mudou desde o quadro anterior: a página
+ * rolou, a janela mudou de tamanho, uma camada entrou/saiu da viewport ou
+ * foi registrada. Sem isto, com a página PARADA, o laço lia
+ * `getBoundingClientRect` de toda camada visível 60 vezes por segundo — a
+ * linha de base de 13/09/2026 mediu 811 ms de forced reflow na home antes
+ * de o visitante tocar em qualquer coisa.
+ */
+let sujo = true;
+let ultimoX = -1;
+let ultimoY = -1;
+let ultimaLargura = -1;
+let ultimaAltura = -1;
 let ambiente: Ambiente = { desktop: true, reduzido: false };
 
 const CONSULTA_DESKTOP = "(min-width: 768px)";
@@ -71,9 +84,26 @@ function lerAmbiente(): Ambiente {
  * uma dúzia de camadas visíveis, é a diferença entre 60fps e 30.
  */
 function aoTique() {
-  const fator = fatorDoAmbiente(ambiente);
   const janelaY = window.innerHeight;
   const janelaX = window.innerWidth;
+  const rolagemX = window.scrollX;
+  const rolagemY = window.scrollY;
+  if (
+    !sujo &&
+    rolagemX === ultimoX &&
+    rolagemY === ultimoY &&
+    janelaX === ultimaLargura &&
+    janelaY === ultimaAltura
+  ) {
+    return;
+  }
+  sujo = false;
+  ultimoX = rolagemX;
+  ultimoY = rolagemY;
+  ultimaLargura = janelaX;
+  ultimaAltura = janelaY;
+
+  const fator = fatorDoAmbiente(ambiente);
 
   const ativas: Entrada[] = [];
 
@@ -128,6 +158,7 @@ function aoObservar(registros: IntersectionObserverEntry[]) {
     const entrada = porElemento.get(registro.target);
     if (entrada) entrada.visivel = registro.isIntersecting;
   }
+  sujo = true;
 }
 
 function ligar() {
@@ -157,6 +188,7 @@ function desligar() {
 
 function aoMudarAmbiente() {
   ambiente = lerAmbiente();
+  sujo = true;
   if (fatorDoAmbiente(ambiente) === 0) {
     // Devolve todo mundo ao lugar: com movimento reduzido o site é o mesmo
     // site, só sem deslocamento. `scale` só volta a 1 em quem pediu zoom —
@@ -198,6 +230,7 @@ export function registrarCamada(el: HTMLElement, opcoes: OpcoesCamada): () => vo
   };
 
   entradas.add(entrada);
+  sujo = true;
   porElemento.set(el, entrada);
   ouvirAmbiente();
   ligar();
