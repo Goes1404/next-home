@@ -12,7 +12,8 @@ summary: Vercel, deploy, variáveis de ambiente, sharp, runtime.
 Vercel (plano Hobby), deploy e runtime.
 
 ## Deploy
-- [[branch-de-producao-nao-e-main]] ⚠️ ler primeiro
+- [[branch-de-producao-nao-e-main]] ⚠️ ler primeiro
+
 - [[o-hobby-aceita-quatro-crons]] ⚠️ medido em 11/09: quatro crons passam
 - [[deploy-recusado-nao-aparece-no-historico]]
 - [[cron-do-hobby-e-1x-por-dia]]
@@ -24,6 +25,9 @@ Vercel (plano Hobby), deploy e runtime.
 - [[constante-compartilhada-mora-em-modulo-sem-nativo]]
 - [[erro-que-so-existe-no-runtime-se-investiga-no-runtime]]
 - [[uma-piscada-do-banco-derrubava-a-home]] — Gateway Timeout de segundos virava 500 na home; repetir, nunca degradar (10/09)
+
+## Performance
+- [[o-site-e-lento-por-desenho-nao-por-peso]] — `proxy.ts` chama `getUser()` em toda requisição; `cookies()` no layout raiz torna tudo dinâmico; função em iad1, banco em ca-central-1 (13/09)
 
 ## Relacionados
 - [[MOC — Banco de Dados]] · [[Home]]

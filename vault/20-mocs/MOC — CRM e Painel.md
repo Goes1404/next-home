@@ -52,6 +52,10 @@ F0–F6.
 ## Administração (gestor)
 - [[papel-nunca-ganha-grant-update]]
 
+## Performance
+- [[o-site-e-lento-por-desenho-nao-por-peso]] — Início abre com 22 consultas (12 idênticas), 3 `getUser()` por requisição, Realtime + polling juntos; fase 4 do roadmap de performance (13/09)
+
 ## Relacionados
 - [[MOC — Banco de Dados]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]
 - [[action-de-outro-build-vira-sem-conexao]] — 404/500 ao clicar é aba velha, não rede
+- [[o-pedido-do-corretor-e-o-que-vai]] — o chat de arte parou de reescrever o pedido; a receita virou skill visível

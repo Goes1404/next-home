@@ -6650,3 +6650,109 @@ Descoberto em 13/09 ao rodar `npm run observatorio` para a medição final da
   dossiês para 131 leads, 0 nome / 0 renda / 1 orçamento em 55. Continuam
   valendo como história; não dá mais para reconferir. A próxima medição começa
   de uma safra limpa, com o atendimento dos corretores de verdade.
+
+## O tradutor de prompt de imagem SAIU (13/09/2026)
+
+Relatado como *"isso de mudar o prompt dele está dando muito erro e resultados
+ruins — deixe somente a conversa, sem muito segredo"*.
+
+- **Havia QUATRO camadas entre o corretor e o gerador**, e ele só via a
+  última: até 3 perguntas com chips, `traduzirPedido` (um LLM trocando o texto
+  dele por outro, com 12s de espera), a espinha da receita escolhida por
+  heurística, e o carimbo da ressalva legal.
+- **A camada do meio se defendia mal, e a própria tela dizia isso**: quando o
+  motor falhava, ela precisava CONFESSAR — "Não consegui melhorar seu pedido
+  agora, este texto é o seu". **Camada cujo MELHOR desfecho é devolver o que
+  a pessoa já tinha escrito, e cujo pior é devolver coisa pior mais 12s, não é
+  camada: é risco com custo.** A pergunta que resolve é qual é o melhor
+  desfecho dela, não o pior.
+- **A regra agora é uma:** `prompt = ideia.trim()`. Zero chamada de LLM no
+  caminho da arte, e há guarda de código-fonte afirmando isso.
+- **A receita virou SKILL, por decisão do usuário**: ela não altera uma
+  palavra do que ele escreveu, só ACRESCENTA a espinha no fim — e isso
+  continua acontecendo num lugar só (`montarPedido`, na rota). O que mudou é
+  que a heurística passou a apenas SUGERIR: a tela mostra os chips, o que vale
+  é o que está marcado, e um "Ver o que a skill acrescenta" traz a espinha por
+  extenso. **Sem segredo é requisito**: prompt que ele não lê é prompt que ele
+  não corrige — o mesmo defeito da versão em inglês dentro de um `<p>`, que
+  voltaria pela outra porta se a espinha ficasse invisível.
+- **Perdido de propósito, e declarado:** `fatosDoImovelCitado` injetava a
+  ficha do imóvel no prompt sem ele ver. O diferencial que FICA são as fotos
+  do imóvel, que ele escolhe na faixa do cartão.
+- **Guarda de decisão de produto é REESCRITA, não apagada** — terceira vez
+  nesta base (as outras: o `schedule` do vídeo e Conversas/Pessoas). As duas de
+  `estudio.test.ts` que protegiam o tradutor e o ritmo das perguntas passaram
+  a afirmar a invariante nova, com o histórico no comentário.
+- **A guarda nova tropeçou no próprio recorte na primeira versão — NONA vez.**
+  Ela recortava "de `turnoDeArte` até `turnoDeVideo`" para proibir LLM ali, e
+  entre as duas moram os auxiliares do VÍDEO, um deles com `chamarLlmJson`
+  legítimo. Hoje o recorte é o corpo da função, terminando na constante
+  `FIM_DA_ARTE`.
+- **A barra invertida some entre o heredoc e o disco, de novo.** `"\n}"` num
+  script Python chegou ao arquivo como QUEBRA DE LINHA real e o vitest
+  reprovou com "Unterminated string" — mesma família do `` que virou
+  BACKSPACE em 09/09. O conserto foi tirar a barra da equação (uma constante
+  com o texto literal), e a conferência é `repr()`, nunca `grep`.
+- **Âncora de guarda não usa caractere de caixa nem acento.**
+  `indexOf("VÍDEO ─")` devolveu -1 — o `─` e o `Í` não casaram entre o arquivo
+  lido e a string do teste. Âncora de código-fonte tem de ser ASCII.
+- **Removidos por ficarem órfãos**: `tradutor.ts`, `engenheiroDePrompt.ts` e
+  `gramatica.ts` (com os testes). `PISO_DE_PROMPT` sobreviveu e mudou para
+  `imagensTipos.ts` — é uma CONTAGEM, não um julgamento sobre o texto, e a
+  tela avisa sem bloquear. Deixar módulo sem chamador é a dívida "construído e
+  nunca ligado" que esta base combate.
+- **Conferido**: `tsc` 0, eslint 0, **1.861 testes em 177 arquivos**, `next
+  build` compilando em 16s com 84 páginas. A guarda nova foi provocada com
+  dente (o prompt voltando a sair de `chamarLlmJson`): reprovou com 2 falhas, e
+  o md5 confirmou que a mordida mordeu.
+
+## O site é lento por desenho, não por peso (13/09/2026)
+
+Pedido: "roadmap para deixar a aplicação o mais rápida possível". Antes de
+planejar, medir — e a medição mudou o plano. Linha de base em
+`docs/medicoes/2026-09-13-linha-de-base-performance.md`; roadmap em
+`docs/ROADMAP-PERFORMANCE.md`. Vault: [[o-site-e-lento-por-desenho-nao-por-peso]].
+
+- **LCP de 10,6 s no celular na home E na listagem, 5,2 s no imóvel — e 99%
+  disso é atraso de renderização, não rede.** Tudo acima da dobra nasce com
+  `.gsap-pending` (`opacity: 0`) e só aparece quando o GSAP hidrata e roda a
+  timeline; o socorro do CSS só solta aos 12 s. No desktop sem freio dá 1,9 s,
+  o que esconde o problema de quem desenvolve num monitor. **Medido SEM a
+  vinheta** (o `sessionStorage` já a marcava como vista); a primeira visita
+  soma 7,2–9,5 s de scroll travado. Ao medir, limpar o `sessionStorage`.
+- **Toda rota é dinâmica por causa de UMA linha: `cookies()` no layout raiz**
+  (o tema). `export const revalidate` em quatro arquivos e
+  `generateStaticParams` em dois são letra morta — o `prerender-manifest` tem
+  zero rotas, e toda resposta sai `private, no-cache, no-store` com
+  `X-Vercel-Cache: MISS`. Isso NÃO é "cache frio": é ausência de cache.
+- **`proxy.ts` chama `auth.getUser()` — uma ida ao Supabase Auth — em TODA
+  requisição**, inclusive visitante anônimo, prefetch RSC e arquivos de
+  `public/` (o matcher só exclui `_next/static`, `_next/image` e
+  `favicon.ico`). O comentário do arquivo diz que ele "não faz round-trip de
+  rede". Nona vez que texto desatualizado aponta o diagnóstico para o lugar
+  errado — e desta vez o texto está no arquivo que causa o custo.
+- **A função roda em iad1 (Virgínia) e o banco em `ca-central-1` (Canadá)**;
+  o visitante está no Brasil. `X-Vercel-Id: gru1::iad1::…` diz a região; o
+  MCP do Supabase diz a do projeto. Mudar a função para `gru1` sem antes
+  reduzir as idas ao banco PIORA (cada ida sobe de ~25 para ~140 ms) — a
+  ordem é cache primeiro, região depois, e medido.
+- **A home baixa o catálogo inteiro (243 KB de JSON) DUAS vezes por
+  requisição** (`getEmpreendimentos` e `getRegioesDisponiveis` chamam
+  `buscarPublicados`, e não há `cache()` em nenhum caminho público —
+  `getCorretorAtivo` é chamado 5 a 8 vezes por página relendo o cookie). E
+  serializa 252 KB dele no HTML para `GloboOuMapa empreendimentos={todos}`,
+  um client que só precisa de lat/lng/nome: 96 KB de HTML gz numa home que
+  deveria ter 30.
+- **Não existe dado de campo.** Sem `@vercel/speed-insights`, sem
+  `@vercel/analytics` (a API devolve 404 para o projeto), fora do CrUX. Todo
+  número de performance deste projeto é de laboratório até a F0 do roadmap.
+- **Como medir em cinco minutos:** MCP do Chrome DevTools — `new_page` +
+  `emulate` (`412x915x2.625,mobile,touch`, Slow 4G, CPU 4x) +
+  `performance_start_trace` com reload; `LCPBreakdown` nomeia o elemento e
+  separa TTFB de render delay. `curl -w "%{time_starttransfer}"` para o TTFB
+  e `curl -sI` para `Cache-Control` e `X-Vercel-Id`.
+- **Achado de passagem, bloqueante:** o último deployment de produção (13/09
+  04:14 UTC) falhou no type-check — `Chat.tsx:595 — Cannot find name
+  'TiraDaMemoria'`. A branch de produção parou em `3c49999`; a definição do
+  componente está em `299396b`, que só existe em `ingestao-de-midia`. A
+  produção serve o deploy anterior, e nada sobe até isso ser mergeado.

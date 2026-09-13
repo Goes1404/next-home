@@ -56,7 +56,7 @@ fato que custou tempo para descobrir; a fonte original é
 
 ## Fora do vault (no repo)
 
-- Roadmaps e specs: [docs/](../docs/) — `ROADMAP.md`, `ROADMAP-CHATBOT.md`,
+- Roadmaps e specs: [docs/](../docs/) — `ROADMAP.md`, `ROADMAP-CHATBOT.md`, `ROADMAP-PERFORMANCE.md`,
   `docs/produto/Plano_Mestre…`, `docs/superpowers/{plans,specs}`
 - Regra do projeto: [AGENTS.md](../AGENTS.md) — **este Next.js não é o do
   treinamento**; ler `node_modules/next/dist/docs/` antes de codar

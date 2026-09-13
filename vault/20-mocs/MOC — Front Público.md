@@ -45,5 +45,8 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 ## Mapa
 - [[carto-passou-a-exigir-chave-e-o-mapa-virou-claro]] — tiles OSM sem chave, mapa claro nos dois temas, pinos para tile claro (12/09)
 
+## Performance
+- [[o-site-e-lento-por-desenho-nao-por-peso]] — LCP de 10,6 s no celular medido em 13/09; três causas estruturais e o roadmap em `docs/ROADMAP-PERFORMANCE.md`
+
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]
