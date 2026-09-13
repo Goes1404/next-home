@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidarCatalogo, revalidarCorretores } from "@/lib/catalogo/revalidar";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { redirect } from "next/navigation";
 import { getCorretorLogado } from "@/lib/corretorSessao";
@@ -213,6 +214,8 @@ export async function enviarMidiaCorretor(
 
   revalidatePath("/corretor/perfil");
   revalidatePath("/corretores");
+  revalidarCatalogo();
+  revalidarCorretores();
   revalidatePath("/", "layout");
   revalidatePath("/portfolio", "layout");
   revalidatePath("/empreendimentos", "layout");

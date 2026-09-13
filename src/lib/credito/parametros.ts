@@ -1,6 +1,8 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { REVALIDA_EM_SEGUNDOS, TAG_CREDITO } from "@/lib/catalogo/tags";
+import { createClient } from "@/lib/supabase/public";
 import type { FaixaMcmv, ParametrosCredito } from "./tipos";
 
 /**
@@ -29,8 +31,20 @@ export const PARAMETROS_PADRAO: ParametrosCredito = {
   conferidoEm: "2026-09-09",
 };
 
-export async function getParametrosCredito(): Promise<ParametrosCredito> {
-  const supabase = await createClient();
+/**
+ * Cacheado por etiqueta desde a F2 (13/09/2026): a home e a página de
+ * financiamento liam esta linha do banco a cada requisição, com o cliente
+ * de SESSÃO (que exige `cookies()`). O cliente público basta — a 0107 abriu
+ * o SELECT para `anon` — e a leitura vale até o gestor gravar
+ * (`revalidarCredito()` em `admin/credito/acoes.ts`).
+ */
+export const getParametrosCredito = unstable_cache(lerParametrosCredito, ["parametros-credito"], {
+  tags: [TAG_CREDITO],
+  revalidate: REVALIDA_EM_SEGUNDOS,
+});
+
+async function lerParametrosCredito(): Promise<ParametrosCredito> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("parametros_credito")
     .select(

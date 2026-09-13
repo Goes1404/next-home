@@ -139,6 +139,13 @@ export const INTRO_POSTER_URL = "/video/intro-poster.jpg";
  */
 export const FUNDO_HOME_VIDEO_URL = "/video/fundo-home.mp4";
 export const FUNDO_HOME_VIDEO_WEBM_URL = "/video/fundo-home.webm";
+/**
+ * O quadro de 1,5 s da peça vertical (onde ela congela — `pararEm`), em JPEG
+ * de 32 KB. É o que o celular pinta ANTES de o WebM de 607 KB chegar: medido
+ * depois da F1, o LCP do celular era o primeiro quadro do vídeo, aos 8,3 s
+ * na rede lenta. O poster é o mesmo quadro, e chega em ~1 s.
+ */
+export const FUNDO_HOME_POSTER_URL = "/video/fundo-home-poster.jpg";
 
 /** Monta um link `wa.me` para qualquer número em E.164, com mensagem pré-preenchida. */
 export function linkWhatsappPara(numero: string, mensagem: string): string {

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidarCatalogo } from "@/lib/catalogo/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import type { EmpreendimentoSimples, ItemConciliado, LoteHistorico } from "@/lib/precos/types";
@@ -130,6 +131,7 @@ export async function aplicarLotePrecos(
   // minutos", e não em "já está no site".
   revalidatePath("/");
   revalidatePath("/portfolio");
+  revalidarCatalogo();
   revalidatePath("/empreendimentos");
   revalidatePath("/mapa");
   revalidatePath("/corretor/admin/precos");
@@ -199,6 +201,7 @@ export async function reverterLotePrecos(loteId: string): Promise<{ ok: boolean;
   // 4. Revalidação
   revalidatePath("/");
   revalidatePath("/portfolio");
+  revalidarCatalogo();
   revalidatePath("/empreendimentos");
   revalidatePath("/corretor/admin/precos");
 

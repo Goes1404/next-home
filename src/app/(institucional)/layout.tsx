@@ -6,7 +6,12 @@ import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { FUNDO_HOME_VIDEO_URL, FUNDO_HOME_VIDEO_WEBM_URL } from "@/lib/site";
+import {
+  FUNDO_HOME_POSTER_URL,
+  FUNDO_HOME_VIDEO_URL,
+  FUNDO_HOME_VIDEO_WEBM_URL,
+  INTRO_POSTER_URL,
+} from "@/lib/site";
 
 /**
  * Casca do site institucional — a face pública para quem chega pelo Google,
@@ -73,6 +78,34 @@ export default async function InstitucionalLayout({
 
             Foto de fundo do corretor continua tendo precedência: é
             personalização explícita dele. */}
+        {/* O POSTER do fundo, no HTML do servidor (F2, 13/09/2026).
+
+            O `FundoVideoIntro` não emite vídeo nenhum no SSR (a escolha
+            celular/desktop é `matchMedia`, só existe no cliente) e o
+            invólucro dele nasce `opacity-0` até o vídeo ter dados. Ou seja:
+            antes desta imagem, o fundo da home era um vazio até o WebM
+            baixar — e no celular de referência o primeiro quadro do vídeo
+            chegava aos 8,3 s, como LCP. Este `<img>` é o MESMO quadro (o
+            de 1,5 s no celular, o primeiro no desktop), pesa 12–32 KB,
+            chega em ~1 s com `fetchPriority="high"` e é o candidato a LCP
+            que o Chrome mede. O vídeo entra por cima com o fade que já
+            tinha, quando chegar.
+
+            `<img>` cru de propósito: `next/image` não faz `<picture>` com
+            fonte por breakpoint, e o otimizador só adicionaria uma volta a
+            uma imagem que já está no tamanho e formato certos. */}
+        {!usaFotoDeFundo && !videoDoCorretor && (
+          <picture>
+            <source media="(max-width: 767.98px)" srcSet={FUNDO_HOME_POSTER_URL} />
+            <img
+              src={INTRO_POSTER_URL}
+              alt=""
+              fetchPriority="high"
+              decoding="async"
+              className="fundo-poster fundo-encaixa-na-tela absolute inset-0 h-full w-full"
+            />
+          </picture>
+        )}
         {usaFotoDeFundo ? (
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : videoDoCorretor ? (

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidarCredito } from "@/lib/catalogo/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import type { ParametrosCredito } from "@/lib/credito/tipos";
@@ -42,6 +43,7 @@ export async function salvarParametrosCredito(
    * O bloco de crédito entra no prompt a cada turno: a próxima resposta do
    * consultor já usa o número novo, sem redeploy.
    */
+  revalidarCredito();
   revalidatePath("/corretor/admin/credito");
   revalidatePath("/corretor/consultor");
   return { ok: true };

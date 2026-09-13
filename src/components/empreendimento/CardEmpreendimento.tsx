@@ -45,6 +45,12 @@ export function CardEmpreendimento({
   return (
     <Link
       href={`/empreendimentos/${e.slug}`}
+      // Sem prefetch (F2, 13/09/2026): a listagem tem 25 cards, e cada um
+      // que entrava na viewport disparava um RSC da ficha — 9 execuções de
+      // função medidas numa carga, cada uma passando pelo proxy. A ficha é
+      // dinâmica (cookie do corretor), então o prefetch só trazia a casca.
+      // O clique continua navegando pelo router; só não antecipa.
+      prefetch={false}
       className="block rounded-glass focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
     >
       <GlassSurface

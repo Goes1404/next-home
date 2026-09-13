@@ -49,6 +49,7 @@ export function Regioes({ catalogo }: { catalogo: Empreendimento[] }) {
             <Reveal key={regiao.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
                 <Link
                   href={`/regioes/${regiao.slug}`}
+                  prefetch={false}
                   className="border-linha bg-superficie/60 hover:border-acento-linha group flex h-full flex-col overflow-hidden rounded-2xl border transition-all hover:-translate-y-0.5 hover:shadow-xl motion-reduce:transition-none"
                 >
                   <div className="bg-campo relative aspect-[16/10] overflow-hidden">
