@@ -7267,3 +7267,66 @@ acima, no mesmo dia, a pedido do usuário.
   índices de FK e policies com initplan) está aplicada — o Supabase estava em
   manutenção programada. Não bloqueia porque ela não cria tabela nem coluna:
   nenhum código lê objeto que possa faltar. É performance, não correção.
+
+## "O navegador carrega a versão antiga" não era cache de HTML (15/09/2026)
+
+Nota: [[a-aba-aberta-e-que-carrega-a-versao-antiga]].
+
+- **Três comandos derrubaram a causa provável.** O HTML sai
+  `private, no-cache, no-store` com `X-Vercel-Cache: MISS` em TODA rota
+  conferida (`/`, `/empreendimentos`, `/financiamento`, `/corretor/entrar`),
+  porque o `cookies()` do layout raiz torna tudo dinâmico. Não há service
+  worker no repositório. Os `/_next/static/**` são imutáveis, mas o nome
+  carrega hash por build. **Navegação de verdade nunca traz HTML velho** — e
+  é por isso que colar o link funcionava: colar o link É uma navegação.
+- **Quem segura a versão antiga é a ABA que nunca renavegou.** Ela guarda o
+  HTML e o JavaScript do build anterior e não pede nada ao voltar do segundo
+  plano; no celular fica suspensa por horas. E não fica só velha: chunk do
+  build anterior responde **404** (medido), e a Server Action dela também —
+  o caso que `ehActionDeOutroBuild` já tratava, mas só DEPOIS que a pessoa
+  tenta agir e falha. **Faltava o aviso antes do erro.**
+- **Ao investigar "versão antiga", medir o cabeçalho antes de culpar
+  cache.** As quatro causas possíveis (HTML cacheado, service worker, chunk
+  imutável, aba presa) pedem consertos completamente diferentes, e três
+  delas se descartam com `curl -sI`.
+- **O carimbo da build tem de ser DETERMINÍSTICO.** O `next.config` é
+  avaliado por mais de um processo — o build e a função em runtime —, então
+  um valor calculado na hora (`Date.now()`, sorteio) faria cliente e
+  servidor discordarem DENTRO da mesma build, e a faixa de "atualize"
+  ficaria na tela para sempre sem deploy nenhum. Sai do commit
+  (`VERCEL_GIT_COMMIT_SHA`), e `dev` fora da Vercel — na máquina de quem
+  desenvolve o `npm run build` roda o tempo todo.
+- **`env` do `next.config` é inlinado nos DOIS pacotes**, cliente e
+  servidor (a documentação garante a substituição pelo literal em tempo de
+  build). É isso que impede a aba e `/api/versao` de discordarem dentro da
+  mesma build. Conferido com um SHA falso: o literal aparece em
+  `.next/static/chunks/` e no chunk de servidor, e a rota responde
+  `{"versao":"abcdef012345"}` com `no-store`.
+- **A rota é `no-store` e não toca no banco, e as duas coisas têm guarda.**
+  Cacheada, ela devolveria o carimbo velho e o recurso inteiro viraria
+  decoração — com build verde, tela funcionando e nenhum erro em lugar
+  nenhum. É o padrão que esta base mais repete.
+- **Nunca recarrega sozinho.** Recarregar por conta própria perde o pedido
+  meio digitado no Estúdio ou o filtro montado na lista. O que faltava era
+  SABER, não decidir pela pessoa.
+- **Cala em dúvida**: rede fora, resposta torta, carimbo ausente ou `dev`
+  não anunciam nada. Falso positivo aqui ensina a ignorar o aviso — a régua
+  do `evolucaoConversa` e da faixa de queda do número.
+- **A faixa foi para o TOPO porque o rodapé tem QUATRO elementos fixos** —
+  WhatsApp, voltar ao topo, navegação do painel e a região de avisos, todos
+  em `acima-da-nav`. Empilhar um quinto ali é como um toque acaba no alvo
+  errado. Custo declarado: ela cobre a parte de cima do cabeçalho enquanto
+  está na tela.
+- **A guarda tropeçou no próprio COMENTÁRIO — quarta vez nesta base.** A
+  checagem "a rota não toca no banco" reprovou a rota certa porque o
+  comentário dela explica que a resposta "não lê arquivo, cookie nem
+  Supabase". Teste que lê código-fonte remove comentário antes de acusar.
+- **Achado de passagem, NÃO corrigido:** `nexthomeimobiliaria.com.br`
+  continua em `187.45.195.126` (Apache) servindo o site LEGADO. É a segunda
+  fonte de "versão antiga", e a única que nenhuma faixa dentro da aplicação
+  alcança — porque a aplicação não está lá. É virada de DNS mais
+  `NEXT_PUBLIC_SITE_URL`, como a seção de SEO já registra.
+- **Erro meu de medição, e vale a régua:** encadeei um segundo
+  `npm run build` sem a variável no mesmo comando e ele sobrescreveu o
+  `.next` do primeiro — o `grep` seguinte deu zero e pareceu que o `env` não
+  inlinava nada. **Build de verificação não divide comando com outro build.**
