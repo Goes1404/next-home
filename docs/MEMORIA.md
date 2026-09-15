@@ -6579,3 +6579,64 @@ Nota: [[importar-conversa-do-whatsapp]].
   `lead_id`, a conversa pertence à instância de um corretor e `e_teste`
   pediria decisão própria. O que sobrevive do conteúdo são as primeiras
   cinco falas do cliente, que viram o campo "mensagem" da ficha.
+
+## O tradutor de imagem era CEGO, e mandavam ele descrever a foto (15/09/2026)
+
+Nota: [[o-tradutor-era-cego-e-inventava-a-cena]].
+
+- **A prova está no TIPO, e custou zero.** `EntradaDoTradutor` carregava
+  `temReferencia?: boolean` — um booleano — e `chamarLlmJson(prompt: string)`
+  é texto puro: o modelo NUNCA recebeu a imagem. Mesmo assim a instrução dizia
+  *"Há uma FOTO de referência. Descreva a cena a partir dela."* **Quando o
+  defeito é "o modelo inventou", a primeira pergunta é o que ele RECEBEU** — e
+  aqui a assinatura do tipo respondeu sozinha, sem gastar chamada.
+- **Instrução impossível não produz recusa, produz invenção plausível.** Some
+  a ordem de descrever o que não se vê com a gramática, que exige 200 a 600
+  caracteres cobrindo Cena, Sujeito, Detalhes e Restrições: há um jeito só de
+  satisfazer as duas. Medido em produção — foto de uma TORRE anexada, pedido
+  "deixe a primeira imagem parecida com a segunda, mas com uma frase que chame
+  mais atenção", e voltou *"um apartamento moderno, sala de estar, sofá
+  elegante e mesa de centro"*. Saiu sala de estar porque é a imagem
+  imobiliária mais provável: o modelo escreveu a média do corpus dele, que é o
+  que sobra quando não há informação. Mesma família do `Torre.` e do "1 suíte"
+  num cadastro com 3.
+- **Edição é outro REGIME, e a gramática de criação não vale nele.** Quem vê
+  as fotos é o gerador (`gpt-image-2` com `image[]`). `instrucaoDeEdicao(n)`
+  diz em voz alta que o tradutor não as vê, PROÍBE descrevê-las, manda
+  escrever só o que muda, e trata as fotos pela POSIÇÃO ("a 1ª", "a 2ª") — que
+  é como a pessoa escreve, e é o que faz o pedido relacional chegar íntegro a
+  quem consegue olhar para as duas. Junto: zero seções cobradas, piso de 80 →
+  40, tamanho de 200-600 → 80-500. Cobrar "Detalhes: luz, materiais" de uma
+  edição é o convite a inventar que a correção veio remover — e acusaria de
+  incompleto um texto certo (sétima vez que um critério desta base reprovaria
+  o comportamento correto).
+- **Quando um limite ganha um irmão, procurar os outros limites do mesmo
+  regime.** Com o piso de edição em 40 e `MINIMO_ACEITAVEL` parado em 60,
+  abriu uma ZONA MORTA de 40 a 59: instrução de edição legítima ("Deixe a 1ª
+  foto com o enquadramento e a luz da 2ª foto.", 55 caracteres) era descartada,
+  o texto cru do corretor voltava no lugar e a tela dizia "não consegui
+  melhorar seu pedido" sobre uma reescrita boa. Apareceu ESCREVENDO O TESTE,
+  não em produção.
+- **"Não dá para enviar mais de uma foto" era o mesmo defeito visto de fora.**
+  O anexo múltiplo funciona ponta a ponta desde 11/09 (composer `multiple`,
+  upload de todas, `image[]` na rota — conferido: a branch de produção está
+  exatamente no commit que o trouxe). Só que `renderAcima` desenhava
+  `m.dados.url`, a PRIMEIRA. Anexar duas e ver uma é indistinguível de "a
+  segunda não foi". **Recurso que não se MOSTRA é indistinguível de recurso que
+  não existe** — irmã da lição de 10/09. Hoje o balão mostra todas numeradas, o
+  composer conta as presas e diz que o clipe SOMA em vez de trocar, e a
+  proposta declara quantas entraram e em que ordem. A numeração não é enfeite:
+  é ela que dá sentido a "a primeira" e "a segunda" na frase do corretor.
+- **Mais um comentário que tinha virado mentira:** `referenciaAtiva`
+  justificava "o último balão vence" com *"o motor de edição aceita uma"* —
+  falso desde 11/09. A regra fica pelo motivo certo (anexar de novo é TROCAR;
+  somar tudo faria a terceira tentativa carregar as fotos das duas anteriores),
+  e o custo — fotos em mensagens separadas não se somam — deixou de ser calado.
+- **Fica de fora, declarado:** dar VISÃO ao tradutor é possível (`gpt-4.1-mini`
+  lê imagem), mas mexeria em `llm.ts`, o caminho único do atendimento inteiro
+  do WhatsApp, e a cascata tem provedores sem visão. Antes de pagar esse risco,
+  medir se a instrução de edição basta — o gerador vê as fotos, e é ele que
+  decide a imagem.
+- **`git checkout --` na provocação só depois de COMMITAR**, de novo. Desta vez
+  a ordem foi commit → provocar as quatro mordidas → árvore limpa, e nada se
+  perdeu (na sessão de 12/09 esse mesmo laço apagou um extrator inteiro).
