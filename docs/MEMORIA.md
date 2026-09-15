@@ -6640,3 +6640,60 @@ Nota: [[o-tradutor-era-cego-e-inventava-a-cena]].
 - **`git checkout --` na provocação só depois de COMMITAR**, de novo. Desta vez
   a ordem foi commit → provocar as quatro mordidas → árvore limpa, e nada se
   perdeu (na sessão de 12/09 esse mesmo laço apagou um extrator inteiro).
+
+## O tradutor passou a OLHAR as fotos, e ganhou o ofício (15/09/2026)
+
+Nota: [[o-tradutor-passou-a-olhar-as-fotos]]. Sequência direta do defeito
+acima, no mesmo dia, a pedido do usuário.
+
+- **Visão entrou por `llm.ts`, o caminho único — não por uma porta lateral.**
+  A tentação era um `visao.ts` próprio, que resolveria sem encostar no módulo
+  por onde passa o atendimento inteiro do WhatsApp. Recusado pelo motivo que
+  esta base já pagou: `aiParser.ts` e `campaignQueue.ts` tinham `fetch`
+  próprio e divergiram até serem migrados. O que torna seguro entrar ali é o
+  DESENHO: `imagens` é opcional (sem ela o corpo é byte a byte o de antes, com
+  teste afirmando que o conteúdo do usuário continua uma `string`), e
+  `Provedor.leImagem?` tem **ausente = não**.
+- **Com foto no pedido, provedor de TEXTO não é chamado.** Mandar imagem para
+  um modelo que não a lê devolve HTTP 400, e a cascata seguiria adiante
+  achando que ele estava doente — provedor saudável marcado como caído é o
+  tipo de diagnóstico errado que já custou sessão aqui.
+- **A decisão de OLHAR vem ANTES de escrever o prompt** (`algumProvedorLeImagem`).
+  O prompt promete uma coisa ou outra ("você está vendo" × "você NÃO está
+  vendo"), e prometer errado recria a instrução impossível que causou o defeito
+  original. Três condições juntas: há fotos, temos as URLs, existe provedor com
+  visão. Faltando qualquer uma, o caminho cego assume — ele **não foi apagado,
+  virou a degradação**, e é exercitado por teste.
+- **A tela diz qual dos dois aconteceu** (`viuAsFotos`): "Olhei as 2 fotos…"
+  contra "…mas escrevi sem conseguir vê-las, confira se bate". Esconder a
+  diferença é o mesmo pecado que `daIa` já cobre — aprovar no escuro.
+- **URL pública, conferida antes e não suposta.** `select public from
+  storage.buckets` devolve `true` para `empreendimentos`. Sem essa checagem a
+  visão falharia CALADA: a OpenAI receberia 403 e o sintoma seria "a IA voltou
+  a inventar". `detail: "low"` são 85 tokens FIXOS por foto contra ~750-1500 em
+  `high` — o que o tradutor precisa ver é assunto, enquadramento e clima, não a
+  marca gravada no vidro. As fotos vão numeradas e ANTES do texto, na ordem em
+  que o corretor anexou.
+- **As "skills" pedidas viraram DADO, não parágrafo solto** (`oficio.ts`), e o
+  que decidiu o desenho foi onde elas NÃO cabiam: `receitas.ts` é a espinha de
+  cada trabalho (o corretor escolhe), `gramatica.ts` é a forma do texto. Oito
+  regras, cada uma apontando um defeito conhecido — verticais aprumadas (o
+  prédio caindo para trás), a hora que vende (o *dusk shot*), céu sem HDR,
+  escala humana sem rosto, um assunto só, sombra e reflexo coerentes, respiro
+  para o texto, e o que preservar ao editar.
+- **Filtradas por REGIME, de propósito.** Mandar "prefira a hora azul" para
+  quem está clareando uma foto gasta metade do bloco com instrução que não se
+  aplica — e `tradutor.ts` registra que prompt gigante DILUI o assunto, que é o
+  defeito que ele existe para consertar.
+- **A régua de entrada do ofício: específico e acionável, nunca elogio.** "Faça
+  uma imagem de alta qualidade" não muda pixel nenhum — o modelo já está
+  tentando. A guarda cobra isso, e **pegou uma regra MINHA na primeira
+  execução, pelo motivo errado**: `top\w*` casou em "nunca convergindo para o
+  TOPO", substantivo concreto e exatamente o tipo de instrução que o módulo
+  existe para ter. Reescrita para FRASES. Sétima vez que uma guarda desta base
+  tropeça no próprio recorte.
+- **O que continua sem prova:** não há chave de API neste ambiente, então o
+  que está demonstrado é a MECÂNICA (as imagens viajam, o prompt certo é
+  montado, a degradação funciona). A medida do DESFECHO só sai de gerar algumas
+  artes reais e olhar — a mesma distinção que o eval já registra entre
+  mecanismo funcionando e resultado melhor.

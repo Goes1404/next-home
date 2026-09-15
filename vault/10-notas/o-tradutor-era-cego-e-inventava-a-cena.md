@@ -131,13 +131,19 @@ terceira tentativa carregar as fotos das duas anteriores — mas pelo motivo
 certo. O custo (fotos em mensagens separadas não se somam) deixou de ser
 calado.
 
-## O que ficou de fora, declarado
+## O que ficou de fora — e deixou de ficar no dia seguinte
 
-**O tradutor continua sem ver as fotos.** Dar visão a ele é possível — o
-motor é `gpt-4.1-mini`, que lê imagem — mas mexeria em `llm.ts`, o caminho
-único por onde passa o atendimento do WhatsApp inteiro, e a cascata tem
-provedores sem visão. Antes de pagar esse risco, vale medir se a instrução
-de edição basta: o gerador vê as fotos, e é ele que decide a imagem.
+Esta nota fechava dizendo que **o tradutor continuava sem ver as fotos**, e
+que dar visão a ele custaria mexer em `llm.ts`. O usuário pediu a visão na
+mesma conversa, e ela foi construída: ver
+[[o-tradutor-passou-a-olhar-as-fotos]].
+
+O caminho cego descrito aqui **não foi apagado** — virou a degradação.
+Vale sempre que não houver provedor com visão configurado (sem
+`OPENAI_API_KEY`, por exemplo), e continua inteiro e testado. É por isso
+que a decisão de olhar é tomada ANTES de escrever o prompt: prometer visão
+a um modelo de texto seria recriar exatamente a instrução impossível que
+esta nota registra.
 
 ## Relacionadas
 - [[o-tradutor-de-prompt-de-imagem]] — por que o tradutor existe
