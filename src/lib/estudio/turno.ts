@@ -220,7 +220,7 @@ export async function turnoDeArte(params: {
     fatos: imovelCitado ? fatosDoImovelCitado(imovelCitado) : [],
     respostas,
     promptAnterior: propostaAnterior?.prompt ?? null,
-    temReferencia: referencias.length > 0,
+    fotosDeReferencia: referencias.length,
   });
 
   const proposta: PropostaDeArte = {
@@ -244,9 +244,20 @@ export async function turnoDeArte(params: {
    * editável. Repetir aqui faria a pessoa ler duas vezes a mesma coisa e
    * ainda daria a impressão de que o de cima é o que vale.
    */
-  const notaDaFoto = referencias.length > 0
-    ? ` Vou partir de ${referencias.length === 1 ? "uma foto que você anexou" : `${referencias.length} fotos que você anexou`}.`
-    : "";
+  /*
+   * A nota diz QUANTAS fotos entraram e que elas vão NUMERADAS.
+   *
+   * Sem o número, "deixe a primeira parecida com a segunda" é um pedido que o
+   * corretor não tem como conferir: ele não sabe se as duas chegaram nem em
+   * que ordem. Com ele, a conta fecha na tela — as miniaturas do balão levam
+   * o mesmo 1 e 2.
+   */
+  const notaDaFoto =
+    referencias.length === 0
+      ? ""
+      : referencias.length === 1
+        ? " Vou partir da foto que você anexou."
+        : ` Vou partir das ${referencias.length} fotos que você anexou, na ordem em que aparecem no seu balão (1 a ${referencias.length}).`;
   const texto = traduzido.daIa
     ? soarHumano(
         `Escrevi assim.${notaDaFoto} Leia e ajuste o que quiser — é exatamente esse texto ` +

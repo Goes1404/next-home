@@ -60,6 +60,18 @@ export const SECOES = [
  */
 export const PISO_DE_PROMPT = 80;
 
+/**
+ * O piso quando JÁ EXISTE foto — bem menor, e de propósito.
+ *
+ * Criar do zero exige descrever enquadramento, luz e material, e isso não cabe
+ * em menos de uma frase. EDITAR não: a cena já está na foto, e "deixe o céu do
+ * fim de tarde e escreva a frase no rodapé" é um pedido completo. Cobrar os 80
+ * de criação aqui empurraria o modelo a encher linguiça sobre uma imagem que
+ * ele não vê — que é exatamente o defeito que a instrução de edição existe
+ * para matar.
+ */
+export const PISO_DE_EDICAO = 40;
+
 export function instrucaoDaGramatica(): string {
   const secoes = SECOES.map((s) => `- ${s.rotulo}: ${s.pede}.`).join("\n");
   return `Escreva um parágrafo corrido, em português, que cubra as quatro coisas abaixo.
@@ -74,6 +86,56 @@ Regras de forma:
 - Texto que deva aparecer NA IMAGEM vai entre aspas, soletrado letra a letra, com
   a posição e o tipo de letra. Só o texto que o corretor escreveu.
 - Entre 200 e 600 caracteres.`;
+}
+
+/**
+ * A instrução para quando o corretor ANEXOU foto — e o motivo dela existir.
+ *
+ * O tradutor é uma chamada de TEXTO: `chamarLlmJson` recebe uma string, e
+ * `EntradaDoTradutor` carrega um booleano, nunca a imagem. Mesmo assim a
+ * instrução antiga mandava "descreva a cena a partir dela". Duas pressões
+ * impossíveis de satisfazer ao mesmo tempo — descrever o que não se vê, e
+ * cobrir as quatro seções em 200 a 600 caracteres — e o modelo fazia a única
+ * coisa que sobrava: INVENTAVA uma cena. Medido em produção (15/09/2026): com
+ * a foto de uma TORRE anexada e o pedido "deixe a primeira imagem parecida com
+ * a segunda", voltou "um apartamento moderno, sala de estar, sofá elegante e
+ * mesa de centro" — nada disso estava na foto nem no pedido.
+ *
+ * Aqui a regra se inverte: quem VÊ as fotos é o gerador (`gpt-image-2` recebe
+ * `image[]`). O tradutor escreve só a EDIÇÃO, e trata as fotos pela POSIÇÃO —
+ * é assim que "a primeira parecida com a segunda" atravessa intacto até quem
+ * consegue olhar para elas.
+ */
+export function instrucaoDeEdicao(quantasFotos: number): string {
+  const quadro =
+    quantasFotos === 1
+      ? "O corretor anexou 1 foto."
+      : `O corretor anexou ${quantasFotos} fotos, nesta ordem: ${Array.from(
+          { length: quantasFotos },
+          (_, i) => `a ${i + 1}ª`,
+        ).join(", ")}.`;
+
+  return `${quadro}
+
+VOCÊ NÃO ESTÁ VENDO ESSAS FOTOS. Quem as vê é o gerador de imagem, que recebe
+todas junto com o texto que você escrever. Então:
+
+- NUNCA descreva o que há nelas. Você não sabe, e chutar troca a foto do
+  corretor por uma cena inventada.
+- Escreva APENAS o que deve MUDAR, ser MANTIDO ou ser ENFATIZADO.
+- Refira-se às fotos pela posição ("a 1ª foto", "a 2ª foto"), do mesmo jeito
+  que o corretor se referiu a elas. É o que permite ao gerador saber qual é
+  qual.
+- Se o corretor pediu para uma ficar parecida com a outra, diga isso com essas
+  palavras — não tente adivinhar o que as duas têm.
+
+Regras de forma:
+- Concreto, não adjetivo solto: "luz quente e rasante do fim de tarde" em vez
+  de "bonito".
+- Texto que deva aparecer NA IMAGEM vai entre aspas, soletrado letra a letra,
+  com a posição e o tipo de letra.
+- Entre 80 e 500 caracteres. Instrução de edição é curta: o que não muda, a
+  foto já resolve.`;
 }
 
 /*
@@ -94,7 +156,17 @@ const MARCAS: Record<ChaveSecao, RegExp> = {
   restricoes: /\b(sem|não|nao|nenhum|evite|exclua|proib)\w*/i,
 };
 
-export function conferir(prompt: string): ChaveSecao[] {
+/**
+ * O que faltou cobrir — e por que EDIÇÃO não tem pendência nenhuma.
+ *
+ * As quatro seções descrevem uma cena a ser criada do zero. Cobrá-las de um
+ * pedido de edição acusaria de incompleto um texto que está certo ("deixe a 1ª
+ * foto com a luz da 2ª" não fala de material, e não deve mesmo) — e a tela
+ * mandaria o corretor consertar o que já servia. Esta base já perdeu tempo
+ * SEIS vezes com critério que reprova o comportamento correto.
+ */
+export function conferir(prompt: string, modo: "criacao" | "edicao" = "criacao"): ChaveSecao[] {
+  if (modo === "edicao") return [];
   const texto = prompt.trim();
   if (texto.length < PISO_DE_PROMPT) return SECOES.map((s) => s.chave);
   return SECOES.filter((s) => !MARCAS[s.chave].test(texto)).map((s) => s.chave);

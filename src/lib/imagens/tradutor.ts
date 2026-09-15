@@ -1,7 +1,14 @@
 import "server-only";
 
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
-import { conferir, instrucaoDaGramatica, PISO_DE_PROMPT, type ChaveSecao } from "./gramatica";
+import {
+  conferir,
+  instrucaoDaGramatica,
+  instrucaoDeEdicao,
+  PISO_DE_EDICAO,
+  PISO_DE_PROMPT,
+  type ChaveSecao,
+} from "./gramatica";
 
 /**
  * O tradutor: pega o que o corretor escreveu e devolve um pedido de imagem
@@ -46,6 +53,17 @@ const ORCAMENTO_MS = 12_000;
  */
 const MINIMO_ACEITAVEL = 60;
 
+/**
+ * O mesmo mínimo, quando há foto — e por que ele desce junto com o piso.
+ *
+ * Com `MINIMO_ACEITAVEL` fixo em 60 abria uma ZONA MORTA entre 40 e 59: uma
+ * instrução de edição legítima ("Deixe a 1ª foto com o enquadramento e a luz
+ * da 2ª foto.", 55 caracteres) era jogada fora, o texto cru do corretor voltava
+ * no lugar dela e a tela dizia "não consegui melhorar seu pedido" — sobre uma
+ * reescrita que tinha ficado boa. Achado escrevendo o teste, não em produção.
+ */
+const MINIMO_DE_EDICAO = PISO_DE_EDICAO;
+
 /** Prompt gigante dilui o assunto, que é justamente o que viemos consertar. */
 const TETO = 1400;
 
@@ -64,8 +82,14 @@ export type EntradaDoTradutor = {
   respostas?: { pergunta: string; escolha: string }[];
   /** O prompt aprovado da rodada anterior, quando isto é um ajuste. */
   promptAnterior?: string | null;
-  /** Há foto de referência? Muda a instrução: é edição, não criação. */
-  temReferencia?: boolean;
+  /**
+   * QUANTAS fotos o corretor anexou. Zero é criação; uma ou mais é edição.
+   *
+   * É um número e não um booleano porque a instrução precisa nomear as fotos
+   * pela POSIÇÃO — "a 1ª", "a 2ª" — que é a única forma de "deixe a primeira
+   * parecida com a segunda" chegar íntegro ao gerador, o único que as vê.
+   */
+  fotosDeReferencia?: number;
 };
 
 export type PromptTraduzido = {
@@ -114,17 +138,11 @@ function montarPromptDoMotor(e: EntradaDoTradutor): string {
     );
   }
 
-  if (e.temReferencia) {
-    blocos.push(
-      "",
-      "Há uma FOTO de referência. Descreva a cena a partir dela: o que você",
-      "escrever é o que deve MUDAR ou ser enfatizado, não uma cena nova.",
-    );
-  }
+  const fotos = e.fotosDeReferencia ?? 0;
 
   blocos.push(
     "",
-    instrucaoDaGramatica(),
+    fotos > 0 ? instrucaoDeEdicao(fotos) : instrucaoDaGramatica(),
     "",
     "O que NUNCA entra:",
     "- Metragem, número de dormitórios, andar, preço ou condição de pagamento que",
@@ -138,36 +156,38 @@ function montarPromptDoMotor(e: EntradaDoTradutor): string {
   return blocos.join("\n");
 }
 
-function textoDoJson(json: unknown): string | null {
+function textoDoJson(json: unknown, fotos: number): string | null {
   if (!json || typeof json !== "object") return null;
   const bruto = (json as { prompt?: unknown }).prompt;
   if (typeof bruto !== "string") return null;
   const texto = bruto.trim().replace(/\s+/g, " ");
-  if (texto.length < MINIMO_ACEITAVEL) return null;
+  if (texto.length < (fotos > 0 ? MINIMO_DE_EDICAO : MINIMO_ACEITAVEL)) return null;
   return texto.slice(0, TETO);
 }
 
-function fechar(prompt: string, daIa: boolean): PromptTraduzido {
+function fechar(prompt: string, daIa: boolean, fotos: number): PromptTraduzido {
+  const modo = fotos > 0 ? "edicao" : "criacao";
   return {
     prompt,
     daIa,
-    naoCobriu: conferir(prompt),
-    abaixoDoPiso: prompt.trim().length < PISO_DE_PROMPT,
+    naoCobriu: conferir(prompt, modo),
+    abaixoDoPiso: prompt.trim().length < (modo === "edicao" ? PISO_DE_EDICAO : PISO_DE_PROMPT),
   };
 }
 
 export async function traduzirPedido(entrada: EntradaDoTradutor): Promise<PromptTraduzido> {
   const original = entrada.pedido.trim();
+  const fotos = entrada.fotosDeReferencia ?? 0;
   // Sem pedido não há o que traduzir, e uma chamada aqui seria gasto puro.
-  if (!original) return fechar("", false);
+  if (!original) return fechar("", false, fotos);
 
   const r = await chamarLlmJson(montarPromptDoMotor(entrada), {
     temperature: 0.7,
     orcamentoMs: ORCAMENTO_MS,
   });
 
-  if (!r.ok) return fechar(original, false);
+  if (!r.ok) return fechar(original, false, fotos);
 
-  const texto = textoDoJson(r.json);
-  return texto ? fechar(texto, true) : fechar(original, false);
+  const texto = textoDoJson(r.json, fotos);
+  return texto ? fechar(texto, true, fotos) : fechar(original, false, fotos);
 }

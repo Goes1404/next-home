@@ -262,11 +262,18 @@ export function dadosDaMensagem(bruto: unknown): DadosDaMensagem | null {
 }
 
 /**
- * A foto de referência que vale AGORA: a última anexada pelo corretor.
+ * As fotos que valem AGORA: as do ÚLTIMO balão com anexo.
  *
- * Uma por vez, de propósito — o motor de edição de imagem aceita uma, e
- * "qual das cinco fotos ele quis?" é ambiguidade que nenhuma pergunta boa
- * resolve. Quem anexa outra está trocando a referência.
+ * O motivo escrito aqui antes ("o motor de edição aceita uma") deixou de ser
+ * verdade em 11/09/2026, quando o envio passou a mandar `image[]` com até
+ * quatro. O que sustenta a regra hoje é outro: anexar de novo é como se TROCA
+ * a referência. Somar tudo que já passou pela conversa faria a terceira
+ * tentativa carregar as fotos das duas anteriores, e não há pergunta boa que
+ * desfaça isso.
+ *
+ * O custo — fotos mandadas em mensagens SEPARADAS não se somam — deixou de ser
+ * calado: a proposta diz quantas fotos entraram, e o composer conta as que
+ * estão presas antes do envio. Para usar duas, as duas vão no mesmo balão.
  */
 export function referenciaAtiva(historico: MensagemDoEstudio[]): ReferenciaDoEstudio | null {
   for (let i = historico.length - 1; i >= 0; i--) {

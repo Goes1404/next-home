@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { conferir, instrucaoDaGramatica, PISO_DE_PROMPT, SECOES } from "./gramatica";
+import { PISO_DE_EDICAO, PISO_DE_PROMPT, SECOES, conferir, instrucaoDaGramatica, instrucaoDeEdicao } from "./gramatica";
 
 describe("a gramática cobre as quatro seções da doc oficial", () => {
   it("tem cena, sujeito, detalhes e restrições", () => {
@@ -47,5 +47,34 @@ describe("conferir aponta o que ficou de fora", () => {
 
   it("o piso existe e é maior que uma palavra solta", () => {
     expect(PISO_DE_PROMPT).toBeGreaterThan("Torre.".length);
+  });
+});
+
+describe("edição é outro regime: a cena já existe na foto", () => {
+  it("a instrução de edição PROÍBE descrever as fotos", () => {
+    const i = instrucaoDeEdicao(2);
+    expect(i).toContain("VOCÊ NÃO ESTÁ VENDO ESSAS FOTOS");
+    expect(i).toMatch(/NUNCA descreva o que há nelas/i);
+  });
+
+  it("nomeia cada foto pela posição, de 1 até quantas forem", () => {
+    expect(instrucaoDeEdicao(3)).toContain("a 1ª, a 2ª, a 3ª");
+    expect(instrucaoDeEdicao(1)).toContain("anexou 1 foto");
+  });
+
+  it("manda repetir o pedido relacional em vez de adivinhar o que as fotos têm", () => {
+    expect(instrucaoDeEdicao(2)).toMatch(/parecida com a outra/i);
+  });
+
+  it("conferir não cobra seção nenhuma em modo edição", () => {
+    // O mesmo texto acusa três seções como criação e nenhuma como edição.
+    const curto = "Deixe a 1ª foto com o enquadramento da 2ª foto.";
+    expect(conferir(curto, "criacao").length).toBeGreaterThan(0);
+    expect(conferir(curto, "edicao")).toEqual([]);
+  });
+
+  it("o piso de edição é menor que o de criação, e maior que uma palavra", () => {
+    expect(PISO_DE_EDICAO).toBeLessThan(PISO_DE_PROMPT);
+    expect(PISO_DE_EDICAO).toBeGreaterThan("Torre.".length);
   });
 });

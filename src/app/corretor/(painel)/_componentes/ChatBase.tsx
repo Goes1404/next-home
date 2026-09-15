@@ -282,14 +282,30 @@ export function ChatBase<M extends MensagemDeChat>({
         </div>
       )}
 
-      {/* A foto escolhida, antes do envio — dá para tirar sem mandar. */}
+      {/* As fotos escolhidas, antes do envio — dá para tirar sem mandar. */}
       {anexos && anexos.length > 0 && (
-        <div className="border-linha flex items-center gap-2 border-t px-3 py-2 md:px-5">
-          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto">
+        <div className="border-linha border-t px-3 py-2 md:px-5">
+          {/*
+            * A contagem existe porque anexar de novo NÃO é descoberto sozinho:
+            * quem já pôs uma foto supõe que o clipe a trocaria. Dizer o número
+            * e o gesto na mesma linha é o que transforma "só cabe uma" em
+            * "cabem várias" sem tela de ajuda.
+            */}
+          <p className="text-fluid-xs text-apoio mb-1.5">
+            {anexos.length === 1
+              ? "1 foto anexada — toque no clipe para somar outra."
+              : `${anexos.length} fotos anexadas, nesta ordem.`}
+          </p>
+          <div className="flex min-w-0 gap-2 overflow-x-auto">
             {anexos.map((anexo, indice) => (
               <div key={anexo.previewUrl} className="relative shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={anexo.previewUrl} alt={anexo.nome} className="border-linha h-12 w-12 rounded-lg border object-cover" />
+                {anexos.length > 1 && (
+                  <span className="bg-ink-950/80 absolute bottom-0 left-0 rounded-tr-lg rounded-bl-lg px-1.5 text-[10px] font-medium text-brand-200">
+                    {indice + 1}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => onRemoverAnexo?.(indice)}

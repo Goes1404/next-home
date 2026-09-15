@@ -128,3 +128,80 @@ describe("o portão", () => {
     expect(r.abaixoDoPiso).toBe(true);
   });
 });
+
+/*
+ * O caso que veio de PRODUÇÃO (15/09/2026).
+ *
+ * Com a foto de uma torre anexada e o pedido "deixe a primeira imagem parecida
+ * com a segunda, mas com uma frase que chame mais atenção", o tradutor
+ * devolveu "um apartamento moderno... sala de estar... sofá elegante e mesa de
+ * centro". Nada disso estava na foto nem no pedido: o modelo é de TEXTO, nunca
+ * recebe a imagem, e a instrução antiga mandava "descreva a cena a partir
+ * dela" enquanto a gramática exigia 200 a 600 caracteres cobrindo quatro
+ * seções. Inventar era a única saída que satisfazia as duas.
+ */
+describe("com foto anexada, o tradutor NÃO manda descrever o que não vê", () => {
+  const PEDIDO_REAL =
+    "Quero que deixe a primeira imagem parecida com a segunda, mas com uma frase " +
+    "que chame mais atenção e atraia mais clientes";
+
+  async function promptDoMotor(fotos: number) {
+    chamarLlmJson.mockResolvedValue(respostaOk(BOM));
+    await traduzirPedido({ pedido: PEDIDO_REAL, fatos: [], fotosDeReferencia: fotos });
+    return String(chamarLlmJson.mock.calls[0][0]);
+  }
+
+  it("diz ao modelo, em voz alta, que ele NÃO está vendo as fotos", async () => {
+    const enviado = await promptDoMotor(2);
+    expect(enviado).toContain("VOCÊ NÃO ESTÁ VENDO ESSAS FOTOS");
+    expect(enviado).toMatch(/NUNCA descreva o que há nelas/i);
+  });
+
+  it("não manda descrever a cena a partir da foto — era a instrução impossível", async () => {
+    const enviado = await promptDoMotor(1);
+    expect(enviado).not.toMatch(/Descreva a cena a partir dela/i);
+  });
+
+  it("nomeia as fotos pela POSIÇÃO, que é como o corretor fala delas", async () => {
+    const enviado = await promptDoMotor(2);
+    expect(enviado).toContain("anexou 2 fotos");
+    expect(enviado).toContain("a 1ª");
+    expect(enviado).toContain("a 2ª");
+  });
+
+  it("a gramática de CRIAÇÃO fica de fora — é ela que obriga a inventar cena", async () => {
+    const enviado = await promptDoMotor(1);
+    expect(enviado).not.toContain("Entre 200 e 600 caracteres");
+    expect(enviado).not.toMatch(/Sujeito: o que aparece em primeiro plano/);
+  });
+
+  it("sem foto, a gramática de criação continua valendo inteira", async () => {
+    const enviado = await promptDoMotor(0);
+    expect(enviado).toContain("Entre 200 e 600 caracteres");
+    expect(enviado).not.toContain("VOCÊ NÃO ESTÁ VENDO");
+  });
+
+  it("instrução curta de edição não é acusada de incompleta nem de abaixo do piso", async () => {
+    const edicao = "Deixe a 1ª foto com o enquadramento e a luz da 2ª foto.";
+    chamarLlmJson.mockResolvedValue(respostaOk(edicao));
+
+    const r = await traduzirPedido({
+      pedido: PEDIDO_REAL,
+      fatos: [],
+      fotosDeReferencia: 2,
+    });
+
+    // 54 caracteres: reprovaria no piso de CRIAÇÃO (80) e acusaria três seções.
+    expect(r.prompt).toBe(edicao);
+    expect(r.naoCobriu).toEqual([]);
+    expect(r.abaixoDoPiso).toBe(false);
+  });
+
+  it("`Torre.` continua barrado mesmo com foto — piso de edição não é piso nenhum", async () => {
+    chamarLlmJson.mockResolvedValue({ ok: false });
+
+    const r = await traduzirPedido({ pedido: "Torre.", fatos: [], fotosDeReferencia: 1 });
+
+    expect(r.abaixoDoPiso).toBe(true);
+  });
+});
