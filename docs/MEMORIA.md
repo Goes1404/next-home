@@ -7330,3 +7330,57 @@ Nota: [[a-aba-aberta-e-que-carrega-a-versao-antiga]].
   `npm run build` sem a variável no mesmo comando e ele sobrescreveu o
   `.next` do primeiro — o `grep` seguinte deu zero e pareceu que o `env` não
   inlinava nada. **Build de verificação não divide comando com outro build.**
+
+## A remoção levou a peça errada junto (15/09/2026)
+
+Nota: [[a-remocao-levou-a-peca-errada-junto]].
+
+- **Um componente montava DUAS peças, e a queixa era de uma.**
+  `FundoVideoIntro` com `fonteMobile` toca vídeos DIFERENTES por breakpoint:
+  no desktop a vinheta do LOGOTIPO (`intro`), no celular uma peça própria
+  (`fundo-home`, prédios abrindo para a marca, vertical, congelada aos 1,5 s
+  e subindo 26% da tela). O commit de 13/09 tirou o fundo dos dois layouts e
+  dos dois tamanhos — e levou junto a peça que ninguém tinha reclamado. O
+  usuário viu em dois dias: *"tínhamos um vídeo que fica só no mobile"*.
+  **Antes de remover, contar quantas coisas aquele código produz** — um
+  parâmetro que troca a peça por breakpoint produz duas, e só uma está no
+  print.
+- **E a queixa não era sobre a PEÇA, era sobre o LUGAR.** O pedido de 13/09
+  foi "remova ele de todas as páginas, especificamente esse", com print do
+  quadro parado ocupando a tela **entre o CTA final e o rodapé**. Quem põe o
+  quadro ali é o fundo ser `position: fixed`: ele ocupa a viewport o tempo
+  todo e aparece atrás de QUALQUER faixa transparente. Conferido no código —
+  o `CtaFinal` e o bloco do endereço não têm fundo próprio; só o rodapé é
+  opaco. Tirar o vídeo do HERÓI para não vê-lo no rodapé é tratar o sintoma
+  no lugar errado, e custa a primeira tela inteira.
+- **O conserto é sair do caminho, não desaparecer.**
+  `.fundo-sai-do-caminho` esmaece o fundo ao longo da primeira tela por
+  `animation-timeline: scroll(root)` — o mesmo mecanismo de
+  `.barra-progresso`, zero JavaScript, dentro de `@supports`, e só no
+  celular (a MESMA consulta de `FundoVideoIntro`, `max-width: 767.98px`).
+  Sem suporte a rolagem em CSS, o véu forte na base (`to-fundo/85`) segura o
+  caso. O envoltório é irmão do véu e NÃO é o nó do parallax — opacidade e
+  transform são propriedades diferentes, e dois donos da mesma propriedade é
+  o que faz elemento sumir nesta base.
+- **O véu do celular volta aos valores MEDIDOS** (`0/0/85`): os 25% de véu
+  que já existiram derrubavam a saturação da peça de 0,269 no arquivo para
+  0,130 na tela — metade da cor, para proteger um texto que no celular nem
+  está visível (o h1 do herói é `so-para-leitor`). O desktop ficou byte a
+  byte como a decisão de 13/09 o deixou.
+- **`preload()` do react-dom NÃO emite `<link>` nenhum nesta versão.**
+  Medido no HTML servido, com e sem `media`. A F2 de performance atribuiu o
+  ganho ao par "`<picture>` + preload no head"; quem entrega o poster cedo é
+  só o `<img fetchPriority="high">`, que já nasce no HTML do servidor. A
+  chamada não voltou ao arquivo: código que promete um hint inexistente é a
+  dívida "construído e nunca ligado" com outra roupa — e vinha embrulhada
+  num comentário de doze linhas explicando o ganho.
+- **Verificado no navegador, não suposto** (Pixel 7 e 1280px, build de
+  produção): no topo do celular o envoltório está em opacidade 1 com o
+  poster visível e o `fundo-home.webm` tocando; no rodapé (scroll 10.719px),
+  opacidade 0; 412 contra 412 de largura, sem estouro; e no desktop não há
+  poster nem vídeo. E OLHADO: a captura mostra os prédios com a marca no
+  céu, esmaecendo na base para o cartão de busca.
+- **Ficou de fora, declarado:** o grupo `(vitrine)` continua sem fundo em
+  vídeo. Lá a peça do celular era a vinheta do LOGOTIPO (`somenteMobile` sem
+  `fonteMobile`), que é justamente a que gerou a queixa — restaurá-la seria
+  repetir 13/09 pelo outro lado.

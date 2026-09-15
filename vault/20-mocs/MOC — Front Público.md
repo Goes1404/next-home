@@ -52,6 +52,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[o-globo-recebe-pontos-e-nada-roda-sozinho]] — F3: HTML da home 96 → 27 KB gz; globo só nasce perto da viewport; laços dormem com a página parada; cards sem backdrop-filter (13/09)
 ## Fundo
 - [[fundo-em-video-saiu-de-todas-as-paginas]] — a vinheta congelada deixou de ser papel de parede; fica a aurora em CSS (13/09)
+- [[a-remocao-levou-a-peca-errada-junto]] — o componente montava DUAS peças e a queixa era de uma; o vídeo do celular volta esmaecendo com a rolagem (15/09)
 
 ## Movimento
 - [[movimento-do-site-publico-e-css-puro]] — botão vivo, sublinhado do menu, barra de progresso por scroll-timeline e anel do WhatsApp, zero JS (13/09)
