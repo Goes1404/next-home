@@ -3,6 +3,7 @@ import { Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
+import { AvisoDeVersaoNova } from "@/components/layout/AvisoDeVersaoNova";
 import { Footer } from "@/components/layout/Footer";
 import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
@@ -196,6 +197,13 @@ export default async function RootLayout({
             disparou nenhuma vez. O layout raiz é o único que sobrevive a
             toda navegação. Ele mesmo decide onde não aparecer. */}
         <OndaDeTransicao />
+        {/* Aba aberta durante um deploy continua com o HTML e o JavaScript do
+            build anterior — é isso, e não cache de HTML, que faz "o navegador
+            carregar a versão antiga" (a medição está em
+            lib/versao/versaoDaBuild.ts). Mora aqui pelo mesmo motivo da onda:
+            o layout raiz é o único que sobrevive a toda navegação, e o aviso
+            vale para a vitrine e para o painel, servidos pelo mesmo deploy. */}
+        <AvisoDeVersaoNova />
         {children}
         <Footer />
         {/* Dado de CAMPO (F0 do roadmap de performance, 13/09/2026). Até
