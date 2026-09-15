@@ -138,6 +138,51 @@ Regras de forma:
   foto já resolve.`;
 }
 
+/**
+ * A instrução de edição quando o modelo ESTÁ vendo as fotos.
+ *
+ * Irmã da de cima, e a diferença entre as duas é toda a correção de
+ * 15/09/2026: lá ele é avisado de que está cego e proibido de descrever;
+ * aqui ele recebe as imagens de verdade (`image_url` na chamada) e pode
+ * ancorar a edição no que existe — "mantenha a torre escura de vidro da 1ª
+ * foto" em vez de "mantenha o que está na 1ª foto".
+ *
+ * O que NÃO muda com a visão: o texto continua sendo uma EDIÇÃO, não uma
+ * descrição de cena. O gerador também vê as fotos, então redescrever tudo
+ * gasta prompt para repetir o que ele já tem na mão — e prompt gigante
+ * dilui o assunto, que é o defeito que este caminho existe para consertar.
+ */
+export function instrucaoDeEdicaoComVisao(quantasFotos: number): string {
+  const quadro =
+    quantasFotos === 1
+      ? "Você está vendo a foto que o corretor anexou."
+      : `Você está vendo as ${quantasFotos} fotos que o corretor anexou, na ordem dele: ` +
+        `${Array.from({ length: quantasFotos }, (_, i) => `a ${i + 1}ª`).join(", ")}.`;
+
+  return `${quadro}
+
+O gerador de imagem também vai receber ${quantasFotos === 1 ? "essa foto" : "essas fotos"}, junto com o texto que
+você escrever. Então:
+
+- Escreva a EDIÇÃO, não uma descrição da cena: o que MUDA, o que FICA como
+  está, e o que deve ganhar destaque.
+- Use o que você está vendo para ser específico no que importa à mudança —
+  nomeie o assunto, o enquadramento e a luz quando eles forem o ponto.
+- Não recite a foto inteira: o gerador já a tem. Descrição longa do que não
+  muda só dilui o pedido.
+- Refira-se às fotos pela posição ("a 1ª foto", "a 2ª foto"), como o corretor
+  fez.
+- Se ele pediu para uma ficar parecida com a outra, diga em que ELAS se
+  parecem e o que a primeira deve herdar da segunda.
+
+Regras de forma:
+- Concreto, não adjetivo solto: "luz quente e rasante do fim de tarde" em vez
+  de "bonito".
+- Texto que deva aparecer NA IMAGEM vai entre aspas, soletrado letra a letra,
+  com a posição e o tipo de letra.
+- Entre 120 e 600 caracteres.`;
+}
+
 /*
  * As marcas de cada seção.
  *

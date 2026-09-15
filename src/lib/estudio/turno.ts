@@ -221,6 +221,9 @@ export async function turnoDeArte(params: {
     respostas,
     promptAnterior: propostaAnterior?.prompt ?? null,
     fotosDeReferencia: referencias.length,
+    // As URLs vão na MESMA ordem das miniaturas do balão: é essa ordem que
+    // dá sentido a "a 1ª foto" tanto para quem escreve quanto para quem gera.
+    urlsDeReferencia: referencias.map((referencia) => referencia.url),
   });
 
   const proposta: PropostaDeArte = {
@@ -252,12 +255,24 @@ export async function turnoDeArte(params: {
    * que ordem. Com ele, a conta fecha na tela — as miniaturas do balão levam
    * o mesmo 1 e 2.
    */
+  /*
+   * E a nota diz se eu OLHEI para elas.
+   *
+   * "Escrevi vendo suas fotos" e "escrevi sem poder vê-las" produzem textos
+   * de confiança diferente, e esconder a diferença é o mesmo pecado de
+   * aprovar no escuro que `daIa` já cobre. O segundo caso é real: sem chave
+   * do motor, o tradutor cai no caminho cego.
+   */
+  const quais =
+    referencias.length === 1
+      ? "a foto que você anexou"
+      : `as ${referencias.length} fotos que você anexou, na ordem do seu balão (1 a ${referencias.length})`;
   const notaDaFoto =
     referencias.length === 0
       ? ""
-      : referencias.length === 1
-        ? " Vou partir da foto que você anexou."
-        : ` Vou partir das ${referencias.length} fotos que você anexou, na ordem em que aparecem no seu balão (1 a ${referencias.length}).`;
+      : traduzido.viuAsFotos
+        ? ` Olhei ${quais}.`
+        : ` Vou partir de ${quais} — mas escrevi sem conseguir vê-las, então confira se bate.`;
   const texto = traduzido.daIa
     ? soarHumano(
         `Escrevi assim.${notaDaFoto} Leia e ajuste o que quiser — é exatamente esse texto ` +

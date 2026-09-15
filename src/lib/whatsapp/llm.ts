@@ -84,7 +84,23 @@ type Provedor = {
   nome: string;
   configurado: () => boolean;
   modelo: () => string;
-  chamar: (p: string, o: { temperature?: number; timeoutMs: number }) => Promise<ResultadoLlm>;
+  chamar: (
+    p: string,
+    o: { temperature?: number; timeoutMs: number; imagens?: string[] },
+  ) => Promise<ResultadoLlm>;
+  /*
+   * Este provedor sabe OLHAR para uma imagem?
+   *
+   * Separado de `configurado` e de `cabe` porque é outra pergunta: não é
+   * sobre ter chave nem sobre o pedido caber, é sobre o provedor aceitar
+   * imagem na entrada. Quem não sabe fica de fora quando há foto — mandar a
+   * foto para um modelo de texto devolveria HTTP 400, e a cascata seguiria
+   * adiante achando que o provedor estava doente.
+   *
+   * Ausente significa NÃO. O padrão certo é o conservador: provedor que não
+   * declara visão não recebe imagem.
+   */
+  leImagem?: () => boolean;
   /*
    * Este provedor consegue atender ESTE prompt? Diferente de
    * `configurado`, que é sobre ter chave, isto é sobre o pedido caber no
@@ -129,6 +145,9 @@ const PROVEDORES: Provedor[] = [
     configurado: openaiConfigurada,
     modelo: modeloOpenai,
     chamar: chamarOpenaiJson,
+    // `gpt-4.1-mini` lê imagem. É o único da lista que declara isso hoje, e
+    // por isso é ele quem atende o tradutor de imagem quando há foto anexada.
+    leImagem: () => true,
   },
 ];
 
@@ -175,17 +194,33 @@ export function ordemDosProvedores(): Provedor[] {
   return PROVEDORES.filter((p) => p.nome !== MOTOR);
 }
 
+/**
+ * Algum provedor da ordem atual sabe olhar para imagem?
+ *
+ * Quem chama decide ANTES o que escrever no prompt: prometer "você está
+ * vendo as fotos" para um modelo de texto é a instrução impossível que fez o
+ * tradutor de imagem inventar uma sala de estar em 15/09/2026. Perguntar
+ * primeiro, escrever depois.
+ */
+export function algumProvedorLeImagem(): boolean {
+  return ordemDosProvedores().some((p) => p.configurado() && (p.leImagem?.() ?? false));
+}
+
 export async function chamarLlmJson(
   prompt: string,
-  opts?: { temperature?: number; orcamentoMs?: number },
+  opts?: { temperature?: number; orcamentoMs?: number; imagens?: string[] },
 ): Promise<ResultadoLlm> {
   const orcamentoMs = opts?.orcamentoMs ?? ORCAMENTO_AGENTE_MS;
   const prazoFinal = Date.now() + orcamentoMs;
+  const imagens = opts?.imagens ?? [];
 
   const disponiveis = ordemDosProvedores().filter(
     (p) =>
       p.configurado() &&
       (p.cabe?.(prompt) ?? true) &&
+      // Com foto no pedido, só entra quem sabe lê-la. Sem foto, a regra não
+      // existe: todo provedor de texto segue valendo como antes.
+      (imagens.length === 0 || (p.leImagem?.() ?? false)) &&
       (!provedorForcado() || p.nome === provedorForcado()),
   );
 
@@ -222,7 +257,11 @@ export async function chamarLlmJson(
     if (restante < MINIMO_UTIL_MS) break;
 
     const timeoutMs = Math.min(tetoPorProvedor, restante);
-    let resultado = await provedor.chamar(prompt, { temperature: opts?.temperature, timeoutMs });
+    let resultado = await provedor.chamar(prompt, {
+      temperature: opts?.temperature,
+      timeoutMs,
+      imagens,
+    });
 
     // Uma retentativa no mesmo provedor só para o que falha rápido (5xx,
     // JSON estranho) e se ainda houver prazo. Cota, timeout e chave
@@ -233,6 +272,7 @@ export async function chamarLlmJson(
         resultado = await provedor.chamar(prompt, {
           temperature: opts?.temperature,
           timeoutMs: Math.min(tetoPorProvedor, aindaResta),
+          imagens,
         });
       }
     }

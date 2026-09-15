@@ -1,14 +1,16 @@
 import "server-only";
 
-import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import { algumProvedorLeImagem, chamarLlmJson } from "@/lib/whatsapp/llm";
 import {
   conferir,
   instrucaoDaGramatica,
   instrucaoDeEdicao,
+  instrucaoDeEdicaoComVisao,
   PISO_DE_EDICAO,
   PISO_DE_PROMPT,
   type ChaveSecao,
 } from "./gramatica";
+import { instrucaoDoOficio } from "./oficio";
 
 /**
  * O tradutor: pega o que o corretor escreveu e devolve um pedido de imagem
@@ -43,6 +45,23 @@ import {
 
 /** Teto curto: isto acontece com a pessoa olhando para a tela. */
 const ORCAMENTO_MS = 12_000;
+
+/**
+ * Com foto, o modelo ainda precisa BAIXAR e olhar as imagens antes de
+ * escrever — por isso o teto sobe. Não sobe mais que isso porque quem está
+ * esperando é uma pessoa: passar de 20s numa tela de chat é indistinguível
+ * de travamento, e a degradação (texto cru do corretor) é pior que esperar.
+ */
+const ORCAMENTO_COM_FOTO_MS = 20_000;
+
+/**
+ * Teto de fotos que viajam na chamada.
+ *
+ * O mesmo 4 do composer, da action e da rota de gerar — o número tem de
+ * bater nos quatro, senão o tradutor enxerga um conjunto e o gerador recebe
+ * outro, e o prompt passa a falar de "a 4ª foto" que nunca chegou lá.
+ */
+const MAX_FOTOS_NA_CHAMADA = 4;
 
 /**
  * Abaixo disto o modelo não melhorou nada.
@@ -90,6 +109,15 @@ export type EntradaDoTradutor = {
    * parecida com a segunda" chegar íntegro ao gerador, o único que as vê.
    */
   fotosDeReferencia?: number;
+  /**
+   * As URLs públicas das fotos, na MESMA ordem em que o corretor as anexou.
+   *
+   * Quando existem e há provedor com visão, elas viajam na chamada e o
+   * modelo OLHA para elas. Quando não — sem chave do motor, ou chamador que
+   * não as tem —, o caminho cego continua inteiro e testado: é a degradação,
+   * não um erro.
+   */
+  urlsDeReferencia?: string[];
 };
 
 export type PromptTraduzido = {
@@ -97,13 +125,21 @@ export type PromptTraduzido = {
   prompt: string;
   /** `false` quando o motor não respondeu e o texto voltou como veio. */
   daIa: boolean;
+  /**
+   * O modelo OLHOU para as fotos ao escrever isto?
+   *
+   * A tela precisa distinguir os dois casos: "escrevi vendo suas fotos" e
+   * "escrevi sem poder vê-las" produzem textos de confiança diferente, e
+   * esconder a diferença é o mesmo pecado do `daIa` — aprovar no escuro.
+   */
+  viuAsFotos: boolean;
   /** Seções da gramática que o texto final não cobriu. */
   naoCobriu: ChaveSecao[];
   /** Curto demais para gerar sem confirmação explícita. */
   abaixoDoPiso: boolean;
 };
 
-function montarPromptDoMotor(e: EntradaDoTradutor): string {
+function montarPromptDoMotor(e: EntradaDoTradutor, verFotos: boolean): string {
   const blocos: string[] = [
     "Você reescreve pedidos de imagem para uma imobiliária brasileira.",
     "",
@@ -139,10 +175,17 @@ function montarPromptDoMotor(e: EntradaDoTradutor): string {
   }
 
   const fotos = e.fotosDeReferencia ?? 0;
+  const regime = fotos > 0 ? "edicao" : "criacao";
 
   blocos.push(
     "",
-    fotos > 0 ? instrucaoDeEdicao(fotos) : instrucaoDaGramatica(),
+    fotos === 0
+      ? instrucaoDaGramatica()
+      : verFotos
+        ? instrucaoDeEdicaoComVisao(fotos)
+        : instrucaoDeEdicao(fotos),
+    "",
+    instrucaoDoOficio(regime),
     "",
     "O que NUNCA entra:",
     "- Metragem, número de dormitórios, andar, preço ou condição de pagamento que",
@@ -165,11 +208,17 @@ function textoDoJson(json: unknown, fotos: number): string | null {
   return texto.slice(0, TETO);
 }
 
-function fechar(prompt: string, daIa: boolean, fotos: number): PromptTraduzido {
+function fechar(
+  prompt: string,
+  daIa: boolean,
+  fotos: number,
+  viuAsFotos: boolean,
+): PromptTraduzido {
   const modo = fotos > 0 ? "edicao" : "criacao";
   return {
     prompt,
     daIa,
+    viuAsFotos,
     naoCobriu: conferir(prompt, modo),
     abaixoDoPiso: prompt.trim().length < (modo === "edicao" ? PISO_DE_EDICAO : PISO_DE_PROMPT),
   };
@@ -178,16 +227,31 @@ function fechar(prompt: string, daIa: boolean, fotos: number): PromptTraduzido {
 export async function traduzirPedido(entrada: EntradaDoTradutor): Promise<PromptTraduzido> {
   const original = entrada.pedido.trim();
   const fotos = entrada.fotosDeReferencia ?? 0;
-  // Sem pedido não há o que traduzir, e uma chamada aqui seria gasto puro.
-  if (!original) return fechar("", false, fotos);
 
-  const r = await chamarLlmJson(montarPromptDoMotor(entrada), {
+  /*
+   * A decisão de OLHAR é tomada antes de escrever uma linha do prompt.
+   *
+   * Prometer "você está vendo as fotos" a um provedor de texto é exatamente
+   * a instrução impossível que fez este módulo inventar uma sala de estar.
+   * Três condições, e as três precisam valer: há fotos anexadas, temos as
+   * URLs delas, e existe provedor configurado que lê imagem.
+   */
+  const urls = (entrada.urlsDeReferencia ?? []).filter(Boolean).slice(0, MAX_FOTOS_NA_CHAMADA);
+  const verFotos = fotos > 0 && urls.length > 0 && algumProvedorLeImagem();
+
+  // Sem pedido não há o que traduzir, e uma chamada aqui seria gasto puro.
+  if (!original) return fechar("", false, fotos, false);
+
+  const r = await chamarLlmJson(montarPromptDoMotor(entrada, verFotos), {
     temperature: 0.7,
-    orcamentoMs: ORCAMENTO_MS,
+    orcamentoMs: verFotos ? ORCAMENTO_COM_FOTO_MS : ORCAMENTO_MS,
+    imagens: verFotos ? urls : undefined,
   });
 
-  if (!r.ok) return fechar(original, false, fotos);
+  if (!r.ok) return fechar(original, false, fotos, false);
 
   const texto = textoDoJson(r.json, fotos);
-  return texto ? fechar(texto, true, fotos) : fechar(original, false, fotos);
+  return texto
+    ? fechar(texto, true, fotos, verFotos)
+    : fechar(original, false, fotos, false);
 }
