@@ -2,6 +2,7 @@
 
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { revalidarCorretores } from "@/lib/catalogo/revalidar";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -158,6 +159,7 @@ export async function criarAcessoCorretor(
     detalhes: { email: emailLimpo, slug },
   });
 
+  revalidarCorretores();
   revalidatePath("/corretor/admin/contas");
   return { ok: true, email: emailLimpo, senha, slug };
 }
@@ -261,6 +263,7 @@ export async function criarAcessosQueFaltam(): Promise<ResultadoLoteAcessos> {
     else falhas.push({ nome: corretor.nome, motivo: r.erro });
   }
 
+  revalidarCorretores();
   revalidatePath("/corretor/admin/contas");
   return { criados, falhas };
 }
@@ -294,6 +297,7 @@ export async function redefinirSenhaCorretor(
     alvo_corretor_id: corretorId,
   });
 
+  revalidarCorretores();
   revalidatePath("/corretor/admin/contas");
   return { ok: true, email: alvo.email ?? "", senha, slug: alvo.slug ?? "" };
 }
@@ -320,6 +324,7 @@ export async function alterarPapelCorretor(
 
   if (error) return { erro: traduzirErroBanco(error.message) };
 
+  revalidarCorretores();
   revalidatePath("/corretor/admin/contas");
   return { ok: papel === "gestor" ? "Agora administra a imobiliária." : "Voltou a ser corretor." };
 }
@@ -350,6 +355,7 @@ export async function alternarAtivoCorretor(
       alvo_corretor_id: corretorId,
     });
 
+  revalidarCorretores();
   revalidatePath("/corretor/admin/contas");
   return { ok: ativo ? "Corretor reativado." : "Corretor desativado — sai da roleta de leads." };
 }

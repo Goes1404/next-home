@@ -1,8 +1,15 @@
+import { cache } from "react";
+import {
+  atuacaoPorCorretor,
+  catalogoPublicado,
+  corretoresPublicos,
+  empreendimentosDoCorretor,
+  type AtuacaoCorretor,
+} from "@/lib/catalogo/cache";
+import { mapCorretor, SELECT_CORRETOR, SELECT_EMPREENDIMENTO, type LinhaCorretor } from "@/lib/catalogo/selects";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { estagioDe } from "@/lib/estagioDeCompra";
 import { createClient } from "@/lib/supabase/public";
-import { comRetentativa } from "@/lib/supabase/retentativa";
-import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
 import type {
   CorretorPerfil,
   Empreendimento,
@@ -10,6 +17,11 @@ import type {
   Ordenacao,
   TipoImovel,
 } from "@/lib/types";
+
+// Os SELECTs e o mapeador de corretor moram em `catalogo/selects.ts` (sem
+// dependência) desde a F2; continuam exportados daqui para quem já importava.
+export { mapCorretor, SELECT_CORRETOR, SELECT_EMPREENDIMENTO };
+export type { AtuacaoCorretor, LinhaCorretor };
 
 /**
  * Camada de acesso a dados dos empreendimentos, sobre o Supabase real
@@ -34,18 +46,8 @@ import type {
  * constraint desfaz o empate.
  */
 
-// `corretores!empreendimentos_corretor_id_fkey`, não só `corretores`: a
-// 0015 deu a `empreendimentos` e `corretores` um segundo caminho de relação
-// (via `corretor_destaques`, tabela ponte many-to-many), e sem o nome do
-// FK o PostgREST recusa o embed por ambiguidade — a leitura de qualquer
-// empreendimento passa a falhar com "more than one relationship was found".
-export const SELECT_EMPREENDIMENTO = `
-  *,
-  corretor:corretores!empreendimentos_corretor_id_fkey(id, nome, creci, whatsapp, foto_url, video_url),
-  tipologias(*),
-  midias(*),
-  lazer:empreendimento_lazer(lazer_itens(*))
-`;
+// `SELECT_EMPREENDIMENTO` (e a história do `!empreendimentos_corretor_id_fkey`)
+// está em `catalogo/selects.ts`.
 
 /**
  * Com um corretor ativo (link pessoal, ver `corretorAtivo.ts`), ele
@@ -60,19 +62,20 @@ function aplicarCorretorAtivo(
   return lista.map((e) => ({ ...e, corretor: corretorAtivo }));
 }
 
-async function buscarPublicados(): Promise<Empreendimento[]> {
-  const supabase = createClient();
-  const [{ data, error }, corretorAtivo] = await Promise.all([
-    comRetentativa("empreendimentos publicados", () =>
-      supabase.from("empreendimentos").select(SELECT_EMPREENDIMENTO).eq("publicado", true).order("ordem"),
-    ),
-    getCorretorAtivo(),
-  ]);
-
-  if (error) throw new Error(`Falha ao buscar empreendimentos: ${error.message}`);
-  const lista = (data as unknown as LinhaEmpreendimento[]).map(mapEmpreendimento);
+/**
+ * O catálogo publicado, já com o corretor ativo aplicado.
+ *
+ * Desde a F2 (13/09/2026) o banco não é consultado aqui: `catalogoPublicado`
+ * é o cache de dados por etiqueta (ver `catalogo/cache.ts`), e `cache()` do
+ * React deduplica dentro da requisição — a home chamava isto duas vezes
+ * (`getEmpreendimentos` e `getRegioesDisponiveis`) e baixava 243 KB do
+ * Canadá duas vezes. A personalização por cookie fica FORA do cache de
+ * dados, de propósito: é um `map` em memória sobre 25 objetos.
+ */
+const buscarPublicados = cache(async (): Promise<Empreendimento[]> => {
+  const [lista, corretorAtivo] = await Promise.all([catalogoPublicado(), getCorretorAtivo()]);
   return aplicarCorretorAtivo(lista, corretorAtivo);
-}
+});
 
 /** Minúsculas e sem acento: "Estação" e "estacao" são a mesma busca. */
 function chave(texto: string): string {
@@ -239,34 +242,16 @@ export async function getEmpreendimentosDestaque(): Promise<Empreendimento[]> {
 export async function getEmpreendimentoBySlug(
   slug: string,
 ): Promise<Empreendimento | null> {
-  const supabase = createClient();
-  const [{ data, error }, corretorAtivo] = await Promise.all([
-    comRetentativa("empreendimento por slug", () =>
-      supabase
-        .from("empreendimentos")
-        .select(SELECT_EMPREENDIMENTO)
-        .eq("slug", slug)
-        .eq("publicado", true)
-        .maybeSingle(),
-    ),
-    getCorretorAtivo(),
-  ]);
-
-  if (error) throw new Error(`Falha ao buscar empreendimento "${slug}": ${error.message}`);
-  if (!data) return null;
-
-  const e = mapEmpreendimento(data as unknown as LinhaEmpreendimento);
-  return corretorAtivo ? { ...e, corretor: corretorAtivo } : e;
+  // O catálogo cacheado já tem todos os publicados — e `generateMetadata` e
+  // a página pedem o MESMO slug na mesma requisição: com o `cache()` de
+  // `buscarPublicados`, a segunda leitura é de graça (era uma ida ao banco a
+  // mais, e depois outra inteira para os similares).
+  const todos = await buscarPublicados();
+  return todos.find((e) => e.slug === slug) ?? null;
 }
 
 export async function getSlugsEmpreendimentos(): Promise<string[]> {
-  const supabase = createClient();
-  const { data, error } = await comRetentativa("slugs", () =>
-    supabase.from("empreendimentos").select("slug").eq("publicado", true),
-  );
-
-  if (error) throw new Error(`Falha ao listar slugs: ${error.message}`);
-  return data.map((row) => row.slug);
+  return (await catalogoPublicado()).map((e) => e.slug);
 }
 
 /* ---------------------------------------------------------------------------
@@ -278,36 +263,8 @@ export async function getSlugsEmpreendimentos(): Promise<string[]> {
  * pelo link de um colega.
  * ------------------------------------------------------------------------ */
 
-export const SELECT_CORRETOR =
-  "id, slug, nome, creci, whatsapp, foto_url, video_url, fundo_tipo, fundo_foto_url, bio";
-
-export type LinhaCorretor = {
-  id: string;
-  slug: string | null;
-  nome: string;
-  creci: string;
-  whatsapp: string;
-  foto_url: string | null;
-  bio: string | null;
-  video_url: string | null;
-  fundo_tipo: string;
-  fundo_foto_url: string | null;
-};
-
-export function mapCorretor(row: LinhaCorretor): CorretorPerfil {
-  return {
-    id: row.id,
-    slug: row.slug!,
-    nome: row.nome,
-    creci: row.creci,
-    whatsapp: row.whatsapp,
-    fotoUrl: row.foto_url,
-    videoUrl: row.video_url,
-    fundoTipo: row.fundo_tipo as CorretorPerfil["fundoTipo"],
-    fundoFotoUrl: row.fundo_foto_url,
-    bio: row.bio,
-  };
-}
+// `SELECT_CORRETOR`, `LinhaCorretor` e `mapCorretor` moram em
+// `catalogo/selects.ts` (re-exportados no topo deste arquivo).
 
 /**
  * Equipe exibida publicamente. `slug not null` filtra o registro genérico
@@ -315,71 +272,22 @@ export function mapCorretor(row: LinhaCorretor): CorretorPerfil {
  * que não é uma pessoa e não deve aparecer na vitrine da equipe.
  */
 export async function getCorretores(): Promise<CorretorPerfil[]> {
-  const supabase = createClient();
-  const { data, error } = await comRetentativa("corretores", () =>
-    supabase.from("corretores").select(SELECT_CORRETOR).not("slug", "is", null).order("nome"),
-  );
-
-  if (error) throw new Error(`Falha ao listar corretores: ${error.message}`);
-  return (data as LinhaCorretor[]).map(mapCorretor);
+  return corretoresPublicos();
 }
 
 export async function getCorretorPorSlug(slug: string): Promise<CorretorPerfil | null> {
-  const supabase = createClient();
-  const { data, error } = await comRetentativa("corretor por slug", () =>
-    supabase.from("corretores").select(SELECT_CORRETOR).eq("slug", slug).maybeSingle(),
-  );
-
-  if (error) throw new Error(`Falha ao buscar corretor "${slug}": ${error.message}`);
-  return data ? mapCorretor(data as LinhaCorretor) : null;
+  return (await corretoresPublicos()).find((c) => c.slug === slug) ?? null;
 }
 
-export type AtuacaoCorretor = {
-  total: number;
-  cidades: string[];
-};
 
 export async function getAtuacaoPorCorretor(): Promise<Record<string, AtuacaoCorretor>> {
-  const supabase = createClient();
-  const { data, error } = await comRetentativa("atuação dos corretores", () =>
-    supabase.from("empreendimentos").select("corretor_id, cidade").eq("publicado", true),
-  );
-
-  if (error) throw new Error(`Falha ao apurar atuação dos corretores: ${error.message}`);
-
-  const porCorretor: Record<string, { total: number; cidades: Set<string> }> = {};
-  for (const linha of data) {
-    if (!linha.corretor_id) continue;
-    const atual = (porCorretor[linha.corretor_id] ??= { total: 0, cidades: new Set() });
-    atual.total += 1;
-    atual.cidades.add(linha.cidade);
-  }
-
-  return Object.fromEntries(
-    Object.entries(porCorretor).map(([id, { total, cidades }]) => [
-      id,
-      { total, cidades: [...cidades].sort() },
-    ]),
-  );
+  return atuacaoPorCorretor();
 }
 
 export async function getEmpreendimentosPorCorretor(
   corretorId: string,
 ): Promise<Empreendimento[]> {
-  const supabase = createClient();
-  const { data, error } = await comRetentativa("empreendimentos do corretor", () =>
-    supabase
-      .from("empreendimentos")
-      .select(SELECT_EMPREENDIMENTO)
-      .eq("corretor_id", corretorId)
-      .eq("publicado", true)
-      .order("ordem"),
-  );
-
-  if (error) {
-    throw new Error(`Falha ao buscar empreendimentos do corretor: ${error.message}`);
-  }
-  return (data as unknown as LinhaEmpreendimento[]).map(mapEmpreendimento);
+  return empreendimentosDoCorretor(corretorId);
 }
 
 /**

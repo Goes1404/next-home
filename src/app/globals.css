@@ -442,11 +442,11 @@
   --text-fluid-lg: clamp(1.125rem, 1.05rem + 0.38vw, 1.375rem);
   --text-fluid-xl: clamp(1.375rem, 1.2rem + 0.85vw, 1.875rem);
   --text-fluid-2xl: clamp(1.75rem, 1.4rem + 1.75vw, 2.75rem);
-  --text-fluid-3xl: clamp(2.25rem, 1.6rem + 3.2vw, 4rem);
-  --text-fluid-4xl: clamp(2.75rem, 1.7rem + 5.2vw, 5.5rem);
+  --text-fluid-3xl: clamp(2rem, 1.5rem + 2.6vw, 3.25rem);
+  --text-fluid-4xl: clamp(2.5rem, 1.6rem + 4.2vw, 4.5rem);
   /* Display editorial — o nome do imóvel no hero. Sobe até 7.5rem no desktop
      mas nunca passa de ~11vw, senão nome longo estoura a viewport no meio. */
-  --text-fluid-5xl: clamp(3rem, 1.2rem + 8.5vw, 7.5rem);
+  --text-fluid-5xl: clamp(2.75rem, 1.3rem + 6vw, 5.5rem);
 
   /* Movimento — curvas compartilhadas entre CSS e GSAP */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -1091,14 +1091,64 @@
     }
   }
 
-  /* Elementos animados pelo GSAP começam invisíveis; a classe é removida
-     assim que o ScrollTrigger assume, e some sozinha se o JS falhar. */
-  .gsap-pending {
-    opacity: 0;
+  /*
+   * A chegada do hero da home SEM JavaScript (13/09/2026).
+   *
+   * Até aqui os elementos do hero nasciam com `.gsap-pending` (opacidade 0)
+   * e esperavam o GSAP hidratar para aparecer — medido no celular de
+   * referência, 10,6 s de LCP, 99% "atraso de renderização". Agora a
+   * entrada é animação CSS: roda assim que a folha chega, antes de qualquer
+   * script, e `both` garante o estado final se o JS nunca vier.
+   *
+   * Enquanto a vinheta cobre a tela (`data-intro-ativa`, só desktop e só na
+   * primeira visita) a animação fica PAUSADA no primeiro quadro; a queda do
+   * atributo a solta — é o mesmo gatilho que o `main > *` acima usa.
+   * `--ordem` escalona a chegada (título, subtítulo, busca, pista de
+   * rolagem), 0,16 s entre irmãos, começando 0,45 s depois de o fundo
+   * começar a recuar (ver AberturaHome).
+   */
+  [data-abertura] {
+    animation: chegada 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(0.45s + var(--ordem, 0) * 0.16s);
   }
-  .no-js .gsap-pending,
-  .motion-off .gsap-pending {
-    opacity: 1;
+  [data-abertura="1"] { --ordem: 1; }
+  [data-abertura="2"] { --ordem: 2; }
+  [data-abertura="3"] { --ordem: 3; }
+  [data-abertura="4"] { --ordem: 4; }
+  :root[data-intro-ativa] [data-abertura] {
+    animation-play-state: paused;
+  }
+  @keyframes chegada {
+    from {
+      opacity: 0;
+      transform: translateY(42px);
+    }
+  }
+
+  /*
+   * O poster do fundo da home segue a MESMA composição do vídeo que vai
+   * entrar por cima (ver `FundoVideoIntro` e o `fonteMobile` do layout
+   * institucional): no celular, `cover` deslocado 26% para cima com o
+   * esmaecimento do último quarto do quadro e o mesmo realce de cor — sem
+   * isso o vídeo "pularia" ao assumir. No desktop, `contain` (a regra
+   * `.fundo-encaixa-na-tela` decide o `cover` em janela mais larga que 16:9).
+   */
+  .fundo-poster {
+    object-fit: contain;
+  }
+  @media (max-width: 767.98px) {
+    .fundo-poster {
+      object-fit: cover;
+      transform: translateY(-26%);
+      -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+      mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+      filter: saturate(1.18) contrast(1.05);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-abertura] {
+      animation: none;
+    }
   }
 
   /* FORA DA TELA, DENTRO DO HTML.
@@ -1267,7 +1317,7 @@
   }
 
   .onda-transicao {
-    animation: onda-passa 900ms cubic-bezier(0.65, 0, 0.35, 1) both;
+    animation: onda-passa 640ms cubic-bezier(0.6, 0, 0.3, 1) both;
     will-change: transform;
   }
 
@@ -1316,13 +1366,13 @@
    * mais nada.
    */
   :root[data-entrando] main > * {
-    animation: pagina-entra 520ms var(--ease-out-expo) both;
+    animation: pagina-entra 380ms var(--ease-out-expo) both;
   }
   :root[data-entrando] main > *:nth-child(2) {
-    animation-delay: 70ms;
+    animation-delay: 40ms;
   }
   :root[data-entrando] main > *:nth-child(n + 3) {
-    animation-delay: 130ms;
+    animation-delay: 80ms;
   }
 
   @keyframes pagina-entra {
@@ -1501,12 +1551,16 @@
   cursor: pointer;
 }
 
+/* Pinos desenhados para tile CLARO (OSM) desde 12/09/2026: o teal claro
+   com brilho neon era legível sobre o tile escuro da CARTO e sumia sobre o
+   OSM. Hoje: ponto em teal escuro com aro branco — a receita de qualquer
+   app de mapa sobre fundo claro. */
 .map-pulse-ring {
   position: absolute;
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(47, 214, 164, 0.45);
+  background: rgba(0, 137, 123, 0.35);
   animation: pulse-ring 2.2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
@@ -1515,17 +1569,19 @@
   width: 13px;
   height: 13px;
   border-radius: 50%;
-  background: #2fd6a4;
-  box-shadow: 0 0 10px #2fd6a4, 0 0 20px rgba(47, 214, 164, 0.6);
+  background: #00897b;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
   border: 2px solid #ffffff;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease;
 }
 
 .map-pulse-marker:hover .map-pulse-dot,
 .map-pulse-marker.active .map-pulse-dot {
-  transform: scale(1.45);
-  background: #6fe7c0;
-  box-shadow: 0 0 14px #6fe7c0, 0 0 28px rgba(111, 231, 192, 0.9);
+  transform: scale(1.7);
+  background: #05211c;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(5, 33, 28, 0.22), 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
 .map-pulse-price {
@@ -1548,10 +1604,15 @@
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.map-pulse-marker:hover .map-pulse-price {
-  transform: translateX(-50%) translateY(-3px) scale(1.05);
-  border-color: #2fd6a4;
+.map-pulse-marker:hover .map-pulse-price,
+.map-pulse-marker.active .map-pulse-price {
+  transform: translateX(-50%) translateY(-3px) scale(1.08);
+  background: #05211c;
+  border-color: #ffffff;
   color: #ffffff;
+}
+.map-pulse-marker.active {
+  z-index: 10;
 }
 
 @keyframes pulse-ring {
@@ -1595,6 +1656,17 @@
   box-shadow: var(--shadow-painel-alto) !important;
 }
 
+/* Alvo de 40px no toque (auditoria de 13/09: o Leaflet nasce com 30px) e
+   atribuição legível — 10px era o menor texto do site inteiro. */
+.leaflet-touch .leaflet-bar a,
+.leaflet-bar a {
+  width: 40px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+}
+.leaflet-control-attribution {
+  font-size: 11px !important;
+}
 .leaflet-control-zoom-in,
 .leaflet-control-zoom-out {
   background: transparent !important;
@@ -1617,12 +1689,12 @@
 @keyframes respirar {
   0%,
   100% {
-    opacity: 0.55;
-    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.7;
+    transform: scale(1);
   }
   50% {
-    opacity: 0.85;
-    transform: translate(-50%, -50%) scale(1.06);
+    opacity: 1;
+    transform: scale(1.06);
   }
 }
 
@@ -1636,6 +1708,70 @@
   to {
     transform: rotateZ(360deg);
   }
+}
+
+/*
+ * Seta do <select> (12/09/2026). `appearance-none` apaga a nativa; esta é
+ * um chevron por background-image, no tom do TEXTO de cada tema — cor
+ * dentro de url() não aceita `light-dark()` nem `currentColor`, então são
+ * duas regras. `data-tema` está sempre carimbado no <html> pelo layout raiz.
+ */
+.select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2305211c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.05rem 1.05rem;
+}
+:root[data-tema="escuro"] .select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f6faf9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+}
+
+/*
+ * Seta do <select> (12/09/2026). `appearance-none` apaga a nativa; esta é
+ * um chevron por background-image, no tom do TEXTO de cada tema — cor
+ * dentro de url() não aceita `light-dark()` nem `currentColor`, então são
+ * duas regras. `data-tema` está sempre carimbado no <html> pelo layout raiz.
+ */
+.select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2305211c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.05rem 1.05rem;
+}
+:root[data-tema="escuro"] .select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f6faf9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+}
+
+/*
+ * Seta do <select> (12/09/2026). `appearance-none` apaga a nativa; esta é
+ * um chevron por background-image, no tom do TEXTO de cada tema — cor
+ * dentro de url() não aceita `light-dark()` nem `currentColor`, então são
+ * duas regras. `data-tema` está sempre carimbado no <html> pelo layout raiz.
+ */
+.select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2305211c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.05rem 1.05rem;
+}
+:root[data-tema="escuro"] .select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f6faf9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+}
+
+/*
+ * Seta do <select> (12/09/2026). `appearance-none` apaga a nativa; esta é
+ * um chevron por background-image, no tom do TEXTO de cada tema — cor
+ * dentro de url() não aceita `light-dark()` nem `currentColor`, então são
+ * duas regras. `data-tema` está sempre carimbado no <html> pelo layout raiz.
+ */
+.select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2305211c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.05rem 1.05rem;
+}
+:root[data-tema="escuro"] .select-seta {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f6faf9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
 }
 
 @keyframes cintilar {
@@ -1877,6 +2013,108 @@
  * cabeçalho-herói, que não contém nada disso. A transparência já deixa os
  * brilhos do fundo passarem — é o que dá a leitura de material.
  */
+/*
+ * =====================================================================
+ * Movimento do site público (13/09/2026) — quatro efeitos, ZERO JavaScript
+ * =====================================================================
+ *
+ * A régua da casa vale aqui como no painel: movimento responde a GESTO
+ * (hover, toque, rolagem) ou mostra CONTEÚDO; nada roda sozinho em repouso
+ * — a única exceção declarada é o anel do WhatsApp, que pulsa a cada 6s
+ * porque é o botão de conversão e some ao rolar no celular. Tudo é CSS:
+ * a barra de progresso usa `animation-timeline: scroll()` (quem não
+ * suporta não vê barra nenhuma, e não vê erro), e `prefers-reduced-motion`
+ * já zera duração de animação e transição no bloco global acima.
+ */
+
+/* Botão de ação: levanta 2px no hover com sombra, afunda no toque. */
+@utility botao-vivo {
+  transition:
+    transform 0.25s var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+    box-shadow 0.25s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+  will-change: transform;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -12px rgb(0 0 0 / 0.45);
+  }
+  &:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: none;
+  }
+}
+
+/* Link de navegação: sublinhado que cresce da esquerda; fixo na rota atual. */
+@utility link-nav {
+  position: relative;
+  padding-bottom: 2px;
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 1.5px;
+    border-radius: 999px;
+    background: var(--color-acento-forte);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+  }
+  &:hover::after,
+  &[aria-current="page"]::after {
+    transform: scaleX(1);
+  }
+}
+
+/* Barra de progresso de leitura no topo, guiada pela rolagem do documento. */
+.barra-progresso {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  z-index: 60;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--color-acento), var(--color-realce));
+  transform-origin: left;
+  transform: scaleX(0);
+}
+@supports (animation-timeline: scroll()) {
+  .barra-progresso {
+    animation: barra-cresce linear both;
+    animation-timeline: scroll(root);
+  }
+}
+@keyframes barra-cresce {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Anel do botão do WhatsApp: expande e some, uma vez a cada 6s. */
+@utility anel-pulso {
+  animation: anel-pulso 6s ease-out infinite;
+}
+@keyframes anel-pulso {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  22% {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+}
+
 @utility cartao {
   position: relative;
   border-radius: 1.25rem;

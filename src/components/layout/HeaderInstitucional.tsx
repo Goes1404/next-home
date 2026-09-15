@@ -45,7 +45,7 @@ export async function HeaderInstitucional() {
         <ul className="hidden items-center gap-6 text-sm text-corpo sm:flex">
           {LINKS.map((link) => (
             <li key={link.href}>
-              <Link href={link.href} className="transition-colors hover:text-acento-suave">
+              <Link href={link.href} className="link-nav transition-colors hover:text-acento-suave">
                 {link.label}
               </Link>
             </li>
@@ -59,17 +59,9 @@ export async function HeaderInstitucional() {
             <SeletorTema atual={tema} />
           </div>
 
-          {/* No celular a navegação inteira vive no MenuMobile: antes o
-              header tinha só logo + um CTA, e nenhum caminho para catálogo,
-              corretores, sobre ou contato. O botão de anunciar continua
-              visível no desktop, onde há espaço para ele ao lado dos links. */}
-          <Link
-            href="/anunciar-imovel"
-            className="hidden shrink-0 rounded-full bg-brand-500 px-4 py-2 text-sm font-medium whitespace-nowrap text-white transition-colors hover:bg-brand-400 sm:inline-block"
-          >
-            Anunciar meu imóvel
-          </Link>
-
+          {/* "Anunciar meu imóvel" saiu do menu em 13/09/2026 (pedido do
+              usuário). A página /anunciar-imovel continua existindo — chega
+              por link direto e pelo cartão do vendedor na home. */}
           <MenuMobile links={LINKS} />
         </div>
       </GlassSurface>

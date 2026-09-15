@@ -53,15 +53,17 @@ export function CabecalhoDePagina({
     <header>
       {(temTrilha || rotulo) && (
         <Reveal from="nenhuma">
-          {/* No celular a trilha vira UM botão de voltar, com 44px de alvo:
-              "Início / Corretores" em 12px é legível, mas não é algo em que
-              o polegar acerta — e foi pedido um botão para voltar ao site
-              (10/09/2026). Volta para o passo anterior da trilha, não sempre
-              para a home: de uma região, volta para Imóveis. */}
+          {/* Botão de voltar com 44px de alvo, em TODO tamanho de tela desde
+              12/09/2026 (era só no celular; no desktop sobrava a trilha em
+              12px, que ninguém lê como botão — pedido: "na equipe de
+              corretores, faça um botão para voltar ao site"). Volta para o
+              passo anterior da trilha, não sempre para a home: de uma
+              região, volta para Imóveis. A trilha continua no desktop, para
+              quem quer ver onde está. */}
           {temTrilha && (
             <Link
               href={(trilha ?? [{ href: "/", label: "Início" }]).at(-1)!.href}
-              className="border-linha bg-superficie/60 text-corpo active:bg-superficie mb-5 inline-flex min-h-11 items-center gap-2 rounded-full border pr-4 pl-3 text-sm font-medium transition-colors sm:hidden"
+              className="border-linha bg-superficie/70 text-corpo hover:border-linha-forte hover:text-titulo active:bg-superficie mb-5 inline-flex min-h-11 items-center gap-2 rounded-full border pr-4 pl-3 text-sm font-medium shadow-md backdrop-blur transition-colors"
             >
               <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" aria-hidden className="size-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 5l-7 7 7 7" />

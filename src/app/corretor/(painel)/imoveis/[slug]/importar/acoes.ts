@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidarCatalogo } from "@/lib/catalogo/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { extrairImagensDePdf, TETO_IMAGENS } from "@/lib/imoveis/pdfImagens";
@@ -210,6 +211,7 @@ export async function gravarEscolhasDoPdf(entrada: {
   // a metragem de cada tipologia — a imagem sozinha não tem isso.
 
   revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
@@ -390,6 +392,7 @@ export async function trazerArquivoDoDrive(entrada: {
   if (!resultado.ok) return { ok: false, erro: resultado.erro };
 
   revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
@@ -491,8 +494,10 @@ export async function aplicarRascunhoNoCadastro(entrada: {
   }
 
   revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
+  revalidarCatalogo();
   revalidatePath("/", "layout");
 
   return { ok: true };

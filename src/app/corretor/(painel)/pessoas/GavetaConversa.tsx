@@ -3,8 +3,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
 import { moduloAtivo } from "../_componentes/navegacao";
-import { Chat, estadoDa, mesclar, type ConversaResumo, type Estado } from "../conversas/Chat";
+import { estadoDa, mesclar, type ConversaResumo, type Estado } from "../conversas/chatModelo";
+
+/*
+ * O `Chat` (1.600 linhas, o maior client component do painel) só chega
+ * quando alguém ABRE uma conversa (F4, 13/09/2026). Antes ele entrava no
+ * JavaScript da lista de Pessoas inteira — a tela mais aberta do painel
+ * depois do Início — para uma gaveta que a maioria das visitas não abre.
+ */
+const Chat = dynamic(() => import("../conversas/Chat").then((m) => m.Chat), {
+  ssr: false,
+  loading: () => (
+    <div className="text-fluid-sm text-apoio flex h-full items-center justify-center">Abrindo a conversa…</div>
+  ),
+});
 import { useConversaAoVivo } from "../conversas/useConversaAoVivo";
 import { lerMensagens, marcarConversaLida, type MensagemConversa } from "../conversas/acoes";
 

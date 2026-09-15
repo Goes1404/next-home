@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapaEmpreendimentos } from "@/components/mapa/MapaEmpreendimentos";
-import type { Empreendimento } from "@/lib/types";
+import type { PontoDoMapa } from "@/lib/mapa/ponto";
 import { estadoDaTransicao, DURACAO_MERGULHO_MS } from "./transicaoGlobo";
 
 // O globo carrega no cliente e só quando é usado — é WebGL, não faz sentido
@@ -53,11 +53,39 @@ export function GloboOuMapa({
   empreendimentos,
   alturaClasse,
 }: {
-  empreendimentos: Empreendimento[];
+  empreendimentos: PontoDoMapa[];
   alturaClasse: string;
 }) {
   const [fase, setFase] = useState<Fase>("globo");
   const camadaDoMapa = useRef<HTMLDivElement>(null);
+  const raiz = useRef<HTMLDivElement>(null);
+
+  /*
+   * O globo só NASCE quando a seção chega perto da viewport (F3, 13/09/2026).
+   * `next/dynamic` com `ssr: false` não adia nada por visibilidade — o
+   * import do `cobe` disparava na montagem da home, quatro telas acima da
+   * seção, e o WebGL começava a renderizar a 60 fps para ninguém. É a mesma
+   * regra que o Leaflet já seguia (`adiarAteVisivel`), agora nos dois.
+   */
+  const [perto, setPerto] = useState(false);
+  useEffect(() => {
+    const el = raiz.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setPerto(true);
+      return;
+    }
+    const observador = new IntersectionObserver(
+      (registros) => {
+        if (registros.some((r) => r.isIntersecting)) {
+          setPerto(true);
+          observador.disconnect();
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, []);
 
   /*
    * `useMemo` NÃO é otimização aqui, é correção. Sem ele, `pinos` é um
@@ -135,15 +163,14 @@ export function GloboOuMapa({
   return (
     <div
       /*
-        Painel ESCURO nos dois temas, como o globo e como os tiles do mapa
-        (ver `temaDoMapa.ts`). Com `bg-superficie/40` o quadro ficava claro
-        no tema claro e a esfera escura boiava num vazio pálido — a mesma
-        razão pela qual a própria esfera é escura nos dois temas: o que dá
-        destaque a um artefato geográfico é o contraste com a página, não a
-        combinação com ela. Tinta fixa (`ink-950`, `white/10`) porque este
-        fundo não acompanha o tema.
+        Painel na SUPERFÍCIE do tema (12/09/2026), como o mapa que ele
+        antecede: com o tema padrão claro, o quadro preto lia como buraco na
+        página. O globo acompanha (`paleta()` em GloboImoveis.tsx: esfera
+        clara no tema claro, escura no escuro), e o destaque vem da
+        atmosfera e dos pontos, não do fundo.
       */
-      className={`relative w-full overflow-hidden rounded-2xl border border-white/10 bg-ink-950 ${alturaClasse}`}
+      ref={raiz}
+      className={`relative w-full overflow-hidden rounded-2xl border border-linha bg-superficie shadow-painel ${alturaClasse}`}
     >
       {/*
         O mapa entra POR BAIXO, já montado e voando para o enquadramento
@@ -170,16 +197,18 @@ export function GloboOuMapa({
       )}
 
       <div key="globo" className="absolute inset-0">
-        <Globo
-          pinos={pinos}
-          aoAtivar={pedirOMapa}
-          aoAproximar={prepararOMapa}
-          mergulhando={fase === "mergulhando"}
-          // Só agora o globo sai da árvore: desmontá-lo antes devolveria o
-          // contexto WebGL no meio da própria animação.
-          aoFimDoMergulho={mostrarSoOMapa}
-          className="h-full w-full py-6"
-        />
+        {perto && (
+          <Globo
+            pinos={pinos}
+            aoAtivar={pedirOMapa}
+            aoAproximar={prepararOMapa}
+            mergulhando={fase === "mergulhando"}
+            // Só agora o globo sai da árvore: desmontá-lo antes devolveria o
+            // contexto WebGL no meio da própria animação.
+            aoFimDoMergulho={mostrarSoOMapa}
+            className="h-full w-full py-6"
+          />
+        )}
       </div>
     </div>
   );

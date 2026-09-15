@@ -37,6 +37,14 @@ function apenasNumero(texto: string): number {
   return digitos ? Number(digitos) : 0;
 }
 
+/** Prazos oferecidos, em anos — recortados pelo teto dos parâmetros. */
+const PRAZOS_ANOS = [10, 15, 20, 25, 30, 35];
+
+/** "8000" → "8.000", para a pessoa conferir o que digitou sem contar zeros. */
+function comPontos(digitos: string): string {
+  return digitos.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 export function Simulador({
   parametros,
   whatsapp,
@@ -49,12 +57,17 @@ export function Simulador({
   const [entrada, setEntrada] = useState("");
   const [fgts, setFgts] = useState("");
   const [valorImovel, setValorImovel] = useState("");
+  const prazosDisponiveis = PRAZOS_ANOS.filter((a) => a * 12 <= parametros.prazoMaximoMeses);
+  const [prazoAnos, setPrazoAnos] = useState(
+    prazosDisponiveis.at(-1) ?? Math.round(parametros.prazoMaximoMeses / 12),
+  );
 
   const numeros = {
     rendaMensal: apenasNumero(renda),
     entrada: apenasNumero(entrada),
     fgts: apenasNumero(fgts),
     valorImovel: apenasNumero(valorImovel),
+    prazoMeses: prazoAnos * 12,
   };
 
   // Sem renda e sem valor de imóvel não há conta — e mostrar zeros faria a
@@ -64,8 +77,34 @@ export function Simulador({
   const resultado = useMemo(
     () => (pronto ? simularFinanciamento(numeros, parametros) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pronto, numeros.rendaMensal, numeros.entrada, numeros.fgts, numeros.valorImovel, parametros],
+    [
+      pronto,
+      numeros.rendaMensal,
+      numeros.entrada,
+      numeros.fgts,
+      numeros.valorImovel,
+      numeros.prazoMeses,
+      parametros,
+    ],
   );
+
+  // Link do WhatsApp com a simulação DENTRO da mensagem: o corretor recebe
+  // os números em vez de "vi o simulador" — e a conversa começa da conta.
+  const whatsappComResumo = (() => {
+    if (!whatsapp || !resultado) return whatsapp;
+    const resumo =
+      `Olá! Simulei no site: renda ${formatarMoedaBRL(numeros.rendaMensal)}, ` +
+      `imóvel ${formatarMoedaBRL(numeros.valorImovel)}, entrada ${formatarMoedaBRL(numeros.entrada + numeros.fgts)}, ` +
+      `${prazoAnos} anos. ${resultado.fecha ? `Parcela estimada ${formatarMoedaBRL(resultado.parcelaEstimada)}.` : `Faltam ${formatarMoedaBRL(resultado.faltam)}.`} ` +
+      "Pode me ajudar a fechar a conta?";
+    try {
+      const url = new URL(whatsapp);
+      url.searchParams.set("text", resumo);
+      return url.toString();
+    } catch {
+      return whatsapp;
+    }
+  })();
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-8">
@@ -119,7 +158,7 @@ export function Simulador({
               </span>
               <input
                 inputMode="numeric"
-                value={campo.valor}
+                value={comPontos(campo.valor)}
                 onChange={(e) => campo.set(e.target.value.replace(/\D/g, ""))}
                 placeholder={campo.exemplo}
                 className={`${CAMPO} pl-11`}
@@ -128,6 +167,33 @@ export function Simulador({
             <span className="text-fluid-xs text-tenue block">{campo.ajuda}</span>
           </label>
         ))}
+
+        {/* O prazo decide a parcela tanto quanto a renda, e o simulador o
+            cravava no teto sem dizer. Botões, não select: são seis valores
+            e a pessoa compara tocando — a parcela muda ao lado, na hora. */}
+        <fieldset className="space-y-1.5">
+          <legend className="text-fluid-sm text-titulo block font-medium">Prazo do financiamento</legend>
+          <div className="flex flex-wrap gap-2">
+            {prazosDisponiveis.map((anos) => (
+              <button
+                key={anos}
+                type="button"
+                onClick={() => setPrazoAnos(anos)}
+                aria-pressed={prazoAnos === anos}
+                className={`min-h-11 rounded-full border px-4 text-sm font-medium transition-colors ${
+                  prazoAnos === anos
+                    ? "border-acento bg-acento text-sobre-cor"
+                    : "border-linha bg-elevado text-corpo hover:border-linha-forte hover:text-titulo"
+                }`}
+              >
+                {anos} anos
+              </button>
+            ))}
+          </div>
+          <span className="text-fluid-xs text-tenue block">
+            Prazo maior baixa a parcela e sobe o total de juros — os dois aparecem no resultado.
+          </span>
+        </fieldset>
       </form>
 
       <div
@@ -166,6 +232,37 @@ export function Simulador({
                 : "É o que falta somando entrada, FGTS e o que a renda financia."}
             </p>
 
+            {/* A resposta acionável: o que MUDA para fechar, ou até quanto dá
+                para buscar. Sem isto o "não fecha" era um beco. */}
+            {!resultado.fecha && (
+              <div className="border-alerta/40 bg-alerta/10 mt-4 space-y-1.5 rounded-xl border px-3.5 py-3">
+                {resultado.rendaNecessaria > numeros.rendaMensal && (
+                  <p className="text-fluid-xs text-corpo text-pretty">
+                    Com renda de{" "}
+                    <strong className="text-titulo tabular-nums">
+                      {formatarMoedaBRL(resultado.rendaNecessaria)}
+                    </strong>{" "}
+                    por mês este imóvel fecharia em {prazoAnos} anos.
+                  </p>
+                )}
+                {resultado.precoMaximo > 0 && (
+                  <p className="text-fluid-xs text-corpo text-pretty">
+                    Com a sua renda e entrada, o teto hoje é de{" "}
+                    <strong className="text-titulo tabular-nums">
+                      {formatarMoedaBRL(resultado.precoMaximo)}
+                    </strong>
+                    .{" "}
+                    <Link
+                      href={`/empreendimentos?precoMax=${Math.floor(resultado.precoMaximo)}`}
+                      className="text-acento-suave font-medium underline-offset-4 hover:underline"
+                    >
+                      Ver imóveis até esse valor
+                    </Link>
+                  </p>
+                )}
+              </div>
+            )}
+
             <ComposicaoDoValor resultado={resultado} valorImovel={numeros.valorImovel} />
 
             <dl className="border-linha mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-5">
@@ -174,6 +271,12 @@ export function Simulador({
                 { t: "Financiamento possível", v: formatarMoedaBRL(resultado.valorFinanciavel) },
                 { t: "Recursos próprios", v: formatarMoedaBRL(resultado.recursosProprios) },
                 { t: "ITBI estimado", v: formatarMoedaBRL(resultado.itbi) },
+                ...(resultado.fecha
+                  ? [
+                      { t: "Total pago ao fim do prazo", v: formatarMoedaBRL(resultado.totalPago) },
+                      { t: "Juros no período", v: formatarMoedaBRL(resultado.jurosTotais) },
+                    ]
+                  : []),
               ].map((linha) => (
                 <div key={linha.t}>
                   <dt className="text-fluid-xs text-tenue text-pretty">{linha.t}</dt>
@@ -217,15 +320,23 @@ export function Simulador({
               cadastro e avaliação do imóvel.
             </p>
 
-            {whatsapp && (
+            {whatsappComResumo && (
               <a
-                href={whatsapp}
+                href={whatsappComResumo}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm mt-5 inline-flex min-h-12 items-center justify-center rounded-xl px-5 font-medium transition-colors"
+                className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm mt-5 inline-flex min-h-12 items-center justify-center rounded-xl px-5 font-medium transition-colors botao-vivo"
               >
-                Falar com um corretor sobre isso
+                Enviar esta simulação para um corretor
               </a>
+            )}
+            {resultado.fecha && resultado.precoMaximo > 0 && (
+              <Link
+                href={`/empreendimentos?precoMax=${Math.floor(resultado.precoMaximo)}`}
+                className="border-linha text-corpo hover:border-acento-linha hover:text-acento-suave text-fluid-sm mt-3 inline-flex min-h-12 items-center justify-center rounded-xl border px-5 font-medium transition-colors"
+              >
+                Ver imóveis até {formatarMoedaBRL(resultado.precoMaximo)}
+              </Link>
             )}
           </>
         )}

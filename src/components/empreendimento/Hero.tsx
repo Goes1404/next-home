@@ -18,6 +18,10 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
     e.corretor.whatsapp,
     `Olá, ${e.corretor.nome}! Vim pelo site e quero saber mais sobre o ${e.nome}.`,
   );
+  const linkDescricao = linkWhatsappPara(
+    e.corretor.whatsapp,
+    `Olá, ${e.corretor.nome}! Vim pelo site e quero a descrição completa, plantas e condições do ${e.nome}.`,
+  );
 
   return (
     <section className="relative flex min-h-svh flex-col justify-end">
@@ -28,7 +32,11 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
           sozinha, cada metade só parece "uma foto grande". */}
       <Camada velocidade={-0.18} className="mx-auto w-full max-w-7xl px-4 pt-28 sm:px-8">
         <Reveal from="nenhuma" duration={0.6}>
-          <VoltarLink href="/empreendimentos">Empreendimentos</VoltarLink>
+          {/* Pílula sobre a foto: o link discreto (12px, sem fundo) sumia na
+              capa escura e era o único caminho de volta da página. */}
+          <VoltarLink href="/empreendimentos" variante="pilula" sobreFoto>
+            Voltar aos imóveis
+          </VoltarLink>
         </Reveal>
 
         {/* Cores literais em todo o hero: o contraste aqui é sempre contra a
@@ -75,14 +83,28 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
             </span>
           </div>
 
-          <a
-            href={link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full bg-brand-500 px-7 py-3.5 text-sm font-medium text-white transition-[background-color,transform] duration-300 hover:scale-[1.03] hover:bg-brand-400"
-          >
-            Falar com corretor
-          </a>
+          {/* Dois botões, o MESMO destino (pedido de 12/09/2026): quem quer
+              a descrição completa, a tabela e as condições recebe tudo pelo
+              corretor — a página mostra o que o cadastro tem, e o resto é
+              conversa. No celular os dois ocupam a largura inteira. */}
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <a
+              href={linkDescricao}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-mist-50/35 bg-black/30 px-7 text-sm font-medium text-mist-50 backdrop-blur-md transition-colors hover:bg-black/50"
+            >
+              Ver descrição completa
+            </a>
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand-500 px-7 text-sm font-medium text-white transition-[background-color,transform] duration-300 hover:scale-[1.03] hover:bg-brand-400 botao-vivo"
+            >
+              Falar com corretor
+            </a>
+          </div>
         </div>
       </Reveal>
     </section>

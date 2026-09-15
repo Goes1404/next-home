@@ -40,6 +40,9 @@ export default async function CorretoresPage() {
   ]);
 
   const quantos = corretores.length;
+  // Cada empreendimento publicado tem UM corretor responsável: a soma das
+  // atuações é a contagem de publicados com dono, sem consulta nova.
+  const imoveisAcompanhados = Object.values(atuacao).reduce((soma, a) => soma + a.total, 0);
 
   return (
     <>
@@ -61,6 +64,27 @@ export default async function CorretoresPage() {
             titulo="Quem acompanha cada lançamento de perto"
             lead="Escolha com quem falar e chame direto no WhatsApp — sem fila de atendimento. Cada perfil mostra o que a pessoa acompanha hoje, para você achar quem conhece a região que procura."
           />
+
+          {/* Faixa de confiança (13/09/2026): três fatos verificáveis, todos
+              do banco ou de `lib/site.ts` — CRECI da imobiliária, tamanho da
+              equipe e quantos imóveis publicados ela acompanha. A régua da
+              casa: número que encolhe quando a realidade encolhe. */}
+          {quantos > 0 && (
+            <Reveal from="nenhuma" delay={0.3}>
+              <dl className="border-linha mt-8 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border bg-linha sm:grid-cols-3">
+                {[
+                  { dt: "CRECI da imobiliária", dd: site.creci },
+                  { dt: "Corretores credenciados", dd: String(quantos) },
+                  { dt: "Imóveis acompanhados", dd: String(imoveisAcompanhados) },
+                ].map((f) => (
+                  <div key={f.dt} className="bg-superficie/80 flex flex-col-reverse gap-1 px-5 py-4">
+                    <dt className="text-fluid-xs text-apoio">{f.dt}</dt>
+                    <dd className="font-display text-fluid-xl text-titulo leading-none tabular-nums">{f.dd}</dd>
+                  </div>
+                ))}
+              </dl>
+            </Reveal>
+          )}
         </Secao>
 
         <Secao espaco="final">
@@ -77,7 +101,7 @@ export default async function CorretoresPage() {
                 <WhatsappLink
                   href={linkWhatsapp()}
                   origem="corretores"
-                  className="bg-acento text-sobre-cor hover:bg-acento-hover mt-6 inline-flex min-h-12 items-center rounded-full px-7 text-sm font-medium transition-colors"
+                  className="bg-acento text-sobre-cor hover:bg-acento-hover mt-6 inline-flex min-h-12 items-center rounded-full px-7 text-sm font-medium transition-colors botao-vivo"
                 >
                   Falar no WhatsApp
                 </WhatsappLink>
@@ -85,7 +109,7 @@ export default async function CorretoresPage() {
             </Reveal>
           ) : (
             <>
-              <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {corretores.map((c, i) => (
                   // Um Reveal por card, em vez de um `stagger` na grade inteira:
                   // o GSAP deixa um `transform` inline no que anima, e ele
@@ -113,7 +137,7 @@ export default async function CorretoresPage() {
                     <WhatsappLink
                       href={linkWhatsapp()}
                       origem="corretores"
-                      className="bg-acento text-sobre-cor hover:bg-acento-hover inline-flex min-h-12 items-center rounded-full px-6 text-sm font-medium transition-colors"
+                      className="bg-acento text-sobre-cor hover:bg-acento-hover inline-flex min-h-12 items-center rounded-full px-6 text-sm font-medium transition-colors botao-vivo"
                     >
                       Falar no WhatsApp
                     </WhatsappLink>

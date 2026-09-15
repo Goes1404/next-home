@@ -141,7 +141,7 @@ export function HeroVideoBackground({ src, srcWebm }: { src: string; srcWebm?: s
         console.warn("Fundo personalizado indisponível; usando o vídeo padrão do site.");
         return {
           origem: src,
-          fonte: { src: HERO_VIDEO_URL, webm: HERO_VIDEO_WEBM_URL },
+          fonte: { src: HERO_VIDEO_URL, webm: HERO_VIDEO_WEBM_URL ?? undefined },
           pronto: false,
           falhou: false,
         };

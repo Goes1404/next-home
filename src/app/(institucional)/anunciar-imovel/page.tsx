@@ -111,7 +111,7 @@ export default async function AnunciarImovelPage() {
                   href={whatsapp}
                   origem="anunciar_imovel"
                   corretorId={corretorAtivo?.id}
-                  className="bg-acento text-sobre-cor hover:bg-acento-hover mt-5 inline-flex min-h-12 items-center rounded-full px-6 text-sm font-medium transition-colors"
+                  className="bg-acento text-sobre-cor hover:bg-acento-hover mt-5 inline-flex min-h-12 items-center rounded-full px-6 text-sm font-medium transition-colors botao-vivo"
                 >
                   Falar no WhatsApp
                 </WhatsappLink>

@@ -15,7 +15,7 @@ export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento })
   const foto = e.galeria.find((f) => f.url !== e.capa.url) ?? e.galeria[0] ?? null;
 
   return (
-    <section id="sobre" className="mx-auto max-w-7xl scroll-mt-24 px-4 pt-16 sm:px-8 sm:pt-28">
+    <section id="sobre" className="mx-auto max-w-6xl scroll-mt-24 px-4 pt-16 sm:px-8 sm:pt-24">
       <div className="grid items-start gap-10 lg:grid-cols-[7fr_5fr] lg:gap-16">
         {/* O par foto/texto: a foto desce a +0.20, o texto sobe a -0.07. É a
             DIFERENÇA que se lê como camada — foto sozinha se lê como foto

@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
 import { Footer } from "@/components/layout/Footer";
 import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
@@ -20,7 +22,12 @@ const fraunces = Fraunces({
   subsets: ["latin"],
   display: "swap",
   weight: "variable",
-  axes: ["SOFT", "opsz"],
+  // Só `opsz` (tamanho óptico, que o navegador aplica sozinho pelo
+  // `font-optical-sizing: auto`). O eixo `SOFT` saiu em 13/09/2026: nenhuma
+  // regra do CSS o usava (`grep SOFT src/app/globals.css` = zero) e ele
+  // engordava a fonte pré-carregada em toda página — 118 KB, o maior
+  // arquivo do primeiro carregamento depois do próprio JS.
+  axes: ["opsz"],
 });
 
 /**
@@ -160,11 +167,11 @@ export default async function RootLayout({
        * desfazer as duas linhas de `generateViewport` acima.
        */
       data-tema={tema ?? "claro"}
-      // Dois scripts inline mexem em atributos do <html> antes da hidratação
-      // de propósito (o `no-js` abaixo e o `data-intro-ativa` do Preloader);
-      // sem isto, o dev console acusa mismatch a cada carga.
+      // O script inline do Preloader carimba `data-intro-ativa` no <html>
+      // antes da hidratação, de propósito; sem isto, o dev console acusa
+      // mismatch a cada carga.
       suppressHydrationWarning
-      className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} no-js h-full antialiased`}
+      className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         {/* Primeiro parável do documento: quem navega por teclado pula o
@@ -176,16 +183,10 @@ export default async function RootLayout({
         >
           Pular para o conteúdo
         </a>
-        {/* A regra `.no-js .gsap-pending` do globals.css existia sem ninguém
-            aplicar a classe: sem JS, todo conteúdo animado ficava invisível
-            para sempre (opacity 0). O contrato correto é o clássico: o HTML
-            nasce `no-js` e o primeiro script remove — roda antes da pintura,
-            então com JS ligado a classe nunca chega a valer. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `document.documentElement.classList.remove("no-js")`,
-          }}
-        />
+        {/* O contrato `.no-js` (HTML nasce com a classe, o primeiro script
+            remove) saiu em 13/09/2026 junto com o `.gsap-pending` que ele
+            servia: nenhum conteúdo nasce mais invisível esperando
+            JavaScript, então não há o que devolver quando ele falta. */}
         <GlassSvgDefs />
         <SmoothScroll />
         {/* A onda entre páginas mora AQUI, e não nos layouts de grupo: ir da
@@ -197,6 +198,16 @@ export default async function RootLayout({
         <OndaDeTransicao />
         {children}
         <Footer />
+        {/* Dado de CAMPO (F0 do roadmap de performance, 13/09/2026). Até
+            aqui todo número de velocidade deste site era de laboratório: sem
+            Speed Insights não há LCP/INP p75 de gente de verdade, e sem Web
+            Analytics não se sabe nem a divisão celular × desktop. Os dois
+            precisam estar LIGADOS no painel da Vercel (Analytics e Speed
+            Insights, um clique cada) — o componente sozinho não grava nada,
+            e "construído e nunca ligado" é o padrão que esta base mais
+            repete. */}
+        <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );

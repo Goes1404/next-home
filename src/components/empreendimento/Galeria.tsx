@@ -6,7 +6,7 @@ import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { ParallaxImagem } from "@/components/motion/ParallaxImagem";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
-import { Lightbox } from "@/components/ui/Lightbox";
+import { LightboxAdiado } from "@/components/ui/LightboxAdiado";
 import type { Midia } from "@/lib/types";
 
 /**
@@ -44,9 +44,9 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
   const escondidas = resto.length - visiveis.length;
 
   return (
-    <section id="galeria" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-16 sm:px-8 sm:py-28">
+    <section id="galeria" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
       <div className="mb-10 sm:mb-14">
-        <TituloEditorial className="text-fluid-3xl text-titulo">Galeria</TituloEditorial>
+        <TituloEditorial className="text-fluid-2xl text-titulo">Galeria</TituloEditorial>
         <Reveal from="nenhuma" delay={0.2}>
           <p className="text-fluid-base mt-3 text-apoio">
             {fotos.length} {fotos.length === 1 ? "imagem" : "imagens"}. Toque para ampliar.
@@ -132,7 +132,7 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
         </Reveal>
       )}
 
-      <Lightbox
+      <LightboxAdiado
         itens={fotos}
         indice={aberta}
         origem={origem}

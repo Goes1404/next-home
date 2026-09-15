@@ -10,6 +10,7 @@
  * Este módulo é só a parte PURA (mensagem, reconhecimento, resolução de
  * campanha), para ser testável sem rede: a rota e o webhook chamam daqui.
  */
+import { clienteTrouxeFraseDeEntrada } from "./modoBot";
 
 /** Mesma normalização do focoDaConversa: minúsculas e sem acento. */
 function normalizar(texto: string): string {
@@ -57,6 +58,72 @@ export function reconhecerMensagemDeAnuncio(texto: string | null | undefined): s
   if (!limpo.startsWith(PREFIXO_ANUNCIO)) return null;
   const nome = limpo.slice(PREFIXO_ANUNCIO.length).trim();
   return nome.length >= 3 ? nome : null;
+}
+
+/** Como reconhecemos que a pessoa está respondendo a uma peça NOSSA. */
+export type ConviteDeEntrada = {
+  via: "mensagem_do_anuncio" | "frase_de_entrada";
+  /** O imóvel citado, quando o texto é o nosso e o traz. */
+  imovel: string | null;
+};
+
+/**
+ * Esta primeira fala autoriza CADASTRAR quem ainda não é lead?
+ *
+ * ## Por que ela existe
+ *
+ * A 0111 fechou o webhook para número desconhecido — sem lead, nada é
+ * criado, gravado ou respondido. A razão continua boa: a instância roda no
+ * WhatsApp PESSOAL do corretor, e a conversa da família dele não pode virar
+ * cadastro. Só que a porta fechou também para quem o anúncio PAGOU para
+ * chegar: a pessoa clica, escreve, e a mensagem morre sem resposta e sem
+ * rastro no CRM.
+ *
+ * O que separa os dois casos não é quem escreveu — é o que foi escrito.
+ * Quem responde a uma peça nossa usa as palavras dela.
+ *
+ * ## As duas portas, e por que são duas
+ *
+ * 1. **A mensagem pronta do nosso link** (`mensagemDeAnuncio`): o texto é
+ *    determinístico e nós o geramos, então reconhecê-lo é quase certeza.
+ *    Ela ainda entrega o NOME do imóvel de graça — a conversa já nasce
+ *    focada nele.
+ * 2. **As frases que o corretor cadastrou** (`palavras_entrada_cliente`):
+ *    "vim pelo anúncio", "vi no instagram", "quero mais informações". Elas
+ *    existem porque, na prática, ninguém cola o texto pré-preenchido — a
+ *    pessoa escreve com as palavras dela. Esta porta é mais larga e é
+ *    escolha do corretor: são as frases DELE, num campo que só ele edita.
+ *
+ * O erro é assimétrico e o desenho segue isso: não reconhecer custa um lead
+ * (que ele ainda vê no celular, porque o número é dele); reconhecer errado
+ * cadastra um parente e começa a gravar conversa pessoal. Por isso nada de
+ * fuzzy, nada de "oi" e nada de inferir por metadado do provedor.
+ */
+export function reconhecerConviteDeEntrada(params: {
+  texto: string | null | undefined;
+  palavrasEntradaCliente: string | null | undefined;
+}): ConviteDeEntrada | null {
+  const imovel = reconhecerMensagemDeAnuncio(params.texto);
+  if (imovel) return { via: "mensagem_do_anuncio", imovel };
+
+  if (
+    params.texto &&
+    clienteTrouxeFraseDeEntrada({
+      mensagem: params.texto,
+      palavrasEntradaCliente: params.palavrasEntradaCliente,
+    })
+  ) {
+    /*
+     * `imovel: null` de propósito. A frase é livre ("vim pelo anúncio do
+     * Manacá") e extrair o nome dela seria adivinhação — quem resolve o
+     * imóvel a partir da fala já é o `focoDaConversa`, com nome e apelidos,
+     * na mensagem seguinte. Chutar aqui poria o imóvel ERRADO na ficha, que
+     * é pior que deixá-la vazia.
+     */
+    return { via: "frase_de_entrada", imovel: null };
+  }
+
+  return null;
 }
 
 export type CampanhaResolvida = {

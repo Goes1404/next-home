@@ -254,3 +254,61 @@ describe("foto de referência no chat (06/09/2026)", () => {
     expect(a).not.toMatch(/params\.proposta\.fotosExtras/);
   });
 });
+
+describe("o Estúdio não assume que todo pedido é de imóvel", () => {
+  /*
+   * Guarda de código-fonte, como as outras desta base, porque a regressão
+   * falha CALADA: quem pedir "um cachorro vestido de Papai Noel" recebe
+   * perguntas sobre apartamento, a imagem sai parecida com imóvel, e nada
+   * no build ou no tipo reclama.
+   */
+  const turno = readFileSync(join(process.cwd(), "src/lib/estudio/turno.ts"), "utf8");
+  const engenheiro = readFileSync(
+    join(process.cwd(), "src/lib/imagens/engenheiroDePrompt.ts"),
+    "utf8",
+  );
+
+  it("o objetivo do briefing não é literal chumbado", () => {
+    expect(turno).not.toMatch(/objetivo:\s*"peça de marketing de um imóvel"/);
+    expect(turno).toMatch(/objetivo:\s*objetivoDoBriefing/);
+  });
+
+  it("o imóvel citado é resolvido ANTES do bloco de perguntas", () => {
+    // A ordem é o defeito: `imovelCitado` era calculado depois, então o
+    // briefing nunca soube se havia imóvel. É puro e sem LLM — não custa
+    // nada subir.
+    const ondeCitado = turno.indexOf("const imovelCitado");
+    const ondePergunta = turno.indexOf("const podePerguntar");
+    expect(ondeCitado, "imovelCitado sumiu do turno").toBeGreaterThan(-1);
+    expect(ondeCitado).toBeLessThan(ondePergunta);
+  });
+
+  it("o preâmbulo do engenheiro é ESCOLHIDO, não afirmado sempre", () => {
+    /*
+     * A primeira versão desta guarda proibia a frase "trabalhando para uma
+     * imobiliária" no arquivo — e reprovou código CORRETO, porque ela é
+     * legítima no ramo de imóvel. Guarda tem de afirmar a INTENÇÃO (o
+     * preâmbulo depende do domínio), nunca a ausência de um texto que
+     * continua tendo um caso certo.
+     */
+    /*
+     * Sem comentário: a frase aparece também na prosa do cabeçalho do módulo,
+     * e acusá-la ali reprovaria documentação. Quarta vez que uma guarda desta
+     * base precisa tirar comentário antes de recortar.
+     */
+    const codigo = engenheiro
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+
+    const escolha = codigo.indexOf("const preambulo =");
+    const uso = codigo.indexOf("const prompt = `${preambulo}");
+    expect(escolha, "o preâmbulo voltou a ser literal único").toBeGreaterThan(-1);
+    expect(uso, "o prompt deixou de usar o preâmbulo escolhido").toBeGreaterThan(escolha);
+    expect(codigo).toMatch(/params\.dominio === "imovel"/);
+
+    // A frase de imobiliária só pode existir DENTRO da escolha.
+    const ondeImobiliaria = codigo.indexOf("para uma imobiliária");
+    expect(ondeImobiliaria).toBeGreaterThan(escolha);
+    expect(ondeImobiliaria).toBeLessThan(uso);
+  });
+});

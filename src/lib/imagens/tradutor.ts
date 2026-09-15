@@ -10,7 +10,7 @@ import {
   PISO_DE_PROMPT,
   type ChaveSecao,
 } from "./gramatica";
-import { instrucaoDoOficio } from "./oficio";
+import { instrucaoDoOficio, type Dominio } from "./oficio";
 
 /**
  * O tradutor: pega o que o corretor escreveu e devolve um pedido de imagem
@@ -118,6 +118,15 @@ export type EntradaDoTradutor = {
    * não um erro.
    */
   urlsDeReferencia?: string[];
+  /**
+   * Sobre o que é o pedido. `"livre"` é o padrão conservador.
+   *
+   * O Estúdio deixou de assumir que todo pedido é de imóvel, e o ofício
+   * segue a mesma régua: mandar "verticais do prédio aprumadas" para um
+   * retrato de cachorro instrui sobre um assunto que não está ali — o mesmo
+   * defeito que `conferir` teve de desfazer.
+   */
+  dominio?: Dominio;
 };
 
 export type PromptTraduzido = {
@@ -185,7 +194,7 @@ function montarPromptDoMotor(e: EntradaDoTradutor, verFotos: boolean): string {
         ? instrucaoDeEdicaoComVisao(fotos)
         : instrucaoDeEdicao(fotos),
     "",
-    instrucaoDoOficio(regime),
+    instrucaoDoOficio(regime, e.dominio ?? "livre"),
     "",
     "O que NUNCA entra:",
     "- Metragem, número de dormitórios, andar, preço ou condição de pagamento que",

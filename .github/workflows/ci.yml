@@ -75,6 +75,14 @@ jobs:
       - name: Lint (catraca)
         run: node scripts/lintTeto.mjs
 
+      # Peso do JavaScript por rota, lido do build que acabou de sair. Mesma
+      # ideia da catraca de lint: nasce com o número de hoje e só desce. A
+      # regressão que ela pega é calada — um `import` a mais num client
+      # component e a rota engorda 100 KB sem teste, tipo ou build reclamar
+      # (ver scripts/bundleTeto.mjs e docs/ROADMAP-PERFORMANCE.md).
+      - name: Bundle (catraca)
+        run: node scripts/bundleTeto.mjs
+
 # O que esta esteira NÃO roda, e por quê:
 #
 # - `npm run test:e2e` — os specs do painel exigem credencial REAL

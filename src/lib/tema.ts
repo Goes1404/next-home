@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 
 /**
@@ -24,10 +25,10 @@ export type Tema = "claro" | "escuro";
  * Valor desconhecido no cookie vira `null` em vez de erro: um cookie
  * adulterado deve cair no padrão, não derrubar a página.
  */
-export async function getTemaEscolhido(): Promise<Tema | null> {
+export const getTemaEscolhido = cache(async (): Promise<Tema | null> => {
   const valor = (await cookies()).get(COOKIE_TEMA)?.value;
   return valor === "claro" || valor === "escuro" ? valor : null;
-}
+});
 
 /**
  * Cor que o navegador usa na própria barra (Chrome no Android, Safari no iOS).

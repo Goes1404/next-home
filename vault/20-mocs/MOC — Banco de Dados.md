@@ -23,6 +23,8 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 - [[policy-sem-grant-nao-habilita-delete]]
 - [[papel-nunca-ganha-grant-update]]
 
+- [[o-site-publico-nao-vai-mais-ao-banco-por-requisicao]] — 0112: 27 policies com `(select auth.uid())` reescritas num bloco `do` a partir de `pg_policies`; 23 índices de FK (13/09)
+
 ## Armadilhas de schema
 - [[telefone-e164-e-coluna-gerada]]
 - [[default-de-coluna-faz-o-dado-mentir]]
@@ -37,6 +39,9 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 - [[pg-cron-e-o-relogio-de-verdade]]
 
 - [[fato-e-permissao-moram-em-campos-diferentes]] — coluna nova porque dois conceitos precisam poder discordar
+
+## Dados de produção
+- [[a-base-de-producao-foi-zerada-em-12-09]] — leads, conversas e mensagens apagados de propósito; o catálogo ficou
 
 ## Migrations: numeração e ordem
 - [[colisao-de-migration-entre-branches]] — a guarda só enxerga a própria branch

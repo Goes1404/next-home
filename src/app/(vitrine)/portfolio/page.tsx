@@ -11,6 +11,7 @@ import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
+import { VoltarLink } from "@/components/ui/VoltarLink";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { precoAPartirDe } from "@/lib/format";
 import { getEmpreendimentos } from "@/lib/queries";
@@ -91,6 +92,11 @@ export default async function Home() {
           {/* Camada por FORA do Reveal: os dois escrevem transform, e no
               mesmo nó um atropelaria o outro. */}
           <Camada velocidade={-0.16} className="w-full max-w-xl">
+            <Reveal from="nenhuma" className="mb-4">
+              <VoltarLink href="/" variante="pilula">
+                Voltar ao site
+              </VoltarLink>
+            </Reveal>
             <Reveal>
               <GlassSurface
                 preset="painel"

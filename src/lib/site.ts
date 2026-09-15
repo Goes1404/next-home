@@ -93,19 +93,29 @@ export const enderecoLinha = `${site.endereco.logradouro} — ${site.endereco.ba
  * antigo (56 Mbps, keyframes esparsos). Se trocar o vídeo, reencode com:
  * `ffmpeg -i fonte.mp4 -an -vf "scale=1080:-2,minterpolate=fps=48:mi_mode=mci:mc_mode=aobmc:vsbmc=1" -c:v libx264 -preset medium -crf 27 -g 1 -pix_fmt yuv420p -movflags +faststart saida.mp4`
  */
-export const HERO_VIDEO_URL: string | null = "/video/hero-scroll-fluido.mp4";
-
-/**
- * Variante VP9 do mesmo vídeo (`-c:v libvpx-vp9 -crf 36 -b:v 0 -g 8`):
- * comprime melhor que H.264 e é o único formato que alguns Chromium sem
- * codecs proprietários (headless de CI incluso) conseguem decodificar.
- * Vai como primeiro `<source>`; o MP4 fica de fallback para Safari antigo.
+/*
+ * O arquivo SAIU do repositório em 13/09/2026 (F0 do roadmap de
+ * performance): `hero-scroll-fluido.{mp4,webm}` somavam 29,8 MB em
+ * `public/video/` sem nenhum componente que os montasse desde 10/09 — só o
+ * caminho de reserva do `HeroVideoBackground` os citava, e esse caminho é o
+ * do vídeo PRÓPRIO do corretor falhando. Com `null`, a reserva passa a ser
+ * "sem vídeo", que é o mesmo fundo que todo visitante já vê (a aurora em CSS
+ * e a vinheta de 0,7 MB). Se um dia o scrub por scroll voltar, o arquivo
+ * volta com a receita acima — e com o par WebM (`-c:v libvpx-vp9 -crf 36
+ * -b:v 0 -g 8`), o único formato que o Chromium do CI decodifica.
  */
-export const HERO_VIDEO_WEBM_URL = "/video/hero-scroll-fluido.webm";
+export const HERO_VIDEO_URL: string | null = null;
+export const HERO_VIDEO_WEBM_URL: string | null = null;
 
 /** Vinheta da logo exibida como preloader na primeira visita da sessão (ver Preloader.tsx). */
 export const INTRO_VIDEO_URL = "/video/intro.mp4";
 export const INTRO_VIDEO_WEBM_URL = "/video/intro.webm";
+/**
+ * Primeiro quadro da vinheta (JPEG, 12 KB, `ffmpeg -ss 0.15 -frames:v 1`).
+ * É o que o navegador pinta antes de o WebM chegar — e o que o Chrome mede
+ * como LCP da primeira visita no desktop, em vez de uma tela em branco.
+ */
+export const INTRO_POSTER_URL = "/video/intro-poster.jpg";
 
 /**
  * Vinheta institucional usada como fundo da home NO CELULAR (26/08/2026).
@@ -129,6 +139,13 @@ export const INTRO_VIDEO_WEBM_URL = "/video/intro.webm";
  */
 export const FUNDO_HOME_VIDEO_URL = "/video/fundo-home.mp4";
 export const FUNDO_HOME_VIDEO_WEBM_URL = "/video/fundo-home.webm";
+/**
+ * O quadro de 1,5 s da peça vertical (onde ela congela — `pararEm`), em JPEG
+ * de 32 KB. É o que o celular pinta ANTES de o WebM de 607 KB chegar: medido
+ * depois da F1, o LCP do celular era o primeiro quadro do vídeo, aos 8,3 s
+ * na rede lenta. O poster é o mesmo quadro, e chega em ~1 s.
+ */
+export const FUNDO_HOME_POSTER_URL = "/video/fundo-home-poster.jpg";
 
 /** Monta um link `wa.me` para qualquer número em E.164, com mensagem pré-preenchida. */
 export function linkWhatsappPara(numero: string, mensagem: string): string {

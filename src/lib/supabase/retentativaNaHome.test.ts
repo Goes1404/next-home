@@ -14,6 +14,11 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 const chamadas = { corretores: 0 };
 
 vi.mock("@/lib/corretorAtivo", () => ({ getCorretorAtivo: async () => null }));
+// Fora do runtime do Next não existe cache de dados ("incrementalCache
+// missing"): o `unstable_cache` vira identidade, e a retentativa — que mora
+// DENTRO da função cacheada (`catalogo/cache.ts`) — continua sendo o que
+// este teste exercita.
+vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }));
 
 vi.mock("@/lib/supabase/public", () => ({
   createClient: () => ({

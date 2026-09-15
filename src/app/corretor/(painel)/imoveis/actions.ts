@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidarCatalogo } from "@/lib/catalogo/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
@@ -114,9 +115,11 @@ export async function salvarDadosGerais(
     return { ok: false, erro: "Não foi possível salvar os dados agora. Tente novamente." };
   }
 
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   revalidatePath(`/empreendimentos/${slugAtual}`);
   revalidatePath("/corretor/imoveis");
+  revalidarCatalogo();
   revalidatePath("/", "layout");
 
   return { ok: true };
@@ -197,6 +200,7 @@ export async function uploadFotoOuPlanta(
   }
 
   revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
@@ -241,6 +245,7 @@ export async function removerMidiaImovel(
   }
 
   revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   return { ok: true };
 }
@@ -276,6 +281,7 @@ export async function definirFotoComoCapa(
   }
 
   revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
   return { ok: true };
@@ -324,6 +330,7 @@ export async function salvarLazerEmpreendimento(
   }
 
   revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   return { ok: true };
 }
@@ -382,6 +389,7 @@ export async function uploadBookDigital(
   }
 
   revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
@@ -416,6 +424,7 @@ export async function salvarLinkBookDigital(
   }
 
   revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   return { ok: true };
 }
@@ -454,6 +463,7 @@ export async function removerBookDigital(
   }
 
   revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   return { ok: true };
 }
@@ -499,6 +509,7 @@ export async function adicionarMidiaExterna(
   }
 
   revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
@@ -644,6 +655,7 @@ export async function excluirImovel(slug: string): Promise<{ ok: boolean; erro?:
   revalidatePath("/corretor/imoveis");
   revalidatePath("/corretor/imoveis/candidatos");
   revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   return { ok: true };
 }

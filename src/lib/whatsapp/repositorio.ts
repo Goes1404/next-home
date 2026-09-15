@@ -3,6 +3,8 @@ import "server-only";
 import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
 import { mesclarDossie } from "./mesclarDossie";
 import { createServiceClient } from "@/lib/supabase/service";
+import type { ConviteDeEntrada } from "./porteiro";
+import { comRetentativa } from "@/lib/supabase/retentativa";
 import {
   bloqueadoAtePor,
   deveAbrirDisjuntor,
@@ -205,17 +207,84 @@ async function encontrarLeadCadastrado(
 ): Promise<string | null> {
   const candidatos = candidatosTelefone(params.telefoneCliente);
 
-  const { data: lead, error } = await supabase
-    .from("leads")
-    .select("id")
-    .eq("corretor_id", params.corretorId)
-    .in("telefone_e164", candidatos)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Com retentativa (12/09/2026): esta é a PRIMEIRA consulta do webhook, e
+  // um "Gateway Timeout" do Supabase aqui derrubava a requisição inteira —
+  // 8 vezes em 24h, todas em minutos redondos (00:00, 00:30), que é quando
+  // o pg_cron e os crons da Vercel batem no mesmo banco. O provedor recebe
+  // 500 e reentrega, mas a mensagem do cliente espera a reentrega para ser
+  // respondida. Erro COM código (consulta errada) continua sem repetição.
+  const { data: lead, error } = await comRetentativa("lead do WhatsApp", () =>
+    supabase
+      .from("leads")
+      .select("id")
+      .eq("corretor_id", params.corretorId)
+      .in("telefone_e164", candidatos)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  );
 
   if (error) throw new Error(`Falha ao conferir o lead do WhatsApp: ${error.message}`);
   return lead?.id ?? null;
+}
+
+/**
+ * Cadastra o lead de quem respondeu a uma peça NOSSA e ainda não existia.
+ *
+ * A 0111 fechou o webhook para número desconhecido, e isso protege a
+ * conversa pessoal do corretor — mas fechou junto a porta que o anúncio
+ * PAGA para abrir: a pessoa clica, escreve, e a mensagem morre sem resposta
+ * e sem rastro no CRM. Quem decide se há convite é `reconhecerConviteDeEntrada`
+ * (puro, testado); aqui só se executa a decisão.
+ *
+ * Três detalhes que não são livres:
+ *
+ * - **`telefone_e164` NUNCA entra no insert.** É coluna GERADA, e incluí-la
+ *   faz o Postgres recusar a linha inteira ("cannot insert a non-DEFAULT
+ *   value"). Foi exatamente esse erro, engolido em silêncio, que em agosto
+ *   deixou 30 conversas sem cadastro por semanas.
+ * - **`corretor_id` vai preenchido**, nunca nulo. O trigger
+ *   `leads_distribuir` (0007) sorteia um dono quando o campo chega vazio — e
+ *   aqui isso mandaria o lead para um corretor DIFERENTE daquele em cujo
+ *   número a pessoa está escrevendo. Quem recebeu a mensagem atende.
+ * - **`consentimento_lgpd` fica no default `false`.** A pessoa iniciou um
+ *   contato comercial, o que sustenta o cadastro, mas ninguém marcou uma
+ *   caixa: escrever `true` aqui seria afirmar um consentimento que não
+ *   aconteceu — e esse campo existe justamente para distinguir os dois.
+ *
+ * A origem nasce `whatsapp/organico` de propósito: é ela que
+ * `marcarLeadVindoDeAnuncio` exige para promover a ficha a `meta/ctwa` com
+ * o imóvel, logo em seguida, quando o texto é o do nosso link.
+ */
+async function cadastrarLeadDeConvite(
+  supabase: ReturnType<typeof createServiceClient>,
+  params: { corretorId: string; telefoneCliente: string; nomeCliente?: string | null },
+): Promise<string | null> {
+  const nome =
+    params.nomeCliente?.trim().slice(0, 120) || `WhatsApp ${params.telefoneCliente.slice(-4)}`;
+
+  const { data, error } = await supabase
+    .from("leads")
+    .insert({
+      nome,
+      telefone: params.telefoneCliente,
+      corretor_id: params.corretorId,
+      origem: "whatsapp/organico",
+      // O dono saiu do NÚMERO que recebeu a mensagem — que é o destino do
+      // link porteiro. Não houve sorteio, então 'roleta' mentiria.
+      origem_atribuicao: "link",
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    // Sem este log, uma policy ou constraint nova derruba a entrada de leads
+    // do anúncio inteira e o sintoma é só "a fila não enche" — o defeito que
+    // custou semanas em agosto.
+    console.error("[porteiro] falha ao cadastrar lead de convite:", error?.message);
+    return null;
+  }
+  return data.id;
 }
 
 /**
@@ -255,6 +324,12 @@ export async function obterOuCriarConversa(params: {
   telefoneCliente: string;
   nomeCliente?: string | null;
   origem?: "organica" | "campanha";
+  /**
+   * Convite reconhecido na primeira fala (mensagem do nosso link ou frase
+   * que o corretor cadastrou). Só ele autoriza CADASTRAR quem ainda não é
+   * lead — sem convite, a regra da 0111 continua inteira.
+   */
+  convite?: ConviteDeEntrada | null;
 }): Promise<ConversaPersistida | null> {
   const supabase = createServiceClient();
 
@@ -284,7 +359,9 @@ export async function obterOuCriarConversa(params: {
     // antes de o lead ser cadastrado): tenta religar agora. É barato e é o
     // que permite ao dossiê desta mensagem ter um destino.
     if (!existente.lead_id) {
-      const leadId = await encontrarLeadCadastrado(supabase, params);
+      const leadId =
+        (await encontrarLeadCadastrado(supabase, params)) ??
+        (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
       if (leadId) {
         await supabase.from("whatsapp_conversas").update({ lead_id: leadId }).eq("id", existente.id);
         return mapConversa({ ...existente, lead_id: leadId });
@@ -297,7 +374,9 @@ export async function obterOuCriarConversa(params: {
     return mapConversa(existente);
   }
 
-  const leadId = await encontrarLeadCadastrado(supabase, params);
+  const leadId =
+    (await encontrarLeadCadastrado(supabase, params)) ??
+    (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
   if (!leadId) return null;
 
   const origem = params.origem ?? "organica";

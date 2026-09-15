@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useCamada } from "./Camada";
+import { estaNaTela } from "./estaNaTela";
 
 /**
  * Moldura com duas camadas de efeito, para as fotos da galeria:
@@ -69,11 +70,7 @@ export function CartaoTilt({
     const el = ref.current;
     if (!el) return;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      el.style.clipPath = "none";
-      el.style.opacity = "1";
-      return;
-    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     gsap.registerPlugin(ScrollTrigger);
 
@@ -86,11 +83,15 @@ export function CartaoTilt({
      */
     const alvoZoom = velocidadeCamada ? null : zoom.current;
 
-    const contexto = gsap.context(() => {
-      // Assume a opacidade ANTES de soltar a classe (contrato do Reveal): a
-      // cortina do clip-path é quem esconde daqui em diante.
-      gsap.set(el, { opacity: 1, clipPath: "inset(100% 0% 0% 0%)" });
-      el.classList.remove("gsap-pending");
+    // Cartão já na tela quando o JS chegou fica como o servidor o entregou:
+    // só a cortina é pulada, o tilt liga do mesmo jeito (regra de
+    // 13/09/2026, ver estaNaTela.ts — esconder o que está sob o olho de quem
+    // lê era o que fazia o LCP esperar o GSAP).
+    const contexto = estaNaTela(el)
+      ? null
+      : gsap.context(() => {
+      // A cortina do clip-path é quem esconde daqui em diante.
+      gsap.set(el, { clipPath: "inset(100% 0% 0% 0%)" });
       if (alvoZoom) gsap.set(alvoZoom, { scale: 1.18 });
 
       /*
@@ -154,7 +155,7 @@ export function CartaoTilt({
     ligarTilt();
 
     return () => {
-      contexto.revert();
+      contexto?.revert();
       limpar?.();
     };
   }, [indice, velocidadeCamada]);
@@ -162,11 +163,11 @@ export function CartaoTilt({
   return (
     <div
       ref={ref}
-      // `opacity-0` inicial pelo mesmo motivo do `.gsap-pending`: sem JS a
-      // regra `.no-js`/`.motion-off` do globals.css devolve a opacidade.
+      // Nasce VISÍVEL (regra de 13/09/2026, ver estaNaTela.ts): a cortina só
+      // é armada pelo efeito, e só para cartão que ainda não está na tela.
       // `overflow-clip` é o corte de LAYOUT que a cortina de clip-path não
       // dá: sem ele, o filho a 1.18 alargava a página (ver cabeçalho).
-      className={`gsap-pending group/tilt relative overflow-clip [transform-style:preserve-3d] [perspective:1000px] ${className ?? ""}`}
+      className={`group/tilt relative overflow-clip [transform-style:preserve-3d] [perspective:1000px] ${className ?? ""}`}
     >
       {/* O conteúdo SEMPRE ganha um nó próprio. Com camada, o nó absoluto com a
           folga do `scale-110`; sem ela, o wrapper em fluxo que a entrada

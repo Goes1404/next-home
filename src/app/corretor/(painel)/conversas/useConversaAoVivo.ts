@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { deMensagemRow, type MensagemRow } from "./Chat";
+import { deMensagemRow, type MensagemRow } from "./chatModelo";
 import type { MensagemConversa } from "./acoes";
 
 /**

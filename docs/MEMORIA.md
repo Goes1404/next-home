@@ -6174,6 +6174,16 @@ MEDINDO o catálogo antes de desenhar — e não por gosto.
   recarregue. **`catch` que NOMEIA uma causa sem ter checado está
   adivinhando** — mesma família do texto de erro desatualizado, o defeito
   recorrente nº 5 desta base.
+- **E o `.then()` SEM `.catch()` é a mesma dívida pelo avesso** (13/09): o
+  seletor de mídia do Live Chat (`Chat.tsx`) carregava o catálogo e só
+  tratava o `{erro}` devolvido. Rede e aba velha REJEITAM a promessa, então
+  `imoveis` ficava `null` para sempre e a grade dizia "Carregando…" sem fim —
+  pior que a mensagem errada, porque parece que ainda vai chegar. O helper e
+  a régua já existiam e três telas os usavam (`ChatDeArte`, `ChatDeVideo`,
+  `ExcluirImovel`); este caller ficou de fora. **Ao migrar callers para um
+  padrão de erro, o `grep` tem de achar TODOS — quem ficou fora não acusa em
+  tipo, teste nem build.** Achado por um `warning` de `exhaustive-deps` em
+  arquivo recém-mexido, exatamente como a lição de 10/09 previa.
 - **Diagnóstico**: para "404/500 ao clicar", subir `next dev` com o stdout
   capturado em arquivo e pedir para repetir o clique. Custa um minuto e
   responde o que varrer rota não responde. Varri 50 rotas com `page`, 13
@@ -6409,6 +6419,531 @@ que **recusa o deployment inteiro, sem log e sem webhook**.
   `x-matched-path` batendo é rota no ar recusando sem segredo; 404 é rota que
   só existe na branch. `web_fetch_vercel_url` do MCP da Vercel faz isso
   quando o `curl` está bloqueado.
+
+## A CARTO passou a exigir chave, e o mapa virou claro (12/09/2026)
+
+Vault: [[carto-passou-a-exigir-chave-e-o-mapa-virou-claro]].
+
+- **O mapa de produção amanheceu com "API KEY REQUIRED" em diagonal em todo
+  tile, sem deploy nenhum.** A CARTO mudou a política dos basemaps gratuitos
+  (`basemaps.cartocdn.com/{dark,light}_all`). Build, tipos, testes e o E2E
+  de saúde passavam: o tile chega com HTTP 200 e a marca d'água está DENTRO
+  da imagem. Defeito que nasce fora do repositório só aparece olhando.
+- **Trocado pelo tile padrão do OpenStreetMap** (`tile.openstreetmap.org`,
+  sem chave, sem `{s}` nem `{r}`), em `temaDoMapa.ts` — nenhum componente
+  mudou. Atribuição visível continua obrigatória (política de uso do OSM).
+- **O mapa é CLARO nos dois temas**, a pedido do usuário. A decisão de 10/09
+  ("escuro nos dois temas, pela lição do globo") caiu: com o tema padrão
+  claro, o mapa escuro lia como buraco preto. Os pinos (`.map-pulse-*`)
+  foram redesenhados para tile claro — teal escuro com aro branco; o teal
+  neon de antes sumia sobre o OSM.
+- **Os dois cartões "Quando você quer morar?" eram `bg-ink-950` fixo** —
+  desenhados quando o padrão do site era escuro. Viraram `cartao`
+  (superfície do tema), com a cor do estágio só no número e na seta
+  (`acento` / `realce`). Regra que fica: tinta escura fixa num componente
+  da home só quando ele flutua sobre FOTO.
+- **`VoltarLink` ganhou a variante `pilula`** (44px, fundo, `sobreFoto` para
+  tinta fixa sobre capa). Está no hero do imóvel, em `/empreendimentos`,
+  `/mapa`, `/portfolio` e na página do corretor. O link discreto de 12px
+  sem fundo sumia na capa escura e era a única saída da página.
+- **Simulador público**: prazo escolhido em botões (10 a 35 anos, recortado
+  pelo teto dos parâmetros), "com renda de R$ X fecharia", teto de imóvel
+  que renda + entrada sustentam (`precoMaximo`, ligado a `?precoMax=`),
+  total pago e juros no período, e o botão do WhatsApp leva a simulação
+  DENTRO da mensagem. Os três números novos moram no módulo puro
+  (`financiamento.ts`), não na tela — o consultor do painel os herda.
+- **O webhook tinha 8 erros em 24h, todos `Gateway Timeout` do Supabase em
+  minutos redondos (00:00, 00:30)** — quando o pg_cron e os crons da Vercel
+  batem no banco juntos. A primeira consulta do webhook
+  (`encontrarLeadCadastrado`) passou por `comRetentativa`; erro COM código
+  continua sem repetição. O "This page couldn't load" do print era rede do
+  navegador: todas as rotas públicas responderam 200 durante a investigação.
+- **`node_modules` não existia nesta máquina.** `npx tsc` sem ele devolve
+  "This is not the tsc command you are looking for" — não é o projeto,
+  é `npm ci` faltando. E `.env.local` também não: para rodar o site público
+  local bastam `NEXT_PUBLIC_SUPABASE_URL` e a chave PUBLICÁVEL (o MCP da
+  Supabase devolve as duas; são públicas por desenho).
+
+## Segunda rodada de 12/09: globo claro, escala de texto e a página do imóvel
+
+- **Globo claro de verdade é `dark: 0` no cobe**, não "clarear a esfera".
+  A nota antiga ("globo claro sobre página clara SOME") descrevia a
+  tentativa errada: só a esfera clareava e os pontos ficavam claros também.
+  Com `dark: 0` os continentes saem ESCUROS sobre a esfera clara, e o
+  contraste volta. `paleta()` decide por tema; painel em volta na
+  superfície do tema. Vault: [[carto-passou-a-exigir-chave-e-o-mapa-virou-claro]].
+- **`appearance-none` num `<select>` apaga a seta e ninguém repõe.** Os
+  campos "Todos" pareciam texto parado. `.select-seta` (globals.css) desenha
+  o chevron por `background-image` — cor dentro de `url()` não aceita
+  `light-dark()` nem `currentColor`, então são DUAS regras, por `data-tema`
+  (que o layout raiz sempre carimba).
+- **A escala fluida tinha teto alto demais para o desktop**: 3xl chegava a
+  4rem, 4xl a 5,5rem e o display do hero a 7,5rem — "Empreendimentos &
+  Oportunidades" ocupava a largura inteira em 1440px. Tetos novos: 3,25 /
+  4,5 / 5,5rem. Mudar o TOKEN, não a classe de cada título: é o que mantém
+  a hierarquia igual em todas as páginas.
+- **A página do imóvel tinha QUATRO larguras de caixa** (7xl, 5xl, 4xl, xl)
+  e dois tamanhos de título de seção (3xl e 2xl) — a margem esquerda pulava
+  a cada seção rolada, o mesmo defeito medido na home em 10/09. Hoje todas
+  as seções são `max-w-6xl`, título `text-fluid-2xl`, ritmo `py-16
+  sm:py-24`. E o painel do Book Digital deixou de ser um bloco preto fixo
+  (era a única coisa preta entre Sobre e Tipologias no tema claro).
+- **Transição entre páginas: 900 → 640ms na onda, 520 → 380ms na entrada.**
+  A régua: a onda precisa cobrir a tela por um instante (é a revelação),
+  mas acima de ~600ms ela vira espera, e o visitante já leu o que estava
+  embaixo antes de ela terminar.
+- **"Voltar ao topo" público** (`components/layout/VoltarAoTopo.tsx`) mora
+  nos DOIS layouts de grupo, um degrau acima do botão do WhatsApp, com
+  degrau FIXO — o WhatsApp some ao rolar para baixo no celular, e um degrau
+  condicional faria este pular. Gatilho por distância (700px), nunca por
+  direção do gesto; subida pelo Lenis (`rolarAoTopo`).
+- **O botão "Voltar ao site" do `CabecalhoDePagina` era `sm:hidden`.** No
+  desktop sobrava a trilha em 12px, que ninguém lê como botão — daí o
+  pedido "na equipe de corretores, faça um botão para voltar ao site" numa
+  página que JÁ tinha o botão, só que escondido por breakpoint. Aparece em
+  todo tamanho agora; a trilha continua no desktop.
+
+## A cláusula anti-texto impedia o produto existir (11/09/2026)
+
+Relatado como "quero que funcione exatamente como o ChatGPT — se eu pedir
+uma foto de um cachorro do Papai Noel, ele cria". O Estúdio não produzia
+peça publicitária, e o motivo não era o modelo: é o MESMO `gpt-image-2`.
+
+- **`textoNaCena` — a única fresta que permitia escrita na imagem — NÃO
+  TINHA UM ÚNICO CHAMADOR.** Nenhum `.tsx`, nenhuma rota, nenhum módulo o
+  preenchia. Logo, **100% das gerações levavam `SEM_TEXTO_ALGUM`**: "sem
+  texto, letras, números, placas, letreiros, logotipos, marcas, selos de
+  preço". As peças de referência do corretor (manchete, metragem, voucher,
+  logo) eram **impossíveis por construção** — e nada no build, no tipo ou
+  no teste dizia isso. Décimo caso de "construído e nunca ligado" aqui, e o
+  primeiro em que o desligado era a válvula de escape de uma proibição.
+- **A proibição foi RETIRADA por decisão de produto, com o risco aceito e
+  escrito**: a IA vai inventar nome, metragem e preço quando achar que a
+  peça pede — foi isso que desenhou a placa "VISTA ALTO" em 03/09. Quem
+  publica responde pelo que está escrito.
+- **O que sobrou de código é a soletração.** Texto entre aspas no pedido
+  vira `textosNaCena` e a instrução manda reproduzir caractere por
+  caractere — 2 em 2 na F0 de 10/09, contra 3 em 4 sem. Quem deriva é a
+  ROTA, do prompt APROVADO: derivar da proposta do chat divergiria quando o
+  corretor editasse o campo antes de gerar.
+- **Aspas simples ficam de fora de propósito**: "marca d'água" e "sala
+  'moderna'" virariam texto para desenhar. Erro assimétrico — não
+  reconhecer custa precisão; reconhecer errado suja a imagem paga. E dois
+  textos saem como LISTA (`"A"; "B"`), nunca colados: juntar por barra faz
+  o modelo DESENHAR o separador dentro da arte.
+- **Outras duas travas acusavam o comportamento CERTO.** O objetivo do
+  briefing era literal chumbado (`"peça de marketing de um imóvel"`) e o
+  preâmbulo do engenheiro afirmava "trabalhando para uma imobiliária" em
+  TODO pedido — era isso que fazia um cachorro de Papai Noel receber
+  perguntas sobre apartamento. E a gramática exigia sujeito da lista
+  `fachada|prédio|sala|piscina…` mais uma negação em "restrições": sobraram
+  as duas conferências que servem a QUALQUER imagem (enquadramento e luz).
+  Sexto e sétimo casos de critério que reprova o certo nesta base.
+- **`imovelCitado` subiu para ANTES do bloco de perguntas.** É puro e sem
+  LLM, então não custa nada — e é dele que sai o domínio do briefing.
+- **A ressalva legal virou condicional, e `carimbada: false` significava
+  DUAS coisas opostas.** "Não se aplica" (imagem livre) e "o carimbo
+  falhou" (peça de imóvel) eram o mesmo booleano; colapsados, toda imagem
+  livre nasceria com aviso VERMELHO de falha — o "aviso onde não se aplica"
+  que a mudança veio evitar. Viraram três desfechos tipados
+  (`aplicada` / `nao_se_aplica` / `falhou`), como o `desfecho` do pareamento.
+  **Ao tornar um efeito condicional, conferir se o booleano que o relatava
+  passou a ter dois significados.**
+- **A conferência de lei saiu do código, e está declarado.**
+  `problemasDaCopy` só lê texto que o corretor escreveu, não pixels —
+  ninguém lê texto dentro de PNG sem OCR. A tela diz isso, FIXO em toda
+  proposta: aviso que aparece só às vezes ensina que a ausência dele é
+  garantia.
+- **Uma guarda minha reprovou código correto e foi reescrita duas vezes.**
+  A primeira proibia a frase "trabalhando para uma imobiliária" no arquivo
+  — e ela é legítima no ramo de imóvel; a segunda acusou a mesma frase no
+  COMENTÁRIO do módulo. Guarda afirma a INTENÇÃO (o preâmbulo é escolhido
+  pelo domínio) e remove comentário antes de recortar. Quarta vez que uma
+  guarda desta base precisa tirar comentário, e a segunda em que ela nasce
+  proibindo um texto que tem caso certo.
+- **Comentário de módulo prometia duas garantias que deixaram de existir**
+  (a cláusula anti-invenção e a régua de copy no caminho da imagem).
+  Corrigido junto — é o defeito recorrente nº 5 daqui.
+
+## A IA que lembra, entende o "não" e preenche a ficha (0110, 11-13/09/2026)
+
+Pedido: *"ela não está conseguindo manter uma conversa e nem entender quando o
+cliente não quer"*, mais, na aprovação, *"faça a nossa IA atualizar a ficha do
+usuário melhor"*. Nota: [[memoria-da-conversa-e-ficha-viva]].
+
+- **O que estava medido antes de desenhar** — a recusa era literalmente
+  respondida com pergunta de funil ("No momento não tenho interesse" →
+  qualificação); a extração do dossiê só rodava quando a IA RESPONDIA (191
+  mensagens de cliente contra 80 respostas da IA e 127 do corretor em sete
+  dias, ou seja, a ficha não aprendia nada quando quem responde é a pessoa —
+  e consertar custa ~R$ 0,22 por semana); `nome` e `email` **não tinham
+  `grant update`**, então o corretor nunca conseguiu renomear um lead pelo
+  painel; e `nome_cliente` era 0 em 140 conversas, o que obriga o nome a vir
+  da CONVERSA.
+- **`revoke` de COLUNA não desfaz `grant` de TABELA.** A migration ia levar um
+  `revoke all (coluna) ... from anon` que é NO-OP: o `anon` tem SELECT de
+  tabela e o Postgres não o retira por coluna. Saiu, e no lugar ficou escrito
+  o que de fato protege.
+- **Fato e permissão moram em campos diferentes**, agora pela terceira vez
+  nesta base. `leads.nao_contatar_em` é o FATO dito pelo cliente; a ETAPA é
+  julgamento do funil e anda e volta — com a etapa como fonte, bastaria
+  arrastar o cartão para "Novo" para o número de quem pediu para sair voltar à
+  lista de transmissão.
+- **Detector de recusa é regex sobre a fala do cliente, e ele erra.** Por isso
+  as quatro consequências (bot mudo, follow-ups cancelados, lead perdido, fora
+  das campanhas) ganharam um aviso na fila do Início: quando o detector erra,
+  quem paga é um lead de verdade, e decisão automática que ninguém confere é
+  justamente a que merece um olho humano. Janela de 48h — não existe marca de
+  "já vi", então a JANELA é o mecanismo de saída, e item que não sai vira
+  paisagem.
+- **Booleano de pergunta roubou uma RESPOSTA do funil.** A primeira versão de
+  `ehPergunta` era `true`/`false`, e "pode ser na planta" (que tem "pode")
+  virou pergunta, travando a qualificação no lugar. Virou
+  `forcaDaPergunta` forte/fraca: forte é pergunta sempre; fraca só quando a
+  fala não responde nenhum assunto do funil.
+- **Trace por PERFIL achou defeito de produto na primeira execução.**
+  `scripts/traces/traceRecusa.ts` mostrou que, depois de `acolher_recusa`, um
+  "não, obrigada" voltava a `convidar_visita`. Custo zero, um segundo, antes
+  de qualquer chamada paga.
+- **Guarda de ordem da fila era CEGA, e parecia rigorosa.**
+  `filaDeTrabalho.test.ts` escreve os pesos à mão "de propósito, para não
+  concordar com qualquer reordenação" — só que nada comparava as duas cópias:
+  `ordenarFila` usa o peso que o próprio ITEM carrega, e o teste monta os itens
+  com os SEUS números. Provado em 11/09: mudar `cliente_recusou` de 2 para 4 no
+  código deixou os cinco testes de ordem verdes. `peloCodigo` lê o `PESO` da
+  fonte e compara — é isso que dá sentido à segunda cópia.
+- **Não acrescente texto novo à dívida de contraste herdada.** A tira da
+  memória vive na paleta copiada do WhatsApp, em que `text-wa-meta` sobre
+  `bg-wa-barra` dá **4,14:1** no tema claro — abaixo de AA. O cabeçalho já vive
+  nisso por fidelidade ao app; texto NOVO, e menor, não entra na mesma dívida.
+  Rótulo e conteúdo passaram a se separar pelo PESO (como o "Você:" da lista do
+  app), e a tira inteira ficou em 12:1 ou mais. Medido com o CSS de produção em
+  320/360/390, nos dois temas, nos três estados.
+
+## A base de produção foi zerada em 12/09/2026
+
+Descoberto em 13/09 ao rodar `npm run observatorio` para a medição final da
+0110: **0 conversas mensuráveis**. Não era defeito do script. Nota:
+[[a-base-de-producao-foi-zerada-em-12-09]].
+
+- **Foi deliberado, e está registrado.** `admin_eventos` de 12/09 17h28 UTC:
+  `"limpeza total antes do teste com corretores"`, 131 leads, 110 conversas,
+  8.125 mensagens, `"autorizado_por": "dono da conta, sem exportacao previa"`.
+- **O catálogo ficou inteiro** — 26 empreendimentos, 339 mídias, 346 itens de
+  lazer. Quem morreu foi `leads` (268 linhas), `whatsapp_conversas` (310),
+  `whatsapp_mensagens` (16.329 contando as já apagadas antes),
+  `lead_interacoes` (265) e os follow-ups.
+- **O cascade da 0111 fez o resto, e fez certo**: conferido depois, zero
+  órfãos — nenhuma linha de `whatsapp_campanhas_fila` aponta para lead
+  inexistente, nenhuma de `ia_interacoes` para conversa inexistente, e a fila
+  não tem nada `pendente` (104 enviados, 8 erro, 1 respondido). `ia_interacoes`
+  sobreviveu com 5.461 linhas porque não é filha do lead: virou telemetria
+  órfã, boa para contar modelo e latência, inútil para reconstituir conversa.
+- **Diagnóstico**: observatório devolvendo zero se confere com
+  `select count(*) from whatsapp_mensagens` ANTES de procurar defeito no
+  script. E `SUPABASE_SECRET_KEY` numa tabela sem policy para `anon` devolve
+  `count: 0` **sem erro** — a prova de que a base está vazia (e não a chave
+  errada) sai da Management API com o `SUPABASE_PAT`, que roda como `postgres`
+  e ignora RLS.
+- **Toda linha de base de atendimento anterior a 12/09 deixou de ser
+  verificável** — 21% de cobertura, mediana de 9s, 2.431 falas em branco, 16
+  dossiês para 131 leads, 0 nome / 0 renda / 1 orçamento em 55. Continuam
+  valendo como história; não dá mais para reconferir. A próxima medição começa
+  de uma safra limpa, com o atendimento dos corretores de verdade.
+
+## O tradutor de prompt de imagem SAIU (13/09/2026)
+
+Relatado como *"isso de mudar o prompt dele está dando muito erro e resultados
+ruins — deixe somente a conversa, sem muito segredo"*.
+
+- **Havia QUATRO camadas entre o corretor e o gerador**, e ele só via a
+  última: até 3 perguntas com chips, `traduzirPedido` (um LLM trocando o texto
+  dele por outro, com 12s de espera), a espinha da receita escolhida por
+  heurística, e o carimbo da ressalva legal.
+- **A camada do meio se defendia mal, e a própria tela dizia isso**: quando o
+  motor falhava, ela precisava CONFESSAR — "Não consegui melhorar seu pedido
+  agora, este texto é o seu". **Camada cujo MELHOR desfecho é devolver o que
+  a pessoa já tinha escrito, e cujo pior é devolver coisa pior mais 12s, não é
+  camada: é risco com custo.** A pergunta que resolve é qual é o melhor
+  desfecho dela, não o pior.
+- **A regra agora é uma:** `prompt = ideia.trim()`. Zero chamada de LLM no
+  caminho da arte, e há guarda de código-fonte afirmando isso.
+- **A receita virou SKILL, por decisão do usuário**: ela não altera uma
+  palavra do que ele escreveu, só ACRESCENTA a espinha no fim — e isso
+  continua acontecendo num lugar só (`montarPedido`, na rota). O que mudou é
+  que a heurística passou a apenas SUGERIR: a tela mostra os chips, o que vale
+  é o que está marcado, e um "Ver o que a skill acrescenta" traz a espinha por
+  extenso. **Sem segredo é requisito**: prompt que ele não lê é prompt que ele
+  não corrige — o mesmo defeito da versão em inglês dentro de um `<p>`, que
+  voltaria pela outra porta se a espinha ficasse invisível.
+- **Perdido de propósito, e declarado:** `fatosDoImovelCitado` injetava a
+  ficha do imóvel no prompt sem ele ver. O diferencial que FICA são as fotos
+  do imóvel, que ele escolhe na faixa do cartão.
+- **Guarda de decisão de produto é REESCRITA, não apagada** — terceira vez
+  nesta base (as outras: o `schedule` do vídeo e Conversas/Pessoas). As duas de
+  `estudio.test.ts` que protegiam o tradutor e o ritmo das perguntas passaram
+  a afirmar a invariante nova, com o histórico no comentário.
+- **A guarda nova tropeçou no próprio recorte na primeira versão — NONA vez.**
+  Ela recortava "de `turnoDeArte` até `turnoDeVideo`" para proibir LLM ali, e
+  entre as duas moram os auxiliares do VÍDEO, um deles com `chamarLlmJson`
+  legítimo. Hoje o recorte é o corpo da função, terminando na constante
+  `FIM_DA_ARTE`.
+- **A barra invertida some entre o heredoc e o disco, de novo.** `"\n}"` num
+  script Python chegou ao arquivo como QUEBRA DE LINHA real e o vitest
+  reprovou com "Unterminated string" — mesma família do `` que virou
+  BACKSPACE em 09/09. O conserto foi tirar a barra da equação (uma constante
+  com o texto literal), e a conferência é `repr()`, nunca `grep`.
+- **Âncora de guarda não usa caractere de caixa nem acento.**
+  `indexOf("VÍDEO ─")` devolveu -1 — o `─` e o `Í` não casaram entre o arquivo
+  lido e a string do teste. Âncora de código-fonte tem de ser ASCII.
+- **Removidos por ficarem órfãos**: `tradutor.ts`, `engenheiroDePrompt.ts` e
+  `gramatica.ts` (com os testes). `PISO_DE_PROMPT` sobreviveu e mudou para
+  `imagensTipos.ts` — é uma CONTAGEM, não um julgamento sobre o texto, e a
+  tela avisa sem bloquear. Deixar módulo sem chamador é a dívida "construído e
+  nunca ligado" que esta base combate.
+- **Conferido**: `tsc` 0, eslint 0, **1.861 testes em 177 arquivos**, `next
+  build` compilando em 16s com 84 páginas. A guarda nova foi provocada com
+  dente (o prompt voltando a sair de `chamarLlmJson`): reprovou com 2 falhas, e
+  o md5 confirmou que a mordida mordeu.
+
+## O site é lento por desenho, não por peso (13/09/2026)
+
+Pedido: "roadmap para deixar a aplicação o mais rápida possível". Antes de
+planejar, medir — e a medição mudou o plano. Linha de base em
+`docs/medicoes/2026-09-13-linha-de-base-performance.md`; roadmap em
+`docs/ROADMAP-PERFORMANCE.md`. Vault: [[o-site-e-lento-por-desenho-nao-por-peso]].
+
+- **LCP de 10,6 s no celular na home E na listagem, 5,2 s no imóvel — e 99%
+  disso é atraso de renderização, não rede.** Tudo acima da dobra nasce com
+  `.gsap-pending` (`opacity: 0`) e só aparece quando o GSAP hidrata e roda a
+  timeline; o socorro do CSS só solta aos 12 s. No desktop sem freio dá 1,9 s,
+  o que esconde o problema de quem desenvolve num monitor. **Medido SEM a
+  vinheta** (o `sessionStorage` já a marcava como vista); a primeira visita
+  soma 7,2–9,5 s de scroll travado. Ao medir, limpar o `sessionStorage`.
+- **Toda rota é dinâmica por causa de UMA linha: `cookies()` no layout raiz**
+  (o tema). `export const revalidate` em quatro arquivos e
+  `generateStaticParams` em dois são letra morta — o `prerender-manifest` tem
+  zero rotas, e toda resposta sai `private, no-cache, no-store` com
+  `X-Vercel-Cache: MISS`. Isso NÃO é "cache frio": é ausência de cache.
+- **`proxy.ts` chama `auth.getUser()` — uma ida ao Supabase Auth — em TODA
+  requisição**, inclusive visitante anônimo, prefetch RSC e arquivos de
+  `public/` (o matcher só exclui `_next/static`, `_next/image` e
+  `favicon.ico`). O comentário do arquivo diz que ele "não faz round-trip de
+  rede". Nona vez que texto desatualizado aponta o diagnóstico para o lugar
+  errado — e desta vez o texto está no arquivo que causa o custo.
+- **A função roda em iad1 (Virgínia) e o banco em `ca-central-1` (Canadá)**;
+  o visitante está no Brasil. `X-Vercel-Id: gru1::iad1::…` diz a região; o
+  MCP do Supabase diz a do projeto. Mudar a função para `gru1` sem antes
+  reduzir as idas ao banco PIORA (cada ida sobe de ~25 para ~140 ms) — a
+  ordem é cache primeiro, região depois, e medido.
+- **A home baixa o catálogo inteiro (243 KB de JSON) DUAS vezes por
+  requisição** (`getEmpreendimentos` e `getRegioesDisponiveis` chamam
+  `buscarPublicados`, e não há `cache()` em nenhum caminho público —
+  `getCorretorAtivo` é chamado 5 a 8 vezes por página relendo o cookie). E
+  serializa 252 KB dele no HTML para `GloboOuMapa empreendimentos={todos}`,
+  um client que só precisa de lat/lng/nome: 96 KB de HTML gz numa home que
+  deveria ter 30.
+- **Não existe dado de campo.** Sem `@vercel/speed-insights`, sem
+  `@vercel/analytics` (a API devolve 404 para o projeto), fora do CrUX. Todo
+  número de performance deste projeto é de laboratório até a F0 do roadmap.
+- **Como medir em cinco minutos:** MCP do Chrome DevTools — `new_page` +
+  `emulate` (`412x915x2.625,mobile,touch`, Slow 4G, CPU 4x) +
+  `performance_start_trace` com reload; `LCPBreakdown` nomeia o elemento e
+  separa TTFB de render delay. `curl -w "%{time_starttransfer}"` para o TTFB
+  e `curl -sI` para `Cache-Control` e `X-Vercel-Id`.
+- **Achado de passagem, bloqueante:** o último deployment de produção (13/09
+  04:14 UTC) falhou no type-check — `Chat.tsx:595 — Cannot find name
+  'TiraDaMemoria'`. A branch de produção parou em `3c49999`; a definição do
+  componente está em `299396b`, que só existe em `ingestao-de-midia`. A
+  produção serve o deploy anterior, e nada sobe até isso ser mergeado.
+
+## F0, F1 e F2 do roadmap de performance (13/09/2026)
+
+Executadas na mesma sessão que mediu a linha de base. Números em
+`docs/medicoes/2026-09-13-f0-a-f2-antes-e-depois.md`; vault:
+[[o-conteudo-aparece-antes-do-javascript]] e
+[[o-site-publico-nao-vai-mais-ao-banco-por-requisicao]].
+
+| celular, primeira visita | antes | depois da F2 |
+|---|---|---|
+| LCP da home | 7,39 s | **4,53 s** |
+| LCP da listagem | 4,59 s | **3,21 s** |
+| TTFB da home (Brasil) | 0,9–2,9 s | 0,37–0,54 s |
+| LCP da home no desktop | 3,43 s | **1,58 s** |
+
+- **O `priority` do `next/image` NÃO põe `fetchpriority` no `<img>`** nesta
+  versão: gera só o `<link rel="preload">`. O Chrome reprovava a listagem
+  na checagem de LCP com `priority` ligado. `fetchPriority="high"` explícito.
+- **A F1 sozinha não moveu o LCP do celular, e o motivo ensina.** Com o hero
+  visível na hora, o maior elemento passou a ser o VÍDEO de fundo (607 KB),
+  cujo primeiro quadro chegava aos 8,3 s. O `FundoVideoIntro` não emite
+  nada no SSR e nasce `opacity-0` até ter dados. O que moveu foi o POSTER
+  no HTML do servidor (`<picture>` + `preload` no head): 32 KB, o mesmo
+  quadro em que o vídeo congela. **Ao trocar um elemento invisível por um
+  visível, conferir quem vira o maior — o LCP troca de dono.**
+- **`.gsap-pending` saiu; a regra é `estaNaTela`.** O que já está na
+  viewport quando o JS chega fica como o servidor entregou; só o que está
+  fora ganha entrada. O hero chega por CSS (`@keyframes chegada`, `both`),
+  pausado só sob a vinheta. Guarda `conteudoVisivelSemJs.test.ts`.
+- **A vinheta é só desktop, 3,8 s, e rolar a dispensa.** No celular o fundo
+  já é ela; 3,8 s é onde a logo fecha (menos é o "soluço" da versão de
+  4,2 s); um `<video>` em vez de dois; `poster`.
+- **`unstable_cache` proíbe `cookies()` dentro** — e `buscarPublicados`
+  chamava `getCorretorAtivo()` por dentro. A consulta (cacheável) e a
+  personalização (cookie) tiveram de ser separadas: `catalogo/cache.ts` e
+  um `map` em memória. `'use cache'` exigiria `cacheComponents`, que muda o
+  contrato das 50 rotas — F2b, com o painel verificável.
+- **"Invariant: incrementalCache missing in unstable_cache"** no vitest:
+  `vi.mock("next/cache", () => ({ unstable_cache: (fn) => fn }))`.
+- **`revalidateTag(tag)` com um argumento está deprecated**; é
+  `revalidateTag(tag, "max")`. E `revalidatePath` limpa a ROTA, a etiqueta
+  limpa o DADO — sem as duas, a rota é recalculada com o dado velho.
+- **O `proxy.ts` chamava `getUser()` (rede) em TODA requisição**, inclusive
+  arquivo de `public/`; o comentário dizia o contrário. Agora Auth só em
+  `/corretor/*`, `getClaims()` (JWT local), matcher sem caminhos com ponto.
+- **Cold start + cache frio: o primeiro acesso depois do deploy custa ~1 s.**
+  Medir TTFB logo depois de subir dá uma amostra alta por rota.
+- **27 policies reescritas num bloco `do` a partir de `pg_policies`**
+  (`auth.uid()` → `(select auth.uid())`), 23 índices de FK, 1 índice
+  duplicado fora. Advisors: `auth_rls_initplan` 27 → 0. Conferido nos dois
+  sentidos como manda a 0077.
+- **`tsx` embrulha função nomeada em `__name(...)`** e a serialização do
+  Playwright leva o embrulho para a página ("`__name is not defined`"). O
+  coletor de métricas vai como `String.raw` — e a barra do regex some se
+  for template literal comum.
+- **Git Bash converte `--paginas=/` em `C:/Program Files/Git/`**:
+  `MSYS_NO_PATHCONV=1` na frente de `npm run perf`.
+- **O `polyfillFiles` do manifesto é o chunk `nomodule`**: contá-lo inflava
+  toda rota em 110 KB na catraca de bundle. Fora, o manifesto casa com o
+  navegador (729 KB contra 740 medidos).
+- **Arquivo de medição por data sobrescreve** (a armadilha do eval, de
+  novo): `--rotulo=` e o perfil no nome. A rodada do celular da F1 e da F2
+  sobreviveu só no terminal; a tabela consolidada foi transcrita à mão.
+
+## F3 e F4 do roadmap de performance (13/09/2026)
+
+Vault: [[o-globo-recebe-pontos-e-nada-roda-sozinho]] e
+[[o-painel-carrega-por-rota-so-o-que-a-rota-usa]].
+
+- **O HTML da home tinha 96 KB de gzip, e 252 KB brutos eram o catálogo
+  inteiro para um globo desenhar 25 pinos.** `GloboOuMapa` é client e
+  recebia `empreendimentos={todos}`. `PontoDoMapa` (12 campos) desceu o
+  HTML para 27 KB gz. **Os nomes dos campos são os de `Empreendimento` de
+  propósito** — nenhum chamador quebra — e é exatamente por isso que a
+  regressão passaria calada; a guarda `pontoDoMapa.test.ts` lê as páginas.
+  O `grep` de campos usados errou por UM (`imovel.endereco`): grep é
+  hipótese, o `tsc` é a prova.
+- **`next/dynamic` com `ssr: false` não adia por visibilidade** — a lição
+  do Leaflet, agora no globo: o `cobe` baixava e o WebGL rodava a 60 fps
+  quatro telas acima da seção. `IntersectionObserver` para montar, outro
+  para o laço pular o `update()` fora da tela.
+- **Laço que roda a cada quadro tem de saber se algo mudou.** O
+  `controladorCamadas` lia `getBoundingClientRect` de toda camada visível
+  60 vezes por segundo com a página PARADA (811 ms de forced reflow na
+  home): agora compara rolagem e tamanho com o quadro anterior e sai.
+- **Importar um utilitário de um arquivo de componente é importar o
+  componente.** A gaveta de Pessoas importava `estadoDa` de `./Chat` e com
+  isso o `Chat` inteiro (1.600 linhas) entrava no JS da lista. Os
+  utilitários saíram para `chatModelo.ts`; o `Chat` vai por `next/dynamic`
+  no toque. O mesmo com a bolha do consultor no LAYOUT: `ChatBase` em toda
+  rota do painel, aberta ou não.
+- **`getClaims()` no lugar de `getUser()` para LER sessão** no painel: JWT
+  verificado localmente; rede só para renovar. Quem MUDA dado continua com
+  `getUser()` na action.
+- **Medir logo depois do deploy mede função fria + cache frio.** A rodada
+  da F3 deu o imóvel a 6,17 s com TTFB de 1,9 s — a primeira visita de cada
+  rota numa função nova. Antes de medir, aquecer cada rota com um `curl`.
+- **Feito × pendente na F4, declarado:** Conversas em 2 estágios, janela de
+  60 mensagens, Realtime OU polling, `revalidateTag`/`useOptimistic` e
+  `useLinkStatus` exigem abrir o painel — esta máquina não tem credencial
+  de E2E. Ficaram escritos como pendência, não fingidos como feitos.
+## Fundo em vídeo fora de todas as páginas, menu sem "anunciar", equipe (13/09/2026)
+
+- **A vinheta congelada atrás do conteúdo SAIU de todo o site.** Nos dois
+  layouts de grupo ela era o fundo padrão (no institucional em todo tamanho,
+  na vitrine só no celular); o quadro parado do logotipo lia como imagem
+  aleatória e, no celular, aparecia inteiro entre a CTA final e o rodapé
+  (print do usuário). O que fica é a aurora em CSS (`fundo-aurora`), que já
+  cobria a vitrine no desktop. A vinheta continua no `Preloader` — abertura,
+  não papel de parede. `AberturaHome` já tratava `[data-fundo-video]`
+  ausente (`if (video)`); `ParallaxFundoHome` escreve no invólucro, que
+  ficou. Foto/vídeo PRÓPRIO do corretor continuam tendo precedência.
+- **A outra sessão do mesmo dia pôs um POSTER da vinheta como LCP (F2 de
+  performance) enquanto esta a tirava do fundo.** O push foi rejeitado
+  (19 commits remotos), o rebase conflitou em `layout.tsx`, `MEMORIA.md` e
+  no MOC — e a resolução não podia ser "aceitar os dois": o poster era o
+  MESMO quadro do logotipo que o usuário pediu para remover. Saiu o
+  `<picture>`, os dois `preload()` e os quatro imports de URL; o LCP passa a
+  ser o conteúdo do herói, que já nasce visível pela F1 deles. **Duas
+  sessões no mesmo repositório: antes de resolver conflito por união,
+  perguntar se as duas mudanças ainda fazem sentido JUNTAS.** E `npm ci`
+  depois do rebase: o lock trouxe `@vercel/analytics` e `speed-insights`,
+  sem os quais o `tsc` acusa módulo inexistente no layout raiz.
+- **"Anunciar meu imóvel" saiu do menu** (header desktop e gaveta do
+  celular), a pedido. A página `/anunciar-imovel` continua — chega pelo
+  cartão do vendedor na home; `seo.test.ts` e o E2E de saúde ainda a listam.
+- **Cartão de corretor completo virou cartão com FOTO-HERÓI** (4:3 no topo,
+  CRECI como selo sobre a foto em tinta fixa, bio em duas linhas quando
+  existe, dois botões de 44px: perfil e WhatsApp). Sem foto: monograma sobre
+  degradê da marca, nunca ícone genérico. A página ganhou faixa de confiança
+  com três fatos verificáveis (CRECI da imobiliária, corretores, imóveis
+  acompanhados — a soma das atuações, sem consulta nova). O `compacto` da
+  home não mudou.
+
+## Movimento do site público em CSS puro (13/09/2026)
+
+Vault: [[movimento-do-site-publico-e-css-puro]].
+
+- **Quatro efeitos, zero JavaScript**: `botao-vivo` (CTA levanta 2px no
+  hover, afunda no toque), `link-nav` (sublinhado que cresce no menu),
+  `.barra-progresso` (barra de leitura por `animation-timeline: scroll()`,
+  em `@supports`) e `anel-pulso` (anel do WhatsApp a cada 6s). Mesma régua
+  do painel: movimento responde a gesto ou mostra conteúdo; o anel é a
+  exceção declarada.
+- **`motion-safe:` só funciona em `@utility`.** `.anel-pulso` como classe
+  comum fazia `motion-safe:anel-pulso` virar nada, calado — a família do
+  `bg-chip`. Conferido no CSS compilado antes de subir.
+- **Regex de className precisa de filtro de TAG.** "cor de marca +
+  arredondado" pegou um selo, um ponto decorativo e um parágrafo além dos
+  21 botões. A sonda no navegador (`[...querySelectorAll(".botao-vivo")]`
+  com tag) é o que mostrou.
+- **404 de `/_vercel/insights` e `/_vercel/speed-insights` em `next start`
+  local NÃO é defeito** — são os scripts de analytics que a F0 de
+  performance injeta e que só existem na Vercel.
+
+## Auditoria de qualidade do site público (13/09/2026)
+
+Pedido: "invista mais na qualidade". Antes de mexer, medir — um script de
+Playwright passou por 12 rotas em desktop e 360px e listou por página:
+título único, saltos de nível de heading, `<img>` sem alt, imagem ampliada
+além do original, alvo de toque abaixo de 40px, fonte abaixo de 12px,
+campo sem label, botão sem nome, tamanho de título/descrição, estouro de
+largura, erro de console e link interno quebrado.
+
+- **As fotos dos corretores têm 120×120 e as do catálogo "foto-1-big" têm
+  320×320.** Medido baixando os originais do Storage. O cartão de equipe
+  em 4:3 (da manhã do mesmo dia) esticava 120px para 370 — foto embaçada
+  num cartão de "profissional". Virou retrato CIRCULAR de 128px sobre faixa
+  de marca: mostra a foto no tamanho que ela tem. **O catálogo continua
+  com originais de 320px em vários imóveis** — é dado; código não inventa
+  pixel. Pendência de cadastro: subir fotos maiores.
+- **A listagem e a página de região pulavam de h1 para h3** — o cartão do
+  imóvel cravava `<h3>`. Virou prop `nivel` (padrão h3; h2 onde o cartão é
+  a primeira subdivisão sob o h1). Leitor de tela anuncia o salto; olho não.
+- **Alvos de toque abaixo de 40px** em oito lugares: links do rodapé
+  (navegação, telefones, redes, "Área do corretor"), links de texto com
+  seta na home, pílulas do filtro do mapa, controles de zoom do Leaflet
+  (30px de fábrica), "Como chegar", nome do corretor. Todos com `min-h-11`
+  ou 40px; o Leaflet via CSS global.
+- **Textos abaixo de 12px**: CRECI no cartão, rótulo da página do mapa,
+  contagem nos cartões de região, atribuição do Leaflet (10px, o menor do
+  site). Todos para 12px, a atribuição para 11px.
+- **Os únicos 404 locais são `/_vercel/insights` e `/_vercel/speed-insights`**
+  — scripts que só existem na Vercel. Filtrar antes de acusar.
+- **Régua:** auditar por MEDIÇÃO, não por olhar tela a tela; a lista do
+  que sai de um script em 60 s é diferente da que sai de uma inspeção
+  visual, e a primeira achou o que a segunda tinha deixado passar na
+  mesma manhã (o cartão 4:3).
 
 ## "Trocar o e-mail do Eduardo" era criar o login dele (12/09/2026)
 

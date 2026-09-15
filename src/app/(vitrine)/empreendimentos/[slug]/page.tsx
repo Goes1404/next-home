@@ -1,30 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
-import { CenaShowcase } from "@/components/empreendimento/CenaShowcase";
-import { Contato } from "@/components/empreendimento/Contato";
-import { FichaNumeros } from "@/components/empreendimento/FichaNumeros";
-import { Galeria } from "@/components/empreendimento/Galeria";
 import { Hero } from "@/components/empreendimento/Hero";
-import { Lazer } from "@/components/empreendimento/Lazer";
-import { Localizacao } from "@/components/empreendimento/Localizacao";
-import { NavAncoras, type Secao } from "@/components/empreendimento/NavAncoras";
-import { Similares } from "@/components/empreendimento/Similares";
-import { Sobre } from "@/components/empreendimento/Sobre";
-import { BookDigital } from "@/components/empreendimento/BookDigital";
-import { Tipologias } from "@/components/empreendimento/Tipologias";
-import { Tour360 } from "@/components/empreendimento/Tour360";
-import { Video } from "@/components/empreendimento/Video";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { precoAPartirDe } from "@/lib/format";
 import { site } from "@/lib/site";
-import {
-  getEmpreendimentoBySlug,
-  getSimilares,
-  getSlugsEmpreendimentos,
-} from "@/lib/queries";
+import { getEmpreendimentoBySlug, getSlugsEmpreendimentos } from "@/lib/queries";
 import type { Empreendimento } from "@/lib/types";
+import { EsperaDasSecoes, SecoesDoImovel } from "./SecoesDoImovel";
 import { descricaoDePagina, tituloDePagina } from "@/lib/seo";
 
 type Params = { slug: string };
@@ -74,20 +59,6 @@ export async function generateMetadata({
       images: [{ url: e.capa.url, width: e.capa.largura, height: e.capa.altura }],
     },
   };
-}
-
-/** Seções realmente renderizadas — a barra de âncoras não pode oferecer link morto. */
-function secoesDe(e: Empreendimento): Secao[] {
-  const secoes: Secao[] = [{ id: "sobre", label: "Sobre" }];
-  secoes.push({ id: "book", label: "Book Digital" });
-  if (e.tipologias.length > 0) secoes.push({ id: "tipologias", label: "Tipologias" });
-  if (e.lazer.length > 0) secoes.push({ id: "lazer", label: "Lazer" });
-  if (e.galeria.length > 0) secoes.push({ id: "galeria", label: "Galeria" });
-  if (e.videos.length > 0) secoes.push({ id: "video", label: "Vídeo" });
-  if (e.tours360.length > 0) secoes.push({ id: "tour360", label: "Tour 360°" });
-  secoes.push({ id: "localizacao", label: "Localização" });
-  secoes.push({ id: "contato", label: "Contato" });
-  return secoes;
 }
 
 /**
@@ -148,8 +119,6 @@ export default async function EmpreendimentoPage({
   const e = await getEmpreendimentoBySlug(slug);
   if (!e) notFound();
 
-  const similares = await getSimilares(slug);
-
   return (
     <GlassBackgroundProvider inicial={e.capa.url}>
       <script
@@ -165,24 +134,14 @@ export default async function EmpreendimentoPage({
       <main className="flex flex-1 flex-col">
         <Hero empreendimento={e} />
 
+        {/* O hero sai no stream ANTES das seções: elas moram num boundary
+            próprio, que cede a vez (`cederAoStream`) para o `h1` — o LCP
+            desta página — ser revelado sem esperar o documento inteiro.
+            Ver SecoesDoImovel.tsx e a guarda heroPrimeiro.test.ts. */}
         <div className="relative bg-fundo">
-          <FichaNumeros empreendimento={e} />
-
-          <div className="mx-auto max-w-3xl px-4">
-            <NavAncoras secoes={secoesDe(e)} />
-          </div>
-
-          <Sobre empreendimento={e} />
-          <CenaShowcase empreendimento={e} />
-          <BookDigital empreendimento={e} />
-          <Tipologias tipologias={e.tipologias} plantasGerais={e.plantas} />
-          <Lazer itens={e.lazer} fotos={e.galeria} />
-          <Galeria fotos={e.galeria} />
-          <Video videos={e.videos} />
-          <Tour360 tours={e.tours360} />
-          <Localizacao empreendimento={e} />
-          <Contato empreendimento={e} />
-          <Similares empreendimentos={similares} />
+          <Suspense fallback={<EsperaDasSecoes />}>
+            <SecoesDoImovel empreendimento={e} />
+          </Suspense>
         </div>
       </main>
     </GlassBackgroundProvider>

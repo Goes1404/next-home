@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimento";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
+import { VoltarLink } from "@/components/ui/VoltarLink";
 import { iniciais, telefoneBR } from "@/lib/format";
 import { getCorretorPorSlug, getEmpreendimentosPorCorretor } from "@/lib/queries";
 import { linkWhatsappPara, site } from "@/lib/site";
@@ -144,12 +145,9 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
             direto aqui e precisa de um caminho para o resto da equipe sem ter
             de rolar a página inteira. */}
         <nav aria-label="Trilha" className="mx-auto w-full max-w-5xl">
-          <Link
-            href="/corretores"
-            className="text-fluid-sm hover:text-acento-suave inline-flex items-center gap-1.5 text-legenda transition-colors"
-          >
-            <span aria-hidden>←</span> Toda a equipe
-          </Link>
+          <VoltarLink href="/corretores" variante="pilula">
+            Voltar para a equipe
+          </VoltarLink>
         </nav>
 
         <Reveal className="mx-auto mt-4 w-full max-w-5xl">
@@ -187,7 +185,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
                     {cidades.map((cidade) => (
                       <li
                         key={cidade}
-                        className="text-fluid-xs border-brand-300/25 bg-brand-500/10 text-acento-suave rounded-full border px-3 py-1"
+                        className="text-fluid-xs border-brand-300/25 bg-brand-500/10 text-acento-suave rounded-full border px-3 py-1 botao-vivo"
                       >
                         {cidade}
                       </li>
@@ -204,7 +202,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
                     href={whatsapp}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-brand-500 hover:bg-brand-400 inline-flex h-12 items-center justify-center gap-2 rounded-full px-7 text-sm font-medium text-white transition-colors"
+                    className="bg-brand-500 hover:bg-brand-400 inline-flex h-12 items-center justify-center gap-2 rounded-full px-7 text-sm font-medium text-white transition-colors botao-vivo"
                   >
                     <svg
                       viewBox="0 0 24 24"

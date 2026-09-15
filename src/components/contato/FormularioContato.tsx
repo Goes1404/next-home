@@ -165,7 +165,7 @@ export function FormularioContato({
       <button
         type="submit"
         disabled={status === "enviando"}
-        className="w-full rounded-full bg-brand-500 px-7 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-400 disabled:opacity-60"
+        className="w-full rounded-full bg-brand-500 px-7 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-400 disabled:opacity-60 botao-vivo"
       >
         {status === "enviando" ? "Enviando…" : "Enviar mensagem"}
       </button>

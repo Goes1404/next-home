@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { cn } from "@/lib/utils";
+import { estaNaTela } from "./estaNaTela";
 
 type Direcao = "cima" | "baixo" | "esquerda" | "direita" | "nenhuma";
 
@@ -30,9 +30,14 @@ export type RevealProps = {
 /**
  * Revela o conteúdo ao entrar na viewport.
  *
- * O elemento nasce com `.gsap-pending` (opacidade 0 via CSS) para não piscar
- * antes da hidratação. Se o JS falhar ou o usuário pedir menos movimento, a
- * classe `motion-off` no `<html>` devolve a opacidade e nada fica invisível.
+ * O elemento nasce VISÍVEL — é o que o servidor entregou e o que o visitante
+ * vê antes de qualquer JavaScript. Até 13/09/2026 ele nascia com
+ * `.gsap-pending` (opacidade 0) e esperava o GSAP hidratar para aparecer:
+ * no celular de referência isso custava um LCP de 10,6 s, 99% dele "atraso
+ * de renderização". A regra agora é a de `estaNaTela`: o que já está na
+ * viewport quando o JS chega fica como está; só o que ainda não foi visto
+ * ganha a entrada. Se o JS falhar ou o usuário pedir menos movimento, nada
+ * muda — o conteúdo simplesmente está lá.
  */
 export function Reveal({
   children,
@@ -49,18 +54,17 @@ export function Reveal({
     const el = ref.current;
     if (!el) return;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      el.classList.remove("gsap-pending");
-      return;
-    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    // Já na tela quando o JS chegou: o visitante pode estar lendo. Esconder
+    // para revelar de novo é piscar — e atrasar o LCP em segundos.
+    if (estaNaTela(el)) return;
 
     gsap.registerPlugin(ScrollTrigger);
 
     const alvos = stagger ? Array.from(el.children) : [el];
     const contexto = gsap.context(() => {
       gsap.set(alvos, { opacity: 0, ...DESLOCAMENTO[from] });
-      // Só agora o CSS pode soltar o elemento: o GSAP já controla a opacidade.
-      el.classList.remove("gsap-pending");
 
       gsap.to(alvos, {
         opacity: 1,
@@ -82,7 +86,7 @@ export function Reveal({
   }, [from, delay, duration, stagger]);
 
   return (
-    <Tag ref={ref as never} className={cn("gsap-pending", className)}>
+    <Tag ref={ref as never} className={className}>
       {children}
     </Tag>
   );

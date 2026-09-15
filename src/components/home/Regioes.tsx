@@ -49,6 +49,7 @@ export function Regioes({ catalogo }: { catalogo: Empreendimento[] }) {
             <Reveal key={regiao.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
                 <Link
                   href={`/regioes/${regiao.slug}`}
+                  prefetch={false}
                   className="border-linha bg-superficie/60 hover:border-acento-linha group flex h-full flex-col overflow-hidden rounded-2xl border transition-all hover:-translate-y-0.5 hover:shadow-xl motion-reduce:transition-none"
                 >
                   <div className="bg-campo relative aspect-[16/10] overflow-hidden">
@@ -74,7 +75,7 @@ export function Regioes({ catalogo }: { catalogo: Empreendimento[] }) {
                       <h3 className="font-display min-w-0 text-lg leading-tight font-bold break-words text-white">
                         {regiao.nome}
                       </h3>
-                      <span className="shrink-0 rounded-full border border-white/25 bg-black/55 px-2.5 py-0.5 text-[11px] font-semibold text-white tabular-nums backdrop-blur-md">
+                      <span className="shrink-0 rounded-full border border-white/25 bg-black/55 px-2.5 py-0.5 text-xs font-semibold text-white tabular-nums backdrop-blur-md">
                         {regiao.imoveis.length}
                       </span>
                     </div>

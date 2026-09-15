@@ -34,15 +34,32 @@ describe("conferir aponta o que ficou de fora", () => {
     expect(conferir(semLuz)).toContain("detalhes");
   });
 
-  it("prompt sem negativa acusa restrições", () => {
+  it("pedido fora de imóveis não é acusado de faltar sujeito nem restrição", () => {
+    /*
+     * As MARCAS de `sujeito` eram a lista `fachada|prédio|sala|piscina…` e
+     * `restricoes` exigia uma negação. Um pedido legítimo de outro assunto
+     * saía com duas dicas de erro — e este projeto já perdeu tempo CINCO
+     * vezes com critério que reprova o comportamento certo.
+     */
+    const pedido =
+      "Retrato fotográfico de um cachorro golden retriever vestido de Papai Noel, " +
+      "sentado em um tapete, plano médio frontal, luz quente de fim de tarde " +
+      "entrando pela janela, sombras suaves e textura de pelo bem definida.";
+    expect(conferir(pedido)).toEqual([]);
+  });
+
+  it("nunca devolve sujeito nem restricoes — não são universais", () => {
     const semNegativa =
       "Fachada de edifício alto vista da calçada em contra-plongée, fim de tarde com luz quente, " +
       "concreto claro e vidro refletivo, com paisagismo tropical no térreo da torre.";
-    expect(conferir(semNegativa)).toContain("restricoes");
+    for (const texto of ["", "x".repeat(200), semNegativa]) {
+      expect(conferir(texto)).not.toContain("sujeito");
+      expect(conferir(texto)).not.toContain("restricoes");
+    }
   });
 
-  it("uma palavra acusa tudo — é o caso `Torre.` que virou imagem paga em 09/09", () => {
-    expect(conferir("Torre.").length).toBe(SECOES.length);
+  it("uma palavra acusa as duas conferidas — é o caso `Torre.` de 09/09", () => {
+    expect(conferir("Torre.").sort()).toEqual(["cena", "detalhes"]);
   });
 
   it("o piso existe e é maior que uma palavra solta", () => {

@@ -93,12 +93,29 @@ export async function perguntarOQueFalta(params: {
   objetivo: string;
   formato: string;
   temReferencia: boolean;
+  /**
+   * De que assunto é o pedido.
+   *
+   * `"imovel"` só quando o corretor CITOU um empreendimento do catálogo.
+   * Fora disso o briefing não pode falar como se a peça fosse de imóvel: o
+   * preâmbulo antigo afirmava "trabalhando para uma imobiliária" em TODO
+   * pedido, e era ele que fazia um cachorro de Papai Noel receber perguntas
+   * sobre apartamento.
+   */
+  dominio: "imovel" | "livre";
 }): Promise<Pergunta[]> {
   const ideia = params.ideia.trim();
   if (!ideia) return [];
 
-  const prompt = `Você é engenheiro de prompt para geradores de imagem, trabalhando
-para uma imobiliária. Um corretor descreveu o que quer, mas de forma incompleta.
+  const preambulo =
+    params.dominio === "imovel"
+      ? `Você é engenheiro de prompt para geradores de imagem, trabalhando
+para uma imobiliária. Um corretor descreveu o que quer, mas de forma incompleta.`
+      : `Você é engenheiro de prompt para geradores de imagem. Quem pediu descreveu o
+que quer, mas de forma incompleta. O assunto é o que ELE escreveu — não presuma
+que a imagem é de imóvel, de marketing ou de qualquer tema em particular.`;
+
+  const prompt = `${preambulo}
 
 O que ele escreveu: "${ideia}"
 
@@ -123,8 +140,9 @@ você não vê a foto: não invente o que há nela nem pergunte para descrevê-l
 pergunte o que a pessoa quer PRESERVAR, MUDAR ou COMUNICAR com ela.
 
 Como perguntar:
-- Uma linha, direta, em português, no vocabulário de quem vende imóvel — não
-  de quem opera software.
+- Uma linha, direta, em português, no vocabulário de quem ${
+    params.dominio === "imovel" ? "vende imóvel" : "pediu a imagem"
+  } — não de quem opera software.
 - Sempre com 2 a 4 alternativas concretas, para ele responder num toque.
 - Se a descrição já permite uma imagem intencional, não pergunte nada.
 

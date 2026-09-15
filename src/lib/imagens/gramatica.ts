@@ -183,22 +183,30 @@ Regras de forma:
 - Entre 120 e 600 caracteres.`;
 }
 
-/*
- * As marcas de cada seção.
+/**
+ * O que a tela cobra de volta como dica.
  *
- * Deliberadamente generosas. O erro é assimétrico: acusar de menos custa uma
- * dica que não apareceu na tela; acusar de mais manda o corretor consertar o
- * que já estava certo — e este projeto já perdeu tempo CINCO vezes com
- * critério que reprova o comportamento correto (Leblon, preco-mais-barato,
- * ofereceVisita, deveFazerPergunta, afirmaPrazo).
+ * Eram as quatro seções, com `sujeito` casando uma lista de imóveis
+ * (`fachada|prédio|sala|piscina…`) e `restricoes` exigindo uma negação. Com o
+ * Estúdio aberto a qualquer assunto (11/09/2026), as duas passaram a acusar o
+ * comportamento CERTO: um retrato de cachorro não tem "fachada" e não precisa
+ * de proibição nenhuma.
+ *
+ * Sobraram as duas que melhoram QUALQUER imagem — enquadramento e luz. As
+ * quatro seções continuam na instrução mandada ao motor: elas dizem o que o
+ * texto deve CONTER, e isso não mudou. O que mudou é o que se cobra de volta.
+ *
+ * O erro aqui é assimétrico, e esta base já pagou por ele cinco vezes (Leblon,
+ * preco-mais-barato, ofereceVisita, deveFazerPergunta, afirmaPrazo): acusar de
+ * menos custa uma dica que não apareceu; acusar de mais manda o corretor
+ * consertar o que já estava certo.
  */
-const MARCAS: Record<ChaveSecao, RegExp> = {
-  cena: /\b(vista|plano|enquadr|ângulo|angulo|contra-plong|close|panor|fotografia|render|ilustra|aérea|aerea|frontal|lateral|grande-angular|lente|composi)\w*/i,
-  sujeito:
-    /\b(fachada|edif|prédio|predio|torre|sala|quarto|cozinha|varanda|piscina|academia|living|salão|salao|hall|churrasqueira|playground|apartamento|casa|terreno|planta|fundo)\w*/i,
+export const CONFERIDAS = ["cena", "detalhes"] as const satisfies readonly ChaveSecao[];
+
+const MARCAS: Record<(typeof CONFERIDAS)[number], RegExp> = {
+  cena: /\b(vista|plano|enquadr|ângulo|angulo|contra-plong|close|panor|fotografia|render|ilustra|retrato|aérea|aerea|frontal|lateral|grande-angular|lente|composi)\w*/i,
   detalhes:
     /\b(luz|iluminad|sol|manhã|manha|tarde|entardecer|noite|golden|sombra|concreto|vidro|madeira|mármore|marmore|porcelanato|cor|paleta|textura|céu|ceu|nublado|difus)\w*/i,
-  restricoes: /\b(sem|não|nao|nenhum|evite|exclua|proib)\w*/i,
 };
 
 /**
@@ -213,6 +221,6 @@ const MARCAS: Record<ChaveSecao, RegExp> = {
 export function conferir(prompt: string, modo: "criacao" | "edicao" = "criacao"): ChaveSecao[] {
   if (modo === "edicao") return [];
   const texto = prompt.trim();
-  if (texto.length < PISO_DE_PROMPT) return SECOES.map((s) => s.chave);
-  return SECOES.filter((s) => !MARCAS[s.chave].test(texto)).map((s) => s.chave);
+  if (texto.length < PISO_DE_PROMPT) return [...CONFERIDAS];
+  return CONFERIDAS.filter((chave) => !MARCAS[chave].test(texto));
 }

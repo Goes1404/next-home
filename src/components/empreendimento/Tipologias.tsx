@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
-import { Lightbox } from "@/components/ui/Lightbox";
+import { LightboxAdiado } from "@/components/ui/LightboxAdiado";
 import { areaM2, precoBRL, precoPorM2 } from "@/lib/format";
 import type { Midia, Tipologia } from "@/lib/types";
 
@@ -21,10 +21,13 @@ const LIMIAR_POUCAS_UNIDADES = 10;
 export function Tipologias({
   tipologias,
   plantasGerais = [],
+  contatoWhatsapp,
 }: {
   tipologias: Tipologia[];
   /** Plantas cadastradas no empreendimento (não atreladas a uma tipologia). */
   plantasGerais?: Midia[];
+  /** Link do WhatsApp do corretor, já com a mensagem — o CTA da seção. */
+  contatoWhatsapp?: string;
 }) {
   const [aberta, setAberta] = useState<number | null>(null);
 
@@ -49,7 +52,7 @@ export function Tipologias({
   const indiceDaPlanta = (t: Tipologia) => plantas.findIndex((p) => p.url === t.plantaUrl);
 
   return (
-    <section id="tipologias" className="mx-auto max-w-5xl scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
+    <section id="tipologias" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
       <Reveal>
         <h2 className="text-fluid-2xl text-titulo">Tipologias</h2>
         <p className="text-fluid-base mt-2 text-apoio">
@@ -128,7 +131,20 @@ export function Tipologias({
         })}
       </div>
 
-      <Lightbox
+      {contatoWhatsapp && (
+        <Reveal className="mt-8">
+          <a
+            href={contatoWhatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-acento-linha bg-acento-lavado px-6 text-sm font-medium text-acento-suave transition-colors hover:bg-acento hover:text-sobre-cor sm:w-auto"
+          >
+            Pedir tabela de valores e plantas no WhatsApp
+          </a>
+        </Reveal>
+      )}
+
+      <LightboxAdiado
         itens={plantas}
         indice={aberta}
         aoFechar={() => setAberta(null)}

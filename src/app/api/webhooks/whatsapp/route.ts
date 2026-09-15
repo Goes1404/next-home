@@ -62,7 +62,7 @@ import {
   decidirPorFalaDoCorretor,
   decidirPorModo,
 } from "@/lib/whatsapp/modoBot";
-import { reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
+import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 
 export const runtime = "nodejs";
@@ -354,14 +354,39 @@ export async function POST(req: NextRequest) {
     }
 
     /*
-     * Porteiro de persistência: sem lead cadastrado, nada desta conversa
-     * entra no CRM. Ele vem ANTES da transcrição para áudio desconhecido não
-     * ser enviado a outro serviço e antes de qualquer gravação/telemetria.
+     * A pessoa está respondendo a uma peça NOSSA? (13/09/2026)
+     *
+     * Precisa ser decidido AQUI, antes do porteiro — a 0111 encerrava a
+     * requisição na linha seguinte, e o reconhecimento de anúncio que já
+     * existia mora 100 linhas abaixo, onde número novo nunca chegava. Ou
+     * seja: o clique que o anúncio PAGOU escrevia e era descartado em
+     * silêncio, sem conversa, sem resposta e sem rastro no CRM.
+     *
+     * Só a primeira fala importa: quem já tem lead nem passa por aqui (o
+     * porteiro acha o cadastro e segue), e a liberação da conversa continua
+     * onde sempre esteve, mais abaixo.
+     */
+    const convite = reconhecerConviteDeEntrada({
+      texto: text,
+      palavrasEntradaCliente: instancia.palavrasEntradaCliente,
+    });
+
+    /*
+     * Porteiro de persistência: sem lead cadastrado E sem convite, nada
+     * desta conversa entra no CRM. Ele vem ANTES da transcrição para áudio
+     * desconhecido não ser enviado a outro serviço e antes de qualquer
+     * gravação/telemetria.
+     *
+     * Consequência declarada: áudio ou imagem como PRIMEIRA fala de um
+     * número novo continuam ignorados — não há texto para reconhecer, e
+     * transcrever antes de saber se é lead é exatamente o que a 0111 veio
+     * impedir.
      */
     const conversa = await obterOuCriarConversa({
       corretorId: instancia.corretorId,
       telefoneCliente: sender,
       nomeCliente: payload.senderName || null,
+      convite,
     });
 
     if (!conversa) {

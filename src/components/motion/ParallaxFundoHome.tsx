@@ -26,6 +26,9 @@ import { useCamada } from "@/components/motion/Camada";
  */
 export function ParallaxFundoHome() {
   const medidor = useRef<HTMLSpanElement>(null);
+  // O nó do fundo é achado UMA vez: `document.querySelector` por quadro era
+  // uma busca no DOM inteiro a 60 fps (F3, 13/09/2026).
+  const fundoRef = useRef<HTMLElement | null>(null);
 
   useCamada(medidor, {
     // O medidor não se move: ele só informa o progresso. Daí velocidade 0.
@@ -44,7 +47,7 @@ export function ParallaxFundoHome() {
        */
       if (window.innerWidth < 768) return;
 
-      const fundo = document.querySelector<HTMLElement>("[data-fundo-parallax]");
+      const fundo = (fundoRef.current ??= document.querySelector<HTMLElement>("[data-fundo-parallax]"));
       if (!fundo) return;
 
       // Só a metade positiva é percorrida: o hero nasce colado no topo, e o

@@ -50,7 +50,7 @@ export function FichaNumeros({ empreendimento: e }: { empreendimento: Empreendim
       <Reveal
         from="nenhuma"
         stagger={0.08}
-        className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-10 px-4 py-14 sm:px-8 sm:py-20 md:grid-cols-3 lg:flex lg:items-end lg:justify-between"
+        className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-10 px-4 py-14 sm:px-8 sm:py-20 md:grid-cols-3 lg:flex lg:items-end lg:justify-between"
       >
         {/* A camada vai POR DENTRO da célula: o `Reveal stagger` já é dono da
             opacidade e do transform de entrada dos filhos diretos, e somar
@@ -58,7 +58,7 @@ export function FichaNumeros({ empreendimento: e }: { empreendimento: Empreendim
         {numeros.map((n, i) => (
           <div key={n.rotulo}>
             <Camada velocidade={0.05 + (i % 3) * 0.04}>
-              <p className="font-display text-fluid-3xl leading-none text-titulo">
+              <p className="font-display text-fluid-2xl leading-none text-titulo">
                 {"texto" in n ? (
                   n.texto
                 ) : (

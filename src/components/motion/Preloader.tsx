@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { INTRO_VIDEO_URL, INTRO_VIDEO_WEBM_URL } from "@/lib/site";
+import { INTRO_POSTER_URL, INTRO_VIDEO_URL, INTRO_VIDEO_WEBM_URL } from "@/lib/site";
 
 /**
  * Vinheta da logo como tela de abertura, uma vez por sessão.
@@ -14,7 +14,14 @@ import { INTRO_VIDEO_URL, INTRO_VIDEO_WEBM_URL } from "@/lib/site";
  * 1. **Nunca prender o usuário.** A vinheta sai quando a logo já se formou
  *    (`ESPERA_MINIMA_MS`) e a página terminou de carregar — e sai de
  *    qualquer jeito no teto (`ESPERA_MAXIMA_MS`), rede lenta ou não. Um
- *    toque em qualquer ponto pula na hora.
+ *    toque, uma rolagem ou Esc pulam na hora: o scroll NÃO fica travado
+ *    (ficou, até 13/09/2026, por até 9,5 s — a régua do roadmap de
+ *    performance é que a página já está pronta atrás da cortina, então quem
+ *    rola quer a página, e recebe a página).
+ * 0. **Só no desktop.** No celular o fundo da home JÁ É a vinheta
+ *    (`fundo-home`, 0,6 MB, ver FundoVideoIntro): tocar a mesma peça duas
+ *    vezes custava 0,7 MB e até 9,5 s de espera a quem chega pelo Google no
+ *    telefone — e o LCP do celular era medido DEPOIS dela.
  * 2. **Uma vez por sessão.** Navegar entre páginas ou dar F5 não repete a
  *    abertura (`sessionStorage`). O controle é feito por um script inline
  *    ANTES da primeira pintura — sem ele, quem já viu a vinheta veria o
@@ -25,13 +32,16 @@ import { INTRO_VIDEO_URL, INTRO_VIDEO_WEBM_URL } from "@/lib/site";
  */
 
 /**
- * Tempo mínimo de exibição — o arco COMPLETO da vinheta (o arquivo 1.3x
- * dura ~7,8s e o `onEnded` encerra junto). A versão anterior cortava aos
- * 4,2s, na metade da animação, e a abertura parecia um soluço.
+ * Tempo mínimo de exibição — até a logo FECHAR (~3,8 s no arquivo 1.3x,
+ * medido quadro a quadro em 08/2026). Era 7,2 s, o arco completo: o que vem
+ * depois de a marca se formar é só ela crescendo, e 3,4 s de espera a mais
+ * por isso é o que a régua do roadmap de performance (13/09/2026) chama de
+ * prender o usuário. Cortar ANTES de a logo fechar continua sendo o soluço
+ * que a versão de 4,2 s tinha — por isso não desce mais que isto.
  */
-const ESPERA_MINIMA_MS = 7200;
+const ESPERA_MINIMA_MS = 3800;
 /** Teto absoluto: além disso, segurar a tela vira punição, não marca. */
-const ESPERA_MAXIMA_MS = 9500;
+const ESPERA_MAXIMA_MS = 4500;
 /** Duração da cortina de saída — casada com o `duration-[950ms]` do overlay. */
 const FADE_MS = 950;
 
@@ -47,7 +57,8 @@ const SCRIPT_ANTI_FLASH = `try{
   var visto=sessionStorage.getItem("${CHAVE_SESSAO}");
   var rm=matchMedia("(prefers-reduced-motion: reduce)").matches;
   var sd=navigator.connection&&navigator.connection.saveData;
-  if(visto||rm||sd){el.setAttribute("data-oculto","1");}
+  var celular=!matchMedia("(min-width: 768px)").matches;
+  if(visto||rm||sd||celular){el.setAttribute("data-oculto","1");}
   else{document.documentElement.setAttribute("data-intro-ativa","1");}
 }catch(e){}`;
 
@@ -63,6 +74,8 @@ function deveExibir(): boolean {
   if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) {
     return false;
   }
+  // Celular não vê a vinheta: o fundo dele já é ela (ver o cabeçalho).
+  if (!window.matchMedia("(min-width: 768px)").matches) return false;
   return true;
 }
 
@@ -146,16 +159,20 @@ export function Preloader() {
     };
   }, [permitido, encerrar]);
 
-  // Trava o scroll enquanto a abertura cobre a tela — sem isso o usuário
-  // rola uma página que não vê e ela aparece já no meio.
+  // Rolar ENCERRA a vinheta em vez de rolar uma página escondida. Antes o
+  // scroll ficava travado (`overflow: hidden` no body) por até 9,5 s; agora
+  // o gesto é lido como "quero a página" — e a página já está pronta atrás
+  // da cortina, então é ela que aparece.
   useEffect(() => {
-    if (!permitido || fase === "encerrado") return;
-    const anterior = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (!permitido || fase !== "exibindo") return;
+    const aoGesto = () => encerrar();
+    window.addEventListener("wheel", aoGesto, { passive: true });
+    window.addEventListener("touchmove", aoGesto, { passive: true });
     return () => {
-      document.body.style.overflow = anterior;
+      window.removeEventListener("wheel", aoGesto);
+      window.removeEventListener("touchmove", aoGesto);
     };
-  }, [permitido, fase]);
+  }, [permitido, fase, encerrar]);
 
   useEffect(() => {
     if (fase !== "saindo") return;
@@ -197,29 +214,22 @@ export function Preloader() {
         <style>{`#nh-intro{display:none}`}</style>
       </noscript>
 
-      {/* Só nascem no cliente, depois da decisão desta sessão — quem tem
+      {/* Só nasce no cliente, depois da decisão desta sessão — quem tem
           Save-Data ou já viu a vinheta não baixa um byte do vídeo.
 
-          São DUAS cópias do mesmo vídeo, e é isso que torna o fundo do
-          vídeo invisível: a de trás cobre a tela inteira borrada
-          (`object-cover` + blur pesado), estendendo o cenário degradê da
-          vinheta para além do 16:9; a da frente é a nítida, contida. A
-          borda da cópia nítida encosta em conteúdo idêntico borrado, então
-          não existe retângulo visível — em nenhuma proporção de tela.
-          Clipar o fundo do arquivo para uma cor chapada não funcionaria: o
-          cenário é um degradê com elementos encostando nas bordas. */}
+          UM vídeo, não dois (13/09/2026). Havia uma segunda cópia borrada
+          atrás, `object-cover`, para estender o cenário além do 16:9 — duas
+          decodificações da mesma peça no exato instante em que a página
+          está hidratando. As máscaras do wrapper já esfumam as bordas do
+          quadro sobre o fundo claro do overlay, que é da mesma família de
+          cor do cenário; o que se perdia com a cópia era invisível ao custo
+          que ela tinha.
+
+          `poster` é o primeiro quadro, em JPEG de 12 KB: é o que o navegador
+          pinta ANTES de o vídeo chegar, e é ele que vira o candidato a LCP
+          — sem o poster, a tela ficava em branco até o WebM baixar. */}
       {hidratado && (
         <>
-          <video
-            className="absolute inset-0 h-full w-full scale-125 object-cover blur-3xl brightness-[1.12] saturate-[0.35] opacity-70"
-            autoPlay
-            muted
-            playsInline
-            preload="auto"
-          >
-            <source src={INTRO_VIDEO_WEBM_URL} type="video/webm" />
-            <source src={INTRO_VIDEO_URL} type="video/mp4" />
-          </video>
           {/* O wrapper abraça exatamente o 16:9 do vídeo (nada de
               `object-contain` com letterbox dentro do elemento — a máscara
               precisa esfumar a borda do CONTEÚDO, não a da tela). As duas
@@ -237,6 +247,7 @@ export function Preloader() {
                 muted
                 playsInline
                 preload="auto"
+                poster={INTRO_POSTER_URL}
                 onEnded={encerrar}
               >
                 <source src={INTRO_VIDEO_WEBM_URL} type="video/webm" />

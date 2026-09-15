@@ -7,7 +7,8 @@ import { gerarImagem, imagensConfiguradas } from "@/lib/imagens/gerarImagem";
 import { getTetoDeHoje, registrarImagem } from "@/lib/imagens/galeria";
 import { TAMANHOS, type ChaveQualidade, type ChaveTamanho } from "@/lib/imagens/imagensTipos";
 import { montarPedido, receitaPor } from "@/lib/imagens/receitas";
-import { carimbarRessalva } from "@/lib/imagens/carimbo";
+import { textosEntreAspas } from "@/lib/imagens/textoNaCena";
+import { carimbarRessalva, type Carimbada } from "@/lib/imagens/carimbo";
 import { classificarFalhaDeStorage } from "@/lib/imagens/falhaDeStorage";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 
@@ -154,6 +155,13 @@ export async function POST(req: NextRequest) {
 
   const resultado = await gerarImagem({
     prompt: pedidoCompleto,
+    /*
+     * O texto ditado sai do PROMPT QUE VAI SER GERADO, não da proposta do
+     * chat: se o corretor editou o campo antes de clicar em gerar, foi a
+     * versão dele que ele aprovou — e derivar aqui é o que garante que as
+     * duas coisas nunca divirjam (a lição do `turnoDeAtendimento`).
+     */
+    textosNaCena: textosEntreAspas(prompt),
     referencias,
     largura: formato.largura,
     altura: formato.altura,
@@ -169,15 +177,35 @@ export async function POST(req: NextRequest) {
 
   /*
    * A ressalva legal entra AQUI, por código, antes de a imagem existir como
-   * arquivo. É o que separa uma perspectiva ilustrativa de uma promessa ao
-   * cliente, e não se pede ao modelo: ele acerta o literal 3 em 4, ótimo para
-   * manchete e inaceitável para aviso legal.
+   * arquivo — e SÓ quando a peça está vinculada a um empreendimento.
    *
-   * Carimbar antes do hash é de propósito — o que é guardado, o que a galeria
-   * mostra e o que o corretor baixa passam a ser o MESMO arquivo, já marcado.
-   * Carimbar depois deixaria uma versão sem aviso no bucket.
+   * É ela que separa uma perspectiva ilustrativa de uma promessa ao cliente,
+   * então em anúncio de imóvel é obrigatória. Numa imagem sem vínculo
+   * (11/09/2026: o Estúdio passou a aceitar qualquer assunto) ela é ruído, e
+   * aviso que aparece onde não se aplica ensina a ignorar aviso — a mesma
+   * régua do `evolucaoConversa` e da faixa de queda de conexão.
+   *
+   * Nunca se pede ao modelo: ele acerta o literal 3 em 4, ótimo para manchete
+   * e inaceitável para aviso legal. Carimbar antes do hash é de propósito — o
+   * que é guardado, o que a galeria mostra e o que o corretor baixa passam a
+   * ser o MESMO arquivo.
    */
-  const marcada = await carimbarRessalva(resultado.bytes, resultado.mime);
+  const marcada: Carimbada = empreendimentoId
+    ? await carimbarRessalva(resultado.bytes, resultado.mime)
+    : { bytes: resultado.bytes, mime: resultado.mime, carimbada: false };
+
+  /*
+   * TRÊS desfechos, não um booleano — e a diferença é a que decide se a tela
+   * soa alarme. "Não se aplica" (imagem livre, sem imóvel) e "falhou" (peça de
+   * imóvel cujo carimbo quebrou) são o MESMO `carimbada: false`, e tratá-los
+   * igual faria toda imagem livre nascer com um aviso vermelho — exatamente o
+   * "aviso onde não se aplica" que a ressalva condicional veio evitar.
+   */
+  const ressalva: "aplicada" | "nao_se_aplica" | "falhou" = !empreendimentoId
+    ? "nao_se_aplica"
+    : marcada.carimbada
+      ? "aplicada"
+      : "falhou";
 
   // Mesmo esquema de nome de `registrarMidia`: hash do conteúdo, o que torna o
   // upload idempotente. O prefixo `corretores/<id>/` já é coberto pela policy
@@ -246,7 +274,7 @@ export async function POST(req: NextRequest) {
      * A imagem já foi paga, então recusar a entrega seria queimar dinheiro de
      * quem não errou; o que não pode é ela sair achando que tem a ressalva.
      */
-    comRessalva: marcada.carimbada,
+    ressalva,
     teto: { usadasHoje: teto.usadasHoje + 1, teto: teto.teto },
     latenciaMs: resultado.latenciaMs,
   });

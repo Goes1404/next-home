@@ -1,5 +1,8 @@
 # Roadmap Next Home — da IA pronta ao produto aberto
 
+> Velocidade e fluidez (site + painel) têm roadmap próprio, medido em
+> 13/09/2026: [ROADMAP-PERFORMANCE.md](ROADMAP-PERFORMANCE.md).
+
 > Escrito em 25/08/2026, logo após as oito fases do chatbot (F0–F7) e a
 > correção da memória (`7cde0d4`). Cada horizonte tem um PORTÃO: a condição
 > medível que autoriza passar ao seguinte. Sem portão, roadmap vira lista

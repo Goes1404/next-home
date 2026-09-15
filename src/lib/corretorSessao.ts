@@ -42,7 +42,7 @@ export type CorretorSessao = CorretorPerfil & {
  *
  * Embrulhado em `cache()` do React: são 68 chamadas espalhadas pelo painel, e
  * numa única requisição o layout, a página e `souGestor()` costumam pedir a
- * mesma coisa duas ou três vezes — cada uma custando um `auth.getUser()` mais
+ * mesma coisa duas ou três vezes — cada uma custando uma verificação de sessão mais
  * uma consulta a `corretores`. O cache vale só para a requisição em curso, e é
  * exatamente o recorte certo: dentro dela a sessão não muda, e entre elas
  * nada é lembrado (sessão em cache atravessando requisição serviria dado de um
@@ -50,9 +50,13 @@ export type CorretorSessao = CorretorPerfil & {
  */
 export const getCorretorLogado = cache(async function getCorretorLogado(): Promise<CorretorSessao | null> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // `getClaims()` verifica o JWT localmente (chave pública em cache) e só
+  // vai à rede para renovar sessão vencida. O `getUser()` era uma ida ao
+  // Auth (Canadá, ~100 ms) em toda página do painel — somada à do proxy
+  // (F4 do roadmap de performance, 13/09/2026). Quem MUDA dado continua
+  // conferindo com `getUser()` nas próprias actions.
+  const { data: sessao } = await supabase.auth.getClaims();
+  const user = sessao?.claims.sub ? { id: sessao.claims.sub } : null;
   if (!user) return null;
 
   const { data } = await supabase
@@ -82,10 +86,8 @@ export async function souGestor(): Promise<boolean> {
 /** E-mail da conta autenticada — usado para revalidar a senha atual. */
 export async function getEmailLogado(): Promise<string | null> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.email ?? null;
+  const { data: sessao } = await supabase.auth.getClaims();
+  return sessao?.claims.email ?? null;
 }
 
 /*
@@ -362,7 +364,12 @@ export async function getEmpreendimentosParaFiltro(): Promise<{ id: string; nome
   return (data ?? []) as { id: string; nome: string }[];
 }
 
-export async function getContagemPorEtapa(): Promise<Record<EtapaFunil, number>> {
+/**
+ * `cache()` do React (F4, 13/09/2026): o Início chama isto DUAS vezes na
+ * mesma requisição — o hero e o funil — e cada chamada são seis contagens
+ * `head: true`. Deduplicado, 12 consultas viram 6.
+ */
+export const getContagemPorEtapa = cache(async (): Promise<Record<EtapaFunil, number>> => {
   const supabase = await createClient();
   const pares = await Promise.all(
     ETAPAS_FUNIL.map(async (etapa) => {
@@ -376,7 +383,7 @@ export async function getContagemPorEtapa(): Promise<Record<EtapaFunil, number>>
     }),
   );
   return Object.fromEntries(pares) as Record<EtapaFunil, number>;
-}
+});
 
 /**
  * Os mesmos leads, ordenados para o quadro: dentro de cada coluna, o que se

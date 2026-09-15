@@ -1,9 +1,10 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/supabase/public";
+import { corretoresPublicos } from "@/lib/catalogo/cache";
 import type { Corretor } from "@/lib/types";
 
-/** Grava pelo `proxy.ts` a partir de `?corretor=<slug>` na URL. */
-export const COOKIE_CORRETOR_ATIVO = "corretor_ativo";
+export { COOKIE_CORRETOR_ATIVO } from "./corretorAtivoCookie";
+import { COOKIE_CORRETOR_ATIVO } from "./corretorAtivoCookie";
 
 export type CorretorAtivo = Corretor & { id: string };
 
@@ -16,29 +17,29 @@ export type CorretorAtivo = Corretor & { id: string };
  * Falha aberta: cookie ausente, slug inválido ou sem correspondência →
  * `null`, e a página cai no comportamento padrão (corretor do
  * empreendimento, ou a linha geral da imobiliária).
+ *
+ * Desde a F2 do roadmap de performance (13/09/2026) esta função custa ZERO
+ * idas ao banco por requisição: o cookie é lido uma vez (`cache()` do React
+ * deduplica os cinco a oito chamadores que uma página tem — layout, página,
+ * Footer, CtaFinal, queries) e o corretor sai da lista de corretores já
+ * cacheada por etiqueta. Antes eram até oito consultas iguais por página.
  */
-export async function getCorretorAtivo(): Promise<CorretorAtivo | null> {
+export const getCorretorAtivo = cache(async (): Promise<CorretorAtivo | null> => {
   const cookieStore = await cookies();
   const slug = cookieStore.get(COOKIE_CORRETOR_ATIVO)?.value;
   if (!slug) return null;
 
-  const supabase = createClient();
-  const { data } = await supabase
-    .from("corretores")
-    .select("id, nome, creci, whatsapp, foto_url, video_url, fundo_tipo, fundo_foto_url")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (!data) return null;
+  const corretor = (await corretoresPublicos()).find((c) => c.slug === slug);
+  if (!corretor) return null;
 
   return {
-    id: data.id,
-    nome: data.nome,
-    creci: data.creci,
-    whatsapp: data.whatsapp,
-    fotoUrl: data.foto_url,
-    videoUrl: data.video_url,
-    fundoTipo: data.fundo_tipo as CorretorAtivo["fundoTipo"],
-    fundoFotoUrl: data.fundo_foto_url,
+    id: corretor.id,
+    nome: corretor.nome,
+    creci: corretor.creci,
+    whatsapp: corretor.whatsapp,
+    fotoUrl: corretor.fotoUrl,
+    videoUrl: corretor.videoUrl,
+    fundoTipo: corretor.fundoTipo,
+    fundoFotoUrl: corretor.fundoFotoUrl,
   };
-}
+});

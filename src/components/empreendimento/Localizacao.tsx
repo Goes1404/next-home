@@ -1,5 +1,7 @@
+import { WhatsappLink } from "@/components/analytics/WhatsappLink";
 import { MapaLocal } from "@/components/mapa/MapaLocal";
 import { Reveal } from "@/components/motion/Reveal";
+import { linkWhatsappPara } from "@/lib/site";
 import type { Empreendimento } from "@/lib/types";
 
 /*
@@ -13,9 +15,14 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
   const comoChegar = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     e.endereco || `${e.bairro}, ${e.cidade}`,
   )}`;
+  // Quem olha o mapa está decidindo se vale a ida — é o momento da visita.
+  const linkVisita = linkWhatsappPara(
+    e.corretor.whatsapp,
+    `Olá, ${e.corretor.nome}! Vim pelo site e quero agendar uma visita ao ${e.nome}.`,
+  );
 
   return (
-    <section id="localizacao" className="mx-auto max-w-5xl scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
+    <section id="localizacao" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
       <Reveal>
         <h2 className="text-fluid-2xl text-titulo">Localização</h2>
 
@@ -33,7 +40,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
                 href={comoChegar}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-fluid-sm inline-flex items-center gap-1.5 font-medium text-acento-suave underline-offset-4 hover:underline"
+                className="text-fluid-sm inline-flex min-h-11 items-center gap-1.5 font-medium text-acento-suave underline-offset-4 hover:underline"
               >
                 <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-4 w-4">
                   <path
@@ -51,6 +58,16 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
                 </p>
               )}
             </div>
+
+            <WhatsappLink
+              href={linkVisita}
+              origem="localizacao"
+              corretorId={"id" in e.corretor ? (e.corretor as { id?: string }).id : undefined}
+              empreendimentoSlug={e.slug}
+              className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-brand-500 px-6 text-sm font-medium text-white transition-colors hover:bg-brand-400 sm:w-auto botao-vivo"
+            >
+              Agendar visita com o corretor
+            </WhatsappLink>
           </div>
         </div>
       </Reveal>

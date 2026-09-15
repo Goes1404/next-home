@@ -35,9 +35,14 @@ import {
  * O que diferencia isto de um chat genérico não é uma instrução longa: é o
  * que o código já sabe e injeta — o catálogo REAL do corretor (para reconhecer
  * "o Eternity" e nunca inventar imóvel), as receitas (`receitas.ts`), a régua
- * de marketing (`marketing.ts`), a cláusula anti-invenção (que continua em
- * `gerarImagem.ts`, fora daqui) e a régua de lei na copy (`problemasDaCopy`,
- * aplicada por `verRoteiro`).
+ * de marketing (`marketing.ts`) e a soletração do texto ditado (em
+ * `gerarImagem.ts`, fora daqui).
+ *
+ * Duas coisas que este comentário já prometeu e NÃO valem mais (11/09/2026):
+ * a cláusula anti-invenção foi retirada por decisão de produto — o modelo
+ * escreve na imagem —, e a régua de lei na copy (`problemasDaCopy`) é do
+ * motor de VÍDEO, não deste caminho: ninguém lê texto dentro de PNG sem OCR,
+ * então a conferência do que está escrito na peça passou a ser humana.
  *
  * ## Arte: perguntas do engenheiro, prompt do tradutor
  *
@@ -172,6 +177,30 @@ export async function turnoDeArte(params: {
    * pergunta — repetir pergunta depois de "ok" é a métrica "o cliente teve de
    * repetir" que o WhatsApp já ensinou a evitar.
    */
+  /*
+   * As heurísticas leem a ideia MAIS as escolhas de chip. Sem isso, quem
+   * responde "Story" tocando na alternativa recebia uma peça quadrada: a
+   * escolha ficava fora de `ideiaAcumulada` por construção, e `tamanhoDoTexto`
+   * nunca a via. Só o que o corretor DIGITOU continua servindo para achar o
+   * imóvel — alternativa curta ("Manhã", "Alta") casaria com nome de
+   * empreendimento por acidente, que é um falso positivo já medido nesta base.
+   */
+  const textoDaHeuristica = [ideia, ...respostas.map((r) => r.escolha)].join(". ");
+  /*
+   * O imóvel que o corretor CITOU. Sem LLM: `imovelPorTexto` casa por nome e
+   * por apelido, então "Manacá" acha o "More na Aldeia de Barueri". É o único
+   * diferencial real sobre o ChatGPT — ele não tem esta ficha nem estas fotos.
+   *
+   * É resolvido AQUI, antes das perguntas, e não depois: é dele que sai o
+   * domínio do briefing. Até 11/09/2026 ele era calculado só na hora de
+   * montar a proposta, então o engenheiro de perguntas tratava TODO pedido
+   * como anúncio de apartamento — inclusive um cachorro de Papai Noel.
+   */
+  const imovelCitado = imovelPorTexto(ideia, params.imoveis);
+  const objetivoDoBriefing = imovelCitado
+    ? "peça de marketing de um imóvel"
+    : "imagem livre, do assunto que o corretor descreveu";
+
   const pediuParaIr = ehConfirmacao(params.mensagem);
   const podePerguntar = feitas.length < MAX_PERGUNTAS && !pediuParaIr && !jaPropos;
 
@@ -179,7 +208,8 @@ export async function turnoDeArte(params: {
     const tamanho = tamanhoDoTexto(ideia);
     const perguntas = await perguntarOQueFalta({
       ideia,
-      objetivo: "peça de marketing de um imóvel",
+      objetivo: objetivoDoBriefing,
+      dominio: imovelCitado ? "imovel" : "livre",
       formato: TAMANHOS.find((t) => t.chave === tamanho)?.rotulo ?? tamanho,
       temReferencia: referencias.length > 0,
     });
@@ -197,23 +227,8 @@ export async function turnoDeArte(params: {
 
   // Ajuste em texto depois de uma proposta ("mais claro", "tira a piscina")
   // já entrou na ideia acumulada: a proposta abaixo nasce com ele.
-  /*
-   * As heurísticas leem a ideia MAIS as escolhas de chip. Sem isso, quem
-   * responde "Story" tocando na alternativa recebia uma peça quadrada: a
-   * escolha ficava fora de `ideiaAcumulada` por construção, e `tamanhoDoTexto`
-   * nunca a via. Só o que o corretor DIGITOU continua servindo para achar o
-   * imóvel — alternativa curta ("Manhã", "Alta") casaria com nome de
-   * empreendimento por acidente, que é um falso positivo já medido nesta base.
-   */
-  const textoDaHeuristica = [ideia, ...respostas.map((r) => r.escolha)].join(". ");
   const tamanho = tamanhoDoTexto(textoDaHeuristica);
   const receita = receitaDoTexto(textoDaHeuristica, referencias.length > 0);
-  /*
-   * O imóvel que o corretor CITOU. Sem LLM: `imovelPorTexto` casa por nome e
-   * por apelido, então "Manacá" acha o "More na Aldeia de Barueri". É o único
-   * diferencial real sobre o ChatGPT — ele não tem esta ficha nem estas fotos.
-   */
-  const imovelCitado = imovelPorTexto(ideia, params.imoveis);
 
   const traduzido = await traduzirPedido({
     pedido: ideia,
@@ -224,6 +239,8 @@ export async function turnoDeArte(params: {
     // As URLs vão na MESMA ordem das miniaturas do balão: é essa ordem que
     // dá sentido a "a 1ª foto" tanto para quem escreve quanto para quem gera.
     urlsDeReferencia: referencias.map((referencia) => referencia.url),
+    // O MESMO critério que decide o domínio do briefing — uma conta só.
+    dominio: imovelCitado ? "imovel" : "livre",
   });
 
   const proposta: PropostaDeArte = {

@@ -40,7 +40,7 @@ export default function Error({
         <button
           type="button"
           onClick={reset}
-          className="bg-brand-500 hover:bg-brand-400 h-12 rounded-full px-6 text-sm font-medium text-white transition-colors"
+          className="bg-brand-500 hover:bg-brand-400 h-12 rounded-full px-6 text-sm font-medium text-white transition-colors botao-vivo"
         >
           Tentar de novo
         </button>

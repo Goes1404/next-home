@@ -5,8 +5,10 @@ import { FiltroForm } from "@/components/busca/FiltroForm";
 import { FiltroSheet } from "@/components/busca/FiltroSheet";
 import { FiltrosAtivos } from "@/components/busca/FiltrosAtivos";
 import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimento";
+import { CtaFinal } from "@/components/home/CtaFinal";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
+import { VoltarLink } from "@/components/ui/VoltarLink";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { ehEstagio } from "@/lib/estagioDeCompra";
@@ -101,6 +103,14 @@ export default async function EmpreendimentosPage({
 
       <main className="flex flex-1 flex-col px-4 pt-28 pb-20 sm:px-8">
         <div className="mx-auto w-full max-w-6xl">
+          {/* Toda página pública tem um botão de voltar (12/09/2026). Aqui
+              o header da vitrine não tem "Início" — só a logo, que ninguém
+              lê como botão. */}
+          <Reveal from="nenhuma" className="mb-5">
+            <VoltarLink href="/" variante="pilula">
+              Voltar ao site
+            </VoltarLink>
+          </Reveal>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <TituloEditorial as="h1" className="text-fluid-3xl tracking-tight text-titulo">
@@ -170,6 +180,7 @@ export default async function EmpreendimentosPage({
                 >
                   <CardEmpreendimento
                     empreendimento={e}
+                    nivel="h2"
                     prioridade={i < 3}
                     velocidadeCapa={0.08 + (i % 3) * 0.05}
                     aspecto={destaqueGrande ? "aspect-[4/3] sm:aspect-[21/10]" : undefined}
@@ -184,6 +195,12 @@ export default async function EmpreendimentosPage({
             })}
           </div>
         )}
+
+        {/* CTA para o corretor no fim da lista: quem rolou 25 cartões e não
+            clicou em nenhum precisa de uma saída que não seja o topo. */}
+        <div className="mt-16 sm:mt-24">
+          <CtaFinal />
+        </div>
       </main>
     </ViewTransition>
   );
