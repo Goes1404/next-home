@@ -7232,3 +7232,38 @@ acima, no mesmo dia, a pedido do usuário.
   montado, a degradação funciona). A medida do DESFECHO só sai de gerar algumas
   artes reais e olhar — a mesma distinção que o eval já registra entre
   mecanismo funcionando e resultado melhor.
+
+## Subir para produção com outra sessão à frente (15/09/2026)
+
+- **A branch de produção tinha andado 27 commits** (542bca7 → c257b57, de
+  13/09) enquanto esta sessão trabalhava. Merjar às cegas teria sido o erro:
+  a outra sessão mexeu em `gramatica.ts`, `turno.ts` e `ChatDeArte.tsx` — os
+  MESMOS arquivos. O caminho foi trazer produção para a branch de trabalho
+  primeiro, resolver e testar aqui, e só então fazer `--ff-only` no sentido
+  contrário. **Nunca force-push sobre trabalho alheio.**
+- **O conflito textual é o barato; o caro é o SEMÂNTICO.** O git acusou dois
+  arquivos (`gramatica.ts` e o `MEMORIA.md`, que colide sempre e resolve por
+  união). O que ele NÃO podia acusar: em 11/09 eles abriram o Estúdio para
+  qualquer assunto e desarmaram `conferir` por isso — e o `oficio.ts` que eu
+  tinha acabado de escrever INSTRUÍA "verticais do prédio aprumadas" em todo
+  prompt. Mesmo defeito que eles corrigiram, do outro lado do espelho.
+  **Depois de um merge, procurar a DECISÃO que o outro lado tomou, não só as
+  linhas que o git marcou.**
+- **A conta do domínio é uma só.** `imovelCitado ? "imovel" : "livre"` já
+  existia para o briefing; o tradutor passou a usar o mesmo literal, com teste
+  exigindo que continuem sendo duas ocorrências da MESMA expressão — duas
+  contas do mesmo número divergem, e esta base registra isso desde
+  `montarResumo`.
+- **Provocação que não morde é achado, não alívio.** Cravar
+  `dominio: "imovel"` no turno não reprovava teste nenhum: a ligação existia
+  sem dono. A guarda nasceu daí, e foi mordida depois de escrita.
+- **A régua do deploy, exercitada:** `vercel.json` com 4 crons (o teto do
+  Hobby aceita — medido em 11/09); depois do push, esperar o registro
+  `Production` na API de deployments do GitHub, que nasce ~1 min DEPOIS do
+  `Preview` — consultar antes imita exatamente uma recusa. Deu
+  `2fef6fa Production success`, e o smoke das 6 rotas públicas mais a rota de
+  cron (401 = viva recusando sem segredo) fechou em 200/401.
+- **O que ficou pendente e não bloqueia:** conferir no banco se a 0112 (deles,
+  índices de FK e policies com initplan) está aplicada — o Supabase estava em
+  manutenção programada. Não bloqueia porque ela não cria tabela nem coluna:
+  nenhum código lê objeto que possa faltar. É performance, não correção.
