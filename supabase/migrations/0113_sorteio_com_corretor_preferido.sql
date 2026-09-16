@@ -8,7 +8,33 @@
 -- pessoal de um corretor desconectado devolver destino nenhum.
 --
 -- O parametro tem `default null` para o chamador existente (a rota
--- `/wa/<campanha>`) seguir valendo sem alteracao.
+-- `/wa/<campanha>`, que chama `.rpc("sortear_corretor_whatsapp")` SEM
+-- argumento) seguir valendo sem alteracao.
+--
+-- `create or replace function` com assinatura DIFERENTE nao substitui: cria
+-- um SEGUNDO objeto. Duas consequencias, corrigidas nesta migration:
+--
+-- 1. Funcao nova nasce com EXECUTE liberado para PUBLIC por padrao do
+--    Postgres. A 0052 fechou isso de proposito (a funcao e `security
+--    definer` e devolve o TELEFONE PESSOAL do corretor: `anon` com execute
+--    permitiria enumerar o numero de todo mundo pela API). Sem repetir os
+--    tres `revoke` e o `grant` aqui, referenciando a assinatura `(uuid)`, a
+--    versao nova reabriria esse buraco.
+-- 2. Com a assinatura de zero argumentos ainda existindo, as duas
+--    coexistiriam e o Postgres prefere o candidato de aridade exata: a rota
+--    em producao (que chama sem argumento) continuaria caindo na versao
+--    ANTIGA, e a preferencia do link pessoal nunca valeria — sem erro
+--    nenhum em lugar nenhum. Por isso o `drop` da versao de zero argumentos
+--    vem primeiro.
+--
+-- `drop` e `create` na MESMA transacao: DDL e transacional no Postgres, e
+-- assim nao existe janela em que a rota em producao fique sem funcao para
+-- chamar. Com o `default null`, a chamada sem argumento que ja esta no ar
+-- passa a resolver para a funcao nova.
+
+begin;
+
+drop function if exists public.sortear_corretor_whatsapp();
 
 create or replace function public.sortear_corretor_whatsapp(preferido uuid default null)
 returns table(corretor_id uuid, telefone text)
@@ -37,3 +63,10 @@ as $function$
      random()
    limit 1
 $function$;
+
+revoke execute on function public.sortear_corretor_whatsapp(uuid) from public;
+revoke execute on function public.sortear_corretor_whatsapp(uuid) from anon;
+revoke execute on function public.sortear_corretor_whatsapp(uuid) from authenticated;
+grant execute on function public.sortear_corretor_whatsapp(uuid) to service_role;
+
+commit;

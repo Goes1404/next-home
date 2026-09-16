@@ -35,7 +35,13 @@ function ultimaDefinicaoDe(nome: string): string {
   let ultima = "";
   for (const arquivo of arquivos) {
     const sql = readFileSync(join(DIR, arquivo), "utf8");
-    const i = sql.toLowerCase().lastIndexOf(`function public.${nome}(`);
+    // A âncora inclui "create or replace" de propósito: `function
+    // public.${nome}(` sozinho também casa dentro de `revoke execute on
+    // function ...` e `grant execute on function ...` — e a 0113 passou a
+    // fechar a ACL de `sortear_corretor_whatsapp` na MESMA migration que a
+    // define. Sem a âncora mais específica, o `lastIndexOf` apontaria para
+    // a última linha de `grant`, perdendo o corpo da função inteiro.
+    const i = sql.toLowerCase().lastIndexOf(`create or replace function public.${nome}(`);
     if (i === -1) continue;
     // Do início da função até o fim do corpo: `$function$;` ou `$$;`.
     const resto = sql.slice(i);
