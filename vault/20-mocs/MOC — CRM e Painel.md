@@ -64,3 +64,4 @@ F0–F6.
 - [[MOC — Banco de Dados]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]
 - [[action-de-outro-build-vira-sem-conexao]] — 404/500 ao clicar é aba velha, não rede
 - [[o-pedido-do-corretor-e-o-que-vai]] — o chat de arte parou de reescrever o pedido; a receita virou skill visível
+- [[a-arte-sumia-antes-de-alguem-baixar]] — galeria sem botão de baixar e seção que sumia quando a retenção de 48h esvaziava a lista (16/09)

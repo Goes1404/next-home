@@ -7416,3 +7416,48 @@ Nota: [[a-folga-encolhe-quando-a-tela-encurta]].
 - **Ganho de quebra:** o vão de sage-green abaixo da seta (126px numa tela de
   839) sumiu, e o convite de rolagem passou a terminar 64px acima da dobra em
   vez de 128.
+
+## A arte de IA sumia antes de alguém conseguir baixar (16/09/2026)
+
+Nota: [[a-arte-sumia-antes-de-alguem-baixar]]. Relatado como "não consigo ver
+os cards de minhas imagens, para baixá-las".
+
+- **Quatro causas possíveis, três descartadas em minutos.** Erros de runtime da
+  Vercel nas rotas do painel: **zero** (a tela não quebrou). `curl -I` na URL do
+  Storage: 200 com 1,7 MB (o arquivo existe). Coluna no lugar (não era migration
+  esquecida). O que sobrou foi `count(*)`: **1 linha na tabela inteira**, criada
+  naquela noite. **Para "não vejo os cards", medir qual das quatro é antes de
+  consertar — elas pedem consertos opostos.**
+- **Eram DOIS defeitos somados.** (1) `grep` por `download|baixar` em todo o
+  painel devolvia só o PDF do book: **não existia botão de baixar em lugar
+  nenhum da galeria** — o card era uma miniatura de 80px sem link. (2) O bloco
+  era `galeria.length > 0 && (…)`, então a retenção de 48h (0109) não produzia
+  lista vazia, produzia a AUSÊNCIA da seção. **Seção que some é indistinguível
+  de recurso que não existe ou que quebrou**, e foi assim que chegou como
+  defeito.
+- **`<a download>` é IGNORADO entre origens**, e a arte mora no domínio do
+  Storage — o botão navegaria para a imagem e ninguém ficaria com arquivo. Quem
+  resolve é o Supabase: `?download=<nome>` responde com `content-disposition:
+  attachment`, **medido contra o bucket real antes de escrever**. Zero
+  JavaScript, vale no celular; fetch + blob faria o telefone segurar 2 MB para
+  chegar ao mesmo lugar.
+- **Prazo na tela é DATA, nunca "faltam X horas".** O card renderiza no servidor
+  E no cliente; relógio dentro do render dá divergência de hidratação (a mesma
+  que esta base pagou lendo `localStorage` na renderização). `quandoExpira`
+  formata com fuso de São Paulo cravado — em UTC, às 21h de Brasília já é o dia
+  seguinte e a arte pareceria durar um dia a mais.
+- **Âncora de edição não única, de novo:** o `select` da galeria aparecia **3x**,
+  não 2 — a terceira é o retorno do INSERT, e é ela que alimenta o card da arte
+  recém-criada. O `assert count` pegou antes de escrever, e a resposta certa era
+  INCLUIR a terceira, não excluí-la.
+- **Régua que fica: ao pôr prazo de validade no que a pessoa produz, entregar o
+  caminho de salvar na MESMA mudança.** A retenção de 48h estava certa como
+  decisão de custo; o que faltava era a saída. Expirar sem caminho de guardar
+  transforma economia de bucket em trabalho perdido.
+- **Achado de passagem, NÃO corrigido:** `sharp` está quebrado em produção na
+  rota `/api/imagens/gerar` (`ERR_DLOPEN_FAILED: libvips-cpp.so.8.18.3`), com
+  ocorrências até 16/09 02:56. É a armadilha de 25/08, que
+  `outputFileTracingIncludes` resolveu para `/corretor/**` — a rota de API está
+  fora daquele escopo. Consequência: **a ressalva legal não está sendo carimbada
+  nas artes geradas**, e o carimbo degrada em silêncio por desenho
+  (`carimbada: false`). Precisa de decisão própria.

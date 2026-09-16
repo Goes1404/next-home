@@ -93,6 +93,18 @@ export type ImagemGerada = {
    */
   empreendimentoId: string | null;
   criadaEm: string;
+  /**
+   * Quando esta arte some (0109): 48h depois de criada, e o cron diario a
+   * remove entre 48 e 72h.
+   *
+   * Viaja ate a TELA de proposito. O prazo existia so no banco, entao a peca
+   * desaparecia sem aviso nenhum — e "baixar antes que suma" e exatamente o
+   * que o corretor precisa fazer. Prazo que so o servidor conhece nao muda o
+   * comportamento de ninguem.
+   *
+   * Nulo em linha antiga, anterior a coluna existir.
+   */
+  expiraEm: string | null;
 };
 
 /** O que a tela precisa saber para decidir se deixa gerar. */
@@ -122,4 +134,80 @@ export function inicioDoDiaEmSaoPaulo(agora: Date = new Date()): string {
     day: "2-digit",
   }).format(agora);
   return `${emSp}T00:00:00-03:00`;
+}
+
+/**
+ * O endereco que BAIXA a arte, em vez de abri-la.
+ *
+ * O atributo `download` do HTML e IGNORADO quando o arquivo vem de outra
+ * origem — e a arte mora no dominio do Storage, nunca no nosso. Sem isto o
+ * botao "Baixar" navegaria para a imagem e a pessoa continuaria sem arquivo,
+ * que e o defeito com outra roupa.
+ *
+ * Quem resolve e o proprio Storage: `?download=<nome>` faz ele responder com
+ * `content-disposition: attachment`. Medido antes de escrever — o cabecalho
+ * volta com o nome que mandamos. Servidor decidindo vale em todo navegador e
+ * no celular, sem uma linha de JavaScript; a alternativa (fetch + blob) faria
+ * o telefone segurar 2 MB na memoria para chegar ao mesmo lugar.
+ *
+ * `URL` cuida de escapar o nome e de preservar query que ja exista.
+ */
+export function linkDeDownload(url: string, nomeDoArquivo: string): string {
+  try {
+    const endereco = new URL(url);
+    endereco.searchParams.set("download", nomeDoArquivo);
+    return endereco.toString();
+  } catch {
+    // URL torta nao vira erro na tela: o botao ainda abre a imagem, e abrir e
+    // melhor que um card que nao faz nada.
+    return url;
+  }
+}
+
+/**
+ * Um nome de arquivo que a pessoa reconhece depois, na pasta de downloads.
+ *
+ * `a6b20eaac07f1c3c.png` — o nome que o Storage usa — nao diz nada a ninguem
+ * uma semana depois. Sai do pedido que ela escreveu, cortado, com a data na
+ * frente para ordenar sozinho.
+ */
+export function nomeDaArte(prompt: string, criadaEm: string, extensao = "png"): string {
+  const dia = criadaEm.slice(0, 10);
+  const miolo = prompt
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)
+    .replace(/-+$/g, "");
+  return `${dia}-${miolo || "arte"}.${extensao}`;
+}
+
+/**
+ * Quando a arte some, escrito para uma pessoa ler: "18/09 às 23h56".
+ *
+ * Nao devolve "faltam 8 horas", e a razao e tecnica: este texto e renderizado
+ * no servidor E no cliente, e qualquer conta com o relogio dentro do render
+ * produz valores diferentes nos dois lados — a divergencia de hidratacao que
+ * esta base ja pagou ao ler `localStorage` durante a renderizacao. Data
+ * formatada e o MESMO texto nos dois lugares, sempre.
+ *
+ * Fuso de Sao Paulo cravado, nunca o do servidor: em UTC, as 21h de Brasilia
+ * ja e o dia seguinte, e a arte pareceria durar um dia a mais. E a mesma
+ * armadilha de `inicioDoDiaEmSaoPaulo`, logo acima.
+ */
+export function quandoExpira(expiraEm: string | null): string | null {
+  if (!expiraEm) return null;
+  const fim = new Date(expiraEm);
+  if (Number.isNaN(fim.getTime())) return null;
+  const partes = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).formatToParts(fim);
+  const pega = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? "";
+  return `${pega("day")}/${pega("month")} às ${pega("hour")}h${pega("minute")}`;
 }

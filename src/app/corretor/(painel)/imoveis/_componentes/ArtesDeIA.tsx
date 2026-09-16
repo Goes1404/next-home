@@ -1,4 +1,5 @@
 import { getArtesDoImovel } from "@/lib/imagens/galeria";
+import { linkDeDownload, nomeDaArte, quandoExpira } from "@/lib/imagens/imagensTipos";
 
 /**
  * As artes de IA deste imóvel (0101).
@@ -34,36 +35,51 @@ export async function ArtesDeIA({ empreendimentoId }: { empreendimentoId: string
           </span>
         </h2>
         <p className="text-fluid-xs text-tenue">
-          Não aparecem no site nem vão para cliente pela assistente.
+          Não aparecem no site. Ficam 48 horas — baixe o que quiser guardar.
         </p>
       </div>
 
       <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {artes.map((arte) => (
-          <li key={arte.id}>
-            <a
-              href={arte.arteUrl ?? arte.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-linha hover:border-acento-linha block overflow-hidden rounded-xl border transition-colors"
-              title={arte.prompt}
-            >
-              {/* `<img>` cru, como o resto da galeria de criações: é imagem de
-                  painel interno, atrás de sessão, e não entra no orçamento de
-                  otimização da vitrine. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={arte.arteUrl ?? arte.url}
-                alt={arte.prompt}
-                loading="lazy"
-                className="aspect-square w-full object-cover"
-              />
-              <span className="text-fluid-xs text-apoio block truncate px-2 py-1.5">
-                {arte.prompt}
-              </span>
-            </a>
-          </li>
-        ))}
+        {artes.map((arte) => {
+          const url = arte.arteUrl ?? arte.url;
+          const some = quandoExpira(arte.expiraEm);
+          return (
+            <li key={arte.id} className="border-linha overflow-hidden rounded-xl border">
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:border-acento-linha block"
+                title="Ver em tamanho cheio"
+              >
+                {/* `<img>` cru, como o resto da galeria de criações: é imagem de
+                    painel interno, atrás de sessão, e não entra no orçamento de
+                    otimização da vitrine. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt={arte.prompt}
+                  loading="lazy"
+                  className="aspect-square w-full object-cover"
+                />
+              </a>
+              <div className="px-2 py-1.5">
+                <span className="text-fluid-xs text-apoio block truncate" title={arte.prompt}>
+                  {arte.prompt}
+                </span>
+                {some && <span className="text-tenue block text-[11px]">Some em {some}</span>}
+                {/* O baixar fica FORA do `<a>` da imagem: link dentro de link é
+                    aninhamento inválido, e o leitor de tela anuncia um alvo só. */}
+                <a
+                  href={linkDeDownload(url, nomeDaArte(arte.prompt, arte.criadaEm))}
+                  className="text-acento-suave inline-flex min-h-11 items-center text-xs font-medium underline-offset-4 hover:underline"
+                >
+                  Baixar
+                </a>
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

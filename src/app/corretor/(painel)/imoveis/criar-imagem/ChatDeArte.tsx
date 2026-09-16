@@ -4,7 +4,15 @@ import { useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { ChatBase } from "@/app/corretor/(painel)/_componentes/ChatBase";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
-import { QUALIDADES, TAMANHOS, type EstadoDoTeto, type ImagemGerada } from "@/lib/imagens/imagensTipos";
+import {
+  QUALIDADES,
+  TAMANHOS,
+  quandoExpira,
+  linkDeDownload,
+  nomeDaArte,
+  type EstadoDoTeto,
+  type ImagemGerada,
+} from "@/lib/imagens/imagensTipos";
 import { PISO_DE_PROMPT, SECOES } from "@/lib/imagens/gramatica";
 import type {
   ConversaDoEstudio,
@@ -371,34 +379,115 @@ export function ChatDeArte({
         </div>
       </div>
 
-      {galeria.length > 0 && (
-        <section className="space-y-2">
+      <section className="space-y-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <h2 className="text-fluid-sm text-apoio font-medium">Suas últimas imagens</h2>
+          <p className="text-tenue text-xs">Cada arte fica disponível por 48 horas.</p>
+        </div>
+
+        {galeria.length === 0 ? (
+          /*
+           * Estado vazio EXPLICADO, e é por isso que a seção deixou de sumir.
+           *
+           * Antes o bloco inteiro era `galeria.length > 0 && (…)`: quando a
+           * retenção de 48h (0109) levava as artes, a tela não ficava vazia —
+           * a seção desaparecia. E seção ausente é indistinguível de recurso
+           * que não existe ou que quebrou, que foi exatamente como isto
+           * chegou como defeito ("não consigo ver os cards das minhas
+           * imagens"). Dizer o prazo em voz alta é o que transforma um
+           * sumiço inexplicável em regra conhecida.
+           */
+          <p className="border-linha text-apoio rounded-xl border border-dashed px-4 py-6 text-center text-xs">
+            Nenhuma arte por aqui. As que você gerar aparecem nesta lista e
+            ficam <strong className="text-titulo font-semibold">48 horas</strong> —
+            depois somem sozinhas, para não virar acervo. Baixe o que quiser
+            guardar.
+          </p>
+        ) : (
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {galeria.slice(0, 8).map((img) => (
-              <li key={img.id} className="border-linha flex gap-3 overflow-hidden rounded-xl border p-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.arteUrl ?? img.url}
-                  alt=""
-                  className="h-20 w-20 shrink-0 rounded-lg object-cover"
-                />
-                <div className="flex min-w-0 flex-col gap-1">
-                  <p className="text-apoio line-clamp-3 min-w-0 text-xs break-words">{img.prompt}</p>
-                  <button
-                    type="button"
-                    onClick={() => setReaproveitado(img.prompt)}
-                    className="text-acento-suave min-h-11 cursor-pointer self-start text-xs underline-offset-4 hover:underline"
-                  >
-                    Gerar outra assim
-                  </button>
-                </div>
-              </li>
+              <CartaoDaGaleria key={img.id} img={img} onReaproveitar={setReaproveitado} />
             ))}
           </ul>
-        </section>
-      )}
+        )}
+      </section>
     </div>
+  );
+}
+
+/**
+ * Um card da galeria: ver grande, BAIXAR, e reaproveitar o pedido.
+ *
+ * O download era o que faltava, e faltava por inteiro — não havia botão de
+ * baixar em lugar nenhum da galeria. A miniatura de 80px era o único elemento
+ * do card, sem link: para guardar a arte, a pessoa dependia de clicar com o
+ * botão direito (ou segurar, no celular) numa imagem que nada indicava ser
+ * clicável. Some isso à retenção de 48h e a peça paga desaparecia antes de
+ * alguém conseguir salvá-la.
+ *
+ * `linkDeDownload` existe porque o atributo `download` do HTML é IGNORADO
+ * entre origens, e a arte mora no domínio do Storage — ver o comentário dele.
+ */
+function CartaoDaGaleria({
+  img,
+  onReaproveitar,
+}: {
+  img: ImagemGerada;
+  onReaproveitar: (prompt: string) => void;
+}) {
+  const arte = img.arteUrl ?? img.url;
+  const some = quandoExpira(img.expiraEm);
+
+  return (
+    <li className="border-linha flex gap-3 overflow-hidden rounded-xl border p-2">
+      <a
+        href={arte}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="border-linha hover:border-acento-linha block shrink-0 overflow-hidden rounded-lg border transition-colors"
+        title="Ver em tamanho cheio"
+      >
+        {/* `<img>` cru: imagem de painel interno, atrás de sessão, fora do
+            orçamento de otimização da vitrine — como o resto da galeria. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={arte} alt={img.prompt} className="h-20 w-20 object-cover" />
+      </a>
+
+      {/* `min-w-0`: sem ele o texto longo do pedido se recusa a encolher e
+          empurra os botões para fora do card (item de flex nasce com
+          `min-width: auto`). */}
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <p className="text-apoio line-clamp-2 min-w-0 text-xs break-words">{img.prompt}</p>
+
+        {some && <p className="text-tenue text-[11px]">Some em {some}</p>}
+
+        <div className="mt-auto flex flex-wrap items-center gap-x-3">
+          <a
+            href={linkDeDownload(arte, nomeDaArte(img.prompt, img.criadaEm))}
+            className="text-acento-suave inline-flex min-h-11 items-center gap-1 text-xs font-medium underline-offset-4 hover:underline"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              strokeWidth={1.8}
+              stroke="currentColor"
+              aria-hidden
+              className="h-4 w-4"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0-4-4m4 4 4-4M4 19h16" />
+            </svg>
+            Baixar
+          </a>
+          <button
+            type="button"
+            onClick={() => onReaproveitar(img.prompt)}
+            className="text-apoio min-h-11 cursor-pointer text-xs underline-offset-4 hover:underline"
+          >
+            Gerar outra assim
+          </button>
+        </div>
+      </div>
+    </li>
   );
 }
 

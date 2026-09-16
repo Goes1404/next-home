@@ -34,6 +34,7 @@ type Linha = {
   briefing?: unknown;
   empreendimento_id?: string | null;
   created_at: string;
+  expira_em?: string | null;
 };
 
 function paraImagem(l: Linha): ImagemGerada {
@@ -48,6 +49,7 @@ function paraImagem(l: Linha): ImagemGerada {
     briefing: briefingGravado(l.briefing),
     empreendimentoId: l.empreendimento_id ?? null,
     criadaEm: l.created_at,
+    expiraEm: l.expira_em ?? null,
   };
 }
 
@@ -56,7 +58,9 @@ export async function getMinhasImagens(): Promise<ImagemGerada[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("imagens_geradas")
-    .select("id, prompt, url, largura, altura, referencia_url, arte_url, briefing, empreendimento_id, created_at")
+    .select(
+      "id, prompt, url, largura, altura, referencia_url, arte_url, briefing, empreendimento_id, created_at, expira_em",
+    )
     .order("created_at", { ascending: false })
     .limit(POR_PAGINA)
     .returns<Linha[]>();
@@ -82,7 +86,9 @@ export async function getArtesDoImovel(empreendimentoId: string): Promise<Imagem
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("imagens_geradas")
-    .select("id, prompt, url, largura, altura, referencia_url, arte_url, briefing, empreendimento_id, created_at")
+    .select(
+      "id, prompt, url, largura, altura, referencia_url, arte_url, briefing, empreendimento_id, created_at, expira_em",
+    )
     .eq("empreendimento_id", empreendimentoId)
     .order("created_at", { ascending: false })
     .limit(POR_PAGINA)
@@ -188,7 +194,9 @@ export async function registrarImagem(dados: {
       empreendimento_id: dados.empreendimentoId ?? null,
       latencia_ms: dados.latenciaMs,
     })
-    .select("id, prompt, url, largura, altura, referencia_url, arte_url, briefing, empreendimento_id, created_at")
+    .select(
+      "id, prompt, url, largura, altura, referencia_url, arte_url, briefing, empreendimento_id, created_at, expira_em",
+    )
     .single<Linha>();
 
   if (error) {
