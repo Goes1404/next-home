@@ -12,6 +12,7 @@ summary: Vercel, deploy, variáveis de ambiente, sharp, runtime.
 Vercel (plano Hobby), deploy e runtime.
 
 ## Deploy
+- [[producao-pode-servir-commit-de-outra-branch]] — o que está NO AR pode não estar em branch nenhuma; a prova é funcional (16/09)
 - [[branch-de-producao-nao-e-main]] ⚠️ ler primeiro
 
 - [[o-hobby-aceita-quatro-crons]] ⚠️ medido em 11/09: quatro crons passam

@@ -7509,3 +7509,35 @@ Nota: [[a-remocao-levou-a-peca-errada-junto]].
   vídeo. Lá a peça do celular era a vinheta do LOGOTIPO (`somenteMobile` sem
   `fonteMobile`), que é justamente a que gerou a queixa — restaurá-la seria
   repetir 13/09 pelo outro lado.
+
+## Produção estava servindo commit de outra branch (16/09/2026)
+
+Nota: [[producao-pode-servir-commit-de-outra-branch]].
+
+- **A regra das duas branches foi cumprida e mesmo assim houve regressão.** O
+  push foi para `main` e `claude/modernizar-plataforma-imobiliaria-2tm13q`,
+  como manda a casa. Só que quem estava NO AR era `62f5a54`, de uma terceira
+  branch (`claude/eduardo-email-senha-update-y6408k`), **promovido pelo painel
+  quatro horas depois do próprio preview**. O auto-deploy da `main` subiu por
+  cima: das 04:42:35 às 04:48:53 UTC produção ficou **sem** o vídeo de fundo do
+  celular e sem a rota `/api/versao`, que são trabalho alheio de 15/09.
+- **Antes de subir, a pergunta não é qual é a branch de produção — é qual
+  COMMIT está servindo.** As duas respostas divergem sempre que alguém promove
+  um preview pelo painel, e a promoção não deixa rastro em branch nenhuma.
+  Terceira vez que esta anomalia aparece aqui (31/08, 04/09, agora).
+- **A prova que fecha o caso é FUNCIONAL, não o registro de deployment.** O
+  registro diz que o deploy saiu; não diz o que sumiu. O que respondeu foi um
+  endereço que só existe do lado deles: `/api/versao` em 404 enquanto produção
+  era o meu commit, 200 depois do merge. **Escolher, antes de subir, uma rota
+  que exista só no trabalho alheio** custa uma linha de `curl` e responde em
+  uma linha se você regrediu alguém.
+- **Consultar cedo demais imita exatamente uma recusa.** O `Production` do
+  `cb4688e` não existia às 04:41:33 e existia às 04:42:35 — cerca de 70s depois
+  do `Preview`. Quase virou o diagnóstico errado ("a Vercel recusou"). E a
+  lista de deployments não traz o `state`: ele vem de `statuses_url`.
+- **O conserto é merjar o que está no ar e subir de novo, nunca `--force`.**
+  Ficou de fora de propósito o que eles ainda não promoveram (`1543f1e`,
+  `c148b2e`, em preview): promover trabalho alheio é decisão deles.
+- **Diagnóstico sem o MCP da Vercel:** o repositório é público, então
+  `curl -s "https://api.github.com/repos/Goes1404/next-home/deployments?per_page=8"`
+  responde, e `statuses_url` de cada registro dá o estado do build.
