@@ -170,3 +170,35 @@ describe("a porta do webhook: o convite é lido ANTES do porteiro encerrar", () 
     expect(FONTE).toMatch(/if \(!conversa\) \{\s*\n\s*return NextResponse\.json\(\{ ok: true, ignored: "numero_sem_lead_cadastrado" \}\)/);
   });
 });
+
+describe("a intenção emendada não atrapalha o reconhecimento", () => {
+  it("reconhece o imóvel com a intenção depois do nome", () => {
+    const texto = mensagemDeAnuncio("Eternity Alphaville Tamboré", "visita");
+
+    expect(texto).toBe(
+      "Olá! Gostaria de mais informações do Eternity Alphaville Tamboré. Quero agendar uma visita.",
+    );
+    expect(reconhecerMensagemDeAnuncio(texto)).toBe("eternity alphaville tambore");
+  });
+
+  it("o nome longo do catálogo cabe com a intenção mais comprida", () => {
+    // O nome mais longo do catálogo real tem 58 caracteres, e a combinação
+    // com a intenção mais comprida passava de 120 no teto antigo.
+    const nome = "Apartamento 2 Dorms a venda no Green Valley - Alphaville";
+    const texto = mensagemDeAnuncio(nome, "material");
+
+    expect(reconhecerMensagemDeAnuncio(texto)).toBe(
+      "apartamento 2 dorms a venda no green valley alphaville",
+    );
+  });
+
+  it("a mensagem sem intenção continua valendo igual", () => {
+    expect(reconhecerMensagemDeAnuncio(mensagemDeAnuncio("Terra Alta"))).toBe("terra alta");
+  });
+
+  it("nome absurdamente longo é recusado", () => {
+    const texto = mensagemDeAnuncio("a".repeat(90));
+
+    expect(reconhecerMensagemDeAnuncio(texto)).toBeNull();
+  });
+});

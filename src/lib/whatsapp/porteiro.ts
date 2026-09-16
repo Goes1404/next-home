@@ -27,37 +27,87 @@ function soLetrasEEspacos(texto: string): string {
     .trim();
 }
 
+/** As intenções que os botões do site levam no endereço (`?i=`). */
+export type ChaveIntencao = "saber" | "material" | "tabela" | "visita";
+
+/**
+ * Vocabulário FECHADO, escrito por nós.
+ *
+ * Ser fechado é o que permite ao reconhecedor tirar a intenção pelo fim
+ * antes de ler o nome do imóvel: nada de adivinhar limite de frase, que não
+ * funcionaria mesmo — o `!` de "Olá!" é a primeira pontuação do texto e o
+ * prefixo atravessa duas frases.
+ */
+export const INTENCOES: Record<ChaveIntencao, string> = {
+  saber: "Quero saber mais.",
+  material: "Quero a descrição completa e as plantas.",
+  tabela: "Quero a tabela de valores e condições.",
+  visita: "Quero agendar uma visita.",
+};
+
+export function ehChaveIntencao(valor: string | null | undefined): valor is ChaveIntencao {
+  return valor != null && Object.prototype.hasOwnProperty.call(INTENCOES, valor);
+}
+
 /**
  * A mensagem pronta que o clique pré-preenche no WhatsApp.
  *
  * O texto é DETERMINÍSTICO por imóvel de propósito: é ele que permite ao
- * webhook reconhecer "isto veio de anúncio" sem nenhum metadado do
+ * webhook reconhecer "isto veio de uma peça nossa" sem nenhum metadado do
  * provedor — e o nome oficial do imóvel dentro dele é o que a Sofia já
  * resolve via focoDaConversa (nome + apelidos).
+ *
+ * A intenção vem DEPOIS do nome e é opcional: o anúncio do Meta continua
+ * mandando a forma sem ela, byte por byte igual à de antes.
  */
-export function mensagemDeAnuncio(nomeImovel: string): string {
-  return `Olá! Gostaria de mais informações do ${nomeImovel.trim()}.`;
+export function mensagemDeAnuncio(
+  nomeImovel: string,
+  intencao?: ChaveIntencao | null,
+): string {
+  const base = `Olá! Gostaria de mais informações do ${nomeImovel.trim()}.`;
+  return intencao ? `${base} ${INTENCOES[intencao]}` : base;
 }
 
 const PREFIXO_ANUNCIO = soLetrasEEspacos("Olá! Gostaria de mais informações do ");
+
+const SUFIXOS_DE_INTENCAO = Object.values(INTENCOES).map(soLetrasEEspacos);
+
+/**
+ * Teto do NOME, não da mensagem.
+ *
+ * O teto antigo (120) valia sobre o texto inteiro e passou a ser pequeno
+ * demais quando a intenção entrou: medido no catálogo real, a pior
+ * combinação dá 137. Aqui ele protege exatamente o pedaço que vira
+ * identificação de imóvel, e o nome mais longo do catálogo tem 58.
+ */
+const TETO_DO_NOME = 80;
 
 /**
  * Esta mensagem de cliente é a mensagem pronta de um anúncio?
  *
  * Devolve o nome do imóvel citado, ou null. O casamento é por PREFIXO
- * normalizado e com teto de tamanho: a trava de palavra-chave existe para
- * proteger o número pessoal do corretor, então o reconhecimento é estrito —
- * falso positivo aqui liga a IA numa conversa da família, que é o caso
- * real que originou a trava. Ninguém abre conversa pessoal com exatamente
- * "Olá! Gostaria de mais informações do X".
+ * normalizado, com a intenção (opcional) removida pelo FIM antes de medir o
+ * teto do nome. A trava de palavra-chave existe para proteger o número
+ * pessoal do corretor, então o reconhecimento é estrito — falso positivo
+ * aqui liga a IA numa conversa da família, que é o caso real que originou a
+ * trava. Ninguém abre conversa pessoal com exatamente "Olá! Gostaria de
+ * mais informações do X".
  */
 export function reconhecerMensagemDeAnuncio(texto: string | null | undefined): string | null {
   if (!texto) return null;
   const limpo = soLetrasEEspacos(texto);
-  if (limpo.length > 120) return null;
   if (!limpo.startsWith(PREFIXO_ANUNCIO)) return null;
-  const nome = limpo.slice(PREFIXO_ANUNCIO.length).trim();
-  return nome.length >= 3 ? nome : null;
+
+  let nome = limpo.slice(PREFIXO_ANUNCIO.length).trim();
+  for (const sufixo of SUFIXOS_DE_INTENCAO) {
+    if (sufixo && nome.endsWith(sufixo)) {
+      nome = nome.slice(0, -sufixo.length).trim();
+      break;
+    }
+  }
+
+  if (nome.length < 3 || nome.length > TETO_DO_NOME) return null;
+  return nome;
 }
 
 /** Como reconhecemos que a pessoa está respondendo a uma peça NOSSA. */
