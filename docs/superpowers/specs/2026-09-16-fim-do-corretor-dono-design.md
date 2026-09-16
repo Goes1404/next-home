@@ -204,17 +204,55 @@ de quem cadastrou os 26 imóveis não volta.
   conversa abriria, e só o CRM não veria nada. Provocada antes de valer,
   com md5 conferindo que a mordida mordeu.
 
+### 7. A porta geral, para o resto do site
+
+> Puxado para dentro do escopo em 16/09, a pedido ("faça tudo então"),
+> depois de ter sido declarado fora.
+
+`CtaFinal.tsx` (home), `Footer.tsx`, `WhatsappCta.tsx` (botão flutuante) e
+`CardCorretor.tsx` também montam `wa.me` com mensagens que o porteiro
+rejeita ("Olá, Bruna! Vim pelo site da Next Home e quero falar com você.").
+Eles não derivam do corretor dono, mas depois desta obra seriam os ÚNICOS
+caminhos do site que não chegam ao CRM.
+
+O problema novo é que o porteiro é chaveado por IMÓVEL, e esses pontos não
+têm imóvel nenhum. O reconhecedor, por sua vez, exige o nome de um imóvel
+depois do prefixo.
+
+**A porta geral é `/wa` sem imóvel**, e ela obriga uma segunda forma de
+reconhecimento:
+
+```
+Olá! Vim pelo site da Next Home.
+```
+
+Essa frase é reconhecida por CÓDIGO, como constante, não por
+`palavras_entrada_cliente`. A razão é dependência: a configuração é por
+corretor e hoje só uma instância a tem preenchida. Fazer o funil do site
+depender de um campo que cada corretor preenche à mão é construir o mesmo
+silêncio que a 0111 causou — funciona para quem configurou e morre calado
+para o resto. A mensagem é NOSSA, então reconhecê-la é decisão de código.
+
+O convite resultante tem `imovel: null`, que o contrato de
+`ConviteDeEntrada` já prevê: quem resolve o imóvel a partir da conversa é
+`focoDaConversa`, na mensagem seguinte.
+
+**O cartão de corretor ganha destino preferido.** `CardCorretor.tsx` é o
+único ponto em que o visitante ESCOLHE uma pessoa, então o link vira
+`/wa?c=<slug>`: o porteiro prefere aquele corretor, e cai no sorteio se ele
+não estiver conectado. O clique também grava o cookie de atribuição, para a
+escolha valer nas próximas páginas.
+
+Depois desta seção, **nenhum ponto do site monta `wa.me` diretamente**, e é
+isso que a guarda de código-fonte passa a exigir.
+
 ## Fora de escopo, declarado
 
-Outros pontos do site também montam `wa.me` com a mensagem "Vim pelo site",
-que o porteiro rejeita: `CtaFinal.tsx` (home), `Footer.tsx`,
-`WhatsappCta.tsx` (botão flutuante) e `CardCorretor.tsx`. Eles não derivam
-do corretor dono — usam o corretor do cookie ou o número do site —, então
-não entram nesta obra.
-
-Mas o defeito é o mesmo, e depois desta mudança eles passam a ser os
-ÚNICOS caminhos do site que não chegam ao CRM. Fica como a continuação
-natural, para decisão à parte.
+Nada do site fica de fora. O que continua montando `wa.me` por conta
+própria é o PAINEL (`whatsapp/acoes.ts`, Live Chat, disparo), e ali é
+correto: quem manda é o corretor logado, pelo próprio número, para um
+cliente que já é lead. A guarda de código-fonte recorta só o site
+público.
 
 ## Riscos
 
