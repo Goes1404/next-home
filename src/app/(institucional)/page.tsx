@@ -246,7 +246,7 @@ export default async function HomeInstitucional() {
                 <Reveal className="mt-10">
                   <Link
                     href="/empreendimentos"
-                    className="text-fluid-base font-medium text-acento-suave underline-offset-4 hover:underline"
+                    className="text-fluid-base font-medium text-acento-suave underline-offset-4 hover:underline inline-flex min-h-11 items-center"
                   >
                     Ver todos os {todos.length} imóveis →
                   </Link>
@@ -300,7 +300,7 @@ export default async function HomeInstitucional() {
               <Reveal className="mt-6">
                 <Link
                   href="/mapa"
-                  className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
+                  className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline inline-flex min-h-11 items-center"
                 >
                   Abrir o mapa em tela cheia →
                 </Link>
@@ -338,7 +338,7 @@ export default async function HomeInstitucional() {
                   <Reveal className="mt-8">
                     <Link
                       href="/corretores"
-                      className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline"
+                      className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline inline-flex min-h-11 items-center"
                     >
                       Ver toda a equipe →
                     </Link>
@@ -382,7 +382,7 @@ export default async function HomeInstitucional() {
               <Reveal className="mt-6">
                 <Link
                   href="/financiamento"
-                  className="text-fluid-sm text-acento-suave font-medium underline-offset-4 hover:underline"
+                  className="text-fluid-sm text-acento-suave font-medium underline-offset-4 hover:underline inline-flex min-h-11 items-center"
                 >
                   Simular com entrada, FGTS e prazo →
                 </Link>

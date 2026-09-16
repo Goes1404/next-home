@@ -325,7 +325,7 @@ export function Simulador({
                 href={whatsappComResumo}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm mt-5 inline-flex min-h-12 items-center justify-center rounded-xl px-5 font-medium transition-colors"
+                className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm mt-5 inline-flex min-h-12 items-center justify-center rounded-xl px-5 font-medium transition-colors botao-vivo"
               >
                 Enviar esta simulação para um corretor
               </a>

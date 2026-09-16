@@ -1,6 +1,13 @@
 import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
 import { extrairVariosLeadsViaRegex } from "@/lib/inbound/regexFallback";
 import { extrairTextoDePdf } from "./pdfTexto";
+import {
+  ehExportDeConversa,
+  normalizar as normalizarRotulo,
+  parsearConversaWhatsapp,
+  type AutorDaConversa,
+} from "./whatsappExport";
+import { lerZip, type MotivoZipIlegivel } from "./zipLeitura";
 
 /**
  * Leitura de listas de leads que o corretor traz de fora — planilha exportada
@@ -29,7 +36,7 @@ export type CandidatoLead = {
 export type ResultadoExtracao = {
   candidatos: CandidatoLead[];
   /** Como o conteúdo foi lido, para a tela dizer ao corretor o que houve. */
-  metodo: "tabela" | "texto" | "ia" | "nenhum";
+  metodo: "tabela" | "texto" | "ia" | "whatsapp" | "nenhum";
   aviso?: string;
 };
 
@@ -391,4 +398,186 @@ function montarDeExtraido(
       imovelInteresse: imovel ?? null,
     }
   );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Conversa exportada do WhatsApp (.zip)                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Quem exportou — para que a fala DELE não vire lead.
+ *
+ * Numa conversa de duas pessoas o nome do arquivo já resolve isso sozinho
+ * (ver `descobrirDono` em `whatsappExport.ts`). Em GRUPO não há nada no
+ * arquivo que diga quem é quem, e é aqui que o cadastro do corretor da
+ * sessão entra: o WhatsApp dele e o nome dele são a única fonte confiável.
+ */
+export type DonoDaExportacao = {
+  nome?: string | null;
+  /** O número do aparelho que exportou, em qualquer formato. */
+  telefone?: string | null;
+};
+
+/** O `.txt` da conversa é minúsculo; o teto existe contra zip bomb. */
+const LIMITE_TEXTO_DO_ZIP = 8 * 1024 * 1024;
+
+const EXTENSOES_DE_TEXTO = [".txt", ".csv", ".tsv"];
+
+const RECADO_DO_ZIP: Record<MotivoZipIlegivel, string> = {
+  nao_e_zip:
+    "Este arquivo não é um .zip válido. Reenvie o arquivo que o WhatsApp gerou, sem abrir nem recompactar.",
+  vazio: "O .zip está vazio.",
+  protegido_por_senha: "O .zip está protegido por senha e não pode ser lido aqui.",
+  zip64:
+    "Este .zip usa um formato que não conseguimos ler. Exporte a conversa de novo, escolhendo “Sem mídia”.",
+  compressao_desconhecida:
+    "Este .zip usa uma compressão que não conseguimos ler. Exporte a conversa de novo pelo próprio WhatsApp.",
+  corrompido: "O .zip chegou incompleto ou corrompido. Envie de novo.",
+};
+
+/**
+ * O rótulo do autor vira telefone só quando ele é SÓ telefone.
+ *
+ * Contato salvo aparece pelo nome; contato desconhecido aparece como
+ * "+55 11 99123-4567" — e é esse o caso de quase todo cliente, porque
+ * cliente novo não está na agenda de ninguém.
+ *
+ * O DDI é conferido antes de normalizar, e isso não é preciosismo: um
+ * "+1 415 555 2671" tem onze dígitos, exatamente como um celular brasileiro
+ * com DDD, e `normalizarTelefoneBrasileiro` carimbaria um `55` na frente —
+ * criando um número que existe e é de outra pessoa. Número estrangeiro entra
+ * cru, sem E.164, para o corretor decidir na revisão.
+ */
+function telefoneDoRotulo(rotulo: string): { telefone: string; e164: string | null } | null {
+  const limpo = rotulo.trim();
+  if (!/^\+?[\d\s().\-‑–]+$/.test(limpo)) return null;
+
+  const digitos = limpo.replace(/\D/g, "");
+  if (digitos.length < 10 || digitos.length > 15) return null;
+
+  const brasileiro = limpo.startsWith("+") ? digitos.startsWith("55") : digitos.length <= 11;
+  return { telefone: limpo, e164: brasileiro ? normalizarTelefoneBrasileiro(limpo) : null };
+}
+
+/**
+ * As primeiras falas do cliente viram a "mensagem" da ficha.
+ *
+ * São elas que dizem o que ele quer — "vi o anúncio do Vitra, ainda tem de 2
+ * dormitórios?" — e é isso que o corretor lê antes de retomar o contato.
+ * Cinco é o bastante para a intenção aparecer sem transformar o campo num
+ * despejo da conversa inteira.
+ */
+function primeirasFalas(autor: AutorDaConversa): string | null {
+  const texto = autor.mensagens.slice(0, 5).join(" ").trim();
+  return texto ? texto.slice(0, 2000) : null;
+}
+
+function candidatoDoAutor(autor: AutorDaConversa): CandidatoLead {
+  const doRotulo = telefoneDoRotulo(autor.rotulo);
+
+  return {
+    // Sem nome utilizável, a identidade é o telefone — é ele que distingue
+    // uma linha da outra na revisão e é ele que o corretor reconhece.
+    nome: doRotulo ? "Contato sem nome" : autor.rotulo.slice(0, 120),
+    telefone: doRotulo?.telefone.slice(0, 40) ?? "",
+    telefoneE164: doRotulo?.e164 ?? null,
+    email: null,
+    mensagem: primeirasFalas(autor),
+    imovelInteresse: null,
+  };
+}
+
+/**
+ * Lê o "Exportar conversa" do WhatsApp e devolve os participantes como leads.
+ *
+ * O `.zip` do WhatsApp é um contêiner comum, então ele serve para mais que
+ * conversa: um `.csv` compactado cai no mesmo caminho e segue para
+ * `extrairDeTexto`. Só as MÍDIAS ficam de fora — elas são quase todo o peso
+ * do arquivo e não têm contato dentro.
+ *
+ * Um participante SEM telefone (contato salvo na agenda) continua vindo na
+ * lista, com o telefone em branco. É o caso mais comum quando o corretor
+ * exporta a conversa de um cliente que ele já tinha salvo, e descartá-lo
+ * calado devolveria "nenhum contato encontrado" para um arquivo que tem um.
+ * Quem preenche o número é ele, na revisão — está no celular dele.
+ */
+export async function extrairDeZipWhatsapp(
+  zip: Buffer | Uint8Array,
+  dono?: DonoDaExportacao,
+): Promise<ResultadoExtracao> {
+  const leitura = lerZip(Buffer.from(zip), {
+    aceitar: (nome) => {
+      const minusculo = nome.toLowerCase();
+      // `__MACOSX/` é a sombra de metadados que o Finder cria ao recompactar:
+      // tem os mesmos nomes e conteúdo nenhum.
+      if (minusculo.startsWith("__macosx/") || minusculo.includes("/._")) return false;
+      return EXTENSOES_DE_TEXTO.some((ext) => minusculo.endsWith(ext));
+    },
+    limiteDescomprimido: LIMITE_TEXTO_DO_ZIP,
+  });
+
+  if (!leitura.ok) return { candidatos: [], metodo: "nenhum", aviso: RECADO_DO_ZIP[leitura.motivo] };
+
+  if (leitura.arquivos.length === 0) {
+    return {
+      candidatos: [],
+      metodo: "nenhum",
+      aviso:
+        "Não achamos nenhum arquivo de texto dentro do .zip — só mídia. No WhatsApp, use Exportar conversa → Sem mídia.",
+    };
+  }
+
+  // O maior arquivo de texto é a conversa: os outros, quando existem, são
+  // avisos curtos que o próprio WhatsApp acrescenta.
+  const principal = leitura.arquivos.reduce((maior, atual) =>
+    atual.conteudo.length > maior.conteudo.length ? atual : maior,
+  );
+  const texto = principal.conteudo.toString("utf8");
+
+  // `.zip` não é sinônimo de conversa. Lista compactada segue o caminho de
+  // sempre, em vez de morrer com "formato não suportado" por causa do envelope.
+  if (!ehExportDeConversa(texto)) return extrairDeTexto(texto);
+
+  const conversa = parsearConversaWhatsapp(texto, principal.nome);
+
+  const rotulosDoDono = new Set<string>();
+  if (conversa.donoProvavel) rotulosDoDono.add(normalizarRotulo(conversa.donoProvavel));
+  if (dono?.nome) rotulosDoDono.add(normalizarRotulo(dono.nome));
+  const e164DoDono = dono?.telefone ? normalizarTelefoneBrasileiro(dono.telefone) : null;
+
+  const dosOutros = conversa.autores.filter((autor) => {
+    if (rotulosDoDono.has(normalizarRotulo(autor.rotulo))) return false;
+    const doRotulo = telefoneDoRotulo(autor.rotulo);
+    return !(e164DoDono && doRotulo?.e164 === e164DoDono);
+  });
+
+  if (dosOutros.length === 0) {
+    return {
+      candidatos: [],
+      metodo: "nenhum",
+      aviso:
+        conversa.totalDeMensagens === 0
+          ? "O arquivo de conversa veio sem nenhuma mensagem."
+          : "Só encontramos as suas próprias mensagens nesta conversa.",
+    };
+  }
+
+  // Quem mais falou primeiro: numa exportação de grupo, é a ordem em que o
+  // corretor quer olhar — e a lista de revisão é lida de cima para baixo.
+  const candidatos = dosOutros
+    .slice()
+    .sort((a, b) => b.mensagens.length - a.mensagens.length)
+    .slice(0, LIMITE_POR_IMPORTACAO)
+    .map(candidatoDoAutor);
+
+  const semTelefone = candidatos.filter((c) => !c.telefone).length;
+
+  return {
+    candidatos,
+    metodo: "whatsapp",
+    aviso:
+      semTelefone > 0
+        ? `${semTelefone} ${semTelefone === 1 ? "contato está salvo" : "contatos estão salvos"} na sua agenda, e o WhatsApp não exporta o número de quem está salvo. ${semTelefone === 1 ? "Preencha o telefone na linha" : "Preencha os telefones nas linhas"} antes de confirmar.`
+        : undefined,
+  };
 }

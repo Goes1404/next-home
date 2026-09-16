@@ -4,7 +4,7 @@ tags: [moc, crm, painel]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-09-12
 summary: Leads, funil, fila de trabalho, telas do corretor e do gestor.
 ---
 # CRM e Painel — Map of Content
@@ -37,6 +37,9 @@ F0–F6.
 - [[capa-de-empreendimento-nunca-e-nula]] — o `else` de "sem foto" era código morto (06/09)
 - [[botoes-perigosos-atras-de-avancado]]
 
+## Importar e cadastrar
+- [[importar-conversa-do-whatsapp]] — o .zip de "Exportar conversa" vira lead; contato salvo na agenda vem sem telefone, de propósito (12/09)
+
 ## Dados do lead
 - [[perfil-do-lead-abre-dentro-da-conversa]] — detalhes e ações sem abandonar o chat
 - [[conversa-casa-com-lead-por-telefone]]
@@ -51,6 +54,7 @@ F0–F6.
 
 ## Administração (gestor)
 - [[papel-nunca-ganha-grant-update]]
+- [[acesso-de-corretor-so-existia-para-um]] — o lote da 0095 nunca rodou: 1 usuário no Auth para 8 corretores, e nenhum caminho de UI para trocar e-mail ou definir senha escolhida (12/09)
 
 ## Performance
 - [[o-site-e-lento-por-desenho-nao-por-peso]] — Início abre com 22 consultas (12 idênticas), 3 `getUser()` por requisição, Realtime + polling juntos; fase 4 do roadmap de performance (13/09)

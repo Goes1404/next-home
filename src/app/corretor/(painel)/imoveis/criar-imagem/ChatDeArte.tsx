@@ -300,16 +300,43 @@ export function ChatDeArte({
                 return atuais.filter((_, i) => i !== indice);
               });
             }}
-            renderAcima={(m) =>
-              m.dados?.tipo === "referencia" ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={m.dados.url}
-                  alt="Foto de referência anexada"
-                  className="border-linha mb-1.5 max-h-44 w-auto max-w-full rounded-lg border"
-                />
-              ) : null
-            }
+            renderAcima={(m) => {
+              if (m.dados?.tipo !== "referencia") return null;
+              /*
+               * TODAS as fotos do balão, NUMERADAS.
+               *
+               * Mostrava só `m.dados.url` — a primeira. Quem anexava duas via
+               * uma, e concluía (com razão) que a segunda não tinha ido; foi
+               * assim que "não dá para enviar mais de uma foto" chegou como
+               * relato, com o recurso inteiro funcionando por baixo. E o
+               * número não é enfeite: é ele que dá sentido a "deixe a primeira
+               * parecida com a segunda", que é como a pessoa escreve.
+               */
+              const fotos =
+                m.dados.referencias && m.dados.referencias.length > 0
+                  ? m.dados.referencias
+                  : [{ path: m.dados.path, url: m.dados.url }];
+
+              return (
+                <div className="mb-1.5 flex flex-wrap gap-1.5">
+                  {fotos.map((foto, i) => (
+                    <div key={foto.path} className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={foto.url}
+                        alt={`Foto de referência ${i + 1} de ${fotos.length}`}
+                        className="border-linha max-h-44 w-auto max-w-full rounded-lg border"
+                      />
+                      {fotos.length > 1 && (
+                        <span className="bg-ink-950/80 absolute top-1.5 left-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium text-brand-200">
+                          {i + 1}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            }}
             renderAbaixo={(m) => {
               if (m.dados?.tipo === "proposta") {
                 return (

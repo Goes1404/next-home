@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
-import { Lightbox } from "@/components/ui/Lightbox";
+import { LightboxAdiado } from "@/components/ui/LightboxAdiado";
 import { areaM2, precoBRL, precoPorM2 } from "@/lib/format";
 import type { Midia, Tipologia } from "@/lib/types";
 
@@ -144,7 +144,7 @@ export function Tipologias({
         </Reveal>
       )}
 
-      <Lightbox
+      <LightboxAdiado
         itens={plantas}
         indice={aberta}
         aoFechar={() => setAberta(null)}

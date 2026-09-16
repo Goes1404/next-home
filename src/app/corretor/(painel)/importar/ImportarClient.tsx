@@ -244,7 +244,8 @@ function Importador({
   const [modo, setModo] = useState<"colar" | "arquivo">("colar");
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState<string | null>(null);
-  const [metodo, setMetodo] = useState<"tabela" | "texto" | "ia" | null>(null);
+  const [metodo, setMetodo] = useState<"tabela" | "texto" | "ia" | "whatsapp" | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
   const [linhas, setLinhas] = useState<(CandidatoRevisado & { incluir: boolean })[]>([]);
   const [resumo, setResumo] = useState<ResumoImportacao | null>(null);
 
@@ -265,9 +266,18 @@ function Importador({
     }
     setErro(null);
     setMetodo(resultado.metodo ?? null);
-    // Duplicado entra desmarcado: o padrão seguro é não recriar o que já
-    // está na carteira, mas a decisão continua com o corretor.
-    setLinhas(resultado.candidatos.map((c) => ({ ...c, incluir: !c.jaExiste })));
+    setAviso(resultado.aviso ?? null);
+    /*
+     * Duplicado entra desmarcado: o padrão seguro é não recriar o que já
+     * está na carteira, mas a decisão continua com o corretor. Contato SEM
+     * telefone também — ele vem da conversa exportada de quem estava salvo na
+     * agenda, e importar em branco criaria uma ficha que nunca recebe
+     * mensagem. Marcar sozinho, depois de o corretor digitar o número, seria
+     * decidir por ele.
+     */
+    setLinhas(
+      resultado.candidatos.map((c) => ({ ...c, incluir: !c.jaExiste && Boolean(c.telefone) })),
+    );
     setEtapa("revisao");
   }
 
@@ -306,6 +316,7 @@ function Importador({
     setTexto("");
     setResumo(null);
     setErro(null);
+    setAviso(null);
     setConsentimento(false);
   }
 
@@ -372,12 +383,19 @@ function Importador({
           <p className="text-fluid-sm text-apoio mt-1">
             {metodo === "ia"
               ? "Lidos por IA — confira nome e telefone antes de confirmar."
-              : metodo === "texto"
-                ? "Lidos do texto do arquivo. Confira e ajuste o que precisar."
-                : "Lidos direto da tabela. Confira e ajuste o que precisar."}
+              : metodo === "whatsapp"
+                ? "Lidos da conversa exportada. As suas próprias mensagens ficaram de fora."
+                : metodo === "texto"
+                  ? "Lidos do texto do arquivo. Confira e ajuste o que precisar."
+                  : "Lidos direto da tabela. Confira e ajuste o que precisar."}
             {duplicados > 0 &&
               ` ${duplicados} já ${duplicados === 1 ? "está" : "estão"} na carteira e ${duplicados === 1 ? "veio" : "vieram"} desmarcado${duplicados === 1 ? "" : "s"}.`}
           </p>
+          {aviso && (
+            <p className="text-fluid-sm text-alerta bg-alerta-lavado border-alerta-linha mt-3 rounded-xl border px-3 py-2">
+              {aviso}
+            </p>
+          )}
         </div>
 
         <ListaRevisao linhas={linhas} onChange={setLinhas} />
@@ -514,11 +532,14 @@ function Importador({
             name="arquivo"
             type="file"
             required
-            accept=".pdf,.csv,.tsv,.txt,application/pdf,text/csv,text/plain"
+            accept=".pdf,.csv,.tsv,.txt,.zip,application/pdf,text/csv,text/plain,application/zip"
             className="text-fluid-sm text-corpo file:border-linha-forte file:bg-vidro file:text-corpo hover:file:bg-vidro-forte w-full cursor-pointer file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-full file:border file:px-4 file:text-sm"
           />
           <p className="text-fluid-xs text-tenue mt-2">
-            PDF, CSV, TSV ou TXT, até 10 MB. PDF escaneado (foto de página) depende da leitura por IA; PDF de texto é lido direto. Planilha do Excel: salve como CSV antes de enviar.
+            PDF, CSV, TSV, TXT ou o <strong>.zip de uma conversa do WhatsApp</strong>, até 10 MB. Na conversa,
+            use <em>Exportar conversa → Sem mídia</em> — dá para exportar um grupo inteiro de uma vez.
+            PDF escaneado (foto de página) depende da leitura por IA; PDF de texto é lido direto.
+            Planilha do Excel: salve como CSV antes de enviar.
           </p>
 
           <button
@@ -610,11 +631,20 @@ function ListaRevisao({
               />
             </div>
 
-            {linha.jaExiste && (
+            {/*
+              * Campo de telefone vazio, sozinho, é indistinguível de defeito.
+              * A etiqueta diz que a falta é do ARQUIVO (contato salvo na
+              * agenda não tem o número no export) e que o conserto é digitar.
+              */}
+            {!linha.telefone ? (
+              <span className="text-alerta bg-alerta-lavado border-alerta-linha col-start-2 h-fit w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium sm:col-start-3 sm:mt-2 sm:justify-self-end">
+                falta o telefone
+              </span>
+            ) : linha.jaExiste ? (
               <span className="text-alerta bg-alerta-lavado border-alerta-linha col-start-2 h-fit w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium sm:col-start-3 sm:mt-2 sm:justify-self-end">
                 já existe
               </span>
-            )}
+            ) : null}
           </li>
         ))}
       </ul>

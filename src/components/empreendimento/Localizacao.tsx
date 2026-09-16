@@ -40,7 +40,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
                 href={comoChegar}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-fluid-sm inline-flex items-center gap-1.5 font-medium text-acento-suave underline-offset-4 hover:underline"
+                className="text-fluid-sm inline-flex min-h-11 items-center gap-1.5 font-medium text-acento-suave underline-offset-4 hover:underline"
               >
                 <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-4 w-4">
                   <path
@@ -64,7 +64,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
               origem="localizacao"
               corretorId={"id" in e.corretor ? (e.corretor as { id?: string }).id : undefined}
               empreendimentoSlug={e.slug}
-              className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-brand-500 px-6 text-sm font-medium text-white transition-colors hover:bg-brand-400 sm:w-auto"
+              className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-brand-500 px-6 text-sm font-medium text-white transition-colors hover:bg-brand-400 sm:w-auto botao-vivo"
             >
               Agendar visita com o corretor
             </WhatsappLink>

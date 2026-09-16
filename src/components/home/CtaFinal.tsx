@@ -24,7 +24,7 @@ export async function CtaFinal() {
               href={link}
               origem="cta_final"
               corretorId={corretorAtivo?.id}
-              className="rounded-full bg-brand-500 px-7 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-400 shadow-md"
+              className="rounded-full bg-brand-500 px-7 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-400 shadow-md botao-vivo"
             >
               Receber Ofertas no WhatsApp
             </WhatsappLink>

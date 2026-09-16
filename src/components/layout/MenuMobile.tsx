@@ -18,7 +18,7 @@ export type LinkMenu = { href: string; label: string };
  * PAINEL LATERAL que desliza da direita sobre um véu escuro — o padrão que
  * todo app do telefone usa, e que a pessoa já sabe fechar tocando fora. O
  * painel tem cabeçalho próprio (marca + fechar), os destinos com seta, as
- * duas ações da casa (WhatsApp e anunciar) e, no pé, a porta da equipe:
+ * a ação da casa (WhatsApp) e, no pé, a porta da equipe:
  * "Área do corretor", com cadeado, dizendo em voz alta que é acesso
  * restrito. Antes essa porta só existia no rodapé, e o corretor no celular
  * rolava a página inteira para achá-la.
@@ -222,20 +222,13 @@ export function MenuMobile({ links }: { links: LinkMenu[] }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={fechar}
-                  className="bg-brand-500 hover:bg-brand-400 active:bg-brand-600 flex min-h-12 items-center justify-center gap-2 rounded-full text-sm font-medium text-white transition-colors"
+                  className="bg-brand-500 hover:bg-brand-400 active:bg-brand-600 flex min-h-12 items-center justify-center gap-2 rounded-full text-sm font-medium text-white transition-colors botao-vivo"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="size-4">
                     <path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.77.46 3.45 1.27 4.9L2 22l5.25-1.38a9.96 9.96 0 0 0 4.79 1.22h.01c5.52 0 10-4.48 10-10s-4.48-9.84-10.01-9.84Zm5.85 14.1c-.25.7-1.45 1.34-2 1.42-.51.08-1.16.11-1.87-.12-.43-.14-.98-.32-1.69-.62-2.97-1.28-4.9-4.27-5.05-4.47-.15-.2-1.21-1.6-1.21-3.06s.77-2.17 1.04-2.47c.27-.3.6-.37.8-.37.2 0 .4 0 .57.01.18.01.43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.33.02.53-.1.2-.15.32-.3.5-.15.18-.31.4-.44.53-.15.15-.3.31-.13.6.17.3.77 1.27 1.65 2.06 1.14 1.02 2.1 1.33 2.4 1.48.3.15.47.13.65-.08.18-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.27.1 1.73.82 2.02.97.3.15.5.22.57.35.07.13.07.75-.18 1.45Z" />
                   </svg>
                   Falar no WhatsApp
                 </a>
-                <Link
-                  href="/anunciar-imovel"
-                  onClick={fechar}
-                  className="border-linha text-corpo hover:border-acento-linha hover:text-titulo active:bg-superficie flex min-h-12 items-center justify-center rounded-full border text-sm font-medium transition-colors"
-                >
-                  Anunciar meu imóvel
-                </Link>
               </div>
 
               {/* A porta da equipe. Aponta para `/corretor`, não para
@@ -247,7 +240,7 @@ export function MenuMobile({ links }: { links: LinkMenu[] }) {
                 onClick={fechar}
                 className="border-linha bg-superficie/60 hover:border-acento-linha active:bg-superficie mx-5 mt-5 mb-6 flex items-center gap-3 rounded-2xl border p-4 transition-colors"
               >
-                <span className="bg-acento-lavado text-acento-suave flex size-10 shrink-0 items-center justify-center rounded-full">
+                <span className="bg-acento-lavado text-acento-suave flex size-10 shrink-0 items-center justify-center rounded-full botao-vivo">
                   <LockKeyhole className="size-4" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">

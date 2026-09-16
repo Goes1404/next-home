@@ -1,5 +1,4 @@
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
-import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
@@ -47,6 +46,7 @@ export default async function VitrineLayout({ children }: { children: React.Reac
       {/* Vinheta da logo na primeira visita da sessão — cobre a montagem
           da página enquanto fontes e o vídeo de fundo ainda carregam. */}
       <Preloader />
+      <div className="barra-progresso" aria-hidden />
 
       {/* `h-lvh` e não `inset-0`: a barra de endereço do celular redimensiona
           a viewport visível ao rolar, e a caixa (com o vídeo em `cover`)
@@ -60,12 +60,8 @@ export default async function VitrineLayout({ children }: { children: React.Reac
             {videoUrl && (
               <HeroVideoBackground src={videoUrl} />
             )}
-            {/* O hero-scroll não monta no celular (14,8 MB antes de qualquer
-                interação), e sem par o fundo aqui era um gradiente liso. A
-                vinheta — 0,7 MB, a mesma peça do institucional — cobre a tela
-                inteira lá, e os dois nunca aparecem juntos: um só existe
-                acima de 768px, o outro só abaixo. */}
-            <FundoVideoIntro somenteMobile />
+            {/* Sem vinheta de fundo desde 13/09/2026 (ver o layout do
+                institucional): a aurora em CSS cobre os dois tamanhos. */}
           </>
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-fundo/30 via-fundo/10 to-fundo/90" />

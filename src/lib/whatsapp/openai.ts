@@ -54,9 +54,43 @@ const INSTRUCAO_JSON =
   "Você responde SOMENTE com um objeto JSON válido, sem cercas de código, " +
   "sem comentários e sem nenhum texto antes ou depois. Nada além do JSON.";
 
+/**
+ * Quanto detalhe pedir ao olhar uma imagem.
+ *
+ * `low` custa 85 tokens FIXOS por foto (a API reduz para 512px), contra
+ * ~750-1500 em `high`. O que o tradutor precisa enxergar é assunto,
+ * enquadramento, luz e clima — "é uma torre escura em fundo neutro", não a
+ * marca gravada no vidro. Se algum dia a saída mostrar leitura errada de
+ * detalhe fino, este é o botão a girar, e ele tem nome.
+ */
+const DETALHE_DA_IMAGEM = "low";
+
+type ParteDoConteudo =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string; detail: string } };
+
+/**
+ * O conteúdo da mensagem do usuário: texto puro, ou texto MAIS as fotos.
+ *
+ * A ordem importa e é deliberada: as imagens vão ANTES do texto, numeradas,
+ * porque o pedido fala delas por posição ("deixe a 1ª parecida com a 2ª") e
+ * o modelo precisa tê-las na mesma ordem em que o corretor as anexou.
+ */
+function conteudoDoUsuario(prompt: string, imagens: string[]): string | ParteDoConteudo[] {
+  if (imagens.length === 0) return prompt;
+
+  const partes: ParteDoConteudo[] = [];
+  imagens.forEach((url, i) => {
+    partes.push({ type: "text", text: `Foto ${i + 1} de ${imagens.length}:` });
+    partes.push({ type: "image_url", image_url: { url, detail: DETALHE_DA_IMAGEM } });
+  });
+  partes.push({ type: "text", text: prompt });
+  return partes;
+}
+
 export async function chamarOpenaiJson(
   prompt: string,
-  opts: { temperature?: number; timeoutMs: number; modelo?: string },
+  opts: { temperature?: number; timeoutMs: number; modelo?: string; imagens?: string[] },
 ): Promise<ResultadoLlm> {
   const inicio = Date.now();
   const apiKey = chaveApi();
@@ -88,7 +122,7 @@ export async function chamarOpenaiJson(
         model: modelo,
         messages: [
           { role: "system", content: INSTRUCAO_JSON },
-          { role: "user", content: prompt },
+          { role: "user", content: conteudoDoUsuario(prompt, opts.imagens ?? []) },
         ],
         ...(familiaNova
           ? { max_completion_tokens: 4096 }

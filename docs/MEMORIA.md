@@ -6933,3 +6933,413 @@ Vault: [[pdf-lido-como-texto-no-navegador-e-binario]].
   planta" e "sem planta cadastrada", que continuam distinguíveis. Renomear
   para "sem planta" nos dois lugares daria dois rótulos idênticos com causas
   diferentes.
+## Fundo em vídeo fora de todas as páginas, menu sem "anunciar", equipe (13/09/2026)
+
+- **A vinheta congelada atrás do conteúdo SAIU de todo o site.** Nos dois
+  layouts de grupo ela era o fundo padrão (no institucional em todo tamanho,
+  na vitrine só no celular); o quadro parado do logotipo lia como imagem
+  aleatória e, no celular, aparecia inteiro entre a CTA final e o rodapé
+  (print do usuário). O que fica é a aurora em CSS (`fundo-aurora`), que já
+  cobria a vitrine no desktop. A vinheta continua no `Preloader` — abertura,
+  não papel de parede. `AberturaHome` já tratava `[data-fundo-video]`
+  ausente (`if (video)`); `ParallaxFundoHome` escreve no invólucro, que
+  ficou. Foto/vídeo PRÓPRIO do corretor continuam tendo precedência.
+- **A outra sessão do mesmo dia pôs um POSTER da vinheta como LCP (F2 de
+  performance) enquanto esta a tirava do fundo.** O push foi rejeitado
+  (19 commits remotos), o rebase conflitou em `layout.tsx`, `MEMORIA.md` e
+  no MOC — e a resolução não podia ser "aceitar os dois": o poster era o
+  MESMO quadro do logotipo que o usuário pediu para remover. Saiu o
+  `<picture>`, os dois `preload()` e os quatro imports de URL; o LCP passa a
+  ser o conteúdo do herói, que já nasce visível pela F1 deles. **Duas
+  sessões no mesmo repositório: antes de resolver conflito por união,
+  perguntar se as duas mudanças ainda fazem sentido JUNTAS.** E `npm ci`
+  depois do rebase: o lock trouxe `@vercel/analytics` e `speed-insights`,
+  sem os quais o `tsc` acusa módulo inexistente no layout raiz.
+- **"Anunciar meu imóvel" saiu do menu** (header desktop e gaveta do
+  celular), a pedido. A página `/anunciar-imovel` continua — chega pelo
+  cartão do vendedor na home; `seo.test.ts` e o E2E de saúde ainda a listam.
+- **Cartão de corretor completo virou cartão com FOTO-HERÓI** (4:3 no topo,
+  CRECI como selo sobre a foto em tinta fixa, bio em duas linhas quando
+  existe, dois botões de 44px: perfil e WhatsApp). Sem foto: monograma sobre
+  degradê da marca, nunca ícone genérico. A página ganhou faixa de confiança
+  com três fatos verificáveis (CRECI da imobiliária, corretores, imóveis
+  acompanhados — a soma das atuações, sem consulta nova). O `compacto` da
+  home não mudou.
+
+## Movimento do site público em CSS puro (13/09/2026)
+
+Vault: [[movimento-do-site-publico-e-css-puro]].
+
+- **Quatro efeitos, zero JavaScript**: `botao-vivo` (CTA levanta 2px no
+  hover, afunda no toque), `link-nav` (sublinhado que cresce no menu),
+  `.barra-progresso` (barra de leitura por `animation-timeline: scroll()`,
+  em `@supports`) e `anel-pulso` (anel do WhatsApp a cada 6s). Mesma régua
+  do painel: movimento responde a gesto ou mostra conteúdo; o anel é a
+  exceção declarada.
+- **`motion-safe:` só funciona em `@utility`.** `.anel-pulso` como classe
+  comum fazia `motion-safe:anel-pulso` virar nada, calado — a família do
+  `bg-chip`. Conferido no CSS compilado antes de subir.
+- **Regex de className precisa de filtro de TAG.** "cor de marca +
+  arredondado" pegou um selo, um ponto decorativo e um parágrafo além dos
+  21 botões. A sonda no navegador (`[...querySelectorAll(".botao-vivo")]`
+  com tag) é o que mostrou.
+- **404 de `/_vercel/insights` e `/_vercel/speed-insights` em `next start`
+  local NÃO é defeito** — são os scripts de analytics que a F0 de
+  performance injeta e que só existem na Vercel.
+
+## Auditoria de qualidade do site público (13/09/2026)
+
+Pedido: "invista mais na qualidade". Antes de mexer, medir — um script de
+Playwright passou por 12 rotas em desktop e 360px e listou por página:
+título único, saltos de nível de heading, `<img>` sem alt, imagem ampliada
+além do original, alvo de toque abaixo de 40px, fonte abaixo de 12px,
+campo sem label, botão sem nome, tamanho de título/descrição, estouro de
+largura, erro de console e link interno quebrado.
+
+- **As fotos dos corretores têm 120×120 e as do catálogo "foto-1-big" têm
+  320×320.** Medido baixando os originais do Storage. O cartão de equipe
+  em 4:3 (da manhã do mesmo dia) esticava 120px para 370 — foto embaçada
+  num cartão de "profissional". Virou retrato CIRCULAR de 128px sobre faixa
+  de marca: mostra a foto no tamanho que ela tem. **O catálogo continua
+  com originais de 320px em vários imóveis** — é dado; código não inventa
+  pixel. Pendência de cadastro: subir fotos maiores.
+- **A listagem e a página de região pulavam de h1 para h3** — o cartão do
+  imóvel cravava `<h3>`. Virou prop `nivel` (padrão h3; h2 onde o cartão é
+  a primeira subdivisão sob o h1). Leitor de tela anuncia o salto; olho não.
+- **Alvos de toque abaixo de 40px** em oito lugares: links do rodapé
+  (navegação, telefones, redes, "Área do corretor"), links de texto com
+  seta na home, pílulas do filtro do mapa, controles de zoom do Leaflet
+  (30px de fábrica), "Como chegar", nome do corretor. Todos com `min-h-11`
+  ou 40px; o Leaflet via CSS global.
+- **Textos abaixo de 12px**: CRECI no cartão, rótulo da página do mapa,
+  contagem nos cartões de região, atribuição do Leaflet (10px, o menor do
+  site). Todos para 12px, a atribuição para 11px.
+- **Os únicos 404 locais são `/_vercel/insights` e `/_vercel/speed-insights`**
+  — scripts que só existem na Vercel. Filtrar antes de acusar.
+- **Régua:** auditar por MEDIÇÃO, não por olhar tela a tela; a lista do
+  que sai de um script em 60 s é diferente da que sai de uma inspeção
+  visual, e a primeira achou o que a segunda tinha deixado passar na
+  mesma manhã (o cartão 4:3).
+
+## "Trocar o e-mail do Eduardo" era criar o login dele (12/09/2026)
+
+Nota: [[acesso-de-corretor-so-existia-para-um]].
+
+- **O verbo do pedido descrevia um estado que não existia.** Medido antes de
+  mexer: `auth.users` com **UMA** linha (a Bruna), **1 de 8** corretores com
+  `user_id`, **0 de 8** com `corretores.email`, e o e-mail do Eduardo `null`.
+  Não havia e-mail para atualizar. Aceitar o verbo ao pé da letra levaria a
+  caçar defeito num `update` que nunca teve linha para afetar. **Ao receber
+  "mude X para Y", conferir que X existe** — é a irmã da régua de medir antes
+  de aceitar o diagnóstico de um item de roadmap.
+- **O lote de acessos da 0095 nunca rodou, e tem botão na tela de Contas.**
+  `criarAcessosQueFaltam` faz exatamente o que faltava — login para todo
+  corretor ativo sem `user_id` — e tem zero execuções na vida. **Décimo caso
+  do padrão "construído e nunca ligado" desta base.** O sintoma é silencioso
+  porque a roleta (0093) só PREFERE quem tem login: ela seguia mandando tudo
+  para a Bruna, o que parece a roleta funcionando em vez de sete pessoas sem
+  conseguir entrar.
+- **Não existe caminho de UI para trocar e-mail nem para definir senha
+  escolhida.** `criarAcessoCorretor` deixa o gestor digitar o e-mail e sorteia
+  a senha; `redefinirSenhaCorretor` sorteia outra. A senha sorteada é DECISÃO
+  (o comentário de `senhaTemporaria` diz por que), não limitação — antes de
+  construir "o gestor digita a senha", reler aquela decisão.
+- **Molde de `auth.users` se COPIA de uma linha que já loga, nunca se escreve
+  de cabeça.** O que custaria tempo: `pgcrypto` mora em `extensions` (`crypt()`
+  sem prefixo não resolve); `gen_salt('bf', 10)` para casar o custo que o
+  GoTrue escreve (`$2a$10$`, e sem o `10` o pgcrypto usa 6); `confirmed_at` é
+  coluna GERADA e inserir nela é erro; os quatro tokens vão como `''` e não
+  `null`; e a linha em `auth.identities` (provider `email`, `provider_id` = id
+  do usuário) NÃO é opcional. Depois: `user_id`, `email` e `slug` em
+  `corretores` — **sem slug, `getCorretorLogado()` devolve `null`** e a pessoa
+  entra com a senha certa e cai em "Conta sem vínculo".
+- **`crypt(senha, hash) = hash` prova o hash, não o login.** A prova é
+  `POST /auth/v1/token?grant_type=password` devolvendo 200 com `access_token`,
+  mais `last_sign_in_at` carimbado e linha em `auth.sessions`.
+- **Erro que muda a cada tentativa não é erro de senha.** A senha correta deu
+  **504** na primeira chamada e 200 na seguinte — a piscada de gateway do
+  Supabase já registrada em 10/09. Senha ERRADA devolve **400 `Invalid login
+  credentials` sempre**. É esse contraste que separa credencial ruim de
+  instabilidade, e sem ele o 504 acusaria a conta recém-criada.
+- **Promover a gestor fora do painel: fingir sessão FALSIFICARIA o log.**
+  `definir_papel_corretor` (0030) exige `eh_gestor()`, que lê `auth.uid()` —
+  como `postgres` ela recusa, e com razão. Fingir o JWT da gestora faria a
+  própria função gravar `ator_id` = ELA em `admin_eventos`, ou seja, um log
+  dizendo que ela promoveu alguém. **Fingir sessão para TESTAR policy dentro
+  de `rollback` é legítimo; para GRAVAR ato de outra pessoa, não.** O caminho
+  honesto é `update` direto com o evento escrito à mão, `ator_id` nulo e
+  `origem` declarada.
+- **A prova de que `papel` pegou é `eh_gestor()` na sessão DELE**, não a
+  coluna: dentro de `begin; set local role authenticated; set local
+  request.jwt.claims = …; rollback;` ele passou a enxergar as 131 linhas de
+  `leads` e as 110 de `whatsapp_conversas`. Coluna gravada prova o `update`;
+  a RLS prova o acesso — e é a RLS que define o que gestor significa.
+- **A promoção foi REVERTIDA no mesmo dia, e o porquê é a lição.** Ao ver o
+  alcance, o usuário perguntou *"então praticamente eles são o mesmo
+  usuário?"*. Não eram: contas, logins e carteiras sempre foram separados
+  (Bruna 122 leads / 110 conversas / 1 instância conectada; Eduardo 2 leads /
+  0 / 0). **O que os igualou foi o PAPEL, não a conta.** `eh_gestor()`
+  aparece no `qual` das policies de `leads`, `whatsapp_conversas`,
+  `whatsapp_mensagens`, `ia_interacoes`, `lead_observacoes_ia` e
+  `anotacoes` — e em `corretor_whatsapp_instancias` com **ALL**, então
+  gestor também DESCONECTA o número de outro e edita o tom de voz dele.
+- **Ao promover alguém, dizer o que ele passa a LER, não o que passa a poder
+  fazer.** "Vira admin" soa como permissão; o que muda é o alcance da RLS —
+  e é isso que a pessoa precisa aprovar antes, não depois.
+- **Medido antes de decidir, sem abrir conteúdo:** das 110 conversas (todas
+  com lead, depois da 0111), **30 nunca atendidas ainda guardam 541 mensagens
+  com texto**, de 19/08 a 06/09 — só 10 posteriores à regra de privacidade de
+  01/09. É o resíduo da era em que tudo era gravado, e como o webhook CRIAVA
+  lead de quem escrevia, contato pessoal pode ter ganhado lead e sobrevivido à
+  limpeza. **Contar basta para decidir; ler seria justamente o que a regra
+  existe para evitar.**
+- **Não existe "gestor que vê o funil e não as conversas".** São dois papéis
+  por decisão de produto, então o recorte intermediário é migration com
+  policies novas, não configuração — vale saber antes de prometer.
+
+## Limpeza total do CRM antes do teste com a equipe (12/09/2026)
+
+Nota: [[apagar-leads-leva-a-conversa-junto]]. Pedido do dono da conta:
+zerar leads e conversas para entregar a plataforma aos corretores. Feito em
+produção, irreversível, **sem exportação prévia** — escolha dele, com os
+números na frente.
+
+- **`delete from leads` derruba a conversa junto**, desde a 0111. Cascata
+  completa: conversas, mensagens, follow-ups, dossiê, tarefas, linha do
+  tempo, `marketing_*` e `sla_leads`. Medido: 131 / 110 / 8.125 → zero.
+- **"Apaguei os leads" NÃO é "o banco está limpo".** Três FKs são
+  `on delete set null` e sobrevivem órfãs: `ia_interacoes` (4.187, com
+  `conversa_id` nulo), `whatsapp_campanhas_fila` (113) + `whatsapp_campanhas`
+  (18), e `historico_envios` (53). A telemetria órfã continua alimentando o
+  contador "N respostas sem revisão" do painel.
+- **Antes de limpeza assim, conferir fila PENDENTE e campanha VIVA.** Item
+  `pendente` sobrevive ao delete com `lead_id` nulo, e campanha ativa
+  dispararia para número de lead que deixou de existir — mensagem indevida
+  para cliente real. Aqui deu 0 e 0; era a única coisa capaz de transformar
+  uma limpeza em incidente.
+- **A consequência menos óbvia é o CORPUS DO FEW-SHOT.** `recuperacao.ts`
+  injeta trecho de conversa REAL no prompt a cada resposta — eram **46
+  conversas elegíveis, 2.998 falas de cliente**. Zerar faz a assistente soar
+  mais genérica exatamente na semana em que a equipe vai julgá-la, e ninguém
+  liga uma coisa à outra depois. **Ao apagar histórico de conversa, dizer em
+  voz alta o que isso tira da IA** — não é só CRM.
+- **Uma visita futura morreu junto** (14/09, 9h). Lead apagado é compromisso
+  apagado do CRM; a pessoa aparece no imóvel do mesmo jeito. Listar
+  `visita_agendada_em >= now()` faz parte de medir o estrago.
+- **O que NÃO é tocado**: catálogo (25 publicados, 339 mídias), corretores, e
+  a instância de WhatsApp — o número segue `conectado`. Limpar CRM não
+  desconecta número.
+
+## A importação de leads aceita o .zip do WhatsApp (12/09/2026)
+
+Nota: [[importar-conversa-do-whatsapp]].
+
+- **O que o export NÃO tem decide o desenho inteiro.** Contato salvo na
+  agenda aparece pelo NOME, e o número dele não está em lugar nenhum do
+  arquivo — nem no texto, nem no nome do `.txt`. Contato desconhecido
+  aparece como `+55 11 99123-4567`, e é esse o caso de quase todo cliente,
+  porque cliente novo não está na agenda de ninguém. As duas saídas ruins
+  eram **adivinhar** (número digitado no meio de um chat é do cônjuge, do
+  síndico, de um terceiro — mandaria a ficha de um cliente para o telefone
+  de outro) e **descartar calado** ("nenhum contato encontrado" para um
+  arquivo que tem exatamente um). Ficou a terceira: o candidato vem com o
+  telefone EM BRANCO, desmarcado, com etiqueta própria e um aviso dizendo
+  de onde vem a falta. **Campo vazio sozinho é indistinguível de defeito** —
+  é a etiqueta que diz que a falta é do ARQUIVO e que o conserto é digitar.
+- **O DDI se confere ANTES de normalizar.** `+1 415 555 2671` tem onze
+  dígitos, exatamente como um celular brasileiro com DDD, e
+  `normalizarTelefoneBrasileiro` carimbaria um `55` na frente — criando um
+  número que existe e é de outra pessoa. Mesma armadilha da 0111 (11/09),
+  agora do lado da importação. Rótulo com `+` só normaliza começando em
+  `55`; sem `+`, só com 10 ou 11 dígitos.
+- **Quem exportou não vira lead, e o nome do arquivo resolve de graça.**
+  "Conversa do WhatsApp com Ana Prado" diz quem é o OUTRO lado numa conversa
+  de duas pessoas, então o dono é o que sobra — sem depender de o cadastro
+  do corretor estar escrito igual ao WhatsApp dele. Em GRUPO não há resposta
+  no arquivo e quem completa é o cadastro da sessão (nome + `whatsapp`).
+  Palpite ("o que mais falou é o dono") tiraria do funil justamente o
+  participante mais engajado.
+- **Fixture sem as marcas invisíveis testa um formato que não existe.** O
+  iPhone injeta `U+200E` no começo de cada linha e antes de cada aviso de
+  mídia; o Android usa `U+202F` antes de AM/PM. Os fixtures do teste trazem
+  os invisíveis de propósito — foi assim que a regex de repetição desta base
+  passou meses cega.
+- **`.zip` não é sinônimo de conversa**: um `.csv` compactado segue para
+  `extrairDeTexto` em vez de morrer com "formato não suportado" por causa do
+  envelope. E só `.txt`/`.csv`/`.tsv` são descomprimidos — a mídia é quase
+  todo o peso e não tem contato dentro.
+- **O leitor de ZIP é caseiro, como o de PDF**: diretório central mais o
+  `inflateRaw` do Node. Duas armadilhas do formato, as duas com teste: o
+  campo `extra` do cabeçalho LOCAL costuma DIFERIR do que o diretório
+  central declara (alinhamento, carimbo de hora), e usar o número do central
+  entrega bytes deslocados com um erro de `inflate` que não diz nada sobre a
+  causa; e o registro de fim se procura de TRÁS para frente, porque o
+  comentário final do ZIP pode conter a própria assinatura.
+- **`git checkout --` num laço de provocação apaga trabalho não
+  commitado.** A rotina de provocar guarda desta base restaura o arquivo com
+  `git checkout` — e num arquivo TRACKED com mudanças ainda não commitadas,
+  isso reverte a mudança inteira, não só a mordida. Perdi o extrator inteiro
+  de `importacao.ts` assim, depois de o teste já estar verde. **Provocar
+  guarda só depois de commitar**, ou restaurar de uma cópia feita antes da
+  mordida. (O `git checkout` em arquivo NOVO falha em voz alta — "pathspec
+  did not match" — e a mordida fica no disco; o caso perigoso é justamente o
+  que não reclama.)
+- **Fica de fora, declarado:** a conversa não é restaurada em
+  `whatsapp_conversas`/`whatsapp_mensagens`. Isso reconstruiria o corpus de
+  few-shot zerado na limpeza do mesmo dia, mas é outra obra — a 0111 exige
+  `lead_id`, a conversa pertence à instância de um corretor e `e_teste`
+  pediria decisão própria. O que sobrevive do conteúdo são as primeiras
+  cinco falas do cliente, que viram o campo "mensagem" da ficha.
+
+## O tradutor de imagem era CEGO, e mandavam ele descrever a foto (15/09/2026)
+
+Nota: [[o-tradutor-era-cego-e-inventava-a-cena]].
+
+- **A prova está no TIPO, e custou zero.** `EntradaDoTradutor` carregava
+  `temReferencia?: boolean` — um booleano — e `chamarLlmJson(prompt: string)`
+  é texto puro: o modelo NUNCA recebeu a imagem. Mesmo assim a instrução dizia
+  *"Há uma FOTO de referência. Descreva a cena a partir dela."* **Quando o
+  defeito é "o modelo inventou", a primeira pergunta é o que ele RECEBEU** — e
+  aqui a assinatura do tipo respondeu sozinha, sem gastar chamada.
+- **Instrução impossível não produz recusa, produz invenção plausível.** Some
+  a ordem de descrever o que não se vê com a gramática, que exige 200 a 600
+  caracteres cobrindo Cena, Sujeito, Detalhes e Restrições: há um jeito só de
+  satisfazer as duas. Medido em produção — foto de uma TORRE anexada, pedido
+  "deixe a primeira imagem parecida com a segunda, mas com uma frase que chame
+  mais atenção", e voltou *"um apartamento moderno, sala de estar, sofá
+  elegante e mesa de centro"*. Saiu sala de estar porque é a imagem
+  imobiliária mais provável: o modelo escreveu a média do corpus dele, que é o
+  que sobra quando não há informação. Mesma família do `Torre.` e do "1 suíte"
+  num cadastro com 3.
+- **Edição é outro REGIME, e a gramática de criação não vale nele.** Quem vê
+  as fotos é o gerador (`gpt-image-2` com `image[]`). `instrucaoDeEdicao(n)`
+  diz em voz alta que o tradutor não as vê, PROÍBE descrevê-las, manda
+  escrever só o que muda, e trata as fotos pela POSIÇÃO ("a 1ª", "a 2ª") — que
+  é como a pessoa escreve, e é o que faz o pedido relacional chegar íntegro a
+  quem consegue olhar para as duas. Junto: zero seções cobradas, piso de 80 →
+  40, tamanho de 200-600 → 80-500. Cobrar "Detalhes: luz, materiais" de uma
+  edição é o convite a inventar que a correção veio remover — e acusaria de
+  incompleto um texto certo (sétima vez que um critério desta base reprovaria
+  o comportamento correto).
+- **Quando um limite ganha um irmão, procurar os outros limites do mesmo
+  regime.** Com o piso de edição em 40 e `MINIMO_ACEITAVEL` parado em 60,
+  abriu uma ZONA MORTA de 40 a 59: instrução de edição legítima ("Deixe a 1ª
+  foto com o enquadramento e a luz da 2ª foto.", 55 caracteres) era descartada,
+  o texto cru do corretor voltava no lugar e a tela dizia "não consegui
+  melhorar seu pedido" sobre uma reescrita boa. Apareceu ESCREVENDO O TESTE,
+  não em produção.
+- **"Não dá para enviar mais de uma foto" era o mesmo defeito visto de fora.**
+  O anexo múltiplo funciona ponta a ponta desde 11/09 (composer `multiple`,
+  upload de todas, `image[]` na rota — conferido: a branch de produção está
+  exatamente no commit que o trouxe). Só que `renderAcima` desenhava
+  `m.dados.url`, a PRIMEIRA. Anexar duas e ver uma é indistinguível de "a
+  segunda não foi". **Recurso que não se MOSTRA é indistinguível de recurso que
+  não existe** — irmã da lição de 10/09. Hoje o balão mostra todas numeradas, o
+  composer conta as presas e diz que o clipe SOMA em vez de trocar, e a
+  proposta declara quantas entraram e em que ordem. A numeração não é enfeite:
+  é ela que dá sentido a "a primeira" e "a segunda" na frase do corretor.
+- **Mais um comentário que tinha virado mentira:** `referenciaAtiva`
+  justificava "o último balão vence" com *"o motor de edição aceita uma"* —
+  falso desde 11/09. A regra fica pelo motivo certo (anexar de novo é TROCAR;
+  somar tudo faria a terceira tentativa carregar as fotos das duas anteriores),
+  e o custo — fotos em mensagens separadas não se somam — deixou de ser calado.
+- **Fica de fora, declarado:** dar VISÃO ao tradutor é possível (`gpt-4.1-mini`
+  lê imagem), mas mexeria em `llm.ts`, o caminho único do atendimento inteiro
+  do WhatsApp, e a cascata tem provedores sem visão. Antes de pagar esse risco,
+  medir se a instrução de edição basta — o gerador vê as fotos, e é ele que
+  decide a imagem.
+- **`git checkout --` na provocação só depois de COMMITAR**, de novo. Desta vez
+  a ordem foi commit → provocar as quatro mordidas → árvore limpa, e nada se
+  perdeu (na sessão de 12/09 esse mesmo laço apagou um extrator inteiro).
+
+## O tradutor passou a OLHAR as fotos, e ganhou o ofício (15/09/2026)
+
+Nota: [[o-tradutor-passou-a-olhar-as-fotos]]. Sequência direta do defeito
+acima, no mesmo dia, a pedido do usuário.
+
+- **Visão entrou por `llm.ts`, o caminho único — não por uma porta lateral.**
+  A tentação era um `visao.ts` próprio, que resolveria sem encostar no módulo
+  por onde passa o atendimento inteiro do WhatsApp. Recusado pelo motivo que
+  esta base já pagou: `aiParser.ts` e `campaignQueue.ts` tinham `fetch`
+  próprio e divergiram até serem migrados. O que torna seguro entrar ali é o
+  DESENHO: `imagens` é opcional (sem ela o corpo é byte a byte o de antes, com
+  teste afirmando que o conteúdo do usuário continua uma `string`), e
+  `Provedor.leImagem?` tem **ausente = não**.
+- **Com foto no pedido, provedor de TEXTO não é chamado.** Mandar imagem para
+  um modelo que não a lê devolve HTTP 400, e a cascata seguiria adiante
+  achando que ele estava doente — provedor saudável marcado como caído é o
+  tipo de diagnóstico errado que já custou sessão aqui.
+- **A decisão de OLHAR vem ANTES de escrever o prompt** (`algumProvedorLeImagem`).
+  O prompt promete uma coisa ou outra ("você está vendo" × "você NÃO está
+  vendo"), e prometer errado recria a instrução impossível que causou o defeito
+  original. Três condições juntas: há fotos, temos as URLs, existe provedor com
+  visão. Faltando qualquer uma, o caminho cego assume — ele **não foi apagado,
+  virou a degradação**, e é exercitado por teste.
+- **A tela diz qual dos dois aconteceu** (`viuAsFotos`): "Olhei as 2 fotos…"
+  contra "…mas escrevi sem conseguir vê-las, confira se bate". Esconder a
+  diferença é o mesmo pecado que `daIa` já cobre — aprovar no escuro.
+- **URL pública, conferida antes e não suposta.** `select public from
+  storage.buckets` devolve `true` para `empreendimentos`. Sem essa checagem a
+  visão falharia CALADA: a OpenAI receberia 403 e o sintoma seria "a IA voltou
+  a inventar". `detail: "low"` são 85 tokens FIXOS por foto contra ~750-1500 em
+  `high` — o que o tradutor precisa ver é assunto, enquadramento e clima, não a
+  marca gravada no vidro. As fotos vão numeradas e ANTES do texto, na ordem em
+  que o corretor anexou.
+- **As "skills" pedidas viraram DADO, não parágrafo solto** (`oficio.ts`), e o
+  que decidiu o desenho foi onde elas NÃO cabiam: `receitas.ts` é a espinha de
+  cada trabalho (o corretor escolhe), `gramatica.ts` é a forma do texto. Oito
+  regras, cada uma apontando um defeito conhecido — verticais aprumadas (o
+  prédio caindo para trás), a hora que vende (o *dusk shot*), céu sem HDR,
+  escala humana sem rosto, um assunto só, sombra e reflexo coerentes, respiro
+  para o texto, e o que preservar ao editar.
+- **Filtradas por REGIME, de propósito.** Mandar "prefira a hora azul" para
+  quem está clareando uma foto gasta metade do bloco com instrução que não se
+  aplica — e `tradutor.ts` registra que prompt gigante DILUI o assunto, que é o
+  defeito que ele existe para consertar.
+- **A régua de entrada do ofício: específico e acionável, nunca elogio.** "Faça
+  uma imagem de alta qualidade" não muda pixel nenhum — o modelo já está
+  tentando. A guarda cobra isso, e **pegou uma regra MINHA na primeira
+  execução, pelo motivo errado**: `top\w*` casou em "nunca convergindo para o
+  TOPO", substantivo concreto e exatamente o tipo de instrução que o módulo
+  existe para ter. Reescrita para FRASES. Sétima vez que uma guarda desta base
+  tropeça no próprio recorte.
+- **O que continua sem prova:** não há chave de API neste ambiente, então o
+  que está demonstrado é a MECÂNICA (as imagens viajam, o prompt certo é
+  montado, a degradação funciona). A medida do DESFECHO só sai de gerar algumas
+  artes reais e olhar — a mesma distinção que o eval já registra entre
+  mecanismo funcionando e resultado melhor.
+
+## Subir para produção com outra sessão à frente (15/09/2026)
+
+- **A branch de produção tinha andado 27 commits** (542bca7 → c257b57, de
+  13/09) enquanto esta sessão trabalhava. Merjar às cegas teria sido o erro:
+  a outra sessão mexeu em `gramatica.ts`, `turno.ts` e `ChatDeArte.tsx` — os
+  MESMOS arquivos. O caminho foi trazer produção para a branch de trabalho
+  primeiro, resolver e testar aqui, e só então fazer `--ff-only` no sentido
+  contrário. **Nunca force-push sobre trabalho alheio.**
+- **O conflito textual é o barato; o caro é o SEMÂNTICO.** O git acusou dois
+  arquivos (`gramatica.ts` e o `MEMORIA.md`, que colide sempre e resolve por
+  união). O que ele NÃO podia acusar: em 11/09 eles abriram o Estúdio para
+  qualquer assunto e desarmaram `conferir` por isso — e o `oficio.ts` que eu
+  tinha acabado de escrever INSTRUÍA "verticais do prédio aprumadas" em todo
+  prompt. Mesmo defeito que eles corrigiram, do outro lado do espelho.
+  **Depois de um merge, procurar a DECISÃO que o outro lado tomou, não só as
+  linhas que o git marcou.**
+- **A conta do domínio é uma só.** `imovelCitado ? "imovel" : "livre"` já
+  existia para o briefing; o tradutor passou a usar o mesmo literal, com teste
+  exigindo que continuem sendo duas ocorrências da MESMA expressão — duas
+  contas do mesmo número divergem, e esta base registra isso desde
+  `montarResumo`.
+- **Provocação que não morde é achado, não alívio.** Cravar
+  `dominio: "imovel"` no turno não reprovava teste nenhum: a ligação existia
+  sem dono. A guarda nasceu daí, e foi mordida depois de escrita.
+- **A régua do deploy, exercitada:** `vercel.json` com 4 crons (o teto do
+  Hobby aceita — medido em 11/09); depois do push, esperar o registro
+  `Production` na API de deployments do GitHub, que nasce ~1 min DEPOIS do
+  `Preview` — consultar antes imita exatamente uma recusa. Deu
+  `2fef6fa Production success`, e o smoke das 6 rotas públicas mais a rota de
+  cron (401 = viva recusando sem segredo) fechou em 200/401.
+- **O que ficou pendente e não bloqueia:** conferir no banco se a 0112 (deles,
+  índices de FK e policies com initplan) está aplicada — o Supabase estava em
+  manutenção programada. Não bloqueia porque ela não cria tabela nem coluna:
+  nenhum código lê objeto que possa faltar. É performance, não correção.

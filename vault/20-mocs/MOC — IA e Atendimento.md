@@ -4,7 +4,7 @@ tags: [moc, ia, prompt]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-09-15
 summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 ---
 # IA e Atendimento (Sofia) — Map of Content
@@ -45,6 +45,8 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[llm-conduz-o-briefing-da-imagem]] — intenção → perguntas → plano → geração
 - [[o-contrato-real-do-gpt-image-2]] — sondar a API sem gastar imagem; `input_fidelity` não existe (10/09)
 - [[o-tradutor-de-prompt-de-imagem]] — um prompt só, em português, editável antes de gastar (10/09)
+- [[o-tradutor-era-cego-e-inventava-a-cena]] — ele recebia um booleano e era mandado descrever a foto; com foto, edição não é criação (15/09)
+- [[o-tradutor-passou-a-olhar-as-fotos]] — visão por `llm.ts` (default-off), e o ofício como dado filtrado por regime (15/09)
 - [[a-resposta-de-chip-era-jogada-fora]] — o corretor respondia e nada mudava; achado por um warning de lint (10/09)
 - [[a-ressalva-legal-volta-por-codigo]] — o aviso de imagem ilustrativa ficou sem dono, e a 1ª versão dava 2,08:1 (10/09)
 - [[a-clausula-anti-texto-impedia-o-produto]] — a proibição de escrever na imagem saiu; aspas ditam a manchete (11/09)

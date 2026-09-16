@@ -99,7 +99,7 @@ export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
           <div className="pt-2 flex items-center gap-2">
             <Link
               href={`/empreendimentos/${imovel.slug}`}
-              className="flex-1 text-center px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-xs font-semibold transition-all shadow-md shadow-brand-500/20"
+              className="flex-1 text-center px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-xs font-semibold transition-all shadow-md shadow-brand-500/20 botao-vivo"
             >
               Ver imóvel
             </Link>

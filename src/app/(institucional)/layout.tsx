@@ -1,18 +1,10 @@
-import { preload } from "react-dom";
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
-import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import {
-  FUNDO_HOME_POSTER_URL,
-  FUNDO_HOME_VIDEO_URL,
-  FUNDO_HOME_VIDEO_WEBM_URL,
-  INTRO_POSTER_URL,
-} from "@/lib/site";
 
 /**
  * Casca do site institucional — a face pública para quem chega pelo Google,
@@ -44,14 +36,6 @@ export default async function InstitucionalLayout({
   // uma escolha que ele fez no painel.
   const videoDoCorretor = corretorAtivo?.videoUrl || null;
 
-  // O poster é o candidato a LCP: avisar o navegador no <head>, antes de
-  // ele chegar ao <img> no meio do body — na rede lenta, os 14 chunks de JS
-  // pré-carregados disputam a banda com ele, e o `<link rel="preload">` com
-  // `fetchPriority="high"` é o que o põe na frente da fila.
-  if (!usaFotoDeFundo && !videoDoCorretor) {
-    preload(FUNDO_HOME_POSTER_URL, { as: "image", fetchPriority: "high", media: "(max-width: 767.98px)" });
-    preload(INTRO_POSTER_URL, { as: "image", fetchPriority: "high", media: "(min-width: 768px)" });
-  }
 
   return (
     <GlassBackgroundProvider>
@@ -59,6 +43,7 @@ export default async function InstitucionalLayout({
           grupo (vitrine); o sessionStorage garante que aparece uma vez só,
           por qualquer porta que o visitante entre. */}
       <Preloader />
+      <div className="barra-progresso" aria-hidden />
 
       <HeaderInstitucional />
 
@@ -88,60 +73,23 @@ export default async function InstitucionalLayout({
 
             Foto de fundo do corretor continua tendo precedência: é
             personalização explícita dele. */}
-        {/* O POSTER do fundo, no HTML do servidor (F2, 13/09/2026).
-
-            O `FundoVideoIntro` não emite vídeo nenhum no SSR (a escolha
-            celular/desktop é `matchMedia`, só existe no cliente) e o
-            invólucro dele nasce `opacity-0` até o vídeo ter dados. Ou seja:
-            antes desta imagem, o fundo da home era um vazio até o WebM
-            baixar — e no celular de referência o primeiro quadro do vídeo
-            chegava aos 8,3 s, como LCP. Este `<img>` é o MESMO quadro (o
-            de 1,5 s no celular, o primeiro no desktop), pesa 12–32 KB,
-            chega em ~1 s com `fetchPriority="high"` e é o candidato a LCP
-            que o Chrome mede. O vídeo entra por cima com o fade que já
-            tinha, quando chegar.
-
-            `<img>` cru de propósito: `next/image` não faz `<picture>` com
-            fonte por breakpoint, e o otimizador só adicionaria uma volta a
-            uma imagem que já está no tamanho e formato certos. */}
-        {!usaFotoDeFundo && !videoDoCorretor && (
-          <picture>
-            <source media="(max-width: 767.98px)" srcSet={FUNDO_HOME_POSTER_URL} />
-            <img
-              src={INTRO_POSTER_URL}
-              alt=""
-              fetchPriority="high"
-              decoding="async"
-              className="fundo-poster fundo-encaixa-na-tela absolute inset-0 h-full w-full"
-            />
-          </picture>
-        )}
+        {/* A imagem de poster da vinheta (F2 de performance, 13/09) saiu
+            junto com o vídeo de fundo, no mesmo dia: era o MESMO quadro do
+            logotipo que o usuário pediu para tirar. O LCP passa a ser o
+            conteúdo do herói, que já nasce visível (F1). */}
         {usaFotoDeFundo ? (
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : videoDoCorretor ? (
           <HeroVideoBackground src={videoDoCorretor} />
-        ) : (
-          /* No celular, a home tem vinheta própria (prédios abrindo para a
-             logo no céu); no desktop segue a de abertura, a mesma que o
-             preloader acabou de mostrar. */
-          <FundoVideoIntro
-            fonteMobile={{
-              webm: FUNDO_HOME_VIDEO_WEBM_URL,
-              mp4: FUNDO_HOME_VIDEO_URL,
-              vertical: true,
-              // Congela com a logo inteira e os prédios em volta; o fim da
-              // peça é um close que corta "Next Home" atrás da busca.
-              //
-              // 1,5s + subir 26% da tela: medido quadro a quadro. Antes de
-              // 1,5s a marca ainda não fechou; depois, só cresce. Os 26%
-              // são o que tira o símbolo da frente do cartão de busca (que
-              // começa a 51% da tela) sem levar o topo dele para trás do
-              // header.
-              pararEm: 1.5,
-              deslocarY: -26,
-            }}
-          />
-        )}
+        ) : null}
+        {/* O fundo em VÍDEO (a vinheta congelada no último quadro) SAIU de
+            todas as páginas em 13/09/2026, a pedido: o quadro parado do
+            logotipo atrás do conteúdo lia como imagem de fundo aleatória, e
+            no celular aparecia inteiro entre as seções. O que fica é a
+            aurora em CSS (`fundo-aurora`): as cores da marca, custo zero de
+            rede. A vinheta continua no Preloader — como abertura, não como
+            papel de parede. Foto ou vídeo PRÓPRIO do corretor seguem tendo
+            precedência. */}
         {/* O véu tem PESOS DIFERENTES por largura, e a razão é o que está
             por cima dele. No desktop o h1 é centrado e a logo passa
             exatamente atrás dele — com pouco véu o título some. No celular
@@ -152,7 +100,7 @@ export default async function InstitucionalLayout({
             celular vai a zero no topo. O degrau FINAL continua forte nas
             duas: é ele que evita o corte seco para a primeira banda
             opaca, e é ele que sustenta o esmaecimento da base do vídeo. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-fundo/0 via-fundo/0 to-fundo/85 sm:from-fundo/70 sm:via-fundo/62 sm:to-fundo/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-fundo/0 via-fundo/10 to-fundo/90" />
       </div>
 
       {children}

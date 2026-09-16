@@ -235,7 +235,12 @@ export async function turnoDeArte(params: {
     fatos: imovelCitado ? fatosDoImovelCitado(imovelCitado) : [],
     respostas,
     promptAnterior: propostaAnterior?.prompt ?? null,
-    temReferencia: referencias.length > 0,
+    fotosDeReferencia: referencias.length,
+    // As URLs vão na MESMA ordem das miniaturas do balão: é essa ordem que
+    // dá sentido a "a 1ª foto" tanto para quem escreve quanto para quem gera.
+    urlsDeReferencia: referencias.map((referencia) => referencia.url),
+    // O MESMO critério que decide o domínio do briefing — uma conta só.
+    dominio: imovelCitado ? "imovel" : "livre",
   });
 
   const proposta: PropostaDeArte = {
@@ -259,9 +264,32 @@ export async function turnoDeArte(params: {
    * editável. Repetir aqui faria a pessoa ler duas vezes a mesma coisa e
    * ainda daria a impressão de que o de cima é o que vale.
    */
-  const notaDaFoto = referencias.length > 0
-    ? ` Vou partir de ${referencias.length === 1 ? "uma foto que você anexou" : `${referencias.length} fotos que você anexou`}.`
-    : "";
+  /*
+   * A nota diz QUANTAS fotos entraram e que elas vão NUMERADAS.
+   *
+   * Sem o número, "deixe a primeira parecida com a segunda" é um pedido que o
+   * corretor não tem como conferir: ele não sabe se as duas chegaram nem em
+   * que ordem. Com ele, a conta fecha na tela — as miniaturas do balão levam
+   * o mesmo 1 e 2.
+   */
+  /*
+   * E a nota diz se eu OLHEI para elas.
+   *
+   * "Escrevi vendo suas fotos" e "escrevi sem poder vê-las" produzem textos
+   * de confiança diferente, e esconder a diferença é o mesmo pecado de
+   * aprovar no escuro que `daIa` já cobre. O segundo caso é real: sem chave
+   * do motor, o tradutor cai no caminho cego.
+   */
+  const quais =
+    referencias.length === 1
+      ? "a foto que você anexou"
+      : `as ${referencias.length} fotos que você anexou, na ordem do seu balão (1 a ${referencias.length})`;
+  const notaDaFoto =
+    referencias.length === 0
+      ? ""
+      : traduzido.viuAsFotos
+        ? ` Olhei ${quais}.`
+        : ` Vou partir de ${quais} — mas escrevi sem conseguir vê-las, então confira se bate.`;
   const texto = traduzido.daIa
     ? soarHumano(
         `Escrevi assim.${notaDaFoto} Leia e ajuste o que quiser — é exatamente esse texto ` +

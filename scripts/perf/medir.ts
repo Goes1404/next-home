@@ -55,6 +55,8 @@ type Perfil = "celular" | "desktop";
 type Medida = {
   lcp: number | null;
   lcpElemento: string | null;
+  /** Todos os candidatos a LCP, na ordem em que o Chrome os promoveu. */
+  historicoLcp?: { t: number; elemento: string; area: number }[];
   cls: number;
   ttfb: number;
   domContentLoaded: number;
@@ -96,12 +98,14 @@ function lerArgs() {
     semVinheta: args.has("sem-vinheta"),
     gravar: !args.has("sem-gravar"),
     rotulo: args.get("rotulo") ?? "",
+    /** `--historico`: imprime cada candidato a LCP por rodada (diagnóstico). */
+    historico: args.has("historico"),
   };
 }
 
 /** Roda antes de qualquer script da página: instala os observadores. */
 const SCRIPT_OBSERVADORES = `
-  window.__perf = { lcp: null, lcpElemento: null, cls: 0, longas: 0 };
+  window.__perf = { lcp: null, lcpElemento: null, cls: 0, longas: 0, historico: [] };
   try {
     new PerformanceObserver((lista) => {
       for (const e of lista.getEntries()) {
@@ -110,6 +114,10 @@ const SCRIPT_OBSERVADORES = `
         window.__perf.lcpElemento = el
           ? el.tagName.toLowerCase() + (el.className && typeof el.className === "string" ? "." + el.className.trim().split(/\\s+/).slice(0, 3).join(".") : "")
           : (e.url || "?");
+        // Cada candidato que o Chrome promoveu, na ordem: é o que explica
+        // "o LCP subiu" — o mesmo elemento repintado maior (fonte que
+        // chegou) conta como candidato novo.
+        window.__perf.historico.push({ t: Math.round(e.startTime), elemento: window.__perf.lcpElemento, area: e.size });
       }
     }).observe({ type: "largest-contentful-paint", buffered: true });
     new PerformanceObserver((lista) => {
@@ -147,6 +155,7 @@ const SCRIPT_MEDIDA = String.raw`(() => {
   return {
     lcp: perf.lcp,
     lcpElemento: perf.lcpElemento,
+    historicoLcp: perf.historico,
     cls: perf.cls,
     ttfb: nav.responseStart,
     domContentLoaded: nav.domContentLoadedEventEnd,
@@ -269,6 +278,9 @@ async function main() {
         const m = await medirUma(cfg.base, pagina, perfil, cfg.semVinheta);
         rodadas.push(m);
         console.log(`  ${perfil.padEnd(7)} ${pagina.padEnd(40)} rodada ${i + 1}: LCP ${s(m.lcp)} · TTFB ${Math.round(m.ttfb)} ms · CLS ${m.cls.toFixed(3)}`);
+        if (cfg.historico) {
+          for (const h of m.historicoLcp ?? []) console.log(`           ${String(h.t).padStart(6)} ms  ${String(h.area).padStart(7)} px²  ${h.elemento}`);
+        }
       }
       resultados.push({ pagina, perfil, rodadas, mediana: medianaDe(rodadas) });
     }

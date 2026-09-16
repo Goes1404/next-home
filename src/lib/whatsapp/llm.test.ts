@@ -326,3 +326,54 @@ describe("IA_ORDEM_PROVEDORES (eval e benchmark)", () => {
     expect(ordemDosProvedores().map((p) => p.nome)).toEqual(["openai"]);
   });
 });
+
+/*
+ * Visão (15/09/2026). O tradutor de imagem precisa que o modelo OLHE para a
+ * foto de referência; antes ele recebia um booleano e era mandado descrever
+ * a cena, e inventava. A regra que sustenta isso aqui é uma só: com foto no
+ * pedido, só entra provedor que declara `leImagem`.
+ */
+describe("Visão: com foto, só quem sabe olhar entra", () => {
+  it("a OpenAI recebe as imagens e as repassa ao adaptador", async () => {
+    process.env.OPENAI_API_KEY = "sk-teste";
+    ({ chamarLlmJson } = await import("./llm"));
+    chamarOpenaiJson.mockResolvedValue(ok("gpt-4.1-mini"));
+
+    await chamarLlmJson("descreva", { imagens: ["https://sto/a.jpg", "https://sto/b.jpg"] });
+
+    expect(chamarOpenaiJson).toHaveBeenCalledTimes(1);
+    expect(chamarOpenaiJson.mock.calls[0][1].imagens).toEqual([
+      "https://sto/a.jpg",
+      "https://sto/b.jpg",
+    ]);
+  });
+
+  it("provedor de TEXTO não recebe foto — mandar devolveria 400 e pareceria queda", async () => {
+    // Sem chave da OpenAI sobram os de reserva, e nenhum declara visão.
+    const r = await chamarLlmJson("descreva", { imagens: ["https://sto/a.jpg"] });
+
+    expect(chamarGeminiJson).not.toHaveBeenCalled();
+    expect(chamarNvidiaJson).not.toHaveBeenCalled();
+    expect(r.ok).toBe(false);
+  });
+
+  it("sem foto, nada muda: os provedores de texto seguem atendendo", async () => {
+    chamarGeminiJson.mockResolvedValue(ok("gemini-2.5-flash"));
+
+    const r = await chamarLlmJson("oi");
+
+    expect(r.ok).toBe(true);
+    expect(chamarGeminiJson).toHaveBeenCalledTimes(1);
+    expect(chamarGeminiJson.mock.calls[0][1].imagens).toEqual([]);
+  });
+
+  it("`algumProvedorLeImagem` responde antes de alguém prometer visão no prompt", async () => {
+    const { algumProvedorLeImagem } = await import("./llm");
+    expect(algumProvedorLeImagem()).toBe(false);
+
+    process.env.OPENAI_API_KEY = "sk-teste";
+    vi.resetModules();
+    const comMotor = await import("./llm");
+    expect(comMotor.algumProvedorLeImagem()).toBe(true);
+  });
+});

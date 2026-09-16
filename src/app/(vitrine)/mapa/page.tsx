@@ -50,7 +50,7 @@ export default async function MapaPage({
         {/* Cabeçalho da Página do Mapa */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <span className="text-[11px] uppercase tracking-widest font-bold text-acento-forte">
+            <span className="text-xs uppercase tracking-widest font-bold text-acento-forte">
               Geolocalização & Arquitetura
             </span>
             <h1 className="text-fluid-xl sm:text-fluid-2xl font-bold text-titulo tracking-tight">

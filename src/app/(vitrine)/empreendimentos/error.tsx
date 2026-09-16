@@ -39,7 +39,7 @@ export default function Error({
         <button
           type="button"
           onClick={reset}
-          className="rounded-full bg-brand-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-400"
+          className="rounded-full bg-brand-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-400 botao-vivo"
         >
           Tentar de novo
         </button>

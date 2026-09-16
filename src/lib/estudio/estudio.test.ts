@@ -312,3 +312,32 @@ describe("o Estúdio não assume que todo pedido é de imóvel", () => {
     expect(ondeImobiliaria).toBeLessThan(uso);
   });
 });
+
+/*
+ * O ofício (`oficio.ts`) carrega regras de arquitetura — "verticais do prédio
+ * aprumadas" — e elas só podem entrar quando o pedido É de imóvel. O
+ * engenheiro já decide isso por `dominio`; o tradutor passou a decidir pelo
+ * MESMO critério em 15/09/2026.
+ *
+ * Esta guarda nasceu de uma provocação que NÃO mordeu: cravar
+ * `dominio: "imovel"` no turno não reprovava teste nenhum, o que quer dizer
+ * que a ligação não tinha dono. Guarda que não é provocada é só otimismo.
+ */
+describe("o domínio do tradutor sai do imóvel citado, não de um literal", () => {
+  it("o turno passa o domínio ao tradutor, derivado de `imovelCitado`", () => {
+    const codigo = ler(LIB[0])
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+
+    const chamada = codigo.match(/traduzirPedido\(\{[\s\S]*?\n  \}\)/);
+    expect(chamada, "a chamada do tradutor mudou de forma").not.toBeNull();
+    expect(chamada![0]).toMatch(/dominio: imovelCitado \? "imovel" : "livre"/);
+  });
+
+  it("os dois caminhos usam a MESMA conta — duas contas divergem", () => {
+    const codigo = ler(LIB[0]);
+    const ocorrencias = codigo.match(/dominio: imovelCitado \? "imovel" : "livre"/g) ?? [];
+    // Uma para o briefing (engenheiro), uma para o tradutor.
+    expect(ocorrencias.length).toBe(2);
+  });
+});

@@ -20,14 +20,24 @@ import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
  * de detalhe usa o mesmo nome, então o navegador interpola a foto do card
  * até a posição do hero em vez de trocar as duas páginas secamente.
  */
+type Titulo = "h2" | "h3";
+
 export function CardEmpreendimento({
   empreendimento: e,
   prioridade = false,
   sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
   aspecto = "aspect-[4/3]",
   velocidadeCapa = 0.12,
+  nivel = "h3",
 }: {
   empreendimento: Empreendimento;
+  /**
+   * Tag do título do cartão. Na home e nas seções ele é h3 (há um h2 de
+   * seção acima); na LISTAGEM e na página de região o cartão é a primeira
+   * subdivisão sob o h1 — h3 ali pulava um nível, e leitor de tela anuncia
+   * o salto (auditoria de 13/09/2026).
+   */
+  nivel?: Titulo;
   /** `priority` na imagem — só para os primeiros cards acima da dobra. */
   prioridade?: boolean;
   sizes?: string;
@@ -40,6 +50,7 @@ export function CardEmpreendimento({
    */
   velocidadeCapa?: number;
 }) {
+  const Titulo = nivel;
   const ficha = resumoTipologias(e.tipologias);
 
   return (
@@ -115,11 +126,11 @@ export function CardEmpreendimento({
         <BrilhoCarro />
 
         <div className="px-5 py-4">
-          <h3 className="font-display text-lg text-titulo">
+          <Titulo className="font-display text-lg text-titulo">
             <span className="bg-gradient-to-r from-acento-forte to-acento-forte bg-[length:0%_1px] bg-left-bottom bg-no-repeat transition-[background-size] duration-500 group-hover:bg-[length:100%_1px]">
               {e.nome}
             </span>
-          </h3>
+          </Titulo>
           <p className="text-fluid-sm mt-0.5 text-legenda">
             {e.bairro}, {e.cidade}
           </p>

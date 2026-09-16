@@ -32,7 +32,7 @@ export function BookDigital({ empreendimento: e }: Props) {
               percebe só que o painel tem profundidade. */}
           <Camada
             velocidade={0.4}
-            className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-acento/15 blur-3xl"
+            className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-acento/15 blur-3xl botao-vivo"
           >
             <span />
           </Camada>
@@ -74,7 +74,7 @@ export function BookDigital({ empreendimento: e }: Props) {
                     href={e.bookUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="min-h-[52px] px-8 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-sm font-bold transition-all shadow-xl shadow-brand-500/25 flex items-center justify-center gap-2.5 active:scale-98"
+                    className="min-h-[52px] px-8 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-sm font-bold transition-all shadow-xl shadow-brand-500/25 flex items-center justify-center gap-2.5 active:scale-98 botao-vivo"
                   >
                     <span> <Download className="inline-block w-5 h-5 align-text-bottom mr-1" />  Baixar Book Completo (PDF)</span>
                     <span className="text-xs">↗</span>
@@ -94,7 +94,7 @@ export function BookDigital({ empreendimento: e }: Props) {
                   href={linkWhatsappBook}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="min-h-[52px] px-8 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-sm font-bold transition-all shadow-xl shadow-brand-500/25 flex items-center justify-center gap-2 active:scale-98"
+                  className="min-h-[52px] px-8 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-sm font-bold transition-all shadow-xl shadow-brand-500/25 flex items-center justify-center gap-2 active:scale-98 botao-vivo"
                 >
                   <span> <Smartphone className="inline-block w-5 h-5 align-text-bottom mr-1" />  Solicitar Book no WhatsApp</span>
                   <span> <ArrowRight className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>

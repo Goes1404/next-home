@@ -1,6 +1,12 @@
 import { deflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
-import { dedupInterno, extrairDePdf, parsearTabelaLeads } from "./importacao";
+import { montarZip } from "../../../test/zipDeTeste";
+import {
+  dedupInterno,
+  extrairDePdf,
+  extrairDeZipWhatsapp,
+  parsearTabelaLeads,
+} from "./importacao";
 
 describe("Importação de leads — tabela com cabeçalho", () => {
   it("lê um CSV com ponto e vírgula e cabeçalho em português", () => {
@@ -167,5 +173,125 @@ describe("Importação de leads — PDF", () => {
 
     expect(resultado.candidatos).toHaveLength(0);
     expect(resultado.aviso).toMatch(/escaneado/i);
+  });
+});
+
+describe("Importação — conversa exportada do WhatsApp (.zip)", () => {
+  const CONVERSA = [
+    "12/09/2026 09:41 - As mensagens e as chamadas são protegidas com a criptografia de ponta a ponta.",
+    "12/09/2026 09:41 - +55 11 99123-4567: Boa tarde! Vi o anúncio do Vitra Alphaville",
+    "12/09/2026 09:42 - +55 11 99123-4567: Ainda tem de 2 dormitórios?",
+    "12/09/2026 09:45 - Bruna Next Home: Oi! Tenho sim",
+    "12/09/2026 09:45 - Bruna Next Home: <Arquivo de mídia oculto>",
+  ].join("\n");
+
+  function zipDaConversa(nome = "Conversa do WhatsApp com +55 11 99123-4567.txt", texto = CONVERSA) {
+    return montarZip([
+      { nome: "IMG-20260912-WA0001.jpg", conteudo: Buffer.alloc(4000, 3) },
+      { nome, conteudo: texto },
+    ]);
+  }
+
+  it("traz o cliente e deixa o corretor de fora", async () => {
+    const resultado = await extrairDeZipWhatsapp(zipDaConversa());
+
+    expect(resultado.metodo).toBe("whatsapp");
+    expect(resultado.candidatos).toHaveLength(1);
+    expect(resultado.candidatos[0].telefoneE164).toBe("5511991234567");
+    expect(resultado.candidatos[0].mensagem).toContain("Vitra Alphaville");
+  });
+
+  it("exclui o corretor pelo WhatsApp dele quando é grupo", async () => {
+    const grupo = [
+      "12/09/2026 09:41 - +55 11 99123-4567: oi",
+      "12/09/2026 09:42 - +55 11 98888-7777: bom dia",
+      "12/09/2026 09:43 - +55 11 97220-7204: oi gente, sou a Bruna",
+    ].join("\n");
+
+    const resultado = await extrairDeZipWhatsapp(
+      zipDaConversa("Conversa do WhatsApp com Clientes Alphaville.txt", grupo),
+      { nome: "Bruna Next Home", telefone: "5511972207204" },
+    );
+
+    expect(resultado.candidatos.map((c) => c.telefoneE164)).toEqual([
+      "5511991234567",
+      "5511988887777",
+    ]);
+  });
+
+  it("mantém o contato salvo na agenda, sem telefone e com aviso", async () => {
+    const salvo = [
+      "12/09/2026 09:41 - Ana Prado: Oi Bruna, quero ver o decorado",
+      "12/09/2026 09:42 - Bruna Next Home: Claro!",
+    ].join("\n");
+
+    const resultado = await extrairDeZipWhatsapp(
+      zipDaConversa("Conversa do WhatsApp com Ana Prado.txt", salvo),
+    );
+
+    expect(resultado.candidatos).toHaveLength(1);
+    expect(resultado.candidatos[0].nome).toBe("Ana Prado");
+    // Nada de inventar: o número simplesmente não está no arquivo.
+    expect(resultado.candidatos[0].telefone).toBe("");
+    expect(resultado.candidatos[0].telefoneE164).toBeNull();
+    expect(resultado.aviso).toContain("salvo");
+  });
+
+  it("não carimba DDI 55 em número estrangeiro", async () => {
+    const gringo = [
+      "12/09/2026 09:41 - +1 415 555-2671: hi, I saw your listing",
+      "12/09/2026 09:42 - +1 415 555-2671: is it still available?",
+      "12/09/2026 09:43 - Bruna Next Home: Hi!",
+    ].join("\n");
+
+    const resultado = await extrairDeZipWhatsapp(
+      zipDaConversa("Conversa do WhatsApp com +1 415 555-2671.txt", gringo),
+    );
+
+    expect(resultado.candidatos[0].telefone).toBe("+1 415 555-2671");
+    expect(resultado.candidatos[0].telefoneE164).toBeNull();
+  });
+
+  it("ordena pelos que mais falaram", async () => {
+    const grupo = [
+      "12/09/2026 09:41 - +55 11 98888-7777: oi",
+      "12/09/2026 09:42 - +55 11 99123-4567: bom dia",
+      "12/09/2026 09:43 - +55 11 99123-4567: tenho interesse no Vitra",
+      "12/09/2026 09:44 - +55 11 99123-4567: dá para visitar sábado?",
+    ].join("\n");
+
+    const resultado = await extrairDeZipWhatsapp(
+      zipDaConversa("Conversa do WhatsApp com Grupo.txt", grupo),
+      { nome: "Bruna", telefone: "5511972207204" },
+    );
+
+    expect(resultado.candidatos[0].telefoneE164).toBe("5511991234567");
+  });
+
+  it("aceita uma lista compactada, que não é conversa nenhuma", async () => {
+    const zip = montarZip([
+      { nome: "leads.csv", conteudo: "nome;telefone\nAna Prado;11991234567" },
+    ]);
+
+    const resultado = await extrairDeZipWhatsapp(zip);
+
+    expect(resultado.metodo).toBe("tabela");
+    expect(resultado.candidatos[0].nome).toBe("Ana Prado");
+  });
+
+  it("explica o .zip só com mídia em vez de dizer que não achou contato", async () => {
+    const zip = montarZip([{ nome: "IMG-0001.jpg", conteudo: Buffer.alloc(500, 1) }]);
+
+    const resultado = await extrairDeZipWhatsapp(zip);
+
+    expect(resultado.candidatos).toHaveLength(0);
+    expect(resultado.aviso).toContain("Sem mídia");
+  });
+
+  it("recusa um arquivo que não é .zip com uma frase útil", async () => {
+    const resultado = await extrairDeZipWhatsapp(Buffer.from("%PDF-1.4 isto é um pdf"));
+
+    expect(resultado.metodo).toBe("nenhum");
+    expect(resultado.aviso).toContain("não é um .zip");
   });
 });

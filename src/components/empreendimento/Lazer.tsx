@@ -6,7 +6,6 @@ import { createPortal } from "react-dom";
 import { FundoEmCamadas } from "@/components/motion/FundoEmCamadas";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
-import { fotosDoLazer } from "@/lib/lazerFotos";
 import type { Midia } from "@/lib/types";
 
 const semInscricao = () => () => {};
@@ -38,12 +37,19 @@ type Aberto = { item: string; foto: Midia };
  * o que prever, e prometer uma prévia que abre a foto errada é pior do que
  * não ter prévia.
  */
-export function Lazer({ itens, fotos = [] }: { itens: string[]; fotos?: Midia[] }) {
+export function Lazer({
+  itens,
+  fotosDosItens = [],
+}: {
+  itens: string[];
+  /** Par item → foto, decidido no servidor (`fotosDoLazer`): o cliente não recebe a galeria inteira para refazer a conta. */
+  fotosDosItens?: Array<[string, Midia]>;
+}) {
   const [aberto, setAberto] = useState<Aberto | null>(null);
   const montado = useMontado();
   const carencia = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const comFoto = fotosDoLazer(itens, fotos);
+  const comFoto = new Map(fotosDosItens);
 
   // Rolagem, Esc e clique fora fecham. O scroll é o gesto mais provável logo
   // depois de olhar a foto no celular — fechar nele evita o painel "grudado".

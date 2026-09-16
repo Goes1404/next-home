@@ -71,7 +71,7 @@ export function FiltrosAtivos({
             href={href}
             scroll={false}
             aria-label={`Remover filtro ${chip.label}`}
-            className="text-fluid-sm group inline-flex items-center gap-1.5 rounded-full border border-brand-500/40 bg-brand-500/10 py-1.5 pr-2.5 pl-3.5 text-corpo transition-colors hover:border-brand-400 hover:bg-brand-500/20"
+            className="text-fluid-sm group inline-flex items-center gap-1.5 rounded-full border border-brand-500/40 bg-brand-500/10 py-1.5 pr-2.5 pl-3.5 text-corpo transition-colors hover:border-brand-400 hover:bg-brand-500/20 botao-vivo"
           >
             {chip.label}
             <svg
