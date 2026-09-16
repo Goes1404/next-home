@@ -25,6 +25,7 @@ Vercel (plano Hobby), deploy e runtime.
 - [[constante-compartilhada-mora-em-modulo-sem-nativo]]
 - [[erro-que-so-existe-no-runtime-se-investiga-no-runtime]]
 - [[uma-piscada-do-banco-derrubava-a-home]] — Gateway Timeout de segundos virava 500 na home; repetir, nunca degradar (10/09)
+- [[a-aba-aberta-e-que-carrega-a-versao-antiga]] — não é cache de HTML (sai `no-store` em toda rota): quem segura a versão antiga é a aba que nunca renavegou (15/09)
 
 ## Performance
 - [[o-site-e-lento-por-desenho-nao-por-peso]] — `proxy.ts` chama `getUser()` em toda requisição; `cookies()` no layout raiz torna tudo dinâmico; função em iad1, banco em ca-central-1 (13/09)

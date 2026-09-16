@@ -7393,3 +7393,119 @@ e resolve por união); o conflito de verdade não tinha marcador nenhum.
   linhas que o git marcou. A outra metade é procurar a decisão que o SEU lado
   tomou e não commitou — essa é invisível para os dois lados e some sem
   barulho.
+## "O navegador carrega a versão antiga" não era cache de HTML (15/09/2026)
+
+Nota: [[a-aba-aberta-e-que-carrega-a-versao-antiga]].
+
+- **Três comandos derrubaram a causa provável.** O HTML sai
+  `private, no-cache, no-store` com `X-Vercel-Cache: MISS` em TODA rota
+  conferida (`/`, `/empreendimentos`, `/financiamento`, `/corretor/entrar`),
+  porque o `cookies()` do layout raiz torna tudo dinâmico. Não há service
+  worker no repositório. Os `/_next/static/**` são imutáveis, mas o nome
+  carrega hash por build. **Navegação de verdade nunca traz HTML velho** — e
+  é por isso que colar o link funcionava: colar o link É uma navegação.
+- **Quem segura a versão antiga é a ABA que nunca renavegou.** Ela guarda o
+  HTML e o JavaScript do build anterior e não pede nada ao voltar do segundo
+  plano; no celular fica suspensa por horas. E não fica só velha: chunk do
+  build anterior responde **404** (medido), e a Server Action dela também —
+  o caso que `ehActionDeOutroBuild` já tratava, mas só DEPOIS que a pessoa
+  tenta agir e falha. **Faltava o aviso antes do erro.**
+- **Ao investigar "versão antiga", medir o cabeçalho antes de culpar
+  cache.** As quatro causas possíveis (HTML cacheado, service worker, chunk
+  imutável, aba presa) pedem consertos completamente diferentes, e três
+  delas se descartam com `curl -sI`.
+- **O carimbo da build tem de ser DETERMINÍSTICO.** O `next.config` é
+  avaliado por mais de um processo — o build e a função em runtime —, então
+  um valor calculado na hora (`Date.now()`, sorteio) faria cliente e
+  servidor discordarem DENTRO da mesma build, e a faixa de "atualize"
+  ficaria na tela para sempre sem deploy nenhum. Sai do commit
+  (`VERCEL_GIT_COMMIT_SHA`), e `dev` fora da Vercel — na máquina de quem
+  desenvolve o `npm run build` roda o tempo todo.
+- **`env` do `next.config` é inlinado nos DOIS pacotes**, cliente e
+  servidor (a documentação garante a substituição pelo literal em tempo de
+  build). É isso que impede a aba e `/api/versao` de discordarem dentro da
+  mesma build. Conferido com um SHA falso: o literal aparece em
+  `.next/static/chunks/` e no chunk de servidor, e a rota responde
+  `{"versao":"abcdef012345"}` com `no-store`.
+- **A rota é `no-store` e não toca no banco, e as duas coisas têm guarda.**
+  Cacheada, ela devolveria o carimbo velho e o recurso inteiro viraria
+  decoração — com build verde, tela funcionando e nenhum erro em lugar
+  nenhum. É o padrão que esta base mais repete.
+- **Nunca recarrega sozinho.** Recarregar por conta própria perde o pedido
+  meio digitado no Estúdio ou o filtro montado na lista. O que faltava era
+  SABER, não decidir pela pessoa.
+- **Cala em dúvida**: rede fora, resposta torta, carimbo ausente ou `dev`
+  não anunciam nada. Falso positivo aqui ensina a ignorar o aviso — a régua
+  do `evolucaoConversa` e da faixa de queda do número.
+- **A faixa foi para o TOPO porque o rodapé tem QUATRO elementos fixos** —
+  WhatsApp, voltar ao topo, navegação do painel e a região de avisos, todos
+  em `acima-da-nav`. Empilhar um quinto ali é como um toque acaba no alvo
+  errado. Custo declarado: ela cobre a parte de cima do cabeçalho enquanto
+  está na tela.
+- **A guarda tropeçou no próprio COMENTÁRIO — quarta vez nesta base.** A
+  checagem "a rota não toca no banco" reprovou a rota certa porque o
+  comentário dela explica que a resposta "não lê arquivo, cookie nem
+  Supabase". Teste que lê código-fonte remove comentário antes de acusar.
+- **Achado de passagem, NÃO corrigido:** `nexthomeimobiliaria.com.br`
+  continua em `187.45.195.126` (Apache) servindo o site LEGADO. É a segunda
+  fonte de "versão antiga", e a única que nenhuma faixa dentro da aplicação
+  alcança — porque a aplicação não está lá. É virada de DNS mais
+  `NEXT_PUBLIC_SITE_URL`, como a seção de SEO já registra.
+- **Erro meu de medição, e vale a régua:** encadeei um segundo
+  `npm run build` sem a variável no mesmo comando e ele sobrescreveu o
+  `.next` do primeiro — o `grep` seguinte deu zero e pareceu que o `env` não
+  inlinava nada. **Build de verificação não divide comando com outro build.**
+
+## A remoção levou a peça errada junto (15/09/2026)
+
+Nota: [[a-remocao-levou-a-peca-errada-junto]].
+
+- **Um componente montava DUAS peças, e a queixa era de uma.**
+  `FundoVideoIntro` com `fonteMobile` toca vídeos DIFERENTES por breakpoint:
+  no desktop a vinheta do LOGOTIPO (`intro`), no celular uma peça própria
+  (`fundo-home`, prédios abrindo para a marca, vertical, congelada aos 1,5 s
+  e subindo 26% da tela). O commit de 13/09 tirou o fundo dos dois layouts e
+  dos dois tamanhos — e levou junto a peça que ninguém tinha reclamado. O
+  usuário viu em dois dias: *"tínhamos um vídeo que fica só no mobile"*.
+  **Antes de remover, contar quantas coisas aquele código produz** — um
+  parâmetro que troca a peça por breakpoint produz duas, e só uma está no
+  print.
+- **E a queixa não era sobre a PEÇA, era sobre o LUGAR.** O pedido de 13/09
+  foi "remova ele de todas as páginas, especificamente esse", com print do
+  quadro parado ocupando a tela **entre o CTA final e o rodapé**. Quem põe o
+  quadro ali é o fundo ser `position: fixed`: ele ocupa a viewport o tempo
+  todo e aparece atrás de QUALQUER faixa transparente. Conferido no código —
+  o `CtaFinal` e o bloco do endereço não têm fundo próprio; só o rodapé é
+  opaco. Tirar o vídeo do HERÓI para não vê-lo no rodapé é tratar o sintoma
+  no lugar errado, e custa a primeira tela inteira.
+- **O conserto é sair do caminho, não desaparecer.**
+  `.fundo-sai-do-caminho` esmaece o fundo ao longo da primeira tela por
+  `animation-timeline: scroll(root)` — o mesmo mecanismo de
+  `.barra-progresso`, zero JavaScript, dentro de `@supports`, e só no
+  celular (a MESMA consulta de `FundoVideoIntro`, `max-width: 767.98px`).
+  Sem suporte a rolagem em CSS, o véu forte na base (`to-fundo/85`) segura o
+  caso. O envoltório é irmão do véu e NÃO é o nó do parallax — opacidade e
+  transform são propriedades diferentes, e dois donos da mesma propriedade é
+  o que faz elemento sumir nesta base.
+- **O véu do celular volta aos valores MEDIDOS** (`0/0/85`): os 25% de véu
+  que já existiram derrubavam a saturação da peça de 0,269 no arquivo para
+  0,130 na tela — metade da cor, para proteger um texto que no celular nem
+  está visível (o h1 do herói é `so-para-leitor`). O desktop ficou byte a
+  byte como a decisão de 13/09 o deixou.
+- **`preload()` do react-dom NÃO emite `<link>` nenhum nesta versão.**
+  Medido no HTML servido, com e sem `media`. A F2 de performance atribuiu o
+  ganho ao par "`<picture>` + preload no head"; quem entrega o poster cedo é
+  só o `<img fetchPriority="high">`, que já nasce no HTML do servidor. A
+  chamada não voltou ao arquivo: código que promete um hint inexistente é a
+  dívida "construído e nunca ligado" com outra roupa — e vinha embrulhada
+  num comentário de doze linhas explicando o ganho.
+- **Verificado no navegador, não suposto** (Pixel 7 e 1280px, build de
+  produção): no topo do celular o envoltório está em opacidade 1 com o
+  poster visível e o `fundo-home.webm` tocando; no rodapé (scroll 10.719px),
+  opacidade 0; 412 contra 412 de largura, sem estouro; e no desktop não há
+  poster nem vídeo. E OLHADO: a captura mostra os prédios com a marca no
+  céu, esmaecendo na base para o cartão de busca.
+- **Ficou de fora, declarado:** o grupo `(vitrine)` continua sem fundo em
+  vídeo. Lá a peça do celular era a vinheta do LOGOTIPO (`somenteMobile` sem
+  `fonteMobile`), que é justamente a que gerou a queixa — restaurá-la seria
+  repetir 13/09 pelo outro lado.

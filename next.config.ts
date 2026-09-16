@@ -9,7 +9,35 @@ const supabaseHost = new URL(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://prhhrqyubjcafvucirri.supabase.co",
 ).hostname;
 
+/**
+ * O carimbo desta build, que a aba aberta usa para descobrir que houve
+ * deploy (ver `src/lib/versao/versaoDaBuild.ts` para o diagnostico inteiro).
+ *
+ * Tem de ser DETERMINISTICO. O `next.config` e avaliado por mais de um
+ * processo — o build e a funcao em runtime —, e um valor calculado na hora
+ * (`Date.now()`, um sorteio) faria cliente e servidor discordarem DENTRO da
+ * mesma build: a faixa de "atualize" apareceria para sempre, sem deploy
+ * nenhum. Por isso sai do commit, que e o mesmo em toda avaliacao.
+ *
+ * Fora da Vercel vale `dev`, e ai o aviso nunca aparece — na maquina de quem
+ * desenvolve o `npm run build` roda o tempo todo e a faixa seria constante.
+ */
+function versaoDaBuild(): string {
+  const commit = process.env.VERCEL_GIT_COMMIT_SHA?.trim();
+  return commit ? commit.slice(0, 12) : "dev";
+}
+
 const nextConfig: NextConfig = {
+  /*
+   * Inlinado em tempo de build nos DOIS pacotes (cliente e servidor), que e o
+   * que a documentacao do `env` garante: o Next substitui a expressao pelo
+   * literal. E isso que impede `/api/versao` e a aba de discordarem dentro da
+   * mesma build.
+   */
+  env: {
+    NEXT_PUBLIC_BUILD_ID: versaoDaBuild(),
+  },
+
   images: {
     formats: ["image/avif", "image/webp"],
     // Larguras alinhadas aos breakpoints reais do layout, evitando gerar

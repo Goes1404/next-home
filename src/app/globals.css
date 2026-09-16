@@ -2096,6 +2096,40 @@
   }
 }
 
+/*
+ * O vídeo de fundo do celular SAI DO CAMINHO conforme a página rola.
+ *
+ * O fundo é `position: fixed`, então ele fica atrás da página INTEIRA — não
+ * só do herói. Foi isso que, em 13/09/2026, fez o quadro parado aparecer de
+ * corpo inteiro na faixa transparente entre o CTA final e o rodapé, e foi
+ * essa queixa que tirou a peça do site. Restaurar o vídeo sem isto seria
+ * repetir o defeito.
+ *
+ * Rolagem em CSS puro, o mesmo mecanismo de `.barra-progresso` — zero
+ * JavaScript, e a régua do movimento do site público continua valendo. Só no
+ * celular (`max-width: 767.98px`, a MESMA consulta de `FundoVideoIntro`),
+ * porque é lá que o vídeo existe; no desktop este nó nem chega a montar.
+ *
+ * O `@supports` é a porta: onde a rolagem em CSS não existe, o fundo fica
+ * como estava entre 26/08 e 13/09 — visível o tempo todo. O véu forte na
+ * base (`to-fundo/85`) é o que segura esse caso.
+ */
+@supports (animation-timeline: scroll()) {
+  @media (max-width: 767.98px) {
+    .fundo-sai-do-caminho {
+      animation: fundo-sai linear both;
+      animation-timeline: scroll(root);
+      /* Uma tela cheia: some junto com o herói, que é `min-h-svh`. */
+      animation-range: 0 100svh;
+    }
+  }
+}
+@keyframes fundo-sai {
+  to {
+    opacity: 0;
+  }
+}
+
 /* Anel do botão do WhatsApp: expande e some, uma vez a cada 6s. */
 @utility anel-pulso {
   animation: anel-pulso 6s ease-out infinite;

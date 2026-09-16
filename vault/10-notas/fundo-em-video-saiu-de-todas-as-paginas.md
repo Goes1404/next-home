@@ -7,9 +7,9 @@ status: growing
 custou: baixo
 codigo: [src/app/(institucional)/layout.tsx, src/app/(vitrine)/layout.tsx, src/components/motion/FundoVideoIntro.tsx, src/app/globals.css]
 created: 2026-09-13
-updated: 2026-09-13
+updated: 2026-09-15
 fonte: pedido do usuário com print do celular (13/09/2026)
-summary: A vinheta parada no último quadro era o fundo padrão dos dois layouts públicos; no celular ela aparecia inteira entre a CTA final e o rodapé e lia como imagem aleatória. Saiu de todo o site; o fundo é a aurora em CSS. A vinheta continua só no Preloader.
+summary: A vinheta parada no último quadro era o fundo padrão dos dois layouts públicos; no celular ela aparecia inteira entre a CTA final e o rodapé e lia como imagem aleatória. Saiu de todo o site — e a remoção foi AMPLA DEMAIS: em 15/09 o vídeo do celular voltou, agora esmaecendo com a rolagem. Ver [[a-remocao-levou-a-peca-errada-junto]].
 ---
 # O fundo em vídeo (vinheta congelada) saiu de todas as páginas
 
@@ -46,7 +46,39 @@ era a mesma do `Preloader`: a abertura recuava e virava papel de parede.
   h1 centrado não sumir atrás da logo). Sobre a aurora só precisa fechar a
   base: `from-fundo/0 via-fundo/10 to-fundo/90`.
 
+## A remoção foi ampla demais, e 15/09 desfez metade dela
+
+Dois dias depois, o usuário: *"saiu a imagem do background que tínhamos —
+tínhamos um vídeo que fica só no mobile, não sei em qual momento isso foi
+removido"*.
+
+Ele estava certo, e o erro desta decisão está na própria frase acima: eram
+**duas peças diferentes** montadas pelo mesmo componente, e o que a queixa de
+13/09 apontava era uma só.
+
+| | desktop | celular |
+|---|---|---|
+| peça | vinheta do LOGOTIPO (`intro`) | prédios abrindo para a marca (`fundo-home`) |
+| queixa de 13/09 | era esta | levada junto |
+| hoje | aurora em CSS | o vídeo VOLTOU |
+
+E a queixa nem era sobre a peça: era sobre **onde ela aparecia**. O pedido
+literal foi *"remova ele de todas as páginas, especificamente esse"*, com
+print do quadro parado ocupando a tela entre o CTA final e o rodapé — e o
+que põe o quadro ali não é a peça, é o fundo ser `position: fixed`, atrás da
+página INTEIRA. Removê-lo do herói foi tratar o sintoma no lugar errado.
+
+Hoje: `somenteMobile` devolve só a peça do celular, e
+`.fundo-sai-do-caminho` esmaece o fundo ao longo da primeira tela por
+`animation-timeline: scroll(root)` — o mesmo mecanismo de
+`.barra-progresso`, zero JavaScript, dentro de `@supports`. O véu do celular
+voltou aos valores medidos (`0/0/85`); o desktop ficou como esta decisão o
+deixou.
+
+**A lição fica**: [[a-remocao-levou-a-peca-errada-junto]].
+
 ## Relacionadas
+- [[a-remocao-levou-a-peca-errada-junto]] — a reversão parcial, e por quê
 - [[fundo-16-9-em-tela-mais-larga-vira-faixa]]
 - [[fundo-fixo-no-celular-usa-lvh]]
 - [[MOC — Front Público]]

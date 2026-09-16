@@ -1,10 +1,16 @@
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
+import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import {
+  FUNDO_HOME_POSTER_URL,
+  FUNDO_HOME_VIDEO_URL,
+  FUNDO_HOME_VIDEO_WEBM_URL,
+} from "@/lib/site";
 
 /**
  * Casca do site institucional — a face pública para quem chega pelo Google,
@@ -35,6 +41,15 @@ export default async function InstitucionalLayout({
   // é personalização explícita dele, e trocá-la pela peça da casa apagaria
   // uma escolha que ele fez no painel.
   const videoDoCorretor = corretorAtivo?.videoUrl || null;
+
+  /*
+   * NAO ha `preload()` do poster aqui, e isso foi MEDIDO, nao suposto: o
+   * `preload` do react-dom nao emite `<link>` nenhum nesta versao — conferido
+   * no HTML servido, com e sem `media`. O que de fato entrega o poster cedo e
+   * o proprio `<img fetchPriority="high">` abaixo, que ja sai no HTML do
+   * servidor. Chamar o `preload` seria codigo prometendo um hint que nao
+   * existe.
+   */
 
 
   return (
@@ -81,7 +96,49 @@ export default async function InstitucionalLayout({
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : videoDoCorretor ? (
           <HeroVideoBackground src={videoDoCorretor} />
-        ) : null}
+        ) : (
+          /*
+           * O video de fundo do CELULAR voltou em 15/09/2026, a pedido — e
+           * so o do celular.
+           *
+           * Eram duas pecas diferentes, e a remocao de 13/09 levou as duas
+           * juntas: no desktop rodava a vinheta do LOGOTIPO (o quadro parado
+           * que lia como imagem aleatoria, e que foi o motivo da queixa), e
+           * no celular uma peca propria — predios abrindo para a marca no
+           * ceu, vertical, congelada aos 1,5 s. `somenteMobile` devolve
+           * exatamente a segunda e deixa o desktop na aurora em CSS.
+           *
+           * O envoltorio existe porque o fundo e `fixed`: ele fica atras da
+           * pagina INTEIRA, e era por isso que o quadro aparecia de corpo
+           * inteiro na faixa transparente entre o CTA final e o rodape.
+           * Restaurar sem isso repetiria o defeito que causou a remocao.
+           */
+          <div className="fundo-sai-do-caminho absolute inset-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={FUNDO_HOME_POSTER_URL}
+              alt=""
+              aria-hidden
+              fetchPriority="high"
+              decoding="async"
+              className="fundo-poster absolute inset-0 h-full w-full md:hidden"
+            />
+            <FundoVideoIntro
+              somenteMobile
+              fonteMobile={{
+                webm: FUNDO_HOME_VIDEO_WEBM_URL,
+                mp4: FUNDO_HOME_VIDEO_URL,
+                vertical: true,
+                // 1,5 s e subir 26% da tela: medido quadro a quadro. Antes
+                // de 1,5 s a marca ainda nao fechou; depois, o close corta
+                // "Next Home" atras da busca. Os 26% tiram o simbolo da
+                // frente do cartao de busca (que comeca a 51% da tela).
+                pararEm: 1.5,
+                deslocarY: -26,
+              }}
+            />
+          </div>
+        )}
         {/* O fundo em VÍDEO (a vinheta congelada no último quadro) SAIU de
             todas as páginas em 13/09/2026, a pedido: o quadro parado do
             logotipo atrás do conteúdo lia como imagem de fundo aleatória, e
@@ -100,7 +157,7 @@ export default async function InstitucionalLayout({
             celular vai a zero no topo. O degrau FINAL continua forte nas
             duas: é ele que evita o corte seco para a primeira banda
             opaca, e é ele que sustenta o esmaecimento da base do vídeo. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-fundo/0 via-fundo/10 to-fundo/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-fundo/0 via-fundo/0 to-fundo/85 sm:via-fundo/10 sm:to-fundo/90" />
       </div>
 
       {children}
