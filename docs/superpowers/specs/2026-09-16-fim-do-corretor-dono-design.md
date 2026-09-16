@@ -94,10 +94,19 @@ combinação de nome mais intenção dá **137** — acima do teto. Emendar a
 intenção depois do nome também faria o nome virar "Eternity Alphaville
 quero agendar uma visita", que `focoDaConversa` não resolve.
 
-Mudança: o nome passa a ser delimitado pela primeira pontuação de fim de
-frase no texto ORIGINAL, e o teto de tamanho passa a valer sobre o NOME,
-com 80 caracteres. Fica mais preciso, não menos: hoje o teto protege contra
-um texto longo que por acaso comece com o prefixo, e amanhã ele protege
+Delimitar o nome "pela primeira pontuação" NÃO funciona, e vale registrar
+por que: o prefixo atravessa duas frases, porque o `!` de "Olá!" já é a
+primeira pontuação do texto. Qualquer corte por sentença devolveria "Olá".
+
+Mudança que funciona: **as intenções são um vocabulário FECHADO, escrito por
+nós, então o reconhecedor as remove pelo fim antes de ler o nome.** Nada de
+adivinhar limite de frase; é comparação de sufixo contra uma lista que o
+próprio módulo exporta. Nome de imóvel com ponto ou hífen no meio continua
+intacto, porque nada é cortado pelo meio.
+
+O teto de tamanho sai da mensagem inteira e passa a valer sobre o NOME, com
+80 caracteres. Fica mais preciso, não menos: hoje o teto protege contra um
+texto longo que por acaso comece com o prefixo, e amanhã ele protege
 exatamente o pedaço que vira identificação de imóvel.
 
 Forma final da mensagem:
