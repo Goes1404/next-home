@@ -18,7 +18,7 @@
 - **Nada de rolagem lateral fora de conteúdo declarado** em `naoRolaDeLado.test.ts`.
 - **Guarda nova é provocada antes de valer**, e a mordida é conferida por `md5sum` antes e depois: mordida que não altera o arquivo já enganou esta base duas vezes.
 - **Script Python que escreve TypeScript usa string RAW (`r"..."`)** ou evita barra invertida: `\b` vira BACKSPACE no disco e o `grep` não mostra.
-- **Arquivo do repositório é CRLF.** Script que edita por âncora precisa normalizar (`replace("\r\n","\n")`) e regravar no formato original.
+- **O repositorio guarda LF em TODO blob** (`core.autocrlf=true`, sem `.gitattributes`): medido em 16/09 sobre arquivos tocados e nao tocados. No DISCO um arquivo recem-baixado aparece com CRLF, entao script que edita por ancora precisa normalizar para casar. O formato em que o script regrava e indiferente ao git: salvar LF ou CRLF produz o mesmo blob e nenhum diff. **Nao trate fim de linha no disco como defeito.**
 - **Número de migration livre:** `0113`. Conferido contra `supabase/migrations/` e contra `origin/main` em 16/09/2026. `RESERVADOS` em `src/lib/migrations.test.ts` está vazio.
 - **Verificação de conclusão:** `npx tsc --noEmit`, `npx vitest run`, `node scripts/lintTeto.mjs`, `npx next build`. O único vermelho tolerado é `src/lib/imagens/carimbo.test.ts`, que falha nesta máquina por falta de fontconfig (provado em 16/09: um render de texto pelo `sharp` devolve um tom só).
 
