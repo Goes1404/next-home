@@ -358,7 +358,7 @@ function MenuDoCard({ imovel }: { imovel: Empreendimento }) {
             <div className="space-y-2 p-1.5">
               <p className="text-fluid-xs text-corpo">
                 Apagar <strong className="text-titulo">{imovel.nome}</strong> de vez? Fotos,
-                plantas e tipologias vão junto, sem volta.
+                plantas e metragens vão junto, sem volta.
               </p>
               <div className="flex gap-2">
                 <button

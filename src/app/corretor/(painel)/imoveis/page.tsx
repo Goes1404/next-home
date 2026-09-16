@@ -65,7 +65,7 @@ export default async function ImoveisPage() {
       */}
       <CabecalhoDeTela
         titulo="Imóveis"
-        descricao="Fotos, textos, preços, tipologias e lazer — do celular ou do computador."
+        descricao="Fotos, textos, preços, plantas e lazer — do celular ou do computador."
         acao={
           <Link
             href="/corretor/imoveis/novo"

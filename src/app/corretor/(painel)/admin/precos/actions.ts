@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { revalidarCatalogo } from "@/lib/catalogo/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { exigirGestorNaAcao } from "@/lib/guardas";
+import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
 import type { EmpreendimentoSimples, ItemConciliado, LoteHistorico } from "@/lib/precos/types";
 
 /**
@@ -246,4 +247,63 @@ export async function buscarHistoricoLotes(): Promise<LoteHistorico[]> {
     revertidoEm: l.revertido_em,
     gestorNome: l.gestor?.nome ?? null,
   }));
+}
+
+
+/**
+ * Teto do PDF que a tela de reajuste aceita.
+ *
+ * Aqui o arquivo CRUZA a Server Action (diferente do book do imóvel, que
+ * vai do navegador direto para o Storage), e o teto de corpo deste projeto
+ * é de 12 MB. Tabela de preços é PDF de texto, gerado de planilha: os reais
+ * têm dezenas de KB. Recusar antes de subir é o que evita o erro de
+ * plataforma, que chega como falha genérica e não diz o que fazer.
+ */
+const TETO_PDF_PRECOS_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Lê a tabela de preços de dentro de um PDF e devolve o texto.
+ *
+ * A tela só aceitava `.csv`/`.txt`/`.tsv` e lia com `readAsText` — e a
+ * construtora manda a tabela em PDF. Um PDF lido como texto no navegador
+ * devolve binário, então nem afrouxar o `accept` resolveria: o conteúdo
+ * precisa ser EXTRAÍDO, e o extrator (`pdfTexto.ts`) usa `node:zlib`, que
+ * só existe no servidor.
+ *
+ * Sem IA de propósito: tabela de preços é PDF gerado de planilha, e o texto
+ * está literalmente dentro do arquivo. Mandar para um modelo o que dá para
+ * conferir seria pagar para adivinhar — e preço adivinhado vai para o
+ * catálogo. O que este caminho NÃO cobre é PDF escaneado (a página é uma
+ * imagem, não há texto nenhum); nesse caso ele diz isso em vez de devolver
+ * vazio em silêncio.
+ */
+export async function lerTabelaDePdf(
+  formData: FormData,
+): Promise<{ ok: true; texto: string } | { ok: false; erro: string }> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
+
+  const arquivo = formData.get("arquivo");
+  if (!(arquivo instanceof File) || arquivo.size === 0) {
+    return { ok: false, erro: "Selecione um arquivo válido." };
+  }
+
+  if (arquivo.size > TETO_PDF_PRECOS_BYTES) {
+    const mb = (arquivo.size / 1024 / 1024).toFixed(0);
+    return {
+      ok: false,
+      erro: `Este PDF tem ${mb} MB e o limite é 8 MB. Tabela de preços costuma ter poucos KB — este parece ser outra coisa.`,
+    };
+  }
+
+  const texto = extrairTextoDePdf(Buffer.from(await arquivo.arrayBuffer()));
+
+  if (texto.trim().length === 0) {
+    return {
+      ok: false,
+      erro: "Não achei texto dentro deste PDF. Se ele for escaneado (foto da tabela), copie os valores e cole na caixa acima.",
+    };
+  }
+
+  return { ok: true, texto };
 }

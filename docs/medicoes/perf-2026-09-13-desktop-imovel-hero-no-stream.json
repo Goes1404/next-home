@@ -1,0 +1,337 @@
+[
+  {
+    "pagina": "/empreendimentos/eternity-alphaville",
+    "perfil": "desktop",
+    "rodadas": [
+      {
+        "lcp": 1404,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 776,
+            "elemento": "button.absolute.bottom-6.right-6",
+            "area": 525
+          },
+          {
+            "t": 1112,
+            "elemento": "a.font-display.shrink-0.text-lg",
+            "area": 2070
+          },
+          {
+            "t": 1404,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 126.39999997615814,
+        "domContentLoaded": 1121.3999999761581,
+        "load": 2456,
+        "tarefasLongasMs": 120,
+        "html": {
+          "transfer": 22925,
+          "decoded": 151268
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "css": {
+            "n": 3,
+            "transfer": 33668,
+            "decoded": 193245
+          },
+          "js": {
+            "n": 20,
+            "transfer": 318001,
+            "decoded": 965464
+          },
+          "imagem": {
+            "n": 19,
+            "transfer": 87161,
+            "decoded": 85961
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 736568,
+            "decoded": 736268
+          },
+          "rsc-prefetch": {
+            "n": 10,
+            "transfer": 11089,
+            "decoded": 21886
+          }
+        }
+      },
+      {
+        "lcp": 1568,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 1164,
+            "elemento": "a.font-display.shrink-0.text-lg",
+            "area": 2070
+          },
+          {
+            "t": 1568,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 92.09999999403954,
+        "domContentLoaded": 1093.4000000059605,
+        "load": 1185.5999999940395,
+        "tarefasLongasMs": 83,
+        "html": {
+          "transfer": 22922,
+          "decoded": 151268
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "css": {
+            "n": 3,
+            "transfer": 33668,
+            "decoded": 193245
+          },
+          "js": {
+            "n": 20,
+            "transfer": 318001,
+            "decoded": 965464
+          },
+          "imagem": {
+            "n": 19,
+            "transfer": 87161,
+            "decoded": 85961
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 736568,
+            "decoded": 736268
+          },
+          "rsc-prefetch": {
+            "n": 10,
+            "transfer": 11093,
+            "decoded": 21886
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 1486,
+      "lcpElemento": "video.h-full.w-full",
+      "cls": 0,
+      "ttfb": 109.24999998509884,
+      "domContentLoaded": 1107.3999999910593,
+      "load": 1820.7999999970198,
+      "tarefasLongasMs": 101.5,
+      "html": {
+        "transfer": 22923.5,
+        "decoded": 151268
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "css": {
+          "n": 3,
+          "transfer": 33668,
+          "decoded": 193245
+        },
+        "js": {
+          "n": 20,
+          "transfer": 318001,
+          "decoded": 965464
+        },
+        "imagem": {
+          "n": 19,
+          "transfer": 87161,
+          "decoded": 85961
+        },
+        "midia": {
+          "n": 1,
+          "transfer": 736568,
+          "decoded": 736268
+        },
+        "rsc-prefetch": {
+          "n": 10,
+          "transfer": 11091,
+          "decoded": 21886
+        }
+      }
+    }
+  },
+  {
+    "pagina": "/",
+    "perfil": "desktop",
+    "rodadas": [
+      {
+        "lcp": 1164,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 652,
+            "elemento": "a.font-display.shrink-0.text-lg",
+            "area": 2070
+          },
+          {
+            "t": 1164,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 71.5,
+        "domContentLoaded": 805.1999999880791,
+        "load": 899.6999999880791,
+        "tarefasLongasMs": 3,
+        "html": {
+          "transfer": 27646,
+          "decoded": 190006
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "css": {
+            "n": 2,
+            "transfer": 30519,
+            "decoded": 182673
+          },
+          "js": {
+            "n": 18,
+            "transfer": 265043,
+            "decoded": 795496
+          },
+          "imagem": {
+            "n": 7,
+            "transfer": 111156,
+            "decoded": 109056
+          },
+          "rsc-prefetch": {
+            "n": 11,
+            "transfer": 15073,
+            "decoded": 40477
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 736568,
+            "decoded": 736268
+          }
+        }
+      },
+      {
+        "lcp": 1564,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 1188,
+            "elemento": "a.font-display.shrink-0.text-lg",
+            "area": 2070
+          },
+          {
+            "t": 1564,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 85.2000000178814,
+        "domContentLoaded": 1142.9000000059605,
+        "load": 1259.7000000178814,
+        "tarefasLongasMs": 97,
+        "html": {
+          "transfer": 27500,
+          "decoded": 190006
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "css": {
+            "n": 2,
+            "transfer": 30519,
+            "decoded": 182673
+          },
+          "js": {
+            "n": 18,
+            "transfer": 265043,
+            "decoded": 795496
+          },
+          "imagem": {
+            "n": 7,
+            "transfer": 111156,
+            "decoded": 109056
+          },
+          "rsc-prefetch": {
+            "n": 11,
+            "transfer": 15072,
+            "decoded": 40477
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 736568,
+            "decoded": 736268
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 1364,
+      "lcpElemento": "video.h-full.w-full",
+      "cls": 0,
+      "ttfb": 78.3500000089407,
+      "domContentLoaded": 974.0499999970198,
+      "load": 1079.7000000029802,
+      "tarefasLongasMs": 50,
+      "html": {
+        "transfer": 27573,
+        "decoded": 190006
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "css": {
+          "n": 2,
+          "transfer": 30519,
+          "decoded": 182673
+        },
+        "js": {
+          "n": 18,
+          "transfer": 265043,
+          "decoded": 795496
+        },
+        "imagem": {
+          "n": 7,
+          "transfer": 111156,
+          "decoded": 109056
+        },
+        "rsc-prefetch": {
+          "n": 11,
+          "transfer": 15072.5,
+          "decoded": 40477
+        },
+        "midia": {
+          "n": 1,
+          "transfer": 736568,
+          "decoded": 736268
+        }
+      }
+    }
+  }
+]

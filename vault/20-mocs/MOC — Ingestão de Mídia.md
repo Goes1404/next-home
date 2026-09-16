@@ -19,6 +19,8 @@ Três origens (upload, PDF, Drive), um caminho único de gravação.
 - [[bucket-nao-se-apaga-por-sql]]
 - [[artes-de-ia-expiram-em-48-horas]] ⚠️ arte gerada não é acervo: 48h no banco, 48–72h no Storage
 - [[storage-da-arte-de-ia-tem-teto]]
+- [[o-teto-do-pdf-e-o-plano-do-supabase]] ⚠️ 50 MB é a parede do plano FREE, não escolha nossa
+- [[pdf-lido-como-texto-no-navegador-e-binario]]
 
 ## Relacionados
 - [[MOC — Front Público]] · [[MOC — Banco de Dados]] · [[Home]]

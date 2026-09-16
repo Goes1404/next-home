@@ -270,6 +270,8 @@ export function EditorImovelClient({ imovel }: Props) {
 
         {abaAtiva === "plantas" && (
           <EditorTipologias
+            empreendimentoId={imovel.id || imovel.slug}
+            slug={imovel.slug}
             tipologias={tipologias}
             onAdicionar={handleAdicionarTipologia}
             onRemover={handleRemoverTipologia}

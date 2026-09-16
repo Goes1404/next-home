@@ -73,7 +73,7 @@ export function ExcluirImovel({
       ) : !confirmando ? (
         <>
           <p className="text-fluid-xs text-apoio mt-1 text-pretty">
-            Apaga o cadastro de vez, com as fotos, plantas, tipologias e itens de lazer. Os leads e
+            Apaga o cadastro de vez, com as fotos, plantas e itens de lazer. Os leads e
             as conversas continuam — só deixam de apontar para este imóvel.
           </p>
           <button

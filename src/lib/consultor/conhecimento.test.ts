@@ -115,8 +115,8 @@ describe("cartaoDoImovel", () => {
     expect(c.precoAPartir).toBe(780000);
   });
 
-  it("imóvel sem tipologia diz isso, não finge ficha", () => {
+  it("imóvel sem planta cadastrada diz isso, não finge ficha", () => {
     const semFicha = { ...IMOVEL, tipologias: [] } as unknown as Empreendimento;
-    expect(cartaoDoImovel(semFicha).resumoFicha).toMatch(/sem tipologia/i);
+    expect(cartaoDoImovel(semFicha).resumoFicha).toMatch(/sem planta cadastrada/i);
   });
 });

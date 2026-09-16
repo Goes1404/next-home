@@ -36,8 +36,8 @@ import {
 
 const RESUMO: { chave: keyof ReturnType<typeof contarPorTipo>; rotulo: string }[] = [
   { chave: "apelido_invisivel", rotulo: "invisíveis para a assistente" },
-  { chave: "sem_planta", rotulo: "sem planta" },
-  { chave: "sem_tipologia", rotulo: "sem tipologia" },
+  { chave: "sem_planta", rotulo: "sem imagem da planta" },
+  { chave: "sem_tipologia", rotulo: "sem planta cadastrada" },
   { chave: "sem_apelido", rotulo: "sem apelido" },
 ];
 

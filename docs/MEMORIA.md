@@ -6857,3 +6857,79 @@ Vault: [[o-globo-recebe-pontos-e-nada-roda-sozinho]] e
   60 mensagens, Realtime OU polling, `revalidateTag`/`useOptimistic` e
   `useLinkStatus` exigem abrir o painel — esta máquina não tem credencial
   de E2E. Ficaram escritos como pendência, não fingidos como feitos.
+
+## O teto do PDF é o plano do Supabase (13/09/2026)
+
+Relatado como "precisamos aumentar o limite de megabytes para comportarmos
+os books completos" — um book de construtora de **182 MB** contra 25 MB na
+tela. Vault: [[o-teto-do-pdf-e-o-plano-do-supabase]].
+
+- **A parede é EXTERNA, e responde em três consultas.** `config/storage` da
+  Management API diz `fileSizeLimit: 52428800`; `organizations/<slug>` diz
+  `plan: "free"`; e o PATCH pedindo 200 MB devolve **HTTP 402** ("Please
+  upgrade the project to a paid plan to unlock higher file size limits").
+  **Plano free = 50 MB por arquivo, e ponto.** O bucket `empreendimentos` já
+  estava nesse teto; quem segurava em 25 MB era só a nossa tela — subiu para
+  50, que é o máximo honesto.
+- **Subir o teto da TELA acima do que o Storage aceita é piorar.** A recusa
+  do cliente existe para acontecer ANTES do upload; acima do limite real ela
+  vira uma recusa do provedor no fim do envio — lenta e genérica, depois de
+  o corretor esperar. O número do cliente é o teto do Storage, nunca maior.
+- **A mensagem cravava "o limite é 25 MB" em texto** e continuaria dizendo 25
+  depois da troca. Sai de `TETO_PDF_MB`, derivado de `TETO_PDF_BYTES`. Décima
+  vez que texto desatualizado apontaria o diagnóstico para o lugar errado.
+- **Os dois caminhos para passar de 50 MB não são "trocar um número":**
+  (1) plano Pro (teto de 50 GB), mas `analisarPdf` baixa o arquivo inteiro
+  para um `Buffer` E o converte para string `latin1` — ~2x o tamanho do PDF
+  na memória da função antes da primeira prévia do `sharp`, o que com 182 MB
+  é ~370 MB e NÃO está medido; (2) extrair as imagens no NAVEGADOR, sem
+  mandar o PDF a lugar nenhum — some o limite, some o custo, e é obra de
+  verdade (`pdfImagens.ts` 307 linhas e `pdfTexto.ts` 242 usam `node:zlib`
+  síncrono, que no navegador vira `DecompressionStream` assíncrono; as
+  prévias saem do `sharp`, que viraria `canvas`).
+- **Régua: antes de mexer no número, descobrir de quem é a parede.** Teto de
+  aplicação e teto de plataforma se parecem na tela e pedem consertos
+  opostos — um é uma linha, o outro é dinheiro ou arquitetura.
+
+## O reajuste em massa não lia PDF, e aceitar o arquivo seria pior (13/09/2026)
+
+Vault: [[pdf-lido-como-texto-no-navegador-e-binario]].
+
+- A tela tinha `accept=".csv,.txt,.tsv"` e lia com `FileReader.readAsText`.
+  **Só acrescentar `.pdf` ao `accept` teria produzido um defeito pior:** PDF
+  lido como texto no navegador devolve o binário do arquivo, o parser acha
+  "nenhum dado válido" e a tela manda procurar defeito num arquivo que tem a
+  tabela inteira dentro. Recusa explicada é melhor que aceitação que não faz
+  nada.
+- **Quem sabe abrir já existia**: `extrairTextoDePdf` (`pdfTexto.ts`), que usa
+  `node:zlib` e por isso vive no servidor. Aqui o arquivo PODE cruzar a Server
+  Action — tabela de preços é PDF de texto gerado de planilha, dezenas de KB,
+  bem abaixo do teto de corpo de 12 MB (diferente do book do imóvel, que vai
+  direto para o Storage). Teto próprio de 8 MB recusa antes de subir: estouro
+  de corpo chega como falha genérica de plataforma.
+- **Sem IA, de propósito.** O texto está literalmente dentro do arquivo;
+  mandá-lo a um modelo seria pagar para adivinhar o que dá para conferir — e
+  o palpite viraria PREÇO no catálogo.
+- **PDF escaneado é desfecho próprio**, com o motivo em voz alta ("copie os
+  valores e cole na caixa acima"), em vez de texto vazio que a tela traduz
+  como "nenhum dado válido".
+
+## A planta se cadastrava colando uma URL (13/09/2026)
+
+- **O campo pedia `https://…` e quem tem o arquivo no celular não tem
+  endereço nenhum para colar** — por isso a planta simplesmente não era
+  cadastrada. `EditorTipologias` ganhou upload por `uploadFotoOuPlanta` com
+  `tipo: "planta"`, então a imagem entra em `midias` pelo MESMO caminho das
+  outras (medida real, blur, dedup por hash) e vira anexo que a assistente
+  pode mandar — o guardrail só libera o que está no catálogo. O campo de URL
+  continua, como segunda porta.
+- **O vocabulário da tela virou PLANTA**, a pedido: "tipologia" é palavra de
+  quem construiu o banco. Os identificadores de código seguem `Tipologia`
+  porque é o nome da tabela — trocar os dois de uma vez seria migration, não
+  texto de tela.
+- **Renomear os dois conceitos para o mesmo nome os faria colidir.** As
+  pendências do catálogo têm `sem_planta` (falta a IMAGEM) e `sem_tipologia`
+  (falta o registro com metragem e dormitórios): viraram "sem imagem da
+  planta" e "sem planta cadastrada", que continuam distinguíveis. Renomear
+  para "sem planta" nos dois lugares daria dois rótulos idênticos com causas
+  diferentes.

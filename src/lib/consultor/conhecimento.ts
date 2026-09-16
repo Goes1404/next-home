@@ -20,7 +20,7 @@ const reais = (n: number) =>
 
 /** Uma linha com o que a ficha tem de tipologia — o que a IA pode afirmar. */
 export function resumoDaFicha(e: Empreendimento): string {
-  if (!e.tipologias?.length) return "sem tipologia cadastrada";
+  if (!e.tipologias?.length) return "sem planta cadastrada";
   return e.tipologias
     .map((t) =>
       [

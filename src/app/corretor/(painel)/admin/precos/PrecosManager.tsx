@@ -5,8 +5,9 @@ import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { parsearTabelaTexto } from "@/lib/precos/spreadsheetParser";
 import { conciliarPlanilhaComCatalogo } from "@/lib/precos/matchingEngine";
 import type { EmpreendimentoSimples, ItemConciliado, LoteHistorico } from "@/lib/precos/types";
-import { aplicarLotePrecos, reverterLotePrecos } from "./actions";
-import { Download, AlertTriangle, Rocket, PartyPopper, Clock, Folder, Check } from 'lucide-react';
+import { aplicarLotePrecos, lerTabelaDePdf, reverterLotePrecos } from "./actions";
+import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
+import { Download, AlertTriangle, Rocket, Clock, Folder, Check } from 'lucide-react';
 
 interface Props {
   catalogoInicial: EmpreendimentoSimples[];
@@ -20,6 +21,8 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
   const [nomeLote, setNomeLote] = useState(`Tabela Mensal - ${new Date().toLocaleDateString("pt-BR")}`);
   const [historico, setHistorico] = useState<LoteHistorico[]>(historicoInicial);
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
+
+  const [lendoPdf, setLendoPdf] = useState(false);
 
   const [isPending, startTransition] = useTransition();
 
@@ -40,18 +43,53 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
     setItensConciliados(conciliados);
   }
 
-  // Upload de arquivo CSV / TXT
-  function onUploadArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+  // Upload de arquivo: CSV / TXT / TSV lidos aqui mesmo, PDF no servidor.
+  //
+  // PDF não se lê com `readAsText`: o navegador devolveria o binário do
+  // arquivo, e o parser acharia "nenhum dado válido" num arquivo que tem a
+  // tabela inteira dentro. Quem sabe abrir é `extrairTextoDePdf`, que usa
+  // `node:zlib` e por isso vive no servidor.
+  async function onUploadArquivo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      setTextoColado(text);
-      processarConteudo(text);
-    };
-    reader.readAsText(file, "UTF-8");
+    const ehPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+
+    if (!ehPdf) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        setTextoColado(text);
+        processarConteudo(text);
+      };
+      reader.readAsText(file, "UTF-8");
+      return;
+    }
+
+    setFeedback(null);
+    setLendoPdf(true);
+    try {
+      const formData = new FormData();
+      formData.append("arquivo", file);
+      const res = await lerTabelaDePdf(formData);
+      if (res.ok) {
+        setTextoColado(res.texto);
+        processarConteudo(res.texto);
+      } else {
+        setFeedback({ tipo: "erro", msg: res.erro });
+      }
+    } catch (err) {
+      // Rede caída e aba de antes do último deploy REJEITAM a promessa. Sem
+      // este ramo a tela destravaria calada, parecendo que o arquivo não
+      // tinha nada dentro.
+      setFeedback({
+        tipo: "erro",
+        msg: ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.",
+      });
+    } finally {
+      setLendoPdf(false);
+    }
   }
 
   // Alterna seleção individual
@@ -197,8 +235,17 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
               </div>
 
               <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-vidro-forte hover:bg-vidro-mais text-fluid-xs font-medium text-corpo transition-colors">
-                <span> <Folder className="inline-block w-5 h-5 align-text-bottom mr-1" />  Carregar Arquivo (.csv / .txt)</span>
-                <input type="file" accept=".csv,.txt,.tsv" onChange={onUploadArquivo} className="hidden" />
+                <span>
+                  <Folder className="inline-block w-5 h-5 align-text-bottom mr-1" />{" "}
+                  {lendoPdf ? "Lendo o PDF…" : "Carregar Arquivo (.pdf / .csv / .txt)"}
+                </span>
+                <input
+                  type="file"
+                  accept=".pdf,.csv,.txt,.tsv,application/pdf"
+                  disabled={lendoPdf}
+                  onChange={(ev) => void onUploadArquivo(ev)}
+                  className="hidden"
+                />
               </label>
             </div>
 

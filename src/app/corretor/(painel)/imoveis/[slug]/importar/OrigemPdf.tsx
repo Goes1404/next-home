@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { TETO_PDF_BYTES } from "@/lib/imoveis/limitesPdf";
+import { TETO_PDF_BYTES, TETO_PDF_MB } from "@/lib/imoveis/limitesPdf";
 import type { RascunhoCadastro as Rascunho } from "@/lib/imoveis/rascunhoDePdf";
 import {
   analisarPdf,
@@ -55,7 +55,7 @@ export function OrigemPdf({
       const mb = (arquivo.size / 1024 / 1024).toFixed(0);
       setAnalise({
         ok: false,
-        erro: `Este PDF tem ${mb} MB e o limite é 25 MB. Mande a apresentação, não o catálogo inteiro da construtora.`,
+        erro: `Este PDF tem ${mb} MB e o limite do Storage é ${TETO_PDF_MB} MB — o arquivo nem chega a sair daqui. Mande a apresentação em vez do catálogo inteiro, ou exporte o book em resolução de tela.`,
       });
       return;
     }
