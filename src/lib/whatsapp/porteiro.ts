@@ -70,6 +70,24 @@ export function mensagemDeAnuncio(
 
 const PREFIXO_ANUNCIO = soLetrasEEspacos("Olá! Gostaria de mais informações do ");
 
+/**
+ * A frase que o site manda quando não há imóvel no contexto.
+ *
+ * Reconhecida por CÓDIGO, não por `palavras_entrada_cliente`. A razão é
+ * dependência: aquele campo é configuração POR CORRETOR e hoje só uma
+ * instância o tem preenchido. Fazer o funil do site depender de um campo
+ * que cada corretor preenche à mão constrói o mesmo silêncio que a 0111
+ * causou — funciona para quem configurou e morre calado para o resto. A
+ * mensagem é NOSSA, então reconhecê-la é decisão de código.
+ */
+export const MENSAGEM_DO_SITE = "Olá! Vim pelo site da Next Home.";
+
+export function mensagemDoSite(intencao?: ChaveIntencao | null): string {
+  return intencao ? `${MENSAGEM_DO_SITE} ${INTENCOES[intencao]}` : MENSAGEM_DO_SITE;
+}
+
+const PREFIXO_DO_SITE = soLetrasEEspacos(MENSAGEM_DO_SITE);
+
 const SUFIXOS_DE_INTENCAO = Object.values(INTENCOES).map(soLetrasEEspacos);
 
 /**
@@ -112,7 +130,7 @@ export function reconhecerMensagemDeAnuncio(texto: string | null | undefined): s
 
 /** Como reconhecemos que a pessoa está respondendo a uma peça NOSSA. */
 export type ConviteDeEntrada = {
-  via: "mensagem_do_anuncio" | "frase_de_entrada";
+  via: "mensagem_do_anuncio" | "mensagem_do_site" | "frase_de_entrada";
   /** O imóvel citado, quando o texto é o nosso e o traz. */
   imovel: string | null;
 };
@@ -155,6 +173,15 @@ export function reconhecerConviteDeEntrada(params: {
 }): ConviteDeEntrada | null {
   const imovel = reconhecerMensagemDeAnuncio(params.texto);
   if (imovel) return { via: "mensagem_do_anuncio", imovel };
+
+  if (params.texto && soLetrasEEspacos(params.texto).startsWith(PREFIXO_DO_SITE)) {
+    /*
+     * `imovel: null` de propósito, como no ramo da frase de entrada: quem
+     * resolve o imóvel a partir da conversa é o `focoDaConversa`, na
+     * mensagem seguinte. Chutar aqui poria o imóvel ERRADO na ficha.
+     */
+    return { via: "mensagem_do_site", imovel: null };
+  }
 
   if (
     params.texto &&

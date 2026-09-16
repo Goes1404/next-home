@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   mensagemDeAnuncio,
+  mensagemDoSite,
   reconhecerConviteDeEntrada,
   reconhecerMensagemDeAnuncio,
   resolverCampanha,
@@ -124,6 +125,43 @@ describe("convite de entrada — o que autoriza cadastrar quem ainda não é lea
   });
 
   it("sem frase cadastrada, conversa comum continua fora", () => {
+    expect(
+      reconhecerConviteDeEntrada({ texto: "oi, tudo bem?", palavrasEntradaCliente: null }),
+    ).toBeNull();
+  });
+});
+
+describe("a frase geral do site é reconhecida por código", () => {
+  it("quem escreve a frase do site é convidado, sem imóvel", () => {
+    const convite = reconhecerConviteDeEntrada({
+      texto: mensagemDoSite(),
+      palavrasEntradaCliente: null,
+    });
+
+    expect(convite).toEqual({ via: "mensagem_do_site", imovel: null });
+  });
+
+  it("vale mesmo com a intenção emendada", () => {
+    const convite = reconhecerConviteDeEntrada({
+      texto: mensagemDoSite("visita"),
+      palavrasEntradaCliente: null,
+    });
+
+    expect(convite?.via).toBe("mensagem_do_site");
+  });
+
+  it("não depende de configuração por corretor", () => {
+    // A instância sem frases cadastradas é o caso comum: só uma das
+    // instâncias tem `palavras_entrada_cliente` preenchida.
+    const convite = reconhecerConviteDeEntrada({
+      texto: mensagemDoSite(),
+      palavrasEntradaCliente: "",
+    });
+
+    expect(convite).not.toBeNull();
+  });
+
+  it("uma saudação qualquer continua sem convite", () => {
     expect(
       reconhecerConviteDeEntrada({ texto: "oi, tudo bem?", palavrasEntradaCliente: null }),
     ).toBeNull();
