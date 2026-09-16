@@ -6,6 +6,7 @@ import { ChatBase } from "@/app/corretor/(painel)/_componentes/ChatBase";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { QUALIDADES, TAMANHOS, type EstadoDoTeto, type ImagemGerada } from "@/lib/imagens/imagensTipos";
 import { PISO_DE_PROMPT, SECOES } from "@/lib/imagens/gramatica";
+import { RECEITAS } from "@/lib/imagens/receitas";
 import type {
   ConversaDoEstudio,
   MensagemDoEstudio,
@@ -153,7 +154,12 @@ export function ChatDeArte({
    * "Gerar assim": a única chamada paga. A rota responde 429 com o teto quando
    * o dia acabou — o contador da tela se atualiza com o que ela devolver.
    */
-  const gerar = async (m: MensagemDoEstudio, promptEditado: string, midiaId: string | null) => {
+  const gerar = async (
+    m: MensagemDoEstudio,
+    promptEditado: string,
+    midiaId: string | null,
+    skill: string,
+  ) => {
     const p = m.dados as PropostaDeArte;
     if (!estado || gerando) return;
     if (restam <= 0) {
@@ -170,7 +176,10 @@ export function ChatDeArte({
           // O texto do CAMPO, não o da proposta: se o corretor editou, foi a
           // versão dele que ele aprovou — e é ela que tem de gerar a imagem.
           prompt: promptEditado,
-          receita: p.receita,
+          // A skill escolhida NA TELA, não a que a proposta sugeriu: trocar a
+          // skill e ver o pedido ir com a antiga seria o mesmo segredo que a
+          // heurística escondida tinha antes.
+          receita: skill,
           tamanho: p.tamanho,
           qualidade: p.qualidade,
           // A foto anexada na conversa: a rota confina à pasta do corretor.
@@ -344,7 +353,7 @@ export function ChatDeArte({
                     proposta={m.dados as PropostaDeArte}
                     gerando={gerando === m.id}
                     bloqueada={restam <= 0 || Boolean(gerando)}
-                    onGerar={(texto, midiaId) => void gerar(m, texto, midiaId)}
+                    onGerar={(texto, midiaId, skill) => void gerar(m, texto, midiaId, skill)}
                   />
                 );
               }
@@ -411,7 +420,7 @@ function CartaoDeProposta({
   proposta: PropostaDeArte;
   gerando: boolean;
   bloqueada: boolean;
-  onGerar: (prompt: string, midiaId: string | null) => void;
+  onGerar: (prompt: string, midiaId: string | null, skill: string) => void;
 }) {
   /*
    * O prompt é EDITÁVEL, e é ele que vai.
@@ -431,6 +440,17 @@ function CartaoDeProposta({
   const [base, setBase] = useState<string | null>(null);
 
   /*
+   * A skill é ESCOLHA, e fica à vista.
+   *
+   * Ela não mexe numa palavra do que o corretor escreveu nem no que o
+   * tradutor propôs: acrescenta a espinha técnica no FIM, em `montarPedido`,
+   * na rota. Até aqui a proposta decidia sozinha e a espinha ia junto sem
+   * ninguém ver — hoje a proposta apenas SUGERE, e o que vale é o que está
+   * marcado nesta tela.
+   */
+  const [skill, setSkill] = useState(proposta.receita);
+
+  /*
    * Proposta NOVA reinicia campo e escolha; enquanto for a mesma, o que o
    * corretor digitou fica — inclusive depois de um erro de geração.
    *
@@ -443,9 +463,15 @@ function CartaoDeProposta({
     setPropostaAnterior(proposta.prompt);
     setTexto(proposta.prompt);
     setBase(null);
+    setSkill(proposta.receita);
   }
 
   const curto = texto.trim().length < PISO_DE_PROMPT;
+  const temFoto = Boolean(proposta.referenciaPath) || base !== null;
+  // Skill que exige foto sem foto anexada não é oferecida: ela não funciona,
+  // e oferecer o que não funciona é pior que não oferecer.
+  const skillsDisponiveis = RECEITAS.filter((r) => !r.precisaFoto || temFoto);
+  const skillAtiva = RECEITAS.find((r) => r.chave === skill) ?? null;
   const tamanho = TAMANHOS.find((t) => t.chave === proposta.tamanho)?.rotulo ?? proposta.tamanho;
   const qualidade = QUALIDADES.find((q) => q.chave === proposta.qualidade)?.rotulo ?? proposta.qualidade;
   // A foto que sustenta esta proposta, visível no cartão: sem a miniatura, o
@@ -509,6 +535,53 @@ function CartaoDeProposta({
         className="border-linha bg-fundo text-corpo min-h-32 w-full rounded-xl border p-3 text-xs leading-relaxed"
       />
 
+      {/*
+        A skill, à vista e trocável.
+
+        Ela NÃO reescreve o texto acima — acrescenta a espinha no fim, e a
+        espinha aparece por extenso logo abaixo. É a diferença entre ajudar e
+        esconder: prompt que o corretor não lê é prompt que ele não corrige.
+      */}
+      <div className="space-y-1.5">
+        <p className="text-apoio text-xs font-medium">
+          Skill — acrescenta no fim, sem mudar seu texto
+        </p>
+        {/* Quebra linha, nunca rola: escolha escondida atrás de um gesto que a
+            fileira não anuncia é o defeito que esta base já mediu. */}
+        <ul className="flex flex-wrap gap-1.5">
+          {skillsDisponiveis.map((r) => (
+            <li key={r.chave}>
+              <button
+                type="button"
+                onClick={() => setSkill(r.chave)}
+                aria-pressed={skill === r.chave}
+                title={r.ajuda}
+                className={cn(
+                  "min-h-11 cursor-pointer rounded-lg border px-3 text-[11px] transition-colors",
+                  skill === r.chave
+                    ? "border-acento bg-acento text-sobre-cor"
+                    : "border-linha text-apoio hover:bg-vidro-forte",
+                )}
+              >
+                {r.rotulo}
+              </button>
+            </li>
+          ))}
+        </ul>
+        {skillAtiva && skillAtiva.espinha ? (
+          <details className="text-tenue text-[11px]">
+            <summary className="min-h-11 cursor-pointer content-center">
+              Ver o que a skill acrescenta
+            </summary>
+            <p className="border-linha bg-fundo mt-1 rounded-lg border p-2 leading-relaxed break-words whitespace-pre-line">
+              {skillAtiva.espinha}
+            </p>
+          </details>
+        ) : (
+          <p className="text-tenue text-[11px]">Sem skill: vai só o que está escrito acima.</p>
+        )}
+      </div>
+
       {!proposta.daIa && (
         <p className="text-alerta text-[11px]">
           Não consegui melhorar seu pedido agora — este texto é o seu, como você escreveu.
@@ -548,7 +621,7 @@ function CartaoDeProposta({
       </p>
       <button
         type="button"
-        onClick={() => onGerar(texto, base)}
+        onClick={() => onGerar(texto, base, skill)}
         disabled={bloqueada || curto}
         aria-busy={gerando}
         className={cn(

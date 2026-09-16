@@ -6651,7 +6651,14 @@ Descoberto em 13/09 ao rodar `npm run observatorio` para a medição final da
   valendo como história; não dá mais para reconferir. A próxima medição começa
   de uma safra limpa, com o atendimento dos corretores de verdade.
 
-## O tradutor de prompt de imagem SAIU (13/09/2026)
+## O tradutor de prompt de imagem SAIU (13/09/2026) — NÃO SAIU, ver 16/09
+
+> **CORREÇÃO DE 16/09/2026.** O que está escrito abaixo foi decidido e
+> construído, mas **nunca foi commitado**: ficou três dias no working tree
+> enquanto só este texto subia. Em 15/09 outra sessão foi ao contrário e deu
+> VISÃO ao tradutor. Em produção, hoje, o tradutor EXISTE. A junção das duas
+> intenções está na seção "O tradutor ficou, e a skill foi para a tela".
+> Leia o de baixo como a decisão daquele dia, não como o estado do código.
 
 Relatado como *"isso de mudar o prompt dele está dando muito erro e resultados
 ruins — deixe somente a conversa, sem muito segredo"*.
@@ -7343,3 +7350,46 @@ acima, no mesmo dia, a pedido do usuário.
   índices de FK e policies com initplan) está aplicada — o Supabase estava em
   manutenção programada. Não bloqueia porque ela não cria tabela nem coluna:
   nenhum código lê objeto que possa faltar. É performance, não correção.
+
+## O tradutor ficou, e a skill foi para a tela (16/09/2026)
+
+Merge de três dias de trabalho parado contra uma branch de produção que tinha
+andado 27 commits. O git marcou UM conflito (a `MEMORIA.md`, que colide sempre
+e resolve por união); o conflito de verdade não tinha marcador nenhum.
+
+- **A decisão que o git não podia acusar era a que nunca foi commitada.** Em
+  13/09 o tradutor foi removido a pedido ("deixe somente a conversa, sem muito
+  segredo") e a seção da MEMORIA que documenta isso SUBIU — o código, não. Em
+  15/09 a outra sessão, lendo um repositório onde o tradutor ainda existia, deu
+  visão a ele e escreveu o `oficio.ts`. Resultado: produção com um documento
+  afirmando que o tradutor saiu e um tradutor maior do que antes. **Ao
+  registrar uma remoção, commitar a remoção** — documento sem o código que ele
+  descreve aponta o diagnóstico para o lugar errado, o defeito recorrente nº 5
+  desta base.
+- **As duas queixas não eram a mesma queixa, e por isso escolher um lado
+  jogaria metade fora.** "Resultados ruins" tinha como causa ele ser CEGO —
+  recebia um booleano e era mandado descrever uma foto que não via, corrigido
+  em 15/09. "Muito segredo" era a espinha entrar sem ninguém ver, escolhida por
+  heurística, corrigido em 13/09. Visão não toca no segredo; skill à vista não
+  toca na cegueira. **Antes de escolher entre dois consertos, conferir se eles
+  atacam o mesmo defeito.**
+- **O encaixe custou pouco porque a rota já fazia a parte cara.**
+  `/api/imagens/gerar` recebe `receita` no corpo e junta a espinha por CÓDIGO
+  em `montarPedido`, antes de qualquer IA. Faltava só o corretor poder
+  escolher: a proposta passou a SUGERIR, o que vale é o que está marcado na
+  tela, e `Ver o que a skill acrescenta` mostra a espinha por extenso. Skill
+  que exige foto não é oferecida sem foto, e os botões quebram linha em vez de
+  rolar — as duas réguas já medidas aqui.
+- **A verificação separou o vermelho de ambiente do vermelho de código.**
+  `carimbo.test.ts` falha nesta máquina com contraste de 1,00:1 — e falha
+  IGUAL sem a mudança. Causa provada, não suposta: sondando o `sharp` direto,
+  um render de texto devolve UM tom distinto, ou seja, o Windows não tem
+  fontconfig e nenhuma fonte chega ao renderizador. Na Vercel (Linux) a DejaVu
+  existe, que é a fonte que o carimbo e o carrossel já usam. **Antes de aceitar
+  um teste vermelho como "de ambiente", provar que ele é vermelho sem a sua
+  mudança E qual é a causa.**
+- **A régua de merge, completada.** A outra sessão já tinha escrito metade:
+  depois de um merge, procurar a DECISÃO que o outro lado tomou, não só as
+  linhas que o git marcou. A outra metade é procurar a decisão que o SEU lado
+  tomou e não commitou — essa é invisível para os dois lados e some sem
+  barulho.

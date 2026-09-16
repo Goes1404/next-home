@@ -47,6 +47,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[o-tradutor-de-prompt-de-imagem]] — um prompt só, em português, editável antes de gastar (10/09)
 - [[o-tradutor-era-cego-e-inventava-a-cena]] — ele recebia um booleano e era mandado descrever a foto; com foto, edição não é criação (15/09)
 - [[o-tradutor-passou-a-olhar-as-fotos]] — visão por `llm.ts` (default-off), e o ofício como dado filtrado por regime (15/09)
+- [[a-skill-a-vista-sem-tirar-a-visao-do-tradutor]] — duas sessões decidiram o contrário; visão e skill à vista consertam queixas diferentes (16/09)
 - [[a-resposta-de-chip-era-jogada-fora]] — o corretor respondia e nada mudava; achado por um warning de lint (10/09)
 - [[a-ressalva-legal-volta-por-codigo]] — o aviso de imagem ilustrativa ficou sem dono, e a 1ª versão dava 2,08:1 (10/09)
 - [[a-clausula-anti-texto-impedia-o-produto]] — a proibição de escrever na imagem saiu; aspas ditam a manchete (11/09)
