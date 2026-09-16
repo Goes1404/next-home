@@ -53,6 +53,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 ## Fundo
 - [[fundo-em-video-saiu-de-todas-as-paginas]] — a vinheta congelada deixou de ser papel de parede; fica a aurora em CSS (13/09)
 - [[a-remocao-levou-a-peca-errada-junto]] — o componente montava DUAS peças e a queixa era de uma; o vídeo do celular volta esmaecendo com a rolagem (15/09)
+- [[a-folga-encolhe-quando-a-tela-encurta]] — fundo por fração da tela contra busca ancorada no rodapé: a colisão só existe em viewport baixa (16/09)
 
 ## Movimento
 - [[movimento-do-site-publico-e-css-puro]] — botão vivo, sublinhado do menu, barra de progresso por scroll-timeline e anel do WhatsApp, zero JS (13/09)

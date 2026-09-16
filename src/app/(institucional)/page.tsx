@@ -132,11 +132,24 @@ export default async function HomeInstitucional() {
             No celular a busca desce para o terço inferior (`justify-end`):
             centralizada, ela cobria justamente o símbolo, que também é
             centrado no quadro. Assim a metade de cima fica só para a marca.
-            O `pb-32` não é folga estética — é o que mantém a busca acima do
-            CTA flutuante do WhatsApp, que é `fixed` no canto inferior. Do
-            `sm` para cima volta ao centro, porque lá quem manda na
-            composição é o texto do hero. */}
-        <section className="relative flex min-h-svh flex-col items-center justify-end px-4 pt-24 pb-32 sm:justify-center sm:pt-28 sm:pb-20">
+            Do `sm` para cima volta ao centro, porque lá quem manda na
+            composição é o texto do hero.
+
+            O `pb-16` saiu de MEDIÇÃO, não de gosto (15/09/2026). As duas
+            peças se movem por réguas diferentes: a marca do vídeo é uma
+            FRAÇÃO da tela (o wordmark termina a 36% da altura, depois do
+            `deslocarY: -26`), e a busca é ancorada no RODAPÉ — ou seja, a
+            folga entre elas ENCOLHE conforme a tela fica mais baixa. Com o
+            `pb-32` anterior ela era de 84px num Pixel 7 (839px de altura) e
+            de **-29px** em 664px, que é a altura útil de um celular comum
+            com a barra do navegador à vista: o cartão escrevia "Tipo" e
+            "Cidade" por cima de "Next Home". Com `pb-16` a folga é de 35px
+            em 664 e de 147px em 839.
+
+            O piso não é o CTA do WhatsApp — ele é `fixed` no canto DIREITO
+            (x 341-395) e o cartão nunca chega lá; quem desce mais é o
+            convite de rolagem, centrado em x 127-285, a 56px dele. */}
+        <section className="relative flex min-h-svh flex-col items-center justify-end px-4 pt-24 pb-16 sm:justify-center sm:pt-28 sm:pb-20">
           {/* O medidor do parallax do fundo. Precisa de um ancestral que
               ROLE (esta seção, agora `relative`) — o fundo é `fixed` e não
               serve de referência de scroll. */}

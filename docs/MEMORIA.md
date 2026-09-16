@@ -7384,3 +7384,35 @@ Nota: [[a-remocao-levou-a-peca-errada-junto]].
   vídeo. Lá a peça do celular era a vinheta do LOGOTIPO (`somenteMobile` sem
   `fonteMobile`), que é justamente a que gerou a queixa — restaurá-la seria
   repetir 13/09 pelo outro lado.
+
+## A busca cobria o logotipo só em tela baixa (16/09/2026)
+
+Nota: [[a-folga-encolhe-quando-a-tela-encurta]].
+
+- **O defeito NÃO reproduzia no preset de celular do Playwright**, e é por isso
+  que ele passou. O `Pixel 7` do Playwright tem 412x**839** — a altura SEM a
+  barra do navegador. Na primeira visita ninguém tem essa altura. Com 664px,
+  que é o celular comum com a barra à vista, o cartão de busca escrevia "Tipo"
+  e "Cidade" por cima do wordmark "Next Home" do vídeo. **Preset de celular é o
+  caso feliz; a queixa se reproduz escolhendo a altura em que ela existe.**
+- **A causa é que as duas peças obedecem a réguas diferentes.** O wordmark é
+  uma FRAÇÃO da tela (`cover` + `deslocarY: -26` → termina a 0,36·H); o cartão
+  é ancorado no RODAPÉ (`justify-end` + `pb` → começa em H−454). A folga é
+  `0,64·H − 454`: ela ENCOLHE conforme a tela encurta e cruza o zero em
+  H ≈ 709. Medido com o `pb-32` anterior: +84px em 839, +16px em 734, **−29px**
+  em 664. Com `pb-16`: +147 / +80 / +36.
+- **O comentário do código apontava o piso errado.** Ele dizia que o `pb-32`
+  existia para manter a busca acima do CTA do WhatsApp — medido, o CTA é `fixed`
+  no canto DIREITO (x 341-395) e o cartão (x 16-396) nunca entra na faixa
+  vertical dele; quem desce mais é o convite de rolagem, centrado em x 127-285,
+  a 56px dele. Acreditar no comentário teria travado a correção em 64px de folga
+  que não protegia nada. **Décima vez que texto desatualizado aponta o
+  diagnóstico para o lugar errado nesta base** — e, como em 13/09, o texto mora
+  no arquivo que causa o problema.
+- **`deslocarY: -26` e a máscara de 72% ficaram como estão, de propósito.** Os
+  dois foram medidos quadro a quadro contra a peça; recalibrá-los para a posição
+  nova do cartão exigiria um número único válido para uma altura só — o mesmo
+  defeito com outra roupa.
+- **Ganho de quebra:** o vão de sage-green abaixo da seta (126px numa tela de
+  839) sumiu, e o convite de rolagem passou a terminar 64px acima da dobra em
+  vez de 128.
