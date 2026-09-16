@@ -7541,3 +7541,46 @@ Nota: [[producao-pode-servir-commit-de-outra-branch]].
 - **Diagnóstico sem o MCP da Vercel:** o repositório é público, então
   `curl -s "https://api.github.com/repos/Goes1404/next-home/deployments?per_page=8"`
   responde, e `statuses_url` de cada registro dá o estado do build.
+
+## O checklist do catálogo, e os campos que ninguém lê (16/09/2026)
+
+Nota: [[o-checklist-do-catalogo-e-as-categorias-sem-leitor]].
+
+- **Antes de pedir que alguém preencha um campo, procurar quem o LÊ.** A
+  varredura de quem lê cada coluna de `empreendimentos` achou quatro campos
+  sem leitor nenhum: `seo_titulo` e `seo_descricao` não aparecem em arquivo
+  algum (o título da página é gerado de nome mais cidade em `lib/seo.ts`), e
+  `iptu` e `condominio_valor` só existem no editor e no mapper. Numa lista de
+  conferência, campo sem leitor é pior que inútil: é um item que nunca fica
+  verde e ensina a ignorar a lista inteira. Ficaram de fora, com o motivo
+  escrito no módulo.
+- **Ao aplicar uma régua antiga, conferir sobre qual população ela foi
+  medida.** A régua da casa diz que degrau que vive em zero ensina a ignorar
+  a lista, e foi por isso que foto ficou fora do cartão de pendências. No
+  checklist a foto ENTRA: aquele zero foi medido só sobre o PUBLICADO, e
+  rascunho novo nasce sem foto e sem descrição — é ele que o checklist existe
+  para completar. Por isso o rascunho também entra na conta, marcado.
+- **Duas faixas, porque cobrar tudo é não cobrar nada.** Essencial é o que a
+  assistente usa ou o cliente vê, e só ele conta na completude; complementar
+  aparece sem cobrança, para o corretor saber que dá para preencher.
+- **Uma conta só, com guarda.** `pendenciasDoCatalogo` respondia "tem
+  planta?" por conta própria; hoje deriva de `completudeDoCatalogo`. Duas
+  implementações da mesma pergunta divergem no primeiro ajuste, e aí a tela
+  de pendências discorda do checklist sem nada ficar vermelho. A guarda de
+  código-fonte foi provocada removendo a derivação, com o md5 conferindo que
+  a mordida mordeu.
+- **Sem matriz, e com teto que veio do dado.** Grade de 26 imóveis por 15
+  categorias não cabe em 360 pixels, e rolagem lateral fora de conteúdo
+  declarado é proibida aqui desde a reforma de bolso. São dois blocos: por
+  CATEGORIA, que diz onde o catálogo está fraco, e por IMÓVEL, que diz por
+  onde começar. O teto de seis abertos existe porque **zero dos 26 imóveis
+  tem o essencial completo** — sem ele a lista abriria com 26 linhas.
+- **Medir aprova, olhar reprova: precisa dos dois.** A medição com o CSS de
+  produção passou em tudo — sem rolagem lateral, sem texto cortado, alvos
+  acima de 44px nos dois temas em 320, 360 e 390. A captura reprovou o que
+  número nenhum pega: a explicação de cada categoria truncava no meio da
+  palavra. Ela é o PORQUÊ, e cortada não ensina nada; passou a quebrar linha.
+- **O retrato do catálogo em 16/09**, sobre 26 imóveis: foto e descrição em
+  26 de 26; construtora 24; plantas cadastradas 22; lazer e preço 21;
+  endereço 11; imagem da planta 9; apelido 6. No complementar, book em PDF e
+  vídeo ou tour estão em ZERO — e os dois têm fluxo de cadastro pronto.

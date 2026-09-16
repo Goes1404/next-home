@@ -10,6 +10,7 @@ import { EditorBook } from "./EditorBook";
 import { EditorMidiasExternas } from "./EditorMidiasExternas";
 import { BarraSalvarFlutuante } from "./BarraSalvarFlutuante";
 import { ExcluirImovel } from "./ExcluirImovel";
+import { ChecklistDoImovel, type AbaDoEditor } from "./ChecklistDoImovel";
 import { salvarDadosGerais, salvarLazerEmpreendimento } from "../actions";
 import { Check } from "lucide-react";
 
@@ -18,7 +19,7 @@ interface Props {
 }
 
 export function EditorImovelClient({ imovel }: Props) {
-  const [abaAtiva, setAbaAtiva] = useState<"fotos" | "textos" | "book" | "midia" | "plantas" | "lazer">("fotos");
+  const [abaAtiva, setAbaAtiva] = useState<AbaDoEditor>("fotos");
   const [salvando, setSalvando] = useState(false);
   const [feedback, setFeedback] = useState<React.ReactNode | null>(null);
   const [feedbackTipo, setFeedbackTipo] = useState<"sucesso" | "erro" | null>(null);
@@ -127,6 +128,25 @@ export function EditorImovelClient({ imovel }: Props) {
           {feedback}
         </div>
       )}
+
+      {/*
+        O checklist vem ANTES das abas de proposito: ele responde "o que
+        falta", e a aba e so o lugar onde se preenche. Invertido, o corretor
+        precisaria abrir aba por aba para descobrir o que ainda nao fez.
+
+        O que ele avalia e o estado VIVO da tela por cima do que veio do
+        banco: descricao, preco, endereco, apelido, lazer e plantas marcam no
+        mesmo toque em que sao preenchidos.
+      */}
+      <ChecklistDoImovel
+        imovel={{
+          ...imovel,
+          ...dadosGerais,
+          lazer,
+          tipologias,
+        }}
+        onIr={setAbaAtiva}
+      />
 
       {/* Abas do editor: quebram linha, não rolam de lado. Rolagem lateral
           aqui escondia metade das seções do imóvel atrás de um gesto que a

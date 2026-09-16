@@ -1,4 +1,5 @@
 import { motivoDeUrgencia, type MotivoUrgencia } from "./apelidoPendente";
+import { avaliarCompletude } from "./completudeDoCatalogo";
 
 /**
  * O que falta em cada imóvel para a assistente conseguir atender bem.
@@ -78,14 +79,26 @@ export interface ImovelComPendencias<T> {
 function pendenciasDe(imovel: ImovelDoCatalogo): PendenciaDoImovel[] {
   const tipos: TipoDePendencia[] = [];
 
-  const semApelido = (imovel.nomesAlternativos?.length ?? 0) === 0;
-  if (semApelido) {
+  /*
+   * Quem responde "tem planta?" e "tem apelido?" e o modulo de completude,
+   * nunca este arquivo. Duas implementacoes da mesma pergunta divergem no
+   * primeiro ajuste, e ai a tela de pendencias passa a discordar do
+   * checklist sem nada ficar vermelho. Guarda em
+   * `completudeDoCatalogo.test.ts` impede a volta.
+   */
+  const ausentes = new Set(
+    avaliarCompletude(imovel)
+      .itens.filter((item) => !item.presente)
+      .map((item) => item.categoria.chave),
+  );
+
+  if (ausentes.has("apelido")) {
     // Nome que é título de anúncio é caso próprio: não é "seria bom ter
     // apelido", é "sem apelido este imóvel não existe para o bot".
     tipos.push(motivoDeUrgencia(imovel.nome) ? "apelido_invisivel" : "sem_apelido");
   }
-  if ((imovel.plantas?.length ?? 0) === 0) tipos.push("sem_planta");
-  if ((imovel.tipologias?.length ?? 0) === 0) tipos.push("sem_tipologia");
+  if (ausentes.has("planta_imagem")) tipos.push("sem_planta");
+  if (ausentes.has("tipologia")) tipos.push("sem_tipologia");
 
   return tipos
     .sort((a, b) => PESO[a] - PESO[b])

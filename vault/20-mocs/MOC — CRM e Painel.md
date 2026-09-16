@@ -14,6 +14,7 @@ leads por corretor (gestor vê milhares via RLS). Reforma "Painel de Bolso"
 F0–F6.
 
 ## Escala e consultas
+- [[o-checklist-do-catalogo-e-as-categorias-sem-leitor]] — duas faixas por efeito; quatro campos sem leitor ficaram de fora (16/09)
 - [[painel-paginado-no-banco]]
 - [[contar-e-listar-sao-consultas-diferentes]]
 - [[medir-carga-com-rollback]]

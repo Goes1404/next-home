@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getCandidatosDoCatalogo } from "@/lib/imoveis/candidatosDoCatalogo";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
-import { PendenciasDoCatalogo } from "../_componentes/PendenciasDoCatalogo";
+import { ChecklistDoCatalogo } from "../_componentes/ChecklistDoCatalogo";
 import { FilaCandidatos } from "./FilaCandidatos";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { AbasImoveis } from "@/app/corretor/(painel)/_componentes/AbasImoveis";
@@ -26,12 +26,14 @@ export default async function CandidatosPage() {
   ]);
 
   /*
-   * A lista de PENDÊNCIAS só olha o que está publicado. O cartão promete o
-   * que "a assistente sente na conversa", e ela só enxerga publicado —
-   * encher aquilo com rascunho recém-criado, incompleto por definição,
-   * esvaziaria a promessa.
+   * RASCUNHO ENTRA, marcado como tal.
+   *
+   * O cartão anterior olhava só o publicado, porque prometia "o que a
+   * assistente sente" e ela não enxerga rascunho. Este checklist promete
+   * outra coisa: o que falta para o cadastro ficar de pé. Completar antes de
+   * publicar é exatamente o caso de uso, então excluir o rascunho esconderia
+   * justamente o imóvel que mais precisa da lista.
    */
-  const publicados = imoveis.filter((i) => i.publicado ?? true);
 
   return (
     <div className="space-y-6">
@@ -46,7 +48,7 @@ export default async function CandidatosPage() {
         inventa metragem que a ficha não tem. Lançamento de fora ainda não
         custa nada; é decisão a tomar.
       */}
-      <PendenciasDoCatalogo imoveis={publicados} />
+      <ChecklistDoCatalogo imoveis={imoveis} />
 
       <FilaCandidatos candidatos={candidatos} />
     </div>
