@@ -7726,3 +7726,18 @@ superfície. Depois: 1,21 (claro) e 1,18 (escuro), texto todo em AA,
   `backdrop-filter` neles, `transform`/`filter` no `cartao` e `infinite` na
   aurora e no herói. A regressão é calada: a tela fica igual, só o quadro
   engorda.
+
+### A transição de rota saiu no mesmo dia (24/09/2026)
+
+- **Relatado logo depois do deploy: "não está renderizando".** Servidor
+  limpo (zero erro de runtime, todas as telas do painel em 200), então a
+  falha era no navegador. A única peça nova que embrulhava TODO o conteúdo
+  de toda tela era `TransicaoDeTela` (`<ViewTransition key={rota}>`), e era
+  também a única que não tinha sido testada no painel logado nem em Safari.
+  Numa reprodução no Chromium ela funcionava (tela nova visível em 600 ms,
+  console limpo) — o que prova o Chromium, não o aparelho do usuário.
+- **Saiu, e a regra que fica é de risco, não de gosto:** efeito que envolve
+  o conteúdo inteiro de todas as telas é o único que, falhando, apaga o
+  produto. Ele só volta com verificação no navegador de quem usa (iPhone) e
+  com o painel logado. O resto da reforma (paleta, aurora, grão, cartões,
+  herói, botões) não embrulha conteúdo e ficou.

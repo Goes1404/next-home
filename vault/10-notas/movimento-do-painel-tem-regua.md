@@ -5,7 +5,7 @@ tags: [painel, decisao]
 type: decisao
 status: evergreen
 custou: baixo
-codigo: [src/app/globals.css, src/app/corretor/(painel)/_componentes/HeroInicio.tsx, src/app/corretor/(painel)/funil/Quadro.tsx, src/app/corretor/(painel)/_componentes/LuzDosCartoes.tsx, src/app/corretor/(painel)/_componentes/TransicaoDeTela.tsx]
+codigo: [src/app/globals.css, src/app/corretor/(painel)/_componentes/HeroInicio.tsx, src/app/corretor/(painel)/funil/Quadro.tsx, src/app/corretor/(painel)/_componentes/LuzDosCartoes.tsx]
 created: 2026-09-07
 updated: 2026-09-24
 fonte: rodada de refinamento visual de 07/09/2026
@@ -41,7 +41,6 @@ somou movimento de FUNDO e de ROTA, e a régua aguentou:
 
 | peça | responde a |
 |---|---|
-| troca de tela (`painel-sai` / `painel-entra`, View Transitions) | a navegação |
 | aurora do fundo derivando | a ROLAGEM (`animation-timeline: scroll()`) |
 | aurora inclinando ±1,2vw | o PONTEIRO |
 | foco de luz no cartão | o ponteiro sobre ele |

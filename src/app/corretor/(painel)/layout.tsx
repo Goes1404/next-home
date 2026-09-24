@@ -3,7 +3,6 @@ import Link from "next/link";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { FundoDoPainel } from "./_componentes/FundoDoPainel";
 import { LuzDosCartoes } from "./_componentes/LuzDosCartoes";
-import { TransicaoDeTela } from "./_componentes/TransicaoDeTela";
 import { NavPainel } from "./NavPainel";
 import { NavMobileBottom } from "./NavMobileBottom";
 import { GavetaLateral } from "./GavetaLateral";
@@ -120,7 +119,7 @@ export default async function PainelLayout({
           */}
           <div className="mx-auto grid w-full max-w-[84rem] flex-1 grid-cols-1 gap-8 px-4 pt-6 pb-28 md:grid-cols-[15rem_minmax(0,1fr)] md:px-8 md:pb-16">
             <NavPainel ehGestor={ehGestor} />
-            <TransicaoDeTela>{children}</TransicaoDeTela>
+            <div className="min-w-0">{children}</div>
           </div>
           <NavMobileBottom />
           <GavetaLateral ehGestor={ehGestor} />

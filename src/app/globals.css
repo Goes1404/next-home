@@ -2306,8 +2306,8 @@
     var(--shadow-cartao),
     inset 0 1px 0 var(--heroi-fio);
   /* Um fio de luz varre a borda de cima UMA vez, 0,9s depois de a tela
-     montar — e a tela monta a cada troca de rota (`TransicaoDeTela` chaveia
-     pela rota), então cada tela nova ganha a sua. 1px de altura, só
+     montar — cada tela tem o próprio cabeçalho-herói, que nasce de novo a
+     cada troca de rota, então cada tela nova ganha a sua. 1px de altura, só
      `transform`. Não é infinita: animação infinita produz quadro a cada
      vsync para sempre, e é a régua da casa (movimento responde a gesto ou
      mostra conteúdo; um momento orquestrado por carga). */
@@ -2563,33 +2563,6 @@
   outline: none;
   border-color: var(--color-acento);
   box-shadow: 0 0 0 4px var(--color-acento-lavado);
-}
-
-/*
- * 6. TROCA DE TELA: a tela que sai esmaece subindo, a que entra chega de
- * baixo. É a View Transitions API (`<ViewTransition>` em `TransicaoDeTela`,
- * chaveada pela rota): o navegador anima DUAS FOTOGRAFIAS, então
- * `translate` aqui é seguro — nada `fixed` no DOM vivo é tocado. Só na
- * troca de ROTA; filtro na URL, `router.refresh()` e o polling das
- * conversas não animam nada.
- */
-::view-transition-old(.painel-sai) {
-  animation: 150ms var(--ease-in-out-quint) both painel-sai;
-}
-::view-transition-new(.painel-entra) {
-  animation: 380ms var(--ease-out-expo) 30ms both painel-entra;
-}
-@keyframes painel-sai {
-  to {
-    opacity: 0;
-    translate: 0 -10px;
-  }
-}
-@keyframes painel-entra {
-  from {
-    opacity: 0;
-    translate: 0 18px;
-  }
 }
 
 /* Quem pediu menos movimento fica com a profundidade e perde o parallax da

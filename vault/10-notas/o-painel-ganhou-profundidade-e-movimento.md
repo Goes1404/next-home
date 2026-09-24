@@ -9,7 +9,6 @@ codigo:
   - src/app/globals.css
   - src/app/corretor/(painel)/_componentes/FundoDoPainel.tsx
   - src/app/corretor/(painel)/_componentes/LuzDosCartoes.tsx
-  - src/app/corretor/(painel)/_componentes/TransicaoDeTela.tsx
   - src/app/corretor/(painel)/_componentes/CabecalhoDeTela.tsx
   - src/app/corretor/(painel)/_componentes/HeroInicio.tsx
   - src/app/corretor/(painel)/layout.tsx
@@ -45,15 +44,17 @@ quadros por segundo, e sai se custar.
   listener no documento, uma leitura de layout por quadro).
 - **Herói** (`cartao-heroi`): vidro translúcido com dois brilhos, foco de luz
   mais forte, e um fio que varre a borda de cima UMA vez, 0,9s depois de a
-  tela montar — como `TransicaoDeTela` chaveia pela rota, cada tela nova
+  tela montar — cada tela tem o próprio herói, que nasce de novo, e cada tela nova
   ganha a sua.
 - **Botão primário** (`a/button.bg-acento`): brilho de topo, sombra na cor do
   módulo, levanta 1px no hover, afunda 2% no toque. Regra por classe
   utilitária, para valer nos ~260 usos sem editar componente.
 - **Campo em foco**: anel lavado na cor do módulo que acende.
-- **Troca de rota**: `<ViewTransition key={rota}>` do React — a tela que sai
-  esmaece subindo, a nova chega de baixo. Chaveado pela ROTA, então filtro na
-  URL, `router.refresh()` e o polling das conversas não animam nada.
+- **Troca de rota: construída e RETIRADA no mesmo dia.** `<ViewTransition
+  key={rota}>` embrulhava o conteúdo de toda tela; logo depois do deploy veio
+  "não está renderizando", com servidor limpo. Era a única peça não testada
+  no painel logado nem no Safari, e a única que, falhando, apaga tudo. Só
+  volta com verificação no aparelho de quem usa.
 - Barra de rolagem fina na cor do texto.
 
 ## O que foi medido, e o que a medição derrubou
