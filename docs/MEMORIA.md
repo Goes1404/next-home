@@ -7584,3 +7584,27 @@ Nota: [[o-checklist-do-catalogo-e-as-categorias-sem-leitor]].
   26 de 26; construtora 24; plantas cadastradas 22; lazer e preço 21;
   endereço 11; imagem da planta 9; apelido 6. No complementar, book em PDF e
   vídeo ou tour estão em ZERO — e os dois têm fluxo de cadastro pronto.
+
+## Construído e nunca ligado — o inventário de 24/09/2026
+
+Pergunta do usuário: "o que foi construído e nunca ligado?". Conferido no
+banco e no GitHub, não só relido da MEMORIA.
+
+- **O worker de vídeo roda de hora em hora e falha sempre**: 134 execuções,
+  todas vermelhas, porque os secrets `SUPABASE_SECRET_KEY` e
+  `NEXT_PUBLIC_SUPABASE_URL` do GitHub estão vazios. O único vídeo pedido
+  está `pendente` desde 03/09 com `tentativas = 0` — que é o MESMO sintoma
+  de "ninguém chamou", porque o worker morre antes de reservar o job. Para
+  distinguir, olhar o log do Actions, não o banco. A mensagem de erro de
+  `createServiceClient` culpava "o webhook do WhatsApp"; passou a nomear
+  todos os chamadores. Nota: [[o-worker-de-video-roda-sem-segredo]].
+- **Produção segue com 0 leads e 0 conversas** 12 dias depois da limpeza de
+  12/09, e zero `ia_interacoes` nos últimos 7 dias, com o número
+  `conectado`. Desde a 0111 o webhook ignora número sem lead cadastrado,
+  então com a carteira vazia a Sofia não atende ninguém — por desenho, mas
+  vale saber antes de concluir que "a IA quebrou". Só 2 dos 7 corretores
+  ativos têm login.
+- **Ainda sem dado**: `meta_ads_metricas` 0 linhas e nenhum lead com
+  campanha (faltam as env vars da Meta); 1 corretor com grade de agenda; 5
+  de 25 publicados com apelido; os dois crons de e-mail seguem desagendados
+  por decisão (e sem `RESEND_API_KEY`).

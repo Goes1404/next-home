@@ -4,7 +4,7 @@ tags: [moc, midia]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-16
+updated: 2026-09-24
 summary: Upload, PDF de construtora, Google Drive, storage, sharp.
 ---
 # Ingestão de Mídia — Map of Content
@@ -21,6 +21,8 @@ Três origens (upload, PDF, Drive), um caminho único de gravação.
 - [[storage-da-arte-de-ia-tem-teto]]
 - [[o-teto-do-pdf-e-o-plano-do-supabase]] ⚠️ 50 MB é a parede do plano FREE, não escolha nossa
 - [[pdf-lido-como-texto-no-navegador-e-binario]]
+
+- [[o-worker-de-video-roda-sem-segredo]] — 134 execuções vermelhas: secrets do GitHub vazios
 
 ## Relacionados
 - [[MOC — Front Público]] · [[MOC — Banco de Dados]] · [[Home]]
