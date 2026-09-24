@@ -13,11 +13,10 @@ import path from "node:path";
  *    ~900x250px — 43,6 ms/quadro no desktop contra 22,9 sem; no celular,
  *    13 quadros acima de 33ms contra 3. O que há atrás já é um gradiente
  *    suave; desfocar não muda a imagem.
- * 2. A aurora é ESTÁTICA (nenhum transform, will-change, animação ou
- *    transição) e o herói não tem animação `infinite`. A aurora ficou
- *    estática depois de um incidente em 24/09 atribuído à GPU por engano;
- *    a causa real era o fundo pintado no portal da bolha (ver o último
- *    teste). Se o movimento voltar, este teste muda junto, de propósito.
+ * 2. Nenhuma animação `infinite` na aurora nem no herói: a aurora se move
+ *    só com a rolagem e o ponteiro. (Ela ficou parada algumas horas em
+ *    24/09 por um diagnóstico errado de GPU; a causa real era o fundo no
+ *    portal da bolha, ver o último teste. Voltou verificada pelo usuário.)
  * 3. Nenhum contexto de empilhamento nem containing block no `cartao`
  *    (`transform`, `filter`, `backdrop-filter`, `isolation`, `contain`):
  *    cinco componentes `fixed` nascem dentro dele, e a folha de ações
@@ -64,14 +63,15 @@ describe("profundidade do painel: o que custa quadro fica fora", () => {
     expect(heroi).not.toMatch(/animation[^;]*infinite/);
   });
 
-  it("a aurora é estática: sem transform, will-change nem animação", () => {
+  it("a aurora só se move com a rolagem e o ponteiro — nada infinito", () => {
     const ini = css.indexOf(".painel-aurora {");
     const fim = css.indexOf(".painel-grao {", ini);
     expect(ini).toBeGreaterThanOrEqual(0);
     expect(fim).toBeGreaterThan(ini);
     const aurora = css.slice(ini, fim);
-    expect(aurora).toContain("radial-gradient");
-    expect(aurora).not.toMatch(/\b(transform|will-change|animation[\w-]*|transition)\s*:/);
+    expect(aurora).toContain("animation-timeline: scroll(root)");
+    expect(aurora).toContain("--lean-x");
+    expect(aurora).not.toMatch(/infinite/);
   });
 
   it.each(["(painel)/_componentes/HeroInicio.tsx", "(painel)/_componentes/CabecalhoDeTela.tsx"])(

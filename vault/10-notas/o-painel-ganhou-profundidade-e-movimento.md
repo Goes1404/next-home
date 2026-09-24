@@ -157,3 +157,7 @@ transição de rota e o movimento da aurora (rolagem e mouse) saíram por
 causa deles. O erro de método foi o harness sem a bolha — justamente o
 único elemento que o print mostrava. **Atributo de escopo de tokens não
 recebe propriedade visual; harness do painel monta os portais.**
+
+Os dois efeitos retirados por engano (transição de rota e movimento da
+aurora) **voltaram no mesmo dia**, conferidos no build de produção com a
+bolha do consultor montada.

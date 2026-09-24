@@ -41,6 +41,9 @@ somou movimento de FUNDO e de ROTA, e a régua aguentou:
 
 | peça | responde a |
 |---|---|
+| troca de tela (`painel-sai` / `painel-entra`, View Transitions) | a navegação |
+| aurora do fundo derivando | a ROLAGEM (`animation-timeline: scroll()`) |
+| aurora inclinando ±1,2vw | o PONTEIRO |
 | foco de luz no cartão | o ponteiro sobre ele |
 | varredura do herói (uma vez, 0,9s depois de montar) | a tela nova chegando — o momento de carga, junto com o medidor |
 
@@ -52,10 +55,9 @@ de ser gosto e virou número.**
 
 ## As regras que valem para a próxima animação
 
-- **O fundo é estático hoje, mas não por causa de GPU.** Em 24/09 o
-  painel sumiu e a aurora animada foi retirada por suspeita; a causa real
-  era o fundo pintado no portal da bolha do consultor. Devolver o
-  movimento é decisão livre, com verificação no painel logado.
+- **O fundo se move com a rolagem e o mouse** (retirado por algumas horas
+  em 24/09 por um diagnóstico errado de GPU; a causa real do incidente era
+  o fundo pintado no portal da bolha do consultor).
 - **Nenhuma animação infinita no painel.** Quadro por vsync para sempre, e
   todo `backdrop-filter` na tela é refeito em cada um. O que precisa parecer
   vivo se prende a um gesto (rolagem, ponteiro) ou roda uma vez por montagem.

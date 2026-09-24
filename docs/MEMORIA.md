@@ -7768,3 +7768,8 @@ superfície. Depois: 1,21 (claro) e 1,18 (escuro), texto todo em AA,
 - **Harness do painel tem de montar os portais** (bolha, gavetas) além do
   `<main>` — terceira vez que um portal muda o resultado (a cor da gaveta em
   04/09, a altura do balão em 11/09, agora isto).
+- **Os dois efeitos voltaram no mesmo dia** (transição de rota e aurora
+  que se move com a rolagem e o mouse), a pedido do usuário depois de
+  confirmar o painel funcionando. Conferidos antes de subir no build de
+  produção COM a bolha do consultor montada: conteúdo visível nos dois
+  temas, navegação entre telas, aurora mudando com a rolagem, zero erro.
