@@ -3,9 +3,12 @@
 import Image from "next/image";
 import { useState, useTransition } from "react";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
+import { useArrastarParaOrdenar } from "../../_componentes/useArrastarParaOrdenar";
+import { IconeAlca } from "../../_componentes/IconeAlca";
 import {
   NA_HOME,
   alternarDestaque,
+  arrastarPara,
   mover,
   podeMover,
   type ItemDaVitrine,
@@ -36,6 +39,18 @@ export function OrdemNoSite({ iniciais }: { iniciais: ItemDaTela[] }) {
     setLista(nova);
     setAviso(null);
   }
+
+  const arrasto = useArrastarParaOrdenar({
+    escopo: "imoveis-do-site",
+    desativado: pendente,
+    // Atualização FUNCIONAL: durante o arrasto dois movimentos podem sair no
+    // mesmo quadro, antes de a tela renderizar — ler `lista` do fechamento
+    // aplicaria o segundo sobre a lista velha.
+    aoMover: (de, para) => {
+      setLista((atual) => arrastarPara(atual, de, para));
+      setAviso(null);
+    },
+  });
 
   function salvar() {
     const enviada = lista;
@@ -95,8 +110,9 @@ export function OrdemNoSite({ iniciais }: { iniciais: ItemDaTela[] }) {
           &quot;Selecionados&quot;, na página inicial, que pega os {NA_HOME} primeiros.
         </p>
         <p className="text-fluid-sm text-apoio">
-          Os marcados como <strong className="text-titulo">destaque</strong> vêm sempre antes dos
-          outros. Para passar um imóvel para cima dessa linha, marque-o como destaque.
+          Arraste pela alça <span aria-hidden>⠿</span> até a posição certa, ou use as setas. Os
+          marcados como <strong className="text-titulo">destaque</strong> vêm sempre antes dos
+          outros; arrastar um imóvel para o meio deles o torna destaque.
         </p>
       </div>
 
@@ -115,8 +131,22 @@ export function OrdemNoSite({ iniciais }: { iniciais: ItemDaTela[] }) {
               {i === 0 && totalDestaques > 0 && (
                 <p className="text-fluid-xs font-medium uppercase tracking-wide text-tenue">Destaques</p>
               )}
-              <div className="cartao flex items-center gap-2 p-2 sm:gap-3 sm:pr-3">
-                <span className="text-fluid-sm w-6 shrink-0 text-center font-medium text-apoio">{i + 1}</span>
+              <div
+                {...arrasto.item(i)}
+                className={`cartao flex items-center gap-2 p-2 transition-shadow sm:gap-3 sm:pr-3 ${
+                  arrasto.arrastando === i ? "ring-acento relative z-10 opacity-90 shadow-lg ring-2" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  {...arrasto.alca(i)}
+                  aria-label={`Arrastar ${item.nome} para outra posição`}
+                  title="Arrastar para outra posição"
+                  className="-my-1 flex min-h-11 w-8 shrink-0 cursor-grab touch-none items-center justify-center text-tenue hover:text-corpo active:cursor-grabbing"
+                >
+                  <IconeAlca className="h-4 w-4" />
+                </button>
+                <span className="text-fluid-sm hidden w-5 shrink-0 text-center font-medium text-apoio sm:inline">{i + 1}</span>
                 <div className="relative hidden h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-elevado sm:block">
                   {item.foto && (
                     <Image src={item.foto} alt="" fill sizes="64px" className="object-cover" />

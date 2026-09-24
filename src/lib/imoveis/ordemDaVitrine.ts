@@ -69,3 +69,18 @@ export function alternarDestaque<T extends ItemDaVitrine>(lista: T[], slug: stri
 export function paraGravar(lista: Pick<ItemDaVitrine, "slug" | "destaque">[]): { slug: string; ordem: number; destaque: boolean }[] {
   return lista.map((item, i) => ({ slug: item.slug, ordem: (i + 1) * 10, destaque: item.destaque }));
 }
+
+/**
+ * Arrastar ATRAVESSA a fronteira, ao contrário das setas: soltar um imóvel no
+ * meio dos destaques o torna destaque, e soltá-lo entre os demais tira o
+ * destaque. Ele adota o grupo do imóvel sobre o qual caiu. As setas continuam
+ * presas ao grupo porque um toque em "subir" não deveria mudar o destaque de
+ * ninguém; arrastar é um gesto de "quero ESTE aqui", e o grupo acompanha.
+ */
+export function arrastarPara<T extends ItemDaVitrine>(lista: T[], de: number, para: number): T[] {
+  if (de === para || de < 0 || para < 0 || de >= lista.length || para >= lista.length) return lista;
+  const nova = [...lista];
+  const [peca] = nova.splice(de, 1);
+  nova.splice(para, 0, { ...peca, destaque: lista[para].destaque });
+  return ordemDoSite(nova);
+}

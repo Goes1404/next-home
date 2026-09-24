@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ordenar } from "@/lib/queries";
 import type { Empreendimento } from "@/lib/types";
-import { alternarDestaque, mover, ordemDoSite, paraGravar, podeMover } from "./ordemDaVitrine";
+import { alternarDestaque, arrastarPara, mover, ordemDoSite, paraGravar, podeMover } from "./ordemDaVitrine";
 
 const item = (slug: string, destaque = false) => ({ slug, nome: slug, destaque });
 const slugs = (l: { slug: string }[]) => l.map((i) => i.slug);
@@ -43,5 +43,18 @@ describe("ordem do site no painel", () => {
       { slug: "x", ordem: 10, destaque: true },
       { slug: "y", ordem: 20, destaque: false },
     ]);
+  });
+
+  it("arrastar muda de posição e adota o grupo de onde caiu", () => {
+    const lista = [item("b", true), item("d", true), item("a"), item("c")];
+    const subiu = arrastarPara(lista, 3, 0);
+    expect(slugs(subiu)).toEqual(["c", "b", "d", "a"]);
+    expect(subiu[0].destaque).toBe(true);
+
+    const desceu = arrastarPara(lista, 0, 3);
+    expect(slugs(desceu)).toEqual(["d", "a", "c", "b"]);
+    expect(desceu[3].destaque).toBe(false);
+
+    expect(slugs(arrastarPara(lista, 2, 3))).toEqual(["b", "d", "c", "a"]);
   });
 });

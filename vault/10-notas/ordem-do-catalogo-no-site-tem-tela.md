@@ -11,6 +11,7 @@ codigo:
   - src/app/corretor/(painel)/imoveis/ordem/page.tsx
   - src/app/corretor/(painel)/imoveis/ordem/OrdemNoSite.tsx
   - src/app/corretor/(painel)/imoveis/actions.ts
+  - src/app/corretor/(painel)/_componentes/useArrastarParaOrdenar.ts
 created: 2026-09-24
 updated: 2026-09-24
 fonte: pedido do usuário em 24/09/2026 ("mudar a sequência dos imóveis exibidos")
@@ -49,5 +50,33 @@ pelo link do corretor.
 - **Uma conta só.** `ordemDoSite` tem teste que a compara com o `ordenar` do
   site, e `paraGravar` é usada pela action. Assim tela e vitrine não podem
   discordar.
+
+## Arrastar (24/09/2026)
+
+Nas duas telas, **Ordem no site** e **galeria de fotos do imóvel**, dá para
+arrastar pela alça ⠿. Isso vale para o mouse e para o dedo, porque usa
+pointer events. O HTML5 drag-and-drop não dispara em toque, e foi por isso
+que o kanban de 02/09 ficou sem arrasto no celular. O hook é
+`useArrastarParaOrdenar`:
+- A lista se rearruma **durante** o arrasto, assim a pessoa vê onde o item
+  vai cair sem precisar de fantasma.
+- O alvo é achado com `elementFromPoint` e `data-ordenavel`, então a mesma
+  conta serve para coluna e para grade.
+- Só a alça tem `touch-none`, para o resto continuar rolando a página.
+- Com o dedo parado perto da borda, um laço de quadro rola a tela.
+
+**Arrastar atravessa o destaque; as setas não.** Soltar um imóvel no meio
+dos destaques o torna destaque (`arrastarPara`). Um toque em "subir" não
+deveria mudar o destaque de ninguém. Arrastar é um gesto de "quero este
+aqui", e o grupo acompanha.
+
+**O `aoMover` tem de usar atualização funcional.** Dois movimentos podem sair
+no mesmo quadro, antes de a tela renderizar. Ler a lista do fechamento
+aplicaria o segundo movimento sobre a lista velha.
+
+Verificado num navegador de verdade, com uma página de teste temporária e
+dados falsos: arrasto com mouse e com toque (CDP `Input.dispatchTouchEvent`)
+nas duas telas, sem rolagem lateral. Os tipos gerados pelo `next dev` para a
+página de teste apagada quebram o `tsc` até alguém rodar `rm -rf .next/dev`.
 
 Ligada em [[MOC — CRM e Painel]] e [[MOC — Front Público]].

@@ -11,6 +11,8 @@ import {
   salvarOrdemDasFotos,
 } from "../actions";
 import { Check } from 'lucide-react';
+import { moverPara, useArrastarParaOrdenar } from "../../_componentes/useArrastarParaOrdenar";
+import { IconeAlca } from "../../_componentes/IconeAlca";
 
 interface Props {
   empreendimentoId: string;
@@ -152,6 +154,13 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
     });
   };
 
+  const arrasto = useArrastarParaOrdenar({
+    escopo: "fotos-do-imovel",
+    desativado: salvandoOrdem,
+    aoMover: (de, para) =>
+      setMidias((prev) => [...moverPara(prev.filter(ehImagem), de, para), ...prev.filter((m) => !ehImagem(m))]),
+  });
+
   const salvarOrdem = async () => {
     const ids = idsDasImagens(midias);
     if (ids.length !== midias.filter(ehImagem).length) {
@@ -223,8 +232,8 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
         <div>
           <h3 className="text-fluid-base font-bold text-titulo">Galeria de Fotos do Imóvel</h3>
           <p className="text-fluid-xs text-apoio mt-0.5">
-            A 1ª foto é a <strong>Capa Principal</strong> na vitrine e nos cards do WhatsApp. Use
-            ◀ ▶ em cada foto para mudar a sequência do site.
+            A 1ª foto é a <strong>Capa Principal</strong> na vitrine e nos cards do WhatsApp. Arraste
+            pela alça <span aria-hidden>⠿</span> (ou use ◀ ▶) para mudar a sequência do site.
           </p>
           <p className="text-fluid-xs text-apoio mt-1 break-words">
             Veio uma planta no meio das fotos? Toque em <strong>É planta</strong> — é assim que a
@@ -304,7 +313,10 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
             return (
               <div
                 key={midia.url}
+                {...arrasto.item(posicao)}
                 className={`group relative rounded-2xl overflow-hidden border transition-all ${
+                  arrasto.arrastando === posicao ? "z-10 scale-[1.03] shadow-xl ring-2 ring-acento " : ""
+                }${
                   ehCapa
                     ? "border-acento ring-acento ring-2"
                     : "border-linha hover:border-linha-forte"
@@ -325,6 +337,18 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
                       Planta
                     </span>
                   )}
+
+                  {/* Alça de arrastar: o único ponto com touch-none, para o resto
+                      da foto continuar rolando a página com o dedo. */}
+                  <button
+                    type="button"
+                    {...arrasto.alca(posicao)}
+                    aria-label="Arrastar para outra posição"
+                    title="Arrastar para outra posição"
+                    className="absolute right-2 top-2 flex min-h-11 min-w-11 cursor-grab touch-none items-center justify-center rounded-lg bg-black/60 text-white hover:bg-black/80 active:cursor-grabbing"
+                  >
+                    <IconeAlca className="h-5 w-5" />
+                  </button>
 
                   {/* Setas sobre a foto: sem ocupar a linha de ações do cartão estreito */}
                   <div className="absolute bottom-2 right-2 flex gap-1">

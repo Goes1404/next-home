@@ -7673,3 +7673,8 @@ Nota: [[ordem-do-catalogo-no-site-tem-tela]].
   ordem". "Definir Capa" antes zerava a sequência (tudo `ordem = 10`), e
   `midias` não tem `created_at` para desempatar: as fotos saíam em ordem
   arbitrária. Ao desempatar mídia, não conte com data; use a ordem da tela.
+- **Arrastar para ordenar** (24/09): `useArrastarParaOrdenar` (pointer events,
+  mouse e dedo, com a lista se rearrumando durante o arrasto) serve à Ordem no
+  site e à galeria de fotos. Para testar toque sem login, usei uma página
+  temporária e `Input.dispatchTouchEvent` do CDP. Depois de apagá-la, rode
+  `rm -rf .next/dev .next/types`, senão o `tsc` acusa o módulo que sumiu.
