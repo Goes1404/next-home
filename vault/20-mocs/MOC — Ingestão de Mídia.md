@@ -24,5 +24,7 @@ Três origens (upload, PDF, Drive), um caminho único de gravação.
 
 - [[o-worker-de-video-roda-sem-segredo]] — 134 execuções vermelhas: secrets do GitHub vazios
 
+- [[planta-que-chega-como-foto]] — botão "É planta" na galeria; e a capa que nunca era gravada
+
 ## Relacionados
 - [[MOC — Front Público]] · [[MOC — Banco de Dados]] · [[Home]]

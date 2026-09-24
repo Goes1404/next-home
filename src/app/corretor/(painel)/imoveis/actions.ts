@@ -288,6 +288,52 @@ export async function definirFotoComoCapa(
 }
 
 /**
+ * Troca uma imagem da galeria entre FOTO e PLANTA.
+ *
+ * Existe porque a planta chega por onde a foto chega: book em PDF, pasta do
+ * Drive, câmera do celular — e tudo isso entra como `foto`. Enquanto ela for
+ * foto, a assistente não a manda quando o cliente pede a planta, a vitrine a
+ * mostra no meio das fotos de ambiente e o checklist do catálogo segue
+ * dizendo "sem imagem da planta" com a imagem ali na tela.
+ *
+ * Só foto ↔ planta: vídeo e tour 360° são link de terceiro e moram em outra
+ * aba. O filtro de tipo está na própria consulta, não num `if` antes dela —
+ * assim um id de vídeo nunca vira "planta" por engano.
+ */
+export async function definirTipoDaMidia(
+  midiaId: string,
+  tipo: "foto" | "planta",
+  slug: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+  if (tipo !== "foto" && tipo !== "planta") return { ok: false, erro: "Tipo inválido." };
+  if (!midiaId) return { ok: false, erro: "Imagem sem identificação. Recarregue a página." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("midias")
+    .update({ tipo })
+    .eq("id", midiaId)
+    .in("tipo", ["foto", "planta"])
+    .select("id");
+
+  if (error) return { ok: false, erro: "Não foi possível mudar o tipo da imagem agora." };
+  // Zero linhas não é sucesso: a policy ou o filtro de tipo recusaram, e a
+  // tela não pode dizer "virou planta" sobre algo que continua foto.
+  if (!data || data.length === 0) {
+    return { ok: false, erro: "Esta imagem não pôde ser alterada. Recarregue a página." };
+  }
+
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+  revalidatePath(`/corretor/imoveis/${slug}`);
+  return { ok: true };
+}
+
+/**
  * Salva as características de lazer e conveniências do empreendimento.
  */
 export async function salvarLazerEmpreendimento(

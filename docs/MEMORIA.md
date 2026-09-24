@@ -7631,3 +7631,22 @@ Nota: [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]].
   que a leitura de foto depende de IA.
 - Provocado antes de subir: desligar a exclusão da coluna de rótulo e o
   desvio da conversa em `extrairDeTexto` derruba 1 e 2 testes.
+
+## A planta chega como foto (24/09/2026)
+
+Nota: [[planta-que-chega-como-foto]].
+
+- **Upload da galeria, curadoria do PDF e Drive gravam `tipo = foto`**, e é
+  o tipo que decide se a assistente consegue mandar a imagem como planta
+  (`resolverMidia` lê `imovel.plantas`) e se o checklist conta "imagem da
+  planta". O botão **"É planta" / "É foto"** em cada cartão da galeria troca
+  o tipo (`definirTipoDaMidia`), com o filtro de tipo na própria consulta e
+  zero linhas tratado como erro.
+- **"Definir Capa" nunca gravou nada**: `definirFotoComoCapa` era importada e
+  nenhum handler a chamava — a tela anunciava "Capa atualizada" e o reload
+  desfazia. Décimo-primeiro caso de "construído e nunca ligado", agora com
+  guarda que lê o código (`EditorFotos.test.ts`, provocada).
+- **A capa do editor era a primeira mídia de qualquer tipo**; hoje é a
+  primeira FOTO, como o mapper da vitrine (`capa: fotos[0]`). E foto recém-
+  enviada passou a guardar o `id` devolvido pelo servidor — sem ele não dava
+  para removê-la nem reclassificá-la antes de recarregar.
