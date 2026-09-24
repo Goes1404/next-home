@@ -142,14 +142,18 @@ Ver também [[movimento-do-painel-tem-regua]], [[a-paleta-tinha-duas-cores-e-o-s
 (09/2026) — cor por módulo" e "O painel ganhou profundidade e movimento
 (24/09/2026)".
 
-## Incidente: o painel sumiu no Chrome com GPU (mesmo dia)
+## Incidente: o painel sumiu (mesmo dia) — era a bolha do consultor
 
-Depois do deploy, o painel ficou todo escuro no Chrome do Windows: nada
-visível, links clicáveis, só a bolha do consultor (fora do `<main>`)
-aparecendo. O build de produção renderizava perfeito no Chromium headless,
-que rasteriza por software. O que era novo e composto na GPU era a aurora
-(fixa, z-index negativo, `transform` + `will-change` + scroll-timeline).
-Ela voltou a ser **estática**, o foco de luz perdeu o `will-change`, e a
-inclinação pelo mouse e a deriva pela rolagem saíram. **Headless não prova
-nada sobre camada promovida**; movimento de fundo só volta testado no
-Chrome com GPU.
+Depois do deploy o painel ficou todo escuro: nada visível, links
+clicáveis, só a bolha do consultor aparecendo. A causa foi o fundo novo
+escrito em `[data-rota="painel"]`: os portais do painel repetem esse
+atributo, e a bolha é um contêiner `fixed inset-0 z-[55]` transparente —
+ganhou o fundo opaco e cobriu tudo. Corrigido com `main[data-rota="painel"]`
+e guarda que reprova fundo no seletor solto.
+
+Antes do certo vieram dois diagnósticos errados (a transição de rota e "a
+GPU com a aurora animada"), e os dois retiraram efeitos que funcionavam: a
+transição de rota e o movimento da aurora (rolagem e mouse) saíram por
+causa deles. O erro de método foi o harness sem a bolha — justamente o
+único elemento que o print mostrava. **Atributo de escopo de tokens não
+recebe propriedade visual; harness do painel monta os portais.**

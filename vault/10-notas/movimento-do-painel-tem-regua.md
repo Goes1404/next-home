@@ -52,10 +52,10 @@ de ser gosto e virou número.**
 
 ## As regras que valem para a próxima animação
 
-- **Nenhuma camada promovida à força atrás do conteúdo** (`will-change`,
-  transform permanente em elemento fixo): em 24/09 a aurora assim fez o
-  painel inteiro sumir no Chrome com GPU, e o teste headless não viu. O
-  fundo é estático.
+- **O fundo é estático hoje, mas não por causa de GPU.** Em 24/09 o
+  painel sumiu e a aurora animada foi retirada por suspeita; a causa real
+  era o fundo pintado no portal da bolha do consultor. Devolver o
+  movimento é decisão livre, com verificação no painel logado.
 - **Nenhuma animação infinita no painel.** Quadro por vsync para sempre, e
   todo `backdrop-filter` na tela é refeito em cada um. O que precisa parecer
   vivo se prende a um gesto (rolagem, ponteiro) ou roda uma vez por montagem.

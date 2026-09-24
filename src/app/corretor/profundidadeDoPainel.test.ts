@@ -14,10 +14,10 @@ import path from "node:path";
  *    13 quadros acima de 33ms contra 3. O que há atrás já é um gradiente
  *    suave; desfocar não muda a imagem.
  * 2. A aurora é ESTÁTICA (nenhum transform, will-change, animação ou
- *    transição) e o herói não tem animação `infinite`. Em 24/09/2026 a
- *    aurora com transform + will-change + scroll-timeline, fixa em z-index
- *    negativo, fez o painel inteiro sumir no Chrome com GPU — e o teste
- *    headless (raster por software) não viu nada.
+ *    transição) e o herói não tem animação `infinite`. A aurora ficou
+ *    estática depois de um incidente em 24/09 atribuído à GPU por engano;
+ *    a causa real era o fundo pintado no portal da bolha (ver o último
+ *    teste). Se o movimento voltar, este teste muda junto, de propósito.
  * 3. Nenhum contexto de empilhamento nem containing block no `cartao`
  *    (`transform`, `filter`, `backdrop-filter`, `isolation`, `contain`):
  *    cinco componentes `fixed` nascem dentro dele, e a folha de ações
@@ -83,4 +83,17 @@ describe("profundidade do painel: o que custa quadro fica fora", () => {
       for (const c of classes) expect(c).not.toMatch(/backdrop-blur/);
     },
   );
+  it("fundo do painel só no <main>, nunca nos portais que levam data-rota", () => {
+    // Os portais (bolha do consultor, gavetas) repetem data-rota="painel"
+    // para herdar a paleta e são contêineres fixed inset-0 transparentes.
+    // Fundo num seletor que os alcança pinta a tela inteira por cima do
+    // conteúdo — foi o incidente de 24/09/2026.
+    const regras = [...css.matchAll(/([^{}]*)\{([^{}]*)\}/g)];
+    const soltas = regras.filter(
+      ([, sel, corpo]) =>
+        /(^|,)\s*\[data-rota="painel"\]\s*$/.test(sel.trim()) && /\bbackground(-image|-color)?\s*:/.test(corpo),
+    );
+    expect(soltas.map(([, s]) => s.trim())).toEqual([]);
+    expect(css).toContain('main[data-rota="painel"]');
+  });
 });

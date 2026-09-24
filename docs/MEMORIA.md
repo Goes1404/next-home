@@ -7742,27 +7742,29 @@ superfície. Depois: 1,21 (claro) e 1,18 (escuro), texto todo em AA,
   com o painel logado. O resto da reforma (paleta, aurora, grão, cartões,
   herói, botões) não embrulha conteúdo e ficou.
 
-### O painel sumia no Chrome com GPU, e o teste headless não via (24/09/2026)
+### O painel sumia: era o FUNDO pintado na bolha do consultor (24/09/2026)
 
-- **Sintoma, por print do usuário (Windows, Chrome, tema escuro):** tela
-  inteira escura, cabeçalho e conteúdo invisíveis, links respondendo ao
-  mouse, e só a bolha do consultor visível — o único elemento que mora FORA
-  do `<main>` do painel (portal no `<body>`). Servidor limpo, tudo em 200.
-- **Tirar a transição de rota não resolveu**, e isso eliminou o primeiro
-  suspeito. O que sobrou de novo e composto na GPU era a aurora: camada
-  `fixed` com z-index negativo, `transform` + `will-change`, filhos com
-  `animation-timeline: scroll(root)`, dentro de um `<main>` com `isolate`.
-- **O build de produção, servido e fotografado no Chromium headless,
-  renderizava perfeito nos dois temas.** O headless rasteriza por software;
-  o defeito só existe com compositor de GPU. **Teste headless não prova
-  nada sobre camada promovida** — a mesma família da lição de 25/08 ("erro
-  que só existe no runtime se investiga no runtime"), agora do lado do
-  navegador.
-- **Conserto: a aurora voltou a ser ESTÁTICA** (sem transform, will-change,
-  animação ou transição), como as manchas que existiam antes de hoje e
-  nunca deram problema, e o `::before` do foco de luz perdeu o
-  `will-change`. A guarda `profundidadeDoPainel.test.ts` reprova qualquer
-  uma dessas propriedades de volta na aurora.
-- **Régua:** no painel, nada de camada promovida à força (`will-change`,
-  transform permanente) em elemento fixo atrás do conteúdo. Movimento de
-  fundo só volta verificado no Chrome de verdade, com GPU.
+- **Sintoma, por print do usuário:** tela inteira escura, conteúdo e
+  cabeçalho invisíveis, links respondendo ao mouse, só a bolha do consultor
+  visível. Servidor limpo, tudo em 200, console sem erro.
+- **Causa:** a regra nova `[data-rota="painel"] { background-image: … }`.
+  Os PORTAIS do painel (bolha do consultor, gaveta lateral, gaveta de
+  conversa) repetem `data-rota="painel"` para herdar a paleta — e a bolha é
+  um contêiner `fixed inset-0 z-[55] pointer-events-none`. Ela ganhou o
+  fundo opaco da página e o pintou por cima de TUDO; os cliques
+  atravessavam por causa do `pointer-events-none`. Corrigido com
+  `main[data-rota="painel"]`, e reproduzido antes e depois no build de
+  produção com a bolha real no harness.
+- **Dois diagnósticos errados antes do certo, e os dois tiraram coisa que
+  funcionava:** primeiro a transição de rota (saiu), depois "o Chrome com
+  GPU e a aurora animada" (a aurora ficou estática). Nenhum dos dois era a
+  causa. O erro de método: **o harness não reproduzia a árvore real** — não
+  tinha a bolha, justamente o único elemento que o print mostrava. A pista
+  estava no próprio sintoma: "só X aparece" aponta para X.
+- **Régua:** `data-rota="painel"` NÃO é "o painel", é "a paleta do painel".
+  Atributo que serve de escopo de TOKENS não pode receber propriedade
+  VISUAL; visual vai no `main`. A guarda `profundidadeDoPainel.test.ts`
+  reprova fundo em seletor `[data-rota="painel"]` solto (provocada).
+- **Harness do painel tem de montar os portais** (bolha, gavetas) além do
+  `<main>` — terceira vez que um portal muda o resultado (a cor da gaveta em
+  04/09, a altura do balão em 11/09, agora isto).

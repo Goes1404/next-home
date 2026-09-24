@@ -2379,7 +2379,12 @@
  */
 
 /* 1. A página: um gradiente da cor do módulo no topo, sobre o fundo. */
-[data-rota="painel"] {
+/* SÓ o <main>: a bolha do consultor, a gaveta lateral e a gaveta de
+   conversa são portais com `data-rota="painel"` (para herdar a paleta) e
+   contêineres `fixed inset-0` transparentes. Com o seletor sem o `main`,
+   a bolha ganhou este fundo opaco em z-55 e cobriu o painel inteiro
+   (24/09/2026) — cliques passavam, nada aparecia. */
+main[data-rota="painel"] {
   background-image: linear-gradient(
     180deg,
     color-mix(in oklab, var(--color-acento) var(--tinta-topo), var(--color-fundo)) 0,
@@ -2399,15 +2404,11 @@
  * gradiente, rasterizado UMA vez. Fixas atrás de tudo com `-z-10`, dentro
  * do `isolate` do <main>.
  *
- * PARADA, e isso é decisão tomada depois de um incidente (24/09/2026): a
- * primeira versão derivava sozinha e depois passou a derivar com a rolagem
- * (`animation-timeline: scroll()`) e a inclinar com o mouse, sempre com
- * `transform` e `will-change` numa camada fixa de z-index negativo. No
- * Chrome com GPU de verdade, o painel inteiro sumiu — cabeçalho e conteúdo
- * invisíveis, links ainda clicáveis — e só a bolha do consultor, que mora
- * fora do <main>, aparecia. No teste headless (raster por software) tudo
- * renderizava. As manchas estáticas de antes nunca deram problema, então o
- * fundo voltou a ser estático: nenhum transform, nenhum will-change aqui.
+ * PARADAS. Já derivaram com a rolagem e inclinaram com o mouse; saíram em
+ * 24/09/2026 por suspeita de defeito de GPU num incidente em que o painel
+ * sumiu — a causa real era outra (o fundo de `main[data-rota]`, logo
+ * abaixo, estava pintado também no portal da bolha do consultor). O
+ * movimento pode voltar; se voltar, verificar no painel logado.
  */
 .painel-aurora,
 .painel-grao {
