@@ -67,3 +67,18 @@ porque a assistente só manda imagem com `tipo = 'planta'`. Isso é travado em
 Depois de reclassificar, a tela chama `router.refresh()`. Sem isso, a aba de
 fotos voltaria a montar com o imóvel antigo e ainda mostraria a imagem como
 foto.
+
+## A ordem das fotos da galeria (24/09/2026)
+
+Cada imagem da aba de fotos tem **◀ ▶**. A nova sequência só vai para o
+banco no botão **"Salvar ordem"** (com "Desfazer" ao lado), pelo mesmo motivo
+da tela "Ordem no site": arrumar a galeria são várias trocas seguidas.
+Grava-se `midias.ordem` em passos de 10 (`salvarOrdemDasFotos`). A vitrine já
+ordena por essa coluna, e a capa é a primeira FOTO.
+
+**"Definir Capa" apagava a sequência.** Ela punha `ordem = 10` em todas as
+fotos e `0` na escolhida. As outras ficavam empatadas, e `midias` não tem data
+de criação para desempatar, então o site as mostrava na ordem que o banco
+devolvesse. Agora a capa passa para a frente e as outras mantêm a ordem
+relativa. A tela manda a sequência que está mostrando, porque reler do banco
+com empate poderia embaralhar as fotos.

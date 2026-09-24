@@ -7669,3 +7669,7 @@ Nota: [[ordem-do-catalogo-no-site-tem-tela]].
   catálogo" reclassifica a foto como planta ANTES de ligá-la. Se a
   reclassificação falha, nada é ligado. Só ligar a URL mostraria a planta na
   tela enquanto a assistente seguiria sem ela.
+- **Ordem das fotos do imóvel** (24/09): ◀ ▶ na galeria, gravado por "Salvar
+  ordem". "Definir Capa" antes zerava a sequência (tudo `ordem = 10`), e
+  `midias` não tem `created_at` para desempatar: as fotos saíam em ordem
+  arbitrária. Ao desempatar mídia, não conte com data; use a ordem da tela.

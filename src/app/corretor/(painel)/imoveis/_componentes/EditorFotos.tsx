@@ -8,6 +8,7 @@ import {
   removerMidiaImovel,
   definirFotoComoCapa,
   definirTipoDaMidia,
+  salvarOrdemDasFotos,
 } from "../actions";
 import { Check } from 'lucide-react';
 
@@ -24,6 +25,9 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
   // Qual cartão está esperando o servidor — trava os botões dele e só dele.
   const [ocupado, setOcupado] = useState<string | null>(null);
   const inputUploadRef = useRef<HTMLInputElement>(null);
+  /** A sequência que o banco tem — é contra ela que "mudou a ordem" se mede. */
+  const [ordemSalva, setOrdemSalva] = useState<string[]>(() => idsDasImagens(midiasIniciais));
+  const [salvandoOrdem, setSalvandoOrdem] = useState(false);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -56,6 +60,9 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
             blurDataUrl: res.midia.blur_data_url,
           };
           setMidias((prev) => [...prev, nova]);
+          // Entra no fim da tela; a sequência salva ganha o mesmo fim, senão
+          // toda foto nova acenderia "ordem alterada" sem ninguém ter mexido.
+          if (nova.id) setOrdemSalva((prev) => [...prev, nova.id!]);
         }
       }
       setMensagem(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Foto(s) adicionada(s) com sucesso!</>);
@@ -83,7 +90,8 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
       return;
     }
     setOcupado(midia.url);
-    const res = await definirFotoComoCapa(empreendimentoId, midia.id, slug).catch(() => ({
+    const daTela = idsDasImagens(midias);
+    const res = await definirFotoComoCapa(empreendimentoId, midia.id, slug, daTela).catch(() => ({
       ok: false as const,
       erro: "Sem resposta do servidor. Tente de novo.",
     }));
@@ -93,6 +101,9 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
       return;
     }
     setMidias((prev) => [midia, ...prev.filter((m) => m.url !== midia.url)]);
+    // A capa grava a tela inteira (com ela na frente), então o que estava
+    // pendente de ordem também foi salvo.
+    setOrdemSalva([midia.id, ...daTela.filter((id) => id !== midia.id)]);
     avisar(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Capa principal atualizada!</>);
   };
 
@@ -123,6 +134,53 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
     );
   };
 
+  /**
+   * Troca a imagem de lugar com a vizinha na grade. Só a TELA muda: a
+   * sequência vai ao banco no botão "Salvar ordem", porque arrumar a galeria
+   * são várias trocas seguidas e gravar cada uma derrubaria o cache do site
+   * no meio do arranjo.
+   */
+  const mover = (midia: Midia, direcao: -1 | 1) => {
+    setMidias((prev) => {
+      const imgs = prev.filter(ehImagem);
+      const i = imgs.findIndex((m) => m.url === midia.url);
+      const alvo = i + direcao;
+      if (i < 0 || alvo < 0 || alvo >= imgs.length) return prev;
+      const nova = [...imgs];
+      [nova[i], nova[alvo]] = [nova[alvo], nova[i]];
+      return [...nova, ...prev.filter((m) => !ehImagem(m))];
+    });
+  };
+
+  const salvarOrdem = async () => {
+    const ids = idsDasImagens(midias);
+    if (ids.length !== midias.filter(ehImagem).length) {
+      avisar(<>Recarregue a página antes de ordenar — há foto recém-enviada sem identificação.</>, 5000);
+      return;
+    }
+    setSalvandoOrdem(true);
+    const res = await salvarOrdemDasFotos(empreendimentoId, slug, ids).catch(() => ({
+      ok: false as const,
+      erro: "Sem resposta do servidor. Tente de novo.",
+    }));
+    setSalvandoOrdem(false);
+    if (!res.ok) {
+      avisar(<>{res.erro ?? "Não foi possível salvar a ordem das fotos."}</>, 5000);
+      return;
+    }
+    setOrdemSalva(ids);
+    avisar(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Ordem das fotos salva — o site já mostra nesta sequência.</>);
+  };
+
+  const desfazerOrdem = () => {
+    setMidias((prev) => {
+      const porId = new Map(prev.filter((m) => m.id).map((m) => [m.id!, m]));
+      const naOrdem = ordemSalva.map((id) => porId.get(id)).filter((m): m is Midia => Boolean(m));
+      const resto = prev.filter((m) => !m.id || !ordemSalva.includes(m.id));
+      return [...naOrdem, ...resto];
+    });
+  };
+
   const handleRemover = async (midia: Midia) => {
     if (!confirm("Tem certeza que deseja remover esta foto?")) return;
 
@@ -137,6 +195,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
     }
 
     setMidias((prev) => prev.filter((m) => m.url !== midia.url));
+    if (midia.id) setOrdemSalva((prev) => prev.filter((id) => id !== midia.id));
     setMensagem(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Foto removida!</>);
     setTimeout(() => setMensagem(null), 3000);
   };
@@ -144,7 +203,10 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
   // Vídeo e tour 360° são link de terceiro e têm aba própria; aqui só entra
   // o que é imagem. A capa é a primeira FOTO — planta nunca é capa, é o que
   // o mapper faz na vitrine (`capa: fotos[0]`), e a tela tem de dizer o mesmo.
-  const imagens = midias.filter((m) => m.tipo === "foto" || m.tipo === "planta");
+  const imagens = midias.filter(ehImagem);
+  const idsAtuais = idsDasImagens(midias);
+  const ordemMudou =
+    idsAtuais.length !== ordemSalva.length || idsAtuais.some((id, i) => id !== ordemSalva[i]);
   const urlDaCapa = imagens.find((m) => m.tipo === "foto")?.url ?? null;
   const totalPlantas = imagens.filter((m) => m.tipo === "planta").length;
 
@@ -161,7 +223,8 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
         <div>
           <h3 className="text-fluid-base font-bold text-titulo">Galeria de Fotos do Imóvel</h3>
           <p className="text-fluid-xs text-apoio mt-0.5">
-            A 1ª foto é a <strong>Capa Principal</strong> na vitrine e nos cards do WhatsApp.
+            A 1ª foto é a <strong>Capa Principal</strong> na vitrine e nos cards do WhatsApp. Use
+            ◀ ▶ em cada foto para mudar a sequência do site.
           </p>
           <p className="text-fluid-xs text-apoio mt-1 break-words">
             Veio uma planta no meio das fotos? Toque em <strong>É planta</strong> — é assim que a
@@ -201,6 +264,28 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
         </div>
       </div>
 
+      {ordemMudou && (
+        <div className="cartao flex flex-wrap items-center gap-3 p-4" role="status">
+          <p className="text-fluid-xs text-corpo">A ordem das fotos mudou e ainda não foi salva.</p>
+          <button
+            type="button"
+            onClick={salvarOrdem}
+            disabled={salvandoOrdem}
+            className="min-h-11 rounded-xl bg-acento px-4 text-fluid-xs font-bold text-sobre-cor hover:bg-acento-hover disabled:opacity-50"
+          >
+            {salvandoOrdem ? "Salvando…" : "Salvar ordem"}
+          </button>
+          <button
+            type="button"
+            onClick={desfazerOrdem}
+            disabled={salvandoOrdem}
+            className="min-h-11 rounded-xl px-3 text-fluid-xs font-semibold text-apoio hover:text-titulo"
+          >
+            Desfazer
+          </button>
+        </div>
+      )}
+
       {/* Grade Visual de Fotos */}
       {imagens.length === 0 ? (
         <div className="p-12 text-center rounded-3xl border border-dashed border-linha-forte bg-elevado space-y-3">
@@ -212,7 +297,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-          {imagens.map((midia) => {
+          {imagens.map((midia, posicao) => {
             const ehCapa = midia.url === urlDaCapa;
             const ehPlanta = midia.tipo === "planta";
             const travado = ocupado === midia.url;
@@ -240,6 +325,30 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
                       Planta
                     </span>
                   )}
+
+                  {/* Setas sobre a foto: sem ocupar a linha de ações do cartão estreito */}
+                  <div className="absolute bottom-2 right-2 flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => mover(midia, -1)}
+                      disabled={posicao === 0 || salvandoOrdem}
+                      aria-label="Mover para antes"
+                      title="Mover para antes"
+                      className="flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-black/60 text-white hover:bg-black/80 disabled:opacity-30"
+                    >
+                      ◀
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => mover(midia, 1)}
+                      disabled={posicao === imagens.length - 1 || salvandoOrdem}
+                      aria-label="Mover para depois"
+                      title="Mover para depois"
+                      className="flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-black/60 text-white hover:bg-black/80 disabled:opacity-30"
+                    >
+                      ▶
+                    </button>
+                  </div>
 
                   {/* Badge de Capa */}
                   {ehCapa && (
@@ -301,4 +410,12 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
       )}
     </div>
   );
+}
+
+function ehImagem(m: Midia): boolean {
+  return m.tipo === "foto" || m.tipo === "planta";
+}
+
+function idsDasImagens(midias: Midia[]): string[] {
+  return midias.filter(ehImagem).flatMap((m) => (m.id ? [m.id] : []));
 }

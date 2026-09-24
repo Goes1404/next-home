@@ -252,39 +252,103 @@ export async function removerMidiaImovel(
 }
 
 /**
- * Define uma foto específica como Capa Principal (ordem 0).
+ * Define uma foto como Capa Principal: ela passa para o INÍCIO da galeria.
+ *
+ * Até 24/09/2026 isto punha `ordem = 10` em todas as fotos e `0` na escolhida
+ * — o que apagava qualquer sequência que o corretor tivesse arrumado, e
+ * deixava as demais empatadas (a vitrine as mostrava na ordem que o banco
+ * quisesse). Agora a escolhida vai para a frente e as outras mantêm a ordem
+ * relativa, pelo mesmo caminho de "Salvar ordem das fotos".
  */
 export async function definirFotoComoCapa(
   empreendimentoId: string,
   midiaId: string,
   slug: string,
+  /**
+   * A sequência que a tela mostra. `midias` não tem data de criação, e fotos
+   * com `ordem` empatada saem do banco em ordem arbitrária: reler do banco
+   * poderia embaralhar o resto. Sem ela, vale a ordem do banco.
+   */
+  idsDaTela?: string[],
 ): Promise<{ ok: boolean; erro?: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { ok: false, erro: "Sessão expirada." };
 
+  let base = idsDaTela;
+  if (!base) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("midias")
+      .select("id")
+      .eq("empreendimento_id", empreendimentoId)
+      .in("tipo", ["foto", "planta"])
+      .order("ordem")
+      .order("id");
+    if (error || !data) return { ok: false, erro: "Não foi possível definir como capa." };
+    base = data.map((m) => m.id);
+  }
+  if (!base.includes(midiaId)) return { ok: false, erro: "Não foi possível definir como capa." };
+
+  const ids = [midiaId, ...base.filter((id) => id !== midiaId)];
+  return salvarOrdemDasFotos(empreendimentoId, slug, ids);
+}
+
+/**
+ * Grava a sequência da galeria do imóvel (fotos e plantas), na ordem da tela.
+ *
+ * A vitrine ordena `midias` por `ordem` (`mapEmpreendimento`), e a capa é a
+ * primeira FOTO. Todo id precisa ser deste imóvel e ser foto ou planta: vídeo
+ * e tour têm aba própria e não entram na conta. Zero linhas num update é
+ * falha — a RLS barra calada, e a tela diria "salvo" sobre nada.
+ */
+export async function salvarOrdemDasFotos(
+  empreendimentoId: string,
+  slug: string,
+  ids: string[],
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+  if (ids.length === 0 || new Set(ids).size !== ids.length) {
+    return { ok: false, erro: "A lista de fotos chegou incompleta. Recarregue a página." };
+  }
+
   const supabase = await createClient();
-
-  // Redefine todas as fotos do empreendimento para ordem padrão
-  await supabase
+  const { data: doImovel, error: erroLeitura } = await supabase
     .from("midias")
-    .update({ ordem: 10 })
+    .select("id")
     .eq("empreendimento_id", empreendimentoId)
-    .eq("tipo", "foto");
+    .in("tipo", ["foto", "planta"]);
 
-  // Define a foto escolhida como ordem 0 (capa)
-  const { error } = await supabase
-    .from("midias")
-    .update({ ordem: 0 })
-    .eq("id", midiaId);
+  if (erroLeitura || !doImovel) {
+    return { ok: false, erro: "Não foi possível ler as fotos agora. Tente novamente." };
+  }
+  const existentes = new Set(doImovel.map((m) => m.id));
+  if (ids.some((id) => !existentes.has(id))) {
+    return { ok: false, erro: "As fotos mudaram enquanto você ordenava. Recarregue a página." };
+  }
 
-  if (error) {
-    return { ok: false, erro: "Não foi possível definir como capa." };
+  const resultados = await Promise.all(
+    ids.map((id, i) =>
+      supabase
+        .from("midias")
+        .update({ ordem: (i + 1) * 10 })
+        .eq("id", id)
+        .eq("empreendimento_id", empreendimentoId)
+        .select("id"),
+    ),
+  );
+  const falhou = resultados.find((r) => r.error || !r.data || r.data.length === 0);
+  if (falhou) {
+    console.error("[ordem das fotos] falha ao gravar:", falhou.error?.message ?? "zero linhas afetadas");
+    return { ok: false, erro: "Não foi possível salvar a ordem das fotos." };
   }
 
   revalidatePath(`/empreendimentos/${slug}`);
   revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/", "layout");
   revalidatePath("/corretor/imoveis");
+  revalidatePath(`/corretor/imoveis/${slug}`);
   return { ok: true };
 }
 

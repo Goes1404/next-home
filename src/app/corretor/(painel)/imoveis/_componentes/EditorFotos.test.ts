@@ -41,6 +41,17 @@ describe("EditorFotos — as ações de cada cartão chegam ao servidor", () => 
     expect(muda).toBeGreaterThan(chamada);
   });
 
+  it("Salvar ordem só marca a sequência como salva depois do servidor confirmar", () => {
+    const inicio = fonte.indexOf("const salvarOrdem = async");
+    expect(inicio).toBeGreaterThan(-1);
+    const corpo = fonte.slice(inicio, fonte.indexOf("\n  };\n", inicio));
+    const chamada = corpo.indexOf("salvarOrdemDasFotos(");
+    const marca = corpo.indexOf("setOrdemSalva(");
+    expect(chamada).toBeGreaterThan(-1);
+    expect(marca).toBeGreaterThan(chamada);
+    expect(corpo.slice(chamada, marca)).toMatch(/if \(!res\.ok\)[\s\S]*?return;/);
+  });
+
   it("a capa é a primeira FOTO, nunca a primeira imagem da lista", () => {
     expect(fonte).toMatch(/find\(\(m\) => m\.tipo === "foto"\)/);
     expect(fonte).not.toMatch(/ehCapa = index === 0/);
