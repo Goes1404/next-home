@@ -7681,3 +7681,48 @@ Nota: [[ordem-do-catalogo-no-site-tem-tela]].
 - **Ordem salva sozinha** (24/09): `useSalvarSozinho`, 900ms depois da última
   mudança e nunca durante o arrasto. Em falha, não repete sozinho: mostra
   "Tentar de novo".
+
+## O painel ganhou profundidade e movimento (24/09/2026)
+
+Nota: [[o-painel-ganhou-profundidade-e-movimento]]. Pedido: "muito sem
+contraste e sem graça no background; fluido, com bastante efeitos, sem
+perder performance". Medido antes: **página e cartão a 1,08:1** — a mesma
+superfície. Depois: 1,21 (claro) e 1,18 (escuro), texto todo em AA,
+`npm run paleta` sem aviso.
+
+- **`backdrop-filter` cobra por quadro em que algo ATRÁS dele muda — e com
+  animação contínua na tela, isso é todo quadro, para sempre.** A primeira
+  versão pôs uma aurora derivando atrás dos heróis com `backdrop-blur-xl`:
+  **43,6 ms/quadro** no desktop parado (2,6x a linha de base de 16,9) e 13
+  quadros acima de 33ms rolando no celular. Sem o blur: 22,9 e 3. O que há
+  atrás do herói é um gradiente suave; desfocar o que já é desfocado não muda
+  a imagem, só a conta. O blur saiu dos heróis, das pílulas do Início e dos
+  chips dos atalhos (que desfocavam o degradê opaco do próprio cartão).
+- **Atribuir antes de cortar.** O palpite era a animação; desligá-la sozinha
+  deixava 38,2 ms. Cinco variantes com `page.addStyleTag` (uma por efeito)
+  custaram dois minutos e apontaram o blur. O grão de `feTurbulence` deu
+  zero de diferença — camada fixa estática é de graça.
+- **Efeito que segue o mouse no `background-image` do cartão repinta o
+  cartão INTEIRO a cada quadro**, texto e fotos incluídos: 21,2 ms contra
+  16,7 sem ele; as transições de sombra e borda não eram o custo (22,9 e
+  24,3 sem elas). Foi para um `::before` com `will-change` só durante o
+  hover — repinta só o gradiente, em camada própria — e o acender virou
+  `opacity` (compositor) em vez de cor por `@property` (repinta).
+- **Nada anda sozinho no painel** (régua de [[movimento-do-painel-tem-regua]],
+  agora com número): a aurora se move com a rolagem
+  (`animation-timeline: scroll(root)`, `animation-range: 0 160vh`) e com o
+  ponteiro (`--lean-x/--lean-y`); a varredura do herói roda UMA vez por
+  montagem, e `TransicaoDeTela` remonta a tela a cada rota. Em repouso, zero
+  quadros. Resultado final igual à linha de base: 17,7–18,4 ms rolando no
+  celular (3–5 quadros > 33ms), 16,7–17,2 no desktop com o mouse.
+- **Contexto de empilhamento no `.cartao` segue proibido**: cinco `fixed`
+  nascem dentro dele. O foco de luz pinta ACIMA do conteúdo a 11%, em vez de
+  `z-index: -1` (exigiria o contexto).
+- **Duas armadilhas de medição**: `mouse.move` depois de `window.scrollTo`
+  diz "sem hover" para um hover que funciona — usar `locator.hover()`; e
+  `CSS.registerProperty` "registra" mesmo quando o `@property` já existe —
+  quem prova é enumerar `CSSPropertyRule`.
+- Guarda: `profundidadeDoPainel.test.ts` lê o CSS e os heróis e reprova
+  `backdrop-filter` neles, `transform`/`filter` no `cartao` e `infinite` na
+  aurora e no herói. A regressão é calada: a tela fica igual, só o quadro
+  engorda.

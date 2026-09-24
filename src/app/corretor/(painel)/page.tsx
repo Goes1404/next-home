@@ -156,7 +156,7 @@ export default async function PainelInicio() {
               />
               <span
                 aria-hidden
-                className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/15 backdrop-blur-md md:size-14"
+                className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/15 md:size-14"
               >
                 <Icone className="size-6 md:size-7" />
               </span>
@@ -167,7 +167,7 @@ export default async function PainelInicio() {
               {a.largo && (
                 <span
                   aria-hidden
-                  className="relative grid size-11 shrink-0 place-items-center rounded-full border border-white/25 bg-white/15 backdrop-blur-md transition-transform group-hover:translate-x-0.5"
+                  className="relative grid size-11 shrink-0 place-items-center rounded-full border border-white/25 bg-white/15 transition-transform group-hover:translate-x-0.5"
                 >
                   →
                 </span>

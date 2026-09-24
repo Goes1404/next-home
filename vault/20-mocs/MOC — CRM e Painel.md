@@ -26,6 +26,7 @@ F0–F6.
 - [[tela-de-entrar-e-dividida]] — login em duas metades (09/09)
 - [[consultor-imobiliario-no-painel]] — chat de portfólio e crédito para o corretor (09/09)
 - [[movimento-do-painel-tem-regua]] — um momento de carga; o resto responde a gesto (07/09)
+- [[o-painel-ganhou-profundidade-e-movimento]] — aurora, grão, cartão com sombra e foco de luz, herói de vidro SEM blur, transição de rota; medido: o blur custava 2,5x o quadro, e nada anda sozinho (24/09)
 - [[placeholder-de-uma-linha-cabe-em-320px]] — 136px no composer, 234px no input; teto medido (11/09)
 - [[o-historico-de-conversas-diz-quando]] — a data já vinha do banco e não era desenhada (11/09)
 - [[o-consultor-em-balao-flutuante]] — o consultor a um toque, de qualquer tela (11/09)

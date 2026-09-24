@@ -868,27 +868,79 @@
    * saturadas sem nenhuma delas gritar.
    */
   [data-rota="painel"] {
-    --color-fundo: light-dark(oklch(0.968 0.004 275), oklch(0.19 0.014 275));
-    --color-superficie: light-dark(oklch(1 0 0), oklch(0.235 0.016 275));
-    --color-elevado: light-dark(oklch(1 0 0), oklch(0.285 0.018 275));
-    --color-campo: light-dark(oklch(0.955 0.006 275), oklch(0.165 0.012 275));
+    /*
+     * PROFUNDIDADE (24/09/2026). Medido antes de mexer: página e cartão
+     * estavam a 1,08:1 no claro e 1,09:1 no escuro — a mesma cor, na
+     * prática. O texto passava em AA; o que faltava era DEGRAU entre as
+     * superfícies. A página desceu meio tom (e ganhou um viés de matiz), o
+     * cartão ficou onde estava, e a linha ficou mais firme. É a lição que o
+     * site público já tinha aprendido em 10/09 ("muito branco" era falta de
+     * degrau, não de cor), agora no painel.
+     */
+    --color-fundo: light-dark(oklch(0.93 0.013 278), oklch(0.155 0.022 278));
+    --color-superficie: light-dark(oklch(1 0 0), oklch(0.245 0.02 278));
+    --color-elevado: light-dark(oklch(1 0 0), oklch(0.3 0.02 278));
+    --color-campo: light-dark(oklch(0.965 0.006 278), oklch(0.135 0.016 278));
 
-    --color-linha: light-dark(oklch(0.25 0.02 275 / 0.12), oklch(1 0 0 / 0.1));
-    --color-linha-forte: light-dark(oklch(0.25 0.02 275 / 0.22), oklch(1 0 0 / 0.19));
-    --color-vidro: light-dark(oklch(0.25 0.02 275 / 0.04), oklch(1 0 0 / 0.05));
-    --color-vidro-forte: light-dark(oklch(0.25 0.02 275 / 0.09), oklch(1 0 0 / 0.11));
+    --color-linha: light-dark(oklch(0.25 0.02 275 / 0.14), oklch(1 0 0 / 0.12));
+    --color-linha-forte: light-dark(oklch(0.25 0.02 275 / 0.28), oklch(1 0 0 / 0.24));
+    --color-vidro: light-dark(oklch(0.25 0.02 275 / 0.05), oklch(1 0 0 / 0.06));
+    --color-vidro-forte: light-dark(oklch(0.25 0.02 275 / 0.1), oklch(1 0 0 / 0.13));
 
     --color-titulo: light-dark(oklch(0.22 0.02 275), oklch(0.98 0.004 275));
     --color-corpo: light-dark(oklch(0.34 0.018 275), oklch(0.9 0.007 275));
     --color-corpo-suave: light-dark(oklch(0.4 0.017 275), oklch(0.84 0.008 275));
-    --color-apoio: light-dark(oklch(0.48 0.016 275), oklch(0.73 0.011 275));
-    --color-legenda: light-dark(oklch(0.48 0.016 275), oklch(0.73 0.011 275));
-    --color-tenue: light-dark(oklch(0.56 0.014 275), oklch(0.62 0.012 275));
+    /* Apoio e tênue desceram um degrau: com a página mais escura, texto que
+       fica FORA de cartão (a lateral, as descrições) precisa da folga. */
+    --color-apoio: light-dark(oklch(0.46 0.016 275), oklch(0.73 0.011 275));
+    --color-legenda: light-dark(oklch(0.46 0.016 275), oklch(0.73 0.011 275));
+    --color-tenue: light-dark(oklch(0.52 0.014 275), oklch(0.62 0.012 275));
+
+    /*
+     * O material dos cartões e do vidro-herói. São CORES com alfa, e não
+     * porcentagens soltas, para viverem em `light-dark()` — número não cabe
+     * ali, cor cabe. O que é número mesmo (força da aurora, grão) mora no
+     * bloco `[data-tema="escuro"]` logo abaixo.
+     */
+    --cartao-fundo: light-dark(oklch(1 0 0 / 0.92), oklch(0.245 0.02 278 / 0.9));
+    --cartao-fio: light-dark(oklch(1 0 0 / 0.9), oklch(1 0 0 / 0.08));
+    --heroi-vidro: light-dark(oklch(1 0 0 / 0.66), oklch(1 0 0 / 0.07));
+    --heroi-fio: light-dark(oklch(1 0 0 / 0.95), oklch(1 0 0 / 0.42));
+    --sombra-tinta: light-dark(oklch(0.3 0.03 278 / 0.22), oklch(0 0 0 / 0.6));
+    --shadow-cartao:
+      0 1px 2px color-mix(in srgb, var(--sombra-tinta) 30%, transparent),
+      0 14px 34px -22px var(--sombra-tinta);
+    --shadow-cartao-alto:
+      0 2px 4px color-mix(in srgb, var(--sombra-tinta) 30%, transparent),
+      0 24px 52px -24px var(--sombra-tinta);
+    --tinta-topo: 9%;
+    --aurora-1: 28%;
+    --aurora-2: 13%;
+    --aurora-3: 10%;
+    --heroi-brilho-1: 26%;
+    --heroi-brilho-2: 12%;
+    --grao: 0.06;
 
     /* Sem módulo resolvido (rota nova, erro), o painel cai no tom do Início. */
     --color-acento: var(--color-mod-inicio);
     --color-acento-hover: var(--color-mod-inicio-hover);
     --color-acento-suave: var(--color-mod-inicio-suave);
+  }
+
+  /*
+   * O que é NÚMERO e muda com o tema. `light-dark()` só aceita cor, e o
+   * `<html>` sempre carimba `data-tema` (claro é o padrão desde 10/09), então
+   * este seletor é confiável. No escuro a aurora precisa de mais força: a
+   * mesma cor a 24% sobre quase-preto mal aparece.
+   */
+  :root[data-tema="escuro"] [data-rota="painel"] {
+    --tinta-topo: 16%;
+    --aurora-1: 38%;
+    --aurora-2: 22%;
+    --aurora-3: 16%;
+    --heroi-brilho-1: 34%;
+    --heroi-brilho-2: 16%;
+    --grao: 0.09;
   }
 
   /*
@@ -2152,9 +2204,405 @@
 @utility cartao {
   position: relative;
   border-radius: 1.25rem;
-  border: 1px solid var(--color-linha);
-  background: color-mix(in srgb, var(--color-superficie) 84%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-acento) 10%, var(--color-linha));
+  background-color: var(--cartao-fundo);
   box-shadow:
-    var(--shadow-painel),
-    inset 0 1px 0 color-mix(in srgb, white 7%, transparent);
+    var(--shadow-cartao),
+    inset 0 1px 0 var(--cartao-fio);
+  transition:
+    border-color 0.35s var(--ease-out-quart),
+    box-shadow 0.35s var(--ease-out-quart);
+  /*
+   * A LUZ PONTUAL (24/09/2026): um foco suave na cor do módulo que segue o
+   * ponteiro. `--luz-x/--luz-y` são escritos por `LuzDosCartoes` (um único
+   * listener no documento, uma leitura de layout por quadro).
+   *
+   * Ela mora num `::before` com camada própria durante o hover
+   * (`will-change`), e NÃO no `background-image` do cartão — medido: com o
+   * foco pintado no fundo do cartão, cada quadro de mouse repintava o cartão
+   * INTEIRO, texto e fotos incluídos (21,2 ms/quadro contra 16,7 sem o
+   * efeito, em raster por software). Na camada própria, o que repinta a
+   * cada quadro é só o gradiente. O acender é `opacity`, que o compositor
+   * anima sozinho; o apagar é seco, de propósito — o fade de saída rodaria
+   * já sem a camada, repintando o cartão de novo por 27 quadros.
+   *
+   * O pseudo pinta ACIMA do conteúdo (posicionado, z-index auto), e isso é
+   * a escolha certa aqui: pô-lo atrás exigiria `z-index: -1` dentro de um
+   * contexto de empilhamento do cartão, e contexto no cartão quebraria os
+   * cinco componentes `fixed` que nascem dentro dele (a folha de ações
+   * ficaria ABAIXO do cartão seguinte). A 11% de acento o véu não muda a
+   * leitura do texto. Pelo mesmo motivo não há `transform`, `filter` nem
+   * `backdrop-filter` no cartão. Só existe onde há ponteiro fino: no
+   * celular não nasce pseudo nenhum.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(
+        28rem circle at var(--luz-x, 50%) var(--luz-y, 0px),
+        color-mix(in oklab, var(--color-acento) 11%, transparent),
+        transparent 60%
+      );
+    }
+    &:hover {
+      border-color: color-mix(in oklab, var(--color-acento) 30%, var(--color-linha));
+      box-shadow:
+        var(--shadow-cartao-alto),
+        inset 0 1px 0 var(--cartao-fio);
+    }
+    &:hover::before {
+      opacity: 1;
+      will-change: transform;
+      transition: opacity 0.45s var(--ease-out-quart);
+    }
+  }
+}
+
+/*
+ * O vidro-herói: o cartão de abertura de toda tela (`CabecalhoDeTela`) e o
+ * do Início (`HeroInicio`). Mais claro que os cartões comuns no tema claro
+ * e mais luminoso no escuro, com dois brilhos na cor do módulo pintados
+ * como GRADIENTE — antes eram dois `<div>` com `blur-3xl`, e filtro de
+ * desfoque custa a cada repintura; gradiente custa uma vez. Recebe a mesma
+ * luz pontual dos cartões. O `backdrop-blur` continua vindo da classe do
+ * componente: é o único lugar do painel em que ele é permitido, porque nada
+ * `fixed` nasce dentro dele.
+ */
+@utility cartao-heroi {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.75rem;
+  border: 1px solid color-mix(in oklab, var(--color-acento) 32%, var(--color-linha));
+  /*
+   * Vidro SEM `backdrop-filter`, e isso foi medido (24/09/2026): com o
+   * `backdrop-blur-xl` que os heróis tinham, cada quadro em que algo atrás
+   * deles mudava — a aurora derivando, a rolagem — refazia o desfoque de
+   * uma área de ~900x250px. Em raster por software: 43,6 ms/quadro com o
+   * mouse passeando no desktop e 13 quadros acima de 33 ms rolando no
+   * celular; sem o blur, 22,9 e 3. O que há atrás do herói é a aurora, que
+   * já É um gradiente suave — desfocar o que já é desfocado não muda a
+   * imagem, só a conta. A translucidez (`--heroi-vidro`) deixa a aurora
+   * passar, e os dois brilhos de acento são pintados aqui mesmo.
+   */
+  background-color: var(--heroi-vidro);
+  background-image:
+    radial-gradient(
+      40rem 24rem at 100% 0%,
+      color-mix(in oklab, var(--color-acento) var(--heroi-brilho-1), transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      32rem 20rem at 0% 100%,
+      color-mix(in oklab, var(--color-acento) var(--heroi-brilho-2), transparent),
+      transparent 70%
+    );
+  box-shadow:
+    0 34px 80px -44px color-mix(in oklab, var(--color-acento) 65%, transparent),
+    var(--shadow-cartao),
+    inset 0 1px 0 var(--heroi-fio);
+  /* Um fio de luz varre a borda de cima UMA vez, 0,9s depois de a tela
+     montar — e a tela monta a cada troca de rota (`TransicaoDeTela` chaveia
+     pela rota), então cada tela nova ganha a sua. 1px de altura, só
+     `transform`. Não é infinita: animação infinita produz quadro a cada
+     vsync para sempre, e é a régua da casa (movimento responde a gesto ou
+     mostra conteúdo; um momento orquestrado por carga). */
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 1px;
+    width: 32%;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--color-acento) 40%, white),
+      transparent
+    );
+    transform: translateX(-110%);
+    animation: varredura 2.2s var(--ease-in-out-quint) 0.9s 1 both;
+  }
+  /* O foco de luz que segue o ponteiro: a mesma camada própria de `cartao`
+     (ver o comentário lá), um pouco mais forte porque o herói é maior. */
+  @media (hover: hover) and (pointer: fine) {
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(
+        22rem 12rem at var(--luz-x, 50%) var(--luz-y, 0px),
+        color-mix(in oklab, var(--color-acento) 14%, transparent),
+        transparent 60%
+      );
+    }
+    &:hover::before {
+      opacity: 1;
+      will-change: transform;
+      transition: opacity 0.45s var(--ease-out-quart);
+    }
+  }
+}
+
+@keyframes varredura {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(420%);
+  }
+}
+
+/*
+ * =====================================================================
+ * Profundidade e movimento do painel (24/09/2026)
+ * =====================================================================
+ *
+ * Pedido: "muito sem contraste e sem graça no background; algo fluido, com
+ * bastante efeitos, sem perder performance". A régua que orienta tudo aqui:
+ *
+ *   - o que roda sozinho é COMPOSITOR (transform/opacity em camada própria)
+ *     ou é estático — nada repinta por quadro em repouso;
+ *   - nenhum `transform`, `filter` ou contexto de empilhamento em elemento
+ *     que possa conter algo `position: fixed` (a armadilha das seis vezes);
+ *   - `prefers-reduced-motion` desliga o que anda sozinho; o que responde a
+ *     gesto continua, porque é resposta, não enfeite.
+ *
+ * As regras ficam FORA de camada de propósito: várias corrigem utilidades
+ * do Tailwind (`transition-colors` num botão que precisa animar sombra), e
+ * regra em `@layer components` perderia para elas.
+ */
+
+/* 1. A página: um gradiente da cor do módulo no topo, sobre o fundo. */
+[data-rota="painel"] {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-acento) var(--tinta-topo), var(--color-fundo)) 0,
+    var(--color-fundo) 44rem
+  );
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-acento) 45%, transparent) transparent;
+}
+:root:has([data-rota="painel"]) {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, currentColor 30%, transparent) transparent;
+}
+
+/*
+ * 2. A AURORA: três manchas de luz (módulo, azul da marca, areia). São
+ * gradientes radiais, não `filter: blur` — o desfoque é o próprio
+ * gradiente, rasterizado UMA vez; o que muda é só `transform`, em camada
+ * própria (`will-change`). Fixas atrás de tudo com `-z-10`, dentro do
+ * `isolate` do <main>.
+ *
+ * NADA aqui anda sozinho, e isso é decisão medida, não economia: a primeira
+ * versão derivava em ciclos de 26 a 40s, e animação infinita obriga o
+ * compositor a produzir um quadro a cada vsync para sempre — foi o que
+ * expôs o custo do `backdrop-blur` dos heróis (43,6 ms/quadro no desktop
+ * parado). A régua da casa já dizia: movimento responde a GESTO ou mostra
+ * conteúdo. Então a aurora se move com dois gestos e só com eles:
+ *   - a ROLAGEM: cada mancha deriva um pouco para cima ao longo dos
+ *     primeiros 160vh de rolagem (`animation-timeline: scroll()`, o mesmo
+ *     mecanismo da barra de progresso do site) — parallax de fundo que só
+ *     custa quadro quando já há quadro sendo produzido;
+ *   - o PONTEIRO: o conjunto inclina ±1,2vw na direção do mouse
+ *     (`--lean-x/--lean-y`, escritos por `LuzDosCartoes`), com transição
+ *     longa, então a luz "segue" a mão sem pular. O contêiner tem 4vmax de
+ *     sobra em cada lado para o inclinar nunca expor uma borda reta.
+ * Em repouso, zero quadros. Navegador sem `scroll()` fica com a aurora
+ * parada; ninguém perde conteúdo.
+ */
+.painel-aurora,
+.painel-grao {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+}
+.painel-aurora {
+  inset: -4vmax;
+  overflow: hidden;
+  transform: translate3d(calc(var(--lean-x, 0) * 2.4vw), calc(var(--lean-y, 0) * 2.4vh), 0);
+  transition: transform 1.1s var(--ease-out-quart);
+  will-change: transform;
+}
+.painel-aurora > i {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, var(--cor) 0%, transparent 62%);
+  will-change: transform;
+}
+.painel-aurora > i:nth-child(1) {
+  --cor: color-mix(in oklab, var(--color-acento) var(--aurora-1), transparent);
+  width: 64vmax;
+  height: 64vmax;
+  top: -34vmax;
+  right: -20vmax;
+}
+.painel-aurora > i:nth-child(2) {
+  --cor: color-mix(in oklab, var(--color-realce) var(--aurora-2), transparent);
+  width: 56vmax;
+  height: 56vmax;
+  bottom: -30vmax;
+  left: -22vmax;
+}
+.painel-aurora > i:nth-child(3) {
+  --cor: color-mix(in oklab, var(--color-sand-500) var(--aurora-3), transparent);
+  width: 44vmax;
+  height: 44vmax;
+  top: 38%;
+  left: 30%;
+}
+@supports (animation-timeline: scroll()) {
+  .painel-aurora > i {
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(root);
+    animation-range: 0 160vh;
+  }
+  .painel-aurora > i:nth-child(1) {
+    animation-name: aurora-a;
+  }
+  .painel-aurora > i:nth-child(2) {
+    animation-name: aurora-b;
+  }
+  .painel-aurora > i:nth-child(3) {
+    animation-name: aurora-c;
+  }
+}
+@keyframes aurora-a {
+  to {
+    transform: translate3d(-6vw, -16vh, 0) scale(1.08);
+  }
+}
+@keyframes aurora-b {
+  to {
+    transform: translate3d(8vw, -22vh, 0) scale(1.06);
+  }
+}
+@keyframes aurora-c {
+  to {
+    transform: translate3d(-10vw, -30vh, 0) scale(0.94);
+  }
+}
+
+/*
+ * 3. O GRÃO: textura fina de ruído sobre o fundo, para o painel deixar de
+ * ser cor chapada. SVG de `feTurbulence` embutido, ladrilhado a 160px: o
+ * navegador rasteriza o ladrilho uma vez. Sem `mix-blend-mode`, de
+ * propósito — mistura força o compositor a recompor o quadro inteiro a cada
+ * rolagem; alfa simples é barato. Preto no claro, branco no escuro.
+ */
+.painel-grao {
+  opacity: var(--grao);
+  background-size: 160px 160px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+:root[data-tema="escuro"] .painel-grao {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/*
+ * 4. BOTÃO PRIMÁRIO: todo `<a>`/`<button>` com `bg-acento` ganha um brilho
+ * de topo, uma sombra na cor do módulo, levanta 1px no hover e afunda no
+ * toque. Um seletor por classe utilitária é pouco ortodoxo, e é o que faz
+ * isto valer para os ~260 usos sem editar um componente — o mesmo motivo
+ * pelo qual a cor do módulo reaponta `--color-acento` em vez de percorrer
+ * telas. Botão não contém nada `fixed`, então `transform` aqui é seguro.
+ * Vale também para o item ATIVO da lateral e das abas, que é `a.bg-acento`.
+ */
+[data-rota="painel"] :is(a, button).bg-acento:not(:disabled) {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 62%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.18),
+    0 8px 20px -10px color-mix(in oklab, var(--color-acento) 80%, transparent);
+  transition:
+    transform 0.2s var(--ease-out-quart),
+    box-shadow 0.25s var(--ease-out-quart),
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s,
+    opacity 0.2s;
+}
+@media (hover: hover) and (pointer: fine) {
+  [data-rota="painel"] :is(a, button).bg-acento:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      0 14px 28px -12px color-mix(in oklab, var(--color-acento) 85%, transparent);
+  }
+}
+[data-rota="painel"] :is(a, button).bg-acento:not(:disabled):active {
+  transform: translateY(0) scale(0.98);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    0 4px 10px -8px color-mix(in oklab, var(--color-acento) 80%, transparent);
+}
+
+/*
+ * 5. CAMPOS: o foco é um anel lavado na cor do módulo que ACENDE, em vez
+ * de uma borda que troca de cor sem transição. `:focus-visible`, para o
+ * toque no celular não deixar o anel preso depois de fechar o teclado.
+ */
+[data-rota="painel"] :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]), select, textarea) {
+  transition:
+    border-color 0.2s,
+    box-shadow 0.3s var(--ease-out-quart),
+    background-color 0.2s;
+}
+[data-rota="painel"] :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]), select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--color-acento);
+  box-shadow: 0 0 0 4px var(--color-acento-lavado);
+}
+
+/*
+ * 6. TROCA DE TELA: a tela que sai esmaece subindo, a que entra chega de
+ * baixo. É a View Transitions API (`<ViewTransition>` em `TransicaoDeTela`,
+ * chaveada pela rota): o navegador anima DUAS FOTOGRAFIAS, então
+ * `translate` aqui é seguro — nada `fixed` no DOM vivo é tocado. Só na
+ * troca de ROTA; filtro na URL, `router.refresh()` e o polling das
+ * conversas não animam nada.
+ */
+::view-transition-old(.painel-sai) {
+  animation: 150ms var(--ease-in-out-quint) both painel-sai;
+}
+::view-transition-new(.painel-entra) {
+  animation: 380ms var(--ease-out-expo) 30ms both painel-entra;
+}
+@keyframes painel-sai {
+  to {
+    opacity: 0;
+    translate: 0 -10px;
+  }
+}
+@keyframes painel-entra {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+  }
+}
+
+/* Quem pediu menos movimento fica com a profundidade e perde o parallax da
+   aurora (rolagem e ponteiro) e a varredura do herói — parallax é o que
+   mais incomoda quem tem sensibilidade vestibular. A troca de módulo, o
+   foco e o hover continuam — respondem a gesto e não deslocam nada. */
+@media (prefers-reduced-motion: reduce) {
+  .painel-aurora > i,
+  .cartao-heroi::after {
+    animation: none;
+  }
+  .painel-aurora {
+    transform: none;
+    transition: none;
+  }
 }

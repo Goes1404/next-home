@@ -5,9 +5,9 @@ tags: [painel, decisao]
 type: decisao
 status: evergreen
 custou: baixo
-codigo: [src/app/globals.css, src/app/corretor/(painel)/_componentes/HeroInicio.tsx, src/app/corretor/(painel)/funil/Quadro.tsx]
+codigo: [src/app/globals.css, src/app/corretor/(painel)/_componentes/HeroInicio.tsx, src/app/corretor/(painel)/funil/Quadro.tsx, src/app/corretor/(painel)/_componentes/LuzDosCartoes.tsx, src/app/corretor/(painel)/_componentes/TransicaoDeTela.tsx]
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-09-24
 fonte: rodada de refinamento visual de 07/09/2026
 summary: UM movimento orquestrado por carga (o medidor do Início enchendo) e todo o resto respondendo a gesto — menu que abre, cartões que a expansão revelou, aviso que chega. Entrada animada em toda seção é o tell de página gerada.
 ---
@@ -36,8 +36,28 @@ A segunda rodada (mesmo dia) somou duas peças pela mesma régua:
   ninguém. O anel termina transparente de propósito: com movimento reduzido a
   animação salta para o fim, e o fim não deixa nada na tela.
 
+A terceira rodada (24/09/2026, [[o-painel-ganhou-profundidade-e-movimento]])
+somou movimento de FUNDO e de ROTA, e a régua aguentou:
+
+| peça | responde a |
+|---|---|
+| troca de tela (`painel-sai` / `painel-entra`, View Transitions) | a navegação |
+| aurora do fundo derivando | a ROLAGEM (`animation-timeline: scroll()`) |
+| aurora inclinando ±1,2vw | o PONTEIRO |
+| foco de luz no cartão | o ponteiro sobre ele |
+| varredura do herói (uma vez, 0,9s depois de montar) | a tela nova chegando — o momento de carga, junto com o medidor |
+
+A primeira versão tinha a aurora derivando SOZINHA em ciclos de 26–40s, e
+foi medida fora: animação infinita obriga o compositor a produzir um quadro a
+cada vsync para sempre, e cada um desses quadros refazia o `backdrop-blur`
+dos heróis (43,6 ms/quadro no desktop parado). **"Nada anda sozinho" deixou
+de ser gosto e virou número.**
+
 ## As regras que valem para a próxima animação
 
+- **Nenhuma animação infinita no painel.** Quadro por vsync para sempre, e
+  todo `backdrop-filter` na tela é refeito em cada um. O que precisa parecer
+  vivo se prende a um gesto (rolagem, ponteiro) ou roda uma vez por montagem.
 - **Um momento orquestrado por carga, não um por seção.** Fade-and-slide em
   todo bloco é o tell de página gerada (frontend-design, 07/09). O momento
   escolhido é o medidor porque ele É o número que muda quando a corretora
