@@ -2217,14 +2217,13 @@
    * ponteiro. `--luz-x/--luz-y` são escritos por `LuzDosCartoes` (um único
    * listener no documento, uma leitura de layout por quadro).
    *
-   * Ela mora num `::before` com camada própria durante o hover
-   * (`will-change`), e NÃO no `background-image` do cartão — medido: com o
+   * Ela mora num `::before`, e NÃO no `background-image` do cartão — medido: com o
    * foco pintado no fundo do cartão, cada quadro de mouse repintava o cartão
    * INTEIRO, texto e fotos incluídos (21,2 ms/quadro contra 16,7 sem o
-   * efeito, em raster por software). Na camada própria, o que repinta a
-   * cada quadro é só o gradiente. O acender é `opacity`, que o compositor
-   * anima sozinho; o apagar é seco, de propósito — o fade de saída rodaria
-   * já sem a camada, repintando o cartão de novo por 27 quadros.
+   * efeito, em raster por software). No pseudo, o que repinta é só a área
+   * dele. Sem `will-change`: depois do incidente de 24/09 (o painel sumiu
+   * no Chrome com GPU; ver a aurora), nenhuma camada promovida à força no
+   * painel.
    *
    * O pseudo pinta ACIMA do conteúdo (posicionado, z-index auto), e isso é
    * a escolha certa aqui: pô-lo atrás exigiria `z-index: -1` dentro de um
@@ -2257,7 +2256,6 @@
     }
     &:hover::before {
       opacity: 1;
-      will-change: transform;
       transition: opacity 0.45s var(--ease-out-quart);
     }
   }
@@ -2346,7 +2344,6 @@
     }
     &:hover::before {
       opacity: 1;
-      will-change: transform;
       transition: opacity 0.45s var(--ease-out-quart);
     }
   }
@@ -2399,26 +2396,18 @@
 /*
  * 2. A AURORA: três manchas de luz (módulo, azul da marca, areia). São
  * gradientes radiais, não `filter: blur` — o desfoque é o próprio
- * gradiente, rasterizado UMA vez; o que muda é só `transform`, em camada
- * própria (`will-change`). Fixas atrás de tudo com `-z-10`, dentro do
- * `isolate` do <main>.
+ * gradiente, rasterizado UMA vez. Fixas atrás de tudo com `-z-10`, dentro
+ * do `isolate` do <main>.
  *
- * NADA aqui anda sozinho, e isso é decisão medida, não economia: a primeira
- * versão derivava em ciclos de 26 a 40s, e animação infinita obriga o
- * compositor a produzir um quadro a cada vsync para sempre — foi o que
- * expôs o custo do `backdrop-blur` dos heróis (43,6 ms/quadro no desktop
- * parado). A régua da casa já dizia: movimento responde a GESTO ou mostra
- * conteúdo. Então a aurora se move com dois gestos e só com eles:
- *   - a ROLAGEM: cada mancha deriva um pouco para cima ao longo dos
- *     primeiros 160vh de rolagem (`animation-timeline: scroll()`, o mesmo
- *     mecanismo da barra de progresso do site) — parallax de fundo que só
- *     custa quadro quando já há quadro sendo produzido;
- *   - o PONTEIRO: o conjunto inclina ±1,2vw na direção do mouse
- *     (`--lean-x/--lean-y`, escritos por `LuzDosCartoes`), com transição
- *     longa, então a luz "segue" a mão sem pular. O contêiner tem 4vmax de
- *     sobra em cada lado para o inclinar nunca expor uma borda reta.
- * Em repouso, zero quadros. Navegador sem `scroll()` fica com a aurora
- * parada; ninguém perde conteúdo.
+ * PARADA, e isso é decisão tomada depois de um incidente (24/09/2026): a
+ * primeira versão derivava sozinha e depois passou a derivar com a rolagem
+ * (`animation-timeline: scroll()`) e a inclinar com o mouse, sempre com
+ * `transform` e `will-change` numa camada fixa de z-index negativo. No
+ * Chrome com GPU de verdade, o painel inteiro sumiu — cabeçalho e conteúdo
+ * invisíveis, links ainda clicáveis — e só a bolha do consultor, que mora
+ * fora do <main>, aparecia. No teste headless (raster por software) tudo
+ * renderizava. As manchas estáticas de antes nunca deram problema, então o
+ * fundo voltou a ser estático: nenhum transform, nenhum will-change aqui.
  */
 .painel-aurora,
 .painel-grao {
@@ -2428,18 +2417,13 @@
   pointer-events: none;
 }
 .painel-aurora {
-  inset: -4vmax;
   overflow: hidden;
-  transform: translate3d(calc(var(--lean-x, 0) * 2.4vw), calc(var(--lean-y, 0) * 2.4vh), 0);
-  transition: transform 1.1s var(--ease-out-quart);
-  will-change: transform;
 }
 .painel-aurora > i {
   position: absolute;
   display: block;
   border-radius: 50%;
   background: radial-gradient(circle at center, var(--cor) 0%, transparent 62%);
-  will-change: transform;
 }
 .painel-aurora > i:nth-child(1) {
   --cor: color-mix(in oklab, var(--color-acento) var(--aurora-1), transparent);
@@ -2462,39 +2446,6 @@
   top: 38%;
   left: 30%;
 }
-@supports (animation-timeline: scroll()) {
-  .painel-aurora > i {
-    animation-timing-function: linear;
-    animation-fill-mode: both;
-    animation-timeline: scroll(root);
-    animation-range: 0 160vh;
-  }
-  .painel-aurora > i:nth-child(1) {
-    animation-name: aurora-a;
-  }
-  .painel-aurora > i:nth-child(2) {
-    animation-name: aurora-b;
-  }
-  .painel-aurora > i:nth-child(3) {
-    animation-name: aurora-c;
-  }
-}
-@keyframes aurora-a {
-  to {
-    transform: translate3d(-6vw, -16vh, 0) scale(1.08);
-  }
-}
-@keyframes aurora-b {
-  to {
-    transform: translate3d(8vw, -22vh, 0) scale(1.06);
-  }
-}
-@keyframes aurora-c {
-  to {
-    transform: translate3d(-10vw, -30vh, 0) scale(0.94);
-  }
-}
-
 /*
  * 3. O GRÃO: textura fina de ruído sobre o fundo, para o painel deixar de
  * ser cor chapada. SVG de `feTurbulence` embutido, ladrilhado a 160px: o
@@ -2570,12 +2521,7 @@
    mais incomoda quem tem sensibilidade vestibular. A troca de módulo, o
    foco e o hover continuam — respondem a gesto e não deslocam nada. */
 @media (prefers-reduced-motion: reduce) {
-  .painel-aurora > i,
   .cartao-heroi::after {
     animation: none;
-  }
-  .painel-aurora {
-    transform: none;
-    transition: none;
   }
 }

@@ -141,3 +141,15 @@ Ver também [[movimento-do-painel-tem-regua]], [[a-paleta-tinha-duas-cores-e-o-s
 (a cor de marca que a aurora usa) e, na MEMORIA, "A reforma visual do CRM
 (09/2026) — cor por módulo" e "O painel ganhou profundidade e movimento
 (24/09/2026)".
+
+## Incidente: o painel sumiu no Chrome com GPU (mesmo dia)
+
+Depois do deploy, o painel ficou todo escuro no Chrome do Windows: nada
+visível, links clicáveis, só a bolha do consultor (fora do `<main>`)
+aparecendo. O build de produção renderizava perfeito no Chromium headless,
+que rasteriza por software. O que era novo e composto na GPU era a aurora
+(fixa, z-index negativo, `transform` + `will-change` + scroll-timeline).
+Ela voltou a ser **estática**, o foco de luz perdeu o `will-change`, e a
+inclinação pelo mouse e a deriva pela rolagem saíram. **Headless não prova
+nada sobre camada promovida**; movimento de fundo só volta testado no
+Chrome com GPU.

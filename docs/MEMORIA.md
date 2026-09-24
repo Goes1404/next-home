@@ -7741,3 +7741,28 @@ superfície. Depois: 1,21 (claro) e 1,18 (escuro), texto todo em AA,
   produto. Ele só volta com verificação no navegador de quem usa (iPhone) e
   com o painel logado. O resto da reforma (paleta, aurora, grão, cartões,
   herói, botões) não embrulha conteúdo e ficou.
+
+### O painel sumia no Chrome com GPU, e o teste headless não via (24/09/2026)
+
+- **Sintoma, por print do usuário (Windows, Chrome, tema escuro):** tela
+  inteira escura, cabeçalho e conteúdo invisíveis, links respondendo ao
+  mouse, e só a bolha do consultor visível — o único elemento que mora FORA
+  do `<main>` do painel (portal no `<body>`). Servidor limpo, tudo em 200.
+- **Tirar a transição de rota não resolveu**, e isso eliminou o primeiro
+  suspeito. O que sobrou de novo e composto na GPU era a aurora: camada
+  `fixed` com z-index negativo, `transform` + `will-change`, filhos com
+  `animation-timeline: scroll(root)`, dentro de um `<main>` com `isolate`.
+- **O build de produção, servido e fotografado no Chromium headless,
+  renderizava perfeito nos dois temas.** O headless rasteriza por software;
+  o defeito só existe com compositor de GPU. **Teste headless não prova
+  nada sobre camada promovida** — a mesma família da lição de 25/08 ("erro
+  que só existe no runtime se investiga no runtime"), agora do lado do
+  navegador.
+- **Conserto: a aurora voltou a ser ESTÁTICA** (sem transform, will-change,
+  animação ou transição), como as manchas que existiam antes de hoje e
+  nunca deram problema, e o `::before` do foco de luz perdeu o
+  `will-change`. A guarda `profundidadeDoPainel.test.ts` reprova qualquer
+  uma dessas propriedades de volta na aurora.
+- **Régua:** no painel, nada de camada promovida à força (`will-change`,
+  transform permanente) em elemento fixo atrás do conteúdo. Movimento de
+  fundo só volta verificado no Chrome de verdade, com GPU.

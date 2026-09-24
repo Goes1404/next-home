@@ -13,9 +13,11 @@ import path from "node:path";
  *    ~900x250px — 43,6 ms/quadro no desktop contra 22,9 sem; no celular,
  *    13 quadros acima de 33ms contra 3. O que há atrás já é um gradiente
  *    suave; desfocar não muda a imagem.
- * 2. Nenhuma animação `infinite` na aurora nem no herói. Animação infinita
- *    produz quadro a cada vsync para sempre, e é a régua da casa: movimento
- *    responde a gesto (rolagem, ponteiro) ou roda uma vez por montagem.
+ * 2. A aurora é ESTÁTICA (nenhum transform, will-change, animação ou
+ *    transição) e o herói não tem animação `infinite`. Em 24/09/2026 a
+ *    aurora com transform + will-change + scroll-timeline, fixa em z-index
+ *    negativo, fez o painel inteiro sumir no Chrome com GPU — e o teste
+ *    headless (raster por software) não viu nada.
  * 3. Nenhum contexto de empilhamento nem containing block no `cartao`
  *    (`transform`, `filter`, `backdrop-filter`, `isolation`, `contain`):
  *    cinco componentes `fixed` nascem dentro dele, e a folha de ações
@@ -62,15 +64,14 @@ describe("profundidade do painel: o que custa quadro fica fora", () => {
     expect(heroi).not.toMatch(/animation[^;]*infinite/);
   });
 
-  it("a aurora só se move com a rolagem e o ponteiro — nada infinito", () => {
+  it("a aurora é estática: sem transform, will-change nem animação", () => {
     const ini = css.indexOf(".painel-aurora {");
     const fim = css.indexOf(".painel-grao {", ini);
     expect(ini).toBeGreaterThanOrEqual(0);
     expect(fim).toBeGreaterThan(ini);
     const aurora = css.slice(ini, fim);
-    expect(aurora).toContain("animation-timeline: scroll(root)");
-    expect(aurora).toContain("--lean-x");
-    expect(aurora).not.toMatch(/infinite/);
+    expect(aurora).toContain("radial-gradient");
+    expect(aurora).not.toMatch(/\b(transform|will-change|animation[\w-]*|transition)\s*:/);
   });
 
   it.each(["(painel)/_componentes/HeroInicio.tsx", "(painel)/_componentes/CabecalhoDeTela.tsx"])(

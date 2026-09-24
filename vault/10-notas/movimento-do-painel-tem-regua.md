@@ -41,8 +41,6 @@ somou movimento de FUNDO e de ROTA, e a régua aguentou:
 
 | peça | responde a |
 |---|---|
-| aurora do fundo derivando | a ROLAGEM (`animation-timeline: scroll()`) |
-| aurora inclinando ±1,2vw | o PONTEIRO |
 | foco de luz no cartão | o ponteiro sobre ele |
 | varredura do herói (uma vez, 0,9s depois de montar) | a tela nova chegando — o momento de carga, junto com o medidor |
 
@@ -54,6 +52,10 @@ de ser gosto e virou número.**
 
 ## As regras que valem para a próxima animação
 
+- **Nenhuma camada promovida à força atrás do conteúdo** (`will-change`,
+  transform permanente em elemento fixo): em 24/09 a aurora assim fez o
+  painel inteiro sumir no Chrome com GPU, e o teste headless não viu. O
+  fundo é estático.
 - **Nenhuma animação infinita no painel.** Quadro por vsync para sempre, e
   todo `backdrop-filter` na tela é refeito em cada um. O que precisa parecer
   vivo se prende a um gesto (rolagem, ponteiro) ou roda uma vez por montagem.
