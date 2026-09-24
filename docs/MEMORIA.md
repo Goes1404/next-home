@@ -7665,3 +7665,7 @@ Nota: [[ordem-do-catalogo-no-site-tem-tela]].
   ★ destaque. Os 6 primeiros são os "Selecionados" da home. Mover não
   atravessa a fronteira do destaque, porque o site devolveria o imóvel para
   o grupo dele.
+- **Escolher a planta do catálogo** (24/09): na aba de plantas, "Escolher do
+  catálogo" reclassifica a foto como planta ANTES de ligá-la. Se a
+  reclassificação falha, nada é ligado. Só ligar a URL mostraria a planta na
+  tela enquanto a assistente seguiria sem ela.

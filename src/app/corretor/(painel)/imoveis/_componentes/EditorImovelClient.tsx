@@ -293,6 +293,7 @@ export function EditorImovelClient({ imovel }: Props) {
             empreendimentoId={imovel.id || imovel.slug}
             slug={imovel.slug}
             tipologias={tipologias}
+            midias={imovel.midias || []}
             onAdicionar={handleAdicionarTipologia}
             onRemover={handleRemoverTipologia}
             onChange={handleTipologiaChange}

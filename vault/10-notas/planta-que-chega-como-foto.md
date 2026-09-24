@@ -9,6 +9,8 @@ codigo:
   - src/app/corretor/(painel)/imoveis/actions.ts
   - src/app/corretor/(painel)/imoveis/_componentes/EditorFotos.tsx
   - src/app/corretor/(painel)/imoveis/_componentes/EditorFotos.test.ts
+  - src/app/corretor/(painel)/imoveis/_componentes/EditorTipologias.tsx
+  - src/app/corretor/(painel)/imoveis/_componentes/EditorTipologias.test.ts
 created: 2026-09-24
 updated: 2026-09-24
 fonte: pedido do usuário em 24/09/2026 ("definir a foto do catálogo como planta")
@@ -49,3 +51,19 @@ código e exige a chamada ao servidor antes da mudança na tela — provocada.
 - [[o-checklist-do-catalogo-e-as-categorias-sem-leitor]]
 - [[midia-por-slug-nunca-por-url]]
 - [[falha-calada-e-a-pior]]
+
+## Escolher do catálogo, na aba de plantas (24/09/2026)
+
+Ao lado de "Enviar imagem da planta" agora há um botão **"Escolher do
+catálogo"**. Ele abre uma grade com as fotos e plantas do imóvel. Tocar numa
+imagem faz duas coisas: **reclassifica a imagem como planta**
+(`definirTipoDaMidia`) e **liga a URL dela a esta planta**.
+
+A ordem importa. Se a reclassificação falha, nada é ligado. Ligar só a URL
+faria a tela mostrar a planta enquanto a assistente continuaria sem ela,
+porque a assistente só manda imagem com `tipo = 'planta'`. Isso é travado em
+`EditorTipologias.test.ts`, e a guarda foi provocada para confirmar que falha.
+
+Depois de reclassificar, a tela chama `router.refresh()`. Sem isso, a aba de
+fotos voltaria a montar com o imóvel antigo e ainda mostraria a imagem como
+foto.
