@@ -4,7 +4,7 @@ tags: [moc, midia]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-16
 summary: Upload, PDF de construtora, Google Drive, storage, sharp.
 ---
 # Ingestão de Mídia — Map of Content

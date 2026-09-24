@@ -4,7 +4,7 @@ tags: [moc, runbook]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-10
 summary: Procedimentos de diagnóstico — sintoma → onde olhar, na ordem certa.
 ---
 # Runbooks — Map of Content

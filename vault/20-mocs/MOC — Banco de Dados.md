@@ -4,7 +4,7 @@ tags: [moc, banco, supabase]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-15
 summary: Supabase, migrations, policies, grants, colunas geradas, types.
 ---
 # Banco de Dados — Map of Content

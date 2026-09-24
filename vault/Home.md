@@ -5,7 +5,7 @@ tags: [moc, meta]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-13
 summary: Ponto de entrada do vault. Comece pelo mapa do sistema e pelas lições gerais.
 ---
 # 🏠 Next Home — Home do vault

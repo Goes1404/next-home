@@ -4,7 +4,7 @@ tags: [moc, front, gsap]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-15
 summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 ---
 # Front Público — Map of Content

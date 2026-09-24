@@ -4,7 +4,7 @@ tags: [moc, meta]
 type: dashboard
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-10
 summary: Dashboards Dataview — requer o plugin Dataview instalado.
 ---
 # Painel do Vault

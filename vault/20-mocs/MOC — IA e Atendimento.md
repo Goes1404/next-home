@@ -4,7 +4,7 @@ tags: [moc, ia, prompt]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-15
+updated: 2026-09-16
 summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 ---
 # IA e Atendimento (Sofia) — Map of Content
