@@ -9,6 +9,7 @@ import {
   criarLeadUnico,
   importarLeads,
   type CandidatoRevisado,
+  type ResultadoAnalise,
   type ResumoImportacao,
 } from "./actions";
 
@@ -244,7 +245,7 @@ function Importador({
   const [modo, setModo] = useState<"colar" | "arquivo">("colar");
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState<string | null>(null);
-  const [metodo, setMetodo] = useState<"tabela" | "texto" | "ia" | "whatsapp" | null>(null);
+  const [metodo, setMetodo] = useState<ResultadoAnalise["metodo"] | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [linhas, setLinhas] = useState<(CandidatoRevisado & { incluir: boolean })[]>([]);
   const [resumo, setResumo] = useState<ResumoImportacao | null>(null);
@@ -385,6 +386,10 @@ function Importador({
               ? "Lidos por IA — confira nome e telefone antes de confirmar."
               : metodo === "whatsapp"
                 ? "Lidos da conversa exportada. As suas próprias mensagens ficaram de fora."
+                : metodo === "contatos"
+                  ? "Lidos dos cartões de contato. Confira e ajuste o que precisar."
+                  : metodo === "planilha"
+                    ? "Lidos da planilha do Excel. Confira e ajuste o que precisar."
                 : metodo === "texto"
                   ? "Lidos do texto do arquivo. Confira e ajuste o que precisar."
                   : "Lidos direto da tabela. Confira e ajuste o que precisar."}
@@ -532,15 +537,28 @@ function Importador({
             name="arquivo"
             type="file"
             required
-            accept=".pdf,.csv,.tsv,.txt,.zip,application/pdf,text/csv,text/plain,application/zip"
+            accept=".xlsx,.csv,.tsv,.txt,.pdf,.vcf,.zip,.jpg,.jpeg,.png,.webp,.heic,application/pdf,text/csv,text/plain,text/vcard,application/zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/*"
             className="text-fluid-sm text-corpo file:border-linha-forte file:bg-vidro file:text-corpo hover:file:bg-vidro-forte w-full cursor-pointer file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-full file:border file:px-4 file:text-sm"
           />
-          <p className="text-fluid-xs text-tenue mt-2">
-            PDF, CSV, TSV, TXT ou o <strong>.zip de uma conversa do WhatsApp</strong>, até 10 MB. Na conversa,
-            use <em>Exportar conversa → Sem mídia</em> — dá para exportar um grupo inteiro de uma vez.
-            PDF escaneado (foto de página) depende da leitura por IA; PDF de texto é lido direto.
-            Planilha do Excel: salve como CSV antes de enviar.
-          </p>
+          <ul className="text-fluid-xs text-tenue mt-2 space-y-1 break-words">
+            <li>
+              <strong>Conversa do WhatsApp</strong>: na conversa ou no grupo, <em>Exportar conversa → Sem mídia</em>, e
+              envie o <strong>.zip</strong> (iPhone) ou o <strong>.txt</strong> (Android).
+            </li>
+            <li>
+              <strong>Contatos</strong>: o <strong>.vcf</strong> de um contato compartilhado no WhatsApp ou da agenda
+              exportada do celular.
+            </li>
+            <li>
+              <strong>Planilhas</strong>: Excel (.xlsx), CSV ou TSV — inclusive a exportação do Google Contatos e de
+              portais.
+            </li>
+            <li>
+              <strong>PDF</strong> de relatório, ou <strong>foto ou print</strong> de uma lista ou conversa (lidos por
+              IA — confira antes de confirmar).
+            </li>
+            <li>Até 10 MB por arquivo.</li>
+          </ul>
 
           <button
             type="submit"

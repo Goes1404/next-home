@@ -7,6 +7,8 @@ import {
   parsearConversaWhatsapp,
   type AutorDaConversa,
 } from "./whatsappExport";
+import { ehArquivoVcard, parsearVcards } from "./vcard";
+import { lerPlanilhaXlsx } from "./xlsxLeitura";
 import { lerZip, type MotivoZipIlegivel } from "./zipLeitura";
 
 /**
@@ -36,14 +38,20 @@ export type CandidatoLead = {
 export type ResultadoExtracao = {
   candidatos: CandidatoLead[];
   /** Como o conteúdo foi lido, para a tela dizer ao corretor o que houve. */
-  metodo: "tabela" | "texto" | "ia" | "whatsapp" | "nenhum";
+  metodo: "tabela" | "texto" | "ia" | "whatsapp" | "contatos" | "planilha" | "nenhum";
   aviso?: string;
 };
 
 /** Teto por importação — protege contra um PDF de 400 páginas virar 400 inserts. */
 export const LIMITE_POR_IMPORTACAO = 300;
 
+/*
+ * A ordem das chaves importa: cada coluna vai para o PRIMEIRO campo que casa.
+ * `sobrenome` vem antes de `nome` porque "Last Name" contém "name" — sem isso,
+ * numa planilha em que o sobrenome aparece antes, ele viraria o nome.
+ */
 const CABECALHOS = {
+  sobrenome: ["sobrenome", "last name", "family name", "ultimo nome"],
   nome: ["nome", "name", "cliente", "contato", "lead", "nome completo", "nome do cliente"],
   telefone: ["telefone", "tel", "celular", "fone", "whatsapp", "whats", "phone", "contato telefone"],
   email: ["email", "e-mail", "mail", "correio"],
@@ -73,7 +81,57 @@ function celulas(linha: string, sep: string): string[] {
   return linha.split(sep).map((c) => c.trim().replace(/^["']|["']$/g, ""));
 }
 
+/**
+ * CSV de verdade, com aspas: `"Prado, Ana"` é UMA célula, `""` é aspas
+ * literal, e um campo entre aspas pode atravessar linhas (a observação do
+ * Google Contatos faz isso). Dividir por vírgula quebraria o nome em dois e
+ * deslocaria todas as colunas seguintes — o telefone iria parar na coluna do
+ * e-mail, calado.
+ */
+function registrosDelimitados(conteudo: string, sep: string): string[][] {
+  const registros: string[][] = [];
+  let registro: string[] = [];
+  let celula = "";
+  let entreAspas = false;
+
+  for (let i = 0; i < conteudo.length; i += 1) {
+    const c = conteudo[i];
+    if (entreAspas) {
+      if (c === '"') {
+        if (conteudo[i + 1] === '"') {
+          celula += '"';
+          i += 1;
+        } else entreAspas = false;
+      } else celula += c;
+      continue;
+    }
+    if (c === '"' && celula.trim() === "") {
+      entreAspas = true;
+      celula = "";
+    } else if (c === sep) {
+      registro.push(celula.trim());
+      celula = "";
+    } else if (c === "\n" || c === "\r") {
+      if (c === "\r" && conteudo[i + 1] === "\n") i += 1;
+      registro.push(celula.trim());
+      if (registro.some((v) => v !== "")) registros.push(registro);
+      registro = [];
+      celula = "";
+    } else celula += c;
+  }
+  registro.push(celula.trim());
+  if (registro.some((v) => v !== "")) registros.push(registro);
+  return registros;
+}
+
 const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+
+const RE_COLUNA_DE_ROTULO = /\b(label|type|tipo|rotulo)\b/;
+
+/** Google Contatos junta vários números na mesma célula: "+55 11 9… ::: +55 11 3…". */
+function primeiroValor(celula: string | undefined): string {
+  return (celula ?? "").split(":::")[0].trim();
+}
 
 /** Um telefone brasileiro tem 8 a 13 dígitos; menos que isso é código, mais é ruído. */
 function pareceTelefone(valor: string): boolean {
@@ -93,6 +151,9 @@ function mapearCabecalho(colunas: string[]): Partial<Record<Campo, number>> | nu
   colunas.forEach((coluna, indice) => {
     const chave = semAcento(coluna);
     if (!chave) return;
+    // "Phone 1 - Label" (Google Contatos) diz o TIPO do número, não o número:
+    // mapeá-la como telefone faria a planilha inteira sair sem nenhum lead.
+    if (RE_COLUNA_DE_ROTULO.test(chave)) return;
     for (const campo of Object.keys(CABECALHOS) as Campo[]) {
       if (mapa[campo] !== undefined) continue;
       if (CABECALHOS[campo].some((c) => chave === c || chave.includes(c))) {
@@ -101,6 +162,14 @@ function mapearCabecalho(colunas: string[]): Partial<Record<Campo, number>> | nu
       }
     }
   });
+
+  // Com mais de um telefone na planilha (Outlook traz comercial, residencial
+  // e celular), o celular vence: é ele que tem WhatsApp.
+  const celular = colunas.findIndex((coluna) => {
+    const chave = semAcento(coluna);
+    return !RE_COLUNA_DE_ROTULO.test(chave) && /\b(celular|cel|mobile|whats\w*)\b/.test(chave);
+  });
+  if (celular >= 0) mapa.telefone = celular;
 
   // Sem telefone não há lead nem deduplicação; sem nome, também não é tabela
   // de contatos. Exigir os dois evita tratar uma planilha de preços como
@@ -170,21 +239,32 @@ export function parsearTabelaLeads(conteudo: string): CandidatoLead[] {
   if (linhas.length === 0) return [];
 
   const sep = detectarSeparador(linhas[0]);
-  const primeira = celulas(linhas[0], sep);
-  const mapa = mapearCabecalho(primeira);
+  const registros = registrosDelimitados(conteudo.trim(), sep);
+  const mapa = registros.length > 0 ? mapearCabecalho(registros[0]) : null;
 
-  const corpo = mapa ? linhas.slice(1) : linhas;
+  // Com cabeçalho, o arquivo é uma tabela de verdade e merece o leitor com
+  // aspas. Sem cabeçalho, é lista solta colada — cada linha pode ter o seu
+  // separador, e o leitor linha a linha é o que acerta.
+  const corpo: string[][] = mapa
+    ? registros.slice(1)
+    : linhas.map((linha) => celulas(linha, detectarSeparador(linha)));
   const resultados: CandidatoLead[] = [];
 
-  for (const linha of corpo) {
-    const colunas = celulas(linha, detectarSeparador(linha));
+  for (const colunas of corpo) {
     if (colunas.length === 0) continue;
+
+    const nome = mapa
+      ? [colunas[mapa.nome!] ?? "", mapa.sobrenome !== undefined ? (colunas[mapa.sobrenome] ?? "") : ""]
+          .map((parte) => parte.trim())
+          .filter(Boolean)
+          .join(" ")
+      : "";
 
     const candidato = mapa
       ? montar({
-          nome: colunas[mapa.nome!] ?? "",
-          telefone: colunas[mapa.telefone!] ?? "",
-          email: mapa.email !== undefined ? (colunas[mapa.email] ?? null) : null,
+          nome,
+          telefone: primeiroValor(colunas[mapa.telefone!]),
+          email: mapa.email !== undefined ? primeiroValor(colunas[mapa.email]) || null : null,
           mensagem: mapa.mensagem !== undefined ? (colunas[mapa.mensagem] ?? null) : null,
           imovelInteresse: mapa.imovel !== undefined ? (colunas[mapa.imovel] ?? null) : null,
         })
@@ -279,10 +359,26 @@ async function chamarGemini(partes: ParteGemini[]): Promise<CandidatoLead[] | nu
   }
 }
 
-/** Texto colado ou arquivo de texto: tabela primeiro, IA se não for tabela. */
-export async function extrairDeTexto(conteudo: string): Promise<ResultadoExtracao> {
-  const limpo = conteudo.trim();
+/**
+ * Texto colado ou arquivo de texto.
+ *
+ * Antes da tabela, dois formatos que TÊM cara própria e que o leitor de
+ * tabela leria errado: a conversa exportada do WhatsApp (o Android gera um
+ * `.txt` solto quando se exporta sem mídia — e o corretor também cola a
+ * conversa inteira na caixa) e o cartão de contato `.vcf`. Lida como tabela,
+ * a conversa viraria "leads" com o horário de cada mensagem no lugar do nome.
+ */
+export async function extrairDeTexto(
+  conteudo: string,
+  contexto?: { nomeDoArquivo?: string; dono?: DonoDaExportacao },
+): Promise<ResultadoExtracao> {
+  const limpo = conteudo.replace(/^\uFEFF/, "").trim();
   if (!limpo) return { candidatos: [], metodo: "nenhum", aviso: "Nada foi colado." };
+
+  if (ehExportDeConversa(limpo)) {
+    return extrairDeConversaWhatsapp(limpo, contexto?.nomeDoArquivo, contexto?.dono);
+  }
+  if (ehArquivoVcard(limpo)) return extrairDeVcard(limpo);
 
   const tabela = dedupInterno(parsearTabelaLeads(limpo));
   if (tabela.length > 0) return { candidatos: tabela, metodo: "tabela" };
@@ -536,9 +632,21 @@ export async function extrairDeZipWhatsapp(
 
   // `.zip` não é sinônimo de conversa. Lista compactada segue o caminho de
   // sempre, em vez de morrer com "formato não suportado" por causa do envelope.
-  if (!ehExportDeConversa(texto)) return extrairDeTexto(texto);
+  return extrairDeTexto(texto, { nomeDoArquivo: principal.nome, dono });
+}
 
-  const conversa = parsearConversaWhatsapp(texto, principal.nome);
+/**
+ * Os participantes de uma conversa exportada do WhatsApp, como leads.
+ *
+ * Serve às três portas por onde a conversa chega: o `.zip` (iPhone, ou
+ * Android com mídia), o `.txt` solto (Android sem mídia) e o texto colado.
+ */
+export function extrairDeConversaWhatsapp(
+  texto: string,
+  nomeDoArquivo?: string,
+  dono?: DonoDaExportacao,
+): ResultadoExtracao {
+  const conversa = parsearConversaWhatsapp(texto, nomeDoArquivo);
 
   const rotulosDoDono = new Set<string>();
   if (conversa.donoProvavel) rotulosDoDono.add(normalizarRotulo(conversa.donoProvavel));
@@ -579,5 +687,146 @@ export async function extrairDeZipWhatsapp(
       semTelefone > 0
         ? `${semTelefone} ${semTelefone === 1 ? "contato está salvo" : "contatos estão salvos"} na sua agenda, e o WhatsApp não exporta o número de quem está salvo. ${semTelefone === 1 ? "Preencha o telefone na linha" : "Preencha os telefones nas linhas"} antes de confirmar.`
         : undefined,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Cartão de contato (.vcf)                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * O contato compartilhado pelo WhatsApp e a agenda exportada do celular.
+ *
+ * Número com DDI de fora é conferido antes de normalizar — a mesma armadilha
+ * da conversa exportada: "+1 415 555 2671" tem onze dígitos, como um celular
+ * brasileiro, e ganharia um 55 na frente, virando o número de outra pessoa.
+ */
+export function extrairDeVcard(texto: string): ResultadoExtracao {
+  const contatos = parsearVcards(texto);
+  if (contatos.length === 0) {
+    return {
+      candidatos: [],
+      metodo: "nenhum",
+      aviso: "O arquivo de contatos não tem nenhum contato com telefone.",
+    };
+  }
+
+  const candidatos: CandidatoLead[] = [];
+  for (const contato of contatos) {
+    const candidato = montar({
+      nome: contato.nome,
+      telefone: contato.telefone,
+      email: contato.email,
+      mensagem: contato.nota,
+      imovelInteresse: null,
+    });
+    if (!candidato) continue;
+
+    const doRotulo = telefoneDoRotulo(contato.telefone);
+    if (doRotulo && doRotulo.e164 === null) candidato.telefoneE164 = null;
+    candidatos.push(candidato);
+    if (candidatos.length >= LIMITE_POR_IMPORTACAO) break;
+  }
+
+  const unicos = dedupInterno(candidatos);
+  return {
+    candidatos: unicos,
+    metodo: unicos.length > 0 ? "contatos" : "nenhum",
+    aviso: unicos.length === 0 ? "Nenhum contato do arquivo tem um telefone que dê para usar." : undefined,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Planilha do Excel (.xlsx)                                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Cada aba vira texto tabulado e passa pelo MESMO leitor de tabela do CSV —
+ * uma regra de cabeçalho só, para as duas formas de a mesma planilha chegar.
+ *
+ * As abas são tentadas em ordem e vale a primeira que tiver contatos: é
+ * comum a primeira ser um resumo ("Totais", "Instruções") e a lista morar
+ * na segunda.
+ */
+export async function extrairDeXlsx(arquivo: Buffer | Uint8Array): Promise<ResultadoExtracao> {
+  const leitura = lerPlanilhaXlsx(Buffer.from(arquivo));
+  if (!leitura.ok) {
+    return {
+      candidatos: [],
+      metodo: "nenhum",
+      aviso:
+        leitura.motivo === "protegido_por_senha"
+          ? "A planilha está protegida por senha. Tire a senha no Excel e envie de novo."
+          : "Não conseguimos abrir esta planilha. Abra no Excel, use Salvar como → Pasta de Trabalho do Excel (.xlsx) e envie de novo.",
+    };
+  }
+
+  for (const aba of leitura.abas) {
+    if (aba.linhas.length === 0) continue;
+    // Tabulação e quebra DENTRO da célula viram espaço: senão uma observação
+    // com parágrafo criaria colunas e linhas que não existem.
+    const texto = aba.linhas
+      .map((linha) => linha.map((celula) => celula.replace(/[\t\r\n]+/g, " ")).join("\t"))
+      .join("\n");
+    const candidatos = dedupInterno(parsearTabelaLeads(texto));
+    if (candidatos.length > 0) {
+      const outras = leitura.abas.length > 1 ? ` (aba “${aba.nome}”)` : "";
+      return {
+        candidatos,
+        metodo: "planilha",
+        aviso: outras ? `Lemos a planilha${outras}. As outras abas não entraram.` : undefined,
+      };
+    }
+  }
+
+  return {
+    candidatos: [],
+    metodo: "nenhum",
+    aviso:
+      "Não achamos contatos na planilha. Confira se há uma coluna de nome e outra de telefone, com o título na primeira linha.",
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Foto ou print                                                               */
+/* -------------------------------------------------------------------------- */
+
+export const TIPOS_DE_IMAGEM = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+
+/**
+ * Print de conversa, foto de uma lista escrita à mão, foto de uma ficha de
+ * plantão. Aqui não há texto dentro do arquivo para ler de graça: só a IA vê
+ * a imagem, como no PDF escaneado. Sem a chave, a tela diz isso em vez de
+ * "nenhum contato encontrado" — que mandaria procurar defeito na foto.
+ */
+export async function extrairDeImagem(
+  imagem: Buffer | Uint8Array,
+  mimeType: string,
+): Promise<ResultadoExtracao> {
+  const daIa = await chamarGemini([
+    {
+      text:
+        "A imagem pode ser um print do WhatsApp: numa conversa, o cliente é o nome ou número no TOPO da tela; " +
+        "ignore o número do dono do celular. Numa lista ou ficha, extraia cada contato com telefone.",
+    },
+    { inline_data: { mime_type: mimeType, data: Buffer.from(imagem).toString("base64") } },
+  ]);
+
+  if (daIa === null) {
+    return {
+      candidatos: [],
+      metodo: "nenhum",
+      aviso: "A leitura de fotos depende da IA, que não está disponível agora. Digite os contatos na caixa de texto.",
+    };
+  }
+
+  const unicos = dedupInterno(daIa);
+  return {
+    candidatos: unicos,
+    metodo: "ia",
+    aviso:
+      unicos.length === 0
+        ? "Não achamos nenhum telefone legível na imagem."
+        : "Lido por IA a partir da imagem: confira nome e telefone de cada linha antes de confirmar.",
   };
 }

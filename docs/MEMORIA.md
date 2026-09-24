@@ -7608,3 +7608,26 @@ banco e no GitHub, não só relido da MEMORIA.
   campanha (faltam as env vars da Meta); 1 corretor com grade de agenda; 5
   de 25 publicados com apelido; os dois crons de e-mail seguem desagendados
   por decisão (e sem `RESEND_API_KEY`).
+
+## A importação de leads passou a ler o que o corretor tem na mão (24/09/2026)
+
+Nota: [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]].
+
+- **O `.txt` da conversa exportada pelo ANDROID caía no leitor de tabela.**
+  Só o `.zip` (iPhone) passava por `ehExportDeConversa`; o Android, sem
+  mídia, gera `.txt` solto. A checagem foi para `extrairDeTexto`, então vale
+  também para conversa COLADA na caixa — e o `dono` (a fala do corretor não
+  vira lead) viaja nos três caminhos.
+- **O CSV do Google Contatos saía com zero leads, calado**: `Phone 1 - Label`
+  casava como telefone antes de `Phone 1 - Value`, e o split por vírgula
+  quebrava `"Prado, Ana"`. Coluna de rótulo agora é ignorada e CSV com
+  cabeçalho usa leitor com aspas.
+- **`.xlsx` sem dependência nova**: é ZIP com XML, e `lerZip` já existia.
+  Telefone salvo como número vem em notação científica
+  (`5.5119912345670002E+12`) — lido cru, vira lixo.
+- **`.vcf`**: `waid=` no TEL é o número do WhatsApp em dígitos; vCard 2.1 do
+  Android vem em quoted-printable.
+- **Foto/print** vai ao Gemini, como o PDF escaneado; sem chave, a tela diz
+  que a leitura de foto depende de IA.
+- Provocado antes de subir: desligar a exclusão da coluna de rótulo e o
+  desvio da conversa em `extrairDeTexto` derruba 1 e 2 testes.
