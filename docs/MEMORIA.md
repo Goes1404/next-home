@@ -7678,3 +7678,6 @@ Nota: [[ordem-do-catalogo-no-site-tem-tela]].
   site e à galeria de fotos. Para testar toque sem login, usei uma página
   temporária e `Input.dispatchTouchEvent` do CDP. Depois de apagá-la, rode
   `rm -rf .next/dev .next/types`, senão o `tsc` acusa o módulo que sumiu.
+- **Ordem salva sozinha** (24/09): `useSalvarSozinho`, 900ms depois da última
+  mudança e nunca durante o arrasto. Em falha, não repete sozinho: mostra
+  "Tentar de novo".

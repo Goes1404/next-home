@@ -12,6 +12,7 @@ codigo:
   - src/app/corretor/(painel)/imoveis/ordem/OrdemNoSite.tsx
   - src/app/corretor/(painel)/imoveis/actions.ts
   - src/app/corretor/(painel)/_componentes/useArrastarParaOrdenar.ts
+  - src/app/corretor/(painel)/_componentes/useSalvarSozinho.ts
 created: 2026-09-24
 updated: 2026-09-24
 fonte: pedido do usuário em 24/09/2026 ("mudar a sequência dos imóveis exibidos")
@@ -37,7 +38,7 @@ pelo link do corretor.
   para baixo e a lista mentiria para o corretor. Para passar para o outro
   grupo, marca-se ou desmarca-se o destaque (★). O imóvel fica encostado na
   fronteira, perto de onde estava.
-- **Salvar é por botão, não a cada toque.** Arrumar a lista leva umas dez
+- **(Substituído no mesmo dia pelo salvamento automático, ver abaixo.)** Salvar era por botão, não a cada toque. Arrumar a lista leva umas dez
   trocas seguidas. Gravar cada uma seria dez idas ao banco e derrubaria o
   cache do site dez vezes no meio do arranjo.
 - **Só entram os publicados.** Rascunho não aparece no site.
@@ -78,5 +79,25 @@ Verificado num navegador de verdade, com uma página de teste temporária e
 dados falsos: arrasto com mouse e com toque (CDP `Input.dispatchTouchEvent`)
 nas duas telas, sem rolagem lateral. Os tipos gerados pelo `next dev` para a
 página de teste apagada quebram o `tsc` até alguém rodar `rm -rf .next/dev`.
+
+## Salva sozinho (24/09/2026)
+
+As duas telas perderam o botão "Salvar ordem" e passaram a usar
+`useSalvarSozinho`:
+- A gravação sai **900ms depois da última mudança**, e só depois que o dedo
+  solta o item. Durante o arrasto a lista muda a cada quadro e só o ponto
+  onde o item cai interessa.
+- A espera resolve o motivo do botão: dez trocas seguidas viram uma gravação
+  só, e o cache do site é derrubado uma vez.
+- Se a pessoa mexer enquanto a gravação está em andamento, as duas versões
+  continuam diferentes quando ela termina, e o ciclo roda de novo.
+- **Em falha, não tenta de novo sozinho.** Um erro de permissão repetido a
+  cada segundo seria barulho. A tela mostra "Tentar de novo" e "Voltar à
+  ordem salva".
+- Fechar a aba com mudança não gravada pede confirmação (`beforeunload`).
+
+Verificado no navegador: segurando o item por 1,5s, zero POST; depois de
+soltar, um POST só; sem sessão, o erro apareceu com os dois botões e não
+houve nova tentativa.
 
 Ligada em [[MOC — CRM e Painel]] e [[MOC — Front Público]].

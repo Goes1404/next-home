@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { useArrastarParaOrdenar } from "../../_componentes/useArrastarParaOrdenar";
+import { TEXTO_DO_SALVAMENTO, useSalvarSozinho } from "../../_componentes/useSalvarSozinho";
 import { IconeAlca } from "../../_componentes/IconeAlca";
 import {
   NA_HOME,
@@ -18,86 +19,83 @@ import { salvarOrdemDaVitrine } from "../actions";
 export type ItemDaTela = ItemDaVitrine & { bairro: string; foto: string | null };
 
 /**
- * A lista do site, na ordem do site, com subir, descer e destaque.
+ * A lista do site, na ordem do site, com arrastar, subir, descer e destaque.
  *
- * Salva por BOTÃO, não a cada toque: arrumar a lista são dez trocas seguidas,
- * e gravar cada uma seria dez rodadas ao banco e dez vezes o cache do site
- * derrubado no meio do arranjo.
+ * Salva SOZINHA (`useSalvarSozinho`): pouco depois da última mudança, e nunca
+ * no meio de um arrasto. A espera junta várias trocas seguidas numa gravação
+ * só — era esse o motivo do botão "Salvar ordem" que existiu até 24/09.
  */
 export function OrdemNoSite({ iniciais }: { iniciais: ItemDaTela[] }) {
   const [lista, setLista] = useState(iniciais);
   const [salva, setSalva] = useState(iniciais);
-  const [pendente, iniciar] = useTransition();
-  const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
 
-  const mudou =
-    lista.length !== salva.length ||
-    lista.some((item, i) => item.slug !== salva[i].slug || item.destaque !== salva[i].destaque);
   const totalDestaques = lista.filter((i) => i.destaque).length;
 
   function alterar(nova: ItemDaTela[]) {
     setLista(nova);
-    setAviso(null);
   }
 
   const arrasto = useArrastarParaOrdenar({
     escopo: "imoveis-do-site",
-    desativado: pendente,
     // Atualização FUNCIONAL: durante o arrasto dois movimentos podem sair no
     // mesmo quadro, antes de a tela renderizar — ler `lista` do fechamento
     // aplicaria o segundo sobre a lista velha.
-    aoMover: (de, para) => {
-      setLista((atual) => arrastarPara(atual, de, para));
-      setAviso(null);
+    aoMover: (de, para) => setLista((atual) => arrastarPara(atual, de, para)),
+  });
+
+  const salvamento = useSalvarSozinho({
+    chave: chaveDa(lista),
+    chaveSalva: chaveDa(salva),
+    pausado: arrasto.arrastando !== null,
+    salvar: async () => {
+      const enviada = lista;
+      try {
+        const res = await salvarOrdemDaVitrine(enviada.map(({ slug, destaque }) => ({ slug, destaque })));
+        if (!res.ok) {
+          setErro(res.erro ?? "Não foi possível salvar a ordem.");
+          return false;
+        }
+        setSalva(enviada);
+        setErro(null);
+        return true;
+      } catch (e) {
+        setErro(ehActionDeOutroBuild(e) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
+        return false;
+      }
     },
   });
 
-  function salvar() {
-    const enviada = lista;
-    iniciar(async () => {
-      try {
-        const res = await salvarOrdemDaVitrine(enviada.map(({ slug, destaque }) => ({ slug, destaque })));
-        if (res.ok) {
-          setSalva(enviada);
-          setAviso({ tipo: "ok", texto: "Ordem salva. O site já mostra os imóveis nesta sequência." });
-        } else {
-          setAviso({ tipo: "erro", texto: res.erro ?? "Não foi possível salvar a ordem." });
-        }
-      } catch (e) {
-        setAviso({
-          tipo: "erro",
-          texto: ehActionDeOutroBuild(e) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.",
-        });
-      }
-    });
-  }
-
   const barra = (
-    <div className="flex flex-wrap items-center gap-3">
-      <button
-        type="button"
-        onClick={salvar}
-        disabled={!mudou || pendente}
-        className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm inline-flex min-h-11 items-center justify-center rounded-xl px-5 font-medium transition-colors disabled:opacity-40"
+    <div className="flex min-h-11 flex-wrap items-center gap-3" role="status" aria-live="polite">
+      <p
+        className={`text-fluid-sm ${
+          salvamento.estado === "erro"
+            ? "text-perigo"
+            : salvamento.estado === "salvo"
+              ? "text-acento"
+              : "text-apoio"
+        }`}
       >
-        {pendente ? "Salvando…" : "Salvar ordem"}
-      </button>
-      {mudou && !pendente && (
+        {salvamento.estado === "erro" && erro ? erro : TEXTO_DO_SALVAMENTO[salvamento.estado]}
+      </p>
+      {salvamento.estado === "erro" && (
+        <button
+          type="button"
+          onClick={salvamento.tentarDeNovo}
+          className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm inline-flex min-h-11 items-center justify-center rounded-xl px-4 font-medium"
+        >
+          Tentar de novo
+        </button>
+      )}
+      {salvamento.estado === "erro" && (
         <button
           type="button"
           onClick={() => alterar(salva)}
           className="text-fluid-sm min-h-11 rounded-xl px-3 text-apoio hover:text-titulo"
         >
-          Desfazer mudanças
+          Voltar à ordem salva
         </button>
-      )}
-      {aviso && (
-        <p
-          role={aviso.tipo === "erro" ? "alert" : "status"}
-          className={`text-fluid-sm ${aviso.tipo === "erro" ? "text-perigo" : "text-acento"}`}
-        >
-          {aviso.texto}
-        </p>
       )}
     </div>
   );
@@ -197,7 +195,10 @@ export function OrdemNoSite({ iniciais }: { iniciais: ItemDaTela[] }) {
         })}
       </ol>
 
-      {lista.length > 8 && barra}
     </div>
   );
+}
+
+function chaveDa(lista: ItemDaVitrine[]): string {
+  return lista.map((i) => `${i.slug}:${i.destaque ? 1 : 0}`).join("|");
 }

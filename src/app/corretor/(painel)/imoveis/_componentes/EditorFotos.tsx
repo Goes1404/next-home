@@ -13,6 +13,7 @@ import {
 import { Check } from 'lucide-react';
 import { moverPara, useArrastarParaOrdenar } from "../../_componentes/useArrastarParaOrdenar";
 import { IconeAlca } from "../../_componentes/IconeAlca";
+import { TEXTO_DO_SALVAMENTO, useSalvarSozinho } from "../../_componentes/useSalvarSozinho";
 
 interface Props {
   empreendimentoId: string;
@@ -29,7 +30,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
   const inputUploadRef = useRef<HTMLInputElement>(null);
   /** A sequência que o banco tem — é contra ela que "mudou a ordem" se mede. */
   const [ordemSalva, setOrdemSalva] = useState<string[]>(() => idsDasImagens(midiasIniciais));
-  const [salvandoOrdem, setSalvandoOrdem] = useState(false);
+  const [erroOrdem, setErroOrdem] = useState<string | null>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -156,29 +157,31 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
 
   const arrasto = useArrastarParaOrdenar({
     escopo: "fotos-do-imovel",
-    desativado: salvandoOrdem,
     aoMover: (de, para) =>
       setMidias((prev) => [...moverPara(prev.filter(ehImagem), de, para), ...prev.filter((m) => !ehImagem(m))]),
   });
 
-  const salvarOrdem = async () => {
+  /**
+   * Grava a sequência da tela. Quem chama é `useSalvarSozinho`, pouco depois
+   * da última mudança e nunca no meio de um arrasto.
+   */
+  const salvarOrdem = async (): Promise<boolean> => {
     const ids = idsDasImagens(midias);
     if (ids.length !== midias.filter(ehImagem).length) {
-      avisar(<>Recarregue a página antes de ordenar — há foto recém-enviada sem identificação.</>, 5000);
-      return;
+      setErroOrdem("Recarregue a página antes de ordenar — há foto recém-enviada sem identificação.");
+      return false;
     }
-    setSalvandoOrdem(true);
     const res = await salvarOrdemDasFotos(empreendimentoId, slug, ids).catch(() => ({
       ok: false as const,
       erro: "Sem resposta do servidor. Tente de novo.",
     }));
-    setSalvandoOrdem(false);
     if (!res.ok) {
-      avisar(<>{res.erro ?? "Não foi possível salvar a ordem das fotos."}</>, 5000);
-      return;
+      setErroOrdem(res.erro ?? "Não foi possível salvar a ordem das fotos.");
+      return false;
     }
     setOrdemSalva(ids);
-    avisar(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Ordem das fotos salva — o site já mostra nesta sequência.</>);
+    setErroOrdem(null);
+    return true;
   };
 
   const desfazerOrdem = () => {
@@ -189,6 +192,13 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
       return [...naOrdem, ...resto];
     });
   };
+
+  const salvamento = useSalvarSozinho({
+    chave: idsDasImagens(midias).join("|"),
+    chaveSalva: ordemSalva.join("|"),
+    pausado: arrasto.arrastando !== null,
+    salvar: salvarOrdem,
+  });
 
   const handleRemover = async (midia: Midia) => {
     if (!confirm("Tem certeza que deseja remover esta foto?")) return;
@@ -213,9 +223,6 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
   // o que é imagem. A capa é a primeira FOTO — planta nunca é capa, é o que
   // o mapper faz na vitrine (`capa: fotos[0]`), e a tela tem de dizer o mesmo.
   const imagens = midias.filter(ehImagem);
-  const idsAtuais = idsDasImagens(midias);
-  const ordemMudou =
-    idsAtuais.length !== ordemSalva.length || idsAtuais.some((id, i) => id !== ordemSalva[i]);
   const urlDaCapa = imagens.find((m) => m.tipo === "foto")?.url ?? null;
   const totalPlantas = imagens.filter((m) => m.tipo === "planta").length;
 
@@ -233,7 +240,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
           <h3 className="text-fluid-base font-bold text-titulo">Galeria de Fotos do Imóvel</h3>
           <p className="text-fluid-xs text-apoio mt-0.5">
             A 1ª foto é a <strong>Capa Principal</strong> na vitrine e nos cards do WhatsApp. Arraste
-            pela alça <span aria-hidden>⠿</span> (ou use ◀ ▶) para mudar a sequência do site.
+            pela alça <span aria-hidden>⠿</span> (ou use ◀ ▶) para mudar a sequência do site — salva sozinho.
           </p>
           <p className="text-fluid-xs text-apoio mt-1 break-words">
             Veio uma planta no meio das fotos? Toque em <strong>É planta</strong> — é assim que a
@@ -273,25 +280,37 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
         </div>
       </div>
 
-      {ordemMudou && (
-        <div className="cartao flex flex-wrap items-center gap-3 p-4" role="status">
-          <p className="text-fluid-xs text-corpo">A ordem das fotos mudou e ainda não foi salva.</p>
-          <button
-            type="button"
-            onClick={salvarOrdem}
-            disabled={salvandoOrdem}
-            className="min-h-11 rounded-xl bg-acento px-4 text-fluid-xs font-bold text-sobre-cor hover:bg-acento-hover disabled:opacity-50"
+      {imagens.length > 1 && (
+        <div className="flex min-h-11 flex-wrap items-center gap-3" role="status" aria-live="polite">
+          <p
+            className={`text-fluid-xs ${
+              salvamento.estado === "erro"
+                ? "text-perigo"
+                : salvamento.estado === "salvo"
+                  ? "text-acento"
+                  : "text-apoio"
+            }`}
           >
-            {salvandoOrdem ? "Salvando…" : "Salvar ordem"}
-          </button>
-          <button
-            type="button"
-            onClick={desfazerOrdem}
-            disabled={salvandoOrdem}
-            className="min-h-11 rounded-xl px-3 text-fluid-xs font-semibold text-apoio hover:text-titulo"
-          >
-            Desfazer
-          </button>
+            {salvamento.estado === "erro" && erroOrdem ? erroOrdem : TEXTO_DO_SALVAMENTO[salvamento.estado]}
+          </p>
+          {salvamento.estado === "erro" && (
+            <>
+              <button
+                type="button"
+                onClick={salvamento.tentarDeNovo}
+                className="min-h-11 rounded-xl bg-acento px-4 text-fluid-xs font-bold text-sobre-cor hover:bg-acento-hover"
+              >
+                Tentar de novo
+              </button>
+              <button
+                type="button"
+                onClick={desfazerOrdem}
+                className="min-h-11 rounded-xl px-3 text-fluid-xs font-semibold text-apoio hover:text-titulo"
+              >
+                Voltar à ordem salva
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -355,7 +374,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
                     <button
                       type="button"
                       onClick={() => mover(midia, -1)}
-                      disabled={posicao === 0 || salvandoOrdem}
+                      disabled={posicao === 0}
                       aria-label="Mover para antes"
                       title="Mover para antes"
                       className="flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-black/60 text-white hover:bg-black/80 disabled:opacity-30"
@@ -365,7 +384,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
                     <button
                       type="button"
                       onClick={() => mover(midia, 1)}
-                      disabled={posicao === imagens.length - 1 || salvandoOrdem}
+                      disabled={posicao === imagens.length - 1}
                       aria-label="Mover para depois"
                       title="Mover para depois"
                       className="flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-black/60 text-white hover:bg-black/80 disabled:opacity-30"
