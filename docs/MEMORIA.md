@@ -7650,3 +7650,18 @@ Nota: [[planta-que-chega-como-foto]].
   primeira FOTO, como o mapper da vitrine (`capa: fotos[0]`). E foto recém-
   enviada passou a guardar o `id` devolvido pelo servidor — sem ele não dava
   para removê-la nem reclassificá-la antes de recarregar.
+
+## A ordem do site não tinha tela (24/09/2026)
+
+Nota: [[ordem-do-catalogo-no-site-tem-tela]].
+
+- **A vitrine ordena por `destaque` e depois por `empreendimentos.ordem`, e
+  `ordem` nunca teve tela.** A sequência do site era a que o seed deixou. A
+  única ordem editável era a do link pessoal (`corretor_destaques`), que só
+  vale para quem chega pelo link do corretor. Quem procurar como mudar a
+  ordem dos imóveis provavelmente vai achar primeiro a tela de Links, e ela
+  não muda a ordem do site.
+- **Imóveis → "Ordem no site"** (`/corretor/imoveis/ordem`): subir, descer e
+  ★ destaque. Os 6 primeiros são os "Selecionados" da home. Mover não
+  atravessa a fronteira do destaque, porque o site devolveria o imóvel para
+  o grupo dele.

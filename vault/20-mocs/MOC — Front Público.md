@@ -4,7 +4,7 @@ tags: [moc, front, gsap]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-15
+updated: 2026-09-24
 summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 ---
 # Front Público — Map of Content
@@ -56,6 +56,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 
 ## Movimento
 - [[movimento-do-site-publico-e-css-puro]] — botão vivo, sublinhado do menu, barra de progresso por scroll-timeline e anel do WhatsApp, zero JS (13/09)
+- [[ordem-do-catalogo-no-site-tem-tela]] — a sequência da vitrine (destaque, depois `ordem`) agora se edita no painel (24/09)
 
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]

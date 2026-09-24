@@ -8,6 +8,7 @@ import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mapp
 import type { Empreendimento, Midia, StatusObra, TipoImovel, Finalidade } from "@/lib/types";
 import { validarUrlMidiaExterna } from "@/lib/embedMidia";
 import { registrarMidia } from "@/lib/imoveis/registrarMidia";
+import { paraGravar } from "@/lib/imoveis/ordemDaVitrine";
 import {
   interpretarRespostaDescricao,
   montarPromptDescricao,
@@ -703,5 +704,67 @@ export async function excluirImovel(slug: string): Promise<{ ok: boolean; erro?:
   revalidatePath(`/empreendimentos/${slug}`);
   revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
+  return { ok: true };
+}
+
+/**
+ * Grava a ordem em que o site mostra os imóveis (tela "Ordem no site").
+ *
+ * Recebe a lista INTEIRA na ordem da tela e reescreve `ordem` e `destaque` de
+ * cada um. Só publicados: rascunho não aparece no site, e mandá-lo junto
+ * gravaria uma posição que ninguém vê.
+ *
+ * Um update por imóvel (são ~25). A contagem de linhas é conferida: update que
+ * a RLS barra afeta zero linhas SEM erro, e a tela diria "salvo" para uma
+ * ordem que o site nunca viu.
+ */
+export async function salvarOrdemDaVitrine(
+  itens: { slug: string; destaque: boolean }[],
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) {
+    return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  }
+
+  const slugsUnicos = new Set(itens.map((i) => i.slug));
+  if (itens.length === 0 || slugsUnicos.size !== itens.length) {
+    return { ok: false, erro: "A lista chegou incompleta. Recarregue a página e tente de novo." };
+  }
+
+  const supabase = await createClient();
+  const { data: publicados, error: erroLeitura } = await supabase
+    .from("empreendimentos")
+    .select("slug")
+    .eq("publicado", true);
+
+  if (erroLeitura || !publicados) {
+    return { ok: false, erro: "Não foi possível ler o catálogo agora. Tente novamente." };
+  }
+  const existentes = new Set(publicados.map((p) => p.slug));
+  if (itens.some((i) => !existentes.has(i.slug))) {
+    return { ok: false, erro: "O catálogo mudou enquanto você ordenava. Recarregue a página." };
+  }
+
+  const resultados = await Promise.all(
+    paraGravar(itens).map((item) =>
+      supabase
+        .from("empreendimentos")
+        .update({ ordem: item.ordem, destaque: item.destaque })
+        .eq("slug", item.slug)
+        .select("id"),
+    ),
+  );
+
+  const falhou = resultados.find((r) => r.error || !r.data || r.data.length === 0);
+  if (falhou) {
+    console.error("[ordem no site] falha ao gravar:", falhou.error?.message ?? "zero linhas afetadas");
+    return { ok: false, erro: "Não foi possível salvar a ordem. Tente novamente." };
+  }
+
+  revalidarCatalogo();
+  revalidatePath("/", "layout");
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis", "layout");
+
   return { ok: true };
 }

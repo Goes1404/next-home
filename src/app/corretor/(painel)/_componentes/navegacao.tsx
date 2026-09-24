@@ -131,6 +131,9 @@ export const GRUPOS_NAV: GrupoNav[] = [
         subitens: [
           { href: "/corretor/imoveis", label: "Catálogo", icone: IconePredio },
           { href: "/corretor/imoveis/candidatos", label: "Fila de cadastro", icone: IconeFila },
+          // A ordem em que o SITE mostra os imóveis (24/09/2026). Antes só
+          // dava para mudar a ordem do link pessoal (em Links por imóvel).
+          { href: "/corretor/imoveis/ordem", label: "Ordem no site", icone: IconeOrdem },
           /*
            * "Links por imóvel" era um chip no cabeçalho do Catálogo e um
            * subtópico de Marketing ao mesmo tempo — duas portas, e nenhuma
@@ -625,6 +628,16 @@ function IconeFila(p: SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M4 13l2.5-8h11L20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
       <path d="M4 13h4l1.5 3h5L16 13h4" />
+    </svg>
+  );
+}
+
+function IconeOrdem(p: SVGProps<SVGSVGElement>) {
+  // Setas para cima e para baixo: trocar a posição na lista.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M8 4v16M4 8l4-4 4 4" />
+      <path d="M16 20V4M12 16l4 4 4-4" />
     </svg>
   );
 }
