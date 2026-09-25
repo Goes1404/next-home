@@ -13,10 +13,12 @@ import path from "node:path";
  *    ~900x250px — 43,6 ms/quadro no desktop contra 22,9 sem; no celular,
  *    13 quadros acima de 33ms contra 3. O que há atrás já é um gradiente
  *    suave; desfocar não muda a imagem.
- * 2. Nenhuma animação `infinite` na aurora nem no herói: a aurora se move
- *    só com a rolagem e o ponteiro. (Ela ficou parada algumas horas em
- *    24/09 por um diagnóstico errado de GPU; a causa real era o fundo no
- *    portal da bolha, ver o último teste. Voltou verificada pelo usuário.)
+ * 2. O herói não anda sozinho; a aurora ANDA, por decisão de 25/09 — o
+ *    usuário pediu um fundo que se mexe. Até ali a regra era "nada
+ *    infinito" e esta guarda a cobrava; ela foi reescrita, não apagada. O
+ *    que a deriva pode fazer é estreito: só `translate` e `scale` (o
+ *    compositor faz sozinho, sem layout nem pintura), nunca `transform` (é
+ *    da rolagem, e as duas se apagariam), e some com menos movimento.
  * 3. Nenhum contexto de empilhamento nem containing block no `cartao`
  *    (`transform`, `filter`, `backdrop-filter`, `isolation`, `contain`):
  *    cinco componentes `fixed` nascem dentro dele, e a folha de ações
@@ -63,15 +65,26 @@ describe("profundidade do painel: o que custa quadro fica fora", () => {
     expect(heroi).not.toMatch(/animation[^;]*infinite/);
   });
 
-  it("a aurora só se move com a rolagem e o ponteiro — nada infinito", () => {
+  it("a aurora deriva sozinha só com translate/scale, e para com menos movimento", () => {
     const ini = css.indexOf(".painel-aurora {");
     const fim = css.indexOf(".painel-grao {", ini);
     expect(ini).toBeGreaterThanOrEqual(0);
     expect(fim).toBeGreaterThan(ini);
     const aurora = css.slice(ini, fim);
-    expect(aurora).toContain("animation-timeline: scroll(root)");
+    expect(aurora).toContain("animation-timeline: scroll(root), auto");
     expect(aurora).toContain("--lean-x");
-    expect(aurora).not.toMatch(/infinite/);
+    expect(aurora).not.toMatch(/backdrop-filter\s*:|\bfilter\s*:/);
+    const derivas = [...aurora.matchAll(/@keyframes (deriva-[a-z])\s*\{/g)].map((m) => m[1]);
+    expect(derivas.length).toBeGreaterThanOrEqual(3);
+    for (const nome of derivas) {
+      const corpo = bloco(aurora, `@keyframes ${nome} {`);
+      const props = [...corpo.matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]);
+      expect(props.length).toBeGreaterThan(0);
+      for (const p of props) expect(["translate", "scale"]).toContain(p);
+      expect(aurora).toMatch(new RegExp(`animation-name:[^;]*\\b${nome}\\b`));
+    }
+    const reduzido = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce)"));
+    expect(reduzido).toMatch(/\.painel-aurora > i:nth-child\(n\)[^{]*\{\s*animation:\s*none/);
   });
 
   it.each(["(painel)/_componentes/HeroInicio.tsx", "(painel)/_componentes/CabecalhoDeTela.tsx"])(

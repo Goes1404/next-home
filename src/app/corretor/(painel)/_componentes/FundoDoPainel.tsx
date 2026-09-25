@@ -16,6 +16,7 @@ export function FundoDoPainel() {
         <i />
         <i />
         <i />
+        <i />
       </div>
       <div aria-hidden className="painel-grao" />
     </>

@@ -2402,18 +2402,13 @@ main[data-rota="painel"] {
 }
 
 /*
- * 2. A AURORA: três manchas de luz (módulo, azul da marca, areia). São
+ * 2. A AURORA: quatro manchas de luz (módulo, azul da marca, areia). São
  * gradientes radiais, não `filter: blur` — o desfoque é o próprio
  * gradiente, rasterizado UMA vez; o que muda é só `transform`, em camada
  * própria (`will-change`). Fixas atrás de tudo com `-z-10`, dentro do
  * `isolate` do <main>.
  *
- * NADA aqui anda sozinho, e isso é decisão medida, não economia: a primeira
- * versão derivava em ciclos de 26 a 40s, e animação infinita obriga o
- * compositor a produzir um quadro a cada vsync para sempre — foi o que
- * expôs o custo do `backdrop-blur` dos heróis (43,6 ms/quadro no desktop
- * parado). A régua da casa já dizia: movimento responde a GESTO ou mostra
- * conteúdo. Então a aurora se move com dois gestos e só com eles:
+ * Ela se move de TRÊS jeitos, e só o terceiro anda sozinho:
  *   - a ROLAGEM: cada mancha deriva um pouco para cima ao longo dos
  *     primeiros 160vh de rolagem (`animation-timeline: scroll()`, o mesmo
  *     mecanismo da barra de progresso do site) — parallax de fundo que só
@@ -2422,8 +2417,13 @@ main[data-rota="painel"] {
  *     (`--lean-x/--lean-y`, escritos por `LuzDosCartoes`), com transição
  *     longa, então a luz "segue" a mão sem pular. O contêiner tem 4vmax de
  *     sobra em cada lado para o inclinar nunca expor uma borda reta.
- * Em repouso, zero quadros. Navegador sem `scroll()` fica com a aurora
- * parada; ninguém perde conteúdo.
+ *   - a DERIVA (25/09, pedido do usuário: um fundo que se mexe): cada
+ *     mancha passeia sozinha em ciclo próprio, ver 2b. Até então a régua
+ *     era "nada infinito", e ela nasceu de uma medição que culpou a
+ *     animação pelo custo que era do `backdrop-blur` dos heróis. Sem o
+ *     blur, a deriva custa quadro de COMPOSITOR, não de pintura.
+ * Navegador sem `scroll()` fica só com a deriva; menos movimento desliga
+ * as três. Ninguém perde conteúdo.
  */
 .painel-aurora,
 .painel-grao {
@@ -2467,21 +2467,92 @@ main[data-rota="painel"] {
   top: 38%;
   left: 30%;
 }
+.painel-aurora > i:nth-child(4) {
+  --cor: color-mix(in oklab, var(--color-acento-suave) var(--aurora-2), transparent);
+  width: 30vmax;
+  height: 30vmax;
+  top: 8%;
+  left: -8vmax;
+}
+/*
+ * 2b. A DERIVA: cada mancha anda sozinha, devagar, em ciclos de 19 a 31s
+ * que não se sincronizam — é o que faz o fundo parecer vivo sem nunca
+ * repetir o mesmo quadro de relance. Anima `translate` e `scale`, as
+ * propriedades INDIVIDUAIS, e não `transform`: o `transform` já é da
+ * rolagem, e o navegador compõe as duas sem uma apagar a outra. As duas
+ * rodam só no compositor (nada de layout nem pintura); e nada aqui tem
+ * `backdrop-filter` em cima — foi o blur sobre fundo animado que custou
+ * 43,6 ms por quadro em 24/09.
+ */
+.painel-aurora > i {
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+.painel-aurora > i:nth-child(1) {
+  animation-name: deriva-a;
+  animation-duration: 23s;
+}
+.painel-aurora > i:nth-child(2) {
+  animation-name: deriva-b;
+  animation-duration: 27s;
+}
+.painel-aurora > i:nth-child(3) {
+  animation-name: deriva-c;
+  animation-duration: 19s;
+}
+.painel-aurora > i:nth-child(4) {
+  animation-name: deriva-d;
+  animation-duration: 31s;
+}
 @supports (animation-timeline: scroll()) {
   .painel-aurora > i {
-    animation-timing-function: linear;
-    animation-fill-mode: both;
-    animation-timeline: scroll(root);
-    animation-range: 0 160vh;
+    animation-timing-function: linear, ease-in-out;
+    animation-iteration-count: 1, infinite;
+    animation-direction: normal, alternate;
+    animation-fill-mode: both, none;
+    animation-timeline: scroll(root), auto;
+    animation-range: 0 160vh, normal;
   }
   .painel-aurora > i:nth-child(1) {
-    animation-name: aurora-a;
+    animation-name: aurora-a, deriva-a;
+    animation-duration: auto, 23s;
   }
   .painel-aurora > i:nth-child(2) {
-    animation-name: aurora-b;
+    animation-name: aurora-b, deriva-b;
+    animation-duration: auto, 27s;
   }
   .painel-aurora > i:nth-child(3) {
-    animation-name: aurora-c;
+    animation-name: aurora-c, deriva-c;
+    animation-duration: auto, 19s;
+  }
+  .painel-aurora > i:nth-child(4) {
+    animation-name: aurora-c, deriva-d;
+    animation-duration: auto, 31s;
+  }
+}
+@keyframes deriva-a {
+  to {
+    translate: -9vw 7vh;
+    scale: 1.12;
+  }
+}
+@keyframes deriva-b {
+  to {
+    translate: 11vw -6vh;
+    scale: 0.9;
+  }
+}
+@keyframes deriva-c {
+  to {
+    translate: 8vw 9vh;
+    scale: 1.18;
+  }
+}
+@keyframes deriva-d {
+  to {
+    translate: 70vw 34vh;
+    scale: 1.3;
   }
 }
 @keyframes aurora-a {
@@ -2598,11 +2669,14 @@ main[data-rota="painel"] {
 }
 
 /* Quem pediu menos movimento fica com a profundidade e perde o parallax da
-   aurora (rolagem e ponteiro) e a varredura do herói — parallax é o que
+   aurora (rolagem, ponteiro e deriva) e a varredura do herói — parallax é o que
    mais incomoda quem tem sensibilidade vestibular. A troca de módulo, o
    foco e o hover continuam — respondem a gesto e não deslocam nada. */
 @media (prefers-reduced-motion: reduce) {
-  .painel-aurora > i,
+  /* `:nth-child(n)`, não só `> i`: os nomes das animações moram em regras
+     `:nth-child(k)`, mais específicas, que ganhariam de um `> i` simples —
+     e a deriva seguiria rodando para quem pediu menos movimento. */
+  .painel-aurora > i:nth-child(n),
   .cartao-heroi::after {
     animation: none;
   }
