@@ -140,8 +140,12 @@ function legendaDoArquivo(url: string): string {
 /**
  * Chave de identidade da MESMA foto em tamanhos diferentes: sem o sufixo de
  * redimensionamento, sem query, sem caixa.
+ *
+ * É também o que se grava em `midias.origem_url` (0113): a próxima leitura da
+ * página pode trazer a mesma foto em outro tamanho ou formato, e só a chave
+ * reconhece que ela já foi trazida.
  */
-function chaveDaFoto(url: string): string {
+export function chaveDaFoto(url: string): string {
   try {
     const u = new URL(url);
     const caminho = u.pathname

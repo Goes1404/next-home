@@ -11,6 +11,7 @@ import { baixarArquivo, listarPasta, parsearLinkDrive, type ArquivoDrive } from 
 import { montarRascunhoDePdf, montarRascunhoDeTexto, type RascunhoCadastro } from "@/lib/imoveis/rascunhoDePdf";
 import { buscarSeguro } from "@/lib/imoveis/site/buscarSeguro";
 import {
+  chaveDaFoto,
   lerPaginaDaConstrutora,
   type DicasEstruturadas,
   type ImagemDoSite,
@@ -531,7 +532,10 @@ const TETO_HTML = 5 * 1024 * 1024;
 /** Foto de construtora chega a 1500 px; 15 MB cobre com folga e trava o absurdo. */
 const TETO_IMAGEM = 15 * 1024 * 1024;
 
-export type ImagemDoSiteNaTela = ImagemDoSite;
+export type ImagemDoSiteNaTela = ImagemDoSite & {
+  /** Já veio desta página numa importação anterior (`midias.origem_url`). */
+  jaTrazida: boolean;
+};
 export type MidiaDoSiteNaTela = MidiaDoSite & { jaCadastrada: boolean };
 
 export type AnaliseDoSite =
@@ -547,6 +551,27 @@ export type AnaliseDoSite =
       urlFinal: string;
     }
   | { ok: false; erro: string };
+
+/**
+ * Origens das fotos já trazidas para este imóvel. Consulta à parte, com o
+ * erro engolido: a coluna nasceu na 0113, e antes de ela existir a tela só
+ * perde a marca "já trazida" — não a importação.
+ */
+async function origensJaTrazidas(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  empreendimentoId: string,
+): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("midias")
+    .select("origem_url")
+    .eq("empreendimento_id", empreendimentoId)
+    .not("origem_url", "is", null);
+  if (error) {
+    console.warn("[importar do site] sem origem_url (0113 aplicada?):", error.message);
+    return new Set();
+  }
+  return new Set((data ?? []).map((m) => m.origem_url).filter((u): u is string => Boolean(u)));
+}
 
 /** Identidade de uma mídia externa: o ID do YouTube, ou a URL sem barra final. */
 function identidadeDaMidia(url: string): string {
@@ -591,13 +616,25 @@ export async function analisarSite(entrada: { url: string; empreendimentoId: str
     .eq("empreendimento_id", entrada.empreendimentoId)
     .in("tipo", ["video", "tour360"]);
   const jaTem = new Set((existentes ?? []).map((m) => identidadeDaMidia(m.url)));
+  const trazidas = await origensJaTrazidas(supabase, entrada.empreendimentoId);
+
+  // Página lida guarda o link no imóvel: é ele que deixa o corretor voltar e
+  // "buscar novidades" sem colar de novo. Página montada por JavaScript não
+  // é lembrada — reler um casco vazio não traria novidade nenhuma.
+  if (!pagina.montadaPorJs) {
+    const { error } = await supabase
+      .from("empreendimentos")
+      .update({ site_construtora: busca.urlFinal })
+      .eq("id", entrada.empreendimentoId);
+    if (error) console.warn("[importar do site] não guardei o link (0113 aplicada?):", error.message);
+  }
 
   return {
     ok: true,
     titulo: pagina.titulo,
     texto: pagina.texto,
     dicas: pagina.dicas,
-    imagens: pagina.imagens,
+    imagens: pagina.imagens.map((img) => ({ ...img, jaTrazida: trazidas.has(chaveDaFoto(img.url)) })),
     midias: pagina.midias.map((m) => ({ ...m, jaCadastrada: jaTem.has(identidadeDaMidia(m.url)) })),
     montadaPorJs: pagina.montadaPorJs,
     urlFinal: busca.urlFinal,
@@ -668,6 +705,18 @@ export async function trazerImagemDoSite(entrada: {
     ordem: entrada.capa ? 0 : 10,
   });
   if (!resultado.ok) return { ok: false, erro: resultado.erro };
+
+  // A origem é carimbada DEPOIS, e à parte: citar a coluna no insert de
+  // `registrarMidia` derrubaria a importação inteira enquanto a 0113 não
+  // estiver aplicada. Só preenche onde está vazio — a foto que já existia
+  // (duplicada) guarda a primeira origem, não a última.
+  const { error: erroOrigem } = await supabase
+    .from("midias")
+    .update({ origem_url: chaveDaFoto(entrada.url) })
+    .eq("empreendimento_id", entrada.empreendimentoId)
+    .eq("url", resultado.url)
+    .is("origem_url", null);
+  if (erroOrigem) console.warn("[importar do site] sem origem_url (0113 aplicada?):", erroOrigem.message);
 
   revalidatePath(`/empreendimentos/${entrada.slug}`);
   revalidarCatalogo();

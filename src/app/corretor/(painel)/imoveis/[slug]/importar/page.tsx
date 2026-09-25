@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
+import { createClient } from "@/lib/supabase/server";
 import { ImportarClient } from "./ImportarClient";
 
 interface Props {
@@ -33,6 +34,22 @@ export async function generateMetadata({ params }: Props) {
 
 export const dynamic = "force-dynamic";
 
+/**
+ * O link guardado na última leitura do site (0113). Consulta à parte, e não
+ * no SELECT do catálogo: antes de a coluna existir, a tela perde só o atalho
+ * "Buscar novidades" — citar a coluna no SELECT derrubaria a tela inteira.
+ */
+async function siteGuardado(empreendimentoId: string): Promise<string | undefined> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("empreendimentos")
+    .select("site_construtora")
+    .eq("id", empreendimentoId)
+    .maybeSingle();
+  if (error) return undefined;
+  return data?.site_construtora ?? undefined;
+}
+
 export default async function ImportarMaterialPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const site = (await searchParams)?.site;
@@ -44,6 +61,7 @@ export default async function ImportarMaterialPage({ params, searchParams }: Pro
   if (!imovel?.id) {
     notFound();
   }
+  const siteSalvo = await siteGuardado(imovel.id);
 
   return (
     <div className="space-y-6">
@@ -56,6 +74,7 @@ export default async function ImportarMaterialPage({ params, searchParams }: Pro
         slug={slug}
         nome={imovel.nome}
         linkDoSite={typeof site === "string" ? site : undefined}
+        siteSalvo={siteSalvo}
         cadastroAtual={{
           nome: imovel.nome,
           construtora: imovel.construtora,

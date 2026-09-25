@@ -32,14 +32,18 @@ export function OrigemSite({
   slug,
   cadastroAtual,
   linkInicial,
+  siteSalvo,
 }: {
   empreendimentoId: string;
   slug: string;
   cadastroAtual: Record<string, unknown>;
   /** Vindo do cadastro de imóvel novo: a página é lida sozinha ao abrir. */
   linkInicial?: string;
+  /** O link da última leitura (0113): vira o atalho "Buscar novidades". */
+  siteSalvo?: string;
 }) {
-  const [link, setLink] = useState(linkInicial ?? "");
+  const [link, setLink] = useState(linkInicial ?? siteSalvo ?? "");
+  const [mostrarTrazidas, setMostrarTrazidas] = useState(false);
   const [lendo, setLendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [analise, setAnalise] = useState<Analise | null>(null);
@@ -52,8 +56,9 @@ export function OrigemSite({
   const [falhas, setFalhas] = useState<string[]>([]);
   const [resumo, setResumo] = useState<string | null>(null);
 
-  const ler = async () => {
+  const ler = async (endereco: string = link) => {
     setErro(null);
+    setMostrarTrazidas(false);
     setAnalise(null);
     setRascunho(null);
     setAvisoRascunho(null);
@@ -65,7 +70,7 @@ export function OrigemSite({
 
     let resultado: AnaliseDoSite;
     try {
-      resultado = await analisarSite({ url: link, empreendimentoId });
+      resultado = await analisarSite({ url: endereco, empreendimentoId });
     } catch {
       setLendo(false);
       setErro("Não consegui ler a página agora. Confira sua conexão e tente de novo.");
@@ -83,7 +88,15 @@ export function OrigemSite({
       Object.fromEntries(
         resultado.imagens.map((img) => [
           img.url,
-          { chave: img.url, incluir: img.sugerida, tipo: img.parecePlanta ? "planta" : "foto", capa: false },
+          // O que já veio desta página numa importação anterior nasce
+          // desmarcado: "buscar novidades" só faz sentido se o botão de trazer
+          // não repetir o que já está na galeria.
+          {
+            chave: img.url,
+            incluir: img.sugerida && !img.jaTrazida,
+            tipo: img.parecePlanta ? "planta" : "foto",
+            capa: false,
+          },
         ]),
       ),
     );
@@ -227,11 +240,13 @@ export function OrigemSite({
     );
   };
 
+  const jaTrazidas = analise?.imagens.filter((img) => img.jaTrazida).length ?? 0;
+  const novasImagens = (analise?.imagens.length ?? 0) - jaTrazidas;
   const itens: ItemDaGrade[] =
-    analise?.imagens.map((img) => ({
+    analise?.imagens.filter((img) => mostrarTrazidas || !img.jaTrazida).map((img) => ({
       chave: img.url,
       preview: img.url,
-      legenda: img.legenda || "Imagem da página",
+      legenda: `${img.jaTrazida ? "Já trazida · " : ""}${img.legenda || "Imagem da página"}`,
     })) ?? [];
 
   const trabalhando = progresso !== null;
@@ -261,6 +276,33 @@ export function OrigemSite({
             {lendo ? "Lendo a página…" : "Ler a página"}
           </button>
         </div>
+        {siteSalvo && !analise && !lendo ? (
+          <div className="flex flex-col gap-2 rounded-2xl border border-linha bg-elevado p-4 sm:flex-row sm:items-center">
+            <p className="min-w-0 flex-1 text-fluid-xs text-corpo">
+              Este imóvel já foi lido de{" "}
+              <a
+                href={siteSalvo}
+                target="_blank"
+                rel="noreferrer"
+                className="break-all text-acento underline decoration-transparent hover:decoration-current"
+              >
+                {siteSalvo}
+              </a>
+              . Posso reler e mostrar só o que é novo.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setLink(siteSalvo);
+                void ler(siteSalvo);
+              }}
+              disabled={trabalhando}
+              className="min-h-[44px] shrink-0 rounded-xl border border-acento px-4 text-fluid-xs font-bold text-acento transition-all active:scale-95 disabled:opacity-60"
+            >
+              Buscar novidades
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {erro ? (
@@ -325,8 +367,26 @@ export function OrigemSite({
         </section>
       ) : null}
 
-      {analise && itens.length === 0 && !analise.montadaPorJs ? (
+      {analise && analise.imagens.length === 0 && !analise.montadaPorJs ? (
         <p className="text-fluid-xs text-apoio">Não encontrei foto nesta página.</p>
+      ) : null}
+
+      {analise && jaTrazidas > 0 ? (
+        <div className="flex flex-col gap-2 rounded-2xl border border-linha bg-elevado p-4 sm:flex-row sm:items-center">
+          <p className="min-w-0 flex-1 text-fluid-xs text-corpo">
+            {novasImagens === 0
+              ? `Nenhuma foto nova: as ${jaTrazidas} desta página já estão no imóvel.`
+              : `${novasImagens} ${novasImagens === 1 ? "foto nova" : "fotos novas"}. ${jaTrazidas} ${jaTrazidas === 1 ? "já tinha sido trazida" : "já tinham sido trazidas"} antes.`}
+          </p>
+          <button
+            type="button"
+            onClick={() => setMostrarTrazidas(!mostrarTrazidas)}
+            aria-pressed={mostrarTrazidas}
+            className="min-h-[44px] shrink-0 rounded-xl bg-campo px-4 text-fluid-xs font-bold text-apoio"
+          >
+            {mostrarTrazidas ? "Esconder as já trazidas" : "Mostrar as já trazidas"}
+          </button>
+        </div>
       ) : null}
 
       {itens.length > 0 ? (

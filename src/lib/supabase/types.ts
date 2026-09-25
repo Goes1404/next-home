@@ -541,6 +541,7 @@ export type Database = {
           publicado: boolean
           seo_descricao: string | null
           seo_titulo: string | null
+          site_construtora: string | null
           slug: string
           status: Database["public"]["Enums"]["status_obra"]
           tagline: string | null
@@ -576,6 +577,7 @@ export type Database = {
           publicado?: boolean
           seo_descricao?: string | null
           seo_titulo?: string | null
+          site_construtora?: string | null
           slug: string
           status?: Database["public"]["Enums"]["status_obra"]
           tagline?: string | null
@@ -611,6 +613,7 @@ export type Database = {
           publicado?: boolean
           seo_descricao?: string | null
           seo_titulo?: string | null
+          site_construtora?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["status_obra"]
           tagline?: string | null
@@ -1786,6 +1789,7 @@ export type Database = {
           blur_data_url: string | null
           empreendimento_id: string
           hash_conteudo: string | null
+          origem_url: string | null
           id: string
           largura: number | null
           ordem: number
@@ -1798,6 +1802,7 @@ export type Database = {
           blur_data_url?: string | null
           empreendimento_id: string
           hash_conteudo?: string | null
+          origem_url?: string | null
           id?: string
           largura?: number | null
           ordem?: number
@@ -1810,6 +1815,7 @@ export type Database = {
           blur_data_url?: string | null
           empreendimento_id?: string
           hash_conteudo?: string | null
+          origem_url?: string | null
           id?: string
           largura?: number | null
           ordem?: number
