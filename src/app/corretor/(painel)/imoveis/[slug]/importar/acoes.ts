@@ -136,6 +136,8 @@ export type ResultadoGravacao = {
   falhas: string[];
   /** O que foi marcado como planta, para virar tipologia em seguida. */
   plantas: { indice: number; url: string }[];
+  /** O desfecho de CADA imagem pedida: a tela marca uma a uma na grade. */
+  porItem: { indice: number; desfecho: "entrou" | "duplicada" | "falhou" }[];
   erro?: string;
 };
 
@@ -157,10 +159,10 @@ export async function gravarEscolhasDoPdf(entrada: {
 }): Promise<ResultadoGravacao> {
   const corretor = await getCorretorLogado();
   if (!corretor) {
-    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], plantas: [], erro: "Sessão expirada. Entre de novo." };
+    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], plantas: [], porItem: [], erro: "Sessão expirada. Entre de novo." };
   }
   if (entrada.escolhas.length === 0) {
-    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], plantas: [], erro: "Marque pelo menos uma imagem." };
+    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], plantas: [], porItem: [], erro: "Marque pelo menos uma imagem." };
   }
 
   const supabase = await createClient();
@@ -172,6 +174,7 @@ export async function gravarEscolhasDoPdf(entrada: {
       duplicadas: 0,
       falhas: [],
       plantas: [],
+      porItem: [],
       erro: "O arquivo que eu estava usando não está mais aqui. Escolha o PDF de novo.",
     };
   }
@@ -184,11 +187,13 @@ export async function gravarEscolhasDoPdf(entrada: {
   let duplicadas = 0;
   const falhas: string[] = [];
   const plantas: { indice: number; url: string }[] = [];
+  const porItem: ResultadoGravacao["porItem"] = [];
 
   for (const escolha of entrada.escolhas) {
     const imagem = extraidas.imagens[escolha.indice];
     if (!imagem) {
       falhas.push(`Imagem ${escolha.indice + 1} não foi encontrada na segunda leitura do arquivo.`);
+      porItem.push({ indice: escolha.indice, desfecho: "falhou" });
       continue;
     }
 
@@ -204,11 +209,13 @@ export async function gravarEscolhasDoPdf(entrada: {
 
     if (!resultado.ok) {
       falhas.push(`Imagem ${escolha.indice + 1}: ${resultado.erro}`);
+      porItem.push({ indice: escolha.indice, desfecho: "falhou" });
       continue;
     }
 
     if (resultado.duplicada) duplicadas++;
     else gravadas++;
+    porItem.push({ indice: escolha.indice, desfecho: resultado.duplicada ? "duplicada" : "entrou" });
 
     // Planta não é só foto na galeria: é a tipologia do imóvel, e é dela que
     // o bot tira dormitórios, suítes e metragem para responder ao cliente.
@@ -224,7 +231,7 @@ export async function gravarEscolhasDoPdf(entrada: {
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
-  return { ok: true, gravadas, duplicadas, falhas, plantas };
+  return { ok: true, gravadas, duplicadas, falhas, plantas, porItem };
 }
 
 export type ResultadoTipologia =

@@ -26,6 +26,27 @@ describe("o envio do site respeita o que foi tirado no meio", () => {
   });
 });
 
+describe("o PDF e o Drive também", () => {
+  const ler = (arquivo: string) => semComentarios(readFileSync(join(__dirname, arquivo), "utf8"));
+
+  it("o PDF manda em lotes pequenos, conferindo a lista antes de cada um", () => {
+    const codigo = ler("OrigemPdf.tsx");
+    expect(codigo).toMatch(/const LOTE_PDF = [2-6];/);
+    expect(codigo).toMatch(/\.map\(\(chave\) => escolhasAgora\.current\[chave\]\)/);
+    expect(codigo).toMatch(/Boolean\(e\?\.incluir\) && !parar\.current/);
+  });
+
+  it("a action do PDF diz o desfecho de cada imagem, para a grade marcar uma a uma", () => {
+    expect(ler("acoes.ts")).toMatch(/return \{ ok: true, gravadas, duplicadas, falhas, plantas, porItem \}/);
+  });
+
+  it("o Drive confere a lista na hora em que cada foto sai", () => {
+    const codigo = ler("OrigemDrive.tsx");
+    expect(codigo).toMatch(/const escolha = escolhasAgora\.current\[chave\];/);
+    expect(codigo).toMatch(/if \(parar\.current \|\| !escolha\?\.incluir\)/);
+  });
+});
+
 const escolha = (chave: string, incluir: boolean): EscolhaCuradoria => ({ chave, incluir, tipo: "foto", capa: false });
 const item = (chave: string, estado?: ItemDaGrade["estado"]): ItemDaGrade => ({
   chave,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ArquivoDrive } from "@/lib/imoveis/drive";
 import { listarMaterialDoDrive, trazerArquivoDoDrive } from "./acoes";
 import { GradeCuradoria, type EscolhaCuradoria, type ItemDaGrade } from "./GradeCuradoria";
@@ -28,6 +28,15 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
   const [resultado, setResultado] = useState<ResultadoImportacao | null>(null);
   const { avisar } = useAvisos();
   const [buscando, setBuscando] = useState(false);
+  const [estados, setEstados] = useState<Record<string, NonNullable<ItemDaGrade["estado"]>>>({});
+
+  // O envio lê a lista NA HORA em que cada foto sai, por ref: estado de React
+  // dentro do laço é o do render em que ele começou.
+  const escolhasAgora = useRef(escolhas);
+  const parar = useRef(false);
+  useEffect(() => {
+    escolhasAgora.current = escolhas;
+  }, [escolhas]);
 
   const buscar = async () => {
     setErro(null);
@@ -35,6 +44,7 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
     setResumo(null);
     setResultado(null);
     setProgresso(null);
+    setEstados({});
     setBuscando(true);
 
     const resultado = await listarMaterialDoDrive(link);
@@ -65,51 +75,85 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
       return;
     }
 
-    setProgresso({ feitos: 0, total: escolhidos.length });
+    let totalAgora = escolhidos.length;
+    setProgresso({ feitos: 0, total: totalAgora });
     setFalhas([]);
     setResumo(null);
     setResultado(null);
+    parar.current = false;
+    setEstados(Object.fromEntries(escolhidos.map((e) => [e.chave, "fila" as const])));
+    const marcar = (chave: string, estado: NonNullable<ItemDaGrade["estado"]> | null) =>
+      setEstados((atual) => {
+        const proximo = { ...atual };
+        if (estado) proximo[chave] = estado;
+        else delete proximo[chave];
+        return proximo;
+      });
 
-    const fila = [...escolhidos];
+    const fila = escolhidos.map((e) => e.chave);
     const problemas: string[] = [];
     let feitos = 0;
+    let entraram = 0;
     let duplicadas = 0;
+    let tiradas = 0;
 
     const trabalhador = async () => {
       for (;;) {
-        const escolha = fila.shift();
-        if (!escolha) return;
+        const chave = fila.shift();
+        if (!chave) return;
+        // Tipo, capa e o próprio "incluir" valem como estão AGORA na tela.
+        const escolha = escolhasAgora.current[chave];
+        if (parar.current || !escolha?.incluir) {
+          marcar(chave, null);
+          tiradas++;
+          totalAgora--;
+          setProgresso({ feitos, total: totalAgora });
+          continue;
+        }
 
-        const arquivo = arquivos.find((a) => a.id === escolha.chave);
+        const arquivo = arquivos.find((a) => a.id === chave);
         if (!arquivo) continue;
+        marcar(chave, "enviando");
 
-        const resultado = await trazerArquivoDoDrive({
-          empreendimentoId,
-          slug,
-          arquivoId: arquivo.id,
-          nome: arquivo.nome,
-          tipo: escolha.tipo,
-          capa: escolha.capa,
-        });
-
-        if (!resultado.ok) problemas.push(`${arquivo.nome}: ${resultado.erro ?? "não veio"}`);
-        else if (resultado.duplicada) duplicadas++;
+        try {
+          const resultado = await trazerArquivoDoDrive({
+            empreendimentoId,
+            slug,
+            arquivoId: arquivo.id,
+            nome: arquivo.nome,
+            tipo: escolha.tipo,
+            capa: escolha.capa,
+          });
+          marcar(chave, resultado.ok ? "entrou" : "falhou");
+          if (!resultado.ok) problemas.push(`${arquivo.nome}: ${resultado.erro ?? "não veio"}`);
+          else {
+            if (resultado.duplicada) duplicadas++;
+            else entraram++;
+            // O que entrou sai da lista: "Trazer" de novo não o repete.
+            setEscolhas((atual) => ({ ...atual, [chave]: { ...escolha, incluir: false, capa: false } }));
+          }
+        } catch {
+          marcar(chave, "falhou");
+          problemas.push(`${arquivo.nome}: a conexão caiu no meio`);
+        }
 
         feitos++;
-        setProgresso({ feitos, total: escolhidos.length });
+        setProgresso({ feitos, total: totalAgora });
       }
     };
 
     await Promise.all(Array.from({ length: Math.min(EM_PARALELO, escolhidos.length) }, trabalhador));
 
+    setProgresso(null);
     setFalhas(problemas);
-    const entraram = escolhidos.length - problemas.length - duplicadas;
     const final: ResultadoImportacao = {
       entraram,
       falharam: problemas.length,
       linhas: [
         entraram > 0 ? `${entraram} ${entraram === 1 ? "foto adicionada" : "fotos adicionadas"}.` : "",
         duplicadas > 0 ? `${duplicadas} ${duplicadas === 1 ? "já estava" : "já estavam"} na galeria.` : "",
+        tiradas > 0 ? `${tiradas} ${tiradas === 1 ? "tirada" : "tiradas"} da lista antes de enviar.` : "",
+        parar.current ? "Envio parado." : "",
       ].filter(Boolean),
     };
     setResultado(final);
@@ -124,9 +168,10 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
         chave: a.id,
         preview: a.thumbnail ?? "",
         legenda: a.nome,
+        estado: estados[a.id],
       })) ?? [];
 
-  const transferindo = progresso !== null && progresso.feitos < progresso.total;
+  const transferindo = progresso !== null;
 
   return (
     <div className="space-y-5">
@@ -184,6 +229,22 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
           >
             {transferindo ? `Trazendo… ${progresso.feitos} de ${progresso.total}` : "Trazer as selecionadas"}
           </button>
+          {transferindo ? (
+            <>
+              <p className="text-fluid-xs text-apoio">
+                Ainda dá para tirar da fila: toque em “Tirar da fila” na foto que ainda não foi enviada.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  parar.current = true;
+                }}
+                className="w-full min-h-[44px] rounded-xl border border-linha-forte px-5 text-fluid-xs font-bold text-corpo"
+              >
+                Parar o envio
+              </button>
+            </>
+          ) : null}
         </>
       ) : null}
 

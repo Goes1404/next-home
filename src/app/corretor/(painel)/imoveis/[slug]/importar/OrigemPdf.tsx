@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TETO_PDF_BYTES, TETO_PDF_MB } from "@/lib/imoveis/limitesPdf";
 import type { RascunhoCadastro as Rascunho } from "@/lib/imoveis/rascunhoDePdf";
@@ -17,6 +17,14 @@ import { GradeCuradoria, type EscolhaCuradoria, type ItemDaGrade } from "./Grade
 import { RascunhoCadastro } from "./RascunhoCadastro";
 import { ResultadoDaImportacao, tituloDoResultado, type ResultadoImportacao } from "./ResultadoDaImportacao";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
+
+/**
+ * Quantas imagens por chamada. A action baixa e relê o PDF a cada chamada,
+ * então uma por vez custaria uma leitura por imagem; tudo de uma vez não
+ * deixaria tirar nada da fila depois do clique. Quatro é o meio: tirar vale
+ * para tudo que ainda não saiu, e o PDF é relido poucas vezes.
+ */
+const LOTE_PDF = 4;
 
 /**
  * Aba da apresentação em PDF.
@@ -46,6 +54,15 @@ export function OrigemPdf({
   const [tipologias, setTipologias] = useState<string | null>(null);
   const [resultadoFinal, setResultadoFinal] = useState<ResultadoImportacao | null>(null);
   const { avisar } = useAvisos();
+  const [estados, setEstados] = useState<Record<string, NonNullable<ItemDaGrade["estado"]>>>({});
+
+  // O envio confere a lista a cada lote, por ref: estado de React dentro do
+  // laço é o do render em que ele começou.
+  const escolhasAgora = useRef(escolhas);
+  const parar = useRef(false);
+  useEffect(() => {
+    escolhasAgora.current = escolhas;
+  }, [escolhas]);
 
   const aoEscolherArquivo = async (arquivo: File) => {
     setResumo(null);
@@ -54,6 +71,7 @@ export function OrigemPdf({
     setAvisoRascunho(null);
     setRascunhoSalvo(null);
     setResultadoFinal(null);
+    setEstados({});
     setTipologias(null);
 
     if (arquivo.size > TETO_PDF_BYTES) {
@@ -143,22 +161,77 @@ export function OrigemPdf({
 
     setEtapa("gravando");
     setTipologias(null);
-    const resultado = await gravarEscolhasDoPdf({
-      empreendimentoId,
-      slug,
-      caminhoStaging,
-      escolhas: escolhidas.map((e) => ({ indice: Number(e.chave), tipo: e.tipo, capa: e.capa })),
-    });
-    if (!resultado.ok) {
-      setEtapa("parado");
-      setResumo(resultado.erro ?? "Não consegui gravar agora.");
-      return;
+    setResumo(null);
+    parar.current = false;
+    setEstados(Object.fromEntries(escolhidas.map((e) => [e.chave, "fila" as const])));
+    const marcar = (chaves: string[], estado: NonNullable<ItemDaGrade["estado"]> | null) =>
+      setEstados((atual) => {
+        const proximo = { ...atual };
+        for (const chave of chaves) {
+          if (estado) proximo[chave] = estado;
+          else delete proximo[chave];
+        }
+        return proximo;
+      });
+
+    const resultado = { gravadas: 0, duplicadas: 0, falhas: [] as string[], plantas: [] as { indice: number; url: string }[] };
+    let tiradas = 0;
+    let erroGeral: string | null = null;
+    let perdidas = 0;
+    const fila = escolhidas.map((e) => e.chave);
+
+    while (fila.length > 0 && !erroGeral) {
+      // Tipo, capa e o próprio "incluir" valem como estão AGORA na tela.
+      const pedido = fila.splice(0, LOTE_PDF);
+      const lote = pedido
+        .map((chave) => escolhasAgora.current[chave])
+        .filter((e): e is EscolhaCuradoria => Boolean(e?.incluir) && !parar.current);
+      const fora = pedido.filter((chave) => !lote.some((e) => e.chave === chave));
+      tiradas += fora.length;
+      marcar(fora, null);
+      if (lote.length === 0) continue;
+
+      marcar(
+        lote.map((e) => e.chave),
+        "enviando",
+      );
+      let parcial;
+      try {
+        parcial = await gravarEscolhasDoPdf({
+          empreendimentoId,
+          slug,
+          caminhoStaging,
+          escolhas: lote.map((e) => ({ indice: Number(e.chave), tipo: e.tipo, capa: e.capa })),
+        });
+      } catch {
+        parcial = null;
+      }
+      if (!parcial || !parcial.ok) {
+        erroGeral = parcial?.erro ?? "A conexão caiu no meio do envio.";
+        perdidas = lote.length + fila.filter((chave) => escolhasAgora.current[chave]?.incluir).length;
+        marcar(
+          lote.map((e) => e.chave),
+          "falhou",
+        );
+        break;
+      }
+      resultado.gravadas += parcial.gravadas;
+      resultado.duplicadas += parcial.duplicadas;
+      resultado.falhas.push(...parcial.falhas);
+      resultado.plantas.push(...parcial.plantas);
+      for (const item of parcial.porItem) {
+        const chave = String(item.indice);
+        marcar([chave], item.desfecho === "falhou" ? "falhou" : "entrou");
+        // O que entrou sai da lista: enviar de novo não o repete.
+        if (item.desfecho !== "falhou")
+          setEscolhas((atual) => (atual[chave] ? { ...atual, [chave]: { ...atual[chave], incluir: false, capa: false } } : atual));
+      }
     }
 
-    setResumo(null);
     const final: ResultadoImportacao = {
       entraram: resultado.gravadas,
-      falharam: resultado.falhas.length,
+      // O que um erro geral deixou sem enviar também ficou de fora.
+      falharam: resultado.falhas.length + perdidas,
       linhas: [
         resultado.gravadas > 0
           ? `${resultado.gravadas} ${resultado.gravadas === 1 ? "imagem adicionada" : "imagens adicionadas"}.`
@@ -166,6 +239,9 @@ export function OrigemPdf({
         resultado.duplicadas > 0
           ? `${resultado.duplicadas} ${resultado.duplicadas === 1 ? "já estava" : "já estavam"} na galeria.`
           : "",
+        tiradas > 0 ? `${tiradas} ${tiradas === 1 ? "tirada" : "tiradas"} da lista antes de enviar.` : "",
+        parar.current ? "Envio parado." : "",
+        erroGeral ?? "",
         ...resultado.falhas,
       ].filter(Boolean),
     };
@@ -203,6 +279,13 @@ export function OrigemPdf({
       );
     }
 
+    // Com erro no meio, o PDF e a grade ficam: o que entrou já saiu da lista,
+    // e tentar de novo manda só o resto.
+    if (erroGeral) {
+      setEtapa("parado");
+      return;
+    }
+
     // Só agora a apresentação pode ir embora: era dela que saía o texto com
     // o nome e a metragem de cada planta.
     await descartarPdfDeImportacao(caminhoStaging);
@@ -224,6 +307,7 @@ export function OrigemPdf({
             : item.parecePaginaInteira
               ? "Parece a página inteira da apresentação"
               : undefined,
+          estado: estados[String(item.indice)],
         }))
       : [];
 
@@ -288,6 +372,22 @@ export function OrigemPdf({
                 ? "Lendo as plantas…"
                 : "Adicionar ao imóvel"}
           </button>
+          {etapa === "gravando" ? (
+            <>
+              <p className="text-fluid-xs text-apoio">
+                Ainda dá para tirar da fila: toque em “Tirar da fila” na imagem que ainda não foi enviada.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  parar.current = true;
+                }}
+                className="w-full min-h-[44px] rounded-xl border border-linha-forte px-5 text-fluid-xs font-bold text-corpo"
+              >
+                Parar o envio
+              </button>
+            </>
+          ) : null}
         </>
       ) : null}
 
