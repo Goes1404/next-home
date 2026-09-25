@@ -1407,7 +1407,8 @@
    * o produto. Acompanha o tema porque sai do próprio token de acento.
    */
   .secao-banda {
-    background-color: color-mix(in srgb, var(--color-acento) 7%, var(--color-superficie));
+    --cor-da-faixa: color-mix(in srgb, var(--color-acento) 7%, var(--color-superficie));
+    background-color: var(--cor-da-faixa);
   }
 
   /*
@@ -1458,7 +1459,8 @@
    * limite do mínimo sobre a superfície clara.
    */
   .secao-funda {
-    background-color: color-mix(in srgb, var(--color-acento) 22%, var(--color-superficie));
+    --cor-da-faixa: color-mix(in srgb, var(--color-acento) 22%, var(--color-superficie));
+    background-color: var(--cor-da-faixa);
   }
 
   /*
@@ -2160,20 +2162,21 @@
  * O PERCURSO DA HOME (25/09/2026, pedido do usuário: "faz o 2 e o 3 juntos").
  *
  * Abaixo do herói, a home era um fundo liso de ponta a ponta. Duas camadas
- * agora, as duas SEM animação, e isso é a lição do vídeo do celular do mesmo
- * dia: efeito que depende de animação ligada à rolagem pode falhar calado
- * num navegador de verdade (Brave no Android). Aqui nada depende de nada:
+ * agora, e nenhuma depende de animação ligada à ROLAGEM — a lição do vídeo
+ * do celular do mesmo dia: isso pode falhar calado num navegador de verdade
+ * (Brave no Android). O deslize das linhas é animação comum, por tempo; se
+ * ela não rodar, o traço fica parado e continua lá:
  *
  * 1. A COR: um degradê vertical do tamanho do conteúdo, que atravessa os
  *    tons da marca (verde -> azul -> areia -> azul -> verde). Não se anima: a
  *    cor "muda conforme desce" porque é a PÁGINA que passa pela janela.
  * 2. A TEXTURA: papel quadriculado de projeto e plantas baixas em traço fino,
- *    num `::before` atrás do conteúdo. O desenho é MÁSCARA e a cor vem de
- *    `--textura-cor` (branco no claro, preto no escuro), então acompanha o
- *    tema sozinho — um SVG em `url()` não enxerga variável de CSS.
+ *    em camadas atrás do conteúdo, branco no claro e preto no escuro. Um SVG
+ *    em `url()` não enxerga variável de CSS, então é uma regra por tema.
+ *    O traço DESLIZA e brilha; o único movimento do fundo (ver abaixo).
  *
- * As faixas (`secao-banda`/`secao-funda`) continuam OPACAS, com a textura
- * desenhada por cima da cor delas (ver abaixo). O recorte é pela classe da
+ * As faixas (`secao-banda`/`secao-funda`) continuam OPACAS: a cor delas
+ * desce para uma camada abaixo da textura (ver abaixo). O recorte é pela classe da
  * home: `Secao.tsx` usa as mesmas faixas em outras páginas, que ficam como
  * estão.
  *
@@ -2193,8 +2196,6 @@
   --percurso-base: white;
   --percurso-tom: 22%;
   --percurso: 70%;
-  --textura-cor: white;
-  --textura: 55%;
   isolation: isolate;
   background-image: linear-gradient(
     180deg,
@@ -2211,40 +2212,75 @@
   --percurso-base: var(--color-fundo);
   --percurso-tom: 14%;
   --percurso: 100%;
-  --textura-cor: black;
-  --textura: 45%;
+}
+/*
+ * AS LINHAS SE MOVEM E BRILHAM (25/09/2026).
+ *
+ * Uma camada só, `::before`, com três desenhos empilhados: a grade de
+ * projeto, a planta baixa e, por cima, a mesma planta ACESA (traço mais forte
+ * com halo) só dentro de manchas redondas. Ela desliza inteira, então as
+ * manchas acesas viajam com as linhas: é o "brilha quando se mexe".
+ *
+ * Por que UMA camada, e o halo desenhado no SVG: medido no navegador de
+ * teste, camada por faixa + `drop-shadow` custou 117-133 ms por quadro;
+ * cada camada animada a mais dobrava o quadro. O desfoque do halo é
+ * rasterizado uma vez com o SVG, não um filtro a cada quadro.
+ *
+ * Só `transform`: deslocar por `background-position` repintaria tudo a cada
+ * quadro, parado ou não. A camada é 720px maior que a superfície e anda
+ * exatamente 720px, múltiplo dos dois ladrilhos (grade 180, planta 720): o
+ * fim do ciclo é idêntico ao começo e o laço não tem emenda. O invólucro
+ * corta a sobra com `overflow: clip`, que não cria contêiner de rolagem.
+ *
+ * Para a camada passar por cima da cor das faixas, a cor delas desce para um
+ * `::before` em z -2; a faixa não pode criar contexto de empilhamento (nada
+ * de `isolation`/`z-index`/`overflow` nela), senão esse -2 fica preso dentro.
+ */
+.home-percurso {
+  overflow: clip;
 }
 .home-percurso::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: calc(100% + 720px);
+  height: calc(100% + 720px);
   z-index: -1;
   pointer-events: none;
-  background-color: color-mix(in oklab, var(--textura-cor) var(--textura), transparent);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none' stroke='%23000'%3E%3Cpath d='M32 0V160M64 0V160M96 0V160M128 0V160M0 32H160M0 64H160M0 96H160M0 128H160' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M.5 0V160M0 .5H160' stroke-width='1'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='%23000' stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none' stroke='%23000'%3E%3Cpath d='M32 0V160M64 0V160M96 0V160M128 0V160M0 32H160M0 64H160M0 96H160M0 128H160' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M.5 0V160M0 .5H160' stroke-width='1'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='%23000' stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/svg%3E");
-  -webkit-mask-size: 160px 160px, 720px 720px;
-  mask-size: 160px 160px, 720px 720px;
-  -webkit-mask-position: 0 0, 40px 120px;
-  mask-position: 0 0, 40px 120px;
+  background-size: 720px 720px, 180px 180px, 720px 720px;
+  background-position: 40px 120px, 0 0, 40px 120px;
+  will-change: transform;
+  animation: planta-desliza 45s linear infinite;
 }
-/*
- * Nas FAIXAS a textura entra por `background-image`, sobre a cor OPACA
- * original delas. Uma primeira versão deixava a faixa translúcida para o
- * fundo passar, e isso escurecia a faixa (o fundo é mais escuro que a
- * superfície dela). Com a cor opaca, a única diferença é o traço, de cor fixa
- * por tema — dentro de `url()` não há variável de CSS, então são DUAS regras,
- * como a `.select-seta`.
- */
-:root[data-tema="claro"] .home-percurso :is(.secao-banda, .secao-funda) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none' stroke='rgba%28255,255,255,0.5%29'%3E%3Cpath d='M32 0V160M64 0V160M96 0V160M128 0V160M0 32H160M0 64H160M0 96H160M0 128H160' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M.5 0V160M0 .5H160' stroke-width='1'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='rgba%28255,255,255,0.5%29' stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/svg%3E");
-  background-size: 160px 160px, 720px 720px;
-  background-position: 0 0, 40px 120px;
+.home-percurso :is(.secao-banda, .secao-funda) {
+  position: relative;
+  background-color: transparent;
 }
-:root[data-tema="escuro"] .home-percurso :is(.secao-banda, .secao-funda) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none' stroke='rgba%280,0,0,0.4%29'%3E%3Cpath d='M32 0V160M64 0V160M96 0V160M128 0V160M0 32H160M0 64H160M0 96H160M0 128H160' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M.5 0V160M0 .5H160' stroke-width='1'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='rgba%280,0,0,0.4%29' stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/svg%3E");
-  background-size: 160px 160px, 720px 720px;
-  background-position: 0 0, 40px 120px;
+.home-percurso :is(.secao-banda, .secao-funda)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: var(--cor-da-faixa);
+}
+@keyframes planta-desliza {
+  to {
+    transform: translate(-720px, -720px);
+  }
+}
+:root[data-tema="claro"] .home-percurso::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='rgba%28255,255,255,0.95%29'%3E%3Cdefs%3E%3CradialGradient id='r' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='1'%3E%3Cstop offset='0' stop-color='white'/%3E%3Cstop offset='1' stop-color='white' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='a' href='%23r' gradientTransform='translate%28200 220%29 scale%28240%29'/%3E%3CradialGradient id='b' href='%23r' gradientTransform='translate%28540 520%29 scale%28200%29'/%3E%3Cmask id='m' maskUnits='userSpaceOnUse' x='0' y='0' width='720' height='720'%3E%3Crect width='720' height='720' fill='url%28%23a%29'/%3E%3Crect width='720' height='720' fill='url%28%23b%29'/%3E%3C/mask%3E%3Cfilter id='h' x='-5%25' y='-5%25' width='110%25' height='110%25'%3E%3CfeGaussianBlur stdDeviation='2.2'/%3E%3C/filter%3E%3C/defs%3E%3Cg mask='url%28%23m%29'%3E%3Cg filter='url%28%23h%29' stroke-width='3'%3E%3Cpath d='M716 0V720M32 0V720M68 0V720M104 0V720M176 0V720M212 0V720M248 0V720M284 0V720M356 0V720M392 0V720M428 0V720M464 0V720M536 0V720M572 0V720M608 0V720M644 0V720M0 636H720M0 672H720M0 708H720M0 24H720M0 96H720M0 132H720M0 168H720M0 204H720M0 276H720M0 312H720M0 348H720M0 384H720M0 456H720M0 492H720M0 528H720M0 564H720' stroke-opacity='.35' stroke-width='3'/%3E%3Cpath d='M680.5 0V720M140.5 0V720M320.5 0V720M500.5 0V720M0 600.5H720M0 60.5H720M0 240.5H720M0 420.5H720' stroke-width='3'/%3E%3Cg stroke-width='4'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='3' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='3'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='3'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='3' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='3' stroke-opacity='.6'/%3E%3C/g%3E%3C/g%3E%3Cg%3E%3Cpath d='M716 0V720M32 0V720M68 0V720M104 0V720M176 0V720M212 0V720M248 0V720M284 0V720M356 0V720M392 0V720M428 0V720M464 0V720M536 0V720M572 0V720M608 0V720M644 0V720M0 636H720M0 672H720M0 708H720M0 24H720M0 96H720M0 132H720M0 168H720M0 204H720M0 276H720M0 312H720M0 348H720M0 384H720M0 456H720M0 492H720M0 528H720M0 564H720' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M680.5 0V720M140.5 0V720M320.5 0V720M500.5 0V720M0 600.5H720M0 60.5H720M0 240.5H720M0 420.5H720' stroke-width='1'/%3E%3Cg stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' fill='none' stroke='rgba%28255,255,255,0.52%29'%3E%3Cpath d='M36 0V180M72 0V180M108 0V180M144 0V180M0 36H180M0 72H180M0 108H180M0 144H180' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M.5 0V180M0 .5H180' stroke-width='1'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='rgba%28255,255,255,0.52%29' stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/svg%3E");
+}
+:root[data-tema="escuro"] .home-percurso::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='%23003d36'%3E%3Cdefs%3E%3CradialGradient id='r' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='1'%3E%3Cstop offset='0' stop-color='white'/%3E%3Cstop offset='1' stop-color='white' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='a' href='%23r' gradientTransform='translate%28200 220%29 scale%28240%29'/%3E%3CradialGradient id='b' href='%23r' gradientTransform='translate%28540 520%29 scale%28200%29'/%3E%3Cmask id='m' maskUnits='userSpaceOnUse' x='0' y='0' width='720' height='720'%3E%3Crect width='720' height='720' fill='url%28%23a%29'/%3E%3Crect width='720' height='720' fill='url%28%23b%29'/%3E%3C/mask%3E%3Cfilter id='h' x='-5%25' y='-5%25' width='110%25' height='110%25'%3E%3CfeGaussianBlur stdDeviation='2.2'/%3E%3C/filter%3E%3C/defs%3E%3Cg mask='url%28%23m%29'%3E%3Cg filter='url%28%23h%29' stroke-width='3'%3E%3Cpath d='M716 0V720M32 0V720M68 0V720M104 0V720M176 0V720M212 0V720M248 0V720M284 0V720M356 0V720M392 0V720M428 0V720M464 0V720M536 0V720M572 0V720M608 0V720M644 0V720M0 636H720M0 672H720M0 708H720M0 24H720M0 96H720M0 132H720M0 168H720M0 204H720M0 276H720M0 312H720M0 348H720M0 384H720M0 456H720M0 492H720M0 528H720M0 564H720' stroke-opacity='.35' stroke-width='3'/%3E%3Cpath d='M680.5 0V720M140.5 0V720M320.5 0V720M500.5 0V720M0 600.5H720M0 60.5H720M0 240.5H720M0 420.5H720' stroke-width='3'/%3E%3Cg stroke-width='4'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='3' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='3'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='3'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='3' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='3' stroke-opacity='.6'/%3E%3C/g%3E%3C/g%3E%3Cg%3E%3Cpath d='M716 0V720M32 0V720M68 0V720M104 0V720M176 0V720M212 0V720M248 0V720M284 0V720M356 0V720M392 0V720M428 0V720M464 0V720M536 0V720M572 0V720M608 0V720M644 0V720M0 636H720M0 672H720M0 708H720M0 24H720M0 96H720M0 132H720M0 168H720M0 204H720M0 276H720M0 312H720M0 348H720M0 384H720M0 456H720M0 492H720M0 528H720M0 564H720' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M680.5 0V720M140.5 0V720M320.5 0V720M500.5 0V720M0 600.5H720M0 60.5H720M0 240.5H720M0 420.5H720' stroke-width='1'/%3E%3Cg stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' fill='none' stroke='rgba%280,0,0,0.42%29'%3E%3Cpath d='M36 0V180M72 0V180M108 0V180M144 0V180M0 36H180M0 72H180M0 108H180M0 144H180' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M.5 0V180M0 .5H180' stroke-width='1'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='rgba%280,0,0,0.42%29' stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/svg%3E");
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-percurso::before {
+    animation: none;
+  }
 }
 
 /* Anel do botão do WhatsApp: expande e some, uma vez a cada 6s. */

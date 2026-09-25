@@ -51,21 +51,62 @@ describe("fundo do percurso da home", () => {
   it("o traço e o tom vão na direção oposta ao texto, em cada tema", () => {
     const bloco = blocoDoPercurso();
     const claro = regra(bloco, ".home-percurso");
-    expect(claro).toMatch(/--textura-cor:\s*white;/);
     expect(claro).toMatch(/--percurso-base:\s*white;/);
     const tom = Number(/--percurso-tom:\s*(\d+)%/.exec(claro)?.[1]);
     expect(tom).toBeLessThanOrEqual(22);
 
-    const escuro = regra(bloco, ':root[data-tema="escuro"] .home-percurso');
-    expect(escuro).toMatch(/--textura-cor:\s*black;/);
-
-    const faixaClaro = regra(bloco, ':root[data-tema="claro"] .home-percurso :is(.secao-banda, .secao-funda)');
-    expect(faixaClaro).toContain("stroke='rgba%28255,255,255");
-    const faixaEscuro = regra(bloco, ':root[data-tema="escuro"] .home-percurso :is(.secao-banda, .secao-funda)');
-    expect(faixaEscuro).toContain("stroke='rgba%280,0,0");
+    // Traço e brilho: branco no claro; traço preto e brilho teal claro no escuro.
+    expect(regra(bloco, ':root[data-tema="claro"] .home-percurso::before')).toContain("stroke='rgba%28255,255,255");
+    expect(regra(bloco, ':root[data-tema="escuro"] .home-percurso::before')).toContain("stroke='rgba%280,0,0");
   });
 
-  it("nada no fundo depende de animação", () => {
-    expect(blocoDoPercurso()).not.toMatch(/\banimation(-[a-z]+)?\s*:/);
+  /*
+   * As linhas deslizam e brilham (25/09/2026). Regressões caladas, todas
+   * medidas na construção: uma camada por faixa com `drop-shadow` custou
+   * 117-133 ms por quadro, e cada camada animada a mais dobrava o quadro
+   * (o halo vai DESENHADO no SVG, numa camada só); deslocar por
+   * `background-position` ou `mask-position` repinta tudo; e andar um tanto
+   * que não é múltiplo dos ladrilhos faz o laço saltar no fim do ciclo.
+   */
+  it("as linhas só se movem por transform, numa camada só, num laço sem emenda", () => {
+    const bloco = blocoDoPercurso();
+    const quadros = [...bloco.matchAll(/@keyframes\s+([\w-]+)\s*\{([\s\S]*?)\n\}/g)];
+    expect(quadros.map((q) => q[1]).sort()).toEqual(["planta-desliza"]);
+    for (const [, , corpo] of quadros) {
+      for (const [, prop] of corpo.matchAll(/([a-z-]+)\s*:/g)) expect(prop).toBe("transform");
+    }
+    const camada = regra(bloco, ".home-percurso::before");
+    expect(bloco).not.toContain(".home-percurso::after");
+    expect(bloco).toMatch(/\.home-percurso \{\s*overflow:\s*clip;/);
+    expect(bloco).not.toMatch(/(^|[;{\s])filter\s*:/m);
+    expect(bloco).not.toMatch(/animation[^;]*(background|mask)-position/);
+
+    const passo = /translate\(-(\d+)px,\s*-(\d+)px\)/.exec(bloco);
+    expect(passo, "deslocamento não encontrado").not.toBeNull();
+    const [dx, dy] = [Number(passo![1]), Number(passo![2])];
+    const tamanho = /background-size:([^;]*);/.exec(camada)?.[1] ?? "";
+    const ladrilhos = [...tamanho.matchAll(/(\d+)px \d+px/g)].map((m) => Number(m[1]));
+    expect(ladrilhos.length).toBe(3);
+    for (const t of ladrilhos) {
+      expect(dx % t).toBe(0);
+      expect(dy % t).toBe(0);
+    }
+    // A camada sobra exatamente o que anda, senão a borda aparece no fim.
+    expect(camada).toContain(`width: calc(100% + ${dx}px);`);
+    expect(camada).toContain(`height: calc(100% + ${dy}px);`);
+  });
+
+  it("a faixa não cria contexto de empilhamento, senão a cor dela cobre as linhas", () => {
+    const faixa = regra(blocoDoPercurso(), ".home-percurso :is(.secao-banda, .secao-funda)");
+    expect(faixa).not.toMatch(/isolation|z-index|overflow/);
+  });
+
+  it("quem pediu menos movimento vê as linhas paradas", () => {
+    const bloco = blocoDoPercurso();
+    const i = bloco.indexOf("@media (prefers-reduced-motion: reduce)");
+    expect(i).toBeGreaterThanOrEqual(0);
+    const media = bloco.slice(i);
+    expect(media).toContain(".home-percurso::before");
+    expect(media).toMatch(/animation:\s*none/);
   });
 });
