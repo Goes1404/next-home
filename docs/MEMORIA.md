@@ -7856,3 +7856,26 @@ Nota: [[o-percurso-da-home]].
   capturas e desalinham comparação por índice.
 - **A home rola a ~36 ms por quadro num celular com CPU 4x**, com ou sem o
   fundo novo. Anterior, não investigado.
+
+### As linhas da planta se movem e brilham (25/09/2026)
+
+Nota: [[o-percurso-da-home]].
+
+- **Uma camada animada só, por `transform`.** Uma por faixa com
+  `drop-shadow` custou 117-133 ms por quadro; cada camada animada a mais
+  dobrava o quadro. O halo do brilho vai desenhado DENTRO do SVG
+  (`feGaussianBlur` + máscara radial), rasterizado uma vez.
+- **Laço sem emenda = andar múltiplo de todos os ladrilhos.** A grade foi de
+  160 para 180px para 720 servir aos dois.
+- **Camada que tem de passar por cima da cor de uma faixa:** a cor desce
+  para um `::before` em z -2, e a faixa não pode ter contexto de
+  empilhamento próprio (`isolation`, `z-index`, `overflow`).
+- **Brilho no tema escuro é o pior caso de contraste**: brilhar é clarear, e
+  o texto é claro. Teal claro deu 1,41:1 sob o texto de apoio; teal escuro
+  opaco `#003d36` dá 4,93:1. Medir com o brilho no pior ponto, não na média.
+- **`percent` dentro de SVG em data URI vira escape**: `x='-5%'` quebra;
+  é `%25`.
+- **Medir texto por script com rolagem suave ligada não mede nada**:
+  `scrollTo` volta antes de rolar e o laço vê "0 textos". Forçar
+  `behavior: "instant"`.
+

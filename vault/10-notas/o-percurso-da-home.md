@@ -7,7 +7,7 @@ custou: uma tarde — a textura não aparecia, depois quebrou o build, depois es
 codigo: src/app/globals.css (.home-percurso), src/app/(institucional)/page.tsx, src/app/percursoDaHome.test.ts
 created: 2026-09-25
 updated: 2026-09-25
-summary: Abaixo do herói, a home ganhou fundo que muda de cor ao descer e textura de planta baixa, as duas sem animação e calibradas para só AFASTAR o fundo da cor do texto.
+summary: Abaixo do herói, a home ganhou fundo que muda de cor ao descer e textura de planta baixa que desliza e brilha, calibradas para só AFASTAR o fundo da cor do texto — inclusive no pior ponto do brilho.
 ---
 
 # O percurso da home
@@ -62,7 +62,41 @@ celular com CPU 4x igual com e sem (~36 ms por quadro nas duas — ver abaixo).
 - **A home rola a ~36 ms por quadro num celular com CPU 4x**, com ou sem o
   fundo novo — bem acima de 60 fps. Problema anterior, não investigado aqui.
 
-Guarda: `percursoDaHome.test.ts` (aspas, direção do traço e do tom, nada de
-animação), provocada com as três regressões reais.
+## As linhas se movem e brilham (mesmo dia, segundo pedido)
+
+A planta desliza devagar (45s por ciclo) e manchas acesas viajam com ela.
+
+- **Uma camada só, por `transform`.** A primeira versão pôs uma camada por
+  superfície (invólucro + 4 faixas) com `drop-shadow` no brilho: 117-133 ms
+  por quadro no desktop de teste, contra 16,7. Cada camada animada a mais
+  dobrava o quadro. Hoje o `::before` do invólucro leva três desenhos
+  empilhados (brilho, grade, planta) e anda inteiro.
+- **O halo é DESENHADO no SVG** (`feGaussianBlur` e uma máscara radial dentro
+  do próprio arquivo), rasterizado uma vez. Como filtro de CSS ele custaria
+  a cada quadro.
+- **O laço não tem emenda porque anda um múltiplo dos ladrilhos.** A grade
+  passou de 160 para 180px para 720 (a planta) ser múltiplo dos dois; a
+  camada é 720px maior que a superfície e anda exatamente 720px.
+- **Para a planta passar por cima das faixas**, a cor delas desceu para um
+  `::before` em z -2 (via `--cor-da-faixa`, a mesma variável da regra
+  original). A faixa NÃO pode ter `isolation`, `z-index` nem `overflow`: com
+  contexto de empilhamento próprio, o -2 fica preso dentro dela e a cor
+  cobre as linhas.
+- **No escuro, brilho é o pior caso de contraste.** Teal claro sob o texto
+  de apoio cinza deu 1,41:1 no pior ponto; teal a 20% ainda 2,90. O que
+  passa é um teal ESCURO opaco (`#003d36`): 4,93:1 no pior ponto, e ainda se
+  vê como linha acesa sobre o quase-preto. Medido com a mancha acesa em oito
+  posições, pixel a pixel sob cada texto. No claro o brilho é branco e não
+  piora nada.
+- **A medição de quadros no navegador de teste é pessimista** (SwiftShader,
+  GPU emulada na CPU): o celular emulado ficou em 16,7 ms com e sem; o
+  desktop 1280 foi a ~33 ms com a animação. Não verificado em aparelho real.
+- **Ao medir texto rolando por script, desligar a rolagem suave**: com ela,
+  `scrollTo` volta antes de rolar e a medição não vê texto nenhum ("0
+  textos"), o que parece aprovação.
+
+Guarda: `percursoDaHome.test.ts` (aspas, direção do traço e do tom, só
+`transform`, uma camada, laço múltiplo dos ladrilhos, faixa sem contexto de
+empilhamento, menos movimento parado), provocada.
 
 Ver [[video-do-celular-rola-com-a-pagina]].
