@@ -18,6 +18,13 @@ export function FundoDoPainel() {
         <i />
         <i />
       </div>
+      <div aria-hidden className="painel-bolhas">
+        <b />
+        <b />
+        <b />
+        <b />
+        <b />
+      </div>
       <div aria-hidden className="painel-grao" />
     </>
   );

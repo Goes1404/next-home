@@ -90,6 +90,26 @@ describe("profundidade do painel: o que custa quadro fica fora", () => {
     expect(reduzido).toMatch(/\.painel-aurora > i:nth-child\(n\)[^{]*\{\s*animation:\s*none/);
   });
 
+  it("as bolhas se movem só com translate/scale, todas ligadas, e param com menos movimento", () => {
+    const ini = css.indexOf(".painel-bolhas {");
+    const fim = css.indexOf(".painel-grao {", ini);
+    expect(ini).toBeGreaterThanOrEqual(0);
+    expect(fim).toBeGreaterThan(ini);
+    const bolhas = css.slice(ini, fim);
+    expect(bolhas).not.toMatch(/backdrop-filter\s*:|\bfilter\s*:/);
+    const nomes = [...bolhas.matchAll(/@keyframes (bolha-[a-z])\s*\{/g)].map((m) => m[1]);
+    expect(nomes.length).toBeGreaterThanOrEqual(3);
+    for (const nome of nomes) {
+      const corpo = bloco(bolhas, `@keyframes ${nome} {`);
+      const props = [...corpo.matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]);
+      expect(props.length).toBeGreaterThan(0);
+      for (const p of props) expect(["translate", "scale"]).toContain(p);
+      expect(bolhas).toMatch(new RegExp(`animation-name:\\s*${nome}\\s*;`));
+    }
+    const reduzido = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce)"));
+    expect(reduzido).toMatch(/\.painel-bolhas > b:nth-child\(n\)[^{]*\{\s*animation:\s*none/);
+  });
+
   it.each(["(painel)/_componentes/HeroInicio.tsx", "(painel)/_componentes/CabecalhoDeTela.tsx"])(
     "%s usa cartao-heroi sem backdrop-blur",
     (arquivo) => {
