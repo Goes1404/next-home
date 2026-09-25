@@ -14,7 +14,7 @@ codigo:
   - src/app/corretor/(painel)/layout.tsx
   - src/app/corretor/profundidadeDoPainel.test.ts
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-25
 fonte: pedido "muito sem contraste e sem graça; fluido, com bastante efeitos, sem perder performance" (24/09/2026) — medido num harness com Playwright, CSS de produção
 summary: Fundo tingido + aurora + grão, cartão com sombra em camadas e foco de luz que segue o mouse, herói de vidro SEM backdrop-blur, varredura uma vez por tela, transição de rota. Medido antes e depois — o blur do herói custava 2,5x o quadro; a aurora só se move com rolagem e ponteiro, porque animação infinita produz quadro para sempre.
 ---
@@ -161,3 +161,27 @@ recebe propriedade visual; harness do painel monta os portais.**
 Os dois efeitos retirados por engano (transição de rota e movimento da
 aurora) **voltaram no mesmo dia**, conferidos no build de produção com a
 bolha do consultor montada.
+
+## 25/09: o fundo passou a se mexer sozinho
+
+Pedido do usuário depois de o painel voltar: "adicione efeitos que se mexem
+no background". Cada mancha da aurora ganhou uma deriva própria (19 a 31s,
+alternada, ciclos que não se sincronizam) e entrou uma quarta luz, menor, que
+atravessa a tela. Detalhes em [[movimento-do-painel-tem-regua]].
+
+- **`translate`/`scale`, não `transform`.** O `transform` das manchas já é
+  conduzido pela rolagem (`animation-timeline: scroll(root)`); as
+  propriedades individuais se compõem com ele em vez de uma apagar a outra.
+  As duas animações convivem na mesma lista (`animation-name: aurora-a,
+  deriva-a` com `animation-timeline: scroll(root), auto`).
+- **Nome de animação por extenso, nunca em `var()`**: o build só mantém o
+  `@keyframes` que ele vê referenciado. Conferido no CSS compilado.
+- **Medido:** 16,7 ms por quadro com e sem deriva, zero quadro acima de 33
+  ms, celular (Pixel 7, CPU 4x) rolando e desktop com o mouse, com a bolha
+  do consultor montada na árvore.
+- **Menos movimento não desligava a deriva** na primeira versão: a regra
+  `> i` perdia na especificidade para os `:nth-child(k)`. Pego na medição
+  (`reducedMotion: "reduce"` no Playwright), não no olho.
+- **A guarda foi reescrita, não apagada**, e na provocação ela deixou passar
+  tirar a deriva só da regra do `@supports` — justo a que vale no Chrome.
+  Hoje cobra o nome nas duas regras.

@@ -7773,3 +7773,20 @@ superfície. Depois: 1,21 (claro) e 1,18 (escuro), texto todo em AA,
   confirmar o painel funcionando. Conferidos antes de subir no build de
   produção COM a bolha do consultor montada: conteúdo visível nos dois
   temas, navegação entre telas, aurora mudando com a rolagem, zero erro.
+
+### O fundo passou a se mexer sozinho (25/09/2026)
+
+- **A régua "nada infinito no painel" caiu para o fundo, por pedido e por
+  medição.** Ela nasceu em 24/09 de 43,6 ms por quadro que eram do
+  `backdrop-blur` dos heróis, não da animação. Refeito sem o blur, com a
+  bolha do consultor montada: 16,7 ms com e sem deriva, celular CPU 4x e
+  desktop. A aurora deriva sozinha (19–31s) só com `translate`/`scale`;
+  `transform` continua sendo da rolagem, e as duas se compõem.
+- **Menos movimento tem de GANHAR na especificidade.** `.painel-aurora > i
+  { animation: none }` perdia para os `:nth-child(k)` que nomeiam as
+  animações, e a deriva seguia rodando para quem pediu menos movimento. Só
+  a medição com `reducedMotion: "reduce"` mostrou.
+- **Nome de animação vai por extenso.** Em `var()` o build pode descartar o
+  `@keyframes` que ele não vê referenciado; conferir no CSS compilado.
+- **Com algo andando sozinho no fundo, `backdrop-filter` volta a custar por
+  quadro.** Antes de pôr vidro sobre o painel, medir.

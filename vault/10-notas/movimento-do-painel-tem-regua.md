@@ -7,7 +7,7 @@ status: evergreen
 custou: baixo
 codigo: [src/app/globals.css, src/app/corretor/(painel)/_componentes/HeroInicio.tsx, src/app/corretor/(painel)/funil/Quadro.tsx, src/app/corretor/(painel)/_componentes/LuzDosCartoes.tsx]
 created: 2026-09-07
-updated: 2026-09-24
+updated: 2026-09-25
 fonte: rodada de refinamento visual de 07/09/2026
 summary: UM movimento orquestrado por carga (o medidor do Início enchendo) e todo o resto respondendo a gesto — menu que abre, cartões que a expansão revelou, aviso que chega. Entrada animada em toda seção é o tell de página gerada.
 ---
@@ -44,6 +44,7 @@ somou movimento de FUNDO e de ROTA, e a régua aguentou:
 | troca de tela (`painel-sai` / `painel-entra`, View Transitions) | a navegação |
 | aurora do fundo derivando | a ROLAGEM (`animation-timeline: scroll()`) |
 | aurora inclinando ±1,2vw | o PONTEIRO |
+| aurora passeando sozinha (19–31s, alternada) | NADA — a exceção declarada, desde 25/09 |
 | foco de luz no cartão | o ponteiro sobre ele |
 | varredura do herói (uma vez, 0,9s depois de montar) | a tela nova chegando — o momento de carga, junto com o medidor |
 
@@ -53,14 +54,28 @@ cada vsync para sempre, e cada um desses quadros refazia o `backdrop-blur`
 dos heróis (43,6 ms/quadro no desktop parado). **"Nada anda sozinho" deixou
 de ser gosto e virou número.**
 
+**Em 25/09 o número foi refeito, e a regra caiu para o fundo.** O usuário
+pediu um fundo que se mexe. Sem o blur nos heróis, a mesma medição (bolha do
+consultor montada, celular CPU 4x rolando, desktop com o mouse) deu 16,7 ms
+por quadro COM e SEM a deriva, e nenhum quadro acima de 33 ms. O custo de
+2024-09-24 era do `backdrop-filter` refeito a cada quadro, não da animação.
+A deriva voltou, estreita: só `translate`/`scale` (compositor), nunca
+`transform` (é da rolagem), e desligada com menos movimento.
+
 ## As regras que valem para a próxima animação
 
 - **O fundo se move com a rolagem e o mouse** (retirado por algumas horas
   em 24/09 por um diagnóstico errado de GPU; a causa real do incidente era
   o fundo pintado no portal da bolha do consultor).
-- **Nenhuma animação infinita no painel.** Quadro por vsync para sempre, e
-  todo `backdrop-filter` na tela é refeito em cada um. O que precisa parecer
-  vivo se prende a um gesto (rolagem, ponteiro) ou roda uma vez por montagem.
+- **Animação infinita só no FUNDO, e só de compositor.** A aurora é a
+  exceção declarada (`translate`/`scale`, atrás de tudo, sem nada desfocando
+  por cima). Fora dela continua valendo: o que precisa parecer vivo se
+  prende a um gesto ou roda uma vez por montagem. E enquanto houver algo
+  andando sozinho, `backdrop-filter` na tela volta a custar por quadro —
+  medir antes de pôr vidro sobre o painel.
+- **Menos movimento precisa ganhar na especificidade.** Os nomes das
+  animações da aurora moram em `:nth-child(k)`; um `> i { animation: none }`
+  PERDE para eles e a deriva seguia rodando. A regra usa `:nth-child(n)`.
 - **Um momento orquestrado por carga, não um por seção.** Fade-and-slide em
   todo bloco é o tell de página gerada (frontend-design, 07/09). O momento
   escolhido é o medidor porque ele É o número que muda quando a corretora
