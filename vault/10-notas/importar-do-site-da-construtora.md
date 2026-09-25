@@ -98,3 +98,14 @@ minuto. `ResultadoDaImportacao` (compartilhado pelas abas site, PDF e Drive)
 "Ver no imóvel". Junto sai o aviso flutuante do painel (`useAvisos`). Só
 duplicadas NÃO vira aviso de erro: nada falhou, só não havia o que trazer.
 Guarda: `resultadoDaImportacao.test.tsx`.
+
+## Tirar da fila no PDF e no Drive (25/09)
+
+O Drive já enviava foto a foto: bastou conferir a lista por ref na hora em
+que cada uma sai, como no site. O PDF não: `gravarEscolhasDoPdf` gravava
+TODAS as escolhas numa chamada só, e depois do clique não havia fila para
+tirar nada. Hoje a action devolve `porItem` (o desfecho de cada imagem) e a
+tela manda em lotes de 4 (`LOTE_PDF`), conferindo a lista antes de cada
+lote. Um por vez seria uma releitura do PDF por imagem; tudo de uma vez não
+deixa tirar. Com erro no meio, o PDF e a grade ficam, e o que entrou já saiu
+da lista — tentar de novo manda só o resto.

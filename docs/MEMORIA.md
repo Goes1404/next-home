@@ -7959,3 +7959,8 @@ Nota: [[importar-do-site-da-construtora]].
   três abas mostram `ResultadoDaImportacao` (cor por desfecho, rola para a
   vista, recebe foco, leva ao imóvel) e o aviso flutuante. "Só duplicadas" não
   é erro: nada falhou.
+- **Para tirar da fila, precisa EXISTIR fila** (25/09): o PDF gravava todas
+  as escolhas numa action só, então nada do lado da tela alcançava o envio
+  depois do clique. Virou lotes de 4 (`LOTE_PDF`) com a action devolvendo o
+  desfecho por imagem (`porItem`). O tamanho do lote é a troca entre reler o
+  PDF a cada chamada e poder tirar o que ainda não saiu.
