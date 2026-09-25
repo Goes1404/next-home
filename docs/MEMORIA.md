@@ -7934,3 +7934,13 @@ Nota: [[importar-do-site-da-construtora]].
   entrou nos dois; o `tsc` pegou porque o Drive não tem `entrada.url`. Ao
   editar por script, conferir a contagem antes (`s.count(old) == 1`).
 
+
+### RSF: o site é HTML, o que faltava era o domínio do tour (25/09/2026)
+
+- `rsf.com.br` entrega texto, fotos e plantas no HTML: não precisa de F5.
+- O tour 360 é da **3D Explora** (`3dexplora.com.br/seutour.aspx?codigo=`),
+  agora reconhecido. A URL é recomposta pelo `codigo`: a RSF cola o endereço
+  duas vezes no mesmo `src`. O iframe do YouTube com `src=""` é empreendimento
+  sem vídeo, não conteúdo montado por JS.
+- Antes de concluir "precisa de navegador", procurar no HTML cru o que o
+  leitor não reconheceu.

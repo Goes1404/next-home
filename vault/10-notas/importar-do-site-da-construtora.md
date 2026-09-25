@@ -64,3 +64,15 @@ Ver [[planta-que-chega-como-foto]].
   `lembrarOrigem.test.ts`. É a lição de 07/09 (a 0101 subiu no código e não
   no banco, e três telas caíram) virando desenho.
 
+
+## RSF e o tour da 3D Explora (25/09)
+
+Medido com `rsf.com.br/carapicuiba/viva-clube-residencial-carapicuiba/`: a
+página vem pronta no HTML (texto de ~5 mil caracteres, 49 fotos de 640×960,
+plantas reconhecidas) e **não precisa de navegador (F5)**. O que faltava era
+o tour: a RSF usa `3dexplora.com.br/seutour.aspx?codigo=…`, e o leitor só
+conhecia Matterport e Kuula. Hoje reconhece, recompondo a URL só pelo
+`codigo` — a página publica o endereço colado duas vezes no mesmo `src`. O
+iframe do YouTube da página vem com `src=""` porque o empreendimento não tem
+vídeo: não é conteúdo montado por JS. Antes de pedir F5 para um site,
+procurar o que falta no HTML cru: aqui era um domínio de tour desconhecido.
