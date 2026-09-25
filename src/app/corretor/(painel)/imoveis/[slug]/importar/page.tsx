@@ -5,6 +5,8 @@ import { ImportarClient } from "./ImportarClient";
 
 interface Props {
   params: Promise<{ slug: string }>;
+  /** `?site=` vem do cadastro de imóvel novo pelo link da construtora. */
+  searchParams?: Promise<{ site?: string }>;
 }
 
 /*
@@ -31,8 +33,9 @@ export async function generateMetadata({ params }: Props) {
 
 export const dynamic = "force-dynamic";
 
-export default async function ImportarMaterialPage({ params }: Props) {
+export default async function ImportarMaterialPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const site = (await searchParams)?.site;
   const imovel = await getEmpreendimentoDoPainel(slug);
 
   // `id` é opcional no tipo porque a vitrine também monta empreendimento a
@@ -52,6 +55,7 @@ export default async function ImportarMaterialPage({ params }: Props) {
         empreendimentoId={imovel.id}
         slug={slug}
         nome={imovel.nome}
+        linkDoSite={typeof site === "string" ? site : undefined}
         cadastroAtual={{
           nome: imovel.nome,
           construtora: imovel.construtora,

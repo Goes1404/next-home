@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { STATUS_LABEL, TIPO_LABEL, type StatusObra, type TipoImovel } from "@/lib/types";
 import { pedidoDeImagemDoCadastro } from "@/lib/imagens/pedidoDoCadastro";
 import { RECEITAS } from "@/lib/imagens/receitas";
-import { criarImovel } from "./acoes";
+import { criarImovel, lerSiteParaNovoImovel } from "./acoes";
 
 /**
  * Receitas que funcionam SEM foto anexada.
@@ -54,6 +54,42 @@ export function FormNovoImovel({ inicial }: { inicial: PreenchimentoInicial }) {
   const [construtora, setConstrutora] = useState("");
   const [status, setStatus] = useState<StatusObra>(inicial.status);
   const [tipo, setTipo] = useState<TipoImovel>("apartamento");
+  const [bairrosSugeridos, setBairrosSugeridos] = useState<string[]>(inicial.bairrosDaFonte ?? []);
+
+  // O site da construtora (25/09/2026): preenche o formulário e, depois de
+  // criar, abre o importador com o link já colado para trazer as fotos.
+  const [linkDoSite, setLinkDoSite] = useState("");
+  const [siteLido, setSiteLido] = useState<string | null>(null);
+  const [lendoSite, setLendoSite] = useState(false);
+  const [avisoSite, setAvisoSite] = useState<string | null>(null);
+
+  async function lerSite() {
+    setAvisoSite(null);
+    setLendoSite(true);
+    try {
+      const r = await lerSiteParaNovoImovel(linkDoSite);
+      if (!r.ok) {
+        setAvisoSite(r.erro);
+        return;
+      }
+      if (r.nome) setNome(r.nome);
+      if (r.cidade) setCidade(r.cidade);
+      if (r.construtora) setConstrutora(r.construtora);
+      if (r.status) setStatus(r.status);
+      if (r.bairros.length === 1) setBairro(r.bairros[0]);
+      setBairrosSugeridos(r.bairros);
+      setSiteLido(r.urlFinal);
+      setAvisoSite(
+        r.semIa
+          ? "Preenchi o que a página publica. A leitura completa por IA não respondeu agora — confira os campos."
+          : "Preenchi com o que está na página. Confira antes de criar.",
+      );
+    } catch {
+      setAvisoSite("Não consegui ler a página agora. Confira sua conexão e tente de novo.");
+    } finally {
+      setLendoSite(false);
+    }
+  }
 
   // Bloco opcional da arte de IA.
   const [querImagem, setQuerImagem] = useState(false);
@@ -103,8 +139,14 @@ export function FormNovoImovel({ inicial }: { inicial: PreenchimentoInicial }) {
         return;
       }
 
+      // Com o site lido, o próximo passo é trazer fotos, plantas e vídeos
+      // dele — o importador abre com o link já colado.
+      const destino = siteLido
+        ? `/corretor/imoveis/${r.slug}/importar?site=${encodeURIComponent(siteLido)}`
+        : `/corretor/imoveis/${r.slug}`;
+
       if (!querImagem || !pedidoMontado) {
-        router.push(`/corretor/imoveis/${r.slug}`);
+        router.push(destino);
         return;
       }
 
@@ -138,7 +180,7 @@ export function FormNovoImovel({ inicial }: { inicial: PreenchimentoInicial }) {
         setErro("A imagem não foi criada (a conexão caiu). O imóvel já está cadastrado.");
         return;
       }
-      router.push(`/corretor/imoveis/${r.slug}`);
+      router.push(destino);
     });
   }
 
@@ -162,6 +204,43 @@ export function FormNovoImovel({ inicial }: { inicial: PreenchimentoInicial }) {
           )}
         </div>
       )}
+
+      <div className="border-linha space-y-2 rounded-2xl border p-4">
+        <label htmlFor="site-da-construtora" className="text-fluid-sm text-titulo block font-medium">
+          Tem o site da construtora?
+        </label>
+        <p className="text-fluid-xs text-apoio">
+          Cole o link da página do empreendimento: eu preencho o que der e, depois de criar, trago as fotos,
+          plantas e vídeos de lá.
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            id="site-da-construtora"
+            type="url"
+            inputMode="url"
+            className={`${CAMPO} min-w-0 flex-1`}
+            value={linkDoSite}
+            onChange={(e) => {
+              setLinkDoSite(e.target.value);
+              setSiteLido(null);
+            }}
+            placeholder="https://construtora.com.br/…"
+          />
+          <button
+            type="button"
+            onClick={() => void lerSite()}
+            disabled={lendoSite || linkDoSite.trim().length === 0}
+            className="border-acento-linha text-titulo hover:bg-elevado text-fluid-sm min-h-12 shrink-0 rounded-xl border px-5 font-medium transition-colors disabled:opacity-60"
+          >
+            {lendoSite ? "Lendo a página…" : "Preencher pelo site"}
+          </button>
+        </div>
+        {avisoSite && (
+          <p role="status" className="text-fluid-xs text-corpo">
+            {avisoSite}
+          </p>
+        )}
+      </div>
 
       <label className="block space-y-1.5">
         <span className="text-fluid-xs text-apoio block">Nome do empreendimento</span>
@@ -189,10 +268,10 @@ export function FormNovoImovel({ inicial }: { inicial: PreenchimentoInicial }) {
             placeholder="Ex.: Alphaville"
             required
           />
-          {(inicial.bairrosDaFonte?.length ?? 0) > 1 && (
+          {bairrosSugeridos.length > 1 && (
             <span className="text-fluid-xs text-tenue block">
-              O levantamento trouxe mais de um:{" "}
-              {inicial.bairrosDaFonte!.map((b, i) => (
+              {siteLido ? "O site traz mais de um:" : "O levantamento trouxe mais de um:"}{" "}
+              {bairrosSugeridos.map((b, i) => (
                 <button
                   key={b}
                   type="button"
@@ -200,7 +279,7 @@ export function FormNovoImovel({ inicial }: { inicial: PreenchimentoInicial }) {
                   className="text-apoio hover:text-titulo underline underline-offset-2"
                 >
                   {b}
-                  {i < inicial.bairrosDaFonte!.length - 1 ? ", " : ""}
+                  {i < bairrosSugeridos.length - 1 ? ", " : ""}
                 </button>
               ))}
               . Escolha um — a busca e o mapa usam um bairro só.

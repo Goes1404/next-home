@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RascunhoCadastro as Rascunho } from "@/lib/imoveis/rascunhoDePdf";
 import { adicionarMidiaExterna } from "../../actions";
 import {
@@ -31,12 +31,15 @@ export function OrigemSite({
   empreendimentoId,
   slug,
   cadastroAtual,
+  linkInicial,
 }: {
   empreendimentoId: string;
   slug: string;
   cadastroAtual: Record<string, unknown>;
+  /** Vindo do cadastro de imóvel novo: a página é lida sozinha ao abrir. */
+  linkInicial?: string;
 }) {
-  const [link, setLink] = useState("");
+  const [link, setLink] = useState(linkInicial ?? "");
   const [lendo, setLendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [analise, setAnalise] = useState<Analise | null>(null);
@@ -97,6 +100,17 @@ export function OrigemSite({
         .catch(() => setAvisoRascunho("Não consegui ler os dados da página agora. As fotos continuam disponíveis."));
     }
   };
+
+  // Quem acabou de criar o imóvel pelo link já decidiu ler esta página: pedir
+  // um segundo toque seria perguntar de novo o que ele acabou de responder.
+  const jaLeuOInicial = useRef(false);
+  useEffect(() => {
+    if (!linkInicial || jaLeuOInicial.current) return;
+    jaLeuOInicial.current = true;
+    void ler();
+    // `ler` muda a cada render; o que importa é rodar UMA vez com o link inicial.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkInicial]);
 
   const salvarRascunho = async (aceitos: Partial<Rascunho>) => {
     try {

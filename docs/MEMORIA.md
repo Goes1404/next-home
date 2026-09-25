@@ -7898,7 +7898,24 @@ empreendimento, sem navegador:
   iframe. As fotos vêm em `data-src`/`srcset`, não em `src`: quem lê só `src`
   acha UMA imagem na Cyrela, em vez de 108.
 - **MRV, Vivaz e Tenda são montadas por JavaScript** (home de 13 KB sem link
-  de produto) e **P4 Engenharia devolve 406** a quem não é navegador.
+  de produto). A P4 Engenharia devolveu 406 a um `User-Agent` curto e abriu
+  com cabeçalhos de navegador completos.
 - **As fotos das construtoras chegam a 1500 px**, contra os originais de
   320 px de vários imóveis do nosso catálogo.
+
+### A aba "Site da construtora" no importador (25/09/2026)
+
+Nota: [[importar-do-site-da-construtora]].
+
+- **URL colada é SSRF**: `buscarSeguro` usa `node:http(s)` com `lookup`
+  próprio, que confere o IP NA CONEXÃO (DNS rebinding) e a cada
+  redirecionamento. O `fetch` do Node não troca a resolução sem declarar o
+  `undici`, que aqui só existe por dentro do cheerio.
+- **`new URL("http://[::ffff:127.0.0.1]/")` vira `::ffff:7f00:1`.** Checagem
+  que só conhece a forma decimal deixa o loopback passar.
+- **Não peça `image/avif` no `Accept`**: o site devolve AVIF, e o bucket e
+  `registrarMidia` não o tratam.
+- **Guarda com página real pode não morder**: a mesma foto chega por mais de um
+  atributo, e tirar um deles não muda o resultado. Regra específica pede teste
+  de HTML mínimo.
 

@@ -2,8 +2,8 @@
 title: Importar do site da construtora
 tags: [midia, decisao, medicao, painel]
 type: nota
-status: seedling
-custou: baixo
+status: growing
+custou: medio
 codigo: docs/superpowers/specs/2026-09-25-importar-do-site-da-construtora-design.md
 created: 2026-09-25
 updated: 2026-09-25
@@ -30,3 +30,24 @@ Spec: `docs/superpowers/specs/2026-09-25-importar-do-site-da-construtora-design.
   casa, mostrar que vale.
 
 Ver [[planta-que-chega-como-foto]].
+
+## Construído (25/09)
+
+- **Fotos não estão no `src`.** Cyrela usa `data-src`; EZTEC e Even guardam
+  imagem e vídeo dentro de script, com a barra escapada (`https:\/\/`). O
+  leitor varre tags, `srcset` (fica a maior), links, `background-image` e o
+  HTML cru.
+- **A mesma foto em vários endereços**: estilo do Drupal
+  (`/files/styles/…/public/x.jpg.webp`), `.webp` e `.png` do mesmo arquivo
+  (Plano&Plano), otimizador do Next (`/_next/image?url=`). Tudo vira uma foto,
+  na versão original.
+- **Pré-marcar sem IA**: tag com alt, planta, ou nome do arquivo que repete as
+  DUAS primeiras palavras do endereço. Uma palavra só ("gran") casava com o
+  Gran Maia, outro prédio da EZTEC nos "recomendados".
+- **`URL` do Node reescreve `[::ffff:127.0.0.1]` em hexadecimal**
+  (`::ffff:7f00:1`), e a checagem só conhecia a forma decimal: o loopback
+  passava pela trava. O teste de SSRF achou.
+- **A P4 abriu** com cabeçalhos de navegador; a 406 era do `User-Agent` curto.
+- Duas guardas do leitor não mordiam (a página real traz a foto por mais de
+  um caminho); viraram testes de HTML mínimo, e mordem.
+

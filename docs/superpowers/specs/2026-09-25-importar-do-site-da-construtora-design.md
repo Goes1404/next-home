@@ -32,7 +32,7 @@ Seis construtoras, páginas reais de empreendimento, baixadas sem navegador:
 | Plano&Plano | sim | 77 | 7,9 mil | YouTube |
 | Even | sim (Next.js) | 1.260 (tamanhos repetidos) | 9 mil | YouTube |
 | MRV, Vivaz, Tenda | **não**: página montada por JavaScript | 0–7 | quase nada | — |
-| P4 Engenharia | **recusou** o acesso (HTTP 406) | — | — | — |
+| P4 Engenharia | sim, com cabeçalhos de navegador (a primeira sonda levou 406 com um `User-Agent` curto) | 60+ | 7,6 mil | sim |
 
 Leituras que decidem o desenho:
 
@@ -154,3 +154,24 @@ esse custo não compra nada.
    vocês de fato usam: é com eles que a F0 decide se a F5 existe.
 2. **Direito de uso**: vocês importariam só imóveis que a Next Home
    representa? O plano parte desse princípio.
+
+## Estado em 25/09/2026
+
+Entregues **F1, F2 e F3** (F0 medida com os sites acima, sem os links da casa):
+
+- `src/lib/imoveis/site/enderecoPublico.ts` + `buscarSeguro.ts`: busca com a
+  trava anti-SSRF (IP conferido na conexão e a cada redirecionamento).
+  Conferido ao vivo: `169.254.169.254`, `localhost` e `127.0.0.1.nip.io`
+  recusados.
+- `src/lib/imoveis/site/lerPagina.ts`: leitor puro, testado com as páginas
+  reais de Cyrela, EZTEC, Plano&Plano e Even (`__fixtures__`).
+- Aba **Site da construtora** no importador (`OrigemSite.tsx`), primeira e
+  padrão. Planta trazida vira tipologia; vídeo e tour entram pelo mesmo
+  `adicionarMidiaExterna` do editor.
+- Imóvel novo: "Preencher pelo site" no formulário; depois de criar, o
+  importador abre com `?site=` e lê a página sozinho.
+
+Pendentes: **F4** (guardar o site de origem e "buscar novidades") e **F5**
+(sites montados por JavaScript). Não exercitado com login: o fluxo completo
+no painel de produção.
+
