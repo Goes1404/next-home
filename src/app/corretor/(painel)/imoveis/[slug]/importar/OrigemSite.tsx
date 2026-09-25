@@ -55,6 +55,18 @@ export function OrigemSite({
   const [progresso, setProgresso] = useState<{ feitos: number; total: number; etapa: string } | null>(null);
   const [falhas, setFalhas] = useState<string[]>([]);
   const [resumo, setResumo] = useState<string | null>(null);
+  const [estados, setEstados] = useState<Record<string, NonNullable<ItemDaGrade["estado"]>>>({});
+
+  // O envio lê a lista NA HORA em que cada item sai, não a foto da lista do
+  // momento do clique: tirar uma imagem da fila durante o envio tem de valer.
+  // Por isso a leitura passa por ref, que o laço assíncrono enxerga atualizada.
+  const escolhasAgora = useRef(escolhas);
+  const midiasAgora = useRef(midiasMarcadas);
+  const parar = useRef(false);
+  useEffect(() => {
+    escolhasAgora.current = escolhas;
+    midiasAgora.current = midiasMarcadas;
+  }, [escolhas, midiasMarcadas]);
 
   const ler = async (endereco: string = link) => {
     setErro(null);
@@ -66,6 +78,7 @@ export function OrigemSite({
     setFalhas([]);
     setResumo(null);
     setProgresso(null);
+    setEstados({});
     setLendo(true);
 
     let resultado: AnaliseDoSite;
@@ -152,22 +165,45 @@ export function OrigemSite({
 
     setFalhas([]);
     setResumo(null);
+    parar.current = false;
+    setEstados(Object.fromEntries(imagensEscolhidas.map((e) => [e.chave, "fila" as const])));
+    const marcarEstado = (chave: string, estado: NonNullable<ItemDaGrade["estado"]>) =>
+      setEstados((atual) => ({ ...atual, [chave]: estado }));
     const problemas: string[] = [];
     const plantasTrazidas: string[] = [];
     let fotos = 0;
     let plantas = 0;
     let duplicadas = 0;
+    let tiradas = 0;
     let feitos = 0;
+    let totalAgora = total;
     setProgresso({ feitos, total, etapa: "Trazendo" });
+    const pular = () => {
+      tiradas++;
+      totalAgora--;
+      setProgresso({ feitos, total: totalAgora, etapa: "Trazendo" });
+    };
 
     // ─── Fotos e plantas, três de cada vez ────────────────────────────────
     const fila = [...imagensEscolhidas];
     const trabalhador = async () => {
       for (;;) {
-        const escolha = fila.shift();
-        if (!escolha) return;
+        const daFila = fila.shift();
+        if (!daFila) return;
+        // Tipo, capa e o próprio "incluir" valem como estão AGORA na tela.
+        const escolha = escolhasAgora.current[daFila.chave] ?? daFila;
+        if (parar.current || !escolha.incluir) {
+          setEstados((atual) => {
+            const proximo = { ...atual };
+            delete proximo[daFila.chave];
+            return proximo;
+          });
+          pular();
+          continue;
+        }
         const imagem = analise.imagens.find((i) => i.url === escolha.chave);
         if (!imagem) continue;
+        marcarEstado(escolha.chave, "enviando");
 
         try {
           const r = await trazerImagemDoSite({
@@ -178,6 +214,9 @@ export function OrigemSite({
             tipo: escolha.tipo,
             capa: escolha.capa,
           });
+          marcarEstado(escolha.chave, r.ok ? "entrou" : "falhou");
+          // O que entrou sai da lista: "Trazer os marcados" de novo não o repete.
+          if (r.ok) setEscolhas((atual) => ({ ...atual, [escolha.chave]: { ...escolha, incluir: false, capa: false } }));
           if (!r.ok) problemas.push(`${imagem.legenda || "Imagem"}: ${r.erro ?? "não veio"}`);
           else if (r.duplicada) duplicadas++;
           else if (escolha.tipo === "planta") {
@@ -185,10 +224,11 @@ export function OrigemSite({
             if (r.url) plantasTrazidas.push(r.url);
           } else fotos++;
         } catch {
+          marcarEstado(escolha.chave, "falhou");
           problemas.push(`${imagem.legenda || "Imagem"}: a conexão caiu no meio`);
         }
         feitos++;
-        setProgresso({ feitos, total, etapa: "Trazendo" });
+        setProgresso({ feitos, total: totalAgora, etapa: "Trazendo" });
       }
     };
     await Promise.all(Array.from({ length: Math.min(EM_PARALELO, fila.length) }, trabalhador));
@@ -196,25 +236,32 @@ export function OrigemSite({
     // ─── Vídeos e tours: só o link é guardado ─────────────────────────────
     let midias = 0;
     for (const midia of midiasEscolhidas) {
+      if (parar.current || !midiasAgora.current[midia.url]) {
+        pular();
+        continue;
+      }
       try {
         const r = await adicionarMidiaExterna(empreendimentoId, slug, {
           tipo: midia.tipo,
           url: midia.url,
           titulo: midia.titulo,
         });
-        if (r.ok) midias++;
-        else problemas.push(`${midia.titulo}: ${r.erro ?? "não entrou"}`);
+        if (r.ok) {
+          midias++;
+          setMidiasMarcadas((atual) => ({ ...atual, [midia.url]: false }));
+        } else problemas.push(`${midia.titulo}: ${r.erro ?? "não entrou"}`);
       } catch {
         problemas.push(`${midia.titulo}: a conexão caiu no meio`);
       }
       feitos++;
-      setProgresso({ feitos, total, etapa: "Trazendo" });
+      setProgresso({ feitos, total: totalAgora, etapa: "Trazendo" });
     }
 
     // ─── Planta vira tipologia (a ficha que a assistente lê) ──────────────
     // Uma por vez: cada leitura é uma ida ao modelo com a imagem.
     let tipologias = 0;
     for (const [i, plantaUrl] of plantasTrazidas.entries()) {
+      if (parar.current) break;
       setProgresso({ feitos: i, total: plantasTrazidas.length, etapa: "Lendo as plantas" });
       try {
         const r = await gerarTipologiaDaPlantaDoSite({ empreendimentoId, slug, plantaUrl, texto: analise.texto });
@@ -234,6 +281,8 @@ export function OrigemSite({
         tipologias > 0 ? `${tipologias} ${tipologias === 1 ? "planta virou ficha" : "plantas viraram ficha"} (dormitórios e metragem).` : "",
         midias > 0 ? `${midias} ${midias === 1 ? "vídeo ou tour adicionado" : "vídeos e tours adicionados"}.` : "",
         duplicadas > 0 ? `${duplicadas} ${duplicadas === 1 ? "já estava" : "já estavam"} na galeria.` : "",
+        tiradas > 0 ? `${tiradas} ${tiradas === 1 ? "tirada" : "tiradas"} da lista antes de enviar.` : "",
+        parar.current ? "Envio parado." : "",
       ]
         .filter(Boolean)
         .join(" ") || "Nada novo entrou.",
@@ -247,6 +296,7 @@ export function OrigemSite({
       chave: img.url,
       preview: img.url,
       legenda: `${img.jaTrazida ? "Já trazida · " : ""}${img.legenda || "Imagem da página"}`,
+      estado: estados[img.url],
     })) ?? [];
 
   const trabalhando = progresso !== null;
@@ -413,6 +463,23 @@ export function OrigemSite({
           >
             {progresso ? `${progresso.etapa}… ${progresso.feitos} de ${progresso.total}` : "Trazer os marcados"}
           </button>
+          {trabalhando ? (
+            <>
+              <p className="text-fluid-xs text-apoio">
+                Ainda dá para tirar da fila: toque em “Tirar da fila” na imagem que ainda não foi enviada.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  parar.current = true;
+                  setProgresso((atual) => (atual ? { ...atual, etapa: "Parando" } : atual));
+                }}
+                className="w-full min-h-[44px] rounded-xl border border-linha-forte px-5 text-fluid-xs font-bold text-corpo"
+              >
+                Parar o envio
+              </button>
+            </>
+          ) : null}
         </div>
       ) : null}
 
