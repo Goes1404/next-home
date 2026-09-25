@@ -100,3 +100,15 @@ Guarda: `percursoDaHome.test.ts` (aspas, direção do traço e do tom, só
 empilhamento, menos movimento parado), provocada.
 
 Ver [[video-do-celular-rola-com-a-pagina]].
+
+## As duas portas estavam SEM FUNDO (25/09/2026)
+
+"Quando você quer morar?" usava `cartao`, cujo fundo é `var(--cartao-fundo)`
+— token definido só no escopo do PAINEL. No site público a variável não
+existe, a declaração vira inválida e o cartão fica transparente: a planta do
+percurso atravessava o texto. `.porta-estagio` dá fundo opaco
+(`--color-elevado`), reflexo de vidro no alto, sombra e um brilho que passa
+no hover (pseudo com `transform`). Os outros usos de `cartao` no site público
+(`CabeNoBolso`, `Simulador`, `CardCorretor`, `BookDigital`) têm o mesmo
+defeito latente e não foram mexidos.
+

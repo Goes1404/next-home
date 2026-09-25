@@ -7879,3 +7879,12 @@ Nota: [[o-percurso-da-home]].
   `scrollTo` volta antes de rolar e o laço vê "0 textos". Forçar
   `behavior: "instant"`.
 
+### `cartao` no site público não tem fundo (25/09/2026)
+
+- **`--cartao-fundo`, `--cartao-fio` e `--shadow-cartao` só existem no escopo
+  do painel.** Fora dele `background-color: var(--cartao-fundo)` é inválida e o
+  cartão sai TRANSPARENTE, calado. As duas portas de "Quando você quer morar?"
+  ganharam `.porta-estagio` (opaco + reflexo + brilho no hover). Ainda usam
+  `cartao` no público, com o mesmo defeito: `CabeNoBolso`, `Simulador`,
+  `CardCorretor`, `BookDigital`.
+
