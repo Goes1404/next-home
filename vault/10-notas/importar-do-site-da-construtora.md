@@ -87,3 +87,14 @@ lista no clique, então desmarcar no meio não mudava nada. Hoje a grade
 na hora em que cada item sai, mostra o estado de cada imagem (fila, enviando,
 entrou, falhou) e tem "Parar o envio". O que entrou sai da lista, para
 "Trazer os marcados" não repetir. Guarda: `tirarDaFila.test.tsx`.
+
+## O fim da importação ficou explícito (25/09)
+
+Pedido: retorno visual explícito quando a inserção dá certo. O resultado era
+uma linha miúda embaixo do botão, fácil de perder depois de um envio de um
+minuto. `ResultadoDaImportacao` (compartilhado pelas abas site, PDF e Drive)
+é um cartão com a cor do desfecho — tudo entrou (verde), parte ficou de fora
+(âmbar), nada novo (neutro) —, que rola para a vista, recebe o foco e tem
+"Ver no imóvel". Junto sai o aviso flutuante do painel (`useAvisos`). Só
+duplicadas NÃO vira aviso de erro: nada falhou, só não havia o que trazer.
+Guarda: `resultadoDaImportacao.test.tsx`.

@@ -7954,3 +7954,8 @@ Nota: [[importar-do-site-da-construtora]].
   enxerga o valor do render em que começou.
 - **Ação que só existe no toque da foto é invisível.** A grade alternava ao
   tocar a imagem, mas não havia botão nem marca dizendo isso; ganhou os dois.
+- **Fim de trabalho longo precisa de desfecho que se veja** (25/09): a
+  importação terminava numa linha de texto de 12px embaixo do botão. Hoje as
+  três abas mostram `ResultadoDaImportacao` (cor por desfecho, rola para a
+  vista, recebe foco, leva ao imóvel) e o aviso flutuante. "Só duplicadas" não
+  é erro: nada falhou.
