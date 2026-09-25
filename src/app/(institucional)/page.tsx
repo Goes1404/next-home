@@ -216,7 +216,7 @@ export default async function HomeInstitucional() {
         {/* Do primeiro conteúdo em diante o fundo é OPACO, como na página do
             imóvel: é o que permite bandas de seção — sem fundo próprio não
             existe separação, tudo flutuava translúcido sobre o vídeo. */}
-        <div className="relative bg-fundo pt-16 sm:pt-24">
+        <div className="home-percurso relative bg-fundo pt-16 sm:pt-24">
           {/* PRODUTO PRIMEIRO. Antes, o primeiro imóvel aparecia a 2,9 telas
               de rolagem, atrás de três cards institucionais. Numa imobiliária
               o produto é a foto do imóvel — ela abre o conteúdo. */}

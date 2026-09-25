@@ -2156,6 +2156,97 @@
   }
 }
 
+/*
+ * O PERCURSO DA HOME (25/09/2026, pedido do usuário: "faz o 2 e o 3 juntos").
+ *
+ * Abaixo do herói, a home era um fundo liso de ponta a ponta. Duas camadas
+ * agora, as duas SEM animação, e isso é a lição do vídeo do celular do mesmo
+ * dia: efeito que depende de animação ligada à rolagem pode falhar calado
+ * num navegador de verdade (Brave no Android). Aqui nada depende de nada:
+ *
+ * 1. A COR: um degradê vertical do tamanho do conteúdo, que atravessa os
+ *    tons da marca (verde -> azul -> areia -> azul -> verde). Não se anima: a
+ *    cor "muda conforme desce" porque é a PÁGINA que passa pela janela.
+ * 2. A TEXTURA: papel quadriculado de projeto e plantas baixas em traço fino,
+ *    num `::before` atrás do conteúdo. O desenho é MÁSCARA e a cor vem de
+ *    `--textura-cor` (branco no claro, preto no escuro), então acompanha o
+ *    tema sozinho — um SVG em `url()` não enxerga variável de CSS.
+ *
+ * As faixas (`secao-banda`/`secao-funda`) continuam OPACAS, com a textura
+ * desenhada por cima da cor delas (ver abaixo). O recorte é pela classe da
+ * home: `Secao.tsx` usa as mesmas faixas em outras páginas, que ficam como
+ * estão.
+ *
+ * O SVG dentro de `url("…")` usa ASPAS SIMPLES. Com aspas duplas ele fecha
+ * a string no meio, e o compilador descarta a regra inteira — calado: foi o
+ * que aconteceu na primeira versão, com a textura simplesmente não
+ * aparecendo. Há guarda para isso (`percursoDaHome.test.ts`).
+ */
+.home-percurso {
+  /*
+   * As duas camadas só podem AFASTAR o fundo da cor do texto, nunca
+   * aproximar. No claro o texto é escuro: os tons entram CLAREADOS com branco
+   * e o traço é BRANCO. No escuro, o contrário. A primeira versão misturava o
+   * tom cheio e desenhava traço escuro, e o texto tênue caiu de 3,1:1 para
+   * 2,2:1 — medido, não suposto.
+   */
+  --percurso-base: white;
+  --percurso-tom: 22%;
+  --percurso: 70%;
+  --textura-cor: white;
+  --textura: 55%;
+  isolation: isolate;
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, color-mix(in oklab, var(--color-acento) var(--percurso-tom), var(--percurso-base)) var(--percurso), var(--color-fundo)) 0%,
+    color-mix(in oklab, color-mix(in oklab, var(--color-realce) var(--percurso-tom), var(--percurso-base)) var(--percurso), var(--color-fundo)) 28%,
+    color-mix(in oklab, color-mix(in oklab, var(--color-sand-500) var(--percurso-tom), var(--percurso-base)) var(--percurso), var(--color-fundo)) 55%,
+    color-mix(in oklab, color-mix(in oklab, var(--color-realce) var(--percurso-tom), var(--percurso-base)) var(--percurso), var(--color-fundo)) 78%,
+    color-mix(in oklab, color-mix(in oklab, var(--color-acento) var(--percurso-tom), var(--percurso-base)) var(--percurso), var(--color-fundo)) 100%
+  );
+}
+:root[data-tema="escuro"] .home-percurso {
+  /* Base = o próprio fundo, não preto: com preto a faixa entre as curvas
+     virava uma tarja quase preta, pesada demais. */
+  --percurso-base: var(--color-fundo);
+  --percurso-tom: 14%;
+  --percurso: 100%;
+  --textura-cor: black;
+  --textura: 45%;
+}
+.home-percurso::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: color-mix(in oklab, var(--textura-cor) var(--textura), transparent);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none' stroke='%23000'%3E%3Cpath d='M32 0V160M64 0V160M96 0V160M128 0V160M0 32H160M0 64H160M0 96H160M0 128H160' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M.5 0V160M0 .5H160' stroke-width='1'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='%23000' stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none' stroke='%23000'%3E%3Cpath d='M32 0V160M64 0V160M96 0V160M128 0V160M0 32H160M0 64H160M0 96H160M0 128H160' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M.5 0V160M0 .5H160' stroke-width='1'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='%23000' stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/svg%3E");
+  -webkit-mask-size: 160px 160px, 720px 720px;
+  mask-size: 160px 160px, 720px 720px;
+  -webkit-mask-position: 0 0, 40px 120px;
+  mask-position: 0 0, 40px 120px;
+}
+/*
+ * Nas FAIXAS a textura entra por `background-image`, sobre a cor OPACA
+ * original delas. Uma primeira versão deixava a faixa translúcida para o
+ * fundo passar, e isso escurecia a faixa (o fundo é mais escuro que a
+ * superfície dela). Com a cor opaca, a única diferença é o traço, de cor fixa
+ * por tema — dentro de `url()` não há variável de CSS, então são DUAS regras,
+ * como a `.select-seta`.
+ */
+:root[data-tema="claro"] .home-percurso :is(.secao-banda, .secao-funda) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none' stroke='rgba%28255,255,255,0.5%29'%3E%3Cpath d='M32 0V160M64 0V160M96 0V160M128 0V160M0 32H160M0 64H160M0 96H160M0 128H160' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M.5 0V160M0 .5H160' stroke-width='1'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='rgba%28255,255,255,0.5%29' stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/svg%3E");
+  background-size: 160px 160px, 720px 720px;
+  background-position: 0 0, 40px 120px;
+}
+:root[data-tema="escuro"] .home-percurso :is(.secao-banda, .secao-funda) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none' stroke='rgba%280,0,0,0.4%29'%3E%3Cpath d='M32 0V160M64 0V160M96 0V160M128 0V160M0 32H160M0 64H160M0 96H160M0 128H160' stroke-opacity='.35' stroke-width='1'/%3E%3Cpath d='M.5 0V160M0 .5H160' stroke-width='1'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' fill='none' stroke='rgba%280,0,0,0.4%29' stroke-width='2'%3E%3Crect x='96' y='112' width='352' height='248'/%3E%3Cpath d='M288 112V224M96 224H196M236 224H448M288 256V360'/%3E%3Cpath d='M196 224A40 40 0 0 1 236 184' stroke-width='1.2'/%3E%3Cpath d='M196 224H236' stroke-width='1' stroke-dasharray='3 4'/%3E%3Cpath d='M288 296A34 34 0 0 0 322 330' stroke-width='1.2'/%3E%3Cpath d='M150 112V104M150 104H230M230 104V112M340 360V368M340 368H410M410 368V360' stroke-width='1.2'/%3E%3Cpath d='M96 404H448M96 396V412M448 396V412M272 398V410' stroke-width='1'/%3E%3Crect x='456' y='456' width='192' height='144'/%3E%3Cpath d='M560 456V600M456 528H520'/%3E%3Cpath d='M520 528A40 40 0 0 1 560 488' stroke-width='1.2'/%3E%3Cpath d='M456 632H648M456 624V640M648 624V640' stroke-width='1'/%3E%3Ccircle cx='200' cy='560' r='44' stroke-width='1' stroke-dasharray='4 6'/%3E%3Cpath d='M200 500V620M140 560H260' stroke-width='1' stroke-opacity='.6'/%3E%3C/svg%3E");
+  background-size: 160px 160px, 720px 720px;
+  background-position: 0 0, 40px 120px;
+}
+
 /* Anel do botão do WhatsApp: expande e some, uma vez a cada 6s. */
 @utility anel-pulso {
   animation: anel-pulso 6s ease-out infinite;
