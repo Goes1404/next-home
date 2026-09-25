@@ -45,3 +45,20 @@ Quando uma animação controla a VISIBILIDADE de uma peça, falhar deixa a peça
 invisível; prefira um mecanismo cuja falha deixe a peça aparecendo.
 
 Ver [[a-remocao-levou-a-peca-errada-junto]].
+
+## Confirmado: era a economia de bateria (25/09, mesmo dia)
+
+- **No Android a economia de bateria liga "reduzir movimento"**, e o
+  componente se recusava a tocar nesse caso. O usuário pediu o vídeo SEMPRE.
+  `FundoVideoIntro` ganhou `ignorarMovimentoReduzido`, usado só pela peça da
+  home: 1,5 s, toca uma vez e congela. Nada em loop pode usar isso. A
+  economia de DADOS continua barrando, porque ela é custo de rede.
+- **O cartão de busca cobria o "Next Home"** em tela baixa. Eram duas réguas
+  diferentes: a camada do vídeo em `h-lvh` (tela sem as barras) e o herói em
+  `min-h-svh` (tela com elas). No Brave, com barra em cima e embaixo, a
+  diferença subia o cartão. Como a camada agora ROLA com a página, `svh` não
+  a faz "ficar maior, menor" — essa armadilha era de caixa fixa. As duas
+  usam `svh`. E o `pb-32` do herói no celular virou `pb-6`: o convite de
+  rolagem ocupa a faixa do botão do WhatsApp sem colidir com ele. Medido em
+  360x640, 390x664, 412x714 e 412x839: logo inteira acima do cartão, sem
+  estouro de largura.

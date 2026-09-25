@@ -23,8 +23,8 @@ const MASCARA_BASE = "linear-gradient(to bottom, #000 72%, transparent 100%)";
  * `somenteMobile`, que existe para o grupo (vitrine), onde o desktop já tem o
  * hero-scroll e os dois nunca podem montar juntos.
  */
-function podeExibir(somenteMobile: boolean): boolean {
-  if (window.matchMedia(CONSULTA_MOVIMENTO).matches) return false;
+function podeExibir(somenteMobile: boolean, ignorarMovimentoReduzido: boolean): boolean {
+  if (!ignorarMovimentoReduzido && window.matchMedia(CONSULTA_MOVIMENTO).matches) return false;
   if (somenteMobile && !window.matchMedia(CONSULTA_MOBILE).matches) return false;
   if ((navigator as NavigatorEstendido).connection?.saveData) return false;
   return true;
@@ -41,10 +41,10 @@ function inscrever(aoMudar: () => void): () => void {
   };
 }
 
-function usePodeExibir(somenteMobile: boolean): boolean {
+function usePodeExibir(somenteMobile: boolean, ignorarMovimentoReduzido: boolean): boolean {
   return useSyncExternalStore(
     inscrever,
-    () => podeExibir(somenteMobile),
+    () => podeExibir(somenteMobile, ignorarMovimentoReduzido),
     () => false,
   );
 }
@@ -96,9 +96,20 @@ function useEhMobile(): boolean {
  */
 export function FundoVideoIntro({
   somenteMobile = false,
+  ignorarMovimentoReduzido = false,
   fonteMobile,
 }: {
   somenteMobile?: boolean;
+  /**
+   * Toca mesmo com "reduzir movimento" ligado (25/09/2026, a pedido). No
+   * Android a ECONOMIA DE BATERIA liga essa preferência sozinha, e o
+   * visitante via só o quadro parado — foi assim que o vídeo da home
+   * "sumiu" num celular com 16% de bateria. Vale só para uma peça CURTA que
+   * toca uma vez e congela (a da home: 1,5 s); nada em loop pode usar isto.
+   * A economia de DADOS continua barrando: aquilo é custo de rede de quem
+   * pediu para não gastar, não preferência de movimento.
+   */
+  ignorarMovimentoReduzido?: boolean;
   /**
    * Vídeo alternativo para telas de celular. Sem isto, mobile e desktop
    * usam a mesma vinheta de abertura — que era o comportamento até
@@ -147,7 +158,7 @@ export function FundoVideoIntro({
     deslocarY?: number;
   };
 } = {}) {
-  const exibir = usePodeExibir(somenteMobile);
+  const exibir = usePodeExibir(somenteMobile, ignorarMovimentoReduzido);
   const ehMobile = useEhMobile();
   const [pronto, setPronto] = useState(false);
 

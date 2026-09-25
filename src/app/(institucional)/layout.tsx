@@ -137,11 +137,16 @@ export default async function InstitucionalLayout({
         página e sai do caminho SOZINHA, como qualquer conteúdo, sem pedir
         nada ao navegador além de posicionar uma caixa. Fica depois do fundo
         fixo no DOM, com o mesmo `-z-10`, e por isso pinta por cima dele.
-        `h-lvh` pela mesma razão da caixa fixa: a barra de endereço some e
-        volta, e a altura da viewport maior não muda.
+        `h-svh`, e NÃO `h-lvh` como a caixa fixa: a logo tem de ser medida
+        pela MESMA régua do herói (`min-h-svh`), senão, num navegador com
+        barra em cima e embaixo (Brave no Android), a diferença entre as duas
+        alturas sobe o cartão de busca para cima da logo — foi o segundo
+        relato de 25/09. Aqui `svh` não "fica maior, menor" ao rolar: essa
+        armadilha é de caixa FIXA, que acompanha a viewport; esta camada
+        rola com a página e a unidade é estática.
       */}
       {fundoDoCelular && (
-        <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-lvh overflow-hidden md:hidden">
+        <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-svh overflow-hidden md:hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={FUNDO_HOME_POSTER_URL}
@@ -153,6 +158,7 @@ export default async function InstitucionalLayout({
           />
           <FundoVideoIntro
             somenteMobile
+            ignorarMovimentoReduzido
             fonteMobile={{
               webm: FUNDO_HOME_VIDEO_WEBM_URL,
               mp4: FUNDO_HOME_VIDEO_URL,

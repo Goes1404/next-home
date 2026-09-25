@@ -7827,3 +7827,12 @@ Nota: [[video-do-celular-rola-com-a-pagina]].
 - **Régua:** animação que controla a VISIBILIDADE de uma peça faz a peça
   sumir quando falha. Prefira um mecanismo cuja falha deixa a peça
   aparecendo.
+- **Confirmado pelo usuário: era a economia de bateria.** No Android ela liga
+  "reduzir movimento", e o vídeo da home não tocava. A peça da home (1,5 s,
+  toca uma vez e congela) passou a ignorar essa preferência, a pedido
+  (`ignorarMovimentoReduzido`); nada em loop pode usar isso, e a economia de
+  DADOS continua barrando. Junto, o cartão de busca cobria o "Next Home" em
+  tela baixa: a camada do vídeo media pela tela SEM barras (`lvh`) e o herói
+  pela tela COM barras (`svh`). As duas usam `svh` agora (a camada rola com a
+  página, então `svh` é estável), e a base do herói no celular foi de
+  `pb-32` para `pb-6`.
