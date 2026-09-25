@@ -23,7 +23,7 @@ import { ETAPA_LABEL, ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 export function SeletorEtapa({ leadId, etapa }: { leadId: string; etapa: EtapaFunil }) {
   const [, iniciar] = useTransition();
   const [etapaVisivel, verEtapa] = useOptimistic(etapa);
-  const { falhar } = useAvisos();
+  const { avisar, falhar } = useAvisos();
 
   return (
     <label className="inline-flex items-center gap-2">
@@ -37,6 +37,9 @@ export function SeletorEtapa({ leadId, etapa }: { leadId: string; etapa: EtapaFu
             try {
               const r = await moverEtapa(leadId, nova);
               if (r?.erro) falhar(r.erro);
+              // A ficha ganha o bloco "Registre a venda" (0114); o aviso diz
+              // onde ele está, no momento em que o corretor lembra os números.
+              else if (nova === "fechado") avisar("Negócio fechado! Registre a venda aqui na ficha.");
             } catch {
               // Erro de rede não devolve `{ erro }` — devolve exceção. Sem
               // este ramo o seletor volta e a tela segue muda.

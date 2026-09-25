@@ -163,6 +163,92 @@ export type Database = {
           },
         ]
       }
+      /** 0114 — a venda (F1 do módulo financeiro). */
+      vendas: {
+        Row: {
+          id: string
+          corretor_id: string
+          lead_id: string | null
+          empreendimento_id: string | null
+          imovel_descricao: string | null
+          unidade: string | null
+          data_venda: string
+          valor_venda: number
+          comissao_percentual: number | null
+          comissao_valor: number
+          status: "ativa" | "distratada"
+          distratada_em: string | null
+          comissao_recebida_em: string | null
+          observacao: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          corretor_id: string
+          lead_id?: string | null
+          empreendimento_id?: string | null
+          imovel_descricao?: string | null
+          unidade?: string | null
+          data_venda: string
+          valor_venda: number
+          comissao_percentual?: number | null
+          comissao_valor: number
+          status?: "ativa" | "distratada"
+          distratada_em?: string | null
+          comissao_recebida_em?: string | null
+          observacao?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          corretor_id?: string
+          lead_id?: string | null
+          empreendimento_id?: string | null
+          imovel_descricao?: string | null
+          unidade?: string | null
+          data_venda?: string
+          valor_venda?: number
+          comissao_percentual?: number | null
+          comissao_valor?: number
+          status?: "ativa" | "distratada"
+          distratada_em?: string | null
+          comissao_recebida_em?: string | null
+          observacao?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0114 — quem participou de cada venda (co-corretagem). */
+      venda_participantes: {
+        Row: {
+          venda_id: string
+          corretor_id: string
+          parte_percentual: number
+          repasse_percentual: number | null
+          repasse_valor: number
+          repasse_pago_em: string | null
+        }
+        Insert: {
+          venda_id: string
+          corretor_id: string
+          parte_percentual: number
+          repasse_percentual?: number | null
+          repasse_valor: number
+          repasse_pago_em?: string | null
+        }
+        Update: {
+          venda_id?: string
+          corretor_id?: string
+          parte_percentual?: number
+          repasse_percentual?: number | null
+          repasse_valor?: number
+          repasse_pago_em?: string | null
+        }
+        Relationships: []
+      }
       catalogo_candidatos: {
         Row: {
           area: string | null
@@ -2371,6 +2457,14 @@ export type Database = {
       }
     }
     Functions: {
+      participa_da_venda: {
+        Args: { p_venda: string }
+        Returns: boolean
+      }
+      salvar_venda: {
+        Args: { p_venda: string | null; p_dados: Json; p_participantes: Json }
+        Returns: string
+      }
       atualizar_parametros_credito: {
         Args: {
           p_comprometimento_maximo: number

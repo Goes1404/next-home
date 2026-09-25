@@ -23,6 +23,8 @@ import { SeletorEtapa } from "./SeletorEtapa";
 import { OrigemJornada } from "./OrigemJornada";
 import { PreferenciasContato } from "./PreferenciasContato";
 import { IniciarConversaIA } from "./IniciarConversaIA";
+import { VendaDoLead } from "./VendaDoLead";
+import { getVendasDoLead } from "@/lib/financeiro/dados";
 import { perguntaDoLead } from "@/lib/consultor/perguntaDoLead";
 
 export const metadata: Metadata = { title: "Lead" };
@@ -48,7 +50,7 @@ export default async function FichaLeadPage({
   if (!lead) notFound();
 
   const supabase = await createClient();
-  const [tarefas, timeline, touchpoints, preferencias, { data: empreendimentos }, { data: notasDoLead }] =
+  const [tarefas, timeline, touchpoints, preferencias, { data: empreendimentos }, { data: notasDoLead }, vendas] =
     await Promise.all([
       getTarefasDoLead(id),
       getTimelineDoLead(id),
@@ -65,6 +67,8 @@ export default async function FichaLeadPage({
         .order("concluida_em", { ascending: true, nullsFirst: true })
         .order("created_at", { ascending: false })
         .limit(5),
+      // Vendas ligadas (0114). Sem a migration aplicada, lista vazia.
+      getVendasDoLead(id),
     ]);
 
   const whatsapp = linkWhatsappLead(lead);
@@ -210,6 +214,7 @@ export default async function FichaLeadPage({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">
+          <VendaDoLead leadId={lead.id} etapa={lead.etapa} vendas={vendas} />
           <OrigemJornada touchpoints={touchpoints} />
           <PreferenciasContato leadId={lead.id} preferencias={preferencias} />
           <Qualificacao

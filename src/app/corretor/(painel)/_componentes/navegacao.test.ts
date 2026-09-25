@@ -344,6 +344,8 @@ describe("as barras de abas DERIVAM do menu", () => {
       "Lista",
       "Funil",
       "Visitas",
+      // Vendas entrou em 25/09/2026 (0114): o fim do mesmo caminho do lead.
+      "Vendas",
       "Anotações",
       "Adicionar",
     ]);

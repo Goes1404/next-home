@@ -116,6 +116,14 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/leads", label: "Lista", icone: IconeListaContatos },
           { href: "/corretor/funil", label: "Funil", icone: IconeFunil },
           { href: "/corretor/visitas", label: "Visitas", icone: IconeVisitas },
+          /*
+           * Vendas (0114, 25/09/2026) é a última etapa do mesmo caminho: o
+           * lead que chegou a "Fechado" vira uma venda com valor, unidade e
+           * comissão. Subtópico e não tópico porque o teto de sete está cheio
+           * (ver o comentário do Consultor) — e porque é aqui, olhando os
+           * leads, que o corretor lembra de registrar.
+           */
+          { href: "/corretor/financeiro", label: "Vendas", icone: IconeCifrao },
           // Bloco de notas com lembretes (0100): nota livre, vínculo a lead,
           // direcionável a colega — mora em Pessoas porque é sobre gente.
           { href: "/corretor/anotacoes", label: "Anotações", icone: IconeNota },
@@ -587,6 +595,15 @@ function IconeFunil(p: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M3 4h18l-7 8.5V19l-4 2v-8.5z" />
+    </svg>
+  );
+}
+function IconeCifrao(p: SVGProps<SVGSVGElement>) {
+  // Uma nota de dinheiro com o cifrão: venda fechada.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <rect x="2.5" y="6" width="19" height="12" rx="2" />
+      <path d="M14.2 9.6c-.4-.6-1.2-1-2.2-1-1.3 0-2.2.7-2.2 1.6 0 2 4.4 1 4.4 3.3 0 .9-.9 1.7-2.2 1.7-1 0-1.9-.4-2.3-1.1M12 7.8v8.4" />
     </svg>
   );
 }
