@@ -7944,3 +7944,13 @@ Nota: [[importar-do-site-da-construtora]].
   sem vídeo, não conteúdo montado por JS.
 - Antes de concluir "precisa de navegador", procurar no HTML cru o que o
   leitor não reconheceu.
+
+### Tirar da lista durante o envio (25/09/2026)
+
+- **Laço assíncrono que copia a seleção no clique ignora o que o usuário
+  muda depois.** O envio do site fazia `[...imagensEscolhidas]` e seguia a
+  cópia; desmarcar no meio não tinha efeito. Hoje cada item confere a lista
+  por `ref` na hora em que sai. Estado de React não serve dentro do laço: ele
+  enxerga o valor do render em que começou.
+- **Ação que só existe no toque da foto é invisível.** A grade alternava ao
+  tocar a imagem, mas não havia botão nem marca dizendo isso; ganhou os dois.

@@ -76,3 +76,14 @@ conhecia Matterport e Kuula. Hoje reconhece, recompondo a URL só pelo
 iframe do YouTube da página vem com `src=""` porque o empreendimento não tem
 vídeo: não é conteúdo montado por JS. Antes de pedir F5 para um site,
 procurar o que falta no HTML cru: aqui era um domínio de tour desconhecido.
+
+## Tirar imagem da lista, inclusive no meio do envio (25/09)
+
+Relatado: "na hora de inserir as imagens, não tem como tirá-las da lista".
+Tocar na foto já alternava, mas nada mostrava que dava — e o envio COPIAVA a
+lista no clique, então desmarcar no meio não mudava nada. Hoje a grade
+(`GradeCuradoria`, compartilhada com PDF e Drive) tem botão "Tirar da lista" /
+"Colocar na lista" e uma marca no canto; no site, o envio lê a lista por ref
+na hora em que cada item sai, mostra o estado de cada imagem (fila, enviando,
+entrou, falhou) e tem "Parar o envio". O que entrou sai da lista, para
+"Trazer os marcados" não repetir. Guarda: `tirarDaFila.test.tsx`.
