@@ -41,6 +41,8 @@ export default async function InstitucionalLayout({
   // é personalização explícita dele, e trocá-la pela peça da casa apagaria
   // uma escolha que ele fez no painel.
   const videoDoCorretor = corretorAtivo?.videoUrl || null;
+  // Sem foto nem vídeo próprio do corretor, o celular ganha a peça da casa.
+  const fundoDoCelular = !usaFotoDeFundo && !videoDoCorretor;
 
   /*
    * NAO ha `preload()` do poster aqui, e isso foi MEDIDO, nao suposto: o
@@ -96,49 +98,7 @@ export default async function InstitucionalLayout({
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : videoDoCorretor ? (
           <HeroVideoBackground src={videoDoCorretor} />
-        ) : (
-          /*
-           * O video de fundo do CELULAR voltou em 15/09/2026, a pedido — e
-           * so o do celular.
-           *
-           * Eram duas pecas diferentes, e a remocao de 13/09 levou as duas
-           * juntas: no desktop rodava a vinheta do LOGOTIPO (o quadro parado
-           * que lia como imagem aleatoria, e que foi o motivo da queixa), e
-           * no celular uma peca propria — predios abrindo para a marca no
-           * ceu, vertical, congelada aos 1,5 s. `somenteMobile` devolve
-           * exatamente a segunda e deixa o desktop na aurora em CSS.
-           *
-           * O envoltorio existe porque o fundo e `fixed`: ele fica atras da
-           * pagina INTEIRA, e era por isso que o quadro aparecia de corpo
-           * inteiro na faixa transparente entre o CTA final e o rodape.
-           * Restaurar sem isso repetiria o defeito que causou a remocao.
-           */
-          <div className="fundo-sai-do-caminho absolute inset-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={FUNDO_HOME_POSTER_URL}
-              alt=""
-              aria-hidden
-              fetchPriority="high"
-              decoding="async"
-              className="fundo-poster absolute inset-0 h-full w-full md:hidden"
-            />
-            <FundoVideoIntro
-              somenteMobile
-              fonteMobile={{
-                webm: FUNDO_HOME_VIDEO_WEBM_URL,
-                mp4: FUNDO_HOME_VIDEO_URL,
-                vertical: true,
-                // 1,5 s e subir 26% da tela: medido quadro a quadro. Antes
-                // de 1,5 s a marca ainda nao fechou; depois, o close corta
-                // "Next Home" atras da busca. Os 26% tiram o simbolo da
-                // frente do cartao de busca (que comeca a 51% da tela).
-                pararEm: 1.5,
-                deslocarY: -26,
-              }}
-            />
-          </div>
-        )}
+        ) : null}
         {/* O fundo em VÍDEO (a vinheta congelada no último quadro) SAIU de
             todas as páginas em 13/09/2026, a pedido: o quadro parado do
             logotipo atrás do conteúdo lia como imagem de fundo aleatória, e
@@ -159,6 +119,55 @@ export default async function InstitucionalLayout({
             opaca, e é ele que sustenta o esmaecimento da base do vídeo. */}
         <div className="absolute inset-0 bg-gradient-to-b from-fundo/0 via-fundo/0 to-fundo/85 sm:via-fundo/10 sm:to-fundo/90" />
       </div>
+
+      {/*
+        O vídeo de fundo do CELULAR (15/09/2026) mora FORA da caixa fixa, e
+        isso é a correção de 25/09.
+
+        Até ali ele ficava dentro do fundo `fixed` e saía do caminho por uma
+        animação ligada à rolagem (`animation-timeline: scroll()`): o fundo
+        fixo aparece atrás da página INTEIRA, e sem esse esmaecimento o
+        quadro parado surgia entre o CTA final e o rodapé — a queixa que
+        tirou a peça do site em 13/09. Num Brave no Android (bateria em 16%),
+        o quadro parado E o vídeo sumiram da primeira tela, com a aurora da
+        mesma caixa aparecendo normalmente: o que falhava era só o envoltório
+        com a animação de rolagem. No Chromium daqui ela funcionava.
+
+        Aqui a camada é `absolute` no topo do documento: ela rola junto com a
+        página e sai do caminho SOZINHA, como qualquer conteúdo, sem pedir
+        nada ao navegador além de posicionar uma caixa. Fica depois do fundo
+        fixo no DOM, com o mesmo `-z-10`, e por isso pinta por cima dele.
+        `h-lvh` pela mesma razão da caixa fixa: a barra de endereço some e
+        volta, e a altura da viewport maior não muda.
+      */}
+      {fundoDoCelular && (
+        <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-lvh overflow-hidden md:hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={FUNDO_HOME_POSTER_URL}
+            alt=""
+            aria-hidden
+            fetchPriority="high"
+            decoding="async"
+            className="fundo-poster absolute inset-0 h-full w-full md:hidden"
+          />
+          <FundoVideoIntro
+            somenteMobile
+            fonteMobile={{
+              webm: FUNDO_HOME_VIDEO_WEBM_URL,
+              mp4: FUNDO_HOME_VIDEO_URL,
+              vertical: true,
+              // 1,5 s e subir 26% da tela: medido quadro a quadro. Antes
+              // de 1,5 s a marca ainda nao fechou; depois, o close corta
+              // "Next Home" atras da busca. Os 26% tiram o simbolo da
+              // frente do cartao de busca (que comeca a 51% da tela).
+              pararEm: 1.5,
+              deslocarY: -26,
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-fundo/0 via-fundo/0 to-fundo/85" />
+        </div>
+      )}
 
       {children}
       <VoltarAoTopo />

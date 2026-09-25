@@ -7807,3 +7807,23 @@ superfície. Depois: 1,21 (claro) e 1,18 (escuro), texto todo em AA,
   0,24; 4,92:1 no escuro a 0,28). No claro a bolha é CLAREADA em vez de só
   enfraquecida, senão só 0,14 passava e a forma sumia. Custo medido: nenhum no
   celular; no desktop com mouse, 0 a 5 quadros lentos em ~210.
+
+## O vídeo do celular sumiu num Brave Android (25/09/2026)
+
+Nota: [[video-do-celular-rola-com-a-pagina]].
+
+- **O print isolou o defeito, não o reproduzi.** Aurora verde visível e sem
+  vídeo nem quadro parado: os três moravam na MESMA caixa `fixed`, então a
+  caixa estava lá e só o envoltório interno sumia — e a única coisa própria
+  dele era o esmaecimento por `animation-timeline: scroll(root)` (15/09). No
+  Chromium daqui funcionava, com e sem "reduzir movimento"; o HTML de
+  produção e os arquivos estavam certos. **Ler o que o print mostra, não só o
+  que falta.**
+- **A correção não depende de descobrir o navegador:** a peça saiu da caixa
+  fixa para uma camada `absolute` no topo do documento (`-z-10`, depois do
+  fundo fixo no DOM, então pinta por cima). Ela rola com a página e sai do
+  caminho sozinha; no rodapé fica 10 mil pixels acima da tela — a queixa de
+  13/09 continua resolvida sem animação nenhuma.
+- **Régua:** animação que controla a VISIBILIDADE de uma peça faz a peça
+  sumir quando falha. Prefira um mecanismo cuja falha deixa a peça
+  aparecendo.
