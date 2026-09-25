@@ -7888,3 +7888,17 @@ Nota: [[o-percurso-da-home]].
   `cartao` no público, com o mesmo defeito: `CabeNoBolso`, `Simulador`,
   `CardCorretor`, `BookDigital`.
 
+## Site de construtora: o que dá para ler sem navegador (25/09/2026)
+
+Nota: [[importar-do-site-da-construtora]]. Medido baixando páginas reais de
+empreendimento, sem navegador:
+
+- **Cyrela, EZTEC, Plano&Plano e Even entregam tudo no HTML**: 6,7 a 10 mil
+  caracteres de texto, 77 a 1.260 URLs de imagem, YouTube e Matterport em
+  iframe. As fotos vêm em `data-src`/`srcset`, não em `src`: quem lê só `src`
+  acha UMA imagem na Cyrela, em vez de 108.
+- **MRV, Vivaz e Tenda são montadas por JavaScript** (home de 13 KB sem link
+  de produto) e **P4 Engenharia devolve 406** a quem não é navegador.
+- **As fotos das construtoras chegam a 1500 px**, contra os originais de
+  320 px de vários imóveis do nosso catálogo.
+
