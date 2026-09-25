@@ -324,7 +324,7 @@ export function FormularioVenda({
             <label className={rotulo} htmlFor="venda-imovel">
               Imóvel
             </label>
-            <select id="venda-imovel" value={imovel} onChange={(e) => setImovel(e.target.value)} className={`${campo} select-seta`}>
+            <select id="venda-imovel" value={imovel} onChange={(e) => setImovel(e.target.value)} className={campo}>
               <option value="">Escolha o imóvel</option>
               {empreendimentos.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -430,7 +430,7 @@ export function FormularioVenda({
                       id={`venda-corretor-${l.chave}`}
                       value={l.corretorId}
                       onChange={(e) => mudarLinha(l.chave, { corretorId: e.target.value })}
-                      className={`${campo} select-seta`}
+                      className={campo}
                     >
                       <option value="">Escolha</option>
                       {opcoesCorretor.map((c) => (
@@ -526,7 +526,7 @@ export function FormularioVenda({
                 id="venda-status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as StatusVenda)}
-                className={`${campo} select-seta`}
+                className={campo}
               >
                 <option value="ativa">Ativa</option>
                 <option value="distratada">Distratada</option>

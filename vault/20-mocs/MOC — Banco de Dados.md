@@ -49,3 +49,4 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 ## Relacionados
 - [[MOC — Infraestrutura]] · [[MOC — CRM e Painel]] · [[Home]]
 - [[apagar-leads-leva-a-conversa-junto]] — o mapa de cascata de `delete from leads`, e as três FKs `set null` que sobrevivem órfãs (12/09)
+- [[vendas-e-o-modulo-financeiro]] — F1 do financeiro: venda com co-corretagem, comissão por venda, distrato; só o gestor marca dinheiro recebido (0114, 25/09)

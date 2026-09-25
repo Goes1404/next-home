@@ -7964,3 +7964,22 @@ Nota: [[importar-do-site-da-construtora]].
   depois do clique. Virou lotes de 4 (`LOTE_PDF`) com a action devolvendo o
   desfecho por imagem (`porItem`). O tamanho do lote é a troca entre reler o
   PDF a cada chamada e poder tirar o que ainda não saiu.
+
+## Vendas: a F1 do módulo financeiro (0114, 25/09/2026)
+
+Nota: [[vendas-e-o-modulo-financeiro]].
+
+- **O funil terminava num cartão.** `fechado` não guardava valor, unidade nem
+  comissão. Agora `vendas` + `venda_participantes` registram tudo isso, com
+  co-corretagem (as partes do VGV somam 100) e distrato como status.
+- **O corretor não pode marcar a própria comissão como paga, e é o grant
+  que garante isso.** As datas de recebido e pago ficam sem `grant update`
+  para `authenticated`. A policy de UPDATE sozinha libera a linha inteira.
+- **Policies que se consultam entram em recursão.** A de `vendas` pergunta
+  "participa?" e a de `venda_participantes` pergunta "registrou?". Uma
+  função `security definer` (`participa_da_venda`) quebra o ciclo.
+- **FK `on delete set null` junto com um CHECK de "tem imóvel" impediria
+  excluir o imóvel.** O nome do imóvel é gravado na venda.
+- **A 0114 não foi aplicada por esta sessão** (MCP da Supabase sem
+  permissão). Enquanto não for aplicada, a tela de Vendas diz que o registro
+  não está ativo e a ficha do lead segue normal.
