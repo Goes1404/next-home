@@ -45,6 +45,7 @@ somou movimento de FUNDO e de ROTA, e a régua aguentou:
 | aurora do fundo derivando | a ROLAGEM (`animation-timeline: scroll()`) |
 | aurora inclinando ±1,2vw | o PONTEIRO |
 | aurora passeando sozinha (14–24s, alternada; amplitude dobrada em 25/09) | NADA — a exceção declarada, desde 25/09 |
+| bolhas de borda definida passando atrás dos cartões (15–27s) | NADA — mesma exceção, só no fundo |
 | foco de luz no cartão | o ponteiro sobre ele |
 | varredura do herói (uma vez, 0,9s depois de montar) | a tela nova chegando — o momento de carga, junto com o medidor |
 
@@ -96,3 +97,9 @@ A deriva voltou, estreita: só `translate`/`scale` (compositor), nunca
 
 Ver [[fundo-16-9-em-tela-mais-larga-vira-faixa]] (a rodada anterior do mesmo
 pedido) e a seção da reforma visual na MEMORIA (cor por módulo).
+
+- **Coisa que se mexe atrás de texto tem de passar no CONTRASTE, e a opacidade
+  sai de medição, não de gosto** (25/09, bolhas). No pior tom de bolha: texto
+  de apoio a 4,62:1 (claro, 0,24) e 4,92:1 (escuro, 0,28). No claro a bolha é
+  CLAREADA (cor + branco) em vez de só enfraquecida: com a cor cheia, só 0,14
+  passava e a forma sumia. Mudar o tom ou a opacidade exige medir de novo.

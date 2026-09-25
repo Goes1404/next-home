@@ -193,3 +193,19 @@ atravessa a tela. Detalhes em [[movimento-do-painel-tem-regua]].
   a classe real: 16,7 ms por quadro, zero quadro acima de 33 ms. O sinal
   barato que denunciou foi a diferença de pixels entre duas capturas dar
   exatamente zero.
+
+## 25/09: bolhas que se movem, no estilo de uma referência do usuário
+
+Pedido com print de um cartão cheio de círculos roxos e magenta ("add nas no
+estilo dessas que estão no background, para elas ficarem se movendo"). Cinco
+bolhas de borda definida (`.painel-bolhas`), nas cores do módulo e da marca,
+por cima da aurora e atrás do conteúdo. A aurora é névoa; a bolha é forma, e é
+a borda que torna o movimento legível.
+
+- **Medido:** 16,7 a 17,2 ms por quadro em seis rodadas. No celular, sem
+  diferença; no desktop com o mouse, de 0 a 5 quadros acima de 33 ms em ~210,
+  contra 0 sem as bolhas. Custo pequeno e real.
+- **O contraste decidiu a opacidade** — ver [[movimento-do-painel-tem-regua]].
+- **Menos movimento para as bolhas** com `:nth-child(n)`, pela mesma razão de
+  especificidade da aurora. A guarda cobra isso, só `translate`/`scale` e que
+  todo `@keyframes bolha-*` esteja ligado (provocada três vezes).

@@ -7800,3 +7800,10 @@ superfície. Depois: 1,21 (claro) e 1,18 (escuro), texto todo em AA,
   intervalo com diferença de pixels exatamente ZERO.
 - **Pedido "mais visível" (25/09):** amplitude dobrada (9–11vw → 16–22vw,
   escala até 1,32) e ciclos de 14 a 24s.
+- **Bolhas que se movem no fundo (25/09):** cinco círculos de borda definida
+  (`.painel-bolhas`) no estilo de uma referência do usuário. **Coisa que se
+  mexe atrás de texto passa pelo contraste antes de ir ao ar**: a opacidade
+  saiu de medir o pior tom de bolha contra o texto de apoio (4,62:1 no claro a
+  0,24; 4,92:1 no escuro a 0,28). No claro a bolha é CLAREADA em vez de só
+  enfraquecida, senão só 0,14 passava e a forma sumia. Custo medido: nenhum no
+  celular; no desktop com mouse, 0 a 5 quadros lentos em ~210.
