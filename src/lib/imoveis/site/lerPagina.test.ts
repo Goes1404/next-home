@@ -162,4 +162,17 @@ describe("regras de leitura com HTML mínimo", () => {
     expect(tipos).toContain("video https://vimeo.com/123456789");
     expect(tipos).toContain("tour360 https://kuula.co/share/collection/7XyZ");
   });
+
+  it("tour da 3D Explora vira tour 360, uma vez só, mesmo com o endereço colado duas vezes (RSF)", () => {
+    const tour = "https://www.3dexplora.com.br/seutour.aspx?codigo=D783XV15XT4&amp;play=1&amp;hl=0";
+    const html = `<iframe src="${tour}${tour}" allowfullscreen></iframe>`;
+    const tours = lerPaginaDaConstrutora(html, base).midias.filter((m) => m.tipo === "tour360");
+    expect(tours.map((m) => m.url)).toEqual(["https://www.3dexplora.com.br/seutour.aspx?codigo=D783XV15XT4"]);
+  });
+
+  it("3D Explora com o código depois de outro parâmetro também é reconhecido", () => {
+    const html = `<a href="https://3dexplora.com.br/seutour.aspx?play=1&codigo=AB12CD34">tour</a>`;
+    const urls = lerPaginaDaConstrutora(html, base).midias.map((m) => m.url);
+    expect(urls).toEqual(["https://www.3dexplora.com.br/seutour.aspx?codigo=AB12CD34"]);
+  });
 });

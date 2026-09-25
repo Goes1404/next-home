@@ -193,6 +193,13 @@ const YOUTUBE =
 const VIMEO = /(?:player\.vimeo\.com\/video\/|vimeo\.com\/)(\d{6,12})/g;
 const MATTERPORT = /my\.matterport\.com\/show\/?\?m=([A-Za-z0-9]{8,16})/g;
 const KUULA = /kuula\.co\/(?:share|post)\/([A-Za-z0-9_\-/]{4,60})/g;
+/**
+ * Tour da 3D Explora (usado pela RSF). Só o `codigo` identifica o tour: o
+ * resto da URL são opções do player, e a RSF chega a publicar o endereço
+ * COLADO duas vezes no mesmo `src` — recompor a partir do código evita
+ * guardar esse lixo.
+ */
+const TRES_D_EXPLORA = /3dexplora\.com\.br\/seutour\.aspx\?(?:[^"'\s<>]*?&)?codigo=([A-Za-z0-9]{4,40})/gi;
 
 function lerMidias(html: string): MidiaDoSite[] {
   const cru = desescapar(html);
@@ -206,6 +213,8 @@ function lerMidias(html: string): MidiaDoSite[] {
 
   for (const m of cru.matchAll(MATTERPORT)) adicionar("tour360", `https://my.matterport.com/show/?m=${m[1]}`);
   for (const m of cru.matchAll(KUULA)) adicionar("tour360", `https://kuula.co/share/${m[1].replace(/\/+$/, "")}`);
+  for (const m of cru.matchAll(TRES_D_EXPLORA))
+    adicionar("tour360", `https://www.3dexplora.com.br/seutour.aspx?codigo=${m[1]}`);
   for (const m of cru.matchAll(YOUTUBE)) adicionar("video", `https://www.youtube.com/watch?v=${m[1]}`);
   for (const m of cru.matchAll(VIMEO)) adicionar("video", `https://vimeo.com/${m[1]}`);
 
