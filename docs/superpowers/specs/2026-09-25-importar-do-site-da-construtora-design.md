@@ -171,7 +171,12 @@ Entregues **F1, F2 e F3** (F0 medida com os sites acima, sem os links da casa):
 - Imóvel novo: "Preencher pelo site" no formulário; depois de criar, o
   importador abre com `?site=` e lê a página sozinho.
 
-Pendentes: **F4** (guardar o site de origem e "buscar novidades") e **F5**
-(sites montados por JavaScript). Não exercitado com login: o fluxo completo
+**F4 entregue no mesmo dia** (migration `0113`): `empreendimentos.site_construtora`
+e `midias.origem_url` (a chave da foto no site). "Buscar novidades" relê o
+link guardado; o que já foi trazido nasce escondido e desmarcado. As duas
+colunas são lidas e gravadas à parte, com o erro engolido: o código não cai
+enquanto a migration não estiver aplicada.
+
+Pendente: **F5** (sites montados por JavaScript). Não exercitado com login: o fluxo completo
 no painel de produção.
 

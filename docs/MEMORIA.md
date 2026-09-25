@@ -7919,3 +7919,18 @@ Nota: [[importar-do-site-da-construtora]].
   atributo, e tirar um deles não muda o resultado. Regra específica pede teste
   de HTML mínimo.
 
+### Buscar novidades no site da construtora (0113, 25/09/2026)
+
+Nota: [[importar-do-site-da-construtora]].
+
+- **Código que depende de coluna nova tem de funcionar ANTES da migration.**
+  Esta sessão não tinha acesso de escrita ao banco, então a 0113 subiu no
+  repositório sem estar aplicada. As colunas (`site_construtora`,
+  `origem_url`) ficaram fora do insert de `registrarMidia` e do SELECT do
+  catálogo e são lidas/gravadas à parte, com o erro virando log: sem a
+  migration, só o atalho "Buscar novidades" e a marca "já trazida" somem.
+- **`str.replace` do Python troca TODAS as ocorrências.** O bloco de
+  `trazerImagemDoSite` é idêntico ao de `trazerImagemDoDrive`, e a edição
+  entrou nos dois; o `tsc` pegou porque o Drive não tem `entrada.url`. Ao
+  editar por script, conferir a contagem antes (`s.count(old) == 1`).
+

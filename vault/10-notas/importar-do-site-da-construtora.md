@@ -51,3 +51,16 @@ Ver [[planta-que-chega-como-foto]].
 - Duas guardas do leitor não mordiam (a página real traz a foto por mais de
   um caminho); viraram testes de HTML mínimo, e mordem.
 
+## Buscar novidades (F4, 0113)
+
+- O imóvel guarda `site_construtora` e cada foto trazida guarda
+  `origem_url`, que é a **chave** da foto (`chaveDaFoto`), não a URL crua:
+  na próxima leitura a mesma foto pode vir em outro tamanho ou formato.
+- O dedup por sha256 só sabe que a foto já existe DEPOIS de baixar. Com a
+  origem guardada, a tela esconde o que já veio sem baixar nada.
+- **Coluna nova nunca entra no caminho que não pode cair.** O insert de
+  `registrarMidia` e o SELECT do catálogo não citam as colunas da 0113; elas
+  são gravadas e lidas por consultas à parte, com o erro virando log. Guarda:
+  `lembrarOrigem.test.ts`. É a lição de 07/09 (a 0101 subiu no código e não
+  no banco, e três telas caíram) virando desenho.
+
