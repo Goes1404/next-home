@@ -7836,3 +7836,23 @@ Nota: [[video-do-celular-rola-com-a-pagina]].
   pela tela COM barras (`svh`). As duas usam `svh` agora (a camada rola com a
   página, então `svh` é estável), e a base do herói no celular foi de
   `pb-32` para `pb-6`.
+
+## O percurso da home: cor e textura sem tirar contraste (25/09/2026)
+
+Nota: [[o-percurso-da-home]].
+
+- **SVG embutido em `url("…")` usa aspas SIMPLES por dentro.** Com aspas
+  duplas a string fecha no meio e o compilador descarta a regra inteira,
+  calado (a textura só não aparecia). Corrigir isso por script com troca de
+  aspas passou do ponto, abriu uma string que engoliu o resto do arquivo e
+  alterou trechos alheios: reconstruir da versão commitada e inserir só o
+  bloco novo foi o conserto.
+- **Fundo decorativo só pode AFASTAR o fundo da cor do texto.** No claro,
+  tom clareado com branco (teto ~22% de cor, porque o fundo do site já é
+  luminoso) e traço branco; no escuro, base no próprio fundo e traço preto.
+  Traço escuro no claro derrubou um tênue de 3,1:1 para 2,2:1.
+- **Medir contraste texto a texto contra a MESMA página sem a mudança**,
+  casando por texto e altura: contadores animados mudam de número entre
+  capturas e desalinham comparação por índice.
+- **A home rola a ~36 ms por quadro num celular com CPU 4x**, com ou sem o
+  fundo novo. Anterior, não investigado.
