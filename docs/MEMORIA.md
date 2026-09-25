@@ -7780,7 +7780,7 @@ superfície. Depois: 1,21 (claro) e 1,18 (escuro), texto todo em AA,
   medição.** Ela nasceu em 24/09 de 43,6 ms por quadro que eram do
   `backdrop-blur` dos heróis, não da animação. Refeito sem o blur, com a
   bolha do consultor montada: 16,7 ms com e sem deriva, celular CPU 4x e
-  desktop. A aurora deriva sozinha (19–31s) só com `translate`/`scale`;
+  desktop. A aurora deriva sozinha (14–24s) só com `translate`/`scale`;
   `transform` continua sendo da rolagem, e as duas se compõem.
 - **Menos movimento tem de GANHAR na especificidade.** `.painel-aurora > i
   { animation: none }` perdia para os `:nth-child(k)` que nomeiam as
@@ -7790,3 +7790,13 @@ superfície. Depois: 1,21 (claro) e 1,18 (escuro), texto todo em AA,
   `@keyframes` que ele não vê referenciado; conferir no CSS compilado.
 - **Com algo andando sozinho no fundo, `backdrop-filter` volta a custar por
   quadro.** Antes de pôr vidro sobre o painel, medir.
+- **Harness sem a CLASSE do `<main>` não pinta a aurora.** O `isolate` vem
+  do layout por `className` (`CromaDoModulo`); sem ele o `-z-10` do fundo
+  cai para trás do fundo da página e nada aparece — nem pintado de vermelho.
+  A primeira medição da deriva (16,7 ms) foi feita assim e não media nada;
+  refeita com a classe real, deu os mesmos 16,7 ms. Ao montar harness de um
+  componente, copiar também os ATRIBUTOS e classes do pai, não só a árvore.
+  E o sinal barato de que algo está errado: duas capturas com 7s de
+  intervalo com diferença de pixels exatamente ZERO.
+- **Pedido "mais visível" (25/09):** amplitude dobrada (9–11vw → 16–22vw,
+  escala até 1,32) e ciclos de 14 a 24s.

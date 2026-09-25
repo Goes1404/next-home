@@ -2475,7 +2475,7 @@ main[data-rota="painel"] {
   left: -8vmax;
 }
 /*
- * 2b. A DERIVA: cada mancha anda sozinha, devagar, em ciclos de 19 a 31s
+ * 2b. A DERIVA: cada mancha anda sozinha, devagar, em ciclos de 14 a 24s
  * que não se sincronizam — é o que faz o fundo parecer vivo sem nunca
  * repetir o mesmo quadro de relance. Anima `translate` e `scale`, as
  * propriedades INDIVIDUAIS, e não `transform`: o `transform` já é da
@@ -2491,19 +2491,19 @@ main[data-rota="painel"] {
 }
 .painel-aurora > i:nth-child(1) {
   animation-name: deriva-a;
-  animation-duration: 23s;
+  animation-duration: 17s;
 }
 .painel-aurora > i:nth-child(2) {
   animation-name: deriva-b;
-  animation-duration: 27s;
+  animation-duration: 21s;
 }
 .painel-aurora > i:nth-child(3) {
   animation-name: deriva-c;
-  animation-duration: 19s;
+  animation-duration: 14s;
 }
 .painel-aurora > i:nth-child(4) {
   animation-name: deriva-d;
-  animation-duration: 31s;
+  animation-duration: 24s;
 }
 @supports (animation-timeline: scroll()) {
   .painel-aurora > i {
@@ -2516,43 +2516,43 @@ main[data-rota="painel"] {
   }
   .painel-aurora > i:nth-child(1) {
     animation-name: aurora-a, deriva-a;
-    animation-duration: auto, 23s;
+    animation-duration: auto, 17s;
   }
   .painel-aurora > i:nth-child(2) {
     animation-name: aurora-b, deriva-b;
-    animation-duration: auto, 27s;
+    animation-duration: auto, 21s;
   }
   .painel-aurora > i:nth-child(3) {
     animation-name: aurora-c, deriva-c;
-    animation-duration: auto, 19s;
+    animation-duration: auto, 14s;
   }
   .painel-aurora > i:nth-child(4) {
     animation-name: aurora-c, deriva-d;
-    animation-duration: auto, 31s;
+    animation-duration: auto, 24s;
   }
 }
 @keyframes deriva-a {
   to {
-    translate: -9vw 7vh;
-    scale: 1.12;
+    translate: -18vw 14vh;
+    scale: 1.22;
   }
 }
 @keyframes deriva-b {
   to {
-    translate: 11vw -6vh;
-    scale: 0.9;
+    translate: 22vw -13vh;
+    scale: 0.82;
   }
 }
 @keyframes deriva-c {
   to {
-    translate: 8vw 9vh;
-    scale: 1.18;
+    translate: 16vw 18vh;
+    scale: 1.32;
   }
 }
 @keyframes deriva-d {
   to {
-    translate: 70vw 34vh;
-    scale: 1.3;
+    translate: 80vw 46vh;
+    scale: 1.45;
   }
 }
 @keyframes aurora-a {

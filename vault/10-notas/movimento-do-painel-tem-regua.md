@@ -44,7 +44,7 @@ somou movimento de FUNDO e de ROTA, e a régua aguentou:
 | troca de tela (`painel-sai` / `painel-entra`, View Transitions) | a navegação |
 | aurora do fundo derivando | a ROLAGEM (`animation-timeline: scroll()`) |
 | aurora inclinando ±1,2vw | o PONTEIRO |
-| aurora passeando sozinha (19–31s, alternada) | NADA — a exceção declarada, desde 25/09 |
+| aurora passeando sozinha (14–24s, alternada; amplitude dobrada em 25/09) | NADA — a exceção declarada, desde 25/09 |
 | foco de luz no cartão | o ponteiro sobre ele |
 | varredura do herói (uma vez, 0,9s depois de montar) | a tela nova chegando — o momento de carga, junto com o medidor |
 

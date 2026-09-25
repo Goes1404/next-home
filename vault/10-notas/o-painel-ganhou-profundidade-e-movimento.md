@@ -185,3 +185,11 @@ atravessa a tela. Detalhes em [[movimento-do-painel-tem-regua]].
 - **A guarda foi reescrita, não apagada**, e na provocação ela deixou passar
   tirar a deriva só da regra do `@supports` — justo a que vale no Chrome.
   Hoje cobra o nome nas duas regras.
+
+- **Mais visível, a pedido (25/09):** amplitude dobrada e ciclos de 14 a
+  24s. Nessa rodada apareceu que o harness anterior não tinha o `isolate`
+  do `<main>` (vem por `className` do layout) e por isso NÃO pintava a
+  aurora: a primeira medição da deriva media um fundo invisível. Refeita com
+  a classe real: 16,7 ms por quadro, zero quadro acima de 33 ms. O sinal
+  barato que denunciou foi a diferença de pixels entre duas capturas dar
+  exatamente zero.
