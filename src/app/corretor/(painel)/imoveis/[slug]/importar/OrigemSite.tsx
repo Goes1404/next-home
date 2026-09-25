@@ -13,6 +13,8 @@ import {
 } from "./acoes";
 import { GradeCuradoria, type EscolhaCuradoria, type ItemDaGrade } from "./GradeCuradoria";
 import { RascunhoCadastro } from "./RascunhoCadastro";
+import { ResultadoDaImportacao, tituloDoResultado, type ResultadoImportacao } from "./ResultadoDaImportacao";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 
 /** Três de cada vez, como no Drive: rápido e sem abrir dezenas de conexões. */
 const EM_PARALELO = 3;
@@ -55,6 +57,8 @@ export function OrigemSite({
   const [progresso, setProgresso] = useState<{ feitos: number; total: number; etapa: string } | null>(null);
   const [falhas, setFalhas] = useState<string[]>([]);
   const [resumo, setResumo] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<ResultadoImportacao | null>(null);
+  const { avisar } = useAvisos();
   const [estados, setEstados] = useState<Record<string, NonNullable<ItemDaGrade["estado"]>>>({});
 
   // O envio lê a lista NA HORA em que cada item sai, não a foto da lista do
@@ -77,6 +81,7 @@ export function OrigemSite({
     setRascunhoSalvo(null);
     setFalhas([]);
     setResumo(null);
+    setResultado(null);
     setProgresso(null);
     setEstados({});
     setLendo(true);
@@ -146,7 +151,10 @@ export function OrigemSite({
           ? `${Object.keys(aceitos).length} ${Object.keys(aceitos).length === 1 ? "campo salvo" : "campos salvos"} no cadastro.`
           : (resultado.erro ?? "Não consegui salvar agora."),
       );
-      if (resultado.ok) setRascunho(null);
+      if (resultado.ok) {
+        setRascunho(null);
+        avisar("Dados do imóvel salvos no cadastro.");
+      }
     } catch {
       setRascunhoSalvo("Não consegui salvar agora. Confira sua conexão e tente de novo.");
     }
@@ -165,6 +173,7 @@ export function OrigemSite({
 
     setFalhas([]);
     setResumo(null);
+    setResultado(null);
     parar.current = false;
     setEstados(Object.fromEntries(imagensEscolhidas.map((e) => [e.chave, "fila" as const])));
     const marcarEstado = (chave: string, estado: NonNullable<ItemDaGrade["estado"]>) =>
@@ -274,8 +283,10 @@ export function OrigemSite({
 
     setProgresso(null);
     setFalhas(problemas);
-    setResumo(
-      [
+    const final: ResultadoImportacao = {
+      entraram: fotos + plantas + midias,
+      falharam: problemas.length,
+      linhas: [
         fotos > 0 ? `${fotos} ${fotos === 1 ? "foto adicionada" : "fotos adicionadas"}.` : "",
         plantas > 0 ? `${plantas} ${plantas === 1 ? "planta adicionada" : "plantas adicionadas"}.` : "",
         tipologias > 0 ? `${tipologias} ${tipologias === 1 ? "planta virou ficha" : "plantas viraram ficha"} (dormitórios e metragem).` : "",
@@ -283,10 +294,10 @@ export function OrigemSite({
         duplicadas > 0 ? `${duplicadas} ${duplicadas === 1 ? "já estava" : "já estavam"} na galeria.` : "",
         tiradas > 0 ? `${tiradas} ${tiradas === 1 ? "tirada" : "tiradas"} da lista antes de enviar.` : "",
         parar.current ? "Envio parado." : "",
-      ]
-        .filter(Boolean)
-        .join(" ") || "Nada novo entrou.",
-    );
+      ].filter(Boolean),
+    };
+    setResultado(final);
+    avisar(tituloDoResultado(final), final.entraram === 0 && final.falharam > 0 ? "erro" : "ok");
   };
 
   const jaTrazidas = analise?.imagens.filter((img) => img.jaTrazida).length ?? 0;
@@ -488,6 +499,8 @@ export function OrigemSite({
           {resumo}
         </p>
       ) : null}
+
+      {resultado ? <ResultadoDaImportacao resultado={resultado} slug={slug} /> : null}
 
       {falhas.length > 0 ? (
         <ul role="alert" className="space-y-1 text-fluid-xs text-corpo break-words">

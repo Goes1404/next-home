@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { ArquivoDrive } from "@/lib/imoveis/drive";
 import { listarMaterialDoDrive, trazerArquivoDoDrive } from "./acoes";
 import { GradeCuradoria, type EscolhaCuradoria, type ItemDaGrade } from "./GradeCuradoria";
+import { ResultadoDaImportacao, tituloDoResultado, type ResultadoImportacao } from "./ResultadoDaImportacao";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 
 /** Três de cada vez: rápido o bastante e sem abrir dezenas de conexões. */
 const EM_PARALELO = 3;
@@ -23,12 +25,15 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
   const [progresso, setProgresso] = useState<{ feitos: number; total: number } | null>(null);
   const [falhas, setFalhas] = useState<string[]>([]);
   const [resumo, setResumo] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<ResultadoImportacao | null>(null);
+  const { avisar } = useAvisos();
   const [buscando, setBuscando] = useState(false);
 
   const buscar = async () => {
     setErro(null);
     setFalhas([]);
     setResumo(null);
+    setResultado(null);
     setProgresso(null);
     setBuscando(true);
 
@@ -63,6 +68,7 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
     setProgresso({ feitos: 0, total: escolhidos.length });
     setFalhas([]);
     setResumo(null);
+    setResultado(null);
 
     const fila = [...escolhidos];
     const problemas: string[] = [];
@@ -98,14 +104,16 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
 
     setFalhas(problemas);
     const entraram = escolhidos.length - problemas.length - duplicadas;
-    setResumo(
-      [
-        `${entraram} ${entraram === 1 ? "foto adicionada" : "fotos adicionadas"} ao imóvel.`,
+    const final: ResultadoImportacao = {
+      entraram,
+      falharam: problemas.length,
+      linhas: [
+        entraram > 0 ? `${entraram} ${entraram === 1 ? "foto adicionada" : "fotos adicionadas"}.` : "",
         duplicadas > 0 ? `${duplicadas} ${duplicadas === 1 ? "já estava" : "já estavam"} na galeria.` : "",
-      ]
-        .filter(Boolean)
-        .join(" "),
-    );
+      ].filter(Boolean),
+    };
+    setResultado(final);
+    avisar(tituloDoResultado(final), final.entraram === 0 && final.falharam > 0 ? "erro" : "ok");
   };
 
   const videos = arquivos?.filter((a) => a.ehVideo) ?? [];
@@ -184,6 +192,8 @@ export function OrigemDrive({ empreendimentoId, slug }: { empreendimentoId: stri
           {resumo}
         </p>
       ) : null}
+
+      {resultado ? <ResultadoDaImportacao resultado={resultado} slug={slug} /> : null}
 
       {falhas.length > 0 ? (
         <ul role="alert" className="space-y-1 text-fluid-xs text-corpo">

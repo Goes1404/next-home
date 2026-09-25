@@ -15,6 +15,8 @@ import {
 } from "./acoes";
 import { GradeCuradoria, type EscolhaCuradoria, type ItemDaGrade } from "./GradeCuradoria";
 import { RascunhoCadastro } from "./RascunhoCadastro";
+import { ResultadoDaImportacao, tituloDoResultado, type ResultadoImportacao } from "./ResultadoDaImportacao";
+import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 
 /**
  * Aba da apresentação em PDF.
@@ -42,6 +44,8 @@ export function OrigemPdf({
   const [avisoRascunho, setAvisoRascunho] = useState<string | null>(null);
   const [rascunhoSalvo, setRascunhoSalvo] = useState<string | null>(null);
   const [tipologias, setTipologias] = useState<string | null>(null);
+  const [resultadoFinal, setResultadoFinal] = useState<ResultadoImportacao | null>(null);
+  const { avisar } = useAvisos();
 
   const aoEscolherArquivo = async (arquivo: File) => {
     setResumo(null);
@@ -49,6 +53,7 @@ export function OrigemPdf({
     setRascunho(null);
     setAvisoRascunho(null);
     setRascunhoSalvo(null);
+    setResultadoFinal(null);
     setTipologias(null);
 
     if (arquivo.size > TETO_PDF_BYTES) {
@@ -121,7 +126,10 @@ export function OrigemPdf({
         ? `${Object.keys(aceitos).length} ${Object.keys(aceitos).length === 1 ? "campo salvo" : "campos salvos"} no cadastro.`
         : (resultado.erro ?? "Não consegui salvar agora."),
     );
-    if (resultado.ok) setRascunho(null);
+    if (resultado.ok) {
+      setRascunho(null);
+      avisar("Dados do imóvel salvos no cadastro.");
+    }
   };
 
   const gravar = async () => {
@@ -147,17 +155,22 @@ export function OrigemPdf({
       return;
     }
 
-    setResumo(
-      [
-        `${resultado.gravadas} ${resultado.gravadas === 1 ? "imagem adicionada" : "imagens adicionadas"} ao imóvel.`,
+    setResumo(null);
+    const final: ResultadoImportacao = {
+      entraram: resultado.gravadas,
+      falharam: resultado.falhas.length,
+      linhas: [
+        resultado.gravadas > 0
+          ? `${resultado.gravadas} ${resultado.gravadas === 1 ? "imagem adicionada" : "imagens adicionadas"}.`
+          : "",
         resultado.duplicadas > 0
           ? `${resultado.duplicadas} ${resultado.duplicadas === 1 ? "já estava" : "já estavam"} na galeria.`
           : "",
         ...resultado.falhas,
-      ]
-        .filter(Boolean)
-        .join(" "),
-    );
+      ].filter(Boolean),
+    };
+    setResultadoFinal(final);
+    avisar(tituloDoResultado(final), final.entraram === 0 && final.falharam > 0 ? "erro" : "ok");
 
     // Cada planta vira a tipologia que ela representa — é dela que o bot
     // tira dormitórios, suítes e metragem para responder ao cliente. Uma
@@ -283,6 +296,8 @@ export function OrigemPdf({
           {resumo}
         </p>
       ) : null}
+
+      {resultadoFinal ? <ResultadoDaImportacao resultado={resultadoFinal} slug={slug} /> : null}
 
       {tipologias ? (
         <p role="status" className="text-fluid-xs text-corpo">
