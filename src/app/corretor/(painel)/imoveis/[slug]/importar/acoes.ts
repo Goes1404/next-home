@@ -8,7 +8,15 @@ import { extrairImagensDePdf, TETO_IMAGENS } from "@/lib/imoveis/pdfImagens";
 import { gerarPreview, sharpDisponivel } from "@/lib/imoveis/imagemDerivada";
 import { registrarMidia } from "@/lib/imoveis/registrarMidia";
 import { baixarArquivo, listarPasta, parsearLinkDrive, type ArquivoDrive } from "@/lib/imoveis/drive";
-import { montarRascunhoDePdf, type RascunhoCadastro } from "@/lib/imoveis/rascunhoDePdf";
+import { montarRascunhoDePdf, montarRascunhoDeTexto, type RascunhoCadastro } from "@/lib/imoveis/rascunhoDePdf";
+import { buscarSeguro } from "@/lib/imoveis/site/buscarSeguro";
+import {
+  lerPaginaDaConstrutora,
+  type DicasEstruturadas,
+  type ImagemDoSite,
+  type MidiaDoSite,
+} from "@/lib/imoveis/site/lerPagina";
+import { youtubeId } from "@/lib/embedMidia";
 import { lerPlanta } from "@/lib/imoveis/lerPlanta";
 import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
 import { limparTextoDeApresentacao } from "@/lib/imoveis/textoDoDeck";
@@ -253,6 +261,19 @@ export async function gerarTipologiaDaPlanta(entrada: {
   if (!imagem) return { ok: false, erro: "não reencontrei a planta no arquivo" };
 
   const leitura = await lerPlanta(imagem.bytes, imagem.mime, limparTextoDeApresentacao(extrairTextoDePdf(pdf)));
+  return gravarTipologiaLida(supabase, entrada, leitura);
+}
+
+/**
+ * Da leitura da planta à linha de `tipologias`. Compartilhada pelas origens
+ * PDF e Site: duas cópias da regra de "mesmo nome atualiza, não duplica"
+ * divergiriam na primeira mudança.
+ */
+async function gravarTipologiaLida(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  entrada: { empreendimentoId: string; slug: string; plantaUrl: string },
+  leitura: Awaited<ReturnType<typeof lerPlanta>>,
+): Promise<ResultadoTipologia> {
   if (!leitura.ok) {
     return {
       ok: false,
@@ -502,3 +523,183 @@ export async function aplicarRascunhoNoCadastro(entrada: {
 
   return { ok: true };
 }
+
+// ─── Origem: site da construtora ──────────────────────────────────────────
+
+/** Página de empreendimento passa de 1 MB (Even: 1,3 MB); 5 MB é folga. */
+const TETO_HTML = 5 * 1024 * 1024;
+/** Foto de construtora chega a 1500 px; 15 MB cobre com folga e trava o absurdo. */
+const TETO_IMAGEM = 15 * 1024 * 1024;
+
+export type ImagemDoSiteNaTela = ImagemDoSite;
+export type MidiaDoSiteNaTela = MidiaDoSite & { jaCadastrada: boolean };
+
+export type AnaliseDoSite =
+  | {
+      ok: true;
+      titulo: string;
+      /** Vai e volta pela tela: é dele que saem o rascunho e a leitura das plantas. */
+      texto: string;
+      dicas: DicasEstruturadas;
+      imagens: ImagemDoSiteNaTela[];
+      midias: MidiaDoSiteNaTela[];
+      montadaPorJs: boolean;
+      urlFinal: string;
+    }
+  | { ok: false; erro: string };
+
+/** Identidade de uma mídia externa: o ID do YouTube, ou a URL sem barra final. */
+function identidadeDaMidia(url: string): string {
+  return youtubeId(url) ?? url.trim().replace(/\/+$/, "").toLowerCase();
+}
+
+/**
+ * Baixa e lê a página do empreendimento no site da construtora.
+ *
+ * Nada é gravado aqui. A análise devolve o que a página tem, e a curadoria
+ * acontece na tela — só o que o corretor marcar é trazido depois, uma foto
+ * por chamada (`trazerImagemDoSite`), como no Drive.
+ */
+export async function analisarSite(entrada: { url: string; empreendimentoId: string }): Promise<AnaliseDoSite> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada. Entre de novo." };
+
+  const busca = await buscarSeguro(entrada.url, {
+    tetoBytes: TETO_HTML,
+    prazoMs: 15_000,
+    aceitar: (tipo) => tipo.includes("text/html") || tipo.includes("application/xhtml"),
+  });
+
+  if (!busca.ok) {
+    return {
+      ok: false,
+      erro:
+        busca.motivo === "bloqueado"
+          ? `${busca.mensagem} Use a aba de PDF ou a do Drive com o material que a construtora mandou.`
+          : busca.motivo === "tipo_errado"
+            ? "Este link não é de uma página de site. Cole o endereço da página do empreendimento."
+            : busca.mensagem,
+    };
+  }
+
+  const pagina = lerPaginaDaConstrutora(busca.bytes.toString("utf8"), busca.urlFinal);
+
+  const supabase = await createClient();
+  const { data: existentes } = await supabase
+    .from("midias")
+    .select("url")
+    .eq("empreendimento_id", entrada.empreendimentoId)
+    .in("tipo", ["video", "tour360"]);
+  const jaTem = new Set((existentes ?? []).map((m) => identidadeDaMidia(m.url)));
+
+  return {
+    ok: true,
+    titulo: pagina.titulo,
+    texto: pagina.texto,
+    dicas: pagina.dicas,
+    imagens: pagina.imagens,
+    midias: pagina.midias.map((m) => ({ ...m, jaCadastrada: jaTem.has(identidadeDaMidia(m.url)) })),
+    montadaPorJs: pagina.montadaPorJs,
+    urlFinal: busca.urlFinal,
+  };
+}
+
+function dicasComoTexto(dicas: DicasEstruturadas): string {
+  return [
+    dicas.nome ? `Nome: ${dicas.nome}` : "",
+    dicas.endereco ? `Endereço: ${dicas.endereco}` : "",
+    dicas.bairro ? `Bairro ou região: ${dicas.bairro}` : "",
+    dicas.cidade ? `Cidade: ${dicas.cidade}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** Mesmo leitor do PDF, com o texto da página e as dicas estruturadas dela. */
+export async function sugerirCadastroDoSite(entrada: {
+  texto: string;
+  dicas: DicasEstruturadas;
+}): Promise<SugestaoDeCadastro> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, aviso: "Sessão expirada. Entre de novo." };
+
+  const resultado = await montarRascunhoDeTexto(entrada.texto.slice(0, 20_000), dicasComoTexto(entrada.dicas));
+  if (!resultado.ok) {
+    return {
+      ok: false,
+      aviso:
+        resultado.motivo === "sem_texto"
+          ? "A página quase não tem texto. As fotos e vídeos acima continuam disponíveis; os dados do imóvel precisam ser digitados."
+          : "Não consegui ler os dados da página agora. As fotos e vídeos acima continuam disponíveis.",
+    };
+  }
+  return { ok: true, rascunho: resultado.rascunho };
+}
+
+/**
+ * Traz UMA imagem do site para a galeria. Uma por chamada, como no Drive: o
+ * teto da função é 60 s, e o que falha aparece nomeado sem derrubar o resto.
+ */
+export async function trazerImagemDoSite(entrada: {
+  empreendimentoId: string;
+  slug: string;
+  url: string;
+  legenda: string;
+  tipo: "foto" | "planta";
+  capa: boolean;
+}): Promise<{ ok: boolean; duplicada?: boolean; url?: string; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "sessão expirada" };
+
+  const busca = await buscarSeguro(entrada.url, {
+    tetoBytes: TETO_IMAGEM,
+    prazoMs: 20_000,
+    aceitar: (tipo) => /^image\/(jpeg|png|webp)/.test(tipo),
+  });
+  if (!busca.ok) return { ok: false, erro: busca.mensagem };
+
+  const supabase = await createClient();
+  const resultado = await registrarMidia(depsMidiaSupabase(supabase), {
+    empreendimentoId: entrada.empreendimentoId,
+    bytes: busca.bytes,
+    mime: busca.contentType.split(";")[0].trim(),
+    tipo: entrada.tipo,
+    alt: entrada.legenda.slice(0, 200) || (entrada.tipo === "planta" ? "Planta do empreendimento" : "Foto do empreendimento"),
+    ordem: entrada.capa ? 0 : 10,
+  });
+  if (!resultado.ok) return { ok: false, erro: resultado.erro };
+
+  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarCatalogo();
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+
+  return { ok: true, duplicada: resultado.duplicada, url: resultado.url };
+}
+
+/**
+ * A planta trazida do site vira tipologia. A imagem é relida da NOSSA cópia
+ * (já no Storage), e o texto da página entra como contexto — é nele que
+ * moram o nome e a metragem de cada tipologia.
+ */
+export async function gerarTipologiaDaPlantaDoSite(entrada: {
+  empreendimentoId: string;
+  slug: string;
+  plantaUrl: string;
+  texto: string;
+}): Promise<ResultadoTipologia> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "sessão expirada" };
+
+  const busca = await buscarSeguro(entrada.plantaUrl, {
+    tetoBytes: TETO_IMAGEM,
+    prazoMs: 20_000,
+    aceitar: (tipo) => tipo.startsWith("image/"),
+  });
+  if (!busca.ok) return { ok: false, erro: "não consegui reabrir a planta" };
+
+  const leitura = await lerPlanta(busca.bytes, busca.contentType.split(";")[0].trim(), entrada.texto.slice(0, 20_000));
+  const supabase = await createClient();
+  return gravarTipologiaLida(supabase, entrada, leitura);
+}
+

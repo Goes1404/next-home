@@ -96,7 +96,13 @@ export function GradeCuradoria({
                 {/* Prévia é data URL (PDF) ou thumbnail do Google (Drive):
                     nenhuma das duas passa pelo otimizador do next/image. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.preview} alt={item.legenda} className="h-full w-full object-cover" />
+                <img
+                  src={item.preview}
+                  alt={item.legenda}
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-cover"
+                />
                 {dentro ? null : (
                   <span className="absolute inset-0 flex items-center justify-center bg-fundo/45 text-fluid-xs font-bold text-corpo">
                     fora
