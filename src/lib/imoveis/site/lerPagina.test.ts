@@ -129,8 +129,17 @@ describe("regras de leitura com HTML mínimo", () => {
     expect(lerPaginaDaConstrutora(html, base).imagens[0].url).toBe("https://cdn.x.com/sala.jpg");
   });
 
+  it("a foto em data-src é a de verdade, não o marcador do src", () => {
+    // Na página real da Cyrela a mesma foto também aparece por outro caminho,
+    // e o teste de fixture não pegaria a perda do data-src. Este pega.
+    const html = `<img alt="Sala" src="/carregando.gif" data-src="/sala-de-estar.jpg">`;
+    expect(lerPaginaDaConstrutora(html, base).imagens.map((i) => i.url)).toEqual([
+      "https://construtora.com.br/sala-de-estar.jpg",
+    ]);
+  });
+
   it("implantação não é planta de apartamento", () => {
-    const html = `<img alt="Implantação do condomínio" src="/implantacao.jpg"><img alt="Planta 2 dorms" src="/p2.jpg">`;
+    const html = `<img alt="Planta de implantação do condomínio" src="/i.jpg"><img alt="Planta 2 dorms" src="/p2.jpg">`;
     const [implantacao, planta] = lerPaginaDaConstrutora(html, base).imagens;
     expect(implantacao.parecePlanta).toBe(false);
     expect(planta.parecePlanta).toBe(true);
