@@ -81,7 +81,10 @@ describe("profundidade do painel: o que custa quadro fica fora", () => {
       const props = [...corpo.matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]);
       expect(props.length).toBeGreaterThan(0);
       for (const p of props) expect(["translate", "scale"]).toContain(p);
-      expect(aurora).toMatch(new RegExp(`animation-name:[^;]*\\b${nome}\\b`));
+      // Nas DUAS regras: a de fora (sem `scroll()`) e a do `@supports`, que é
+      // a que vale no Chrome — faltar só nesta deixaria a mancha parada lá.
+      const ligadas = aurora.match(new RegExp(`animation-name:[^;]*\\b${nome}\\b`, "g")) ?? [];
+      expect(ligadas.length, nome).toBeGreaterThanOrEqual(2);
     }
     const reduzido = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce)"));
     expect(reduzido).toMatch(/\.painel-aurora > i:nth-child\(n\)[^{]*\{\s*animation:\s*none/);
