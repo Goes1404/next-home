@@ -8044,3 +8044,11 @@ Nota: [[link-de-anuncio-e-rodizio-aleatorio]].
 - **Guarda de migration que busca `function public.x(`** acha o
   `grant execute on function public.x(` posterior. Ancorar em
   `create or replace`. Mais uma guarda que tropeçaria no próprio recorte.
+- **Produção tinha uma `sortear_corretor_whatsapp(preferido uuid)` que não
+  existe em migration nenhuma** (aplicada direto no banco). Achada ao aplicar a
+  0117 pelo conector; a 0117 passou a derrubá-la também, senão duas sobrecargas
+  com default deixariam a chamada sem argumento ambígua. Antes de aplicar
+  migration que substitui função, listar as assinaturas reais em `pg_proc`.
+- **O conector do Supabase estava logado em outra conta** e por isso toda
+  chamada dava "permission denied". `list_projects` responde em um segundo
+  qual conta está conectada.

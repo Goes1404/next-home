@@ -81,7 +81,12 @@ begin
 end
 $function$;
 
+-- Produção tinha uma variante `sortear_corretor_whatsapp(preferido uuid)`
+-- aplicada direto no banco, fora de qualquer migration (achada em 26/09).
+-- Nenhum código passa `preferido`; sai junto, senão as duas sobrecargas com
+-- default tornariam a chamada sem argumento ambígua.
 drop function if exists public.sortear_corretor_whatsapp();
+drop function if exists public.sortear_corretor_whatsapp(uuid);
 
 create or replace function public.sortear_corretor_whatsapp(p_empreendimento uuid default null)
 returns table(corretor_id uuid, telefone text)
