@@ -8052,3 +8052,18 @@ Nota: [[link-de-anuncio-e-rodizio-aleatorio]].
 - **O conector do Supabase estava logado em outra conta** e por isso toda
   chamada dava "permission denied". `list_projects` responde em um segundo
   qual conta está conectada.
+
+## A Next Home é o espelho da versão geral (decisão, 26/09/2026)
+
+Nota: [[next-home-e-o-espelho-da-versao-geral]].
+
+- **Decisão de produto:** terminar esta instalação completa e, depois,
+  derivar a versão para vender, com funcionalidades limitadas e **uma
+  instalação por cliente** (banco e projeto Vercel próprios). Multi-empresa
+  num banco só foi descartado.
+- **Por isso credencial de terceiro por variável de ambiente continua
+  certa** (Meta Ads inclusive): cada cliente terá as dele. OAuth da Meta e
+  revisão do app só seriam necessários no modelo multi-empresa.
+- **Antes do segundo cliente:** histórico de migrations confiável, o que está
+  fixo como "Next Home" virando configuração, e planos pagos (Hobby da Vercel
+  não permite uso comercial).
