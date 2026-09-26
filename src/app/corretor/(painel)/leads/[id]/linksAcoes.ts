@@ -41,11 +41,17 @@ async function leadDaCarteira(leadId: string) {
 
 async function gravar(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  p: { tipo: TipoDeLink; leadId: string; corretorId: string; dados: Record<string, unknown>; nome: string },
+  p: { tipo: TipoDeLink; leadId: string; corretorId: string; dados: Record<string, unknown>; nome: string; expiraEm?: string },
 ): Promise<LinkCriado> {
   const { data, error } = await supabase
     .from("links_do_cliente")
-    .insert({ tipo: p.tipo, lead_id: p.leadId, corretor_id: p.corretorId, dados: p.dados as never })
+    .insert({
+      tipo: p.tipo,
+      lead_id: p.leadId,
+      corretor_id: p.corretorId,
+      dados: p.dados as never,
+      ...(p.expiraEm ? { expira_em: p.expiraEm } : {}),
+    })
     .select("token")
     .single();
   if (error || !data) return { erro: "Não foi possível criar o link agora." };
@@ -183,5 +189,38 @@ export async function criarProposta(leadId: string, entrada: EntradaDaProposta):
     corretorId: r.corretor.id,
     nome: r.lead.nome,
     dados: v.dados,
+  });
+}
+
+/**
+ * Portal do comprador (0125): UM link por cliente, que vale até as chaves.
+ * Pedir de novo devolve o mesmo link enquanto ele vale — o cliente guarda o
+ * endereço, e um link novo a cada clique deixaria o antigo órfão na mão dele.
+ */
+export async function criarPortal(leadId: string): Promise<LinkCriado> {
+  const r = await leadDaCarteira(leadId);
+  if ("erro" in r) return { erro: r.erro! };
+  const primeiroNome = r.lead.nome.trim().split(/\s+/)[0] || null;
+  const { data: existente } = await r.supabase
+    .from("links_do_cliente")
+    .select("token, expira_em")
+    .eq("lead_id", leadId)
+    .eq("tipo", "portal")
+    .gt("expira_em", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existente) {
+    const url = `${site.url}${caminhoDoLink("portal", existente.token)}`;
+    return { url, mensagem: mensagemParaCliente({ tipo: "portal", primeiroNome, url }) };
+  }
+  return gravar(r.supabase, {
+    tipo: "portal",
+    leadId,
+    corretorId: r.corretor.id,
+    nome: r.lead.nome,
+    dados: {},
+    // Obra na planta leva anos: o link acompanha o cliente até as chaves.
+    expiraEm: new Date(Date.now() + 4 * 365 * 86_400_000).toISOString(),
   });
 }

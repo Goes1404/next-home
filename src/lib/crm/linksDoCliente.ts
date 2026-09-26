@@ -7,7 +7,7 @@
  * nada do CRM aparece nela além do primeiro nome do cliente.
  */
 
-export type TipoDeLink = "documentos" | "selecao" | "proposta";
+export type TipoDeLink = "documentos" | "selecao" | "proposta" | "portal";
 
 /** A lista padrão do financiamento — o que o banco pede em quase todo caso. */
 export const DOCUMENTOS_PADRAO = [
@@ -101,6 +101,9 @@ export function mensagemParaCliente(p: {
   const oi = p.primeiroNome ? `Oi, ${p.primeiroNome}!` : "Oi!";
   if (p.tipo === "selecao") {
     return `${oi} Separei os imóveis que mais combinam com o que você me contou, com a simulação do financiamento: ${p.url}`;
+  }
+  if (p.tipo === "portal") {
+    return `${oi} Criei a sua página de acompanhamento: o andamento da obra, os documentos que você já mandou e os próximos passos até as chaves. Guarde este link: ${p.url}`;
   }
   if (p.tipo === "proposta") {
     return `${oi} Preparei a proposta que conversamos. Dá uma olhada com calma e me diz por ali mesmo: ${p.url}`;

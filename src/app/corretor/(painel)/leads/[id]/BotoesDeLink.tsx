@@ -7,6 +7,7 @@ import { PERFIL_DE_DOCUMENTO_LABEL, PERFIS_DE_DOCUMENTO, IMOVEIS_NA_SELECAO, typ
 import { VALIDADES_DA_PROPOSTA } from "@/lib/crm/proposta";
 import {
   criarLinkDeDocumentos,
+  criarPortal,
   criarProposta,
   criarSelecao,
   sugerirSelecao,
@@ -138,6 +139,14 @@ export function BotoesDeLink({
           className="min-h-11 rounded-xl border border-linha-forte px-4 text-fluid-xs font-semibold text-corpo hover:border-acento-linha disabled:opacity-60"
         >
           Fazer proposta
+        </button>
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() => criar(() => criarPortal(leadId))}
+          className="min-h-11 rounded-xl border border-linha-forte px-4 text-fluid-xs font-semibold text-corpo hover:border-acento-linha disabled:opacity-60"
+        >
+          Portal do comprador
         </button>
       </div>
 
