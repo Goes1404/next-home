@@ -13,9 +13,14 @@ import { horasDesdeAUltimaFala } from "@/lib/whatsapp/tempoDaConversa";
 import { devoExtrair } from "@/lib/whatsapp/quandoExtrair";
 import { mesclarMemoria } from "@/lib/whatsapp/memoriaDaConversa";
 import { detectarEvolucao, podeAvisarAgora } from "@/lib/whatsapp/evolucaoConversa";
-import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
+import { instrucaoDoAudio, transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
 import { notificarAtualizacaoCorretor, notificarCorretorLeadQuente } from "@/lib/whatsapp/brokerNotifier";
-import { enviarMensagemWhatsapp, enviarMidiaWhatsapp, enviarPresencaDigitando } from "@/lib/whatsapp/provider";
+import {
+  baixarMidiaDoProvedor,
+  enviarMensagemWhatsapp,
+  enviarMidiaWhatsapp,
+  enviarPresencaDigitando,
+} from "@/lib/whatsapp/provider";
 import {
   agendarFollowup,
   agendarVisitaLead,
@@ -247,11 +252,18 @@ export async function POST(req: NextRequest) {
     // provedor reentrega webhooks; sem esta chave, cada retry virava
     // resposta duplicada no WhatsApp do cliente.
     const providerMessageId: string | null = payload.data?.key?.id || payload.messageId || null;
+    const audioMsg = payload.data?.message?.audioMessage;
+    /*
+     * A `url` do `audioMessage` é o arquivo CIFRADO do WhatsApp — não serve
+     * para transcrever (ver `audioTranscriber.ts`). Fica só como referência
+     * da mídia na mensagem gravada; o áudio de verdade vem decifrado da
+     * Evolution, logo antes da transcrição.
+     */
     const audioUrlOrBase64 =
-      payload.data?.message?.audioMessage?.url ||
+      audioMsg?.url ||
       payload.audioBase64 ||
       payload.audioUrl ||
-      "";
+      (audioMsg ? "audio" : "");
 
     let text =
       payload.data?.message?.conversation ||
@@ -395,15 +407,31 @@ export async function POST(req: NextRequest) {
     }
 
     let audioFalhou = false;
+    let instrucaoAudio: string | undefined;
+    /** O áudio decifrado: do próprio webhook (se vier) ou pedido à Evolution. */
+    const audioDecifrado = async () => {
+      const segundos = typeof audioMsg?.seconds === "number" ? audioMsg.seconds : null;
+      const noPayload: string | undefined = payload.data?.message?.base64 || payload.audioBase64;
+      if (noPayload) return { base64: noPayload, mimeType: audioMsg?.mimetype ?? null, segundos };
+      if (!providerMessageId) return { base64: null, segundos };
+      const baixado = await baixarMidiaDoProvedor({ instanceName: instancia.instanceName, messageId: providerMessageId });
+      if (!baixado.ok) {
+        console.warn("[webhook] não consegui baixar o áudio decifrado:", baixado.motivo, baixado.detalhe ?? "");
+        return { base64: null, segundos };
+      }
+      return { base64: baixado.base64, mimeType: audioMsg?.mimetype ?? baixado.mimeType, segundos };
+    };
     if (ehAudio) {
-      const resultadoAudio = await transcreverAudioWhatsapp(audioUrlOrBase64);
+      const resultadoAudio = await transcreverAudioWhatsapp(await audioDecifrado());
       audioFalhou = !resultadoAudio.sucesso;
       text = resultadoAudio.textoTranscrito;
-      // A intenção resumida era calculada e jogada fora; como anotação ela
-      // ajuda a IA quando a transcrição sai truncada ou ambígua.
-      if (resultadoAudio.intencaoResumida) {
-        text = `${text}\n[intenção detectada no áudio: ${resultadoAudio.intencaoResumida}]`;
-      }
+      /*
+       * A "intenção detectada" que ia anexada aqui SAIU (26/09/2026): era um
+       * palpite do modelo gravado como fala do cliente, e a IA respondia ao
+       * palpite. O que vai para o turno é a instrução de que a fala é uma
+       * transcrição — ver `instrucaoDoAudio`.
+       */
+      if (resultadoAudio.sucesso) instrucaoAudio = instrucaoDoAudio(resultadoAudio);
     }
 
     if (!text) {
@@ -762,7 +790,7 @@ export async function POST(req: NextRequest) {
        * O cálculo mora aqui porque `turnoDeAtendimento` não toca no relógio.
        */
       horasDesdeAUltimaFala: horasDesdeAUltimaFala(historico),
-      instrucaoExtra: instrucaoDoFollowup,
+      instrucaoExtra: [instrucaoAudio, instrucaoDoFollowup].filter(Boolean).join(" ") || undefined,
       fewShot: { corretorId: instancia.corretorId, conversaAtualId: conversa.id },
       /*
        * Os horários que EXISTEM na agenda do corretor (0073). Até aqui a

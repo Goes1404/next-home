@@ -48,7 +48,7 @@ describe("conversa de WhatsApp só existe para lead cadastrado", () => {
 
   it("barra número desconhecido antes de transcrever áudio", () => {
     const porteiro = webhook.indexOf('ignored: "numero_sem_lead_cadastrado"');
-    const transcricao = webhook.indexOf("transcreverAudioWhatsapp(audioUrlOrBase64)");
+    const transcricao = webhook.indexOf("transcreverAudioWhatsapp(await audioDecifrado())");
     expect(porteiro).toBeGreaterThan(0);
     expect(porteiro).toBeLessThan(transcricao);
   });

@@ -423,7 +423,7 @@ describe("Nota de acompanhamento ao corretor", () => {
 
 describe("Transcrição de áudio", () => {
   it("não afirma sucesso quando a transcrição falhou", async () => {
-    const resAudio = await transcreverAudioWhatsapp("data:audio/ogg;base64,AAA");
+    const resAudio = await transcreverAudioWhatsapp({ base64: "data:audio/ogg;base64,AAA" });
 
     expect(resAudio.sucesso).toBe(false);
     // O texto mostrado no CRM tem que contar a mesma história do `sucesso`.
