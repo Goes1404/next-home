@@ -24,6 +24,7 @@ import { OrigemJornada } from "./OrigemJornada";
 import { PreferenciasContato } from "./PreferenciasContato";
 import { IniciarConversaIA } from "./IniciarConversaIA";
 import { VendaDoLead } from "./VendaDoLead";
+import { LinksDoCliente } from "./LinksDoCliente";
 import { getVendasDoLead } from "@/lib/financeiro/dados";
 import { perguntaDoLead } from "@/lib/consultor/perguntaDoLead";
 
@@ -230,6 +231,7 @@ export default async function FichaLeadPage({
             empreendimentos={empreendimentos ?? []}
           />
 
+          <LinksDoCliente leadId={lead.id} telefone={lead.telefone} />
           <AtalhoDoConsultor lead={lead} />
           <div id="proximas-acoes" className="scroll-mt-24">
             <ProximasAcoes leadId={lead.id} tarefas={tarefas} />
