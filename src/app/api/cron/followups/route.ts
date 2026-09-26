@@ -28,6 +28,7 @@ import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
 import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
+import { abrirConversasDePortal } from "@/lib/whatsapp/aberturaPelaIA";
 import { separarRajada } from "@/lib/whatsapp/rajada";
 import {
   decidirRespostaAtrasada,
@@ -520,6 +521,12 @@ export async function GET(req: NextRequest) {
   try {
     await agendarLembretesDeVisita(supabase);
     await agendarPosVisita(supabase);
+    // Quem pediu contato num portal/formulário recebe a primeira mensagem
+    // sozinho — dentro da janela, com cota e teto de 2 por tique.
+    const primeirosContatos = await abrirConversasDePortal(2).catch((e) => {
+      console.error("[primeiro contato]", e);
+      return 0;
+    });
     // Lembretes das anotações (0100): mensagem para o PRÓPRIO corretor, não
     // para cliente — por isso não passa por cota anti-ban nem pela janela.
     await processarLembretesDeAnotacao(supabase);
@@ -539,7 +546,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "descartado") resultado.descartados++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, primeirosContatos });
   } finally {
     await destravarDisparo("followups", dono);
   }

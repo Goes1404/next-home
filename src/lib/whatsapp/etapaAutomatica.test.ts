@@ -14,7 +14,13 @@ import { describe, expect, it } from "vitest";
 const REPOSITORIO = readFileSync("src/lib/whatsapp/repositorio.ts", "utf8");
 const WEBHOOK = readFileSync("src/app/api/webhooks/whatsapp/route.ts", "utf8");
 const DISPARADOR = readFileSync("src/lib/whatsapp/campaignDispatcher.ts", "utf8");
-const ACOES_IA = readFileSync("src/app/corretor/(painel)/conversas/acoesIA.ts", "utf8");
+// Os botões do painel moram em acoesIA.ts; o miolo de envio saiu para
+// aberturaPelaIA.ts em 26/09/2026 (o primeiro contato com lead de portal o
+// reusa). A guarda lê os dois: a regra vale para o caminho, não para o arquivo.
+const ACOES_IA =
+  readFileSync("src/app/corretor/(painel)/conversas/acoesIA.ts", "utf8") +
+  "\n" +
+  readFileSync("src/lib/whatsapp/aberturaPelaIA.ts", "utf8");
 
 describe("novo → primeiro_contato automático", () => {
   it("o update só alcança quem ainda está em 'novo' — o termostato do funil", () => {
