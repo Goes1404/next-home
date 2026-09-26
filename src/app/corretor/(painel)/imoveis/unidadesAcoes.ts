@@ -4,7 +4,14 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { revalidarCatalogo } from "@/lib/catalogo/revalidar";
-import { andarDaUnidade, lerIdentificacoes, type StatusUnidade } from "@/lib/imoveis/unidades";
+import {
+  andarDaUnidade,
+  fimDaReserva,
+  lerIdentificacoes,
+  PRAZOS_DE_RESERVA,
+  type StatusUnidade,
+} from "@/lib/imoveis/unidades";
+import { chaveDaUnidade } from "@/lib/imoveis/tabelaDeDisponibilidade";
 
 type Resultado = { ok?: string; erro?: string };
 
@@ -62,17 +69,30 @@ export async function mudarStatusDaUnidade(params: {
   id: string;
   slug: string;
   status: StatusUnidade;
-}): Promise<Resultado> {
+  /**
+   * Reserva com prazo (0121): vencido, a unidade volta a disponível sozinha
+   * no tique dos follow-ups. Só vale para `reservada`.
+   */
+  diasDeReserva?: number | null;
+}): Promise<Resultado & { reservadaAte?: string | null }> {
   if (!(await getCorretorLogado())) return { erro: "Sessão expirada." };
+  if (!["disponivel", "reservada", "vendida"].includes(params.status)) return { erro: "Status desconhecido." };
+  const dias = params.diasDeReserva ?? null;
+  if (!(PRAZOS_DE_RESERVA as readonly (number | null)[]).includes(dias)) return { erro: "Prazo desconhecido." };
   const supabase = await createClient();
+  const reservadaAte = params.status === "reservada" ? fimDaReserva(dias) : null;
   const { data, error } = await supabase
     .from("unidades")
-    .update({ status: params.status, atualizado_em: new Date().toISOString() })
+    .update({
+      status: params.status,
+      reservada_ate: reservadaAte,
+      atualizado_em: new Date().toISOString(),
+    })
     .eq("id", params.id)
     .select("id");
   if (error || !data?.length) return { erro: "Não foi possível mudar o status." };
   revalidar(params.slug);
-  return { ok: "Status atualizado." };
+  return { ok: "Status atualizado.", reservadaAte };
 }
 
 export async function excluirUnidade(params: { id: string; slug: string }): Promise<Resultado> {
@@ -82,4 +102,88 @@ export async function excluirUnidade(params: { id: string; slug: string }): Prom
   if (error || !data?.length) return { erro: "Não foi possível excluir a unidade." };
   revalidar(params.slug);
   return { ok: "Unidade excluída." };
+}
+
+const TETO_PDF_DISPONIBILIDADE = 8 * 1024 * 1024;
+const TETO_LINHAS_DISPONIBILIDADE = 500;
+
+/**
+ * Texto de dentro do PDF da tabela de disponibilidade (0121). Mesmo
+ * extrator da tabela de preços: a construtora gera esse PDF de planilha, e o
+ * texto está dentro. PDF escaneado não tem texto — e a tela diz isso.
+ */
+export async function lerTabelaDeUnidadesPdf(
+  formData: FormData,
+): Promise<{ ok: true; texto: string } | { ok: false; erro: string }> {
+  if (!(await getCorretorLogado())) return { ok: false, erro: "Sessão expirada." };
+  const arquivo = formData.get("arquivo");
+  if (!(arquivo instanceof File) || arquivo.size === 0) return { ok: false, erro: "Selecione um arquivo." };
+  if (arquivo.size > TETO_PDF_DISPONIBILIDADE) return { ok: false, erro: "O PDF passa de 8 MB — a tabela costuma ter poucos KB." };
+  const { extrairTextoDePdf } = await import("@/lib/leads/pdfTexto");
+  const texto = extrairTextoDePdf(Buffer.from(await arquivo.arrayBuffer()));
+  if (!texto.trim()) {
+    return { ok: false, erro: "Não achei texto neste PDF. Se ele for escaneado, copie a tabela e cole na caixa." };
+  }
+  return { ok: true, texto };
+}
+
+/**
+ * Aplica o espelho da construtora: unidade que existe muda de status;
+ * unidade que não existe é criada (sem planta — o corretor liga depois).
+ * Status aplicado aqui apaga o prazo de reserva: quem manda agora é a
+ * tabela da construtora.
+ */
+export async function aplicarDisponibilidade(params: {
+  empreendimentoId: string;
+  slug: string;
+  linhas: Array<{ identificacao: string; status: StatusUnidade }>;
+}): Promise<Resultado> {
+  if (!(await getCorretorLogado())) return { erro: "Sessão expirada." };
+  const validas = (Array.isArray(params.linhas) ? params.linhas : [])
+    .filter(
+      (l) =>
+        typeof l?.identificacao === "string" &&
+        l.identificacao.trim().length > 0 &&
+        l.identificacao.length <= 20 &&
+        ["disponivel", "reservada", "vendida"].includes(l.status),
+    )
+    .slice(0, TETO_LINHAS_DISPONIBILIDADE);
+  if (validas.length === 0) return { erro: "Nenhuma unidade reconhecida na tabela." };
+
+  const supabase = await createClient();
+  const { data: existentes, error } = await supabase
+    .from("unidades")
+    .select("id, identificacao, status")
+    .eq("empreendimento_id", params.empreendimentoId);
+  if (error) return { erro: "Não foi possível ler as unidades deste imóvel." };
+  const porChave = new Map((existentes ?? []).map((u) => [chaveDaUnidade(u.identificacao), u]));
+
+  const agora = new Date().toISOString();
+  let mudaram = 0;
+  const novas: typeof validas = [];
+  for (const l of validas) {
+    const atual = porChave.get(chaveDaUnidade(l.identificacao));
+    if (!atual) {
+      novas.push(l);
+      continue;
+    }
+    if (atual.status === l.status) continue;
+    const { error: e } = await supabase
+      .from("unidades")
+      .update({ status: l.status, reservada_ate: null, atualizado_em: agora })
+      .eq("id", atual.id);
+    if (!e) mudaram++;
+  }
+  if (novas.length > 0) {
+    await supabase.from("unidades").insert(
+      novas.map((l) => ({
+        empreendimento_id: params.empreendimentoId,
+        identificacao: l.identificacao.trim(),
+        andar: andarDaUnidade(l.identificacao),
+        status: l.status,
+      })),
+    );
+  }
+  revalidar(params.slug);
+  return { ok: `${mudaram} unidade(s) mudaram de status e ${novas.length} foram cadastradas.` };
 }

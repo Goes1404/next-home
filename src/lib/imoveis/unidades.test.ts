@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { andarDaUnidade, lerIdentificacoes, resumoDeDisponibilidade, TETO_DO_LOTE, unidadesRestantes } from "./unidades";
+import { andarDaUnidade, lerIdentificacoes, resumoDeDisponibilidade, TETO_DO_LOTE, fimDaReserva, unidadesRestantes } from "./unidades";
 
 describe("lote de unidades", () => {
   it("aceita vírgula, linha e faixa", () => {
@@ -44,5 +44,13 @@ describe("selo de poucas unidades", () => {
     expect(unidadesRestantes([{ unidadesDisponiveis: 0 }])).toBeNull();
     expect(unidadesRestantes([{ unidadesDisponiveis: null }])).toBeNull();
     expect(unidadesRestantes([])).toBeNull();
+  });
+});
+
+describe("prazo da reserva", () => {
+  it("vence no fim do dia de SP, N dias depois; sem prazo é null", () => {
+    // 26/09 22:00 em SP = 27/09 01:00Z. +2 dias → fim de 28/09 em SP.
+    expect(fimDaReserva(2, new Date("2026-09-27T01:00:00Z"))).toBe("2026-09-29T02:59:00.000Z");
+    expect(fimDaReserva(null)).toBeNull();
   });
 });

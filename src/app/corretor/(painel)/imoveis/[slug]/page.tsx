@@ -49,7 +49,7 @@ export default async function EditarImovelPage({ params }: Props) {
   const { data: unidades } = imovel.id
     ? await supabase
         .from("unidades")
-        .select("id, identificacao, tipologia_id, status")
+        .select("id, identificacao, tipologia_id, status, reservada_ate")
         .eq("empreendimento_id", imovel.id)
     : { data: [] };
   const unidadesNaTela: UnidadeNaTela[] = (unidades ?? []).map((u) => ({
@@ -57,6 +57,7 @@ export default async function EditarImovelPage({ params }: Props) {
     identificacao: u.identificacao,
     tipologiaId: u.tipologia_id,
     status: u.status,
+    reservadaAte: u.reservada_ate,
   }));
 
   return (

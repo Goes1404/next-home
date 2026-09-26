@@ -28,6 +28,8 @@ import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
 import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
+import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
+import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
 import { abrirConversasDePortal } from "@/lib/whatsapp/aberturaPelaIA";
 import { separarRajada } from "@/lib/whatsapp/rajada";
 import {
@@ -506,11 +508,23 @@ export async function GET(req: NextRequest) {
     return 0;
   });
 
+  /*
+   * Também antes da janela, pelo mesmo motivo: o aviso de lead pago sem
+   * contato vai para o CORRETOR (0121), e lead de portal que chega às 22h
+   * não pode esperar até as 9h para alguém saber dele. E reserva vencida
+   * volta a disponível a qualquer hora.
+   */
+  const semContato = await alertarLeadsSemContato(supabase).catch((e) => {
+    console.error("[lead sem contato]", e);
+    return 0;
+  });
+  const reservasLiberadas = await liberarReservasVencidas(supabase).catch(() => 0);
+
   // Fora do horário comercial nada sai — e nada é descartado: o item
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -546,7 +560,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "descartado") resultado.descartados++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, primeirosContatos });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, primeirosContatos });
   } finally {
     await destravarDisparo("followups", dono);
   }

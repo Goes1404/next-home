@@ -78,3 +78,19 @@ export function unidadesRestantes(plantas: Array<{ unidadesDisponiveis: number |
   const total = contadas.reduce((s, p) => s + (p.unidadesDisponiveis ?? 0), 0);
   return total >= 1 && total <= POUCAS_UNIDADES ? total : null;
 }
+
+/** Prazos que a tela oferece para uma reserva, em dias (`null` = sem prazo). */
+export const PRAZOS_DE_RESERVA = [null, 2, 3, 7] as const;
+
+/** O fim da reserva: meia-noite de SP ao fim do N-ésimo dia a partir de agora. */
+export function fimDaReserva(dias: number | null, agora = new Date()): string | null {
+  if (!dias || dias <= 0) return null;
+  const alvo = new Date(agora.getTime() + dias * 86_400_000);
+  const dia = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(alvo);
+  return new Date(`${dia}T23:59:00-03:00`).toISOString();
+}
