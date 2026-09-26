@@ -14,6 +14,7 @@ import { site } from "@/lib/site";
 import { primeiroNome } from "@/lib/format";
 import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
 import { HeroInicio } from "./_componentes/HeroInicio";
+import { PrimeirosPassos } from "./_componentes/PrimeirosPassos";
 import { CartaoMeta } from "./financeiro/CartaoMeta";
 import { getRitmoDoCorretor } from "@/lib/financeiro/ritmoDoCorretor";
 import { getVendas } from "@/lib/financeiro/dados";
@@ -99,6 +100,11 @@ export default async function PainelInicio() {
       */}
       <Suspense fallback={<EsqueletoCartao linhas={3} />}>
         <BlocoDoHero nome={nomeNaSaudacao} />
+      </Suspense>
+
+      {/* Some quando tudo está configurado: não segura a tela com esqueleto. */}
+      <Suspense fallback={null}>
+        <PrimeirosPassos corretorId={corretor.id} />
       </Suspense>
 
       {/*
