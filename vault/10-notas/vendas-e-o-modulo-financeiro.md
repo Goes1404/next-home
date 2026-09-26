@@ -7,7 +7,7 @@ custou: medio
 codigo: supabase/migrations/0114_vendas.sql
 created: 2026-09-25
 updated: 2026-09-26
-summary: Módulo financeiro F1 a F8 (0114-0116). Venda com co-corretagem, comissão digitada por venda (% ou R$, as duas gravadas) e distrato. Grant por coluna (com o revoke da tabela, 0116) deixa comissão recebida e repasse pago só para o gestor. Base do extrato, do ranking de VGV e do desempenho.
+summary: Módulo financeiro F1 a F8 (0114-0116; o bônus de especialista da roleta saiu na 0117). Venda com co-corretagem, comissão digitada por venda (% ou R$, as duas gravadas) e distrato. Grant por coluna (com o revoke da tabela, 0116) deixa comissão recebida e repasse pago só para o gestor. Base do extrato, do ranking de VGV e do desempenho.
 ---
 
 # Vendas e o módulo financeiro
@@ -76,9 +76,10 @@ Relacionados: [[MOC — CRM e Painel]] · [[MOC — Banco de Dados]]
   (2 corretores com 10 atendimentos e 5 conversas).
 - **Anúncio → comissão:** coluna de comissão e retorno (comissão ÷ investido)
   por campanha em Administração → Anúncios.
-- **Roleta que aprende:** desconto na carga de 5 leads por venda do mesmo
-  imóvel no último ano, teto 3 vendas, depois das preferências de "consegue
-  atender". Guarda cobra o teto (mordida conferida por md5).
+- **Roleta que aprende (REMOVIDA na 0117):** a 0115 descontava 5 leads de
+  carga por venda do mesmo imóvel. O dono do produto não quis preferência por
+  histórico de venda; a roleta voltou à da 0093 e o "especialista do imóvel"
+  saiu também da tela de Desempenho. Ver [[link-de-anuncio-e-rodizio-aleatorio]].
 - **Upsert não serve com grant por coluna**: ele reescreve `corretor_id` e
   `mes`. A meta faz ler-e-decidir.
 - **Placeholder que parece valor, de novo:** "15.000" no campo da meta lia

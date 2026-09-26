@@ -2,8 +2,9 @@
  * O link porteiro: /wa/<campanha> → WhatsApp do corretor da vez.
  *
  * O anúncio do Meta aponta para um link NOSSO; no clique, o servidor
- * sorteia o corretor (rodízio por carga, `sortear_corretor_whatsapp` no
- * banco — a mesma régua da roleta de leads) e redireciona para o wa.me
+ * sorteia o corretor (`sortear_corretor_whatsapp` no banco: aleatório entre
+ * os conectados, sem repetir quem recebeu o último clique daquele imóvel —
+ * 0117) e redireciona para o wa.me
  * dele com a mensagem pronta da campanha. Cada corretor atende no próprio
  * número — número central único foi descartado pelo usuário (26/08/2026).
  *

@@ -4,7 +4,6 @@ import { getCorretorLogado, getEmpreendimentosParaFiltro, getEquipeAtiva } from 
 import { getLeadsLeves, getPrimeirasRespostas, getVendas } from "@/lib/financeiro/dados";
 import {
   desempenhoPorCorretor,
-  especialistasPorImovel,
   formatarMinutos,
   oQueOsMelhoresFazem,
   tempoDeRespostaPorCorretor,
@@ -41,15 +40,6 @@ function PainelDoCorretor({ d, tempo }: { d: DesempenhoDoCorretor; tempo: string
         <Numero rotulo="Dias até a venda (mediana)" valor={d.diasAteVenda === null ? "—" : String(Math.round(d.diasAteVenda))} />
         <Numero rotulo="Primeira resposta (mediana)" valor={tempo ?? "—"} />
       </dl>
-
-      {d.especialidade && (
-        <p className="cartao text-fluid-sm text-corpo p-4">
-          <strong className="text-titulo">Referência em {d.especialidade.imovel}.</strong>{" "}
-          {d.especialidade.atendidos} atendimentos, {d.especialidade.visitas} visitas e {d.especialidade.vendas}{" "}
-          {d.especialidade.vendas === 1 ? "venda" : "vendas"} deste imóvel. Quem vende um imóvel ganha preferência na
-          roleta dos próximos leads dele.
-        </p>
-      )}
 
       <section className="space-y-2">
         <h2 className="text-fluid-base text-titulo font-medium">Por imóvel</h2>
@@ -127,7 +117,6 @@ export default async function DesempenhoPage({
     leadParaVenda: null,
     diasAteVenda: null,
     porImovel: [],
-    especialidade: null,
   });
   const tempoDe = (id: string) => {
     const t = tempos.get(id);
@@ -149,7 +138,6 @@ export default async function DesempenhoPage({
         .sort((a, b) => b.vgv - a.vgv || b.vendas - a.vendas || b.atendidos - a.atendidos)
     : [];
   const frase = gestor ? oQueOsMelhoresFazem({ desempenho, tempos, nomes }) : null;
-  const especialistas = gestor ? [...especialistasPorImovel(desempenho).entries()] : [];
 
   return (
     <div className="space-y-4">
@@ -236,7 +224,6 @@ export default async function DesempenhoPage({
                       {d.atendidos} atendidos · {pct(d.leadParaVisita)} viram visita · {d.vendas}{" "}
                       {d.vendas === 1 ? "venda" : "vendas"}
                       {tempoDe(d.corretorId) ? ` · responde em ${tempoDe(d.corretorId)}` : ""}
-                      {d.especialidade ? ` · referência em ${d.especialidade.imovel}` : ""}
                     </span>
                   </Link>
                 </li>
@@ -244,26 +231,6 @@ export default async function DesempenhoPage({
             </ul>
           </section>
 
-          {especialistas.length > 0 && (
-            <section className="space-y-2">
-              <div>
-                <h2 className="text-fluid-base text-titulo font-medium">Referências por imóvel</h2>
-                <p className="text-fluid-xs text-tenue">
-                  Quem vendeu um imóvel no último ano ganha preferência limitada na roleta dos próximos leads dele.
-                </p>
-              </div>
-              <ul className="cartao divide-linha divide-y p-2">
-                {especialistas.map(([imovelId, e]) => (
-                  <li key={imovelId} className="text-fluid-sm flex flex-wrap justify-between gap-2 p-2">
-                    <span className="text-titulo min-w-0 break-words">{e.linha.imovel}</span>
-                    <span className="text-apoio">
-                      {nomes.get(e.corretorId) ?? "Corretor"} · {e.linha.vendas} vendas · {e.linha.atendidos} atend.
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
         </>
       )}
     </div>

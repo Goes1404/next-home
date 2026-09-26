@@ -8030,3 +8030,17 @@ Nota: [[vendas-e-o-modulo-financeiro]].
 - **Esta sessão não tem acesso ao banco** (MCP da Supabase sem permissão): o
   usuário aplica pelo SQL Editor e cola o resultado de uma consulta de
   conferência. Foi essa conferência que achou o defeito.
+
+## Sem especialista; link de anúncio é rodízio aleatório (0117, 26/09/2026)
+
+Nota: [[link-de-anuncio-e-rodizio-aleatorio]].
+
+- **Decisão de produto: nada de "especialista do imóvel".** Saiu o bônus da
+  0115 na roleta (volta a `distribuir_lead` da 0093) e a seção "Referências
+  por imóvel" do Desempenho.
+- **`/wa/<campanha>` sorteia** entre os conectados e manda para o fim quem
+  recebeu o último clique daquele imóvel (`cliques_whatsapp`). Deixou de
+  seguir a carga da roleta de leads, de propósito.
+- **Guarda de migration que busca `function public.x(`** acha o
+  `grant execute on function public.x(` posterior. Ancorar em
+  `create or replace`. Mais uma guarda que tropeçaria no próprio recorte.

@@ -35,7 +35,10 @@ function ultimaDefinicaoDe(nome: string): string {
   let ultima = "";
   for (const arquivo of arquivos) {
     const sql = readFileSync(join(DIR, arquivo), "utf8");
-    const i = sql.toLowerCase().lastIndexOf(`function public.${nome}(`);
+    // Ancorado em `create or replace`: `grant execute on function public.x(`
+    // e `drop function if exists public.x(` também contêm o nome, e vêm
+    // DEPOIS da definição na mesma migration.
+    const i = sql.toLowerCase().lastIndexOf(`create or replace function public.${nome}(`);
     if (i === -1) continue;
     // Do início da função até o fim do corpo: `$function$;` ou `$$;`.
     const resto = sql.slice(i);
@@ -108,60 +111,47 @@ describe("a roleta distribui para quem consegue atender", () => {
 });
 
 /*
- * A roleta que aprende (0115): quem já vendeu o imóvel ganha um DESCONTO na
- * carga, com teto. Sem o teto, o especialista receberia todo lead daquele
- * imóvel até afogar, e a carteira dos outros morreria. E o desconto vem
- * DEPOIS das preferências de "consegue atender": especialista sem número
- * conectado não fala com ninguém.
+ * Sem "especialista do imóvel" (0117, decisão de produto): quem já vendeu o
+ * imóvel não ganha preferência nenhuma. A 0115 descontava 5 leads de carga
+ * por venda; se voltar, todo corretor deixa de concorrer igual.
  */
-describe("a roleta aprende quem vende o quê, com limite", () => {
-  const corpo = ultimaDefinicaoDe("distribuir_lead");
-  const semComentario = corpo.replace(/--.*$/gm, "");
+describe("a roleta não prefere quem já vendeu o imóvel", () => {
+  const corpo = ultimaDefinicaoDe("distribuir_lead").replace(/--.*$/gm, "");
 
-  it("o bônus de especialista tem teto", () => {
+  it("não consulta vendas", () => {
     expect(
-      /least\(\s*3\s*,[\s\S]*venda_participantes/.test(semComentario),
-      "O bônus de especialista perdeu o teto (least(3, ...)). Preferência sem limite " +
-        "manda todo lead do imóvel para uma pessoa só.",
-    ).toBe(true);
-  });
-
-  it("vem depois de WhatsApp, login e slug", () => {
-    const bonus = semComentario.indexOf("venda_participantes");
-    const whats = semComentario.search(/\(\s*i\.corretor_id\s+is\s+null\s*\)/);
-    const login = semComentario.search(/\(\s*c\.user_id\s+is\s+null\s*\)/);
-    const slug = semComentario.search(/\(\s*c\.slug\s+is\s+null\s*\)/);
-    expect(bonus).toBeGreaterThan(Math.max(whats, login, slug));
-  });
-
-  it("só conta venda ATIVA do mesmo imóvel", () => {
-    expect(/v\.status\s*=\s*'ativa'/.test(semComentario)).toBe(true);
-    expect(/v\.empreendimento_id\s*=\s*new\.empreendimento_id/.test(semComentario)).toBe(true);
+      /venda_participantes|from\s+vendas\b/.test(corpo),
+      "A roleta voltou a olhar vendas — é o bônus de especialista que a 0117 tirou.",
+    ).toBe(false);
   });
 });
 
 /*
  * O porteiro `/wa/<campanha>` — o destino do anúncio Click-to-WhatsApp — usa
- * `sortear_corretor_whatsapp`, que é OUTRA função. O comentário da rota diz
- * "a mesma régua da roleta de leads", e é justamente essa promessa que
- * envelhece calada: a 0093 mudou a conta de carga de um lado só, e por
- * algumas horas as duas divergiram. Aqui o clique já foi PAGO.
+ * `sortear_corretor_whatsapp`, que é OUTRA função. Desde a 0117 ela NÃO segue
+ * a régua de carga da roleta de leads: sorteia entre os conectados e manda
+ * para o fim quem recebeu o último clique daquele imóvel (decisão de
+ * produto, 26/09/2026).
  */
-describe("o porteiro do anúncio conta carga igual à roleta", () => {
+describe("o porteiro do anúncio é rotativo e aleatório por produto", () => {
   const corpo = ultimaDefinicaoDe("sortear_corretor_whatsapp");
 
   it("a função existe nas migrations", () => {
     expect(corpo).not.toBe("");
   });
 
-  it("usa a mesma conta de carga da roleta de leads", () => {
+  it("sorteia por produto e não repete quem recebeu o último clique dele", () => {
+    const semComentario = corpo.replace(/--.*$/gm, "");
+    expect(semComentario.includes("random()"), "O porteiro deixou de sortear.").toBe(true);
     expect(
-      /l\.arquivado_em\s+is\s+null/.test(corpo) &&
-        /l\.etapa\s+not\s+in\s*\(\s*'perdido'\s*,\s*'fechado'\s*\)/.test(corpo),
-      "A carga do porteiro divergiu da roleta de leads. Duas contas de " +
-        "'quem recebe o próximo' divergem, e esta decide para quem vai o " +
-        "clique pago do anúncio.",
+      /k\.empreendimento_id\s*=\s*p_empreendimento/.test(semComentario) &&
+        /order\s+by\s+k\.created_at\s+desc/.test(semComentario),
+      "O rodízio por produto sumiu: o mesmo corretor pode receber cliques seguidos do mesmo imóvel.",
     ).toBe(true);
+    expect(
+      /from\s+leads\b/.test(semComentario) || /venda_participantes/.test(semComentario),
+      "O porteiro voltou a escolher por carga ou por venda — a regra é sorteio.",
+    ).toBe(false);
   });
 
   it("continua EXIGINDO WhatsApp conectado — aqui é filtro, não preferência", () => {

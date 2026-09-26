@@ -9,8 +9,9 @@ export const dynamic = "force-dynamic";
  * O link porteiro: /wa/<campanha> — o destino fixo que o anúncio do Meta
  * aponta, e que distribui o clique entre os corretores.
  *
- * No clique: sorteia o corretor da vez (rodízio por carga, no banco — a
- * mesma régua da roleta de leads) e redireciona para o wa.me DELE com a
+ * No clique: sorteia o corretor da vez no banco — aleatório entre os que têm
+ * WhatsApp conectado, e quem recebeu o último clique DESTE imóvel vai para o
+ * fim (rodízio por produto, 0117) — e redireciona para o wa.me DELE com a
  * mensagem pronta da campanha. A Sofia do próprio corretor atende, o lead
  * nasce no CRM já dele. Cada corretor no próprio número — número central
  * único foi descartado (decisão de produto, 26/08/2026).
@@ -65,10 +66,15 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
     return NextResponse.redirect(new URL("/", url.origin), 302);
   }
 
-  const { data: sorteio } = await supabase.rpc("sortear_corretor_whatsapp").maybeSingle<{
-    corretor_id: string;
-    telefone: string;
-  }>();
+  type Sorteio = { corretor_id: string; telefone: string };
+  let { data: sorteio, error: erroDoSorteio } = await supabase
+    .rpc("sortear_corretor_whatsapp", { p_empreendimento: alvo.id })
+    .maybeSingle<Sorteio>();
+  if (erroDoSorteio) {
+    // Banco ainda sem a 0117 (a função antiga não recebe o imóvel): sorteia
+    // pela versão antiga em vez de perder o clique pago.
+    ({ data: sorteio } = await supabase.rpc("sortear_corretor_whatsapp").maybeSingle<Sorteio>());
+  }
 
   const telefone = sorteio?.telefone?.replace(/\D/g, "") ?? "";
 

@@ -5,7 +5,6 @@ import { calcularRitmo, escolherComissaoPorVenda, escolherTaxa, fraseDoRitmo } f
 import { preverCaixa, VENDAS_MINIMAS_PARA_ESTIMAR } from "./previsao";
 import {
   desempenhoPorCorretor,
-  especialistasPorImovel,
   formatarMinutos,
   oQueOsMelhoresFazem,
   tempoDeRespostaPorCorretor,
@@ -170,11 +169,6 @@ describe("desempenho por corretor e por imóvel", () => {
     expect(c1.leadParaVisita).toBe(0.5);
     expect(c1.visitaParaVenda).toBe(0.5);
     expect(c1.diasAteVenda).toBe(10);
-  });
-  it("especialidade exige fato (venda ou 3 atendimentos)", () => {
-    expect(d.get("c1")!.especialidade?.imovel).toBe("Eternity");
-    expect(d.get("c2")!.especialidade).toBeNull();
-    expect(especialistasPorImovel(d).get("e1")?.corretorId).toBe("c1");
   });
 });
 

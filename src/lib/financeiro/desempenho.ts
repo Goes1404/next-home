@@ -55,8 +55,6 @@ export type DesempenhoDoCorretor = {
   /** Mediana de dias entre o lead chegar e a venda, só vendas ligadas a lead. */
   diasAteVenda: number | null;
   porImovel: LinhaPorImovel[];
-  /** O imóvel em que ele é referência, quando há base para dizer. */
-  especialidade: LinhaPorImovel | null;
 };
 
 const fracao = (a: number, b: number) => (b > 0 ? a / b : null);
@@ -95,7 +93,6 @@ export function desempenhoPorCorretor(params: {
         leadParaVenda: null,
         diasAteVenda: null,
         porImovel: [],
-        especialidade: null,
       };
       res.set(corretorId, d);
       porImovel.set(corretorId, new Map());
@@ -156,26 +153,8 @@ export function desempenhoPorCorretor(params: {
     d.leadParaVenda = fracao(d.vendas, d.atendidos);
     d.diasAteVenda = mediana(diasPorCorretor.get(d.corretorId) ?? []);
     d.porImovel = [...(porImovel.get(d.corretorId)?.values() ?? [])].sort((a, b) => pontos(b) - pontos(a));
-    const topo = d.porImovel[0];
-    // Referência pede fato: uma venda, ou três atendimentos do mesmo imóvel.
-    d.especialidade = topo && (topo.vendas >= 1 || topo.atendidos >= 3) ? topo : null;
   }
   return res;
-}
-
-/** Quem é referência em cada imóvel: o corretor com mais pontos nele. */
-export function especialistasPorImovel(
-  desempenho: Map<string, DesempenhoDoCorretor>,
-): Map<string, { corretorId: string; linha: LinhaPorImovel }> {
-  const melhor = new Map<string, { corretorId: string; linha: LinhaPorImovel }>();
-  for (const d of desempenho.values()) {
-    for (const l of d.porImovel) {
-      if (l.vendas < 1 && l.atendidos < 3) continue;
-      const atual = melhor.get(l.imovelId);
-      if (!atual || pontos(l) > pontos(atual.linha)) melhor.set(l.imovelId, { corretorId: d.corretorId, linha: l });
-    }
-  }
-  return melhor;
 }
 
 // ─── F8: o que os melhores fazem ────────────────────────────────────────
