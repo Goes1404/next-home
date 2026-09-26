@@ -67,14 +67,14 @@ function FormularioDaMeta({
     >
       <label className="block">
         <span className="text-fluid-xs text-tenue mb-1 block">Quanto quer ganhar este mês (R$)</span>
-        <input inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="15.000" className={campo} />
+        <input inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} className={campo} aria-describedby="meta-ex" />
       </label>
       <label className="block">
         <span className="text-fluid-xs text-tenue mb-1 block">Quanto costuma ganhar por venda (opcional)</span>
-        <input inputMode="decimal" value={porVenda} onChange={(e) => setPorVenda(e.target.value)} placeholder="6.000" className={campo} />
+        <input inputMode="decimal" value={porVenda} onChange={(e) => setPorVenda(e.target.value)} className={campo} aria-describedby="meta-ex" />
       </label>
-      <p className="text-fluid-xs text-tenue sm:col-span-2">
-        O valor por venda só é usado até você ter duas vendas registradas; depois vale a média das suas vendas.
+      <p id="meta-ex" className="text-fluid-xs text-tenue sm:col-span-2">
+        Exemplo: 15.000 de meta e 6.000 por venda. O valor por venda só é usado até você ter duas vendas registradas; depois vale a média das suas vendas.
       </p>
       <button
         type="submit"
@@ -177,7 +177,9 @@ export function CartaoMeta({ estado, compacto = false }: { estado: EstadoDaMeta;
           )}
           {r.atendimentosPorSemana !== null && (
             <li className="text-titulo font-medium">
-              Ritmo: cerca de {r.atendimentosPorSemana} atendimentos por semana até o fim do mês.
+              {r.diasRestantes < 7
+                ? `Ritmo: cerca de ${r.atendimentos} atendimentos nos ${r.diasRestantes} dias que faltam.`
+                : `Ritmo: cerca de ${r.atendimentosPorSemana} atendimentos por semana até o fim do mês.`}
             </li>
           )}
         </ul>
