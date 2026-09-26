@@ -800,6 +800,20 @@ async function processarFollowup(
   });
   if (!decisao.pode) return descartar(supabase, item.id, "modo_nao_permite");
 
+  /*
+   * Reengajamento é para quem ainda não decidiu. Lead que fechou (ou foi
+   * perdido) desde o agendamento não recebe "voltando ao que conversamos":
+   * a lista de compradores de um imóvel (26/09/2026) dispara para quem já
+   * comprou, e o disparo agenda reengajamento para quem não responde.
+   * Checado ANTES da cota, para não gastar cota com o que vai ser descartado.
+   */
+  if (item.tipo === "reengajamento" && conversa.lead_id) {
+    const { data: lead } = await supabase.from("leads").select("etapa").eq("id", conversa.lead_id).maybeSingle();
+    if (lead?.etapa === "fechado" || lead?.etapa === "perdido") {
+      return descartar(supabase, item.id, "lead_encerrado");
+    }
+  }
+
   const cota = await reservarCotaCampanha(instancia.id, new Date(instancia.conectado_em));
   /*
    * Espaçamento anti-ban (0062) NÃO é motivo para descartar: a vez chega em

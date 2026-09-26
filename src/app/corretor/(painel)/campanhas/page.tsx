@@ -23,14 +23,16 @@ const UUID = /^[0-9a-f-]{36}$/i;
 export default async function CampanhasPainelPage({
   searchParams,
 }: {
-  searchParams: Promise<{ imovel?: string; leads?: string }>;
+  searchParams: Promise<{ imovel?: string; leads?: string; publico?: string }>;
 }) {
   // Vindo de "leads que combinam" (tela do imóvel): imóvel e leads já
   // marcados. É só pré-preenchimento: a criação refaz a interseção com a
   // carteira no servidor, então id inventado na URL não vira mensagem.
-  const { imovel, leads } = await searchParams;
+  const { imovel, leads, publico } = await searchParams;
   const inicial = {
     imovelSlug: imovel || undefined,
+    // "Avisar compradores" na tela do imóvel (26/09/2026).
+    publico: publico === "compradores" ? ("compradores" as const) : undefined,
     leadIds: (leads ?? "").split(",").filter((id) => UUID.test(id)).slice(0, TETO_DE_IDS),
   };
 

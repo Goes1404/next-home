@@ -17,7 +17,8 @@ export type FiltroLeadsCampanha =
   | "novos_sem_contato"
   | "sem_resposta"
   | "todos"
-  | "selecionados";
+  | "selecionados"
+  | "compradores";
 
 const DIAS_PARADO = 15;
 
@@ -40,7 +41,11 @@ const DIAS_PARADO = 15;
 export const TETO_DE_INSISTENCIA = 3;
 
 /** Fechado e perdido nunca entram — reativar quem já comprou ou já disse não é o oposto do objetivo. */
-export function elegivel(lead: Lead, filtro: FiltroLeadsCampanha): boolean {
+export function elegivel(
+  lead: Lead,
+  filtro: FiltroLeadsCampanha,
+  contexto: { imovelSlug?: string | null } = {},
+): boolean {
   if (!lead.telefone) return false;
   /*
    * Quem PEDIU para não ser procurado não entra em campanha nenhuma, e
@@ -54,6 +59,17 @@ export function elegivel(lead: Lead, filtro: FiltroLeadsCampanha): boolean {
    * sinal mais forte que existe contra o número.
    */
   if (lead.naoContatarEm) return false;
+
+  /*
+   * Compradores de UM imóvel (26/09/2026): o avanço da obra até a entrega
+   * das chaves. É a única exceção à regra de que fechado não entra — e só
+   * vale com o imóvel da campanha: "todos os que já compraram" seria
+   * propaganda para quem acabou de comprar, o oposto do objetivo.
+   */
+  if (filtro === "compradores") {
+    return lead.etapa === "fechado" && Boolean(contexto.imovelSlug) && lead.empreendimento?.slug === contexto.imovelSlug;
+  }
+
   if (lead.etapa === "fechado" || lead.etapa === "perdido") return false;
 
   if (filtro === "novos_sem_contato") return lead.etapa === "novo";

@@ -3,6 +3,7 @@ import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { EditorImovelClient } from "../_componentes/EditorImovelClient";
 import { ArtesDeIA } from "../_componentes/ArtesDeIA";
 import { LeadsQueCombinam } from "../_componentes/LeadsQueCombinam";
+import { AvisarCompradores } from "../_componentes/AvisarCompradores";
 import { EditorUnidades, type UnidadeNaTela } from "../_componentes/EditorUnidades";
 import { createClient } from "@/lib/supabase/server";
 import { Suspense } from "react";
@@ -128,6 +129,11 @@ export default async function EditarImovelPage({ params }: Props) {
       {imovel.publicado !== false && (
         <Suspense fallback={null}>
           <LeadsQueCombinam imovel={imovel} />
+        </Suspense>
+      )}
+      {imovel.publicado !== false && imovel.id && (
+        <Suspense fallback={null}>
+          <AvisarCompradores empreendimentoId={imovel.id} slug={imovel.slug} />
         </Suspense>
       )}
 

@@ -70,7 +70,7 @@ async function idsProtegidosDeNovaCampanha(corretorId: string): Promise<Set<stri
   return new Set((itens ?? []).flatMap((item) => (item.lead_id ? [item.lead_id] : [])));
 }
 
-async function publicoComProtecao(filtro: FiltroLeadsCampanha): Promise<{
+async function publicoComProtecao(filtro: FiltroLeadsCampanha, imovelSlug?: string | null): Promise<{
   elegiveis: LeadElegivel[];
   protegidos: number;
 }> {
@@ -78,7 +78,7 @@ async function publicoComProtecao(filtro: FiltroLeadsCampanha): Promise<{
   if (!corretor) return { elegiveis: [], protegidos: 0 };
 
   const leads = await getMeusLeads();
-  const base = leads.filter((lead) => elegivel(lead, filtro));
+  const base = leads.filter((lead) => elegivel(lead, filtro, { imovelSlug }));
   const protegidos = await idsProtegidosDeNovaCampanha(corretor.id);
   return {
     elegiveis: base
@@ -96,15 +96,17 @@ async function publicoComProtecao(filtro: FiltroLeadsCampanha): Promise<{
 /** `getMeusLeads` já vem filtrado por RLS (0007) — aqui só decide QUAIS desses entram na campanha. */
 export async function listarLeadsElegiveis(
   filtro: FiltroLeadsCampanha,
+  imovelSlug?: string | null,
 ): Promise<LeadElegivel[]> {
-  return (await publicoComProtecao(filtro)).elegiveis;
+  return (await publicoComProtecao(filtro, imovelSlug)).elegiveis;
 }
 
 /** Contagem informativa; criar a campanha refaz a mesma proteção no servidor. */
 export async function preverPublicoCampanha(
   filtro: FiltroLeadsCampanha,
+  imovelSlug?: string | null,
 ): Promise<PreviaPublicoCampanha> {
-  const publico = await publicoComProtecao(filtro);
+  const publico = await publicoComProtecao(filtro, imovelSlug);
   return { total: publico.elegiveis.length, protegidos: publico.protegidos };
 }
 
@@ -131,6 +133,8 @@ export async function gerarPreviewCampanha(params: {
   mensagemBase: string;
   /** Só para `filtro: "selecionados"` — os leads escolhidos um a um. */
   leadIds?: string[];
+  /** Só para `filtro: "compradores"`. */
+  imovelSlug?: string | null;
 }): Promise<{ mensagens: string[] } | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
@@ -139,7 +143,7 @@ export async function gerarPreviewCampanha(params: {
 
   let elegiveis: LeadElegivel[];
   try {
-    elegiveis = await listarLeadsElegiveis(params.filtro);
+    elegiveis = await listarLeadsElegiveis(params.filtro, params.imovelSlug ?? null);
   } catch {
     return { erro: "Não foi possível conferir os contatos recentes agora." };
   }
@@ -265,9 +269,22 @@ export async function criarCampanha(params: {
     };
   }
 
+  // Compradores só existem em relação a UM imóvel: o slug sai do id da campanha.
+  let imovelSlug: string | null = null;
+  if (params.filtro === "compradores") {
+    if (!params.empreendimentoId) return { erro: "Escolha o imóvel dos compradores." };
+    const { data: e } = await (await createClient())
+      .from("empreendimentos")
+      .select("slug")
+      .eq("id", params.empreendimentoId)
+      .maybeSingle();
+    imovelSlug = e?.slug ?? null;
+    if (!imovelSlug) return { erro: "Imóvel não encontrado." };
+  }
+
   let elegiveis: LeadElegivel[];
   try {
-    elegiveis = await listarLeadsElegiveis(params.filtro);
+    elegiveis = await listarLeadsElegiveis(params.filtro, imovelSlug);
   } catch {
     // Falha fechada: sem provar quem recebeu campanha recentemente, ninguém
     // entra na fila. Repetir propaganda é pior do que pedir nova tentativa.

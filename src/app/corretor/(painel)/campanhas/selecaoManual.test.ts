@@ -29,7 +29,8 @@ describe("seleção manual da lista de transmissão", () => {
   });
 
   it("mostra a prévia e explica quem foi protegido de repetição", () => {
-    expect(componente).toContain("preverPublicoCampanha(publico)");
+    // O imóvel entra como segundo argumento para o público "compradores" (26/09/2026).
+    expect(componente).toMatch(/preverPublicoCampanha\(publico[,)]/);
     expect(componente).toContain("últimos 7 dias");
     expect(acoes).toContain("DIAS_SEM_REPETIR_CAMPANHA = 7");
     expect(acoes).toContain("status.eq.pendente,enviado_em.gte.");

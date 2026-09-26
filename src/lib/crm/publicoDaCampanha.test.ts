@@ -109,3 +109,27 @@ describe("não-perturbe", () => {
     expect(elegivel(lead({ naoContatarEm: null, etapa: "novo" }), "novos_sem_contato")).toBe(true);
   });
 });
+
+describe("compradores de um imóvel", () => {
+  const base = {
+    telefone: "11999990000",
+    naoContatarEm: null,
+    etapa: "fechado",
+    empreendimento: { nome: "Vitra", slug: "vitra", endereco: null },
+  } as unknown as Parameters<typeof elegivel>[0];
+
+  it("só quem fechou NESTE imóvel, e só com o imóvel informado", () => {
+    expect(elegivel(base, "compradores", { imovelSlug: "vitra" })).toBe(true);
+    expect(elegivel(base, "compradores", { imovelSlug: "outro" })).toBe(false);
+    expect(elegivel(base, "compradores")).toBe(false);
+    expect(elegivel({ ...base, etapa: "primeiro_contato" } as typeof base, "compradores", { imovelSlug: "vitra" })).toBe(false);
+  });
+
+  it("quem pediu para não ser procurado continua fora", () => {
+    expect(elegivel({ ...base, naoContatarEm: "2026-09-01" } as typeof base, "compradores", { imovelSlug: "vitra" })).toBe(false);
+  });
+
+  it("nos outros públicos, fechado continua fora", () => {
+    expect(elegivel(base, "todos")).toBe(false);
+  });
+});

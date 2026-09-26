@@ -71,6 +71,12 @@ const PUBLICOS: { valor: FiltroLeadsCampanha; titulo: string; descricao: string 
       "A carteira inteira. Use com cuidado: mensagem repetida cansa quem já respondeu.",
   },
   {
+    valor: "compradores",
+    titulo: "Compradores deste imóvel",
+    descricao:
+      "Quem já fechou no imóvel escolhido. Para avisar avanço da obra, vistoria e entrega das chaves — nunca para vender de novo.",
+  },
+  {
     valor: "selecionados",
     titulo: "Escolher um por um",
     descricao: "Você marca exatamente quem recebe — busque pelo nome e monte a lista.",
@@ -107,12 +113,12 @@ export function NovaCampanha({
   empreendimentos: Empreendimento[];
   aoCriar: (campanha: CampanhaListada, aviso: string) => void;
   /** Imóvel e leads já marcados (vindo de "leads que combinam"). */
-  inicial?: { imovelSlug?: string; leadIds: string[] };
+  inicial?: { imovelSlug?: string; leadIds: string[]; publico?: FiltroLeadsCampanha };
 }) {
   const veioMarcado = (inicial?.leadIds.length ?? 0) > 0;
   const [passo, setPasso] = useState<1 | 2 | 3>(1);
   const [publico, setPublico] = useState<FiltroLeadsCampanha>(
-    veioMarcado ? "selecionados" : "parados_15d",
+    inicial?.publico ?? (veioMarcado ? "selecionados" : "parados_15d"),
   );
   const [imovelSlug, setImovelSlug] = useState(
     (inicial?.imovelSlug && empreendimentos.some((e) => e.slug === inicial.imovelSlug)
@@ -152,7 +158,7 @@ export function NovaCampanha({
 
   useEffect(() => {
     let vivo = true;
-    preverPublicoCampanha(publico)
+    preverPublicoCampanha(publico, publico === "compradores" ? imovelSlug : null)
       .then((previa) => {
         if (vivo) setPreviaPublico({ ...previa, filtro: publico });
       })
@@ -164,7 +170,7 @@ export function NovaCampanha({
     return () => {
       vivo = false;
     };
-  }, [publico]);
+  }, [publico, imovelSlug]);
 
   useEffect(() => {
     if (publico !== "selecionados" || carteira !== null) return;
@@ -241,6 +247,7 @@ export function NovaCampanha({
         empreendimentoNome: nomeImovel,
         mensagemBase,
         leadIds,
+        imovelSlug: publico === "compradores" ? imovelSlug : null,
       });
       setGerando(false);
 
