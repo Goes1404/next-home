@@ -8110,3 +8110,29 @@ Nota: [[oito-funcionalidades-de-26-09]].
 - **Contador por planta tem uma fonte só**: com unidade ligada, sai da lista
   (`unidadesDaPlanta`); o `anon` só lê as `disponivel` (0120). Prompt v37 diz
   "restam N de X dorm", nunca preço.
+
+## Aprimoramentos das oito (0121-0122, 26/09/2026)
+
+Nota: [[aprimoramentos-das-oito-funcionalidades]].
+
+- **Aviso ao corretor tem um caminho só** (`avisarCorretor`): da instância
+  dele para o WhatsApp dele, sem cota nem janela. Só vira aviso o que é
+  notícia de agora: a seleção aberta pela primeira vez, o primeiro documento
+  e a lista completa. Clique e documento do meio ficam na ficha
+  (`links_do_cliente_eventos`). A lista completa não muda a etapa.
+- **A/B decide sozinho no disparador, com a trava na mão**
+  (`aplicarVencedoras`). A régua é a de `resultadoAB` e o claim é
+  `variante_vencedora`. Os pendentes da perdedora recebem o texto da vencedora.
+  Tela e decisão usam a mesma conta (`placarDaFila`).
+- **Renda vira orçamento pela conta do simulador**, sem entrada nem FGTS. A
+  ficha manda, o dossiê preenche o vazio, e orçamento dito ganha da renda.
+- **`visita_agendada_em` não diz quando a visita foi marcada.** A IA marca
+  por `reservar_visita` sem deixar rastro em `lead_interacoes`. Por isso a
+  0122 põe um trigger (`visita_marcada_em`) que vale para qualquer caminho.
+- **Resumo sem fim de semana por padrão.** 26/09/2026 é sábado, e teste de
+  agenda com essa data passou a reprovar. Use dia útil explícito.
+- **`react-hooks/purity` reprova `Date.now()` em handler de cliente e em
+  Server Component.** Calcule o relógio no servidor ou em módulo
+  (`janelaDeDias`).
+- **A catraca de lint estava em 1 erro** por um `prefer-const` do commit do
+  rodízio do anúncio. Rode `node scripts/lintTeto.mjs` antes de subir.

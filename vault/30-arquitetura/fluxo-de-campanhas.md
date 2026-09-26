@@ -60,13 +60,25 @@ Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
 ## O tique dos follow-ups (a cada 5 min) — ordem desde 26/09/2026
 
 1. `varrerRespostasAtrasadas` — resposta a quem escreveu (antes da janela).
-2. `enviarResumosDoDia` — 8h–12h de SP, para o PRÓPRIO corretor (antes da janela).
-3. *(fora da janela 9h–20h59: para aqui)*
-4. trava `followups` →
+2. `enviarResumosDoDia` — da hora escolhida pelo corretor (6h–11h, padrão
+   8h) até 12h de SP; fim de semana só para quem pediu. Para o PRÓPRIO
+   corretor (antes da janela). Traz o placar de ontem e as visitas sem
+   retorno do cliente.
+3. `alertarLeadsSemContato` — lead de portal/anúncio sem mensagem nossa em
+   30 min vira aviso ao corretor, uma vez (antes da janela, 0121).
+4. `liberarReservasVencidas` — unidade com reserva vencida volta a
+   disponível e o catálogo é revalidado (0121).
+5. *(fora da janela 9h–20h59: para aqui)*
+6. trava `followups` →
    `agendarLembretesDeVisita` → `agendarPosVisita` →
    `abrirConversasDePortal` (2 por tique, com cota e espaçamento) →
    `processarLembretesDeAnotacao` → follow-ups vencidos
    (`reengajamento`, `lembrete_visita`, `pos_visita`).
+
+No disparador de campanhas, antes do primeiro item: `aplicarVencedoras`
+(0121) decide o A/B quando o placar atinge a régua e reescreve os
+pendentes da perdedora com o texto da vencedora. Ver
+[[aprimoramentos-das-oito-funcionalidades]].
 
 Tudo que fala com cliente por iniciativa nossa passa por
 `reservarCotaCampanha` e olha `nao_contatar_em`. Ver
@@ -74,5 +86,6 @@ Tudo que fala com cliente por iniciativa nossa passa por
 
 ## Relacionadas
 - [[fluxo-do-webhook-whatsapp]]
+- [[aprimoramentos-das-oito-funcionalidades]]
 - [[a-conversa-fantasma-do-disparo-sem-ddi]]
 - [[botoes-perigosos-atras-de-avancado]]
