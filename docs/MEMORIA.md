@@ -7983,3 +7983,27 @@ Nota: [[vendas-e-o-modulo-financeiro]].
 - **A 0114 não foi aplicada por esta sessão** (MCP da Supabase sem
   permissão). Enquanto não for aplicada, a tela de Vendas diz que o registro
   não está ativo e a ficha do lead segue normal.
+
+## Financeiro F2 a F8 (0115, 26/09/2026)
+
+Nota: [[vendas-e-o-modulo-financeiro]].
+
+- **Server page não passa arrow function para client component.** O botão
+  "Recebi hoje" recebia `() => marcar(id)` e o build recusaria; o que viaja é
+  a Server Action com `.bind(null, id, data)`.
+- **`upsert` com grant por coluna falha:** ele faz `update` de TODAS as
+  colunas enviadas, inclusive a chave. Com grant só em algumas, é ler e
+  decidir entre insert e update.
+- **Guarda que recorta função por `lastIndexOf("function public.x")` acha o
+  `grant execute on function public.x` que vem depois.** Ancorar em
+  `create or replace function`. Décima vez que uma guarda tropeça no próprio
+  recorte, e esta falhou antes da mordida (e entrou num commit assim).
+- **Ranking visível a todos exige `security definer`**, porque a RLS de
+  `vendas` só mostra as próprias. Aí a função é a fronteira da privacidade:
+  devolve VGV e contagens, nunca comissão.
+- **Etapas do funil são seis** (`novo`, `primeiro_contato`,
+  `visita_agendada`, `documentacao`, `fechado`, `perdido`). Escrevi
+  "proposta" e "negociacao" de cabeça no SQL; não quebrava nada, só mentia.
+- **Consultor saiu do menu para Imóveis** para o Financeiro caber no teto de
+  sete; ele segue na bolha de toda tela. Guarda de navegação reescrita com o
+  motivo, não apagada.

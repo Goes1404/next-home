@@ -69,3 +69,4 @@ F0–F6.
 - [[ordem-do-catalogo-no-site-tem-tela]] — Imóveis → Ordem no site: subir, descer e destaque; os 6 primeiros vão para a home (24/09)
 - [[o-pedido-do-corretor-e-o-que-vai]] — o chat de arte parou de reescrever o pedido; a receita virou skill visível
 - [[vendas-e-o-modulo-financeiro]] — F1 do financeiro: venda com co-corretagem, comissão por venda, distrato; só o gestor marca dinheiro recebido (0114, 25/09)
+- [[vendas-e-o-modulo-financeiro]] — F2 a F8 (0115): extrato, meta em ritmo, ranking de VGV, desempenho, retorno de anúncio, roleta que aprende (26/09)
