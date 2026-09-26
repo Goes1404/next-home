@@ -7,6 +7,8 @@ import { getAgregadoDaEquipe } from "@/lib/admin/agregados";
 import { createClient } from "@/lib/supabase/server";
 import { ETAPA_LABEL, ETAPAS_FUNIL } from "@/lib/types";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
+import { Suspense } from "react";
+import { UsoDasNovidades } from "./_componentes/UsoDasNovidades";
 
 export const metadata: Metadata = { title: "Visão geral" };
 
@@ -300,6 +302,9 @@ export default async function AdminVisaoGeralPage() {
           ))}
         </ul>
       </section>
+      <Suspense fallback={null}>
+        <UsoDasNovidades />
+      </Suspense>
     </div>
   );
 }
