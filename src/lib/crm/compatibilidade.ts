@@ -18,10 +18,19 @@
  * cliente a ignorar a próxima.
  */
 
+import { simularFinanciamento } from "@/lib/consultor/financiamento";
+import type { ParametrosCredito } from "@/lib/credito/tipos";
+
 export type PerfilDoLead = {
   regiaoInteresse?: string | null;
   dormitoriosMin?: number | null;
   orcamentoMax?: number | null;
+  /**
+   * O que a renda declarada financia (`tetoPelaRenda`). Só vale quando o
+   * cliente não disse um orçamento: orçamento é o que ele QUER gastar, e
+   * isso manda mais que a conta do banco.
+   */
+  tetoPelaRenda?: number | null;
 };
 
 export type ImovelParaCompatibilidade = {
@@ -92,16 +101,55 @@ export function compatibilidade(lead: PerfilDoLead, imovel: ImovelParaCompatibil
     motivos.push(`${dorms}+ dormitórios`);
   }
 
-  const teto = lead.orcamentoMax;
-  if (teto && teto > 0 && imovel.precoAPartir) {
+  const declarado = lead.orcamentoMax && lead.orcamentoMax > 0 ? lead.orcamentoMax : null;
+  const teto = declarado ?? (lead.tetoPelaRenda && lead.tetoPelaRenda > 0 ? lead.tetoPelaRenda : null);
+  if (teto && imovel.precoAPartir) {
     criterios++;
     if (imovel.precoAPartir > teto * FOLGA_ORCAMENTO) return { combina: false, pontos: 0, motivos: [] };
     pontos += 30;
-    motivos.push("cabe no orçamento");
+    motivos.push(declarado ? "cabe no orçamento" : "cabe no que a renda financia");
   }
 
   if (criterios === 0) return { combina: false, pontos: 0, motivos: [] };
   return { combina: true, pontos, motivos };
+}
+
+/**
+ * O valor de imóvel que a renda declarada sustenta, sem entrada nem FGTS —
+ * a leitura conservadora. É a MESMA conta do consultor e do simulador
+ * público (`simularFinanciamento`): duas contas do mesmo financiamento
+ * divergiriam, e o cliente ouviria um número no site e outro do corretor.
+ */
+export function tetoPelaRenda(renda: number | null | undefined, params: ParametrosCredito): number | null {
+  if (!renda || renda <= 0) return null;
+  // `valorImovel` só pesa no teto do FGTS, que aqui é zero.
+  const teto = simularFinanciamento({ rendaMensal: renda, entrada: 0, valorImovel: 1 }, params).precoMaximo;
+  return teto > 0 ? teto : null;
+}
+
+/**
+ * Junta o que o lead declarou na ficha com o que a IA extraiu da conversa
+ * (`lead_observacoes_ia`). A ficha manda; o dossiê só preenche o vazio — é o
+ * cliente que o corretor ouviu contra o que um modelo leu.
+ */
+export function perfilDoLead(
+  lead: {
+    regiao_interesse?: string | null;
+    dormitorios_min?: number | null;
+    orcamento_max?: number | string | null;
+    renda_mensal?: number | string | null;
+  },
+  dossie: { orcamento_max?: number | string | null } | null | undefined,
+  params: ParametrosCredito,
+): PerfilDoLead {
+  const numero = (v: number | string | null | undefined) => (v != null && Number(v) > 0 ? Number(v) : null);
+  return {
+    regiaoInteresse: lead.regiao_interesse,
+    dormitoriosMin: lead.dormitorios_min,
+    // `numeric` chega como string no supabase-js.
+    orcamentoMax: numero(lead.orcamento_max) ?? numero(dossie?.orcamento_max),
+    tetoPelaRenda: tetoPelaRenda(numero(lead.renda_mensal), params),
+  };
 }
 
 /** Os que combinam, do mais para o menos compatível. */

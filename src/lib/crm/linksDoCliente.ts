@@ -20,6 +20,64 @@ export const DOCUMENTOS_PADRAO = [
   "Declaração do Imposto de Renda (com recibo)",
 ] as const;
 
+/**
+ * A lista muda com a forma de ganhar dinheiro, e pedir a errada custa uma
+ * volta: o autônomo não tem holerite, e o banco de um casal pede os
+ * documentos dos dois. Três perfis cobrem quase todo caso; o resto o
+ * corretor pede na conversa.
+ */
+export const PERFIS_DE_DOCUMENTO = ["clt", "autonomo", "casal"] as const;
+export type PerfilDeDocumento = (typeof PERFIS_DE_DOCUMENTO)[number];
+export const PERFIL_DE_DOCUMENTO_LABEL: Record<PerfilDeDocumento, string> = {
+  clt: "Registrado (CLT)",
+  autonomo: "Autônomo ou empresário",
+  casal: "Casal (compra a dois)",
+};
+
+export function documentosDoPerfil(perfil: PerfilDeDocumento): string[] {
+  if (perfil === "autonomo") {
+    return [
+      "RG ou CNH",
+      "CPF (se não estiver no RG/CNH)",
+      "Comprovante de residência",
+      "Comprovante de estado civil (certidão de nascimento ou casamento)",
+      "Extratos bancários dos últimos 6 meses",
+      "Declaração do Imposto de Renda (com recibo)",
+      "Pró-labore ou DECORE (se tiver empresa)",
+      "Extrato do FGTS (se tiver)",
+    ];
+  }
+  if (perfil === "casal") {
+    return [
+      "RG ou CNH dos dois",
+      "CPF dos dois (se não estiver no RG/CNH)",
+      "Certidão de casamento ou declaração de união estável",
+      "Comprovante de residência",
+      "3 últimos holerites ou comprovante de renda de cada um",
+      "Extrato do FGTS de cada um",
+      "Declaração do Imposto de Renda de cada um (com recibo)",
+    ];
+  }
+  return [...DOCUMENTOS_PADRAO];
+}
+
+/** Abaixo disto, foto de documento costuma sair ilegível para o banco. */
+export const LADO_MINIMO_LEGIVEL = 900;
+
+/** O aviso para o corretor, ou `null` se a foto tem resolução para ler. */
+export function alertaDeResolucao(largura: number | undefined, altura: number | undefined): string | null {
+  if (!largura || !altura) return null;
+  const menor = Math.min(largura, altura);
+  if (menor >= LADO_MINIMO_LEGIVEL) return null;
+  return `Foto pequena (${largura}×${altura}): pode estar ilegível para o banco. Confira antes de mandar.`;
+}
+
+/** Itens da lista que ainda não têm nenhum arquivo. */
+export function documentosQueFaltam(itens: string[], recebidos: string[]): string[] {
+  const tem = new Set(recebidos);
+  return itens.filter((i) => !tem.has(i));
+}
+
 export const TETO_DOCUMENTO_BYTES = 10 * 1024 * 1024;
 export const TETO_DOCUMENTOS_POR_LINK = 40;
 export const MIMES_ACEITOS = [
@@ -69,4 +127,31 @@ export function problemaDoArquivo(arquivo: { size: number; type: string }): stri
 
 export function linkValido(link: { expira_em: string } | null, agora = new Date()): boolean {
   return Boolean(link) && new Date(link!.expira_em).getTime() > agora.getTime();
+}
+
+export type TipoDeEventoDoLink = "abriu" | "clicou" | "documento" | "documentos_completos";
+
+/**
+ * O aviso que chega no WhatsApp do corretor quando o cliente age no link.
+ * `null` para o que não vira aviso (clique em imóvel e documento do meio da
+ * lista ficam só na ficha). O nome é o do CRM — o aviso vai para o corretor,
+ * não para o cliente, então aqui ele pode aparecer inteiro.
+ */
+export function textoDoAvisoDoLink(p: {
+  tipo: TipoDeEventoDoLink;
+  nome: string | null;
+  detalhe: string | null;
+  fichaUrl: string;
+}): string | null {
+  const quem = p.nome?.trim() || "Seu cliente";
+  if (p.tipo === "abriu") {
+    return `👀 ${quem} abriu agora a seleção de imóveis que você mandou. É um bom momento para puxar conversa.\n${p.fichaUrl}`;
+  }
+  if (p.tipo === "documento") {
+    return `📄 ${quem} começou a mandar os documentos${p.detalhe ? ` (${p.detalhe})` : ""}.\n${p.fichaUrl}`;
+  }
+  if (p.tipo === "documentos_completos") {
+    return `✅ ${quem} mandou todos os documentos pedidos. Confira na ficha antes de levar ao banco.\n${p.fichaUrl}`;
+  }
+  return null;
 }

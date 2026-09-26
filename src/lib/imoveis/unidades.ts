@@ -62,3 +62,19 @@ export function resumoDeDisponibilidade(
     );
   return partes.join("; ");
 }
+
+/** A partir de quantas unidades o cartão do site avisa que está acabando. */
+export const POUCAS_UNIDADES = 5;
+
+/**
+ * Quantas unidades restam no imóvel, somando as plantas que têm contagem —
+ * só quando são poucas (1 a `POUCAS_UNIDADES`). Fora disso, `null`: "restam
+ * 40" não é notícia, e zero não é convite (esgotado sai do catálogo pela
+ * decisão do corretor, não por um selo).
+ */
+export function unidadesRestantes(plantas: Array<{ unidadesDisponiveis: number | null }>): number | null {
+  const contadas = plantas.filter((p) => p.unidadesDisponiveis != null);
+  if (contadas.length === 0) return null;
+  const total = contadas.reduce((s, p) => s + (p.unidadesDisponiveis ?? 0), 0);
+  return total >= 1 && total <= POUCAS_UNIDADES ? total : null;
+}

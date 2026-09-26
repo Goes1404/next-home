@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { compatibilidade, ordenarCompativeis, regiaoCasa } from "./compatibilidade";
+import { compatibilidade, ordenarCompativeis, perfilDoLead, regiaoCasa, tetoPelaRenda } from "./compatibilidade";
+import type { ParametrosCredito } from "@/lib/credito/tipos";
+
+const P: ParametrosCredito = {
+  faixas: [
+    { nome: "Faixa 3", rendaMax: 8000, subsidioMaximo: 0, taxaAnual: 0.0766 },
+    { nome: "Faixa 4", rendaMax: 12000, subsidioMaximo: 0, taxaAnual: 0.1 },
+  ],
+  tetoFgtsImovel: 350000,
+  taxaSbpeAnual: 0.1149,
+  prazoMaximoMeses: 420,
+  comprometimentoMaximo: 0.3,
+  itbiPorCidade: {},
+  conferidoEm: "2026-09-09",
+};
 
 const vitra = {
   cidade: "Barueri",
@@ -46,5 +60,30 @@ describe("compatibilidade lead × imóvel", () => {
     ];
     const r = ordenarCompativeis(leads, (l) => compatibilidade(l.perfil, vitra));
     expect(r.map((l) => l.id)).toEqual(["b", "a"]);
+  });
+});
+
+describe("orçamento que vem do dossiê e da renda", () => {
+  it("a ficha manda; o dossiê só preenche o vazio", () => {
+    expect(perfilDoLead({ orcamento_max: "500000" }, { orcamento_max: 300000 }, P).orcamentoMax).toBe(500000);
+    expect(perfilDoLead({ orcamento_max: null }, { orcamento_max: "300000" }, P).orcamentoMax).toBe(300000);
+  });
+
+  it("renda vira teto pela mesma conta do simulador, e só vale sem orçamento dito", () => {
+    const teto = tetoPelaRenda(8000, P)!;
+    expect(teto).toBeGreaterThan(200000);
+    expect(teto).toBeLessThan(500000);
+    const barato = { ...vitra, precoAPartir: Math.round(teto * 0.9) };
+    const caro = { ...vitra, precoAPartir: Math.round(teto * 1.5) };
+    const pelaRenda = { tetoPelaRenda: teto };
+    expect(compatibilidade(pelaRenda, barato).motivos).toContain("cabe no que a renda financia");
+    expect(compatibilidade(pelaRenda, caro).combina).toBe(false);
+    // Orçamento dito ganha da renda, mesmo quando a renda aguentaria mais.
+    expect(compatibilidade({ orcamentoMax: teto * 0.5, tetoPelaRenda: teto }, barato).combina).toBe(false);
+  });
+
+  it("sem renda não há teto", () => {
+    expect(tetoPelaRenda(null, P)).toBeNull();
+    expect(tetoPelaRenda(0, P)).toBeNull();
   });
 });

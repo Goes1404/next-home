@@ -1,6 +1,8 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
+import { after } from "next/server";
 import { linkValido, type TipoDeLink } from "@/lib/crm/linksDoCliente";
+import { avisarCorretorDoLink, registrarEventoDoLink } from "@/lib/crm/eventosDoLink";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -19,7 +21,10 @@ export type LinkPublico = {
  * a página responde 404 e não diz qual dos três foi.
  *
  * A primeira abertura é carimbada (`aberto_em`): é o que diz ao corretor,
- * na ficha, que o cliente viu a seleção.
+ * na ficha, que o cliente viu a seleção. Quem ganha o carimbo (o UPDATE
+ * condicional devolve a linha) registra o evento e, na seleção, avisa o
+ * corretor no WhatsApp — depois da resposta (`after`), para o cliente não
+ * esperar o envio.
  */
 export async function lerLinkPublico(
   token: string,
@@ -44,11 +49,21 @@ export async function lerLinkPublico(
 
   // A prévia do corretor ("ver como o cliente vê") não conta como abertura.
   if (!link.aberto_em && !opcoes.previa) {
-    await supabase
+    const { data: carimbou } = await supabase
       .from("links_do_cliente")
       .update({ aberto_em: new Date().toISOString() })
       .eq("token", token)
-      .is("aberto_em", null);
+      .is("aberto_em", null)
+      .select("token");
+    if (carimbou && carimbou.length > 0) {
+      const evento = { token, leadId: link.lead_id, corretorId: link.corretor_id, tipo: "abriu" as const };
+      after(async () => {
+        await registrarEventoDoLink(supabase, evento);
+        if (tipo === "selecao") {
+          await avisarCorretorDoLink(supabase, { ...evento, nomeLead: lead.nome });
+        }
+      });
+    }
   }
 
   const primeiro = (lead.nome ?? "").trim().split(/\s+/)[0] || null;

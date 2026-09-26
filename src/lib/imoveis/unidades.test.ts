@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { andarDaUnidade, lerIdentificacoes, resumoDeDisponibilidade, TETO_DO_LOTE } from "./unidades";
+import { andarDaUnidade, lerIdentificacoes, resumoDeDisponibilidade, TETO_DO_LOTE, unidadesRestantes } from "./unidades";
 
 describe("lote de unidades", () => {
   it("aceita vírgula, linha e faixa", () => {
@@ -33,5 +33,16 @@ describe("o que a IA pode dizer sobre disponibilidade", () => {
 
   it("sem nada cadastrado, não diz nada — não sabemos", () => {
     expect(resumoDeDisponibilidade([{ dormitorios: 2, unidadesDisponiveis: null }])).toBeNull();
+  });
+});
+
+describe("selo de poucas unidades", () => {
+  it("só aparece entre 1 e 5, somando as plantas com contagem", () => {
+    expect(unidadesRestantes([{ unidadesDisponiveis: 2 }, { unidadesDisponiveis: 1 }])).toBe(3);
+    expect(unidadesRestantes([{ unidadesDisponiveis: 2 }, { unidadesDisponiveis: null }])).toBe(2);
+    expect(unidadesRestantes([{ unidadesDisponiveis: 30 }])).toBeNull();
+    expect(unidadesRestantes([{ unidadesDisponiveis: 0 }])).toBeNull();
+    expect(unidadesRestantes([{ unidadesDisponiveis: null }])).toBeNull();
+    expect(unidadesRestantes([])).toBeNull();
   });
 });

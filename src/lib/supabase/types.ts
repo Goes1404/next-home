@@ -111,6 +111,7 @@ export type Database = {
           tamanho: number | null
         }
         Insert: {
+          alerta?: string | null
           caminho: string
           corretor_id: string
           created_at?: string

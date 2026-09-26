@@ -3,27 +3,63 @@
 import { useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
-import { criarLinkDeDocumentos, criarSelecao, type LinkCriado } from "./linksAcoes";
+import { PERFIL_DE_DOCUMENTO_LABEL, PERFIS_DE_DOCUMENTO, IMOVEIS_NA_SELECAO, type PerfilDeDocumento } from "@/lib/crm/linksDoCliente";
+import {
+  criarLinkDeDocumentos,
+  criarSelecao,
+  sugerirSelecao,
+  type CandidatoDaSelecao,
+  type LinkCriado,
+} from "./linksAcoes";
 
 /**
  * Os dois botões do cartão "Links para o cliente". Criado o link, a tela
  * oferece as duas saídas que o corretor usa: mandar pelo WhatsApp do
  * cliente com a mensagem pronta, ou copiar.
+ *
+ * A seleção passa por uma escolha antes do link: a sugestão chega marcada, e
+ * o corretor troca o que quiser. Os documentos pedem o perfil (CLT,
+ * autônomo, casal), porque a lista muda com ele.
  */
 export function BotoesDeLink({ leadId, telefone }: { leadId: string; telefone: string | null }) {
   const [criado, setCriado] = useState<{ url: string; mensagem: string } | null>(null);
+  const [escolha, setEscolha] = useState<{ candidatos: CandidatoDaSelecao[]; marcados: string[] } | null>(null);
+  const [perfil, setPerfil] = useState<PerfilDeDocumento>("clt");
   const [ocupado, iniciar] = useTransition();
   const { avisar, falhar } = useAvisos();
 
-  function criar(fn: (id: string) => Promise<LinkCriado>) {
+  function criar(fn: () => Promise<LinkCriado>) {
     iniciar(async () => {
       try {
-        const r = await fn(leadId);
+        const r = await fn();
         if ("erro" in r) return falhar(r.erro);
         setCriado(r);
+        setEscolha(null);
       } catch (err) {
         falhar(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
       }
+    });
+  }
+
+  function abrirEscolha() {
+    setCriado(null);
+    iniciar(async () => {
+      try {
+        const r = await sugerirSelecao(leadId);
+        if ("erro" in r) return falhar(r.erro);
+        setEscolha(r);
+      } catch (err) {
+        falhar(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
+      }
+    });
+  }
+
+  function alternar(id: string) {
+    setEscolha((e) => {
+      if (!e) return e;
+      if (e.marcados.includes(id)) return { ...e, marcados: e.marcados.filter((x) => x !== id) };
+      if (e.marcados.length >= IMOVEIS_NA_SELECAO) return e;
+      return { ...e, marcados: [...e.marcados, id] };
     });
   }
 
@@ -46,20 +82,87 @@ export function BotoesDeLink({ leadId, telefone }: { leadId: string; telefone: s
         <button
           type="button"
           disabled={ocupado}
-          onClick={() => criar(criarSelecao)}
+          onClick={abrirEscolha}
           className="min-h-11 rounded-xl bg-acento hover:bg-acento-hover px-4 text-fluid-xs font-bold text-sobre-cor disabled:opacity-60"
         >
           Montar seleção de imóveis
         </button>
-        <button
-          type="button"
-          disabled={ocupado}
-          onClick={() => criar(criarLinkDeDocumentos)}
-          className="min-h-11 rounded-xl border border-linha-forte px-4 text-fluid-xs font-semibold text-corpo hover:border-acento-linha disabled:opacity-60"
-        >
-          Pedir documentos
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            aria-label="Perfil de renda do cliente"
+            value={perfil}
+            onChange={(e) => setPerfil(e.target.value as PerfilDeDocumento)}
+            className="select-seta text-fluid-xs border-linha-forte bg-campo text-titulo min-h-11 rounded-xl border px-3"
+          >
+            {PERFIS_DE_DOCUMENTO.map((p) => (
+              <option key={p} value={p}>
+                {PERFIL_DE_DOCUMENTO_LABEL[p]}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => criar(() => criarLinkDeDocumentos(leadId, perfil))}
+            className="min-h-11 rounded-xl border border-linha-forte px-4 text-fluid-xs font-semibold text-corpo hover:border-acento-linha disabled:opacity-60"
+          >
+            Pedir documentos
+          </button>
+        </div>
       </div>
+
+      {escolha && (
+        <fieldset className="rounded-xl border border-linha p-3 space-y-2">
+          <legend className="px-1 text-fluid-xs font-semibold text-corpo">
+            Escolha até {IMOVEIS_NA_SELECAO} imóveis ({escolha.marcados.length} marcados)
+          </legend>
+          <ul className="space-y-1">
+            {escolha.candidatos.map((c) => {
+              const marcado = escolha.marcados.includes(c.id);
+              const cheio = !marcado && escolha.marcados.length >= IMOVEIS_NA_SELECAO;
+              return (
+                <li key={c.id}>
+                  <label
+                    className={`flex min-h-11 items-start gap-3 rounded-lg px-2 py-2 ${cheio ? "opacity-50" : "cursor-pointer hover:bg-vidro-forte"}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={marcado}
+                      disabled={cheio}
+                      onChange={() => alternar(c.id)}
+                      className="mt-1 h-4 w-4 accent-acento"
+                    />
+                    <span className="min-w-0 break-words">
+                      <span className="block text-fluid-xs font-semibold text-titulo">{c.nome}</span>
+                      <span className="block text-fluid-xs text-apoio">
+                        {c.onde}
+                        {c.motivos.length > 0 ? ` · ${c.motivos.join(" · ")}` : ""}
+                      </span>
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={ocupado || escolha.marcados.length === 0}
+              onClick={() => criar(() => criarSelecao(leadId, escolha.marcados))}
+              className="min-h-11 rounded-xl bg-acento hover:bg-acento-hover px-4 text-fluid-xs font-bold text-sobre-cor disabled:opacity-60"
+            >
+              Gerar link com {escolha.marcados.length} {escolha.marcados.length === 1 ? "imóvel" : "imóveis"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEscolha(null)}
+              className="min-h-11 rounded-xl px-3 text-fluid-xs text-apoio"
+            >
+              Cancelar
+            </button>
+          </div>
+        </fieldset>
+      )}
 
       {criado && (
         <div className="rounded-xl border border-acento-linha bg-acento-lavado p-3 space-y-2">

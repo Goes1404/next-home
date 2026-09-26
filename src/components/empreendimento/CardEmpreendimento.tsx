@@ -6,6 +6,7 @@ import { BrilhoCarro } from "@/components/motion/BrilhoCarro";
 import { Camada } from "@/components/motion/Camada";
 import { ehRecente, precoAPartirDe } from "@/lib/format";
 import { resumoTipologias } from "@/lib/resumoTipologias";
+import { unidadesRestantes } from "@/lib/imoveis/unidades";
 import { STATUS_PONTO, STATUS_TINTA } from "@/lib/statusCor";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
 
@@ -29,8 +30,14 @@ export function CardEmpreendimento({
   aspecto = "aspect-[4/3]",
   velocidadeCapa = 0.12,
   nivel = "h3",
+  href,
 }: {
   empreendimento: Empreendimento;
+  /**
+   * Destino do clique. Na seleção do cliente ele passa por uma rota que
+   * registra QUAL imóvel foi aberto antes de levar à ficha.
+   */
+  href?: string;
   /**
    * Tag do título do cartão. Na home e nas seções ele é h3 (há um h2 de
    * seção acima); na LISTAGEM e na página de região o cartão é a primeira
@@ -52,10 +59,11 @@ export function CardEmpreendimento({
 }) {
   const Titulo = nivel;
   const ficha = resumoTipologias(e.tipologias);
+  const restam = unidadesRestantes(e.tipologias);
 
   return (
     <Link
-      href={`/empreendimentos/${e.slug}`}
+      href={href ?? `/empreendimentos/${e.slug}`}
       // Sem prefetch (F2, 13/09/2026): a listagem tem 25 cards, e cada um
       // que entrava na viewport disparava um RSC da ficha — 9 execuções de
       // função medidas numa carga, cada uma passando pelo proxy. A ficha é
@@ -111,7 +119,13 @@ export function CardEmpreendimento({
             {STATUS_LABEL[e.status]}
           </span>
 
-          {ehRecente(e.criadoEm) && (
+          {restam != null ? (
+            // A contagem sai da lista de unidades (0118); só aparece perto do
+            // fim, onde ela é notícia — "restam 40" não diz nada.
+            <span className="text-fluid-xs absolute top-3 right-3 rounded-full bg-sand-400/90 px-2.5 py-1 font-semibold text-ink-950">
+              {restam === 1 ? "Última unidade" : `Restam ${restam} unidades`}
+            </span>
+          ) : ehRecente(e.criadoEm) && (
             // `text-ink-950` literal: o contraste aqui é com o próprio chip
             // de areia, que é claro nos dois temas.
             <span className="text-fluid-xs absolute top-3 right-3 rounded-full bg-sand-400/90 px-2.5 py-1 font-medium text-ink-950">

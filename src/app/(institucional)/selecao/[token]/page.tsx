@@ -69,7 +69,12 @@ export default async function SelecaoPage({
           <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {imoveis.map((e, i) => (
               <li key={e.slug}>
-                <CardEmpreendimento empreendimento={e} prioridade={i === 0} nivel="h2" />
+                <CardEmpreendimento
+                  empreendimento={e}
+                  prioridade={i === 0}
+                  nivel="h2"
+                  href={`/selecao/${token}/ir/${e.slug}${previa === "1" ? "?previa=1" : ""}`}
+                />
               </li>
             ))}
           </ul>
@@ -83,7 +88,11 @@ export default async function SelecaoPage({
           quem aprova é o banco.
         </p>
         <div className="mt-6">
-          <Simulador parametros={parametros} whatsapp={whatsapp} />
+          <Simulador
+            parametros={parametros}
+            whatsapp={whatsapp}
+            valorInicial={imoveis.find((e) => e.precoAPartir)?.precoAPartir ?? null}
+          />
         </div>
         {whatsapp && (
           <a

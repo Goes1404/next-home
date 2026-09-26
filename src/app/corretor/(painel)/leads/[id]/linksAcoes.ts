@@ -5,11 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
 import { site } from "@/lib/site";
-import { compatibilidade, ordenarCompativeis } from "@/lib/crm/compatibilidade";
+import { compatibilidade, perfilDoLead } from "@/lib/crm/compatibilidade";
+import { getParametrosCredito } from "@/lib/credito/parametros";
 import {
   caminhoDoLink,
-  DOCUMENTOS_PADRAO,
+  documentosDoPerfil,
   IMOVEIS_NA_SELECAO,
+  PERFIS_DE_DOCUMENTO,
+  type PerfilDeDocumento,
   mensagemParaCliente,
   type TipoDeLink,
 } from "@/lib/crm/linksDoCliente";
@@ -24,7 +27,7 @@ async function leadDaCarteira(leadId: string) {
   const { data: lead } = await supabase
     .from("leads")
     .select(
-      "id, nome, corretor_id, regiao_interesse, dormitorios_min, orcamento_max, empreendimento_id, imovel_interesse_id",
+      "id, nome, corretor_id, regiao_interesse, dormitorios_min, orcamento_max, renda_mensal, empreendimento_id, imovel_interesse_id",
     )
     .eq("id", leadId)
     .maybeSingle();
@@ -51,44 +54,95 @@ async function gravar(
   return { url, mensagem: mensagemParaCliente({ tipo: p.tipo, primeiroNome, url }) };
 }
 
+/** Quantos imóveis a tela de escolha oferece. */
+const CANDIDATOS_NA_ESCOLHA = 12;
+
+export type CandidatoDaSelecao = {
+  id: string;
+  nome: string;
+  onde: string;
+  motivos: string[];
+};
+
 /**
- * Seleção personalizada: os imóveis publicados que mais combinam com o que o
- * lead declarou (`compatibilidade.ts`), com o imóvel de interesse dele na
- * frente quando existe. Sem nenhum critério e sem imóvel de interesse, não
- * há o que selecionar — a tela pede para qualificar primeiro.
+ * Seleção personalizada, passo 1: a sugestão. Os imóveis publicados que mais
+ * combinam com o lead (`perfilDoLead`: ficha, dossiê da IA e renda), com o
+ * imóvel de interesse na frente. Os três primeiros vêm marcados; o corretor
+ * troca antes de gerar o link — a máquina sugere, quem manda o link assina.
+ *
+ * Sem critério nenhum, ainda oferece o catálogo, mas nada marcado: é o
+ * corretor quem sabe o que mostrar a quem não disse o que procura.
  */
-export async function criarSelecao(leadId: string): Promise<LinkCriado> {
+export async function sugerirSelecao(
+  leadId: string,
+): Promise<{ candidatos: CandidatoDaSelecao[]; marcados: string[] } | { erro: string }> {
   const r = await leadDaCarteira(leadId);
   if ("erro" in r) return { erro: r.erro! };
-  const { supabase, lead, corretor } = r;
+  const { supabase, lead } = r;
 
-  const catalogo = await getEmpreendimentos().catch(() => []);
+  const [catalogo, credito, { data: dossie }] = await Promise.all([
+    getEmpreendimentos().catch(() => []),
+    getParametrosCredito(),
+    supabase.from("lead_observacoes_ia").select("orcamento_max").eq("lead_id", leadId).maybeSingle(),
+  ]);
+  const perfil = perfilDoLead(lead, dossie, credito);
   const interesse = [lead.imovel_interesse_id, lead.empreendimento_id].filter(Boolean) as string[];
-  const primeiros = catalogo.filter((e) => e.id && interesse.includes(e.id));
-  const compativeis = ordenarCompativeis(catalogo, (e) =>
-    compatibilidade(
-      {
-        regiaoInteresse: lead.regiao_interesse,
-        dormitoriosMin: lead.dormitorios_min,
-        orcamentoMax: lead.orcamento_max != null ? Number(lead.orcamento_max) : null,
-      },
-      {
+
+  const avaliados = catalogo
+    .filter((e) => e.id)
+    .map((e) => ({
+      e,
+      compat: compatibilidade(perfil, {
         cidade: e.cidade,
         bairro: e.bairro,
         precoAPartir: e.precoAPartir,
         dormitorios: e.tipologias.map((t) => t.dormitorios),
-      },
-    ),
-  );
-  const ids = [...new Set([...primeiros, ...compativeis].map((e) => e.id!).filter(Boolean))].slice(
-    0,
-    IMOVEIS_NA_SELECAO,
-  );
-  if (ids.length === 0) {
-    return {
-      erro: "Nenhum imóvel combina ainda. Preencha região, dormitórios ou orçamento na qualificação.",
-    };
-  }
+      }),
+      interesse: interesse.includes(e.id!),
+    }))
+    .sort(
+      (a, b) =>
+        Number(b.interesse) - Number(a.interesse) ||
+        Number(b.compat.combina) - Number(a.compat.combina) ||
+        b.compat.pontos - a.compat.pontos,
+    )
+    .slice(0, CANDIDATOS_NA_ESCOLHA);
+
+  if (avaliados.length === 0) return { erro: "Não há imóvel publicado no catálogo." };
+  const marcados = avaliados
+    .filter((a) => a.interesse || a.compat.combina)
+    .slice(0, IMOVEIS_NA_SELECAO)
+    .map((a) => a.e.id!);
+
+  return {
+    marcados,
+    candidatos: avaliados.map((a) => ({
+      id: a.e.id!,
+      nome: a.e.nome,
+      onde: [a.e.bairro, a.e.cidade].filter(Boolean).join(", "),
+      motivos: a.interesse ? ["imóvel de interesse", ...a.compat.motivos] : a.compat.motivos,
+    })),
+  };
+}
+
+/**
+ * Seleção personalizada, passo 2: o link, com os imóveis que o corretor
+ * deixou marcados. Os ids chegam pela rede, então só vale o que é imóvel
+ * PUBLICADO do catálogo — um id qualquer não vira página para o cliente.
+ */
+export async function criarSelecao(leadId: string, escolhidos: string[]): Promise<LinkCriado> {
+  const r = await leadDaCarteira(leadId);
+  if ("erro" in r) return { erro: r.erro! };
+  const { supabase, lead, corretor } = r;
+
+  const pedidos = [...new Set(Array.isArray(escolhidos) ? escolhidos : [])].filter((id) => typeof id === "string");
+  if (pedidos.length === 0) return { erro: "Marque ao menos um imóvel." };
+  if (pedidos.length > IMOVEIS_NA_SELECAO) return { erro: `No máximo ${IMOVEIS_NA_SELECAO} imóveis por seleção.` };
+
+  const catalogo = await getEmpreendimentos().catch(() => []);
+  const publicados = new Set(catalogo.map((e) => e.id).filter(Boolean));
+  const ids = pedidos.filter((id) => publicados.has(id));
+  if (ids.length !== pedidos.length) return { erro: "Algum imóvel saiu do catálogo. Monte a seleção de novo." };
 
   return gravar(supabase, {
     tipo: "selecao",
@@ -100,7 +154,8 @@ export async function criarSelecao(leadId: string): Promise<LinkCriado> {
   });
 }
 
-export async function criarLinkDeDocumentos(leadId: string): Promise<LinkCriado> {
+export async function criarLinkDeDocumentos(leadId: string, perfil: string = "clt"): Promise<LinkCriado> {
+  if (!(PERFIS_DE_DOCUMENTO as readonly string[]).includes(perfil)) return { erro: "Perfil desconhecido." };
   const r = await leadDaCarteira(leadId);
   if ("erro" in r) return { erro: r.erro! };
   return gravar(r.supabase, {
@@ -108,6 +163,6 @@ export async function criarLinkDeDocumentos(leadId: string): Promise<LinkCriado>
     leadId,
     corretorId: r.corretor.id,
     nome: r.lead.nome,
-    dados: { itens: [...DOCUMENTOS_PADRAO] },
+    dados: { itens: documentosDoPerfil(perfil as PerfilDeDocumento), perfil },
   });
 }

@@ -15,7 +15,7 @@ const VALIDADE_DO_LINK_S = 60 * 30;
  */
 export async function LinksDoCliente({ leadId, telefone }: { leadId: string; telefone: string | null }) {
   const supabase = await createClient();
-  const [{ data: links }, { data: documentos }] = await Promise.all([
+  const [{ data: links }, { data: documentos }, { data: cliques }] = await Promise.all([
     supabase
       .from("links_do_cliente")
       .select("token, tipo, aberto_em, created_at, dados")
@@ -24,10 +24,19 @@ export async function LinksDoCliente({ leadId, telefone }: { leadId: string; tel
       .limit(10),
     supabase
       .from("lead_documentos")
-      .select("id, item, caminho, nome_arquivo, created_at")
+      .select("id, item, caminho, nome_arquivo, created_at, alerta")
       .eq("lead_id", leadId)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("links_do_cliente_eventos")
+      .select("detalhe, created_at")
+      .eq("lead_id", leadId)
+      .eq("tipo", "clicou")
+      .order("created_at", { ascending: false })
+      .limit(50),
   ]);
+  // O que ele abriu, do mais recente, sem repetir: é por onde começar a conversa.
+  const abertos = [...new Set((cliques ?? []).map((c) => c.detalhe).filter((d): d is string => Boolean(d)))];
 
   const selecao = links?.find((l) => l.tipo === "selecao");
   const pedido = links?.find((l) => l.tipo === "documentos");
@@ -62,6 +71,7 @@ export async function LinksDoCliente({ leadId, telefone }: { leadId: string; tel
           {selecao.aberto_em
             ? `aberta pelo cliente em ${dataHora.format(new Date(selecao.aberto_em))}`
             : "ainda não aberta"}
+          {abertos.length > 0 && ` · olhou: ${abertos.join(", ")}`}
         </p>
       )}
 
@@ -86,6 +96,7 @@ export async function LinksDoCliente({ leadId, telefone }: { leadId: string; tel
                     <span className="text-tenue">
                       · {d.nome_arquivo ?? "arquivo"} · {dataHora.format(new Date(d.created_at))}
                     </span>
+                    {d.alerta && <span className="block text-alerta">⚠ {d.alerta}</span>}
                   </li>
                 );
               })}

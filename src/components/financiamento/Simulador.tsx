@@ -48,15 +48,24 @@ function comPontos(digitos: string): string {
 export function Simulador({
   parametros,
   whatsapp,
+  valorInicial,
 }: {
   parametros: ParametrosCredito;
   /** Link já montado do WhatsApp — o passo seguinte do resultado. */
   whatsapp: string | null;
+  /**
+   * Valor do imóvel já preenchido. Na seleção do cliente é o preço do
+   * primeiro imóvel: quem chega ali já sabe QUAL imóvel, e fazê-lo digitar
+   * o preço de volta é o passo em que ele desiste.
+   */
+  valorInicial?: number | null;
 }) {
   const [renda, setRenda] = useState("");
   const [entrada, setEntrada] = useState("");
   const [fgts, setFgts] = useState("");
-  const [valorImovel, setValorImovel] = useState("");
+  const [valorImovel, setValorImovel] = useState(
+    valorInicial && valorInicial > 0 ? String(Math.round(valorInicial)) : "",
+  );
   const prazosDisponiveis = PRAZOS_ANOS.filter((a) => a * 12 <= parametros.prazoMaximoMeses);
   const [prazoAnos, setPrazoAnos] = useState(
     prazosDisponiveis.at(-1) ?? Math.round(parametros.prazoMaximoMeses / 12),
