@@ -33,9 +33,13 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    - catálogo ranqueado + encolhido por foco ([[foco-da-conversa]]);
    - few-shot ([[recuperar-por-relevancia]]) + estilo da casa + funil de
      qualificação + calendário;
-   - resposta ao pós-visita (até 72h, sem fala nossa depois dele) entra
-     como `instrucaoExtra`: gostou → simulação/proposta; não gostou → o que
-     não agradou e UMA alternativa ([[aprimoramentos-das-oito-funcionalidades]]);
+   - resposta a um follow-up nosso (`instrucaoPelosFollowups`, vale o mais
+     recente e só se ele foi a última palavra nossa) entra como
+     `instrucaoExtra`: pós-visita (72h) → próximo passo; lembrete da
+     véspera (30h) → "confirmo" grava `visita_confirmada_em` e avisa o
+     corretor, "remarcar" oferece horários reais; pedido de indicação (96h)
+     → agradece e avisa o corretor para registrar o indicado
+     ([[aprimoramentos-das-oito-funcionalidades]], [[fechar-o-ciclo-e-ligar-a-plataforma]]);
    - LLM ([[motor-unico-openai]], [[timeout-nao-e-retentado]]);
    - guardrails ([[midia-por-slug-nunca-por-url]]), `semValores`
      ([[a-ia-nao-fala-valores]]), prazo
@@ -59,3 +63,4 @@ Orçamento de tempo: 6s rajada + 20s agente + ~5s envios + 12s dossiê ≈ 43s.
 - [[visao-geral-do-sistema]]
 - [[fluxo-de-campanhas]]
 - [[aprimoramentos-das-oito-funcionalidades]]
+- [[fechar-o-ciclo-e-ligar-a-plataforma]]

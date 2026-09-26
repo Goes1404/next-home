@@ -62,8 +62,9 @@ Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
 1. `varrerRespostasAtrasadas` — resposta a quem escreveu (antes da janela).
 2. `enviarResumosDoDia` — da hora escolhida pelo corretor (6h–11h, padrão
    8h) até 12h de SP; fim de semana só para quem pediu. Para o PRÓPRIO
-   corretor (antes da janela). Traz o placar de ontem e as visitas sem
-   retorno do cliente.
+   corretor (antes da janela). Traz o placar de ontem, as visitas sem
+   retorno do cliente, imóvel novo que combina com a carteira e, às
+   segundas, quem vale retomar.
 3. `alertarLeadsSemContato` — lead de portal/anúncio sem mensagem nossa em
    30 min vira aviso ao corretor, uma vez (antes da janela, 0121).
 4. `liberarReservasVencidas` — unidade com reserva vencida volta a
@@ -71,9 +72,16 @@ Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
 5. *(fora da janela 9h–20h59: para aqui)*
 6. trava `followups` →
    `agendarLembretesDeVisita` → `agendarPosVisita` →
+   `agendarPedidoDeIndicacao` (5 a 30 dias depois do fechamento, uma vez) →
    `abrirConversasDePortal` (2 por tique, com cota e espaçamento) →
    `processarLembretesDeAnotacao` → follow-ups vencidos
-   (`reengajamento`, `lembrete_visita`, `pos_visita`).
+   (`reengajamento`, `lembrete_visita`, `pos_visita`, `indicacao`).
+   Reengajamento de lead que virou `fechado`/`perdido` é descartado ANTES
+   da cota (a lista de compradores dispara para quem já comprou).
+
+Público `compradores` (26/09): só quem fechou NO imóvel da campanha — a
+única exceção à regra de que fechado não entra em campanha. Serve ao
+avanço da obra e à entrega das chaves.
 
 No disparador de campanhas, antes do primeiro item: `aplicarVencedoras`
 (0121) decide o A/B quando o placar atinge a régua e reescreve os
@@ -87,5 +95,6 @@ Tudo que fala com cliente por iniciativa nossa passa por
 ## Relacionadas
 - [[fluxo-do-webhook-whatsapp]]
 - [[aprimoramentos-das-oito-funcionalidades]]
+- [[fechar-o-ciclo-e-ligar-a-plataforma]]
 - [[a-conversa-fantasma-do-disparo-sem-ddi]]
 - [[botoes-perigosos-atras-de-avancado]]

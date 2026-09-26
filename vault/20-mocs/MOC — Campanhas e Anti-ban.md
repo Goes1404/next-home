@@ -38,3 +38,4 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[MOC — IA e Atendimento]] · [[Home]]
 - [[oito-funcionalidades-de-26-09]] — aberturas A/B sugeridas pela IA, pós-visita e primeiro contato automático pelo tique dos follow-ups (26/09)
 - [[aprimoramentos-das-oito-funcionalidades]] — A/B que decide sozinho e reescreve a fila, vencedoras como exemplo, pós-visita que puxa o próximo passo, lead pago sem contato em 30 min (26/09)
+- [[fechar-o-ciclo-e-ligar-a-plataforma]] — público compradores, reengajamento descartado para quem fechou, pedido de indicação no tique (26/09)

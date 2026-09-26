@@ -23,6 +23,7 @@ summary: Procedimentos de diagnóstico — sintoma → onde olhar, na ordem cert
 | pairingCode nulo | [[pareamento-decide-pelo-estado]] |
 | `TypeError: fetch failed` no agente | rede local — sondar `curl api.openai.com` ([[eval-de-conversa]]) |
 | migration nova | [[list-migrations-esta-dessincronizado]] antes de aplicar |
+| ligar e-mail dos portais ou Meta Ads | [[ligar-entradas-de-leads]] |
 
 ## Relacionados
 - [[Home]]

@@ -8136,3 +8136,27 @@ Nota: [[aprimoramentos-das-oito-funcionalidades]].
   (`janelaDeDias`).
 - **A catraca de lint estava em 1 erro** por um `prefer-const` do commit do
   rodízio do anúncio. Rode `node scripts/lintTeto.mjs` antes de subir.
+
+## Fechar o ciclo e ligar a plataforma (0123-0124, 26/09/2026)
+
+Nota: [[fechar-o-ciclo-e-ligar-a-plataforma]]. Guia de configuração:
+`docs/LIGAR-ENTRADAS-DE-LEADS.md` ([[ligar-entradas-de-leads]]).
+
+- **O gargalo de produção é adoção, não funcionalidade.** Havia 0 leads, 1
+  de 7 corretores com WhatsApp e 2 com login. O Início agora mostra os
+  primeiros passos, e o gestor vê "Equipe pronta para atender".
+- **E-mail dos portais: os campos decidem o provedor.** O endpoint lê
+  `from/to/subject/html/text` ou `From/To/Subject/HtmlBody/TextBody`.
+  Postmark e SendGrid batem. Mailgun (`body-plain`) e Cloudmailin
+  (remetente aninhado) chegariam sem texto e virariam `ignorado`.
+- **Reengajar quem comprou é propaganda para cliente.** A lista de
+  compradores dispara para leads `fechado`, e o disparo agenda
+  reengajamento para quem não responde. O runner descarta reengajamento de
+  `fechado`/`perdido` antes de gastar cota.
+- **Confirmação de visita: a negação vence e a dúvida não grava.** "Não
+  posso" contém "posso". Uma confirmação inventada deixa alguém esperando
+  no decorado. Remarcar apaga a confirmação (trigger da 0124).
+- **O indicado não deu consentimento a ninguém.** Registrar exige que o
+  corretor confirme que a pessoa sabe que será procurada.
+- **A meta por corretor já existia** (F5 do financeiro). Faltava só a visão
+  do gestor.
