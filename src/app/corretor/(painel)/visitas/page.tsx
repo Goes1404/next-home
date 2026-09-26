@@ -5,6 +5,9 @@ import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import { getCorretorLogado, getLeadsDeVisita } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import { GradeDaSemana } from "./_componentes/GradeDaSemana";
+import { AgendaNoCelular } from "./_componentes/AgendaNoCelular";
+import { createServiceClient } from "@/lib/supabase/service";
+import { site } from "@/lib/site";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { linkWhatsappPara } from "@/lib/site";
 import {
@@ -44,6 +47,12 @@ export default async function VisitasPage({
    */
   const corretor = await getCorretorLogado();
   const supabase = await createClient();
+  // Token da agenda (0126): tabela fechada ao painel, lida pelo servidor
+  // depois de saber de quem é a sessão.
+  const { data: agenda } = corretor
+    ? await createServiceClient().from("corretor_agenda").select("token").eq("corretor_id", corretor.id).maybeSingle()
+    : { data: null };
+  const linkDaAgenda = agenda ? `${site.url}/api/agenda/${agenda.token}.ics` : null;
   const { data: grade } = corretor
     ? await supabase
         .from("corretor_disponibilidade")
@@ -117,7 +126,8 @@ export default async function VisitasPage({
         Visitas vem ver as visitas de hoje; ajustar horário é o que se faz
         depois.
       */}
-      <div className="mt-6">
+      <div className="mt-6 space-y-4">
+        <AgendaNoCelular link={linkDaAgenda} />
         <GradeDaSemana
           inicial={(grade ?? []).map((f) => ({
             diaSemana: f.dia_semana,

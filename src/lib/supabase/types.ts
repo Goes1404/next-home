@@ -336,6 +336,24 @@ export type Database = {
         }
         Relationships: []
       }
+      corretor_agenda: {
+        Row: {
+          corretor_id: string
+          token: string
+          created_at: string
+        }
+        Insert: {
+          corretor_id: string
+          token?: string
+          created_at?: string
+        }
+        Update: {
+          corretor_id?: string
+          token?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       unidades: {
         Row: {
           andar: number | null
@@ -825,7 +843,6 @@ export type Database = {
           creci: string
           deve_trocar_senha: boolean
           resumo_diario_em: string | null
-          agenda_token: string | null
           resumo_fim_de_semana: boolean
           resumo_hora: number
           em_pausa: boolean
@@ -849,7 +866,6 @@ export type Database = {
           creci: string
           deve_trocar_senha?: boolean
           resumo_diario_em?: string | null
-          agenda_token?: string | null
           resumo_fim_de_semana?: boolean
           resumo_hora?: number
           em_pausa?: boolean
@@ -873,7 +889,6 @@ export type Database = {
           creci?: string
           deve_trocar_senha?: boolean
           resumo_diario_em?: string | null
-          agenda_token?: string | null
           resumo_fim_de_semana?: boolean
           resumo_hora?: number
           em_pausa?: boolean

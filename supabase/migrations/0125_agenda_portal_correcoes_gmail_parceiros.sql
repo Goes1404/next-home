@@ -12,8 +12,8 @@
 -- vão no jsonb `detalhes`, e a marca é configuração de instalação (env).
 
 -- ─── 1. Agenda ───────────────────────────────────────────────────────────
--- O token É a credencial do feed .ics: o aplicativo de calendário busca a
--- URL sem sessão. Escrito só pelo servidor; nenhum grant de update.
+-- (O token da agenda nasceu aqui, em `corretores`, e saiu na 0126: aquela
+-- tabela é pública. A linha continua para o histórico bater com o banco.)
 alter table public.corretores add column if not exists agenda_token uuid unique;
 
 -- ─── 2. Portal do comprador ──────────────────────────────────────────────
