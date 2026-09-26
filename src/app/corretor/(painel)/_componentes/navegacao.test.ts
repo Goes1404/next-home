@@ -369,7 +369,8 @@ describe("as barras de abas DERIVAM do menu", () => {
     // cita. O número é atualizado com o motivo escrito, nunca afrouxado em
     // silêncio — a guarda existe para a barra de abas e o menu não voltarem a
     // discordar sobre o que é subtópico de quê.
-    expect(subitensDe("/corretor/admin")).toHaveLength(9);
+    // Construtoras entrou em 26/09/2026 (relatório para a parceira).
+    expect(subitensDe("/corretor/admin")).toHaveLength(10);
   });
 });
 

@@ -3,6 +3,7 @@ import {
   diaEmSP,
   horaDeMandarResumo,
   linhaDeOntem,
+  segundaEmSP,
   montarResumoDoDia,
   MAXIMO_POR_SECAO,
 } from "./resumoDoDia";
@@ -93,5 +94,27 @@ describe("preferências, placar e visitas sem retorno", () => {
     )!;
     expect(t).toMatch(/Visitas sem retorno do cliente \(1\)/);
     expect(t).toMatch(/Ontem: 2 clientes escreveram/);
+  });
+});
+
+describe("imóvel novo e vale retomar", () => {
+  it("segunda-feira em SP, não em UTC", () => {
+    // Domingo 23h em SP = segunda 02h UTC.
+    expect(segundaEmSP(new Date("2026-09-28T02:00:00Z"))).toBe(false);
+    expect(segundaEmSP(new Date("2026-09-28T12:00:00Z"))).toBe(true);
+  });
+
+  it("as duas seções entram e contam como notícia", () => {
+    const vazio = { nomeCorretor: "Bruna", visitas: [], esperando: [], novos: [], lembretes: [] };
+    const t = montarResumoDoDia(
+      {
+        ...vazio,
+        imoveisNovos: [{ titulo: "Vitra", detalhe: "4 leads combinam", link: "https://x/i" }],
+        valeRetomar: [{ titulo: "Ana", link: "https://x/l" }],
+      },
+      "https://x",
+    )!;
+    expect(t).toMatch(/Imóvel novo que combina com sua carteira \(1\)/);
+    expect(t).toMatch(/Vale retomar esta semana \(1\)/);
   });
 });

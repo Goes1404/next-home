@@ -13,6 +13,8 @@ import { intervaloDo, lerPeriodo, PERIODOS } from "@/lib/financeiro/periodo";
 import { formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
 import { AbasFinanceiro } from "../../_componentes/AbasFinanceiro";
+import { Suspense } from "react";
+import { MetasDaEquipe } from "./MetasDaEquipe";
 
 export const metadata: Metadata = { title: "Desempenho" };
 
@@ -203,6 +205,10 @@ export default async function DesempenhoPage({
               atendimentos e 5 conversas no período. Antes disso ela seria anedota.
             </p>
           )}
+
+          <Suspense fallback={null}>
+            <MetasDaEquipe equipe={equipe.map((c) => ({ id: c.id, nome: c.nome }))} />
+          </Suspense>
 
           <section className="space-y-2">
             <h2 className="text-fluid-base text-titulo font-medium">A equipe</h2>

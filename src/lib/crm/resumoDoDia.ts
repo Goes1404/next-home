@@ -60,6 +60,11 @@ export function fimDeSemanaEmSP(data: Date): boolean {
   return d === "Sat" || d === "Sun";
 }
 
+/** Segunda-feira em São Paulo: o dia da lista semanal de quem vale retomar. */
+export function segundaEmSP(data: Date): boolean {
+  return fmtDiaDaSemana.format(data) === "Mon";
+}
+
 /**
  * Entre a hora escolhida pelo corretor e meio-dia de São Paulo, e ainda não
  * enviado hoje. Hora e fim de semana vêm de `corretores` (0121): um
@@ -91,6 +96,10 @@ export type EntradaDoResumo = {
    * o corretor registra o desfecho na ficha, senão a visita some do radar.
    */
   semRetorno?: ItemDoResumo[];
+  /** Imóvel publicado nas últimas 24h com leads da carteira que combinam. */
+  imoveisNovos?: ItemDoResumo[];
+  /** Segunda-feira: leads parados há 30+ dias que ainda valem uma mensagem. */
+  valeRetomar?: ItemDoResumo[];
   /** O que aconteceu ontem. Informa, mas sozinho não justifica mensagem. */
   ontem?: { clientesQueEscreveram: number; visitasMarcadas: number } | null;
 };
@@ -126,7 +135,16 @@ function secao(rotulo: string, itens: ItemDoResumo[]): string[] {
 /** O texto do resumo, ou `null` quando não há nada a dizer. */
 export function montarResumoDoDia(e: EntradaDoResumo, urlPainel: string): string | null {
   const semRetorno = e.semRetorno ?? [];
-  const total = e.visitas.length + e.esperando.length + e.novos.length + e.lembretes.length + semRetorno.length;
+  const imoveisNovos = e.imoveisNovos ?? [];
+  const valeRetomar = e.valeRetomar ?? [];
+  const total =
+    e.visitas.length +
+    e.esperando.length +
+    e.novos.length +
+    e.lembretes.length +
+    semRetorno.length +
+    imoveisNovos.length +
+    valeRetomar.length;
   if (total === 0) return null;
 
   const primeiroNome = e.nomeCorretor.trim().split(/\s+/)[0] || "";
@@ -140,6 +158,8 @@ export function montarResumoDoDia(e: EntradaDoResumo, urlPainel: string): string
     ...secao("Leads novos (24h)", e.novos),
     ...secao("Lembretes de hoje", e.lembretes),
     ...secao("Visitas sem retorno do cliente", semRetorno),
+    ...secao("Imóvel novo que combina com sua carteira", imoveisNovos),
+    ...secao("Vale retomar esta semana", valeRetomar),
     `Painel: ${urlPainel}/corretor`,
   ].join("\n");
 }
