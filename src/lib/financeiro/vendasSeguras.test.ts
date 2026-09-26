@@ -45,3 +45,22 @@ describe("vendas: dinheiro recebido/pago é só do gestor", () => {
     expect(sql).toMatch(/revoke\s+all\s+on\s+public\.venda_participantes\s+from\s+anon/i);
   });
 });
+
+describe("o ranking que todos veem não leva comissão de ninguém", () => {
+  const sql = todas();
+  const i = sql.lastIndexOf("function public.ranking_vgv");
+  const corpo = sql.slice(i, sql.indexOf("$$;", i));
+
+  it("a função existe e confere a sessão", () => {
+    expect(i).toBeGreaterThan(-1);
+    expect(corpo).toMatch(/corretor_atual\(\)\s+is\s+null/);
+  });
+
+  it("não devolve nem soma comissão ou repasse", () => {
+    expect(
+      /comissao|repasse/i.test(corpo),
+      "ranking_vgv é security definer e todos os corretores a chamam: comissão e repasse de colega " +
+        "não podem sair dela (decisão de 25/09/2026).",
+    ).toBe(false);
+  });
+});
