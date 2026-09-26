@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-09-26
 fonte: leitura do código + docs/MEMORIA.md
 summary: Criação monta a fila com agendado_para; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, cota/espaçamento no banco e variação por IA.
 ---
@@ -56,6 +56,21 @@ Cada envio passa por:
    ([[tentativas-de-contato-sao-duas-contagens]]).
 
 Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
+
+## O tique dos follow-ups (a cada 5 min) — ordem desde 26/09/2026
+
+1. `varrerRespostasAtrasadas` — resposta a quem escreveu (antes da janela).
+2. `enviarResumosDoDia` — 8h–12h de SP, para o PRÓPRIO corretor (antes da janela).
+3. *(fora da janela 9h–20h59: para aqui)*
+4. trava `followups` →
+   `agendarLembretesDeVisita` → `agendarPosVisita` →
+   `abrirConversasDePortal` (2 por tique, com cota e espaçamento) →
+   `processarLembretesDeAnotacao` → follow-ups vencidos
+   (`reengajamento`, `lembrete_visita`, `pos_visita`).
+
+Tudo que fala com cliente por iniciativa nossa passa por
+`reservarCotaCampanha` e olha `nao_contatar_em`. Ver
+[[oito-funcionalidades-de-26-09]].
 
 ## Relacionadas
 - [[fluxo-do-webhook-whatsapp]]

@@ -8077,3 +8077,36 @@ Nota: [[o-worker-de-video-roda-sem-segredo]].
 - **O MCP do GitHub desta sessão não dispara nem reexecuta workflow** (403
   `Resource not accessible by integration`). Disparo manual é pelo usuário, em
   Actions → Run workflow; senão, o `schedule` de hora em hora.
+
+## As oito funcionalidades de 26/09/2026 (0118-0120)
+
+Nota: [[oito-funcionalidades-de-26-09]].
+
+- **Duas das oito já existiam pela metade**, e só medir mostrou: o placar
+  A/B de campanha (0084) e o webhook de e-mail dos portais — este com **0
+  linhas em `inbound_logs` na vida**, ou seja, nunca configurado. Nelas o
+  trabalho foi o que faltava (aberturas sugeridas pela IA; primeiro contato
+  automático), não reconstruir.
+- **Tudo novo roda no tique dos follow-ups**, nenhum cron novo: resumo do dia
+  ANTES da janela (vai para o corretor), pós-visita e primeiro contato com lead
+  de portal DEPOIS dela (é iniciativa nossa com cliente). Ordem completa em
+  `vault/30-arquitetura/fluxo-de-campanhas.md`.
+- **Função exportada de arquivo "use server" é endpoint HTTP.** O miolo que
+  envia pela IA (`gerarEEnviarPelaIA`) precisava ser chamado pelo cron; exportá-lo
+  de `acoesIA.ts` abriria um endpoint que manda mensagem sem sessão. Foi para
+  `aberturaPelaIA.ts` (`server-only`), e as três guardas que liam `acoesIA.ts`
+  pelo caminho passaram a ler os dois arquivos.
+- **Link para o cliente: o token é a credencial.** `links_do_cliente` sem
+  acesso do `anon`, página lida pelo servidor, 30 dias, `noindex`. A renda não
+  viaja no link; a prévia do corretor (`?previa=1`) não conta como abertura.
+  Documentos no bucket PRIVADO `documentos-clientes`, lidos por URL assinada.
+- **O Salvar do editor do imóvel nunca gravou as plantas**, e dizia "Todas as
+  alterações foram salvas". Achado construindo as unidades. Ver
+  [[plantas-do-editor-nunca-eram-salvas]].
+- **Antes de mudar `SELECT_EMPREENDIMENTO`, testar o embed contra o PostgREST
+  com a chave publicável** (`curl .../rest/v1/empreendimentos?select=...`): é o
+  select do site inteiro, e um embed ambíguo (PGRST201) já derrubou tudo uma
+  vez. O `unidades(tipologia_id,status)` passou.
+- **Contador por planta tem uma fonte só**: com unidade ligada, sai da lista
+  (`unidadesDaPlanta`); o `anon` só lê as `disponivel` (0120). Prompt v37 diz
+  "restam N de X dorm", nunca preço.

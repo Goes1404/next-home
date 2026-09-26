@@ -71,3 +71,5 @@ F0–F6.
 - [[vendas-e-o-modulo-financeiro]] — F1 do financeiro: venda com co-corretagem, comissão por venda, distrato; só o gestor marca dinheiro recebido (0114, 25/09)
 - [[link-de-anuncio-e-rodizio-aleatorio]] — sem especialista; link de anúncio sorteia e não repete o último do produto (0117, 26/09)
 - [[vendas-e-o-modulo-financeiro]] — F2 a F8 (0115): extrato, meta em ritmo, ranking de VGV, desempenho, retorno de anúncio, roleta que aprende (26/09)
+- [[oito-funcionalidades-de-26-09]] — imóvel encontra quem procurava, resumo do dia no WhatsApp, documentos e seleção pelo link, unidades, pós-visita e primeiro contato com lead de portal (0118-0120, 26/09)
+- [[plantas-do-editor-nunca-eram-salvas]] — o Salvar do editor dizia "tudo salvo" e não gravava as plantas (26/09)

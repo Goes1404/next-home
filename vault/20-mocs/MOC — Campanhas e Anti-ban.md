@@ -36,3 +36,4 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 
 ## Relacionados
 - [[MOC — IA e Atendimento]] · [[Home]]
+- [[oito-funcionalidades-de-26-09]] — aberturas A/B sugeridas pela IA, pós-visita e primeiro contato automático pelo tique dos follow-ups (26/09)
