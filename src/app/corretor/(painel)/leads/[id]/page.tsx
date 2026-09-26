@@ -26,6 +26,7 @@ import { IniciarConversaIA } from "./IniciarConversaIA";
 import { VendaDoLead } from "./VendaDoLead";
 import { LinksDoCliente } from "./LinksDoCliente";
 import { Indicacoes } from "./Indicacoes";
+import { PedidoDoSite } from "./PedidoDoSite";
 import { getVendasDoLead } from "@/lib/financeiro/dados";
 import { perguntaDoLead } from "@/lib/consultor/perguntaDoLead";
 
@@ -232,6 +233,7 @@ export default async function FichaLeadPage({
             empreendimentos={empreendimentos ?? []}
           />
 
+          <PedidoDoSite leadId={lead.id} />
           <LinksDoCliente leadId={lead.id} telefone={lead.telefone} />
           <Indicacoes leadId={lead.id} />
           <AtalhoDoConsultor lead={lead} />

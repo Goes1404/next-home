@@ -6,6 +6,7 @@ import { FiltroSheet } from "@/components/busca/FiltroSheet";
 import { FiltrosAtivos } from "@/components/busca/FiltrosAtivos";
 import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimento";
 import { CtaFinal } from "@/components/home/CtaFinal";
+import { AvisemeQuandoSurgir } from "@/components/busca/AvisemeQuandoSurgir";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { VoltarLink } from "@/components/ui/VoltarLink";
@@ -195,6 +196,13 @@ export default async function EmpreendimentosPage({
             })}
           </div>
         )}
+
+        <AvisemeQuandoSurgir
+          regiao={filtros.bairro ?? filtros.cidade}
+          dormitoriosMin={filtros.dormitoriosMin}
+          precoMax={filtros.precoMax}
+          poucosResultados={empreendimentos.length < 3}
+        />
 
         {/* CTA para o corretor no fim da lista: quem rolou 25 cartões e não
             clicou em nenhum precisa de uma saída que não seja o topo. */}

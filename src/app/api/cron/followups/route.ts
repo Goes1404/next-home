@@ -31,6 +31,7 @@ import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
 import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
 import { abrirConversasDePortal } from "@/lib/whatsapp/aberturaPelaIA";
+import { avisarQuemPediuAlerta } from "@/lib/crm/avisoDeNovidade";
 import { separarRajada } from "@/lib/whatsapp/rajada";
 import {
   decidirRespostaAtrasada,
@@ -603,6 +604,15 @@ export async function GET(req: NextRequest) {
       console.error("[primeiro contato]", e);
       return 0;
     });
+    // "Me avise quando surgir": quem pediu pelo site recebe o imóvel novo que
+    // combina. Um por tique e só se sobrou tempo: cada aviso custa ~20s de IA.
+    const avisosDeNovidade =
+      primeirosContatos >= 2
+        ? 0
+        : await avisarQuemPediuAlerta(1).catch((e) => {
+            console.error("[aviso de novidade]", e);
+            return 0;
+          });
     // Lembretes das anotações (0100): mensagem para o PRÓPRIO corretor, não
     // para cliente — por isso não passa por cota anti-ban nem pela janela.
     await processarLembretesDeAnotacao(supabase);
@@ -622,7 +632,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "descartado") resultado.descartados++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, primeirosContatos });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, primeirosContatos, avisosDeNovidade });
   } finally {
     await destravarDisparo("followups", dono);
   }

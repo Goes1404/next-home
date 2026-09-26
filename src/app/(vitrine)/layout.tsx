@@ -3,6 +3,7 @@ import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
 import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
+import { BarraDeFavoritos } from "@/components/empreendimento/BarraDeFavoritos";
 
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 
@@ -69,6 +70,7 @@ export default async function VitrineLayout({ children }: { children: React.Reac
 
       {children}
     <VoltarAoTopo />
+    <BarraDeFavoritos />
     </GlassBackgroundProvider>
   );
 }

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ViewTransition } from "react";
+import { BotaoFavorito } from "@/components/empreendimento/BotaoFavorito";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { BrilhoCarro } from "@/components/motion/BrilhoCarro";
 import { Camada } from "@/components/motion/Camada";
@@ -62,6 +63,7 @@ export function CardEmpreendimento({
   const restam = unidadesRestantes(e.tipologias);
 
   return (
+    <div className="relative">
     <Link
       href={href ?? `/empreendimentos/${e.slug}`}
       // Sem prefetch (F2, 13/09/2026): a listagem tem 25 cards, e cada um
@@ -122,13 +124,13 @@ export function CardEmpreendimento({
           {restam != null ? (
             // A contagem sai da lista de unidades (0118); só aparece perto do
             // fim, onde ela é notícia — "restam 40" não diz nada.
-            <span className="text-fluid-xs absolute top-3 right-3 rounded-full bg-sand-400/90 px-2.5 py-1 font-semibold text-ink-950">
+            <span className="text-fluid-xs absolute top-3 right-16 rounded-full bg-sand-400/90 px-2.5 py-1 font-semibold text-ink-950">
               {restam === 1 ? "Última unidade" : `Restam ${restam} unidades`}
             </span>
           ) : ehRecente(e.criadoEm) && (
             // `text-ink-950` literal: o contraste aqui é com o próprio chip
             // de areia, que é claro nos dois temas.
-            <span className="text-fluid-xs absolute top-3 right-3 rounded-full bg-sand-400/90 px-2.5 py-1 font-medium text-ink-950">
+            <span className="text-fluid-xs absolute top-3 right-16 rounded-full bg-sand-400/90 px-2.5 py-1 font-medium text-ink-950">
               Novo
             </span>
           )}
@@ -171,5 +173,8 @@ export function CardEmpreendimento({
         </div>
       </GlassSurface>
     </Link>
+    {/* Fora do link: botão dentro de link é HTML inválido. */}
+    <BotaoFavorito slug={e.slug} nome={e.nome} className="absolute top-3 right-3 z-10" />
+    </div>
   );
 }
