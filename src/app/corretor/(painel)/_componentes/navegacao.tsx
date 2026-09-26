@@ -116,14 +116,6 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/leads", label: "Lista", icone: IconeListaContatos },
           { href: "/corretor/funil", label: "Funil", icone: IconeFunil },
           { href: "/corretor/visitas", label: "Visitas", icone: IconeVisitas },
-          /*
-           * Vendas (0114, 25/09/2026) é a última etapa do mesmo caminho: o
-           * lead que chegou a "Fechado" vira uma venda com valor, unidade e
-           * comissão. Subtópico e não tópico porque o teto de sete está cheio
-           * (ver o comentário do Consultor) — e porque é aqui, olhando os
-           * leads, que o corretor lembra de registrar.
-           */
-          { href: "/corretor/financeiro", label: "Vendas", icone: IconeCifrao },
           // Bloco de notas com lembretes (0100): nota livre, vínculo a lead,
           // direcionável a colega — mora em Pessoas porque é sobre gente.
           { href: "/corretor/anotacoes", label: "Anotações", icone: IconeNota },
@@ -150,6 +142,16 @@ export const GRUPOS_NAV: GrupoNav[] = [
            * que se olha imóvel. A rota não muda, então nada salvo quebra.
            */
           { href: "/corretor/links", label: "Links por imóvel", icone: IconeLink },
+          /*
+           * O Consultor foi tópico próprio de 09/09 a 26/09/2026. Desceu para
+           * cá quando o Financeiro precisou do lugar no teto de sete, e o
+           * motivo que o tinha feito tópico ("ferramenta de uso diário atrás
+           * de um clique extra não é usada") deixou de valer em 11/09: desde
+           * então ele é a BOLHA presente em toda tela do painel. É o
+           * assistente do portfólio, então mora em Imóveis, e pinta dessa cor
+           * como já pintava. A rota não muda.
+           */
+          { href: "/corretor/consultor", label: "Consultor", icone: IconeConsultor },
         ],
       },
     ],
@@ -164,16 +166,25 @@ export const GRUPOS_NAV: GrupoNav[] = [
     itens: [
       {
         /*
-         * O sétimo destino, e o TETO da régua de menu. Mora em Ferramentas, e
-         * não na barra do polegar: aquela leva três, e são as três coisas que
-         * se fazem EM PÉ, no corredor (o que precisa de você agora, com quem
-         * falar, qual imóvel). Perguntar ao consultor é coisa de sentar.
+         * O Financeiro (26/09/2026): vendas, extrato, ranking de VGV e
+         * desempenho. É o sétimo destino e bate no TETO da régua de menu; o
+         * lugar veio do Consultor, que virou subtópico de Imóveis (ele vive
+         * na bolha de toda tela desde 11/09).
+         *
+         * Mora em Ferramentas, e não na barra do polegar: aquela leva as três
+         * coisas que se fazem EM PÉ, no corredor. Olhar extrato é de sentar.
          *
          * O próximo destino que alguém quiser criar NÃO cabe: vira subtópico.
          */
-        href: "/corretor/consultor",
-        label: "Consultor",
-        icone: IconeConsultor,
+        href: "/corretor/financeiro",
+        label: "Financeiro",
+        icone: IconeCifrao,
+        subitens: [
+          { href: "/corretor/financeiro", label: "Vendas", icone: IconeCifrao },
+          { href: "/corretor/financeiro/extrato", label: "Extrato e meta", icone: IconeExtrato },
+          { href: "/corretor/financeiro/ranking", label: "Ranking de VGV", icone: IconeTrofeu },
+          { href: "/corretor/financeiro/desempenho", label: "Desempenho", icone: IconeGrafico },
+        ],
       },
       {
         /*
@@ -429,6 +440,12 @@ const MODULO_POR_DESTINO: Record<string, Modulo> = {
    * /imoveis e pinta da Assistente, dona dela desde 11/09/2026.
    */
   "/corretor/consultor": "imoveis",
+  /*
+   * O Financeiro pinta com a cor do Início, e pelo mesmo motivo do
+   * Consultor: o círculo cromático está cheio. É a dupla do "como estou
+   * indo" — o Início mostra o funil, o Financeiro mostra o dinheiro.
+   */
+  "/corretor/financeiro": "inicio",
   "/corretor/marketing": "marketing",
   "/corretor/whatsapp": "whatsapp",
   "/corretor/perfil": "conta",
@@ -604,6 +621,32 @@ function IconeCifrao(p: SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <rect x="2.5" y="6" width="19" height="12" rx="2" />
       <path d="M14.2 9.6c-.4-.6-1.2-1-2.2-1-1.3 0-2.2.7-2.2 1.6 0 2 4.4 1 4.4 3.3 0 .9-.9 1.7-2.2 1.7-1 0-1.9-.4-2.3-1.1M12 7.8v8.4" />
+    </svg>
+  );
+}
+function IconeExtrato(p: SVGProps<SVGSVGElement>) {
+  // Recibo com as linhas de lançamento: o extrato.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
+      <path d="M9 8h6M9 12h6M9 16h3" />
+    </svg>
+  );
+}
+function IconeTrofeu(p: SVGProps<SVGSVGElement>) {
+  // Taça: o ranking.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M8 4h8v5a4 4 0 0 1-8 0z" />
+      <path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7M10 17h4" />
+    </svg>
+  );
+}
+function IconeGrafico(p: SVGProps<SVGSVGElement>) {
+  // Barras crescendo: desempenho.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M4 20h16M7 16v-4M12 16V8M17 16V5" />
     </svg>
   );
 }

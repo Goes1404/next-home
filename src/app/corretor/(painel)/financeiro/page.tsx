@@ -4,7 +4,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getVendas, vgvPorCorretor, type VendaNaTela } from "@/lib/financeiro/dados";
 import { formatarPercentual, formatarReais, hojeEmSaoPaulo, vgvCreditado } from "@/lib/financeiro/venda";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
-import { AbasLeads } from "../_componentes/AbasLeads";
+import { AbasFinanceiro } from "../_componentes/AbasFinanceiro";
 
 export const metadata: Metadata = { title: "Vendas" };
 
@@ -31,7 +31,7 @@ export default async function VendasPage() {
   const cabecalho = (
     <>
       <CabecalhoDeTela
-        secao="Leads"
+        secao="Financeiro"
         titulo="Vendas"
         descricao="Cada venda com valor, comissão e quem vendeu. É daqui que saem o extrato e o ranking de VGV."
         acao={
@@ -46,7 +46,7 @@ export default async function VendasPage() {
         }
       />
       <div className="mt-6">
-        <AbasLeads ativa="/corretor/financeiro" />
+        <AbasFinanceiro ativa="/corretor/financeiro" />
       </div>
     </>
   );

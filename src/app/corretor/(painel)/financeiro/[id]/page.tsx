@@ -3,11 +3,67 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCorretorLogado, getEmpreendimentosParaFiltro, getEquipeAtiva } from "@/lib/corretorSessao";
 import { getVenda } from "@/lib/financeiro/dados";
-import { formatarPercentual, formatarReais } from "@/lib/financeiro/venda";
+import { formatarPercentual, formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
+import type { VendaNaTela } from "@/lib/financeiro/dados";
+import { BotaoAcao } from "../../_componentes/BotaoAcao";
+import { marcarComissaoRecebida, marcarRepassePago } from "../acoes";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
 import { FormularioVenda } from "../FormularioVenda";
 
 export const metadata: Metadata = { title: "Venda" };
+
+/**
+ * O que só o gestor marca (F2): a comissão entrou, o repasse saiu. Cada
+ * marcação tem volta (desfazer), porque clique errado em dinheiro é o tipo
+ * de engano que ninguém percebe até o fim do mês.
+ */
+function PagamentosDaVenda({ venda }: { venda: VendaNaTela }) {
+  const hoje = hojeEmSaoPaulo();
+  const data = (iso: string) => iso.split("-").reverse().join("/");
+  return (
+    <section className="cartao space-y-3 p-4 sm:p-5">
+      <h2 className="text-fluid-base text-titulo font-medium">Pagamentos</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-fluid-sm text-corpo">
+          Comissão da construtora ({formatarReais(venda.comissaoValor)}):{" "}
+          <strong className="text-titulo">
+            {venda.comissaoRecebidaEm ? `recebida em ${data(venda.comissaoRecebidaEm)}` : "a receber"}
+          </strong>
+        </span>
+        {venda.comissaoRecebidaEm ? (
+          <BotaoAcao acao={marcarComissaoRecebida.bind(null, venda.id, null)} variante="secundario" rotulopendente="Desfazendo…">
+            Desfazer
+          </BotaoAcao>
+        ) : venda.status === "ativa" ? (
+          <BotaoAcao acao={marcarComissaoRecebida.bind(null, venda.id, hoje)} rotulopendente="Marcando…">
+            Recebi hoje
+          </BotaoAcao>
+        ) : null}
+      </div>
+      <ul className="divide-linha divide-y">
+        {venda.participantes.map((p) => (
+          <li key={p.corretorId} className="flex flex-wrap items-center justify-between gap-2 py-2">
+            <span className="text-fluid-sm text-corpo min-w-0 break-words">
+              Repasse de {p.nome} ({formatarReais(p.repasseValor)}):{" "}
+              <strong className="text-titulo">{p.repassePagoEm ? `pago em ${data(p.repassePagoEm)}` : "a pagar"}</strong>
+            </span>
+            {p.repassePagoEm ? (
+              <BotaoAcao acao={marcarRepassePago.bind(null, venda.id, p.corretorId, null)} variante="secundario" rotulopendente="Desfazendo…">
+                Desfazer
+              </BotaoAcao>
+            ) : venda.comissaoRecebidaEm ? (
+              <BotaoAcao acao={marcarRepassePago.bind(null, venda.id, p.corretorId, hoje)} rotulopendente="Marcando…">
+                Paguei hoje
+              </BotaoAcao>
+            ) : (
+              <span className="text-fluid-xs text-tenue">libera quando a construtora pagar</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 const dataCurta = (iso: string) => {
   const [a, m, d] = iso.split("-");
@@ -90,6 +146,7 @@ export default async function VendaPage({ params }: { params: Promise<{ id: stri
     <div className="space-y-4">
       {voltar}
       <CabecalhoDeTela secao="Vendas" titulo="Editar venda" descricao={`${venda.imovel} · ${dataCurta(venda.dataVenda)}`} />
+      {gestor && <PagamentosDaVenda venda={venda} />}
       <FormularioVenda
         inicial={{
           id: venda.id,

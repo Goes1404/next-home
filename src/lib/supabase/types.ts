@@ -249,6 +249,34 @@ export type Database = {
         }
         Relationships: []
       }
+      /** 0115 — a meta mensal do corretor (F5 do financeiro). */
+      metas_corretor: {
+        Row: {
+          corretor_id: string
+          mes: string
+          meta_comissao: number
+          comissao_por_venda: number | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          corretor_id: string
+          mes: string
+          meta_comissao: number
+          comissao_por_venda?: number | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          corretor_id?: string
+          mes?: string
+          meta_comissao?: number
+          comissao_por_venda?: number | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
       catalogo_candidatos: {
         Row: {
           area: string | null
@@ -2377,6 +2405,18 @@ export type Database = {
       }
     }
     Views: {
+      /** 0115 — tempo de primeira resposta por conversa (security_invoker). */
+      whatsapp_primeira_resposta: {
+        Row: {
+          conversa_id: string
+          corretor_id: string
+          lead_id: string
+          primeira_fala_cliente: string
+          primeira_resposta_corretor: string | null
+          primeira_resposta_ia: string | null
+        }
+        Relationships: []
+      }
       sla_leads_metricas: {
         Row: {
           canal_automatico: string | null
@@ -2457,6 +2497,36 @@ export type Database = {
       }
     }
     Functions: {
+      marcar_comissao_recebida: {
+        Args: { p_venda: string; p_data: string | null }
+        Returns: boolean
+      }
+      marcar_repasse_pago: {
+        Args: { p_venda: string; p_corretor: string; p_data: string | null }
+        Returns: boolean
+      }
+      ranking_vgv: {
+        Args: { p_inicio: string; p_fim: string }
+        Returns: {
+          corretor_id: string
+          nome: string
+          foto_url: string | null
+          vgv: number
+          vendas: number
+          distratos: number
+        }[]
+      }
+      taxas_da_equipe: {
+        Args: { p_desde: string }
+        Returns: {
+          leads: number
+          visitas: number
+          vendas: number
+          repasse_medio: number | null
+          ticket_medio: number | null
+          doc_para_venda: number | null
+        }[]
+      }
       participa_da_venda: {
         Args: { p_venda: string }
         Returns: boolean

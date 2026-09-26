@@ -140,3 +140,93 @@ export async function buscarLeadsParaVenda(termo: string): Promise<LeadParaVenda
     empreendimentoId: l.imovel_interesse_id ?? l.empreendimento_id ?? null,
   }));
 }
+
+// ─── F2: o gestor marca o dinheiro que entrou e o que saiu (0115) ───────
+
+const DATA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+function erroDaMarcacao(mensagem: string): string {
+  if (mensagem.includes("so_gestor")) return "Só o gestor marca pagamento.";
+  if (/marcar_|does not exist|PGRST202/.test(mensagem)) return "Esta ação ainda não foi ativada no banco.";
+  return "Não foi possível marcar agora. Tente de novo.";
+}
+
+/** `data` null desmarca: clique errado tem volta. */
+export async function marcarComissaoRecebida(vendaId: string, data: string | null): Promise<ResultadoVenda> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
+  if (corretor.papel !== "gestor") return { erro: "Só o gestor marca pagamento." };
+  if (data !== null && (!DATA_ISO.test(data) || data > hojeEmSaoPaulo())) return { erro: "Data inválida." };
+
+  const supabase = await createClient();
+  const { data: ok, error } = await supabase.rpc("marcar_comissao_recebida", { p_venda: vendaId, p_data: data });
+  if (error) return { erro: erroDaMarcacao(error.message) };
+  if (!ok) return { erro: "Venda não encontrada." };
+
+  revalidatePath(ROTA, "layout");
+  return { ok: data ? "Comissão marcada como recebida." : "Marcação desfeita." };
+}
+
+export async function marcarRepassePago(vendaId: string, corretorId: string, data: string | null): Promise<ResultadoVenda> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
+  if (corretor.papel !== "gestor") return { erro: "Só o gestor marca pagamento." };
+  if (data !== null && (!DATA_ISO.test(data) || data > hojeEmSaoPaulo())) return { erro: "Data inválida." };
+
+  const supabase = await createClient();
+  const { data: ok, error } = await supabase.rpc("marcar_repasse_pago", {
+    p_venda: vendaId,
+    p_corretor: corretorId,
+    p_data: data,
+  });
+  if (error) return { erro: erroDaMarcacao(error.message) };
+  if (!ok) return { erro: "Repasse não encontrado." };
+
+  revalidatePath(ROTA, "layout");
+  return { ok: data ? "Repasse marcado como pago." : "Marcação desfeita." };
+}
+
+// ─── F5: a meta do mês ──────────────────────────────────────────────────
+
+export async function salvarMeta(params: {
+  metaComissao: number | null;
+  comissaoPorVenda: number | null;
+}): Promise<ResultadoVenda> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
+  if (!params.metaComissao || params.metaComissao <= 0) return { erro: "Diga quanto quer ganhar no mês." };
+  if (params.metaComissao > 10_000_000) return { erro: "A meta parece alta demais. Confira os zeros." };
+  if (params.comissaoPorVenda !== null && params.comissaoPorVenda <= 0) {
+    return { erro: "O valor por venda precisa ser maior que zero." };
+  }
+
+  const mes = `${hojeEmSaoPaulo().slice(0, 7)}-01`;
+  const supabase = await createClient();
+  // Ler e decidir, não upsert: o upsert reescreveria `corretor_id` e `mes`,
+  // que não têm grant de update (só a meta e a estimativa têm).
+  const { data: existente } = await supabase
+    .from("metas_corretor")
+    .select("mes")
+    .eq("corretor_id", corretor.id)
+    .eq("mes", mes)
+    .maybeSingle();
+  const valores = {
+    meta_comissao: params.metaComissao,
+    comissao_por_venda: params.comissaoPorVenda,
+    atualizado_em: new Date().toISOString(),
+  };
+  const { error } = existente
+    ? await supabase.from("metas_corretor").update(valores).eq("corretor_id", corretor.id).eq("mes", mes)
+    : await supabase.from("metas_corretor").insert({ corretor_id: corretor.id, mes, ...valores });
+  if (error) {
+    console.error("[meta] falha ao salvar:", error.message);
+    return {
+      erro: /metas_corretor|PGRST205/.test(error.message)
+        ? "A meta ainda não foi ativada no banco."
+        : "Não foi possível salvar a meta agora.",
+    };
+  }
+  revalidatePath(ROTA, "layout");
+  revalidatePath("/corretor");
+  return { ok: "Meta salva." };
+}

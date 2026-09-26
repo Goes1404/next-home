@@ -108,6 +108,39 @@ describe("a roleta distribui para quem consegue atender", () => {
 });
 
 /*
+ * A roleta que aprende (0115): quem já vendeu o imóvel ganha um DESCONTO na
+ * carga, com teto. Sem o teto, o especialista receberia todo lead daquele
+ * imóvel até afogar, e a carteira dos outros morreria. E o desconto vem
+ * DEPOIS das preferências de "consegue atender": especialista sem número
+ * conectado não fala com ninguém.
+ */
+describe("a roleta aprende quem vende o quê, com limite", () => {
+  const corpo = ultimaDefinicaoDe("distribuir_lead");
+  const semComentario = corpo.replace(/--.*$/gm, "");
+
+  it("o bônus de especialista tem teto", () => {
+    expect(
+      /least\(\s*3\s*,[\s\S]*venda_participantes/.test(semComentario),
+      "O bônus de especialista perdeu o teto (least(3, ...)). Preferência sem limite " +
+        "manda todo lead do imóvel para uma pessoa só.",
+    ).toBe(true);
+  });
+
+  it("vem depois de WhatsApp, login e slug", () => {
+    const bonus = semComentario.indexOf("venda_participantes");
+    const whats = semComentario.search(/\(\s*i\.corretor_id\s+is\s+null\s*\)/);
+    const login = semComentario.search(/\(\s*c\.user_id\s+is\s+null\s*\)/);
+    const slug = semComentario.search(/\(\s*c\.slug\s+is\s+null\s*\)/);
+    expect(bonus).toBeGreaterThan(Math.max(whats, login, slug));
+  });
+
+  it("só conta venda ATIVA do mesmo imóvel", () => {
+    expect(/v\.status\s*=\s*'ativa'/.test(semComentario)).toBe(true);
+    expect(/v\.empreendimento_id\s*=\s*new\.empreendimento_id/.test(semComentario)).toBe(true);
+  });
+});
+
+/*
  * O porteiro `/wa/<campanha>` — o destino do anúncio Click-to-WhatsApp — usa
  * `sortear_corretor_whatsapp`, que é OUTRA função. O comentário da rota diz
  * "a mesma régua da roleta de leads", e é justamente essa promessa que

@@ -32,6 +32,8 @@ export type VendaNaTela = {
   leadNome: string | null;
   empreendimentoId: string | null;
   imovel: string;
+  /** Quem paga a comissão da imobiliária. */
+  construtora: string | null;
   unidade: string | null;
   dataVenda: string;
   valorVenda: number;
@@ -104,8 +106,8 @@ async function montar(linhas: LinhaVenda[]): Promise<VendaNaTela[]> {
   const [{ data: corretores }, { data: imoveis }, { data: leads }] = await Promise.all([
     supabase.from("corretores").select("id, nome").in("id", idsCorretores),
     idsImoveis.length
-      ? supabase.from("empreendimentos").select("id, nome").in("id", idsImoveis)
-      : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
+      ? supabase.from("empreendimentos").select("id, nome, construtora").in("id", idsImoveis)
+      : Promise.resolve({ data: [] as { id: string; nome: string; construtora: string | null }[] }),
     idsLeads.length
       ? supabase.from("leads").select("id, nome").in("id", idsLeads)
       : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
@@ -113,6 +115,7 @@ async function montar(linhas: LinhaVenda[]): Promise<VendaNaTela[]> {
 
   const nomeCorretor = new Map((corretores ?? []).map((c) => [c.id, c.nome as string]));
   const nomeImovel = new Map((imoveis ?? []).map((i) => [i.id, i.nome as string]));
+  const construtoraDe = new Map((imoveis ?? []).map((i) => [i.id, (i.construtora as string | null) ?? null]));
   const nomeLead = new Map((leads ?? []).map((l) => [l.id, l.nome as string]));
 
   return linhas.map((l) => ({
@@ -124,6 +127,7 @@ async function montar(linhas: LinhaVenda[]): Promise<VendaNaTela[]> {
     leadNome: l.lead_id ? (nomeLead.get(l.lead_id) ?? null) : null,
     empreendimentoId: l.empreendimento_id,
     imovel: (l.empreendimento_id && nomeImovel.get(l.empreendimento_id)) || l.imovel_descricao || "Imóvel",
+    construtora: l.empreendimento_id ? (construtoraDe.get(l.empreendimento_id) ?? null) : null,
     unidade: l.unidade,
     dataVenda: l.data_venda,
     valorVenda: Number(l.valor_venda),
@@ -222,4 +226,147 @@ export function vgvPorCorretor(vendas: VendaNaTela[]): Map<string, number> {
     }
   }
   return total;
+}
+
+// ─── F2 a F8 (0115) ─────────────────────────────────────────────────────
+
+export type LinhaDoRanking = {
+  corretorId: string;
+  nome: string;
+  fotoUrl: string | null;
+  vgv: number;
+  vendas: number;
+  distratos: number;
+};
+
+/** Ranking de VGV que todos veem. `null` quando a 0115 não está aplicada. */
+export async function getRankingVgv(inicio: string, fim: string): Promise<LinhaDoRanking[] | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("ranking_vgv", { p_inicio: inicio, p_fim: fim });
+  if (error) {
+    if (!faltaATabela(error) && !/ranking_vgv/.test(error.message)) console.error("[ranking] falha:", error.message);
+    return null;
+  }
+  return (data ?? []).map((r) => ({
+    corretorId: r.corretor_id,
+    nome: r.nome,
+    fotoUrl: r.foto_url,
+    vgv: Number(r.vgv),
+    vendas: Number(r.vendas),
+    distratos: Number(r.distratos),
+  }));
+}
+
+export type TaxasDaEquipe = {
+  leads: number;
+  visitas: number;
+  vendas: number;
+  repasseMedio: number | null;
+  ticketMedio: number | null;
+  docParaVenda: number | null;
+};
+
+export async function getTaxasDaEquipe(desde: string): Promise<TaxasDaEquipe | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("taxas_da_equipe", { p_desde: desde });
+  if (error || !data || data.length === 0) return null;
+  const r = data[0];
+  return {
+    leads: Number(r.leads),
+    visitas: Number(r.visitas),
+    vendas: Number(r.vendas),
+    repasseMedio: num(r.repasse_medio),
+    ticketMedio: num(r.ticket_medio),
+    docParaVenda: num(r.doc_para_venda),
+  };
+}
+
+export type MetaDoMes = { metaComissao: number; comissaoPorVenda: number | null };
+
+/**
+ * A meta do mês. Sem linha no mês, herda a ESTIMATIVA de comissão por venda
+ * do mês mais recente: o valor de uma venda não muda porque o mês virou.
+ */
+export async function getMeta(
+  corretorId: string,
+  mes: string,
+): Promise<{ meta: MetaDoMes | null; estimativaAnterior: number | null } | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("metas_corretor")
+    .select("mes, meta_comissao, comissao_por_venda")
+    .eq("corretor_id", corretorId)
+    .lte("mes", mes)
+    .order("mes", { ascending: false })
+    .limit(6);
+  if (error) return null;
+  const linhas = data ?? [];
+  const doMes = linhas.find((l) => l.mes === mes);
+  const estimativaAnterior = num(linhas.find((l) => l.comissao_por_venda !== null)?.comissao_por_venda ?? null);
+  return {
+    meta: doMes
+      ? { metaComissao: Number(doMes.meta_comissao), comissaoPorVenda: num(doMes.comissao_por_venda) }
+      : null,
+    estimativaAnterior,
+  };
+}
+
+export type LeadLeve = {
+  id: string;
+  corretorId: string | null;
+  imovelId: string | null;
+  criadoEm: string;
+  visitou: boolean;
+  etapa: string;
+};
+
+const ETAPAS_DE_VISITA = new Set(["visita_agendada", "documentacao", "fechado"]);
+
+/** Teto da leitura de leads do desempenho: ~100 por corretor hoje. */
+const TETO_DE_LEADS = 5000;
+
+/**
+ * Leads numa forma magra, para contar desempenho. Arquivado entra: ele foi
+ * atendido do mesmo jeito. O imóvel é o assunto da conversa e, na falta,
+ * o de origem.
+ */
+export async function getLeadsLeves(desde: string): Promise<LeadLeve[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("leads")
+    .select("id, corretor_id, empreendimento_id, imovel_interesse_id, created_at, visita_agendada_em, etapa")
+    .gte("created_at", desde)
+    .order("created_at", { ascending: false })
+    .limit(TETO_DE_LEADS);
+  return (data ?? []).map((l) => ({
+    id: l.id,
+    corretorId: l.corretor_id,
+    imovelId: l.imovel_interesse_id ?? l.empreendimento_id ?? null,
+    criadoEm: String(l.created_at).slice(0, 10),
+    visitou: Boolean(l.visita_agendada_em) || ETAPAS_DE_VISITA.has(l.etapa),
+    etapa: l.etapa,
+  }));
+}
+
+export type PrimeiraRespostaLida = {
+  corretorId: string;
+  primeiraFalaCliente: string;
+  primeiraRespostaCorretor: string | null;
+  primeiraRespostaIa: string | null;
+};
+
+export async function getPrimeirasRespostas(desde: string): Promise<PrimeiraRespostaLida[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("whatsapp_primeira_resposta")
+    .select("corretor_id, primeira_fala_cliente, primeira_resposta_corretor, primeira_resposta_ia")
+    .gte("primeira_fala_cliente", desde)
+    .limit(TETO_DE_LEADS);
+  if (error) return [];
+  return (data ?? []).map((r) => ({
+    corretorId: r.corretor_id,
+    primeiraFalaCliente: r.primeira_fala_cliente,
+    primeiraRespostaCorretor: r.primeira_resposta_corretor,
+    primeiraRespostaIa: r.primeira_resposta_ia,
+  }));
 }

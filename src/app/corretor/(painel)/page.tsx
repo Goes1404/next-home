@@ -14,6 +14,9 @@ import { site } from "@/lib/site";
 import { primeiroNome } from "@/lib/format";
 import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
 import { HeroInicio } from "./_componentes/HeroInicio";
+import { CartaoMeta } from "./financeiro/CartaoMeta";
+import { getRitmoDoCorretor } from "@/lib/financeiro/ritmoDoCorretor";
+import { getVendas } from "@/lib/financeiro/dados";
 import { cn } from "@/lib/utils";
 import {
   IconeLink,
@@ -105,6 +108,12 @@ export default async function PainelInicio() {
         só existia quando a última respondesse. Agora o cabeçalho e a cor do
         módulo aparecem de imediato e cada seção chega quando fica pronta.
       */}
+      {/* A meta do mês (F5 do financeiro): o que falta, em trabalho. Sem
+          fallback visível — antes da 0115, ou sem meta, é um convite curto. */}
+      <Suspense fallback={null}>
+        <BlocoDaMeta corretorId={corretor.id} />
+      </Suspense>
+
       <Suspense fallback={<EsqueletoCartao linhas={1} />}>
         <BlocoDoFunil />
       </Suspense>
@@ -252,4 +261,17 @@ function CartaoDeCliques({
       )}
     </div>
   );
+}
+
+/**
+ * O cartão da meta no Início. As vendas só são lidas quando existe meta:
+ * sem ela, o custo nesta tela é UMA consulta (a da meta).
+ */
+async function BlocoDaMeta({ corretorId }: { corretorId: string }) {
+  const ritmo = await getRitmoDoCorretor(corretorId, async () => {
+    const r = await getVendas();
+    return r.ok ? r.vendas : [];
+  });
+  if (ritmo.estado === "sem_migracao") return null;
+  return <CartaoMeta estado={ritmo} compacto />;
 }
