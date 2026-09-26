@@ -7,7 +7,7 @@ custou: medio
 codigo: supabase/migrations/0114_vendas.sql
 created: 2026-09-25
 updated: 2026-09-26
-summary: Módulo financeiro F1 a F8 (0114-0115). Venda com co-corretagem, comissão digitada por venda (% ou R$, as duas gravadas) e distrato. Grant por coluna deixa comissão recebida e repasse pago só para o gestor. Base do extrato, do ranking de VGV e do desempenho.
+summary: Módulo financeiro F1 a F8 (0114-0116). Venda com co-corretagem, comissão digitada por venda (% ou R$, as duas gravadas) e distrato. Grant por coluna (com o revoke da tabela, 0116) deixa comissão recebida e repasse pago só para o gestor. Base do extrato, do ranking de VGV e do desempenho.
 ---
 
 # Vendas e o módulo financeiro
@@ -87,3 +87,23 @@ Relacionados: [[MOC — CRM e Painel]] · [[MOC — Banco de Dados]]
   recurso não foi ativado e o Início esconde o cartão da meta.
 - **Pendente:** importar a planilha antiga (esperando o arquivo).
 
+
+## O grant por coluna não valia (0116, 26/09/2026)
+
+Conferido no banco depois de aplicar 0114 e 0115:
+`has_column_privilege('authenticated','public.vendas','comissao_recebida_em','UPDATE')`
+deu **true**. Pela API, o corretor marcaria a própria comissão como recebida.
+
+- O Supabase dá ao `authenticated`, por padrão, ALL em toda tabela nova do
+  `public`. Grant de tabela cobre todas as colunas, então `grant update (a, b)`
+  sem `revoke all ... from authenticated` antes não restringe nada. A 0114 só
+  revogou o `anon`.
+- O INSERT tinha o mesmo furo: dava para criar a venda já marcada como
+  recebida. A 0116 passou insert e update para grant por coluna em `vendas`,
+  `venda_participantes` e `metas_corretor`.
+- A guarda antiga (`vendasSeguras.test.ts`) conferia os grants que a
+  migration escrevia e não sabia do grant padrão; por isso passava. A nova, em
+  `tabelasSeguras.test.ts`, exige o revoke do `authenticated` em toda tabela
+  com grant por coluna, e foi provocada.
+- `leads`, `corretores` e `catalogo_candidatos` já faziam o revoke; só as
+  três tabelas novas não.

@@ -94,3 +94,50 @@ describe("tabela nova não nasce escrevível pela chave pública", () => {
     },
   );
 });
+
+/**
+ * Grant por COLUNA só vale se o grant de TABELA sair antes (0116).
+ *
+ * O Supabase dá ao `authenticated`, por privilégio padrão, ALL em toda
+ * tabela nova. Grant de tabela cobre todas as colunas, então um
+ * `grant update (a, b)` sem `revoke ... from authenticated` antes é
+ * decorativo: a 0114 "protegia" `comissao_recebida_em` assim, e medido no
+ * banco o corretor podia marcar a própria comissão como recebida.
+ */
+describe("grant por coluna vem com o revoke da tabela", () => {
+  const instrucoes = migrations().flatMap(({ sql: s }) =>
+    s
+      .replace(/--[^\n]*/g, "")
+      .split(";")
+      .map((st) => st.replace(/\s+/g, " ").trim()),
+  );
+
+  const comGrantPorColuna = [
+    ...new Set(
+      instrucoes.flatMap((st) => {
+        const m = /grant\s+(?:insert|update)\s*\([^)]*\)\s*on\s+(?:table\s+)?(?:public\.)?(\w+)\s+to\s+[^;]*\bauthenticated\b/i.exec(st);
+        return m ? [m[1]] : [];
+      }),
+    ),
+  ];
+
+  it("encontra as tabelas com grant por coluna (a guarda não está cega)", () => {
+    expect(comGrantPorColuna).toEqual(expect.arrayContaining(["leads", "vendas", "venda_participantes", "metas_corretor"]));
+  });
+
+  it.each(comGrantPorColuna)("%s retira do authenticated o grant de tabela", (tabela) => {
+    const revoga = instrucoes.some((st) =>
+      new RegExp(
+        `^revoke\\b.*\\b(update|all)\\b.*\\bon\\s+(?:table\\s+)?(?:public\\.)?${tabela}\\b.*\\bfrom\\b.*\\bauthenticated\\b`,
+        "i",
+      ).test(st),
+    );
+    expect(
+      revoga,
+      `"${tabela}" concede insert/update por coluna ao authenticated, mas nenhuma migration ` +
+        `revoga o grant de TABELA que o Supabase dá por padrão. Sem isso o grant por coluna ` +
+        `não restringe nada. Acrescente: revoke all on public.${tabela} from authenticated; ` +
+        `antes dos grants.`,
+    ).toBe(true);
+  });
+});

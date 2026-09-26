@@ -19,13 +19,15 @@ const todas = () =>
 
 describe("vendas: dinheiro recebido/pago é só do gestor", () => {
   const sql = todas();
-  const grantsDeUpdate = [...sql.matchAll(/grant\s+update\s*\(([^)]*)\)\s*on\s+public\.(vendas|venda_participantes)\s+to\s+authenticated/gi)];
+  const grantsDeUpdate = [...sql.matchAll(/grant\s+(?:update|insert)\s*\(([^)]*)\)\s*on\s+public\.(vendas|venda_participantes)\s+to\s+authenticated/gi)];
 
   it("existe grant de update por coluna nas duas tabelas", () => {
-    expect(grantsDeUpdate.map((m) => m[2]).sort()).toEqual(["venda_participantes", "vendas"]);
+    expect([...new Set(grantsDeUpdate.map((m) => m[2]))].sort()).toEqual(["venda_participantes", "vendas"]);
   });
 
-  it("nenhum grant de update para authenticated inclui as datas de recebido/pago", () => {
+  // Vale para INSERT também (0116): com insert de tabela, dava para criar a
+  // venda já marcada como recebida.
+  it("nenhum grant de update ou insert para authenticated inclui as datas de recebido/pago", () => {
     for (const m of grantsDeUpdate) {
       expect(m[1]).not.toMatch(/comissao_recebida_em|repasse_pago_em/);
     }

@@ -8007,3 +8007,26 @@ Nota: [[vendas-e-o-modulo-financeiro]].
 - **Consultor saiu do menu para Imóveis** para o Financeiro caber no teto de
   sete; ele segue na bolha de toda tela. Guarda de navegação reescrita com o
   motivo, não apagada.
+
+## O grant por coluna não valia: o `authenticated` já tinha ALL (0116, 26/09/2026)
+
+Nota: [[vendas-e-o-modulo-financeiro]].
+
+- **O Supabase dá ALL ao `authenticated` em toda tabela nova do `public`**, não
+  só ao `anon`. Grant de TABELA cobre todas as colunas, então
+  `grant update (a, b) ... to authenticated` sem `revoke all ... from
+  authenticated` antes é decorativo. Medido depois de aplicar a 0114:
+  `has_column_privilege('authenticated','public.vendas','comissao_recebida_em','UPDATE')`
+  = true, ou seja, o corretor marcaria a própria comissão como recebida.
+- **INSERT tem o mesmo furo**: com insert de tabela dava para criar a venda já
+  marcada. Quando a proteção é "esta coluna só o gestor escreve", insert e
+  update vão por coluna.
+- **A guarda antiga passou porque lia só o que a migration escrevia.** O
+  privilégio padrão não aparece em arquivo nenhum. A prova é
+  `has_column_privilege` no banco; a guarda nova
+  (`tabelasSeguras.test.ts`) exige o revoke do `authenticated` em toda tabela
+  com grant por coluna. As antigas (`leads`, `corretores`,
+  `catalogo_candidatos`) já faziam; só as três do financeiro não.
+- **Esta sessão não tem acesso ao banco** (MCP da Supabase sem permissão): o
+  usuário aplica pelo SQL Editor e cola o resultado de uma consulta de
+  conferência. Foi essa conferência que achou o defeito.
