@@ -8067,3 +8067,13 @@ Nota: [[next-home-e-o-espelho-da-versao-geral]].
 - **Antes do segundo cliente:** histórico de migrations confiável, o que está
   fixo como "Next Home" virando configuração, e planos pagos (Hobby da Vercel
   não permite uso comercial).
+
+## O worker de vídeo rodou pela primeira vez (26/09/2026)
+
+Nota: [[o-worker-de-video-roda-sem-segredo]].
+
+- Com os dois secrets cadastrados no GitHub, a execução 144 ficou verde e o
+  vídeo parado desde 03/09 saiu: 17,2 s, 1080x1920, 52 s de render, 5,5 MB.
+- **O MCP do GitHub desta sessão não dispara nem reexecuta workflow** (403
+  `Resource not accessible by integration`). Disparo manual é pelo usuário, em
+  Actions → Run workflow; senão, o `schedule` de hora em hora.

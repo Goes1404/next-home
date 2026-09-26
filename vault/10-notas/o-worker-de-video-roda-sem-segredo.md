@@ -3,13 +3,13 @@ title: O worker de vídeo roda de hora em hora sem segredo nenhum
 aliases: [render de vídeo falhando, secrets do GitHub vazios]
 tags: [midia, armadilha]
 type: nota
-status: growing
+status: stable
 custou: medio
 codigo: [.github/workflows/render-video.yml, scripts/video/worker.ts, src/lib/supabase/service.ts]
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-26
 fonte: medição de 24/09/2026 — GitHub Actions + video_jobs
-summary: O acionamento do worker foi ligado em 03/09, mas os secrets SUPABASE_SECRET_KEY e NEXT_PUBLIC_SUPABASE_URL do GitHub estão vazios. 134 execuções, todas vermelhas; o único vídeo pedido está pendente desde 03/09 com 0 tentativas.
+summary: Os secrets SUPABASE_SECRET_KEY e NEXT_PUBLIC_SUPABASE_URL do GitHub estavam vazios e o worker falhou 143 vezes. Cadastrados em 26/09; o primeiro render de ponta a ponta saiu (vídeo de 03/09, 17,2 s, 1080x1920, 52 s de render).
 ---
 # O worker de vídeo roda sem segredo nenhum
 
@@ -49,6 +49,18 @@ Em GitHub → Settings → Secrets and variables → Actions, criar
 Vercel. Depois, disparar o workflow à mão e conferir o job indo para
 `renderizando` → `pronto`. O render de ponta a ponta continua **sem prova**
 até isso acontecer.
+
+## Resolvido em 26/09/2026
+
+- Os dois secrets foram cadastrados pelo dono do repositório (pelo navegador
+  do celular: o app do GitHub não tem a tela de segredos).
+- **Esta sessão não consegue disparar o workflow**: `workflow_dispatch` e
+  `rerun` devolvem `403 Resource not accessible by integration` pelo MCP do
+  GitHub. Quem dispara à mão é o usuário (Actions → Run workflow), ou espera
+  o `schedule` de hora em hora.
+- Execução 144 verde em ~2 min. O job de 03/09 foi para `pronto` com
+  `render_ms` 51.638 e mp4 de 5,5 MB público no bucket. **Foi o primeiro
+  render de ponta a ponta da vida do motor.**
 
 ## Relacionadas
 - [[falha-calada-e-a-pior]]
