@@ -1864,15 +1864,39 @@ export async function destravarDisparo(escopo: string, dono: string): Promise<vo
  * resposta segue o planner normal — nada quebra.
  */
 export async function ultimoPosVisitaEnviado(conversaId: string): Promise<string | null> {
+  return ultimoFollowupEnviado(conversaId, "pos_visita");
+}
+
+/** Quando saiu o último follow-up deste tipo nesta conversa, ou `null`. */
+export async function ultimoFollowupEnviado(
+  conversaId: string,
+  tipo: "pos_visita" | "lembrete_visita" | "indicacao",
+): Promise<string | null> {
   const supabase = createServiceClient();
   const { data } = await supabase
     .from("whatsapp_followups")
     .select("enviado_em")
     .eq("conversa_id", conversaId)
-    .eq("tipo", "pos_visita")
+    .eq("tipo", tipo)
     .eq("status", "enviado")
     .order("enviado_em", { ascending: false })
     .limit(1)
     .maybeSingle();
   return data?.enviado_em ?? null;
+}
+
+/**
+ * O cliente confirmou a visita respondendo ao lembrete (0123). Carimba uma
+ * vez; mudar a data da visita apaga o carimbo (trigger da 0124).
+ */
+export async function registrarVisitaConfirmada(leadId: string): Promise<boolean> {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("leads")
+    .update({ visita_confirmada_em: new Date().toISOString() })
+    .eq("id", leadId)
+    .is("visita_confirmada_em", null)
+    .not("visita_agendada_em", "is", null)
+    .select("id");
+  return (data?.length ?? 0) > 0;
 }

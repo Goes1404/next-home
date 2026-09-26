@@ -67,7 +67,7 @@ export default async function VisitasPage({
     ? await Promise.all([
         supabase
           .from("leads")
-          .select("id, regiao_interesse, dormitorios_min, orcamento_min, orcamento_max, renda_mensal")
+          .select("id, regiao_interesse, dormitorios_min, orcamento_min, orcamento_max, renda_mensal, visita_confirmada_em")
           .in("id", ids),
         supabase
           .from("lead_observacoes_ia")
@@ -77,6 +77,8 @@ export default async function VisitasPage({
     : [{ data: null }, { data: null }];
 
   const numero = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+  // O cliente respondeu "confirmo" ao lembrete da véspera (0123).
+  const confirmadas = new Set((perfis ?? []).filter((p) => p.visita_confirmada_em).map((p) => p.id));
   const preparoPorLead = new Map<string, DadosDoPreparo>();
   for (const p of perfis ?? []) {
     preparoPorLead.set(p.id, {
@@ -160,9 +162,15 @@ export default async function VisitasPage({
                     </p>
                   </div>
                   <div>
-                    <span className="text-fluid-xs rounded-full bg-etapa-visita-lavado px-2.5 py-1 font-medium text-etapa-visita">
-                      {hora ? "Agendada" : "Sem horário"}
-                    </span>
+                    {confirmadas.has(lead.id) ? (
+                      <span className="text-fluid-xs rounded-full bg-ok-lavado px-2.5 py-1 font-semibold text-ok">
+                        Confirmada pelo cliente
+                      </span>
+                    ) : (
+                      <span className="text-fluid-xs rounded-full bg-etapa-visita-lavado px-2.5 py-1 font-medium text-etapa-visita">
+                        {hora ? "Agendada" : "Sem horário"}
+                      </span>
+                    )}
                   </div>
                 </div>
 

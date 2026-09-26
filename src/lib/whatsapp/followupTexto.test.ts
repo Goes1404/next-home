@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { formatarVisitaSP, instrucaoDaRespostaAoPosVisita, instrucaoDoFollowup, respondeAoPosVisita } from "./followupTexto";
+import {
+  formatarVisitaSP,
+  instrucaoDaRespostaAoPosVisita,
+  instrucaoDoFollowup,
+  JANELA_RESPOSTA_LEMBRETE_H,
+  lerRespostaAoLembrete,
+  respondeAoFollowup,
+  respondeAoPosVisita,
+} from "./followupTexto";
 
 describe("instrução do follow-up (roadmap nº 6)", () => {
   it("1ª tentativa com dossiê usa os ganchos concretos", () => {
@@ -182,5 +190,29 @@ describe("resposta ao pós-visita", () => {
     expect(t).toMatch(/simulação/);
     expect(t).toMatch(/UMA alternativa/);
     expect(t).toMatch(/NÃO fale valores/);
+  });
+});
+
+describe("resposta ao lembrete da visita", () => {
+  it("negação vence e vira remarcar", () => {
+    expect(lerRespostaAoLembrete("Não vou conseguir amanhã")).toBe("remarcar");
+    expect(lerRespostaAoLembrete("podemos remarcar pra semana?")).toBe("remarcar");
+    expect(lerRespostaAoLembrete("não posso, mas sexta dá")).toBe("remarcar");
+  });
+
+  it("confirmação clara", () => {
+    expect(lerRespostaAoLembrete("Confirmado! Estarei lá")).toBe("confirmou");
+    expect(lerRespostaAoLembrete("👍")).toBe("confirmou");
+    expect(lerRespostaAoLembrete("sim")).toBe("confirmou");
+  });
+
+  it("dúvida fica com o corretor", () => {
+    expect(lerRespostaAoLembrete("qual o endereço mesmo?")).toBeNull();
+  });
+
+  it("responde ao follow-up pela janela do tipo", () => {
+    const agora = new Date("2026-09-26T15:00:00Z");
+    expect(respondeAoFollowup("2026-09-26T00:00:00Z", [], JANELA_RESPOSTA_LEMBRETE_H, agora)).toBe(true);
+    expect(respondeAoFollowup("2026-09-24T00:00:00Z", [], JANELA_RESPOSTA_LEMBRETE_H, agora)).toBe(false);
   });
 });

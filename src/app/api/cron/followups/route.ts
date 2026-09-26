@@ -100,7 +100,7 @@ type ItemFollowup = {
   instancia_id: string;
   tentativa: number;
   agendado_para: string;
-  tipo: "reengajamento" | "lembrete_visita" | "pos_visita";
+  tipo: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao";
 };
 
 /** Janela em que uma visita futura ganha lembrete: entre 8h e 30h antes. */
@@ -234,6 +234,67 @@ async function agendarPosVisita(
       tentativa: 1,
       tipo: "pos_visita",
       agendado_para: new Date(quando).toISOString(),
+    });
+    agendados++;
+  }
+  return agendados;
+}
+
+/** Quantos dias depois do fechamento sai o pedido de indicação. */
+const DIAS_ATE_A_INDICACAO = 5;
+
+/**
+ * Pedido de indicação depois do fechamento (0123). Leads que viraram
+ * `fechado` entre 5 e 30 dias atrás, uma vez por conversa na vida. Mora no
+ * tique dos follow-ups e passa pela mesma cota anti-ban dos outros.
+ */
+async function agendarPedidoDeIndicacao(
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<number> {
+  const agora = Date.now();
+  const { data: fechados } = await supabase
+    .from("leads")
+    .select("id, corretor_id")
+    .eq("etapa", "fechado")
+    .is("nao_contatar_em", null)
+    .not("corretor_id", "is", null)
+    .lte("etapa_alterada_em", new Date(agora - DIAS_ATE_A_INDICACAO * 86_400_000).toISOString())
+    .gte("etapa_alterada_em", new Date(agora - 30 * 86_400_000).toISOString())
+    .limit(50);
+
+  let agendados = 0;
+  for (const lead of fechados ?? []) {
+    const { data: conversa } = await supabase
+      .from("whatsapp_conversas")
+      .select("id")
+      .eq("lead_id", lead.id)
+      .eq("corretor_id", lead.corretor_id!)
+      .limit(1)
+      .maybeSingle();
+    if (!conversa) continue;
+
+    const { data: jaTem } = await supabase
+      .from("whatsapp_followups")
+      .select("id")
+      .eq("conversa_id", conversa.id)
+      .eq("tipo", "indicacao")
+      .limit(1)
+      .maybeSingle();
+    if (jaTem) continue;
+
+    const { data: instancia } = await supabase
+      .from("corretor_whatsapp_instancias")
+      .select("id")
+      .eq("corretor_id", lead.corretor_id!)
+      .maybeSingle();
+    if (!instancia) continue;
+
+    await supabase.from("whatsapp_followups").insert({
+      conversa_id: conversa.id,
+      instancia_id: instancia.id,
+      tentativa: 1,
+      tipo: "indicacao",
+      agendado_para: new Date(agora).toISOString(),
     });
     agendados++;
   }
@@ -535,6 +596,7 @@ export async function GET(req: NextRequest) {
   try {
     await agendarLembretesDeVisita(supabase);
     await agendarPosVisita(supabase);
+    await agendarPedidoDeIndicacao(supabase);
     // Quem pediu contato num portal/formulário recebe a primeira mensagem
     // sozinho — dentro da janela, com cota e teto de 2 por tique.
     const primeirosContatos = await abrirConversasDePortal(2).catch((e) => {
@@ -784,6 +846,23 @@ async function processarFollowup(
     const imovel = Array.isArray(lead?.empreendimento)
       ? lead.empreendimento[0]
       : lead?.empreendimento;
+    nomeDoImovel = imovel?.nome ?? null;
+  }
+
+  if (item.tipo === "indicacao") {
+    // Revalidado: quem voltou atrás no fechamento ou pediu para não ser
+    // procurado não recebe pedido de indicação.
+    const { data: lead } = conversa.lead_id
+      ? await supabase
+          .from("leads")
+          .select("etapa, nao_contatar_em, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome)")
+          .eq("id", conversa.lead_id)
+          .maybeSingle()
+      : { data: null };
+    if (!lead || lead.etapa !== "fechado" || lead.nao_contatar_em) {
+      return descartar(supabase, item.id, "lead_fora_do_pos_venda");
+    }
+    const imovel = Array.isArray(lead.empreendimento) ? lead.empreendimento[0] : lead.empreendimento;
     nomeDoImovel = imovel?.nome ?? null;
   }
 

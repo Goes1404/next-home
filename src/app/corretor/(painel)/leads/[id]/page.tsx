@@ -25,6 +25,7 @@ import { PreferenciasContato } from "./PreferenciasContato";
 import { IniciarConversaIA } from "./IniciarConversaIA";
 import { VendaDoLead } from "./VendaDoLead";
 import { LinksDoCliente } from "./LinksDoCliente";
+import { Indicacoes } from "./Indicacoes";
 import { getVendasDoLead } from "@/lib/financeiro/dados";
 import { perguntaDoLead } from "@/lib/consultor/perguntaDoLead";
 
@@ -232,6 +233,7 @@ export default async function FichaLeadPage({
           />
 
           <LinksDoCliente leadId={lead.id} telefone={lead.telefone} />
+          <Indicacoes leadId={lead.id} />
           <AtalhoDoConsultor lead={lead} />
           <div id="proximas-acoes" className="scroll-mt-24">
             <ProximasAcoes leadId={lead.id} tarefas={tarefas} />
