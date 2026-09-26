@@ -270,6 +270,8 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeSmartphone },
           { href: "/corretor/admin/anuncios", label: "Anúncios", icone: IconeAlvo },
           { href: "/corretor/admin/construtoras", label: "Construtoras", icone: IconePredio },
+          { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa },
+          { href: "/corretor/admin/marca", label: "Marca", icone: IconePaleta },
           { href: "/corretor/admin/sla", label: "SLA", icone: IconeAgora },
           { href: "/corretor/admin/eventos", label: "Eventos", icone: IconeAntena },
           { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta },
