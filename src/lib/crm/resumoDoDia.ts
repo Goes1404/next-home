@@ -52,10 +52,29 @@ export function horarioEmSP(iso: string): string {
   return fmtHora.format(new Date(iso));
 }
 
-/** Entre 8h e meio-dia de São Paulo, e ainda não enviado hoje. */
-export function horaDeMandarResumo(agora: Date, ultimoEnvio: string | null): boolean {
+const fmtDiaDaSemana = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", weekday: "short" });
+
+/** Sábado ou domingo em São Paulo. */
+export function fimDeSemanaEmSP(data: Date): boolean {
+  const d = fmtDiaDaSemana.format(data);
+  return d === "Sat" || d === "Sun";
+}
+
+/**
+ * Entre a hora escolhida pelo corretor e meio-dia de São Paulo, e ainda não
+ * enviado hoje. Hora e fim de semana vêm de `corretores` (0121): um
+ * corretor começa às 7h, outro às 10h, e resumo no sábado é escolha, não
+ * padrão.
+ */
+export function horaDeMandarResumo(
+  agora: Date,
+  ultimoEnvio: string | null,
+  prefs: { hora?: number | null; fimDeSemana?: boolean | null } = {},
+): boolean {
+  const inicio = Math.min(Math.max(prefs.hora ?? HORA_DO_RESUMO, 6), 11);
   const hora = horaEmSP(agora);
-  if (hora < HORA_DO_RESUMO || hora >= HORA_LIMITE_DO_RESUMO) return false;
+  if (hora < inicio || hora >= HORA_LIMITE_DO_RESUMO) return false;
+  if (!prefs.fimDeSemana && fimDeSemanaEmSP(agora)) return false;
   return ultimoEnvio !== diaEmSP(agora);
 }
 
@@ -67,7 +86,28 @@ export type EntradaDoResumo = {
   esperando: ItemDoResumo[];
   novos: ItemDoResumo[];
   lembretes: ItemDoResumo[];
+  /**
+   * Visitas que já receberam o pós-visita e o cliente não respondeu (0121):
+   * o corretor registra o desfecho na ficha, senão a visita some do radar.
+   */
+  semRetorno?: ItemDoResumo[];
+  /** O que aconteceu ontem. Informa, mas sozinho não justifica mensagem. */
+  ontem?: { clientesQueEscreveram: number; visitasMarcadas: number } | null;
 };
+
+function plural(n: number, um: string, varios: string): string {
+  return `${n} ${n === 1 ? um : varios}`;
+}
+
+/** "Ontem: 3 clientes escreveram · 1 visita marcada", ou nada. */
+export function linhaDeOntem(o: EntradaDoResumo["ontem"]): string | null {
+  if (!o) return null;
+  const partes = [
+    o.clientesQueEscreveram > 0 ? plural(o.clientesQueEscreveram, "cliente escreveu", "clientes escreveram") : null,
+    o.visitasMarcadas > 0 ? plural(o.visitasMarcadas, "visita marcada", "visitas marcadas") : null,
+  ].filter(Boolean);
+  return partes.length > 0 ? `Ontem: ${partes.join(" · ")}` : null;
+}
 
 function secao(rotulo: string, itens: ItemDoResumo[]): string[] {
   if (itens.length === 0) return [];
@@ -85,17 +125,21 @@ function secao(rotulo: string, itens: ItemDoResumo[]): string[] {
 
 /** O texto do resumo, ou `null` quando não há nada a dizer. */
 export function montarResumoDoDia(e: EntradaDoResumo, urlPainel: string): string | null {
-  const total = e.visitas.length + e.esperando.length + e.novos.length + e.lembretes.length;
+  const semRetorno = e.semRetorno ?? [];
+  const total = e.visitas.length + e.esperando.length + e.novos.length + e.lembretes.length + semRetorno.length;
   if (total === 0) return null;
 
   const primeiroNome = e.nomeCorretor.trim().split(/\s+/)[0] || "";
+  const ontem = linhaDeOntem(e.ontem);
   return [
     `Bom dia${primeiroNome ? `, ${primeiroNome}` : ""}! Seu dia:`,
     "",
+    ...(ontem ? [ontem, ""] : []),
     ...secao("Visitas de hoje", e.visitas),
     ...secao("Esperando sua resposta", e.esperando),
     ...secao("Leads novos (24h)", e.novos),
     ...secao("Lembretes de hoje", e.lembretes),
+    ...secao("Visitas sem retorno do cliente", semRetorno),
     `Painel: ${urlPainel}/corretor`,
   ].join("\n");
 }

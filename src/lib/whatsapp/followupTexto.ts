@@ -158,3 +158,49 @@ export function formatarVisitaSP(iso: string): string {
   }).format(d);
   return `${dia}, às ${hora}`;
 }
+
+/** Até quando a resposta do cliente ainda conta como resposta ao pós-visita. */
+export const JANELA_RESPOSTA_POS_VISITA_H = 72;
+
+/**
+ * A mensagem que o cliente mandou agora responde ao pós-visita? (0121)
+ *
+ * Sim quando o pós-visita saiu há menos de 72h e foi a ÚLTIMA palavra nossa
+ * na conversa: se a IA ou o corretor falaram depois, a conversa já andou e
+ * o próximo passo é outro. Dois minutos de folga porque a própria mensagem
+ * do pós-visita é gravada logo depois do envio.
+ */
+export function respondeAoPosVisita(
+  enviadoEm: string | null | undefined,
+  historico: ReadonlyArray<{ remetente: string; em?: string | null }>,
+  agora = new Date(),
+): boolean {
+  if (!enviadoEm) return false;
+  const enviado = new Date(enviadoEm).getTime();
+  if (Number.isNaN(enviado)) return false;
+  if (agora.getTime() - enviado > JANELA_RESPOSTA_POS_VISITA_H * 3_600_000) return false;
+  const nossas = historico.filter((f) => f.remetente !== "cliente" && f.em);
+  const ultima = nossas.at(-1);
+  if (!ultima?.em) return true;
+  return new Date(ultima.em).getTime() <= enviado + 120_000;
+}
+
+/**
+ * O que fazer com a resposta ao pós-visita. Gostou → o passo seguinte é
+ * concreto (simulação ou proposta, que o corretor conduz). Não gostou → o
+ * que não agradou, e UMA alternativa que resolva exatamente isso. Em
+ * dúvida → uma pergunta para entender. A decisão de mover o lead no funil
+ * continua do corretor.
+ */
+export function instrucaoDaRespostaAoPosVisita(): string {
+  return (
+    "O cliente está RESPONDENDO ao pós-visita (você perguntou o que ele achou do imóvel visitado). " +
+    "Leia a resposta e siga UM caminho: " +
+    "(1) se ele gostou, agradeça em uma frase e proponha o passo seguinte concreto — " +
+    "fazer a simulação do financiamento com ele ou o corretor preparar uma proposta — perguntando qual prefere; " +
+    "(2) se não gostou, pergunte o que não agradou (se ele não disse) ou, se já disse, " +
+    "ofereça UMA alternativa do catálogo que resolva exatamente isso; " +
+    "(3) se ficou em dúvida, pergunte o que falta para decidir. " +
+    "NÃO fale valores, NÃO pressione e NÃO volte a perguntar região ou tipologia: a visita já aconteceu."
+  );
+}

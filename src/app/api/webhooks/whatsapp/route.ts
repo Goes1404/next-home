@@ -56,7 +56,9 @@ import {
   type InstanciaResolvida,
   ultimoAvisoEvolucao,
   marcarAvisoEvolucao,
+  ultimoPosVisitaEnviado,
 } from "@/lib/whatsapp/repositorio";
+import { instrucaoDaRespostaAoPosVisita, respondeAoPosVisita } from "@/lib/whatsapp/followupTexto";
 import {
   clienteTrouxeFraseDeEntrada,
   decidirPorFalaDoCorretor,
@@ -707,13 +709,14 @@ export async function POST(req: NextRequest) {
     // O dossiê ANTERIOR entra no prompt (a IA deixa de re-perguntar o que
     // já qualificou) e serve de base de comparação para a nota incremental
     // ao corretor. O NOVO é extraído depois da resposta, da conversa toda.
-    const [catalogo, historico, dossieAnterior] = await Promise.all([
+    const [catalogo, historico, dossieAnterior, posVisitaEm] = await Promise.all([
       getEmpreendimentos().catch((err) => {
         console.warn("Aviso: Falha ao carregar catálogo para o webhook (usando fallback):", err);
         return [] as Awaited<ReturnType<typeof getEmpreendimentos>>;
       }),
       historicoRecente(conversa.id),
       conversa.leadId ? buscarDossieAtual(conversa.leadId) : Promise.resolve(null),
+      ultimoPosVisitaEnviado(conversa.id).catch(() => null),
     ]);
 
     /*
@@ -749,6 +752,12 @@ export async function POST(req: NextRequest) {
        * O cálculo mora aqui porque `turnoDeAtendimento` não toca no relógio.
        */
       horasDesdeAUltimaFala: horasDesdeAUltimaFala(historico),
+      /*
+       * Resposta ao pós-visita (0121): gostou → simulação ou proposta; não
+       * gostou → o que não agradou e UMA alternativa. Sem isto o planner
+       * voltava a perguntar região a quem acabou de visitar o imóvel.
+       */
+      instrucaoExtra: respondeAoPosVisita(posVisitaEm, historico) ? instrucaoDaRespostaAoPosVisita() : undefined,
       fewShot: { corretorId: instancia.corretorId, conversaAtualId: conversa.id },
       /*
        * Os horários que EXISTEM na agenda do corretor (0073). Até aqui a

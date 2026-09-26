@@ -1908,6 +1908,7 @@ export type Database = {
           nao_contatar_em: string | null
           primeiro_contato_auto_em: string | null
           alerta_sem_contato_em: string | null
+          visita_marcada_em: string | null
           nao_contatar_motivo: string | null
           nome: string
           orcamento_max: number | null
@@ -1959,6 +1960,7 @@ export type Database = {
           nao_contatar_em?: string | null
           primeiro_contato_auto_em?: string | null
           alerta_sem_contato_em?: string | null
+          visita_marcada_em?: string | null
           nao_contatar_motivo?: string | null
           nome: string
           orcamento_max?: number | null
@@ -2010,6 +2012,7 @@ export type Database = {
           nao_contatar_em?: string | null
           primeiro_contato_auto_em?: string | null
           alerta_sem_contato_em?: string | null
+          visita_marcada_em?: string | null
           nao_contatar_motivo?: string | null
           nome?: string
           orcamento_max?: number | null

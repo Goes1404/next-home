@@ -1856,3 +1856,23 @@ export async function destravarDisparo(escopo: string, dono: string): Promise<vo
   const supabase = createServiceClient();
   await supabase.rpc("destravar_disparo", { p_escopo: escopo, p_dono: dono });
 }
+
+/**
+ * Quando saiu o último pós-visita desta conversa (0121). É o que permite ao
+ * webhook reconhecer a resposta a ele (`respondeAoPosVisita`) e dar à IA a
+ * instrução do passo seguinte. Falha vira `null`: sem a instrução, a
+ * resposta segue o planner normal — nada quebra.
+ */
+export async function ultimoPosVisitaEnviado(conversaId: string): Promise<string | null> {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("whatsapp_followups")
+    .select("enviado_em")
+    .eq("conversa_id", conversaId)
+    .eq("tipo", "pos_visita")
+    .eq("status", "enviado")
+    .order("enviado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.enviado_em ?? null;
+}

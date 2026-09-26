@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatarVisitaSP, instrucaoDoFollowup } from "./followupTexto";
+import { formatarVisitaSP, instrucaoDaRespostaAoPosVisita, instrucaoDoFollowup, respondeAoPosVisita } from "./followupTexto";
 
 describe("instrução do follow-up (roadmap nº 6)", () => {
   it("1ª tentativa com dossiê usa os ganchos concretos", () => {
@@ -148,5 +148,39 @@ describe("pós-visita (26/09/2026)", () => {
     expect(texto).toMatch(/NÃO ofereça outros imóveis/);
     expect(texto).toMatch(/NÃO fale de valores/);
     expect(texto).toMatch(/NÃO pressione/);
+  });
+});
+
+describe("resposta ao pós-visita", () => {
+  const agora = new Date("2026-09-26T15:00:00Z");
+  const enviado = "2026-09-26T12:00:00Z";
+
+  it("vale quando o pós-visita foi a última palavra nossa", () => {
+    const h = [
+      { remetente: "bot", em: "2026-09-26T12:00:30Z" },
+      { remetente: "cliente", em: "2026-09-26T14:59:00Z" },
+    ];
+    expect(respondeAoPosVisita(enviado, h, agora)).toBe(true);
+  });
+
+  it("não vale se a conversa já andou depois dele", () => {
+    const h = [
+      { remetente: "bot", em: "2026-09-26T12:00:30Z" },
+      { remetente: "corretor", em: "2026-09-26T13:00:00Z" },
+      { remetente: "cliente", em: "2026-09-26T14:59:00Z" },
+    ];
+    expect(respondeAoPosVisita(enviado, h, agora)).toBe(false);
+  });
+
+  it("não vale depois de 72h nem sem envio", () => {
+    expect(respondeAoPosVisita("2026-09-22T12:00:00Z", [], agora)).toBe(false);
+    expect(respondeAoPosVisita(null, [], agora)).toBe(false);
+  });
+
+  it("a instrução segue a resposta e não volta ao funil", () => {
+    const t = instrucaoDaRespostaAoPosVisita();
+    expect(t).toMatch(/simulação/);
+    expect(t).toMatch(/UMA alternativa/);
+    expect(t).toMatch(/NÃO fale valores/);
   });
 });

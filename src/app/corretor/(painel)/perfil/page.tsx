@@ -3,6 +3,8 @@ import Link from "next/link";
 import { EditorAvatar } from "./EditorAvatar";
 import { FormularioPerfil } from "./FormularioPerfil";
 import { FundoLink } from "./FundoLink";
+import { AjustesDoResumo } from "./AjustesDoResumo";
+import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
@@ -11,6 +13,12 @@ export const metadata: Metadata = { title: "Meu perfil" };
 export default async function PerfilPage() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
+  const supabase = await createClient();
+  const { data: prefs } = await supabase
+    .from("corretores")
+    .select("resumo_hora, resumo_fim_de_semana")
+    .eq("id", corretor.id)
+    .maybeSingle();
 
   return (
     // Formulário se cansa de ler antes de o painel acabar: campo de texto
@@ -57,6 +65,10 @@ export default async function PerfilPage() {
 
       <div className="cartao mt-6 p-6 sm:p-7">
         <FormularioPerfil corretor={corretor} />
+      </div>
+
+      <div className="cartao mt-6 p-6 sm:p-7">
+        <AjustesDoResumo hora={prefs?.resumo_hora ?? 8} fimDeSemana={prefs?.resumo_fim_de_semana ?? false} />
       </div>
     </div>
   );
