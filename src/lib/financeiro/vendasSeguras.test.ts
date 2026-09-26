@@ -48,7 +48,7 @@ describe("vendas: dinheiro recebido/pago é só do gestor", () => {
 
 describe("o ranking que todos veem não leva comissão de ninguém", () => {
   const sql = todas();
-  const i = sql.lastIndexOf("function public.ranking_vgv");
+  const i = sql.lastIndexOf("create or replace function public.ranking_vgv");
   const corpo = sql.slice(i, sql.indexOf("$$;", i));
 
   it("a função existe e confere a sessão", () => {
