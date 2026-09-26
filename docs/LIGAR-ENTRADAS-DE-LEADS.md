@@ -74,6 +74,36 @@ O endpoint lê os campos `from`, `to`, `subject`, `html` e `text` (ou
 | 200 com `ignorado` em `inbound_logs` | O e-mail não tinha telefone que a IA reconhecesse. Confira o texto do portal. |
 | Nada em `inbound_logs` | O e-mail não chegou ao Postmark. Confira o encaminhamento. |
 
+### Alternativa: o Gmail de cada corretor (sem serviço no meio)
+
+Desde 26/09/2026, cada corretor pode conectar o próprio Gmail em **Conta →
+Meu perfil → Leads dos portais pelo seu Gmail**. A plataforma lê, a cada 5
+minutos, só os e-mails dos portais (ZAP, VivaReal, OLX, Imovelweb, Chaves na
+Mão, QuintoAndar, Facebook) e o lead nasce **na carteira de quem conectou**,
+com o mesmo processamento do webhook.
+
+Configuração, uma vez só (Google Cloud Console):
+
+1. Crie um projeto e ative a **Gmail API**.
+2. Em **Tela de consentimento OAuth**, cadastre o app e o escopo
+   `gmail.readonly`.
+3. Em **Credenciais**, crie um **ID do cliente OAuth** do tipo "Aplicativo da
+   Web", com o URI de redirecionamento
+   `https://next-home-drab.vercel.app/api/gmail/retorno` (troque pelo domínio
+   final quando virar).
+4. Na Vercel: `GOOGLE_OAUTH_CLIENT_ID` e `GOOGLE_OAUTH_CLIENT_SECRET`, e
+   redeploy.
+
+**O limite que decide qual caminho usar:** `gmail.readonly` é escopo
+RESTRITO do Google.
+- Se os corretores usam **Google Workspace da imobiliária**, marque o app
+  como **Interno**: sem verificação e o acesso não vence.
+- Com **Gmail pessoal** (@gmail.com), o app fica em modo **Teste** (até 100
+  usuários cadastrados como testadores) e **o acesso vence a cada 7 dias**:
+  a tela de Perfil avisa e pede para reconectar. Publicar para qualquer
+  conta exige a verificação do Google com auditoria de segurança (paga).
+  Nesse caso, o Postmark acima é o caminho estável.
+
 ---
 
 ## 2. Meta Ads (Facebook e Instagram)

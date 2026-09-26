@@ -32,6 +32,7 @@ import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
 import { abrirConversasDePortal } from "@/lib/whatsapp/aberturaPelaIA";
 import { avisarQuemPediuAlerta } from "@/lib/crm/avisoDeNovidade";
+import { lerCaixasDoGmail } from "@/lib/inbound/gmailCaixa";
 import { separarRajada } from "@/lib/whatsapp/rajada";
 import {
   decidirRespostaAtrasada,
@@ -560,6 +561,14 @@ export async function GET(req: NextRequest) {
    */
   const atrasadas = await varrerRespostasAtrasadas(supabase);
 
+  // Caixas do Gmail conectadas (0125): e-mail de portal vira lead. Antes da
+  // janela — é entrada de lead, não contato com cliente. Uma caixa e até
+  // quatro e-mails por tique: cada um custa uma extração de IA.
+  const leadsDoGmail = await lerCaixasDoGmail(1, 4).catch((e) => {
+    console.error("[gmail]", e);
+    return 0;
+  });
+
   /*
    * O resumo do dia vai para o PRÓPRIO corretor, não para cliente: não
    * passa pela janela comercial nem pela cota (mesma regra dos lembretes
@@ -586,7 +595,7 @@ export async function GET(req: NextRequest) {
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -632,7 +641,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "descartado") resultado.descartados++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, primeirosContatos, avisosDeNovidade });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, primeirosContatos, avisosDeNovidade, leadsDoGmail });
   } finally {
     await destravarDisparo("followups", dono);
   }
