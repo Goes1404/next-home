@@ -45,6 +45,7 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 
 ## Migrations: numeração e ordem
 - [[colisao-de-migration-entre-branches]] — a guarda só enxerga a própria branch
+- [[rodada-de-26-09-parte-3]] — `corretores` é pública para anon: credencial (token da agenda) saiu para tabela fechada na 0126 (26/09)
 
 ## Relacionados
 - [[MOC — Infraestrutura]] · [[MOC — CRM e Painel]] · [[Home]]

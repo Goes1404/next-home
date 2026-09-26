@@ -24,6 +24,7 @@ summary: Procedimentos de diagnóstico — sintoma → onde olhar, na ordem cert
 | `TypeError: fetch failed` no agente | rede local — sondar `curl api.openai.com` ([[eval-de-conversa]]) |
 | migration nova | [[list-migrations-esta-dessincronizado]] antes de aplicar |
 | ligar e-mail dos portais ou Meta Ads | [[ligar-entradas-de-leads]] |
+- [[rodada-de-26-09-parte-3]] — instalar para outro cliente (`docs/INSTALAR-NOVO-CLIENTE.md`) e conectar o Gmail do corretor (26/09)
 
 ## Relacionados
 - [[Home]]

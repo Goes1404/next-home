@@ -8160,3 +8160,54 @@ Nota: [[fechar-o-ciclo-e-ligar-a-plataforma]]. Guia de configuração:
   corretor confirme que a pessoa sabe que será procurada.
 - **A meta por corretor já existia** (F5 do financeiro). Faltava só a visão
   do gestor.
+
+## O áudio do cliente ia cifrado para a transcrição (26/09/2026)
+
+Nota: [[audio-do-cliente-era-arquivo-cifrado]]. Relatado: "quando o cliente
+manda áudio, a IA alucina".
+
+- **`audioMessage.url` é o arquivo CIFRADO do WhatsApp** (`mmg.whatsapp.net/…enc`).
+  Baixá-lo dá ruído, e quando o download falhava a própria URL seguia como se
+  fosse base64. O arquivo decifrado vem da Evolution:
+  `POST /chat/getBase64FromMediaMessage/{instância}` com o `key.id`
+  (`baixarMidiaDoProvedor`). **Ao processar mídia recebida da Evolution,
+  nunca usar a `url` do webhook.**
+- **O prompt dava o roteiro para inventar**: "clientes de alto padrão em
+  Alphaville", exemplo "quer saber o preço do 3 suítes". Diante de ruído, o
+  modelo escrevia isso. Prompt de transcrição não diz o assunto; trecho
+  incerto vira `[inaudível]`. Guarda de código reprova assunto no prompt.
+- **A "intenção detectada" anexada ao texto saiu**: era palpite do modelo
+  gravado como fala do cliente, e a IA respondia ao palpite.
+- **Travas**: frases que o Whisper tira do silêncio ("Legendas pela
+  comunidade Amara.org"), mais de 6 palavras por segundo de áudio, fala quase
+  toda inaudível; Whisper em `verbose_json` descarta trecho com
+  `no_speech_prob ≥ 0,6`. Ordem: OpenAI (`gpt-4o-mini-transcribe`) → Groq →
+  Gemini por último.
+- **Régua**: quando a IA "alucina" sobre uma entrada, conferir primeiro o que
+  ela RECEBEU.
+
+## Rodada de 26/09, parte 3 (0125-0126)
+
+Nota: [[rodada-de-26-09-parte-3]]. Me avise quando surgir, favoritos e
+`/comparar`, agenda `.ics`, portal do comprador e andamento da obra,
+correções do corretor no prompt, Gmail do corretor, espelho para parceiros,
+marca da instalação.
+
+- **`corretores` é PÚBLICA para `anon`** (policy "corretores sao publicos",
+  a página da equipe lê). A 0125 pôs o token da agenda ali; a conferência
+  com `has_column_privilege('anon', …)` deu true antes de qualquer link
+  existir, e a 0126 o moveu para `corretor_agenda`, sem grant nenhum.
+  **Credencial nunca mora em tabela que o site público lê.**
+- **Rota do App Router só pode exportar os métodos HTTP**: função auxiliar
+  exportada de `route.ts` quebra o build. Vai para `src/lib`.
+- **A marca é `NEXT_PUBLIC_MARCA` (JSON), não tabela**: `site` é lido em 50
+  arquivos de forma síncrona, inclusive no cliente. Campo inválido é
+  ignorado e o padrão fica. `seo.test.ts` mede título em template com a
+  marca. Guia: `docs/INSTALAR-NOVO-CLIENTE.md`.
+- **Gmail: `gmail.readonly` é escopo restrito.** Workspace → app Interno;
+  Gmail pessoal → modo Teste com acesso que **vence a cada 7 dias**. O
+  webhook dos portais e o Gmail usam o mesmo `processarEmailDeLead`, que
+  agora pula e-mail já importado (`email_message_id`).
+- **Tipos gerados não conhecem relacionamento**: embed como
+  `unidades(...)` sai tipado como erro no TS mesmo existindo a FK no banco;
+  `as unknown as T` e testar o embed contra o PostgREST.

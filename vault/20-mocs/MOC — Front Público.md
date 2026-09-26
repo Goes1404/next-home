@@ -59,6 +59,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 ## Movimento
 - [[movimento-do-site-publico-e-css-puro]] — botão vivo, sublinhado do menu, barra de progresso por scroll-timeline e anel do WhatsApp, zero JS (13/09)
 - [[ordem-do-catalogo-no-site-tem-tela]] — a sequência da vitrine (destaque, depois `ordem`) agora se edita no painel (24/09)
+- [[rodada-de-26-09-parte-3]] — me avise quando surgir, favoritos e /comparar, portal do comprador, espelho de vendas (26/09)
 
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]

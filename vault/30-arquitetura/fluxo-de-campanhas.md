@@ -60,6 +60,9 @@ Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
 ## O tique dos follow-ups (a cada 5 min) — ordem desde 26/09/2026
 
 1. `varrerRespostasAtrasadas` — resposta a quem escreveu (antes da janela).
+1b. `lerCaixasDoGmail(1, 4)` — e-mails de portal das caixas conectadas viram
+   lead na carteira de quem conectou (0125; antes da janela, é entrada de
+   lead, não contato).
 2. `enviarResumosDoDia` — da hora escolhida pelo corretor (6h–11h, padrão
    8h) até 12h de SP; fim de semana só para quem pediu. Para o PRÓPRIO
    corretor (antes da janela). Traz o placar de ontem, as visitas sem
@@ -74,6 +77,8 @@ Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
    `agendarLembretesDeVisita` → `agendarPosVisita` →
    `agendarPedidoDeIndicacao` (5 a 30 dias depois do fechamento, uma vez) →
    `abrirConversasDePortal` (2 por tique, com cota e espaçamento) →
+   `avisarQuemPediuAlerta(1)` ("me avise quando surgir", só se o primeiro
+   contato não gastou as duas vagas — cada um custa ~20s de IA) →
    `processarLembretesDeAnotacao` → follow-ups vencidos
    (`reengajamento`, `lembrete_visita`, `pos_visita`, `indicacao`).
    Reengajamento de lead que virou `fechado`/`perdido` é descartado ANTES

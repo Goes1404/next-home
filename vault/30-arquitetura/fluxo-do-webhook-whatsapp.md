@@ -20,8 +20,11 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 3. **Porteiro de cadastro** — casa o telefone com um lead da carteira. Sem
    lead, devolve `numero_sem_lead_cadastrado`: não cria conversa nem lead e
    não manda áudio para transcrição ([[conversa-casa-com-lead-por-telefone]]).
-4. **Transcrição de áudio** — Gemini, reserva Whisper
-   ([[whisper-nao-recusa-como-o-gemini]]).
+4. **Transcrição de áudio** — o arquivo DECIFRADO vem da Evolution
+   (`getBase64FromMediaMessage`; a `url` do webhook é o `.enc` cifrado);
+   OpenAI → Whisper (Groq) → Gemini, prompt neutro com `[inaudível]`, travas
+   contra fala inventada; o turno recebe `instrucaoDoAudio`
+   ([[audio-do-cliente-era-arquivo-cifrado]], [[whisper-nao-recusa-como-o-gemini]]).
 5. **Gravação + dedup** — a conversa já nasce com `lead_id` obrigatório;
    `provider_message_id` único (0027) mata reentrega.
 6. **Rajada** — espera 6s + trava `resposta:<conversaId>`; balões pendentes
