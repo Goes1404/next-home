@@ -1,8 +1,9 @@
+import { site } from "@/lib/site";
 import { algumProvedorConfigurado, chamarLlmJson, ORCAMENTO_DOSSIE_MS } from "./llm";
 import { TETO_DA_MEMORIA } from "./memoriaDaConversa";
 import type { DossieClienteIA, TemperaturaLeadLabel } from "./types";
 
-const PROMPT_DOSSIE = `Você é um analista sênior de inteligência comercial imobiliária da Next Home.
+const PROMPT_DOSSIE = `Você é um analista sênior de inteligência comercial imobiliária da ${site.nome}.
 Sua missão é ler a transcrição de uma conversa de WhatsApp entre um cliente e a imobiliária e extrair um DOSSIÊ EXECUTIVO ESTRUTURADO do cliente.
 
 Você DEVE responder EXCLUSIVAMENTE um objeto JSON válido no seguinte formato:

@@ -1,12 +1,22 @@
 /**
- * Dados institucionais da Next Home.
+ * Dados institucionais da imobiliária desta instalação (padrão: Next Home).
  * Fonte única de verdade para NAP (nome/endereço/telefone), usada tanto na
  * interface quanto no JSON-LD — o Google penaliza divergência entre os dois.
  */
 
-export const site = {
+import { lerMarca } from "./marca";
+
+/**
+ * A marca desta instalação (`NEXT_PUBLIC_MARCA`). Sem a variável, os dados
+ * abaixo são os da Next Home. Ver `marca.ts`.
+ */
+const marca = lerMarca(process.env.NEXT_PUBLIC_MARCA);
+
+const PADRAO = {
   nome: "Next Home",
   nomeCompleto: "Next Home Negócios Imobiliários",
+  wordmark: ["Next", "Home"] as [string, string],
+  assistente: "Sofia",
   creci: "044589-J",
   descricao:
     "Sua imobiliária de confiança em Alphaville, Barueri, Santana de Parnaíba e região. As melhores oportunidades em apartamentos, casas, lançamentos na planta e prontos para morar com condições facilitadas e assessoria completa.",
@@ -75,7 +85,21 @@ export const site = {
     "Osasco",
     "Itapevi",
   ],
-} as const;
+};
+
+/**
+ * O que a instalação declarou sobrepõe o padrão campo a campo. `url` nunca
+ * vem da marca: ela tem variável própria (`NEXT_PUBLIC_SITE_URL`).
+ */
+export const site: typeof PADRAO = {
+  ...PADRAO,
+  ...marca,
+  // Se a instalação declara alguma rede, as que ela não declarou ficam
+  // vazias: herdar o Instagram da Next Home no site de outra imobiliária
+  // seria pior que não ter o link.
+  social: marca.social ? { instagram: "", facebook: "", youtube: "", linkedin: "", ...marca.social } : PADRAO.social,
+  url: PADRAO.url,
+};
 
 export const enderecoLinha = `${site.endereco.logradouro} — ${site.endereco.bairro}, ${site.endereco.cidade}/${site.endereco.uf}`;
 

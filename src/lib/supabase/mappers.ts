@@ -1,3 +1,4 @@
+import { site } from "@/lib/site";
 import type { Empreendimento, Midia, Tipologia } from "@/lib/types";
 import type { Tables } from "./types";
 
@@ -66,7 +67,7 @@ function mapMidia(m: Tables<"midias">): Midia {
 
 /** Placeholder até haver um corretor cadastrado — evita a UI quebrar por dado ausente. */
 const CORRETOR_INDEFINIDO = {
-  nome: "Equipe Next Home",
+  nome: `Equipe ${site.nome}`,
   creci: "044589-J",
   whatsapp: "5511972207204",
   fotoUrl: null,

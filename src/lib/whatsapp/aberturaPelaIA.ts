@@ -1,3 +1,4 @@
+import { site } from "@/lib/site";
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getEmpreendimentos } from "@/lib/queries";
@@ -100,7 +101,7 @@ export async function gerarEEnviarPelaIA(params: {
       slugCorretor: corretor.slug ?? undefined,
       creciCorretor: corretor.creci,
       telefoneCorretor: corretor.whatsapp,
-      nomeAssistente: instancia.nome_assistente ?? "Sofia",
+      nomeAssistente: instancia.nome_assistente ?? site.assistente,
       tomVoz: instancia.tom_voz ?? "profissional e acolhedor",
     },
     catalogo,

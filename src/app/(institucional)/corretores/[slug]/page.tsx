@@ -104,7 +104,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
   const primeiroNome = corretor.nome.split(" ")[0];
   const whatsapp = linkWhatsappPara(
     corretor.whatsapp,
-    `Olá, ${corretor.nome}! Vim pelo site da Next Home e quero falar com você.`,
+    `Olá, ${corretor.nome}! Vim pelo site da ${site.nome} e quero falar com você.`,
   );
   const cidades = cidadesDe(empreendimentos);
 
@@ -177,7 +177,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
               <div className="min-w-0 flex-1">
                 <h1 className="text-fluid-2xl text-titulo">{corretor.nome}</h1>
                 <p className="text-fluid-sm mt-1.5 text-legenda">
-                  Equipe Next Home · CRECI {corretor.creci}
+                  Equipe {site.nome} · CRECI {corretor.creci}
                 </p>
 
                 {cidades.length > 0 && (

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   description: `Fale com consultores credenciados CRECI ${site.creci}. Especialistas em compra, venda e investimento em Alphaville, Barueri e região.`,
   alternates: { canonical: "/corretores" },
   openGraph: {
-    title: "Equipe de Corretores de Imóveis | Next Home Alphaville",
+    title: `Equipe de Corretores de Imóveis | ${site.nome}`,
     description:
       "Atendimento consultivo e personalizado com corretores credenciados em Alphaville e região.",
     url: `${site.url}/corretores`,

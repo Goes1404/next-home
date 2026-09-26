@@ -3,7 +3,7 @@ import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { iniciais } from "@/lib/format";
 import type { AtuacaoCorretor } from "@/lib/queries";
-import { linkWhatsappPara } from "@/lib/site";
+import { linkWhatsappPara, site } from "@/lib/site";
 import type { CorretorPerfil } from "@/lib/types";
 
 type CardCorretorProps = {
@@ -94,7 +94,7 @@ export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps)
   const resumo = resumoAtuacao(atuacao);
   const whatsapp = linkWhatsappPara(
     corretor.whatsapp,
-    `Olá, ${corretor.nome}! Vim pelo site da Next Home e quero falar com você.`,
+    `Olá, ${corretor.nome}! Vim pelo site da ${site.nome} e quero falar com você.`,
   );
   const bio = corretor.bio?.trim();
 

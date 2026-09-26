@@ -1,3 +1,4 @@
+import { Wordmark } from "@/components/ui/Wordmark";
 import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { HeaderCondensado } from "@/components/motion/HeaderCondensado";
@@ -39,7 +40,7 @@ export async function HeaderInstitucional() {
           href="/"
           className="font-display shrink-0 text-lg leading-none font-medium tracking-tight whitespace-nowrap text-titulo"
         >
-          Next<span className="text-acento-forte">Home</span>
+          <Wordmark destaque="text-acento-forte" />
         </Link>
 
         <ul className="hidden items-center gap-6 text-sm text-corpo sm:flex">

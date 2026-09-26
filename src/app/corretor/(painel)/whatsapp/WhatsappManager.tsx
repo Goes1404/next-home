@@ -1,5 +1,6 @@
 "use client";
 
+import { site } from "@/lib/site";
 import { useState } from "react";
 import type { ModoBotWhatsapp, StatusConexaoWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { ConfiguracaoIA } from "./_componentes/ConfiguracaoIA";
@@ -53,7 +54,7 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
   // veio ajustar ou testar, e a primeira aba deixa de ser o assunto.
   const [aba, setAba] = useState<Aba>(conectadoDeInicio ? "ia" : "conexao");
   const [conectado, setConectado] = useState(conectadoDeInicio);
-  const [nomeAssistente, setNomeAssistente] = useState(configInicial?.nomeAssistente ?? "Sofia");
+  const [nomeAssistente, setNomeAssistente] = useState(configInicial?.nomeAssistente ?? site.assistente);
 
   return (
     <div className="space-y-6">

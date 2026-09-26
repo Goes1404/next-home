@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     "Apartamentos na planta, prontos para morar e casas em condomínio em Alphaville, Barueri e região. Fotos, plantas e condições de pagamento.",
   alternates: { canonical: "/empreendimentos" },
   openGraph: {
-    title: "Empreendimentos e Oportunidades em Alphaville e Região | Next Home",
+    title: `Empreendimentos e Oportunidades em Alphaville e Região | ${site.nome}`,
     description: `Catálogo completo de lançamentos e oportunidades selecionadas em Alphaville e região.`,
     url: `${site.url}/empreendimentos`,
   },

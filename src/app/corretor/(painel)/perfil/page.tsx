@@ -1,3 +1,4 @@
+import { site } from "@/lib/site";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EditorAvatar } from "./EditorAvatar";
@@ -55,7 +56,7 @@ export default async function PerfilPage() {
           </span>
         </div>
         <p className="text-fluid-xs mt-2 text-apoio">
-          O CRECI é gerenciado pela administração da Next Home.
+          O CRECI é gerenciado pela administração da {site.nome}.
         </p>
       </div>
 

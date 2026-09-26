@@ -1,3 +1,4 @@
+import { Wordmark } from "@/components/ui/Wordmark";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
@@ -68,7 +69,7 @@ export default async function PainelLayout({
                 corretor não há gaveta para abrir. */}
             {corretor && <BotaoGaveta />}
             <Link href="/" className="font-display text-titulo text-lg">
-              Next<span className="text-acento-suave">Home</span>
+              <Wordmark destaque="text-acento-suave" />
             </Link>
           </div>
 

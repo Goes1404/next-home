@@ -1,5 +1,5 @@
 import { ETIQUETA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
-import { linkWhatsappPara } from "@/lib/site";
+import { linkWhatsappPara, site } from "@/lib/site";
 import { ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
 
 /**
@@ -34,7 +34,7 @@ export function linkWhatsappLead(lead: Lead): string | null {
   const e164 = digitos.length <= 11 ? `55${digitos}` : digitos;
   const primeiroNome = lead.nome.split(" ")[0];
 
-  let textoOrigem = "pelo site da Next Home";
+  let textoOrigem = `pelo site da ${site.nome}`;
   if (lead.portalOrigem === "zap_imoveis") textoOrigem = "pelo Zap Imóveis";
   else if (lead.portalOrigem === "vivareal") textoOrigem = "pelo VivaReal";
   else if (lead.portalOrigem === "olx") textoOrigem = "pela OLX";
@@ -46,7 +46,7 @@ export function linkWhatsappLead(lead: Lead): string | null {
 
   return linkWhatsappPara(
     e164,
-    `Olá, ${primeiroNome}! Aqui é da Next Home, recebi seu contato ${textoOrigem}${textoImovel}. Como posso te ajudar?`,
+    `Olá, ${primeiroNome}! Aqui é da ${site.nome}, recebi seu contato ${textoOrigem}${textoImovel}. Como posso te ajudar?`,
   );
 }
 
