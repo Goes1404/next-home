@@ -131,3 +131,33 @@ export function resultadoAB(entrada: {
       `${perdedora.taxa}% de resposta. Repita numa próxima campanha antes de aposentar a outra.`,
   };
 }
+
+/**
+ * O placar a partir das linhas da fila. `respondido` também já saiu — senão
+ * a taxa passaria de 100%. Uma conta só, usada pela tela e pela escolha
+ * automática da vencedora: duas contas do mesmo placar divergiriam, e a
+ * tela diria "empate" sobre uma campanha que já trocou de mensagem.
+ */
+export function placarDaFila(
+  itens: Array<{ variante: string | null; status: string }>,
+): { a: { enviados: number; respostas: number }; b: { enviados: number; respostas: number } } {
+  const placar = { a: { enviados: 0, respostas: 0 }, b: { enviados: 0, respostas: 0 } };
+  for (const item of itens) {
+    if (item.variante !== "A" && item.variante !== "B") continue;
+    const lado = item.variante === "B" ? placar.b : placar.a;
+    if (item.status === "enviado" || item.status === "respondido") lado.enviados++;
+    if (item.status === "respondido") lado.respostas++;
+  }
+  return placar;
+}
+
+/**
+ * A vencedora, só quando o placar tem base (`temVencedor`). É a letra que
+ * passa a valer para o resto da fila (0121, 26/09/2026): uma vez que há
+ * sinal, continuar mandando a metade que responde menos é desperdiçar
+ * metade dos contatos que ainda faltam.
+ */
+export function vencedoraDoPlacar(r: ResultadoAB): Variante | null {
+  if (!r.temVencedor) return null;
+  return (r.a.taxa ?? 0) > (r.b.taxa ?? 0) ? "A" : "B";
+}

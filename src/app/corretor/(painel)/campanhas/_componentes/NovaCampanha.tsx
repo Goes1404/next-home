@@ -322,6 +322,7 @@ export function NovaCampanha({
           status: "em_andamento",
           // Campanha recém-criada não tem envio nenhum, então não há placar.
           testeAB: null,
+          vencedora: null,
           criadoEm: new Date().toISOString(),
         },
         modoEnvio === "agendado"

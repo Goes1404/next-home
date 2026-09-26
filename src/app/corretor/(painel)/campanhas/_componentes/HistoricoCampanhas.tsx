@@ -156,6 +156,11 @@ export function HistoricoCampanhas({
                   >
                     {c.testeAB.leitura}
                   </p>
+                  {c.vencedora && (
+                    <p className="text-fluid-xs text-ok mt-1 font-semibold">
+                      A versão {c.vencedora} passou a valer para quem ainda não recebeu.
+                    </p>
+                  )}
                 </div>
               )}
             </li>

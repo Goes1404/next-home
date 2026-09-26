@@ -20,14 +20,30 @@ import { contemValor } from "@/lib/whatsapp/semValores";
 
 export const TETO_ABERTURA = 220;
 
-export function promptDeAberturas(p: {
-  imovel: string;
-  bairro?: string | null;
-  cidade?: string | null;
-  estagio?: string | null;
-  publico: string;
-}): string {
+/** Quantas vencedoras do próprio corretor entram como exemplo. */
+export const EXEMPLOS_VENCEDORES = 3;
+
+export function promptDeAberturas(
+  p: {
+    imovel: string;
+    bairro?: string | null;
+    cidade?: string | null;
+    estagio?: string | null;
+    publico: string;
+  },
+  /**
+   * Aberturas que JÁ VENCERAM um A/B deste corretor (0121). É o dado mais
+   * forte que existe sobre o que a carteira dele responde — mais que a
+   * régua geral. Entram como tom a seguir, não como texto a copiar: a
+   * versão nova precisa ser do imóvel de agora.
+   */
+  vencedoras: string[] = [],
+): string {
   const onde = [p.bairro, p.cidade].filter(Boolean).join(", ");
+  const exemplos = vencedoras
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .slice(0, EXEMPLOS_VENCEDORES);
   return [
     "Você escreve a PRIMEIRA mensagem de WhatsApp de uma corretora de imóveis para um lead da carteira dela.",
     `Imóvel: ${p.imovel}${onde ? ` (${onde})` : ""}${p.estagio ? `, ${p.estagio}` : ""}.`,
@@ -41,6 +57,13 @@ export function promptDeAberturas(p: {
     "- sem urgência falsa (\"últimas horas\", \"imperdível\"), sem emoji em excesso, sem markdown;",
     "- tom de gente, não de anúncio.",
     "",
+    ...(exemplos.length > 0
+      ? [
+          "Aberturas desta corretora que VENCERAM testes anteriores (siga o tom e o tamanho; não copie o texto):",
+          ...exemplos.map((e) => `- ${e}`),
+          "",
+        ]
+      : []),
     "Escreva DUAS versões com ângulos DIFERENTES (ex.: uma pergunta sobre o momento dele, outra oferecendo algo concreto como fotos ou visita ao decorado).",
     'Responda só JSON: {"a": "...", "b": "..."}',
   ].join("\n");

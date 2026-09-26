@@ -28,3 +28,16 @@ describe("aberturas sugeridas pela IA", () => {
     expect(aberturasDoJson("texto")).toBeNull();
   });
 });
+
+describe("vencedoras de A/B como exemplo", () => {
+  it("entram no prompt como tom, no máximo três", () => {
+    const p = promptDeAberturas({ imovel: "Vitra", publico: "leads" }, ["Oi {nome}! 1?", "Oi {nome}! 2?", "Oi {nome}! 3?", "Oi {nome}! 4?"]);
+    expect(p).toMatch(/VENCERAM/);
+    expect(p).toContain("Oi {nome}! 3?");
+    expect(p).not.toContain("Oi {nome}! 4?");
+  });
+
+  it("sem vencedora, o prompt não fala delas", () => {
+    expect(promptDeAberturas({ imovel: "Vitra", publico: "leads" })).not.toMatch(/VENCERAM/);
+  });
+});
