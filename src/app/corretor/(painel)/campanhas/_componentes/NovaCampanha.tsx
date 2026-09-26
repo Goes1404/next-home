@@ -98,13 +98,25 @@ const MENSAGEM_PADRAO =
 export function NovaCampanha({
   empreendimentos,
   aoCriar,
+  inicial,
 }: {
   empreendimentos: Empreendimento[];
   aoCriar: (campanha: CampanhaListada, aviso: string) => void;
+  /** Imóvel e leads já marcados (vindo de "leads que combinam"). */
+  inicial?: { imovelSlug?: string; leadIds: string[] };
 }) {
+  const veioMarcado = (inicial?.leadIds.length ?? 0) > 0;
   const [passo, setPasso] = useState<1 | 2 | 3>(1);
-  const [publico, setPublico] = useState<FiltroLeadsCampanha>("parados_15d");
-  const [imovelSlug, setImovelSlug] = useState(empreendimentos[0]?.slug ?? "");
+  const [publico, setPublico] = useState<FiltroLeadsCampanha>(
+    veioMarcado ? "selecionados" : "parados_15d",
+  );
+  const [imovelSlug, setImovelSlug] = useState(
+    (inicial?.imovelSlug && empreendimentos.some((e) => e.slug === inicial.imovelSlug)
+      ? inicial.imovelSlug
+      : undefined) ??
+      empreendimentos[0]?.slug ??
+      "",
+  );
   const [mensagemBase, setMensagemBase] = useState(MENSAGEM_PADRAO);
   /*
    * Segunda versão do teste A/B (0084). Vazia = campanha de uma versão só,
@@ -128,7 +140,7 @@ export function NovaCampanha({
   const [carteira, setCarteira] = useState<LeadElegivel[] | null>(null);
   const [buscaLead, setBuscaLead] = useState("");
   const [etapaLead, setEtapaLead] = useState<EtapaFunil | "todas">("todas");
-  const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set());
+  const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set(inicial?.leadIds ?? []));
   const [previaPublico, setPreviaPublico] = useState<
     (PreviaPublicoCampanha & { filtro: FiltroLeadsCampanha; erro?: boolean }) | null
   >(null);

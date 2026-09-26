@@ -179,6 +179,7 @@ export type Database = {
           id: string
           identificacao: string
           status: "disponivel" | "reservada" | "vendida"
+          tipologia_id: string | null
         }
         Insert: {
           andar?: number | null
@@ -190,6 +191,7 @@ export type Database = {
           id?: string
           identificacao: string
           status?: "disponivel" | "reservada" | "vendida"
+          tipologia_id?: string | null
         }
         Update: {
           andar?: number | null
@@ -201,6 +203,7 @@ export type Database = {
           id?: string
           identificacao?: string
           status?: "disponivel" | "reservada" | "vendida"
+          tipologia_id?: string | null
         }
         Relationships: []
       }

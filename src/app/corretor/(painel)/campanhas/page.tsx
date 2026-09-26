@@ -16,7 +16,24 @@ export const metadata: Metadata = {
  */
 export const maxDuration = 60;
 
-export default async function CampanhasPainelPage() {
+/** Até isso de ids pela URL: acima disso a URL fica maior que o navegador aceita. */
+const TETO_DE_IDS = 300;
+const UUID = /^[0-9a-f-]{36}$/i;
+
+export default async function CampanhasPainelPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ imovel?: string; leads?: string }>;
+}) {
+  // Vindo de "leads que combinam" (tela do imóvel): imóvel e leads já
+  // marcados. É só pré-preenchimento: a criação refaz a interseção com a
+  // carteira no servidor, então id inventado na URL não vira mensagem.
+  const { imovel, leads } = await searchParams;
+  const inicial = {
+    imovelSlug: imovel || undefined,
+    leadIds: (leads ?? "").split(",").filter((id) => UUID.test(id)).slice(0, TETO_DE_IDS),
+  };
+
   const [empreendimentos, campanhas, status] = await Promise.all([
     getEmpreendimentos(),
     listarCampanhas(),
@@ -43,6 +60,7 @@ export default async function CampanhasPainelPage() {
         empreendimentos={empreendimentos}
         campanhasIniciais={campanhas}
         statusInicial={status}
+        inicial={inicial}
       />
     </div>
   );

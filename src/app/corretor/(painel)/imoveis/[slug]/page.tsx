@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { EditorImovelClient } from "../_componentes/EditorImovelClient";
 import { ArtesDeIA } from "../_componentes/ArtesDeIA";
+import { LeadsQueCombinam } from "../_componentes/LeadsQueCombinam";
 import { Suspense } from "react";
 import Link from "next/link";
 
@@ -101,6 +102,14 @@ export default async function EditarImovelPage({ params }: Props) {
       {imovel.id && (
         <Suspense fallback={null}>
           <ArtesDeIA empreendimentoId={imovel.id} />
+        </Suspense>
+      )}
+
+      {/* Só para imóvel no ar: mandar rascunho para cliente é mandar um
+          link que a vitrine não abre. */}
+      {imovel.publicado !== false && (
+        <Suspense fallback={null}>
+          <LeadsQueCombinam imovel={imovel} />
         </Suspense>
       )}
 
