@@ -96,7 +96,7 @@ type ItemFollowup = {
   instancia_id: string;
   tentativa: number;
   agendado_para: string;
-  tipo: "reengajamento" | "lembrete_visita";
+  tipo: "reengajamento" | "lembrete_visita" | "pos_visita";
 };
 
 /** Janela em que uma visita futura ganha lembrete: entre 8h e 30h antes. */
@@ -163,6 +163,72 @@ async function agendarLembretesDeVisita(
       instancia_id: instancia.id,
       tentativa: 1,
       tipo: "lembrete_visita",
+      agendado_para: new Date(quando).toISOString(),
+    });
+    agendados++;
+  }
+  return agendados;
+}
+
+/**
+ * O pós-visita (26/09/2026): no dia seguinte à visita, uma pergunta — o
+ * que ele achou. Até aqui, depois da visita não acontecia nada sozinho, e
+ * é justamente o momento em que o cliente decide.
+ *
+ * Janela: visitas que aconteceram entre 12h e 72h atrás. O envio sai 18h
+ * depois do horário marcado (a manhã seguinte, para visita de fim de
+ * tarde); se o tique chegar depois disso, sai agora. Uma por conversa,
+ * como o lembrete. Quem pediu para não ser procurado, ou já está em
+ * `fechado`/`perdido`, não recebe.
+ */
+async function agendarPosVisita(
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<number> {
+  const agora = Date.now();
+  const { data: visitas } = await supabase
+    .from("leads")
+    .select("id, corretor_id, visita_agendada_em, etapa, nao_contatar_em")
+    .gte("visita_agendada_em", new Date(agora - 72 * 3600_000).toISOString())
+    .lte("visita_agendada_em", new Date(agora - 12 * 3600_000).toISOString())
+    .not("corretor_id", "is", null)
+    .is("nao_contatar_em", null)
+    .not("etapa", "in", "(fechado,perdido)")
+    .limit(50);
+
+  let agendados = 0;
+  for (const lead of visitas ?? []) {
+    const { data: conversa } = await supabase
+      .from("whatsapp_conversas")
+      .select("id")
+      .eq("lead_id", lead.id)
+      .eq("corretor_id", lead.corretor_id!)
+      .limit(1)
+      .maybeSingle();
+    if (!conversa) continue;
+
+    const { data: jaTem } = await supabase
+      .from("whatsapp_followups")
+      .select("id")
+      .eq("conversa_id", conversa.id)
+      .eq("tipo", "pos_visita")
+      .gte("created_at", new Date(agora - 7 * 86_400_000).toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (jaTem) continue;
+
+    const { data: instancia } = await supabase
+      .from("corretor_whatsapp_instancias")
+      .select("id")
+      .eq("corretor_id", lead.corretor_id!)
+      .maybeSingle();
+    if (!instancia) continue;
+
+    const quando = Math.max(agora, new Date(lead.visita_agendada_em!).getTime() + 18 * 3600_000);
+    await supabase.from("whatsapp_followups").insert({
+      conversa_id: conversa.id,
+      instancia_id: instancia.id,
+      tentativa: 1,
+      tipo: "pos_visita",
       agendado_para: new Date(quando).toISOString(),
     });
     agendados++;
@@ -442,6 +508,7 @@ export async function GET(req: NextRequest) {
 
   try {
     await agendarLembretesDeVisita(supabase);
+    await agendarPosVisita(supabase);
     // Lembretes das anotações (0100): mensagem para o PRÓPRIO corretor, não
     // para cliente — por isso não passa por cota anti-ban nem pela janela.
     await processarLembretesDeAnotacao(supabase);
@@ -662,6 +729,32 @@ async function processarFollowup(
   let visitaFormatada: string | undefined;
   let enderecoDoImovel: string | null = null;
   let nomeDoImovel: string | null = null;
+  if (item.tipo === "pos_visita") {
+    // Revalidado contra a agenda: se a visita foi REMARCADA para o futuro,
+    // perguntar "o que achou?" seria perguntar de uma visita que não houve.
+    const { data: lead } = conversa.lead_id
+      ? await supabase
+          .from("leads")
+          .select(
+            "visita_agendada_em, etapa, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome)",
+          )
+          .eq("id", conversa.lead_id)
+          .maybeSingle()
+      : { data: null };
+    const visita = lead?.visita_agendada_em;
+    if (!visita || new Date(visita).getTime() > Date.now() - 6 * 3600_000) {
+      return descartar(supabase, item.id, "visita_remarcada_ou_ausente");
+    }
+    if (lead?.etapa === "fechado" || lead?.etapa === "perdido") {
+      return descartar(supabase, item.id, "lead_encerrado");
+    }
+    visitaFormatada = formatarVisitaSP(visita);
+    const imovel = Array.isArray(lead?.empreendimento)
+      ? lead.empreendimento[0]
+      : lead?.empreendimento;
+    nomeDoImovel = imovel?.nome ?? null;
+  }
+
   if (item.tipo === "lembrete_visita") {
     /*
      * O endereço vem daqui, do CADASTRO, e viaja até a instrução — a IA

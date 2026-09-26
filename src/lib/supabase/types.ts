@@ -96,6 +96,114 @@ export type Database = {
           },
         ]
       }
+      lead_documentos: {
+        Row: {
+          caminho: string
+          corretor_id: string
+          created_at: string
+          id: string
+          item: string
+          lead_id: string
+          link_token: string | null
+          mime: string | null
+          nome_arquivo: string | null
+          tamanho: number | null
+        }
+        Insert: {
+          caminho: string
+          corretor_id: string
+          created_at?: string
+          id?: string
+          item: string
+          lead_id: string
+          link_token?: string | null
+          mime?: string | null
+          nome_arquivo?: string | null
+          tamanho?: number | null
+        }
+        Update: {
+          caminho?: string
+          corretor_id?: string
+          created_at?: string
+          id?: string
+          item?: string
+          lead_id?: string
+          link_token?: string | null
+          mime?: string | null
+          nome_arquivo?: string | null
+          tamanho?: number | null
+        }
+        Relationships: []
+      }
+      links_do_cliente: {
+        Row: {
+          aberto_em: string | null
+          corretor_id: string
+          created_at: string
+          dados: Json
+          expira_em: string
+          lead_id: string
+          tipo: "documentos" | "selecao"
+          token: string
+        }
+        Insert: {
+          aberto_em?: string | null
+          corretor_id: string
+          created_at?: string
+          dados?: Json
+          expira_em?: string
+          lead_id: string
+          tipo: "documentos" | "selecao"
+          token?: string
+        }
+        Update: {
+          aberto_em?: string | null
+          corretor_id?: string
+          created_at?: string
+          dados?: Json
+          expira_em?: string
+          lead_id?: string
+          tipo?: "documentos" | "selecao"
+          token?: string
+        }
+        Relationships: []
+      }
+      unidades: {
+        Row: {
+          andar: number | null
+          area_m2: number | null
+          atualizado_em: string
+          created_at: string
+          dormitorios: number | null
+          empreendimento_id: string
+          id: string
+          identificacao: string
+          status: "disponivel" | "reservada" | "vendida"
+        }
+        Insert: {
+          andar?: number | null
+          area_m2?: number | null
+          atualizado_em?: string
+          created_at?: string
+          dormitorios?: number | null
+          empreendimento_id: string
+          id?: string
+          identificacao: string
+          status?: "disponivel" | "reservada" | "vendida"
+        }
+        Update: {
+          andar?: number | null
+          area_m2?: number | null
+          atualizado_em?: string
+          created_at?: string
+          dormitorios?: number | null
+          empreendimento_id?: string
+          id?: string
+          identificacao?: string
+          status?: "disponivel" | "reservada" | "vendida"
+        }
+        Relationships: []
+      }
       anotacoes: {
         Row: {
           id: string
@@ -542,6 +650,7 @@ export type Database = {
           created_at: string
           creci: string
           deve_trocar_senha: boolean
+          resumo_diario_em: string | null
           em_pausa: boolean
           email: string | null
           foto_url: string | null
@@ -562,6 +671,7 @@ export type Database = {
           created_at?: string
           creci: string
           deve_trocar_senha?: boolean
+          resumo_diario_em?: string | null
           em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
@@ -582,6 +692,7 @@ export type Database = {
           created_at?: string
           creci?: string
           deve_trocar_senha?: boolean
+          resumo_diario_em?: string | null
           em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
@@ -1750,6 +1861,7 @@ export type Database = {
           meta_conjunto_id: string | null
           meta_lead_id: string | null
           nao_contatar_em: string | null
+          primeiro_contato_auto_em: string | null
           nao_contatar_motivo: string | null
           nome: string
           orcamento_max: number | null
@@ -1799,6 +1911,7 @@ export type Database = {
           meta_conjunto_id?: string | null
           meta_lead_id?: string | null
           nao_contatar_em?: string | null
+          primeiro_contato_auto_em?: string | null
           nao_contatar_motivo?: string | null
           nome: string
           orcamento_max?: number | null
@@ -1848,6 +1961,7 @@ export type Database = {
           meta_conjunto_id?: string | null
           meta_lead_id?: string | null
           nao_contatar_em?: string | null
+          primeiro_contato_auto_em?: string | null
           nao_contatar_motivo?: string | null
           nome?: string
           orcamento_max?: number | null
@@ -2306,7 +2420,7 @@ export type Database = {
           motivo: string | null
           status: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa: number
-          tipo: "reengajamento" | "lembrete_visita"
+          tipo: "reengajamento" | "lembrete_visita" | "pos_visita"
         }
         Insert: {
           agendado_para: string
@@ -2318,7 +2432,7 @@ export type Database = {
           motivo?: string | null
           status?: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa?: number
-          tipo?: "reengajamento" | "lembrete_visita"
+          tipo?: "reengajamento" | "lembrete_visita" | "pos_visita"
         }
         Update: {
           agendado_para?: string
@@ -2330,7 +2444,7 @@ export type Database = {
           motivo?: string | null
           status?: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa?: number
-          tipo?: "reengajamento" | "lembrete_visita"
+          tipo?: "reengajamento" | "lembrete_visita" | "pos_visita"
         }
         Relationships: [
           {

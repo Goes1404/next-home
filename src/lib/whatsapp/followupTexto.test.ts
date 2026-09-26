@@ -129,3 +129,24 @@ describe("o lembrete de véspera não inventa onde encontrar", () => {
     expect(texto).toContain("NÃO reofereça outros imóveis");
   });
 });
+
+describe("pós-visita (26/09/2026)", () => {
+  const texto = instrucaoDoFollowup({
+    tipo: "pos_visita",
+    tentativa: 1,
+    nomeDoImovel: "Vitra Alphaville",
+    visitaFormatada: "sábado, 26/09, às 10:00",
+  });
+
+  it("pergunta o que ele achou, citando o imóvel visitado", () => {
+    expect(texto).toMatch(/PÓS-VISITA/);
+    expect(texto).toContain("Vitra Alphaville");
+    expect(texto).toMatch(/o que ele achou/);
+  });
+
+  it("proíbe reoferta, valor e pressão", () => {
+    expect(texto).toMatch(/NÃO ofereça outros imóveis/);
+    expect(texto).toMatch(/NÃO fale de valores/);
+    expect(texto).toMatch(/NÃO pressione/);
+  });
+});

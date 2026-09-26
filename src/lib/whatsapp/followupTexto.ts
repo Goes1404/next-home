@@ -28,7 +28,7 @@ export function ganchosDoDossie(
 }
 
 export function instrucaoDoFollowup(params: {
-  tipo: "reengajamento" | "lembrete_visita";
+  tipo: "reengajamento" | "lembrete_visita" | "pos_visita";
   tentativa: number;
   dossie?: Pick<DossieClienteIA, "regiaoInteresse" | "dormitoriosMin"> | null;
   /** Data/hora da visita, já formatada em São Paulo (só para lembrete). */
@@ -55,6 +55,23 @@ export function instrucaoDoFollowup(params: {
    */
   clienteNuncaFalou?: boolean;
 }): string {
+  if (params.tipo === "pos_visita") {
+    /*
+     * O dia seguinte à visita é quando o cliente decide — e até aqui nada
+     * acontecia sozinho depois dela. A pergunta é UMA e aberta: o que ele
+     * achou. Sem reoferta, sem pressão para fechar e sem valor: a resposta
+     * dele é o que diz ao corretor qual é o próximo passo.
+     */
+    return (
+      `Este é o PÓS-VISITA: o cliente visitou${params.nomeDoImovel ? ` o ${params.nomeDoImovel}` : " o imóvel"} ` +
+      `${params.visitaFormatada ? `(${params.visitaFormatada}) ` : ""}` +
+      "e ainda não comentou nada. Mande UMA mensagem curta agradecendo a visita e perguntando o que ele achou — " +
+      "de forma aberta, sem sugerir a resposta. " +
+      "NÃO ofereça outros imóveis, NÃO fale de valores e NÃO pressione para fechar: " +
+      "o que ele responder é o que decide o próximo passo."
+    );
+  }
+
   if (params.tipo === "lembrete_visita") {
     /*
      * O ENDEREÇO vem daqui, do cadastro — nunca da cabeça do modelo.
