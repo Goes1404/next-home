@@ -11,7 +11,7 @@ import { EditorMidiasExternas } from "./EditorMidiasExternas";
 import { BarraSalvarFlutuante } from "./BarraSalvarFlutuante";
 import { ExcluirImovel } from "./ExcluirImovel";
 import { ChecklistDoImovel, type AbaDoEditor } from "./ChecklistDoImovel";
-import { salvarDadosGerais, salvarLazerEmpreendimento } from "../actions";
+import { salvarDadosGerais, salvarLazerEmpreendimento, salvarTipologias } from "../actions";
 import { Check } from "lucide-react";
 
 interface Props {
@@ -98,6 +98,15 @@ export function EditorImovelClient({ imovel }: Props) {
 
       // 2. Salva características de lazer
       await salvarLazerEmpreendimento(imovelId, imovel.slug, lazer);
+
+      // 3. Salva as plantas — antes deste passo elas nunca eram gravadas,
+      // e a tela dizia "todas as alterações foram salvas" mesmo assim.
+      const resPlantas = await salvarTipologias(imovelId, imovel.slug, tipologias);
+      if (!resPlantas.ok) throw new Error(resPlantas.erro || "Falha ao salvar as plantas");
+      const ids = resPlantas.ids ?? [];
+      setTipologias((prev) =>
+        prev.map((t, i) => (ids[i] ? { ...t, id: ids[i]! } : t)).filter((_, i) => ids[i] !== null),
+      );
 
       setFeedbackTipo("sucesso");
       setFeedback(<><Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> Todas as alterações foram salvas com sucesso no catálogo!</>);

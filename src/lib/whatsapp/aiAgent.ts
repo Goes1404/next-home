@@ -1,4 +1,5 @@
 import type { Empreendimento } from "@/lib/types";
+import { resumoDeDisponibilidade } from "@/lib/imoveis/unidades";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { chamarLlmJson, ORCAMENTO_AGENTE_MS } from "./llm";
 import { formatarReais } from "./dadoPedido";
@@ -56,7 +57,7 @@ import { blocoSemAcabamentoCadastrado } from "./acabamentoInventado";
  * `ia_interacoes`, e sem isso a medição do efeito não existe.
  */
 
-export const PROMPT_VERSAO = "2026.09-v36"; // a conversa ganha MEMORIA: o estado da negociacao entra antes de tudo no prompt e sobrevive a janela de 40 falas (ate 27 delas sao do corretor) + a recusa vira jogada em vez de cair no funil + pergunta nao classificada passa a ser respondida + quem some por 72h volta sendo perguntado se ainda vale // // a oferta solitária da IA passa a definir o FOCO: quem se interessa pelo imóvel oferecido não repete o nome dele, e sem foco o prompt voltava a dez fichas e desfilava por cima do interesse // a marca de "assunto respondido" acumula pela conversa (a v33 esquecia depois de um turno) + a IA não inventa acabamento (flagrada afirmando piso laminado e bancada em granito de um cadastro sem o campo)
+export const PROMPT_VERSAO = "2026.09-v37"; // a ficha do prompt diz quantas unidades restam por dormitórios, quando a lista de unidades existe (nunca inventa número) // a conversa ganha MEMORIA: o estado da negociacao entra antes de tudo no prompt e sobrevive a janela de 40 falas (ate 27 delas sao do corretor) + a recusa vira jogada em vez de cair no funil + pergunta nao classificada passa a ser respondida + quem some por 72h volta sendo perguntado se ainda vale // // a oferta solitária da IA passa a definir o FOCO: quem se interessa pelo imóvel oferecido não repete o nome dele, e sem foco o prompt voltava a dez fichas e desfilava por cima do interesse // a marca de "assunto respondido" acumula pela conversa (a v33 esquecia depois de um turno) + a IA não inventa acabamento (flagrada afirmando piso laminado e bancada em granito de um cadastro sem o campo)
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -364,6 +365,15 @@ export function construirPromptSistema(ctx: ContextoAtendimento): string {
         e.entregaPrevista ? `Entrega ${e.entregaPrevista}` : null,
         e.totalTorres ? `${e.totalTorres} torre(s)` : null,
         e.construtora ? `Construtora ${e.construtora}` : null,
+        /*
+         * Disponibilidade por dormitórios, da lista de unidades (0118). É o
+         * único "restam N" que ela pode dizer — sem o cadastro, ela não sabe
+         * e não diz (urgência inventada é a mentira que o cliente confere).
+         */
+        (() => {
+          const d = resumoDeDisponibilidade(e.tipologias ?? []);
+          return d ? `Unidades disponíveis hoje: ${d} (pode dizer quantas restam; nunca invente número)` : null;
+        })(),
       ]
         .filter(Boolean)
         .join(". ");

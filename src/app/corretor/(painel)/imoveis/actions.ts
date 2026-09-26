@@ -399,6 +399,82 @@ export async function definirTipoDaMidia(
 }
 
 /**
+ * Salva as plantas editadas na tela (26/09/2026).
+ *
+ * Até aqui o botão "Salvar" gravava dados gerais e lazer e dizia "Todas as
+ * alterações foram salvas" — as plantas editadas na tela NUNCA chegavam ao
+ * banco. Só a importação escrevia em `tipologias`.
+ *
+ * Atualiza as que têm id, insere as novas e apaga as que saíram da tela.
+ * `unidades_disponiveis` fica de FORA de propósito: na tela ele já vem
+ * derivado da lista de unidades (mappers.ts), e gravá-lo de volta criaria
+ * um contador manual que envelhece.
+ */
+export async function salvarTipologias(
+  empreendimentoId: string,
+  slug: string,
+  tipologias: Array<{
+    id?: string;
+    nome: string;
+    areaPrivativa: number | null;
+    dormitorios: number;
+    suites: number;
+    banheiros: number;
+    vagas: number;
+    preco: number | null;
+    plantaUrl: string | null;
+  }>,
+): Promise<{ ok: boolean; erro?: string; ids?: Array<string | null> }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+  const supabase = await createClient();
+
+  const validas = tipologias.filter((t) => t.nome.trim() || t.dormitorios > 0 || t.areaPrivativa);
+  const { data: atuais, error: erroLeitura } = await supabase
+    .from("tipologias")
+    .select("id")
+    .eq("empreendimento_id", empreendimentoId);
+  if (erroLeitura) return { ok: false, erro: "Não foi possível ler as plantas agora." };
+
+  const mantidas = new Set(validas.map((t) => t.id).filter(Boolean));
+  const remover = (atuais ?? []).map((t) => t.id).filter((id) => !mantidas.has(id));
+  if (remover.length > 0) {
+    const { error } = await supabase.from("tipologias").delete().in("id", remover);
+    if (error) return { ok: false, erro: "Não foi possível remover uma planta." };
+  }
+
+  // O id de cada planta na ordem da TELA (null para a descartada por vazia):
+  // sem devolver o id da planta recém-inserida, um segundo "Salvar" a
+  // inseriria de novo.
+  const idPorPlanta = new Map<(typeof tipologias)[number], string>();
+  for (const [ordem, t] of validas.entries()) {
+    const linha = {
+      empreendimento_id: empreendimentoId,
+      nome: t.nome.trim() || `${t.dormitorios} dormitórios`,
+      area_privativa: t.areaPrivativa,
+      dormitorios: Math.max(0, Math.round(t.dormitorios || 0)),
+      suites: Math.max(0, Math.round(t.suites || 0)),
+      banheiros: Math.max(0, Math.round(t.banheiros || 0)),
+      vagas: Math.max(0, Math.round(t.vagas || 0)),
+      preco: t.preco,
+      planta_url: t.plantaUrl?.trim() || null,
+      ordem,
+    };
+    const { data: gravada, error } =
+      t.id && (atuais ?? []).some((a) => a.id === t.id)
+        ? await supabase.from("tipologias").update(linha).eq("id", t.id).select("id").single()
+        : await supabase.from("tipologias").insert(linha).select("id").single();
+    if (error || !gravada) return { ok: false, erro: `Não foi possível salvar a planta "${linha.nome}".` };
+    idPorPlanta.set(t, gravada.id);
+  }
+
+  revalidatePath(`/corretor/imoveis/${slug}`);
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
+  return { ok: true, ids: tipologias.map((t) => idPorPlanta.get(t) ?? null) };
+}
+
+/**
  * Salva as características de lazer e conveniências do empreendimento.
  */
 export async function salvarLazerEmpreendimento(

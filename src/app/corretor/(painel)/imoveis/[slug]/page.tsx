@@ -3,6 +3,8 @@ import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { EditorImovelClient } from "../_componentes/EditorImovelClient";
 import { ArtesDeIA } from "../_componentes/ArtesDeIA";
 import { LeadsQueCombinam } from "../_componentes/LeadsQueCombinam";
+import { EditorUnidades, type UnidadeNaTela } from "../_componentes/EditorUnidades";
+import { createClient } from "@/lib/supabase/server";
 import { Suspense } from "react";
 import Link from "next/link";
 
@@ -41,6 +43,21 @@ export default async function EditarImovelPage({ params }: Props) {
   if (!imovel) {
     notFound();
   }
+
+  // A lista inteira (inclusive vendidas): o painel lê como corretor logado.
+  const supabase = await createClient();
+  const { data: unidades } = imovel.id
+    ? await supabase
+        .from("unidades")
+        .select("id, identificacao, tipologia_id, status")
+        .eq("empreendimento_id", imovel.id)
+    : { data: [] };
+  const unidadesNaTela: UnidadeNaTela[] = (unidades ?? []).map((u) => ({
+    id: u.id,
+    identificacao: u.identificacao,
+    tipologiaId: u.tipologia_id,
+    status: u.status,
+  }));
 
   return (
     <div className="space-y-6">
@@ -114,6 +131,17 @@ export default async function EditarImovelPage({ params }: Props) {
       )}
 
       <EditorImovelClient imovel={imovel} />
+
+      {imovel.id && (
+        <EditorUnidades
+          empreendimentoId={imovel.id}
+          slug={imovel.slug}
+          plantas={imovel.tipologias
+            .filter((t): t is typeof t & { id: string } => Boolean(t.id))
+            .map((t) => ({ id: t.id, nome: t.nome, dormitorios: t.dormitorios }))}
+          iniciais={unidadesNaTela}
+        />
+      )}
     </div>
   );
 }
