@@ -145,7 +145,7 @@ export type Database = {
           detalhe: string | null
           id: string
           lead_id: string
-          tipo: "abriu" | "clicou" | "documento" | "documentos_completos"
+          tipo: "abriu" | "clicou" | "documento" | "documentos_completos" | "aceitou" | "quer_conversar"
           token: string
         }
         Insert: {
@@ -154,7 +154,7 @@ export type Database = {
           detalhe?: string | null
           id?: string
           lead_id: string
-          tipo: "abriu" | "clicou" | "documento" | "documentos_completos"
+          tipo: "abriu" | "clicou" | "documento" | "documentos_completos" | "aceitou" | "quer_conversar"
           token: string
         }
         Update: {
@@ -163,7 +163,7 @@ export type Database = {
           detalhe?: string | null
           id?: string
           lead_id?: string
-          tipo?: "abriu" | "clicou" | "documento" | "documentos_completos"
+          tipo?: "abriu" | "clicou" | "documento" | "documentos_completos" | "aceitou" | "quer_conversar"
           token?: string
         }
         Relationships: []
@@ -176,7 +176,7 @@ export type Database = {
           dados: Json
           expira_em: string
           lead_id: string
-          tipo: "documentos" | "selecao"
+          tipo: "documentos" | "selecao" | "proposta"
           token: string
         }
         Insert: {
@@ -186,7 +186,7 @@ export type Database = {
           dados?: Json
           expira_em?: string
           lead_id: string
-          tipo: "documentos" | "selecao"
+          tipo: "documentos" | "selecao" | "proposta"
           token?: string
         }
         Update: {
@@ -196,7 +196,7 @@ export type Database = {
           dados?: Json
           expira_em?: string
           lead_id?: string
-          tipo?: "documentos" | "selecao"
+          tipo?: "documentos" | "selecao" | "proposta"
           token?: string
         }
         Relationships: []
@@ -1909,6 +1909,8 @@ export type Database = {
           primeiro_contato_auto_em: string | null
           alerta_sem_contato_em: string | null
           visita_marcada_em: string | null
+          indicado_por: string | null
+          visita_confirmada_em: string | null
           nao_contatar_motivo: string | null
           nome: string
           orcamento_max: number | null
@@ -1961,6 +1963,8 @@ export type Database = {
           primeiro_contato_auto_em?: string | null
           alerta_sem_contato_em?: string | null
           visita_marcada_em?: string | null
+          indicado_por?: string | null
+          visita_confirmada_em?: string | null
           nao_contatar_motivo?: string | null
           nome: string
           orcamento_max?: number | null
@@ -2013,6 +2017,8 @@ export type Database = {
           primeiro_contato_auto_em?: string | null
           alerta_sem_contato_em?: string | null
           visita_marcada_em?: string | null
+          indicado_por?: string | null
+          visita_confirmada_em?: string | null
           nao_contatar_motivo?: string | null
           nome?: string
           orcamento_max?: number | null
@@ -2474,7 +2480,7 @@ export type Database = {
           motivo: string | null
           status: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa: number
-          tipo: "reengajamento" | "lembrete_visita" | "pos_visita"
+          tipo: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao"
         }
         Insert: {
           agendado_para: string
@@ -2486,7 +2492,7 @@ export type Database = {
           motivo?: string | null
           status?: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa?: number
-          tipo?: "reengajamento" | "lembrete_visita" | "pos_visita"
+          tipo?: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao"
         }
         Update: {
           agendado_para?: string
@@ -2498,7 +2504,7 @@ export type Database = {
           motivo?: string | null
           status?: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa?: number
-          tipo?: "reengajamento" | "lembrete_visita" | "pos_visita"
+          tipo?: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao"
         }
         Relationships: [
           {

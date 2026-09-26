@@ -4,8 +4,10 @@ import { useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { PERFIL_DE_DOCUMENTO_LABEL, PERFIS_DE_DOCUMENTO, IMOVEIS_NA_SELECAO, type PerfilDeDocumento } from "@/lib/crm/linksDoCliente";
+import { VALIDADES_DA_PROPOSTA } from "@/lib/crm/proposta";
 import {
   criarLinkDeDocumentos,
+  criarProposta,
   criarSelecao,
   sugerirSelecao,
   type CandidatoDaSelecao,
@@ -21,10 +23,26 @@ import {
  * o corretor troca o que quiser. Os documentos pedem o perfil (CLT,
  * autônomo, casal), porque a lista muda com ele.
  */
-export function BotoesDeLink({ leadId, telefone }: { leadId: string; telefone: string | null }) {
+export function BotoesDeLink({
+  leadId,
+  telefone,
+  imovelDoLead = null,
+}: {
+  leadId: string;
+  telefone: string | null;
+  /** O imóvel de interesse do lead, para a proposta nascer preenchida. */
+  imovelDoLead?: { id: string; nome: string } | null;
+}) {
   const [criado, setCriado] = useState<{ url: string; mensagem: string } | null>(null);
   const [escolha, setEscolha] = useState<{ candidatos: CandidatoDaSelecao[]; marcados: string[] } | null>(null);
   const [perfil, setPerfil] = useState<PerfilDeDocumento>("clt");
+  const [proposta, setProposta] = useState<{
+    imovel: string;
+    unidade: string;
+    valor: string;
+    condicao: string;
+    validadeDias: number;
+  } | null>(null);
   const [ocupado, iniciar] = useTransition();
   const { avisar, falhar } = useAvisos();
 
@@ -109,7 +127,98 @@ export function BotoesDeLink({ leadId, telefone }: { leadId: string; telefone: s
             Pedir documentos
           </button>
         </div>
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() => {
+            setCriado(null);
+            setEscolha(null);
+            setProposta({ imovel: imovelDoLead?.nome ?? "", unidade: "", valor: "", condicao: "", validadeDias: 7 });
+          }}
+          className="min-h-11 rounded-xl border border-linha-forte px-4 text-fluid-xs font-semibold text-corpo hover:border-acento-linha disabled:opacity-60"
+        >
+          Fazer proposta
+        </button>
       </div>
+
+      {proposta && (
+        <fieldset className="rounded-xl border border-linha p-3 space-y-2">
+          <legend className="px-1 text-fluid-xs font-semibold text-corpo">Proposta para o cliente</legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className="text-fluid-xs text-apoio">
+              Imóvel
+              <input
+                value={proposta.imovel}
+                onChange={(e) => setProposta({ ...proposta, imovel: e.target.value })}
+                className="mt-1 text-fluid-sm border-linha-forte bg-campo text-titulo min-h-11 w-full rounded-xl border px-3"
+              />
+            </label>
+            <label className="text-fluid-xs text-apoio">
+              Unidade
+              <input
+                value={proposta.unidade}
+                onChange={(e) => setProposta({ ...proposta, unidade: e.target.value })}
+                className="mt-1 text-fluid-sm border-linha-forte bg-campo text-titulo min-h-11 w-full rounded-xl border px-3"
+              />
+            </label>
+            <label className="text-fluid-xs text-apoio">
+              Valor total (R$)
+              <input
+                inputMode="numeric"
+                value={proposta.valor.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+                onChange={(e) => setProposta({ ...proposta, valor: e.target.value.replace(/\D/g, "") })}
+                className="mt-1 text-fluid-sm border-linha-forte bg-campo text-titulo min-h-11 w-full rounded-xl border px-3"
+              />
+            </label>
+            <label className="text-fluid-xs text-apoio">
+              Válida por
+              <select
+                value={proposta.validadeDias}
+                onChange={(e) => setProposta({ ...proposta, validadeDias: Number(e.target.value) })}
+                className="mt-1 select-seta text-fluid-sm border-linha-forte bg-campo text-titulo min-h-11 w-full rounded-xl border px-3"
+              >
+                {VALIDADES_DA_PROPOSTA.map((d) => (
+                  <option key={d} value={d}>
+                    {d} dias
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className="block text-fluid-xs text-apoio">
+            Condição
+            <textarea
+              rows={3}
+              value={proposta.condicao}
+              onChange={(e) => setProposta({ ...proposta, condicao: e.target.value })}
+              className="mt-1 text-fluid-sm border-linha-forte bg-campo text-titulo w-full rounded-xl border p-3"
+            />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={ocupado}
+              onClick={() =>
+                criar(async () => {
+                  const r = await criarProposta(leadId, {
+                    ...proposta,
+                    empreendimentoId: imovelDoLead && proposta.imovel === imovelDoLead.nome ? imovelDoLead.id : null,
+                    valor: Number(proposta.valor),
+                  });
+                  if (!("erro" in r)) setProposta(null);
+                  return r;
+                })
+              }
+              className="min-h-11 rounded-xl bg-acento hover:bg-acento-hover px-4 text-fluid-xs font-bold text-sobre-cor disabled:opacity-60"
+            >
+              Gerar link da proposta
+            </button>
+            <button type="button" onClick={() => setProposta(null)} className="min-h-11 rounded-xl px-3 text-fluid-xs text-apoio">
+              Cancelar
+            </button>
+          </div>
+        </fieldset>
+      )}
 
       {escolha && (
         <fieldset className="rounded-xl border border-linha p-3 space-y-2">

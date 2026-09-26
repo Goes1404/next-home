@@ -15,7 +15,7 @@ const VALIDADE_DO_LINK_S = 60 * 30;
  */
 export async function LinksDoCliente({ leadId, telefone }: { leadId: string; telefone: string | null }) {
   const supabase = await createClient();
-  const [{ data: links }, { data: documentos }, { data: cliques }] = await Promise.all([
+  const [{ data: links }, { data: documentos }, { data: cliques }, { data: lead }] = await Promise.all([
     supabase
       .from("links_do_cliente")
       .select("token, tipo, aberto_em, created_at, dados")
@@ -29,14 +29,31 @@ export async function LinksDoCliente({ leadId, telefone }: { leadId: string; tel
       .order("created_at", { ascending: false }),
     supabase
       .from("links_do_cliente_eventos")
-      .select("detalhe, created_at")
+      .select("tipo, token, detalhe, created_at")
       .eq("lead_id", leadId)
-      .eq("tipo", "clicou")
+      .in("tipo", ["clicou", "aceitou", "quer_conversar"])
       .order("created_at", { ascending: false })
       .limit(50),
+    supabase
+      .from("leads")
+      .select("empreendimento:empreendimentos!leads_empreendimento_id_fkey(id, nome)")
+      .eq("id", leadId)
+      .maybeSingle(),
   ]);
+  const imovelDoLead = Array.isArray(lead?.empreendimento) ? lead?.empreendimento[0] : lead?.empreendimento;
   // O que ele abriu, do mais recente, sem repetir: é por onde começar a conversa.
-  const abertos = [...new Set((cliques ?? []).map((c) => c.detalhe).filter((d): d is string => Boolean(d)))];
+  const abertos = [
+    ...new Set(
+      (cliques ?? [])
+        .filter((c) => c.tipo === "clicou")
+        .map((c) => c.detalhe)
+        .filter((d): d is string => Boolean(d)),
+    ),
+  ];
+  const propostaEnviada = links?.find((l) => l.tipo === "proposta");
+  const respostaDaProposta = (cliques ?? []).find(
+    (c) => (c.tipo === "aceitou" || c.tipo === "quer_conversar") && c.token === propostaEnviada?.token,
+  );
 
   const selecao = links?.find((l) => l.tipo === "selecao");
   const pedido = links?.find((l) => l.tipo === "documentos");
@@ -63,7 +80,26 @@ export async function LinksDoCliente({ leadId, telefone }: { leadId: string; tel
   return (
     <section className="cartao space-y-3 p-4">
       <h2 className="text-fluid-sm text-titulo font-medium">Links para o cliente</h2>
-      <BotoesDeLink leadId={leadId} telefone={telefone} />
+      <BotoesDeLink
+        leadId={leadId}
+        telefone={telefone}
+        imovelDoLead={imovelDoLead ? { id: imovelDoLead.id, nome: imovelDoLead.nome } : null}
+      />
+
+      {propostaEnviada && (
+        <p className="text-fluid-xs text-apoio">
+          Proposta enviada em {dataHora.format(new Date(propostaEnviada.created_at))} ·{" "}
+          {respostaDaProposta?.tipo === "aceitou" ? (
+            <strong className="text-ok">aceita pelo cliente</strong>
+          ) : respostaDaProposta?.tipo === "quer_conversar" ? (
+            <strong className="text-corpo">o cliente quer conversar</strong>
+          ) : propostaEnviada.aberto_em ? (
+            "aberta, sem resposta"
+          ) : (
+            "ainda não aberta"
+          )}
+        </p>
+      )}
 
       {selecao && (
         <p className="text-fluid-xs text-apoio">

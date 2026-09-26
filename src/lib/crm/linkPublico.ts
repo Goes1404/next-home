@@ -59,8 +59,9 @@ export async function lerLinkPublico(
       const evento = { token, leadId: link.lead_id, corretorId: link.corretor_id, tipo: "abriu" as const };
       after(async () => {
         await registrarEventoDoLink(supabase, evento);
-        if (tipo === "selecao") {
-          await avisarCorretorDoLink(supabase, { ...evento, nomeLead: lead.nome });
+        if (tipo === "selecao" || tipo === "proposta") {
+          const detalhe = tipo === "proposta" ? "a proposta que você mandou" : null;
+          await avisarCorretorDoLink(supabase, { ...evento, nomeLead: lead.nome, detalhe });
         }
       });
     }

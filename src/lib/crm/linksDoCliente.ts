@@ -7,7 +7,7 @@
  * nada do CRM aparece nela além do primeiro nome do cliente.
  */
 
-export type TipoDeLink = "documentos" | "selecao";
+export type TipoDeLink = "documentos" | "selecao" | "proposta";
 
 /** A lista padrão do financiamento — o que o banco pede em quase todo caso. */
 export const DOCUMENTOS_PADRAO = [
@@ -90,7 +90,7 @@ export const MIMES_ACEITOS = [
 export const IMOVEIS_NA_SELECAO = 3;
 
 export function caminhoDoLink(tipo: TipoDeLink, token: string): string {
-  return `/${tipo === "selecao" ? "selecao" : "documentos"}/${token}`;
+  return `/${tipo}/${token}`;
 }
 
 export function mensagemParaCliente(p: {
@@ -99,9 +99,13 @@ export function mensagemParaCliente(p: {
   url: string;
 }): string {
   const oi = p.primeiroNome ? `Oi, ${p.primeiroNome}!` : "Oi!";
-  return p.tipo === "selecao"
-    ? `${oi} Separei os imóveis que mais combinam com o que você me contou, com a simulação do financiamento: ${p.url}`
-    : `${oi} Para darmos entrada no financiamento, envie os documentos por este link, direto do celular: ${p.url}`;
+  if (p.tipo === "selecao") {
+    return `${oi} Separei os imóveis que mais combinam com o que você me contou, com a simulação do financiamento: ${p.url}`;
+  }
+  if (p.tipo === "proposta") {
+    return `${oi} Preparei a proposta que conversamos. Dá uma olhada com calma e me diz por ali mesmo: ${p.url}`;
+  }
+  return `${oi} Para darmos entrada no financiamento, envie os documentos por este link, direto do celular: ${p.url}`;
 }
 
 /** Nome de arquivo seguro para o Storage: sem acento, sem barra, curto. */
@@ -129,7 +133,13 @@ export function linkValido(link: { expira_em: string } | null, agora = new Date(
   return Boolean(link) && new Date(link!.expira_em).getTime() > agora.getTime();
 }
 
-export type TipoDeEventoDoLink = "abriu" | "clicou" | "documento" | "documentos_completos";
+export type TipoDeEventoDoLink =
+  | "abriu"
+  | "clicou"
+  | "documento"
+  | "documentos_completos"
+  | "aceitou"
+  | "quer_conversar";
 
 /**
  * O aviso que chega no WhatsApp do corretor quando o cliente age no link.
@@ -145,10 +155,16 @@ export function textoDoAvisoDoLink(p: {
 }): string | null {
   const quem = p.nome?.trim() || "Seu cliente";
   if (p.tipo === "abriu") {
-    return `👀 ${quem} abriu agora a seleção de imóveis que você mandou. É um bom momento para puxar conversa.\n${p.fichaUrl}`;
+    return `👀 ${quem} abriu agora ${p.detalhe ?? "a seleção de imóveis que você mandou"}. É um bom momento para puxar conversa.\n${p.fichaUrl}`;
   }
   if (p.tipo === "documento") {
     return `📄 ${quem} começou a mandar os documentos${p.detalhe ? ` (${p.detalhe})` : ""}.\n${p.fichaUrl}`;
+  }
+  if (p.tipo === "aceitou") {
+    return `🎉 ${quem} ACEITOU a proposta${p.detalhe ? ` (${p.detalhe})` : ""}. Hora de preparar a documentação.\n${p.fichaUrl}`;
+  }
+  if (p.tipo === "quer_conversar") {
+    return `💬 ${quem} viu a proposta e quer conversar antes de decidir. Ligue enquanto ela está fresca.\n${p.fichaUrl}`;
   }
   if (p.tipo === "documentos_completos") {
     return `✅ ${quem} mandou todos os documentos pedidos. Confira na ficha antes de levar ao banco.\n${p.fichaUrl}`;

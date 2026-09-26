@@ -7,6 +7,7 @@ import { getEmpreendimentos } from "@/lib/queries";
 import { site } from "@/lib/site";
 import { compatibilidade, perfilDoLead } from "@/lib/crm/compatibilidade";
 import { getParametrosCredito } from "@/lib/credito/parametros";
+import { validarProposta, type EntradaDaProposta } from "@/lib/crm/proposta";
 import {
   caminhoDoLink,
   documentosDoPerfil,
@@ -164,5 +165,23 @@ export async function criarLinkDeDocumentos(leadId: string, perfil: string = "cl
     corretorId: r.corretor.id,
     nome: r.lead.nome,
     dados: { itens: documentosDoPerfil(perfil as PerfilDeDocumento), perfil },
+  });
+}
+
+/**
+ * Proposta por link (0123). O corretor escreve os números; a validação é a
+ * de `proposta.ts`, porque a entrada vem pela rede.
+ */
+export async function criarProposta(leadId: string, entrada: EntradaDaProposta): Promise<LinkCriado> {
+  const r = await leadDaCarteira(leadId);
+  if ("erro" in r) return { erro: r.erro! };
+  const v = validarProposta(entrada ?? ({} as EntradaDaProposta));
+  if ("erro" in v) return { erro: v.erro };
+  return gravar(r.supabase, {
+    tipo: "proposta",
+    leadId,
+    corretorId: r.corretor.id,
+    nome: r.lead.nome,
+    dados: v.dados,
   });
 }
