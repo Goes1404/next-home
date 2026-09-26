@@ -98,6 +98,7 @@ export type Database = {
       }
       lead_documentos: {
         Row: {
+          alerta: string | null
           caminho: string
           corretor_id: string
           created_at: string
@@ -122,6 +123,7 @@ export type Database = {
           tamanho?: number | null
         }
         Update: {
+          alerta?: string | null
           caminho?: string
           corretor_id?: string
           created_at?: string
@@ -132,6 +134,36 @@ export type Database = {
           mime?: string | null
           nome_arquivo?: string | null
           tamanho?: number | null
+        }
+        Relationships: []
+      }
+      links_do_cliente_eventos: {
+        Row: {
+          corretor_id: string
+          created_at: string
+          detalhe: string | null
+          id: string
+          lead_id: string
+          tipo: "abriu" | "clicou" | "documento" | "documentos_completos"
+          token: string
+        }
+        Insert: {
+          corretor_id: string
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          lead_id: string
+          tipo: "abriu" | "clicou" | "documento" | "documentos_completos"
+          token: string
+        }
+        Update: {
+          corretor_id?: string
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          lead_id?: string
+          tipo?: "abriu" | "clicou" | "documento" | "documentos_completos"
+          token?: string
         }
         Relationships: []
       }
@@ -180,6 +212,7 @@ export type Database = {
           identificacao: string
           status: "disponivel" | "reservada" | "vendida"
           tipologia_id: string | null
+          reservada_ate: string | null
         }
         Insert: {
           andar?: number | null
@@ -192,6 +225,7 @@ export type Database = {
           identificacao: string
           status?: "disponivel" | "reservada" | "vendida"
           tipologia_id?: string | null
+          reservada_ate?: string | null
         }
         Update: {
           andar?: number | null
@@ -204,6 +238,7 @@ export type Database = {
           identificacao?: string
           status?: "disponivel" | "reservada" | "vendida"
           tipologia_id?: string | null
+          reservada_ate?: string | null
         }
         Relationships: []
       }
@@ -654,6 +689,8 @@ export type Database = {
           creci: string
           deve_trocar_senha: boolean
           resumo_diario_em: string | null
+          resumo_fim_de_semana: boolean
+          resumo_hora: number
           em_pausa: boolean
           email: string | null
           foto_url: string | null
@@ -675,6 +712,8 @@ export type Database = {
           creci: string
           deve_trocar_senha?: boolean
           resumo_diario_em?: string | null
+          resumo_fim_de_semana?: boolean
+          resumo_hora?: number
           em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
@@ -696,6 +735,8 @@ export type Database = {
           creci?: string
           deve_trocar_senha?: boolean
           resumo_diario_em?: string | null
+          resumo_fim_de_semana?: boolean
+          resumo_hora?: number
           em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
@@ -1865,6 +1906,7 @@ export type Database = {
           meta_lead_id: string | null
           nao_contatar_em: string | null
           primeiro_contato_auto_em: string | null
+          alerta_sem_contato_em: string | null
           nao_contatar_motivo: string | null
           nome: string
           orcamento_max: number | null
@@ -1915,6 +1957,7 @@ export type Database = {
           meta_lead_id?: string | null
           nao_contatar_em?: string | null
           primeiro_contato_auto_em?: string | null
+          alerta_sem_contato_em?: string | null
           nao_contatar_motivo?: string | null
           nome: string
           orcamento_max?: number | null
@@ -1965,6 +2008,7 @@ export type Database = {
           meta_lead_id?: string | null
           nao_contatar_em?: string | null
           primeiro_contato_auto_em?: string | null
+          alerta_sem_contato_em?: string | null
           nao_contatar_motivo?: string | null
           nome?: string
           orcamento_max?: number | null
@@ -2182,6 +2226,7 @@ export type Database = {
           empreendimento_id: string | null
           id: string
           mensagem_base_b: string | null
+          variante_vencedora: "A" | "B" | null
           ignorar_janela: boolean
           mensagem_base: string
           status: "rascunho" | "em_andamento" | "pausada" | "concluida"
@@ -2196,6 +2241,7 @@ export type Database = {
           empreendimento_id?: string | null
           id?: string
           mensagem_base_b?: string | null
+          variante_vencedora?: "A" | "B" | null
           ignorar_janela?: boolean
           mensagem_base: string
           status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
@@ -2210,6 +2256,7 @@ export type Database = {
           empreendimento_id?: string | null
           id?: string
           mensagem_base_b?: string | null
+          variante_vencedora?: "A" | "B" | null
           ignorar_janela?: boolean
           mensagem_base?: string
           status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
