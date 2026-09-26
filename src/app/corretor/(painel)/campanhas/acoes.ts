@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import { aberturasDoJson, promptDeAberturas } from "@/lib/marketing/aberturaSugerida";
 import { getCorretorLogado, getMeusLeads } from "@/lib/corretorSessao";
 import { elegivel, type FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
 import { resultadoAB, type ResultadoAB } from "@/lib/whatsapp/testeAB";
@@ -159,6 +161,31 @@ export async function gerarPreviewCampanha(params: {
   });
 
   return { mensagens: fila.map((item) => item.mensagemPersonalizada) };
+}
+
+/**
+ * Duas aberturas para o teste A/B, escritas pela IA na régua medida da
+ * casa (`aberturaSugerida.ts`). Reprovada na validação, devolve erro — a
+ * tela mantém o que o corretor já escreveu. Não consome cota nem dispara.
+ */
+export async function sugerirAberturas(params: {
+  imovel: string;
+  bairro?: string | null;
+  cidade?: string | null;
+  estagio?: string | null;
+  publico: string;
+}): Promise<{ a: string; b: string } | { erro: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  const prompt = promptDeAberturas(params);
+  for (let tentativa = 0; tentativa < 2; tentativa++) {
+    const r = await chamarLlmJson(prompt, { temperature: 0.9, orcamentoMs: 15_000 });
+    if (!r.ok) return { erro: "A IA não respondeu agora. Tente de novo em instantes." };
+    const par = aberturasDoJson(r.json);
+    if (par) return par;
+  }
+  return { erro: "A IA sugeriu algo fora da régua (longo, sem pergunta ou com valor). Tente de novo." };
 }
 
 export type ResultadoCriarCampanha =

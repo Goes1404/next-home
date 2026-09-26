@@ -1,5 +1,7 @@
 "use client";
 
+import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
+
 import type { FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
@@ -18,12 +20,14 @@ import {
 import {
   ETAPAS_FUNIL,
   ETAPA_LABEL,
+  STATUS_LABEL,
   type Empreendimento,
   type EtapaFunil,
 } from "@/lib/types";
 import {
   criarCampanha,
   gerarPreviewCampanha,
+  sugerirAberturas,
   listarLeadsElegiveis,
   preverPublicoCampanha,
   type CampanhaListada,
@@ -130,6 +134,7 @@ export function NovaCampanha({
   const [agendarPara, setAgendarPara] = useState("");
   const [exemplos, setExemplos] = useState<string[]>([]);
   const [gerando, setGerando] = useState(false);
+  const [sugerindo, setSugerindo] = useState(false);
   const [criando, iniciarCriacao] = useTransition();
   const { falhar } = useAvisos();
 
@@ -246,6 +251,31 @@ export function NovaCampanha({
       }
       setExemplos(resultado.mensagens);
     });
+  }
+
+  async function sugerirComIA() {
+    setSugerindo(true);
+    try {
+      const r = await sugerirAberturas({
+        imovel: nomeImovel,
+        bairro: imovel?.bairro ?? null,
+        cidade: imovel?.cidade ?? null,
+        estagio: imovel ? STATUS_LABEL[imovel.status] : null,
+        publico: selecaoManual ? "leads escolhidos pelo corretor" : publicoEscolhido.titulo,
+      });
+      if ("erro" in r) {
+        falhar(r.erro);
+        return;
+      }
+      setMensagemBase(r.a);
+      setMensagemB(r.b);
+      setTestandoDuas(true);
+      setExemplos([]);
+    } catch (err) {
+      falhar(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
+    } finally {
+      setSugerindo(false);
+    }
   }
 
   function disparar() {
@@ -551,6 +581,20 @@ export function NovaCampanha({
             aria-label="Mensagem da lista de transmissão"
             className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento w-full rounded-xl border p-3.5 focus:outline-none"
           />
+          {/*
+            As duas versões já entram no teste A/B: comparar duas aberturas é
+            o que diz qual responde mais (88 entregues, 1 resposta em 31/08).
+          */}
+          <button
+            type="button"
+            onClick={sugerirComIA}
+            disabled={sugerindo}
+            className="text-fluid-sm border-acento-linha bg-acento-lavado text-titulo hover:border-acento flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors disabled:opacity-60"
+          >
+            <Sparkles className="h-4 w-4" />
+            {sugerindo ? "Escrevendo duas versões…" : "Sugerir duas aberturas com IA"}
+          </button>
+
           <p className="text-fluid-xs text-tenue">
             <code className="bg-vidro-forte rounded px-1">{"{nome}"}</code> vira o nome
             da pessoa e{" "}
