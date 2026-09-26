@@ -733,3 +733,67 @@ export async function salvarMemoriaDaConversaNoPainel(
   revalidatePath("/corretor/pessoas");
   return { ok: "Memória atualizada. A IA passa a usar o seu texto." };
 }
+
+/**
+ * "Como você responderia?" (0125): a resposta que o corretor daria no lugar
+ * da IA vira exemplo nas conversas seguintes DELE. Grava também o 👎 —
+ * ensinar é, por definição, dizer que aquela resposta não serviu.
+ *
+ * O contexto (a fala do cliente) é lido do banco, nunca do navegador: é ele
+ * que decide em que situação a correção volta ao prompt.
+ */
+export async function ensinarIA(
+  interacaoId: string,
+  respostaCerta: string,
+): Promise<{ ok?: string; erro?: string }> {
+  const supabase = await exigirSessao();
+  const texto = respostaCerta.trim();
+  if (texto.length < 2) return { erro: "Escreva como você responderia." };
+  if (texto.length > 1500) return { erro: "Resposta longa demais — o cliente leria no celular." };
+
+  const { data: interacao } = await supabase
+    .from("ia_interacoes")
+    .select("id, conversa_id, corretor_id")
+    .eq("id", interacaoId)
+    .maybeSingle();
+  if (!interacao?.conversa_id || !interacao.corretor_id) return { erro: "Resposta não encontrada na sua carteira." };
+
+  const { data: balao } = await supabase
+    .from("whatsapp_mensagens")
+    .select("conteudo, created_at")
+    .eq("interacao_id", interacaoId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const { data: falas } = await supabase
+    .from("whatsapp_mensagens")
+    .select("conteudo")
+    .eq("conversa_id", interacao.conversa_id)
+    .eq("remetente", "cliente")
+    .lt("created_at", balao?.created_at ?? new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(3);
+  const falaCliente = (falas ?? [])
+    .map((f) => f.conteudo)
+    .filter((c) => c && !c.startsWith("[mensagem não gravada"))
+    .reverse()
+    .join(" | ")
+    .slice(0, 2000);
+  if (!falaCliente) return { erro: "Não achei a fala do cliente que esta resposta respondia." };
+
+  // Uma correção por resposta: ensinar de novo substitui a anterior.
+  await supabase.from("ia_correcoes").delete().eq("interacao_id", interacaoId);
+  const { error } = await supabase.from("ia_correcoes").insert({
+    corretor_id: interacao.corretor_id,
+    interacao_id: interacaoId,
+    conversa_id: interacao.conversa_id,
+    fala_cliente: falaCliente,
+    resposta_ia: balao?.conteudo?.slice(0, 4000) ?? null,
+    resposta_certa: texto,
+  });
+  if (error) return { erro: "Não consegui guardar a correção. Tente de novo." };
+  await supabase.from("ia_interacoes").update({ avaliacao: "ruim" }).eq("id", interacaoId);
+
+  revalidatePath("/corretor/conversas");
+  return { ok: "Anotado. Em conversas parecidas, a IA vai seguir o seu jeito." };
+}

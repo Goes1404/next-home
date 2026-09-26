@@ -7,6 +7,7 @@ import {
   termosDoAssunto,
   type ConversaCandidata,
 } from "./recuperacao";
+import { escolherCorrecoes, formatarCorrecoes, type Correcao } from "./correcoesDoCorretor";
 
 /**
  * Aprendizado contínuo do agente.
@@ -164,11 +165,37 @@ export async function buscarExemplosFewShot(params: {
   catalogo: Empreendimento[];
   conversaAtualId?: string;
 }): Promise<string> {
-  try {
-    const conversas = await buscarConversasRelevantes(params);
-    return formatarExemplosFewShot(conversas);
-  } catch (err) {
-    console.warn("Aviso: falha ao recuperar conversas para o few-shot:", err);
-    return "";
-  }
+  const [exemplos, correcoes] = await Promise.all([
+    buscarConversasRelevantes(params)
+      .then(formatarExemplosFewShot)
+      .catch((err) => {
+        console.warn("Aviso: falha ao recuperar conversas para o few-shot:", err);
+        return "";
+      }),
+    buscarCorrecoes(params.corretorId, params.mensagemAtual).catch((err) => {
+      console.warn("Aviso: falha ao ler as correções do corretor:", err);
+      return "";
+    }),
+  ]);
+  return [exemplos, correcoes].filter(Boolean).join("\n\n");
+}
+
+/**
+ * As correções que o corretor escreveu no Live Chat (0125). Só as DELE: o
+ * jeito de um corretor não é regra para a carteira de outro.
+ */
+async function buscarCorrecoes(corretorId: string, mensagemAtual: string): Promise<string> {
+  const { data } = await createServiceClient()
+    .from("ia_correcoes")
+    .select("fala_cliente, resposta_ia, resposta_certa")
+    .eq("corretor_id", corretorId)
+    .eq("ativa", true)
+    .order("created_at", { ascending: false })
+    .limit(40);
+  const lista: Correcao[] = (data ?? []).map((c) => ({
+    falaCliente: c.fala_cliente,
+    respostaIa: c.resposta_ia,
+    respostaCerta: c.resposta_certa,
+  }));
+  return formatarCorrecoes(escolherCorrecoes(lista, mensagemAtual));
 }

@@ -8,6 +8,7 @@ import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOu
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import {
   avaliarInteracao,
+  ensinarIA,
   enviarMensagemDoPainel,
   enviarMidiaDoPainel,
   lerFichaDoLead,
@@ -1441,6 +1442,61 @@ function Balao({
           </div>
         </details>
       )}
+      {avaliavel && nota === "ruim" && mensagem.interacaoId && (
+        <EnsinarIA interacaoId={mensagem.interacaoId} onErro={onErro} />
+      )}
     </div>
+  );
+}
+
+/**
+ * "Como você responderia?" (0125). Aparece depois do 👎: a resposta escrita
+ * aqui volta ao prompt das próximas conversas parecidas deste corretor.
+ */
+function EnsinarIA({ interacaoId, onErro }: { interacaoId: string; onErro: (e: string) => void }) {
+  const [texto, setTexto] = useState("");
+  const [salvo, setSalvo] = useState<string | null>(null);
+  const [salvando, setSalvando] = useState(false);
+  if (salvo) {
+    return (
+      <p role="status" className="text-wa-meta mt-1 mr-1 max-w-full text-[12px]">
+        {salvo}
+      </p>
+    );
+  }
+  return (
+    <form
+      className="mt-1 mr-1 flex w-full max-w-sm min-w-0 flex-col gap-1.5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setSalvando(true);
+        ensinarIA(interacaoId, texto)
+          .then((r) => {
+            if (r.erro) onErro(r.erro);
+            else setSalvo(r.ok ?? "Anotado.");
+          })
+          .catch((err) => onErro(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo."))
+          .finally(() => setSalvando(false));
+      }}
+    >
+      <label className="text-wa-meta text-[12px]" htmlFor={`ensinar-${interacaoId}`}>
+        Como você responderia? A IA passa a seguir o seu jeito.
+      </label>
+      <textarea
+        id={`ensinar-${interacaoId}`}
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        rows={2}
+        maxLength={1500}
+        className="bg-wa-entrada text-wa-texto w-full rounded-lg border border-black/10 px-2.5 py-2 text-[14px] outline-none"
+      />
+      <button
+        type="submit"
+        disabled={salvando || texto.trim().length < 2}
+        className="bg-wa-verde min-h-11 self-end rounded-full px-4 text-[13px] font-semibold text-white disabled:opacity-50"
+      >
+        {salvando ? "Guardando…" : "Ensinar a IA"}
+      </button>
+    </form>
   );
 }
