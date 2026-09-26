@@ -67,9 +67,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   }
 
   type Sorteio = { corretor_id: string; telefone: string };
-  let { data: sorteio, error: erroDoSorteio } = await supabase
+  const primeiro = await supabase
     .rpc("sortear_corretor_whatsapp", { p_empreendimento: alvo.id })
     .maybeSingle<Sorteio>();
+  let sorteio = primeiro.data;
+  const erroDoSorteio = primeiro.error;
   if (erroDoSorteio) {
     // Banco ainda sem a 0117 (a função antiga não recebe o imóvel): sorteia
     // pela versão antiga em vez de perder o clique pago.
