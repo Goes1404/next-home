@@ -8211,3 +8211,23 @@ marca da instalação.
 - **Tipos gerados não conhecem relacionamento**: embed como
   `unidades(...)` sai tipado como erro no TS mesmo existindo a FK no banco;
   `as unknown as T` e testar o embed contra o PostgREST.
+
+## O impulsionamento do corretor passava pelo porteiro sem convite (0127, 27/09/2026)
+
+Nota: [[impulsionamento-do-corretor-pela-etiqueta-da-meta]].
+
+- **O lead que o corretor PAGA no Instagram era descartado.** Post
+  impulsionado com botão de WhatsApp manda o texto padrão da Meta, que não
+  era convite; desde a 0111 número sem lead e sem convite é ignorado.
+- **A etiqueta da Meta vem na mensagem**: `contextInfo.externalAdReply` com
+  `sourceType: "ad"` e o id do anúncio em `sourceId`. Link compartilhado
+  também tem `externalAdReply`, mas sem `sourceType: ad`. Reserva: texto
+  padrão da Meta, casamento exato.
+- **Ainda não provado com anúncio real.** Número sem lead que chega com
+  `contextInfo` gera o log `[porteiro] número sem lead com contextInfo:` com
+  os nomes dos campos. É por ele que se descobre se a Evolution repassa a
+  etiqueta.
+- **Gasto digitado, não OAuth**: ler gasto da conta de cada corretor exige
+  app da Meta aprovado. A tela conta os leads pelo `meta_ad_id`.
+- **Guarda do porteiro exige `return` logo depois de `if (!conversa) {`**
+  (`porteiro.test.ts`): log de diagnóstico vai num `if` separado antes.

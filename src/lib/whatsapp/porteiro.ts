@@ -12,6 +12,7 @@
  * campanha), para ser testável sem rede: a rota e o webhook chamam daqui.
  */
 import { clienteTrouxeFraseDeEntrada } from "./modoBot";
+import type { AnuncioMeta } from "./anuncioMeta";
 
 /** Mesma normalização do focoDaConversa: minúsculas e sem acento. */
 function normalizar(texto: string): string {
@@ -63,9 +64,11 @@ export function reconhecerMensagemDeAnuncio(texto: string | null | undefined): s
 
 /** Como reconhecemos que a pessoa está respondendo a uma peça NOSSA. */
 export type ConviteDeEntrada = {
-  via: "mensagem_do_anuncio" | "frase_de_entrada";
+  via: "mensagem_do_anuncio" | "anuncio_meta" | "frase_de_entrada";
   /** O imóvel citado, quando o texto é o nosso e o traz. */
   imovel: string | null;
+  /** O anúncio impulsionado pelo corretor, quando a Meta o identificou. */
+  anuncio?: AnuncioMeta;
 };
 
 /**
@@ -103,9 +106,15 @@ export type ConviteDeEntrada = {
 export function reconhecerConviteDeEntrada(params: {
   texto: string | null | undefined;
   palavrasEntradaCliente: string | null | undefined;
+  /** Anúncio da Meta reconhecido na mensagem (`reconhecerAnuncioMeta`). */
+  anuncio?: AnuncioMeta | null;
 }): ConviteDeEntrada | null {
   const imovel = reconhecerMensagemDeAnuncio(params.texto);
   if (imovel) return { via: "mensagem_do_anuncio", imovel };
+
+  // Impulsionamento do próprio corretor (etiqueta da Meta ou texto padrão
+  // dela). Vem depois do nosso link porque aquele entrega o imóvel exato.
+  if (params.anuncio) return { via: "anuncio_meta", imovel: null, anuncio: params.anuncio };
 
   if (
     params.texto &&

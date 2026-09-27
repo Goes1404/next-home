@@ -20,6 +20,10 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 3. **Porteiro de cadastro** — casa o telefone com um lead da carteira. Sem
    lead, devolve `numero_sem_lead_cadastrado`: não cria conversa nem lead e
    não manda áudio para transcrição ([[conversa-casa-com-lead-por-telefone]]).
+   Exceção: convite de entrada, que inclui o anúncio da Meta reconhecido pela
+   etiqueta (`externalAdReply`) ou pelo texto padrão; o lead nasce `meta/ctwa`
+   e o anúncio vai para `impulsionamentos`
+   ([[impulsionamento-do-corretor-pela-etiqueta-da-meta]]).
 4. **Transcrição de áudio** — o arquivo DECIFRADO vem da Evolution
    (`getBase64FromMediaMessage`; a `url` do webhook é o `.enc` cifrado);
    OpenAI → Whisper (Groq) → Gemini, prompt neutro com `[inaudível]`, travas

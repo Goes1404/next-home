@@ -248,6 +248,12 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/marketing", label: "Painel", icone: IconeMegafone },
           { href: "/corretor/campanhas", label: "Listas de transmissão", icone: IconeAntena },
           { href: "/corretor/templates", label: "Modelos", icone: IconeModelo },
+          // Quanto cada impulsionamento do Instagram/Facebook rendeu (27/09).
+          {
+            href: "/corretor/marketing/impulsionamentos",
+            label: "Impulsionamentos",
+            icone: IconeAlvo,
+          },
         ],
       },
     ],

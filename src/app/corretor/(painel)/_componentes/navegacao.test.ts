@@ -360,10 +360,13 @@ describe("as barras de abas DERIVAM do menu", () => {
       "/corretor/marketing/video",
     ]);
     // E saíram de lá: sobrou o que DISPARA a peça, não o que a produz.
+    // Impulsionamentos entrou em 27/09/2026: é o resultado do anúncio que o
+    // corretor põe na rua, não uma ferramenta de produzir peça.
     expect(subitensDe("/corretor/marketing").map((s) => s.href)).toEqual([
       "/corretor/marketing",
       "/corretor/campanhas",
       "/corretor/templates",
+      "/corretor/marketing/impulsionamentos",
     ]);
     // 9 desde 09/09/2026: "Crédito" entrou com os parâmetros que o consultor
     // cita. O número é atualizado com o motivo escrito, nunca afrouxado em

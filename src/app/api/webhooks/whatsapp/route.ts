@@ -69,6 +69,8 @@ import {
   decidirPorModo,
 } from "@/lib/whatsapp/modoBot";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
+import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
+import { registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 
 export const runtime = "nodejs";
@@ -379,9 +381,11 @@ export async function POST(req: NextRequest) {
      * porteiro acha o cadastro e segue), e a liberação da conversa continua
      * onde sempre esteve, mais abaixo.
      */
+    const anuncioMeta = reconhecerAnuncioMeta({ payload, texto: text });
     const convite = reconhecerConviteDeEntrada({
       texto: text,
       palavrasEntradaCliente: instancia.palavrasEntradaCliente,
+      anuncio: anuncioMeta,
     });
 
     /*
@@ -401,6 +405,15 @@ export async function POST(req: NextRequest) {
       nomeCliente: payload.senderName || null,
       convite,
     });
+
+    /*
+     * Diagnóstico do impulsionamento (27/09): só os NOMES dos campos de
+     * contexto, nunca o conteúdo. Se um anúncio de verdade chegar sem ser
+     * reconhecido, é aqui que aparece qual campo a Evolution mandou.
+     */
+    if (!conversa && chavesDeContexto(payload).length > 0) {
+      console.info("[porteiro] número sem lead com contextInfo:", chavesDeContexto(payload).join(","));
+    }
 
     if (!conversa) {
       return NextResponse.json({ ok: true, ignored: "numero_sem_lead_cadastrado" });
@@ -542,6 +555,26 @@ export async function POST(req: NextRequest) {
       }
       if (conversa.leadId) {
         await marcarLeadVindoDeAnuncio(conversa.leadId, nomeDoAnuncio);
+      }
+    }
+
+    /*
+     * Impulsionamento do próprio corretor (27/09/2026): a Meta identificou o
+     * anúncio. Libera a IA como no link porteiro, carimba o anúncio na ficha
+     * e registra o anúncio na lista do corretor — é nela que ele digita
+     * quanto gastou, e o custo por lead sai sozinho.
+     */
+    if (anuncioMeta && !nomeDoAnuncio) {
+      if (!conversa.liberadoPorPalavraChave) {
+        await liberarConversaPorPalavraChave(conversa.id);
+        conversa.liberadoPorPalavraChave = true;
+      }
+      if (conversa.leadId) {
+        await registrarLeadDeImpulsionamento({
+          leadId: conversa.leadId,
+          corretorId: instancia.corretorId,
+          anuncio: anuncioMeta,
+        });
       }
     }
 

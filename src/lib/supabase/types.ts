@@ -336,6 +336,51 @@ export type Database = {
         }
         Relationships: []
       }
+      impulsionamentos: {
+        Row: {
+          id: string
+          corretor_id: string
+          chave: string
+          meta_ad_id: string | null
+          titulo: string | null
+          url: string | null
+          empreendimento_id: string | null
+          valor_gasto: number | null
+          gasto_informado_em: string | null
+          primeiro_lead_em: string
+          ultimo_lead_em: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          corretor_id: string
+          chave: string
+          meta_ad_id?: string | null
+          titulo?: string | null
+          url?: string | null
+          empreendimento_id?: string | null
+          valor_gasto?: number | null
+          gasto_informado_em?: string | null
+          primeiro_lead_em?: string
+          ultimo_lead_em?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          corretor_id?: string
+          chave?: string
+          meta_ad_id?: string | null
+          titulo?: string | null
+          url?: string | null
+          empreendimento_id?: string | null
+          valor_gasto?: number | null
+          gasto_informado_em?: string | null
+          primeiro_lead_em?: string
+          ultimo_lead_em?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       corretor_agenda: {
         Row: {
           corretor_id: string
