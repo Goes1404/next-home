@@ -26,6 +26,7 @@ Três origens (upload, PDF, Drive), um caminho único de gravação.
 
 - [[planta-que-chega-como-foto]] — botão "É planta" na galeria; e a capa que nunca era gravada
 - [[importar-do-site-da-construtora]] — plano: colar o link do site e trazer dados, fotos, vídeos e tours
+- [[fila-de-cadastro-pelo-site-da-construtora]] — os 14 candidatos viraram rascunhos lidos do site da construtora (0128)
 
 ## Relacionados
 - [[MOC — Front Público]] · [[MOC — Banco de Dados]] · [[Home]]

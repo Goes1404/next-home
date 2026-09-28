@@ -8296,3 +8296,18 @@ Nota: [[apresentacao-digital-e-o-link-da-pagina]].
   imóvel é, nada muda.
 - **`sanearRespostaIA` recebe a fala do cliente** (`textoDaVez`) como
   sexto argumento. É o único jeito de saber se ele PEDIU a apresentação.
+
+## A fila de cadastro virou rascunho pelo site da construtora (0128, 28/09/2026)
+
+Nota: [[fila-de-cadastro-pelo-site-da-construtora]].
+
+- **Os links da fila são do apto.vc, não da construtora.** A construtora
+  está no `__NEXT_DATA__` da página do apto (`companySections`); o site
+  dela sai de uma busca e se lê com `lerPaginaDaConstrutora`.
+- **Agregador e construtora divergem** (Liv Stay: endereço e plantas;
+  Dellagio: entrega). Preço e entrega ficaram vazios; coordenada só onde a
+  rua bate.
+- **Fotos ficam para o painel** (Importar → Site da construtora, link já
+  gravado em `site_construtora`): `registrarMidia` não roda em migration.
+- **Migration grande pelo MCP**: conferir depois com `md5(descricao)` do
+  banco contra o arquivo, para provar que o texto aplicado é o do repositório.
