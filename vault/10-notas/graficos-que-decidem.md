@@ -7,12 +7,13 @@ custou: medio
 codigo:
   - src/lib/graficos/calculos.ts
   - src/app/corretor/(painel)/_componentes/graficos/
+  - src/app/corretor/(painel)/financeiro/CartaoMeta.tsx
   - src/lib/corretorSessao.ts
   - src/lib/financeiro/ritmo.ts
   - src/app/corretor/(painel)/financeiro/CartaoMeta.tsx
 created: 2026-09-28
 updated: 2026-09-28
-summary: Seis gráficos, cada um respondendo a uma pergunta que leva a uma ação. Passagem do funil (funil e administração), clientes esperando resposta por tempo (Início), origem dos leads com custo por lead e por visita (Marketing), placar da equipe (administração), procura por imóvel (Imóveis) e a marca do ritmo na meta do mês. Toda barra abre a lista filtrada, e a lista conta as mesmas pessoas. As contas moram num módulo puro com teste.
+summary: Seis gráficos, cada um com a FORMA da sua pergunta (funil centrado, número + faixa + nomes, cartão por canal, placar com anel, ranking com foto, medidor em arco), cada um respondendo a uma pergunta que leva a uma ação. Passagem do funil (funil e administração), clientes esperando resposta por tempo (Início), origem dos leads com custo por lead e por visita (Marketing), placar da equipe (administração), procura por imóvel (Imóveis) e a marca do ritmo na meta do mês. Toda barra abre a lista filtrada, e a lista conta as mesmas pessoas. As contas moram num módulo puro com teste.
 ---
 
 # Seis gráficos que decidem
@@ -51,3 +52,25 @@ Cada gráfico responde a UMA pergunta que leva a uma ação:
   cabeçalho escondido usam `sr-only`; com a outra, apareceram no desktop.
 - **Alvo de 44px sem abrir espaço**: `-my-3 py-3` no link do nome, não
   `min-h-11`, que empurrava a linha de detalhe para baixo.
+
+## A forma segue a pergunta (28/09, segunda versão)
+
+A primeira versão usou barra deitada em tudo e o usuário achou feio. Cada um
+ganhou a forma do que pergunta:
+
+| Pergunta | Forma |
+|---|---|
+| Onde perco gente? | funil de faixas centradas na rampa das etapas, com a passagem entre elas e "maior perda" escrita |
+| Quem está esfriando? | número grande, UMA faixa dividida pelo tempo de espera, e os 3 que esperam há mais tempo abrindo a conversa |
+| Onde o dinheiro rende? | um cartão por canal (leads, parte do total, visitas, vendas, custo) |
+| Quem converte? | placar com posição, iniciais, anel de conversão e três mini medidores |
+| O que vende? | ranking com a foto do imóvel, barra de leads e pílulas de visita e venda |
+| Meta do mês | medidor em arco com o traço do ritmo |
+
+- **Cada gráfico com consulta tem uma parte `…Visual` só de desenho.** É o
+  que permite conferir o gráfico com dado de exemplo numa página temporária,
+  sem login e sem banco.
+- **`BarrasHorizontais` e `TabelaDeBarras` saíram**; o que se repete ficou em
+  `Moldura.tsx` (título e estado vazio).
+- **Selo ao lado de rótulo longo quebra a palavra** ("impulsionam/entos"): o
+  selo desce para a linha de baixo.

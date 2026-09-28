@@ -95,7 +95,7 @@ export default async function ImoveisPage() {
         <ProcuraPorImovel
           imoveis={imoveis
             .filter((i) => i.id)
-            .map((i) => ({ id: i.id as string, nome: i.nome, slug: i.slug, publicado: i.publicado !== false }))}
+            .map((i) => ({ id: i.id as string, nome: i.nome, slug: i.slug, publicado: i.publicado !== false, foto: i.galeria?.[0]?.url ?? null }))}
         />
       </Suspense>
     </div>

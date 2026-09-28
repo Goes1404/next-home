@@ -8246,3 +8246,15 @@ Nota: [[graficos-que-decidem]].
   640px. Legenda de tabela escondida é `sr-only`.
 - **Gráfico que vive em zero some** (quem espera resposta), a régua do
   contador de aba.
+
+### Segunda versão: a forma segue a pergunta (28/09/2026)
+
+- **Barra deitada em tudo foi achada feia.** Cada gráfico ganhou a forma da
+  pergunta: funil centrado, número + faixa + nomes, cartão por canal, placar
+  com anel, ranking com foto, medidor em arco. Tabela em
+  [[graficos-que-decidem]].
+- **Gráfico que consulta o banco tem uma parte `…Visual` só de desenho**,
+  para conferir com dado de exemplo sem login.
+- **Script que corta um arquivo "até o fim da função" perde o que vem
+  depois dela.** Fiz isso com Python e sumiram `iniciais`, `ROTULO` e
+  `Pilula`; o `tsc` pegou. Recortar deve manter o resto do arquivo.

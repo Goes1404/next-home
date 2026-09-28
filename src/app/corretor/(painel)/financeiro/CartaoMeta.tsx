@@ -124,20 +124,7 @@ export function CartaoMeta({ estado, compacto = false }: { estado: EstadoDaMeta;
       ? Math.min(100, Math.round((r.esperadoHoje / r.meta) * 100))
       : null;
   const adiantado = r.esperadoHoje !== null && r.ganho >= r.esperadoHoje;
-  const barra = (
-    <div className="relative">
-      <div className="bg-vidro-forte h-2.5 overflow-hidden rounded-full" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(r.progresso * 100)}>
-        <div className="bg-acento h-full rounded-full transition-[width] duration-700" style={{ width: `${Math.round(r.progresso * 100)}%` }} />
-      </div>
-      {marca !== null && (
-        <span
-          aria-hidden
-          className="bg-titulo ring-superficie absolute -top-1 h-[18px] w-[3px] -translate-x-1/2 rounded-full ring-2"
-          style={{ left: `${marca}%` }}
-        />
-      )}
-    </div>
-  );
+  const barra = <MedidorDaMeta progresso={r.progresso} marca={marca} compacto={compacto} />;
   const linhaDoRitmo =
     marca !== null && r.esperadoHoje !== null ? (
       <p className="text-fluid-xs text-apoio">
@@ -150,16 +137,15 @@ export function CartaoMeta({ estado, compacto = false }: { estado: EstadoDaMeta;
 
   if (compacto) {
     return (
-      <Link href="/corretor/financeiro/extrato" className="cartao hover:border-acento-linha block space-y-2 p-4 transition-colors">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="text-fluid-xs text-tenue">Meta do mês</p>
-          <p className="text-fluid-xs text-apoio">
-            {formatarReais(r.ganho)} de {formatarReais(r.meta)}
-          </p>
-        </div>
+      <Link href="/corretor/financeiro/extrato" className="cartao hover:border-acento-linha flex items-center gap-4 p-4 transition-colors">
         {barra}
-        {linhaDoRitmo}
-        <p className="text-fluid-sm text-titulo font-medium">{fraseDoRitmo(r)}</p>
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="text-fluid-xs text-tenue">
+            Meta do mês · {formatarReais(r.ganho)} de {formatarReais(r.meta)}
+          </p>
+          <p className="text-fluid-sm text-titulo font-medium">{fraseDoRitmo(r)}</p>
+          {linhaDoRitmo}
+        </div>
       </Link>
     );
   }
@@ -182,9 +168,13 @@ export function CartaoMeta({ estado, compacto = false }: { estado: EstadoDaMeta;
           {editando ? "Fechar" : "Ajustar meta"}
         </button>
       </div>
-      {barra}
-      {linhaDoRitmo}
-      <p className="text-fluid-lg text-titulo font-bold">{fraseDoRitmo(r)}</p>
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-6">
+        {barra}
+        <div className="w-full min-w-0 flex-1 space-y-2">
+          <p className="text-fluid-lg text-titulo font-bold">{fraseDoRitmo(r)}</p>
+          {linhaDoRitmo}
+        </div>
+      </div>
 
       {!r.atingida && r.vendas !== null && (
         <ul className="text-fluid-xs text-apoio space-y-1">
@@ -224,5 +214,59 @@ export function CartaoMeta({ estado, compacto = false }: { estado: EstadoDaMeta;
         />
       )}
     </section>
+  );
+}
+
+/**
+ * Medidor em arco (28/09/2026). A meta é UMA razão contra um limite, e o arco
+ * a mostra como velocímetro: quanto já foi, e o traço escuro onde um ritmo
+ * constante pediria que você estivesse hoje. O número no meio é o dado; o
+ * arco é o reforço. `pathLength=100` deixa o traço em porcentagem direta.
+ */
+function MedidorDaMeta({ progresso, marca, compacto }: { progresso: number; marca: number | null; compacto: boolean }) {
+  const feito = Math.round(Math.min(1, Math.max(0, progresso)) * 100);
+  const arco = "M 16 96 A 84 84 0 0 1 184 96";
+  let tique: { x1: number; y1: number; x2: number; y2: number } | null = null;
+  if (marca !== null) {
+    const t = Math.PI * (1 - marca / 100);
+    const ponto = (raio: number) => ({ x: 100 + raio * Math.cos(t), y: 96 - raio * Math.sin(t) });
+    const a = ponto(70);
+    const b = ponto(98);
+    tique = { x1: a.x, y1: a.y, x2: b.x, y2: b.y };
+  }
+  return (
+    <svg
+      viewBox="0 0 200 108"
+      className={`shrink-0 ${compacto ? "w-28" : "w-44 sm:w-52"}`}
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={feito}
+      aria-label={`Meta do mês: ${feito}% feito`}
+    >
+      <path d={arco} fill="none" strokeWidth="14" strokeLinecap="round" className="stroke-vidro-forte" />
+      {feito > 0 && (
+        <path
+          d={arco}
+          fill="none"
+          strokeWidth="14"
+          strokeLinecap="round"
+          pathLength={100}
+          strokeDasharray={`${feito} 100`}
+          className="stroke-acento"
+        />
+      )}
+      {tique && (
+        <line {...tique} strokeWidth="3.5" strokeLinecap="round" className="stroke-titulo">
+          <title>Onde um ritmo constante pediria que você estivesse hoje</title>
+        </line>
+      )}
+      <text x="100" y="84" textAnchor="middle" className="fill-titulo" style={{ fontSize: 34, fontWeight: 700 }}>
+        {feito}%
+      </text>
+      <text x="100" y="104" textAnchor="middle" className="fill-apoio" style={{ fontSize: 12 }}>
+        da meta
+      </text>
+    </svg>
   );
 }
