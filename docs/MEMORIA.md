@@ -8321,3 +8321,17 @@ Nota: [[fila-de-cadastro-pelo-site-da-construtora]].
   OUTRO prédio (Liv Stay mostrava o do Beyond): conferir o `<title>` do tour.
 - **Migration grande pelo MCP**: conferir depois com `md5(descricao)` do
   banco contra o arquivo, para provar que o texto aplicado é o do repositório.
+
+## O CI ficou vermelho de 13/09 a 28/09 e ninguém viu
+
+Nota: [[ci-vermelho-quinze-dias-pela-catraca-de-bundle]].
+
+- **A Vercel publica sem esperar o CI**, então esteira vermelha não trava
+  nada e ninguém lê. Foi a catraca de peso (`scripts/bundleTeto.mjs`) em
+  todos os pushes por quinze dias. Depois de subir, olhe o CI também.
+- **Para achar o que engordou**: build da última versão verde num worktree
+  (node_modules por `cp -al`; symlink o Turbopack recusa) e diff dos client
+  modules de cada rota no `page_client-reference-manifest.js`.
+- **`next/dynamic` numa página de servidor não sai da primeira carga.** Só
+  `ssr: false` num módulo cliente tira (`components/layout/SobDemanda.tsx`).
+- **Teto = KB impresso + 1**: a tela arredonda, a comparação usa o exato.
