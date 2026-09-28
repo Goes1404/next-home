@@ -8315,8 +8315,9 @@ Nota: [[fila-de-cadastro-pelo-site-da-construtora]].
 - **O leitor do site para em 60 imagens**: no NID cortou todas as plantas,
   que vêm no fim. E `parecePlanta` marcou foto de lazer como planta
   (Serenne) e "Suíte" como planta (Oásis).
-- **O leitor do site não conhece tourmkr, Tour Brasil 360 nem Instacasa**, e
-  não lê `<video><source>`. E a página da construtora pode trazer o tour de
+- **O leitor do site não conhecia tourmkr, Tour Brasil 360 nem Instacasa**, e
+  não lia `<video><source>` (ensinado no mesmo dia: o `.mp4` vem desmarcado
+  e, se escolhido, sobe para o Storage; o tour mostra o `<title>` dele). E a página da construtora pode trazer o tour de
   OUTRO prédio (Liv Stay mostrava o do Beyond): conferir o `<title>` do tour.
 - **Migration grande pelo MCP**: conferir depois com `md5(descricao)` do
   banco contra o arquivo, para provar que o texto aplicado é o do repositório.

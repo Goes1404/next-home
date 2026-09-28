@@ -64,9 +64,14 @@ describe("página da EZTEC (vídeo e fotos dentro de script)", () => {
   const p = lerPaginaDaConstrutora(pagina("eztec"), EZTEC);
 
   it("acha os vídeos do YouTube mesmo com a barra escapada no JSON", () => {
-    const videos = p.midias.filter((m) => m.tipo === "video");
+    const videos = p.midias.filter((m) => m.tipo === "video" && !m.arquivo);
     expect(videos.length).toBeGreaterThanOrEqual(3);
     expect(videos.every((v) => /^https:\/\/www\.youtube\.com\/watch\?v=[\w-]{11}$/.test(v.url))).toBe(true);
+  });
+
+  it("acha também o vídeo em arquivo do topo da página", () => {
+    const arquivos = p.midias.filter((m) => m.arquivo).map((m) => m.url);
+    expect(arquivos).toEqual(["https://hub.eztec.com.br/wp-content/uploads/2026/08/GranResort-Reserva-Sao-Caetano-Hero-30s.mp4"]);
   });
 
   it("pré-marca as fotos cujo nome repete o endereço da página", () => {
@@ -174,5 +179,40 @@ describe("regras de leitura com HTML mínimo", () => {
     const html = `<a href="https://3dexplora.com.br/seutour.aspx?play=1&codigo=AB12CD34">tour</a>`;
     const urls = lerPaginaDaConstrutora(html, base).midias.map((m) => m.url);
     expect(urls).toEqual(["https://www.3dexplora.com.br/seutour.aspx?codigo=AB12CD34"]);
+  });
+
+  it("tourmkr, Tour Brasil 360 e Instacasa viram tour 360 (Dubai, RSF, Vitta)", () => {
+    const html = `<iframe src="https://tourmkr.com/F1yS7sp6JO"></iframe>
+      <a href="https://tourbrasil360.com/imoveis/rsf/square-design-94">94</a>
+      <a href="https://tour.instacasa.com.br/vitta-barueri/">tour</a>`;
+    const tours = lerPaginaDaConstrutora(html, base).midias.filter((m) => m.tipo === "tour360").map((m) => m.url);
+    expect(tours).toEqual([
+      "https://tourmkr.com/F1yS7sp6JO",
+      "https://tourbrasil360.com/imoveis/rsf/square-design-94/",
+      "https://tour.instacasa.com.br/vitta-barueri/",
+    ]);
+  });
+
+  it("tour hospedado pela construtora vira tour 360, mas a imagem do botão não", () => {
+    const html = `<a href="/estatico/tour-virtual/decorado-nid/index.html">Tour virtual</a>
+      <img src="/wp-content/uploads/tour-virtual.png" alt="tour virtual">`;
+    const tours = lerPaginaDaConstrutora(html, base).midias.filter((m) => m.tipo === "tour360");
+    expect(tours.map((m) => m.url)).toEqual([new URL("/estatico/tour-virtual/decorado-nid/index.html", base).toString()]);
+  });
+
+  it("arquivo .mp4 da página vira vídeo marcado como arquivo, uma vez só", () => {
+    const html = `<video autoplay><source src="/estatico/hero.mp4" type="video/mp4"></video>
+      <a href="/estatico/hero.mp4" data-fancybox>Ver vídeo</a>`;
+    const videos = lerPaginaDaConstrutora(html, base).midias.filter((m) => m.tipo === "video");
+    expect(videos).toEqual([
+      { tipo: "video", url: new URL("/estatico/hero.mp4", base).toString(), titulo: "Arquivo de vídeo 1", arquivo: true },
+    ]);
+  });
+
+  it("vídeo de YouTube não é contado também como arquivo", () => {
+    const html = `<iframe src="https://www.youtube.com/embed/abcdefghijk"></iframe>`;
+    const videos = lerPaginaDaConstrutora(html, base).midias;
+    expect(videos).toHaveLength(1);
+    expect(videos[0].arquivo).toBeUndefined();
   });
 });

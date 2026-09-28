@@ -39,6 +39,13 @@ export type MidiaDoSite = {
   tipo: "video" | "tour360";
   url: string;
   titulo: string;
+  /**
+   * Arquivo de vídeo (.mp4) hospedado no site da construtora, e não
+   * link de plataforma. Sobe para o nosso Storage em vez de virar link: o
+   * arquivo dela some no dia em que ela trocar o site. Vem DESMARCADO na
+   * tela porque muita página usa vídeo em loop só como fundo decorativo.
+   */
+  arquivo?: boolean;
 };
 
 export type DicasEstruturadas = {
@@ -200,8 +207,24 @@ const KUULA = /kuula\.co\/(?:share|post)\/([A-Za-z0-9_\-/]{4,60})/g;
  * guardar esse lixo.
  */
 const TRES_D_EXPLORA = /3dexplora\.com\.br\/seutour\.aspx\?(?:[^"'\s<>]*?&)?codigo=([A-Za-z0-9]{4,40})/gi;
+/** Tour Maker (Construtora Dubai): `tourmkr.com/<id>`. */
+const TOURMKR = /tourmkr\.com\/([A-Za-z0-9_-]{6,20})(?![A-Za-z0-9_-])/g;
+/** Tour Brasil 360 (RSF): `tourbrasil360.com/imoveis/<construtora>/<tour>`. */
+const TOUR_BRASIL_360 = /tourbrasil360\.com\/imoveis\/([a-z0-9-]+(?:\/[a-z0-9-]+){1,3})/gi;
+/** Instacasa (Vitta Loteamentos): `tour.instacasa.com.br/<tour>`. */
+const INSTACASA = /tour\.instacasa\.com\.br\/([a-z0-9-]{3,80})/gi;
+/**
+ * Atributo que aponta para um recurso: é dele que saem o tour hospedado no
+ * próprio site da construtora e o arquivo de vídeo, que não têm domínio
+ * conhecido para casar.
+ */
+const ATRIBUTO_URL = /(?:src|href|data-src|data-video|data-url)=["']([^"']{8,400})["']/gi;
+/** Tour da própria construtora (Plano&Plano: `/estatico/tour-virtual/.../index.html`). */
+const TOUR_PROPRIO = /tour[-_]?(?:virtual|360)/i;
+/** Só mp4: é o único formato de vídeo que o bucket `empreendimentos` aceita. */
+const EXTENSAO_VIDEO = /\.mp4(?:$|[?#])/i;
 
-function lerMidias(html: string): MidiaDoSite[] {
+function lerMidias(html: string, base: string): MidiaDoSite[] {
   const cru = desescapar(html);
   const vistas = new Set<string>();
   const saida: MidiaDoSite[] = [];
@@ -215,13 +238,41 @@ function lerMidias(html: string): MidiaDoSite[] {
   for (const m of cru.matchAll(KUULA)) adicionar("tour360", `https://kuula.co/share/${m[1].replace(/\/+$/, "")}`);
   for (const m of cru.matchAll(TRES_D_EXPLORA))
     adicionar("tour360", `https://www.3dexplora.com.br/seutour.aspx?codigo=${m[1]}`);
+  for (const m of cru.matchAll(TOURMKR)) adicionar("tour360", `https://tourmkr.com/${m[1]}`);
+  for (const m of cru.matchAll(TOUR_BRASIL_360))
+    adicionar("tour360", `https://tourbrasil360.com/imoveis/${m[1].replace(/\/+$/, "").toLowerCase()}/`);
+  for (const m of cru.matchAll(INSTACASA))
+    adicionar("tour360", `https://tour.instacasa.com.br/${m[1].toLowerCase()}/`);
   for (const m of cru.matchAll(YOUTUBE)) adicionar("video", `https://www.youtube.com/watch?v=${m[1]}`);
   for (const m of cru.matchAll(VIMEO)) adicionar("video", `https://vimeo.com/${m[1]}`);
 
+  const conhecido = /matterport|kuula|3dexplora|tourmkr|tourbrasil360|instacasa|youtube|youtu\.be|vimeo/i;
+  for (const m of cru.matchAll(ATRIBUTO_URL)) {
+    const url = normalizarUrl(m[1], base);
+    if (!url || url.startsWith("http:") || conhecido.test(url)) continue;
+    if (EXTENSAO_VIDEO.test(new URL(url).pathname)) {
+      if (!vistas.has(url)) {
+        vistas.add(url);
+        saida.push({ tipo: "video", url, titulo: "", arquivo: true });
+      }
+      continue;
+    }
+    // Tour hospedado pela construtora: página HTML (ou pasta) com "tour
+    // virtual" no caminho. A imagem de capa do botão ("tour-virtual.png")
+    // tem o mesmo nome e não é tour.
+    const caminho = new URL(url).pathname;
+    if (TOUR_PROPRIO.test(caminho) && (/\.html?$/i.test(caminho) || caminho.endsWith("/"))) adicionar("tour360", url);
+  }
+
   let v = 0;
   let t = 0;
+  let a = 0;
   for (const midia of saida) {
-    midia.titulo = midia.tipo === "video" ? `Vídeo ${++v}` : `Tour 360° ${++t}`;
+    midia.titulo = midia.arquivo
+      ? `Arquivo de vídeo ${++a}`
+      : midia.tipo === "video"
+        ? `Vídeo ${++v}`
+        : `Tour 360° ${++t}`;
   }
   return saida;
 }
@@ -303,7 +354,7 @@ export function lerPaginaDaConstrutora(html: string, urlDaPagina: string): Pagin
     .replace(/\s+/g, " ")
     .trim();
   const dicas = lerDicas($);
-  const midias = lerMidias(html);
+  const midias = lerMidias(html, urlDaPagina);
 
   // ─── Imagens ──────────────────────────────────────────────────────────
   // Três níveis de confiança, nessa ordem na grade: tag com alt (quem

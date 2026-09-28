@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { revalidarCatalogo } from "@/lib/catalogo/revalidar";
 import { createClient } from "@/lib/supabase/server";
@@ -538,6 +539,10 @@ export async function aplicarRascunhoNoCadastro(entrada: {
 const TETO_HTML = 5 * 1024 * 1024;
 /** Foto de construtora chega a 1500 px; 15 MB cobre com folga e trava o absurdo. */
 const TETO_IMAGEM = 15 * 1024 * 1024;
+/** O bucket aceita até 50 MB por arquivo no plano atual do Supabase. */
+const TETO_VIDEO = 50 * 1024 * 1024;
+/** Quantos tours têm o nome lido: cada um é uma ida à plataforma dele. */
+const TOURS_COM_NOME = 6;
 
 export type ImagemDoSiteNaTela = ImagemDoSite & {
   /** Já veio desta página numa importação anterior (`midias.origem_url`). */
@@ -636,13 +641,19 @@ export async function analisarSite(entrada: { url: string; empreendimentoId: str
     if (error) console.warn("[importar do site] não guardei o link (0113 aplicada?):", error.message);
   }
 
+  const midias = await comNomeDosTours(pagina.midias);
+
   return {
     ok: true,
     titulo: pagina.titulo,
     texto: pagina.texto,
     dicas: pagina.dicas,
     imagens: pagina.imagens.map((img) => ({ ...img, jaTrazida: trazidas.has(chaveDaFoto(img.url)) })),
-    midias: pagina.midias.map((m) => ({ ...m, jaCadastrada: jaTem.has(identidadeDaMidia(m.url)) })),
+    // Arquivo de vídeo subido antes guarda a origem, não a URL dele.
+    midias: midias.map((m) => ({
+      ...m,
+      jaCadastrada: jaTem.has(identidadeDaMidia(m.url)) || trazidas.has(identidadeDaMidia(m.url)),
+    })),
     montadaPorJs: pagina.montadaPorJs,
     urlFinal: busca.urlFinal,
   };
@@ -731,6 +742,110 @@ export async function trazerImagemDoSite(entrada: {
   revalidatePath("/corretor/imoveis");
 
   return { ok: true, duplicada: resultado.duplicada, url: resultado.url };
+}
+
+/**
+ * O nome do tour é o `<title>` da página dele. É por ele que o corretor vê
+ * quando a página da construtora mostra o tour de OUTRO prédio: a do Liv
+ * Stay (RSF) trazia dois tours chamados "Beyond Residence". Falha na leitura
+ * mantém o nome genérico: nome é ajuda, não requisito.
+ */
+async function comNomeDosTours(midias: MidiaDoSite[]): Promise<MidiaDoSite[]> {
+  const tours = midias.filter((m) => m.tipo === "tour360" && !m.arquivo).slice(0, TOURS_COM_NOME);
+  const nomes = new Map<string, string>();
+  await Promise.all(
+    tours.map(async (m) => {
+      const busca = await buscarSeguro(m.url, {
+        tetoBytes: 1024 * 1024,
+        prazoMs: 6_000,
+        aceitar: (tipo) => tipo.includes("text/html"),
+      });
+      if (!busca.ok) return;
+      const titulo = busca.bytes
+        .toString("utf8")
+        .match(/<title[^>]*>([^<]{2,120})<\/title>/i)?.[1]
+        ?.replace(/&amp;/g, "&")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (titulo) nomes.set(m.url, `Tour 360° · ${titulo}`);
+    }),
+  );
+  return midias.map((m) => (nomes.has(m.url) ? { ...m, titulo: nomes.get(m.url)! } : m));
+}
+
+/**
+ * Arquivo de vídeo (.mp4) do site da construtora sobe para o nosso Storage
+ * e entra como vídeo do imóvel. Link direto para o arquivo dela quebraria no
+ * dia em que ela trocasse o site, e a página do imóvel ficaria com um player
+ * vazio.
+ *
+ * A origem é guardada em `origem_url` para "Buscar novidades" reconhecer o
+ * arquivo como já trazido, já que a URL gravada passa a ser a nossa.
+ */
+export async function trazerVideoDoSite(entrada: {
+  empreendimentoId: string;
+  slug: string;
+  url: string;
+  titulo: string;
+}): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "sessão expirada" };
+
+  const busca = await buscarSeguro(entrada.url, {
+    tetoBytes: TETO_VIDEO,
+    prazoMs: 45_000,
+    // Só mp4: é o único vídeo que o bucket aceita.
+    aceitar: (tipo) => tipo.startsWith("video/mp4"),
+  });
+  if (!busca.ok) return { ok: false, erro: busca.mensagem };
+
+  const mime = "video/mp4";
+  const hash = createHash("sha256").update(busca.bytes).digest("hex");
+  const caminho = `${entrada.empreendimentoId}/video-${hash.slice(0, 16)}.mp4`;
+
+  const supabase = await createClient();
+  const { error: erroUpload } = await supabase.storage
+    .from("empreendimentos")
+    .upload(caminho, busca.bytes, { contentType: mime, upsert: true });
+  if (erroUpload) {
+    console.error("[importar do site] vídeo não subiu:", erroUpload.message);
+    return { ok: false, erro: "o Storage recusou o arquivo" };
+  }
+  const url = supabase.storage.from("empreendimentos").getPublicUrl(caminho).data.publicUrl;
+
+  const { data: existente } = await supabase
+    .from("midias")
+    .select("id")
+    .eq("empreendimento_id", entrada.empreendimentoId)
+    .eq("url", url)
+    .maybeSingle();
+  if (!existente) {
+    const { error } = await supabase.from("midias").insert({
+      empreendimento_id: entrada.empreendimentoId,
+      tipo: "video",
+      url,
+      alt: entrada.titulo || "Vídeo do empreendimento",
+      ordem: 50,
+    });
+    if (error) {
+      console.error("[importar do site] vídeo não gravou:", error.message);
+      return { ok: false, erro: "não consegui gravar o vídeo" };
+    }
+  }
+
+  const { error: erroOrigem } = await supabase
+    .from("midias")
+    .update({ origem_url: identidadeDaMidia(entrada.url) })
+    .eq("empreendimento_id", entrada.empreendimentoId)
+    .eq("url", url)
+    .is("origem_url", null);
+  if (erroOrigem) console.warn("[importar do site] sem origem_url (0113 aplicada?):", erroOrigem.message);
+
+  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarCatalogo();
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+  return { ok: true };
 }
 
 /**

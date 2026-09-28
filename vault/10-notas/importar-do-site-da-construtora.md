@@ -6,7 +6,7 @@ status: growing
 custou: medio
 codigo: docs/superpowers/specs/2026-09-25-importar-do-site-da-construtora-design.md
 created: 2026-09-25
-updated: 2026-09-25
+updated: 2026-09-28
 summary: Plano de colar o link do site da construtora e trazer dados, fotos, plantas, vídeos e tours. Vira a terceira origem do importador existente; a medição de 6 construtoras decide o que precisa de navegador.
 ---
 
@@ -109,3 +109,22 @@ tela manda em lotes de 4 (`LOTE_PDF`), conferindo a lista antes de cada
 lote. Um por vez seria uma releitura do PDF por imagem; tudo de uma vez não
 deixa tirar. Com erro no meio, o PDF e a grade ficam, e o que entrou já saiu
 da lista — tentar de novo manda só o resto.
+
+## Tours e vídeo em arquivo (28/09/2026)
+
+- **O leitor passou a reconhecer tourmkr (Dubai), Tour Brasil 360 (RSF),
+  Instacasa (Vitta)** e o tour hospedado pela própria construtora (caminho
+  com "tour-virtual" terminando em `.html` ou `/`; a imagem do botão com o
+  mesmo nome não conta). Antes, só Matterport, Kuula e 3D Explora.
+- **Arquivo `.mp4` da página vira vídeo com `arquivo: true`**, vem
+  DESMARCADO (muito site usa vídeo em loop como fundo decorativo) e, se
+  marcado, sobe para o nosso Storage por `trazerVideoDoSite`. Link direto
+  quebraria quando a construtora trocasse o site. Só mp4: é o único vídeo
+  que o bucket aceita. A origem fica em `origem_url`, para "Buscar
+  novidades" reconhecer o arquivo já trazido.
+- **O nome de cada tour é o `<title>` da página dele**: é o que mostra
+  quando a página da construtora traz o tour de outro prédio (a do Liv
+  Stay trazia dois do Beyond Residence).
+- Na página real da EZTEC, o leitor passou a achar o vídeo de 30 s do topo,
+  que antes ninguém via.
+

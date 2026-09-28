@@ -9,6 +9,7 @@ import {
   gerarTipologiaDaPlantaDoSite,
   sugerirCadastroDoSite,
   trazerImagemDoSite,
+  trazerVideoDoSite,
   type AnaliseDoSite,
 } from "./acoes";
 import { GradeCuradoria, type EscolhaCuradoria, type ItemDaGrade } from "./GradeCuradoria";
@@ -118,7 +119,9 @@ export function OrigemSite({
         ]),
       ),
     );
-    setMidiasMarcadas(Object.fromEntries(resultado.midias.map((m) => [m.url, !m.jaCadastrada])));
+    // Arquivo de vídeo vem desmarcado: muita página usa vídeo em loop só como
+    // fundo decorativo, e ele ocupa espaço no nosso Storage.
+    setMidiasMarcadas(Object.fromEntries(resultado.midias.map((m) => [m.url, !m.jaCadastrada && !m.arquivo])));
 
     // Depois das imagens e sem travar a tela: a IA é o elo que pode demorar
     // ou estar fora do ar, e a curadoria das fotos não depende dela.
@@ -242,7 +245,7 @@ export function OrigemSite({
     };
     await Promise.all(Array.from({ length: Math.min(EM_PARALELO, fila.length) }, trabalhador));
 
-    // ─── Vídeos e tours: só o link é guardado ─────────────────────────────
+    // ─── Vídeos e tours: link, ou o arquivo subido para o nosso Storage ───
     let midias = 0;
     for (const midia of midiasEscolhidas) {
       if (parar.current || !midiasAgora.current[midia.url]) {
@@ -250,11 +253,13 @@ export function OrigemSite({
         continue;
       }
       try {
-        const r = await adicionarMidiaExterna(empreendimentoId, slug, {
-          tipo: midia.tipo,
-          url: midia.url,
-          titulo: midia.titulo,
-        });
+        const r = midia.arquivo
+          ? await trazerVideoDoSite({ empreendimentoId, slug, url: midia.url, titulo: midia.titulo })
+          : await adicionarMidiaExterna(empreendimentoId, slug, {
+              tipo: midia.tipo,
+              url: midia.url,
+              titulo: midia.titulo,
+            });
         if (r.ok) {
           midias++;
           setMidiasMarcadas((atual) => ({ ...atual, [midia.url]: false }));
@@ -412,6 +417,11 @@ export function OrigemSite({
                       {m.titulo}
                       {m.jaCadastrada ? <span className="ml-2 font-normal text-apoio">já está no imóvel</span> : null}
                     </span>
+                    {m.arquivo && !m.jaCadastrada ? (
+                      <span className="block text-fluid-xs text-apoio">
+                        Arquivo do site da construtora: sobe para o nosso servidor. Confira antes, pode ser só fundo da página.
+                      </span>
+                    ) : null}
                     <a
                       href={m.url}
                       target="_blank"
