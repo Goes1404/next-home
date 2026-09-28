@@ -8258,3 +8258,25 @@ Nota: [[graficos-que-decidem]].
 - **Script que corta um arquivo "até o fim da função" perde o que vem
   depois dela.** Fiz isso com Python e sumiram `iniciais`, `ROTULO` e
   `Pilula`; o `tsc` pegou. Recortar deve manter o resto do arquivo.
+
+## Lista .txt sem cabeçalho passou a ser lida pela IA (28/09/2026)
+
+Nota: [[lista-de-leads-sem-cabecalho-e-lida-pela-ia]].
+
+- **O leitor de tabela sem cabeçalho errava toda lista solta.** Punha a
+  linha inteira no campo telefone, gravava "visita sábado" como nome,
+  perdia fichas em várias linhas e sumia com quem tinha dois números. E
+  nunca chegava à IA: como achava "algum telefone", o resultado parecia
+  bom.
+- **Agora:** tabela com cabeçalho segue determinística (sem IA). Lista sem
+  cabeçalho vai primeiro ao `chamarLlmJson`, em pedaços de ~2.500
+  caracteres cortados em linha em branco. Se a IA falhar, a escada antiga
+  continua, com aviso.
+- **A IA só preenche o que está no texto:** telefone conferido por dígitos
+  na mesma linha (aceita o `55` acrescentado), cada palavra do nome
+  presente na lista, e-mail escrito na lista. O que não passa não é
+  corrigido nem adivinhado.
+- **`telefoneE164` aqui é SÓ DÍGITOS** (`5511…`), sem `+`. Errei a
+  expectativa no teste.
+- Sem chave da OpenAI no ambiente de desenvolvimento, a prova com o modelo
+  real é importar uma lista em produção.

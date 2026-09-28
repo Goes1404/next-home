@@ -10,6 +10,7 @@ import {
 import { ehArquivoVcard, parsearVcards } from "./vcard";
 import { lerPlanilhaXlsx } from "./xlsxLeitura";
 import { lerZip, type MotivoZipIlegivel } from "./zipLeitura";
+import { lerListaComIa } from "./leituraPorIa";
 
 /**
  * Leitura de listas de leads que o corretor traz de fora — planilha exportada
@@ -226,6 +227,19 @@ function montar(bruto: {
 }
 
 /**
+ * O texto é uma tabela de contatos COM cabeçalho (nome e telefone
+ * reconhecidos na primeira linha)? É o único caso que o leitor determinístico
+ * acerta sempre; lista solta, sem cabeçalho, vai para a IA antes
+ * (`leituraPorIa.ts`).
+ */
+export function temCabecalhoDeContatos(conteudo: string): boolean {
+  const primeira = conteudo.trim().split(/\r?\n/)[0] ?? "";
+  if (!primeira) return false;
+  const registros = registrosDelimitados(conteudo.trim(), detectarSeparador(primeira));
+  return registros.length > 0 && mapearCabecalho(registros[0]) !== null;
+}
+
+/**
  * Lê texto tabular: CSV, TSV, colado do Excel ou do Google Sheets.
  * Devolve lista vazia quando não reconhece uma tabela — é o sinal de que a
  * IA deve tentar.
@@ -380,8 +394,60 @@ export async function extrairDeTexto(
   }
   if (ehArquivoVcard(limpo)) return extrairDeVcard(limpo);
 
-  const tabela = dedupInterno(parsearTabelaLeads(limpo));
-  if (tabela.length > 0) return { candidatos: tabela, metodo: "tabela" };
+  // Tabela com cabeçalho: o leitor determinístico acerta tudo e não precisa
+  // de modelo nenhum.
+  const comCabecalho = temCabecalhoDeContatos(limpo);
+  if (comCabecalho) {
+    const tabela = dedupInterno(parsearTabelaLeads(limpo));
+    if (tabela.length > 0) return { candidatos: tabela, metodo: "tabela" };
+  }
+
+  // Lista solta: a IA lê primeiro, porque é onde o leitor sem cabeçalho
+  // erra (ver `leituraPorIa.ts`). Tudo o que ela devolve foi conferido
+  // contra o texto; se ela não responder, a escada antiga segue abaixo.
+  let iaFalhou = false;
+  if (!comCabecalho) {
+    const daIa = await lerListaComIa(limpo);
+    if (daIa.ok) {
+      const candidatos = dedupInterno(
+        daIa.leads
+          .map((l) =>
+            montar({
+              nome: l.nome ?? "",
+              telefone: l.telefone,
+              email: l.email,
+              mensagem: l.mensagem,
+              imovelInteresse: l.imovelInteresse,
+            }),
+          )
+          .filter((c): c is CandidatoLead => c !== null)
+          .slice(0, LIMITE_POR_IMPORTACAO),
+      );
+      if (candidatos.length > 0) {
+        return {
+          candidatos,
+          metodo: "ia",
+          aviso:
+            daIa.pedacosSemResposta > 0
+              ? `A IA não conseguiu ler ${daIa.pedacosSemResposta === 1 ? "um trecho" : `${daIa.pedacosSemResposta} trechos`} da lista agora. Confira se falta alguém ou envie de novo.`
+              : undefined,
+        };
+      }
+    } else {
+      iaFalhou = true;
+    }
+  }
+
+  const semCabecalho = dedupInterno(parsearTabelaLeads(limpo));
+  if (semCabecalho.length > 0) {
+    return {
+      candidatos: semCabecalho,
+      metodo: "tabela",
+      aviso: iaFalhou
+        ? "A leitura por IA não respondeu agora, então a lista foi lida linha a linha. Confira nome e telefone de cada contato antes de importar."
+        : undefined,
+    };
+  }
 
   // Mesma escada do PDF: antes de gastar uma chamada de IA, tenta o extrator
   // por regex, que já resolve lista solta no formato "Nome — telefone".

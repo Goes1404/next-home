@@ -42,6 +42,7 @@ F0–F6.
 ## Importar e cadastrar
 - [[importar-conversa-do-whatsapp]] — o .zip de "Exportar conversa" vira lead; contato salvo na agenda vem sem telefone, de propósito (12/09)
 - [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]] — .txt da conversa, .vcf, .xlsx, foto/print e o CSV do Google Contatos
+- [[lista-de-leads-sem-cabecalho-e-lida-pela-ia]] — lista .txt solta vai à IA; telefone, nome e e-mail só entram se estiverem no texto
 
 ## Dados do lead
 - [[perfil-do-lead-abre-dentro-da-conversa]] — detalhes e ações sem abandonar o chat
