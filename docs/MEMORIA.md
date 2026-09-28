@@ -8280,3 +8280,19 @@ Nota: [[lista-de-leads-sem-cabecalho-e-lida-pela-ia]].
   expectativa no teste.
 - Sem chave da OpenAI no ambiente de desenvolvimento, a prova com o modelo
   real é importar uma lista em produção.
+
+## A apresentação digital é o link, não a foto (28/09/2026, v40)
+
+Nota: [[apresentacao-digital-e-o-link-da-pagina]].
+
+- **A regra 17 mandava "o link junto com uma ou duas fotos", e o modelo
+  mandava só a foto.** Pedir foto em `anexosMidia` é fácil; copiar o link
+  da ficha é o passo que ele esquecia. Regra com duas metades perde a
+  difícil.
+- **Agora o código garante** (`apresentacaoDigital.ts`, dentro de
+  `sanearRespostaIA`): quando o cliente pede apresentação/material/book, ou
+  a resposta fala em "apresentação", as fotos saem antes de virar anexo e o
+  link da página entra por último, montado pelo slug. Sem saber de qual
+  imóvel é, nada muda.
+- **`sanearRespostaIA` recebe a fala do cliente** (`textoDaVez`) como
+  sexto argumento. É o único jeito de saber se ele PEDIU a apresentação.

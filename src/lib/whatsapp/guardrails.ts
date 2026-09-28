@@ -13,6 +13,7 @@ import {
 import { corrigirVisitaNoPassado, verificarCoerenciaVisita } from "./coerenciaVisita";
 import { aproveitarSoONovo, ehRepeticaoDoBot, textoNoLugarDaRepeticao } from "./repeticao";
 import { manterIdentidadeHonesta } from "./identidadeHonesta";
+import { decidirApresentacao, garantirLinkDaPagina } from "./apresentacaoDigital";
 
 /**
  * Guardrails de saída: nada sai para o WhatsApp do cliente sem conferir
@@ -53,6 +54,8 @@ export type RespostaSaneada = {
   catalogoAnexado: boolean;
   /** A resposta repetia, palavra por palavra, algo que o bot já tinha dito? */
   repeticaoBloqueada: boolean;
+  /** A apresentação saiu como link da página (fotos tiradas ou link posto pelo código)? */
+  apresentacaoComoLink: boolean;
 };
 
 
@@ -74,8 +77,27 @@ export function sanearRespostaIA(
   slugCorretor?: string | null,
   /** Nome da assistente, para a apresentação honesta quando a IA mentir sobre o que é. */
   nomeAssistente?: string | null,
+  /*
+   * O que o cliente acabou de escrever. Só para saber se ele pediu a
+   * apresentação: aí ela sai como LINK da página, nunca como foto.
+   */
+  falaDoCliente?: string | null,
 ): RespostaSaneada {
   const slugsPermitidos = new Set(catalogo.map((e) => e.slug));
+
+  /*
+   * A apresentação digital é o link da página, nunca uma foto. A IA pedia
+   * as fotos e esquecia o link (ver `apresentacaoDigital.ts`); as fotos
+   * saem ANTES de virar anexo, e o link entra no fim, junto com o do
+   * catálogo.
+   */
+  const apresentacao = decidirApresentacao({
+    texto: resposta.textoResposta ?? "",
+    pedidos: resposta.anexosMidia ?? [],
+    recomendados: resposta.imoveisRecomendados ?? [],
+    catalogo,
+    falaDoCliente,
+  });
 
   /*
    * A IA pede mídia por slug + tipo; quem monta a URL é o código. Isso
@@ -84,7 +106,7 @@ export function sanearRespostaIA(
    * e 6 bloqueados em produção).
    */
   const { anexos, pedidosSemMidia, repetidos } = resolverAnexos(
-    resposta.anexosMidia,
+    apresentacao.pedidos,
     catalogo,
     midiasJaEnviadas(historico),
   );
@@ -113,7 +135,7 @@ export function sanearRespostaIA(
     .map((e) => e.precoAPartir)
     .filter((p): p is number => typeof p === "number" && p > 0);
 
-  const semValor = removerValores(soarHumano(resposta.textoResposta ?? ""), 0, pisosPermitidos);
+  const semValor = removerValores(soarHumano(apresentacao.texto), 0, pisosPermitidos);
 
   /*
    * Repetição literal do que o bot já disse. Medido: 23 das 80 mensagens
@@ -186,7 +208,10 @@ export function sanearRespostaIA(
   const comCatalogo = resposta.mandarCatalogo
     ? anexarLinkDoCatalogo(semRepeticao, slugCorretor)
     : { texto: semRepeticao, anexou: false };
-  const texto = comCatalogo.texto;
+  const comApresentacao = apresentacao.slug
+    ? garantirLinkDaPagina(comCatalogo.texto, apresentacao.slug, catalogo)
+    : { texto: comCatalogo.texto, anexou: false };
+  const texto = comApresentacao.texto;
 
   /*
    * A visita só passa se a data BATER com o dia prometido no texto. Uma
@@ -221,7 +246,7 @@ export function sanearRespostaIA(
     resposta: {
       ...resposta,
       textoResposta: texto,
-      anexosMidia: resposta.anexosMidia ?? [],
+      anexosMidia: apresentacao.pedidos,
       imoveisRecomendados: recomendadosValidos,
       visitaProposta:
         coerencia.coerente && visita && dataVisita
@@ -239,5 +264,6 @@ export function sanearRespostaIA(
     repeticaoBloqueada: repetiu,
     prazoRemovido: semPrazo.removeu,
     catalogoAnexado: comCatalogo.anexou,
+    apresentacaoComoLink: apresentacao.tirouFotos || comApresentacao.anexou,
   };
 }

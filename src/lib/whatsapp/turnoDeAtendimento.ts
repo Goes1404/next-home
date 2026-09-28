@@ -260,6 +260,7 @@ export async function executarTurnoDeAtendimento(
     pedido.historico,
     pedido.identidade.slugCorretor,
     pedido.identidade.nomeAssistente,
+    textoDaVez,
   );
 
   const partes = dividirEmMensagens(saneada.resposta.textoResposta);
