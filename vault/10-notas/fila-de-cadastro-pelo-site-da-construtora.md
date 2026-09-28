@@ -7,7 +7,7 @@ custou: medio
 codigo: supabase/migrations/0128_fila_de_cadastro_pelo_site_da_construtora.sql
 created: 2026-09-28
 updated: 2026-09-28
-summary: Os 14 candidatos "cadastrar" viraram rascunhos lidos da página de cada construtora; o apto.vc só serviu para achar quem constrói. Fotos ficam para a aba Importar, com o link já gravado.
+summary: Os 14 candidatos "cadastrar" viraram rascunhos lidos da página de cada construtora; o apto.vc só serviu para achar quem constrói. As fotos vieram depois, por um workflow do GitHub Actions que usa o mesmo caminho da aba Importar.
 ---
 
 # Fila de cadastro pelo site da construtora
@@ -28,8 +28,16 @@ imóveis RASCUNHO (`publicado = false`), cada um ligado ao candidato
   entrou quando a rua do apto bate com a da construtora (fora: Liv Stay e
   Square).
 - **Fotos não entram por migration**: precisam de `registrarMidia` (medida,
-  blur, dedup por hash), que roda no painel. Em cada rascunho, Importar →
-  Site da construtora já abre com o link, e o corretor escolhe as fotos.
+  blur, dedup por hash). Vieram por `scripts/catalogo/trazerFotos0128.ts`,
+  rodando no GitHub Actions (`fotos-da-fila.yml`), onde está a chave de
+  serviço. A seleção curada fica em `scripts/catalogo/fotos-0128.json`: sem
+  banner, foto de obra, "conheça também" e fotos da região.
+- **O leitor para em 60 imagens** (`TETO_IMAGENS_SITE`), e no NID isso
+  cortou todas as plantas, que vêm no fim da página. Elas foram tiradas do
+  HTML à parte. Página com galeria grande perde o que vem depois.
+- **`parecePlanta` erra nos dois sentidos**: no Serenne marcou as fotos do
+  lazer como planta; no Oásis marcou "Suíte" e "Suíte master". Conferir o
+  tipo antes de gravar.
   Vídeos do YouTube e tours (Kuula, 3D Explora) entraram, como faz
   `adicionarMidiaExterna`.
 - **Vitta Barueri é loteamento** (`tipo = terreno`, lotes a partir de

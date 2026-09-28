@@ -8307,7 +8307,13 @@ Nota: [[fila-de-cadastro-pelo-site-da-construtora]].
 - **Agregador e construtora divergem** (Liv Stay: endereço e plantas;
   Dellagio: entrega). Preço e entrega ficaram vazios; coordenada só onde a
   rua bate.
-- **Fotos ficam para o painel** (Importar → Site da construtora, link já
-  gravado em `site_construtora`): `registrarMidia` não roda em migration.
+- **Fotos em lote pelo GitHub Actions** (`fotos-da-fila.yml` +
+  `scripts/catalogo/trazerFotos0128.ts`): a chave de serviço está nos
+  secrets do repositório, então o script roda lá, pelo mesmo caminho da aba
+  Importar. Workflow que dispara por `push` com filtro de `paths` é o jeito
+  de acionar: o MCP do GitHub não dispara `workflow_dispatch` (403).
+- **O leitor do site para em 60 imagens**: no NID cortou todas as plantas,
+  que vêm no fim. E `parecePlanta` marcou foto de lazer como planta
+  (Serenne) e "Suíte" como planta (Oásis).
 - **Migration grande pelo MCP**: conferir depois com `md5(descricao)` do
   banco contra o arquivo, para provar que o texto aplicado é o do repositório.
