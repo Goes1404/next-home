@@ -45,3 +45,11 @@ imóveis RASCUNHO (`publicado = false`), cada um ligado ao candidato
 - **Plantas com dado incompleto** no site (vagas e suítes por planta nem
   sempre aparecem) ficaram com 0, que o prompt omite. Conferir antes de
   publicar.
+- **Tours e vídeos que o leitor não achou** vieram depois
+  (`scripts/catalogo/trazerVideos0128.ts`, `videos-da-fila.yml`): o leitor
+  conhece Kuula, Matterport e 3D Explora, mas não tourmkr, Tour Brasil 360
+  e Instacasa, e não lê `<video><source>`. Tour entra como link; `.mp4` do
+  site da construtora sobe para o nosso Storage.
+- **Tour de outro prédio na página certa**: os dois tours da página do Liv
+  Stay se chamam "Beyond Residence" (28 m², planta que o Liv Stay nem tem).
+  Conferir o `<title>` do tour antes de cadastrar.
