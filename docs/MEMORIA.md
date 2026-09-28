@@ -8231,3 +8231,18 @@ Nota: [[impulsionamento-do-corretor-pela-etiqueta-da-meta]].
   app da Meta aprovado. A tela conta os leads pelo `meta_ad_id`.
 - **Guarda do porteiro exige `return` logo depois de `if (!conversa) {`**
   (`porteiro.test.ts`): log de diagnóstico vai num `if` separado antes.
+
+## Seis gráficos que decidem (28/09/2026)
+
+Nota: [[graficos-que-decidem]].
+
+- **Toda barra abre a lista filtrada, e a lista conta as mesmas pessoas.**
+  `?canal=` passou a existir na lista de leads; os padrões moram ao lado de
+  `canalDaOrigem` (`src/lib/graficos/calculos.ts`) com teste que simula o
+  `ilike`. Janela de 90 dias vai junto como `de=`.
+- **O funil conta quem passou; o link abre quem está.** A linha de detalhe
+  diz as duas coisas, senão o número da barra e o da lista divergem.
+- **`so-para-leitor` NÃO é `sr-only`**: ela volta a aparecer a partir de
+  640px. Legenda de tabela escondida é `sr-only`.
+- **Gráfico que vive em zero some** (quem espera resposta), a régua do
+  contador de aba.

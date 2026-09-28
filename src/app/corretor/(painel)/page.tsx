@@ -15,6 +15,7 @@ import { primeiroNome } from "@/lib/format";
 import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
 import { HeroInicio } from "./_componentes/HeroInicio";
 import { PrimeirosPassos } from "./_componentes/PrimeirosPassos";
+import { QuemEstaEsperando } from "./_componentes/graficos/QuemEstaEsperando";
 import { CartaoMeta } from "./financeiro/CartaoMeta";
 import { getRitmoDoCorretor } from "@/lib/financeiro/ritmoDoCorretor";
 import { getVendas } from "@/lib/financeiro/dados";
@@ -100,6 +101,12 @@ export default async function PainelInicio() {
       */}
       <Suspense fallback={<EsqueletoCartao linhas={3} />}>
         <BlocoDoHero nome={nomeNaSaudacao} />
+      </Suspense>
+
+      {/* Quem está esperando resposta, pelo tempo de espera. Some quando
+          ninguém espera; sem esqueleto para não empurrar a tela à toa. */}
+      <Suspense fallback={null}>
+        <QuemEstaEsperando corretorId={corretor.id} />
       </Suspense>
 
       {/* Some quando tudo está configurado: não segura a tela com esqueleto. */}

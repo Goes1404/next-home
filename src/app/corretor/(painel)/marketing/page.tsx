@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { OrigemDosLeads } from "@/app/corretor/(painel)/_componentes/graficos/OrigemDosLeads";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { AbasMarketing } from "@/app/corretor/(painel)/_componentes/AbasMarketing";
 import { getCorretorLogado } from "@/lib/corretorSessao";
@@ -80,6 +82,10 @@ export default async function PaginaMarketing() {
         videosDisponiveis={saldoVideo.disponiveis}
         videosNoMes={saldoVideo.cotaMensal}
       />
+
+      <Suspense fallback={null}>
+        <OrigemDosLeads />
+      </Suspense>
 
       <p className="text-fluid-xs text-tenue">
         Nada do que sai daqui entra no catálogo do imóvel nem aparece no site.

@@ -2,7 +2,7 @@ import "server-only";
 
 import { getLeadsLeves, getMeta, getTaxasDaEquipe, type VendaNaTela } from "./dados";
 import { repasseDoPeriodo } from "./extrato";
-import { diasRestantesNoMes, intervaloDo, mesAtual } from "./periodo";
+import { diasNoMes, diasRestantesNoMes, intervaloDo, mesAtual } from "./periodo";
 import {
   AMOSTRA_MINIMA,
   calcularRitmo,
@@ -85,6 +85,7 @@ export async function getRitmoDoCorretor(
       AMOSTRA_MINIMA.leadParaVisita,
     ),
     diasRestantes: diasRestantesNoMes(hoje),
+    diasNoMes: diasNoMes(hoje),
   });
 
   return {

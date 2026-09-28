@@ -1,3 +1,4 @@
+import { esperadoAteHoje } from "@/lib/graficos/calculos";
 import { centavos } from "./venda";
 
 /**
@@ -67,6 +68,11 @@ export type Ritmo = {
   visitaParaVenda: Taxa | null;
   leadParaVisita: Taxa | null;
   diasRestantes: number;
+  /**
+   * Quanto já deveria estar ganho hoje num ritmo constante (a marca na
+   * barra). `null` quando o chamador não informou quantos dias o mês tem.
+   */
+  esperadoHoje: number | null;
 };
 
 export function calcularRitmo(params: {
@@ -76,6 +82,7 @@ export function calcularRitmo(params: {
   visitaParaVenda: Taxa | null;
   leadParaVisita: Taxa | null;
   diasRestantes: number;
+  diasNoMes?: number;
 }): Ritmo {
   const falta = centavos(Math.max(0, params.meta - params.ganhoNoMes));
   const atingida = falta === 0;
@@ -99,6 +106,10 @@ export function calcularRitmo(params: {
     visitaParaVenda: params.visitaParaVenda,
     leadParaVisita: params.leadParaVisita,
     diasRestantes: params.diasRestantes,
+    esperadoHoje:
+      params.diasNoMes === undefined
+        ? null
+        : esperadoAteHoje(params.meta, params.diasNoMes, params.diasRestantes),
   };
 }
 

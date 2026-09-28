@@ -10,6 +10,8 @@ import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoD
 import { Suspense } from "react";
 import { UsoDasNovidades } from "./_componentes/UsoDasNovidades";
 import { ProntidaoDaEquipe } from "./_componentes/ProntidaoDaEquipe";
+import { PassagemDoFunil } from "@/app/corretor/(painel)/_componentes/graficos/PassagemDoFunil";
+import { PlacarDaEquipe } from "@/app/corretor/(painel)/_componentes/graficos/PlacarDaEquipe";
 
 export const metadata: Metadata = { title: "Visão geral" };
 
@@ -266,6 +268,12 @@ export default async function AdminVisaoGeralPage() {
           })}
         </ul>
       </section>
+
+      <PassagemDoFunil contagens={agregado.porEtapa} />
+
+      <Suspense fallback={null}>
+        <PlacarDaEquipe equipe={equipe} />
+      </Suspense>
 
       <section className="cartao p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">

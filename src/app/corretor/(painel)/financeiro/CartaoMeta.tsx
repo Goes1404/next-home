@@ -113,11 +113,40 @@ export function CartaoMeta({ estado, compacto = false }: { estado: EstadoDaMeta;
   }
 
   const r = estado.ritmo;
+  /*
+   * A marca de "onde o ritmo pede que você esteja hoje" (28/09/2026). Não é
+   * previsão do mês: comissão chega em degraus (uma venda de uma vez), e
+   * projetar o fim do mês pelo que entrou até agora mentiria nos dois
+   * sentidos. A marca só diz se hoje você está adiantado ou atrasado.
+   */
+  const marca =
+    r.esperadoHoje !== null && r.meta > 0 && !r.atingida && r.esperadoHoje > 0
+      ? Math.min(100, Math.round((r.esperadoHoje / r.meta) * 100))
+      : null;
+  const adiantado = r.esperadoHoje !== null && r.ganho >= r.esperadoHoje;
   const barra = (
-    <div className="bg-vidro-forte h-2.5 overflow-hidden rounded-full" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(r.progresso * 100)}>
-      <div className="bg-acento h-full rounded-full transition-[width] duration-700" style={{ width: `${Math.round(r.progresso * 100)}%` }} />
+    <div className="relative">
+      <div className="bg-vidro-forte h-2.5 overflow-hidden rounded-full" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(r.progresso * 100)}>
+        <div className="bg-acento h-full rounded-full transition-[width] duration-700" style={{ width: `${Math.round(r.progresso * 100)}%` }} />
+      </div>
+      {marca !== null && (
+        <span
+          aria-hidden
+          className="bg-titulo ring-superficie absolute -top-1 h-[18px] w-[3px] -translate-x-1/2 rounded-full ring-2"
+          style={{ left: `${marca}%` }}
+        />
+      )}
     </div>
   );
+  const linhaDoRitmo =
+    marca !== null && r.esperadoHoje !== null ? (
+      <p className="text-fluid-xs text-apoio">
+        <span aria-hidden className="bg-titulo mr-1.5 inline-block h-2.5 w-[3px] rounded-full align-middle" />
+        {adiantado
+          ? `Adiantado: num ritmo constante você teria ${formatarReais(r.esperadoHoje)} hoje.`
+          : `Atrasado: num ritmo constante você já teria ${formatarReais(r.esperadoHoje)} hoje.`}
+      </p>
+    ) : null;
 
   if (compacto) {
     return (
@@ -129,6 +158,7 @@ export function CartaoMeta({ estado, compacto = false }: { estado: EstadoDaMeta;
           </p>
         </div>
         {barra}
+        {linhaDoRitmo}
         <p className="text-fluid-sm text-titulo font-medium">{fraseDoRitmo(r)}</p>
       </Link>
     );
@@ -153,6 +183,7 @@ export function CartaoMeta({ estado, compacto = false }: { estado: EstadoDaMeta;
         </button>
       </div>
       {barra}
+      {linhaDoRitmo}
       <p className="text-fluid-lg text-titulo font-bold">{fraseDoRitmo(r)}</p>
 
       {!r.atingida && r.vendas !== null && (

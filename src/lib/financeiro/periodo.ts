@@ -48,6 +48,11 @@ export function mesAtual(hoje: string = hojeEmSaoPaulo()): string {
   return `${hoje.slice(0, 7)}-01`;
 }
 
+/** Quantos dias o mês de hoje tem. */
+export function diasNoMes(hoje: string = hojeEmSaoPaulo()): number {
+  return ultimoDia(Number(hoje.slice(0, 4)), Number(hoje.slice(5, 7)));
+}
+
 /** Quantos dias faltam no mês, contando hoje. */
 export function diasRestantesNoMes(hoje: string = hojeEmSaoPaulo()): number {
   const ano = Number(hoje.slice(0, 4));
