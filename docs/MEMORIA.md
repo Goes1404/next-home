@@ -8363,3 +8363,21 @@ Nota: [[migration-aplicada-fora-da-branch-e-apagada-pela-outra]].
 - **Régua:** aplicar migration no banco é levar o arquivo para a branch de
   produção no mesmo dia. Migration aplicada só de uma branch paralela vira
   "objeto sem origem" para as outras sessões, e objeto sem origem é apagado.
+
+## Os botões do site falavam uma língua que o porteiro não entendia (28/09/2026)
+
+Nota: [[botoes-do-site-mandavam-texto-que-o-porteiro-nao-reconhecia]].
+
+- **Desde a 0111, o visitante novo do site era ignorado.** O webhook só
+  deixa entrar número sem lead quando a primeira fala é convite reconhecido,
+  e os 13 pontos de WhatsApp do site montavam frase própria ("Olá, Bruna!
+  Vim pelo site…"). Nenhuma casava. Botão funcionando, conversa abrindo no
+  celular, e o CRM sem nada.
+- **Hoje:** com imóvel, `mensagemDeAnuncio(nome, intencao)`; sem, 
+  `mensagemDoSite()`. Moram em `mensagensDoSite.ts`, puro, porque
+  importar do `porteiro.ts` via `site.ts` engordava rotas do painel
+  (catraca acusou +1 KB mesmo assim; teto subiu 1 KB em três rotas, com o
+  motivo escrito). Guarda: `botoesDoSite.test.ts`.
+- **Custo:** a mensagem não cumprimenta mais o corretor pelo nome.
+- **Régua:** ao criar porteiro que DESCARTA quem não reconhece, procurar
+  todos os lugares que produzem a entrada que ele precisa reconhecer.

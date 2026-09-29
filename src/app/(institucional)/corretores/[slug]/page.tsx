@@ -11,6 +11,7 @@ import { getCorretorPorSlug, getEmpreendimentosPorCorretor } from "@/lib/queries
 import { linkWhatsappPara, site } from "@/lib/site";
 import type { CorretorPerfil, Empreendimento } from "@/lib/types";
 import { descricaoDePagina } from "@/lib/seo";
+import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 
 type Params = { slug: string };
 
@@ -104,7 +105,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
   const primeiroNome = corretor.nome.split(" ")[0];
   const whatsapp = linkWhatsappPara(
     corretor.whatsapp,
-    `Olá, ${corretor.nome}! Vim pelo site da ${site.nome} e quero falar com você.`,
+    mensagemDoSite(),
   );
   const cidades = cidadesDe(empreendimentos);
 

@@ -4,11 +4,12 @@ import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { linkWhatsapp, linkWhatsappPara } from "@/lib/site";
+import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 
 export async function CtaFinal() {
   const corretorAtivo = await getCorretorAtivo();
   const link = corretorAtivo
-    ? linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pelo site.`)
+    ? linkWhatsappPara(corretorAtivo.whatsapp, mensagemDoSite())
     : linkWhatsapp();
 
   return (

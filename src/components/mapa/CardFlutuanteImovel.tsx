@@ -1,6 +1,5 @@
 "use client";
 
-import { site } from "@/lib/site";
 import Link from "next/link";
 import Image from "next/image";
 import type { PontoDoMapa } from "@/lib/mapa/ponto";
@@ -9,6 +8,7 @@ import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
 import { STATUS_TINTA } from "@/lib/statusCor";
 import { MapPin } from 'lucide-react';
+import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
 
 
 interface Props {
@@ -19,7 +19,7 @@ interface Props {
 export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
   const foneLimpo = normalizarWhatsapp(imovel.corretor?.whatsapp || "5511972207204") || "5511972207204";
   const textoZap = encodeURIComponent(
-    `Olá! Vi o ${imovel.nome} no mapa da ${site.nome} e gostaria de mais informações.`,
+    mensagemDeAnuncio(imovel.nome, "saber"),
   );
   const zapLink = `https://wa.me/${foneLimpo}?text=${textoZap}`;
 

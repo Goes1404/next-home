@@ -48,12 +48,15 @@ const TETOS_KB = {
   // em toda rota do painel), e o importador ganhou tours, vídeo em arquivo e
   // a leitura do site da construtora.
   "/corretor/(painel)/conversas/page": 1030,
-  "/corretor/(painel)/imoveis/criar-imagem/page": 1008,
+  // 28/09: +1 KB em criar-imagem, editor do imóvel e vídeo é
+  // `mensagensDoSite` (as mensagens que o porteiro reconhece), puxado via
+  // `site.ts`. Sem ela, o visitante novo do site é ignorado pelo webhook.
+  "/corretor/(painel)/imoveis/criar-imagem/page": 1009,
   "/corretor/(painel)/imoveis/[slug]/importar/page": 1017,
   // O editor do imóvel mostra na mesma tela as unidades, o andamento da obra
   // e os leads que combinam (com "reabrir perdidos"): 26/09.
-  "/corretor/(painel)/imoveis/[slug]/page": 826,
-  "/corretor/(painel)/marketing/video/page": 1000,
+  "/corretor/(painel)/imoveis/[slug]/page": 827,
+  "/corretor/(painel)/marketing/video/page": 1001,
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
   // 28/09: +3 KB na home e +7 na listagem são o coração de favorito em cada

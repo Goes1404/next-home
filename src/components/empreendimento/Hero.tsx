@@ -8,6 +8,7 @@ import { precoAPartirDe } from "@/lib/format";
 import { linkWhatsappPara } from "@/lib/site";
 import { STATUS_PONTO, STATUS_TINTA } from "@/lib/statusCor";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
+import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
 
 /**
  * Hero editorial: a foto ocupa tudo, o nome do imóvel é o elemento gráfico
@@ -17,11 +18,11 @@ import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
 export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) {
   const link = linkWhatsappPara(
     e.corretor.whatsapp,
-    `Olá, ${e.corretor.nome}! Vim pelo site e quero saber mais sobre o ${e.nome}.`,
+    mensagemDeAnuncio(e.nome, "saber"),
   );
   const linkDescricao = linkWhatsappPara(
     e.corretor.whatsapp,
-    `Olá, ${e.corretor.nome}! Vim pelo site e quero a descrição completa, plantas e condições do ${e.nome}.`,
+    mensagemDeAnuncio(e.nome, "material"),
   );
 
   return (

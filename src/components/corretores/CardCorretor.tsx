@@ -3,8 +3,9 @@ import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { iniciais } from "@/lib/format";
 import type { AtuacaoCorretor } from "@/lib/queries";
-import { linkWhatsappPara, site } from "@/lib/site";
+import { linkWhatsappPara } from "@/lib/site";
 import type { CorretorPerfil } from "@/lib/types";
+import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 
 type CardCorretorProps = {
   corretor: CorretorPerfil;
@@ -94,7 +95,7 @@ export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps)
   const resumo = resumoAtuacao(atuacao);
   const whatsapp = linkWhatsappPara(
     corretor.whatsapp,
-    `Olá, ${corretor.nome}! Vim pelo site da ${site.nome} e quero falar com você.`,
+    mensagemDoSite(),
   );
   const bio = corretor.bio?.trim();
 

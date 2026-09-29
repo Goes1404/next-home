@@ -6,11 +6,12 @@ import { Reveal } from "@/components/motion/Reveal";
 import { iniciais } from "@/lib/format";
 import { linkWhatsappPara } from "@/lib/site";
 import type { Empreendimento } from "@/lib/types";
+import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
 
 export function Contato({ empreendimento: e }: { empreendimento: Empreendimento }) {
   const link = linkWhatsappPara(
     e.corretor.whatsapp,
-    `Olá, ${e.corretor.nome}! Vim pelo site e quero receber a tabela de valores e condições do ${e.nome}.`,
+    mensagemDeAnuncio(e.nome, "tabela"),
   );
 
   return (

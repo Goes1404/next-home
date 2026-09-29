@@ -75,3 +75,4 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 
 ## Relacionados
 - [[MOC — Evals e Medição]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]
+- [[botoes-do-site-mandavam-texto-que-o-porteiro-nao-reconhecia]] — visitante novo do site era ignorado pela 0111

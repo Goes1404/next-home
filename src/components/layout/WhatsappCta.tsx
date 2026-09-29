@@ -1,6 +1,7 @@
 import { WhatsappLink } from "@/components/analytics/WhatsappLink";
 import { FlutuanteVisivel } from "@/components/layout/FlutuanteVisivel";
 import { linkWhatsapp, linkWhatsappPara } from "@/lib/site";
+import { mensagemDeAnuncio, mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 
 type WhatsappCtaProps = {
   empreendimento?: string;
@@ -32,7 +33,7 @@ export function WhatsappCta({ empreendimento, corretor }: WhatsappCtaProps) {
   const link = corretor
     ? linkWhatsappPara(
         corretor.whatsapp,
-        `Olá, ${corretor.nome}! Vim pelo site${empreendimento ? ` e quero saber mais sobre o ${empreendimento}` : ""}.`,
+        empreendimento ? mensagemDeAnuncio(empreendimento, "saber") : mensagemDoSite(),
       )
     : linkWhatsapp(empreendimento);
 

@@ -4,6 +4,7 @@ import { GlassSurface } from "@/components/glass/GlassSurface";
 import { linkWhatsappPara } from "@/lib/site";
 import type { Empreendimento } from "@/lib/types";
 import { Smartphone, FileText, Download, Check, ArrowRight } from 'lucide-react';
+import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
 
 
 interface Props {
@@ -13,7 +14,7 @@ interface Props {
 export function BookDigital({ empreendimento: e }: Props) {
   const linkWhatsappBook = linkWhatsappPara(
     e.corretor.whatsapp,
-    `Olá, ${e.corretor.nome}! Gostaria de receber o Book Digital e a tabela oficial do ${e.nome}.`,
+    mensagemDeAnuncio(e.nome, "material"),
   );
 
   return (

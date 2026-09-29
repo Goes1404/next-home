@@ -5,6 +5,7 @@ import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 import { getTemaEscolhido } from "@/lib/tema";
+import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 
 const LINKS_RAPIDOS = [
   { href: "/empreendimentos", label: "Empreendimentos" },
@@ -65,7 +66,7 @@ export async function Footer() {
             {corretorAtivo ? (
               <li>
                 <a
-                  href={linkWhatsappPara(corretorAtivo.whatsapp, `Olá, ${corretorAtivo.nome}! Vim pelo site.`)}
+                  href={linkWhatsappPara(corretorAtivo.whatsapp, mensagemDoSite())}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-fluid-sm text-legenda inline-flex min-h-11 items-center transition-colors hover:text-acento-suave"

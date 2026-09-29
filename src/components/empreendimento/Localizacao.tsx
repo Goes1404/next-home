@@ -3,6 +3,7 @@ import { MapaLocal } from "@/components/mapa/MapaLocal";
 import { Reveal } from "@/components/motion/Reveal";
 import { linkWhatsappPara } from "@/lib/site";
 import type { Empreendimento } from "@/lib/types";
+import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
 
 /*
  * As coordenadas cadastradas são centroides de via/bairro, não a porta do
@@ -18,7 +19,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
   // Quem olha o mapa está decidindo se vale a ida — é o momento da visita.
   const linkVisita = linkWhatsappPara(
     e.corretor.whatsapp,
-    `Olá, ${e.corretor.nome}! Vim pelo site e quero agendar uma visita ao ${e.nome}.`,
+    mensagemDeAnuncio(e.nome, "visita"),
   );
 
   return (

@@ -11,6 +11,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getEmpreendimentos } from "@/lib/queries";
 import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
+import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 
 export const metadata: Metadata = {
   title: `Fale com a ${site.nome}`,
@@ -93,7 +94,7 @@ export default async function ContatoPage({
                       <WhatsappLink
                         href={linkWhatsappPara(
                           corretorAtivo.whatsapp,
-                          `Olá, ${corretorAtivo.nome}! Vim pelo site.`,
+                          mensagemDoSite(),
                         )}
                         origem="contato"
                         corretorId={corretorAtivo.id}

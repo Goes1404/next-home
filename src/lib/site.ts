@@ -5,6 +5,7 @@
  */
 
 import { lerMarca } from "./marca";
+import { mensagemDeAnuncio, mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 
 /**
  * A marca desta instalação (`NEXT_PUBLIC_MARCA`). Sem a variável, os dados
@@ -203,8 +204,8 @@ export function linkWhatsappApp(numero: string, mensagem: string, ehCelular: boo
  */
 export function linkWhatsapp(empreendimento?: string, indice = 0): string {
   const alvo = site.whatsapp[indice] ?? site.whatsapp[0];
-  const texto = empreendimento
-    ? `Olá! Vim pelo site e quero receber a tabela de valores e condições do ${empreendimento}.`
-    : "Olá! Vim pelo site e quero conhecer as melhores oportunidades de imóveis.";
+  // Textos que o porteiro RECONHECE: sem isso, quem ainda não é lead e
+  // escreve pela primeira vez é ignorado pelo webhook (0111).
+  const texto = empreendimento ? mensagemDeAnuncio(empreendimento, "tabela") : mensagemDoSite();
   return linkWhatsappPara(alvo.numero, texto);
 }

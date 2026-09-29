@@ -17,6 +17,7 @@ import { fotosDoLazer } from "@/lib/lazerFotos";
 import { getSimilares } from "@/lib/queries";
 import { linkWhatsappPara } from "@/lib/site";
 import type { Empreendimento } from "@/lib/types";
+import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
 
 /** Seções realmente renderizadas — a barra de âncoras não pode oferecer link morto. */
 function secoesDe(e: Empreendimento): Secao[] {
@@ -67,7 +68,7 @@ export async function SecoesDoImovel({ empreendimento: e }: { empreendimento: Em
         plantasGerais={e.plantas}
         contatoWhatsapp={linkWhatsappPara(
           e.corretor.whatsapp,
-          `Olá, ${e.corretor.nome}! Vim pelo site e quero a tabela de valores e as plantas do ${e.nome}.`,
+          mensagemDeAnuncio(e.nome, "tabela"),
         )}
       />
       <Lazer itens={e.lazer} fotosDosItens={[...fotosDoLazer(e.lazer, e.galeria)]} />
