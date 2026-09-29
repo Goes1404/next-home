@@ -28,6 +28,7 @@ import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
 import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
+import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvaliacoes";
 import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
 import { abrirConversasDePortal } from "@/lib/whatsapp/aberturaPelaIA";
@@ -580,6 +581,16 @@ export async function GET(req: NextRequest) {
   });
 
   /*
+   * O relatório semanal das avaliações da IA (29/09/2026): segunda de
+   * manhã, para o próprio corretor, com os 👎 agrupados por motivo. Mesma
+   * regra do resumo do dia: não passa pela janela comercial nem pela cota.
+   */
+  const relatoriosDasAvaliacoes = await enviarRelatoriosDasAvaliacoes(supabase).catch((e) => {
+    console.error("[relatório das avaliações]", e);
+    return 0;
+  });
+
+  /*
    * Também antes da janela, pelo mesmo motivo: o aviso de lead pago sem
    * contato vai para o CORRETOR (0121), e lead de portal que chega às 22h
    * não pode esperar até as 9h para alguém saber dele. E reserva vencida
@@ -595,7 +606,7 @@ export async function GET(req: NextRequest) {
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, leadsDoGmail, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, reservasLiberadas, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -641,7 +652,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "descartado") resultado.descartados++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, primeirosContatos, avisosDeNovidade, leadsDoGmail });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, reservasLiberadas, primeirosContatos, avisosDeNovidade, leadsDoGmail });
   } finally {
     await destravarDisparo("followups", dono);
   }

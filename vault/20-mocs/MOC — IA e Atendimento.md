@@ -67,6 +67,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[memoria-da-conversa-e-ficha-viva]] — memória em prosa, recusa com consequência e pergunta antes do funil (0110)
 - [[eval-de-28-09-e-a-v41]] — "Next Home" travava o foco no Breeze Home; guarda anti-eco enlatada; visita confirmada sem aceite; renda em 1 de 17 (v41)
 - [[perguntas-antes-da-indicacao]] — v42: as quatro perguntas vêm antes de indicar imóvel; o código corta indicação prematura
+- [[avaliacoes-do-corretor-que-ensinam]] — 0131: motivo do 👎, 👍 vira exemplo, relatório semanal no WhatsApp
 
 ## Conexão do número
 - [[pareamento-decide-pelo-estado]]

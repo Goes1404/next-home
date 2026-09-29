@@ -3,7 +3,7 @@ import "server-only";
 import type { Empreendimento } from "@/lib/types";
 import { gerarRespostaIA, type RespostaAgenteIA } from "./aiAgent";
 import type { AnexoResolvido } from "./resolverMidia";
-import { buscarExemplosFewShot } from "./aprendizadoContinuo";
+import { buscarExemplosFewShot, contarExemplosDoAprendizado } from "./aprendizadoContinuo";
 import {
   catalogoParaAtendimento,
   imoveisCitados,
@@ -440,6 +440,6 @@ export async function executarTurnoDeAtendimento(
     historicoAnterior,
     bloqueios: saneada.anexosBloqueados + saneada.slugsBloqueados,
     jogada,
-    fewShot: exemplosFewShot?.length ?? 0,
+    fewShot: contarExemplosDoAprendizado(exemplosFewShot),
   };
 }

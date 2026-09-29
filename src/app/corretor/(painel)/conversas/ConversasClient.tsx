@@ -150,7 +150,7 @@ export function ConversasClient({
             return {
               ...atual,
               [row.conversa_id]: lista.map((m) =>
-                m.id === row.id ? { ...deMensagemRow(row), avaliacao: m.avaliacao } : m,
+                m.id === row.id ? { ...deMensagemRow(row), avaliacao: m.avaliacao, motivoAvaliacao: m.motivoAvaliacao } : m,
               ),
             };
           });

@@ -14,6 +14,7 @@
  *   - corretor_whatsapp_instancias.modo_bot
  *   - corretor_whatsapp_instancias.status_conexao
  *   - ia_interacoes.avaliacao
+ *   - ia_interacoes.motivo_avaliacao (0131)
  *   - ia_interacoes.origem
  *   - lead_interacoes.tipo
  *   - lead_observacoes_ia.temperatura_label
@@ -888,6 +889,7 @@ export type Database = {
           creci: string
           deve_trocar_senha: boolean
           resumo_diario_em: string | null
+          relatorio_avaliacoes_em: string | null
           resumo_fim_de_semana: boolean
           resumo_hora: number
           em_pausa: boolean
@@ -911,6 +913,7 @@ export type Database = {
           creci: string
           deve_trocar_senha?: boolean
           resumo_diario_em?: string | null
+          relatorio_avaliacoes_em?: string | null
           resumo_fim_de_semana?: boolean
           resumo_hora?: number
           em_pausa?: boolean
@@ -934,6 +937,7 @@ export type Database = {
           creci?: string
           deve_trocar_senha?: boolean
           resumo_diario_em?: string | null
+          relatorio_avaliacoes_em?: string | null
           resumo_fim_de_semana?: boolean
           resumo_hora?: number
           em_pausa?: boolean
@@ -1225,6 +1229,7 @@ export type Database = {
           anexos_bloqueados: number | null
           anexos_enviados: number | null
           avaliacao: "boa" | "ruim" | null
+          motivo_avaliacao: "nao_respondeu" | "inventou" | "robotico" | "insistente" | "imovel_errado" | "outro" | null
           contexto: Json | null
           conversa_id: string | null
           corretor_id: string | null
@@ -1247,6 +1252,7 @@ export type Database = {
           anexos_bloqueados?: number | null
           anexos_enviados?: number | null
           avaliacao?: "boa" | "ruim" | null
+          motivo_avaliacao?: "nao_respondeu" | "inventou" | "robotico" | "insistente" | "imovel_errado" | "outro" | null
           contexto?: Json | null
           conversa_id?: string | null
           corretor_id?: string | null
@@ -1269,6 +1275,7 @@ export type Database = {
           anexos_bloqueados?: number | null
           anexos_enviados?: number | null
           avaliacao?: "boa" | "ruim" | null
+          motivo_avaliacao?: "nao_respondeu" | "inventou" | "robotico" | "insistente" | "imovel_errado" | "outro" | null
           contexto?: Json | null
           conversa_id?: string | null
           corretor_id?: string | null

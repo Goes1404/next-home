@@ -147,6 +147,7 @@ export function deMensagemRow(row: MensagemRow): MensagemConversa {
     // segunda consulta em ia_interacoes. (O comentário antigo falava de um
     // "reconcílio periódico" que não existe; enganou uma investigação.)
     avaliacao: null,
+    motivoAvaliacao: null,
     // Pelo mesmo motivo, sem contexto: a linha de telemetria é escrita DEPOIS
     // do envio, e é o reconcílio de 15s que a traz.
     contexto: null,

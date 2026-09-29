@@ -15,7 +15,8 @@ export const TETO_CORRECOES = 3;
 
 const VAZIAS = new Set(["que", "para", "com", "uma", "voce", "vocês", "voces", "tem", "ter", "sim", "nao", "isso", "esse", "essa", "como", "qual", "mais", "pode", "gostaria", "queria", "obrigado", "obrigada", "tudo", "bem"]);
 
-function termos(texto: string): Set<string> {
+/** Exportado: as respostas aprovadas (👍) escolhem pelo MESMO critério. */
+export function termosDaFala(texto: string): Set<string> {
   return new Set(
     texto
       .normalize("NFD")
@@ -33,9 +34,9 @@ function termos(texto: string): Set<string> {
  * JEITO do corretor, que vale para qualquer assunto.
  */
 export function escolherCorrecoes(correcoes: Correcao[], mensagemAtual: string): Correcao[] {
-  const atual = termos(mensagemAtual);
+  const atual = termosDaFala(mensagemAtual);
   const pontuadas = correcoes.map((c, i) => {
-    const t = termos(c.falaCliente);
+    const t = termosDaFala(c.falaCliente);
     let comum = 0;
     for (const x of t) if (atual.has(x)) comum++;
     return { c, comum, i };

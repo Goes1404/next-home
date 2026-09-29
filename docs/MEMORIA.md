@@ -8483,3 +8483,14 @@ número só é capacidade dita fora de pergunta.
   ao modelo com o trecho que ele ia repetir. Três personas: 6 refeitas, 0
   repetiram, 0 frases prontas. Dois blocos pedindo "termine com uma
   pergunta" fazem o modelo emendar duas perguntas: só um bloco pergunta.
+
+## As avaliações do corretor passaram a ensinar (0131, 29/09/2026)
+
+Nota: [[avaliacoes-do-corretor-que-ensinam]]. Havia 13 avaliações na vida
+inteira e nada as lia. Agora o 👎 tem motivo em um toque, o 👍 volta ao
+prompt como exemplo (`respostasAprovadas.ts`), conversa com 👎 sai do
+few-shot, e o corretor recebe o resumo toda segunda no WhatsApp dele.
+**`ia_interacoes` agora tem grant de UPDATE só em `avaliacao` e
+`motivo_avaliacao`**: antes o corretor podia reescrever a telemetria pela
+API. Código novo que precise gravar outra coluna de `ia_interacoes` pela
+sessão do corretor vai levar "permission denied" — use o cliente de serviço.

@@ -46,6 +46,10 @@ export type ConversaCandidata = {
   /** Quantas vezes o CLIENTE falou — engajamento real, não monólogo do bot. */
   falasDoCliente: number;
   atualizadaEm: string;
+  /** Respostas da IA nesta conversa que o corretor marcou 👍 (29/09/2026). */
+  respostasAprovadas?: number;
+  /** E as que ele marcou 👎: conversa com resposta reprovada não vira exemplo. */
+  respostasReprovadas?: number;
 };
 
 function normalizar(texto: string): string {
@@ -105,6 +109,10 @@ export function pontuarRelevancia(
    */
   pontos += Math.min(candidata.falasDoCliente, 6) * 8;
 
+  // O 👍 do corretor é o sinal mais direto de que aquele jeito funcionou
+  // (29/09/2026). Pesa como assunto, com teto para não afogar o resto.
+  pontos += Math.min(candidata.respostasAprovadas ?? 0, 3) * 25;
+
   // Recência entra por último, como desempate: até 20 pontos, caindo ao
   // longo de 30 dias.
   const dias = (agora.getTime() - new Date(candidata.atualizadaEm).getTime()) / 86_400_000;
@@ -127,6 +135,12 @@ export function escolherExemplos(
 ): ConversaCandidata[] {
   return candidatas
     .filter((c) => c.falasDoCliente >= 2)
+    /*
+     * Conversa com resposta que o corretor reprovou não entra: o exemplo vai
+     * inteiro ao prompt, e a resposta ruim iria junto, ensinando exatamente o
+     * que ele marcou como errado.
+     */
+    .filter((c) => (c.respostasReprovadas ?? 0) === 0)
     .map((c) => ({ c, pontos: pontuarRelevancia(c, termos, agora) }))
     .sort((a, b) => b.pontos - a.pontos)
     .slice(0, limite)

@@ -1,5 +1,6 @@
 "use server";
 
+import { ehMotivoDaAvaliacao, type MotivoDaAvaliacao } from "@/lib/whatsapp/motivosDaAvaliacao";
 import { revalidatePath } from "next/cache";
 import type { ContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { redirect } from "next/navigation";
@@ -130,6 +131,8 @@ export type MensagemConversa = {
   interacaoId: string | null;
   /** Avaliação já dada a esta resposta, se houver. */
   avaliacao: "boa" | "ruim" | null;
+  /** O motivo do 👎 (0131), quando o corretor tocou num. */
+  motivoAvaliacao: MotivoDaAvaliacao | null;
   /**
    * Por que a IA respondeu isso (0105). Nulo em resposta anterior à coluna —
    * e é assim que a tela diz "contexto não registrado" em vez de inventar uma
@@ -171,14 +174,16 @@ export async function lerMensagens(
    */
   const idsInteracao = (data ?? []).map((m) => m.interacao_id).filter((v): v is string => v !== null);
   const avaliacoes = new Map<string, "boa" | "ruim" | null>();
+  const motivos = new Map<string, MotivoDaAvaliacao | null>();
   const contextos = new Map<string, ContextoDaInteracao | null>();
   if (idsInteracao.length > 0) {
     const { data: interacoes } = await supabase
       .from("ia_interacoes")
-      .select("id, avaliacao, contexto")
+      .select("id, avaliacao, motivo_avaliacao, contexto")
       .in("id", idsInteracao);
     for (const i of interacoes ?? []) {
       avaliacoes.set(i.id, i.avaliacao);
+      motivos.set(i.id, i.motivo_avaliacao);
       // O jsonb volta como `Json`; o formato é o que `montarContextoDaInteracao`
       // gravou, e a conversão fica nesta fronteira em vez de vazar para a tela.
       contextos.set(i.id, (i.contexto as ContextoDaInteracao | null) ?? null);
@@ -196,6 +201,7 @@ export async function lerMensagens(
       statusEntrega: m.status_entrega,
       interacaoId: m.interacao_id,
       avaliacao: m.interacao_id ? (avaliacoes.get(m.interacao_id) ?? null) : null,
+      motivoAvaliacao: m.interacao_id ? (motivos.get(m.interacao_id) ?? null) : null,
       contexto: m.interacao_id ? (contextos.get(m.interacao_id) ?? null) : null,
     }))
     .reverse();
@@ -236,7 +242,8 @@ export async function avaliarInteracao(
 
   const { data, error } = await supabase
     .from("ia_interacoes")
-    .update({ avaliacao })
+    // 👍 apaga o motivo de um 👎 anterior: motivo órfão falsearia o relatório.
+    .update(avaliacao === "boa" ? { avaliacao, motivo_avaliacao: null } : { avaliacao })
     .eq("id", interacaoId)
     .select("id");
 
@@ -246,6 +253,31 @@ export async function avaliarInteracao(
   revalidatePath("/corretor/conversas");
   revalidatePath("/corretor/pessoas");
   return { ok: avaliacao === "ruim" ? "Anotado — esta resposta vira caso de teste do próximo ajuste da IA." : "Avaliação registrada." };
+}
+
+/**
+ * O motivo do 👎, em um toque (0131). Só vale para resposta já marcada como
+ * ruim: motivo sem 👎 seria um defeito que ninguém apontou.
+ */
+export async function motivoDaAvaliacao(
+  interacaoId: string,
+  motivo: MotivoDaAvaliacao,
+): Promise<ResultadoConversa> {
+  if (!ehMotivoDaAvaliacao(motivo)) return { erro: "Motivo inválido." };
+  const supabase = await exigirSessao();
+
+  const { data, error } = await supabase
+    .from("ia_interacoes")
+    .update({ motivo_avaliacao: motivo })
+    .eq("id", interacaoId)
+    .eq("avaliacao", "ruim")
+    .select("id");
+
+  if (error) return { erro: "Não foi possível registrar o motivo." };
+  if (!data || data.length === 0) return { erro: "Marque a resposta como ruim antes de escolher o motivo." };
+
+  revalidatePath("/corretor/conversas");
+  return { ok: "Anotado." };
 }
 
 /**

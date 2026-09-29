@@ -91,7 +91,7 @@ export function GavetaConversa({
   const aoAtualizar = useCallback((m: MensagemConversa) => {
     // Preserva a avaliação local: o UPDATE do banco não a carrega, e sem isto
     // o 👍 que a pessoa acabou de dar sumiria no próximo ack de entrega.
-    setMensagens((antes) => antes?.map((x) => (x.id === m.id ? { ...m, avaliacao: x.avaliacao } : x)) ?? antes);
+    setMensagens((antes) => antes?.map((x) => (x.id === m.id ? { ...m, avaliacao: x.avaliacao, motivoAvaliacao: x.motivoAvaliacao } : x)) ?? antes);
   }, []);
   useConversaAoVivo({ conversaId: conversa.id, aoInserir, aoAtualizar });
 

@@ -8,6 +8,12 @@ import {
   type ConversaCandidata,
 } from "./recuperacao";
 import { escolherCorrecoes, formatarCorrecoes, type Correcao } from "./correcoesDoCorretor";
+import {
+  escolherAprovadas,
+  extrairAprovadas,
+  formatarAprovadas,
+  type RespostaAprovada,
+} from "./respostasAprovadas";
 
 /**
  * Aprendizado contínuo do agente.
@@ -53,6 +59,21 @@ export async function buscarConversasRelevantes(params: {
   conversaAtualId?: string;
   limite?: number;
 }): Promise<ExemploConvertido[]> {
+  return (await lerAprendizado(params)).exemplos;
+}
+
+/**
+ * As conversas do corretor lidas UMA vez, e delas saem as duas coisas: os
+ * exemplos inteiros (few-shot) e as respostas que ele aprovou com 👍.
+ */
+async function lerAprendizado(params: {
+  corretorId: string;
+  mensagemAtual: string;
+  historico?: { texto: string }[];
+  catalogo: Empreendimento[];
+  conversaAtualId?: string;
+  limite?: number;
+}): Promise<{ exemplos: ExemploConvertido[]; aprovadas: RespostaAprovada[] }> {
   const supabase = createServiceClient();
 
   /*
@@ -62,7 +83,7 @@ export async function buscarConversasRelevantes(params: {
    */
   const { data: conversas } = await supabase
     .from("whatsapp_conversas")
-    .select("id, ultima_interacao_em, lead:leads(etapa), whatsapp_mensagens(remetente, conteudo, created_at)")
+    .select("id, ultima_interacao_em, lead:leads(etapa), whatsapp_mensagens(remetente, conteudo, created_at, interacao_id)")
     .eq("corretor_id", params.corretorId)
     .not("lead_id", "is", null)
     /*
@@ -76,7 +97,29 @@ export async function buscarConversasRelevantes(params: {
     .order("ultima_interacao_em", { ascending: false })
     .limit(40);
 
-  if (!conversas || conversas.length === 0) return [];
+  if (!conversas || conversas.length === 0) return { exemplos: [], aprovadas: [] };
+
+  /*
+   * O que o corretor achou das respostas da IA nessas conversas (👍/👎).
+   * Uma consulta só, pelos ids que já vieram no embed.
+   */
+  const idsDasRespostas = (conversas as unknown as LinhaConversa[]).flatMap((c) =>
+    (c.whatsapp_mensagens ?? []).map((m) => m.interacao_id).filter((id): id is string => Boolean(id)),
+  );
+  const aprovadasIds = new Set<string>();
+  const reprovadasIds = new Set<string>();
+  if (idsDasRespostas.length > 0) {
+    const { data: avaliadas } = await supabase
+      .from("ia_interacoes")
+      .select("id, avaliacao")
+      .in("id", [...new Set(idsDasRespostas)])
+      .not("avaliacao", "is", null);
+    for (const a of avaliadas ?? []) {
+      if (a.avaliacao === "boa") aprovadasIds.add(a.id);
+      if (a.avaliacao === "ruim") reprovadasIds.add(a.id);
+    }
+  }
+  const aprovadas: RespostaAprovada[] = [];
 
   const termos = termosDoAssunto({
     mensagemAtual: params.mensagemAtual,
@@ -89,10 +132,17 @@ export async function buscarConversasRelevantes(params: {
   for (const conversa of conversas as unknown as LinhaConversa[]) {
     if (conversa.id === params.conversaAtualId) continue;
 
-    const mensagens = (conversa.whatsapp_mensagens ?? [])
+    const ordenadas = (conversa.whatsapp_mensagens ?? [])
       .filter((m) => m.remetente === "cliente" || m.remetente === "bot")
-      .sort((a, b) => a.created_at.localeCompare(b.created_at))
-      .map((m) => ({ remetente: m.remetente as "cliente" | "bot", texto: m.conteudo }));
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+    const mensagens = ordenadas.map((m) => ({ remetente: m.remetente as "cliente" | "bot", texto: m.conteudo }));
+    aprovadas.push(
+      ...extrairAprovadas(
+        ordenadas.map((m) => ({ remetente: m.remetente, texto: m.conteudo, interacaoId: m.interacao_id })),
+        aprovadasIds,
+      ),
+    );
+    const idsDaConversa = ordenadas.map((m) => m.interacao_id).filter((id): id is string => Boolean(id));
 
     if (mensagens.length < 2) continue;
 
@@ -102,23 +152,28 @@ export async function buscarConversasRelevantes(params: {
       texto: mensagens.map((m) => m.texto).join(" "),
       falasDoCliente: mensagens.filter((m) => m.remetente === "cliente").length,
       atualizadaEm: conversa.ultima_interacao_em,
+      respostasAprovadas: new Set(idsDaConversa.filter((id) => aprovadasIds.has(id))).size,
+      respostasReprovadas: new Set(idsDaConversa.filter((id) => reprovadasIds.has(id))).size,
       mensagens,
     });
   }
 
   const escolhidas = escolherExemplos(candidatas, termos, params.limite ?? 3);
 
-  return escolhidas.map((escolhida) => {
-    const completa = candidatas.find((c) => c.conversaId === escolhida.conversaId)!;
-    return { etapa: completa.leadEtapa, mensagens: completa.mensagens };
-  });
+  return {
+    exemplos: escolhidas.map((escolhida) => {
+      const completa = candidatas.find((c) => c.conversaId === escolhida.conversaId)!;
+      return { etapa: completa.leadEtapa, mensagens: completa.mensagens };
+    }),
+    aprovadas,
+  };
 }
 
 type LinhaConversa = {
   id: string;
   ultima_interacao_em: string;
   lead: { etapa: string } | null;
-  whatsapp_mensagens: { remetente: string; conteudo: string; created_at: string }[];
+  whatsapp_mensagens: { remetente: string; conteudo: string; created_at: string; interacao_id: string | null }[];
 };
 
 /**
@@ -166,8 +221,12 @@ export async function buscarExemplosFewShot(params: {
   conversaAtualId?: string;
 }): Promise<string> {
   const [exemplos, correcoes] = await Promise.all([
-    buscarConversasRelevantes(params)
-      .then(formatarExemplosFewShot)
+    lerAprendizado(params)
+      .then(({ exemplos, aprovadas }) =>
+        [formatarExemplosFewShot(exemplos), formatarAprovadas(escolherAprovadas(aprovadas, params.mensagemAtual))]
+          .filter(Boolean)
+          .join("\n\n"),
+      )
       .catch((err) => {
         console.warn("Aviso: falha ao recuperar conversas para o few-shot:", err);
         return "";
@@ -198,4 +257,13 @@ async function buscarCorrecoes(corretorId: string, mensagemAtual: string): Promi
     respostaCerta: c.resposta_certa,
   }));
   return formatarCorrecoes(escolherCorrecoes(lista, mensagemAtual));
+}
+
+/**
+ * Quantos exemplos o bloco de aprendizado levou ao prompt (conversas,
+ * correções e respostas aprovadas). O "por quê?" do Live Chat mostrava o
+ * TAMANHO do texto ("2.345 exemplos"), porque o turno contava caracteres.
+ */
+export function contarExemplosDoAprendizado(bloco: string | undefined): number {
+  return (bloco ?? "").match(/^(Exemplo real|Correção|Aprovada) \d+/gm)?.length ?? 0;
 }

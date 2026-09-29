@@ -6,8 +6,10 @@ import { ArrowLeft, ExternalLink, NotebookPen, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
+import { MOTIVOS_DA_AVALIACAO, type MotivoDaAvaliacao } from "@/lib/whatsapp/motivosDaAvaliacao";
 import {
   avaliarInteracao,
+  motivoDaAvaliacao,
   ensinarIA,
   enviarMensagemDoPainel,
   enviarMidiaDoPainel,
@@ -405,6 +407,7 @@ export function Chat({
       statusEntrega: null,
       interacaoId: null,
       avaliacao: null,
+      motivoAvaliacao: null,
       contexto: null,
     };
     onMesclar([temporaria]);
@@ -1443,8 +1446,76 @@ function Balao({
         </details>
       )}
       {avaliavel && nota === "ruim" && mensagem.interacaoId && (
+        <MotivoDoRuim
+          interacaoId={mensagem.interacaoId}
+          inicial={mensagem.motivoAvaliacao}
+          onErro={onErro}
+        />
+      )}
+      {avaliavel && nota === "ruim" && mensagem.interacaoId && (
         <EnsinarIA interacaoId={mensagem.interacaoId} onErro={onErro} />
       )}
+    </div>
+  );
+}
+
+/**
+ * O motivo do 👎 em um toque (0131). Sem ele, o 👎 dizia que a resposta
+ * estava ruim e não dizia por quê: alguém tinha de reler a conversa para
+ * descobrir. É daqui que sai o relatório semanal das avaliações.
+ */
+function MotivoDoRuim({
+  interacaoId,
+  inicial,
+  onErro,
+}: {
+  interacaoId: string;
+  inicial: MotivoDaAvaliacao | null;
+  onErro: (e: string) => void;
+}) {
+  const [motivo, setMotivo] = useState<MotivoDaAvaliacao | null>(inicial);
+  const [salvando, setSalvando] = useState(false);
+
+  function escolher(valor: MotivoDaAvaliacao) {
+    const anterior = motivo;
+    setMotivo(valor);
+    setSalvando(true);
+    motivoDaAvaliacao(interacaoId, valor)
+      .then((r) => {
+        if (r.erro) {
+          setMotivo(anterior);
+          onErro(r.erro);
+        }
+      })
+      .catch((e) => {
+        setMotivo(anterior);
+        onErro(ehActionDeOutroBuild(e) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
+      })
+      .finally(() => setSalvando(false));
+  }
+
+  return (
+    <div className="mt-1 mr-1 flex max-w-full min-w-0 flex-col items-end gap-1">
+      <p className="text-wa-meta text-[12px]">O que ficou ruim?</p>
+      <div role="group" aria-label="Motivo da avaliação ruim" className="flex flex-wrap justify-end gap-1.5">
+        {MOTIVOS_DA_AVALIACAO.map((m) => (
+          <button
+            key={m.valor}
+            type="button"
+            disabled={salvando}
+            aria-pressed={motivo === m.valor}
+            onClick={() => escolher(m.valor)}
+            className={cn(
+              "min-h-11 rounded-full px-3 text-[13px] transition-colors active:scale-[0.97]",
+              motivo === m.valor
+                ? "bg-wa-verde font-medium text-white"
+                : "bg-wa-entrada text-wa-texto ring-wa-divisor ring-1",
+            )}
+          >
+            {m.rotulo}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
