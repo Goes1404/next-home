@@ -1,0 +1,76 @@
+sem-perfil-de-renda · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria sair do aluguel, pago 900 hoje, da pra financiar
+[1] Sofia:   Dá para simular o financiamento, mas o que o banco aprova depende da renda mensal.
+Qual é a renda média da sua família por mês, sozinho ou somando com alguém?
+
+[2] Cliente: renda 2500
+              entrada zero
+              quero financiar
+[2] Sofia:   Financiamento com entrada zero é possível, vamos ver o que cabe para você.
+Em qual região de Barueri você procura o imóvel?
+
+[3] Cliente: region barueri?
+              qual valor?
+              tem foto?
+              onde fica?
+              qual metragem?
+              tem 2 dorm?
+              qual o valor?
+              tem foto?
+              onde fica?
+              qual o valor?
+[3] Sofia:   O mais acessível do nosso catálogo começa em R$ 249.000.
+Você prefere imóvel pronto para morar ou na planta?
+Tem interesse em 2 dormitórios com vaga?
+
+[4] Cliente: 249 mil? caro demais
+              não entendi se é pronto
+              manda foto
+[4] Sofia:   Entendo que o valor chamou atenção. O que você viu por esse valor?
+A entrada pode ser parcelada e o financiamento é pela construtora
+Na visita, o corretor monta o fluxo para você entender tudo melhor
+Te mandei as fotos do Vila Eco Park aqui embaixo
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-1-big-1597aad13631a310ed7b0fc07ffbb619.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-2-big-a9da807487ea43da180107514a2dbf8b.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-3-big-06248497c720b210e19a743a066ded5a.jpg
+
+[5] Cliente: quero saber onde fica
+              você não respondeu o valor ainda
+[5] Sofia:   O Vila Eco Park fica no Munhoz Júnior, Osasco, uma região com acesso fácil e infraestrutura completa.
+O valor começa em R$ 249.000, e o preço final depende do andar e forma de pagamento, que fechamos na visita.
+
+[6] Cliente: onde fica exatamente
+              qual o valor final
+              quando posso visitar
+[6] Sofia:   O Vila Eco Park fica no Munhoz Júnior, Osasco, perto de tudo que você precisa.
+O valor final depende do andar e da forma de pagamento, que fechamos na visita.
+Posso te mostrar o decorado na terça às 10h ou na quinta às 15h? Escolhe o que for melhor para você.
+
+[7] Cliente: onde fica exatamente
+              qual o valor final
+              quando posso visitar
+[7] Sofia:   O Vila Eco Park é no Munhoz Júnior, Osasco, perto de tudo.
+O valor final depende do andar e pagamento, fechamos na visita.
+Quer conhecer o Vila Eco Park, o More Aldeia de Barueri ou o Apartamento 1 ou 2 Dorms 39 M2?
+Posso te mostrar na quarta às 11h ou na sexta às 16h, qual prefere?
+
+[8] Cliente: onde fica exatamente
+              qual o valor final
+              quando posso visitar
+[8] Sofia:   O valor final depende do andar e forma de pagamento, que fechamos na visita.
+Posso te mostrar o decorado na sexta às 10h ou no sábado às 11h, qual prefere?
+
+[9] Cliente: onde fica exatamente
+              qual o valor final
+              quando posso visitar
+[9] Sofia:   O valor final depende do andar e forma de pagamento, que fechamos na visita.
+Posso te mostrar o decorado na segunda às 14h ou na quarta às 16h, qual prefere?
+
+[10] Cliente: onde fica exatamente
+              qual o valor final
+              quando posso visitar
+[10] Sofia:   O Vila Eco Park fica no Munhoz Júnior, Osasco, região com infraestrutura completa e acesso fácil.
+O valor começa em R$ 249.000, e o final depende do andar e forma de pagamento, que fechamos na visita.
+Posso te mostrar o decorado na quinta às 10h ou na sexta às 15h, qual prefere?

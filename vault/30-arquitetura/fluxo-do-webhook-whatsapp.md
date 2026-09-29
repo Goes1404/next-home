@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-09-29
 fonte: leitura do código + docs/MEMORIA.md
 summary: Autenticação → eventos técnicos → porteiro de lead cadastrado → transcrição/dedup/rajada → turnoDeAtendimento → envio → gravação → telemetria → dossiê → aviso.
 ---
@@ -47,6 +47,11 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
      corretor, "remarcar" oferece horários reais; pedido de indicação (96h)
      → agradece e avisa o corretor para registrar o indicado
      ([[aprimoramentos-das-oito-funcionalidades]], [[fechar-o-ciclo-e-ligar-a-plataforma]]);
+   - trava da qualificação: enquanto falta pergunta do funil, bloco "AINDA
+     EM QUALIFICAÇÃO" no prompt e, depois do LLM, corte de frase/anexo/link
+     de imóvel que o cliente não trouxe ([[perguntas-antes-da-indicacao]]);
+     confirmação de visita só passa se o planner viu o aceite
+     ([[eval-de-28-09-e-a-v41]]);
    - LLM ([[motor-unico-openai]], [[timeout-nao-e-retentado]]);
    - guardrails ([[midia-por-slug-nunca-por-url]]), `semValores`
      ([[a-ia-nao-fala-valores]]), prazo
@@ -60,7 +65,8 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 11. **Telemetria** (`ia_interacoes`) —
     [[ia-interacoes-filtrar-por-acao-respondida]].
 12. **Dossiê** (extração p/ `leads` + `lead_observacoes_ia`) e **aviso ao
-    corretor** ([[aviso-por-evolucao-nao-por-mensagem]]),
+    corretor** ([[aviso-por-evolucao-nao-por-mensagem]]; também quando a IA
+    promete que o corretor traz a resposta, `duvida_pendente`),
     **visita** ([[visita-e-gravada-com-validacao]]), **etapa do funil**
     ([[campanha-tambem-mexe-no-funil]]).
 

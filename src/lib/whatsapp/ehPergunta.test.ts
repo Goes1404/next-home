@@ -49,3 +49,26 @@ describe("forcaDaPergunta", () => {
     expect(forcaDaPergunta("qual o preco")).toBe("forte");
   });
 });
+
+/*
+ * Produção, 28/09/2026: "Vc tem apartamento de dois dormitórios em Barueri"
+ * (sem "?") respondia ao funil com tipologia e cidade, então caía como
+ * resposta, e a IA devolveu "em qual região?" sem dizer que tinha. Quem abre
+ * a fala com "você tem" está perguntando, mesmo sem a interrogação.
+ */
+describe("\"você tem ...\" no começo da fala é pergunta", () => {
+  it("é forte, com ou sem o você abreviado", () => {
+    expect(forcaDaPergunta("Vc tem apartamento de dois dormitórios em Barueri")).toBe("forte");
+    expect(forcaDaPergunta("vocês tem algo na aldeia")).toBe("forte");
+    expect(forcaDaPergunta("tem apartamento de 2 dorm em Barueri")).toBe("forte");
+    expect(forcaDaPergunta("teria algum com 3 suítes")).toBe("forte");
+  });
+
+  it("\"tem sim\" é resposta, não pergunta", () => {
+    expect(forcaDaPergunta("tem sim, dois filhos")).not.toBe("forte");
+  });
+
+  it("o \"tem\" no meio da fala continua fraco", () => {
+    expect(forcaDaPergunta("minha esposa tem que ver também")).toBe("fraca");
+  });
+});

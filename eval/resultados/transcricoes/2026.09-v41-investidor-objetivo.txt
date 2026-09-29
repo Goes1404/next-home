@@ -1,0 +1,48 @@
+investidor-objetivo · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual a menor tipologia do vista alphagran
+[1] Sofia:   Não tenho essa informação agora, vou confirmar com o corretor e te retorno em seguida.
+
+[2] Cliente: tem metragem
+              qual entrega
+[2] Sofia:   Não tenho a metragem e a data de entrega do Vista Alphagran agora, vou confirmar com o corretor e te retorno.
+
+[3] Cliente: e a metragem
+              e entrega
+[3] Sofia:   Entendo sua busca por detalhes precisos. Em qual região de Barueri você procura o imóvel?
+
+[4] Cliente: onde fica
+              tem foto
+[4] Sofia:   O Vista Alphagran não está no meu catálogo, vou confirmar com o corretor e te retorno.
+Enquanto isso, posso te mostrar opções em Barueri com fotos?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[5] Cliente: qual o valor
+              qual a metragem
+[5] Sofia:   O mais acessível do nosso catálogo está em Osasco, no Vila Eco Park, a partir de R$ 249.000.
+Tem 2 dormitórios e 38,81m². Quer que eu te mande as fotos?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-1-big-1597aad13631a310ed7b0fc07ffbb619.jpg
+
+[6] Cliente: qual a metragem do vista alphagran
+              não quero outra opção
+[6] Sofia:   O Vista Alphagran não está no meu catálogo, por isso não tenho a metragem dele.
+Posso ajudar com o Vila Eco Park, em Osasco, que é mais em conta, a partir de R$ 249.000, com 2 dormitórios e 38,81m², ideal para quem busca praticidade perto do Munhoz Júnior.
+
+[7] Cliente: qual a metragem do vista alphagran
+              qual a entrega
+[7] Sofia:   O Vila Eco Park tem 38,81 m², com 2 dormitórios e 1 vaga.
+A entrega do Vista Alphagran não está disponível para mim. Quer conhecer o decorado para ver de perto?
+
+[8] Cliente: qual a metragem do vista alphagran
+              qual a entrega
+[8] Sofia:   Não tenho a metragem nem a data de entrega do Vista Alphagran, vou confirmar com o corretor e te retorno.
+
+[9] Cliente: qual a metragem
+              qual a entrega
+[9] Sofia:   Vou confirmar com o corretor e te retorno assim que souber.
+
+[10] Cliente: qual a metragem
+              qual a entrega
+[10] Sofia:   Isso eu não tenho aqui com certeza, e não quero te passar errado.
+Já pedi para o corretor e te respondo assim que ele me passar.

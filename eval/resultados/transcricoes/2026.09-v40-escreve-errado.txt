@@ -1,0 +1,45 @@
+escreve-errado · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vcs tem o vrita alphagran ainda?
+[1] Sofia:   Não tenho essa informação agora, vou confirmar com o corretor e te retorno em breve.
+
+[2] Cliente: e a planta do vrita alphagran?
+              manda dms agora
+[2] Sofia:   O Bosque AlphaGran é o empreendimento que temos no Alphagran.
+Ele está em pré-lançamento, com planta de 1 dormitório. Vou te mandar as plantas que temos aqui.
+Te mandei as plantas do Bosque AlphaGran para você analisar.
+Se quiser, podemos agendar uma visita para conhecer o decorado e as condições, o que acha?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/bosque-alphagran-ne55087/planta-big-4f5554da5eebf1eb78376b6430324c64.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/bosque-alphagran-ne55087/planta-big-66a98195918096ee48df3496ac2da6c8.jpeg
+
+[3] Cliente: nao pedi isso, manda a planta do vrita
+[3] Sofia:   O Vitra Alphagran não está no nosso catálogo. Em qual região de Barueri você procura o imóvel?
+
+[4] Cliente: nao to perguntando de bairro, manda planta do vrita
+[4] Sofia:   O Bosque AlphaGran fica no Alphagran Alphaville, Barueri.
+Não tenho a planta do Vitra, só do Bosque mesmo. Quer conhecer o decorado para ver de perto?
+
+[5] Cliente: vc não entendeu, planta do vrita agora
+              pq não tem a planta?
+[5] Sofia:   Não tenho a planta do Vitra Alphagran, vou confirmar com o corretor e te retorno assim que possível.
+
+[6] Cliente: vcs tem planta do vrita ou nao?
+              vc ta me enrolando
+[6] Sofia:   Não temos a planta do Vitra Alphagran no nosso catálogo. Confirmo com o corretor e te trago o quanto antes.
+
+[7] Cliente: manda a planta do vrita
+[7] Sofia:   Entendo sua urgência. Para ajudar melhor, quantos dormitórios você precisa no imóvel?
+
+[8] Cliente: manda dps a planta do vrita
+[8] Sofia:   Prefere que eu te envie a planta do Bosque AlphaGran ou agendamos
+uma visita para você conhecer o decorado e as condições?
+
+[9] Cliente: planta do vrita agora
+[9] Sofia:   Não tenho a planta do Vitra Alphagran para enviar agora
+posso te mostrar o Bosque AlphaGran, que é o que temos no catálogo
+prefere agendar uma visita para conhecer o decorado?
+
+[10] Cliente: planta do vrita
+[10] Sofia:   Posso te ajudar com o Bosque AlphaGran, que é o que temos disponível.
+Quer agendar uma visita para conhecer o decorado e as condições?

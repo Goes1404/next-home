@@ -1,7 +1,7 @@
 import type { Empreendimento } from "@/lib/types";
 import type { RespostaAgenteIA } from "./aiAgent";
-import { soarHumano } from "./vozHumana";
-import { limparSeparadoresOrfaos, removerValores } from "./semValores";
+import { removerCumprimentoRepetido, soarHumano } from "./vozHumana";
+import { limparSeparadoresOrfaos, removerValores, sementeDoDesvio } from "./semValores";
 import { removerPrazoInventado } from "./prazoEntrega";
 import { removerAcabamentoInventado } from "./acabamentoInventado";
 import {
@@ -13,6 +13,7 @@ import {
 import { corrigirVisitaNoPassado, verificarCoerenciaVisita } from "./coerenciaVisita";
 import { aproveitarSoONovo, ehRepeticaoDoBot, textoNoLugarDaRepeticao } from "./repeticao";
 import { manterIdentidadeHonesta } from "./identidadeHonesta";
+import { removerConfirmacaoSemAceite, removerPromessaDeValorizacao } from "./afirmacoesSemLastro";
 import { decidirApresentacao, garantirLinkDaPagina } from "./apresentacaoDigital";
 
 /**
@@ -135,7 +136,11 @@ export function sanearRespostaIA(
     .map((e) => e.precoAPartir)
     .filter((p): p is number => typeof p === "number" && p > 0);
 
-  const semValor = removerValores(soarHumano(apresentacao.texto), 0, pisosPermitidos);
+  const semValor = removerValores(
+    removerCumprimentoRepetido(soarHumano(apresentacao.texto), historico),
+    sementeDoDesvio((historico ?? []).filter((m) => m.remetente === "bot").map((m) => m.texto)),
+    pisosPermitidos,
+  );
 
   /*
    * Repetição literal do que o bot já disse. Medido: 23 das 80 mensagens
@@ -172,7 +177,21 @@ export function sanearRespostaIA(
    * Remover a frase do preço (ou do prazo) pode deixar o separador de balão
    * sozinho — a resposta chegava ao cliente começando com "--- ".
    */
-  const semOrfaos = limparSeparadoresOrfaos(semAcabamento.texto);
+  /*
+   * Visita "confirmada" que o cliente não aceitou, e promessa de
+   * valorização. As duas saíram no eval de conversa de 28/09/2026 (ver
+   * `afirmacoesSemLastro.ts`). Quem decide se há visita é o campo
+   * estruturado, não o texto.
+   */
+  const semValorizacao = removerPromessaDeValorizacao(semAcabamento.texto);
+  const semConfirmacaoFalsa = removerConfirmacaoSemAceite(
+    semValorizacao.texto,
+    resposta.visitaProposta?.confirmadaPeloCliente === true,
+  );
+  if (semValorizacao.cortou) console.warn(`[guardrails] promessa de valorização cortada`);
+  if (semConfirmacaoFalsa.cortou) console.warn(`[guardrails] visita confirmada sem aceite cortada`);
+
+  const semOrfaos = limparSeparadoresOrfaos(semConfirmacaoFalsa.texto);
 
   /*
    * A IA não mente sobre o que é. Flagrada respondendo "Sou humana" a uma
@@ -198,7 +217,7 @@ export function sanearRespostaIA(
   const semRepeticao = repetiu
     ? soONovo.length >= 40
       ? soONovo
-      : textoNoLugarDaRepeticao(historico)
+      : textoNoLugarDaRepeticao(historico, falaDoCliente)
     : identidade.texto;
 
   /*

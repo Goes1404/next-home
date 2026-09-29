@@ -1,0 +1,44 @@
+quer-visitar-sabado · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria visitar um apartamento sábado, dá?
+[1] Sofia:   Sábado às 9h ou às 11h, qual horário prefere?
+Posso te mostrar o decorado e as condições pessoalmente.
+
+[2] Cliente: 11h então
+[2] Sofia:   Combinado para sábado, 03/10, às 11h com a Sofia.
+O endereço certinho eu envio antes para você.
+Se precisar remarcar, é só responder aqui.
+
+[3] Cliente: e o endereço?
+              qual o endereço mesmo?
+[3] Sofia:   A visita está confirmada para sábado, 03/10, às 11h.
+O endereço eu envio antes para você. Qualquer dúvida até lá, me chama.
+
+[4] Cliente: mas e o endereço?
+[4] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[5] Cliente: mas eu só quero o endereço
+              me manda o endereço logo
+[5] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[6] Cliente: me manda o endereço
+              não pode ser difícil
+[6] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[7] Cliente: só quero o endereço
+              não muda de assunto
+[7] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
+o link com tudo do empreendimento, ou marcar de conversar pessoalmente?
+
+[8] Cliente: me manda o endereço
+              não quero mais nada
+[8] Sofia:   Entendo, sem problemas. Posso perguntar se o motivo é o preço, a região ou se você já resolveu de outra forma?
+
+[9] Cliente: ENDEREÇO, POR FAVOR
+              SÓ QUERO O ENDEREÇO
+[9] Sofia:   A visita está confirmada para sábado, 03/10, às 11h com a Sofia.
+O endereço eu envio antes para você. Qualquer dúvida até lá, me chama.
+
+[10] Cliente: ENDEREÇO, POR FAVOR
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.

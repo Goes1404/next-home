@@ -1,0 +1,60 @@
+insiste-no-desconto · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O valor exato depende da unidade e condições, que fechamos na visita. Quer conhecer o decorado?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[2] Cliente: mas quanto fica então?
+              tem como dar um desconto pra visita?
+[2] Sofia:   O mais em conta do nosso catálogo começa em R$ 457.000.
+O valor exato varia conforme a unidade e forma de pagamento, e fechamos isso na visita.
+Quer agendar para conhecer o decorado?
+
+[3] Cliente: mas quanto fica esse de 457?
+              não dá pra ter um desconto antes da visita?
+[3] Sofia:   O valor do Viva RSF Vila do Conde começa em R$ 457.000, e o exato depende da unidade e forma de pagamento.
+Sobre desconto antes da visita, confirmo com o corretor e te trago a resposta.
+
+[4] Cliente: mas quanto fica a unidade mais barata?
+              tem desconto sim ou não?
+[4] Sofia:   O valor da unidade mais barata é a partir de R$ 457.000, no Viva RSF Vila do Conde.
+
+[5] Cliente: mas e o desconto?
+              não tem como dar uma condição especial?
+[5] Sofia:   Sobre desconto ou condição especial, confirmo com o corretor e te trago.
+
+[6] Cliente: quanto tá a unidade mais barata?
+              desconto é certeza ou não?
+[6] Sofia:   O Viva RSF Vila do Conde tem unidades a partir de R$ 457.000
+fica na Vila do Conde, Barueri, com opções de até 3 dormitórios e suíte
+olha o link com tudo lá para você avaliar: https://next-home-drab.vercel.app/empreendimentos/viva-rsf-vila-do-conde
+
+[7] Cliente: mas quanto tá a unidade mais barata?
+              e o desconto?
+[7] Sofia:   O Viva RSF Vila do Conde tem unidades a partir de R$ 457.000
+fica na Vila do Conde, Barueri, com opções de até 3 dormitórios e suíte
+o valor exato e desconto fechamos na visita
+olha o link com tudo lá para você avaliar: https://next-home-drab.vercel.app/empreendimentos/viva-rsf-vila-do-conde
+
+[8] Cliente: mas quanto tá a unidade mais barata?
+              e o desconto?
+[8] Sofia:   O Viva RSF Vila do Conde começa a partir de R$ 457.000
+fica na Vila do Conde, Barueri, com opções de até 3 dormitórios e suíte
+o valor exato e desconto fechamos na visita
+olha o link com tudo lá para você avaliar: https://next-home-drab.vercel.app/empreendimentos/viva-rsf-vila-do-conde
+
+[9] Cliente: mas quanto tá a unidade mais barata?
+              e o desconto?
+[9] Sofia:   O Viva RSF Vila do Conde é a opção mais em conta, com unidades a partir de R$ 457.000
+fica na Vila do Conde, Barueri, com até 3 dormitórios e suíte
+o valor exato e desconto fechamos na visita
+veja o link com tudo lá para você avaliar: https://next-home-drab.vercel.app/empreendimentos/viva-rsf-vila-do-conde
+
+[10] Cliente: mas quanto tá a unidade mais barata?
+              desconto é certeza ou não?
+[10] Sofia:   O Viva RSF Vila do Conde é a opção mais em conta, com unidades a partir de R$ 457.000
+fica na Vila do Conde, Barueri, com até 3 dormitórios e suíte
+o valor exato e desconto fechamos na visita
+veja o link com tudo lá para você avaliar: https://next-home-drab.vercel.app/empreendimentos/viva-rsf-vila-do-conde

@@ -1,0 +1,73 @@
+confuso-entre-dois · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me fala do terra alta e do more aldeia, qual compensa mais
+[1] Sofia:   Cada um tem tipologias e localização diferentes, vou confirmar detalhes com o corretor e te retorno.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[2] Cliente: cá vai: terra alta tem 2 dorm, mais perto de escola
+              more aldeia tem vista pra mar, mas fica longe da praia
+              qual é melhor pra mim?
+[2] Sofia:   O Terra Alta tem 2 dormitórios e fica mais perto da escola, ideal para quem valoriza essa proximidade.
+O More Aldeia tem vista para o mar, mas fica mais longe da praia e da escola.
+Se a localização perto da escola é prioridade, Terra Alta é melhor.
+Posso te mostrar as opções de ambos para comparar ao vivo?
+
+[3] Cliente: mais 2 dorm?
+              praia?
+              qual vale?
+              me dá foto?
+              praia 200m?
+              custo?
+              qual melhor?
+              me avisa
+[3] Sofia:   Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-b5c51e49fa886a80.webp
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-00dd82102f49cde1.webp
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-fa20b277a8750de4.webp
+
+[4] Cliente: me ajuda a decidir?
+              custa 200k?
+              praia 200m?
+              foto do 2 dorm?
+              qual compensa?
+[4] Sofia:   O Terra Alta não está no nosso catálogo, vou confirmar com o corretor e te trago.
+O More Aldeia não é nosso, mas posso mostrar opções com vista e perto da praia aqui.
+O preço de 200k não temos nessa faixa, o Viva RSF Vila do Conde começa em R$ 457.000.
+Te mandei as fotos do Viva RSF Vila do Conde, que tem 2 dormitórios e é perto de comércio.
+Quer que eu te mostre essas opções para ajudar na decisão?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-59de0e1ddaaf03ab.webp
+
+[5] Cliente: pô, 2 dorms ok
+              praia 200m?
+              quero foto
+[5] Sofia:   O Viva RSF Vila do Conde tem 2 dormitórios com suíte, mas não fica a 200m da praia
+Te mandei as fotos para você conferir o padrão e a planta
+Podemos agendar sua visita para terça às 14h ou quinta às 16h? Escolhe o melhor para você.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-7294cfb37b8ef45a.webp
+
+[6] Cliente: mais 200m?
+              foto 2 dorm?
+              qual compensa?
+              praia 200m?
+              me avisa
+[6] Sofia:   O Viva RSF Vila do Conde oferece opções de 1, 2 e 3 dormitórios, com até 1 suíte e 2 vagas.
+Não fica a 200m da praia, mas tem ótima localização em Barueri.
+Quer que eu te envie a planta para você analisar melhor?
+
+[7] Cliente: mais 200m? foto 2 dorm?
+              qual compensa?
+[7] Sofia:   Te mandei as fotos dos 2 dormitórios.
+
+[8] Cliente: mas cadê a praia 200m?
+              quero só foto 2 dorm!
+[8] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[9] Cliente: mais 200m? foto 2 dorm?
+[9] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[10] Cliente: quero foto 2 dorm
+              mas e a praia 200m?
+[10] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.

@@ -24,6 +24,9 @@ const ABERTURAS_DE_ROBO = [
   /^ol[áa]!\s*(entendi|claro|perfeito)[!.,]?\s*/i,
   /^fico\s+feliz\s+em\s+(ajudar|saber)[!.]?\s*/i,
   /^espero\s+ter\s+ajudado[!.]?\s*$/i,
+  // Produção, 28/09/2026: primeira resposta a um "Oi". Agradece o oi em
+  // vez de responder a pergunta que veio junto.
+  /^que\s+bom\s+(receber|ter)\s+(o\s+|a\s+)?(seu|sua)\s+(oi|mensagem|contato)[!.]?\s*/i,
 ];
 
 /**
@@ -80,4 +83,37 @@ export function soarHumano(texto: string): string {
     // marcador de corte, e um bloco de linhas vazias o confundiria.
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+/**
+ * Cumprimento no começo de uma resposta NO MEIO da conversa.
+ *
+ * Produção, 28/09/2026: "Oi Matheus, tudo bem?" no terceiro turno, depois
+ * de o cliente já ter respondido "Na aldeia". Pessoa cumprimenta uma vez;
+ * quem abre toda mensagem com "Oi, tudo bem?" é robô, e o cliente percebe
+ * na hora.
+ *
+ * Só age quando o bot já falou nas últimas falas E a última fala é do
+ * cliente, ou seja, a conversa está andando. A primeira mensagem e o
+ * retorno depois do silêncio do cliente (a última fala é nossa) podem
+ * cumprimentar. E só corta se sobrar frase de verdade, pela mesma régua de
+ * `removerAberturaDeRobo`.
+ */
+const CUMPRIMENTO =
+  /^(oi|ol[áa]|opa|e\s+a[íi]|bom\s+dia|boa\s+tarde|boa\s+noite)(?![a-zà-ú])(\s*,?\s*[A-ZÀ-Ú][a-zà-ú]+(?=\s*[!.,?]|\s+tudo))?\s*[!.,]*\s*((tudo\s+(bem|bom|certo)|como\s+vai|como\s+voc[êe]\s+est[áa])\s*\??[!.]*)?\s*(---\s*)?/i;
+
+export function removerCumprimentoRepetido(
+  texto: string,
+  historico: readonly { remetente: string; texto: string }[] | undefined,
+): string {
+  const falas = historico ?? [];
+  if (falas.length === 0) return texto;
+  if (falas[falas.length - 1].remetente !== "cliente") return texto;
+  const botFalouHaPouco = falas.slice(-10).some((f) => f.remetente === "bot");
+  if (!botFalouHaPouco) return texto;
+
+  const inicio = texto.trimStart();
+  const semCumprimento = inicio.replace(CUMPRIMENTO, "").trimStart();
+  if (semCumprimento === inicio || semCumprimento.length < 20) return texto;
+  return semCumprimento.charAt(0).toUpperCase() + semCumprimento.slice(1);
 }

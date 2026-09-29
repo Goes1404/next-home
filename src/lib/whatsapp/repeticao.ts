@@ -1,3 +1,4 @@
+import { ehPergunta } from "./ehPergunta";
 import { semelhanca } from "./metricasConversa";
 
 /**
@@ -128,6 +129,15 @@ const SAIDAS: string[] = [
 ];
 
 /**
+ * Quando a resposta bloqueada era para uma PERGUNTA dele. Sem dado nenhum
+ * (mesma régua das `SAIDAS`): reconhecem que falta e dizem quem traz.
+ */
+const SAIDAS_DE_PERGUNTA: string[] = [
+  "Isso eu não tenho aqui com certeza, e não quero te passar errado. Já pedi para o corretor e te respondo assim que ele me passar.",
+  "Ainda não tenho essa resposta certinha. Assim que o corretor me confirmar, te mando aqui mesmo.",
+];
+
+/**
  * O último recurso do último recurso.
  *
  * Quando as saídas acabaram, insistir numa quarta pergunta de qualificação
@@ -156,6 +166,7 @@ const SAIDA_FINAL =
  */
 export function textoNoLugarDaRepeticao(
   historico?: { remetente: string; texto: string }[],
+  falaDoCliente?: string | null,
 ): string {
   const ditas = (historico ?? [])
     .filter((m) => m.remetente === "bot")
@@ -166,7 +177,38 @@ export function textoNoLugarDaRepeticao(
     return ditas.some((d) => d === n || d.includes(n) || semelhanca(d, n) >= 0.6);
   };
 
-  const inedita = SAIDAS.find((s) => !jaDita(s));
+  /*
+   * Ele fez uma PERGUNTA e a resposta do modelo era eco. Pergunta dele não
+   * se responde com pergunta de qualificação: no eval de 28/09/2026, quem
+   * pedia o endereço pela quinta vez ouviu "me conta um pouco mais do que
+   * você procura", e quem perguntava a metragem ouviu "quantos dormitórios
+   * você precisa?". O honesto é reconhecer que o dado não está aqui e que
+   * o corretor vai trazer.
+   */
+  /*
+   * "Robô ou humano?" repetido não é dado que falta: é alguém cansado que
+   * quer gente. v41, 28/09/2026: a pendência genérica ("isso eu não tenho
+   * aqui com certeza") saiu como resposta a "robô ou humano?". Diz a
+   * verdade e oferece o corretor, que é o que ele está pedindo.
+   */
+  if (falaDoCliente && /\b(rob[oô]|humano|bot|pessoa de verdade|pessoa real|intelig[eê]ncia artificial)\b/i.test(falaDoCliente)) {
+    const franca =
+      "Sou uma assistente virtual, sim. Se preferir falar com uma pessoa, é só me dizer que eu chamo o corretor para falar com você.";
+    if (!jaDita(franca)) return franca;
+  }
+
+  if (falaDoCliente && ehPergunta(falaDoCliente)) {
+    const pendencia = SAIDAS_DE_PERGUNTA.find((s) => !jaDita(s));
+    if (pendencia) return pendencia;
+  }
+
+  // Quem já disse quantos dormitórios não ouve a pergunta de novo.
+  const jaDisseDormitorios = (historico ?? []).some(
+    (m) => m.remetente === "cliente" && /\d\s*(dorm|quarto|su[ií]te)/i.test(m.texto),
+  );
+  const inedita = SAIDAS.filter((s) => !(jaDisseDormitorios && /dormit/i.test(s))).find(
+    (s) => !jaDita(s),
+  );
   if (inedita) return inedita;
 
   // Todas usadas: a conversa está travada de verdade. Uma quarta pergunta

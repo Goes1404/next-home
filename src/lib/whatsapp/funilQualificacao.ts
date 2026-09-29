@@ -134,10 +134,8 @@ export function blocoCapacidadePendente(): string {
     "PENDÊNCIA DESTA CONVERSA — CAPACIDADE DE COMPRA:",
     "Você já sabe onde ele procura e o que ele quer, e AINDA NÃO SABE o que cabe no bolso dele. É a próxima pergunta.",
     "NÃO indique imóvel, não mande material e não proponha horário antes disso — indicar sem saber leva alguém a uma visita que não cabe, e isso queima o lead e a manhã do corretor.",
-    "Comece pelo caminho MENOS invasivo, e pare assim que tiver a resposta:",
-    "1) a faixa que ele procura — \"qual faixa de valor você tem em mente?\" (quase todo mundo responde, e já basta);",
-    "2) se ele compra sozinho ou em conjunto — \"a compra é só sua ou em conjunto?\" (muda o que o banco financia);",
-    "3) a renda mensal, e SÓ se os dois acima não vierem — aí sim com a razão junto: \"pra eu já te mostrar o que cabe no financiamento, qual é a renda média da família por mês?\".",
+    "Pergunte a RENDA MENSAL da família (sozinho ou somando com alguém), com a razão junto: \"pra eu calcular o que o banco aprova e te indicar o imóvel certo, qual é a renda média da família por mês?\".",
+    "Se ele não quiser dizer a renda, pergunte com o que ele trabalha. NUNCA pergunte faixa de valor nem quanto ele quer gastar: a faixa sai da conta, não da pergunta.",
     "UMA pergunta por mensagem. Se ele desconversar, siga a conversa sem insistir e volte ao assunto mais adiante — perder o lead por insistência é pior que ficar sem o dado.",
   ].join("\n");
 }

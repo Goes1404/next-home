@@ -1,0 +1,33 @@
+quer-visitar-sabado · cliente_encerrou · 7 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria visitar um apartamento sábado, dá?
+[1] Sofia:   Vou confirmar com o corretor se sábado está disponível e te retorno.
+Enquanto isso, em qual região de Barueri você procura?
+
+[2] Cliente: Barueri centro?
+[2] Sofia:   Tem sim, algumas opções assim no centro de Barueri e região próxima. Você prefere pronto para morar ou na planta?
+
+[3] Cliente: pronto pra morar
+              só quero visitar sábado
+[3] Sofia:   Ótimo, pronto para morar é uma escolha prática.
+Quantos dormitórios você precisa no apartamento?
+
+[4] Cliente: 2 dorms
+              só quero visitar sábado
+[4] Sofia:   Dois dormitórios é uma ótima escolha para conforto e espaço.
+Sobre sábado, que horário você prefere, manhã ou tarde?
+E qual faixa de valor você tem em mente para o apartamento?
+
+[5] Cliente: só quero saber horário
+              não pedi mais info
+[5] Sofia:   Ainda vou confirmar o horário exato para sábado com o corretor e te aviso em seguida.
+
+[6] Cliente: qual horário?
+              só isso que quero saber.
+[6] Sofia:   Sábado posso te mostrar às 9h ou às 11h.
+Qual desses horários fica melhor para você?
+
+[7] Cliente: 9h tá bom
+[7] Sofia:   Qual imóvel você gostaria de conhecer?
+Posso sugerir o More Aldeia de Bareuri ou o Elos Barueri, que são prontos para morar e têm 2 dormitórios.

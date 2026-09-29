@@ -1,0 +1,56 @@
+familia-tres-dorm · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Que bom receber seu contato!
+Em qual região de Barueri você procura o imóvel?
+
+[2] Cliente: oi, tô procurando um 3 dorm
+              tem que ser perto da escola das crianças
+[2] Sofia:   Tenho opções de 3 dormitórios em Barueri, perto de escolas.
+Posso te mostrar o Viva RSF Vila do Conde e o Eternity Alphaville, que ficam em regiões com boa estrutura escolar.
+Quer que eu te envie as fotos para começar?
+
+[3] Cliente: mas e o valor?
+              pode me passar o preço?
+              quero saber o preço urgentemente.
+[3] Sofia:   O mais em conta do nosso catálogo começa em R$ 457.000. O valor varia conforme o andar e a forma de pagamento.
+Quer que eu te envie as fotos do Viva RSF Vila do Conde para começar?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-b5c51e49fa886a80.webp
+
+[4] Cliente: valor?
+              qual preço exato?
+              preciso saber
+[4] Sofia:   O Viva RSF Vila do Conde começa em R$ 457.000.
+O valor exato depende do andar e da forma de pagamento, que fechamos na visita.
+Posso agendar para você conhecer o decorado?
+Assim você vê tudo de perto e aproveita para tirar dúvidas.
+
+[5] Cliente: mas e pra visitar?
+              quero ver no fim de semana
+[5] Sofia:   Posso agendar sua visita para sábado às 10h ou às 11h?
+Assim você conhece o decorado e vê tudo de perto
+Me confirma qual horário fica melhor para você
+
+[6] Cliente: prefiro 10h
+              mas e o valor exato mesmo?
+[6] Sofia:   Sábado às 10h está reservado para você conhecer o Viva RSF Vila do Conde
+O valor exato fechamos na visita, com as condições e unidades disponíveis
+Te mandei as fotos para ir vendo enquanto isso
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-00dd82102f49cde1.webp
+
+[7] Cliente: mas preciso do valor exato
+              não dá pra saber só na visita?
+[7] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[8] Cliente: valor exato?
+              você tá me deixando no vácuo
+[8] Sofia:   O valor exato fechamos na visita, sábado às 10h no Viva RSF Vila do Conde. Qualquer dúvida até lá, me chama.
+
+[9] Cliente: valor?
+              quero saber
+[9] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[10] Cliente: valor exato?
+              não entendi sua resposta
+[10] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.

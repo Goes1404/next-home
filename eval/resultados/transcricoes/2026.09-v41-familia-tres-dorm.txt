@@ -1,0 +1,80 @@
+familia-tres-dorm · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Em qual região de Barueri você procura o imóvel?
+
+[2] Cliente: 3 quartos
+              Barueri ou Alphaville
+[2] Sofia:   Você busca em Barueri ou Alphaville com 3 quartos, certo?
+Quer conhecer o decorado para sentir o espaço e o acabamento?
+Tenho opções interessantes nessas regiões.
+
+[3] Cliente: certo, mas quero 3 quartos
+              quero perto da escola
+              em barueri ou alphaville
+              e quanto custa?
+              me dá o valor
+[3] Sofia:   O mais em conta do nosso catálogo começa em R$ 457.000.
+Temos opções em Barueri e Alphaville com 3 dormitórios e suíte.
+Quer que eu te envie a apresentação digital para você avaliar melhor?
+https://next-home-drab.vercel.app/empreendimentos/viva-rsf-vila-do-conde
+
+[4] Cliente: vamo marcar visita no fim de semana
+              quanto vale exatamente?
+              tem foto do interior?
+              preciso do valor sem taxa?
+              tá perto da escola?
+              o que tem na área?
+              quero 3 quartos, não menos
+[4] Sofia:   O Viva RSF Vila do Conde tem 3 dormitórios com suíte, perfeito para sua busca.
+Fica em Barueri, perto de escolas e com área de lazer completa.
+Te mandei o link da apresentação digital para você ver tudo com calma:
+https://next-home-drab.vercel.app/empreendimentos/viva-rsf-vila-do-conde agendar sua visita para sábado às 10h ou segunda às 15h?
+Escolhe o melhor para você.
+
+[5] Cliente: ok, sábado 10h ok
+              quanto exatamente?
+              tem foto interior?
+              preciso valor sem taxa
+[5] Sofia:   Combinado, sábado às 10h está reservado para você.
+O Viva RSF Vila do Conde começa em R$ 457.000, valor que varia conforme unidade e condições.
+Te mandei as fotos do interior para você conferir o padrão.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-b5c51e49fa886a80.webp
+
+[6] Cliente: e preciso saber valor exato
+              foto interior?
+              sem taxa?
+              pelo menos 3 quartos
+[6] Sofia:   Sábado às 10h está confirmado para a visita no Viva RSF Vila do Conde.
+O valor exato e detalhes sobre taxas fechamos pessoalmente lá.
+Te mandei as fotos do interior para você conferir o padrão. Qualquer dúvida até lá, me chama.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-00dd82102f49cde1.webp
+
+[7] Cliente: Oi, ainda quero 3 quartos
+              Barueri perto da escola
+              Quanto custa exatamente?
+              Preciso do valor sem taxa
+[7] Sofia:   Isso eu não tenho aqui com certeza, e não quero te passar errado.
+Já pedi para o corretor e te respondo assim que ele me passar.
+
+[8] Cliente: Oi, ainda preciso 3 quartos
+              Barueri, perto da escola. Quanto exato, sem taxa?
+[8] Sofia:   O Viva RSF Vila do Conde oferece apartamentos de 3 dormitórios com até 1 suíte e 2 vagas.
+Posso confirmar o valor exato para você assim que receber do corretor.
+Quer que eu te envie a planta para você analisar enquanto isso?
+
+[9] Cliente: Oi, ainda quero 3 quartos
+              Barueri perto da escola
+              Quanto exato, sem taxa?
+[9] Sofia:   Posso te enviar a planta para você analisar enquanto confirmo o valor exato para você?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/planta-d1511af323f32bc1.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/planta-1b5612f6305ab94f.jpg
+
+[10] Cliente: Oi, ainda preciso 3 quartos
+              Barueri perto da escola
+              Quanto exato, sem taxa?
+              Foto interior?
+              Preciso do valor sem taxa
+[10] Sofia:   Te mandei as fotos e plantas para você analisar.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-fa20b277a8750de4.webp

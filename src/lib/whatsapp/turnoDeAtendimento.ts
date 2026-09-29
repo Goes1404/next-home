@@ -4,8 +4,21 @@ import type { Empreendimento } from "@/lib/types";
 import { gerarRespostaIA, type RespostaAgenteIA } from "./aiAgent";
 import type { AnexoResolvido } from "./resolverMidia";
 import { buscarExemplosFewShot } from "./aprendizadoContinuo";
-import { catalogoParaAtendimento } from "./focoDaConversa";
-import { blocoDaJogada, estadoDaConversa, planejarJogada, type Jogada } from "./jogada";
+import {
+  catalogoParaAtendimento,
+  imoveisCitados,
+  palpiteDeNome,
+  removerIndicacaoPrematura,
+} from "./focoDaConversa";
+import {
+  aceiteDeVisitaValido,
+  blocoDaJogada,
+  blocoDeQualificacao,
+  travaDeQualificacao,
+  estadoDaConversa,
+  planejarJogada,
+  type Jogada,
+} from "./jogada";
 import { blocoDaMemoria } from "./memoriaDaConversa";
 import { regrasCondicionais } from "./regrasCondicionais";
 import {
@@ -20,6 +33,10 @@ import { sanearRespostaIA } from "./guardrails";
 import { dividirEmMensagens } from "./chunking";
 import { separarRajada, type Fala } from "./rajada";
 import type { DossieClienteIA } from "./types";
+import { PARAMETROS_PADRAO } from "@/lib/credito/parametrosPadrao";
+import type { ParametrosCredito } from "@/lib/credito/tipos";
+import { blocoDeCapacidade, rendaNaConversa, tetoDeCompra } from "./capacidadeDeCompra";
+import { removerAnuncioDeAnexo } from "./afirmacoesSemLastro";
 
 /**
  * UM turno de atendimento: da conversa até os balões prontos para sair.
@@ -95,6 +112,11 @@ export type PedidoDeTurno = {
    * bloco fora significaria fazer essa conta em dois lugares.
    */
   horariosReais?: readonly HorarioDeVisita[];
+  /**
+   * Os parâmetros de crédito do banco (`getParametrosCredito`). Ausente vale
+   * o seed em código: o eval e o playground não têm cache do Next.
+   */
+  parametrosCredito?: ParametrosCredito;
   /**
    * Sobrescreve a vez do cliente. Existe para o follow-up, em que NINGUÉM
    * falou — é o silêncio que motiva a mensagem.
@@ -177,12 +199,28 @@ export async function executarTurnoDeAtendimento(
       })
     : undefined;
 
-  const { catalogo: catalogoDoPrompt, foco } = catalogoParaAtendimento({
+  const { catalogo: catalogoRanqueado, foco } = catalogoParaAtendimento({
     catalogo: pedido.catalogo,
     mensagemAtual: textoDaVez,
     historico: historicoAnterior,
     dossie: pedido.dossie,
   });
+
+  /*
+   * O QUE CABE NO BOLSO, calculado (decisão de 29/09/2026): a renda que ele
+   * disse (ficha, dossiê ou esta conversa) passa pelo mesmo simulador do
+   * site, e o bloco de capacidade diz quais imóveis cabem. O
+   * orçamento que ELE disse, se disse, vence a conta.
+   */
+  const rendaDoCliente = pedido.dossie?.rendaMensal ?? rendaNaConversa(historicoAnterior, textoDaVez);
+  const teto = tetoDeCompra(
+    { rendaMensal: rendaDoCliente, orcamentoMax: pedido.dossie?.orcamentoMax ?? null },
+    pedido.parametrosCredito ?? PARAMETROS_PADRAO,
+  );
+  // O ranking de relevância (região, dormitórios, o que ele citou) continua
+  // mandando na ordem: reordenar pelo teto punha um imóvel de Osasco na frente
+  // de quem pediu Barueri (v43). O teto entra pelo bloco, que nomeia quem cabe.
+  const catalogoDoPrompt = catalogoRanqueado;
 
   /*
    * PLANNER: a jogada desta mensagem é decidida AQUI, em código, antes de
@@ -200,6 +238,24 @@ export async function executarTurnoDeAtendimento(
    * repetições do cliente, uma pergunta feita doze vezes) e da v26 (o mesmo
    * horário três vezes) passa a ser impossível por construção.
    */
+  /*
+   * Os imóveis que o CLIENTE trouxe (o foco, que pode vir do anúncio ou da
+   * campanha que ele respondeu, e os que ele citou) e se a IA já indicou
+   * algum depois de ele começar a falar. A mensagem de campanha que abriu a
+   * conversa não conta como indicação: ela veio antes da primeira pergunta.
+   */
+  const falasDoCliente = historicoAnterior.filter((m) => m.remetente === "cliente").map((m) => m.texto);
+  const imoveisDoCliente = new Set<string>([
+    ...(foco ? [foco.slug] : []),
+    ...[...falasDoCliente, textoDaVez].flatMap((t) => imoveisCitados(t, pedido.catalogo)),
+  ]);
+  const primeiraDoCliente = historicoAnterior.findIndex((m) => m.remetente === "cliente");
+  const jaIndicouImovel =
+    primeiraDoCliente >= 0 &&
+    historicoAnterior
+      .slice(primeiraDoCliente)
+      .some((m) => m.remetente === "bot" && imoveisCitados(m.texto, pedido.catalogo).length > 0);
+
   const imovelEmFoco = foco ? (catalogoDoPrompt.find((e) => e.slug === foco.slug) ?? null) : null;
   const estado = estadoDaConversa({
     historico: historicoAnterior,
@@ -208,8 +264,17 @@ export async function executarTurnoDeAtendimento(
     imovelEmFoco,
     catalogo: catalogoDoPrompt,
     horasDesdeAUltimaFala: pedido.horasDesdeAUltimaFala,
+    jaIndicouImovel,
   });
   const jogada = planejarJogada(estado);
+
+  /*
+   * PERGUNTAS ANTES DA INDICAÇÃO (decisão de 28/09/2026). Enquanto faltar
+   * pergunta do funil, a IA só fala dos imóveis que o cliente trouxe. Não
+   * vale no retorno sem fala nova do cliente (follow-up), que tem regra
+   * própria.
+   */
+  const pendenteDaTrava = vezDoCliente.length > 0 ? travaDeQualificacao(jogada, estado) : null;
 
   /*
    * O que ela JÁ ofereceu de horário nesta conversa: a lista real perde os
@@ -221,6 +286,15 @@ export async function executarTurnoDeAtendimento(
     semOsJaOferecidos(pedido.horariosReais ?? [], oferecidos.assinaturas),
   );
 
+  /*
+   * Nome de imóvel escrito errado ("vrita" = Vitra): sem foco, pergunta se é
+   * esse, em vez de dizer que não tem (ver `palpiteDeNome`).
+   */
+  const palpite = foco ? null : palpiteDeNome(textoDaVez, pedido.catalogo);
+  const blocoPalpite = palpite
+    ? `ATENÇÃO: ele escreveu "${palpite.escrito}", que parece ser o ${palpite.nome}, do nosso catálogo. Antes de qualquer outra coisa, pergunte se é o ${palpite.nome} que ele quer dizer. NUNCA diga que não tem, nem que vai confirmar com o corretor: o imóvel é nosso.`
+    : "";
+
   const bruta = await gerarRespostaIA(
     {
       ...pedido.identidade,
@@ -231,7 +305,14 @@ export async function executarTurnoDeAtendimento(
       instrucaoExtra: pedido.instrucaoExtra,
       foco,
       blocoMemoria: blocoDaMemoria(pedido.memoria ?? null),
-      blocoJogada: blocoDaJogada(jogada, { nomeDoFoco: foco?.nome ?? null }),
+      blocoJogada: [
+        blocoDaJogada(jogada, { nomeDoFoco: foco?.nome ?? null }),
+        pendenteDaTrava ? blocoDeQualificacao(pendenteDaTrava, { nomeDoFoco: foco?.nome ?? null }) : "",
+        teto && !pendenteDaTrava ? blocoDeCapacidade(teto, catalogoDoPrompt) : "",
+        blocoPalpite,
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
       blocoRegrasCondicionais: regrasCondicionais({ baloesDaVez: vezDoCliente.length }),
       blocoHorariosReais,
       blocoNaoRepitaHorario: blocoNaoRepitaHorario(oferecidos),
@@ -254,8 +335,47 @@ export async function executarTurnoDeAtendimento(
    * dois turnos precisa continuar visível — senão a IA reenvia a mesma
    * foto, que é o loop que ela existe para cortar.
    */
+  /*
+   * Confirmação de visita que o cliente não deu não passa: o campo grava a
+   * visita no CRM e avisa o corretor (ver `aceiteDeVisitaValido`). Sem o
+   * campo, o guardrail também corta a frase que afirma a confirmação.
+   */
+  const confirmacaoInventada =
+    bruta.visitaProposta?.confirmadaPeloCliente === true && !aceiteDeVisitaValido(jogada, Boolean(foco));
+  if (confirmacaoInventada) {
+    console.warn(`[turno] confirmação de visita sem aceite do cliente descartada (jogada ${jogada.tipo})`);
+  }
+  const brutaConferida = confirmacaoInventada
+    ? { ...bruta, visitaProposta: { ...bruta.visitaProposta!, confirmadaPeloCliente: false } }
+    : bruta;
+
+  /*
+   * A rede da trava: o que o prompt pediu e o modelo não cumpriu. Frase que
+   * indica imóvel que o cliente não trouxe sai, e anexo, recomendação e link
+   * do catálogo desses imóveis também.
+   */
+  const semIndicacao = pendenteDaTrava
+    ? removerIndicacaoPrematura(brutaConferida.textoResposta ?? "", pedido.catalogo, imoveisDoCliente)
+    : null;
+  if (semIndicacao?.cortou) console.warn(`[turno] indicação antes da qualificação cortada (falta ${pendenteDaTrava})`);
+  const anexosNaHora = (brutaConferida.anexosMidia ?? []).filter((a) => imoveisDoCliente.has(a.slug));
+  const textoNaHora = semIndicacao?.texto ?? brutaConferida.textoResposta;
+  const brutaNaHora = pendenteDaTrava
+    ? {
+        ...brutaConferida,
+        // Tirou todos os anexos: tira também a frase que diz que eles foram.
+        textoResposta:
+          anexosNaHora.length === 0 && (brutaConferida.anexosMidia ?? []).length > 0
+            ? removerAnuncioDeAnexo(textoNaHora).texto
+            : textoNaHora,
+        anexosMidia: anexosNaHora,
+        imoveisRecomendados: (brutaConferida.imoveisRecomendados ?? []).filter((r) => imoveisDoCliente.has(r.slug)),
+        mandarCatalogo: false,
+      }
+    : brutaConferida;
+
   const saneada = sanearRespostaIA(
-    bruta,
+    brutaNaHora,
     pedido.catalogo,
     pedido.historico,
     pedido.identidade.slugCorretor,

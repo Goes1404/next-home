@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import { REVALIDA_EM_SEGUNDOS, TAG_CREDITO } from "@/lib/catalogo/tags";
 import { createClient } from "@/lib/supabase/public";
 import type { FaixaMcmv, ParametrosCredito } from "./tipos";
+import { PARAMETROS_PADRAO } from "./parametrosPadrao";
 
 /**
  * Os parâmetros de crédito, do banco.
@@ -16,20 +17,7 @@ import type { FaixaMcmv, ParametrosCredito } from "./tipos";
  * sobre financiamento. O padrão é o mesmo seed; se um dia divergir do banco,
  * a data de conferência é o que denuncia.
  */
-export const PARAMETROS_PADRAO: ParametrosCredito = {
-  faixas: [
-    { nome: "Faixa 1", rendaMax: 2850, subsidioMaximo: 55000, taxaAnual: 0.045 },
-    { nome: "Faixa 2", rendaMax: 4700, subsidioMaximo: 29000, taxaAnual: 0.06 },
-    { nome: "Faixa 3", rendaMax: 8000, subsidioMaximo: 0, taxaAnual: 0.0766 },
-    { nome: "Faixa 4", rendaMax: 12000, subsidioMaximo: 0, taxaAnual: 0.1 },
-  ],
-  tetoFgtsImovel: 350000,
-  taxaSbpeAnual: 0.1149,
-  prazoMaximoMeses: 420,
-  comprometimentoMaximo: 0.3,
-  itbiPorCidade: { Barueri: 0.02, Osasco: 0.02, "Santana de Parnaiba": 0.02, "Sao Paulo": 0.03 },
-  conferidoEm: "2026-09-09",
-};
+export { PARAMETROS_PADRAO };
 
 /**
  * Cacheado por etiqueta desde a F2 (13/09/2026): a home e a página de

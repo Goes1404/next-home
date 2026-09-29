@@ -1,0 +1,51 @@
+elogiou-o-terra-alta · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: gostei do Terra Alta, me fala mais dele
+[1] Sofia:   O Terra Alta não está no nosso catálogo, vou confirmar com o corretor e te retorno com as informações precisas.
+
+[2] Cliente: foto
+              mais foto
+              foto
+[2] Sofia:   O Terra Alta não é um imóvel do nosso catálogo. Me conta, em qual região de Barueri você procura?
+
+[3] Cliente: foto
+[3] Sofia:   O Terra Alta não é do nosso catálogo.
+Quer conhecer o decorado de algum empreendimento que temos em Alphaville ou Barueri? Posso te mostrar opções.
+
+[4] Cliente: foto
+              mais foto
+              foto
+[4] Sofia:   Entendo seu interesse pelas fotos.
+Para direcionar melhor, você prefere imóvel pronto para morar ou na planta?
+
+[5] Cliente: foto
+[5] Sofia:   Para te ajudar melhor, quantos dormitórios você precisa no imóvel?
+
+[6] Cliente: foto
+              mais foto
+[6] Sofia:   Vejo que quer ver fotos, mas para avançar, prefere imóvel pronto ou na planta?
+E quantos dormitórios você busca?
+Assim já te mostro o que cabe no seu perfil.
+
+[7] Cliente: foto
+              mais foto
+              foto
+[7] Sofia:   Vejo que as fotos chamaram sua atenção
+prefiro seguir com o que você busca para indicar o ideal
+prefere imóvel pronto ou na planta?
+
+[8] Cliente: foto
+              mais foto
+              foto
+              mais foto
+[8] Sofia:   Para seguir, me diz: prefere imóvel pronto para morar ou na planta?
+Assim já te mostro as melhores opções para você.
+
+[9] Cliente: foto
+              mais foto
+[9] Sofia:   Prefere que eu te mostre opções prontas para morar ou na planta agora?
+
+[10] Cliente: foto
+              mais foto
+[10] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.

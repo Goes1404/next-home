@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Empreendimento } from "@/lib/types";
-import { catalogoComFoco, catalogoParaAtendimento, detectarFoco } from "./focoDaConversa";
+import {
+  catalogoComFoco,
+  catalogoParaAtendimento,
+  detectarFoco,
+  palpiteDeNome,
+  removerIndicacaoPrematura,
+} from "./focoDaConversa";
 import { construirPromptSistema, type ContextoAtendimento } from "./aiAgent";
 
 /**
@@ -487,5 +493,136 @@ describe("typo de cadastro não vira token distintivo", () => {
       catalogo: comTypo,
     });
     expect(foco?.imovel.slug).toBe("more-aldeia-de-bareuri-var064");
+  });
+});
+
+/*
+ * Produção, 28/09/2026: a abertura "Aqui é a Lia, da Next Home" citava
+ * "Home", o token distintivo do "Breeze Home Clube". Virou oferta solitária
+ * da IA, o foco travou num imóvel do Jardim Júlio desde o primeiro turno, e
+ * o cliente que pediu a Aldeia recebeu o Breeze. O nome da própria
+ * imobiliária nunca identifica um imóvel.
+ */
+describe("o nome da imobiliária não vira foco", () => {
+  const catalogo = [
+    imovel("Breeze Home Clube", "breeze-home-clube-bhc741"),
+    imovel("Oásis Home Resort", "oasis-home-resort"),
+    imovel("Royal Barueri II", "royal-barueri-ii", { bairro: "Aldeia" }),
+  ];
+
+  it("a abertura com a marca não é oferta de imóvel", () => {
+    const foco = detectarFoco({
+      catalogo: [catalogo[0]],
+      mensagemAtual: "Vc tem apartamento de dois dormitórios em Barueri",
+      historico: [
+        { remetente: "bot", texto: "Oi Matheus, tudo bem? Aqui é a Lia, da Next Home em Alphaville." },
+        { remetente: "cliente", texto: "Oi" },
+      ],
+    });
+    expect(foco).toBeNull();
+  });
+
+  it("o cliente que escreve o nome da imobiliária também não aponta imóvel", () => {
+    expect(
+      detectarFoco({ catalogo: [catalogo[0]], mensagemAtual: "vi o anúncio da next home" }),
+    ).toBeNull();
+  });
+
+  it("o nome inteiro do imóvel continua reconhecido", () => {
+    expect(
+      detectarFoco({ catalogo, mensagemAtual: "me fala do breeze home clube" })?.imovel.slug,
+    ).toBe("breeze-home-clube-bhc741");
+    expect(detectarFoco({ catalogo, mensagemAtual: "e o breeze?" })?.imovel.slug).toBe(
+      "breeze-home-clube-bhc741",
+    );
+  });
+});
+
+/*
+ * Produção, 28/09/2026: com o Estação 267 em foco, "tem algo que entregue o
+ * ano que vem?" virou pergunta de ENTREGA do Estação, e a resposta foi "o
+ * Estação é pronto, não tem entrega para o ano que vem". Ele estava pedindo
+ * OUTRO imóvel, com um critério. Busca no catálogo solta o foco.
+ */
+describe("busca por critério solta o foco", () => {
+  const catalogo = [
+    imovel("Estação 267", "estacao-267-ne67774"),
+    imovel("Manacá Barueri", "more-na-aldeia-de-barueri-mac238"),
+  ];
+  const ofertaDoEstacao = [
+    { remetente: "cliente", texto: "Tem algum próximo da estação ?" },
+    { remetente: "bot", texto: "Tem sim, o Estação 267 fica na Nova Aldeinha." },
+    { remetente: "cliente", texto: "Pode ser" },
+    { remetente: "bot", texto: "Te mandei a apresentação do Estação 267." },
+  ];
+
+  it("\"tem algo que ...\" não herda o imóvel oferecido", () => {
+    expect(
+      detectarFoco({ catalogo, mensagemAtual: "Tem algo que entregue o ano que vem ?", historico: ofertaDoEstacao }),
+    ).toBeNull();
+  });
+
+  it("nem o imóvel que o cliente citou antes", () => {
+    const historico = [{ remetente: "cliente", texto: "quero informações do manaca" }];
+    expect(
+      detectarFoco({ catalogo, mensagemAtual: "tem algum outro com 3 dormitórios?", historico }),
+    ).toBeNull();
+  });
+
+  it("buscar citando o imóvel pelo nome continua sendo foco nele", () => {
+    expect(
+      detectarFoco({ catalogo, mensagemAtual: "tem algum de 3 dorm no manacá?", historico: ofertaDoEstacao })?.imovel
+        .slug,
+    ).toBe("more-na-aldeia-de-barueri-mac238");
+  });
+
+  it("pergunta sobre o imóvel em foco não é busca", () => {
+    expect(
+      detectarFoco({ catalogo, mensagemAtual: "tem vaga de garagem?", historico: ofertaDoEstacao })?.imovel.slug,
+    ).toBe("estacao-267-ne67774");
+  });
+});
+
+describe("palpite de nome escrito errado", () => {
+  const catalogo = [
+    imovel("Vitra Alphaville", "vitra-alphaville-vt110"),
+    imovel("Bosque AlphaGran", "bosque-alphagran"),
+    imovel("Terra Alta", "terra-alta-ta141"),
+  ];
+
+  it("\"vrita\" sugere o Vitra", () => {
+    expect(palpiteDeNome("vcs tem o vrita alphagran ainda?", catalogo)?.slug).toBe("vitra-alphaville-vt110");
+  });
+
+  it("nome certo é foco, não palpite", () => {
+    expect(palpiteDeNome("me fala do vitra", catalogo)).toBeNull();
+  });
+
+  it("palavra comum não vira palpite", () => {
+    expect(palpiteDeNome("quero ver a planta e a metragem por favor", catalogo)).toBeNull();
+    expect(palpiteDeNome("tenho interesse, qual o valor?", catalogo)).toBeNull();
+  });
+});
+
+describe("indicação antes da hora", () => {
+  const catalogo = [
+    imovel("Estação 267", "estacao-267-ne67774"),
+    imovel("Manacá Barueri", "more-na-aldeia-de-barueri-mac238"),
+  ];
+
+  it("corta a frase que indica imóvel que o cliente não trouxe", () => {
+    const r = removerIndicacaoPrematura(
+      "Tenho sim, algumas opções na Aldeia. --- O Estação 267 fica pertinho da estação. --- Você prefere pronto para morar ou na planta?",
+      catalogo,
+      new Set(),
+    );
+    expect(r.cortou).toBe(true);
+    expect(r.texto).not.toMatch(/Estação 267/);
+    expect(r.texto).toMatch(/pronto para morar ou na planta/);
+  });
+
+  it("o imóvel que ele trouxe pode ser citado", () => {
+    const t = "O Manacá Barueri fica no Jardim Iracema. Você prefere pronto ou na planta?";
+    expect(removerIndicacaoPrematura(t, catalogo, new Set(["more-na-aldeia-de-barueri-mac238"])).texto).toBe(t);
   });
 });

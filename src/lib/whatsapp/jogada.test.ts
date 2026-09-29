@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { blocoDaJogada, estadoDaConversa, planejarJogada, type EstadoDaConversa } from "./jogada";
+import {
+  aceiteDeVisitaValido,
+  blocoDaJogada,
+  blocoDeQualificacao,
+  travaDeQualificacao,
+  estadoDaConversa,
+  planejarJogada,
+  type EstadoDaConversa,
+} from "./jogada";
 import type { Empreendimento } from "@/lib/types";
 import type { Fala } from "./rajada";
 
@@ -41,6 +49,8 @@ function estado(over: Partial<EstadoDaConversa> = {}): EstadoDaConversa {
     alternativa: null,
     nomeDoFoco: null,
     visitaConfirmada: false,
+    aceitouOferta: null,
+    jaIndicouImovel: false,
     perguntaSemDado: null,
     agendamento: { dia: null, hora: null, pediuVisita: false },
     recusa: null,
@@ -102,36 +112,71 @@ describe("planejarJogada — a ordem de prioridade", () => {
     expect(j).toEqual({ tipo: "perguntar", assunto: "estagio" });
   });
 
-  it("capacidade só entra quando o funil chegou lá", () => {
-    // Renda antes de região e tipologia é a pergunta que mais espanta cliente.
-    const cedo = planejarJogada(
-      estado({ respondidos: new Set(["regiao", "estagio", "tipologia"]), capacidadePendente: false, convidouVisita: true, falasDoCliente: 3 }),
-    );
-    expect(cedo.tipo).not.toBe("perguntar");
-
-    const naHora = planejarJogada(
-      estado({ respondidos: new Set(["regiao", "estagio", "tipologia"]), capacidadePendente: true, convidouVisita: true, falasDoCliente: 4 }),
-    );
-    expect(naHora).toEqual({ tipo: "perguntar", assunto: "capacidade" });
+  /*
+   * Reescrito em 28/09/2026, por decisão do usuário: "as perguntas têm que
+   * ser antes de recomendar um imóvel, é com base nelas que identificamos o
+   * melhor imóvel para a situação do cliente". Até a v41 a IA convidava
+   * assim que sabia a região ("convida CEDO") e a capacidade só entrava se
+   * sobrasse espaço. Agora a ordem é: as quatro perguntas → a indicação →
+   * o convite → o horário.
+   */
+  it("capacidade é pergunta do funil: vem antes de indicar", () => {
+    const j = planejarJogada(estado({ respondidos: new Set(["regiao", "estagio", "tipologia"]), falasDoCliente: 3 }));
+    expect(j).toEqual({ tipo: "perguntar", assunto: "capacidade" });
   });
 
-  it("convida CEDO — assim que sabe a região, antes de o funil acabar", () => {
-    // A corretora que converte convida na 5ª–8ª mensagem, junto com a
-    // apresentação — não como prêmio no fim da qualificação.
+  it("não convida nem indica sabendo só a região", () => {
     const j = planejarJogada(estado({ respondidos: new Set(["regiao"]), falasDoCliente: 2 }));
-    expect(j.tipo).toBe("convidar_visita");
+    expect(j).toEqual({ tipo: "perguntar", assunto: "estagio" });
   });
 
-  it("propõe horário só com o funil completo, e nunca depois de dois recusados", () => {
+  it("funil completo: indica primeiro, convida depois, e só então o horário", () => {
     const completo = new Set(["regiao", "estagio", "tipologia", "capacidade"] as const);
+    expect(planejarJogada(estado({ respondidos: completo, falasDoCliente: 5 }))).toEqual({ tipo: "indicar_imovel" });
+    expect(planejarJogada(estado({ respondidos: completo, jaIndicouImovel: true, falasDoCliente: 5 }))).toEqual({
+      tipo: "convidar_visita",
+    });
     expect(
-      planejarJogada(estado({ respondidos: completo, convidouVisita: true, horariosOferecidos: 0, falasDoCliente: 5 })),
+      planejarJogada(estado({ respondidos: completo, jaIndicouImovel: true, convidouVisita: true, horariosOferecidos: 0, falasDoCliente: 5 })),
     ).toEqual({ tipo: "propor_horario", jaOfereceu: 0 });
 
     // Dois horários recusados: insistir num terceiro é o loop com outra roupa.
     expect(
-      planejarJogada(estado({ respondidos: completo, convidouVisita: true, horariosOferecidos: 2, falasDoCliente: 6 })),
+      planejarJogada(estado({ respondidos: completo, jaIndicouImovel: true, convidouVisita: true, horariosOferecidos: 2, falasDoCliente: 6 })),
     ).toEqual({ tipo: "devolver_escolha" });
+  });
+
+  it("pergunta ignorada duas vezes sai do caminho e não trava a indicação", () => {
+    const j = planejarJogada(
+      estado({
+        respondidos: new Set(["regiao", "estagio", "tipologia"]),
+        vezesPerguntado: new Map([["capacidade", 2]]),
+        perguntadosNaUltima: new Set(["capacidade"]),
+        falasDoCliente: 6,
+      }),
+    );
+    expect(j).toEqual({ tipo: "indicar_imovel" });
+  });
+});
+
+describe("trava da qualificação", () => {
+  it("vale enquanto falta pergunta, e sai com o funil completo", () => {
+    const aberto = estado({ respondidos: new Set(["regiao"]) });
+    expect(travaDeQualificacao({ tipo: "responder_pergunta_aberta", oQueEleDisse: "tem 2 dorm?" }, aberto)).toBe("estagio");
+    const fechado = estado({ respondidos: new Set(["regiao", "estagio", "tipologia", "capacidade"]) });
+    expect(travaDeQualificacao({ tipo: "indicar_imovel" }, fechado)).toBeNull();
+  });
+
+  it("não vale em recusa nem em saída suave (ali não se pergunta nada)", () => {
+    const aberto = estado({ respondidos: new Set() });
+    expect(travaDeQualificacao({ tipo: "acolher_recusa", familia: "desinteresse", oQueEleDisse: "não" }, aberto)).toBeNull();
+    expect(travaDeQualificacao({ tipo: "deixar_porta_aberta", oQueEleDisse: "vou pensar" }, aberto)).toBeNull();
+  });
+
+  it("o bloco proíbe indicar e termina na pergunta que falta", () => {
+    const b = blocoDeQualificacao("tipologia", { nomeDoFoco: null });
+    expect(b).toMatch(/NÃO cite nenhum imóvel/);
+    expect(b).toMatch(/quantos dormitórios/);
   });
 });
 
@@ -323,17 +368,47 @@ describe("os três achados do trace cooperativo", () => {
     expect(planejarJogada(e)).toEqual({ tipo: "perguntar", assunto: "tipologia" });
   });
 
-  it("a pergunta de FAIXA do próprio bot conta como capacidade — não se repete", () => {
+  /*
+   * Reescrito em 29/09/2026: a capacidade deixou de fechar com qualquer
+   * resposta. Decisão do usuário: ela sai da RENDA (ou da profissão), e é o
+   * número que alimenta a conta do teto. Quem desconversa ouve a pergunta
+   * UMA vez mais; na segunda, o assunto sai do caminho (vale a régua de não
+   * virar formulário). As outras perguntas do funil continuam fechando com
+   * qualquer resposta sem "?".
+   */
+  it("a capacidade que o bot perguntou e ele não respondeu volta UMA vez", () => {
     const e = estadoDaConversa({
       historico: [
         cliente("procuro em Alphaville, 2 dormitórios, na planta"),
-        bot("Qual faixa de valor você tem em mente?"),
+        bot("Pra eu calcular o que o banco aprova, qual é a renda média da família por mês?"),
       ],
-      mensagemAtual: "sim, quero conhecer",
+      mensagemAtual: "sou professor",
       dossie: null, imovelEmFoco: null, catalogo: [IMOVEL],
     });
     expect(e.perguntadosNaUltima.has("capacidade")).toBe(true);
-    expect(planejarJogada(e)).not.toEqual({ tipo: "perguntar", assunto: "capacidade" });
+    expect(e.respondidos.has("capacidade")).toBe(false);
+    expect(planejarJogada(e)).toEqual({ tipo: "perguntar", assunto: "capacidade" });
+
+    const segunda = estadoDaConversa({
+      historico: [
+        cliente("procuro em Alphaville, 2 dormitórios, na planta"),
+        bot("Qual é a renda média da família por mês?"),
+        cliente("sou professor"),
+        bot("Legal! E a renda média da família, mais ou menos?"),
+      ],
+      mensagemAtual: "prefiro não dizer",
+      dossie: null, imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(planejarJogada(segunda)).not.toEqual({ tipo: "perguntar", assunto: "capacidade" });
+  });
+
+  it("renda dita com número fecha a capacidade", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("Alphaville, 2 dormitórios, na planta"), bot("Qual é a renda média da família por mês?")],
+      mensagemAtual: "uns 4000",
+      imovelEmFoco: null, catalogo: [IMOVEL],
+    });
+    expect(e.respondidos.has("capacidade")).toBe(true);
   });
 
   it("aceitou o horário → CONFIRMAR, nunca propor outro", () => {
@@ -409,25 +484,22 @@ describe("repergunta e pedido de horário", () => {
     /*
      * Regra da casa: "se ele desconversar em qualquer uma, siga a conversa —
      * perder o lead por insistência é pior que ficar sem o dado". A v32
-     * reperguntava e regrediu (IA repetiu 6,5 → 14). Agora qualquer resposta
-     * sem "?" fecha a pergunta do turno anterior; a repergunta só cabe
-     * quando ele perguntou outra coisa em vez de responder.
+     * reperguntava e regrediu (IA repetiu 6,5 → 14). Qualquer resposta sem
+     * "?" fecha a pergunta do turno anterior (a capacidade é a exceção
+     * declarada acima: ela volta uma vez); a repergunta só cabe quando ele
+     * perguntou outra coisa em vez de responder.
      */
-    const historico = [
-      cliente("Alphaville, 2 dormitórios, na planta"),
-      bot("Quer conhecer o decorado? Qual faixa de valor você tem em mente?"),
-    ];
+    const historico = [cliente("Alphaville, 2 dormitórios"), bot("Você prefere pronto para morar ou na planta?")];
 
     const desconversou = estadoDaConversa({
-      historico, mensagemAtual: "sim, quero conhecer!", imovelEmFoco: null, catalogo: [IMOVEL],
+      historico, mensagemAtual: "tanto faz, quero ver fotos!", imovelEmFoco: null, catalogo: [IMOVEL],
     });
-    expect(desconversou.respondidos.has("capacidade")).toBe(true);
-    expect(planejarJogada(desconversou)).not.toEqual({ tipo: "perguntar", assunto: "capacidade" });
+    expect(desconversou.respondidos.has("estagio")).toBe(true);
 
     const perguntouOutraCoisa = estadoDaConversa({
       historico, mensagemAtual: "tem vaga de garagem?", imovelEmFoco: null, catalogo: [IMOVEL],
     });
-    expect(perguntouOutraCoisa.respondidos.has("capacidade")).toBe(false);
+    expect(perguntouOutraCoisa.respondidos.has("estagio")).toBe(false);
   });
 
   it("'que horas?' é pedido de horário → propor, não convidar", () => {
@@ -669,10 +741,24 @@ describe("a regressão da v32: a resposta do cliente conta mesmo sem casar no re
 describe("quem está marcando já passou do funil", () => {
   const convite = "Quer conhecer o decorado do Vista AlphaGran?";
 
+  // Com imóvel em foco (o do anúncio, ou o que a IA já indicou): é o caso
+  // em que quem está marcando não espera o funil. Sem foco, ver abaixo.
   const jogadaPara = (mensagemAtual: string, historico: Fala[] = []) =>
     planejarJogada(
-      estadoDaConversa({ historico, mensagemAtual, imovelEmFoco: null, catalogo: [IMOVEL] }),
+      estadoDaConversa({ historico, mensagemAtual, imovelEmFoco: IMOVEL, catalogo: [IMOVEL] }),
     );
+
+  /*
+   * Decisão de 28/09/2026: sem imóvel escolhido e sem as perguntas, "quero
+   * marcar uma visita" ganha as perguntas primeiro, para saber QUAL decorado
+   * mostrar. O bloco de `perguntar` já manda reagir ao que ele disse antes.
+   */
+  it("sem imóvel e sem perguntas, pedir visita começa pelas perguntas", () => {
+    const j = planejarJogada(
+      estadoDaConversa({ historico: [], mensagemAtual: "Quero marcar uma visita no amanhã", imovelEmFoco: null, catalogo: [IMOVEL] }),
+    );
+    expect(j).toEqual({ tipo: "perguntar", assunto: "regiao" });
+  });
 
   it("pedir visita na primeira frase não vira pergunta de estágio", () => {
     expect(jogadaPara("Quero marcar uma visita no amanhã")).toEqual({
@@ -737,9 +823,15 @@ describe("a confirmação manda o combinado, não só um 'confirmado'", () => {
     expect(texto("Vista AlphaGran")).toContain("nome do corretor");
   });
 
-  it("sem foco, não inventa imóvel nenhum", () => {
+  /*
+   * Reescrito em 28/09/2026: sem foco, a confirmação deixou de sair. O eval
+   * de conversa flagrou "combinado para sábado às 11h com a Sofia" sem
+   * imóvel nenhum, e o cliente pediu o endereço seis vezes. Sem imóvel não
+   * existe visita: o bloco segura o horário e pergunta QUAL imóvel.
+   */
+  it("sem foco, não inventa imóvel nenhum e pergunta qual é", () => {
     expect(texto(null)).not.toContain("no null");
-    expect(texto(null)).toContain("nome do corretor");
+    expect(texto(null)).toMatch(/qual (dos )?im[óo]ve/i);
   });
 
   it("proíbe a IA de escrever endereço — ele vem do cadastro", () => {
@@ -975,4 +1067,245 @@ describe("a retomada depois de dias", () => {
     expect(t).toContain("MEMÓRIA");
     expect(t).toContain("UMA pergunta");
   });
+});
+
+/*
+ * Eval de conversa, 28/09/2026 (`sem-perfil-de-renda`): "queria sair do
+ * aluguel, pago 900 HOJE, da pra financiar" virou `agendar` para hoje, e a
+ * IA ofereceu horário no stand para quem perguntou de financiamento. Dia
+ * da semana solto só é agendamento quando a conversa está falando de visita.
+ */
+describe("dia solto sem assunto de visita não é agendamento", () => {
+  const catalogo = [IMOVEL];
+
+  it("\"hoje\" no meio de uma pergunta de financiamento não marca nada", () => {
+    const j = planejarJogada(
+      estadoDaConversa({
+        historico: [],
+        mensagemAtual: "queria sair do aluguel, pago 900 hoje, da pra financiar",
+        imovelEmFoco: null,
+        catalogo,
+      }),
+    );
+    expect(j.tipo).not.toBe("agendar");
+  });
+
+  it("o dia continua valendo quando ele fala em visitar", () => {
+    const j = planejarJogada(
+      estadoDaConversa({
+        historico: [],
+        mensagemAtual: "queria visitar um apartamento sábado, dá?",
+        imovelEmFoco: IMOVEL,
+        catalogo,
+      }),
+    );
+    expect(j.tipo).toBe("agendar");
+  });
+
+  it("e quando responde ao convite do bot", () => {
+    const j = planejarJogada(
+      estadoDaConversa({
+        historico: [bot("Quer conhecer o decorado do Terra Alta?")],
+        mensagemAtual: "segunda feira",
+        imovelEmFoco: IMOVEL,
+        catalogo,
+      }),
+    );
+    expect(j.tipo).toBe("agendar");
+  });
+});
+
+/*
+ * Eval de conversa, 28/09/2026 (`quer-visitar-sabado`): "11h então" virou
+ * visita confirmada sem imóvel nenhum ("combinado para sábado às 11h com a
+ * Sofia"), e o cliente pediu o endereço seis vezes. Sem imóvel não existe
+ * visita; e quem recebe o cliente é o corretor, nunca a assistente.
+ */
+describe("marcar visita sem saber QUAL imóvel", () => {
+  it("agendar sem foco pede o imóvel antes de fechar", () => {
+    const b = blocoDaJogada({ tipo: "agendar", dia: "sábado", hora: null }, { nomeDoFoco: null });
+    expect(b).toMatch(/qual (dos )?im[óo]ve/i);
+  });
+
+  it("confirmar sem foco segura o horário e pergunta o imóvel", () => {
+    const b = blocoDaJogada({ tipo: "confirmar_visita", oQueEleDisse: "11h então" }, { nomeDoFoco: null });
+    expect(b).toMatch(/qual (dos )?im[óo]ve/i);
+    expect(b).not.toMatch(/"confirmadaPeloCliente": true/);
+  });
+
+  it("com foco, confirma normalmente", () => {
+    const b = blocoDaJogada({ tipo: "confirmar_visita", oQueEleDisse: "11h" }, { nomeDoFoco: "Terra Alta" });
+    expect(b).toMatch(/"confirmadaPeloCliente": true/);
+  });
+
+  it("quem recebe o cliente é o corretor, não a assistente", () => {
+    const b = blocoDaJogada({ tipo: "confirmar_visita", oQueEleDisse: "11h" }, { nomeDoFoco: "Terra Alta" });
+    expect(b).toMatch(/nunca o seu/i);
+  });
+});
+
+/*
+ * Eval de conversa, 28/09/2026. Três leituras erradas do planner, todas
+ * sobre dado que o cliente já tinha dado ou estava pedindo:
+ *   - "2 dorm" não contava como tipologia, e a IA perguntou "quantos
+ *     dormitórios?" a quem tinha acabado de dizer.
+ *   - "preciso falar com ela" não era saída suave, e a IA ofereceu horário
+ *     cinco vezes a quem ia conversar com a esposa.
+ *   - "pago 900 de aluguel, dá pra financiar?" contava como RENDA
+ *     respondida e caía no funil; a pergunta de financiamento sumia e a
+ *     renda nunca era perguntada.
+ */
+describe("o que o cliente disse de verdade", () => {
+  const catalogo = [IMOVEL];
+  const planejar = (mensagemAtual: string, historico: Fala[] = []) => {
+    const e = estadoDaConversa({ historico, mensagemAtual, imovelEmFoco: null, catalogo });
+    return { e, j: planejarJogada(e) };
+  };
+
+  it("\"2 dorm\" responde a tipologia", () => {
+    const { e } = planejar("Barueri centro\n2 dorm");
+    expect(e.respondidos.has("tipologia")).toBe(true);
+  });
+
+  it("\"preciso falar com ela\" é saída suave", () => {
+    const { j } = planejar("preciso falar com ela", [bot("Quer conhecer o decorado?")]);
+    expect(j.tipo).toBe("deixar_porta_aberta");
+  });
+
+  it("valor de aluguel não é renda respondida", () => {
+    const { e } = planejar("pago 900 de aluguel");
+    expect(e.respondidos.has("capacidade")).toBe(false);
+  });
+
+  it("renda dita com número é capacidade respondida", () => {
+    expect(planejar("minha renda é 6 mil").e.respondidos.has("capacidade")).toBe(true);
+    expect(planejar("tenho até 400 mil").e.respondidos.has("capacidade")).toBe(true);
+  });
+
+  it("\"dá pra financiar?\" é respondida, e a resposta pede a renda", () => {
+    const { j } = planejar("queria sair do aluguel, pago 900 hoje, da pra financiar");
+    expect(j.tipo).toBe("responder_pergunta_aberta");
+    expect(blocoDaJogada(j, { nomeDoFoco: null })).toMatch(/renda/i);
+  });
+});
+
+/*
+ * Produção, 28/09/2026: "Quer que eu te envie a apresentação digital?" →
+ * "Quero Simm" caiu em `devolver_escolha`. Aceite de material oferecido se
+ * cumpre.
+ */
+describe("aceitou o material que a IA ofereceu", () => {
+  const catalogo = [IMOVEL];
+  const jogadaPara = (mensagemAtual: string, ultimaDoBot: string) =>
+    planejarJogada(
+      estadoDaConversa({ historico: [bot(ultimaDoBot)], mensagemAtual, imovelEmFoco: IMOVEL, catalogo }),
+    );
+
+  it("\"quero simm\" depois da oferta da apresentação entrega a apresentação", () => {
+    const j = jogadaPara("Quero Simm", "Quer que eu te envie a apresentação digital para você conhecer melhor?");
+    expect(j.tipo).toBe("entregar_oferta");
+    expect(blocoDaJogada(j, { nomeDoFoco: "Terra Alta" })).toMatch(/link da página/);
+  });
+
+  it("\"pode mandar\" depois de oferecer fotos", () => {
+    expect(jogadaPara("pode mandar", "Posso te mandar as fotos do Terra Alta?").tipo).toBe("entregar_oferta");
+  });
+
+  it("resposta longa com outra coisa não é só aceite", () => {
+    expect(
+      jogadaPara("sim mas antes me diz quanto é o condomínio e se aceita pet", "Posso te mandar as fotos?").tipo,
+    ).not.toBe("entregar_oferta");
+  });
+
+  it("sem oferta de envio, \"sim\" não entrega nada", () => {
+    expect(jogadaPara("sim", "Você prefere pronto para morar ou na planta?").tipo).not.toBe("entregar_oferta");
+  });
+});
+
+// Produção, 28/09/2026: quem pediu "algo que entregue o ano que vem" já disse
+// que quer na planta, e ouviu "pronto para morar ou na planta?" dois turnos
+// depois.
+it("pedir prazo de entrega já responde o estágio", () => {
+  const e = estadoDaConversa({
+    historico: [cliente("Tem algo que entregue o ano que vem ?"), bot("O Estação 267 é pronto para morar.")],
+    mensagemAtual: "Quero informações do manaca",
+    imovelEmFoco: IMOVEL,
+    catalogo: [IMOVEL],
+  });
+  expect(e.respondidos.has("estagio")).toBe(true);
+});
+
+// Eval de 28/09/2026: capacidade perguntada em 1 de 16 conversas. Depois da
+// visita marcada, UMA pergunta, com a razão (a simulação que o corretor leva).
+describe("depois da visita confirmada, a simulação", () => {
+  const confirmou = bot("Combinado: sábado às 10h no Terra Alta, com o Eduardo.");
+
+  it("sem capacidade conhecida, pede a renda com a razão", () => {
+    const j = planejarJogada(
+      estadoDaConversa({ historico: [confirmou], mensagemAtual: "beleza, obrigado", imovelEmFoco: IMOVEL, catalogo: [IMOVEL] }),
+    );
+    expect(j).toEqual({ tipo: "encerrar_confirmado", prepararSimulacao: true });
+    expect(blocoDaJogada(j, { nomeDoFoco: "Terra Alta" })).toMatch(/simulação/);
+  });
+
+  it("com a renda já dita, não pergunta", () => {
+    const j = planejarJogada(
+      estadoDaConversa({
+        historico: [cliente("minha renda é 7 mil"), confirmou],
+        mensagemAtual: "beleza",
+        imovelEmFoco: IMOVEL,
+        catalogo: [IMOVEL],
+      }),
+    );
+    expect(j).toEqual({ tipo: "encerrar_confirmado", prepararSimulacao: false });
+  });
+
+  it("se ele perguntou algo, responde primeiro e não pergunta", () => {
+    const j = planejarJogada(
+      estadoDaConversa({ historico: [confirmou], mensagemAtual: "onde fica mesmo?", imovelEmFoco: IMOVEL, catalogo: [IMOVEL] }),
+    );
+    expect(j.tipo === "encerrar_confirmado" && j.prepararSimulacao).toBe(false);
+  });
+});
+
+describe("aceite de visita: quem decide é o planner", () => {
+  it("só confirmar_visita, ou agendar com a hora dita, e com imóvel", () => {
+    expect(aceiteDeVisitaValido({ tipo: "confirmar_visita", oQueEleDisse: "9h" }, true)).toBe(true);
+    expect(aceiteDeVisitaValido({ tipo: "agendar", dia: "sábado", hora: 9 }, true)).toBe(true);
+    expect(aceiteDeVisitaValido({ tipo: "agendar", dia: "sábado", hora: null }, true)).toBe(false);
+    expect(aceiteDeVisitaValido({ tipo: "confirmar_visita", oQueEleDisse: "9h" }, false)).toBe(false);
+    // investidor-objetivo, 28/09/2026: perguntava metragem e ganhou visita.
+    expect(aceiteDeVisitaValido({ tipo: "responder_pergunta_aberta", oQueEleDisse: "tamanho 30" }, true)).toBe(false);
+  });
+
+  it("\"falo com ela\" também é saída suave", () => {
+    const j = planejarJogada(
+      estadoDaConversa({ historico: [bot("Quer conhecer o decorado?")], mensagemAtual: "Falo com ela", imovelEmFoco: null, catalogo: [IMOVEL] }),
+    );
+    expect(j.tipo).toBe("deixar_porta_aberta");
+  });
+});
+
+// v42, 29/09/2026: "R$ 249k?" era o cliente repetindo o piso com espanto, e
+// fechava a qualificação como se fosse a faixa dele.
+it("número em pergunta não é capacidade dita", () => {
+  const e = estadoDaConversa({
+    historico: [],
+    mensagemAtual: "R$ 249k?\nPreciso saber valor exato",
+    imovelEmFoco: null,
+    catalogo: [IMOVEL],
+  });
+  expect(e.respondidos.has("capacidade")).toBe(false);
+  const dita = estadoDaConversa({ historico: [], mensagemAtual: "tenho uns 300 mil", imovelEmFoco: null, catalogo: [IMOVEL] });
+  expect(dita.respondidos.has("capacidade")).toBe(true);
+});
+
+it("\"renda não importa\" não responde a capacidade", () => {
+  const e = estadoDaConversa({
+    historico: [bot("Qual é a renda mensal da família?")],
+    mensagemAtual: "renda não importa, quero o preço só",
+    imovelEmFoco: null,
+    catalogo: [IMOVEL],
+  });
+  expect(e.respondidos.has("capacidade")).toBe(false);
 });

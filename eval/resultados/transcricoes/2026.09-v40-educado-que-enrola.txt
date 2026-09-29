@@ -1,0 +1,70 @@
+educado-que-enrola · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: achei lindo o empreendimento de vcs no instagram
+[1] Sofia:   Fico feliz que tenha gostado! Em qual região de Barueri você procura o imóvel?
+
+[2] Cliente: na Barueri centro?
+              quer saber preço?
+              qual metragem?
+              tem 2 dorm?
+              quanto fica?
+              qual tipo?
+[2] Sofia:   O mais acessível do nosso catálogo está a partir de R$ 457.000.
+Temos opções com 2 dormitórios, inclusive com suíte.
+A metragem varia, posso te mostrar as plantas.
+Quer que eu envie o catálogo para você dar uma olhada?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: depois te falo
+              mas e as plantas?
+[3] Sofia:   Temos plantas disponíveis para o Viva RSF Vila do Conde e Manacá Barueri. Posso te enviar as plantas para você analisar.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/planta-d1511af323f32bc1.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/planta-1b5612f6305ab94f.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/c19a6dfc-0b55-428e-8710-f86a621ee147/planta-611a0def7bef3d75.png
+
+[4] Cliente: show as plantas, mas preciso ver com calma
+              qual é a diferença entre elas?
+[4] Sofia:   As plantas do Viva RSF Vila do Conde têm opções de 1 a 3 dormitórios, com metragens a partir de 49m². Já o Manacá Barueri oferece 2 dormitórios, com suíte, e metragem de 63m².
+A diferença principal está no tamanho e na quantidade de dormitórios, que impactam no espaço e conforto. Posso te enviar as plantas para analisar com calma.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/c19a6dfc-0b55-428e-8710-f86a621ee147/planta-35b74f413b0d7afd.png
+
+[5] Cliente: enviou plantas mas quero ver com calma
+              qual diferença?
+[5] Sofia:   A diferença está no tamanho e número de quartos, que impactam no conforto e espaço.
+
+[6] Cliente: qual diferença de preço?
+              e valor por m²?
+              quero saber se tem variação
+[6] Sofia:   O valor exato varia conforme andar, metragem e forma de pagamento, que confirmo com o corretor e te trago.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[7] Cliente: qual preço exato?
+              valor por m²?
+              tem variação?
+              devo esperar?
+              qual diferença?
+[7] Sofia:   O valor exato depende da unidade, andar e forma de pagamento — isso fechamos na visita.
+Posso agendar para terça às 10h ou quarta às 15h para te mostrar tudo com calma?
+
+[8] Cliente: vou pensar
+[8] Sofia:   Fica tranquilo, vou deixar o link das fotos e da página aqui para você mostrar para quem quiser
+https://next-home-drab.vercel.app/empreendimentos/viva-rsf-vila-do-conde
+Sempre que quiser, é só me chamar.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-b5c51e49fa886a80.webp
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-00dd82102f49cde1.webp
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-fa20b277a8750de4.webp
+
+[9] Cliente: muito show os links
+              mas e a diferença de preço?
+[9] Sofia:   O Viva RSF Vila do Conde começa em R$ 457.000.
+A diferença de preço depende do andar, metragem e forma de pagamento — isso fechamos na visita.
+Posso agendar para te mostrar tudo com calma?
+
+[10] Cliente: não entendi essa diferença de preço
+              qual preço exato?
+              quero saber mais detalhes
+[10] Sofia:   O Viva RSF Vila do Conde começa em R$ 457.000.
+O preço varia conforme o andar, metragem e forma de pagamento, que fechamos na visita.
+Posso agendar para te mostrar tudo com calma e esclarecer cada detalhe?

@@ -21,7 +21,9 @@ export interface ParametrosNotificacaoCorretor {
     | "lead_quente_score_alto"
     | "transferencia_humana"
     /** O cliente pediu para ser ligado. Quem liga é o corretor — ver `pedidoDeLigacao.ts`. */
-    | "ligacao_solicitada";
+    | "ligacao_solicitada"
+    /** A assistente disse ao cliente que o corretor traz uma resposta. Ver `promessaDeRetorno.ts`. */
+    | "duvida_pendente";
 }
 
 /** Só monta o texto — separado do envio para poder ser testado sem rede. */
@@ -53,6 +55,8 @@ export function formatarAlertaCorretor(
        */
       : motivoAlerta === "ligacao_solicitada"
       ? "📞 *CLIENTE PEDIU LIGAÇÃO — LIGUE PARA ELE*"
+      : motivoAlerta === "duvida_pendente"
+      ? "❓ *A ASSISTENTE DISSE QUE VOCÊ RESPONDE — O CLIENTE ESTÁ ESPERANDO*"
       : "🚨 *CLIENTE PEDIU ATENDIMENTO HUMANO*";
 
   return `${emojiAlerta}

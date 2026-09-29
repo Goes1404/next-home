@@ -8412,3 +8412,69 @@ Nota: [[o-imovel-nao-tem-mais-corretor-dono]].
   ganha a vez e o clique cai no sorteio, sem se perder. Aplicada ANTES do
   deploy de propósito: o código antigo chama sem argumento ou com
   `p_empreendimento` nomeado, e as duas formas continuam valendo.
+
+## Eval de 28/09 e a v41: voz, contexto e coleta
+
+Nota: [[eval-de-28-09-e-a-v41]]. Taxonomia:
+`eval/resultados/taxonomia-2026.09-v40-2026-09-28.md`.
+
+- **"da Next Home" travava o foco no "Breeze Home Clube".** A abertura de
+  toda conversa cita "Home", o token distintivo do imóvel, e a oferta
+  solitária da IA virava foco no primeiro turno. O cliente que pediu a
+  Aldeia recebeu o Breeze (Jardim Júlio). As palavras de `site.nome` estão
+  fora do índice de foco. **Ao criar token distintivo de imóvel, conferir se
+  ele aparece no nome da casa ou no texto fixo da assistente.**
+- **A guarda anti-eco era a maior fonte de voz robótica**: 27 frases
+  enlatadas em 10 de 16 conversas simuladas. A saída agora lê a fala do
+  cliente (pergunta ganha pendência honesta; "robô ou humano?" ganha a
+  verdade e a oferta do corretor).
+- **O campo `confirmadaPeloCliente` mentia junto com o texto.** O modelo
+  confirmou visita que o cliente nunca aceitou; no webhook isso grava a
+  visita e avisa o corretor. Quem decide é o planner
+  (`aceiteDeVisitaValido`), e o guardrail corta a frase.
+- **Capacidade perguntada em 1 de 17 conversas.** "Dá pra financiar?"
+  contava como renda respondida; agora é pergunta, e a resposta pede a
+  renda. Depois da visita confirmada, uma pergunta de renda "pra levar a
+  simulação".
+- **"Confirmo com o corretor" não avisava ninguém.** `promessaDeRetorno.ts`
+  + alerta `duvida_pendente`, com a carência do lead quente.
+- **TPM de 200k no `gpt-4.1-mini`, prompt de ~10k tokens**: a conta aguenta
+  ~20 respostas por minuto, e o eval usa a MESMA chave do atendimento. Oito
+  simulações em paralelo mataram nove conversas com 429. **Simular com no
+  máximo 3 em paralelo**, e lembrar que simular em horário de pico tira
+  capacidade dos clientes reais.
+- **O eval de conversa não salva nada até o fim**: `timeout` no comando
+  mata as transcrições junto. Uma persona por processo
+  (`rodaUma.sh`-style), sem `timeout` menor que a conversa.
+- **Script Python que escreve TypeScript trocou `\n` por quebra de linha
+  real** três vezes nesta sessão (e `\b` por backspace, de novo). Para
+  trecho com barra invertida, usar a ferramenta de edição, não heredoc.
+- **`npm run eval:fixture` troca os imóveis do eval.** Regenerado em 28/09,
+  o fixture perdeu o Terra Alta, que duas personas citam, e a IA passou a
+  dizer "não está no catálogo" por culpa do fixture. Voltou ao commitado.
+  Antes de regenerar, conferir os imóveis que personas e casos golden citam.
+- **"vc não me mandou ainda" virava pedido para PARAR** (`nao me mand\w*` no
+  detector de recusa): a IA se despedia e o lead ganharia `nao_contatar_em`
+  por reclamar que não recebeu a planta. Só o imperativo ("não me mande",
+  "não me manda mais") é opt-out.
+- **Guarda que corta frase precisa cortar no `---` também.** Resposta sem
+  ponto final, com os balões separados por `---`, virava UMA frase; a guarda
+  recusava apagar tudo e a "visita confirmada" falsa passava inteira.
+
+## Perguntas antes da indicação (v42, 29/09/2026)
+
+Nota: [[perguntas-antes-da-indicacao]]. **Decisão do usuário que substitui o
+"convida CEDO" da v8**: região → pronto/planta → dormitórios → o que cabe no
+bolso → indicação → convite → horário. Enquanto falta pergunta, o turno corta
+frase, foto e link de imóvel que o cliente não trouxe; o imóvel que ELE
+trouxe (anúncio, campanha, nome escrito) continua liberado. Ao mexer no
+funil, conferir `travaDeQualificacao` e a lista de jogadas que ficam fora dela.
+Armadilha: "R$ 249k?" (o cliente repetindo o piso) contava como a faixa dele;
+número só é capacidade dita fora de pergunta.
+- **Capacidade pela RENDA, nunca pela faixa (v43).** Decisão do usuário: a IA
+  pergunta a renda (ou a profissão, se ele não quiser dizer) e o código
+  calcula o teto com o simulador do site (`capacidadeDeCompra.ts` →
+  `tetoPelaRenda`). O teto escolhe o imóvel e não é dito ao cliente.
+  **Não reordenar o catálogo pelo teto**: pôs Osasco na frente de quem pediu
+  Barueri. E "renda não importa" cita renda sem dizer nenhuma: do cliente, a
+  capacidade só conta com número.

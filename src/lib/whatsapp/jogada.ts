@@ -65,23 +65,26 @@ export type Jogada =
   | { tipo: "responder_honesto"; pergunta: string; vezes: number }
   | { tipo: "perguntar"; assunto: AssuntoDoFunil }
   | { tipo: "convidar_visita" }
+  | { tipo: "indicar_imovel" }
   | { tipo: "propor_horario"; jaOfereceu: number }
   | { tipo: "confirmar_visita"; oQueEleDisse: string }
   | { tipo: "agendar"; dia: string | null; hora: number | null }
   | { tipo: "tratar_objecao"; oQueEleDisse: string }
   | { tipo: "indicar_alternativa"; slug: string; nome: string; piso: number | null; emVezDe: string | null }
   | { tipo: "deixar_porta_aberta"; oQueEleDisse: string }
-  | { tipo: "encerrar_confirmado" }
+  | { tipo: "encerrar_confirmado"; prepararSimulacao: boolean }
   | { tipo: "responder_pergunta_aberta"; oQueEleDisse: string }
   | { tipo: "retomar"; horas: number }
   | { tipo: "acolher_recusa"; familia: FamiliaDeRecusa; oQueEleDisse: string }
   | { tipo: "encerrar_recusado"; familia: FamiliaDeRecusa }
+  | { tipo: "entregar_oferta"; oferta: string }
   | { tipo: "devolver_escolha" };
 
 import type { Fala } from "./rajada";
 import { normalizar } from "./normalizarFala";
 import { detectarRecusa, type FamiliaDeRecusa, type Recusa } from "./recusaDoCliente";
 import { forcaDaPergunta } from "./ehPergunta";
+import { rendaNaConversa } from "./capacidadeDeCompra";
 
 export interface EstadoDaConversa {
   /** Assuntos do funil que o cliente já cobriu (na fala ou no dossiê). */
@@ -104,6 +107,11 @@ export interface EstadoDaConversa {
   objecoesSeguidas: number;
   /** A IA JÁ confirmou uma visita nesta conversa: o funil acabou. */
   visitaConfirmada: boolean;
+  /**
+   * Ele aceitou o que a IA OFERECEU MANDAR na última mensagem (apresentação,
+   * fotos, planta). A frase da oferta, ou null.
+   */
+  aceitouOferta: string | null;
   /** Perguntou algo que NÃO temos como responder (desconto, negociar, preço final). */
   perguntaSemDado: string | null;
   /** A alternativa mais em conta do catálogo, fora do foco. */
@@ -145,6 +153,8 @@ export interface EstadoDaConversa {
    * deixa o eval medir o mesmo turno sem efeito sobre o mundo.
    */
   horasDesdeAUltimaFala: number;
+  /** A IA já indicou algum imóvel pelo nome nesta conversa. */
+  jaIndicouImovel: boolean;
 }
 
 /** A leitura de "renda" e "estágio" nas falas, no vocabulário do detector de assuntos. */
@@ -198,10 +208,30 @@ const OBJECAO_DE_PRECO =
 const PEDIDO_DE_ALTERNATIVA =
   /\b(mais em conta|mais barato|mais barata|outra opcao|outra opção|outras opcoes|outras opções|algo (mais )?(barato|em conta|acessivel|acessível)|tem outro|outro imovel|outro imóvel|alternativa)\b/;
 const SAIDA_SUAVE =
-  /\b(vou pensar|preciso pensar|vou ver com|vou conversar com|vou falar com|depois eu (vejo|falo|te falo)|te aviso|qualquer coisa eu (chamo|falo)|por enquanto nao|por enquanto não|mais pra frente|outra hora)\b/;
+  /\b(vou pensar|preciso pensar|vou ver com|vou conversar com|vou falar com|preciso (falar|conversar|ver) com|falo com (ela|ele|minha|meu|a |o )|vejo com (ela|ele|minha|meu)|depois eu (vejo|falo|te falo)|te aviso|qualquer coisa eu (chamo|falo)|por enquanto nao|por enquanto não|mais pra frente|outra hora)\b/;
 
 export function pediuOutraOpcao(texto: string): boolean {
   return PEDIDO_DE_ALTERNATIVA.test(normalizar(texto));
+}
+
+/**
+ * BUSCA no catálogo por um critério: "tem algo que entregue o ano que vem?",
+ * "tem algum próximo da estação?", "tem algum outro com 3 dormitórios?".
+ *
+ * Produção, 28/09/2026: com o Estação 267 em foco, "tem algo que entregue o
+ * ano que vem?" virou pergunta de ENTREGA do Estação, e a resposta foi que
+ * ele é pronto e não entrega. O cliente estava pedindo OUTRO imóvel. Busca
+ * solta o foco (em `focoDaConversa`), e sem foco o catálogo volta inteiro
+ * para a IA responder pelo critério.
+ *
+ * Exige "algum/algo/outro" logo depois do "tem": "tem vaga?" é pergunta
+ * sobre o imóvel em foco, não busca.
+ */
+const BUSCA_POR_CRITERIO =
+  /(^|\s)(tem|teria|voces tem|vc tem|voce tem|existe)\s+(algum|alguma|algo|outro|outra|mais algum|mais alguma|mais algo)(\s|$)/;
+
+export function pediuBusca(texto: string): boolean {
+  return BUSCA_POR_CRITERIO.test(normalizar(texto));
 }
 
 /**
@@ -258,6 +288,11 @@ function alternativaMaisEmConta(
 }
 
 const TIPOLOGIA_DE_VERDADE = /\b(dormitorio|dormitorios|quarto|quartos|suite|suites|vaga|vagas|metragem|m2|metros)\b/;
+const DORMITORIO_ABREVIADO = /\b\d+\s*(dorm|dorms|dormi|qto|qtos|q)\b|\bdorms?\b/;
+
+/** Capacidade DITA: renda, faixa ou entrada com número, ou crédito aprovado. */
+const CAPACIDADE_DITA =
+  /\b(renda|ganho|ganhamos|ganha|recebo|salario|faixa|orcamento|entrada)\b[^.?!\n]{0,25}\d|\b\d+\s*(mil|k)\b|\baprovad/;
 
 /**
  * A pergunta de capacidade, como a ESCADA da casa a faz: faixa → sozinho ou
@@ -273,7 +308,19 @@ const PERGUNTA_DE_CAPACIDADE =
  * Como o cliente responde "pronto ou na planta?" de verdade: uma palavra.
  * O regex de métricas exige a locução inteira; aqui vale a palavra.
  */
-const RESPOSTA_DE_ESTAGIO = /\b(pronto|prontos|planta|lancamento|obra|construcao|tanto faz|qualquer um|indiferente|os dois|ambos)\b/;
+const RESPOSTA_DE_ESTAGIO = /\b(pronto|prontos|planta|entrega|entregue|entregar|lancamento|obra|construcao|tanto faz|qualquer um|indiferente|os dois|ambos)\b/;
+
+/*
+ * O número só é capacidade DITA quando vem numa afirmação. "R$ 249k?" é o
+ * cliente repetindo o piso que a IA acabou de dar, com espanto; contar isso
+ * como a faixa dele fechava a qualificação e liberava a indicação antes da
+ * hora (v42, `familia-tres-dorm`, 29/09/2026).
+ */
+function capacidadeDita(texto: string): boolean {
+  return texto
+    .split(/(?<=[.!?])|[\n|]/)
+    .some((trecho) => !trecho.includes("?") && CAPACIDADE_DITA.test(normalizar(trecho)));
+}
 
 function assuntosDoFunil(texto: string): AssuntoDoFunil[] {
   const n = normalizar(texto);
@@ -284,7 +331,18 @@ function assuntosDoFunil(texto: string): AssuntoDoFunil[] {
   );
   // Tipologia só com palavra de tipologia de verdade — "planta" não conta.
   if (achados.has("tipologia") && !TIPOLOGIA_DE_VERDADE.test(n)) achados.delete("tipologia");
-  if (PERGUNTA_DE_CAPACIDADE.test(n)) achados.add("capacidade");
+  // "2 dorm", "3 qtos": o jeito que o cliente escreve no WhatsApp.
+  if (DORMITORIO_ABREVIADO.test(n)) achados.add("tipologia");
+  /*
+   * "Dá pra financiar?" cita financiamento e NÃO diz renda nenhuma. Contar
+   * isso como capacidade respondida fazia a pergunta sumir no funil e a
+   * renda nunca ser perguntada (eval de 28/09/2026). Só vale o que traz
+   * número ou aprovação.
+   */
+  if (achados.has("capacidade") && !capacidadeDita(texto) && !PERGUNTA_DE_CAPACIDADE.test(n)) {
+    achados.delete("capacidade");
+  }
+  if (PERGUNTA_DE_CAPACIDADE.test(n) || capacidadeDita(texto)) achados.add("capacidade");
   if (RESPOSTA_DE_ESTAGIO.test(n)) achados.add("estagio");
   return [...achados];
 }
@@ -326,6 +384,12 @@ export function estadoDaConversa(params: {
    * e nenhuma jogada de retomada dispara.
    */
   horasDesdeAUltimaFala?: number;
+  /**
+   * A IA já citou algum imóvel pelo nome nesta conversa. Quem calcula é o
+   * turno (o índice de nomes mora em `focoDaConversa`, que importa este
+   * módulo). Ausente vale false.
+   */
+  jaIndicouImovel?: boolean;
 }): EstadoDaConversa {
   const { historico, mensagemAtual, dossie } = params;
 
@@ -348,7 +412,11 @@ export function estadoDaConversa(params: {
 
   const respondidos = new Set<AssuntoDoFunil>();
   for (const texto of [...falasCliente, mensagemAtual]) {
-    for (const a of assuntosDoFunil(texto)) respondidos.add(a);
+    for (const a of assuntosDoFunil(texto)) {
+      // "renda não importa" cita renda e não diz nenhuma (v43, 29/09/2026):
+      // do cliente, a capacidade só conta com número ou crédito aprovado.
+      if (a !== "capacidade" || capacidadeDita(texto)) respondidos.add(a);
+    }
   }
   /*
    * A resposta à pergunta do turno anterior CONTA, mesmo quando o regex não
@@ -383,20 +451,33 @@ export function estadoDaConversa(params: {
     const resposta = historico.slice(i + 1).find((f) => f.remetente === "cliente");
     if (!resposta || resposta.texto.includes("?")) continue;
     for (const pergunta of perguntasDe(fala.texto)) {
-      for (const a of assuntosDoFunil(pergunta)) respondidos.add(a);
+      for (const a of assuntosDoFunil(pergunta)) {
+        // Capacidade só se responde com número (29/09/2026): "sou professor"
+        // depois de "qual a renda?" é resposta, mas não dá para calcular nada.
+        if (a !== "capacidade") respondidos.add(a);
+      }
     }
   }
   const ultimaDoBotAntes = falasBot[falasBot.length - 1] ?? "";
   if (!mensagemAtual.includes("?")) {
     for (const pergunta of perguntasDe(ultimaDoBotAntes)) {
-      for (const a of assuntosDoFunil(pergunta)) respondidos.add(a);
+      for (const a of assuntosDoFunil(pergunta)) {
+        // Capacidade só se responde com número (29/09/2026): "sou professor"
+        // depois de "qual a renda?" é resposta, mas não dá para calcular nada.
+        if (a !== "capacidade") respondidos.add(a);
+      }
     }
   }
 
   // O dossiê é o que a extração já consolidou — vale mais que o regex.
   if (dossie?.regiaoInteresse) respondidos.add("regiao");
   if (dossie?.dormitoriosMin != null) respondidos.add("tipologia");
-  if (dossie?.rendaMensal != null || dossie?.orcamentoMin != null || dossie?.orcamentoMax != null) {
+  if (
+    dossie?.rendaMensal != null ||
+    dossie?.orcamentoMin != null ||
+    dossie?.orcamentoMax != null ||
+    rendaNaConversa(historico, mensagemAtual) != null
+  ) {
     respondidos.add("capacidade");
   }
 
@@ -450,6 +531,26 @@ export function estadoDaConversa(params: {
   const agendamento = pedidoDeAgendamento(mensagemAtual);
   const ultimaDoBotConvidou = /\b(visita|visitar|conhecer|decorado|te mostr)/i.test(ultimaDoBot);
   /*
+   * Dia SOLTO só é agendamento quando a conversa está falando de visita.
+   *
+   * Eval de conversa, 28/09/2026: "queria sair do aluguel, pago 900 HOJE,
+   * da pra financiar" virou `agendar` para hoje, e a IA ofereceu horário no
+   * stand a quem perguntou de financiamento. "Hoje", "sábado" e "segunda"
+   * aparecem em qualquer frase; sem pedido de visita, sem hora e sem convite
+   * do bot antes, eles não marcam nada.
+   */
+  if (
+    agendamento.dia &&
+    agendamento.hora === null &&
+    !agendamento.pediuVisita &&
+    !ultimaDoBotConvidou &&
+    !/\b(visit|decorado|conhecer|ver o|ver a|consigo|pode ser|fica bom|prefiro)/.test(nAtual) &&
+    // A fala que é SÓ o dia ("segunda feira") é resposta de agenda.
+    nAtual.trim().split(/\s+/).length > 3
+  ) {
+    agendamento.dia = null;
+  }
+  /*
    * A terceira metade, que a primeira versão esqueceu: a fala dele não pode
    * trazer assunto do FUNIL. "pode ser na planta" casa em `ACEITE` por causa
    * do "pode ser" — e é resposta de ESTÁGIO, não aceite de convite. Sem esta
@@ -494,6 +595,7 @@ export function estadoDaConversa(params: {
     recusasAnteriores,
     falaAtualRespondeFunil,
     horasDesdeAUltimaFala: params.horasDesdeAUltimaFala ?? 0,
+    jaIndicouImovel: params.jaIndicouImovel ?? false,
     vezesPerguntado,
     /*
      * "Que horas?" / "quando dá?" é pedido de HORÁRIO, e no caminho feliz
@@ -507,6 +609,7 @@ export function estadoDaConversa(params: {
     pediuAlternativa: PEDIDO_DE_ALTERNATIVA.test(nAtual),
     saidaSuave: SAIDA_SUAVE.test(nAtual),
     visitaConfirmada: falasBot.some((t) => CONFIRMACAO.test(normalizar(t))),
+    aceitouOferta: ofertaAceita(ultimaDoBot, mensagemAtual),
     perguntaSemDado: SEM_DADO.test(nAtual) ? mensagemAtual.trim() : null,
     alternativa: alternativaMaisEmConta(params.catalogo, params.imovelEmFoco),
     nomeDoFoco: params.imovelEmFoco?.nome ?? null,
@@ -537,6 +640,25 @@ export function estadoDaConversa(params: {
  * 6. Tudo feito, ou tudo já recusado → devolver a escolha a ele. Insistir
  *    numa quarta pergunta seria o loop com outra roupa.
  */
+/*
+ * A IA ofereceu MANDAR algo ("quer que eu te envie a apresentação?") e ele
+ * disse "quero sim". Produção, 28/09/2026: essa resposta caiu em
+ * `devolver_escolha`, porque "simm" não casava no aceite e o funil já estava
+ * andado. Aceite de oferta de material se cumpre, não se devolve.
+ */
+const OFERTA_DE_ENVIO =
+  /(quer que eu (te )?(envie|mande|mostre|passe)|posso te (enviar|mandar|passar|mostrar)|te envio|te mando)[^.?!]*/;
+const ACEITE_CURTO =
+  /^(s+i+m+|quero( s+i+m+)?|quero ver|pode( ser| mandar| enviar)?|manda|mande|envia|claro|ok|okay|beleza|bora|isso|por favor|com certeza|aham|uhum)(\s|[!.,]|$)/;
+
+function ofertaAceita(ultimaDoBot: string, mensagemAtual: string): string | null {
+  const oferta = normalizar(ultimaDoBot).match(OFERTA_DE_ENVIO)?.[0];
+  if (!oferta) return null;
+  const fala = normalizar(mensagemAtual).trim();
+  if (fala.split(/\s+/).length > 5) return null;
+  return ACEITE_CURTO.test(fala) ? oferta.trim() : null;
+}
+
 export function planejarJogada(estado: EstadoDaConversa): Jogada {
   /*
    * A RECUSA vem primeiro, antes até do aceite de horário.
@@ -578,7 +700,25 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
    * recebe uma resposta curta e a porta aberta — nada de qualificar quem
    * já marcou.
    */
-  if (estado.visitaConfirmada) return { tipo: "encerrar_confirmado" };
+  if (estado.visitaConfirmada) {
+    /*
+     * Visita marcada e nada se sabe do bolso dele: UMA pergunta, com a razão
+     * junto ("pra ele já levar a simulação"). No eval de 28/09/2026 a
+     * capacidade foi perguntada em 1 de 16 conversas; quem marcou visita
+     * chegava ao decorado sem o corretor saber o que ele pode pagar. Só uma
+     * vez, e nunca quando a fala dele é uma pergunta: responder vem antes.
+     */
+    const prepararSimulacao =
+      !estado.respondidos.has("capacidade") &&
+      !estado.perguntadosAlgumaVez.has("capacidade") &&
+      forcaDaPergunta(estado.oQueEleDisse) === "nao";
+    return { tipo: "encerrar_confirmado", prepararSimulacao };
+  }
+
+  // Ele aceitou o material oferecido: entregar antes de qualquer outra coisa.
+  if (estado.aceitouOferta && !estado.agendamento.dia && estado.agendamento.hora === null) {
+    return { tipo: "entregar_oferta", oferta: estado.aceitouOferta };
+  }
 
   /*
    * ELE ESTÁ MARCANDO. Ganha do funil, da objeção e da saída suave — de
@@ -592,7 +732,13 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
    * 2cff42f6, em que "Quero marcar uma visita no amanhã" foi respondido com
    * uma pergunta de estágio e ele levou cinco turnos para marcar.
    */
-  if (estaMarcando(estado.agendamento)) {
+  /*
+   * Sem imóvel escolhido e com pergunta pendente, "quero conhecer" ainda
+   * não é agendamento: é a vez de fechar as perguntas para saber QUAL
+   * decorado mostrar (decisão de 28/09/2026). Quem pede para visitar o
+   * imóvel que ELE trouxe continua marcando na hora.
+   */
+  if (estaMarcando(estado.agendamento) && (estado.nomeDoFoco || !pendenteDaQualificacao(estado))) {
     return {
       tipo: "agendar",
       dia: estado.agendamento.dia,
@@ -703,21 +849,32 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
      * `devolver_escolha`. A repergunta é permitida UMA vez; na segunda, o
      * assunto sai do caminho (ele não quer responder, e insistir afasta).
      */
-    if (estado.perguntadosNaUltima.has(a) && (estado.vezesPerguntado.get(a) ?? 0) >= 2) return false;
-    if (a === "capacidade") return estado.capacidadePendente;
+    const vezes = estado.vezesPerguntado.get(a) ?? 0;
+    if (estado.perguntadosNaUltima.has(a) && vezes >= 2) return false;
+    // A renda não se pergunta uma terceira vez, nem com assunto no meio.
+    if (a === "capacidade" && vezes >= 2) return false;
     return true;
   });
 
-  // O convite entra cedo, mas não antes de saber a região: convidar para
-  // "conhecer" sem saber onde ele procura é convite para lugar nenhum.
-  if (!estado.convidouVisita && estado.respondidos.has("regiao") && estado.falasDoCliente >= 2) {
-    return { tipo: "convidar_visita" };
-  }
-
+  /*
+   * PRIMEIRO as perguntas, DEPOIS a indicação, e só então a visita.
+   *
+   * Decisão do usuário, 28/09/2026: "as perguntas têm que ser antes de
+   * recomendar um imóvel, porque é com base nelas que identificamos o melhor
+   * imóvel para a situação do cliente". Até a v41 o convite entrava assim
+   * que se sabia a região ("convida CEDO"), e a IA indicava imóvel antes de
+   * saber estágio, dormitórios e o que cabe no bolso — na conversa real do
+   * Matheus, o Breeze foi oferecido no segundo turno para quem ainda não
+   * tinha dito nada além de "Aldeia". A capacidade entra no funil de vez:
+   * sem ela não dá para saber se o imóvel cabe.
+   */
   if (proximoAssunto) return { tipo: "perguntar", assunto: proximoAssunto };
 
-  const funilCompleto = ORDEM_DO_FUNIL.every((a) => estado.respondidos.has(a));
-  if (funilCompleto && estado.horariosOferecidos < 2) {
+  if (!estado.jaIndicouImovel) return { tipo: "indicar_imovel" };
+
+  if (!estado.convidouVisita) return { tipo: "convidar_visita" };
+
+  if (estado.horariosOferecidos < 2) {
     return { tipo: "propor_horario", jaOfereceu: estado.horariosOferecidos };
   }
 
@@ -729,7 +886,7 @@ const PERGUNTA_DO_ASSUNTO: Record<AssuntoDoFunil, string> = {
   estagio: "se ele quer pronto para morar ou na planta",
   tipologia: "quantos dormitórios ele precisa",
   capacidade:
-    "o que cabe no bolso — pela escada, do menos invasivo para o mais: a FAIXA que ele tem em mente; se não vier, se a compra é sozinho ou em conjunto; depois a profissão; e só por último a renda, com a razão junto",
+    "a RENDA MENSAL da família (sozinho ou somando com alguém), com a razão junto: é com ela que você calcula o que o banco aprova e acha o imóvel certo. Se ele já desconversou da renda, pergunte com o que ele trabalha. NUNCA pergunte faixa de valor nem quanto ele quer gastar"
 };
 
 /**
@@ -760,6 +917,17 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
         `${cabecalho}: fazer UMA pergunta — ${PERGUNTA_DO_ASSUNTO[jogada.assunto]}.`,
         "Antes dela, uma frase curta reagindo ao que ele disse. Nada mais: uma pergunta por mensagem.",
       ].join("\n");
+    case "indicar_imovel":
+      return [
+        `${cabecalho}: INDICAR o imóvel que mais combina com o que ele contou — só agora, depois das perguntas.`,
+        "Use o que ele disse (região, pronto ou na planta, dormitórios, o que cabe no bolso) e escolha UM imóvel do catálogo abaixo (no máximo DOIS, se forem igualmente bons). O catálogo já vem ordenado pelo que mais combina.",
+        contexto.nomeDoFoco
+          ? `Ele já falou do ${contexto.nomeDoFoco}: se ele atende o que ele contou, diga por quê; se não atende, diga com franqueza o que não bate e indique o que atende.`
+          : "",
+        "Diga em UMA frase por que combina com a situação DELE (\"pelo que você me contou, o que mais faz sentido é o X, porque...\"), e mande o link da página. Se nenhum atende tudo, diga o que não atende e indique o mais próximo. Termine perguntando o que ele achou — o convite para a visita vem na próxima mensagem.",
+      ]
+        .filter(Boolean)
+        .join("\n");
     case "convidar_visita":
       return [
         `${cabecalho}: convidar para conhecer${contexto.nomeDoFoco ? ` o ${contexto.nomeDoFoco}` : " o decorado"} — o CONVITE, não o horário.`,
@@ -790,10 +958,24 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
        * endereço inventado leva o cliente ao lugar errado no dia da visita —
        * mesma razão pela qual o link da página é montado por código.
        */
+      /*
+       * Sem imóvel não existe visita. Eval de conversa, 28/09/2026
+       * (`quer-visitar-sabado`): "11h então" virou "combinado para sábado às
+       * 11h com a Sofia" sem imóvel nenhum, e o cliente pediu o endereço seis
+       * vezes. Segura o horário e pergunta QUAL imóvel; confirma no turno
+       * seguinte.
+       */
+      if (!contexto.nomeDoFoco) {
+        return [
+          `${cabecalho}: SEGURAR o horário que ele escolheu e perguntar QUAL imóvel ele quer conhecer.`,
+          `Ele disse: "${jogada.oQueEleDisse}".`,
+          'Diga que o horário fica guardado para ele e pergunte qual dos imóveis ele quer visitar (se o catálogo abaixo tiver dois ou três que combinam com o que ele contou, cite-os pelo nome). Ainda NÃO confirme: sem imóvel não existe visita. "visitaProposta" fica null nesta mensagem.',
+        ].join("\n");
+      }
       return [
         `${cabecalho}: CONFIRMAR a visita que ele acabou de aceitar, com o resumo do combinado.`,
         `Ele disse: "${jogada.oQueEleDisse}".`,
-        `Escreva o combinado inteiro, em duas mensagens curtas: (1) o dia e o horário exatos que ele escolheu${contexto.nomeDoFoco ? `, e que a visita é no ${contexto.nomeDoFoco}` : ""}, e com quem ele vai falar (diga o nome do corretor); (2) que o endereço certinho chega antes, e que se precisar remarcar é só responder aqui.`,
+        `Escreva o combinado inteiro, em duas mensagens curtas: (1) o dia e o horário exatos que ele escolheu, e que a visita é no ${contexto.nomeDoFoco}, e com quem ele vai falar (diga o nome do corretor, nunca o seu: quem recebe o cliente na visita é ele); (2) que o endereço certinho chega antes, e que se precisar remarcar é só responder aqui.`,
         "NUNCA escreva o endereço nem o número da unidade: eles vêm do cadastro, e endereço errado leva o cliente ao lugar errado no dia.",
         'Preencha "visitaProposta" com a data da tabela CALENDÁRIO e "confirmadaPeloCliente": true. Nenhuma pergunta nova, nenhum outro horário — ele já escolheu.',
       ].join("\n");
@@ -806,6 +988,13 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
        * segunda?".
        */
       const passos: string[] = [`${cabecalho}: fechar a visita. Ele está marcando AGORA.`];
+
+      // Sem imóvel não existe visita (ver `confirmar_visita`).
+      if (!contexto.nomeDoFoco) {
+        passos.push(
+          "Ele ainda não disse QUAL imóvel quer conhecer. Nesta mensagem, pergunte qual dos imóveis (cite pelo nome dois ou três do catálogo abaixo que combinem com o que ele contou) junto com o horário. Não confirme nada antes de saber o imóvel.",
+        );
+      }
 
       if (jogada.dia && jogada.hora !== null) {
         passos.push(
@@ -831,7 +1020,9 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
       passos.push(
         "NENHUMA pergunta de qualificação nesta mensagem (região, estágio, dormitórios, valor). Quem está marcando já passou disso — perguntar agora é perder a visita que ele estava entregando.",
       );
-      return passos.join("\n");
+      return passos
+        .filter((p) => contexto.nomeDoFoco || !p.includes("confirmadaPeloCliente"))
+        .join("\n");
     }
     case "tratar_objecao":
       return [
@@ -855,7 +1046,9 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
     case "encerrar_confirmado":
       return [
         `${cabecalho}: a visita JÁ ESTÁ CONFIRMADA. Não qualifique mais.`,
-        "Responda o que ele disse em UMA frase curta (se perguntou endereço/horário, repita o combinado). Nenhuma pergunta de região, estágio, tipologia ou renda — isso acabou. Feche com \"qualquer dúvida até lá, me chama\".",
+        jogada.prepararSimulacao
+          ? "Responda o que ele disse em UMA frase curta. Depois, UMA pergunta só, com a razão junto: pra o corretor já levar a simulação do financiamento pronta, qual é a renda média da família por mês. Nunca pergunte faixa de valor. Nenhuma outra pergunta de funil."
+          : "Responda o que ele disse em UMA frase curta (se perguntou endereço/horário, repita o combinado). Nenhuma pergunta de região, estágio, tipologia ou renda — isso acabou. Feche com \"qualquer dúvida até lá, me chama\".",
       ].join("\n");
     case "retomar":
       return [
@@ -868,7 +1061,18 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
         `${cabecalho}: responder a pergunta que ele acabou de fazer ("${jogada.oQueEleDisse.slice(0, 100)}"), e só ela.`,
         "Se você não tem o dado, diga que não tem e que vai confirmar com o corretor — nunca invente, nunca troque de assunto, nunca devolva com uma pergunta de qualificação.",
         "Só depois de responder, se couber, dê UM passo adiante.",
-      ].join(QUEBRA);
+        /*
+         * Pergunta de financiamento é a porta natural para a renda, que é o
+         * dado que decide o que o banco aprova. No eval de 28/09/2026 quem
+         * perguntou "dá pra financiar?" ouviu uma oferta de visita e a renda
+         * nunca foi perguntada em dez turnos.
+         */
+        /financ|banco|parcela|entrada|fgts|minha casa/i.test(jogada.oQueEleDisse)
+          ? "É pergunta de FINANCIAMENTO: diga que dá para simular e que o que o banco aprova depende da RENDA MENSAL. Termine perguntando a renda mensal dele (sozinho ou somando com alguém). Uma pergunta só, e é essa."
+          : "",
+      ]
+        .filter(Boolean)
+        .join(QUEBRA);
     case "acolher_recusa":
       return [
         `${cabecalho}: ele disse que NÃO tem interesse ("${jogada.oQueEleDisse.slice(0, 80)}").`,
@@ -888,6 +1092,12 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
             "Despeça-se em UMA frase, agradecendo e deixando a porta aberta para quando ele quiser voltar.",
             "Nenhuma pergunta, nenhuma oferta.",
           ].join("\n");
+    case "entregar_oferta":
+      return [
+        `${cabecalho}: ENTREGAR o que você ofereceu na última mensagem ("${jogada.oferta.slice(0, 90)}") — ele aceitou.`,
+        "Entregue AGORA: apresentação digital é o link da página do imóvel; foto e planta vão em anexosMidia. Uma frase curta junto, do jeito que se manda para um amigo.",
+        "Depois, no máximo UMA pergunta leve sobre o que ele achou. Nenhuma pergunta de funil nesta mensagem, nenhum horário.",
+      ].join("\n");
     case "devolver_escolha":
       return [
         `${cabecalho}: devolver a escolha a ele.`,
@@ -909,4 +1119,71 @@ const QUEBRA = String.fromCharCode(10);
 
 function maiuscula(t: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/**
+ * O cliente ACEITOU um horário nesta mensagem? Quem decide é o planner, que
+ * leu a fala dele, e não o modelo.
+ *
+ * Eval de conversa, 28/09/2026 (`investidor-objetivo`, v40 e v41): o modelo
+ * preencheu `visitaProposta.confirmadaPeloCliente: true` e escreveu "a
+ * visita está agendada para terça às 10h no stand" numa conversa em que o
+ * cliente só perguntava metragem. No webhook esse campo GRAVA a visita no
+ * CRM e avisa o corretor. Só vale quando a jogada era confirmar, ou marcar
+ * com a hora dita por ele, e há imóvel em foco.
+ */
+export function aceiteDeVisitaValido(jogada: Jogada, temFoco: boolean): boolean {
+  if (!temFoco) return false;
+  if (jogada.tipo === "confirmar_visita") return true;
+  return jogada.tipo === "agendar" && jogada.hora !== null;
+}
+
+/**
+ * O que ainda falta perguntar ANTES de indicar imóvel, ou null.
+ *
+ * Mesma régua do funil: assunto respondido não falta, e assunto perguntado
+ * duas vezes sem resposta sai do caminho (ele não quer responder, e travar
+ * a indicação nisso seria trocar a conversa por um formulário).
+ */
+export function pendenteDaQualificacao(estado: EstadoDaConversa): AssuntoDoFunil | null {
+  return (
+    ORDEM_DO_FUNIL.find(
+      (a) => !estado.respondidos.has(a) && (estado.vezesPerguntado.get(a) ?? 0) < 2,
+    ) ?? null
+  );
+}
+
+/**
+ * Jogadas em que a trava da qualificação NÃO entra: nelas não se pergunta
+ * nada (recusa, saída suave, visita já confirmada, retomada) ou quem pediu
+ * o imóvel foi ele (alternativa mais barata).
+ */
+const SEM_TRAVA_DE_QUALIFICACAO = new Set<Jogada["tipo"]>([
+  "acolher_recusa",
+  "encerrar_recusado",
+  "deixar_porta_aberta",
+  "encerrar_confirmado",
+  "confirmar_visita",
+  "retomar",
+  "indicar_alternativa",
+]);
+
+/**
+ * A trava vale nesta jogada? Enquanto houver pergunta pendente, a IA não
+ * indica imóvel, não manda material e não convida.
+ */
+export function travaDeQualificacao(jogada: Jogada, estado: EstadoDaConversa): AssuntoDoFunil | null {
+  if (SEM_TRAVA_DE_QUALIFICACAO.has(jogada.tipo)) return null;
+  return pendenteDaQualificacao(estado);
+}
+
+/** O bloco que entra no prompt enquanto a qualificação não terminou. */
+export function blocoDeQualificacao(pendente: AssuntoDoFunil, contexto: { nomeDoFoco: string | null }): string {
+  return [
+    "AINDA EM QUALIFICAÇÃO (decidido pelo código): as perguntas vêm ANTES de qualquer indicação, porque é com elas que se escolhe o imóvel certo para a situação dele.",
+    contexto.nomeDoFoco
+      ? `Ele falou do ${contexto.nomeDoFoco}: pode responder sobre ELE, mas não indique nenhum outro imóvel pelo nome.`
+      : "NÃO cite nenhum imóvel pelo nome, NÃO mande foto, planta, link nem catálogo, e NÃO convide para visita.",
+    `Se ele perguntou algo, responda em termos gerais ("tenho sim, algumas opções assim") e termine com UMA pergunta: ${PERGUNTA_DO_ASSUNTO[pendente]}.`,
+  ].join("\n");
 }

@@ -1,0 +1,64 @@
+familia-tres-dorm · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Em qual região de Barueri você procura?
+
+[2] Cliente: Barueri, sim.
+              Quero 3 dormitórios, perto da escola
+              Preciso marcar visita fim de semana
+[2] Sofia:   Barueri é uma ótima escolha, especialmente para famílias.
+Você prefere imóvel pronto para morar ou na planta?
+
+[3] Cliente: ok, pronto pra morar
+              quero 3d
+              preciso perto da escola
+              qual o valor?
+              vou marcar fim de semana
+[3] Sofia:   Tenho sim, algumas opções de 3 dormitórios prontos em Barueri, perto de escolas.
+O mais em conta do nosso catálogo começa em R$ 249.000.
+Para eu calcular o que o banco aprova e achar o imóvel certo, qual é a renda média da família por mês?
+
+[4] Cliente: qual o valor mesmo?
+              e tem foto?
+[4] Sofia:   O valor mais em conta para 3 dormitórios prontos em Barueri começa em R$ 249.000,
+mas varia conforme unidade e condições de pagamento.
+
+[5] Cliente: mas eu quero saber o valor exato
+              não entendi, e as fotos dos imóveis?
+[5] Sofia:   O valor exato depende da unidade e forma de pagamento, quem fecha isso é o corretor na visita.
+Te mandei as fotos dos imóveis prontos em Barueri com 3 dormitórios.
+Para eu calcular o que o banco aprova e achar o imóvel certo, qual é a renda média da família por mês?
+
+[6] Cliente: mas eu só quero saber o valor exato
+              não quero saber da renda agora, só o valor!
+[6] Sofia:   Quem fecha o valor final é o corretor na visita
+Posso agendar sábado às 10h ou às 11h para te mostrar tudo?
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-1-big-1597aad13631a310ed7b0fc07ffbb619.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-2-big-a9da807487ea43da180107514a2dbf8b.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vila-eco-park-mj605/foto-3-big-06248497c720b210e19a743a066ded5a.jpg
+
+[7] Cliente: mas e o valor exato?
+              não quero saber da visita agora.
+[7] Sofia:   O valor exato eu não tenho, confirmo com o corretor e te trago na sequência.
+Assim você já tem o piso: a partir de R$ 249.000 para 3 dormitórios prontos em Barueri.
+
+[8] Cliente: mas qual o valor exato?
+              não é possível saber agora?
+[8] Sofia:   Entendo a importância do valor exato, mas só consigo confirmar isso pessoalmente na visita.
+Posso te mostrar sábado às 9h ou às 11h?
+Assim você vê tudo e já conversamos sobre condições.
+
+[9] Cliente: mas e aquele valor exato?
+              só quero saber isso!
+[9] Sofia:   Isso eu não tenho aqui com certeza, e não quero te passar errado.
+Já pedi para o corretor e te respondo assim que ele me passar.
+
+[10] Cliente: mas quando vou saber o valor exato?
+              não dá pra fazer isso agora?
+[10] Sofia:   O valor exato só consigo confirmar com o corretor e te trago assim que tiver a resposta.
+Enquanto isso, o piso para 3 dormitórios prontos em Barueri é a partir de R$ 249.000.
+Quer que eu te envie o catálogo completo para você dar uma olhada e me dizer o que te agradou?
+https://next-home-drab.vercel.app/?corretor=cristal-bruna

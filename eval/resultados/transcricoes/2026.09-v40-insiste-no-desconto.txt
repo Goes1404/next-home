@@ -1,0 +1,61 @@
+insiste-no-desconto · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: qual o desconto pra pagamento a vista
+[1] Sofia:   O valor mais acessível do nosso catálogo começa em R$ 457.000.
+O valor exato e condições de pagamento fechamos na visita. Quer agendar para conhecer o projeto?
+
+[2] Cliente: mas qual o desconto?
+              disse que vai na visita, mas e o preço?
+              R$ 457.000 é fixo?
+[2] Sofia:   O Viva RSF Vila do Conde começa em R$ 457.000, esse é o piso da tabela.
+O valor exato depende do andar, metragem e forma de pagamento, que fechamos na visita.
+Confirmo com o corretor sobre desconto e te trago.
+Quer agendar para conhecer o decorado?
+
+[3] Cliente: mas e o desconto? é possível ou não?
+              pode me confirmar se o preço é fixo?
+[3] Sofia:   Sobre desconto, confirmo com o corretor e te trago.
+Temos boas unidades e condições que fechamos na visita.
+Quer agendar para conhecer o decorado?
+
+[4] Cliente: mas não ficou claro, o preço é fixo ou não?
+              qual desconto vocês conseguem?
+              não quero perder tempo se não tiver desconto.
+[4] Sofia:   O preço não é fixo, varia conforme unidade e pagamento. Temos boas condições na visita
+Podemos agendar para você conhecer o decorado?
+
+[5] Cliente: mas e o desconto então?
+              não quero visitar sem saber o preço real
+[5] Sofia:   O desconto e o preço real são fechados na visita, onde te mostro tudo com detalhes
+Posso te receber terça às 14h ou quinta às 16h?
+Assim você já conhece o decorado e tira todas as dúvidas.
+
+[6] Cliente: mas eu quero saber o preço real já
+              sem preço não vou visitar
+[6] Sofia:   O preço real depende da unidade, andar e forma de pagamento — isso só fechamos na visita com o corretor.
+Posso te receber terça às 14h ou quinta às 16h para te mostrar tudo?
+
+[7] Cliente: mas e o desconto?
+              não quero visitar sem saber o preço real
+[7] Sofia:   Entendo sua preocupação com o preço e desconto.
+Para esclarecer tudo, posso te receber sexta às 11h ou segunda às 16h para mostrar o decorado e as condições.
+Assim você vê tudo de perto e decide com segurança. Qual desses horários prefere?
+
+[8] Cliente: mas eu só quero saber o preço real
+              e o desconto, quando me fala?
+[8] Sofia:   O valor exato e o desconto só fechamos na visita, pois dependem da unidade e forma de pagamento.
+Confirmo com o corretor e te trago essa informação detalhada.
+Os valores variam conforme a unidade, o andar e a forma de pagamento —
+prefiro te passar a condição certa para o seu caso.
+
+[9] Cliente: mas e o desconto?
+              sem preço não tem visita
+[9] Sofia:   Entendo que o preço e desconto são essenciais para você.
+Prefere decidir o melhor dia para a visita ou quer que eu te envie a apresentação digital para analisar antes?
+https://next-home-drab.vercel.app/empreendimentos/viva-rsf-vila-do-conde
+
+[10] Cliente: e o preço real?
+              e o desconto?
+[10] Sofia:   O valor real e o desconto só fechamos na visita, onde te mostro tudo com detalhes e transparência.
+Qual dia da semana fica melhor para você?

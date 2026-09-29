@@ -1,0 +1,49 @@
+escreve-errado · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vcs tem o vrita alphagran ainda?
+[1] Sofia:   Você quis dizer o Vitra Alphaville? Temos sim, pronto para morar, 2 dormitórios e 2 suítes.
+Posso te mandar as fotos para conhecer melhor?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/foto-1-big-f608eff642223e60ac7c7d8b68d6525e.jpg
+
+[2] Cliente: poderia mandar a planta?
+[2] Sofia:   O Vitra Alphaville tem 2 dormitórios, sendo até 2 suítes, e 2 vagas de garagem.
+Vou te mandar a planta para você conhecer melhor.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-4437ee1f8f0ca0135bd73540a6063059.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/vitra-alphaville-vt110/planta-big-db60774778f5a3d788cdcb47cdd43db3.jpg
+
+[3] Cliente: planta do vrita?
+              vc não me mandou ainda.
+[3] Sofia:   Já não vou mais te procurar, obrigado pela atenção até aqui.
+
+[4] Cliente: planta do vrita, cadê?
+              vc não respondeu ainda.
+[4] Sofia:   O Vitra Alphaville tem 2 dormitórios, até 2 suítes, e 2 vagas.
+Te mandei as plantas aqui, dá uma olhada.
+Quer conhecer o decorado para ver de perto o padrão e acabamento?
+
+[5] Cliente: não é isso q pedi
+              planta do vrita, manda!
+[5] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[6] Cliente: planta vrita?
+              vc não mandou ainda
+[6] Sofia:   Já te enviei as plantas disponíveis, dá uma olhada nelas.
+
+[7] Cliente: não é a planta do vrita
+              vc não mandou nada ainda
+[7] Sofia:   O Vitra Alphaville tem 2 dormitórios, até 2 suítes, e 2 vagas.
+Já te enviei as plantas disponíveis, são essas mesmo do empreendimento.
+Quer que eu te envie o link da página com todas as informações para você conferir direto lá?
+
+[8] Cliente: não é isso q pedi
+              planta do vrita, manda!
+[8] Sofia:   Olha o link da página, tem tudo lá: https://next-home-drab.vercel.app/empreendimentos/vitra-alphaville-vt110
+Quer conhecer o decorado para ver o padrão e acabamento de perto?
+
+[9] Cliente: vc não entendeu, manda a planta do vrita!
+[9] Sofia:   Já te mandei as plantas disponíveis e o link da página com tudo.
+
+[10] Cliente: não é a planta do vrita
+              vc não mandou nada ainda
+[10] Sofia:   Já te enviei as plantas disponíveis e o link da página oficial.

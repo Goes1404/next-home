@@ -1,0 +1,59 @@
+imovel-de-outra-imobiliaria · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: vi o Dom Barueri e gostei bastante, vocês têm algo assim?
+[1] Sofia:   Dom Barueri não é nosso, mas me conta o que gostou nele — localização, tamanho, estilo?
+Assim te mostro algo parecido que temos.
+
+[2] Cliente: Onde fica?
+              Quantos quartos?
+[2] Sofia:   O Dom Barueri não é nosso. Para te ajudar, preciso saber a região que prefere aqui em Barueri ou Alphaville.
+Assim te mostro opções com o tamanho que deseja.
+https://next-home-drab.vercel.app/?corretor=cristal-bruna
+
+[3] Cliente: Qual a área?
+              Quanto custa?
+              Quero foto
+[3] Sofia:   O mais em conta do nosso catálogo começa em R$ 457.000.
+Para te mostrar o que cabe no seu perfil, qual região você prefere em Barueri ou Alphaville?
+Já te mando as fotos do Viva RSF Vila do Conde, que tem opções próximas ao Dom Barueri.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-b5c51e49fa886a80.webp
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-00dd82102f49cde1.webp
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-fa20b277a8750de4.webp
+
+[4] Cliente: Oi, vi o Dom Barueri, gostei. Vocês têm algo parecido?
+              Ele tem 3 quartos, 120m², prédio com piscina. Preciso saber se tem similar
+[4] Sofia:   O Dom Barueri não é nosso, mas temos o Eternity Alphaville Tamboré,
+que tem 3 dormitórios com 2 suítes e 100m², prédio com lazer completo.
+Posso te mostrar as fotos e a planta?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-02.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/fachada.jpg
+
+[5] Cliente: Oi, vi o Dom Barueri, curti 3 quartos, 120m², piscina
+              Tem algo igual?
+[5] Sofia:   O Dom Barueri não é nosso, e não temos 3 quartos com 120m² e piscina exatos.
+O Eternity Alphaville Tamboré tem 3 quartos, 100m², lazer completo, parecido. Quer que te envie fotos e planta?
+
+[6] Cliente: Oi, vi o Dom Barueri, curti 3 quartos, 120m², piscina
+              Tem algo igual?
+[6] Sofia:   Não temos exatamente 3 quartos com 120m² e piscina.
+
+[7] Cliente: Tem algo parecido? Preciso de foto
+[7] Sofia:   Posso te enviar as fotos e a planta do Eternity Alphaville Tamboré, que tem 3 dormitórios, 2 suítes e lazer completo.
+Olha o link da página, tem tudo lá: https://next-home-drab.vercel.app/empreendimentos/eternity-alphaville
+
+[8] Cliente: Oi, vi o Dom Barueri, curti 3 quartos, 120m², piscina
+              Tem algo igual? Preciso de foto
+[8] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[9] Cliente: Oi, curti 3 quartos, 120m² e piscina. Que região você prefere?
+              Preciso de foto do que tem parecido
+[9] Sofia:   O Eternity Alphaville Tamboré tem 2 ou 3 dormitórios, até 2 suítes e 2 vagas.
+Te mandei as fotos aqui embaixo para você conhecer melhor.
+Quer conhecer o decorado para sentir o padrão e o lazer pessoalmente?
+
+[10] Cliente: Oi, curti 3 quartos, 120m², piscina do Dom Barueri. Tem algo igual?
+              Me manda foto
+[10] Sofia:   O Eternity Alphaville Tamboré tem 3 dormitórios, 2 suítes e lazer completo.
+Posso agendar para terça às 10h ou quarta às 15h para você conhecer o decorado?

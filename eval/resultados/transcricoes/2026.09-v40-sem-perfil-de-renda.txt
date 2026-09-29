@@ -1,0 +1,63 @@
+sem-perfil-de-renda · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria sair do aluguel, pago 900 hoje, da pra financiar
+[1] Sofia:   Ótimo, vamos agendar sua visita para hoje mesmo? Tenho às 15h ou às 17h disponíveis.
+Assim você conhece o projeto e já vê as condições de financiamento.
+
+[2] Cliente: tem foto
+              qual o valor
+              onde fica
+[2] Sofia:   O mais acessível do nosso catálogo está a partir de R$ 457.000.
+Posso te enviar as fotos do Viva RSF Vila do Conde?
+Quer conhecer o decorado para entender melhor a localização e o projeto?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-b5c51e49fa886a80.webp
+
+[3] Cliente: foto aí
+              valor
+              onde fica
+[3] Sofia:   Te mandei as fotos do Viva RSF Vila do Conde aqui embaixo
+o valor é a partir de R$ 457.000, o preço varia conforme andar e forma de pagamento
+fica em Vila do Conde, Barueri, uma região com ótima valorização.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-00dd82102f49cde1.webp
+
+[4] Cliente: qual o valor
+              tem foto
+              onde fica
+[4] Sofia:   O Viva RSF Vila do Conde tem unidades a partir de R$ 457.000.
+Já te enviei as fotos disponíveis.
+Fica em Vila do Conde, Barueri, uma região com ótima valorização.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-fa20b277a8750de4.webp
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-59de0e1ddaaf03ab.webp
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-7294cfb37b8ef45a.webp
+
+[5] Cliente: valor
+              foto
+              onde fica
+[5] Sofia:   O Viva RSF Vila do Conde tem unidades a partir de R$ 457.000.
+Já te enviei as fotos disponíveis do empreendimento.
+Fica em Vila do Conde, Barueri, uma região com ótima valorização.
+
+[6] Cliente: valor
+              tem foto
+              onde fica
+[6] Sofia:   Me conta um pouco mais do que você procura para eu te ajudar melhor.
+
+[7] Cliente: valor
+              foto
+              onde fica
+[7] Sofia:   Para eu te indicar certo: quantos dormitórios você precisa?
+
+[8] Cliente: qual valor tem foto onde fica
+[8] Sofia:   Prefere conhecer pessoalmente? Consigo te mostrar essa semana.
+
+[9] Cliente: valor
+              foto
+              onde fica
+[9] Sofia:   O Viva RSF Vila do Conde tem unidades a partir de R$ 457.000.
+Já te mandei as fotos disponíveis.
+Fica em Vila do Conde, Barueri, região com ótima valorização.
+
+[10] Cliente: tem foto onde fica valor
+[10] Sofia:   Me diz o que te ajudaria mais agora: ver as fotos,
+o link com tudo do empreendimento, ou marcar de conversar pessoalmente?

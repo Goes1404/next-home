@@ -1,7 +1,8 @@
 import type { Empreendimento } from "@/lib/types";
 import type { DossieClienteIA } from "./types";
 import { ranquearCatalogo } from "./catalogoRelevante";
-import { pediuOutraOpcao } from "./jogada";
+import { pediuBusca, pediuOutraOpcao } from "./jogada";
+import { site } from "@/lib/site";
 
 /**
  * Qual imóvel esta conversa está tratando AGORA.
@@ -111,6 +112,22 @@ const COMUNS = new Set([
   "unica",
   "unico",
 ]);
+
+/**
+ * As palavras do nome da própria imobiliária.
+ *
+ * "Aqui é a Lia, da Next Home" é a abertura de toda conversa, e "Home" é o
+ * token distintivo de "Breeze Home Clube" e "Oásis Home Resort". Em
+ * 28/09/2026 isso virou oferta solitária da IA já no primeiro turno: o foco
+ * travou no Breeze (Jardim Júlio) e o cliente que pediu a Aldeia recebeu o
+ * Breeze três vezes. O nome da casa nunca identifica um imóvel. Sai da
+ * marca configurada, então vale para qualquer instalação.
+ */
+const PALAVRAS_DA_MARCA = new Set(
+  normalizar(site.nome)
+    .split(/[^a-z0-9]+/)
+    .filter((p) => p.length >= 4),
+);
 
 /**
  * Recusa dita na mesma frase do nome.
@@ -268,7 +285,13 @@ function construirIndice(catalogo: Empreendimento[]): Indice {
       // Nome sem espaço: "terraalta" é como muita gente digita no celular.
       registrar(inteiro.replace(/[^a-z0-9]/g, ""), imovel.slug);
       for (const palavra of inteiro.split(/[^a-z0-9]+/)) {
-        if (!palavra || GENERICAS.has(palavra) || COMUNS.has(palavra) || /^\d+$/.test(palavra)) {
+        if (
+          !palavra ||
+          GENERICAS.has(palavra) ||
+          COMUNS.has(palavra) ||
+          PALAVRAS_DA_MARCA.has(palavra) ||
+          /^\d+$/.test(palavra)
+        ) {
           continue;
         }
         /*
@@ -523,6 +546,13 @@ export function detectarFoco(params: {
     if (imovel) return { imovel, origem: "mensagem" };
   }
 
+  /*
+   * Busca por critério sem nome ("tem algo que entregue o ano que vem?"):
+   * ele saiu do imóvel de antes e quer o catálogo. Herdar o foco do
+   * histórico ou da oferta faria a IA responder sobre o imóvel velho.
+   */
+  if (pediuBusca(mensagemAtual ?? "")) return null;
+
   // Do mais recente para o mais antigo: o assunto de agora manda.
   const falasCliente = (params.historico ?? []).filter((m) => m.remetente === "cliente");
   for (let i = falasCliente.length - 1; i >= 0; i--) {
@@ -625,4 +655,68 @@ export function catalogoParaAtendimento(params: {
     catalogo: catalogoComFoco(ranqueado, foco),
     foco: foco ? { slug: foco.imovel.slug, nome: foco.imovel.nome } : null,
   };
+}
+
+/**
+ * "Você quis dizer o X?": nome de imóvel escrito errado demais para virar
+ * foco, mas perto o bastante para valer a PERGUNTA.
+ *
+ * Eval de conversa, 28/09/2026 (`escreve-errado`, v40 e v41): "vrita
+ * alphagran" é o Vitra Alphaville com as letras trocadas. O foco (com razão)
+ * não casa, e a IA respondeu dez turnos que "não tem essa informação" e que
+ * ia confirmar com o corretor, sobre um imóvel que está no catálogo. Uma
+ * pessoa perguntaria "você diz o Vitra?". Isto só SUGERE; quem confirma é o
+ * cliente, então errar custa uma pergunta, não uma ficha errada.
+ *
+ * Mais estrito que o foco em um ponto e mais frouxo em outro: aceita até 2
+ * letras de diferença, mas só quando são as MESMAS letras fora de ordem
+ * (vrita/vitra), ou 1 de diferença a partir de 5 letras. Primeira letra
+ * sempre igual, e palavra genérica ou comum nunca entra.
+ */
+export function palpiteDeNome(
+  mensagem: string,
+  catalogo: Empreendimento[],
+): { nome: string; slug: string; escrito: string } | null {
+  if (catalogo.length === 0) return null;
+  const indice = construirIndice(catalogo);
+  const ordenada = (p: string) => [...p].sort().join("");
+
+  const palpites = new Map<string, string>();
+  for (const palavra of normalizar(mensagem ?? "").split(/[^a-z0-9]+/)) {
+    if (palavra.length < 5 || GENERICAS.has(palavra) || COMUNS.has(palavra) || ABRE_FRASE.has(palavra)) continue;
+    if (indice.termos.has(palavra)) continue; // exato: é foco, não palpite
+    for (const [termo, slug] of indice.termos) {
+      if (!slug || termo.includes(" ") || termo.length < 5 || termo[0] !== palavra[0]) continue;
+      const d = distancia(palavra, termo, 2);
+      const anagrama = ordenada(palavra) === ordenada(termo);
+      if ((anagrama && d <= 2) || d <= 1) palpites.set(slug, palavra);
+    }
+  }
+
+  if (palpites.size !== 1) return null;
+  const [[slug, escrito]] = [...palpites];
+  const imovel = catalogo.find((e) => e.slug === slug);
+  return imovel ? { nome: imovel.nome, slug, escrito } : null;
+}
+
+/**
+ * Corta as frases que indicam imóvel ANTES da hora.
+ *
+ * Enquanto a qualificação não terminou (`travaDeQualificacao`), a IA só
+ * pode falar dos imóveis que o CLIENTE trouxe (`permitidos`). Frase que cita
+ * outro imóvel sai. O prompt já pede isso; esta é a rede, porque instrução
+ * de prompt é probabilística e indicar cedo foi exatamente o que aconteceu
+ * na conversa real de 28/09/2026. Nunca deixa a resposta vazia.
+ */
+export function removerIndicacaoPrematura(
+  texto: string,
+  catalogo: Empreendimento[],
+  permitidos: ReadonlySet<string>,
+): { texto: string; cortou: boolean } {
+  const frasesDoTexto = texto.split(/(?<=[.!?])\s+|\n+|\s*---\s*/).filter((f) => f.trim().length > 0);
+  const ficam = frasesDoTexto.filter((f) =>
+    imoveisCitados(f, catalogo).every((slug) => permitidos.has(slug)),
+  );
+  if (ficam.length === frasesDoTexto.length || ficam.length === 0) return { texto, cortou: false };
+  return { texto: ficam.join("\n\n"), cortou: true };
 }

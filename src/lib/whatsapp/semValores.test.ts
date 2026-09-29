@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contemValor, ehFaixaPermitida, removerValores } from "./semValores";
+import { contemValor, ehFaixaPermitida, removerValores, sementeDoDesvio } from "./semValores";
 
 describe("Detectar valor no texto", () => {
   it("pega as formas que o modelo usa de verdade", () => {
@@ -135,5 +135,20 @@ describe("as locuções de faixa que a casa usa", () => {
 
   it("continua bloqueando cifra sem locução de piso", () => {
     expect(ehFaixaPermitida("essa unidade custa R$ 249.000", CATALOGO)).toBe(false);
+  });
+});
+
+// Eval de 28/09/2026: a mesma desculpa de preço saiu três vezes na mesma
+// conversa, porque a semente era sempre 0.
+describe("desvio de preço não se repete na conversa", () => {
+  it("escolhe o primeiro ainda não dito", () => {
+    expect(sementeDoDesvio([])).toBe(0);
+    const primeira = removerValores("Sai por R$ 900.000.", sementeDoDesvio([])).texto;
+    expect(sementeDoDesvio([primeira])).toBe(1);
+  });
+
+  it("com todos ditos e conversa sobrando, só corta o número", () => {
+    const r = removerValores("Fica no Centro. Sai por R$ 900.000.", -1);
+    expect(r.texto).toBe("Fica no Centro.");
   });
 });

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatarParaWhatsapp, removerAberturaDeRobo, soarHumano } from "./vozHumana";
+import {
+  formatarParaWhatsapp,
+  removerAberturaDeRobo,
+  removerCumprimentoRepetido,
+  soarHumano,
+} from "./vozHumana";
 import { classificarTamanho, dividirEmMensagens } from "./chunking";
 
 describe("Formatação que o WhatsApp entende", () => {
@@ -108,5 +113,72 @@ describe("Corte em fronteira de oração", () => {
     for (const balao of dividirEmMensagens(texto).slice(0, -1)) {
       expect(balao).toMatch(/[.!?]$/);
     }
+  });
+});
+
+/*
+ * Produção, 28/09/2026: "Que bom receber seu oi!" como primeira resposta, e
+ * "Oi Matheus, tudo bem?" de novo no terceiro turno, no meio da conversa.
+ * Pessoa cumprimenta uma vez; quem cumprimenta a cada mensagem é robô.
+ */
+describe("Cumprimento repetido no meio da conversa", () => {
+  const conversando = [
+    { remetente: "bot", texto: "Oi Matheus, tudo bem? Aqui é a Lia, da Next Home." },
+    { remetente: "cliente", texto: "Na aldeia" },
+  ];
+
+  it("tira o cumprimento quando o bot já falou e o cliente respondeu", () => {
+    expect(
+      removerCumprimentoRepetido("Oi Matheus, tudo bem? --- Quer conhecer o decorado do Royal?", conversando),
+    ).toBe("Quer conhecer o decorado do Royal?");
+    expect(
+      removerCumprimentoRepetido("Bom dia, Matheus! Na Aldeia tenho o Royal Barueri II.", conversando),
+    ).toBe("Na Aldeia tenho o Royal Barueri II.");
+    expect(removerCumprimentoRepetido("Oi! Tenho sim, na Aldeia o Serenne.", conversando)).toBe(
+      "Tenho sim, na Aldeia o Serenne.",
+    );
+  });
+
+  it("a primeira mensagem da conversa cumprimenta normalmente", () => {
+    const texto = "Oi Matheus, tudo bem? Aqui é a Lia, da Next Home.";
+    expect(removerCumprimentoRepetido(texto, [])).toBe(texto);
+    expect(removerCumprimentoRepetido(texto, [{ remetente: "cliente", texto: "Oi" }])).toBe(texto);
+  });
+
+  it("o retorno depois do silêncio do cliente pode cumprimentar", () => {
+    const texto = "Oi Matheus, tudo bem? Passando pra saber se ficou alguma dúvida do Royal.";
+    const ultimaDoBot = [...conversando, { remetente: "bot", texto: "Te mandei a apresentação." }];
+    expect(removerCumprimentoRepetido(texto, ultimaDoBot)).toBe(texto);
+  });
+
+  it("não corta quando o cumprimento é a resposta inteira", () => {
+    expect(removerCumprimentoRepetido("Oi Matheus, tudo bem?", conversando)).toBe("Oi Matheus, tudo bem?");
+  });
+
+  it("a primeira palavra da resposta não é tomada por nome", () => {
+    expect(removerCumprimentoRepetido("Oi, tenho sim um de 2 dormitórios na Aldeia.", conversando)).toBe(
+      "Tenho sim um de 2 dormitórios na Aldeia.",
+    );
+  });
+
+  it("palavra que só começa igual não é cumprimento", () => {
+    const texto = "Oito unidades ainda estão disponíveis no Royal.";
+    expect(removerCumprimentoRepetido(texto, conversando)).toBe(texto);
+  });
+});
+
+describe("Abertura que agradece o oi", () => {
+  it("\"Que bom receber seu oi!\" sai", () => {
+    expect(removerAberturaDeRobo("Que bom receber seu oi! Em qual região de Barueri você procura?")).toBe(
+      "Em qual região de Barueri você procura?",
+    );
+    expect(removerAberturaDeRobo("Que bom receber sua mensagem! Tenho sim, na Aldeia.")).toBe(
+      "Tenho sim, na Aldeia.",
+    );
+  });
+
+  it("\"Que bom que gostou\" é gente falando e fica", () => {
+    const texto = "Que bom que gostou! O Royal tem decorado aberto no sábado.";
+    expect(removerAberturaDeRobo(texto)).toBe(texto);
   });
 });

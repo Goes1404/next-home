@@ -72,6 +72,8 @@ import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/w
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
 import { registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
+import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
+import { getParametrosCredito } from "@/lib/credito/parametros";
 
 export const runtime = "nodejs";
 // O buffer de rajada espera ~6s antes de responder, e o ciclo completo
@@ -837,6 +839,9 @@ export async function POST(req: NextRequest) {
        * mesma conta em dois lugares.
        */
       horariosReais: await horariosDeVisitaSeguros(instancia.corretorId),
+      // A renda do cliente vira teto de compra pela mesma conta do site
+      // (`capacidadeDeCompra.ts`); a leitura já cai no seed se o banco falhar.
+      parametrosCredito: await getParametrosCredito().catch(() => undefined),
     });
 
     const respostaIA = turno.resposta;
@@ -1084,8 +1089,20 @@ export async function POST(req: NextRequest) {
      */
     const pediuLigacao = turno.vezDoCliente.some(clientePediuLigacao);
     const exigeAcaoAgora = visitaConfirmada || respostaIA.transferirHumano || pediuLigacao;
+    /*
+     * A IA prometeu que o corretor traz a resposta ("confirmo com o corretor
+     * e te trago"). Sem este aviso ninguém ficava sabendo, e a promessa
+     * virava mentira (ver `promessaDeRetorno.ts`). Passa pela mesma carência
+     * do lead quente: prometer de novo na mensagem seguinte não repete o
+     * aviso.
+     */
+    const prometeuRetorno =
+      !exigeAcaoAgora &&
+      iaPrometeuRetorno(respostaIA.textoResposta ?? "") &&
+      (await podeAlertarLeadQuente(conversa.id));
     const deveAlertar =
       exigeAcaoAgora ||
+      prometeuRetorno ||
       (dossie.temperaturaScore >= 75 && (await podeAlertarLeadQuente(conversa.id)));
 
     if (deveAlertar) {
@@ -1099,11 +1116,15 @@ export async function POST(req: NextRequest) {
         temperaturaScore: dossie.temperaturaScore,
         resumoDossie: visitaConfirmada
           ? `Visita confirmada para ${new Date(respostaIA.visitaProposta!.dataHoraISO).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}. ${dossie.resumoExecutivo}`
+          : prometeuRetorno
+          ? `O cliente perguntou: "${turno.vezDoCliente.join(" / ")}". A assistente disse que você responde. ${dossie.resumoExecutivo}`
           : dossie.resumoExecutivo,
         motivoAlerta: visitaConfirmada
           ? "visita_confirmada"
           : pediuLigacao
           ? "ligacao_solicitada"
+          : prometeuRetorno
+          ? "duvida_pendente"
           : respostaIA.sugerirVisita
           ? "visita_solicitada"
           : respostaIA.transferirHumano

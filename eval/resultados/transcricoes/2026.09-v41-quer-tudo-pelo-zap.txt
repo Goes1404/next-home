@@ -1,0 +1,59 @@
+quer-tudo-pelo-zap · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: me passa as infos por aqui mesmo, nao tenho tempo de visita
+[1] Sofia:   Vou te passar as informações por aqui mesmo. Me diz a região e o que procura para eu enviar o que cabe no seu perfil.
+
+[2] Cliente: região centro 2 dorm 70m2
+[2] Sofia:   Temos opções próximas ao centro com 2 dormitórios. Quer conhecer o decorado para sentir o espaço e acabamento?
+Olha o link com detalhes https://next-home-drab.vercel.app/empreendimentos/viva-rsf-vila-do-conde
+
+[3] Cliente: valor
+              tem foto
+              onde fica
+[3] Sofia:   O Viva RSF Vila do Conde tem unidades a partir de R$ 457.000.
+Já te mandei o link com fotos e detalhes do empreendimento.
+Ele fica na Vila do Conde, Barueri, perto do centro.
+Quer que eu te mostre as plantas para você ter uma ideia melhor?
+
+[4] Cliente: planta
+              metragem
+              condicoes
+[4] Sofia:   O Viva RSF Vila do Conde tem planta de 49m² para 1 dormitório e opções de até 3 dormitórios com suíte.
+As condições variam conforme a unidade e forma de pagamento, que fechamos na visita.
+Quer que eu te envie a planta para você analisar melhor?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/planta-d1511af323f32bc1.jpg
+
+[5] Cliente: planta e condicoes
+              nao vai me passar as condicoes?
+[5] Sofia:   O Viva RSF Vila do Conde oferece apartamentos de 1 a 3 dormitórios, com até 1 suíte e 2 vagas.
+As condições variam conforme a unidade e forma de pagamento, que fechamos na visita.
+Quer que eu te envie a planta para analisar melhor?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/planta-1b5612f6305ab94f.jpg
+
+[6] Cliente: e as condicoes?
+              nao quero ver planta se nao tem isso
+[6] Sofia:   As condições exatas eu confirmo com o corretor e te passo direto.
+Posso agendar uma visita rápida para te mostrar tudo pessoalmente?
+
+[7] Cliente: quero as condicoes agora
+              nao quero visita
+[7] Sofia:   Entendo que queira as condições agora, mas só consigo passar tudo certinho na visita,
+onde mostramos as opções e fechamos o melhor para você.
+Quer escolher o que prefere fazer agora?
+
+[8] Cliente: nao vou visitar
+              quero as condicoes aqui
+[8] Sofia:   Compreendo sua posição e respeito seu tempo.
+Posso enviar o link com todas as informações detalhadas para você analisar com calma?
+Ou prefere que eu te mostre as condições em uma conversa rápida por telefone?
+
+[9] Cliente: quero as condicoes agora
+              nao quero link, manda aqui
+[9] Sofia:   As condições exatas só fechamos na visita, onde ajustamos o melhor para você
+Posso te mostrar as opções em um rápido papo por telefone ou prefere continuar por aqui?
+
+[10] Cliente: nao quero telefonema
+              quero as condicoes aqui agora
+[10] Sofia:   As condições exatas só fechamos na visita, onde ajustamos o melhor para você.
+Prefere que eu te proponha um horário para conversarmos pessoalmente e resolver isso de vez?

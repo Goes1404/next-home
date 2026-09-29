@@ -1,0 +1,65 @@
+sem-perfil-de-renda · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria sair do aluguel, pago 900 hoje, da pra financiar
+[1] Sofia:   Dá para simular o financiamento, mas o que o banco aprova depende da sua renda mensal.
+Qual é a renda média da sua família por mês?
+
+[2] Cliente: renda 2.500
+              quero 0 entrada
+              quero 0 entrada
+[2] Sofia:   Entendi sua situação e o interesse em financiar sem entrada.
+Em qual região de Barueri você procura o imóvel?
+
+[3] Cliente: mexe no barueri
+              tem casa 2 dorm?
+              tem foto?
+              qual valor?
+[3] Sofia:   O mais em conta do nosso catálogo em Barueri começa em R$ 457.000.
+Não temos casas, mas apartamentos de 2 dormitórios com suíte.
+Te mandei as fotos do Viva RSF Vila do Conde aqui embaixo.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-b5c51e49fa886a80.webp
+
+[4] Cliente: não quero apartamento
+              quero casa
+              qual valor casa?
+[4] Sofia:   Não temos casas no catálogo, só apartamentos. Sobre casas, vou confirmar com o corretor e te retorno assim que souber.
+
+[5] Cliente: mas e a casa?
+              qual valor?
+              não quero esperar
+[5] Sofia:   Não temos casas no catálogo, só apartamentos. Posso ajudar a encontrar algo que atenda suas necessidades.
+Qual dia da semana fica melhor para você visitar? Manhã ou tarde?
+
+[6] Cliente: mas e a casa?
+              quero saber o valor
+              quando vai me responder?
+[6] Sofia:   Não temos casas no catálogo, só apartamentos. Confirmo com o corretor e te trago o valor exato.
+Posso agendar uma visita para você conhecer o Viva RSF Vila do Conde?
+Qual dia da semana fica melhor, manhã ou tarde?
+
+[7] Cliente: mas e a casa?
+              quero saber o valor
+              não quero apartamento
+[7] Sofia:   Como falei, não temos casas no catálogo, só apartamentos.
+O Viva RSF Vila do Conde é uma ótima opção em Barueri, com 2 dormitórios e suíte.
+Posso te mostrar o decorado na quinta às 10h ou sexta às 15h?
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/14875d89-c1cb-4f14-a32a-24f6d38738d7/foto-00dd82102f49cde1.webp
+
+[8] Cliente: mas e a casa?
+              quero saber o valor logo
+[8] Sofia:   Entendo sua preferência pela casa, mas só temos apartamentos no catálogo.
+O Viva RSF Vila do Conde começa em R$ 457.000, valor que varia conforme unidade e condições.
+Prefere escolher o dia da visita ou quer que eu te envie mais informações antes?
+
+[9] Cliente: mas e a casa?
+              quero valor agora
+[9] Sofia:   O Viva RSF Vila do Conde é apartamento, não temos casas no catálogo.
+O valor começa em R$ 457.000, varia por unidade e condições
+Prefere escolher o dia para a visita ou quer mais informações antes?
+
+[10] Cliente: mas e a casa?
+              quero valor agora
+              não quero esperar mais
+[10] Sofia:   O valor do Viva RSF Vila do Conde começa em R$ 457.000, e o exato depende da unidade e condições.
+Prefere escolher o dia para a visita ou quer que eu envie mais informações antes?

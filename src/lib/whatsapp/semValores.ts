@@ -194,6 +194,19 @@ const DESVIOS = [
 ];
 
 /**
+ * Qual desvio usar: o primeiro que a IA ainda não disse nesta conversa.
+ *
+ * Eval de conversa, 28/09/2026: a semente era sempre 0, e a MESMA frase ("Os
+ * valores variam conforme a unidade, o andar e a forma de pagamento —
+ * prefiro te passar a condição certa para o seu caso") saiu até três vezes
+ * na mesma conversa. Devolve -1 quando todos já foram ditos.
+ */
+export function sementeDoDesvio(falasDoBot: readonly string[]): number {
+  const idx = DESVIOS.findIndex((d) => !falasDoBot.some((f) => f.includes(d.slice(0, 40))));
+  return idx;
+}
+
+/**
  * Tira valores do texto que vai para o cliente.
  *
  * A frase inteira que contém o número é substituída, não só o número: um
@@ -235,11 +248,18 @@ export function removerValores(
   // Nada foi cortado: a resposta inteira era faixa legítima.
   if (limpas.length === frases.length) return { texto, removeu: false };
 
-  const desvio = DESVIOS[semente % DESVIOS.length];
+  const desvio = DESVIOS[Math.abs(semente) % DESVIOS.length];
 
   // Se sobrou conversa, o desvio entra no lugar da frase removida. Se o
-  // texto INTEIRO era sobre preço, o desvio vira a resposta.
-  const resultado = limpas.length > 0 ? `${limpas.join(" ")} ${desvio}` : desvio;
+  // texto INTEIRO era sobre preço, o desvio vira a resposta. Semente
+  // negativa = os desvios já foram todos ditos nesta conversa: com
+  // conversa sobrando, só corta (a quarta vez da mesma desculpa é robô).
+  const resultado =
+    limpas.length > 0
+      ? semente < 0
+        ? limpas.join(" ")
+        : `${limpas.join(" ")} ${desvio}`
+      : desvio;
 
   return { texto: resultado.trim(), removeu: true };
 }

@@ -1,0 +1,50 @@
+pergunta-se-e-robo-no-meio · cliente_encerrou · 9 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: boa noite, vi o anuncio do lancamento em alphaville
+[1] Sofia:   Boa noite! Alphaville é uma região excelente para investir ou morar. Quantos dormitórios você precisa no imóvel?
+
+[2] Cliente: quero saber mais do imóvel
+              tem foto?
+[2] Sofia:   Tenho fotos sim, vou te mandar aqui embaixo
+Dá uma olhada e me diz o que achou
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-1-big-add4e9ee31bc78e8e466f17417e84e26.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-2-big-8f414d9eed40c6ac9f0990bd96cd8a24.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-3-big-49406f476a83a577b8907baa94fed78f.jpg
+
+[3] Cliente: não pedi foto de vista aérea
+              deixa eu ver o imóvel
+[3] Sofia:   Quer conhecer o decorado do On The Park Alphaville? Assim você vê tudo de perto e sente o espaço.
+
+[4] Cliente: quero ver foto do imóvel
+              tá falando com alguém de verdade?
+[4] Sofia:   Te mandei as fotos do On The Park Alphaville, que é o imóvel que temos em Alphaville com fotos disponíveis.
+Aqui é a Sofia, assistente digital da equipe — pode seguir comigo que eu resolvo com você.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-4-big-c927018093552dd1e44890698536515d.jpg
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/on-the-park-alphaville-ne72055/foto-5-big-b8ce3deb5bcf41e5d85efcda6567ddc5.jpg
+
+[5] Cliente: não quero saber do lazer
+              quero foto do imóvel de verdade
+[5] Sofia:   As fotos que temos do On The Park Alphaville são essas que te enviei, todas oficiais do imóvel.
+Não temos outras imagens além dessas, mas posso confirmar com o corretor e te retorno.
+
+[6] Cliente: você é um robô mesmo, né?
+              não tem foto do imóvel?
+[6] Sofia:   Isso eu não tenho aqui com certeza, e não quero te passar errado.
+Já pedi para o corretor e te respondo assim que ele me passar.
+
+[7] Cliente: não tem foto do imóvel?
+              não posso esperar, vou desistir
+[7] Sofia:   As fotos oficiais do On The Park Alphaville são as que te enviei.
+Não tenho outras no momento, mas confirmo com o corretor e te trago.
+Se preferir, posso te mostrar o decorado para sentir o espaço de perto.
+
+[8] Cliente: não quero decorado, só foto do imóvel
+              e aí, vai me ajudar ou não?
+[8] Sofia:   As fotos oficiais do imóvel são as que já te enviei.
+Não tenho outras no momento, mas confirmo com o corretor e te retorno assim que possível.
+Enquanto isso, posso ajudar com mais alguma informação?
+
+[9] Cliente: não tem mais nada?
+              não quero esperar, vou desistir
+[9] Sofia:   Não tenho outras para mostrar agora, mas confirmo com o corretor e te retorno.

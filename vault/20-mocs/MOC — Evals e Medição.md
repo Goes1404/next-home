@@ -26,6 +26,7 @@ summary: Evals de resposta e conversa, juízes, benchmarks, rótulos, e as liç�
 - [[medir-carga-com-rollback]]
 - [[estilo-da-casa-foi-medido]]
 - [[historia-da-cascata-de-provedores]] — benchmarks de modelo
+- [[eval-de-28-09-e-a-v41]] — taxonomia de 17 conversas (16 simuladas + 1 real) e o limite de TPM que derruba simulação em paralelo
 
 ## Relacionados
 - [[MOC — IA e Atendimento]] · [[MOC — Lições Gerais]] · [[Home]]

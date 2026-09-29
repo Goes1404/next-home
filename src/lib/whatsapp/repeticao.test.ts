@@ -303,3 +303,47 @@ describe("a saída nunca repete a saída — a guarda não pode virar o loop", (
     expect(textoNoLugarDaRepeticao(tudo).length).toBeGreaterThan(0);
   });
 });
+
+/*
+ * Eval de conversa, 28/09/2026: a guarda bloqueava o eco e mandava "Para eu
+ * te indicar certo: quantos dormitórios você precisa?" a quem tinha dito "3
+ * dorm" no turno 2, e "Me conta um pouco mais do que você procura" a quem
+ * pedia o endereço pela quinta vez. Pergunta dele não se responde com
+ * pergunta de qualificação.
+ */
+describe("saída da repetição quando o cliente fez uma pergunta", () => {
+  const historico = [
+    { remetente: "cliente", texto: "tô procurando um 3 dorm" },
+    { remetente: "bot", texto: "O endereço eu envio antes da visita." },
+  ];
+
+  it("reconhece a pergunta em aberto em vez de qualificar", () => {
+    const t = textoNoLugarDaRepeticao(historico, "mas e o endereço?");
+    expect(t).not.toMatch(/quantos dormit|me conta um pouco mais/i);
+    expect(t).toMatch(/corretor/i);
+  });
+
+  it("não repete a mesma saída duas vezes", () => {
+    const primeira = textoNoLugarDaRepeticao(historico, "e o endereço?");
+    const segunda = textoNoLugarDaRepeticao(
+      [...historico, { remetente: "bot", texto: primeira }],
+      "e o endereço?",
+    );
+    expect(segunda).not.toBe(primeira);
+  });
+
+  it("não pergunta dormitórios a quem já disse", () => {
+    const t = textoNoLugarDaRepeticao([
+      { remetente: "cliente", texto: "procuro 3 dormitórios" },
+      { remetente: "bot", texto: "Me conta um pouco mais do que você procura para eu te ajudar melhor." },
+    ]);
+    expect(t).not.toMatch(/quantos dormit/i);
+  });
+});
+
+it("\"robô ou humano?\" repetido ganha a verdade e a oferta do corretor", () => {
+  const t = textoNoLugarDaRepeticao([{ remetente: "bot", texto: "Aqui é a Sofia, assistente digital." }], "Robô ou humano?\nTô cansado");
+  expect(t).toMatch(/assistente virtual/);
+  expect(t).toMatch(/corretor/);
+  expect(t).not.toMatch(/não tenho aqui/);
+});

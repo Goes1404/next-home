@@ -118,3 +118,20 @@ describe("o não seco só conta depois de uma recusa", () => {
     expect(detectarRecusa("na verdade me manda o de 2 dorm", depois)).toBeNull();
   });
 });
+
+/*
+ * v41, 28/09/2026 (`escreve-errado`): "vc não me mandou ainda" é RECLAMAÇÃO
+ * de quem quer a planta, e virou pedido para parar — a IA se despediu e o
+ * lead ganharia `nao_contatar_em`. O passado ("mandou") nunca é opt-out.
+ */
+describe("reclamar que não recebeu não é pedir para parar", () => {
+  it("\"não me mandou\" não é recusa", () => {
+    expect(detectarRecusa("planta do vrita?\nvc não me mandou ainda.")).toBeNull();
+    expect(detectarRecusa("vocês não me mandaram nada")).toBeNull();
+  });
+
+  it("\"não me mande mais\" continua sendo", () => {
+    expect(detectarRecusa("não me mande mais mensagem")?.familia).toBe("parada");
+    expect(detectarRecusa("nao me manda mais nada")?.familia).toBe("parada");
+  });
+});

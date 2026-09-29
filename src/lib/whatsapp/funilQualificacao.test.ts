@@ -224,11 +224,14 @@ describe("a escada da capacidade (v25)", () => {
     ).toBe(true);
   });
 
-  it("o bloco propõe a escada, do menos invasivo ao mais", () => {
+  // Reescrito em 29/09/2026: decisão do usuário, a capacidade é perguntada
+  // pela RENDA (ou profissão), e a faixa sai da conta, nunca da pergunta.
+  it("o bloco pergunta a renda (ou a profissão) e proíbe perguntar faixa", () => {
     const b = blocoCapacidadePendente();
-    expect(b).toContain("faixa");
-    expect(b).toContain("só sua ou em conjunto");
-    expect(b.indexOf("faixa")).toBeLessThan(b.indexOf("renda média"));
+    expect(b).toContain("RENDA MENSAL");
+    expect(b).toContain("com o que ele trabalha");
+    expect(b).toContain("NUNCA pergunte faixa de valor");
+    expect(b).not.toMatch(/qual faixa de valor você tem em mente/);
     expect(b).toContain("UMA pergunta por mensagem");
   });
 });

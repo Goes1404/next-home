@@ -48,7 +48,19 @@ const FRACA =
 
 /** Pedido: não é interrogativo, mas espera resposta do mesmo jeito. */
 const PEDIDO =
-  /(^|\s)(me (manda|mande|envia|envie|passa|passe|diz|fala)|manda (a|o|as|os|pra mim)|queria saber|gostaria de saber|preciso saber|quero saber|me ajuda)($|\s)/;
+  /(^|\s)(me (manda|mande|envia|envie|passa|passe|diz|fala)|manda (a|o|as|os|pra mim)|quero (informacoes|informacao|info|infos|detalhes|saber mais)|queria saber|gostaria de saber|preciso saber|quero saber|me ajuda)($|\s)/;
+
+/**
+ * "Você tem ...?" ABRINDO a fala, mesmo sem a interrogação.
+ *
+ * Produção, 28/09/2026: "Vc tem apartamento de dois dormitórios em Barueri"
+ * cita tipologia e cidade, então o planner a lia como RESPOSTA ao funil, e a
+ * IA devolveu "em qual região?" sem dizer se tinha. No começo da fala,
+ * "(você) tem / teria / possui" é a forma de perguntar; no meio ("minha
+ * esposa tem que ver") não é, e continua fraca. "Tem sim" é resposta.
+ */
+const ABRE_PERGUNTA =
+  /^(vc|vcs|voce|voces|ce|cs)?\s*(tem|teria|possui|possuem|tem como)\s+(?!sim\b)/;
 
 export function forcaDaPergunta(texto: string): ForcaDaPergunta {
   // A interrogação é lida no texto CRU: `normalizar` não mexe em pontuação
@@ -56,6 +68,8 @@ export function forcaDaPergunta(texto: string): ForcaDaPergunta {
   if (texto.includes("?")) return "forte";
   const t = normalizar(texto);
   if (FORTE.test(t)) return "forte";
+  // Cada linha conta: em "Oi" + "Vc tem ...", a pergunta está na segunda.
+  if (t.split(/\n+/).some((linha) => ABRE_PERGUNTA.test(linha.trim()))) return "forte";
   if (PEDIDO.test(t) || FRACA.test(t)) return "fraca";
   return "nao";
 }

@@ -1,0 +1,15 @@
+quer-visitar-sabado · cliente_encerrou · 3 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: queria visitar um apartamento sábado, dá?
+[1] Sofia:   Posso te mostrar o Eternity Alphaville Tamboré ou o Bless Jardim Esperança no sábado.
+Temos horários às 9h e às 11h. Qual imóvel e horário prefere?
+
+[2] Cliente: Eternity 9h
+[2] Sofia:   Combinado, sábado às 9h está reservado para você no Eternity Alphaville Tamboré.
+Te mando as fotos para você ir vendo o padrão do projeto.
+              📎 https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/eternity-alphaville/living-03.jpg
+
+[3] Cliente: Confirmo sábado 9h
+[3] Sofia:   Ótimo, sábado às 9h está confirmado para o Eternity Alphaville Tamboré.
+Pra eu já levar a simulação do financiamento pronta, qual é a renda média da família por mês?
