@@ -53,3 +53,12 @@ imóveis RASCUNHO (`publicado = false`), cada um ligado ao candidato
 - **Tour de outro prédio na página certa**: os dois tours da página do Liv
   Stay se chamam "Beyond Residence" (28 m², planta que o Liv Stay nem tem).
   Conferir o `<title>` do tour antes de cadastrar.
+- **Publicados em 29/09** (`scripts/catalogo/operacao0129.ts`, junto com o
+  Arbórea Alphagran), e a duplicata `serenne-barueri-2` apagada com os
+  arquivos dela no Storage.
+- **Publicar direto no banco não aparece no site na hora.** O catálogo
+  público fica em `unstable_cache` por até 1 h (`REVALIDA_EM_SEGUNDOS`), e só
+  as actions do painel chamam `revalidarCatalogo`. As páginas novas mostram
+  "não encontrado" até o cache virar. `invalidate_by_tags` do MCP da Vercel
+  não alcança esse cache ("CDN Cache Namespace not found"). Para ver na hora:
+  salvar qualquer imóvel no painel.

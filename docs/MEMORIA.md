@@ -8321,6 +8321,11 @@ Nota: [[fila-de-cadastro-pelo-site-da-construtora]].
   OUTRO prédio (Liv Stay mostrava o do Beyond): conferir o `<title>` do tour.
 - **Migration grande pelo MCP**: conferir depois com `md5(descricao)` do
   banco contra o arquivo, para provar que o texto aplicado é o do repositório.
+- **Mudança no catálogo feita fora do painel (migration, script) só aparece
+  no site depois que o cache vira** (até 1 h, `unstable_cache` com a tag
+  `catalogo`). Página de imóvel recém-publicado responde "não encontrado"
+  nesse intervalo. O `invalidate_by_tags` do MCP da Vercel não alcança esse
+  cache. Salvar qualquer imóvel no painel chama `revalidarCatalogo`.
 
 ## O CI ficou vermelho de 13/09 a 28/09 e ninguém viu
 
