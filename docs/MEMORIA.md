@@ -8354,9 +8354,12 @@ Nota: [[migration-aplicada-fora-da-branch-e-apagada-pela-outra]].
   lugar**: prefixo 0113 duplicado e `sorteioPreferido.test.ts`, que lê a
   última definição da função. Renumerar a 0113 não serviria, porque o
   `create or replace` com outro nome de parâmetro é recusado depois da 0117.
-- **A junção é a 0129**: uma função só, `(p_empreendimento, preferido)`, os
-  dois com default null. Ordem: preferido, rodízio, sorteio. ACL da 0052
-  repetida em `(uuid, uuid)`. **Não aplicada ainda.**
+- **Decisão (28/09): vale o que está em PRODUÇÃO.** A 0113 local saiu e a
+  função fica a da 0117, `(p_empreendimento uuid)`, sem `preferido`. Uma
+  junção 0129 chegou a ser escrita e foi descartada sem ser aplicada. O
+  link pessoal preferir o corretor, se voltar, volta como migration nova
+  sobre a assinatura da 0117. A guarda virou `sorteioDoPorteiro.test.ts` e
+  manteve as checagens de número conectado e de ACL em `(uuid)`.
 - **Régua:** aplicar migration no banco é levar o arquivo para a branch de
   produção no mesmo dia. Migration aplicada só de uma branch paralela vira
   "objeto sem origem" para as outras sessões, e objeto sem origem é apagado.

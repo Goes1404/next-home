@@ -52,4 +52,4 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 - [[apagar-leads-leva-a-conversa-junto]] — o mapa de cascata de `delete from leads`, e as três FKs `set null` que sobrevivem órfãs (12/09)
 - [[vendas-e-o-modulo-financeiro]] — F1 do financeiro: venda com co-corretagem, comissão por venda, distrato; só o gestor marca dinheiro recebido (0114, 25/09)
 - [[vendas-e-o-modulo-financeiro]] — grant por coluna só vale com `revoke all ... from authenticated` antes: o padrão do Supabase dá ALL ao usuário logado (0116, 26/09)
-- [[migration-aplicada-fora-da-branch-e-apagada-pela-outra]] — a 0113 do sorteio preferido, apagada pela 0117, juntada na 0129
+- [[migration-aplicada-fora-da-branch-e-apagada-pela-outra]] — a 0113 do sorteio preferido, apagada pela 0117; vale a de produção

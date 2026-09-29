@@ -2993,7 +2993,7 @@ export type Database = {
       }
       desligar_disparo_automatico: { Args: never; Returns: string }
       sortear_corretor_whatsapp: {
-        Args: { p_empreendimento?: string; preferido?: string }
+        Args: { p_empreendimento?: string }
         Returns: { corretor_id: string; telefone: string }[]
       }
       desligar_followups_automaticos: { Args: never; Returns: string }

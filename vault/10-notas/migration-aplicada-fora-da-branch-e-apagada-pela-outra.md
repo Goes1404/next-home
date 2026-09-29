@@ -5,11 +5,11 @@ tags: [banco, licao]
 type: nota
 status: evergreen
 custou: medio
-codigo: [supabase/migrations/0129_sorteio_rodizio_e_preferido.sql, src/lib/whatsapp/sorteioPreferido.test.ts]
+codigo: [supabase/migrations/0117_sem_especialista_e_link_rotativo.sql, src/lib/whatsapp/sorteioDoPorteiro.test.ts]
 created: 2026-09-28
 updated: 2026-09-28
 fonte: merge de 28/09/2026, ingestao-de-midia × branch de produção
-summary: A 0113 do sorteio com corretor preferido foi aplicada em produção a partir de ingestao-de-midia. A branch de produção, sem esse código, achou a função no banco, tratou-a como resíduo e a apagou na 0117. No merge as duas colidiram no número E na assinatura; renumerar não bastava. A junção é a 0129, com os dois parâmetros.
+summary: A 0113 do sorteio com corretor preferido foi aplicada em produção a partir de ingestao-de-midia. A branch de produção, sem esse código, achou a função no banco, tratou-a como resíduo e a apagou na 0117. No merge as duas colidiram no número E na assinatura; renumerar não bastava. Decisão: vale o que está em produção (0117); a 0113 local saiu.
 ---
 # Migration aplicada fora da branch e apagada pela outra
 
@@ -34,13 +34,15 @@ Com o nome `0129`, a `0113` rodaria depois da `0117` e faria
 existe com outro nome de parâmetro. O Postgres recusa essa troca. Sem erro, o
 efeito seria pior ainda: o rodízio da 0117 sumiria.
 
-## A junção
+## Decisão: vale o que está em produção
 
-`0129_sorteio_rodizio_e_preferido` tem uma função só,
-`(p_empreendimento uuid default null, preferido uuid default null)`. A ordem
-é: preferido, depois o rodízio, depois o sorteio. A ACL da 0052 vem repetida
-na assinatura `(uuid, uuid)`. Até esta nota ser escrita, a 0129 **não estava
-aplicada** no banco.
+A 0113 local saiu do repositório. A função fica a da 0117,
+`(p_empreendimento uuid)`, que é a que está no banco. Uma junção (`0129`,
+com os dois parâmetros) chegou a ser escrita e foi descartada sem ser
+aplicada. Se o link pessoal voltar a preferir o corretor, ele volta como
+migration nova sobre a assinatura da 0117. A guarda passou a se chamar
+`sorteioDoPorteiro.test.ts` e ficou com o que continua valendo: número
+conectado e ACL fechada em `(uuid)`.
 
 ## Régua
 
