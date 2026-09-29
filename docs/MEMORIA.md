@@ -7584,3 +7584,779 @@ Nota: [[o-checklist-do-catalogo-e-as-categorias-sem-leitor]].
   26 de 26; construtora 24; plantas cadastradas 22; lazer e preço 21;
   endereço 11; imagem da planta 9; apelido 6. No complementar, book em PDF e
   vídeo ou tour estão em ZERO — e os dois têm fluxo de cadastro pronto.
+
+## Construído e nunca ligado — o inventário de 24/09/2026
+
+Pergunta do usuário: "o que foi construído e nunca ligado?". Conferido no
+banco e no GitHub, não só relido da MEMORIA.
+
+- **O worker de vídeo roda de hora em hora e falha sempre**: 134 execuções,
+  todas vermelhas, porque os secrets `SUPABASE_SECRET_KEY` e
+  `NEXT_PUBLIC_SUPABASE_URL` do GitHub estão vazios. O único vídeo pedido
+  está `pendente` desde 03/09 com `tentativas = 0` — que é o MESMO sintoma
+  de "ninguém chamou", porque o worker morre antes de reservar o job. Para
+  distinguir, olhar o log do Actions, não o banco. A mensagem de erro de
+  `createServiceClient` culpava "o webhook do WhatsApp"; passou a nomear
+  todos os chamadores. Nota: [[o-worker-de-video-roda-sem-segredo]].
+- **Produção segue com 0 leads e 0 conversas** 12 dias depois da limpeza de
+  12/09, e zero `ia_interacoes` nos últimos 7 dias, com o número
+  `conectado`. Desde a 0111 o webhook ignora número sem lead cadastrado,
+  então com a carteira vazia a Sofia não atende ninguém — por desenho, mas
+  vale saber antes de concluir que "a IA quebrou". Só 2 dos 7 corretores
+  ativos têm login.
+- **Ainda sem dado**: `meta_ads_metricas` 0 linhas e nenhum lead com
+  campanha (faltam as env vars da Meta); 1 corretor com grade de agenda; 5
+  de 25 publicados com apelido; os dois crons de e-mail seguem desagendados
+  por decisão (e sem `RESEND_API_KEY`).
+
+## A importação de leads passou a ler o que o corretor tem na mão (24/09/2026)
+
+Nota: [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]].
+
+- **O `.txt` da conversa exportada pelo ANDROID caía no leitor de tabela.**
+  Só o `.zip` (iPhone) passava por `ehExportDeConversa`; o Android, sem
+  mídia, gera `.txt` solto. A checagem foi para `extrairDeTexto`, então vale
+  também para conversa COLADA na caixa — e o `dono` (a fala do corretor não
+  vira lead) viaja nos três caminhos.
+- **O CSV do Google Contatos saía com zero leads, calado**: `Phone 1 - Label`
+  casava como telefone antes de `Phone 1 - Value`, e o split por vírgula
+  quebrava `"Prado, Ana"`. Coluna de rótulo agora é ignorada e CSV com
+  cabeçalho usa leitor com aspas.
+- **`.xlsx` sem dependência nova**: é ZIP com XML, e `lerZip` já existia.
+  Telefone salvo como número vem em notação científica
+  (`5.5119912345670002E+12`) — lido cru, vira lixo.
+- **`.vcf`**: `waid=` no TEL é o número do WhatsApp em dígitos; vCard 2.1 do
+  Android vem em quoted-printable.
+- **Foto/print** vai ao Gemini, como o PDF escaneado; sem chave, a tela diz
+  que a leitura de foto depende de IA.
+- Provocado antes de subir: desligar a exclusão da coluna de rótulo e o
+  desvio da conversa em `extrairDeTexto` derruba 1 e 2 testes.
+
+## A planta chega como foto (24/09/2026)
+
+Nota: [[planta-que-chega-como-foto]].
+
+- **Upload da galeria, curadoria do PDF e Drive gravam `tipo = foto`**, e é
+  o tipo que decide se a assistente consegue mandar a imagem como planta
+  (`resolverMidia` lê `imovel.plantas`) e se o checklist conta "imagem da
+  planta". O botão **"É planta" / "É foto"** em cada cartão da galeria troca
+  o tipo (`definirTipoDaMidia`), com o filtro de tipo na própria consulta e
+  zero linhas tratado como erro.
+- **"Definir Capa" nunca gravou nada**: `definirFotoComoCapa` era importada e
+  nenhum handler a chamava — a tela anunciava "Capa atualizada" e o reload
+  desfazia. Décimo-primeiro caso de "construído e nunca ligado", agora com
+  guarda que lê o código (`EditorFotos.test.ts`, provocada).
+- **A capa do editor era a primeira mídia de qualquer tipo**; hoje é a
+  primeira FOTO, como o mapper da vitrine (`capa: fotos[0]`). E foto recém-
+  enviada passou a guardar o `id` devolvido pelo servidor — sem ele não dava
+  para removê-la nem reclassificá-la antes de recarregar.
+
+## A ordem do site não tinha tela (24/09/2026)
+
+Nota: [[ordem-do-catalogo-no-site-tem-tela]].
+
+- **A vitrine ordena por `destaque` e depois por `empreendimentos.ordem`, e
+  `ordem` nunca teve tela.** A sequência do site era a que o seed deixou. A
+  única ordem editável era a do link pessoal (`corretor_destaques`), que só
+  vale para quem chega pelo link do corretor. Quem procurar como mudar a
+  ordem dos imóveis provavelmente vai achar primeiro a tela de Links, e ela
+  não muda a ordem do site.
+- **Imóveis → "Ordem no site"** (`/corretor/imoveis/ordem`): subir, descer e
+  ★ destaque. Os 6 primeiros são os "Selecionados" da home. Mover não
+  atravessa a fronteira do destaque, porque o site devolveria o imóvel para
+  o grupo dele.
+- **Escolher a planta do catálogo** (24/09): na aba de plantas, "Escolher do
+  catálogo" reclassifica a foto como planta ANTES de ligá-la. Se a
+  reclassificação falha, nada é ligado. Só ligar a URL mostraria a planta na
+  tela enquanto a assistente seguiria sem ela.
+- **Ordem das fotos do imóvel** (24/09): ◀ ▶ na galeria, gravado por "Salvar
+  ordem". "Definir Capa" antes zerava a sequência (tudo `ordem = 10`), e
+  `midias` não tem `created_at` para desempatar: as fotos saíam em ordem
+  arbitrária. Ao desempatar mídia, não conte com data; use a ordem da tela.
+- **Arrastar para ordenar** (24/09): `useArrastarParaOrdenar` (pointer events,
+  mouse e dedo, com a lista se rearrumando durante o arrasto) serve à Ordem no
+  site e à galeria de fotos. Para testar toque sem login, usei uma página
+  temporária e `Input.dispatchTouchEvent` do CDP. Depois de apagá-la, rode
+  `rm -rf .next/dev .next/types`, senão o `tsc` acusa o módulo que sumiu.
+- **Ordem salva sozinha** (24/09): `useSalvarSozinho`, 900ms depois da última
+  mudança e nunca durante o arrasto. Em falha, não repete sozinho: mostra
+  "Tentar de novo".
+
+## O painel ganhou profundidade e movimento (24/09/2026)
+
+Nota: [[o-painel-ganhou-profundidade-e-movimento]]. Pedido: "muito sem
+contraste e sem graça no background; fluido, com bastante efeitos, sem
+perder performance". Medido antes: **página e cartão a 1,08:1** — a mesma
+superfície. Depois: 1,21 (claro) e 1,18 (escuro), texto todo em AA,
+`npm run paleta` sem aviso.
+
+- **`backdrop-filter` cobra por quadro em que algo ATRÁS dele muda — e com
+  animação contínua na tela, isso é todo quadro, para sempre.** A primeira
+  versão pôs uma aurora derivando atrás dos heróis com `backdrop-blur-xl`:
+  **43,6 ms/quadro** no desktop parado (2,6x a linha de base de 16,9) e 13
+  quadros acima de 33ms rolando no celular. Sem o blur: 22,9 e 3. O que há
+  atrás do herói é um gradiente suave; desfocar o que já é desfocado não muda
+  a imagem, só a conta. O blur saiu dos heróis, das pílulas do Início e dos
+  chips dos atalhos (que desfocavam o degradê opaco do próprio cartão).
+- **Atribuir antes de cortar.** O palpite era a animação; desligá-la sozinha
+  deixava 38,2 ms. Cinco variantes com `page.addStyleTag` (uma por efeito)
+  custaram dois minutos e apontaram o blur. O grão de `feTurbulence` deu
+  zero de diferença — camada fixa estática é de graça.
+- **Efeito que segue o mouse no `background-image` do cartão repinta o
+  cartão INTEIRO a cada quadro**, texto e fotos incluídos: 21,2 ms contra
+  16,7 sem ele; as transições de sombra e borda não eram o custo (22,9 e
+  24,3 sem elas). Foi para um `::before` com `will-change` só durante o
+  hover — repinta só o gradiente, em camada própria — e o acender virou
+  `opacity` (compositor) em vez de cor por `@property` (repinta).
+- **Nada anda sozinho no painel** (régua de [[movimento-do-painel-tem-regua]],
+  agora com número): a aurora se move com a rolagem
+  (`animation-timeline: scroll(root)`, `animation-range: 0 160vh`) e com o
+  ponteiro (`--lean-x/--lean-y`); a varredura do herói roda UMA vez por
+  montagem, e `TransicaoDeTela` remonta a tela a cada rota. Em repouso, zero
+  quadros. Resultado final igual à linha de base: 17,7–18,4 ms rolando no
+  celular (3–5 quadros > 33ms), 16,7–17,2 no desktop com o mouse.
+- **Contexto de empilhamento no `.cartao` segue proibido**: cinco `fixed`
+  nascem dentro dele. O foco de luz pinta ACIMA do conteúdo a 11%, em vez de
+  `z-index: -1` (exigiria o contexto).
+- **Duas armadilhas de medição**: `mouse.move` depois de `window.scrollTo`
+  diz "sem hover" para um hover que funciona — usar `locator.hover()`; e
+  `CSS.registerProperty` "registra" mesmo quando o `@property` já existe —
+  quem prova é enumerar `CSSPropertyRule`.
+- Guarda: `profundidadeDoPainel.test.ts` lê o CSS e os heróis e reprova
+  `backdrop-filter` neles, `transform`/`filter` no `cartao` e `infinite` na
+  aurora e no herói. A regressão é calada: a tela fica igual, só o quadro
+  engorda.
+
+### A transição de rota saiu no mesmo dia (24/09/2026)
+
+- **Relatado logo depois do deploy: "não está renderizando".** Servidor
+  limpo (zero erro de runtime, todas as telas do painel em 200), então a
+  falha era no navegador. A única peça nova que embrulhava TODO o conteúdo
+  de toda tela era `TransicaoDeTela` (`<ViewTransition key={rota}>`), e era
+  também a única que não tinha sido testada no painel logado nem em Safari.
+  Numa reprodução no Chromium ela funcionava (tela nova visível em 600 ms,
+  console limpo) — o que prova o Chromium, não o aparelho do usuário.
+- **Saiu, e a regra que fica é de risco, não de gosto:** efeito que envolve
+  o conteúdo inteiro de todas as telas é o único que, falhando, apaga o
+  produto. Ele só volta com verificação no navegador de quem usa (iPhone) e
+  com o painel logado. O resto da reforma (paleta, aurora, grão, cartões,
+  herói, botões) não embrulha conteúdo e ficou.
+
+### O painel sumia: era o FUNDO pintado na bolha do consultor (24/09/2026)
+
+- **Sintoma, por print do usuário:** tela inteira escura, conteúdo e
+  cabeçalho invisíveis, links respondendo ao mouse, só a bolha do consultor
+  visível. Servidor limpo, tudo em 200, console sem erro.
+- **Causa:** a regra nova `[data-rota="painel"] { background-image: … }`.
+  Os PORTAIS do painel (bolha do consultor, gaveta lateral, gaveta de
+  conversa) repetem `data-rota="painel"` para herdar a paleta — e a bolha é
+  um contêiner `fixed inset-0 z-[55] pointer-events-none`. Ela ganhou o
+  fundo opaco da página e o pintou por cima de TUDO; os cliques
+  atravessavam por causa do `pointer-events-none`. Corrigido com
+  `main[data-rota="painel"]`, e reproduzido antes e depois no build de
+  produção com a bolha real no harness.
+- **Dois diagnósticos errados antes do certo, e os dois tiraram coisa que
+  funcionava:** primeiro a transição de rota (saiu), depois "o Chrome com
+  GPU e a aurora animada" (a aurora ficou estática). Nenhum dos dois era a
+  causa. O erro de método: **o harness não reproduzia a árvore real** — não
+  tinha a bolha, justamente o único elemento que o print mostrava. A pista
+  estava no próprio sintoma: "só X aparece" aponta para X.
+- **Régua:** `data-rota="painel"` NÃO é "o painel", é "a paleta do painel".
+  Atributo que serve de escopo de TOKENS não pode receber propriedade
+  VISUAL; visual vai no `main`. A guarda `profundidadeDoPainel.test.ts`
+  reprova fundo em seletor `[data-rota="painel"]` solto (provocada).
+- **Harness do painel tem de montar os portais** (bolha, gavetas) além do
+  `<main>` — terceira vez que um portal muda o resultado (a cor da gaveta em
+  04/09, a altura do balão em 11/09, agora isto).
+- **Os dois efeitos voltaram no mesmo dia** (transição de rota e aurora
+  que se move com a rolagem e o mouse), a pedido do usuário depois de
+  confirmar o painel funcionando. Conferidos antes de subir no build de
+  produção COM a bolha do consultor montada: conteúdo visível nos dois
+  temas, navegação entre telas, aurora mudando com a rolagem, zero erro.
+
+### O fundo passou a se mexer sozinho (25/09/2026)
+
+- **A régua "nada infinito no painel" caiu para o fundo, por pedido e por
+  medição.** Ela nasceu em 24/09 de 43,6 ms por quadro que eram do
+  `backdrop-blur` dos heróis, não da animação. Refeito sem o blur, com a
+  bolha do consultor montada: 16,7 ms com e sem deriva, celular CPU 4x e
+  desktop. A aurora deriva sozinha (14–24s) só com `translate`/`scale`;
+  `transform` continua sendo da rolagem, e as duas se compõem.
+- **Menos movimento tem de GANHAR na especificidade.** `.painel-aurora > i
+  { animation: none }` perdia para os `:nth-child(k)` que nomeiam as
+  animações, e a deriva seguia rodando para quem pediu menos movimento. Só
+  a medição com `reducedMotion: "reduce"` mostrou.
+- **Nome de animação vai por extenso.** Em `var()` o build pode descartar o
+  `@keyframes` que ele não vê referenciado; conferir no CSS compilado.
+- **Com algo andando sozinho no fundo, `backdrop-filter` volta a custar por
+  quadro.** Antes de pôr vidro sobre o painel, medir.
+- **Harness sem a CLASSE do `<main>` não pinta a aurora.** O `isolate` vem
+  do layout por `className` (`CromaDoModulo`); sem ele o `-z-10` do fundo
+  cai para trás do fundo da página e nada aparece — nem pintado de vermelho.
+  A primeira medição da deriva (16,7 ms) foi feita assim e não media nada;
+  refeita com a classe real, deu os mesmos 16,7 ms. Ao montar harness de um
+  componente, copiar também os ATRIBUTOS e classes do pai, não só a árvore.
+  E o sinal barato de que algo está errado: duas capturas com 7s de
+  intervalo com diferença de pixels exatamente ZERO.
+- **Pedido "mais visível" (25/09):** amplitude dobrada (9–11vw → 16–22vw,
+  escala até 1,32) e ciclos de 14 a 24s.
+- **Bolhas que se movem no fundo (25/09):** cinco círculos de borda definida
+  (`.painel-bolhas`) no estilo de uma referência do usuário. **Coisa que se
+  mexe atrás de texto passa pelo contraste antes de ir ao ar**: a opacidade
+  saiu de medir o pior tom de bolha contra o texto de apoio (4,62:1 no claro a
+  0,24; 4,92:1 no escuro a 0,28). No claro a bolha é CLAREADA em vez de só
+  enfraquecida, senão só 0,14 passava e a forma sumia. Custo medido: nenhum no
+  celular; no desktop com mouse, 0 a 5 quadros lentos em ~210.
+
+## O vídeo do celular sumiu num Brave Android (25/09/2026)
+
+Nota: [[video-do-celular-rola-com-a-pagina]].
+
+- **O print isolou o defeito, não o reproduzi.** Aurora verde visível e sem
+  vídeo nem quadro parado: os três moravam na MESMA caixa `fixed`, então a
+  caixa estava lá e só o envoltório interno sumia — e a única coisa própria
+  dele era o esmaecimento por `animation-timeline: scroll(root)` (15/09). No
+  Chromium daqui funcionava, com e sem "reduzir movimento"; o HTML de
+  produção e os arquivos estavam certos. **Ler o que o print mostra, não só o
+  que falta.**
+- **A correção não depende de descobrir o navegador:** a peça saiu da caixa
+  fixa para uma camada `absolute` no topo do documento (`-z-10`, depois do
+  fundo fixo no DOM, então pinta por cima). Ela rola com a página e sai do
+  caminho sozinha; no rodapé fica 10 mil pixels acima da tela — a queixa de
+  13/09 continua resolvida sem animação nenhuma.
+- **Régua:** animação que controla a VISIBILIDADE de uma peça faz a peça
+  sumir quando falha. Prefira um mecanismo cuja falha deixa a peça
+  aparecendo.
+- **Confirmado pelo usuário: era a economia de bateria.** No Android ela liga
+  "reduzir movimento", e o vídeo da home não tocava. A peça da home (1,5 s,
+  toca uma vez e congela) passou a ignorar essa preferência, a pedido
+  (`ignorarMovimentoReduzido`); nada em loop pode usar isso, e a economia de
+  DADOS continua barrando. Junto, o cartão de busca cobria o "Next Home" em
+  tela baixa: a camada do vídeo media pela tela SEM barras (`lvh`) e o herói
+  pela tela COM barras (`svh`). As duas usam `svh` agora (a camada rola com a
+  página, então `svh` é estável), e a base do herói no celular foi de
+  `pb-32` para `pb-6`.
+
+## O percurso da home: cor e textura sem tirar contraste (25/09/2026)
+
+Nota: [[o-percurso-da-home]].
+
+- **SVG embutido em `url("…")` usa aspas SIMPLES por dentro.** Com aspas
+  duplas a string fecha no meio e o compilador descarta a regra inteira,
+  calado (a textura só não aparecia). Corrigir isso por script com troca de
+  aspas passou do ponto, abriu uma string que engoliu o resto do arquivo e
+  alterou trechos alheios: reconstruir da versão commitada e inserir só o
+  bloco novo foi o conserto.
+- **Fundo decorativo só pode AFASTAR o fundo da cor do texto.** No claro,
+  tom clareado com branco (teto ~22% de cor, porque o fundo do site já é
+  luminoso) e traço branco; no escuro, base no próprio fundo e traço preto.
+  Traço escuro no claro derrubou um tênue de 3,1:1 para 2,2:1.
+- **Medir contraste texto a texto contra a MESMA página sem a mudança**,
+  casando por texto e altura: contadores animados mudam de número entre
+  capturas e desalinham comparação por índice.
+- **A home rola a ~36 ms por quadro num celular com CPU 4x**, com ou sem o
+  fundo novo. Anterior, não investigado.
+
+### As linhas da planta se movem e brilham (25/09/2026)
+
+Nota: [[o-percurso-da-home]].
+
+- **Uma camada animada só, por `transform`.** Uma por faixa com
+  `drop-shadow` custou 117-133 ms por quadro; cada camada animada a mais
+  dobrava o quadro. O halo do brilho vai desenhado DENTRO do SVG
+  (`feGaussianBlur` + máscara radial), rasterizado uma vez.
+- **Laço sem emenda = andar múltiplo de todos os ladrilhos.** A grade foi de
+  160 para 180px para 720 servir aos dois.
+- **Camada que tem de passar por cima da cor de uma faixa:** a cor desce
+  para um `::before` em z -2, e a faixa não pode ter contexto de
+  empilhamento próprio (`isolation`, `z-index`, `overflow`).
+- **Brilho no tema escuro é o pior caso de contraste**: brilhar é clarear, e
+  o texto é claro. Teal claro deu 1,41:1 sob o texto de apoio; teal escuro
+  opaco `#003d36` dá 4,93:1. Medir com o brilho no pior ponto, não na média.
+- **`percent` dentro de SVG em data URI vira escape**: `x='-5%'` quebra;
+  é `%25`.
+- **Medir texto por script com rolagem suave ligada não mede nada**:
+  `scrollTo` volta antes de rolar e o laço vê "0 textos". Forçar
+  `behavior: "instant"`.
+
+### `cartao` no site público não tem fundo (25/09/2026)
+
+- **`--cartao-fundo`, `--cartao-fio` e `--shadow-cartao` só existem no escopo
+  do painel.** Fora dele `background-color: var(--cartao-fundo)` é inválida e o
+  cartão sai TRANSPARENTE, calado. As duas portas de "Quando você quer morar?"
+  ganharam `.porta-estagio` (opaco + reflexo + brilho no hover). Ainda usam
+  `cartao` no público, com o mesmo defeito: `CabeNoBolso`, `Simulador`,
+  `CardCorretor`, `BookDigital`.
+
+## Site de construtora: o que dá para ler sem navegador (25/09/2026)
+
+Nota: [[importar-do-site-da-construtora]]. Medido baixando páginas reais de
+empreendimento, sem navegador:
+
+- **Cyrela, EZTEC, Plano&Plano e Even entregam tudo no HTML**: 6,7 a 10 mil
+  caracteres de texto, 77 a 1.260 URLs de imagem, YouTube e Matterport em
+  iframe. As fotos vêm em `data-src`/`srcset`, não em `src`: quem lê só `src`
+  acha UMA imagem na Cyrela, em vez de 108.
+- **MRV, Vivaz e Tenda são montadas por JavaScript** (home de 13 KB sem link
+  de produto). A P4 Engenharia devolveu 406 a um `User-Agent` curto e abriu
+  com cabeçalhos de navegador completos.
+- **As fotos das construtoras chegam a 1500 px**, contra os originais de
+  320 px de vários imóveis do nosso catálogo.
+
+### A aba "Site da construtora" no importador (25/09/2026)
+
+Nota: [[importar-do-site-da-construtora]].
+
+- **URL colada é SSRF**: `buscarSeguro` usa `node:http(s)` com `lookup`
+  próprio, que confere o IP NA CONEXÃO (DNS rebinding) e a cada
+  redirecionamento. O `fetch` do Node não troca a resolução sem declarar o
+  `undici`, que aqui só existe por dentro do cheerio.
+- **`new URL("http://[::ffff:127.0.0.1]/")` vira `::ffff:7f00:1`.** Checagem
+  que só conhece a forma decimal deixa o loopback passar.
+- **Não peça `image/avif` no `Accept`**: o site devolve AVIF, e o bucket e
+  `registrarMidia` não o tratam.
+- **Guarda com página real pode não morder**: a mesma foto chega por mais de um
+  atributo, e tirar um deles não muda o resultado. Regra específica pede teste
+  de HTML mínimo.
+
+### Buscar novidades no site da construtora (0113, 25/09/2026)
+
+Nota: [[importar-do-site-da-construtora]].
+
+- **Código que depende de coluna nova tem de funcionar ANTES da migration.**
+  Esta sessão não tinha acesso de escrita ao banco, então a 0113 subiu no
+  repositório sem estar aplicada. As colunas (`site_construtora`,
+  `origem_url`) ficaram fora do insert de `registrarMidia` e do SELECT do
+  catálogo e são lidas/gravadas à parte, com o erro virando log: sem a
+  migration, só o atalho "Buscar novidades" e a marca "já trazida" somem.
+- **`str.replace` do Python troca TODAS as ocorrências.** O bloco de
+  `trazerImagemDoSite` é idêntico ao de `trazerImagemDoDrive`, e a edição
+  entrou nos dois; o `tsc` pegou porque o Drive não tem `entrada.url`. Ao
+  editar por script, conferir a contagem antes (`s.count(old) == 1`).
+
+
+### RSF: o site é HTML, o que faltava era o domínio do tour (25/09/2026)
+
+- `rsf.com.br` entrega texto, fotos e plantas no HTML: não precisa de F5.
+- O tour 360 é da **3D Explora** (`3dexplora.com.br/seutour.aspx?codigo=`),
+  agora reconhecido. A URL é recomposta pelo `codigo`: a RSF cola o endereço
+  duas vezes no mesmo `src`. O iframe do YouTube com `src=""` é empreendimento
+  sem vídeo, não conteúdo montado por JS.
+- Antes de concluir "precisa de navegador", procurar no HTML cru o que o
+  leitor não reconheceu.
+
+### Tirar da lista durante o envio (25/09/2026)
+
+- **Laço assíncrono que copia a seleção no clique ignora o que o usuário
+  muda depois.** O envio do site fazia `[...imagensEscolhidas]` e seguia a
+  cópia; desmarcar no meio não tinha efeito. Hoje cada item confere a lista
+  por `ref` na hora em que sai. Estado de React não serve dentro do laço: ele
+  enxerga o valor do render em que começou.
+- **Ação que só existe no toque da foto é invisível.** A grade alternava ao
+  tocar a imagem, mas não havia botão nem marca dizendo isso; ganhou os dois.
+- **Fim de trabalho longo precisa de desfecho que se veja** (25/09): a
+  importação terminava numa linha de texto de 12px embaixo do botão. Hoje as
+  três abas mostram `ResultadoDaImportacao` (cor por desfecho, rola para a
+  vista, recebe foco, leva ao imóvel) e o aviso flutuante. "Só duplicadas" não
+  é erro: nada falhou.
+- **Para tirar da fila, precisa EXISTIR fila** (25/09): o PDF gravava todas
+  as escolhas numa action só, então nada do lado da tela alcançava o envio
+  depois do clique. Virou lotes de 4 (`LOTE_PDF`) com a action devolvendo o
+  desfecho por imagem (`porItem`). O tamanho do lote é a troca entre reler o
+  PDF a cada chamada e poder tirar o que ainda não saiu.
+
+## Vendas: a F1 do módulo financeiro (0114, 25/09/2026)
+
+Nota: [[vendas-e-o-modulo-financeiro]].
+
+- **O funil terminava num cartão.** `fechado` não guardava valor, unidade nem
+  comissão. Agora `vendas` + `venda_participantes` registram tudo isso, com
+  co-corretagem (as partes do VGV somam 100) e distrato como status.
+- **O corretor não pode marcar a própria comissão como paga, e é o grant
+  que garante isso.** As datas de recebido e pago ficam sem `grant update`
+  para `authenticated`. A policy de UPDATE sozinha libera a linha inteira.
+- **Policies que se consultam entram em recursão.** A de `vendas` pergunta
+  "participa?" e a de `venda_participantes` pergunta "registrou?". Uma
+  função `security definer` (`participa_da_venda`) quebra o ciclo.
+- **FK `on delete set null` junto com um CHECK de "tem imóvel" impediria
+  excluir o imóvel.** O nome do imóvel é gravado na venda.
+- **A 0114 não foi aplicada por esta sessão** (MCP da Supabase sem
+  permissão). Enquanto não for aplicada, a tela de Vendas diz que o registro
+  não está ativo e a ficha do lead segue normal.
+
+## Financeiro F2 a F8 (0115, 26/09/2026)
+
+Nota: [[vendas-e-o-modulo-financeiro]].
+
+- **Server page não passa arrow function para client component.** O botão
+  "Recebi hoje" recebia `() => marcar(id)` e o build recusaria; o que viaja é
+  a Server Action com `.bind(null, id, data)`.
+- **`upsert` com grant por coluna falha:** ele faz `update` de TODAS as
+  colunas enviadas, inclusive a chave. Com grant só em algumas, é ler e
+  decidir entre insert e update.
+- **Guarda que recorta função por `lastIndexOf("function public.x")` acha o
+  `grant execute on function public.x` que vem depois.** Ancorar em
+  `create or replace function`. Décima vez que uma guarda tropeça no próprio
+  recorte, e esta falhou antes da mordida (e entrou num commit assim).
+- **Ranking visível a todos exige `security definer`**, porque a RLS de
+  `vendas` só mostra as próprias. Aí a função é a fronteira da privacidade:
+  devolve VGV e contagens, nunca comissão.
+- **Etapas do funil são seis** (`novo`, `primeiro_contato`,
+  `visita_agendada`, `documentacao`, `fechado`, `perdido`). Escrevi
+  "proposta" e "negociacao" de cabeça no SQL; não quebrava nada, só mentia.
+- **Consultor saiu do menu para Imóveis** para o Financeiro caber no teto de
+  sete; ele segue na bolha de toda tela. Guarda de navegação reescrita com o
+  motivo, não apagada.
+
+## O grant por coluna não valia: o `authenticated` já tinha ALL (0116, 26/09/2026)
+
+Nota: [[vendas-e-o-modulo-financeiro]].
+
+- **O Supabase dá ALL ao `authenticated` em toda tabela nova do `public`**, não
+  só ao `anon`. Grant de TABELA cobre todas as colunas, então
+  `grant update (a, b) ... to authenticated` sem `revoke all ... from
+  authenticated` antes é decorativo. Medido depois de aplicar a 0114:
+  `has_column_privilege('authenticated','public.vendas','comissao_recebida_em','UPDATE')`
+  = true, ou seja, o corretor marcaria a própria comissão como recebida.
+- **INSERT tem o mesmo furo**: com insert de tabela dava para criar a venda já
+  marcada. Quando a proteção é "esta coluna só o gestor escreve", insert e
+  update vão por coluna.
+- **A guarda antiga passou porque lia só o que a migration escrevia.** O
+  privilégio padrão não aparece em arquivo nenhum. A prova é
+  `has_column_privilege` no banco; a guarda nova
+  (`tabelasSeguras.test.ts`) exige o revoke do `authenticated` em toda tabela
+  com grant por coluna. As antigas (`leads`, `corretores`,
+  `catalogo_candidatos`) já faziam; só as três do financeiro não.
+- **Esta sessão não tem acesso ao banco** (MCP da Supabase sem permissão): o
+  usuário aplica pelo SQL Editor e cola o resultado de uma consulta de
+  conferência. Foi essa conferência que achou o defeito.
+
+## Sem especialista; link de anúncio é rodízio aleatório (0117, 26/09/2026)
+
+Nota: [[link-de-anuncio-e-rodizio-aleatorio]].
+
+- **Decisão de produto: nada de "especialista do imóvel".** Saiu o bônus da
+  0115 na roleta (volta a `distribuir_lead` da 0093) e a seção "Referências
+  por imóvel" do Desempenho.
+- **`/wa/<campanha>` sorteia** entre os conectados e manda para o fim quem
+  recebeu o último clique daquele imóvel (`cliques_whatsapp`). Deixou de
+  seguir a carga da roleta de leads, de propósito.
+- **Guarda de migration que busca `function public.x(`** acha o
+  `grant execute on function public.x(` posterior. Ancorar em
+  `create or replace`. Mais uma guarda que tropeçaria no próprio recorte.
+- **Produção tinha uma `sortear_corretor_whatsapp(preferido uuid)` que não
+  existe em migration nenhuma** (aplicada direto no banco). Achada ao aplicar a
+  0117 pelo conector; a 0117 passou a derrubá-la também, senão duas sobrecargas
+  com default deixariam a chamada sem argumento ambígua. Antes de aplicar
+  migration que substitui função, listar as assinaturas reais em `pg_proc`.
+- **O conector do Supabase estava logado em outra conta** e por isso toda
+  chamada dava "permission denied". `list_projects` responde em um segundo
+  qual conta está conectada.
+
+## A Next Home é o espelho da versão geral (decisão, 26/09/2026)
+
+Nota: [[next-home-e-o-espelho-da-versao-geral]].
+
+- **Decisão de produto:** terminar esta instalação completa e, depois,
+  derivar a versão para vender, com funcionalidades limitadas e **uma
+  instalação por cliente** (banco e projeto Vercel próprios). Multi-empresa
+  num banco só foi descartado.
+- **Por isso credencial de terceiro por variável de ambiente continua
+  certa** (Meta Ads inclusive): cada cliente terá as dele. OAuth da Meta e
+  revisão do app só seriam necessários no modelo multi-empresa.
+- **Antes do segundo cliente:** histórico de migrations confiável, o que está
+  fixo como "Next Home" virando configuração, e planos pagos (Hobby da Vercel
+  não permite uso comercial).
+
+## O worker de vídeo rodou pela primeira vez (26/09/2026)
+
+Nota: [[o-worker-de-video-roda-sem-segredo]].
+
+- Com os dois secrets cadastrados no GitHub, a execução 144 ficou verde e o
+  vídeo parado desde 03/09 saiu: 17,2 s, 1080x1920, 52 s de render, 5,5 MB.
+- **O MCP do GitHub desta sessão não dispara nem reexecuta workflow** (403
+  `Resource not accessible by integration`). Disparo manual é pelo usuário, em
+  Actions → Run workflow; senão, o `schedule` de hora em hora.
+
+## As oito funcionalidades de 26/09/2026 (0118-0120)
+
+Nota: [[oito-funcionalidades-de-26-09]].
+
+- **Duas das oito já existiam pela metade**, e só medir mostrou: o placar
+  A/B de campanha (0084) e o webhook de e-mail dos portais — este com **0
+  linhas em `inbound_logs` na vida**, ou seja, nunca configurado. Nelas o
+  trabalho foi o que faltava (aberturas sugeridas pela IA; primeiro contato
+  automático), não reconstruir.
+- **Tudo novo roda no tique dos follow-ups**, nenhum cron novo: resumo do dia
+  ANTES da janela (vai para o corretor), pós-visita e primeiro contato com lead
+  de portal DEPOIS dela (é iniciativa nossa com cliente). Ordem completa em
+  `vault/30-arquitetura/fluxo-de-campanhas.md`.
+- **Função exportada de arquivo "use server" é endpoint HTTP.** O miolo que
+  envia pela IA (`gerarEEnviarPelaIA`) precisava ser chamado pelo cron; exportá-lo
+  de `acoesIA.ts` abriria um endpoint que manda mensagem sem sessão. Foi para
+  `aberturaPelaIA.ts` (`server-only`), e as três guardas que liam `acoesIA.ts`
+  pelo caminho passaram a ler os dois arquivos.
+- **Link para o cliente: o token é a credencial.** `links_do_cliente` sem
+  acesso do `anon`, página lida pelo servidor, 30 dias, `noindex`. A renda não
+  viaja no link; a prévia do corretor (`?previa=1`) não conta como abertura.
+  Documentos no bucket PRIVADO `documentos-clientes`, lidos por URL assinada.
+- **O Salvar do editor do imóvel nunca gravou as plantas**, e dizia "Todas as
+  alterações foram salvas". Achado construindo as unidades. Ver
+  [[plantas-do-editor-nunca-eram-salvas]].
+- **Antes de mudar `SELECT_EMPREENDIMENTO`, testar o embed contra o PostgREST
+  com a chave publicável** (`curl .../rest/v1/empreendimentos?select=...`): é o
+  select do site inteiro, e um embed ambíguo (PGRST201) já derrubou tudo uma
+  vez. O `unidades(tipologia_id,status)` passou.
+- **Contador por planta tem uma fonte só**: com unidade ligada, sai da lista
+  (`unidadesDaPlanta`); o `anon` só lê as `disponivel` (0120). Prompt v37 diz
+  "restam N de X dorm", nunca preço.
+
+## Aprimoramentos das oito (0121-0122, 26/09/2026)
+
+Nota: [[aprimoramentos-das-oito-funcionalidades]].
+
+- **Aviso ao corretor tem um caminho só** (`avisarCorretor`): da instância
+  dele para o WhatsApp dele, sem cota nem janela. Só vira aviso o que é
+  notícia de agora: a seleção aberta pela primeira vez, o primeiro documento
+  e a lista completa. Clique e documento do meio ficam na ficha
+  (`links_do_cliente_eventos`). A lista completa não muda a etapa.
+- **A/B decide sozinho no disparador, com a trava na mão**
+  (`aplicarVencedoras`). A régua é a de `resultadoAB` e o claim é
+  `variante_vencedora`. Os pendentes da perdedora recebem o texto da vencedora.
+  Tela e decisão usam a mesma conta (`placarDaFila`).
+- **Renda vira orçamento pela conta do simulador**, sem entrada nem FGTS. A
+  ficha manda, o dossiê preenche o vazio, e orçamento dito ganha da renda.
+- **`visita_agendada_em` não diz quando a visita foi marcada.** A IA marca
+  por `reservar_visita` sem deixar rastro em `lead_interacoes`. Por isso a
+  0122 põe um trigger (`visita_marcada_em`) que vale para qualquer caminho.
+- **Resumo sem fim de semana por padrão.** 26/09/2026 é sábado, e teste de
+  agenda com essa data passou a reprovar. Use dia útil explícito.
+- **`react-hooks/purity` reprova `Date.now()` em handler de cliente e em
+  Server Component.** Calcule o relógio no servidor ou em módulo
+  (`janelaDeDias`).
+- **A catraca de lint estava em 1 erro** por um `prefer-const` do commit do
+  rodízio do anúncio. Rode `node scripts/lintTeto.mjs` antes de subir.
+
+## Fechar o ciclo e ligar a plataforma (0123-0124, 26/09/2026)
+
+Nota: [[fechar-o-ciclo-e-ligar-a-plataforma]]. Guia de configuração:
+`docs/LIGAR-ENTRADAS-DE-LEADS.md` ([[ligar-entradas-de-leads]]).
+
+- **O gargalo de produção é adoção, não funcionalidade.** Havia 0 leads, 1
+  de 7 corretores com WhatsApp e 2 com login. O Início agora mostra os
+  primeiros passos, e o gestor vê "Equipe pronta para atender".
+- **E-mail dos portais: os campos decidem o provedor.** O endpoint lê
+  `from/to/subject/html/text` ou `From/To/Subject/HtmlBody/TextBody`.
+  Postmark e SendGrid batem. Mailgun (`body-plain`) e Cloudmailin
+  (remetente aninhado) chegariam sem texto e virariam `ignorado`.
+- **Reengajar quem comprou é propaganda para cliente.** A lista de
+  compradores dispara para leads `fechado`, e o disparo agenda
+  reengajamento para quem não responde. O runner descarta reengajamento de
+  `fechado`/`perdido` antes de gastar cota.
+- **Confirmação de visita: a negação vence e a dúvida não grava.** "Não
+  posso" contém "posso". Uma confirmação inventada deixa alguém esperando
+  no decorado. Remarcar apaga a confirmação (trigger da 0124).
+- **O indicado não deu consentimento a ninguém.** Registrar exige que o
+  corretor confirme que a pessoa sabe que será procurada.
+- **A meta por corretor já existia** (F5 do financeiro). Faltava só a visão
+  do gestor.
+
+## O áudio do cliente ia cifrado para a transcrição (26/09/2026)
+
+Nota: [[audio-do-cliente-era-arquivo-cifrado]]. Relatado: "quando o cliente
+manda áudio, a IA alucina".
+
+- **`audioMessage.url` é o arquivo CIFRADO do WhatsApp** (`mmg.whatsapp.net/…enc`).
+  Baixá-lo dá ruído, e quando o download falhava a própria URL seguia como se
+  fosse base64. O arquivo decifrado vem da Evolution:
+  `POST /chat/getBase64FromMediaMessage/{instância}` com o `key.id`
+  (`baixarMidiaDoProvedor`). **Ao processar mídia recebida da Evolution,
+  nunca usar a `url` do webhook.**
+- **O prompt dava o roteiro para inventar**: "clientes de alto padrão em
+  Alphaville", exemplo "quer saber o preço do 3 suítes". Diante de ruído, o
+  modelo escrevia isso. Prompt de transcrição não diz o assunto; trecho
+  incerto vira `[inaudível]`. Guarda de código reprova assunto no prompt.
+- **A "intenção detectada" anexada ao texto saiu**: era palpite do modelo
+  gravado como fala do cliente, e a IA respondia ao palpite.
+- **Travas**: frases que o Whisper tira do silêncio ("Legendas pela
+  comunidade Amara.org"), mais de 6 palavras por segundo de áudio, fala quase
+  toda inaudível; Whisper em `verbose_json` descarta trecho com
+  `no_speech_prob ≥ 0,6`. Ordem: OpenAI (`gpt-4o-mini-transcribe`) → Groq →
+  Gemini por último.
+- **Régua**: quando a IA "alucina" sobre uma entrada, conferir primeiro o que
+  ela RECEBEU.
+
+## Rodada de 26/09, parte 3 (0125-0126)
+
+Nota: [[rodada-de-26-09-parte-3]]. Me avise quando surgir, favoritos e
+`/comparar`, agenda `.ics`, portal do comprador e andamento da obra,
+correções do corretor no prompt, Gmail do corretor, espelho para parceiros,
+marca da instalação.
+
+- **`corretores` é PÚBLICA para `anon`** (policy "corretores sao publicos",
+  a página da equipe lê). A 0125 pôs o token da agenda ali; a conferência
+  com `has_column_privilege('anon', …)` deu true antes de qualquer link
+  existir, e a 0126 o moveu para `corretor_agenda`, sem grant nenhum.
+  **Credencial nunca mora em tabela que o site público lê.**
+- **Rota do App Router só pode exportar os métodos HTTP**: função auxiliar
+  exportada de `route.ts` quebra o build. Vai para `src/lib`.
+- **A marca é `NEXT_PUBLIC_MARCA` (JSON), não tabela**: `site` é lido em 50
+  arquivos de forma síncrona, inclusive no cliente. Campo inválido é
+  ignorado e o padrão fica. `seo.test.ts` mede título em template com a
+  marca. Guia: `docs/INSTALAR-NOVO-CLIENTE.md`.
+- **Gmail: `gmail.readonly` é escopo restrito.** Workspace → app Interno;
+  Gmail pessoal → modo Teste com acesso que **vence a cada 7 dias**. O
+  webhook dos portais e o Gmail usam o mesmo `processarEmailDeLead`, que
+  agora pula e-mail já importado (`email_message_id`).
+- **Tipos gerados não conhecem relacionamento**: embed como
+  `unidades(...)` sai tipado como erro no TS mesmo existindo a FK no banco;
+  `as unknown as T` e testar o embed contra o PostgREST.
+
+## O impulsionamento do corretor passava pelo porteiro sem convite (0127, 27/09/2026)
+
+Nota: [[impulsionamento-do-corretor-pela-etiqueta-da-meta]].
+
+- **O lead que o corretor PAGA no Instagram era descartado.** Post
+  impulsionado com botão de WhatsApp manda o texto padrão da Meta, que não
+  era convite; desde a 0111 número sem lead e sem convite é ignorado.
+- **A etiqueta da Meta vem na mensagem**: `contextInfo.externalAdReply` com
+  `sourceType: "ad"` e o id do anúncio em `sourceId`. Link compartilhado
+  também tem `externalAdReply`, mas sem `sourceType: ad`. Reserva: texto
+  padrão da Meta, casamento exato.
+- **Ainda não provado com anúncio real.** Número sem lead que chega com
+  `contextInfo` gera o log `[porteiro] número sem lead com contextInfo:` com
+  os nomes dos campos. É por ele que se descobre se a Evolution repassa a
+  etiqueta.
+- **Gasto digitado, não OAuth**: ler gasto da conta de cada corretor exige
+  app da Meta aprovado. A tela conta os leads pelo `meta_ad_id`.
+- **Guarda do porteiro exige `return` logo depois de `if (!conversa) {`**
+  (`porteiro.test.ts`): log de diagnóstico vai num `if` separado antes.
+
+## Seis gráficos que decidem (28/09/2026)
+
+Nota: [[graficos-que-decidem]].
+
+- **Toda barra abre a lista filtrada, e a lista conta as mesmas pessoas.**
+  `?canal=` passou a existir na lista de leads; os padrões moram ao lado de
+  `canalDaOrigem` (`src/lib/graficos/calculos.ts`) com teste que simula o
+  `ilike`. Janela de 90 dias vai junto como `de=`.
+- **O funil conta quem passou; o link abre quem está.** A linha de detalhe
+  diz as duas coisas, senão o número da barra e o da lista divergem.
+- **`so-para-leitor` NÃO é `sr-only`**: ela volta a aparecer a partir de
+  640px. Legenda de tabela escondida é `sr-only`.
+- **Gráfico que vive em zero some** (quem espera resposta), a régua do
+  contador de aba.
+
+### Segunda versão: a forma segue a pergunta (28/09/2026)
+
+- **Barra deitada em tudo foi achada feia.** Cada gráfico ganhou a forma da
+  pergunta: funil centrado, número + faixa + nomes, cartão por canal, placar
+  com anel, ranking com foto, medidor em arco. Tabela em
+  [[graficos-que-decidem]].
+- **Gráfico que consulta o banco tem uma parte `…Visual` só de desenho**,
+  para conferir com dado de exemplo sem login.
+- **Script que corta um arquivo "até o fim da função" perde o que vem
+  depois dela.** Fiz isso com Python e sumiram `iniciais`, `ROTULO` e
+  `Pilula`; o `tsc` pegou. Recortar deve manter o resto do arquivo.
+
+## Lista .txt sem cabeçalho passou a ser lida pela IA (28/09/2026)
+
+Nota: [[lista-de-leads-sem-cabecalho-e-lida-pela-ia]].
+
+- **O leitor de tabela sem cabeçalho errava toda lista solta.** Punha a
+  linha inteira no campo telefone, gravava "visita sábado" como nome,
+  perdia fichas em várias linhas e sumia com quem tinha dois números. E
+  nunca chegava à IA: como achava "algum telefone", o resultado parecia
+  bom.
+- **Agora:** tabela com cabeçalho segue determinística (sem IA). Lista sem
+  cabeçalho vai primeiro ao `chamarLlmJson`, em pedaços de ~2.500
+  caracteres cortados em linha em branco. Se a IA falhar, a escada antiga
+  continua, com aviso.
+- **A IA só preenche o que está no texto:** telefone conferido por dígitos
+  na mesma linha (aceita o `55` acrescentado), cada palavra do nome
+  presente na lista, e-mail escrito na lista. O que não passa não é
+  corrigido nem adivinhado.
+- **`telefoneE164` aqui é SÓ DÍGITOS** (`5511…`), sem `+`. Errei a
+  expectativa no teste.
+- Sem chave da OpenAI no ambiente de desenvolvimento, a prova com o modelo
+  real é importar uma lista em produção.
+
+## A apresentação digital é o link, não a foto (28/09/2026, v40)
+
+Nota: [[apresentacao-digital-e-o-link-da-pagina]].
+
+- **A regra 17 mandava "o link junto com uma ou duas fotos", e o modelo
+  mandava só a foto.** Pedir foto em `anexosMidia` é fácil; copiar o link
+  da ficha é o passo que ele esquecia. Regra com duas metades perde a
+  difícil.
+- **Agora o código garante** (`apresentacaoDigital.ts`, dentro de
+  `sanearRespostaIA`): quando o cliente pede apresentação/material/book, ou
+  a resposta fala em "apresentação", as fotos saem antes de virar anexo e o
+  link da página entra por último, montado pelo slug. Sem saber de qual
+  imóvel é, nada muda.
+- **`sanearRespostaIA` recebe a fala do cliente** (`textoDaVez`) como
+  sexto argumento. É o único jeito de saber se ele PEDIU a apresentação.
+
+## A fila de cadastro virou rascunho pelo site da construtora (0128, 28/09/2026)
+
+Nota: [[fila-de-cadastro-pelo-site-da-construtora]].
+
+- **Os links da fila são do apto.vc, não da construtora.** A construtora
+  está no `__NEXT_DATA__` da página do apto (`companySections`); o site
+  dela sai de uma busca e se lê com `lerPaginaDaConstrutora`.
+- **Agregador e construtora divergem** (Liv Stay: endereço e plantas;
+  Dellagio: entrega). Preço e entrega ficaram vazios; coordenada só onde a
+  rua bate.
+- **Fotos em lote pelo GitHub Actions** (`fotos-da-fila.yml` +
+  `scripts/catalogo/trazerFotos0128.ts`): a chave de serviço está nos
+  secrets do repositório, então o script roda lá, pelo mesmo caminho da aba
+  Importar. Workflow que dispara por `push` com filtro de `paths` é o jeito
+  de acionar: o MCP do GitHub não dispara `workflow_dispatch` (403).
+- **O leitor do site para em 60 imagens**: no NID cortou todas as plantas,
+  que vêm no fim. E `parecePlanta` marcou foto de lazer como planta
+  (Serenne) e "Suíte" como planta (Oásis).
+- **O leitor do site não conhecia tourmkr, Tour Brasil 360 nem Instacasa**, e
+  não lia `<video><source>` (ensinado no mesmo dia: o `.mp4` vem desmarcado
+  e, se escolhido, sobe para o Storage; o tour mostra o `<title>` dele). E a página da construtora pode trazer o tour de
+  OUTRO prédio (Liv Stay mostrava o do Beyond): conferir o `<title>` do tour.
+- **Migration grande pelo MCP**: conferir depois com `md5(descricao)` do
+  banco contra o arquivo, para provar que o texto aplicado é o do repositório.
+- **Mudança no catálogo feita fora do painel (migration, script) só aparece
+  no site depois que o cache vira** (até 1 h, `unstable_cache` com a tag
+  `catalogo`). Página de imóvel recém-publicado responde "não encontrado"
+  nesse intervalo. O `invalidate_by_tags` do MCP da Vercel não alcança esse
+  cache. Salvar qualquer imóvel no painel chama `revalidarCatalogo`.
+
+## O CI ficou vermelho de 13/09 a 28/09 e ninguém viu
+
+Nota: [[ci-vermelho-quinze-dias-pela-catraca-de-bundle]].
+
+- **A Vercel publica sem esperar o CI**, então esteira vermelha não trava
+  nada e ninguém lê. Foi a catraca de peso (`scripts/bundleTeto.mjs`) em
+  todos os pushes por quinze dias. Depois de subir, olhe o CI também.
+- **Para achar o que engordou**: build da última versão verde num worktree
+  (node_modules por `cp -al`; symlink o Turbopack recusa) e diff dos client
+  modules de cada rota no `page_client-reference-manifest.js`.
+- **`next/dynamic` numa página de servidor não sai da primeira carga.** Só
+  `ssr: false` num módulo cliente tira (`components/layout/SobDemanda.tsx`).
+- **Teto = KB impresso + 1**: a tela arredonda, a comparação usa o exato.
+
+## Migration aplicada de branch paralela foi apagada pela outra (28/09/2026)
+
+Nota: [[migration-aplicada-fora-da-branch-e-apagada-pela-outra]].
+
+- **A 0113 do sorteio com corretor preferido foi aplicada no banco a partir
+  de `ingestao-de-midia`**, sem o arquivo chegar à branch de produção. Lá, a
+  0113 virou outra coisa (site da construtora), e a **0117 achou a função no
+  banco, chamou-a de "aplicada fora de qualquer migration" e a apagou**. Em
+  seguida pôs `(p_empreendimento uuid)` com rodízio por imóvel.
+- **No merge, o git acusou 2 arquivos e o conflito real estava em outro
+  lugar**: prefixo 0113 duplicado e `sorteioPreferido.test.ts`, que lê a
+  última definição da função. Renumerar a 0113 não serviria, porque o
+  `create or replace` com outro nome de parâmetro é recusado depois da 0117.
+- **A junção é a 0129**: uma função só, `(p_empreendimento, preferido)`, os
+  dois com default null. Ordem: preferido, rodízio, sorteio. ACL da 0052
+  repetida em `(uuid, uuid)`. **Não aplicada ainda.**
+- **Régua:** aplicar migration no banco é levar o arquivo para a branch de
+  produção no mesmo dia. Migration aplicada só de uma branch paralela vira
+  "objeto sem origem" para as outras sessões, e objeto sem origem é apagado.

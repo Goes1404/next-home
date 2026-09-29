@@ -2,8 +2,9 @@
  * O link porteiro: /wa/<campanha> → WhatsApp do corretor da vez.
  *
  * O anúncio do Meta aponta para um link NOSSO; no clique, o servidor
- * sorteia o corretor (rodízio por carga, `sortear_corretor_whatsapp` no
- * banco — a mesma régua da roleta de leads) e redireciona para o wa.me
+ * sorteia o corretor (`sortear_corretor_whatsapp` no banco: aleatório entre
+ * os conectados, sem repetir quem recebeu o último clique daquele imóvel —
+ * 0117) e redireciona para o wa.me
  * dele com a mensagem pronta da campanha. Cada corretor atende no próprio
  * número — número central único foi descartado pelo usuário (26/08/2026).
  *
@@ -11,6 +12,7 @@
  * campanha), para ser testável sem rede: a rota e o webhook chamam daqui.
  */
 import { clienteTrouxeFraseDeEntrada } from "./modoBot";
+import type { AnuncioMeta } from "./anuncioMeta";
 
 /** Mesma normalização do focoDaConversa: minúsculas e sem acento. */
 function normalizar(texto: string): string {
@@ -130,9 +132,11 @@ export function reconhecerMensagemDeAnuncio(texto: string | null | undefined): s
 
 /** Como reconhecemos que a pessoa está respondendo a uma peça NOSSA. */
 export type ConviteDeEntrada = {
-  via: "mensagem_do_anuncio" | "mensagem_do_site" | "frase_de_entrada";
+  via: "mensagem_do_anuncio" | "mensagem_do_site" | "anuncio_meta" | "frase_de_entrada";
   /** O imóvel citado, quando o texto é o nosso e o traz. */
   imovel: string | null;
+  /** O anúncio impulsionado pelo corretor, quando a Meta o identificou. */
+  anuncio?: AnuncioMeta;
 };
 
 /**
@@ -170,6 +174,8 @@ export type ConviteDeEntrada = {
 export function reconhecerConviteDeEntrada(params: {
   texto: string | null | undefined;
   palavrasEntradaCliente: string | null | undefined;
+  /** Anúncio da Meta reconhecido na mensagem (`reconhecerAnuncioMeta`). */
+  anuncio?: AnuncioMeta | null;
 }): ConviteDeEntrada | null {
   const imovel = reconhecerMensagemDeAnuncio(params.texto);
   if (imovel) return { via: "mensagem_do_anuncio", imovel };
@@ -182,6 +188,10 @@ export function reconhecerConviteDeEntrada(params: {
      */
     return { via: "mensagem_do_site", imovel: null };
   }
+
+  // Impulsionamento do próprio corretor (etiqueta da Meta ou texto padrão
+  // dela). Vem depois do nosso link porque aquele entrega o imóvel exato.
+  if (params.anuncio) return { via: "anuncio_meta", imovel: null, anuncio: params.anuncio };
 
   if (
     params.texto &&

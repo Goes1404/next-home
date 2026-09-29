@@ -1,5 +1,6 @@
 "use client";
 
+import { Wordmark } from "@/components/ui/Wordmark";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -175,7 +176,7 @@ export function MenuMobile({ links }: { links: LinkMenu[] }) {
                   onClick={fechar}
                   className="font-display text-titulo text-lg leading-none font-medium tracking-tight"
                 >
-                  Next<span className="text-acento-forte">Home</span>
+                  <Wordmark destaque="text-acento-forte" />
                 </Link>
                 <button
                   type="button"

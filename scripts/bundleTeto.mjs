@@ -43,16 +43,27 @@ const TETOS_KB = {
   // que o layout RAIZ monta em toda rota — inclusive no painel. Tirar os
   // dois do painel é a F4b.
   "/corretor/(painel)/pessoas/page": 1000,
-  "/corretor/(painel)/conversas/page": 1020,
-  "/corretor/(painel)/imoveis/criar-imagem/page": 1000,
-  "/corretor/(painel)/imoveis/[slug]/importar/page": 1000,
+  // 28/09: +9 KB (conversas) e +16 (importar) vêm de funcionalidades pedidas:
+  // o painel ganhou a transição de tela e a luz dos cartões no LAYOUT (vale
+  // em toda rota do painel), e o importador ganhou tours, vídeo em arquivo e
+  // a leitura do site da construtora.
+  "/corretor/(painel)/conversas/page": 1030,
+  "/corretor/(painel)/imoveis/criar-imagem/page": 1008,
+  "/corretor/(painel)/imoveis/[slug]/importar/page": 1017,
+  // O editor do imóvel mostra na mesma tela as unidades, o andamento da obra
+  // e os leads que combinam (com "reabrir perdidos"): 26/09.
+  "/corretor/(painel)/imoveis/[slug]/page": 826,
   "/corretor/(painel)/marketing/video/page": 1000,
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
-  "/(institucional)/page": 750,
+  // 28/09: +3 KB na home e +7 na listagem são o coração de favorito em cada
+  // cartão (comparar imóveis, 26/09) e, na home, o vídeo de fundo do celular
+  // que voltou a pedido. O aviso de versão nova e a barra de favoritos já
+  // saíram da primeira carga (`components/layout/SobDemanda.tsx`).
+  "/(institucional)/page": 754,
   "/(institucional)/financiamento/page": 750,
   "/(institucional)/regioes/[slug]/page": 740,
-  "/(vitrine)/empreendimentos/page": 730,
+  "/(vitrine)/empreendimentos/page": 738,
   "/(vitrine)/empreendimentos/[slug]/page": 790,
 };
 

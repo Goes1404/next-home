@@ -9,7 +9,7 @@ import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Política de Privacidade",
-  description: "Como a Next Home trata os dados enviados pelo formulário de contato.",
+  description: `Como a ${site.nome} trata os dados enviados pelo formulário de contato.`,
   alternates: { canonical: "/privacidade" },
 };
 

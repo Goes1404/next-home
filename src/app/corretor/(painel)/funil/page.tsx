@@ -5,6 +5,7 @@ import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import { getContagemPorEtapa, getLeadsDoFunil, souGestor } from "@/lib/corretorSessao";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { BotaoVoltarAoTopo } from "@/app/corretor/(painel)/_componentes/BotaoVoltarAoTopo";
+import { PassagemDoFunil } from "@/app/corretor/(painel)/_componentes/graficos/PassagemDoFunil";
 
 export const metadata: Metadata = { title: "Funil" };
 
@@ -59,6 +60,14 @@ export default async function FunilPage({
         contagens={busca ? undefined : contagens}
         mostrarDono={gestor}
       />
+
+      {/* Embaixo do quadro: o quadro é o trabalho, este é o balanço dele. Com
+          busca ativa as contagens não descrevem a tela, então ele some. */}
+      {!busca && (
+        <div className="mt-8">
+          <PassagemDoFunil contagens={contagens} />
+        </div>
+      )}
 
       <BotaoVoltarAoTopo />
     </div>

@@ -54,20 +54,9 @@ export function CabecalhoDeTela({
   abaixo?: React.ReactNode;
 }) {
   return (
-    <section className="border-white/10 bg-vidro-forte shadow-painel relative overflow-hidden rounded-[1.75rem] border p-5 ring-1 ring-white/5 backdrop-blur-xl ring-inset md:p-6">
-      {/* Os dois brilhos de acento que o vidro desfoca, e o fio de luz no topo. */}
-      <div
-        aria-hidden
-        className="from-acento/35 pointer-events-none absolute -top-24 -right-16 h-56 w-56 rounded-full bg-gradient-to-br to-transparent blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="from-acento/15 pointer-events-none absolute -bottom-28 -left-12 h-48 w-48 rounded-full bg-gradient-to-tr to-transparent blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
-      />
+    <section className="cartao-heroi p-5 md:p-6">
+      {/* Os brilhos de acento, o fio de luz e a varredura vêm de `cartao-heroi`
+          (globals.css) — gradientes, não divs desfocados. */}
 
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">

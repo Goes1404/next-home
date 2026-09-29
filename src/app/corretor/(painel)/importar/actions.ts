@@ -5,10 +5,14 @@ import { redirect } from "next/navigation";
 import { getCorretorLogado, souGestor } from "@/lib/corretorSessao";
 import {
   LIMITE_POR_IMPORTACAO,
+  TIPOS_DE_IMAGEM,
+  extrairDeImagem,
   extrairDePdf,
   extrairDeTexto,
+  extrairDeXlsx,
   extrairDeZipWhatsapp,
   type CandidatoLead,
+  type ResultadoExtracao,
 } from "@/lib/leads/importacao";
 import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
 import { createClient } from "@/lib/supabase/server";
@@ -55,7 +59,7 @@ export type ResultadoAnaliseEmail = {
 
 export type ResultadoAnalise = {
   candidatos?: CandidatoRevisado[];
-  metodo?: "tabela" | "texto" | "ia" | "whatsapp";
+  metodo?: Exclude<ResultadoExtracao["metodo"], "nenhum">;
   erro?: string;
   aviso?: string;
 };
@@ -72,7 +76,14 @@ export type EstadoLeadUnico = { erro?: string; ok?: string } | undefined;
 /** 10 MB — acima disso é catálogo, não lista de contatos. */
 const LIMITE_ARQUIVO = 10 * 1024 * 1024;
 
-const TIPOS_TEXTO = ["text/csv", "text/plain", "text/tab-separated-values", "application/csv"];
+const TIPOS_TEXTO = [
+  "text/csv",
+  "text/plain",
+  "text/tab-separated-values",
+  "application/csv",
+  "text/vcard",
+  "text/x-vcard",
+];
 
 /**
  * O `.zip` que o WhatsApp gera chega com um destes três tipos, conforme o
@@ -80,6 +91,20 @@ const TIPOS_TEXTO = ["text/csv", "text/plain", "text/tab-separated-values", "app
  * extensão ao lado.
  */
 const TIPOS_ZIP = ["application/zip", "application/x-zip-compressed", "multipart/x-zip"];
+
+const TIPO_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+const FORMATOS_ACEITOS =
+  "Excel (.xlsx), CSV, PDF, contatos (.vcf), foto ou print, ou a conversa exportada do WhatsApp (.zip ou .txt)";
+
+/** O navegador às vezes manda imagem sem tipo (HEIC do iPhone, sobretudo). */
+function mimeDaImagem(tipo: string, nome: string): string {
+  if (tipo.startsWith("image/")) return tipo;
+  if (/\.png$/.test(nome)) return "image/png";
+  if (/\.webp$/.test(nome)) return "image/webp";
+  if (/\.hei[cf]$/.test(nome)) return "image/heic";
+  return "image/jpeg";
+}
 
 /**
  * Server Action é POST na rota, não navegação: o `proxy.ts` não cobre isto.
@@ -136,14 +161,18 @@ async function marcarExistentes(
 }
 
 export async function analisarTexto(conteudo: string): Promise<ResultadoAnalise> {
-  const { supabase } = await exigirCorretor();
+  const { supabase, corretor } = await exigirCorretor();
 
   if (!conteudo?.trim()) return { erro: "Cole a lista de contatos antes de continuar." };
   if (conteudo.length > 200_000) {
     return { erro: "Texto grande demais. Divida em partes menores ou envie um arquivo." };
   }
 
-  const resultado = await extrairDeTexto(conteudo);
+  // Conversa do WhatsApp colada na caixa também chega aqui, e a fala de quem
+  // colou não pode virar lead.
+  const resultado = await extrairDeTexto(conteudo, {
+    dono: { nome: corretor.nome, telefone: corretor.whatsapp },
+  });
   if (resultado.candidatos.length === 0) {
     return { erro: resultado.aviso ?? "Nenhum contato com telefone foi encontrado." };
   }
@@ -171,37 +200,44 @@ export async function analisarArquivo(formData: FormData): Promise<ResultadoAnal
   }
 
   const nome = arquivo.name.toLowerCase();
+  const dono = { nome: corretor.nome, telefone: corretor.whatsapp };
+  const bytes = async () => Buffer.from(await arquivo.arrayBuffer());
+
   const ehPdf = arquivo.type === "application/pdf" || nome.endsWith(".pdf");
-  const ehZip = TIPOS_ZIP.includes(arquivo.type) || nome.endsWith(".zip");
+  const ehXlsx = nome.endsWith(".xlsx") || arquivo.type === TIPO_XLSX;
+  const ehZip = !ehXlsx && (TIPOS_ZIP.includes(arquivo.type) || nome.endsWith(".zip"));
+  const ehImagem =
+    TIPOS_DE_IMAGEM.includes(arquivo.type) || /\.(jpe?g|png|webp|heic|heif)$/.test(nome);
   const ehTexto =
     TIPOS_TEXTO.includes(arquivo.type) ||
-    [".csv", ".tsv", ".txt"].some((ext) => nome.endsWith(ext));
+    [".csv", ".tsv", ".txt", ".vcf"].some((ext) => nome.endsWith(ext));
 
-  if (nome.endsWith(".xlsx") || nome.endsWith(".xls")) {
+  if (nome.endsWith(".xls")) {
     return {
       erro:
-        "Planilha do Excel ainda não é lida direto. No Excel, use Salvar como → CSV e envie o arquivo gerado.",
+        "Este é o formato antigo do Excel (.xls). No Excel, use Salvar como → Pasta de Trabalho do Excel (.xlsx) ou CSV e envie o arquivo gerado.",
     };
   }
 
-  if (!ehPdf && !ehZip && !ehTexto) {
-    return { erro: "Formato não suportado. Envie PDF, CSV, TSV, TXT ou o .zip da conversa do WhatsApp." };
+  if (!ehPdf && !ehXlsx && !ehZip && !ehImagem && !ehTexto) {
+    return { erro: `Formato não suportado. Envie ${FORMATOS_ACEITOS}.` };
   }
 
+  /*
+   * Quem exportou é o dono do aparelho, e a fala dele não pode virar lead.
+   * O nome do arquivo já resolve isso numa conversa de duas pessoas; em
+   * GRUPO, o único jeito é o cadastro do corretor da sessão — e é por isso
+   * que ele viaja daqui, inclusive para o `.txt` solto do Android.
+   */
   const resultado = ehPdf
-    ? await extrairDePdf(Buffer.from(await arquivo.arrayBuffer()))
-    : ehZip
-      ? /*
-         * Quem exportou é o dono do aparelho, e a fala dele não pode virar
-         * lead. O nome do arquivo já resolve isso numa conversa de duas
-         * pessoas; em GRUPO, o único jeito é o cadastro do corretor da
-         * sessão — e é por isso que ele viaja daqui.
-         */
-        await extrairDeZipWhatsapp(Buffer.from(await arquivo.arrayBuffer()), {
-          nome: corretor.nome,
-          telefone: corretor.whatsapp,
-        })
-      : await extrairDeTexto(await arquivo.text());
+    ? await extrairDePdf(await bytes())
+    : ehXlsx
+      ? await extrairDeXlsx(await bytes())
+      : ehZip
+        ? await extrairDeZipWhatsapp(await bytes(), dono)
+        : ehImagem
+          ? await extrairDeImagem(await bytes(), mimeDaImagem(arquivo.type, nome))
+          : await extrairDeTexto(await arquivo.text(), { nomeDoArquivo: arquivo.name, dono });
 
   if (resultado.candidatos.length === 0) {
     return { erro: resultado.aviso ?? "Nenhum contato com telefone foi encontrado no arquivo." };

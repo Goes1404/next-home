@@ -28,7 +28,7 @@ export function ganchosDoDossie(
 }
 
 export function instrucaoDoFollowup(params: {
-  tipo: "reengajamento" | "lembrete_visita";
+  tipo: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao";
   tentativa: number;
   dossie?: Pick<DossieClienteIA, "regiaoInteresse" | "dormitoriosMin"> | null;
   /** Data/hora da visita, já formatada em São Paulo (só para lembrete). */
@@ -55,6 +55,37 @@ export function instrucaoDoFollowup(params: {
    */
   clienteNuncaFalou?: boolean;
 }): string {
+  if (params.tipo === "indicacao") {
+    /*
+     * Pedido de indicação depois do fechamento (0123). É o momento em que o
+     * cliente está mais satisfeito e ainda lembra de quem ajudou. Uma
+     * mensagem, um pedido, nenhuma venda para ele.
+     */
+    return (
+      `Este é o PEDIDO DE INDICAÇÃO: o cliente fechou negócio${params.nomeDoImovel ? ` no ${params.nomeDoImovel}` : ""} ` +
+      "há alguns dias. Mande UMA mensagem curta: agradeça a confiança, pergunte como ele está com a conquista " +
+      "e peça, sem pressão, se conhece alguém que também esteja procurando imóvel — o corretor atende com o " +
+      "mesmo cuidado. NÃO ofereça imóveis a ele, NÃO fale valores."
+    );
+  }
+
+  if (params.tipo === "pos_visita") {
+    /*
+     * O dia seguinte à visita é quando o cliente decide — e até aqui nada
+     * acontecia sozinho depois dela. A pergunta é UMA e aberta: o que ele
+     * achou. Sem reoferta, sem pressão para fechar e sem valor: a resposta
+     * dele é o que diz ao corretor qual é o próximo passo.
+     */
+    return (
+      `Este é o PÓS-VISITA: o cliente visitou${params.nomeDoImovel ? ` o ${params.nomeDoImovel}` : " o imóvel"} ` +
+      `${params.visitaFormatada ? `(${params.visitaFormatada}) ` : ""}` +
+      "e ainda não comentou nada. Mande UMA mensagem curta agradecendo a visita e perguntando o que ele achou — " +
+      "de forma aberta, sem sugerir a resposta. " +
+      "NÃO ofereça outros imóveis, NÃO fale de valores e NÃO pressione para fechar: " +
+      "o que ele responder é o que decide o próximo passo."
+    );
+  }
+
   if (params.tipo === "lembrete_visita") {
     /*
      * O ENDEREÇO vem daqui, do cadastro — nunca da cabeça do modelo.
@@ -140,4 +171,116 @@ export function formatarVisitaSP(iso: string): string {
     minute: "2-digit",
   }).format(d);
   return `${dia}, às ${hora}`;
+}
+
+/** Até quando a resposta do cliente ainda conta como resposta ao pós-visita. */
+export const JANELA_RESPOSTA_POS_VISITA_H = 72;
+
+/**
+ * A mensagem que o cliente mandou agora responde ao pós-visita? (0121)
+ *
+ * Sim quando o pós-visita saiu há menos de 72h e foi a ÚLTIMA palavra nossa
+ * na conversa: se a IA ou o corretor falaram depois, a conversa já andou e
+ * o próximo passo é outro. Dois minutos de folga porque a própria mensagem
+ * do pós-visita é gravada logo depois do envio.
+ */
+export function respondeAoPosVisita(
+  enviadoEm: string | null | undefined,
+  historico: ReadonlyArray<{ remetente: string; em?: string | null }>,
+  agora = new Date(),
+): boolean {
+  return respondeAoFollowup(enviadoEm, historico, JANELA_RESPOSTA_POS_VISITA_H, agora);
+}
+
+/**
+ * O que fazer com a resposta ao pós-visita. Gostou → o passo seguinte é
+ * concreto (simulação ou proposta, que o corretor conduz). Não gostou → o
+ * que não agradou, e UMA alternativa que resolva exatamente isso. Em
+ * dúvida → uma pergunta para entender. A decisão de mover o lead no funil
+ * continua do corretor.
+ */
+export function instrucaoDaRespostaAoPosVisita(): string {
+  return (
+    "O cliente está RESPONDENDO ao pós-visita (você perguntou o que ele achou do imóvel visitado). " +
+    "Leia a resposta e siga UM caminho: " +
+    "(1) se ele gostou, agradeça em uma frase e proponha o passo seguinte concreto — " +
+    "fazer a simulação do financiamento com ele ou o corretor preparar uma proposta — perguntando qual prefere; " +
+    "(2) se não gostou, pergunte o que não agradou (se ele não disse) ou, se já disse, " +
+    "ofereça UMA alternativa do catálogo que resolva exatamente isso; " +
+    "(3) se ficou em dúvida, pergunte o que falta para decidir. " +
+    "NÃO fale valores, NÃO pressione e NÃO volte a perguntar região ou tipologia: a visita já aconteceu."
+  );
+}
+
+/** Até quando a resposta ainda conta como resposta ao lembrete da véspera. */
+export const JANELA_RESPOSTA_LEMBRETE_H = 30;
+
+/**
+ * Responde a um follow-up nosso? Mesma régua do pós-visita, com a janela de
+ * cada tipo: o follow-up foi a última palavra nossa e saiu há pouco.
+ */
+export function respondeAoFollowup(
+  enviadoEm: string | null | undefined,
+  historico: ReadonlyArray<{ remetente: string; em?: string | null }>,
+  janelaH: number,
+  agora = new Date(),
+): boolean {
+  if (!enviadoEm) return false;
+  const enviado = new Date(enviadoEm).getTime();
+  if (Number.isNaN(enviado) || agora.getTime() - enviado > janelaH * 3_600_000) return false;
+  const ultima = historico.filter((f) => f.remetente !== "cliente" && f.em).at(-1);
+  return !ultima?.em || new Date(ultima.em).getTime() <= enviado + 120_000;
+}
+
+export type LeituraDoLembrete = "confirmou" | "remarcar" | null;
+
+/**
+ * "Confirmo", "tudo certo", "estarei lá" contra "não vou conseguir",
+ * "podemos remarcar". A negação vence: "não posso" contém "posso". Em
+ * dúvida, `null` — o corretor lê a conversa; confirmação inventada leva
+ * alguém a esperar no decorado por quem não vem.
+ */
+export function lerRespostaAoLembrete(texto: string): LeituraDoLembrete {
+  const t = texto
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+  if (
+    /\b(remarcar|reagendar|adiar|desmarcar|cancelar|outro dia|outro horario)\b/.test(t) ||
+    /\bnao (vou|vai|consigo|posso|da|vamos|poderei)\b/.test(t)
+  ) {
+    return "remarcar";
+  }
+  if (
+    /\b(confirmad[oa]|confirmo|confirmado|combinado|estarei|estaremos|vou sim|vamos sim|tudo certo|certinho|pode deixar|ok|sim)\b/.test(t) ||
+    /👍|✅/.test(texto)
+  ) {
+    return "confirmou";
+  }
+  return null;
+}
+
+export function instrucaoDaRespostaAoLembrete(leitura: Exclude<LeituraDoLembrete, null>): string {
+  if (leitura === "confirmou") {
+    return (
+      "O cliente CONFIRMOU a visita respondendo ao lembrete. Agradeça em UMA frase curta e diga que o corretor " +
+      "o espera. NÃO ofereça outra coisa, NÃO pergunte nada de qualificação."
+    );
+  }
+  return (
+    "O cliente quer REMARCAR a visita. Sem pressão: ofereça dois horários da lista de horários reais e deixe ele " +
+    "escolher. Só dê a visita como remarcada depois que ele escolher um horário. NÃO fale valores."
+  );
+}
+
+/** Até quando a resposta ainda conta como resposta ao pedido de indicação. */
+export const JANELA_RESPOSTA_INDICACAO_H = 96;
+
+export function instrucaoDaRespostaAIndicacao(): string {
+  return (
+    "O cliente está respondendo ao seu PEDIDO DE INDICAÇÃO. Se ele indicou alguém, agradeça de verdade e, " +
+    "se faltar, peça o nome e o WhatsApp da pessoa; diga que o corretor vai falar com ela com cuidado, " +
+    "citando quem indicou. Se ele disse que não tem ninguém agora, agradeça em uma frase e NÃO insista. " +
+    "NÃO ofereça imóveis a ele."
+  );
 }

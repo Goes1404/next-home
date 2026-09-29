@@ -6,6 +6,7 @@ import { FiltroSheet } from "@/components/busca/FiltroSheet";
 import { FiltrosAtivos } from "@/components/busca/FiltrosAtivos";
 import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimento";
 import { CtaFinal } from "@/components/home/CtaFinal";
+import { AvisemeQuandoSurgir } from "@/components/busca/AvisemeQuandoSurgir";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { VoltarLink } from "@/components/ui/VoltarLink";
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
     "Apartamentos na planta, prontos para morar e casas em condomínio em Alphaville, Barueri e região. Fotos, plantas e condições de pagamento.",
   alternates: { canonical: "/empreendimentos" },
   openGraph: {
-    title: "Empreendimentos e Oportunidades em Alphaville e Região | Next Home",
+    title: `Empreendimentos e Oportunidades em Alphaville e Região | ${site.nome}`,
     description: `Catálogo completo de lançamentos e oportunidades selecionadas em Alphaville e região.`,
     url: `${site.url}/empreendimentos`,
   },
@@ -195,6 +196,13 @@ export default async function EmpreendimentosPage({
             })}
           </div>
         )}
+
+        <AvisemeQuandoSurgir
+          regiao={filtros.bairro ?? filtros.cidade}
+          dormitoriosMin={filtros.dormitoriosMin}
+          precoMax={filtros.precoMax}
+          poucosResultados={empreendimentos.length < 3}
+        />
 
         {/* CTA para o corretor no fim da lista: quem rolou 25 cartões e não
             clicou em nenhum precisa de uma saída que não seja o topo. */}

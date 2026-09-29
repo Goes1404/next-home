@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import { aberturasDoJson, EXEMPLOS_VENCEDORES, promptDeAberturas } from "@/lib/marketing/aberturaSugerida";
 import { getCorretorLogado, getMeusLeads } from "@/lib/corretorSessao";
 import { elegivel, type FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
-import { resultadoAB, type ResultadoAB } from "@/lib/whatsapp/testeAB";
+import { placarDaFila, resultadoAB, type ResultadoAB } from "@/lib/whatsapp/testeAB";
 import { createClient } from "@/lib/supabase/server";
 import type { EtapaFunil } from "@/lib/types";
 import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
@@ -68,7 +70,7 @@ async function idsProtegidosDeNovaCampanha(corretorId: string): Promise<Set<stri
   return new Set((itens ?? []).flatMap((item) => (item.lead_id ? [item.lead_id] : [])));
 }
 
-async function publicoComProtecao(filtro: FiltroLeadsCampanha): Promise<{
+async function publicoComProtecao(filtro: FiltroLeadsCampanha, imovelSlug?: string | null): Promise<{
   elegiveis: LeadElegivel[];
   protegidos: number;
 }> {
@@ -76,7 +78,7 @@ async function publicoComProtecao(filtro: FiltroLeadsCampanha): Promise<{
   if (!corretor) return { elegiveis: [], protegidos: 0 };
 
   const leads = await getMeusLeads();
-  const base = leads.filter((lead) => elegivel(lead, filtro));
+  const base = leads.filter((lead) => elegivel(lead, filtro, { imovelSlug }));
   const protegidos = await idsProtegidosDeNovaCampanha(corretor.id);
   return {
     elegiveis: base
@@ -94,15 +96,17 @@ async function publicoComProtecao(filtro: FiltroLeadsCampanha): Promise<{
 /** `getMeusLeads` já vem filtrado por RLS (0007) — aqui só decide QUAIS desses entram na campanha. */
 export async function listarLeadsElegiveis(
   filtro: FiltroLeadsCampanha,
+  imovelSlug?: string | null,
 ): Promise<LeadElegivel[]> {
-  return (await publicoComProtecao(filtro)).elegiveis;
+  return (await publicoComProtecao(filtro, imovelSlug)).elegiveis;
 }
 
 /** Contagem informativa; criar a campanha refaz a mesma proteção no servidor. */
 export async function preverPublicoCampanha(
   filtro: FiltroLeadsCampanha,
+  imovelSlug?: string | null,
 ): Promise<PreviaPublicoCampanha> {
-  const publico = await publicoComProtecao(filtro);
+  const publico = await publicoComProtecao(filtro, imovelSlug);
   return { total: publico.elegiveis.length, protegidos: publico.protegidos };
 }
 
@@ -129,6 +133,8 @@ export async function gerarPreviewCampanha(params: {
   mensagemBase: string;
   /** Só para `filtro: "selecionados"` — os leads escolhidos um a um. */
   leadIds?: string[];
+  /** Só para `filtro: "compradores"`. */
+  imovelSlug?: string | null;
 }): Promise<{ mensagens: string[] } | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
@@ -137,7 +143,7 @@ export async function gerarPreviewCampanha(params: {
 
   let elegiveis: LeadElegivel[];
   try {
-    elegiveis = await listarLeadsElegiveis(params.filtro);
+    elegiveis = await listarLeadsElegiveis(params.filtro, params.imovelSlug ?? null);
   } catch {
     return { erro: "Não foi possível conferir os contatos recentes agora." };
   }
@@ -159,6 +165,53 @@ export async function gerarPreviewCampanha(params: {
   });
 
   return { mensagens: fila.map((item) => item.mensagemPersonalizada) };
+}
+
+/**
+ * Duas aberturas para o teste A/B, escritas pela IA na régua medida da
+ * casa (`aberturaSugerida.ts`). Reprovada na validação, devolve erro — a
+ * tela mantém o que o corretor já escreveu. Não consome cota nem dispara.
+ */
+export async function sugerirAberturas(params: {
+  imovel: string;
+  bairro?: string | null;
+  cidade?: string | null;
+  estagio?: string | null;
+  publico: string;
+}): Promise<{ a: string; b: string } | { erro: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+
+  // As aberturas que já venceram um A/B deste corretor viram exemplo.
+  const supabase = await createClient();
+  const { data: decididas } = await supabase
+    .from("whatsapp_campanhas")
+    .select("mensagem_base, mensagem_base_b, variante_vencedora")
+    .eq("corretor_id", corretor.id)
+    .not("variante_vencedora", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(EXEMPLOS_VENCEDORES);
+  const vencedoras = (decididas ?? [])
+    .map((c) => (c.variante_vencedora === "B" ? c.mensagem_base_b : c.mensagem_base))
+    .filter((t): t is string => Boolean(t));
+
+  const prompt = promptDeAberturas(
+    {
+      imovel: String(params.imovel ?? ""),
+      bairro: params.bairro ?? null,
+      cidade: params.cidade ?? null,
+      estagio: params.estagio ?? null,
+      publico: String(params.publico ?? ""),
+    },
+    vencedoras,
+  );
+  for (let tentativa = 0; tentativa < 2; tentativa++) {
+    const r = await chamarLlmJson(prompt, { temperature: 0.9, orcamentoMs: 15_000 });
+    if (!r.ok) return { erro: "A IA não respondeu agora. Tente de novo em instantes." };
+    const par = aberturasDoJson(r.json);
+    if (par) return par;
+  }
+  return { erro: "A IA sugeriu algo fora da régua (longo, sem pergunta ou com valor). Tente de novo." };
 }
 
 export type ResultadoCriarCampanha =
@@ -216,9 +269,22 @@ export async function criarCampanha(params: {
     };
   }
 
+  // Compradores só existem em relação a UM imóvel: o slug sai do id da campanha.
+  let imovelSlug: string | null = null;
+  if (params.filtro === "compradores") {
+    if (!params.empreendimentoId) return { erro: "Escolha o imóvel dos compradores." };
+    const { data: e } = await (await createClient())
+      .from("empreendimentos")
+      .select("slug")
+      .eq("id", params.empreendimentoId)
+      .maybeSingle();
+    imovelSlug = e?.slug ?? null;
+    if (!imovelSlug) return { erro: "Imóvel não encontrado." };
+  }
+
   let elegiveis: LeadElegivel[];
   try {
-    elegiveis = await listarLeadsElegiveis(params.filtro);
+    elegiveis = await listarLeadsElegiveis(params.filtro, imovelSlug);
   } catch {
     // Falha fechada: sem provar quem recebeu campanha recentemente, ninguém
     // entra na fila. Repetir propaganda é pior do que pedir nova tentativa.
@@ -303,6 +369,8 @@ export async function criarCampanha(params: {
 export type CampanhaListada = {
   /** Placar do teste A/B, ou null quando a campanha tem uma versão só (0084). */
   testeAB: ResultadoAB | null;
+  /** Versão que o disparador passou a usar no resto da fila (0121). */
+  vencedora: "A" | "B" | null;
   id: string;
   titulo: string;
   empreendimentoNome: string | null;
@@ -325,7 +393,7 @@ export async function listarCampanhas(): Promise<CampanhaListada[]> {
   const { data } = await supabase
     .from("whatsapp_campanhas")
     .select(
-      "id, titulo, total_leads, total_enviados, total_respondidos, status, created_at, mensagem_base_b, empreendimento:empreendimentos(nome)",
+      "id, titulo, total_leads, total_enviados, total_respondidos, status, created_at, mensagem_base_b, variante_vencedora, empreendimento:empreendimentos(nome)",
     )
     .eq("corretor_id", corretor.id)
     .order("created_at", { ascending: false })
@@ -348,25 +416,18 @@ export async function listarCampanhas(): Promise<CampanhaListada[]> {
       .in("campanha_id", comTeste)
       .not("variante", "is", null);
 
+    const porCampanha = new Map<string, Array<{ variante: string | null; status: string }>>();
     for (const item of itens ?? []) {
-      const atual = placar.get(item.campanha_id) ?? {
-        a: { enviados: 0, respostas: 0 },
-        b: { enviados: 0, respostas: 0 },
-      };
-      const lado = item.variante === "B" ? atual.b : atual.a;
-
-      // "respondido" também já saiu — senão a taxa passaria de 100%.
-      if (item.status === "enviado" || item.status === "respondido") lado.enviados++;
-      if (item.status === "respondido") lado.respostas++;
-
-      placar.set(item.campanha_id, atual);
+      porCampanha.set(item.campanha_id, [...(porCampanha.get(item.campanha_id) ?? []), item]);
     }
+    for (const [id, lista] of porCampanha) placar.set(id, placarDaFila(lista));
   }
 
   return (data ?? []).map((c) => ({
     id: c.id,
     titulo: c.titulo,
     testeAB: placar.has(c.id) ? resultadoAB(placar.get(c.id)!) : null,
+    vencedora: c.variante_vencedora,
     empreendimentoNome: (c.empreendimento as { nome: string } | null)?.nome ?? null,
     totalLeads: c.total_leads,
     totalEnviados: c.total_enviados,

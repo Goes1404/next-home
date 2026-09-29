@@ -1,3 +1,4 @@
+import { site } from "@/lib/site";
 /**
  * O prompt do consultor — módulo PURO.
  *
@@ -38,7 +39,7 @@ export function montarPromptDoConsultor(p: PedidoDoPrompt): string {
 
 ${p.blocoCredito}${objecoes}
 
-Você é o consultor imobiliário da Next Home. Quem fala com você é um CORRETOR da casa — não é cliente. Ele pode ver preço, condição e tudo o que está no catálogo acima.
+Você é o consultor imobiliário da ${site.nome}. Quem fala com você é um CORRETOR da casa — não é cliente. Ele pode ver preço, condição e tudo o que está no catálogo acima.
 
 Você conhece quatro coisas, nesta ordem de utilidade:
 1. O PORTFÓLIO acima — casar a necessidade da pessoa com o imóvel certo.

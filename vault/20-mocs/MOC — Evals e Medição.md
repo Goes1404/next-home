@@ -4,7 +4,7 @@ tags: [moc, eval]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-10
 summary: Evals de resposta e conversa, juízes, benchmarks, rótulos, e as lições de medição.
 ---
 # Evals e Medição — Map of Content

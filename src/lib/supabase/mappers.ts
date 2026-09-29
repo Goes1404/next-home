@@ -1,3 +1,4 @@
+import { site } from "@/lib/site";
 import type { Empreendimento, Midia, Tipologia } from "@/lib/types";
 import type { Tables } from "./types";
 
@@ -11,10 +12,35 @@ export type LinhaEmpreendimento = Tables<"empreendimentos"> & {
   tipologias: Tables<"tipologias">[];
   midias: Tables<"midias">[];
   lazer: Array<{ lazer_itens: Tables<"lazer_itens"> | null }>;
+  /** Opcional: nem todo select embute (e a vitrine só enxerga as disponíveis). */
+  unidades?: Array<{ tipologia_id: string | null; status: string }>;
 };
 
-function mapTipologia(t: Tables<"tipologias">): Tipologia {
+/**
+ * Unidades disponíveis de uma planta (26/09/2026).
+ *
+ * Quando a planta tem unidade cadastrada na lista (`unidades`, 0118), o
+ * número sai DELA — contar à mão e cadastrar a lista seriam duas fontes do
+ * mesmo número. Sem unidade ligada, vale o contador antigo da planta.
+ * A vitrine (anon) só enxerga as `disponivel`, então planta esgotada cai no
+ * contador antigo, que é nulo: o site simplesmente não mostra selo.
+ */
+export function unidadesDaPlanta(
+  tipologiaId: string,
+  unidades: Array<{ tipologia_id: string | null; status: string }> | undefined,
+  contadorManual: number | null,
+): number | null {
+  const daPlanta = (unidades ?? []).filter((u) => u.tipologia_id === tipologiaId);
+  if (daPlanta.length === 0) return contadorManual;
+  return daPlanta.filter((u) => u.status === "disponivel").length;
+}
+
+function mapTipologia(
+  t: Tables<"tipologias">,
+  unidades?: Array<{ tipologia_id: string | null; status: string }>,
+): Tipologia {
   return {
+    id: t.id,
     nome: t.nome,
     areaPrivativa: t.area_privativa,
     dormitorios: t.dormitorios,
@@ -23,7 +49,7 @@ function mapTipologia(t: Tables<"tipologias">): Tipologia {
     vagas: t.vagas,
     preco: t.preco,
     plantaUrl: t.planta_url,
-    unidadesDisponiveis: t.unidades_disponiveis,
+    unidadesDisponiveis: unidadesDaPlanta(t.id, unidades, t.unidades_disponiveis),
   };
 }
 
@@ -41,7 +67,7 @@ function mapMidia(m: Tables<"midias">): Midia {
 
 /** Placeholder até haver um corretor cadastrado — evita a UI quebrar por dado ausente. */
 const CORRETOR_INDEFINIDO = {
-  nome: "Equipe Next Home",
+  nome: `Equipe ${site.nome}`,
   creci: "044589-J",
   whatsapp: "5511972207204",
   fotoUrl: null,
@@ -101,7 +127,7 @@ export function mapEmpreendimento(row: LinhaEmpreendimento): Empreendimento {
     plantas: midias.filter((m) => m.tipo === "planta"),
     videos: midias.filter((m) => m.tipo === "video"),
     tours360: midias.filter((m) => m.tipo === "tour360"),
-    tipologias: [...row.tipologias].sort((a, b) => a.ordem - b.ordem).map(mapTipologia),
+    tipologias: [...row.tipologias].sort((a, b) => a.ordem - b.ordem).map((t) => mapTipologia(t, row.unidades)),
     lazer: row.lazer.map((l) => l.lazer_itens?.nome).filter((n): n is string => !!n),
     corretor: row.corretor
       ? {

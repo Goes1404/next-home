@@ -35,12 +35,9 @@ function ultimaDefinicaoDe(nome: string): string {
   let ultima = "";
   for (const arquivo of arquivos) {
     const sql = readFileSync(join(DIR, arquivo), "utf8");
-    // A âncora inclui "create or replace" de propósito: `function
-    // public.${nome}(` sozinho também casa dentro de `revoke execute on
-    // function ...` e `grant execute on function ...` — e a 0113 passou a
-    // fechar a ACL de `sortear_corretor_whatsapp` na MESMA migration que a
-    // define. Sem a âncora mais específica, o `lastIndexOf` apontaria para
-    // a última linha de `grant`, perdendo o corpo da função inteiro.
+    // Ancorado em `create or replace`: `grant execute on function public.x(`
+    // e `drop function if exists public.x(` também contêm o nome, e vêm
+    // DEPOIS da definição na mesma migration.
     const i = sql.toLowerCase().lastIndexOf(`create or replace function public.${nome}(`);
     if (i === -1) continue;
     // Do início da função até o fim do corpo: `$function$;` ou `$$;`.
@@ -114,27 +111,47 @@ describe("a roleta distribui para quem consegue atender", () => {
 });
 
 /*
- * O porteiro `/wa/<campanha>` — o destino do anúncio Click-to-WhatsApp — usa
- * `sortear_corretor_whatsapp`, que é OUTRA função. O comentário da rota diz
- * "a mesma régua da roleta de leads", e é justamente essa promessa que
- * envelhece calada: a 0093 mudou a conta de carga de um lado só, e por
- * algumas horas as duas divergiram. Aqui o clique já foi PAGO.
+ * Sem "especialista do imóvel" (0117, decisão de produto): quem já vendeu o
+ * imóvel não ganha preferência nenhuma. A 0115 descontava 5 leads de carga
+ * por venda; se voltar, todo corretor deixa de concorrer igual.
  */
-describe("o porteiro do anúncio conta carga igual à roleta", () => {
+describe("a roleta não prefere quem já vendeu o imóvel", () => {
+  const corpo = ultimaDefinicaoDe("distribuir_lead").replace(/--.*$/gm, "");
+
+  it("não consulta vendas", () => {
+    expect(
+      /venda_participantes|from\s+vendas\b/.test(corpo),
+      "A roleta voltou a olhar vendas — é o bônus de especialista que a 0117 tirou.",
+    ).toBe(false);
+  });
+});
+
+/*
+ * O porteiro `/wa/<campanha>` — o destino do anúncio Click-to-WhatsApp — usa
+ * `sortear_corretor_whatsapp`, que é OUTRA função. Desde a 0117 ela NÃO segue
+ * a régua de carga da roleta de leads: sorteia entre os conectados e manda
+ * para o fim quem recebeu o último clique daquele imóvel (decisão de
+ * produto, 26/09/2026).
+ */
+describe("o porteiro do anúncio é rotativo e aleatório por produto", () => {
   const corpo = ultimaDefinicaoDe("sortear_corretor_whatsapp");
 
   it("a função existe nas migrations", () => {
     expect(corpo).not.toBe("");
   });
 
-  it("usa a mesma conta de carga da roleta de leads", () => {
+  it("sorteia por produto e não repete quem recebeu o último clique dele", () => {
+    const semComentario = corpo.replace(/--.*$/gm, "");
+    expect(semComentario.includes("random()"), "O porteiro deixou de sortear.").toBe(true);
     expect(
-      /l\.arquivado_em\s+is\s+null/.test(corpo) &&
-        /l\.etapa\s+not\s+in\s*\(\s*'perdido'\s*,\s*'fechado'\s*\)/.test(corpo),
-      "A carga do porteiro divergiu da roleta de leads. Duas contas de " +
-        "'quem recebe o próximo' divergem, e esta decide para quem vai o " +
-        "clique pago do anúncio.",
+      /k\.empreendimento_id\s*=\s*p_empreendimento/.test(semComentario) &&
+        /order\s+by\s+k\.created_at\s+desc/.test(semComentario),
+      "O rodízio por produto sumiu: o mesmo corretor pode receber cliques seguidos do mesmo imóvel.",
     ).toBe(true);
+    expect(
+      /from\s+leads\b/.test(semComentario) || /venda_participantes/.test(semComentario),
+      "O porteiro voltou a escolher por carga ou por venda — a regra é sorteio.",
+    ).toBe(false);
   });
 
   it("continua EXIGINDO WhatsApp conectado — aqui é filtro, não preferência", () => {

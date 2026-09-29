@@ -66,6 +66,8 @@ describe("os três caminhos de iniciativa olham o não-perturbe", () => {
     "src/app/api/cron/followups/route.ts",
     // Abertura por iniciativa da IA, pelo painel.
     "src/app/corretor/(painel)/conversas/acoesIA.ts",
+    // Primeiro contato automático com lead de portal (26/09/2026).
+    "src/lib/whatsapp/aberturaPelaIA.ts",
   ];
 
   it.each(CAMINHOS)("%s lê nao_contatar_em / naoContatarEm", (arquivo) => {

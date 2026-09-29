@@ -1,5 +1,6 @@
 "use client";
 
+import { site } from "@/lib/site";
 import { useState } from "react";
 import { Bot, BellOff, Moon, Timer } from "lucide-react";
 import { EXPEDIENTE, MINUTOS_COPILOTO, listarPalavrasChave } from "@/lib/whatsapp/modoBot";
@@ -73,7 +74,7 @@ export function ConfiguracaoIA({
   aoMudarNome?: (nome: string) => void;
 }) {
   const [modoBot, setModoBot] = useState<ModoBotWhatsapp>(inicial?.modoBot ?? "24_7");
-  const [nomeAssistente, setNomeAssistente] = useState(inicial?.nomeAssistente ?? "Sofia");
+  const [nomeAssistente, setNomeAssistente] = useState(inicial?.nomeAssistente ?? site.assistente);
   const [tomVoz, setTomVoz] = useState<TomVozBot>(inicial?.tomVoz ?? "consultivo_alto_padrao");
   const [palavraChaveAtivacao, setPalavraChaveAtivacao] = useState(
     inicial?.palavraChaveAtivacao ?? "",
@@ -96,7 +97,7 @@ export function ConfiguracaoIA({
     inicial?.palavraChaveAtivacao ||
       inicial?.palavraChaveTeste ||
       inicial?.palavrasEntradaCliente ||
-      (inicial?.nomeAssistente && inicial.nomeAssistente !== "Sofia"),
+      (inicial?.nomeAssistente && inicial.nomeAssistente !== site.assistente),
   );
   const [mostrarAvancado, setMostrarAvancado] = useState(temAvancado);
 

@@ -1,3 +1,4 @@
+import { site } from "@/lib/site";
 /**
  * O relatório semanal do gestor (roadmap geral, H4).
  *
@@ -153,8 +154,8 @@ export function acharNoticias(n: NumerosDaSemana): Achado[] {
  */
 export function assuntoDoRelatorio(achados: readonly Achado[]): string {
   const pior = achados[0];
-  if (!pior || pior.gravidade === "ok") return "Next Home · a semana correu bem";
-  return `Next Home · ${pior.titulo}`;
+  if (!pior || pior.gravidade === "ok") return `${site.nome} · a semana correu bem`;
+  return `${site.nome} · ${pior.titulo}`;
 }
 
 export function corpoDoRelatorio(params: {

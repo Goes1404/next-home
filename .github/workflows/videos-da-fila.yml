@@ -1,0 +1,42 @@
+# Vídeos e tours dos rascunhos da 0128 (ver scripts/catalogo/trazerVideos0128.ts).
+#
+# Roda aqui porque escrever no Storage exige a chave de serviço, que mora nos
+# secrets do repositório (as mesmas do worker de vídeo). O script é
+# idempotente: o índice de hash (ou a URL) recusa repetição, então rodar
+# de novo não duplica nada, e imóvel já publicado é pulado.
+#
+# Dispara quando a seleção muda na branch de produção, ou à mão.
+
+name: Vídeos da fila de cadastro
+
+on:
+  push:
+    branches: ["claude/modernizar-plataforma-imobiliaria-2tm13q"]
+    paths:
+      - "scripts/catalogo/videos-0128.json"
+      - "scripts/catalogo/trazerVideos0128.ts"
+  workflow_dispatch:
+
+concurrency:
+  group: videos-da-fila
+  cancel-in-progress: false
+
+jobs:
+  trazer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Trazer vídeos e tours
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        run: npx tsx --conditions=react-server scripts/catalogo/trazerVideos0128.ts

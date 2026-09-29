@@ -18,7 +18,7 @@ import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/
 import { enderecoLinha, linkWhatsapp, site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Sobre a Next Home",
+  title: `Sobre a ${site.nome}`,
   description: `Imobiliária de Alphaville com CRECI ${site.creci}: lançamentos e imóveis prontos em Alphaville, Barueri e região, com atendimento direto no WhatsApp.`,
   alternates: { canonical: "/sobre" },
   openGraph: {

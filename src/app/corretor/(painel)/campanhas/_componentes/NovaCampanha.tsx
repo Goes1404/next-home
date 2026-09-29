@@ -1,5 +1,7 @@
 "use client";
 
+import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
+
 import type { FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
@@ -18,12 +20,14 @@ import {
 import {
   ETAPAS_FUNIL,
   ETAPA_LABEL,
+  STATUS_LABEL,
   type Empreendimento,
   type EtapaFunil,
 } from "@/lib/types";
 import {
   criarCampanha,
   gerarPreviewCampanha,
+  sugerirAberturas,
   listarLeadsElegiveis,
   preverPublicoCampanha,
   type CampanhaListada,
@@ -67,6 +71,12 @@ const PUBLICOS: { valor: FiltroLeadsCampanha; titulo: string; descricao: string 
       "A carteira inteira. Use com cuidado: mensagem repetida cansa quem já respondeu.",
   },
   {
+    valor: "compradores",
+    titulo: "Compradores deste imóvel",
+    descricao:
+      "Quem já fechou no imóvel escolhido. Para avisar avanço da obra, vistoria e entrega das chaves — nunca para vender de novo.",
+  },
+  {
     valor: "selecionados",
     titulo: "Escolher um por um",
     descricao: "Você marca exatamente quem recebe — busque pelo nome e monte a lista.",
@@ -98,13 +108,25 @@ const MENSAGEM_PADRAO =
 export function NovaCampanha({
   empreendimentos,
   aoCriar,
+  inicial,
 }: {
   empreendimentos: Empreendimento[];
   aoCriar: (campanha: CampanhaListada, aviso: string) => void;
+  /** Imóvel e leads já marcados (vindo de "leads que combinam"). */
+  inicial?: { imovelSlug?: string; leadIds: string[]; publico?: FiltroLeadsCampanha };
 }) {
+  const veioMarcado = (inicial?.leadIds.length ?? 0) > 0;
   const [passo, setPasso] = useState<1 | 2 | 3>(1);
-  const [publico, setPublico] = useState<FiltroLeadsCampanha>("parados_15d");
-  const [imovelSlug, setImovelSlug] = useState(empreendimentos[0]?.slug ?? "");
+  const [publico, setPublico] = useState<FiltroLeadsCampanha>(
+    inicial?.publico ?? (veioMarcado ? "selecionados" : "parados_15d"),
+  );
+  const [imovelSlug, setImovelSlug] = useState(
+    (inicial?.imovelSlug && empreendimentos.some((e) => e.slug === inicial.imovelSlug)
+      ? inicial.imovelSlug
+      : undefined) ??
+      empreendimentos[0]?.slug ??
+      "",
+  );
   const [mensagemBase, setMensagemBase] = useState(MENSAGEM_PADRAO);
   /*
    * Segunda versão do teste A/B (0084). Vazia = campanha de uma versão só,
@@ -118,6 +140,7 @@ export function NovaCampanha({
   const [agendarPara, setAgendarPara] = useState("");
   const [exemplos, setExemplos] = useState<string[]>([]);
   const [gerando, setGerando] = useState(false);
+  const [sugerindo, setSugerindo] = useState(false);
   const [criando, iniciarCriacao] = useTransition();
   const { falhar } = useAvisos();
 
@@ -128,14 +151,14 @@ export function NovaCampanha({
   const [carteira, setCarteira] = useState<LeadElegivel[] | null>(null);
   const [buscaLead, setBuscaLead] = useState("");
   const [etapaLead, setEtapaLead] = useState<EtapaFunil | "todas">("todas");
-  const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set());
+  const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set(inicial?.leadIds ?? []));
   const [previaPublico, setPreviaPublico] = useState<
     (PreviaPublicoCampanha & { filtro: FiltroLeadsCampanha; erro?: boolean }) | null
   >(null);
 
   useEffect(() => {
     let vivo = true;
-    preverPublicoCampanha(publico)
+    preverPublicoCampanha(publico, publico === "compradores" ? imovelSlug : null)
       .then((previa) => {
         if (vivo) setPreviaPublico({ ...previa, filtro: publico });
       })
@@ -147,7 +170,7 @@ export function NovaCampanha({
     return () => {
       vivo = false;
     };
-  }, [publico]);
+  }, [publico, imovelSlug]);
 
   useEffect(() => {
     if (publico !== "selecionados" || carteira !== null) return;
@@ -224,6 +247,7 @@ export function NovaCampanha({
         empreendimentoNome: nomeImovel,
         mensagemBase,
         leadIds,
+        imovelSlug: publico === "compradores" ? imovelSlug : null,
       });
       setGerando(false);
 
@@ -234,6 +258,31 @@ export function NovaCampanha({
       }
       setExemplos(resultado.mensagens);
     });
+  }
+
+  async function sugerirComIA() {
+    setSugerindo(true);
+    try {
+      const r = await sugerirAberturas({
+        imovel: nomeImovel,
+        bairro: imovel?.bairro ?? null,
+        cidade: imovel?.cidade ?? null,
+        estagio: imovel ? STATUS_LABEL[imovel.status] : null,
+        publico: selecaoManual ? "leads escolhidos pelo corretor" : publicoEscolhido.titulo,
+      });
+      if ("erro" in r) {
+        falhar(r.erro);
+        return;
+      }
+      setMensagemBase(r.a);
+      setMensagemB(r.b);
+      setTestandoDuas(true);
+      setExemplos([]);
+    } catch (err) {
+      falhar(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
+    } finally {
+      setSugerindo(false);
+    }
   }
 
   function disparar() {
@@ -280,6 +329,7 @@ export function NovaCampanha({
           status: "em_andamento",
           // Campanha recém-criada não tem envio nenhum, então não há placar.
           testeAB: null,
+          vencedora: null,
           criadoEm: new Date().toISOString(),
         },
         modoEnvio === "agendado"
@@ -539,6 +589,20 @@ export function NovaCampanha({
             aria-label="Mensagem da lista de transmissão"
             className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento w-full rounded-xl border p-3.5 focus:outline-none"
           />
+          {/*
+            As duas versões já entram no teste A/B: comparar duas aberturas é
+            o que diz qual responde mais (88 entregues, 1 resposta em 31/08).
+          */}
+          <button
+            type="button"
+            onClick={sugerirComIA}
+            disabled={sugerindo}
+            className="text-fluid-sm border-acento-linha bg-acento-lavado text-titulo hover:border-acento flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors disabled:opacity-60"
+          >
+            <Sparkles className="h-4 w-4" />
+            {sugerindo ? "Escrevendo duas versões…" : "Sugerir duas aberturas com IA"}
+          </button>
+
           <p className="text-fluid-xs text-tenue">
             <code className="bg-vidro-forte rounded px-1">{"{nome}"}</code> vira o nome
             da pessoa e{" "}

@@ -1,3 +1,4 @@
+import { BotaoFavorito } from "@/components/empreendimento/BotaoFavorito";
 import { CapaHero } from "@/components/empreendimento/CapaHero";
 import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
@@ -34,9 +35,12 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
         <Reveal from="nenhuma" duration={0.6}>
           {/* Pílula sobre a foto: o link discreto (12px, sem fundo) sumia na
               capa escura e era o único caminho de volta da página. */}
-          <VoltarLink href="/empreendimentos" variante="pilula" sobreFoto>
-            Voltar aos imóveis
-          </VoltarLink>
+          <div className="flex items-center justify-between gap-3">
+            <VoltarLink href="/empreendimentos" variante="pilula" sobreFoto>
+              Voltar aos imóveis
+            </VoltarLink>
+            <BotaoFavorito slug={e.slug} nome={e.nome} />
+          </div>
         </Reveal>
 
         {/* Cores literais em todo o hero: o contraste aqui é sempre contra a

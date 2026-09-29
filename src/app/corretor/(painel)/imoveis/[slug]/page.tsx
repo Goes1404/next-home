@@ -2,6 +2,11 @@ import { notFound } from "next/navigation";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { EditorImovelClient } from "../_componentes/EditorImovelClient";
 import { ArtesDeIA } from "../_componentes/ArtesDeIA";
+import { LeadsQueCombinam } from "../_componentes/LeadsQueCombinam";
+import { AvisarCompradores } from "../_componentes/AvisarCompradores";
+import { AndamentoDaObra } from "../_componentes/AndamentoDaObra";
+import { EditorUnidades, type UnidadeNaTela } from "../_componentes/EditorUnidades";
+import { createClient } from "@/lib/supabase/server";
 import { Suspense } from "react";
 import Link from "next/link";
 
@@ -40,6 +45,22 @@ export default async function EditarImovelPage({ params }: Props) {
   if (!imovel) {
     notFound();
   }
+
+  // A lista inteira (inclusive vendidas): o painel lê como corretor logado.
+  const supabase = await createClient();
+  const { data: unidades } = imovel.id
+    ? await supabase
+        .from("unidades")
+        .select("id, identificacao, tipologia_id, status, reservada_ate")
+        .eq("empreendimento_id", imovel.id)
+    : { data: [] };
+  const unidadesNaTela: UnidadeNaTela[] = (unidades ?? []).map((u) => ({
+    id: u.id,
+    identificacao: u.identificacao,
+    tipologiaId: u.tipologia_id,
+    status: u.status,
+    reservadaAte: u.reservada_ate,
+  }));
 
   return (
     <div className="space-y-6">
@@ -104,7 +125,40 @@ export default async function EditarImovelPage({ params }: Props) {
         </Suspense>
       )}
 
+      {/* Só para imóvel no ar: mandar rascunho para cliente é mandar um
+          link que a vitrine não abre. */}
+      {imovel.publicado !== false && (
+        <Suspense fallback={null}>
+          <LeadsQueCombinam imovel={imovel} />
+        </Suspense>
+      )}
+      {imovel.publicado !== false && imovel.id && (
+        <Suspense fallback={null}>
+          <AvisarCompradores empreendimentoId={imovel.id} slug={imovel.slug} />
+        </Suspense>
+      )}
+
       <EditorImovelClient imovel={imovel} />
+
+      {imovel.id && (
+        <Suspense fallback={null}>
+          <AndamentoDaObra
+            empreendimentoId={imovel.id}
+            fotos={(imovel.galeria ?? []).map((f) => ({ url: f.url, alt: f.alt }))}
+          />
+        </Suspense>
+      )}
+
+      {imovel.id && (
+        <EditorUnidades
+          empreendimentoId={imovel.id}
+          slug={imovel.slug}
+          plantas={imovel.tipologias
+            .filter((t): t is typeof t & { id: string } => Boolean(t.id))
+            .map((t) => ({ id: t.id, nome: t.nome, dormitorios: t.dormitorios }))}
+          iniciais={unidadesNaTela}
+        />
+      )}
     </div>
   );
 }

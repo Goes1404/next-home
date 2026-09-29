@@ -131,6 +131,9 @@ export const GRUPOS_NAV: GrupoNav[] = [
         subitens: [
           { href: "/corretor/imoveis", label: "Catálogo", icone: IconePredio },
           { href: "/corretor/imoveis/candidatos", label: "Fila de cadastro", icone: IconeFila },
+          // A ordem em que o SITE mostra os imóveis (24/09/2026). Antes só
+          // dava para mudar a ordem do link pessoal (em Links por imóvel).
+          { href: "/corretor/imoveis/ordem", label: "Ordem no site", icone: IconeOrdem },
           /*
            * "Links por imóvel" era um chip no cabeçalho do Catálogo e um
            * subtópico de Marketing ao mesmo tempo — duas portas, e nenhuma
@@ -139,6 +142,16 @@ export const GRUPOS_NAV: GrupoNav[] = [
            * que se olha imóvel. A rota não muda, então nada salvo quebra.
            */
           { href: "/corretor/links", label: "Links por imóvel", icone: IconeLink },
+          /*
+           * O Consultor foi tópico próprio de 09/09 a 26/09/2026. Desceu para
+           * cá quando o Financeiro precisou do lugar no teto de sete, e o
+           * motivo que o tinha feito tópico ("ferramenta de uso diário atrás
+           * de um clique extra não é usada") deixou de valer em 11/09: desde
+           * então ele é a BOLHA presente em toda tela do painel. É o
+           * assistente do portfólio, então mora em Imóveis, e pinta dessa cor
+           * como já pintava. A rota não muda.
+           */
+          { href: "/corretor/consultor", label: "Consultor", icone: IconeConsultor },
         ],
       },
     ],
@@ -153,16 +166,25 @@ export const GRUPOS_NAV: GrupoNav[] = [
     itens: [
       {
         /*
-         * O sétimo destino, e o TETO da régua de menu. Mora em Ferramentas, e
-         * não na barra do polegar: aquela leva três, e são as três coisas que
-         * se fazem EM PÉ, no corredor (o que precisa de você agora, com quem
-         * falar, qual imóvel). Perguntar ao consultor é coisa de sentar.
+         * O Financeiro (26/09/2026): vendas, extrato, ranking de VGV e
+         * desempenho. É o sétimo destino e bate no TETO da régua de menu; o
+         * lugar veio do Consultor, que virou subtópico de Imóveis (ele vive
+         * na bolha de toda tela desde 11/09).
+         *
+         * Mora em Ferramentas, e não na barra do polegar: aquela leva as três
+         * coisas que se fazem EM PÉ, no corredor. Olhar extrato é de sentar.
          *
          * O próximo destino que alguém quiser criar NÃO cabe: vira subtópico.
          */
-        href: "/corretor/consultor",
-        label: "Consultor",
-        icone: IconeConsultor,
+        href: "/corretor/financeiro",
+        label: "Financeiro",
+        icone: IconeCifrao,
+        subitens: [
+          { href: "/corretor/financeiro", label: "Vendas", icone: IconeCifrao },
+          { href: "/corretor/financeiro/extrato", label: "Extrato e meta", icone: IconeExtrato },
+          { href: "/corretor/financeiro/ranking", label: "Ranking de VGV", icone: IconeTrofeu },
+          { href: "/corretor/financeiro/desempenho", label: "Desempenho", icone: IconeGrafico },
+        ],
       },
       {
         /*
@@ -226,6 +248,12 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/marketing", label: "Painel", icone: IconeMegafone },
           { href: "/corretor/campanhas", label: "Listas de transmissão", icone: IconeAntena },
           { href: "/corretor/templates", label: "Modelos", icone: IconeModelo },
+          // Quanto cada impulsionamento do Instagram/Facebook rendeu (27/09).
+          {
+            href: "/corretor/marketing/impulsionamentos",
+            label: "Impulsionamentos",
+            icone: IconeAlvo,
+          },
         ],
       },
     ],
@@ -247,6 +275,9 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/admin/contas", label: "Contas", icone: IconeCracha },
           { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeSmartphone },
           { href: "/corretor/admin/anuncios", label: "Anúncios", icone: IconeAlvo },
+          { href: "/corretor/admin/construtoras", label: "Construtoras", icone: IconePredio },
+          { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa },
+          { href: "/corretor/admin/marca", label: "Marca", icone: IconePaleta },
           { href: "/corretor/admin/sla", label: "SLA", icone: IconeAgora },
           { href: "/corretor/admin/eventos", label: "Eventos", icone: IconeAntena },
           { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta },
@@ -418,6 +449,12 @@ const MODULO_POR_DESTINO: Record<string, Modulo> = {
    * /imoveis e pinta da Assistente, dona dela desde 11/09/2026.
    */
   "/corretor/consultor": "imoveis",
+  /*
+   * O Financeiro pinta com a cor do Início, e pelo mesmo motivo do
+   * Consultor: o círculo cromático está cheio. É a dupla do "como estou
+   * indo" — o Início mostra o funil, o Financeiro mostra o dinheiro.
+   */
+  "/corretor/financeiro": "inicio",
   "/corretor/marketing": "marketing",
   "/corretor/whatsapp": "whatsapp",
   "/corretor/perfil": "conta",
@@ -587,6 +624,41 @@ function IconeFunil(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconeCifrao(p: SVGProps<SVGSVGElement>) {
+  // Uma nota de dinheiro com o cifrão: venda fechada.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <rect x="2.5" y="6" width="19" height="12" rx="2" />
+      <path d="M14.2 9.6c-.4-.6-1.2-1-2.2-1-1.3 0-2.2.7-2.2 1.6 0 2 4.4 1 4.4 3.3 0 .9-.9 1.7-2.2 1.7-1 0-1.9-.4-2.3-1.1M12 7.8v8.4" />
+    </svg>
+  );
+}
+function IconeExtrato(p: SVGProps<SVGSVGElement>) {
+  // Recibo com as linhas de lançamento: o extrato.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
+      <path d="M9 8h6M9 12h6M9 16h3" />
+    </svg>
+  );
+}
+function IconeTrofeu(p: SVGProps<SVGSVGElement>) {
+  // Taça: o ranking.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M8 4h8v5a4 4 0 0 1-8 0z" />
+      <path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7M10 17h4" />
+    </svg>
+  );
+}
+function IconeGrafico(p: SVGProps<SVGSVGElement>) {
+  // Barras crescendo: desempenho.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M4 20h16M7 16v-4M12 16V8M17 16V5" />
+    </svg>
+  );
+}
 function IconeNota(p: SVGProps<SVGSVGElement>) {
   // Bloco de notas com o lápis: anotação.
   return (
@@ -625,6 +697,16 @@ function IconeFila(p: SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M4 13l2.5-8h11L20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
       <path d="M4 13h4l1.5 3h5L16 13h4" />
+    </svg>
+  );
+}
+
+function IconeOrdem(p: SVGProps<SVGSVGElement>) {
+  // Setas para cima e para baixo: trocar a posição na lista.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M8 4v16M4 8l4-4 4 4" />
+      <path d="M16 20V4M12 16l4 4 4-4" />
     </svg>
   );
 }

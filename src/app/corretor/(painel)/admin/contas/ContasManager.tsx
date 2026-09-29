@@ -1,5 +1,6 @@
 "use client";
 
+import { site } from "@/lib/site";
 import { useState, useTransition } from "react";
 import type { CorretorAdmin } from "@/lib/corretorSessao";
 import { Check, Copy, KeyRound, ShieldCheck, TriangleAlert, UserPlus, Users } from "lucide-react";
@@ -26,7 +27,7 @@ type Credencial = { nome: string; email: string; senha: string; slug: string };
 function CartaoCredencial({ cred, aoFechar }: { cred: Credencial; aoFechar: () => void }) {
   const [copiado, setCopiado] = useState(false);
 
-  const texto = `Acesso ao painel Next Home\nSite: ${typeof window !== "undefined" ? window.location.origin : ""}/corretor/entrar\nE-mail: ${cred.email}\nSenha provisória: ${cred.senha}`;
+  const texto = `Acesso ao painel ${site.nome}\nSite: ${typeof window !== "undefined" ? window.location.origin : ""}/corretor/entrar\nE-mail: ${cred.email}\nSenha provisória: ${cred.senha}`;
 
   return (
     <div className="border-ok-linha bg-ok-lavado mb-6 rounded-2xl border p-5">

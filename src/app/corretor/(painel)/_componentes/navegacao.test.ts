@@ -67,17 +67,21 @@ describe("mapa de navegação (três destinos no polegar, e é de propósito)", 
     }
   });
 
-  it("Consultor é destino de menu, e o teto de sete continua valendo", () => {
+  it("Financeiro é destino de menu, o Consultor é subtópico de Imóveis, e o teto de sete continua valendo", () => {
     /*
-     * O sétimo tópico bate EXATAMENTE no teto, e a escolha é deliberada:
-     * ferramenta de uso diário atrás de um clique extra não é usada — foi o
-     * que aconteceu com o aviso de apelidos, que não moveu nada em cinco dias
-     * porque morava dentro do editor de imóvel.
+     * O sétimo tópico bate EXATAMENTE no teto. De 09/09 a 26/09/2026 ele era
+     * o Consultor, pela régua "ferramenta de uso diário atrás de um clique
+     * extra não é usada". Essa régua deixou de valer para ele em 11/09,
+     * quando virou a BOLHA de toda tela do painel; o lugar passou ao
+     * Financeiro, e o Consultor desceu para Imóveis (é o assistente do
+     * portfólio). Guarda REESCRITA por decisão de produto, não apagada.
      *
      * O próximo destino que alguém quiser criar NÃO cabe: vira subtópico.
      */
     const itens = gruposVisiveis(true).flatMap((g) => g.itens);
-    expect(itens.some((i) => i.href === "/corretor/consultor")).toBe(true);
+    expect(itens.some((i) => i.href === "/corretor/financeiro")).toBe(true);
+    expect(itens.some((i) => i.href === "/corretor/consultor")).toBe(false);
+    expect(subitensDe("/corretor/imoveis").map((s) => s.href)).toContain("/corretor/consultor");
     expect(itens.length).toBeLessThanOrEqual(7);
   });
 
@@ -317,6 +321,7 @@ describe("as barras de abas DERIVAM do menu", () => {
     "AbasMarketing.tsx",
     "AbasAdmin.tsx",
     "AbasImoveis.tsx",
+    "AbasFinanceiro.tsx",
   ];
 
   it.each(BARRAS)("%s monta as abas com subitensDe", (arq) => {
@@ -355,16 +360,22 @@ describe("as barras de abas DERIVAM do menu", () => {
       "/corretor/marketing/video",
     ]);
     // E saíram de lá: sobrou o que DISPARA a peça, não o que a produz.
+    // Impulsionamentos entrou em 27/09/2026: é o resultado do anúncio que o
+    // corretor põe na rua, não uma ferramenta de produzir peça.
     expect(subitensDe("/corretor/marketing").map((s) => s.href)).toEqual([
       "/corretor/marketing",
       "/corretor/campanhas",
       "/corretor/templates",
+      "/corretor/marketing/impulsionamentos",
     ]);
     // 9 desde 09/09/2026: "Crédito" entrou com os parâmetros que o consultor
     // cita. O número é atualizado com o motivo escrito, nunca afrouxado em
     // silêncio — a guarda existe para a barra de abas e o menu não voltarem a
     // discordar sobre o que é subtópico de quê.
-    expect(subitensDe("/corretor/admin")).toHaveLength(9);
+    // Construtoras entrou em 26/09/2026 (relatório para a parceira).
+    // Parceiros (espelho de vendas) e Marca (instalar para outro cliente)
+    // entraram no mesmo dia, na segunda rodada.
+    expect(subitensDe("/corretor/admin")).toHaveLength(12);
   });
 });
 
@@ -390,6 +401,7 @@ describe("a barra de abas da tela é a do DONO da rota", () => {
     AbasWhatsapp: "/corretor/whatsapp",
     AbasMarketing: "/corretor/marketing",
     AbasAdmin: "/corretor/admin",
+    AbasFinanceiro: "/corretor/financeiro",
   };
 
   /** Toda `page.tsx` do painel — a convenção de varredura das outras guardas. */

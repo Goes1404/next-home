@@ -38,33 +38,16 @@ export function HeroInicio({
     <section
       aria-label="Resumo da sua carteira"
       /*
-       * Vidro (glassmorphism), com os tokens que o painel já tem: `bg-vidro-forte`
-       * é branco a 12% no escuro e verde-escuro a 10% no claro — o mesmo par
-       * que o header e os chips já usam, então acompanha o tema. O
-       * `backdrop-blur` só faz sentido porque há os dois brilhos de acento
-       * ATRÁS dele para desfocar; sem eles, vidro sobre fundo liso é só cinza.
-       *
-       * Atenção: `backdrop-filter` cria containing block. Nada `position:
-       * fixed` pode nascer dentro deste cartão — a gaveta do painel é portalada
-       * justamente por isso.
+       * Vidro-herói (`cartao-heroi`, globals.css): translúcido sobre a aurora
+       * do painel, com os brilhos de acento pintados nele mesmo. SEM
+       * `backdrop-blur` desde 24/09/2026 — medido, o desfoque refazia uma
+       * área de ~900x250px a cada quadro em que a aurora ou a rolagem
+       * mudavam o que há atrás (43,6 ms/quadro no desktop), e o que há atrás
+       * já é um gradiente suave: desfocar não mudava a imagem, só a conta.
        */
-      className="border-white/10 bg-vidro-forte shadow-painel relative overflow-hidden rounded-[1.75rem] border p-5 ring-1 ring-white/5 backdrop-blur-xl ring-inset md:p-7"
+      className="cartao-heroi p-5 md:p-7"
     >
-      {/* Dois brilhos de acento, um em cada canto: são o que o vidro desfoca. */}
-      <div
-        aria-hidden
-        className="from-acento/40 pointer-events-none absolute -top-28 -right-20 h-72 w-72 rounded-full bg-gradient-to-br to-transparent blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="from-acento/20 pointer-events-none absolute -bottom-32 -left-16 h-64 w-64 rounded-full bg-gradient-to-tr to-transparent blur-3xl"
-      />
-      {/* Fio de luz no topo, como reflexo na borda do vidro. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
-      />
-
+      {/* Brilhos, fio de luz e varredura vêm de `cartao-heroi` (globals.css). */}
       <div className="relative grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
         <div className="min-w-0">
           <p className="text-tenue text-[11px] font-medium tracking-[0.22em] uppercase">
@@ -141,7 +124,7 @@ function Pilula({ icone, numero, rotulo }: { icone: React.ReactNode; numero: num
     /* No celular o ícone fica EM CIMA do número: três colunas com ícone ao
        lado cortavam "em conversa" em 320-390px (medido com o CSS de produção).
        Lado a lado só a partir de md, onde sobra largura. */
-    <li className="border-white/10 bg-vidro flex min-h-16 flex-col items-start gap-2 rounded-2xl border px-3 py-2.5 backdrop-blur-md md:flex-row md:items-center md:gap-3 md:px-4">
+    <li className="border-white/10 bg-vidro flex min-h-16 flex-col items-start gap-2 rounded-2xl border px-3 py-2.5 md:flex-row md:items-center md:gap-3 md:px-4">
       <span
         aria-hidden
         className="bg-acento text-sobre-cor grid size-9 shrink-0 place-items-center rounded-xl shadow-[0_6px_18px_-6px_var(--color-acento)] md:size-10"

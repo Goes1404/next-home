@@ -1,5 +1,6 @@
 "use client";
 
+import { site } from "@/lib/site";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { lerAtribuicao, type AtribuicaoMarketing } from "@/lib/marketing/atribuicao";
@@ -82,7 +83,7 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
       <div className="rounded-2xl border border-brand-400/30 bg-marca-fundo/30 px-6 py-8 text-center">
         <p className="font-display text-lg text-titulo">Recebemos seu imóvel!</p>
         <p className="text-fluid-sm mt-2 text-apoio">
-          Um corretor da Next Home vai entrar em contato para entender o imóvel e conversar
+          Um corretor da {site.nome} vai entrar em contato para entender o imóvel e conversar
           sobre avaliação e condições.
         </p>
       </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { distribuirVariantes, ENVIOS_MINIMOS, resultadoAB } from "./testeAB";
+import { distribuirVariantes, ENVIOS_MINIMOS, placarDaFila, resultadoAB, vencedoraDoPlacar } from "./testeAB";
 
 describe("distribuirVariantes", () => {
   it("divide ao meio — moeda por item sairia torta numa fila curta", () => {
@@ -65,5 +65,30 @@ describe("resultadoAB", () => {
     // Zero significaria "mandamos e ninguém respondeu"; null é "não mandamos".
     const r = resultadoAB({ a: { enviados: 0, respostas: 0 }, b: { enviados: 0, respostas: 0 } });
     expect(r.a.taxa).toBeNull();
+  });
+});
+
+describe("vencedora automática", () => {
+  const linhas = (variante: "A" | "B", enviados: number, respostas: number) => [
+    ...Array.from({ length: respostas }, () => ({ variante, status: "respondido" })),
+    ...Array.from({ length: enviados - respostas }, () => ({ variante, status: "enviado" })),
+  ];
+
+  it("placar conta respondido como enviado e ignora pendente e sem letra", () => {
+    const p = placarDaFila([
+      ...linhas("A", 3, 1),
+      { variante: "B", status: "pendente" },
+      { variante: null, status: "enviado" },
+    ]);
+    expect(p).toEqual({ a: { enviados: 3, respostas: 1 }, b: { enviados: 0, respostas: 0 } });
+  });
+
+  it("só decide com a régua do resultado: 30 de cada lado e respostas diferentes", () => {
+    const pouco = placarDaFila([...linhas("A", 20, 5), ...linhas("B", 20, 0)]);
+    expect(vencedoraDoPlacar(resultadoAB(pouco))).toBeNull();
+    const empate = placarDaFila([...linhas("A", 30, 2), ...linhas("B", 30, 2)]);
+    expect(vencedoraDoPlacar(resultadoAB(empate))).toBeNull();
+    const b = placarDaFila([...linhas("A", 30, 1), ...linhas("B", 31, 4)]);
+    expect(vencedoraDoPlacar(resultadoAB(b))).toBe("B");
   });
 });

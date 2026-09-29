@@ -1,0 +1,42 @@
+# Apaga a duplicata do Serenne e publica os rascunhos da fila (scripts/catalogo/operacao0129.ts).
+#
+# Roda aqui porque escrever no Storage exige a chave de serviço, que mora nos
+# secrets do repositório (as mesmas do worker de vídeo). O script é
+# idempotente: imóvel já apagado ou já publicado é pulado, então rodar
+# de novo não faz nada.
+#
+# Dispara quando a seleção muda na branch de produção, ou à mão.
+
+name: Publicar a fila de cadastro
+
+on:
+  push:
+    branches: ["claude/modernizar-plataforma-imobiliaria-2tm13q"]
+    paths:
+      - "scripts/catalogo/operacao-0129.json"
+      - "scripts/catalogo/operacao0129.ts"
+  workflow_dispatch:
+
+concurrency:
+  group: publicar-fila
+  cancel-in-progress: false
+
+jobs:
+  trazer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Apagar e publicar
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        run: npx tsx --conditions=react-server scripts/catalogo/operacao0129.ts

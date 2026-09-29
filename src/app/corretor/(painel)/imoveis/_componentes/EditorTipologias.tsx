@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import type { Tipologia } from "@/lib/types";
-import { Ruler, ImagePlus, Trash2 } from "lucide-react";
+import type { Midia, Tipologia } from "@/lib/types";
+import { Ruler, ImagePlus, Trash2, Images } from "lucide-react";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
-import { uploadFotoOuPlanta } from "../actions";
+import { definirTipoDaMidia, uploadFotoOuPlanta } from "../actions";
 
 interface Props {
   empreendimentoId: string;
   slug: string;
   tipologias: Tipologia[];
+  /** Fotos e plantas já cadastradas do imóvel — a grade de "Escolher do catálogo". */
+  midias: Midia[];
   onAdicionar: () => void;
   onRemover: (index: number) => void;
   /*
@@ -41,12 +44,109 @@ export function EditorTipologias({
   empreendimentoId,
   slug,
   tipologias,
+  midias,
   onAdicionar,
   onRemover,
   onChange,
 }: Props) {
   const [enviando, setEnviando] = useState<number | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const router = useRouter();
+  /** Qual planta está com a grade do catálogo aberta. */
+  const [escolhendo, setEscolhendo] = useState<number | null>(null);
+  /*
+   * Cópia local: ao agregar uma foto como planta, o selo muda aqui na hora,
+   * sem esperar o servidor devolver o imóvel inteiro.
+   */
+  const [catalogo, setCatalogo] = useState(() =>
+    midias.filter((m) => (m.tipo === "foto" || m.tipo === "planta") && m.id),
+  );
+
+  /*
+   * Escolher do catálogo é o caminho de quem já subiu a planta pela galeria
+   * (ou pelo book em PDF) e ela entrou como FOTO. Só ligar a URL à planta não
+   * bastaria: a assistente manda planta a partir de `midias.tipo = 'planta'`,
+   * então a imagem é reclassificada ANTES de ser ligada — e se a
+   * reclassificação falha, nada é ligado, para a tela não prometer uma planta
+   * que a assistente não enxerga.
+   */
+  const escolherDoCatalogo = async (index: number, midia: Midia) => {
+    setErro(null);
+    if (midia.tipo !== "planta") {
+      setEnviando(index);
+      try {
+        const res = await definirTipoDaMidia(midia.id!, "planta", slug);
+        if (!res.ok) {
+          setErro(res.erro ?? "Não consegui marcar a imagem como planta.");
+          return;
+        }
+        setCatalogo((atual) => atual.map((m) => (m.id === midia.id ? { ...m, tipo: "planta" } : m)));
+        // A aba de fotos remonta a partir do imóvel do servidor; sem isto ela
+        // seguiria mostrando esta imagem como foto até recarregar a página.
+        router.refresh();
+      } catch (e) {
+        setErro(ehActionDeOutroBuild(e) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
+        return;
+      } finally {
+        setEnviando(null);
+      }
+    }
+    onChange(index, "plantaUrl", midia.url);
+    setEscolhendo(null);
+  };
+
+  const gradeDoCatalogo = (index: number) => (
+    <div className="space-y-2 rounded-xl border border-linha bg-elevado p-3">
+      <p className="text-fluid-xs text-apoio">
+        Toque na imagem que é a planta. Se ela estiver como foto, passa a ser planta — e sai da galeria de fotos do site.
+      </p>
+      {catalogo.length === 0 ? (
+        <p className="text-fluid-xs text-tenue">Este imóvel ainda não tem imagens. Envie pela aba de fotos ou aqui ao lado.</p>
+      ) : (
+        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {catalogo.map((m) => (
+            <li key={m.id}>
+              <button
+                type="button"
+                disabled={enviando !== null}
+                onClick={() => void escolherDoCatalogo(index, m)}
+                aria-label={`Usar como planta: ${m.alt || "imagem do catálogo"}`}
+                className="relative block aspect-square w-full overflow-hidden rounded-lg border border-linha bg-superficie hover:border-acento focus-visible:border-acento disabled:opacity-50"
+              >
+                <Image src={m.url} alt="" fill sizes="120px" className="object-cover" unoptimized />
+                <span
+                  className={`absolute left-1 top-1 rounded px-1.5 py-0.5 text-[11px] font-semibold ${
+                    m.tipo === "planta" ? "bg-realce text-sobre-cor" : "bg-black/60 text-white"
+                  }`}
+                >
+                  {m.tipo === "planta" ? "Planta" : "Foto"}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <button
+        type="button"
+        onClick={() => setEscolhendo(null)}
+        className="min-h-11 text-fluid-xs font-semibold text-apoio hover:text-titulo"
+      >
+        Fechar
+      </button>
+    </div>
+  );
+
+  const botaoCatalogo = (index: number) => (
+    <button
+      type="button"
+      onClick={() => setEscolhendo(escolhendo === index ? null : index)}
+      aria-expanded={escolhendo === index}
+      className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-linha-forte bg-superficie px-3 text-fluid-xs font-semibold text-corpo"
+    >
+      <Images className="h-4 w-4" />
+      <span>Escolher do catálogo</span>
+    </button>
+  );
 
   const enviarImagem = async (index: number, arquivo: File) => {
     setErro(null);
@@ -215,9 +315,11 @@ export function EditorTipologias({
                             <Trash2 className="h-4 w-4" />
                             <span>Tirar daqui</span>
                           </button>
+                          {botaoCatalogo(index)}
                         </div>
                       </div>
                     ) : (
+                      <div className="grid gap-2 sm:grid-cols-2">
                       <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-linha-forte bg-elevado px-3 py-2 text-fluid-xs font-semibold text-corpo">
                         <ImagePlus className="h-4 w-4" />
                         <span>{enviando === index ? "Enviando…" : "Enviar imagem da planta"}</span>
@@ -233,7 +335,11 @@ export function EditorTipologias({
                           }}
                         />
                       </label>
+                      {botaoCatalogo(index)}
+                      </div>
                     )}
+
+                    {escolhendo === index && gradeDoCatalogo(index)}
 
                     <input
                       type="text"

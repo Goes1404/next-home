@@ -25,7 +25,8 @@ export const SELECT_EMPREENDIMENTO = `
   corretor:corretores!empreendimentos_corretor_id_fkey(id, nome, creci, whatsapp, foto_url, video_url),
   tipologias(*),
   midias(*),
-  lazer:empreendimento_lazer(lazer_itens(*))
+  lazer:empreendimento_lazer(lazer_itens(*)),
+  unidades(tipologia_id, status)
 `;
 
 export const SELECT_CORRETOR =

@@ -314,7 +314,7 @@ git commit -m "feat(porteiro): a frase do site e reconhecida por codigo, nao por
 O link pessoal `?corretor=<slug>` grava um cookie. O porteiro precisa preferir esse corretor, sem transformar a preferência em filtro.
 
 **Files:**
-- Create: `supabase/migrations/0113_sorteio_com_corretor_preferido.sql`
+- Create: `supabase/migrations/0113_sorteio_com_corretor_preferido.sql` (substituída pela `0129_sorteio_rodizio_e_preferido.sql` no merge de 28/09 — ver MEMORIA)
 - Test: `src/lib/whatsapp/sorteioPreferido.test.ts`
 
 **Interfaces:**

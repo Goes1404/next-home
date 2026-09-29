@@ -67,6 +67,11 @@ const nextConfig: NextConfig = {
    * isso, e o build passa limpo enquanto a rota quebra em produção.
    */
   outputFileTracingIncludes: {
+    // `/documentos/**`: a action do envio mede a foto do documento com o sharp.
+    "/documentos/**": [
+      "./node_modules/@img/sharp-linux-x64/**/*",
+      "./node_modules/@img/sharp-libvips-linux-x64/**/*",
+    ],
     "/corretor/**": [
       "./node_modules/@img/sharp-linux-x64/**/*",
       "./node_modules/@img/sharp-libvips-linux-x64/**/*",

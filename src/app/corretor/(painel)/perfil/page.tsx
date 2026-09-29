@@ -1,16 +1,35 @@
+import { site } from "@/lib/site";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EditorAvatar } from "./EditorAvatar";
 import { FormularioPerfil } from "./FormularioPerfil";
 import { FundoLink } from "./FundoLink";
+import { AjustesDoResumo } from "./AjustesDoResumo";
+import { CaixaDoGmail } from "./CaixaDoGmail";
+import { createServiceClient } from "@/lib/supabase/service";
+import { gmailConfigurado } from "@/lib/inbound/gmailCaixa";
+import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Meu perfil" };
 
-export default async function PerfilPage() {
+export default async function PerfilPage({ searchParams }: { searchParams: Promise<{ gmail?: string }> }) {
+  const { gmail: volta } = await searchParams;
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
+  // A caixa do Gmail (0125) só o servidor lê: o refresh token nunca sai daqui.
+  const { data: contaGmail } = await createServiceClient()
+    .from("contas_email_google")
+    .select("email, ultima_leitura_em, ultimo_erro, lidos_total")
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+  const supabase = await createClient();
+  const { data: prefs } = await supabase
+    .from("corretores")
+    .select("resumo_hora, resumo_fim_de_semana")
+    .eq("id", corretor.id)
+    .maybeSingle();
 
   return (
     // Formulário se cansa de ler antes de o painel acabar: campo de texto
@@ -47,7 +66,7 @@ export default async function PerfilPage() {
           </span>
         </div>
         <p className="text-fluid-xs mt-2 text-apoio">
-          O CRECI é gerenciado pela administração da Next Home.
+          O CRECI é gerenciado pela administração da {site.nome}.
         </p>
       </div>
 
@@ -57,6 +76,27 @@ export default async function PerfilPage() {
 
       <div className="cartao mt-6 p-6 sm:p-7">
         <FormularioPerfil corretor={corretor} />
+      </div>
+
+      <div className="cartao mt-6 p-6 sm:p-7">
+        <CaixaDoGmail
+          configurado={gmailConfigurado()}
+          volta={volta ?? null}
+          conta={
+            contaGmail
+              ? {
+                  email: contaGmail.email,
+                  ultimaLeitura: contaGmail.ultima_leitura_em,
+                  erro: contaGmail.ultimo_erro,
+                  lidos: contaGmail.lidos_total,
+                }
+              : null
+          }
+        />
+      </div>
+
+      <div className="cartao mt-6 p-6 sm:p-7">
+        <AjustesDoResumo hora={prefs?.resumo_hora ?? 8} fimDeSemana={prefs?.resumo_fim_de_semana ?? false} />
       </div>
     </div>
   );

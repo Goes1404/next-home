@@ -5,6 +5,9 @@ import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import { getCorretorLogado, getLeadsDeVisita } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import { GradeDaSemana } from "./_componentes/GradeDaSemana";
+import { AgendaNoCelular } from "./_componentes/AgendaNoCelular";
+import { createServiceClient } from "@/lib/supabase/service";
+import { site } from "@/lib/site";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { linkWhatsappPara } from "@/lib/site";
 import {
@@ -44,6 +47,12 @@ export default async function VisitasPage({
    */
   const corretor = await getCorretorLogado();
   const supabase = await createClient();
+  // Token da agenda (0126): tabela fechada ao painel, lida pelo servidor
+  // depois de saber de quem é a sessão.
+  const { data: agenda } = corretor
+    ? await createServiceClient().from("corretor_agenda").select("token").eq("corretor_id", corretor.id).maybeSingle()
+    : { data: null };
+  const linkDaAgenda = agenda ? `${site.url}/api/agenda/${agenda.token}.ics` : null;
   const { data: grade } = corretor
     ? await supabase
         .from("corretor_disponibilidade")
@@ -67,7 +76,7 @@ export default async function VisitasPage({
     ? await Promise.all([
         supabase
           .from("leads")
-          .select("id, regiao_interesse, dormitorios_min, orcamento_min, orcamento_max, renda_mensal")
+          .select("id, regiao_interesse, dormitorios_min, orcamento_min, orcamento_max, renda_mensal, visita_confirmada_em")
           .in("id", ids),
         supabase
           .from("lead_observacoes_ia")
@@ -77,6 +86,8 @@ export default async function VisitasPage({
     : [{ data: null }, { data: null }];
 
   const numero = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+  // O cliente respondeu "confirmo" ao lembrete da véspera (0123).
+  const confirmadas = new Set((perfis ?? []).filter((p) => p.visita_confirmada_em).map((p) => p.id));
   const preparoPorLead = new Map<string, DadosDoPreparo>();
   for (const p of perfis ?? []) {
     preparoPorLead.set(p.id, {
@@ -115,7 +126,8 @@ export default async function VisitasPage({
         Visitas vem ver as visitas de hoje; ajustar horário é o que se faz
         depois.
       */}
-      <div className="mt-6">
+      <div className="mt-6 space-y-4">
+        <AgendaNoCelular link={linkDaAgenda} />
         <GradeDaSemana
           inicial={(grade ?? []).map((f) => ({
             diaSemana: f.dia_semana,
@@ -160,9 +172,15 @@ export default async function VisitasPage({
                     </p>
                   </div>
                   <div>
-                    <span className="text-fluid-xs rounded-full bg-etapa-visita-lavado px-2.5 py-1 font-medium text-etapa-visita">
-                      {hora ? "Agendada" : "Sem horário"}
-                    </span>
+                    {confirmadas.has(lead.id) ? (
+                      <span className="text-fluid-xs rounded-full bg-ok-lavado px-2.5 py-1 font-semibold text-ok">
+                        Confirmada pelo cliente
+                      </span>
+                    ) : (
+                      <span className="text-fluid-xs rounded-full bg-etapa-visita-lavado px-2.5 py-1 font-medium text-etapa-visita">
+                        {hora ? "Agendada" : "Sem horário"}
+                      </span>
+                    )}
                   </div>
                 </div>
 

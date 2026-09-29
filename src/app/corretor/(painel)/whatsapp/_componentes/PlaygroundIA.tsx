@@ -1,5 +1,6 @@
 "use client";
 
+import { site } from "@/lib/site";
 import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { testarAgenteIA } from "../acoes";
@@ -59,7 +60,7 @@ function explicarFallback(motivo?: string | null): string {
 function saudacao(nomeAssistente: string, corretorNome: string): MensagemPlayground {
   return {
     remetente: "bot",
-    texto: `Olá! Sou a ${nomeAssistente}, assistente do consultor ${corretorNome} da Next Home. Como posso te ajudar hoje?`,
+    texto: `Olá! Sou a ${nomeAssistente}, assistente do consultor ${corretorNome} da ${site.nome}. Como posso te ajudar hoje?`,
     hora: "Agora",
   };
 }

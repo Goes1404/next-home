@@ -1,3 +1,4 @@
+import { site } from "@/lib/site";
 import { dentroDaJanela } from "./antiBan";
 import { nomeUtilDoLead } from "@/lib/leads/nomeExibido";
 import { algumProvedorConfigurado, chamarLlmJson } from "./llm";
@@ -86,7 +87,7 @@ export async function variarMensagemComIA(params: {
   const nome = nomeUtilDoLead(params.nomeLead);
   if (!algumProvedorConfigurado()) return semVariacao;
 
-  const promptVariacao = `Você é um redator imobiliário sênior da Next Home.
+  const promptVariacao = `Você é um redator imobiliário sênior da ${site.nome}.
 Reescreva a mensagem abaixo ${nome ? `para o cliente "${nome}"` : 'SEM CITAR NOME NENHUM (não sabemos o nome desta pessoa — cumprimente sem nome, e nunca escreva algo como "Contato sem nome", "prezado cliente" ou um nome inventado)'}, mantendo o objetivo de negócio e o tom consultivo e elegante, mas variando a saudação e vocabulário para torná-la 100% natural, humana e única.
 Nunca use emojis em excesso. Máximo 2 parágrafos curtos.
 

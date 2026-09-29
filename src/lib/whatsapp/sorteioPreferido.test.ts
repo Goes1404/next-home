@@ -76,25 +76,25 @@ describe("o sorteio do porteiro", () => {
     expect(defMin).toMatch(/telefone_conectado\s+is\s+not\s+null/);
   });
 
-  it("fecha o execute para PUBLIC/anon/authenticated e libera só o service_role, na assinatura (uuid)", () => {
+  it("fecha o execute para PUBLIC/anon/authenticated e libera só o service_role, na assinatura (uuid, uuid)", () => {
     // `create or replace function` com assinatura DIFERENTE não substitui:
     // cria um SEGUNDO objeto, que nasce com EXECUTE liberado para PUBLIC
     // por padrão do Postgres. A função é `security definer` e devolve o
     // TELEFONE PESSOAL do corretor — a 0052 fechou isso de propósito, e sem
     // repetir os três `revoke` e o `grant` aqui, referenciando a
-    // assinatura `(uuid)`, a versão nova reabriria esse buraco em
+    // assinatura `(uuid, uuid)`, a versão nova reabriria esse buraco em
     // silêncio, sem nada ficar vermelho.
     expect(defMin).toMatch(
-      /revoke execute on function public\.sortear_corretor_whatsapp\(uuid\)\s+from public/,
+      /revoke execute on function public\.sortear_corretor_whatsapp\(uuid, uuid\)\s+from public/,
     );
     expect(defMin).toMatch(
-      /revoke execute on function public\.sortear_corretor_whatsapp\(uuid\)\s+from anon/,
+      /revoke execute on function public\.sortear_corretor_whatsapp\(uuid, uuid\)\s+from anon/,
     );
     expect(defMin).toMatch(
-      /revoke execute on function public\.sortear_corretor_whatsapp\(uuid\)\s+from authenticated/,
+      /revoke execute on function public\.sortear_corretor_whatsapp\(uuid, uuid\)\s+from authenticated/,
     );
     expect(defMin).toMatch(
-      /grant execute on function public\.sortear_corretor_whatsapp\(uuid\)\s+to service_role/,
+      /grant execute on function public\.sortear_corretor_whatsapp\(uuid, uuid\)\s+to service_role/,
     );
   });
 });

@@ -181,6 +181,25 @@ export default async function AnunciosPage() {
         .in("lead_id", idsDeAnuncio)
     : { data: [] as { lead_id: string; temperatura_label: string }[] };
 
+  /*
+   * As vendas registradas (0114) dos leads de anúncio — é daqui que sai o
+   * número que justifica a tela: quanto cada real de anúncio devolveu em
+   * COMISSÃO. VGV é o valor da venda inteira (a campanha trouxe a venda, não
+   * uma parte dela). Sem a 0114 aplicada, a consulta falha e a tabela segue
+   * sem as colunas de venda.
+   */
+  const { data: vendasDeAnuncio } = idsDeAnuncio.length
+    ? await sessao
+        .from("vendas")
+        .select("lead_id, valor_venda, comissao_valor")
+        .in("lead_id", idsDeAnuncio)
+        .eq("status", "ativa")
+    : { data: [] as { lead_id: string | null; valor_venda: number; comissao_valor: number }[] };
+  const vendasLigadas = (vendasDeAnuncio ?? [])
+    .filter((v): v is typeof v & { lead_id: string } => Boolean(v.lead_id))
+    .map((v) => ({ leadId: v.lead_id, vgv: Number(v.valor_venda) || 0, comissao: Number(v.comissao_valor) || 0 }));
+  const comissaoDeAnuncio = vendasLigadas.reduce((s, v) => s + v.comissao, 0);
+
   const temperatura = { quente: 0, morno: 0, frio: 0 };
   for (const d of dossies ?? []) {
     if (d.temperatura_label === "quente") temperatura.quente++;
@@ -229,6 +248,7 @@ export default async function AnunciosPage() {
       leadId: d.lead_id,
       temperaturaLabel: d.temperatura_label,
     })),
+    vendas: vendasLigadas,
   });
 
   const cplCrm = leadsCrm > 0 ? totalGasto / leadsCrm : null;
@@ -276,6 +296,20 @@ export default async function AnunciosPage() {
           valor={cplCrm === null ? "—" : formatarMoedaBRL(cplCrm)}
           detalhe="investido ÷ leads no CRM"
         />
+        {/* O número que a Meta não tem: quanto voltou em comissão. Só
+            aparece quando há venda registrada de lead de anúncio. */}
+        {comissaoDeAnuncio > 0 && (
+          <Kpi
+            rotulo="Comissão das vendas de anúncio"
+            valor={formatarMoedaBRL(comissaoDeAnuncio)}
+            detalhe={
+              totalGasto > 0
+                ? `cada R$ 1 investido voltou R$ ${(comissaoDeAnuncio / totalGasto).toFixed(2).replace(".", ",")}`
+                : "vendas registradas de leads de anúncio"
+            }
+            href="/corretor/financeiro"
+          />
+        )}
       </div>
 
       <section className="cartao p-4">
@@ -340,7 +374,7 @@ export default async function AnunciosPage() {
             Custo por visita e por fechado são o que a Meta não tem como calcular — o que acontece
             depois do clique só existe aqui.
           </p>
-          <table className="text-fluid-sm w-full min-w-[44rem] text-left">
+          <table className="text-fluid-sm w-full min-w-[52rem] text-left">
             <thead>
               <tr className="text-tenue text-fluid-xs">
                 <th className="pb-2 font-medium">Campanha</th>
@@ -351,6 +385,8 @@ export default async function AnunciosPage() {
                 <th className="pb-2 text-right font-medium">Por visita</th>
                 <th className="pb-2 text-right font-medium">Fechados</th>
                 <th className="pb-2 text-right font-medium">Por fechado</th>
+                <th className="pb-2 text-right font-medium">Comissão</th>
+                <th className="pb-2 text-right font-medium">Retorno</th>
               </tr>
             </thead>
             <tbody className="text-apoio">
@@ -410,6 +446,12 @@ export default async function AnunciosPage() {
                   <td className="py-2 text-right tabular-nums">{c.fechados}</td>
                   <td className="py-2 text-right tabular-nums">
                     {c.custoPorFechado === null ? "—" : formatarMoedaBRL(c.custoPorFechado)}
+                  </td>
+                  {/* Comissão das vendas REGISTRADAS e o retorno sobre o
+                      investido: é o número que decide onde pôr dinheiro. */}
+                  <td className="py-2 text-right tabular-nums">{c.comissao > 0 ? formatarMoedaBRL(c.comissao) : "—"}</td>
+                  <td className="text-titulo py-2 text-right font-medium tabular-nums">
+                    {c.retorno === null || c.comissao === 0 ? "—" : `${c.retorno.toFixed(1).replace(".", ",")}x`}
                   </td>
                 </tr>
               ))}

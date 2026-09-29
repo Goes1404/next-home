@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { createClient } from "@/lib/supabase/public";
+import { parseFavoritos, parseInteresse } from "@/lib/crm/pedidoDoSite";
 import { CHAVES_ATRIBUICAO, type AtribuicaoMarketing } from "@/lib/marketing/atribuicao";
 
 export const runtime = "nodejs";
@@ -32,6 +33,12 @@ type CorpoLead = {
   /** Tempo em ms desde que o formulário apareceu na tela do visitante. */
   elapsedMs?: number | null;
   atribuicao?: AtribuicaoMarketing;
+  /** "Me avise quando surgir": o que a pessoa procura (comprador). */
+  interesse?: { regiao?: string; dormitoriosMin?: number; precoMax?: number };
+  /** Pediu para ser avisada quando entrar imóvel que combine. */
+  alerta?: boolean;
+  /** Slugs dos imóveis que a pessoa marcou como favoritos no site. */
+  favoritos?: string[];
 };
 
 /**
@@ -151,7 +158,23 @@ export async function POST(req: Request) {
   const corretorAtivo = await getCorretorAtivo();
 
   const tipo = parseTipo(corpo.tipo);
-  const detalhes = tipo === "proprietario" ? parseDetalhes(corpo.detalhes) : null;
+  const favoritos = parseFavoritos(corpo.favoritos);
+  const interesse = tipo === "comprador" ? parseInteresse(corpo.interesse) : null;
+  const querAlerta = tipo === "comprador" && corpo.alerta === true;
+  /*
+   * Para o comprador, `detalhes` guarda o pedido de aviso e os favoritos.
+   * `avisados` é a trava de "um aviso por imóvel": sem ela o tique dos
+   * follow-ups mandaria o mesmo imóvel todo dia.
+   */
+  const detalhes =
+    tipo === "proprietario"
+      ? parseDetalhes(corpo.detalhes)
+      : querAlerta || favoritos.length > 0
+        ? { ...(querAlerta ? { alerta: true, avisados: [] as string[] } : {}), ...(favoritos.length ? { favoritos } : {}) }
+        : null;
+  if (querAlerta && !telefone) {
+    return NextResponse.json({ erro: "Informe o WhatsApp para receber o aviso." }, { status: 400 });
+  }
   const atribuicao = parseAtribuicao(corpo.atribuicao);
 
   const { error } = await supabase.from("leads").insert({
@@ -165,6 +188,7 @@ export async function POST(req: Request) {
     detalhes,
     origem: normalizado(corpo.origem) ?? "site/contato",
     consentimento_lgpd: true,
+    ...(interesse ?? {}),
     ...atribuicao,
   });
 

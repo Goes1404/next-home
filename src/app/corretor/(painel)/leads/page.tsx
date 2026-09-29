@@ -1,3 +1,4 @@
+import { ehCanal, type Canal } from "@/lib/graficos/calculos";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Archive, Mail } from "lucide-react";
@@ -78,6 +79,8 @@ export default async function LeadsPage({
     // ignoraria o parâmetro EM SILÊNCIO, mostrando a carteira inteira —
     // já aconteceu neste projeto com `?filtro=parados`.
     metaCampanhaId: primeiroValor(params.campanha) || undefined,
+    // `?canal=` chega das barras de "De onde vêm os leads" (Marketing).
+    canal: ehCanal(primeiroValor(params.canal)) ? (primeiroValor(params.canal) as Canal) : undefined,
     criadoDe: primeiroValor(params.de) || undefined,
     criadoAte: primeiroValor(params.ate) || undefined,
     // `?empreendimento=` — chegou por OU conversando sobre (06/09/2026).

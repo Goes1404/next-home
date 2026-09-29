@@ -19,7 +19,13 @@ import { describe, expect, it } from "vitest";
 
 const REPOSITORIO = readFileSync("src/lib/whatsapp/repositorio.ts", "utf8");
 const ACOES = readFileSync("src/app/corretor/(painel)/conversas/acoes.ts", "utf8");
-const ACOES_IA = readFileSync("src/app/corretor/(painel)/conversas/acoesIA.ts", "utf8");
+// Os botões do painel moram em acoesIA.ts; o miolo de envio saiu para
+// aberturaPelaIA.ts em 26/09/2026 (o primeiro contato com lead de portal o
+// reusa). A guarda lê os dois: a regra vale para o caminho, não para o arquivo.
+const ACOES_IA =
+  readFileSync("src/app/corretor/(painel)/conversas/acoesIA.ts", "utf8") +
+  "\n" +
+  readFileSync("src/lib/whatsapp/aberturaPelaIA.ts", "utf8");
 
 const TRES_CAMPOS = ["liberado_por_palavra_chave: true", "bot_ativo: true", "pausado_humano_ate: null"];
 

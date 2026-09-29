@@ -96,6 +96,351 @@ export type Database = {
           },
         ]
       }
+      lead_documentos: {
+        Row: {
+          alerta: string | null
+          caminho: string
+          corretor_id: string
+          created_at: string
+          id: string
+          item: string
+          lead_id: string
+          link_token: string | null
+          mime: string | null
+          nome_arquivo: string | null
+          tamanho: number | null
+        }
+        Insert: {
+          alerta?: string | null
+          caminho: string
+          corretor_id: string
+          created_at?: string
+          id?: string
+          item: string
+          lead_id: string
+          link_token?: string | null
+          mime?: string | null
+          nome_arquivo?: string | null
+          tamanho?: number | null
+        }
+        Update: {
+          alerta?: string | null
+          caminho?: string
+          corretor_id?: string
+          created_at?: string
+          id?: string
+          item?: string
+          lead_id?: string
+          link_token?: string | null
+          mime?: string | null
+          nome_arquivo?: string | null
+          tamanho?: number | null
+        }
+        Relationships: []
+      }
+      links_do_cliente_eventos: {
+        Row: {
+          corretor_id: string
+          created_at: string
+          detalhe: string | null
+          id: string
+          lead_id: string
+          tipo: "abriu" | "clicou" | "documento" | "documentos_completos" | "aceitou" | "quer_conversar"
+          token: string
+        }
+        Insert: {
+          corretor_id: string
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          lead_id: string
+          tipo: "abriu" | "clicou" | "documento" | "documentos_completos" | "aceitou" | "quer_conversar"
+          token: string
+        }
+        Update: {
+          corretor_id?: string
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          lead_id?: string
+          tipo?: "abriu" | "clicou" | "documento" | "documentos_completos" | "aceitou" | "quer_conversar"
+          token?: string
+        }
+        Relationships: []
+      }
+      links_do_cliente: {
+        Row: {
+          aberto_em: string | null
+          corretor_id: string
+          created_at: string
+          dados: Json
+          expira_em: string
+          lead_id: string
+          tipo: "documentos" | "selecao" | "proposta" | "portal"
+          token: string
+        }
+        Insert: {
+          aberto_em?: string | null
+          corretor_id: string
+          created_at?: string
+          dados?: Json
+          expira_em?: string
+          lead_id: string
+          tipo: "documentos" | "selecao" | "proposta" | "portal"
+          token?: string
+        }
+        Update: {
+          aberto_em?: string | null
+          corretor_id?: string
+          created_at?: string
+          dados?: Json
+          expira_em?: string
+          lead_id?: string
+          tipo?: "documentos" | "selecao" | "proposta" | "portal"
+          token?: string
+        }
+        Relationships: []
+      }
+      obra_atualizacoes: {
+        Row: {
+          id: string
+          empreendimento_id: string
+          corretor_id: string | null
+          titulo: string
+          texto: string | null
+          percentual: number | null
+          foto_url: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          empreendimento_id: string
+          corretor_id?: string | null
+          titulo: string
+          texto?: string | null
+          percentual?: number | null
+          foto_url?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          empreendimento_id?: string
+          corretor_id?: string | null
+          titulo?: string
+          texto?: string | null
+          percentual?: number | null
+          foto_url?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      ia_correcoes: {
+        Row: {
+          id: string
+          corretor_id: string
+          interacao_id: string | null
+          conversa_id: string | null
+          fala_cliente: string
+          resposta_ia: string | null
+          resposta_certa: string
+          ativa: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          corretor_id: string
+          interacao_id?: string | null
+          conversa_id?: string | null
+          fala_cliente: string
+          resposta_ia?: string | null
+          resposta_certa: string
+          ativa?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          corretor_id?: string
+          interacao_id?: string | null
+          conversa_id?: string | null
+          fala_cliente?: string
+          resposta_ia?: string | null
+          resposta_certa?: string
+          ativa?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      contas_email_google: {
+        Row: {
+          corretor_id: string
+          email: string
+          refresh_token: string
+          ultima_leitura_em: string | null
+          ultimo_erro: string | null
+          lidos_total: number
+          created_at: string
+        }
+        Insert: {
+          corretor_id: string
+          email: string
+          refresh_token: string
+          ultima_leitura_em?: string | null
+          ultimo_erro?: string | null
+          lidos_total?: number
+          created_at?: string
+        }
+        Update: {
+          corretor_id?: string
+          email?: string
+          refresh_token?: string
+          ultima_leitura_em?: string | null
+          ultimo_erro?: string | null
+          lidos_total?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      parceiros: {
+        Row: {
+          id: string
+          nome: string
+          imobiliaria: string | null
+          creci: string | null
+          telefone: string | null
+          email: string | null
+          token: string
+          ativo: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          imobiliaria?: string | null
+          creci?: string | null
+          telefone?: string | null
+          email?: string | null
+          token?: string
+          ativo?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          imobiliaria?: string | null
+          creci?: string | null
+          telefone?: string | null
+          email?: string | null
+          token?: string
+          ativo?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      impulsionamentos: {
+        Row: {
+          id: string
+          corretor_id: string
+          chave: string
+          meta_ad_id: string | null
+          titulo: string | null
+          url: string | null
+          empreendimento_id: string | null
+          valor_gasto: number | null
+          gasto_informado_em: string | null
+          primeiro_lead_em: string
+          ultimo_lead_em: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          corretor_id: string
+          chave: string
+          meta_ad_id?: string | null
+          titulo?: string | null
+          url?: string | null
+          empreendimento_id?: string | null
+          valor_gasto?: number | null
+          gasto_informado_em?: string | null
+          primeiro_lead_em?: string
+          ultimo_lead_em?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          corretor_id?: string
+          chave?: string
+          meta_ad_id?: string | null
+          titulo?: string | null
+          url?: string | null
+          empreendimento_id?: string | null
+          valor_gasto?: number | null
+          gasto_informado_em?: string | null
+          primeiro_lead_em?: string
+          ultimo_lead_em?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      corretor_agenda: {
+        Row: {
+          corretor_id: string
+          token: string
+          created_at: string
+        }
+        Insert: {
+          corretor_id: string
+          token?: string
+          created_at?: string
+        }
+        Update: {
+          corretor_id?: string
+          token?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      unidades: {
+        Row: {
+          andar: number | null
+          area_m2: number | null
+          atualizado_em: string
+          created_at: string
+          dormitorios: number | null
+          empreendimento_id: string
+          id: string
+          identificacao: string
+          status: "disponivel" | "reservada" | "vendida"
+          tipologia_id: string | null
+          reservada_ate: string | null
+        }
+        Insert: {
+          andar?: number | null
+          area_m2?: number | null
+          atualizado_em?: string
+          created_at?: string
+          dormitorios?: number | null
+          empreendimento_id: string
+          id?: string
+          identificacao: string
+          status?: "disponivel" | "reservada" | "vendida"
+          tipologia_id?: string | null
+          reservada_ate?: string | null
+        }
+        Update: {
+          andar?: number | null
+          area_m2?: number | null
+          atualizado_em?: string
+          created_at?: string
+          dormitorios?: number | null
+          empreendimento_id?: string
+          id?: string
+          identificacao?: string
+          status?: "disponivel" | "reservada" | "vendida"
+          tipologia_id?: string | null
+          reservada_ate?: string | null
+        }
+        Relationships: []
+      }
       anotacoes: {
         Row: {
           id: string
@@ -162,6 +507,120 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      /** 0114 — a venda (F1 do módulo financeiro). */
+      vendas: {
+        Row: {
+          id: string
+          corretor_id: string
+          lead_id: string | null
+          empreendimento_id: string | null
+          imovel_descricao: string | null
+          unidade: string | null
+          data_venda: string
+          valor_venda: number
+          comissao_percentual: number | null
+          comissao_valor: number
+          status: "ativa" | "distratada"
+          distratada_em: string | null
+          comissao_recebida_em: string | null
+          observacao: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          corretor_id: string
+          lead_id?: string | null
+          empreendimento_id?: string | null
+          imovel_descricao?: string | null
+          unidade?: string | null
+          data_venda: string
+          valor_venda: number
+          comissao_percentual?: number | null
+          comissao_valor: number
+          status?: "ativa" | "distratada"
+          distratada_em?: string | null
+          comissao_recebida_em?: string | null
+          observacao?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          corretor_id?: string
+          lead_id?: string | null
+          empreendimento_id?: string | null
+          imovel_descricao?: string | null
+          unidade?: string | null
+          data_venda?: string
+          valor_venda?: number
+          comissao_percentual?: number | null
+          comissao_valor?: number
+          status?: "ativa" | "distratada"
+          distratada_em?: string | null
+          comissao_recebida_em?: string | null
+          observacao?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0114 — quem participou de cada venda (co-corretagem). */
+      venda_participantes: {
+        Row: {
+          venda_id: string
+          corretor_id: string
+          parte_percentual: number
+          repasse_percentual: number | null
+          repasse_valor: number
+          repasse_pago_em: string | null
+        }
+        Insert: {
+          venda_id: string
+          corretor_id: string
+          parte_percentual: number
+          repasse_percentual?: number | null
+          repasse_valor: number
+          repasse_pago_em?: string | null
+        }
+        Update: {
+          venda_id?: string
+          corretor_id?: string
+          parte_percentual?: number
+          repasse_percentual?: number | null
+          repasse_valor?: number
+          repasse_pago_em?: string | null
+        }
+        Relationships: []
+      }
+      /** 0115 — a meta mensal do corretor (F5 do financeiro). */
+      metas_corretor: {
+        Row: {
+          corretor_id: string
+          mes: string
+          meta_comissao: number
+          comissao_por_venda: number | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          corretor_id: string
+          mes: string
+          meta_comissao: number
+          comissao_por_venda?: number | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          corretor_id?: string
+          mes?: string
+          meta_comissao?: number
+          comissao_por_venda?: number | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: []
       }
       catalogo_candidatos: {
         Row: {
@@ -428,6 +887,9 @@ export type Database = {
           created_at: string
           creci: string
           deve_trocar_senha: boolean
+          resumo_diario_em: string | null
+          resumo_fim_de_semana: boolean
+          resumo_hora: number
           em_pausa: boolean
           email: string | null
           foto_url: string | null
@@ -448,6 +910,9 @@ export type Database = {
           created_at?: string
           creci: string
           deve_trocar_senha?: boolean
+          resumo_diario_em?: string | null
+          resumo_fim_de_semana?: boolean
+          resumo_hora?: number
           em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
@@ -468,6 +933,9 @@ export type Database = {
           created_at?: string
           creci?: string
           deve_trocar_senha?: boolean
+          resumo_diario_em?: string | null
+          resumo_fim_de_semana?: boolean
+          resumo_hora?: number
           em_pausa?: boolean
           email?: string | null
           foto_url?: string | null
@@ -541,6 +1009,7 @@ export type Database = {
           publicado: boolean
           seo_descricao: string | null
           seo_titulo: string | null
+          site_construtora: string | null
           slug: string
           status: Database["public"]["Enums"]["status_obra"]
           tagline: string | null
@@ -576,6 +1045,7 @@ export type Database = {
           publicado?: boolean
           seo_descricao?: string | null
           seo_titulo?: string | null
+          site_construtora?: string | null
           slug: string
           status?: Database["public"]["Enums"]["status_obra"]
           tagline?: string | null
@@ -611,6 +1081,7 @@ export type Database = {
           publicado?: boolean
           seo_descricao?: string | null
           seo_titulo?: string | null
+          site_construtora?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["status_obra"]
           tagline?: string | null
@@ -1633,6 +2104,12 @@ export type Database = {
           meta_conjunto_id: string | null
           meta_lead_id: string | null
           nao_contatar_em: string | null
+          primeiro_contato_auto_em: string | null
+          parceiro_id: string | null
+          alerta_sem_contato_em: string | null
+          visita_marcada_em: string | null
+          indicado_por: string | null
+          visita_confirmada_em: string | null
           nao_contatar_motivo: string | null
           nome: string
           orcamento_max: number | null
@@ -1682,6 +2159,12 @@ export type Database = {
           meta_conjunto_id?: string | null
           meta_lead_id?: string | null
           nao_contatar_em?: string | null
+          primeiro_contato_auto_em?: string | null
+          parceiro_id?: string | null
+          alerta_sem_contato_em?: string | null
+          visita_marcada_em?: string | null
+          indicado_por?: string | null
+          visita_confirmada_em?: string | null
           nao_contatar_motivo?: string | null
           nome: string
           orcamento_max?: number | null
@@ -1731,6 +2214,12 @@ export type Database = {
           meta_conjunto_id?: string | null
           meta_lead_id?: string | null
           nao_contatar_em?: string | null
+          primeiro_contato_auto_em?: string | null
+          parceiro_id?: string | null
+          alerta_sem_contato_em?: string | null
+          visita_marcada_em?: string | null
+          indicado_por?: string | null
+          visita_confirmada_em?: string | null
           nao_contatar_motivo?: string | null
           nome?: string
           orcamento_max?: number | null
@@ -1786,6 +2275,7 @@ export type Database = {
           blur_data_url: string | null
           empreendimento_id: string
           hash_conteudo: string | null
+          origem_url: string | null
           id: string
           largura: number | null
           ordem: number
@@ -1798,6 +2288,7 @@ export type Database = {
           blur_data_url?: string | null
           empreendimento_id: string
           hash_conteudo?: string | null
+          origem_url?: string | null
           id?: string
           largura?: number | null
           ordem?: number
@@ -1810,6 +2301,7 @@ export type Database = {
           blur_data_url?: string | null
           empreendimento_id?: string
           hash_conteudo?: string | null
+          origem_url?: string | null
           id?: string
           largura?: number | null
           ordem?: number
@@ -1945,6 +2437,7 @@ export type Database = {
           empreendimento_id: string | null
           id: string
           mensagem_base_b: string | null
+          variante_vencedora: "A" | "B" | null
           ignorar_janela: boolean
           mensagem_base: string
           status: "rascunho" | "em_andamento" | "pausada" | "concluida"
@@ -1959,6 +2452,7 @@ export type Database = {
           empreendimento_id?: string | null
           id?: string
           mensagem_base_b?: string | null
+          variante_vencedora?: "A" | "B" | null
           ignorar_janela?: boolean
           mensagem_base: string
           status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
@@ -1973,6 +2467,7 @@ export type Database = {
           empreendimento_id?: string | null
           id?: string
           mensagem_base_b?: string | null
+          variante_vencedora?: "A" | "B" | null
           ignorar_janela?: boolean
           mensagem_base?: string
           status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
@@ -2186,7 +2681,7 @@ export type Database = {
           motivo: string | null
           status: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa: number
-          tipo: "reengajamento" | "lembrete_visita"
+          tipo: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao"
         }
         Insert: {
           agendado_para: string
@@ -2198,7 +2693,7 @@ export type Database = {
           motivo?: string | null
           status?: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa?: number
-          tipo?: "reengajamento" | "lembrete_visita"
+          tipo?: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao"
         }
         Update: {
           agendado_para?: string
@@ -2210,7 +2705,7 @@ export type Database = {
           motivo?: string | null
           status?: "pendente" | "enviado" | "cancelado" | "descartado"
           tentativa?: number
-          tipo?: "reengajamento" | "lembrete_visita"
+          tipo?: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao"
         }
         Relationships: [
           {
@@ -2285,6 +2780,18 @@ export type Database = {
       }
     }
     Views: {
+      /** 0115 — tempo de primeira resposta por conversa (security_invoker). */
+      whatsapp_primeira_resposta: {
+        Row: {
+          conversa_id: string
+          corretor_id: string
+          lead_id: string
+          primeira_fala_cliente: string
+          primeira_resposta_corretor: string | null
+          primeira_resposta_ia: string | null
+        }
+        Relationships: []
+      }
       sla_leads_metricas: {
         Row: {
           canal_automatico: string | null
@@ -2365,6 +2872,44 @@ export type Database = {
       }
     }
     Functions: {
+      marcar_comissao_recebida: {
+        Args: { p_venda: string; p_data: string | null }
+        Returns: boolean
+      }
+      marcar_repasse_pago: {
+        Args: { p_venda: string; p_corretor: string; p_data: string | null }
+        Returns: boolean
+      }
+      ranking_vgv: {
+        Args: { p_inicio: string; p_fim: string }
+        Returns: {
+          corretor_id: string
+          nome: string
+          foto_url: string | null
+          vgv: number
+          vendas: number
+          distratos: number
+        }[]
+      }
+      taxas_da_equipe: {
+        Args: { p_desde: string }
+        Returns: {
+          leads: number
+          visitas: number
+          vendas: number
+          repasse_medio: number | null
+          ticket_medio: number | null
+          doc_para_venda: number | null
+        }[]
+      }
+      participa_da_venda: {
+        Args: { p_venda: string }
+        Returns: boolean
+      }
+      salvar_venda: {
+        Args: { p_venda: string | null; p_dados: Json; p_participantes: Json }
+        Returns: string
+      }
       atualizar_parametros_credito: {
         Args: {
           p_comprometimento_maximo: number
@@ -2448,7 +2993,7 @@ export type Database = {
       }
       desligar_disparo_automatico: { Args: never; Returns: string }
       sortear_corretor_whatsapp: {
-        Args: never
+        Args: { p_empreendimento?: string; preferido?: string }
         Returns: { corretor_id: string; telefone: string }[]
       }
       desligar_followups_automaticos: { Args: never; Returns: string }

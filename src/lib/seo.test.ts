@@ -1,3 +1,4 @@
+import { site } from "./site";
 import { describe, expect, it } from "vitest";
 import {
   LIMITE_DESCRICAO,
@@ -81,8 +82,12 @@ describe("os títulos escritos à mão cabem na SERP", () => {
   for (const arquivo of PAGINAS_PUBLICAS) {
     it(`${arquivo.replace("src/app/", "")} cabe em ${LIMITE_TITULO_PAGINA} caracteres`, () => {
       const codigo = readFileSync(arquivo, "utf8");
-      // Só o `title:` do bloco de metadata, e só quando é string literal.
-      const literais = [...codigo.matchAll(/^\s{2}title: "([^"]+)"/gm)].map((m) => m[1]);
+      // Só o `title:` do bloco de metadata: string literal ou template que
+      // só interpola a marca (`${site.nome}`), medido com o nome desta
+      // instalação — um cliente de nome longo estoura antes.
+      const literais = [...codigo.matchAll(/^\s{2}title: (?:"([^"]+)"|`([^`]+)`)/gm)]
+        .map((m) => m[1] ?? m[2].replaceAll("${site.nome}", site.nome).replaceAll("${site.nomeCompleto}", site.nomeCompleto))
+        .filter((t) => !t.includes("${"));
       expect(literais.length).toBeGreaterThan(0);
 
       for (const titulo of literais) {

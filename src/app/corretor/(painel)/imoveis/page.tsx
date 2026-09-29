@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { ProcuraPorImovel } from "../_componentes/graficos/ProcuraPorImovel";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { ListaImoveisClient } from "./ListaImoveisClient";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
@@ -88,6 +90,14 @@ export default async function ImoveisPage() {
         motivo: virou aba.
       */}
       <ListaImoveisClient imoveis={imoveis} artePorImovel={Object.fromEntries(artePorImovel)} />
+
+      <Suspense fallback={null}>
+        <ProcuraPorImovel
+          imoveis={imoveis
+            .filter((i) => i.id)
+            .map((i) => ({ id: i.id as string, nome: i.nome, slug: i.slug, publicado: i.publicado !== false, foto: i.galeria?.[0]?.url ?? null }))}
+        />
+      </Suspense>
     </div>
   );
 }

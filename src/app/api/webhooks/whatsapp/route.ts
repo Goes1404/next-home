@@ -13,9 +13,14 @@ import { horasDesdeAUltimaFala } from "@/lib/whatsapp/tempoDaConversa";
 import { devoExtrair } from "@/lib/whatsapp/quandoExtrair";
 import { mesclarMemoria } from "@/lib/whatsapp/memoriaDaConversa";
 import { detectarEvolucao, podeAvisarAgora } from "@/lib/whatsapp/evolucaoConversa";
-import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
+import { instrucaoDoAudio, transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
 import { notificarAtualizacaoCorretor, notificarCorretorLeadQuente } from "@/lib/whatsapp/brokerNotifier";
-import { enviarMensagemWhatsapp, enviarMidiaWhatsapp, enviarPresencaDigitando } from "@/lib/whatsapp/provider";
+import {
+  baixarMidiaDoProvedor,
+  enviarMensagemWhatsapp,
+  enviarMidiaWhatsapp,
+  enviarPresencaDigitando,
+} from "@/lib/whatsapp/provider";
 import {
   agendarFollowup,
   agendarVisitaLead,
@@ -57,12 +62,15 @@ import {
   ultimoAvisoEvolucao,
   marcarAvisoEvolucao,
 } from "@/lib/whatsapp/repositorio";
+import { instrucaoPelosFollowups } from "@/lib/whatsapp/respostaAosFollowups";
 import {
   clienteTrouxeFraseDeEntrada,
   decidirPorFalaDoCorretor,
   decidirPorModo,
 } from "@/lib/whatsapp/modoBot";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
+import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
+import { registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 
 export const runtime = "nodejs";
@@ -246,11 +254,18 @@ export async function POST(req: NextRequest) {
     // provedor reentrega webhooks; sem esta chave, cada retry virava
     // resposta duplicada no WhatsApp do cliente.
     const providerMessageId: string | null = payload.data?.key?.id || payload.messageId || null;
+    const audioMsg = payload.data?.message?.audioMessage;
+    /*
+     * A `url` do `audioMessage` é o arquivo CIFRADO do WhatsApp — não serve
+     * para transcrever (ver `audioTranscriber.ts`). Fica só como referência
+     * da mídia na mensagem gravada; o áudio de verdade vem decifrado da
+     * Evolution, logo antes da transcrição.
+     */
     const audioUrlOrBase64 =
-      payload.data?.message?.audioMessage?.url ||
+      audioMsg?.url ||
       payload.audioBase64 ||
       payload.audioUrl ||
-      "";
+      (audioMsg ? "audio" : "");
 
     let text =
       payload.data?.message?.conversation ||
@@ -366,9 +381,11 @@ export async function POST(req: NextRequest) {
      * porteiro acha o cadastro e segue), e a liberação da conversa continua
      * onde sempre esteve, mais abaixo.
      */
+    const anuncioMeta = reconhecerAnuncioMeta({ payload, texto: text });
     const convite = reconhecerConviteDeEntrada({
       texto: text,
       palavrasEntradaCliente: instancia.palavrasEntradaCliente,
+      anuncio: anuncioMeta,
     });
 
     /*
@@ -389,20 +406,45 @@ export async function POST(req: NextRequest) {
       convite,
     });
 
+    /*
+     * Diagnóstico do impulsionamento (27/09): só os NOMES dos campos de
+     * contexto, nunca o conteúdo. Se um anúncio de verdade chegar sem ser
+     * reconhecido, é aqui que aparece qual campo a Evolution mandou.
+     */
+    if (!conversa && chavesDeContexto(payload).length > 0) {
+      console.info("[porteiro] número sem lead com contextInfo:", chavesDeContexto(payload).join(","));
+    }
+
     if (!conversa) {
       return NextResponse.json({ ok: true, ignored: "numero_sem_lead_cadastrado" });
     }
 
     let audioFalhou = false;
+    let instrucaoAudio: string | undefined;
+    /** O áudio decifrado: do próprio webhook (se vier) ou pedido à Evolution. */
+    const audioDecifrado = async () => {
+      const segundos = typeof audioMsg?.seconds === "number" ? audioMsg.seconds : null;
+      const noPayload: string | undefined = payload.data?.message?.base64 || payload.audioBase64;
+      if (noPayload) return { base64: noPayload, mimeType: audioMsg?.mimetype ?? null, segundos };
+      if (!providerMessageId) return { base64: null, segundos };
+      const baixado = await baixarMidiaDoProvedor({ instanceName: instancia.instanceName, messageId: providerMessageId });
+      if (!baixado.ok) {
+        console.warn("[webhook] não consegui baixar o áudio decifrado:", baixado.motivo, baixado.detalhe ?? "");
+        return { base64: null, segundos };
+      }
+      return { base64: baixado.base64, mimeType: audioMsg?.mimetype ?? baixado.mimeType, segundos };
+    };
     if (ehAudio) {
-      const resultadoAudio = await transcreverAudioWhatsapp(audioUrlOrBase64);
+      const resultadoAudio = await transcreverAudioWhatsapp(await audioDecifrado());
       audioFalhou = !resultadoAudio.sucesso;
       text = resultadoAudio.textoTranscrito;
-      // A intenção resumida era calculada e jogada fora; como anotação ela
-      // ajuda a IA quando a transcrição sai truncada ou ambígua.
-      if (resultadoAudio.intencaoResumida) {
-        text = `${text}\n[intenção detectada no áudio: ${resultadoAudio.intencaoResumida}]`;
-      }
+      /*
+       * A "intenção detectada" que ia anexada aqui SAIU (26/09/2026): era um
+       * palpite do modelo gravado como fala do cliente, e a IA respondia ao
+       * palpite. O que vai para o turno é a instrução de que a fala é uma
+       * transcrição — ver `instrucaoDoAudio`.
+       */
+      if (resultadoAudio.sucesso) instrucaoAudio = instrucaoDoAudio(resultadoAudio);
     }
 
     if (!text) {
@@ -513,6 +555,26 @@ export async function POST(req: NextRequest) {
       }
       if (conversa.leadId) {
         await marcarLeadVindoDeAnuncio(conversa.leadId, nomeDoAnuncio);
+      }
+    }
+
+    /*
+     * Impulsionamento do próprio corretor (27/09/2026): a Meta identificou o
+     * anúncio. Libera a IA como no link porteiro, carimba o anúncio na ficha
+     * e registra o anúncio na lista do corretor — é nela que ele digita
+     * quanto gastou, e o custo por lead sai sozinho.
+     */
+    if (anuncioMeta && !nomeDoAnuncio) {
+      if (!conversa.liberadoPorPalavraChave) {
+        await liberarConversaPorPalavraChave(conversa.id);
+        conversa.liberadoPorPalavraChave = true;
+      }
+      if (conversa.leadId) {
+        await registrarLeadDeImpulsionamento({
+          leadId: conversa.leadId,
+          corretorId: instancia.corretorId,
+          anuncio: anuncioMeta,
+        });
       }
     }
 
@@ -717,6 +779,18 @@ export async function POST(req: NextRequest) {
     ]);
 
     /*
+     * Resposta a um follow-up nosso (pós-visita, lembrete da véspera,
+     * pedido de indicação) vira instrução para o turno e, quando cabe,
+     * aviso ao corretor e `visita_confirmada_em` (0121, 0123).
+     */
+    const instrucaoDoFollowup = await instrucaoPelosFollowups({
+      conversaId: conversa.id,
+      leadId: conversa.leadId,
+      corretorId: instancia.corretorId,
+      historico,
+    });
+
+    /*
      * UM turno de atendimento, no caminho compartilhado
      * (`turnoDeAtendimento.ts`): separa a rajada, recupera few-shot,
      * ranqueia e encolhe o catálogo pelo foco, gera, saneia e quebra em
@@ -749,6 +823,7 @@ export async function POST(req: NextRequest) {
        * O cálculo mora aqui porque `turnoDeAtendimento` não toca no relógio.
        */
       horasDesdeAUltimaFala: horasDesdeAUltimaFala(historico),
+      instrucaoExtra: [instrucaoAudio, instrucaoDoFollowup].filter(Boolean).join(" ") || undefined,
       fewShot: { corretorId: instancia.corretorId, conversaAtualId: conversa.id },
       /*
        * Os horários que EXISTEM na agenda do corretor (0073). Até aqui a

@@ -131,7 +131,11 @@ export function CabeNoBolso({
           valor={valorEntrada}
           aoMudar={setValorEntrada}
         />
-        <p className="text-fluid-xs text-tenue">
+        {/* `text-apoio`, não `tenue`: esta seção mora na faixa mais escura da
+            home, e o tênue dava 2,62:1 no tema claro (medido em 25/09),
+            abaixo dos 3:1. E é o aviso de privacidade do simulador — o
+            texto que menos pode se perder. */}
+        <p className="text-fluid-xs text-apoio">
           A conta roda no seu navegador. Nada do que você escrever aqui é enviado.
         </p>
       </form>
@@ -198,7 +202,7 @@ export function CabeNoBolso({
               </p>
             )}
 
-            <p className="text-fluid-xs text-tenue mt-5">
+            <p className="text-fluid-xs text-apoio mt-5">
               Estimativa, não aprovação de crédito. Taxas e faixas conferidas em{" "}
               {new Date(parametros.conferidoEm + "T12:00:00Z").toLocaleDateString("pt-BR")}.
             </p>
@@ -289,7 +293,7 @@ function Campo({
           aria-describedby={`${id}-ajuda`}
         />
       </div>
-      <p id={`${id}-ajuda`} className="text-fluid-xs text-tenue mt-1">
+      <p id={`${id}-ajuda`} className="text-fluid-xs text-apoio mt-1">
         {ajuda}
       </p>
     </div>

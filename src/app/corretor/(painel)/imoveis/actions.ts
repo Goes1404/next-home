@@ -8,6 +8,7 @@ import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mapp
 import type { Empreendimento, Midia, StatusObra, TipoImovel, Finalidade } from "@/lib/types";
 import { validarUrlMidiaExterna } from "@/lib/embedMidia";
 import { registrarMidia } from "@/lib/imoveis/registrarMidia";
+import { paraGravar } from "@/lib/imoveis/ordemDaVitrine";
 import {
   interpretarRespostaDescricao,
   montarPromptDescricao,
@@ -251,40 +252,226 @@ export async function removerMidiaImovel(
 }
 
 /**
- * Define uma foto específica como Capa Principal (ordem 0).
+ * Define uma foto como Capa Principal: ela passa para o INÍCIO da galeria.
+ *
+ * Até 24/09/2026 isto punha `ordem = 10` em todas as fotos e `0` na escolhida
+ * — o que apagava qualquer sequência que o corretor tivesse arrumado, e
+ * deixava as demais empatadas (a vitrine as mostrava na ordem que o banco
+ * quisesse). Agora a escolhida vai para a frente e as outras mantêm a ordem
+ * relativa, pelo mesmo caminho de "Salvar ordem das fotos".
  */
 export async function definirFotoComoCapa(
   empreendimentoId: string,
   midiaId: string,
   slug: string,
+  /**
+   * A sequência que a tela mostra. `midias` não tem data de criação, e fotos
+   * com `ordem` empatada saem do banco em ordem arbitrária: reler do banco
+   * poderia embaralhar o resto. Sem ela, vale a ordem do banco.
+   */
+  idsDaTela?: string[],
 ): Promise<{ ok: boolean; erro?: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { ok: false, erro: "Sessão expirada." };
 
+  let base = idsDaTela;
+  if (!base) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("midias")
+      .select("id")
+      .eq("empreendimento_id", empreendimentoId)
+      .in("tipo", ["foto", "planta"])
+      .order("ordem")
+      .order("id");
+    if (error || !data) return { ok: false, erro: "Não foi possível definir como capa." };
+    base = data.map((m) => m.id);
+  }
+  if (!base.includes(midiaId)) return { ok: false, erro: "Não foi possível definir como capa." };
+
+  const ids = [midiaId, ...base.filter((id) => id !== midiaId)];
+  return salvarOrdemDasFotos(empreendimentoId, slug, ids);
+}
+
+/**
+ * Grava a sequência da galeria do imóvel (fotos e plantas), na ordem da tela.
+ *
+ * A vitrine ordena `midias` por `ordem` (`mapEmpreendimento`), e a capa é a
+ * primeira FOTO. Todo id precisa ser deste imóvel e ser foto ou planta: vídeo
+ * e tour têm aba própria e não entram na conta. Zero linhas num update é
+ * falha — a RLS barra calada, e a tela diria "salvo" sobre nada.
+ */
+export async function salvarOrdemDasFotos(
+  empreendimentoId: string,
+  slug: string,
+  ids: string[],
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+  if (ids.length === 0 || new Set(ids).size !== ids.length) {
+    return { ok: false, erro: "A lista de fotos chegou incompleta. Recarregue a página." };
+  }
+
   const supabase = await createClient();
-
-  // Redefine todas as fotos do empreendimento para ordem padrão
-  await supabase
+  const { data: doImovel, error: erroLeitura } = await supabase
     .from("midias")
-    .update({ ordem: 10 })
+    .select("id")
     .eq("empreendimento_id", empreendimentoId)
-    .eq("tipo", "foto");
+    .in("tipo", ["foto", "planta"]);
 
-  // Define a foto escolhida como ordem 0 (capa)
-  const { error } = await supabase
+  if (erroLeitura || !doImovel) {
+    return { ok: false, erro: "Não foi possível ler as fotos agora. Tente novamente." };
+  }
+  const existentes = new Set(doImovel.map((m) => m.id));
+  if (ids.some((id) => !existentes.has(id))) {
+    return { ok: false, erro: "As fotos mudaram enquanto você ordenava. Recarregue a página." };
+  }
+
+  const resultados = await Promise.all(
+    ids.map((id, i) =>
+      supabase
+        .from("midias")
+        .update({ ordem: (i + 1) * 10 })
+        .eq("id", id)
+        .eq("empreendimento_id", empreendimentoId)
+        .select("id"),
+    ),
+  );
+  const falhou = resultados.find((r) => r.error || !r.data || r.data.length === 0);
+  if (falhou) {
+    console.error("[ordem das fotos] falha ao gravar:", falhou.error?.message ?? "zero linhas afetadas");
+    return { ok: false, erro: "Não foi possível salvar a ordem das fotos." };
+  }
+
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/", "layout");
+  revalidatePath("/corretor/imoveis");
+  revalidatePath(`/corretor/imoveis/${slug}`);
+  return { ok: true };
+}
+
+/**
+ * Troca uma imagem da galeria entre FOTO e PLANTA.
+ *
+ * Existe porque a planta chega por onde a foto chega: book em PDF, pasta do
+ * Drive, câmera do celular — e tudo isso entra como `foto`. Enquanto ela for
+ * foto, a assistente não a manda quando o cliente pede a planta, a vitrine a
+ * mostra no meio das fotos de ambiente e o checklist do catálogo segue
+ * dizendo "sem imagem da planta" com a imagem ali na tela.
+ *
+ * Só foto ↔ planta: vídeo e tour 360° são link de terceiro e moram em outra
+ * aba. O filtro de tipo está na própria consulta, não num `if` antes dela —
+ * assim um id de vídeo nunca vira "planta" por engano.
+ */
+export async function definirTipoDaMidia(
+  midiaId: string,
+  tipo: "foto" | "planta",
+  slug: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+  if (tipo !== "foto" && tipo !== "planta") return { ok: false, erro: "Tipo inválido." };
+  if (!midiaId) return { ok: false, erro: "Imagem sem identificação. Recarregue a página." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("midias")
-    .update({ ordem: 0 })
-    .eq("id", midiaId);
+    .update({ tipo })
+    .eq("id", midiaId)
+    .in("tipo", ["foto", "planta"])
+    .select("id");
 
-  if (error) {
-    return { ok: false, erro: "Não foi possível definir como capa." };
+  if (error) return { ok: false, erro: "Não foi possível mudar o tipo da imagem agora." };
+  // Zero linhas não é sucesso: a policy ou o filtro de tipo recusaram, e a
+  // tela não pode dizer "virou planta" sobre algo que continua foto.
+  if (!data || data.length === 0) {
+    return { ok: false, erro: "Esta imagem não pôde ser alterada. Recarregue a página." };
   }
 
   revalidatePath(`/empreendimentos/${slug}`);
   revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
+  revalidatePath(`/corretor/imoveis/${slug}`);
   return { ok: true };
+}
+
+/**
+ * Salva as plantas editadas na tela (26/09/2026).
+ *
+ * Até aqui o botão "Salvar" gravava dados gerais e lazer e dizia "Todas as
+ * alterações foram salvas" — as plantas editadas na tela NUNCA chegavam ao
+ * banco. Só a importação escrevia em `tipologias`.
+ *
+ * Atualiza as que têm id, insere as novas e apaga as que saíram da tela.
+ * `unidades_disponiveis` fica de FORA de propósito: na tela ele já vem
+ * derivado da lista de unidades (mappers.ts), e gravá-lo de volta criaria
+ * um contador manual que envelhece.
+ */
+export async function salvarTipologias(
+  empreendimentoId: string,
+  slug: string,
+  tipologias: Array<{
+    id?: string;
+    nome: string;
+    areaPrivativa: number | null;
+    dormitorios: number;
+    suites: number;
+    banheiros: number;
+    vagas: number;
+    preco: number | null;
+    plantaUrl: string | null;
+  }>,
+): Promise<{ ok: boolean; erro?: string; ids?: Array<string | null> }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada." };
+  const supabase = await createClient();
+
+  const validas = tipologias.filter((t) => t.nome.trim() || t.dormitorios > 0 || t.areaPrivativa);
+  const { data: atuais, error: erroLeitura } = await supabase
+    .from("tipologias")
+    .select("id")
+    .eq("empreendimento_id", empreendimentoId);
+  if (erroLeitura) return { ok: false, erro: "Não foi possível ler as plantas agora." };
+
+  const mantidas = new Set(validas.map((t) => t.id).filter(Boolean));
+  const remover = (atuais ?? []).map((t) => t.id).filter((id) => !mantidas.has(id));
+  if (remover.length > 0) {
+    const { error } = await supabase.from("tipologias").delete().in("id", remover);
+    if (error) return { ok: false, erro: "Não foi possível remover uma planta." };
+  }
+
+  // O id de cada planta na ordem da TELA (null para a descartada por vazia):
+  // sem devolver o id da planta recém-inserida, um segundo "Salvar" a
+  // inseriria de novo.
+  const idPorPlanta = new Map<(typeof tipologias)[number], string>();
+  for (const [ordem, t] of validas.entries()) {
+    const linha = {
+      empreendimento_id: empreendimentoId,
+      nome: t.nome.trim() || `${t.dormitorios} dormitórios`,
+      area_privativa: t.areaPrivativa,
+      dormitorios: Math.max(0, Math.round(t.dormitorios || 0)),
+      suites: Math.max(0, Math.round(t.suites || 0)),
+      banheiros: Math.max(0, Math.round(t.banheiros || 0)),
+      vagas: Math.max(0, Math.round(t.vagas || 0)),
+      preco: t.preco,
+      planta_url: t.plantaUrl?.trim() || null,
+      ordem,
+    };
+    const { data: gravada, error } =
+      t.id && (atuais ?? []).some((a) => a.id === t.id)
+        ? await supabase.from("tipologias").update(linha).eq("id", t.id).select("id").single()
+        : await supabase.from("tipologias").insert(linha).select("id").single();
+    if (error || !gravada) return { ok: false, erro: `Não foi possível salvar a planta "${linha.nome}".` };
+    idPorPlanta.set(t, gravada.id);
+  }
+
+  revalidatePath(`/corretor/imoveis/${slug}`);
+  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarCatalogo();
+  return { ok: true, ids: tipologias.map((t) => idPorPlanta.get(t) ?? null) };
 }
 
 /**
@@ -657,5 +844,67 @@ export async function excluirImovel(slug: string): Promise<{ ok: boolean; erro?:
   revalidatePath(`/empreendimentos/${slug}`);
   revalidarCatalogo();
   revalidatePath("/empreendimentos", "layout");
+  return { ok: true };
+}
+
+/**
+ * Grava a ordem em que o site mostra os imóveis (tela "Ordem no site").
+ *
+ * Recebe a lista INTEIRA na ordem da tela e reescreve `ordem` e `destaque` de
+ * cada um. Só publicados: rascunho não aparece no site, e mandá-lo junto
+ * gravaria uma posição que ninguém vê.
+ *
+ * Um update por imóvel (são ~25). A contagem de linhas é conferida: update que
+ * a RLS barra afeta zero linhas SEM erro, e a tela diria "salvo" para uma
+ * ordem que o site nunca viu.
+ */
+export async function salvarOrdemDaVitrine(
+  itens: { slug: string; destaque: boolean }[],
+): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) {
+    return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  }
+
+  const slugsUnicos = new Set(itens.map((i) => i.slug));
+  if (itens.length === 0 || slugsUnicos.size !== itens.length) {
+    return { ok: false, erro: "A lista chegou incompleta. Recarregue a página e tente de novo." };
+  }
+
+  const supabase = await createClient();
+  const { data: publicados, error: erroLeitura } = await supabase
+    .from("empreendimentos")
+    .select("slug")
+    .eq("publicado", true);
+
+  if (erroLeitura || !publicados) {
+    return { ok: false, erro: "Não foi possível ler o catálogo agora. Tente novamente." };
+  }
+  const existentes = new Set(publicados.map((p) => p.slug));
+  if (itens.some((i) => !existentes.has(i.slug))) {
+    return { ok: false, erro: "O catálogo mudou enquanto você ordenava. Recarregue a página." };
+  }
+
+  const resultados = await Promise.all(
+    paraGravar(itens).map((item) =>
+      supabase
+        .from("empreendimentos")
+        .update({ ordem: item.ordem, destaque: item.destaque })
+        .eq("slug", item.slug)
+        .select("id"),
+    ),
+  );
+
+  const falhou = resultados.find((r) => r.error || !r.data || r.data.length === 0);
+  if (falhou) {
+    console.error("[ordem no site] falha ao gravar:", falhou.error?.message ?? "zero linhas afetadas");
+    return { ok: false, erro: "Não foi possível salvar a ordem. Tente novamente." };
+  }
+
+  revalidarCatalogo();
+  revalidatePath("/", "layout");
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis", "layout");
+
   return { ok: true };
 }

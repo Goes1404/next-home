@@ -27,6 +27,12 @@ import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
+import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
+import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
+import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
+import { abrirConversasDePortal } from "@/lib/whatsapp/aberturaPelaIA";
+import { avisarQuemPediuAlerta } from "@/lib/crm/avisoDeNovidade";
+import { lerCaixasDoGmail } from "@/lib/inbound/gmailCaixa";
 import { separarRajada } from "@/lib/whatsapp/rajada";
 import {
   decidirRespostaAtrasada,
@@ -96,7 +102,7 @@ type ItemFollowup = {
   instancia_id: string;
   tentativa: number;
   agendado_para: string;
-  tipo: "reengajamento" | "lembrete_visita";
+  tipo: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao";
 };
 
 /** Janela em que uma visita futura ganha lembrete: entre 8h e 30h antes. */
@@ -164,6 +170,133 @@ async function agendarLembretesDeVisita(
       tentativa: 1,
       tipo: "lembrete_visita",
       agendado_para: new Date(quando).toISOString(),
+    });
+    agendados++;
+  }
+  return agendados;
+}
+
+/**
+ * O pós-visita (26/09/2026): no dia seguinte à visita, uma pergunta — o
+ * que ele achou. Até aqui, depois da visita não acontecia nada sozinho, e
+ * é justamente o momento em que o cliente decide.
+ *
+ * Janela: visitas que aconteceram entre 12h e 72h atrás. O envio sai 18h
+ * depois do horário marcado (a manhã seguinte, para visita de fim de
+ * tarde); se o tique chegar depois disso, sai agora. Uma por conversa,
+ * como o lembrete. Quem pediu para não ser procurado, ou já está em
+ * `fechado`/`perdido`, não recebe.
+ */
+async function agendarPosVisita(
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<number> {
+  const agora = Date.now();
+  const { data: visitas } = await supabase
+    .from("leads")
+    .select("id, corretor_id, visita_agendada_em, etapa, nao_contatar_em")
+    .gte("visita_agendada_em", new Date(agora - 72 * 3600_000).toISOString())
+    .lte("visita_agendada_em", new Date(agora - 12 * 3600_000).toISOString())
+    .not("corretor_id", "is", null)
+    .is("nao_contatar_em", null)
+    .not("etapa", "in", "(fechado,perdido)")
+    .limit(50);
+
+  let agendados = 0;
+  for (const lead of visitas ?? []) {
+    const { data: conversa } = await supabase
+      .from("whatsapp_conversas")
+      .select("id")
+      .eq("lead_id", lead.id)
+      .eq("corretor_id", lead.corretor_id!)
+      .limit(1)
+      .maybeSingle();
+    if (!conversa) continue;
+
+    const { data: jaTem } = await supabase
+      .from("whatsapp_followups")
+      .select("id")
+      .eq("conversa_id", conversa.id)
+      .eq("tipo", "pos_visita")
+      .gte("created_at", new Date(agora - 7 * 86_400_000).toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (jaTem) continue;
+
+    const { data: instancia } = await supabase
+      .from("corretor_whatsapp_instancias")
+      .select("id")
+      .eq("corretor_id", lead.corretor_id!)
+      .maybeSingle();
+    if (!instancia) continue;
+
+    const quando = Math.max(agora, new Date(lead.visita_agendada_em!).getTime() + 18 * 3600_000);
+    await supabase.from("whatsapp_followups").insert({
+      conversa_id: conversa.id,
+      instancia_id: instancia.id,
+      tentativa: 1,
+      tipo: "pos_visita",
+      agendado_para: new Date(quando).toISOString(),
+    });
+    agendados++;
+  }
+  return agendados;
+}
+
+/** Quantos dias depois do fechamento sai o pedido de indicação. */
+const DIAS_ATE_A_INDICACAO = 5;
+
+/**
+ * Pedido de indicação depois do fechamento (0123). Leads que viraram
+ * `fechado` entre 5 e 30 dias atrás, uma vez por conversa na vida. Mora no
+ * tique dos follow-ups e passa pela mesma cota anti-ban dos outros.
+ */
+async function agendarPedidoDeIndicacao(
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<number> {
+  const agora = Date.now();
+  const { data: fechados } = await supabase
+    .from("leads")
+    .select("id, corretor_id")
+    .eq("etapa", "fechado")
+    .is("nao_contatar_em", null)
+    .not("corretor_id", "is", null)
+    .lte("etapa_alterada_em", new Date(agora - DIAS_ATE_A_INDICACAO * 86_400_000).toISOString())
+    .gte("etapa_alterada_em", new Date(agora - 30 * 86_400_000).toISOString())
+    .limit(50);
+
+  let agendados = 0;
+  for (const lead of fechados ?? []) {
+    const { data: conversa } = await supabase
+      .from("whatsapp_conversas")
+      .select("id")
+      .eq("lead_id", lead.id)
+      .eq("corretor_id", lead.corretor_id!)
+      .limit(1)
+      .maybeSingle();
+    if (!conversa) continue;
+
+    const { data: jaTem } = await supabase
+      .from("whatsapp_followups")
+      .select("id")
+      .eq("conversa_id", conversa.id)
+      .eq("tipo", "indicacao")
+      .limit(1)
+      .maybeSingle();
+    if (jaTem) continue;
+
+    const { data: instancia } = await supabase
+      .from("corretor_whatsapp_instancias")
+      .select("id")
+      .eq("corretor_id", lead.corretor_id!)
+      .maybeSingle();
+    if (!instancia) continue;
+
+    await supabase.from("whatsapp_followups").insert({
+      conversa_id: conversa.id,
+      instancia_id: instancia.id,
+      tentativa: 1,
+      tipo: "indicacao",
+      agendado_para: new Date(agora).toISOString(),
     });
     agendados++;
   }
@@ -428,11 +561,41 @@ export async function GET(req: NextRequest) {
    */
   const atrasadas = await varrerRespostasAtrasadas(supabase);
 
+  // Caixas do Gmail conectadas (0125): e-mail de portal vira lead. Antes da
+  // janela — é entrada de lead, não contato com cliente. Uma caixa e até
+  // quatro e-mails por tique: cada um custa uma extração de IA.
+  const leadsDoGmail = await lerCaixasDoGmail(1, 4).catch((e) => {
+    console.error("[gmail]", e);
+    return 0;
+  });
+
+  /*
+   * O resumo do dia vai para o PRÓPRIO corretor, não para cliente: não
+   * passa pela janela comercial nem pela cota (mesma regra dos lembretes
+   * das anotações). Às 8h a janela ainda está fechada; por isso aqui.
+   */
+  const resumos = await enviarResumosDoDia(supabase).catch((e) => {
+    console.error("[resumo do dia]", e);
+    return 0;
+  });
+
+  /*
+   * Também antes da janela, pelo mesmo motivo: o aviso de lead pago sem
+   * contato vai para o CORRETOR (0121), e lead de portal que chega às 22h
+   * não pode esperar até as 9h para alguém saber dele. E reserva vencida
+   * volta a disponível a qualquer hora.
+   */
+  const semContato = await alertarLeadsSemContato(supabase).catch((e) => {
+    console.error("[lead sem contato]", e);
+    return 0;
+  });
+  const reservasLiberadas = await liberarReservasVencidas(supabase).catch(() => 0);
+
   // Fora do horário comercial nada sai — e nada é descartado: o item
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -442,6 +605,23 @@ export async function GET(req: NextRequest) {
 
   try {
     await agendarLembretesDeVisita(supabase);
+    await agendarPosVisita(supabase);
+    await agendarPedidoDeIndicacao(supabase);
+    // Quem pediu contato num portal/formulário recebe a primeira mensagem
+    // sozinho — dentro da janela, com cota e teto de 2 por tique.
+    const primeirosContatos = await abrirConversasDePortal(2).catch((e) => {
+      console.error("[primeiro contato]", e);
+      return 0;
+    });
+    // "Me avise quando surgir": quem pediu pelo site recebe o imóvel novo que
+    // combina. Um por tique e só se sobrou tempo: cada aviso custa ~20s de IA.
+    const avisosDeNovidade =
+      primeirosContatos >= 2
+        ? 0
+        : await avisarQuemPediuAlerta(1).catch((e) => {
+            console.error("[aviso de novidade]", e);
+            return 0;
+          });
     // Lembretes das anotações (0100): mensagem para o PRÓPRIO corretor, não
     // para cliente — por isso não passa por cota anti-ban nem pela janela.
     await processarLembretesDeAnotacao(supabase);
@@ -461,7 +641,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "descartado") resultado.descartados++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, semContato, reservasLiberadas, primeirosContatos, avisosDeNovidade, leadsDoGmail });
   } finally {
     await destravarDisparo("followups", dono);
   }
@@ -639,6 +819,20 @@ async function processarFollowup(
   });
   if (!decisao.pode) return descartar(supabase, item.id, "modo_nao_permite");
 
+  /*
+   * Reengajamento é para quem ainda não decidiu. Lead que fechou (ou foi
+   * perdido) desde o agendamento não recebe "voltando ao que conversamos":
+   * a lista de compradores de um imóvel (26/09/2026) dispara para quem já
+   * comprou, e o disparo agenda reengajamento para quem não responde.
+   * Checado ANTES da cota, para não gastar cota com o que vai ser descartado.
+   */
+  if (item.tipo === "reengajamento" && conversa.lead_id) {
+    const { data: lead } = await supabase.from("leads").select("etapa").eq("id", conversa.lead_id).maybeSingle();
+    if (lead?.etapa === "fechado" || lead?.etapa === "perdido") {
+      return descartar(supabase, item.id, "lead_encerrado");
+    }
+  }
+
   const cota = await reservarCotaCampanha(instancia.id, new Date(instancia.conectado_em));
   /*
    * Espaçamento anti-ban (0062) NÃO é motivo para descartar: a vez chega em
@@ -662,6 +856,49 @@ async function processarFollowup(
   let visitaFormatada: string | undefined;
   let enderecoDoImovel: string | null = null;
   let nomeDoImovel: string | null = null;
+  if (item.tipo === "pos_visita") {
+    // Revalidado contra a agenda: se a visita foi REMARCADA para o futuro,
+    // perguntar "o que achou?" seria perguntar de uma visita que não houve.
+    const { data: lead } = conversa.lead_id
+      ? await supabase
+          .from("leads")
+          .select(
+            "visita_agendada_em, etapa, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome)",
+          )
+          .eq("id", conversa.lead_id)
+          .maybeSingle()
+      : { data: null };
+    const visita = lead?.visita_agendada_em;
+    if (!visita || new Date(visita).getTime() > Date.now() - 6 * 3600_000) {
+      return descartar(supabase, item.id, "visita_remarcada_ou_ausente");
+    }
+    if (lead?.etapa === "fechado" || lead?.etapa === "perdido") {
+      return descartar(supabase, item.id, "lead_encerrado");
+    }
+    visitaFormatada = formatarVisitaSP(visita);
+    const imovel = Array.isArray(lead?.empreendimento)
+      ? lead.empreendimento[0]
+      : lead?.empreendimento;
+    nomeDoImovel = imovel?.nome ?? null;
+  }
+
+  if (item.tipo === "indicacao") {
+    // Revalidado: quem voltou atrás no fechamento ou pediu para não ser
+    // procurado não recebe pedido de indicação.
+    const { data: lead } = conversa.lead_id
+      ? await supabase
+          .from("leads")
+          .select("etapa, nao_contatar_em, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome)")
+          .eq("id", conversa.lead_id)
+          .maybeSingle()
+      : { data: null };
+    if (!lead || lead.etapa !== "fechado" || lead.nao_contatar_em) {
+      return descartar(supabase, item.id, "lead_fora_do_pos_venda");
+    }
+    const imovel = Array.isArray(lead.empreendimento) ? lead.empreendimento[0] : lead.empreendimento;
+    nomeDoImovel = imovel?.nome ?? null;
+  }
+
   if (item.tipo === "lembrete_visita") {
     /*
      * O endereço vem daqui, do CADASTRO, e viaja até a instrução — a IA

@@ -651,3 +651,54 @@ export async function enviarMensagemWhatsapp(params: {
     };
   }
 }
+
+export type MidiaBaixada =
+  | { ok: true; base64: string; mimeType: string }
+  | { ok: false; motivo: "provedor_nao_configurado" | "erro_provedor" | "sem_conteudo"; detalhe?: string };
+
+/**
+ * Baixa do provedor a mídia de uma mensagem recebida JÁ DECIFRADA.
+ *
+ * A `url` que vem no webhook (`audioMessage.url`, `mmg.whatsapp.net/…enc`)
+ * aponta para o arquivo CIFRADO do WhatsApp: baixá-la devolve bytes que
+ * nenhum modelo consegue ouvir. Era isso que ia para a transcrição, e o
+ * modelo, recebendo ruído, escrevia uma fala plausível de cliente
+ * imobiliário — a alucinação relatada em 26/09/2026. Quem tem a chave de
+ * decifragem é a Evolution, e este endpoint devolve o arquivo decifrado em
+ * base64.
+ */
+export async function baixarMidiaDoProvedor(params: {
+  instanceName: string;
+  messageId: string;
+  timeoutMs?: number;
+}): Promise<MidiaBaixada> {
+  const config = configDoProvedor();
+  if (!config) return { ok: false, motivo: "provedor_nao_configurado" };
+  if (!params.instanceName || !params.messageId) return { ok: false, motivo: "sem_conteudo" };
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), params.timeoutMs ?? 10_000);
+    const res = await fetch(
+      `${config.baseUrl}/chat/getBase64FromMediaMessage/${encodeURIComponent(params.instanceName)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: config.apiKey },
+        signal: controller.signal,
+        body: JSON.stringify({ message: { key: { id: params.messageId } }, convertToMp4: false }),
+      },
+    );
+    clearTimeout(timeoutId);
+    if (!res.ok) {
+      const corpo = await res.text().catch(() => "");
+      return { ok: false, motivo: "erro_provedor", detalhe: `http_${res.status} ${corpo.slice(0, 150)}` };
+    }
+    const json = (await res.json().catch(() => null)) as { base64?: unknown; mimetype?: unknown } | null;
+    const base64 = typeof json?.base64 === "string" ? json.base64.replace(/^data:[^;]+;base64,/, "") : "";
+    if (!base64) return { ok: false, motivo: "sem_conteudo" };
+    const mimeType = typeof json?.mimetype === "string" && json.mimetype ? json.mimetype : "audio/ogg";
+    return { ok: true, base64, mimeType };
+  } catch (err) {
+    return { ok: false, motivo: "erro_provedor", detalhe: err instanceof Error ? err.message : String(err) };
+  }
+}

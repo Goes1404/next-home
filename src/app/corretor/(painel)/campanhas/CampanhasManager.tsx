@@ -22,9 +22,11 @@ interface Props {
   empreendimentos: Empreendimento[];
   campanhasIniciais: CampanhaListada[];
   statusInicial: StatusDisparo | null;
+  /** Pré-preenchimento vindo de "leads que combinam" (tela do imóvel). */
+  inicial?: { imovelSlug?: string; leadIds: string[] };
 }
 
-export function CampanhasManager({ empreendimentos, campanhasIniciais, statusInicial }: Props) {
+export function CampanhasManager({ empreendimentos, campanhasIniciais, statusInicial, inicial }: Props) {
   const [campanhas, setCampanhas] = useState<CampanhaListada[]>(campanhasIniciais);
   const { avisar } = useAvisos();
 
@@ -44,6 +46,7 @@ export function CampanhasManager({ empreendimentos, campanhasIniciais, statusIni
 
       <NovaCampanha
         empreendimentos={empreendimentos}
+        inicial={inicial}
         aoCriar={(campanha, aviso) => {
           setCampanhas((prev) => [campanha, ...prev]);
           avisar(aviso);

@@ -6,6 +6,7 @@ import { varrerQuedasDeNumero } from "./avisoDeQueda";
 import { variarMensagemComIA } from "./campaignQueue";
 import { enviarMensagemWhatsapp } from "./provider";
 import { normalizarTelefoneBr } from "./telefone";
+import { aplicarVencedoras } from "./vencedoraAB";
 import {
   agendarFollowup,
   avancarLeadParaPrimeiroContato,
@@ -380,6 +381,9 @@ async function processarInstancia(ctx: {
   };
 
   try {
+    // Com a trava na mão: só um disparador reescreve a fila por vez.
+    await aplicarVencedoras(supabase, idsCampanhas);
+
     while (parcial.processados < ctx.vagas) {
       const { data: itens } = await supabase
         .from("whatsapp_campanhas_fila")

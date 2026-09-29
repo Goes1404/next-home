@@ -1,0 +1,14 @@
+{
+ "joy-barueri": [{ "tipo": "tour360", "url": "https://tourmkr.com/F1yS7sp6JO", "titulo": "Tour virtual do decorado" }],
+ "open-view-47": [{ "tipo": "tour360", "url": "https://tourmkr.com/F1q5KBWsys", "titulo": "Tour virtual do decorado" }],
+ "square-design-residence": [
+  { "tipo": "tour360", "url": "https://tourbrasil360.com/imoveis/rsf/square-design-94/", "titulo": "Tour virtual do decorado de 94 m²" },
+  { "tipo": "tour360", "url": "https://tourbrasil360.com/imoveis/rsf/square-design-120/", "titulo": "Tour virtual do decorado de 120 m²" }
+ ],
+ "nid-alphaville": [
+  { "tipo": "tour360", "url": "https://www.planoeplano.com.br/estatico/tour-virtual/decorado-nid-alphaville/index.html", "titulo": "Tour virtual do decorado" },
+  { "tipo": "video", "url": "https://www.planoeplano.com.br/estatico/2025/07/17/13/33/7834468613fd3e63e8f2fd67c27be7397694e24d.mp4", "titulo": "Vídeo do NID Alphaville", "subir": true },
+  { "tipo": "video", "url": "https://www.planoeplano.com.br/estatico/2026/08/14/14/46/84e45737157f3de1af4cbc6645b0134b87e1cb7f.mp4", "titulo": "Vista aérea do NID Alphaville", "subir": true }
+ ],
+ "vitta-barueri": [{ "tipo": "tour360", "url": "https://tour.instacasa.com.br/vitta-barueri/", "titulo": "Tour virtual do loteamento" }]
+}

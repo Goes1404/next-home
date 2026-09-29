@@ -100,7 +100,7 @@ export function EscolhaDeEstagio({ catalogo }: { catalogo: Empreendimento[] }) {
             <CartaoTilt key={porta.estagio} indice={i} className="rounded-glass">
               <Link
                 href={`/empreendimentos?estagio=${porta.estagio}`}
-                className={`cartao group relative block h-full overflow-hidden p-6 transition-[border-color,transform] duration-300 hover:-translate-y-0.5 sm:p-8 ${porta.borda}`}
+                className={`cartao porta-estagio group relative block h-full overflow-hidden p-6 transition-[border-color,transform] duration-300 hover:-translate-y-0.5 sm:p-8 ${porta.borda}`}
               >
                 <span
                   aria-hidden

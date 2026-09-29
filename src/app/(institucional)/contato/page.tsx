@@ -13,7 +13,7 @@ import { getEmpreendimentos } from "@/lib/queries";
 import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Fale com a Next Home",
+  title: `Fale com a ${site.nome}`,
   description: `WhatsApp, formulário e atendimento presencial em Alphaville. ${enderecoLinha}.`,
   alternates: { canonical: "/contato" },
   openGraph: {

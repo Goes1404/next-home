@@ -72,3 +72,23 @@ export async function salvarDisponibilidade(
         : "Agenda salva. A assistente passa a oferecer só estes horários.",
   };
 }
+
+/**
+ * Gera (ou troca) o link do feed de visitas para o calendário do celular.
+ * Trocar invalida o anterior na hora: é o botão de "vazou o link".
+ * A tabela é fechada para o painel (0126); quem escreve é o servidor, só
+ * depois de saber de quem é a sessão.
+ */
+export async function gerarLinkDaAgenda(): Promise<{ link?: string; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
+  const { createServiceClient } = await import("@/lib/supabase/service");
+  const { site } = await import("@/lib/site");
+  const token = crypto.randomUUID();
+  const { error } = await createServiceClient()
+    .from("corretor_agenda")
+    .upsert({ corretor_id: corretor.id, token, created_at: new Date().toISOString() });
+  if (error) return { erro: "Não consegui gerar o link agora. Tente de novo." };
+  revalidatePath("/corretor/visitas");
+  return { link: `${site.url}/api/agenda/${token}.ics` };
+}

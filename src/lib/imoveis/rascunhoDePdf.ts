@@ -141,8 +141,8 @@ export function interpretarRascunho(bruto: unknown): RascunhoCadastro {
   };
 }
 
-function montarPrompt(conteudo: string): string {
-  return `Você lê apresentações de empreendimentos imobiliários e devolve o cadastro em JSON.
+function montarPrompt(conteudo: string, dicas?: string): string {
+  return `Você lê apresentações e páginas de site de empreendimentos imobiliários e devolve o cadastro em JSON.
 
 Regras:
 - Responda SÓ com JSON, sem cerca de código e sem comentário.
@@ -153,11 +153,13 @@ Regras:
   unidades DESTE prédio, e só se a ficha técnica disser.
 - "status" só pode ser um destes: ${STATUS_VALIDOS.join(", ")}.
 - "entregaPrevista" no formato AAAA-MM.
+- Página de site traz menu, rodapé e OUTROS empreendimentos da construtora
+  ("veja também", "recomendados"). Leia só o empreendimento principal.
 
 Formato:
 {"nome":"","construtora":"","cidade":"","bairro":"","endereco":"","status":"","entregaPrevista":"","totalTorres":0,"totalAndares":0,"totalUnidades":0,"tagline":"","descricao":"","tipologias":[{"nome":"","dormitorios":0,"suites":0,"banheiros":0,"vagas":0,"metragem":0}],"lazer":[""]}
 
-Apresentação:
+${dicas ? `Dados que a própria página publica (costumam estar certos, mas confira com o texto):\n${dicas}\n\n` : ""}Apresentação:
 ${conteudo}`;
 }
 
@@ -166,14 +168,21 @@ export type ResultadoRascunho =
   | { ok: false; motivo: "sem_texto" | "ia_indisponivel" };
 
 export async function montarRascunhoDePdf(pdf: Buffer): Promise<ResultadoRascunho> {
-  const conteudo = limparTextoDeApresentacao(extrairTextoDePdf(pdf));
+  return montarRascunhoDeTexto(limparTextoDeApresentacao(extrairTextoDePdf(pdf)));
+}
 
-  // Sem texto embutido o deck é imagem pura (escaneado ou feito no Canva).
-  // Não vale mandar para a IA: ela receberia uma string vazia e inventaria
-  // um empreendimento inteiro.
+/**
+ * O mesmo leitor para qualquer fornecedor de texto — hoje o PDF e a página
+ * do site da construtora. Os filtros (preço fora, tetos de plausibilidade)
+ * valem para os dois porque moram em `interpretarRascunho`, não no prompt.
+ */
+export async function montarRascunhoDeTexto(conteudo: string, dicas?: string): Promise<ResultadoRascunho> {
+  // Sem texto a origem é imagem pura (deck escaneado, página montada por
+  // JavaScript). Não vale mandar para a IA: ela receberia quase nada e
+  // inventaria um empreendimento inteiro.
   if (!conteudo || conteudo.length < MINIMO_DE_TEXTO) return { ok: false, motivo: "sem_texto" };
 
-  const resposta = await chamarLlmJson(montarPrompt(conteudo.slice(0, TETO_DE_TEXTO)));
+  const resposta = await chamarLlmJson(montarPrompt(conteudo.slice(0, TETO_DE_TEXTO), dicas));
   if (!resposta.ok) return { ok: false, motivo: "ia_indisponivel" };
 
   return { ok: true, rascunho: interpretarRascunho(resposta.json) };

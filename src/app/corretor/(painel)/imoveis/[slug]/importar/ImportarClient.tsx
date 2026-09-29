@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { OrigemSite } from "./OrigemSite";
 import { OrigemDrive } from "./OrigemDrive";
 import { OrigemPdf } from "./OrigemPdf";
 
@@ -17,15 +18,19 @@ export function ImportarClient({
   slug,
   nome,
   cadastroAtual,
+  linkDoSite,
+  siteSalvo,
 }: {
   empreendimentoId: string;
   slug: string;
   nome: string;
   cadastroAtual: Record<string, unknown>;
+  linkDoSite?: string;
+  siteSalvo?: string;
 }) {
-  const [origem, setOrigem] = useState<"pdf" | "drive">("pdf");
+  const [origem, setOrigem] = useState<"site" | "pdf" | "drive">("site");
 
-  const aba = (valor: "pdf" | "drive", rotulo: string) => (
+  const aba = (valor: "site" | "pdf" | "drive", rotulo: string) => (
     <button
       key={valor}
       type="button"
@@ -46,12 +51,21 @@ export function ImportarClient({
         <p className="text-fluid-xs text-apoio">{nome}</p>
       </header>
 
-      <nav className="flex gap-2">
+      <nav className="flex flex-wrap gap-2">
+        {aba("site", "Site da construtora")}
         {aba("pdf", "Apresentação em PDF")}
         {aba("drive", "Pasta do Drive")}
       </nav>
 
-      {origem === "pdf" ? (
+      {origem === "site" ? (
+        <OrigemSite
+          empreendimentoId={empreendimentoId}
+          slug={slug}
+          cadastroAtual={cadastroAtual}
+          linkInicial={linkDoSite}
+          siteSalvo={siteSalvo}
+        />
+      ) : origem === "pdf" ? (
         <OrigemPdf empreendimentoId={empreendimentoId} slug={slug} cadastroAtual={cadastroAtual} />
       ) : (
         <OrigemDrive empreendimentoId={empreendimentoId} slug={slug} />

@@ -4,7 +4,7 @@ tags: [moc, front, gsap]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-24
 summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 ---
 # Front Público — Map of Content
@@ -53,9 +53,13 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 ## Fundo
 - [[fundo-em-video-saiu-de-todas-as-paginas]] — a vinheta congelada deixou de ser papel de parede; fica a aurora em CSS (13/09)
 - [[a-remocao-levou-a-peca-errada-junto]] — o componente montava DUAS peças e a queixa era de uma; o vídeo do celular volta esmaecendo com a rolagem (15/09)
+- [[video-do-celular-rola-com-a-pagina]] — o vídeo sumiu num Brave Android; saiu da caixa fixa com esmaecimento por rolagem para uma camada que rola com a página (25/09)
+- [[o-percurso-da-home]] — fundo que muda de cor ao descer + textura de planta baixa, calibrados para nunca tirar contraste do texto (25/09)
 
 ## Movimento
 - [[movimento-do-site-publico-e-css-puro]] — botão vivo, sublinhado do menu, barra de progresso por scroll-timeline e anel do WhatsApp, zero JS (13/09)
+- [[ordem-do-catalogo-no-site-tem-tela]] — a sequência da vitrine (destaque, depois `ordem`) agora se edita no painel (24/09)
+- [[rodada-de-26-09-parte-3]] — me avise quando surgir, favoritos e /comparar, portal do comprador, espelho de vendas (26/09)
 
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]

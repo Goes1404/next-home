@@ -20,8 +20,15 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 3. **Porteiro de cadastro** — casa o telefone com um lead da carteira. Sem
    lead, devolve `numero_sem_lead_cadastrado`: não cria conversa nem lead e
    não manda áudio para transcrição ([[conversa-casa-com-lead-por-telefone]]).
-4. **Transcrição de áudio** — Gemini, reserva Whisper
-   ([[whisper-nao-recusa-como-o-gemini]]).
+   Exceção: convite de entrada, que inclui o anúncio da Meta reconhecido pela
+   etiqueta (`externalAdReply`) ou pelo texto padrão; o lead nasce `meta/ctwa`
+   e o anúncio vai para `impulsionamentos`
+   ([[impulsionamento-do-corretor-pela-etiqueta-da-meta]]).
+4. **Transcrição de áudio** — o arquivo DECIFRADO vem da Evolution
+   (`getBase64FromMediaMessage`; a `url` do webhook é o `.enc` cifrado);
+   OpenAI → Whisper (Groq) → Gemini, prompt neutro com `[inaudível]`, travas
+   contra fala inventada; o turno recebe `instrucaoDoAudio`
+   ([[audio-do-cliente-era-arquivo-cifrado]], [[whisper-nao-recusa-como-o-gemini]]).
 5. **Gravação + dedup** — a conversa já nasce com `lead_id` obrigatório;
    `provider_message_id` único (0027) mata reentrega.
 6. **Rajada** — espera 6s + trava `resposta:<conversaId>`; balões pendentes
@@ -33,6 +40,13 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    - catálogo ranqueado + encolhido por foco ([[foco-da-conversa]]);
    - few-shot ([[recuperar-por-relevancia]]) + estilo da casa + funil de
      qualificação + calendário;
+   - resposta a um follow-up nosso (`instrucaoPelosFollowups`, vale o mais
+     recente e só se ele foi a última palavra nossa) entra como
+     `instrucaoExtra`: pós-visita (72h) → próximo passo; lembrete da
+     véspera (30h) → "confirmo" grava `visita_confirmada_em` e avisa o
+     corretor, "remarcar" oferece horários reais; pedido de indicação (96h)
+     → agradece e avisa o corretor para registrar o indicado
+     ([[aprimoramentos-das-oito-funcionalidades]], [[fechar-o-ciclo-e-ligar-a-plataforma]]);
    - LLM ([[motor-unico-openai]], [[timeout-nao-e-retentado]]);
    - guardrails ([[midia-por-slug-nunca-por-url]]), `semValores`
      ([[a-ia-nao-fala-valores]]), prazo
@@ -55,3 +69,5 @@ Orçamento de tempo: 6s rajada + 20s agente + ~5s envios + 12s dossiê ≈ 43s.
 ## Relacionadas
 - [[visao-geral-do-sistema]]
 - [[fluxo-de-campanhas]]
+- [[aprimoramentos-das-oito-funcionalidades]]
+- [[fechar-o-ciclo-e-ligar-a-plataforma]]

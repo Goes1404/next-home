@@ -1,15 +1,41 @@
 /**
- * Módulo de Transcrição e Compreensão de Áudios do WhatsApp.
+ * Transcrição dos áudios que o cliente manda no WhatsApp.
  *
- * Gemini multimodal na frente (transcreve E resume a intenção numa
- * chamada só); Whisper da Groq como reserva quando ele não responde.
+ * A alucinação relatada em 26/09/2026 tinha duas causas somadas:
+ *
+ * 1. O áudio que ia para o modelo era RUÍDO. O webhook passava
+ *    `audioMessage.url`, que aponta para o arquivo CIFRADO do WhatsApp
+ *    (`mmg.whatsapp.net/…enc`); e quando o download falhava, a própria URL
+ *    seguia como se fosse base64. O arquivo decifrado agora vem da Evolution
+ *    (`baixarMidiaDoProvedor`), e URL nunca é tratada como áudio.
+ * 2. O prompt ENSINAVA a inventar: dizia que o áudio era de "clientes
+ *    imobiliários de alto padrão em Alphaville" e dava como exemplo "quer
+ *    saber o preço do 3 suítes". Diante de ruído, o modelo escrevia
+ *    exatamente isso. Hoje o prompt é neutro, manda marcar trecho que não se
+ *    entende e deixa o modelo dizer que não entendeu.
+ *
+ * Ordem dos motores: transcrição dedicada da OpenAI (a chave paga que já
+ * atende), Whisper da Groq com o filtro de "sem fala" por trecho, e o Gemini
+ * por último — modelo generativo é o que mais completa o que não ouviu.
  */
 import { groqAudioConfigurado, transcreverComGroq } from "./groqAudio";
 
 export interface ResultadoAudio {
   textoTranscrito: string;
-  intencaoResumida: string;
   sucesso: boolean;
+  /** Parte da fala ficou marcada como inaudível: a IA deve perguntar, não supor. */
+  parcial: boolean;
+  /** Quem transcreveu, para a telemetria. */
+  motor?: "openai" | "groq" | "gemini";
+  motivo?: "sem_audio" | "nao_entendido";
+}
+
+export interface EntradaAudio {
+  /** O arquivo JÁ DECIFRADO, em base64. URL não serve: ver o cabeçalho. */
+  base64: string | null;
+  mimeType?: string | null;
+  /** Duração declarada pelo WhatsApp (`audioMessage.seconds`). */
+  segundos?: number | null;
 }
 
 /**
@@ -83,57 +109,120 @@ export function transcricaoTemConteudo(texto: string): boolean {
   return letras.length >= 2;
 }
 
-const PROMPT_AUDIO = `Você é um assistente especializado em transcrever e compreender áudios de clientes imobiliários de alto padrão em Alphaville e região.
-Transcreva fielmente a fala do cliente e, caso haja termos em português coloquial ou gírias, preserve o significado original.
+/**
+ * Frases que o Whisper produz a partir de SILÊNCIO ou ruído — vêm do corpus
+ * de legendas de vídeo em que ele foi treinado. Nenhum cliente fala isso num
+ * áudio para a imobiliária.
+ */
+const ALUCINACOES_CONHECIDAS: RegExp[] = [
+  /amara\.org/i,
+  /legendas?\s+(pela|por|da)\b/i,
+  /\blegendado\s+por\b/i,
+  /obrigad[oa]\s+por\s+(assistir|ver|acompanhar)/i,
+  /inscrev[ae](-se)?\s+(no|n[oa]\s+nosso)\s+canal/i,
+  /\bsubtitles?\s+by\b/i,
+  /thanks?\s+(you\s+)?for\s+watching/i,
+];
 
-Responda EXCLUSIVAMENTE um JSON no seguinte formato:
-{
-  "textoTranscrito": "Transcrição completa do que o cliente falou",
-  "intencaoResumida": "Resumo em 1 frase da intenção principal do cliente (ex: quer saber o preço do 3 suítes, quer agendar visita no sábado, etc)"
-}`;
+export function pareceAlucinacaoConhecida(texto: string): boolean {
+  return ALUCINACOES_CONHECIDAS.some((p) => p.test(texto));
+}
+
+export const MARCA_INAUDIVEL = "[inaudível]";
 
 /**
- * Transcreve áudio enviado no WhatsApp via base64 ou URL utilizando Gemini Multimodal.
+ * Mais palavras do que cabem na duração do áudio é sinal de texto inventado.
+ * Fala rápida em português chega a ~3,5 palavras por segundo; 6 por segundo,
+ * com folga de 4 palavras para áudio curtíssimo, não é fala humana.
  */
-export async function transcreverAudioWhatsapp(
-  audioBase64OrUrl: string,
-  mimeType: string = "audio/ogg",
-): Promise<ResultadoAudio> {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+export function cabeNaDuracao(texto: string, segundos: number | null | undefined): boolean {
+  if (!segundos || segundos <= 0) return true;
+  const palavras = texto.split(/\s+/).filter(Boolean).length;
+  return palavras <= segundos * 6 + 4;
+}
 
-  // Sem áudio não há o que fazer. Sem chave do Gemini, ainda há: a Groq
-  // pode transcrever. Desistir aqui era o que fazia a falta de UM provedor
-  // silenciar o cliente.
-  if (!audioBase64OrUrl || (!apiKey && !groqAudioConfigurado())) {
-    return {
-      textoTranscrito: "[Áudio recebido — não foi possível transcrever automaticamente]",
-      intencaoResumida: "Transcrição indisponível: ouça o áudio original no WhatsApp.",
-      sucesso: false,
-    };
-  }
+/** O que sobra de fala depois de tirar as marcas de inaudível. */
+function falaUtil(texto: string): string {
+  return texto.split(MARCA_INAUDIVEL).join(" ").replace(/\s+/g, " ").trim();
+}
 
-  // Fora do `try` para sobreviver ao caminho de erro do Gemini: é este
-  // buffer que a Groq reaproveita, sem baixar o áudio de novo.
-  let dadosBase64 = audioBase64OrUrl;
+/**
+ * A transcrição é aceitável como fala do cliente? Junta todas as travas:
+ * recusa do modelo, ruído, alucinação conhecida, excesso para a duração e
+ * fala que é quase toda inaudível.
+ */
+export function transcricaoAceitavel(texto: string, segundos?: number | null): boolean {
+  const limpo = texto?.trim() ?? "";
+  if (!limpo) return false;
+  if (pareceRecusaDeTranscricao(limpo)) return false;
+  if (pareceAlucinacaoConhecida(limpo)) return false;
+  const util = falaUtil(limpo);
+  if (!transcricaoTemConteudo(util)) return false;
+  if (!cabeNaDuracao(util, segundos)) return false;
+  return true;
+}
 
+const FALHA = (motivo: "sem_audio" | "nao_entendido"): ResultadoAudio => ({
+  textoTranscrito: "[Áudio recebido — não foi possível transcrever automaticamente]",
+  sucesso: false,
+  parcial: false,
+  motivo,
+});
+
+/**
+ * Prompt NEUTRO de propósito. Dizer ao modelo de que assunto é o áudio é
+ * dar a ele o texto para inventar quando não ouvir nada.
+ */
+const PROMPT_AUDIO = `Transcreva literalmente, em português, a fala deste áudio de WhatsApp.
+
+Regras:
+- Escreva só o que foi de fato dito, palavra por palavra. Não resuma, não corrija, não complete frases e não acrescente nada.
+- Trecho que você não entende com segurança vira ${MARCA_INAUDIVEL}. Nunca adivinhe uma palavra.
+- Se não houver fala (silêncio, ruído, música, áudio cortado), devolva "texto" vazio e "haFala": false.
+- Não descreva o áudio e não fale com quem pediu a transcrição.
+
+Responda só JSON: {"haFala": true|false, "texto": "..."}`;
+
+type Tentativa = { ok: true; texto: string } | { ok: false; erro: string };
+
+async function transcreverComOpenAI(base64: string, mimeType: string): Promise<Tentativa> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return { ok: false, erro: "sem_api_key" };
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const t = setTimeout(() => controller.abort(), 15_000);
+    const form = new FormData();
+    form.append("file", new Blob([Buffer.from(base64, "base64")], { type: mimeType }), `audio.${extensaoDo(mimeType)}`);
+    form.append("model", process.env.OPENAI_AUDIO_MODEL || "gpt-4o-mini-transcribe");
+    form.append("language", "pt");
+    form.append("response_format", "json");
+    // Mesma ideia do prompt do Gemini: pedir literalidade, sem assunto.
+    form.append("prompt", "Transcrição literal de um áudio de WhatsApp em português do Brasil.");
+    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+      signal: controller.signal,
+    });
+    clearTimeout(t);
+    if (!res.ok) return { ok: false, erro: `http_${res.status}` };
+    const json = (await res.json().catch(() => null)) as { text?: unknown } | null;
+    const texto = typeof json?.text === "string" ? json.text.trim() : "";
+    return texto ? { ok: true, texto } : { ok: false, erro: "resposta_vazia" };
+  } catch (err) {
+    return { ok: false, erro: err instanceof Error ? err.name : String(err) };
+  }
+}
 
-    // Se for URL, baixa o buffer e converte para base64
-    if (audioBase64OrUrl.startsWith("http://") || audioBase64OrUrl.startsWith("https://")) {
-      const resBuffer = await fetch(audioBase64OrUrl, { signal: controller.signal });
-      if (resBuffer.ok) {
-        const arrayBuffer = await resBuffer.arrayBuffer();
-        dadosBase64 = Buffer.from(arrayBuffer).toString("base64");
-      }
-    } else if (audioBase64OrUrl.includes("base64,")) {
-      dadosBase64 = audioBase64OrUrl.split("base64,")[1];
-    }
-
-    const response = apiKey
-      ? await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+async function transcreverComGemini(base64: string, mimeType: string): Promise<Tentativa> {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) return { ok: false, erro: "sem_api_key" };
+  const modelo = process.env.GEMINI_AUDIO_MODEL || process.env.GEMINI_MODEL || "gemini-3.5-flash";
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 15_000);
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,90 +231,102 @@ export async function transcreverAudioWhatsapp(
           contents: [
             {
               role: "user",
-              parts: [
-                { text: PROMPT_AUDIO },
-                {
-                  inlineData: {
-                    mimeType: mimeType || "audio/ogg",
-                    data: dadosBase64,
-                  },
-                },
-              ],
+              parts: [{ text: PROMPT_AUDIO }, { inlineData: { mimeType, data: base64 } }],
             },
           ],
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: "application/json",
-          },
+          generationConfig: { temperature: 0, responseMimeType: "application/json" },
         }),
       },
-        )
-      : null;
-
-    clearTimeout(timeoutId);
-
-    if (response?.ok) {
-      const json = await response.json();
-      const texto = json.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (texto) {
-        const parsed = JSON.parse(texto);
-        const transcrito = String(parsed.textoTranscrito ?? "");
-
-        // Resposta 200 não é garantia de transcrição: o modelo pode ter
-        // devolvido, educadamente, que não transcreveu nada. Isso não pode
-        // virar fala do cliente no histórico.
-        /*
-         * As DUAS checagens, não só a primeira. `transcricaoTemConteudo`
-         * só era aplicada no caminho da Groq — então uma resposta do
-         * Gemini com `"."` ou `" - "` passava direto e virava turno do
-         * cliente no histórico, com a IA respondendo a ela.
-         */
-        if (!pareceRecusaDeTranscricao(transcrito) && transcricaoTemConteudo(transcrito)) {
-          return {
-            textoTranscrito: transcrito,
-            intencaoResumida: parsed.intencaoResumida || "Mensagem de voz sobre imóveis.",
-            sucesso: true,
-          };
-        }
-
-        console.warn("[audioTranscriber] resposta recusada pelo modelo, caindo no fallback:", transcrito.slice(0, 120));
-      }
-    }
+    );
+    clearTimeout(t);
+    if (!res.ok) return { ok: false, erro: `http_${res.status}` };
+    const json = await res.json();
+    const bruto = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!bruto) return { ok: false, erro: "resposta_vazia" };
+    const parsed = JSON.parse(bruto) as { haFala?: unknown; texto?: unknown };
+    if (parsed.haFala === false) return { ok: false, erro: "sem_fala" };
+    const texto = typeof parsed.texto === "string" ? parsed.texto.trim() : "";
+    return texto ? { ok: true, texto } : { ok: false, erro: "resposta_vazia" };
   } catch (err) {
-    console.error("Erro ao transcrever áudio no Gemini:", err);
+    return { ok: false, erro: err instanceof Error ? err.name : String(err) };
   }
+}
 
-  /*
-   * A rede embaixo. Chegar aqui significa que o Gemini não transcreveu —
-   * sem chave, fora do ar, ou recusando o áudio. Antes disso virava
-   * "[não foi possível transcrever]" e o cliente ficava sem resposta até o
-   * corretor ouvir o áudio na mão.
-   *
-   * O Whisper só transcreve: a intenção resumida, que o Gemini devolve de
-   * graça na mesma chamada, aqui não existe. Melhor uma transcrição sem
-   * resumo que silêncio — e o texto abaixo não finge ter o que não tem.
-   */
-  if (groqAudioConfigurado() && dadosBase64) {
-    const reserva = await transcreverComGroq(dadosBase64, mimeType || "audio/ogg");
-    if (reserva.ok && !pareceRecusaDeTranscricao(reserva.texto) && transcricaoTemConteudo(reserva.texto)) {
-      console.warn("[audioTranscriber] Gemini indisponível; transcrito pela Groq (Whisper).");
-      return {
-        textoTranscrito: reserva.texto,
-        intencaoResumida: "Mensagem de voz do cliente (transcrita pela reserva, sem resumo de intenção).",
-        sucesso: true,
-      };
+function extensaoDo(mimeType: string): string {
+  return mimeType.includes("mpeg")
+    ? "mp3"
+    : mimeType.includes("wav")
+      ? "wav"
+      : mimeType.includes("mp4") || mimeType.includes("m4a")
+        ? "m4a"
+        : mimeType.includes("webm")
+          ? "webm"
+          : "ogg";
+}
+
+/** Tira o `data:...;base64,` e recusa o que não é base64 (uma URL, por exemplo). */
+export function base64DoAudio(entrada: string | null | undefined): string | null {
+  if (!entrada) return null;
+  const semPrefixo = entrada.includes("base64,") ? entrada.split("base64,")[1] : entrada;
+  const limpo = semPrefixo.replace(/\s+/g, "");
+  if (/^https?:/i.test(limpo) || !/^[A-Za-z0-9+/]+=*$/.test(limpo)) return null;
+  // Menos de ~1 KB não é um áudio de voz: é resto de erro.
+  return limpo.length >= 1200 ? limpo : null;
+}
+
+/**
+ * Transcreve o áudio do cliente. Nunca devolve fala que não passou pelas
+ * travas: na dúvida, `sucesso: false`, e o webhook pede ao cliente que
+ * escreva — resposta honesta custa menos que resposta a uma fala inventada.
+ */
+export async function transcreverAudioWhatsapp(entrada: EntradaAudio): Promise<ResultadoAudio> {
+  const base64 = base64DoAudio(entrada.base64);
+  if (!base64) return FALHA("sem_audio");
+  const mimeType = (entrada.mimeType || "audio/ogg").split(";")[0].trim() || "audio/ogg";
+  const segundos = entrada.segundos ?? null;
+
+  const motores: Array<{ nome: "openai" | "groq" | "gemini"; tentar: () => Promise<Tentativa> }> = [
+    { nome: "openai", tentar: () => transcreverComOpenAI(base64, mimeType) },
+    {
+      nome: "groq",
+      tentar: async () => {
+        if (!groqAudioConfigurado()) return { ok: false, erro: "sem_api_key" };
+        const r = await transcreverComGroq(base64, mimeType);
+        return r.ok ? { ok: true, texto: r.texto } : { ok: false, erro: r.erro };
+      },
+    },
+    { nome: "gemini", tentar: () => transcreverComGemini(base64, mimeType) },
+  ];
+
+  for (const motor of motores) {
+    const r = await motor.tentar();
+    if (!r.ok) {
+      if (r.erro !== "sem_api_key") console.warn(`[audio] ${motor.nome} não transcreveu: ${r.erro}`);
+      continue;
     }
-    if (!reserva.ok) {
-      console.error("[audioTranscriber] reserva da Groq também falhou:", reserva.erro);
+    if (!transcricaoAceitavel(r.texto, segundos)) {
+      console.warn(`[audio] ${motor.nome} devolveu texto recusado pelas travas:`, r.texto.slice(0, 120));
+      continue;
     }
+    return {
+      textoTranscrito: r.texto,
+      sucesso: true,
+      parcial: r.texto.includes(MARCA_INAUDIVEL),
+      motor: motor.nome,
+    };
   }
+  return FALHA("nao_entendido");
+}
 
-  // `sucesso: false` e o texto precisam contar a MESMA história: dizer
-  // "processado com sucesso" aqui faria o corretor ler o card no CRM e
-  // acreditar numa transcrição que nunca aconteceu.
-  return {
-    textoTranscrito: "[Áudio recebido — não foi possível transcrever automaticamente]",
-    intencaoResumida: "Transcrição indisponível: ouça o áudio original no WhatsApp.",
-    sucesso: false,
-  };
+/**
+ * Instrução para o turno quando a mensagem é um áudio. Não repete a fala:
+ * diz à IA que o texto é TRANSCRIÇÃO, que pode ter erro, e o que fazer com
+ * o trecho inaudível.
+ */
+export function instrucaoDoAudio(resultado: ResultadoAudio): string {
+  const base =
+    "A última mensagem do cliente foi um ÁUDIO, e você está lendo a transcrição automática dele. Responda só ao que está escrito; não suponha o que ele quis dizer além disso.";
+  return resultado.parcial
+    ? `${base} Parte do áudio ficou ${MARCA_INAUDIVEL}: se o trecho que faltou importa para responder, peça em UMA frase curta que ele repita essa parte ou escreva. Não invente o que estava ali.`
+    : `${base} Se a transcrição parecer sem sentido ou contraditória, pergunte em vez de adivinhar.`;
 }

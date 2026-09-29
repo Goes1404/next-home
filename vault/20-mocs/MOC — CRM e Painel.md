@@ -4,7 +4,7 @@ tags: [moc, crm, painel]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-12
+updated: 2026-09-24
 summary: Leads, funil, fila de trabalho, telas do corretor e do gestor.
 ---
 # CRM e Painel — Map of Content
@@ -26,6 +26,7 @@ F0–F6.
 - [[tela-de-entrar-e-dividida]] — login em duas metades (09/09)
 - [[consultor-imobiliario-no-painel]] — chat de portfólio e crédito para o corretor (09/09)
 - [[movimento-do-painel-tem-regua]] — um momento de carga; o resto responde a gesto (07/09)
+- [[o-painel-ganhou-profundidade-e-movimento]] — aurora, grão, cartão com sombra e foco de luz, herói de vidro SEM blur, transição de rota; medido: o blur custava 2,5x o quadro, e nada anda sozinho (24/09)
 - [[placeholder-de-uma-linha-cabe-em-320px]] — 136px no composer, 234px no input; teto medido (11/09)
 - [[o-historico-de-conversas-diz-quando]] — a data já vinha do banco e não era desenhada (11/09)
 - [[o-consultor-em-balao-flutuante]] — o consultor a um toque, de qualquer tela (11/09)
@@ -40,6 +41,8 @@ F0–F6.
 
 ## Importar e cadastrar
 - [[importar-conversa-do-whatsapp]] — o .zip de "Exportar conversa" vira lead; contato salvo na agenda vem sem telefone, de propósito (12/09)
+- [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]] — .txt da conversa, .vcf, .xlsx, foto/print e o CSV do Google Contatos
+- [[lista-de-leads-sem-cabecalho-e-lida-pela-ia]] — lista .txt solta vai à IA; telefone, nome e e-mail só entram se estiverem no texto
 
 ## Dados do lead
 - [[perfil-do-lead-abre-dentro-da-conversa]] — detalhes e ações sem abandonar o chat
@@ -60,8 +63,18 @@ F0–F6.
 ## Performance
 - [[o-site-e-lento-por-desenho-nao-por-peso]] — Início abre com 22 consultas (12 idênticas), 3 `getUser()` por requisição, Realtime + polling juntos; fase 4 do roadmap de performance (13/09)
 - [[o-painel-carrega-por-rota-so-o-que-a-rota-usa]] — F4: Chat e ChatBase por next/dynamic no toque, sessão por getClaims(), contagem do funil deduplicada; o que ficou de fora e por quê (13/09)
+- [[rodada-de-26-09-parte-3]] — agenda .ics, portal do comprador, andamento da obra, parceiros, Gmail do corretor, marca da instalação (0125-0126, 26/09)
 
 ## Relacionados
 - [[MOC — Banco de Dados]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]
 - [[action-de-outro-build-vira-sem-conexao]] — 404/500 ao clicar é aba velha, não rede
+- [[ordem-do-catalogo-no-site-tem-tela]] — Imóveis → Ordem no site: subir, descer e destaque; os 6 primeiros vão para a home (24/09)
 - [[o-pedido-do-corretor-e-o-que-vai]] — o chat de arte parou de reescrever o pedido; a receita virou skill visível
+- [[vendas-e-o-modulo-financeiro]] — F1 do financeiro: venda com co-corretagem, comissão por venda, distrato; só o gestor marca dinheiro recebido (0114, 25/09)
+- [[link-de-anuncio-e-rodizio-aleatorio]] — sem especialista; link de anúncio sorteia e não repete o último do produto (0117, 26/09)
+- [[vendas-e-o-modulo-financeiro]] — F2 a F8 (0115): extrato, meta em ritmo, ranking de VGV, desempenho, retorno de anúncio, roleta que aprende (26/09)
+- [[oito-funcionalidades-de-26-09]] — imóvel encontra quem procurava, resumo do dia no WhatsApp, documentos e seleção pelo link, unidades, pós-visita e primeiro contato com lead de portal (0118-0120, 26/09)
+- [[aprimoramentos-das-oito-funcionalidades]] — avisos quando o cliente age no link, seleção escolhida à mão, compatibilidade com dossiê e renda, reserva com prazo, espelho da construtora, resumo na hora do corretor, painel de uso (0121-0122, 26/09)
+- [[fechar-o-ciclo-e-ligar-a-plataforma]] — primeiros passos e prontidão da equipe, proposta por link, confirmação da visita, indicação pós-venda, compradores até as chaves, relatório por construtora, metas da equipe (0123-0124, 26/09)
+- [[plantas-do-editor-nunca-eram-salvas]] — o Salvar do editor dizia "tudo salvo" e não gravava as plantas (26/09)
+- [[graficos-que-decidem]] — seis gráficos que levam a uma ação: passagem do funil, quem espera resposta, origem com custo, placar da equipe, procura por imóvel, ritmo da meta (28/09)

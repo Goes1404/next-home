@@ -1,3 +1,4 @@
+import { Wordmark } from "@/components/ui/Wordmark";
 import Link from "next/link";
 import { FundoEmCamadas } from "@/components/motion/FundoEmCamadas";
 import { SeletorTema } from "@/components/tema/SeletorTema";
@@ -35,7 +36,7 @@ export async function Footer() {
       <div className="mx-auto grid w-full max-w-6xl gap-10 sm:grid-cols-3">
         <div>
           <p className="font-display text-lg text-titulo">
-            Next<span className="text-acento-forte">Home</span>
+            <Wordmark destaque="text-acento-forte" />
           </p>
           <p className="text-fluid-sm mt-3 max-w-xs text-legenda">{site.descricao}</p>
           <p className="text-fluid-xs mt-4 text-tenue">CRECI {site.creci}</p>

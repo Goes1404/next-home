@@ -3,6 +3,7 @@ import { cache } from "react";
 
 import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
+import { PADROES_DO_CANAL, type Canal } from "@/lib/graficos/calculos";
 import {
   ETAPAS_FUNIL,
   type CorretorPerfil,
@@ -222,6 +223,12 @@ export type FiltroLeads = {
    * por nome: nome de campanha muda quando alguém renomeia no Gerenciador.
    */
   metaCampanhaId?: string;
+  /**
+   * Canal de origem (28/09/2026): cada barra do gráfico "De onde vêm os
+   * leads" abre a lista já recortada nele. Os padrões moram em
+   * `PADROES_DO_CANAL`, ao lado da conta do gráfico.
+   */
+  canal?: Canal;
   /** Datas `yyyy-mm-dd` vindas dos inputs de data da lista. */
   criadoDe?: string;
   criadoAte?: string;
@@ -327,6 +334,8 @@ export async function getPaginaDeLeads(
   if (filtro.criadoAte) query = query.lte("created_at", `${filtro.criadoAte}T23:59:59`);
   if (filtro.semDono) query = query.is("corretor_id", null);
   if (filtro.metaCampanhaId) query = query.eq("meta_campanha_id", filtro.metaCampanhaId);
+  const padroes = filtro.canal ? PADROES_DO_CANAL[filtro.canal] : null;
+  if (padroes) query = query.or(padroes.map((p) => `origem.ilike.${p}`).join(","));
   if (filtro.paradoDias && filtro.paradoDias > 0) {
     // "Parado" = a etapa não muda há N dias E o negócio ainda está em jogo.
     // Fechado/perdido parados são só história encerrada.

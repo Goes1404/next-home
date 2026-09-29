@@ -24,7 +24,7 @@ export function createServiceClient() {
 
   if (!chave) {
     throw new Error(
-      "SUPABASE_SECRET_KEY não configurada — o webhook do WhatsApp não consegue gravar sem ela.",
+      "SUPABASE_SECRET_KEY não configurada neste ambiente (Vercel, GitHub Actions ou máquina local) — nada que usa a chave de serviço funciona sem ela: webhook, crons e worker de vídeo.",
     );
   }
 

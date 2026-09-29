@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { revalidarCatalogo } from "@/lib/catalogo/revalidar";
 import { createClient } from "@/lib/supabase/server";
@@ -8,7 +9,16 @@ import { extrairImagensDePdf, TETO_IMAGENS } from "@/lib/imoveis/pdfImagens";
 import { gerarPreview, sharpDisponivel } from "@/lib/imoveis/imagemDerivada";
 import { registrarMidia } from "@/lib/imoveis/registrarMidia";
 import { baixarArquivo, listarPasta, parsearLinkDrive, type ArquivoDrive } from "@/lib/imoveis/drive";
-import { montarRascunhoDePdf, type RascunhoCadastro } from "@/lib/imoveis/rascunhoDePdf";
+import { montarRascunhoDePdf, montarRascunhoDeTexto, type RascunhoCadastro } from "@/lib/imoveis/rascunhoDePdf";
+import { buscarSeguro } from "@/lib/imoveis/site/buscarSeguro";
+import {
+  chaveDaFoto,
+  lerPaginaDaConstrutora,
+  type DicasEstruturadas,
+  type ImagemDoSite,
+  type MidiaDoSite,
+} from "@/lib/imoveis/site/lerPagina";
+import { youtubeId } from "@/lib/embedMidia";
 import { lerPlanta } from "@/lib/imoveis/lerPlanta";
 import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
 import { limparTextoDeApresentacao } from "@/lib/imoveis/textoDoDeck";
@@ -127,6 +137,8 @@ export type ResultadoGravacao = {
   falhas: string[];
   /** O que foi marcado como planta, para virar tipologia em seguida. */
   plantas: { indice: number; url: string }[];
+  /** O desfecho de CADA imagem pedida: a tela marca uma a uma na grade. */
+  porItem: { indice: number; desfecho: "entrou" | "duplicada" | "falhou" }[];
   erro?: string;
 };
 
@@ -148,10 +160,10 @@ export async function gravarEscolhasDoPdf(entrada: {
 }): Promise<ResultadoGravacao> {
   const corretor = await getCorretorLogado();
   if (!corretor) {
-    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], plantas: [], erro: "Sessão expirada. Entre de novo." };
+    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], plantas: [], porItem: [], erro: "Sessão expirada. Entre de novo." };
   }
   if (entrada.escolhas.length === 0) {
-    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], plantas: [], erro: "Marque pelo menos uma imagem." };
+    return { ok: false, gravadas: 0, duplicadas: 0, falhas: [], plantas: [], porItem: [], erro: "Marque pelo menos uma imagem." };
   }
 
   const supabase = await createClient();
@@ -163,6 +175,7 @@ export async function gravarEscolhasDoPdf(entrada: {
       duplicadas: 0,
       falhas: [],
       plantas: [],
+      porItem: [],
       erro: "O arquivo que eu estava usando não está mais aqui. Escolha o PDF de novo.",
     };
   }
@@ -175,11 +188,13 @@ export async function gravarEscolhasDoPdf(entrada: {
   let duplicadas = 0;
   const falhas: string[] = [];
   const plantas: { indice: number; url: string }[] = [];
+  const porItem: ResultadoGravacao["porItem"] = [];
 
   for (const escolha of entrada.escolhas) {
     const imagem = extraidas.imagens[escolha.indice];
     if (!imagem) {
       falhas.push(`Imagem ${escolha.indice + 1} não foi encontrada na segunda leitura do arquivo.`);
+      porItem.push({ indice: escolha.indice, desfecho: "falhou" });
       continue;
     }
 
@@ -195,11 +210,13 @@ export async function gravarEscolhasDoPdf(entrada: {
 
     if (!resultado.ok) {
       falhas.push(`Imagem ${escolha.indice + 1}: ${resultado.erro}`);
+      porItem.push({ indice: escolha.indice, desfecho: "falhou" });
       continue;
     }
 
     if (resultado.duplicada) duplicadas++;
     else gravadas++;
+    porItem.push({ indice: escolha.indice, desfecho: resultado.duplicada ? "duplicada" : "entrou" });
 
     // Planta não é só foto na galeria: é a tipologia do imóvel, e é dela que
     // o bot tira dormitórios, suítes e metragem para responder ao cliente.
@@ -215,7 +232,7 @@ export async function gravarEscolhasDoPdf(entrada: {
   revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
-  return { ok: true, gravadas, duplicadas, falhas, plantas };
+  return { ok: true, gravadas, duplicadas, falhas, plantas, porItem };
 }
 
 export type ResultadoTipologia =
@@ -253,6 +270,19 @@ export async function gerarTipologiaDaPlanta(entrada: {
   if (!imagem) return { ok: false, erro: "não reencontrei a planta no arquivo" };
 
   const leitura = await lerPlanta(imagem.bytes, imagem.mime, limparTextoDeApresentacao(extrairTextoDePdf(pdf)));
+  return gravarTipologiaLida(supabase, entrada, leitura);
+}
+
+/**
+ * Da leitura da planta à linha de `tipologias`. Compartilhada pelas origens
+ * PDF e Site: duas cópias da regra de "mesmo nome atualiza, não duplica"
+ * divergiriam na primeira mudança.
+ */
+async function gravarTipologiaLida(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  entrada: { empreendimentoId: string; slug: string; plantaUrl: string },
+  leitura: Awaited<ReturnType<typeof lerPlanta>>,
+): Promise<ResultadoTipologia> {
   if (!leitura.ok) {
     return {
       ok: false,
@@ -502,3 +532,345 @@ export async function aplicarRascunhoNoCadastro(entrada: {
 
   return { ok: true };
 }
+
+// ─── Origem: site da construtora ──────────────────────────────────────────
+
+/** Página de empreendimento passa de 1 MB (Even: 1,3 MB); 5 MB é folga. */
+const TETO_HTML = 5 * 1024 * 1024;
+/** Foto de construtora chega a 1500 px; 15 MB cobre com folga e trava o absurdo. */
+const TETO_IMAGEM = 15 * 1024 * 1024;
+/** O bucket aceita até 50 MB por arquivo no plano atual do Supabase. */
+const TETO_VIDEO = 50 * 1024 * 1024;
+/** Quantos tours têm o nome lido: cada um é uma ida à plataforma dele. */
+const TOURS_COM_NOME = 6;
+
+export type ImagemDoSiteNaTela = ImagemDoSite & {
+  /** Já veio desta página numa importação anterior (`midias.origem_url`). */
+  jaTrazida: boolean;
+};
+export type MidiaDoSiteNaTela = MidiaDoSite & { jaCadastrada: boolean };
+
+export type AnaliseDoSite =
+  | {
+      ok: true;
+      titulo: string;
+      /** Vai e volta pela tela: é dele que saem o rascunho e a leitura das plantas. */
+      texto: string;
+      dicas: DicasEstruturadas;
+      imagens: ImagemDoSiteNaTela[];
+      midias: MidiaDoSiteNaTela[];
+      montadaPorJs: boolean;
+      urlFinal: string;
+    }
+  | { ok: false; erro: string };
+
+/**
+ * Origens das fotos já trazidas para este imóvel. Consulta à parte, com o
+ * erro engolido: a coluna nasceu na 0113, e antes de ela existir a tela só
+ * perde a marca "já trazida" — não a importação.
+ */
+async function origensJaTrazidas(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  empreendimentoId: string,
+): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("midias")
+    .select("origem_url")
+    .eq("empreendimento_id", empreendimentoId)
+    .not("origem_url", "is", null);
+  if (error) {
+    console.warn("[importar do site] sem origem_url (0113 aplicada?):", error.message);
+    return new Set();
+  }
+  return new Set((data ?? []).map((m) => m.origem_url).filter((u): u is string => Boolean(u)));
+}
+
+/** Identidade de uma mídia externa: o ID do YouTube, ou a URL sem barra final. */
+function identidadeDaMidia(url: string): string {
+  return youtubeId(url) ?? url.trim().replace(/\/+$/, "").toLowerCase();
+}
+
+/**
+ * Baixa e lê a página do empreendimento no site da construtora.
+ *
+ * Nada é gravado aqui. A análise devolve o que a página tem, e a curadoria
+ * acontece na tela — só o que o corretor marcar é trazido depois, uma foto
+ * por chamada (`trazerImagemDoSite`), como no Drive.
+ */
+export async function analisarSite(entrada: { url: string; empreendimentoId: string }): Promise<AnaliseDoSite> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "Sessão expirada. Entre de novo." };
+
+  const busca = await buscarSeguro(entrada.url, {
+    tetoBytes: TETO_HTML,
+    prazoMs: 15_000,
+    aceitar: (tipo) => tipo.includes("text/html") || tipo.includes("application/xhtml"),
+  });
+
+  if (!busca.ok) {
+    return {
+      ok: false,
+      erro:
+        busca.motivo === "bloqueado"
+          ? `${busca.mensagem} Use a aba de PDF ou a do Drive com o material que a construtora mandou.`
+          : busca.motivo === "tipo_errado"
+            ? "Este link não é de uma página de site. Cole o endereço da página do empreendimento."
+            : busca.mensagem,
+    };
+  }
+
+  const pagina = lerPaginaDaConstrutora(busca.bytes.toString("utf8"), busca.urlFinal);
+
+  const supabase = await createClient();
+  const { data: existentes } = await supabase
+    .from("midias")
+    .select("url")
+    .eq("empreendimento_id", entrada.empreendimentoId)
+    .in("tipo", ["video", "tour360"]);
+  const jaTem = new Set((existentes ?? []).map((m) => identidadeDaMidia(m.url)));
+  const trazidas = await origensJaTrazidas(supabase, entrada.empreendimentoId);
+
+  // Página lida guarda o link no imóvel: é ele que deixa o corretor voltar e
+  // "buscar novidades" sem colar de novo. Página montada por JavaScript não
+  // é lembrada — reler um casco vazio não traria novidade nenhuma.
+  if (!pagina.montadaPorJs) {
+    const { error } = await supabase
+      .from("empreendimentos")
+      .update({ site_construtora: busca.urlFinal })
+      .eq("id", entrada.empreendimentoId);
+    if (error) console.warn("[importar do site] não guardei o link (0113 aplicada?):", error.message);
+  }
+
+  const midias = await comNomeDosTours(pagina.midias);
+
+  return {
+    ok: true,
+    titulo: pagina.titulo,
+    texto: pagina.texto,
+    dicas: pagina.dicas,
+    imagens: pagina.imagens.map((img) => ({ ...img, jaTrazida: trazidas.has(chaveDaFoto(img.url)) })),
+    // Arquivo de vídeo subido antes guarda a origem, não a URL dele.
+    midias: midias.map((m) => ({
+      ...m,
+      jaCadastrada: jaTem.has(identidadeDaMidia(m.url)) || trazidas.has(identidadeDaMidia(m.url)),
+    })),
+    montadaPorJs: pagina.montadaPorJs,
+    urlFinal: busca.urlFinal,
+  };
+}
+
+function dicasComoTexto(dicas: DicasEstruturadas): string {
+  return [
+    dicas.nome ? `Nome: ${dicas.nome}` : "",
+    dicas.endereco ? `Endereço: ${dicas.endereco}` : "",
+    dicas.bairro ? `Bairro ou região: ${dicas.bairro}` : "",
+    dicas.cidade ? `Cidade: ${dicas.cidade}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** Mesmo leitor do PDF, com o texto da página e as dicas estruturadas dela. */
+export async function sugerirCadastroDoSite(entrada: {
+  texto: string;
+  dicas: DicasEstruturadas;
+}): Promise<SugestaoDeCadastro> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, aviso: "Sessão expirada. Entre de novo." };
+
+  const resultado = await montarRascunhoDeTexto(entrada.texto.slice(0, 20_000), dicasComoTexto(entrada.dicas));
+  if (!resultado.ok) {
+    return {
+      ok: false,
+      aviso:
+        resultado.motivo === "sem_texto"
+          ? "A página quase não tem texto. As fotos e vídeos acima continuam disponíveis; os dados do imóvel precisam ser digitados."
+          : "Não consegui ler os dados da página agora. As fotos e vídeos acima continuam disponíveis.",
+    };
+  }
+  return { ok: true, rascunho: resultado.rascunho };
+}
+
+/**
+ * Traz UMA imagem do site para a galeria. Uma por chamada, como no Drive: o
+ * teto da função é 60 s, e o que falha aparece nomeado sem derrubar o resto.
+ */
+export async function trazerImagemDoSite(entrada: {
+  empreendimentoId: string;
+  slug: string;
+  url: string;
+  legenda: string;
+  tipo: "foto" | "planta";
+  capa: boolean;
+}): Promise<{ ok: boolean; duplicada?: boolean; url?: string; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "sessão expirada" };
+
+  const busca = await buscarSeguro(entrada.url, {
+    tetoBytes: TETO_IMAGEM,
+    prazoMs: 20_000,
+    aceitar: (tipo) => /^image\/(jpeg|png|webp)/.test(tipo),
+  });
+  if (!busca.ok) return { ok: false, erro: busca.mensagem };
+
+  const supabase = await createClient();
+  const resultado = await registrarMidia(depsMidiaSupabase(supabase), {
+    empreendimentoId: entrada.empreendimentoId,
+    bytes: busca.bytes,
+    mime: busca.contentType.split(";")[0].trim(),
+    tipo: entrada.tipo,
+    alt: entrada.legenda.slice(0, 200) || (entrada.tipo === "planta" ? "Planta do empreendimento" : "Foto do empreendimento"),
+    ordem: entrada.capa ? 0 : 10,
+  });
+  if (!resultado.ok) return { ok: false, erro: resultado.erro };
+
+  // A origem é carimbada DEPOIS, e à parte: citar a coluna no insert de
+  // `registrarMidia` derrubaria a importação inteira enquanto a 0113 não
+  // estiver aplicada. Só preenche onde está vazio — a foto que já existia
+  // (duplicada) guarda a primeira origem, não a última.
+  const { error: erroOrigem } = await supabase
+    .from("midias")
+    .update({ origem_url: chaveDaFoto(entrada.url) })
+    .eq("empreendimento_id", entrada.empreendimentoId)
+    .eq("url", resultado.url)
+    .is("origem_url", null);
+  if (erroOrigem) console.warn("[importar do site] sem origem_url (0113 aplicada?):", erroOrigem.message);
+
+  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarCatalogo();
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+
+  return { ok: true, duplicada: resultado.duplicada, url: resultado.url };
+}
+
+/**
+ * O nome do tour é o `<title>` da página dele. É por ele que o corretor vê
+ * quando a página da construtora mostra o tour de OUTRO prédio: a do Liv
+ * Stay (RSF) trazia dois tours chamados "Beyond Residence". Falha na leitura
+ * mantém o nome genérico: nome é ajuda, não requisito.
+ */
+async function comNomeDosTours(midias: MidiaDoSite[]): Promise<MidiaDoSite[]> {
+  const tours = midias.filter((m) => m.tipo === "tour360" && !m.arquivo).slice(0, TOURS_COM_NOME);
+  const nomes = new Map<string, string>();
+  await Promise.all(
+    tours.map(async (m) => {
+      const busca = await buscarSeguro(m.url, {
+        tetoBytes: 1024 * 1024,
+        prazoMs: 6_000,
+        aceitar: (tipo) => tipo.includes("text/html"),
+      });
+      if (!busca.ok) return;
+      const titulo = busca.bytes
+        .toString("utf8")
+        .match(/<title[^>]*>([^<]{2,120})<\/title>/i)?.[1]
+        ?.replace(/&amp;/g, "&")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (titulo) nomes.set(m.url, `Tour 360° · ${titulo}`);
+    }),
+  );
+  return midias.map((m) => (nomes.has(m.url) ? { ...m, titulo: nomes.get(m.url)! } : m));
+}
+
+/**
+ * Arquivo de vídeo (.mp4) do site da construtora sobe para o nosso Storage
+ * e entra como vídeo do imóvel. Link direto para o arquivo dela quebraria no
+ * dia em que ela trocasse o site, e a página do imóvel ficaria com um player
+ * vazio.
+ *
+ * A origem é guardada em `origem_url` para "Buscar novidades" reconhecer o
+ * arquivo como já trazido, já que a URL gravada passa a ser a nossa.
+ */
+export async function trazerVideoDoSite(entrada: {
+  empreendimentoId: string;
+  slug: string;
+  url: string;
+  titulo: string;
+}): Promise<{ ok: boolean; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "sessão expirada" };
+
+  const busca = await buscarSeguro(entrada.url, {
+    tetoBytes: TETO_VIDEO,
+    prazoMs: 45_000,
+    // Só mp4: é o único vídeo que o bucket aceita.
+    aceitar: (tipo) => tipo.startsWith("video/mp4"),
+  });
+  if (!busca.ok) return { ok: false, erro: busca.mensagem };
+
+  const mime = "video/mp4";
+  const hash = createHash("sha256").update(busca.bytes).digest("hex");
+  const caminho = `${entrada.empreendimentoId}/video-${hash.slice(0, 16)}.mp4`;
+
+  const supabase = await createClient();
+  const { error: erroUpload } = await supabase.storage
+    .from("empreendimentos")
+    .upload(caminho, busca.bytes, { contentType: mime, upsert: true });
+  if (erroUpload) {
+    console.error("[importar do site] vídeo não subiu:", erroUpload.message);
+    return { ok: false, erro: "o Storage recusou o arquivo" };
+  }
+  const url = supabase.storage.from("empreendimentos").getPublicUrl(caminho).data.publicUrl;
+
+  const { data: existente } = await supabase
+    .from("midias")
+    .select("id")
+    .eq("empreendimento_id", entrada.empreendimentoId)
+    .eq("url", url)
+    .maybeSingle();
+  if (!existente) {
+    const { error } = await supabase.from("midias").insert({
+      empreendimento_id: entrada.empreendimentoId,
+      tipo: "video",
+      url,
+      alt: entrada.titulo || "Vídeo do empreendimento",
+      ordem: 50,
+    });
+    if (error) {
+      console.error("[importar do site] vídeo não gravou:", error.message);
+      return { ok: false, erro: "não consegui gravar o vídeo" };
+    }
+  }
+
+  const { error: erroOrigem } = await supabase
+    .from("midias")
+    .update({ origem_url: identidadeDaMidia(entrada.url) })
+    .eq("empreendimento_id", entrada.empreendimentoId)
+    .eq("url", url)
+    .is("origem_url", null);
+  if (erroOrigem) console.warn("[importar do site] sem origem_url (0113 aplicada?):", erroOrigem.message);
+
+  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarCatalogo();
+  revalidatePath("/empreendimentos", "layout");
+  revalidatePath("/corretor/imoveis");
+  return { ok: true };
+}
+
+/**
+ * A planta trazida do site vira tipologia. A imagem é relida da NOSSA cópia
+ * (já no Storage), e o texto da página entra como contexto — é nele que
+ * moram o nome e a metragem de cada tipologia.
+ */
+export async function gerarTipologiaDaPlantaDoSite(entrada: {
+  empreendimentoId: string;
+  slug: string;
+  plantaUrl: string;
+  texto: string;
+}): Promise<ResultadoTipologia> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { ok: false, erro: "sessão expirada" };
+
+  const busca = await buscarSeguro(entrada.plantaUrl, {
+    tetoBytes: TETO_IMAGEM,
+    prazoMs: 20_000,
+    aceitar: (tipo) => tipo.startsWith("image/"),
+  });
+  if (!busca.ok) return { ok: false, erro: "não consegui reabrir a planta" };
+
+  const leitura = await lerPlanta(busca.bytes, busca.contentType.split(";")[0].trim(), entrada.texto.slice(0, 20_000));
+  const supabase = await createClient();
+  return gravarTipologiaLida(supabase, entrada, leitura);
+}
+

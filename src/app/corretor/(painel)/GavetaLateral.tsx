@@ -1,5 +1,6 @@
 "use client";
 
+import { Wordmark } from "@/components/ui/Wordmark";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -203,7 +204,7 @@ export function GavetaLateral({ ehGestor }: { ehGestor: boolean }) {
           </span>
           <div className="min-w-0 leading-tight">
             <p className="font-display text-titulo text-lg">
-              Next<span className="text-acento-suave">Home</span>
+              <Wordmark destaque="text-acento-suave" />
             </p>
             <p className="text-tenue text-[11px] font-medium tracking-[0.14em] uppercase">
               Painel do corretor

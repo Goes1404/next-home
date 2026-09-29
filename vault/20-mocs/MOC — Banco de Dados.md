@@ -4,7 +4,7 @@ tags: [moc, banco, supabase]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-15
 summary: Supabase, migrations, policies, grants, colunas geradas, types.
 ---
 # Banco de Dados — Map of Content
@@ -45,7 +45,11 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 
 ## Migrations: numeração e ordem
 - [[colisao-de-migration-entre-branches]] — a guarda só enxerga a própria branch
+- [[rodada-de-26-09-parte-3]] — `corretores` é pública para anon: credencial (token da agenda) saiu para tabela fechada na 0126 (26/09)
 
 ## Relacionados
 - [[MOC — Infraestrutura]] · [[MOC — CRM e Painel]] · [[Home]]
 - [[apagar-leads-leva-a-conversa-junto]] — o mapa de cascata de `delete from leads`, e as três FKs `set null` que sobrevivem órfãs (12/09)
+- [[vendas-e-o-modulo-financeiro]] — F1 do financeiro: venda com co-corretagem, comissão por venda, distrato; só o gestor marca dinheiro recebido (0114, 25/09)
+- [[vendas-e-o-modulo-financeiro]] — grant por coluna só vale com `revoke all ... from authenticated` antes: o padrão do Supabase dá ALL ao usuário logado (0116, 26/09)
+- [[migration-aplicada-fora-da-branch-e-apagada-pela-outra]] — a 0113 do sorteio preferido, apagada pela 0117, juntada na 0129

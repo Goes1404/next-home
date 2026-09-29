@@ -46,6 +46,13 @@ export interface LeadDeAnuncio {
   etapa: string;
 }
 
+/** Venda registrada (0114) ligada a um lead de anúncio. Distrato já fora. */
+export interface VendaDeLead {
+  leadId: string;
+  vgv: number;
+  comissao: number;
+}
+
 export interface DossieDeLead {
   leadId: string;
   temperaturaLabel: string | null;
@@ -64,6 +71,11 @@ export interface FunilDaCampanha {
   custoPorVisita: number | null;
   custoPorFechado: number | null;
   custoPorQuente: number | null;
+  /** Soma das vendas registradas de leads da campanha (F6 do financeiro). */
+  vgv: number;
+  comissao: number;
+  /** Comissão ÷ investido: quanto cada real de anúncio devolveu. */
+  retorno: number | null;
 }
 
 export interface AgregadoDeAnuncios {
@@ -80,7 +92,14 @@ export function agregarPorCampanha(params: {
   gastos: readonly GastoDeCampanha[];
   leads: readonly LeadDeAnuncio[];
   dossies: readonly DossieDeLead[];
+  /** Opcional: sem a 0114 aplicada, a tela segue sem as colunas de venda. */
+  vendas?: readonly VendaDeLead[];
 }): AgregadoDeAnuncios {
+  const vendaPorLead = new Map<string, { vgv: number; comissao: number }>();
+  for (const v of params.vendas ?? []) {
+    const a = vendaPorLead.get(v.leadId) ?? { vgv: 0, comissao: 0 };
+    vendaPorLead.set(v.leadId, { vgv: a.vgv + v.vgv, comissao: a.comissao + v.comissao });
+  }
   const quentePorLead = new Set(
     params.dossies.filter((d) => d.temperaturaLabel === "quente").map((d) => d.leadId),
   );
@@ -106,6 +125,9 @@ export function agregarPorCampanha(params: {
       custoPorVisita: null,
       custoPorFechado: null,
       custoPorQuente: null,
+      vgv: 0,
+      comissao: 0,
+      retorno: null,
     };
     porId.set(campanhaId, novo);
     return novo;
@@ -131,6 +153,11 @@ export function agregarPorCampanha(params: {
     if (lead.visitaAgendadaEm) linha.visitas++;
     if (lead.etapa === "fechado") linha.fechados++;
     if (quentePorLead.has(lead.id)) linha.quentes++;
+    const venda = vendaPorLead.get(lead.id);
+    if (venda) {
+      linha.vgv += venda.vgv;
+      linha.comissao += venda.comissao;
+    }
   }
 
   const campanhas = [...porId.values()].map((c) => ({
@@ -139,6 +166,8 @@ export function agregarPorCampanha(params: {
     custoPorVisita: dividir(c.gasto, c.visitas),
     custoPorFechado: dividir(c.gasto, c.fechados),
     custoPorQuente: dividir(c.gasto, c.quentes),
+    // Sem gasto não há retorno a medir: dividir por zero diria "infinito".
+    retorno: c.gasto > 0 ? c.comissao / c.gasto : null,
   }));
 
   // Quem gastou mais primeiro: a tela é sobre para onde o dinheiro foi.

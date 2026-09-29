@@ -14,6 +14,11 @@ import { site } from "@/lib/site";
 import { primeiroNome } from "@/lib/format";
 import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
 import { HeroInicio } from "./_componentes/HeroInicio";
+import { PrimeirosPassos } from "./_componentes/PrimeirosPassos";
+import { QuemEstaEsperando } from "./_componentes/graficos/QuemEstaEsperando";
+import { CartaoMeta } from "./financeiro/CartaoMeta";
+import { getRitmoDoCorretor } from "@/lib/financeiro/ritmoDoCorretor";
+import { getVendas } from "@/lib/financeiro/dados";
 import { cn } from "@/lib/utils";
 import {
   IconeLink,
@@ -98,6 +103,17 @@ export default async function PainelInicio() {
         <BlocoDoHero nome={nomeNaSaudacao} />
       </Suspense>
 
+      {/* Quem está esperando resposta, pelo tempo de espera. Some quando
+          ninguém espera; sem esqueleto para não empurrar a tela à toa. */}
+      <Suspense fallback={null}>
+        <QuemEstaEsperando corretorId={corretor.id} />
+      </Suspense>
+
+      {/* Some quando tudo está configurado: não segura a tela com esqueleto. */}
+      <Suspense fallback={null}>
+        <PrimeirosPassos corretorId={corretor.id} />
+      </Suspense>
+
       {/*
         Cada bloco busca o próprio dado atrás do seu `<Suspense>`, em vez de a
         página esperar tudo antes de pintar qualquer coisa. Antes eram três
@@ -105,6 +121,12 @@ export default async function PainelInicio() {
         só existia quando a última respondesse. Agora o cabeçalho e a cor do
         módulo aparecem de imediato e cada seção chega quando fica pronta.
       */}
+      {/* A meta do mês (F5 do financeiro): o que falta, em trabalho. Sem
+          fallback visível — antes da 0115, ou sem meta, é um convite curto. */}
+      <Suspense fallback={null}>
+        <BlocoDaMeta corretorId={corretor.id} />
+      </Suspense>
+
       <Suspense fallback={<EsqueletoCartao linhas={1} />}>
         <BlocoDoFunil />
       </Suspense>
@@ -156,7 +178,7 @@ export default async function PainelInicio() {
               />
               <span
                 aria-hidden
-                className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/15 backdrop-blur-md md:size-14"
+                className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/15 md:size-14"
               >
                 <Icone className="size-6 md:size-7" />
               </span>
@@ -167,7 +189,7 @@ export default async function PainelInicio() {
               {a.largo && (
                 <span
                   aria-hidden
-                  className="relative grid size-11 shrink-0 place-items-center rounded-full border border-white/25 bg-white/15 backdrop-blur-md transition-transform group-hover:translate-x-0.5"
+                  className="relative grid size-11 shrink-0 place-items-center rounded-full border border-white/25 bg-white/15 transition-transform group-hover:translate-x-0.5"
                 >
                   →
                 </span>
@@ -252,4 +274,17 @@ function CartaoDeCliques({
       )}
     </div>
   );
+}
+
+/**
+ * O cartão da meta no Início. As vendas só são lidas quando existe meta:
+ * sem ela, o custo nesta tela é UMA consulta (a da meta).
+ */
+async function BlocoDaMeta({ corretorId }: { corretorId: string }) {
+  const ritmo = await getRitmoDoCorretor(corretorId, async () => {
+    const r = await getVendas();
+    return r.ok ? r.vendas : [];
+  });
+  if (ritmo.estado === "sem_migracao") return null;
+  return <CartaoMeta estado={ritmo} compacto />;
 }

@@ -4,7 +4,7 @@ tags: [moc, meta]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-10
 summary: Os padrões que atravessam o projeto inteiro — vale ler antes de qualquer tarefa.
 ---
 # Lições Gerais — Map of Content

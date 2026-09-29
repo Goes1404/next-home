@@ -1,5 +1,6 @@
 "use server";
 
+import { site } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 import { sondarProvedor } from "@/lib/whatsapp/sonda";
 import { getCorretorLogado } from "@/lib/corretorSessao";
@@ -80,7 +81,7 @@ export async function testarAgenteIA(
       slugCorretor: corretor.slug ?? undefined,
       creciCorretor: corretor.creci,
       telefoneCorretor: corretor.whatsapp,
-      nomeAssistente: instancia?.nome_assistente ?? "Sofia",
+      nomeAssistente: instancia?.nome_assistente ?? site.assistente,
       tomVoz: instancia?.tom_voz ?? "consultivo_alto_padrao",
     },
     catalogo,

@@ -12,10 +12,10 @@ import { Shield, Handshake, Sparkles, Zap } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Anunciar Imóvel em Alphaville e Barueri",
-  description: `Avaliação real de mercado, compradores já cadastrados e suporte jurídico. Venda ou alugue com a Next Home — CRECI ${site.creci}.`,
+  description: `Avaliação real de mercado, compradores já cadastrados e suporte jurídico. Venda ou alugue com a ${site.nome} — CRECI ${site.creci}.`,
   alternates: { canonical: "/anunciar-imovel" },
   openGraph: {
-    title: "Anuncie seu Imóvel | Next Home Negócios Imobiliários",
+    title: `Anuncie seu Imóvel | ${site.nomeCompleto}`,
     description:
       "Venda ou alugue com agilidade, divulgação nos principais portais e assessoria completa.",
     url: `${site.url}/anunciar-imovel`,
@@ -52,9 +52,9 @@ export default async function AnunciarImovelPage() {
   const whatsapp = corretorAtivo
     ? linkWhatsappPara(
         corretorAtivo.whatsapp,
-        `Olá, ${corretorAtivo.nome}! Tenho um imóvel e quero anunciar com a Next Home.`,
+        `Olá, ${corretorAtivo.nome}! Tenho um imóvel e quero anunciar com a ${site.nome}.`,
       )
-    : linkWhatsapp("Olá! Quero anunciar meu imóvel com a Next Home e solicitar uma avaliação.");
+    : linkWhatsapp(`Olá! Quero anunciar meu imóvel com a ${site.nome} e solicitar uma avaliação.`);
 
   return (
     <>

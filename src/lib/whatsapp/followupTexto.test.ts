@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { formatarVisitaSP, instrucaoDoFollowup } from "./followupTexto";
+import {
+  formatarVisitaSP,
+  instrucaoDaRespostaAoPosVisita,
+  instrucaoDoFollowup,
+  JANELA_RESPOSTA_LEMBRETE_H,
+  lerRespostaAoLembrete,
+  respondeAoFollowup,
+  respondeAoPosVisita,
+} from "./followupTexto";
 
 describe("instrução do follow-up (roadmap nº 6)", () => {
   it("1ª tentativa com dossiê usa os ganchos concretos", () => {
@@ -127,5 +135,84 @@ describe("o lembrete de véspera não inventa onde encontrar", () => {
   it("continua sendo só sobre a visita", () => {
     const texto = lembrete({ tipo: "lembrete_visita", tentativa: 1 });
     expect(texto).toContain("NÃO reofereça outros imóveis");
+  });
+});
+
+describe("pós-visita (26/09/2026)", () => {
+  const texto = instrucaoDoFollowup({
+    tipo: "pos_visita",
+    tentativa: 1,
+    nomeDoImovel: "Vitra Alphaville",
+    visitaFormatada: "sábado, 26/09, às 10:00",
+  });
+
+  it("pergunta o que ele achou, citando o imóvel visitado", () => {
+    expect(texto).toMatch(/PÓS-VISITA/);
+    expect(texto).toContain("Vitra Alphaville");
+    expect(texto).toMatch(/o que ele achou/);
+  });
+
+  it("proíbe reoferta, valor e pressão", () => {
+    expect(texto).toMatch(/NÃO ofereça outros imóveis/);
+    expect(texto).toMatch(/NÃO fale de valores/);
+    expect(texto).toMatch(/NÃO pressione/);
+  });
+});
+
+describe("resposta ao pós-visita", () => {
+  const agora = new Date("2026-09-26T15:00:00Z");
+  const enviado = "2026-09-26T12:00:00Z";
+
+  it("vale quando o pós-visita foi a última palavra nossa", () => {
+    const h = [
+      { remetente: "bot", em: "2026-09-26T12:00:30Z" },
+      { remetente: "cliente", em: "2026-09-26T14:59:00Z" },
+    ];
+    expect(respondeAoPosVisita(enviado, h, agora)).toBe(true);
+  });
+
+  it("não vale se a conversa já andou depois dele", () => {
+    const h = [
+      { remetente: "bot", em: "2026-09-26T12:00:30Z" },
+      { remetente: "corretor", em: "2026-09-26T13:00:00Z" },
+      { remetente: "cliente", em: "2026-09-26T14:59:00Z" },
+    ];
+    expect(respondeAoPosVisita(enviado, h, agora)).toBe(false);
+  });
+
+  it("não vale depois de 72h nem sem envio", () => {
+    expect(respondeAoPosVisita("2026-09-22T12:00:00Z", [], agora)).toBe(false);
+    expect(respondeAoPosVisita(null, [], agora)).toBe(false);
+  });
+
+  it("a instrução segue a resposta e não volta ao funil", () => {
+    const t = instrucaoDaRespostaAoPosVisita();
+    expect(t).toMatch(/simulação/);
+    expect(t).toMatch(/UMA alternativa/);
+    expect(t).toMatch(/NÃO fale valores/);
+  });
+});
+
+describe("resposta ao lembrete da visita", () => {
+  it("negação vence e vira remarcar", () => {
+    expect(lerRespostaAoLembrete("Não vou conseguir amanhã")).toBe("remarcar");
+    expect(lerRespostaAoLembrete("podemos remarcar pra semana?")).toBe("remarcar");
+    expect(lerRespostaAoLembrete("não posso, mas sexta dá")).toBe("remarcar");
+  });
+
+  it("confirmação clara", () => {
+    expect(lerRespostaAoLembrete("Confirmado! Estarei lá")).toBe("confirmou");
+    expect(lerRespostaAoLembrete("👍")).toBe("confirmou");
+    expect(lerRespostaAoLembrete("sim")).toBe("confirmou");
+  });
+
+  it("dúvida fica com o corretor", () => {
+    expect(lerRespostaAoLembrete("qual o endereço mesmo?")).toBeNull();
+  });
+
+  it("responde ao follow-up pela janela do tipo", () => {
+    const agora = new Date("2026-09-26T15:00:00Z");
+    expect(respondeAoFollowup("2026-09-26T00:00:00Z", [], JANELA_RESPOSTA_LEMBRETE_H, agora)).toBe(true);
+    expect(respondeAoFollowup("2026-09-24T00:00:00Z", [], JANELA_RESPOSTA_LEMBRETE_H, agora)).toBe(false);
   });
 });

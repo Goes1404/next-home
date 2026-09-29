@@ -1,3 +1,5 @@
+import { Wordmark } from "@/components/ui/Wordmark";
+import { site } from "@/lib/site";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -70,7 +72,7 @@ export default function EntrarPage() {
 
         <div className="border-linha bg-superficie shadow-painel-alto mx-auto mt-auto w-full max-w-sm rounded-2xl border p-6 sm:p-7 lg:mt-0">
           <h1 className="text-fluid-xl text-titulo font-medium">Entrar</h1>
-          <p className="text-fluid-sm text-apoio mt-1 mb-6">Área do corretor da Next Home.</p>
+          <p className="text-fluid-sm text-apoio mt-1 mb-6">Área do corretor da {site.nome}.</p>
 
           <FormularioLogin />
 
@@ -101,7 +103,7 @@ function Marca({ grande = false }: { grande?: boolean }) {
         grande ? "text-[clamp(3rem,5vw,4.5rem)]" : "text-fluid-2xl"
       }`}
     >
-      Next<span className="text-brand-200">Home</span>
+      <Wordmark destaque="text-brand-200" />
     </Link>
   );
 }
