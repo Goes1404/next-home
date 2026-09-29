@@ -8403,5 +8403,12 @@ Nota: [[o-imovel-nao-tem-mais-corretor-dono]].
 - **Exceções declaradas na guarda `semCorretorDono.test.ts`:** página e
   cartão do corretor (o visitante escolheu a pessoa) e páginas por token
   (quem abre já é lead).
-- **Custo:** com um só número conectado, todo lead do site vai para ele, e
-  o link pessoal do corretor não direciona mais o WhatsApp.
+- **Custo:** com um só número conectado, todo lead do site sem link
+  pessoal vai para ele.
+- **O link pessoal voltou a direcionar (0130).** Tirar o dono levou junto a
+  troca pelo corretor do cookie, e o sorteio da 0117 não sabia preferir
+  ninguém. A 0130 junta os dois: `(p_empreendimento, preferido)`, com o
+  preferido na ORDEM, nunca no filtro. Corretor do link desconectado não
+  ganha a vez e o clique cai no sorteio, sem se perder. Aplicada ANTES do
+  deploy de propósito: o código antigo chama sem argumento ou com
+  `p_empreendimento` nomeado, e as duas formas continuam valendo.

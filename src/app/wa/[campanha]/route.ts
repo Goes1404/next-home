@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
 import { ehChaveIntencao, resolverCampanha } from "@/lib/whatsapp/porteiro";
@@ -77,13 +78,16 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   }
 
   type Sorteio = { corretor_id: string; telefone: string };
+  // Link pessoal (cookie de 30 dias): PREFERÊNCIA no sorteio, nunca filtro.
+  // Desconectado, o corretor do link simplesmente não ganha a vez.
+  const preferido = (await getCorretorAtivo())?.id ?? undefined;
   const primeiro = await supabase
-    .rpc("sortear_corretor_whatsapp", { p_empreendimento: alvo.id })
+    .rpc("sortear_corretor_whatsapp", { p_empreendimento: alvo.id, preferido })
     .maybeSingle<Sorteio>();
   let sorteio = primeiro.data;
   const erroDoSorteio = primeiro.error;
   if (erroDoSorteio) {
-    // Banco ainda sem a 0117 (a função antiga não recebe o imóvel): sorteia
+    // Banco sem a assinatura nova (0117/0130): sorteia
     // pela versão antiga em vez de perder o clique pago.
     ({ data: sorteio } = await supabase.rpc("sortear_corretor_whatsapp").maybeSingle<Sorteio>());
   }

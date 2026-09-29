@@ -5,7 +5,7 @@ tags: [front, whatsapp, decisao]
 type: nota
 status: evergreen
 custou: alto
-codigo: [src/lib/whatsapp/linkDoPorteiro.ts, src/lib/whatsapp/destinoDoPorteiro.ts, src/app/wa/route.ts, src/app/wa/[campanha]/route.ts, src/app/semCorretorDono.test.ts, supabase/migrations/0129_empreendimento_sem_corretor_dono.sql]
+codigo: [src/lib/whatsapp/linkDoPorteiro.ts, src/lib/whatsapp/destinoDoPorteiro.ts, src/app/wa/route.ts, src/app/wa/[campanha]/route.ts, src/app/semCorretorDono.test.ts, supabase/migrations/0129_empreendimento_sem_corretor_dono.sql, supabase/migrations/0130_sorteio_prefere_o_corretor_do_link.sql]
 created: 2026-09-28
 updated: 2026-09-28
 fonte: decisão do dono do produto em 28/09/2026 ("tire do site e tire de tudo")
@@ -44,11 +44,19 @@ A guarda `semCorretorDono.test.ts` permite `wa.me` direto só onde o
 visitante escolheu uma PESSOA (página e cartão do corretor) ou já é lead
 (portal, proposta, seleção, documentos).
 
+## O link pessoal voltou a direcionar (0130)
+
+Sem o dono, o cookie do link pessoal (`?corretor=<slug>`) deixou de mandar o
+WhatsApp para o corretor — a preferência tinha sido descartada junto com a
+0113 (ver [[migration-aplicada-fora-da-branch-e-apagada-pela-outra]]). A
+0130 devolveu: `sortear_corretor_whatsapp(p_empreendimento, preferido)`, e as
+duas portas do porteiro passam o corretor do cookie. **Preferência na
+ORDEM, nunca filtro**: corretor do link desconectado não ganha a vez, e o
+clique cai no sorteio (conferido no banco: preferido desconectado → Bruna).
+
 ## Custo aceito
 
-Com um único número conectado (Bruna, em 28/09), todo lead do site vai para
-ela. O cookie do link pessoal não direciona mais o WhatsApp — a preferência
-por corretor foi descartada junto com a 0113 (ver
-[[migration-aplicada-fora-da-branch-e-apagada-pela-outra]]).
+Com um único número conectado (Bruna, em 28/09), todo lead do site sem link
+pessoal vai para ela.
 
 Ver [[botoes-do-site-mandavam-texto-que-o-porteiro-nao-reconhecia]].
