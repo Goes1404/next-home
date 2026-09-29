@@ -2,15 +2,10 @@ import Link from "next/link";
 import { WhatsappLink } from "@/components/analytics/WhatsappLink";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { linkWhatsapp, linkWhatsappPara } from "@/lib/site";
-import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
-export async function CtaFinal() {
-  const corretorAtivo = await getCorretorAtivo();
-  const link = corretorAtivo
-    ? linkWhatsappPara(corretorAtivo.whatsapp, mensagemDoSite())
-    : linkWhatsapp();
+export function CtaFinal() {
+  const link = linkDoPorteiro({ intencao: "saber" });
 
   return (
     <section className="px-4 pb-24">
@@ -24,7 +19,6 @@ export async function CtaFinal() {
             <WhatsappLink
               href={link}
               origem="cta_final"
-              corretorId={corretorAtivo?.id}
               className="rounded-full bg-brand-500 px-7 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-400 shadow-md botao-vivo"
             >
               Receber Ofertas no WhatsApp

@@ -101,18 +101,16 @@ export function Simulador({
   // os números em vez de "vi o simulador" — e a conversa começa da conta.
   const whatsappComResumo = (() => {
     if (!whatsapp || !resultado) return whatsapp;
+    // Vai no `m` do porteiro, que emenda DEPOIS da frase reconhecida: sem
+    // isso a mensagem não abriria conversa para quem ainda não é lead.
     const resumo =
-      `Olá! Simulei no site: renda ${formatarMoedaBRL(numeros.rendaMensal)}, ` +
+      `Simulei: renda ${formatarMoedaBRL(numeros.rendaMensal)}, ` +
       `imóvel ${formatarMoedaBRL(numeros.valorImovel)}, entrada ${formatarMoedaBRL(numeros.entrada + numeros.fgts)}, ` +
       `${prazoAnos} anos. ${resultado.fecha ? `Parcela estimada ${formatarMoedaBRL(resultado.parcelaEstimada)}.` : `Faltam ${formatarMoedaBRL(resultado.faltam)}.`} ` +
       "Pode me ajudar a fechar a conta?";
-    try {
-      const url = new URL(whatsapp);
-      url.searchParams.set("text", resumo);
-      return url.toString();
-    } catch {
-      return whatsapp;
-    }
+    const url = new URL(whatsapp, "https://porteiro.invalid");
+    url.searchParams.set("m", resumo);
+    return url.pathname + url.search;
   })();
 
   return (

@@ -58,7 +58,6 @@ export async function buscarEmpreendimentoParaEdicao(slug: string): Promise<Empr
     .from("empreendimentos")
     .select(`
       *,
-      corretor:corretores!empreendimentos_corretor_id_fkey(id, nome, creci, whatsapp, foto_url, video_url),
       tipologias(*),
       midias(*),
       lazer:empreendimento_lazer(lazer_itens(*))

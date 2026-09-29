@@ -1,11 +1,5 @@
 import { cache } from "react";
-import {
-  atuacaoPorCorretor,
-  catalogoPublicado,
-  corretoresPublicos,
-  empreendimentosDoCorretor,
-  type AtuacaoCorretor,
-} from "@/lib/catalogo/cache";
+import { catalogoPublicado, corretoresPublicos } from "@/lib/catalogo/cache";
 import { mapCorretor, SELECT_CORRETOR, SELECT_EMPREENDIMENTO, type LinhaCorretor } from "@/lib/catalogo/selects";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { estagioDe } from "@/lib/estagioDeCompra";
@@ -21,61 +15,28 @@ import type {
 // Os SELECTs e o mapeador de corretor moram em `catalogo/selects.ts` (sem
 // dependência) desde a F2; continuam exportados daqui para quem já importava.
 export { mapCorretor, SELECT_CORRETOR, SELECT_EMPREENDIMENTO };
-export type { AtuacaoCorretor, LinhaCorretor };
+export type { LinhaCorretor };
 
 /**
  * Camada de acesso a dados dos empreendimentos, sobre o Supabase real
  * (prhhrqyubjcafvucirri). RLS já restringe a leitura a `publicado = true`
  * (ver supabase/migrations/0001_init.sql) — o `.eq("publicado", true)"
  * aqui é redundante com a policy, mas deixa a intenção explícita na query.
- *
- * Colunas explícitas no embed de `corretor` (em vez de `corretores(*)`): a
- * tabela ganhou `user_id`/`slug` (login de corretor) que não devem vazar
- * pela API pública de empreendimentos.
- *
- * O `!empreendimentos_corretor_id_fkey` no embed não é enfeite: existe no
- * banco uma tabela de junção `corretor_destaques (empreendimento_slug,
- * corretor_id)` — criada fora deste repositório, ela não aparece em
- * `supabase/migrations` nem nos tipos gerados. Com ela, o PostgREST passa a
- * enxergar DOIS caminhos entre `empreendimentos` e `corretores` (a chave
- * estrangeira direta e o muitos-para-muitos pela junção) e se recusa a
- * adivinhar qual usar: toda query com este select passou a responder PGRST201
- * ("more than one relationship was found"). Como este select alimenta a home,
- * a listagem, o portfólio, a página de cada empreendimento e a do corretor, o
- * site inteiro caía no `error.tsx` contra o banco de produção. Nomear a
- * constraint desfaz o empate.
  */
 
-// `SELECT_EMPREENDIMENTO` (e a história do `!empreendimentos_corretor_id_fkey`)
-// está em `catalogo/selects.ts`.
-
 /**
- * Com um corretor ativo (link pessoal, ver `corretorAtivo.ts`), ele
- * sobrepõe o corretor cadastrado em cada item — em todo lugar do site, não
- * só nos empreendimentos que são "dele" no cadastro.
- */
-function aplicarCorretorAtivo(
-  lista: Empreendimento[],
-  corretorAtivo: Awaited<ReturnType<typeof getCorretorAtivo>>,
-): Empreendimento[] {
-  if (!corretorAtivo) return lista;
-  return lista.map((e) => ({ ...e, corretor: corretorAtivo }));
-}
-
-/**
- * O catálogo publicado, já com o corretor ativo aplicado.
+ * O catálogo publicado.
  *
  * Desde a F2 (13/09/2026) o banco não é consultado aqui: `catalogoPublicado`
  * é o cache de dados por etiqueta (ver `catalogo/cache.ts`), e `cache()` do
  * React deduplica dentro da requisição — a home chamava isto duas vezes
- * (`getEmpreendimentos` e `getRegioesDisponiveis`) e baixava 243 KB do
- * Canadá duas vezes. A personalização por cookie fica FORA do cache de
- * dados, de propósito: é um `map` em memória sobre 25 objetos.
+ * (`getEmpreendimentos` e `getRegioesDisponiveis`).
+ *
+ * Até 28/09 cada item carregava um "corretor dono", sobreposto pelo corretor
+ * do link pessoal. O imóvel não tem mais dono: o contato do site passa pelo
+ * porteiro (`/wa`), que sorteia entre quem tem WhatsApp conectado.
  */
-const buscarPublicados = cache(async (): Promise<Empreendimento[]> => {
-  const [lista, corretorAtivo] = await Promise.all([catalogoPublicado(), getCorretorAtivo()]);
-  return aplicarCorretorAtivo(lista, corretorAtivo);
-});
+const buscarPublicados = cache(async (): Promise<Empreendimento[]> => catalogoPublicado());
 
 /** Minúsculas e sem acento: "Estação" e "estacao" são a mesma busca. */
 function chave(texto: string): string {
@@ -257,10 +218,6 @@ export async function getSlugsEmpreendimentos(): Promise<string[]> {
 /* ---------------------------------------------------------------------------
  * Corretores
  *
- * Nenhuma das funções abaixo aplica `aplicarCorretorAtivo`: aqui o corretor é
- * o assunto da página, não o intermediário da visita. Sobrepor pelo cookie
- * faria a página de um corretor exibir outra pessoa para quem tivesse chegado
- * pelo link de um colega.
  * ------------------------------------------------------------------------ */
 
 // `SELECT_CORRETOR`, `LinhaCorretor` e `mapCorretor` moram em
@@ -279,16 +236,6 @@ export async function getCorretorPorSlug(slug: string): Promise<CorretorPerfil |
   return (await corretoresPublicos()).find((c) => c.slug === slug) ?? null;
 }
 
-
-export async function getAtuacaoPorCorretor(): Promise<Record<string, AtuacaoCorretor>> {
-  return atuacaoPorCorretor();
-}
-
-export async function getEmpreendimentosPorCorretor(
-  corretorId: string,
-): Promise<Empreendimento[]> {
-  return empreendimentosDoCorretor(corretorId);
-}
 
 /**
  * Cidades, bairros e TIPOS distintos, para popular os selects de filtro.

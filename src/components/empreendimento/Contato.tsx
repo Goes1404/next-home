@@ -1,18 +1,13 @@
-import Image from "next/image";
 import Link from "next/link";
 import { WhatsappLink } from "@/components/analytics/WhatsappLink";
 import { Compartilhar } from "@/components/empreendimento/Compartilhar";
 import { Reveal } from "@/components/motion/Reveal";
-import { iniciais } from "@/lib/format";
-import { linkWhatsappPara } from "@/lib/site";
+import { site } from "@/lib/site";
 import type { Empreendimento } from "@/lib/types";
-import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 export function Contato({ empreendimento: e }: { empreendimento: Empreendimento }) {
-  const link = linkWhatsappPara(
-    e.corretor.whatsapp,
-    mensagemDeAnuncio(e.nome, "tabela"),
-  );
+  const link = linkDoPorteiro({ imovelSlug: e.slug, intencao: "tabela" });
 
   return (
     <section id="contato" className="scroll-mt-24 bg-superficie/40 px-4 py-16 sm:px-8 sm:py-24">
@@ -23,38 +18,19 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
         </p>
 
         <div className="mt-8 rounded-2xl border border-linha/10 bg-superficie px-6 py-7">
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:text-left">
-            {e.corretor.fotoUrl ? (
-              <Image
-                src={e.corretor.fotoUrl}
-                alt=""
-                width={72}
-                height={72}
-                className="h-18 w-18 shrink-0 rounded-full object-cover"
-              />
-            ) : (
-              // `text-mist-50` literal, como o texto branco sobre botão da marca: as
-              // iniciais vivem sobre um círculo de teal sólido, igual nos dois temas.
-              <span
-                aria-hidden
-                className="font-display flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xl text-mist-50"
-              >
-                {iniciais(e.corretor.nome)}
-              </span>
-            )}
-
-            <div className="min-w-0 flex-1">
-              <p className="font-display text-lg text-titulo">{e.corretor.nome}</p>
-              <p className="text-fluid-sm text-legenda">
-                Corretor responsável · CRECI {e.corretor.creci}
-              </p>
-            </div>
+          {/* Sem corretor dono (28/09): quem atende é decidido no clique, entre
+              quem tem WhatsApp conectado. Mostrar um rosto aqui seria prometer
+              uma pessoa que o porteiro pode não escolher. */}
+          <div className="sm:text-left">
+            <p className="font-display text-lg text-titulo">Equipe {site.nome}</p>
+            <p className="text-fluid-sm text-legenda">
+              Um corretor da equipe responde no WhatsApp · CRECI {site.creci}
+            </p>
           </div>
 
           <WhatsappLink
             href={link}
             origem="ficha_imovel"
-            corretorId={e.corretor && "id" in e.corretor ? (e.corretor as { id: string }).id : undefined}
             empreendimentoSlug={e.slug}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 px-7 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-400 shadow-md botao-vivo"
           >

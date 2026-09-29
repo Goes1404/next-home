@@ -2,26 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { iniciais } from "@/lib/format";
-import type { AtuacaoCorretor } from "@/lib/queries";
 import { linkWhatsappPara } from "@/lib/site";
 import type { CorretorPerfil } from "@/lib/types";
 import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 
 type CardCorretorProps = {
   corretor: CorretorPerfil;
-  atuacao?: AtuacaoCorretor;
   compacto?: boolean;
 };
-
-function resumoAtuacao(atuacao?: AtuacaoCorretor) {
-  if (!atuacao || atuacao.total === 0) return null;
-  const contagem = `${atuacao.total} empreendimento${atuacao.total === 1 ? "" : "s"}`;
-  const visiveis = atuacao.cidades.slice(0, 2);
-  const restantes = atuacao.cidades.length - visiveis.length;
-  const cidades =
-    restantes > 0 ? `${visiveis.join(", ")} +${restantes}` : visiveis.join(", ");
-  return { contagem, cidades };
-}
 
 function Avatar({ corretor, tamanho }: { corretor: CorretorPerfil; tamanho: 56 | 72 }) {
   const classe = tamanho === 72 ? "h-18 w-18" : "h-14 w-14";
@@ -59,11 +47,11 @@ const ICONE_WHATSAPP = (
  *
  * Completo (equipe, 13/09/2026, "deixar mais profissional"): faixa de marca
  * com o retrato CIRCULAR de 128px (as fotos cadastradas têm 120px — em 4:3
- * elas embaçavam), nome, CRECI, atuação (número de imóveis + cidades) e a
+ * elas embaçavam), nome, CRECI e a
  * bio em duas linhas quando existe. Duas saídas de tamanho de polegar:
  * WhatsApp (primária) e perfil. Sem foto, monograma no mesmo círculo.
  */
-export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps) {
+export function CardCorretor({ corretor, compacto }: CardCorretorProps) {
   if (compacto) {
     return (
       <Link
@@ -92,7 +80,6 @@ export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps)
     );
   }
 
-  const resumo = resumoAtuacao(atuacao);
   const whatsapp = linkWhatsappPara(
     corretor.whatsapp,
     mensagemDoSite(),
@@ -143,18 +130,9 @@ export function CardCorretor({ corretor, atuacao, compacto }: CardCorretorProps)
           <p className="text-xs text-legenda mt-1 tracking-[0.12em] uppercase">CRECI {corretor.creci}</p>
         </div>
 
-        {/* Atuação: número em destaque e cidades em seguida — o que se lê
-            mais rápido varrendo sete cartões. Sem atuação apurada, a frase
-            geral, para o cartão não encolher e desalinhar a grade. */}
-        <p className="text-fluid-sm text-apoio">
-          {resumo ? (
-            <>
-              <span className="font-medium text-corpo">{resumo.contagem}</span> · {resumo.cidades}
-            </>
-          ) : (
-            <>Atende toda a região — de lançamento a pronto para morar.</>
-          )}
-        </p>
+        {/* Sem imóvel com dono (28/09) não há "N empreendimentos em X" para
+            contar: todo corretor apresenta o catálogo inteiro. */}
+        <p className="text-fluid-sm text-apoio">Atende toda a região — de lançamento a pronto para morar.</p>
 
         {bio && <p className="text-fluid-sm text-corpo-suave line-clamp-2 text-pretty">{bio}</p>}
 

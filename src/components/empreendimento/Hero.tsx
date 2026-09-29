@@ -5,10 +5,9 @@ import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { precoAPartirDe } from "@/lib/format";
-import { linkWhatsappPara } from "@/lib/site";
 import { STATUS_PONTO, STATUS_TINTA } from "@/lib/statusCor";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
-import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 /**
  * Hero editorial: a foto ocupa tudo, o nome do imóvel é o elemento gráfico
@@ -16,14 +15,8 @@ import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
  * vira uma barra fina no rodapé — o produto primeiro, a burocracia depois.
  */
 export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) {
-  const link = linkWhatsappPara(
-    e.corretor.whatsapp,
-    mensagemDeAnuncio(e.nome, "saber"),
-  );
-  const linkDescricao = linkWhatsappPara(
-    e.corretor.whatsapp,
-    mensagemDeAnuncio(e.nome, "material"),
-  );
+  const link = linkDoPorteiro({ imovelSlug: e.slug, intencao: "saber" });
+  const linkDescricao = linkDoPorteiro({ imovelSlug: e.slug, intencao: "material" });
 
   return (
     <section className="relative flex min-h-svh flex-col justify-end">

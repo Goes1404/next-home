@@ -27,7 +27,6 @@ export type PontoDoMapa = {
   tipo: TipoImovel;
   precoAPartir: number | null;
   capa: Pick<Midia, "url" | "alt" | "blurDataUrl">;
-  corretor: { whatsapp: string } | null;
 };
 
 export function pontoDoMapa(e: Empreendimento): PontoDoMapa {
@@ -43,7 +42,6 @@ export function pontoDoMapa(e: Empreendimento): PontoDoMapa {
     tipo: e.tipo,
     precoAPartir: e.precoAPartir,
     capa: { url: e.capa.url, alt: e.capa.alt, blurDataUrl: e.capa.blurDataUrl },
-    corretor: e.corretor ? { whatsapp: e.corretor.whatsapp } : null,
   };
 }
 

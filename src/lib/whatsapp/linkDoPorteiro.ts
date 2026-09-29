@@ -1,4 +1,4 @@
-import type { ChaveIntencao } from "./porteiro";
+import type { ChaveIntencao } from "./mensagensDoSite";
 
 /**
  * O endereço do porteiro, montado num lugar só.
@@ -8,21 +8,24 @@ import type { ChaveIntencao } from "./porteiro";
  * registra desde `montarResumo` —, e a divergência aqui seria calada: o
  * botão funcionaria, a conversa abriria, e só o CRM não veria nada.
  *
+ * `de=site` separa, em `cliques_whatsapp`, o clique do site do clique do
+ * anúncio pago: os dois passam pela mesma rota `/wa/<imóvel>`, e sem a marca
+ * o site inflaria a métrica do anúncio.
+ *
  * Módulo PURO, sem `server-only`: quem chama é `"use client"`.
  */
 export function linkDoPorteiro(params: {
   imovelSlug?: string | null;
   intencao?: ChaveIntencao | null;
-  corretorSlug?: string | null;
+  /** Texto livre emendado depois da frase reconhecida (ver `destinoDoPorteiro`). */
+  complemento?: string | null;
 }): string {
-  const base = params.imovelSlug
-    ? `/wa/${encodeURIComponent(params.imovelSlug)}`
-    : "/wa";
+  const base = params.imovelSlug ? `/wa/${encodeURIComponent(params.imovelSlug)}` : "/wa";
 
   const busca = new URLSearchParams();
-  if (params.corretorSlug) busca.set("c", params.corretorSlug);
   if (params.intencao) busca.set("i", params.intencao);
+  if (params.complemento) busca.set("m", params.complemento);
+  busca.set("de", "site");
 
-  const query = busca.toString();
-  return query ? `${base}?${query}` : base;
+  return `${base}?${busca.toString()}`;
 }

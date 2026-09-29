@@ -9,7 +9,6 @@ import { Secao } from "@/components/institucional/Secao";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { getEmpreendimentos } from "@/lib/queries";
 import { REGIOES, regiaoPorSlug, regioesComEstoque } from "@/lib/regioes";
@@ -67,7 +66,7 @@ export default async function PaginaDaRegiao({ params }: Props) {
   const regiao = regiaoPorSlug(slug);
   if (!regiao) notFound();
 
-  const [catalogo, corretorAtivo] = await Promise.all([getEmpreendimentos(), getCorretorAtivo()]);
+  const catalogo = await getEmpreendimentos();
   const todasComEstoque = regioesComEstoque(catalogo);
   const comEstoque = todasComEstoque.find((r) => r.slug === slug);
 
@@ -182,7 +181,7 @@ export default async function PaginaDaRegiao({ params }: Props) {
         <CtaFinal />
       </Pagina>
 
-      <WhatsappCta corretor={corretorAtivo ?? undefined} />
+      <WhatsappCta />
     </>
   );
 }

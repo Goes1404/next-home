@@ -270,7 +270,6 @@ export type Empreendimento = {
   tours360: Midia[];
   tipologias: Tipologia[];
   lazer: string[];
-  corretor: Corretor;
 };
 
 export type Ordenacao = "destaque" | "preco_asc" | "preco_desc" | "recentes";

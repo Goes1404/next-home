@@ -16,7 +16,6 @@ import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { Reveal } from "@/components/motion/Reveal";
 import { ScrollCue } from "@/components/home/ScrollCue";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
 import { GloboOuMapa } from "@/components/mapa/GloboOuMapa";
@@ -63,11 +62,10 @@ const VENDEDOR = {
  * detecta o `?corretor=` na raiz e manda direto ao catálogo.
  */
 export default async function HomeInstitucional() {
-  const [todos, regioes, corretores, corretorAtivo, parametrosCredito] = await Promise.all([
+  const [todos, regioes, corretores, parametrosCredito] = await Promise.all([
     getEmpreendimentos(),
     getRegioesDisponiveis(),
     getCorretores(),
-    getCorretorAtivo(),
     getParametrosCredito(),
   ]);
 
@@ -433,7 +431,7 @@ export default async function HomeInstitucional() {
           DEPOIS do main: é `fixed`, então visualmente nada muda — mas na
           ordem de tabulação ele deixa de ser a primeira parada do conteúdo e
           vai para o fim, onde o canto da tela sugere que ele está. */}
-      <WhatsappCta corretor={corretorAtivo ?? undefined} />
+      <WhatsappCta />
     </>
   );
 }

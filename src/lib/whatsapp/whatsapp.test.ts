@@ -49,15 +49,6 @@ const IMOVEL_MOCK: Empreendimento = {
   tours360: [],
   tipologias: [],
   lazer: [],
-  corretor: {
-    nome: "Carlos Silva",
-    creci: "123456-F",
-    whatsapp: "5511999998888",
-    fotoUrl: null,
-    videoUrl: null,
-    fundoTipo: "foto",
-    fundoFotoUrl: null,
-  },
 };
 
 describe("Agente IA — prompt com RAG do catálogo", () => {

@@ -5,7 +5,6 @@
  */
 
 import { lerMarca } from "./marca";
-import { mensagemDeAnuncio, mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 
 /**
  * A marca desta instalação (`NEXT_PUBLIC_MARCA`). Sem a variável, os dados
@@ -197,15 +196,3 @@ export function linkWhatsappApp(numero: string, mensagem: string, ehCelular: boo
     : `https://web.whatsapp.com/send?phone=${numero}&text=${texto}`;
 }
 
-/**
- * Link de WhatsApp para a linha geral da imobiliária, com mensagem
- * pré-preenchida. Use `linkWhatsappPara` diretamente quando o contato for
- * com um corretor específico (ex.: o responsável por um empreendimento).
- */
-export function linkWhatsapp(empreendimento?: string, indice = 0): string {
-  const alvo = site.whatsapp[indice] ?? site.whatsapp[0];
-  // Textos que o porteiro RECONHECE: sem isso, quem ainda não é lead e
-  // escreve pela primeira vez é ignorado pelo webhook (0111).
-  const texto = empreendimento ? mensagemDeAnuncio(empreendimento, "tabela") : mensagemDoSite();
-  return linkWhatsappPara(alvo.numero, texto);
-}

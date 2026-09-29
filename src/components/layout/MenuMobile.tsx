@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { ChevronRight, LockKeyhole, Menu, X } from "lucide-react";
-import { linkWhatsapp } from "@/lib/site";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
+
 
 export type LinkMenu = { href: string; label: string };
 
@@ -219,7 +220,7 @@ export function MenuMobile({ links }: { links: LinkMenu[] }) {
 
               <div className="mt-auto flex flex-col gap-3 px-5 pt-2">
                 <a
-                  href={linkWhatsapp()}
+                  href={linkDoPorteiro({ intencao: "saber" })}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={fechar}

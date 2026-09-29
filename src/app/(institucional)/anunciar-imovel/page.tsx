@@ -6,9 +6,9 @@ import { Pagina } from "@/components/institucional/Pagina";
 import { Secao } from "@/components/institucional/Secao";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
+import { site } from "@/lib/site";
 import { Shield, Handshake, Sparkles, Zap } from "lucide-react";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 export const metadata: Metadata = {
   title: "Anunciar Imóvel em Alphaville e Barueri",
@@ -48,13 +48,10 @@ const MOTIVOS = [
 ];
 
 export default async function AnunciarImovelPage() {
-  const corretorAtivo = await getCorretorAtivo();
-  const whatsapp = corretorAtivo
-    ? linkWhatsappPara(
-        corretorAtivo.whatsapp,
-        `Olá, ${corretorAtivo.nome}! Tenho um imóvel e quero anunciar com a ${site.nome}.`,
-      )
-    : linkWhatsapp(`Olá! Quero anunciar meu imóvel com a ${site.nome} e solicitar uma avaliação.`);
+  // Pelo porteiro, como todo o site: vai para quem tem número conectado, e a
+  // mensagem é a que o webhook reconhece. O formulário ao lado continua sendo
+  // o caminho com as informações do imóvel.
+  const whatsapp = linkDoPorteiro({});
 
   return (
     <>
@@ -103,14 +100,11 @@ export default async function AnunciarImovelPage() {
               <Reveal delay={0.1} className="border-linha bg-superficie/50 rounded-2xl border p-5 sm:p-6">
                 <h2 className="font-display text-titulo text-lg">Prefere falar direto?</h2>
                 <p className="text-fluid-sm text-apoio mt-2 text-pretty">
-                  {corretorAtivo
-                    ? `Converse com ${corretorAtivo.nome} no WhatsApp e mande as fotos por lá.`
-                    : "Chame no WhatsApp, mande as fotos por lá e receba a avaliação na conversa."}
+                  Chame no WhatsApp, mande as fotos por lá e receba a avaliação na conversa.
                 </p>
                 <WhatsappLink
                   href={whatsapp}
                   origem="anunciar_imovel"
-                  corretorId={corretorAtivo?.id}
                   className="bg-acento text-sobre-cor hover:bg-acento-hover mt-5 inline-flex min-h-12 items-center rounded-full px-6 text-sm font-medium transition-colors botao-vivo"
                 >
                   Falar no WhatsApp
@@ -136,7 +130,7 @@ export default async function AnunciarImovelPage() {
         </Secao>
       </Pagina>
 
-      <WhatsappCta corretor={corretorAtivo ?? undefined} />
+      <WhatsappCta />
     </>
   );
 }

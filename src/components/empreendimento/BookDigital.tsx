@@ -1,10 +1,9 @@
 import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
 import { GlassSurface } from "@/components/glass/GlassSurface";
-import { linkWhatsappPara } from "@/lib/site";
 import type { Empreendimento } from "@/lib/types";
 import { Smartphone, FileText, Download, Check, ArrowRight } from 'lucide-react';
-import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 
 interface Props {
@@ -12,10 +11,7 @@ interface Props {
 }
 
 export function BookDigital({ empreendimento: e }: Props) {
-  const linkWhatsappBook = linkWhatsappPara(
-    e.corretor.whatsapp,
-    mensagemDeAnuncio(e.nome, "material"),
-  );
+  const linkWhatsappBook = linkDoPorteiro({ imovelSlug: e.slug, intencao: "material" });
 
   return (
     <section id="book" className="mx-auto max-w-6xl scroll-mt-24 px-4 pt-16 sm:px-8 sm:pt-24">

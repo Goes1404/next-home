@@ -1,14 +1,12 @@
-import { site } from "@/lib/site";
 import type { Empreendimento, Midia, Tipologia } from "@/lib/types";
 import type { Tables } from "./types";
 
 /**
  * Formato de linha retornado pela query com embeds do PostgREST — os nomes
- * dos relacionamentos aninhados (`corretor`, `lazer`) vêm do alias definido
+ * dos relacionamentos aninhados (`lazer`) vêm do alias definido
  * em `SELECT_EMPREENDIMENTO` (queries.ts), não do nome da tabela.
  */
 export type LinhaEmpreendimento = Tables<"empreendimentos"> & {
-  corretor: Tables<"corretores"> | null;
   tipologias: Tables<"tipologias">[];
   midias: Tables<"midias">[];
   lazer: Array<{ lazer_itens: Tables<"lazer_itens"> | null }>;
@@ -65,17 +63,6 @@ function mapMidia(m: Tables<"midias">): Midia {
   };
 }
 
-/** Placeholder até haver um corretor cadastrado — evita a UI quebrar por dado ausente. */
-const CORRETOR_INDEFINIDO = {
-  nome: `Equipe ${site.nome}`,
-  creci: "044589-J",
-  whatsapp: "5511972207204",
-  fotoUrl: null,
-  videoUrl: null,
-  fundoTipo: "video" as const,
-  fundoFotoUrl: null,
-};
-
 const CAPA_PADRAO: Midia = {
   tipo: "foto",
   url: "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/logo-original.png",
@@ -129,16 +116,5 @@ export function mapEmpreendimento(row: LinhaEmpreendimento): Empreendimento {
     tours360: midias.filter((m) => m.tipo === "tour360"),
     tipologias: [...row.tipologias].sort((a, b) => a.ordem - b.ordem).map((t) => mapTipologia(t, row.unidades)),
     lazer: row.lazer.map((l) => l.lazer_itens?.nome).filter((n): n is string => !!n),
-    corretor: row.corretor
-      ? {
-          nome: row.corretor.nome,
-          creci: row.corretor.creci,
-          whatsapp: row.corretor.whatsapp,
-          fotoUrl: row.corretor.foto_url,
-          videoUrl: row.corretor.video_url,
-          fundoTipo: "video" as const,
-          fundoFotoUrl: null,
-        }
-      : CORRETOR_INDEFINIDO,
   };
 }

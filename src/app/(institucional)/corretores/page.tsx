@@ -8,9 +8,9 @@ import { Pagina } from "@/components/institucional/Pagina";
 import { Secao } from "@/components/institucional/Secao";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { getAtuacaoPorCorretor, getCorretores } from "@/lib/queries";
-import { linkWhatsapp, site } from "@/lib/site";
+import { getCorretores, getEmpreendimentos } from "@/lib/queries";
+import { site } from "@/lib/site";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 export const metadata: Metadata = {
   title: "Corretores de Imóveis em Alphaville",
@@ -33,16 +33,12 @@ export const metadata: Metadata = {
  * escolher — sem ela, quem chega indeciso volta para o header.
  */
 export default async function CorretoresPage() {
-  const [corretores, atuacao, corretorAtivo] = await Promise.all([
-    getCorretores(),
-    getAtuacaoPorCorretor(),
-    getCorretorAtivo(),
-  ]);
+  const [corretores, catalogo] = await Promise.all([getCorretores(), getEmpreendimentos()]);
 
   const quantos = corretores.length;
-  // Cada empreendimento publicado tem UM corretor responsável: a soma das
-  // atuações é a contagem de publicados com dono, sem consulta nova.
-  const imoveisAcompanhados = Object.values(atuacao).reduce((soma, a) => soma + a.total, 0);
+  // Sem corretor dono (28/09): o número que descreve a equipe é o tamanho do
+  // catálogo que qualquer um deles apresenta.
+  const imoveisAcompanhados = catalogo.length;
 
   return (
     <>
@@ -75,7 +71,7 @@ export default async function CorretoresPage() {
                 {[
                   { dt: "CRECI da imobiliária", dd: site.creci },
                   { dt: "Corretores credenciados", dd: String(quantos) },
-                  { dt: "Imóveis acompanhados", dd: String(imoveisAcompanhados) },
+                  { dt: "Imóveis no catálogo", dd: String(imoveisAcompanhados) },
                 ].map((f) => (
                   <div key={f.dt} className="bg-superficie/80 flex flex-col-reverse gap-1 px-5 py-4">
                     <dt className="text-fluid-xs text-apoio">{f.dt}</dt>
@@ -99,7 +95,7 @@ export default async function CorretoresPage() {
                   que você procura.
                 </p>
                 <WhatsappLink
-                  href={linkWhatsapp()}
+                  href={linkDoPorteiro({ intencao: "saber" })}
                   origem="corretores"
                   className="bg-acento text-sobre-cor hover:bg-acento-hover mt-6 inline-flex min-h-12 items-center rounded-full px-7 text-sm font-medium transition-colors botao-vivo"
                 >
@@ -115,7 +111,7 @@ export default async function CorretoresPage() {
                   // o GSAP deixa um `transform` inline no que anima, e ele
                   // venceria o `hover:-translate-y` do card.
                   <Reveal key={c.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
-                    <CardCorretor corretor={c} atuacao={atuacao[c.id]} />
+                    <CardCorretor corretor={c} />
                   </Reveal>
                 ))}
               </ul>
@@ -135,7 +131,7 @@ export default async function CorretoresPage() {
 
                   <div className="flex shrink-0 flex-wrap items-center justify-center gap-3">
                     <WhatsappLink
-                      href={linkWhatsapp()}
+                      href={linkDoPorteiro({ intencao: "saber" })}
                       origem="corretores"
                       className="bg-acento text-sobre-cor hover:bg-acento-hover inline-flex min-h-12 items-center rounded-full px-6 text-sm font-medium transition-colors botao-vivo"
                     >
@@ -155,7 +151,7 @@ export default async function CorretoresPage() {
         </Secao>
       </Pagina>
 
-      <WhatsappCta corretor={corretorAtivo ?? undefined} />
+      <WhatsappCta />
     </>
   );
 }

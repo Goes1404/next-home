@@ -1,12 +1,10 @@
 import { WhatsappLink } from "@/components/analytics/WhatsappLink";
 import { FlutuanteVisivel } from "@/components/layout/FlutuanteVisivel";
-import { linkWhatsapp, linkWhatsappPara } from "@/lib/site";
-import { mensagemDeAnuncio, mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 type WhatsappCtaProps = {
-  empreendimento?: string;
-  /** Quando informado, fala direto com o corretor responsável em vez da linha geral. */
-  corretor?: { nome: string; whatsapp: string; id?: string };
+  /** Quando há imóvel no contexto, o porteiro manda a mensagem dele. */
+  imovelSlug?: string | null;
 };
 
 /**
@@ -28,24 +26,21 @@ type WhatsappCtaProps = {
  *
  * Só o símbolo, sem rótulo: o destino vai no `aria-label`, que é o que
  * leitor de tela e busca por voz anunciam.
+ *
+ * Desde 28/09 aponta para o porteiro: o imóvel não tem corretor dono, e
+ * quem atende é decidido no clique, entre quem tem número conectado. Por
+ * isso o rótulo não nomeia ninguém.
  */
-export function WhatsappCta({ empreendimento, corretor }: WhatsappCtaProps) {
-  const link = corretor
-    ? linkWhatsappPara(
-        corretor.whatsapp,
-        empreendimento ? mensagemDeAnuncio(empreendimento, "saber") : mensagemDoSite(),
-      )
-    : linkWhatsapp(empreendimento);
-
-  const rotulo = corretor ? `Falar com ${corretor.nome} no WhatsApp` : "Falar no WhatsApp";
+export function WhatsappCta({ imovelSlug }: WhatsappCtaProps) {
+  const link = linkDoPorteiro({ imovelSlug, intencao: "saber" });
+  const rotulo = "Falar no WhatsApp";
 
   return (
     <FlutuanteVisivel>
       <WhatsappLink
         href={link}
         origem="botao_flutuante"
-        corretorId={corretor?.id}
-        empreendimentoSlug={empreendimento}
+        empreendimentoSlug={imovelSlug ?? undefined}
         aria-label={rotulo}
         title={rotulo}
         // Cores literais de propósito: é o verde do WhatsApp/da marca com

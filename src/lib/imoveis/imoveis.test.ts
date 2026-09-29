@@ -143,15 +143,6 @@ describe("Módulo de Edição Mobile de Imóveis", () => {
         },
       ],
       lazer: ["Piscina com Raia", "Varanda Gourmet"],
-      corretor: {
-        nome: "Carlos Silva",
-        creci: "123456-F",
-        whatsapp: "5511999998888",
-        fotoUrl: null,
-        videoUrl: null,
-        fundoTipo: "foto",
-        fundoFotoUrl: null,
-      },
     };
 
     // 1. Simula alteração de dados gerais

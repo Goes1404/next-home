@@ -7,9 +7,9 @@ import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { iniciais, telefoneBR } from "@/lib/format";
-import { getCorretorPorSlug, getEmpreendimentosPorCorretor } from "@/lib/queries";
+import { getCorretorPorSlug, getEmpreendimentos } from "@/lib/queries";
 import { linkWhatsappPara, site } from "@/lib/site";
-import type { CorretorPerfil, Empreendimento } from "@/lib/types";
+import type { CorretorPerfil } from "@/lib/types";
 import { descricaoDePagina } from "@/lib/seo";
 import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 
@@ -50,37 +50,21 @@ export async function generateMetadata({
   };
 }
 
-/** Cidades onde ele tem empreendimento hoje, sem repetição. */
-function cidadesDe(empreendimentos: Empreendimento[]): string[] {
-  return [...new Set(empreendimentos.map((e) => e.cidade))].sort();
-}
-
 /**
  * Texto de apresentação.
  *
- * A `bio` é preenchida pelo próprio corretor no painel e, hoje, nenhum dos
- * perfis tem uma. Sem um substituto, a página abre com um painel de vidro
- * praticamente vazio — nome, CRECI e dois botões —, que é o oposto do que uma
- * página de apresentação precisa fazer. O texto abaixo é montado do que o
- * banco já sabe: quantos empreendimentos ele acompanha e onde.
+ * A `bio` é preenchida pelo próprio corretor no painel. Sem ela, o texto é
+ * genérico de propósito: desde 28/09 o imóvel não tem corretor dono, então
+ * não existe mais "quantos empreendimentos ele acompanha" para contar.
  */
-function apresentacao(corretor: CorretorPerfil, empreendimentos: Empreendimento[]) {
+function apresentacao(corretor: CorretorPerfil) {
   if (corretor.bio) return corretor.bio;
-
-  const cidades = cidadesDe(empreendimentos);
   const primeiroNome = corretor.nome.split(" ")[0];
-
-  if (empreendimentos.length === 0) {
-    return `${primeiroNome} atende pela ${site.nomeCompleto}, com CRECI ${corretor.creci} e atuação em ${site.regioes.slice(0, 3).join(", ")} e região. Chame no WhatsApp e conte o que você procura.`;
-  }
-
-  const onde =
-    cidades.length === 1
-      ? cidades[0]
-      : `${cidades.slice(0, -1).join(", ")} e ${cidades.at(-1)}`;
-
-  return `${primeiroNome} acompanha ${empreendimentos.length} empreendimento${empreendimentos.length === 1 ? "" : "s"} em ${onde}, do primeiro contato à entrega das chaves.`;
+  return `${primeiroNome} atende pela ${site.nomeCompleto}, com CRECI ${corretor.creci} e atuação em ${site.regioes.slice(0, 3).join(", ")} e região. Chame no WhatsApp e conte o que você procura.`;
 }
+
+/** Quantos imóveis do catálogo a página mostra antes de mandar para a lista. */
+const VITRINE = 6;
 
 /**
  * Página do corretor — o "microsite de agente" que a RE/MAX usa, adaptado ao
@@ -92,22 +76,25 @@ function apresentacao(corretor: CorretorPerfil, empreendimentos: Empreendimento[
  * para baixo da dobra em desktop, e a lista é justamente a prova de que ele
  * trabalha — o que mais convence alguém a chamar.
  *
- * O botão "Ver portfólio completo" leva ao mesmo link pessoal que ele copia no
- * painel (`/portfolio?corretor=<slug>`): a partir dali, todo CTA do site passa
- * a apontar para o WhatsApp dele, mesmo em imóveis de outro responsável.
+ * O botão "Falar com" desta página é o ÚNICO do site que vai direto para o
+ * número de uma pessoa: aqui o visitante escolheu aquele corretor. Todo o
+ * resto passa pelo porteiro (`/wa`), porque o imóvel não tem dono (28/09).
+ *
+ * A lista mostra o catálogo, não "os imóveis dele": todo corretor da equipe
+ * apresenta o catálogo inteiro.
  */
 export default async function CorretorPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
   const corretor = await getCorretorPorSlug(slug);
   if (!corretor) notFound();
 
-  const empreendimentos = await getEmpreendimentosPorCorretor(corretor.id);
+  const catalogo = await getEmpreendimentos();
+  const empreendimentos = catalogo.slice(0, VITRINE);
   const primeiroNome = corretor.nome.split(" ")[0];
   const whatsapp = linkWhatsappPara(
     corretor.whatsapp,
     mensagemDoSite(),
   );
-  const cidades = cidadesDe(empreendimentos);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -123,7 +110,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
       name: site.nomeCompleto,
       url: site.url,
     },
-    areaServed: (cidades.length > 0 ? cidades : [...site.regioes]).map((nome) => ({
+    areaServed: [...site.regioes].map((nome) => ({
       "@type": "Place",
       name: nome,
     })),
@@ -181,21 +168,8 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
                   Equipe {site.nome} · CRECI {corretor.creci}
                 </p>
 
-                {cidades.length > 0 && (
-                  <ul className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
-                    {cidades.map((cidade) => (
-                      <li
-                        key={cidade}
-                        className="text-fluid-xs border-brand-300/25 bg-brand-500/10 text-acento-suave rounded-full border px-3 py-1 botao-vivo"
-                      >
-                        {cidade}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
                 <p className="text-fluid-base text-apoio mt-5 break-words whitespace-pre-line">
-                  {apresentacao(corretor, empreendimentos)}
+                  {apresentacao(corretor)}
                 </p>
 
                 <div className="mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
@@ -237,11 +211,11 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
           <section className="mx-auto mt-20 w-full max-w-5xl">
             <Reveal>
               <h2 className="text-fluid-2xl text-titulo">
-                Acompanhados por {primeiroNome}
+                O que {primeiroNome} pode te apresentar
               </h2>
               <p className="text-fluid-base mt-3 text-apoio">
-                {empreendimentos.length} empreendimento
-                {empreendimentos.length === 1 ? "" : "s"} sob responsabilidade direta.
+                Todo corretor da {site.nome} apresenta o catálogo inteiro: {catalogo.length}{" "}
+                empreendimento{catalogo.length === 1 ? "" : "s"}.
               </p>
             </Reveal>
 
@@ -252,6 +226,15 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
                 </Reveal>
               ))}
             </div>
+
+            {catalogo.length > VITRINE && (
+              <Link
+                href="/empreendimentos"
+                className="hover:text-acento-suave mt-8 inline-flex min-h-11 items-center text-sm font-medium text-corpo underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current"
+              >
+                Ver os {catalogo.length} imóveis →
+              </Link>
+            )}
           </section>
         )}
       </main>

@@ -5,24 +5,10 @@ import type { CorretorPerfil } from "@/lib/types";
  * `queries.ts` (a API que as páginas usam) e `catalogo/cache.ts` (onde o
  * resultado é cacheado) importem a mesma string sem importar um ao outro.
  *
- * Colunas explícitas no embed de `corretor` (em vez de `corretores(*)`): a
- * tabela ganhou `user_id`/`slug` (login de corretor) que não devem vazar
- * pela API pública de empreendimentos.
- *
- * O `!empreendimentos_corretor_id_fkey` no embed não é enfeite: existe no
- * banco uma tabela de junção `corretor_destaques (empreendimento_slug,
- * corretor_id)`. Com ela, o PostgREST passa a enxergar DOIS caminhos entre
- * `empreendimentos` e `corretores` (a chave estrangeira direta e o
- * muitos-para-muitos pela junção) e se recusa a adivinhar qual usar: toda
- * query com este select respondia PGRST201 ("more than one relationship was
- * found"). Como este select alimenta a home, a listagem, o portfólio, a
- * página de cada empreendimento e a do corretor, o site inteiro caía no
- * `error.tsx` contra o banco de produção. Nomear a constraint desfaz o
- * empate.
+ * Sem o embed de `corretor` desde 28/09: o imóvel não tem mais corretor dono.
  */
 export const SELECT_EMPREENDIMENTO = `
   *,
-  corretor:corretores!empreendimentos_corretor_id_fkey(id, nome, creci, whatsapp, foto_url, video_url),
   tipologias(*),
   midias(*),
   lazer:empreendimento_lazer(lazer_itens(*)),

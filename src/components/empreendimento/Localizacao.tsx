@@ -1,9 +1,8 @@
 import { WhatsappLink } from "@/components/analytics/WhatsappLink";
 import { MapaLocal } from "@/components/mapa/MapaLocal";
 import { Reveal } from "@/components/motion/Reveal";
-import { linkWhatsappPara } from "@/lib/site";
 import type { Empreendimento } from "@/lib/types";
-import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 /*
  * As coordenadas cadastradas são centroides de via/bairro, não a porta do
@@ -17,10 +16,7 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
     e.endereco || `${e.bairro}, ${e.cidade}`,
   )}`;
   // Quem olha o mapa está decidindo se vale a ida — é o momento da visita.
-  const linkVisita = linkWhatsappPara(
-    e.corretor.whatsapp,
-    mensagemDeAnuncio(e.nome, "visita"),
-  );
+  const linkVisita = linkDoPorteiro({ imovelSlug: e.slug, intencao: "visita" });
 
   return (
     <section id="localizacao" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
@@ -63,11 +59,10 @@ export function Localizacao({ empreendimento: e }: { empreendimento: Empreendime
             <WhatsappLink
               href={linkVisita}
               origem="localizacao"
-              corretorId={"id" in e.corretor ? (e.corretor as { id?: string }).id : undefined}
               empreendimentoSlug={e.slug}
               className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-brand-500 px-6 text-sm font-medium text-white transition-colors hover:bg-brand-400 sm:w-auto botao-vivo"
             >
-              Agendar visita com o corretor
+              Agendar visita
             </WhatsappLink>
           </div>
         </div>

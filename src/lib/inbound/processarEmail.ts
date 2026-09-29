@@ -68,7 +68,7 @@ export async function processarEmailDeLead(
   }
 
   const [{ data: empreendimentos }, { data: corretores }] = await Promise.all([
-    supabase.from("empreendimentos").select("id, nome, slug, corretor_id").limit(50),
+    supabase.from("empreendimentos").select("id, nome, slug").limit(50),
     supabase.from("corretores").select("id, nome, slug").eq("ativo", true),
   ]);
 
@@ -92,10 +92,9 @@ export async function processarEmailDeLead(
           termo.includes(e.slug.toLowerCase()) ||
           e.nome.toLowerCase().includes(termo),
       );
-      if (match) {
-        empreendimentoId = match.id;
-        if (match.corretor_id) corretorId = match.corretor_id;
-      }
+      // Só o imóvel: desde 28/09 ele não tem corretor dono. Sem corretor
+      // citado nem dono da caixa, o lead nasce sem dono e a roleta decide.
+      if (match) empreendimentoId = match.id;
     }
 
     if (!corretorId && corretores && lead.corretorMencionado) {

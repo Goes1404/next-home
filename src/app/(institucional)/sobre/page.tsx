@@ -13,9 +13,9 @@ import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
-import { enderecoLinha, linkWhatsapp, site } from "@/lib/site";
+import { enderecoLinha, site } from "@/lib/site";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 export const metadata: Metadata = {
   title: `Sobre a ${site.nome}`,
@@ -81,11 +81,10 @@ const COMO_FUNCIONA = [
 ];
 
 export default async function SobrePage() {
-  const [catalogo, regioes, corretores, corretorAtivo] = await Promise.all([
+  const [catalogo, regioes, corretores] = await Promise.all([
     getEmpreendimentos(),
     getRegioesDisponiveis(),
     getCorretores(),
-    getCorretorAtivo(),
   ]);
 
   const equipe = corretores.slice(0, 6);
@@ -219,18 +218,16 @@ export default async function SobrePage() {
                 </address>
 
                 <ul className="mt-6 flex flex-wrap gap-3">
-                  {site.whatsapp.map((w, i) => (
-                    <li key={w.numero}>
-                      <WhatsappLink
-                        href={linkWhatsapp(undefined, i)}
-                        origem="sobre"
-                        className="border-linha bg-superficie/60 text-corpo hover:border-acento-linha hover:text-acento-suave inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors"
-                      >
-                        <span aria-hidden className="bg-ok size-2 rounded-full" />
-                        {w.label}
-                      </WhatsappLink>
-                    </li>
-                  ))}
+                  <li>
+                    <WhatsappLink
+                      href={linkDoPorteiro({ intencao: "saber" })}
+                      origem="sobre"
+                      className="border-linha bg-superficie/60 text-corpo hover:border-acento-linha hover:text-acento-suave inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors"
+                    >
+                      <span aria-hidden className="bg-ok size-2 rounded-full" />
+                      Falar no WhatsApp
+                    </WhatsappLink>
+                  </li>
                 </ul>
 
                 <p className="text-fluid-xs text-tenue mt-6">
@@ -249,7 +246,7 @@ export default async function SobrePage() {
         <CtaFinal />
       </Pagina>
 
-      <WhatsappCta corretor={corretorAtivo ?? undefined} />
+      <WhatsappCta />
     </>
   );
 }

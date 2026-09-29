@@ -12,7 +12,6 @@ import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { VoltarLink } from "@/components/ui/VoltarLink";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { precoAPartirDe } from "@/lib/format";
 import { getEmpreendimentos } from "@/lib/queries";
 
@@ -67,10 +66,7 @@ export const metadata: Metadata = {
  * abaixo pode envolver o header/CTA num ancestral com `transform`.
  */
 export default async function Home() {
-  const [todos, corretorAtivo] = await Promise.all([
-    getEmpreendimentos(),
-    getCorretorAtivo(),
-  ]);
+  const todos = await getEmpreendimentos();
   const destaques = todos.filter((e) => e.destaque);
 
   return (
@@ -85,7 +81,7 @@ export default async function Home() {
       default="none"
     >
       <SiteHeader />
-      <WhatsappCta corretor={corretorAtivo ?? undefined} />
+      <WhatsappCta />
 
       <main className="flex flex-1 flex-col">
         <section className="flex min-h-svh flex-col items-center justify-center px-4 pt-24 pb-32">

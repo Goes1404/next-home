@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { linkWhatsapp } from "@/lib/site";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
+
 
 /**
  * Cobre a vitrine da equipe e a página de cada corretor.
@@ -45,7 +46,7 @@ export default function Error({
           Tentar de novo
         </button>
         <a
-          href={linkWhatsapp()}
+          href={linkDoPorteiro({ intencao: "saber" })}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex h-12 items-center rounded-full border border-linha/15 px-6 text-sm font-medium text-corpo transition-colors hover:border-linha/30"

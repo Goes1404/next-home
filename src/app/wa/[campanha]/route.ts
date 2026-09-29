@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { mensagemDeAnuncio, resolverCampanha } from "@/lib/whatsapp/porteiro";
+import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
+import { ehChaveIntencao, resolverCampanha } from "@/lib/whatsapp/porteiro";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,14 +21,23 @@ export const dynamic = "force-dynamic";
  * com `origem = 'anuncio/<campanha>'` — é o denominador da métrica
  * "cliques que não viraram conversa", que nem o Gerenciador da Meta dá.
  *
+ * Desde 28/09 é também a porta de TODO botão de imóvel do site
+ * (`linkDoPorteiro`, com `?i=<intenção>&de=site`): o imóvel não tem mais
+ * corretor dono, e o contato vai para quem tem número conectado.
+ *
  * Nenhum caminho termina em erro para o visitante: campanha desconhecida
- * ou nenhum corretor conectado degradam para a página do imóvel (ou a
- * home), nunca para uma tela quebrada — o clique custou dinheiro.
+ * vai para a home, e nenhum corretor conectado vai para `/contato`, que tem
+ * formulário — nunca para uma tela quebrada, porque o clique pode ter
+ * custado dinheiro.
  */
 export async function GET(req: Request, ctx: { params: Promise<{ campanha: string }> }) {
   const { campanha } = await ctx.params;
   const url = new URL(req.url);
   const supabase = createServiceClient();
+
+  const bruto = url.searchParams.get("i");
+  const intencao = ehChaveIntencao(bruto) ? bruto : null;
+  const doSite = url.searchParams.get("de") === "site";
 
   const { data: imoveis } = await supabase
     .from("empreendimentos")
@@ -53,7 +63,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
     await supabase.from("cliques_whatsapp").insert({
       corretor_id: corretorId,
       empreendimento_id: alvo?.id ?? null,
-      origem: `anuncio/${campanha.slice(0, 80)}`,
+      origem: `${doSite ? "site" : "anuncio"}/${campanha.slice(0, 80)}`,
       url_origem: url.pathname + url.search,
       user_agent: req.headers.get("user-agent")?.slice(0, 500) ?? null,
     });
@@ -78,17 +88,14 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
     ({ data: sorteio } = await supabase.rpc("sortear_corretor_whatsapp").maybeSingle<Sorteio>());
   }
 
-  const telefone = sorteio?.telefone?.replace(/\D/g, "") ?? "";
+  const destino = destinoDoPorteiro({ telefone: sorteio?.telefone, nomeImovel: alvo.nome, intencao, complemento: url.searchParams.get("m") });
 
-  if (!sorteio || telefone.length < 10) {
+  if (destino.tipo === "escape") {
     // Nenhum corretor com WhatsApp conectado: o clique não pode morrer.
-    // A página do imóvel tem formulário e o link de WhatsApp do site.
     await registrarClique(null);
-    return NextResponse.redirect(new URL(`/empreendimentos/${alvo.slug}`, url.origin), 302);
+    return NextResponse.redirect(new URL(destino.caminho, url.origin), 302);
   }
 
-  await registrarClique(sorteio.corretor_id);
-
-  const destino = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagemDeAnuncio(alvo.nome))}`;
-  return NextResponse.redirect(destino, 302);
+  await registrarClique(sorteio?.corretor_id ?? null);
+  return NextResponse.redirect(destino.url, 302);
 }

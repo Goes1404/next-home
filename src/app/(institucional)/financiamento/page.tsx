@@ -9,11 +9,11 @@ import { Secao } from "@/components/institucional/Secao";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { getEmpreendimentos } from "@/lib/queries";
-import { linkWhatsapp, site } from "@/lib/site";
+import { site } from "@/lib/site";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 /**
  * "Quanto cabe no meu bolso" — a primeira pergunta de quem compra o primeiro
@@ -52,11 +52,7 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function PaginaFinanciamento() {
-  const [parametros, catalogo, corretorAtivo] = await Promise.all([
-    getParametrosCredito(),
-    getEmpreendimentos(),
-    getCorretorAtivo(),
-  ]);
+  const [parametros, catalogo] = await Promise.all([getParametrosCredito(), getEmpreendimentos()]);
 
   const comPreco = catalogo
     .filter((e) => typeof e.precoAPartir === "number" && e.precoAPartir > 0)
@@ -138,7 +134,7 @@ export default async function PaginaFinanciamento() {
 
         <Secao espaco="final">
           <Reveal>
-            <Simulador parametros={parametros} whatsapp={linkWhatsapp()} />
+            <Simulador parametros={parametros} whatsapp={linkDoPorteiro({ intencao: "tabela" })} />
           </Reveal>
 
           <p className="text-fluid-xs text-tenue mt-5">
@@ -202,7 +198,7 @@ export default async function PaginaFinanciamento() {
         <CtaFinal />
       </Pagina>
 
-      <WhatsappCta corretor={corretorAtivo ?? undefined} />
+      <WhatsappCta />
     </>
   );
 }

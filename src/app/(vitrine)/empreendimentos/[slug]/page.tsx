@@ -129,7 +129,7 @@ export default async function EmpreendimentoPage({
       />
 
       <SiteHeader />
-      <WhatsappCta empreendimento={e.nome} corretor={e.corretor} />
+      <WhatsappCta imovelSlug={e.slug} />
 
       <main className="flex flex-1 flex-col">
         <Hero empreendimento={e} />

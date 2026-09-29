@@ -19,7 +19,11 @@ export function WhatsappLink({
   ...props
 }: WhatsappLinkProps) {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    try {
+    // O porteiro (`/wa`) grava o clique ele mesmo, já com o corretor que o
+    // sorteio escolheu. Registrar aqui também contaria o mesmo clique duas
+    // vezes em `cliques_whatsapp`.
+    const peloPorteiro = href.startsWith("/wa");
+    if (!peloPorteiro) try {
       const payload = JSON.stringify({
         origem,
         corretorId: corretorId ?? null,

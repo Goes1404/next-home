@@ -8,10 +8,9 @@ import { Pagina } from "@/components/institucional/Pagina";
 import { Secao } from "@/components/institucional/Secao";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { getEmpreendimentos } from "@/lib/queries";
-import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
-import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
+import { enderecoLinha, site } from "@/lib/site";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 export const metadata: Metadata = {
   title: `Fale com a ${site.nome}`,
@@ -49,10 +48,9 @@ export default async function ContatoPage({
 }: {
   searchParams: Promise<{ empreendimento?: string }>;
 }) {
-  const [sp, empreendimentos, corretorAtivo] = await Promise.all([
+  const [sp, empreendimentos] = await Promise.all([
     searchParams,
     getEmpreendimentos(),
-    getCorretorAtivo(),
   ]);
 
   return (
@@ -84,39 +82,18 @@ export default async function ContatoPage({
               <Reveal delay={0.1} className="border-linha bg-superficie/50 rounded-2xl border p-5 sm:p-6">
                 <h2 className="font-display text-titulo text-lg">WhatsApp</h2>
                 <p className="text-fluid-sm text-apoio mt-1">
-                  {corretorAtivo
-                    ? `Você chegou pelo link de ${corretorAtivo.nome} — é com quem a conversa abre.`
-                    : "Duas linhas da casa. Qualquer uma abre a conversa com a equipe."}
+                  Abre a conversa com o corretor da equipe que está no ar agora.
                 </p>
                 <ul className="mt-4 flex flex-wrap gap-3">
-                  {corretorAtivo ? (
-                    <li>
-                      <WhatsappLink
-                        href={linkWhatsappPara(
-                          corretorAtivo.whatsapp,
-                          mensagemDoSite(),
-                        )}
-                        origem="contato"
-                        corretorId={corretorAtivo.id}
-                        className="bg-acento text-sobre-cor hover:bg-acento-hover inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-sm font-medium transition-colors botao-vivo"
-                      >
-                        Falar com {corretorAtivo.nome}
-                      </WhatsappLink>
-                    </li>
-                  ) : (
-                    site.whatsapp.map((w, i) => (
-                      <li key={w.numero}>
-                        <WhatsappLink
-                          href={linkWhatsapp(undefined, i)}
-                          origem="contato"
-                          className="border-linha bg-superficie/60 text-corpo hover:border-acento-linha hover:text-acento-suave inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors"
-                        >
-                          <span aria-hidden className="bg-ok size-2 rounded-full" />
-                          {w.label}
-                        </WhatsappLink>
-                      </li>
-                    ))
-                  )}
+                  <li>
+                    <WhatsappLink
+                      href={linkDoPorteiro({ intencao: "saber" })}
+                      origem="contato"
+                      className="bg-acento text-sobre-cor hover:bg-acento-hover inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-sm font-medium transition-colors botao-vivo"
+                    >
+                      Falar no WhatsApp
+                    </WhatsappLink>
+                  </li>
                 </ul>
 
                 <h2 className="font-display text-titulo mt-6 text-lg">Endereço</h2>
@@ -160,7 +137,7 @@ export default async function ContatoPage({
         </Secao>
       </Pagina>
 
-      <WhatsappCta corretor={corretorAtivo ?? undefined} />
+      <WhatsappCta />
     </>
   );
 }

@@ -2,10 +2,9 @@ import { Wordmark } from "@/components/ui/Wordmark";
 import Link from "next/link";
 import { FundoEmCamadas } from "@/components/motion/FundoEmCamadas";
 import { SeletorTema } from "@/components/tema/SeletorTema";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { enderecoLinha, linkWhatsapp, linkWhatsappPara, site } from "@/lib/site";
+import { enderecoLinha, site } from "@/lib/site";
 import { getTemaEscolhido } from "@/lib/tema";
-import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 const LINKS_RAPIDOS = [
   { href: "/empreendimentos", label: "Empreendimentos" },
@@ -29,7 +28,7 @@ const REDES = [
  * cada rota).
  */
 export async function Footer() {
-  const [corretorAtivo, tema] = await Promise.all([getCorretorAtivo(), getTemaEscolhido()]);
+  const tema = await getTemaEscolhido();
 
   return (
     <footer className="relative overflow-hidden border-t border-linha/10 bg-superficie px-4 py-14 sm:px-8">
@@ -63,31 +62,16 @@ export async function Footer() {
           <p className="text-fluid-sm font-medium text-corpo">Contato</p>
           <ul className="mt-3 space-y-2">
             <li className="text-fluid-sm text-legenda">{enderecoLinha}</li>
-            {corretorAtivo ? (
-              <li>
-                <a
-                  href={linkWhatsappPara(corretorAtivo.whatsapp, mensagemDoSite())}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-fluid-sm text-legenda inline-flex min-h-11 items-center transition-colors hover:text-acento-suave"
-                >
-                  Falar com {corretorAtivo.nome}
-                </a>
-              </li>
-            ) : (
-              site.whatsapp.map((w, i) => (
-                <li key={w.numero}>
-                  <a
-                    href={linkWhatsapp(undefined, i)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-fluid-sm text-legenda inline-flex min-h-11 items-center transition-colors hover:text-acento-suave"
-                  >
-                    {w.label}
-                  </a>
-                </li>
-              ))
-            )}
+            <li>
+              <a
+                href={linkDoPorteiro({ intencao: "saber" })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-fluid-sm text-legenda inline-flex min-h-11 items-center transition-colors hover:text-acento-suave"
+              >
+                Falar no WhatsApp
+              </a>
+            </li>
           </ul>
 
           <div className="mt-5 flex gap-4">

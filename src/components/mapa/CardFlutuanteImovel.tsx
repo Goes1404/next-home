@@ -5,10 +5,9 @@ import Image from "next/image";
 import type { PontoDoMapa } from "@/lib/mapa/ponto";
 import { STATUS_LABEL, TIPO_LABEL } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
-import { normalizarWhatsapp } from "@/lib/whatsapp";
 import { STATUS_TINTA } from "@/lib/statusCor";
 import { MapPin } from 'lucide-react';
-import { mensagemDeAnuncio } from "@/lib/whatsapp/mensagensDoSite";
+import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 
 interface Props {
@@ -17,11 +16,9 @@ interface Props {
 }
 
 export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
-  const foneLimpo = normalizarWhatsapp(imovel.corretor?.whatsapp || "5511972207204") || "5511972207204";
-  const textoZap = encodeURIComponent(
-    mensagemDeAnuncio(imovel.nome, "saber"),
-  );
-  const zapLink = `https://wa.me/${foneLimpo}?text=${textoZap}`;
+  // Sem corretor dono e sem número chumbado: quem atende é decidido no
+  // clique, entre quem tem WhatsApp conectado.
+  const zapLink = linkDoPorteiro({ imovelSlug: imovel.slug, intencao: "saber" });
 
   return (
     <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-auto sm:w-96 z-[1000] animate-in fade-in slide-in-from-bottom-4 duration-300">
