@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { site } from "@/lib/site";
@@ -35,9 +34,6 @@ export default async function ParceirosPage() {
         titulo="Parceiros"
         descricao="Corretores de fora veem as unidades disponíveis e indicam clientes pelo link."
       />
-      <div className="mt-4">
-        <AbasAdmin ativa="/corretor/admin/parceiros" />
-      </div>
       <div className="mt-6">
         <GestaoDeParceiros
           parceiros={(parceiros ?? []).map((p) => ({

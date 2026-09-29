@@ -320,7 +320,8 @@ export const ITENS_DA_CONTA: ItemNav[] = [
 export const ATALHOS_MOBILE: ItemNav[] = GRUPOS_NAV[0].itens;
 
 /**
- * Os subtópicos de um destino — a MESMA lista que a barra de abas desenha.
+ * Os subtópicos de um destino, desenhados pelo menu (gaveta e sidebar).
+ * Até 29/09/2026 a caixa de abas das telas também os desenhava; ela saiu.
  *
  * É esta função que impede a divergência voltar. Até 04/09/2026 as abas eram
  * escritas à mão em `AbasLeads`/`AbasWhatsapp`/`AbasAdmin`, separadas do mapa

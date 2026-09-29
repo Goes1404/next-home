@@ -7,11 +7,14 @@ status: evergreen
 custou: medio
 codigo: [src/app/corretor/(painel)/_componentes/navegacao.tsx, src/app/corretor/(painel)/_componentes/AbasSecao.tsx, src/app/corretor/(painel)/_componentes/navegacao.test.ts]
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-09-29
 fonte: docs/MEMORIA.md — Painel de Bolso F0/0052
 summary: Máx 5 destinos no menu; o que é parente vira aba (rota de verdade, com endereço próprio). Rotas antigas continuam existindo — só saíram do menu. navegacao.test.ts trava.
 ---
 # A navegação do painel tem régua
+
+> **29/09/2026:** a caixa de abas saiu de todas as telas, a pedido. Os
+> subtópicos moram só no menu. Ver [[a-caixa-de-abas-saiu-das-telas]].
 
 Menu com **5 destinos** para o corretor comum. O que é parente vira **aba**
 (`AbasSecao`), e cada aba continua sendo uma ROTA de verdade — endereço

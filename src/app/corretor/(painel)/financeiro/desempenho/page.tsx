@@ -12,7 +12,6 @@ import {
 import { intervaloDo, lerPeriodo, PERIODOS } from "@/lib/financeiro/periodo";
 import { formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
-import { AbasFinanceiro } from "../../_componentes/AbasFinanceiro";
 import { Suspense } from "react";
 import { MetasDaEquipe } from "./MetasDaEquipe";
 
@@ -152,9 +151,6 @@ export default async function DesempenhoPage({
             : "Quantos você atendeu, quantos viraram visita e venda, e em que imóvel você é referência."
         }
       />
-      <div className="mt-6">
-        <AbasFinanceiro ativa="/corretor/financeiro/desempenho" />
-      </div>
 
       <nav aria-label="Período" className="flex flex-wrap gap-2">
         {PERIODOS.map((p) => (

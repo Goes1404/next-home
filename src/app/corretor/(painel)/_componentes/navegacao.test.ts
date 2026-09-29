@@ -304,46 +304,40 @@ describe("subtópicos: uma hierarquia só", () => {
   });
 });
 
-describe("as barras de abas DERIVAM do menu", () => {
+describe("a caixa de abas saiu das telas; os subtópicos moram no menu", () => {
   /*
-   * Esta é a guarda que impede a divergência voltar. Ela lê o código-fonte
-   * porque o defeito não é de resultado, é de ORIGEM: uma barra de abas com
-   * lista própria renderiza perfeitamente e só mente quando alguém muda o
-   * menu e esquece dela — que foi exatamente o que aconteceu.
+   * Até 29/09/2026 cada tela desenhava, abaixo do cabeçalho, uma caixa com os
+   * subtópicos da seção (Conversas / Lista / Funil / …). Decisão do usuário:
+   * ela sai de todas as telas. Ela repetia o que o menu lateral já mostra e
+   * ocupava a primeira dobra do celular. Os subtópicos continuam no menu
+   * (gaveta e sidebar), que é a fonte única desde 04/09.
+   *
+   * A guarda impede a caixa de voltar calada: reprova tela do painel que
+   * desenhe `AbasSecao` ou uma barra `Abas<Seção>`. Se ela voltar, que seja
+   * por decisão, reescrevendo esta guarda com o motivo.
    */
-  const fonte = (arq: string) =>
-    readFileSync(join(process.cwd(), "src/app/corretor/(painel)/_componentes", arq), "utf8")
-      .replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+  const telasDo = (dir: string): string[] =>
+    readdirSync(join(process.cwd(), dir), { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory()
+        ? telasDo(`${dir}/${e.name}`)
+        : e.name.endsWith(".tsx")
+          ? [`${dir}/${e.name}`]
+          : [],
+    );
+  const arquivos = telasDo("src/app/corretor/(painel)");
 
-  const BARRAS = [
-    "AbasLeads.tsx",
-    "AbasWhatsapp.tsx",
-    "AbasMarketing.tsx",
-    "AbasAdmin.tsx",
-    "AbasImoveis.tsx",
-    "AbasFinanceiro.tsx",
-  ];
-
-  it.each(BARRAS)("%s monta as abas com subitensDe", (arq) => {
-    expect(fonte(arq)).toMatch(/subitensDe\(/);
+  it("nenhum arquivo do painel desenha barra de abas de seção", () => {
+    const com = arquivos.filter((arq) =>
+      /<Abas(Secao|Leads|Whatsapp|Marketing|Admin|Imoveis|Financeiro)\b/.test(
+        readFileSync(join(process.cwd(), arq), "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, ""),
+      ),
+    );
+    expect(com).toEqual([]);
+    // Varredura que não acha arquivo nenhum aprova tudo em silêncio.
+    expect(arquivos.length).toBeGreaterThan(50);
   });
 
-  it.each(BARRAS)("%s não escreve rótulo de aba à mão", (arq) => {
-    /*
-     * O rótulo é o sinal exato de que a lista voltou a morar na barra. A
-     * versão derivada nunca escreve um: ela faz `label: sub.label`, com o
-     * texto vindo de `navegacao.tsx`. Uma lista escrita à mão sempre escreve
-     * — foi assim que "Listas de transmissão" existiu em dois arquivos e as
-     * duas hierarquias puderam discordar.
-     *
-     * Comparar ROTAS não serviria: as barras legitimamente citam uma ou duas
-     * para decidir contador e pontinho.
-     */
-    const rotulos = fonte(arq).match(/\blabel:\s*"/g) ?? [];
-    expect(rotulos.length, `${arq} escreve ${rotulos.length} rótulo(s) à mão`).toBe(0);
-  });
-
-  it("as abas de cada seção SÃO os subtópicos dela", () => {
+  it("os subtópicos de cada seção", () => {
     expect(subitensDe("/corretor/pessoas").map((s) => s.label)).toEqual([
       "Conversas",
       "Lista",
@@ -376,70 +370,6 @@ describe("as barras de abas DERIVAM do menu", () => {
     // Parceiros (espelho de vendas) e Marca (instalar para outro cliente)
     // entraram no mesmo dia, na segunda rodada.
     expect(subitensDe("/corretor/admin")).toHaveLength(12);
-  });
-});
-
-
-/**
- * A barra de abas da TELA é a do dono da rota — a divergência de novo.
- *
- * O defeito de 04/09/2026 em uma linha: `/corretor/campanhas` era Marketing
- * no menu e desenhava abas de WhatsApp; o sidebar acendia magenta e a tela
- * dizia outra seção. A correção de então derivou as abas do mapa
- * (`subitensDe`), o que acabou com DUAS listas — mas não com a possibilidade
- * de uma tela chamar a barra da seção ERRADA.
- *
- * E aconteceu de novo em 11/09/2026: Criar arte e Criar vídeo mudaram de pai
- * para a Assistente e continuaram desenhando `AbasMarketing`. Falha calada —
- * build verde, tela funcionando, e só a barra mentindo sobre onde a pessoa
- * está. Esta guarda lê o código das telas e compara com `destinoAtivo`.
- */
-describe("a barra de abas da tela é a do DONO da rota", () => {
-  const TOPICO_DA_BARRA: Record<string, string> = {
-    AbasLeads: "/corretor/pessoas",
-    AbasImoveis: "/corretor/imoveis",
-    AbasWhatsapp: "/corretor/whatsapp",
-    AbasMarketing: "/corretor/marketing",
-    AbasAdmin: "/corretor/admin",
-    AbasFinanceiro: "/corretor/financeiro",
-  };
-
-  /** Toda `page.tsx` do painel — a convenção de varredura das outras guardas. */
-  const telasDo = (dir: string): string[] =>
-    readdirSync(join(process.cwd(), dir), { withFileTypes: true }).flatMap((e) =>
-      e.isDirectory()
-        ? telasDo(`${dir}/${e.name}`)
-        : e.name === "page.tsx"
-          ? [`${dir}/${e.name}`]
-          : [],
-    );
-  const telas = telasDo("src/app/corretor/(painel)").sort();
-
-  it("nenhuma tela desenha a barra de outra seção", () => {
-    // Comentário fora antes de acusar: é a terceira vez nesta base que uma
-    // guarda de código-fonte recorta um trecho citado em comentário.
-    const usos: string[] = [];
-    for (const arq of telas) {
-      const fonte = readFileSync(join(process.cwd(), arq), "utf8").replace(
-        /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
-        "",
-      );
-      for (const m of fonte.matchAll(/<(Abas[A-Za-z]+)([\s\S]{0,300}?)\/?>/g)) {
-        const barra = m[1];
-        const topico = TOPICO_DA_BARRA[barra];
-        if (!topico) continue;
-        const rota = m[2].match(/ativa=\{?"([^"]+)"/)?.[1];
-        if (!rota) continue;
-        usos.push(`${arq} ${barra} ${rota}`);
-        expect(
-          destinoAtivo(rota)?.href,
-          `${arq} desenha ${barra} numa rota cujo dono é outro`,
-        ).toBe(topico);
-      }
-    }
-    // Se o casamento parar de achar tela nenhuma, a guarda passa a aprovar
-    // tudo em silêncio — que é o defeito que ela persegue.
-    expect(usos.length).toBeGreaterThan(15);
   });
 });
 

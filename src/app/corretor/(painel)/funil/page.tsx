@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Quadro } from "./Quadro";
-import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import { getContagemPorEtapa, getLeadsDoFunil, souGestor } from "@/lib/corretorSessao";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
@@ -40,9 +39,6 @@ export default async function FunilPage({
       />
 
       <BuscaLeads className="mt-5" />
-      <div className="mt-3">
-        <AbasLeads ativa="/corretor/funil" />
-      </div>
 
       {busca && (
         <p className="text-fluid-xs text-apoio mt-3">

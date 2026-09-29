@@ -3,7 +3,6 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import type { ModoBotWhatsapp, StatusConexaoWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { WhatsappManager } from "./WhatsappManager";
-import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = {
@@ -42,10 +41,6 @@ export default async function WhatsappPainelPage() {
         <CabecalhoDeTela secao="Assistente" titulo="Minha IA" descricao="Conecte seu número para a IA atender, mandar fotos e plantas e qualificar seus leads enquanto você não está." />
       </div>
 
-      <AbasWhatsapp
-        ativa="/corretor/whatsapp"
-        conectado={instancia?.status_conexao === "conectado"}
-      />
 
       {/*
         O funil do atendimento, em cores que dizem o estágio: cada número

@@ -7,7 +7,6 @@ import {
   souGestor,
 } from "@/lib/corretorSessao";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
-import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import { AnotacoesClient, type AnotacaoNaTela } from "./AnotacoesClient";
 
 export const metadata: Metadata = { title: "Anotações" };
@@ -138,11 +137,6 @@ export default async function AnotacoesPage({
         titulo="Anotações"
         descricao="Seu bloco de notas: vincule a um lead, mande para um colega, e receba o lembrete no WhatsApp e na fila do Início."
       />
-      {/* Mesmo respiro da Lista: a barra de abas não encosta no cartão de
-          "Anotações". */}
-      <div className="mt-6">
-        <AbasLeads ativa="/corretor/anotacoes" />
-      </div>
       <AnotacoesClient
         anotacoes={anotacoes}
         equipe={equipe}

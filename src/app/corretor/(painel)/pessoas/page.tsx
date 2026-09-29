@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
-import { AbasLeads } from "../_componentes/AbasLeads";
 import { BotaoVoltarAoTopo } from "../_componentes/BotaoVoltarAoTopo";
 import { EsqueletoDeLista } from "../_componentes/EsqueletoDeLista";
 import { ListaPessoas } from "./ListaPessoas";
@@ -73,7 +72,6 @@ export default async function PaginaPessoas({
 
       {/* Pessoas virou subtópico ("Conversas") de 04/09: a barra é a mesma
           hierarquia do menu, derivada de `subitensDe`. */}
-      <AbasLeads ativa="/corretor/pessoas" />
 
       <Suspense
         key={`${busca}:${conversaInicial ?? ""}`}

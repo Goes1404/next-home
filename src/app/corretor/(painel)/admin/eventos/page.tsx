@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, Clock3, RefreshCw } from "lucide-react";
-import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 
@@ -70,7 +69,6 @@ export default async function MonitorEventosPage() {
         </p>
       </div>
 
-      <AbasAdmin ativa="/corretor/admin/eventos" />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi titulo="Eventos registrados" valor={eventos.count ?? 0} icone={RefreshCw} />

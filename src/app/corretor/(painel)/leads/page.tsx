@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Archive, Mail } from "lucide-react";
 import { ListaLeads } from "./ListaLeads";
-import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import {
   getCorretorLogado,
   getEquipeAtiva,
@@ -155,13 +154,6 @@ export default async function LeadsPage({
           </Link>
         }
       />
-
-      {/* A barra de abas encostava no cartão-herói: dois blocos de vidro
-          colados leem como um só, e a régua de abas some dentro do cabeçalho.
-          O respiro é o mesmo `mt-6` que Visitas já usava. */}
-      <div className="mt-6">
-        <AbasLeads ativa="/corretor/leads" />
-      </div>
 
       {/* Recorte vindo de um KPI da administração. Precisa estar ESCRITO na
           tela: filtro invisível filtrando é a pior surpresa de uma lista —

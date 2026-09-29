@@ -5,7 +5,6 @@ import { getRankingVgv } from "@/lib/financeiro/dados";
 import { intervaloDo, lerPeriodo, nomeDoMes, PERIODOS } from "@/lib/financeiro/periodo";
 import { formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
-import { AbasFinanceiro } from "../../_componentes/AbasFinanceiro";
 
 export const metadata: Metadata = { title: "Ranking de VGV" };
 
@@ -63,9 +62,6 @@ export default async function RankingPage({
         titulo="Ranking de VGV"
         descricao="Quem mais vendeu na equipe. Todos veem as posições; a comissão de cada um continua privada."
       />
-      <div className="mt-6">
-        <AbasFinanceiro ativa="/corretor/financeiro/ranking" />
-      </div>
 
       <nav aria-label="Período" className="flex flex-wrap gap-2">
         {PERIODOS.map((p) => (

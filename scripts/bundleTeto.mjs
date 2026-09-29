@@ -47,7 +47,9 @@ const TETOS_KB = {
   // o painel ganhou a transição de tela e a luz dos cartões no LAYOUT (vale
   // em toda rota do painel), e o importador ganhou tours, vídeo em arquivo e
   // a leitura do site da construtora.
-  "/corretor/(painel)/conversas/page": 1030,
+  // 29/09: +2 KB em conversas, do motivo do 👎 e do resumo semanal das
+  // avaliações (0131), que já tinha ido ao ar 1 KB acima do teto.
+  "/corretor/(painel)/conversas/page": 1032,
   // 28/09: +1 KB em criar-imagem, editor do imóvel e vídeo é
   // `mensagensDoSite` (as mensagens que o porteiro reconhece), puxado via
   // `site.ts`. Sem ela, o visitante novo do site é ignorado pelo webhook.

@@ -8494,3 +8494,13 @@ few-shot, e o corretor recebe o resumo toda segunda no WhatsApp dele.
 `motivo_avaliacao`**: antes o corretor podia reescrever a telemetria pela
 API. Código novo que precise gravar outra coluna de `ia_interacoes` pela
 sessão do corretor vai levar "permission denied" — use o cliente de serviço.
+
+## A caixa de abas saiu das telas (29/09/2026)
+
+Nota: [[a-caixa-de-abas-saiu-das-telas]]. Decisão do usuário: a caixa com os
+subtópicos da seção (Conversas / Lista / Funil / …) repetia o menu lateral e
+ocupava a primeira dobra do celular. Saiu das 34 telas, e `AbasSecao` e as
+seis barras foram apagadas. Os subtópicos ficam só no menu. **Os contadores
+que moravam nas abas sumiram junto** (visitas de hoje, respostas sem revisão,
+fila de disparo, número conectado, Fila de cadastro). `navegacao.test.ts`
+reprova a volta.

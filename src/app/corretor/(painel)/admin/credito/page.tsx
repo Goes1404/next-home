@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getParametrosCredito } from "@/lib/credito/parametros";
@@ -27,7 +26,6 @@ export default async function CreditoPage() {
         descricao="Os números que o consultor pode citar. O que não está aqui, ele não inventa."
       />
 
-      <AbasAdmin ativa="/corretor/admin/credito" />
 
       <FormularioCredito
         inicial={parametros}

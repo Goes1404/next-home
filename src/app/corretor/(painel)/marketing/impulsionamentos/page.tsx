@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
-import { AbasMarketing } from "@/app/corretor/(painel)/_componentes/AbasMarketing";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { createClient } from "@/lib/supabase/server";
@@ -79,7 +78,6 @@ export default async function PaginaImpulsionamentos() {
         titulo="Impulsionamentos"
         descricao="Quanto cada post impulsionado trouxe de clientes, e quanto custou cada um."
       />
-      <AbasMarketing ativa="/corretor/marketing/impulsionamentos" />
       <ListaDeImpulsionamentos
         resumos={resumos}
         totais={totaisDosImpulsionamentos(resumos)}

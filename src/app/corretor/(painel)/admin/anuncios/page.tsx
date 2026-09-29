@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -270,7 +269,6 @@ export default async function AnunciosPage() {
         <CabecalhoDeTela secao="Administração" titulo="Anúncios" descricao="Quanto cada campanha do Meta custou e o que ela virou — atualizado uma vez por dia." />
       </div>
 
-      <AbasAdmin ativa="/corretor/admin/anuncios" />
 
       {conectado && sincronizacao.estado !== "em_dia" && (
         <FaixaDeSincronizacao

@@ -15,7 +15,6 @@ import { getRitmoDoCorretor } from "@/lib/financeiro/ritmoDoCorretor";
 import { centavos, formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { BotaoAcao } from "../../_componentes/BotaoAcao";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
-import { AbasFinanceiro } from "../../_componentes/AbasFinanceiro";
 import { CartaoMeta } from "../CartaoMeta";
 import { marcarComissaoRecebida, marcarRepassePago } from "../acoes";
 
@@ -86,9 +85,6 @@ export default async function ExtratoPage() {
         titulo="Extrato e meta"
         descricao="O que você tem a receber, em que ponto está cada comissão, e quanto falta para a meta do mês."
       />
-      <div className="mt-6">
-        <AbasFinanceiro ativa="/corretor/financeiro/extrato" />
-      </div>
     </>
   );
 

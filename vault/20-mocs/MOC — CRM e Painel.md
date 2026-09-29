@@ -21,6 +21,7 @@ F0–F6.
 
 ## Telas
 - [[navegacao-do-painel-tem-regua]]
+- [[a-caixa-de-abas-saiu-das-telas]]
 - [[quadro-do-funil-e-lateral-de-novo]] — kanban lateral com filtros operacionais (11/09)
 - [[rampa-de-etapa-e-o-teto-da-gama]] — paleta das etapas (09/09)
 - [[tela-de-entrar-e-dividida]] — login em duas metades (09/09)

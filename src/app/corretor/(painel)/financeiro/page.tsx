@@ -4,7 +4,6 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getVendas, vgvPorCorretor, type VendaNaTela } from "@/lib/financeiro/dados";
 import { formatarPercentual, formatarReais, hojeEmSaoPaulo, vgvCreditado } from "@/lib/financeiro/venda";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
-import { AbasFinanceiro } from "../_componentes/AbasFinanceiro";
 
 export const metadata: Metadata = { title: "Vendas" };
 
@@ -45,9 +44,6 @@ export default async function VendasPage() {
           ) : undefined
         }
       />
-      <div className="mt-6">
-        <AbasFinanceiro ativa="/corretor/financeiro" />
-      </div>
     </>
   );
 

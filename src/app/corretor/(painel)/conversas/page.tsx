@@ -6,7 +6,6 @@ import { ConversasClient, type ConversaResumo } from "./ConversasClient";
 import { faltaNaLista, garantirNaLista } from "./listaDeConversas";
 import { RevisaoRespostas, type ItemRevisao } from "./RevisaoRespostas";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
-import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { ROTULO_MODO } from "@/lib/whatsapp/modoBot";
 import { createClient } from "@/lib/supabase/server";
@@ -239,13 +238,6 @@ export default async function ConversasPage({
         descricao="Quem está falando com o seu número e se a IA está atendendo."
       />
 
-      <div className="mt-5">
-        <AbasWhatsapp
-          ativa="/corretor/conversas"
-          semRevisao={itensRevisao.length}
-          conectado={instancia?.status_conexao === "conectado"}
-        />
-      </div>
 
       {modo && (
         <p className="text-fluid-sm text-apoio mt-4">

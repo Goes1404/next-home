@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
-import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getMinhasImagens, getTetoDeHoje } from "@/lib/imagens/galeria";
 import { imagensConfiguradas } from "@/lib/imagens/gerarImagem";
@@ -37,7 +36,6 @@ export default async function PaginaCriarImagem() {
         descricao="Diz o que você quer, com suas palavras. A IA da casa pergunta o que faltar, mostra como vai ficar e só gera quando você aprovar."
       />
 
-      <AbasWhatsapp ativa="/corretor/imoveis/criar-imagem" />
 
       {!imagensConfiguradas() ? (
         <p

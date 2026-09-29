@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { lerMarca } from "@/lib/marca";
@@ -24,9 +23,6 @@ export default async function MarcaPage() {
         titulo="Marca"
         descricao="O nome, o CRECI, o endereço e os contatos que aparecem no site, nos avisos e no que a IA diz."
       />
-      <div className="mt-4">
-        <AbasAdmin ativa="/corretor/admin/marca" />
-      </div>
       <div className="mt-6 space-y-4">
         <section className="cartao space-y-2 p-4">
           <p className="text-fluid-sm text-titulo">

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
-import { AbasWhatsapp } from "@/app/corretor/(painel)/_componentes/AbasWhatsapp";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getMeusVideos, getSaldo } from "@/lib/video/fila";
 import { ChatDeVideo } from "./ChatDeVideo";
@@ -56,7 +55,6 @@ export default async function PaginaVideo() {
         }
       />
 
-      <AbasWhatsapp ativa="/corretor/marketing/video" />
 
       <ChatDeVideo
         corretorId={corretor.id}

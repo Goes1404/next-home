@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import { getCorretorLogado, getLeadsDeVisita } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
@@ -114,15 +113,11 @@ export default async function VisitasPage({
       <CabecalhoDeTela secao="Leads" titulo="Visitas" descricao="Leads com visita marcada, ordenados pelo horário." />
 
       <BuscaLeads className="mt-6" />
-      <div className="mt-3">
-        <AbasLeads ativa="/corretor/visitas" visitas={busca ? undefined : visitas.length} />
-      </div>
 
       {/*
-        A grade de disponibilidade desceu para DEPOIS da busca e das abas
-        (06/09/2026, pedido do usuário). Ela é configuração — "quando eu
-        recebo visitas" —, e estava entre o cabeçalho e a navegação da seção,
-        empurrando as abas para fora da primeira tela no celular. Quem abre
+        A grade de disponibilidade desceu para DEPOIS da busca (06/09/2026,
+        pedido do usuário). Ela é configuração — "quando eu recebo visitas" —,
+        e empurrava a lista para fora da primeira tela no celular. Quem abre
         Visitas vem ver as visitas de hoje; ajustar horário é o que se faz
         depois.
       */}

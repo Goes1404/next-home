@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { OrigemDosLeads } from "@/app/corretor/(painel)/_componentes/graficos/OrigemDosLeads";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
-import { AbasMarketing } from "@/app/corretor/(painel)/_componentes/AbasMarketing";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getMinhasImagens, getTetoDeHoje } from "@/lib/imagens/galeria";
 import { getSaldo } from "@/lib/video/fila";
@@ -60,7 +59,6 @@ export default async function PaginaMarketing() {
         descricao="Tudo o que vira post, story, anúncio ou disparo — num lugar só."
       />
 
-      <AbasMarketing ativa="/corretor/marketing" />
 
       <OficinaDeMarketing
         artesFeitas={imagens.length}

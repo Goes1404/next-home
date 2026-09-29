@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
@@ -73,9 +72,6 @@ export default async function RelatorioConstrutoraPage({
   return (
     <div className="space-y-6">
       <CabecalhoDeTela secao="Administração" titulo="Relatório por construtora" descricao="Leads, visitas e vendas que cada empreendimento recebeu. Sem dado de cliente: pode mandar para a construtora." />
-      <div className="print:hidden">
-        <AbasAdmin ativa="/corretor/admin/construtoras" />
-      </div>
 
       {construtoras.length === 0 ? (
         <p className="cartao p-4 text-fluid-sm text-corpo">Nenhum imóvel tem construtora cadastrada.</p>

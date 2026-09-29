@@ -4,9 +4,6 @@ import { ProcuraPorImovel } from "../_componentes/graficos/ProcuraPorImovel";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { ListaImoveisClient } from "./ListaImoveisClient";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
-import { AbasImoveis } from "../_componentes/AbasImoveis";
-import { contarCandidatosPendentes } from "@/lib/imoveis/candidatosDoCatalogo";
-import { pendenciasDoCatalogo } from "@/lib/imoveis/pendenciasDoCatalogo";
 import { getArtePorImovel } from "@/lib/imagens/galeria";
 
 export const metadata = {
@@ -17,19 +14,8 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function ImoveisPage() {
-  const [imoveis, candidatosPendentes] = await Promise.all([
-    getEmpreendimentosDoPainel(),
-    contarCandidatosPendentes(),
-  ]);
+  const imoveis = await getEmpreendimentosDoPainel();
 
-  /*
-   * O contador da aba soma as duas coisas que a Fila de cadastro reúne:
-   * ficha incompleta de imóvel nosso (só publicado — é o que a assistente
-   * enxerga) e lançamento do mercado ainda sem decisão. É o gancho que
-   * substitui o cartão que ficava atravessado na frente desta lista.
-   */
-  const aCadastrar =
-    pendenciasDoCatalogo(imoveis.filter((i) => i.publicado ?? true)).length + candidatosPendentes;
 
   /*
    * Capa emprestada da arte de IA (0101), SÓ para quem não tem foto.
@@ -78,16 +64,13 @@ export default async function ImoveisPage() {
         }
       />
 
-      <AbasImoveis ativa="/corretor/imoveis" aCadastrar={aCadastrar} />
-
       {/*
         O que falta CADASTRAR não mora mais aqui (04/09/2026, decisão do
         usuário): o cartão de cadastro incompleto e o dos lançamentos
         levantados no mercado foram os dois para "Fila de cadastro", que é o
-        subtópico dedicado a isso no menu — e a aba acima carrega o número,
-        que era o que o cartão dava. Esta tela é o CATÁLOGO: o que já existe,
+        subtópico dedicado a isso no menu. Esta tela é o CATÁLOGO: o que já existe,
         para editar. "Links por imóvel" também saiu do cabeçalho pelo mesmo
-        motivo: virou aba.
+        motivo: virou subtópico do menu.
       */}
       <ListaImoveisClient imoveis={imoveis} artePorImovel={Object.fromEntries(artePorImovel)} />
 

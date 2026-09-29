@@ -4,7 +4,6 @@ import { RedistribuirCarteira } from "./RedistribuirCarteira";
 import { SeletorDono } from "./SeletorDono";
 import { TogglePausa } from "./TogglePausa";
 import { EtiquetaEtapa, dataHora } from "@/app/corretor/(painel)/_componentes/CartaoLead";
-import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { getEquipeAtiva, getPaginaDeLeads } from "@/lib/corretorSessao";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getAgregadoDaEquipe } from "@/lib/admin/agregados";
@@ -51,7 +50,6 @@ export default async function EquipePage() {
           automática entrega o lead a quem recebeu menos nos últimos 30 dias.</>} />
       </div>
 
-      <AbasAdmin ativa="/corretor/admin/leads" />
 
       <RedistribuirCarteira
         equipe={agregado.porCorretor.map((linha) => ({

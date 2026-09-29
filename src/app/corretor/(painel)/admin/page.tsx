@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AbasAdmin } from "@/app/corretor/(painel)/_componentes/AbasAdmin";
 import { getEquipeAtiva } from "@/lib/corretorSessao";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getAgregadoDaEquipe } from "@/lib/admin/agregados";
@@ -155,7 +154,6 @@ export default async function AdminVisaoGeralPage() {
         <CabecalhoDeTela secao="Administração" titulo="Visão geral" descricao="O retrato da operação. Todo número aqui abre a lista por trás dele." />
       </div>
 
-      <AbasAdmin ativa="/corretor/admin" />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi

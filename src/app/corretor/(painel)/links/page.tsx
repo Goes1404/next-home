@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AbasImoveis } from "@/app/corretor/(painel)/_componentes/AbasImoveis";
 import { EditarDestaques } from "./EditarDestaques";
 import { ListaLinks } from "./ListaLinks";
 import { CopiarLink } from "../CopiarLink";
@@ -33,9 +32,6 @@ export default async function LinksPage() {
         04/09/2026 esta era a ÚNICA tela do painel sem item de menu e sem aba,
         alcançável só por um cartão em Imóveis.
       */}
-      <div className="mt-5">
-        <AbasImoveis ativa="/corretor/links" />
-      </div>
 
       <section className="cartao mt-8 p-6">
         <p className="font-display text-titulo">Portfólio completo</p>

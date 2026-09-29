@@ -4,7 +4,6 @@ import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { ChecklistDoCatalogo } from "../_componentes/ChecklistDoCatalogo";
 import { FilaCandidatos } from "./FilaCandidatos";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
-import { AbasImoveis } from "@/app/corretor/(painel)/_componentes/AbasImoveis";
 
 export const metadata = {
   title: "Fila de cadastro | Painel do Corretor",
@@ -39,7 +38,6 @@ export default async function CandidatosPage() {
     <div className="space-y-6">
       <CabecalhoDeTela secao="Imóveis" titulo="Fila de cadastro" descricao="Tudo que falta cadastrar, em ordem: primeiro a ficha incompleta dos imóveis que já são nossos — é o que a assistente sente na conversa —, depois os lançamentos de Barueri levantados no mercado, que ainda não são cadastro nenhum." />
 
-      <AbasImoveis ativa="/corretor/imoveis/candidatos" />
 
       {/*
         A ficha incompleta vem ANTES dos lançamentos do mercado, e a ordem é

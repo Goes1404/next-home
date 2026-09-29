@@ -1,7 +1,6 @@
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { ordemDoSite } from "@/lib/imoveis/ordemDaVitrine";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
-import { AbasImoveis } from "@/app/corretor/(painel)/_componentes/AbasImoveis";
 import { OrdemNoSite, type ItemDaTela } from "./OrdemNoSite";
 
 export const metadata = {
@@ -41,7 +40,6 @@ export default async function OrdemPage() {
         titulo="Ordem no site"
         descricao="Suba, desça e destaque: é nesta sequência que o visitante vê os imóveis."
       />
-      <AbasImoveis ativa="/corretor/imoveis/ordem" />
       {itens.length === 0 ? (
         <p className="cartao text-fluid-sm p-5 text-apoio">Nenhum imóvel publicado ainda.</p>
       ) : (

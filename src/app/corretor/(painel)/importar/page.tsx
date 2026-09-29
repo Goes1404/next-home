@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AbasLeads } from "@/app/corretor/(painel)/_componentes/AbasLeads";
 import { ImportarClient } from "./ImportarClient";
 import { getCorretorLogado, souGestor } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
@@ -18,9 +17,6 @@ export default async function ImportarPage() {
       <CabecalhoDeTela secao="Leads" titulo="Importar leads" descricao={<>Puxe leads do seu <strong>Gmail</strong> (Zap Imóveis, VivaReal, OLX, Imovelweb), importe
         uma planilha ou PDF, ou cadastre um contato na hora.</>} />
 
-      <div className="mt-5">
-        <AbasLeads ativa="/corretor/importar" />
-      </div>
 
       <ImportarClient
         // `id` é opcional no tipo (algumas consultas do catálogo público não
