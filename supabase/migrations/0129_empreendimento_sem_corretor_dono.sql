@@ -1,0 +1,38 @@
+-- 0129 — o imóvel deixa de ter corretor dono.
+--
+-- Decisão de produto de 28/09/2026 ("tire de tudo"). A medição que motivou:
+-- dos 18 imóveis com dono, 14 apontavam o WhatsApp do site para um corretor
+-- sem número conectado ao sistema. A mensagem ia para o celular pessoal
+-- dele, e o CRM nunca via o lead.
+--
+-- O código parou de ler a coluna ANTES desta migration (commit afecfa1, no
+-- ar e provado). O embed `corretor:corretores!empreendimentos_corretor_id_fkey`
+-- era a única leitura; com a chave estrangeira caindo antes dele sair, o
+-- catálogo inteiro cairia junto.
+--
+-- Conferido antes de escrever: nenhuma policy, função, view ou trigger do
+-- schema `public` usa `empreendimentos.corretor_id`. Saem só a chave
+-- estrangeira e o índice, que caem junto com a coluna.
+--
+-- Registro do que a coluna guardava no momento do drop (18 imóveis), para
+-- quem precisar reconstituir quem cadastrou o quê:
+--   3-dormitorios-com-suite-e-2-vagas-blsp634 -> Carolini Ivina Maia
+--   apartamento-1-ou-2-dorms-39-m2-vvj710 -> Eduardo Cezar
+--   apartamento-ao-lado-do-shopping-apv668 -> Eduardo Cezar
+--   bosque-alphagran-ne55087 -> Carolini Ivina Maia
+--   breeze-home-clube-bhc741 -> Cristal - Bruna
+--   eternity-alphaville -> Miro Araujo
+--   lancamento-ao-lado-do-parque-ne51970 -> Eduardo Cezar
+--   melhor-valor-de-metro-da-regiao-btb103 -> Renan Azael
+--   minha-casa-minha-vida-analise-de-credito-gratuita-ne78847 -> Equipe Next Home
+--   more-na-aldeia-de-barueri-mac238 -> Miro Araujo
+--   on-the-park-alphaville-ne72055 -> Miro Araujo
+--   royal-barueri-shopping-barueri-apartamento-1-a-3-dorms-rb111 -> Eduardo Cezar
+--   terra-alta-ta141 -> Cristal - Bruna
+--   torre-unica-e-lazer-na-cobertura-bje257 -> Cristal - Bruna
+--   vila-eco-park-mj605 -> Cristal - Bruna
+--   vista-alphagran-ne83472 -> Carolini Ivina Maia
+--   vitra-alphaville-vt110 -> Carolini Ivina Maia
+--   viva-rsf-vila-do-conde -> Renan Azael
+
+alter table public.empreendimentos drop column if exists corretor_id;

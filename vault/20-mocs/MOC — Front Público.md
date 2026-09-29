@@ -63,3 +63,4 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 
 ## Relacionados
 - [[MOC — Ingestão de Mídia]] · [[Home]]
+- [[o-imovel-nao-tem-mais-corretor-dono]] — todo WhatsApp do site pelo porteiro; coluna corretor_id caiu na 0129

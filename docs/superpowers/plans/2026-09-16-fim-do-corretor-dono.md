@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Status (28/09):** executado com adaptações — sem `preferido` (a 0113 foi descartada) e coluna dropada na 0129. Ver MEMORIA.
+
 **Goal:** Tirar o conceito de corretor dono do imóvel, fazendo todo contato do site público passar pelo porteiro `/wa`, que roteia só para quem tem número conectado e manda a mensagem que o webhook reconhece.
 
 **Architecture:** O porteiro (`src/app/wa/`) vira a porta ÚNICA de WhatsApp do site. Ele ganha duas formas: com imóvel (`/wa/<slug>`) e sem (`/wa`), ambas aceitando intenção (`?i=`) e corretor preferido (`?c=`). O reconhecedor de mensagem (`porteiro.ts`) passa a tolerar a intenção emendada e a frase geral do site. O tipo `Empreendimento` perde o campo `corretor`, e o compilador vira a guarda que acha todos os leitores. A coluna `empreendimentos.corretor_id` cai numa migration separada, DEPOIS de o código parar de lê-la.

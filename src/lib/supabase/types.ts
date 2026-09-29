@@ -991,7 +991,6 @@ export type Database = {
           codigo_legado: string | null
           condominio_valor: number | null
           construtora: string | null
-          corretor_id: string | null
           created_at: string
           descricao: string | null
           destaque: boolean
@@ -1027,7 +1026,6 @@ export type Database = {
           codigo_legado?: string | null
           condominio_valor?: number | null
           construtora?: string | null
-          corretor_id?: string | null
           created_at?: string
           descricao?: string | null
           destaque?: boolean
@@ -1063,7 +1061,6 @@ export type Database = {
           codigo_legado?: string | null
           condominio_valor?: number | null
           construtora?: string | null
-          corretor_id?: string | null
           created_at?: string
           descricao?: string | null
           destaque?: boolean
@@ -1092,13 +1089,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "empreendimentos_corretor_id_fkey"
-            columns: ["corretor_id"]
-            isOneToOne: false
-            referencedRelation: "corretores"
-            referencedColumns: ["id"]
-          },
         ]
       }
       historico_envios: {

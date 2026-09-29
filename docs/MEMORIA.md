@@ -8381,3 +8381,27 @@ Nota: [[botoes-do-site-mandavam-texto-que-o-porteiro-nao-reconhecia]].
 - **Custo:** a mensagem não cumprimenta mais o corretor pelo nome.
 - **Régua:** ao criar porteiro que DESCARTA quem não reconhece, procurar
   todos os lugares que produzem a entrada que ele precisa reconhecer.
+
+## O imóvel não tem mais corretor dono (0129, 28/09/2026)
+
+Nota: [[o-imovel-nao-tem-mais-corretor-dono]].
+
+- **A 0117 tirou o dono da roleta e do anúncio, e o site continuou com
+  ele.** Os botões abriam o WhatsApp do dono cadastrado: 14 de 18 imóveis
+  com dono apontavam para número fora do sistema. Tirar uma regra de um
+  caminho não a tira dos outros; procurar TODOS os leitores do campo.
+- **Hoje todo botão do site passa pelo porteiro.** `/wa/<imóvel>` e a porta
+  geral nova `/wa` sorteiam entre quem tem número conectado e mandam a
+  mensagem reconhecida. `?m=` emenda texto DEPOIS da frase (o simulador
+  usa). `de=site` separa o clique do site do clique pago em
+  `cliques_whatsapp`. Sem ninguém conectado, o escape é `/contato`.
+- **A coluna caiu em dois tempos:** primeiro o deploy que parou de ler o
+  embed `empreendimentos_corretor_id_fkey`, provado no ar; depois a 0129.
+  Na ordem inversa o catálogo inteiro cairia junto com a chave. Antes do
+  drop, conferido que nenhuma policy/função/view/trigger usava a coluna; o
+  mapeamento antigo ficou no comentário da migration.
+- **Exceções declaradas na guarda `semCorretorDono.test.ts`:** página e
+  cartão do corretor (o visitante escolheu a pessoa) e páginas por token
+  (quem abre já é lead).
+- **Custo:** com um só número conectado, todo lead do site vai para ele, e
+  o link pessoal do corretor não direciona mais o WhatsApp.
