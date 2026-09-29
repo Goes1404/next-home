@@ -58,7 +58,7 @@ import { blocoSemAcabamentoCadastrado } from "./acabamentoInventado";
  * `ia_interacoes`, e sem isso a medição do efeito não existe.
  */
 
-export const PROMPT_VERSAO = "2026.09-v43"; // capacidade pela RENDA (ou profissão), nunca pela faixa: o código calcula o teto com o simulador de financiamento e indica entre os imóveis que cabem // perguntas ANTES de indicar imóvel: o planner não convida nem indica até o funil fechar (região, estágio, tipologia, capacidade), e o turno corta indicação prematura //  eval de conversa de 28/09: planner lê "2 dorm", "você tem...", "tem algo que...", "dá pra financiar?" (pede renda), "preciso falar com ela" e aceite de material; visita sem imóvel pergunta qual; sem cumprimento repetido; sem promessa de valorização //  a apresentação digital é SÓ o link da página do imóvel, nunca foto (a v39 mandava "link junto com uma ou duas fotos" e o modelo mandava só a foto) // a ficha do prompt diz quantas unidades restam por dormitórios, quando a lista de unidades existe (nunca inventa número) // a conversa ganha MEMORIA: o estado da negociacao entra antes de tudo no prompt e sobrevive a janela de 40 falas (ate 27 delas sao do corretor) + a recusa vira jogada em vez de cair no funil + pergunta nao classificada passa a ser respondida + quem some por 72h volta sendo perguntado se ainda vale // // a oferta solitária da IA passa a definir o FOCO: quem se interessa pelo imóvel oferecido não repete o nome dele, e sem foco o prompt voltava a dez fichas e desfilava por cima do interesse // a marca de "assunto respondido" acumula pela conversa (a v33 esquecia depois de um turno) + a IA não inventa acabamento (flagrada afirmando piso laminado e bancada em granito de um cadastro sem o campo)
+export const PROMPT_VERSAO = "2026.09-v44"; // resposta que era eco é refeita pelo modelo (com o que ele ia repetir) em vez da frase pronta; cliente colaborando ouve pronto/planta e dormitórios numa frase só // capacidade pela RENDA (ou profissão), nunca pela faixa: o código calcula o teto com o simulador de financiamento e indica entre os imóveis que cabem // perguntas ANTES de indicar imóvel: o planner não convida nem indica até o funil fechar (região, estágio, tipologia, capacidade), e o turno corta indicação prematura //  eval de conversa de 28/09: planner lê "2 dorm", "você tem...", "tem algo que...", "dá pra financiar?" (pede renda), "preciso falar com ela" e aceite de material; visita sem imóvel pergunta qual; sem cumprimento repetido; sem promessa de valorização //  a apresentação digital é SÓ o link da página do imóvel, nunca foto (a v39 mandava "link junto com uma ou duas fotos" e o modelo mandava só a foto) // a ficha do prompt diz quantas unidades restam por dormitórios, quando a lista de unidades existe (nunca inventa número) // a conversa ganha MEMORIA: o estado da negociacao entra antes de tudo no prompt e sobrevive a janela de 40 falas (ate 27 delas sao do corretor) + a recusa vira jogada em vez de cair no funil + pergunta nao classificada passa a ser respondida + quem some por 72h volta sendo perguntado se ainda vale // // a oferta solitária da IA passa a definir o FOCO: quem se interessa pelo imóvel oferecido não repete o nome dele, e sem foco o prompt voltava a dez fichas e desfilava por cima do interesse // a marca de "assunto respondido" acumula pela conversa (a v33 esquecia depois de um turno) + a IA não inventa acabamento (flagrada afirmando piso laminado e bancada em granito de um cadastro sem o campo)
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -118,6 +118,8 @@ export interface ContextoAtendimento {
   dossie?: DossieClienteIA | null;
   /** Instrução extra de cenário (ex.: follow-up de reengajamento). */
   instrucaoExtra?: string;
+  /** Prazo da chamada ao modelo; ausente vale `ORCAMENTO_AGENTE_MS`. Menor na segunda tentativa. */
+  orcamentoMs?: number;
   /**
    * Nenhum imóvel do catálogo desta conversa tem data de entrega
    * (`catalogoTemPrazo`). Quem calcula é o CÓDIGO — a regra 14 sozinha não
@@ -715,7 +717,7 @@ export async function gerarRespostaIA(
   // teve um soluço e outro cobriu.
   const resultado = await chamarLlmJson(entradaPrompt, {
     temperature: 0.2,
-    orcamentoMs: ORCAMENTO_AGENTE_MS,
+    orcamentoMs: ctx.orcamentoMs ?? ORCAMENTO_AGENTE_MS,
   });
 
   if (!resultado.ok) {

@@ -259,3 +259,20 @@ function frasesDe(texto: string): string[] {
     .map((f) => f.trim())
     .filter(Boolean);
 }
+
+/**
+ * A instrução da segunda tentativa, quando a primeira resposta era eco.
+ *
+ * Diz ao modelo O QUE ele ia repetir (sem isso ele repete de novo, com
+ * casaco trocado) e dá as três saídas que funcionam: responder de outro
+ * jeito, admitir que não tem o dado, ou dar um passo novo. Nada de conteúdo
+ * sobre imóvel aqui: quem sabe o que dizer é o modelo, com o catálogo.
+ */
+export function instrucaoContraRepeticao(textoRepetido: string): string {
+  const trecho = textoRepetido.replace(/\s+/g, " ").trim().slice(0, 220);
+  return [
+    `ATENÇÃO: a resposta que você ia mandar repete o que você já disse nesta conversa ("${trecho}"). O cliente já leu isso.`,
+    "Escreva algo DIFERENTE, com as suas palavras: responda o que ele disse AGORA de outro jeito; ou, se não tem o dado, diga isso numa frase e quem vai trazer; ou dê um passo que ainda não foi dado.",
+    "É proibido reaproveitar frases da resposta acima.",
+  ].join("\n");
+}

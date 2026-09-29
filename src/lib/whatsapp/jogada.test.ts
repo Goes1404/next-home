@@ -50,6 +50,7 @@ function estado(over: Partial<EstadoDaConversa> = {}): EstadoDaConversa {
     nomeDoFoco: null,
     visitaConfirmada: false,
     aceitouOferta: null,
+    clienteColaborando: false,
     jaIndicouImovel: false,
     perguntaSemDado: null,
     agendamento: { dia: null, hora: null, pediuVisita: false },
@@ -1308,4 +1309,43 @@ it("\"renda não importa\" não responde a capacidade", () => {
     catalogo: [IMOVEL],
   });
   expect(e.respondidos.has("capacidade")).toBe(false);
+});
+
+/*
+ * 29/09/2026: cruzar os dados sem interrogatório. Quem responde curto e na
+ * sequência ouve pronto/planta e dormitórios numa frase só.
+ */
+describe("duas perguntas leves numa mensagem", () => {
+  it("cliente colaborando: estágio e dormitórios juntos", () => {
+    const e = estadoDaConversa({
+      historico: [bot("Em qual região de Barueri você procura?")],
+      mensagemAtual: "Alphaville",
+      imovelEmFoco: null,
+      catalogo: [IMOVEL],
+    });
+    const j = planejarJogada(e);
+    expect(j).toEqual({ tipo: "perguntar", assunto: "estagio", junto: "tipologia" });
+    expect(blocoDaJogada(j, { nomeDoFoco: null })).toMatch(/DUAS perguntas curtas/);
+  });
+
+  it("quem perguntou alguma coisa recebe uma pergunta só", () => {
+    const e = estadoDaConversa({
+      historico: [bot("Em qual região de Barueri você procura?")],
+      mensagemAtual: "Alphaville, e vocês têm decorado lá?",
+      imovelEmFoco: null,
+      catalogo: [IMOVEL],
+    });
+    const j = planejarJogada(e);
+    expect(j.tipo === "perguntar" && j.junto).toBeFalsy();
+  });
+
+  it("a renda nunca vai junto com outra pergunta", () => {
+    const e = estadoDaConversa({
+      historico: [cliente("Alphaville"), bot("Prefere pronto ou na planta, e de quantos dormitórios?")],
+      mensagemAtual: "na planta, 2 dormitórios",
+      imovelEmFoco: null,
+      catalogo: [IMOVEL],
+    });
+    expect(planejarJogada(e)).toEqual({ tipo: "perguntar", assunto: "capacidade" });
+  });
 });

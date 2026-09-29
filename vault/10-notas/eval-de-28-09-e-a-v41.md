@@ -58,3 +58,23 @@ Trace da conversa real: `scripts/traces/traceAldeia.ts`.
   a v41 foi verificada persona a persona, não por comparação de números.
 
 Ligações: [[memoria-da-conversa-e-ficha-viva]] · [[foco-da-conversa]]
+
+## v44 (29/09/2026): a frase pronta saiu de vez
+
+- Quando a resposta era eco e sobrava pouco depois do corte, o turno pede ao
+  modelo UMA resposta nova, dizendo o que ele ia repetir
+  (`instrucaoContraRepeticao`), em vez de mandar a frase pronta da guarda. Só
+  se couber no orçamento do agente (`MINIMO_PARA_REFAZER_MS`, 6s): somar uma
+  segunda chamada inteira estouraria os 60s do webhook. Se a nova também
+  repetir, a frase pronta continua como último recurso.
+- Medido em três personas: 6 respostas refeitas, nenhuma repetiu de novo, e
+  zero frases prontas nas transcrições (eram 27 em 16 conversas na v40).
+- Cliente que responde curto e na sequência ouve "pronto ou na planta, e de
+  quantos dormitórios?" numa frase só. A renda nunca vai junto.
+- Armadilha: com a trava da qualificação e a jogada `perguntar` no mesmo
+  prompt, as duas mandavam "termine com uma pergunta", e o modelo emendava
+  DUAS perguntas de assuntos diferentes. O bloco da trava não repete a
+  pergunta quando a jogada já é a pergunta.
+- "Vou te deixar o link" para quem vai conversar com a esposa, sem imóvel
+  escolhido, era promessa vazia: a saída suave só oferece material quando há
+  imóvel em foco.

@@ -37,6 +37,11 @@ import { PARAMETROS_PADRAO } from "@/lib/credito/parametrosPadrao";
 import type { ParametrosCredito } from "@/lib/credito/tipos";
 import { blocoDeCapacidade, rendaNaConversa, tetoDeCompra } from "./capacidadeDeCompra";
 import { removerAnuncioDeAnexo } from "./afirmacoesSemLastro";
+import { instrucaoContraRepeticao } from "./repeticao";
+import { ORCAMENTO_AGENTE_MS } from "./llm";
+
+/** Abaixo disso, a segunda chamada não cabe no orçamento do agente. */
+const MINIMO_PARA_REFAZER_MS = 6_000;
 
 /**
  * UM turno de atendimento: da conversa até os balões prontos para sair.
@@ -295,8 +300,7 @@ export async function executarTurnoDeAtendimento(
     ? `ATENÇÃO: ele escreveu "${palpite.escrito}", que parece ser o ${palpite.nome}, do nosso catálogo. Antes de qualquer outra coisa, pergunte se é o ${palpite.nome} que ele quer dizer. NUNCA diga que não tem, nem que vai confirmar com o corretor: o imóvel é nosso.`
     : "";
 
-  const bruta = await gerarRespostaIA(
-    {
+  const ctxAgente: Parameters<typeof gerarRespostaIA>[0] = {
       ...pedido.identidade,
       catalogo: catalogoDoPrompt,
       historicoMensagens: historicoAnterior,
@@ -307,7 +311,12 @@ export async function executarTurnoDeAtendimento(
       blocoMemoria: blocoDaMemoria(pedido.memoria ?? null),
       blocoJogada: [
         blocoDaJogada(jogada, { nomeDoFoco: foco?.nome ?? null }),
-        pendenteDaTrava ? blocoDeQualificacao(pendenteDaTrava, { nomeDoFoco: foco?.nome ?? null }) : "",
+        pendenteDaTrava
+          ? blocoDeQualificacao(pendenteDaTrava, {
+              nomeDoFoco: foco?.nome ?? null,
+              jogadaJaPergunta: jogada.tipo === "perguntar",
+            })
+          : "",
         teto && !pendenteDaTrava ? blocoDeCapacidade(teto, catalogoDoPrompt) : "",
         blocoPalpite,
       ]
@@ -323,11 +332,10 @@ export async function executarTurnoDeAtendimento(
        */
       semPrazoCadastrado: !catalogoTemPrazo(catalogoDoPrompt),
       semAcabamentoCadastrado: !catalogoTemAcabamento(catalogoDoPrompt),
-    },
-    vezDoCliente.length > 0
-      ? vezDoCliente
-      : "(o cliente não respondeu; escreva a mensagem de retomada)",
-  );
+  };
+  const mensagemParaIA =
+    vezDoCliente.length > 0 ? vezDoCliente : "(o cliente não respondeu; escreva a mensagem de retomada)";
+  const bruta = await gerarRespostaIA(ctxAgente, mensagemParaIA);
 
   /*
    * O guardrail recebe o histórico COMPLETO, não o recortado: é dele que
@@ -340,54 +348,91 @@ export async function executarTurnoDeAtendimento(
    * visita no CRM e avisa o corretor (ver `aceiteDeVisitaValido`). Sem o
    * campo, o guardrail também corta a frase que afirma a confirmação.
    */
-  const confirmacaoInventada =
-    bruta.visitaProposta?.confirmadaPeloCliente === true && !aceiteDeVisitaValido(jogada, Boolean(foco));
-  if (confirmacaoInventada) {
-    console.warn(`[turno] confirmação de visita sem aceite do cliente descartada (jogada ${jogada.tipo})`);
-  }
-  const brutaConferida = confirmacaoInventada
-    ? { ...bruta, visitaProposta: { ...bruta.visitaProposta!, confirmadaPeloCliente: false } }
-    : bruta;
+  const conferir = (bruta: Awaited<ReturnType<typeof gerarRespostaIA>>) => {
+    const confirmacaoInventada =
+      bruta.visitaProposta?.confirmadaPeloCliente === true && !aceiteDeVisitaValido(jogada, Boolean(foco));
+    if (confirmacaoInventada) {
+      console.warn(`[turno] confirmação de visita sem aceite do cliente descartada (jogada ${jogada.tipo})`);
+    }
+    const brutaConferida = confirmacaoInventada
+      ? { ...bruta, visitaProposta: { ...bruta.visitaProposta!, confirmadaPeloCliente: false } }
+      : bruta;
+
+    /*
+     * A rede da trava: o que o prompt pediu e o modelo não cumpriu. Frase que
+     * indica imóvel que o cliente não trouxe sai, e anexo, recomendação e link
+     * do catálogo desses imóveis também.
+     */
+    const semIndicacao = pendenteDaTrava
+      ? removerIndicacaoPrematura(brutaConferida.textoResposta ?? "", pedido.catalogo, imoveisDoCliente)
+      : null;
+    if (semIndicacao?.cortou) console.warn(`[turno] indicação antes da qualificação cortada (falta ${pendenteDaTrava})`);
+    const anexosNaHora = (brutaConferida.anexosMidia ?? []).filter((a) => imoveisDoCliente.has(a.slug));
+    const textoNaHora = semIndicacao?.texto ?? brutaConferida.textoResposta;
+    const brutaNaHora = pendenteDaTrava
+      ? {
+          ...brutaConferida,
+          // Tirou todos os anexos: tira também a frase que diz que eles foram.
+          textoResposta:
+            anexosNaHora.length === 0 && (brutaConferida.anexosMidia ?? []).length > 0
+              ? removerAnuncioDeAnexo(textoNaHora).texto
+              : textoNaHora,
+          anexosMidia: anexosNaHora,
+          imoveisRecomendados: (brutaConferida.imoveisRecomendados ?? []).filter((r) => imoveisDoCliente.has(r.slug)),
+          mandarCatalogo: false,
+        }
+      : brutaConferida;
+
+    return sanearRespostaIA(
+      brutaNaHora,
+      pedido.catalogo,
+      pedido.historico,
+      pedido.identidade.slugCorretor,
+      pedido.identidade.nomeAssistente,
+      textoDaVez,
+    );
+  };
+
+  let respostaBruta = bruta;
+  let saneada = conferir(bruta);
 
   /*
-   * A rede da trava: o que o prompt pediu e o modelo não cumpriu. Frase que
-   * indica imóvel que o cliente não trouxe sai, e anexo, recomendação e link
-   * do catálogo desses imóveis também.
+   * A resposta repetia o que ela já tinha dito, e sobrou pouco depois do
+   * corte: em vez de mandar a frase pronta da guarda ("me conta um pouco
+   * mais do que você procura"), pede ao modelo UMA resposta nova, dizendo o
+   * que ele ia repetir. Eval de 28/09/2026: a frase pronta saiu em 10 de 16
+   * conversas e era a marca mais robótica da assistente.
+   *
+   * Só com tempo sobrando dentro do mesmo orçamento do agente: somar uma
+   * segunda chamada inteira estouraria os 60s da função do webhook.
    */
-  const semIndicacao = pendenteDaTrava
-    ? removerIndicacaoPrematura(brutaConferida.textoResposta ?? "", pedido.catalogo, imoveisDoCliente)
-    : null;
-  if (semIndicacao?.cortou) console.warn(`[turno] indicação antes da qualificação cortada (falta ${pendenteDaTrava})`);
-  const anexosNaHora = (brutaConferida.anexosMidia ?? []).filter((a) => imoveisDoCliente.has(a.slug));
-  const textoNaHora = semIndicacao?.texto ?? brutaConferida.textoResposta;
-  const brutaNaHora = pendenteDaTrava
-    ? {
-        ...brutaConferida,
-        // Tirou todos os anexos: tira também a frase que diz que eles foram.
-        textoResposta:
-          anexosNaHora.length === 0 && (brutaConferida.anexosMidia ?? []).length > 0
-            ? removerAnuncioDeAnexo(textoNaHora).texto
-            : textoNaHora,
-        anexosMidia: anexosNaHora,
-        imoveisRecomendados: (brutaConferida.imoveisRecomendados ?? []).filter((r) => imoveisDoCliente.has(r.slug)),
-        mandarCatalogo: false,
+  const restante = ORCAMENTO_AGENTE_MS - bruta.meta.latenciaMs;
+  if (saneada.repeticaoSubstituida && !bruta.meta.fallback && restante >= MINIMO_PARA_REFAZER_MS) {
+    const nova = await gerarRespostaIA(
+      {
+        ...ctxAgente,
+        instrucaoExtra: [ctxAgente.instrucaoExtra, instrucaoContraRepeticao(bruta.textoResposta)]
+          .filter(Boolean)
+          .join("\n\n"),
+        orcamentoMs: restante,
+      },
+      mensagemParaIA,
+    );
+    if (!nova.meta.fallback) {
+      const refeita = conferir(nova);
+      console.warn(`[turno] resposta repetida refeita pelo modelo (${refeita.repeticaoSubstituida ? "repetiu de novo" : "ok"})`);
+      if (!refeita.repeticaoSubstituida) {
+        respostaBruta = { ...nova, meta: { ...nova.meta, latenciaMs: bruta.meta.latenciaMs + nova.meta.latenciaMs } };
+        saneada = { ...refeita, resposta: { ...refeita.resposta, meta: respostaBruta.meta } };
       }
-    : brutaConferida;
-
-  const saneada = sanearRespostaIA(
-    brutaNaHora,
-    pedido.catalogo,
-    pedido.historico,
-    pedido.identidade.slugCorretor,
-    pedido.identidade.nomeAssistente,
-    textoDaVez,
-  );
+    }
+  }
 
   const partes = dividirEmMensagens(saneada.resposta.textoResposta);
 
   return {
     resposta: saneada.resposta,
-    respostaBruta: bruta,
+    respostaBruta,
     baloes: partes.length > 0 ? partes : [saneada.resposta.textoResposta],
     anexos: saneada.anexos,
     foco,

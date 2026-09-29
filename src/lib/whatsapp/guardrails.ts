@@ -55,6 +55,8 @@ export type RespostaSaneada = {
   catalogoAnexado: boolean;
   /** A resposta repetia, palavra por palavra, algo que o bot já tinha dito? */
   repeticaoBloqueada: boolean;
+  /** A resposta virou a frase pronta da guarda: quase tudo era eco. */
+  repeticaoSubstituida: boolean;
   /** A apresentação saiu como link da página (fotos tiradas ou link posto pelo código)? */
   apresentacaoComoLink: boolean;
 };
@@ -281,6 +283,7 @@ export function sanearRespostaIA(
     slugsBloqueados: (resposta.imoveisRecomendados?.length ?? 0) - recomendadosValidos.length,
     visitaIncoerente: !coerencia.coerente,
     repeticaoBloqueada: repetiu,
+    repeticaoSubstituida: repetiu && soONovo.length < 40,
     prazoRemovido: semPrazo.removeu,
     catalogoAnexado: comCatalogo.anexou,
     apresentacaoComoLink: apresentacao.tirouFotos || comApresentacao.anexou,

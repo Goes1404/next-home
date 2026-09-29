@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { aproveitarSoONovo, ehRepeticaoDoBot, normalizarParaRepeticao, textoNoLugarDaRepeticao } from "./repeticao";
+import {
+  aproveitarSoONovo,
+  ehRepeticaoDoBot,
+  instrucaoContraRepeticao,
+  normalizarParaRepeticao,
+  textoNoLugarDaRepeticao,
+} from "./repeticao";
 import { limparSeparadoresOrfaos } from "./semValores";
 
 /**
@@ -346,4 +352,10 @@ it("\"robô ou humano?\" repetido ganha a verdade e a oferta do corretor", () =>
   expect(t).toMatch(/assistente virtual/);
   expect(t).toMatch(/corretor/);
   expect(t).not.toMatch(/não tenho aqui/);
+});
+
+it("a segunda tentativa diz ao modelo o que ele ia repetir", () => {
+  const i = instrucaoContraRepeticao("O Viva RSF Vila do Conde começa em R$ 457.000.\n--- O valor exato fechamos na visita.");
+  expect(i).toMatch(/Viva RSF Vila do Conde começa em R\$ 457\.000/);
+  expect(i).toMatch(/DIFERENTE/);
 });

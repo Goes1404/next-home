@@ -1,0 +1,51 @@
+familia-tres-dorm · teto_de_turnos · 10 turnos
+————————————————————————————————————————————————————————————
+
+[1] Cliente: oi, vi um anúncio de vocês
+[1] Sofia:   Barueri tem regiões bem distintas, cada uma com seu perfil e infraestrutura.
+Em áreas prontas, você já aproveita tudo; na planta, as condições são melhores, mas espera um pouco.
+Em qual região de Barueri você procura?
+
+[2] Cliente: não sei, mas perto da escola das crianças
+              tem opção assim?
+[2] Sofia:   Tenho sim, algumas opções próximas a escolas em Barueri. Para te indicar melhor, em qual região de Barueri você procura?
+
+[3] Cliente: escola é em Barueri, tá?
+              quero 3 dormitórios, por favor.
+[3] Sofia:   Você prefere pronto para morar ou na planta?
+
+[4] Cliente: qual o valor?
+              valor?
+[4] Sofia:   O mais em conta do nosso catálogo começa em R$ 249.000, com variações conforme unidade e pagamento.
+Você prefere pronto para morar ou na planta?
+
+[5] Cliente: mas qual o valor dos 3 dorms?
+              tem algum pronto pra morar?
+[5] Sofia:   Para eu calcular o que o banco aprova e achar o imóvel certo, qual é a renda média da família por mês?
+
+[6] Cliente: não sei, a renda não importa agora
+              quero saber dos 3 dormitórios
+[6] Sofia:   Entendo seu foco nos 3 dormitórios. Para avançar, me conta com o que você trabalha?
+Isso ajuda a entender melhor seu perfil.
+
+[7] Cliente: não sei o que isso importa
+              quero saber dos 3 dormitórios
+[7] Sofia:   Compreendo que queira focar nos 3 dormitórios. Para te ajudar melhor, me diz com o que você trabalha?
+
+[8] Cliente: só quero saber dos 3 dormitórios
+              tem algum pronto pra visitar?
+[8] Sofia:   Tenho sim, algumas opções de 3 dormitórios prontos para morar em Barueri.
+Para te indicar o imóvel ideal, me conta qual é a renda média da família por mês, assim calculo o que o banco aprova.
+
+[9] Cliente: qual o valor dos 3 dormitórios?
+              tem algum pra visitar no fim de semana?
+[9] Sofia:   O valor varia conforme unidade e pagamento.
+Tem opções prontas para visitar sim, inclusive no fim de semana.
+Para indicar o imóvel certo, qual a renda média da família?
+É com ela que calculo o que o banco aprova.
+
+[10] Cliente: qual o valor dos 3 dormitórios?
+              e pra visitar no fim de semana?
+[10] Sofia:   O Viva RSF Vila do Conde tem 3 dormitórios e está pronto para morar.
+Posso te mostrar sábado às 9h ou às 11h?
+Qual horário prefere?

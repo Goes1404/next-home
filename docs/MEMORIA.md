@@ -8478,3 +8478,8 @@ número só é capacidade dita fora de pergunta.
   **Não reordenar o catálogo pelo teto**: pôs Osasco na frente de quem pediu
   Barueri. E "renda não importa" cita renda sem dizer nenhuma: do cliente, a
   capacidade só conta com número.
+- **Eco é refeito pelo modelo, não trocado por frase pronta (v44).** Com
+  tempo sobrando no orçamento do agente (6s+), a resposta que repetia volta
+  ao modelo com o trecho que ele ia repetir. Três personas: 6 refeitas, 0
+  repetiram, 0 frases prontas. Dois blocos pedindo "termine com uma
+  pergunta" fazem o modelo emendar duas perguntas: só um bloco pergunta.

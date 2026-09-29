@@ -63,7 +63,7 @@ const HORAS_PARA_RETOMAR = 72;
 export type Jogada =
   | { tipo: "responder_dado"; dado: DadoPedido }
   | { tipo: "responder_honesto"; pergunta: string; vezes: number }
-  | { tipo: "perguntar"; assunto: AssuntoDoFunil }
+  | { tipo: "perguntar"; assunto: AssuntoDoFunil; junto?: AssuntoDoFunil }
   | { tipo: "convidar_visita" }
   | { tipo: "indicar_imovel" }
   | { tipo: "propor_horario"; jaOfereceu: number }
@@ -146,6 +146,11 @@ export interface EstadoDaConversa {
    * estágio — e tratá-la como pergunta aberta trava o funil no lugar.
    */
   falaAtualRespondeFunil: boolean;
+  /**
+   * Ele respondeu a pergunta do turno anterior, curto e sem perguntar nada:
+   * está colaborando, e dá para juntar duas perguntas leves numa mensagem.
+   */
+  clienteColaborando: boolean;
   /**
    * Horas desde a última fala de qualquer um nesta conversa.
    *
@@ -594,6 +599,10 @@ export function estadoDaConversa(params: {
     recusa,
     recusasAnteriores,
     falaAtualRespondeFunil,
+    clienteColaborando:
+      perguntadosNaUltima.size > 0 &&
+      forcaDaPergunta(mensagemAtual) === "nao" &&
+      mensagemAtual.trim().split(/\s+/).length <= 8,
     horasDesdeAUltimaFala: params.horasDesdeAUltimaFala ?? 0,
     jaIndicouImovel: params.jaIndicouImovel ?? false,
     vezesPerguntado,
@@ -868,7 +877,21 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
    * tinha dito nada além de "Aldeia". A capacidade entra no funil de vez:
    * sem ela não dá para saber se o imóvel cabe.
    */
-  if (proximoAssunto) return { tipo: "perguntar", assunto: proximoAssunto };
+  if (proximoAssunto) {
+    /*
+     * Cruzar sem interrogatório (29/09/2026): quem está respondendo curto e
+     * na sequência ouve "pronto ou na planta, e de quantos dormitórios?" numa
+     * mensagem só, em vez de duas idas e voltas. Só esse par: são perguntas
+     * leves que se completam. Renda continua sozinha, com a razão junto, e a
+     * região abre a conversa sozinha.
+     */
+    const tipologiaPendente =
+      !estado.respondidos.has("tipologia") && (estado.vezesPerguntado.get("tipologia") ?? 0) < 2;
+    if (proximoAssunto === "estagio" && tipologiaPendente && estado.clienteColaborando) {
+      return { tipo: "perguntar", assunto: "estagio", junto: "tipologia" };
+    }
+    return { tipo: "perguntar", assunto: proximoAssunto };
+  }
 
   if (!estado.jaIndicouImovel) return { tipo: "indicar_imovel" };
 
@@ -914,9 +937,16 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
       ].join("\n");
     case "perguntar":
       return [
-        `${cabecalho}: fazer UMA pergunta — ${PERGUNTA_DO_ASSUNTO[jogada.assunto]}.`,
-        "Antes dela, uma frase curta reagindo ao que ele disse. Nada mais: uma pergunta por mensagem.",
-      ].join("\n");
+        jogada.junto
+          ? `${cabecalho}: fazer DUAS perguntas curtas, ligadas, numa frase só — ${PERGUNTA_DO_ASSUNTO[jogada.assunto]}, e ${PERGUNTA_DO_ASSUNTO[jogada.junto]} (ex.: "prefere pronto para morar ou na planta, e de quantos dormitórios?").`
+          : `${cabecalho}: fazer UMA pergunta — ${PERGUNTA_DO_ASSUNTO[jogada.assunto]}.`,
+        "Antes dela, reaja ao que ele disse com algo útil, em termos gerais (o que existe naquela região, o que muda entre pronto e na planta), sem citar imóvel antes da hora. Pergunta seca atrás de pergunta seca soa formulário, e é isso que o cliente percebe.",
+        jogada.junto
+          ? "Só essas duas; nenhuma outra pergunta do funil nesta mensagem."
+          : "Nada mais: uma pergunta por mensagem. Não emende outra pergunta do funil (região, estágio, dormitórios, renda): a próxima vem na próxima mensagem.",
+      ]
+        .filter(Boolean)
+        .join("\n");
     case "indicar_imovel":
       return [
         `${cabecalho}: INDICAR o imóvel que mais combina com o que ele contou — só agora, depois das perguntas.`,
@@ -1041,7 +1071,14 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
     case "deixar_porta_aberta":
       return [
         `${cabecalho}: ele sinalizou que vai pensar / decidir com alguém — "${jogada.oQueEleDisse}".`,
-        "Respeite. UMA frase: deixe a porta aberta e ofereça o que ajuda a decidir junto (o link da página ou as fotos, para mostrar a quem ele citou). NENHUMA pergunta de qualificação, NENHUM horário. Termine sem cobrar resposta.",
+        /*
+         * Sem imóvel escolhido não há link nem foto para mandar: prometer
+         * "vou deixar o link" e não mandar nada fazia o cliente perguntar
+         * "qual link?" (v44, 29/09/2026).
+         */
+        contexto.nomeDoFoco
+          ? `Respeite. UMA frase: deixe a porta aberta e ofereça o que ajuda a decidir junto (o link da página do ${contexto.nomeDoFoco} ou as fotos, para mostrar a quem ele citou). NENHUMA pergunta de qualificação, NENHUM horário. Termine sem cobrar resposta.`
+          : "Respeite. UMA frase: deixe a porta aberta (\"quando vocês conversarem, me chama que eu te mostro as opções que combinam\"). Ainda não há imóvel escolhido: NÃO prometa link, foto nem material. NENHUMA pergunta, NENHUM horário.",
       ].join("\n");
     case "encerrar_confirmado":
       return [
@@ -1178,12 +1215,19 @@ export function travaDeQualificacao(jogada: Jogada, estado: EstadoDaConversa): A
 }
 
 /** O bloco que entra no prompt enquanto a qualificação não terminou. */
-export function blocoDeQualificacao(pendente: AssuntoDoFunil, contexto: { nomeDoFoco: string | null }): string {
+export function blocoDeQualificacao(
+  pendente: AssuntoDoFunil,
+  contexto: { nomeDoFoco: string | null; jogadaJaPergunta?: boolean },
+): string {
   return [
     "AINDA EM QUALIFICAÇÃO (decidido pelo código): as perguntas vêm ANTES de qualquer indicação, porque é com elas que se escolhe o imóvel certo para a situação dele.",
     contexto.nomeDoFoco
       ? `Ele falou do ${contexto.nomeDoFoco}: pode responder sobre ELE, mas não indique nenhum outro imóvel pelo nome.`
       : "NÃO cite nenhum imóvel pelo nome, NÃO mande foto, planta, link nem catálogo, e NÃO convide para visita.",
-    `Se ele perguntou algo, responda em termos gerais ("tenho sim, algumas opções assim") e termine com UMA pergunta: ${PERGUNTA_DO_ASSUNTO[pendente]}.`,
+    // Quando a jogada já é a pergunta, repetir aqui fazia o modelo emendar
+    // uma SEGUNDA pergunta de outro assunto (v44, 29/09/2026).
+    contexto.jogadaJaPergunta
+      ? 'Se ele perguntou algo, responda em termos gerais ("tenho sim, algumas opções assim") antes da pergunta da tarefa acima.'
+      : `Se ele perguntou algo, responda em termos gerais ("tenho sim, algumas opções assim") e termine com UMA pergunta: ${PERGUNTA_DO_ASSUNTO[pendente]}.`,
   ].join("\n");
 }
