@@ -256,6 +256,7 @@ export async function restaurarLead(leadId: string): Promise<ResultadoCrm> {
 export async function excluirLeadDefinitivo(leadId: string): Promise<ResultadoCrm> {
   const ctx = await sessao();
   if ("erro" in ctx) return { erro: ctx.erro };
+  if (ctx.corretor.papel !== "gestor") return { erro: "Só o ADM exclui leads. Você pode arquivar." };
 
   const { data: lead } = await ctx.supabase
     .from("leads")

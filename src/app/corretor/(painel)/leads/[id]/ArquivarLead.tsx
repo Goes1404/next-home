@@ -24,10 +24,13 @@ export function ArquivarLead({
   leadId,
   arquivado,
   nome,
+  podeExcluir,
 }: {
   leadId: string;
   arquivado: boolean;
   nome: string;
+  /** Excluir é do ADM (30/09/2026); o corretor só arquiva e restaura. */
+  podeExcluir: boolean;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -79,7 +82,7 @@ export function ArquivarLead({
               <RotateCcw className="h-4 w-4" aria-hidden />
               Restaurar
             </button>
-            {!confirmando ? (
+            {!podeExcluir ? null : !confirmando ? (
               <button
                 type="button"
                 disabled={pendente}

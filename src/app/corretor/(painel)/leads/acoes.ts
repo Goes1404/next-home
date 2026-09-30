@@ -117,6 +117,7 @@ export async function restaurarLeadsEmLote(leadIds: string[]): Promise<Resultado
 export async function excluirLeadsEmLote(leadIds: string[]): Promise<ResultadoLote> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+  if (corretor.papel !== "gestor") return { erro: "Só o ADM exclui leads. Você pode arquivar." };
 
   const ids = idsValidos(leadIds);
   if (!ids) return { erro: "Selecione ao menos um lead." };

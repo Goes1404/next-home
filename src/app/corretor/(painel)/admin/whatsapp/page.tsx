@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
+import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
+import { BotaoDesconectar } from "./BotaoDesconectar";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "WhatsApp & IA da equipe" };
@@ -8,10 +10,14 @@ export const metadata: Metadata = { title: "WhatsApp & IA da equipe" };
 /**
  * O estado do WhatsApp e da IA de toda a equipe num lugar só.
  *
- * Esta tela só é possível por causa da 0031: até ela, as policies de
- * `whatsapp_*` e `ia_interacoes` amarravam tudo ao dono, e o gestor via
- * exatamente nada da operação dos colegas — apesar de comentários no código
- * prometerem o contrário.
+ * Desde a 0134 (30/09/2026) o ADM NÃO lê conversa, mensagem nem tom da IA
+ * de outro corretor. O que esta tela mostra é status e contagem: quem está
+ * conectado, em que modo a IA está, e como ela vem respondendo. Status e
+ * contagem saem pela chave de serviço (`clienteParaNumerosDaEquipe`), só
+ * com colunas que não carregam texto de ninguém.
+ *
+ * O único poder do ADM sobre o número de outro é desconectar
+ * (`BotaoDesconectar`), registrado em `admin_eventos`.
  */
 
 const ROTULO_MODO: Record<string, string> = {
@@ -33,6 +39,7 @@ const ROTULO_EVENTO: Record<string, string> = {
   corretor_desativado: "desativou",
   corretor_reativado: "reativou",
   leads_redistribuidos: "redistribuiu os leads de",
+  numero_desconectado: "desconectou o número de",
 };
 
 function Selo({ ok, texto }: { ok: boolean; texto: string }) {
@@ -50,18 +57,21 @@ function Selo({ ok, texto }: { ok: boolean; texto: string }) {
 export default async function AdminWhatsappPage() {
   await exigirGestorNaPagina();
   const supabase = await createClient();
+  // Status dos números e desempenho da IA: só colunas de status e contagem
+  // (0134). O tom de voz e as conversas de cada corretor ficam com ele.
+  const equipe = await clienteParaNumerosDaEquipe();
 
   // Os nomes vêm numa consulta à parte e são casados em memória: as relações
   // entre `admin_eventos`/instâncias e `corretores` não estão declaradas nos
   // tipos gerados, e um embed pelo nome da FK quebraria no primeiro rename.
   const [{ data: instancias }, { data: interacoes }, { data: eventos }, { data: pessoas }] =
     await Promise.all([
-    supabase
+    equipe
       .from("corretor_whatsapp_instancias")
       .select(
         "id, corretor_id, instance_name, status_conexao, telefone_conectado, conectado_em, modo_bot, bloqueado_ate",
       ),
-    supabase
+    equipe
       .from("ia_interacoes")
       .select("fallback, latencia_ms, anexos_bloqueados, avaliacao, created_at")
       .order("created_at", { ascending: false })
@@ -144,6 +154,12 @@ export default async function AdminWhatsappPage() {
                         peça para {nomePor.get(i.corretor_id) ?? "o corretor"} conectar em
                         WhatsApp → Conexão
                       </span>
+                    )}
+                    {i.status_conexao !== "desconectado" && (
+                      <BotaoDesconectar
+                        corretorId={i.corretor_id}
+                        nome={nomePor.get(i.corretor_id) ?? "este corretor"}
+                      />
                     )}
                   </div>
                 </li>

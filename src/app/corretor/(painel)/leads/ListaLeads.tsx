@@ -488,6 +488,8 @@ export function ListaLeads({
                   >
                     Restaurar
                   </button>
+                  {/* Excluir é do ADM (30/09/2026): o corretor arquiva e restaura. */}
+                  {gestor && (
                   <button
                     type="button"
                     onClick={() => setConfirmandoExclusao(true)}
@@ -496,6 +498,7 @@ export function ListaLeads({
                   >
                     Excluir
                   </button>
+                  )}
                 </>
               ) : (
                 <>

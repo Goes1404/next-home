@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
 import { numerosDeUso } from "@/lib/admin/usoDasNovidades";
 import { janelaDeDias } from "@/lib/admin/janelaDeDias";
 
@@ -10,6 +11,8 @@ const DIAS = 30;
  */
 export async function UsoDasNovidades() {
   const supabase = await createClient();
+  // Pós-visita da equipe: só datas e contagens, sem ler conversa (0134).
+  const equipe = await clienteParaNumerosDaEquipe();
   const desde = janelaDeDias(DIAS).corte.toISOString();
   const contar = (q: PromiseLike<{ count: number | null }>) => Promise.resolve(q).then((r) => r.count ?? 0);
 
@@ -32,7 +35,7 @@ export async function UsoDasNovidades() {
         .eq("tipo", "documentos_completos")
         .gte("created_at", desde),
     ),
-    supabase
+    equipe
       .from("whatsapp_followups")
       .select("conversa_id, enviado_em")
       .eq("tipo", "pos_visita")
@@ -51,7 +54,7 @@ export async function UsoDasNovidades() {
   let respondidos = 0;
   for (const f of posVisitas.data ?? []) {
     if (!f.enviado_em) continue;
-    const { count } = await supabase
+    const { count } = await equipe
       .from("whatsapp_mensagens")
       .select("id", { count: "exact", head: true })
       .eq("conversa_id", f.conversa_id)

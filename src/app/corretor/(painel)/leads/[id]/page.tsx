@@ -1,3 +1,4 @@
+import { souGestor } from "@/lib/corretorSessao";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -49,7 +50,7 @@ export default async function FichaLeadPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const lead = await getLeadDetalhado(id);
+  const [lead, gestor] = await Promise.all([getLeadDetalhado(id), souGestor()]);
   if (!lead) notFound();
 
   const supabase = await createClient();
@@ -286,7 +287,12 @@ export default async function FichaLeadPage({
         <LinhaDoTempo leadId={lead.id} itens={timeline} />
       </div>
 
-      <ArquivarLead leadId={lead.id} arquivado={Boolean(lead.arquivadoEm)} nome={lead.nome} />
+      <ArquivarLead
+        leadId={lead.id}
+        arquivado={Boolean(lead.arquivadoEm)}
+        nome={lead.nome}
+        podeExcluir={gestor}
+      />
 
       {/* Barra de ações no polegar (roadmap F2): no celular, as três ações
           que resolvem 90% das visitas à ficha ficam fixas no rodapé — chamar,

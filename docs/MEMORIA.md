@@ -8578,3 +8578,26 @@ Nota: [[totais-dos-anuncios-contam-e-dividem-o-mesmo]].
   aparecem num aviso à parte.
 - **O topo mostra os degraus** (clientes, qualificados, visitas, fechados) com
   o custo de cada um.
+
+## Perfis separados: o ADM não lê conversa alheia (0134, 30/09/2026)
+
+Nota: [[adm-nao-le-conversa-alheia]].
+
+- **Decisão do usuário:** o corretor mantém catálogo e marketing completos,
+  vê só as próprias campanhas pagas, as próprias vendas e o ranking, e não
+  exclui lead (arquiva). O ADM vê leads, funil e a leitura da IA da equipe,
+  exclui leads, desconecta números e vê a tela de Desempenho, mas **não lê
+  conversa, mensagem, telemetria nem correções de outro corretor**.
+- **Policies fora das migrations**: `whatsapp_conversas` tinha três, duas só
+  em produção (uma com `papel = 'gestor'` direto), e a policy do dono de
+  `corretor_whatsapp_instancias` também não estava em arquivo. Antes de
+  fechar acesso, listar `pg_policies` da tabela.
+- **Contagem da equipe pela chave de serviço, sem texto**:
+  `clienteParaNumerosDaEquipe()` confere o papel; a guarda
+  `admNaoLeConversa.test.ts` reprova coluna com texto nesses arquivos e
+  policy com `eh_gestor()` nas tabelas de conversa.
+- **Teste de RLS em produção sem deixar rastro**: migration + dados
+  sintéticos + troca de papel numa transação que termina em
+  `raise exception` com o resultado em JSON. A exceção desfaz tudo e
+  devolve a medição.
+

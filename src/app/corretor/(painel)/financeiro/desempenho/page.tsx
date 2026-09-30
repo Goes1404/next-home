@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getCorretorLogado, getEmpreendimentosParaFiltro, getEquipeAtiva } from "@/lib/corretorSessao";
+import { getEmpreendimentosParaFiltro, getEquipeAtiva } from "@/lib/corretorSessao";
 import { getLeadsLeves, getPrimeirasRespostas, getVendas } from "@/lib/financeiro/dados";
 import {
   desempenhoPorCorretor,
@@ -11,6 +11,7 @@ import {
 } from "@/lib/financeiro/desempenho";
 import { intervaloDo, lerPeriodo, PERIODOS } from "@/lib/financeiro/periodo";
 import { formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
+import { exigirGestorNaPagina } from "@/lib/guardas";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
 import { Suspense } from "react";
 import { MetasDaEquipe } from "./MetasDaEquipe";
@@ -78,9 +79,9 @@ export default async function DesempenhoPage({
 }: {
   searchParams: Promise<{ [k: string]: string | string[] | undefined }>;
 }) {
-  const corretor = await getCorretorLogado();
-  if (!corretor) return null;
-  const gestor = corretor.papel === "gestor";
+  // A tela compara a equipe inteira: é do ADM (30/09/2026).
+  const corretor = await exigirGestorNaPagina();
+  const gestor = true;
 
   const params = await searchParams;
   const periodo = lerPeriodo(params.periodo);

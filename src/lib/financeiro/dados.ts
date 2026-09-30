@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
 import { vgvCreditado, type StatusVenda } from "./venda";
 
 /**
@@ -356,7 +357,9 @@ export type PrimeiraRespostaLida = {
 };
 
 export async function getPrimeirasRespostas(desde: string): Promise<PrimeiraRespostaLida[]> {
-  const supabase = await createClient();
+  // Só horários, e só para o ADM (a tela de Desempenho é dele). A RLS da
+  // 0134 recortaria a view para as conversas do próprio ADM.
+  const supabase = await clienteParaNumerosDaEquipe();
   const { data, error } = await supabase
     .from("whatsapp_primeira_resposta")
     .select("corretor_id, primeira_fala_cliente, primeira_resposta_corretor, primeira_resposta_ia")

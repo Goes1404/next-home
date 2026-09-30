@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getEquipeAtiva } from "@/lib/corretorSessao";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getAgregadoDaEquipe } from "@/lib/admin/agregados";
-import { createClient } from "@/lib/supabase/server";
+import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
 import { ETAPA_LABEL, ETAPAS_FUNIL } from "@/lib/types";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { Suspense } from "react";
@@ -97,7 +97,9 @@ function Kpi({
 export default async function AdminVisaoGeralPage() {
   await exigirGestorNaPagina();
 
-  const supabase = await createClient();
+  // As duas views só trazem contagens; a RLS da 0134 recortaria para as
+  // conversas do próprio ADM.
+  const supabase = await clienteParaNumerosDaEquipe();
   const equipe = await getEquipeAtiva();
 
   const [agregado, { data: funilWhats }, { data: respostaWhats }] = await Promise.all([

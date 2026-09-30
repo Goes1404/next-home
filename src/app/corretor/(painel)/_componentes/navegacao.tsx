@@ -41,6 +41,8 @@ export type SubItemNav = {
   href: string;
   label: string;
   icone?: (props: SVGProps<SVGSVGElement>) => React.ReactElement;
+  /** Só o ADM enxerga. A página também se protege com `exigirGestorNaPagina`. */
+  gestor?: boolean;
 };
 
 export type ItemNav = {
@@ -183,7 +185,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/financeiro", label: "Vendas", icone: IconeCifrao },
           { href: "/corretor/financeiro/extrato", label: "Extrato e meta", icone: IconeExtrato },
           { href: "/corretor/financeiro/ranking", label: "Ranking de VGV", icone: IconeTrofeu },
-          { href: "/corretor/financeiro/desempenho", label: "Desempenho", icone: IconeGrafico },
+          { href: "/corretor/financeiro/desempenho", label: "Desempenho", icone: IconeGrafico, gestor: true },
         ],
       },
       {
@@ -353,7 +355,11 @@ export function ehPasta(item: ItemNav): boolean {
 export function gruposVisiveis(ehGestor: boolean): GrupoNav[] {
   return GRUPOS_NAV.map((g) => ({
     ...g,
-    itens: g.itens.filter((i) => !i.gestor || ehGestor),
+    itens: g.itens
+      .filter((i) => !i.gestor || ehGestor)
+      .map((i) =>
+        i.subitens ? { ...i, subitens: i.subitens.filter((sub) => !sub.gestor || ehGestor) } : i,
+      ),
   })).filter((g) => g.itens.length > 0);
 }
 

@@ -3,6 +3,7 @@ import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoD
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { createClient } from "@/lib/supabase/server";
+import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import { hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import {
@@ -33,8 +34,9 @@ export const dynamic = "force-dynamic";
  * como uma das portas para "qualificado", porque ela oscila de uma leitura
  * para a outra.
  *
- * A RLS recorta: o corretor vê os dele; o gestor vê os da equipe inteira
- * (mas só o dono edita).
+ * A RLS recorta: o corretor vê as campanhas dele; o ADM vê as da equipe
+ * inteira, inclusive as da imobiliária que ele mesmo cadastra (só o dono
+ * edita).
  */
 export default async function PaginaImpulsionamentos() {
   const corretor = await getCorretorLogado();
@@ -88,9 +90,14 @@ export default async function PaginaImpulsionamentos() {
   // Quantas mensagens cada cliente mandou. Paginado: o PostgREST entrega no
   // máximo 1000 linhas por vez, e cortar ali faria cliente que conversou
   // parecer que não conversou.
+  //
+  // O ADM vê as campanhas da equipe, mas desde a 0134 não lê conversa de
+  // outro corretor: a contagem dele vem só com id e remetente, pela chave
+  // de serviço. `ids` já saiu recortado pela RLS de `leads`.
+  const contador = corretor.papel === "gestor" ? await clienteParaNumerosDaEquipe() : supabase;
   const conversaDoLead = new Map<string, string>();
   for (let i = 0; i < ids.length; i += 300) {
-    const { data } = await supabase
+    const { data } = await contador
       .from("whatsapp_conversas")
       .select("id, lead_id")
       .in("lead_id", ids.slice(i, i + 300));
@@ -101,7 +108,7 @@ export default async function PaginaImpulsionamentos() {
   for (let i = 0; i < conversas.length; i += 200) {
     const lote = conversas.slice(i, i + 200);
     for (let pagina = 0; pagina < 20; pagina += 1) {
-      const { data } = await supabase
+      const { data } = await contador
         .from("whatsapp_mensagens")
         .select("conversa_id")
         .in("conversa_id", lote)
