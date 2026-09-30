@@ -8621,3 +8621,14 @@ Nota: [[menu-do-painel-reorganizado]].
 - **`page.tsx` não pode exportar componente para outra tela.** Por isso a
   conta da Meta foi para um arquivo próprio, e as guardas que liam o caminho
   antigo foram atualizadas.
+
+### A Administração ficou azul (30/09/2026)
+
+- **Era cinza de propósito, e o usuário achou "sem graça".** Passou a usar o
+  azul do logotipo. Não há outro arco de matiz livre: entre Marketing e Home,
+  no tema claro, sobram exatamente 40° de cada lado. Ao mexer nesse tom, rode
+  `npm run paleta`. Croma alto tira a cor da gama e desloca a matiz pintada.
+- **Reprodução visual com ícone de mentira gera pedido para consertar o que
+  não está quebrado**, e aconteceu de novo: bolinhas no lugar dos ícones
+  fizeram o usuário pedir símbolos que já existiam. Na reprodução, os ícones
+  saem do código, por `renderToStaticMarkup`.

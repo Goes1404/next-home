@@ -287,11 +287,11 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeDistribuir, secao: "Equipe" },
           { href: "/corretor/admin/contas", label: "Contas", icone: IconeCracha, secao: "Equipe" },
           { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeSmartphone, secao: "Equipe" },
-          { href: "/corretor/admin/construtoras", label: "Construtoras", icone: IconePredio, secao: "Negócio" },
+          { href: "/corretor/admin/construtoras", label: "Construtoras", icone: IconeGuindaste, secao: "Negócio" },
           { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa, secao: "Negócio" },
           { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta, secao: "Negócio" },
-          { href: "/corretor/admin/credito", label: "Crédito", icone: IconeEtiqueta, secao: "Negócio" },
-          { href: "/corretor/admin/marca", label: "Marca", icone: IconePaleta, secao: "Sistema" },
+          { href: "/corretor/admin/credito", label: "Crédito", icone: IconeBanco, secao: "Negócio" },
+          { href: "/corretor/admin/marca", label: "Marca", icone: IconeSelo, secao: "Sistema" },
         ],
       },
     ],
@@ -866,6 +866,39 @@ function IconeAlvo(p: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconeGuindaste(p: SVGProps<SVGSVGElement>) {
+  // Guindaste de obra: quem constrói, não o prédio pronto (que é o Catálogo).
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M6 21V4h2v17M3 21h8M8 5h12l-4 3H8" />
+      <path d="M17 8v4" />
+      <rect x="15.5" y="12" width="3" height="2.5" rx="0.5" />
+      <path d="M6 4l2 3" />
+    </svg>
+  );
+}
+
+function IconeBanco(p: SVGProps<SVGSVGElement>) {
+  // Fachada de banco: parâmetros de financiamento, não preço de imóvel.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M3 9l9-5 9 5H3z" />
+      <path d="M5 9v8M9.5 9v8M14.5 9v8M19 9v8M3 20h18" />
+    </svg>
+  );
+}
+
+function IconeSelo(p: SVGProps<SVGSVGElement>) {
+  // Selo com estrela: a identidade da imobiliária.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <circle cx="12" cy="10" r="6.5" />
+      <path d="M12 7l1 2.1 2.3.3-1.7 1.6.4 2.3L12 12.2l-2 1.1.4-2.3-1.7-1.6 2.3-.3z" />
+      <path d="M8.5 15.5L7 21l5-2.2L17 21l-1.5-5.5" />
+    </svg>
+  );
+}
+
 function IconeEtiqueta(p: SVGProps<SVGSVGElement>) {
   // Etiqueta de preço.
   return (

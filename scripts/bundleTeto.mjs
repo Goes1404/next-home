@@ -54,7 +54,9 @@ const TETOS_KB = {
   // `mensagensDoSite` (as mensagens que o porteiro reconhece), puxado via
   // `site.ts`. Sem ela, o visitante novo do site é ignorado pelo webhook.
   "/corretor/(painel)/imoveis/criar-imagem/page": 1009,
-  "/corretor/(painel)/imoveis/[slug]/importar/page": 1017,
+  // 30/09: +1 KB. Três ícones novos no menu (Construtoras, Crédito e Marca
+  // tinham ícone repetido); o menu vai em toda rota do painel.
+  "/corretor/(painel)/imoveis/[slug]/importar/page": 1018,
   // O editor do imóvel mostra na mesma tela as unidades, o andamento da obra
   // e os leads que combinam (com "reabrir perdidos"): 26/09.
   "/corretor/(painel)/imoveis/[slug]/page": 827,

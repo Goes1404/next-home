@@ -11,6 +11,7 @@ codigo:
   - src/app/corretor/(painel)/GavetaLateral.tsx
   - src/app/corretor/(painel)/admin/_componentes/SaudeDaOperacao.tsx
   - src/app/corretor/(painel)/admin/anuncios/ContaDaMeta.tsx
+  - src/app/globals.css
 created: 2026-09-30
 updated: 2026-09-30
 summary: Reorganização do menu do painel em 30/09/2026, a pedido. Criar arte e Criar vídeo foram para Marketing e o Consultor para Assistente. A Administração virou um tópico com três seções (Equipe, Negócio, Sistema). "Atendimento da IA" passou a se chamar "Respostas da IA", e a conta da Meta mudou-se para Anúncios pagos. Adicionar leads, Modelos, Ordem no site, Fila de cadastro, SLA e Eventos saíram do menu e continuam como botões na tela de que fazem parte. No visual, cada tópico ganhou um quadradinho na cor da sua seção, e os subtópicos ganharam ícone e títulos de seção.
@@ -68,3 +69,20 @@ seja por `tambem`. Assim nenhum link salvo quebra.
   aprovou a troca.
 
 Veja também [[navegacao-do-painel-tem-regua]] e [[adm-nao-le-conversa-alheia]].
+
+## A Administração ficou azul, e três ícones deixaram de se repetir
+
+- **O cinza da Administração saiu a pedido do usuário** ("sem graça"). Ela
+  agora usa o azul do logotipo. O único arco de matiz livre para mais um
+  módulo fica entre Marketing (205°) e Home (292°). No tema claro, medindo a
+  cor que o navegador pinta, sobram exatamente 40° de cada lado, o mínimo da
+  `npm run paleta`. Por isso a matiz ficou com decimal (246,3) e o claro tem
+  menos croma que o escuro: com croma alto a cor sai da gama, a matiz
+  pintada desloca e um dos lados fica abaixo de 40°.
+- **Ícones repetidos:** Construtoras usava o mesmo prédio do Catálogo,
+  Crédito a mesma etiqueta de Preços e Marca a mesma paleta de Criar arte.
+  Ganharam guindaste, banco e selo.
+- **Lição de método:** a primeira captura mostrada ao usuário vinha de uma
+  reprodução que desenhava bolinhas no lugar dos ícones. Ele pediu "crie
+  símbolos" para ícones que já existiam. Agora a reprodução usa os SVGs
+  reais, gerados com `renderToStaticMarkup` sobre `GRUPOS_NAV`.

@@ -253,17 +253,25 @@
   --color-mod-marketing-hover: light-dark(oklch(0.43 0.13 205), oklch(0.82 0.12 205));
   --color-mod-marketing-suave: light-dark(oklch(0.45 0.13 205), oklch(0.86 0.1 205));
 
-  --color-mod-admin: light-dark(oklch(0.42 0.035 275), oklch(0.68 0.03 275));
-  --color-mod-admin-hover: light-dark(oklch(0.34 0.035 275), oklch(0.76 0.028 275));
-  --color-mod-admin-suave: light-dark(oklch(0.36 0.035 275), oklch(0.85 0.022 275));
+  /*
+   * Administração no AZUL DO LOGOTIPO (30/09/2026, pedido do usuário: o cinza
+   * era "sem graça"). O arco livre entre Marketing (205) e Início (292) é o
+   * único que comporta mais um módulo, e ele é justo: no tema claro, medido
+   * no que o navegador pinta, sobram 40° de cada lado, exatamente o mínimo da
+   * guarda. Por isso a matiz tem decimal e o claro tem menos croma que o
+   * escuro — mais croma empurra a matiz para fora da gama e desequilibra os
+   * dois lados. Mexer aqui pede `npm run paleta`. Fica perto de
+   * `etapa-contato`, o que é aceito: cor de módulo mora no cromo, cor de
+   * etapa mora no registro, e as duas não dividem o mesmo lugar.
+   */
+  --color-mod-admin: light-dark(oklch(0.48 0.155 246.3), oklch(0.72 0.14 250));
+  --color-mod-admin-hover: light-dark(oklch(0.41 0.155 246.3), oklch(0.8 0.12 250));
+  --color-mod-admin-suave: light-dark(oklch(0.43 0.155 246.3), oklch(0.85 0.1 250));
 
   /*
-   * Conta e Administração são os dois módulos META — não são trabalho, são a
-   * ferramenta se configurando. Ficam quase sem croma de propósito: as quatro
-   * cores vivas pertencem ao trabalho, e dar uma quinta e uma sexta a telas
-   * que se visita uma vez por mês roubaria distinção de quem precisa dela.
-   * Diferem entre si pela temperatura do cinza — frio na equipe, quente no
-   * pessoal — o bastante para não serem a mesma tela.
+   * Conta é o módulo META: não é trabalho, é a ferramenta se configurando
+   * (perfil, senha). Fica quase sem croma de propósito, num cinza quente —
+   * tela que se visita uma vez por mês não precisa de cor viva.
    */
   --color-mod-conta: light-dark(oklch(0.42 0.022 70), oklch(0.7 0.02 70));
   --color-mod-conta-hover: light-dark(oklch(0.34 0.022 70), oklch(0.78 0.018 70));
