@@ -44,7 +44,14 @@ export function Regioes({ catalogo }: { catalogo: Empreendimento[] }) {
           </p>
         </Reveal>
 
-        <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Com quatro regiões, três colunas deixavam a quarta sozinha numa
+            linha, com dois terços da largura vazios (30/09/2026). */}
+        <ul
+          className={
+            "mt-8 grid gap-4 sm:grid-cols-2 " +
+            (regioes.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3")
+          }
+        >
           {regioes.map((regiao, i) => (
             <Reveal key={regiao.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
                 <Link

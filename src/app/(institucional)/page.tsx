@@ -7,6 +7,7 @@ import { GlassSurface } from "@/components/glass/GlassSurface";
 import { CabeNoBolso } from "@/components/home/CabeNoBolso";
 import { CtaFinal } from "@/components/home/CtaFinal";
 import { EscolhaDeEstagio } from "@/components/home/EscolhaDeEstagio";
+import { MosaicoDoHeroi } from "@/components/home/MosaicoDoHeroi";
 import { Regioes } from "@/components/home/Regioes";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { AberturaHome } from "@/components/motion/AberturaHome";
@@ -140,7 +141,7 @@ export default async function HomeInstitucional() {
             centralizado, sem colidir com o botão no canto. Do `sm` para
             cima volta ao centro, porque lá quem manda na composição é o
             texto do hero. */}
-        <section className="relative flex min-h-svh flex-col items-center justify-end px-4 pt-24 pb-6 sm:justify-center sm:pt-28 sm:pb-20">
+        <section className="relative flex min-h-svh flex-col items-center justify-end px-4 pt-24 pb-6 sm:justify-center sm:px-8 sm:pt-28 sm:pb-20">
           {/* O medidor do parallax do fundo. Precisa de um ancestral que
               ROLE (esta seção, agora `relative`) — o fundo é `fixed` e não
               serve de referência de scroll. */}
@@ -156,7 +157,13 @@ export default async function HomeInstitucional() {
               no PRÓPRIO nó, e os dois nunca dividem o mesmo nó. Título a -0.22 e busca a -0.10 — o título
               escapa da tela antes, e é essa diferença que se lê como planos
               separados em vez de um bloco só subindo. */}
-          <Camada velocidade={-0.22} className="w-full max-w-4xl text-center">
+          {/* No computador o herói vira DUAS colunas (30/09/2026): texto e
+              busca à esquerda, alinhados à esquerda, e o mosaico de fotos à
+              direita. Abaixo de `lg` o invólucro é só uma coluna centrada,
+              exatamente como antes — o celular não muda. */}
+          <div className="flex w-full flex-col items-center lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-14">
+          <div className="flex w-full flex-col items-center lg:items-start">
+          <Camada velocidade={-0.22} className="w-full max-w-4xl text-center lg:max-w-none lg:text-left">
             <p
               data-abertura="0"
               className="so-para-leitor text-fluid-xs sm:mb-4 font-medium tracking-[0.2em] text-acento-suave uppercase"
@@ -174,14 +181,14 @@ export default async function HomeInstitucional() {
             </h1>
             <p
               data-abertura="2"
-              className="so-para-leitor text-fluid-base mx-auto sm:mt-6 max-w-xl text-corpo-suave"
+              className="so-para-leitor text-fluid-base mx-auto sm:mt-6 max-w-xl text-corpo-suave lg:mx-0"
             >
               Lançamentos na planta e prontos para morar, com condições
               facilitadas e atendimento direto no WhatsApp.
             </p>
           </Camada>
 
-          <Camada velocidade={-0.1} className="mt-8 w-full max-w-3xl sm:mt-10">
+          <Camada velocidade={-0.1} className="mt-8 w-full max-w-3xl sm:mt-10 lg:max-w-none">
             <div data-abertura="3">
               <GlassSurface preset="painel" className="px-5 py-5 sm:px-7 sm:py-7">
                 <FiltroForm
@@ -194,6 +201,14 @@ export default async function HomeInstitucional() {
               </GlassSurface>
             </div>
           </Camada>
+          </div>
+
+          <Camada velocidade={-0.06} className="w-full">
+            <div data-abertura="2">
+              <MosaicoDoHeroi imoveis={destaques} />
+            </div>
+          </Camada>
+          </div>
 
           {/* A ponte para o conteúdo (09/09/2026). O herói terminava num vão
               escuro de meia tela e nada dizia que havia página embaixo — quem
@@ -232,9 +247,20 @@ export default async function HomeInstitucional() {
                   </span>{" "}
                   de {todos.length} imóveis, escolhidos a dedo
                 </p>
-                <TituloEditorial className="text-fluid-2xl text-titulo">
-                  Oportunidades em destaque
-                </TituloEditorial>
+                <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
+                  <TituloEditorial className="text-fluid-2xl text-titulo">
+                    Oportunidades em destaque
+                  </TituloEditorial>
+                  {/* No computador o link sobe para a linha do título: é onde
+                      o olho procura "ver mais", e poupa uma faixa vazia no
+                      fim da seção. No celular ele continua embaixo. */}
+                  <Link
+                    href="/empreendimentos"
+                    className="botao-vivo hidden shrink-0 items-center gap-2 rounded-full border border-acento-linha bg-superficie/70 px-5 py-2.5 text-sm font-medium text-acento-suave lg:inline-flex"
+                  >
+                    Ver todos os {todos.length} imóveis →
+                  </Link>
+                </div>
 
                 <div className="mt-10 grid w-full gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {destaques.map((e, i) => (
@@ -247,7 +273,7 @@ export default async function HomeInstitucional() {
                   ))}
                 </div>
 
-                <Reveal className="mt-10">
+                <Reveal className="mt-10 lg:hidden">
                   <Link
                     href="/empreendimentos"
                     className="text-fluid-base font-medium text-acento-suave underline-offset-4 hover:underline inline-flex min-h-11 items-center"
@@ -281,9 +307,17 @@ export default async function HomeInstitucional() {
                 </span>{" "}
                 bairros em {regioes.cidades.length} cidades
               </p>
-              <TituloEditorial className="text-fluid-2xl text-titulo">
-                Onde cada imóvel está
-              </TituloEditorial>
+              <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
+                <TituloEditorial className="text-fluid-2xl text-titulo">
+                  Onde cada imóvel está
+                </TituloEditorial>
+                <Link
+                  href="/mapa"
+                  className="botao-vivo hidden shrink-0 items-center gap-2 rounded-full border border-acento-linha bg-superficie/70 px-5 py-2.5 text-sm font-medium text-acento-suave lg:inline-flex"
+                >
+                  Abrir o mapa em tela cheia →
+                </Link>
+              </div>
               <Reveal from="nenhuma" delay={0.2}>
                 <p className="text-fluid-base mt-3 max-w-xl text-apoio">
                   Cada ponto é um imóvel do catálogo. Toque no globo para abrir
@@ -301,7 +335,7 @@ export default async function HomeInstitucional() {
                 />
               </Reveal>
 
-              <Reveal className="mt-6">
+              <Reveal className="mt-6 lg:hidden">
                 <Link
                   href="/mapa"
                   className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline inline-flex min-h-11 items-center"
@@ -322,9 +356,19 @@ export default async function HomeInstitucional() {
                   </span>{" "}
                   {corretores.length === 1 ? "corretor" : "corretores"} com CRECI, na região
                 </p>
-                <TituloEditorial className="text-fluid-2xl text-titulo">
-                  Equipe pronta para negociar
-                </TituloEditorial>
+                <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
+                  <TituloEditorial className="text-fluid-2xl text-titulo">
+                    Equipe pronta para negociar
+                  </TituloEditorial>
+                  {corretores.length > equipe.length && (
+                    <Link
+                      href="/corretores"
+                      className="botao-vivo hidden shrink-0 items-center gap-2 rounded-full border border-acento-linha bg-superficie/70 px-5 py-2.5 text-sm font-medium text-acento-suave lg:inline-flex"
+                    >
+                      Ver toda a equipe →
+                    </Link>
+                  )}
+                </div>
 
                 <div className="mt-8 grid w-full gap-4 sm:grid-cols-2">
                   {/* CartaoTilt no lugar do Reveal, não junto: o tilt já faz a
@@ -339,7 +383,7 @@ export default async function HomeInstitucional() {
                 </div>
 
                 {corretores.length > equipe.length && (
-                  <Reveal className="mt-8">
+                  <Reveal className="mt-8 lg:hidden">
                     <Link
                       href="/corretores"
                       className="text-fluid-sm font-medium text-acento-suave underline-offset-4 hover:underline inline-flex min-h-11 items-center"
@@ -395,7 +439,7 @@ export default async function HomeInstitucional() {
           </section>
 
           {/* A porta do vendedor — única rota da home para /anunciar-imovel. */}
-          <section className="px-4 py-16 sm:px-8 sm:py-24">
+          <section className="px-4 pt-16 pb-8 sm:px-8 sm:pt-24 sm:pb-10">
             {/* CartaoTilt no lugar do Reveal: ele traz o brilho que segue o
                 ponteiro e já faz a própria entrada. Somar o Reveal daria dois
                 donos da opacidade.
@@ -410,7 +454,10 @@ export default async function HomeInstitucional() {
                     <h2 className="font-display text-fluid-xl text-titulo">{VENDEDOR.titulo}</h2>
                     <p className="text-fluid-sm mt-2 max-w-lg text-legenda">{VENDEDOR.texto}</p>
                   </div>
-                  <span className="text-fluid-base shrink-0 font-medium text-acento-suave transition-colors group-hover:text-acento-intenso">
+                  {/* Pílula, não texto solto: é a ação do cartão, e no computador
+                      um link de texto à direita de 700px vazios não se lia
+                      como botão (30/09/2026). */}
+                  <span className="text-fluid-sm inline-flex shrink-0 items-center self-start rounded-full border border-acento-linha bg-superficie/80 px-5 py-2.5 font-medium text-acento-suave transition-colors group-hover:border-acento group-hover:text-acento-intenso sm:self-auto">
                     {VENDEDOR.cta} →
                   </span>
                 </GlassSurface>

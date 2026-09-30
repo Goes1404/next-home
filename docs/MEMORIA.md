@@ -8632,3 +8632,22 @@ Nota: [[menu-do-painel-reorganizado]].
   não está quebrado**, e aconteceu de novo: bolinhas no lugar dos ícones
   fizeram o usuário pedir símbolos que já existiam. Na reprodução, os ícones
   saem do código, por `renderToStaticMarkup`.
+
+## A home do computador (30/09/2026)
+
+Nota: [[home-do-computador-em-duas-colunas]].
+
+- **O herói do computador não tinha nenhuma foto** desde que o vídeo saiu
+  (13/09). Hoje ele tem duas colunas: texto e busca à esquerda, e à direita
+  um mosaico com três capas reais dos destaques (`MosaicoDoHeroi`, só `lg`).
+  O celular não mudou.
+- **`.so-para-leitor` entortava o subtítulo.** A regra de `sm` para cima
+  desfazia o esconder com `margin: 0`, na mesma camada e depois dos
+  utilitários, e com isso vencia `mx-auto` e `sm:mt-6`. Hoje a regra só vale
+  abaixo de `sm`. Uma regra que desfaz outra por breakpoint também apaga os
+  utilitários do elemento.
+- **Imagem que só aparece no computador:** use `sizes` com `1px` abaixo do
+  breakpoint e `eager` no lugar de `priority`. `priority` emite um preload
+  sem mídia e o celular baixaria a foto inteira.
+- **`CtaFinal` agora ocupa a largura das seções** em todas as 7 páginas, com
+  o texto à esquerda e os botões à direita a partir de `lg`.
