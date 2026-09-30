@@ -12,14 +12,15 @@ import type { Midia } from "@/lib/types";
 /**
  * Quantas fotos da grade aparecem antes do "Ver mais".
  *
- * Seis é o que fecha duas fileiras no desktop (3 colunas) e três no celular
- * (2 colunas) — a grade termina reta, sem uma sobra solitária que pareça
- * corte acidental. Cadastro com 30 fotos entregava 30 `<Image>` de uma vez
+ * Cinco é um bloco do mosaico (uma célula alta + quatro paisagens): fecha
+ * duas fileiras no desktop (3 colunas) e três no celular (2 colunas), sem
+ * sobra solitária. Eram seis, e a sexta abria um bloco novo sozinha, alta,
+ * sem vizinhas — a grade terminava torta (30/09/2026). Cadastro com 30 fotos entregava 30 `<Image>` de uma vez
  * na primeira pintura e empurrava o resto da página para longe do polegar;
  * quem quer ver tudo pede, e o Lightbox continua percorrendo o acervo
  * INTEIRO desde o primeiro clique — o corte é de exibição, não de acervo.
  */
-const FOTOS_ANTES_DE_VER_MAIS = 6;
+const FOTOS_ANTES_DE_VER_MAIS = 5;
 
 /**
  * Mosaico editorial: a primeira foto abre em destaque com parallax, as
@@ -90,8 +91,13 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
               className={
                 "overflow-hidden rounded-2xl " +
                 // Ritmo do mosaico: a cada bloco de 5, a primeira célula é
-                // retrato e alta; as outras, paisagem — revista, não tabela.
-                (i % 5 === 0 ? "row-span-2 aspect-[3/4]" : "aspect-[4/3]")
+                // alta e ocupa as duas linhas das quatro paisagens ao lado.
+                // Sem proporção própria: ela ESTICA até a altura das duas
+                // linhas. Com `aspect-[3/4]` ela saía mais baixa que as duas
+                // paisagens e deixava um buraco embaixo (30/09/2026). Bloco
+                // incompleto no fim não ganha célula alta: sozinha, ela não
+                // teria linhas vizinhas para medir.
+                (i % 5 === 0 && i + 4 < visiveis.length ? "row-span-2" : "aspect-[4/3]")
               }
             >
               <button
@@ -124,7 +130,7 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
               onClick={() => setTudoVisivel(true)}
               /* Botão largo no celular: é alvo de polegar, e a seção inteira
                  depende dele para revelar o resto do acervo. */
-              className="text-fluid-sm min-h-[48px] w-full max-w-xs cursor-pointer rounded-full border border-linha-forte bg-superficie/70 px-6 font-medium text-titulo backdrop-blur transition-colors hover:border-acento hover:text-acento-suave focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte sm:w-auto"
+              className="text-fluid-sm min-h-[48px] w-full max-w-xs cursor-pointer rounded-full border border-linha-forte bg-superficie/70 px-6 font-medium text-titulo md:backdrop-blur transition-colors hover:border-acento hover:text-acento-suave focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte sm:w-auto"
             >
               Ver mais {escondidas} {escondidas === 1 ? "foto" : "fotos"}
             </button>

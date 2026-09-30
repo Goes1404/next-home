@@ -68,7 +68,7 @@ export function NavAncoras({ secoes }: { secoes: Secao[] }) {
       aria-label="Seções do empreendimento"
       className="sticky top-20 z-30 -mx-4 mb-2 px-4"
     >
-      <ul className="scrollbar-none relative flex gap-1 overflow-x-auto rounded-full border border-linha/10 bg-fundo/85 p-1.5 backdrop-blur-xl backdrop-saturate-150">
+      <ul className="scrollbar-none relative flex gap-1 overflow-x-auto rounded-full border border-linha/10 bg-fundo/85 p-1.5 md:backdrop-blur-xl backdrop-saturate-150">
         <span
           ref={progresso}
           aria-hidden

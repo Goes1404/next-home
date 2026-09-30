@@ -621,3 +621,79 @@ export async function getCorretoresParaAdmin(): Promise<CorretorAdmin[]> {
     leads: porCorretor.get(c.id) ?? 0,
   }));
 }
+
+/**
+ * Os números que o menu do painel mostra ao lado dos subtópicos (30/09/2026).
+ *
+ * Eles moravam nas abas de cada tela e sumiram junto com a caixa de abas
+ * (29/09). Voltam para o MENU, que é onde a pessoa decide para onde ir. Só o
+ * que muda o que o corretor faz agora: visitas de hoje, respostas da IA à
+ * espera de 👍/👎, mensagens na fila de disparo e se o número está no ar.
+ *
+ * Tudo recortado pelo PRÓPRIO corretor, mesmo para o gestor: a RLS dele
+ * enxerga a equipe inteira em `leads`, e um contador que somasse as visitas
+ * de todo mundo apontaria para uma tela que só lista as dele. Quatro
+ * consultas de contagem (`head: true`), em paralelo — nenhuma traz linha.
+ */
+export type ContadoresDoMenu = {
+  visitasHoje: number;
+  semRevisao: number;
+  naFila: number;
+  /** `null` quando o corretor nunca criou instância: não há o que avisar. */
+  conectado: boolean | null;
+};
+
+export async function getContadoresDoMenu(corretorId: string): Promise<ContadoresDoMenu> {
+  const supabase = await createClient();
+  const dia = diaEmSaoPaulo();
+
+  const [visitas, revisao, instancia, campanhas] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("corretor_id", corretorId)
+      .is("arquivado_em", null)
+      .eq("etapa", "visita_agendada")
+      .gte("visita_agendada_em", `${dia}T00:00:00-03:00`)
+      .lte("visita_agendada_em", `${dia}T23:59:59-03:00`),
+    // Os mesmos filtros da fila de revisão da tela de Respostas da IA —
+    // senão o número do menu e a lista da tela discordam.
+    supabase
+      .from("ia_interacoes")
+      .select("id", { count: "exact", head: true })
+      .eq("corretor_id", corretorId)
+      .in("origem", ["webhook", "followup"])
+      .eq("e_teste", false)
+      .in("acao", ["respondida", "visita_confirmada"])
+      .is("avaliacao", null)
+      .not("conversa_id", "is", null),
+    supabase
+      .from("corretor_whatsapp_instancias")
+      .select("status_conexao")
+      .eq("corretor_id", corretorId)
+      .maybeSingle(),
+    supabase
+      .from("whatsapp_campanhas")
+      .select("id")
+      .eq("corretor_id", corretorId)
+      .eq("status", "em_andamento"),
+  ]);
+
+  let naFila = 0;
+  const ids = (campanhas.data ?? []).map((c) => c.id);
+  if (ids.length > 0) {
+    const { count } = await supabase
+      .from("whatsapp_campanhas_fila")
+      .select("id", { count: "exact", head: true })
+      .in("campanha_id", ids)
+      .eq("status", "pendente");
+    naFila = count ?? 0;
+  }
+
+  return {
+    visitasHoje: visitas.count ?? 0,
+    semRevisao: revisao.count ?? 0,
+    naFila,
+    conectado: instancia.data ? instancia.data.status_conexao === "conectado" : null,
+  };
+}

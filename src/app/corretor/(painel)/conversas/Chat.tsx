@@ -38,6 +38,8 @@ import {
   mesclar,
   estadoDa,
   SELO,
+  JANELA_DO_RECONCILIO,
+  MENSAGENS_POR_PAGINA,
   type ConversaResumo,
   type MensagemRow,
   type ConversaRow,
@@ -374,7 +376,7 @@ export function Chat({
         if (resultado.erro) onErro(resultado.erro);
         if (resultado.respondeu) {
           presoNoFimRef.current = true;
-          onMesclar(await lerMensagens(conversa.id));
+          onMesclar(await lerMensagens(conversa.id, undefined, JANELA_DO_RECONCILIO));
         }
         return;
       }
@@ -424,7 +426,7 @@ export function Chat({
 
     if (resultado.iaAtivada) onEstado("ativa");
     else if (estado === "ativa") onEstado("pausada_humano");
-    const frescas = await lerMensagens(conversa.id);
+    const frescas = await lerMensagens(conversa.id, undefined, JANELA_DO_RECONCILIO);
     onRemover(temporaria.id);
     onMesclar(frescas);
   }
@@ -443,7 +445,7 @@ export function Chat({
       return;
     }
     if (estado === "ativa") onEstado("pausada_humano");
-    onMesclar(await lerMensagens(conversa.id));
+    onMesclar(await lerMensagens(conversa.id, undefined, JANELA_DO_RECONCILIO));
   }
 
   async function carregarAnteriores() {
@@ -460,7 +462,7 @@ export function Chat({
     presoNoFimRef.current = false;
 
     const pagina = await lerMensagens(conversa.id, primeira.criadoEm);
-    if (pagina.length < 100) setEsgotado(true);
+    if (pagina.length < MENSAGENS_POR_PAGINA) setEsgotado(true);
     if (pagina.length > 0) {
       onMesclar(pagina);
       requestAnimationFrame(() => {

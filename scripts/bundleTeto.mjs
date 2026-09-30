@@ -42,25 +42,29 @@ const TETOS_KB = {
   // (F4); o que sobra é o supabase-js (245 KB, Realtime) e o GSAP (111 KB)
   // que o layout RAIZ monta em toda rota — inclusive no painel. Tirar os
   // dois do painel é a F4b.
-  "/corretor/(painel)/pessoas/page": 1000,
+  // 30/09: +3 KB em toda rota do painel com folga curta: os contadores do
+  // menu (visitas de hoje, respostas sem revisão, fila, número no ar) e a
+  // barrinha de carregamento dos links (`useLinkStatus`). O menu vai em
+  // toda rota do painel.
+  "/corretor/(painel)/pessoas/page": 1001,
   // 28/09: +9 KB (conversas) e +16 (importar) vêm de funcionalidades pedidas:
   // o painel ganhou a transição de tela e a luz dos cartões no LAYOUT (vale
   // em toda rota do painel), e o importador ganhou tours, vídeo em arquivo e
   // a leitura do site da construtora.
   // 29/09: +2 KB em conversas, do motivo do 👎 e do resumo semanal das
   // avaliações (0131), que já tinha ido ao ar 1 KB acima do teto.
-  "/corretor/(painel)/conversas/page": 1032,
+  "/corretor/(painel)/conversas/page": 1036,
   // 28/09: +1 KB em criar-imagem, editor do imóvel e vídeo é
   // `mensagensDoSite` (as mensagens que o porteiro reconhece), puxado via
   // `site.ts`. Sem ela, o visitante novo do site é ignorado pelo webhook.
-  "/corretor/(painel)/imoveis/criar-imagem/page": 1009,
+  "/corretor/(painel)/imoveis/criar-imagem/page": 1013,
   // 30/09: +1 KB. Três ícones novos no menu (Construtoras, Crédito e Marca
   // tinham ícone repetido); o menu vai em toda rota do painel.
-  "/corretor/(painel)/imoveis/[slug]/importar/page": 1018,
+  "/corretor/(painel)/imoveis/[slug]/importar/page": 1021,
   // O editor do imóvel mostra na mesma tela as unidades, o andamento da obra
   // e os leads que combinam (com "reabrir perdidos"): 26/09.
-  "/corretor/(painel)/imoveis/[slug]/page": 827,
-  "/corretor/(painel)/marketing/video/page": 1001,
+  "/corretor/(painel)/imoveis/[slug]/page": 831,
+  "/corretor/(painel)/marketing/video/page": 1005,
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
   // 28/09: +3 KB na home e +7 na listagem são o coração de favorito em cada

@@ -1,6 +1,21 @@
 import type { MensagemConversa } from "./acoes";
 
 /**
+ * Quanto se lê de uma conversa (30/09/2026). A abertura trazia 100 mensagens
+ * e o reconcílio de 15s relia as MESMAS 100, com a avaliação e o contexto de
+ * cada resposta da IA, o tempo todo em que a conversa estivesse aberta.
+ *
+ * - Abertura e "ver anteriores": 60 — mais que uma tela cheia no computador,
+ *   e o resto vem por página.
+ * - Reconcílio e releitura depois de enviar: só as 20 mais recentes. Ele
+ *   existe para trazer o que mudou PERTO do fim (avaliação, vínculo com a
+ *   telemetria, a mensagem que o Realtime perdeu); `mesclar` junta por id e
+ *   não apaga as páginas antigas.
+ */
+export const MENSAGENS_POR_PAGINA = 60;
+export const JANELA_DO_RECONCILIO = 20;
+
+/**
  * O MODELO da conversa do painel — tipos e utilitários puros — separado do
  * componente `Chat` (F4 do roadmap de performance, 13/09/2026).
  *

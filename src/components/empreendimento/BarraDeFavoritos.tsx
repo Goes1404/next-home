@@ -19,7 +19,7 @@ export function BarraDeFavoritos() {
   return (
     <Link
       href={alvo}
-      className="botao-vivo fixed bottom-6 left-4 z-40 inline-flex min-h-11 items-center gap-2 rounded-full bg-ink-950/90 px-4 text-sm font-semibold text-white shadow-lg backdrop-blur"
+      className="botao-vivo fixed bottom-6 left-4 z-40 inline-flex min-h-11 items-center gap-2 rounded-full bg-ink-950/90 px-4 text-sm font-semibold text-white shadow-lg md:backdrop-blur"
     >
       <Heart className="h-4 w-4 fill-rose-500 text-rose-500" aria-hidden />
       {favoritos.length} {favoritos.length === 1 ? "favorito" : "favoritos"}

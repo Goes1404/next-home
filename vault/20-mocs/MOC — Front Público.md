@@ -65,3 +65,4 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[MOC — Ingestão de Mídia]] · [[Home]]
 - [[o-imovel-nao-tem-mais-corretor-dono]] — todo WhatsApp do site pelo porteiro; coluna corretor_id caiu na 0129
 - [[home-do-computador-em-duas-colunas]] — herói em duas colunas com mosaico de fotos; `.so-para-leitor` zerava a margem (30/09)
+- [[nove-ajustes-de-frontend-de-30-09]] — tokens de `cartao` no site, vidro só a partir de `md` (−18% de rolagem no celular), galeria sem buraco (30/09)

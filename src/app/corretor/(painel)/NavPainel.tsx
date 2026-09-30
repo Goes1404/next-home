@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { destinoAtivo, ehPasta, gruposVisiveis, moduloDoTopico, subitemAtivo } from "./_componentes/navegacao";
+import { useContadoresDoMenu } from "./_componentes/contadoresDoMenu";
+import { MarcaDoMenu, temPendencia } from "./_componentes/MarcaDoMenu";
+import { CarregandoLink } from "./_componentes/CarregandoLink";
 
 /**
  * Barra lateral do painel (desktop).
@@ -29,6 +32,7 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
   const atual = usePathname();
   const grupos = gruposVisiveis(ehGestor);
   const dono = destinoAtivo(atual);
+  const marcas = useContadoresDoMenu();
 
   // Pasta aberta à mão nesta rota; ao navegar, volta a ser a da rota nova.
   const [manual, setManual] = useState<{ rota: string | null; href: string | null } | null>(null);
@@ -102,6 +106,15 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                       <Icone className="h-[18px] w-[18px]" />
                     </span>
                     {item.label}
+                    {/* Pasta fechada: um ponto diz que há pendência lá dentro,
+                        já que os números moram nos subtópicos escondidos. */}
+                    {pasta && !aberta && temPendencia((item.subitens ?? []).map((s) => s.href), marcas) && (
+                      <span
+                        aria-hidden
+                        className={cn("ml-auto size-2 shrink-0 rounded-full", ativa ? "bg-sobre-cor" : "bg-acento")}
+                      />
+                    )}
+                    {!pasta && <MarcaDoMenu marca={marcas[item.href]} sobreSolido={ativa} />}
                     {pasta && (
                       <svg
                         viewBox="0 0 24 24"
@@ -112,7 +125,10 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         className={cn(
-                          "ml-auto h-3.5 w-3.5 shrink-0 opacity-60 transition-transform motion-reduce:transition-none",
+                          "h-3.5 w-3.5 shrink-0 opacity-60 transition-transform motion-reduce:transition-none",
+                          // A seta vai para a direita sozinha só quando não há
+                          // ponto de pendência antes dela.
+                          !(!aberta && temPendencia((item.subitens ?? []).map((s) => s.href), marcas)) && "ml-auto",
                           aberta && "rotate-90",
                         )}
                       >
@@ -137,6 +153,7 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                     ) : (
                       <Link href={item.href} aria-current={ativa ? "page" : undefined} className={classes}>
                         {miolo}
+                        <CarregandoLink />
                       </Link>
                     )}
 
@@ -163,7 +180,7 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                                 href={sub.href}
                                 aria-current={aberto ? "page" : undefined}
                                 className={cn(
-                                  "flex min-h-9 items-center gap-2.5 rounded-lg px-2 py-1.5 text-[14px] transition-colors",
+                                  "relative flex min-h-9 items-center gap-2.5 rounded-lg px-2 py-1.5 text-[14px] transition-colors",
                                   /* O subtópico aberto ganhou FUNDO: só a cor
                                      do texto não vencia a régua vertical ao
                                      lado, e numa lista de seis a linha atual
@@ -175,6 +192,8 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                               >
                                 {IconeSub && <IconeSub aria-hidden className="h-4 w-4 shrink-0 opacity-80" />}
                                 {sub.label}
+                                <MarcaDoMenu marca={marcas[sub.href]} />
+                                <CarregandoLink />
                               </Link>
                             </li>
                           );

@@ -2,6 +2,7 @@
 
 import { ehMotivoDaAvaliacao, type MotivoDaAvaliacao } from "@/lib/whatsapp/motivosDaAvaliacao";
 import { revalidatePath } from "next/cache";
+import { MENSAGENS_POR_PAGINA } from "./chatModelo";
 import type { ContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -149,15 +150,18 @@ export type MensagemConversa = {
 export async function lerMensagens(
   conversaId: string,
   antesDe?: string,
+  limite: number = MENSAGENS_POR_PAGINA,
 ): Promise<MensagemConversa[]> {
   const supabase = await exigirSessao();
+  // Action é endpoint: o número vem do navegador e é contido aqui.
+  const quantas = Math.min(100, Math.max(1, Math.floor(Number(limite) || MENSAGENS_POR_PAGINA)));
 
   let consulta = supabase
     .from("whatsapp_mensagens")
     .select("id, remetente, conteudo, created_at, tipo, midia_url, status_entrega, interacao_id")
     .eq("conversa_id", conversaId)
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(quantas);
   if (antesDe) consulta = consulta.lt("created_at", antesDe);
 
   const { data, error } = await consulta;

@@ -81,3 +81,4 @@ F0–F6.
 - [[fechar-o-ciclo-e-ligar-a-plataforma]] — primeiros passos e prontidão da equipe, proposta por link, confirmação da visita, indicação pós-venda, compradores até as chaves, relatório por construtora, metas da equipe (0123-0124, 26/09)
 - [[plantas-do-editor-nunca-eram-salvas]] — o Salvar do editor dizia "tudo salvo" e não gravava as plantas (26/09)
 - [[graficos-que-decidem]] — seis gráficos que levam a uma ação: passagem do funil, quem espera resposta, origem com custo, placar da equipe, procura por imóvel, ritmo da meta (28/09)
+- [[nove-ajustes-de-frontend-de-30-09]] — contadores voltam como marcas no menu, barra de carregamento nos links, conversas em janela de 60/20 (30/09)

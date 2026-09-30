@@ -63,7 +63,7 @@ export function CabecalhoDePagina({
           {temTrilha && (
             <Link
               href={(trilha ?? [{ href: "/", label: "Início" }]).at(-1)!.href}
-              className="border-linha bg-superficie/70 text-corpo hover:border-linha-forte hover:text-titulo active:bg-superficie mb-5 inline-flex min-h-11 items-center gap-2 rounded-full border pr-4 pl-3 text-sm font-medium shadow-md backdrop-blur transition-colors"
+              className="border-linha bg-superficie/70 text-corpo hover:border-linha-forte hover:text-titulo active:bg-superficie mb-5 inline-flex min-h-11 items-center gap-2 rounded-full border pr-4 pl-3 text-sm font-medium shadow-md md:backdrop-blur transition-colors"
             >
               <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" aria-hidden className="size-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 5l-7 7 7 7" />

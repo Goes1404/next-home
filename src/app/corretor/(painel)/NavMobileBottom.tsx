@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ATALHOS_MOBILE, destinoAtivo } from "./_componentes/navegacao";
 import { alternarGaveta, useGavetaAberta } from "./_componentes/gavetaStore";
+import { CarregandoLink } from "./_componentes/CarregandoLink";
 
 /**
  * A barra do polegar (celular): três destinos de trabalho mais o botão Menu.
@@ -41,7 +42,7 @@ export function NavMobileBottom() {
             href={item.href}
             aria-current={ativa ? "page" : undefined}
             className={cn(
-              "flex w-full min-w-0 flex-col items-center justify-center gap-0.5 transition-colors",
+              "relative flex w-full min-w-0 flex-col items-center justify-center gap-0.5 transition-colors",
               ativa ? "text-acento-suave" : "text-tenue",
             )}
           >
@@ -65,6 +66,7 @@ export function NavMobileBottom() {
             <span className="max-w-full truncate text-[10px] font-medium tracking-wide">
               {item.label}
             </span>
+            <CarregandoLink />
           </Link>
         );
       })}

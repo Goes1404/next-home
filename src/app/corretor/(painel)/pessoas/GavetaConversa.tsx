@@ -5,7 +5,14 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { moduloAtivo } from "../_componentes/navegacao";
-import { estadoDa, mesclar, type ConversaResumo, type Estado } from "../conversas/chatModelo";
+import {
+  JANELA_DO_RECONCILIO,
+  MENSAGENS_POR_PAGINA,
+  estadoDa,
+  mesclar,
+  type ConversaResumo,
+  type Estado,
+} from "../conversas/chatModelo";
 
 /*
  * O `Chat` (1.600 linhas, o maior client component do painel) só chega
@@ -66,12 +73,18 @@ export function GavetaConversa({
    */
   useEffect(() => {
     let vivo = true;
-    const buscar = async () => {
-      const novas = await lerMensagens(conversa.id);
+    const buscar = async (primeira: boolean) => {
+      // Aba em segundo plano não relê (ver `ConversasClient`).
+      if (!primeira && document.hidden) return;
+      const novas = await lerMensagens(
+        conversa.id,
+        undefined,
+        primeira ? MENSAGENS_POR_PAGINA : JANELA_DO_RECONCILIO,
+      );
       if (vivo) setMensagens((antes) => mesclar(antes ?? undefined, novas));
     };
-    void buscar();
-    const timer = setInterval(() => void buscar(), 15_000);
+    void buscar(true);
+    const timer = setInterval(() => void buscar(false), 15_000);
     return () => {
       vivo = false;
       clearInterval(timer);

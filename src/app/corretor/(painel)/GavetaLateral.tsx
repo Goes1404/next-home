@@ -17,6 +17,9 @@ import {
   type ItemNav,
 } from "./_componentes/navegacao";
 import { fecharGaveta, useGavetaAberta } from "./_componentes/gavetaStore";
+import { useContadoresDoMenu, type MarcaDoMenu as Marca } from "./_componentes/contadoresDoMenu";
+import { MarcaDoMenu, temPendencia } from "./_componentes/MarcaDoMenu";
+import { CarregandoLink } from "./_componentes/CarregandoLink";
 
 /**
  * A gaveta lateral do celular — o mapa inteiro do painel, pela esquerda.
@@ -88,6 +91,7 @@ export function GavetaLateral({ ehGestor }: { ehGestor: boolean }) {
   const grupos = gruposVisiveis(ehGestor);
   const dono = destinoAtivo(atual);
   const modulo = moduloAtivo(atual);
+  const marcas = useContadoresDoMenu();
 
   /*
    * Acordeão: o tópico expandido é o da rota, a menos que a pessoa tenha
@@ -233,6 +237,7 @@ export function GavetaLateral({ ehGestor }: { ehGestor: boolean }) {
                       ativo={dono?.href === item.href}
                       expandido={expandido === item.href}
                       aoAlternar={() => alternarTopico(item.href)}
+                      marcas={marcas}
                     />
                   ))}
                 </ul>
@@ -297,18 +302,21 @@ function Topico({
   ativo,
   expandido,
   aoAlternar,
+  marcas,
 }: {
   item: ItemNav;
   atual: string | null;
   ativo: boolean;
   expandido: boolean;
   aoAlternar: () => void;
+  marcas: Record<string, Marca>;
 }) {
   const Icone = item.icone;
   const subs = item.subitens ?? [];
   const subAtivo = ativo ? subitemAtivo(atual, item) : null;
   const temSubs = subs.length > 0;
   const idSubs = `subs-${item.href.replace(/\//g, "-")}`;
+  const pendente = !expandido && temPendencia(subs.map((s) => s.href), marcas);
 
   return (
     <li>
@@ -342,12 +350,18 @@ function Topico({
               <Icone className="h-5 w-5" />
             </span>
             <span className="min-w-0 truncate">{item.label}</span>
+            {pendente && (
+              <span
+                aria-hidden
+                className={cn("ml-auto size-2 shrink-0 rounded-full", ativo ? "bg-sobre-cor" : "bg-acento")}
+              />
+            )}
           </button>
         ) : (
           <Link
             href={item.href}
             aria-current={ativo ? "page" : undefined}
-            className="flex min-h-13 min-w-0 flex-1 items-center gap-3 px-2.5 text-[15px] font-medium"
+            className="relative flex min-h-13 min-w-0 flex-1 items-center gap-3 px-2.5 text-[15px] font-medium"
           >
             <span
               aria-hidden
@@ -360,6 +374,8 @@ function Topico({
               <Icone className="h-5 w-5" />
             </span>
             <span className="min-w-0 truncate">{item.label}</span>
+            <MarcaDoMenu marca={marcas[item.href]} sobreSolido={ativo} />
+            <CarregandoLink />
           </Link>
         )}
 
@@ -408,7 +424,7 @@ function Topico({
                   className={cn(
                     // 44px: subtópico não pode ser mais difícil de acertar
                     // que tópico.
-                    "flex min-h-11 items-center gap-3 rounded-xl px-3 text-[14px] transition-colors",
+                    "relative flex min-h-11 items-center gap-3 rounded-xl px-3 text-[14px] transition-colors",
                     aberto
                       ? "bg-acento-lavado text-acento-suave font-medium"
                       : "text-corpo hover:bg-vidro",
@@ -416,6 +432,8 @@ function Topico({
                 >
                   {IconeSub && <IconeSub aria-hidden className="h-[18px] w-[18px] shrink-0" />}
                   {sub.label}
+                  <MarcaDoMenu marca={marcas[sub.href]} />
+                  <CarregandoLink />
                 </Link>
               </li>
             );

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { lerMensagens, marcarConversaLida, type MensagemConversa } from "./acoes";
+import { JANELA_DO_RECONCILIO, MENSAGENS_POR_PAGINA } from "./chatModelo";
 import {
   Chat,
   SELO,
@@ -181,8 +182,15 @@ export function ConversasClient({
   useEffect(() => {
     if (!selecionadaId) return;
     let vivo = true;
-    const carregar = async () => {
-      const mensagens = await lerMensagens(selecionadaId);
+    const carregar = async (primeira: boolean) => {
+      // Aba em segundo plano não relê: ninguém está olhando, e a volta dela
+      // dispara a leitura de novo no próximo tique.
+      if (!primeira && document.hidden) return;
+      const mensagens = await lerMensagens(
+        selecionadaId,
+        undefined,
+        primeira ? MENSAGENS_POR_PAGINA : JANELA_DO_RECONCILIO,
+      );
       if (vivo) {
         setMensagensPor((atual) => ({
           ...atual,
@@ -190,8 +198,8 @@ export function ConversasClient({
         }));
       }
     };
-    void carregar();
-    const timer = setInterval(carregar, 15000);
+    void carregar(true);
+    const timer = setInterval(() => void carregar(false), 15000);
     return () => {
       vivo = false;
       clearInterval(timer);

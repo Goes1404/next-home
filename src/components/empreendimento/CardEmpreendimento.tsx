@@ -115,7 +115,7 @@ export function CardEmpreendimento({
               para as últimas unidades. É a cor mais repetida do site, e ela
               informa em vez de decorar. */}
           <span
-            className={`text-fluid-xs absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-ink-950/80 px-3 py-1 font-medium tracking-wide uppercase backdrop-blur-sm ${STATUS_TINTA[e.status]}`}
+            className={`text-fluid-xs absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-ink-950/80 px-3 py-1 font-medium tracking-wide uppercase md:backdrop-blur-sm ${STATUS_TINTA[e.status]}`}
           >
             <span aria-hidden className={`size-1.5 rounded-full ${STATUS_PONTO[e.status]}`} />
             {STATUS_LABEL[e.status]}

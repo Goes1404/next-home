@@ -11,15 +11,29 @@ type CardCorretorProps = {
   compacto?: boolean;
 };
 
-function Avatar({ corretor, tamanho }: { corretor: CorretorPerfil; tamanho: 56 | 72 }) {
-  const classe = tamanho === 72 ? "h-18 w-18" : "h-14 w-14";
+function Avatar({
+  corretor,
+  tamanho,
+  cresceNoComputador = false,
+}: {
+  corretor: CorretorPerfil;
+  tamanho: 56 | 72;
+  /** No cartão da home, o retrato vira 96px de `lg` para cima. */
+  cresceNoComputador?: boolean;
+}) {
+  const classe =
+    (tamanho === 72 ? "h-18 w-18" : "h-14 w-14") +
+    (cresceNoComputador ? " lg:h-24 lg:w-24 lg:text-2xl" : "");
+  // A foto é pedida no tamanho em que ela pode chegar a ser DESENHADA, senão
+  // o retrato de 96px sairia da variante de 56 e embaçaria.
+  const pedido = cresceNoComputador ? 96 : tamanho;
   if (corretor.fotoUrl) {
     return (
       <Image
         src={corretor.fotoUrl}
         alt=""
-        width={tamanho}
-        height={tamanho}
+        width={pedido}
+        height={pedido}
         className={`${classe} shrink-0 rounded-full object-cover ring-1 ring-linha/15`}
       />
     );
@@ -60,10 +74,13 @@ export function CardCorretor({ corretor, compacto }: CardCorretorProps) {
       >
         <GlassSurface
           preset="card"
-          className="group flex items-center gap-4 px-5 py-5 transition-transform duration-300 ease-[var(--ease-out-quart)] hover:-translate-y-0.5"
+          // No computador (30/09/2026) a linha vira coluna: quatro cartões
+          // lado a lado com o retrato em cima, no lugar de duas colunas de
+          // linhas finas que deixavam a seção mais pobre que as vizinhas.
+          className="group flex items-center gap-4 px-5 py-5 transition-transform duration-300 ease-[var(--ease-out-quart)] hover:-translate-y-0.5 lg:h-full lg:flex-col lg:gap-3 lg:px-5 lg:py-7 lg:text-center"
         >
-          <Avatar corretor={corretor} tamanho={56} />
-          <div className="min-w-0 flex-1">
+          <Avatar corretor={corretor} tamanho={56} cresceNoComputador />
+          <div className="min-w-0 flex-1 lg:w-full">
             <p className="font-display group-hover:text-acento-suave truncate text-lg text-titulo transition-colors">
               {corretor.nome}
             </p>
@@ -71,9 +88,12 @@ export function CardCorretor({ corretor, compacto }: CardCorretorProps) {
           </div>
           <span
             aria-hidden
-            className="group-hover:text-acento-suave shrink-0 text-tenue transition-all group-hover:translate-x-0.5"
+            className="group-hover:text-acento-suave shrink-0 text-tenue transition-all group-hover:translate-x-0.5 lg:hidden"
           >
             →
+          </span>
+          <span className="text-acento-suave hidden text-sm font-medium lg:inline">
+            Ver perfil →
           </span>
         </GlassSurface>
       </Link>

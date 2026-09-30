@@ -91,6 +91,13 @@ export function GlassSurface({
         // baixo); o card guarda a translucidez e o fio de luz, que é o que
         // se lê como vidro numa grade parada. Mesma régua que o painel do
         // corretor adotou em 04/09.
+        //
+        // Abaixo de `md`, nenhum vidro desfoca (30/09/2026). Medido rolando a
+        // home inteira num celular com CPU 4x (4 rodadas por variante): 7,3 s
+        // hoje, 6,3 s sem desfoque — e o cabeçalho sozinho, 40px de blur
+        // fixo sobre conteúdo que passa por baixo, respondia pela maior parte.
+        // No celular os fundos já são 72% a 93% opacos, então o desfoque
+        // quase não se via e custava a rolagem inteira.
         usaWebgl
           ? "vidro-webgl"
           : [
@@ -98,8 +105,8 @@ export function GlassSurface({
               preset === "card"
                 ? null
                 : opaco
-                  ? "backdrop-blur-2xl backdrop-saturate-150"
-                  : "backdrop-blur-xl backdrop-saturate-150",
+                  ? "md:backdrop-blur-2xl md:backdrop-saturate-150"
+                  : "md:backdrop-blur-xl md:backdrop-saturate-150",
             ],
         // Nav e pill ficam fixos na tela com conteúdo passando por baixo o
         // tempo todo ao rolar; precisam de mais opacidade para não brigar

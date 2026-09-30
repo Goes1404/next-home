@@ -8651,3 +8651,26 @@ Nota: [[home-do-computador-em-duas-colunas]].
   sem mídia e o celular baixaria a foto inteira.
 - **`CtaFinal` agora ocupa a largura das seções** em todas as 7 páginas, com
   o texto à esquerda e os botões à direita a partir de `lg`.
+
+## Nove ajustes de frontend (30/09/2026)
+
+Nota: [[nove-ajustes-de-frontend-de-30-09]].
+
+- **Um utilitário que depende de tokens do painel fica transparente fora
+  dele.** `cartao` usa `--cartao-fundo`, que só existia em
+  `[data-rota="painel"]`. Quatro cartões do site saíram sem fundo, sem nenhum
+  aviso. Esses tokens agora também existem em `:root`, nos três blocos de tema.
+- **No celular, o custo de rolagem vinha do `backdrop-filter`, não do
+  parallax.** Sem vidro abaixo de `md`, a rolagem da home caiu de ~7,4 s para
+  6,0 s num Pixel 7 com CPU 4x. Para medir, some o tempo total de rolagem em
+  4 rodadas. A mediana do tempo de quadro fica quantizada em 16,7 ou 33 ms e
+  não mostra a diferença.
+- **Os contadores do menu são buscados no navegador a cada navegação**
+  (`/api/painel/contadores`), porque o layout não reexecuta entre rotas irmãs.
+  O teto de peso das rotas do painel subiu 3 KB.
+- **Numa grade, uma célula `row-span-2` com `aspect` próprio deixa buraco.**
+  Sem `aspect`, ela estica até a altura das linhas vizinhas. O corte antes do
+  "Ver mais" precisa fechar um bloco inteiro: são 5 fotos na galeria do imóvel.
+- **Captura de tela do site no computador precisa pular a vinheta**:
+  `sessionStorage.setItem("nh-intro-vista","1")` num `addInitScript`. Sem isso,
+  a abertura cobre a página e a captura mostra o logotipo.

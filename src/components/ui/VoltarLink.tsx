@@ -28,8 +28,8 @@ export function VoltarLink({
 }) {
   if (variante === "pilula") {
     const tinta = sobreFoto
-      ? "border-white/25 bg-black/45 text-mist-50 backdrop-blur-md hover:bg-black/65"
-      : "border-linha bg-superficie/80 text-corpo backdrop-blur hover:border-linha-forte hover:text-titulo active:bg-superficie";
+      ? "border-white/25 bg-black/60 text-mist-50 md:bg-black/45 md:backdrop-blur-md hover:bg-black/65"
+      : "border-linha bg-superficie/80 text-corpo md:backdrop-blur hover:border-linha-forte hover:text-titulo active:bg-superficie";
     return (
       <Link
         href={href}

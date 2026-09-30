@@ -370,7 +370,7 @@ export default async function HomeInstitucional() {
                   )}
                 </div>
 
-                <div className="mt-8 grid w-full gap-4 sm:grid-cols-2">
+                <div className="mt-8 grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   {/* CartaoTilt no lugar do Reveal, não junto: o tilt já faz a
                       própria entrada (cortina de clip-path) e já assume a
                       opacidade. Somar o Reveal daria dois donos da mesma

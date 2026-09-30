@@ -90,7 +90,7 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
               href={linkDescricao}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-12 items-center justify-center rounded-full border border-mist-50/35 bg-black/30 px-7 text-sm font-medium text-mist-50 backdrop-blur-md transition-colors hover:bg-black/50"
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-mist-50/35 bg-black/50 px-7 text-sm font-medium text-mist-50 md:bg-black/30 md:backdrop-blur-md transition-colors hover:bg-black/50"
             >
               Ver descrição completa
             </a>

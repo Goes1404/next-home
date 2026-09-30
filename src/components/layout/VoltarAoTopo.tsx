@@ -36,7 +36,7 @@ export function VoltarAoTopo() {
       title="Voltar ao topo"
       aria-hidden={!longe}
       tabIndex={longe ? 0 : -1}
-      className={`fixed right-5 bottom-[5.5rem] z-30 flex size-11 items-center justify-center rounded-full border border-linha-forte bg-superficie/90 text-titulo shadow-lg backdrop-blur-md transition-[opacity,transform] duration-300 hover:-translate-y-0.5 sm:right-6 sm:bottom-[6.25rem] ${
+      className={`fixed right-5 bottom-[5.5rem] z-30 flex size-11 items-center justify-center rounded-full border border-linha-forte bg-superficie/90 text-titulo shadow-lg md:backdrop-blur-md transition-[opacity,transform] duration-300 hover:-translate-y-0.5 sm:right-6 sm:bottom-[6.25rem] ${
         longe ? "opacity-95 hover:opacity-100" : "pointer-events-none translate-y-2 opacity-0"
       }`}
     >

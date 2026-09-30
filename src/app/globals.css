@@ -235,7 +235,11 @@
   --color-wa-entrada: light-dark(#ffffff, #202c33);
   --color-wa-saida: light-dark(#d9fdd3, #005c4b);
   --color-wa-texto: light-dark(#111b21, #e9edef);
-  --color-wa-meta: light-dark(#667781, #8696a0);
+  /* O cinza do próprio app dava 4,14:1 sobre a barra no claro e 3,9:1 sobre o
+     campo no escuro, abaixo de AA. Um degrau mais forte nos dois (30/09/2026):
+     no mínimo 4,6:1 sobre barra, papel de parede e balões no claro, e 4,9:1
+     sobre barra e campo no escuro. Continua lendo como o cinza do app. */
+  --color-wa-meta: light-dark(#5b6b75, #9aa9b2);
   --color-wa-lida: light-dark(#53bdeb, #53bdeb);
   --color-wa-verde: light-dark(#008069, #00a884);
   --color-wa-nome: light-dark(#1fa855, #06cf9c);
@@ -1117,8 +1121,14 @@
   }
   .vidro-opaco.vidro-css {
     background: var(--vidro-fundo-opaco);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+  /* Só de `md` para cima: no celular o desfoque do cabeçalho custava a
+     rolagem inteira (ver GlassSurface, 30/09/2026). */
+  @media (min-width: 768px) {
+    .vidro-opaco.vidro-css {
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+    }
   }
 }
 
@@ -2271,6 +2281,15 @@
   pointer-events: none;
   background-color: var(--cor-da-faixa);
 }
+/* No computador a tela larga mostra a planta inteira atrás dos cartões e
+   ela competia com eles (30/09/2026: "está feia no desktop"). Mais fraca a
+   partir de `lg`; no celular, onde aparece só uma fatia, fica como estava.
+   Opacidade na própria camada: o compositor aplica sem repintar. */
+@media (min-width: 1024px) {
+  .home-percurso::before {
+    opacity: 0.45;
+  }
+}
 @keyframes planta-desliza {
   to {
     transform: translate(-720px, -720px);
@@ -2378,6 +2397,64 @@
   100% {
     transform: scale(1.75);
     opacity: 0;
+  }
+}
+
+/*
+ * O MATERIAL DO CARTÃO NO SITE PÚBLICO (30/09/2026).
+ *
+ * `cartao` lê `--cartao-fundo`, `--cartao-fio` e `--shadow-cartao`, que só
+ * eram declarados em `[data-rota="painel"]`. Fora do painel a declaração
+ * ficava inválida e o cartão saía TRANSPARENTE, calado: a planta animada da
+ * home aparecia por trás do simulador, do "cabe no bolso", do cartão do
+ * corretor e do book digital. Aqui estão os valores do site; o bloco do
+ * painel continua mandando lá dentro, porque o `<main>` do painel está mais
+ * perto de quem herda.
+ */
+:root {
+  --cartao-fundo: #102420;
+  --cartao-fio: rgb(255 255 255 / 0.08);
+  --shadow-cartao:
+    0 1px 2px rgb(0 0 0 / 0.3),
+    0 18px 38px -22px rgb(0 0 0 / 0.7);
+  --shadow-cartao-alto:
+    0 2px 4px rgb(0 0 0 / 0.3),
+    0 26px 52px -24px rgb(0 0 0 / 0.75);
+}
+:root[data-tema="claro"] {
+  --cartao-fundo: #f7f9f2;
+  --cartao-fio: rgb(255 255 255 / 0.95);
+  --shadow-cartao:
+    0 1px 2px rgb(10 40 34 / 0.08),
+    0 18px 38px -22px rgb(10 40 34 / 0.32);
+  --shadow-cartao-alto:
+    0 2px 4px rgb(10 40 34 / 0.1),
+    0 26px 52px -24px rgb(10 40 34 / 0.4);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-tema]) {
+    --cartao-fundo: #f7f9f2;
+    --cartao-fio: rgb(255 255 255 / 0.95);
+    --shadow-cartao:
+      0 1px 2px rgb(10 40 34 / 0.08),
+      0 18px 38px -22px rgb(10 40 34 / 0.32);
+    --shadow-cartao-alto:
+      0 2px 4px rgb(10 40 34 / 0.1),
+      0 26px 52px -24px rgb(10 40 34 / 0.4);
+  }
+}
+
+/* A linha que corre sob o item do menu enquanto a tela carrega
+   (`CarregandoLink`). Só `transform`: compositor, sem repintura. */
+.link-carregando {
+  animation: link-carregando 0.9s var(--ease-out-quart) infinite;
+}
+@keyframes link-carregando {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
   }
 }
 

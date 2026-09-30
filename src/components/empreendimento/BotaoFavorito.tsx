@@ -46,7 +46,7 @@ export function BotaoFavorito({
       aria-pressed={ativo}
       aria-label={ativo ? `Tirar ${nome} dos favoritos` : `Salvar ${nome} nos favoritos`}
       className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition-transform active:scale-90 ${
-        sobreFoto ? "bg-ink-950/70 text-white backdrop-blur-sm hover:bg-ink-950/85" : "border border-linha-forte bg-elevado text-titulo hover:bg-vidro"
+        sobreFoto ? "bg-ink-950/70 text-white md:backdrop-blur-sm hover:bg-ink-950/85" : "border border-linha-forte bg-elevado text-titulo hover:bg-vidro"
       } ${className}`}
     >
       <Heart className={`h-5 w-5 ${ativo ? "fill-rose-500 text-rose-500" : ""}`} aria-hidden />
