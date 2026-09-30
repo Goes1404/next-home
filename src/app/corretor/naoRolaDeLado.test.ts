@@ -48,6 +48,10 @@ const ROLAGEM_DECLARADA = [
   // não destinos. No máximo quatro; quebrar linha roubaria a altura do campo
   // e a rolagem só aparece quando há mais de uma referência real.
   "(painel)/_componentes/ChatBase.tsx",
+  // Tabela do custo semana a semana (30/09/2026): cinco colunas de número não
+  // cabem em 320px. É o CONTEÚDO, fechada por padrão, e os mesmos números
+  // estão no gráfico logo acima.
+  "(painel)/marketing/impulsionamentos/CustoAoLongoDoTempo.tsx",
 ];
 
 const RAIZ = path.join(process.cwd(), "src/app/corretor");

@@ -70,9 +70,19 @@ antigo não derruba o total.
   Meta e Google gastam um orçamento diário. Antes do primeiro, parte de zero no
   início da campanha; depois do último, fica parado. Registro feito depois do
   fim conta como gasto até o fim.
-- **O gráfico é o custo ACUMULADO no fim de cada semana** (`serieDeCusto`):
-  o custo "da semana" seria infinito numa semana sem cliente. Semana sem
-  cliente ainda não desenha ponto, em vez de um zero que pareceria barato.
+- **O gráfico é o custo das ÚLTIMAS 4 SEMANAS, móvel** (`serieDeCusto`).
+  A primeira versão, do mesmo dia, usava o acumulado desde o começo, e o
+  próprio usuário perguntou se era a melhor escolha. Não era, por três
+  motivos: o começo (1 ou 2 clientes) desenhava um pico que achatava o resto
+  do gráfico e servia de referência falsa na frase do topo; o acumulado
+  demorava a mostrar piora, porque uma semana ruim mal mexe na média desde o
+  início; e a linha parecia medida quando o gasto era estimado. Hoje: janela
+  de 4 semanas, linha só depois do 3º cliente, frase do topo comparando com 4
+  semanas antes, barras de clientes por semana num gráfico separado (medido,
+  nunca estimado) e ponto cheio só na semana em que houve registro de gasto.
+- **A pergunta do corretor decide a forma do gráfico**: "quanto custou em
+  média" pede acumulado; "está ficando caro agora?" pede janela móvel. Ao
+  desenhar custo ao longo do tempo, perguntar qual das duas antes.
 - **Uma linha por vez, com seletor** (todas ou uma campanha): várias linhas
   coloridas pediriam uma cor por campanha, e a comparação entre elas já tem o
   gráfico de barras.

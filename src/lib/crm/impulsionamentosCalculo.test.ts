@@ -153,17 +153,33 @@ describe("custo ao longo do tempo (0133)", () => {
     expect(gastoAte(acabou, pts, "2026-09-11", HOJE)).toBe(100);
   });
 
-  it("a série semanal divide o gasto acumulado pelos clientes acumulados", () => {
+  it("a série usa as últimas 4 semanas e só começa com 3 clientes", () => {
     const leads = [
       { ...lead({}), impulsionamentoId: "k", criadoEm: "2026-09-05T15:00:00Z" },
       { ...lead({}), impulsionamentoId: "k", criadoEm: "2026-09-20T15:00:00Z" },
       { ...lead({}), impulsionamentoId: "k", criadoEm: "2026-09-29T15:00:00Z" },
     ];
     const resumos = resumirImpulsionamentos([camp], leads);
-    const serie = serieDeCusto(resumos, [], HOJE);
+    const serie = serieDeCusto(resumos, [{ impulsionamentoId: "k", dia: "2026-09-30", valor: 300 }], HOJE);
     expect(serie.map((p) => p.dia)).toEqual(["2026-09-02", "2026-09-09", "2026-09-16", "2026-09-23", "2026-09-30"]);
-    expect(serie[0]).toMatchObject({ clientes: 0, custoPorCliente: null });
-    expect(serie.at(-1)).toMatchObject({ gasto: 300, clientes: 3, custoPorCliente: 100 });
+    expect(serie.map((p) => p.novos)).toEqual([0, 1, 0, 1, 1]);
+    // Antes do 3º cliente não há custo, mesmo com gasto.
+    expect(serie.slice(0, 4).every((p) => p.custoMovel === null)).toBe(true);
+    // Janela de 2/9 a 30/9: gasto de 300 menos o do dia 2 (~10,34), 3 clientes.
+    expect(serie.at(-1)).toMatchObject({ clientes4: 3, informado: true });
+    expect(serie.at(-1)?.custoMovel).toBeCloseTo(96.55, 1);
+    expect(serie[3].informado).toBe(false);
+  });
+
+  it("a janela móvel mostra a piora que o acumulado esconderia", () => {
+    const longa = { ...camp, inicio: "2026-06-01" };
+    const cedo = Array.from({ length: 10 }, (_, i) => ({ ...lead({}), impulsionamentoId: "k", criadoEm: `2026-06-${String(i + 5).padStart(2, "0")}T12:00:00Z` }));
+    const tarde = [{ ...lead({}), impulsionamentoId: "k", criadoEm: "2026-09-25T12:00:00Z" }];
+    const serie = serieDeCusto(resumirImpulsionamentos([longa], [...cedo, ...tarde]), [], HOJE, 20);
+    const ultimo = serie.at(-1)!;
+    // Acumulado seria 300/11 ≈ 27; nas últimas 4 semanas foi ~70 para 1 cliente.
+    expect(ultimo.clientes4).toBe(1);
+    expect(ultimo.custoMovel!).toBeGreaterThan(60);
   });
 
   it("sem gasto informado não há série", () => {

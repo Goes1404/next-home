@@ -226,9 +226,19 @@ export type PontoDeGasto = { impulsionamentoId: string; dia: string; valor: numb
 export type PontoDaSerie = {
   /** Último dia da semana, "aaaa-mm-dd". */
   dia: string;
-  gasto: number;
-  clientes: number;
-  custoPorCliente: number | null;
+  /** Clientes que chegaram nesta semana (medido, nunca estimado). */
+  novos: number;
+  /** Gasto e clientes nas 4 semanas que terminam aqui. */
+  gasto4: number;
+  clientes4: number;
+  /**
+   * Custo por cliente nas últimas 4 semanas. null quando a campanha ainda
+   * não juntou 3 clientes (o começo pula demais para dizer algo) ou quando
+   * a janela não teve cliente nenhum.
+   */
+  custoMovel: number | null;
+  /** Algum gasto foi registrado com data nesta semana; senão o valor é estimado. */
+  informado: boolean;
 };
 
 const DIA_MS = 86_400_000;
@@ -285,13 +295,24 @@ export function gastoAte(
   return pts[pts.length - 1].valor;
 }
 
+/** Clientes mínimos para a linha começar: antes disso um cliente muda tudo. */
+export const MINIMO_DE_CLIENTES_NA_SERIE = 3;
+const JANELA_DIAS = 28;
+
 /**
- * O custo por cliente ao longo do tempo, semana a semana: no fim de cada
- * semana, o gasto acumulado dividido pelos clientes acumulados até ali.
+ * O custo por cliente ao longo do tempo, semana a semana (30/09/2026).
  *
- * Acumulado, e não o da semana: numa semana sem cliente o custo "da semana"
- * seria infinito, e numa com um cliente só pularia para qualquer lado. O
- * acumulado mostra para onde a campanha está indo.
+ * Em cada fim de semana: o que foi gasto nas ÚLTIMAS 4 SEMANAS dividido pelos
+ * clientes que chegaram nelas. Móvel, e não acumulado desde o começo: o
+ * acumulado demora a mostrar piora (uma semana ruim quase não mexe na média),
+ * e a pergunta do corretor é se a campanha está ficando cara AGORA. Quatro
+ * semanas, e não uma, porque o custo de uma semana só pula demais.
+ *
+ * A linha só começa depois dos 3 primeiros clientes: antes, cada cliente muda
+ * o número pela metade e o pico do começo esmagaria o resto do gráfico.
+ *
+ * `informado` separa o que foi medido do que é conta: sem registro de gasto
+ * naquela semana, o valor vem da distribuição por igual (`gastoAte`).
  *
  * Só entram linhas com gasto informado — sem ele não existe custo.
  */
@@ -304,17 +325,33 @@ export function serieDeCusto(
   const comGasto = resumos.filter((r) => r.gastoTotal !== null);
   if (comGasto.length === 0) return [];
   const linhas = comGasto.flatMap((r) => [r as LinhaImpulsionamento, ...r.anuncios]);
+  const ids = new Set(linhas.map((l) => l.id));
+  const registros = pontos.filter((p) => ids.has(p.impulsionamentoId)).map((p) => p.dia);
   const inicios = comGasto.map((r) => r.inicio ?? diaDe(r.primeiroLeadEm));
   const primeiro = inicios.reduce((a, b) => (a < b ? a : b));
   const dias = comGasto.flatMap((r) => r.datasDosLeads.map(diaDe));
 
+  const gastoEm = (dia: string) => linhas.reduce((s, l) => s + gastoAte(l, pontos, dia, hoje), 0);
+  const entre = (depoisDe: string, ate: string) => dias.filter((d) => d > depoisDe && d <= ate).length;
+  const recuar = (dia: string, n: number) => deMs(emMs(dia) - n * DIA_MS);
+
   const serie: PontoDaSerie[] = [];
   for (let i = semanas - 1; i >= 0; i--) {
-    const dia = deMs(emMs(hoje) - i * 7 * DIA_MS);
+    const dia = recuar(hoje, i * 7);
     if (dia < primeiro) continue;
-    const gasto = Math.round(linhas.reduce((s, l) => s + gastoAte(l, pontos, dia, hoje), 0) * 100) / 100;
-    const clientes = dias.filter((d) => d <= dia).length;
-    serie.push({ dia, gasto, clientes, custoPorCliente: dividir(gasto, clientes) });
+    const inicioJanela = recuar(dia, JANELA_DIAS);
+    const gasto4 = Math.round((gastoEm(dia) - gastoEm(inicioJanela)) * 100) / 100;
+    const clientes4 = entre(inicioJanela, dia);
+    const acumulados = dias.filter((d) => d <= dia).length;
+    const semana = recuar(dia, 7);
+    serie.push({
+      dia,
+      novos: entre(semana, dia),
+      gasto4,
+      clientes4,
+      custoMovel: acumulados < MINIMO_DE_CLIENTES_NA_SERIE ? null : dividir(gasto4, clientes4),
+      informado: registros.some((r) => r > semana && r <= dia),
+    });
   }
   return serie;
 }

@@ -8536,3 +8536,8 @@ por visita e por cliente quente/morno; um gráfico compara as campanhas.
 - **Coluna fora do grant de INSERT recusa o insert inteiro**: testando a RLS,
   mandar `id` na mão deu "permission denied" porque `id` não está no grant por
   coluna. A tela nunca manda `id`; o teste é que estava errado.
+- **O custo acumulado desde o começo era a forma errada**, e o usuário
+  percebeu antes de mim. O pico dos primeiros clientes achatava o gráfico e a
+  média demorava a mostrar piora. Hoje a linha é o custo das últimas 4 semanas,
+  começa no 3º cliente, e os clientes por semana ficam em barras separadas.
+  Ponto cheio = gasto registrado naquela semana; vazado = estimado.
