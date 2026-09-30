@@ -209,20 +209,39 @@ export function resumirImpulsionamentos(
   });
 }
 
-/** Os totais do topo da tela. Só entra no custo a linha com gasto informado. */
+/**
+ * Os totais do topo da tela, degrau por degrau: quantos clientes, quantos se
+ * qualificaram, quantos visitaram, quantos fecharam, e quanto custou cada um.
+ *
+ * Contagem e custo usam a MESMA população: só as campanhas com gasto
+ * informado. Antes a tela somava os clientes de todas e dividia o gasto só
+ * pelos das que tinham valor, então "30 clientes" e "R$ 52 por cliente" não
+ * batiam na conta de ninguém. Os clientes das campanhas sem valor aparecem à
+ * parte (`clientesSemGasto`), para não sumirem.
+ */
 export function totaisDosImpulsionamentos(resumos: ResumoImpulsionamento[]) {
   const comGasto = resumos.filter((r) => r.gastoTotal !== null);
-  const gasto = comGasto.reduce((s, r) => s + (r.gastoTotal ?? 0), 0);
-  const leadsComGasto = comGasto.reduce((s, r) => s + r.leads, 0);
-  const visitasComGasto = comGasto.reduce((s, r) => s + r.visitas, 0);
+  const semGasto = resumos.filter((r) => r.gastoTotal === null);
+  const gasto = Math.round(comGasto.reduce((s, r) => s + (r.gastoTotal ?? 0), 0) * 100) / 100;
+  const soma = (lista: ResumoImpulsionamento[], k: keyof Omit<Degraus, "sairam">) =>
+    lista.reduce((s, r) => s + r.degraus[k], 0);
+  const informado = comGasto.length > 0 ? gasto : null;
+  const degraus = {
+    clientes: soma(comGasto, "chegaram"),
+    qualificados: soma(comGasto, "qualificados"),
+    visitas: soma(comGasto, "visitaram"),
+    fechados: soma(comGasto, "fecharam"),
+  };
   return {
     anuncios: resumos.length,
-    semGasto: resumos.length - comGasto.length,
+    semGasto: semGasto.length,
+    clientesSemGasto: soma(semGasto, "chegaram"),
     gasto,
-    leads: resumos.reduce((s, r) => s + r.leads, 0),
-    visitas: resumos.reduce((s, r) => s + r.visitas, 0),
-    custoPorLead: dividir(comGasto.length ? gasto : null, leadsComGasto),
-    custoPorVisita: dividir(comGasto.length ? gasto : null, visitasComGasto),
+    ...degraus,
+    custoPorLead: dividir(informado, degraus.clientes),
+    custoPorQualificado: dividir(informado, degraus.qualificados),
+    custoPorVisita: dividir(informado, degraus.visitas),
+    custoPorFechado: dividir(informado, degraus.fechados),
   };
 }
 

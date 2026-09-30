@@ -44,14 +44,22 @@ describe("resumirImpulsionamentos", () => {
     expect(rb).toMatchObject({ leads: 1, custoPorLead: null });
   });
 
-  it("totais só somam custo de quem informou gasto", () => {
+  it("totais contam e dividem a mesma população: só quem informou gasto", () => {
     expect(totaisDosImpulsionamentos([ra, rb])).toMatchObject({
       anuncios: 2,
       semGasto: 1,
+      clientesSemGasto: 1,
       gasto: 100,
-      leads: 4,
+      clientes: 3,
+      visitas: 2,
       custoPorLead: 33.33,
+      custoPorVisita: 50,
+      custoPorFechado: null,
     });
+  });
+
+  it("sem nenhum gasto informado, nenhum custo é inventado", () => {
+    expect(totaisDosImpulsionamentos([rb])).toMatchObject({ gasto: 0, clientes: 0, clientesSemGasto: 1, custoPorLead: null });
   });
 });
 

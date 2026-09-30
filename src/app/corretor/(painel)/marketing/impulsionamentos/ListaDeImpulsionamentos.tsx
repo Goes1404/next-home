@@ -141,23 +141,7 @@ export function ListaDeImpulsionamentos({
       <NovaCampanha imoveis={imoveis} />
       <ComoFunciona aberto={resumos.length === 0} />
 
-      {resumos.length > 0 && (
-        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Numero rotulo="Investido" valor={reais(totais.gasto)} />
-          <Numero rotulo="Clientes que chegaram" valor={String(totais.leads)} />
-          <Numero rotulo="Custo por cliente" valor={reais(totais.custoPorLead)} />
-          <Numero rotulo="Custo por visita" valor={reais(totais.custoPorVisita)} />
-        </dl>
-      )}
-
-      {totais.semGasto > 0 && (
-        <p className="rounded-xl bg-alerta-lavado px-4 py-3 text-fluid-sm text-titulo">
-          {totais.semGasto === 1
-            ? "1 anúncio está sem o valor gasto."
-            : `${totais.semGasto} anúncios estão sem o valor gasto.`}{" "}
-          Sem ele, o custo por cliente não entra na conta nem na comparação.
-        </p>
-      )}
+      {resumos.length > 0 && <Totais totais={totais} />}
 
       <Comparativo comparativo={comparativo} />
       <QualidadeLadoALado linhas={qualidade} />
@@ -183,12 +167,56 @@ export function ListaDeImpulsionamentos({
   );
 }
 
-function Numero({ rotulo, valor }: { rotulo: string; valor: string }) {
+const DEGRAUS_DO_TOTAL = [
+  { rotulo: "Clientes", quantos: (t: Totais) => t.clientes, custo: (t: Totais) => t.custoPorLead },
+  { rotulo: "Se qualificaram", quantos: (t: Totais) => t.qualificados, custo: (t: Totais) => t.custoPorQualificado },
+  { rotulo: "Visitaram", quantos: (t: Totais) => t.visitas, custo: (t: Totais) => t.custoPorVisita },
+  { rotulo: "Fecharam", quantos: (t: Totais) => t.fechados, custo: (t: Totais) => t.custoPorFechado },
+] as const;
+
+/**
+ * O topo da tela: quanto foi investido e, degrau por degrau, quantos clientes
+ * isso trouxe e quanto custou cada um. Contagem e custo são da mesma
+ * população (as campanhas com valor informado), então a conta fecha.
+ */
+function Totais({ totais }: { totais: Totais }) {
+  const semValor = totais.semGasto > 0;
   return (
-    <div className="cartao flex flex-col-reverse gap-1 p-4">
-      <dt className="text-fluid-xs text-corpo">{rotulo}</dt>
-      <dd className="text-fluid-xl font-semibold text-titulo tabular-nums">{valor}</dd>
-    </div>
+    <section className="cartao space-y-4 p-4" aria-labelledby="totais-titulo">
+      <div className="flex flex-col-reverse gap-1">
+        <h2 id="totais-titulo" className="text-fluid-xs text-corpo">
+          Investido{totais.anuncios - totais.semGasto > 0 ? ` em ${totais.anuncios - totais.semGasto} ${totais.anuncios - totais.semGasto === 1 ? "campanha" : "campanhas"}` : ""}
+        </h2>
+        <p className="text-fluid-2xl font-semibold text-titulo tabular-nums">{reais(totais.gasto)}</p>
+      </div>
+
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {DEGRAUS_DO_TOTAL.map((d) => {
+          const custo = d.custo(totais);
+          return (
+            <div key={d.rotulo} className="min-w-0 rounded-xl bg-vidro px-3 py-2.5">
+              <dt className="text-fluid-xs text-corpo">{d.rotulo}</dt>
+              <dd>
+                <span className="block text-fluid-xl font-semibold text-titulo tabular-nums">{d.quantos(totais)}</span>
+                <span className="block text-fluid-xs text-corpo tabular-nums">
+                  {custo === null ? "sem custo ainda" : `${reais(custo)} cada`}
+                </span>
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+
+      {semValor && (
+        <p className="rounded-xl bg-alerta-lavado px-3 py-2.5 text-fluid-sm text-titulo">
+          {totais.semGasto === 1 ? "1 campanha está" : `${totais.semGasto} campanhas estão`} sem o valor gasto
+          {totais.clientesSemGasto > 0
+            ? `, e ${totais.clientesSemGasto === 1 ? "o cliente" : `os ${totais.clientesSemGasto} clientes`} ${totais.semGasto === 1 ? "dela" : "delas"} ${totais.clientesSemGasto === 1 ? "fica" : "ficam"} fora destes números`
+            : ""}
+          . Informe o gasto no cartão para entrarem na conta e na comparação.
+        </p>
+      )}
+    </section>
   );
 }
 

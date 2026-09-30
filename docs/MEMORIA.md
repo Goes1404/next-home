@@ -8567,3 +8567,14 @@ Nota: [[comparacao-de-campanhas-por-um-criterio-so]].
   custo por visita ganharia por sorte.
 - **Quem gastou e não trouxe ninguém entra no fim, com aviso.** Antes sumia,
   porque sem cliente não existe custo por cliente.
+
+### Os totais do topo contam e dividem a mesma população (30/09/2026)
+
+Nota: [[totais-dos-anuncios-contam-e-dividem-o-mesmo]].
+
+- **"Clientes" somava todas as campanhas e "custo por cliente" dividia só pelos
+  das campanhas com gasto**, então os dois números não fechavam a conta. Hoje
+  os dois usam só as campanhas com valor informado; os clientes das outras
+  aparecem num aviso à parte.
+- **O topo mostra os degraus** (clientes, qualificados, visitas, fechados) com
+  o custo de cada um.
