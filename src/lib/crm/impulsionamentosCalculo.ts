@@ -226,51 +226,97 @@ export function totaisDosImpulsionamentos(resumos: ResumoImpulsionamento[]) {
   };
 }
 
+export type CriterioDoComparativo = "visita" | "qualificado" | "cliente";
+
 export type LinhaDoComparativo = {
   id: string;
   nome: string;
+  gasto: number;
   leads: number;
-  custoPorLead: number;
-  custoPorVisita: number | null;
   qualificados: number;
-  taxaDeQualificados: number | null;
-  /** A de menor custo por visita (ou por cliente, se nenhuma tiver visita). */
-  melhor: boolean;
+  visitas: number;
+  custoPorLead: number | null;
+  custoPorQualificado: number | null;
+  custoPorVisita: number | null;
+  /** Menos de 5 clientes: aparece, mas não disputa o "melhor". */
+  pequena: boolean;
+};
+
+export type Comparativo = {
+  linhas: LinhaDoComparativo[];
+  /** O degrau que decide; null quando ainda não há duas campanhas para comparar. */
+  criterio: CriterioDoComparativo | null;
+  melhor: string | null;
+  /** A segunda colocada, para a frase "R$ X contra R$ Y de fulana". */
+  segunda: string | null;
+};
+
+const CUSTO_DO_CRITERIO: Record<CriterioDoComparativo, (l: LinhaDoComparativo) => number | null> = {
+  visita: (l) => l.custoPorVisita,
+  qualificado: (l) => l.custoPorQualificado,
+  cliente: (l) => l.custoPorLead,
 };
 
 /**
- * A comparação entre campanhas: só entra quem tem gasto E cliente — sem um
- * dos dois não existe custo por cliente para comparar. Ordem: a mais barata
- * por cliente primeiro.
+ * A comparação entre campanhas com gasto informado, inclusive a que gastou e
+ * não trouxe ninguém (é a pior de todas, e sumir com ela esconderia isso).
  *
- * A "melhor" é a de menor custo por VISITA quando alguma teve visita: cliente
- * barato que não visita é o anúncio que parece bom e não vende.
+ * Decide pelo degrau mais fundo que dá para comparar: custo por VISITA quando
+ * duas campanhas com amostra tiveram visita; senão por qualificado; senão por
+ * cliente. Cliente barato que não visita é o anúncio que parece bom e não
+ * vende, e por isso a ordem e o "melhor" seguem o MESMO critério — antes a
+ * lista ordenava por cliente e o selo ia para a melhor por visita, e a
+ * primeira da lista não era a melhor.
+ *
+ * Campanha com menos de 5 clientes aparece, mas não disputa: 1 cliente que
+ * visitou faria o custo por visita dela ganhar por sorte.
  */
 export function compararCampanhas(
   resumos: ResumoImpulsionamento[],
   nomeDe: (r: ResumoImpulsionamento) => string,
-): LinhaDoComparativo[] {
-  const linhas = resumos
-    .filter((r) => r.custoPorLead !== null)
+): Comparativo {
+  const linhas: LinhaDoComparativo[] = resumos
+    .filter((r) => r.gastoTotal !== null)
     .map((r) => ({
       id: r.id,
       nome: nomeDe(r),
+      gasto: r.gastoTotal as number,
       leads: r.leads,
-      custoPorLead: r.custoPorLead as number,
-      custoPorVisita: r.custoPorVisita,
       qualificados: r.degraus.qualificados,
-      taxaDeQualificados: r.taxaDeQualificados,
-      melhor: false,
-    }))
-    .sort((a, b) => a.custoPorLead - b.custoPorLead);
-  if (linhas.length < 2) return linhas;
+      visitas: r.visitas,
+      custoPorLead: r.custoPorLead,
+      custoPorQualificado: r.custoPorQualificado,
+      custoPorVisita: r.custoPorVisita,
+      pequena: r.leads < MINIMO_PARA_PORCENTAGEM,
+    }));
 
-  const comVisita = linhas.filter((l) => l.custoPorVisita !== null);
-  const melhor = comVisita.length
-    ? comVisita.reduce((a, b) => ((b.custoPorVisita as number) < (a.custoPorVisita as number) ? b : a))
-    : linhas[0];
-  melhor.melhor = true;
-  return linhas;
+  const disputam = linhas.filter((l) => !l.pequena);
+  const criterio =
+    (["visita", "qualificado", "cliente"] as const).find(
+      (c) => disputam.filter((l) => CUSTO_DO_CRITERIO[c](l) !== null).length >= 2,
+    ) ?? null;
+
+  const custo = (l: LinhaDoComparativo) => (criterio ? CUSTO_DO_CRITERIO[criterio](l) : l.custoPorLead);
+  const grupo = (l: LinhaDoComparativo) => (l.leads === 0 ? 2 : l.pequena ? 1 : 0);
+  linhas.sort((a, b) => {
+    if (grupo(a) !== grupo(b)) return grupo(a) - grupo(b);
+    if (grupo(a) === 2) return b.gasto - a.gasto;
+    if (grupo(a) === 1) return b.leads - a.leads;
+    const ca = custo(a);
+    const cb = custo(b);
+    if (ca === null && cb === null) return (a.custoPorLead ?? 0) - (b.custoPorLead ?? 0);
+    if (ca === null) return 1;
+    if (cb === null) return -1;
+    return ca - cb;
+  });
+
+  const candidatas = criterio ? linhas.filter((l) => !l.pequena && custo(l) !== null) : [];
+  return {
+    linhas,
+    criterio,
+    melhor: candidatas[0]?.id ?? null,
+    segunda: candidatas[1]?.id ?? null,
+  };
 }
 
 /** "Até este dia, a campanha tinha gastado X" (0133). */

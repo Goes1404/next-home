@@ -111,19 +111,11 @@ describe("campanhas cadastradas pelo corretor (0132)", () => {
     expect(resumirImpulsionamentos([anuncio], leads).map((r) => r.id)).toEqual(["a"]);
   });
 
-  it("a comparação marca a de menor custo por visita, não a mais barata por cliente", () => {
-    const linhas = compararCampanhas(resumos, (r) => r.titulo ?? "");
-    expect(linhas.map((l) => l.id)).toEqual(["s", "c"]); // 20 por cliente antes de 75
-    expect(linhas.find((l) => l.melhor)?.id).toBe("s"); // 60 por visita contra 300
-    const semVisita = compararCampanhas(
-      resumirImpulsionamentos([{ ...solto, valorGasto: 10 }, campanha, anuncio], leads.map((l) => ({ ...l, etapa: "novo" }))),
-      (r) => r.id,
-    );
-    expect(semVisita.find((l) => l.melhor)?.id).toBe(semVisita[0].id);
-  });
-
-  it("uma campanha só não vira comparação com vencedor", () => {
-    expect(compararCampanhas([resumos[1]], (r) => r.id).some((l) => l.melhor)).toBe(false);
+  it("com poucos clientes nenhuma campanha disputa o melhor", () => {
+    const c = compararCampanhas(resumos, (r) => r.titulo ?? "");
+    expect(c.criterio).toBeNull();
+    expect(c.melhor).toBeNull();
+    expect(c.linhas.every((l) => l.pequena)).toBe(true);
   });
 });
 
@@ -225,5 +217,51 @@ describe("qualidade pelo que o cliente fez", () => {
     ];
     const r = resumirImpulsionamentos([linha("grande"), linha("pequena"), linha("media")], leads);
     expect(compararQualidade(r, (x) => x.id).map((x) => x.id)).toEqual(["media", "grande", "pequena"]);
+  });
+});
+
+describe("comparação entre campanhas", () => {
+  const camp = (id: string, gasto: number | null): LinhaImpulsionamento => ({
+    ...base, id, corretorId: "c1", chave: `manual:${id}`, titulo: id, valorGasto: gasto, criadaPeloCorretor: true,
+  });
+  const muitos = (id: string, n: number, visitas: number, qualif: number) =>
+    Array.from({ length: n }, (_, i) => ({
+      ...lead({ visitaAgendadaEm: i < visitas ? "2026-09-10" : null }),
+      impulsionamentoId: id,
+      capacidadeDita: i < qualif,
+    }));
+
+  it("ordem e melhor seguem o mesmo critério: custo por visita", () => {
+    // barata: 10 clientes por 100 (10 cada), 1 visita → 100 por visita
+    // cara: 5 clientes por 150 (30 cada), 3 visitas → 50 por visita
+    const r = resumirImpulsionamentos(
+      [camp("barata", 100), camp("cara", 150)],
+      [...muitos("barata", 10, 1, 2), ...muitos("cara", 5, 3, 3)],
+    );
+    const c = compararCampanhas(r, (x) => x.id);
+    expect(c.criterio).toBe("visita");
+    expect(c.linhas.map((l) => l.id)).toEqual(["cara", "barata"]);
+    expect(c.melhor).toBe("cara");
+    expect(c.segunda).toBe("barata");
+  });
+
+  it("sem visita em duas, desce para o custo por qualificado", () => {
+    const r = resumirImpulsionamentos(
+      [camp("a", 100), camp("b", 100)],
+      [...muitos("a", 5, 0, 1), ...muitos("b", 5, 0, 4)],
+    );
+    const c = compararCampanhas(r, (x) => x.id);
+    expect(c.criterio).toBe("qualificado");
+    expect(c.melhor).toBe("b");
+  });
+
+  it("quem gastou e não trouxe ninguém aparece no fim; sem gasto não entra", () => {
+    const r = resumirImpulsionamentos(
+      [camp("a", 100), camp("b", 100), camp("zero", 300), camp("semGasto", null), camp("pequena", 50)],
+      [...muitos("a", 5, 1, 1), ...muitos("b", 6, 2, 2), ...muitos("pequena", 2, 2, 2), ...muitos("semGasto", 9, 0, 0)],
+    );
+    const c = compararCampanhas(r, (x) => x.id);
+    expect(c.linhas.map((l) => l.id)).toEqual(["b", "a", "pequena", "zero"]);
+    expect(c.melhor).toBe("b"); // a pequena tem visita mais barata, mas não disputa
   });
 });

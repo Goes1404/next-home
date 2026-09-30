@@ -8554,3 +8554,16 @@ Nota: [[qualidade-do-lead-pelo-que-ele-fez]].
 - **Abaixo de 5 clientes, contagem e não porcentagem** (`MINIMO_PARA_PORCENTAGEM`).
 - **Contar mensagens por PostgREST exige paginar**: o teto é 1000 linhas por
   resposta, e cortar ali faria a campanha parecer pior do que é.
+
+### A comparação de campanhas decide por um critério só (30/09/2026)
+
+Nota: [[comparacao-de-campanhas-por-um-criterio-so]].
+
+- **A lista ordenava por custo por cliente e o selo ia para a mais barata
+  por visita**, então a primeira da lista não era a melhor. Hoje ordem e selo
+  usam o degrau mais fundo que duas campanhas com 5+ clientes conseguem
+  comparar: visita, depois qualificado, depois cliente.
+- **Campanha pequena aparece, mas não disputa.** Com 1 cliente que visitou, o
+  custo por visita ganharia por sorte.
+- **Quem gastou e não trouxe ninguém entra no fim, com aviso.** Antes sumia,
+  porque sem cliente não existe custo por cliente.

@@ -8,7 +8,9 @@ import {
   compararQualidade,
   porcentagem,
   MINIMO_PARA_PORCENTAGEM,
+  type CriterioDoComparativo,
   type Degraus,
+  type LinhaDoComparativo,
   type ResumoImpulsionamento,
   type totaisDosImpulsionamentos,
 } from "@/lib/crm/impulsionamentosCalculo";
@@ -157,7 +159,7 @@ export function ListaDeImpulsionamentos({
         </p>
       )}
 
-      <Comparativo linhas={comparativo} />
+      <Comparativo comparativo={comparativo} />
       <QualidadeLadoALado linhas={qualidade} />
       {series.length > 0 && <CustoAoLongoDoTempo opcoes={series} />}
 
@@ -322,52 +324,91 @@ function ComoFunciona({ aberto }: { aberto: boolean }) {
   );
 }
 
+const COLUNAS_DO_CUSTO = [
+  { criterio: "cliente", rotulo: "Por cliente", valor: (l: LinhaDoComparativo) => l.custoPorLead },
+  { criterio: "qualificado", rotulo: "Por qualificado", valor: (l: LinhaDoComparativo) => l.custoPorQualificado },
+  { criterio: "visita", rotulo: "Por visita", valor: (l: LinhaDoComparativo) => l.custoPorVisita },
+] as const;
+
+const O_QUE_SAI_MAIS_BARATO: Record<CriterioDoComparativo, string> = {
+  visita: "a visita mais barata",
+  qualificado: "o cliente qualificado mais barato",
+  cliente: "o cliente mais barato",
+};
+
+/** A frase que responde a pergunta do cartão, antes de qualquer número. */
+function veredito(c: ReturnType<typeof compararCampanhas>): string {
+  const melhor = c.linhas.find((l) => l.id === c.melhor);
+  const segunda = c.linhas.find((l) => l.id === c.segunda);
+  if (!c.criterio || !melhor || !segunda) {
+    return `Ainda é cedo para dizer: é preciso duas campanhas com ${MINIMO_PARA_PORCENTAGEM} clientes ou mais.`;
+  }
+  const coluna = COLUNAS_DO_CUSTO.find((k) => k.criterio === c.criterio)!;
+  return `${melhor.nome} traz ${O_QUE_SAI_MAIS_BARATO[c.criterio]}: ${reais(coluna.valor(melhor))}, contra ${reais(coluna.valor(segunda))} de ${segunda.nome}.`;
+}
+
 /**
- * Comparação entre campanhas: uma barra por campanha, do custo por cliente.
- * Barra mais curta é mais barata. Só entra quem tem gasto e cliente.
+ * Comparação entre campanhas: quanto custa cada degrau (cliente, qualificado,
+ * visita), com a coluna que decide destacada. A ordem e o "melhor" seguem o
+ * mesmo critério; campanha pequena aparece sem disputar.
  */
-function Comparativo({ linhas }: { linhas: ReturnType<typeof compararCampanhas> }) {
+function Comparativo({ comparativo }: { comparativo: ReturnType<typeof compararCampanhas> }) {
+  const { linhas, criterio, melhor } = comparativo;
   if (linhas.length < 2) return null;
-  const maximo = Math.max(...linhas.map((l) => l.custoPorLead));
+  const disputam = linhas.filter((l) => !l.pequena);
+  const maisBarato = Object.fromEntries(
+    COLUNAS_DO_CUSTO.map((k) => {
+      const valores = disputam.map(k.valor).filter((v): v is number => v !== null);
+      return [k.criterio, valores.length >= 2 ? Math.min(...valores) : null];
+    }),
+  ) as Record<CriterioDoComparativo, number | null>;
 
   return (
     <CartaoDeGrafico
       titulo="Qual campanha rende mais?"
-      subtitulo="Custo por cliente, da mais barata para a mais cara. Barra menor é melhor."
-      rodape="A marcada como melhor é a de menor custo por visita: cliente barato que não visita não vende."
+      subtitulo={veredito(comparativo)}
+      rodape={`Decide pelo degrau mais fundo que dá para comparar: visita, depois cliente qualificado, depois cliente. Cliente barato que não visita não vende. Campanha com menos de ${MINIMO_PARA_PORCENTAGEM} clientes aparece, mas não disputa: um cliente só decidiria por sorte.`}
     >
       <ol className="space-y-4">
         {linhas.map((l) => (
-          <li key={l.id} className="space-y-1.5">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <span className="text-fluid-sm min-w-0 font-semibold break-words text-titulo">
-                {l.nome}
-                {l.melhor && (
-                  <span className="ml-2 inline-block rounded-full border border-acento-linha bg-acento-lavado px-2 py-0.5 text-fluid-xs text-acento-forte">
-                    Melhor por visita
-                  </span>
-                )}
-              </span>
-              <span className="text-fluid-sm font-semibold text-titulo tabular-nums">
-                {reais(l.custoPorLead)}
+          <li key={l.id} className="space-y-2">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className="text-fluid-sm min-w-0 font-semibold break-words text-titulo">{l.nome}</span>
+              {l.id === melhor && (
+                <span className="rounded-full border border-acento-linha bg-acento-lavado px-2 py-0.5 text-fluid-xs text-acento-forte">
+                  Melhor
+                </span>
+              )}
+              <span className="text-fluid-xs text-corpo">
+                {reais(l.gasto)} · {l.leads} {l.leads === 1 ? "cliente" : "clientes"}
+                {l.leads > 0 && l.pequena ? " · poucos para comparar" : ""}
               </span>
             </div>
-            <div
-              className="h-2 overflow-hidden rounded-full bg-vidro-forte"
-              title={`${l.nome}: ${reais(l.custoPorLead)} por cliente`}
-              aria-hidden
-            >
-              <div
-                className="h-full rounded-full bg-acento"
-                style={{ width: `${Math.max(4, (l.custoPorLead / maximo) * 100)}%` }}
-              />
-            </div>
-            <p className="text-fluid-xs text-corpo">
-              {l.leads} {l.leads === 1 ? "cliente" : "clientes"} · por visita {reais(l.custoPorVisita)} ·{" "}
-              {l.taxaDeQualificados === null
-                ? `${l.qualificados} de ${l.leads} qualificados`
-                : `${l.taxaDeQualificados}% qualificados`}
-            </p>
+            {l.leads === 0 ? (
+              <p className="rounded-xl bg-alerta-lavado px-3 py-2 text-fluid-xs text-titulo">
+                Gastou {reais(l.gasto)} e ainda não trouxe nenhum cliente.
+              </p>
+            ) : (
+              <dl className="grid grid-cols-3 gap-2">
+                {COLUNAS_DO_CUSTO.map((k) => {
+                  const v = k.valor(l);
+                  const decide = k.criterio === criterio;
+                  const barato = !l.pequena && v !== null && v === maisBarato[k.criterio];
+                  return (
+                    <div
+                      key={k.criterio}
+                      className={`min-w-0 rounded-xl px-2.5 py-2 ${decide ? "bg-acento-lavado ring-1 ring-acento-linha" : "bg-vidro"}`}
+                    >
+                      <dt className="text-fluid-xs text-corpo">{k.rotulo}</dt>
+                      <dd className={`tabular-nums ${l.pequena ? "text-corpo" : "font-semibold text-titulo"}`}>
+                        {v === null ? "—" : reais(v)}
+                        {barato && <span className="block text-fluid-xs font-normal text-acento-forte">mais barato</span>}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            )}
           </li>
         ))}
       </ol>
