@@ -12,6 +12,7 @@ import {
 import { TITULO_SEM_ETIQUETA } from "@/lib/whatsapp/anuncioMeta";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { CartaoDeGrafico } from "@/app/corretor/(painel)/_componentes/graficos/Moldura";
+import { CustoAoLongoDoTempo, type OpcaoDeSerie } from "./CustoAoLongoDoTempo";
 import {
   agruparAnuncio,
   apagarCampanha,
@@ -100,6 +101,8 @@ export function ListaDeImpulsionamentos({
   imoveis,
   ligados,
   candidatos,
+  series,
+  hoje,
   indisponivel,
 }: {
   resumos: ResumoImpulsionamento[];
@@ -110,6 +113,8 @@ export function ListaDeImpulsionamentos({
   imoveis: { id: string; nome: string }[];
   ligados: Record<string, ClienteDaLista[]>;
   candidatos: ClienteDaLista[];
+  series: OpcaoDeSerie[];
+  hoje: string;
   indisponivel: boolean;
 }) {
   const comparativo = useMemo(() => compararCampanhas(resumos, nomeDoResumo), [resumos]);
@@ -149,6 +154,7 @@ export function ListaDeImpulsionamentos({
       )}
 
       <Comparativo linhas={comparativo} />
+      {series.length > 0 && <CustoAoLongoDoTempo opcoes={series} />}
 
       <ul className="space-y-3">
         {resumos.map((r) => (
@@ -161,6 +167,7 @@ export function ListaDeImpulsionamentos({
               campanhas={minhasCampanhas}
               ligados={ligados[r.id] ?? []}
               candidatos={candidatos}
+              hoje={hoje}
             />
           </li>
         ))}
@@ -406,6 +413,7 @@ function Cartao({
   campanhas,
   ligados,
   candidatos,
+  hoje,
 }: {
   resumo: ResumoImpulsionamento;
   editavel: boolean;
@@ -414,7 +422,9 @@ function Cartao({
   campanhas: { id: string; nome: string }[];
   ligados: ClienteDaLista[];
   candidatos: ClienteDaLista[];
+  hoje: string;
 }) {
+  const [dia, setDia] = useState(hoje);
   const [valor, setValor] = useState(valorNoCampo(resumo.valorGasto));
   const [imovel, setImovel] = useState(resumo.empreendimentoId ?? "");
   const { msg, pendente, rodar } = useAcao();
@@ -492,18 +502,16 @@ function Cartao({
 
       {editavel ? (
         <form
-          className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
+          className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]"
           onSubmit={(e) => {
             e.preventDefault();
             rodar(() =>
-              salvarGastoDoImpulsionamento({ id: resumo.id, valor, empreendimentoId: imovel || null }),
+              salvarGastoDoImpulsionamento({ id: resumo.id, valor, empreendimentoId: imovel || null, dia }),
             );
           }}
         >
           <label className="space-y-1">
-            <span className="text-fluid-xs text-corpo">
-              {manual ? "Valor investido (R$)" : "Quanto você gastou (R$)"}
-            </span>
+            <span className="text-fluid-xs text-corpo">Gasto total até o dia (R$)</span>
             <input
               inputMode="decimal"
               value={valor}
@@ -511,6 +519,10 @@ function Cartao({
               placeholder="Ex.: 50"
               className={CAMPO}
             />
+          </label>
+          <label className="space-y-1">
+            <span className="text-fluid-xs text-corpo">Dia</span>
+            <input type="date" value={dia} max={hoje} onChange={(e) => setDia(e.target.value)} className={CAMPO} />
           </label>
           <label className="space-y-1">
             <span className="text-fluid-xs text-corpo">Imóvel (opcional)</span>

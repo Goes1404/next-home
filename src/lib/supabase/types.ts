@@ -337,6 +337,33 @@ export type Database = {
         }
         Relationships: []
       }
+      impulsionamento_gastos: {
+        Row: {
+          id: string
+          impulsionamento_id: string
+          corretor_id: string
+          dia: string
+          valor_acumulado: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          impulsionamento_id: string
+          corretor_id: string
+          dia: string
+          valor_acumulado: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          impulsionamento_id?: string
+          corretor_id?: string
+          dia?: string
+          valor_acumulado?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
       impulsionamentos: {
         Row: {
           id: string

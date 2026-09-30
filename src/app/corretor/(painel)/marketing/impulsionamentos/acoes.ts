@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { CANAIS_DE_CAMPANHA, lerValorEmReais } from "@/lib/crm/impulsionamentosCalculo";
 import { createClient } from "@/lib/supabase/server";
+import { hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 
 type Resultado = { ok?: string; erro?: string };
 
@@ -19,39 +20,109 @@ function lerGasto(entrada: string): number | null | "invalido" {
 
 const VALOR_INVALIDO = "Não entendi o valor. Escreva só o número, por exemplo 50 ou 49,90.";
 
+type Cliente = Awaited<ReturnType<typeof createClient>>;
+
 /**
- * O corretor informa quanto gastou num anúncio ou campanha (e, se quiser, de
- * qual imóvel era). A policy só deixa o DONO atualizar, e o grant por coluna
- * só deixa mudar gasto, imóvel, nome, canal, período e agrupamento.
+ * Grava "até este dia, a campanha tinha gastado X" (0133). Uma linha por
+ * campanha e dia; salvar de novo no mesmo dia corrige. Ler e decidir entre
+ * insert e update, e não upsert: com grant por coluna, o upsert tenta
+ * atualizar a chave também e é recusado.
+ */
+async function registrarPontoDeGasto(
+  supabase: Cliente,
+  corretorId: string,
+  impulsionamentoId: string,
+  dia: string,
+  valor: number,
+): Promise<boolean> {
+  const { data: existente } = await supabase
+    .from("impulsionamento_gastos")
+    .select("id")
+    .eq("impulsionamento_id", impulsionamentoId)
+    .eq("dia", dia)
+    .maybeSingle();
+  const { error } = existente
+    ? await supabase.from("impulsionamento_gastos").update({ valor_acumulado: valor }).eq("id", existente.id)
+    : await supabase.from("impulsionamento_gastos").insert({
+        impulsionamento_id: impulsionamentoId,
+        corretor_id: corretorId,
+        dia,
+        valor_acumulado: valor,
+      });
+  if (error) console.error("[campanhas] falha ao registrar o gasto do dia:", error.message);
+  return !error;
+}
+
+/** O dia informado, ou hoje em São Paulo. Dia no futuro não vale. */
+function diaDoGasto(entrada: string | undefined): string | "futuro" {
+  const hoje = hojeEmSaoPaulo();
+  if (!entrada || !DATA.test(entrada)) return hoje;
+  return entrada > hoje ? "futuro" : entrada;
+}
+
+/**
+ * O corretor informa quanto já tinha gastado até um dia (hoje, por padrão),
+ * e, se quiser, de qual imóvel era. O valor da linha passa a ser o do
+ * registro mais recente; os anteriores ficam na linha do tempo do custo.
+ * Apagar o valor apaga a linha do tempo inteira.
  */
 export async function salvarGastoDoImpulsionamento(params: {
   id: string;
   valor: string;
   empreendimentoId: string | null;
+  dia?: string;
 }): Promise<Resultado> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
 
   const valor = lerGasto(params.valor);
   if (valor === "invalido") return { erro: VALOR_INVALIDO };
+  const dia = diaDoGasto(params.dia);
+  if (dia === "futuro") return { erro: "O dia do gasto não pode ser no futuro." };
 
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data: dono } = await supabase
+    .from("impulsionamentos")
+    .select("id")
+    .eq("id", params.id)
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+  // O anúncio de outro corretor: o gestor vê, mas não edita.
+  if (!dono) return { erro: "Só quem fez o anúncio pode informar o gasto." };
+
+  let total: number | null = null;
+  if (valor === null) {
+    await supabase.from("impulsionamento_gastos").delete().eq("impulsionamento_id", params.id);
+  } else {
+    if (!(await registrarPontoDeGasto(supabase, corretor.id, params.id, dia, valor))) {
+      return { erro: "Não consegui salvar agora. Tente de novo." };
+    }
+    const { data: ultimo } = await supabase
+      .from("impulsionamento_gastos")
+      .select("valor_acumulado")
+      .eq("impulsionamento_id", params.id)
+      .order("dia", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    total = ultimo ? Number(ultimo.valor_acumulado) : valor;
+  }
+
+  const { error } = await supabase
     .from("impulsionamentos")
     .update({
-      valor_gasto: valor,
-      gasto_informado_em: valor === null ? null : new Date().toISOString(),
+      valor_gasto: total,
+      gasto_informado_em: total === null ? null : new Date().toISOString(),
       empreendimento_id: params.empreendimentoId || null,
     })
-    .eq("id", params.id)
-    .select("id");
-
+    .eq("id", params.id);
   if (error) return { erro: "Não consegui salvar agora. Tente de novo." };
-  // Zero linhas: o anúncio é de outro corretor (o gestor vê, mas não edita).
-  if (!data?.length) return { erro: "Só quem fez o anúncio pode informar o gasto." };
 
   revalidatePath(ROTA);
-  return { ok: valor === null ? "Gasto apagado." : "Gasto salvo. O custo por cliente já foi recalculado." };
+  if (valor === null) return { ok: "Gasto apagado." };
+  if (total !== valor) {
+    return { ok: "Gasto registrado nesse dia. O total continua sendo o do registro mais recente." };
+  }
+  return { ok: "Gasto salvo. O custo por cliente já foi recalculado." };
 }
 
 /**
@@ -80,10 +151,11 @@ export async function criarCampanha(params: {
   if (inicio && fim && fim < inicio) return { erro: "O fim não pode ser antes do início." };
 
   const agora = new Date().toISOString();
+  const chave = `manual:${randomUUID()}`;
   const supabase = await createClient();
   const { error } = await supabase.from("impulsionamentos").insert({
     corretor_id: corretor.id,
-    chave: `manual:${randomUUID()}`,
+    chave,
     criada_pelo_corretor: true,
     titulo: nome,
     canal: params.canal as keyof typeof CANAIS_DE_CAMPANHA,
@@ -98,6 +170,17 @@ export async function criarCampanha(params: {
   if (error) {
     console.error("[campanhas] falha ao criar:", error.message);
     return { erro: "Não consegui criar a campanha agora. Tente de novo." };
+  }
+
+  if (valor !== null) {
+    const { data: criada } = await supabase
+      .from("impulsionamentos")
+      .select("id")
+      .eq("chave", chave)
+      .maybeSingle();
+    // Falhar aqui não desfaz a campanha: o total fica em `valor_gasto`, e a
+    // linha do tempo usa o total quando não há registro com data.
+    if (criada) await registrarPontoDeGasto(supabase, corretor.id, criada.id, hojeEmSaoPaulo(), valor);
   }
 
   revalidatePath(ROTA);

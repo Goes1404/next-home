@@ -54,6 +54,8 @@ export type LeadDeAnuncio = {
   impulsionamentoId?: string | null;
   /** A leitura da IA sobre o lead; null quando ainda não houve conversa lida. */
   temperatura?: Temperatura | null;
+  /** Quando o lead nasceu (ISO); é o que põe o cliente na linha do tempo. */
+  criadoEm?: string;
 };
 
 /** Qualidade dos clientes que chegaram: quantos de cada temperatura. */
@@ -75,6 +77,8 @@ export type ResumoImpulsionamento = LinhaImpulsionamento & {
   taxaDeBonsLeads: number | null;
   /** Os anúncios detectados que foram agrupados nesta campanha. */
   anuncios: LinhaImpulsionamento[];
+  /** Quando cada cliente desta linha nasceu (ISO), para a linha do tempo. */
+  datasDosLeads: string[];
 };
 
 const ETAPAS_DE_VISITA_EM_DIANTE = new Set(["visita_agendada", "documentacao", "fechado"]);
@@ -139,6 +143,7 @@ export function resumirImpulsionamentos(
     return {
       ...linha,
       anuncios,
+      datasDosLeads: meus.map((l) => l.criadoEm).filter((d): d is string => Boolean(d)),
       leads: meus.length,
       visitas,
       fechados: meus.filter((l) => l.etapa === "fechado").length,
@@ -213,6 +218,105 @@ export function compararCampanhas(
     : linhas[0];
   melhor.melhor = true;
   return linhas;
+}
+
+/** "Até este dia, a campanha tinha gastado X" (0133). */
+export type PontoDeGasto = { impulsionamentoId: string; dia: string; valor: number };
+
+export type PontoDaSerie = {
+  /** Último dia da semana, "aaaa-mm-dd". */
+  dia: string;
+  gasto: number;
+  clientes: number;
+  custoPorCliente: number | null;
+};
+
+const DIA_MS = 86_400_000;
+const emMs = (dia: string) => Date.UTC(+dia.slice(0, 4), +dia.slice(5, 7) - 1, +dia.slice(8, 10));
+const deMs = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+/** O dia de São Paulo de um instante ISO (ou o próprio dia, se já vier assim). */
+export function diaDe(iso: string): string {
+  if (iso.length === 10) return iso;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(iso));
+}
+
+/**
+ * Quanto uma linha tinha gastado até o dia `d`.
+ *
+ * Os pontos são o que o corretor registrou ("até dia X, gastei Y"). Entre o
+ * começo da campanha e o primeiro ponto, e entre dois pontos, o gasto é
+ * distribuído por igual — é como Meta e Google gastam um orçamento diário.
+ * Depois do último ponto, fica parado: não sabemos o que veio depois.
+ * Ponto registrado depois do fim da campanha conta como gasto até o fim.
+ */
+export function gastoAte(
+  linha: LinhaImpulsionamento,
+  pontos: PontoDeGasto[],
+  d: string,
+  hoje: string,
+): number {
+  let pts = pontos
+    .filter((p) => p.impulsionamentoId === linha.id)
+    .map((p) => ({ dia: linha.fim && p.dia > linha.fim ? linha.fim : p.dia, valor: p.valor }))
+    .sort((a, b) => a.dia.localeCompare(b.dia));
+  if (pts.length === 0 && linha.valorGasto !== null) {
+    pts = [{ dia: linha.fim && linha.fim < hoje ? linha.fim : hoje, valor: linha.valorGasto }];
+  }
+  if (pts.length === 0) return 0;
+
+  const inicio = linha.inicio ?? diaDe(linha.primeiroLeadEm);
+  if (d < inicio) return 0;
+  let anterior = { dia: inicio, valor: 0 };
+  for (const p of pts) {
+    if (d < p.dia) {
+      const total = emMs(p.dia) - emMs(anterior.dia);
+      if (total <= 0) return p.valor;
+      const fracao = (emMs(d) - emMs(anterior.dia)) / total;
+      return anterior.valor + (p.valor - anterior.valor) * fracao;
+    }
+    anterior = p.dia >= anterior.dia ? p : { dia: anterior.dia, valor: p.valor };
+  }
+  return pts[pts.length - 1].valor;
+}
+
+/**
+ * O custo por cliente ao longo do tempo, semana a semana: no fim de cada
+ * semana, o gasto acumulado dividido pelos clientes acumulados até ali.
+ *
+ * Acumulado, e não o da semana: numa semana sem cliente o custo "da semana"
+ * seria infinito, e numa com um cliente só pularia para qualquer lado. O
+ * acumulado mostra para onde a campanha está indo.
+ *
+ * Só entram linhas com gasto informado — sem ele não existe custo.
+ */
+export function serieDeCusto(
+  resumos: ResumoImpulsionamento[],
+  pontos: PontoDeGasto[],
+  hoje: string,
+  semanas = 12,
+): PontoDaSerie[] {
+  const comGasto = resumos.filter((r) => r.gastoTotal !== null);
+  if (comGasto.length === 0) return [];
+  const linhas = comGasto.flatMap((r) => [r as LinhaImpulsionamento, ...r.anuncios]);
+  const inicios = comGasto.map((r) => r.inicio ?? diaDe(r.primeiroLeadEm));
+  const primeiro = inicios.reduce((a, b) => (a < b ? a : b));
+  const dias = comGasto.flatMap((r) => r.datasDosLeads.map(diaDe));
+
+  const serie: PontoDaSerie[] = [];
+  for (let i = semanas - 1; i >= 0; i--) {
+    const dia = deMs(emMs(hoje) - i * 7 * DIA_MS);
+    if (dia < primeiro) continue;
+    const gasto = Math.round(linhas.reduce((s, l) => s + gastoAte(l, pontos, dia, hoje), 0) * 100) / 100;
+    const clientes = dias.filter((d) => d <= dia).length;
+    serie.push({ dia, gasto, clientes, custoPorCliente: dividir(gasto, clientes) });
+  }
+  return serie;
 }
 
 /**

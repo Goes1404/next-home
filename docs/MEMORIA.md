@@ -8523,3 +8523,16 @@ por visita e por cliente quente/morno; um gráfico compara as campanhas.
   gráfico de origem, porque os clientes dela chegam por outro canal.
 - A 0132 foi aplicada no banco antes do deploy: ela não muda o que o código
   antigo lê nem escreve.
+
+### O custo por cliente ao longo do tempo (0133, 30/09/2026)
+
+- **O gasto passou a ter data** (`impulsionamento_gastos`: "até este dia,
+  gastou X"). `valor_gasto` continua sendo o total, agora o do registro mais
+  recente.
+- **Entre dois registros o gasto é distribuído por igual pelos dias**; o
+  gráfico mostra o custo acumulado no fim de cada semana, uma campanha por vez.
+- **Gráfico com ResizeObserver começa com largura zero**: com um número fixo, a
+  caixa media o próprio SVG e crescia junto, estourando a tela do celular.
+- **Coluna fora do grant de INSERT recusa o insert inteiro**: testando a RLS,
+  mandar `id` na mão deu "permission denied" porque `id` não está no grant por
+  coluna. A tela nunca manda `id`; o teste é que estava errado.

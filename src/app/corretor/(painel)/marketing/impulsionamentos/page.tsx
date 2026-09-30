@@ -4,11 +4,14 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { createClient } from "@/lib/supabase/server";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
+import { hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import {
   resumirImpulsionamentos,
+  serieDeCusto,
   totaisDosImpulsionamentos,
   type LeadDeAnuncio,
   type LinhaImpulsionamento,
+  type PontoDeGasto,
   type Temperatura,
 } from "@/lib/crm/impulsionamentosCalculo";
 import { ListaDeImpulsionamentos, type ClienteDaLista } from "./ListaDeImpulsionamentos";
@@ -36,7 +39,7 @@ export default async function PaginaImpulsionamentos() {
   if (!corretor) return null;
 
   const supabase = await createClient();
-  const [{ data: linhas, error }, { data: leads }, catalogo, { data: corretores }, { data: candidatos }] =
+  const [{ data: linhas, error }, { data: leads }, catalogo, { data: corretores }, { data: candidatos }, { data: gastos }] =
     await Promise.all([
       supabase
         .from("impulsionamentos")
@@ -47,7 +50,7 @@ export default async function PaginaImpulsionamentos() {
         .limit(200),
       supabase
         .from("leads")
-        .select("id, nome, telefone, corretor_id, meta_ad_id, anuncio_origem, etapa, visita_agendada_em, impulsionamento_id")
+        .select("id, nome, telefone, corretor_id, meta_ad_id, anuncio_origem, etapa, visita_agendada_em, impulsionamento_id, created_at")
         .or("origem.eq.meta/ctwa,impulsionamento_id.not.is.null")
         .is("arquivado_em", null)
         .limit(5000),
@@ -64,6 +67,8 @@ export default async function PaginaImpulsionamentos() {
         .is("impulsionamento_id", null)
         .order("created_at", { ascending: false })
         .limit(150),
+      // A linha do tempo do gasto (0133): "até este dia, tinha gastado X".
+      supabase.from("impulsionamento_gastos").select("impulsionamento_id, dia, valor_acumulado").limit(5000),
     ]);
 
   const ids = (leads ?? []).map((l) => l.id);
@@ -102,9 +107,27 @@ export default async function PaginaImpulsionamentos() {
     visitaAgendadaEm: l.visita_agendada_em,
     impulsionamentoId: l.impulsionamento_id,
     temperatura: temperaturas.get(l.id) ?? null,
+    criadoEm: l.created_at,
   }));
 
   const resumos = resumirImpulsionamentos(doBanco, leadsDeAnuncio);
+  const pontos: PontoDeGasto[] = (gastos ?? []).map((g) => ({
+    impulsionamentoId: g.impulsionamento_id,
+    dia: g.dia,
+    valor: Number(g.valor_acumulado),
+  }));
+  const hoje = hojeEmSaoPaulo();
+  const comGasto = resumos.filter((r) => r.gastoTotal !== null);
+  const series = [
+    ...(comGasto.length > 1
+      ? [{ id: "todas", nome: "Todas as campanhas", serie: serieDeCusto(comGasto, pontos, hoje) }]
+      : []),
+    ...comGasto.map((r) => ({
+      id: r.id,
+      nome: r.titulo ?? (r.criadaPeloCorretor ? "Campanha sem nome" : "Post impulsionado"),
+      serie: serieDeCusto([r], pontos, hoje),
+    })),
+  ];
   const nomes = Object.fromEntries((corretores ?? []).map((c) => [c.id, c.nome]));
 
   // Os clientes ligados à mão, por campanha, para a lista de cada cartão.
@@ -129,6 +152,8 @@ export default async function PaginaImpulsionamentos() {
         imoveis={catalogo.filter((i) => i.id).map((i) => ({ id: i.id as string, nome: i.nome }))}
         ligados={ligados}
         candidatos={(candidatos ?? []).map((c) => ({ id: c.id, nome: nomeParaExibir(c) }))}
+        series={series}
+        hoje={hoje}
         indisponivel={Boolean(error)}
       />
     </div>

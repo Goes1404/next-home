@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   compararCampanhas,
+  gastoAte,
+  serieDeCusto,
   lerValorEmReais,
   resumirImpulsionamentos,
   totaisDosImpulsionamentos,
@@ -118,5 +120,53 @@ describe("campanhas cadastradas pelo corretor (0132)", () => {
 
   it("uma campanha só não vira comparação com vencedor", () => {
     expect(compararCampanhas([resumos[1]], (r) => r.id).some((l) => l.melhor)).toBe(false);
+  });
+});
+
+describe("custo ao longo do tempo (0133)", () => {
+  const camp: LinhaImpulsionamento = {
+    ...base, id: "k", corretorId: "c1", chave: "manual:k", titulo: "K", valorGasto: 300,
+    criadaPeloCorretor: true, inicio: "2026-09-01",
+  };
+  const HOJE = "2026-09-30";
+
+  it("sem registro com data, espalha o total do início até hoje", () => {
+    expect(gastoAte(camp, [], "2026-08-31", HOJE)).toBe(0);
+    expect(gastoAte(camp, [], "2026-09-01", HOJE)).toBe(0);
+    expect(gastoAte(camp, [], "2026-09-30", HOJE)).toBe(300);
+    expect(gastoAte(camp, [], "2026-09-15", HOJE)).toBeCloseTo(144.83, 1);
+  });
+
+  it("entre dois registros o gasto anda por igual, e depois do último fica parado", () => {
+    const pts = [
+      { impulsionamentoId: "k", dia: "2026-09-11", valor: 100 },
+      { impulsionamentoId: "k", dia: "2026-09-21", valor: 300 },
+    ];
+    expect(gastoAte(camp, pts, "2026-09-06", HOJE)).toBe(50);
+    expect(gastoAte(camp, pts, "2026-09-16", HOJE)).toBe(200);
+    expect(gastoAte(camp, pts, "2026-09-29", HOJE)).toBe(300);
+  });
+
+  it("registro feito depois do fim conta como gasto até o fim", () => {
+    const acabou = { ...camp, fim: "2026-09-11" };
+    const pts = [{ impulsionamentoId: "k", dia: "2026-09-25", valor: 100 }];
+    expect(gastoAte(acabou, pts, "2026-09-11", HOJE)).toBe(100);
+  });
+
+  it("a série semanal divide o gasto acumulado pelos clientes acumulados", () => {
+    const leads = [
+      { ...lead({}), impulsionamentoId: "k", criadoEm: "2026-09-05T15:00:00Z" },
+      { ...lead({}), impulsionamentoId: "k", criadoEm: "2026-09-20T15:00:00Z" },
+      { ...lead({}), impulsionamentoId: "k", criadoEm: "2026-09-29T15:00:00Z" },
+    ];
+    const resumos = resumirImpulsionamentos([camp], leads);
+    const serie = serieDeCusto(resumos, [], HOJE);
+    expect(serie.map((p) => p.dia)).toEqual(["2026-09-02", "2026-09-09", "2026-09-16", "2026-09-23", "2026-09-30"]);
+    expect(serie[0]).toMatchObject({ clientes: 0, custoPorCliente: null });
+    expect(serie.at(-1)).toMatchObject({ gasto: 300, clientes: 3, custoPorCliente: 100 });
+  });
+
+  it("sem gasto informado não há série", () => {
+    expect(serieDeCusto(resumirImpulsionamentos([{ ...camp, valorGasto: null }], []), [], HOJE)).toEqual([]);
   });
 });

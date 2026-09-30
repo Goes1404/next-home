@@ -6,12 +6,13 @@ status: growing
 custou: baixo
 codigo:
   - supabase/migrations/0132_campanhas_do_corretor.sql
+  - supabase/migrations/0133_gasto_das_campanhas_por_dia.sql
   - src/lib/crm/impulsionamentosCalculo.ts
   - src/app/corretor/(painel)/marketing/impulsionamentos/
   - src/app/corretor/(painel)/_componentes/graficos/OrigemDosLeads.tsx
 created: 2026-09-30
 updated: 2026-09-30
-summary: A tela de impulsionamentos só mostrava anúncio que o webhook detectava, sem como cadastrar campanha, sem qualidade do lead e sem comparação. Agora (0132) o corretor cria campanha com canal, valor e período, coloca anúncios detectados dentro dela e liga clientes de outros canais; cada cartão mostra a qualidade pela temperatura da IA e o custo por cliente, por visita e por cliente quente/morno, e um gráfico compara as campanhas pela mais barata por cliente, marcando a melhor por visita.
+summary: A tela de impulsionamentos só mostrava anúncio que o webhook detectava, sem como cadastrar campanha, sem qualidade do lead e sem comparação. Agora (0132) o corretor cria campanha com canal, valor e período, coloca anúncios detectados dentro dela e liga clientes de outros canais; cada cartão mostra a qualidade pela temperatura da IA e o custo por cliente, por visita e por cliente quente/morno, e um gráfico compara as campanhas pela mais barata por cliente, marcando a melhor por visita. Desde a 0133 o gasto tem data, e a tela desenha o custo por cliente semana a semana.
 ---
 
 # Campanha cadastrada pelo corretor
@@ -55,5 +56,32 @@ Grants conferidos com `has_column_privilege`: `anon` sem nada; o
 Inserir campanha manual com sessão fingida passou; chave de anúncio forjada
 levou erro de RLS. Tela olhada com dados de exemplo em 390 e 1280 px, sem
 estouro de largura.
+
+## O custo ao longo do tempo (0133)
+
+`valor_gasto` é um número só, o total mais recente; com ele não se sabe
+quanto já tinha sido gasto em cada semana. `impulsionamento_gastos` guarda
+"até este dia, a campanha tinha gastado X", uma linha por campanha e dia. O
+formulário do cartão ganhou o campo **Dia** (padrão hoje, nunca no futuro), e
+o total da linha passa a ser o do registro mais recente — registrar um gasto
+antigo não derruba o total.
+
+- **Entre dois registros, o gasto anda por igual** (`gastoAte`), que é como
+  Meta e Google gastam um orçamento diário. Antes do primeiro, parte de zero no
+  início da campanha; depois do último, fica parado. Registro feito depois do
+  fim conta como gasto até o fim.
+- **O gráfico é o custo ACUMULADO no fim de cada semana** (`serieDeCusto`):
+  o custo "da semana" seria infinito numa semana sem cliente. Semana sem
+  cliente ainda não desenha ponto, em vez de um zero que pareceria barato.
+- **Uma linha por vez, com seletor** (todas ou uma campanha): várias linhas
+  coloridas pediriam uma cor por campanha, e a comparação entre elas já tem o
+  gráfico de barras.
+- Armadilha do gráfico: a caixa começava com largura fixa (640) e o
+  ResizeObserver media o próprio SVG, então a caixa crescia com ele e estourava
+  a tela do celular. Largura zero até medir. E quantas datas cabem no eixo sai
+  da largura (~90px por data), senão elas se sobrepõem no celular.
+- Teste de RLS dentro de uma instrução só engana: a campanha criada num CTE não
+  é vista pela checagem do insert do gasto no mesmo comando. Em comandos
+  separados, o dono grava e o de outro corretor é recusado.
 
 Ver também [[impulsionamento-do-corretor-pela-etiqueta-da-meta]].
