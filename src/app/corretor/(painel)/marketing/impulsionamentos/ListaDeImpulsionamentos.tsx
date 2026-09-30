@@ -1,19 +1,37 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import type {
-  ResumoImpulsionamento,
-  totaisDosImpulsionamentos,
+import { useMemo, useState, useTransition } from "react";
+import {
+  CANAIS_DE_CAMPANHA,
+  compararCampanhas,
+  type Qualidade,
+  type ResumoImpulsionamento,
+  type totaisDosImpulsionamentos,
 } from "@/lib/crm/impulsionamentosCalculo";
 import { TITULO_SEM_ETIQUETA } from "@/lib/whatsapp/anuncioMeta";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
-import { salvarGastoDoImpulsionamento } from "./acoes";
+import { CartaoDeGrafico } from "@/app/corretor/(painel)/_componentes/graficos/Moldura";
+import {
+  agruparAnuncio,
+  apagarCampanha,
+  criarCampanha,
+  desvincularCliente,
+  salvarGastoDoImpulsionamento,
+  vincularClientes,
+} from "./acoes";
 
 type Totais = ReturnType<typeof totaisDosImpulsionamentos>;
+export type ClienteDaLista = { id: string; nome: string };
+type Msg = { tipo: "ok" | "erro"; texto: string } | null;
+type Resultado = { ok?: string; erro?: string };
 
 const CAMPO =
   "w-full rounded-xl border border-linha-forte bg-campo px-3 py-2.5 text-fluid-sm text-titulo outline-none";
+const BOTAO =
+  "min-h-11 rounded-xl bg-acento px-5 text-fluid-sm font-semibold text-sobre-cor disabled:opacity-60";
+const BOTAO_SECUNDARIO =
+  "min-h-11 rounded-xl border border-linha-forte px-4 text-fluid-sm font-semibold text-titulo hover:bg-vidro disabled:opacity-60";
 
 const reais = (v: number | null) =>
   v === null
@@ -25,10 +43,53 @@ const dataCurta = (iso: string) =>
     day: "2-digit",
     month: "short",
     timeZone: "America/Sao_Paulo",
-  }).format(new Date(iso));
+  }).format(new Date(iso.length === 10 ? `${iso}T12:00:00-03:00` : iso));
 
 const valorNoCampo = (v: number | null) =>
   v === null ? "" : v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function nomeDoResumo(r: ResumoImpulsionamento): string {
+  if (r.chave === "sem-etiqueta") return `${TITULO_SEM_ETIQUETA}, sem identificação do post`;
+  return r.titulo ?? (r.criadaPeloCorretor ? "Campanha sem nome" : "Post impulsionado");
+}
+
+/** Roda uma action e traduz o desfecho numa mensagem de tela. */
+function useAcao() {
+  const router = useRouter();
+  const [msg, setMsg] = useState<Msg>(null);
+  const [pendente, iniciar] = useTransition();
+  const rodar = (acao: () => Promise<Resultado>, depois?: () => void) =>
+    iniciar(async () => {
+      setMsg(null);
+      try {
+        const r = await acao();
+        if (r.erro) setMsg({ tipo: "erro", texto: r.erro });
+        else {
+          setMsg({ tipo: "ok", texto: r.ok ?? "Salvo." });
+          depois?.();
+          router.refresh();
+        }
+      } catch (e) {
+        setMsg({
+          tipo: "erro",
+          texto: ehActionDeOutroBuild(e) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.",
+        });
+      }
+    });
+  return { msg, pendente, rodar };
+}
+
+function Mensagem({ msg }: { msg: Msg }) {
+  if (!msg) return null;
+  return (
+    <p
+      role={msg.tipo === "erro" ? "alert" : "status"}
+      className={msg.tipo === "erro" ? "text-fluid-sm text-perigo" : "text-fluid-sm text-ok"}
+    >
+      {msg.texto}
+    </p>
+  );
+}
 
 export function ListaDeImpulsionamentos({
   resumos,
@@ -37,6 +98,8 @@ export function ListaDeImpulsionamentos({
   verEquipe,
   nomes,
   imoveis,
+  ligados,
+  candidatos,
   indisponivel,
 }: {
   resumos: ResumoImpulsionamento[];
@@ -45,37 +108,47 @@ export function ListaDeImpulsionamentos({
   verEquipe: boolean;
   nomes: Record<string, string>;
   imoveis: { id: string; nome: string }[];
+  ligados: Record<string, ClienteDaLista[]>;
+  candidatos: ClienteDaLista[];
   indisponivel: boolean;
 }) {
+  const comparativo = useMemo(() => compararCampanhas(resumos, nomeDoResumo), [resumos]);
+  const minhasCampanhas = resumos
+    .filter((r) => r.criadaPeloCorretor && r.corretorId === meuId)
+    .map((r) => ({ id: r.id, nome: nomeDoResumo(r) }));
+
   if (indisponivel) {
     return (
       <p className="cartao p-4 text-fluid-sm text-corpo">
-        O registro de impulsionamentos ainda não está ativo nesta instalação.
+        O registro de anúncios ainda não está ativo nesta instalação.
       </p>
     );
   }
 
   return (
     <div className="space-y-6">
+      <NovaCampanha imoveis={imoveis} />
       <ComoFunciona aberto={resumos.length === 0} />
 
       {resumos.length > 0 && (
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Numero rotulo="Investido" valor={reais(totais.gasto)} />
           <Numero rotulo="Clientes que chegaram" valor={String(totais.leads)} />
-          <Numero rotulo="Visitas marcadas" valor={String(totais.visitas)} />
-          <Numero rotulo="Gasto informado" valor={reais(totais.gasto)} />
           <Numero rotulo="Custo por cliente" valor={reais(totais.custoPorLead)} />
+          <Numero rotulo="Custo por visita" valor={reais(totais.custoPorVisita)} />
         </dl>
       )}
 
       {totais.semGasto > 0 && (
         <p className="rounded-xl bg-alerta-lavado px-4 py-3 text-fluid-sm text-titulo">
           {totais.semGasto === 1
-            ? "1 impulsionamento está sem o valor gasto."
-            : `${totais.semGasto} impulsionamentos estão sem o valor gasto.`}{" "}
-          Sem ele, o custo por cliente não entra na conta.
+            ? "1 anúncio está sem o valor gasto."
+            : `${totais.semGasto} anúncios estão sem o valor gasto.`}{" "}
+          Sem ele, o custo por cliente não entra na conta nem na comparação.
         </p>
       )}
+
+      <Comparativo linhas={comparativo} />
 
       <ul className="space-y-3">
         {resumos.map((r) => (
@@ -83,8 +156,11 @@ export function ListaDeImpulsionamentos({
             <Cartao
               resumo={r}
               editavel={r.corretorId === meuId}
-              dono={verEquipe ? nomes[r.corretorId] ?? null : null}
+              dono={verEquipe ? (nomes[r.corretorId] ?? null) : null}
               imoveis={imoveis}
+              campanhas={minhasCampanhas}
+              ligados={ligados[r.id] ?? []}
+              candidatos={candidatos}
             />
           </li>
         ))}
@@ -97,8 +173,106 @@ function Numero({ rotulo, valor }: { rotulo: string; valor: string }) {
   return (
     <div className="cartao flex flex-col-reverse gap-1 p-4">
       <dt className="text-fluid-xs text-corpo">{rotulo}</dt>
-      <dd className="text-fluid-xl font-semibold text-titulo">{valor}</dd>
+      <dd className="text-fluid-xl font-semibold text-titulo tabular-nums">{valor}</dd>
     </div>
+  );
+}
+
+function NovaCampanha({ imoveis }: { imoveis: { id: string; nome: string }[] }) {
+  const [aberto, setAberto] = useState(false);
+  const [form, setForm] = useState({ nome: "", canal: "instagram", valor: "", imovel: "", inicio: "", fim: "" });
+  const { msg, pendente, rodar } = useAcao();
+  const campo = (k: keyof typeof form) => (e: { target: { value: string } }) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  if (!aberto) {
+    return (
+      <div className="space-y-2">
+        <button type="button" onClick={() => setAberto(true)} className={BOTAO}>
+          + Nova campanha
+        </button>
+        <Mensagem msg={msg} />
+      </div>
+    );
+  }
+
+  return (
+    <form
+      className="cartao space-y-4 p-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        rodar(
+          () =>
+            criarCampanha({
+              nome: form.nome,
+              canal: form.canal,
+              valor: form.valor,
+              empreendimentoId: form.imovel || null,
+              inicio: form.inicio,
+              fim: form.fim,
+            }),
+          () => {
+            setForm({ nome: "", canal: "instagram", valor: "", imovel: "", inicio: "", fim: "" });
+            setAberto(false);
+          },
+        );
+      }}
+    >
+      <h2 className="text-fluid-base font-semibold text-titulo">Nova campanha</h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="space-y-1 sm:col-span-2">
+          <span className="text-fluid-xs text-corpo">Nome</span>
+          <input value={form.nome} onChange={campo("nome")} placeholder="Ex.: Vitra outubro" className={CAMPO} />
+        </label>
+        <label className="space-y-1">
+          <span className="text-fluid-xs text-corpo">Onde roda</span>
+          <select value={form.canal} onChange={campo("canal")} className={`${CAMPO} select-seta`}>
+            {Object.entries(CANAIS_DE_CAMPANHA).map(([v, r]) => (
+              <option key={v} value={v}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="space-y-1">
+          <span className="text-fluid-xs text-corpo">Valor investido (R$)</span>
+          <input inputMode="decimal" value={form.valor} onChange={campo("valor")} placeholder="Ex.: 300" className={CAMPO} />
+        </label>
+        <label className="space-y-1">
+          <span className="text-fluid-xs text-corpo">Começou em</span>
+          <input type="date" value={form.inicio} onChange={campo("inicio")} className={CAMPO} />
+        </label>
+        <label className="space-y-1">
+          <span className="text-fluid-xs text-corpo">Termina em (opcional)</span>
+          <input type="date" value={form.fim} onChange={campo("fim")} className={CAMPO} />
+        </label>
+        <label className="space-y-1 sm:col-span-2">
+          <span className="text-fluid-xs text-corpo">Imóvel (opcional)</span>
+          <select value={form.imovel} onChange={campo("imovel")} className={`${CAMPO} select-seta`}>
+            <option value="">Não informado</option>
+            {imoveis.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.nome}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <p className="text-fluid-xs text-corpo">
+        Depois de criar, ligue a ela os clientes que vieram da campanha. Se for um impulsionamento com
+        botão de WhatsApp, o anúncio aparece aqui sozinho no primeiro cliente, e você o coloca dentro
+        da campanha.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" disabled={pendente} className={BOTAO}>
+          {pendente ? "Criando…" : "Criar campanha"}
+        </button>
+        <button type="button" onClick={() => setAberto(false)} className={BOTAO_SECUNDARIO}>
+          Cancelar
+        </button>
+      </div>
+      <Mensagem msg={msg} />
+    </form>
   );
 }
 
@@ -110,26 +284,117 @@ function ComoFunciona({ aberto }: { aberto: boolean }) {
       </summary>
       <ol className="mt-3 list-decimal space-y-2 pl-5 text-fluid-sm text-corpo">
         <li>
-          Impulsione o post pelo Instagram ou Facebook, como você já faz, escolhendo{" "}
-          <strong className="text-titulo">WhatsApp</strong> como destino.
+          Impulsionamento do Instagram ou Facebook com destino{" "}
+          <strong className="text-titulo">WhatsApp</strong> (o mesmo conectado em Assistente → Minha IA):
+          o anúncio aparece aqui sozinho, com o primeiro cliente que chegar por ele.
         </li>
         <li>
-          Use o mesmo WhatsApp que está conectado em Assistente → Minha IA. Cada cliente que
-          chamar pelo anúncio vira lead e a IA atende na hora.
+          Campanha de outro lugar (Google, portal, panfleto), ou que ainda não trouxe ninguém: crie em{" "}
+          <strong className="text-titulo">+ Nova campanha</strong> e ligue a ela os clientes que vieram
+          dela.
         </li>
         <li>
-          O anúncio aparece nesta lista sozinho, com o primeiro cliente que chegar por ele. Você
-          só digita <strong className="text-titulo">quanto gastou</strong> (o valor está no app do
-          Instagram, em Impulsionamentos).
+          Digite <strong className="text-titulo">quanto gastou</strong>. O custo por cliente e por visita
+          sai na hora.
         </li>
-        <li>O custo por cliente e por visita é calculado na hora.</li>
+        <li>
+          A qualidade é a leitura da IA sobre cada conversa: quente, morno ou frio. Quem ainda não
+          conversou fica como &quot;sem leitura&quot;.
+        </li>
       </ol>
       {aberto && (
-        <p className="mt-3 text-fluid-sm text-corpo">
-          Ainda não chegou nenhum cliente por impulsionamento.
-        </p>
+        <p className="mt-3 text-fluid-sm text-corpo">Ainda não há anúncio nem campanha registrada.</p>
       )}
     </details>
+  );
+}
+
+/**
+ * Comparação entre campanhas: uma barra por campanha, do custo por cliente.
+ * Barra mais curta é mais barata. Só entra quem tem gasto e cliente.
+ */
+function Comparativo({ linhas }: { linhas: ReturnType<typeof compararCampanhas> }) {
+  if (linhas.length < 2) return null;
+  const maximo = Math.max(...linhas.map((l) => l.custoPorLead));
+
+  return (
+    <CartaoDeGrafico
+      titulo="Qual campanha rende mais?"
+      subtitulo="Custo por cliente, da mais barata para a mais cara. Barra menor é melhor."
+      rodape="A marcada como melhor é a de menor custo por visita: cliente barato que não visita não vende."
+    >
+      <ol className="space-y-4">
+        {linhas.map((l) => (
+          <li key={l.id} className="space-y-1.5">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <span className="text-fluid-sm min-w-0 font-semibold break-words text-titulo">
+                {l.nome}
+                {l.melhor && (
+                  <span className="ml-2 inline-block rounded-full border border-acento-linha bg-acento-lavado px-2 py-0.5 text-fluid-xs text-acento-forte">
+                    Melhor por visita
+                  </span>
+                )}
+              </span>
+              <span className="text-fluid-sm font-semibold text-titulo tabular-nums">
+                {reais(l.custoPorLead)}
+              </span>
+            </div>
+            <div
+              className="h-2 overflow-hidden rounded-full bg-vidro-forte"
+              title={`${l.nome}: ${reais(l.custoPorLead)} por cliente`}
+              aria-hidden
+            >
+              <div
+                className="h-full rounded-full bg-acento"
+                style={{ width: `${Math.max(4, (l.custoPorLead / maximo) * 100)}%` }}
+              />
+            </div>
+            <p className="text-fluid-xs text-corpo">
+              {l.leads} {l.leads === 1 ? "cliente" : "clientes"} · por visita {reais(l.custoPorVisita)} ·{" "}
+              {l.taxaDeBonsLeads === null ? "qualidade sem leitura" : `${l.taxaDeBonsLeads}% quentes ou mornos`}
+            </p>
+          </li>
+        ))}
+      </ol>
+    </CartaoDeGrafico>
+  );
+}
+
+const FAIXAS: { chave: keyof Qualidade; rotulo: string; cor: string }[] = [
+  { chave: "quente", rotulo: "Quentes", cor: "bg-acento" },
+  { chave: "morno", rotulo: "Mornos", cor: "bg-acento/55" },
+  { chave: "frio", rotulo: "Frios", cor: "bg-acento/25" },
+  { chave: "semLeitura", rotulo: "Sem leitura", cor: "bg-vidro-forte" },
+];
+
+/** A qualidade dos clientes de uma campanha: barra 100% por temperatura. */
+function BarraDeQualidade({ qualidade, total }: { qualidade: Qualidade; total: number }) {
+  if (total === 0) return null;
+  const partes = FAIXAS.filter((f) => qualidade[f.chave] > 0);
+  const resumo = FAIXAS.map((f) => `${qualidade[f.chave]} ${f.rotulo.toLowerCase()}`).join(", ");
+
+  return (
+    <figure className="space-y-2">
+      <figcaption className="text-fluid-xs text-corpo">Qualidade dos clientes (leitura da IA)</figcaption>
+      <div className="flex h-3 gap-0.5 overflow-hidden rounded-full" role="img" aria-label={resumo}>
+        {partes.map((f) => (
+          <div
+            key={f.chave}
+            className={`${f.cor} h-full first:rounded-l-full last:rounded-r-full`}
+            style={{ width: `${(qualidade[f.chave] / total) * 100}%` }}
+            title={`${f.rotulo}: ${qualidade[f.chave]}`}
+          />
+        ))}
+      </div>
+      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-fluid-xs text-corpo">
+        {FAIXAS.map((f) => (
+          <li key={f.chave} className="flex items-center gap-1.5">
+            <span aria-hidden className={`${f.cor} inline-block h-2.5 w-2.5 rounded-sm`} />
+            {f.rotulo} <span className="font-semibold text-titulo tabular-nums">{qualidade[f.chave]}</span>
+          </li>
+        ))}
+      </ul>
+    </figure>
   );
 }
 
@@ -138,52 +403,42 @@ function Cartao({
   editavel,
   dono,
   imoveis,
+  campanhas,
+  ligados,
+  candidatos,
 }: {
   resumo: ResumoImpulsionamento;
   editavel: boolean;
   dono: string | null;
   imoveis: { id: string; nome: string }[];
+  campanhas: { id: string; nome: string }[];
+  ligados: ClienteDaLista[];
+  candidatos: ClienteDaLista[];
 }) {
-  const router = useRouter();
   const [valor, setValor] = useState(valorNoCampo(resumo.valorGasto));
   const [imovel, setImovel] = useState(resumo.empreendimentoId ?? "");
-  const [msg, setMsg] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
-  const [pendente, iniciar] = useTransition();
+  const { msg, pendente, rodar } = useAcao();
+  const manual = Boolean(resumo.criadaPeloCorretor);
+  const canal = resumo.canal ? CANAIS_DE_CAMPANHA[resumo.canal] : null;
 
-  const titulo =
-    resumo.chave === "sem-etiqueta"
-      ? `${TITULO_SEM_ETIQUETA}, sem identificação do post`
-      : resumo.titulo ?? "Post impulsionado";
-
-  const salvar = () =>
-    iniciar(async () => {
-      setMsg(null);
-      try {
-        const r = await salvarGastoDoImpulsionamento({
-          id: resumo.id,
-          valor,
-          empreendimentoId: imovel || null,
-        });
-        if (r.erro) setMsg({ tipo: "erro", texto: r.erro });
-        else {
-          setMsg({ tipo: "ok", texto: r.ok ?? "Salvo." });
-          router.refresh();
-        }
-      } catch (e) {
-        setMsg({
-          tipo: "erro",
-          texto: ehActionDeOutroBuild(e) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.",
-        });
-      }
-    });
+  const periodo = manual
+    ? resumo.inicio
+      ? `desde ${dataCurta(resumo.inicio)}${resumo.fim ? ` até ${dataCurta(resumo.fim)}` : ""}`
+      : `criada em ${dataCurta(resumo.primeiroLeadEm)}`
+    : `primeiro cliente em ${dataCurta(resumo.primeiroLeadEm)}, último em ${dataCurta(resumo.ultimoLeadEm)}`;
 
   return (
     <article className="cartao space-y-4 p-4">
       <header className="space-y-1">
-        <h2 className="text-fluid-base font-semibold break-words text-titulo">{titulo}</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-fluid-base min-w-0 font-semibold break-words text-titulo">{nomeDoResumo(resumo)}</h2>
+          <span className="rounded-full bg-vidro px-2 py-0.5 text-fluid-xs text-corpo">
+            {manual ? `Campanha${canal ? ` · ${canal}` : ""}` : "Anúncio detectado"}
+          </span>
+        </div>
         <p className="text-fluid-xs text-corpo">
-          {dono ? `${dono} · ` : ""}primeiro cliente em {dataCurta(resumo.primeiroLeadEm)}, último
-          em {dataCurta(resumo.ultimoLeadEm)}
+          {dono ? `${dono} · ` : ""}
+          {periodo}
           {resumo.url && (
             <>
               {" · "}
@@ -200,23 +455,55 @@ function Cartao({
         </p>
       </header>
 
-      <dl className="grid grid-cols-2 gap-2 text-fluid-sm sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-2 text-fluid-sm sm:grid-cols-5">
         <Mini rotulo="Clientes" valor={String(resumo.leads)} />
         <Mini rotulo="Visitas" valor={String(resumo.visitas)} />
         <Mini rotulo="Por cliente" valor={reais(resumo.custoPorLead)} />
         <Mini rotulo="Por visita" valor={reais(resumo.custoPorVisita)} />
+        <Mini rotulo="Por quente/morno" valor={reais(resumo.custoPorBomLead)} />
       </dl>
+
+      <BarraDeQualidade qualidade={resumo.qualidade} total={resumo.leads} />
+
+      {resumo.anuncios.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-fluid-xs text-corpo">Anúncios dentro desta campanha</p>
+          <ul className="space-y-1">
+            {resumo.anuncios.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-vidro px-3 py-2">
+                <span className="text-fluid-sm min-w-0 break-words text-titulo">
+                  {a.titulo ?? "Post impulsionado"} · {reais(a.valorGasto)}
+                </span>
+                {editavel && (
+                  <button
+                    type="button"
+                    disabled={pendente}
+                    onClick={() => rodar(() => agruparAnuncio({ anuncioId: a.id, campanhaId: null }))}
+                    className="min-h-11 px-2 text-fluid-xs font-semibold text-acento-forte"
+                  >
+                    Tirar
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {editavel ? (
         <form
           className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
           onSubmit={(e) => {
             e.preventDefault();
-            salvar();
+            rodar(() =>
+              salvarGastoDoImpulsionamento({ id: resumo.id, valor, empreendimentoId: imovel || null }),
+            );
           }}
         >
           <label className="space-y-1">
-            <span className="text-fluid-xs text-corpo">Quanto você gastou (R$)</span>
+            <span className="text-fluid-xs text-corpo">
+              {manual ? "Valor investido (R$)" : "Quanto você gastou (R$)"}
+            </span>
             <input
               inputMode="decimal"
               value={valor}
@@ -226,12 +513,8 @@ function Cartao({
             />
           </label>
           <label className="space-y-1">
-            <span className="text-fluid-xs text-corpo">Imóvel do post (opcional)</span>
-            <select
-              value={imovel}
-              onChange={(e) => setImovel(e.target.value)}
-              className={`${CAMPO} select-seta`}
-            >
+            <span className="text-fluid-xs text-corpo">Imóvel (opcional)</span>
+            <select value={imovel} onChange={(e) => setImovel(e.target.value)} className={`${CAMPO} select-seta`}>
               <option value="">Não informado</option>
               {imoveis.map((i) => (
                 <option key={i.id} value={i.id}>
@@ -240,29 +523,192 @@ function Cartao({
               ))}
             </select>
           </label>
-          <button
-            type="submit"
-            disabled={pendente}
-            className="min-h-11 self-end rounded-xl bg-acento px-5 text-fluid-sm font-semibold text-sobre-cor disabled:opacity-60"
-          >
+          <button type="submit" disabled={pendente} className={`${BOTAO} self-end`}>
             {pendente ? "Salvando…" : "Salvar"}
           </button>
         </form>
       ) : (
         <p className="text-fluid-sm text-corpo">
-          Gasto informado: <span className="text-titulo">{reais(resumo.valorGasto)}</span>
+          Gasto informado: <span className="text-titulo">{reais(resumo.gastoTotal)}</span>
         </p>
       )}
 
-      {msg && (
-        <p
-          role={msg.tipo === "erro" ? "alert" : "status"}
-          className={msg.tipo === "erro" ? "text-fluid-sm text-perigo" : "text-fluid-sm text-ok"}
-        >
-          {msg.texto}
-        </p>
+      {editavel && !manual && campanhas.length > 0 && (
+        <label className="block space-y-1">
+          <span className="text-fluid-xs text-corpo">Faz parte de uma campanha?</span>
+          <select
+            defaultValue=""
+            disabled={pendente}
+            onChange={(e) =>
+              e.target.value && rodar(() => agruparAnuncio({ anuncioId: resumo.id, campanhaId: e.target.value }))
+            }
+            className={`${CAMPO} select-seta`}
+          >
+            <option value="">Não, fica solto</option>
+            {campanhas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
+        </label>
       )}
+
+      {editavel && manual && (
+        <ClientesDaCampanha
+          campanhaId={resumo.id}
+          ligados={ligados}
+          candidatos={candidatos}
+          rodar={rodar}
+          pendente={pendente}
+        />
+      )}
+
+      {editavel && manual && <ApagarCampanha rodar={() => rodar(() => apagarCampanha(resumo.id))} pendente={pendente} />}
+
+      <Mensagem msg={msg} />
     </article>
+  );
+}
+
+function ClientesDaCampanha({
+  campanhaId,
+  ligados,
+  candidatos,
+  rodar,
+  pendente,
+}: {
+  campanhaId: string;
+  ligados: ClienteDaLista[];
+  candidatos: ClienteDaLista[];
+  rodar: (acao: () => Promise<Resultado>, depois?: () => void) => void;
+  pendente: boolean;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [marcados, setMarcados] = useState<Set<string>>(new Set());
+  const termo = busca.trim().toLowerCase();
+  const visiveis = candidatos.filter((c) => !termo || c.nome.toLowerCase().includes(termo)).slice(0, 40);
+
+  return (
+    <div className="space-y-2">
+      <p className="text-fluid-xs text-corpo">
+        {ligados.length === 0
+          ? "Nenhum cliente ligado à mão ainda. Os que chegaram pelos anúncios de dentro já contam."
+          : `Clientes ligados à mão (${ligados.length})`}
+      </p>
+      {ligados.length > 0 && (
+        <ul className="flex flex-wrap gap-2">
+          {ligados.map((c) => (
+            <li key={c.id} className="flex items-center gap-1 rounded-full bg-vidro pl-3 text-fluid-xs text-titulo">
+              <span className="break-words">{c.nome}</span>
+              <button
+                type="button"
+                aria-label={`Tirar ${c.nome} da campanha`}
+                disabled={pendente}
+                onClick={() => rodar(() => desvincularCliente(c.id))}
+                className="flex h-11 w-11 items-center justify-center text-corpo hover:text-titulo"
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!aberto ? (
+        <button type="button" onClick={() => setAberto(true)} className={BOTAO_SECUNDARIO}>
+          Ligar clientes
+        </button>
+      ) : (
+        <div className="space-y-2 rounded-xl border border-linha p-3">
+          <input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar cliente"
+            className={CAMPO}
+          />
+          {visiveis.length === 0 ? (
+            <p className="text-fluid-sm text-corpo">Nenhum cliente disponível para ligar.</p>
+          ) : (
+            <ul className="max-h-64 space-y-1 overflow-y-auto">
+              {visiveis.map((c) => (
+                <li key={c.id}>
+                  <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 hover:bg-vidro">
+                    <input
+                      type="checkbox"
+                      checked={marcados.has(c.id)}
+                      onChange={(e) =>
+                        setMarcados((m) => {
+                          const n = new Set(m);
+                          if (e.target.checked) n.add(c.id);
+                          else n.delete(c.id);
+                          return n;
+                        })
+                      }
+                      className="h-5 w-5"
+                    />
+                    <span className="text-fluid-sm min-w-0 break-words text-titulo">{c.nome}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={pendente || marcados.size === 0}
+              onClick={() =>
+                rodar(
+                  () => vincularClientes({ campanhaId, leadIds: [...marcados] }),
+                  () => {
+                    setMarcados(new Set());
+                    setAberto(false);
+                  },
+                )
+              }
+              className={BOTAO}
+            >
+              {marcados.size > 0 ? `Ligar ${marcados.size}` : "Ligar"}
+            </button>
+            <button type="button" onClick={() => setAberto(false)} className={BOTAO_SECUNDARIO}>
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ApagarCampanha({ rodar, pendente }: { rodar: () => void; pendente: boolean }) {
+  const [confirmando, setConfirmando] = useState(false);
+  if (!confirmando) {
+    return (
+      <button
+        type="button"
+        onClick={() => setConfirmando(true)}
+        className="min-h-11 text-fluid-xs font-semibold text-corpo hover:text-perigo"
+      >
+        Apagar campanha
+      </button>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-xl bg-perigo-lavado px-3 py-2">
+      <span className="text-fluid-sm text-titulo">Apagar? Os clientes continuam na carteira.</span>
+      <button
+        type="button"
+        disabled={pendente}
+        onClick={rodar}
+        className="min-h-11 rounded-xl bg-perigo px-4 text-fluid-sm font-semibold text-sobre-cor"
+      >
+        Apagar
+      </button>
+      <button type="button" onClick={() => setConfirmando(false)} className={BOTAO_SECUNDARIO}>
+        Cancelar
+      </button>
+    </div>
   );
 }
 
@@ -270,7 +716,7 @@ function Mini({ rotulo, valor }: { rotulo: string; valor: string }) {
   return (
     <div className="flex flex-col-reverse rounded-xl bg-vidro px-3 py-2">
       <dt className="text-fluid-xs text-corpo">{rotulo}</dt>
-      <dd className="font-semibold text-titulo">{valor}</dd>
+      <dd className="font-semibold text-titulo tabular-nums">{valor}</dd>
     </div>
   );
 }

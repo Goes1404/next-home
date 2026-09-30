@@ -350,6 +350,11 @@ export type Database = {
           gasto_informado_em: string | null
           primeiro_lead_em: string
           ultimo_lead_em: string
+          criada_pelo_corretor: boolean
+          canal: "instagram" | "facebook" | "google" | "portal" | "outro" | null
+          inicio: string | null
+          fim: string | null
+          agrupado_em: string | null
           created_at: string
         }
         Insert: {
@@ -364,6 +369,11 @@ export type Database = {
           gasto_informado_em?: string | null
           primeiro_lead_em?: string
           ultimo_lead_em?: string
+          criada_pelo_corretor?: boolean
+          canal?: "instagram" | "facebook" | "google" | "portal" | "outro" | null
+          inicio?: string | null
+          fim?: string | null
+          agrupado_em?: string | null
           created_at?: string
         }
         Update: {
@@ -378,6 +388,11 @@ export type Database = {
           gasto_informado_em?: string | null
           primeiro_lead_em?: string
           ultimo_lead_em?: string
+          criada_pelo_corretor?: boolean
+          canal?: "instagram" | "facebook" | "google" | "portal" | "outro" | null
+          inicio?: string | null
+          fim?: string | null
+          agrupado_em?: string | null
           created_at?: string
         }
         Relationships: []
@@ -2095,6 +2110,7 @@ export type Database = {
           gclid: string | null
           id: string
           imovel_interesse_id: string | null
+          impulsionamento_id: string | null
           mensagem: string | null
           meta_ad_id: string | null
           meta_campanha_id: string | null
@@ -2150,6 +2166,7 @@ export type Database = {
           gclid?: string | null
           id?: string
           imovel_interesse_id?: string | null
+          impulsionamento_id?: string | null
           mensagem?: string | null
           meta_ad_id?: string | null
           meta_campanha_id?: string | null
@@ -2205,6 +2222,7 @@ export type Database = {
           gclid?: string | null
           id?: string
           imovel_interesse_id?: string | null
+          impulsionamento_id?: string | null
           mensagem?: string | null
           meta_ad_id?: string | null
           meta_campanha_id?: string | null

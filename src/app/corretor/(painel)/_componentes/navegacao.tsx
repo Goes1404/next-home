@@ -248,10 +248,11 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/marketing", label: "Painel", icone: IconeMegafone },
           { href: "/corretor/campanhas", label: "Listas de transmissão", icone: IconeAntena },
           { href: "/corretor/templates", label: "Modelos", icone: IconeModelo },
-          // Quanto cada impulsionamento do Instagram/Facebook rendeu (27/09).
+          // Quanto cada anúncio e campanha paga rendeu (27/09; campanhas
+          // cadastradas pelo corretor desde 30/09).
           {
             href: "/corretor/marketing/impulsionamentos",
-            label: "Impulsionamentos",
+            label: "Anúncios pagos",
             icone: IconeAlvo,
           },
         ],

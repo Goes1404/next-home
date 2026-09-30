@@ -8504,3 +8504,22 @@ seis barras foram apagadas. Os subtópicos ficam só no menu. **Os contadores
 que moravam nas abas sumiram junto** (visitas de hoje, respostas sem revisão,
 fila de disparo, número conectado, Fila de cadastro). `navegacao.test.ts`
 reprova a volta.
+
+## O corretor cadastra a campanha paga (0132, 30/09/2026)
+
+Nota: [[campanha-cadastrada-pelo-corretor]]. A tela (agora "Anúncios pagos")
+só mostrava o anúncio que o webhook detectava. Hoje o corretor cria campanha
+com canal, valor e período, põe anúncios detectados dentro dela
+(`agrupado_em`) e liga clientes de outro canal (`leads.impulsionamento_id`).
+Cada cartão mostra a qualidade pela temperatura da IA e o custo por cliente,
+por visita e por cliente quente/morno; um gráfico compara as campanhas.
+
+- **Chave `manual:<uuid>` exigida na policy de INSERT**: sem o prefixo, o
+  corretor poderia criar a linha de um anúncio da Meta e roubar os clientes
+  dele na conta.
+- **A melhor campanha é a de menor custo por VISITA**, não por cliente:
+  cliente barato que não visita é o anúncio que parece bom e não vende.
+- **Campanha de Google/portal não entra no gasto do canal "anúncio"** do
+  gráfico de origem, porque os clientes dela chegam por outro canal.
+- A 0132 foi aplicada no banco antes do deploy: ela não muda o que o código
+  antigo lê nem escreve.

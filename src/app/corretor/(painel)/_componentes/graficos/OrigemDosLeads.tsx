@@ -41,7 +41,13 @@ export async function OrigemDosLeads() {
       .select("origem, etapa, visita_agendada_em")
       .is("arquivado_em", null)
       .gte("created_at", corte.toISOString()),
-    supabase.from("impulsionamentos").select("valor_gasto").gte("ultimo_lead_em", corte.toISOString()),
+    supabase
+      .from("impulsionamentos")
+      .select("valor_gasto")
+      .gte("ultimo_lead_em", corte.toISOString())
+      // Campanha de Google ou portal (0132) não é gasto do canal "anúncio":
+      // os clientes dela chegam por outro canal.
+      .or("canal.is.null,canal.in.(instagram,facebook)"),
     // Só o gestor lê o gasto da conta da Meta; para o corretor o erro vira
     // "sem gasto", e o custo dele sai só do que ele digitou.
     supabase.from("meta_ads_metricas").select("gasto").gte("dia", corteDia),
@@ -78,7 +84,7 @@ export function OrigemVisual({
       rodape={
         gastoAnuncio > 0
           ? `Gasto em anúncios no período: ${reais(gastoAnuncio)}.`
-          : "Nenhum gasto registrado ainda. Digite quanto gastou em Marketing → Impulsionamentos para ver o custo por lead."
+          : "Nenhum gasto registrado ainda. Digite quanto gastou em Marketing → Anúncios pagos para ver o custo por lead."
       }
     >
       {linhas.length === 0 ? (
