@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { destinoAtivo, ehPasta, gruposVisiveis, subitemAtivo } from "./_componentes/navegacao";
+import { destinoAtivo, ehPasta, gruposVisiveis, moduloDoTopico, subitemAtivo } from "./_componentes/navegacao";
 
 /**
  * Barra lateral do painel (desktop).
@@ -60,7 +60,7 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                 const subs = aberta ? (item.subitens ?? []) : [];
                 const subAtivo = ativa ? subitemAtivo(atual, item) : null;
                 const classes = cn(
-                  "group relative flex items-center gap-3 overflow-hidden rounded-xl px-3 py-2 text-sm transition-colors",
+                  "group relative flex min-h-11 items-center gap-3 overflow-hidden rounded-xl px-2 py-1.5 text-[15px] transition-colors",
                   /*
                    * Tópico ativo é SÓLIDO, igual ao da gaveta do celular
                    * (06/09/2026, pedido do usuário: "deixe mais visível qual
@@ -88,7 +88,19 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                         ativa ? "bg-sobre-cor opacity-90" : "bg-acento opacity-0",
                       )}
                     />
-                    <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
+                    {/* O ícone num quadradinho na cor da PRÓPRIA seção (30/09/2026):
+                        o menu vira a legenda das cores do painel. No ativo,
+                        o fundo já é sólido e o quadradinho só clareia. */}
+                    <span
+                      aria-hidden
+                      data-modulo={moduloDoTopico(item.href) ?? undefined}
+                      className={cn(
+                        "grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors",
+                        ativa ? "bg-white/20" : "bg-acento-lavado text-acento-suave",
+                      )}
+                    >
+                      <Icone className="h-[18px] w-[18px]" />
+                    </span>
                     {item.label}
                     {pasta && (
                       <svg
@@ -133,16 +145,25 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                          e uma régua vertical: é o recuo que diz "isto pertence
                          àquilo", por isso subtópico não leva ícone — cinco
                          símbolos repetidos seriam ruído, não hierarquia. */
-                      <ul className="border-linha mt-0.5 ml-[1.65rem] space-y-px border-l pl-3">
-                        {subs.map((sub) => {
+                      <ul className="border-linha mt-1 mb-1 ml-6 space-y-px border-l pl-3">
+                        {subs.map((sub, i) => {
                           const aberto = subAtivo?.href === sub.href;
+                          const IconeSub = sub.icone;
+                          // Título de seção quando ela muda (Administração:
+                          // Equipe · Negócio · Sistema).
+                          const novaSecao = sub.secao && sub.secao !== subs[i - 1]?.secao;
                           return (
                             <li key={sub.href}>
+                              {novaSecao && (
+                                <p className="text-tenue px-2 pt-2.5 pb-1 text-[10.5px] font-semibold tracking-[0.14em] uppercase">
+                                  {sub.secao}
+                                </p>
+                              )}
                               <Link
                                 href={sub.href}
                                 aria-current={aberto ? "page" : undefined}
                                 className={cn(
-                                  "block rounded-lg px-2 py-1.5 text-[13px] transition-colors",
+                                  "flex min-h-9 items-center gap-2.5 rounded-lg px-2 py-1.5 text-[14px] transition-colors",
                                   /* O subtópico aberto ganhou FUNDO: só a cor
                                      do texto não vencia a régua vertical ao
                                      lado, e numa lista de seis a linha atual
@@ -152,6 +173,7 @@ export function NavPainel({ ehGestor }: { ehGestor: boolean }) {
                                     : "text-apoio hover:text-titulo hover:bg-vidro",
                                 )}
                               >
+                                {IconeSub && <IconeSub aria-hidden className="h-4 w-4 shrink-0 opacity-80" />}
                                 {sub.label}
                               </Link>
                             </li>

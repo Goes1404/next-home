@@ -12,6 +12,7 @@ import {
   destinoAtivo,
   gruposVisiveis,
   moduloAtivo,
+  moduloDoTopico,
   subitemAtivo,
   type ItemNav,
 } from "./_componentes/navegacao";
@@ -328,18 +329,36 @@ function Topico({
             onClick={aoAlternar}
             aria-expanded={expandido}
             aria-controls={idSubs}
-            className="flex min-h-12 min-w-0 flex-1 cursor-pointer items-center gap-3 px-4 text-left text-[15px] font-medium"
+            className="flex min-h-13 min-w-0 flex-1 cursor-pointer items-center gap-3 px-2.5 text-left text-[15px] font-medium"
           >
-            <Icone aria-hidden className="h-5 w-5 shrink-0" />
+            <span
+              aria-hidden
+              data-modulo={moduloDoTopico(item.href) ?? undefined}
+              className={cn(
+                "grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors",
+                ativo ? "bg-white/20" : "bg-acento-lavado text-acento-suave",
+              )}
+            >
+              <Icone className="h-5 w-5" />
+            </span>
             <span className="min-w-0 truncate">{item.label}</span>
           </button>
         ) : (
           <Link
             href={item.href}
             aria-current={ativo ? "page" : undefined}
-            className="flex min-h-12 min-w-0 flex-1 items-center gap-3 px-4 text-[15px] font-medium"
+            className="flex min-h-13 min-w-0 flex-1 items-center gap-3 px-2.5 text-[15px] font-medium"
           >
-            <Icone aria-hidden className="h-5 w-5 shrink-0" />
+            <span
+              aria-hidden
+              data-modulo={moduloDoTopico(item.href) ?? undefined}
+              className={cn(
+                "grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors",
+                ativo ? "bg-white/20" : "bg-acento-lavado text-acento-suave",
+              )}
+            >
+              <Icone className="h-5 w-5" />
+            </span>
             <span className="min-w-0 truncate">{item.label}</span>
           </Link>
         )}
@@ -370,13 +389,19 @@ function Topico({
           hidden={!expandido}
           // Recuo alinhado ao rótulo do pai (ícone 20px + gap 12px) e uma
           // régua vertical: é isso que diz "pertence àquele".
-          className="border-linha mt-1 mb-1 ml-[2.1rem] space-y-0.5 border-l pl-2"
+          className="border-linha mt-1 mb-2 ml-7 space-y-0.5 border-l pl-2"
         >
-          {subs.map((sub) => {
+          {subs.map((sub, i) => {
             const aberto = subAtivo?.href === sub.href;
             const IconeSub = sub.icone;
+            const novaSecao = sub.secao && sub.secao !== subs[i - 1]?.secao;
             return (
               <li key={sub.href}>
+                {novaSecao && (
+                  <p className="text-tenue px-3 pt-3 pb-1 text-[11px] font-semibold tracking-[0.14em] uppercase">
+                    {sub.secao}
+                  </p>
+                )}
                 <Link
                   href={sub.href}
                   aria-current={aberto ? "page" : undefined}

@@ -28,7 +28,7 @@ import path from "node:path";
 const ROLAGEM_DECLARADA = [
   "(painel)/admin/leads/page.tsx",
   "(painel)/admin/precos/PrecosManager.tsx",
-  "(painel)/admin/anuncios/page.tsx",
+  "(painel)/admin/anuncios/ContaDaMeta.tsx",
   "(painel)/importar/GmailLeadsExtractor.tsx",
   // Faixa de sugestões dentro da simulação de conversa: são atalhos de teste,
   // não navegação, e a caixa imita a janela do WhatsApp de propósito.

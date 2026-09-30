@@ -9,6 +9,7 @@ import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoD
 import { Suspense } from "react";
 import { UsoDasNovidades } from "./_componentes/UsoDasNovidades";
 import { ProntidaoDaEquipe } from "./_componentes/ProntidaoDaEquipe";
+import { SaudeDaOperacao } from "./_componentes/SaudeDaOperacao";
 import { PassagemDoFunil } from "@/app/corretor/(painel)/_componentes/graficos/PassagemDoFunil";
 import { PlacarDaEquipe } from "@/app/corretor/(painel)/_componentes/graficos/PlacarDaEquipe";
 
@@ -316,6 +317,10 @@ export default async function AdminVisaoGeralPage() {
       </Suspense>
       <Suspense fallback={null}>
         <UsoDasNovidades />
+      </Suspense>
+      {/* SLA e Eventos saíram do menu em 30/09/2026 e viraram esta seção. */}
+      <Suspense fallback={null}>
+        <SaudeDaOperacao />
       </Suspense>
     </div>
   );

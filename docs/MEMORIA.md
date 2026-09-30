@@ -8601,3 +8601,23 @@ Nota: [[adm-nao-le-conversa-alheia]].
   `raise exception` com o resultado em JSON. A exceção desfaz tudo e
   devolve a medição.
 
+
+## O menu foi reorganizado (30/09/2026)
+
+Nota: [[menu-do-painel-reorganizado]].
+
+- **Mudanças de lugar:** Criar arte e Criar vídeo foram para Marketing, e o
+  Consultor para Assistente. A Administração virou um tópico com as seções
+  Equipe, Negócio e Sistema (campo `secao` do subtópico).
+- **Saíram do menu e viraram botões nas telas:** Adicionar leads, Modelos,
+  Ordem no site, Fila de cadastro, SLA e Eventos. As rotas continuam; o menu
+  fica aceso nelas pelo prefixo ou por `tambem`.
+- **A conta da Meta mudou de lugar:** agora é uma seção de Anúncios pagos que
+  só o ADM vê (`admin/anuncios/ContaDaMeta.tsx`). A rota antiga redireciona.
+- **Uma entrada de `MODULO_POR_DESTINO` ficou sem uso** quando a rota virou
+  subtópico: o Consultor passou a herdar a cor de Assistente. Quando uma rota
+  muda de pai, apague a entrada de cor dela, para ninguém ler um comentário
+  que não é mais verdade.
+- **`page.tsx` não pode exportar componente para outra tela.** Por isso a
+  conta da Meta foi para um arquivo próprio, e as guardas que liam o caminho
+  antigo foram atualizadas.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CampanhasManager } from "./CampanhasManager";
 import { listarCampanhas, statusDisparo } from "./acoes";
 import { getEmpreendimentos } from "@/lib/queries";
@@ -47,6 +48,15 @@ export default async function CampanhasPainelPage({
         <CabecalhoDeTela
           titulo="Listas de transmissão"
           descricao="Monte a lista e pronto: as mensagens saem sozinhas, uma a uma, com pausa entre elas. Nada aqui depende de você ficar clicando."
+          // "Modelos" saiu do menu em 30/09/2026: mora aqui, onde é usado.
+          abaixo={
+            <Link
+              href="/corretor/templates"
+              className="text-acento-suave text-fluid-sm inline-flex min-h-11 items-center gap-1 font-medium underline decoration-transparent underline-offset-4 hover:decoration-current"
+            >
+              Modelos de mensagem →
+            </Link>
+          }
         />
       </div>
 

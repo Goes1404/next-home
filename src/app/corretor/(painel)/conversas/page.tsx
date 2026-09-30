@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ModoBotWhatsapp } from "@/lib/whatsapp/types";
 import { lerSinaisDoMundo, type LeituraDoMundo } from "@/lib/whatsapp/rotuloAutomatico";
 
-export const metadata: Metadata = { title: "Conversas do WhatsApp" };
+export const metadata: Metadata = { title: "Respostas da IA" };
 
 export const dynamic = "force-dynamic";
 
@@ -234,8 +234,8 @@ export default async function ConversasPage({
         em qual das duas o corretor estava. Agora nomeia o que se faz aqui.
       */}
       <CabecalhoDeTela
-        titulo="Conversas"
-        descricao="Quem está falando com o seu número e se a IA está atendendo."
+        titulo="Respostas da IA"
+        descricao="O que a IA respondeu no seu número, para você revisar com 👍 ou 👎."
       />
 
 

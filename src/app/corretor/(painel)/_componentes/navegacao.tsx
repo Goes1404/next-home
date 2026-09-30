@@ -43,6 +43,12 @@ export type SubItemNav = {
   icone?: (props: SVGProps<SVGSVGElement>) => React.ReactElement;
   /** Só o ADM enxerga. A página também se protege com `exigirGestorNaPagina`. */
   gestor?: boolean;
+  /**
+   * Título da seção a que o subtópico pertence dentro da pasta (30/09/2026).
+   * O menu desenha o título quando ele muda de um subtópico para o seguinte;
+   * hoje só a Administração usa (Equipe · Negócio · Sistema).
+   */
+  secao?: string;
 };
 
 export type ItemNav = {
@@ -121,8 +127,10 @@ export const GRUPOS_NAV: GrupoNav[] = [
           // Bloco de notas com lembretes (0100): nota livre, vínculo a lead,
           // direcionável a colega — mora em Pessoas porque é sobre gente.
           { href: "/corretor/anotacoes", label: "Anotações", icone: IconeNota },
-          { href: "/corretor/importar", label: "Adicionar", icone: IconeAdicionarPessoa },
+          // "Adicionar" saiu do menu em 30/09/2026 (decisão do usuário): é o
+          // botão "+ Adicionar" da Lista, onde se pensa nele.
         ],
+        tambem: ["/corretor/importar"],
       },
       {
         href: "/corretor/imoveis",
@@ -131,11 +139,13 @@ export const GRUPOS_NAV: GrupoNav[] = [
         // A fila de cadastro virou sub-rota justamente porque o menu estava no
         // teto; era alcançável só pelo cartão da tela de Imóveis.
         subitens: [
+          /*
+           * "Fila de cadastro" e "Ordem no site" saíram do menu em 30/09/2026
+           * (decisão do usuário) e viraram botões no cabeçalho do Catálogo.
+           * As rotas continuam sob `/corretor/imoveis`, então acendem o
+           * Catálogo sozinhas.
+           */
           { href: "/corretor/imoveis", label: "Catálogo", icone: IconePredio },
-          { href: "/corretor/imoveis/candidatos", label: "Fila de cadastro", icone: IconeFila },
-          // A ordem em que o SITE mostra os imóveis (24/09/2026). Antes só
-          // dava para mudar a ordem do link pessoal (em Links por imóvel).
-          { href: "/corretor/imoveis/ordem", label: "Ordem no site", icone: IconeOrdem },
           /*
            * "Links por imóvel" era um chip no cabeçalho do Catálogo e um
            * subtópico de Marketing ao mesmo tempo — duas portas, e nenhuma
@@ -144,16 +154,6 @@ export const GRUPOS_NAV: GrupoNav[] = [
            * que se olha imóvel. A rota não muda, então nada salvo quebra.
            */
           { href: "/corretor/links", label: "Links por imóvel", icone: IconeLink },
-          /*
-           * O Consultor foi tópico próprio de 09/09 a 26/09/2026. Desceu para
-           * cá quando o Financeiro precisou do lugar no teto de sete, e o
-           * motivo que o tinha feito tópico ("ferramenta de uso diário atrás
-           * de um clique extra não é usada") deixou de valer em 11/09: desde
-           * então ele é a BOLHA presente em toda tela do painel. É o
-           * assistente do portfólio, então mora em Imóveis, e pinta dessa cor
-           * como já pintava. A rota não muda.
-           */
-          { href: "/corretor/consultor", label: "Consultor", icone: IconeConsultor },
         ],
       },
     ],
@@ -212,21 +212,15 @@ export const GRUPOS_NAV: GrupoNav[] = [
           // Era "Conversas", mas Pessoas ganhou um subtópico com esse nome (a
           // lista de quem falou). Esta tela é outra coisa: o que a IA
           // respondeu e a revisão 👍/👎. O nome diz isso.
-          { href: "/corretor/conversas", label: "Atendimento da IA", icone: IconeBalaoCheck },
+          // Era "Atendimento da IA" até 30/09/2026: é onde se revisa com 👍/👎
+          // o que ela respondeu, e o nome passou a dizer isso.
+          { href: "/corretor/conversas", label: "Respostas da IA", icone: IconeBalaoCheck },
           /*
-           * Criar arte e Criar vídeo moraram em Marketing até 11/09/2026, e
-           * mudaram de pai por decisão do usuário: quem gera a peça é a IA
-           * da casa, e é aqui que ele procura por ela. Marketing continua
-           * sendo onde a peça é DISPARADA (listas de transmissão, modelos).
-           *
-           * As ROTAS não mudam (`/corretor/imoveis/criar-imagem` e
-           * `/corretor/marketing/video`): mover arquivo quebraria todo link
-           * salvo e os atalhos que já apontam para elas. Rota morando sob um
-           * prefixo e pertencendo a outro destino já é o normal aqui — quem
-           * desempata é `destinoAtivo`, pelo href mais específico.
+           * O Consultor morou em Imóveis de 26/09 a 30/09/2026. Voltou para a
+           * Assistente por decisão do usuário: é uma das IAs da casa, e é aqui
+           * que se procura por ela. Continua também na bolha de toda tela.
            */
-          { href: "/corretor/imoveis/criar-imagem", label: "Criar arte", icone: IconePaleta },
-          { href: "/corretor/marketing/video", label: "Criar vídeo", icone: IconeClaquete },
+          { href: "/corretor/consultor", label: "Consultor", icone: IconeConsultor },
         ],
       },
       {
@@ -246,10 +240,19 @@ export const GRUPOS_NAV: GrupoNav[] = [
         href: "/corretor/marketing",
         label: "Marketing",
         icone: IconeMegafone,
+        tambem: ["/corretor/templates"],
         subitens: [
           { href: "/corretor/marketing", label: "Painel", icone: IconeMegafone },
+          /*
+           * Criar arte e Criar vídeo voltaram para Marketing em 30/09/2026
+           * (decisão do usuário; moraram na Assistente de 11/09 a 30/09):
+           * tudo o que serve para divulgar fica junto. As rotas não mudam.
+           */
+          { href: "/corretor/imoveis/criar-imagem", label: "Criar arte", icone: IconePaleta },
+          { href: "/corretor/marketing/video", label: "Criar vídeo", icone: IconeClaquete },
+          // "Modelos" saiu do menu em 30/09/2026: é um botão dentro das
+          // Listas de transmissão, onde os modelos são usados.
           { href: "/corretor/campanhas", label: "Listas de transmissão", icone: IconeAntena },
-          { href: "/corretor/templates", label: "Modelos", icone: IconeModelo },
           // Quanto cada anúncio e campanha paga rendeu (27/09; campanhas
           // cadastradas pelo corretor desde 30/09).
           {
@@ -273,18 +276,22 @@ export const GRUPOS_NAV: GrupoNav[] = [
         icone: IconeEngrenagem,
         gestor: true,
         subitens: [
-          { href: "/corretor/admin", label: "Visão geral", icone: IconeVelocimetro },
-          { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeDistribuir },
-          { href: "/corretor/admin/contas", label: "Contas", icone: IconeCracha },
-          { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeSmartphone },
-          { href: "/corretor/admin/anuncios", label: "Anúncios", icone: IconeAlvo },
-          { href: "/corretor/admin/construtoras", label: "Construtoras", icone: IconePredio },
-          { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa },
-          { href: "/corretor/admin/marca", label: "Marca", icone: IconePaleta },
-          { href: "/corretor/admin/sla", label: "SLA", icone: IconeAgora },
-          { href: "/corretor/admin/eventos", label: "Eventos", icone: IconeAntena },
-          { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta },
-          { href: "/corretor/admin/credito", label: "Crédito", icone: IconeEtiqueta },
+          /*
+           * Três seções dentro de um tópico só (30/09/2026, decisão do
+           * usuário): doze subtópicos numa lista corrida não se leem. SLA e
+           * Eventos viraram seções da Visão geral; "Anúncios" (a conta da
+           * Meta) foi para dentro de Anúncios pagos, em Marketing. As rotas
+           * continuam existindo e acendem a Administração pelo prefixo.
+           */
+          { href: "/corretor/admin", label: "Visão geral", icone: IconeVelocimetro, secao: "Equipe" },
+          { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeDistribuir, secao: "Equipe" },
+          { href: "/corretor/admin/contas", label: "Contas", icone: IconeCracha, secao: "Equipe" },
+          { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeSmartphone, secao: "Equipe" },
+          { href: "/corretor/admin/construtoras", label: "Construtoras", icone: IconePredio, secao: "Negócio" },
+          { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa, secao: "Negócio" },
+          { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta, secao: "Negócio" },
+          { href: "/corretor/admin/credito", label: "Crédito", icone: IconeEtiqueta, secao: "Negócio" },
+          { href: "/corretor/admin/marca", label: "Marca", icone: IconePaleta, secao: "Sistema" },
         ],
       },
     ],
@@ -446,20 +453,13 @@ const MODULO_POR_DESTINO: Record<string, Modulo> = {
   "/corretor/pessoas": "leads",
   "/corretor/imoveis": "imoveis",
   /*
-   * O consultor é tópico PRÓPRIO no menu e pinta com a cor de IMÓVEIS, e isso
-   * não é economia: o círculo cromático está cheio. Seis módulos coloridos
-   * mais a rampa ordinal de etapa (270° a 192°) já o ocupam, e todo matiz
-   * livre que passa nos 40° de separação entre módulos cai em cima da rampa
-   * (248° fica a 4° de `etapa-contato`) ou encosta em `alerta` (66°).
-   *
-   * Emprestar a cor de Imóveis é honesto: o consultor é o assistente DO
-   * PORTFÓLIO. E já há precedente do inverso — `criar-imagem` mora sob
-   * /imoveis e pinta da Assistente, dona dela desde 11/09/2026.
+   * Não há entrada para o Consultor, Criar arte ou Criar vídeo: desde
+   * 30/09/2026 eles são SUBTÓPICOS (de Assistente e de Marketing) e herdam a
+   * cor do tópico dono, por `destinoAtivo`.
    */
-  "/corretor/consultor": "imoveis",
   /*
-   * O Financeiro pinta com a cor do Início, e pelo mesmo motivo do
-   * Consultor: o círculo cromático está cheio. É a dupla do "como estou
+   * O Financeiro pinta com a cor do Início, porque o círculo cromático
+   * está cheio (seis módulos mais a rampa de etapa). É a dupla do "como estou
    * indo" — o Início mostra o funil, o Financeiro mostra o dinheiro.
    */
   "/corretor/financeiro": "inicio",
@@ -469,6 +469,17 @@ const MODULO_POR_DESTINO: Record<string, Modulo> = {
   "/corretor/senha": "conta",
   "/corretor/admin": "admin",
 };
+
+/**
+ * A cor de um TÓPICO do menu, para o quadradinho do ícone (30/09/2026).
+ *
+ * Cada tópico aparece no menu com a cor da própria seção, não a da tela
+ * aberta: é o menu virando legenda das cores do painel. Sai do mesmo mapa que
+ * pinta a tela, então tópico e tela nunca discordam.
+ */
+export function moduloDoTopico(href: string): Modulo | null {
+  return MODULO_POR_DESTINO[href] ?? null;
+}
 
 /*
  * Houve aqui um mapa de exceção — `MODULO_POR_SUBITEM` —, para subtópico cuja

@@ -15,6 +15,8 @@ import {
   type PontoDeGasto,
   type Temperatura,
 } from "@/lib/crm/impulsionamentosCalculo";
+import { Suspense } from "react";
+import { ContaDaMeta } from "@/app/corretor/(painel)/admin/anuncios/ContaDaMeta";
 import { ListaDeImpulsionamentos, type ClienteDaLista } from "./ListaDeImpulsionamentos";
 
 export const metadata: Metadata = { title: "Anúncios pagos" };
@@ -201,6 +203,13 @@ export default async function PaginaImpulsionamentos() {
         hoje={hoje}
         indisponivel={Boolean(error)}
       />
+      {/* A antiga tela "Anúncios" da Administração (30/09/2026): a conta de
+          anúncios da imobiliária, só para o ADM. */}
+      {corretor.papel === "gestor" && (
+        <Suspense fallback={null}>
+          <ContaDaMeta />
+        </Suspense>
+      )}
     </div>
   );
 }

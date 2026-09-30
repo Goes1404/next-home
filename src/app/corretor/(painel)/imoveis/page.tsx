@@ -62,6 +62,24 @@ export default async function ImoveisPage() {
             + Novo imóvel
           </Link>
         }
+        // "Fila de cadastro" e "Ordem no site" saíram do menu em 30/09/2026
+        // e moram aqui, junto do catálogo que elas organizam.
+        abaixo={
+          <div className="flex flex-wrap gap-x-5">
+            {[
+              { href: "/corretor/imoveis/ordem", rotulo: "Ordem no site" },
+              { href: "/corretor/imoveis/candidatos", rotulo: "Fila de cadastro" },
+            ].map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="text-acento-suave text-fluid-sm inline-flex min-h-11 items-center gap-1 font-medium underline decoration-transparent underline-offset-4 hover:decoration-current"
+              >
+                {l.rotulo} →
+              </Link>
+            ))}
+          </div>
+        }
       />
 
       {/*

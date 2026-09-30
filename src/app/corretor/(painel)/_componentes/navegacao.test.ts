@@ -67,7 +67,7 @@ describe("mapa de navegação (três destinos no polegar, e é de propósito)", 
     }
   });
 
-  it("Financeiro é destino de menu, o Consultor é subtópico de Imóveis, e o teto de sete continua valendo", () => {
+  it("Financeiro é destino de menu, o Consultor é subtópico da Assistente, e o teto de sete continua valendo", () => {
     /*
      * O sétimo tópico bate EXATAMENTE no teto. De 09/09 a 26/09/2026 ele era
      * o Consultor, pela régua "ferramenta de uso diário atrás de um clique
@@ -76,20 +76,24 @@ describe("mapa de navegação (três destinos no polegar, e é de propósito)", 
      * Financeiro, e o Consultor desceu para Imóveis (é o assistente do
      * portfólio). Guarda REESCRITA por decisão de produto, não apagada.
      *
+     * 30/09/2026: o Consultor foi para a Assistente (decisão do usuário: é
+     * uma das IAs da casa). Reescrita de novo, com o motivo.
+     *
      * O próximo destino que alguém quiser criar NÃO cabe: vira subtópico.
      */
     const itens = gruposVisiveis(true).flatMap((g) => g.itens);
     expect(itens.some((i) => i.href === "/corretor/financeiro")).toBe(true);
     expect(itens.some((i) => i.href === "/corretor/consultor")).toBe(false);
-    expect(subitensDe("/corretor/imoveis").map((s) => s.href)).toContain("/corretor/consultor");
+    expect(subitensDe("/corretor/whatsapp").map((s) => s.href)).toContain("/corretor/consultor");
+    expect(subitensDe("/corretor/imoveis").map((s) => s.href)).not.toContain("/corretor/consultor");
     expect(itens.length).toBeLessThanOrEqual(7);
   });
 
-  it("o Consultor pinta com a cor de Imóveis — o círculo cromático está cheio", () => {
+  it("o Consultor pinta com a cor do pai, a Assistente — sem cor própria", () => {
     // Matiz própria colidiria: todo valor livre pelos 40° entre módulos cai
     // em cima da rampa de etapa (248° fica a 4° de `etapa-contato`) ou
-    // encosta em `alerta`. Emprestar a cor do domínio é honesto.
-    expect(moduloAtivo("/corretor/consultor")).toBe("imoveis");
+    // encosta em `alerta`. Desde 30/09 o pai é a Assistente, e a cor vem dele.
+    expect(moduloAtivo("/corretor/consultor")).toBe("whatsapp");
   });
 
   it("o menu inteiro cabe numa olhada", () => {
@@ -263,15 +267,23 @@ describe("subtópicos: uma hierarquia só", () => {
 
   it("toda rota tem UM dono, mesmo quando dois casam por prefixo", () => {
     /*
-     * `/corretor/imoveis/criar-imagem` é subtópico da Assistente e casa por
+     * `/corretor/imoveis/criar-imagem` é subtópico de Marketing e casa por
      * prefixo com Imóveis. Sem desempate o menu acenderia os dois.
+     *
+     * Voltou a Marketing em 30/09/2026 (decisão do usuário: tudo que serve
+     * para divulgar fica junto).
      *
      * O pai mudou em 11/09/2026 (era Marketing) por decisão do usuário: quem
      * gera a peça é a IA da casa. A ROTA continua onde estava — é justamente
      * por isso que este desempate precisa existir.
      */
-    expect(destinoAtivo("/corretor/imoveis/criar-imagem")?.href).toBe("/corretor/whatsapp");
-    expect(destinoAtivo("/corretor/marketing/video")?.href).toBe("/corretor/whatsapp");
+    expect(destinoAtivo("/corretor/imoveis/criar-imagem")?.href).toBe("/corretor/marketing");
+    expect(destinoAtivo("/corretor/marketing/video")?.href).toBe("/corretor/marketing");
+    // Saíram do menu em 30/09 e continuam com pai:
+    expect(destinoAtivo("/corretor/imoveis/ordem")?.href).toBe("/corretor/imoveis");
+    expect(destinoAtivo("/corretor/importar")?.href).toBe("/corretor/pessoas");
+    expect(destinoAtivo("/corretor/templates")?.href).toBe("/corretor/marketing");
+    expect(destinoAtivo("/corretor/admin/sla")?.href).toBe("/corretor/admin");
     expect(destinoAtivo("/corretor/imoveis")?.href).toBe("/corretor/imoveis");
     expect(destinoAtivo("/corretor/imoveis/candidatos")?.href).toBe("/corretor/imoveis");
     expect(destinoAtivo("/corretor/conversas")?.href).toBe("/corretor/whatsapp");
@@ -297,8 +309,8 @@ describe("subtópicos: uma hierarquia só", () => {
     // As duas telas de geração pintam da Assistente, dona delas desde
     // 11/09 — e nenhuma exceção de cor participa disso: quem resolve é o
     // href mais específico, a mesma regra que acende o item do menu.
-    expect(moduloAtivo("/corretor/imoveis/criar-imagem")).toBe("whatsapp");
-    expect(moduloAtivo("/corretor/marketing/video")).toBe("whatsapp");
+    expect(moduloAtivo("/corretor/imoveis/criar-imagem")).toBe("marketing");
+    expect(moduloAtivo("/corretor/marketing/video")).toBe("marketing");
     expect(moduloAtivo("/corretor/conversas")).toBe("whatsapp");
     expect(moduloAtivo("/corretor/imoveis/candidatos")).toBe("imoveis");
   });
@@ -344,22 +356,23 @@ describe("a caixa de abas saiu das telas; os subtópicos moram no menu", () => {
       "Funil",
       "Visitas",
       "Anotações",
-      "Adicionar",
     ]);
+    // 30/09/2026: Criar arte e Criar vídeo voltaram a Marketing; o Consultor
+    // veio de Imóveis. A Assistente reúne as IAs da casa.
     expect(subitensDe("/corretor/whatsapp").map((s) => s.href)).toEqual([
       "/corretor/whatsapp",
       "/corretor/conversas",
-      // Criar arte e Criar vídeo entraram em 11/09/2026, vindas de Marketing.
-      "/corretor/imoveis/criar-imagem",
-      "/corretor/marketing/video",
+      "/corretor/consultor",
     ]);
     // E saíram de lá: sobrou o que DISPARA a peça, não o que a produz.
     // Impulsionamentos entrou em 27/09/2026: é o resultado do anúncio que o
     // corretor põe na rua, não uma ferramenta de produzir peça.
+    // 30/09/2026: tudo que serve para divulgar; Modelos virou botão das Listas.
     expect(subitensDe("/corretor/marketing").map((s) => s.href)).toEqual([
       "/corretor/marketing",
+      "/corretor/imoveis/criar-imagem",
+      "/corretor/marketing/video",
       "/corretor/campanhas",
-      "/corretor/templates",
       "/corretor/marketing/impulsionamentos",
     ]);
     // 9 desde 09/09/2026: "Crédito" entrou com os parâmetros que o consultor
@@ -369,7 +382,14 @@ describe("a caixa de abas saiu das telas; os subtópicos moram no menu", () => {
     // Construtoras entrou em 26/09/2026 (relatório para a parceira).
     // Parceiros (espelho de vendas) e Marca (instalar para outro cliente)
     // entraram no mesmo dia, na segunda rodada.
-    expect(subitensDe("/corretor/admin")).toHaveLength(12);
+    // 30/09/2026: 12 → 9, em três seções. SLA e Eventos viraram seções da
+    // Visão geral; Anúncios foi para Anúncios pagos.
+    expect(subitensDe("/corretor/admin")).toHaveLength(9);
+    expect([...new Set(subitensDe("/corretor/admin").map((s) => s.secao))]).toEqual([
+      "Equipe",
+      "Negócio",
+      "Sistema",
+    ]);
   });
 });
 

@@ -33,7 +33,7 @@ export async function sincronizarMetaAdsAgora(): Promise<{ ok: boolean; mensagem
     };
   }
 
-  revalidatePath("/corretor/admin/anuncios");
+  revalidatePath("/corretor/marketing/impulsionamentos");
   return {
     ok: true,
     mensagem:

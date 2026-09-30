@@ -150,7 +150,8 @@ export default async function LeadsPage({
             className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 font-medium transition-colors"
           >
             <Mail aria-hidden className="h-4 w-4 shrink-0" />
-            Puxar do Gmail / Importar
+            {/* "Adicionar" saiu do menu em 30/09/2026: a porta é este botão. */}
+            + Adicionar leads
           </Link>
         }
       />

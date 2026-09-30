@@ -16,7 +16,7 @@ import { describe, expect, it } from "vitest";
 
 const LISTA_DE_LEADS = readFileSync("src/app/corretor/(painel)/leads/page.tsx", "utf8");
 const TELA_DE_ANUNCIOS = readFileSync(
-  "src/app/corretor/(painel)/admin/anuncios/page.tsx",
+  "src/app/corretor/(painel)/admin/anuncios/ContaDaMeta.tsx",
   "utf8",
 );
 
