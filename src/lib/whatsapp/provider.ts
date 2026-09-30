@@ -670,22 +670,51 @@ export type MidiaBaixada =
 export async function baixarMidiaDoProvedor(params: {
   instanceName: string;
   messageId: string;
+  /**
+   * A mensagem INTEIRA como chegou no webhook (`data.key` + `data.message`).
+   * Com ela a Evolution decifra direto, sem procurar a mensagem no próprio
+   * banco. Só com o id ela procura, e a instância desta base não guarda
+   * mensagens: toda chamada voltava HTTP 400 "Message not found" e nenhum
+   * áudio era transcrito (medido em 30/09/2026, 100% dos áudios da semana).
+   */
+  mensagemCompleta?: { key?: unknown; message?: unknown } | null;
   timeoutMs?: number;
 }): Promise<MidiaBaixada> {
   const config = configDoProvedor();
   if (!config) return { ok: false, motivo: "provedor_nao_configurado" };
   if (!params.instanceName || !params.messageId) return { ok: false, motivo: "sem_conteudo" };
 
+  const completa =
+    params.mensagemCompleta?.key && params.mensagemCompleta?.message
+      ? { key: params.mensagemCompleta.key, message: params.mensagemCompleta.message }
+      : null;
+  // Primeiro a mensagem inteira; se ela não vier, ou falhar, a busca por id.
+  const tentativas = completa ? [completa, { key: { id: params.messageId } }] : [{ key: { id: params.messageId } }];
+
+  let ultima: MidiaBaixada = { ok: false, motivo: "sem_conteudo" };
+  for (const message of tentativas) {
+    ultima = await pedirBase64(config, params.instanceName, message, params.timeoutMs);
+    if (ultima.ok) return ultima;
+  }
+  return ultima;
+}
+
+async function pedirBase64(
+  config: { baseUrl: string; apiKey: string },
+  instanceName: string,
+  message: unknown,
+  timeoutMs?: number,
+): Promise<MidiaBaixada> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), params.timeoutMs ?? 10_000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs ?? 10_000);
     const res = await fetch(
-      `${config.baseUrl}/chat/getBase64FromMediaMessage/${encodeURIComponent(params.instanceName)}`,
+      `${config.baseUrl}/chat/getBase64FromMediaMessage/${encodeURIComponent(instanceName)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json", apikey: config.apiKey },
         signal: controller.signal,
-        body: JSON.stringify({ message: { key: { id: params.messageId } }, convertToMp4: false }),
+        body: JSON.stringify({ message, convertToMp4: false }),
       },
     );
     clearTimeout(timeoutId);

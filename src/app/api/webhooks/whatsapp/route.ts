@@ -429,7 +429,11 @@ export async function POST(req: NextRequest) {
       const noPayload: string | undefined = payload.data?.message?.base64 || payload.audioBase64;
       if (noPayload) return { base64: noPayload, mimeType: audioMsg?.mimetype ?? null, segundos };
       if (!providerMessageId) return { base64: null, segundos };
-      const baixado = await baixarMidiaDoProvedor({ instanceName: instancia.instanceName, messageId: providerMessageId });
+      const baixado = await baixarMidiaDoProvedor({
+        instanceName: instancia.instanceName,
+        messageId: providerMessageId,
+        mensagemCompleta: payload.data,
+      });
       if (!baixado.ok) {
         console.warn("[webhook] não consegui baixar o áudio decifrado:", baixado.motivo, baixado.detalhe ?? "");
         return { base64: null, segundos };

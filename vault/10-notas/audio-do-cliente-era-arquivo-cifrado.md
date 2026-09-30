@@ -10,7 +10,7 @@ codigo:
   - src/lib/whatsapp/provider.ts
   - src/app/api/webhooks/whatsapp/route.ts
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-30
 summary: Relatado "quando o cliente manda áudio, a IA alucina". Duas causas somadas. (1) O webhook passava audioMessage.url, que é o arquivo CIFRADO do WhatsApp (.enc); e quando o download falhava, a URL seguia como base64. O modelo recebia ruído. (2) O prompt dizia que o áudio era de "clientes de alto padrão em Alphaville" e dava "quer saber o preço do 3 suítes" como exemplo — diante de ruído, ele escrevia exatamente isso. Hoje o áudio vem decifrado da Evolution (getBase64FromMediaMessage), o prompt é neutro, trecho incerto vira [inaudível], há travas (alucinação conhecida do Whisper, palavras demais para a duração) e a IA é avisada de que lê uma transcrição.
 ---
 
@@ -60,3 +60,20 @@ Quando a IA "alucina" sobre uma entrada, conferir primeiro **o que ela
 recebeu**. Aqui o modelo não inventou do nada: recebeu ruído e um roteiro.
 
 Relacionadas: [[fluxo-do-webhook-whatsapp]] · [[MOC — IA e Atendimento]]
+
+## 30/09/2026: a Evolution respondia "Message not found"
+
+A correção de 26/09 pedia o áudio decifrado à Evolution mandando só o
+`key.id`. Com o id, a Evolution procura a mensagem no próprio banco, e a
+instância desta base não guarda mensagens. Resultado: **todos os áudios de
+cliente da semana** foram gravados como "[Áudio recebido — não foi possível
+transcrever automaticamente]". O log de runtime mostrava
+`http_400 {"message":["Message not found"]}`.
+
+Hoje o webhook passa a mensagem inteira (`payload.data`, com `key` e
+`message`), e a Evolution decifra direto. Se falhar, ainda tenta pelo id.
+Teste: `src/lib/whatsapp/baixarMidia.test.ts`.
+
+**Diagnóstico:** `select conteudo from whatsapp_mensagens where tipo =
+'audio'` mostra o texto salvo; o motivo está no log de runtime, na linha
+`[webhook] não consegui baixar o áudio decifrado`.

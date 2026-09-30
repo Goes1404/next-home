@@ -8674,3 +8674,20 @@ Nota: [[nove-ajustes-de-frontend-de-30-09]].
 - **Captura de tela do site no computador precisa pular a vinheta**:
   `sessionStorage.setItem("nh-intro-vista","1")` num `addInitScript`. Sem isso,
   a abertura cobre a página e a captura mostra o logotipo.
+
+## O áudio ainda não era transcrito: "Message not found" (30/09/2026)
+
+Nota: [[audio-do-cliente-era-arquivo-cifrado]].
+
+- **A correção de 26/09 não resolveu, e o banco mostrava isso.** Todos os
+  áudios de cliente da semana ficaram gravados como "[Áudio recebido — não foi
+  possível transcrever automaticamente]". A causa estava no log de runtime:
+  `getBase64FromMediaMessage` respondia `http_400 Message not found`.
+- **Só com o `key.id`, a Evolution procura a mensagem no próprio banco**, e a
+  instância não guarda mensagens. Mandando a mensagem inteira do webhook
+  (`key` + `message`), ela decifra direto. A busca por id ficou como segunda
+  tentativa.
+- **Régua:** depois de corrigir um caminho, contar no banco se ele passou a
+  produzir o resultado. Aqui bastava um `select` em `whatsapp_mensagens` com
+  `tipo = 'audio'`.
+

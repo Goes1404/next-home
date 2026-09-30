@@ -72,7 +72,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 ## Conexão do número
 - [[pareamento-decide-pelo-estado]]
 - [[trocar-numero-zera-reputacao]]
-- [[audio-do-cliente-era-arquivo-cifrado]] — a "alucinação" com áudio era arquivo cifrado + prompt que dava o roteiro; áudio decifrado pela Evolution, prompt neutro, travas (26/09)
+- [[audio-do-cliente-era-arquivo-cifrado]] — a "alucinação" com áudio era arquivo cifrado + prompt que dava o roteiro; áudio decifrado pela Evolution, prompt neutro, travas (26/09); em 30/09, "Message not found": agora vai a mensagem inteira, não só o id
 - [[rodada-de-26-09-parte-3]] — o corretor ensinando a IA: a correção dele volta ao prompt das conversas parecidas (0125, 26/09)
 - [[apresentacao-digital-e-o-link-da-pagina]] — a apresentação sai como link da página do imóvel, nunca foto; o guardrail tira a foto e põe o link (v40, 28/09)
 
