@@ -5,7 +5,10 @@ import { useMemo, useState, useTransition } from "react";
 import {
   CANAIS_DE_CAMPANHA,
   compararCampanhas,
-  type Qualidade,
+  compararQualidade,
+  porcentagem,
+  MINIMO_PARA_PORCENTAGEM,
+  type Degraus,
   type ResumoImpulsionamento,
   type totaisDosImpulsionamentos,
 } from "@/lib/crm/impulsionamentosCalculo";
@@ -118,6 +121,7 @@ export function ListaDeImpulsionamentos({
   indisponivel: boolean;
 }) {
   const comparativo = useMemo(() => compararCampanhas(resumos, nomeDoResumo), [resumos]);
+  const qualidade = useMemo(() => compararQualidade(resumos, nomeDoResumo), [resumos]);
   const minhasCampanhas = resumos
     .filter((r) => r.criadaPeloCorretor && r.corretorId === meuId)
     .map((r) => ({ id: r.id, nome: nomeDoResumo(r) }));
@@ -154,6 +158,7 @@ export function ListaDeImpulsionamentos({
       )}
 
       <Comparativo linhas={comparativo} />
+      <QualidadeLadoALado linhas={qualidade} />
       {series.length > 0 && <CustoAoLongoDoTempo opcoes={series} />}
 
       <ul className="space-y-3">
@@ -305,8 +310,9 @@ function ComoFunciona({ aberto }: { aberto: boolean }) {
           sai na hora.
         </li>
         <li>
-          A qualidade é a leitura da IA sobre cada conversa: quente, morno ou frio. Quem ainda não
-          conversou fica como &quot;sem leitura&quot;.
+          A qualidade é o que o cliente fez: <strong className="text-titulo">conversou</strong> (mandou
+          mais de uma mensagem), <strong className="text-titulo">se qualificou</strong> (disse renda ou
+          orçamento, ou a IA o leu como quente ou morno), visitou e fechou.
         </li>
       </ol>
       {aberto && (
@@ -358,7 +364,9 @@ function Comparativo({ linhas }: { linhas: ReturnType<typeof compararCampanhas> 
             </div>
             <p className="text-fluid-xs text-corpo">
               {l.leads} {l.leads === 1 ? "cliente" : "clientes"} · por visita {reais(l.custoPorVisita)} ·{" "}
-              {l.taxaDeBonsLeads === null ? "qualidade sem leitura" : `${l.taxaDeBonsLeads}% quentes ou mornos`}
+              {l.taxaDeQualificados === null
+                ? `${l.qualificados} de ${l.leads} qualificados`
+                : `${l.taxaDeQualificados}% qualificados`}
             </p>
           </li>
         ))}
@@ -367,41 +375,107 @@ function Comparativo({ linhas }: { linhas: ReturnType<typeof compararCampanhas> 
   );
 }
 
-const FAIXAS: { chave: keyof Qualidade; rotulo: string; cor: string }[] = [
-  { chave: "quente", rotulo: "Quentes", cor: "bg-acento" },
-  { chave: "morno", rotulo: "Mornos", cor: "bg-acento/55" },
-  { chave: "frio", rotulo: "Frios", cor: "bg-acento/25" },
-  { chave: "semLeitura", rotulo: "Sem leitura", cor: "bg-vidro-forte" },
+const DEGRAUS: { chave: Exclude<keyof Degraus, "chegaram" | "sairam">; rotulo: string }[] = [
+  { chave: "conversaram", rotulo: "Conversaram" },
+  { chave: "qualificados", rotulo: "Se qualificaram" },
+  { chave: "visitaram", rotulo: "Visitaram" },
+  { chave: "fecharam", rotulo: "Fecharam" },
 ];
 
-/** A qualidade dos clientes de uma campanha: barra 100% por temperatura. */
-function BarraDeQualidade({ qualidade, total }: { qualidade: Qualidade; total: number }) {
+/** "3 de 12 · 25%", ou só "2 de 3" quando a amostra é pequena para porcentagem. */
+function deQuantos(parte: number, total: number): string {
+  const p = porcentagem(parte, total);
+  return p === null ? `${parte} de ${total}` : `${parte} de ${total} · ${p}%`;
+}
+
+/**
+ * O que os clientes de uma campanha fizeram, degrau por degrau. Cada barra é
+ * a fração de quem chegou: o comprimento mostra onde a campanha perde gente.
+ */
+function DegrausDoCliente({ degraus }: { degraus: Degraus }) {
+  const total = degraus.chegaram;
   if (total === 0) return null;
-  const partes = FAIXAS.filter((f) => qualidade[f.chave] > 0);
-  const resumo = FAIXAS.map((f) => `${qualidade[f.chave]} ${f.rotulo.toLowerCase()}`).join(", ");
 
   return (
     <figure className="space-y-2">
-      <figcaption className="text-fluid-xs text-corpo">Qualidade dos clientes (leitura da IA)</figcaption>
-      <div className="flex h-3 gap-0.5 overflow-hidden rounded-full" role="img" aria-label={resumo}>
-        {partes.map((f) => (
-          <div
-            key={f.chave}
-            className={`${f.cor} h-full first:rounded-l-full last:rounded-r-full`}
-            style={{ width: `${(qualidade[f.chave] / total) * 100}%` }}
-            title={`${f.rotulo}: ${qualidade[f.chave]}`}
-          />
-        ))}
-      </div>
-      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-fluid-xs text-corpo">
-        {FAIXAS.map((f) => (
-          <li key={f.chave} className="flex items-center gap-1.5">
-            <span aria-hidden className={`${f.cor} inline-block h-2.5 w-2.5 rounded-sm`} />
-            {f.rotulo} <span className="font-semibold text-titulo tabular-nums">{qualidade[f.chave]}</span>
+      <figcaption className="text-fluid-xs text-corpo">
+        O que {total === 1 ? "o cliente fez" : `os ${total} clientes fizeram`}
+      </figcaption>
+      <ol className="space-y-1.5">
+        {DEGRAUS.map((d) => (
+          <li key={d.chave} className="grid grid-cols-[7.5rem_1fr] items-center gap-x-3 text-fluid-xs sm:grid-cols-[8.5rem_1fr_7rem]">
+            <span className="text-corpo">{d.rotulo}</span>
+            <span aria-hidden className="h-2 overflow-hidden rounded-full bg-vidro-forte">
+              <span
+                className="block h-full rounded-full bg-acento"
+                style={{ width: `${(degraus[d.chave] / total) * 100}%` }}
+              />
+            </span>
+            <span className="col-start-2 font-semibold text-titulo tabular-nums sm:col-start-3 sm:text-right">
+              {deQuantos(degraus[d.chave], total)}
+            </span>
           </li>
         ))}
-      </ul>
+      </ol>
+      {degraus.sairam > 0 && (
+        <p className="text-fluid-xs text-corpo">
+          {degraus.sairam === 1 ? "1 saiu" : `${degraus.sairam} saíram`} (pediu para parar ou foi marcado
+          como perdido).
+        </p>
+      )}
     </figure>
+  );
+}
+
+/**
+ * A qualidade lado a lado, para toda campanha com cliente (com ou sem gasto).
+ * Três colunas fixas, a mesma ordem em toda linha, para o olho descer a coluna.
+ */
+function QualidadeLadoALado({ linhas }: { linhas: ReturnType<typeof compararQualidade> }) {
+  if (linhas.length < 2) return null;
+  const colunas = DEGRAUS.slice(0, 3);
+
+  return (
+    <CartaoDeGrafico
+      titulo="Qual campanha traz cliente melhor?"
+      subtitulo="Dos clientes que chegaram, quantos conversaram, se qualificaram e visitaram."
+      rodape={`Se qualificou: disse renda ou orçamento, ou a IA o leu como quente ou morno. Com menos de ${MINIMO_PARA_PORCENTAGEM} clientes a campanha mostra a contagem, não a porcentagem, e fica no fim da lista.`}
+    >
+      <ol className="space-y-4">
+        {linhas.map((l) => (
+          <li key={l.id} className="space-y-2">
+            <p className="text-fluid-sm font-semibold break-words text-titulo">
+              {l.nome}{" "}
+              <span className="font-normal text-corpo">
+                · {l.degraus.chegaram} {l.degraus.chegaram === 1 ? "cliente" : "clientes"}
+              </span>
+            </p>
+            <dl className="grid grid-cols-3 gap-2">
+              {colunas.map((c) => {
+                const valor = l.degraus[c.chave];
+                const p = porcentagem(valor, l.degraus.chegaram);
+                return (
+                  <div key={c.chave} className="min-w-0 rounded-xl bg-vidro px-2.5 py-2">
+                    <dt className="text-fluid-xs text-corpo">{c.rotulo}</dt>
+                    <dd className="space-y-1.5">
+                      <span className="block font-semibold text-titulo tabular-nums">
+                        {p === null ? `${valor} de ${l.degraus.chegaram}` : `${p}%`}
+                      </span>
+                      <span aria-hidden className="block h-1.5 overflow-hidden rounded-full bg-vidro-forte">
+                        <span
+                          className={`block h-full rounded-full ${p === null ? "bg-acento/40" : "bg-acento"}`}
+                          style={{ width: `${(valor / l.degraus.chegaram) * 100}%` }}
+                        />
+                      </span>
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+          </li>
+        ))}
+      </ol>
+    </CartaoDeGrafico>
   );
 }
 
@@ -470,10 +544,10 @@ function Cartao({
         <Mini rotulo="Visitas" valor={String(resumo.visitas)} />
         <Mini rotulo="Por cliente" valor={reais(resumo.custoPorLead)} />
         <Mini rotulo="Por visita" valor={reais(resumo.custoPorVisita)} />
-        <Mini rotulo="Por quente/morno" valor={reais(resumo.custoPorBomLead)} />
+        <Mini rotulo="Por qualificado" valor={reais(resumo.custoPorQualificado)} />
       </dl>
 
-      <BarraDeQualidade qualidade={resumo.qualidade} total={resumo.leads} />
+      <DegrausDoCliente degraus={resumo.degraus} />
 
       {resumo.anuncios.length > 0 && (
         <div className="space-y-2">

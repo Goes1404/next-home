@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   compararCampanhas,
+  compararQualidade,
+  contarDegraus,
+  degrauDoCliente,
   gastoAte,
   serieDeCusto,
   lerValorEmReais,
@@ -95,12 +98,13 @@ describe("campanhas cadastradas pelo corretor (0132)", () => {
     expect(rc.leads).toBe(2);
   });
 
-  it("qualidade conta a temperatura e o custo por cliente bom", () => {
+  it("qualificado é quem esquentou ou visitou; o custo divide pelo qualificado", () => {
     const [rc, rs] = resumos;
-    expect(rc.qualidade).toEqual({ quente: 1, morno: 1, frio: 1, semLeitura: 1 });
-    expect(rc.taxaDeBonsLeads).toBe(67);
-    expect(rc.custoPorBomLead).toBe(150);
-    expect(rs.taxaDeBonsLeads).toBe(33);
+    // quente+visita, morno, frio, sem leitura
+    expect(rc.degraus).toMatchObject({ chegaram: 4, qualificados: 2, visitaram: 1, fecharam: 0 });
+    expect(rc.custoPorQualificado).toBe(150);
+    expect(rc.taxaDeQualificados).toBeNull(); // 4 clientes: pouco para porcentagem
+    expect(rs.degraus).toMatchObject({ chegaram: 3, qualificados: 1, fecharam: 1 });
   });
 
   it("anúncio agrupado numa campanha que sumiu volta para cima", () => {
@@ -184,5 +188,42 @@ describe("custo ao longo do tempo (0133)", () => {
 
   it("sem gasto informado não há série", () => {
     expect(serieDeCusto(resumirImpulsionamentos([{ ...camp, valorGasto: null }], []), [], HOJE)).toEqual([]);
+  });
+});
+
+describe("qualidade pelo que o cliente fez", () => {
+  const l = (o: Record<string, unknown>) => ({ ...lead({}), ...o });
+
+  it("uma fala só é a mensagem pronta do botão; duas já é conversa", () => {
+    expect(degrauDoCliente(l({ falasDoCliente: 1 }))).toBe(0);
+    expect(degrauDoCliente(l({ falasDoCliente: 2 }))).toBe(1);
+  });
+
+  it("renda dita qualifica mesmo com a IA lendo frio", () => {
+    expect(degrauDoCliente(l({ temperatura: "frio", capacidadeDita: true }))).toBe(2);
+    expect(degrauDoCliente(l({ temperatura: "frio", falasDoCliente: 5 }))).toBe(1);
+  });
+
+  it("os degraus contêm os de baixo, e quem saiu corre por fora", () => {
+    const d = contarDegraus([
+      l({ etapa: "fechado" }),
+      l({ visitaAgendadaEm: "2026-09-10", etapa: "perdido" }),
+      l({ falasDoCliente: 3, pediuParaSair: true }),
+      l({}),
+    ]);
+    expect(d).toEqual({ chegaram: 4, conversaram: 3, qualificados: 2, visitaram: 2, fecharam: 1, sairam: 2 });
+  });
+
+  it("a comparação põe amostra pequena no fim, mesmo com taxa maior", () => {
+    const linha = (id: string): LinhaImpulsionamento => ({
+      ...base, id, corretorId: "c1", chave: `k${id}`, titulo: id, valorGasto: null,
+    });
+    const leads = [
+      ...Array.from({ length: 10 }, (_, i) => l({ metaAdId: "kgrande", capacidadeDita: i < 3 })),
+      ...Array.from({ length: 2 }, () => l({ metaAdId: "kpequena", capacidadeDita: true })),
+      ...Array.from({ length: 6 }, (_, i) => l({ metaAdId: "kmedia", capacidadeDita: i < 3 })),
+    ];
+    const r = resumirImpulsionamentos([linha("grande"), linha("pequena"), linha("media")], leads);
+    expect(compararQualidade(r, (x) => x.id).map((x) => x.id)).toEqual(["media", "grande", "pequena"]);
   });
 });

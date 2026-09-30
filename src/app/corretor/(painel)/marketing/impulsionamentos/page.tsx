@@ -28,8 +28,10 @@ export const dynamic = "force-dynamic";
  * Meta). A campanha de outro canal, ou a que ainda não rendeu, o corretor
  * cadastra à mão, com o valor, e diz quais clientes vieram dela.
  *
- * A qualidade do cliente é a temperatura que a IA leu da conversa
- * (`lead_observacoes_ia`): quente e morno são os que valem a conversa.
+ * A qualidade do cliente é o que ele FEZ (`contarDegraus`): conversou,
+ * disse renda ou orçamento, visitou, fechou. A temperatura da IA só conta
+ * como uma das portas para "qualificado", porque ela oscila de uma leitura
+ * para a outra.
  *
  * A RLS recorta: o corretor vê os dele; o gestor vê os da equipe inteira
  * (mas só o dono edita).
@@ -50,7 +52,9 @@ export default async function PaginaImpulsionamentos() {
         .limit(200),
       supabase
         .from("leads")
-        .select("id, nome, telefone, corretor_id, meta_ad_id, anuncio_origem, etapa, visita_agendada_em, impulsionamento_id, created_at")
+        .select(
+          "id, nome, telefone, corretor_id, meta_ad_id, anuncio_origem, etapa, visita_agendada_em, impulsionamento_id, created_at, renda_mensal, orcamento_min, orcamento_max, nao_contatar_em",
+        )
         .or("origem.eq.meta/ctwa,impulsionamento_id.not.is.null")
         .is("arquivado_em", null)
         .limit(5000),
@@ -81,6 +85,37 @@ export default async function PaginaImpulsionamentos() {
     for (const o of data ?? []) temperaturas.set(o.lead_id, o.temperatura_label);
   }
 
+  // Quantas mensagens cada cliente mandou. Paginado: o PostgREST entrega no
+  // máximo 1000 linhas por vez, e cortar ali faria cliente que conversou
+  // parecer que não conversou.
+  const conversaDoLead = new Map<string, string>();
+  for (let i = 0; i < ids.length; i += 300) {
+    const { data } = await supabase
+      .from("whatsapp_conversas")
+      .select("id, lead_id")
+      .in("lead_id", ids.slice(i, i + 300));
+    for (const c of data ?? []) conversaDoLead.set(c.id, c.lead_id);
+  }
+  const falas = new Map<string, number>();
+  const conversas = [...conversaDoLead.keys()];
+  for (let i = 0; i < conversas.length; i += 200) {
+    const lote = conversas.slice(i, i + 200);
+    for (let pagina = 0; pagina < 20; pagina += 1) {
+      const { data } = await supabase
+        .from("whatsapp_mensagens")
+        .select("conversa_id")
+        .in("conversa_id", lote)
+        .eq("remetente", "cliente")
+        .order("id")
+        .range(pagina * 1000, pagina * 1000 + 999);
+      for (const m of data ?? []) {
+        const lead = conversaDoLead.get(m.conversa_id);
+        if (lead) falas.set(lead, (falas.get(lead) ?? 0) + 1);
+      }
+      if (!data || data.length < 1000) break;
+    }
+  }
+
   const doBanco: LinhaImpulsionamento[] = (linhas ?? []).map((l) => ({
     id: l.id,
     corretorId: l.corretor_id,
@@ -108,6 +143,9 @@ export default async function PaginaImpulsionamentos() {
     impulsionamentoId: l.impulsionamento_id,
     temperatura: temperaturas.get(l.id) ?? null,
     criadoEm: l.created_at,
+    falasDoCliente: falas.get(l.id) ?? 0,
+    capacidadeDita: l.renda_mensal !== null || l.orcamento_min !== null || l.orcamento_max !== null,
+    pediuParaSair: l.nao_contatar_em !== null,
   }));
 
   const resumos = resumirImpulsionamentos(doBanco, leadsDeAnuncio);

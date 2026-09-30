@@ -8541,3 +8541,16 @@ por visita e por cliente quente/morno; um gráfico compara as campanhas.
   média demorava a mostrar piora. Hoje a linha é o custo das últimas 4 semanas,
   começa no 3º cliente, e os clientes por semana ficam em barras separadas.
   Ponto cheio = gasto registrado naquela semana; vazado = estimado.
+
+### A qualidade do lead é o que ele fez (30/09/2026)
+
+Nota: [[qualidade-do-lead-pelo-que-ele-fez]].
+
+- **A temperatura da IA sozinha não serve para comparar campanhas**: ela
+  oscila de uma leitura para a outra, e quem não conversou vira "sem
+  leitura". Hoje a qualidade são degraus: conversou (2+ mensagens, porque no
+  anúncio de WhatsApp a primeira vem pronta do botão), se qualificou (renda ou
+  orçamento na ficha, ou quente/morno), visitou, fechou, e à parte quem saiu.
+- **Abaixo de 5 clientes, contagem e não porcentagem** (`MINIMO_PARA_PORCENTAGEM`).
+- **Contar mensagens por PostgREST exige paginar**: o teto é 1000 linhas por
+  resposta, e cortar ali faria a campanha parecer pior do que é.

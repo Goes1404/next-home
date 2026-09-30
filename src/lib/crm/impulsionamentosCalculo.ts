@@ -56,25 +56,82 @@ export type LeadDeAnuncio = {
   temperatura?: Temperatura | null;
   /** Quando o lead nasceu (ISO); é o que põe o cliente na linha do tempo. */
   criadoEm?: string;
+  /** Quantas mensagens o cliente mandou no WhatsApp (todas as conversas dele). */
+  falasDoCliente?: number;
+  /** Disse renda ou orçamento (na ficha: pela conversa ou pelo corretor). */
+  capacidadeDita?: boolean;
+  /** Pediu para não ser mais contatado. */
+  pediuParaSair?: boolean;
 };
 
-/** Qualidade dos clientes que chegaram: quantos de cada temperatura. */
-export type Qualidade = { quente: number; morno: number; frio: number; semLeitura: number };
+/**
+ * A qualidade medida pelo que o cliente FEZ, não só pela leitura da IA.
+ * Cada degrau contém os de baixo: quem visitou também conversou.
+ *
+ * - conversaram: mandaram 2+ mensagens. No anúncio de WhatsApp a primeira
+ *   mensagem vem pronta do botão, então 1 fala só não diz nada.
+ * - qualificados: disseram renda ou orçamento, ou a IA leu quente/morno.
+ * - visitaram: visita marcada, ou etapa de visita em diante.
+ * - fecharam: etapa fechado.
+ *
+ * `sairam` corre por fora: pediu para parar ou foi marcado como perdido.
+ */
+export type Degraus = {
+  chegaram: number;
+  conversaram: number;
+  qualificados: number;
+  visitaram: number;
+  fecharam: number;
+  sairam: number;
+};
+
+/** Abaixo disso a porcentagem é ruído: 1 de 2 vira "50%". */
+export const MINIMO_PARA_PORCENTAGEM = 5;
+
+const PORTAS_DE_QUALIFICACAO: Temperatura[] = ["quente", "morno"];
+
+/** O degrau mais alto que o cliente alcançou: 0 chegou … 4 fechou. */
+export function degrauDoCliente(l: LeadDeAnuncio): 0 | 1 | 2 | 3 | 4 {
+  if (l.etapa === "fechado") return 4;
+  if (l.visitaAgendadaEm !== null || ETAPAS_DE_VISITA_EM_DIANTE.has(l.etapa)) return 3;
+  if (l.capacidadeDita || (l.temperatura && PORTAS_DE_QUALIFICACAO.includes(l.temperatura))) return 2;
+  if ((l.falasDoCliente ?? 0) >= 2) return 1;
+  return 0;
+}
+
+export function contarDegraus(leads: LeadDeAnuncio[]): Degraus {
+  const d: Degraus = { chegaram: leads.length, conversaram: 0, qualificados: 0, visitaram: 0, fecharam: 0, sairam: 0 };
+  for (const l of leads) {
+    const g = degrauDoCliente(l);
+    if (g >= 1) d.conversaram += 1;
+    if (g >= 2) d.qualificados += 1;
+    if (g >= 3) d.visitaram += 1;
+    if (g >= 4) d.fecharam += 1;
+    if (l.pediuParaSair || l.etapa === "perdido") d.sairam += 1;
+  }
+  return d;
+}
+
+/** Porcentagem inteira; null quando a amostra é pequena demais para dizer. */
+export function porcentagem(parte: number, total: number): number | null {
+  if (total < MINIMO_PARA_PORCENTAGEM) return null;
+  return Math.round((parte / total) * 100);
+}
 
 export type ResumoImpulsionamento = LinhaImpulsionamento & {
   leads: number;
   visitas: number;
   fechados: number;
   perdidos: number;
-  qualidade: Qualidade;
+  degraus: Degraus;
   /** Gasto da linha somado ao dos anúncios agrupados nela; null se ninguém informou. */
   gastoTotal: number | null;
   custoPorLead: number | null;
   custoPorVisita: number | null;
-  /** Custo por cliente quente ou morno: quanto custou cada cliente que vale a conversa. */
-  custoPorBomLead: number | null;
-  /** % de quentes e mornos entre os que a IA já leu; null sem leitura nenhuma. */
-  taxaDeBonsLeads: number | null;
+  /** Quanto custou cada cliente qualificado (disse renda/orçamento ou esquentou). */
+  custoPorQualificado: number | null;
+  /** % de qualificados entre os que chegaram; null com menos de 5 clientes. */
+  taxaDeQualificados: number | null;
   /** Os anúncios detectados que foram agrupados nesta campanha. */
   anuncios: LinhaImpulsionamento[];
   /** Quando cada cliente desta linha nasceu (ISO), para a linha do tempo. */
@@ -131,13 +188,7 @@ export function resumirImpulsionamentos(
     const visitas = meus.filter(
       (l) => l.visitaAgendadaEm !== null || ETAPAS_DE_VISITA_EM_DIANTE.has(l.etapa),
     ).length;
-    const qualidade: Qualidade = { quente: 0, morno: 0, frio: 0, semLeitura: 0 };
-    for (const l of meus) {
-      if (l.temperatura) qualidade[l.temperatura] += 1;
-      else qualidade.semLeitura += 1;
-    }
-    const lidos = qualidade.quente + qualidade.morno + qualidade.frio;
-    const bons = qualidade.quente + qualidade.morno;
+    const degraus = contarDegraus(meus);
     const gastoTotal = somaDeGasto(todas);
 
     return {
@@ -148,12 +199,12 @@ export function resumirImpulsionamentos(
       visitas,
       fechados: meus.filter((l) => l.etapa === "fechado").length,
       perdidos: meus.filter((l) => l.etapa === "perdido").length,
-      qualidade,
+      degraus,
       gastoTotal,
       custoPorLead: dividir(gastoTotal, meus.length),
       custoPorVisita: dividir(gastoTotal, visitas),
-      custoPorBomLead: dividir(gastoTotal, bons),
-      taxaDeBonsLeads: lidos === 0 ? null : Math.round((bons / lidos) * 100),
+      custoPorQualificado: dividir(gastoTotal, degraus.qualificados),
+      taxaDeQualificados: porcentagem(degraus.qualificados, meus.length),
     };
   });
 }
@@ -181,7 +232,8 @@ export type LinhaDoComparativo = {
   leads: number;
   custoPorLead: number;
   custoPorVisita: number | null;
-  taxaDeBonsLeads: number | null;
+  qualificados: number;
+  taxaDeQualificados: number | null;
   /** A de menor custo por visita (ou por cliente, se nenhuma tiver visita). */
   melhor: boolean;
 };
@@ -206,7 +258,8 @@ export function compararCampanhas(
       leads: r.leads,
       custoPorLead: r.custoPorLead as number,
       custoPorVisita: r.custoPorVisita,
-      taxaDeBonsLeads: r.taxaDeBonsLeads,
+      qualificados: r.degraus.qualificados,
+      taxaDeQualificados: r.taxaDeQualificados,
       melhor: false,
     }))
     .sort((a, b) => a.custoPorLead - b.custoPorLead);
@@ -221,6 +274,32 @@ export function compararCampanhas(
 }
 
 /** "Até este dia, a campanha tinha gastado X" (0133). */
+export type LinhaDeQualidade = { id: string; nome: string; degraus: Degraus };
+
+/**
+ * A qualidade lado a lado: toda campanha com cliente, com ou sem gasto (a
+ * qualidade não depende do valor). As com amostra para porcentagem vêm
+ * primeiro, da que mais qualifica para a que menos; as pequenas vão para o
+ * fim, pela quantidade de clientes, porque "2 de 3" não ganha de "8 de 20".
+ */
+export function compararQualidade(
+  resumos: ResumoImpulsionamento[],
+  nomeDe: (r: ResumoImpulsionamento) => string,
+): LinhaDeQualidade[] {
+  const taxa = (d: Degraus) => porcentagem(d.qualificados, d.chegaram);
+  return resumos
+    .filter((r) => r.degraus.chegaram > 0)
+    .map((r) => ({ id: r.id, nome: nomeDe(r), degraus: r.degraus }))
+    .sort((a, b) => {
+      const ta = taxa(a.degraus);
+      const tb = taxa(b.degraus);
+      if (ta !== null && tb !== null) return tb - ta || b.degraus.chegaram - a.degraus.chegaram;
+      if (ta !== null) return -1;
+      if (tb !== null) return 1;
+      return b.degraus.chegaram - a.degraus.chegaram;
+    });
+}
+
 export type PontoDeGasto = { impulsionamentoId: string; dia: string; valor: number };
 
 export type PontoDaSerie = {
