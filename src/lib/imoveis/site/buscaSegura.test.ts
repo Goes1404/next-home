@@ -31,3 +31,24 @@ describe("busca de URL colada pelo corretor", () => {
     expect(fonte).toMatch(/alvo = validarUrlPublica\(new URL\(resposta\.cabecalhos\.location/);
   });
 });
+
+describe("tipo de imagem pelos primeiros bytes (servidor que não diz o tipo)", () => {
+  it("reconhece JPEG, PNG e WebP", async () => {
+    const { tipoPelaAssinatura } = await import("./buscarSeguro");
+    expect(tipoPelaAssinatura(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0]))).toBe("image/jpeg");
+    expect(tipoPelaAssinatura(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0]))).toBe("image/png");
+    const webp = Buffer.concat([Buffer.from("RIFF"), Buffer.from([0, 0, 0, 0]), Buffer.from("WEBPVP8 ")]);
+    expect(tipoPelaAssinatura(webp)).toBe("image/webp");
+  });
+
+  it("HTML sem tipo continua não sendo imagem", async () => {
+    const { tipoPelaAssinatura } = await import("./buscarSeguro");
+    expect(tipoPelaAssinatura(Buffer.from("<!doctype html><html>"))).toBeNull();
+    expect(tipoPelaAssinatura(Buffer.alloc(0))).toBeNull();
+  });
+
+  it("o tipo DECLARADO pelo servidor vence; a assinatura só entra quando ele falta", () => {
+    const fonte = fs.readFileSync(path.join(process.cwd(), "src/lib/imoveis/site/buscarSeguro.ts"), "utf8");
+    expect(fonte).toMatch(/declarado && !declarado\.startsWith\("application\/octet-stream"\)\s*\?\s*declarado\s*:\s*\(tipoPelaAssinatura\(bytes\)/);
+  });
+});

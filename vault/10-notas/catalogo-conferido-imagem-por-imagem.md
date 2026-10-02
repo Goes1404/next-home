@@ -14,6 +14,7 @@ codigo:
   - scripts/catalogo/trazerFotosCuradas.ts
   - scripts/catalogo/fotos-curadas/0139-poucas-fotos.json
   - .github/workflows/fotos-curadas.yml
+  - src/lib/imoveis/site/buscarSeguro.ts
 summary: Pedido "imóveis com cadastro incompleto ou poucas imagens". A medição achou 44 plantas publicadas sem metragem, dormitórios chutados pela importação, 7 "plantas" que não eram planta, e fotos de OUTROS empreendimentos nas galerias do Alpha Park View e do Copa 18. Corrigido conferindo cada imagem; as remoções ficaram na 0138, porque a ferramenta de migration cancela delete.
 updated: 2026-10-02
 ---
@@ -66,11 +67,20 @@ updated: 2026-10-02
 - **Os três com poucas fotos (02/10, leva 0139):** Royal Barueri 6 → 29 (galeria
   oficial da CNA Spitaletti, sem as 4 que repetiam render já cadastrado),
   Vila Eco Park 5 → 29 (página da Árbore; as fases Jatobás e Ipês usam as
-  mesmas perspectivas do condomínio) e Vitra 7 → 9 (o site da Lidera não
+  mesmas perspectivas do condomínio; lista 0140, porque a 0139 falhou nele) e Vitra 7 → 9 (o site da Lidera não
   abre; a página da Lopes só tinha 2 renders novos, a 869 px).
 - **`trazerFotosCuradas.ts` + `fotos-curadas.yml`**: uma lista JSON por leva
   em `scripts/catalogo/fotos-curadas/`. O push na branch de produção roda só
   a lista que mudou. Próxima leva = um JSON novo, sem script novo.
+- **Servidor sem Content-Type**: o Apache da Árbore entrega `.webp` sem tipo,
+  e o `buscarSeguro` recusava as 24 fotos ("não aponta para o que eu
+  esperava"). Hoje, com o tipo ausente ou `octet-stream`, ele identifica a
+  imagem pelos primeiros bytes (JPEG, PNG, WebP); tipo declarado continua
+  valendo, e HTML sem tipo continua recusado.
+- **Armadilha do teste de guarda**: `buscaSegura.test.ts` tira comentários
+  com regex, e o curinga do cabeçalho Accept abre um falso comentário de
+  bloco. Comentário `/* */` depois dele fecha o falso e apaga o código do
+  teste. Em `buscarSeguro.ts`, daquele ponto para baixo, só `//`.
 - **Para não duplicar render vindo de outra fonte** (o dedup por hash só pega
   arquivo idêntico): montar uma grade com as fotos atuais e as candidatas e
   olhar antes de montar a lista.

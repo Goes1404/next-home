@@ -8804,3 +8804,9 @@ Nota: [[catalogo-conferido-imagem-por-imagem]].
   alterada). Leva 0139: Royal Barueri 6 → 29, Vila Eco Park 5 → 29, Vitra
   7 → 9. O dedup por hash não pega o mesmo render vindo de outra fonte:
   comparar numa grade antes.
+- **Servidor que não manda Content-Type** (o Apache da Árbore, nas 24 fotos
+  do Vila Eco Park): o `buscarSeguro` recusava. Agora o tipo ausente ou
+  `octet-stream` sai dos primeiros bytes (JPEG, PNG, WebP).
+- **`/* */` em `buscarSeguro.ts` depois do cabeçalho Accept quebra o teste de
+  guarda**: o curinga do Accept abre um falso comentário para o regex do
+  teste, e o fechamento de bloco apaga o código. Usar `//`.

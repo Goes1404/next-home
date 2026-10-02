@@ -168,16 +168,27 @@ export async function buscarSeguro(
       return { ok: false, motivo: "rede", mensagem: `O site respondeu com erro (${resposta.status}).` };
     }
 
-    const contentType = String(resposta.cabecalhos["content-type"] ?? "").toLowerCase();
-    if (!opcoes.aceitar(contentType)) {
-      return { ok: false, motivo: "tipo_errado", mensagem: "Este endereço não aponta para o que eu esperava." };
-    }
-
     let bytes: Buffer;
     try {
       bytes = descompactar(resposta.corpo, resposta.cabecalhos["content-encoding"] as string | undefined);
     } catch {
       return { ok: false, motivo: "rede", mensagem: "O site mandou uma resposta que não consegui abrir." };
+    }
+
+    // Servidor que não diz o tipo (ou diz só "octet-stream") é comum em site
+    // de construtora: o Apache da Árbore entrega `.webp` SEM Content-Type, e
+    // as 24 fotos do Vila Eco Park foram recusadas por isso (02/10/2026).
+    // Nesse caso o tipo sai dos primeiros bytes; quando o servidor DIZ um
+    // tipo, ele continua valendo. (Sem comentário de bloco daqui para baixo:
+    // o curinga do cabeçalho Accept abre um falso comentário para o teste de
+    // guarda, e um fechamento de bloco o encerraria, apagando o código.)
+    const declarado = String(resposta.cabecalhos["content-type"] ?? "").toLowerCase();
+    const contentType =
+      declarado && !declarado.startsWith("application/octet-stream")
+        ? declarado
+        : (tipoPelaAssinatura(bytes) ?? declarado);
+    if (!opcoes.aceitar(contentType)) {
+      return { ok: false, motivo: "tipo_errado", mensagem: "Este endereço não aponta para o que eu esperava." };
     }
     if (bytes.length > opcoes.tetoBytes * 8) {
       return { ok: false, motivo: "grande_demais", mensagem: "O arquivo é maior do que o limite." };
@@ -187,4 +198,16 @@ export async function buscarSeguro(
   }
 
   return { ok: false, motivo: "rede", mensagem: "O site redireciona demais." };
+}
+
+// Tipo de imagem pelos primeiros bytes (JPEG, PNG, WebP), ou null.
+export function tipoPelaAssinatura(bytes: Buffer): string | null {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
+    return "image/png";
+  }
+  if (bytes.length >= 12 && bytes.toString("latin1", 0, 4) === "RIFF" && bytes.toString("latin1", 8, 12) === "WEBP") {
+    return "image/webp";
+  }
+  return null;
 }
