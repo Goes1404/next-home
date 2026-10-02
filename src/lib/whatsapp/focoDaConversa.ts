@@ -100,6 +100,10 @@ const COMUNS = new Set([
   "clube",
   "campo",
   "centro",
+  // "tem copa e cozinha americana?" virava foco no Copa 18 do Forte, e
+  // "moro no 18 do Forte" (bairro de quatro imóveis) também (02/10/2026).
+  "copa",
+  "forte",
   "grande",
   "lago",
   "melhor",
@@ -351,9 +355,16 @@ const ABRE_FRASE = new Set([
  * reconhecer o nome mesmo quando o cliente escreve tudo junto, separa com
  * hífen ou digita o nome completo do cadastro.
  */
-function candidatos(frase: string): string[] {
+/** Pedaço da frase e onde ele está: palavra inicial e quantas palavras. */
+interface Candidato {
+  texto: string;
+  inicio: number;
+  tamanho: number;
+}
+
+function candidatos(frase: string): Candidato[] {
   const palavras = frase.split(/[^a-z0-9]+/).filter(Boolean);
-  const saida: string[] = [palavras.join(" ")];
+  const saida: Candidato[] = [{ texto: palavras.join(" "), inicio: 0, tamanho: palavras.length }];
   /*
    * Preposição e conjunção também não FECHAM um nome, e o custo de ignorar
    * isso foi medido: "bom que" está a uma letra de "bosque", e a tolerância
@@ -366,14 +377,14 @@ function candidatos(frase: string): string[] {
 
   for (let i = 0; i < palavras.length; i++) {
     if (ABRE_FRASE.has(palavras[i])) continue;
-    saida.push(palavras[i]);
+    saida.push({ texto: palavras[i], inicio: i, tamanho: 1 });
     if (i + 1 < palavras.length && !fecha(palavras[i + 1])) {
-      saida.push(`${palavras[i]} ${palavras[i + 1]}`);
-      saida.push(`${palavras[i]}${palavras[i + 1]}`);
+      saida.push({ texto: `${palavras[i]} ${palavras[i + 1]}`, inicio: i, tamanho: 2 });
+      saida.push({ texto: `${palavras[i]}${palavras[i + 1]}`, inicio: i, tamanho: 2 });
     }
     if (i + 2 < palavras.length && !fecha(palavras[i + 2])) {
-      saida.push(`${palavras[i]} ${palavras[i + 1]} ${palavras[i + 2]}`);
-      saida.push(`${palavras[i]}${palavras[i + 1]}${palavras[i + 2]}`);
+      saida.push({ texto: `${palavras[i]} ${palavras[i + 1]} ${palavras[i + 2]}`, inicio: i, tamanho: 3 });
+      saida.push({ texto: `${palavras[i]}${palavras[i + 1]}${palavras[i + 2]}`, inicio: i, tamanho: 3 });
     }
   }
 
@@ -449,10 +460,32 @@ function citadosNoTexto(
 
   for (const frase of frases(texto)) {
     if (!opcoes.ignorarRecusa && RECUSA.test(frase)) continue;
-    for (const candidato of candidatos(frase)) {
-      const termo = melhorTermo(candidato, indice);
-      if (!termo) continue;
-      const slug = indice.termos.get(termo);
+    const casados = candidatos(frase).flatMap((c) => {
+      const termo = melhorTermo(c.texto, indice);
+      return termo ? [{ ...c, termo }] : [];
+    });
+    for (const c of casados) {
+      /*
+       * Pedaço que cabe dentro de outro pedaço casado, no MESMO lugar da
+       * frase, é parte dele: "royal barueri ii" contém "royal barueri", e
+       * contar os dois fazia a frase citar dois imóveis — um desfile, que
+       * anula o foco (02/10/2026). Por posição, não por texto: "royal
+       * barueri ou royal barueri ii" cita mesmo os dois.
+       */
+      const dentroDeOutro = casados.some(
+        (o) =>
+          o !== c &&
+          // Só casamento EXATO engole outro: "royal barueri ou" fica a duas
+          // letras de "royal barueri ii", e o aproximado apagaria o Royal I
+          // de quem perguntou pelos dois.
+          o.texto === o.termo &&
+          o.tamanho > c.tamanho &&
+          o.inicio <= c.inicio &&
+          o.inicio + o.tamanho >= c.inicio + c.tamanho &&
+          indice.termos.get(o.termo) !== indice.termos.get(c.termo),
+      );
+      if (dentroDeOutro) continue;
+      const slug = indice.termos.get(c.termo);
       if (slug && !achados.includes(slug)) achados.push(slug);
     }
   }

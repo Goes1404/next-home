@@ -4,6 +4,7 @@ import {
   catalogoComFoco,
   catalogoParaAtendimento,
   detectarFoco,
+  imoveisCitados,
   palpiteDeNome,
   removerIndicacaoPrematura,
 } from "./focoDaConversa";
@@ -134,6 +135,28 @@ describe("variação de escrita do nome", () => {
     ]) {
       expect(foco(texto), texto).toBeNull();
     }
+  });
+
+  it("cômodo e bairro não viram imóvel (Copa 18 do Forte)", () => {
+    const comCopa = [
+      ...CATALOGO,
+      imovel("Copa 18 do Forte", "copa-18-do-forte", { nomesAlternativos: ["Copa 18"] }),
+    ];
+    for (const texto of ["tem copa e cozinha americana?", "moro no 18 do forte"]) {
+      expect(imoveisCitados(texto, comCopa), texto).toEqual([]);
+    }
+    expect(imoveisCitados("quero o copa 18", comCopa)).toEqual(["copa-18-do-forte"]);
+  });
+
+  it("nome contido em outro não vira segunda citação (Royal Barueri e Royal Barueri II)", () => {
+    const comRoyal = [
+      ...CATALOGO,
+      imovel("Royal Barueri", "royal-1"),
+      imovel("Royal Barueri II", "royal-2"),
+    ];
+    expect(imoveisCitados("me fala do royal barueri", comRoyal)).toEqual(["royal-1"]);
+    expect(imoveisCitados("e o royal barueri ii?", comRoyal)).toEqual(["royal-2"]);
+    expect(imoveisCitados("royal barueri ou royal barueri ii?", comRoyal).sort()).toEqual(["royal-1", "royal-2"]);
   });
 
   it("nome completo do cadastro, com preposições e tudo", () => {

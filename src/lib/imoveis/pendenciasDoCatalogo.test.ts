@@ -33,15 +33,17 @@ describe("pendenciasDoCatalogo", () => {
    * bot não tem como reconhecer, porque não existe nome para o cliente
    * acertar.
    */
-  it("separa nome-que-é-anúncio de nome de verdade sem apelido", () => {
+  it("só cobra apelido de nome que é anúncio; nome de verdade não entra na lista", () => {
+    // 02/10/2026: "Beyond Residence" sem apelido não é pendência — a
+    // assistente reconhece o nome e a palavra marcante dele.
     const lista = pendenciasDoCatalogo([
       completo("Vitra Alphaville", { nomesAlternativos: [] }),
       completo("Melhor valor de metro da Região", { nomesAlternativos: [] }),
     ]);
 
+    expect(lista).toHaveLength(1);
     expect(lista[0].imovel.nome).toBe("Melhor valor de metro da Região");
     expect(lista[0].pendencias[0].tipo).toBe("apelido_invisivel");
-    expect(lista[1].pendencias[0].tipo).toBe("sem_apelido");
   });
 
   it("ordena pelo estrago: invisível, depois planta, depois tipologia", () => {
@@ -75,7 +77,7 @@ describe("pendenciasDoCatalogo", () => {
     );
     expect(contagem.sem_planta).toBe(2);
     expect(contagem.sem_tipologia).toBe(1);
-    expect(contagem.sem_apelido).toBe(0);
+    expect(contagem.apelido_invisivel).toBe(0);
   });
 
   it("catálogo vazio não vira lista fantasma", () => {

@@ -1,4 +1,3 @@
-import { motivoDeUrgencia, type MotivoUrgencia } from "./apelidoPendente";
 import { avaliarCompletude } from "./completudeDoCatalogo";
 
 /**
@@ -27,11 +26,12 @@ import { avaliarCompletude } from "./completudeDoCatalogo";
  *
  * Nome que é título de anúncio vem primeiro porque o imóvel fica invisível
  * para o bot — o cliente não tem como acertar um nome que não existe.
- * Depois planta, que é o pedido mais comum. Depois tipologia, e por último
- * o apelido de um imóvel que já tem nome de verdade.
+ * Depois planta, que é o pedido mais comum. Depois tipologia. O apelido de
+ * um imóvel que já tem nome de verdade saiu da lista em 02/10/2026: a
+ * assistente reconhece o nome e a palavra marcante dele.
  */
 
-export type TipoDePendencia = "apelido_invisivel" | "sem_planta" | "sem_tipologia" | "sem_apelido";
+export type TipoDePendencia = "apelido_invisivel" | "sem_planta" | "sem_tipologia";
 
 export interface PendenciaDoImovel {
   tipo: TipoDePendencia;
@@ -43,7 +43,6 @@ export const PESO: Record<TipoDePendencia, number> = {
   apelido_invisivel: 0,
   sem_planta: 1,
   sem_tipologia: 2,
-  sem_apelido: 3,
 };
 
 const EXPLICACAO: Record<TipoDePendencia, string> = {
@@ -51,7 +50,6 @@ const EXPLICACAO: Record<TipoDePendencia, string> = {
     "o nome cadastrado é um título de anúncio — sem apelido, não há nome que o cliente possa acertar",
   sem_planta: "o cliente pede a planta e a assistente não tem o que mandar",
   sem_tipologia: "sem metragem e dormitórios na ficha, a assistente inventa",
-  sem_apelido: "o cliente pode chamar por outro nome e a assistente não reconhecer",
 };
 
 export interface ImovelDoCatalogo {
@@ -95,7 +93,9 @@ function pendenciasDe(imovel: ImovelDoCatalogo): PendenciaDoImovel[] {
   if (ausentes.has("apelido")) {
     // Nome que é título de anúncio é caso próprio: não é "seria bom ter
     // apelido", é "sem apelido este imóvel não existe para o bot".
-    tipos.push(motivoDeUrgencia(imovel.nome) ? "apelido_invisivel" : "sem_apelido");
+    // Desde 02/10/2026 a completude só acusa o apelido quando o nome é
+    // título de anúncio: nome de verdade a assistente já reconhece.
+    tipos.push("apelido_invisivel");
   }
   if (ausentes.has("planta_imagem")) tipos.push("sem_planta");
   if (ausentes.has("tipologia")) tipos.push("sem_tipologia");
@@ -129,7 +129,6 @@ export function contarPorTipo(
     apelido_invisivel: 0,
     sem_planta: 0,
     sem_tipologia: 0,
-    sem_apelido: 0,
   };
 
   for (const item of lista) {

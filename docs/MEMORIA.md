@@ -8760,3 +8760,20 @@ Nota: [[o-orcamento-do-dossie-era-menor-que-o-escrito]].
   `E2E_CORRETOR_EMAIL`/`SENHA` nos secrets. Sem eles o painel é pulado.
   `webServer` só sobe quando não há `E2E_BASE_URL`.
 - **Senhas vazadas (advisor do Auth) é recurso do plano Pro** do Supabase.
+
+## Nomes que o cliente acerta (0136, 02/10/2026)
+
+Nota: [[nomes-que-o-cliente-acerta]].
+
+- **Nenhum dos 21 sites de construtora publica preço**: o "a partir de" só
+  sai da tabela de preços (tela de reajuste).
+- **Apelido só faz falta para nome de anúncio.** O reconhecimento já usa o
+  nome inteiro e a palavra marcante dele. O checklist deixou de cobrar
+  apelido dos outros (era 19 "incompletos" sem ganho).
+- **Frases reais pelo `imoveisCitados` acharam três defeitos**: "copa" e
+  "18 do Forte" viravam o Copa 18 (agora em `COMUNS`); "royal barueri" caía
+  no Royal II porque o I tinha nome de anúncio (renomeado), e "royal barueri
+  ii" citava os dois (casamento exato engole o que está dentro dele, por
+  posição); "vitta" virava Vitra (apelido "Vitta").
+- Termo com menos de 4 letras não é registrado no reconhecimento.
+- Nome trocado por migration aparece no site em até 1 h (cache `catalogo`).

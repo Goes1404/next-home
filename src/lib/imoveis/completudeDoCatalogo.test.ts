@@ -22,10 +22,20 @@ const completo: ImovelAvaliavel = {
 
 describe("completude de um imóvel", () => {
   it("imóvel recém-criado não tem nenhum essencial completo", () => {
-    const r = avaliarCompletude({ nome: "Residencial Aurora" });
+    // Nome de anúncio: com nome de verdade o apelido já conta como presente.
+    const r = avaliarCompletude({ nome: "Apartamento 2 dorms ao lado do shopping" });
 
     expect(r.essencialCompletos).toBe(0);
     expect(r.essencialTotal).toBeGreaterThan(0);
+  });
+
+  it("nome de verdade não precisa de apelido; nome de anúncio precisa", () => {
+    const real = avaliarCompletude({ nome: "Beyond Residence" });
+    const anuncio = avaliarCompletude({ nome: "3 Dormitórios com Suíte e 2 Vagas" });
+    const apelido = (r: typeof real) => r.itens.find((x) => x.categoria.chave === "apelido")!.presente;
+
+    expect(apelido(real)).toBe(true);
+    expect(apelido(anuncio)).toBe(false);
   });
 
   it("conta cada essencial que o imóvel de fato tem", () => {

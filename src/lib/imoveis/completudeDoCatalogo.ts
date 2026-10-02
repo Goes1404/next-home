@@ -46,6 +46,8 @@
  */
 
 /** Onde a categoria pesa: só o essencial entra na conta de completude. */
+import { motivoDeUrgencia } from "./apelidoPendente";
+
 export type Faixa = "essencial" | "complementar";
 
 export type ChaveCategoria =
@@ -120,8 +122,8 @@ export const CATEGORIAS: readonly Categoria[] = [
   {
     chave: "apelido",
     faixa: "essencial",
-    rotulo: "Também conhecido como",
-    explicacao: "o cliente pode chamar por outro nome e a assistente não reconhecer",
+    rotulo: "Nome que o cliente reconhece",
+    explicacao: "nome de anúncio precisa de apelido, senão a assistente não reconhece o imóvel",
   },
   {
     chave: "construtora",
@@ -229,7 +231,15 @@ const PRESENTE: Record<ChaveCategoria, (i: ImovelAvaliavel) => boolean> = {
   preco: (i) => typeof i.precoAPartir === "number" && i.precoAPartir > 0,
   descricao: (i) => temTexto(i.descricao),
   endereco: (i) => temTexto(i.endereco),
-  apelido: (i) => temItem(i.nomesAlternativos),
+  /*
+   * Nome de verdade já basta: a assistente reconhece "Beyond Residence" pelo
+   * nome e pela palavra marcante dele ("beyond"). Cobrar apelido de todo
+   * imóvel deixava 19 de 39 publicados "incompletos" em 02/10/2026 sem
+   * nenhum ganho, e lista que pede trabalho inútil ensina a ignorar a lista.
+   * O apelido só falta quando o nome é título de anúncio (a régua de
+   * `motivoDeUrgencia`, a mesma do cartão de pendências).
+   */
+  apelido: (i) => temItem(i.nomesAlternativos) || motivoDeUrgencia(i.nome) === null,
   construtora: (i) => temTexto(i.construtora),
   entrega: (i) => temTexto(i.entregaPrevista),
   unidades: (i) => typeof i.totalUnidades === "number" && i.totalUnidades > 0,
