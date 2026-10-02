@@ -637,6 +637,8 @@ export function catalogoParaAtendimento(params: {
   mensagemAtual: string;
   historico?: { remetente: "cliente" | "bot" | "corretor"; texto: string }[];
   dossie?: DossieClienteIA | null;
+  /** O teto calculado pela renda (`tetoDeCompra`), quando não há orçamento dito. */
+  tetoPelaRenda?: number | null;
 }): { catalogo: Empreendimento[]; foco: { slug: string; nome: string } | null } {
   const foco = detectarFoco({
     catalogo: params.catalogo,
@@ -649,6 +651,7 @@ export function catalogoParaAtendimento(params: {
     mensagemAtual: params.mensagemAtual,
     historico: params.historico,
     dossie: params.dossie,
+    tetoPelaRenda: params.tetoPelaRenda,
   });
 
   return {

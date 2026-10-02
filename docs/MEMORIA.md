@@ -8691,3 +8691,21 @@ Nota: [[audio-do-cliente-era-arquivo-cifrado]].
   produzir o resultado. Aqui bastava um `select` em `whatsapp_mensagens` com
   `tipo = 'audio'`.
 
+
+## A renda da ficha não chegava ao atendimento (v45, 02/10/2026)
+
+Nota: [[a-renda-da-ficha-nao-chegava-ao-atendimento]].
+
+- **`buscarDossieAtual` devolvia renda, região e dormitórios como `null`**,
+  porque moram em `leads`. A extração gravava a renda certa na ficha e o
+  atendimento nunca a lia. Hoje ele lê os três de `leads`.
+- **"Renda mínima por imóvel" não é a solução**: ela já sai do "a partir de"
+  pela conta do simulador. O buraco é de dado: 23 de 39 publicados sem
+  "a partir de", e esses não entram na indicação por renda.
+- **"Cabe" corria só sobre os imóveis do prompt.** Agora
+  `escolherPorCapacidade` olha o catálogo inteiro, nomeia o mais perto quando
+  nada cabe e põe os nomeados no prompt. Sem isso, o modelo chamou um imóvel
+  de R$ 457 mil de "o que chega mais perto" com o de R$ 349,9 mil fora do
+  prompt.
+- **"1500 do meu marido e 2644 meu" virava 1500.** Agora soma quando a fala
+  cita outra pessoa da casa.

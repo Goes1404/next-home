@@ -1450,13 +1450,14 @@ export async function registrarResultadoEnvio(
 export async function buscarDossieAtual(leadId: string): Promise<DossieClienteIA | null> {
   const supabase = createServiceClient();
 
-  const { data } = await supabase
-    .from("lead_observacoes_ia")
-    .select("*")
-    .eq("lead_id", leadId)
-    .maybeSingle();
+  const [{ data }, { data: lead }] = await Promise.all([
+    supabase.from("lead_observacoes_ia").select("*").eq("lead_id", leadId).maybeSingle(),
+    supabase.from("leads").select("renda_mensal, regiao_interesse, dormitorios_min").eq("id", leadId).maybeSingle(),
+  ]);
 
   if (!data) return null;
+  // `numeric` chega como string no supabase-js.
+  const rendaDaFicha = lead?.renda_mensal != null && Number(lead.renda_mensal) > 0 ? Number(lead.renda_mensal) : null;
 
   return {
     id: data.id,
@@ -1464,14 +1465,14 @@ export async function buscarDossieAtual(leadId: string): Promise<DossieClienteIA
     orcamentoMin: data.orcamento_min,
     orcamentoMax: data.orcamento_max,
     /*
-     * A renda mora em `leads`, não no dossiê — quem a carrega para a tela é
-     * `dadosLead.ts`. Aqui ela entra como null e só é preenchida pela
-     * extração, que é a única que a descobre.
+     * Renda, região e dormitórios moram em `leads`, e é de lá que vêm. Até
+     * 01/10/2026 entravam como null aqui: a extração gravava a renda na ficha
+     * e o atendimento nunca a lia, então a IA calculava o teto só pelo que
+     * achava no histórico (e errava "1500 do meu marido e 2644 meu").
      */
-    rendaMensal: null,
-    // Como a renda: moram em `leads`, não no dossiê.
-    regiaoInteresse: null,
-    dormitoriosMin: null,
+    rendaMensal: rendaDaFicha,
+    regiaoInteresse: lead?.regiao_interesse ?? null,
+    dormitoriosMin: lead?.dormitorios_min ?? null,
     /*
      * Nome e e-mail também moram em `leads` — a extração os descobre e
      * `salvarDossie` os escreve lá, que é de onde a ficha do CRM lê.

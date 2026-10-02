@@ -35,7 +35,14 @@ import { separarRajada, type Fala } from "./rajada";
 import type { DossieClienteIA } from "./types";
 import { PARAMETROS_PADRAO } from "@/lib/credito/parametrosPadrao";
 import type { ParametrosCredito } from "@/lib/credito/tipos";
-import { blocoDeCapacidade, rendaNaConversa, tetoDeCompra } from "./capacidadeDeCompra";
+import {
+  blocoDeCapacidade,
+  escolherPorCapacidade,
+  imoveisDaEscolha,
+  rendaDaFala,
+  rendaNaConversa,
+  tetoDeCompra,
+} from "./capacidadeDeCompra";
 import { removerAnuncioDeAnexo } from "./afirmacoesSemLastro";
 import { instrucaoContraRepeticao } from "./repeticao";
 import { ORCAMENTO_AGENTE_MS } from "./llm";
@@ -204,28 +211,51 @@ export async function executarTurnoDeAtendimento(
       })
     : undefined;
 
+  /*
+   * O QUE CABE NO BOLSO, calculado (decisão de 29/09/2026): a renda que ele
+   * disse passa pelo mesmo simulador do site, e o bloco de capacidade diz
+   * quais imóveis cabem. O orçamento que ELE disse, se disse, vence a conta.
+   *
+   * A renda dita AGORA vence a da ficha (é a correção mais recente); a da
+   * ficha vence o histórico, porque quem a escreve é a extração, que lê
+   * "1500 do meu marido e 2644 meu" melhor que um regex.
+   */
+  const ultimaDoBot = [...historicoAnterior].reverse().find((m) => m.remetente === "bot")?.texto ?? "";
+  const perguntouRenda = /\brenda\b/i.test(ultimaDoBot) && ultimaDoBot.includes("?");
+  const rendaDoCliente =
+    rendaDaFala(textoDaVez, perguntouRenda) ??
+    pedido.dossie?.rendaMensal ??
+    rendaNaConversa(historicoAnterior, textoDaVez);
+  const teto = tetoDeCompra(
+    { rendaMensal: rendaDoCliente, orcamentoMax: pedido.dossie?.orcamentoMax ?? null },
+    pedido.parametrosCredito ?? PARAMETROS_PADRAO,
+  );
+
   const { catalogo: catalogoRanqueado, foco } = catalogoParaAtendimento({
     catalogo: pedido.catalogo,
     mensagemAtual: textoDaVez,
     historico: historicoAnterior,
     dossie: pedido.dossie,
+    tetoPelaRenda: teto?.origem === "renda" ? teto.valor : null,
   });
 
   /*
-   * O QUE CABE NO BOLSO, calculado (decisão de 29/09/2026): a renda que ele
-   * disse (ficha, dossiê ou esta conversa) passa pelo mesmo simulador do
-   * site, e o bloco de capacidade diz quais imóveis cabem. O
-   * orçamento que ELE disse, se disse, vence a conta.
+   * A escolha corre sobre o catálogo INTEIRO, não sobre os dez do prompt: o
+   * imóvel que cabe podia estar fora do ranking (produção, 01/10/2026). Os
+   * que o bloco nomeia entram no prompt com a ficha, senão a IA indicaria um
+   * nome sem saber nada dele.
    */
-  const rendaDoCliente = pedido.dossie?.rendaMensal ?? rendaNaConversa(historicoAnterior, textoDaVez);
-  const teto = tetoDeCompra(
-    { rendaMensal: rendaDoCliente, orcamentoMax: pedido.dossie?.orcamentoMax ?? null },
-    pedido.parametrosCredito ?? PARAMETROS_PADRAO,
-  );
-  // O ranking de relevância (região, dormitórios, o que ele citou) continua
-  // mandando na ordem: reordenar pelo teto punha um imóvel de Osasco na frente
-  // de quem pediu Barueri (v43). O teto entra pelo bloco, que nomeia quem cabe.
-  const catalogoDoPrompt = catalogoRanqueado;
+  const escolha = teto
+    ? escolherPorCapacidade(pedido.catalogo, teto.valor, {
+        regiao: pedido.dossie?.regiaoInteresse ?? null,
+        dormitorios: pedido.dossie?.dormitoriosMin ?? null,
+      })
+    : null;
+  const noPrompt = new Set(catalogoRanqueado.map((e) => e.slug));
+  const catalogoDoPrompt = [
+    ...catalogoRanqueado,
+    ...(escolha ? imoveisDaEscolha(escolha).filter((e) => !noPrompt.has(e.slug)) : []),
+  ];
 
   /*
    * PLANNER: a jogada desta mensagem é decidida AQUI, em código, antes de
@@ -317,7 +347,7 @@ export async function executarTurnoDeAtendimento(
               jogadaJaPergunta: jogada.tipo === "perguntar",
             })
           : "",
-        teto && !pendenteDaTrava ? blocoDeCapacidade(teto, catalogoDoPrompt) : "",
+        teto && escolha && !pendenteDaTrava ? blocoDeCapacidade(teto, escolha) : "",
         blocoPalpite,
       ]
         .filter(Boolean)

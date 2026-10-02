@@ -288,7 +288,20 @@ function alternativaMaisEmConta(
   const candidatos = catalogo
     .filter((e) => e.slug !== foco?.slug && typeof e.precoAPartir === "number" && e.precoAPartir > 0)
     .sort((a, b) => (a.precoAPartir ?? 0) - (b.precoAPartir ?? 0));
-  const melhor = candidatos[0];
+  /*
+   * Mesma cidade do imóvel em foco primeiro: quem pede "mais em conta" do que
+   * um imóvel de Barueri não pediu para mudar de cidade. Só sai dela quando
+   * não há nenhum mais barato lá.
+   */
+  const cidade = foco?.cidade?.trim().toLowerCase();
+  const naMesmaCidade = cidade
+    ? candidatos.filter(
+        (e) =>
+          e.cidade?.trim().toLowerCase() === cidade &&
+          (foco?.precoAPartir == null || (e.precoAPartir ?? 0) < foco.precoAPartir),
+      )
+    : [];
+  const melhor = naMesmaCidade[0] ?? candidatos[0];
   return melhor ? { slug: melhor.slug, nome: melhor.nome, piso: melhor.precoAPartir } : null;
 }
 

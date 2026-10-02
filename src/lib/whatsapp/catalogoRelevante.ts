@@ -102,6 +102,9 @@ export function filtrarPorUrgencia(
   return prontos.length > 0 ? prontos : catalogo;
 }
 
+/** Entrada e FGTS sobem o teto calculado sem eles. */
+const FOLGA_DO_TETO_PELA_RENDA = 1.5;
+
 export function ranquearCatalogo(params: {
   catalogo: Empreendimento[];
   mensagemAtual: string;
@@ -109,8 +112,10 @@ export function ranquearCatalogo(params: {
   dossie?: Pick<
     DossieClienteIA,
     "orcamentoMin" | "orcamentoMax" | "exigenciasEspecificas" | "urgenciaMudanca" | "regiaoInteresse"
-  > | null;
+  > & Partial<Pick<DossieClienteIA, "dormitoriosMin">> | null;
   limite?: number;
+  /** O teto calculado pela renda, quando ele não disse orçamento. */
+  tetoPelaRenda?: number | null;
 }): Empreendimento[] {
   const { dossie } = params;
   const limite = params.limite ?? LIMITE_PADRAO;
@@ -186,6 +191,21 @@ export function ranquearCatalogo(params: {
       if (e.precoAPartir >= min * 0.8 && e.precoAPartir <= max * 1.2) pontos += 25;
       else pontos -= 10;
     }
+
+    /*
+     * Teto pela RENDA (01/10/2026), quando não há orçamento dito. Antes a renda
+     * não pesava no ranking, e os dez do prompt eram quase a ordem editorial:
+     * o imóvel que cabia ficava de fora. Folga de 1,5x porque entrada e FGTS
+     * sobem o teto. Pesa como o orçamento, menos que bairro + cidade da região:
+     * reordenar só pelo teto já pôs Osasco na frente de quem pediu Barueri (v43).
+     */
+    if (e.precoAPartir && params.tetoPelaRenda && !dossie?.orcamentoMin && !dossie?.orcamentoMax) {
+      if (e.precoAPartir <= params.tetoPelaRenda * FOLGA_DO_TETO_PELA_RENDA) pontos += 25;
+      else pontos -= 10;
+    }
+
+    // Dormitórios que ele pediu: só conta a planta que existe de verdade.
+    if (dossie?.dormitoriosMin && e.tipologias?.some((t) => t.dormitorios === dossie.dormitoriosMin)) pontos += 15;
 
     // Desempate estável: a ordem editorial do site (destaque/ordem) vale
     // como critério final, então sem sinal nenhum o corte é o mesmo de antes.

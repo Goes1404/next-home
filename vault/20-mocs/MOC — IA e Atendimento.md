@@ -66,6 +66,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[fato-e-permissao-moram-em-campos-diferentes]] — o retravamento parou de apagar o texto (0106)
 - [[memoria-da-conversa-e-ficha-viva]] — memória em prosa, recusa com consequência e pergunta antes do funil (0110)
 - [[eval-de-28-09-e-a-v41]] — "Next Home" travava o foco no Breeze Home; guarda anti-eco enlatada; visita confirmada sem aceite; renda em 1 de 17 (v41)
+- [[a-renda-da-ficha-nao-chegava-ao-atendimento]] — a renda da ficha entrava null no turno; "o que cabe" passou a olhar o catálogo inteiro e nomear o mais perto (v45)
 - [[perguntas-antes-da-indicacao]] — v42: as quatro perguntas vêm antes de indicar imóvel; o código corta indicação prematura
 - [[avaliacoes-do-corretor-que-ensinam]] — 0131: motivo do 👎, 👍 vira exemplo, relatório semanal no WhatsApp
 
