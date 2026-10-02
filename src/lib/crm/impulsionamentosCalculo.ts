@@ -45,6 +45,8 @@ export type LinhaImpulsionamento = {
   inicio?: string | null;
   fim?: string | null;
   agrupadoEm?: string | null;
+  /** Calculado na leitura: o anúncio caiu na campanha sem ninguém agrupar. */
+  agrupadoSozinho?: boolean;
 };
 
 export type Temperatura = "quente" | "morno" | "frio";
@@ -185,6 +187,58 @@ export function campanhaDoLinkDoAnuncio(
   return escolhida?.id ?? null;
 }
 
+/** Canais em que a Meta põe a etiqueta de anúncio na mensagem. */
+const CANAIS_DA_META = new Set<string>(["instagram", "facebook"]);
+
+/**
+ * Anúncio detectado pela etiqueta da Meta (caminho 3) que ninguém agrupou:
+ * em qual campanha do corretor ele cai sozinho. A campanha precisa ser do
+ * mesmo corretor, de canal da Meta, e estar no ar no dia do primeiro cliente
+ * do anúncio. Imóvel diferente do da campanha impede: pelo imóvel ligado ao
+ * anúncio ou por outro imóvel do catálogo citado no título. Com duas no ar,
+ * vence a que tem o imóvel no título; depois, a que começou por último.
+ * Agrupar à mão sempre ganha (quem chama só pergunta sem `agrupadoEm`).
+ */
+export function campanhaDoAnuncioDetectado(
+  anuncio: LinhaImpulsionamento,
+  linhas: LinhaImpulsionamento[],
+  nomesDoImovel: Record<string, string[]>,
+): string | null {
+  if (anuncio.criadaPeloCorretor || anuncio.agrupadoEm) return null;
+  const dia = anuncio.primeiroLeadEm ? diaDe(anuncio.primeiroLeadEm) : null;
+  const titulo = anuncio.titulo ? nomeComparavel(anuncio.titulo) : "";
+  const citados = new Set(
+    Object.entries(nomesDoImovel)
+      .filter(([, nomes]) =>
+        nomes.some((n) => {
+          const c = nomeComparavel(n);
+          return c.length >= 4 && ` ${titulo} `.includes(` ${c} `);
+        }),
+      )
+      .map(([id]) => id),
+  );
+  let escolhida: LinhaImpulsionamento | null = null;
+  let escolhidaCitada = false;
+  for (const c of linhas) {
+    if (!c.criadaPeloCorretor || c.corretorId !== anuncio.corretorId) continue;
+    if (!c.canal || !CANAIS_DA_META.has(c.canal)) continue;
+    if (dia && c.inicio && dia < c.inicio) continue;
+    if (dia && c.fim && dia > c.fim) continue;
+    if (anuncio.empreendimentoId && c.empreendimentoId && anuncio.empreendimentoId !== c.empreendimentoId) continue;
+    const citada = Boolean(c.empreendimentoId && citados.has(c.empreendimentoId));
+    if (citados.size > 0 && !citada) continue;
+    const melhor =
+      !escolhida ||
+      (citada && !escolhidaCitada) ||
+      (citada === escolhidaCitada && (c.inicio ?? "") > (escolhida.inicio ?? ""));
+    if (melhor) {
+      escolhida = c;
+      escolhidaCitada = citada;
+    }
+  }
+  return escolhida?.id ?? null;
+}
+
 function doAnuncio(
   linha: LinhaImpulsionamento,
   lead: LeadDeAnuncio,
@@ -222,6 +276,12 @@ export function resumirImpulsionamentos(
   /** Nome e apelidos de cada imóvel, por id, para ligar o lead do link. */
   nomesDoImovel: Record<string, string[]> = {},
 ): ResumoImpulsionamento[] {
+  // Anúncio detectado sem agrupamento cai sozinho na campanha da Meta que
+  // estava no ar; o agrupamento feito à mão continua valendo como está.
+  linhas = linhas.map((l) => {
+    const campanha = campanhaDoAnuncioDetectado(l, linhas, nomesDoImovel);
+    return campanha ? { ...l, agrupadoEm: campanha, agrupadoSozinho: true } : l;
+  });
   const peloLink = new Map(leads.map((l) => [l, campanhaDoLinkDoAnuncio(l, linhas, nomesDoImovel)]));
   const idsDeCima = new Set(linhas.filter((l) => !l.agrupadoEm).map((l) => l.id));
   // Anúncio agrupado numa campanha que sumiu (apagada fora da tela) volta a

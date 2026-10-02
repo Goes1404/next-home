@@ -626,8 +626,11 @@ function Cartao({
               <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-vidro px-3 py-2">
                 <span className="text-fluid-sm min-w-0 break-words text-titulo">
                   {a.titulo ?? "Post impulsionado"} · {reais(a.valorGasto)}
+                  {a.agrupadoSozinho && (
+                    <span className="ml-1 text-fluid-xs text-corpo">· entrou sozinho pela data e pelo canal</span>
+                  )}
                 </span>
-                {editavel && (
+                {editavel && !a.agrupadoSozinho && (
                   <button
                     type="button"
                     disabled={pendente}

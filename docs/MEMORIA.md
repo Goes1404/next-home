@@ -8909,3 +8909,16 @@ Nota: [[clique-no-link-cadastra-quem-escreve]].
 - **O `anon` grava clique do site só por grant de coluna**: sem isso,
   qualquer um forjaria um clique pela chave pública e abriria a porta.
 - Para conferir: `select * from cliques_whatsapp where lead_id is not null`.
+
+## O anúncio da etiqueta cai sozinho na campanha (02/10/2026)
+
+Nota: [[anuncio-da-etiqueta-cai-sozinho-na-campanha]].
+
+- **O lead da etiqueta da Meta vira "anúncio detectado"**, e antes só contava
+  na campanha cadastrada se alguém agrupasse à mão. Agora o anúncio sem
+  agrupamento cai na campanha do mesmo corretor, de canal Instagram ou
+  Facebook, no ar no dia do primeiro cliente dele (`campanhaDoAnuncioDetectado`,
+  calculado na leitura). Imóvel diferente (ligado ou citado no título)
+  impede; agrupar à mão ganha.
+- **Não há "Tirar" para o que entrou sozinho**: gravaria nulo, o mesmo estado
+  de antes. Separar é mexer no período ou canal da campanha.

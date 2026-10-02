@@ -8,6 +8,7 @@ import {
   serieDeCusto,
   lerValorEmReais,
   resumirImpulsionamentos,
+  campanhaDoAnuncioDetectado,
   totaisDosImpulsionamentos,
   type LinhaImpulsionamento,
 } from "./impulsionamentosCalculo";
@@ -320,5 +321,54 @@ describe("lead do link do anúncio cai na campanha do imóvel (02/10/2026)", () 
     const leads = [doLink({ anuncioOrigem: "dom parque", criadoEm: "2026-10-02T12:00:00Z" })];
     const [rd, rn] = resumirImpulsionamentos([dom, nova], leads, nomes);
     expect([rd.leads, rn.leads]).toEqual([0, 1]);
+  });
+});
+
+describe("anúncio detectado pela etiqueta cai sozinho na campanha (02/10/2026)", () => {
+  const dom: LinhaImpulsionamento = {
+    ...base, id: "dom", corretorId: "c1", chave: "manual:dom", titulo: "Dom", valorGasto: 200,
+    empreendimentoId: "e-dom", criadaPeloCorretor: true, canal: "instagram", inicio: "2026-09-29",
+  };
+  const nomes = { "e-dom": ["Dom Parque"], "e-eter": ["Eternity Alphaville"] };
+  const anuncio = (o: Partial<LinhaImpulsionamento> = {}): LinhaImpulsionamento => ({
+    ...base, id: "ad1", corretorId: "c1", chave: "123", titulo: "Seu apê perto do parque", valorGasto: 50,
+    primeiroLeadEm: "2026-10-01T15:00:00Z", ...o,
+  });
+  const daEtiqueta = () => ({ ...lead({ metaAdId: "123", corretorId: "c1" }), criadoEm: "2026-10-01T15:00:00Z" });
+
+  it("o cliente e o gasto do anúncio contam na campanha, sem linha própria", () => {
+    const r = resumirImpulsionamentos([dom, anuncio()], [daEtiqueta()], nomes);
+    expect(r).toHaveLength(1);
+    expect(r[0].id).toBe("dom");
+    expect(r[0].leads).toBe(1);
+    expect(r[0].gastoTotal).toBe(250);
+    expect(r[0].anuncios[0].agrupadoSozinho).toBe(true);
+  });
+
+  it("não cai em campanha de outro canal, fora do período ou de outro corretor", () => {
+    for (const c of [
+      { ...dom, canal: "google" as const },
+      { ...dom, inicio: "2026-10-05" },
+      { ...dom, fim: "2026-09-30" },
+      { ...dom, corretorId: "c2" },
+    ]) {
+      expect(campanhaDoAnuncioDetectado(anuncio(), [c, anuncio()], nomes)).toBeNull();
+    }
+  });
+
+  it("título que cita outro imóvel não cai na campanha do Dom", () => {
+    expect(campanhaDoAnuncioDetectado(anuncio({ titulo: "Eternity Alphaville 2 dorms" }), [dom], nomes)).toBeNull();
+  });
+
+  it("com duas no ar, vence a do imóvel citado no título", () => {
+    const eter = { ...dom, id: "eter", chave: "manual:eter", empreendimentoId: "e-eter", inicio: "2026-09-30" };
+    expect(campanhaDoAnuncioDetectado(anuncio({ titulo: "Dom Parque lançamento" }), [dom, eter], nomes)).toBe("dom");
+  });
+
+  it("agrupado à mão continua onde está", () => {
+    const outra = { ...dom, id: "outra", chave: "manual:outra", canal: "facebook" as const };
+    const r = resumirImpulsionamentos([dom, outra, anuncio({ agrupadoEm: "outra" })], [daEtiqueta()], nomes);
+    expect(r.find((x) => x.id === "outra")?.leads).toBe(1);
+    expect(r.find((x) => x.id === "dom")?.leads).toBe(0);
   });
 });
