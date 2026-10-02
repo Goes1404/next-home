@@ -17,13 +17,16 @@ const webhook = semComentarios(fs.readFileSync("src/app/api/webhooks/whatsapp/ro
 const migration = fs.readFileSync("supabase/migrations/0143_clique_no_link_cadastra_o_lead.sql", "utf8");
 
 describe("cadastro por clique no link (0143)", () => {
-  it("o clique só é reivindicado depois de o porteiro não achar o lead", () => {
-    const primeira = webhook.indexOf("obterOuCriarConversa({");
+  it("número sem lead NÃO é cadastrado pelo clique (desligado em 02/10)", () => {
+    // Cadastrava conhecidos do corretor que escreviam nos 15 min seguintes a
+    // um clique. Só a mensagem pronta reivindica o clique, e com conversa já
+    // existente.
+    expect(webhook).not.toContain('via: "clique_no_link"');
+    expect(webhook).not.toMatch(/if \(!conversa\) \{\s*cliqueDoLink = await reivindicarCliqueDoLink/);
     const reivindica = webhook.indexOf("reivindicarCliqueDoLink(");
-    const semConversa = webhook.indexOf("if (!conversa) {");
-    expect(primeira).toBeGreaterThan(0);
-    expect(semConversa).toBeGreaterThan(primeira);
-    expect(reivindica).toBeGreaterThan(semConversa);
+    const guarda = webhook.lastIndexOf("if (conversa && (convite?.via", reivindica);
+    expect(guarda).toBeGreaterThan(0);
+    expect(reivindica - guarda).toBeLessThan(200);
   });
 
   it("os dois links /wa/ marcam o clique como do porteiro", () => {

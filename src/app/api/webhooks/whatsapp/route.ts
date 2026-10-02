@@ -404,7 +404,7 @@ export async function POST(req: NextRequest) {
      * transcrever antes de saber se é lead é exatamente o que a 0111 veio
      * impedir.
      */
-    let conversa = await obterOuCriarConversa({
+    const conversa = await obterOuCriarConversa({
       corretorId: instancia.corretorId,
       telefoneCliente: sender,
       nomeCliente: payload.senderName || null,
@@ -412,28 +412,18 @@ export async function POST(req: NextRequest) {
     });
 
     /*
-     * Quem clicou no link /wa/ e apagou a mensagem pronta (0143): número sem
-     * lead escrevendo ao corretor sorteado até 15 minutos depois de um
-     * clique de pessoa no link. É cadastrado seja qual for a mensagem —
-     * sabemos de onde ele veio pelo clique, não pelo texto. Cada clique
-     * cadastra uma pessoa só.
+     * Cadastro pelo clique no link SEM a mensagem pronta (0143) foi
+     * DESLIGADO em 02/10/2026, no mesmo dia: o número do corretor é o
+     * WhatsApp pessoal dele, e qualquer conhecido que escrevesse nos 15
+     * minutos seguintes a um clique virava lead e era respondido pela IA
+     * (os dois únicos cadastros por essa regra eram conhecidos dele). A
+     * hora da mensagem não separa cliente de conhecido; só o texto separa.
      *
-     * Quando a mensagem pronta chega, o clique dela é gasto também: senão
-     * ele sobraria e abriria a porta para o próximo número que escrevesse
-     * na janela, mesmo sendo um contato pessoal.
+     * O que fica: quando a mensagem pronta chega, o clique dela é gasto e
+     * ligado ao lead, para a atribuição do anúncio.
      */
     let cliqueDoLink: CliqueDoLink | null = null;
-    if (!conversa) {
-      cliqueDoLink = await reivindicarCliqueDoLink({ corretorId: instancia.corretorId });
-      if (cliqueDoLink) {
-        conversa = await obterOuCriarConversa({
-          corretorId: instancia.corretorId,
-          telefoneCliente: sender,
-          nomeCliente: payload.senderName || null,
-          convite: { via: "clique_no_link", imovel: cliqueDoLink.nomeImovel },
-        });
-      }
-    } else if (convite?.via === "mensagem_do_anuncio" || convite?.via === "mensagem_do_site") {
+    if (conversa && (convite?.via === "mensagem_do_anuncio" || convite?.via === "mensagem_do_site")) {
       cliqueDoLink = await reivindicarCliqueDoLink({ corretorId: instancia.corretorId });
     }
     if (cliqueDoLink && conversa?.leadId) {

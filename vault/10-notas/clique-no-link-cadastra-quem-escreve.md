@@ -2,7 +2,7 @@
 title: Quem clicou no link do anúncio é cadastrado, seja qual for a mensagem
 tags: [campanhas, meta, whatsapp, banco]
 type: decisao
-status: evergreen
+status: superada
 custou: baixo
 codigo:
   - supabase/migrations/0143_clique_no_link_cadastra_o_lead.sql
@@ -54,3 +54,14 @@ de link. Até 02/10 nenhum chegou: os `contextInfo` registrados eram de
 conversas pessoais.
 
 Ver [[lead-do-link-do-anuncio-cai-na-campanha-do-imovel]].
+
+
+## DESLIGADA no mesmo dia (02/10/2026)
+
+Os dois únicos cadastros feitos por esta regra eram conhecidos do corretor
+("estamos esperando em frente", "já tenho corretora que me atende"), e a IA
+respondeu os dois. O número é o WhatsApp pessoal dele: a hora em que alguém
+escreve não separa cliente de conhecido, só o texto separa. O cadastro pelo
+clique saiu do webhook; o clique continua sendo gasto e ligado ao lead quando
+a mensagem pronta chega (atribuição). A 0144 desligou a IA nas duas conversas
+e arquivou os dois leads. Guarda: `cliqueDoLink.test.ts`.

@@ -8922,3 +8922,18 @@ Nota: [[anuncio-da-etiqueta-cai-sozinho-na-campanha]].
   impede; agrupar à mão ganha.
 - **Não há "Tirar" para o que entrou sozinho**: gravaria nulo, o mesmo estado
   de antes. Separar é mexer no período ou canal da campanha.
+
+## O cadastro pelo clique foi desligado no mesmo dia (0144, 02/10/2026)
+
+Nota: [[clique-no-link-cadastra-quem-escreve]].
+
+- **"A IA começou a responder gente de fora."** Os dois únicos cadastros da
+  regra 0143 eram conhecidos do corretor, que escreveram no WhatsApp pessoal
+  dele dentro dos 15 minutos de um clique no link. Com ~160 pessoas clicando
+  por dia, a janela vive aberta. **Num número pessoal, a hora da mensagem não
+  separa cliente de conhecido; só o texto separa.**
+- Hoje só a mensagem pronta (`mensagem_do_anuncio`/`mensagem_do_site`) abre a
+  porta, e o clique é gasto junto para a atribuição. A 0144 desligou a IA nas
+  duas conversas e arquivou os dois leads.
+- Régua: antes de abrir o porteiro por um sinal que não é o texto, medir
+  quantas mensagens de NÃO clientes caem no mesmo intervalo.
