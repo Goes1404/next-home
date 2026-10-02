@@ -8,7 +8,12 @@
  * 2. o anúncio sem etiqueta (só o texto padrão da Meta o identificou), que
  *    junta todos os leads assim do corretor numa linha;
  * 3. `leads.impulsionamento_id`, quando o corretor diz de qual campanha veio
- *    um cliente de outro canal (0132).
+ *    um cliente de outro canal (0132);
+ * 4. o link do anúncio (`/wa/<imóvel>`, 02/10/2026): o lead chega com o NOME
+ *    do imóvel em `anuncio_origem` e sem id da Meta. Ele cai sozinho na
+ *    campanha do corretor que é daquele imóvel e estava no ar naquele dia.
+ *    Sem isto, a campanha "Dom" contava zero com 7 leads do link do Dom
+ *    Parque na carteira: nada ligava um ao outro.
  *
  * Um anúncio detectado pode ser AGRUPADO numa campanha do corretor
  * (`agrupadoEm`, 0132): os clientes e o gasto dele passam a contar na
@@ -140,9 +145,54 @@ export type ResumoImpulsionamento = LinhaImpulsionamento & {
 
 const ETAPAS_DE_VISITA_EM_DIANTE = new Set(["visita_agendada", "documentacao", "fechado"]);
 
-function doAnuncio(linha: LinhaImpulsionamento, lead: LeadDeAnuncio): boolean {
+/** Mesma normalização do porteiro: o nome do link chega assim no lead. */
+function nomeComparavel(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Lead que veio pelo link do anúncio (caminho 4): de qual campanha do
+ * corretor ele é. A campanha precisa ser do mesmo corretor, do imóvel cujo
+ * nome (ou apelido) o link levou, e estar no ar no dia em que o lead chegou.
+ * Com duas no ar, vence a que começou por último: é a que estava rodando.
+ * Lead ligado à mão, ou com id da Meta, não entra aqui.
+ */
+export function campanhaDoLinkDoAnuncio(
+  lead: LeadDeAnuncio,
+  linhas: LinhaImpulsionamento[],
+  nomesDoImovel: Record<string, string[]>,
+): string | null {
+  if (lead.impulsionamentoId || lead.metaAdId || !lead.anuncioOrigem) return null;
+  if (lead.anuncioOrigem === TITULO_SEM_ETIQUETA) return null;
+  const nome = nomeComparavel(lead.anuncioOrigem);
+  const dia = lead.criadoEm ? diaDe(lead.criadoEm) : null;
+  let escolhida: LinhaImpulsionamento | null = null;
+  for (const c of linhas) {
+    if (!c.criadaPeloCorretor || !c.empreendimentoId) continue;
+    if (c.corretorId !== lead.corretorId) continue;
+    const nomes = (nomesDoImovel[c.empreendimentoId] ?? []).map(nomeComparavel);
+    if (!nomes.includes(nome)) continue;
+    if (dia && c.inicio && dia < c.inicio) continue;
+    if (dia && c.fim && dia > c.fim) continue;
+    if (!escolhida || (c.inicio ?? "") > (escolhida.inicio ?? "")) escolhida = c;
+  }
+  return escolhida?.id ?? null;
+}
+
+function doAnuncio(
+  linha: LinhaImpulsionamento,
+  lead: LeadDeAnuncio,
+  peloLink: Map<LeadDeAnuncio, string | null>,
+): boolean {
   if (lead.corretorId !== linha.corretorId) return false;
   if (lead.impulsionamentoId === linha.id) return true;
+  if (peloLink.get(lead) === linha.id) return true;
   if (linha.criadaPeloCorretor) return false;
   if (linha.chave === "sem-etiqueta") {
     return lead.metaAdId === null && lead.anuncioOrigem === TITULO_SEM_ETIQUETA;
@@ -169,7 +219,10 @@ function somaDeGasto(linhas: LinhaImpulsionamento[]): number | null {
 export function resumirImpulsionamentos(
   linhas: LinhaImpulsionamento[],
   leads: LeadDeAnuncio[],
+  /** Nome e apelidos de cada imóvel, por id, para ligar o lead do link. */
+  nomesDoImovel: Record<string, string[]> = {},
 ): ResumoImpulsionamento[] {
+  const peloLink = new Map(leads.map((l) => [l, campanhaDoLinkDoAnuncio(l, linhas, nomesDoImovel)]));
   const idsDeCima = new Set(linhas.filter((l) => !l.agrupadoEm).map((l) => l.id));
   // Anúncio agrupado numa campanha que sumiu (apagada fora da tela) volta a
   // ser linha de cima, em vez de desaparecer com os clientes dentro.
@@ -180,7 +233,7 @@ export function resumirImpulsionamentos(
     const todas = [linha, ...anuncios];
     const vistos = new Set<LeadDeAnuncio>();
     const meus = leads.filter((l) => {
-      if (vistos.has(l) || !todas.some((t) => doAnuncio(t, l))) return false;
+      if (vistos.has(l) || !todas.some((t) => doAnuncio(t, l, peloLink))) return false;
       vistos.add(l);
       return true;
     });

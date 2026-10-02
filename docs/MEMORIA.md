@@ -8881,3 +8881,17 @@ Nota: [[pixel-da-meta-fica-fora-das-paginas-de-token]].
   usuário, no painel.
 - A política de privacidade dizia "sem cookies de rastreamento" e foi
   reescrita junto.
+
+## O lead do link do anúncio não caía na campanha (02/10/2026)
+
+Nota: [[lead-do-link-do-anuncio-cai-na-campanha-do-imovel]].
+
+- **A campanha "Dom" contava zero com 7 leads do anúncio na carteira.** O
+  anúncio aponta para `/wa/<imóvel>`: o lead chega com `origem = meta/ctwa`
+  e o NOME do imóvel em `anuncio_origem`, sem id da Meta. Campanha
+  cadastrada pelo corretor só aceitava lead ligado à mão.
+- **Agora cai sozinho** (`campanhaDoLinkDoAnuncio`, calculado na leitura):
+  mesmo corretor, nome ou apelido do imóvel da campanha, dia de São Paulo
+  dentro do período; com duas no ar, a que começou por último.
+- **692 cliques para 7 leads**: os logs do porteiro do período não mostram
+  lead de anúncio barrado; os cliques incluem repetição e robôs.

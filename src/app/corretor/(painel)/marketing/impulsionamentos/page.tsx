@@ -157,7 +157,10 @@ export default async function PaginaImpulsionamentos() {
     pediuParaSair: l.nao_contatar_em !== null,
   }));
 
-  const resumos = resumirImpulsionamentos(doBanco, leadsDeAnuncio);
+  const nomesDoImovel = Object.fromEntries(
+    catalogo.filter((i) => i.id).map((i) => [i.id as string, [i.nome, ...(i.nomesAlternativos ?? [])]]),
+  );
+  const resumos = resumirImpulsionamentos(doBanco, leadsDeAnuncio, nomesDoImovel);
   const pontos: PontoDeGasto[] = (gastos ?? []).map((g) => ({
     impulsionamentoId: g.impulsionamento_id,
     dia: g.dia,

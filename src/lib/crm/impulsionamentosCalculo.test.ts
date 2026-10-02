@@ -273,3 +273,52 @@ describe("comparação entre campanhas", () => {
     expect(c.melhor).toBe("b"); // a pequena tem visita mais barata, mas não disputa
   });
 });
+
+describe("lead do link do anúncio cai na campanha do imóvel (02/10/2026)", () => {
+  const dom: LinhaImpulsionamento = {
+    ...base, id: "dom", corretorId: "c1", chave: "manual:dom", titulo: "Dom", valorGasto: 200,
+    empreendimentoId: "e-dom", criadaPeloCorretor: true, inicio: "2026-09-29",
+  };
+  const nomes = { "e-dom": ["Dom Parque", "Lançamento ao Lado do Parque"] };
+  const doLink = (o: { anuncioOrigem: string; criadoEm: string; corretorId?: string }) => ({
+    ...lead({ anuncioOrigem: o.anuncioOrigem, corretorId: o.corretorId ?? "c1" }),
+    criadoEm: o.criadoEm,
+  });
+
+  it("conta o lead do link com o nome ou o apelido do imóvel", () => {
+    const leads = [
+      doLink({ anuncioOrigem: "dom parque", criadoEm: "2026-09-30T00:01:43Z" }),
+      doLink({ anuncioOrigem: "lancamento ao lado do parque", criadoEm: "2026-10-01T16:00:00Z" }),
+    ];
+    expect(resumirImpulsionamentos([dom], leads, nomes)[0].leads).toBe(2);
+  });
+
+  it("não conta lead de antes do início, de outro imóvel ou de outro corretor", () => {
+    const leads = [
+      doLink({ anuncioOrigem: "dom parque", criadoEm: "2026-09-28T12:00:00Z" }),
+      doLink({ anuncioOrigem: "eternity alphaville", criadoEm: "2026-09-30T12:00:00Z" }),
+      doLink({ anuncioOrigem: "dom parque", criadoEm: "2026-09-30T12:00:00Z", corretorId: "c2" }),
+    ];
+    expect(resumirImpulsionamentos([dom], leads, nomes)[0].leads).toBe(0);
+  });
+
+  it("dia é o de São Paulo: 22h de 28/09 em Brasília ainda é antes do início", () => {
+    const leads = [doLink({ anuncioOrigem: "dom parque", criadoEm: "2026-09-29T01:00:00Z" })];
+    expect(resumirImpulsionamentos([dom], leads, nomes)[0].leads).toBe(0);
+  });
+
+  it("lead ligado à mão a outra campanha não é contado duas vezes", () => {
+    const outra: LinhaImpulsionamento = { ...dom, id: "outra", chave: "manual:outra", empreendimentoId: null };
+    const ligado = { ...doLink({ anuncioOrigem: "dom parque", criadoEm: "2026-09-30T12:00:00Z" }), impulsionamentoId: "outra" };
+    const [rd, ro] = resumirImpulsionamentos([dom, outra], [ligado], nomes);
+    expect(rd.leads).toBe(0);
+    expect(ro.leads).toBe(1);
+  });
+
+  it("com duas campanhas do imóvel no ar, vale a que começou por último", () => {
+    const nova: LinhaImpulsionamento = { ...dom, id: "nova", chave: "manual:nova", inicio: "2026-10-01" };
+    const leads = [doLink({ anuncioOrigem: "dom parque", criadoEm: "2026-10-02T12:00:00Z" })];
+    const [rd, rn] = resumirImpulsionamentos([dom, nova], leads, nomes);
+    expect([rd.leads, rn.leads]).toEqual([0, 1]);
+  });
+});
