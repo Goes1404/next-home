@@ -27,7 +27,7 @@ export function ArquivarLead({
   leadId: string;
   arquivado: boolean;
   nome: string;
-  /** Excluir é do ADM (30/09/2026); o corretor só arquiva e restaura. */
+  /** Desde 02/10/2026 todo corretor exclui os próprios leads (0145). */
   podeExcluir: boolean;
 }) {
   const router = useRouter();

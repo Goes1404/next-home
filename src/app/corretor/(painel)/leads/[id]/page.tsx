@@ -291,7 +291,7 @@ export default async function FichaLeadPage({
         leadId={lead.id}
         arquivado={Boolean(lead.arquivadoEm)}
         nome={lead.nome}
-        podeExcluir={gestor}
+        podeExcluir
       />
 
       {/* Barra de ações no polegar (roadmap F2): no celular, as três ações

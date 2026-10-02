@@ -82,7 +82,7 @@ export function ListaLeads({
    * A lista está mostrando os ARQUIVADOS.
    *
    * Muda quais ações a seleção oferece: aqui restaurar; na ativa, arquivar
-   * e mover. Excluir aparece nas duas para o ADM (02/10/2026, pedido do
+   * e mover. Excluir aparece nas duas (02/10/2026, pedido do
    * usuário), sempre com a confirmação que escreve quantos saem.
    */
   verArquivados?: boolean;
@@ -487,8 +487,7 @@ export function ListaLeads({
                   >
                     Restaurar
                   </button>
-                  {/* Excluir é do ADM (30/09/2026): o corretor arquiva e restaura. */}
-                  {gestor && (
+                  {(
                   <button
                     type="button"
                     onClick={() => setConfirmandoExclusao(true)}
@@ -515,8 +514,8 @@ export function ListaLeads({
                   >
                     {movendoLote ? "…" : "Arquivar"}
                   </button>
-                  {/* Excluir direto, sem arquivar antes (02/10/2026). Só o ADM. */}
-                  {gestor && (
+                  {/* Excluir direto, sem arquivar antes (02/10/2026). */}
+                  {(
                     <button
                       type="button"
                       onClick={() => setConfirmandoExclusao(true)}

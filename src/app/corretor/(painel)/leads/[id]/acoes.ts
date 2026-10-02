@@ -247,13 +247,13 @@ export async function restaurarLead(leadId: string): Promise<ResultadoCrm> {
 /**
  * Exclusão definitiva. Não há desfazer.
  *
- * Desde 02/10/2026 o ADM exclui direto, sem arquivar antes (pedido do
- * usuário). A confirmação da tela é a trava contra o clique errado.
+ * Desde 02/10/2026 exclui direto, sem arquivar antes. A policy (0145) deixa
+ * o corretor excluir os próprios leads e o ADM os de todos; zero linhas
+ * afetadas é lead de outro.
  */
 export async function excluirLeadDefinitivo(leadId: string): Promise<ResultadoCrm> {
   const ctx = await sessao();
   if ("erro" in ctx) return { erro: ctx.erro };
-  if (ctx.corretor.papel !== "gestor") return { erro: "Só o ADM exclui leads. Você pode arquivar." };
 
   const { data, error } = await ctx.supabase.from("leads").delete().eq("id", leadId).select("id");
 

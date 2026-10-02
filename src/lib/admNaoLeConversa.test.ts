@@ -69,14 +69,17 @@ describe("o ADM não lê a conversa de outro corretor", () => {
     }
   });
 
-  it("excluir lead é só do ADM", () => {
+  // Era "excluir é só do ADM" (0134). Em 02/10/2026 o usuário pediu que o
+  // corretor exclua os próprios leads (0145). O que a guarda segura agora: a
+  // policy é uma só, e o corretor só alcança o que é dele.
+  it("excluir lead: ADM exclui todos, corretor só os seus (0145)", () => {
     const deletes = [...(vivas.get("leads") ?? new Map()).entries()].filter(([, corpo]) =>
       /for\s+delete/i.test(corpo),
     );
     expect(deletes.length).toBe(1);
     const [, corpo] = deletes[0];
     expect(corpo).toMatch(/eh_gestor\s*\(/);
-    expect(corpo).not.toMatch(/corretor_atual/);
+    expect(corpo).toMatch(/corretor_id\s*=\s*\(select public\.corretor_atual\(\)\)/);
   });
 });
 

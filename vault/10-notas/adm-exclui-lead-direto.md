@@ -1,5 +1,5 @@
 ---
-title: O ADM exclui o lead direto, sem arquivar antes
+title: Excluir lead direto, sem arquivar antes
 tags: [crm, painel, decisao]
 type: decisao
 status: evergreen
@@ -11,7 +11,7 @@ codigo:
   - src/app/corretor/(painel)/leads/ListaLeads.tsx
 created: 2026-10-02
 updated: 2026-10-02
-summary: A exclusão definitiva exigia dois passos (arquivar, depois excluir na lista de arquivados), e o botão quase não era achado. Pedido do usuário em 02/10/2026, o ADM passa a ver "Excluir" na lista ativa (seleção) e "Excluir definitivamente" na ficha de qualquer lead, sempre com confirmação. O corretor continua só arquivando (0134). Vai junto, por cascade, a conversa de WhatsApp, o dossiê, tarefas e linha do tempo.
+summary: A exclusão definitiva exigia dois passos (arquivar, depois excluir na lista de arquivados), e o botão quase não era achado. Pedido do usuário em 02/10/2026, o ADM passa a ver "Excluir" na lista ativa (seleção) e "Excluir definitivamente" na ficha de qualquer lead, sempre com confirmação. No mesmo dia, o corretor passou a excluir os próprios leads (0145, pedido para o Eduardo); o ADM exclui os de todos. Vai junto, por cascade, a conversa de WhatsApp, o dossiê, tarefas e linha do tempo.
 ---
 
 # O ADM exclui o lead direto
@@ -28,3 +28,12 @@ summary: A exclusão definitiva exigia dois passos (arquivar, depois excluir na 
   vai junto por cascade, e a pessoa não é atendida se escrever de novo.
 
 Relacionado: [[adm-nao-le-conversa-alheia]], [[apagar-leads-leva-a-conversa-junto]].
+
+## O corretor também exclui (0145, 02/10/2026)
+
+Pedido para o Eduardo. A policy de DELETE virou "corretor exclui os seus,
+gestor exclui todos" (mesma expressão do SELECT e do UPDATE). As actions não
+checam mais papel: lead de outro não é afetado pela RLS. Em produção foi
+aplicada como `alter policy` + rename, porque o MCP cancela `drop policy`;
+o arquivo da migration descreve o mesmo estado final com drop + create.
+Guardas: `leadArquivado.test.ts` e `admNaoLeConversa.test.ts` (reescrita).

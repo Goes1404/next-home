@@ -61,15 +61,10 @@ describe("toda consulta de lead filtra os arquivados (0055)", () => {
     expect(fonte("src/app/corretor/(painel)/leads/page.tsx")).toContain("arquivados");
   });
 
-  it("excluir em lote é só do ADM, e não exige mais arquivar antes (02/10/2026)", () => {
-    // Era dois passos (arquivar, depois excluir); o usuário pediu exclusão
-    // direta. O que não pode sumir é a checagem de papel ANTES do delete.
-    const acoes = fonte("src/app/corretor/(painel)/leads/acoes.ts");
-    const delecao = acoes.slice(acoes.indexOf("export async function excluirLeadsEmLote"));
-    const corpo = delecao.slice(0, delecao.indexOf("\n}"));
-    expect(corpo).toContain(".delete()");
-    expect(corpo.indexOf('papel !== "gestor"')).toBeGreaterThan(0);
-    expect(corpo.indexOf('papel !== "gestor"')).toBeLessThan(corpo.indexOf(".delete()"));
+  it("quem pode excluir é decidido pela policy (0145): corretor os seus, ADM todos", () => {
+    const m = fonte("supabase/migrations/0145_corretor_exclui_os_seus_leads.sql");
+    expect(m).toMatch(/for delete[\s\S]*eh_gestor\(\)\) or corretor_id = \(select public\.corretor_atual\(\)\)/);
+    expect(m).toContain('drop policy if exists "leads: so o adm exclui"');
   });
 
   it("arquivar em lote não alcança quem já estava arquivado", () => {
@@ -81,11 +76,4 @@ describe("toda consulta de lead filtra os arquivados (0055)", () => {
     expect(corpo).toContain('is("arquivado_em", null)');
   });
 
-  it("excluir um lead é só do ADM, conferido antes do delete", () => {
-    const acoes = fonte("src/app/corretor/(painel)/leads/[id]/acoes.ts");
-    const fn = acoes.slice(acoes.indexOf("export async function excluirLeadDefinitivo"));
-    const corpo = fn.slice(0, fn.indexOf("\n}"));
-    expect(corpo.indexOf('papel !== "gestor"')).toBeGreaterThan(0);
-    expect(corpo.indexOf('papel !== "gestor"')).toBeLessThan(corpo.indexOf(".delete()"));
-  });
 });

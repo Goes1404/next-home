@@ -107,15 +107,14 @@ export async function restaurarLeadsEmLote(leadIds: string[]): Promise<Resultado
 /**
  * Exclusão definitiva em lote. Não há desfazer.
  *
- * Desde 02/10/2026 o ADM exclui direto, sem arquivar antes (pedido do
- * usuário). Quem decide é o papel, conferido aqui e na policy
- * "leads: so o adm exclui"; a trava contra o clique errado é a confirmação
- * da tela, que escreve quantos leads saem.
+ * Desde 02/10/2026 exclui direto, sem arquivar antes (pedido do usuário).
+ * Quem alcança o quê é a policy (0145): o corretor, os próprios leads; o
+ * ADM, os de todos. Lead de outro simplesmente não é afetado, e a diferença
+ * entre pedidos e afetados é o que a tela conta de volta.
  */
 export async function excluirLeadsEmLote(leadIds: string[]): Promise<ResultadoLote> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
-  if (corretor.papel !== "gestor") return { erro: "Só o ADM exclui leads. Você pode arquivar." };
 
   const ids = idsValidos(leadIds);
   if (!ids) return { erro: "Selecione ao menos um lead." };

@@ -8948,3 +8948,7 @@ Nota: [[adm-exclui-lead-direto]].
   confirmação. O corretor continua só arquivando (0134).
 - A checagem de papel vem antes do `.delete()` nas duas actions, e a policy
   `leads: so o adm exclui` segura no banco.
+- **No mesmo dia o corretor também passou a excluir (0145)**, só os próprios
+  leads: a policy de DELETE ficou igual à de SELECT/UPDATE (`eh_gestor() or
+  corretor_id = corretor_atual()`). O MCP cancela `drop policy` e `delete`
+  até dentro de transação desfeita; em produção foi `alter policy` + rename.
