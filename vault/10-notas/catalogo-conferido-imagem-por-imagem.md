@@ -11,6 +11,9 @@ codigo:
   - scripts/catalogo/trazerFotos0137.ts
   - scripts/catalogo/fotos-0137.json
   - .github/workflows/fotos-0137.yml
+  - scripts/catalogo/trazerFotosCuradas.ts
+  - scripts/catalogo/fotos-curadas/0139-poucas-fotos.json
+  - .github/workflows/fotos-curadas.yml
 summary: Pedido "imóveis com cadastro incompleto ou poucas imagens". A medição achou 44 plantas publicadas sem metragem, dormitórios chutados pela importação, 7 "plantas" que não eram planta, e fotos de OUTROS empreendimentos nas galerias do Alpha Park View e do Copa 18. Corrigido conferindo cada imagem; as remoções ficaram na 0138, porque a ferramenta de migration cancela delete.
 updated: 2026-10-02
 ---
@@ -59,9 +62,18 @@ updated: 2026-10-02
 - **Régua:** ao importar do site de construtora ou de imobiliária, conferir
   se a foto é do imóvel. Nome de arquivo com nome de outro empreendimento
   (`royal-barueri-ii.jpg` na galeria do APV) é o sinal mais barato.
-- Sites sem foto maior: Vitta (o original é 820 px). Imóveis com poucas fotos
-  e sem site cadastrado (Vila Eco Park, Royal Barueri, Vitra) precisam de
-  material da construtora.
+- Sites sem foto maior: Vitta (o original é 820 px).
+- **Os três com poucas fotos (02/10, leva 0139):** Royal Barueri 6 → 29 (galeria
+  oficial da CNA Spitaletti, sem as 4 que repetiam render já cadastrado),
+  Vila Eco Park 5 → 29 (página da Árbore; as fases Jatobás e Ipês usam as
+  mesmas perspectivas do condomínio) e Vitra 7 → 9 (o site da Lidera não
+  abre; a página da Lopes só tinha 2 renders novos, a 869 px).
+- **`trazerFotosCuradas.ts` + `fotos-curadas.yml`**: uma lista JSON por leva
+  em `scripts/catalogo/fotos-curadas/`. O push na branch de produção roda só
+  a lista que mudou. Próxima leva = um JSON novo, sem script novo.
+- **Para não duplicar render vindo de outra fonte** (o dedup por hash só pega
+  arquivo idêntico): montar uma grade com as fotos atuais e as candidatas e
+  olhar antes de montar a lista.
 
 ## Preço e entrega não saem do site
 

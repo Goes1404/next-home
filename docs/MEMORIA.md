@@ -8799,3 +8799,8 @@ Nota: [[catalogo-conferido-imagem-por-imagem]].
   arquivo que o usuário roda no editor SQL (0138, rodada e conferida em
   02/10: sobraram 2 plantas sem metragem, ambas sem imagem).
 - Nenhuma página de construtora publica preço nem data de entrega.
+- **Fotos curadas viram um JSON por leva** em `scripts/catalogo/fotos-curadas/`
+  (`trazerFotosCuradas.ts` + `fotos-curadas.yml`, que roda só a lista
+  alterada). Leva 0139: Royal Barueri 6 → 29, Vila Eco Park 5 → 29, Vitra
+  7 → 9. O dedup por hash não pega o mesmo render vindo de outra fonte:
+  comparar numa grade antes.
