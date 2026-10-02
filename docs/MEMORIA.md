@@ -8729,3 +8729,20 @@ Nota: [[tabela-de-precos-lida-pela-ia]].
   "Financiamento" tem número menor que o "Total" e também está escrita no
   arquivo: só o prompt a separa. Antes de culpar a IA por não achar o preço,
   rodar `extrairTextoDePdf` no arquivo e ver o que ela recebeu.
+
+## Revisão antes de produção (0135, 02/10/2026)
+
+Nota: [[revisao-antes-de-producao]].
+
+- **Quatro funções `security definer` eram chamáveis pela chave pública sem
+  conferir quem chama** (`consumir/devolver/resetar_cota_campanha`,
+  `processar_outbox_analytics_interno`): qualquer um esgotaria ou zeraria a
+  cota anti-ban. A 0135 tira o `execute` de `public`/`anon`. O advisor de
+  segurança do Supabase (`get_advisors`) é a consulta que acha isso; a guarda
+  `tabelasSeguras` olha tabela, não função.
+- **`createPortal(…, document.body)` em componente que pode nascer aberto no
+  servidor derruba a tela** (Pessoas pelo deep link). Desenhar só no
+  navegador.
+- **`outputFileTracingIncludes` é por rota**: o sharp chegava a `/corretor/**`
+  e não a `/api/imagens/**`, e a arte saía sem a ressalva.
+- **Coluna `date` recusa "2027-10"**: entrega lida de apresentação vira dia 1º.

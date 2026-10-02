@@ -72,6 +72,12 @@ const nextConfig: NextConfig = {
       "./node_modules/@img/sharp-linux-x64/**/*",
       "./node_modules/@img/sharp-libvips-linux-x64/**/*",
     ],
+    // `/api/imagens/**`: o carimbo da ressalva usa o sharp, e sem o .so a
+    // arte saía sem carimbo (log de 28/09).
+    "/api/imagens/**": [
+      "./node_modules/@img/sharp-linux-x64/**/*",
+      "./node_modules/@img/sharp-libvips-linux-x64/**/*",
+    ],
     "/corretor/**": [
       "./node_modules/@img/sharp-linux-x64/**/*",
       "./node_modules/@img/sharp-libvips-linux-x64/**/*",

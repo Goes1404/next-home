@@ -1,5 +1,6 @@
 "use server";
 
+import { dataDeEntrega } from "@/lib/catalogo/dataDeEntrega";
 import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { revalidarCatalogo } from "@/lib/catalogo/revalidar";
@@ -509,6 +510,18 @@ export async function aplicarRascunhoNoCadastro(entrada: {
     }
   }
 
+  if (Object.keys(mudancas).length === 0) {
+    return { ok: false, erro: "Nada para salvar." };
+  }
+
+  // A apresentação diz "entrega em out/2027" e a IA devolve "2027-10"; a
+  // coluna é `date` e recusava o mês sozinho (erro 22007 em produção, 28/09).
+  const entrega = (mudancas as Record<string, unknown>).entrega_prevista;
+  if (typeof entrega === "string") {
+    const normalizada = dataDeEntrega(entrega);
+    if (normalizada) (mudancas as Record<string, unknown>).entrega_prevista = normalizada;
+    else delete (mudancas as Record<string, unknown>).entrega_prevista;
+  }
   if (Object.keys(mudancas).length === 0) {
     return { ok: false, erro: "Nada para salvar." };
   }

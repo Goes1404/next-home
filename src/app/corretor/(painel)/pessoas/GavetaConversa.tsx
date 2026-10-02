@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -48,6 +48,8 @@ import { lerMensagens, marcarConversaLida, type MensagemConversa } from "../conv
  * gaveta nasce com a paleta do SITE e o acento padrão — não quebra nada, ela
  * só mente, que é pior.
  */
+const semAssinatura = () => () => {};
+
 export function GavetaConversa({
   conversa,
   podeEnviar,
@@ -59,6 +61,11 @@ export function GavetaConversa({
 }) {
   const atual = usePathname();
   const modulo = moduloAtivo(atual);
+  const noNavegador = useSyncExternalStore(
+    semAssinatura,
+    () => true,
+    () => false,
+  );
 
   const [mensagens, setMensagens] = useState<MensagemConversa[] | null>(null);
   const [estado, setEstado] = useState<Estado>(estadoDa(conversa));
@@ -147,6 +154,12 @@ export function GavetaConversa({
       document.body.style.overflow = overflowAnterior;
     };
   }, [aoFechar]);
+
+  // A conversa do deep link (`?conversa=`) chega aberta já no HTML do
+  // servidor, onde não existe `document`: o portal derrubava a tela inteira
+  // ("document is not defined", logs de 29/09 e 01/10). No servidor e na
+  // hidratação a gaveta não desenha nada; no navegador, aparece em seguida.
+  if (!noNavegador) return null;
 
   return createPortal(
     <div
