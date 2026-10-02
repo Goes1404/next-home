@@ -28,6 +28,7 @@ Três origens (upload, PDF, Drive), um caminho único de gravação.
 - [[importar-do-site-da-construtora]] — plano: colar o link do site e trazer dados, fotos, vídeos e tours
 - [[fila-de-cadastro-pelo-site-da-construtora]] — os 14 candidatos viraram rascunhos lidos do site da construtora (0128)
 - [[nomes-que-o-cliente-acerta]] — nenhum site de construtora publica preço; o checklist só cobra apelido de nome de anúncio (02/10)
+- [[catalogo-conferido-imagem-por-imagem]] — 44 plantas sem metragem, dormitórios chutados, fotos de outros prédios no APV e no Copa 18; conferido imagem por imagem (0137/0138, 02/10)
 
 ## Relacionados
 - [[MOC — Front Público]] · [[MOC — Banco de Dados]] · [[Home]]

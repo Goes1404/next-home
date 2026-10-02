@@ -1,0 +1,43 @@
+# Versões grandes das fotos que estavam como miniatura (0137), do site das
+# construtoras para o nosso Storage.
+#
+# Roda aqui porque escrever no Storage exige a chave de serviço, que mora nos
+# secrets do repositório. O script é idempotente: o índice de hash de
+# `midias` recusa foto repetida, então rodar de novo não duplica nada. Ele só
+# ACRESCENTA; as miniaturas duplicadas saem pela 0138 (editor SQL).
+#
+# Dispara quando a seleção muda na branch de produção, ou à mão.
+
+name: Fotos maiores do catálogo (0137)
+
+on:
+  push:
+    branches: ["claude/modernizar-plataforma-imobiliaria-2tm13q"]
+    paths:
+      - "scripts/catalogo/fotos-0137.json"
+      - "scripts/catalogo/trazerFotos0137.ts"
+  workflow_dispatch:
+
+concurrency:
+  group: fotos-0137
+  cancel-in-progress: false
+
+jobs:
+  trazer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Trazer as fotos
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        run: npx tsx --conditions=react-server scripts/catalogo/trazerFotos0137.ts

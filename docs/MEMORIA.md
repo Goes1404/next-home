@@ -8777,3 +8777,24 @@ Nota: [[nomes-que-o-cliente-acerta]].
   posição); "vitta" virava Vitra (apelido "Vitta").
 - Termo com menos de 4 letras não é registrado no reconhecimento.
 - Nome trocado por migration aparece no site em até 1 h (cache `catalogo`).
+
+## O catálogo conferido imagem por imagem (0137/0138, 02/10/2026)
+
+Nota: [[catalogo-conferido-imagem-por-imagem]].
+
+- **44 plantas publicadas não tinham metragem, e os dormitórios eram
+  chutados** pela importação a partir da legenda da imagem. As 40 imagens
+  foram abertas uma a uma; 34 corrigidas pelo que está escrito na planta,
+  7 não eram planta de apartamento (implantação, pavimento, rooftop, foto de
+  living...). Planta sem `area_privativa` é sinal de que ninguém olhou.
+- **Fotos de OUTROS empreendimentos nas galerias**: o APV tinha o bloco
+  "conheça também" da construtora (NID, Royal II, Eternity...), e o Copa 18
+  tinha imóveis usados da imobiliária J Almeida Matos. Ao importar, conferir
+  se a foto é do imóvel; nome de arquivo com outro empreendimento é o sinal.
+- **Miniatura ao lado da foto grande**: o script `trazerFotos0137` (GitHub
+  Actions) traz a versão grande e a 0138 tira a miniatura só quando a grande
+  existe.
+- **`apply_migration` do MCP cancela `delete`** (e chamada grande demais),
+  mesmo com autorização. Aplicar em partes sem `delete`; remoção vai para um
+  arquivo que o usuário roda no editor SQL (0138).
+- Nenhuma página de construtora publica preço nem data de entrega.

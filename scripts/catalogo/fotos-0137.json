@@ -1,0 +1,182 @@
+{
+ "dellagio-alphaville": [
+  {
+   "url": "https://www.atriaincorporadora.com.br/wp-content/uploads/photo-gallery/dellagio/novo/LIVING-94_HR_30.04.2025.jpg",
+   "legenda": "Living do apartamento de 94 m²",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.atriaincorporadora.com.br/wp-content/uploads/photo-gallery/dellagio/novo/LIVING-94A_HR_30.04.2025.jpg",
+   "legenda": "Living do apartamento de 94 m², outro ângulo",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.atriaincorporadora.com.br/wp-content/uploads/photo-gallery/dellagio/novo/LIVING-94B_HR_30.04.2025.jpg",
+   "legenda": "Cozinha integrada do apartamento de 94 m²",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.atriaincorporadora.com.br/wp-content/uploads/photo-gallery/dellagio/novo/SUITE-94_HR_30.04.2025.jpg",
+   "legenda": "Suíte do apartamento de 94 m²",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.atriaincorporadora.com.br/wp-content/uploads/photo-gallery/dellagio/novo/LIVING-116A_HR_30.04.2025.jpg",
+   "legenda": "Living do apartamento de 116 m²",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.atriaincorporadora.com.br/wp-content/uploads/photo-gallery/dellagio/novo/LIVING-116B_HR_30.04.2025.jpg",
+   "legenda": "Living do apartamento de 116 m², outro ângulo",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.atriaincorporadora.com.br/wp-content/uploads/photo-gallery/dellagio/novo/SUITE-116_HR_30.04.2025.jpg",
+   "legenda": "Suíte do apartamento de 116 m²",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.atriaincorporadora.com.br/wp-content/uploads/photo-gallery/dellagio/novo/DORM-1_116_HR_02.04.2025.jpg",
+   "legenda": "Dormitório do apartamento de 116 m²",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.atriaincorporadora.com.br/wp-content/uploads/photo-gallery/dellagio/novo/DORM-2_116_HR_02.04.2025.jpg",
+   "legenda": "Segundo dormitório do apartamento de 116 m²",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.atriaincorporadora.com.br/wp-content/uploads/photo-gallery/dellagio/novo/VARANDA_HR_30.04.2025.jpg",
+   "legenda": "Varanda gourmet",
+   "tipo": "foto",
+   "ordem": 10
+  }
+ ],
+ "apartamento-ao-lado-do-shopping-apv668": [
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-3.webp",
+   "legenda": "Área de lazer do Alpha Park View (3)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-4.webp",
+   "legenda": "Área de lazer do Alpha Park View (4)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-5.webp",
+   "legenda": "Área de lazer do Alpha Park View (5)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-6.webp",
+   "legenda": "Área de lazer do Alpha Park View (6)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-7.webp",
+   "legenda": "Área de lazer do Alpha Park View (7)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-8.webp",
+   "legenda": "Área de lazer do Alpha Park View (8)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-9.webp",
+   "legenda": "Área de lazer do Alpha Park View (9)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-10.webp",
+   "legenda": "Área de lazer do Alpha Park View (10)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-11.webp",
+   "legenda": "Área de lazer do Alpha Park View (11)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-12.webp",
+   "legenda": "Área de lazer do Alpha Park View (12)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-13.webp",
+   "legenda": "Área de lazer do Alpha Park View (13)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-14.webp",
+   "legenda": "Área de lazer do Alpha Park View (14)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-15.webp",
+   "legenda": "Área de lazer do Alpha Park View (15)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-16.webp",
+   "legenda": "Área de lazer do Alpha Park View (16)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-17.webp",
+   "legenda": "Área de lazer do Alpha Park View (17)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-18.webp",
+   "legenda": "Área de lazer do Alpha Park View (18)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-19.webp",
+   "legenda": "Área de lazer do Alpha Park View (19)",
+   "tipo": "foto",
+   "ordem": 10
+  },
+  {
+   "url": "https://www.alphaparkview.com/imagens/lazer/full/alpha-park-view-20.webp",
+   "legenda": "Área de lazer do Alpha Park View (20)",
+   "tipo": "foto",
+   "ordem": 10
+  }
+ ],
+ "acervo-apartments": [
+  {
+   "url": "https://acervoapartments.com.br/wp-content/uploads/2025/03/fachada.jpg",
+   "legenda": "Fachada do Acervo Apartments",
+   "tipo": "foto",
+   "ordem": 5
+  }
+ ]
+}
