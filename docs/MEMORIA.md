@@ -8847,3 +8847,18 @@ Nota: [[videos-e-tours-so-do-canal-da-construtora]].
   de fora. Os do Beyond entraram sem metragem (site diz 43/56/75 m², o
   cadastro diz 56/79).
 - `midias.tipo` é enum: `values` precisa de `::public.tipo_midia`.
+
+## Banheiros e vagas das plantas (0142, 02/10/2026)
+
+Nota: [[banheiros-e-vagas-pelo-apto-vc]].
+
+- **De 94 plantas publicadas, 55 estavam sem banheiro e 40 sem vaga; agora
+  são 12 e 8.** Fonte: o apto.vc, que publica banheiros e vagas por planta
+  no `__NEXT_DATA__` (`floorplans[]` e `floorplanImages[].floorplan`; o
+  segundo traz as plantas sem preço).
+- **O apto.vc erra** ("3 suítes, 1 banheiro"). Só entrou número que não
+  contradiz as suítes do cadastro; metragem com duas versões se desempata
+  pelos dormitórios, e o que continua ambíguo fica em branco.
+- Vaga que varia por andar (Liv Stay) não é número de planta.
+- Pendente: a planta de 66 m² do Bit diz 3 dormitórios e 2 suítes, e a
+  imagem ligada a ela mostra 2 dormitórios.
