@@ -67,3 +67,4 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[home-do-computador-em-duas-colunas]] — herói em duas colunas com mosaico de fotos; `.so-para-leitor` zerava a margem (30/09)
 - [[nove-ajustes-de-frontend-de-30-09]] — tokens de `cartao` no site, vidro só a partir de `md` (−18% de rolagem no celular), galeria sem buraco (30/09)
 - [[pagina-do-imovel-mostrava-o-cadastro-cru]] — zero que era ausência, frase de destaque repetindo a descrição, Book prometendo PDF, endereço do escritório no Dellagio (0140, 02/10)
+- [[pixel-da-meta-fica-fora-das-paginas-de-token]] — pixel nos layouts públicos, Lead no clique de WhatsApp, fora das páginas de token (02/10)

@@ -1,6 +1,7 @@
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
+import { PixelMeta } from "@/components/analytics/PixelMeta";
 import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
@@ -176,6 +177,7 @@ export default async function InstitucionalLayout({
       )}
 
       {children}
+      <PixelMeta />
       <VoltarAoTopo />
     </GlassBackgroundProvider>
   );

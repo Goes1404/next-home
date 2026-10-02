@@ -71,10 +71,12 @@ const TETOS_KB = {
   // cartão (comparar imóveis, 26/09) e, na home, o vídeo de fundo do celular
   // que voltou a pedido. O aviso de versão nova e a barra de favoritos já
   // saíram da primeira carga (`components/layout/SobDemanda.tsx`).
-  "/(institucional)/page": 754,
-  "/(institucional)/financiamento/page": 750,
+  // 02/10: +1 KB em toda rota pública, do Pixel da Meta (PixelMeta.tsx, nos
+  // dois layouts públicos), pedido para medir os anúncios.
+  "/(institucional)/page": 756,
+  "/(institucional)/financiamento/page": 751,
   "/(institucional)/regioes/[slug]/page": 740,
-  "/(vitrine)/empreendimentos/page": 738,
+  "/(vitrine)/empreendimentos/page": 740,
   "/(vitrine)/empreendimentos/[slug]/page": 790,
 };
 

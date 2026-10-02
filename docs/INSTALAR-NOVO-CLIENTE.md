@@ -29,6 +29,7 @@ Plano **Pro** (o Hobby não permite uso comercial). Variáveis:
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | banco |
 | `NEXT_PUBLIC_SITE_URL` | domínio do cliente |
 | `NEXT_PUBLIC_MARCA` | a marca (gere em **Administração → Marca**) |
+| `NEXT_PUBLIC_META_PIXEL_ID` | Pixel da Meta do cliente (opcional; sem ele o pixel não carrega). Exige redeploy |
 | `CRON_SECRET` | crons |
 | `OPENAI_API_KEY` | a IA (texto e transcrição de áudio) |
 | `WHATSAPP_API_URL`, `WHATSAPP_API_KEY`, `WHATSAPP_WEBHOOK_URL`, `WHATSAPP_WEBHOOK_SECRET` | Evolution |

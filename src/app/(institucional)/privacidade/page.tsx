@@ -19,7 +19,7 @@ export const metadata: Metadata = {
  * revisada todo mês sem ninguém a ter tocado — e uma data que mente sobre
  * revisão é pior que nenhuma. Ao mudar o texto, mudar a data junto.
  */
-const ATUALIZADA_EM = "setembro de 2026";
+const ATUALIZADA_EM = "outubro de 2026";
 
 const SECOES = [
   {
@@ -28,8 +28,21 @@ const SECOES = [
       <>
         Quando você envia o formulário de contato ou fala com um corretor, coletamos apenas o
         que você mesmo informa: nome, e-mail e/ou telefone, mensagem e, quando aplicável, o
-        empreendimento de interesse. Não usamos cookies de rastreamento próprios além do
-        necessário para o funcionamento do site.
+        empreendimento de interesse.
+      </>
+    ),
+  },
+  {
+    titulo: "Cookies e Pixel da Meta",
+    texto: (
+      <>
+        Usamos o Pixel da Meta (Facebook e Instagram) para medir os nossos anúncios. Ele grava
+        cookies no seu navegador e informa à Meta as páginas de imóveis que você visita e
+        quando você toca em um botão de WhatsApp, junto com dados técnicos do navegador. Não
+        enviamos à Meta seu nome, telefone ou mensagens, e as páginas de acesso individual
+        (como portal do comprador e propostas) ficam fora dessa medição. Você pode bloquear
+        esses cookies nas configurações do navegador ou ajustar suas preferências de anúncio
+        na própria Meta.
       </>
     ),
   },
@@ -39,8 +52,8 @@ const SECOES = [
       <>
         Esses dados servem exclusivamente para que a {site.nomeCompleto} (CRECI {site.creci}) ou
         o corretor responsável pelo empreendimento entre em contato com você sobre o imóvel de
-        interesse. Não vendemos nem compartilhamos seus dados com terceiros para fins de
-        marketing.
+        interesse. Não vendemos seus dados nem os compartilhamos com terceiros, exceto a
+        medição de anúncios descrita acima.
       </>
     ),
   },

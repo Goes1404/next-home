@@ -8862,3 +8862,22 @@ Nota: [[banheiros-e-vagas-pelo-apto-vc]].
 - Vaga que varia por andar (Liv Stay) não é número de planta.
 - Pendente: a planta de 66 m² do Bit diz 3 dormitórios e 2 suítes, e a
   imagem ligada a ela mostra 2 dormitórios.
+
+## Pixel da Meta (02/10/2026)
+
+Nota: [[pixel-da-meta-fica-fora-das-paginas-de-token]].
+
+- **A ferramenta da Meta não achava pixel porque não havia pixel**, e o link
+  testado era `/wa/<imóvel>`, que é 302 para o `wa.me`. Teste a ficha do
+  imóvel, nunca o atalho.
+- **`PixelMeta`** nos dois layouts públicos: PageView, ViewContent na ficha
+  (`content_ids` = slug) e **Lead no clique** de qualquer link de WhatsApp
+  (ouvinte único, fase de captura).
+- **Fora das páginas de token** (o token vai no endereço, e o pixel manda o
+  endereço à Meta): lista em `pixelMeta.ts`, `disablePushState` e
+  `autoConfig` desligados. Guarda em `pixelMeta.test.ts`.
+- **`NEXT_PUBLIC_META_PIXEL_ID`** (sem ela nada carrega; exige redeploy). O
+  MCP da Vercel desta sessão não cria env var (403): quem cadastra é o
+  usuário, no painel.
+- A política de privacidade dizia "sem cookies de rastreamento" e foi
+  reescrita junto.
