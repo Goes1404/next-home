@@ -1,5 +1,5 @@
 import { expect, test as setup } from "@playwright/test";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const ARQUIVO_SESSAO = "e2e/.auth/corretor.json";
@@ -35,6 +35,8 @@ setup("login do corretor", async ({ page }) => {
     // — o skip educado de cada spec (redirecionado para /entrar) nunca
     // chega a acontecer. Com o arquivo vazio, os specs abrem deslogados,
     // caem no /entrar e se pulam com a mensagem certa.
+    // A pasta é ignorada pelo git: num checkout limpo (a esteira) ela não existe.
+    mkdirSync(path.dirname(ARQUIVO_SESSAO), { recursive: true });
     writeFileSync(ARQUIVO_SESSAO, JSON.stringify({ cookies: [], origins: [] }));
     setup.skip(
       true,

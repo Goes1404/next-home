@@ -88,8 +88,8 @@ jobs:
 # - `npm run test:e2e` — os specs do painel exigem credencial REAL
 #   (E2E_CORRETOR_EMAIL/SENHA) e o banco por trás é o de PRODUÇÃO, não há
 #   ambiente de teste. Rodar a cada push seria bater no banco de clientes
-#   de verdade a cada commit. Enquanto não houver ambiente separado, o E2E
-#   continua sendo comando de gente.
+#   de verdade a cada commit. Desde 02/10/2026 ele roda à parte, uma vez por
+#   dia e sob demanda, contra o site no ar (ver e2e.yml).
 #
 # - `npm run eval` e `eval:conversa` — custam chamada de LLM paga a cada
 #   rodada e consomem a MESMA cota do atendimento real. Eval é decisão de

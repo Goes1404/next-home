@@ -160,7 +160,7 @@ export async function extrairDossieCliente(
   // do agente de resposta, sem duplicar o fetch aqui.
   const resultado = await chamarLlmJson(
     `${PROMPT_DOSSIE}${blocoDaMemoriaAnterior(memoriaAnterior)}\n\n--- TRANSCRIÇÃO DA CONVERSA ---\n${conversaTexto.slice(0, 12000)}`,
-    { temperature: 0.1, orcamentoMs: ORCAMENTO_DOSSIE_MS },
+    { temperature: 0.1, orcamentoMs: ORCAMENTO_DOSSIE_MS, fatia: 1 },
   );
 
   if (!resultado.ok) {

@@ -274,6 +274,23 @@ describe("Motor único", () => {
     expect(chamarOpenaiJson).toHaveBeenCalledTimes(2);
   });
 
+  it("com fatia 1, o motor único recebe o orçamento inteiro (é o dossiê)", async () => {
+    // Em 02/10/2026 o "orçamento de 12s" do dossiê era 7,2s na prática, e
+    // estourou cinco vezes em produção. Ninguém espera pelo dossiê.
+    const { chamarLlmJson: chamar } = await comMotor();
+    chamarOpenaiJson.mockResolvedValueOnce(ok("gpt-4.1-mini"));
+
+    await chamar("prompt", { orcamentoMs: 12_000, fatia: 1 });
+
+    expect(chamarOpenaiJson.mock.calls[0][1].timeoutMs).toBeGreaterThan(11_000);
+  });
+
+  it("o dossiê de fato pede a fatia inteira", async () => {
+    const { readFileSync } = await import("node:fs");
+    const fonte = readFileSync("src/lib/whatsapp/dossierExtractor.ts", "utf8");
+    expect(fonte).toMatch(/orcamentoMs:\s*ORCAMENTO_DOSSIE_MS,\s*fatia:\s*1\b/);
+  });
+
   it("a tela de diagnóstico mostra QUEM RESPONDE, não quem tem chave", async () => {
     // Em produção as quatro chaves existem na Vercel. Listar as quatro faria
     // o corretor procurar defeito num provedor que não atende ninguém.

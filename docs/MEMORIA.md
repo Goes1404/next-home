@@ -8746,3 +8746,17 @@ Nota: [[revisao-antes-de-producao]].
 - **`outputFileTracingIncludes` é por rota**: o sharp chegava a `/corretor/**`
   e não a `/api/imagens/**`, e a arte saía sem a ressalva.
 - **Coluna `date` recusa "2027-10"**: entrega lida de apresentação vira dia 1º.
+
+## O orçamento do dossiê era 7,2s, e o E2E ganhou esteira (02/10/2026)
+
+Nota: [[o-orcamento-do-dossie-era-menor-que-o-escrito]].
+
+- **Com motor único, `chamarLlmJson` dá ao provedor só 60% do orçamento**
+  (`FATIA_MOTOR_UNICO`), para sobrar prazo de retentar o que falha rápido. O
+  "orçamento de 12s" do dossiê era 7,2s e estourou 5 vezes. Timeout não é
+  retentado e ninguém espera o dossiê: ele passa `fatia: 1`. O orçamento
+  total do webhook não muda.
+- **E2E diário contra produção** (`.github/workflows/e2e.yml`), com
+  `E2E_CORRETOR_EMAIL`/`SENHA` nos secrets. Sem eles o painel é pulado.
+  `webServer` só sobe quando não há `E2E_BASE_URL`.
+- **Senhas vazadas (advisor do Auth) é recurso do plano Pro** do Supabase.

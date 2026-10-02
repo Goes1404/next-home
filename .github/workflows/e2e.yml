@@ -1,0 +1,67 @@
+# E2E contra o site NO AR — uma vez por dia e sob demanda.
+#
+# ## Por que não roda a cada push (ver o fim de ci.yml)
+#
+# Não existe banco de teste: o painel por trás é o de PRODUÇÃO. Rodar a cada
+# commit bateria no banco de clientes de verdade dezenas de vezes por dia.
+# Uma vez por dia é o meio-termo: os specs são SOMENTE LEITURA por contrato
+# (abrem tela, marcam checkbox, abrem modal, nunca acionam o botão que grava
+# ou dispara), e o que eles pegam — tela do painel que parou de abrir — é
+# exatamente o defeito que build, tipo e teste não pegam.
+#
+# ## Credenciais
+#
+# Secrets do repositório E2E_CORRETOR_EMAIL e E2E_CORRETOR_SENHA, de uma
+# conta de corretor de verdade (de preferência uma criada só para isso, sem
+# carteira, para nenhum spec nem sequer LER lead de cliente). Sem os
+# secrets, os specs do painel são PULADOS com aviso e os do site público
+# rodam do mesmo jeito: a esteira não fica vermelha por falta de segredo.
+#
+# Roda contra o domínio de produção, não contra um build local: o que se
+# quer saber é se o que está NO AR abre.
+
+name: E2E (produção)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 09:17 UTC = 06:17 em Brasília: antes de a equipe começar o dia.
+    - cron: "17 9 * * *"
+
+concurrency:
+  group: e2e-producao
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Instalar o Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Rodar os specs
+        env:
+          E2E_BASE_URL: https://next-home-drab.vercel.app
+          E2E_CORRETOR_EMAIL: ${{ secrets.E2E_CORRETOR_EMAIL }}
+          E2E_CORRETOR_SENHA: ${{ secrets.E2E_CORRETOR_SENHA }}
+        run: npm run test:e2e
+
+      - name: Guardar o rastro das falhas
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-rastros
+          path: test-results/
+          retention-days: 7

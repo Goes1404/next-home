@@ -208,7 +208,20 @@ export function algumProvedorLeImagem(): boolean {
 
 export async function chamarLlmJson(
   prompt: string,
-  opts?: { temperature?: number; orcamentoMs?: number; imagens?: string[] },
+  opts?: {
+    temperature?: number;
+    orcamentoMs?: number;
+    imagens?: string[];
+    /**
+     * Fração do orçamento que o primeiro provedor pode gastar, quando o
+     * chamador sabe mais que a regra geral. O dossiê passa 1: ninguém está
+     * esperando por ele, e timeout não é retentado de qualquer jeito — com
+     * a fatia de 0,6 o "orçamento de 12s" era, na prática, 7,2s, e foi isso
+     * que estourou em produção (02/10/2026). A retentativa do que falha
+     * RÁPIDO continua possível: ela herda o que sobrou do prazo.
+     */
+    fatia?: number;
+  },
 ): Promise<ResultadoLlm> {
   const orcamentoMs = opts?.orcamentoMs ?? ORCAMENTO_AGENTE_MS;
   const prazoFinal = Date.now() + orcamentoMs;
@@ -225,7 +238,7 @@ export async function chamarLlmJson(
   );
 
   const tetoPorProvedor = Math.floor(
-    orcamentoMs * (disponiveis.length === 1 ? FATIA_MOTOR_UNICO : FATIA_MAXIMA),
+    orcamentoMs * (opts?.fatia ?? (disponiveis.length === 1 ? FATIA_MOTOR_UNICO : FATIA_MAXIMA)),
   );
   /*
    * Avisar quando um provedor com chave fica de fora por não caber. Sem

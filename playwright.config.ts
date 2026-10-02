@@ -37,13 +37,17 @@ export default defineConfig({
     // (E2E_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome).
     ...(process.env.E2E_CHROMIUM ? { launchOptions: { executablePath: process.env.E2E_CHROMIUM } } : {}),
   },
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
-    // Aproveita o dev server que já estiver de pé — sobe um só se faltar.
-    reuseExistingServer: true,
-    timeout: 60_000,
-  },
+  // Com E2E_BASE_URL apontando para um site no ar (a esteira e2e.yml usa a
+  // produção), não há servidor local para subir.
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: "npm run dev",
+        url: "http://localhost:3000",
+        // Aproveita o dev server que já estiver de pé — sobe um só se faltar.
+        reuseExistingServer: true,
+        timeout: 60_000,
+      },
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
