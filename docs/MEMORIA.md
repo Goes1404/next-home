@@ -8831,3 +8831,19 @@ Nota: [[pagina-do-imovel-mostrava-o-cadastro-cru]].
   altíssimo padrão". O texto agora depende de existir book.
 - **Texto do catálogo mudado por migration leva até 1 h para aparecer no
   site** (cache `catalogo`); mudança no mapper vale no deploy.
+
+## Vídeos e tours só do canal da construtora (0141, 02/10/2026)
+
+Nota: [[videos-e-tours-so-do-canal-da-construtora]].
+
+- **18 publicados sem vídeo nem tour caíram para 4.** Entraram 15 vídeos e
+  3 tours do Beyond. Sobraram Royal Barueri, Copa 18, La Vista e Nova
+  Califórnia, sem vídeo oficial.
+- **A busca do YouTube responde por `curl`** (`ytInitialData` no HTML de
+  `/results`), e o oEmbed diz o canal (`author_name`) e se o vídeo aceita
+  incorporação. Só entra vídeo do canal da construtora: o resto é corretor
+  de outra imobiliária com o telefone dele.
+- **Tour da página do Liv Stay tem título e descrição do Beyond** e ficou
+  de fora. Os do Beyond entraram sem metragem (site diz 43/56/75 m², o
+  cadastro diz 56/79).
+- `midias.tipo` é enum: `values` precisa de `::public.tipo_midia`.
