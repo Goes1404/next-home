@@ -8810,3 +8810,7 @@ Nota: [[catalogo-conferido-imagem-por-imagem]].
 - **`/* */` em `buscarSeguro.ts` depois do cabeçalho Accept quebra o teste de
   guarda**: o curinga do Accept abre um falso comentário para o regex do
   teste, e o fechamento de bloco apaga o código. Usar `//`.
+- **Endereços (0139)**: nenhum publicado sem endereço. Fonte divergente se
+  desempata pela coordenada do cadastro (Breeze: Rua São Fernando, não
+  Estrada das Pitas). Conferir o pino contra a rua achou Bosque e Vista
+  AlphaGran a ~2 km do lugar certo.

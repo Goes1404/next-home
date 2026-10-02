@@ -8,6 +8,7 @@ custou: alto
 codigo:
   - supabase/migrations/0137_catalogo_conferido_imagem_por_imagem.sql
   - supabase/migrations/0138_plantas_e_fotos_que_nao_sao_do_imovel.sql
+  - supabase/migrations/0139_enderecos_que_faltavam.sql
   - scripts/catalogo/trazerFotos0137.ts
   - scripts/catalogo/fotos-0137.json
   - .github/workflows/fotos-0137.yml
@@ -28,7 +29,7 @@ updated: 2026-10-02
 | plantas publicadas sem metragem | 44 | 2 (On The Park e La Vista, sem imagem) |
 | imóveis sem descrição (ou < 200 caracteres) | 9 | 3 |
 | imóveis sem lazer | 10 | 4 |
-| imóveis sem endereço | 11 | 6 |
+| imóveis sem endereço | 11 | 0 (0139) |
 
 ## Plantas: a importação chutava os dormitórios
 
@@ -84,6 +85,19 @@ updated: 2026-10-02
 - **Para não duplicar render vindo de outra fonte** (o dedup por hash só pega
   arquivo idêntico): montar uma grade com as fotos atuais e as candidatas e
   olhar antes de montar a lista.
+
+## Endereços (0139)
+
+- Os 6 que faltavam saíram de agregadores (apto.vc, Lopes), porque nenhuma
+  página de construtora deles traz endereço. Cada um foi conferido contra a
+  coordenada que o cadastro já tinha (Nominatim pela rua).
+- **A coordenada desempata fonte divergente**: para o Breeze, o apto.vc dizia
+  Estrada das Pitas e outra fonte Rua São Fernando, 741; o pino estava a
+  ~150 m da Rua São Fernando.
+- **Pinos errados descobertos assim**: Bosque e Vista AlphaGran estavam a
+  ~2 km da Alameda Washington. Foram para pontos da própria alameda.
+- Vitra e Authoria declaram o mesmo número (Av. Copacabana, 500).
+- 9 endereços continuam sem número (a fonte só dá a rua).
 
 ## Preço e entrega não saem do site
 
