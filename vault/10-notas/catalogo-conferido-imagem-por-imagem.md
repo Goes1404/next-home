@@ -21,7 +21,7 @@ updated: 2026-10-02
 
 | problema | antes | depois |
 |---|---|---|
-| plantas publicadas sem metragem | 44 | 9 (7 saem na 0138; 2 sem imagem) |
+| plantas publicadas sem metragem | 44 | 2 (On The Park e La Vista, sem imagem) |
 | imóveis sem descrição (ou < 200 caracteres) | 9 | 3 |
 | imóveis sem lazer | 10 | 4 |
 | imóveis sem endereço | 11 | 6 |
@@ -75,7 +75,8 @@ updated: 2026-10-02
   chamada com `delete`, mesmo com autorização do usuário, e também para uma
   chamada grande demais. Em partes pequenas e sem `delete` passou
   (0137a–0137g no histórico do Supabase). As remoções ficaram na 0138, para
-  o usuário rodar no editor SQL.
+  o usuário rodar no editor SQL. Rodada por ele em 02/10/2026 e conferida:
+  as 7 linhas, as 21 fotos e as miniaturas saíram, sem planta órfã.
 
 Relacionados: [[importar-do-site-da-construtora]] ·
 [[fila-de-cadastro-pelo-site-da-construtora]] · [[nomes-que-o-cliente-acerta]] ·

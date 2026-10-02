@@ -8796,5 +8796,6 @@ Nota: [[catalogo-conferido-imagem-por-imagem]].
   existe.
 - **`apply_migration` do MCP cancela `delete`** (e chamada grande demais),
   mesmo com autorização. Aplicar em partes sem `delete`; remoção vai para um
-  arquivo que o usuário roda no editor SQL (0138).
+  arquivo que o usuário roda no editor SQL (0138, rodada e conferida em
+  02/10: sobraram 2 plantas sem metragem, ambas sem imagem).
 - Nenhuma página de construtora publica preço nem data de entrega.
