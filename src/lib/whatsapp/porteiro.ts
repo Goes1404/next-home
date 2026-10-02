@@ -85,7 +85,7 @@ export function reconhecerMensagemDeAnuncio(texto: string | null | undefined): s
 
 /** Como reconhecemos que a pessoa está respondendo a uma peça NOSSA. */
 export type ConviteDeEntrada = {
-  via: "mensagem_do_anuncio" | "mensagem_do_site" | "anuncio_meta" | "frase_de_entrada";
+  via: "mensagem_do_anuncio" | "mensagem_do_site" | "anuncio_meta" | "frase_de_entrada" | "clique_no_link";
   /** O imóvel citado, quando o texto é o nosso e o traz. */
   imovel: string | null;
   /** O anúncio impulsionado pelo corretor, quando a Meta o identificou. */

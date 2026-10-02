@@ -40,6 +40,8 @@ export async function GET(req: Request) {
     corretor_id: destino.tipo === "whatsapp" ? (sorteio?.corretor_id ?? null) : null,
     empreendimento_id: null,
     origem: "site",
+    // Só clique gravado aqui pode cadastrar quem escreve sem a mensagem pronta (0143).
+    pelo_porteiro: true,
     url_origem: url.pathname + url.search,
     user_agent: req.headers.get("user-agent")?.slice(0, 500) ?? null,
   });

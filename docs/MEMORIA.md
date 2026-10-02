@@ -8895,3 +8895,17 @@ Nota: [[lead-do-link-do-anuncio-cai-na-campanha-do-imovel]].
   dentro do período; com duas no ar, a que começou por último.
 - **692 cliques para 7 leads**: os logs do porteiro do período não mostram
   lead de anúncio barrado; os cliques incluem repetição e robôs.
+
+## Quem clicou no link é cadastrado, seja qual for a mensagem (0143, 02/10/2026)
+
+Nota: [[clique-no-link-cadastra-quem-escreve]].
+
+- **O porteiro só aceitava a mensagem pronta do link**; quem a apagava e
+  escrevia "oi" sumia. Agora o `/wa/` marca o clique (`pelo_porteiro`), e
+  número sem lead que escreve ao corretor sorteado em até 15 min ganha
+  cadastro pelo clique (`reivindicar_clique_do_link`, uma pessoa por clique).
+- **Robô da Meta abre o link para montar a prévia**: 409 de 692 acessos ao
+  link do Dom Parque. Ele não conta como clique pago nem reivindica nada.
+- **O `anon` grava clique do site só por grant de coluna**: sem isso,
+  qualquer um forjaria um clique pela chave pública e abriria a porta.
+- Para conferir: `select * from cliques_whatsapp where lead_id is not null`.

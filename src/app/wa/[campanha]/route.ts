@@ -65,6 +65,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
       corretor_id: corretorId,
       empreendimento_id: alvo?.id ?? null,
       origem: `${doSite ? "site" : "anuncio"}/${campanha.slice(0, 80)}`,
+      // Só clique gravado aqui pode cadastrar quem escreve sem a mensagem pronta (0143).
+      pelo_porteiro: true,
       url_origem: url.pathname + url.search,
       user_agent: req.headers.get("user-agent")?.slice(0, 500) ?? null,
     });

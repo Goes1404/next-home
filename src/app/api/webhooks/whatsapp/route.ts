@@ -39,6 +39,9 @@ import {
   historicoRecente,
   liberarConversaPorPalavraChave,
   marcarLeadVindoDeAnuncio,
+  reivindicarCliqueDoLink,
+  vincularCliqueAoLead,
+  type CliqueDoLink,
   marcarConversaComoTeste,
   marcarRespostaCampanha,
   obterOuCriarConversa,
@@ -401,12 +404,41 @@ export async function POST(req: NextRequest) {
      * transcrever antes de saber se é lead é exatamente o que a 0111 veio
      * impedir.
      */
-    const conversa = await obterOuCriarConversa({
+    let conversa = await obterOuCriarConversa({
       corretorId: instancia.corretorId,
       telefoneCliente: sender,
       nomeCliente: payload.senderName || null,
       convite,
     });
+
+    /*
+     * Quem clicou no link /wa/ e apagou a mensagem pronta (0143): número sem
+     * lead escrevendo ao corretor sorteado até 15 minutos depois de um
+     * clique de pessoa no link. É cadastrado seja qual for a mensagem —
+     * sabemos de onde ele veio pelo clique, não pelo texto. Cada clique
+     * cadastra uma pessoa só.
+     *
+     * Quando a mensagem pronta chega, o clique dela é gasto também: senão
+     * ele sobraria e abriria a porta para o próximo número que escrevesse
+     * na janela, mesmo sendo um contato pessoal.
+     */
+    let cliqueDoLink: CliqueDoLink | null = null;
+    if (!conversa) {
+      cliqueDoLink = await reivindicarCliqueDoLink({ corretorId: instancia.corretorId });
+      if (cliqueDoLink) {
+        conversa = await obterOuCriarConversa({
+          corretorId: instancia.corretorId,
+          telefoneCliente: sender,
+          nomeCliente: payload.senderName || null,
+          convite: { via: "clique_no_link", imovel: cliqueDoLink.nomeImovel },
+        });
+      }
+    } else if (convite?.via === "mensagem_do_anuncio" || convite?.via === "mensagem_do_site") {
+      cliqueDoLink = await reivindicarCliqueDoLink({ corretorId: instancia.corretorId });
+    }
+    if (cliqueDoLink && conversa?.leadId) {
+      await vincularCliqueAoLead(cliqueDoLink.cliqueId, conversa.leadId);
+    }
 
     /*
      * Diagnóstico do impulsionamento (27/09): só os NOMES dos campos de
@@ -562,6 +594,12 @@ export async function POST(req: NextRequest) {
       if (conversa.leadId) {
         await marcarLeadVindoDeAnuncio(conversa.leadId, nomeDoAnuncio);
       }
+    }
+
+    // Entrou pelo clique no link do anúncio, sem a mensagem pronta: a ficha
+    // ganha a mesma origem e o imóvel do link (é o que a campanha conta).
+    if (!nomeDoAnuncio && convite === null && cliqueDoLink?.doAnuncio && cliqueDoLink.nomeImovel && conversa.leadId) {
+      await marcarLeadVindoDeAnuncio(conversa.leadId, cliqueDoLink.nomeImovel);
     }
 
     /*

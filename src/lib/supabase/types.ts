@@ -730,28 +730,37 @@ export type Database = {
       cliques_whatsapp: {
         Row: {
           corretor_id: string | null
+          consumido_em: string | null
           created_at: string
           empreendimento_id: string | null
           id: string
+          lead_id: string | null
           origem: string
+          pelo_porteiro: boolean
           url_origem: string | null
           user_agent: string | null
         }
         Insert: {
           corretor_id?: string | null
+          consumido_em?: string | null
           created_at?: string
           empreendimento_id?: string | null
           id?: string
+          lead_id?: string | null
           origem: string
+          pelo_porteiro?: boolean
           url_origem?: string | null
           user_agent?: string | null
         }
         Update: {
           corretor_id?: string | null
+          consumido_em?: string | null
           created_at?: string
           empreendimento_id?: string | null
           id?: string
+          lead_id?: string | null
           origem?: string
+          pelo_porteiro?: boolean
           url_origem?: string | null
           user_agent?: string | null
         }
@@ -3034,6 +3043,10 @@ export type Database = {
         Returns: undefined
       }
       desligar_disparo_automatico: { Args: never; Returns: string }
+      reivindicar_clique_do_link: {
+        Args: { p_corretor: string; p_janela_min?: number; p_empreendimento?: string }
+        Returns: { clique_id: string; empreendimento_id: string | null; origem: string }[]
+      }
       sortear_corretor_whatsapp: {
         Args: { p_empreendimento?: string; preferido?: string }
         Returns: { corretor_id: string; telefone: string }[]

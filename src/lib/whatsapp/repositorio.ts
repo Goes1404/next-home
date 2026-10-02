@@ -423,6 +423,73 @@ export async function marcarConversaComoTeste(conversaId: string): Promise<void>
   await supabase.from("whatsapp_conversas").update({ e_teste: true }).eq("id", conversaId);
 }
 
+/** Quanto tempo depois do clique no link a primeira mensagem ainda é dele. */
+export const JANELA_DO_CLIQUE_MIN = 15;
+
+export type CliqueDoLink = {
+  cliqueId: string;
+  /** Nome do imóvel do link; null no botão geral do site. */
+  nomeImovel: string | null;
+  /** O clique veio do anúncio (não do site). */
+  doAnuncio: boolean;
+};
+
+/**
+ * Quem escreve pela primeira vez, sem cadastro e sem a mensagem pronta,
+ * clicou no link /wa/ do corretor há poucos minutos? (0143)
+ *
+ * O link registra todo clique com o corretor sorteado; a mensagem que chega
+ * a ESSE corretor logo depois, de número sem lead, é de quem clicou — a
+ * pessoa só apagou o texto pronto. A função do banco marca o clique como
+ * usado no mesmo comando: dois números escrevendo juntos nunca levam o
+ * mesmo clique, e cada clique cadastra uma pessoa só.
+ *
+ * Também é chamada quando a mensagem pronta chega, para gastar o clique
+ * dela: sem isso o clique sobraria e abriria a porta para o próximo número
+ * que escrevesse na janela, mesmo sendo um contato pessoal.
+ */
+export async function reivindicarCliqueDoLink(params: {
+  corretorId: string;
+  empreendimentoId?: string | null;
+}): Promise<CliqueDoLink | null> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .rpc("reivindicar_clique_do_link", {
+      p_corretor: params.corretorId,
+      p_janela_min: JANELA_DO_CLIQUE_MIN,
+      ...(params.empreendimentoId ? { p_empreendimento: params.empreendimentoId } : {}),
+    })
+    .maybeSingle<{ clique_id: string; empreendimento_id: string | null; origem: string }>();
+  if (error) {
+    // Sem a 0143 a função não existe: o porteiro segue como antes.
+    console.error("[porteiro] falha ao reivindicar clique:", error.message);
+    return null;
+  }
+  if (!data) return null;
+
+  let nomeImovel: string | null = null;
+  if (data.empreendimento_id) {
+    const { data: imovel } = await supabase
+      .from("empreendimentos")
+      .select("nome")
+      .eq("id", data.empreendimento_id)
+      .maybeSingle();
+    nomeImovel = imovel?.nome ?? null;
+  }
+  return {
+    cliqueId: data.clique_id,
+    nomeImovel,
+    doAnuncio: data.origem.startsWith("anuncio/"),
+  };
+}
+
+/** Grava no clique quem ele cadastrou, para conferir depois. */
+export async function vincularCliqueAoLead(cliqueId: string, leadId: string): Promise<void> {
+  const supabase = createServiceClient();
+  const { error } = await supabase.from("cliques_whatsapp").update({ lead_id: leadId }).eq("id", cliqueId);
+  if (error) console.error("[porteiro] falha ao ligar clique ao lead:", error.message);
+}
+
 /**
  * O lead chegou pela mensagem pronta de um anúncio (link porteiro
  * /wa/<campanha>): carimba a origem e o anúncio na ficha do CRM.
