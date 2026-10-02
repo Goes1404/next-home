@@ -107,12 +107,10 @@ export async function restaurarLeadsEmLote(leadIds: string[]): Promise<Resultado
 /**
  * Exclusão definitiva em lote. Não há desfazer.
  *
- * O `.not("arquivado_em", "is", null)` no próprio DELETE é a trava dos dois
- * passos, e ela vive na QUERY de propósito: uma conferência em JavaScript
- * antes do delete seria uma corrida — entre ler e apagar, o lead pode ter
- * sido restaurado em outra aba. Assim, lead não arquivado simplesmente não
- * é alcançado, e a diferença entre pedidos e afetados é o que a tela conta
- * de volta.
+ * Desde 02/10/2026 o ADM exclui direto, sem arquivar antes (pedido do
+ * usuário). Quem decide é o papel, conferido aqui e na policy
+ * "leads: so o adm exclui"; a trava contra o clique errado é a confirmação
+ * da tela, que escreve quantos leads saem.
  */
 export async function excluirLeadsEmLote(leadIds: string[]): Promise<ResultadoLote> {
   const corretor = await getCorretorLogado();
@@ -127,7 +125,6 @@ export async function excluirLeadsEmLote(leadIds: string[]): Promise<ResultadoLo
     .from("leads")
     .delete()
     .in("id", ids)
-    .not("arquivado_em", "is", null)
     .select("id");
 
   if (error) return { erro: "Não foi possível excluir agora." };

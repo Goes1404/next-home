@@ -81,10 +81,9 @@ export function ListaLeads({
   /**
    * A lista está mostrando os ARQUIVADOS.
    *
-   * Muda quais ações a seleção oferece, e é o que mantém a regra de dois
-   * passos da 0055 de pé: arquivar só existe na lista ativa, excluir só
-   * existe aqui. Nunca o mesmo botão no mesmo lugar — apagar não pode ser
-   * um toque a mais onde antes se arquivava.
+   * Muda quais ações a seleção oferece: aqui restaurar; na ativa, arquivar
+   * e mover. Excluir aparece nas duas para o ADM (02/10/2026, pedido do
+   * usuário), sempre com a confirmação que escreve quantos saem.
    */
   verArquivados?: boolean;
   /** Para o select de filtro por empreendimento (06/09/2026). */
@@ -516,6 +515,17 @@ export function ListaLeads({
                   >
                     {movendoLote ? "…" : "Arquivar"}
                   </button>
+                  {/* Excluir direto, sem arquivar antes (02/10/2026). Só o ADM. */}
+                  {gestor && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmandoExclusao(true)}
+                      disabled={movendoLote}
+                      className="text-fluid-sm border-perigo-linha bg-perigo-lavado text-perigo flex min-h-11 cursor-pointer items-center rounded-lg border px-3 whitespace-nowrap transition-opacity hover:opacity-80 disabled:opacity-60"
+                    >
+                      Excluir
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setModalAberto(true)}
@@ -542,7 +552,7 @@ export function ListaLeads({
                 Excluir {selecionados.size} lead{selecionados.size === 1 ? "" : "s"} para sempre?
               </p>
               <p className="text-fluid-xs text-apoio mt-1">
-                Vai junto o histórico de conversa no CRM, as tarefas e o que a IA anotou sobre
+                Vai junto a conversa no WhatsApp, as tarefas e o que a IA anotou sobre
                 cada um. Não dá para desfazer.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -551,7 +561,7 @@ export function ListaLeads({
                   onClick={() =>
                     agirEmLote(excluirLeadsEmLote, (n) =>
                       n === 0
-                        ? "Nada foi excluído — só leads arquivados podem ser apagados."
+                        ? "Nada foi excluído."
                         : `${n} lead${n === 1 ? "" : "s"} excluído${n === 1 ? "" : "s"} para sempre.`,
                     )
                   }

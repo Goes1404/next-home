@@ -14,11 +14,9 @@ import { arquivarLead, excluirLeadDefinitivo, restaurarLead } from "./acoes";
  * régua do painel de campanhas: botão destrutivo no mesmo nível do resto é
  * convite ao clique errado.
  *
- * A exclusão exige DOIS passos deliberados — o lead precisa estar
- * arquivado, e ainda assim há uma confirmação que diz por escrito o que
- * será apagado junto (dossiê da IA, tarefas e linha do tempo). Não é
- * excesso de zelo: o banco apaga essas três por CASCADE, e ninguém
- * lembraria disso na hora do clique.
+ * Excluir é do ADM e, desde 02/10/2026, não exige arquivar antes. A trava
+ * é a confirmação, que diz por escrito o que vai junto (conversa, dossiê da
+ * IA, tarefas e linha do tempo): o banco apaga tudo por CASCADE.
  */
 export function ArquivarLead({
   leadId,
@@ -59,6 +57,47 @@ export function ArquivarLead({
       }
     });
 
+  const excluir = !podeExcluir ? null : !confirmando ? (
+              <button
+                type="button"
+                disabled={pendente}
+                onClick={() => setConfirmando(true)}
+                className="text-fluid-sm inline-flex min-h-11 items-center gap-2 rounded-xl border-perigo-linha text-perigo hover:bg-perigo-lavado border px-4 transition-colors disabled:opacity-60"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+                Excluir definitivamente
+              </button>
+            ) : (
+              <div className="border-perigo-linha bg-perigo-lavado w-full rounded-xl border p-3">
+                <p className="text-fluid-sm text-titulo">
+                  Excluir {nome} de vez? Isso apaga junto o que a IA anotou sobre ele, as tarefas e a linha do
+                  tempo dele. Não tem desfazer.
+                </p>
+                <p className="text-fluid-xs text-apoio mt-1">
+                  A conversa no WhatsApp vai junto. Se a pessoa escrever de novo, ela não é
+                  atendida: o número não está mais na carteira.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    disabled={pendente}
+                    onClick={() => executar(() => excluirLeadDefinitivo(leadId), true)}
+                    className="text-fluid-sm min-h-11 bg-perigo text-sobre-cor rounded-xl px-4 font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
+                  >
+                    {pendente ? "Excluindo…" : "Sim, excluir para sempre"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pendente}
+                    onClick={() => setConfirmando(false)}
+                    className="border-linha-forte text-corpo text-fluid-sm min-h-11 rounded-xl border px-4"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            );
+
   return (
     <section className="border-linha mt-8 rounded-2xl border border-dashed p-4">
       <h2 className="text-fluid-sm text-apoio font-medium">
@@ -82,46 +121,7 @@ export function ArquivarLead({
               <RotateCcw className="h-4 w-4" aria-hidden />
               Restaurar
             </button>
-            {!podeExcluir ? null : !confirmando ? (
-              <button
-                type="button"
-                disabled={pendente}
-                onClick={() => setConfirmando(true)}
-                className="text-fluid-sm inline-flex min-h-11 items-center gap-2 rounded-xl border-perigo-linha text-perigo hover:bg-perigo-lavado border px-4 transition-colors disabled:opacity-60"
-              >
-                <Trash2 className="h-4 w-4" aria-hidden />
-                Excluir definitivamente
-              </button>
-            ) : (
-              <div className="border-perigo-linha bg-perigo-lavado w-full rounded-xl border p-3">
-                <p className="text-fluid-sm text-titulo">
-                  Excluir {nome} de vez? Isso apaga junto o que a IA anotou sobre ele, as tarefas e a linha do
-                  tempo dele. Não tem desfazer.
-                </p>
-                <p className="text-fluid-xs text-apoio mt-1">
-                  A conversa no WhatsApp não é apagada — ela fica sem lead. Se a pessoa escrever de
-                  novo, um lead novo é criado.
-                </p>
-                <div className="mt-3 flex gap-2">
-                  <button
-                    type="button"
-                    disabled={pendente}
-                    onClick={() => executar(() => excluirLeadDefinitivo(leadId), true)}
-                    className="text-fluid-sm min-h-11 bg-perigo text-sobre-cor rounded-xl px-4 font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
-                  >
-                    {pendente ? "Excluindo…" : "Sim, excluir para sempre"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={pendente}
-                    onClick={() => setConfirmando(false)}
-                    className="border-linha-forte text-corpo text-fluid-sm min-h-11 rounded-xl border px-4"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            )}
+            {excluir}
           </>
         ) : (
           <button
@@ -134,6 +134,7 @@ export function ArquivarLead({
             {pendente ? "Arquivando…" : "Arquivar lead"}
           </button>
         )}
+        {!arquivado && excluir}
       </div>
 
     </section>

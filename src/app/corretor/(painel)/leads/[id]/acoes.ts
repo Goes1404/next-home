@@ -247,27 +247,13 @@ export async function restaurarLead(leadId: string): Promise<ResultadoCrm> {
 /**
  * Exclusão definitiva. Não há desfazer.
  *
- * Exige que o lead JÁ ESTEJA ARQUIVADO: são dois passos de propósito, para
- * que apagar nunca seja um toque a mais no mesmo lugar de arquivar. O
- * `.eq("arquivado_em", ...)` não serve aqui (é um timestamp qualquer), então
- * a conferência é uma leitura antes — e ela também é o que permite dizer
- * "arquive primeiro" em vez de falhar sem explicação.
+ * Desde 02/10/2026 o ADM exclui direto, sem arquivar antes (pedido do
+ * usuário). A confirmação da tela é a trava contra o clique errado.
  */
 export async function excluirLeadDefinitivo(leadId: string): Promise<ResultadoCrm> {
   const ctx = await sessao();
   if ("erro" in ctx) return { erro: ctx.erro };
   if (ctx.corretor.papel !== "gestor") return { erro: "Só o ADM exclui leads. Você pode arquivar." };
-
-  const { data: lead } = await ctx.supabase
-    .from("leads")
-    .select("id, arquivado_em")
-    .eq("id", leadId)
-    .maybeSingle();
-
-  if (!lead) return { erro: "Lead não encontrado." };
-  if (!lead.arquivado_em) {
-    return { erro: "Arquive o lead antes de excluir — excluir não tem volta." };
-  }
 
   const { data, error } = await ctx.supabase.from("leads").delete().eq("id", leadId).select("id");
 

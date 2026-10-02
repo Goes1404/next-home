@@ -61,14 +61,15 @@ describe("toda consulta de lead filtra os arquivados (0055)", () => {
     expect(fonte("src/app/corretor/(painel)/leads/page.tsx")).toContain("arquivados");
   });
 
-  it("excluir em LOTE também exige arquivado antes — a trava vive na query", () => {
+  it("excluir em lote é só do ADM, e não exige mais arquivar antes (02/10/2026)", () => {
+    // Era dois passos (arquivar, depois excluir); o usuário pediu exclusão
+    // direta. O que não pode sumir é a checagem de papel ANTES do delete.
     const acoes = fonte("src/app/corretor/(painel)/leads/acoes.ts");
     const delecao = acoes.slice(acoes.indexOf("export async function excluirLeadsEmLote"));
     const corpo = delecao.slice(0, delecao.indexOf("\n}"));
-    // Na QUERY, e não numa conferência em JavaScript antes: entre ler e
-    // apagar, o lead pode ter sido restaurado em outra aba.
-    expect(corpo).toContain('.delete()');
-    expect(corpo).toContain('not("arquivado_em", "is", null)');
+    expect(corpo).toContain(".delete()");
+    expect(corpo.indexOf('papel !== "gestor"')).toBeGreaterThan(0);
+    expect(corpo.indexOf('papel !== "gestor"')).toBeLessThan(corpo.indexOf(".delete()"));
   });
 
   it("arquivar em lote não alcança quem já estava arquivado", () => {
@@ -80,12 +81,11 @@ describe("toda consulta de lead filtra os arquivados (0055)", () => {
     expect(corpo).toContain('is("arquivado_em", null)');
   });
 
-  it("excluir exige o lead arquivado antes — dois passos, não um", () => {
+  it("excluir um lead é só do ADM, conferido antes do delete", () => {
     const acoes = fonte("src/app/corretor/(painel)/leads/[id]/acoes.ts");
-    expect(acoes).toContain("Arquive o lead antes de excluir");
-    // A checagem tem de vir ANTES do delete, senão não protege nada.
-    expect(acoes.indexOf("Arquive o lead antes de excluir")).toBeLessThan(
-      acoes.indexOf('.delete()'),
-    );
+    const fn = acoes.slice(acoes.indexOf("export async function excluirLeadDefinitivo"));
+    const corpo = fn.slice(0, fn.indexOf("\n}"));
+    expect(corpo.indexOf('papel !== "gestor"')).toBeGreaterThan(0);
+    expect(corpo.indexOf('papel !== "gestor"')).toBeLessThan(corpo.indexOf(".delete()"));
   });
 });

@@ -8937,3 +8937,14 @@ Nota: [[clique-no-link-cadastra-quem-escreve]].
   duas conversas e arquivou os dois leads.
 - Régua: antes de abrir o porteiro por um sinal que não é o texto, medir
   quantas mensagens de NÃO clientes caem no mesmo intervalo.
+
+## O ADM exclui o lead direto (02/10/2026)
+
+Nota: [[adm-exclui-lead-direto]].
+
+- **A regra de dois passos da 0055 caiu, a pedido do usuário**: o botão de
+  excluir só existia na lista de arquivados e quase ninguém o achava. Agora o
+  ADM exclui na seleção da lista ativa e na ficha de qualquer lead, com
+  confirmação. O corretor continua só arquivando (0134).
+- A checagem de papel vem antes do `.delete()` nas duas actions, e a policy
+  `leads: so o adm exclui` segura no banco.
