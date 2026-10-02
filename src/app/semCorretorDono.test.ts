@@ -28,6 +28,8 @@ const EXCECOES = [
   "src/app/(institucional)/proposta/[token]/page.tsx",
   "src/app/(institucional)/selecao/[token]/page.tsx",
   "src/app/(institucional)/documentos/[token]/page.tsx",
+  // O pixel só RECONHECE o clique num link wa.me (para o evento Lead); não monta link.
+  "src/components/analytics/pixelMeta.ts",
 ];
 
 function arquivos(dir: string): string[] {
