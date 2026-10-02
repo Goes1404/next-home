@@ -4,6 +4,9 @@ import { PrecosManager } from "./PrecosManager";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
+// A leitura pela IA de uma tabela grande vai em pedaços e passa de 10 s.
+export const maxDuration = 60;
+
 export const metadata: Metadata = { title: "Atualização de Preços em Massa" };
 
 export default async function PrecosPage() {

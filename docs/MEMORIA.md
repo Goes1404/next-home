@@ -8709,3 +8709,16 @@ Nota: [[a-renda-da-ficha-nao-chegava-ao-atendimento]].
   prompt.
 - **"1500 do meu marido e 2644 meu" virava 1500.** Agora soma quando a fala
   cita outra pessoa da casa.
+
+## Tabela de preços lida pela IA (02/10/2026)
+
+Nota: [[tabela-de-precos-lida-pela-ia]].
+
+- **O leitor antigo esperava "um imóvel por linha", e a construtora manda
+  outra coisa**: o empreendimento no cabeçalho e uma linha por unidade. O
+  "a partir de" é o menor valor de unidade, que não está escrito como tal.
+- **A IA casa com o catálogo e aponta o menor valor**, e o código confere:
+  slug do catálogo, valor escrito no arquivo, entre R$ 50 mil e R$ 50
+  milhões. Tabela longa vai em pedaços, cada um com o começo do arquivo.
+- **Revisão, histórico e Desfazer continuam iguais.** PDF escaneado não é
+  lido: a tela pede para colar.

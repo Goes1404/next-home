@@ -5,7 +5,7 @@ import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { parsearTabelaTexto } from "@/lib/precos/spreadsheetParser";
 import { conciliarPlanilhaComCatalogo } from "@/lib/precos/matchingEngine";
 import type { EmpreendimentoSimples, ItemConciliado, LoteHistorico } from "@/lib/precos/types";
-import { aplicarLotePrecos, lerTabelaDePdf, reverterLotePrecos } from "./actions";
+import { aplicarLotePrecos, lerTabelaColadaComIa, lerTabelaDePdf, reverterLotePrecos } from "./actions";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { Download, AlertTriangle, Rocket, Clock, Folder, Check } from 'lucide-react';
 
@@ -72,17 +72,44 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
     try {
       const formData = new FormData();
       formData.append("arquivo", file);
-      const res = await lerTabelaDePdf(formData);
-      if (res.ok) {
-        setTextoColado(res.texto);
-        processarConteudo(res.texto);
-      } else {
-        setFeedback({ tipo: "erro", msg: res.erro });
-      }
+      aplicarLeituraDaIa(await lerTabelaDePdf(formData));
     } catch (err) {
       // Rede caída e aba de antes do último deploy REJEITAM a promessa. Sem
       // este ramo a tela destravaria calada, parecendo que o arquivo não
       // tinha nada dentro.
+      setFeedback({
+        tipo: "erro",
+        msg: ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.",
+      });
+    } finally {
+      setLendoPdf(false);
+    }
+  }
+
+  // Resultado da leitura pela IA (PDF ou texto colado): os itens já vêm
+  // casados com o catálogo, e o texto fica na caixa para conferência.
+  function aplicarLeituraDaIa(res: Awaited<ReturnType<typeof lerTabelaDePdf>>) {
+    if (res.texto) setTextoColado(res.texto);
+    if (!res.ok) {
+      setItensConciliados([]);
+      setFeedback({ tipo: "erro", msg: res.erro });
+      return;
+    }
+    setItensConciliados(res.itens);
+    if (res.descartados.length > 0) {
+      setFeedback({
+        tipo: "erro",
+        msg: `A IA leu ${res.itens.length} ${res.itens.length === 1 ? "empreendimento" : "empreendimentos"}. ${res.descartados.length} valor(es) ficaram de fora por não estarem escritos no arquivo: ${res.descartados.slice(0, 3).join("; ")}.`,
+      });
+    }
+  }
+
+  async function lerColadoComIa() {
+    setFeedback(null);
+    setLendoPdf(true);
+    try {
+      aplicarLeituraDaIa(await lerTabelaColadaComIa(textoColado));
+    } catch (err) {
       setFeedback({
         tipo: "erro",
         msg: ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.",
@@ -227,17 +254,18 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <div>
                 <h3 className="text-fluid-base font-semibold text-titulo">
-                  1. Cole a Tabela do Excel ou Envie o Arquivo
+                  1. Envie a tabela da construtora ou cole os valores
                 </h3>
                 <p className="text-fluid-xs text-apoio">
-                  Copie as colunas de <strong>Nome do Imóvel</strong> e <strong>Novo Valor</strong> do Excel / Google Sheets e cole abaixo.
+                  Em PDF, a IA acha o empreendimento, casa com o catálogo e pega o <strong>menor valor de unidade</strong> como
+                  &quot;a partir de&quot;. Você confere tudo antes de aplicar.
                 </p>
               </div>
 
               <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-vidro-forte hover:bg-vidro-mais text-fluid-xs font-medium text-corpo transition-colors">
                 <span>
                   <Folder className="inline-block w-5 h-5 align-text-bottom mr-1" />{" "}
-                  {lendoPdf ? "Lendo o PDF…" : "Carregar Arquivo (.pdf / .csv / .txt)"}
+                  {lendoPdf ? "A IA está lendo a tabela…" : "Carregar Arquivo (.pdf / .csv / .txt)"}
                 </span>
                 <input
                   type="file"
@@ -261,7 +289,15 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
             />
 
             {textoColado && (
-              <div className="mt-2 flex justify-end">
+              <div className="mt-2 flex flex-wrap items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={lendoPdf}
+                  onClick={() => void lerColadoComIa()}
+                  className="min-h-11 rounded-lg bg-acento px-4 text-fluid-xs font-semibold text-sobre-cor disabled:opacity-60"
+                >
+                  {lendoPdf ? "A IA está lendo…" : "Ler com IA"}
+                </button>
                 <button
                   type="button"
                   onClick={() => {

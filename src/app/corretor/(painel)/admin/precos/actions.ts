@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
 import type { EmpreendimentoSimples, ItemConciliado, LoteHistorico } from "@/lib/precos/types";
+import { lerTabelaDePrecosComIa } from "@/lib/precos/leituraPorIa";
 
 /**
  * Busca a lista de empreendimentos para conciliação no cliente.
@@ -261,6 +262,44 @@ export async function buscarHistoricoLotes(): Promise<LoteHistorico[]> {
  */
 const TETO_PDF_PRECOS_BYTES = 8 * 1024 * 1024;
 
+type ResultadoDaLeitura =
+  | { ok: true; texto: string; itens: ItemConciliado[]; descartados: string[] }
+  | { ok: false; erro: string; texto?: string };
+
+async function lerComIa(texto: string): Promise<ResultadoDaLeitura> {
+  const catalogo = await buscarCatalogoAtualParaConciliacao();
+  const leitura = await lerTabelaDePrecosComIa(texto, catalogo);
+  if (leitura.falhou) {
+    return {
+      ok: false,
+      texto,
+      erro: "A IA não respondeu agora. Tente de novo em instantes, ou cole a tabela no formato 'Nome do imóvel  Preço'.",
+    };
+  }
+  if (leitura.itens.length === 0) {
+    return {
+      ok: false,
+      texto,
+      erro:
+        leitura.descartados.length > 0
+          ? "A IA achou valores, mas nenhum estava escrito no arquivo do jeito que ela leu. Confira se é a tabela de preços."
+          : "Não encontrei valores de unidade nesta tabela. Confira se é a tabela de preços.",
+    };
+  }
+  return { ok: true, texto, itens: leitura.itens, descartados: leitura.descartados };
+}
+
+/**
+ * Lê uma tabela colada com a IA: o mesmo caminho do PDF, para quando o texto
+ * colado é a tabela da construtora (unidades) e não uma lista "imóvel e preço".
+ */
+export async function lerTabelaColadaComIa(texto: string): Promise<ResultadoDaLeitura> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
+  if (texto.trim().length === 0) return { ok: false, erro: "Cole a tabela primeiro." };
+  return lerComIa(texto.slice(0, 200_000));
+}
+
 /**
  * Lê a tabela de preços de dentro de um PDF e devolve o texto.
  *
@@ -270,16 +309,12 @@ const TETO_PDF_PRECOS_BYTES = 8 * 1024 * 1024;
  * precisa ser EXTRAÍDO, e o extrator (`pdfTexto.ts`) usa `node:zlib`, que
  * só existe no servidor.
  *
- * Sem IA de propósito: tabela de preços é PDF gerado de planilha, e o texto
- * está literalmente dentro do arquivo. Mandar para um modelo o que dá para
- * conferir seria pagar para adivinhar — e preço adivinhado vai para o
- * catálogo. O que este caminho NÃO cobre é PDF escaneado (a página é uma
- * imagem, não há texto nenhum); nesse caso ele diz isso em vez de devolver
- * vazio em silêncio.
+ * A IA lê o texto extraído (ver `leituraPorIa.ts`), e o valor que ela
+ * aponta só entra se estiver escrito no arquivo. O que este caminho NÃO
+ * cobre é PDF escaneado (a página é uma imagem, não há texto nenhum); nesse
+ * caso ele diz isso em vez de devolver vazio em silêncio.
  */
-export async function lerTabelaDePdf(
-  formData: FormData,
-): Promise<{ ok: true; texto: string } | { ok: false; erro: string }> {
+export async function lerTabelaDePdf(formData: FormData): Promise<ResultadoDaLeitura> {
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
 
@@ -305,5 +340,10 @@ export async function lerTabelaDePdf(
     };
   }
 
-  return { ok: true, texto };
+  /*
+   * 02/10/2026: a tabela da construtora não tem "um imóvel por linha" (é o
+   * empreendimento no cabeçalho e as unidades embaixo), e o leitor por linha
+   * não achava nada. Quem lê agora é a IA, com o valor conferido no texto.
+   */
+  return lerComIa(texto);
 }
