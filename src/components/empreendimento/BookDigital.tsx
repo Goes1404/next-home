@@ -43,24 +43,33 @@ export function BookDigital({ empreendimento: e }: Props) {
               </div>
 
               <h2 className="text-fluid-xl font-bold text-titulo leading-tight">
-                {e.bookTitulo || `Book Digital & Apresentação Oficial — ${e.nome}`}
+                {e.bookUrl
+                  ? e.bookTitulo || `Book digital — ${e.nome}`
+                  : `Apresentação do ${e.nome}`}
               </h2>
 
+              {/* O texto descreve o que EXISTE (02/10/2026). Antes, todo imóvel
+                  prometia "Formato PDF · Acesso Instantâneo" e "acabamentos de
+                  altíssimo padrão" — nenhum tinha book cadastrado, o botão
+                  levava ao WhatsApp, e acabamento é o que o cliente confere
+                  no primeiro minuto da visita. */}
               <p className="text-fluid-sm text-apoio leading-relaxed max-w-xl">
-                Acesse o material completo com todas as perspectivas artísticas, detalhes de acabamentos de altíssimo padrão, plantas humanizadas de todas as tipologias e especificações do condomínio.
+                {e.bookUrl
+                  ? "O material da construtora com as perspectivas, as plantas e as especificações do condomínio."
+                  : "Peça pelo WhatsApp e receba as fotos, as plantas e as condições deste empreendimento."}
               </p>
 
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-1 text-[11px] text-tenue">
-                <span className="flex items-center gap-1">
-                  <span className="text-acento-suave"> <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Formato PDF Alta Resolução
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="text-acento-suave"> <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Acesso Instantâneo
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="text-acento-suave"> <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Gratuito
-                </span>
-              </div>
+              <ul className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1 pt-1 text-fluid-xs text-tenue">
+                {(e.bookUrl
+                  ? ["Arquivo em PDF", "Download na hora", "Gratuito"]
+                  : ["Direto no WhatsApp", "Sem formulário", "Gratuito"]
+                ).map((item) => (
+                  <li key={item} className="flex items-center gap-1">
+                    <Check aria-hidden className="h-4 w-4 text-acento-suave" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* Lado Direito: Botões de Ação */}
@@ -93,7 +102,7 @@ export function BookDigital({ empreendimento: e }: Props) {
                   rel="noopener noreferrer"
                   className="min-h-[52px] px-8 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-400 text-white text-fluid-sm font-bold transition-all shadow-xl shadow-brand-500/25 flex items-center justify-center gap-2 active:scale-98 botao-vivo"
                 >
-                  <span> <Smartphone className="inline-block w-5 h-5 align-text-bottom mr-1" />  Solicitar Book no WhatsApp</span>
+                  <span> <Smartphone className="inline-block w-5 h-5 align-text-bottom mr-1" />  Receber no WhatsApp</span>
                   <span> <ArrowRight className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span>
                 </a>
               )}

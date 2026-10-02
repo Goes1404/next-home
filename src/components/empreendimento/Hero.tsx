@@ -60,13 +60,15 @@ export function Hero({ empreendimento: e }: { empreendimento: Empreendimento }) 
           {e.nome}
         </TituloEditorial>
 
-        <TituloEditorial
-          as="p"
-          delay={0.35}
-          className="text-fluid-lg mt-6 max-w-xl text-mist-200"
-        >
-          {e.tagline}
-        </TituloEditorial>
+        {e.tagline && (
+          <TituloEditorial
+            as="p"
+            delay={0.35}
+            className="text-fluid-lg mt-6 max-w-xl text-mist-200"
+          >
+            {e.tagline}
+          </TituloEditorial>
+        )}
       </Camada>
 
       {/* Barra de compra: divisória fina, informação mínima, um CTA. */}

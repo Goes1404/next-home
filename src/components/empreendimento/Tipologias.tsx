@@ -8,12 +8,22 @@ import { LightboxAdiado } from "@/components/ui/LightboxAdiado";
 import { areaM2, precoBRL, precoPorM2 } from "@/lib/format";
 import type { Midia, Tipologia } from "@/lib/types";
 
-const CAMPOS: Array<{ chave: keyof Tipologia; label: (t: Tipologia) => string }> = [
-  { chave: "dormitorios", label: (t) => `${t.dormitorios} dorm.` },
-  { chave: "suites", label: (t) => (t.suites > 0 ? `${t.suites} suíte${t.suites > 1 ? "s" : ""}` : "—") },
-  { chave: "banheiros", label: (t) => `${t.banheiros} banh.` },
-  { chave: "vagas", label: (t) => `${t.vagas} vaga${t.vagas > 1 ? "s" : ""}` },
+/**
+ * Zero no cadastro é "ninguém preencheu", não "não tem": nenhum apartamento
+ * sai sem banheiro, e "0 vaga" ao lado de "0 banh." lia como informação e
+ * era só ausência (50 de 94 plantas sem banheiro em 02/10/2026). Campo zerado
+ * some, como a ficha do prompt da assistente já fazia.
+ */
+const CAMPOS: Array<(t: Tipologia) => string | null> = [
+  (t) => (t.dormitorios > 0 ? `${t.dormitorios} dorm.` : null),
+  (t) => (t.suites > 0 ? `${t.suites} suíte${t.suites > 1 ? "s" : ""}` : null),
+  (t) => (t.banheiros > 0 ? `${t.banheiros} banh.` : null),
+  (t) => (t.vagas > 0 ? `${t.vagas} vaga${t.vagas > 1 ? "s" : ""}` : null),
 ];
+
+export function camposDaPlanta(t: Tipologia): string[] {
+  return CAMPOS.map((c) => c(t)).filter((x): x is string => x !== null);
+}
 
 /** Poucas unidades restantes é o único caso em que o aviso agrega urgência real. */
 const LIMIAR_POUCAS_UNIDADES = 10;
@@ -104,13 +114,15 @@ export function Tipologias({
                   </button>
                 )}
 
-                <div className="mt-4 grid grid-cols-4 gap-2 border-t border-linha/10 pt-4 text-center">
-                  {CAMPOS.map((campo) => (
-                    <p key={campo.chave} className="text-fluid-sm font-medium text-corpo">
-                      {campo.label(t)}
-                    </p>
-                  ))}
-                </div>
+                {camposDaPlanta(t).length > 0 && (
+                  <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t border-linha/10 pt-4">
+                    {camposDaPlanta(t).map((campo) => (
+                      <li key={campo} className="text-fluid-sm font-medium text-corpo">
+                        {campo}
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
                 <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <p className="text-fluid-lg font-medium text-acento-suave">{precoBRL(t.preco)}</p>

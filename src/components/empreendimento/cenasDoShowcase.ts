@@ -15,7 +15,9 @@ export function cenasDoShowcase(e: Empreendimento): Cena[] {
   if (fotos.length < 3) return [];
 
   const frases: Array<{ frase: string; rotulo: string }> = [
-    { frase: e.tagline, rotulo: "O projeto" },
+    e.tagline
+      ? { frase: e.tagline, rotulo: "O projeto" }
+      : { frase: `${e.nome}, ${e.bairro}.`, rotulo: "O projeto" },
   ];
   if (e.lazer.length >= 3) {
     frases.push({

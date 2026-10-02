@@ -104,7 +104,7 @@ export function Lazer({
         <Reveal
           stagger={0.04}
           from="nenhuma"
-          className="mt-10 grid gap-x-12 sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-10 grid grid-cols-2 gap-x-6 sm:gap-x-12 lg:grid-cols-3"
         >
           {itens.map((item) => {
             const foto = comFoto.get(item);
@@ -113,7 +113,7 @@ export function Lazer({
               return (
                 <span
                   key={item}
-                  className="text-fluid-base flex items-center gap-3 border-b border-linha/10 py-3.5 text-corpo"
+                  className="text-fluid-base flex min-w-0 items-center gap-3 border-b border-linha/10 py-3.5 break-words text-corpo"
                 >
                   <span className="h-1 w-1 shrink-0 rounded-full bg-linha/40" />
                   {item}
@@ -128,7 +128,7 @@ export function Lazer({
                 key={item}
                 type="button"
                 // min-h-11 = 44px, o alvo de toque mínimo confortável.
-                className="text-fluid-base flex min-h-11 w-full items-center gap-3 border-b border-linha/10 py-3.5 text-left text-corpo transition-colors hover:text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
+                className="text-fluid-base flex min-h-11 w-full min-w-0 items-center gap-3 break-words border-b border-linha/10 py-3.5 text-left text-corpo transition-colors hover:text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
                 aria-expanded={ativo}
                 onClick={() => setAberto(ativo ? null : { item, foto })}
                 onMouseEnter={() => abrirComCarencia(item, foto)}

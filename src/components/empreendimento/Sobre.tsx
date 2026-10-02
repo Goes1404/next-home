@@ -24,11 +24,13 @@ export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento })
           <p className="text-fluid-xs mb-4 tracking-[0.22em] text-acento-suave uppercase">
             Sobre o empreendimento
           </p>
-          <TituloEditorial className="font-display text-fluid-2xl leading-snug text-titulo">
-            {e.tagline}
-          </TituloEditorial>
+          {e.tagline && (
+            <TituloEditorial className="font-display text-fluid-2xl leading-snug text-titulo">
+              {e.tagline}
+            </TituloEditorial>
+          )}
           <Reveal from="nenhuma" delay={0.25}>
-            <p className="text-fluid-lg text-corpo-suave mt-8 leading-relaxed break-words whitespace-pre-line">
+            <p className={`text-fluid-lg text-corpo-suave leading-relaxed ${e.tagline ? "mt-8" : ""} break-words whitespace-pre-line`}>
               {e.descricao}
             </p>
           </Reveal>

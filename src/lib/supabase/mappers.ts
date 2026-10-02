@@ -1,4 +1,5 @@
 import type { Empreendimento, Midia, Tipologia } from "@/lib/types";
+import { textoDoCadastro } from "@/lib/imoveis/textoDoCadastro";
 import type { Tables } from "./types";
 
 /**
@@ -84,8 +85,9 @@ export function mapEmpreendimento(row: LinhaEmpreendimento): Empreendimento {
     // Como o cliente chama o imóvel (0044) — é por aqui que "Dom Parque"
     // chega ao bot, num cadastro cujo `nome` é "Lançamento ao Lado do Parque".
     nomesAlternativos: row.nomes_alternativos ?? [],
-    tagline: row.tagline ?? "",
-    descricao: row.descricao ?? "",
+    // Limpo na leitura: frase de destaque que repetia a descrição e frases
+    // coladas do import (ver textoDoCadastro.ts).
+    ...textoDoCadastro(row.nome, row.tagline, row.descricao),
     status: row.status,
     tipo: row.tipo,
     finalidade: row.finalidade,

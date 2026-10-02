@@ -8814,3 +8814,20 @@ Nota: [[catalogo-conferido-imagem-por-imagem]].
   desempata pela coordenada do cadastro (Breeze: Rua São Fernando, não
   Estrada das Pitas). Conferir o pino contra a rua achou Bosque e Vista
   AlphaGran a ~2 km do lugar certo.
+
+## A página do imóvel mostrava o cadastro cru (0140, 02/10/2026)
+
+Nota: [[pagina-do-imovel-mostrava-o-cadastro-cru]].
+
+- **Zero em banheiro/vaga é ausência.** 50 de 94 plantas sem banheiro; o
+  cartão escrevia "0 banh. · 0 vaga". Campo zerado some da tela.
+- **A frase de destaque dos imóveis importados era a descrição**: o 1º
+  parágrafo (título repetido) ou os 160 primeiros caracteres cortados.
+  `textoDoCadastro` limpa na leitura, dentro do mapper, e separa frases
+  coladas ("Osasco!Descubra"). Vale para site, prompt e legenda.
+- **Endereço vindo do site da construtora pode ser o do ESCRITÓRIO** (o
+  "Onde estamos" do rodapé). Foi o caso do Dellagio. Conferir contra o pino.
+- **O cartão do Book prometia PDF em todo imóvel** e "acabamento de
+  altíssimo padrão". O texto agora depende de existir book.
+- **Texto do catálogo mudado por migration leva até 1 h para aparecer no
+  site** (cache `catalogo`); mudança no mapper vale no deploy.

@@ -44,7 +44,7 @@ export async function generateMetadata({
    */
   const titulo = tituloDePagina(`${e.nome} — ${e.cidade}`);
   const descricao = descricaoDePagina(
-    `${e.tagline} ${e.bairro}, ${e.cidade}. ${precoAPartirDe(e.precoAPartir)}.`,
+    `${e.tagline ? `${e.tagline}${/[.!?]$/.test(e.tagline) ? "" : "."} ` : ""}${e.bairro}, ${e.cidade}. ${precoAPartirDe(e.precoAPartir)}.`,
   );
 
   return {
