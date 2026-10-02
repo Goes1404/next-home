@@ -37,7 +37,7 @@ O arquivo pode trazer mais de um empreendimento.
 Para CADA empreendimento que aparece no trecho:
 - nomeNoArquivo: o nome como está no arquivo.
 - slug: o slug do empreendimento do NOSSO CATÁLOGO (lista abaixo) que é o mesmo imóvel. Compare nome, apelido, bairro e cidade. Se não for nenhum do catálogo, ou se tiver dúvida, null. Nunca invente um slug.
-- menorPreco: o MENOR VALOR TOTAL de unidade do empreendimento, em reais, como número (ex.: 457000). É o preço do imóvel inteiro, não a parcela, o sinal, o valor do m², a entrada nem o valor financiado. Copie o número que está escrito no arquivo, sem arredondar e sem fazer conta.
+- menorPreco: o MENOR VALOR TOTAL de unidade DISPONÍVEL do empreendimento, em reais, como número (ex.: 608923.68). É a coluna "Total", "Valor total", "Preço" ou "Valor de venda": o preço do imóvel inteiro. Nunca use a coluna de financiamento, ato, sinal, entrada, parcelas, mensais, chaves ou valor do m², mesmo que o número dela seja menor. Se a tabela tem coluna de situação, ignore unidade vendida, reservada, bloqueada ou em negociação. Copie o número que está escrito no arquivo, sem arredondar e sem fazer conta.
 - unidades: quantas unidades com preço você contou para esse empreendimento no trecho, ou null.
 
 Se o trecho não tiver nenhum valor de unidade, devolva lista vazia.
@@ -54,6 +54,9 @@ const TAMANHO_DO_PEDACO = 12_000;
 const CABECALHO = 1_200;
 const EM_PARALELO = 3;
 const ORCAMENTO_POR_PEDACO_MS = 45_000;
+
+/** Abaixo disto, o casamento da IA vira sugestão desmarcada. */
+const NOME_PARECIDO = 0.5;
 
 /** Preço plausível de um imóvel inteiro (não é parcela nem m²). */
 const PRECO_MINIMO = 50_000;
@@ -174,6 +177,8 @@ export async function lerTabelaDePrecosComIa(
     const precoAtual = emp?.precoAtual ?? null;
     const precoNovo = lido.menorPreco;
     const temAtual = precoAtual !== null && precoAtual > 0;
+    const similaridade = emp ? calcularSimilaridade(lido.nomeNoArquivo, emp.nome) : 0;
+    const parecido = similaridade >= NOME_PARECIDO;
     return {
       idTemp: `ia_${indice}_${agora}`,
       linhaOriginal: {
@@ -190,11 +195,15 @@ export async function lerTabelaDePrecosComIa(
       precoNovo,
       diferencaReais: temAtual ? precoNovo - precoAtual : null,
       variacaoPercentual: temAtual ? parseFloat((((precoNovo - precoAtual) / precoAtual) * 100).toFixed(2)) : null,
-      // A IA casou e o valor está no arquivo: entra marcado. O gestor ainda
-      // confere a tela antes de aplicar, e o lote tem Desfazer.
-      matchStatus: emp ? "exato" : "nao_encontrado",
-      scoreSimilaridade: emp ? Math.max(0.9, calcularSimilaridade(lido.nomeNoArquivo, emp.nome)) : 0,
-      selecionado: emp !== null,
+      /*
+       * A IA casou e o nome se parece: entra marcado. Nome que NÃO se parece
+       * (o "Acqua Park" do arquivo de exemplo de 02/10 contra o "Alpha Park
+       * View" do catálogo dá 0,43) fica como sugestão desmarcada: casar
+       * errado muda o preço público de OUTRO imóvel.
+       */
+      matchStatus: !emp ? "nao_encontrado" : parecido ? "exato" : "sugerido",
+      scoreSimilaridade: similaridade,
+      selecionado: emp !== null && parecido,
     };
   });
 

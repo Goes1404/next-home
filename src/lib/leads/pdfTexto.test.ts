@@ -101,3 +101,57 @@ describe("Extração de texto de PDF", () => {
     expect(extrairTextoDePdf(criarPdf(imagem, { comprimir: true }))).toBe("");
   });
 });
+
+/**
+ * A tabela de preço da construtora (Winnovative, 02/10/2026): fonte Type0 com
+ * `/Identity-H`, que grava o NÚMERO DO GLIFO e só vira letra pelo
+ * `/ToUnicode`; e o texto vem depois de muitos KB de retângulos da grade.
+ * Antes desta correção o extrator devolvia "7RGDV" no lugar de "Todas" e
+ * descartava a tabela inteira.
+ */
+describe("tabela de preço gerada de HTML", () => {
+  // Glifo = código ASCII - 29, como no arquivo real ("T" 0x54 → 0x37).
+  const glifo = (texto: string) =>
+    "<" + [...texto].map((c) => (c.charCodeAt(0) - 29).toString(16).padStart(4, "0")).join("") + ">";
+  const cmap = [
+    "/CIDInit /ProcSet findresource begin",
+    "begincmap",
+    "1 begincodespacerange <0000> <FFFF> endcodespacerange",
+    "1 beginbfrange",
+    "<0003> <005D> <0020>",
+    "endbfrange",
+    "1 beginbfchar",
+    "<00A0> <00E7>",
+    "endbfchar",
+    "endcmap",
+  ].join("\n");
+
+  function tabela(): Buffer {
+    const grade = "8.00000 708.00000 m\n1016.00000 708.00000 l\nh\nf*\n".repeat(400);
+    const conteudo = `${grade}BT\n/AYBQCF+Tahoma 9 Tf\n10 600 Td ${glifo("T1-1704")} Tj\n0 -12 Td ${glifo("608.923,68")} Tj\n0 -12 Td [${glifo("Valor")} -300 ${glifo("total")}] TJ\n0 -12 Td <003400A00052> Tj\nET`;
+    const fluxo = deflateSync(Buffer.from(conteudo, "latin1"));
+    const partes = [
+      "%PDF-1.4",
+      "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
+      "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
+      "3 0 obj << /Type /Page /Parent 2 0 R /Resources << /XObject << /W1 4 0 R >> >> >> endobj",
+      `5 0 obj << /Type /Font /Subtype /Type0 /Encoding /Identity-H /ToUnicode 6 0 R >> endobj`,
+      `6 0 obj << /Length ${cmap.length} >>\nstream\n${cmap}\nendstream\nendobj`,
+      `4 0 obj << /Type /XObject /Resources << /Font << /AYBQCF+Tahoma 5 0 R >> >> /Subtype /Form /Filter /FlateDecode /Length ${fluxo.length} >>\nstream\n`,
+    ];
+    return Buffer.concat([
+      Buffer.from(partes.join("\n"), "latin1"),
+      fluxo,
+      Buffer.from("\nendstream\nendobj\ntrailer << /Root 1 0 R >>\n%%EOF", "latin1"),
+    ]);
+  }
+
+  it("decodifica a fonte pelo /ToUnicode, mesmo com o texto depois da grade", () => {
+    const texto = extrairTextoDePdf(tabela());
+    expect(texto).toContain("T1-1704");
+    expect(texto).toContain("608.923,68");
+    expect(texto).toContain("Valor total");
+    // bfchar: o glifo 00A0 é "ç", fora da faixa do bfrange.
+    expect(texto).toContain("Qço");
+  });
+});

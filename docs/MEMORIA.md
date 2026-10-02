@@ -8722,3 +8722,10 @@ Nota: [[tabela-de-precos-lida-pela-ia]].
   milhões. Tabela longa vai em pedaços, cada um com o começo do arquivo.
 - **Revisão, histórico e Desfazer continuam iguais.** PDF escaneado não é
   lido: a tela pede para colar.
+- **O primeiro PDF real veio ilegível para o nosso extrator** (Acqua Park,
+  gerado de HTML): fonte Type0 `/Identity-H` sem leitura de `/ToUnicode`, e
+  o texto depois de 170 KB de retângulos, quando o extrator olhava só os
+  primeiros 4 KB. Os dois foram corrigidos em `pdfTexto.ts`. A coluna
+  "Financiamento" tem número menor que o "Total" e também está escrita no
+  arquivo: só o prompt a separa. Antes de culpar a IA por não achar o preço,
+  rodar `extrairTextoDePdf` no arquivo e ver o que ela recebeu.

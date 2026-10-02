@@ -55,6 +55,14 @@ describe("tabela de preços lida pela IA", () => {
     expect(r.itens).toHaveLength(0);
   });
 
+  it("casamento com nome que não se parece vira sugestão desmarcada", async () => {
+    chamarLlmJson.mockResolvedValue(
+      ok({ imoveis: [{ nomeNoArquivo: "Acqua Park Barueri", slug: "breeze", menorPreco: 448000 }] }),
+    );
+    const r = await lerTabelaDePrecosComIa(TABELA, catalogo);
+    expect(r.itens[0]).toMatchObject({ empreendimentoId: "2", matchStatus: "sugerido", selecionado: false });
+  });
+
   it("slug que não existe no catálogo vira 'não encontrado', desmarcado", async () => {
     chamarLlmJson.mockResolvedValue(
       ok({ imoveis: [{ nomeNoArquivo: "Outro Prédio", slug: "inventado", menorPreco: 448000 }] }),
