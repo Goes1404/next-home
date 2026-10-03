@@ -62,6 +62,7 @@ F0–F6.
 - [[acesso-de-corretor-so-existia-para-um]] — o lote da 0095 nunca rodou: 1 usuário no Auth para 8 corretores, e nenhum caminho de UI para trocar e-mail ou definir senha escolhida (12/09)
 - [[adm-nao-le-conversa-alheia]] — perfis separados: o ADM tem tudo menos a conversa de outro corretor, que a RLS fecha (0134); só o ADM exclui lead e desconecta número (30/09)
 - [[adm-exclui-lead-direto]] — excluir lead direto na lista ativa e na ficha, sem arquivar antes, com confirmação; corretor exclui os seus, ADM todos (0145, 02/10)
+- [[nome-da-agenda-chega-como-pushname]] — nome salvo na agenda chega no mesmo pushName do perfil; diagnóstico compara com o nome da conversa (03/10, em teste)
 - [[menu-do-painel-reorganizado]] — menu reorganizado: arte e vídeo em Marketing, Consultor em Assistente, Administração em três seções, telas de apoio viraram botões, cor por seção em cada tópico (30/09)
 
 ## Performance

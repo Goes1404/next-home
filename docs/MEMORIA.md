@@ -8952,3 +8952,19 @@ Nota: [[adm-exclui-lead-direto]].
   leads: a policy de DELETE ficou igual à de SELECT/UPDATE (`eh_gestor() or
   corretor_id = corretor_atual()`). O MCP cancela `drop policy` e `delete`
   até dentro de transação desfeita; em produção foi `alter policy` + rename.
+
+## O nome da agenda chega como pushName (03/10/2026)
+
+Nota: [[nome-da-agenda-chega-como-pushname]].
+
+- **O caminho existe no código**: contato salvo no celular → `contactAction`
+  (sincronização com os aparelhos conectados) → Baileys `contacts.upsert` →
+  Evolution `CONTACTS_UPSERT` com `pushName` = nome da agenda.
+- **O mesmo `pushName` chega com o nome do PERFIL do cliente**, num
+  CONTACTS_UPDATE que a Evolution manda junto de toda mensagem. Sem comparar
+  com o `nome_cliente` da conversa, todo evento pareceria "veio da agenda".
+- O passo 1 só registra contagens no log (`[contatos]`). Para conferir:
+  `get_runtime_logs` com a busca `[contatos]`, depois que a corretora abrir
+  a tela Conversas (que atualiza o webhook) e salvar um contato.
+- `remoteJid` em `@lid` não traz telefone, porque a Evolution descarta o
+  `phoneNumber`. Esse caso não dá para ligar a um lead.
