@@ -22,7 +22,7 @@ export function MosaicoDoHeroi({ imoveis }: { imoveis: Empreendimento[] }) {
   if (fotos.length < 3) return null;
 
   return (
-    <div className="hidden h-[clamp(300px,calc(100svh_-_14rem),600px)] w-full grid-cols-5 grid-rows-2 gap-3 lg:grid">
+    <div className="hidden h-[clamp(320px,calc(100svh_-_12.5rem),660px)] w-full grid-cols-5 grid-rows-2 gap-3 lg:grid">
       {fotos.map((e, i) => (
         <Link
           key={e.slug}
@@ -37,7 +37,7 @@ export function MosaicoDoHeroi({ imoveis }: { imoveis: Empreendimento[] }) {
             src={e.capa.url}
             alt={e.capa.alt}
             fill
-            sizes={i === 0 ? "(min-width: 1024px) 30vw, 1px" : "(min-width: 1024px) 20vw, 1px"}
+            sizes={i === 0 ? "(min-width: 1024px) 34vw, 1px" : "(min-width: 1024px) 22vw, 1px"}
             loading={i === 0 ? "eager" : "lazy"}
             fetchPriority={i === 0 ? "high" : undefined}
             placeholder={e.capa.blurDataUrl ? "blur" : "empty"}

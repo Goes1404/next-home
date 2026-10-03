@@ -167,7 +167,7 @@ export default async function HomeInstitucional() {
               na primeira tela de um notebook (03/10/2026: em 1343x598 o
               cartão de busca e o convite ficavam abaixo da dobra). Medido de
               1024x600 a 1920x960: nada passa da primeira tela. */}
-          <div className="flex w-full flex-col items-center lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-14">
+          <div className="flex w-full flex-col items-center lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-14 xl:max-w-[76rem] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-12">
           <div className="flex w-full flex-col items-center lg:items-start">
           <Camada velocidade={-0.22} className="w-full max-w-4xl text-center lg:max-w-none lg:text-left">
             <p
