@@ -3,6 +3,7 @@ import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
 import { PixelMeta } from "@/components/analytics/PixelMeta";
 import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
+import { FundoDaCasaDesktop } from "@/components/motion/FundoDaCasaDesktop";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
@@ -99,7 +100,9 @@ export default async function InstitucionalLayout({
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : videoDoCorretor ? (
           <HeroVideoBackground src={videoDoCorretor} />
-        ) : null}
+        ) : (
+          <FundoDaCasaDesktop />
+        )}
         {/* O fundo em VÍDEO (a vinheta congelada no último quadro) SAIU de
             todas as páginas em 13/09/2026, a pedido: o quadro parado do
             logotipo atrás do conteúdo lia como imagem de fundo aleatória, e

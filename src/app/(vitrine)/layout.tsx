@@ -1,5 +1,6 @@
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
+import { FundoDaCasaDesktop } from "@/components/motion/FundoDaCasaDesktop";
 import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
 import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
@@ -59,9 +60,7 @@ export default async function VitrineLayout({ children }: { children: React.Reac
           <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
         ) : (
           <>
-            {videoUrl && (
-              <HeroVideoBackground src={videoUrl} />
-            )}
+            {videoUrl ? <HeroVideoBackground src={videoUrl} /> : <FundoDaCasaDesktop />}
             {/* Sem vinheta de fundo desde 13/09/2026 (ver o layout do
                 institucional): a aurora em CSS cobre os dois tamanhos. */}
           </>

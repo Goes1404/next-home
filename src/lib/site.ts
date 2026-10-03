@@ -171,6 +171,16 @@ export const FUNDO_HOME_VIDEO_WEBM_URL = "/video/fundo-home.webm";
  */
 export const FUNDO_HOME_POSTER_URL = "/video/fundo-home-poster.jpg";
 
+/**
+ * Fundo da casa NO COMPUTADOR (03/10/2026): avenida entre torres de vidro,
+ * escolhida pelo usuário no lugar do vídeo que aparecia ali. WebP de
+ * 1024x559, 149 KB. Só monta a partir de `md`: no celular o fundo é a peça
+ * vertical acima, e a imagem nem é baixada (`hidden` + `loading` padrão não
+ * bastam para isso — por isso ela mora num `<picture>` com `media`).
+ * Foto ou vídeo PRÓPRIO do corretor continuam tendo precedência.
+ */
+export const FUNDO_DESKTOP_URL = "/img/fundo-cidade-desktop.webp";
+
 /** Monta um link `wa.me` para qualquer número em E.164, com mensagem pré-preenchida. */
 export function linkWhatsappPara(numero: string, mensagem: string): string {
   return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;

@@ -54,6 +54,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[fundo-em-video-saiu-de-todas-as-paginas]] — a vinheta congelada deixou de ser papel de parede; fica a aurora em CSS (13/09)
 - [[a-remocao-levou-a-peca-errada-junto]] — o componente montava DUAS peças e a queixa era de uma; o vídeo do celular volta esmaecendo com a rolagem (15/09)
 - [[video-do-celular-rola-com-a-pagina]] — o vídeo sumiu num Brave Android; saiu da caixa fixa com esmaecimento por rolagem para uma camada que rola com a página (25/09)
+- [[fundo-do-computador-e-a-foto-da-avenida]] — no computador o fundo da casa é uma foto de avenida entre torres; o vídeo que aparecia era o do link da Bruna, tirado na 0151 (03/10)
 - [[o-percurso-da-home]] — fundo que muda de cor ao descer + textura de planta baixa, calibrados para nunca tirar contraste do texto (25/09)
 
 ## Movimento

@@ -9061,3 +9061,20 @@ Nota: [[quando-a-ia-responde]].
   (`escreveu_durante_a_pausa`); a IA só responde mensagem nova, chegada
   depois de a pausa vencer, pelo webhook. A fila do Início diz "é com você".
 
+
+## O fundo do computador é a foto da avenida (0151, 03/10/2026)
+
+Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
+
+- **"O vídeo do fundo do desktop está errado" era o vídeo do link da Bruna.**
+  A casa não tem vídeo de fundo desde 13/09; ele só aparece quando o corretor
+  do cookie tem `video_url`, e a única com vídeo era a Bruna, apontando para o
+  arquivo antigo da casa (`marca/hero-video.mp4`). A 0151 o tirou. Ao receber
+  queixa de fundo, conferir o cookie de corretor antes do código.
+- **Fundo da casa no computador**: `FundoDaCasaDesktop`, foto de avenida entre
+  torres (WebP 1024x559, 149 KB), nos dois layouts públicos, com véu de 60%.
+  Num `<picture>` com `media`, porque `display: none` não impede o download.
+- **No Windows, `next dev` local quebra** (Turbopack e webpack): `PixelMeta.tsx`
+  e `pixelMeta.ts` na mesma pasta só diferem na caixa. Para conferir visual
+  sem servidor local, injetar o elemento na página de produção com Playwright
+  (`page.route` serve o arquivo local).
