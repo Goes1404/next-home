@@ -141,7 +141,7 @@ export default async function HomeInstitucional() {
             centralizado, sem colidir com o botão no canto. Do `sm` para
             cima volta ao centro, porque lá quem manda na composição é o
             texto do hero. */}
-        <section className="relative flex min-h-svh flex-col items-center justify-end px-4 pt-24 pb-6 sm:justify-center sm:px-8 sm:pt-28 sm:pb-20">
+        <section className="relative flex min-h-svh flex-col items-center justify-end px-4 pt-24 pb-6 sm:justify-center sm:px-8 sm:pt-28 sm:pb-20 lg:pt-[clamp(5rem,13svh,7rem)] lg:pb-[clamp(0.5rem,2svh,1.5rem)]">
           {/* O medidor do parallax do fundo. Precisa de um ancestral que
               ROLE (esta seção, agora `relative`) — o fundo é `fixed` e não
               serve de referência de scroll. */}
@@ -160,13 +160,19 @@ export default async function HomeInstitucional() {
           {/* No computador o herói vira DUAS colunas (30/09/2026): texto e
               busca à esquerda, alinhados à esquerda, e o mosaico de fotos à
               direita. Abaixo de `lg` o invólucro é só uma coluna centrada,
-              exatamente como antes — o celular não muda. */}
+              exatamente como antes — o celular não muda.
+
+              No computador, título, espaços, busca e mosaico encolhem com a
+              ALTURA da tela (`svh`), e é isso que faz o herói inteiro caber
+              na primeira tela de um notebook (03/10/2026: em 1343x598 o
+              cartão de busca e o convite ficavam abaixo da dobra). Medido de
+              1024x600 a 1920x960: nada passa da primeira tela. */}
           <div className="flex w-full flex-col items-center lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-14">
           <div className="flex w-full flex-col items-center lg:items-start">
           <Camada velocidade={-0.22} className="w-full max-w-4xl text-center lg:max-w-none lg:text-left">
             <p
               data-abertura="0"
-              className="so-para-leitor text-fluid-xs sm:mb-4 font-medium tracking-[0.2em] text-acento-suave uppercase"
+              className="so-para-leitor text-fluid-xs sm:mb-4 lg:mb-[clamp(0.5rem,1.5svh,1rem)] font-medium tracking-[0.2em] text-acento-suave uppercase"
             >
               Imóveis & Oportunidades · Alphaville, Barueri e Região
             </p>
@@ -175,22 +181,22 @@ export default async function HomeInstitucional() {
                 nada verificável. A promessa longa desceu para o subtítulo. */}
             <h1
               data-abertura="1"
-              className="so-para-leitor text-fluid-4xl leading-[1.05] tracking-tight text-titulo"
+              className="so-para-leitor text-fluid-4xl lg:text-[length:clamp(2.25rem,min(4vw,7.5svh),4.5rem)] leading-[1.05] tracking-tight text-titulo"
             >
               {todos.length} imóveis em Alphaville, Barueri e região.
             </h1>
             <p
               data-abertura="2"
-              className="so-para-leitor text-fluid-base mx-auto sm:mt-6 max-w-xl text-corpo-suave lg:mx-0"
+              className="so-para-leitor text-fluid-base mx-auto sm:mt-6 lg:mt-[clamp(0.75rem,2svh,1.5rem)] max-w-xl text-corpo-suave lg:mx-0"
             >
               Lançamentos na planta e prontos para morar, com condições
               facilitadas e atendimento direto no WhatsApp.
             </p>
           </Camada>
 
-          <Camada velocidade={-0.1} className="mt-8 w-full max-w-3xl sm:mt-10 lg:max-w-none">
+          <Camada velocidade={-0.1} className="mt-8 w-full max-w-3xl sm:mt-10 lg:mt-[clamp(0.75rem,3svh,2.5rem)] lg:max-w-none">
             <div data-abertura="3">
-              <GlassSurface preset="painel" className="px-5 py-5 sm:px-7 sm:py-7">
+              <GlassSurface preset="painel" className="px-5 py-5 sm:px-7 sm:py-7 lg:py-[clamp(1rem,3svh,1.75rem)]">
                 <FiltroForm
                   compacto
                   filtrosAtuais={{}}
@@ -217,7 +223,7 @@ export default async function HomeInstitucional() {
 
               `data-abertura="4"` pelo mesmo contrato dos irmãos: chega por
               CSS, por último, e está lá mesmo sem JavaScript. */}
-          <div data-abertura="4">
+          <div data-abertura="4" className="lg:[&>a]:mt-[clamp(1rem,4svh,3rem)]">
             <ScrollCue
               alvo="destaques"
               posicao="fluxo"

@@ -22,7 +22,7 @@ export function MosaicoDoHeroi({ imoveis }: { imoveis: Empreendimento[] }) {
   if (fotos.length < 3) return null;
 
   return (
-    <div className="hidden h-[min(64svh,600px)] min-h-[440px] w-full grid-cols-5 grid-rows-2 gap-3 lg:grid">
+    <div className="hidden h-[clamp(300px,calc(100svh_-_14rem),600px)] w-full grid-cols-5 grid-rows-2 gap-3 lg:grid">
       {fotos.map((e, i) => (
         <Link
           key={e.slug}
