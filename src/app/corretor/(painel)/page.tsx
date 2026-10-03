@@ -2,6 +2,9 @@ import { Suspense, type SVGProps } from "react";
 import Link from "next/link";
 import { CopiarLink } from "./CopiarLink";
 import { FilaAgora } from "./_componentes/FilaAgora";
+import { ListasSugeridasBloco } from "./_componentes/ListasSugeridas";
+import { getListasSugeridas } from "@/lib/crm/listasSugeridasDados";
+import { lerDiasDeParado, type DiasDeParado } from "@/lib/crm/listasSugeridas";
 import { TermometroFunil } from "./_componentes/TermometroFunil";
 import {
   getCliquesWhatsappCorretor,
@@ -72,7 +75,13 @@ const ATALHOS: {
  * botão do WhatsApp ao lado; os números continuam existindo, abaixo, para
  * quem quiser conferir a carteira.
  */
-export default async function PainelInicio() {
+export default async function PainelInicio({
+  searchParams,
+}: {
+  searchParams: Promise<{ parados?: string }>;
+}) {
+  const { parados } = await searchParams;
+  const diasParado = lerDiasDeParado(parados);
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
@@ -209,8 +218,21 @@ export default async function PainelInicio() {
       <Suspense fallback={<EsqueletoCartao linhas={4} />}>
         <BlocoDaFila />
       </Suspense>
+
+      {/* Listas sugeridas (plano de ativação, Fase 4): quem precisa de uma
+          mensagem nossa. Depois da fila: a fila é o que fazer agora, as listas
+          são o que mandar quando sobrar um tempo. */}
+      <Suspense fallback={<EsqueletoCartao linhas={2} />}>
+        <BlocoDasListasSugeridas diasParado={diasParado} />
+      </Suspense>
     </div>
   );
+}
+
+async function BlocoDasListasSugeridas({ diasParado }: { diasParado: DiasDeParado }) {
+  const listas = await getListasSugeridas(diasParado);
+  if (!listas) return null;
+  return <ListasSugeridasBloco listas={listas} diasParado={diasParado} caminho="/corretor" />;
 }
 
 /**

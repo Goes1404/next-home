@@ -4,6 +4,9 @@ import { CampanhasManager } from "./CampanhasManager";
 import { listarCampanhas, statusDisparo } from "./acoes";
 import { getEmpreendimentos } from "@/lib/queries";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
+import { ListasSugeridasBloco } from "../_componentes/ListasSugeridas";
+import { getListasSugeridas } from "@/lib/crm/listasSugeridasDados";
+import { descreverLista, lerDiasDeParado } from "@/lib/crm/listasSugeridas";
 
 export const metadata: Metadata = {
   title: "Listas de Transmissão de WhatsApp | Next Home",
@@ -23,23 +26,39 @@ const UUID = /^[0-9a-f-]{36}$/i;
 export default async function CampanhasPainelPage({
   searchParams,
 }: {
-  searchParams: Promise<{ imovel?: string; leads?: string; publico?: string }>;
+  searchParams: Promise<{
+    imovel?: string;
+    leads?: string;
+    publico?: string;
+    /** Vindo das listas sugeridas (plano de ativação, Fase 4). */
+    grupo?: string;
+    dias?: string;
+    parados?: string;
+  }>;
 }) {
   // Vindo de "leads que combinam" (tela do imóvel): imóvel e leads já
   // marcados. É só pré-preenchimento: a criação refaz a interseção com a
   // carteira no servidor, então id inventado na URL não vira mensagem.
-  const { imovel, leads, publico } = await searchParams;
+  const { imovel, leads, publico, grupo, dias, parados } = await searchParams;
+  const diasParado = lerDiasDeParado(parados);
+  const grupoDaLista = grupo === "novos" || grupo === "parados" || grupo === "imovel" ? grupo : null;
   const inicial = {
     imovelSlug: imovel || undefined,
     // "Avisar compradores" na tela do imóvel (26/09/2026).
     publico: publico === "compradores" ? ("compradores" as const) : undefined,
     leadIds: (leads ?? "").split(",").filter((id) => UUID.test(id)).slice(0, TETO_DE_IDS),
+    // Quem é este público, em palavras: é o que a IA usa para sugerir a
+    // mensagem de uma lista sugerida (citando o imóvel, quando houver).
+    descricaoDoPublico: grupoDaLista
+      ? descreverLista(grupoDaLista, { diasParado: lerDiasDeParado(dias), imovel: imovel || null })
+      : undefined,
   };
 
-  const [empreendimentos, campanhas, status] = await Promise.all([
+  const [empreendimentos, campanhas, status, listas] = await Promise.all([
     getEmpreendimentos(),
     listarCampanhas(),
     statusDisparo(),
+    getListasSugeridas(diasParado),
   ]);
 
   return (
@@ -59,6 +78,12 @@ export default async function CampanhasPainelPage({
           }
         />
       </div>
+
+      {/* Listas sugeridas (plano de ativação, Fase 4). Some quando o
+          corretor já veio de uma delas: a lista dele está no assistente. */}
+      {listas && inicial.leadIds.length === 0 && (
+        <ListasSugeridasBloco listas={listas} diasParado={diasParado} caminho="/corretor/campanhas" />
+      )}
 
       <CampanhasManager
         empreendimentos={empreendimentos}

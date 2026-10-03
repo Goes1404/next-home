@@ -23,7 +23,7 @@ interface Props {
   campanhasIniciais: CampanhaListada[];
   statusInicial: StatusDisparo | null;
   /** Pré-preenchimento vindo de "leads que combinam" (tela do imóvel). */
-  inicial?: { imovelSlug?: string; leadIds: string[] };
+  inicial?: { imovelSlug?: string; leadIds: string[]; descricaoDoPublico?: string };
 }
 
 export function CampanhasManager({ empreendimentos, campanhasIniciais, statusInicial, inicial }: Props) {

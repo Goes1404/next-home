@@ -113,7 +113,13 @@ export function NovaCampanha({
   empreendimentos: Empreendimento[];
   aoCriar: (campanha: CampanhaListada, aviso: string) => void;
   /** Imóvel e leads já marcados (vindo de "leads que combinam"). */
-  inicial?: { imovelSlug?: string; leadIds: string[]; publico?: FiltroLeadsCampanha };
+  inicial?: {
+    imovelSlug?: string;
+    leadIds: string[];
+    publico?: FiltroLeadsCampanha;
+    /** Quem é o público em palavras, vindo de uma lista sugerida. */
+    descricaoDoPublico?: string;
+  };
 }) {
   const veioMarcado = (inicial?.leadIds.length ?? 0) > 0;
   const [passo, setPasso] = useState<1 | 2 | 3>(1);
@@ -268,7 +274,9 @@ export function NovaCampanha({
         bairro: imovel?.bairro ?? null,
         cidade: imovel?.cidade ?? null,
         estagio: imovel ? STATUS_LABEL[imovel.status] : null,
-        publico: selecaoManual ? "leads escolhidos pelo corretor" : publicoEscolhido.titulo,
+        publico: selecaoManual
+          ? (inicial?.descricaoDoPublico ?? "leads escolhidos pelo corretor")
+          : publicoEscolhido.titulo,
       });
       if ("erro" in r) {
         falhar(r.erro);
