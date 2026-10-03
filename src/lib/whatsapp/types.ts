@@ -53,7 +53,7 @@ export interface CampanhaWhatsapp {
   totalLeads: number;
   totalEnviados: number;
   totalRespondidos: number;
-  status: "rascunho" | "em_andamento" | "pausada" | "concluida";
+  status: "rascunho" | "em_andamento" | "pausada" | "concluida" | "cancelada";
   createdAt: string;
 }
 

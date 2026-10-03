@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Clock } from "lucide-react";
 import { liberarEnvioAgora, type CampanhaListada } from "../acoes";
+import { BotaoDetalheDaLista, ControlesDaLista } from "./DetalheDaLista";
 
 /**
  * O que já foi enviado. Mostra progresso e resposta — as duas perguntas que
@@ -14,6 +15,7 @@ const ROTULO_STATUS: Record<CampanhaListada["status"], string> = {
   em_andamento: "Enviando",
   pausada: "Pausada",
   concluida: "Concluída",
+  cancelada: "Cancelada",
 };
 
 const CLASSE_STATUS: Record<CampanhaListada["status"], string> = {
@@ -21,6 +23,7 @@ const CLASSE_STATUS: Record<CampanhaListada["status"], string> = {
   em_andamento: "bg-alerta-lavado border-alerta-linha text-alerta",
   pausada: "bg-vidro border-linha text-apoio",
   concluida: "bg-ok-lavado border-ok-linha text-ok",
+  cancelada: "bg-vidro border-linha text-tenue",
 };
 
 /**
@@ -125,11 +128,26 @@ export function HistoricoCampanhas({
                     {c.totalRespondidos} ({taxaResposta}%)
                   </span>
                 </div>
+                {(c.desfecho.visitas > 0 || c.desfecho.vendas > 0) && (
+                  <div title="Marcaram visita ou compraram até 60 dias depois de receber">
+                    <span className="text-tenue block text-[10px]">Depois</span>
+                    <span className="text-titulo font-medium tabular-nums">
+                      {c.desfecho.visitas} visita{c.desfecho.visitas === 1 ? "" : "s"} · {c.desfecho.vendas} venda
+                      {c.desfecho.vendas === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {c.status === "em_andamento" && c.totalEnviados < c.totalLeads && (
-                <BotaoLiberar campanhaId={c.id} aoLiberar={aoLiberar} />
-              )}
+              <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                <BotaoDetalheDaLista campanha={c} />
+                <div className="flex flex-wrap items-center gap-2">
+                  {c.status === "em_andamento" && c.totalEnviados < c.totalLeads && (
+                    <BotaoLiberar campanhaId={c.id} aoLiberar={aoLiberar} />
+                  )}
+                  <ControlesDaLista campanha={c} aoMudar={aoLiberar} />
+                </div>
+              </div>
 
               {/*
                 O placar do teste A/B (0084). Ocupa a linha inteira porque a

@@ -3,6 +3,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { EtapaFunil, Lead, OrigemAtribuicao } from "@/lib/types";
 import type { Interacao, Tarefa, TipoInteracao } from "./timeline";
+import { textoDaEntradaNaLista } from "./desfechoDaLista";
 import type { AtribuicaoMarketing } from "@/lib/marketing/atribuicao";
 
 /**
@@ -246,7 +247,7 @@ const AUTOR_WHATSAPP: Record<string, string> = {
 export async function getTimelineDoLead(leadId: string): Promise<Interacao[]> {
   const supabase = await createClient();
 
-  const [{ data: interacoes }, { data: conversas }] = await Promise.all([
+  const [{ data: interacoes }, { data: conversas }, { data: listas }] = await Promise.all([
     supabase
       .from("lead_interacoes")
       .select("id, tipo, conteudo, created_at, corretor:corretores(nome)")
@@ -254,6 +255,15 @@ export async function getTimelineDoLead(leadId: string): Promise<Interacao[]> {
       .order("created_at", { ascending: false })
       .limit(200),
     supabase.from("whatsapp_conversas").select("id").eq("lead_id", leadId),
+    // Listas de transmissão em que o lead entrou (Fase 1, 03/10/2026). Lido
+    // na hora da leitura, como as mensagens: copiar para lead_interacoes
+    // criaria duas verdades para divergir.
+    supabase
+      .from("whatsapp_campanhas_fila")
+      .select("id, created_at, campanha:whatsapp_campanhas(titulo)")
+      .eq("lead_id", leadId)
+      .order("created_at", { ascending: false })
+      .limit(50),
   ]);
 
   const itens: Interacao[] = ((interacoes ?? []) as unknown as {
@@ -269,6 +279,19 @@ export async function getTimelineDoLead(leadId: string): Promise<Interacao[]> {
     autor: i.corretor?.nome ?? null,
     em: i.created_at,
   }));
+
+  for (const item of listas ?? []) {
+    const campanha = (Array.isArray(item.campanha) ? item.campanha[0] : item.campanha) as {
+      titulo: string;
+    } | null;
+    itens.push({
+      id: `lista-${item.id}`,
+      tipo: "sistema",
+      conteudo: textoDaEntradaNaLista(campanha?.titulo ?? null, item.created_at),
+      autor: null,
+      em: item.created_at,
+    });
+  }
 
   const conversaIds = (conversas ?? []).map((c) => c.id);
   if (conversaIds.length > 0) {

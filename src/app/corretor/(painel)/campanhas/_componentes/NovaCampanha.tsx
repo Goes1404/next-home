@@ -2,7 +2,8 @@
 
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 
-import type { FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
+import type { FiltroLeadsCampanha, OpcoesDeRecorte, RecorteDeOrigem } from "@/lib/crm/publicoDaCampanha";
+import type { Canal } from "@/lib/graficos/calculos";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import {
@@ -29,6 +30,7 @@ import {
   gerarPreviewCampanha,
   sugerirAberturas,
   listarLeadsElegiveis,
+  listarOpcoesDeOrigem,
   preverPublicoCampanha,
   type CampanhaListada,
   type LeadElegivel,
@@ -159,24 +161,50 @@ export function NovaCampanha({
   const [etapaLead, setEtapaLead] = useState<EtapaFunil | "todas">("todas");
   const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set(inicial?.leadIds ?? []));
   const [previaPublico, setPreviaPublico] = useState<
-    (PreviaPublicoCampanha & { filtro: FiltroLeadsCampanha; erro?: boolean }) | null
+    (PreviaPublicoCampanha & { chave: string; erro?: boolean }) | null
   >(null);
+
+  /*
+   * Recorte por origem (Fase 3, 03/10/2026): canal e anúncio de onde o lead
+   * veio, além do público. Só oferece o que existe na carteira. Não vale
+   * para a escolha a dedo, em que quem decide é o corretor.
+   */
+  const [opcoesOrigem, setOpcoesOrigem] = useState<OpcoesDeRecorte | null>(null);
+  const [canal, setCanal] = useState<Canal | "">("");
+  const [anuncio, setAnuncio] = useState("");
+  const recorte: RecorteDeOrigem | null =
+    publico === "selecionados" || (!canal && !anuncio) ? null : { canal: canal || null, anuncio: anuncio || null };
+  const chavePrevia = `${publico}|${publico === "compradores" ? imovelSlug : ""}|${recorte?.canal ?? ""}|${recorte?.anuncio ?? ""}`;
 
   useEffect(() => {
     let vivo = true;
-    preverPublicoCampanha(publico, publico === "compradores" ? imovelSlug : null)
+    listarOpcoesDeOrigem()
+      .then((o) => {
+        if (vivo) setOpcoesOrigem(o);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let vivo = true;
+    const filtroDaVez: RecorteDeOrigem | null =
+      publico === "selecionados" || (!canal && !anuncio) ? null : { canal: canal || null, anuncio: anuncio || null };
+    preverPublicoCampanha(publico, publico === "compradores" ? imovelSlug : null, filtroDaVez)
       .then((previa) => {
-        if (vivo) setPreviaPublico({ ...previa, filtro: publico });
+        if (vivo) setPreviaPublico({ ...previa, chave: chavePrevia });
       })
       .catch(() => {
         if (vivo) {
-          setPreviaPublico({ total: 0, protegidos: 0, filtro: publico, erro: true });
+          setPreviaPublico({ total: 0, protegidos: 0, chave: chavePrevia, erro: true });
         }
       });
     return () => {
       vivo = false;
     };
-  }, [publico, imovelSlug]);
+  }, [publico, imovelSlug, canal, anuncio, chavePrevia]);
 
   useEffect(() => {
     if (publico !== "selecionados" || carteira !== null) return;
@@ -233,7 +261,7 @@ export function NovaCampanha({
   const publicoEscolhido = PUBLICOS.find((p) => p.valor === publico)!;
   const selecaoManual = publico === "selecionados";
   const leadIds = selecaoManual ? [...escolhidos] : undefined;
-  const previaAtual = previaPublico?.filtro === publico ? previaPublico : null;
+  const previaAtual = previaPublico?.chave === chavePrevia ? previaPublico : null;
   const carregandoPublico = previaAtual === null;
   const totalPrevisto = selecaoManual
     ? escolhidos.size
@@ -254,6 +282,7 @@ export function NovaCampanha({
         mensagemBase,
         leadIds,
         imovelSlug: publico === "compradores" ? imovelSlug : null,
+        recorte,
       });
       setGerando(false);
 
@@ -319,6 +348,7 @@ export function NovaCampanha({
         mensagemBaseB: testandoDuas ? mensagemB : null,
         leadIds,
         iniciarEm,
+        recorte,
       });
 
       if ("erro" in resultado) {
@@ -338,6 +368,7 @@ export function NovaCampanha({
           // Campanha recém-criada não tem envio nenhum, então não há placar.
           testeAB: null,
           vencedora: null,
+          desfecho: { visitas: 0, vendas: 0 },
           criadoEm: new Date().toISOString(),
         },
         modoEnvio === "agendado"
@@ -391,6 +422,43 @@ export function NovaCampanha({
               </p>
             </button>
           ))}
+
+          {!selecaoManual && opcoesOrigem && (opcoesOrigem.canais.length > 1 || opcoesOrigem.anuncios.length > 0) && (
+            <div className="border-linha flex flex-col gap-2 rounded-2xl border p-3 sm:flex-row sm:p-4">
+              <label className="min-w-0 flex-1">
+                <span className="text-fluid-xs text-apoio mb-1 block">De onde o lead veio</span>
+                <select
+                  value={canal}
+                  onChange={(e) => setCanal(e.target.value as Canal | "")}
+                  className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 w-full rounded-xl border px-3 focus:outline-none"
+                >
+                  <option value="">Qualquer origem</option>
+                  {opcoesOrigem.canais.map((c) => (
+                    <option key={c.canal} value={c.canal}>
+                      {c.rotulo} ({c.total})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {opcoesOrigem.anuncios.length > 0 && (
+                <label className="min-w-0 flex-1">
+                  <span className="text-fluid-xs text-apoio mb-1 block">Anúncio</span>
+                  <select
+                    value={anuncio}
+                    onChange={(e) => setAnuncio(e.target.value)}
+                    className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 w-full rounded-xl border px-3 focus:outline-none"
+                  >
+                    <option value="">Qualquer anúncio</option>
+                    {opcoesOrigem.anuncios.map((a) => (
+                      <option key={a.nome} value={a.nome}>
+                        {a.nome} ({a.total})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+          )}
 
           <div className="border-linha bg-elevado flex items-start gap-3 rounded-2xl border p-4 shadow-sm">
             <span className="bg-acento-lavado text-acento-suave flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">

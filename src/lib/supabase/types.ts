@@ -2524,7 +2524,7 @@ export type Database = {
           variante_vencedora: "A" | "B" | null
           ignorar_janela: boolean
           mensagem_base: string
-          status: "rascunho" | "em_andamento" | "pausada" | "concluida"
+          status: "rascunho" | "em_andamento" | "pausada" | "concluida" | "cancelada"
           titulo: string
           total_enviados: number
           total_leads: number
@@ -2539,7 +2539,7 @@ export type Database = {
           variante_vencedora?: "A" | "B" | null
           ignorar_janela?: boolean
           mensagem_base: string
-          status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
+          status?: "rascunho" | "em_andamento" | "pausada" | "concluida" | "cancelada"
           titulo: string
           total_enviados?: number
           total_leads?: number
@@ -2554,7 +2554,7 @@ export type Database = {
           variante_vencedora?: "A" | "B" | null
           ignorar_janela?: boolean
           mensagem_base?: string
-          status?: "rascunho" | "em_andamento" | "pausada" | "concluida"
+          status?: "rascunho" | "em_andamento" | "pausada" | "concluida" | "cancelada"
           titulo?: string
           total_enviados?: number
           total_leads?: number

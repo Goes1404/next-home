@@ -70,10 +70,10 @@ describe("o disparador espera em vez de mandar em rajada", () => {
   });
 
   it("dorme o intervalo e tenta de novo, sem gastar a vaga do item", () => {
-    const bloco = dispatcher.slice(
-      dispatcher.indexOf('cota.motivo === "aguardando_intervalo"'),
-      dispatcher.indexOf("parcial.processados++"),
-    );
+    // O `processados++` DEPOIS do bloco: a guarda de conversa humana (03/10)
+    // tem o seu antes da cota, e recortar pelo primeiro daria bloco vazio.
+    const ini = dispatcher.indexOf('cota.motivo === "aguardando_intervalo"');
+    const bloco = dispatcher.slice(ini, dispatcher.indexOf("parcial.processados++", ini));
     expect(bloco).toContain("await dormir(cota.esperaMs)");
     expect(bloco).toContain("continue");
     // `processados++` não pode acontecer antes do `continue`: aguardar não
@@ -82,10 +82,10 @@ describe("o disparador espera em vez de mandar em rajada", () => {
   });
 
   it("quando a espera não cabe no orçamento, encadeia em vez de forçar", () => {
-    const bloco = dispatcher.slice(
-      dispatcher.indexOf('cota.motivo === "aguardando_intervalo"'),
-      dispatcher.indexOf("parcial.processados++"),
-    );
+    // O `processados++` DEPOIS do bloco: a guarda de conversa humana (03/10)
+    // tem o seu antes da cota, e recortar pelo primeiro daria bloco vazio.
+    const ini = dispatcher.indexOf('cota.motivo === "aguardando_intervalo"');
+    const bloco = dispatcher.slice(ini, dispatcher.indexOf("parcial.processados++", ini));
     expect(bloco).toContain("deveContinuar = true");
   });
 });

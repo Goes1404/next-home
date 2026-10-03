@@ -9103,3 +9103,26 @@ Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
   (fundo do site) minutos antes; a minha virou 0152 no arquivo, mas foi
   aplicada no banco com o nome `0151_fala_do_corretor_desliga_a_ia`.
 
+
+## Listas de transmissão visíveis e controláveis (0153, 03/10/2026)
+
+Nota: [[lista-de-transmissao-visivel-e-controlavel]].
+
+- **A resposta à lista quase nunca contava.** `marcarRespostaCampanha`
+  casava por `telefone` cru (52 de 111 enviados fora do padrão 55) e só
+  rodava em conversa de origem `campanha`; lead que já conversava recebe a
+  lista na conversa orgânica. Hoje é por `lead_id`, em qualquer conversa,
+  até 30 dias — e a mesma lista vira contexto da IA até 7 dias.
+- **Fechar como `concluida` sobrescrevia qualquer estado.** Disparador e
+  "Limpar fila" fechavam toda lista sem pendente; com `pausada` e
+  `cancelada` existindo, só fecham `em_andamento`. Ao criar estado novo,
+  procurar quem ESCREVE o estado vizinho.
+- **Pausar no meio da corrente**: `idsCampanhas` é lido no começo e a
+  corrente dura até 45 min; o disparador confere a lista de cada item antes
+  de enviar.
+- **Guarda de 24h**: corretor falou com o lead → item vira `erro` com o
+  motivo, antes da cota. Não volta para a fila.
+- **`espacamentoEnvio.test.ts` recortava até o PRIMEIRO `processados++`** e
+  tropeçou no da guarda nova. Recorte de guarda ancora no ponto de partida.
+- Em aberto: resposta à lista em conversa com a IA desligada não é
+  respondida pela IA. Decidir se enviar lista conta como ativação.

@@ -42,6 +42,7 @@ import {
   type CliqueDoLink,
   marcarConversaComoTeste,
   marcarRespostaCampanha,
+  ultimaListaDoLead,
   obterOuCriarConversa,
   podeAlertarLeadQuente,
   preencherNomeContato,
@@ -68,6 +69,7 @@ import {
 import { importarHistoricoDoChat } from "@/lib/whatsapp/importarHistorico";
 import { gerarEEnviarPelaIA } from "@/lib/whatsapp/aberturaPelaIA";
 import { instrucaoPelosFollowups } from "@/lib/whatsapp/respostaAosFollowups";
+import { instrucaoDaCampanha } from "@/lib/whatsapp/contextoDaCampanha";
 import { decidirPorFalaDoCorretor, palavraDoCorretorNaMensagem } from "@/lib/whatsapp/modoBot";
 import { decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoAIaResponde";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
@@ -723,13 +725,15 @@ export async function POST(req: NextRequest) {
     // perde o motivo de existir (ver whatsapp_followups, 0028).
     await cancelarFollowupsPendentes(conversa.id);
 
-    // Fecha o loop do disparador: se este telefone recebeu uma campanha e
-    // respondeu, é isso que faz o contador de "Respostas" da campanha
-    // deixar de ser sempre zero. Só vale a consulta em conversa de campanha
-    // — em conversa orgânica não existe item de fila para achar.
-    if (conversa.origem === "campanha") {
-      await marcarRespostaCampanha(sender);
-    }
+    /*
+     * Fecha o loop da lista de transmissão: se este lead recebeu uma lista,
+     * a fala dele conta como resposta (placar) e a lista vira contexto para
+     * a IA (Fase 2, 03/10/2026). Por `lead_id` e em QUALQUER conversa: lead
+     * que já conversava recebe a lista na conversa que já existia, com
+     * origem orgânica, e antes a resposta dele não contava nem chegava à IA.
+     */
+    const listaRecente = conversa.leadId ? await ultimaListaDoLead(conversa.leadId) : null;
+    if (listaRecente) await marcarRespostaCampanha(listaRecente);
 
     /*
      * A DECISÃO de responder, num lugar só (`quandoAIaResponde.ts`): a
@@ -931,7 +935,9 @@ export async function POST(req: NextRequest) {
        * O cálculo mora aqui porque `turnoDeAtendimento` não toca no relógio.
        */
       horasDesdeAUltimaFala: horasDesdeAUltimaFala(historico),
-      instrucaoExtra: [instrucaoAudio, instrucaoDoFollowup].filter(Boolean).join(" ") || undefined,
+      instrucaoExtra:
+        [instrucaoAudio, instrucaoDoFollowup, instrucaoDaCampanha(listaRecente)].filter(Boolean).join(" ") ||
+        undefined,
       fewShot: { corretorId: instancia.corretorId, conversaAtualId: conversa.id },
       /*
        * Os horários que EXISTEM na agenda do corretor (0073). Até aqui a

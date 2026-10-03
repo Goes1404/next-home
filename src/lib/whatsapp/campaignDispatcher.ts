@@ -7,6 +7,7 @@ import { variarMensagemComIA } from "./campaignQueue";
 import { enviarMensagemWhatsapp } from "./provider";
 import { normalizarTelefoneBr } from "./telefone";
 import { aplicarVencedoras } from "./vencedoraAB";
+import { HORAS_DA_GUARDA_HUMANA, MOTIVO_CONVERSA_RECENTE } from "./contextoDaCampanha";
 import {
   avancarLeadParaPrimeiroContato,
   destravarDisparo,
@@ -427,6 +428,43 @@ async function processarInstancia(ctx: {
       }
 
       /*
+       * A lista pode ter sido PAUSADA ou CANCELADA enquanto esta chamada
+       * esperava (Fase 1, 03/10/2026): a corrente dura até 45 min e o
+       * `idsCampanhas` foi lido no começo. Confere a lista do item antes de
+       * cada envio; se saiu de `em_andamento`, ela sai do escopo e o laço
+       * segue com as outras.
+       */
+      const { data: aindaAtiva } = await supabase
+        .from("whatsapp_campanhas")
+        .select("id")
+        .eq("id", item.campanha_id)
+        .eq("status", "em_andamento")
+        .maybeSingle();
+      if (!aindaAtiva) {
+        idsCampanhas.splice(idsCampanhas.indexOf(item.campanha_id), 1);
+        if (idsCampanhas.length === 0) {
+          parcial.motivo = "fila_vazia";
+          break;
+        }
+        continue;
+      }
+
+      /*
+       * A guarda de conversa humana (Fase 2): o corretor falou com este lead
+       * nas últimas 24h, então a mensagem da lista não sai. Antes da cota:
+       * o que não sai não gasta a cota do número.
+       */
+      if (item.lead_id && (await corretorFalouComOLead(supabase, item.lead_id))) {
+        parcial.processados++;
+        await supabase
+          .from("whatsapp_campanhas_fila")
+          .update({ status: "erro", erro_motivo: MOTIVO_CONVERSA_RECENTE })
+          .eq("id", item.id)
+          .eq("status", "pendente");
+        continue;
+      }
+
+      /*
        * A vez de disparar: cota diária E espaçamento, decididos no banco
        * (0062). O intervalo precisa ser verificado AQUI, contra o relógio,
        * e não só contra `agendado_para` — item vencido tem espera negativa,
@@ -723,16 +761,37 @@ async function atualizarProgressoCampanhas(
       .eq("campanha_id", campanhaId)
       .eq("status", "pendente");
 
-    await supabase
-      .from("whatsapp_campanhas")
-      .update({
-        total_enviados: enviados ?? 0,
-        // Só fecha quando não sobra nada para tentar de novo — um item com
-        // erro não trava a campanha em "em_andamento" para sempre porque
-        // ele já não é mais 'pendente', mas também não vira 'concluida' à
-        // toa: a contagem de pendentes é que decide.
-        ...(pendentes === 0 ? { status: "concluida" } : {}),
-      })
-      .eq("id", campanhaId);
+    await supabase.from("whatsapp_campanhas").update({ total_enviados: enviados ?? 0 }).eq("id", campanhaId);
+
+    // Só fecha quando não sobra nada para tentar de novo — um item com
+    // erro não trava a campanha em "em_andamento" para sempre porque ele já
+    // não é mais 'pendente', mas também não vira 'concluida' à toa: a
+    // contagem de pendentes é que decide. E só fecha lista que estava
+    // enviando: pausada ou cancelada pelo corretor continua dizendo isso.
+    if (pendentes === 0) {
+      await supabase
+        .from("whatsapp_campanhas")
+        .update({ status: "concluida" })
+        .eq("id", campanhaId)
+        .eq("status", "em_andamento");
+    }
   }
+}
+
+/** O corretor mandou mensagem a este lead nas últimas `HORAS_DA_GUARDA_HUMANA`? */
+async function corretorFalouComOLead(
+  supabase: ReturnType<typeof createServiceClient>,
+  leadId: string,
+): Promise<boolean> {
+  const desde = new Date(Date.now() - HORAS_DA_GUARDA_HUMANA * 3_600_000).toISOString();
+  const { data: conversas } = await supabase.from("whatsapp_conversas").select("id").eq("lead_id", leadId);
+  const ids = (conversas ?? []).map((c) => c.id);
+  if (ids.length === 0) return false;
+  const { count } = await supabase
+    .from("whatsapp_mensagens")
+    .select("id", { count: "exact", head: true })
+    .in("conversa_id", ids)
+    .eq("remetente", "corretor")
+    .gte("created_at", desde);
+  return (count ?? 0) > 0;
 }

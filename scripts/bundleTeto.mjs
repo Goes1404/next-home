@@ -46,14 +46,18 @@ const TETOS_KB = {
   // menu (visitas de hoje, respostas sem revisão, fila, número no ar) e a
   // barrinha de carregamento dos links (`useLinkStatus`). O menu vai em
   // toda rota do painel.
-  "/corretor/(painel)/pessoas/page": 1001,
+  // 03/10: +5 KB em pessoas e +7 em conversas, de 7e2b2d0 a 0152: o perfil
+  // do lead dentro da conversa (`resumoDoLead`), a frase de por que a IA
+  // responde ou não (`decidirSeAIaResponde` no cliente) e "IA assume agora".
+  // A esteira estava vermelha desde então, sem ninguém ver.
+  "/corretor/(painel)/pessoas/page": 1006,
   // 28/09: +9 KB (conversas) e +16 (importar) vêm de funcionalidades pedidas:
   // o painel ganhou a transição de tela e a luz dos cartões no LAYOUT (vale
   // em toda rota do painel), e o importador ganhou tours, vídeo em arquivo e
   // a leitura do site da construtora.
   // 29/09: +2 KB em conversas, do motivo do 👎 e do resumo semanal das
   // avaliações (0131), que já tinha ido ao ar 1 KB acima do teto.
-  "/corretor/(painel)/conversas/page": 1036,
+  "/corretor/(painel)/conversas/page": 1044,
   // 28/09: +1 KB em criar-imagem, editor do imóvel e vídeo é
   // `mensagensDoSite` (as mensagens que o porteiro reconhece), puxado via
   // `site.ts`. Sem ela, o visitante novo do site é ignorado pelo webhook.

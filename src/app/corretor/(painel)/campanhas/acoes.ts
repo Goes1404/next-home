@@ -4,8 +4,16 @@ import { revalidatePath } from "next/cache";
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
 import { aberturasDoJson, EXEMPLOS_VENCEDORES, promptDeAberturas } from "@/lib/marketing/aberturaSugerida";
 import { getCorretorLogado, getMeusLeads } from "@/lib/corretorSessao";
-import { elegivel, type FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
+import {
+  elegivel,
+  noRecorte,
+  opcoesDeRecorte,
+  type FiltroLeadsCampanha,
+  type OpcoesDeRecorte,
+  type RecorteDeOrigem,
+} from "@/lib/crm/publicoDaCampanha";
 import { placarDaFila, resultadoAB, type ResultadoAB } from "@/lib/whatsapp/testeAB";
+import { desfechoDaLista, type Desfecho } from "@/lib/crm/desfechoDaLista";
 import { createClient } from "@/lib/supabase/server";
 import type { EtapaFunil } from "@/lib/types";
 import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
@@ -70,7 +78,11 @@ async function idsProtegidosDeNovaCampanha(corretorId: string): Promise<Set<stri
   return new Set((itens ?? []).flatMap((item) => (item.lead_id ? [item.lead_id] : [])));
 }
 
-async function publicoComProtecao(filtro: FiltroLeadsCampanha, imovelSlug?: string | null): Promise<{
+async function publicoComProtecao(
+  filtro: FiltroLeadsCampanha,
+  imovelSlug?: string | null,
+  recorte?: RecorteDeOrigem | null,
+): Promise<{
   elegiveis: LeadElegivel[];
   protegidos: number;
 }> {
@@ -78,7 +90,7 @@ async function publicoComProtecao(filtro: FiltroLeadsCampanha, imovelSlug?: stri
   if (!corretor) return { elegiveis: [], protegidos: 0 };
 
   const leads = await getMeusLeads();
-  const base = leads.filter((lead) => elegivel(lead, filtro, { imovelSlug }));
+  const base = leads.filter((lead) => elegivel(lead, filtro, { imovelSlug }) && noRecorte(lead, recorte));
   const protegidos = await idsProtegidosDeNovaCampanha(corretor.id);
   return {
     elegiveis: base
@@ -97,16 +109,25 @@ async function publicoComProtecao(filtro: FiltroLeadsCampanha, imovelSlug?: stri
 export async function listarLeadsElegiveis(
   filtro: FiltroLeadsCampanha,
   imovelSlug?: string | null,
+  recorte?: RecorteDeOrigem | null,
 ): Promise<LeadElegivel[]> {
-  return (await publicoComProtecao(filtro, imovelSlug)).elegiveis;
+  return (await publicoComProtecao(filtro, imovelSlug, recorte)).elegiveis;
+}
+
+/** Os canais e anúncios que existem na carteira, para o recorte do passo 1 (Fase 3). */
+export async function listarOpcoesDeOrigem(): Promise<OpcoesDeRecorte> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { canais: [], anuncios: [] };
+  return opcoesDeRecorte(await getMeusLeads());
 }
 
 /** Contagem informativa; criar a campanha refaz a mesma proteção no servidor. */
 export async function preverPublicoCampanha(
   filtro: FiltroLeadsCampanha,
   imovelSlug?: string | null,
+  recorte?: RecorteDeOrigem | null,
 ): Promise<PreviaPublicoCampanha> {
-  const publico = await publicoComProtecao(filtro, imovelSlug);
+  const publico = await publicoComProtecao(filtro, imovelSlug, recorte);
   return { total: publico.elegiveis.length, protegidos: publico.protegidos };
 }
 
@@ -135,6 +156,8 @@ export async function gerarPreviewCampanha(params: {
   leadIds?: string[];
   /** Só para `filtro: "compradores"`. */
   imovelSlug?: string | null;
+  /** Canal ou anúncio de origem (Fase 3). */
+  recorte?: RecorteDeOrigem | null;
 }): Promise<{ mensagens: string[] } | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
@@ -143,7 +166,7 @@ export async function gerarPreviewCampanha(params: {
 
   let elegiveis: LeadElegivel[];
   try {
-    elegiveis = await listarLeadsElegiveis(params.filtro, params.imovelSlug ?? null);
+    elegiveis = await listarLeadsElegiveis(params.filtro, params.imovelSlug ?? null, params.recorte);
   } catch {
     return { erro: "Não foi possível conferir os contatos recentes agora." };
   }
@@ -242,6 +265,8 @@ export async function criarCampanha(params: {
    * curva de aquecimento e o disjuntor continuam valendo.
    */
   ignorarJanela?: boolean;
+  /** Canal ou anúncio de origem (Fase 3). O servidor refaz o recorte. */
+  recorte?: RecorteDeOrigem | null;
 }): Promise<ResultadoCriarCampanha> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
@@ -284,7 +309,7 @@ export async function criarCampanha(params: {
 
   let elegiveis: LeadElegivel[];
   try {
-    elegiveis = await listarLeadsElegiveis(params.filtro, imovelSlug);
+    elegiveis = await listarLeadsElegiveis(params.filtro, imovelSlug, params.recorte);
   } catch {
     // Falha fechada: sem provar quem recebeu campanha recentemente, ninguém
     // entra na fila. Repetir propaganda é pior do que pedir nova tentativa.
@@ -377,8 +402,10 @@ export type CampanhaListada = {
   totalLeads: number;
   totalEnviados: number;
   totalRespondidos: number;
-  status: "rascunho" | "em_andamento" | "pausada" | "concluida";
+  status: "rascunho" | "em_andamento" | "pausada" | "concluida" | "cancelada";
   criadoEm: string;
+  /** Quem recebeu e depois marcou visita ou comprou (`desfechoDaLista.ts`). */
+  desfecho: Desfecho;
 };
 
 export async function listarCampanhas(): Promise<CampanhaListada[]> {
@@ -423,9 +450,15 @@ export async function listarCampanhas(): Promise<CampanhaListada[]> {
     for (const [id, lista] of porCampanha) placar.set(id, placarDaFila(lista));
   }
 
+  const desfechos = await desfechosDasListas(
+    supabase,
+    (data ?? []).map((c) => c.id),
+  );
+
   return (data ?? []).map((c) => ({
     id: c.id,
     titulo: c.titulo,
+    desfecho: desfechos.get(c.id) ?? { visitas: 0, vendas: 0 },
     testeAB: placar.has(c.id) ? resultadoAB(placar.get(c.id)!) : null,
     vencedora: c.variante_vencedora,
     empreendimentoNome: (c.empreendimento as { nome: string } | null)?.nome ?? null,
@@ -438,6 +471,172 @@ export async function listarCampanhas(): Promise<CampanhaListada[]> {
 }
 
 type Contagem = { enviados: number; respostas: number };
+
+/**
+ * Visitas e vendas de quem recebeu cada lista (Fase 3). Três consultas para
+ * as 20 listas da tela, nunca uma por lista. A RLS recorta: o corretor vê os
+ * próprios leads e as próprias vendas.
+ */
+async function desfechosDasListas(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  ids: string[],
+): Promise<Map<string, Desfecho>> {
+  const resultado = new Map<string, Desfecho>();
+  if (ids.length === 0) return resultado;
+
+  const { data: itens } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .select("campanha_id, lead_id, enviado_em")
+    .in("campanha_id", ids)
+    .in("status", ["enviado", "respondido"])
+    .not("lead_id", "is", null);
+  const leadIds = [...new Set((itens ?? []).map((i) => i.lead_id as string))];
+  if (leadIds.length === 0) return resultado;
+
+  const [{ data: leads }, { data: vendas }] = await Promise.all([
+    supabase.from("leads").select("id, visita_marcada_em").in("id", leadIds).not("visita_marcada_em", "is", null),
+    supabase.from("vendas").select("lead_id, created_at, status").in("lead_id", leadIds),
+  ]);
+  const visitas = (leads ?? []).map((l) => ({ leadId: l.id, marcadaEm: l.visita_marcada_em }));
+  const vendasDosLeads = (vendas ?? []).map((v) => ({ leadId: v.lead_id, criadaEm: v.created_at, status: v.status }));
+
+  for (const id of ids) {
+    const daLista = (itens ?? [])
+      .filter((i) => i.campanha_id === id)
+      .map((i) => ({ leadId: i.lead_id, enviadoEm: i.enviado_em }));
+    resultado.set(id, desfechoDaLista({ itens: daLista, visitas, vendas: vendasDosLeads }));
+  }
+  return resultado;
+}
+
+export type ItemDaLista = {
+  id: string;
+  leadId: string | null;
+  nome: string;
+  telefone: string;
+  status: "pendente" | "enviado" | "respondido" | "erro";
+  erroMotivo: string | null;
+  agendadoPara: string;
+  enviadoEm: string | null;
+  respostaEm: string | null;
+};
+
+/**
+ * Quem está na lista e o que aconteceu com cada um (Fase 1): na fila,
+ * enviada, respondeu ou não enviada, com o motivo. Responde "por que fulano
+ * não recebeu?" sem abrir o banco.
+ */
+export async function detalharCampanha(
+  campanhaId: string,
+): Promise<{ itens: ItemDaLista[] } | { erro: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+  const supabase = await createClient();
+
+  // A lista tem de ser DESTE corretor: a policy deixa o gestor ver a equipe.
+  const { data: campanha } = await supabase
+    .from("whatsapp_campanhas")
+    .select("id")
+    .eq("id", campanhaId)
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+  if (!campanha) return { erro: "Lista não encontrada." };
+
+  const { data, error } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .select("id, lead_id, telefone, status, erro_motivo, agendado_para, enviado_em, resposta_em, lead:leads(nome)")
+    .eq("campanha_id", campanhaId)
+    .order("agendado_para", { ascending: true })
+    .limit(500);
+  if (error) return { erro: "Não foi possível abrir a lista agora." };
+
+  return {
+    itens: (data ?? []).map((i) => {
+      const lead = (Array.isArray(i.lead) ? i.lead[0] : i.lead) as { nome: string | null } | null;
+      return {
+        id: i.id,
+        leadId: i.lead_id,
+        nome: lead?.nome?.trim() || i.telefone,
+        telefone: i.telefone,
+        status: i.status as ItemDaLista["status"],
+        erroMotivo: i.erro_motivo,
+        agendadoPara: i.agendado_para,
+        enviadoEm: i.enviado_em,
+        respostaEm: i.resposta_em,
+      };
+    }),
+  };
+}
+
+/**
+ * Pausar, retomar e cancelar UMA lista (Fase 1), sem mexer nas outras.
+ *
+ * Pausar é só o estado: o disparador pega apenas lista `em_andamento` e
+ * confere de novo antes de cada mensagem. Retomar não reagenda nada: o
+ * espaçamento de 35-75s mora no banco (0062) e vale para os itens vencidos.
+ * Cancelar apaga o que ainda não saiu (a fila é lista de intenções, mesma
+ * régua do "Limpar fila") e marca a lista como `cancelada` (0153), para o
+ * histórico não dizer "Concluída" do que foi interrompido.
+ */
+export async function pausarCampanha(campanhaId: string): Promise<{ ok: true } | { erro: string }> {
+  return mudarEstadoDaLista(campanhaId, "em_andamento", "pausada");
+}
+
+export async function retomarCampanha(campanhaId: string): Promise<{ ok: true } | { erro: string }> {
+  const r = await mudarEstadoDaLista(campanhaId, "pausada", "em_andamento");
+  if ("ok" in r) acenderCorrenteDeDisparo();
+  return r;
+}
+
+export async function cancelarCampanha(
+  campanhaId: string,
+): Promise<{ ok: true; removidos: number } | { erro: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+  const supabase = await createClient();
+
+  // Primeiro o estado: a partir daqui o disparador já não pega a lista.
+  const { data: mudou } = await supabase
+    .from("whatsapp_campanhas")
+    .update({ status: "cancelada" })
+    .eq("id", campanhaId)
+    .eq("corretor_id", corretor.id)
+    .in("status", ["em_andamento", "pausada", "rascunho"])
+    .select("id");
+  if (!mudou || mudou.length === 0) return { erro: "Esta lista já terminou ou não é sua." };
+
+  const { data: removidos } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .delete()
+    .eq("campanha_id", campanhaId)
+    .eq("status", "pendente")
+    .select("id");
+
+  revalidatePath("/corretor/campanhas");
+  return { ok: true, removidos: removidos?.length ?? 0 };
+}
+
+async function mudarEstadoDaLista(
+  campanhaId: string,
+  de: "em_andamento" | "pausada",
+  para: "em_andamento" | "pausada",
+): Promise<{ ok: true } | { erro: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("whatsapp_campanhas")
+    .update({ status: para })
+    .eq("id", campanhaId)
+    .eq("corretor_id", corretor.id)
+    .eq("status", de)
+    .select("id");
+  if (!data || data.length === 0) {
+    return { erro: para === "pausada" ? "Esta lista não está enviando agora." : "Esta lista não está pausada." };
+  }
+  revalidatePath("/corretor/campanhas");
+  return { ok: true };
+}
 
 export type ResultadoProcessarFila =
   | {
@@ -708,7 +907,7 @@ export async function limparFilaDisparo(): Promise<ResultadoLimparFila> {
         .update({ status: "concluida" })
         .eq("id", id)
         .eq("corretor_id", corretor.id)
-        .neq("status", "concluida")
+        .in("status", ["em_andamento", "pausada", "rascunho"])
         .select("id");
       campanhasFechadas += data?.length ?? 0;
     }

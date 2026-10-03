@@ -133,3 +133,26 @@ describe("compradores de um imóvel", () => {
     expect(elegivel(base, "todos")).toBe(false);
   });
 });
+
+describe("recorte por origem (Fase 3, 03/10/2026)", () => {
+  it("canal pela mesma régua dos gráficos e anúncio sem caixa", async () => {
+    const { noRecorte, opcoesDeRecorte } = await import("./publicoDaCampanha");
+    const doAnuncio = { origem: "meta/ctwa", anuncioOrigem: "Dom Parque " };
+    const doPortal = { origem: "inbound/zap", anuncioOrigem: null };
+    expect(noRecorte(doAnuncio, { canal: "anuncio" })).toBe(true);
+    expect(noRecorte(doPortal, { canal: "anuncio" })).toBe(false);
+    expect(noRecorte(doAnuncio, { anuncio: "dom parque" })).toBe(true);
+    expect(noRecorte(doAnuncio, { anuncio: "Outro" })).toBe(false);
+    expect(noRecorte(doPortal, null)).toBe(true);
+
+    const opcoes = opcoesDeRecorte([doAnuncio, doAnuncio, doPortal]);
+    expect(opcoes.canais[0]).toMatchObject({ canal: "anuncio", total: 2 });
+    expect(opcoes.anuncios).toEqual([{ nome: "Dom Parque", total: 2 }]);
+  });
+
+  it("o recorte só estreita: a action aplica elegivel E noRecorte", async () => {
+    const { readFileSync } = await import("node:fs");
+    const acoes = readFileSync("src/app/corretor/(painel)/campanhas/acoes.ts", "utf8");
+    expect(acoes).toContain("elegivel(lead, filtro, { imovelSlug }) && noRecorte(lead, recorte)");
+  });
+});

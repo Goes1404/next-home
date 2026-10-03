@@ -109,6 +109,7 @@ export function EnvioImediato({
         // Campanha recém-criada não tem envio nenhum, então não há placar.
         testeAB: null,
         vencedora: null,
+        desfecho: { visitas: 0, vendas: 0 },
           criadoEm: new Date().toISOString(),
         },
         `Saindo para ${resultado.totalLeads} lead${resultado.totalLeads === 1 ? "" : "s"}, uma mensagem a cada minuto — independente do horário.`,

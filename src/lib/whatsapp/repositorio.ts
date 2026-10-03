@@ -18,6 +18,7 @@ import { consultarEstadoConexao } from "./provider";
 import { resetPorTrocaDeNumero } from "./trocaDeNumero";
 import { camposDaFicha } from "./fichaDoLead";
 import type { DossieClienteIA } from "./types";
+import { contaComoRespostaDaLista, type ListaRecenteDoLead } from "./contextoDaCampanha";
 
 /**
  * Persistência do fluxo de WhatsApp, do lado do webhook.
@@ -1478,48 +1479,78 @@ export async function devolverCotaCampanha(instanciaId: string): Promise<void> {
 }
 
 /**
- * O cliente respondeu a um disparo de campanha: marca o item da fila como
- * `respondido` e soma no contador da campanha.
+ * A última lista de transmissão enviada a este lead (Fase 2, 03/10/2026).
  *
- * Só chamado pelo webhook quando `conversa.origem === 'campanha'` — em
- * conversa orgânica não existe item de fila para achar. Pega o envio
- * `enviado` mais recente para este telefone (pode haver mais de um se o
- * mesmo lead entrou em duas campanhas), porque é a esse que a resposta se
- * refere.
+ * Por `lead_id`, não por telefone: 52 dos 111 itens enviados até 03/10
+ * tinham o telefone gravado fora do padrão com 55, e a busca por igualdade
+ * de telefone não achava a resposta deles. Por isso o contador "Responderam"
+ * vivia perto de zero.
  */
-export async function marcarRespostaCampanha(telefoneCliente: string): Promise<void> {
+export async function ultimaListaDoLead(leadId: string): Promise<ListaRecenteDoLead | null> {
   const supabase = createServiceClient();
-
-  const { data: item } = await supabase
+  const { data } = await supabase
     .from("whatsapp_campanhas_fila")
-    .select("id, campanha_id")
-    .eq("telefone", telefoneCliente)
-    .eq("status", "enviado")
+    .select(
+      "id, campanha_id, status, enviado_em, mensagem_personalizada, campanha:whatsapp_campanhas(titulo, empreendimento:empreendimentos(nome))",
+    )
+    .eq("lead_id", leadId)
+    .in("status", ["enviado", "respondido"])
+    .not("enviado_em", "is", null)
     .order("enviado_em", { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (!data?.enviado_em) return null;
 
-  if (!item) return;
+  const campanha = (Array.isArray(data.campanha) ? data.campanha[0] : data.campanha) as {
+    titulo: string | null;
+    empreendimento: { nome: string } | { nome: string }[] | null;
+  } | null;
+  const emp = Array.isArray(campanha?.empreendimento) ? campanha?.empreendimento[0] : campanha?.empreendimento;
+  return {
+    itemId: data.id,
+    campanhaId: data.campanha_id,
+    status: data.status as ListaRecenteDoLead["status"],
+    enviadoEm: data.enviado_em,
+    titulo: campanha?.titulo ?? null,
+    imovel: emp?.nome ?? null,
+    mensagemEnviada: data.mensagem_personalizada,
+  };
+}
 
-  await supabase
+/**
+ * O cliente respondeu a uma lista: marca o item como `respondido` e reconta
+ * o placar da lista.
+ *
+ * Vale para qualquer conversa, não só as nascidas de campanha: lead que já
+ * conversava recebe a lista na conversa que já existia (origem orgânica), e
+ * a resposta dele também é resposta à lista. Quem decide se conta é
+ * `contaComoRespostaDaLista` (item ainda `enviado`, até 30 dias).
+ */
+export async function marcarRespostaCampanha(lista: ListaRecenteDoLead): Promise<void> {
+  if (!contaComoRespostaDaLista(lista)) return;
+  const supabase = createServiceClient();
+
+  const { data: mudou } = await supabase
     .from("whatsapp_campanhas_fila")
     .update({ status: "respondido", resposta_em: new Date().toISOString() })
-    .eq("id", item.id);
+    .eq("id", lista.itemId)
+    .eq("status", "enviado")
+    .select("id");
+  if (!mudou || mudou.length === 0) return;
 
   // Recontado do zero, não incrementado: a contagem de linhas na fila é a
   // fonte da verdade, e recalcular dela é imune a corrida entre dois
-  // webhooks concorrentes — incrementar a partir de uma leitura anterior
-  // não seria.
+  // webhooks concorrentes.
   const { count } = await supabase
     .from("whatsapp_campanhas_fila")
     .select("id", { count: "exact", head: true })
-    .eq("campanha_id", item.campanha_id)
+    .eq("campanha_id", lista.campanhaId)
     .eq("status", "respondido");
 
   await supabase
     .from("whatsapp_campanhas")
     .update({ total_respondidos: count ?? 0 })
-    .eq("id", item.campanha_id);
+    .eq("id", lista.campanhaId);
 }
 
 /**

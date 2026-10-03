@@ -1,4 +1,5 @@
 import type { Lead } from "@/lib/types";
+import { canalDaOrigem, ROTULO_DO_CANAL, type Canal } from "@/lib/graficos/calculos";
 
 /**
  * Quem entra numa campanha, por público escolhido.
@@ -94,4 +95,59 @@ export function elegivel(
   // "todos" e "selecionados" usam só as regras de base: quem recorta a
   // seleção manual é a lista de ids, na action.
   return true;
+}
+
+/**
+ * O RECORTE POR ORIGEM (Fase 3 do plano das listas, 03/10/2026): além do
+ * público, de onde o lead veio. "Quem chegou pelo anúncio do Dom Parque e
+ * parou" é outra conversa que "quem chegou por portal".
+ *
+ * O canal sai de `canalDaOrigem`, a MESMA régua dos gráficos de origem: duas
+ * contas de "de onde veio" divergiriam no primeiro ajuste, e a lista que o
+ * gráfico mostra deixaria de ser a lista que a campanha alcança. O anúncio é
+ * `leads.anuncio_origem` comparado sem caixa nem espaço nas pontas.
+ *
+ * Vazio = sem recorte. O recorte só ESTREITA: nunca põe na lista quem as
+ * regras de `elegivel` tiraram.
+ */
+export type RecorteDeOrigem = { canal?: Canal | null; anuncio?: string | null };
+
+function chaveDoAnuncio(nome: string | null | undefined): string {
+  return (nome ?? "").trim().toLowerCase();
+}
+
+export function noRecorte(
+  lead: Pick<Lead, "origem" | "anuncioOrigem">,
+  recorte: RecorteDeOrigem | null | undefined,
+): boolean {
+  if (recorte?.canal && canalDaOrigem(lead.origem) !== recorte.canal) return false;
+  const anuncio = chaveDoAnuncio(recorte?.anuncio);
+  if (anuncio && chaveDoAnuncio(lead.anuncioOrigem) !== anuncio) return false;
+  return true;
+}
+
+export type OpcoesDeRecorte = {
+  canais: { canal: Canal; rotulo: string; total: number }[];
+  anuncios: { nome: string; total: number }[];
+};
+
+/** Só oferece canal e anúncio que EXISTEM na carteira: opção que leva a lista vazia é a primeira frustração da tela. */
+export function opcoesDeRecorte(leads: Pick<Lead, "origem" | "anuncioOrigem">[]): OpcoesDeRecorte {
+  const canais = new Map<Canal, number>();
+  const anuncios = new Map<string, { nome: string; total: number }>();
+  for (const lead of leads) {
+    const canal = canalDaOrigem(lead.origem);
+    canais.set(canal, (canais.get(canal) ?? 0) + 1);
+    const chave = chaveDoAnuncio(lead.anuncioOrigem);
+    if (chave) {
+      const atual = anuncios.get(chave);
+      anuncios.set(chave, { nome: atual?.nome ?? lead.anuncioOrigem!.trim(), total: (atual?.total ?? 0) + 1 });
+    }
+  }
+  return {
+    canais: [...canais.entries()]
+      .map(([canal, total]) => ({ canal, rotulo: ROTULO_DO_CANAL[canal], total }))
+      .sort((a, b) => b.total - a.total),
+    anuncios: [...anuncios.values()].sort((a, b) => b.total - a.total),
+  };
 }
