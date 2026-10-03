@@ -9153,6 +9153,6 @@ Nota: [[regras-do-corretor-e-horario-preferido]].
   pedido de imóvel pronto logo depois de a IA perguntar o estágio.
 - **"Eu quero te apagar meu contato" não era pedido de parada** para o
   detector. Agora é, junto com bloquear, "me esquece", "não me liga mais".
-- **Script Python que escreve TypeScript trocou `b` por backspace de
+- **Script Python que escreve TypeScript trocou `\b` por backspace de
   novo**, desta vez dentro de uma regex no turno. `cat -A` mostra `^H`.
 
