@@ -251,7 +251,7 @@ export default async function HomeInstitucional({
               de rolagem, atrás de três cards institucionais. Numa imobiliária
               o produto é a foto do imóvel — ela abre o conteúdo. */}
           {destaques.length > 0 && (
-            <section id="destaques" className="secao-passa scroll-mt-24 px-4 pb-16 sm:px-8 sm:pb-24">
+            <section id="destaques" className="scroll-mt-24 px-4 pb-16 sm:px-8 sm:pb-24">
               <div className="mx-auto w-full max-w-6xl">
                 {/* O rótulo acima do título passou a CONTAR (09/09/2026).
                     "Selecionados" em versalete não dizia nada que o título já
@@ -281,12 +281,20 @@ export default async function HomeInstitucional({
 
                 <div className="mt-10 grid w-full gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {destaques.map((e, i) => (
-                    <Reveal key={e.slug} delay={(i % 3) * 0.1} from="baixo" className="h-full">
+                    // `cartao-passa` no lugar do Reveal (03/10/2026): a mesma
+                    // passagem das seções, card a card. Os dois juntos dariam
+                    // dois donos da opacidade. A seção perdeu a `secao-passa`
+                    // pelo mesmo motivo: a dela somaria à de cada card.
+                    <div
+                      key={e.slug}
+                      className="cartao-passa h-full"
+                      style={{ "--coluna": i % 3 } as React.CSSProperties}
+                    >
                       <CardEmpreendimento
                         empreendimento={e}
                         velocidadeCapa={0.08 + (i % 3) * 0.05}
                       />
-                    </Reveal>
+                    </div>
                   ))}
                 </div>
 

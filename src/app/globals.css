@@ -3165,3 +3165,45 @@ main[data-rota="painel"] {
     opacity: 0.25;
   }
 }
+
+/*
+ * A mesma passagem nos CARDS de "Oportunidades em destaque" (03/10/2026).
+ * Card a card, cada um pela própria posição na tela. No computador, as três
+ * colunas partem de alturas diferentes (`--coluna`, 0 a 2) e chegam juntas:
+ * a fileira sobe em leque, sem precisar de atraso nenhum.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cartao-passa {
+      --sobe: 64px;
+      transform-origin: 50% 100%;
+      animation: cartao-passa linear both;
+      animation-timeline: view();
+    }
+  }
+}
+@media (min-width: 1024px) {
+  .cartao-passa {
+    --sobe: calc(56px + var(--coluna, 0) * 36px);
+  }
+}
+@keyframes cartao-passa {
+  entry 0% {
+    translate: 0 var(--sobe);
+    scale: 0.94;
+    opacity: 0.3;
+  }
+  entry 80% {
+    translate: 0 0;
+    scale: 1;
+    opacity: 1;
+  }
+  exit 10% {
+    scale: 1;
+    opacity: 1;
+  }
+  exit 100% {
+    scale: 0.9;
+    opacity: 0.2;
+  }
+}
