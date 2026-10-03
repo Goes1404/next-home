@@ -2,7 +2,7 @@
 title: O nome da agenda chega como pushName, misturado com o nome do perfil
 tags: [whatsapp, crm, armadilha, lgpd]
 type: armadilha
-status: em-teste
+status: growing
 custou: medio
 codigo:
   - src/lib/whatsapp/contatosDaAgenda.ts
