@@ -30,7 +30,7 @@ export async function horariosDeVisita(
   const [{ data: grade }, { data: marcadas }] = await Promise.all([
     supabase
       .from("corretor_disponibilidade")
-      .select("dia_semana, hora_inicio, hora_fim")
+      .select("dia_semana, hora_inicio, hora_fim, horas_preferidas")
       .eq("corretor_id", corretorId),
     /*
      * Só o que ainda vai acontecer: visita de ontem não ocupa vaga nenhuma.
@@ -49,6 +49,7 @@ export async function horariosDeVisita(
     diaSemana: f.dia_semana,
     horaInicio: f.hora_inicio,
     horaFim: f.hora_fim,
+    horasPreferidas: f.horas_preferidas ?? [],
   }));
 
   const ocupados = (marcadas ?? [])

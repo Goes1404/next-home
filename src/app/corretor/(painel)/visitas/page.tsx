@@ -55,7 +55,7 @@ export default async function VisitasPage({
   const { data: grade } = corretor
     ? await supabase
         .from("corretor_disponibilidade")
-        .select("dia_semana, hora_inicio, hora_fim")
+        .select("dia_semana, hora_inicio, hora_fim, horas_preferidas")
         .eq("corretor_id", corretor.id)
     : { data: null };
 
@@ -128,6 +128,7 @@ export default async function VisitasPage({
             diaSemana: f.dia_semana,
             horaInicio: f.hora_inicio,
             horaFim: f.hora_fim,
+            horasPreferidas: f.horas_preferidas ?? [],
           }))}
         />
       </div>

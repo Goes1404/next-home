@@ -149,6 +149,7 @@ export async function gerarEEnviarPelaIA(params: {
         telefoneCorretor: corretor.whatsapp,
         nomeAssistente: instancia.nome_assistente ?? site.assistente,
         tomVoz: instancia.tom_voz ?? "profissional e acolhedor",
+        regrasDaIa: await regrasDaIaDaInstancia(instancia.id),
       },
       catalogo,
       historico,
@@ -258,3 +259,17 @@ export const NOME_DO_PORTAL: Record<string, string> = {
   site_direto: "site",
   email_outro: "anúncio",
 };
+
+/**
+ * As regras do corretor (0154), lidas aqui e não passadas por quem chama:
+ * são três caminhos (palavra-chave, "IA assume agora", varredura) e um
+ * esquecido faria a IA responder sem elas.
+ */
+async function regrasDaIaDaInstancia(instanciaId: string): Promise<string | null> {
+  const { data } = await createServiceClient()
+    .from("corretor_whatsapp_instancias")
+    .select("regras_da_ia")
+    .eq("id", instanciaId)
+    .maybeSingle();
+  return data?.regras_da_ia ?? null;
+}

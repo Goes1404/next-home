@@ -9133,3 +9133,26 @@ Nota: [[lista-de-transmissao-visivel-e-controlavel]].
   lista e ficava sem resposta, porque a fala antiga do corretor desligou a
   IA (0152). O disparador chama `ativarIaNaConversa` depois de gravar o
   envio; se o corretor voltar a falar, desliga de novo.
+
+## A campanha "Dom" e as regras do corretor (0154, 03/10/2026)
+
+Nota: [[regras-do-corretor-e-horario-preferido]].
+
+- **Campanha paga do Dom Parque, 5 dias, R$ 200**: ~485 cliques de gente
+  (489 dos 974 eram o robô da Meta), 10 leads, 2 conversas reais, 0 renda,
+  0 visita no CRM. A perda grande é clique → mensagem enviada (~2%).
+- **A corretora escreveu as instruções para a IA dentro do chat da
+  cliente**, e a cliente recebeu. Agora existe "Suas regras para a IA"
+  (`regras_da_ia`, no prompt) e horas preferidas por dia na agenda
+  (`horas_preferidas`). Regra de horário vai na agenda e não no texto: a
+  lista do prompt diz "só estes existem" e brigaria com o texto.
+- **Com a grade aberta todo dia, o sábado nunca chegava ao prompt**: os seis
+  primeiros horários acabavam em três dias. O dia preferido entra além do
+  teto.
+- **"Pronto" sozinho é interjeição** ("pronto, pode ser"): só vale como
+  pedido de imóvel pronto logo depois de a IA perguntar o estágio.
+- **"Eu quero te apagar meu contato" não era pedido de parada** para o
+  detector. Agora é, junto com bloquear, "me esquece", "não me liga mais".
+- **Script Python que escreve TypeScript trocou `` por backspace de
+  novo**, desta vez dentro de uma regex no turno. `cat -A` mostra `^H`.
+

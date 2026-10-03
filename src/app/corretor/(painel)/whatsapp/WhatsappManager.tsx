@@ -38,6 +38,7 @@ interface Props {
     palavrasEntradaCliente: string | null;
     expedienteInicio: number;
     expedienteFim: number;
+    regrasDaIa: string | null;
   } | null;
 }
 
@@ -123,6 +124,7 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
                   palavrasEntradaCliente: configInicial.palavrasEntradaCliente,
                   expedienteInicio: configInicial.expedienteInicio,
                   expedienteFim: configInicial.expedienteFim,
+                  regrasDaIa: configInicial.regrasDaIa,
                 }
               : null
           }

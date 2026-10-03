@@ -58,7 +58,7 @@ import { blocoSemAcabamentoCadastrado } from "./acabamentoInventado";
  * `ia_interacoes`, e sem isso a medição do efeito não existe.
  */
 
-export const PROMPT_VERSAO = "2026.10-v45"; // a renda da FICHA chega ao atendimento (entrava null) e a escolha do que cabe corre sobre o catálogo inteiro, nomeando o mais perto quando nada cabe // resposta que era eco é refeita pelo modelo (com o que ele ia repetir) em vez da frase pronta; cliente colaborando ouve pronto/planta e dormitórios numa frase só // capacidade pela RENDA (ou profissão), nunca pela faixa: o código calcula o teto com o simulador de financiamento e indica entre os imóveis que cabem // perguntas ANTES de indicar imóvel: o planner não convida nem indica até o funil fechar (região, estágio, tipologia, capacidade), e o turno corta indicação prematura //  eval de conversa de 28/09: planner lê "2 dorm", "você tem...", "tem algo que...", "dá pra financiar?" (pede renda), "preciso falar com ela" e aceite de material; visita sem imóvel pergunta qual; sem cumprimento repetido; sem promessa de valorização //  a apresentação digital é SÓ o link da página do imóvel, nunca foto (a v39 mandava "link junto com uma ou duas fotos" e o modelo mandava só a foto) // a ficha do prompt diz quantas unidades restam por dormitórios, quando a lista de unidades existe (nunca inventa número) // a conversa ganha MEMORIA: o estado da negociacao entra antes de tudo no prompt e sobrevive a janela de 40 falas (ate 27 delas sao do corretor) + a recusa vira jogada em vez de cair no funil + pergunta nao classificada passa a ser respondida + quem some por 72h volta sendo perguntado se ainda vale // // a oferta solitária da IA passa a definir o FOCO: quem se interessa pelo imóvel oferecido não repete o nome dele, e sem foco o prompt voltava a dez fichas e desfilava por cima do interesse // a marca de "assunto respondido" acumula pela conversa (a v33 esquecia depois de um turno) + a IA não inventa acabamento (flagrada afirmando piso laminado e bancada em granito de um cadastro sem o campo)
+export const PROMPT_VERSAO = "2026.10-v46"; // as regras do corretor entram no prompt (0154), o cliente que pede pronto ouve que o lançamento não é pronto e recebe UM pronto, e "apagar meu contato" é pedido de parada // a renda da FICHA chega ao atendimento (entrava null) e a escolha do que cabe corre sobre o catálogo inteiro, nomeando o mais perto quando nada cabe // resposta que era eco é refeita pelo modelo (com o que ele ia repetir) em vez da frase pronta; cliente colaborando ouve pronto/planta e dormitórios numa frase só // capacidade pela RENDA (ou profissão), nunca pela faixa: o código calcula o teto com o simulador de financiamento e indica entre os imóveis que cabem // perguntas ANTES de indicar imóvel: o planner não convida nem indica até o funil fechar (região, estágio, tipologia, capacidade), e o turno corta indicação prematura //  eval de conversa de 28/09: planner lê "2 dorm", "você tem...", "tem algo que...", "dá pra financiar?" (pede renda), "preciso falar com ela" e aceite de material; visita sem imóvel pergunta qual; sem cumprimento repetido; sem promessa de valorização //  a apresentação digital é SÓ o link da página do imóvel, nunca foto (a v39 mandava "link junto com uma ou duas fotos" e o modelo mandava só a foto) // a ficha do prompt diz quantas unidades restam por dormitórios, quando a lista de unidades existe (nunca inventa número) // a conversa ganha MEMORIA: o estado da negociacao entra antes de tudo no prompt e sobrevive a janela de 40 falas (ate 27 delas sao do corretor) + a recusa vira jogada em vez de cair no funil + pergunta nao classificada passa a ser respondida + quem some por 72h volta sendo perguntado se ainda vale // // a oferta solitária da IA passa a definir o FOCO: quem se interessa pelo imóvel oferecido não repete o nome dele, e sem foco o prompt voltava a dez fichas e desfilava por cima do interesse // a marca de "assunto respondido" acumula pela conversa (a v33 esquecia depois de um turno) + a IA não inventa acabamento (flagrada afirmando piso laminado e bancada em granito de um cadastro sem o campo)
 
 /**
  * Os próximos dias com data e nome do dia da semana, prontos para o prompt.
@@ -110,6 +110,11 @@ export interface ContextoAtendimento {
   telefoneCorretor: string;
   nomeAssistente: string;
   tomVoz: string;
+  /**
+   * As regras do corretor para a IA dele (0154). Até aqui a corretora
+   * escrevia as instruções DENTRO do chat da cliente, e a cliente recebia.
+   */
+  regrasDaIa?: string | null;
   catalogo: Empreendimento[];
   historicoMensagens: { remetente: "cliente" | "bot" | "corretor"; texto: string }[];
   /** Trechos reais de conversas que converteram (ver `aprendizadoContinuo.ts`). Vazio para corretor sem histórico ainda. */
@@ -212,6 +217,23 @@ const INSTRUCOES_TOM: Record<TomVozBot, string> = {
   descontraido_acolhedor:
     "TOM DE VOZ: descontraído e acolhedor. Próxima e calorosa, como quem atende um amigo — pode usar emoji com parcimônia (no máximo um por mensagem) e linguagem leve, sem perder o profissionalismo.",
 };
+
+/**
+ * As regras que o corretor escreveu para a IA dele (0154).
+ *
+ * Valem mais que a tarefa do topo quando dizem o que fazer naquele momento
+ * da conversa: é o jeito dele de vender. Não valem acima do que protege o
+ * cliente e o corretor (inventar dado, prometer data, horário fora da lista):
+ * isso é segurança, não estilo.
+ */
+export function blocoRegrasDoCorretor(nomeCorretor: string, regras: string | null | undefined): string {
+  const texto = (regras ?? "").trim().slice(0, 1500);
+  if (!texto) return "";
+  return `
+REGRAS DE ${nomeCorretor.toUpperCase()} PARA VOCÊ — o corretor que você representa pediu assim. Siga. Quando uma delas disser o que fazer neste momento da conversa, ela vale mais que a tarefa do topo. Só não vale acima das regras que proíbem inventar informação, prometer data de entrega e oferecer horário fora da lista de horários reais:
+${texto}
+`;
+}
 
 function instrucaoDeTom(tomVoz: string): string {
   return INSTRUCOES_TOM[tomVoz as TomVozBot] ?? INSTRUCOES_TOM.consultivo_alto_padrao;
@@ -501,7 +523,7 @@ export function construirPromptSistema(ctx: ContextoAtendimento): string {
 Você não é uma atendente de suporte: é uma vendedora. Seu objetivo é conduzir a conversa — com elegância, nunca com pressão — do primeiro "oi" até a visita agendada ou a proposta.
 
 ${instrucaoDeTom(ctx.tomVoz)}
-
+${blocoRegrasDoCorretor(ctx.nomeCorretor, ctx.regrasDaIa)}
 AGORA SÃO ${agoraSP} (horário de São Paulo).
 
 CALENDÁRIO — use SEMPRE a data desta tabela ao preencher "visitaProposta". NUNCA calcule a data de cabeça, e nunca proponha um dia que já passou:

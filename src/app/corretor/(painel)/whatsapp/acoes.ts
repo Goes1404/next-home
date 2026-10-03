@@ -58,7 +58,7 @@ export async function testarAgenteIA(
   const supabase = await createClient();
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("nome_assistente, tom_voz")
+    .select("nome_assistente, tom_voz, regras_da_ia")
     .eq("corretor_id", corretor.id)
     .maybeSingle();
 
@@ -84,6 +84,7 @@ export async function testarAgenteIA(
       telefoneCorretor: corretor.whatsapp,
       nomeAssistente: instancia?.nome_assistente ?? site.assistente,
       tomVoz: instancia?.tom_voz ?? "consultivo_alto_padrao",
+      regrasDaIa: instancia?.regras_da_ia ?? null,
     },
     catalogo,
     historico: [...historico, { remetente: "cliente" as const, texto: mensagem }],
@@ -144,6 +145,8 @@ export async function salvarConfiguracaoWhatsapp(params: {
   /** O expediente do corretor (0148). */
   expedienteInicio?: number;
   expedienteFim?: number;
+  /** As regras do corretor para a IA (0154). Vazio = sem regras. */
+  regrasDaIa?: string;
 }): Promise<{ ok?: string; erro?: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
@@ -165,6 +168,10 @@ export async function salvarConfiguracaoWhatsapp(params: {
   const palavraChave = params.palavraChaveAtivacao?.trim() || null;
   const palavraTeste = params.palavraChaveTeste?.trim() || null;
   const frasesEntrada = params.palavrasEntradaCliente?.trim() || null;
+  const regrasDaIa = params.regrasDaIa?.trim() || null;
+  if (regrasDaIa && regrasDaIa.length > 1500) {
+    return { erro: "As regras para a IA passam de 1500 caracteres. Encurte um pouco." };
+  }
 
   /*
    * Duas palavras iguais fariam a de teste vencer sempre (ela é conferida
@@ -223,6 +230,7 @@ export async function salvarConfiguracaoWhatsapp(params: {
         palavra_chave_teste: palavraTeste,
         expediente_inicio: expedienteInicio,
         expediente_fim: expedienteFim,
+        regras_da_ia: regrasDaIa,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "corretor_id" },

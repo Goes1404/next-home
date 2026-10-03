@@ -35,6 +35,11 @@ export interface FaixaDisponivel {
   diaSemana: number;
   horaInicio: number;
   horaFim: number;
+  /**
+   * Horas deste dia que a IA oferece PRIMEIRO (0154): "sempre sugerir no
+   * sábado às 10h ou às 14h". Vazio = o primeiro livre e o do meio.
+   */
+  horasPreferidas?: readonly number[];
 }
 
 export interface HorarioDeVisita {
@@ -42,6 +47,8 @@ export interface HorarioDeVisita {
   quando: Date;
   /** "sábado, 06/09 às 10h" — o jeito que se fala com o cliente. */
   rotulo: string;
+  /** Hora que o corretor pediu para oferecer primeiro (0154). */
+  preferido?: boolean;
 }
 
 const PARTES_SP = new Intl.DateTimeFormat("en-CA", {
@@ -149,11 +156,26 @@ export function proximosHorarios(params: {
   const horarios: HorarioDeVisita[] = [];
   const hoje = emSaoPaulo(params.agora).dia;
   const teto = params.quantos ?? POR_DIA * 7;
+  /*
+   * O primeiro dia com horário PREFERIDO entra mesmo depois do teto: com a
+   * grade da corretora aberta todo dia, os seis primeiros horários acabam
+   * em três dias, e o sábado que ela pediu para oferecer nunca chegava ao
+   * prompt (anúncio do Dom Parque, 02/10/2026).
+   */
+  let preferidoIncluido = false;
 
-  for (let i = 0; i <= DIAS_DE_HORIZONTE && horarios.length < teto; i++) {
+  for (
+    let i = 0;
+    i <= DIAS_DE_HORIZONTE && (horarios.length < teto || !preferidoIncluido);
+    i++
+  ) {
     const dia = somarDias(hoje, i);
     const faixa = porDia.get(new Date(`${dia}T12:00:00Z`).getUTCDay());
     if (!faixa) continue;
+    const preferidas = (faixa.horasPreferidas ?? []).filter((h) => h >= faixa.horaInicio && h < faixa.horaFim);
+    const cheio = horarios.length >= teto;
+    // Depois do teto, só o dia preferido ainda entra.
+    if (cheio && preferidas.length === 0) continue;
 
     const livres: { quando: Date; hora: number }[] = [];
     for (let hora = faixa.horaInicio; hora < faixa.horaFim; hora++) {
@@ -172,6 +194,16 @@ export function proximosHorarios(params: {
      * `floor` e não `round` porque a faixa 9h-12h tem de continuar dando
      * 9h e 10h — é o caso do teste que já existia.
      */
+    const livresPreferidos = livres.filter((l) => preferidas.includes(l.hora));
+    if (livresPreferidos.length > 0) {
+      for (const { quando, hora } of livresPreferidos.slice(0, POR_DIA)) {
+        horarios.push({ quando, rotulo: rotuloDe(quando, hora), preferido: true });
+      }
+      preferidoIncluido = true;
+      continue;
+    }
+    if (cheio) continue;
+
     const meio = Math.floor((faixa.horaInicio + faixa.horaFim) / 2);
     const escolhidos = [livres[0]];
     const daTarde = livres.find((l) => l.hora >= meio && l.hora !== livres[0].hora);
@@ -208,8 +240,22 @@ export function blocoDeHorarios(horarios: readonly HorarioDeVisita[]): string {
     porDia.set(dia, [...(porDia.get(dia) ?? []), hora]);
   }
 
+  /*
+   * O corretor pediu para oferecer estes primeiro (0154). A linha vem antes
+   * da lista: é a primeira coisa que ela lê sobre horário.
+   */
+  const preferidos = horarios.filter((h) => h.preferido);
+  const diaPreferido = preferidos[0]?.rotulo.split(" às ")[0];
+  const linhaPreferida = diaPreferido
+    ? `OFEREÇA PRIMEIRO, como o corretor pediu: ${diaPreferido} às ${preferidos
+        .filter((h) => h.rotulo.startsWith(diaPreferido))
+        .map((h) => h.rotulo.split(" às ")[1])
+        .join(" ou às ")}. Só se o cliente não puder, ofereça outro da lista.`
+    : "";
+
   return [
     "HORÁRIOS REAIS DE VISITA — só estes existem:",
+    ...(linhaPreferida ? [linhaPreferida] : []),
     ...[...porDia].map(([dia, horas]) => `- ${dia}: ${horas.join(", ")}`),
     "",
     "Ofereça no máximo DOIS por vez, e SEMPRE desta lista.",

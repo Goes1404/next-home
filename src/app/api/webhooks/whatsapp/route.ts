@@ -918,6 +918,7 @@ export async function POST(req: NextRequest) {
         telefoneCorretor: instancia.whatsappCorretor,
         nomeAssistente: instancia.nomeAssistente,
         tomVoz: instancia.tomVoz,
+        regrasDaIa: instancia.regrasDaIa,
       },
       catalogo,
       historico,

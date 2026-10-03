@@ -410,7 +410,7 @@ async function responderAtrasada(
 
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, conectado_em, bloqueado_ate, expediente_inicio, expediente_fim")
+    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, regras_da_ia, modo_bot, conectado_em, bloqueado_ate, expediente_inicio, expediente_fim")
     .eq("corretor_id", params.corretorId)
     .maybeSingle();
   if (!instancia || !instancia.conectado_em) return "pulada";
@@ -467,6 +467,7 @@ async function responderAtrasada(
       telefoneCorretor: corretor.whatsapp,
       nomeAssistente: instancia.nome_assistente,
       tomVoz: instancia.tom_voz,
+      regrasDaIa: instancia.regras_da_ia,
     },
     catalogo,
     historico,
@@ -818,7 +819,7 @@ async function processarFollowup(
   // Revalidação 3: instância, modo e cota anti-ban.
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, conectado_em, bloqueado_ate, expediente_inicio, expediente_fim")
+    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, regras_da_ia, modo_bot, conectado_em, bloqueado_ate, expediente_inicio, expediente_fim")
     .eq("id", item.instancia_id)
     .maybeSingle();
 
@@ -964,6 +965,7 @@ async function processarFollowup(
       telefoneCorretor: corretor.whatsapp,
       nomeAssistente: instancia.nome_assistente,
       tomVoz: instancia.tom_voz,
+      regrasDaIa: instancia.regras_da_ia,
     },
     catalogo,
     historico,

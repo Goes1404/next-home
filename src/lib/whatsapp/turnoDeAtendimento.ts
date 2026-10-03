@@ -1,4 +1,5 @@
 import "server-only";
+import { estagioIncompativel } from "./estagioIncompativel";
 
 import type { Empreendimento } from "@/lib/types";
 import { gerarRespostaIA, type RespostaAgenteIA } from "./aiAgent";
@@ -86,6 +87,8 @@ export type IdentidadeDoAtendimento = {
   telefoneCorretor: string;
   nomeAssistente: string;
   tomVoz: string;
+  /** As regras que o corretor escreveu para a IA dele (0154). */
+  regrasDaIa?: string | null;
 };
 
 export type PedidoDeTurno = {
@@ -258,6 +261,28 @@ export async function executarTurnoDeAtendimento(
   ];
 
   /*
+   * Quer PRONTO e o imóvel da conversa não é (anúncio do Dom Parque,
+   * 02/10/2026: a IA vendeu "a vantagem de imóvel pronto" de um lançamento
+   * com entrega em 2030). O bloco diz isso antes da tarefa e oferece UM
+   * pronto; esse pronto entra no prompt com a ficha e fica fora da trava de
+   * qualificação, porque foi o próprio cliente que o pediu.
+   */
+  const focoCompleto = foco ? (pedido.catalogo.find((e) => e.slug === foco.slug) ?? null) : null;
+  const estagio =
+    vezDoCliente.length > 0
+      ? estagioIncompativel({
+          falaDaVez: textoDaVez,
+          foco: focoCompleto,
+          catalogo: pedido.catalogo,
+          teto: teto?.valor ?? null,
+          perguntouEstagio: /\b(pronto|planta)\b/i.test(ultimaDoBot) && ultimaDoBot.includes("?"),
+        })
+      : null;
+  if (estagio?.alternativa && !catalogoDoPrompt.some((e) => e.slug === estagio.alternativa?.slug)) {
+    catalogoDoPrompt.push(estagio.alternativa);
+  }
+
+  /*
    * PLANNER: a jogada desta mensagem é decidida AQUI, em código, antes de
    * qualquer chamada ao modelo (`jogada.ts`).
    *
@@ -283,6 +308,7 @@ export async function executarTurnoDeAtendimento(
   const imoveisDoCliente = new Set<string>([
     ...(foco ? [foco.slug] : []),
     ...[...falasDoCliente, textoDaVez].flatMap((t) => imoveisCitados(t, pedido.catalogo)),
+    ...(estagio?.alternativa ? [estagio.alternativa.slug] : []),
   ]);
   const primeiraDoCliente = historicoAnterior.findIndex((m) => m.remetente === "cliente");
   const jaIndicouImovel =
@@ -341,6 +367,7 @@ export async function executarTurnoDeAtendimento(
       blocoMemoria: blocoDaMemoria(pedido.memoria ?? null),
       blocoJogada: [
         blocoDaJogada(jogada, { nomeDoFoco: foco?.nome ?? null }),
+        estagio?.bloco ?? "",
         pendenteDaTrava
           ? blocoDeQualificacao(pendenteDaTrava, {
               nomeDoFoco: foco?.nome ?? null,

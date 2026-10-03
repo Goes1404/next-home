@@ -845,6 +845,7 @@ export type Database = {
           dia_semana: number
           hora_fim: number
           hora_inicio: number
+          horas_preferidas: number[]
           id: string
         }
         Insert: {
@@ -853,6 +854,7 @@ export type Database = {
           dia_semana: number
           hora_fim: number
           hora_inicio: number
+          horas_preferidas?: number[]
           id?: string
         }
         Update: {
@@ -861,6 +863,7 @@ export type Database = {
           dia_semana?: number
           hora_fim?: number
           hora_inicio?: number
+          horas_preferidas?: number[]
           id?: string
         }
         Relationships: [
@@ -895,6 +898,7 @@ export type Database = {
           palavras_entrada_cliente: string | null
           qrcode_base64: string | null
           status_conexao: "desconectado" | "conectando" | "conectado"
+          regras_da_ia: string | null
           telefone_conectado: string | null
           tom_voz: string
           updated_at: string
@@ -921,6 +925,7 @@ export type Database = {
           palavras_entrada_cliente?: string | null
           qrcode_base64?: string | null
           status_conexao?: "desconectado" | "conectando" | "conectado"
+          regras_da_ia?: string | null
           telefone_conectado?: string | null
           tom_voz?: string
           updated_at?: string
@@ -947,6 +952,7 @@ export type Database = {
           palavras_entrada_cliente?: string | null
           qrcode_base64?: string | null
           status_conexao?: "desconectado" | "conectando" | "conectado"
+          regras_da_ia?: string | null
           telefone_conectado?: string | null
           tom_voz?: string
           updated_at?: string

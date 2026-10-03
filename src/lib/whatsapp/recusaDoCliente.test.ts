@@ -135,3 +135,28 @@ describe("reclamar que não recebeu não é pedir para parar", () => {
     expect(detectarRecusa("nao me manda mais nada")?.familia).toBe("parada");
   });
 });
+
+describe("apagar o contato, bloquear e \"me esquece\" são pedido de parada (03/10/2026)", () => {
+  it("a frase do anúncio do Dom Parque que passou batido", () => {
+    expect(detectarRecusa("Eu quero te apagar meu contato sua doida")?.familia).toBe("parada");
+  });
+
+  it("variações do mesmo pedido", () => {
+    for (const fala of [
+      "apaga meu número",
+      "pode excluir meus dados",
+      "remove meu contato daí",
+      "vou te bloquear",
+      "me esquece",
+      "não me liga mais",
+      "para de me encher",
+    ]) {
+      expect(detectarRecusa(fala)?.familia, fala).toBe("parada");
+    }
+  });
+
+  it("conversa normal sobre contato não vira parada", () => {
+    expect(detectarRecusa("pode salvar meu contato")).toBeNull();
+    expect(detectarRecusa("me liga amanhã de manhã")).toBeNull();
+  });
+});

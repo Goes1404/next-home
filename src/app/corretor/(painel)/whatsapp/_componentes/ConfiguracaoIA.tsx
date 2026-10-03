@@ -53,6 +53,7 @@ export type ConfigIA = {
   palavrasEntradaCliente: string | null;
   expedienteInicio: number;
   expedienteFim: number;
+  regrasDaIa: string | null;
 };
 
 /** "a", "a" e "b", "a", "b" e "c" — lista em português, com aspas. */
@@ -79,6 +80,7 @@ export function ConfiguracaoIA({
   const [palavraChaveTeste, setPalavraChaveTeste] = useState(inicial?.palavraChaveTeste ?? "");
   const [expedienteInicio, setExpedienteInicio] = useState(inicial?.expedienteInicio ?? EXPEDIENTE.inicioHora);
   const [expedienteFim, setExpedienteFim] = useState(inicial?.expedienteFim ?? EXPEDIENTE.fimHora);
+  const [regrasDaIa, setRegrasDaIa] = useState(inicial?.regrasDaIa ?? "");
   const [palavrasEntradaCliente, setPalavrasEntradaCliente] = useState(
     inicial?.palavrasEntradaCliente ?? "",
   );
@@ -118,6 +120,7 @@ export function ConfiguracaoIA({
       palavrasEntradaCliente,
       expedienteInicio,
       expedienteFim,
+      regrasDaIa,
     });
     setSalvando(false);
     setFeedback(resultado.erro ?? resultado.ok ?? null);
@@ -253,6 +256,31 @@ export function ConfiguracaoIA({
                 <option value="descontraido_acolhedor">Descontraído e acolhedor</option>
               </select>
             </div>
+          </div>
+
+          {/*
+            As regras do corretor (0154). Até 02/10/2026 a corretora escrevia
+            as instruções para a IA dentro do chat da cliente, e a cliente
+            recebia. O lugar delas é aqui.
+          */}
+          <div className="border-linha space-y-1.5 border-t pt-4">
+            <label className="text-fluid-xs text-apoio block" htmlFor="regras-da-ia">
+              Suas regras para a IA (opcional)
+            </label>
+            <textarea
+              id="regras-da-ia"
+              rows={4}
+              maxLength={1500}
+              value={regrasDaIa}
+              onChange={(e) => setRegrasDaIa(e.target.value)}
+              placeholder="Uma regra por linha"
+              className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento w-full rounded-xl border px-3.5 py-2.5 focus:outline-none"
+            />
+            <p className="text-fluid-xs text-apoio leading-snug">
+              Como você quer que ela atenda. Ex.: &quot;Na primeira resposta, fale da localização e das plantas e
+              pergunte quantos dormitórios&quot;. Escreva aqui, nunca no chat do cliente: lá, ele recebe. Horário
+              de visita preferido se escolhe na agenda de Visitas.
+            </p>
           </div>
 
           <div className="border-linha space-y-1.5 border-t pt-4">

@@ -639,6 +639,7 @@ export async function responderComIA(conversaId: string): Promise<ResultadoEnvio
       telefoneCorretor: identidade.whatsappCorretor,
       nomeAssistente: identidade.nomeAssistente,
       tomVoz: identidade.tomVoz,
+      regrasDaIa: identidade.regrasDaIa,
     },
     catalogo,
     historico,

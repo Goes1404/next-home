@@ -41,7 +41,11 @@ export type Recusa = {
  * razão pela qual a janela de horário comercial existe.
  */
 const PARADA =
-  /\b(me tirar? da lista|tirar da lista|tira meu numero|nao quero mais receber|para de (mandar|enviar|me mandar)|pare de (mandar|enviar|me mandar)|(pode|podem) parar|para com isso|nao me mand(e|em)|nao me manda mais|descadastr\w*|sair da lista|numero errado|pessoa errada|nao era eu|nao sou eu|nao conheco (voces|essa empresa))\b/;
+  /\b(me tirar? da lista|tirar da lista|tira meu numero|nao quero mais receber|para de (mandar|enviar|me mandar)|pare de (mandar|enviar|me mandar)|(pode|podem) parar|para com isso|nao me mand(e|em)|nao me manda mais|descadastr\w*|sair da lista|numero errado|pessoa errada|nao era eu|nao sou eu|nao conheco (voces|essa empresa)|(apagar|apaga|apague|excluir|exclui|exclua|remover|remove|remova|deletar|deleta|delete|bloquear|bloqueia|bloqueie) (o |esse |este )?(meu|o meu|meus) (contato|numero|telefone|cadastro|dados)|(vou|ja vou|vou te) bloquear|me bloqueia|me esquece|esquece meu (numero|contato)|nao me procur\w*|nao (me )?(liga|ligue|chama|chame) mais|para de me (ligar|chamar|encher|incomodar)|pare de me (ligar|chamar|encher|incomodar))\b/;
+// "Eu quero te apagar meu contato sua doida" (anúncio do Dom Parque,
+// 29/09/2026) passou batido: a IA seguiu oferecendo o imóvel a quem pediu
+// para sumir. Pedido de parada não é só "me tira da lista": é apagar o
+// contato, bloquear, "me esquece".
 
 /** Fim de jornada: ele resolveu, e não há o que reofertar. */
 const JA_RESOLVIDO =

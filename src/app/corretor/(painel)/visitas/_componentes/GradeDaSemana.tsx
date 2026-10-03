@@ -67,7 +67,31 @@ export function GradeDaSemana({ inicial }: { inicial: FaixaDaSemana[] }) {
               ...(campo === "horaFim" && valor <= f.horaInicio ? { horaInicio: valor - 1 } : {}),
             }
           : f,
+      ).map((f) =>
+        // Hora preferida fora do novo intervalo deixa de valer.
+        f.diaSemana === dia
+          ? { ...f, horasPreferidas: (f.horasPreferidas ?? []).filter((h) => h >= f.horaInicio && h < f.horaFim) }
+          : f,
       ),
+    );
+  };
+
+  /*
+   * As horas que a IA oferece PRIMEIRO neste dia (0154): "sempre sugerir no
+   * sábado às 10h ou às 14h". Até duas, dentro do intervalo do dia.
+   */
+  const mudarPreferida = (dia: number, posicao: 0 | 1, valor: number | null) => {
+    setAviso(null);
+    setFaixas((atual) =>
+      atual.map((f) => {
+        if (f.diaSemana !== dia) return f;
+        const horas: (number | null)[] = [...(f.horasPreferidas ?? [])];
+        horas[posicao] = valor;
+        const limpas = [...new Set(horas.filter((h): h is number => h !== null && !Number.isNaN(h)))].sort(
+          (a, b) => a - b,
+        );
+        return { ...f, horasPreferidas: limpas };
+      }),
     );
   };
 
@@ -148,6 +172,28 @@ export function GradeDaSemana({ inicial }: { inicial: FaixaDaSemana[] }) {
                       <option key={h} value={h}>{`${h}h`}</option>
                     ))}
                   </select>
+                </span>
+              ) : null}
+
+              {faixa ? (
+                <span className="text-fluid-xs text-apoio flex w-full flex-wrap items-center gap-2 pl-1">
+                  a IA oferece primeiro
+                  {([0, 1] as const).map((posicao) => (
+                    <select
+                      key={posicao}
+                      aria-label={`${posicao + 1}º horário preferido da ${longo}`}
+                      value={faixa.horasPreferidas?.[posicao] ?? ""}
+                      onChange={(e) =>
+                        mudarPreferida(n, posicao, e.target.value === "" ? null : Number(e.target.value))
+                      }
+                      className="border-linha bg-campo text-titulo min-h-11 cursor-pointer rounded-lg border px-2"
+                    >
+                      <option value="">—</option>
+                      {HORAS.filter((h) => h >= faixa.horaInicio && h < faixa.horaFim).map((h) => (
+                        <option key={h} value={h}>{`${h}h`}</option>
+                      ))}
+                    </select>
+                  ))}
                 </span>
               ) : (
                 <span className="text-fluid-xs text-tenue">não recebo</span>

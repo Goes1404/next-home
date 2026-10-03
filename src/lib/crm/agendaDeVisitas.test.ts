@@ -186,3 +186,39 @@ describe("temAgendaConfigurada", () => {
     expect(temAgendaConfigurada(GRADE)).toBe(true);
   });
 });
+
+describe("horas preferidas do corretor (0154)", () => {
+  /** Quarta, 30/09/2026, 10h em São Paulo. */
+  const QUARTA_10H = new Date("2026-09-30T13:00:00Z");
+  /** A grade real da Bruna: todo dia das 9h às 22h, sábado com 10h e 14h primeiro. */
+  const TODO_DIA: FaixaDisponivel[] = [0, 1, 2, 3, 4, 5, 6].map((d) => ({
+    diaSemana: d,
+    horaInicio: 9,
+    horaFim: 22,
+    ...(d === 6 ? { horasPreferidas: [10, 14] } : {}),
+  }));
+
+  it("o sábado preferido entra mesmo além dos seis primeiros horários", () => {
+    const h = proximosHorarios({ grade: TODO_DIA, ocupados: [], agora: QUARTA_10H, quantos: 6 });
+    const sabado = h.filter((x) => x.preferido).map((x) => x.rotulo);
+    expect(sabado).toEqual(["sábado, 03/10 às 10h", "sábado, 03/10 às 14h"]);
+  });
+
+  it("o bloco do prompt manda oferecer o preferido primeiro", () => {
+    const h = proximosHorarios({ grade: TODO_DIA, ocupados: [], agora: QUARTA_10H, quantos: 6 });
+    const bloco = blocoDeHorarios(h);
+    expect(bloco).toContain("OFEREÇA PRIMEIRO, como o corretor pediu: sábado, 03/10 às 10h ou às 14h");
+  });
+
+  it("hora preferida já ocupada não é oferecida", () => {
+    const ocupado = new Date("2026-10-03T13:00:00Z"); // sábado 10h
+    const h = proximosHorarios({ grade: TODO_DIA, ocupados: [ocupado], agora: QUARTA_10H, quantos: 6 });
+    expect(h.filter((x) => x.preferido).map((x) => x.rotulo)).toEqual(["sábado, 03/10 às 14h"]);
+  });
+
+  it("sem preferência, nada muda", () => {
+    const h = proximosHorarios({ grade: GRADE, ocupados: [], agora: SABADO_8H, quantos: 5 });
+    expect(h.some((x) => x.preferido)).toBe(false);
+    expect(blocoDeHorarios(h)).not.toContain("OFEREÇA PRIMEIRO");
+  });
+});

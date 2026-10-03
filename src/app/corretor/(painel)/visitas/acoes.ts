@@ -18,6 +18,8 @@ export interface FaixaDaSemana {
   diaSemana: number;
   horaInicio: number;
   horaFim: number;
+  /** Horas que a IA oferece primeiro neste dia (0154). */
+  horasPreferidas?: number[];
 }
 
 export async function salvarDisponibilidade(
@@ -33,11 +35,15 @@ export async function salvarDisponibilidade(
       f.diaSemana <= 6 &&
       f.horaInicio >= 6 &&
       f.horaFim <= 22 &&
-      f.horaFim > f.horaInicio,
+      f.horaFim > f.horaInicio &&
+      (f.horasPreferidas ?? []).length <= 2 &&
+      (f.horasPreferidas ?? []).every((h) => Number.isInteger(h) && h >= f.horaInicio && h < f.horaFim),
   );
 
   if (validas.length !== faixas.length) {
-    return { erro: "Há um horário inválido na grade. O fim precisa ser depois do começo." };
+    return {
+      erro: "Há um horário inválido na grade. O fim precisa ser depois do começo, e o horário preferido precisa estar dentro do dia.",
+    };
   }
 
   const supabase = await createClient();
@@ -58,6 +64,7 @@ export async function salvarDisponibilidade(
         dia_semana: f.diaSemana,
         hora_inicio: f.horaInicio,
         hora_fim: f.horaFim,
+        horas_preferidas: [...new Set(f.horasPreferidas ?? [])].sort((a, b) => a - b),
       })),
     );
     if (error) return { erro: "Não foi possível salvar agora. Tente de novo." };
