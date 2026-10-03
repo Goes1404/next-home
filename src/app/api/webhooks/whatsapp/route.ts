@@ -22,7 +22,6 @@ import {
   enviarPresencaDigitando,
 } from "@/lib/whatsapp/provider";
 import {
-  agendarFollowup,
   agendarVisitaLead,
   aplicarAckDeEntrega,
   avancarLeadParaPrimeiroContato,
@@ -68,6 +67,7 @@ import {
   registrarAtivacaoEmLeadAlheio,
 } from "@/lib/whatsapp/repositorio";
 import { importarHistoricoDoChat } from "@/lib/whatsapp/importarHistorico";
+import { gerarEEnviarPelaIA } from "@/lib/whatsapp/aberturaPelaIA";
 import { instrucaoPelosFollowups } from "@/lib/whatsapp/respostaAosFollowups";
 import {
   clienteTrouxeFraseDeEntrada,
@@ -592,13 +592,18 @@ export async function POST(req: NextRequest) {
          */
         if (decisao.marcarComoTeste) await marcarConversaComoTeste(conversa.id);
         /*
-         * Número que a palavra acabou de cadastrar: traz o que já foi
-         * conversado no chat e, com isso, preenche a ficha. Roda depois da
-         * resposta ao provedor (`after`), porque a importação pode transcrever
-         * áudios e passar dos segundos que um webhook deve levar.
+         * Depois da resposta ao provedor (`after`), porque os dois passos
+         * podem levar segundos:
+         *
+         * 1. Número que a palavra acabou de cadastrar (0146): traz o que já
+         *    foi conversado no chat e, com isso, preenche a ficha.
+         * 2. O cliente estava esperando? A IA responde agora (plano de
+         *    ativação, 2.3), como no "IA assume agora". A mensagem com a
+         *    palavra é do corretor e fecharia a rajada, por isso é
+         *    desconsiderada; sem pendência do cliente, nada é enviado (N1).
          */
-        if (cadastradoPelaPalavra) {
-          after(async () => {
+        after(async () => {
+          if (cadastradoPelaPalavra) {
             const trazidas = await importarHistoricoDoChat({
               instanceName: instancia.instanceName,
               conversaId: conversa.id,
@@ -612,8 +617,28 @@ export async function POST(req: NextRequest) {
                 telefone: sender,
               });
             }
+          }
+          const r = await gerarEEnviarPelaIA({
+            conversa: {
+              id: conversa.id,
+              telefoneCliente: conversa.telefoneCliente,
+              leadId: conversa.leadId,
+              eTeste: conversa.eTeste || decisao.marcarComoTeste,
+            },
+            instancia: {
+              id: instancia.id,
+              corretor_id: instancia.corretorId,
+              instance_name: instancia.instanceName,
+              nome_assistente: instancia.nomeAssistente,
+              tom_voz: instancia.tomVoz,
+              conectado_em: null,
+            },
+            instrucaoAbertura: "",
+            desconsiderarUltimaFalaDoCorretor: true,
+            somenteResposta: true,
           });
-        }
+          if (r.erro) console.warn("[palavra-chave] a IA não respondeu a pendência:", r.erro);
+        });
         return NextResponse.json({
           ok: true,
           action: decisao.marcarComoTeste
@@ -1175,16 +1200,6 @@ export async function POST(req: NextRequest) {
       if (dataVisita) {
         visitaConfirmada = await agendarVisitaLead(conversa.leadId, dataVisita);
       }
-    }
-
-    /*
-     * Lead que promete (morno para cima) e conversa que o BOT respondeu:
-     * agenda reengajamento para o caso de o cliente sumir — quem responde
-     * cancela (ver início do POST). Fora isso, nenhum lead morre por
-     * silêncio nosso.
-     */
-    if (envio.enviado && dossie.temperaturaScore >= 40) {
-      await agendarFollowup(conversa.id, instancia.id);
     }
 
     // Duas classes de aviso ao corretor, nunca as duas juntas na mesma

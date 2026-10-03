@@ -25,6 +25,7 @@ export type TipoItemFila =
   | "cliente_recusou"
   | "contato_de_outro_corretor"
   | "lead_novo"
+  | "sugestao_de_mensagem"
   | "tarefa_vencida"
   | "tarefa_hoje"
   | "lembrete_vencido"
@@ -50,6 +51,8 @@ export type ItemFila = {
   anotacaoId?: string;
   /** Conversa de origem — permite pedir a resposta da IA sem sair do Início. */
   conversaId?: string;
+  /** Sugestão de mensagem (0147) — permite enviar ou dispensar sem sair do Início. */
+  followupId?: string;
   /** Peso na ordenação; menor primeiro. */
   peso: number;
 };
@@ -117,6 +120,12 @@ const PESO: Record<TipoItemFila, number> = {
   tarefa_vencida: 3,
   lembrete_vencido: 3,
   lead_novo: 4,
+  /*
+   * Mensagem que a IA sugeriu (pós-visita e indicação, 0147). Pesa como lead
+   * novo: o cliente acabou de visitar ou de fechar, e o momento esfria em
+   * horas, mas nada está atrasado ainda.
+   */
+  sugestao_de_mensagem: 4,
   tarefa_hoje: 5,
   lembrete_hoje: 5,
   sem_revisao: 6,
@@ -226,7 +235,14 @@ export async function getFilaDeTrabalho(
         .limit(INDIVIDUAIS_POR_TIPO)
     : Promise.resolve({ data: [] as { id: string; telefone: string; created_at: string }[] });
 
-  const [esperando, visitas, recusas, novos, parados, revisao, lembretes, alheios] = await Promise.all([
+  const consultaSugestoes = supabase
+    .from("whatsapp_followups")
+    .select("id, tipo, texto_sugerido, conversa_id, sugerido_em")
+    .eq("status", "sugerido")
+    .order("sugerido_em", { ascending: false })
+    .limit(INDIVIDUAIS_POR_TIPO);
+
+  const [esperando, visitas, recusas, novos, parados, revisao, lembretes, alheios, sugestoes] = await Promise.all([
     /*
      * Quem falou com a gente e está esperando (0087). Primeiro item da fila
      * porque é a única situação em que a pessoa já levantou a mão e nós
@@ -291,7 +307,30 @@ export async function getFilaDeTrabalho(
       .not("conversa_id", "is", null),
     consultaLembretes,
     consultaAlheios,
+    consultaSugestoes,
   ]);
+
+  /*
+   * Quem está esperando DURANTE a pausa do corretor (plano de ativação, 2.4):
+   * a IA está calada porque ele falou, então a fila diz isso em vez de só
+   * "sem resposta". Uma consulta só, sobre as conversas que já vieram.
+   */
+  const idsEsperando = (esperando.data ?? []).map((c) => c.conversa_id as string).filter(Boolean);
+  const pausaPorConversa = new Map<string, string>();
+  const nomePorConversa = new Map<string, string>();
+  const idsSugestao = (sugestoes.data ?? []).map((f) => f.conversa_id);
+  if (idsEsperando.length > 0 || idsSugestao.length > 0) {
+    const { data: conversasDaFila } = await supabase
+      .from("whatsapp_conversas")
+      .select("id, pausado_humano_ate, nome_cliente, telefone_cliente")
+      .in("id", [...idsEsperando, ...idsSugestao]);
+    for (const c of conversasDaFila ?? []) {
+      if (c.pausado_humano_ate && new Date(c.pausado_humano_ate) > agora) {
+        pausaPorConversa.set(c.id, c.pausado_humano_ate);
+      }
+      nomePorConversa.set(c.id, c.nome_cliente || c.telefone_cliente);
+    }
+  }
 
   const itens: ItemFila[] = [];
 
@@ -308,8 +347,9 @@ export async function getFilaDeTrabalho(
        * A espera em horas, e em DIAS quando passa de um: "há 5 dias" dói
        * como tem de doer, e "há 47 horas" ninguém converte de cabeça.
        */
-      detalhe:
-        horas >= 24
+      detalhe: pausaPorConversa.has(conversa.conversa_id as string)
+        ? `Esperando durante a sua pausa há ${horas >= 1 ? `${horas}h` : "menos de 1h"} · a IA volta às ${horaCurta.format(new Date(pausaPorConversa.get(conversa.conversa_id as string)!))}`
+        : horas >= 24
           ? `Escreveu há ${Math.floor(horas / 24)} dia${horas >= 48 ? "s" : ""} e está sem resposta`
           : horas >= 1
             ? `Escreveu há ${horas}h e está sem resposta`
@@ -361,6 +401,24 @@ export async function getFilaDeTrabalho(
        */
       whatsapp: motivo === "parada" ? undefined : whatsappDoLead(lead),
       peso: PESO.cliente_recusou,
+    });
+  }
+
+  for (const sugestao of sugestoes.data ?? []) {
+    if (!sugestao.texto_sugerido) continue;
+    const quem = nomePorConversa.get(sugestao.conversa_id) ?? "cliente";
+    itens.push({
+      chave: `sugestao_de_mensagem:${sugestao.id}`,
+      tipo: "sugestao_de_mensagem",
+      followupId: sugestao.id,
+      conversaId: sugestao.conversa_id,
+      titulo:
+        sugestao.tipo === "indicacao"
+          ? `Pedir indicação a ${quem}`
+          : `Perguntar a ${quem} o que achou da visita`,
+      detalhe: `“${sugestao.texto_sugerido}”`,
+      href: `/corretor/conversas?conversa=${sugestao.conversa_id}`,
+      peso: PESO.sugestao_de_mensagem,
     });
   }
 

@@ -3,24 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { gerarEEnviarPelaIA, instrucaoDePrimeiroContato } from "@/lib/whatsapp/aberturaPelaIA";
+import { gerarEEnviarPelaIA } from "@/lib/whatsapp/aberturaPelaIA";
 import { separarRajada } from "@/lib/whatsapp/rajada";
-import {
-  historicoRecente,
-  liberarConversaPorPalavraChave,
-  obterOuCriarConversa,
-} from "@/lib/whatsapp/repositorio";
+import { historicoRecente } from "@/lib/whatsapp/repositorio";
 
 /**
- * Os dois botões de IA do painel (05/09/2026):
+ * O botão de IA do painel: "IA assume agora" (conversa) →
+ * `assumirConversaComIA`.
  *
- *   - "IA assume agora" (conversa)  → `assumirConversaComIA`
- *   - "Iniciar conversa com IA" (ficha do lead) → `iniciarConversaPelaIA`
- *
- * Nasceram junto com a inversão da trava (`exigeLiberacaoExplicita`):
- * número desconhecido agora fica travado SEMPRE, e estes botões são o
- * caminho de liberação que não depende de o corretor lembrar a
- * palavra-chave no meio do atendimento — a queixa real que os motivou.
+ * O "Iniciar conversa com IA" da ficha do lead saiu em 03/10/2026 (plano de
+ * ativação, regra N1): a IA só responde. O primeiro contato é do corretor,
+ * por lista de transmissão, e a ficha leva para lá.
  */
 
 export type ResultadoIA = { erro?: string; ok?: string; respondeu?: boolean; conversaId?: string };
@@ -90,78 +83,4 @@ export async function assumirConversaComIA(conversaId: string): Promise<Resultad
   revalidatePath("/corretor/conversas");
   if (resultado.erro) return { ok: "IA assumiu a conversa.", erro: resultado.erro };
   return { ok: "IA assumiu e já respondeu o cliente.", respondeu: true };
-}
-
-/**
- * O botão "Iniciar conversa com IA" da ficha do lead.
- *
- * Cria (ou reaproveita) a conversa do telefone do lead, ativa a IA e manda
- * a primeira mensagem — apresentação curta, gerada pelo mesmo agente do
- * atendimento.
- */
-export async function iniciarConversaPelaIA(leadId: string): Promise<ResultadoIA> {
-  const supabase = await exigirSessao();
-
-  // RLS recorta: lead de outro corretor simplesmente não vem.
-  const { data: lead } = await supabase
-    .from("leads")
-    .select("id, nome, telefone_e164, corretor_id, regiao_interesse, nao_contatar_em")
-    .eq("id", leadId)
-    .maybeSingle();
-  if (!lead) return { erro: "Lead não encontrado na sua carteira." };
-  /*
-   * Ele pediu para não ser procurado (0110). Este é o terceiro caminho que
-   * fala por iniciativa nossa — os outros dois são a campanha (`elegivel`)
-   * e o runner de follow-up.
-   *
-   * Barra a IA, não o corretor: mandar mensagem à mão pelo Live Chat
-   * continua liberado, porque ali é uma pessoa decidindo, com o histórico
-   * na frente. O que não pode é a máquina reabrir sozinha.
-   */
-  if (lead.nao_contatar_em) {
-    return {
-      erro: "Este cliente pediu para não receber mais mensagens. Se quiser retomar, fale com ele pelo Live Chat.",
-    };
-  }
-  if (!lead.telefone_e164) return { erro: "Este lead está sem telefone válido no cadastro." };
-  if (!lead.corretor_id) return { erro: "Este lead está sem corretor responsável." };
-
-  const { data: instancia } = await supabase
-    .from("corretor_whatsapp_instancias")
-    .select("id, corretor_id, instance_name, status_conexao, nome_assistente, tom_voz, conectado_em")
-    .eq("corretor_id", lead.corretor_id)
-    .maybeSingle();
-  if (!instancia || instancia.status_conexao !== "conectado") {
-    return { erro: "O número não está conectado — conecte o WhatsApp antes." };
-  }
-
-  const conversa = await obterOuCriarConversa({
-    corretorId: lead.corretor_id,
-    telefoneCliente: lead.telefone_e164,
-    nomeCliente: lead.nome,
-  });
-  if (!conversa) return { erro: "Não foi possível abrir a conversa deste lead." };
-
-  // Iniciar pela ficha é autorização explícita — mesmo peso do botão de
-  // assumir e da palavra-chave: abre as três condições de uma vez.
-  await liberarConversaPorPalavraChave(conversa.id);
-
-  const resultado = await gerarEEnviarPelaIA({
-    conversa: {
-      id: conversa.id,
-      telefoneCliente: conversa.telefoneCliente,
-      leadId: lead.id,
-      eTeste: conversa.eTeste,
-    },
-    instancia,
-    instrucaoAbertura: instrucaoDePrimeiroContato({
-      nome: lead.nome,
-      regiaoInteresse: lead.regiao_interesse,
-    }),
-  });
-
-  revalidatePath("/corretor/conversas");
-  revalidatePath(`/corretor/leads/${leadId}`);
-  if (resultado.erro) return { erro: resultado.erro, conversaId: conversa.id };
-  return { ok: "A IA iniciou a conversa com este lead.", conversaId: conversa.id };
 }

@@ -12,6 +12,7 @@ import {
   type TipoMidiaWhatsapp,
 } from "@/lib/whatsapp/provider";
 import { decidirPorFalaDoCorretor } from "@/lib/whatsapp/modoBot";
+import { gerarEEnviarPelaIA } from "@/lib/whatsapp/aberturaPelaIA";
 import {
   buscarDossieAtual,
   gravarMensagem,
@@ -400,6 +401,23 @@ export async function enviarMensagemDoPainel(
   if (decisao.acao === "ativar_ia") {
     await liberarConversaPorPalavraChave(conversaId);
     if (decisao.marcarComoTeste) await marcarConversaComoTeste(conversaId);
+    /*
+     * O cliente estava esperando? A IA responde agora (plano de ativação,
+     * 2.3), como faz a palavra digitada no celular. Sem pendência, nada sai.
+     */
+    const resposta = await gerarEEnviarPelaIA({
+      conversa: {
+        id: conversa.id,
+        telefoneCliente: conversa.telefone_cliente,
+        leadId: conversa.lead_id,
+        eTeste: Boolean(conversa.e_teste) || decisao.marcarComoTeste,
+      },
+      instancia,
+      instrucaoAbertura: "",
+      desconsiderarUltimaFalaDoCorretor: true,
+      somenteResposta: true,
+    });
+    if (resposta.erro) console.warn("[conversas] a IA não respondeu a pendência:", resposta.erro);
     revalidatePath("/corretor/conversas");
     revalidatePath("/corretor/pessoas");
     return { iaAtivada: true };

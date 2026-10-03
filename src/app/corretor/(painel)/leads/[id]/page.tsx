@@ -23,7 +23,7 @@ import { ArquivarLead } from "./ArquivarLead";
 import { SeletorEtapa } from "./SeletorEtapa";
 import { OrigemJornada } from "./OrigemJornada";
 import { PreferenciasContato } from "./PreferenciasContato";
-import { IniciarConversaIA } from "./IniciarConversaIA";
+import { AdicionarALista } from "./AdicionarALista";
 import { VendaDoLead } from "./VendaDoLead";
 import { LinksDoCliente } from "./LinksDoCliente";
 import { Indicacoes } from "./Indicacoes";
@@ -202,7 +202,7 @@ export default async function FichaLeadPage({
               <span className="min-w-0 truncate">{lead.email}</span>
             </a>
           )}
-          <IniciarConversaIA leadId={lead.id} temTelefone={Boolean(lead.telefone)} />
+          <AdicionarALista leadId={lead.id} temTelefone={Boolean(lead.telefone)} />
         </div>
 
         {lead.etapa === "visita_agendada" && (

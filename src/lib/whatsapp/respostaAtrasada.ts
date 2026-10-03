@@ -56,6 +56,14 @@ export type DecisaoRespostaAtrasada =
 export function decidirRespostaAtrasada(params: {
   /** Quando o cliente falou pela última vez sem obter resposta. */
   esperandoDesde: string | Date;
+  /**
+   * Até quando a IA ficou pausada porque o corretor falou (plano de
+   * ativação, 2.4). Se o cliente escreveu DURANTE essa pausa e ela já
+   * venceu, a resposta sai no próximo tique (até 5 min), sem esperar as 4h
+   * do atraso normal: o corretor parou de responder, e o cliente já esperou
+   * a pausa inteira.
+   */
+  pausaAte?: string | Date | null;
   agora?: Date;
 }): DecisaoRespostaAtrasada {
   const agora = params.agora ?? new Date();
@@ -69,6 +77,13 @@ export function decidirRespostaAtrasada(params: {
   }
 
   const horas = Math.floor(ms / 3_600_000);
+
+  if (params.pausaAte) {
+    const fimDaPausa = new Date(params.pausaAte).getTime();
+    const escreveuDuranteAPausa =
+      Number.isFinite(fimDaPausa) && desde.getTime() < fimDaPausa && fimDaPausa <= agora.getTime();
+    if (escreveuDuranteAPausa && horas <= DIAS_LIMITE * 24) return { responder: true, horas };
+  }
 
   if (horas < HORAS_PARA_RESPONDER) {
     return { responder: false, motivo: "ainda_no_intervalo_normal", horas };

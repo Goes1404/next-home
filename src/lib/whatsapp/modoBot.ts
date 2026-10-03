@@ -214,8 +214,16 @@ export function contemPalavraChave(mensagem: string, palavraChave: string | null
  *
  * Desde a 0111 o webhook não cria mais lead de quem escreve: só existe
  * conversa com lead, e `obterOuCriarConversa` grava toda conversa nova como
- * liberada e de cliente conhecido. Esta trava, na prática, só pega conversas
- * antigas, criadas antes da 0111 com `cliente_conhecido = false`.
+ * liberada e de cliente conhecido. A 0147 liberou as antigas que restavam
+ * travadas, então hoje nenhuma conversa volta a travar: a fala do corretor
+ * só pausa.
+ *
+ * Por que a coluna `liberado_por_palavra_chave` e esta trava não foram
+ * removidas (plano de ativação, 2.5): ela é lida em 22 arquivos, inclusive
+ * duas views (`whatsapp_esperando_resposta`, `pessoas_do_corretor`) que
+ * teriam de ser recriadas com os passos de segurança da 0077, e em guardas
+ * de teste. Sem conversa que nasça ou volte a travar, ela é inofensiva; a
+ * remoção pede uma rodada própria, com o painel exercitado.
  */
 export function exigeLiberacaoExplicita(params: {
   origemConversa: "organica" | "campanha";

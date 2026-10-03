@@ -31,7 +31,6 @@ import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
 import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvaliacoes";
 import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
-import { abrirConversasDePortal } from "@/lib/whatsapp/aberturaPelaIA";
 import { avisarQuemPediuAlerta } from "@/lib/crm/avisoDeNovidade";
 import { lerCaixasDoGmail } from "@/lib/inbound/gmailCaixa";
 import { separarRajada } from "@/lib/whatsapp/rajada";
@@ -357,12 +356,34 @@ async function varrerRespostasAtrasadas(
     .order("esperando_desde", { ascending: true })
     .limit(20);
 
-  for (const linha of esperando ?? []) {
+  /*
+   * A pausa de cada conversa (plano de ativação, 2.4): quem escreveu durante
+   * a pausa do corretor é respondido assim que ela vence, e vai na frente.
+   */
+  const ids = (esperando ?? []).map((l) => l.conversa_id).filter((id): id is string => Boolean(id));
+  const pausas = new Map<string, string | null>();
+  if (ids.length > 0) {
+    const { data: conversas } = await supabase
+      .from("whatsapp_conversas")
+      .select("id, pausado_humano_ate")
+      .in("id", ids);
+    for (const c of conversas ?? []) pausas.set(c.id, c.pausado_humano_ate);
+  }
+  const venceuAPausa = (l: { conversa_id: string | null; esperando_desde: string | null }) => {
+    const ate = l.conversa_id ? pausas.get(l.conversa_id) : null;
+    return Boolean(ate && l.esperando_desde && l.esperando_desde < ate && new Date(ate) <= new Date());
+  };
+  const ordenadas = [...(esperando ?? [])].sort((a, b) => Number(venceuAPausa(b)) - Number(venceuAPausa(a)));
+
+  for (const linha of ordenadas) {
     if (saldo.respondidas >= MAX_RESPOSTAS_ATRASADAS) break;
     if (Date.now() - comecou > ORCAMENTO_VARREDURA_MS) break;
     if (!linha.conversa_id || !linha.corretor_id || !linha.esperando_desde) continue;
 
-    const decisao = decidirRespostaAtrasada({ esperandoDesde: linha.esperando_desde });
+    const decisao = decidirRespostaAtrasada({
+      esperandoDesde: linha.esperando_desde,
+      pausaAte: pausas.get(linha.conversa_id) ?? null,
+    });
     if (!decisao.responder) {
       saldo.puladas++;
       continue;
@@ -551,7 +572,7 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = createServiceClient();
-  const resultado = { processados: 0, enviados: 0, descartados: 0 };
+  const resultado = { processados: 0, enviados: 0, descartados: 0, sugeridos: 0 };
 
   /*
    * ANTES da janela de propósito. Isto é RESPOSTA a quem nos escreveu, não
@@ -618,21 +639,19 @@ export async function GET(req: NextRequest) {
     await agendarLembretesDeVisita(supabase);
     await agendarPosVisita(supabase);
     await agendarPedidoDeIndicacao(supabase);
-    // Quem pediu contato num portal/formulário recebe a primeira mensagem
-    // sozinho — dentro da janela, com cota e teto de 2 por tique.
-    const primeirosContatos = await abrirConversasDePortal(2).catch((e) => {
-      console.error("[primeiro contato]", e);
+    /*
+     * O primeiro contato automático com lead de portal SAIU em 03/10/2026
+     * (plano de ativação, regra N1): a IA só responde. O lead de portal
+     * aparece nas listas sugeridas e o corretor decide quando mandar.
+     *
+     * "Me avise quando surgir" fica: quem recebe PEDIU pelo site para ser
+     * avisado, então é resposta a um pedido do cliente, não iniciativa nossa.
+     * Um por tique: cada aviso custa ~20s de IA.
+     */
+    const avisosDeNovidade = await avisarQuemPediuAlerta(1).catch((e) => {
+      console.error("[aviso de novidade]", e);
       return 0;
     });
-    // "Me avise quando surgir": quem pediu pelo site recebe o imóvel novo que
-    // combina. Um por tique e só se sobrou tempo: cada aviso custa ~20s de IA.
-    const avisosDeNovidade =
-      primeirosContatos >= 2
-        ? 0
-        : await avisarQuemPediuAlerta(1).catch((e) => {
-            console.error("[aviso de novidade]", e);
-            return 0;
-          });
     // Lembretes das anotações (0100): mensagem para o PRÓPRIO corretor, não
     // para cliente — por isso não passa por cota anti-ban nem pela janela.
     await processarLembretesDeAnotacao(supabase);
@@ -650,9 +669,10 @@ export async function GET(req: NextRequest) {
       const desfecho = await processarFollowup(supabase, item);
       if (desfecho === "enviado") resultado.enviados++;
       else if (desfecho === "descartado") resultado.descartados++;
+      else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, reservasLiberadas, primeirosContatos, avisosDeNovidade, leadsDoGmail });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, reservasLiberadas, avisosDeNovidade, leadsDoGmail });
   } finally {
     await destravarDisparo("followups", dono);
   }
@@ -752,15 +772,25 @@ async function descartar(
 async function processarFollowup(
   supabase: ReturnType<typeof createServiceClient>,
   item: ItemFollowup,
-): Promise<"enviado" | "descartado" | "pulado"> {
-  // Revalidação 1: a conversa ainda quer o bot falando?
+): Promise<"enviado" | "descartado" | "pulado" | "sugerido"> {
+  /*
+   * Plano de ativação, 03/10/2026 (regra N7). Reengajamento automático saiu:
+   * item antigo que sobrou é descartado. Pós-visita e indicação não saem
+   * mais sozinhos: o texto é gerado e vira SUGESTÃO para o corretor enviar
+   * da fila do Início. Só o lembrete de visita continua sendo enviado.
+   */
+  if (item.tipo === "reengajamento") return descartar(supabase, item.id, "reengajamento_desligado");
+  const ehSugestao = item.tipo === "pos_visita" || item.tipo === "indicacao";
+
+  // Revalidação 1: a conversa ainda quer o bot falando? Para a sugestão,
+  // quem vai mandar é o corretor: basta a conversa existir.
   const { data: conversa } = await supabase
     .from("whatsapp_conversas")
     .select("id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave")
     .eq("id", item.conversa_id)
     .maybeSingle();
 
-  if (!conversa || !conversa.bot_ativo || !conversa.liberado_por_palavra_chave) {
+  if (!conversa || (!ehSugestao && (!conversa.bot_ativo || !conversa.liberado_por_palavra_chave))) {
     return descartar(supabase, item.id, "bot_inativo");
   }
 
@@ -824,35 +854,23 @@ async function processarFollowup(
     return descartar(supabase, item.id, "numero_bloqueado");
   }
 
-  const decisao = decidirPorModo(instancia.modo_bot as "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado", {
-    ultimaFalaCorretorEm:
-      instancia.modo_bot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
-  });
-  if (!decisao.pode) return descartar(supabase, item.id, "modo_nao_permite");
+  if (!ehSugestao) {
+    const decisao = decidirPorModo(instancia.modo_bot as "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado", {
+      ultimaFalaCorretorEm:
+        instancia.modo_bot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
+    });
+    if (!decisao.pode) return descartar(supabase, item.id, "modo_nao_permite");
 
-  /*
-   * Reengajamento é para quem ainda não decidiu. Lead que fechou (ou foi
-   * perdido) desde o agendamento não recebe "voltando ao que conversamos":
-   * a lista de compradores de um imóvel (26/09/2026) dispara para quem já
-   * comprou, e o disparo agenda reengajamento para quem não responde.
-   * Checado ANTES da cota, para não gastar cota com o que vai ser descartado.
-   */
-  if (item.tipo === "reengajamento" && conversa.lead_id) {
-    const { data: lead } = await supabase.from("leads").select("etapa").eq("id", conversa.lead_id).maybeSingle();
-    if (lead?.etapa === "fechado" || lead?.etapa === "perdido") {
-      return descartar(supabase, item.id, "lead_encerrado");
-    }
+    const cota = await reservarCotaCampanha(instancia.id, new Date(instancia.conectado_em));
+    /*
+     * Espaçamento anti-ban (0062) NÃO é motivo para descartar: a vez chega em
+     * segundos e o tique seguinte pega o item. Descartar aqui apagaria um
+     * follow-up legítimo porque uma campanha mandou mensagem 40 segundos
+     * antes — e follow-up descartado não volta.
+     */
+    if (!cota.permitido && cota.motivo === "aguardando_intervalo") return "pulado";
+    if (!cota.permitido) return descartar(supabase, item.id, "cota_esgotada");
   }
-
-  const cota = await reservarCotaCampanha(instancia.id, new Date(instancia.conectado_em));
-  /*
-   * Espaçamento anti-ban (0062) NÃO é motivo para descartar: a vez chega em
-   * segundos e o tique seguinte pega o item. Descartar aqui apagaria um
-   * follow-up legítimo porque uma campanha mandou mensagem 40 segundos
-   * antes — e follow-up descartado não volta.
-   */
-  if (!cota.permitido && cota.motivo === "aguardando_intervalo") return "pulado";
-  if (!cota.permitido) return descartar(supabase, item.id, "cota_esgotada");
 
   const { data: corretor } = await supabase
     .from("corretores")
@@ -992,6 +1010,14 @@ async function processarFollowup(
   // Follow-up é UM balão, sempre: quem não respondeu à última mensagem não
   // precisa receber três.
   const balao = turno.baloes[0] ?? resposta.textoResposta;
+
+  if (ehSugestao) {
+    await supabase
+      .from("whatsapp_followups")
+      .update({ status: "sugerido", texto_sugerido: balao, sugerido_em: new Date().toISOString() })
+      .eq("id", item.id);
+    return "sugerido";
+  }
 
   const envio = await enviarMensagemWhatsapp({
     instanceName: instancia.instance_name,

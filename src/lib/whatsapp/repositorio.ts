@@ -1001,43 +1001,12 @@ export async function avancarLeadParaPrimeiroContato(leadId: string): Promise<vo
 // Follow-ups proativos (migration 0028)
 // ---------------------------------------------------------------------------
 
-/** +24h na primeira tentativa, +72h na segunda. Depois disso, silêncio é resposta. */
-const HORAS_FOLLOWUP: Record<number, number> = { 1: 24, 2: 72 };
-export const MAX_TENTATIVAS_FOLLOWUP = 2;
-
-/**
- * Agenda o próximo follow-up da conversa, se ainda couber um.
- *
- * Idempotente por desenho: se já existe um pendente, não cria outro; se a
- * conversa já queimou as 2 tentativas, para — insistência vira denúncia de
- * spam, e denúncia derruba o número (ver antiBan.ts).
+/*
+ * O REENGAJAMENTO automático (+24h e +72h) saiu em 03/10/2026 (plano de
+ * ativação, regra N7): a IA só responde. Quem sumiu volta nas listas
+ * sugeridas do Início. O lembrete de visita continua, e pós-visita e pedido
+ * de indicação viraram sugestão para o corretor enviar.
  */
-export async function agendarFollowup(conversaId: string, instanciaId: string): Promise<void> {
-  const supabase = createServiceClient();
-
-  // Só o REENGAJAMENTO conta para o teto de 2 e para o "já tem pendente":
-  // lembrete de visita é serviço, não insistência, e vive fora desta conta.
-  const { data: existentes } = await supabase
-    .from("whatsapp_followups")
-    .select("id, status, tentativa")
-    .eq("conversa_id", conversaId)
-    .eq("tipo", "reengajamento");
-
-  if (existentes?.some((f) => f.status === "pendente")) return;
-
-  const enviados = existentes?.filter((f) => f.status === "enviado").length ?? 0;
-  const tentativa = enviados + 1;
-  if (tentativa > MAX_TENTATIVAS_FOLLOWUP) return;
-
-  const horas = HORAS_FOLLOWUP[tentativa] ?? 24;
-
-  await supabase.from("whatsapp_followups").insert({
-    conversa_id: conversaId,
-    instancia_id: instanciaId,
-    tentativa,
-    agendado_para: new Date(Date.now() + horas * 3600_000).toISOString(),
-  });
-}
 
 /**
  * O cliente respondeu: o REENGAJAMENTO pendente perde o motivo de existir.

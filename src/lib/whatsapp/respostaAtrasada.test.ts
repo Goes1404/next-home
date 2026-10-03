@@ -115,3 +115,34 @@ describe("o runner da varredura", () => {
     expect(trecho).not.toContain("reservarCotaCampanha");
   });
 });
+
+describe("quem escreveu durante a pausa do corretor (plano de ativação, 2.4)", () => {
+  const agora = new Date("2026-10-03T15:00:00Z");
+
+  it("é respondido assim que a pausa vence, sem esperar as 4h", () => {
+    const d = decidirRespostaAtrasada({
+      esperandoDesde: "2026-10-03T13:00:00Z",
+      pausaAte: "2026-10-03T14:55:00Z",
+      agora,
+    });
+    expect(d.responder).toBe(true);
+  });
+
+  it("enquanto a pausa vale, espera", () => {
+    const d = decidirRespostaAtrasada({
+      esperandoDesde: "2026-10-03T13:00:00Z",
+      pausaAte: "2026-10-03T16:00:00Z",
+      agora,
+    });
+    expect(d.responder).toBe(false);
+  });
+
+  it("mensagem depois da pausa segue a régua normal de 4h", () => {
+    const d = decidirRespostaAtrasada({
+      esperandoDesde: "2026-10-03T14:58:00Z",
+      pausaAte: "2026-10-03T14:00:00Z",
+      agora,
+    });
+    expect(d.responder).toBe(false);
+  });
+});

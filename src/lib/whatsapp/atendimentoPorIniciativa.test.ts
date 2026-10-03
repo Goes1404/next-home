@@ -64,10 +64,10 @@ describe("os três caminhos de iniciativa olham o não-perturbe", () => {
     "src/lib/crm/publicoDaCampanha.ts",
     // Follow-up: a revalidação no runner, antes de mandar.
     "src/app/api/cron/followups/route.ts",
-    // Abertura por iniciativa da IA, pelo painel.
-    "src/app/corretor/(painel)/conversas/acoesIA.ts",
-    // Primeiro contato automático com lead de portal (26/09/2026).
-    "src/lib/whatsapp/aberturaPelaIA.ts",
+    // "Me avise quando surgir": o único aviso por iniciativa que sobrou
+    // (03/10/2026). A abertura pela ficha e o primeiro contato automático
+    // com lead de portal saíram (regra N1: a IA só responde).
+    "src/lib/crm/avisoDeNovidade.ts",
   ];
 
   it.each(CAMINHOS)("%s lê nao_contatar_em / naoContatarEm", (arquivo) => {

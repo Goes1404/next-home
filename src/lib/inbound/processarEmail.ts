@@ -118,11 +118,17 @@ export async function processarEmailDeLead(
      * segunda ficha vira dois corretores ligando para ela. Lead arquivado
      * fica de fora: arquivar é tirar do caminho, e quem volta pede ficha nova.
      */
-    const { data: existente, error: erroBusca } = await supabase
+    /*
+     * E-mail lido da caixa DE um corretor só deduplica na carteira dele: a
+     * caixa é dele, e ela não pode escrever na ficha de um colega.
+     */
+    let buscaExistente = supabase
       .from("leads")
-      .select("id, mensagem")
+      .select("id, mensagem, empreendimento_id")
       .eq("telefone_e164", e164 ?? lead.telefone)
-      .is("arquivado_em", null)
+      .is("arquivado_em", null);
+    if (opcoes.corretorDono) buscaExistente = buscaExistente.eq("corretor_id", opcoes.corretorDono);
+    const { data: existente, error: erroBusca } = await buscaExistente
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -140,11 +146,9 @@ export async function processarEmailDeLead(
           mensagem: novaMensagem,
           etapa_alterada_em: new Date().toISOString(),
           portal_origem: lead.portalOrigem,
-          // O imóvel do pedido NOVO: é o interesse mais recente da pessoa.
-          ...(empreendimentoId ? { empreendimento_id: empreendimentoId } : {}),
-          ...(lead.imovelInteresse || lead.codigoReferencia
-            ? { anuncio_origem: lead.imovelInteresse || lead.codigoReferencia }
-            : {}),
+          // O imóvel só entra onde a ficha não tem um: o que o corretor
+          // escolheu (ou o primeiro pedido) não é trocado por e-mail.
+          ...(empreendimentoId && !existente.empreendimento_id ? { empreendimento_id: empreendimentoId } : {}),
         })
         .eq("id", existente.id);
 

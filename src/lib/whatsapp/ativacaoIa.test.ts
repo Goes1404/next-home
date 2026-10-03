@@ -51,9 +51,8 @@ describe("ativar a IA escreve as TRÊS condições de botDeveResponder", () => {
     for (const campo of TRES_CAMPOS) expect(fn).toContain(campo);
   });
 
-  it("'Iniciar conversa com IA' libera pelo caminho único", () => {
-    const fn = trechoDe(ACOES_IA, "export async function iniciarConversaPelaIA");
-    expect(fn).toContain("liberarConversaPorPalavraChave(");
+  it("a ficha não tem mais botão que faz a IA escrever primeiro (regra N1, 03/10/2026)", () => {
+    expect(ACOES_IA).not.toContain("iniciarConversaPelaIA");
   });
 });
 

@@ -169,22 +169,33 @@ export async function POST(req: Request) {
       if (e164) {
         const { data: existente } = await supabase
           .from("leads")
-          .select("id, meta_lead_id")
+          .select("id, meta_lead_id, meta_ad_id")
           .eq("telefone_e164", e164)
           .is("arquivado_em", null)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
         if (existente && existente.meta_lead_id !== leadgenId) {
+          /*
+           * O telefone do formulário é digitado por quem preenche, então ele
+           * não autoriza REESCREVER a ficha: a atribuição só entra onde ela
+           * ainda não existe. Ficha que já veio de outro anúncio fica com o
+           * dela, e só ganha a data de volta ao topo.
+           */
+          const semAtribuicao = !existente.meta_lead_id && !existente.meta_ad_id;
           const { error: erroUpdate } = await supabase
             .from("leads")
             .update({
-              anuncio_origem: anuncio.nome,
-              meta_ad_id: anuncio.anuncioId,
-              meta_conjunto_id: anuncio.conjuntoId,
-              meta_campanha_id: anuncio.campanhaId,
               etapa_alterada_em: new Date().toISOString(),
-              ...(existente.meta_lead_id ? {} : { meta_lead_id: leadgenId }),
+              ...(semAtribuicao
+                ? {
+                    meta_lead_id: leadgenId,
+                    anuncio_origem: anuncio.nome,
+                    meta_ad_id: anuncio.anuncioId,
+                    meta_conjunto_id: anuncio.conjuntoId,
+                    meta_campanha_id: anuncio.campanhaId,
+                  }
+                : {}),
             })
             .eq("id", existente.id);
           if (erroUpdate) {

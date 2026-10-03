@@ -2757,7 +2757,9 @@ export type Database = {
           id: string
           instancia_id: string
           motivo: string | null
-          status: "pendente" | "enviado" | "cancelado" | "descartado"
+          sugerido_em: string | null
+          texto_sugerido: string | null
+          status: "pendente" | "enviado" | "cancelado" | "descartado" | "sugerido"
           tentativa: number
           tipo: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao"
         }
@@ -2769,7 +2771,9 @@ export type Database = {
           id?: string
           instancia_id: string
           motivo?: string | null
-          status?: "pendente" | "enviado" | "cancelado" | "descartado"
+          sugerido_em?: string | null
+          texto_sugerido?: string | null
+          status?: "pendente" | "enviado" | "cancelado" | "descartado" | "sugerido"
           tentativa?: number
           tipo?: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao"
         }
@@ -2781,7 +2785,9 @@ export type Database = {
           id?: string
           instancia_id?: string
           motivo?: string | null
-          status?: "pendente" | "enviado" | "cancelado" | "descartado"
+          sugerido_em?: string | null
+          texto_sugerido?: string | null
+          status?: "pendente" | "enviado" | "cancelado" | "descartado" | "sugerido"
           tentativa?: number
           tipo?: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao"
         }

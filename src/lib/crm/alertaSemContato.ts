@@ -12,9 +12,9 @@ type Supa = ReturnType<typeof createServiceClient>;
  * Lead de portal ou anúncio sem nenhum contato nosso em 30 minutos (0121).
  *
  * É o lead mais caro da carteira — foi pago — e o que esfria mais rápido:
- * quem pediu contato num portal pediu em outros três. A abertura automática
- * (`abrirConversasDePortal`) cobre quem tem número conectado; este aviso
- * cobre o resto (número fora do ar, IA desligada, cota) e avisa UMA vez.
+ * quem pediu contato num portal pediu em outros três. Desde 03/10/2026 a IA
+ * não abre conversa (regra N1): o primeiro contato é do corretor, e este
+ * aviso é o que o faz saber do lead a tempo. Avisa UMA vez.
  *
  * O carimbo (`alerta_sem_contato_em`) é o claim e vale também quando o
  * lead JÁ teve contato: assim ele não é olhado de novo a cada tique.

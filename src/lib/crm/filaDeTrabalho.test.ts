@@ -53,6 +53,8 @@ const PESOS: Record<TipoItemFila, number> = {
   tarefa_vencida: 3,
   lembrete_vencido: 3,
   lead_novo: 4,
+  // Sugestão de mensagem da IA (0147): pós-visita e indicação.
+  sugestao_de_mensagem: 4,
   tarefa_hoje: 5,
   lembrete_hoje: 5,
   sem_revisao: 6,

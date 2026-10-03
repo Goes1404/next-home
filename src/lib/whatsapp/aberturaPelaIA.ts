@@ -12,8 +12,6 @@ import {
   buscarDossieAtual,
   gravarMensagem,
   historicoRecente,
-  liberarConversaPorPalavraChave,
-  obterOuCriarConversa,
   registrarResultadoEnvio,
   registrarTentativaDeContato,
   reservarCotaCampanha,
@@ -58,13 +56,28 @@ export async function gerarEEnviarPelaIA(params: {
   instancia: InstanciaParaEnvio;
   /** Instrução de cenário usada só quando é abertura (sem pendência). */
   instrucaoAbertura: string;
+  /**
+   * A conversa acabou de ser entregue à IA pela palavra-chave (plano de
+   * ativação, 2.3). A mensagem com a palavra é do corretor e fecharia a
+   * rajada: sem tirá-la, o cliente que esperava nunca contaria como pendente.
+   */
+  desconsiderarUltimaFalaDoCorretor?: boolean;
+  /** Só responde: sem pendência do cliente, não abre conversa (regra N1). */
+  somenteResposta?: boolean;
 }): Promise<{ erro?: string; enviou: boolean }> {
   const servico = createServiceClient();
   const { conversa, instancia } = params;
 
-  const historicoCompleto = await historicoRecente(conversa.id);
+  let historicoCompleto = await historicoRecente(conversa.id);
+  if (
+    params.desconsiderarUltimaFalaDoCorretor &&
+    historicoCompleto[historicoCompleto.length - 1]?.remetente === "corretor"
+  ) {
+    historicoCompleto = historicoCompleto.slice(0, -1);
+  }
   const { historico, pendentes } = separarRajada(historicoCompleto);
   const ehAbertura = pendentes.length === 0;
+  if (ehAbertura && params.somenteResposta) return { enviou: false };
 
   if (ehAbertura) {
     const cota = await reservarCotaCampanha(
@@ -199,32 +212,6 @@ export async function gerarEEnviarPelaIA(params: {
   return { enviou: true };
 }
 
-/**
- * A instrução da primeira mensagem — a mesma para o botão da ficha e para
- * o lead de portal, mudando só o que se sabe de onde ele veio.
- */
-export function instrucaoDePrimeiroContato(p: {
-  nome: string | null;
-  regiaoInteresse?: string | null;
-  /** De onde o pedido de contato veio, quando veio de fora ("ZAP Imóveis"). */
-  origem?: string | null;
-  imovel?: string | null;
-}): string {
-  const primeiroNome = (p.nome ?? "").trim().split(/\s+/)[0] || "";
-  return [
-    p.origem
-      ? `PRIMEIRO CONTATO: este cliente pediu contato pelo ${p.origem}${p.imovel ? `, sobre o ${p.imovel}` : ""}. Ele ESTÁ esperando ser procurado — diga que viu o interesse dele.`
-      : "PRIMEIRO CONTATO POR INICIATIVA NOSSA: o corretor pediu que você inicie a conversa com este cliente do CRM.",
-    primeiroNome && !primeiroNome.startsWith("WhatsApp")
-      ? `O cliente se chama ${primeiroNome} — cumprimente pelo nome.`
-      : "Não sabemos o nome do cliente — cumprimente sem inventar nome.",
-    p.regiaoInteresse ? `Ele demonstrou interesse na região: ${p.regiaoInteresse}.` : "",
-    "Apresente-se em UMA mensagem curta (até 2 frases): diga quem você é e de onde fala, e termine com UMA pergunta leve que puxe conversa. Não liste imóveis nem mande links nesta primeira mensagem.",
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
 /** Nome legível do portal gravado em `leads.portal_origem`. */
 export const NOME_DO_PORTAL: Record<string, string> = {
   zap_imoveis: "ZAP Imóveis",
@@ -235,101 +222,3 @@ export const NOME_DO_PORTAL: Record<string, string> = {
   site_direto: "site",
   email_outro: "anúncio",
 };
-
-/** Só lead que chegou há menos disso ganha abertura automática. */
-export const JANELA_DO_PRIMEIRO_CONTATO_H = 24;
-
-/**
- * Primeiro contato automático com quem PEDIU contato por um portal ou por
- * formulário de anúncio (26/09/2026).
- *
- * Roda no tique dos follow-ups, DEPOIS da janela comercial (quem chega às
- * 3h recebe às 9h: propaganda de madrugada é o que faz alguém denunciar o
- * número) e com teto por tique (cada abertura custa ~20s de IA; a função
- * tem 60s). Passa pelas mesmas travas de todo caminho que fala por
- * iniciativa nossa: não-perturbe, cota e espaçamento (em
- * `gerarEEnviarPelaIA`), e avança o funil.
- *
- * O claim (`primeiro_contato_auto_em`) é gravado ANTES do envio: se o envio
- * falhar, a abertura não é repetida a cada 5 min — o lead aparece no resumo
- * do dia e o corretor decide. Conversa que já tem mensagem (o corretor foi
- * mais rápido) é marcada e pulada.
- */
-export async function abrirConversasDePortal(limite = 2): Promise<number> {
-  const supabase = createServiceClient();
-  const desde = new Date(Date.now() - JANELA_DO_PRIMEIRO_CONTATO_H * 3600_000).toISOString();
-  const { data: candidatos } = await supabase
-    .from("leads")
-    .select(
-      "id, nome, telefone_e164, corretor_id, regiao_interesse, portal_origem, meta_lead_id, nao_contatar_em, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome)",
-    )
-    .is("primeiro_contato_auto_em", null)
-    .is("nao_contatar_em", null)
-    .is("arquivado_em", null)
-    .not("corretor_id", "is", null)
-    .not("telefone_e164", "is", null)
-    .or("portal_origem.not.is.null,meta_lead_id.not.is.null")
-    .gte("created_at", desde)
-    .order("created_at", { ascending: true })
-    .limit(limite * 3);
-
-  let enviados = 0;
-  for (const lead of candidatos ?? []) {
-    if (enviados >= limite) break;
-
-    const { data: claim } = await supabase
-      .from("leads")
-      .update({ primeiro_contato_auto_em: new Date().toISOString() })
-      .eq("id", lead.id)
-      .is("primeiro_contato_auto_em", null)
-      .select("id");
-    if (!claim || claim.length === 0) continue;
-
-    const { data: instancia } = await supabase
-      .from("corretor_whatsapp_instancias")
-      .select("id, corretor_id, instance_name, status_conexao, nome_assistente, tom_voz, conectado_em")
-      .eq("corretor_id", lead.corretor_id!)
-      .maybeSingle();
-    if (!instancia || instancia.status_conexao !== "conectado") continue;
-
-    const conversa = await obterOuCriarConversa({
-      corretorId: lead.corretor_id!,
-      telefoneCliente: lead.telefone_e164!,
-      nomeCliente: lead.nome,
-    });
-    if (!conversa) continue;
-
-    // O corretor (ou o próprio cliente) já falou: não é mais primeiro contato.
-    const { count } = await supabase
-      .from("whatsapp_mensagens")
-      .select("id", { count: "exact", head: true })
-      .eq("conversa_id", conversa.id);
-    if ((count ?? 0) > 0) continue;
-
-    // Pedir contato no portal é a autorização: abre as três condições.
-    await liberarConversaPorPalavraChave(conversa.id);
-
-    const imovel = Array.isArray(lead.empreendimento) ? lead.empreendimento[0] : lead.empreendimento;
-    const origem = lead.portal_origem
-      ? (NOME_DO_PORTAL[lead.portal_origem] ?? "anúncio")
-      : "anúncio do Facebook/Instagram";
-    const r = await gerarEEnviarPelaIA({
-      conversa: {
-        id: conversa.id,
-        telefoneCliente: conversa.telefoneCliente,
-        leadId: lead.id,
-        eTeste: conversa.eTeste,
-      },
-      instancia,
-      instrucaoAbertura: instrucaoDePrimeiroContato({
-        nome: lead.nome,
-        regiaoInteresse: lead.regiao_interesse,
-        origem,
-        imovel: imovel?.nome ?? null,
-      }),
-    });
-    if (r.enviou) enviados++;
-    else console.warn("[primeiro contato] não saiu:", lead.id, r.erro);
-  }
-  return enviados;
-}

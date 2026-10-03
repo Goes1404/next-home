@@ -124,33 +124,18 @@ describe("novo → primeiro_contato automático", () => {
  * uma falha, respondendo "processados: 0" — cron saudável, fila vazia.
  * Antes de culpar o runner, conferir quem ENFILEIRA.
  */
-describe("quem fala com o cliente agenda o reengajamento", () => {
-  it("o disparo de campanha agenda follow-up", () => {
-    expect(DISPARADOR).toContain("agendarFollowup(");
+/*
+ * 03/10/2026 (plano de ativação, regra N1): o reengajamento automático saiu.
+ * A guarda acima foi REESCRITA, não apagada: agora ela impede que um caminho
+ * volte a agendar mensagem que a IA mandaria sem o cliente ter escrito.
+ */
+describe("ninguém agenda reengajamento automático", () => {
+  it("nem o disparo de campanha nem o webhook agendam follow-up", () => {
+    expect(DISPARADOR).not.toContain("agendarFollowup(");
+    expect(WEBHOOK).not.toContain("agendarFollowup(");
   });
 
-  it("o webhook continua agendando", () => {
-    expect(WEBHOOK).toContain("agendarFollowup(");
-  });
-
-  it("o agendamento do disparo acontece DEPOIS de a mensagem ser gravada", () => {
-    // Follow-up de mensagem que não chegou a existir seria insistência
-    // sobre o nada — e a conversa é o que o runner revalida antes de enviar.
-    const gravou = DISPARADOR.indexOf("gravarMensagem({");
-    const agendou = DISPARADOR.indexOf("agendarFollowup(");
-    expect(gravou).toBeGreaterThan(-1);
-    expect(agendou).toBeGreaterThan(gravou);
-  });
-
-  /*
-   * As proteções do reengajamento não podem ser afrouxadas para caber o
-   * caso novo: o teto de 2 e a trava de "um pendente por vez" são o que
-   * separa follow-up de perseguição.
-   */
-  it("o teto de tentativas e a trava de pendente continuam em agendarFollowup", () => {
-    const fn = REPOSITORIO.slice(REPOSITORIO.indexOf("export async function agendarFollowup"));
-    const corpo = fn.slice(0, fn.indexOf("\n}"));
-    expect(corpo).toContain("MAX_TENTATIVAS_FOLLOWUP");
-    expect(corpo).toContain('f.status === "pendente"');
+  it("a função de agendar reengajamento não existe mais", () => {
+    expect(REPOSITORIO).not.toContain("export async function agendarFollowup");
   });
 });
