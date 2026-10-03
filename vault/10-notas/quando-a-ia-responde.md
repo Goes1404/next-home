@@ -53,7 +53,9 @@ que o corretor configurou.
 - **A trava de liberação saiu** (`liberado_por_palavra_chave`) e
   `cliente_conhecido` com ela (0149-0150). Desde a 0111 só existe conversa com
   lead e desde a 0147 nenhuma travava (medido: 18 conversas, 0 travadas):
-  eram estado que ninguém mudava e que confundia o diagnóstico.
+  eram estado que ninguém mudava e que confundia o diagnóstico. A 0149
+  foi aplicada antes do deploy; a 0150 (o `drop column`) o MCP recusa e fica
+  para o editor SQL — sem pressa, o código já não lê nem escreve as colunas.
 - **A fala do corretor só pausa**; não existe mais retravar.
 - **Lead transferido**: o número do corretor antigo para de responder
   (`lead_de_outro_corretor`). Antes a IA dele seguia atendendo.

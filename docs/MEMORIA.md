@@ -9035,6 +9035,9 @@ Nota: [[quando-a-ia-responde]].
   antes: 18 conversas, 0 travadas, 0 desconhecidas. Migração em duas partes:
   a 0149 (views sem as colunas + `ia_interacoes.silencio`) ANTES do deploy, a
   0150 (drop) DEPOIS — na ordem inversa, o código antigo quebraria no insert.
+  A 0149 foi aplicada pelo MCP; o `drop column` da 0150 o MCP recusa
+  ("declined"), então ela fica para rodar no editor SQL. Até lá as colunas
+  existem e ninguém as lê nem escreve — o código já não depende delas.
 - **Lead transferido**: o número do corretor antigo respondia; hoje cala com
   `lead_de_outro_corretor` (o lead vem embutido em `SELECT_CONVERSA`).
 - **O lembrete de visita nunca saía para quem usa "fora do expediente"**: o
