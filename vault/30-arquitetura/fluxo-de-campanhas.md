@@ -60,29 +60,34 @@ Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
 ## O tique dos follow-ups (a cada 5 min) — ordem desde 26/09/2026
 
 1. `varrerRespostasAtrasadas` — resposta a quem escreveu (antes da janela).
+   Quem escreveu DURANTE a pausa do corretor é respondido no tique seguinte
+   ao fim da pausa; o resto, depois de 4 h de espera (0147).
 1b. `lerCaixasDoGmail(1, 4)` — e-mails de portal das caixas conectadas viram
    lead na carteira de quem conectou (0125; antes da janela, é entrada de
    lead, não contato).
 2. `enviarResumosDoDia` — da hora escolhida pelo corretor (6h–11h, padrão
    8h) até 12h de SP; fim de semana só para quem pediu. Para o PRÓPRIO
-   corretor (antes da janela). Traz o placar de ontem, as visitas sem
-   retorno do cliente, imóvel novo que combina com a carteira e, às
-   segundas, quem vale retomar.
+   corretor (antes da janela).
 3. `alertarLeadsSemContato` — lead de portal/anúncio sem mensagem nossa em
    30 min vira aviso ao corretor, uma vez (antes da janela, 0121).
-4. `liberarReservasVencidas` — unidade com reserva vencida volta a
-   disponível e o catálogo é revalidado (0121).
+4. `liberarReservasVencidas` (0121).
 5. *(fora da janela 9h–20h59: para aqui)*
 6. trava `followups` →
    `agendarLembretesDeVisita` → `agendarPosVisita` →
-   `agendarPedidoDeIndicacao` (5 a 30 dias depois do fechamento, uma vez) →
-   `abrirConversasDePortal` (2 por tique, com cota e espaçamento) →
-   `avisarQuemPediuAlerta(1)` ("me avise quando surgir", só se o primeiro
-   contato não gastou as duas vagas — cada um custa ~20s de IA) →
-   `processarLembretesDeAnotacao` → follow-ups vencidos
-   (`reengajamento`, `lembrete_visita`, `pos_visita`, `indicacao`).
-   Reengajamento de lead que virou `fechado`/`perdido` é descartado ANTES
-   da cota (a lista de compradores dispara para quem já comprou).
+   `agendarPedidoDeIndicacao` → `avisarQuemPediuAlerta(1)` ("me avise
+   quando surgir": o cliente pediu pelo site) →
+   `processarLembretesDeAnotacao` → follow-ups vencidos:
+   - `lembrete_visita`: o único que sai sozinho, dentro do expediente do
+     corretor (0148);
+   - `pos_visita` e `indicacao`: o texto é gerado e vira SUGESTÃO na fila
+     do Início, com Enviar e Dispensar (status `sugerido`, 0147);
+   - `reengajamento`: item antigo é descartado. O agendamento saiu do
+     webhook e do disparador.
+
+Desde 03/10/2026 a IA só responde ([[a-ia-so-responde]]): saíram o
+primeiro contato automático com lead de portal (`abrirConversasDePortal`) e
+o reengajamento de +24h/+72h. Quem precisa de uma mensagem nossa aparece
+nas listas sugeridas do Início.
 
 Público `compradores` (26/09): só quem fechou NO imóvel da campanha — a
 única exceção à regra de que fechado não entra em campanha. Serve ao

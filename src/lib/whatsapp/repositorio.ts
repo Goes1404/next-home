@@ -646,7 +646,7 @@ export async function marcarLeadVindoDeAnuncio(leadId: string, nomeImovel: strin
  * digitando "pode assumir" — a pausa continuava valendo e a IA seguia muda.
  * Era exatamente a queixa "a palavra-chave não funciona como ativação":
  * o gesto de entrega liberava a porta e esquecia de abrir as outras duas.
- * Mesmo defeito que o botão do painel já teve (ver `retomarBotNaConversa`).
+ * Mesmo defeito que o antigo botão "reativar" do painel já teve.
  */
 export async function liberarConversaPorPalavraChave(conversaId: string): Promise<void> {
   const supabase = createServiceClient();

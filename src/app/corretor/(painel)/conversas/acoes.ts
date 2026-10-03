@@ -43,52 +43,11 @@ async function exigirSessao() {
   return supabase;
 }
 
-/**
- * Devolve a palavra ao bot nesta conversa, agora.
- *
- * O webhook silencia a IA por 24 horas assim que o corretor responde do
- * celular (`pausarBotPorAtendimentoHumano`). A regra é boa — o bot não pode
- * falar por cima de um atendimento humano — mas até aqui não havia saída
- * nenhuma: sem tela e sem botão, a única forma de destravar era esperar o
- * dia passar ou dar UPDATE no banco. Foi por isso que, em produção, o bot
- * nunca respondeu uma única mensagem.
- *
- * Não passa pelo cliente qual conversa é de quem: a RLS da 0018 já recorta
- * (`corretor_id = corretor_atual()` ou gestor), então um id de outro
- * corretor simplesmente não atualiza linha nenhuma.
+/*
+ * `retomarBotNaConversa` saiu em 03/10/2026 (plano de ativação, 6.1): não
+ * tinha botão na tela. Religar a IA numa conversa é o "IA assume agora"
+ * (`assumirConversaComIA`), que também responde quem estava esperando.
  */
-export async function retomarBotNaConversa(conversaId: string): Promise<ResultadoConversa> {
-  const supabase = await exigirSessao();
-
-  /*
-   * `liberado_por_palavra_chave` entra AQUI, e a ausência dela é o defeito
-   * que fazia este botão mentir: `botDeveResponder` exige TRÊS coisas —
-   * bot ativo, pausa vencida e conversa liberada — e a versão anterior
-   * mexia só nas duas primeiras. O corretor clicava, a tela dizia "IA
-   * reativada nesta conversa", e o bot continuava mudo.
-   *
-   * Reativar pela tela É a autorização explícita, do mesmo jeito que
-   * digitar a palavra-chave no chat: quem clicou foi o dono da conversa,
-   * logado, olhando para ela.
-   */
-  const { data, error } = await supabase
-    .from("whatsapp_conversas")
-    .update({ bot_ativo: true, pausado_humano_ate: null, liberado_por_palavra_chave: true })
-    .eq("id", conversaId)
-    .select("id");
-
-  if (error) {
-    console.error("[conversas] falha ao retomar bot:", error.message);
-    return { erro: "Não foi possível reativar a IA agora." };
-  }
-  if (!data || data.length === 0) {
-    return { erro: "Conversa não encontrada na sua carteira." };
-  }
-
-  revalidatePath("/corretor/conversas");
-  revalidatePath("/corretor/pessoas");
-  return { ok: "IA reativada nesta conversa." };
-}
 
 /**
  * Silencia a IA nesta conversa por tempo indeterminado.

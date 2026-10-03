@@ -41,9 +41,8 @@ describe("ativar a IA escreve as TRÊS condições de botDeveResponder", () => {
     for (const campo of TRES_CAMPOS) expect(fn).toContain(campo);
   });
 
-  it("o botão antigo do painel (retomarBotNaConversa) continua ativando de verdade", () => {
-    const fn = trechoDe(ACOES, "export async function retomarBotNaConversa");
-    for (const campo of TRES_CAMPOS) expect(fn).toContain(campo);
+  it("o botão sem tela (retomarBotNaConversa) saiu: religar é o 'IA assume agora'", () => {
+    expect(ACOES).not.toContain("export async function retomarBotNaConversa");
   });
 
   it("o botão 'IA assume agora' ativa de verdade", () => {

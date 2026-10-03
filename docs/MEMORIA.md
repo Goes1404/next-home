@@ -8997,3 +8997,27 @@ Nota: [[palavra-chave-cadastra-o-lead]]. Fase 1 do plano de ativação da IA.
 - **Áudio com etiqueta de anúncio já cadastrava** número novo: a etiqueta é
   lida do `contextInfo` de qualquer tipo de mensagem.
 
+## A IA só responde (0147-0148, 03/10/2026)
+
+Nota: [[a-ia-so-responde]]. Fases 2 a 6 do plano de ativação. Roteiro de
+testes: `docs/ROTEIRO-TESTES-ATIVACAO-IA.md`.
+
+- **Saíram** a abertura automática de lead de portal, o "Iniciar conversa
+  com IA" da ficha e o reengajamento de +24h/+72h. Pós-visita e indicação
+  viram sugestão no Início (`whatsapp_followups.status = 'sugerido'`).
+- **A palavra-chave tem de desconsiderar a própria mensagem** para achar o
+  cliente esperando: `separarRajada` corta na última fala do corretor, e a
+  mensagem com a palavra É do corretor.
+- **`whatsapp_followups` não tinha policy nenhuma**: só o servidor lia. A
+  0147 dá SELECT ao corretor dono da conversa, para a fila mostrar as
+  sugestões.
+- **Expediente e janela segura são coisas diferentes**: o expediente do
+  corretor (0148) só ENCURTA a janela de envio (9h–20h59, seg–sáb); a janela
+  protege a reputação do número e não é configuração.
+- **A guarda de "chamada do webhook" pegava a primeira ocorrência**: com a
+  fala do corretor também avançando o funil, `etapaAutomatica.test.ts` passou
+  a usar a última (a da resposta da IA).
+- **`npm run paleta` no Windows sem build acusa toda classe como morta**
+  (o CSS sai do postcss). Os contrastes valem; a checagem de classe pede
+  `next build`.
+
