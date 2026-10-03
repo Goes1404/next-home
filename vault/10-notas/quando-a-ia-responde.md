@@ -70,6 +70,13 @@ que o corretor configurou.
 - O botão "IA assume agora" some quando o lead pediu para sair ou é de outro
   corretor.
 
+## A pausa não é retomada
+
+Mensagem escrita durante a pausa do corretor é dele: a varredura de respostas
+atrasadas nunca volta para respondê-la (`escreveu_durante_a_pausa` em
+`respostaAtrasada.ts`, decisão de 03/10/2026). A IA responde só mensagem nova,
+chegada depois de a pausa vencer.
+
 ## Uma resposta por vez
 
 Webhook, palavra-chave/"IA assume agora" e varredura atrasada pegam a mesma

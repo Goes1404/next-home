@@ -348,7 +348,7 @@ export async function getFilaDeTrabalho(
        * como tem de doer, e "há 47 horas" ninguém converte de cabeça.
        */
       detalhe: pausaPorConversa.has(conversa.conversa_id as string)
-        ? `Esperando durante a sua pausa há ${horas >= 1 ? `${horas}h` : "menos de 1h"} · a IA volta às ${horaCurta.format(new Date(pausaPorConversa.get(conversa.conversa_id as string)!))}`
+        ? `Escreveu enquanto você atendia, há ${horas >= 1 ? `${horas}h` : "menos de 1h"} · a IA não responde, é com você`
         : horas >= 24
           ? `Escreveu há ${Math.floor(horas / 24)} dia${horas >= 48 ? "s" : ""} e está sem resposta`
           : horas >= 1

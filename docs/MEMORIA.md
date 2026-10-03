@@ -9054,4 +9054,10 @@ Nota: [[quando-a-ia-responde]].
   varredura atrasada) pegam a mesma trava, e o webhook, já com ela, não fala
   se a última fala deixou de ser do cliente (`ja_respondida`) — o que também
   impede a IA de responder por cima do corretor que digitou durante a rajada.
+- **A IA não retoma a conversa depois da pausa (decisão do Matheus, 03/10).**
+  Até aqui a varredura respondia, no tique seguinte ao fim da pausa de 3h,
+  quem tinha escrito enquanto o corretor atendia (plano de ativação, 2.4).
+  Agora mensagem escrita DURANTE a pausa é do corretor para sempre
+  (`escreveu_durante_a_pausa`); a IA só responde mensagem nova, chegada
+  depois de a pausa vencer, pelo webhook. A fila do Início diz "é com você".
 

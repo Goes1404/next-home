@@ -51,17 +51,24 @@ export const DIAS_LIMITE = 7;
 
 export type DecisaoRespostaAtrasada =
   | { responder: true; horas: number }
-  | { responder: false; motivo: "ainda_no_intervalo_normal" | "antigo_demais"; horas: number };
+  | {
+      responder: false;
+      motivo: "ainda_no_intervalo_normal" | "antigo_demais" | "escreveu_durante_a_pausa";
+      horas: number;
+    };
 
 export function decidirRespostaAtrasada(params: {
   /** Quando o cliente falou pela última vez sem obter resposta. */
   esperandoDesde: string | Date;
   /**
-   * Até quando a IA ficou pausada porque o corretor falou (plano de
-   * ativação, 2.4). Se o cliente escreveu DURANTE essa pausa e ela já
-   * venceu, a resposta sai no próximo tique (até 5 min), sem esperar as 4h
-   * do atraso normal: o corretor parou de responder, e o cliente já esperou
-   * a pausa inteira.
+   * Até quando a IA ficou pausada porque o corretor falou.
+   *
+   * Mensagem escrita DURANTE essa pausa é do corretor, para sempre: a IA não
+   * volta depois para respondê-la (decisão do Matheus, 03/10/2026). A pausa
+   * diz "estou atendendo esta pessoa"; a IA retomar sozinha uma conversa que
+   * ele assumiu é falar por cima dele, só que mais tarde. O que ela
+   * responde é mensagem NOVA, chegada depois de a pausa vencer — e essa vem
+   * pelo webhook, na hora, não por aqui.
    */
   pausaAte?: string | Date | null;
   agora?: Date;
@@ -80,9 +87,9 @@ export function decidirRespostaAtrasada(params: {
 
   if (params.pausaAte) {
     const fimDaPausa = new Date(params.pausaAte).getTime();
-    const escreveuDuranteAPausa =
-      Number.isFinite(fimDaPausa) && desde.getTime() < fimDaPausa && fimDaPausa <= agora.getTime();
-    if (escreveuDuranteAPausa && horas <= DIAS_LIMITE * 24) return { responder: true, horas };
+    if (Number.isFinite(fimDaPausa) && desde.getTime() < fimDaPausa) {
+      return { responder: false, motivo: "escreveu_durante_a_pausa", horas };
+    }
   }
 
   if (horas < HORAS_PARA_RESPONDER) {

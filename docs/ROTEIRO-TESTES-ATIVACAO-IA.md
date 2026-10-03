@@ -21,7 +21,7 @@ precisam de um número que não está no CRM, use um celular de teste.
 | 9 | Palavra-chave em número novo | Igual ao 8, com a palavra de ativação | Lead criado na carteira da Bruna, com o mesmo comportamento do 8 (sem marca de teste) |
 | 10 | Palavra-chave em lead de outro corretor | Mande a palavra para um número que é lead de outro corretor | A IA não responde; o lead continua com o dono; aviso no Início só para quem digitou, sem o nome do dono |
 | 11 | Corretor fala sem palavra-chave | Do celular da Bruna, responda o cliente normalmente | Cabeçalho da conversa: "Pausada até HH:MM porque você falou"; lead em Novo vai para Primeiro contato |
-| 12 | Cliente escreve durante a pausa | Depois do 11, mande uma mensagem do cliente | A IA não responde na hora; o Início mostra "Esperando durante a sua pausa"; até 5 min depois de a pausa vencer, a IA responde |
+| 12 | Cliente escreve durante a pausa | Depois do 11, mande uma mensagem do cliente | A IA não responde, nem quando a pausa vence; o Início mostra "Escreveu enquanto você atendia · a IA não responde, é com você". Uma mensagem NOVA depois das 3h é respondida na hora |
 | 13 | Cliente responde à transmissão | Monte uma lista com o celular de teste e responda a mensagem recebida | A IA assume a conversa |
 | 14 | Cliente recusa contato | Responda "não tenho interesse" | A IA se despede; lead vai para Perdido; sai das listas sugeridas; o Início avisa por 48 h |
 | 15 | Lead transferido | Como ADM, transfira um lead e escreva do cliente para o número do novo corretor | Linha do tempo: "Lead transferido de X para Y pela gestão"; novo corretor vê o resumo e a etapa (não as mensagens antigas); a IA responde sem pedir de novo o que o cliente já disse |

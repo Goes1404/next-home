@@ -361,8 +361,8 @@ async function varrerRespostasAtrasadas(
     .limit(20);
 
   /*
-   * A pausa de cada conversa (plano de ativação, 2.4): quem escreveu durante
-   * a pausa do corretor é respondido assim que ela vence, e vai na frente.
+   * A pausa de cada conversa: quem escreveu DURANTE a pausa do corretor é
+   * dele, e a varredura nunca volta para responder (03/10/2026).
    */
   const ids = (esperando ?? []).map((l) => l.conversa_id).filter((id): id is string => Boolean(id));
   const pausas = new Map<string, string | null>();
@@ -373,11 +373,7 @@ async function varrerRespostasAtrasadas(
       .in("id", ids);
     for (const c of conversas ?? []) pausas.set(c.id, c.pausado_humano_ate);
   }
-  const venceuAPausa = (l: { conversa_id: string | null; esperando_desde: string | null }) => {
-    const ate = l.conversa_id ? pausas.get(l.conversa_id) : null;
-    return Boolean(ate && l.esperando_desde && l.esperando_desde < ate && new Date(ate) <= new Date());
-  };
-  const ordenadas = [...(esperando ?? [])].sort((a, b) => Number(venceuAPausa(b)) - Number(venceuAPausa(a)));
+  const ordenadas = esperando ?? [];
 
   for (const linha of ordenadas) {
     if (saldo.respondidas >= MAX_RESPOSTAS_ATRASADAS) break;
