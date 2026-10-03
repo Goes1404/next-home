@@ -1,4 +1,5 @@
 import type { MensagemConversa } from "./acoes";
+import { dentroDoExpediente } from "@/lib/whatsapp/modoBot";
 
 /**
  * Quanto se lê de uma conversa (30/09/2026). A abertura trazia 100 mensagens
@@ -57,6 +58,14 @@ export type ConversaResumo = {
    * a IA leu o que não leu.
    */
   historicoIndisponivel?: boolean;
+  /** O lead pediu para não ser contatado (0110). */
+  naoContatar?: boolean;
+  /**
+   * O lead desta conversa é de OUTRO corretor (transferido depois que a
+   * conversa começou): a RLS esconde a ficha dele, então a conversa tem
+   * `lead_id` mas o lead não vem.
+   */
+  contatoDeOutroCorretor?: boolean;
 };
 
 /** A linha crua que o Realtime entrega no INSERT/UPDATE de whatsapp_mensagens. */
@@ -87,6 +96,7 @@ export type ConversaRow = {
   memoria?: string | null;
   memoria_do_corretor?: boolean;
   historico_anterior?: string | null;
+  lead?: { nao_contatar_em: string | null } | { nao_contatar_em: string | null }[] | null;
 };
 
 export const hora = new Intl.DateTimeFormat("pt-BR", {
@@ -152,6 +162,7 @@ export function deRow(row: ConversaRow): ConversaResumo {
     memoria: row.memoria ?? null,
     memoriaDoCorretor: row.memoria_do_corretor ?? false,
     historicoIndisponivel: row.historico_anterior === "indisponivel",
+    ...sinaisDoLead(row),
   };
 }
 
@@ -217,13 +228,70 @@ export function estadoDa(conversa: ConversaResumo): Estado {
   return "ativa";
 }
 
+/** O que vem do lead embutido na conversa (`lead:leads(nao_contatar_em)`). */
+export function sinaisDoLead(row: {
+  lead_id: string | null;
+  lead?: { nao_contatar_em: string | null } | { nao_contatar_em: string | null }[] | null;
+}): { naoContatar: boolean; contatoDeOutroCorretor: boolean } {
+  const lead = Array.isArray(row.lead) ? row.lead[0] : row.lead;
+  return {
+    naoContatar: Boolean(lead?.nao_contatar_em),
+    // `undefined` = a consulta não pediu o lead; só `null` com lead_id é
+    // lead que a RLS escondeu.
+    contatoDeOutroCorretor: row.lead === null && Boolean(row.lead_id),
+  };
+}
+
+/** O que o cabeçalho precisa saber do número para explicar o silêncio da IA. */
+export type ContextoDaIA = {
+  modo: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado";
+  expediente: { inicioHora: number; fimHora: number };
+} | null;
+
+const horaMinuto = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+
+/**
+ * POR QUE a IA está ou não respondendo, em uma frase (plano de ativação,
+ * 5.1). O selo dizia "IA em pausa" e o corretor não sabia até quando, nem
+ * por quê; a ausência de resposta era lida como defeito.
+ */
+export function fraseDoEstado(
+  conversa: ConversaResumo,
+  estado: Estado,
+  ia: ContextoDaIA,
+  agora: Date = new Date(),
+): string {
+  if (conversa.contatoDeOutroCorretor) return "Contato de outro corretor";
+  if (conversa.naoContatar) return "Lead pediu para não ser contatado";
+  if (estado === "desligada") return "Desligada nesta conversa";
+  if (estado === "pausada_humano" && conversa.pausadoAte) {
+    return `Pausada até ${horaMinuto.format(new Date(conversa.pausadoAte))} porque você falou`;
+  }
+  if (estado === "aguardando_liberacao") return "Esperando sua liberação";
+  if (ia?.modo === "desativado") return "IA desligada no seu número";
+  if (ia?.modo === "noturno_e_fds" && dentroDoExpediente(agora, ia.expediente)) {
+    return `Você atende no expediente; a IA volta às ${ia.expediente.fimHora}h`;
+  }
+  if (ia?.modo === "co_piloto_3min") return "IA entra se você ficar 3 min sem responder";
+  return "IA respondendo";
+}
+
+/*
+ * Azul-céu para "atendendo" desde 03/10/2026 (plano de ativação, 5.3): o
+ * verde passou a ser só da etapa Fechado, que aparece ao lado na mesma tela,
+ * e as cores do funil não repetem as do estado da IA.
+ */
 export const SELO: Record<Estado, { texto: string; classe: string; ponto: string }> = {
-  ativa: { texto: "IA atendendo", classe: "text-ok", ponto: "bg-ok" },
+  ativa: { texto: "IA atendendo", classe: "text-info", ponto: "bg-info" },
   pausada_humano: { texto: "IA em pausa", classe: "text-alerta", ponto: "bg-alerta" },
   aguardando_liberacao: {
     texto: "IA esperando sua liberação",
-    classe: "text-info",
-    ponto: "bg-info",
+    classe: "text-apoio",
+    ponto: "bg-linha-forte",
   },
   desligada: { texto: "IA desligada", classe: "text-apoio", ponto: "bg-linha-forte" },
 };

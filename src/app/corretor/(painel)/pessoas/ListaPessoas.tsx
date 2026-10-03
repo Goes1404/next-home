@@ -3,13 +3,13 @@
 import { useCallback, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { REGUA_ETAPA } from "../_componentes/etapas";
+import { ETIQUETA_ETAPA, REGUA_ETAPA } from "../_componentes/etapas";
 import { ETAPA_LABEL } from "@/lib/types";
 import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
 import { linkWhatsappPara } from "@/lib/site";
 import { carregarConversaDaPessoa, carregarMaisPessoas } from "./acoes";
 import { GavetaConversa } from "./GavetaConversa";
-import type { ConversaResumo } from "../conversas/chatModelo";
+import type { ContextoDaIA, ConversaResumo } from "../conversas/chatModelo";
 import { recalcularRolagem } from "@/components/motion/lenis";
 // Do módulo PURO, não de `pessoas.ts`: aquele tem `server-only` e uma
 // constante importada dele arrasta o servidor inteiro para o cliente.
@@ -30,6 +30,7 @@ export function ListaPessoas({
   busca,
   conversaInicial,
   podeEnviar,
+  contextoDaIA = null,
 }: {
   iniciais: PessoaNaLista[];
   total: number;
@@ -46,6 +47,8 @@ export function ListaPessoas({
   conversaInicial: ConversaResumo | null;
   /** O número está pareado — é o que habilita o teclado do chat. */
   podeEnviar: boolean;
+  /** Modo e expediente do número: explicam no cabeçalho por que a IA cala. */
+  contextoDaIA?: ContextoDaIA;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -161,7 +164,7 @@ export function ListaPessoas({
       </p>
 
       {aberta && (
-        <GavetaConversa conversa={aberta} podeEnviar={podeEnviar} aoFechar={fechar} />
+        <GavetaConversa conversa={aberta} podeEnviar={podeEnviar} contextoDaIA={contextoDaIA} aoFechar={fechar} />
       )}
     </div>
   );
@@ -249,6 +252,16 @@ function LinhaPessoa({
         </span>
 
         <span className="mt-0.5 flex items-center gap-2">
+          {/* O NOME da etapa ao lado da prévia (plano de ativação, 5.3): a
+              régua de cor sozinha não serve a quem não distingue cores, e as
+              etapas do meio do funil se confundiam nesta tela. */}
+          {pessoa.etapa && pessoa.previa && (
+            <span
+              className={`text-[11px] shrink-0 rounded-full px-2 py-0.5 font-medium ${ETIQUETA_ETAPA[pessoa.etapa]}`}
+            >
+              {ETAPA_LABEL[pessoa.etapa]}
+            </span>
+          )}
           <span className="text-fluid-xs text-apoio min-w-0 flex-1 truncate">
             {pessoa.previa ?? (pessoa.etapa ? ETAPA_LABEL[pessoa.etapa] : "Sem conversa ainda")}
           </span>

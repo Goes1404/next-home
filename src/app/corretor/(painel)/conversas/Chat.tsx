@@ -45,6 +45,8 @@ import {
   type MensagemRow,
   type ConversaRow,
   type Estado,
+  fraseDoEstado,
+  type ContextoDaIA,
 } from "./chatModelo";
 
 /**
@@ -240,6 +242,7 @@ export function Chat({
   estado,
   mensagens,
   podeEnviar,
+  contextoDaIA = null,
   onVoltar,
   onErro,
   onEstado,
@@ -250,6 +253,8 @@ export function Chat({
   estado: Estado;
   mensagens: MensagemConversa[] | null;
   podeEnviar: boolean;
+  /** Modo e expediente do número (plano de ativação, 5.1). */
+  contextoDaIA?: ContextoDaIA;
   onVoltar: () => void;
   /*
    * Só relata falha; não existe mais "limpar o erro". Antes ele escrevia num
@@ -538,7 +543,8 @@ export function Chat({
                   {telefoneLegivel(conversa.telefone)} ·{" "}
                 </span>
               )}
-              <span className={selo.classe}>{selo.texto}</span>
+              {/* Por que a IA está ou não respondendo, em uma frase (5.1). */}
+              <span className={selo.classe}>{fraseDoEstado(conversa, estado, contextoDaIA)}</span>
               {!conversa.temLead && (
                 <span className="text-wa-meta"> · sem ficha no funil</span>
               )}

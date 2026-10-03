@@ -9,10 +9,12 @@ import type { EtapaFunil } from "@/lib/types";
  * qual cor vem antes de qual. "A escala esquenta junto com a negociação"
  * existia só no comentário; no olho eram quatro cores quaisquer.
  *
- * Agora são quatro passos de uma rampa só (azul-índigo → ciano), com o peso
- * visual crescendo conforme o negócio avança, e dois TERMINAIS fora dela:
- * fechado e perdido não são passos, são desfechos — o mesmo recorte que
- * `ETAPAS_DO_CAMINHO` faz em `types.ts`.
+ * Desde 03/10/2026 (plano de ativação, 5.3) cada passo tem matiz própria,
+ * das frias às quentes (índigo → turquesa → laranja → magenta): a rampa de
+ * uma matiz só deixava as vizinhas parecidas demais na tela de Conversas. Os
+ * dois TERMINAIS ficam fora do caminho: fechado é verde, perdido é vermelho
+ * apagado — o mesmo recorte que `ETAPAS_DO_CAMINHO` faz em `types.ts`. Os
+ * valores moram só em `globals.css`; aqui só os nomes dos tokens.
  *
  * Nada aqui usa `acento`. Isso é regra, não detalhe: `acento` passou a ser a
  * cor do MÓDULO (reapontada por `[data-modulo]` em globals.css), então uma

@@ -141,6 +141,9 @@ export async function salvarConfiguracaoWhatsapp(params: {
   palavraChaveTeste?: string;
   /** Frases que o CLIENTE escreve e que liberam a IA na hora (0056). */
   palavrasEntradaCliente?: string;
+  /** O expediente do corretor (0148). */
+  expedienteInicio?: number;
+  expedienteFim?: number;
 }): Promise<{ ok?: string; erro?: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
@@ -148,6 +151,15 @@ export async function salvarConfiguracaoWhatsapp(params: {
   const nome = params.nomeAssistente.trim();
   if (nome.length < 2 || nome.length > 40) {
     return { erro: "O nome da assistente precisa ter entre 2 e 40 caracteres." };
+  }
+
+  const expedienteInicio = Number.isInteger(params.expedienteInicio) ? Number(params.expedienteInicio) : 9;
+  const expedienteFim = Number.isInteger(params.expedienteFim) ? Number(params.expedienteFim) : 21;
+  if (expedienteInicio < 0 || expedienteInicio > 23 || expedienteFim < 1 || expedienteFim > 24) {
+    return { erro: "Escolha um horário de expediente válido." };
+  }
+  if (expedienteInicio >= expedienteFim) {
+    return { erro: "O expediente precisa terminar depois de começar." };
   }
 
   const palavraChave = params.palavraChaveAtivacao?.trim() || null;
@@ -209,6 +221,8 @@ export async function salvarConfiguracaoWhatsapp(params: {
         modo_bot: params.modoBot,
         palavra_chave_ativacao: palavraChave,
         palavra_chave_teste: palavraTeste,
+        expediente_inicio: expedienteInicio,
+        expediente_fim: expedienteFim,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "corretor_id" },

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { ContextoDaIA } from "../conversas/chatModelo";
 import Link from "next/link";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { BotaoVoltarAoTopo } from "../_componentes/BotaoVoltarAoTopo";
@@ -106,7 +107,7 @@ async function Conteudo({
     getPaginaDePessoas({ busca: busca || undefined }),
     supabase
       .from("corretor_whatsapp_instancias")
-      .select("status_conexao")
+      .select("status_conexao, modo_bot, expediente_inicio, expediente_fim")
       .eq("corretor_id", corretorId)
       .maybeSingle(),
     conversaInicial ? carregarConversaDaPessoa(conversaInicial) : Promise.resolve(null),
@@ -119,6 +120,14 @@ async function Conteudo({
       busca={busca}
       conversaInicial={conversa}
       podeEnviar={instancia?.status_conexao === "conectado"}
+      contextoDaIA={
+        instancia
+          ? {
+              modo: instancia.modo_bot as NonNullable<ContextoDaIA>["modo"],
+              expediente: { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim },
+            }
+          : null
+      }
     />
   );
 }

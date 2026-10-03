@@ -27,8 +27,17 @@ export type DecisaoModo = {
     | "corretor_respondendo";
 };
 
-/** Expediente comercial, em America/Sao_Paulo — a hora do cliente, não a do servidor. */
-export const EXPEDIENTE = { inicioHora: 9, fimHora: 18, fusoHorario: "America/Sao_Paulo" } as const;
+/**
+ * O expediente do corretor, em America/Sao_Paulo. `fimHora` é exclusivo: em
+ * 21, a última hora de expediente é 20h59.
+ *
+ * Desde a 0148 cada corretor configura o dele (`expediente_inicio`/`_fim`),
+ * e o MESMO número vale para o modo "fora do expediente" e para a janela de
+ * envio por iniciativa nossa (plano de ativação, 5.2). Este é o padrão de
+ * quem não configurou, igual ao default da coluna.
+ */
+export type Expediente = { inicioHora: number; fimHora: number };
+export const EXPEDIENTE = { inicioHora: 9, fimHora: 21, fusoHorario: "America/Sao_Paulo" } as const;
 
 /**
  * Janela do co-piloto: o bot só entra se o corretor não falou nos últimos
@@ -47,6 +56,8 @@ type Contexto = {
   agora?: Date;
   /** ISO da última mensagem enviada pelo corretor nesta conversa. */
   ultimaFalaCorretorEm?: string | null;
+  /** O expediente configurado pelo corretor (0148). */
+  expediente?: Expediente | null;
 };
 
 /**
@@ -69,10 +80,11 @@ function horaLocal(agora: Date, fusoHorario: string): { hora: number; diaSemana:
 }
 
 /** Segunda a sexta, entre o início e o fim do expediente. */
-export function dentroDoExpediente(agora: Date): boolean {
+export function dentroDoExpediente(agora: Date, expediente: Expediente | null = EXPEDIENTE): boolean {
+  const { inicioHora, fimHora } = expediente ?? EXPEDIENTE;
   const { hora, diaSemana } = horaLocal(agora, EXPEDIENTE.fusoHorario);
   const diaUtil = diaSemana >= 1 && diaSemana <= 5;
-  return diaUtil && hora >= EXPEDIENTE.inicioHora && hora < EXPEDIENTE.fimHora;
+  return diaUtil && hora >= inicioHora && hora < fimHora;
 }
 
 export function decidirPorModo(modo: ModoBotWhatsapp, ctx: Contexto = {}): DecisaoModo {
@@ -85,7 +97,7 @@ export function decidirPorModo(modo: ModoBotWhatsapp, ctx: Contexto = {}): Decis
     case "noturno_e_fds":
       // De dia e em dia útil quem atende é o corretor; a IA cobre o resto,
       // que é justamente quando o lead chega e ninguém está olhando.
-      return dentroDoExpediente(agora)
+      return dentroDoExpediente(agora, ctx.expediente ?? null)
         ? { pode: false, motivo: "dentro_do_expediente" }
         : { pode: true, motivo: "fora_do_expediente" };
 
@@ -110,7 +122,7 @@ export function decidirPorModo(modo: ModoBotWhatsapp, ctx: Contexto = {}): Decis
 /** Texto curto do modo, para o painel e para a lista de conversas. */
 export const ROTULO_MODO: Record<ModoBotWhatsapp, string> = {
   "24_7": "Sempre ativa",
-  noturno_e_fds: `Fora do expediente (após ${EXPEDIENTE.fimHora}h, antes das ${EXPEDIENTE.inicioHora}h e fins de semana)`,
+  noturno_e_fds: "Fora do seu expediente (à noite, de madrugada e nos fins de semana)",
   co_piloto_3min: `Só se você demorar (entra após ${MINUTOS_COPILOTO} min sem você responder)`,
   desativado: "Desligada",
 };

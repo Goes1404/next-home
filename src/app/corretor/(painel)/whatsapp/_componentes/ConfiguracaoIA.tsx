@@ -33,7 +33,7 @@ const MODOS: {
   {
     valor: "noturno_e_fds",
     titulo: "Noturno e fim de semana",
-    descricao: `Só fora do expediente: depois das ${EXPEDIENTE.fimHora}h, antes das ${EXPEDIENTE.inicioHora}h e nos fins de semana.`,
+    descricao: "Só fora do seu expediente (escolhido abaixo): à noite, de madrugada e nos fins de semana.",
     icone: Moon,
   },
   {
@@ -57,6 +57,8 @@ export type ConfigIA = {
   palavraChaveAtivacao: string | null;
   palavraChaveTeste: string | null;
   palavrasEntradaCliente: string | null;
+  expedienteInicio: number;
+  expedienteFim: number;
 };
 
 /** "a", "a" e "b", "a", "b" e "c" — lista em português, com aspas. */
@@ -81,6 +83,8 @@ export function ConfiguracaoIA({
     inicial?.palavraChaveAtivacao ?? "",
   );
   const [palavraChaveTeste, setPalavraChaveTeste] = useState(inicial?.palavraChaveTeste ?? "");
+  const [expedienteInicio, setExpedienteInicio] = useState(inicial?.expedienteInicio ?? EXPEDIENTE.inicioHora);
+  const [expedienteFim, setExpedienteFim] = useState(inicial?.expedienteFim ?? EXPEDIENTE.fimHora);
   const [palavrasEntradaCliente, setPalavrasEntradaCliente] = useState(
     inicial?.palavrasEntradaCliente ?? "",
   );
@@ -118,6 +122,8 @@ export function ConfiguracaoIA({
       palavraChaveAtivacao,
       palavraChaveTeste,
       palavrasEntradaCliente,
+      expedienteInicio,
+      expedienteFim,
     });
     setSalvando(false);
     setFeedback(resultado.erro ?? resultado.ok ?? null);
@@ -165,6 +171,50 @@ export function ConfiguracaoIA({
           );
         })}
       </div>
+
+      {/* Um expediente só (0148): vale para o modo "fora do expediente" e
+          limita a janela em que as listas de transmissão e o lembrete de
+          visita saem — dentro da janela segura de 9h às 20h59. */}
+      <fieldset className="border-linha space-y-2 rounded-2xl border p-4">
+        <legend className="text-fluid-sm text-titulo px-1 font-medium">Seu expediente</legend>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-fluid-xs text-apoio" htmlFor="expediente-inicio">
+            Das
+          </label>
+          <select
+            id="expediente-inicio"
+            value={expedienteInicio}
+            onChange={(e) => setExpedienteInicio(Number(e.target.value))}
+            className="text-fluid-sm border-linha-forte bg-campo text-titulo min-h-11 cursor-pointer rounded-xl border px-3"
+          >
+            {Array.from({ length: 24 }, (_, h) => (
+              <option key={h} value={h}>
+                {h}h
+              </option>
+            ))}
+          </select>
+          <label className="text-fluid-xs text-apoio" htmlFor="expediente-fim">
+            às
+          </label>
+          <select
+            id="expediente-fim"
+            value={expedienteFim}
+            onChange={(e) => setExpedienteFim(Number(e.target.value))}
+            className="text-fluid-sm border-linha-forte bg-campo text-titulo min-h-11 cursor-pointer rounded-xl border px-3"
+          >
+            {Array.from({ length: 24 }, (_, i) => i + 1).map((h) => (
+              <option key={h} value={h}>
+                {h}h
+              </option>
+            ))}
+          </select>
+        </div>
+        <p className="text-fluid-xs text-apoio leading-snug">
+          No modo &ldquo;Noturno e fim de semana&rdquo;, a IA fica quieta nesse horário de segunda a
+          sexta. As listas de transmissão e o lembrete de visita só saem dentro dele, e nunca antes
+          das 9h, depois das 20h59 ou aos domingos.
+        </p>
+      </fieldset>
 
       <button
         type="button"

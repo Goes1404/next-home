@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { sinaisDoLead, type ContextoDaIA } from "./chatModelo";
 import { after } from "next/server";
 import Link from "next/link";
 import { garantirEventosWebhook } from "@/lib/whatsapp/provider";
@@ -45,7 +46,7 @@ export default async function ConversasPage({
   const [{ data: conversas }, { data: instancia }] = await Promise.all([
     supabase
       .from("whatsapp_conversas")
-      .select("id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior")
+      .select("id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)")
       .eq("corretor_id", corretor.id)
       // Defesa durante a transição até a 0111 ser aplicada: conversa sem
       // cadastro não aparece nem por estoque antigo.
@@ -54,7 +55,7 @@ export default async function ConversasPage({
       .limit(100),
     supabase
       .from("corretor_whatsapp_instancias")
-      .select("modo_bot, status_conexao, instance_name")
+      .select("modo_bot, status_conexao, instance_name, expediente_inicio, expediente_fim")
       .eq("corretor_id", corretor.id)
       .maybeSingle(),
   ]);
@@ -90,6 +91,7 @@ export default async function ConversasPage({
     temLead: Boolean(c.lead_id),
     naoLidas: c.nao_lidas,
     historicoIndisponivel: c.historico_anterior === "indisponivel",
+    ...sinaisDoLead(c),
   }));
 
   /*
@@ -106,7 +108,7 @@ export default async function ConversasPage({
     const { data: solta } = await supabase
       .from("whatsapp_conversas")
       .select(
-        "id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior",
+        "id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)",
       )
       .eq("id", conversaInicial as string)
       .not("lead_id", "is", null)
@@ -131,6 +133,7 @@ export default async function ConversasPage({
         temLead: Boolean(solta.lead_id),
         naoLidas: solta.nao_lidas,
         historicoIndisponivel: solta.historico_anterior === "indisponivel",
+        ...sinaisDoLead(solta),
       });
     }
   }
@@ -258,6 +261,14 @@ export default async function ConversasPage({
       <ConversasClient
         conversas={listaFinal}
         podeEnviar={instancia?.status_conexao === "conectado"}
+        contextoDaIA={
+          instancia
+            ? {
+                modo: instancia.modo_bot as NonNullable<ContextoDaIA>["modo"],
+                expediente: { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim },
+              }
+            : null
+        }
         conversaInicial={conversaInicial}
       />
     </div>

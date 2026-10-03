@@ -882,6 +882,8 @@ export type Database = {
           created_at: string
           desconectado_em: string | null
           envios_campanha_contador: number
+          expediente_fim: number
+          expediente_inicio: number
           envios_campanha_data: string | null
           falhas_seguidas: number
           id: string
@@ -906,6 +908,8 @@ export type Database = {
           created_at?: string
           desconectado_em?: string | null
           envios_campanha_contador?: number
+          expediente_fim?: number
+          expediente_inicio?: number
           envios_campanha_data?: string | null
           falhas_seguidas?: number
           id?: string
@@ -930,6 +934,8 @@ export type Database = {
           created_at?: string
           desconectado_em?: string | null
           envios_campanha_contador?: number
+          expediente_fim?: number
+          expediente_inicio?: number
           envios_campanha_data?: string | null
           falhas_seguidas?: number
           id?: string

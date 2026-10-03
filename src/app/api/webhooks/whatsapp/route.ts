@@ -857,6 +857,7 @@ export async function POST(req: NextRequest) {
      * é uma consulta: só é feita no modo que usa.
      */
     const decisao = decidirPorModo(instancia.modoBot, {
+      expediente: instancia.expediente,
       ultimaFalaCorretorEm:
         instancia.modoBot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
     });

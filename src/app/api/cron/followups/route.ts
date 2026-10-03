@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { createServiceClient } from "@/lib/supabase/service";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
-import { dentroDaJanela } from "@/lib/whatsapp/antiBan";
+import { dentroDaJanela, dentroDaJanelaDoCorretor } from "@/lib/whatsapp/antiBan";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { decidirPorModo } from "@/lib/whatsapp/modoBot";
 import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
@@ -439,7 +439,7 @@ async function responderAtrasada(
 
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, conectado_em, bloqueado_ate")
+    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, conectado_em, bloqueado_ate, expediente_inicio, expediente_fim")
     .eq("corretor_id", params.corretorId)
     .maybeSingle();
   if (!instancia || !instancia.conectado_em) return "pulada";
@@ -450,6 +450,7 @@ async function responderAtrasada(
     {
       ultimaFalaCorretorEm:
         instancia.modo_bot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
+      expediente: { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim },
     },
   );
   if (!decisaoModo.pode) return "pulada";
@@ -845,7 +846,7 @@ async function processarFollowup(
   // Revalidação 3: instância, modo e cota anti-ban.
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, conectado_em, bloqueado_ate")
+    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, conectado_em, bloqueado_ate, expediente_inicio, expediente_fim")
     .eq("id", item.instancia_id)
     .maybeSingle();
 
@@ -858,7 +859,12 @@ async function processarFollowup(
     const decisao = decidirPorModo(instancia.modo_bot as "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado", {
       ultimaFalaCorretorEm:
         instancia.modo_bot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
+      expediente: { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim },
     });
+    // O lembrete de visita é envio nosso: respeita o expediente do corretor
+    // dentro da janela segura (0148), não só a janela global do tique.
+    const expediente = { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim };
+    if (!dentroDaJanelaDoCorretor(new Date(), expediente)) return "pulado";
     if (!decisao.pode) return descartar(supabase, item.id, "modo_nao_permite");
 
     const cota = await reservarCotaCampanha(instancia.id, new Date(instancia.conectado_em));

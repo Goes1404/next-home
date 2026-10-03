@@ -104,6 +104,22 @@ export function dentroDaJanela(data: Date, config: ConfigAntiBan = CONFIG_PADRAO
   return hora >= config.horaInicio && hora <= config.horaFim;
 }
 
+/**
+ * A janela de ENVIO de um corretor (0148): o expediente dele dentro da
+ * janela segura. O expediente pode encurtar a janela, nunca alargá-la —
+ * propaganda fora das 9h às 20h59 é o que faz o destinatário denunciar.
+ * `fimHora` do expediente é exclusivo.
+ */
+export function dentroDaJanelaDoCorretor(
+  data: Date,
+  expediente: { inicioHora: number; fimHora: number } | null,
+): boolean {
+  if (!dentroDaJanela(data)) return false;
+  if (!expediente) return true;
+  const { hora } = momentoEmSaoPaulo(data);
+  return hora >= expediente.inicioHora && hora < expediente.fimHora;
+}
+
 export type ContextoEnvio = {
   tipo: TipoEnvio;
   /** Quando o número foi pareado — base da curva de aquecimento. */

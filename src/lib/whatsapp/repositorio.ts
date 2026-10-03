@@ -44,6 +44,8 @@ export type InstanciaResolvida = {
   palavraChaveTeste: string | null;
   /** Frases que o CLIENTE escreve e que liberam a IA na hora (0056). */
   palavrasEntradaCliente: string | null;
+  /** O expediente do corretor (0148): modo "fora do expediente" e janela de envio. */
+  expediente: { inicioHora: number; fimHora: number };
 };
 
 /**
@@ -60,7 +62,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
   const { data, error } = await supabase
     .from("corretor_whatsapp_instancias")
     .select(
-      "id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret, palavra_chave_ativacao, palavra_chave_teste, palavras_entrada_cliente",
+      "id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret, palavra_chave_ativacao, palavra_chave_teste, palavras_entrada_cliente, expediente_inicio, expediente_fim",
     )
     .eq("instance_name", instanceName)
     .maybeSingle();
@@ -90,6 +92,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
     palavraChaveAtivacao: data.palavra_chave_ativacao,
     palavraChaveTeste: data.palavra_chave_teste,
     palavrasEntradaCliente: data.palavras_entrada_cliente,
+    expediente: { inicioHora: data.expediente_inicio ?? 9, fimHora: data.expediente_fim ?? 21 },
   };
 }
 

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { dentroDaJanela, ehDestinatarioInexistente } from "./antiBan";
+import { dentroDaJanela, dentroDaJanelaDoCorretor, ehDestinatarioInexistente } from "./antiBan";
 import { varrerQuedasDeNumero } from "./avisoDeQueda";
 import { variarMensagemComIA } from "./campaignQueue";
 import { enviarMensagemWhatsapp } from "./provider";
@@ -215,7 +215,9 @@ export async function processarFilaCampanhas(params?: {
 
   let query = supabase
     .from("corretor_whatsapp_instancias")
-    .select("id, corretor_id, instance_name, status_conexao, conectado_em, bloqueado_ate, telefone_conectado");
+    .select(
+      "id, corretor_id, instance_name, status_conexao, conectado_em, bloqueado_ate, telefone_conectado, expediente_inicio, expediente_fim",
+    );
 
   if (params?.corretorId) query = query.eq("corretor_id", params.corretorId);
 
@@ -242,7 +244,14 @@ export async function processarFilaCampanhas(params?: {
       fimDoOrcamento,
       margemMs,
       vagas: Math.min(ITENS_POR_INSTANCIA_POR_CHAMADA, limiteTotal - resultado.processados),
-      somenteUrgentes: !janelaAberta,
+      // O expediente do corretor (0148) encurta a janela segura dele: fora
+      // do expediente, só as listas marcadas para "qualquer hora" saem.
+      somenteUrgentes:
+        !janelaAberta ||
+        !dentroDaJanelaDoCorretor(new Date(), {
+          inicioHora: instancia.expediente_inicio,
+          fimHora: instancia.expediente_fim,
+        }),
     });
 
     resultado.processados += parcial.processados;

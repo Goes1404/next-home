@@ -21,7 +21,7 @@ export default async function WhatsappPainelPage() {
     supabase
       .from("corretor_whatsapp_instancias")
       .select(
-        "nome_assistente, tom_voz, modo_bot, status_conexao, telefone_conectado, palavra_chave_ativacao, palavra_chave_teste, palavras_entrada_cliente",
+        "nome_assistente, tom_voz, modo_bot, status_conexao, telefone_conectado, palavra_chave_ativacao, palavra_chave_teste, palavras_entrada_cliente, expediente_inicio, expediente_fim",
       )
       .eq("corretor_id", corretor.id)
       .maybeSingle(),
@@ -98,6 +98,8 @@ export default async function WhatsappPainelPage() {
                 palavraChaveAtivacao: instancia.palavra_chave_ativacao,
                 palavraChaveTeste: instancia.palavra_chave_teste,
                 palavrasEntradaCliente: instancia.palavras_entrada_cliente,
+                expedienteInicio: instancia.expediente_inicio,
+                expedienteFim: instancia.expediente_fim,
               }
             : null
         }

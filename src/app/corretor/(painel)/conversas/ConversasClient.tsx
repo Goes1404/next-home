@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { lerMensagens, marcarConversaLida, type MensagemConversa } from "./acoes";
-import { JANELA_DO_RECONCILIO, MENSAGENS_POR_PAGINA } from "./chatModelo";
+import { JANELA_DO_RECONCILIO, MENSAGENS_POR_PAGINA, type ContextoDaIA } from "./chatModelo";
 import {
   Chat,
   SELO,
@@ -43,10 +43,13 @@ export type { ConversaResumo } from "./Chat";
 export function ConversasClient({
   conversas,
   podeEnviar,
+  contextoDaIA = null,
   conversaInicial,
 }: {
   conversas: ConversaResumo[];
   podeEnviar: boolean;
+  /** Modo e expediente do número: explicam no cabeçalho por que a IA cala. */
+  contextoDaIA?: ContextoDaIA;
   /**
    * A conversa que já vem aberta, vinda de `?c=<id>` na URL.
    *
@@ -393,6 +396,7 @@ export function ConversasClient({
               estado={estados[selecionada.id] ?? estadoDa(selecionada)}
               mensagens={mensagensPor[selecionada.id] ?? null}
               podeEnviar={podeEnviar}
+              contextoDaIA={contextoDaIA}
               onVoltar={() => setSelecionadaId(null)}
               onErro={falhar}
               onEstado={(novo) => setEstados((atual) => ({ ...atual, [selecionada.id]: novo }))}

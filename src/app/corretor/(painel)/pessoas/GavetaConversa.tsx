@@ -12,6 +12,7 @@ import {
   mesclar,
   type ConversaResumo,
   type Estado,
+  type ContextoDaIA,
 } from "../conversas/chatModelo";
 
 /*
@@ -53,10 +54,12 @@ const semAssinatura = () => () => {};
 export function GavetaConversa({
   conversa,
   podeEnviar,
+  contextoDaIA = null,
   aoFechar,
 }: {
   conversa: ConversaResumo;
   podeEnviar: boolean;
+  contextoDaIA?: ContextoDaIA;
   aoFechar: () => void;
 }) {
   const atual = usePathname();
@@ -192,6 +195,7 @@ export function GavetaConversa({
           estado={estado}
           mensagens={mensagens}
           podeEnviar={podeEnviar}
+          contextoDaIA={contextoDaIA}
           onVoltar={aoFechar}
           onErro={setErro}
           onEstado={setEstado}

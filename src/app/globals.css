@@ -409,37 +409,49 @@
    * deixa de ser possível.
    */
 
+  /*
+   * Paleta de 03/10/2026 (plano de ativação, 5.3): a rampa de uma matiz só
+   * (270 → 192) deixava vizinhas a 22-30° uma da outra, e na tela de
+   * Conversas "primeiro contato", "visita" e "documentação" se confundiam.
+   * Agora cada etapa tem matiz própria, a 65° ou mais da vizinha, indo das
+   * frias às quentes: índigo → turquesa → laranja → magenta, com os dois
+   * desfechos fora do caminho (verde e vermelho apagado). Nenhuma repete as
+   * cores do estado da IA que aparecem ao lado (azul-céu, âmbar e cinza).
+   * A presença continua vindo da LUZ: no claro o texto fica entre 0.46 e
+   * 0.52 (contraste AA sobre o lavado), no escuro entre 0.72 e 0.82.
+   */
+
   /* Passo 1 — chegou agora. */
-  --color-etapa-novo: light-dark(oklch(0.56 0.19 270), oklch(0.68 0.17 270));
-  --color-etapa-novo-lavado: light-dark(oklch(0.56 0.19 270 / 0.16), oklch(0.68 0.17 270 / 0.22));
-  --color-etapa-novo-linha: light-dark(oklch(0.56 0.19 270 / 0.45), oklch(0.68 0.17 270 / 0.5));
+  --color-etapa-novo: light-dark(oklch(0.52 0.19 285), oklch(0.77 0.14 285));
+  --color-etapa-novo-lavado: light-dark(oklch(0.52 0.19 285 / 0.16), oklch(0.77 0.14 285 / 0.22));
+  --color-etapa-novo-linha: light-dark(oklch(0.52 0.19 285 / 0.45), oklch(0.77 0.14 285 / 0.5));
 
   /* Passo 2 — a conversa começou. */
-  --color-etapa-contato: light-dark(oklch(0.485 0.175 244), oklch(0.745 0.155 244));
-  --color-etapa-contato-lavado: light-dark(oklch(0.485 0.175 244 / 0.16), oklch(0.745 0.155 244 / 0.22));
-  --color-etapa-contato-linha: light-dark(oklch(0.485 0.175 244 / 0.45), oklch(0.745 0.155 244 / 0.5));
+  --color-etapa-contato: light-dark(oklch(0.48 0.1 185), oklch(0.8 0.12 185));
+  --color-etapa-contato-lavado: light-dark(oklch(0.48 0.1 185 / 0.16), oklch(0.8 0.12 185 / 0.22));
+  --color-etapa-contato-linha: light-dark(oklch(0.48 0.1 185 / 0.45), oklch(0.8 0.12 185 / 0.5));
 
   /* Passo 3 — há compromisso marcado. */
-  --color-etapa-visita: light-dark(oklch(0.45 0.15 214), oklch(0.81 0.145 214));
-  --color-etapa-visita-lavado: light-dark(oklch(0.45 0.15 214 / 0.16), oklch(0.81 0.145 214 / 0.22));
-  --color-etapa-visita-linha: light-dark(oklch(0.45 0.15 214 / 0.45), oklch(0.81 0.145 214 / 0.5));
+  --color-etapa-visita: light-dark(oklch(0.5 0.15 45), oklch(0.78 0.14 50));
+  --color-etapa-visita-lavado: light-dark(oklch(0.5 0.15 45 / 0.16), oklch(0.78 0.14 50 / 0.22));
+  --color-etapa-visita-linha: light-dark(oklch(0.5 0.15 45 / 0.45), oklch(0.78 0.14 50 / 0.5));
 
   /* Passo 4 — o negócio está na mesa. */
-  --color-etapa-doc: light-dark(oklch(0.385 0.125 192), oklch(0.875 0.135 192));
-  --color-etapa-doc-lavado: light-dark(oklch(0.385 0.125 192 / 0.16), oklch(0.875 0.135 192 / 0.22));
-  --color-etapa-doc-linha: light-dark(oklch(0.385 0.125 192 / 0.45), oklch(0.875 0.135 192 / 0.5));
+  --color-etapa-doc: light-dark(oklch(0.48 0.19 345), oklch(0.76 0.16 345));
+  --color-etapa-doc-lavado: light-dark(oklch(0.48 0.19 345 / 0.16), oklch(0.76 0.16 345 / 0.22));
+  --color-etapa-doc-linha: light-dark(oklch(0.48 0.19 345 / 0.45), oklch(0.76 0.16 345 / 0.5));
 
   /* Terminal: deu certo. Sai da rampa porque não é passo, é desfecho — e é o
      verde mais vivo do painel, porque é a única etapa que se comemora. */
-  --color-etapa-fechado: light-dark(oklch(0.5 0.17 152), oklch(0.8 0.19 152));
-  --color-etapa-fechado-lavado: light-dark(oklch(0.5 0.17 152 / 0.16), oklch(0.8 0.19 152 / 0.22));
-  --color-etapa-fechado-linha: light-dark(oklch(0.5 0.17 152 / 0.45), oklch(0.8 0.19 152 / 0.5));
+  --color-etapa-fechado: light-dark(oklch(0.46 0.15 152), oklch(0.8 0.19 152));
+  --color-etapa-fechado-lavado: light-dark(oklch(0.46 0.15 152 / 0.16), oklch(0.8 0.19 152 / 0.22));
+  --color-etapa-fechado-linha: light-dark(oklch(0.46 0.15 152 / 0.45), oklch(0.8 0.19 152 / 0.5));
 
-  /* Terminal: saiu do caminho. Sem croma — não compete com quem está vivo, e
-     por isso é o único que NÃO acompanha o ganho de presença dos outros. */
-  --color-etapa-perdido: light-dark(oklch(0.55 0.01 275), oklch(0.62 0.012 275));
-  --color-etapa-perdido-lavado: light-dark(oklch(0.55 0.01 275 / 0.09), oklch(0.62 0.012 275 / 0.14));
-  --color-etapa-perdido-linha: light-dark(oklch(0.55 0.01 275 / 0.3), oklch(0.62 0.012 275 / 0.36));
+  /* Terminal: saiu do caminho. Vermelho APAGADO: o cinza seria o mesmo do
+     "IA desligada" que aparece ao lado, e vermelho vivo gritaria como erro. */
+  --color-etapa-perdido: light-dark(oklch(0.5 0.07 22), oklch(0.72 0.07 22));
+  --color-etapa-perdido-lavado: light-dark(oklch(0.5 0.07 22 / 0.1), oklch(0.72 0.07 22 / 0.15));
+  --color-etapa-perdido-linha: light-dark(oklch(0.5 0.07 22 / 0.32), oklch(0.72 0.07 22 / 0.38));
 
   /* Tipografia */
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
