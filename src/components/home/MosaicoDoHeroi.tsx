@@ -1,6 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
+import { Camada } from "@/components/motion/Camada";
+
+/*
+ * Profundidade de cada card (03/10/2026). Os dois menores ficam "mais perto":
+ * andam mais com a rolagem e com o ponteiro, e o grande, mais devagar, fica
+ * atrás. A rolagem vai na `Camada` (transform); o ponteiro vai no `Link`, pela
+ * propriedade `translate`, lendo as variáveis que `ProfundidadeDoPonteiro`
+ * escreve na seção. Duas propriedades, dois donos, sem briga.
+ */
+const PROFUNDIDADE = [
+  { rolagem: -0.04, ponteiro: "[translate:calc(var(--ponteiro-x,0)*8px)_calc(var(--ponteiro-y,0)*6px)]" },
+  { rolagem: -0.16, ponteiro: "[translate:calc(var(--ponteiro-x,0)*18px)_calc(var(--ponteiro-y,0)*14px)]" },
+  { rolagem: -0.1, ponteiro: "[translate:calc(var(--ponteiro-x,0)*13px)_calc(var(--ponteiro-y,0)*10px)]" },
+] as const;
 
 /**
  * A coluna da direita do herói, SÓ no computador (30/09/2026).
@@ -24,13 +38,17 @@ export function MosaicoDoHeroi({ imoveis }: { imoveis: Empreendimento[] }) {
   return (
     <div className="hidden h-[clamp(320px,calc(100svh_-_12.5rem),660px)] w-full grid-cols-5 grid-rows-2 gap-3 lg:grid">
       {fotos.map((e, i) => (
-        <Link
+        <Camada
           key={e.slug}
+          velocidade={PROFUNDIDADE[i].rolagem}
+          className={i === 0 ? "col-span-3 row-span-2" : "col-span-2"}
+        >
+        <Link
           href={`/empreendimentos/${e.slug}`}
           prefetch={false}
           className={
-            (i === 0 ? "col-span-3 row-span-2" : "col-span-2") +
-            " group relative overflow-hidden rounded-[1.75rem] shadow-xl ring-1 ring-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
+            PROFUNDIDADE[i].ponteiro +
+            " group relative block h-full overflow-hidden rounded-[1.75rem] shadow-xl ring-1 ring-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
           }
         >
           <Image
@@ -62,6 +80,7 @@ export function MosaicoDoHeroi({ imoveis }: { imoveis: Empreendimento[] }) {
             </span>
           </span>
         </Link>
+        </Camada>
       ))}
     </div>
   );

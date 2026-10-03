@@ -29,6 +29,7 @@ export function ParallaxFundoHome() {
   // O nó do fundo é achado UMA vez: `document.querySelector` por quadro era
   // uma busca no DOM inteiro a 60 fps (F3, 13/09/2026).
   const fundoRef = useRef<HTMLElement | null>(null);
+  const fotoRef = useRef<HTMLElement | null>(null);
 
   useCamada(medidor, {
     // O medidor não se move: ele só informa o progresso. Daí velocidade 0.
@@ -47,12 +48,26 @@ export function ParallaxFundoHome() {
        */
       if (window.innerWidth < 768) return;
 
-      const fundo = (fundoRef.current ??= document.querySelector<HTMLElement>("[data-fundo-parallax]"));
-      if (!fundo) return;
-
       // Só a metade positiva é percorrida: o hero nasce colado no topo, e o
       // progresso vai de 0 (topo da página) a 1 (hero saindo por cima).
       const p = Math.max(0, Math.min(1, progresso));
+
+      /*
+       * Com a foto da casa no fundo (03/10/2026), quem anda é a FOTO, para
+       * CIMA e devagar: o conteúdo sobe à velocidade da rolagem e a avenida a
+       * uma fração dela, e é essa diferença que se lê como distância. A foto
+       * tem 15% de folga em cima e embaixo (`FundoDaCasaDesktop`), então os
+       * 12% de deslocamento nunca mostram a borda. O invólucro fica parado.
+       */
+      const foto = (fotoRef.current ??= document.querySelector<HTMLElement>("[data-fundo-camada]"));
+      if (foto) {
+        const yFoto = -p * 0.12 * fator * window.innerHeight;
+        foto.style.transform = `translate3d(0, ${yFoto}px, 0) scale(${1 + p * 0.05 * fator})`;
+        return;
+      }
+
+      const fundo = (fundoRef.current ??= document.querySelector<HTMLElement>("[data-fundo-parallax]"));
+      if (!fundo) return;
 
       /*
        * O `fator` entra à mão porque quem escreve é este callback, não o

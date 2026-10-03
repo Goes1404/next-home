@@ -20,11 +20,15 @@ export function FundoDaCasaDesktop() {
     <div aria-hidden className="absolute inset-0 hidden md:block">
       <picture>
         <source media="(min-width: 768px)" srcSet={FUNDO_DESKTOP_URL} type="image/webp" />
+        {/* 130% de altura, sobrando 15% em cima e embaixo: é a folga (e 3% de cada lado) que o
+            parallax (rolagem em `ParallaxFundoHome`, ponteiro em
+            `ProfundidadeDoPonteiro`) percorre sem nunca mostrar a borda. */}
         <img
           src={PIXEL_VAZIO}
           alt=""
           decoding="async"
-          className="absolute inset-0 h-full w-full object-cover"
+          data-fundo-camada
+          className="absolute -left-[3%] -top-[15%] h-[130%] w-[106%] max-w-none object-cover will-change-transform"
         />
       </picture>
       <div className="absolute inset-0 bg-fundo/60" />

@@ -8,6 +8,7 @@ import { CabeNoBolso } from "@/components/home/CabeNoBolso";
 import { CtaFinal } from "@/components/home/CtaFinal";
 import { EscolhaDeEstagio } from "@/components/home/EscolhaDeEstagio";
 import { MosaicoDoHeroi } from "@/components/home/MosaicoDoHeroi";
+import { ProfundidadeDoPonteiro } from "@/components/motion/ProfundidadeDoPonteiro";
 import { Regioes } from "@/components/home/Regioes";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { AberturaHome } from "@/components/motion/AberturaHome";
@@ -146,6 +147,7 @@ export default async function HomeInstitucional() {
               ROLE (esta seção, agora `relative`) — o fundo é `fixed` e não
               serve de referência de scroll. */}
           <ParallaxFundoHome />
+          <ProfundidadeDoPonteiro />
           {/* `data-abertura="n"`: a chegada é CSS puro (`@keyframes chegada`
               em globals.css), escalonada pelo número — roda antes de qualquer
               JavaScript e fica pausada só enquanto a vinheta cobre a tela.
@@ -209,11 +211,12 @@ export default async function HomeInstitucional() {
           </Camada>
           </div>
 
-          <Camada velocidade={-0.06} className="w-full">
-            <div data-abertura="2">
-              <MosaicoDoHeroi imoveis={destaques} />
-            </div>
-          </Camada>
+          {/* Sem `Camada` em volta desde 03/10/2026: cada card do mosaico tem
+              a própria profundidade (ver `MosaicoDoHeroi`), e uma camada por
+              fora somaria um segundo deslocamento ao de cada um. */}
+          <div data-abertura="2" className="w-full">
+            <MosaicoDoHeroi imoveis={destaques} />
+          </div>
           </div>
 
           {/* A ponte para o conteúdo (09/09/2026). O herói terminava num vão
