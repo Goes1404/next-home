@@ -27,6 +27,7 @@ import { getEmpreendimentos } from "@/lib/queries";
 import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { TETO_DA_MEMORIA } from "@/lib/whatsapp/memoriaDaConversa";
+import { lerResumoDoLead, type ResumoDoLead } from "@/lib/crm/resumoDoLead";
 
 export type ResultadoConversa = { erro?: string; ok?: string };
 
@@ -575,6 +576,8 @@ export type FichaDoLead = {
   /** Última leitura da IA sobre este lead, se o dossiê já rodou. */
   temperatura: { label: "quente" | "morno" | "frio"; score: number } | null;
   resumoIA: string | null;
+  /** O resumo completo do lead (plano de ativação, 3.1), o mesmo da ficha. */
+  resumo: ResumoDoLead | null;
 };
 
 /** `numeric` do Postgres chega como STRING no supabase-js — sempre converter. */
@@ -618,8 +621,10 @@ export async function lerFichaDoLead(conversaId: string): Promise<FichaDoLead | 
   ]);
 
   if (!lead) return null;
+  const resumo = await lerResumoDoLead(supabase, conversa.lead_id);
 
   return {
+    resumo,
     leadId: lead.id,
     nome: lead.nome,
     etapa: lead.etapa,

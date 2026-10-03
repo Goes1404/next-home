@@ -410,6 +410,24 @@ export async function redistribuirCarteira(
     return { ok: deId === null ? "Não havia leads sem dono." : "Este corretor não tem leads." };
   }
 
+  // A transferência entra na linha do tempo de cada lead (plano de
+  // ativação, 3.3): o novo dono precisa saber de onde ele veio.
+  const { data: origem } = deId
+    ? await supabase.from("corretores").select("nome").eq("id", deId).maybeSingle()
+    : { data: null };
+  const { error: erroLinha } = await createServiceClient()
+    .from("lead_interacoes")
+    .insert(
+      (movidos ?? []).map((l) => ({
+        lead_id: l.id,
+        corretor_id: guarda.corretor.id,
+        tipo: "sistema" as const,
+        conteudo: `Lead transferido${origem?.nome ? ` de ${origem.nome}` : ""} para ${destino.nome} pela gestão`,
+        detalhes: { de: deId, para: paraId, motivo: "redistribuicao_de_carteira" },
+      })),
+    );
+  if (erroLinha) console.error("[redistribuir] linha do tempo não gravada:", erroLinha.message);
+
   // Auditoria pelo cliente de serviço — mesma razão das outras ações: a
   // tabela não tem policy de INSERT de propósito (log forjável não é log).
   await createServiceClient()

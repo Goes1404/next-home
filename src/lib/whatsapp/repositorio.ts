@@ -489,6 +489,22 @@ export async function obterOuCriarConversa(params: {
 
   const origem = params.origem ?? "organica";
 
+  /*
+   * Lead transferido de outro corretor (plano de ativação, 3.3): a conversa
+   * nova no número do novo dono nasce com a MEMÓRIA da anterior — o resumo
+   * da negociação, não as mensagens. Com isso e o dossiê (que é do lead), a
+   * IA do número novo não faz o cliente repetir o que já disse.
+   */
+  const { data: anterior } = await supabase
+    .from("whatsapp_conversas")
+    .select("memoria")
+    .eq("lead_id", leadId)
+    .neq("corretor_id", params.corretorId)
+    .not("memoria", "is", null)
+    .order("ultima_interacao_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const { data: criada, error } = await supabase
     .from("whatsapp_conversas")
     .insert({
@@ -499,6 +515,7 @@ export async function obterOuCriarConversa(params: {
       origem,
       liberado_por_palavra_chave: true,
       cliente_conhecido: true,
+      ...(anterior?.memoria ? { memoria: anterior.memoria } : {}),
     })
     .select(SELECT_CONVERSA)
     .single();
@@ -888,6 +905,7 @@ export function validarDataVisita(dataHoraISO: string, agora: Date = new Date())
  */
 export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promise<boolean> {
   const supabase = createServiceClient();
+  const { data: antes } = await supabase.from("leads").select("etapa").eq("id", leadId).maybeSingle();
 
   const { data, error } = await supabase.rpc("reservar_horario_visita", {
     p_lead_id: leadId,
@@ -906,6 +924,11 @@ export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promi
     console.warn(
       `[visita] horário recusado (fora da grade ou já ocupado) para o lead ${leadId}: ${dataVisita.toISOString()}`,
     );
+  }
+
+  if (data === true && antes?.etapa) {
+    const { data: depois } = await supabase.from("leads").select("etapa").eq("id", leadId).maybeSingle();
+    if (depois?.etapa) await registrarEtapaAutomatica(leadId, antes.etapa, depois.etapa, "ia");
   }
 
   return data === true;
@@ -988,13 +1011,61 @@ export async function registrarImovelDeInteresse(
   if (error) console.error("[lead] falha ao gravar imóvel de interesse:", error.message);
 }
 
-export async function avancarLeadParaPrimeiroContato(leadId: string): Promise<void> {
+export async function avancarLeadParaPrimeiroContato(
+  leadId: string,
+  por: QuemMudouAEtapa = "ia",
+): Promise<void> {
   const supabase = createServiceClient();
-  await supabase
+  const { data } = await supabase
     .from("leads")
     .update({ etapa: "primeiro_contato", etapa_alterada_em: new Date().toISOString() })
     .eq("id", leadId)
-    .eq("etapa", "novo");
+    .eq("etapa", "novo")
+    .select("id");
+  if (data && data.length > 0) await registrarEtapaAutomatica(leadId, "novo", "primeiro_contato", por);
+}
+
+/** Quem moveu o lead no funil sem o corretor arrastar o cartão. */
+export type QuemMudouAEtapa = "ia" | "lista" | "corretor_no_whatsapp";
+
+const ROTULO_DA_ETAPA: Record<string, string> = {
+  novo: "Novo",
+  primeiro_contato: "Primeiro contato",
+  visita_agendada: "Visita agendada",
+  documentacao: "Documentação",
+  fechado: "Fechado",
+  perdido: "Perdido",
+};
+
+const QUEM_MUDOU: Record<QuemMudouAEtapa, string> = {
+  ia: "Etapa alterada pela IA",
+  lista: "Etapa alterada pelo envio da lista de transmissão",
+  corretor_no_whatsapp: "Etapa alterada porque você respondeu pelo WhatsApp",
+};
+
+/**
+ * Toda mudança de etapa que o SISTEMA faz entra na linha do tempo (plano de
+ * ativação, 3.2). O arrastar do painel já registrava; as automáticas (a
+ * primeira resposta, a visita confirmada, a recusa) mudavam o cartão de
+ * coluna sem deixar rastro, e o corretor não sabia por que o lead andou.
+ */
+export async function registrarEtapaAutomatica(
+  leadId: string,
+  de: string,
+  para: string,
+  por: QuemMudouAEtapa,
+): Promise<void> {
+  if (de === para) return;
+  const { error } = await createServiceClient()
+    .from("lead_interacoes")
+    .insert({
+      lead_id: leadId,
+      corretor_id: null,
+      tipo: "etapa",
+      conteudo: `${QUEM_MUDOU[por]}: ${ROTULO_DA_ETAPA[de] ?? de} → ${ROTULO_DA_ETAPA[para] ?? para}`,
+      detalhes: { de, para, por },
+    });
+  if (error) console.error("[etapa] falha ao registrar na linha do tempo:", error.message);
 }
 
 // ---------------------------------------------------------------------------
@@ -1066,6 +1137,9 @@ export async function registrarRecusaDoCliente(params: {
   if (erroFollowups) console.error("[recusa] falha ao cancelar follow-ups:", erroFollowups.message);
 
   if (!params.leadId) return;
+
+  const { data: antes } = await supabase.from("leads").select("etapa").eq("id", params.leadId).maybeSingle();
+  if (antes?.etapa) await registrarEtapaAutomatica(params.leadId, antes.etapa, "perdido", "ia");
 
   const { error: erroLead } = await supabase
     .from("leads")

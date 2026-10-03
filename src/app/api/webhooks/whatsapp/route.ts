@@ -651,6 +651,9 @@ export async function POST(req: NextRequest) {
       await pausarBotPorAtendimentoHumano(conversa.id, {
         retravarPalavraChave: decisao.retravarPalavraChave,
       });
+      // O corretor falou com o cliente: é o primeiro contato, com a IA
+      // calada ou não (plano de ativação, 3.2). Só anda quem está em "Novo".
+      if (conversa.leadId) await avancarLeadParaPrimeiroContato(conversa.leadId, "corretor_no_whatsapp");
       return NextResponse.json({
         ok: true,
         action: decisao.retravarPalavraChave

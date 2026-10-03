@@ -635,7 +635,7 @@ async function processarInstancia(ctx: {
        * puxa ninguém para TRÁS: quem já está em negociação continua onde
        * está. É a mesma guarda de termostato que o webhook usa.
        */
-      if (item.lead_id) await avancarLeadParaPrimeiroContato(item.lead_id);
+      if (item.lead_id) await avancarLeadParaPrimeiroContato(item.lead_id, "lista");
       // Disparo é iniciativa nossa: conta como tentativa de contato (0060).
       await registrarTentativaDeContato(item.lead_id);
 

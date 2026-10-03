@@ -29,6 +29,8 @@ import { LinksDoCliente } from "./LinksDoCliente";
 import { Indicacoes } from "./Indicacoes";
 import { PedidoDoSite } from "./PedidoDoSite";
 import { getVendasDoLead } from "@/lib/financeiro/dados";
+import { lerResumoDoLead } from "@/lib/crm/resumoDoLead";
+import { ResumoDoLeadCartao } from "@/app/corretor/(painel)/_componentes/ResumoDoLeadCartao";
 import { perguntaDoLead } from "@/lib/consultor/perguntaDoLead";
 
 export const metadata: Metadata = { title: "Lead" };
@@ -74,6 +76,7 @@ export default async function FichaLeadPage({
       // Vendas ligadas (0114). Sem a migration aplicada, lista vazia.
       getVendasDoLead(id),
     ]);
+  const resumo = await lerResumoDoLead(supabase, id);
 
   const whatsapp = linkWhatsappLead(lead);
   const parado = diasParado(lead);
@@ -215,6 +218,11 @@ export default async function FichaLeadPage({
           </blockquote>
         )}
       </header>
+
+      {/* O resumo do lead (plano de ativação, 3.1): o que saber para retomar
+          a conversa sem ler o histórico. O mesmo cartão do perfil aberto de
+          dentro da conversa. */}
+      {resumo && <ResumoDoLeadCartao resumo={resumo} />}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">

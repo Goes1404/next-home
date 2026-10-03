@@ -34,8 +34,11 @@ describe("novo → primeiro_contato automático", () => {
   });
 
   it("o webhook só avança quando a resposta foi ENTREGUE", () => {
-    const chamada = WEBHOOK.indexOf("avancarLeadParaPrimeiroContato(");
+    // A chamada da RESPOSTA DA IA é a última do arquivo. A outra (03/10/2026)
+    // é a fala do corretor pelo celular, que é contato por definição.
+    const chamada = WEBHOOK.lastIndexOf("avancarLeadParaPrimeiroContato(");
     expect(chamada).toBeGreaterThan(-1);
+    expect(WEBHOOK).toContain('avancarLeadParaPrimeiroContato(conversa.leadId, "corretor_no_whatsapp")');
     const contexto = WEBHOOK.slice(chamada - 200, chamada);
     // Resposta que falhou no envio não é contato com ninguém.
     expect(contexto).toContain("envio.enviado");

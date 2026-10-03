@@ -496,6 +496,13 @@ export async function atribuirLead(
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { erro: guarda.erro };
 
+  // O dono ANTERIOR, para a linha do tempo dizer de quem para quem.
+  const { data: antes } = await supabase
+    .from("leads")
+    .select("corretor_id, corretor:corretores!leads_corretor_id_fkey(nome)")
+    .eq("id", leadId)
+    .maybeSingle();
+
   const { data, error } = await supabase
     .from("leads")
     .update({ corretor_id: corretorId, origem_atribuicao: "manual" })
@@ -515,13 +522,22 @@ export async function atribuirLead(
     .eq("id", corretorId)
     .maybeSingle();
 
-  await registrarInteracao(supabase, {
-    leadId,
-    corretorId: guarda.corretor.id,
-    tipo: "sistema",
-    conteudo: `Lead atribuído a ${novoDono?.nome ?? "outro corretor"}`,
-    detalhes: { corretorId },
-  });
+  /*
+   * Transferência na linha do tempo (plano de ativação, 3.3): de quem, para
+   * quem, quando (a data da linha) e por quê. O novo dono lê o resumo, a
+   * linha do tempo e a etapa; as mensagens trocadas com o colega continuam
+   * com o colega (decisão de 03/10: só resumo e linha do tempo).
+   */
+  const anterior = Array.isArray(antes?.corretor) ? antes?.corretor[0] : antes?.corretor;
+  if (antes?.corretor_id !== corretorId) {
+    await registrarInteracao(supabase, {
+      leadId,
+      corretorId: guarda.corretor.id,
+      tipo: "sistema",
+      conteudo: `Lead transferido${anterior?.nome ? ` de ${anterior.nome}` : ""} para ${novoDono?.nome ?? "outro corretor"} pela gestão`,
+      detalhes: { de: antes?.corretor_id ?? null, para: corretorId, motivo: "transferencia_pela_gestao" },
+    });
+  }
 
   revalidatePath(`/corretor/leads/${leadId}`);
   revalidatePath("/corretor/funil");

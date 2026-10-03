@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, NotebookPen, Phone } from "lucide-react";
+import { ResumoDoLeadCartao } from "../_componentes/ResumoDoLeadCartao";
 import { cn } from "@/lib/utils";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
@@ -1029,6 +1030,14 @@ function PerfilLead({
           </div>
         </section>
 
+        {/* O resumo do lead (plano de ativação, 3.1): o mesmo cartão do topo
+            da ficha. O bloco antigo fica só para o caso de o resumo não vir. */}
+        {ficha.resumo ? (
+          <div className="mx-auto mt-6 w-full max-w-lg">
+            <ResumoDoLeadCartao resumo={ficha.resumo} />
+          </div>
+        ) : (
+          <>
         <section className="border-linha mx-auto mt-6 w-full max-w-lg overflow-hidden rounded-2xl border text-left">
           <h2 className="text-titulo border-linha border-b px-4 py-3 text-sm font-semibold">
             Sobre este lead
@@ -1068,6 +1077,9 @@ function PerfilLead({
               {ficha.resumoIA}
             </p>
           </section>
+        )}
+
+          </>
         )}
 
         <Link
