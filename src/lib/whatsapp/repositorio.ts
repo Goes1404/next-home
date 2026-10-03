@@ -1249,6 +1249,39 @@ export async function marcarConversaAtendida(conversaId: string): Promise<void> 
  * conversa que o corretor tinha assumido. Gravar de fato é o ponto: devolver
  * "IA desligada" só no corpo da resposta HTTP não desligaria nada.
  */
+/**
+ * Os três instantes que `ehSaudacaoAutomatica` precisa, lidos ANTES de
+ * gravar a fala do corretor que está chegando (senão ela mesma contaria
+ * como "o corretor falou agora").
+ */
+export async function momentosParaSaudacao(params: {
+  conversaId: string;
+  leadId: string | null;
+}): Promise<{ leadCriadoEm: string | null; ultimaFalaDoClienteEm: string | null; ultimaFalaDoCorretorEm: string | null }> {
+  const supabase = createServiceClient();
+  const ultima = (remetente: "cliente" | "corretor") =>
+    supabase
+      .from("whatsapp_mensagens")
+      .select("created_at")
+      .eq("conversa_id", params.conversaId)
+      .eq("remetente", remetente)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+  const [lead, cliente, corretor] = await Promise.all([
+    params.leadId
+      ? supabase.from("leads").select("created_at").eq("id", params.leadId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    ultima("cliente"),
+    ultima("corretor"),
+  ]);
+  return {
+    leadCriadoEm: lead.data?.created_at ?? null,
+    ultimaFalaDoClienteEm: cliente.data?.created_at ?? null,
+    ultimaFalaDoCorretorEm: corretor.data?.created_at ?? null,
+  };
+}
+
 export async function desligarIaPorFalaDoCorretor(conversaId: string): Promise<void> {
   const supabase = createServiceClient();
   await supabase

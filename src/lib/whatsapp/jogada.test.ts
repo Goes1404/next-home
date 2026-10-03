@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   aceiteDeVisitaValido,
@@ -1347,5 +1348,41 @@ describe("duas perguntas leves numa mensagem", () => {
       catalogo: [IMOVEL],
     });
     expect(planejarJogada(e)).toEqual({ tipo: "perguntar", assunto: "capacidade" });
+  });
+});
+
+describe("quem chega pedindo UM imóvel já respondeu região e estágio (03/10/2026)", () => {
+  /*
+   * Anúncio do Dom Parque: "Gostaria de mais informações do Dom Parque" era
+   * respondido com "em qual região de Barueri você procura?" — que soa como
+   * oferecer outra coisa. A próxima pergunta é a de dormitórios.
+   */
+  it("com o foco trazido pelo cliente, a pergunta é a de dormitórios", () => {
+    const e = estadoDaConversa({
+      historico: [],
+      mensagemAtual: "Olá! Gostaria de mais informações do Terra Alta.",
+      imovelEmFoco: IMOVEL,
+      catalogo: [IMOVEL],
+      focoDoCliente: true,
+    });
+    expect(e.respondidos.has("regiao")).toBe(true);
+    expect(e.respondidos.has("estagio")).toBe(true);
+    const j = planejarJogada(e);
+    expect(j.tipo === "perguntar" ? j.assunto : null).toBe("tipologia");
+  });
+
+  it("sem foco do cliente, a região continua sendo perguntada", () => {
+    const e = estadoDaConversa({
+      historico: [],
+      mensagemAtual: "oi, quero um apartamento",
+      imovelEmFoco: null,
+      catalogo: [IMOVEL],
+    });
+    expect(e.respondidos.has("regiao")).toBe(false);
+  });
+
+  it("o turno marca o foco do cliente pelo nome que ele escreveu", () => {
+    const codigo = readFileSync("src/lib/whatsapp/turnoDeAtendimento.ts", "utf8");
+    expect(codigo).toMatch(/focoDoCliente: foco\s*\?/);
   });
 });

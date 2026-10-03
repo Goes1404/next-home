@@ -48,6 +48,7 @@ import {
   preencherNomeContato,
   registrarEventoConexao,
   desligarIaPorFalaDoCorretor,
+  momentosParaSaudacao,
   registrarResultadoEnvio,
   resolverInstancia,
   salvarDossie,
@@ -70,6 +71,7 @@ import { importarHistoricoDoChat } from "@/lib/whatsapp/importarHistorico";
 import { gerarEEnviarPelaIA } from "@/lib/whatsapp/aberturaPelaIA";
 import { instrucaoPelosFollowups } from "@/lib/whatsapp/respostaAosFollowups";
 import { instrucaoDaCampanha } from "@/lib/whatsapp/contextoDaCampanha";
+import { ehSaudacaoAutomatica, SEGUNDOS_PARA_A_SAUDACAO } from "@/lib/whatsapp/saudacaoAutomatica";
 import { decidirPorFalaDoCorretor, palavraDoCorretorNaMensagem } from "@/lib/whatsapp/modoBot";
 import { decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoAIaResponde";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
@@ -555,6 +557,29 @@ export async function POST(req: NextRequest) {
     //      IA fica DESLIGADA nela até a ativação (palavra-chave ou "IA assume
     //      agora"). A regra mora em `decidirPorFalaDoCorretor`.
     if (fromMe) {
+      /*
+       * A saudação automática do WhatsApp Business chega como fala do
+       * próprio número, no mesmo segundo da primeira mensagem do cliente
+       * (anúncio do Dom Parque, 01-03/10/2026). Lida como fala da corretora,
+       * ela desligaria a IA em todo lead novo (0152). Os instantes são lidos
+       * ANTES de gravar esta fala, e depois de 3s: a saudação e a mensagem do
+       * cliente chegam no mesmo segundo, em qualquer ordem, e a do cliente
+       * precisa estar gravada para a conta enxergá-la.
+       *
+       * A saudação NÃO é gravada como fala do corretor. Gravada, ela fecharia
+       * a vez do cliente (`separarRajada` corta na última fala do corretor) e
+       * o webhook dele concluiria que a mensagem já foi respondida.
+       */
+      await new Promise((r) => setTimeout(r, SEGUNDOS_PARA_A_SAUDACAO * 1000));
+      const saudacaoAutomatica = ehSaudacaoAutomatica({
+        agora: new Date(),
+        ...(await momentosParaSaudacao({ conversaId: conversa.id, leadId: conversa.leadId })),
+      });
+      if (saudacaoAutomatica) {
+        console.warn(`[webhook] saudação automática do WhatsApp ignorada na conversa ${conversa.id}`);
+        return NextResponse.json({ ok: true, action: "saudacao_automatica_ignorada", sender });
+      }
+
       await gravarMensagem({
         // O porteiro acima já garantiu o vínculo com um lead. A função
         // central continua decidindo a gravação para manter o mesmo contrato

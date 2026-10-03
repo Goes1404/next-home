@@ -408,6 +408,11 @@ export function estadoDaConversa(params: {
    * módulo). Ausente vale false.
    */
   jaIndicouImovel?: boolean;
+  /**
+   * O imóvel em foco foi trazido pelo CLIENTE (o anúncio, o nome que ele
+   * escreveu), não oferecido pela IA. Ausente vale false.
+   */
+  focoDoCliente?: boolean;
 }): EstadoDaConversa {
   const { historico, mensagemAtual, dossie } = params;
 
@@ -485,6 +490,19 @@ export function estadoDaConversa(params: {
         if (a !== "capacidade") respondidos.add(a);
       }
     }
+  }
+
+  /*
+   * Quem chegou pedindo UM imóvel já respondeu região e estágio: o imóvel tem
+   * os dois. Medido no anúncio do Dom Parque (01-03/10/2026): a cliente pedia
+   * "informações do Dom Parque" e ouvia "em qual região de Barueri você
+   * procura?" — que soa como "quer ver outra coisa?". A pergunta seguinte é a
+   * de dormitórios, que é a regra da corretora. Se ele quiser pronto e o
+   * imóvel não for, `estagioIncompativel` cuida.
+   */
+  if (params.focoDoCliente) {
+    respondidos.add("regiao");
+    respondidos.add("estagio");
   }
 
   // O dossiê é o que a extração já consolidou — vale mais que o regex.

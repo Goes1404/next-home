@@ -326,6 +326,9 @@ export async function executarTurnoDeAtendimento(
     catalogo: catalogoDoPrompt,
     horasDesdeAUltimaFala: pedido.horasDesdeAUltimaFala,
     jaIndicouImovel,
+    focoDoCliente: foco
+      ? [...falasDoCliente, textoDaVez].some((t) => imoveisCitados(t, pedido.catalogo).includes(foco.slug))
+      : false,
   });
   const jogada = planejarJogada(estado);
 

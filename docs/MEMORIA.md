@@ -9161,4 +9161,12 @@ Nota: [[regras-do-corretor-e-horario-preferido]].
   detector. Agora é, junto com bloquear, "me esquece", "não me liga mais".
 - **Script Python que escreve TypeScript trocou `\b` por backspace de
   novo**, desta vez dentro de uma regex no turno. `cat -A` mostra `^H`.
+- **"A IA oferece outra coisa para quem pede o Dom Parque" era a pergunta de
+  funil**, não outro imóvel: "em qual região de Barueri você procura?" para
+  quem acabou de escolher um. Imóvel trazido pelo cliente responde região e
+  estágio (`focoDoCliente`, v47); a próxima pergunta é a de dormitórios.
+- **A saudação automática do WhatsApp Business chega como fala do corretor**,
+  no mesmo segundo da mensagem do cliente. Com a 0152 ela desligaria a IA em
+  todo lead novo. O webhook espera 3s, reconhece (`ehSaudacaoAutomatica`) e
+  NÃO grava: gravada, fecharia a vez do cliente e a IA não responderia.
 

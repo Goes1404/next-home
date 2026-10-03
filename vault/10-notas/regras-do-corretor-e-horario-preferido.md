@@ -10,6 +10,8 @@ codigo:
   - src/lib/whatsapp/aiAgent.ts
   - src/lib/whatsapp/estagioIncompativel.ts
   - src/lib/whatsapp/recusaDoCliente.ts
+  - src/lib/whatsapp/jogada.ts
+  - src/lib/whatsapp/saudacaoAutomatica.ts
   - src/lib/crm/agendaDeVisitas.ts
   - src/app/corretor/(painel)/whatsapp/_componentes/ConfiguracaoIA.tsx
   - src/app/corretor/(painel)/visitas/_componentes/GradeDaSemana.tsx
@@ -45,10 +47,28 @@ E o detector de recusa não pegava "Eu quero te apagar meu contato": apagar,
 excluir ou bloquear o contato, "me esquece" e "não me liga mais" viraram
 pedido de parada. A 0154 marcou esse lead e semeou as regras da Bruna.
 
+## "Peço o Dom Parque e ela me oferece outra coisa" (mesmo dia)
+
+Nas conversas do anúncio a IA nunca citou outro imóvel. O que soava como
+oferta de outra coisa era a pergunta de funil: a cliente pedia "informações
+do Dom Parque" e ouvia "em qual região de Barueri você procura?" e "prefere
+pronto ou na planta?". Quem trouxe o imóvel já respondeu região e estágio:
+`estadoDaConversa` ganhou `focoDoCliente` (o nome escrito pelo cliente) e a
+próxima pergunta passa a ser a de dormitórios, que é a regra da Bruna.
+
+E um risco escondido: a **saudação automática do WhatsApp Business**
+("Oiii Sou eu a corretora Bruna!") chega como fala do número no mesmo
+segundo da mensagem do cliente. Desde a 0152 a fala do corretor desliga a
+IA, então ela desligaria a IA em todo lead novo do anúncio. O webhook espera
+3s, reconhece a saudação (`ehSaudacaoAutomatica`: corretor sem fala nas
+últimas 24h e lead de até 12s ou cliente de até 8s) e não a grava: gravada,
+ela fecharia a vez do cliente e o webhook dele acharia que já foi respondido.
+
 ## Guardas
 `regrasDoCorretor.test.ts` (todo caminho do turno passa as regras),
 `estagioIncompativel.test.ts`, `agendaDeVisitas.test.ts` (horas
-preferidas), `recusaDoCliente.test.ts`. Mordidas conferidas.
+preferidas), `recusaDoCliente.test.ts`, `saudacaoAutomatica.test.ts`,
+`jogada.test.ts` (foco do cliente). Mordidas conferidas.
 
 ## Relacionadas
 - [[quando-a-ia-responde]]
