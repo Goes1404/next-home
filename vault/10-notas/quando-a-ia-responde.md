@@ -70,6 +70,13 @@ que o corretor configurou.
 - O botão "IA assume agora" some quando o lead pediu para sair ou é de outro
   corretor.
 
+## Uma resposta por vez
+
+Webhook, palavra-chave/"IA assume agora" e varredura atrasada pegam a mesma
+trava `resposta:<conversa>`. Com a trava, o webhook confere se a última fala
+ainda é do cliente (`ja_respondida`). Nasceu de um caso real de 03/10: a
+palavra-chave e a mensagem do cliente no mesmo segundo geraram duas respostas.
+
 ## Guardas
 
 `quandoAIaResponde.test.ts` cobre a regra e lê o código: webhook, cron e

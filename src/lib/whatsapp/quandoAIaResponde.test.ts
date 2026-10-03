@@ -233,3 +233,23 @@ describe("todo lugar que decide responder pergunta à mesma função", () => {
     );
   });
 });
+
+describe("uma resposta por vez em cada conversa", () => {
+  /*
+   * Medido em 03/10/2026: a palavra-chave do corretor e a mensagem do cliente
+   * chegaram no mesmo segundo, e o cliente recebeu DUAS respostas da IA — a
+   * do caminho da palavra-chave e a do webhook. Todo caminho que responde
+   * pega a mesma trava `resposta:<conversa>`.
+   */
+  it.each([
+    "src/app/api/webhooks/whatsapp/route.ts",
+    "src/lib/whatsapp/aberturaPelaIA.ts",
+    "src/app/api/cron/followups/route.ts",
+  ])("%s pega a trava de resposta da conversa", (arquivo) => {
+    expect(semComentarios(arquivo)).toMatch(/`resposta:\$\{[^}]+\}`/);
+  });
+
+  it("o webhook, já com a trava, não fala se a vez passou", () => {
+    expect(semComentarios("src/app/api/webhooks/whatsapp/route.ts")).toContain('action: "ja_respondida"');
+  });
+});

@@ -9046,4 +9046,12 @@ Nota: [[quando-a-ia-responde]].
 - **Silêncio grava `acao` = motivo e `silencio` = {motivo, volta_em, modo,
   expediente}.** Para saber por que ela não respondeu ontem:
   `select acao, silencio from ia_interacoes where conversa_id = … and modelo is null`.
+- **Duas respostas para a mesma mensagem (achado no tráfego real, 03/10).**
+  A palavra-chave do corretor e a mensagem do cliente chegaram no mesmo
+  segundo: o caminho da palavra-chave (`gerarEEnviarPelaIA`) respondeu sem
+  pegar a trava `resposta:<conversa>`, e o webhook respondeu de novo 4s
+  depois. Hoje os três caminhos que respondem (webhook, palavra-chave/botão,
+  varredura atrasada) pegam a mesma trava, e o webhook, já com ela, não fala
+  se a última fala deixou de ser do cliente (`ja_respondida`) — o que também
+  impede a IA de responder por cima do corretor que digitou durante a rajada.
 

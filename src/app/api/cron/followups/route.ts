@@ -393,11 +393,27 @@ async function varrerRespostasAtrasadas(
       continue;
     }
 
-    const desfecho = await responderAtrasada(supabase, {
-      conversaId: linha.conversa_id,
-      corretorId: linha.corretor_id,
-      horas: decisao.horas,
-    });
+    /*
+     * A MESMA trava de resposta do webhook e da palavra-chave
+     * (`resposta:<conversa>`): sem ela, o cliente que escreve enquanto a
+     * varredura responde receberia duas respostas.
+     */
+    const escopo = `resposta:${linha.conversa_id}`;
+    const dono = `atrasada-${linha.conversa_id}-${Date.now()}`;
+    if (!(await travarDisparo(escopo, dono, 55))) {
+      saldo.puladas++;
+      continue;
+    }
+    let desfecho: "respondida" | "pulada";
+    try {
+      desfecho = await responderAtrasada(supabase, {
+        conversaId: linha.conversa_id,
+        corretorId: linha.corretor_id,
+        horas: decisao.horas,
+      });
+    } finally {
+      await destravarDisparo(escopo, dono);
+    }
     if (desfecho === "respondida") saldo.respondidas++;
     else saldo.puladas++;
   }

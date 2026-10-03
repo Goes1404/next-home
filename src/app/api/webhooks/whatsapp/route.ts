@@ -866,6 +866,26 @@ export async function POST(req: NextRequest) {
     ]);
 
     /*
+     * Com a trava na mão, a última fala ainda tem de ser do CLIENTE. Durante
+     * os 6s da rajada alguém pode ter respondido: a palavra-chave do corretor
+     * (que dispara a IA por outro caminho) ou o próprio corretor digitando.
+     * Medido em 03/10/2026: a palavra-chave e a mensagem do cliente chegaram
+     * no mesmo segundo e o cliente recebeu DUAS respostas da IA. Se a vez já
+     * passou, esta invocação não fala — nem por cima do corretor.
+     */
+    if (historico.length > 0 && historico[historico.length - 1].remetente !== "cliente") {
+      await registrarInteracao({
+        conversaId: conversa.id,
+        corretorId: instancia.corretorId,
+        origem: "webhook",
+        eTeste: conversa.eTeste,
+        promptVersao: PROMPT_VERSAO,
+        acao: "absorvida_por_debounce",
+      });
+      return NextResponse.json({ ok: true, action: "ja_respondida", sender });
+    }
+
+    /*
      * Resposta a um follow-up nosso (pós-visita, lembrete da véspera,
      * pedido de indicação) vira instrução para o turno e, quando cabe,
      * aviso ao corretor e `visita_confirmada_em` (0121, 0123).
