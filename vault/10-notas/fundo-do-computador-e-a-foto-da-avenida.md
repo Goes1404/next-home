@@ -66,6 +66,19 @@ Medido em produção de 1024x600 a 1920x960: nada passa da primeira tela.
 - A `Camada` que envolvia o mosaico inteiro saiu: somaria um segundo
   deslocamento ao de cada card.
 
+## Transição de rolagem (03/10/2026)
+
+- `.folha-que-sobe` (fim do `globals.css`): o conteúdo da home tem cantos de
+  cima arredondados e sombra para cima; o `overflow: clip` do percurso corta
+  no raio e a foto aparece nos cantos.
+- `.heroi-recua`: o herói diminui (0,9) e esmaece (0,2) enquanto sai, por
+  `animation-timeline: view()`, só `scale`/`opacity`. Sem `view()` (Firefox),
+  fica só a folha.
+- Títulos da home com `TituloEditorial por="palavras"`.
+- O bloco CSS mora FORA do bloco do percurso: `percursoDaHome.test.ts` exige
+  que só `planta-desliza` exista ali.
+- Teste do zoom na cidade só com `?efeito=zoom` (foto até 1,7x).
+
 ## Limite
 
 A foto tem 1024x559. Num monitor de 1920 ela é ampliada; com o véu isso não
