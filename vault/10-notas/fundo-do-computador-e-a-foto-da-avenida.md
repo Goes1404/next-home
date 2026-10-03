@@ -46,6 +46,13 @@ Bruna: `corretoresPublicos` é `unstable_cache` de 1h, sobrevive ao deploy, e o
 para `corretores-publicos-v2`. Conferir com
 `curl -H "Cookie: corretor_ativo=<slug>"`.
 
+## O herói cabe na primeira tela
+
+Com a foto no fundo, o corte do herói em notebook ficou visível. A partir de
+`lg`, título (`clamp(2.25rem, min(4vw, 7.5svh), 4.5rem)`), espaços, busca e
+mosaico (`clamp(300px, 100svh - 14rem, 600px)`) encolhem com a altura.
+Medido em produção de 1024x600 a 1920x960: nada passa da primeira tela.
+
 ## Limite
 
 A foto tem 1024x559. Num monitor de 1920 ela é ampliada; com o véu isso não

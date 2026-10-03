@@ -9085,6 +9085,12 @@ Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
   site seguiu mostrando por mais dois deploys. Saída: trocar a chave do cache
   (`corretores-publicos-v2`). Para conferir: `curl` com o cookie
   `corretor_ativo=<slug>`, sem ele o caminho do corretor não é exercitado.
+- **O herói do computador não cabia num notebook** (1343x598: busca e convite
+  abaixo da dobra). A partir de `lg`, título, espaços, busca e mosaico
+  encolhem com `svh`. Para calibrar sem servidor local: `addStyleTag` na
+  produção com Playwright em várias resoluções, medindo o `bottom` de cada
+  bloco contra `innerHeight`; depois do deploy, a mesma medição sem a injeção
+  deu os mesmos números.
 - **E no mesmo dia a pausa acabou: a fala do corretor DESLIGA a IA (0152).**
   Decisão do Matheus: a IA nunca mais responde uma conversa em que o corretor
   falou, a não ser que seja ativada (palavra-chave ou "IA assume agora").
