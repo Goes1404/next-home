@@ -77,10 +77,10 @@ describe("o runner da varredura", () => {
   );
   const semComentario = fonte.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
 
-  it("usa motivoDoSilencio, e não régua própria", () => {
+  it("usa decidirSeAIaResponde, e não régua própria", () => {
     // Régua própria aqui significaria o bot falando por cima do humano que
     // está atendendo — o pior desfecho possível desta varredura.
-    expect(semComentario).toContain("motivoDoSilencio({");
+    expect(semComentario).toContain("decidirSeAIaResponde({");
   });
 
   it("lê a MESMA view da fila do Início", () => {

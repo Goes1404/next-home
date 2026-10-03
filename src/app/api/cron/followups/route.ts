@@ -5,7 +5,11 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { dentroDaJanela, dentroDaJanelaDoCorretor } from "@/lib/whatsapp/antiBan";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
-import { decidirPorModo } from "@/lib/whatsapp/modoBot";
+import {
+  decidirSeAIaResponde,
+  podeEnviarPorIniciativa,
+  silencioDaConversa,
+} from "@/lib/whatsapp/quandoAIaResponde";
 import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
 import {
   buscarDossieAtual,
@@ -20,8 +24,8 @@ import {
   ultimaFalaDoCorretor,
   contarFalasNaoGravadas,
   marcarConversaAtendida,
-  marcarConversaComoAtendimento,
-  motivoDoSilencio,
+  lerConversaPersistida,
+  situacaoDaConversa,
 } from "@/lib/whatsapp/repositorio";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
@@ -347,8 +351,8 @@ async function varrerRespostasAtrasadas(
    * contas do mesmo número divergem, e esta decide quem é atendido.
    *
    * Ela já recorta o que importa: última fala é do cliente, tem lead, e é
-   * ATENDIMENTO (liberada, cliente conhecido ou campanha). O que ela não
-   * sabe é se o bot pode falar agora — isso é `motivoDoSilencio`, abaixo.
+   * conversa com lead. O que ela não sabe é se a IA pode falar agora —
+   * isso é `decidirSeAIaResponde`, abaixo.
    */
   const { data: esperando } = await supabase
     .from("whatsapp_esperando_resposta")
@@ -405,37 +409,8 @@ async function responderAtrasada(
   supabase: ReturnType<typeof createServiceClient>,
   params: { conversaId: string; corretorId: string; horas: number },
 ): Promise<"respondida" | "pulada"> {
-  const { data: conversa } = await supabase
-    .from("whatsapp_conversas")
-    .select(
-      "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido, atendida_em, memoria, memoria_do_corretor",
-    )
-    .eq("id", params.conversaId)
-    .maybeSingle();
+  const conversa = await lerConversaPersistida(params.conversaId);
   if (!conversa) return "pulada";
-
-  /*
-   * A MESMA função que o webhook usa para decidir o silêncio. É o que
-   * garante que a varredura nunca fale onde o webhook calaria — se ela
-   * tivesse régua própria, uma conversa pausada de propósito poderia ser
-   * respondida por aqui, que é o pior desfecho possível: o bot por cima do
-   * humano que está atendendo.
-   */
-  const silencio = motivoDoSilencio({
-    id: conversa.id,
-    leadId: conversa.lead_id,
-    telefoneCliente: conversa.telefone_cliente,
-    botAtivo: conversa.bot_ativo,
-    pausadoHumanoAte: conversa.pausado_humano_ate,
-    liberadoPorPalavraChave: conversa.liberado_por_palavra_chave,
-    memoria: conversa.memoria ?? null,
-    memoriaDoCorretor: conversa.memoria_do_corretor ?? false,
-    clienteConhecido: conversa.cliente_conhecido ?? false,
-    atendidaEm: conversa.atendida_em ?? null,
-    eTeste: conversa.e_teste,
-    origem: conversa.origem,
-  });
-  if (silencio) return "pulada";
 
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
@@ -445,15 +420,23 @@ async function responderAtrasada(
   if (!instancia || !instancia.conectado_em) return "pulada";
   if (instancia.bloqueado_ate && new Date(instancia.bloqueado_ate) > new Date()) return "pulada";
 
-  const decisaoModo = decidirPorModo(
-    instancia.modo_bot as "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado",
-    {
-      ultimaFalaCorretorEm:
-        instancia.modo_bot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
+  /*
+   * A MESMA decisão que o webhook aplica (`quandoAIaResponde.ts`). É o que
+   * garante que a varredura nunca fale onde o webhook calaria — se ela
+   * tivesse régua própria, uma conversa pausada de propósito poderia ser
+   * respondida por aqui, que é o pior desfecho possível: o bot por cima do
+   * humano que está atendendo.
+   */
+  const decisao = decidirSeAIaResponde({
+    conversa: situacaoDaConversa(conversa),
+    numero: {
+      modo: instancia.modo_bot as "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado",
       expediente: { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim },
     },
-  );
-  if (!decisaoModo.pode) return "pulada";
+    ultimaFalaCorretorEm:
+      instancia.modo_bot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
+  });
+  if (!decisao.responde) return "pulada";
 
   const { data: corretor } = await supabase
     .from("corretores")
@@ -465,7 +448,7 @@ async function responderAtrasada(
   const [catalogo, historicoCompleto, dossie] = await Promise.all([
     getEmpreendimentos().catch(() => []),
     historicoRecente(conversa.id),
-    conversa.lead_id ? buscarDossieAtual(conversa.lead_id) : Promise.resolve(null),
+    conversa.leadId ? buscarDossieAtual(conversa.leadId) : Promise.resolve(null),
   ]);
 
   /*
@@ -509,7 +492,7 @@ async function responderAtrasada(
     if (i > 0) await new Promise((r) => setTimeout(r, 900 + Math.floor(Math.random() * 800)));
     const envio = await enviarMensagemWhatsapp({
       instanceName: instancia.instance_name,
-      telefone: conversa.telefone_cliente,
+      telefone: conversa.telefoneCliente,
       texto: baloes[i],
     });
     if (!envio.enviado) todosEnviados = false;
@@ -547,7 +530,7 @@ async function responderAtrasada(
     conversaId: conversa.id,
     corretorId: instancia.corretor_id,
     origem: "webhook",
-    eTeste: conversa.e_teste,
+    eTeste: conversa.eTeste,
     promptVersao: PROMPT_VERSAO,
     acao: "respondida",
     modelo: turno.resposta.meta.modelo,
@@ -783,39 +766,34 @@ async function processarFollowup(
   if (item.tipo === "reengajamento") return descartar(supabase, item.id, "reengajamento_desligado");
   const ehSugestao = item.tipo === "pos_visita" || item.tipo === "indicacao";
 
-  // Revalidação 1: a conversa ainda quer o bot falando? Para a sugestão,
-  // quem vai mandar é o corretor: basta a conversa existir.
-  const { data: conversa } = await supabase
-    .from("whatsapp_conversas")
-    .select("id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave")
-    .eq("id", item.conversa_id)
-    .maybeSingle();
-
-  if (!conversa || (!ehSugestao && (!conversa.bot_ativo || !conversa.liberado_por_palavra_chave))) {
-    return descartar(supabase, item.id, "bot_inativo");
-  }
-
   /*
-   * Revalidação 0: ele PEDIU para não ser procurado (0110).
+   * Revalidação 1: a camada da CONVERSA de `quandoAIaResponde.ts` — a mesma
+   * que decide se a IA responde. Lead de outro corretor, pedido para não ser
+   * contatado (nao_contatar_em, 0110), IA desligada e corretor falando agora
+   * barram o follow-up.
    *
    * `registrarRecusaDoCliente` já cancela os follow-ups pendentes no
-   * instante da recusa; isto cobre a corrida e o item antigo — e é o
-   * terceiro dos três caminhos que falam por iniciativa nossa (os outros
-   * são a campanha, via `elegivel`, e a abertura pela IA).
+   * instante da recusa; isto cobre a corrida e o item antigo.
    *
-   * DESCARTA, não pula: quem pediu para sair não volta a ser elegível
-   * amanhã, e um item pulado ficaria na fila para sempre tentando.
+   * DESCARTA, não pula: nenhum desses motivos vira "pode" no próximo tique
+   * de um jeito que torne o follow-up oportuno, e um item pulado ficaria na
+   * fila para sempre tentando. Para a SUGESTÃO, quem envia é o corretor: a
+   * IA desligada nesta conversa não a impede.
    */
-  if (conversa.lead_id) {
-    const { data: lead } = await supabase
-      .from("leads")
-      .select("nao_contatar_em")
-      .eq("id", conversa.lead_id)
-      .maybeSingle();
-    if (lead?.nao_contatar_em) return descartar(supabase, item.id, "cliente_recusou");
-  }
-  if (conversa.pausado_humano_ate && new Date(conversa.pausado_humano_ate) > new Date()) {
-    return descartar(supabase, item.id, "corretor_assumiu");
+  const conversa = await lerConversaPersistida(item.conversa_id);
+  if (!conversa) return descartar(supabase, item.id, "bot_inativo");
+
+  const silencio = silencioDaConversa(situacaoDaConversa(conversa));
+  if (silencio && !(ehSugestao && silencio.motivo === "ia_desligada_na_conversa")) {
+    const motivo =
+      silencio.motivo === "lead_pediu_para_sair"
+        ? "cliente_recusou"
+        : silencio.motivo === "pausada_pelo_corretor"
+          ? "corretor_assumiu"
+          : silencio.motivo === "lead_de_outro_corretor"
+            ? "lead_de_outro_corretor"
+            : "bot_inativo";
+    return descartar(supabase, item.id, motivo);
   }
 
   // Revalidação 2: o cliente respondeu depois do agendamento? (o cancelamento
@@ -856,16 +834,20 @@ async function processarFollowup(
   }
 
   if (!ehSugestao) {
-    const decisao = decidirPorModo(instancia.modo_bot as "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado", {
-      ultimaFalaCorretorEm:
-        instancia.modo_bot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
+    /*
+     * O lembrete de visita é envio NOSSO: sai dentro do expediente do
+     * corretor (e da janela segura, 0148) e respeita só "IA desligada no
+     * número". O modo "fora do expediente" é sobre quem RESPONDE — aplicado
+     * aqui, ele barrava todo lembrete de quem usa esse modo, porque o
+     * lembrete só sai DENTRO do expediente (`podeEnviarPorIniciativa`).
+     */
+    const numero = {
+      modo: instancia.modo_bot as "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado",
       expediente: { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim },
-    });
-    // O lembrete de visita é envio nosso: respeita o expediente do corretor
-    // dentro da janela segura (0148), não só a janela global do tique.
-    const expediente = { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim };
-    if (!dentroDaJanelaDoCorretor(new Date(), expediente)) return "pulado";
-    if (!decisao.pode) return descartar(supabase, item.id, "modo_nao_permite");
+    };
+    if (!dentroDaJanelaDoCorretor(new Date(), numero.expediente)) return "pulado";
+    const pode = podeEnviarPorIniciativa({ conversa: situacaoDaConversa(conversa), numero });
+    if (!pode.responde) return descartar(supabase, item.id, "modo_nao_permite");
 
     const cota = await reservarCotaCampanha(instancia.id, new Date(instancia.conectado_em));
     /*
@@ -894,13 +876,13 @@ async function processarFollowup(
   if (item.tipo === "pos_visita") {
     // Revalidado contra a agenda: se a visita foi REMARCADA para o futuro,
     // perguntar "o que achou?" seria perguntar de uma visita que não houve.
-    const { data: lead } = conversa.lead_id
+    const { data: lead } = conversa.leadId
       ? await supabase
           .from("leads")
           .select(
             "visita_agendada_em, etapa, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome)",
           )
-          .eq("id", conversa.lead_id)
+          .eq("id", conversa.leadId)
           .maybeSingle()
       : { data: null };
     const visita = lead?.visita_agendada_em;
@@ -920,11 +902,11 @@ async function processarFollowup(
   if (item.tipo === "indicacao") {
     // Revalidado: quem voltou atrás no fechamento ou pediu para não ser
     // procurado não recebe pedido de indicação.
-    const { data: lead } = conversa.lead_id
+    const { data: lead } = conversa.leadId
       ? await supabase
           .from("leads")
           .select("etapa, nao_contatar_em, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome)")
-          .eq("id", conversa.lead_id)
+          .eq("id", conversa.leadId)
           .maybeSingle()
       : { data: null };
     if (!lead || lead.etapa !== "fechado" || lead.nao_contatar_em) {
@@ -941,13 +923,13 @@ async function processarFollowup(
      * possível para endereço inventado: o cliente lê à noite, sai de casa e
      * vai para onde a mensagem mandou. Mesma razão do link da página.
      */
-    const { data: lead } = conversa.lead_id
+    const { data: lead } = conversa.leadId
       ? await supabase
           .from("leads")
           .select(
             "visita_agendada_em, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome, endereco)",
           )
-          .eq("id", conversa.lead_id)
+          .eq("id", conversa.leadId)
           .maybeSingle()
       : { data: null };
     const visita = lead?.visita_agendada_em;
@@ -968,7 +950,7 @@ async function processarFollowup(
   const [catalogo, historico, dossie] = await Promise.all([
     getEmpreendimentos().catch(() => []),
     historicoRecente(conversa.id),
-    conversa.lead_id ? buscarDossieAtual(conversa.lead_id) : Promise.resolve(null),
+    conversa.leadId ? buscarDossieAtual(conversa.leadId) : Promise.resolve(null),
   ]);
 
   /*
@@ -1023,7 +1005,7 @@ async function processarFollowup(
 
   const envio = await enviarMensagemWhatsapp({
     instanceName: instancia.instance_name,
-    telefone: conversa.telefone_cliente,
+    telefone: conversa.telefoneCliente,
     texto: balao,
   });
   await registrarResultadoEnvio(instancia.id, envio.enviado);
@@ -1050,15 +1032,7 @@ async function processarFollowup(
     statusEntrega: envio.messageId ? "enviada" : null,
   });
 
-  /*
-   * Mesmo motivo do disparador: falamos por iniciativa nossa, então a
-   * conversa é atendimento. Sem isto, o cliente responde ao follow-up e o
-   * bot fica mudo porque a isenção da trava olhava só como a conversa
-   * nasceu.
-   */
-  await marcarConversaComoAtendimento(conversa.id);
-  // E o FATO da 0106, que sobrevive ao retravamento: sem ele, a fala do
-  // corretor depois do follow-up voltaria a apagar o texto do cliente.
+  // O FATO da 0106: a IA atendeu esta conversa.
   await marcarConversaAtendida(conversa.id);
   await supabase
     .from("whatsapp_followups")
@@ -1068,7 +1042,7 @@ async function processarFollowup(
   // Follow-up é iniciativa nossa: conta como tentativa de contato (0060).
   // É justamente aqui que o contador fica interessante — follow-up é o
   // segundo e o terceiro toque em quem não respondeu ao primeiro.
-  await registrarTentativaDeContato(conversa.lead_id);
+  await registrarTentativaDeContato(conversa.leadId);
 
   await registrarInteracao({
     id: interacaoId,

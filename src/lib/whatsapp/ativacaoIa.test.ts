@@ -4,15 +4,16 @@ import { describe, expect, it } from "vitest";
 /**
  * Guardas de leitura de código para a ATIVAÇÃO da IA numa conversa.
  *
- * `botDeveResponder` exige TRÊS condições — bot ativo, pausa vencida e
- * conversa liberada — e este projeto já quebrou duas vezes o mesmo jeito:
- * um caminho de ativação escrevia SÓ UMA delas e o gesto virava mentira.
+ * A camada da conversa que o corretor controla tem DUAS condições — IA
+ * ligada e pausa vencida (`quandoAIaResponde.ts`). Até 04/10/2026 eram três
+ * (havia a trava de liberação), e este projeto já quebrou duas vezes do mesmo
+ * jeito: um caminho de ativação escrevia SÓ UMA delas e o gesto virava mentira.
  * O botão do painel mexia em duas e a tela dizia "IA reativada" com o bot
  * mudo; a palavra-chave mexia só na trava e a pausa de 24h da fala anterior
  * do corretor mantinha a IA calada ("a palavra-chave não funciona como
  * ativação", relatado em 05/09/2026).
  *
- * Regra: TODO caminho que ativa a IA escreve as três colunas juntas.
+ * Regra: TODO caminho que ativa a IA escreve as duas colunas juntas.
  * Mesma classe de teste de `gravacaoDeMensagem.test.ts` — a regressão aqui
  * falha calada: tipos passam, a tela confirma, e o bot não responde.
  */
@@ -27,7 +28,7 @@ const ACOES_IA =
   "\n" +
   readFileSync("src/lib/whatsapp/aberturaPelaIA.ts", "utf8");
 
-const TRES_CAMPOS = ["liberado_por_palavra_chave: true", "bot_ativo: true", "pausado_humano_ate: null"];
+const CAMPOS = ["bot_ativo: true", "pausado_humano_ate: null"];
 
 function trechoDe(fonte: string, marcador: string): string {
   const inicio = fonte.indexOf(marcador);
@@ -35,10 +36,10 @@ function trechoDe(fonte: string, marcador: string): string {
   return fonte.slice(inicio, fonte.indexOf("\n}", inicio));
 }
 
-describe("ativar a IA escreve as TRÊS condições de botDeveResponder", () => {
-  it("a palavra-chave (liberarConversaPorPalavraChave) ativa de verdade", () => {
-    const fn = trechoDe(REPOSITORIO, "export async function liberarConversaPorPalavraChave");
-    for (const campo of TRES_CAMPOS) expect(fn).toContain(campo);
+describe("ativar a IA escreve as duas condições da conversa", () => {
+  it("a palavra-chave (ativarIaNaConversa) ativa de verdade", () => {
+    const fn = trechoDe(REPOSITORIO, "export async function ativarIaNaConversa");
+    for (const campo of CAMPOS) expect(fn).toContain(campo);
   });
 
   it("o botão sem tela (retomarBotNaConversa) saiu: religar é o 'IA assume agora'", () => {
@@ -47,7 +48,7 @@ describe("ativar a IA escreve as TRÊS condições de botDeveResponder", () => {
 
   it("o botão 'IA assume agora' ativa de verdade", () => {
     const fn = trechoDe(ACOES_IA, "export async function assumirConversaComIA");
-    for (const campo of TRES_CAMPOS) expect(fn).toContain(campo);
+    for (const campo of CAMPOS) expect(fn).toContain(campo);
   });
 
   it("a ficha não tem mais botão que faz a IA escrever primeiro (regra N1, 03/10/2026)", () => {
@@ -75,5 +76,13 @@ describe("a ordem de gravação dos botões de IA é a do webhook", () => {
     // reservarCotaCampanha — a regra que campanha e follow-up já seguem.
     expect(ACOES_IA).toContain("reservarCotaCampanha(");
     expect(ACOES_IA).toContain("registrarTentativaDeContato(");
+  });
+});
+
+describe("a trava de liberação saiu (04/10/2026)", () => {
+  it("nenhum caminho de ativação escreve a coluna removida", () => {
+    for (const fonte of [REPOSITORIO, ACOES, ACOES_IA]) {
+      expect(fonte).not.toContain("liberado_por_palavra_chave");
+    }
   });
 });

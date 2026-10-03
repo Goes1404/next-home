@@ -9021,3 +9021,26 @@ testes: `docs/ROTEIRO-TESTES-ATIVACAO-IA.md`.
   (o CSS sai do postcss). Os contrastes valem; a checagem de classe pede
   `next build`.
 
+## A decisão de responder num lugar só (0149-0150, 04/10/2026)
+
+Nota: [[quando-a-ia-responde]].
+
+- **Ela estava em quatro lugares**: webhook (`motivoDoSilencio` +
+  `decidirPorModo`), varredura atrasada (as mesmas, chamadas de novo), tela
+  (`estadoDa` e `fraseDoEstado` refaziam as condições) e o áudio não
+  entendido (olhava só metade e respondia com o modo mandando calar). Hoje
+  todos chamam `decidirSeAIaResponde` (`quandoAIaResponde.ts`): conversa
+  primeiro, número depois. Guarda em `quandoAIaResponde.test.ts`.
+- **A trava de liberação e `cliente_conhecido` saíram do banco.** Medido
+  antes: 18 conversas, 0 travadas, 0 desconhecidas. Migração em duas partes:
+  a 0149 (views sem as colunas + `ia_interacoes.silencio`) ANTES do deploy, a
+  0150 (drop) DEPOIS — na ordem inversa, o código antigo quebraria no insert.
+- **Lead transferido**: o número do corretor antigo respondia; hoje cala com
+  `lead_de_outro_corretor` (o lead vem embutido em `SELECT_CONVERSA`).
+- **O lembrete de visita nunca saía para quem usa "fora do expediente"**: o
+  modo dizia "não" dentro do expediente, e o lembrete só sai dentro dele.
+  Iniciativa nossa usa `podeEnviarPorIniciativa` (só "IA desligada" barra).
+- **Silêncio grava `acao` = motivo e `silencio` = {motivo, volta_em, modo,
+  expediente}.** Para saber por que ela não respondeu ontem:
+  `select acao, silencio from ia_interacoes where conversa_id = … and modelo is null`.
+

@@ -371,7 +371,7 @@ export function Chat({
     onEstado(proximo);
     iniciar(async () => {
       if (proximo === "ativa") {
-        // "IA assume agora": liga as três condições E responde a pendência
+        // "IA assume agora": liga a IA, tira a pausa E responde a pendência
         // do cliente na hora, se houver (ver acoesIA.ts).
         const resultado = await assumirConversaComIA(conversa.id);
         if (resultado.erro && !resultado.ok) {
@@ -574,6 +574,10 @@ export function Chat({
           </Link>
         )}
 
+        {/* Sem botão quando quem decidiu foi o cliente (pediu para sair) ou a
+            carteira (lead de outro corretor): o corretor não liga a IA por
+            cima disso, e a frase do cabeçalho já explica. */}
+        {!conversa.naoContatar && !conversa.contatoDeOutroCorretor && (
         <button
           type="button"
           onClick={alternarBot}
@@ -587,6 +591,7 @@ export function Chat({
         >
           {estado === "ativa" ? "Desligar IA" : "IA assume agora"}
         </button>
+        )}
       </header>
 
       {/*

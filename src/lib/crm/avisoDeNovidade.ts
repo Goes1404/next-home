@@ -2,7 +2,8 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { linkDaPagina } from "@/lib/whatsapp/resolverMidia";
 import { gerarEEnviarPelaIA } from "@/lib/whatsapp/aberturaPelaIA";
-import { liberarConversaPorPalavraChave, obterOuCriarConversa } from "@/lib/whatsapp/repositorio";
+import { obterOuCriarConversa, situacaoDaConversa } from "@/lib/whatsapp/repositorio";
+import { silencioDaConversa } from "@/lib/whatsapp/quandoAIaResponde";
 import {
   descreverPedido,
   imovelParaAvisar,
@@ -77,8 +78,13 @@ export async function avisarQuemPediuAlerta(limite = 2): Promise<number> {
       nomeCliente: lead.nome,
     });
     if (!conversa) continue;
-    // Pedir o aviso pelo site é a autorização para a assistente falar.
-    await liberarConversaPorPalavraChave(conversa.id);
+    /*
+     * Pedir o aviso pelo site autoriza a assistente a escrever — mas não
+     * passa por cima da conversa: se o corretor desligou a IA ali, está
+     * falando com a pessoa agora, ou o lead pediu para sair, o aviso espera
+     * (a mesma camada que decide se a IA responde, `quandoAIaResponde.ts`).
+     */
+    if (silencioDaConversa(situacaoDaConversa(conversa))) continue;
 
     const r = await gerarEEnviarPelaIA({
       conversa: { id: conversa.id, telefoneCliente: conversa.telefoneCliente, leadId: lead.id, eTeste: conversa.eTeste },

@@ -30,8 +30,9 @@ async function exigirSessao() {
 /**
  * O botão "IA assume agora" da conversa.
  *
- * Liga as TRÊS condições de `botDeveResponder` de uma vez e, se a última
- * fala é do cliente (pendência sem resposta), a IA responde NA HORA —
+ * Liga a IA e tira a pausa (a camada da conversa que o corretor controla,
+ * `quandoAIaResponde.ts`) e, se a última fala é do cliente (pendência sem
+ * resposta), a IA responde NA HORA —
  * assumir e ficar em silêncio até a próxima mensagem parecia botão
  * quebrado.
  */
@@ -42,7 +43,7 @@ export async function assumirConversaComIA(conversaId: string): Promise<Resultad
   // a carteira — conversa de outro corretor não atualiza linha nenhuma.
   const { data: liberada, error } = await supabase
     .from("whatsapp_conversas")
-    .update({ bot_ativo: true, pausado_humano_ate: null, liberado_por_palavra_chave: true })
+    .update({ bot_ativo: true, pausado_humano_ate: null })
     .eq("id", conversaId)
     .select("id, telefone_cliente, lead_id, e_teste, corretor_id");
   if (error || !liberada || liberada.length === 0) {

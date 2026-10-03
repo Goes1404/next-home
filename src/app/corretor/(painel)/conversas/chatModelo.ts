@@ -1,5 +1,12 @@
 import type { MensagemConversa } from "./acoes";
-import { dentroDoExpediente } from "@/lib/whatsapp/modoBot";
+import {
+  decidirSeAIaResponde,
+  fraseDaDecisao,
+  HORAS_PAUSA_HUMANA,
+  silencioDaConversa,
+  type ConfigDoNumero,
+  type SituacaoDaConversa,
+} from "@/lib/whatsapp/quandoAIaResponde";
 
 /**
  * Quanto se lê de uma conversa (30/09/2026). A abertura trazia 100 mensagens
@@ -37,8 +44,6 @@ export type ConversaResumo = {
   nome: string | null;
   botAtivo: boolean;
   pausadoAte: string | null;
-  /** A conversa já foi autorizada — a terceira condição de `botDeveResponder`. */
-  liberada: boolean;
   ultimaMensagem: string | null;
   ultimaInteracaoEm: string;
   temLead: boolean;
@@ -88,7 +93,6 @@ export type ConversaRow = {
   nome_cliente: string | null;
   bot_ativo: boolean;
   pausado_humano_ate: string | null;
-  liberado_por_palavra_chave: boolean;
   ultima_mensagem: string | null;
   ultima_interacao_em: string;
   lead_id: string | null;
@@ -154,7 +158,6 @@ export function deRow(row: ConversaRow): ConversaResumo {
     nome: row.nome_cliente,
     botAtivo: row.bot_ativo,
     pausadoAte: row.pausado_humano_ate,
-    liberada: row.liberado_por_palavra_chave,
     ultimaMensagem: row.ultima_mensagem,
     ultimaInteracaoEm: row.ultima_interacao_em,
     temLead: Boolean(row.lead_id),
@@ -212,20 +215,31 @@ export function mesclar(
   );
 }
 
-export type Estado = "ativa" | "pausada_humano" | "aguardando_liberacao" | "desligada";
+export type Estado = "ativa" | "pausada_humano" | "desligada";
 
 /**
- * O estado tem de refletir as TRÊS condições de `botDeveResponder`, não
- * duas — foi um selo que olhava só duas que escondeu, por semanas, que a
- * IA nunca tinha respondido um cliente.
+ * O que a conversa tem de seu para a decisão de responder — o formato que
+ * `quandoAIaResponde.ts` lê. A tela e o webhook passam pela MESMA função; foi
+ * um selo que refazia as condições por conta própria (e olhava duas de três)
+ * que mostrou "IA atendendo" por semanas com a IA muda.
  */
-export function estadoDa(conversa: ConversaResumo): Estado {
-  if (!conversa.botAtivo) return "desligada";
-  const pausada =
-    conversa.pausadoAte && new Date(conversa.pausadoAte).getTime() > Date.now();
-  if (pausada) return "pausada_humano";
-  if (!conversa.liberada) return "aguardando_liberacao";
-  return "ativa";
+export function situacaoDoResumo(conversa: ConversaResumo): SituacaoDaConversa {
+  return {
+    botAtivo: conversa.botAtivo,
+    pausadoAte: conversa.pausadoAte,
+    naoContatar: conversa.naoContatar,
+    leadDeOutroCorretor: conversa.contatoDeOutroCorretor,
+  };
+}
+
+/**
+ * O selo da lista: só a camada da CONVERSA. A do número (modo, expediente)
+ * é igual para todas as conversas e aparece na frase do cabeçalho.
+ */
+export function estadoDa(conversa: ConversaResumo, agora: Date = new Date()): Estado {
+  const silencio = silencioDaConversa(situacaoDoResumo(conversa), agora);
+  if (!silencio) return "ativa";
+  return silencio.motivo === "pausada_pelo_corretor" ? "pausada_humano" : "desligada";
 }
 
 /** O que vem do lead embutido na conversa (`lead:leads(nao_contatar_em)`). */
@@ -243,21 +257,16 @@ export function sinaisDoLead(row: {
 }
 
 /** O que o cabeçalho precisa saber do número para explicar o silêncio da IA. */
-export type ContextoDaIA = {
-  modo: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado";
-  expediente: { inicioHora: number; fimHora: number };
-} | null;
-
-const horaMinuto = new Intl.DateTimeFormat("pt-BR", {
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "America/Sao_Paulo",
-});
+export type ContextoDaIA = ConfigDoNumero | null;
 
 /**
  * POR QUE a IA está ou não respondendo, em uma frase (plano de ativação,
- * 5.1). O selo dizia "IA em pausa" e o corretor não sabia até quando, nem
- * por quê; a ausência de resposta era lida como defeito.
+ * 5.1). Sai de `decidirSeAIaResponde` — a mesma função que o webhook aplica.
+ *
+ * `estado` é o da TELA, que muda antes do banco (botão de ligar/desligar,
+ * mensagem enviada): ele ajusta a situação da conversa antes de decidir,
+ * para a frase não contradizer o selo nos segundos em que o servidor ainda
+ * não respondeu. A pausa otimista usa a mesma duração que o banco grava.
  */
 export function fraseDoEstado(
   conversa: ConversaResumo,
@@ -265,19 +274,19 @@ export function fraseDoEstado(
   ia: ContextoDaIA,
   agora: Date = new Date(),
 ): string {
-  if (conversa.contatoDeOutroCorretor) return "Contato de outro corretor";
-  if (conversa.naoContatar) return "Lead pediu para não ser contatado";
-  if (estado === "desligada") return "Desligada nesta conversa";
-  if (estado === "pausada_humano" && conversa.pausadoAte) {
-    return `Pausada até ${horaMinuto.format(new Date(conversa.pausadoAte))} porque você falou`;
-  }
-  if (estado === "aguardando_liberacao") return "Esperando sua liberação";
-  if (ia?.modo === "desativado") return "IA desligada no seu número";
-  if (ia?.modo === "noturno_e_fds" && dentroDoExpediente(agora, ia.expediente)) {
-    return `Você atende no expediente; a IA volta às ${ia.expediente.fimHora}h`;
-  }
-  if (ia?.modo === "co_piloto_3min") return "IA entra se você ficar 3 min sem responder";
-  return "IA respondendo";
+  const situacao = situacaoDoResumo(conversa);
+  const pausaGravada = conversa.pausadoAte && new Date(conversa.pausadoAte).getTime() > agora.getTime();
+  const ajustada = {
+    ...situacao,
+    botAtivo: estado !== "desligada",
+    pausadoAte:
+      estado === "pausada_humano"
+        ? pausaGravada
+          ? conversa.pausadoAte
+          : new Date(agora.getTime() + HORAS_PAUSA_HUMANA * 3_600_000)
+        : null,
+  };
+  return fraseDaDecisao(decidirSeAIaResponde({ conversa: ajustada, numero: ia, agora }), ia);
 }
 
 /*
@@ -288,11 +297,6 @@ export function fraseDoEstado(
 export const SELO: Record<Estado, { texto: string; classe: string; ponto: string }> = {
   ativa: { texto: "IA atendendo", classe: "text-info", ponto: "bg-info" },
   pausada_humano: { texto: "IA em pausa", classe: "text-alerta", ponto: "bg-alerta" },
-  aguardando_liberacao: {
-    texto: "IA esperando sua liberação",
-    classe: "text-apoio",
-    ponto: "bg-linha-forte",
-  },
   desligada: { texto: "IA desligada", classe: "text-apoio", ponto: "bg-linha-forte" },
 };
 

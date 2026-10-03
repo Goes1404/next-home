@@ -130,12 +130,13 @@ export const ROTULO_MODO: Record<ModoBotWhatsapp, string> = {
 /**
  * Ativação por palavra-chave manual do corretor.
  *
- * Complementa (não substitui) `decidirPorModo`: o modo decide QUANDO a IA
- * pode falar; a palavra-chave decide SE ela já foi autorizada a entrar
- * nesta conversa específica. Um corretor que atende pessoalmente do celular
- * e, em algum ponto, digita a frase combinada está dizendo "pode assumir
- * daqui" — sem isso, o WhatsApp não tem outro jeito de diferenciar "estou
- * respondendo pessoalmente" de "pode voltar a responder por mim".
+ * O modo decide QUANDO a IA pode falar no número; a palavra-chave é o gesto
+ * do corretor numa conversa: em número novo, cadastra o lead (0146); em
+ * conversa pausada ou desligada, entrega para a IA. Um corretor que atende
+ * pessoalmente do celular e digita a frase combinada está dizendo "pode
+ * assumir daqui" — sem isso, o WhatsApp não tem outro jeito de diferenciar
+ * "estou respondendo pessoalmente" de "pode voltar a responder por mim".
+ * A decisão de responder, com todas as camadas, mora em `quandoAIaResponde.ts`.
  */
 
 /** Minúsculas e sem acento — "Pode Ativar" e "pode ativar" não podem ser sinais diferentes. */
@@ -201,79 +202,25 @@ export function contemPalavraChave(mensagem: string, palavraChave: string | null
 }
 
 /**
- * Se esta conversa precisa aguardar liberação EXPLÍCITA antes da IA poder
- * responder ao cliente.
- *
- * A regra mudou em 05/09/2026, e mudou de POLARIDADE: número desconhecido
- * fica travado SEMPRE, exista palavra-chave cadastrada ou não. A versão
- * anterior desligava a trava quando nenhuma palavra estava configurada
- * ("recurso desligado, ninguém espera") — e esse padrão-aberto era a causa
- * relatada de "a IA está respondendo todo mundo": bastava o campo estar
- * vazio para toda conversa nova de desconhecido nascer liberada. Numa
- * instância que roda no WhatsApp PESSOAL do corretor, padrão-aberto é o
- * lado errado do erro.
- *
- * O que abre a porta, hoje, são atos deliberados:
- *
- * 1. **Campanha.** Quem dispara em massa pelo próprio CRM já decidiu que a
- *    IA participa.
- * 2. **O número já era do CRM antes desta conversa** (`jaEraDoCrm`). Foi
- *    importado, veio de formulário ou foi cadastrado à mão — alguém o pôs
- *    lá de propósito. É o que faz a trava virar incentivo para cadastrar.
- * 3. Palavra-chave do corretor no chat, frase de entrada do cliente,
- *    mensagem pronta de anúncio, ou o botão "IA assume" do painel — todos
- *    caminhos que chamam `liberarConversaPorPalavraChave` depois.
- *
- * Desde a 0111 o webhook não cria mais lead de quem escreve: só existe
- * conversa com lead, e `obterOuCriarConversa` grava toda conversa nova como
- * liberada e de cliente conhecido. A 0147 liberou as antigas que restavam
- * travadas, então hoje nenhuma conversa volta a travar: a fala do corretor
- * só pausa.
- *
- * Por que a coluna `liberado_por_palavra_chave` e esta trava não foram
- * removidas (plano de ativação, 2.5): ela é lida em 22 arquivos, inclusive
- * duas views (`whatsapp_esperando_resposta`, `pessoas_do_corretor`) que
- * teriam de ser recriadas com os passos de segurança da 0077, e em guardas
- * de teste. Sem conversa que nasça ou volte a travar, ela é inofensiva; a
- * remoção pede uma rodada própria, com o painel exercitado.
- */
-export function exigeLiberacaoExplicita(params: {
-  origemConversa: "organica" | "campanha";
-  /** O telefone já tinha lead no CRM ANTES desta conversa começar. */
-  jaEraDoCrm?: boolean;
-}): boolean {
-  if (params.origemConversa === "campanha") return false;
-  if (params.jaEraDoCrm) return false;
-  return true;
-}
-
-/**
  * O que fazer quando o CORRETOR fala na conversa.
  *
- * A palavra-chave só LIGA a IA; qualquer outra fala do corretor a
- * DESLIGA de novo. Antes, a liberação era permanente — `liberado_por_
- * palavra_chave` só sabia virar `true`, nunca voltar — e o único freio
- * era a pausa de 24h de `pausado_humano_ate`, que se renova a cada
- * mensagem e vence sozinha. Numa linha PESSOAL (o caso real: a instância
- * roda no WhatsApp que o corretor usa com a família) isso significa que
- * bastava ele passar 24h sem falar com alguém para a IA assumir aquela
- * conversa e começar a oferecer imóvel. Foi o que aconteceu em teste com
- * a conversa da mãe dele.
+ * Duas leituras, mutuamente exclusivas:
  *
- * Como efeito colateral desejado, isto também cura as conversas que
- * NASCERAM liberadas: `obterOuCriarConversa` congela a decisão no INSERT,
- * então toda conversa criada antes de existir palavra-chave ficou com
- * `liberado = true` para sempre. Com o retravamento, a primeira fala do
- * corretor nessas conversas as devolve ao estado bloqueado — sem
- * backfill.
+ * 1. A mensagem traz a palavra-chave (ou a de teste): é a entrega
+ *    deliberada para a IA. Liga e tira a pausa.
+ * 2. Qualquer outra fala: o corretor está atendendo. A IA PAUSA por
+ *    `HORAS_PAUSA_HUMANA` e volta sozinha (`quandoAIaResponde.ts`).
  *
- * Desde 05/09/2026 o retravamento vale mesmo SEM palavra-chave cadastrada:
- * o botão "IA assume" do painel é o caminho de destravar que sempre existe,
- * então travar nunca mais emudece a IA sem saída.
+ * Até 03/10/2026 havia um terceiro efeito, o RETRAVAMENTO: para número que
+ * não era do CRM, a fala do corretor travava a conversa até alguém digitar a
+ * palavra de novo. Ele protegia a conversa da família no número pessoal do
+ * corretor. Desde a 0111 número sem lead nem entra (o porteiro barra antes),
+ * então toda conversa é de cliente cadastrado e o retravamento só podia
+ * emudecer cliente de verdade. Saiu junto com a coluna (0149-0150).
  */
 export type DecisaoFalaDoCorretor =
   | { acao: "ativar_ia"; marcarComoTeste: boolean }
-  | { acao: "pausar_ia"; retravarPalavraChave: boolean };
+  | { acao: "pausar_ia" };
 
 export function decidirPorFalaDoCorretor(params: {
   mensagem: string;
@@ -286,20 +233,6 @@ export function decidirPorFalaDoCorretor(params: {
    * atendimento bom (ver migrations 0038 e 0039).
    */
   palavraChaveTeste?: string | null;
-  origemConversa: "organica" | "campanha";
-  /**
-   * O telefone já era do CRM antes desta conversa (0049).
-   *
-   * Para cliente conhecido, a fala do corretor PAUSA mas não retrava: a
-   * pausa de 24h vence e a IA volta sozinha. Retravar aqui significaria que
-   * uma única mensagem dele — "te ligo já" — desliga a IA naquele lead para
-   * sempre, e ele nem fica sabendo.
-   *
-   * Para número desconhecido a trava continua inteira. É ela que protege a
-   * conversa da família, e o caso que a motivou foi real: em teste, a IA
-   * assumiu a conversa da mãe do corretor e começou a oferecer imóvel.
-   */
-  clienteConhecido?: boolean;
 }): DecisaoFalaDoCorretor {
   /*
    * A de teste é conferida PRIMEIRO. Se as duas palavras casarem com a
@@ -309,30 +242,17 @@ export function decidirPorFalaDoCorretor(params: {
    */
   const palavra = palavraDoCorretorNaMensagem(params);
   if (palavra) return { acao: "ativar_ia", marcarComoTeste: palavra === "teste" };
-
-  return {
-    acao: "pausar_ia",
-    retravarPalavraChave: exigeLiberacaoExplicita({
-      origemConversa: params.origemConversa,
-      jaEraDoCrm: params.clienteConhecido,
-    }),
-  };
+  return { acao: "pausar_ia" };
 }
 
 /**
  * A PRIMEIRA mensagem do cliente traz uma das frases de entrada?
  *
- * Existe para destravar o que a trava de palavra-chave impedia sem querer
- * (26/08/2026): conversa nova de número desconhecido nasce muda até o
- * corretor liberar, e num teste em massa — ou num anúncio que o cliente
- * responde com as palavras dele — isso vira silêncio sem erro nenhum na
- * tela. Quem escreve "vim pelo anúncio" está respondendo a uma peça de
- * divulgação NOSSA: é lead por definição, como já eram a campanha e o
- * link `/wa/<campanha>`.
- *
- * O que NÃO muda: sem nenhuma frase cadastrada, ou sem nenhuma delas na
- * mensagem, a trava segue inteira. É ela que protege a conversa da
- * família no número pessoal do corretor — o caso real que a criou.
+ * É uma das portas do PORTEIRO (`porteiro.ts`): número sem lead que escreve
+ * uma frase cadastrada ("vim pelo anúncio") está respondendo a uma peça de
+ * divulgação NOSSA e vira lead. Sem frase cadastrada, ou sem nenhuma delas na
+ * mensagem, o porteiro segue barrando — é ele que protege a conversa da
+ * família no número pessoal do corretor.
  *
  * Reusa `contemPalavraChave`, então herda as duas guardas dele: várias
  * frases separadas por vírgula e piso de 3 letras (frase curta demais

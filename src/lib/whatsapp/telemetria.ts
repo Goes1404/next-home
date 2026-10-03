@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import type { ContextoDaInteracao } from "./contextoDaInteracao";
+import type { registroDoSilencio } from "./quandoAIaResponde";
 import type { Json } from "@/lib/supabase/types";
 
 /**
@@ -57,6 +58,13 @@ export type InteracaoIA = {
    * justamente por receber um padrão onde a resposta honesta era nada.
    */
   contexto?: ContextoDaInteracao | null;
+  /**
+   * Por que a IA ficou calada (0149): o motivo e o que o explica naquele
+   * momento — modo, expediente e até quando. Só nos silêncios; a
+   * configuração do número muda, e a pergunta "por que ela não respondeu
+   * ontem?" precisa da de ontem.
+   */
+  silencio?: ReturnType<typeof registroDoSilencio> | null;
 };
 
 /**
@@ -126,6 +134,8 @@ export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
       tokens_entrada: dados.tokensEntrada ?? null,
       tokens_saida: dados.tokensSaida ?? null,
       contexto: comoJson(dados.contexto ?? null),
+      // Só vai a chave quando há silêncio: linha de resposta não muda.
+      ...(dados.silencio ? { silencio: dados.silencio as unknown as Json } : {}),
     });
   } catch (err) {
     console.warn("Telemetria de IA falhou (seguindo sem ela):", err);

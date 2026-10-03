@@ -16,7 +16,10 @@ import {
   registrarTentativaDeContato,
   reservarCotaCampanha,
   vincularInteracaoNaMensagem,
+  lerConversaPersistida,
+  situacaoDaConversa,
 } from "@/lib/whatsapp/repositorio";
+import { fraseDaDecisao, silencioDaConversa } from "./quandoAIaResponde";
 
 /**
  * A abertura de conversa pela IA — o miolo dos botões do painel e do
@@ -67,6 +70,22 @@ export async function gerarEEnviarPelaIA(params: {
 }): Promise<{ erro?: string; enviou: boolean }> {
   const servico = createServiceClient();
   const { conversa, instancia } = params;
+
+  /*
+   * O clique do corretor (ou a palavra-chave) liga a IA e tira a pausa, mas
+   * não passa por cima do que é do CLIENTE: lead que pediu para sair ou que
+   * foi transferido para outro corretor não recebe nada daqui. É a camada da
+   * conversa de `quandoAIaResponde.ts` — a mesma do webhook. O modo do
+   * número não entra: o gesto do corretor é a decisão.
+   */
+  const persistida = await lerConversaPersistida(conversa.id);
+  const silencio = persistida ? silencioDaConversa(situacaoDaConversa(persistida)) : null;
+  if (silencio) {
+    return {
+      enviou: false,
+      erro: fraseDaDecisao({ responde: false, ...silencio }, null),
+    };
+  }
 
   let historicoCompleto = await historicoRecente(conversa.id);
   if (

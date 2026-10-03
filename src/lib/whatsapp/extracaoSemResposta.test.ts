@@ -40,7 +40,7 @@ function corpoDoHelper(): string {
 }
 
 describe("a extração não volta a depender de a IA ter respondido", () => {
-  it("é chamada nos TRÊS caminhos: silêncio, modo e resposta", () => {
+  it("é chamada nos caminhos de saída: silêncio (conversa ou número), palavra-chave e resposta", () => {
     const chamadas = FONTE.split("atualizarFichaEMemoria({").length - 1;
     expect(chamadas, "esperado uma chamada por caminho de saída").toBeGreaterThanOrEqual(3);
   });
@@ -50,9 +50,9 @@ describe("a extração não volta a depender de a IA ter respondido", () => {
    * a chamada sair de lá, volta o defeito inteiro — e nada acusa.
    */
   it("o ramo do silêncio atualiza a ficha ANTES de devolver", () => {
-    const inicio = FONTE.indexOf("const silencio = motivoDoSilencio(");
+    const inicio = FONTE.indexOf("if (!decisaoIA.responde) {");
     expect(inicio, "ramo do silêncio não encontrado").toBeGreaterThan(-1);
-    const fim = FONTE.indexOf("bot_calado_nesta_conversa", inicio);
+    const fim = FONTE.indexOf("ia_calada", inicio);
     expect(fim).toBeGreaterThan(inicio);
     expect(FONTE.slice(inicio, fim)).toContain("atualizarFichaEMemoria({");
   });
@@ -62,7 +62,7 @@ describe("a extração não volta a depender de a IA ter respondido", () => {
     expect(corpo).toContain("devoExtrair({");
     // A privacidade é a trava que não pode sumir: a linha é o WhatsApp
     // pessoal do corretor (0087).
-    expect(corpo).toContain("conversaEhAtendimento({");
+    expect(corpo).toContain("conversaEhAtendimento(");
   });
 
   it("a memória gravada passa pela mescla, nunca pelo dossiê cru", () => {

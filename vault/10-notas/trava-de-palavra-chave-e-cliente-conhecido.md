@@ -3,7 +3,7 @@ title: A trava de palavra-chave e o cliente conhecido
 aliases: [botDeveResponder, jaEraDoCrm, liberado_por_palavra_chave]
 tags: [ia, whatsapp, decisao]
 type: decisao
-status: evergreen
+status: superada
 custou: alto
 codigo: [src/lib/whatsapp/modoBot.ts, src/lib/whatsapp/porteiro.ts, supabase/migrations/0049_cliente_conhecido_na_conversa.sql]
 created: 2026-09-05
@@ -11,6 +11,10 @@ updated: 2026-09-06
 fonte: docs/MEMORIA.md — eval de conversa e ativação da IA
 summary: A IA nunca tinha respondido um cliente e o painel jurava que sim — três causas empilhadas. A trava virou incentivo — quem já era do CRM é atendido na hora; desconhecido espera liberação. ATUALIZADO 06/09 — ver trava-aberta-por-padrao.
 ---
+
+> **Superada em 04/10/2026**: a trava (`liberado_por_palavra_chave`) e
+> `cliente_conhecido` saíram do código e do banco (0149-0150). A decisão de
+> responder mora em [[quando-a-ia-responde]]. Esta nota fica como história.
 
 > **Atualização 06/09/2026**: a trava passou a valer SEMPRE para
 > desconhecido (antes, sem palavra cadastrada ela ficava aberta) e a

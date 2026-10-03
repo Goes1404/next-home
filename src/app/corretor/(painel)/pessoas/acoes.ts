@@ -39,7 +39,7 @@ export async function carregarConversaDaPessoa(
   const { data } = await supabase
     .from("whatsapp_conversas")
     .select(
-      "id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)",
+      "id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)",
     )
     .eq("id", conversaId)
     .eq("corretor_id", corretor.id)
@@ -55,7 +55,6 @@ export async function carregarConversaDaPessoa(
     botAtivo: data.bot_ativo,
     memoria: data.memoria ?? null,
     memoriaDoCorretor: data.memoria_do_corretor ?? false,
-    liberada: data.liberado_por_palavra_chave,
     pausadoAte: data.pausado_humano_ate,
     ultimaMensagem: data.ultima_mensagem,
     ultimaInteracaoEm: data.ultima_interacao_em,

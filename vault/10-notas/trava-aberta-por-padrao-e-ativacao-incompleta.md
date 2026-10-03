@@ -3,7 +3,7 @@ title: A trava era aberta por padrão, e a palavra-chave não ativava
 aliases: [IA responde todo mundo, exigeLiberacaoExplicita, IA assume agora]
 tags: [ia, whatsapp, armadilha]
 type: nota
-status: evergreen
+status: superada
 custou: alto
 codigo: [src/lib/whatsapp/modoBot.ts, src/lib/whatsapp/repositorio.ts, src/app/corretor/(painel)/conversas/acoesIA.ts, supabase/migrations/0098_ia_so_para_cliente_conhecido.sql, src/lib/whatsapp/ativacaoIa.test.ts]
 created: 2026-09-06
@@ -11,6 +11,10 @@ updated: 2026-09-06
 fonte: incidente de produção, 05-06/09/2026
 summary: Dois defeitos distintos com o mesmo relato — trava padrão-aberto sem palavra cadastrada (todo desconhecido liberado) e ativação que escrevia 1 das 3 condições de botDeveResponder.
 ---
+
+> **Superada em 04/10/2026**: a trava de liberação saiu (0149-0150). A
+> decisão de responder mora em [[quando-a-ia-responde]].
+
 # A trava era aberta por padrão, e a palavra-chave não ativava
 
 Relatado: "a IA responde todo mundo" + "a palavra-chave não funciona". Dois

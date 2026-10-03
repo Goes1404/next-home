@@ -8,7 +8,6 @@ import {
   decidirPorFalaDoCorretor,
   listarPalavrasChave,
   clienteTrouxeFraseDeEntrada,
-  exigeLiberacaoExplicita,
 } from "./modoBot";
 
 /** Datas fixas em UTC; o módulo converte para America/Sao_Paulo (UTC-3). */
@@ -110,11 +109,6 @@ describe("Ativação por palavra-chave", () => {
     expect(contemPalavraChave("pode continuar", undefined)).toBe(false);
     expect(contemPalavraChave("pode continuar", "   ")).toBe(false);
   });
-
-  it("conversa orgânica de desconhecido exige liberação; campanha não", () => {
-    expect(exigeLiberacaoExplicita({ origemConversa: "organica" })).toBe(true);
-    expect(exigeLiberacaoExplicita({ origemConversa: "campanha" })).toBe(false);
-  });
 });
 
 describe("Transcrição de áudio — recusa do modelo", () => {
@@ -145,7 +139,7 @@ describe("Transcrição de áudio — recusa do modelo", () => {
   });
 });
 
-describe("Fala do corretor — a palavra-chave só liga, qualquer outra fala desliga", () => {
+describe("Fala do corretor — a palavra-chave liga, qualquer outra fala pausa", () => {
   const CHAVE = "ativar lia agora";
 
   it("ativa a IA quando a mensagem traz a palavra-chave", () => {
@@ -153,61 +147,47 @@ describe("Fala do corretor — a palavra-chave só liga, qualquer outra fala des
       decidirPorFalaDoCorretor({
         mensagem: "pronto, ativar lia agora",
         palavraChaveConfigurada: CHAVE,
-        origemConversa: "organica",
       }),
     ).toEqual({ acao: "ativar_ia", marcarComoTeste: false });
   });
 
-  it("retrava a conversa em qualquer outra fala do corretor", () => {
+  it("pausa a IA em qualquer outra fala do corretor", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "oi mãe, vamos no cinema?",
         palavraChaveConfigurada: CHAVE,
-        origemConversa: "organica",
       }),
-    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
+    ).toEqual({ acao: "pausar_ia" });
   });
 
   /*
-   * O caso que motivou tudo: a conversa já tinha sido liberada, e antes
-   * disto só a pausa de 24h segurava a IA. Ela vence sozinha — bastava o
-   * corretor passar um dia sem falar com a mãe para a IA assumir. Agora
-   * cada mensagem dele devolve a conversa ao estado bloqueado.
+   * Desde 04/10/2026 a fala do corretor só PAUSA (não retrava): toda
+   * conversa tem lead (0111), e quem protege a conversa pessoal é o porteiro.
    */
-  it("não deixa a liberação sobreviver ao silêncio do corretor", () => {
+  it("fala comum do corretor sempre pausa, nunca liga", () => {
     const decisao = decidirPorFalaDoCorretor({
       mensagem: "Teste",
       palavraChaveConfigurada: "pode continuar",
-      origemConversa: "organica",
     });
-    expect(decisao).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
+    expect(decisao).toEqual({ acao: "pausar_ia" });
   });
 
-  /*
-   * Desde 05/09/2026 retrava MESMO sem palavra-chave cadastrada: o botão
-   * "IA assume" do painel é o caminho de destravar que sempre existe, então
-   * retravar nunca mais emudece a IA sem saída — e não retravar era um dos
-   * buracos do "a IA responde todo mundo".
-   */
-  it("retrava mesmo sem palavra-chave cadastrada — o botão do painel destrava", () => {
+  it("pausa mesmo sem palavra-chave cadastrada", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "qualquer coisa",
         palavraChaveConfigurada: null,
-        origemConversa: "organica",
       }),
-    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
+    ).toEqual({ acao: "pausar_ia" });
   });
 
-  /** Campanha nunca exigiu palavra-chave — logo, não há o que retravar. */
-  it("não retrava conversa de campanha", () => {
+  it("conversa de campanha também só pausa", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "vou assumir daqui",
         palavraChaveConfigurada: CHAVE,
-        origemConversa: "campanha",
       }),
-    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: false });
+    ).toEqual({ acao: "pausar_ia" });
   });
 });
 
@@ -250,7 +230,6 @@ describe("Palavra-chave de TESTE", () => {
         mensagem: "modo teste agora",
         palavraChaveConfigurada: CHAVE,
         palavraChaveTeste: TESTE,
-        origemConversa: "organica",
       }),
     ).toEqual({ acao: "ativar_ia", marcarComoTeste: true });
   });
@@ -261,7 +240,6 @@ describe("Palavra-chave de TESTE", () => {
         mensagem: "ativar lia agora",
         palavraChaveConfigurada: CHAVE,
         palavraChaveTeste: TESTE,
-        origemConversa: "organica",
       }),
     ).toEqual({ acao: "ativar_ia", marcarComoTeste: false });
   });
@@ -277,31 +255,28 @@ describe("Palavra-chave de TESTE", () => {
         mensagem: "ativar lia agora em modo teste agora",
         palavraChaveConfigurada: CHAVE,
         palavraChaveTeste: TESTE,
-        origemConversa: "organica",
       }),
     ).toEqual({ acao: "ativar_ia", marcarComoTeste: true });
   });
 
-  it("qualquer outra fala do corretor continua retravando", () => {
+  it("qualquer outra fala do corretor continua pausando", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "oi mãe",
         palavraChaveConfigurada: CHAVE,
         palavraChaveTeste: TESTE,
-        origemConversa: "organica",
       }),
-    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
+    ).toEqual({ acao: "pausar_ia" });
   });
 
-  it("fala comum do corretor retrava mesmo só com a palavra de teste cadastrada", () => {
+  it("fala comum do corretor pausa mesmo só com a palavra de teste cadastrada", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "qualquer coisa",
         palavraChaveConfigurada: null,
         palavraChaveTeste: TESTE,
-        origemConversa: "organica",
       }),
-    ).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
+    ).toEqual({ acao: "pausar_ia" });
   });
 
   it("sem palavra de teste cadastrada, nada é marcado", () => {
@@ -310,82 +285,8 @@ describe("Palavra-chave de TESTE", () => {
         mensagem: "ativar lia agora",
         palavraChaveConfigurada: CHAVE,
         palavraChaveTeste: null,
-        origemConversa: "organica",
       }),
     ).toEqual({ acao: "ativar_ia", marcarComoTeste: false });
-  });
-});
-
-describe("quem já é do CRM não espera liberação (F3)", () => {
-  it("lead que já existia antes da conversa é atendido na hora", () => {
-    /*
-     * A trava existe porque a instância roda no WhatsApp PESSOAL do
-     * corretor — mas do jeito antigo ela travava cliente junto com cunhado,
-     * e o resultado medido em 24/08/2026 foi 172 mensagens de cliente e
-     * ZERO respostas. Quem foi cadastrado de propósito é cliente conhecido.
-     */
-    expect(
-      exigeLiberacaoExplicita({ origemConversa: "organica", jaEraDoCrm: true }),
-    ).toBe(false);
-  });
-
-  it("número desconhecido continua esperando — é o que protege a família", () => {
-    expect(
-      exigeLiberacaoExplicita({ origemConversa: "organica", jaEraDoCrm: false }),
-    ).toBe(true);
-  });
-
-  it("desconhecido fica travado MESMO sem palavra-chave cadastrada (05/09/2026)", () => {
-    /*
-     * A regra antiga era o inverso ("sem chave, recurso desligado, ninguém
-     * espera") e foi a causa relatada de a IA responder todo mundo: campo
-     * vazio fazia toda conversa nova de desconhecido nascer liberada. O
-     * botão "IA assume" do painel é o caminho de liberação que sempre
-     * existe — travar nunca mais emudece a IA sem saída.
-     */
-    expect(exigeLiberacaoExplicita({ origemConversa: "organica" })).toBe(true);
-    expect(
-      exigeLiberacaoExplicita({ origemConversa: "organica", jaEraDoCrm: false }),
-    ).toBe(true);
-  });
-});
-
-describe("a IA volta sozinha para cliente conhecido (F7)", () => {
-  it("fala do corretor pausa, mas NÃO retrava lead do CRM", () => {
-    /*
-     * Retravar aqui significaria que um "te ligo já" desliga a IA naquele
-     * lead para sempre, e o corretor nem fica sabendo. A pausa de 24h
-     * vence; a IA volta.
-     */
-    const d = decidirPorFalaDoCorretor({
-      mensagem: "te ligo em 10 minutos",
-      palavraChaveConfigurada: "pode continuar",
-      origemConversa: "organica",
-      clienteConhecido: true,
-    });
-    expect(d).toEqual({ acao: "pausar_ia", retravarPalavraChave: false });
-  });
-
-  it("número desconhecido continua sendo retravado", () => {
-    // É esta trava que protege a conversa da família — a instância roda no
-    // WhatsApp pessoal do corretor, e o caso foi real.
-    const d = decidirPorFalaDoCorretor({
-      mensagem: "opa, tudo certo?",
-      palavraChaveConfigurada: "pode continuar",
-      origemConversa: "organica",
-      clienteConhecido: false,
-    });
-    expect(d).toEqual({ acao: "pausar_ia", retravarPalavraChave: true });
-  });
-
-  it("a palavra-chave continua ligando a IA em qualquer caso", () => {
-    const d = decidirPorFalaDoCorretor({
-      mensagem: "pode continuar",
-      palavraChaveConfigurada: "pode continuar",
-      origemConversa: "organica",
-      clienteConhecido: false,
-    });
-    expect(d).toEqual({ acao: "ativar_ia", marcarComoTeste: false });
   });
 });
 
@@ -411,14 +312,6 @@ describe("Várias palavras-chave no mesmo campo (26/08/2026)", () => {
   it("chave curta demais é descartada — 'a' não pode ligar a IA em toda mensagem", () => {
     expect(contemPalavraChave("bom dia", "a, ok")).toBe(false);
     expect(listarPalavrasChave("a, ok, pode assumir")).toEqual(["pode assumir"]);
-  });
-
-  it("campo só com chaves inválidas não muda a trava — ela independe do campo", () => {
-    // Desde 05/09/2026 a trava vale para todo desconhecido, com ou sem
-    // chave cadastrada; chave curta continua incapaz de ATIVAR (acima).
-    expect(
-      exigeLiberacaoExplicita({ origemConversa: "organica", jaEraDoCrm: false }),
-    ).toBe(true);
   });
 
   it("uma chave só continua funcionando como antes", () => {
@@ -448,11 +341,11 @@ describe("Porta de entrada do CLIENTE (0056)", () => {
   });
 
   /*
-   * O que a trava existe para proteger: a instância roda no WhatsApp
+   * O que o porteiro existe para proteger: a instância roda no WhatsApp
    * PESSOAL do corretor, e a IA já assumiu a conversa da mãe dele uma vez.
    * Conversa comum NÃO pode abrir a porta.
    */
-  it("conversa pessoal continua travada", () => {
+  it("conversa pessoal não abre a porta", () => {
     for (const msg of [
       "oi, tudo bem?",
       "filho, você vem jantar hoje?",
@@ -465,7 +358,7 @@ describe("Porta de entrada do CLIENTE (0056)", () => {
     }
   });
 
-  it("sem frases cadastradas, a trava segue inteira", () => {
+  it("sem frases cadastradas, ninguém entra por frase", () => {
     expect(
       clienteTrouxeFraseDeEntrada({ mensagem: "vim pelo anúncio", palavrasEntradaCliente: null }),
     ).toBe(false);

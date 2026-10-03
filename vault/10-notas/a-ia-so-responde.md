@@ -16,7 +16,7 @@ codigo:
   - supabase/migrations/0148_expediente_do_corretor.sql
 fonte: plano de ativação da IA, Fases 2 a 6 (03/10/2026)
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-04
 summary: Decisão do Matheus em 03/10. A IA nunca escreve sem o cliente ter escrito antes; a única exceção é o lembrete de visita. O primeiro contato é do corretor, por lista de transmissão. Saíram a abertura automática de lead de portal, o "Iniciar conversa com IA" e o reengajamento de +24h/+72h. Pós-visita e indicação viram sugestão no Início; quem precisa de mensagem aparece nas listas sugeridas.
 ---
 
@@ -64,11 +64,12 @@ por lista de transmissão, e quando o lead responde a IA assume (N2).
 - **Paleta do funil**: matiz própria por etapa; "IA atendendo" foi para
   azul-céu porque o verde ficou só com Fechado.
 
-## Não removido, e por quê
-`liberado_por_palavra_chave` continua (lido em 22 arquivos e duas views). A
-0147 liberou as últimas conversas travadas e nenhuma nasce ou volta a travar.
+## A trava de liberação
+`liberado_por_palavra_chave` ficou na 0147 e saiu em 04/10 (0149-0150), junto
+com `cliente_conhecido`. A decisão de responder mora em [[quando-a-ia-responde]].
 
 ## Relacionadas
 - [[palavra-chave-cadastra-o-lead]]
+- [[quando-a-ia-responde]]
 - [[trava-de-palavra-chave-e-cliente-conhecido]]
 - [[fluxo-de-campanhas]]

@@ -9,7 +9,6 @@ const c = (id: string, quando: string): ConversaResumo => ({
   telefone: "5511999999999",
   nome: id,
   botAtivo: true,
-  liberada: true,
   pausadoAte: null,
   memoria: null,
   memoriaDoCorretor: false,

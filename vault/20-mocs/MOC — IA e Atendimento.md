@@ -80,6 +80,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[nomes-que-o-cliente-acerta]] — copa/18 do Forte, Royal I × II e vitta → Vitra erravam o imóvel; apelido só para nome de anúncio (0136, 02/10)
 - [[palavra-chave-cadastra-o-lead]] — a palavra do corretor cadastra número novo; lead de outro corretor só gera aviso para quem digitou (0146, 03/10)
 - [[a-ia-so-responde]] — a IA nunca escreve primeiro; pós-visita vira sugestão, listas sugeridas, resumo do lead, expediente único (0147-0148, 03/10)
+- [[quando-a-ia-responde]] — a decisão de responder numa função só, em duas camadas; trava de liberação removida; motivo do silêncio gravado (0149-0150, 04/10)
 
 ## Relacionados
 - [[MOC — Evals e Medição]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]

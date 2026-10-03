@@ -2,6 +2,7 @@ import "server-only";
 
 import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
 import { mesclarDossie } from "./mesclarDossie";
+import { HORAS_PAUSA_HUMANA, type SituacaoDaConversa } from "./quandoAIaResponde";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { ConviteDeEntrada } from "./porteiro";
 import { comRetentativa } from "@/lib/supabase/retentativa";
@@ -112,59 +113,73 @@ export type ConversaPersistida = {
   telefoneCliente: string;
   botAtivo: boolean;
   pausadoHumanoAte: string | null;
-  /** false = aguardando o corretor digitar a palavra-chave neste chat (ver modoBot.ts). */
-  liberadoPorPalavraChave: boolean;
   /** De onde esta conversa nasceu — 'campanha' é quem o disparo em massa criou (ver campaignDispatcher.ts). */
   origem: "organica" | "campanha";
   /** Conversa de teste da equipe: fora do few-shot e do golden (ver 0038/0039). */
   eTeste: boolean;
-  /**
-   * O telefone já era do CRM ANTES desta conversa (0049).
-   *
-   * Decide duas coisas: a IA atende sem esperar palavra-chave, e ela VOLTA
-   * sozinha quando a pausa de 24h vence — em vez de ficar retravada para
-   * sempre pela primeira mensagem que o corretor digitou.
-   */
-  clienteConhecido: boolean;
-  /**
-   * Quando a IA atendeu esta conversa pela primeira vez (0106). É a quarta
-   * porta de `conversaEhAtendimento` — o FATO, que sobrevive ao
-   * retravamento da PERMISSÃO.
-   */
+  /** Quando a IA atendeu esta conversa pela primeira vez (0106). */
   atendidaEm: string | null;
+  /** O lead pediu para não ser contatado (0110). Entra na decisão de responder. */
+  naoContatar: boolean;
+  /**
+   * O lead foi transferido para OUTRO corretor depois desta conversa: este
+   * número não fala mais com ele (`quandoAIaResponde.ts`).
+   */
+  leadDeOutroCorretor: boolean;
 };
 
+/*
+ * O lead vem embutido porque dois motivos de silêncio moram nele: o pedido
+ * para não ser contatado e a transferência para outro corretor. Uma consulta
+ * só, em vez de uma segunda leitura no meio do webhook.
+ */
 const SELECT_CONVERSA =
-  "id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, origem, e_teste, cliente_conhecido, atendida_em, memoria, memoria_do_corretor";
+  "id, corretor_id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, origem, e_teste, atendida_em, memoria, memoria_do_corretor, lead:leads!whatsapp_conversas_lead_id_fkey(corretor_id, nao_contatar_em)";
+
+type LeadEmbutido = { corretor_id: string | null; nao_contatar_em: string | null };
 
 function mapConversa(row: {
   id: string;
+  corretor_id?: string | null;
   lead_id: string | null;
   telefone_cliente: string;
   bot_ativo: boolean;
   pausado_humano_ate: string | null;
-  liberado_por_palavra_chave: boolean;
   origem: "organica" | "campanha";
   e_teste: boolean;
-  cliente_conhecido?: boolean;
   atendida_em?: string | null;
   memoria?: string | null;
   memoria_do_corretor?: boolean;
+  lead?: LeadEmbutido | LeadEmbutido[] | null;
 }): ConversaPersistida {
+  const lead = Array.isArray(row.lead) ? (row.lead[0] ?? null) : (row.lead ?? null);
   return {
     id: row.id,
     leadId: row.lead_id,
     telefoneCliente: row.telefone_cliente,
     botAtivo: row.bot_ativo,
     pausadoHumanoAte: row.pausado_humano_ate,
-    liberadoPorPalavraChave: row.liberado_por_palavra_chave,
-    clienteConhecido: row.cliente_conhecido ?? false,
     atendidaEm: row.atendida_em ?? null,
+    naoContatar: Boolean(lead?.nao_contatar_em),
+    leadDeOutroCorretor: Boolean(
+      lead?.corretor_id && row.corretor_id && lead.corretor_id !== row.corretor_id,
+    ),
     memoria: row.memoria ?? null,
     memoriaDoCorretor: row.memoria_do_corretor ?? false,
     eTeste: row.e_teste,
     origem: row.origem,
   };
+}
+
+/** Uma conversa pelo id, no mesmo formato que o webhook usa — para os crons. */
+export async function lerConversaPersistida(conversaId: string): Promise<ConversaPersistida | null> {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("whatsapp_conversas")
+    .select(SELECT_CONVERSA)
+    .eq("id", conversaId)
+    .maybeSingle();
+  return data ? mapConversa(data) : null;
 }
 
 /**
@@ -516,8 +531,6 @@ export async function obterOuCriarConversa(params: {
       nome_cliente: params.nomeCliente ?? null,
       lead_id: leadId,
       origem,
-      liberado_por_palavra_chave: true,
-      cliente_conhecido: true,
       ...(anterior?.memoria ? { memoria: anterior.memoria } : {}),
     })
     .select(SELECT_CONVERSA)
@@ -637,22 +650,22 @@ export async function marcarLeadVindoDeAnuncio(leadId: string, nomeImovel: strin
 }
 
 /**
- * Ativa a IA nesta conversa — palavra-chave do corretor, frase de entrada
- * do cliente, mensagem de anúncio ou o botão "IA assume" do painel.
+ * Ativa a IA nesta conversa — palavra-chave do corretor ou o botão "IA
+ * assume agora" do painel.
  *
- * Escreve as TRÊS condições de `botDeveResponder`, não só a trava. A versão
- * anterior setava apenas `liberado_por_palavra_chave`, e no fluxo real —
- * corretor atendendo pessoalmente (cada fala dele pausa por 24h) e depois
- * digitando "pode assumir" — a pausa continuava valendo e a IA seguia muda.
- * Era exatamente a queixa "a palavra-chave não funciona como ativação":
- * o gesto de entrega liberava a porta e esquecia de abrir as outras duas.
- * Mesmo defeito que o antigo botão "reativar" do painel já teve.
+ * Escreve as DUAS condições da camada da conversa que o corretor controla
+ * (`quandoAIaResponde.ts`): liga e tira a pausa. Ligar sem tirar a pausa foi
+ * o defeito de 05/09/2026 — o corretor atendendo (cada fala pausa) digitava
+ * "pode assumir" e a IA seguia muda.
+ *
+ * Não mexe no que é do cliente (pedido para sair) nem no que é do número
+ * (modo e expediente): isso o corretor muda em outro lugar, e de propósito.
  */
-export async function liberarConversaPorPalavraChave(conversaId: string): Promise<void> {
+export async function ativarIaNaConversa(conversaId: string): Promise<void> {
   const supabase = createServiceClient();
   await supabase
     .from("whatsapp_conversas")
-    .update({ liberado_por_palavra_chave: true, bot_ativo: true, pausado_humano_ate: null })
+    .update({ bot_ativo: true, pausado_humano_ate: null })
     .eq("id", conversaId);
 }
 
@@ -1177,72 +1190,8 @@ export async function registrarRecusaDoCliente(params: {
   if (erroTimeline) console.error("[recusa] falha ao registrar na linha do tempo:", erroTimeline.message);
 }
 
-/** Janela padrão de silêncio do bot depois que o corretor entra na conversa. */
-/**
- * Quanto tempo a IA cala depois que o corretor fala.
- *
- * Era 24h, e numa linha PESSOAL isso é praticamente permanente: medido em
- * 01/09, 448 mensagens de cliente foram puladas em 7 dias por
- * `pausada_por_humano`, contra 32 respondidas — e o relógio reinicia a cada
- * mensagem do corretor, que manda 373 por semana no próprio celular, para
- * quem for.
- *
- * Três horas cobre o que a pausa existe para cobrir: enquanto o humano está
- * respondendo, o bot não fala por cima. Depois disso, ou o atendimento
- * acabou, ou o corretor falou de novo e o relógio reiniciou.
- *
- * O que protege a conversa pessoal NÃO é a duração — é o retravamento
- * (`retravarPalavraChave`), que só a palavra-chave desfaz. Encurtar a pausa
- * não afrouxa aquilo.
- */
-const HORAS_PAUSA_HUMANA = 3;
-
-/**
- * O corretor respondeu do celular dele: a IA cala a boca nesta conversa.
- *
- * Gravar de fato é o ponto — devolver "pausa detectada" só no corpo da
- * resposta HTTP não pausa nada, e a próxima mensagem do cliente voltaria a
- * ser respondida pelo bot por cima do atendimento humano.
- */
-/**
- * Nós falamos com esta pessoa por iniciativa nossa — a conversa virou
- * atendimento.
- *
- * ## O defeito que isto conserta (01/09/2026)
- *
- * Relatado: "disparamos para a lista de leads, alguns responderam, e a IA
- * não respondeu". Medido: **7 clientes responderam ao disparo e só 1 das
- * conversas estava marcada como campanha.**
- *
- * A causa é que a isenção da trava olhava a CERTIDÃO DE NASCIMENTO da
- * conversa. `obterOuCriarConversa` devolve a conversa existente intacta —
- * o `origem: "campanha"` que o disparador passa só vale no INSERT. Lead que
- * já tinha conversa orgânica recebia o disparo, respondia, e o bot via
- * `origem = 'organica'`, sem palavra-chave, e ficava mudo.
- *
- * ## Por que `cliente_conhecido`, e não `origem`
- *
- * Reescrever `origem` apagaria de onde a conversa veio. `cliente_conhecido`
- * significa "sabemos que este número é cliente" — e disparar para ele a
- * partir da própria lista de leads é a prova disso. A flag só estava errada
- * porque foi calculada no instante do INSERT, às vezes antes de a pessoa
- * virar lead.
- *
- * Isso também acerta o resto por tabela: com a flag, a fala do corretor
- * passa a PAUSAR sem retravar (`decidirPorFalaDoCorretor`), que é o
- * comportamento certo para quem é cliente de verdade.
- */
-export async function marcarConversaComoAtendimento(conversaId: string): Promise<void> {
-  const supabase = createServiceClient();
-
-  const { error } = await supabase
-    .from("whatsapp_conversas")
-    .update({ cliente_conhecido: true, liberado_por_palavra_chave: true })
-    .eq("id", conversaId)
-    .or("cliente_conhecido.is.false,liberado_por_palavra_chave.is.false");
-
-  if (error) console.error("[conversa] falha ao marcar como atendimento:", error.message);
-}
+// A duração da pausa mora em `quandoAIaResponde.ts` (HORAS_PAUSA_HUMANA): a tela
+// calcula a mesma hora que o banco grava.
 
 /**
  * Carimba o FATO: a IA atendeu esta conversa (0106).
@@ -1251,10 +1200,7 @@ export async function marcarConversaComoAtendimento(conversaId: string): Promise
  * a marca mentir sobre QUANDO o atendimento começou, o mesmo motivo pelo qual
  * `desconectado_em` (0071) é gravado uma vez e não a cada ciclo do cron.
  *
- * É o que faz o texto voltar a ser guardado depois de um retravamento. NÃO
- * desliga o retravamento: quem decide se a IA fala continua sendo
- * `exigeLiberacaoExplicita` + `motivoDoSilencio`, e nenhum dos dois lê esta
- * coluna. Fato e permissão em campos diferentes é o recurso inteiro.
+ * É um FATO e não entra na decisão de responder (`quandoAIaResponde.ts`).
  *
  * Falha vira log, como o resto da telemetria de conversa: perder o carimbo
  * custa o texto das próximas mensagens até a resposta seguinte carimbar de
@@ -1295,28 +1241,22 @@ export async function marcarConversaAtendida(conversaId: string): Promise<void> 
   if (error) console.error("[conversa] falha ao carimbar atendida_em:", error.message);
 }
 
-export async function pausarBotPorAtendimentoHumano(
-  conversaId: string,
-  opcoes: { retravarPalavraChave?: boolean } = {},
-): Promise<void> {
+/**
+ * O corretor respondeu do celular dele: a IA cala nesta conversa por
+ * `HORAS_PAUSA_HUMANA` e volta sozinha depois.
+ *
+ * Gravar de fato é o ponto: devolver "pausa detectada" só no corpo da
+ * resposta HTTP não pausaria nada, e a próxima mensagem do cliente seria
+ * respondida pelo bot por cima do atendimento humano.
+ *
+ * Não existe mais "retravar" (0149-0150): desde a 0111 só há conversa com
+ * lead, então a fala do corretor só PAUSA. O que protege a conversa pessoal
+ * é o porteiro, que não deixa número sem lead entrar.
+ */
+export async function pausarBotPorAtendimentoHumano(conversaId: string): Promise<void> {
   const supabase = createServiceClient();
   const ate = new Date(Date.now() + HORAS_PAUSA_HUMANA * 3600_000).toISOString();
-
-  /*
-   * A pausa de 24h sozinha não bastava: ela VENCE. Com palavra-chave
-   * cadastrada, a fala do corretor também retrava a conversa, e aí a IA
-   * só volta quando ele digitar a palavra de novo — em vez de voltar
-   * sozinha no dia seguinte, que numa linha pessoal significa a IA
-   * assumindo a conversa da família (ver `decidirPorFalaDoCorretor`).
-   */
-  await supabase
-    .from("whatsapp_conversas")
-    .update(
-      opcoes.retravarPalavraChave
-        ? { pausado_humano_ate: ate, liberado_por_palavra_chave: false }
-        : { pausado_humano_ate: ate },
-    )
-    .eq("id", conversaId);
+  await supabase.from("whatsapp_conversas").update({ pausado_humano_ate: ate }).eq("id", conversaId);
 }
 
 /**
@@ -1339,49 +1279,17 @@ export async function ultimaFalaDoCorretor(conversaId: string): Promise<string |
   return data?.created_at ?? null;
 }
 
-/** Se o bot pode responder agora nesta conversa. */
 /**
- * POR QUE o bot está calado nesta conversa — ou `null` se ele pode falar.
- *
- * ## O defeito que isto conserta (03/09/2026)
- *
- * `botDeveResponder` responde SIM ou NÃO, e o webhook carimbava todo NÃO
- * como `pausada_por_humano`. São três causas diferentes, com conserto
- * diferente cada uma, indistinguíveis no banco.
- *
- * Medido em produção: em três dias, **335 mensagens de cliente** foram
- * puladas e TODAS registradas como pausa humana. Conferindo o estado real
- * das conversas, a pausa não era a causa de NENHUMA delas: 9 estavam
- * travadas pela palavra-chave, 1 tinha o bot desligado, e 7 já tinham a
- * pausa vencida. Ou seja, o rótulo mandava consertar a única coisa que não
- * estava quebrada.
- *
- * É a mesma família de defeito que esta base já pagou cinco vezes — texto
- * de erro desatualizado apontando o diagnóstico para o lugar errado — e a
- * mesma da coluna `modelo`, que carimbava um modelo nunca chamado.
- *
- * A ORDEM importa e é a de precedência real do `botDeveResponder`: bot
- * desligado ganha da pausa, que ganha da trava. Sem isso, uma conversa
- * desligada E travada seria contada duas vezes, dependendo de quem
- * perguntasse.
+ * A situação da conversa no formato que `decidirSeAIaResponde` lê — o único
+ * lugar que decide se a IA fala (ver `quandoAIaResponde.ts`).
  */
-export type MotivoDoSilencio = "bot_desligado" | "pausada_por_humano" | "aguardando_palavra_chave";
-
-export function motivoDoSilencio(conversa: ConversaPersistida): MotivoDoSilencio | null {
-  if (!conversa.botAtivo) return "bot_desligado";
-  if (conversa.pausadoHumanoAte && new Date(conversa.pausadoHumanoAte) > new Date())
-    return "pausada_por_humano";
-  if (!conversa.liberadoPorPalavraChave) return "aguardando_palavra_chave";
-  return null;
-}
-
-/**
- * Mantida como a pergunta de SIM ou NÃO que a maioria dos chamadores faz.
- * Deriva de `motivoDoSilencio` de propósito: duas listas de condições para
- * a mesma decisão divergem, e esta decide se o cliente é atendido.
- */
-export function botDeveResponder(conversa: ConversaPersistida): boolean {
-  return motivoDoSilencio(conversa) === null;
+export function situacaoDaConversa(conversa: ConversaPersistida): SituacaoDaConversa {
+  return {
+    botAtivo: conversa.botAtivo,
+    pausadoAte: conversa.pausadoHumanoAte,
+    naoContatar: conversa.naoContatar,
+    leadDeOutroCorretor: conversa.leadDeOutroCorretor,
+  };
 }
 
 /**

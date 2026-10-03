@@ -5,9 +5,9 @@ tags: [whatsapp, ia, arquitetura]
 type: nota
 status: evergreen
 custou: medio
-codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
+codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/quandoAIaResponde.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
 created: 2026-09-05
-updated: 2026-09-29
+updated: 2026-10-04
 fonte: leitura do código + docs/MEMORIA.md
 summary: Autenticação → eventos técnicos → porteiro de lead cadastrado → transcrição/dedup/rajada → turnoDeAtendimento → envio → gravação → telemetria → dossiê → aviso.
 ---
@@ -35,11 +35,15 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    ([[audio-do-cliente-era-arquivo-cifrado]], [[whisper-nao-recusa-como-o-gemini]]).
 5. **Gravação + dedup** — a conversa já nasce com `lead_id` obrigatório;
    `provider_message_id` único (0027) mata reentrega.
-6. **Rajada** — espera 6s + trava `resposta:<conversaId>`; balões pendentes
+6. **Porteiro da IA** — `decidirSeAIaResponde` ([[quando-a-ia-responde]]),
+   a decisão inteira num lugar só: primeiro a conversa (lead de outro
+   corretor, pediu para sair, IA desligada, pausa de 3h do corretor), depois
+   o número (IA desligada, expediente, co-piloto). Calada, grava o motivo em
+   `ia_interacoes.acao` e o detalhe em `silencio` (0149), e ainda atualiza a
+   ficha. O áudio não entendido também obedece a ela.
+7. **Rajada** — espera 6s + trava `resposta:<conversaId>`; balões pendentes
    entram como linhas `Cliente:` separadas
    ([[rajada-agrupar-conteudo-nao-so-invocacoes]]).
-7. **Porteiro da IA** — modo do bot e estado do atendimento
-   ([[trava-de-palavra-chave-e-cliente-conhecido]]).
 8. **`executarTurnoDeAtendimento`** ([[turno-de-atendimento-e-o-caminho-unico]]):
    - catálogo ranqueado + encolhido por foco ([[foco-da-conversa]]);
    - few-shot ([[recuperar-por-relevancia]]) + estilo da casa + funil de

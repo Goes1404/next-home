@@ -17,7 +17,7 @@ import {
   buscarDossieAtual,
   gravarMensagem,
   historicoRecente,
-  liberarConversaPorPalavraChave,
+  ativarIaNaConversa,
   marcarConversaComoTeste,
   pausarBotPorAtendimentoHumano,
   registrarTentativaDeContato,
@@ -257,7 +257,7 @@ async function carregarConversaEInstancia(
 ) {
   const { data: conversa } = await supabase
     .from("whatsapp_conversas")
-    .select("id, corretor_id, telefone_cliente, origem, cliente_conhecido, lead_id, e_teste")
+    .select("id, corretor_id, telefone_cliente, origem, lead_id, e_teste")
     .eq("id", conversaId)
     .maybeSingle();
 
@@ -354,12 +354,10 @@ export async function enviarMensagemDoPainel(
     mensagem: conteudo,
     palavraChaveConfigurada: instancia.palavra_chave_ativacao,
     palavraChaveTeste: instancia.palavra_chave_teste,
-    origemConversa: conversa.origem as "organica" | "campanha",
-    clienteConhecido: conversa.cliente_conhecido ?? false,
   });
 
   if (decisao.acao === "ativar_ia") {
-    await liberarConversaPorPalavraChave(conversaId);
+    await ativarIaNaConversa(conversaId);
     if (decisao.marcarComoTeste) await marcarConversaComoTeste(conversaId);
     /*
      * O cliente estava esperando? A IA responde agora (plano de ativação,
@@ -383,9 +381,7 @@ export async function enviarMensagemDoPainel(
     return { iaAtivada: true };
   }
 
-  await pausarBotPorAtendimentoHumano(conversaId, {
-    retravarPalavraChave: decisao.retravarPalavraChave,
-  });
+  await pausarBotPorAtendimentoHumano(conversaId);
 
   revalidatePath("/corretor/conversas");
   revalidatePath("/corretor/pessoas");
@@ -502,19 +498,8 @@ export async function enviarMidiaDoPainel(
     statusEntrega: envio.messageId ? "enviada" : null,
   });
 
-  // Anexo nunca é palavra-chave: é sempre fala de atendimento. A régua de
-  // retravar (cliente conhecido × desconhecido) é a mesma do texto.
-  const decisao = decidirPorFalaDoCorretor({
-    mensagem: titulo,
-    palavraChaveConfigurada: instancia.palavra_chave_ativacao,
-    palavraChaveTeste: instancia.palavra_chave_teste,
-    origemConversa: conversa.origem as "organica" | "campanha",
-    clienteConhecido: conversa.cliente_conhecido ?? false,
-  });
-
-  await pausarBotPorAtendimentoHumano(conversaId, {
-    retravarPalavraChave: decisao.acao === "pausar_ia" ? decisao.retravarPalavraChave : false,
-  });
+  // Anexo nunca é palavra-chave: é sempre fala de atendimento, e pausa a IA.
+  await pausarBotPorAtendimentoHumano(conversaId);
 
   revalidatePath("/corretor/conversas");
   revalidatePath("/corretor/pessoas");

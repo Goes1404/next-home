@@ -29,14 +29,13 @@ import {
   marcarConversaAtendida,
   registrarImovelDeInteresse,
   registrarRespostaDoLead,
-  botDeveResponder,
-  motivoDoSilencio,
+  situacaoDaConversa,
   buscarDossieAtual,
   cancelarFollowupsPendentes,
   gravarMensagem,
   vincularInteracaoNaMensagem,
   historicoRecente,
-  liberarConversaPorPalavraChave,
+  ativarIaNaConversa,
   marcarLeadVindoDeAnuncio,
   reivindicarCliqueDoLink,
   vincularCliqueAoLead,
@@ -69,12 +68,8 @@ import {
 import { importarHistoricoDoChat } from "@/lib/whatsapp/importarHistorico";
 import { gerarEEnviarPelaIA } from "@/lib/whatsapp/aberturaPelaIA";
 import { instrucaoPelosFollowups } from "@/lib/whatsapp/respostaAosFollowups";
-import {
-  clienteTrouxeFraseDeEntrada,
-  decidirPorFalaDoCorretor,
-  decidirPorModo,
-  palavraDoCorretorNaMensagem,
-} from "@/lib/whatsapp/modoBot";
+import { decidirPorFalaDoCorretor, palavraDoCorretorNaMensagem } from "@/lib/whatsapp/modoBot";
+import { decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoAIaResponde";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
 import { registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
@@ -132,12 +127,7 @@ async function atualizarFichaEMemoria(params: {
 }): Promise<DossieClienteIA | null> {
   const { conversa, historico } = params;
   try {
-    const ehAtendimento = conversaEhAtendimento({
-      liberadoPorPalavraChave: conversa.liberadoPorPalavraChave,
-      clienteConhecido: conversa.clienteConhecido,
-      origem: conversa.origem,
-      atendidaEm: conversa.atendidaEm,
-    });
+    const ehAtendimento = conversaEhAtendimento(conversa);
 
     const permitido = devoExtrair({
       ehAtendimento,
@@ -556,13 +546,11 @@ export async function POST(req: NextRequest) {
     // possíveis para o que vem a seguir — e são mutuamente exclusivas:
     //
     //   1. A mensagem contém a palavra-chave cadastrada: é o sinal
-    //      combinado de "pode assumir" (ver modoBot.ts). Libera a conversa
-    //      e NÃO pausa — esta mensagem específica não é "estou atendendo
-    //      pessoalmente", é a entrega deliberada para a IA.
-    //   2. Qualquer outra mensagem do corretor: pausa a IA por 24h E
-    //      RETRAVA a conversa, devolvendo-a ao estado de espera pela
-    //      palavra-chave. A palavra-chave só liga; qualquer fala dele
-    //      desliga. A regra mora em `decidirPorFalaDoCorretor`.
+    //      combinado de "pode assumir" (ver modoBot.ts). Liga a IA e tira a
+    //      pausa — esta mensagem não é "estou atendendo pessoalmente", é a
+    //      entrega deliberada para a IA.
+    //   2. Qualquer outra mensagem do corretor: pausa a IA por 3h, e ela
+    //      volta sozinha. A regra mora em `decidirPorFalaDoCorretor`.
     if (fromMe) {
       await gravarMensagem({
         // O porteiro acima já garantiu o vínculo com um lead. A função
@@ -579,12 +567,10 @@ export async function POST(req: NextRequest) {
         mensagem: text,
         palavraChaveConfigurada: instancia.palavraChaveAtivacao,
         palavraChaveTeste: instancia.palavraChaveTeste,
-        origemConversa: conversa.origem,
-        clienteConhecido: conversa.clienteConhecido,
       });
 
       if (decisao.acao === "ativar_ia") {
-        await liberarConversaPorPalavraChave(conversa.id);
+        await ativarIaNaConversa(conversa.id);
         /*
          * A palavra de TESTE liga a IA e tira a conversa do corpus. Sem
          * isto, o corretor testando pela linha de verdade voltaria a
@@ -648,17 +634,13 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      await pausarBotPorAtendimentoHumano(conversa.id, {
-        retravarPalavraChave: decisao.retravarPalavraChave,
-      });
+      await pausarBotPorAtendimentoHumano(conversa.id);
       // O corretor falou com o cliente: é o primeiro contato, com a IA
       // calada ou não (plano de ativação, 3.2). Só anda quem está em "Novo".
       if (conversa.leadId) await avancarLeadParaPrimeiroContato(conversa.leadId, "corretor_no_whatsapp");
       return NextResponse.json({
         ok: true,
-        action: decisao.retravarPalavraChave
-          ? "pausa_bot_humano_registrada_e_retravada"
-          : "pausa_bot_humano_registrada",
+        action: "pausa_bot_humano_registrada",
         sender,
       });
     }
@@ -692,19 +674,12 @@ export async function POST(req: NextRequest) {
 
     /*
      * Mensagem pronta de anúncio (link porteiro /wa/<campanha>): quem
-     * chega por ela clicou num anúncio pago — é lead por definição, então
-     * a conversa é LIBERADA sem palavra-chave (o mesmo raciocínio da
-     * isenção de origem 'campanha' no disparo ativo; a trava existe para
-     * proteger o número pessoal, e ninguém abre conversa pessoal com o
-     * texto exato do anúncio). O lead recebe a origem e o anúncio na
-     * ficha — é o que liga a conversa às métricas de custo por campanha.
+     * chega por ela clicou num anúncio pago. O lead recebe a origem e o
+     * anúncio na ficha — é o que liga a conversa às métricas de custo por
+     * campanha. (Quem deixa o número ENTRAR é o porteiro, mais acima.)
      */
     const nomeDoAnuncio = reconhecerMensagemDeAnuncio(text);
     if (nomeDoAnuncio) {
-      if (!conversa.liberadoPorPalavraChave) {
-        await liberarConversaPorPalavraChave(conversa.id);
-        conversa.liberadoPorPalavraChave = true;
-      }
       if (conversa.leadId) {
         await marcarLeadVindoDeAnuncio(conversa.leadId, nomeDoAnuncio);
       }
@@ -718,15 +693,11 @@ export async function POST(req: NextRequest) {
 
     /*
      * Impulsionamento do próprio corretor (27/09/2026): a Meta identificou o
-     * anúncio. Libera a IA como no link porteiro, carimba o anúncio na ficha
-     * e registra o anúncio na lista do corretor — é nela que ele digita
-     * quanto gastou, e o custo por lead sai sozinho.
+     * anúncio. Carimba o anúncio na ficha e registra o anúncio na lista do
+     * corretor — é nela que ele digita quanto gastou, e o custo por lead sai
+     * sozinho.
      */
     if (anuncioMeta && !nomeDoAnuncio) {
-      if (!conversa.liberadoPorPalavraChave) {
-        await liberarConversaPorPalavraChave(conversa.id);
-        conversa.liberadoPorPalavraChave = true;
-      }
       if (conversa.leadId) {
         await registrarLeadDeImpulsionamento({
           leadId: conversa.leadId,
@@ -734,30 +705,6 @@ export async function POST(req: NextRequest) {
           anuncio: anuncioMeta,
         });
       }
-    }
-
-    /*
-     * PORTA DE ENTRADA DO CLIENTE (0056): a mensagem traz uma das frases
-     * que o corretor cadastrou ("vim pelo anúncio", "quero informações").
-     * Quem escreve isso está respondendo a uma peça de divulgação nossa —
-     * é lead por definição, como já eram a campanha e o link /wa/.
-     *
-     * Sem isto, conversa nova de número desconhecido ficava MUDA até o
-     * corretor liberar uma por uma: silêncio sem erro em lugar nenhum, e
-     * o que travava um teste em massa.
-     *
-     * A trava segue inteira para quem NÃO trouxer nenhuma frase — é ela
-     * que protege a conversa da família no número pessoal.
-     */
-    if (
-      !conversa.liberadoPorPalavraChave &&
-      clienteTrouxeFraseDeEntrada({
-        mensagem: text,
-        palavrasEntradaCliente: instancia.palavrasEntradaCliente,
-      })
-    ) {
-      await liberarConversaPorPalavraChave(conversa.id);
-      conversa.liberadoPorPalavraChave = true;
     }
 
     // O pushName vem em toda mensagem do CLIENTE (aqui, depois do desvio de
@@ -784,6 +731,25 @@ export async function POST(req: NextRequest) {
     }
 
     /*
+     * A DECISÃO de responder, num lugar só (`quandoAIaResponde.ts`): a
+     * conversa (lead de outro corretor, pediu para sair, IA desligada,
+     * pausa do corretor) e depois o número (IA desligada, expediente,
+     * co-piloto). A varredura de respostas atrasadas e o cabeçalho da
+     * conversa perguntam à MESMA função — duas contas da mesma decisão já
+     * fizeram a tela dizer "IA atendendo" com a IA muda.
+     *
+     * O co-piloto precisa saber quando o humano falou pela última vez, e
+     * isso é uma consulta: só é feita no modo que usa.
+     */
+    const numero = { modo: instancia.modoBot, expediente: instancia.expediente };
+    const decisaoIA = decidirSeAIaResponde({
+      conversa: situacaoDaConversa(conversa),
+      numero,
+      ultimaFalaCorretorEm:
+        instancia.modoBot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
+    });
+
+    /*
      * Áudio que não deu para entender: fale a verdade e chame o corretor.
      *
      * Responder ao texto de erro como se fosse a fala do cliente é o pior
@@ -792,7 +758,7 @@ export async function POST(req: NextRequest) {
      * e o corretor fica sabendo, porque o áudio ainda está lá no WhatsApp
      * dele para ser ouvido por gente.
      */
-    if (audioFalhou && botDeveResponder(conversa)) {
+    if (audioFalhou && decisaoIA.responde) {
       await enviarMensagemWhatsapp({
         instanceName: instancia.instanceName,
         telefone: sender,
@@ -809,19 +775,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, action: "audio_nao_transcrito", sender });
     }
 
-    const silencio = motivoDoSilencio(conversa);
-    if (silencio) {
+    if (!decisaoIA.responde) {
       /*
        * Silêncio também é dado: sem registrar, "o bot respondeu pouco" e "o
-       * bot está quebrado" são indistinguíveis no painel.
-       *
-       * E o MOTIVO é o dado que importa. Até 03/09/2026 as três causas
-       * saíam daqui carimbadas como `pausada_por_humano`, e a medição de
-       * produção mostrou o estrago: 335 mensagens puladas em três dias, a
-       * pausa apontada como culpada em todas, e culpada de nenhuma (ver
-       * `motivoDoSilencio`). Cada causa tem conserto diferente — desligado
-       * é decisão do corretor, pausa é o humano atendendo, e trava é o
-       * cliente esperando uma palavra que talvez ninguém vá digitar.
+       * bot está quebrado" são indistinguíveis no painel. E o MOTIVO é o dado
+       * que importa: até 03/09/2026 todo silêncio saía carimbado como pausa,
+       * e a pausa era culpada de nenhum dos 335 casos medidos. Desde
+       * 04/10/2026 vai junto o que explica o motivo (modo, expediente, até
+       * quando) em `silencio` — a configuração pode mudar depois, e a
+       * pergunta "por que ela não respondeu ontem?" precisa da de ontem.
        */
       await registrarInteracao({
         conversaId: conversa.id,
@@ -829,55 +791,21 @@ export async function POST(req: NextRequest) {
         origem: "webhook",
         eTeste: conversa.eTeste,
         promptVersao: PROMPT_VERSAO,
-        acao: silencio,
+        acao: decisaoIA.motivo,
+        silencio: registroDoSilencio(decisaoIA, numero),
       });
       /*
        * A ficha é atualizada MESMO com a IA calada — e este é o caminho
        * mais comum: medido em 7 dias, 127 das 191 falas de cliente foram
-       * atendidas pelo CORRETOR, e nenhuma delas gerava extração. Daí a
-       * ficha vazia.
-       *
-       * Fica DEPOIS da telemetria e ANTES do return, nunca no começo do
-       * handler: aqui já se sabe que a mensagem é de cliente, já foi
-       * gravada e já passou pelo dedupe. As travas de privacidade e de
-       * debounce moram em `devoExtrair`.
+       * atendidas pelo CORRETOR, e nenhuma delas gerava extração. As travas
+       * de privacidade e de debounce moram em `devoExtrair`.
        */
       await atualizarFichaEMemoria({
         conversa,
         historico: await historicoRecente(conversa.id),
         telefone: sender,
       });
-      return NextResponse.json({ ok: true, action: "bot_calado_nesta_conversa", motivo: silencio, sender });
-    }
-
-    /*
-     * O modo escolhido pelo corretor decide aqui — antes só `desativado` era
-     * lido, e "noturno e fim de semana" e "co-piloto" não faziam nada. O
-     * co-piloto precisa saber quando o humano falou pela última vez, e isso
-     * é uma consulta: só é feita no modo que usa.
-     */
-    const decisao = decidirPorModo(instancia.modoBot, {
-      expediente: instancia.expediente,
-      ultimaFalaCorretorEm:
-        instancia.modoBot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
-    });
-
-    if (!decisao.pode) {
-      await registrarInteracao({
-        conversaId: conversa.id,
-        corretorId: instancia.corretorId,
-        origem: "webhook",
-        eTeste: conversa.eTeste,
-        promptVersao: PROMPT_VERSAO,
-        acao: "silenciada_por_modo",
-      });
-      // Mesma razão do bloco acima: o corretor atende, a ficha aprende.
-      await atualizarFichaEMemoria({
-        conversa,
-        historico: await historicoRecente(conversa.id),
-        telefone: sender,
-      });
-      return NextResponse.json({ ok: true, action: "bot_silenciado_por_modo", motivo: decisao.motivo, modo: instancia.modoBot, sender });
+      return NextResponse.json({ ok: true, action: "ia_calada", motivo: decisaoIA.motivo, sender });
     }
 
     /*

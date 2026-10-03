@@ -30,6 +30,8 @@ precisam de um número que não está no CRM, use um celular de teste.
 | 18 | Lead de portal novo | Chegada de lead por e-mail de portal ou Lead Ads | Cadastrado na chegada, sem mensagem automática; aparece em "Novos sem primeiro contato" |
 | 19 | Palavra-chave discreta | Em Assistente → IA, tente salvar "ok" ou "obrigado" como palavra | Recusado com a explicação; a palavra antiga da Bruna (3 caracteres) continua valendo, com aviso para trocar |
 | 20 | Expediente | Mude o expediente para 9h–18h no modo "Noturno e fim de semana" e escreva às 15h de um dia útil | A IA não responde; o cabeçalho diz "Você atende no expediente; a IA volta às 18h" |
+| 21 | Lead transferido escreve para o número antigo | Depois do 15, mande mensagem do cliente para o número do corretor ANTIGO | A IA não responde; o cabeçalho da conversa antiga diz "Lead agora é de outro corretor" e não mostra o botão "IA assume agora" |
+| 22 | Motivo do silêncio gravado | Repita o 11 e o 20 | Em `ia_interacoes`, `acao` = `pausada_pelo_corretor` / `dentro_do_expediente` e `silencio` com modo, expediente e até quando |
 
 ## O que não dá para testar ainda
 

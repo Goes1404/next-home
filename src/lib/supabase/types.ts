@@ -1312,6 +1312,7 @@ export type Database = {
           avaliacao: "boa" | "ruim" | null
           motivo_avaliacao: "nao_respondeu" | "inventou" | "robotico" | "insistente" | "imovel_errado" | "outro" | null
           contexto: Json | null
+          silencio: Json | null
           conversa_id: string | null
           corretor_id: string | null
           created_at: string
@@ -1335,6 +1336,7 @@ export type Database = {
           avaliacao?: "boa" | "ruim" | null
           motivo_avaliacao?: "nao_respondeu" | "inventou" | "robotico" | "insistente" | "imovel_errado" | "outro" | null
           contexto?: Json | null
+          silencio?: Json | null
           conversa_id?: string | null
           corretor_id?: string | null
           created_at?: string
@@ -1358,6 +1360,7 @@ export type Database = {
           avaliacao?: "boa" | "ruim" | null
           motivo_avaliacao?: "nao_respondeu" | "inventou" | "robotico" | "insistente" | "imovel_errado" | "outro" | null
           contexto?: Json | null
+          silencio?: Json | null
           conversa_id?: string | null
           corretor_id?: string | null
           created_at?: string
@@ -2648,7 +2651,6 @@ export type Database = {
           memoria_atualizada_em: string | null
           memoria_do_corretor: boolean
           bot_ativo: boolean
-          cliente_conhecido: boolean
           corretor_id: string
           corretor_leu_ate: string | null
           created_at: string
@@ -2656,7 +2658,6 @@ export type Database = {
           historico_anterior: "importado" | "indisponivel" | null
           id: string
           lead_id: string
-          liberado_por_palavra_chave: boolean
           nao_lidas: number
           nome_cliente: string | null
           origem: "organica" | "campanha"
@@ -2673,7 +2674,6 @@ export type Database = {
           memoria_atualizada_em?: string | null
           memoria_do_corretor?: boolean
           bot_ativo?: boolean
-          cliente_conhecido?: boolean
           corretor_id: string
           corretor_leu_ate?: string | null
           created_at?: string
@@ -2681,7 +2681,6 @@ export type Database = {
           historico_anterior?: "importado" | "indisponivel" | null
           id?: string
           lead_id: string
-          liberado_por_palavra_chave?: boolean
           nao_lidas?: number
           nome_cliente?: string | null
           origem?: "organica" | "campanha"
@@ -2698,7 +2697,6 @@ export type Database = {
           memoria_atualizada_em?: string | null
           memoria_do_corretor?: boolean
           bot_ativo?: boolean
-          cliente_conhecido?: boolean
           corretor_id?: string
           corretor_leu_ate?: string | null
           created_at?: string
@@ -2706,7 +2704,6 @@ export type Database = {
           historico_anterior?: "importado" | "indisponivel" | null
           id?: string
           lead_id?: string
-          liberado_por_palavra_chave?: boolean
           nao_lidas?: number
           nome_cliente?: string | null
           origem?: "organica" | "campanha"
