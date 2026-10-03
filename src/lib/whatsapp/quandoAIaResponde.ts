@@ -54,7 +54,9 @@ import { decidirPorModo, MINUTOS_COPILOTO, type Expediente } from "./modoBot";
  * A FALA DO CORRETOR DESLIGA A IA na conversa, sem prazo (decisão do
  * Matheus, 03/10/2026). Antes era uma pausa de 3h que vencia sozinha, e a IA
  * voltava a responder uma conversa que o corretor tinha assumido. Agora ela
- * só volta com ATIVAÇÃO: a palavra-chave no chat ou "IA assume agora".
+ * só volta com ATIVAÇÃO: a palavra-chave no chat, "IA assume agora" ou o
+ * envio de uma lista de transmissão para o lead (o corretor entregando a
+ * conversa, 03/10/2026).
  */
 
 export type SituacaoDaConversa = {

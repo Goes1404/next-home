@@ -20,7 +20,7 @@ codigo:
 fonte: roadmap das listas de transmissão em 3 fases (03/10/2026)
 created: 2026-10-03
 updated: 2026-10-03
-summary: Cada lista abre uma gaveta com quem recebeu e o motivo de quem não recebeu, pausa/retoma/cancela sozinha, aparece na ficha do lead, vira contexto para a IA quando o cliente responde, não atropela conversa do corretor nas últimas 24h, recorta por canal/anúncio de origem e mostra visitas e vendas de quem recebeu.
+summary: Cada lista abre uma gaveta com quem recebeu e o motivo de quem não recebeu, pausa/retoma/cancela sozinha, aparece na ficha do lead, vira contexto para a IA quando o cliente responde, não atropela conversa do corretor nas últimas 24h, recorta por canal/anúncio de origem mostra visitas e vendas de quem recebeu, e o envio ativa a IA na conversa.
 ---
 
 # Lista de transmissão visível e controlável
@@ -68,10 +68,14 @@ fechar só `em_andamento`; actions recortam pelo corretor; resposta por
 `espacamentoEnvio.test.ts` recortava até o PRIMEIRO `processados++` e
 tropeçou no da guarda nova: hoje busca o primeiro DEPOIS do bloco.
 
-## Em aberto
-Resposta à lista numa conversa com a IA desligada (o corretor falou antes)
-não é respondida pela IA ([[quando-a-ia-responde]]). Decidir se enviar uma
-lista conta como ativação.
+## Enviar a lista ativa a IA (decisão do Matheus, 03/10/2026)
+A fala do corretor desliga a IA na conversa (0152), então o lead com quem
+ele já tinha falado respondia à lista e ficava sem resposta. Agora o
+disparador chama `ativarIaNaConversa` logo depois de gravar o envio: a lista
+é o corretor entregando a conversa, como a palavra-chave. Quem pediu para
+sair não entra na lista, a guarda de 24h segura quem está conversando, e se
+o corretor voltar a falar a IA desliga de novo. Guarda em
+`quandoAIaResponde.test.ts`.
 
 ## Relacionadas
 - [[fluxo-de-campanhas]]

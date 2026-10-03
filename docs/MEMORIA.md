@@ -9128,5 +9128,8 @@ Nota: [[lista-de-transmissao-visivel-e-controlavel]].
   motivo, antes da cota. Não volta para a fila.
 - **`espacamentoEnvio.test.ts` recortava até o PRIMEIRO `processados++`** e
   tropeçou no da guarda nova. Recorte de guarda ancora no ponto de partida.
-- Em aberto: resposta à lista em conversa com a IA desligada não é
-  respondida pela IA. Decidir se enviar lista conta como ativação.
+- **Enviar a lista ATIVA a IA na conversa** (decisão do Matheus, mesmo
+  dia). Sem isso, o lead com quem o corretor já tinha falado respondia à
+  lista e ficava sem resposta, porque a fala antiga do corretor desligou a
+  IA (0152). O disparador chama `ativarIaNaConversa` depois de gravar o
+  envio; se o corretor voltar a falar, desliga de novo.

@@ -12,6 +12,7 @@ import {
   avancarLeadParaPrimeiroContato,
   destravarDisparo,
   registrarTentativaDeContato,
+  ativarIaNaConversa,
   gravarMensagem,
   obterOuCriarConversa,
   devolverCotaCampanha,
@@ -636,6 +637,18 @@ async function processarInstancia(ctx: {
           providerMessageId: envio.messageId ?? null,
           statusEntrega: envio.messageId ? "enviada" : null,
         });
+
+        /*
+         * Mandar a lista ATIVA a IA nesta conversa (decisão do Matheus,
+         * 03/10/2026). Sem isto, o lead com quem o corretor já tinha falado
+         * respondia à lista e ficava sem resposta: a fala antiga do corretor
+         * deixou a IA desligada (0152). A lista é o corretor entregando a
+         * conversa, como a palavra-chave. O que o cliente pediu continua
+         * valendo: quem pediu para sair nem entra na lista (`elegivel`), e
+         * a guarda de 24h acima segura quem está em conversa com o corretor.
+         * Se ele voltar a falar, a IA desliga de novo.
+         */
+        await ativarIaNaConversa(conversa.id);
 
         if (!envio.messageId) {
           // Sem chave não há como confirmar entrega depois. Não vira erro

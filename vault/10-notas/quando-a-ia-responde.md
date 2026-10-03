@@ -14,7 +14,7 @@ codigo:
   - supabase/migrations/0150_remove_trava_de_liberacao.sql
 fonte: avaliação 6/10 do fluxo de ativação (04/10/2026)
 created: 2026-10-04
-updated: 2026-10-04
+updated: 2026-10-03
 summary: A decisão de responder estava em quatro lugares e a tela refazia as condições por conta própria. Hoje é decidirSeAIaResponde, em duas camadas (conversa, depois número); webhook, varredura atrasada e cabeçalho da conversa perguntam a ela. A trava de liberação e cliente_conhecido saíram do banco. O silêncio grava motivo e contexto em ia_interacoes.silencio.
 ---
 
@@ -82,6 +82,11 @@ corretor falou depois da última resposta da IA). O modo co-piloto saiu da
 tela: com a fala do corretor desligando a IA, ele não tinha mais efeito.
 A varredura de respostas atrasadas ficou só para mensagem sem resposta com
 a IA ligada (falha de envio, provedor fora).
+
+## Enviar uma lista ativa a IA (03/10/2026)
+Terceira porta de ativação, ao lado da palavra-chave e de "IA assume agora":
+o disparador ativa a IA na conversa depois de gravar a mensagem da lista
+([[lista-de-transmissao-visivel-e-controlavel]]).
 
 ## Uma resposta por vez
 

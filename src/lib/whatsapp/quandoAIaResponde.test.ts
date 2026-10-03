@@ -179,6 +179,17 @@ describe("a fala do corretor desliga a IA, sem prazo (03/10/2026)", () => {
     expect(corpo).toContain("bot_ativo: false");
   });
 
+  it("mandar uma lista de transmissão ativa a IA na conversa (03/10/2026)", () => {
+    // O lead que responde à lista tem de ser atendido, mesmo que o corretor
+    // tenha falado com ele antes. Ativar DEPOIS de gravar o envio: só a
+    // mensagem que saiu entrega a conversa.
+    const codigo = semComentariosDe("src/lib/whatsapp/campaignDispatcher.ts");
+    const grava = codigo.indexOf('remetente: "bot"');
+    const ativa = codigo.indexOf("ativarIaNaConversa(conversa.id)");
+    expect(grava).toBeGreaterThan(-1);
+    expect(ativa).toBeGreaterThan(grava);
+  });
+
   it("ninguém mais grava pausa com prazo", () => {
     for (const arquivo of [
       "src/lib/whatsapp/repositorio.ts",
