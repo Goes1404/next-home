@@ -3,6 +3,13 @@ import { HORAS_PARA_AVISAR } from "@/lib/crm/quemEstaEsperando";
 /**
  * A resposta que o webhook DESCARTOU.
  *
+ * **Atualização de 03/10/2026:** a fala do corretor não pausa mais — desliga
+ * a IA na conversa até a ativação. Conversa que o corretor assumiu nunca é
+ * respondida por aqui (a decisão `decidirSeAIaResponde` cala). A varredura
+ * ficou para o que sobra: mensagem que ficou sem resposta com a IA LIGADA
+ * (falha de envio, provedor fora, função que estourou o tempo). O texto
+ * abaixo é a história de como ela nasceu.
+ *
  * ## O defeito (medido em 03/09/2026)
  *
  * A pausa humana não adia a mensagem do cliente: ela a **joga fora**. O
@@ -53,24 +60,13 @@ export type DecisaoRespostaAtrasada =
   | { responder: true; horas: number }
   | {
       responder: false;
-      motivo: "ainda_no_intervalo_normal" | "antigo_demais" | "escreveu_durante_a_pausa";
+      motivo: "ainda_no_intervalo_normal" | "antigo_demais";
       horas: number;
     };
 
 export function decidirRespostaAtrasada(params: {
   /** Quando o cliente falou pela última vez sem obter resposta. */
   esperandoDesde: string | Date;
-  /**
-   * Até quando a IA ficou pausada porque o corretor falou.
-   *
-   * Mensagem escrita DURANTE essa pausa é do corretor, para sempre: a IA não
-   * volta depois para respondê-la (decisão do Matheus, 03/10/2026). A pausa
-   * diz "estou atendendo esta pessoa"; a IA retomar sozinha uma conversa que
-   * ele assumiu é falar por cima dele, só que mais tarde. O que ela
-   * responde é mensagem NOVA, chegada depois de a pausa vencer — e essa vem
-   * pelo webhook, na hora, não por aqui.
-   */
-  pausaAte?: string | Date | null;
   agora?: Date;
 }): DecisaoRespostaAtrasada {
   const agora = params.agora ?? new Date();
@@ -84,13 +80,6 @@ export function decidirRespostaAtrasada(params: {
   }
 
   const horas = Math.floor(ms / 3_600_000);
-
-  if (params.pausaAte) {
-    const fimDaPausa = new Date(params.pausaAte).getTime();
-    if (Number.isFinite(fimDaPausa) && desde.getTime() < fimDaPausa) {
-      return { responder: false, motivo: "escreveu_durante_a_pausa", horas };
-    }
-  }
 
   if (horas < HORAS_PARA_RESPONDER) {
     return { responder: false, motivo: "ainda_no_intervalo_normal", horas };

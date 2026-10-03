@@ -27,8 +27,9 @@ Uma função pura decide: `decidirSeAIaResponde` (`quandoAIaResponde.ts`).
 1. **Conversa** (`silencioDaConversa`):
    - lead agora é de outro corretor (`lead_de_outro_corretor`);
    - lead pediu para não ser contatado (`lead_pediu_para_sair`);
-   - IA desligada nesta conversa (`ia_desligada_na_conversa`);
-   - corretor falou há menos de 3 h (`pausada_pelo_corretor`, `HORAS_PAUSA_HUMANA`).
+   - IA desligada nesta conversa (`ia_desligada_na_conversa`): o corretor
+     falou nela, tocou em "Desligar IA" ou o cliente recusou. Sem prazo — só
+     a palavra-chave ou "IA assume agora" religam.
 2. **Número**:
    - IA desligada no número (`ia_desligada_no_numero`);
    - modo "fora do expediente" dentro do expediente (`dentro_do_expediente`);
@@ -70,12 +71,17 @@ que o corretor configurou.
 - O botão "IA assume agora" some quando o lead pediu para sair ou é de outro
   corretor.
 
-## A pausa não é retomada
+## A fala do corretor desliga a IA (03/10/2026)
 
-Mensagem escrita durante a pausa do corretor é dele: a varredura de respostas
-atrasadas nunca volta para respondê-la (`escreveu_durante_a_pausa` em
-`respostaAtrasada.ts`, decisão de 03/10/2026). A IA responde só mensagem nova,
-chegada depois de a pausa vencer.
+Decisão do Matheus: a IA nunca mais responde uma conversa em que o corretor
+falou, a não ser que seja ATIVADA (palavra-chave no chat ou "IA assume
+agora"). Era uma pausa de 3 h que vencia sozinha e devolvia a conversa à IA.
+`desligarIaPorFalaDoCorretor` grava `bot_ativo = false`; `pausado_humano_ate`
+saiu do código. A 0152 aplicou a regra ao que existia (5 conversas em que o
+corretor falou depois da última resposta da IA). O modo co-piloto saiu da
+tela: com a fala do corretor desligando a IA, ele não tinha mais efeito.
+A varredura de respostas atrasadas ficou só para mensagem sem resposta com
+a IA ligada (falha de envio, provedor fora).
 
 ## Uma resposta por vez
 

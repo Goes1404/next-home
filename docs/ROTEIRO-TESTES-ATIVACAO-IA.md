@@ -20,8 +20,8 @@ precisam de um número que não está no CRM, use um celular de teste.
 | 8 | Palavra de teste em número novo | Converse com o celular de teste e, do celular da Bruna, mande uma mensagem com a palavra de teste | Lead criado arquivado; conversa marcada como teste; histórico importado ou aviso "Histórico anterior à ativação não foi importado"; se a última mensagem era do cliente, a IA responde |
 | 9 | Palavra-chave em número novo | Igual ao 8, com a palavra de ativação | Lead criado na carteira da Bruna, com o mesmo comportamento do 8 (sem marca de teste) |
 | 10 | Palavra-chave em lead de outro corretor | Mande a palavra para um número que é lead de outro corretor | A IA não responde; o lead continua com o dono; aviso no Início só para quem digitou, sem o nome do dono |
-| 11 | Corretor fala sem palavra-chave | Do celular da Bruna, responda o cliente normalmente | Cabeçalho da conversa: "Pausada até HH:MM porque você falou"; lead em Novo vai para Primeiro contato |
-| 12 | Cliente escreve durante a pausa | Depois do 11, mande uma mensagem do cliente | A IA não responde, nem quando a pausa vence; o Início mostra "Escreveu enquanto você atendia · a IA não responde, é com você". Uma mensagem NOVA depois das 3h é respondida na hora |
+| 11 | Corretor fala sem palavra-chave | Do celular da Bruna, responda o cliente normalmente | Cabeçalho da conversa: "IA desligada nesta conversa: volta com a palavra-chave ou \"IA assume agora\""; lead em Novo vai para Primeiro contato |
+| 12 | Cliente escreve depois que o corretor falou | Depois do 11, mande mensagens do cliente, inclusive horas depois | A IA não responde nunca; o Início mostra "a IA está desligada nesta conversa, é com você". Só volta com a palavra-chave ou "IA assume agora" |
 | 13 | Cliente responde à transmissão | Monte uma lista com o celular de teste e responda a mensagem recebida | A IA assume a conversa |
 | 14 | Cliente recusa contato | Responda "não tenho interesse" | A IA se despede; lead vai para Perdido; sai das listas sugeridas; o Início avisa por 48 h |
 | 15 | Lead transferido | Como ADM, transfira um lead e escreva do cliente para o número do novo corretor | Linha do tempo: "Lead transferido de X para Y pela gestão"; novo corretor vê o resumo e a etapa (não as mensagens antigas); a IA responde sem pedir de novo o que o cliente já disse |
@@ -31,7 +31,7 @@ precisam de um número que não está no CRM, use um celular de teste.
 | 19 | Palavra-chave discreta | Em Assistente → IA, tente salvar "ok" ou "obrigado" como palavra | Recusado com a explicação; a palavra antiga da Bruna (3 caracteres) continua valendo, com aviso para trocar |
 | 20 | Expediente | Mude o expediente para 9h–18h no modo "Noturno e fim de semana" e escreva às 15h de um dia útil | A IA não responde; o cabeçalho diz "Você atende no expediente; a IA volta às 18h" |
 | 21 | Lead transferido escreve para o número antigo | Depois do 15, mande mensagem do cliente para o número do corretor ANTIGO | A IA não responde; o cabeçalho da conversa antiga diz "Lead agora é de outro corretor" e não mostra o botão "IA assume agora" |
-| 22 | Motivo do silêncio gravado | Repita o 11 e o 20 | Em `ia_interacoes`, `acao` = `pausada_pelo_corretor` / `dentro_do_expediente` e `silencio` com modo, expediente e até quando |
+| 22 | Motivo do silêncio gravado | Repita o 11 e o 20 | Em `ia_interacoes`, `acao` = `ia_desligada_na_conversa` / `dentro_do_expediente` e `silencio` com modo e expediente |
 
 ## O que não dá para testar ainda
 

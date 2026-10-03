@@ -371,7 +371,7 @@ export function Chat({
     onEstado(proximo);
     iniciar(async () => {
       if (proximo === "ativa") {
-        // "IA assume agora": liga a IA, tira a pausa E responde a pendência
+        // "IA assume agora": liga a IA nesta conversa E responde a pendência
         // do cliente na hora, se houver (ver acoesIA.ts).
         const resultado = await assumirConversaComIA(conversa.id);
         if (resultado.erro && !resultado.ok) {
@@ -431,7 +431,7 @@ export function Chat({
     }
 
     if (resultado.iaAtivada) onEstado("ativa");
-    else if (estado === "ativa") onEstado("pausada_humano");
+    else if (estado === "ativa") onEstado("desligada");
     const frescas = await lerMensagens(conversa.id, undefined, JANELA_DO_RECONCILIO);
     onRemover(temporaria.id);
     onMesclar(frescas);
@@ -450,7 +450,7 @@ export function Chat({
       onErro(resultado.erro);
       return;
     }
-    if (estado === "ativa") onEstado("pausada_humano");
+    if (estado === "ativa") onEstado("desligada");
     onMesclar(await lerMensagens(conversa.id, undefined, JANELA_DO_RECONCILIO));
   }
 
@@ -818,10 +818,10 @@ export function Chat({
             para responder por aqui.
           </p>
         )}
-        {estado === "pausada_humano" && conversa.pausadoAte && (
+        {estado === "desligada" && !conversa.naoContatar && !conversa.contatoDeOutroCorretor && (
           <p className="text-fluid-xs text-wa-meta mt-1.5 px-2">
-            Você assumiu esta conversa; a IA volta sozinha em até 24h — ou agora, pelo
-            botão acima.
+            A IA está desligada nesta conversa e só volta com a palavra-chave ou pelo
+            botão &ldquo;IA assume agora&rdquo;.
           </p>
         )}
       </footer>

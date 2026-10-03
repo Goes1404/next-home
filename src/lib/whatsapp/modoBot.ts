@@ -132,7 +132,7 @@ export const ROTULO_MODO: Record<ModoBotWhatsapp, string> = {
  *
  * O modo decide QUANDO a IA pode falar no número; a palavra-chave é o gesto
  * do corretor numa conversa: em número novo, cadastra o lead (0146); em
- * conversa pausada ou desligada, entrega para a IA. Um corretor que atende
+ * conversa desligada, entrega para a IA. Um corretor que atende
  * pessoalmente do celular e digita a frase combinada está dizendo "pode
  * assumir daqui" — sem isso, o WhatsApp não tem outro jeito de diferenciar
  * "estou respondendo pessoalmente" de "pode voltar a responder por mim".
@@ -207,20 +207,19 @@ export function contemPalavraChave(mensagem: string, palavraChave: string | null
  * Duas leituras, mutuamente exclusivas:
  *
  * 1. A mensagem traz a palavra-chave (ou a de teste): é a entrega
- *    deliberada para a IA. Liga e tira a pausa.
- * 2. Qualquer outra fala: o corretor está atendendo. A IA PAUSA por
- *    `HORAS_PAUSA_HUMANA` e volta sozinha (`quandoAIaResponde.ts`).
+ *    deliberada para a IA. Liga a IA na conversa.
+ * 2. Qualquer outra fala: o corretor assumiu a conversa. A IA fica
+ *    DESLIGADA nela até a ativação (palavra-chave ou "IA assume agora").
+ *    Até 03/10/2026 era uma pausa de 3h que vencia sozinha; a IA voltava a
+ *    falar numa conversa que o corretor tinha assumido.
  *
- * Até 03/10/2026 havia um terceiro efeito, o RETRAVAMENTO: para número que
- * não era do CRM, a fala do corretor travava a conversa até alguém digitar a
- * palavra de novo. Ele protegia a conversa da família no número pessoal do
- * corretor. Desde a 0111 número sem lead nem entra (o porteiro barra antes),
- * então toda conversa é de cliente cadastrado e o retravamento só podia
- * emudecer cliente de verdade. Saiu junto com a coluna (0149-0150).
+ * Na prática é o antigo RETRAVAMENTO, agora para todo lead e sem coluna
+ * própria: a trava de liberação (0149-0150) saiu, e "desligada" é
+ * `bot_ativo = false`, o mesmo estado do botão "Desligar IA".
  */
 export type DecisaoFalaDoCorretor =
   | { acao: "ativar_ia"; marcarComoTeste: boolean }
-  | { acao: "pausar_ia" };
+  | { acao: "desligar_ia" };
 
 export function decidirPorFalaDoCorretor(params: {
   mensagem: string;
@@ -242,7 +241,7 @@ export function decidirPorFalaDoCorretor(params: {
    */
   const palavra = palavraDoCorretorNaMensagem(params);
   if (palavra) return { acao: "ativar_ia", marcarComoTeste: palavra === "teste" };
-  return { acao: "pausar_ia" };
+  return { acao: "desligar_ia" };
 }
 
 /**

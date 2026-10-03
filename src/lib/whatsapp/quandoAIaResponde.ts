@@ -24,8 +24,8 @@ import { decidirPorModo, MINUTOS_COPILOTO, type Expediente } from "./modoBot";
  *    - o lead agora é de OUTRO corretor (transferência): este número não
  *      fala mais com ele;
  *    - o lead pediu para não ser contatado (0110);
- *    - a IA foi desligada nesta conversa (botão, ou a recusa do cliente);
- *    - o corretor falou há menos de 3 h (pausa).
+ *    - a IA está desligada nesta conversa: o corretor falou nela, tocou em
+ *      "Desligar IA", ou o cliente recusou contato.
  * 2. **O número** (a configuração do corretor):
  *    - IA desligada no número;
  *    - modo "fora do expediente" e agora é expediente;
@@ -50,14 +50,19 @@ import { decidirPorModo, MINUTOS_COPILOTO, type Expediente } from "./modoBot";
  * regra inteira e garante que tela e webhook façam a mesma conta.
  */
 
-/** Quanto tempo a fala do corretor cala a IA nesta conversa. */
-export const HORAS_PAUSA_HUMANA = 3;
+/*
+ * A FALA DO CORRETOR DESLIGA A IA na conversa, sem prazo (decisão do
+ * Matheus, 03/10/2026). Antes era uma pausa de 3h que vencia sozinha, e a IA
+ * voltava a responder uma conversa que o corretor tinha assumido. Agora ela
+ * só volta com ATIVAÇÃO: a palavra-chave no chat ou "IA assume agora".
+ */
 
 export type SituacaoDaConversa = {
-  /** `false` = desligada nesta conversa (botão do painel ou recusa do cliente). */
+  /**
+   * `false` = desligada nesta conversa: o corretor falou nela, tocou em
+   * "Desligar IA", ou o cliente recusou. Só a ativação religa.
+   */
   botAtivo: boolean;
-  /** Até quando a fala do corretor cala a IA. Vencida = sem pausa. */
-  pausadoAte: string | Date | null;
   /** O lead pediu para não ser contatado (0110). */
   naoContatar?: boolean;
   /** O lead foi transferido para outro corretor depois desta conversa. */
@@ -73,7 +78,6 @@ export type MotivoDoSilencio =
   | "lead_de_outro_corretor"
   | "lead_pediu_para_sair"
   | "ia_desligada_na_conversa"
-  | "pausada_pelo_corretor"
   | "ia_desligada_no_numero"
   | "dentro_do_expediente"
   | "corretor_respondendo";
@@ -94,7 +98,6 @@ export const SILENCIOS_DA_CONVERSA = [
   "lead_de_outro_corretor",
   "lead_pediu_para_sair",
   "ia_desligada_na_conversa",
-  "pausada_pelo_corretor",
 ] as const satisfies readonly MotivoDoSilencio[];
 
 function emData(valor: string | Date | null | undefined): Date | null {
@@ -106,13 +109,10 @@ function emData(valor: string | Date | null | undefined): Date | null {
 /** A primeira camada: o que vale para esta pessoa, independente do número. */
 export function silencioDaConversa(
   conversa: SituacaoDaConversa,
-  agora: Date = new Date(),
 ): { motivo: MotivoDoSilencio; voltaEm: Date | null } | null {
   if (conversa.leadDeOutroCorretor) return { motivo: "lead_de_outro_corretor", voltaEm: null };
   if (conversa.naoContatar) return { motivo: "lead_pediu_para_sair", voltaEm: null };
   if (!conversa.botAtivo) return { motivo: "ia_desligada_na_conversa", voltaEm: null };
-  const pausa = emData(conversa.pausadoAte);
-  if (pausa && pausa.getTime() > agora.getTime()) return { motivo: "pausada_pelo_corretor", voltaEm: pausa };
   return null;
 }
 
@@ -126,7 +126,7 @@ export function decidirSeAIaResponde(params: {
 }): DecisaoDaIA {
   const agora = params.agora ?? new Date();
 
-  const daConversa = silencioDaConversa(params.conversa, agora);
+  const daConversa = silencioDaConversa(params.conversa);
   if (daConversa) return { responde: false, ...daConversa };
 
   if (!params.numero) return { responde: true, motivo: "sempre_ativa" };
@@ -164,7 +164,8 @@ export function decidirSeAIaResponde(params: {
  * Mensagem por iniciativa NOSSA (hoje só o lembrete de visita, regra N1).
  *
  * A camada da conversa vale inteira: não se lembra quem saiu da carteira,
- * pediu para sair, teve a IA desligada ou está falando com o corretor agora.
+ * pediu para sair ou está com a IA desligada (inclusive porque o corretor
+ * assumiu a conversa).
  * Da camada do número, só "IA desligada" vale: o modo "fora do expediente" é
  * sobre QUEM RESPONDE, e aplicá-lo aqui faria o lembrete nunca sair para
  * quem usa esse modo — ele tem de sair DENTRO do expediente
@@ -173,22 +174,14 @@ export function decidirSeAIaResponde(params: {
 export function podeEnviarPorIniciativa(params: {
   conversa: SituacaoDaConversa;
   numero: ConfigDoNumero;
-  agora?: Date;
 }): DecisaoDaIA {
-  const agora = params.agora ?? new Date();
-  const daConversa = silencioDaConversa(params.conversa, agora);
+  const daConversa = silencioDaConversa(params.conversa);
   if (daConversa) return { responde: false, ...daConversa };
   if (params.numero.modo === "desativado") {
     return { responde: false, motivo: "ia_desligada_no_numero", voltaEm: null };
   }
   return { responde: true, motivo: "sempre_ativa" };
 }
-
-const horaMinuto = new Intl.DateTimeFormat("pt-BR", {
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "America/Sao_Paulo",
-});
 
 /**
  * POR QUE a IA está ou não respondendo, em uma frase — para o cabeçalho da
@@ -208,11 +201,7 @@ export function fraseDaDecisao(decisao: DecisaoDaIA, numero: ConfigDoNumero | nu
     case "lead_pediu_para_sair":
       return "Lead pediu para não ser contatado";
     case "ia_desligada_na_conversa":
-      return "Desligada nesta conversa";
-    case "pausada_pelo_corretor":
-      return decisao.voltaEm
-        ? `Pausada até ${horaMinuto.format(decisao.voltaEm)} porque você falou`
-        : "Pausada porque você falou";
+      return "IA desligada nesta conversa: volta com a palavra-chave ou \"IA assume agora\"";
     case "ia_desligada_no_numero":
       return "IA desligada no seu número";
     case "dentro_do_expediente":

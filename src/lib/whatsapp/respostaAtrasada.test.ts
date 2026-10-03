@@ -115,34 +115,3 @@ describe("o runner da varredura", () => {
     expect(trecho).not.toContain("reservarCotaCampanha");
   });
 });
-
-describe("quem escreveu durante a pausa do corretor é dele (03/10/2026)", () => {
-  const agora = new Date("2026-10-03T15:00:00Z");
-
-  it("a IA não volta para responder depois que a pausa vence", () => {
-    const d = decidirRespostaAtrasada({
-      esperandoDesde: "2026-10-03T13:00:00Z",
-      pausaAte: "2026-10-03T14:55:00Z",
-      agora,
-    });
-    expect(d).toMatchObject({ responder: false, motivo: "escreveu_durante_a_pausa" });
-  });
-
-  it("nem horas depois, quando a régua normal de atraso valeria", () => {
-    const d = decidirRespostaAtrasada({
-      esperandoDesde: "2026-10-03T01:00:00Z",
-      pausaAte: "2026-10-03T03:00:00Z",
-      agora,
-    });
-    expect(d).toMatchObject({ responder: false, motivo: "escreveu_durante_a_pausa" });
-  });
-
-  it("mensagem depois da pausa segue a régua normal de 4h", () => {
-    const d = decidirRespostaAtrasada({
-      esperandoDesde: "2026-10-03T14:58:00Z",
-      pausaAte: "2026-10-03T14:00:00Z",
-      agora,
-    });
-    expect(d).toMatchObject({ responder: false, motivo: "ainda_no_intervalo_normal" });
-  });
-});

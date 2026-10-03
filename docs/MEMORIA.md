@@ -9078,3 +9078,15 @@ Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
   e `pixelMeta.ts` na mesma pasta só diferem na caixa. Para conferir visual
   sem servidor local, injetar o elemento na página de produção com Playwright
   (`page.route` serve o arquivo local).
+- **E no mesmo dia a pausa acabou: a fala do corretor DESLIGA a IA (0152).**
+  Decisão do Matheus: a IA nunca mais responde uma conversa em que o corretor
+  falou, a não ser que seja ativada (palavra-chave ou "IA assume agora").
+  `desligarIaPorFalaDoCorretor` grava `bot_ativo = false`;
+  `pausado_humano_ate` saiu do código e foi zerado no banco. A 0152 desligou
+  as 5 conversas em que o corretor tinha falado depois da última resposta da
+  IA. O co-piloto saiu da tela (ficou sem efeito). Consequência a lembrar: o
+  lembrete de visita também não sai numa conversa desligada.
+- **Colisão de número de migration outra vez:** outra sessão subiu uma 0151
+  (fundo do site) minutos antes; a minha virou 0152 no arquivo, mas foi
+  aplicada no banco com o nome `0151_fala_do_corretor_desliga_a_ia`.
+

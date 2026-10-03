@@ -46,7 +46,7 @@ export default async function ConversasPage({
   const [{ data: conversas }, { data: instancia }] = await Promise.all([
     supabase
       .from("whatsapp_conversas")
-      .select("id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)")
+      .select("id, telefone_cliente, nome_cliente, bot_ativo, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)")
       .eq("corretor_id", corretor.id)
       // Defesa durante a transição até a 0111 ser aplicada: conversa sem
       // cadastro não aparece nem por estoque antigo.
@@ -72,17 +72,11 @@ export default async function ConversasPage({
     after(() => garantirEventosWebhook(nomeInstancia));
   }
 
-  /*
-   * "Está pausada agora?" não é calculado aqui: a resposta depende do
-   * relógio, e um booleano gravado no HTML já nasce velho — a pausa vence
-   * enquanto a página está aberta. O cliente deriva de `pausadoAte`.
-   */
   const lista: ConversaResumo[] = (conversas ?? []).map((c) => ({
     id: c.id,
     telefone: c.telefone_cliente,
     nome: c.nome_cliente,
     botAtivo: c.bot_ativo,
-    pausadoAte: c.pausado_humano_ate,
     ultimaMensagem: c.ultima_mensagem,
     memoria: c.memoria ?? null,
     memoriaDoCorretor: c.memoria_do_corretor ?? false,
@@ -107,7 +101,7 @@ export default async function ConversasPage({
     const { data: solta } = await supabase
       .from("whatsapp_conversas")
       .select(
-        "id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)",
+        "id, telefone_cliente, nome_cliente, bot_ativo, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)",
       )
       .eq("id", conversaInicial as string)
       .not("lead_id", "is", null)
@@ -123,7 +117,6 @@ export default async function ConversasPage({
         telefone: solta.telefone_cliente,
         nome: solta.nome_cliente,
         botAtivo: solta.bot_ativo,
-        pausadoAte: solta.pausado_humano_ate,
         ultimaMensagem: solta.ultima_mensagem,
         memoria: solta.memoria ?? null,
         memoriaDoCorretor: solta.memoria_do_corretor ?? false,

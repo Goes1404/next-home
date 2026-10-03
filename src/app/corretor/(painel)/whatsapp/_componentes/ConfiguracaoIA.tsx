@@ -2,8 +2,8 @@
 
 import { site } from "@/lib/site";
 import { useState } from "react";
-import { Bot, BellOff, Moon, Timer } from "lucide-react";
-import { EXPEDIENTE, MINUTOS_COPILOTO, listarPalavrasChave } from "@/lib/whatsapp/modoBot";
+import { Bot, BellOff, Moon } from "lucide-react";
+import { EXPEDIENTE, listarPalavrasChave } from "@/lib/whatsapp/modoBot";
 import { problemaDaPalavraChave } from "@/lib/whatsapp/palavraChaveDiscreta";
 import type { ModoBotWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { salvarConfiguracaoWhatsapp } from "../acoes";
@@ -27,7 +27,7 @@ const MODOS: {
   {
     valor: "24_7",
     titulo: "Sempre ativa (24/7)",
-    descricao: "Responde qualquer mensagem, a qualquer hora do dia.",
+    descricao: "Responde a qualquer hora. Quando você fala numa conversa, ela sai dali e só volta com a palavra-chave ou \"IA assume agora\".",
     icone: Bot,
   },
   {
@@ -35,12 +35,6 @@ const MODOS: {
     titulo: "Noturno e fim de semana",
     descricao: "Só fora do seu expediente (escolhido abaixo): à noite, de madrugada e nos fins de semana.",
     icone: Moon,
-  },
-  {
-    valor: "co_piloto_3min",
-    titulo: `Co-piloto (${MINUTOS_COPILOTO} min)`,
-    descricao: `Fica quieta enquanto você responde e assume depois de ${MINUTOS_COPILOTO} minutos sem você falar na conversa.`,
-    icone: Timer,
   },
   {
     valor: "desativado",

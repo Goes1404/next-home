@@ -139,7 +139,7 @@ describe("Transcrição de áudio — recusa do modelo", () => {
   });
 });
 
-describe("Fala do corretor — a palavra-chave liga, qualquer outra fala pausa", () => {
+describe("Fala do corretor — a palavra-chave liga, qualquer outra fala desliga a IA na conversa", () => {
   const CHAVE = "ativar lia agora";
 
   it("ativa a IA quando a mensagem traz a palavra-chave", () => {
@@ -151,43 +151,43 @@ describe("Fala do corretor — a palavra-chave liga, qualquer outra fala pausa",
     ).toEqual({ acao: "ativar_ia", marcarComoTeste: false });
   });
 
-  it("pausa a IA em qualquer outra fala do corretor", () => {
+  it("desliga a IA em qualquer outra fala do corretor", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "oi mãe, vamos no cinema?",
         palavraChaveConfigurada: CHAVE,
       }),
-    ).toEqual({ acao: "pausar_ia" });
+    ).toEqual({ acao: "desligar_ia" });
   });
 
   /*
-   * Desde 04/10/2026 a fala do corretor só PAUSA (não retrava): toda
-   * conversa tem lead (0111), e quem protege a conversa pessoal é o porteiro.
+   * Desde 03/10/2026 a fala do corretor DESLIGA a IA na conversa, sem prazo:
+   * ela só volta com a palavra-chave ou "IA assume agora".
    */
-  it("fala comum do corretor sempre pausa, nunca liga", () => {
+  it("fala comum do corretor sempre desliga, nunca liga", () => {
     const decisao = decidirPorFalaDoCorretor({
       mensagem: "Teste",
       palavraChaveConfigurada: "pode continuar",
     });
-    expect(decisao).toEqual({ acao: "pausar_ia" });
+    expect(decisao).toEqual({ acao: "desligar_ia" });
   });
 
-  it("pausa mesmo sem palavra-chave cadastrada", () => {
+  it("desliga mesmo sem palavra-chave cadastrada", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "qualquer coisa",
         palavraChaveConfigurada: null,
       }),
-    ).toEqual({ acao: "pausar_ia" });
+    ).toEqual({ acao: "desligar_ia" });
   });
 
-  it("conversa de campanha também só pausa", () => {
+  it("conversa de campanha também desliga", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "vou assumir daqui",
         palavraChaveConfigurada: CHAVE,
       }),
-    ).toEqual({ acao: "pausar_ia" });
+    ).toEqual({ acao: "desligar_ia" });
   });
 });
 
@@ -259,24 +259,24 @@ describe("Palavra-chave de TESTE", () => {
     ).toEqual({ acao: "ativar_ia", marcarComoTeste: true });
   });
 
-  it("qualquer outra fala do corretor continua pausando", () => {
+  it("qualquer outra fala do corretor continua desligando", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "oi mãe",
         palavraChaveConfigurada: CHAVE,
         palavraChaveTeste: TESTE,
       }),
-    ).toEqual({ acao: "pausar_ia" });
+    ).toEqual({ acao: "desligar_ia" });
   });
 
-  it("fala comum do corretor pausa mesmo só com a palavra de teste cadastrada", () => {
+  it("fala comum do corretor desliga mesmo só com a palavra de teste cadastrada", () => {
     expect(
       decidirPorFalaDoCorretor({
         mensagem: "qualquer coisa",
         palavraChaveConfigurada: null,
         palavraChaveTeste: TESTE,
       }),
-    ).toEqual({ acao: "pausar_ia" });
+    ).toEqual({ acao: "desligar_ia" });
   });
 
   it("sem palavra de teste cadastrada, nada é marcado", () => {

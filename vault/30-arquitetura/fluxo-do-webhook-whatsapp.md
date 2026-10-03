@@ -37,7 +37,7 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    `provider_message_id` único (0027) mata reentrega.
 6. **Porteiro da IA** — `decidirSeAIaResponde` ([[quando-a-ia-responde]]),
    a decisão inteira num lugar só: primeiro a conversa (lead de outro
-   corretor, pediu para sair, IA desligada, pausa de 3h do corretor), depois
+   corretor, pediu para sair, IA desligada — a fala do corretor desliga, sem prazo), depois
    o número (IA desligada, expediente, co-piloto). Calada, grava o motivo em
    `ia_interacoes.acao` e o detalhe em `silencio` (0149), e ainda atualiza a
    ficha. O áudio não entendido também obedece a ela.

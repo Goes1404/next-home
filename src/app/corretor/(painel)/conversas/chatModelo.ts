@@ -2,7 +2,6 @@ import type { MensagemConversa } from "./acoes";
 import {
   decidirSeAIaResponde,
   fraseDaDecisao,
-  HORAS_PAUSA_HUMANA,
   silencioDaConversa,
   type ConfigDoNumero,
   type SituacaoDaConversa,
@@ -43,7 +42,6 @@ export type ConversaResumo = {
   telefone: string;
   nome: string | null;
   botAtivo: boolean;
-  pausadoAte: string | null;
   ultimaMensagem: string | null;
   ultimaInteracaoEm: string;
   temLead: boolean;
@@ -92,7 +90,6 @@ export type ConversaRow = {
   telefone_cliente: string;
   nome_cliente: string | null;
   bot_ativo: boolean;
-  pausado_humano_ate: string | null;
   ultima_mensagem: string | null;
   ultima_interacao_em: string;
   lead_id: string | null;
@@ -157,7 +154,6 @@ export function deRow(row: ConversaRow): ConversaResumo {
     telefone: row.telefone_cliente,
     nome: row.nome_cliente,
     botAtivo: row.bot_ativo,
-    pausadoAte: row.pausado_humano_ate,
     ultimaMensagem: row.ultima_mensagem,
     ultimaInteracaoEm: row.ultima_interacao_em,
     temLead: Boolean(row.lead_id),
@@ -215,7 +211,7 @@ export function mesclar(
   );
 }
 
-export type Estado = "ativa" | "pausada_humano" | "desligada";
+export type Estado = "ativa" | "desligada";
 
 /**
  * O que a conversa tem de seu para a decisão de responder — o formato que
@@ -226,7 +222,6 @@ export type Estado = "ativa" | "pausada_humano" | "desligada";
 export function situacaoDoResumo(conversa: ConversaResumo): SituacaoDaConversa {
   return {
     botAtivo: conversa.botAtivo,
-    pausadoAte: conversa.pausadoAte,
     naoContatar: conversa.naoContatar,
     leadDeOutroCorretor: conversa.contatoDeOutroCorretor,
   };
@@ -236,10 +231,8 @@ export function situacaoDoResumo(conversa: ConversaResumo): SituacaoDaConversa {
  * O selo da lista: só a camada da CONVERSA. A do número (modo, expediente)
  * é igual para todas as conversas e aparece na frase do cabeçalho.
  */
-export function estadoDa(conversa: ConversaResumo, agora: Date = new Date()): Estado {
-  const silencio = silencioDaConversa(situacaoDoResumo(conversa), agora);
-  if (!silencio) return "ativa";
-  return silencio.motivo === "pausada_pelo_corretor" ? "pausada_humano" : "desligada";
+export function estadoDa(conversa: ConversaResumo): Estado {
+  return silencioDaConversa(situacaoDoResumo(conversa)) ? "desligada" : "ativa";
 }
 
 /** O que vem do lead embutido na conversa (`lead:leads(nao_contatar_em)`). */
@@ -266,7 +259,7 @@ export type ContextoDaIA = ConfigDoNumero | null;
  * `estado` é o da TELA, que muda antes do banco (botão de ligar/desligar,
  * mensagem enviada): ele ajusta a situação da conversa antes de decidir,
  * para a frase não contradizer o selo nos segundos em que o servidor ainda
- * não respondeu. A pausa otimista usa a mesma duração que o banco grava.
+ * não respondeu.
  */
 export function fraseDoEstado(
   conversa: ConversaResumo,
@@ -274,18 +267,7 @@ export function fraseDoEstado(
   ia: ContextoDaIA,
   agora: Date = new Date(),
 ): string {
-  const situacao = situacaoDoResumo(conversa);
-  const pausaGravada = conversa.pausadoAte && new Date(conversa.pausadoAte).getTime() > agora.getTime();
-  const ajustada = {
-    ...situacao,
-    botAtivo: estado !== "desligada",
-    pausadoAte:
-      estado === "pausada_humano"
-        ? pausaGravada
-          ? conversa.pausadoAte
-          : new Date(agora.getTime() + HORAS_PAUSA_HUMANA * 3_600_000)
-        : null,
-  };
+  const ajustada = { ...situacaoDoResumo(conversa), botAtivo: estado !== "desligada" };
   return fraseDaDecisao(decidirSeAIaResponde({ conversa: ajustada, numero: ia, agora }), ia);
 }
 
@@ -296,7 +278,6 @@ export function fraseDoEstado(
  */
 export const SELO: Record<Estado, { texto: string; classe: string; ponto: string }> = {
   ativa: { texto: "IA atendendo", classe: "text-info", ponto: "bg-info" },
-  pausada_humano: { texto: "IA em pausa", classe: "text-alerta", ponto: "bg-alerta" },
   desligada: { texto: "IA desligada", classe: "text-apoio", ponto: "bg-linha-forte" },
 };
 

@@ -22,7 +22,7 @@ export async function carregarMaisPessoas(busca: string, pagina: number): Promis
  * O resumo da conversa que a gaveta abre.
  *
  * A lista de Pessoas traz o `conversaId`, e só ele: o `Chat` precisa do
- * estado da IA (ativa, pausada, esperando liberação), que é o que decide o
+ * estado da IA (ativa ou desligada nesta conversa), que é o que decide o
  * selo do cabeçalho e o botão de assumir.
  *
  * O filtro por corretor é explícito pela mesma razão da 0031: a policy foi
@@ -39,7 +39,7 @@ export async function carregarConversaDaPessoa(
   const { data } = await supabase
     .from("whatsapp_conversas")
     .select(
-      "id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)",
+      "id, telefone_cliente, nome_cliente, bot_ativo, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)",
     )
     .eq("id", conversaId)
     .eq("corretor_id", corretor.id)
@@ -55,7 +55,6 @@ export async function carregarConversaDaPessoa(
     botAtivo: data.bot_ativo,
     memoria: data.memoria ?? null,
     memoriaDoCorretor: data.memoria_do_corretor ?? false,
-    pausadoAte: data.pausado_humano_ate,
     ultimaMensagem: data.ultima_mensagem,
     ultimaInteracaoEm: data.ultima_interacao_em,
     temLead: Boolean(data.lead_id),

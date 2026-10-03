@@ -360,19 +360,6 @@ async function varrerRespostasAtrasadas(
     .order("esperando_desde", { ascending: true })
     .limit(20);
 
-  /*
-   * A pausa de cada conversa: quem escreveu DURANTE a pausa do corretor é
-   * dele, e a varredura nunca volta para responder (03/10/2026).
-   */
-  const ids = (esperando ?? []).map((l) => l.conversa_id).filter((id): id is string => Boolean(id));
-  const pausas = new Map<string, string | null>();
-  if (ids.length > 0) {
-    const { data: conversas } = await supabase
-      .from("whatsapp_conversas")
-      .select("id, pausado_humano_ate")
-      .in("id", ids);
-    for (const c of conversas ?? []) pausas.set(c.id, c.pausado_humano_ate);
-  }
   const ordenadas = esperando ?? [];
 
   for (const linha of ordenadas) {
@@ -380,10 +367,7 @@ async function varrerRespostasAtrasadas(
     if (Date.now() - comecou > ORCAMENTO_VARREDURA_MS) break;
     if (!linha.conversa_id || !linha.corretor_id || !linha.esperando_desde) continue;
 
-    const decisao = decidirRespostaAtrasada({
-      esperandoDesde: linha.esperando_desde,
-      pausaAte: pausas.get(linha.conversa_id) ?? null,
-    });
+    const decisao = decidirRespostaAtrasada({ esperandoDesde: linha.esperando_desde });
     if (!decisao.responder) {
       saldo.puladas++;
       continue;
@@ -800,11 +784,9 @@ async function processarFollowup(
     const motivo =
       silencio.motivo === "lead_pediu_para_sair"
         ? "cliente_recusou"
-        : silencio.motivo === "pausada_pelo_corretor"
-          ? "corretor_assumiu"
-          : silencio.motivo === "lead_de_outro_corretor"
-            ? "lead_de_outro_corretor"
-            : "bot_inativo";
+        : silencio.motivo === "lead_de_outro_corretor"
+          ? "lead_de_outro_corretor"
+          : "bot_inativo";
     return descartar(supabase, item.id, motivo);
   }
 

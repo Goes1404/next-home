@@ -19,7 +19,7 @@ import {
   historicoRecente,
   ativarIaNaConversa,
   marcarConversaComoTeste,
-  pausarBotPorAtendimentoHumano,
+  desligarIaPorFalaDoCorretor,
   registrarTentativaDeContato,
   resolverInstancia,
 } from "@/lib/whatsapp/repositorio";
@@ -52,10 +52,8 @@ async function exigirSessao() {
 /**
  * Silencia a IA nesta conversa por tempo indeterminado.
  *
- * Diferente da pausa automática de 24h, esta é uma decisão explícita: fica
- * em `bot_ativo = false` até o corretor reativar. É o caso do cliente que
- * pediu para falar só com gente, e do número que atende também a conversa
- * pessoal do corretor.
+ * O mesmo estado em que a fala do corretor deixa a conversa (`bot_ativo =
+ * false`): a IA só volta com a palavra-chave ou "IA assume agora".
  */
 export async function silenciarBotNaConversa(conversaId: string): Promise<ResultadoConversa> {
   const supabase = await exigirSessao();
@@ -283,8 +281,8 @@ async function carregarConversaEInstancia(
 export type ResultadoEnvioPainel = {
   erro?: string;
   /** O envio pausou a IA nesta conversa (mesma regra da fala pelo celular). */
-  iaPausada?: boolean;
-  /** A mensagem era a palavra-chave: a IA foi LIGADA em vez de pausada. */
+  iaDesligada?: boolean;
+  /** A mensagem era a palavra-chave: a IA foi LIGADA em vez de desligada. */
   iaAtivada?: boolean;
   /** Quantos balões a IA mandou, quando o corretor pediu que ela respondesse. */
   baloesEnviados?: number;
@@ -294,7 +292,7 @@ export type ResultadoEnvioPainel = {
  * O corretor respondeu o cliente PELO PAINEL — o teclado do Live Chat.
  *
  * O envio pela API do provedor NÃO ecoa de volta no webhook (é por isso que
- * o bot não pausa a si mesmo a cada resposta), então este caminho precisa
+ * o bot não se desliga a cada resposta), então este caminho precisa
  * fazer sozinho o que o webhook faz quando o corretor fala do celular:
  * gravar a mensagem como `corretor` e aplicar `decidirPorFalaDoCorretor` —
  * a MESMA regra, para o painel e o celular nunca divergirem. Digitar a
@@ -381,11 +379,11 @@ export async function enviarMensagemDoPainel(
     return { iaAtivada: true };
   }
 
-  await pausarBotPorAtendimentoHumano(conversaId);
+  await desligarIaPorFalaDoCorretor(conversaId);
 
   revalidatePath("/corretor/conversas");
   revalidatePath("/corretor/pessoas");
-  return { iaPausada: true };
+  return { iaDesligada: true };
 }
 
 export type MidiaDoCatalogo = {
@@ -445,7 +443,7 @@ export async function listarCatalogoDeMidias(): Promise<
  * pelo mesmo motivo do `resolverMidia`: URL montada fora do catálogo é
  * como anexo errado nasce. A nota `📎 título: url` gravada na conversa é o
  * formato que `midiasJaEnviadas` lê, então a IA não reenvia o que o
- * corretor já mandou. Enviar mídia é fala do corretor: pausa a IA como
+ * corretor já mandou. Enviar mídia é fala do corretor: desliga a IA como
  * qualquer outra resposta dele.
  */
 export async function enviarMidiaDoPainel(
@@ -498,12 +496,12 @@ export async function enviarMidiaDoPainel(
     statusEntrega: envio.messageId ? "enviada" : null,
   });
 
-  // Anexo nunca é palavra-chave: é sempre fala de atendimento, e pausa a IA.
-  await pausarBotPorAtendimentoHumano(conversaId);
+  // Anexo nunca é palavra-chave: é sempre fala de atendimento, e desliga a IA.
+  await desligarIaPorFalaDoCorretor(conversaId);
 
   revalidatePath("/corretor/conversas");
   revalidatePath("/corretor/pessoas");
-  return { iaPausada: true };
+  return { iaDesligada: true };
 }
 
 export type FichaDoLead = {

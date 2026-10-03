@@ -311,23 +311,21 @@ export async function getFilaDeTrabalho(
   ]);
 
   /*
-   * Quem está esperando DURANTE a pausa do corretor (plano de ativação, 2.4):
-   * a IA está calada porque ele falou, então a fila diz isso em vez de só
+   * Quem está esperando numa conversa com a IA DESLIGADA (o corretor assumiu,
+   * 03/10/2026): a IA não vai responder, então a fila diz isso em vez de só
    * "sem resposta". Uma consulta só, sobre as conversas que já vieram.
    */
   const idsEsperando = (esperando.data ?? []).map((c) => c.conversa_id as string).filter(Boolean);
-  const pausaPorConversa = new Map<string, string>();
+  const iaDesligadaEm = new Set<string>();
   const nomePorConversa = new Map<string, string>();
   const idsSugestao = (sugestoes.data ?? []).map((f) => f.conversa_id);
   if (idsEsperando.length > 0 || idsSugestao.length > 0) {
     const { data: conversasDaFila } = await supabase
       .from("whatsapp_conversas")
-      .select("id, pausado_humano_ate, nome_cliente, telefone_cliente")
+      .select("id, bot_ativo, nome_cliente, telefone_cliente")
       .in("id", [...idsEsperando, ...idsSugestao]);
     for (const c of conversasDaFila ?? []) {
-      if (c.pausado_humano_ate && new Date(c.pausado_humano_ate) > agora) {
-        pausaPorConversa.set(c.id, c.pausado_humano_ate);
-      }
+      if (!c.bot_ativo) iaDesligadaEm.add(c.id);
       nomePorConversa.set(c.id, c.nome_cliente || c.telefone_cliente);
     }
   }
@@ -347,8 +345,8 @@ export async function getFilaDeTrabalho(
        * A espera em horas, e em DIAS quando passa de um: "há 5 dias" dói
        * como tem de doer, e "há 47 horas" ninguém converte de cabeça.
        */
-      detalhe: pausaPorConversa.has(conversa.conversa_id as string)
-        ? `Escreveu enquanto você atendia, há ${horas >= 1 ? `${horas}h` : "menos de 1h"} · a IA não responde, é com você`
+      detalhe: iaDesligadaEm.has(conversa.conversa_id as string)
+        ? `Escreveu há ${horas >= 24 ? `${Math.floor(horas / 24)}d` : horas >= 1 ? `${horas}h` : "menos de 1h"} · a IA está desligada nesta conversa, é com você`
         : horas >= 24
           ? `Escreveu há ${Math.floor(horas / 24)} dia${horas >= 48 ? "s" : ""} e está sem resposta`
           : horas >= 1

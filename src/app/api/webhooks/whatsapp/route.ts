@@ -46,7 +46,7 @@ import {
   podeAlertarLeadQuente,
   preencherNomeContato,
   registrarEventoConexao,
-  pausarBotPorAtendimentoHumano,
+  desligarIaPorFalaDoCorretor,
   registrarResultadoEnvio,
   resolverInstancia,
   salvarDossie,
@@ -549,8 +549,9 @@ export async function POST(req: NextRequest) {
     //      combinado de "pode assumir" (ver modoBot.ts). Liga a IA e tira a
     //      pausa — esta mensagem não é "estou atendendo pessoalmente", é a
     //      entrega deliberada para a IA.
-    //   2. Qualquer outra mensagem do corretor: pausa a IA por 3h, e ela
-    //      volta sozinha. A regra mora em `decidirPorFalaDoCorretor`.
+    //   2. Qualquer outra mensagem do corretor: ele assumiu a conversa, e a
+    //      IA fica DESLIGADA nela até a ativação (palavra-chave ou "IA assume
+    //      agora"). A regra mora em `decidirPorFalaDoCorretor`.
     if (fromMe) {
       await gravarMensagem({
         // O porteiro acima já garantiu o vínculo com um lead. A função
@@ -634,13 +635,13 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      await pausarBotPorAtendimentoHumano(conversa.id);
+      await desligarIaPorFalaDoCorretor(conversa.id);
       // O corretor falou com o cliente: é o primeiro contato, com a IA
       // calada ou não (plano de ativação, 3.2). Só anda quem está em "Novo".
       if (conversa.leadId) await avancarLeadParaPrimeiroContato(conversa.leadId, "corretor_no_whatsapp");
       return NextResponse.json({
         ok: true,
-        action: "pausa_bot_humano_registrada",
+        action: "ia_desligada_pela_fala_do_corretor",
         sender,
       });
     }

@@ -2,7 +2,7 @@ import "server-only";
 
 import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
 import { mesclarDossie } from "./mesclarDossie";
-import { HORAS_PAUSA_HUMANA, type SituacaoDaConversa } from "./quandoAIaResponde";
+import type { SituacaoDaConversa } from "./quandoAIaResponde";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { ConviteDeEntrada } from "./porteiro";
 import { comRetentativa } from "@/lib/supabase/retentativa";
@@ -112,7 +112,6 @@ export type ConversaPersistida = {
   memoriaDoCorretor: boolean;
   telefoneCliente: string;
   botAtivo: boolean;
-  pausadoHumanoAte: string | null;
   /** De onde esta conversa nasceu — 'campanha' é quem o disparo em massa criou (ver campaignDispatcher.ts). */
   origem: "organica" | "campanha";
   /** Conversa de teste da equipe: fora do few-shot e do golden (ver 0038/0039). */
@@ -134,7 +133,7 @@ export type ConversaPersistida = {
  * só, em vez de uma segunda leitura no meio do webhook.
  */
 const SELECT_CONVERSA =
-  "id, corretor_id, lead_id, telefone_cliente, bot_ativo, pausado_humano_ate, origem, e_teste, atendida_em, memoria, memoria_do_corretor, lead:leads!whatsapp_conversas_lead_id_fkey(corretor_id, nao_contatar_em)";
+  "id, corretor_id, lead_id, telefone_cliente, bot_ativo, origem, e_teste, atendida_em, memoria, memoria_do_corretor, lead:leads!whatsapp_conversas_lead_id_fkey(corretor_id, nao_contatar_em)";
 
 type LeadEmbutido = { corretor_id: string | null; nao_contatar_em: string | null };
 
@@ -144,7 +143,6 @@ function mapConversa(row: {
   lead_id: string | null;
   telefone_cliente: string;
   bot_ativo: boolean;
-  pausado_humano_ate: string | null;
   origem: "organica" | "campanha";
   e_teste: boolean;
   atendida_em?: string | null;
@@ -158,7 +156,6 @@ function mapConversa(row: {
     leadId: row.lead_id,
     telefoneCliente: row.telefone_cliente,
     botAtivo: row.bot_ativo,
-    pausadoHumanoAte: row.pausado_humano_ate,
     atendidaEm: row.atendida_em ?? null,
     naoContatar: Boolean(lead?.nao_contatar_em),
     leadDeOutroCorretor: Boolean(
@@ -1190,8 +1187,6 @@ export async function registrarRecusaDoCliente(params: {
   if (erroTimeline) console.error("[recusa] falha ao registrar na linha do tempo:", erroTimeline.message);
 }
 
-// A duração da pausa mora em `quandoAIaResponde.ts` (HORAS_PAUSA_HUMANA): a tela
-// calcula a mesma hora que o banco grava.
 
 /**
  * Carimba o FATO: a IA atendeu esta conversa (0106).
@@ -1242,21 +1237,20 @@ export async function marcarConversaAtendida(conversaId: string): Promise<void> 
 }
 
 /**
- * O corretor respondeu do celular dele: a IA cala nesta conversa por
- * `HORAS_PAUSA_HUMANA` e volta sozinha depois.
+ * O corretor falou na conversa: a IA fica DESLIGADA nela até a ativação — a
+ * palavra-chave no chat ou "IA assume agora" (decisão do Matheus,
+ * 03/10/2026).
  *
- * Gravar de fato é o ponto: devolver "pausa detectada" só no corpo da
- * resposta HTTP não pausaria nada, e a próxima mensagem do cliente seria
- * respondida pelo bot por cima do atendimento humano.
- *
- * Não existe mais "retravar" (0149-0150): desde a 0111 só há conversa com
- * lead, então a fala do corretor só PAUSA. O que protege a conversa pessoal
- * é o porteiro, que não deixa número sem lead entrar.
+ * Era uma pausa de 3h que vencia sozinha, e a IA voltava a responder uma
+ * conversa que o corretor tinha assumido. Gravar de fato é o ponto: devolver
+ * "IA desligada" só no corpo da resposta HTTP não desligaria nada.
  */
-export async function pausarBotPorAtendimentoHumano(conversaId: string): Promise<void> {
+export async function desligarIaPorFalaDoCorretor(conversaId: string): Promise<void> {
   const supabase = createServiceClient();
-  const ate = new Date(Date.now() + HORAS_PAUSA_HUMANA * 3600_000).toISOString();
-  await supabase.from("whatsapp_conversas").update({ pausado_humano_ate: ate }).eq("id", conversaId);
+  await supabase
+    .from("whatsapp_conversas")
+    .update({ bot_ativo: false, pausado_humano_ate: null })
+    .eq("id", conversaId);
 }
 
 /**
@@ -1286,7 +1280,6 @@ export async function ultimaFalaDoCorretor(conversaId: string): Promise<string |
 export function situacaoDaConversa(conversa: ConversaPersistida): SituacaoDaConversa {
   return {
     botAtivo: conversa.botAtivo,
-    pausadoAte: conversa.pausadoHumanoAte,
     naoContatar: conversa.naoContatar,
     leadDeOutroCorretor: conversa.leadDeOutroCorretor,
   };

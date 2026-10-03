@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   decidirSeAIaResponde,
   fraseDaDecisao,
-  HORAS_PAUSA_HUMANA,
   podeEnviarPorIniciativa,
   registroDoSilencio,
   silencioDaConversa,
@@ -11,14 +10,17 @@ import {
   type SituacaoDaConversa,
 } from "./quandoAIaResponde";
 
+function semComentariosDe(arquivo: string): string {
+  return readFileSync(arquivo, "utf8").replace(/\/\*[\s\S]*?\*\/|(^|[^:])\/\/.*$/gm, "$1");
+}
+
 /** Datas fixas em UTC; o módulo converte para America/Sao_Paulo (UTC-3). */
 const QUARTA_14H_BRT = new Date("2026-08-19T17:00:00Z");
 const QUARTA_22H_BRT = new Date("2026-08-20T01:00:00Z");
 
-const livre: SituacaoDaConversa = { botAtivo: true, pausadoAte: null };
+const livre: SituacaoDaConversa = { botAtivo: true };
 const sempre: ConfigDoNumero = { modo: "24_7", expediente: { inicioHora: 9, fimHora: 18 } };
 const noturno: ConfigDoNumero = { modo: "noturno_e_fds", expediente: { inicioHora: 9, fimHora: 18 } };
-const daqui = (agora: Date, horas: number) => new Date(agora.getTime() + horas * 3_600_000);
 
 describe("decidirSeAIaResponde — a decisão inteira num lugar só", () => {
   it("conversa livre, número 24/7: responde", () => {
@@ -34,7 +36,6 @@ describe("decidirSeAIaResponde — a decisão inteira num lugar só", () => {
       [{ ...livre, leadDeOutroCorretor: true }, "lead_de_outro_corretor"],
       [{ ...livre, naoContatar: true }, "lead_pediu_para_sair"],
       [{ ...livre, botAtivo: false }, "ia_desligada_na_conversa"],
-      [{ ...livre, pausadoAte: daqui(agora, 1) }, "pausada_pelo_corretor"],
     ];
     for (const [conversa, motivo] of casos) {
       const d = decidirSeAIaResponde({ conversa, numero: sempre, agora });
@@ -43,21 +44,10 @@ describe("decidirSeAIaResponde — a decisão inteira num lugar só", () => {
     }
   });
 
-  it("pausa VENCIDA não é motivo — foi o caso de 7 conversas reais em 03/09", () => {
-    const agora = QUARTA_14H_BRT;
-    const d = decidirSeAIaResponde({
-      conversa: { ...livre, pausadoAte: daqui(agora, -1) },
-      numero: sempre,
-      agora,
-    });
-    expect(d.responde).toBe(true);
-  });
-
-  it("a pausa diz quando a IA volta", () => {
-    const agora = QUARTA_14H_BRT;
-    const ate = daqui(agora, 2);
-    const d = decidirSeAIaResponde({ conversa: { ...livre, pausadoAte: ate }, numero: sempre, agora });
-    expect(d).toEqual({ responde: false, motivo: "pausada_pelo_corretor", voltaEm: ate });
+  it("conversa desligada não tem prazo: só a ativação religa (03/10/2026)", () => {
+    // Era uma pausa de 3h que vencia sozinha. Agora não existe "volta em".
+    const d = decidirSeAIaResponde({ conversa: { ...livre, botAtivo: false }, numero: sempre });
+    expect(d).toEqual({ responde: false, motivo: "ia_desligada_na_conversa", voltaEm: null });
   });
 
   it("a conversa ganha do número: o que o cliente pediu vem antes da configuração", () => {
@@ -72,7 +62,7 @@ describe("decidirSeAIaResponde — a decisão inteira num lugar só", () => {
   it("a precedência dentro da conversa é estável", () => {
     // Sem ordem fixa, a soma por motivo em ia_interacoes deixaria de fechar.
     const d = decidirSeAIaResponde({
-      conversa: { botAtivo: false, pausadoAte: daqui(QUARTA_14H_BRT, 1), naoContatar: true, leadDeOutroCorretor: true },
+      conversa: { botAtivo: false, naoContatar: true, leadDeOutroCorretor: true },
       numero: sempre,
       agora: QUARTA_14H_BRT,
     });
@@ -111,15 +101,13 @@ describe("decidirSeAIaResponde — a decisão inteira num lugar só", () => {
   });
 
   it("silencioDaConversa concorda com a decisão em toda combinação da conversa", () => {
-    const agora = QUARTA_14H_BRT;
     for (const botAtivo of [true, false])
-      for (const pausadoAte of [null, daqui(agora, 1), daqui(agora, -1)])
-        for (const naoContatar of [true, false])
-          for (const leadDeOutroCorretor of [true, false]) {
-            const conversa = { botAtivo, pausadoAte, naoContatar, leadDeOutroCorretor };
-            const d = decidirSeAIaResponde({ conversa, numero: sempre, agora });
-            expect(d.responde).toBe(silencioDaConversa(conversa, agora) === null);
-          }
+      for (const naoContatar of [true, false])
+        for (const leadDeOutroCorretor of [true, false]) {
+          const conversa = { botAtivo, naoContatar, leadDeOutroCorretor };
+          const d = decidirSeAIaResponde({ conversa, numero: sempre, agora: QUARTA_14H_BRT });
+          expect(d.responde).toBe(silencioDaConversa(conversa) === null);
+        }
   });
 });
 
@@ -138,7 +126,7 @@ describe("podeEnviarPorIniciativa — o lembrete de visita", () => {
      * "não" justamente lá — o lembrete nunca saía.
      */
     expect(
-      podeEnviarPorIniciativa({ conversa: livre, numero: noturno, agora: QUARTA_14H_BRT }).responde,
+      podeEnviarPorIniciativa({ conversa: livre, numero: noturno }).responde,
     ).toBe(true);
   });
 
@@ -155,7 +143,6 @@ describe("fraseDaDecisao — a tela tira a frase da mesma decisão", () => {
       "lead_de_outro_corretor",
       "lead_pediu_para_sair",
       "ia_desligada_na_conversa",
-      "pausada_pelo_corretor",
       "ia_desligada_no_numero",
       "dentro_do_expediente",
       "corretor_respondendo",
@@ -183,11 +170,23 @@ describe("fraseDaDecisao — a tela tira a frase da mesma decisão", () => {
   });
 });
 
-describe("a pausa é curta — numa linha pessoal, 24h é silêncio permanente", () => {
-  it("HORAS_PAUSA_HUMANA não passa de 6", () => {
-    // Medido em 01/09: 448 mensagens de cliente puladas em 7 dias por pausa,
-    // com o relógio reiniciando a cada mensagem do corretor.
-    expect(HORAS_PAUSA_HUMANA).toBeLessThanOrEqual(6);
+describe("a fala do corretor desliga a IA, sem prazo (03/10/2026)", () => {
+  it("a fala comum do corretor desliga, não pausa", () => {
+    const codigo = semComentariosDe("src/lib/whatsapp/repositorio.ts");
+    const inicio = codigo.indexOf("export async function desligarIaPorFalaDoCorretor");
+    expect(inicio).toBeGreaterThan(-1);
+    const corpo = codigo.slice(inicio, codigo.indexOf("\n}", inicio));
+    expect(corpo).toContain("bot_ativo: false");
+  });
+
+  it("ninguém mais grava pausa com prazo", () => {
+    for (const arquivo of [
+      "src/lib/whatsapp/repositorio.ts",
+      "src/app/api/webhooks/whatsapp/route.ts",
+      "src/app/corretor/(painel)/conversas/acoes.ts",
+    ]) {
+      expect(semComentariosDe(arquivo)).not.toMatch(/pausarBotPorAtendimentoHumano|HORAS_PAUSA_HUMANA/);
+    }
   });
 });
 

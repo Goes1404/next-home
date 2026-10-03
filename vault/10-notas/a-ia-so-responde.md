@@ -43,9 +43,9 @@ por lista de transmissão, e quando o lead responde a IA assume (N2).
 - **Palavra-chave responde na hora** quem estava esperando
   (`desconsiderarUltimaFalaDoCorretor`, `somenteResposta`). A mensagem com a
   palavra é do corretor e fecharia a rajada: sem tirá-la, nunca há pendência.
-- **Pausa vencida** (revisto em 03/10, decisão do Matheus): mensagem escrita
-  DURANTE a pausa é do corretor e a IA nunca volta para respondê-la. A IA só
-  responde mensagem nova, chegada depois de a pausa vencer.
+- **Fala do corretor desliga a IA** (revisto em 03/10, decisão do Matheus):
+  não há mais pausa de 3 h; a IA só volta com a palavra-chave ou "IA assume
+  agora" ([[quando-a-ia-responde]]).
 - **Listas sugeridas** (Início e Listas de transmissão): novos sem primeiro
   contato, parados há 15/30/60 dias e parados por imóvel. Perdido fica de fora
   embora o plano só cite Fechado: a régua da lista (`elegivel`) já recusa

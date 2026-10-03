@@ -99,7 +99,7 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
                   : "bg-alerta-lavado text-alerta border-alerta-linha"
               }`}
             >
-              {botAtivo ? "🟢 Ativa (IA respondendo)" : "⏸️ Pausada (Atendimento Humano)"}
+              {botAtivo ? "🟢 Ativa (IA respondendo)" : "⏸️ Desligada (o corretor assumiu)"}
             </button>
           </div>
         </div>
