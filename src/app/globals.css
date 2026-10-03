@@ -3074,3 +3074,44 @@ main[data-rota="painel"] {
     transition: none;
   }
 }
+
+/*
+ * A FOLHA QUE SOBE POR CIMA DO HERÓI (03/10/2026).
+ *
+ * O conteúdo da home nasce com os cantos de cima arredondados e uma sombra
+ * para cima: ele se lê como uma folha deslizando sobre a foto. Os cantos
+ * mostram a foto do fundo porque o `overflow: clip` do percurso corta no
+ * raio. Ao mesmo tempo o herói RECUA (diminui e esmaece) enquanto sai da
+ * tela, guiado pela própria rolagem: `animation-timeline: view()`, zero
+ * JavaScript, só `scale` e `opacity` (compositor). O `scale` é a propriedade
+ * avulsa, não `transform`, que tem dono nos filhos (as camadas).
+ *
+ * Navegador sem `view()` (Firefox) fica só com a folha, sem o recuo.
+ */
+.folha-que-sobe {
+  border-top-left-radius: 2rem;
+  border-top-right-radius: 2rem;
+  box-shadow: 0 -28px 60px -24px rgb(0 0 0 / 0.35);
+}
+@media (min-width: 640px) {
+  .folha-que-sobe {
+    border-top-left-radius: 3rem;
+    border-top-right-radius: 3rem;
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .heroi-recua {
+      transform-origin: 50% 0%;
+      animation: heroi-recua linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 85%;
+    }
+  }
+}
+@keyframes heroi-recua {
+  to {
+    scale: 0.9;
+    opacity: 0.2;
+  }
+}

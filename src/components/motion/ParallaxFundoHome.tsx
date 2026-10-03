@@ -30,6 +30,7 @@ export function ParallaxFundoHome() {
   // uma busca no DOM inteiro a 60 fps (F3, 13/09/2026).
   const fundoRef = useRef<HTMLElement | null>(null);
   const fotoRef = useRef<HTMLElement | null>(null);
+  const zoomRef = useRef<boolean | null>(null);
 
   useCamada(medidor, {
     // O medidor não se move: ele só informa o progresso. Daí velocidade 0.
@@ -61,6 +62,12 @@ export function ParallaxFundoHome() {
        */
       const foto = (fotoRef.current ??= document.querySelector<HTMLElement>("[data-fundo-camada]"));
       if (foto) {
+        // TESTE `?efeito=zoom`: a câmera avança pela avenida em vez de a foto
+        // só subir. Opt-in pela URL, ninguém mais vê.
+        if (zoomRef.current ??= !!document.querySelector("[data-efeito-zoom]")) {
+          foto.style.transform = `translate3d(0, ${-p * 0.03 * fator * window.innerHeight}px, 0) scale(${1 + p * 0.7 * fator})`;
+          return;
+        }
         const yFoto = -p * 0.12 * fator * window.innerHeight;
         foto.style.transform = `translate3d(0, ${yFoto}px, 0) scale(${1 + p * 0.05 * fator})`;
         return;

@@ -63,7 +63,14 @@ const VENDEDOR = {
  * por mim". Quem chega por link de corretor nem passa por aqui: o `proxy.ts`
  * detecta o `?corretor=` na raiz e manda direto ao catálogo.
  */
-export default async function HomeInstitucional() {
+export default async function HomeInstitucional({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  /* TESTE do zoom de entrada na cidade (03/10/2026): só com `?efeito=zoom`,
+     para o dono do site comparar antes de decidir. Ninguém mais vê. */
+  const testeZoom = (await searchParams).efeito === "zoom";
   const [todos, regioes, corretores, parametrosCredito] = await Promise.all([
     getEmpreendimentos(),
     getRegioesDisponiveis(),
@@ -148,6 +155,7 @@ export default async function HomeInstitucional() {
               serve de referência de scroll. */}
           <ParallaxFundoHome />
           <ProfundidadeDoPonteiro />
+          {testeZoom && <span data-efeito-zoom hidden />}
           {/* `data-abertura="n"`: a chegada é CSS puro (`@keyframes chegada`
               em globals.css), escalonada pelo número — roda antes de qualquer
               JavaScript e fica pausada só enquanto a vinheta cobre a tela.
@@ -169,7 +177,7 @@ export default async function HomeInstitucional() {
               na primeira tela de um notebook (03/10/2026: em 1343x598 o
               cartão de busca e o convite ficavam abaixo da dobra). Medido de
               1024x600 a 1920x960: nada passa da primeira tela. */}
-          <div className="flex w-full flex-col items-center lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-14 xl:max-w-[76rem] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-12">
+          <div className="heroi-recua flex w-full flex-col items-center lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-14 xl:max-w-[76rem] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-12">
           <div className="flex w-full flex-col items-center lg:items-start">
           <Camada velocidade={-0.22} className="w-full max-w-4xl text-center lg:max-w-none lg:text-left">
             <p
@@ -238,7 +246,7 @@ export default async function HomeInstitucional() {
         {/* Do primeiro conteúdo em diante o fundo é OPACO, como na página do
             imóvel: é o que permite bandas de seção — sem fundo próprio não
             existe separação, tudo flutuava translúcido sobre o vídeo. */}
-        <div className="home-percurso relative bg-fundo pt-16 sm:pt-24">
+        <div className="home-percurso folha-que-sobe relative bg-fundo pt-16 sm:pt-24">
           {/* PRODUTO PRIMEIRO. Antes, o primeiro imóvel aparecia a 2,9 telas
               de rolagem, atrás de três cards institucionais. Numa imobiliária
               o produto é a foto do imóvel — ela abre o conteúdo. */}
@@ -257,7 +265,7 @@ export default async function HomeInstitucional() {
                   de {todos.length} imóveis, escolhidos a dedo
                 </p>
                 <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
-                  <TituloEditorial className="text-fluid-2xl text-titulo">
+                  <TituloEditorial por="palavras" className="text-fluid-2xl text-titulo">
                     Oportunidades em destaque
                   </TituloEditorial>
                   {/* No computador o link sobe para a linha do título: é onde
@@ -317,7 +325,7 @@ export default async function HomeInstitucional() {
                 bairros em {regioes.cidades.length} cidades
               </p>
               <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
-                <TituloEditorial className="text-fluid-2xl text-titulo">
+                <TituloEditorial por="palavras" className="text-fluid-2xl text-titulo">
                   Onde cada imóvel está
                 </TituloEditorial>
                 <Link
@@ -366,7 +374,7 @@ export default async function HomeInstitucional() {
                   {corretores.length === 1 ? "corretor" : "corretores"} com CRECI, na região
                 </p>
                 <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
-                  <TituloEditorial className="text-fluid-2xl text-titulo">
+                  <TituloEditorial por="palavras" className="text-fluid-2xl text-titulo">
                     Equipe pronta para negociar
                   </TituloEditorial>
                   {corretores.length > equipe.length && (
@@ -418,7 +426,7 @@ export default async function HomeInstitucional() {
           <section id="cabe-no-bolso" className="secao-funda secao-curva secao-curva-fim scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
             <div className="mx-auto w-full max-w-6xl">
               <p className="text-fluid-xs text-apoio mb-3">Sem formulário, sem cadastro</p>
-              <TituloEditorial className="text-fluid-2xl text-titulo">
+              <TituloEditorial por="palavras" className="text-fluid-2xl text-titulo">
                 Cabe no seu bolso?
               </TituloEditorial>
               <Reveal from="nenhuma" delay={0.15}>
