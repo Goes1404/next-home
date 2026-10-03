@@ -53,6 +53,19 @@ Com a foto no fundo, o corte do herói em notebook ficou visível. A partir de
 mosaico (`clamp(300px, 100svh - 14rem, 600px)`) encolhem com a altura.
 Medido em produção de 1024x600 a 1920x960: nada passa da primeira tela.
 
+## Parallax (03/10/2026)
+
+- A FOTO (não o invólucro) sobe até 12% da tela com a rolagem do herói
+  (`ParallaxFundoHome`); ela tem 130% de altura e 106% de largura, e a folga
+  cobre rolagem e ponteiro sem mostrar borda.
+- `ProfundidadeDoPonteiro` escreve `--ponteiro-x/-y` na seção; cada card do
+  mosaico tem profundidade própria na rolagem (`Camada`) e no ponteiro
+  (propriedade `translate`, que não disputa o `transform` das camadas). O
+  laço só roda enquanto o valor chega no alvo; só mouse, nada com movimento
+  reduzido.
+- A `Camada` que envolvia o mosaico inteiro saiu: somaria um segundo
+  deslocamento ao de cada card.
+
 ## Limite
 
 A foto tem 1024x559. Num monitor de 1920 ela é ampliada; com o véu isso não

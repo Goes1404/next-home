@@ -9091,6 +9091,10 @@ Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
   produção com Playwright em várias resoluções, medindo o `bottom` de cada
   bloco contra `innerHeight`; depois do deploy, a mesma medição sem a injeção
   deu os mesmos números.
+- **Parallax pelo ponteiro sem brigar com as camadas**: as camadas de rolagem
+  e a chegada do herói são donas do `transform`; o ponteiro escreve a
+  propriedade `translate`, que se compõe com ele. Camada em volta de um grupo
+  cujos filhos já são camadas soma dois deslocamentos: tirar a de fora.
 - **E no mesmo dia a pausa acabou: a fala do corretor DESLIGA a IA (0152).**
   Decisão do Matheus: a IA nunca mais responde uma conversa em que o corretor
   falou, a não ser que seja ativada (palavra-chave ou "IA assume agora").
