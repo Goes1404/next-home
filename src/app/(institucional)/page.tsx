@@ -251,7 +251,7 @@ export default async function HomeInstitucional({
               de rolagem, atrás de três cards institucionais. Numa imobiliária
               o produto é a foto do imóvel — ela abre o conteúdo. */}
           {destaques.length > 0 && (
-            <section id="destaques" className="scroll-mt-24 px-4 pb-16 sm:px-8 sm:pb-24">
+            <section id="destaques" className="secao-passa scroll-mt-24 px-4 pb-16 sm:px-8 sm:pb-24">
               <div className="mx-auto w-full max-w-6xl">
                 {/* O rótulo acima do título passou a CONTAR (09/09/2026).
                     "Selecionados" em versalete não dizia nada que o título já
@@ -304,11 +304,13 @@ export default async function HomeInstitucional({
 
           {/* A primeira escolha de quem compra não é ONDE, é QUANDO — e a home
               só oferecia o eixo do lugar (as regiões, logo abaixo). */}
-          <EscolhaDeEstagio catalogo={todos} />
+          <div className="secao-passa">
+            <EscolhaDeEstagio catalogo={todos} />
+          </div>
 
           {/* Regioes é compartilhado com o portfólio do corretor — a banda vem
               do embrulho, não de dentro do componente. */}
-          <div className="secao-banda secao-curva secao-curva-fim mt-16 sm:mt-24">
+          <div className="secao-passa secao-banda secao-curva secao-curva-fim mt-16 sm:mt-24">
             <Regioes catalogo={todos} />
           </div>
 
@@ -365,7 +367,7 @@ export default async function HomeInstitucional({
           )}
 
           {equipe.length > 0 && (
-            <section className="secao-banda secao-curva secao-curva-fim px-4 py-16 sm:px-8 sm:py-24">
+            <section className="secao-passa secao-banda secao-curva secao-curva-fim px-4 py-16 sm:px-8 sm:py-24">
               <div className="mx-auto w-full max-w-6xl">
                 <p className="text-fluid-xs text-apoio mb-3">
                   <span className="text-acento-suave font-semibold tabular-nums">
@@ -423,7 +425,7 @@ export default async function HomeInstitucional({
             `precoMax` é o MESMO parâmetro que a listagem lê, e os parâmetros
             de crédito saem do banco (0107) com a data da última conferência.
           */}
-          <section id="cabe-no-bolso" className="secao-funda secao-curva secao-curva-fim scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
+          <section id="cabe-no-bolso" className="secao-passa secao-funda secao-curva secao-curva-fim scroll-mt-24 px-4 py-16 sm:px-8 sm:py-24">
             <div className="mx-auto w-full max-w-6xl">
               <p className="text-fluid-xs text-apoio mb-3">Sem formulário, sem cadastro</p>
               <TituloEditorial por="palavras" className="text-fluid-2xl text-titulo">
@@ -456,7 +458,7 @@ export default async function HomeInstitucional({
           </section>
 
           {/* A porta do vendedor — única rota da home para /anunciar-imovel. */}
-          <section className="px-4 pt-16 pb-8 sm:px-8 sm:pt-24 sm:pb-10">
+          <section className="secao-passa px-4 pt-16 pb-8 sm:px-8 sm:pt-24 sm:pb-10">
             {/* CartaoTilt no lugar do Reveal: ele traz o brilho que segue o
                 ponteiro e já faz a própria entrada. Somar o Reveal daria dois
                 donos da opacidade.
@@ -482,7 +484,9 @@ export default async function HomeInstitucional({
             </CartaoTilt>
           </section>
 
-          <CtaFinal />
+          <div className="secao-passa">
+            <CtaFinal />
+          </div>
 
           <Reveal className="px-4 pb-16 text-center">
             <p className="text-fluid-sm text-legenda">{enderecoLinha}</p>

@@ -3115,3 +3115,53 @@ main[data-rota="painel"] {
     opacity: 0.2;
   }
 }
+
+/*
+ * A MESMA PASSAGEM ENTRE TODAS AS SEÇÕES DA HOME (03/10/2026).
+ *
+ * O que a home fazia entre o herói e o conteúdo (`.heroi-recua` +
+ * `.folha-que-sobe`) agora acontece entre cada seção: a que chega sobe um
+ * pouco e acende; a que sai encolhe ancorada na base e esmaece, enquanto a
+ * seguinte cobre a tela. As faixas curvas ganham sombra para cima e se leem
+ * como folhas empilhadas.
+ *
+ * Uma animação só, com os marcos nomeados pela própria rolagem (`entry`,
+ * `exit`): para uma seção mais alta que a tela, cada fase dura uma tela de
+ * rolagem, então seção curta e seção longa passam no mesmo ritmo. Só
+ * `translate`, `scale` e `opacity` (compositor), e são as propriedades
+ * AVULSAS: o `transform` dos filhos tem dono (Reveal, CartaoTilt, camadas).
+ *
+ * A seção do MAPA fica de fora de propósito: com `scale` no ancestral, o
+ * clique no mapa cairia deslocado enquanto ela sai da tela, e o card
+ * flutuante do imóvel ficaria preso à seção encolhida.
+ */
+.home-percurso .secao-curva {
+  box-shadow: 0 -26px 50px -32px rgb(0 0 0 / 0.32);
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .secao-passa {
+      transform-origin: 50% 100%;
+      animation: secao-passa linear both;
+      animation-timeline: view();
+    }
+  }
+}
+@keyframes secao-passa {
+  entry 0% {
+    translate: 0 56px;
+    opacity: 0.45;
+  }
+  entry 55% {
+    translate: 0 0;
+    opacity: 1;
+  }
+  exit 0% {
+    scale: 1;
+    opacity: 1;
+  }
+  exit 100% {
+    scale: 0.93;
+    opacity: 0.25;
+  }
+}
