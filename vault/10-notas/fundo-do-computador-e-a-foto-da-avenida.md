@@ -86,7 +86,7 @@ Medido em produção de 1024x600 a 1920x960: nada passa da primeira tela.
   destaque", substituindo o Reveal (dois donos da opacidade); no computador
   as colunas partem de alturas diferentes (`--coluna`) e chegam juntas. A
   seção perdeu a `secao-passa` para não somar com a dos cards.
-- Teste do zoom na cidade só com `?efeito=zoom` (foto até 1,7x).
+- Zoom na cidade é o PADRÃO desde 03/10 (escolhido no teste `?efeito=zoom`, que saiu): a foto aproxima até 1,7x e sobe 3% enquanto o herói sai. Fica um pouco borrada na ampliação, porque o arquivo tem 1024px.
 
 ## Limite
 

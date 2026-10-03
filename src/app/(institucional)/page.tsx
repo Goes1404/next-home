@@ -63,14 +63,7 @@ const VENDEDOR = {
  * por mim". Quem chega por link de corretor nem passa por aqui: o `proxy.ts`
  * detecta o `?corretor=` na raiz e manda direto ao catálogo.
  */
-export default async function HomeInstitucional({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  /* TESTE do zoom de entrada na cidade (03/10/2026): só com `?efeito=zoom`,
-     para o dono do site comparar antes de decidir. Ninguém mais vê. */
-  const testeZoom = (await searchParams).efeito === "zoom";
+export default async function HomeInstitucional() {
   const [todos, regioes, corretores, parametrosCredito] = await Promise.all([
     getEmpreendimentos(),
     getRegioesDisponiveis(),
@@ -155,7 +148,6 @@ export default async function HomeInstitucional({
               serve de referência de scroll. */}
           <ParallaxFundoHome />
           <ProfundidadeDoPonteiro />
-          {testeZoom && <span data-efeito-zoom hidden />}
           {/* `data-abertura="n"`: a chegada é CSS puro (`@keyframes chegada`
               em globals.css), escalonada pelo número — roda antes de qualquer
               JavaScript e fica pausada só enquanto a vinheta cobre a tela.

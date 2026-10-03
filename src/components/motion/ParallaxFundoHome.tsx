@@ -30,7 +30,6 @@ export function ParallaxFundoHome() {
   // uma busca no DOM inteiro a 60 fps (F3, 13/09/2026).
   const fundoRef = useRef<HTMLElement | null>(null);
   const fotoRef = useRef<HTMLElement | null>(null);
-  const zoomRef = useRef<boolean | null>(null);
 
   useCamada(medidor, {
     // O medidor não se move: ele só informa o progresso. Daí velocidade 0.
@@ -54,22 +53,15 @@ export function ParallaxFundoHome() {
       const p = Math.max(0, Math.min(1, progresso));
 
       /*
-       * Com a foto da casa no fundo (03/10/2026), quem anda é a FOTO, para
-       * CIMA e devagar: o conteúdo sobe à velocidade da rolagem e a avenida a
-       * uma fração dela, e é essa diferença que se lê como distância. A foto
-       * tem 15% de folga em cima e embaixo (`FundoDaCasaDesktop`), então os
-       * 12% de deslocamento nunca mostram a borda. O invólucro fica parado.
+       * Com a foto da casa no fundo, a CÂMERA AVANÇA pela avenida (03/10/2026,
+       * escolhido no teste `?efeito=zoom`): a foto aproxima até 1,7x enquanto
+       * o herói sai, e sobe só 3% da tela. A folga da foto
+       * (`FundoDaCasaDesktop`) cobre o deslocamento sem mostrar borda; a
+       * ampliação só a deixa maior. O invólucro fica parado.
        */
       const foto = (fotoRef.current ??= document.querySelector<HTMLElement>("[data-fundo-camada]"));
       if (foto) {
-        // TESTE `?efeito=zoom`: a câmera avança pela avenida em vez de a foto
-        // só subir. Opt-in pela URL, ninguém mais vê.
-        if (zoomRef.current ??= !!document.querySelector("[data-efeito-zoom]")) {
-          foto.style.transform = `translate3d(0, ${-p * 0.03 * fator * window.innerHeight}px, 0) scale(${1 + p * 0.7 * fator})`;
-          return;
-        }
-        const yFoto = -p * 0.12 * fator * window.innerHeight;
-        foto.style.transform = `translate3d(0, ${yFoto}px, 0) scale(${1 + p * 0.05 * fator})`;
+        foto.style.transform = `translate3d(0, ${-p * 0.03 * fator * window.innerHeight}px, 0) scale(${1 + p * 0.7 * fator})`;
         return;
       }
 
