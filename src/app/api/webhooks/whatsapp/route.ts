@@ -77,6 +77,9 @@ import { registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos"
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
 import { getParametrosCredito } from "@/lib/credito/parametros";
+import { itensDoEvento, lerContato, resumirEventoDeContato } from "@/lib/whatsapp/contatosDaAgenda";
+import { candidatosTelefone } from "@/lib/whatsapp/repositorio";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
 // O buffer de rajada espera ~6s antes de responder, e o ciclo completo
@@ -362,26 +365,25 @@ export async function POST(req: NextRequest) {
      * número — nunca o nome em si. Nenhum lead é criado nem alterado.
      */
     if (evento === "contacts.upsert" || evento === "contacts.update") {
-      const itens: Record<string, unknown>[] = Array.isArray(payload.data)
-        ? payload.data
-        : payload.data
-          ? [payload.data]
-          : [];
-      const pareceNome = (v: unknown) =>
-        typeof v === "string" && /[a-zA-ZÀ-ÿ]/.test(v) && v.replace(/\D/g, "").length < 8;
-      const campos = Array.from(new Set(itens.flatMap((i) => Object.keys(i ?? {})))).sort();
-      const comNome = Object.fromEntries(
-        ["pushName", "name", "notify", "verifiedName"].map((c) => [
-          c,
-          itens.filter((i) => pareceNome(i?.[c])).length,
-        ]),
+      const itens = itensDoEvento(payload.data);
+      const telefones = Array.from(
+        new Set(itens.flatMap((i) => candidatosTelefone(lerContato(i).digitos)).filter(Boolean)),
       );
+      const nomesDoPerfil = new Map<string, string | null>();
+      if (telefones.length && telefones.length <= 200) {
+        const { data } = await createServiceClient()
+          .from("whatsapp_conversas")
+          .select("telefone_cliente, nome_cliente")
+          .eq("corretor_id", instancia.corretorId)
+          .in("telefone_cliente", telefones);
+        for (const c of data ?? []) {
+          for (const t of candidatosTelefone(c.telefone_cliente)) nomesDoPerfil.set(t, c.nome_cliente);
+        }
+      }
       console.log("[contatos] evento da agenda:", {
         evento,
         instancia: instanceName,
-        itens: itens.length,
-        campos,
-        comNome,
+        ...resumirEventoDeContato(itens, nomesDoPerfil),
       });
       return NextResponse.json({ ok: true, action: "contato_registrado_no_log" });
     }
