@@ -100,7 +100,7 @@ async function garantirInstancia(
                 url: urlWebhook,
                 byEvents: false,
                 headers: segredo ? { "x-webhook-secret": segredo } : undefined,
-                events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE"],
+                events: EVENTOS_DO_WEBHOOK,
               },
             }
           : {}),
@@ -110,6 +110,20 @@ async function garantirInstancia(
     // Falha aqui não impede tentar o connect — o erro real aparece lá.
   }
 }
+
+/**
+ * Eventos que a Evolution manda ao webhook. CONTACTS_UPSERT/UPDATE entram
+ * para descobrir se o nome que o corretor salva na agenda do celular chega
+ * até nós (03/10/2026); por enquanto o webhook só registra a forma do
+ * evento no log, sem mexer em lead nenhum.
+ */
+const EVENTOS_DO_WEBHOOK = [
+  "MESSAGES_UPSERT",
+  "CONNECTION_UPDATE",
+  "MESSAGES_UPDATE",
+  "CONTACTS_UPSERT",
+  "CONTACTS_UPDATE",
+];
 
 /**
  * Reconfigura o webhook de uma instância que JÁ existe no provedor.
@@ -154,7 +168,7 @@ export async function garantirEventosWebhook(instanceName: string): Promise<void
           url: urlWebhook,
           byEvents: false,
           headers: segredo ? { "x-webhook-secret": segredo } : undefined,
-          events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE"],
+          events: EVENTOS_DO_WEBHOOK,
         },
       }),
     });

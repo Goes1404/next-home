@@ -355,6 +355,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, action: "ack_registrado", status: ackStatus });
     }
 
+    /*
+     * Contatos da agenda (03/10/2026, passo 1): só diagnóstico. Queremos
+     * saber se o nome que o corretor salva no celular chega aqui, e em qual
+     * campo. O log leva os NOMES dos campos e se há um nome que não é só o
+     * número — nunca o nome em si. Nenhum lead é criado nem alterado.
+     */
+    if (evento === "contacts.upsert" || evento === "contacts.update") {
+      const itens: Record<string, unknown>[] = Array.isArray(payload.data)
+        ? payload.data
+        : payload.data
+          ? [payload.data]
+          : [];
+      const pareceNome = (v: unknown) =>
+        typeof v === "string" && /[a-zA-ZÀ-ÿ]/.test(v) && v.replace(/\D/g, "").length < 8;
+      const campos = Array.from(new Set(itens.flatMap((i) => Object.keys(i ?? {})))).sort();
+      const comNome = Object.fromEntries(
+        ["pushName", "name", "notify", "verifiedName"].map((c) => [
+          c,
+          itens.filter((i) => pareceNome(i?.[c])).length,
+        ]),
+      );
+      console.log("[contatos] evento da agenda:", {
+        evento,
+        instancia: instanceName,
+        itens: itens.length,
+        campos,
+        comNome,
+      });
+      return NextResponse.json({ ok: true, action: "contato_registrado_no_log" });
+    }
+
     const ehAudio = Boolean(!text && audioUrlOrBase64);
     /*
      * A transcrição falhou? Isso PRECISA ser visível.
