@@ -61,7 +61,11 @@ export const corretoresPublicos = unstable_cache(
     if (error) throw new Error(`Falha ao listar corretores: ${error.message}`);
     return (data as LinhaCorretor[]).map(mapCorretor);
   },
-  ["corretores-publicos"],
+  // A chave muda quando um dado de corretor é corrigido por MIGRATION: o cache
+  // de dados da Vercel sobrevive ao deploy, e a etiqueta só é limpa por ação
+  // do painel. "-v2" (03/10/2026): a 0151 tirou o vídeo de fundo da Bruna e o
+  // site seguiu mostrando o vídeo pela entrada antiga.
+  ["corretores-publicos-v2"],
   { tags: [TAG_CORRETORES], revalidate: REVALIDA_EM_SEGUNDOS },
 );
 

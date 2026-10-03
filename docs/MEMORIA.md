@@ -9078,6 +9078,13 @@ Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
   e `pixelMeta.ts` na mesma pasta só diferem na caixa. Para conferir visual
   sem servidor local, injetar o elemento na página de produção com Playwright
   (`page.route` serve o arquivo local).
+- **Dado de corretor mudado por migration NÃO aparece no site depois do
+  deploy.** O cache de dados (`unstable_cache` de `corretoresPublicos`)
+  sobrevive ao deploy, a etiqueta só é limpa por ação do painel, e o
+  `invalidate_by_tags` do MCP da Vercel responde 404. A 0151 tirou o vídeo e o
+  site seguiu mostrando por mais dois deploys. Saída: trocar a chave do cache
+  (`corretores-publicos-v2`). Para conferir: `curl` com o cookie
+  `corretor_ativo=<slug>`, sem ele o caminho do corretor não é exercitado.
 - **E no mesmo dia a pausa acabou: a fala do corretor DESLIGA a IA (0152).**
   Decisão do Matheus: a IA nunca mais responde uma conversa em que o corretor
   falou, a não ser que seja ativada (palavra-chave ou "IA assume agora").

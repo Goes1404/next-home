@@ -38,6 +38,14 @@ código**: o fundo muda por link pessoal.
   título do herói. Conferido em captura nos dois temas.
 - A **0151** tirou o `video_url` da Bruna, e o link dela cai no fundo da casa.
 
+## O cache segurou o vídeo
+
+Depois do deploy o site ainda mostrava o vídeo a quem tinha o cookie da
+Bruna: `corretoresPublicos` é `unstable_cache` de 1h, sobrevive ao deploy, e o
+`invalidate_by_tags` do MCP devolve 404. Resolvido trocando a chave do cache
+para `corretores-publicos-v2`. Conferir com
+`curl -H "Cookie: corretor_ativo=<slug>"`.
+
 ## Limite
 
 A foto tem 1024x559. Num monitor de 1920 ela é ampliada; com o véu isso não
