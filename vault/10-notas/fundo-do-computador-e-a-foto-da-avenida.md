@@ -82,6 +82,10 @@ Medido em produção de 1024x600 a 1920x960: nada passa da primeira tela.
   que a tela, cada fase dura uma tela de rolagem); sobe ao chegar, encolhe
   ancorada na base ao sair; faixas curvas com sombra para cima. O mapa fica
   de fora: `scale` no ancestral desloca o clique e prende o card flutuante.
+- `.cartao-passa` (03/10): a mesma passagem card a card em "Oportunidades em
+  destaque", substituindo o Reveal (dois donos da opacidade); no computador
+  as colunas partem de alturas diferentes (`--coluna`) e chegam juntas. A
+  seção perdeu a `secao-passa` para não somar com a dos cards.
 - Teste do zoom na cidade só com `?efeito=zoom` (foto até 1,7x).
 
 ## Limite
