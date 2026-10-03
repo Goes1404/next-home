@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { conversaEhAtendimento } from "@/lib/whatsapp/privacidadeDaConversa";
@@ -64,12 +64,16 @@ import {
   type InstanciaResolvida,
   ultimoAvisoEvolucao,
   marcarAvisoEvolucao,
+  cadastrarPelaPalavraChave,
+  registrarAtivacaoEmLeadAlheio,
 } from "@/lib/whatsapp/repositorio";
+import { importarHistoricoDoChat } from "@/lib/whatsapp/importarHistorico";
 import { instrucaoPelosFollowups } from "@/lib/whatsapp/respostaAosFollowups";
 import {
   clienteTrouxeFraseDeEntrada,
   decidirPorFalaDoCorretor,
   decidirPorModo,
+  palavraDoCorretorNaMensagem,
 } from "@/lib/whatsapp/modoBot";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
@@ -427,6 +431,42 @@ export async function POST(req: NextRequest) {
     });
 
     /*
+     * A palavra-chave do CORRETOR cadastra o número (0146, plano de ativação
+     * de 03/10/2026). Precisa vir antes do porteiro pelo mesmo motivo do
+     * convite acima: num número sem lead, a 0111 encerraria a requisição
+     * antes de a palavra ser lida, e o corretor digitaria para nada.
+     *
+     * Número que já é lead de OUTRO corretor (regra N6): o lead fica com o
+     * dono, nada é criado aqui, e a IA não responde neste número. O aviso vai
+     * só para quem digitou, pela fila do Início, sem o nome do dono.
+     */
+    const palavraDoCorretor =
+      fromMe && text
+        ? palavraDoCorretorNaMensagem({
+            mensagem: text,
+            palavraChaveConfigurada: instancia.palavraChaveAtivacao,
+            palavraChaveTeste: instancia.palavraChaveTeste,
+          })
+        : null;
+    let cadastradoPelaPalavra = false;
+    if (palavraDoCorretor) {
+      const cadastro = await cadastrarPelaPalavraChave({
+        corretorId: instancia.corretorId,
+        telefoneCliente: sender,
+        teste: palavraDoCorretor === "teste",
+      });
+      if (cadastro.desfecho === "lead_de_outro_corretor") {
+        await registrarAtivacaoEmLeadAlheio({
+          corretorId: instancia.corretorId,
+          leadId: cadastro.leadId,
+          telefone: sender,
+        });
+        return NextResponse.json({ ok: true, action: "lead_de_outro_corretor", sender });
+      }
+      cadastradoPelaPalavra = cadastro.desfecho === "cadastrado";
+    }
+
+    /*
      * Porteiro de persistência: sem lead cadastrado E sem convite, nada
      * desta conversa entra no CRM. Ele vem ANTES da transcrição para áudio
      * desconhecido não ser enviado a outro serviço e antes de qualquer
@@ -551,6 +591,29 @@ export async function POST(req: NextRequest) {
          * envenenar o few-shot — o problema que a 0038 acabou de limpar.
          */
         if (decisao.marcarComoTeste) await marcarConversaComoTeste(conversa.id);
+        /*
+         * Número que a palavra acabou de cadastrar: traz o que já foi
+         * conversado no chat e, com isso, preenche a ficha. Roda depois da
+         * resposta ao provedor (`after`), porque a importação pode transcrever
+         * áudios e passar dos segundos que um webhook deve levar.
+         */
+        if (cadastradoPelaPalavra) {
+          after(async () => {
+            const trazidas = await importarHistoricoDoChat({
+              instanceName: instancia.instanceName,
+              conversaId: conversa.id,
+              remoteJid: jidBruto,
+              mensagemAtualId: providerMessageId,
+            });
+            if (trazidas > 0) {
+              await atualizarFichaEMemoria({
+                conversa,
+                historico: await historicoRecente(conversa.id),
+                telefone: sender,
+              });
+            }
+          });
+        }
         return NextResponse.json({
           ok: true,
           action: decisao.marcarComoTeste

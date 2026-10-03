@@ -8968,3 +8968,32 @@ Nota: [[nome-da-agenda-chega-como-pushname]].
   a tela Conversas (que atualiza o webhook) e salvar um contato.
 - `remoteJid` em `@lid` não traz telefone, porque a Evolution descarta o
   `phoneNumber`. Esse caso não dá para ligar a um lead.
+
+## A palavra-chave cadastra o lead (0146, 03/10/2026)
+
+Nota: [[palavra-chave-cadastra-o-lead]]. Fase 1 do plano de ativação da IA.
+
+- **Em número novo, a palavra-chave nunca fez nada.** Desde a 0111 o porteiro
+  descarta número sem lead, e a palavra era lida depois dele. Agora ela é
+  lida antes (`cadastrarPelaPalavraChave`) e cadastra o número na carteira de
+  quem digitou.
+- **O pushName de mensagem `fromMe` é o nome do corretor.** O lead nasce
+  `WhatsApp 1234` e o nome vem da primeira fala do cliente.
+- **Lead de teste nasce arquivado** em vez de ganhar coluna nova: arquivado
+  já é respeitado por todas as consultas (`leadArquivado.test.ts`).
+- **Lead de outro corretor (N6):** não muda de carteira, a IA não responde,
+  o aviso vai só para quem digitou (fila do Início, sem o nome do dono) e a
+  tentativa fica em `ativacoes_em_lead_alheio`.
+- **Histórico do chat:** pedido à Evolution (`/chat/findMessages`) depois da
+  resposta (`after`). Esta instância provavelmente não guarda mensagens; o
+  primeiro uso real diz. Sem nada, a conversa avisa (`historico_anterior`).
+- **Palavra discreta:** nova exige 6+ caracteres e não pode ser só expressão
+  comum. A já salva continua valendo, com aviso na tela.
+- **Portal e Lead Ads:** o lead já nascia na chegada (webhook de e-mail e da
+  Meta). Mudou a deduplicação: a Meta passou a casar pelo telefone e o
+  e-mail perdeu a janela de 30 dias; nos dois, a ficha existente recebe o
+  anúncio ou imóvel novo. Não foi criada conversa vazia na chegada: a
+  primeira fala do cliente já cai no fluxo de lead cadastrado.
+- **Áudio com etiqueta de anúncio já cadastrava** número novo: a etiqueta é
+  lida do `contextInfo` de qualquer tipo de mensagem.
+

@@ -1,5 +1,6 @@
 "use server";
 
+import { problemasDasPalavrasChave } from "@/lib/whatsapp/palavraChaveDiscreta";
 import { site } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 import { sondarProvedor } from "@/lib/whatsapp/sonda";
@@ -174,21 +175,28 @@ export async function salvarConfiguracaoWhatsapp(params: {
     }
   }
 
-  for (const [rotulo, valor] of [
-    ["A palavra-chave", palavraChave],
-    ["A palavra de teste", palavraTeste],
+  const supabase = await createClient();
+
+  /*
+   * A palavra-chave tem que ser DISCRETA (regra N8, 03/10/2026): o cliente lê
+   * a mensagem em que ela aparece, e desde a 0146 ela também cadastra o
+   * número como lead. A régua vale só para palavra NOVA: a que já estava
+   * salva continua valendo, para a regra não desligar de surpresa o que o
+   * corretor usa hoje (a tela avisa e pede a troca).
+   */
+  const { data: atual } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("palavra_chave_ativacao, palavra_chave_teste")
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+  for (const [rotulo, valor, antigo] of [
+    ["Palavra-chave", palavraChave, atual?.palavra_chave_ativacao],
+    ["Palavra de teste", palavraTeste, atual?.palavra_chave_teste],
   ] as const) {
-    /*
-     * O mínimo existe porque o casamento é por substring: a palavra
-     * cadastrada em produção era "Teste", e "testei"/"testando" abriam a
-     * porta. Três caracteres é pouco, mas é o piso que já existia.
-     */
-    if (valor && valor.length < 3) {
-      return { erro: `${rotulo} precisa ter pelo menos 3 caracteres, para não disparar por acaso.` };
-    }
+    const problema = problemasDasPalavrasChave(valor, antigo)[0];
+    if (problema) return { erro: `${rotulo}: ${problema}` };
   }
 
-  const supabase = await createClient();
   const { data, error } = await supabase
     .from("corretor_whatsapp_instancias")
     .upsert(

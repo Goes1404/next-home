@@ -287,6 +287,114 @@ async function cadastrarLeadDeConvite(
   return data.id;
 }
 
+export type CadastroPelaPalavraChave =
+  | { desfecho: "ja_e_lead"; leadId: string }
+  | { desfecho: "cadastrado"; leadId: string }
+  | { desfecho: "lead_de_outro_corretor"; leadId: string }
+  | { desfecho: "falhou" };
+
+/**
+ * A palavra-chave do corretor CADASTRA o número (0146, plano de ativação,
+ * 03/10/2026).
+ *
+ * Antes, num número sem lead, o porteiro da 0111 descartava a mensagem do
+ * corretor antes de o webhook ler a palavra: ele digitava, nada acontecia, e
+ * a única saída era cadastrar à mão no painel. A palavra é um ato deliberado
+ * dele, então vale como a autorização que o convite do cliente já é.
+ *
+ * O telefone é procurado em TODAS as carteiras, com e sem o nono dígito:
+ *
+ * - **na dele:** nada a cadastrar, a conversa segue como sempre;
+ * - **em nenhuma:** nasce na carteira dele. O nome fica no placeholder
+ *   `WhatsApp 1234` de propósito: o pushName desta mensagem é o nome do
+ *   CORRETOR, não do cliente. A primeira fala do cliente preenche;
+ * - **na de outro corretor (regra N6):** o lead NÃO muda de carteira, nada é
+ *   criado, e quem chama registra o aviso. Duas fichas para a mesma pessoa
+ *   em carteiras diferentes é como dois corretores ligam para o mesmo
+ *   cliente sem saber.
+ *
+ * Palavra de TESTE: o lead nasce arquivado, com origem própria. Arquivado é
+ * o recorte que todas as telas, relatórios, listas e campanhas já respeitam
+ * (`leadArquivado.test.ts`), então o teste fica fora do funil sem uma coluna
+ * nova que cada consulta precisaria lembrar de filtrar. A conversa continua
+ * no Live Chat, marcada como teste.
+ */
+export async function cadastrarPelaPalavraChave(params: {
+  corretorId: string;
+  telefoneCliente: string;
+  teste: boolean;
+}): Promise<CadastroPelaPalavraChave> {
+  const supabase = createServiceClient();
+
+  const proprio = await encontrarLeadCadastrado(supabase, params);
+  if (proprio) return { desfecho: "ja_e_lead", leadId: proprio };
+
+  const { data: alheio, error: erroAlheio } = await supabase
+    .from("leads")
+    .select("id")
+    .in("telefone_e164", candidatosTelefone(params.telefoneCliente))
+    .neq("corretor_id", params.corretorId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (erroAlheio) {
+    // Sem saber se o número é de outro corretor, cadastrar poderia duplicar a
+    // pessoa em duas carteiras. O lado seguro é não cadastrar.
+    console.error("[palavra-chave] falha ao conferir outras carteiras:", erroAlheio.message);
+    return { desfecho: "falhou" };
+  }
+  if (alheio) return { desfecho: "lead_de_outro_corretor", leadId: alheio.id };
+
+  const agora = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("leads")
+    .insert({
+      nome: `WhatsApp ${params.telefoneCliente.slice(-4)}`,
+      telefone: params.telefoneCliente,
+      corretor_id: params.corretorId,
+      origem: params.teste ? "whatsapp/teste_do_corretor" : "whatsapp/ativado_pelo_corretor",
+      origem_atribuicao: "manual",
+      ...(params.teste ? { arquivado_em: agora } : {}),
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    console.error("[palavra-chave] falha ao cadastrar o lead:", error?.message);
+    return { desfecho: "falhou" };
+  }
+  return { desfecho: "cadastrado", leadId: data.id };
+}
+
+/**
+ * Registra a palavra-chave usada num lead de outro corretor (regra N6). É a
+ * fonte do aviso no Início de quem acionou e o registro para a gestão.
+ * Repetir a palavra no mesmo dia não gera uma segunda linha.
+ */
+export async function registrarAtivacaoEmLeadAlheio(params: {
+  corretorId: string;
+  leadId: string;
+  telefone: string;
+}): Promise<void> {
+  const supabase = createServiceClient();
+  const inicioDoDia = new Date(Date.now() - 24 * 3600_000).toISOString();
+
+  const { count } = await supabase
+    .from("ativacoes_em_lead_alheio")
+    .select("id", { count: "exact", head: true })
+    .eq("corretor_id", params.corretorId)
+    .eq("lead_id", params.leadId)
+    .gte("created_at", inicioDoDia);
+  if ((count ?? 0) > 0) return;
+
+  const { error } = await supabase.from("ativacoes_em_lead_alheio").insert({
+    corretor_id: params.corretorId,
+    lead_id: params.leadId,
+    telefone: params.telefone,
+  });
+  if (error) console.error("[palavra-chave] falha ao registrar lead de outro corretor:", error.message);
+}
+
 /**
  * Preenche o nome do contato onde ele FALTA, a partir do pushName que o
  * WhatsApp manda em toda mensagem.

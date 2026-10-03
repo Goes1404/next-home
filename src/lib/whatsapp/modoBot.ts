@@ -1,4 +1,5 @@
 import type { ModoBotWhatsapp } from "./types";
+import { ehSoSimbolos } from "./palavraChaveDiscreta";
 
 /**
  * Decide se o bot pode falar AGORA, segundo o modo escolhido pelo corretor.
@@ -157,7 +158,26 @@ export function listarPalavrasChave(campo: string | null | undefined): string[] 
   return (campo ?? "")
     .split(",")
     .map((p) => p.trim())
-    .filter((p) => p.length >= MINIMO_PALAVRA_CHAVE);
+    // Emoji sozinho tem 1 a 2 caracteres e passaria abaixo do piso: desde
+    // 03/10/2026 ele é aceito quando a tela o validou como discreto.
+    .filter((p) => p.length >= MINIMO_PALAVRA_CHAVE || ehSoSimbolos(p));
+}
+
+/**
+ * Qual palavra do corretor esta mensagem traz: a de TESTE, a de ativação ou
+ * nenhuma. A de teste é conferida primeiro (ver `decidirPorFalaDoCorretor`).
+ *
+ * O webhook precisa da resposta ANTES do porteiro desde a 0146: com a
+ * palavra, a mensagem do corretor cadastra o número como lead.
+ */
+export function palavraDoCorretorNaMensagem(params: {
+  mensagem: string;
+  palavraChaveConfigurada: string | null | undefined;
+  palavraChaveTeste?: string | null;
+}): "teste" | "ativacao" | null {
+  if (contemPalavraChave(params.mensagem, params.palavraChaveTeste)) return "teste";
+  if (contemPalavraChave(params.mensagem, params.palavraChaveConfigurada)) return "ativacao";
+  return null;
 }
 
 /** A mensagem (enviada pelo corretor) contém ALGUMA das palavras-chave cadastradas? */
@@ -192,10 +212,10 @@ export function contemPalavraChave(mensagem: string, palavraChave: string | null
  *    mensagem pronta de anúncio, ou o botão "IA assume" do painel — todos
  *    caminhos que chamam `liberarConversaPorPalavraChave` depois.
  *
- * O detalhe que faz a regra 2 funcionar: "já era do CRM" significa que o
- * lead existia ANTES desta conversa. O webhook CRIA o lead de quem escreve
- * (0026), então "tem lead" seria verdade para todo mundo no instante em que
- * a pessoa manda a primeira mensagem — e a checagem passaria sempre.
+ * Desde a 0111 o webhook não cria mais lead de quem escreve: só existe
+ * conversa com lead, e `obterOuCriarConversa` grava toda conversa nova como
+ * liberada e de cliente conhecido. Esta trava, na prática, só pega conversas
+ * antigas, criadas antes da 0111 com `cliente_conhecido = false`.
  */
 export function exigeLiberacaoExplicita(params: {
   origemConversa: "organica" | "campanha";
@@ -267,13 +287,8 @@ export function decidirPorFalaDoCorretor(params: {
    * marcada como teste custa um exemplo a menos no corpus; uma de teste
    * marcada como real envenena o prompt.
    */
-  if (contemPalavraChave(params.mensagem, params.palavraChaveTeste)) {
-    return { acao: "ativar_ia", marcarComoTeste: true };
-  }
-
-  if (contemPalavraChave(params.mensagem, params.palavraChaveConfigurada)) {
-    return { acao: "ativar_ia", marcarComoTeste: false };
-  }
+  const palavra = palavraDoCorretorNaMensagem(params);
+  if (palavra) return { acao: "ativar_ia", marcarComoTeste: palavra === "teste" };
 
   return {
     acao: "pausar_ia",

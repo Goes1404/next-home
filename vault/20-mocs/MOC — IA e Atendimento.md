@@ -78,6 +78,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[apresentacao-digital-e-o-link-da-pagina]] — a apresentação sai como link da página do imóvel, nunca foto; o guardrail tira a foto e põe o link (v40, 28/09)
 - [[o-orcamento-do-dossie-era-menor-que-o-escrito]] — com motor único o dossiê tinha 7,2s, não 12s; agora fatia 1 (02/10)
 - [[nomes-que-o-cliente-acerta]] — copa/18 do Forte, Royal I × II e vitta → Vitra erravam o imóvel; apelido só para nome de anúncio (0136, 02/10)
+- [[palavra-chave-cadastra-o-lead]] — a palavra do corretor cadastra número novo; lead de outro corretor só gera aviso para quem digitou (0146, 03/10)
 
 ## Relacionados
 - [[MOC — Evals e Medição]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]

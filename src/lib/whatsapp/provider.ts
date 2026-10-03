@@ -671,6 +671,53 @@ export type MidiaBaixada =
   | { ok: false; motivo: "provedor_nao_configurado" | "erro_provedor" | "sem_conteudo"; detalhe?: string };
 
 /**
+ * As últimas mensagens de um chat, como a Evolution as tem guardadas
+ * (`POST /chat/findMessages`). Usada quando a palavra-chave do corretor
+ * cadastra um número (0146), para trazer o que já foi conversado.
+ *
+ * Devolve a resposta CRUA: quem a lê é `lerHistoricoDoChat`, que absorve as
+ * diferenças de formato entre versões. Falha nunca lança — histórico é
+ * contexto a mais, e o cadastro não pode depender dele.
+ */
+export async function buscarMensagensDoChat(params: {
+  instanceName: string;
+  remoteJid: string;
+  limite: number;
+  timeoutMs?: number;
+}): Promise<{ ok: true; resposta: unknown } | { ok: false; detalhe: string }> {
+  const config = configDoProvedor();
+  if (!config) return { ok: false, detalhe: "provedor_nao_configurado" };
+  if (!params.instanceName || !params.remoteJid) return { ok: false, detalhe: "sem_chat" };
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), params.timeoutMs ?? 10_000);
+    const res = await fetch(
+      `${config.baseUrl}/chat/findMessages/${encodeURIComponent(params.instanceName)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: config.apiKey },
+        signal: controller.signal,
+        body: JSON.stringify({
+          where: { key: { remoteJid: params.remoteJid } },
+          page: 1,
+          offset: params.limite,
+          limit: params.limite,
+        }),
+      },
+    );
+    clearTimeout(timeoutId);
+    if (!res.ok) {
+      const corpo = await res.text().catch(() => "");
+      return { ok: false, detalhe: `http_${res.status} ${corpo.slice(0, 150)}` };
+    }
+    return { ok: true, resposta: await res.json().catch(() => null) };
+  } catch (err) {
+    return { ok: false, detalhe: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/**
  * Baixa do provedor a mídia de uma mensagem recebida JÁ DECIFRADA.
  *
  * A `url` que vem no webhook (`audioMessage.url`, `mmg.whatsapp.net/…enc`)

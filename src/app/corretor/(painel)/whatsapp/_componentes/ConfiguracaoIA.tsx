@@ -4,6 +4,7 @@ import { site } from "@/lib/site";
 import { useState } from "react";
 import { Bot, BellOff, Moon, Timer } from "lucide-react";
 import { EXPEDIENTE, MINUTOS_COPILOTO, listarPalavrasChave } from "@/lib/whatsapp/modoBot";
+import { problemaDaPalavraChave } from "@/lib/whatsapp/palavraChaveDiscreta";
 import type { ModoBotWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { salvarConfiguracaoWhatsapp } from "../acoes";
 
@@ -90,6 +91,10 @@ export function ConfiguracaoIA({
   const chavesAtivacao = listarPalavrasChave(palavraChaveAtivacao);
   const chavesTeste = listarPalavrasChave(palavraChaveTeste);
   const chavesEntrada = listarPalavrasChave(palavrasEntradaCliente);
+  // A mesma régua do servidor (regra N8): a tela avisa antes de salvar, e
+  // avisa também sobre a palavra antiga que continua valendo mas é óbvia.
+  const avisosAtivacao = chavesAtivacao.map(problemaDaPalavraChave).filter(Boolean);
+  const avisosTeste = chavesTeste.map(problemaDaPalavraChave).filter(Boolean);
 
   // Abre sozinho quando já existe algo configurado: ajuste invisível em
   // vigor é a mesma armadilha do filtro escondido da lista de leads.
@@ -215,18 +220,25 @@ export function ConfiguracaoIA({
               type="text"
               value={palavraChaveAtivacao}
               onChange={(e) => setPalavraChaveAtivacao(e.target.value)}
-              placeholder="ex: pode continuar, assume aí"
+              placeholder="ex: vou te passar os detalhes.."
               className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-11 w-full rounded-xl border px-3.5 focus:outline-none"
             />
             <p className="text-fluid-xs text-apoio leading-snug">
               {chavesAtivacao.length > 0
-                ? `Digitar ${listarEmTexto(chavesAtivacao)} no próprio chat do WhatsApp entrega a conversa para a IA na hora — sem o cliente perceber a troca. O botão "IA assume agora" das Conversas faz o mesmo.`
-                : "Número que não está no seu CRM nunca é atendido sozinho: a IA espera você liberar. Cadastre frases aqui para liberar digitando no próprio chat — ou use o botão \"IA assume agora\" na tela de Conversas."}
+                ? `Digitar ${listarEmTexto(chavesAtivacao)} no próprio chat do WhatsApp entrega a conversa para a IA. Se o número ainda não está no seu CRM, ele é cadastrado na hora, com o histórico do chat quando for possível trazer.`
+                : "Cadastre uma frase para entregar a conversa à IA digitando no próprio chat. Se o número ainda não estiver no seu CRM, ele é cadastrado na hora. O botão \"IA assume agora\" das Conversas também libera."}
             </p>
             <p className="text-fluid-xs text-tenue leading-snug">
-              Separe por vírgula para cadastrar mais de uma — no meio do atendimento ninguém lembra
-              da frase exata. Cada uma precisa de pelo menos 3 letras.
+              O cliente lê essa mensagem, então a palavra precisa ser discreta e algo que você não diz
+              por acaso: um sinal no fim de uma frase (&ldquo;vou te passar os detalhes..&rdquo;), uma
+              expressão rara mas natural, ou um emoji que você não costuma mandar. Pelo menos 6
+              caracteres. Separe por vírgula para cadastrar mais de uma.
             </p>
+            {avisosAtivacao.map((aviso) => (
+              <p key={aviso} className="text-fluid-xs text-alerta leading-snug">
+                {aviso} Troque antes que ela dispare por engano.
+              </p>
+            ))}
           </div>
 
           <div className="border-linha space-y-1.5 border-t pt-4">
@@ -246,6 +258,11 @@ export function ConfiguracaoIA({
                 ? `Digitar ${listarEmTexto(chavesTeste)} no chat liga a IA E marca a conversa como teste: ela sai das análises de qualidade e nunca vira exemplo de treinamento.`
                 : "Serve para testar sem sujar o aprendizado da IA. Também aceita várias, separadas por vírgula — e precisam ser diferentes das de ativação."}
             </p>
+            {avisosTeste.map((aviso) => (
+              <p key={aviso} className="text-fluid-xs text-alerta leading-snug">
+                {aviso}
+              </p>
+            ))}
           </div>
 
           {/* A porta de entrada do CLIENTE (0056). Fica DEPOIS das duas do

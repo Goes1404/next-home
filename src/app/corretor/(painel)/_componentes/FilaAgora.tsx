@@ -35,6 +35,8 @@ const REGUA: Record<TipoItemFila, string> = {
   // Recusa (0110): a cor de quem SAIU do funil, a mesma da etapa "perdido" —
   // o corretor reconhece o estado antes de ler a linha.
   cliente_recusou: "bg-etapa-perdido",
+  // Palavra-chave em lead de outro corretor (0146): aviso, não urgência.
+  contato_de_outro_corretor: "bg-alerta",
   tarefa_vencida: "bg-alerta",
   // Lembrete de anotação (0100) pesa como tarefa — e leva a mesma cor.
   lembrete_vencido: "bg-alerta",

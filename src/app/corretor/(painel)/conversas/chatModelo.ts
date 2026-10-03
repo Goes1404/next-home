@@ -51,6 +51,12 @@ export type ConversaResumo = {
    */
   memoria: string | null;
   memoriaDoCorretor: boolean;
+  /**
+   * A palavra-chave cadastrou este número e o histórico anterior do chat não
+   * pôde ser trazido (0146). A conversa avisa, para o corretor não achar que
+   * a IA leu o que não leu.
+   */
+  historicoIndisponivel?: boolean;
 };
 
 /** A linha crua que o Realtime entrega no INSERT/UPDATE de whatsapp_mensagens. */
@@ -80,6 +86,7 @@ export type ConversaRow = {
   nao_lidas: number;
   memoria?: string | null;
   memoria_do_corretor?: boolean;
+  historico_anterior?: string | null;
 };
 
 export const hora = new Intl.DateTimeFormat("pt-BR", {
@@ -144,6 +151,7 @@ export function deRow(row: ConversaRow): ConversaResumo {
     naoLidas: row.nao_lidas ?? 0,
     memoria: row.memoria ?? null,
     memoriaDoCorretor: row.memoria_do_corretor ?? false,
+    historicoIndisponivel: row.historico_anterior === "indisponivel",
   };
 }
 

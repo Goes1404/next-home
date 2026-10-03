@@ -45,6 +45,9 @@ const PESOS: Record<TipoItemFila, number> = {
    * mais não muda nada; recusa só se reverte enquanto está fresca.
    */
   cliente_recusou: 2,
+  // Palavra-chave em lead de outro corretor (0146): também é o sistema
+  // recusando sozinho, enquanto o cliente ainda está na conversa.
+  contato_de_outro_corretor: 2,
   // Lembrete de anotação (0100) pesa como tarefa — os dois são compromissos
   // que o próprio corretor marcou.
   tarefa_vencida: 3,

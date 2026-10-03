@@ -621,6 +621,19 @@ export function Chat({
               </button>
             </p>
           )}
+          {mensagens !== null && conversa.historicoIndisponivel && (
+            /*
+             * A palavra-chave cadastrou este número e a Evolution não devolveu
+             * o que veio antes (0146). Sem este aviso, o corretor leria a
+             * conversa como completa e esperaria da IA um contexto que ela
+             * não tem.
+             */
+            <p className="my-3 text-center">
+              <span className="bg-wa-dia text-wa-meta inline-block rounded-lg px-3 py-1.5 text-[12px] shadow-sm">
+                Histórico anterior à ativação não foi importado
+              </span>
+            </p>
+          )}
           {mensagens === null ? (
             <p className="text-wa-meta py-8 text-center text-xs">
               Carregando conversa…

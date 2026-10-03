@@ -23,6 +23,7 @@ export type TipoItemFila =
   | "sem_resposta"
   | "visita_hoje"
   | "cliente_recusou"
+  | "contato_de_outro_corretor"
   | "lead_novo"
   | "tarefa_vencida"
   | "tarefa_hoje"
@@ -102,6 +103,13 @@ const PESO: Record<TipoItemFila, number> = {
    * não recupera mais.
    */
   cliente_recusou: 2,
+  /*
+   * Palavra-chave num número que já é lead de OUTRO corretor (0146, regra
+   * N6): o sistema recusou sozinho e a IA não vai responder ali. Pesa como a
+   * recusa pelo mesmo motivo — decisão automática que o corretor precisa
+   * saber enquanto o cliente ainda está na conversa com ele.
+   */
+  contato_de_outro_corretor: 2,
   // Lembrete de anotação (0100) pesa como TAREFA: os dois são compromissos
   // que o próprio corretor marcou — vencido dói igual, "para hoje" espera
   // igual. Peso repetido é deliberado: dentro do mesmo peso vale a ordem de
@@ -203,7 +211,22 @@ export async function getFilaDeTrabalho(
     agora.getTime() - HORAS_DE_AVISO_DA_RECUSA * 3_600_000,
   ).toISOString();
 
-  const [esperando, visitas, recusas, novos, parados, revisao, lembretes] = await Promise.all([
+  /*
+   * Palavra-chave em lead de outro corretor (0146). Recorta pelo corretor
+   * LOGADO mesmo quando ele é ADM: a RLS mostra ao ADM as tentativas de
+   * todos, e o aviso é só de quem digitou.
+   */
+  const consultaAlheios = corretorId
+    ? supabase
+        .from("ativacoes_em_lead_alheio")
+        .select("id, telefone, created_at")
+        .eq("corretor_id", corretorId)
+        .gte("created_at", limiteRecusa)
+        .order("created_at", { ascending: false })
+        .limit(INDIVIDUAIS_POR_TIPO)
+    : Promise.resolve({ data: [] as { id: string; telefone: string; created_at: string }[] });
+
+  const [esperando, visitas, recusas, novos, parados, revisao, lembretes, alheios] = await Promise.all([
     /*
      * Quem falou com a gente e está esperando (0087). Primeiro item da fila
      * porque é a única situação em que a pessoa já levantou a mão e nós
@@ -267,6 +290,7 @@ export async function getFilaDeTrabalho(
       .is("avaliacao", null)
       .not("conversa_id", "is", null),
     consultaLembretes,
+    consultaAlheios,
   ]);
 
   const itens: ItemFila[] = [];
@@ -337,6 +361,19 @@ export async function getFilaDeTrabalho(
        */
       whatsapp: motivo === "parada" ? undefined : whatsappDoLead(lead),
       peso: PESO.cliente_recusou,
+    });
+  }
+
+  for (const tentativa of alheios.data ?? []) {
+    const digitos = tentativa.telefone.replace(/\D/g, "");
+    itens.push({
+      chave: `contato_de_outro_corretor:${tentativa.id}`,
+      tipo: "contato_de_outro_corretor",
+      // Sem o nome do dono, de propósito (regra N6).
+      titulo: `O contato ${digitos} já é atendido por outro corretor`,
+      detalhe: "A IA não vai responder aqui. Fale com a gestão se precisar da transferência.",
+      href: `https://wa.me/${digitos}`,
+      peso: PESO.contato_de_outro_corretor,
     });
   }
 

@@ -55,6 +55,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      ativacoes_em_lead_alheio: {
+        Row: {
+          corretor_id: string
+          created_at: string
+          id: string
+          lead_id: string | null
+          telefone: string
+        }
+        Insert: {
+          corretor_id: string
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          telefone: string
+        }
+        Update: {
+          corretor_id?: string
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          telefone?: string
+        }
+        Relationships: []
+      }
       admin_eventos: {
         Row: {
           acao: string
@@ -2623,6 +2647,7 @@ export type Database = {
           corretor_leu_ate: string | null
           created_at: string
           e_teste: boolean
+          historico_anterior: "importado" | "indisponivel" | null
           id: string
           lead_id: string
           liberado_por_palavra_chave: boolean
@@ -2647,6 +2672,7 @@ export type Database = {
           corretor_leu_ate?: string | null
           created_at?: string
           e_teste?: boolean
+          historico_anterior?: "importado" | "indisponivel" | null
           id?: string
           lead_id: string
           liberado_por_palavra_chave?: boolean
@@ -2671,6 +2697,7 @@ export type Database = {
           corretor_leu_ate?: string | null
           created_at?: string
           e_teste?: boolean
+          historico_anterior?: "importado" | "indisponivel" | null
           id?: string
           lead_id?: string
           liberado_por_palavra_chave?: boolean

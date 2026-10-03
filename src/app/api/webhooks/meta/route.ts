@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { assinaturaValida } from "@/lib/metaWebhookSignature";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
 import { createServiceClient } from "@/lib/supabase/service";
+import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
 import { CAMPOS_DO_ANUNCIO, extrairIdsDoAnuncio, SEM_ANUNCIO } from "@/lib/metaAnuncio";
 
 export const runtime = "nodejs";
@@ -156,6 +157,42 @@ export async function POST(req: Request) {
        */
       const idDoAnuncio = adId ?? dados.adId ?? null;
       const anuncio = idDoAnuncio ? await buscarAnuncio(idDoAnuncio, token) : SEM_ANUNCIO;
+
+      /*
+       * Mesma pessoa, outro formulário (plano de ativação, 03/10/2026): se o
+       * telefone já é lead, a ficha existente ganha o anúncio novo em vez de
+       * nascer uma segunda. Duas fichas da mesma pessoa viram dois corretores
+       * ligando para ela sem saber. A reentrega da Meta (mesmo
+       * `meta_lead_id`) continua sendo resolvida pelo upsert abaixo.
+       */
+      const e164 = normalizarTelefoneBrasileiro(dados.telefone);
+      if (e164) {
+        const { data: existente } = await supabase
+          .from("leads")
+          .select("id, meta_lead_id")
+          .eq("telefone_e164", e164)
+          .is("arquivado_em", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (existente && existente.meta_lead_id !== leadgenId) {
+          const { error: erroUpdate } = await supabase
+            .from("leads")
+            .update({
+              anuncio_origem: anuncio.nome,
+              meta_ad_id: anuncio.anuncioId,
+              meta_conjunto_id: anuncio.conjuntoId,
+              meta_campanha_id: anuncio.campanhaId,
+              etapa_alterada_em: new Date().toISOString(),
+              ...(existente.meta_lead_id ? {} : { meta_lead_id: leadgenId }),
+            })
+            .eq("id", existente.id);
+          if (erroUpdate) {
+            console.error(`Webhook Meta: falha ao atualizar o lead existente ${existente.id}: ${erroUpdate.message}`);
+          }
+          continue;
+        }
+      }
 
       const { error } = await supabase.from("leads").upsert(
         {

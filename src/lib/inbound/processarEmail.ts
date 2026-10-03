@@ -72,9 +72,6 @@ export async function processarEmailDeLead(
     supabase.from("corretores").select("id, nome, slug").eq("ativo", true),
   ]);
 
-  const trintaDiasAtras = new Date();
-  trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
-
   const processados: { id: string; deduplicado: boolean; nome: string; telefone: string }[] = [];
   const falhas: { telefone: string; motivo: string }[] = [];
   let totalInseridos = 0;
@@ -115,11 +112,17 @@ export async function processarEmailDeLead(
      */
     const e164 = normalizarTelefoneBrasileiro(lead.telefone);
 
+    /*
+     * Sem janela de 30 dias desde 03/10/2026 (plano de ativação): a mesma
+     * pessoa voltando meses depois por outro portal é a mesma ficha, e uma
+     * segunda ficha vira dois corretores ligando para ela. Lead arquivado
+     * fica de fora: arquivar é tirar do caminho, e quem volta pede ficha nova.
+     */
     const { data: existente, error: erroBusca } = await supabase
       .from("leads")
       .select("id, mensagem")
       .eq("telefone_e164", e164 ?? lead.telefone)
-      .gte("created_at", trintaDiasAtras.toISOString())
+      .is("arquivado_em", null)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -137,6 +140,11 @@ export async function processarEmailDeLead(
           mensagem: novaMensagem,
           etapa_alterada_em: new Date().toISOString(),
           portal_origem: lead.portalOrigem,
+          // O imóvel do pedido NOVO: é o interesse mais recente da pessoa.
+          ...(empreendimentoId ? { empreendimento_id: empreendimentoId } : {}),
+          ...(lead.imovelInteresse || lead.codigoReferencia
+            ? { anuncio_origem: lead.imovelInteresse || lead.codigoReferencia }
+            : {}),
         })
         .eq("id", existente.id);
 

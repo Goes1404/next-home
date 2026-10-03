@@ -45,7 +45,7 @@ export default async function ConversasPage({
   const [{ data: conversas }, { data: instancia }] = await Promise.all([
     supabase
       .from("whatsapp_conversas")
-      .select("id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor")
+      .select("id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior")
       .eq("corretor_id", corretor.id)
       // Defesa durante a transição até a 0111 ser aplicada: conversa sem
       // cadastro não aparece nem por estoque antigo.
@@ -89,6 +89,7 @@ export default async function ConversasPage({
     ultimaInteracaoEm: c.ultima_interacao_em,
     temLead: Boolean(c.lead_id),
     naoLidas: c.nao_lidas,
+    historicoIndisponivel: c.historico_anterior === "indisponivel",
   }));
 
   /*
@@ -105,7 +106,7 @@ export default async function ConversasPage({
     const { data: solta } = await supabase
       .from("whatsapp_conversas")
       .select(
-        "id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor",
+        "id, telefone_cliente, nome_cliente, bot_ativo, pausado_humano_ate, liberado_por_palavra_chave, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior",
       )
       .eq("id", conversaInicial as string)
       .not("lead_id", "is", null)
@@ -129,6 +130,7 @@ export default async function ConversasPage({
         ultimaInteracaoEm: solta.ultima_interacao_em,
         temLead: Boolean(solta.lead_id),
         naoLidas: solta.nao_lidas,
+        historicoIndisponivel: solta.historico_anterior === "indisponivel",
       });
     }
   }

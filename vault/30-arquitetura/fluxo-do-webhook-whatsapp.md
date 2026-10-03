@@ -24,6 +24,10 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    etiqueta (`externalAdReply`) ou pelo texto padrão; o lead nasce `meta/ctwa`
    e o anúncio vai para `impulsionamentos`
    ([[impulsionamento-do-corretor-pela-etiqueta-da-meta]]).
+   Antes dele, a mensagem do corretor com a palavra-chave cadastra o
+   número na carteira dele; se o número já é lead de outro corretor, nada é
+   criado e quem digitou recebe aviso no Início
+   ([[palavra-chave-cadastra-o-lead]], 0146).
 4. **Transcrição de áudio** — o arquivo DECIFRADO vem da Evolution
    (`getBase64FromMediaMessage`; a `url` do webhook é o `.enc` cifrado);
    OpenAI → Whisper (Groq) → Gemini, prompt neutro com `[inaudível]`, travas
