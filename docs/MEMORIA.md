@@ -9095,6 +9095,12 @@ Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
   e a chegada do herói são donas do `transform`; o ponteiro escreve a
   propriedade `translate`, que se compõe com ele. Camada em volta de um grupo
   cujos filhos já são camadas soma dois deslocamentos: tirar a de fora.
+- **Transição entre seções da home por CSS puro** (`.secao-passa`,
+  `.heroi-recua`, `.folha-que-sobe`): `animation-timeline: view()` com marcos
+  `entry`/`exit` nos keyframes, só `translate`/`scale`/`opacity` avulsos.
+  O bloco mora no FIM do `globals.css`: `percursoDaHome.test.ts` reprova
+  qualquer `@keyframes` além de `planta-desliza` no bloco do percurso. Seção
+  com mapa não recebe `scale` (clique deslocado).
 - **E no mesmo dia a pausa acabou: a fala do corretor DESLIGA a IA (0152).**
   Decisão do Matheus: a IA nunca mais responde uma conversa em que o corretor
   falou, a não ser que seja ativada (palavra-chave ou "IA assume agora").

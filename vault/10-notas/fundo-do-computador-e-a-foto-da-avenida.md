@@ -77,6 +77,11 @@ Medido em produção de 1024x600 a 1920x960: nada passa da primeira tela.
 - Títulos da home com `TituloEditorial por="palavras"`.
 - O bloco CSS mora FORA do bloco do percurso: `percursoDaHome.test.ts` exige
   que só `planta-desliza` exista ali.
+- `.secao-passa` (03/10): a mesma passagem entre TODAS as seções da home.
+  Uma animação com marcos `entry`/`exit` nos keyframes (para seção mais alta
+  que a tela, cada fase dura uma tela de rolagem); sobe ao chegar, encolhe
+  ancorada na base ao sair; faixas curvas com sombra para cima. O mapa fica
+  de fora: `scale` no ancestral desloca o clique e prende o card flutuante.
 - Teste do zoom na cidade só com `?efeito=zoom` (foto até 1,7x).
 
 ## Limite
