@@ -143,6 +143,8 @@ export type ResumoImpulsionamento = LinhaImpulsionamento & {
   anuncios: LinhaImpulsionamento[];
   /** Quando cada cliente desta linha nasceu (ISO), para a linha do tempo. */
   datasDosLeads: string[];
+  /** Os clientes desta linha, para cruzar com as listas de transmissão. */
+  leadIds: string[];
 };
 
 const ETAPAS_DE_VISITA_EM_DIANTE = new Set(["visita_agendada", "documentacao", "fechado"]);
@@ -308,6 +310,7 @@ export function resumirImpulsionamentos(
       ...linha,
       anuncios,
       datasDosLeads: meus.map((l) => l.criadoEm).filter((d): d is string => Boolean(d)),
+      leadIds: meus.map((l) => l.id).filter((id): id is string => Boolean(id)),
       leads: meus.length,
       visitas,
       fechados: meus.filter((l) => l.etapa === "fechado").length,

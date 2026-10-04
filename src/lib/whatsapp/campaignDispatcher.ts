@@ -1,13 +1,25 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { dentroDaJanela, dentroDaJanelaDoCorretor, ehDestinatarioInexistente } from "./antiBan";
+import { dentroDaJanela, dentroDaJanelaDoCorretor } from "./antiBan";
 import { varrerQuedasDeNumero } from "./avisoDeQueda";
 import { variarMensagemComIA } from "./campaignQueue";
 import { enviarMensagemWhatsapp } from "./provider";
 import { normalizarTelefoneBr } from "./telefone";
 import { aplicarVencedoras } from "./vencedoraAB";
 import { HORAS_DA_GUARDA_HUMANA, MOTIVO_CONVERSA_RECENTE } from "./contextoDaCampanha";
+import {
+  classificarFalhaDeEnvio,
+  falhaContaParaDisjuntor,
+  motivoParaNaoEnviar,
+  MOTIVO_ENVIO_INCERTO,
+  MOTIVO_TELEFONE_INVALIDO,
+  resolverHorarios,
+  type LeadNoEnvio,
+} from "./listaDeTransmissao";
+import { horariosDeVisita } from "@/lib/crm/agendaDoCorretor";
+import { enviarMidiasDaLista, type MidiaDaLista } from "./midiasDaLista";
+import { alimentarListasVivas } from "./listasVivas";
 import {
   avancarLeadParaPrimeiroContato,
   destravarDisparo,
@@ -192,6 +204,12 @@ export async function processarFilaCampanhas(params?: {
    */
   await varrerQuedasDeNumero();
 
+  // Listas vivas (0155) ganham quem passou a se encaixar no critério. Só no
+  // tique geral: o botão de um corretor não varre a equipe.
+  if (!params?.corretorId) {
+    await alimentarListasVivas().catch((err) => console.warn("[lista viva] falhou:", err));
+  }
+
   const janelaAberta = dentroDaJanela(new Date());
   if (!janelaAberta) {
     resultado.dentroDaJanela = false;
@@ -200,7 +218,7 @@ export async function processarFilaCampanhas(params?: {
       .from("whatsapp_campanhas")
       .select("id", { count: "exact", head: true })
       .eq("status", "em_andamento")
-      .eq("ignorar_janela", true);
+      .or(filtroForaDaJanela());
 
     if (!urgentes) {
       resultado.diagnostico.push(
@@ -356,7 +374,9 @@ async function processarInstancia(ctx: {
     .eq("corretor_id", instancia.corretor_id)
     .eq("status", "em_andamento");
 
-  if (ctx.somenteUrgentes) queryCampanhas = queryCampanhas.eq("ignorar_janela", true);
+  // Fora da janela só sai a lista marcada para "qualquer hora" ou liberada
+  // UMA vez pelo corretor (`janela_liberada_ate`, 0155).
+  if (ctx.somenteUrgentes) queryCampanhas = queryCampanhas.or(filtroForaDaJanela());
 
   const { data: campanhasAtivas } = await queryCampanhas;
 
@@ -389,6 +409,9 @@ async function processarInstancia(ctx: {
     diagnostico: null,
   };
 
+  // Os horários livres da agenda, lidos uma vez por chamada (`{horarios}`).
+  let rotulosDaAgenda: string[] | null = null;
+
   try {
     // Com a trava na mão: só um disparador reescreve a fila por vez.
     await aplicarVencedoras(supabase, idsCampanhas);
@@ -397,7 +420,7 @@ async function processarInstancia(ctx: {
       const { data: itens } = await supabase
         .from("whatsapp_campanhas_fila")
         .select(
-          "id, campanha_id, lead_id, telefone, mensagem_personalizada, personalizado_por_ia, tentativas, agendado_para",
+          "id, campanha_id, lead_id, telefone, mensagem_personalizada, personalizado_por_ia, tentativas, agendado_para, variante",
         )
         .in("campanha_id", idsCampanhas)
         .eq("status", "pendente")
@@ -437,7 +460,7 @@ async function processarInstancia(ctx: {
        */
       const { data: aindaAtiva } = await supabase
         .from("whatsapp_campanhas")
-        .select("id")
+        .select("id, corretor_id, criterio, midias")
         .eq("id", item.campanha_id)
         .eq("status", "em_andamento")
         .maybeSingle();
@@ -447,6 +470,28 @@ async function processarInstancia(ctx: {
           parcial.motivo = "fila_vazia";
           break;
         }
+        continue;
+      }
+
+      /*
+       * A lista é montada num instante e sai ao longo de horas (Fase 0 do
+       * roadmap, 03/10/2026). Quem pediu para sair, foi arquivado, perdido ou
+       * transferido NESSE MEIO TEMPO não recebe. Antes, a mensagem saía mesmo
+       * para quem tinha acabado de dizer "não quero mais". Antes da cota: o
+       * que não sai não gasta a cota do número.
+       */
+      const lead = item.lead_id ? await leadParaEnvio(supabase, item.lead_id) : null;
+      const barrado = motivoParaNaoEnviar(lead, {
+        corretor_id: aindaAtiva.corretor_id,
+        criterio: aindaAtiva.criterio as { filtro?: string } | null,
+      });
+      if (barrado) {
+        parcial.processados++;
+        await supabase
+          .from("whatsapp_campanhas_fila")
+          .update({ status: "erro", erro_motivo: barrado })
+          .eq("id", item.id)
+          .eq("status", "pendente");
         continue;
       }
 
@@ -512,8 +557,15 @@ async function processarInstancia(ctx: {
       // corrente cair depois desta linha e antes do envio, a próxima
       // tentativa reaproveita o texto em vez de pagar a IA de novo.
       let texto = item.mensagem_personalizada;
-      if (!item.personalizado_por_ia) {
-        const nomeLead = await nomeDoLead(supabase, item.lead_id);
+      /*
+       * Durante o teste A/B a IA NÃO reescreve (roadmap, Fase 2): reescrever
+       * saudação e vocabulário das duas versões dilui exatamente a diferença
+       * de abertura que o teste quer medir. O espaçamento e o nome de cada
+       * pessoa continuam variando a mensagem. Item com `variante` nula (sem
+       * teste, ou reescrito depois da decisão) segue com a variação.
+       */
+      if (!item.personalizado_por_ia && !item.variante) {
+        const nomeLead = lead?.nome ?? "";
         const variacao = await variarMensagemComIA({ texto, nomeLead });
         if (variacao.personalizadoPorIA) {
           texto = variacao.texto;
@@ -522,6 +574,16 @@ async function processarInstancia(ctx: {
             .update({ mensagem_personalizada: texto, personalizado_por_ia: true })
             .eq("id", item.id);
         }
+      }
+
+      /*
+       * `{horarios}` é resolvido AGORA, e não na criação: a fila anda devagar
+       * de propósito, e um horário oferecido na criação pode ter sido marcado
+       * por outro cliente até a mensagem sair. Lido uma vez por chamada.
+       */
+      if (/\{horarios\}/i.test(texto)) {
+        rotulosDaAgenda ??= (await horariosDeVisita(instancia.corretor_id).catch(() => [])).map((h) => h.rotulo);
+        texto = resolverHorarios(texto, rotulosDaAgenda);
       }
 
       const envio = await enviarMensagemWhatsapp({
@@ -537,13 +599,23 @@ async function processarInstancia(ctx: {
        * saúde da nossa conexão. Sem esta distinção, três cadastros com
        * número errado seguidos travavam a fila inteira por 12 horas.
        */
-      const numeroInexistente = !envio.enviado && ehDestinatarioInexistente(envio.detalhe);
-      if (numeroInexistente) {
+      /*
+       * Cada falha tem um tratamento (`classificarFalhaDeEnvio`, Fase 0):
+       * - número sem WhatsApp ou telefone inválido no cadastro: dado do lead,
+       *   não do número. Erro definitivo, cota devolvida, disjuntor intocado.
+       *   Antes, três cadastros ruins seguidos travavam o número por 12h;
+       * - envio INCERTO (o provedor demorou ou respondeu sem comprovante): a
+       *   mensagem pode ter saído, e tentar de novo arriscaria mandar duas
+       *   vezes. Erro definitivo com aviso para conferir a conversa;
+       * - recusa clara do provedor: nada saiu, então vale tentar de novo.
+       */
+      const classe = envio.enviado ? null : classificarFalhaDeEnvio(envio);
+      if (classe === "inexistente" || classe === "dados") {
         // A cota foi reservada antes do envio e este envio não aconteceu
         // para ninguém: devolver evita que uma lista com telefones errados
         // consuma o dia inteiro sem entregar mensagem nenhuma.
         await devolverCotaCampanha(instancia.id);
-      } else {
+      } else if (envio.enviado || (classe && falhaContaParaDisjuntor(classe))) {
         await registrarResultadoEnvio(instancia.id, envio.enviado);
       }
 
@@ -555,25 +627,23 @@ async function processarInstancia(ctx: {
         // Um número que o provedor recusa não pode ficar na frente da fila
         // bloqueando todo o resto: ou ele volta para o fim (retentativa
         // adiada) ou vira erro definitivo.
-        //
-        // Número inexistente não ganha retentativa: ele não vai passar a
-        // existir daqui a 30 minutos, e insistir só gasta a cota do dia.
-        await supabase
-          .from("whatsapp_campanhas_fila")
-          .update(
-            numeroInexistente
-              ? { status: "erro", erro_motivo: "Número não está no WhatsApp", tentativas }
-              : tentativas >= MAX_TENTATIVAS
-                ? { status: "erro", erro_motivo: motivo, tentativas }
-                : {
-                    tentativas,
-                    erro_motivo: motivo,
-                    agendado_para: new Date(
-                      Date.now() + MINUTOS_ATE_RETENTAR * 60_000,
-                    ).toISOString(),
-                  },
-          )
-          .eq("id", item.id);
+        const atualizacao =
+          classe === "inexistente"
+            ? { status: "erro" as const, erro_motivo: "Número não está no WhatsApp", tentativas }
+            : classe === "dados"
+              ? { status: "erro" as const, erro_motivo: MOTIVO_TELEFONE_INVALIDO, tentativas }
+              : classe === "incerto"
+                ? { status: "erro" as const, erro_motivo: MOTIVO_ENVIO_INCERTO, tentativas }
+                : tentativas >= MAX_TENTATIVAS
+                  ? { status: "erro" as const, erro_motivo: motivo, tentativas }
+                  : {
+                      tentativas,
+                      erro_motivo: motivo,
+                      agendado_para: new Date(
+                        Date.now() + MINUTOS_ATE_RETENTAR * 60_000,
+                      ).toISOString(),
+                    };
+        await supabase.from("whatsapp_campanhas_fila").update(atualizacao).eq("id", item.id);
 
         continue;
       }
@@ -650,6 +720,22 @@ async function processarInstancia(ctx: {
          */
         await ativarIaNaConversa(conversa.id);
 
+        /*
+         * Fotos e planta do imóvel depois do texto (Fase 2). Fazem parte do
+         * MESMO contato: não reservam cota de novo nem esperam o intervalo de
+         * 35-75s, só uma pausa curta entre uma e outra, como uma pessoa
+         * mandando. Falha numa foto não desfaz o texto que já saiu.
+         */
+        const midias = (aindaAtiva.midias ?? []) as MidiaDaLista[];
+        if (midias.length > 0) {
+          await enviarMidiasDaLista({
+            instanceName: instancia.instance_name,
+            telefone: item.telefone,
+            conversaId: conversa.id,
+            midias,
+          });
+        }
+
         if (!envio.messageId) {
           // Sem chave não há como confirmar entrega depois. Não vira erro
           // (a mensagem pode ter saído), mas não pode passar em silêncio.
@@ -717,14 +803,29 @@ async function processarInstancia(ctx: {
   }
 }
 
-/** Nome do lead para a variação por IA; vazio faz `variarMensagemComIA` devolver o texto intacto. */
-async function nomeDoLead(
+/**
+ * O lead como está AGORA, para a conferência antes do envio e para o nome
+ * da variação por IA. Null quando o lead foi excluído.
+ */
+async function leadParaEnvio(
   supabase: ReturnType<typeof createServiceClient>,
-  leadId: string | null,
-): Promise<string> {
-  if (!leadId) return "";
-  const { data } = await supabase.from("leads").select("nome").eq("id", leadId).maybeSingle();
-  return data?.nome ?? "";
+  leadId: string,
+): Promise<(NonNullable<LeadNoEnvio> & { nome: string }) | null> {
+  const { data } = await supabase
+    .from("leads")
+    .select("nome, nao_contatar_em, arquivado_em, etapa, corretor_id")
+    .eq("id", leadId)
+    .maybeSingle();
+  return data ? { ...data, nome: data.nome ?? "" } : null;
+}
+
+/**
+ * O filtro das listas que podem sair FORA da janela: marcadas para "qualquer
+ * hora" (0058) ou liberadas uma vez pelo corretor e ainda dentro do prazo
+ * (`janela_liberada_ate`, 0155).
+ */
+function filtroForaDaJanela(): string {
+  return `ignorar_janela.eq.true,janela_liberada_ate.gt.${new Date().toISOString()}`;
 }
 
 async function contarPendentes(

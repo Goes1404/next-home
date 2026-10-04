@@ -4,9 +4,7 @@ import Link from "next/link";
 import { Archive, Mail } from "lucide-react";
 import { ListaLeads } from "./ListaLeads";
 import {
-  getCorretorLogado,
   getEquipeAtiva,
-  getMeusTemplates,
   getPaginaDeLeads,
   getEmpreendimentosParaFiltro,
   contarLeadsArquivados,
@@ -89,11 +87,9 @@ export default async function LeadsPage({
     arquivados: verArquivados || undefined,
   };
 
-  const [pagina, gestor, corretor, templates, arquivados, empreendimentos] = await Promise.all([
+  const [pagina, gestor, arquivados, empreendimentos] = await Promise.all([
     getPaginaDeLeads(filtro),
     souGestor(),
-    getCorretorLogado(),
-    getMeusTemplates(),
     contarLeadsArquivados(),
     getEmpreendimentosParaFiltro(),
   ]);
@@ -181,9 +177,6 @@ export default async function LeadsPage({
         filtroServidor={filtro}
         gestor={gestor}
         equipe={equipe}
-        templates={templates}
-        nomeCorretor={corretor?.nome ?? ""}
-        whatsappCorretor={corretor?.whatsapp ?? ""}
         verArquivados={verArquivados}
         empreendimentos={empreendimentos}
       />

@@ -4,6 +4,7 @@ import { nomeUtilDoLead } from "@/lib/leads/nomeExibido";
 import { algumProvedorConfigurado, chamarLlmJson } from "./llm";
 import type { ItemFilaCampanha } from "./types";
 import { comecoAleatorio, distribuirVariantes, type Variante } from "./testeAB";
+import { aplicarContexto, type ContextoTemplate } from "./listaDeTransmissao";
 
 /**
  * Piso e teto do intervalo humanizado entre disparos, em segundos.
@@ -47,8 +48,16 @@ export function aplicarTemplate(params: {
   mensagemBase: string;
   nomeLead: string;
   empreendimentoNome?: string;
+  /**
+   * As variáveis do imóvel e do corretor ({bairro}, {link}...), resolvidas na
+   * criação da lista (`contextoDaLista`). `{horarios}` fica para o envio.
+   */
+  contexto?: ContextoTemplate | null;
 }): string {
-  return params.mensagemBase
+  const comContexto = params.contexto
+    ? aplicarContexto(params.mensagemBase, params.contexto)
+    : params.mensagemBase;
+  return comContexto
     .replace(/{nome}/gi, nomeUtilDoLead(params.nomeLead) || "Tudo bem?")
     .replace(
       /{imovel}/gi,
@@ -157,6 +166,8 @@ export function montarFilaCampanha(params: {
   mensagemBaseB?: string | null;
   /** Fixa o começo do rodízio. Só o teste passa isto; produção sorteia. */
   comecarVarianteEm?: Variante;
+  /** Variáveis do imóvel e do corretor (`contextoDaLista`). */
+  contexto?: ContextoTemplate | null;
 }): ItemFilaCampanha[] {
   const { campanhaId, leads, mensagemBase, empreendimentoNome } = params;
   const ignorarJanela = params.ignorarJanela ?? false;
@@ -227,6 +238,7 @@ export function montarFilaCampanha(params: {
         mensagemBase: mensagemB && variantes[indice] === "B" ? mensagemB : mensagemBase,
         nomeLead: lead.nome,
         empreendimentoNome,
+        contexto: params.contexto,
       }),
       // A variação por IA acontece no envio (ver `variarMensagemComIA`).
       // Nasce false porque, neste instante, ela de fato ainda não ocorreu.
@@ -263,6 +275,7 @@ export async function gerarMensagensCampanhaPersonalizadas(params: {
   mensagemBase: string;
   empreendimentoNome?: string;
   intervaloSegundosMinimo?: number;
+  contexto?: ContextoTemplate | null;
 }): Promise<ItemFilaCampanha[]> {
   if (!algumProvedorConfigurado()) {
     console.warn(

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
 import { aberturasDoJson, EXEMPLOS_VENCEDORES, promptDeAberturas } from "@/lib/marketing/aberturaSugerida";
-import { getCorretorLogado, getMeusLeads } from "@/lib/corretorSessao";
+import { getCorretorLogado } from "@/lib/corretorSessao";
 import {
   elegivel,
   noRecorte,
@@ -15,21 +15,29 @@ import {
 import { placarDaFila, resultadoAB, type ResultadoAB } from "@/lib/whatsapp/testeAB";
 import { desfechoDaLista, type Desfecho } from "@/lib/crm/desfechoDaLista";
 import { createClient } from "@/lib/supabase/server";
-import type { EtapaFunil } from "@/lib/types";
+import { getEmpreendimentos } from "@/lib/queries";
+import type { Empreendimento, EtapaFunil } from "@/lib/types";
 import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
 import { processarFilaCampanhas } from "@/lib/whatsapp/campaignDispatcher";
-import {
-  gerarMensagensCampanhaPersonalizadas,
-  montarFilaCampanha,
-  INTERVALO_MAXIMO_SEGUNDOS,
-  INTERVALO_MINIMO_SEGUNDOS,
-} from "@/lib/whatsapp/campaignQueue";
+import { gerarMensagensCampanhaPersonalizadas, montarFilaCampanha } from "@/lib/whatsapp/campaignQueue";
 import { provedorConfigurado } from "@/lib/whatsapp/provider";
-import { saldoDiario, dentroDaJanela } from "@/lib/whatsapp/antiBan";
+import { saldoDiario, dentroDaJanela, dentroDaJanelaDoCorretor } from "@/lib/whatsapp/antiBan";
+import { linkDaPagina } from "@/lib/whatsapp/resolverMidia";
+import { horariosDeVisita } from "@/lib/crm/agendaDoCorretor";
+import {
+  contextoDaLista,
+  previsaoDeTermino,
+  resolverHorarios,
+  variaveisSemValor,
+  type ContextoTemplate,
+} from "@/lib/whatsapp/listaDeTransmissao";
+import { MAXIMO_DE_MIDIAS_NA_LISTA, type MidiaDaLista } from "@/lib/whatsapp/midiasDaLista";
+import { corretorTemAgenda, idsProtegidosDeNovaLista, leadsDoCorretor } from "@/lib/whatsapp/publicoDaLista";
+import type { CriterioDaLista } from "@/lib/whatsapp/listasVivas";
 
 /**
- * Ações do painel de Campanhas: criar, listar, diagnosticar e (quando o
- * corretor não quer esperar nem um minuto) empurrar a fila na hora.
+ * Ações do painel de listas de transmissão: criar, listar, diagnosticar e
+ * (quando o corretor não quer esperar nem um minuto) empurrar a fila na hora.
  *
  * A montagem da fila (`montarFilaCampanha`) e o envio de fato
  * (`processarFilaCampanhas`) são os mesmos módulos usados pelo disparo
@@ -37,9 +45,15 @@ import { saldoDiario, dentroDaJanela } from "@/lib/whatsapp/antiBan";
  * resultado, sob a sessão do corretor logado (RLS via `createClient`, nunca
  * o cliente de serviço aqui).
  *
- * Criar uma campanha já acende a corrente de auto-disparo
+ * Criar uma lista já acende a corrente de auto-disparo
  * (`acenderCorrenteDeDisparo`): a partir daí as mensagens saem sozinhas,
  * uma a cada 35-75s, sem ninguém clicar em nada.
+ *
+ * Roadmap das listas (03/10/2026): o público sai SÓ da carteira do próprio
+ * corretor (antes o gestor alcançava a equipe), a lista guarda o critério
+ * (para repetir e para a lista viva), aceita fotos do imóvel e variáveis do
+ * cadastro, pode virar rascunho, e "liberar" vale uma vez em vez de marcar a
+ * lista para sempre.
  */
 
 export type LeadElegivel = {
@@ -54,29 +68,8 @@ export type PreviaPublicoCampanha = {
   protegidos: number;
 };
 
-/** Evita repetir propaganda para a mesma pessoa dentro da mesma semana. */
-const DIAS_SEM_REPETIR_CAMPANHA = 7;
-
-async function idsProtegidosDeNovaCampanha(corretorId: string): Promise<Set<string>> {
-  const supabase = await createClient();
-  // O filtro explícito mantém esta tela pessoal mesmo quando a policy do
-  // gestor permite enxergar campanhas da equipe inteira.
-  const limite = new Date(
-    Date.now() - DIAS_SEM_REPETIR_CAMPANHA * 86_400_000,
-  ).toISOString();
-  const { data: itens, error: erroFila } = await supabase
-    .from("whatsapp_campanhas_fila")
-    .select("lead_id, campanha:whatsapp_campanhas!inner(corretor_id)")
-    .eq("campanha.corretor_id", corretorId)
-    .not("lead_id", "is", null)
-    // Pendente em outra lista nunca duplica. Enviado/respondido só protege
-    // pela janela de sete dias; erro definitivo não bloqueia nova tentativa.
-    .or(`status.eq.pendente,enviado_em.gte.${limite}`);
-  if (erroFila) {
-    throw new Error(`Falha ao conferir contatos recentes: ${erroFila.message}`);
-  }
-  return new Set((itens ?? []).flatMap((item) => (item.lead_id ? [item.lead_id] : [])));
-}
+/** Dias de vida de uma lista viva: depois disso ela para de incluir gente. */
+const DIAS_DA_LISTA_VIVA = 30;
 
 async function publicoComProtecao(
   filtro: FiltroLeadsCampanha,
@@ -89,9 +82,10 @@ async function publicoComProtecao(
   const corretor = await getCorretorLogado();
   if (!corretor) return { elegiveis: [], protegidos: 0 };
 
-  const leads = await getMeusLeads();
+  const supabase = await createClient();
+  const leads = await leadsDoCorretor(supabase, corretor.id);
   const base = leads.filter((lead) => elegivel(lead, filtro, { imovelSlug }) && noRecorte(lead, recorte));
-  const protegidos = await idsProtegidosDeNovaCampanha(corretor.id);
+  const protegidos = await idsProtegidosDeNovaLista(supabase, corretor.id);
   return {
     elegiveis: base
       .filter((lead) => !protegidos.has(lead.id))
@@ -105,7 +99,7 @@ async function publicoComProtecao(
   };
 }
 
-/** `getMeusLeads` já vem filtrado por RLS (0007) — aqui só decide QUAIS desses entram na campanha. */
+/** Só a carteira DESTE corretor, mesmo para o gestor (`leadsDoCorretor`). */
 export async function listarLeadsElegiveis(
   filtro: FiltroLeadsCampanha,
   imovelSlug?: string | null,
@@ -118,10 +112,10 @@ export async function listarLeadsElegiveis(
 export async function listarOpcoesDeOrigem(): Promise<OpcoesDeRecorte> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { canais: [], anuncios: [] };
-  return opcoesDeRecorte(await getMeusLeads());
+  return opcoesDeRecorte(await leadsDoCorretor(await createClient(), corretor.id));
 }
 
-/** Contagem informativa; criar a campanha refaz a mesma proteção no servidor. */
+/** Contagem informativa; criar a lista refaz a mesma proteção no servidor. */
 export async function preverPublicoCampanha(
   filtro: FiltroLeadsCampanha,
   imovelSlug?: string | null,
@@ -135,10 +129,8 @@ export async function preverPublicoCampanha(
  * Recorta os elegíveis pela seleção manual do corretor.
  *
  * A INTERSEÇÃO é a segurança: os ids chegam pela rede (Server Action é
- * endpoint HTTP) e só valem se apontarem para um lead que a RLS já entregou
- * como do corretor E que passa nas regras de base (tem telefone, não está
- * fechado/perdido). Id alheio ou inventado simplesmente não sobrevive ao
- * filtro — nunca vira mensagem.
+ * endpoint HTTP) e só valem se apontarem para um lead DESTE corretor que
+ * passa nas regras de base. Id alheio ou inventado não sobrevive ao filtro.
  */
 function recortarPorSelecao(
   elegiveis: LeadElegivel[],
@@ -148,21 +140,64 @@ function recortarPorSelecao(
   return elegiveis.filter((lead) => escolhidos.has(lead.id));
 }
 
+/** O imóvel do catálogo e as variáveis da mensagem que saem dele e do corretor. */
+async function contextoDoImovel(
+  empreendimentoId: string | null,
+  corretorNome: string | null,
+): Promise<{ imovel: Empreendimento | null; contexto: ContextoTemplate }> {
+  const imovel = empreendimentoId
+    ? ((await getEmpreendimentos()).find((e) => e.id === empreendimentoId) ?? null)
+    : null;
+  return {
+    imovel,
+    contexto: contextoDaLista({
+      imovel,
+      linkDoImovel: imovel ? linkDaPagina(imovel.slug) : null,
+      corretorNome,
+    }),
+  };
+}
+
+/**
+ * As fotos escolhidas, conferidas contra o CADASTRO do imóvel.
+ *
+ * A URL chega pela rede: só vale se for de uma foto ou planta do imóvel da
+ * lista. Assim a lista nunca anexa arquivo que não é do catálogo.
+ */
+function midiasValidas(imovel: Empreendimento | null, urls: string[] | undefined): MidiaDaLista[] {
+  if (!imovel || !urls?.length) return [];
+  const doCatalogo = [
+    ...imovel.galeria.map((m) => ({ url: m.url, tipo: "foto" as const, titulo: m.alt || imovel.nome })),
+    ...imovel.plantas.map((m) => ({ url: m.url, tipo: "planta" as const, titulo: m.alt || `Planta · ${imovel.nome}` })),
+  ];
+  const escolhidas = new Set(urls);
+  return doCatalogo.filter((m) => escolhidas.has(m.url)).slice(0, MAXIMO_DE_MIDIAS_NA_LISTA);
+}
+
+/** Frase do aviso de variável sem valor, em português de gente. */
+function avisoDeVariaveis(faltando: string[]): string {
+  const lista = faltando.map((v) => `{${v}}`).join(", ");
+  if (faltando.includes("horarios") && faltando.length === 1) {
+    return "Para usar {horarios}, configure seus horários de visita em Minha IA → Agenda.";
+  }
+  return `A mensagem usa ${lista}, mas o imóvel escolhido não tem esse dado no cadastro. Tire da mensagem ou complete o cadastro.`;
+}
+
 export async function gerarPreviewCampanha(params: {
   filtro: FiltroLeadsCampanha;
-  empreendimentoNome: string;
+  empreendimentoId: string | null;
   mensagemBase: string;
+  mensagemBaseB?: string | null;
   /** Só para `filtro: "selecionados"` — os leads escolhidos um a um. */
   leadIds?: string[];
   /** Só para `filtro: "compradores"`. */
   imovelSlug?: string | null;
   /** Canal ou anúncio de origem (Fase 3). */
   recorte?: RecorteDeOrigem | null;
-}): Promise<{ mensagens: string[] } | { erro: string }> {
+}): Promise<{ mensagens: string[]; mensagemB: string | null } | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
-  if (!params.mensagemBase.trim())
-    return { erro: "Escreva uma mensagem base primeiro." };
+  if (!params.mensagemBase.trim()) return { erro: "Escreva uma mensagem base primeiro." };
 
   let elegiveis: LeadElegivel[];
   try {
@@ -174,20 +209,52 @@ export async function gerarPreviewCampanha(params: {
     elegiveis = recortarPorSelecao(elegiveis, params.leadIds);
     if (elegiveis.length === 0) return { erro: "Escolha ao menos um lead primeiro." };
   }
-  if (elegiveis.length === 0) {
-    return { erro: "Nenhum lead elegível para este filtro no momento." };
-  }
+  if (elegiveis.length === 0) return { erro: "Nenhum lead elegível para este filtro no momento." };
 
-  // Amostra de até 3 — o preview é só para o corretor calibrar o tom antes
-  // de disparar de verdade, não precisa (nem deve) gerar a fila inteira.
-  const fila = await gerarMensagensCampanhaPersonalizadas({
-    campanhaId: "preview",
-    leads: elegiveis.slice(0, 3),
-    mensagemBase: params.mensagemBase,
-    empreendimentoNome: params.empreendimentoNome,
-  });
+  const { imovel, contexto } = await contextoDoImovel(params.empreendimentoId, corretor.nome);
+  const temAgenda = await corretorTemAgenda(await createClient(), corretor.id);
+  const textoB = params.mensagemBaseB?.trim() || null;
+  const faltando = [
+    ...variaveisSemValor(params.mensagemBase, contexto, { temAgenda }),
+    ...(textoB ? variaveisSemValor(textoB, contexto, { temAgenda }) : []),
+  ];
+  if (faltando.length > 0) return { erro: avisoDeVariaveis([...new Set(faltando)]) };
 
-  return { mensagens: fila.map((item) => item.mensagemPersonalizada) };
+  const rotulos = temAgenda ? (await horariosDeVisita(corretor.id)).map((h) => h.rotulo) : [];
+  const amostra = elegiveis.slice(0, 3);
+
+  // Com teste A/B a IA não reescreve no envio (ver o disparador): o
+  // exemplo mostra o texto exatamente como vai sair.
+  const fila = textoB
+    ? montarFilaCampanha({
+        campanhaId: "preview",
+        leads: amostra,
+        mensagemBase: params.mensagemBase,
+        empreendimentoNome: imovel?.nome,
+        contexto,
+      })
+    : await gerarMensagensCampanhaPersonalizadas({
+        campanhaId: "preview",
+        leads: amostra,
+        mensagemBase: params.mensagemBase,
+        empreendimentoNome: imovel?.nome,
+        contexto,
+      });
+
+  const exemploB = textoB
+    ? montarFilaCampanha({
+        campanhaId: "preview",
+        leads: amostra.slice(0, 1),
+        mensagemBase: textoB,
+        empreendimentoNome: imovel?.nome,
+        contexto,
+      })[0]?.mensagemPersonalizada ?? null
+    : null;
+
+  return {
+    mensagens: fila.map((item) => resolverHorarios(item.mensagemPersonalizada, rotulos)),
+    mensagemB: exemploB ? resolverHorarios(exemploB, rotulos) : null,
+  };
 }
 
 /**
@@ -240,19 +307,12 @@ export async function sugerirAberturas(params: {
 export type ResultadoCriarCampanha =
   { ok: true; campanhaId: string; totalLeads: number } | { erro: string };
 
-export async function criarCampanha(params: {
+export type ParametrosDaLista = {
   titulo: string;
   empreendimentoId: string | null;
-  empreendimentoNome: string;
   filtro: FiltroLeadsCampanha;
   mensagemBase: string;
-  /**
-   * Segunda versão da mensagem (teste A/B, 0084).
-   *
-   * Existe porque 102 disparos entregues produziram UMA resposta: quem
-   * decide isso é a abertura, e nada permitia comparar duas. Ausente = a
-   * campanha roda com uma versão só, exatamente como antes.
-   */
+  /** Segunda versão da mensagem (teste A/B, 0084). Ausente = uma versão só. */
   mensagemBaseB?: string | null;
   /** ISO absoluto; a interface envia o horário de Brasília já com offset. */
   iniciarEm?: string | null;
@@ -260,14 +320,31 @@ export async function criarCampanha(params: {
   leadIds?: string[];
   /**
    * Dispara em qualquer horário, inclusive madrugada e domingo (0058).
-   *
-   * Exceção pedida caso a caso. O espaçamento de 35-75s, a cota diária da
-   * curva de aquecimento e o disjuntor continuam valendo.
+   * Exceção pedida caso a caso. Espaçamento, cota e disjuntor continuam.
    */
   ignorarJanela?: boolean;
   /** Canal ou anúncio de origem (Fase 3). O servidor refaz o recorte. */
   recorte?: RecorteDeOrigem | null;
-}): Promise<ResultadoCriarCampanha> {
+  /** URLs de fotos/plantas do imóvel, conferidas contra o cadastro (0155). */
+  midias?: string[];
+  /** Lista viva: por 30 dias, quem passar a se encaixar entra sozinho (0155). */
+  viva?: boolean;
+  /** Modelo de mensagem de onde o texto partiu, para a biblioteca contar a taxa (0155). */
+  templateId?: string | null;
+  /** Rascunho que esta lista conclui: some quando a lista nasce. */
+  rascunhoId?: string | null;
+};
+
+/** O critério que a lista guarda (0155): é o que permite repeti-la e mantê-la viva. */
+function criterioDe(params: ParametrosDaLista, imovelSlug: string | null): CriterioDaLista {
+  return {
+    filtro: params.filtro,
+    imovelSlug: params.filtro === "compradores" ? imovelSlug : null,
+    recorte: params.filtro === "selecionados" ? null : (params.recorte ?? null),
+  };
+}
+
+export async function criarCampanha(params: ParametrosDaLista): Promise<ResultadoCriarCampanha> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
 
@@ -294,24 +371,46 @@ export async function criarCampanha(params: {
     };
   }
 
-  // Compradores só existem em relação a UM imóvel: o slug sai do id da campanha.
+  const supabase = await createClient();
+
+  /*
+   * Sem número conectado, a lista nasceria parada (Fase 3 do roadmap). Só 1
+   * dos 7 corretores tinha o número conectado em 03/10/2026: os outros
+   * montavam a lista e ela ficava "enviando" para sempre.
+   */
+  const { data: instancia } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("status_conexao")
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+  if (instancia?.status_conexao !== "conectado") {
+    return {
+      erro: "Seu WhatsApp não está conectado. Conecte o número em Minha IA → WhatsApp e volte para criar a lista.",
+    };
+  }
+
+  const { imovel, contexto } = await contextoDoImovel(params.empreendimentoId, corretor.nome);
+
+  // Compradores só existem em relação a UM imóvel.
   let imovelSlug: string | null = null;
   if (params.filtro === "compradores") {
-    if (!params.empreendimentoId) return { erro: "Escolha o imóvel dos compradores." };
-    const { data: e } = await (await createClient())
-      .from("empreendimentos")
-      .select("slug")
-      .eq("id", params.empreendimentoId)
-      .maybeSingle();
-    imovelSlug = e?.slug ?? null;
-    if (!imovelSlug) return { erro: "Imóvel não encontrado." };
+    if (!imovel) return { erro: "Escolha o imóvel dos compradores." };
+    imovelSlug = imovel.slug;
   }
+
+  const temAgenda = await corretorTemAgenda(supabase, corretor.id);
+  const textoB = params.mensagemBaseB?.trim() || null;
+  const faltando = [
+    ...variaveisSemValor(params.mensagemBase, contexto, { temAgenda }),
+    ...(textoB ? variaveisSemValor(textoB, contexto, { temAgenda }) : []),
+  ];
+  if (faltando.length > 0) return { erro: avisoDeVariaveis([...new Set(faltando)]) };
 
   let elegiveis: LeadElegivel[];
   try {
     elegiveis = await listarLeadsElegiveis(params.filtro, imovelSlug, params.recorte);
   } catch {
-    // Falha fechada: sem provar quem recebeu campanha recentemente, ninguém
+    // Falha fechada: sem provar quem recebeu lista recentemente, ninguém
     // entra na fila. Repetir propaganda é pior do que pedir nova tentativa.
     return {
       erro: "Não foi possível conferir os contatos recentes agora. Tente de novo.",
@@ -325,20 +424,26 @@ export async function criarCampanha(params: {
     return { erro: "Nenhum lead elegível para este filtro no momento." };
   }
 
-  const supabase = await createClient();
+  const viva = Boolean(params.viva) && params.filtro !== "selecionados";
+  const midias = midiasValidas(imovel, params.midias);
 
   const { data: campanha, error: erroCampanha } = await supabase
     .from("whatsapp_campanhas")
     .insert({
       corretor_id: corretor.id,
       titulo,
-      empreendimento_id: params.empreendimentoId,
+      empreendimento_id: imovel?.id ?? null,
       mensagem_base: params.mensagemBase,
-      // Segunda versão do teste A/B (0084). Null = campanha de uma versão.
-      mensagem_base_b: params.mensagemBaseB?.trim() || null,
+      mensagem_base_b: textoB,
       total_leads: elegiveis.length,
       status: "em_andamento",
       ignorar_janela: params.ignorarJanela ?? false,
+      criterio: criterioDe(params, imovelSlug),
+      viva,
+      viva_ate: viva ? new Date(Date.now() + DIAS_DA_LISTA_VIVA * 86_400_000).toISOString() : null,
+      midias,
+      contexto_template: contexto,
+      template_id: params.templateId ?? null,
     })
     .select("id")
     .single();
@@ -347,20 +452,15 @@ export async function criarCampanha(params: {
     return { erro: "Não foi possível criar a lista de transmissão agora." };
 
   // Fila montada SEM chamar a IA: só interpolação de template e cálculo de
-  // horários. A variação anti-ban por IA acontece no envio, um item por vez
-  // (`variarMensagemComIA`, usada pelo disparador).
-  //
-  // Antes, esta action fazia uma chamada ao Gemini por lead, em série,
-  // antes de gravar qualquer coisa. Com algumas dezenas de leads isso
-  // estoura o tempo da função e a campanha simplesmente não nasce — o
-  // corretor via "criando..." e nada aparecia.
+  // horários. A variação anti-ban por IA acontece no envio, um item por vez.
   const fila = montarFilaCampanha({
     campanhaId: campanha.id,
     leads: elegiveis,
     mensagemBase: params.mensagemBase,
-    empreendimentoNome: params.empreendimentoNome,
+    empreendimentoNome: imovel?.nome,
+    contexto,
     ignorarJanela: params.ignorarJanela,
-    mensagemBaseB: params.mensagemBaseB,
+    mensagemBaseB: textoB,
     iniciarEm: inicio ?? undefined,
   });
 
@@ -378,24 +478,160 @@ export async function criarCampanha(params: {
   );
 
   if (erroFila) {
-    // Campanha sem fila é um card fantasma no histórico — melhor desfazer.
+    // Lista sem fila é um card fantasma no histórico — melhor desfazer.
     await supabase.from("whatsapp_campanhas").delete().eq("id", campanha.id);
     return { erro: "Não foi possível montar a fila de envio agora." };
   }
 
-  // Acende a corrente: a primeira mensagem sai em segundos e a fila segue
-  // andando sozinha, sem depender do corretor clicar em nada.
+  if (params.rascunhoId) {
+    await supabase
+      .from("whatsapp_campanhas")
+      .delete()
+      .eq("id", params.rascunhoId)
+      .eq("corretor_id", corretor.id)
+      .eq("status", "rascunho");
+  }
+
   acenderCorrenteDeDisparo();
 
   revalidatePath("/corretor/campanhas");
   return { ok: true, campanhaId: campanha.id, totalLeads: elegiveis.length };
 }
 
+/**
+ * Guarda a lista como RASCUNHO (Fase 4): sem fila, sem envio, para terminar
+ * depois. Nada aqui manda mensagem; o público é recalculado quando a lista
+ * nascer de verdade.
+ */
+export async function salvarRascunho(
+  params: ParametrosDaLista,
+): Promise<{ ok: true; id: string } | { erro: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+  const supabase = await createClient();
+  const { imovel } = await contextoDoImovel(params.empreendimentoId, corretor.nome);
+  const linha = {
+    titulo: params.titulo.trim() || "Rascunho",
+    empreendimento_id: imovel?.id ?? null,
+    mensagem_base: params.mensagemBase,
+    mensagem_base_b: params.mensagemBaseB?.trim() || null,
+    criterio: { ...criterioDe(params, imovel?.slug ?? null), leadIds: params.leadIds ?? [] },
+    midias: midiasValidas(imovel, params.midias),
+    template_id: params.templateId ?? null,
+    viva: Boolean(params.viva),
+  };
+
+  if (params.rascunhoId) {
+    const { data, error } = await supabase
+      .from("whatsapp_campanhas")
+      .update(linha)
+      .eq("id", params.rascunhoId)
+      .eq("corretor_id", corretor.id)
+      .eq("status", "rascunho")
+      .select("id");
+    if (error || !data?.length) return { erro: "Não foi possível salvar o rascunho agora." };
+    revalidatePath("/corretor/campanhas");
+    return { ok: true, id: params.rascunhoId };
+  }
+
+  const { data, error } = await supabase
+    .from("whatsapp_campanhas")
+    .insert({ ...linha, corretor_id: corretor.id, status: "rascunho", total_leads: 0 })
+    .select("id")
+    .single();
+  if (error || !data) return { erro: "Não foi possível salvar o rascunho agora." };
+  revalidatePath("/corretor/campanhas");
+  return { ok: true, id: data.id };
+}
+
+/** Uma lista guardada, para repetir ou continuar o rascunho no assistente. */
+export type ListaParaReabrir = {
+  id: string;
+  status: CampanhaListada["status"];
+  titulo: string;
+  imovelSlug: string | null;
+  filtro: FiltroLeadsCampanha;
+  recorte: RecorteDeOrigem | null;
+  leadIds: string[];
+  mensagemBase: string;
+  mensagemBaseB: string | null;
+  midias: string[];
+  templateId: string | null;
+  viva: boolean;
+};
+
+/**
+ * O que o assistente precisa para reabrir uma lista (Fase 3: repetir) ou um
+ * rascunho (Fase 4: continuar). Só do próprio corretor.
+ */
+export async function carregarListaParaReabrir(id: string): Promise<ListaParaReabrir | null> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("whatsapp_campanhas")
+    .select(
+      "id, status, titulo, criterio, mensagem_base, mensagem_base_b, variante_vencedora, midias, template_id, viva, empreendimento:empreendimentos(slug)",
+    )
+    .eq("id", id)
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+  if (!data) return null;
+  const criterio = (data.criterio ?? {}) as Partial<CriterioDaLista> & { leadIds?: string[] };
+  const imovel = (Array.isArray(data.empreendimento) ? data.empreendimento[0] : data.empreendimento) as
+    | { slug: string }
+    | null;
+  // Repetir uma lista que já decidiu o A/B parte da vencedora.
+  const vencedoraB = data.variante_vencedora === "B" && data.mensagem_base_b;
+  return {
+    id: data.id,
+    status: data.status,
+    titulo: data.titulo,
+    imovelSlug: imovel?.slug ?? null,
+    filtro: criterio.filtro ?? "parados_15d",
+    recorte: criterio.recorte ?? null,
+    leadIds: criterio.leadIds ?? [],
+    mensagemBase: vencedoraB ? data.mensagem_base_b! : data.mensagem_base,
+    mensagemBaseB: data.variante_vencedora ? null : data.mensagem_base_b,
+    midias: ((data.midias ?? []) as MidiaDaLista[]).map((m) => m.url),
+    templateId: data.template_id,
+    viva: data.viva,
+  };
+}
+
+/** Apaga um rascunho. Lista que já saiu nunca é apagada por aqui. */
+export async function descartarRascunho(id: string): Promise<{ ok: true } | { erro: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+  const { data } = await (await createClient())
+    .from("whatsapp_campanhas")
+    .delete()
+    .eq("id", id)
+    .eq("corretor_id", corretor.id)
+    .eq("status", "rascunho")
+    .select("id");
+  if (!data?.length) return { erro: "Rascunho não encontrado." };
+  revalidatePath("/corretor/campanhas");
+  return { ok: true };
+}
+
+/** O caminho de cada lista: de quem recebeu até quem comprou. */
+export type FunilDaLista = {
+  enviadas: number;
+  responderam: number;
+  /** Responderam e trocaram duas ou mais mensagens depois do envio. */
+  conversaram: number;
+  /** Mediana do tempo até a resposta, em minutos; null sem resposta. */
+  medianaRespostaMin: number | null;
+};
+
 export type CampanhaListada = {
-  /** Placar do teste A/B, ou null quando a campanha tem uma versão só (0084). */
+  /** Placar do teste A/B, ou null quando a lista tem uma versão só (0084). */
   testeAB: ResultadoAB | null;
   /** Versão que o disparador passou a usar no resto da fila (0121). */
   vencedora: "A" | "B" | null;
+  /** Quando a vencedora foi decidida (0155). */
+  vencedoraEm: string | null;
   id: string;
   titulo: string;
   empreendimentoNome: string | null;
@@ -406,76 +642,96 @@ export type CampanhaListada = {
   criadoEm: string;
   /** Quem recebeu e depois marcou visita ou comprou (`desfechoDaLista.ts`). */
   desfecho: Desfecho;
+  funil: FunilDaLista;
+  /** Lista viva: até quando inclui gente nova (0155). */
+  vivaAte: string | null;
+  /** Quantas fotos/plantas vão junto da mensagem. */
+  midias: number;
+  /** Pode ser repetida (guarda o critério) — listas antigas não guardavam. */
+  repetivel: boolean;
 };
 
-export async function listarCampanhas(): Promise<CampanhaListada[]> {
+/** Quantas listas o histórico mostra por vez. */
+const LISTAS_POR_PAGINA = 20;
+
+/**
+ * As listas DESTE corretor, mais recentes primeiro, de 20 em 20 (Fase 4).
+ * `antesDe` é a data de criação da última lista já mostrada.
+ */
+export async function listarCampanhas(antesDe?: string): Promise<CampanhaListada[]> {
   const corretor = await getCorretorLogado();
   if (!corretor) return [];
 
-  // Filtro explícito desde a 0031: as policies de campanha passaram a
-  // incluir o gestor (a administração vê a equipe), então sem o `.eq` esta
-  // tela mostraria as campanhas dos colegas para quem administra. Aqui é a
-  // lista PESSOAL; a da equipe fica em /corretor/admin/whatsapp.
+  // Filtro explícito desde a 0031: as policies de campanha incluem o
+  // gestor, então sem o `.eq` esta tela mostraria as listas dos colegas.
   const supabase = await createClient();
-  const { data } = await supabase
+  let consulta = supabase
     .from("whatsapp_campanhas")
     .select(
-      "id, titulo, total_leads, total_enviados, total_respondidos, status, created_at, mensagem_base_b, variante_vencedora, empreendimento:empreendimentos(nome)",
+      "id, titulo, total_leads, total_enviados, total_respondidos, status, created_at, mensagem_base_b, variante_vencedora, vencedora_em, viva, viva_ate, midias, criterio, empreendimento:empreendimentos(nome)",
     )
     .eq("corretor_id", corretor.id)
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(LISTAS_POR_PAGINA);
+  if (antesDe) consulta = consulta.lt("created_at", antesDe);
+  const { data } = await consulta;
 
-  /*
-   * O placar do A/B, só para as campanhas que TÊM segunda versão (0084).
-   *
-   * Uma consulta agregada para todas elas, não uma por campanha: o
-   * histórico mostra 20 e a tela é aberta o tempo todo. Sem `variante`
-   * gravada não existe teste, então a leitura nem começa.
-   */
-  const comTeste = (data ?? []).filter((c) => c.mensagem_base_b).map((c) => c.id);
-  const placar = new Map<string, { a: Contagem; b: Contagem }>();
-
-  if (comTeste.length > 0) {
-    const { data: itens } = await supabase
-      .from("whatsapp_campanhas_fila")
-      .select("campanha_id, variante, status")
-      .in("campanha_id", comTeste)
-      .not("variante", "is", null);
-
-    const porCampanha = new Map<string, Array<{ variante: string | null; status: string }>>();
-    for (const item of itens ?? []) {
-      porCampanha.set(item.campanha_id, [...(porCampanha.get(item.campanha_id) ?? []), item]);
-    }
-    for (const [id, lista] of porCampanha) placar.set(id, placarDaFila(lista));
-  }
-
-  const desfechos = await desfechosDasListas(
-    supabase,
-    (data ?? []).map((c) => c.id),
-  );
+  const ids = (data ?? []).map((c) => c.id);
+  const [placar, desfechos, funis] = await Promise.all([
+    placaresDoTeste(supabase, (data ?? []).filter((c) => c.mensagem_base_b).map((c) => c.id)),
+    desfechosDasListas(supabase, ids),
+    funisDasListas(supabase, ids),
+  ]);
 
   return (data ?? []).map((c) => ({
     id: c.id,
     titulo: c.titulo,
     desfecho: desfechos.get(c.id) ?? { visitas: 0, vendas: 0 },
+    funil: funis.get(c.id) ?? { enviadas: 0, responderam: 0, conversaram: 0, medianaRespostaMin: null },
     testeAB: placar.has(c.id) ? resultadoAB(placar.get(c.id)!) : null,
     vencedora: c.variante_vencedora,
+    vencedoraEm: c.vencedora_em,
     empreendimentoNome: (c.empreendimento as { nome: string } | null)?.nome ?? null,
     totalLeads: c.total_leads,
     totalEnviados: c.total_enviados,
     totalRespondidos: c.total_respondidos,
     status: c.status,
     criadoEm: c.created_at,
+    vivaAte: c.viva && c.viva_ate && new Date(c.viva_ate) > new Date() ? c.viva_ate : null,
+    midias: Array.isArray(c.midias) ? c.midias.length : 0,
+    repetivel: Boolean(c.criterio),
   }));
 }
 
 type Contagem = { enviados: number; respostas: number };
 
 /**
+ * O placar do A/B, só para as listas que TÊM segunda versão (0084). Itens
+ * reescritos depois da decisão perdem a letra (`vencedoraAB.ts`) e saem da
+ * conta: o placar mostra só o que foi enviado DURANTE o teste.
+ */
+async function placaresDoTeste(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  comTeste: string[],
+): Promise<Map<string, { a: Contagem; b: Contagem }>> {
+  const placar = new Map<string, { a: Contagem; b: Contagem }>();
+  if (comTeste.length === 0) return placar;
+  const { data: itens } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .select("campanha_id, variante, status")
+    .in("campanha_id", comTeste)
+    .not("variante", "is", null);
+  const porCampanha = new Map<string, Array<{ variante: string | null; status: string }>>();
+  for (const item of itens ?? []) {
+    porCampanha.set(item.campanha_id, [...(porCampanha.get(item.campanha_id) ?? []), item]);
+  }
+  for (const [id, lista] of porCampanha) placar.set(id, placarDaFila(lista));
+  return placar;
+}
+
+/**
  * Visitas e vendas de quem recebeu cada lista (Fase 3). Três consultas para
- * as 20 listas da tela, nunca uma por lista. A RLS recorta: o corretor vê os
- * próprios leads e as próprias vendas.
+ * as listas da tela, nunca uma por lista. A RLS recorta.
  */
 async function desfechosDasListas(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -509,6 +765,77 @@ async function desfechosDasListas(
   return resultado;
 }
 
+function mediana(valores: number[]): number | null {
+  if (valores.length === 0) return null;
+  const ordenados = [...valores].sort((a, b) => a - b);
+  const meio = Math.floor(ordenados.length / 2);
+  return ordenados.length % 2 ? ordenados[meio] : (ordenados[meio - 1] + ordenados[meio]) / 2;
+}
+
+/**
+ * O caminho de cada lista (Fase 1): enviadas → responderam → conversaram,
+ * mais a mediana do tempo até a resposta. "Conversou" = trocou duas ou mais
+ * mensagens depois de receber: uma resposta só pode ser "pare".
+ */
+async function funisDasListas(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  ids: string[],
+): Promise<Map<string, FunilDaLista>> {
+  const resultado = new Map<string, FunilDaLista>();
+  if (ids.length === 0) return resultado;
+
+  const { data: itens } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .select("campanha_id, lead_id, status, enviado_em, resposta_em")
+    .in("campanha_id", ids)
+    .in("status", ["enviado", "respondido"]);
+
+  const respondidos = (itens ?? []).filter((i) => i.status === "respondido" && i.lead_id && i.enviado_em);
+  const leadIds = [...new Set(respondidos.map((i) => i.lead_id as string))];
+  const falasPorLead = new Map<string, string[]>();
+  if (leadIds.length > 0) {
+    const { data: conversas } = await supabase.from("whatsapp_conversas").select("id, lead_id").in("lead_id", leadIds);
+    const leadDaConversa = new Map((conversas ?? []).map((c) => [c.id, c.lead_id as string]));
+    const desde = respondidos.map((i) => i.enviado_em as string).sort()[0];
+    if (leadDaConversa.size > 0) {
+      const { data: falas } = await supabase
+        .from("whatsapp_mensagens")
+        .select("conversa_id, created_at")
+        .in("conversa_id", [...leadDaConversa.keys()])
+        .eq("remetente", "cliente")
+        .gte("created_at", desde)
+        .limit(5000);
+      for (const f of falas ?? []) {
+        const lead = leadDaConversa.get(f.conversa_id);
+        if (lead) falasPorLead.set(lead, [...(falasPorLead.get(lead) ?? []), f.created_at]);
+      }
+    }
+  }
+
+  for (const id of ids) {
+    const daLista = (itens ?? []).filter((i) => i.campanha_id === id);
+    const resp = daLista.filter((i) => i.status === "respondido");
+    const tempos = resp
+      .filter((i) => i.enviado_em && i.resposta_em)
+      .map((i) => (new Date(i.resposta_em!).getTime() - new Date(i.enviado_em!).getTime()) / 60_000)
+      .filter((m) => m >= 0);
+    const conversaram = resp.filter(
+      (i) =>
+        i.lead_id &&
+        i.enviado_em &&
+        (falasPorLead.get(i.lead_id) ?? []).filter((t) => t >= i.enviado_em!).length >= 2,
+    ).length;
+    const m = mediana(tempos);
+    resultado.set(id, {
+      enviadas: daLista.length,
+      responderam: resp.length,
+      conversaram,
+      medianaRespostaMin: m === null ? null : Math.round(m),
+    });
+  }
+  return resultado;
+}
+
 export type ItemDaLista = {
   id: string;
   leadId: string | null;
@@ -521,14 +848,18 @@ export type ItemDaLista = {
   respostaEm: string | null;
 };
 
+/** Quantas pessoas a gaveta "Ver quem recebeu" carrega por vez (Fase 4). */
+const ITENS_POR_PAGINA = 200;
+
 /**
- * Quem está na lista e o que aconteceu com cada um (Fase 1): na fila,
- * enviada, respondeu ou não enviada, com o motivo. Responde "por que fulano
- * não recebeu?" sem abrir o banco.
+ * Quem está na lista e o que aconteceu com cada um (Fase 1), de 200 em 200
+ * (Fase 4: antes parava em 500 sem avisar). Responde "por que fulano não
+ * recebeu?" sem abrir o banco.
  */
 export async function detalharCampanha(
   campanhaId: string,
-): Promise<{ itens: ItemDaLista[] } | { erro: string }> {
+  pagina = 0,
+): Promise<{ itens: ItemDaLista[]; total: number; temMais: boolean } | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
   const supabase = await createClient();
@@ -542,15 +873,21 @@ export async function detalharCampanha(
     .maybeSingle();
   if (!campanha) return { erro: "Lista não encontrada." };
 
-  const { data, error } = await supabase
+  const inicio = Math.max(0, pagina) * ITENS_POR_PAGINA;
+  const { data, error, count } = await supabase
     .from("whatsapp_campanhas_fila")
-    .select("id, lead_id, telefone, status, erro_motivo, agendado_para, enviado_em, resposta_em, lead:leads(nome)")
+    .select("id, lead_id, telefone, status, erro_motivo, agendado_para, enviado_em, resposta_em, lead:leads(nome)", {
+      count: "exact",
+    })
     .eq("campanha_id", campanhaId)
     .order("agendado_para", { ascending: true })
-    .limit(500);
+    .range(inicio, inicio + ITENS_POR_PAGINA - 1);
   if (error) return { erro: "Não foi possível abrir a lista agora." };
 
+  const total = count ?? 0;
   return {
+    total,
+    temMais: inicio + (data?.length ?? 0) < total,
     itens: (data ?? []).map((i) => {
       const lead = (Array.isArray(i.lead) ? i.lead[0] : i.lead) as { nome: string | null } | null;
       return {
@@ -574,9 +911,7 @@ export async function detalharCampanha(
  * Pausar é só o estado: o disparador pega apenas lista `em_andamento` e
  * confere de novo antes de cada mensagem. Retomar não reagenda nada: o
  * espaçamento de 35-75s mora no banco (0062) e vale para os itens vencidos.
- * Cancelar apaga o que ainda não saiu (a fila é lista de intenções, mesma
- * régua do "Limpar fila") e marca a lista como `cancelada` (0153), para o
- * histórico não dizer "Concluída" do que foi interrompido.
+ * Cancelar apaga o que ainda não saiu e marca a lista como `cancelada` (0153).
  */
 export async function pausarCampanha(campanhaId: string): Promise<{ ok: true } | { erro: string }> {
   return mudarEstadoDaLista(campanhaId, "em_andamento", "pausada");
@@ -598,10 +933,10 @@ export async function cancelarCampanha(
   // Primeiro o estado: a partir daqui o disparador já não pega a lista.
   const { data: mudou } = await supabase
     .from("whatsapp_campanhas")
-    .update({ status: "cancelada" })
+    .update({ status: "cancelada", viva: false })
     .eq("id", campanhaId)
     .eq("corretor_id", corretor.id)
-    .in("status", ["em_andamento", "pausada", "rascunho"])
+    .in("status", ["em_andamento", "pausada"])
     .select("id");
   if (!mudou || mudou.length === 0) return { erro: "Esta lista já terminou ou não é sua." };
 
@@ -652,13 +987,8 @@ export type ResultadoProcessarFila =
   | { erro: string };
 
 /**
- * Empurra a fila deste corretor agora, e deixa a corrente acesa.
- *
- * O botão continua existindo para quem não quer esperar nem um minuto, mas
- * deixou de ser o caminho principal: ele processa um lote e acende a
- * corrente de auto-disparo, que segue despachando sozinha. Antes, cada
- * clique mandava no máximo 3 mensagens e parava — uma campanha de 40 leads
- * exigia o corretor clicando o dia inteiro.
+ * Empurra a fila deste corretor agora, e deixa a corrente acesa. Processa um
+ * lote curto (a tela está esperando) e delega o resto à corrente.
  */
 export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
   const corretor = await getCorretorLogado();
@@ -667,9 +997,6 @@ export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
   const resultado = await processarFilaCampanhas({
     corretorId: corretor.id,
     limiteTotal: 2,
-    // A server action responde para uma tela com alguém olhando: trabalha
-    // pouco e delega o resto à corrente, em vez de segurar o botão girando.
-    // O trabalho de verdade é da corrente, que tem os 60s da rota inteira.
     orcamentoMs: 8_000,
   });
 
@@ -677,10 +1004,8 @@ export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
 
   revalidatePath("/corretor/campanhas");
 
-  // Fora da janela o disparador não para mais: ele estreita o escopo para
-  // as listas marcadas com "enviar a qualquer hora" (0058). Só é erro
-  // quando NADA saiu — senão a tela diria "não disparou" logo depois de
-  // disparar, que é a pior forma de mentir para quem está olhando.
+  // Só é erro quando NADA saiu — senão a tela diria "não disparou" logo
+  // depois de disparar.
   if (!resultado.dentroDaJanela && resultado.processados === 0) {
     return {
       erro: "Fora do horário comercial (9h às 20h59, de segunda a sábado) — as listas comuns não disparam agora. A fila segue esperando a próxima janela.",
@@ -704,16 +1029,10 @@ export type ResultadoEnvioImediato =
 /**
  * Dispara UMA mensagem para todos os leads, a qualquer hora.
  *
- * É o botão "enviar agora, mesmo fora do horário" do painel. Por baixo não
- * há caminho novo: monta uma campanha comum marcada com `ignorar_janela`
- * (0058) e acende a mesma corrente de disparo. Fazer disso um caminho
- * paralelo — mandar direto pelo provedor, sem fila — perderia de uma vez o
- * espaçamento anti-ban, o registro no Live Chat, a cota e o histórico da
- * campanha. O que muda é a janela, e só ela.
- *
- * O título é gerado aqui porque este botão não tem formulário: quem clica
- * quer mandar, não quer nomear uma lista. No histórico ele aparece com a
- * data, para depois se saber qual disparo foi este.
+ * Por baixo não há caminho novo: monta uma lista comum marcada com
+ * `ignorar_janela` (0058) e acende a mesma corrente de disparo. O que muda é
+ * a janela, e só ela. Sem imóvel: variáveis do imóvel na mensagem são
+ * recusadas (`variaveisSemValor`) em vez de virar texto genérico.
  */
 export async function enviarAgoraParaTodosOsLeads(params: {
   mensagemBase: string;
@@ -737,7 +1056,6 @@ export async function enviarAgoraParaTodosOsLeads(params: {
   return criarCampanha({
     titulo: `Envio imediato · ${agora}`,
     empreendimentoId: null,
-    empreendimentoNome: "nossos lançamentos em Alphaville",
     filtro: "todos",
     mensagemBase,
     ignorarJanela: true,
@@ -745,30 +1063,26 @@ export async function enviarAgoraParaTodosOsLeads(params: {
 }
 
 export type ResultadoLiberacao =
-  | { ok: true; campanhas: number; mensagens: number; retentativas: number }
+  | { ok: true; campanhas: number; mensagens: number }
   | { erro: string };
 
 /**
- * Solta uma fila que está esperando o horário comercial.
+ * Solta, UMA VEZ, uma fila que está esperando o horário comercial.
  *
- * Sem isto, a exceção de janela (0058) só valia para campanha NOVA: a lista
- * criada às 21h já nascia com cada item agendado para as 9h do dia seguinte,
- * e marcar a campanha depois não adiantava nada — o disparador obedece o
- * `agendado_para`, não a marca. Liberar é, portanto, duas coisas:
+ * Liberar é duas coisas: reagendar os pendentes a partir de agora (com o
+ * mesmo espaçamento de 35-75s, num comando só no banco — `reagendar_fila_
+ * campanha`, 0155) e autorizar a lista a sair fora da janela ATÉ o último
+ * item reagendado (`janela_liberada_ate`). Depois disso ela volta à janela
+ * segura sozinha.
  *
- *  1. marcar a campanha com `ignorar_janela`; e
- *  2. **reagendar os pendentes a partir de agora**, mantendo o espaçamento
- *     de 35-75s. É o passo que as pessoas esquecem, e sem ele o botão
- *     parece não fazer nada.
- *
- * Também devolve à fila os itens em `erro`. O motivo é específico: até
- * 27/08/2026 o envio mandava o telefone sem o DDI `55`, a Evolution
- * respondia `"exists": false` e o item virava erro DEFINITIVO — 39% dos
- * leads da base eram queimados por uma pontuação no cadastro. Esses erros
- * são falsos, e a cota gasta com eles já foi devolvida (0034).
- *
- * `campanhaId` ausente = todas as campanhas em andamento do corretor. É o
- * botão "liberar tudo"; com id, é o botão de uma lista só.
+ * O que mudou no roadmap (Fase 0, 03/10/2026):
+ * - não marca mais `ignorar_janela` para sempre;
+ * - NÃO devolve à fila os itens com erro. Eles eram revividos por causa de um
+ *   defeito de DDI de agosto, já corrigido, e a revivência devolvia número
+ *   sem WhatsApp, quem esgotou as tentativas e quem foi barrado por estar
+ *   conversando com o corretor;
+ * - só libera o horário: cota acabada, número caído ou bloqueado não são
+ *   coisa que este botão resolva, e a tela já não o oferece nesses casos.
  */
 export async function liberarEnvioAgora(params?: {
   campanhaId?: string;
@@ -778,70 +1092,60 @@ export async function liberarEnvioAgora(params?: {
 
   const supabase = await createClient();
 
-  // A RLS já recorta por corretor; o `.eq` explícito existe porque o gestor
-  // enxerga a equipe inteira desde a 0031 e liberaria a fila dos colegas.
+  // Dentro do horário (e do expediente) a fila já está saindo sozinha:
+  // liberar não teria o que fazer, e reagendar só embaralharia a ordem.
+  const { data: instancia } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("expediente_inicio, expediente_fim")
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+  const expediente = instancia
+    ? { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim }
+    : null;
+  if (dentroDaJanelaDoCorretor(new Date(), expediente)) {
+    return { erro: "As listas já estão dentro do horário e saindo sozinhas." };
+  }
+
   let queryCampanhas = supabase
     .from("whatsapp_campanhas")
     .select("id")
     .eq("corretor_id", corretor.id)
     .eq("status", "em_andamento");
-
   if (params?.campanhaId) queryCampanhas = queryCampanhas.eq("id", params.campanhaId);
 
   const { data: campanhas } = await queryCampanhas;
   const ids = (campanhas ?? []).map((c) => c.id);
   if (ids.length === 0) return { erro: "Nenhuma lista em andamento para liberar." };
 
-  const { error: erroMarca } = await supabase
-    .from("whatsapp_campanhas")
-    .update({ ignorar_janela: true })
-    .in("id", ids);
+  const { data: reagendados, error: erroReagenda } = await supabase.rpc("reagendar_fila_campanha", {
+    p_campanhas: ids,
+  });
+  if (erroReagenda) return { erro: "Não foi possível liberar o envio agora." };
 
-  if (erroMarca) return { erro: "Não foi possível liberar o envio agora." };
-
-  // Erro falso volta para a fila ANTES do reagendamento, para entrar na
-  // mesma escada de horários dos pendentes.
-  const { data: revividos } = await supabase
+  const { data: ultimo } = await supabase
     .from("whatsapp_campanhas_fila")
-    .update({ status: "pendente", erro_motivo: null })
-    .in("campanha_id", ids)
-    .eq("status", "erro")
-    .select("id");
-
-  const { data: pendentes } = await supabase
-    .from("whatsapp_campanhas_fila")
-    .select("id")
+    .select("agendado_para")
     .in("campanha_id", ids)
     .eq("status", "pendente")
-    .order("agendado_para", { ascending: true });
+    .order("agendado_para", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  // Reagenda a partir de agora, com o mesmo espaçamento humanizado da
-  // montagem original. Um `update` por item porque cada um recebe um
-  // horário diferente — é o preço de não despachar tudo no mesmo segundo,
-  // que é justamente o padrão que o WhatsApp lê como robô.
-  const janela = INTERVALO_MAXIMO_SEGUNDOS - INTERVALO_MINIMO_SEGUNDOS;
-  let deslocamentoSegundos = 0;
-
-  for (const item of pendentes ?? []) {
-    await supabase
-      .from("whatsapp_campanhas_fila")
-      .update({
-        agendado_para: new Date(Date.now() + deslocamentoSegundos * 1000).toISOString(),
-      })
-      .eq("id", item.id);
-    deslocamentoSegundos +=
-      INTERVALO_MINIMO_SEGUNDOS + Math.floor(Math.random() * janela);
-  }
+  // A liberação vale até o último item reagendado, com folga de 30 min
+  // para retentativas. Depois disso a lista volta à janela segura.
+  const ate = new Date(
+    Math.max(Date.now(), ultimo ? new Date(ultimo.agendado_para).getTime() : 0) + 30 * 60_000,
+  ).toISOString();
+  const { error: erroMarca } = await supabase
+    .from("whatsapp_campanhas")
+    .update({ janela_liberada_ate: ate })
+    .in("id", ids);
+  if (erroMarca) return { erro: "Não foi possível liberar o envio agora." };
 
   acenderCorrenteDeDisparo();
   revalidatePath("/corretor/campanhas");
 
-  return {
-    ok: true,
-    campanhas: ids.length,
-    mensagens: pendentes?.length ?? 0,
-    retentativas: revividos?.length ?? 0,
-  };
+  return { ok: true, campanhas: ids.length, mensagens: reagendados ?? 0 };
 }
 
 export type ResultadoLimparFila =
@@ -851,19 +1155,8 @@ export type ResultadoLimparFila =
  * Esvazia a fila de disparo deste corretor.
  *
  * Só remove o que AINDA NÃO SAIU — `pendente` e `erro`. Mensagem já
- * entregue (`enviado`) ou respondida pelo cliente (`respondido`) é
- * histórico do atendimento e nunca pode desaparecer: é dela que o Live Chat
- * e a linha do tempo do lead são feitos.
- *
- * Por que apagar em vez de marcar como cancelada: a fila é uma lista de
- * intenções, não de fatos. Um item pendente é uma mensagem que ninguém
- * mandou; guardá-lo como "cancelado" encheria a tabela de linhas que nunca
- * seriam consultadas — o mesmo erro do `historico_envios`, que acumulou 53
- * registros que nenhuma tela lia.
- *
- * As campanhas que ficam sem nada pendente são fechadas na sequência. Sem
- * isso elas continuariam em "em andamento" para sempre, prometendo um
- * disparo que não existe mais.
+ * entregue ou respondida é histórico do atendimento e nunca pode sumir.
+ * As listas que ficam sem nada pendente são fechadas na sequência.
  */
 export async function limparFilaDisparo(): Promise<ResultadoLimparFila> {
   const corretor = await getCorretorLogado();
@@ -871,13 +1164,11 @@ export async function limparFilaDisparo(): Promise<ResultadoLimparFila> {
 
   const supabase = await createClient();
 
-  // O `.eq("corretor_id")` é explícito de propósito: desde a 0031 as
-  // policies de campanha incluem o gestor, e sem ele um gestor limparia a
-  // fila da equipe inteira ao clicar no botão da própria tela.
   const { data: campanhas } = await supabase
     .from("whatsapp_campanhas")
     .select("id")
-    .eq("corretor_id", corretor.id);
+    .eq("corretor_id", corretor.id)
+    .neq("status", "rascunho");
 
   const ids = (campanhas ?? []).map((c) => c.id);
   if (ids.length === 0) return { ok: true, removidos: 0, campanhasFechadas: 0 };
@@ -891,8 +1182,6 @@ export async function limparFilaDisparo(): Promise<ResultadoLimparFila> {
 
   if (error) return { erro: "Não foi possível limpar a fila agora. Tente de novo." };
 
-  // Fecha o que ficou sem pendência. Uma campanha cuja fila esvaziou não
-  // está mais "em andamento" — dizer que está é mentir na tela.
   let campanhasFechadas = 0;
   for (const id of ids) {
     const { count } = await supabase
@@ -904,10 +1193,10 @@ export async function limparFilaDisparo(): Promise<ResultadoLimparFila> {
     if ((count ?? 0) === 0) {
       const { data } = await supabase
         .from("whatsapp_campanhas")
-        .update({ status: "concluida" })
+        .update({ status: "concluida", viva: false })
         .eq("id", id)
         .eq("corretor_id", corretor.id)
-        .in("status", ["em_andamento", "pausada", "rascunho"])
+        .eq("status", "em_andamento")
         .select("id");
       campanhasFechadas += data?.length ?? 0;
     }
@@ -917,50 +1206,8 @@ export async function limparFilaDisparo(): Promise<ResultadoLimparFila> {
   return { ok: true, removidos: removidas?.length ?? 0, campanhasFechadas };
 }
 
-/**
- * TEMPORÁRIO — ferramenta de FASE DE TESTE.
- *
- * Zera a cota do dia, o bloqueio e o disjuntor deste corretor, para não ser
- * preciso esperar a virada do dia a cada experimento.
- *
- * ISTO AFROUXA A PROTEÇÃO ANTI-BAN DE PROPÓSITO. A cota diária existe
- * porque volume alto num número novo é o caminho mais curto para o WhatsApp
- * bloquear a linha do corretor — e uma linha bloqueada não volta com
- * deploy. Enquanto este botão existir, quem clicar está assumindo esse
- * risco conscientemente.
- *
- * `conectado_em` não é tocado: zerá-lo reiniciaria a curva de aquecimento e
- * daria cota MENOR, além de mentir sobre a idade do número.
- *
- * PARA REMOVER depois da fase de teste: apagar esta função, o botão em
- * `CampanhasManager.tsx` e a função `resetar_cota_campanha` no banco
- * (migration 0034).
- */
-export async function resetarCotaDisparo(): Promise<{ ok?: true; erro?: string }> {
-  const corretor = await getCorretorLogado();
-  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
-
-  const supabase = await createClient();
-
-  // Só a instância DESTE corretor: a RPC é `security definer` e recebe um
-  // id, então quem escolhe o id precisa ser esta camada, com a sessão.
-  const { data: instancia } = await supabase
-    .from("corretor_whatsapp_instancias")
-    .select("id")
-    .eq("corretor_id", corretor.id)
-    .maybeSingle();
-
-  if (!instancia) return { erro: "Nenhum número de WhatsApp configurado para você." };
-
-  const { error } = await supabase.rpc("resetar_cota_campanha", {
-    p_instancia_id: instancia.id,
-  });
-
-  if (error) return { erro: "Não foi possível resetar a cota agora." };
-
-  revalidatePath("/corretor/campanhas");
-  return { ok: true };
-}
+/** O que está impedindo a fila de andar, em categoria — a tela decide o botão por ela. */
+export type TipoDeImpedimento = "sem_numero" | "bloqueado" | "desconectado" | "cota" | "horario" | "expediente";
 
 export type StatusDisparo = {
   /** Nome pareado no provedor; null quando o número ainda não conectou. */
@@ -973,15 +1220,25 @@ export type StatusDisparo = {
   proximoAgendadoEm: string | null;
   /** O que está impedindo a fila de andar, em português, ou null se está tudo certo. */
   impedimento: string | null;
+  impedimentoTipo: TipoDeImpedimento | null;
+  /** Previsão de término do que sai hoje (ISO), quando há previsão. */
+  terminaEm: string | null;
+  /** Quantas ficam para os próximos dias. */
+  continuaAmanha: number;
 };
 
+/** O dia de hoje em São Paulo (YYYY-MM-DD) — o mesmo relógio da cota (0155). */
+function hojeEmSaoPaulo(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+}
+
 /**
- * O que o painel precisa saber para responder "por que minha campanha não
- * está saindo?" sem ninguém abrir o banco.
+ * O que o painel precisa saber para responder "por que minha lista não está
+ * saindo?" e "quando termina?" sem ninguém abrir o banco.
  *
- * Esta pergunta não tinha resposta antes: uma fila 100% pendente era
- * indistinguível de uma fila travada por número não pareado, cota estourada
- * ou disjuntor aberto. Os três casos apareciam como "0 enviados".
+ * Desde o roadmap das listas, conta também o EXPEDIENTE do corretor (0148):
+ * antes a tela dizia "saem sozinhas" enquanto o disparador segurava tudo
+ * porque o expediente dele tinha acabado.
  */
 export async function statusDisparo(): Promise<StatusDisparo | null> {
   const corretor = await getCorretorLogado();
@@ -992,7 +1249,7 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
     .select(
-      "status_conexao, telefone_conectado, conectado_em, bloqueado_ate, envios_campanha_contador, envios_campanha_data",
+      "status_conexao, telefone_conectado, conectado_em, bloqueado_ate, envios_campanha_contador, envios_campanha_data, expediente_inicio, expediente_fim",
     )
     .eq("corretor_id", corretor.id)
     .maybeSingle();
@@ -1028,33 +1285,58 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
   }
 
   const conectadoEm = instancia?.conectado_em ? new Date(instancia.conectado_em) : null;
-  const hoje = new Date().toISOString().slice(0, 10);
   const enviosHoje =
-    instancia?.envios_campanha_data === hoje ? instancia.envios_campanha_contador : 0;
+    instancia?.envios_campanha_data === hojeEmSaoPaulo() ? instancia.envios_campanha_contador : 0;
 
   const saldoHoje = conectadoEm
     ? saldoDiario({ conectadoEm, enviosCampanhaHoje: enviosHoje })
     : null;
-  const janelaAberta = dentroDaJanela(new Date());
+  const agora = new Date();
+  const janelaAberta = dentroDaJanela(agora);
+  const expediente = instancia
+    ? { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim }
+    : null;
+  const noExpediente = dentroDaJanelaDoCorretor(agora, expediente);
   const bloqueado =
-    instancia?.bloqueado_ate && new Date(instancia.bloqueado_ate) > new Date();
+    instancia?.bloqueado_ate && new Date(instancia.bloqueado_ate) > agora;
 
   let impedimento: string | null = null;
+  let impedimentoTipo: TipoDeImpedimento | null = null;
   if (!instancia) {
-    impedimento =
-      "Nenhum número de WhatsApp cadastrado. Conecte o seu em Configurações do WhatsApp.";
+    impedimentoTipo = "sem_numero";
+    impedimento = "Nenhum número de WhatsApp cadastrado. Conecte o seu em Minha IA → WhatsApp.";
   } else if (bloqueado) {
-    impedimento = `Envios pausados automaticamente até ${new Date(instancia.bloqueado_ate as string).toLocaleString("pt-BR")} após falhas seguidas do provedor.`;
+    impedimentoTipo = "bloqueado";
+    impedimento = `Envios pausados automaticamente até ${new Date(instancia.bloqueado_ate as string).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} depois de falhas seguidas do WhatsApp. Voltam sozinhos.`;
   } else if (instancia.status_conexao !== "conectado" || !conectadoEm) {
+    impedimentoTipo = "desconectado";
     impedimento =
-      "O número ainda não está pareado. Leia o QR Code em Configurações do WhatsApp — sem isso nenhum disparo é autorizado.";
+      "O número não está conectado. Leia o QR Code em Minha IA → WhatsApp — sem isso nenhuma mensagem sai.";
   } else if (saldoHoje === 0) {
-    impedimento =
-      "Cota diária de disparos deste número atingida. A fila continua sozinha amanhã.";
+    impedimentoTipo = "cota";
+    impedimento = "Hoje já saíram todas as mensagens que o seu número aguenta com segurança. A fila continua sozinha amanhã.";
   } else if (!janelaAberta) {
+    impedimentoTipo = "horario";
     impedimento =
       "Fora do horário comercial (9h às 20h59, de segunda a sábado). A fila retoma sozinha na próxima janela.";
+  } else if (!noExpediente) {
+    impedimentoTipo = "expediente";
+    impedimento = `Fora do seu expediente (${instancia.expediente_inicio}h às ${instancia.expediente_fim}h). A fila retoma sozinha no começo do próximo expediente.`;
   }
+
+  // A janela de hoje é a interseção entre a janela segura e o expediente.
+  const previsao =
+    !impedimento && pendentes > 0
+      ? previsaoDeTermino({
+          pendentes,
+          saldoHoje,
+          agora,
+          expediente: {
+            inicioHora: Math.max(9, instancia?.expediente_inicio ?? 9),
+            fimHora: Math.min(21, instancia?.expediente_fim ?? 21),
+          },
+        })
+      : null;
 
   return {
     numeroConectado: instancia?.telefone_conectado ?? null,
@@ -1064,5 +1346,8 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
     pendentes,
     proximoAgendadoEm,
     impedimento,
+    impedimentoTipo,
+    terminaEm: previsao?.terminaEm?.toISOString() ?? null,
+    continuaAmanha: previsao?.continuaAmanha ?? 0,
   };
 }

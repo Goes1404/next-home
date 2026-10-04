@@ -1,5 +1,6 @@
 "use client";
 
+import { listaRecemCriada } from "./listaRecemCriada";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { AlertTriangle, Send } from "lucide-react";
@@ -98,21 +99,13 @@ export function EnvioImediato({
       setMensagem("");
       setQuantos(null);
       aoEnviar(
-        {
+        listaRecemCriada({
           id: resultado.campanhaId,
           titulo: "Envio imediato",
           empreendimentoNome: null,
           totalLeads: resultado.totalLeads,
-          totalEnviados: 0,
-          totalRespondidos: 0,
-          status: "em_andamento",
-        // Campanha recém-criada não tem envio nenhum, então não há placar.
-        testeAB: null,
-        vencedora: null,
-        desfecho: { visitas: 0, vendas: 0 },
-          criadoEm: new Date().toISOString(),
-        },
-        `Saindo para ${resultado.totalLeads} lead${resultado.totalLeads === 1 ? "" : "s"}, uma mensagem a cada minuto — independente do horário.`,
+        }),
+        `Saindo para ${resultado.totalLeads} lead${resultado.totalLeads === 1 ? "" : "s"}, com 35 a 75 segundos entre uma mensagem e outra — independente do horário.`,
       );
     });
   }
@@ -132,12 +125,12 @@ export function EnvioImediato({
           setMensagem(e.target.value);
           setConfirmando(false);
         }}
-        placeholder="Ex.: Oi {nome}, abriu uma unidade no {imovel} que combina com o que você procurava."
+        placeholder="Ex.: Oi {nome}, abriu uma condição nova que combina com o que você procurava. Posso te contar?"
         aria-label="Mensagem para todos os leads"
         className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento mt-4 w-full rounded-xl border p-3.5 focus:outline-none"
       />
       <p className="text-fluid-xs text-tenue mt-1.5">
-        <code className="bg-vidro-forte rounded px-1">{"{nome}"}</code> vira o nome da pessoa.
+        <code className="bg-vidro-forte rounded px-1">{"{nome}"}</code> vira o nome da pessoa. Este envio não tem imóvel: para falar de um, monte uma lista acima.
       </p>
 
       {foraDoHorarioCivil && !confirmando && (

@@ -260,7 +260,7 @@ export async function getTimelineDoLead(leadId: string): Promise<Interacao[]> {
     // criaria duas verdades para divergir.
     supabase
       .from("whatsapp_campanhas_fila")
-      .select("id, created_at, campanha:whatsapp_campanhas(titulo)")
+      .select("id, created_at, status, enviado_em, resposta_em, erro_motivo, mensagem_personalizada, campanha:whatsapp_campanhas(titulo)")
       .eq("lead_id", leadId)
       .order("created_at", { ascending: false })
       .limit(50),
@@ -280,17 +280,40 @@ export async function getTimelineDoLead(leadId: string): Promise<Interacao[]> {
     em: i.created_at,
   }));
 
+  /*
+   * A lista na ficha conta a HISTÓRIA, não só a entrada (roadmap das listas,
+   * Fase 3): o que foi enviado, se saiu, e se o cliente respondeu. Antes a
+   * ficha dizia só "entrou na lista X", e o corretor tinha de abrir a lista
+   * para saber se a mensagem tinha chegado.
+   */
   for (const item of listas ?? []) {
-    const campanha = (Array.isArray(item.campanha) ? item.campanha[0] : item.campanha) as {
-      titulo: string;
-    } | null;
+    const campanha = (Array.isArray(item.campanha) ? item.campanha[0] : item.campanha) as { titulo: string } | null;
+    const titulo = campanha?.titulo ?? null;
+    const mensagem = item.mensagem_personalizada?.trim();
+    const situacao =
+      item.status === "erro"
+        ? ` Não foi enviada: ${item.erro_motivo ?? "erro"}`
+        : item.status === "pendente"
+          ? " Ainda na fila."
+          : mensagem
+            ? ` Mensagem: “${mensagem.length > 160 ? `${mensagem.slice(0, 157)}…` : mensagem}”`
+            : "";
     itens.push({
       id: `lista-${item.id}`,
       tipo: "sistema",
-      conteudo: textoDaEntradaNaLista(campanha?.titulo ?? null, item.created_at),
+      conteudo: `${textoDaEntradaNaLista(titulo, item.created_at)}.${situacao}`,
       autor: null,
-      em: item.created_at,
+      em: item.enviado_em ?? item.created_at,
     });
+    if (item.status === "respondido" && item.resposta_em) {
+      itens.push({
+        id: `lista-resposta-${item.id}`,
+        tipo: "sistema",
+        conteudo: `Respondeu à lista de transmissão ${titulo ? `“${titulo}”` : "sem título"}.`,
+        autor: null,
+        em: item.resposta_em,
+      });
+    }
   }
 
   const conversaIds = (conversas ?? []).map((c) => c.id);

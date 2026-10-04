@@ -1170,6 +1170,20 @@ export async function registrarRecusaDoCliente(params: {
   if (erroLead) console.error("[recusa] falha ao marcar o lead:", erroLead.message);
 
   /*
+   * E sai de verdade das listas (roadmap das listas, Fase 0). A linha do
+   * tempo abaixo diz "ele saiu das campanhas", e até 03/10/2026 isso era
+   * falso para quem já estava numa lista agendada: a mensagem saía horas
+   * depois do "não quero mais". O disparador também confere antes de cada
+   * envio; apagar aqui é para a lista mostrar a fila certa.
+   */
+  const { error: erroFila } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .delete()
+    .eq("lead_id", params.leadId)
+    .eq("status", "pendente");
+  if (erroFila) console.error("[recusa] falha ao tirar das listas:", erroFila.message);
+
+  /*
    * A linha do tempo registra UMA linha, com o motivo. É o que o corretor
    * lê para entender por que aquele lead saiu da fila — e o que permite
    * reabrir com conhecimento de causa, em vez de achar que foi engano.

@@ -6,7 +6,14 @@ import type { TemplateMensagem } from "@/lib/types";
 
 const VARIAVEIS_DISPONIVEIS = "{{nome_lead}}, {{nome_corretor}}, {{telefone_corretor}}";
 
-export function GerenciarTemplates({ templatesIniciais }: { templatesIniciais: TemplateMensagem[] }) {
+export function GerenciarTemplates({
+  templatesIniciais,
+  desempenho = {},
+}: {
+  templatesIniciais: TemplateMensagem[];
+  /** Listas que usaram cada modelo, e quanto responderam. */
+  desempenho?: Record<string, { listas: number; enviadas: number; responderam: number }>;
+}) {
   const [templates, setTemplates] = useState(templatesIniciais);
   const [editando, setEditando] = useState<TemplateMensagem | null>(null);
   const [titulo, setTitulo] = useState("");
@@ -122,6 +129,14 @@ export function GerenciarTemplates({ templatesIniciais }: { templatesIniciais: T
                 {template.titulo} {template.padrao && <span className="text-acento-suave">· padrão</span>}
               </p>
               <p className="text-fluid-xs mt-1 truncate text-apoio">{template.conteudo}</p>
+              {desempenho[template.id] && (
+                <p className="text-fluid-xs text-corpo mt-1 tabular-nums">
+                  Usado em {desempenho[template.id].listas} lista{desempenho[template.id].listas === 1 ? "" : "s"} ·{" "}
+                  {desempenho[template.id].enviadas > 0
+                    ? `${Math.round((desempenho[template.id].responderam / desempenho[template.id].enviadas) * 100)}% de resposta (${desempenho[template.id].responderam} de ${desempenho[template.id].enviadas})`
+                    : "nenhuma enviada ainda"}
+                </p>
+              )}
             </div>
             <div className="flex shrink-0 gap-2">
               <button

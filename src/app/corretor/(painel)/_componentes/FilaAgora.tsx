@@ -47,6 +47,8 @@ const REGUA: Record<TipoItemFila, string> = {
   tarefa_hoje: "bg-info",
   lembrete_hoje: "bg-info",
   sem_revisao: "bg-linha-forte",
+  // Retorno de lista de transmissão: a cor da ação que a gerou.
+  lista_com_retorno: "bg-acento",
   lead_parado: "bg-linha-forte",
 };
 

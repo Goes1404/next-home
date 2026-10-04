@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { janelaDeDias } from "@/lib/admin/janelaDeDias";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
@@ -64,7 +65,8 @@ export default async function AdminWhatsappPage() {
   // Os nomes vêm numa consulta à parte e são casados em memória: as relações
   // entre `admin_eventos`/instâncias e `corretores` não estão declaradas nos
   // tipos gerados, e um embed pelo nome da FK quebraria no primeiro rename.
-  const [{ data: instancias }, { data: interacoes }, { data: eventos }, { data: pessoas }] =
+  const desdeListas = janelaDeDias(30).corte.toISOString();
+  const [{ data: instancias }, { data: interacoes }, { data: eventos }, { data: pessoas }, { data: listas }] =
     await Promise.all([
     equipe
       .from("corretor_whatsapp_instancias")
@@ -82,7 +84,27 @@ export default async function AdminWhatsappPage() {
       .order("created_at", { ascending: false })
       .limit(20),
     supabase.from("corretores").select("id, nome"),
+    /*
+     * As listas de transmissão da equipe nos últimos 30 dias (roadmap das
+     * listas, Fase 3): só contagens, nunca o texto que foi mandado (0134).
+     */
+    equipe
+      .from("whatsapp_campanhas")
+      .select("corretor_id, total_leads, total_enviados, total_respondidos, status")
+      .neq("status", "rascunho")
+      .gte("created_at", desdeListas),
   ]);
+
+  const listasPorCorretor = new Map<string, { listas: number; enviadas: number; responderam: number; enviando: number }>();
+  for (const l of listas ?? []) {
+    const a = listasPorCorretor.get(l.corretor_id) ?? { listas: 0, enviadas: 0, responderam: 0, enviando: 0 };
+    a.listas++;
+    a.enviadas += l.total_enviados;
+    a.responderam += l.total_respondidos;
+    if (l.status === "em_andamento") a.enviando++;
+    listasPorCorretor.set(l.corretor_id, a);
+  }
+  const statusPorCorretor = new Map((instancias ?? []).map((i) => [i.corretor_id, i.status_conexao]));
 
   const nomePor = new Map((pessoas ?? []).map((p) => [p.id, p.nome]));
 
@@ -197,6 +219,35 @@ export default async function AdminWhatsappPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="cartao p-5">
+        <h2 className="text-fluid-base font-bold text-titulo">Listas de transmissão da equipe</h2>
+        <p className="text-fluid-xs text-apoio mt-1">
+          Últimos 30 dias, por corretor. Lista com número desconectado não sai — é o primeiro
+          lugar para olhar quando a taxa de resposta some.
+        </p>
+        {listasPorCorretor.size === 0 ? (
+          <p className="text-fluid-sm text-apoio mt-3">Nenhuma lista enviada nos últimos 30 dias.</p>
+        ) : (
+          <ul className="divide-linha mt-3 divide-y">
+            {[...listasPorCorretor.entries()].map(([id, l]) => {
+              const taxa = l.enviadas > 0 ? Math.round((l.responderam / l.enviadas) * 100) : null;
+              const conectado = statusPorCorretor.get(id) === "conectado";
+              return (
+                <li key={id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                  <span className="text-fluid-sm text-titulo min-w-0 font-medium">{nomePor.get(id) ?? "Corretor"}</span>
+                  <span className="text-fluid-xs text-corpo flex flex-wrap gap-x-4 tabular-nums">
+                    <span>{l.listas} lista{l.listas === 1 ? "" : "s"}{l.enviando > 0 ? ` (${l.enviando} enviando)` : ""}</span>
+                    <span>{l.enviadas} enviadas</span>
+                    <span className="text-ok">{l.responderam} responderam{taxa !== null ? ` (${taxa}%)` : ""}</span>
+                    {!conectado && <span className="text-alerta">número desconectado</span>}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       <section className="cartao p-5">

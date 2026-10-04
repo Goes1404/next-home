@@ -2522,6 +2522,15 @@ export type Database = {
       }
       whatsapp_campanhas: {
         Row: {
+          criterio: Json | null
+          viva: boolean
+          viva_ate: string | null
+          viva_varrida_em: string | null
+          janela_liberada_ate: string | null
+          vencedora_em: string | null
+          midias: Json
+          contexto_template: Json | null
+          template_id: string | null
           corretor_id: string
           created_at: string
           empreendimento_id: string | null
@@ -2537,6 +2546,15 @@ export type Database = {
           total_respondidos: number
         }
         Insert: {
+          criterio?: Json | null
+          viva?: boolean
+          viva_ate?: string | null
+          viva_varrida_em?: string | null
+          janela_liberada_ate?: string | null
+          vencedora_em?: string | null
+          midias?: Json
+          contexto_template?: Json | null
+          template_id?: string | null
           corretor_id: string
           created_at?: string
           empreendimento_id?: string | null
@@ -2552,6 +2570,15 @@ export type Database = {
           total_respondidos?: number
         }
         Update: {
+          criterio?: Json | null
+          viva?: boolean
+          viva_ate?: string | null
+          viva_varrida_em?: string | null
+          janela_liberada_ate?: string | null
+          vencedora_em?: string | null
+          midias?: Json
+          contexto_template?: Json | null
+          template_id?: string | null
           corretor_id?: string
           created_at?: string
           empreendimento_id?: string | null
@@ -3104,9 +3131,9 @@ export type Database = {
       }
       eh_gestor: { Args: never; Returns: boolean }
       normalizar_telefone_br: { Args: { bruto: string }; Returns: string }
-      resetar_cota_campanha: {
-        Args: { p_instancia_id: string }
-        Returns: undefined
+      reagendar_fila_campanha: {
+        Args: { p_campanhas: string[]; p_intervalo_min?: number; p_intervalo_max?: number }
+        Returns: number
       }
       travar_disparo: {
         Args: { p_dono: string; p_escopo: string; p_segundos: number }

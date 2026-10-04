@@ -7,6 +7,12 @@ const componente = fs.readFileSync(
   "utf8",
 );
 const acoes = fs.readFileSync(path.join(__dirname, "acoes.ts"), "utf8");
+// A proteção de 7 dias saiu da action para o módulo compartilhado com a
+// lista viva (roadmap das listas, 03/10/2026): uma regra só para os dois.
+const publico = fs.readFileSync(
+  path.join(__dirname, "..", "..", "..", "..", "lib", "whatsapp", "publicoDaLista.ts"),
+  "utf8",
+);
 
 describe("seleção manual da lista de transmissão", () => {
   it("leva etapa junto com o destinatário sem alterar a segurança por id", () => {
@@ -32,8 +38,8 @@ describe("seleção manual da lista de transmissão", () => {
     // O imóvel entra como segundo argumento para o público "compradores" (26/09/2026).
     expect(componente).toMatch(/preverPublicoCampanha\(publico[,)]/);
     expect(componente).toContain("últimos 7 dias");
-    expect(acoes).toContain("DIAS_SEM_REPETIR_CAMPANHA = 7");
-    expect(acoes).toContain("status.eq.pendente,enviado_em.gte.");
+    expect(publico).toContain("DIAS_SEM_REPETIR_CAMPANHA = 7");
+    expect(publico).toContain("status.eq.pendente,enviado_em.gte.");
   });
 
   it("agenda no horário de Brasília e revalida a janela no servidor", () => {

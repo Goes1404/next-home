@@ -58,6 +58,8 @@ const PESOS: Record<TipoItemFila, number> = {
   tarefa_hoje: 5,
   lembrete_hoje: 5,
   sem_revisao: 6,
+  // Retorno de lista de transmissão (roadmap das listas, Fase 3).
+  lista_com_retorno: 6,
   lead_parado: 7,
 };
 

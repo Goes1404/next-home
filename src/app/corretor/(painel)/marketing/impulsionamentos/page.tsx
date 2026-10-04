@@ -180,6 +180,34 @@ export default async function PaginaImpulsionamentos() {
   ];
   const nomes = Object.fromEntries((corretores ?? []).map((c) => [c.id, c.nome]));
 
+  /*
+   * Quantos clientes de cada campanha paga a lista de transmissão alcançou
+   * (roadmap das listas, Fase 3): o anúncio traz, a lista reengaja quem
+   * esfriou. Uma consulta para todos os cartões.
+   */
+  const todosDosCartoes = [...new Set(resumos.flatMap((r) => r.leadIds))];
+  const listasPorLead = new Map<string, { recebeu: boolean; respondeu: boolean }>();
+  if (todosDosCartoes.length > 0) {
+    const { data: itensDeLista } = await supabase
+      .from("whatsapp_campanhas_fila")
+      .select("lead_id, status")
+      .in("lead_id", todosDosCartoes)
+      .in("status", ["enviado", "respondido"]);
+    for (const i of itensDeLista ?? []) {
+      if (!i.lead_id) continue;
+      const atual = listasPorLead.get(i.lead_id) ?? { recebeu: false, respondeu: false };
+      listasPorLead.set(i.lead_id, { recebeu: true, respondeu: atual.respondeu || i.status === "respondido" });
+    }
+  }
+  const listasPorCartao: Record<string, { receberam: number; responderam: number }> = {};
+  for (const r of resumos) {
+    const daLinha = r.leadIds.map((id) => listasPorLead.get(id)).filter(Boolean);
+    listasPorCartao[r.id] = {
+      receberam: daLinha.filter((x) => x!.recebeu).length,
+      responderam: daLinha.filter((x) => x!.respondeu).length,
+    };
+  }
+
   // Os clientes ligados à mão, por campanha, para a lista de cada cartão.
   const ligados: Record<string, ClienteDaLista[]> = {};
   for (const l of leads ?? []) {
@@ -201,6 +229,7 @@ export default async function PaginaImpulsionamentos() {
         nomes={nomes}
         imoveis={catalogo.filter((i) => i.id).map((i) => ({ id: i.id as string, nome: i.nome }))}
         ligados={ligados}
+        listasPorCartao={listasPorCartao}
         candidatos={(candidatos ?? []).map((c) => ({ id: c.id, nome: nomeParaExibir(c) }))}
         series={series}
         hoje={hoje}

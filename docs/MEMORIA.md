@@ -9181,3 +9181,29 @@ Nota: [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]].
   (`formatarTelefoneBr`). Número com "+" e DDI que não é 55 não é formatado:
   onze dígitos americanos virariam um celular de DDD 14.
 
+## A lista de transmissão inteira, de uma vez (0155, 03/10/2026)
+
+Nota: [[lista-de-transmissao-visivel-e-controlavel]].
+
+- **O que já existia fazia a lista certa só no caminho principal.** Os
+  furos estavam nos atalhos: o envio em massa da tela de Leads (sem regra
+  nenhuma), "Liberar envio agora" (revivia todo erro, inclusive número sem
+  WhatsApp e quem estava falando com o corretor, e marcava a lista para
+  sempre como "qualquer hora"), e o gestor alcançando a carteira da equipe.
+  **Ao criar caminho novo que FALA com o cliente, passar pelo assistente**:
+  `listaDeTransmissao.test.ts` reprova insert em `whatsapp_campanhas` fora
+  de `campanhas/acoes.ts` e `listasVivas.ts`.
+- **A lista é montada num instante e sai ao longo de horas.** Por isso o
+  disparador confere o lead de novo antes de cada envio
+  (`motivoParaNaoEnviar`), antes da cota.
+- **`resetar_cota_campanha` aceitava o id de qualquer instância** para
+  qualquer `authenticated`. Revogado; o `drop` fica para o editor SQL.
+- **Variável sem valor é recusada na criação**, não mandada em branco.
+  `{horarios}` é resolvido no ENVIO (a fila anda devagar e o horário pode
+  ter sido marcado até lá).
+- **Durante o A/B a IA não reescreve**: reescrever as duas versões diluía a
+  diferença medida. E os pendentes saem do teste sem letra depois da
+  decisão (antes recebiam a da vencedora e contaminavam o placar).
+- **Cota pelo dia de São Paulo** (`current_date` é UTC e virava às 21h).
+- **A fila do Início linkava Conversas com `?conversa=`**, que a tela não
+  lê; o certo é `?c=`.

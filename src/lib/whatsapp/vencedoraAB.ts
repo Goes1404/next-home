@@ -1,6 +1,7 @@
 import "server-only";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { aplicarTemplate } from "@/lib/whatsapp/campaignQueue";
+import type { ContextoTemplate } from "@/lib/whatsapp/listaDeTransmissao";
 import { placarDaFila, resultadoAB, vencedoraDoPlacar } from "@/lib/whatsapp/testeAB";
 
 type Supa = ReturnType<typeof createServiceClient>;
@@ -12,7 +13,7 @@ type Supa = ReturnType<typeof createServiceClient>;
  * ativas que têm segunda versão e ainda não decidiram. Quando o placar
  * atinge a régua de `resultadoAB` (30 envios de cada lado e respostas
  * diferentes), grava `variante_vencedora` e reescreve os itens PENDENTES da
- * perdedora com o texto da vencedora.
+ * perdedora com o texto da vencedora (e sem letra: já não fazem parte do teste).
  *
  * O carimbo é o claim: o UPDATE só vale se `variante_vencedora` ainda é
  * nulo, então dois tiques não reescrevem a fila duas vezes. Os itens
@@ -27,7 +28,7 @@ export async function aplicarVencedoras(supabase: Supa, campanhaIds: string[]): 
   try {
     const { data: campanhas } = await supabase
       .from("whatsapp_campanhas")
-      .select("id, mensagem_base, mensagem_base_b, empreendimento:empreendimentos(nome)")
+      .select("id, mensagem_base, mensagem_base_b, contexto_template, empreendimento:empreendimentos(nome)")
       .in("id", campanhaIds)
       .not("mensagem_base_b", "is", null)
       .is("variante_vencedora", null);
@@ -44,12 +45,21 @@ export async function aplicarVencedoras(supabase: Supa, campanhaIds: string[]): 
 
       const { data: carimbo } = await supabase
         .from("whatsapp_campanhas")
-        .update({ variante_vencedora: vencedora })
+        .update({ variante_vencedora: vencedora, vencedora_em: new Date().toISOString() })
         .eq("id", c.id)
         .is("variante_vencedora", null)
         .select("id");
       if (!carimbo || carimbo.length === 0) continue;
       trocadas++;
+
+      // Os pendentes da vencedora também saem do teste: o placar fica
+      // com o que foi enviado ANTES da decisão.
+      await supabase
+        .from("whatsapp_campanhas_fila")
+        .update({ variante: null })
+        .eq("campanha_id", c.id)
+        .eq("status", "pendente")
+        .eq("variante", vencedora);
 
       const perdedora = vencedora === "A" ? "B" : "A";
       const texto = vencedora === "A" ? c.mensagem_base : c.mensagem_base_b!;
@@ -73,12 +83,20 @@ export async function aplicarVencedoras(supabase: Supa, campanhaIds: string[]): 
         await supabase
           .from("whatsapp_campanhas_fila")
           .update({
-            variante: vencedora,
+            /*
+             * Sem letra depois da decisão (roadmap das listas, Fase 2): o
+             * item já não faz parte do teste. Antes ele ganhava a letra da
+             * vencedora, e o placar passava a misturar envios de depois da
+             * troca. Sem letra, ele também volta a ganhar a variação por IA
+             * no envio, que o teste suspende.
+             */
+            variante: null,
             personalizado_por_ia: false,
             mensagem_personalizada: aplicarTemplate({
               mensagemBase: texto,
               nomeLead: (p.lead_id && nomes.get(p.lead_id)) || "",
               empreendimentoNome: imovel?.nome ?? undefined,
+              contexto: c.contexto_template as ContextoTemplate | null,
             }),
           })
           .eq("id", p.id)

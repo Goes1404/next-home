@@ -99,7 +99,7 @@ export async function getEmailLogado(): Promise<string | null> {
  * inteira falha. Mesma armadilha que `corretor_destaques` já criou entre
  * `empreendimentos` e `corretores`.
  */
-const SELECT_LEAD = `
+export const SELECT_LEAD = `
   id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
   etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, portal_origem, anuncio_origem,
   tentativas_sem_resposta, nao_contatar_em,
@@ -107,7 +107,7 @@ const SELECT_LEAD = `
   empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome, slug, endereco)
 `;
 
-type LinhaLead = {
+export type LinhaLead = {
   id: string;
   nome: string;
   email: string | null;
@@ -129,7 +129,7 @@ type LinhaLead = {
   empreendimento: { nome: string; slug: string; endereco: string | null } | null;
 };
 
-function mapLead(row: LinhaLead): Lead {
+export function mapLead(row: LinhaLead): Lead {
   return {
     naoContatarEm: row.nao_contatar_em ?? null,
     id: row.id,

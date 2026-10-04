@@ -109,8 +109,12 @@ export function resultadoAB(entrada: {
     };
   }
 
-  if (a.respostas === b.respostas) {
-    return { a, b, temVencedor: false, leitura: "Empate: as duas versões tiveram a mesma resposta." };
+  /*
+   * Empate pela TAXA, não pela contagem (roadmap das listas, Fase 2): com 31
+   * envios de um lado e 40 do outro, 3 respostas de cada não é empate.
+   */
+  if (a.taxa === b.taxa) {
+    return { a, b, temVencedor: false, leitura: "Empate: as duas versões tiveram a mesma taxa de resposta." };
   }
 
   const vencedora = (a.taxa ?? 0) > (b.taxa ?? 0) ? a : b;

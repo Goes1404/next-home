@@ -1,13 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Clock } from "lucide-react";
-import { liberarEnvioAgora, type CampanhaListada } from "../acoes";
+import { Clock, MessagesSquare, Repeat, Sprout, Trash2 } from "lucide-react";
+import {
+  descartarRascunho,
+  liberarEnvioAgora,
+  listarCampanhas,
+  type CampanhaListada,
+} from "../acoes";
 import { BotaoDetalheDaLista, ControlesDaLista } from "./DetalheDaLista";
 
 /**
- * O que já foi enviado. Mostra progresso e resposta — as duas perguntas que
- * o corretor faz depois de criar a campanha ("saiu?" e "adiantou?").
+ * O que já foi enviado. Mostra o CAMINHO de cada lista (roadmap das listas,
+ * Fase 1): enviadas → responderam → conversaram → visitas → vendas, com o
+ * tempo até a resposta. Antes eram dois números, e "adiantou?" ficava sem
+ * resposta.
  */
 
 const ROTULO_STATUS: Record<CampanhaListada["status"], string> = {
@@ -26,12 +34,20 @@ const CLASSE_STATUS: Record<CampanhaListada["status"], string> = {
   cancelada: "bg-vidro border-linha text-tenue",
 };
 
+function dataCurta(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
+}
+
+/** Tempo até a resposta em palavras curtas: "12 min", "3 h", "2 dias". */
+function tempoCurto(minutos: number): string {
+  if (minutos < 60) return `${minutos} min`;
+  if (minutos < 48 * 60) return `${Math.round(minutos / 60)} h`;
+  return `${Math.round(minutos / 1440)} dias`;
+}
+
 /**
- * Botão de liberar UMA lista.
- *
- * O da barra de status solta a fila inteira do corretor; este existe para o
- * caso em que há mais de uma lista em andamento e só uma é urgente — soltar
- * todas seria mandar de madrugada quem podia esperar a manhã.
+ * Liberar UMA lista fora do horário. Só aparece quando o problema é o
+ * horário (a casca sabe), e vale uma vez: depois a lista volta à janela.
  */
 function BotaoLiberar({ campanhaId, aoLiberar }: { campanhaId: string; aoLiberar?: () => void }) {
   const [liberando, iniciar] = useTransition();
@@ -41,19 +57,23 @@ function BotaoLiberar({ campanhaId, aoLiberar }: { campanhaId: string; aoLiberar
     if (
       !confirm(
         "Esta lista vai sair AGORA, mesmo fora do horário comercial.\n\n" +
-          "O intervalo entre uma mensagem e outra continua valendo. Confirma?",
+          "O intervalo entre uma mensagem e outra continua valendo, e depois desta vez a lista volta ao horário comercial. Confirma?",
       )
     ) {
       return;
     }
     iniciar(async () => {
-      const resultado = await liberarEnvioAgora({ campanhaId });
-      setAviso(
-        "erro" in resultado
-          ? resultado.erro
-          : `${resultado.mensagens} mensagem${resultado.mensagens === 1 ? "" : "s"} saindo agora.`,
-      );
-      if (!("erro" in resultado)) aoLiberar?.();
+      try {
+        const resultado = await liberarEnvioAgora({ campanhaId });
+        setAviso(
+          "erro" in resultado
+            ? resultado.erro
+            : `${resultado.mensagens} mensagem${resultado.mensagens === 1 ? "" : "s"} saindo agora.`,
+        );
+        if (!("erro" in resultado)) aoLiberar?.();
+      } catch {
+        setAviso("Não deu certo agora. Recarregue a página e tente de novo.");
+      }
     });
   }
 
@@ -72,15 +92,74 @@ function BotaoLiberar({ campanhaId, aoLiberar }: { campanhaId: string; aoLiberar
   );
 }
 
+function Etapa({ rotulo, valor, destaque }: { rotulo: string; valor: string; destaque?: boolean }) {
+  return (
+    <div className="min-w-0">
+      <span className="text-tenue block text-[10px]">{rotulo}</span>
+      <span className={`font-medium tabular-nums ${destaque ? "text-ok" : "text-titulo"}`}>{valor}</span>
+    </div>
+  );
+}
+
+function LinhaDoRascunho({ c, aoMudar }: { c: CampanhaListada; aoMudar?: () => void }) {
+  const [ocupado, iniciar] = useTransition();
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-3 py-4">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-fluid-sm text-titulo font-medium break-words">{c.titulo}</p>
+          <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${CLASSE_STATUS.rascunho}`}>
+            {ROTULO_STATUS.rascunho}
+          </span>
+        </div>
+        <p className="text-fluid-xs text-apoio mt-0.5">
+          {c.empreendimentoNome ?? "Sem imóvel vinculado"} · salvo em {dataCurta(c.criadoEm)}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          href={`/corretor/campanhas?rascunho=${c.id}`}
+          className="text-fluid-xs bg-acento text-sobre-cor flex min-h-11 items-center rounded-xl px-3.5 font-medium"
+        >
+          Continuar
+        </Link>
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() => {
+            if (!confirm("Descartar este rascunho?")) return;
+            iniciar(async () => {
+              await descartarRascunho(c.id).catch(() => null);
+              aoMudar?.();
+            });
+          }}
+          className="text-fluid-xs text-apoio hover:text-perigo flex min-h-11 items-center gap-1 px-2"
+        >
+          <Trash2 className="h-3.5 w-3.5" /> Descartar
+        </button>
+      </div>
+    </li>
+  );
+}
+
 export function HistoricoCampanhas({
   campanhas,
-  aoLiberar,
+  aoMudar,
+  foraDoHorario = false,
 }: {
   campanhas: CampanhaListada[];
-  /** A casca recarrega o status da fila quando uma lista é liberada. */
-  aoLiberar?: () => void;
+  /** A casca recarrega o status da fila e o histórico quando uma lista muda. */
+  aoMudar?: () => void;
+  /** A fila espera o horário: só então "Liberar agora" faz sentido. */
+  foraDoHorario?: boolean;
 }) {
-  if (campanhas.length === 0) {
+  const [antigas, setAntigas] = useState<CampanhaListada[]>([]);
+  const [semMais, setSemMais] = useState(false);
+  const [carregando, iniciar] = useTransition();
+
+  const todas = [...campanhas, ...antigas.filter((a) => !campanhas.some((c) => c.id === a.id))];
+
+  if (todas.length === 0) {
     return (
       <p className="text-fluid-sm text-tenue py-6 text-center">
         Nenhuma lista de transmissão ainda. A primeira você cria aí em cima.
@@ -88,12 +167,28 @@ export function HistoricoCampanhas({
     );
   }
 
+  function carregarMais() {
+    const ultima = todas.at(-1);
+    if (!ultima) return;
+    iniciar(async () => {
+      try {
+        const mais = await listarCampanhas(ultima.criadoEm);
+        setAntigas((a) => [...a, ...mais]);
+        if (mais.length < 20) setSemMais(true);
+      } catch {
+        setSemMais(true);
+      }
+    });
+  }
+
   return (
     <section>
-      <h2 className="font-display text-titulo text-lg">Já enviadas</h2>
+      <h2 className="font-display text-titulo text-lg">Suas listas</h2>
 
       <ul className="divide-linha mt-3 divide-y">
-        {campanhas.map((c) => {
+        {todas.map((c) => {
+          if (c.status === "rascunho") return <LinhaDoRascunho key={c.id} c={c} aoMudar={aoMudar} />;
+
           const perc = c.totalLeads > 0 ? Math.round((c.totalEnviados / c.totalLeads) * 100) : 0;
           const taxaResposta =
             c.totalEnviados > 0 ? Math.round((c.totalRespondidos / c.totalEnviados) * 100) : 0;
@@ -102,57 +197,73 @@ export function HistoricoCampanhas({
             <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-fluid-sm text-titulo font-medium">{c.titulo}</p>
+                  <p className="text-fluid-sm text-titulo font-medium break-words">{c.titulo}</p>
                   <span
                     className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${CLASSE_STATUS[c.status]}`}
                   >
                     {ROTULO_STATUS[c.status]}
                   </span>
+                  {c.vivaAte && (
+                    <span
+                      title="Quem passar a se encaixar no público entra sozinho"
+                      className="bg-ok-lavado border-ok-linha text-ok flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold"
+                    >
+                      <Sprout className="h-3 w-3" /> Viva até {dataCurta(c.vivaAte)}
+                    </span>
+                  )}
                 </div>
                 <p className="text-fluid-xs text-apoio mt-0.5">
-                  {c.empreendimentoNome ?? "Sem imóvel vinculado"} ·{" "}
-                  {new Date(c.criadoEm).toLocaleDateString("pt-BR")}
+                  {c.empreendimentoNome ?? "Sem imóvel vinculado"} · {dataCurta(c.criadoEm)}
+                  {c.midias > 0 && ` · ${c.midias} foto${c.midias === 1 ? "" : "s"} junto`}
                 </p>
               </div>
 
-              <div className="text-fluid-xs flex shrink-0 items-center gap-5">
-                <div>
-                  <span className="text-tenue block text-[10px]">Enviadas</span>
-                  <span className="text-titulo font-medium tabular-nums">
-                    {c.totalEnviados}/{c.totalLeads} ({perc}%)
-                  </span>
-                </div>
-                <div>
-                  <span className="text-tenue block text-[10px]">Responderam</span>
-                  <span className="text-ok font-medium tabular-nums">
-                    {c.totalRespondidos} ({taxaResposta}%)
-                  </span>
-                </div>
-                {(c.desfecho.visitas > 0 || c.desfecho.vendas > 0) && (
-                  <div title="Marcaram visita ou compraram até 60 dias depois de receber">
-                    <span className="text-tenue block text-[10px]">Depois</span>
-                    <span className="text-titulo font-medium tabular-nums">
-                      {c.desfecho.visitas} visita{c.desfecho.visitas === 1 ? "" : "s"} · {c.desfecho.vendas} venda
-                      {c.desfecho.vendas === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                )}
+              {/* O caminho da lista, da entrega à venda (Fase 1). */}
+              <div className="text-fluid-xs grid w-full grid-cols-3 gap-x-4 gap-y-2 sm:w-auto sm:grid-cols-6">
+                <Etapa rotulo="Enviadas" valor={`${c.totalEnviados}/${c.totalLeads} (${perc}%)`} />
+                <Etapa rotulo="Responderam" valor={`${c.totalRespondidos} (${taxaResposta}%)`} destaque />
+                <Etapa rotulo="Conversaram" valor={String(c.funil.conversaram)} />
+                <Etapa
+                  rotulo="Resposta em"
+                  valor={c.funil.medianaRespostaMin === null ? "—" : tempoCurto(c.funil.medianaRespostaMin)}
+                />
+                <Etapa rotulo="Visitas" valor={String(c.desfecho.visitas)} />
+                <Etapa rotulo="Vendas" valor={String(c.desfecho.vendas)} />
               </div>
 
               <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                <BotaoDetalheDaLista campanha={c} />
-                <div className="flex flex-wrap items-center gap-2">
-                  {c.status === "em_andamento" && c.totalEnviados < c.totalLeads && (
-                    <BotaoLiberar campanhaId={c.id} aoLiberar={aoLiberar} />
+                <div className="flex flex-wrap items-center gap-1">
+                  <BotaoDetalheDaLista campanha={c} />
+                  {c.totalRespondidos > 0 && (
+                    <Link
+                      href={`/corretor/conversas?lista=${c.id}`}
+                      className="text-fluid-xs text-acento flex min-h-11 items-center gap-1 rounded-xl px-2 font-medium hover:underline"
+                    >
+                      <MessagesSquare className="h-3.5 w-3.5" /> Conversas de quem respondeu
+                    </Link>
                   )}
-                  <ControlesDaLista campanha={c} aoMudar={aoLiberar} />
+                  {c.repetivel && (c.status === "concluida" || c.status === "cancelada") && (
+                    <Link
+                      href={`/corretor/campanhas?repetir=${c.id}`}
+                      title="Monta uma lista nova com o mesmo público e a mesma mensagem"
+                      className="text-fluid-xs text-acento flex min-h-11 items-center gap-1 rounded-xl px-2 font-medium hover:underline"
+                    >
+                      <Repeat className="h-3.5 w-3.5" /> Repetir
+                    </Link>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {foraDoHorario && c.status === "em_andamento" && c.totalEnviados < c.totalLeads && (
+                    <BotaoLiberar campanhaId={c.id} aoLiberar={aoMudar} />
+                  )}
+                  <ControlesDaLista campanha={c} aoMudar={aoMudar} />
                 </div>
               </div>
 
               {/*
-                O placar do teste A/B (0084). Ocupa a linha inteira porque a
-                leitura é uma frase, não um número — e é a frase que evita
-                trocar a mensagem certa por causa de uma amostra de cinco.
+                O placar do teste A/B (0084). Só conta o que foi enviado
+                DURANTE o teste: depois da decisão, quem recebe a vencedora
+                não entra no placar.
               */}
               {c.testeAB && (
                 <div className="border-linha bg-elevado w-full rounded-xl border p-3">
@@ -176,7 +287,8 @@ export function HistoricoCampanhas({
                   </p>
                   {c.vencedora && (
                     <p className="text-fluid-xs text-ok mt-1 font-semibold">
-                      A versão {c.vencedora} passou a valer para quem ainda não recebeu.
+                      A versão {c.vencedora} passou a valer para quem ainda não recebeu
+                      {c.vencedoraEm ? ` (desde ${dataCurta(c.vencedoraEm)})` : ""}.
                     </p>
                   )}
                 </div>
@@ -185,6 +297,17 @@ export function HistoricoCampanhas({
           );
         })}
       </ul>
+
+      {!semMais && todas.length >= 20 && (
+        <button
+          type="button"
+          onClick={carregarMais}
+          disabled={carregando}
+          className="text-fluid-sm border-linha-forte text-corpo hover:text-titulo mt-2 flex min-h-11 w-full cursor-pointer items-center justify-center rounded-xl border transition-colors disabled:opacity-60"
+        >
+          {carregando ? "Carregando…" : "Ver listas mais antigas"}
+        </button>
+      )}
     </section>
   );
 }

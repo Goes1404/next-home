@@ -9,7 +9,7 @@ codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/
 created: 2026-09-05
 updated: 2026-10-03
 fonte: leitura do código + docs/MEMORIA.md
-summary: Criação monta a fila com agendado_para; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, cota/espaçamento no banco e variação por IA.
+summary: Criação monta a fila com agendado_para (e guarda o critério); a lista viva inclui gente nova a cada hora; cada envio confere o lead de novo antes da cota; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, cota/espaçamento no banco e variação por IA.
 ---
 # Fluxo de campanhas
 
@@ -101,6 +101,17 @@ No disparador de campanhas, antes do primeiro item: `aplicarVencedoras`
 (0121) decide o A/B quando o placar atinge a régua e reescreve os
 pendentes da perdedora com o texto da vencedora. Ver
 [[aprimoramentos-das-oito-funcionalidades]].
+
+Roadmap das listas (0155, 03/10/2026) — a ordem de cada tique agora é:
+`varrerQuedasDeNumero` → `alimentarListasVivas` (só no tique geral, 1x/hora
+por lista) → instância a instância: bloqueio → conexão → listas
+`em_andamento` (fora da janela, só `ignorar_janela` OU `janela_liberada_ate`
+no futuro) → trava → `aplicarVencedoras` → por item: lista ainda ativa →
+**`motivoParaNaoEnviar`** (pediu para sair, arquivado, perdido, transferido,
+comprou) → guarda de 24h → cota → texto (sem IA durante o A/B; `{horarios}`
+resolvido agora) → envio → `classificarFalhaDeEnvio` → conversa, IA ligada,
+**fotos do imóvel** (`enviarMidiasDaLista`), funil e tentativa. Ver
+[[lista-de-transmissao-visivel-e-controlavel]].
 
 Tudo que fala com cliente por iniciativa nossa passa por
 `reservarCotaCampanha` e olha `nao_contatar_em`. Ver

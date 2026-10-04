@@ -124,21 +124,35 @@ export function ControlesDaLista({
 export function BotaoDetalheDaLista({ campanha }: { campanha: CampanhaListada }) {
   const dialogo = useRef<HTMLDialogElement>(null);
   const [itens, setItens] = useState<ItemDaLista[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [pagina, setPagina] = useState(0);
+  const [temMais, setTemMais] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, iniciar] = useTransition();
 
-  function abrir() {
-    dialogo.current?.showModal();
+  /** De 200 em 200 (Fase 4): antes a gaveta parava em 500 sem avisar. */
+  function carregar(qual: number) {
     setErro(null);
     iniciar(async () => {
       try {
-        const r = await detalharCampanha(campanha.id);
-        if ("erro" in r) setErro(r.erro);
-        else setItens(r.itens);
+        const r = await detalharCampanha(campanha.id, qual);
+        if ("erro" in r) {
+          setErro(r.erro);
+          return;
+        }
+        setItens((atual) => (qual === 0 ? r.itens : [...(atual ?? []), ...r.itens]));
+        setTotal(r.total);
+        setTemMais(r.temMais);
+        setPagina(qual);
       } catch {
         setErro("Não deu certo agora. Recarregue a página e tente de novo.");
       }
     });
+  }
+
+  function abrir() {
+    dialogo.current?.showModal();
+    carregar(0);
   }
 
   const contagem = (itens ?? []).reduce<Record<string, number>>((acc, i) => {
@@ -220,6 +234,16 @@ export function BotaoDetalheDaLista({ campanha }: { campanha: CampanhaListada })
                 </li>
               ))}
             </ul>
+          )}
+          {itens && temMais && (
+            <button
+              type="button"
+              onClick={() => carregar(pagina + 1)}
+              disabled={carregando}
+              className="text-fluid-sm border-linha-forte text-corpo mt-3 flex min-h-11 w-full cursor-pointer items-center justify-center rounded-xl border disabled:opacity-60"
+            >
+              {carregando ? "Carregando…" : `Mostrar mais (${itens.length} de ${total})`}
+            </button>
           )}
         </div>
       </dialog>

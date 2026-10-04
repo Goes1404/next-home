@@ -5,17 +5,22 @@ import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOu
 import type { FiltroLeadsCampanha, OpcoesDeRecorte, RecorteDeOrigem } from "@/lib/crm/publicoDaCampanha";
 import type { Canal } from "@/lib/graficos/calculos";
 import { useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import {
   ArrowLeft,
   ArrowRight,
+  BookmarkPlus,
   CalendarClock,
   CheckCheck,
+  ImageIcon,
   Rocket,
+  Save,
   Search,
   Shield,
   Sparkles,
   UsersRound,
+  WifiOff,
   X,
 } from "lucide-react";
 import {
@@ -24,27 +29,36 @@ import {
   STATUS_LABEL,
   type Empreendimento,
   type EtapaFunil,
+  type TemplateMensagem,
 } from "@/lib/types";
+import { preencherTemplate } from "@/lib/mensagem";
+import { VARIAVEIS_DA_MENSAGEM } from "@/lib/whatsapp/listaDeTransmissao";
+import { criarTemplate } from "@/app/corretor/actions";
 import {
   criarCampanha,
   gerarPreviewCampanha,
+  salvarRascunho,
   sugerirAberturas,
   listarLeadsElegiveis,
   listarOpcoesDeOrigem,
   preverPublicoCampanha,
   type CampanhaListada,
   type LeadElegivel,
+  type ListaParaReabrir,
+  type ParametrosDaLista,
   type PreviaPublicoCampanha,
 } from "../acoes";
+import { listaRecemCriada } from "./listaRecemCriada";
 
 /**
- * Criar campanha em três passos: quem recebe → o que dizer → confirmar.
+ * Criar lista de transmissão em três passos: quem recebe → o que dizer →
+ * confirmar.
  *
- * O formulário antigo mostrava tudo de uma vez — título, empreendimento,
- * público, mensagem, preview e dois botões — e o corretor precisava entender
- * o conjunto antes de fazer qualquer coisa (roadmap F4). Agora é uma
- * pergunta por tela, e o passo 3 mostra o único número que importa: para
- * quantas pessoas isso vai.
+ * Roadmap das listas (03/10/2026): a mensagem ganha fotos do imóvel,
+ * variáveis do cadastro ({bairro}, {link}, {horarios}...), modelos com a
+ * taxa de resposta de cada um, o passo 3 mostra as duas versões do teste, a
+ * lista pode ficar viva por 30 dias, virar rascunho, e o assistente avisa —
+ * e não deixa enviar — quando o número do corretor não está conectado.
  */
 
 const PUBLICOS: { valor: FiltroLeadsCampanha; titulo: string; descricao: string }[] = [
@@ -70,7 +84,7 @@ const PUBLICOS: { valor: FiltroLeadsCampanha; titulo: string; descricao: string 
     valor: "todos",
     titulo: "Todos os meus leads",
     descricao:
-      "A carteira inteira. Use com cuidado: mensagem repetida cansa quem já respondeu.",
+      "A sua carteira inteira. Use com cuidado: mensagem repetida cansa quem já respondeu.",
   },
   {
     valor: "compradores",
@@ -105,73 +119,92 @@ function horarioEstaNaJanelaSegura(valor: string): boolean {
 }
 
 const MENSAGEM_PADRAO =
-  "Olá, {nome}! Tudo bem? Lembrei do seu interesse em Alphaville. Acabou de sair uma condição exclusiva na tabela do {imovel}. Gostaria de receber o book digital?";
+  "Olá, {nome}! Tudo bem? Lembrei do seu interesse e acabou de sair uma condição nova no {imovel}, em {bairro}. Quer que eu te mande os detalhes?";
+
+const CONVITE_COM_HORARIOS = " Se quiser conhecer pessoalmente, tenho {horarios}. Qual fica melhor?";
+
+/** Variáveis que só existem quando há imóvel escolhido. */
+const DO_IMOVEL = new Set(["imovel", "bairro", "cidade", "a_partir_de", "dormitorios", "link"]);
+
+export type InicialDaLista = {
+  imovelSlug?: string;
+  leadIds: string[];
+  publico?: FiltroLeadsCampanha;
+  /** Quem é o público em palavras, vindo de uma lista sugerida. */
+  descricaoDoPublico?: string;
+  /** Lista reaberta para repetir, ou rascunho para continuar (0155). */
+  reabrir?: ListaParaReabrir & { modo: "repetir" | "rascunho" };
+};
 
 export function NovaCampanha({
   empreendimentos,
   aoCriar,
   inicial,
+  modelos,
+  temAgenda,
+  numeroConectado,
+  corretor,
 }: {
   empreendimentos: Empreendimento[];
   aoCriar: (campanha: CampanhaListada, aviso: string) => void;
-  /** Imóvel e leads já marcados (vindo de "leads que combinam"). */
-  inicial?: {
-    imovelSlug?: string;
-    leadIds: string[];
-    publico?: FiltroLeadsCampanha;
-    /** Quem é o público em palavras, vindo de uma lista sugerida. */
-    descricaoDoPublico?: string;
-  };
+  inicial?: InicialDaLista;
+  /** Modelos de mensagem do corretor (templates_mensagens). */
+  modelos: TemplateMensagem[];
+  /** Há horários de visita na agenda? Sem isso `{horarios}` não tem o que oferecer. */
+  temAgenda: boolean;
+  /** O número do corretor está conectado? Sem isso a lista nasceria parada. */
+  numeroConectado: boolean;
+  corretor: { nome: string; whatsapp: string };
 }) {
-  const veioMarcado = (inicial?.leadIds.length ?? 0) > 0;
-  const [passo, setPasso] = useState<1 | 2 | 3>(1);
+  const reabrir = inicial?.reabrir;
+  const veioMarcado = (inicial?.leadIds.length ?? 0) > 0 || (reabrir?.leadIds.length ?? 0) > 0;
+  const [passo, setPasso] = useState<1 | 2 | 3>(reabrir ? 2 : 1);
   const [publico, setPublico] = useState<FiltroLeadsCampanha>(
-    inicial?.publico ?? (veioMarcado ? "selecionados" : "parados_15d"),
+    reabrir?.filtro ?? inicial?.publico ?? (veioMarcado ? "selecionados" : "parados_15d"),
   );
+  const slugInicial = reabrir ? reabrir.imovelSlug : inicial?.imovelSlug;
   const [imovelSlug, setImovelSlug] = useState(
-    (inicial?.imovelSlug && empreendimentos.some((e) => e.slug === inicial.imovelSlug)
-      ? inicial.imovelSlug
-      : undefined) ??
-      empreendimentos[0]?.slug ??
-      "",
+    (slugInicial && empreendimentos.some((e) => e.slug === slugInicial) ? slugInicial : undefined) ??
+      (reabrir ? "" : (empreendimentos[0]?.slug ?? "")),
   );
-  const [mensagemBase, setMensagemBase] = useState(MENSAGEM_PADRAO);
-  /*
-   * Segunda versão do teste A/B (0084). Vazia = campanha de uma versão só,
-   * que é como tudo funcionava antes. Existe porque 102 disparos entregues
-   * produziram UMA resposta, e quem decide isso é a abertura.
-   */
-  const [mensagemB, setMensagemB] = useState("");
-  const [testandoDuas, setTestandoDuas] = useState(false);
-  const [titulo, setTitulo] = useState("");
+  const [mensagemBase, setMensagemBase] = useState(reabrir?.mensagemBase || MENSAGEM_PADRAO);
+  const [mensagemB, setMensagemB] = useState(reabrir?.mensagemBaseB ?? "");
+  const [testandoDuas, setTestandoDuas] = useState(Boolean(reabrir?.mensagemBaseB));
+  const [titulo, setTitulo] = useState(reabrir?.modo === "rascunho" ? reabrir.titulo : "");
   const [modoEnvio, setModoEnvio] = useState<"automatico" | "agendado">("automatico");
   const [agendarPara, setAgendarPara] = useState("");
   const [exemplos, setExemplos] = useState<string[]>([]);
+  const [exemploB, setExemploB] = useState<string | null>(null);
   const [gerando, setGerando] = useState(false);
   const [sugerindo, setSugerindo] = useState(false);
   const [criando, iniciarCriacao] = useTransition();
-  const { falhar } = useAvisos();
+  const [salvandoRascunho, iniciarRascunho] = useTransition();
+  const [midias, setMidias] = useState<string[]>(reabrir?.midias ?? []);
+  const [viva, setViva] = useState(reabrir?.viva ?? false);
+  const [templateId, setTemplateId] = useState<string | null>(reabrir?.templateId ?? null);
+  const [rascunhoId, setRascunhoId] = useState<string | null>(
+    reabrir?.modo === "rascunho" ? reabrir.id : null,
+  );
+  const { avisar, falhar } = useAvisos();
 
   // ---- Seleção manual ("Escolher um por um") -------------------------
-  // A carteira elegível chega UMA vez, quando a opção é escolhida (~100
-  // leads por corretor — diretriz de produto — cabem inteiros na memória;
-  // paginar aqui só atrapalharia a busca).
   const [carteira, setCarteira] = useState<LeadElegivel[] | null>(null);
   const [buscaLead, setBuscaLead] = useState("");
   const [etapaLead, setEtapaLead] = useState<EtapaFunil | "todas">("todas");
-  const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set(inicial?.leadIds ?? []));
+  const [escolhidos, setEscolhidos] = useState<Set<string>>(
+    new Set(reabrir?.leadIds.length ? reabrir.leadIds : (inicial?.leadIds ?? [])),
+  );
   const [previaPublico, setPreviaPublico] = useState<
     (PreviaPublicoCampanha & { chave: string; erro?: boolean }) | null
   >(null);
 
   /*
-   * Recorte por origem (Fase 3, 03/10/2026): canal e anúncio de onde o lead
-   * veio, além do público. Só oferece o que existe na carteira. Não vale
-   * para a escolha a dedo, em que quem decide é o corretor.
+   * Recorte por origem (Fase 3): canal e anúncio de onde o lead veio. Só
+   * oferece o que existe na carteira. Não vale para a escolha a dedo.
    */
   const [opcoesOrigem, setOpcoesOrigem] = useState<OpcoesDeRecorte | null>(null);
-  const [canal, setCanal] = useState<Canal | "">("");
-  const [anuncio, setAnuncio] = useState("");
+  const [canal, setCanal] = useState<Canal | "">((reabrir?.recorte?.canal as Canal | undefined) ?? "");
+  const [anuncio, setAnuncio] = useState(reabrir?.recorte?.anuncio ?? "");
   const recorte: RecorteDeOrigem | null =
     publico === "selecionados" || (!canal && !anuncio) ? null : { canal: canal || null, anuncio: anuncio || null };
   const chavePrevia = `${publico}|${publico === "compradores" ? imovelSlug : ""}|${recorte?.canal ?? ""}|${recorte?.anuncio ?? ""}`;
@@ -257,7 +290,7 @@ export function NovaCampanha({
   }
 
   const imovel = empreendimentos.find((e) => e.slug === imovelSlug) ?? null;
-  const nomeImovel = imovel?.nome ?? "nossos lançamentos em Alphaville";
+  const nomeImovel = imovel?.nome ?? "Sem imóvel específico";
   const publicoEscolhido = PUBLICOS.find((p) => p.valor === publico)!;
   const selecaoManual = publico === "selecionados";
   const leadIds = selecaoManual ? [...escolhidos] : undefined;
@@ -273,25 +306,90 @@ export function NovaCampanha({
     ? `${escolhidos.size} lead${escolhidos.size === 1 ? "" : "s"} escolhido${escolhidos.size === 1 ? "" : "s"} a dedo`
     : publicoEscolhido.titulo;
 
+  /** Fotos e plantas do imóvel escolhido, para anexar (0155). */
+  const midiasDoImovel = useMemo(
+    () =>
+      imovel
+        ? [
+            ...imovel.galeria.map((m) => ({ url: m.url, alt: m.alt, tipo: "Foto" })),
+            ...imovel.plantas.map((m) => ({ url: m.url, alt: m.alt, tipo: "Planta" })),
+          ].slice(0, 16)
+        : [],
+    [imovel],
+  );
+
+  function trocarImovel(slug: string) {
+    setImovelSlug(slug);
+    // Foto de outro imóvel não pode seguir marcada.
+    setMidias([]);
+  }
+
+  function alternarMidia(url: string) {
+    setMidias((atual) =>
+      atual.includes(url) ? atual.filter((u) => u !== url) : atual.length >= 2 ? atual : [...atual, url],
+    );
+  }
+
+  function inserirVariavel(chave: string) {
+    setMensagemBase((m) => `${m.trimEnd()} {${chave}}`);
+    setExemplos([]);
+  }
+
+  function usarModelo(id: string) {
+    const modelo = modelos.find((m) => m.id === id);
+    if (!modelo) {
+      setTemplateId(null);
+      return;
+    }
+    setMensagemBase(
+      preencherTemplate(modelo.conteudo, {
+        nomeLead: "{nome}",
+        nomeCorretor: corretor.nome,
+        telefoneCorretor: corretor.whatsapp,
+      }),
+    );
+    setTemplateId(modelo.id);
+    setExemplos([]);
+  }
+
+  async function salvarComoModelo() {
+    const nome = prompt("Nome do modelo (só para você achar depois):", titulo || `Mensagem · ${nomeImovel}`);
+    if (!nome) return;
+    try {
+      const r = await criarTemplate(nome, mensagemBase.replace(/\{nome\}/gi, "{{nome_lead}}"), false);
+      if (r.erro) falhar(r.erro);
+      else avisar("Modelo salvo. Ele aparece em Modelos de mensagem, com a taxa de resposta de cada lista.");
+    } catch (err) {
+      falhar(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
+    }
+  }
+
   function verExemplos() {
     setGerando(true);
     iniciarCriacao(async () => {
-      const resultado = await gerarPreviewCampanha({
-        filtro: publico,
-        empreendimentoNome: nomeImovel,
-        mensagemBase,
-        leadIds,
-        imovelSlug: publico === "compradores" ? imovelSlug : null,
-        recorte,
-      });
-      setGerando(false);
-
-      if ("erro" in resultado) {
-        falhar(resultado.erro);
-        setExemplos([]);
-        return;
+      try {
+        const resultado = await gerarPreviewCampanha({
+          filtro: publico,
+          empreendimentoId: imovel?.id ?? null,
+          mensagemBase,
+          mensagemBaseB: testandoDuas ? mensagemB : null,
+          leadIds,
+          imovelSlug: publico === "compradores" ? imovelSlug : null,
+          recorte,
+        });
+        if ("erro" in resultado) {
+          falhar(resultado.erro);
+          setExemplos([]);
+          setExemploB(null);
+          return;
+        }
+        setExemplos(resultado.mensagens);
+        setExemploB(resultado.mensagemB);
+      } catch (err) {
+        falhar(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
+      } finally {
+        setGerando(false);
       }
-      setExemplos(resultado.mensagens);
     });
   }
 
@@ -299,7 +397,7 @@ export function NovaCampanha({
     setSugerindo(true);
     try {
       const r = await sugerirAberturas({
-        imovel: nomeImovel,
+        imovel: imovel?.nome ?? "nossos imóveis",
         bairro: imovel?.bairro ?? null,
         cidade: imovel?.cidade ?? null,
         estagio: imovel ? STATUS_LABEL[imovel.status] : null,
@@ -314,12 +412,68 @@ export function NovaCampanha({
       setMensagemBase(r.a);
       setMensagemB(r.b);
       setTestandoDuas(true);
+      setTemplateId(null);
       setExemplos([]);
     } catch (err) {
       falhar(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
     } finally {
       setSugerindo(false);
     }
+  }
+
+  function parametros(iniciarEm: string | null, nomeLista: string): ParametrosDaLista {
+    return {
+      titulo: nomeLista,
+      empreendimentoId: imovel?.id ?? null,
+      filtro: publico,
+      mensagemBase,
+      mensagemBaseB: testandoDuas ? mensagemB : null,
+      leadIds,
+      iniciarEm,
+      recorte,
+      midias,
+      viva: viva && !selecaoManual,
+      templateId,
+      rascunhoId,
+    };
+  }
+
+  function reiniciar() {
+    setPasso(1);
+    setPublico("parados_15d");
+    setTitulo("");
+    setExemplos([]);
+    setExemploB(null);
+    setEscolhidos(new Set());
+    setBuscaLead("");
+    setEtapaLead("todas");
+    setModoEnvio("automatico");
+    setAgendarPara("");
+    setMensagemBase(MENSAGEM_PADRAO);
+    setMensagemB("");
+    setTestandoDuas(false);
+    setCanal("");
+    setAnuncio("");
+    setMidias([]);
+    setViva(false);
+    setTemplateId(null);
+    setRascunhoId(null);
+  }
+
+  function guardarRascunho() {
+    iniciarRascunho(async () => {
+      try {
+        const r = await salvarRascunho(parametros(null, titulo.trim() || `${rotuloPublico} · ${nomeImovel}`));
+        if ("erro" in r) {
+          falhar(r.erro);
+          return;
+        }
+        setRascunhoId(r.id);
+        avisar("Rascunho salvo. Ele fica no histórico, pronto para continuar.");
+      } catch (err) {
+        falhar(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
+      }
+    });
   }
 
   function disparar() {
@@ -333,63 +487,68 @@ export function NovaCampanha({
       falhar("Escolha um horário entre 9h e 20h59, de segunda a sábado.");
       return;
     }
-    // Sem título digitado, o nome do imóvel e a data já descrevem a campanha
-    // melhor do que um campo vazio bloqueando o envio.
-    const nomeCampanha =
+    // Sem título digitado, o público, o imóvel e a data já descrevem a lista.
+    const nomeLista =
       titulo.trim() ||
       `${rotuloPublico} · ${nomeImovel} · ${new Date().toLocaleDateString("pt-BR")}`;
     iniciarCriacao(async () => {
-      const resultado = await criarCampanha({
-        titulo: nomeCampanha,
-        empreendimentoId: imovel?.id ?? null,
-        empreendimentoNome: nomeImovel,
-        filtro: publico,
-        mensagemBase,
-        mensagemBaseB: testandoDuas ? mensagemB : null,
-        leadIds,
-        iniciarEm,
-        recorte,
-      });
+      try {
+        const resultado = await criarCampanha(parametros(iniciarEm, nomeLista));
 
-      if ("erro" in resultado) {
-        falhar(resultado.erro);
-        return;
+        if ("erro" in resultado) {
+          falhar(resultado.erro);
+          return;
+        }
+
+        aoCriar(
+          listaRecemCriada({
+            id: resultado.campanhaId,
+            titulo: nomeLista,
+            empreendimentoNome: imovel?.nome ?? null,
+            totalLeads: resultado.totalLeads,
+            midias: midias.length,
+            viva: viva && !selecaoManual,
+          }),
+          modoEnvio === "agendado"
+            ? `Lista agendada para ${new Date(iniciarEm!).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}, com ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}.`
+            : `Lista de transmissão criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens começam a sair sozinhas no próximo horário seguro.`,
+        );
+
+        // Volta ao começo para a próxima lista, sem nada da anterior.
+        reiniciar();
+      } catch (err) {
+        falhar(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
       }
-
-      aoCriar(
-        {
-          id: resultado.campanhaId,
-          titulo: nomeCampanha,
-          empreendimentoNome: imovel?.nome ?? null,
-          totalLeads: resultado.totalLeads,
-          totalEnviados: 0,
-          totalRespondidos: 0,
-          status: "em_andamento",
-          // Campanha recém-criada não tem envio nenhum, então não há placar.
-          testeAB: null,
-          vencedora: null,
-          desfecho: { visitas: 0, vendas: 0 },
-          criadoEm: new Date().toISOString(),
-        },
-        modoEnvio === "agendado"
-          ? `Lista agendada para ${new Date(iniciarEm!).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}, com ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}.`
-          : `Lista de transmissão criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens começam a sair sozinhas no próximo horário seguro.`,
-      );
-
-      // Volta ao começo para a próxima campanha.
-      setPasso(1);
-      setTitulo("");
-      setExemplos([]);
-      setEscolhidos(new Set());
-      setBuscaLead("");
-      setEtapaLead("todas");
-      setModoEnvio("automatico");
-      setAgendarPara("");
     });
   }
 
+  const variaveisDisponiveis = VARIAVEIS_DA_MENSAGEM.filter(
+    (v) => (imovel || !DO_IMOVEL.has(v.chave)) && (temAgenda || v.chave !== "horarios"),
+  );
+
   return (
     <section className="cartao p-5 sm:p-6">
+      {!numeroConectado && (
+        <div className="border-alerta-linha bg-alerta-lavado text-fluid-sm mb-4 flex items-start gap-3 rounded-xl border p-3.5">
+          <WifiOff aria-hidden className="text-alerta mt-0.5 h-4 w-4 shrink-0" />
+          <p className="text-corpo min-w-0">
+            Seu WhatsApp não está conectado, então nenhuma lista consegue sair. Você pode montar e
+            salvar como rascunho.{" "}
+            <Link href="/corretor/whatsapp" className="text-titulo font-semibold underline underline-offset-2">
+              Conectar o número
+            </Link>
+          </p>
+        </div>
+      )}
+
+      {reabrir && (
+        <p className="text-fluid-xs text-apoio mb-3">
+          {reabrir.modo === "repetir"
+            ? `Repetindo “${reabrir.titulo}”. O público é recalculado agora: quem recebeu nos últimos 7 dias fica de fora.`
+            : `Continuando o rascunho “${reabrir.titulo}”.`}
+        </p>
+      )}
+
       <div className="flex items-baseline gap-2.5">
         <span className="text-tenue text-[11px] font-medium tracking-[0.14em] uppercase tabular-nums">
           Passo {passo} de 3
@@ -474,8 +633,8 @@ export function NovaCampanha({
               </p>
               <p className="text-fluid-xs text-apoio mt-0.5 leading-relaxed">
                 {previaAtual && previaAtual.protegidos > 0
-                  ? `${previaAtual.protegidos} contato${previaAtual.protegidos === 1 ? "" : "s"} protegido${previaAtual.protegidos === 1 ? "" : "s"}: ${previaAtual.protegidos === 1 ? "já recebeu campanha nos últimos 7 dias ou está em outra lista" : "já receberam campanha nos últimos 7 dias ou estão em outra lista"}.`
-                  : "A contagem será conferida novamente no servidor antes de criar a lista."}
+                  ? `${previaAtual.protegidos} contato${previaAtual.protegidos === 1 ? "" : "s"} protegido${previaAtual.protegidos === 1 ? "" : "s"}: ${previaAtual.protegidos === 1 ? "já recebeu lista nos últimos 7 dias ou está em outra lista" : "já receberam lista nos últimos 7 dias ou estão em outra lista"}.`
+                  : "Só leads da sua carteira. A contagem é conferida de novo antes de criar a lista."}
               </p>
             </div>
           </div>
@@ -637,9 +796,10 @@ export function NovaCampanha({
             <select
               id="imovel-campanha"
               value={imovelSlug}
-              onChange={(e) => setImovelSlug(e.target.value)}
+              onChange={(e) => trocarImovel(e.target.value)}
               className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento min-h-12 w-full cursor-pointer rounded-xl border px-3.5 focus:outline-none"
             >
+              {publico !== "compradores" && <option value="">Nenhum imóvel específico</option>}
               {empreendimentos.map((emp) => (
                 <option key={emp.slug} value={emp.slug}>
                   {emp.nome} ({emp.bairro})
@@ -653,38 +813,124 @@ export function NovaCampanha({
       {/* -------------------------------------------------- 2. mensagem */}
       {passo === 2 && (
         <div className="mt-4 space-y-3">
+          {modelos.length > 0 && (
+            <label className="block">
+              <span className="text-fluid-xs text-apoio mb-1 block">Partir de um modelo</span>
+              <select
+                value={templateId ?? ""}
+                onChange={(e) => usarModelo(e.target.value)}
+                className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 w-full rounded-xl border px-3 focus:outline-none"
+              >
+                <option value="">Escrever do zero</option>
+                {modelos.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.titulo}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
           <p className="text-fluid-xs text-apoio">
-            Escreva como você falaria. A IA reescreve cada mensagem com palavras um
-            pouco diferentes — mensagens idênticas em massa é o que faz o WhatsApp
-            bloquear números.
+            Escreva como você falaria.{" "}
+            {testandoDuas
+              ? "Durante o teste de duas versões a IA não reescreve o texto, para a comparação ser justa: cada pessoa recebe a versão como está, com o nome dela."
+              : "A IA reescreve cada mensagem com palavras um pouco diferentes — mensagens idênticas em massa é o que faz o WhatsApp bloquear números."}
           </p>
           <textarea
             rows={4}
             value={mensagemBase}
-            onChange={(e) => setMensagemBase(e.target.value)}
+            onChange={(e) => {
+              setMensagemBase(e.target.value);
+              setExemplos([]);
+            }}
             aria-label="Mensagem da lista de transmissão"
             className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento w-full rounded-xl border p-3.5 focus:outline-none"
           />
-          {/*
-            As duas versões já entram no teste A/B: comparar duas aberturas é
-            o que diz qual responde mais (88 entregues, 1 resposta em 31/08).
-          */}
-          <button
-            type="button"
-            onClick={sugerirComIA}
-            disabled={sugerindo}
-            className="text-fluid-sm border-acento-linha bg-acento-lavado text-titulo hover:border-acento flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors disabled:opacity-60"
-          >
-            <Sparkles className="h-4 w-4" />
-            {sugerindo ? "Escrevendo duas versões…" : "Sugerir duas aberturas com IA"}
-          </button>
 
-          <p className="text-fluid-xs text-tenue">
-            <code className="bg-vidro-forte rounded px-1">{"{nome}"}</code> vira o nome
-            da pessoa e{" "}
-            <code className="bg-vidro-forte rounded px-1">{"{imovel}"}</code> vira{" "}
-            {nomeImovel}.
-          </p>
+          {/* Variáveis do cadastro em um toque (Fase 2). Só aparecem as que
+              têm valor: sem imóvel, nada de {bairro}; sem agenda, nada de
+              {horarios}. */}
+          <div className="flex flex-wrap gap-1.5" aria-label="Inserir variável na mensagem">
+            {variaveisDisponiveis.map((v) => (
+              <button
+                key={v.chave}
+                type="button"
+                onClick={() => inserirVariavel(v.chave)}
+                title={`Vira ${v.descricao}`}
+                className="border-linha bg-elevado text-corpo hover:border-acento-linha min-h-9 rounded-full border px-3 font-mono text-xs transition-colors"
+              >
+                {`{${v.chave}}`}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={sugerirComIA}
+              disabled={sugerindo}
+              className="text-fluid-sm border-acento-linha bg-acento-lavado text-titulo hover:border-acento flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors disabled:opacity-60"
+            >
+              <Sparkles className="h-4 w-4" />
+              {sugerindo ? "Escrevendo duas versões…" : "Sugerir duas aberturas com IA"}
+            </button>
+            {temAgenda && !/\{horarios\}/i.test(mensagemBase) && (
+              <button
+                type="button"
+                onClick={() => setMensagemBase((m) => `${m.trimEnd()}${CONVITE_COM_HORARIOS}`)}
+                className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors"
+              >
+                <CalendarClock className="h-4 w-4" />
+                Convidar com horários da sua agenda
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={salvarComoModelo}
+              className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors"
+            >
+              <BookmarkPlus className="h-4 w-4" />
+              Salvar como modelo
+            </button>
+          </div>
+
+          {/* Fotos e planta do cadastro do imóvel (Fase 2): saem depois do
+              texto, no mesmo contato. Até duas. */}
+          {midiasDoImovel.length > 0 && (
+            <div className="border-linha rounded-xl border p-3">
+              <p className="text-fluid-xs text-titulo flex items-center gap-1.5 font-medium">
+                <ImageIcon aria-hidden className="h-4 w-4" />
+                Mandar fotos junto (até 2) · {midias.length} escolhida{midias.length === 1 ? "" : "s"}
+              </p>
+              <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-6">
+                {midiasDoImovel.map((m) => {
+                  const marcada = midias.includes(m.url);
+                  return (
+                    <button
+                      key={m.url}
+                      type="button"
+                      onClick={() => alternarMidia(m.url)}
+                      aria-pressed={marcada}
+                      aria-label={`${m.tipo}: ${m.alt}`}
+                      title={`${m.tipo}: ${m.alt}`}
+                      className={`relative aspect-square overflow-hidden rounded-lg border-2 transition-colors ${
+                        marcada ? "border-acento" : "border-transparent opacity-80 hover:opacity-100"
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element -- miniatura de escolha, sem otimização */}
+                      <img src={m.url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                      {marcada && (
+                        <span className="bg-acento text-sobre-cor absolute top-1 right-1 rounded-full px-1.5 text-[10px] font-bold">
+                          {midias.indexOf(m.url) + 1}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <button
             type="button"
@@ -699,10 +945,15 @@ export function NovaCampanha({
           {exemplos.length > 0 && (
             <div className="border-acento-linha bg-acento-lavado space-y-2 rounded-xl border p-4">
               {exemplos.map((msg, i) => (
-                <p key={i} className="text-fluid-xs text-corpo leading-relaxed">
-                  “{msg}”
+                <p key={i} className="text-fluid-xs text-corpo leading-relaxed break-words">
+                  {testandoDuas && i === 0 && <span className="text-tenue">Versão A · </span>}“{msg}”
                 </p>
               ))}
+              {exemploB && (
+                <p className="text-fluid-xs text-corpo leading-relaxed break-words">
+                  <span className="text-tenue">Versão B · </span>“{exemploB}”
+                </p>
+              )}
             </div>
           )}
 
@@ -735,8 +986,9 @@ export function NovaCampanha({
                 </button>
               </div>
               <p className="text-fluid-xs text-apoio">
-                Metade da lista recebe cada versão, alternadas. Depois de 30 envios de
-                cada lado, o histórico mostra qual teve mais resposta.
+                Metade da lista recebe cada versão, alternadas. Quando cada lado tiver 30 envios e
+                uma responder mais, a plataforma passa a mandar SÓ a vencedora para quem ainda não
+                recebeu — e o histórico mostra quando trocou.
               </p>
               <textarea
                 rows={4}
@@ -757,17 +1009,56 @@ export function NovaCampanha({
           <dl className="text-fluid-sm space-y-2">
             <div className="flex gap-2">
               <dt className="text-apoio shrink-0">Para:</dt>
-              <dd className="text-titulo">{rotuloPublico}</dd>
+              <dd className="text-titulo">
+                {rotuloPublico}
+                {totalPrevisto !== undefined && !selecaoManual && ` · ${totalPrevisto} pessoa${totalPrevisto === 1 ? "" : "s"}`}
+              </dd>
             </div>
             <div className="flex gap-2">
               <dt className="text-apoio shrink-0">Sobre:</dt>
               <dd className="text-titulo">{nomeImovel}</dd>
             </div>
             <div className="flex gap-2">
-              <dt className="text-apoio shrink-0">Diz:</dt>
-              <dd className="text-corpo min-w-0">“{mensagemBase}”</dd>
+              <dt className="text-apoio shrink-0">{testandoDuas ? "Versão A:" : "Diz:"}</dt>
+              <dd className="text-corpo min-w-0 break-words">“{mensagemBase}”</dd>
             </div>
+            {testandoDuas && mensagemB.trim() && (
+              <div className="flex gap-2">
+                <dt className="text-apoio shrink-0">Versão B:</dt>
+                <dd className="text-corpo min-w-0 break-words">“{mensagemB}”</dd>
+              </div>
+            )}
+            {midias.length > 0 && (
+              <div className="flex gap-2">
+                <dt className="text-apoio shrink-0">Junto:</dt>
+                <dd className="text-titulo">
+                  {midias.length} foto{midias.length === 1 ? "" : "s"} do imóvel
+                </dd>
+              </div>
+            )}
           </dl>
+
+          {!selecaoManual && (
+            <label
+              className={`flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${
+                viva ? "border-acento-linha bg-acento-lavado" : "border-linha hover:border-linha-forte"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={viva}
+                onChange={(e) => setViva(e.target.checked)}
+                className="accent-acento mt-1 h-4 w-4"
+              />
+              <span>
+                <span className="text-fluid-sm text-titulo block font-medium">Manter a lista viva por 30 dias</span>
+                <span className="text-fluid-xs text-apoio mt-0.5 block">
+                  Quem passar a se encaixar em “{publicoEscolhido.titulo}” entra sozinho e recebe a mesma
+                  mensagem. As proteções continuam: ninguém recebe duas vezes nem dentro de 7 dias.
+                </span>
+              </span>
+            </label>
+          )}
 
           <fieldset className="border-linha rounded-2xl border p-4">
             <legend className="text-fluid-xs text-apoio px-1">Quando começar?</legend>
@@ -791,7 +1082,7 @@ export function NovaCampanha({
                     Próximo horário seguro
                   </span>
                   <span className="text-fluid-xs text-apoio mt-0.5 block">
-                    A plataforma escolhe e respeita a fila.
+                    A plataforma escolhe e respeita a fila e o seu expediente.
                   </span>
                 </span>
               </label>
@@ -864,14 +1155,14 @@ export function NovaCampanha({
 
           <p className="text-fluid-xs text-apoio flex items-start gap-2">
             <Shield aria-hidden className="text-ok mt-0.5 h-4 w-4 shrink-0" />
-            As mensagens saem uma a uma, com pausa entre elas e só em horário comercial
-            — é o que mantém seu número seguro.
+            As mensagens saem uma a uma, com 35 a 75 segundos entre elas e só em horário comercial
+            — é o que mantém seu número seguro. Quem pedir para sair no meio do caminho não recebe.
           </p>
         </div>
       )}
 
       {/* Navegação entre os passos, sempre no mesmo lugar. */}
-      <div className="border-linha mt-5 flex items-center justify-between gap-3 border-t pt-4">
+      <div className="border-linha mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
         {passo > 1 ? (
           <button
             type="button"
@@ -884,37 +1175,56 @@ export function NovaCampanha({
           <span />
         )}
 
-        {passo < 3 ? (
-          <button
-            type="button"
-            onClick={() => {
-              // No modo manual, seguir sem ninguém marcado geraria uma
-              // campanha vazia lá no fim — melhor barrar aqui, com contexto.
-              if (passo === 1 && selecaoManual && escolhidos.size === 0) {
-                falhar("Marque ao menos um lead antes de continuar.");
-                return;
-              }
-              if (passo === 1 && !selecaoManual && previaAtual?.total === 0) {
-                falhar("Não há pessoas disponíveis nesse público agora.");
-                return;
-              }
-              setPasso((p) => (p === 1 ? 2 : 3));
-            }}
-            className="bg-acento hover:bg-acento-hover text-fluid-sm text-sobre-cor flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium transition-colors"
-          >
-            Continuar <ArrowRight className="h-4 w-4" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={disparar}
-            disabled={criando}
-            className="bg-acento hover:bg-acento-hover text-fluid-sm text-sobre-cor flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium transition-colors disabled:opacity-60"
-          >
-            <Rocket className="h-4 w-4" />
-            {criando ? "Criando…" : "Começar a enviar"}
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {passo > 1 && (
+            <button
+              type="button"
+              onClick={guardarRascunho}
+              disabled={salvandoRascunho}
+              className="text-fluid-sm border-linha-forte text-corpo hover:text-titulo flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors disabled:opacity-60"
+            >
+              <Save className="h-4 w-4" />
+              {salvandoRascunho ? "Salvando…" : rascunhoId ? "Atualizar rascunho" : "Salvar rascunho"}
+            </button>
+          )}
+
+          {passo < 3 ? (
+            <button
+              type="button"
+              onClick={() => {
+                // No modo manual, seguir sem ninguém marcado geraria uma
+                // lista vazia lá no fim — melhor barrar aqui, com contexto.
+                if (passo === 1 && selecaoManual && escolhidos.size === 0) {
+                  falhar("Marque ao menos um lead antes de continuar.");
+                  return;
+                }
+                if (passo === 1 && !selecaoManual && previaAtual?.total === 0) {
+                  falhar("Não há pessoas disponíveis nesse público agora.");
+                  return;
+                }
+                if (passo === 1 && publico === "compradores" && !imovel) {
+                  falhar("Escolha o imóvel dos compradores.");
+                  return;
+                }
+                setPasso((p) => (p === 1 ? 2 : 3));
+              }}
+              className="bg-acento hover:bg-acento-hover text-fluid-sm text-sobre-cor flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium transition-colors"
+            >
+              Continuar <ArrowRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={disparar}
+              disabled={criando || !numeroConectado}
+              title={numeroConectado ? undefined : "Conecte seu WhatsApp para enviar"}
+              className="bg-acento hover:bg-acento-hover text-fluid-sm text-sobre-cor flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium transition-colors disabled:opacity-60"
+            >
+              <Rocket className="h-4 w-4" />
+              {criando ? "Criando…" : "Começar a enviar"}
+            </button>
+          )}
+        </div>
       </div>
     </section>
   );

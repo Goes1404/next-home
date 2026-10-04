@@ -69,6 +69,12 @@ export type ConversaResumo = {
    * `lead_id` mas o lead não vem.
    */
   contatoDeOutroCorretor?: boolean;
+  /**
+   * A lista de transmissão que este cliente recebeu nos últimos 7 dias
+   * (roadmap das listas, Fase 3). A conversa diz de onde veio, em vez de a
+   * resposta à lista sumir no meio das outras.
+   */
+  listaRecente?: string | null;
 };
 
 /** A linha crua que o Realtime entrega no INSERT/UPDATE de whatsapp_mensagens. */

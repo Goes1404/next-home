@@ -548,6 +548,9 @@ export function Chat({
               {!conversa.temLead && (
                 <span className="text-wa-meta"> · sem ficha no funil</span>
               )}
+              {conversa.listaRecente && (
+                <span className="text-wa-meta"> · veio da lista “{conversa.listaRecente}”</span>
+              )}
             </span>
           </span>
         </button>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { janelaDeDias } from "@/lib/admin/janelaDeDias";
 import { sinaisDoLead, type ContextoDaIA } from "./chatModelo";
 import { after } from "next/server";
 import Link from "next/link";
@@ -23,13 +24,40 @@ export default async function ConversasPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   // `?c=<id>` chega da lista de Pessoas, que é a porta única do painel.
-  const bruto = (await searchParams).c;
+  const params = await searchParams;
+  const bruto = params.c;
   const conversaInicial = (Array.isArray(bruto) ? bruto[0] : bruto) ?? null;
+  // `?lista=<id>`: só as conversas de quem RESPONDEU a uma lista de
+  // transmissão (roadmap das listas, Fase 3).
+  const listaBruta = Array.isArray(params.lista) ? params.lista[0] : params.lista;
+  const listaId = listaBruta && /^[0-9a-f-]{36}$/i.test(listaBruta) ? listaBruta : null;
 
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
   const supabase = await createClient();
+
+  let filtroDaLista: { titulo: string; leadIds: string[] } | null = null;
+  if (listaId) {
+    const { data: lista } = await supabase
+      .from("whatsapp_campanhas")
+      .select("titulo")
+      .eq("id", listaId)
+      .eq("corretor_id", corretor.id)
+      .maybeSingle();
+    if (lista) {
+      const { data: responderam } = await supabase
+        .from("whatsapp_campanhas_fila")
+        .select("lead_id")
+        .eq("campanha_id", listaId)
+        .eq("status", "respondido")
+        .not("lead_id", "is", null);
+      filtroDaLista = {
+        titulo: lista.titulo,
+        leadIds: [...new Set((responderam ?? []).map((r) => r.lead_id as string))],
+      };
+    }
+  }
 
   /*
    * O filtro por corretor é OBRIGATÓRIO aqui.
@@ -43,16 +71,22 @@ export default async function ConversasPage({
    * Esta continua sendo a CAIXA PESSOAL de quem está logado; a visão da
    * equipe mora em /corretor/admin/whatsapp.
    */
+  let consultaConversas = supabase
+    .from("whatsapp_conversas")
+    .select("id, telefone_cliente, nome_cliente, bot_ativo, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)")
+    .eq("corretor_id", corretor.id)
+    // Defesa durante a transição até a 0111: conversa sem cadastro não aparece.
+    .not("lead_id", "is", null);
+  // Com `?lista=`, só quem respondeu àquela lista. Lista sem resposta = vazio.
+  if (filtroDaLista) {
+    consultaConversas = consultaConversas.in(
+      "lead_id",
+      filtroDaLista.leadIds.length ? filtroDaLista.leadIds : ["00000000-0000-0000-0000-000000000000"],
+    );
+  }
+
   const [{ data: conversas }, { data: instancia }] = await Promise.all([
-    supabase
-      .from("whatsapp_conversas")
-      .select("id, telefone_cliente, nome_cliente, bot_ativo, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)")
-      .eq("corretor_id", corretor.id)
-      // Defesa durante a transição até a 0111 ser aplicada: conversa sem
-      // cadastro não aparece nem por estoque antigo.
-      .not("lead_id", "is", null)
-      .order("ultima_interacao_em", { ascending: false })
-      .limit(100),
+    consultaConversas.order("ultima_interacao_em", { ascending: false }).limit(100),
     supabase
       .from("corretor_whatsapp_instancias")
       .select("modo_bot, status_conexao, instance_name, expediente_inicio, expediente_fim")
@@ -72,6 +106,27 @@ export default async function ConversasPage({
     after(() => garantirEventosWebhook(nomeInstancia));
   }
 
+  /*
+   * A lista que cada cliente recebeu na última semana (Fase 3): a conversa
+   * diz "veio da lista X". Uma consulta para as conversas da tela.
+   */
+  const leadsDaTela = [...new Set((conversas ?? []).map((c) => c.lead_id as string))];
+  const listaPorLead = new Map<string, string>();
+  if (leadsDaTela.length > 0) {
+    const { data: recebidas } = await supabase
+      .from("whatsapp_campanhas_fila")
+      .select("lead_id, enviado_em, campanha:whatsapp_campanhas!inner(titulo, corretor_id)")
+      .in("lead_id", leadsDaTela)
+      .eq("campanha.corretor_id", corretor.id)
+      .in("status", ["enviado", "respondido"])
+      .gte("enviado_em", janelaDeDias(7).corte.toISOString())
+      .order("enviado_em", { ascending: true });
+    for (const r of recebidas ?? []) {
+      const c = (Array.isArray(r.campanha) ? r.campanha[0] : r.campanha) as { titulo: string } | null;
+      if (r.lead_id && c) listaPorLead.set(r.lead_id, c.titulo);
+    }
+  }
+
   const lista: ConversaResumo[] = (conversas ?? []).map((c) => ({
     id: c.id,
     telefone: c.telefone_cliente,
@@ -84,6 +139,7 @@ export default async function ConversasPage({
     temLead: Boolean(c.lead_id),
     naoLidas: c.nao_lidas,
     historicoIndisponivel: c.historico_anterior === "indisponivel",
+    listaRecente: c.lead_id ? (listaPorLead.get(c.lead_id) ?? null) : null,
     ...sinaisDoLead(c),
   }));
 
@@ -247,7 +303,17 @@ export default async function ConversasPage({
         </p>
       )}
 
-      <RevisaoRespostas itens={itensRevisao} />
+      {filtroDaLista ? (
+        <p className="border-acento-linha bg-acento-lavado text-fluid-sm text-corpo mt-4 rounded-xl border px-4 py-3">
+          Mostrando quem respondeu à lista <span className="text-titulo font-medium">“{filtroDaLista.titulo}”</span> (
+          {filtroDaLista.leadIds.length}).{" "}
+          <Link href="/corretor/conversas" className="text-acento-suave font-medium underline-offset-4 hover:underline">
+            Ver todas as conversas
+          </Link>
+        </p>
+      ) : (
+        <RevisaoRespostas itens={itensRevisao} />
+      )}
 
       <ConversasClient
         conversas={listaFinal}

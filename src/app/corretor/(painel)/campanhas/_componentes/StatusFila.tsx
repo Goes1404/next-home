@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
-import { Clock, RotateCcw, Trash2, Zap } from "lucide-react";
+import Link from "next/link";
+import { Clock, Trash2, Zap } from "lucide-react";
 import {
   liberarEnvioAgora,
   limparFilaDisparo,
   processarFilaAgora,
-  resetarCotaDisparo,
   statusDisparo,
   type StatusDisparo,
 } from "../acoes";
@@ -24,16 +24,33 @@ import {
  * dele, e uma linha bloqueada não volta com deploy.
  */
 
+function horaDeBrasilia(iso: string): string {
+  return new Date(iso).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  });
+}
+
+/**
+ * A frase da previsão (roadmap das listas, Fase 1). A tela dizia "saem uma
+ * a cada minuto", mas o intervalo real é de 35 a 75 segundos, e o que o
+ * corretor quer saber é QUANDO termina.
+ */
 function frasePrincipal(status: StatusDisparo): string {
   if (status.impedimento) return status.impedimento;
   if (status.pendentes === 0) return "Nenhuma mensagem esperando. Crie uma lista de transmissão abaixo.";
 
-  const saldo = status.saldoHoje;
-  if (saldo !== null && saldo < status.pendentes) {
-    const restante = status.pendentes - saldo;
-    return `Hoje saem ${saldo} mensagem${saldo === 1 ? "" : "s"}; as outras ${restante} continuam amanhã, sozinhas.`;
+  const n = status.pendentes;
+  const plural = n === 1 ? "" : "s";
+  if (status.terminaEm && status.continuaAmanha === 0) {
+    return `${n} mensagem${plural} na fila — devem terminar por volta das ${horaDeBrasilia(status.terminaEm)}.`;
   }
-  return `${status.pendentes} mensagem${status.pendentes === 1 ? "" : "s"} para enviar hoje — saem sozinhas, uma a cada minuto.`;
+  if (status.terminaEm && status.continuaAmanha > 0) {
+    const hoje = n - status.continuaAmanha;
+    return `Hoje saem ${hoje} mensagem${hoje === 1 ? "" : "s"}, até por volta das ${horaDeBrasilia(status.terminaEm)}; as outras ${status.continuaAmanha} continuam no próximo dia, sozinhas.`;
+  }
+  return `${n} mensagem${plural} na fila — saem sozinhas, com 35 a 75 segundos entre uma e outra.`;
 }
 
 export function StatusFila({
@@ -49,7 +66,6 @@ export function StatusFila({
   const { avisar, falhar } = useAvisos();
   const [processando, iniciarProcessamento] = useTransition();
   const [limpando, iniciarLimpeza] = useTransition();
-  const [resetando, iniciarReset] = useTransition();
   const [liberando, iniciarLiberacao] = useTransition();
 
   if (!status) return null;
@@ -107,37 +123,9 @@ export function StatusFila({
   }
 
   /**
-   * TEMPORÁRIO — fase de teste. Ver o aviso em `resetarCotaDisparo`: isto
-   * afrouxa a proteção anti-ban de propósito, e o texto da confirmação
-   * existe para que ninguém clique sem saber disso.
-   */
-  function resetarCota() {
-    if (
-      !confirm(
-        "Isto devolve os envios de hoje e solta qualquer bloqueio.\n\n" +
-          "O limite diário existe para proteger o seu número: volume alto num número " +
-          "novo é o caminho mais curto para o WhatsApp bloquear a linha. Confirma?",
-      )
-    ) {
-      return;
-    }
-    iniciarReset(async () => {
-      const resultado = await resetarCotaDisparo();
-      if (resultado.erro) {
-        falhar(resultado.erro);
-        return;
-      }
-      await atualizar();
-      avisar("Envios de hoje devolvidos e bloqueios soltos. As mensagens voltam a sair.");
-    });
-  }
-
-  /**
-   * Solta a fila que está esperando o horário comercial.
-   *
-   * Marcar a campanha não basta: os itens já foram gravados com
-   * `agendado_para` na próxima janela, e o disparador obedece a hora, não a
-   * marca. A ação reagenda tudo a partir de agora — ver `liberarEnvioAgora`.
+   * Solta UMA VEZ a fila que está esperando o horário (ver
+   * `liberarEnvioAgora`). Só aparece quando o problema é o horário: cota,
+   * número caído ou bloqueado não se resolvem por aqui.
    */
   function liberar() {
     if (
@@ -158,10 +146,7 @@ export function StatusFila({
       }
       await atualizar();
       avisar(
-        `Liberado: ${resultado.mensagens} mensagem${resultado.mensagens === 1 ? "" : "s"} saindo agora, uma a cada minuto.` +
-          (resultado.retentativas > 0
-            ? ` ${resultado.retentativas} que tinha${resultado.retentativas === 1 ? "" : "m"} falhado volta${resultado.retentativas === 1 ? "" : "m"} para a fila.`
-            : ""),
+        `Liberado: ${resultado.mensagens} mensagem${resultado.mensagens === 1 ? "" : "s"} saindo agora, com 35 a 75 segundos entre uma e outra. Depois disso as listas voltam ao horário comercial.`,
       );
     });
   }
@@ -197,7 +182,9 @@ export function StatusFila({
 
         {/* Quando a fila está parada, o botão útil é o que a solta — não o
             "enviar agora", que respeita a mesma janela e não faria nada. */}
-        {status.pendentes > 0 && parada && (
+        {/* Liberar só existe quando o problema é o HORÁRIO (Fase 0). */}
+        {status.pendentes > 0 &&
+          (status.impedimentoTipo === "horario" || status.impedimentoTipo === "expediente") && (
           <button
             type="button"
             onClick={liberar}
@@ -207,6 +194,15 @@ export function StatusFila({
             <Clock className="h-4 w-4" />
             {liberando ? "Liberando…" : "Liberar envio agora"}
           </button>
+        )}
+
+        {(status.impedimentoTipo === "desconectado" || status.impedimentoTipo === "sem_numero") && (
+          <Link
+            href="/corretor/whatsapp"
+            className="text-fluid-sm border-alerta-linha text-alerta flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl border px-4 hover:opacity-80"
+          >
+            Conectar o número
+          </Link>
         )}
 
         {status.pendentes > 0 && !parada && (
@@ -231,10 +227,10 @@ export function StatusFila({
         `Avisos`: sucesso some sozinho, erro fica até alguém fechar.
       */}
 
-      {/* Ferramentas que estragam coisa ficam atrás de uma porta. Limpar a
-          fila apaga mensagens programadas; resetar a cota afrouxa a proteção
-          anti-ban de propósito. Nenhuma das duas é rotina. */}
-      {(status.pendentes > 0 || parada) && (
+      {/* Ferramenta que apaga coisa fica atrás de uma porta: limpar a fila
+          apaga mensagens programadas, e não é rotina. O botão "Liberar
+          envios de hoje", que zerava a proteção do número, saiu (0155). */}
+      {status.pendentes > 0 && (
         <>
           <button
             type="button"
@@ -259,22 +255,6 @@ export function StatusFila({
                 </button>
               )}
 
-              {/* TEMPORÁRIO — fase de teste. Remover junto com
-                  `resetarCotaDisparo` e a função `resetar_cota_campanha`
-                  (migration 0034) quando a operação entrar no ritmo real. */}
-              <button
-                type="button"
-                onClick={resetarCota}
-                disabled={resetando || processando || limpando}
-                title="Devolve os envios de hoje e solta bloqueios. Afrouxa de propósito a proteção do seu número — use só quando precisar mesmo."
-                className="text-fluid-xs border-alerta-linha bg-alerta-lavado text-alerta flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 transition-opacity hover:opacity-80 disabled:opacity-60"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                {/* Era "(teste)": rótulo de fase de desenvolvimento visível para quem
-                    usa o produto. O que o botão faz é devolver os envios do dia; o
-                    risco está no `title` e na confirmação, onde ele é lido. */}
-                {resetando ? "Liberando…" : "Liberar envios de hoje"}
-              </button>
             </div>
           )}
         </>

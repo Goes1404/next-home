@@ -77,6 +77,52 @@ sair não entra na lista, a guarda de 24h segura quem está conversando, e se
 o corretor voltar a falar a IA desliga de novo. Guarda em
 `quandoAIaResponde.test.ts`.
 
+## O roadmap inteiro (0155, 03/10/2026)
+
+Análise pedida pelo usuário, nota 5,5 → meta 9. Feito numa tacada:
+
+- **Fase 0 (furos):** o disparador confere o lead ANTES da cota
+  (`motivoParaNaoEnviar`: pediu para sair, arquivado, perdido, transferido,
+  comprou fora da lista de compradores); a recusa apaga os pendentes da
+  fila; "Liberar envio agora" só aparece quando o problema é o horário,
+  vale UMA vez (`janela_liberada_ate`) e nunca devolve erro à fila; o
+  público é só da carteira do próprio corretor (`leadsDoCorretor`, o gestor
+  alcançava a equipe); o envio em massa da tela de Leads virou link para o
+  assistente (era um segundo caminho sem regra nenhuma); "Liberar envios de
+  hoje" saiu; falhas são classificadas (`classificarFalhaDeEnvio`):
+  telefone inválido não conta para o bloqueio e envio incerto não repete.
+- **Fase 1 (tela honesta):** previsão de término no lugar de "uma a cada
+  minuto"; o status conta o expediente (0148); o texto do A/B diz que a
+  troca é automática e o histórico mostra quando trocou; o passo 3 mostra
+  as duas versões; o assistente reinicia limpo; a cota vira o dia em São
+  Paulo (era UTC: virava às 21h); cada lista mostra enviadas → responderam
+  → conversaram → tempo até a resposta → visitas → vendas.
+- **Fase 2 (mensagem):** até 2 fotos/plantas do cadastro depois do texto;
+  variáveis `{bairro} {cidade} {a_partir_de} {dormitorios} {link}
+  {corretor} {horarios}` (o assistente RECUSA variável sem valor); sem IA
+  durante o A/B; empate pela taxa; modelos com taxa de resposta; botão de
+  convite com horários da agenda.
+- **Fase 3 (ecossistema):** a lista guarda o critério → "Repetir" e lista
+  VIVA por 30 dias (`listasVivas.ts`, no tique do disparador); Início mostra
+  "N responderam" e, depois de 7 dias, "M não responderam — segunda
+  tentativa?"; Conversas filtra `?lista=` e o chat diz "veio da lista X";
+  Anúncios pagos mostra quantos clientes do anúncio a lista alcançou; ficha
+  conta mensagem e resposta; Administração tem as listas da equipe; sem
+  número conectado o assistente avisa e não deixa enviar.
+- **Fase 4:** reagendar numa operação só (`reagendar_fila_campanha`);
+  histórico e "Ver quem recebeu" paginados; rascunho; guardas em
+  `listaDeTransmissao.test.ts`.
+
+Armadilhas desta rodada:
+- **`resetar_cota_campanha` aceitava o id de QUALQUER instância** para
+  qualquer `authenticated` (security definer). Revogado na hora; o `drop` o
+  MCP recusa, fica para o editor SQL.
+- **A/B relabelava os pendentes da perdedora com a letra da vencedora** e o
+  placar passava a misturar envios de depois da decisão. Hoje saem do teste
+  sem letra.
+- Os links da fila do Início para Conversas usavam `?conversa=`, que a tela
+  não lê (`?c=`). Corrigido junto.
+
 ## Relacionadas
 - [[fluxo-de-campanhas]]
 - [[quando-a-ia-responde]]

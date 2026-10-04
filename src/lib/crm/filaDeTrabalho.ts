@@ -1,5 +1,6 @@
 import "server-only";
 
+import { DIAS_ATE_ESQUECER, retornoDasListas } from "@/lib/whatsapp/listaDeTransmissao";
 import { createClient } from "@/lib/supabase/server";
 import { situacaoDaTarefa, type Tarefa } from "@/lib/crm/timeline";
 import { horaDoLembrete, situacaoDoLembrete } from "@/lib/crm/lembretes";
@@ -31,6 +32,7 @@ export type TipoItemFila =
   | "lembrete_vencido"
   | "lembrete_hoje"
   | "sem_revisao"
+  | "lista_com_retorno"
   | "lead_parado";
 
 export type ItemFila = {
@@ -129,6 +131,12 @@ const PESO: Record<TipoItemFila, number> = {
   tarefa_hoje: 5,
   lembrete_hoje: 5,
   sem_revisao: 6,
+  /*
+   * O retorno de uma lista de transmissão (roadmap das listas, Fase 3):
+   * quem respondeu e quem pede segunda tentativa. Pesa como a revisão da IA:
+   * nada está atrasado, mas o ciclo da lista só fecha se alguém olhar.
+   */
+  lista_com_retorno: 6,
   lead_parado: 7,
 };
 
@@ -242,7 +250,21 @@ export async function getFilaDeTrabalho(
     .order("sugerido_em", { ascending: false })
     .limit(INDIVIDUAIS_POR_TIPO);
 
-  const [esperando, visitas, recusas, novos, parados, revisao, lembretes, alheios, sugestoes] = await Promise.all([
+  /*
+   * As listas que voltaram algo (Fase 3): itens enviados nos últimos 14
+   * dias deste corretor. Magro: cinco colunas e teto de 500 linhas.
+   */
+  const consultaListas = corretorId
+    ? supabase
+        .from("whatsapp_campanhas_fila")
+        .select("campanha_id, lead_id, status, enviado_em, resposta_em, campanha:whatsapp_campanhas!inner(titulo, corretor_id)")
+        .eq("campanha.corretor_id", corretorId)
+        .in("status", ["enviado", "respondido"])
+        .gte("enviado_em", new Date(agora.getTime() - DIAS_ATE_ESQUECER * 86_400_000).toISOString())
+        .limit(500)
+    : Promise.resolve({ data: [] as never[] });
+
+  const [esperando, visitas, recusas, novos, parados, revisao, lembretes, alheios, sugestoes, listas] = await Promise.all([
     /*
      * Quem falou com a gente e está esperando (0087). Primeiro item da fila
      * porque é a única situação em que a pessoa já levantou a mão e nós
@@ -308,6 +330,7 @@ export async function getFilaDeTrabalho(
     consultaLembretes,
     consultaAlheios,
     consultaSugestoes,
+    consultaListas,
   ]);
 
   /*
@@ -352,7 +375,7 @@ export async function getFilaDeTrabalho(
           : horas >= 1
             ? `Escreveu há ${horas}h e está sem resposta`
             : "Acabou de escrever",
-      href: `/corretor/conversas?conversa=${conversa.conversa_id}`,
+      href: `/corretor/conversas?c=${conversa.conversa_id}`,
       whatsapp: conversa.telefone_cliente
         ? `https://wa.me/${String(conversa.telefone_cliente).replace(/\D/g, "")}`
         : undefined,
@@ -415,7 +438,7 @@ export async function getFilaDeTrabalho(
           ? `Pedir indicação a ${quem}`
           : `Perguntar a ${quem} o que achou da visita`,
       detalhe: `“${sugestao.texto_sugerido}”`,
-      href: `/corretor/conversas?conversa=${sugestao.conversa_id}`,
+      href: `/corretor/conversas?c=${sugestao.conversa_id}`,
       peso: PESO.sugestao_de_mensagem,
     });
   }
@@ -548,6 +571,42 @@ export async function getFilaDeTrabalho(
       href: `/corretor/leads?parado=${DIAS_PARA_ESFRIAR}`,
       peso: PESO.lead_parado,
     });
+  }
+
+  const retornos = retornoDasListas(
+    (listas.data ?? []).map((i: { campanha_id: string; lead_id: string | null; status: string; enviado_em: string | null; resposta_em: string | null; campanha: unknown }) => {
+      const c = (Array.isArray(i.campanha) ? i.campanha[0] : i.campanha) as { titulo: string } | null;
+      return {
+        campanhaId: i.campanha_id,
+        titulo: c?.titulo ?? "sem título",
+        leadId: i.lead_id,
+        status: i.status,
+        enviadoEm: i.enviado_em,
+        respostaEm: i.resposta_em,
+      };
+    }),
+    agora,
+  );
+  for (const r of retornos.slice(0, INDIVIDUAIS_POR_TIPO)) {
+    if (r.responderam > 0) {
+      itens.push({
+        chave: `lista_com_retorno:${r.campanhaId}:respostas`,
+        tipo: "lista_com_retorno",
+        titulo: `${r.responderam} responde${r.responderam === 1 ? "u" : "ram"} à lista “${r.titulo}”`,
+        detalhe: "A IA está atendendo — veja as conversas",
+        href: `/corretor/conversas?lista=${r.campanhaId}`,
+        peso: PESO.lista_com_retorno,
+      });
+    } else if (r.semResposta.length > 0) {
+      itens.push({
+        chave: `lista_com_retorno:${r.campanhaId}:segunda`,
+        tipo: "lista_com_retorno",
+        titulo: `${r.semResposta.length} da lista “${r.titulo}” não ${r.semResposta.length === 1 ? "respondeu" : "responderam"}`,
+        detalhe: "Uma semana depois: montar uma segunda tentativa?",
+        href: `/corretor/campanhas?leads=${r.semResposta.slice(0, 300).join(",")}`,
+        peso: PESO.lista_com_retorno,
+      });
+    }
   }
 
   return ordenarFila(itens).slice(0, TETO_DA_FILA);

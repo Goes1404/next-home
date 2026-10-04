@@ -2,71 +2,87 @@
 
 import { useState } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
-import type { Empreendimento } from "@/lib/types";
+import type { Empreendimento, TemplateMensagem } from "@/lib/types";
 import { EnvioImediato } from "./_componentes/EnvioImediato";
 import { HistoricoCampanhas } from "./_componentes/HistoricoCampanhas";
-import { NovaCampanha } from "./_componentes/NovaCampanha";
+import { NovaCampanha, type InicialDaLista } from "./_componentes/NovaCampanha";
 import { StatusFila } from "./_componentes/StatusFila";
-import { listarCampanhas, type CampanhaListada, type StatusDisparo } from "./acoes";
+import { listarCampanhas, statusDisparo, type CampanhaListada, type StatusDisparo } from "./acoes";
 
 /**
- * A casca da tela de Campanhas (roadmap F4).
+ * A casca da tela de listas (roadmap F4).
  *
- * Antes eram 552 linhas com 21 botões, jargão de sistema à vista ("cota",
- * "fila", "instância") e as ferramentas destrutivas no mesmo nível do resto.
- * Agora são três blocos com um papel cada: como está a fila, criar campanha
- * nova (assistente de 3 passos) e o que já foi enviado.
+ * Três blocos com um papel cada: como está a fila, criar lista nova
+ * (assistente de 3 passos) e o que já foi enviado. Quando uma lista muda,
+ * a casca recarrega o histórico E o status da fila, para os dois nunca
+ * contarem histórias diferentes.
  */
 
 interface Props {
   empreendimentos: Empreendimento[];
   campanhasIniciais: CampanhaListada[];
   statusInicial: StatusDisparo | null;
-  /** Pré-preenchimento vindo de "leads que combinam" (tela do imóvel). */
-  inicial?: { imovelSlug?: string; leadIds: string[]; descricaoDoPublico?: string };
+  /** Pré-preenchimento vindo de "leads que combinam", listas sugeridas, repetir ou rascunho. */
+  inicial?: InicialDaLista;
+  modelos: TemplateMensagem[];
+  temAgenda: boolean;
+  corretor: { nome: string; whatsapp: string };
 }
 
-export function CampanhasManager({ empreendimentos, campanhasIniciais, statusInicial, inicial }: Props) {
+export function CampanhasManager({
+  empreendimentos,
+  campanhasIniciais,
+  statusInicial,
+  inicial,
+  modelos,
+  temAgenda,
+  corretor,
+}: Props) {
   const [campanhas, setCampanhas] = useState<CampanhaListada[]>(campanhasIniciais);
+  const [status, setStatus] = useState<StatusDisparo | null>(statusInicial);
   const { avisar } = useAvisos();
+
+  async function recarregar() {
+    const [listas, novoStatus] = await Promise.all([listarCampanhas(), statusDisparo()]);
+    setCampanhas(listas);
+    setStatus(novoStatus);
+  }
+
+  const numeroConectado = status?.statusConexao === "conectado";
 
   return (
     <div className="space-y-6">
-      {/*
-        A confirmação saiu daqui para a região de avisos do shell.
-        Ela nascia no TOPO desta tela, e quem acabou de criar uma lista está
-        olhando para o rodapé do assistente — a confirmação aparecia acima de
-        tudo, fora do campo de visão, e sumia sozinha em 10 segundos.
-      */}
-
-      <StatusFila
-        statusInicial={statusInicial}
-        aoMudar={async () => setCampanhas(await listarCampanhas())}
-      />
+      <StatusFila key={JSON.stringify(status)} statusInicial={status} aoMudar={recarregar} />
 
       <NovaCampanha
         empreendimentos={empreendimentos}
         inicial={inicial}
+        modelos={modelos}
+        temAgenda={temAgenda}
+        numeroConectado={numeroConectado}
+        corretor={corretor}
         aoCriar={(campanha, aviso) => {
-          setCampanhas((prev) => [campanha, ...prev]);
+          setCampanhas((prev) => [campanha, ...prev.filter((c) => c.status !== "rascunho" || c.id !== campanha.id)]);
           avisar(aviso);
+          void recarregar();
         }}
       />
 
       {/* Depois do assistente, e não antes: o caminho normal é criar uma
           lista escolhendo o público. Este é o atalho para a carteira
-          inteira agora — poderoso e sem volta, então não disputa a
-          atenção com o fluxo que se quer que seja o padrão. */}
+          inteira agora. */}
       <EnvioImediato
         aoEnviar={(campanha, aviso) => {
           setCampanhas((prev) => [campanha, ...prev]);
           avisar(aviso);
+          void recarregar();
         }}
       />
 
       <HistoricoCampanhas
         campanhas={campanhas}
-        aoLiberar={async () => setCampanhas(await listarCampanhas())}
+        aoMudar={recarregar}
+        foraDoHorario={status?.impedimentoTipo === "horario" || status?.impedimentoTipo === "expediente"}
       />
     </div>
   );

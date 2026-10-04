@@ -105,6 +105,7 @@ export function ListaDeImpulsionamentos({
   nomes,
   imoveis,
   ligados,
+  listasPorCartao = {},
   candidatos,
   series,
   hoje,
@@ -117,6 +118,8 @@ export function ListaDeImpulsionamentos({
   nomes: Record<string, string>;
   imoveis: { id: string; nome: string }[];
   ligados: Record<string, ClienteDaLista[]>;
+  /** Quantos clientes de cada cartão receberam e responderam lista de transmissão. */
+  listasPorCartao?: Record<string, { receberam: number; responderam: number }>;
   candidatos: ClienteDaLista[];
   series: OpcaoDeSerie[];
   hoje: string;
@@ -157,6 +160,7 @@ export function ListaDeImpulsionamentos({
               imoveis={imoveis}
               campanhas={minhasCampanhas}
               ligados={ligados[r.id] ?? []}
+              listas={listasPorCartao[r.id]}
               candidatos={candidatos}
               hoje={hoje}
             />
@@ -555,9 +559,11 @@ function Cartao({
   imoveis,
   campanhas,
   ligados,
+  listas,
   candidatos,
   hoje,
 }: {
+  listas?: { receberam: number; responderam: number };
   resumo: ResumoImpulsionamento;
   editavel: boolean;
   dono: string | null;
@@ -617,6 +623,14 @@ function Cartao({
       </dl>
 
       <DegrausDoCliente degraus={resumo.degraus} />
+
+      {listas && listas.receberam > 0 && (
+        <p className="text-fluid-xs text-corpo">
+          Lista de transmissão: {listas.receberam} cliente{listas.receberam === 1 ? "" : "s"} desta campanha
+          recebe{listas.receberam === 1 ? "u" : "ram"} uma lista, {listas.responderam} respond
+          {listas.responderam === 1 ? "eu" : "eram"}.
+        </p>
+      )}
 
       {resumo.anuncios.length > 0 && (
         <div className="space-y-2">

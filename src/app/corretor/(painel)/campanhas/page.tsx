@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CampanhasManager } from "./CampanhasManager";
-import { listarCampanhas, statusDisparo } from "./acoes";
+import { carregarListaParaReabrir, listarCampanhas, statusDisparo } from "./acoes";
 import { getEmpreendimentos } from "@/lib/queries";
+import { getCorretorLogado, getMeusTemplates } from "@/lib/corretorSessao";
+import { createClient } from "@/lib/supabase/server";
+import { corretorTemAgenda } from "@/lib/whatsapp/publicoDaLista";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { ListasSugeridasBloco } from "../_componentes/ListasSugeridas";
 import { getListasSugeridas } from "@/lib/crm/listasSugeridasDados";
 import { descreverLista, lerDiasDeParado } from "@/lib/crm/listasSugeridas";
+import type { InicialDaLista } from "./_componentes/NovaCampanha";
 
 export const metadata: Metadata = {
   title: "Listas de Transmissão de WhatsApp | Next Home",
@@ -34,31 +38,41 @@ export default async function CampanhasPainelPage({
     grupo?: string;
     dias?: string;
     parados?: string;
+    /** Repetir uma lista já enviada (roadmap das listas, Fase 3). */
+    repetir?: string;
+    /** Continuar um rascunho (Fase 4). */
+    rascunho?: string;
   }>;
 }) {
-  // Vindo de "leads que combinam" (tela do imóvel): imóvel e leads já
-  // marcados. É só pré-preenchimento: a criação refaz a interseção com a
-  // carteira no servidor, então id inventado na URL não vira mensagem.
-  const { imovel, leads, publico, grupo, dias, parados } = await searchParams;
+  // Pré-preenchimento: a criação refaz a interseção com a carteira no
+  // servidor, então id inventado na URL não vira mensagem.
+  const { imovel, leads, publico, grupo, dias, parados, repetir, rascunho } = await searchParams;
   const diasParado = lerDiasDeParado(parados);
   const grupoDaLista = grupo === "novos" || grupo === "parados" || grupo === "imovel" ? grupo : null;
-  const inicial = {
+  const idReabrir = [repetir, rascunho].find((v) => v && UUID.test(v));
+  const reaberta = idReabrir ? await carregarListaParaReabrir(idReabrir) : null;
+
+  const inicial: InicialDaLista = {
     imovelSlug: imovel || undefined,
     // "Avisar compradores" na tela do imóvel (26/09/2026).
     publico: publico === "compradores" ? ("compradores" as const) : undefined,
     leadIds: (leads ?? "").split(",").filter((id) => UUID.test(id)).slice(0, TETO_DE_IDS),
-    // Quem é este público, em palavras: é o que a IA usa para sugerir a
-    // mensagem de uma lista sugerida (citando o imóvel, quando houver).
     descricaoDoPublico: grupoDaLista
       ? descreverLista(grupoDaLista, { diasParado: lerDiasDeParado(dias), imovel: imovel || null })
       : undefined,
+    reabrir: reaberta
+      ? { ...reaberta, modo: rascunho && reaberta.status === "rascunho" ? "rascunho" : "repetir" }
+      : undefined,
   };
 
-  const [empreendimentos, campanhas, status, listas] = await Promise.all([
+  const corretor = await getCorretorLogado();
+  const [empreendimentos, campanhas, status, listas, modelos, temAgenda] = await Promise.all([
     getEmpreendimentos(),
     listarCampanhas(),
     statusDisparo(),
     getListasSugeridas(diasParado),
+    getMeusTemplates(),
+    corretor ? corretorTemAgenda(await createClient(), corretor.id) : Promise.resolve(false),
   ]);
 
   return (
@@ -81,15 +95,20 @@ export default async function CampanhasPainelPage({
 
       {/* Listas sugeridas (plano de ativação, Fase 4). Some quando o
           corretor já veio de uma delas: a lista dele está no assistente. */}
-      {listas && inicial.leadIds.length === 0 && (
+      {listas && inicial.leadIds.length === 0 && !reaberta && (
         <ListasSugeridasBloco listas={listas} diasParado={diasParado} caminho="/corretor/campanhas" />
       )}
 
       <CampanhasManager
+        // Reabrir outra lista monta o assistente do zero com os dados dela.
+        key={reaberta?.id ?? "nova"}
         empreendimentos={empreendimentos}
         campanhasIniciais={campanhas}
         statusInicial={status}
         inicial={inicial}
+        modelos={modelos}
+        temAgenda={temAgenda}
+        corretor={{ nome: corretor?.nome ?? "", whatsapp: corretor?.whatsapp ?? "" }}
       />
     </div>
   );

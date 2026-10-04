@@ -5,7 +5,6 @@ import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TabelaLeads } from "./TabelaLeads";
-import { EnviarEmMassa } from "./EnviarEmMassa";
 import {
   arquivarLeadsEmLote,
   carregarPaginaLeads,
@@ -23,7 +22,6 @@ import {
   ETAPA_LABEL,
   type EtapaFunil,
   type Lead,
-  type TemplateMensagem,
 } from "@/lib/types";
 
 type Filtro = "todos" | "hoje" | "novos" | "conversa" | "visitas" | "frios";
@@ -64,9 +62,6 @@ export function ListaLeads({
   filtroServidor,
   gestor,
   equipe,
-  templates,
-  nomeCorretor,
-  whatsappCorretor,
   verArquivados = false,
   empreendimentos = [],
 }: {
@@ -75,9 +70,6 @@ export function ListaLeads({
   filtroServidor: FiltroLeads;
   gestor: boolean;
   equipe: { id: string; nome: string }[];
-  templates: TemplateMensagem[];
-  nomeCorretor: string;
-  whatsappCorretor: string;
   /**
    * A lista está mostrando os ARQUIVADOS.
    *
@@ -106,7 +98,6 @@ export function ListaLeads({
   const buscaNaUrl = params.get("busca") ?? "";
 
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
-  const [modalAberto, setModalAberto] = useState(false);
   // Segundo andar da barra de seleção: a lista de etapas para mover o lote.
   const [escolhendoEtapa, setEscolhendoEtapa] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
@@ -182,7 +173,6 @@ export function ListaLeads({
     );
   }
 
-  const leadsSelecionados = leads.filter((l) => selecionados.has(l.id));
 
   /**
    * Ações de arquivo em lote. Uma função só porque as três diferem apenas
@@ -424,7 +414,7 @@ export function ListaLeads({
         </div>
       )}
 
-      {selecionados.size > 0 && !modalAberto && (
+      {selecionados.size > 0 && (
         // `acima-da-nav` em vez de `bottom-0`: no celular a navegação
         // inferior ocupa exatamente esse espaço, e as duas barras fixas se
         // sobrepunham — a de seleção ficava atrás da navegação, com o botão
@@ -527,7 +517,12 @@ export function ListaLeads({
                   )}
                   <button
                     type="button"
-                    onClick={() => setModalAberto(true)}
+                    // O envio em massa é a LISTA DE TRANSMISSÃO, com todas as
+                    // regras dela (Fase 0): o botão abre o assistente com os
+                    // leads já marcados, em vez de um segundo caminho.
+                    onClick={() =>
+                      router.push(`/corretor/campanhas?leads=${[...selecionados].slice(0, 300).join(",")}`)
+                    }
                     className="text-fluid-sm bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-lg px-4 font-medium whitespace-nowrap text-sobre-cor transition-colors"
                   >
                     Enviar mensagem
@@ -608,18 +603,6 @@ export function ListaLeads({
         sobrevivendo ao sumiço da barra, que era o motivo de ela existir.
       */}
 
-      {modalAberto && (
-        <EnviarEmMassa
-          leadsSelecionados={leadsSelecionados}
-          templates={templates}
-          nomeCorretor={nomeCorretor}
-          whatsappCorretor={whatsappCorretor}
-          onFechar={() => {
-            setModalAberto(false);
-            setSelecionados(new Set());
-          }}
-        />
-      )}
     </div>
   );
 }
