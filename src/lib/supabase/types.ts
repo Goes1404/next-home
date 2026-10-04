@@ -2955,6 +2955,7 @@ export type Database = {
           previa: string | null
           telefone: string | null
           tem_conversa: boolean | null
+          conversou: boolean | null
           ultima_atividade: string | null
         }
         Relationships: []

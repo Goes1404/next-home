@@ -127,6 +127,8 @@ Armadilhas desta rodada:
 A tela de Conversas lista apenas conversa em que o cliente falou ao menos
 uma vez. Lista enviada sem resposta não aparece ali (aparece no histórico da
 lista e no Início). O deep link `?c=` abre qualquer conversa.
+A aba "Conversas" do MENU é a lista de Pessoas: a 0157 põe `conversou` na
+view `pessoas_do_corretor` e ela também mostra só quem falou.
 
 ## Relacionadas
 - [[fluxo-de-campanhas]]

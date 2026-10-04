@@ -121,7 +121,7 @@ export function ListaPessoas({
         <p className="cartao text-fluid-sm text-apoio p-6 text-center">
           {busca
             ? `Ninguém com "${busca}".`
-            : "Ninguém por aqui ainda. Quem chegar pelo seu link aparece nesta lista."}
+            : "Nenhuma conversa ainda. Quem te responder aparece aqui; os leads que ainda não falaram com você ficam na aba Lista."}
         </p>
       ) : (
         <ul className="cartao divide-linha divide-y overflow-hidden">

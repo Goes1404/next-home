@@ -9211,3 +9211,8 @@ Nota: [[lista-de-transmissao-visivel-e-controlavel]].
   o cliente falou ao menos uma vez. Medido em 03/10: 8 de 21 conversas eram
   um lado só (sem mensagem, só a lista sem resposta, só o corretor). O `?c=`
   continua abrindo qualquer uma.
+- **A aba "Conversas" do menu é a lista de PESSOAS (`/corretor/pessoas`), não
+  a tela `/corretor/conversas`** ("Respostas da IA"). A 0156 filtrou a tela
+  errada; a 0157 põe `conversou` na view `pessoas_do_corretor` e a aba mostra
+  só quem falou (eram 298 leads sem conversa misturados). Ao mexer em
+  "conversas", conferir pelo menu qual rota o usuário vê.

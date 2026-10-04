@@ -59,7 +59,14 @@ export async function getPaginaDePessoas(
     )
     // A view antiga admitia conversa atendida sem lead. Enquanto a 0111 não
     // estiver aplicada, este filtro impede que esse estoque reapareça.
-    .not("lead_id", "is", null);
+    .not("lead_id", "is", null)
+    /*
+     * Só quem JÁ CONVERSOU: o cliente falou ao menos uma vez (0157). Esta é
+     * a aba "Conversas" do menu, e lead recém-importado aparecia aqui como se
+     * tivesse falado (298 leads sem conversa e 8 conversas de um lado só, em
+     * 03/10/2026). Quem nunca conversou continua na aba Lista.
+     */
+    .eq("conversou", true);
 
   const busca = filtro.busca ? sanearBusca(filtro.busca) : "";
   // Sem saneamento, vírgula e parênteses digitados na busca viram sintaxe de

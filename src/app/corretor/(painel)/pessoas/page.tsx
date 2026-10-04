@@ -54,7 +54,7 @@ export default async function PaginaPessoas({
     <div className="space-y-5">
       <CabecalhoDeTela
         titulo="Pessoas"
-        descricao="Quem falou com você, de quem falou por último para quem falou há mais tempo."
+        descricao="Quem já conversou com você, de quem falou por último para quem falou há mais tempo. Os leads que ainda não falaram ficam na aba Lista."
         abaixo={
           /*
            * Adicionar gente à mão é raro — 25 das 147 pessoas em produção
