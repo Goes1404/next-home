@@ -3,7 +3,7 @@ title: Domínio próprio nexthomeimoveis.com
 aliases: [nexthomeimoveis.com, NEXT_PUBLIC_SITE_URL, domínio]
 tags: [infra, seo, runbook]
 type: runbook
-status: growing
+status: evergreen
 custou: baixo
 codigo:
   - src/lib/site.ts
@@ -43,3 +43,12 @@ apex, nameservers `dns-parking.com`).
 Evolution, webhook da Meta e o E2E podem seguir no endereço antigo.
 
 Ver [[seo-o-dominio-real-nao-aponta-para-ca]] e [[MOC — Infraestrutura]].
+
+## Feito em 04/10/2026
+
+O principal ficou o **`www`**: `nexthomeimoveis.com` redireciona (308) para
+`https://www.nexthomeimoveis.com`, e é esse o valor de `NEXT_PUBLIC_SITE_URL`.
+Conferido depois do redeploy: canonical, `og:url`, sitemap (0 links antigos) e
+`robots.txt` saem com o domínio novo, e o endereço `vercel.app` também aponta o
+canonical para ele. Variável salva sem redeploy não vale: o deploy que estava no
+ar era anterior a ela, e foi um push (commit vazio) que a fez valer.
