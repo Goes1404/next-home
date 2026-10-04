@@ -12,7 +12,7 @@ codigo:
   - src/app/corretor/(painel)/importar/actions.ts
   - src/app/corretor/(painel)/importar/ImportarClient.tsx
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-10-03
 fonte: pedido do usuário em 24/09/2026 ("adicionar leads de mais tipos de arquivo")
 summary: Além de PDF, CSV e o .zip do WhatsApp, a importação passou a ler o .txt solto da conversa (Android), .vcf, .xlsx sem dependência nova, foto/print por IA, e o CSV do Google Contatos — que antes saía vazio, calado.
 ---
@@ -51,6 +51,20 @@ Formatos aceitos desde 24/09/2026: conversa do WhatsApp (`.zip` **e**
 - **Foto/print** vai ao Gemini (o mesmo da importação de PDF escaneado).
   Sem chave, a tela diz que a leitura de foto depende de IA — não
   "nenhum contato encontrado", que mandaria procurar defeito na foto.
+
+## Tirar coluna e telefone escrito certo (03/10/2026)
+
+- **A revisão mostra as colunas que vão para o CRM** (Nome, Telefone,
+  E-mail, Observação, Imóvel de interesse), com quantos contatos têm cada
+  uma, e um toque tira a coluna da importação inteira. Só o telefone não
+  sai. Observação e imóvel entravam no banco SEM aparecer na revisão; agora
+  aparecem em cada linha e podem ser editados ou tirados.
+- **O telefone entra escrito "(11) 98191-8127"** (`formatarTelefoneBr`): na
+  revisão, ao sair do campo e de novo ao gravar. Antes ia como vinha da
+  planilha ("+55 11 98191-8127", "11981918127"). A chave de busca
+  (`telefone_e164`) já saía certa; o que mudou é o que se lê.
+- **Número com "+" e DDI diferente de 55 fica como está**: "+1 415 555 2671"
+  tem onze dígitos, igual a um celular daqui, e viraria "(14) 15555-2671".
 
 ## Relacionadas
 - [[importar-conversa-do-whatsapp]]

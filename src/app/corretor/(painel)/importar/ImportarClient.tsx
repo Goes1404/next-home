@@ -14,6 +14,7 @@ import {
 } from "./actions";
 
 import { GmailLeadsExtractor } from "./GmailLeadsExtractor";
+import { formatarTelefoneBr } from "@/lib/inbound/phoneUtils";
 import { Mail } from 'lucide-react';
 
 type Empreendimento = { id: string; nome: string };
@@ -248,6 +249,12 @@ function Importador({
   const [metodo, setMetodo] = useState<ResultadoAnalise["metodo"] | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [linhas, setLinhas] = useState<(CandidatoRevisado & { incluir: boolean })[]>([]);
+  /*
+   * Colunas que o corretor tirou da importação. A planilha às vezes traz uma
+   * coluna que não deve entrar no CRM (observação interna, interesse errado,
+   * nome trocado): tirá-la vale para todos os contatos de uma vez.
+   */
+  const [colunasFora, setColunasFora] = useState<Set<ColunaOpcional>>(new Set());
   const [resumo, setResumo] = useState<ResumoImportacao | null>(null);
 
   const [empreendimentoId, setEmpreendimentoId] = useState("");
@@ -292,11 +299,11 @@ function Importador({
     iniciarImportacao(async () => {
       const resultado = await importarLeads(
         selecionados.map((l) => ({
-          nome: l.nome,
+          nome: colunasFora.has("nome") ? "" : l.nome,
           telefone: l.telefone,
-          email: l.email,
-          mensagem: l.mensagem,
-          imovelInteresse: l.imovelInteresse,
+          email: colunasFora.has("email") ? null : l.email,
+          mensagem: colunasFora.has("mensagem") ? null : l.mensagem,
+          imovelInteresse: colunasFora.has("imovelInteresse") ? null : l.imovelInteresse,
         })),
         { distribuirNaEquipe: distribuir, empreendimentoId: empreendimentoId || null, consentimento },
       );
@@ -319,6 +326,7 @@ function Importador({
     setErro(null);
     setAviso(null);
     setConsentimento(false);
+    setColunasFora(new Set());
   }
 
   if (etapa === "concluido" && resumo) {
@@ -403,7 +411,9 @@ function Importador({
           )}
         </div>
 
-        <ListaRevisao linhas={linhas} onChange={setLinhas} />
+        <ColunasDaImportacao linhas={linhas} fora={colunasFora} onChange={setColunasFora} />
+
+        <ListaRevisao linhas={linhas} onChange={setLinhas} fora={colunasFora} />
 
         <div className="cartao space-y-4 p-5">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -585,16 +595,113 @@ function Importador({
 
 type LinhaRevisao = CandidatoRevisado & { incluir: boolean };
 
-function ListaRevisao({
+/** Colunas que dá para tirar da importação. O telefone não: sem ele não há lead. */
+type ColunaOpcional = "nome" | "email" | "mensagem" | "imovelInteresse";
+
+const COLUNAS: { chave: ColunaOpcional | "telefone"; rotulo: string }[] = [
+  { chave: "nome", rotulo: "Nome" },
+  { chave: "telefone", rotulo: "Telefone" },
+  { chave: "email", rotulo: "E-mail" },
+  { chave: "mensagem", rotulo: "Observação" },
+  { chave: "imovelInteresse", rotulo: "Imóvel de interesse" },
+];
+
+/**
+ * As colunas que vão para o CRM, com quantos contatos têm cada uma, e o
+ * botão de tirar. Só aparece coluna que veio preenchida: oferecer "tirar a
+ * Observação" de uma planilha sem observação é botão para nada.
+ *
+ * Observação e imóvel de interesse entravam no CRM sem aparecer na revisão;
+ * agora aparecem, e dá para tirá-los.
+ */
+function ColunasDaImportacao({
   linhas,
+  fora,
   onChange,
 }: {
   linhas: LinhaRevisao[];
+  fora: Set<ColunaOpcional>;
+  onChange: (f: Set<ColunaOpcional>) => void;
+}) {
+  const preenchidas = COLUNAS.map((c) => ({
+    ...c,
+    total: linhas.filter((l) => {
+      const valor = l[c.chave];
+      return typeof valor === "string" && valor.trim() !== "";
+    }).length,
+  })).filter((c) => c.chave === "nome" || c.chave === "telefone" || c.total > 0);
+
+  function alternar(chave: ColunaOpcional) {
+    const nova = new Set(fora);
+    if (nova.has(chave)) nova.delete(chave);
+    else nova.add(chave);
+    onChange(nova);
+  }
+
+  return (
+    <div className="cartao p-5">
+      <p className="text-fluid-sm text-titulo font-medium">Colunas que vão para o CRM</p>
+      <p className="text-fluid-xs text-apoio mt-0.5">Toque numa coluna para tirá-la da importação.</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {preenchidas.map((c) => {
+          if (c.chave === "telefone") {
+            return (
+              <span
+                key={c.chave}
+                className="border-acento-linha bg-acento-lavado text-titulo text-fluid-xs flex min-h-11 items-center rounded-full border px-4"
+              >
+                Telefone · obrigatório
+              </span>
+            );
+          }
+          const chave = c.chave;
+          const tirada = fora.has(chave);
+          return (
+            <button
+              key={chave}
+              type="button"
+              aria-pressed={!tirada}
+              onClick={() => alternar(chave)}
+              className={cn(
+                "text-fluid-xs flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-4 transition-colors",
+                tirada
+                  ? "border-linha text-tenue"
+                  : "border-acento-linha bg-acento-lavado text-titulo hover:opacity-80",
+              )}
+            >
+              <span className={tirada ? "line-through" : undefined}>
+                {tirada ? "Fora:" : "✓"} {c.rotulo}
+              </span>
+              {c.total > 0 && <span className="text-apoio">· {c.total}</span>}
+            </button>
+          );
+        })}
+      </div>
+      {fora.has("nome") && (
+        <p className="text-fluid-xs text-apoio mt-2">
+          Sem a coluna de nome, os contatos entram como &quot;Contato sem nome&quot;.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ListaRevisao({
+  linhas,
+  onChange,
+  fora,
+}: {
+  linhas: LinhaRevisao[];
   onChange: (l: LinhaRevisao[]) => void;
+  fora: Set<ColunaOpcional>;
 }) {
   const todosMarcados = linhas.length > 0 && linhas.every((l) => l.incluir);
 
-  function alterar(indice: number, campo: "nome" | "telefone" | "email", valor: string) {
+  function alterar(
+    indice: number,
+    campo: "nome" | "telefone" | "email" | "mensagem" | "imovelInteresse",
+    valor: string,
+  ) {
     onChange(linhas.map((l, i) => (i === indice ? { ...l, [campo]: valor } : l)));
   }
 
@@ -632,21 +739,41 @@ function ListaRevisao({
             />
 
             <div className="grid min-w-0 gap-2 sm:grid-cols-[1.2fr_1fr_1.2fr]">
-              <CampoLinha
-                rotulo="Nome"
-                valor={linha.nome}
-                onChange={(v) => alterar(i, "nome", v)}
-              />
+              {!fora.has("nome") && (
+                <CampoLinha
+                  rotulo="Nome"
+                  valor={linha.nome}
+                  onChange={(v) => alterar(i, "nome", v)}
+                />
+              )}
               <CampoLinha
                 rotulo="Telefone"
                 valor={linha.telefone}
                 onChange={(v) => alterar(i, "telefone", v)}
+                // Número digitado de qualquer jeito sai escrito certo ao sair do campo.
+                onBlur={(v) => alterar(i, "telefone", formatarTelefoneBr(v))}
               />
-              <CampoLinha
-                rotulo="E-mail"
-                valor={linha.email ?? ""}
-                onChange={(v) => alterar(i, "email", v)}
-              />
+              {!fora.has("email") && (
+                <CampoLinha
+                  rotulo="E-mail"
+                  valor={linha.email ?? ""}
+                  onChange={(v) => alterar(i, "email", v)}
+                />
+              )}
+              {!fora.has("mensagem") && Boolean(linha.mensagem?.trim()) && (
+                <CampoLinha
+                  rotulo="Observação"
+                  valor={linha.mensagem ?? ""}
+                  onChange={(v) => alterar(i, "mensagem", v)}
+                />
+              )}
+              {!fora.has("imovelInteresse") && Boolean(linha.imovelInteresse?.trim()) && (
+                <CampoLinha
+                  rotulo="Imóvel de interesse"
+                  valor={linha.imovelInteresse ?? ""}
+                  onChange={(v) => alterar(i, "imovelInteresse", v)}
+                />
+              )}
             </div>
 
             {/*
@@ -674,10 +801,12 @@ function CampoLinha({
   rotulo,
   valor,
   onChange,
+  onBlur,
 }: {
   rotulo: string;
   valor: string;
   onChange: (v: string) => void;
+  onBlur?: (v: string) => void;
 }) {
   return (
     <label className="min-w-0">
@@ -685,6 +814,7 @@ function CampoLinha({
       <input
         value={valor}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur ? (e) => onBlur(e.target.value) : undefined}
         placeholder={rotulo}
         className="border-linha bg-campo text-corpo focus:border-acento text-fluid-xs min-h-11 w-full rounded-lg border px-3 outline-none transition-colors"
       />

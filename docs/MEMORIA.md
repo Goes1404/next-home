@@ -9170,3 +9170,14 @@ Nota: [[regras-do-corretor-e-horario-preferido]].
   todo lead novo. O webhook espera 3s, reconhece (`ehSaudacaoAutomatica`) e
   NÃO grava: gravada, fecharia a vez do cliente e a IA não responderia.
 
+## Importação: tirar coluna e telefone escrito certo (03/10/2026)
+
+Nota: [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]].
+
+- **Observação e imóvel de interesse entravam no CRM sem aparecer na
+  revisão.** A tela mostrava só nome, telefone e e-mail. Agora mostra as
+  colunas com contagem e deixa tirar qualquer uma, menos o telefone.
+- **Telefone gravado como vinha da planilha**; agora "(11) 98191-8127"
+  (`formatarTelefoneBr`). Número com "+" e DDI que não é 55 não é formatado:
+  onze dígitos americanos virariam um celular de DDD 14.
+

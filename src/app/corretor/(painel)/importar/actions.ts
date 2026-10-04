@@ -14,7 +14,7 @@ import {
   type CandidatoLead,
   type ResultadoExtracao,
 } from "@/lib/leads/importacao";
-import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
+import { formatarTelefoneBr, normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
 import { createClient } from "@/lib/supabase/server";
 
 import { extrairVariosLeadsComIA } from "@/lib/inbound/aiParser";
@@ -133,8 +133,10 @@ async function exigirCorretor() {
  */
 async function marcarExistentes(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  candidatos: CandidatoLead[],
+  lidos: CandidatoLead[],
 ): Promise<CandidatoRevisado[]> {
+  // O telefone já chega à revisão escrito do jeito certo: "(11) 98191-8127".
+  const candidatos = lidos.map((c) => ({ ...c, telefone: c.telefone ? formatarTelefoneBr(c.telefone) : c.telefone }));
   const chaves = candidatos
     .map((c) => c.telefoneE164)
     .filter((t): t is string => Boolean(t));
@@ -291,7 +293,7 @@ export async function importarLeads(
 
       return {
         nome: nome && nome.length >= 2 ? nome.slice(0, 120) : "Contato sem nome",
-        telefone: telefone.slice(0, 40),
+        telefone: formatarTelefoneBr(telefone).slice(0, 40),
         email: item.email?.trim().slice(0, 160) || null,
         mensagem: item.mensagem?.trim().slice(0, 2000) || null,
         anuncio_origem: item.imovelInteresse?.trim().slice(0, 160) || null,
@@ -361,7 +363,7 @@ export async function criarLeadUnico(
 
   const { error } = await supabase.from("leads").insert({
     nome: nome.slice(0, 120),
-    telefone: telefone.slice(0, 40) || null,
+    telefone: telefone ? formatarTelefoneBr(telefone).slice(0, 40) : null,
     email: email.slice(0, 160) || null,
     mensagem: mensagem.slice(0, 2000) || null,
     empreendimento_id: empreendimentoId || null,
