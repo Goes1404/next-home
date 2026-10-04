@@ -9,8 +9,10 @@ import { comRetentativa } from "@/lib/supabase/retentativa";
 import {
   bloqueadoAtePor,
   deveAbrirDisjuntor,
-  limiteDiarioCampanha,
+  limiteDoDia,
   diasDesdeConexao,
+  DIAS_DE_USO_RECENTE,
+  type LimiteDoDia,
   INTERVALO_MINIMO_SEGUNDOS,
   INTERVALO_MAXIMO_SEGUNDOS,
 } from "./antiBan";
@@ -1416,6 +1418,44 @@ export type VezDeDisparar =
  * todo disparo iniciado por nós passa (campanha e follow-up), então é aqui
  * que a garantia cabe.
  */
+/**
+ * O limite de hoje deste número, pelo USO REAL (0158). A mesma conta para o
+ * disparador e para a tela (`limiteDoDia`). Falha ao ler o histórico cai no
+ * PISO, nunca no teto: na dúvida, manda menos.
+ */
+export async function calcularLimiteDoDia(instanciaId: string, conectadoEm: Date): Promise<LimiteDoDia> {
+  const supabase = createServiceClient();
+  const hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+  const desde = new Date(Date.now() - (DIAS_DE_USO_RECENTE + 1) * 86_400_000);
+  const desdeDia = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(desde);
+
+  const [{ data: historico, error }, { data: instancia }] = await Promise.all([
+    supabase
+      .from("whatsapp_envios_por_dia")
+      .select("dia, enviados")
+      .eq("instancia_id", instanciaId)
+      .gte("dia", desdeDia),
+    supabase.from("corretor_whatsapp_instancias").select("corretor_id").eq("id", instanciaId).maybeSingle(),
+  ]);
+
+  let recusas = 0;
+  if (instancia?.corretor_id) {
+    const { count } = await supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("corretor_id", instancia.corretor_id)
+      .gte("nao_contatar_em", desde.toISOString());
+    recusas = count ?? 0;
+  }
+
+  return limiteDoDia({
+    diasDesdeConexao: diasDesdeConexao(conectadoEm),
+    historico: error ? [] : (historico ?? []),
+    hoje,
+    recusasNaSemana: recusas,
+  });
+}
+
 export async function reservarCotaCampanha(
   instanciaId: string,
   conectadoEm: Date | null,
@@ -1429,7 +1469,8 @@ export async function reservarCotaCampanha(
     };
   }
 
-  const limite = limiteDiarioCampanha(diasDesdeConexao(conectadoEm));
+  // Pelo uso real, não só pela idade do número (0158).
+  const { limite } = await calcularLimiteDoDia(instanciaId, conectadoEm);
   const supabase = createServiceClient();
 
   const { data, error } = await supabase.rpc("consumir_cota_campanha_espacada", {

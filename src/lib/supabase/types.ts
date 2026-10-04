@@ -2520,6 +2520,12 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_envios_por_dia: {
+        Row: { instancia_id: string; dia: string; enviados: number }
+        Insert: { instancia_id: string; dia: string; enviados?: number }
+        Update: { instancia_id?: string; dia?: string; enviados?: number }
+        Relationships: []
+      }
       whatsapp_campanhas: {
         Row: {
           criterio: Json | null

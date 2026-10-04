@@ -66,6 +66,11 @@ export interface FotoDaConexao {
   enviosCampanhaContador: number;
   /** Itens ainda `pendente` na fila deste número. */
   pendentes: number;
+  /**
+   * O limite de hoje pelo uso (`limiteDoDia`, 0158), quando quem monta a foto
+   * já o calculou. Sem ele vale o teto por idade, que é sempre maior ou igual.
+   */
+  limiteDoDia?: number;
 }
 
 const FUSO = "America/Sao_Paulo";
@@ -189,7 +194,8 @@ export function avaliarSaudeDaConexao(foto: FotoDaConexao, agora: Date): AvisoDa
   if (foto.pendentes > 0 && foto.conectadoEm) {
     const doDia =
       foto.enviosCampanhaData === diaEmSaoPaulo(agora) ? foto.enviosCampanhaContador : 0;
-    const limite = limiteDiarioCampanha(diasDesdeConexao(foto.conectadoEm, agora));
+    const limite =
+      foto.limiteDoDia ?? limiteDiarioCampanha(diasDesdeConexao(foto.conectadoEm, agora));
 
     if (doDia >= limite) {
       return {

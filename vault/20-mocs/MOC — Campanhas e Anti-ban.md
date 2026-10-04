@@ -4,7 +4,7 @@ tags: [moc, campanhas, anti-ban]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-10-03
 summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 ---
 # Campanhas e Anti-ban — Map of Content
@@ -23,6 +23,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[espacamento-anti-ban-so-existia-no-papel]]
 - [[o-lado-certo-de-errar-numa-trava]]
 - [[trocar-numero-zera-reputacao]]
+- [[aquecimento-do-numero-pelo-uso]] ⚠️ o limite diário segue o uso da última semana, não a idade (0158, 03/10)
 
 ## Diagnóstico
 - [[fila-parada-tres-causas]] ⚠️ runbook principal

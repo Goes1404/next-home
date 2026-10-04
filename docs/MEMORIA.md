@@ -9216,3 +9216,20 @@ Nota: [[lista-de-transmissao-visivel-e-controlavel]].
   errada; a 0157 põe `conversou` na view `pessoas_do_corretor` e a aba mostra
   só quem falou (eram 298 leads sem conversa misturados). Ao mexer em
   "conversas", conferir pelo menu qual rota o usuário vê.
+
+## O aquecimento do número segue o uso, não a idade (0158, 03/10/2026)
+
+Nota: [[aquecimento-do-numero-pelo-uso]].
+
+- **A curva por idade liberava 150/dia para número parado.** Ela contava só
+  os dias desde a conexão, então número velho que nunca mandou nada (ou que
+  ficou uma semana parado) saltava de zero para o máximo. O usuário apontou:
+  sem envio diário, as contas tomariam ban.
+- **Hoje o limite é o maior dia dos últimos 7 × 1,5, piso 15**, com a curva
+  por idade como teto e freio quando 3+ pessoas (≥ 5% do enviado) pedem para
+  sair na semana. Lista de 300 num número parado: 15, 23, 35, 53, 80, 120.
+- **`whatsapp_envios_por_dia` é gravada no MESMO update que reserva a
+  cota**, e a devolução desconta dela: `envios_campanha_contador` só lembra
+  o dia de hoje.
+- **Disparador e tela usam `calcularLimiteDoDia`.** Erro ao ler o histórico
+  cai no piso. A tela de listas diz por que o limite de hoje é esse.

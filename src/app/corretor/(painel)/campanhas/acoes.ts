@@ -21,7 +21,8 @@ import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
 import { processarFilaCampanhas } from "@/lib/whatsapp/campaignDispatcher";
 import { gerarMensagensCampanhaPersonalizadas, montarFilaCampanha } from "@/lib/whatsapp/campaignQueue";
 import { provedorConfigurado } from "@/lib/whatsapp/provider";
-import { saldoDiario, dentroDaJanela, dentroDaJanelaDoCorretor } from "@/lib/whatsapp/antiBan";
+import { dentroDaJanela, dentroDaJanelaDoCorretor, fraseDoLimite } from "@/lib/whatsapp/antiBan";
+import { calcularLimiteDoDia } from "@/lib/whatsapp/repositorio";
 import { linkDaPagina } from "@/lib/whatsapp/resolverMidia";
 import { horariosDeVisita } from "@/lib/crm/agendaDoCorretor";
 import {
@@ -1213,8 +1214,10 @@ export type StatusDisparo = {
   /** Nome pareado no provedor; null quando o número ainda não conectou. */
   numeroConectado: string | null;
   statusConexao: string;
-  /** Quantos disparos ainda cabem hoje neste número (curva de aquecimento). */
+  /** Quantos disparos ainda cabem hoje neste número (aquecimento pelo uso, 0158). */
   saldoHoje: number | null;
+  /** Por que o limite de hoje é esse, em português; null sem número conectado. */
+  explicacaoDoLimite: string | null;
   dentroDaJanela: boolean;
   pendentes: number;
   proximoAgendadoEm: string | null;
@@ -1249,7 +1252,7 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
     .select(
-      "status_conexao, telefone_conectado, conectado_em, bloqueado_ate, envios_campanha_contador, envios_campanha_data, expediente_inicio, expediente_fim",
+      "id, status_conexao, telefone_conectado, conectado_em, bloqueado_ate, envios_campanha_contador, envios_campanha_data, expediente_inicio, expediente_fim",
     )
     .eq("corretor_id", corretor.id)
     .maybeSingle();
@@ -1288,9 +1291,11 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
   const enviosHoje =
     instancia?.envios_campanha_data === hojeEmSaoPaulo() ? instancia.envios_campanha_contador : 0;
 
-  const saldoHoje = conectadoEm
-    ? saldoDiario({ conectadoEm, enviosCampanhaHoje: enviosHoje })
-    : null;
+  // O mesmo limite que o disparador usa (calcularLimiteDoDia): a tela não
+  // pode prometer uma cota que a reserva recusa.
+  const limiteHoje =
+    instancia && conectadoEm ? await calcularLimiteDoDia(instancia.id, conectadoEm) : null;
+  const saldoHoje = limiteHoje ? Math.max(0, limiteHoje.limite - enviosHoje) : null;
   const agora = new Date();
   const janelaAberta = dentroDaJanela(agora);
   const expediente = instancia
@@ -1342,6 +1347,7 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
     numeroConectado: instancia?.telefone_conectado ?? null,
     statusConexao: instancia?.status_conexao ?? "sem_instancia",
     saldoHoje,
+    explicacaoDoLimite: limiteHoje ? fraseDoLimite(limiteHoje) : null,
     dentroDaJanela: janelaAberta,
     pendentes,
     proximoAgendadoEm,

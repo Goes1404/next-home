@@ -231,3 +231,95 @@ export function ehDestinatarioInexistente(detalhe: string | undefined): boolean 
 export function bloqueadoAtePor(agora: Date = new Date()): Date {
   return new Date(agora.getTime() + HORAS_DISJUNTOR * 3600_000);
 }
+
+// ------------------------------------------------- aquecimento pelo USO (0158)
+
+/** O mínimo por dia: um número parado recomeça daqui. */
+export const PISO_POR_USO = 15;
+/** Quanto o limite pode crescer sobre o maior dia recente. */
+export const CRESCIMENTO_POR_USO = 1.5;
+/** Quantos dias para trás contam como "uso recente". */
+export const DIAS_DE_USO_RECENTE = 7;
+/** Recusas na semana a partir das quais o crescimento trava. */
+export const RECUSAS_PARA_FREAR = 3;
+
+export type LimiteDoDia = {
+  limite: number;
+  /** O que decidiu o número, para a tela explicar em português. */
+  motivo: "uso" | "idade" | "freio" | "piso";
+  /** O maior dia de envio dos últimos 7 dias (sem contar hoje). */
+  maiorDiaRecente: number;
+};
+
+/**
+ * O limite de hoje, pelo USO REAL do número (0158, 03/10/2026).
+ *
+ * A curva antiga contava só a IDADE do número desde a conexão: um número
+ * conectado há 30 dias que nunca mandou nada ganhava 150 por dia de uma vez,
+ * e um número que parou uma semana voltava no volume máximo. É o padrão que
+ * o WhatsApp lê como conta comprometida — volume que não foi construído.
+ *
+ * Agora o limite acompanha o que o número de fato mandou:
+ * - parte do maior dia dos últimos 7 (sem contar hoje) e pode crescer 50%
+ *   sobre ele; sem uso recente, volta ao piso de 15;
+ * - a idade continua sendo TETO (número novo não passa de 15 por dia nos 3
+ *   primeiros dias, nem de 30 até o sétimo, e assim por diante);
+ * - se a semana teve 3 ou mais recusas ("não quero mais") e elas são 5% ou
+ *   mais do que saiu, o limite NÃO cresce: o público está reclamando, e
+ *   aumentar o volume é o caminho mais curto para a denúncia.
+ *
+ * `historico` = envios por dia (YYYY-MM-DD em São Paulo). `hoje` no mesmo
+ * formato. Pura: a tela e o disparador usam a mesma conta.
+ */
+export function limiteDoDia(params: {
+  diasDesdeConexao: number;
+  historico: ReadonlyArray<{ dia: string; enviados: number }>;
+  hoje: string;
+  recusasNaSemana: number;
+}): LimiteDoDia {
+  const tetoPorIdade = limiteDiarioCampanha(params.diasDesdeConexao);
+  if (tetoPorIdade <= 0) return { limite: 0, motivo: "idade", maiorDiaRecente: 0 };
+
+  const corte = new Date(`${params.hoje}T12:00:00Z`);
+  corte.setUTCDate(corte.getUTCDate() - DIAS_DE_USO_RECENTE);
+  const desde = corte.toISOString().slice(0, 10);
+
+  const recentes = params.historico.filter((h) => h.dia < params.hoje && h.dia >= desde);
+  const maiorDiaRecente = recentes.reduce((m, h) => Math.max(m, h.enviados), 0);
+  const enviadosNaSemana = recentes.reduce((s, h) => s + h.enviados, 0);
+
+  const freio =
+    params.recusasNaSemana >= RECUSAS_PARA_FREAR &&
+    enviadosNaSemana > 0 &&
+    params.recusasNaSemana / enviadosNaSemana >= 0.05;
+
+  const porUso = Math.max(
+    PISO_POR_USO,
+    Math.round(maiorDiaRecente * (freio ? 1 : CRESCIMENTO_POR_USO)),
+  );
+  const limite = Math.min(tetoPorIdade, porUso);
+
+  const motivo: LimiteDoDia["motivo"] =
+    limite === tetoPorIdade && porUso > tetoPorIdade
+      ? "idade"
+      : freio
+        ? "freio"
+        : maiorDiaRecente === 0 || porUso === PISO_POR_USO
+          ? "piso"
+          : "uso";
+  return { limite, motivo, maiorDiaRecente };
+}
+
+/** A frase que a tela mostra sobre o limite de hoje. */
+export function fraseDoLimite(l: LimiteDoDia): string {
+  switch (l.motivo) {
+    case "piso":
+      return `Hoje seu número pode mandar até ${l.limite} mensagens de lista. O limite cresce conforme ele é usado; parado por uma semana, volta a ${PISO_POR_USO}.`;
+    case "uso":
+      return `Hoje seu número pode mandar até ${l.limite} mensagens de lista (o maior dia da última semana foi ${l.maiorDiaRecente}). Usando todo dia, o limite sobe.`;
+    case "idade":
+      return `Hoje seu número pode mandar até ${l.limite} mensagens de lista. Ele ainda é novo no sistema: o teto sobe sozinho com os dias.`;
+    case "freio":
+      return `Hoje seu número pode mandar até ${l.limite} mensagens de lista. O limite parou de subir porque várias pessoas pediram para sair esta semana — vale rever a mensagem ou o público.`;
+  }
+}

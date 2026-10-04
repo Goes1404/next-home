@@ -178,6 +178,12 @@ export function StatusFila({
               WhatsApp.
             </p>
           )}
+
+          {/* O limite de hoje sai do USO da última semana (0158): dizer por
+              que ele é esse evita a surpresa de um número parado voltar baixo. */}
+          {status.explicacaoDoLimite && (status.pendentes > 0 || status.impedimentoTipo === "cota") && (
+            <p className="text-fluid-xs text-tenue mt-1">{status.explicacaoDoLimite}</p>
+          )}
         </div>
 
         {/* Quando a fila está parada, o botão útil é o que a solta — não o

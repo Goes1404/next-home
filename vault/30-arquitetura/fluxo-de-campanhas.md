@@ -49,7 +49,9 @@ Cada envio passa por:
    item vira `erro` sem gastar cota
    ([[lista-de-transmissao-visivel-e-controlavel]]);
 5. cota + espaçamento no MESMO update atômico
-   ([[espacamento-anti-ban-so-existia-no-papel]]);
+   ([[espacamento-anti-ban-so-existia-no-papel]]); o limite do dia sai do
+   uso da última semana e o envio entra em `whatsapp_envios_por_dia` no
+   mesmo update ([[aquecimento-do-numero-pelo-uso]]);
 6. telefone normalizado no provedor ([[envio-mandava-telefone-sem-ddi]])
    **e também ao abrir a conversa** — com o telefone cru ela nascia sem
    lead, em paralelo à orgânica ([[a-conversa-fantasma-do-disparo-sem-ddi]]);
