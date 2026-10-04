@@ -4,7 +4,7 @@ tags: [moc, infra]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-28
+updated: 2026-10-04
 summary: Vercel, deploy, variáveis de ambiente, sharp, runtime.
 ---
 # Infraestrutura — Map of Content
@@ -12,6 +12,7 @@ summary: Vercel, deploy, variáveis de ambiente, sharp, runtime.
 Vercel (plano Hobby), deploy e runtime.
 
 ## Deploy
+- [[dominio-proprio-nexthomeimoveis]] — virada para o domínio próprio: DNS antes, NEXT_PUBLIC_SITE_URL depois (04/10)
 - [[producao-pode-servir-commit-de-outra-branch]] — o que está NO AR pode não estar em branch nenhuma; a prova é funcional (16/09)
 - [[branch-de-producao-nao-e-main]] ⚠️ ler primeiro
 - [[ci-vermelho-quinze-dias-pela-catraca-de-bundle]] — o deploy não espera o CI; vermelho vira paisagem (28/09)

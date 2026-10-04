@@ -9233,3 +9233,17 @@ Nota: [[aquecimento-do-numero-pelo-uso]].
   o dia de hoje.
 - **Disparador e tela usam `calcularLimiteDoDia`.** Erro ao ler o histórico
   cai no piso. A tela de listas diz por que o limite de hoje é esse.
+
+## O domínio próprio nexthomeimoveis.com (04/10/2026)
+
+Nota: [[dominio-proprio-nexthomeimoveis]].
+
+- **Comprado na Hostinger; o MCP da Vercel não adiciona domínio** (403 em
+  `add_project_domain`, e também ao listar env vars). A virada é pelo
+  painel: Vercel → Domains, depois os registros que ela mostrar no DNS da
+  Hostinger.
+- **`NEXT_PUBLIC_SITE_URL` só depois do HTTPS responder.** O código inteiro
+  lê `site.url` (links da IA, sitemap, canonical, agenda `.ics`, retorno do
+  OAuth do Gmail); trocar antes manda gente para um endereço morto.
+- **O retorno do Gmail muda junto**: acrescentar
+  `https://nexthomeimoveis.com/api/gmail/retorno` no Google Cloud Console.
