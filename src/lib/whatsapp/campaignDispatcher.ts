@@ -460,7 +460,7 @@ async function processarInstancia(ctx: {
        */
       const { data: aindaAtiva } = await supabase
         .from("whatsapp_campanhas")
-        .select("id, corretor_id, criterio, midias")
+        .select("id, corretor_id, criterio, midias, empreendimento_id")
         .eq("id", item.campanha_id)
         .eq("status", "em_andamento")
         .maybeSingle();
@@ -726,7 +726,17 @@ async function processarInstancia(ctx: {
          * 35-75s, só uma pausa curta entre uma e outra, como uma pessoa
          * mandando. Falha numa foto não desfaz o texto que já saiu.
          */
-        const midias = (aindaAtiva.midias ?? []) as MidiaDaLista[];
+        /*
+         * A coluna `midias` é gravável pela sessão do corretor (RLS do dono),
+         * então ela NÃO é prova de que a URL é do catálogo: alguém pela API
+         * poderia pôr uma URL qualquer e fazer o provedor buscá-la. O envio
+         * só aceita URL que existe em `midias` do imóvel DESTA lista.
+         */
+        const midias = await midiasDoCatalogo(
+          supabase,
+          aindaAtiva.empreendimento_id,
+          (aindaAtiva.midias ?? []) as MidiaDaLista[],
+        );
         if (midias.length > 0) {
           await enviarMidiasDaLista({
             instanceName: instancia.instance_name,
@@ -817,6 +827,25 @@ async function leadParaEnvio(
     .eq("id", leadId)
     .maybeSingle();
   return data ? { ...data, nome: data.nome ?? "" } : null;
+}
+
+/** As mídias da lista que de fato pertencem ao imóvel dela no catálogo. */
+async function midiasDoCatalogo(
+  supabase: ReturnType<typeof createServiceClient>,
+  empreendimentoId: string | null,
+  midias: MidiaDaLista[],
+): Promise<MidiaDaLista[]> {
+  if (!empreendimentoId || midias.length === 0) return [];
+  const { data } = await supabase
+    .from("midias")
+    .select("url")
+    .eq("empreendimento_id", empreendimentoId)
+    .in(
+      "url",
+      midias.map((m) => m.url),
+    );
+  const validas = new Set((data ?? []).map((m) => m.url));
+  return midias.filter((m) => validas.has(m.url) && (m.tipo === "foto" || m.tipo === "planta"));
 }
 
 /**

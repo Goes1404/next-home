@@ -191,6 +191,12 @@ describe("guardas de código (Fase 4)", () => {
     expect(cota).toBeGreaterThan(conferencia);
   });
 
+  it("a foto da lista só sai se existir no catálogo do imóvel dela", () => {
+    const fonte = ler("src/lib/whatsapp/campaignDispatcher.ts");
+    expect(fonte).toContain("await midiasDoCatalogo(");
+    expect(fonte).not.toMatch(/enviarMidiasDaLista\(\{[^}]*midias: \(aindaAtiva\.midias/);
+  });
+
   it("quem pede para sair sai das listas pendentes", () => {
     const fonte = ler("src/lib/whatsapp/repositorio.ts");
     const ini = fonte.indexOf("export async function registrarRecusaDoCliente");
