@@ -123,6 +123,11 @@ Armadilhas desta rodada:
 - Os links da fila do Início para Conversas usavam `?conversa=`, que a tela
   não lê (`?c=`). Corrigido junto.
 
+## Conversas só de quem conversou (0156)
+A tela de Conversas lista apenas conversa em que o cliente falou ao menos
+uma vez. Lista enviada sem resposta não aparece ali (aparece no histórico da
+lista e no Início). O deep link `?c=` abre qualquer conversa.
+
 ## Relacionadas
 - [[fluxo-de-campanhas]]
 - [[quando-a-ia-responde]]

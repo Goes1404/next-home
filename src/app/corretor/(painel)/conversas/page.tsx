@@ -86,7 +86,8 @@ export default async function ConversasPage({
   }
 
   const [{ data: conversas }, { data: instancia }] = await Promise.all([
-    consultaConversas.order("ultima_interacao_em", { ascending: false }).limit(100),
+    // 150 e não 100: as conversas sem fala do cliente saem logo abaixo.
+    consultaConversas.order("ultima_interacao_em", { ascending: false }).limit(150),
     supabase
       .from("corretor_whatsapp_instancias")
       .select("modo_bot, status_conexao, instance_name, expediente_inicio, expediente_fim")
@@ -107,10 +108,25 @@ export default async function ConversasPage({
   }
 
   /*
+   * Só aparece quem JÁ CONVERSOU: o cliente falou ao menos uma vez (0156).
+   * Conversa sem mensagem, só com a lista de transmissão que ninguém
+   * respondeu ou só com fala do corretor é um lado falando sozinho — enchia
+   * a tela de linhas mortas. O deep link `?c=` continua abrindo qualquer
+   * conversa (ver `faltaNaLista` abaixo): é o corretor pedindo aquela.
+   * Se a conferência falhar, a tela mostra todas em vez de nenhuma.
+   */
+  const idsCarregados = (conversas ?? []).map((c) => c.id);
+  const { data: comFala, error: erroComFala } = idsCarregados.length
+    ? await supabase.rpc("conversas_com_fala_do_cliente", { p_ids: idsCarregados })
+    : { data: [] as string[], error: null };
+  const conversou = new Set((comFala ?? []) as string[]);
+  const conversasVisiveis = erroComFala ? (conversas ?? []) : (conversas ?? []).filter((c) => conversou.has(c.id));
+
+  /*
    * A lista que cada cliente recebeu na última semana (Fase 3): a conversa
    * diz "veio da lista X". Uma consulta para as conversas da tela.
    */
-  const leadsDaTela = [...new Set((conversas ?? []).map((c) => c.lead_id as string))];
+  const leadsDaTela = [...new Set(conversasVisiveis.map((c) => c.lead_id as string))];
   const listaPorLead = new Map<string, string>();
   if (leadsDaTela.length > 0) {
     const { data: recebidas } = await supabase
@@ -127,7 +143,7 @@ export default async function ConversasPage({
     }
   }
 
-  const lista: ConversaResumo[] = (conversas ?? []).map((c) => ({
+  const lista: ConversaResumo[] = conversasVisiveis.map((c) => ({
     id: c.id,
     telefone: c.telefone_cliente,
     nome: c.nome_cliente,

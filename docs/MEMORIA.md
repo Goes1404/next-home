@@ -9207,3 +9207,7 @@ Nota: [[lista-de-transmissao-visivel-e-controlavel]].
 - **Cota pelo dia de São Paulo** (`current_date` é UTC e virava às 21h).
 - **A fila do Início linkava Conversas com `?conversa=`**, que a tela não
   lê; o certo é `?c=`.
+- **Conversas mostra só quem já conversou** (0156, `conversas_com_fala_do_cliente`):
+  o cliente falou ao menos uma vez. Medido em 03/10: 8 de 21 conversas eram
+  um lado só (sem mensagem, só a lista sem resposta, só o corretor). O `?c=`
+  continua abrindo qualquer uma.

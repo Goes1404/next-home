@@ -3131,6 +3131,10 @@ export type Database = {
       }
       eh_gestor: { Args: never; Returns: boolean }
       normalizar_telefone_br: { Args: { bruto: string }; Returns: string }
+      conversas_com_fala_do_cliente: {
+        Args: { p_ids: string[] }
+        Returns: string[]
+      }
       reagendar_fila_campanha: {
         Args: { p_campanhas: string[]; p_intervalo_min?: number; p_intervalo_max?: number }
         Returns: number
