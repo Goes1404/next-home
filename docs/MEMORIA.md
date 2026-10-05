@@ -9268,3 +9268,15 @@ nota 10 (link do anúncio), decidido com o usuário: medir antes de mexer.
   sem a coluna o clique pago se perderia.
 - **A catraca de peso estava vermelha desde 04/10** (listas de transmissão
   806 KB, home 757). Teto ajustado com o motivo. Ninguém tinha visto.
+
+## A palavra-chave "Oii" cadastrava amigos (0160, 05/10/2026)
+
+Nota: [[palavra-chave-cadastra-o-lead]].
+
+- **"Conversas que não são de leads aparecem na plataforma"**: toda conversa
+  tinha lead, e os 5 leads de origem `whatsapp/ativado_pelo_corretor` foram
+  criados pela palavra-chave "Oii", casada por trecho. A 0146 tinha deixado a
+  palavra antiga valer, só com aviso. Agora `somenteDiscretas` ignora palavra
+  fora da régua (inclusive a já salva), e a 0160 arquivou os 5.
+- **Para conferir quem criou um lead estranho:** `leads.origem`.
+  `ativado_pelo_corretor` = palavra-chave; `painel/importacao` = planilha.

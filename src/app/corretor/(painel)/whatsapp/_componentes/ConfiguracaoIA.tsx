@@ -3,7 +3,7 @@
 import { site } from "@/lib/site";
 import { useState } from "react";
 import { Bot, BellOff, Moon } from "lucide-react";
-import { EXPEDIENTE, listarPalavrasChave } from "@/lib/whatsapp/modoBot";
+import { EXPEDIENTE, listarPalavrasChave, somenteDiscretas } from "@/lib/whatsapp/modoBot";
 import { problemaDaPalavraChave } from "@/lib/whatsapp/palavraChaveDiscreta";
 import type { ModoBotWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { salvarConfiguracaoWhatsapp } from "../acoes";
@@ -88,13 +88,15 @@ export function ConfiguracaoIA({
   // A tela mostra as chaves que VALEM, pela mesma função que o webhook usa:
   // se ela descarta "ok" por ser curta, o corretor precisa ver isso aqui, e
   // não descobrir no atendimento que a palavra não liga nada.
-  const chavesAtivacao = listarPalavrasChave(palavraChaveAtivacao);
-  const chavesTeste = listarPalavrasChave(palavraChaveTeste);
+  // Desde 05/10/2026 a palavra fora da régua de palavra discreta não vale
+  // mais, nem a que já estava salva: era "Oii", e cadastrava amigos.
+  const chavesAtivacao = listarPalavrasChave(somenteDiscretas(palavraChaveAtivacao));
+  const chavesTeste = listarPalavrasChave(somenteDiscretas(palavraChaveTeste));
   const chavesEntrada = listarPalavrasChave(palavrasEntradaCliente);
   // A mesma régua do servidor (regra N8): a tela avisa antes de salvar, e
-  // avisa também sobre a palavra antiga que continua valendo mas é óbvia.
-  const avisosAtivacao = chavesAtivacao.map(problemaDaPalavraChave).filter(Boolean);
-  const avisosTeste = chavesTeste.map(problemaDaPalavraChave).filter(Boolean);
+  // avisa também sobre a palavra antiga que deixou de valer.
+  const avisosAtivacao = listarPalavrasChave(palavraChaveAtivacao).map(problemaDaPalavraChave).filter(Boolean);
+  const avisosTeste = listarPalavrasChave(palavraChaveTeste).map(problemaDaPalavraChave).filter(Boolean);
 
   // Abre sozinho quando já existe algo configurado: ajuste invisível em
   // vigor é a mesma armadilha do filtro escondido da lista de leads.
@@ -308,7 +310,7 @@ export function ConfiguracaoIA({
             </p>
             {avisosAtivacao.map((aviso) => (
               <p key={aviso} className="text-fluid-xs text-alerta leading-snug">
-                {aviso} Troque antes que ela dispare por engano.
+                {aviso} Ela não liga a IA nem cadastra ninguém até você trocar.
               </p>
             ))}
           </div>
@@ -332,7 +334,7 @@ export function ConfiguracaoIA({
             </p>
             {avisosTeste.map((aviso) => (
               <p key={aviso} className="text-fluid-xs text-alerta leading-snug">
-                {aviso}
+                {aviso} Ela não liga a IA até você trocar.
               </p>
             ))}
           </div>

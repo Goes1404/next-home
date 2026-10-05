@@ -1,5 +1,5 @@
 import type { ModoBotWhatsapp } from "./types";
-import { ehSoSimbolos } from "./palavraChaveDiscreta";
+import { ehSoSimbolos, problemaDaPalavraChave } from "./palavraChaveDiscreta";
 
 /**
  * Decide se o bot pode falar AGORA, segundo o modo escolhido pelo corretor.
@@ -188,9 +188,23 @@ export function palavraDoCorretorNaMensagem(params: {
   palavraChaveConfigurada: string | null | undefined;
   palavraChaveTeste?: string | null;
 }): "teste" | "ativacao" | null {
-  if (contemPalavraChave(params.mensagem, params.palavraChaveTeste)) return "teste";
-  if (contemPalavraChave(params.mensagem, params.palavraChaveConfigurada)) return "ativacao";
+  if (contemPalavraChave(params.mensagem, somenteDiscretas(params.palavraChaveTeste))) return "teste";
+  if (contemPalavraChave(params.mensagem, somenteDiscretas(params.palavraChaveConfigurada))) return "ativacao";
   return null;
+}
+
+/**
+ * Só as palavras que passam na régua de palavra discreta (05/10/2026).
+ *
+ * A 0146 deixou valer a palavra já salva antes da régua, com aviso na tela.
+ * Foi esse o furo: a palavra em produção era "Oii", casada por trecho, e
+ * todo "Oii" que a corretora mandava a um amigo cadastrava o número como
+ * lead e ligava a IA. Palavra fora da régua não liga nada, nem cadastra.
+ */
+export function somenteDiscretas(campo: string | null | undefined): string {
+  return listarPalavrasChave(campo)
+    .filter((p) => problemaDaPalavraChave(p) === null)
+    .join(",");
 }
 
 /** A mensagem (enviada pelo corretor) contém ALGUMA das palavras-chave cadastradas? */
