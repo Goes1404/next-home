@@ -18,6 +18,7 @@ import {
 import { Suspense } from "react";
 import { ContaDaMeta } from "@/app/corretor/(painel)/admin/anuncios/ContaDaMeta";
 import { ListaDeImpulsionamentos, type ClienteDaLista } from "./ListaDeImpulsionamentos";
+import { DoCliqueAConversa } from "./DoCliqueAConversa";
 
 export const metadata: Metadata = { title: "Anúncios pagos" };
 export const dynamic = "force-dynamic";
@@ -235,6 +236,10 @@ export default async function PaginaImpulsionamentos() {
         hoje={hoje}
         indisponivel={Boolean(error)}
       />
+      {/* Onde o clique no link do anúncio se perde (0159). */}
+      <Suspense fallback={null}>
+        <DoCliqueAConversa />
+      </Suspense>
       {/* A antiga tela "Anúncios" da Administração (30/09/2026): a conta de
           anúncios da imobiliária, só para o ADM. */}
       {corretor.papel === "gestor" && (

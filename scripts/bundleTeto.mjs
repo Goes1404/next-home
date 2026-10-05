@@ -69,6 +69,10 @@ const TETOS_KB = {
   // e os leads que combinam (com "reabrir perdidos"): 26/09.
   "/corretor/(painel)/imoveis/[slug]/page": 831,
   "/corretor/(painel)/marketing/video/page": 1005,
+  // 03/10: +7 KB nas listas de transmissão (0153-0155): pausar, cancelar,
+  // variáveis, A/B que decide sozinho e o motivo do limite do dia, tudo no
+  // assistente. Vermelho desde 04/10 sem ninguém ver.
+  "/corretor/(painel)/campanhas/page": 807,
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
   // 28/09: +3 KB na home e +7 na listagem são o coração de favorito em cada
@@ -77,7 +81,9 @@ const TETOS_KB = {
   // saíram da primeira carga (`components/layout/SobDemanda.tsx`).
   // 02/10: +1 KB em toda rota pública, do Pixel da Meta (PixelMeta.tsx, nos
   // dois layouts públicos), pedido para medir os anúncios.
-  "/(institucional)/page": 756,
+  // 03/10: +2 KB na home, do fundo da casa no computador e do parallax pelo
+  // ponteiro (0151). A esteira estava vermelha desde 04/10.
+  "/(institucional)/page": 758,
   "/(institucional)/financiamento/page": 751,
   "/(institucional)/regioes/[slug]/page": 740,
   "/(vitrine)/empreendimentos/page": 740,

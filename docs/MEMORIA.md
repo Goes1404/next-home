@@ -9247,3 +9247,24 @@ Nota: [[dominio-proprio-nexthomeimoveis]].
   OAuth do Gmail); trocar antes manda gente para um endereço morto.
 - **O retorno do Gmail muda junto**: acrescentar
   `https://nexthomeimoveis.com/api/gmail/retorno` no Google Cloud Console.
+
+## Onde o clique do anúncio se perde (0159, 05/10/2026)
+
+Nota: [[onde-o-clique-do-anuncio-se-perde]]. Primeiro item do roadmap da
+nota 10 (link do anúncio), decidido com o usuário: medir antes de mexer.
+
+- **679 cliques de gente, 5 leads em 7 dias** (Dom Parque). Dos 1.356
+  acessos, 643 eram o robô da Meta. O resto é quase todo o navegador interno
+  do Instagram e do Facebook no Android (`wv` no user agent).
+- **Pessoas**: `cliques_whatsapp.visitante` = hash de IP + navegador + dia,
+  com a chave de serviço como segredo. Muda todo dia.
+- **Quem escreveu sem a mensagem pronta**: `porteiro_barrados`, uma linha por
+  número desconhecido/corretor/dia, só com resumo do número, tipo, minutos
+  desde o clique e se citou o imóvel. O texto nunca é gravado. Retenção de
+  90 dias pela limpeza diária.
+- **O MCP do Supabase cancela migration com `drop policy`**, inclusive
+  `if exists` numa tabela nova. Aplicar sem o `drop`.
+- **A migration vai antes do deploy**: o link grava `visitante` no insert, e
+  sem a coluna o clique pago se perderia.
+- **A catraca de peso estava vermelha desde 04/10** (listas de transmissão
+  806 KB, home 757). Teto ajustado com o motivo. Ninguém tinha visto.

@@ -81,7 +81,7 @@ import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { itensDoEvento, lerContato, resumirEventoDeContato } from "@/lib/whatsapp/contatosDaAgenda";
-import { candidatosTelefone } from "@/lib/whatsapp/repositorio";
+import { candidatosTelefone, registrarMensagemBarrada } from "@/lib/whatsapp/repositorio";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -504,6 +504,24 @@ export async function POST(req: NextRequest) {
      */
     if (!conversa && chavesDeContexto(payload).length > 0) {
       console.info("[porteiro] número sem lead com contextInfo:", chavesDeContexto(payload).join(","));
+    }
+
+    /*
+     * Medição do link do anúncio (0159): conta quem escreveu sem convite e
+     * vai ser ignorado — só o resumo do número, o tipo e a distância até o
+     * último clique de pessoa no link. O texto é lido aqui para saber se citou
+     * o imóvel e não é gravado. Depois da resposta, para não atrasar nada.
+     */
+    if (!conversa && !fromMe) {
+      const corretorDaMedicao = instancia.corretorId;
+      after(() =>
+        registrarMensagemBarrada({
+          corretorId: corretorDaMedicao,
+          telefone: sender,
+          texto: text || null,
+          tipo: text ? "texto" : ehAudio ? "audio" : "outro",
+        }),
+      );
     }
 
     if (!conversa) {

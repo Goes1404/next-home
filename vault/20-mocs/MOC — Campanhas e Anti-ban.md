@@ -42,6 +42,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[fechar-o-ciclo-e-ligar-a-plataforma]] — público compradores, reengajamento descartado para quem fechou, pedido de indicação no tique (26/09)
 - [[impulsionamento-do-corretor-pela-etiqueta-da-meta]] — lead do impulsionamento do corretor era descartado pela 0111; etiqueta da Meta abre a porta, gasto digitado em Marketing → Impulsionamentos (27/09)
 - [[campanha-cadastrada-pelo-corretor]] · [[lead-do-link-do-anuncio-cai-na-campanha-do-imovel]] · [[clique-no-link-cadastra-quem-escreve]] · [[anuncio-da-etiqueta-cai-sozinho-na-campanha]] — o corretor cadastra campanha com valor, agrupa anúncios, liga clientes; qualidade pela temperatura da IA e comparação pela melhor por visita (0132, 30/09)
+- [[onde-o-clique-do-anuncio-se-perde]] — pessoas por clique e quem escreveu sem a mensagem pronta, só contagem (0159, 05/10)
 - [[qualidade-do-lead-pelo-que-ele-fez]] — qualidade por degraus de comportamento (conversou, se qualificou, visitou, fechou), contagem abaixo de 5 clientes, comparativo entre campanhas (30/09)
 - [[comparacao-de-campanhas-por-um-criterio-so]] — ordem e "melhor" pelo mesmo critério (visita → qualificado → cliente), amostra mínima de 5, quem gastou sem trazer ninguém aparece (30/09)
 - [[totais-dos-anuncios-contam-e-dividem-o-mesmo]] — contagem e custo do topo usam só as campanhas com gasto; degraus com custo de cada um (30/09)

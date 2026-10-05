@@ -21,6 +21,13 @@ import { resetPorTrocaDeNumero } from "./trocaDeNumero";
 import { camposDaFicha } from "./fichaDoLead";
 import type { DossieClienteIA } from "./types";
 import { contaComoRespostaDaLista, type ListaRecenteDoLead } from "./contextoDaCampanha";
+import {
+  citaOImovel,
+  diaEmSaoPauloISO,
+  ehClienteDePessoa,
+  remetenteResumido,
+  segredoDaMedicao,
+} from "./medicaoDoLink";
 
 /**
  * Persistência do fluxo de WhatsApp, do lado do webhook.
@@ -625,6 +632,76 @@ export async function reivindicarCliqueDoLink(params: {
     nomeImovel,
     doAnuncio: data.origem.startsWith("anuncio/"),
   };
+}
+
+/**
+ * Conta a mensagem que o porteiro vai ignorar (0159): número sem lead que
+ * escreveu sem convite. Grava só o resumo do número, o tipo, quantos minutos
+ * depois de um clique de pessoa no link ela chegou e se citou o imóvel
+ * daquele clique. O texto nunca sai daqui.
+ *
+ * Uma linha por número, por corretor, por dia: a primeira mensagem do dia é
+ * a que conta. Falha nunca derruba o webhook: é medição.
+ */
+export async function registrarMensagemBarrada(p: {
+  corretorId: string;
+  telefone: string;
+  texto: string | null;
+  tipo: "texto" | "audio" | "outro";
+}): Promise<void> {
+  try {
+    const supabase = createServiceClient();
+    const { data: cliques } = await supabase
+      .from("cliques_whatsapp")
+      .select("id, created_at, empreendimento_id, user_agent")
+      .eq("corretor_id", p.corretorId)
+      .eq("pelo_porteiro", true)
+      .gte("created_at", new Date(Date.now() - 60 * 60_000).toISOString())
+      .order("created_at", { ascending: false })
+      .limit(20);
+    const clique = (cliques ?? []).find((c) => ehClienteDePessoa(c.user_agent)) ?? null;
+
+    let citou = false;
+    if (clique?.empreendimento_id && p.texto) {
+      const { data: imovel } = await supabase
+        .from("empreendimentos")
+        .select("nome, nomes_alternativos")
+        .eq("id", clique.empreendimento_id)
+        .maybeSingle();
+      if (imovel) citou = citaOImovel(p.texto, [imovel.nome, ...(imovel.nomes_alternativos ?? [])]);
+    }
+
+    const { error } = await supabase.from("porteiro_barrados").upsert(
+      {
+        corretor_id: p.corretorId,
+        dia: diaEmSaoPauloISO(),
+        remetente: remetenteResumido(p.telefone, segredoDaMedicao()),
+        tipo: p.tipo,
+        minutos_desde_clique: clique
+          ? Math.max(0, Math.floor((Date.now() - new Date(clique.created_at).getTime()) / 60_000))
+          : null,
+        clique_id: clique?.id ?? null,
+        empreendimento_id: clique?.empreendimento_id ?? null,
+        citou_imovel: citou,
+      },
+      { onConflict: "corretor_id,remetente,dia", ignoreDuplicates: true },
+    );
+    if (error) console.error("[porteiro] falha ao contar mensagem barrada:", error.message);
+  } catch (e) {
+    console.error("[porteiro] falha ao contar mensagem barrada:", e);
+  }
+}
+
+/** Quanto tempo a contagem de mensagens barradas fica guardada (0159). */
+export const DIAS_DE_MENSAGENS_BARRADAS = 90;
+
+/** Apaga a contagem antiga: depois de 90 dias ela já não decide nada. */
+export async function limparMensagensBarradasAntigas(): Promise<number> {
+  const supabase = createServiceClient();
+  const limite = new Date(Date.now() - DIAS_DE_MENSAGENS_BARRADAS * 86_400_000).toISOString().slice(0, 10);
+  const { data, error } = await supabase.from("porteiro_barrados").delete().lt("dia", limite).select("id");
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
 }
 
 /** Grava no clique quem ele cadastrou, para conferir depois. */

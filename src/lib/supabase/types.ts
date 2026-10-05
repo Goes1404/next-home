@@ -763,6 +763,7 @@ export type Database = {
           pelo_porteiro: boolean
           url_origem: string | null
           user_agent: string | null
+          visitante: string | null
         }
         Insert: {
           corretor_id?: string | null
@@ -775,6 +776,7 @@ export type Database = {
           pelo_porteiro?: boolean
           url_origem?: string | null
           user_agent?: string | null
+          visitante?: string | null
         }
         Update: {
           corretor_id?: string | null
@@ -787,6 +789,7 @@ export type Database = {
           pelo_porteiro?: boolean
           url_origem?: string | null
           user_agent?: string | null
+          visitante?: string | null
         }
         Relationships: [
           {
@@ -1611,6 +1614,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      porteiro_barrados: {
+        Row: {
+          citou_imovel: boolean
+          clique_id: string | null
+          corretor_id: string
+          criado_em: string
+          dia: string
+          empreendimento_id: string | null
+          id: string
+          minutos_desde_clique: number | null
+          remetente: string
+          tipo: "texto" | "audio" | "outro"
+        }
+        Insert: {
+          citou_imovel?: boolean
+          clique_id?: string | null
+          corretor_id: string
+          criado_em?: string
+          dia: string
+          empreendimento_id?: string | null
+          id?: string
+          minutos_desde_clique?: number | null
+          remetente: string
+          tipo: "texto" | "audio" | "outro"
+        }
+        Update: {
+          citou_imovel?: boolean
+          clique_id?: string | null
+          corretor_id?: string
+          criado_em?: string
+          dia?: string
+          empreendimento_id?: string | null
+          id?: string
+          minutos_desde_clique?: number | null
+          remetente?: string
+          tipo?: "texto" | "audio" | "outro"
+        }
+        Relationships: []
       }
       parametros_credito: {
         Row: {

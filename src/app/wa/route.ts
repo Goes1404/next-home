@@ -3,6 +3,7 @@ import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
 import { ehChaveIntencao } from "@/lib/whatsapp/porteiro";
+import { diaEmSaoPauloISO, ipDaRequisicao, segredoDaMedicao, visitanteDoClique } from "@/lib/whatsapp/medicaoDoLink";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +35,7 @@ export async function GET(req: Request) {
 
   const destino = destinoDoPorteiro({ telefone: sorteio?.telefone, nomeImovel: null, intencao, complemento: url.searchParams.get("m") });
 
+  const userAgent = req.headers.get("user-agent")?.slice(0, 500) ?? null;
   // Aguardado de propósito: fire-and-forget perderia o clique se a função
   // for congelada logo após o redirect.
   await supabase.from("cliques_whatsapp").insert({
@@ -43,7 +45,13 @@ export async function GET(req: Request) {
     // Só clique gravado aqui pode cadastrar quem escreve sem a mensagem pronta (0143).
     pelo_porteiro: true,
     url_origem: url.pathname + url.search,
-    user_agent: req.headers.get("user-agent")?.slice(0, 500) ?? null,
+    user_agent: userAgent,
+    visitante: visitanteDoClique({
+      ip: ipDaRequisicao(req.headers),
+      userAgent,
+      dia: diaEmSaoPauloISO(),
+      segredo: segredoDaMedicao(),
+    }),
   });
 
   return destino.tipo === "escape"
