@@ -6,13 +6,14 @@ type: nota
 status: growing
 custou: medio
 codigo:
+  - src/lib/leads/googlePlanilhas.ts
   - src/lib/leads/importacao.ts
   - src/lib/leads/xlsxLeitura.ts
   - src/lib/leads/vcard.ts
   - src/app/corretor/(painel)/importar/actions.ts
   - src/app/corretor/(painel)/importar/ImportarClient.tsx
 created: 2026-09-24
-updated: 2026-10-03
+updated: 2026-10-06
 fonte: pedido do usuário em 24/09/2026 ("adicionar leads de mais tipos de arquivo")
 summary: Além de PDF, CSV e o .zip do WhatsApp, a importação passou a ler o .txt solto da conversa (Android), .vcf, .xlsx sem dependência nova, foto/print por IA, e o CSV do Google Contatos — que antes saía vazio, calado.
 ---
@@ -69,3 +70,17 @@ Formatos aceitos desde 24/09/2026: conversa do WhatsApp (`.zip` **e**
 ## Relacionadas
 - [[importar-conversa-do-whatsapp]]
 - [[falha-calada-e-a-pior]]
+
+## Google Planilhas (06/10/2026)
+
+- **Colar o link da planilha** na caixa de texto importa a aba do link
+  (`googlePlanilhas.ts`: exportação CSV com o `gid`, baixada por
+  `buscarSeguro`). Antes o link virava "lista solta" sem telefone. Planilha
+  privada redireciona para o login do Google e a tela pede para compartilhar
+  como "qualquer pessoa com o link".
+- **Cabeçalho procurado nas 10 primeiras linhas**: planilha feita à mão abre
+  com título e linha em branco. O separador sai da primeira linha que tem
+  separador, senão o título fazia um CSV com vírgula ser lido por tabulação.
+- **Título exato ganha do que só contém a palavra**: na planilha de leads da
+  Meta, "ad_name" vinha antes de "full_name" e virava o nome do cliente.
+  `_` conta como espaço ("phone_number").

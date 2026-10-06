@@ -9372,3 +9372,14 @@ Nota: [[catalogo-exportado-em-excel]].
 - **LibreOffice headless não abre `.xlsx` neste contêiner**, nem o gerado
   pelo openpyxl ("source file could not be loaded"). Para validar planilha
   aqui, use `pip install openpyxl` e leia por ele.
+
+## Importação do Google Planilhas (06/10/2026)
+
+Nota: [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]].
+
+- **O `.xlsx` baixado do Google já era lido** (conferido com uma planilha
+  pública real). O que falhava era o resto: link colado, título acima do
+  cabeçalho e cabeçalho ambíguo ("ad_name" × "full_name").
+- **Link colado vira exportação CSV** (`/export?format=csv&gid=`), só com a
+  planilha compartilhada por link. Exportação pública do Google responde por
+  `curl` neste contêiner, então dá para testar com planilha real.

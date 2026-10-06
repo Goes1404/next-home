@@ -1,5 +1,6 @@
 "use server";
 
+import { baixarPlanilhaDoGoogle, linkDoGooglePlanilhas } from "@/lib/leads/googlePlanilhas";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCorretorLogado, souGestor } from "@/lib/corretorSessao";
@@ -168,6 +169,14 @@ export async function analisarTexto(conteudo: string): Promise<ResultadoAnalise>
   if (!conteudo?.trim()) return { erro: "Cole a lista de contatos antes de continuar." };
   if (conteudo.length > 200_000) {
     return { erro: "Texto grande demais. Divida em partes menores ou envie um arquivo." };
+  }
+
+  // Link do Google Planilhas colado: vira a exportação CSV da aba citada.
+  const link = linkDoGooglePlanilhas(conteudo);
+  if (link) {
+    const baixada = await baixarPlanilhaDoGoogle(link);
+    if (!baixada.ok) return { erro: baixada.erro };
+    conteudo = baixada.texto;
   }
 
   // Conversa do WhatsApp colada na caixa também chega aqui, e a fala de quem

@@ -521,8 +521,9 @@ function Importador({
             className={cn(CAMPO, "font-mono text-[13px]")}
           />
           <p className="text-fluid-xs text-tenue mt-2">
-            Funciona com tabela colada do Excel ou do Google Sheets, CSV, ou uma lista solta —
-            neste último caso a IA lê o texto.
+            Funciona com tabela colada do Excel ou do Google Planilhas, CSV, ou uma lista solta —
+            neste último caso a IA lê o texto. Também dá para colar só o link da planilha do
+            Google, se ela estiver compartilhada como &quot;qualquer pessoa com o link&quot;.
           </p>
 
           <button

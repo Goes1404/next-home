@@ -53,8 +53,8 @@ export const LIMITE_POR_IMPORTACAO = 300;
  */
 const CABECALHOS = {
   sobrenome: ["sobrenome", "last name", "family name", "ultimo nome"],
-  nome: ["nome", "name", "cliente", "contato", "lead", "nome completo", "nome do cliente"],
-  telefone: ["telefone", "tel", "celular", "fone", "whatsapp", "whats", "phone", "contato telefone"],
+  nome: ["nome", "name", "cliente", "contato", "lead", "nome completo", "nome do cliente", "full name"],
+  telefone: ["telefone", "tel", "celular", "fone", "whatsapp", "whats", "phone", "contato telefone", "phone number", "numero"],
   email: ["email", "e-mail", "mail", "correio"],
   mensagem: ["mensagem", "obs", "observacao", "observação", "observacoes", "comentario", "comentário", "descricao", "descrição"],
   imovel: ["imovel", "imóvel", "empreendimento", "interesse", "produto", "anuncio", "anúncio", "referencia", "referência"],
@@ -67,6 +67,7 @@ function semAcento(texto: string): string {
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase()
+    .replace(/_+/g, " ")
     .trim();
 }
 
@@ -76,6 +77,16 @@ function detectarSeparador(linha: string): string {
   if (linha.includes("|")) return "|";
   if (linha.includes(",")) return ",";
   return "\t";
+}
+
+/**
+ * O separador sai da primeira linha que TEM separador: um título solto no
+ * topo ("Leads de outubro") não tem nenhum, e decidir por ele faria um CSV
+ * com vírgulas ser lido por tabulação.
+ */
+function separadorDoTexto(linhas: string[]): string {
+  const comSeparador = linhas.slice(0, LINHAS_ATE_O_CABECALHO + 1).find((l) => /[\t;|,]/.test(l));
+  return detectarSeparador(comSeparador ?? linhas[0] ?? "");
 }
 
 function celulas(linha: string, sep: string): string[] {
@@ -149,20 +160,29 @@ function pareceTelefone(valor: string): boolean {
 function mapearCabecalho(colunas: string[]): Partial<Record<Campo, number>> | null {
   const mapa: Partial<Record<Campo, number>> = {};
 
-  colunas.forEach((coluna, indice) => {
-    const chave = semAcento(coluna);
-    if (!chave) return;
-    // "Phone 1 - Label" (Google Contatos) diz o TIPO do número, não o número:
-    // mapeá-la como telefone faria a planilha inteira sair sem nenhum lead.
-    if (RE_COLUNA_DE_ROTULO.test(chave)) return;
-    for (const campo of Object.keys(CABECALHOS) as Campo[]) {
-      if (mapa[campo] !== undefined) continue;
-      if (CABECALHOS[campo].some((c) => chave === c || chave.includes(c))) {
-        mapa[campo] = indice;
-        return;
+  // Duas passadas: o título EXATO ganha do que só contém a palavra. Sem
+  // isso, na planilha de leads da Meta (exportada para o Google Planilhas)
+  // "ad_name" vem antes de "full_name" e o nome do anúncio virava o nome do
+  // cliente; e "Data do lead" disputava com "Nome".
+  const usadas = new Set<number>();
+  for (const exato of [true, false]) {
+    colunas.forEach((coluna, indice) => {
+      if (usadas.has(indice)) return;
+      const chave = semAcento(coluna);
+      if (!chave) return;
+      // "Phone 1 - Label" (Google Contatos) diz o TIPO do número, não o número:
+      // mapeá-la como telefone faria a planilha inteira sair sem nenhum lead.
+      if (RE_COLUNA_DE_ROTULO.test(chave)) return;
+      for (const campo of Object.keys(CABECALHOS) as Campo[]) {
+        if (mapa[campo] !== undefined) continue;
+        if (CABECALHOS[campo].some((c) => chave === c || (!exato && chave.includes(c)))) {
+          mapa[campo] = indice;
+          usadas.add(indice);
+          return;
+        }
       }
-    }
-  });
+    });
+  }
 
   // Com mais de um telefone na planilha (Outlook traz comercial, residencial
   // e celular), o celular vence: é ele que tem WhatsApp.
@@ -233,10 +253,27 @@ function montar(bruto: {
  * (`leituraPorIa.ts`).
  */
 export function temCabecalhoDeContatos(conteudo: string): boolean {
-  const primeira = conteudo.trim().split(/\r?\n/)[0] ?? "";
-  if (!primeira) return false;
-  const registros = registrosDelimitados(conteudo.trim(), detectarSeparador(primeira));
-  return registros.length > 0 && mapearCabecalho(registros[0]) !== null;
+  const linhas = conteudo.trim().split(/\r?\n/).filter((l) => l.trim());
+  if (linhas.length === 0) return false;
+  const registros = registrosDelimitados(conteudo.trim(), separadorDoTexto(linhas));
+  return acharCabecalho(registros) !== null;
+}
+
+/**
+ * O cabeçalho costuma estar na 1ª linha, mas planilha montada à mão no
+ * Google Planilhas ou no Excel muitas vezes abre com um título ("Leads de
+ * outubro") e uma linha em branco. Procura nas primeiras linhas.
+ */
+const LINHAS_ATE_O_CABECALHO = 10;
+
+function acharCabecalho(
+  registros: string[][],
+): { indice: number; mapa: Partial<Record<Campo, number>> } | null {
+  for (let i = 0; i < Math.min(registros.length, LINHAS_ATE_O_CABECALHO); i += 1) {
+    const mapa = mapearCabecalho(registros[i]);
+    if (mapa) return { indice: i, mapa };
+  }
+  return null;
 }
 
 /**
@@ -252,15 +289,16 @@ export function parsearTabelaLeads(conteudo: string): CandidatoLead[] {
 
   if (linhas.length === 0) return [];
 
-  const sep = detectarSeparador(linhas[0]);
+  const sep = separadorDoTexto(linhas);
   const registros = registrosDelimitados(conteudo.trim(), sep);
-  const mapa = registros.length > 0 ? mapearCabecalho(registros[0]) : null;
+  const cabecalho = acharCabecalho(registros);
+  const mapa = cabecalho?.mapa ?? null;
 
   // Com cabeçalho, o arquivo é uma tabela de verdade e merece o leitor com
   // aspas. Sem cabeçalho, é lista solta colada — cada linha pode ter o seu
   // separador, e o leitor linha a linha é o que acerta.
   const corpo: string[][] = mapa
-    ? registros.slice(1)
+    ? registros.slice(cabecalho!.indice + 1)
     : linhas.map((linha) => celulas(linha, detectarSeparador(linha)));
   const resultados: CandidatoLead[] = [];
 
