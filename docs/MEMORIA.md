@@ -9350,3 +9350,12 @@ nota 10.
 - **Visita combinada pelo corretor no chat** (com a IA calada) vira
   `whatsapp_conversas.visita_sugerida_para` e um "Registrar?" no Início.
   Nunca grava sozinho.
+
+## Multitenant: banco compartilhado (decisão, 06/10/2026)
+
+Nota: [[next-home-e-o-espelho-da-versao-geral]]. A decisão de 26/09 (uma
+instalação por cliente) foi revertida: vai ser **um deploy e um banco para
+todas as empresas, com `empresa_id` + RLS**. Motivo: atualizar N instalações
+enquanto a plataforma muda toda semana. O risco aceito é o vazamento entre
+empresas por filtro esquecido; toda tabela, consulta e cache passa a levar a
+empresa.
