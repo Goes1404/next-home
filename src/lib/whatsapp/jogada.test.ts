@@ -50,6 +50,8 @@ function estado(over: Partial<EstadoDaConversa> = {}): EstadoDaConversa {
     alternativa: null,
     nomeDoFoco: null,
     visitaConfirmada: false,
+    visitaMarcada: null,
+    mudancaDeVisita: null,
     aceitouOferta: null,
     clienteColaborando: false,
     jaIndicouImovel: false,

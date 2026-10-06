@@ -55,6 +55,8 @@ const PESOS: Record<TipoItemFila, number> = {
   lead_novo: 4,
   // Sugestão de mensagem da IA (0147): pós-visita e indicação.
   sugestao_de_mensagem: 4,
+  // Visita combinada no chat (0163): pesa como lead novo.
+  visita_combinada: 4,
   tarefa_hoje: 5,
   lembrete_hoje: 5,
   sem_revisao: 6,

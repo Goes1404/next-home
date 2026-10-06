@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/quandoAIaResponde.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
 created: 2026-09-05
-updated: 2026-10-04
+updated: 2026-10-06
 fonte: leitura do código + docs/MEMORIA.md
 summary: Autenticação → eventos técnicos → porteiro de lead cadastrado → transcrição/dedup/rajada → turnoDeAtendimento → envio → gravação → telemetria → dossiê → aviso.
 ---
@@ -60,6 +60,9 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
      de imóvel que o cliente não trouxe ([[perguntas-antes-da-indicacao]]);
      confirmação de visita só passa se o planner viu o aceite
      ([[eval-de-28-09-e-a-v41]]);
+   - com visita futura no CRM (`visitaMarcadaEm`), o planner reconhece
+     remarcar e desmarcar; desmarcar é decidido pelo planner e gravado por
+     `cancelarVisitaLead` ([[visita-remarcada-e-desmarcada-pela-conversa]]);
    - LLM ([[motor-unico-openai]], [[timeout-nao-e-retentado]]);
    - guardrails ([[midia-por-slug-nunca-por-url]]), `semValores`
      ([[a-ia-nao-fala-valores]]), prazo
@@ -75,10 +78,14 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 12. **Dossiê** (extração p/ `leads` + `lead_observacoes_ia`) e **aviso ao
     corretor** ([[aviso-por-evolucao-nao-por-mensagem]]; também quando a IA
     promete que o corretor traz a resposta, `duvida_pendente`),
-    **visita** ([[visita-e-gravada-com-validacao]]), **etapa do funil**
+    **visita** ([[visita-e-gravada-com-validacao]]; remarcada ou desmarcada, alerta próprio — [[visita-remarcada-e-desmarcada-pela-conversa]]), **etapa do funil**
     ([[campanha-tambem-mexe-no-funil]]).
 
 Orçamento de tempo: 6s rajada + 20s agente + ~5s envios + 12s dossiê ≈ 43s.
+
+Fala do corretor (IA calada ou ao desligar): "combinado, sábado às 10" ou
+a proposta dele aceita pelo cliente vira `visita_sugerida_para` e um
+"Registrar?" no Início, nunca registro automático (0163).
 
 ## Relacionadas
 - [[visao-geral-do-sistema]]

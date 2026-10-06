@@ -61,6 +61,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[gravar-mensagem-antes-do-vinculo]]
 - [[aviso-por-evolucao-nao-por-mensagem]]
 - [[visita-e-gravada-com-validacao]]
+- [[visita-remarcada-e-desmarcada-pela-conversa]] — a IA remarca e desmarca; a visita do CRM decide o fim do funil; a combinada no chat vira "Registrar?" no Início (0163, 06/10)
 - [[conversa-pessoal-do-corretor-e-gravada]] (LGPD, em aberto)
 - [[o-contexto-da-decisao-da-ia]] — por que ela disse aquilo, no balão
 - [[fato-e-permissao-moram-em-campos-diferentes]] — o retravamento parou de apagar o texto (0106)

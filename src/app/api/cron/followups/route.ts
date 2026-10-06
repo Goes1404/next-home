@@ -128,7 +128,7 @@ async function agendarLembretesDeVisita(
   const agora = Date.now();
   const { data: visitas } = await supabase
     .from("leads")
-    .select("id, corretor_id, visita_agendada_em")
+    .select("id, corretor_id, visita_agendada_em, visita_marcada_em")
     .gte("visita_agendada_em", new Date(agora + LEMBRETE_MIN_HORAS * 3600_000).toISOString())
     .lte("visita_agendada_em", new Date(agora + LEMBRETE_MAX_HORAS * 3600_000).toISOString())
     .not("corretor_id", "is", null)
@@ -147,13 +147,21 @@ async function agendarLembretesDeVisita(
     // para lembrar por aqui — o lembrete é do canal, não do CRM.
     if (!conversa) continue;
 
+    /*
+     * Só conta lembrete criado DEPOIS da última marcação: visita remarcada
+     * (A2) ganha lembrete novo mesmo que o da data velha já tenha saído.
+     */
+    const desde = Math.max(
+      agora - 7 * 86_400_000,
+      lead.visita_marcada_em ? new Date(lead.visita_marcada_em).getTime() : 0,
+    );
     const { data: jaTem } = await supabase
       .from("whatsapp_followups")
       .select("id")
       .eq("conversa_id", conversa.id)
       .eq("tipo", "lembrete_visita")
       .in("status", ["pendente", "enviado"])
-      .gte("created_at", new Date(agora - 7 * 86_400_000).toISOString())
+      .gte("created_at", new Date(desde).toISOString())
       .limit(1)
       .maybeSingle();
     if (jaTem) continue;

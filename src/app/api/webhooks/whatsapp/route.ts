@@ -3,6 +3,7 @@ import { after, NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { conversaEhAtendimento } from "@/lib/whatsapp/privacidadeDaConversa";
+import { rotuloDaVisita, visitaCombinadaNoChat } from "@/lib/whatsapp/mudancaDeVisita";
 import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
@@ -23,6 +24,8 @@ import {
 } from "@/lib/whatsapp/provider";
 import {
   agendarVisitaLead,
+  cancelarVisitaLead,
+  guardarVisitaSugerida,
   aplicarAckDeEntrega,
   avancarLeadParaPrimeiroContato,
   contarFalasNaoGravadas,
@@ -685,6 +688,16 @@ export async function POST(req: NextRequest) {
       }
 
       await desligarIaPorFalaDoCorretor(conversa.id);
+      /*
+       * "Combinado, sábado às 10": a visita que ele marcou de cabeça vira
+       * sugestão de registro no Início (A2, 0163). Nunca grava sozinho.
+       */
+      const combinadaPeloCorretor = visitaCombinadaNoChat({
+        falaDoCorretor: text,
+        agora: new Date(),
+        visitaMarcada: conversa.visitaAgendadaEm ? new Date(conversa.visitaAgendadaEm) : null,
+      });
+      if (combinadaPeloCorretor) await guardarVisitaSugerida(conversa.id, combinadaPeloCorretor);
       // O corretor falou com o cliente: é o primeiro contato, com a IA
       // calada ou não (plano de ativação, 3.2). Só anda quem está em "Novo".
       if (conversa.leadId) await avancarLeadParaPrimeiroContato(conversa.leadId, "corretor_no_whatsapp");
@@ -854,6 +867,21 @@ export async function POST(req: NextRequest) {
        * que no turno da IA (ver `registrarParadaSemIA`).
        */
       const historicoCalado = await historicoRecente(conversa.id);
+      /*
+       * O corretor propôs ("sábado às 10 fica bom?") e o cliente aceitou
+       * ("pode ser"): a mesma sugestão de registro (A2, 0163).
+       */
+      const ultimaAntes = [...historicoCalado].reverse().find((m) => m.remetente !== "cliente");
+      const aceitouOCorretor =
+        ultimaAntes?.remetente === "corretor"
+          ? visitaCombinadaNoChat({
+              falaDoCliente: text,
+              propostaDoCorretor: ultimaAntes.texto,
+              agora: new Date(),
+              visitaMarcada: conversa.visitaAgendadaEm ? new Date(conversa.visitaAgendadaEm) : null,
+            })
+          : null;
+      if (aceitouOCorretor) await guardarVisitaSugerida(conversa.id, aceitouOCorretor);
       if (decisaoIA.motivo !== "lead_pediu_para_sair") {
         // Em camadas: regex para o óbvio, IA para o duvidoso. Aqui só a
         // PARADA age; o resto fica registrado para a revisão semanal.
@@ -1006,6 +1034,8 @@ export async function POST(req: NextRequest) {
       historico,
       dossie: dossieAnterior,
       recusasPelaIA: await contarRecusasPelaIA(conversa.id),
+      // A visita marcada no CRM: com ela a IA remarca e desmarca (A2).
+      visitaMarcadaEm: conversa.visitaAgendadaEm,
       /*
        * A MEMÓRIA (0110): o estado da negociação que sobrevive à janela de
        * 40 falas. Nas conversas ativas, até 27 dessas 40 são do CORRETOR —
@@ -1254,12 +1284,28 @@ export async function POST(req: NextRequest) {
      * degrada para o alerta comum de "visita solicitada", nunca grava lixo.
      */
     let visitaConfirmada = false;
+    let dataGravada: Date | null = null;
     if (respostaIA.visitaProposta?.confirmadaPeloCliente && conversa.leadId) {
       const dataVisita = validarDataVisita(respostaIA.visitaProposta.dataHoraISO);
       if (dataVisita) {
         visitaConfirmada = await agendarVisitaLead(conversa.leadId, dataVisita);
+        if (visitaConfirmada) dataGravada = dataVisita;
       }
     }
+    /*
+     * REMARCAR e DESMARCAR (A2, 06/10/2026). A remarcação é a confirmação
+     * acima com uma visita que já existia em outra data; o desmarque é
+     * decidido pelo planner sobre a fala do cliente, nunca pelo modelo.
+     */
+    const visitaAnterior = conversa.visitaAgendadaEm ? new Date(conversa.visitaAgendadaEm) : null;
+    const visitaRemarcada =
+      dataGravada !== null && visitaAnterior !== null && visitaAnterior.getTime() !== dataGravada.getTime()
+        ? visitaAnterior
+        : null;
+    const visitaDesmarcada =
+      turno.jogada.tipo === "cancelar_visita" && conversa.leadId
+        ? await cancelarVisitaLead(conversa.leadId)
+        : null;
 
     // Duas classes de aviso ao corretor, nunca as duas juntas na mesma
     // mensagem: o alerta grande pede ação imediata (lead quente, visita,
@@ -1290,7 +1336,8 @@ export async function POST(req: NextRequest) {
      * ninguém ficou sabendo que precisava acontecer.
      */
     const pediuLigacao = turno.vezDoCliente.some(clientePediuLigacao);
-    const exigeAcaoAgora = visitaConfirmada || respostaIA.transferirHumano || pediuLigacao;
+    const exigeAcaoAgora =
+      visitaConfirmada || visitaDesmarcada !== null || respostaIA.transferirHumano || pediuLigacao;
     /*
      * A IA prometeu que o corretor traz a resposta ("confirmo com o corretor
      * e te trago"). Sem este aviso ninguém ficava sabendo, e a promessa
@@ -1316,12 +1363,20 @@ export async function POST(req: NextRequest) {
         telefoneCliente: sender,
         empreendimentoNome: respostaIA.empreendimentoCitado,
         temperaturaScore: dossie.temperaturaScore,
-        resumoDossie: visitaConfirmada
+        resumoDossie: visitaRemarcada
+          ? `O cliente remarcou a visita: era ${rotuloDaVisita(visitaRemarcada)}, agora é ${rotuloDaVisita(dataGravada!)}. ${dossie.resumoExecutivo}`
+          : visitaDesmarcada
+          ? `O cliente desmarcou a visita de ${rotuloDaVisita(visitaDesmarcada)}. Ele disse: "${turno.vezDoCliente.join(" / ")}". ${dossie.resumoExecutivo}`
+          : visitaConfirmada
           ? `Visita confirmada para ${new Date(respostaIA.visitaProposta!.dataHoraISO).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}. ${dossie.resumoExecutivo}`
           : prometeuRetorno
           ? `O cliente perguntou: "${turno.vezDoCliente.join(" / ")}". A assistente disse que você responde. ${dossie.resumoExecutivo}`
           : dossie.resumoExecutivo,
-        motivoAlerta: visitaConfirmada
+        motivoAlerta: visitaRemarcada
+          ? "visita_remarcada"
+          : visitaDesmarcada
+          ? "visita_desmarcada"
+          : visitaConfirmada
           ? "visita_confirmada"
           : pediuLigacao
           ? "ligacao_solicitada"

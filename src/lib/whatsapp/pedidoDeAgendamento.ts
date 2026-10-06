@@ -94,7 +94,8 @@ function normalizar(texto: string): string {
  * escolher sábado. Sem esta guarda, a contraproposta ("sábado não consigo,
  * pode ser segunda?") marcaria sábado — que é o dia recusado.
  */
-const NEGACAO = /\bn(a|ã)o\s+(consigo|posso|da|dá|rola|vai dar|consegui)\b/;
+const NEGACAO =
+  /\bn(a|ã)o\s+(consigo|posso|da|dá|rola|vai dar|consegui|vou poder|vou conseguir|vai rolar)\b/;
 
 /** Frase a frase, para a negação só anular o dia que está junto dela. */
 function frases(texto: string): string[] {

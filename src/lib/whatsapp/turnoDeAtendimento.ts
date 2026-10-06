@@ -151,6 +151,12 @@ export type PedidoDeTurno = {
    * registro `recusas_detectadas`; ausente vale 0 (eval, playground).
    */
   recusasPelaIA?: number;
+  /**
+   * `leads.visita_agendada_em` (ISO) da conversa, lido pelo webhook. Com
+   * ele, a IA sabe que há visita marcada e consegue remarcar ou desmarcar
+   * (A2). Ausente (eval, playground), vale a leitura do texto da conversa.
+   */
+  visitaMarcadaEm?: string | null;
 };
 
 export type TurnoDeAtendimento = {
@@ -363,6 +369,7 @@ export async function executarTurnoDeAtendimento(
       : false,
     ...(classificacaoDeRecusa ? { recusa: classificacaoDeRecusa.recusa } : {}),
     recusasAnterioresExtra: recusasPelaIA,
+    ...(pedido.visitaMarcadaEm !== undefined ? { visitaMarcadaEm: pedido.visitaMarcadaEm } : {}),
   });
   const jogada = planejarJogada(estado);
 
@@ -444,7 +451,7 @@ export async function executarTurnoDeAtendimento(
    */
   const conferir = (bruta: Awaited<ReturnType<typeof gerarRespostaIA>>) => {
     const confirmacaoInventada =
-      bruta.visitaProposta?.confirmadaPeloCliente === true && !aceiteDeVisitaValido(jogada, Boolean(foco));
+      bruta.visitaProposta?.confirmadaPeloCliente === true && !aceiteDeVisitaValido(jogada, Boolean(foco), estado.visitaMarcada !== null);
     if (confirmacaoInventada) {
       console.warn(`[turno] confirmação de visita sem aceite do cliente descartada (jogada ${jogada.tipo})`);
     }

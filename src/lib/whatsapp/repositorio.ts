@@ -8,6 +8,7 @@ import { site } from "@/lib/site";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import type { ClassificacaoDeRecusa } from "./recusaEmCamadas";
+import { rotuloDaVisita } from "./mudancaDeVisita";
 import type { ConviteDeEntrada } from "./porteiro";
 import { comRetentativa } from "@/lib/supabase/retentativa";
 import {
@@ -142,6 +143,11 @@ export type ConversaPersistida = {
    * número não fala mais com ele (`quandoAIaResponde.ts`).
    */
   leadDeOutroCorretor: boolean;
+  /**
+   * `leads.visita_agendada_em`, para a IA saber que há visita marcada e
+   * poder remarcar ou desmarcar (A2, 06/10/2026).
+   */
+  visitaAgendadaEm: string | null;
 };
 
 /*
@@ -150,9 +156,13 @@ export type ConversaPersistida = {
  * só, em vez de uma segunda leitura no meio do webhook.
  */
 const SELECT_CONVERSA =
-  "id, corretor_id, lead_id, telefone_cliente, bot_ativo, origem, e_teste, atendida_em, memoria, memoria_do_corretor, lead:leads!whatsapp_conversas_lead_id_fkey(corretor_id, nao_contatar_em)";
+  "id, corretor_id, lead_id, telefone_cliente, bot_ativo, origem, e_teste, atendida_em, memoria, memoria_do_corretor, lead:leads!whatsapp_conversas_lead_id_fkey(corretor_id, nao_contatar_em, visita_agendada_em)";
 
-type LeadEmbutido = { corretor_id: string | null; nao_contatar_em: string | null };
+type LeadEmbutido = {
+  corretor_id: string | null;
+  nao_contatar_em: string | null;
+  visita_agendada_em?: string | null;
+};
 
 function mapConversa(row: {
   id: string;
@@ -180,6 +190,7 @@ function mapConversa(row: {
     ),
     memoria: row.memoria ?? null,
     memoriaDoCorretor: row.memoria_do_corretor ?? false,
+    visitaAgendadaEm: lead?.visita_agendada_em ?? null,
     eTeste: row.e_teste,
     origem: row.origem,
   };
@@ -1005,7 +1016,11 @@ export function validarDataVisita(dataHoraISO: string, agora: Date = new Date())
  */
 export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promise<boolean> {
   const supabase = createServiceClient();
-  const { data: antes } = await supabase.from("leads").select("etapa").eq("id", leadId).maybeSingle();
+  const { data: antes } = await supabase
+    .from("leads")
+    .select("etapa, visita_agendada_em")
+    .eq("id", leadId)
+    .maybeSingle();
 
   const { data, error } = await supabase.rpc("reservar_horario_visita", {
     p_lead_id: leadId,
@@ -1031,7 +1046,90 @@ export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promi
     if (depois?.etapa) await registrarEtapaAutomatica(leadId, antes.etapa, depois.etapa, "ia");
   }
 
+  /*
+   * REMARCAÇÃO (A2): a data mudou. O lembrete de véspera ainda pendente era
+   * da data velha e sairia no dia errado; a linha do tempo diz de onde para
+   * onde, para o corretor não confiar na data que tinha anotado.
+   */
+  const anterior = antes?.visita_agendada_em ? new Date(antes.visita_agendada_em) : null;
+  if (data === true && anterior && anterior.getTime() !== dataVisita.getTime()) {
+    await apagarLembretesPendentesDeVisita(supabase, leadId);
+    const { error: erroTimeline } = await supabase.from("lead_interacoes").insert({
+      lead_id: leadId,
+      corretor_id: null,
+      tipo: "visita",
+      conteudo: `O cliente remarcou a visita pela conversa: de ${rotuloDaVisita(anterior)} para ${rotuloDaVisita(dataVisita)}.`,
+      detalhes: { de: anterior.toISOString(), para: dataVisita.toISOString(), por: "ia" },
+    });
+    if (erroTimeline) console.error("[visita] falha ao registrar a remarcação:", erroTimeline.message);
+  }
+
   return data === true;
+}
+
+/**
+ * O cliente disse que não vai poder ir: a visita sai do CRM (A2, 06/10/2026).
+ *
+ * Quem decide é o planner (`detectarMudancaDeVisita`), sobre a fala dele,
+ * nunca o modelo. A etapa volta de "visita agendada" para "primeiro
+ * contato" — só ela: lead em documentação não regride por desmarcar uma
+ * visita. O lembrete de véspera pendente é apagado, a linha do tempo diz o
+ * que aconteceu e o corretor é avisado pelo chamador.
+ *
+ * Devolve a data desmarcada, ou null quando não havia visita (nada a fazer).
+ */
+export async function cancelarVisitaLead(leadId: string): Promise<Date | null> {
+  const supabase = createServiceClient();
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("etapa, visita_agendada_em")
+    .eq("id", leadId)
+    .maybeSingle();
+  if (!lead?.visita_agendada_em) return null;
+
+  const voltaEtapa = lead.etapa === "visita_agendada";
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      visita_agendada_em: null,
+      ...(voltaEtapa ? { etapa: "primeiro_contato" as const, etapa_alterada_em: new Date().toISOString() } : {}),
+    })
+    .eq("id", leadId)
+    .eq("visita_agendada_em", lead.visita_agendada_em);
+  if (error) {
+    console.error(`[visita] não foi possível desmarcar a visita do lead ${leadId}: ${error.message}`);
+    return null;
+  }
+
+  const desmarcada = new Date(lead.visita_agendada_em);
+  await apagarLembretesPendentesDeVisita(supabase, leadId);
+  if (voltaEtapa) await registrarEtapaAutomatica(leadId, "visita_agendada", "primeiro_contato", "ia");
+  const { error: erroTimeline } = await supabase.from("lead_interacoes").insert({
+    lead_id: leadId,
+    corretor_id: null,
+    tipo: "visita",
+    conteudo: `O cliente desmarcou pela conversa a visita de ${rotuloDaVisita(desmarcada)}.`,
+    detalhes: { desmarcada: desmarcada.toISOString(), por: "ia" },
+  });
+  if (erroTimeline) console.error("[visita] falha ao registrar o cancelamento:", erroTimeline.message);
+  return desmarcada;
+}
+
+/** O lembrete de véspera ainda não enviado era da data velha. */
+async function apagarLembretesPendentesDeVisita(
+  supabase: ReturnType<typeof createServiceClient>,
+  leadId: string,
+): Promise<void> {
+  const { data: conversas } = await supabase.from("whatsapp_conversas").select("id").eq("lead_id", leadId);
+  const ids = (conversas ?? []).map((c) => c.id);
+  if (ids.length === 0) return;
+  const { error } = await supabase
+    .from("whatsapp_followups")
+    .delete()
+    .in("conversa_id", ids)
+    .eq("tipo", "lembrete_visita")
+    .eq("status", "pendente");
+  if (error) console.error("[visita] falha ao apagar o lembrete da data velha:", error.message);
 }
 
 /**
@@ -2367,4 +2465,16 @@ export async function registrarVisitaConfirmada(leadId: string): Promise<boolean
     .not("visita_agendada_em", "is", null)
     .select("id");
   return (data?.length ?? 0) > 0;
+}
+
+/**
+ * Guarda a visita que o corretor parece ter combinado no chat, para o Início
+ * perguntar "registrar?" (0163). Nunca grava em `leads`: só o toque dele.
+ */
+export async function guardarVisitaSugerida(conversaId: string, quando: Date): Promise<void> {
+  const { error } = await createServiceClient()
+    .from("whatsapp_conversas")
+    .update({ visita_sugerida_para: quando.toISOString(), visita_sugerida_em: new Date().toISOString() })
+    .eq("id", conversaId);
+  if (error) console.error("[visita] falha ao guardar a visita combinada no chat:", error.message);
 }

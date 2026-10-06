@@ -6,6 +6,7 @@ import { perguntaIgnorada, type PerguntaIgnorada } from "./perguntaIgnorada";
 import { horariosJaOferecidos } from "./ofertasDeVisita";
 import { capacidadeEstaPendente } from "./funilQualificacao";
 import { estaMarcando, pedidoDeAgendamento, type PedidoDeAgendamento } from "./pedidoDeAgendamento";
+import { detectarMudancaDeVisita, rotuloDaVisita, type MudancaDeVisita } from "./mudancaDeVisita";
 
 /**
  * A JOGADA: o que esta mensagem vai fazer, decidido ANTES de escrever.
@@ -69,6 +70,10 @@ export type Jogada =
   | { tipo: "propor_horario"; jaOfereceu: number }
   | { tipo: "confirmar_visita"; oQueEleDisse: string }
   | { tipo: "agendar"; dia: string | null; hora: number | null }
+  /** Já há visita marcada e ele quer outra data (A2, 06/10/2026). */
+  | { tipo: "remarcar_visita"; de: string; dia: string | null; hora: number | null }
+  /** Já há visita marcada e ele não vai poder ir. O código desmarca no CRM. */
+  | { tipo: "cancelar_visita"; de: string }
   | { tipo: "tratar_objecao"; oQueEleDisse: string }
   | { tipo: "indicar_alternativa"; slug: string; nome: string; piso: number | null; emVezDe: string | null }
   | { tipo: "deixar_porta_aberta"; oQueEleDisse: string }
@@ -107,6 +112,13 @@ export interface EstadoDaConversa {
   objecoesSeguidas: number;
   /** A IA JÁ confirmou uma visita nesta conversa: o funil acabou. */
   visitaConfirmada: boolean;
+  /**
+   * A visita marcada no CRM, se ainda não aconteceu. Null quando não há, ou
+   * quando quem chama não sabe (eval, playground).
+   */
+  visitaMarcada: Date | null;
+  /** Com visita marcada, ele quer remarcar ou desmarcar. */
+  mudancaDeVisita: MudancaDeVisita | null;
   /**
    * Ele aceitou o que a IA OFERECEU MANDAR na última mensagem (apresentação,
    * fotos, planta). A frase da oferta, ou null.
@@ -426,6 +438,16 @@ export function estadoDaConversa(params: {
    * pergunta do motivo de novo, em vez de encerrar.
    */
   recusasAnterioresExtra?: number;
+  /**
+   * `leads.visita_agendada_em` (ISO), lido pelo webhook. Quando vem (mesmo
+   * null), a VISITA DO CRM decide se o funil acabou, e não o texto da
+   * conversa: depois de desmarcada, a frase "está confirmado" continua no
+   * histórico e mandaria a IA dizer "até lá" para quem não tem mais visita.
+   * Ausente (eval, playground, traces), vale a leitura do texto, como antes.
+   */
+  visitaMarcadaEm?: string | null;
+  /** O instante da conversa, para saber se a visita já passou. Ausente, agora. */
+  agora?: Date;
 }): EstadoDaConversa {
   const { historico, mensagemAtual, dossie } = params;
 
@@ -619,6 +641,18 @@ export function estadoDaConversa(params: {
     agendamento.pediuVisita = true;
   }
 
+  /*
+   * A visita do CRM, só se ainda não aconteceu. Visita passada não segura o
+   * funil ("até lá" para quem já visitou) nem é remarcável.
+   */
+  const agora = params.agora ?? new Date();
+  const visitaDoCrm = params.visitaMarcadaEm ? new Date(params.visitaMarcadaEm) : null;
+  const visitaMarcada =
+    visitaDoCrm && !Number.isNaN(visitaDoCrm.getTime()) && visitaDoCrm.getTime() > agora.getTime()
+      ? visitaDoCrm
+      : null;
+  const mudancaDeVisita = detectarMudancaDeVisita({ texto: mensagemAtual, visitaMarcada, agendamento });
+
   return {
     respondidos,
     perguntadosNaUltima,
@@ -665,7 +699,12 @@ export function estadoDaConversa(params: {
     objecoesSeguidas: contarObjecoesSeguidas(falasCliente, nAtual),
     pediuAlternativa: PEDIDO_DE_ALTERNATIVA.test(nAtual),
     saidaSuave: SAIDA_SUAVE.test(nAtual),
-    visitaConfirmada: falasBot.some((t) => CONFIRMACAO.test(normalizar(t))),
+    visitaConfirmada:
+      params.visitaMarcadaEm !== undefined
+        ? visitaMarcada !== null
+        : falasBot.some((t) => CONFIRMACAO.test(normalizar(t))),
+    visitaMarcada,
+    mudancaDeVisita,
     aceitouOferta: ofertaAceita(ultimaDoBot, mensagemAtual),
     perguntaSemDado: SEM_DADO.test(nAtual) ? mensagemAtual.trim() : null,
     alternativa: alternativaMaisEmConta(params.catalogo, params.imovelEmFoco),
@@ -749,6 +788,24 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
   // O aceite vem antes do resto: é o momento da conversão, e qualquer outra
   // jogada aqui (até entregar um dado) adiaria a confirmação em um turno.
   if (estado.aceitouHorario) return { tipo: "confirmar_visita", oQueEleDisse: estado.oQueEleDisse };
+
+  /*
+   * A visita marcada mudou: remarcar ou desmarcar vem antes de responder
+   * dado e muito antes do "até lá" da visita confirmada. Sem isto, "não vou
+   * conseguir sábado, pode ser domingo?" recebia "qualquer dúvida, me chama"
+   * e a data velha ficava no CRM (A2, 06/10/2026).
+   */
+  if (estado.mudancaDeVisita && estado.visitaMarcada) {
+    const de = rotuloDaVisita(estado.visitaMarcada);
+    return estado.mudancaDeVisita.tipo === "cancelar"
+      ? { tipo: "cancelar_visita", de }
+      : {
+          tipo: "remarcar_visita",
+          de,
+          dia: estado.mudancaDeVisita.dia,
+          hora: estado.mudancaDeVisita.hora,
+        };
+  }
 
   if (estado.pedidoEmAberto) return { tipo: "responder_dado", dado: estado.pedidoEmAberto };
 
@@ -1128,6 +1185,39 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
           ? `Respeite. UMA frase: deixe a porta aberta e ofereça o que ajuda a decidir junto (o link da página do ${contexto.nomeDoFoco} ou as fotos, para mostrar a quem ele citou). NENHUMA pergunta de qualificação, NENHUM horário. Termine sem cobrar resposta.`
           : "Respeite. UMA frase: deixe a porta aberta (\"quando vocês conversarem, me chama que eu te mostro as opções que combinam\"). Ainda não há imóvel escolhido: NÃO prometa link, foto nem material. NENHUMA pergunta, NENHUM horário.",
       ].join("\n");
+    case "remarcar_visita": {
+      /*
+       * A data nova só vale quando ele deu dia e hora (ou só a hora, com o
+       * dia da visita marcada). Sem isso, a tarefa é oferecer dois horários
+       * da lista real — e nunca dizer que já mudou: quem muda é o código,
+       * quando ele escolher.
+       */
+      const passos = [
+        `${cabecalho}: REMARCAR a visita que estava marcada para ${jogada.de}. Ele quer outra data.`,
+      ];
+      if (jogada.hora !== null) {
+        const quando = jogada.dia ? `${jogada.dia} às ${jogada.hora}h` : `às ${jogada.hora}h, no mesmo dia`;
+        passos.push(
+          `Ele pediu ${quando}. Se estiver em HORÁRIOS REAIS DE VISITA (ou se não houver lista de horários), confirme a troca em duas mensagens curtas: a data nova, e que a de ${jogada.de} foi desmarcada. Se não estiver, ofereça o horário mais próximo que existe naquele dia — nunca outro dia sem ele pedir.`,
+          'Preencha "visitaProposta" com a data NOVA da tabela CALENDÁRIO e "confirmadaPeloCliente": true. Não escreva endereço.',
+        );
+      } else {
+        passos.push(
+          jogada.dia
+            ? `Ele quer ${jogada.dia}, sem dizer a hora. Ofereça DOIS horários de ${jogada.dia} da lista HORÁRIOS REAIS DE VISITA (um de manhã e um à tarde, se houver) e pergunte qual fica melhor.`
+            : "Diga que tudo bem remarcar e ofereça DOIS horários da lista HORÁRIOS REAIS DE VISITA, de dias diferentes. Pergunte qual fica melhor.",
+          `Ainda NÃO diga que mudou: a visita de ${jogada.de} continua marcada até ele escolher. "visitaProposta" fica null nesta mensagem.`,
+        );
+      }
+      passos.push("Nenhuma pergunta de qualificação: ele já tem visita, só está trocando a data.");
+      return passos.join("\n");
+    }
+    case "cancelar_visita":
+      return [
+        `${cabecalho}: ele NÃO VAI PODER IR à visita de ${jogada.de}. O sistema já desmarcou.`,
+        "UMA mensagem curta: diga que tudo bem e que a visita foi desmarcada. Depois, em meia frase, deixe a porta aberta para remarcar (\"quando quiser marcar outro dia, é só me chamar\").",
+        'Não insista, não pergunte o motivo, não ofereça horário agora. "visitaProposta" fica null.',
+      ].join("\n");
     case "encerrar_confirmado":
       return [
         `${cabecalho}: a visita JÁ ESTÁ CONFIRMADA. Não qualifique mais.`,
@@ -1217,8 +1307,14 @@ function maiuscula(t: string): string {
  * CRM e avisa o corretor. Só vale quando a jogada era confirmar, ou marcar
  * com a hora dita por ele, e há imóvel em foco.
  */
-export function aceiteDeVisitaValido(jogada: Jogada, temFoco: boolean): boolean {
-  if (!temFoco) return false;
+export function aceiteDeVisitaValido(jogada: Jogada, temFoco: boolean, temVisitaMarcada = false): boolean {
+  /*
+   * Remarcar não precisa de foco: o imóvel é o da visita que já existe. Mas
+   * precisa de dia E hora ditos por ele — trocar só a hora de uma visita
+   * vale com a hora, porque o dia é o da marcada (`resolverDataDaVisita`).
+   */
+  if (jogada.tipo === "remarcar_visita") return temVisitaMarcada && jogada.hora !== null;
+  if (!temFoco && !temVisitaMarcada) return false;
   if (jogada.tipo === "confirmar_visita") return true;
   return jogada.tipo === "agendar" && jogada.hora !== null;
 }
@@ -1249,6 +1345,8 @@ const SEM_TRAVA_DE_QUALIFICACAO = new Set<Jogada["tipo"]>([
   "deixar_porta_aberta",
   "encerrar_confirmado",
   "confirmar_visita",
+  "remarcar_visita",
+  "cancelar_visita",
   "retomar",
   "indicar_alternativa",
 ]);

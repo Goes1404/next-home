@@ -9327,3 +9327,26 @@ Nota: [[recusa-em-camadas]].
 - **Guarda que recorta código por um texto quebra quando o texto aparece
   antes**: "ia_calada" virou nome de caminho do registro, e a guarda da ficha
   passou a ancorar no `return` do ramo.
+
+## Remarcar, desmarcar e a visita combinada no chat (0163, 06/10/2026)
+
+Nota: [[visita-remarcada-e-desmarcada-pela-conversa]]. Área A2 do roadmap da
+nota 10.
+
+- **A IA só sabia marcar.** Com visita no CRM, "não vou conseguir sábado,
+  pode ser domingo?" virava "qualquer dúvida, me chama", e a data velha
+  ficava no funil. Agora `detectarMudancaDeVisita` (pura) vira as jogadas
+  `remarcar_visita` e `cancelar_visita`. Desmarcar só pelo planner, nunca
+  pelo modelo; "não vou poder ir" com outro dia é remarcação.
+- **`visitaConfirmada` lia o texto do histórico**: depois de desmarcada, a
+  frase "está confirmado" seguiria mandando a IA dizer "até lá". Com
+  `visitaMarcadaEm` vindo do webhook, vale o CRM; eval e playground seguem
+  pelo texto (por isso o eval não exercita estas jogadas).
+- **O lembrete de véspera não voltava depois de remarcar**: o cron contava
+  qualquer lembrete dos últimos 7 dias. Agora só conta o criado depois de
+  `visita_marcada_em`, e o pendente da data velha é apagado.
+- **`pedidoDeAgendamento` escolhia o dia recusado** em "não vou poder ir
+  sábado": a negação não conhecia "não vou poder/conseguir".
+- **Visita combinada pelo corretor no chat** (com a IA calada) vira
+  `whatsapp_conversas.visita_sugerida_para` e um "Registrar?" no Início.
+  Nunca grava sozinho.

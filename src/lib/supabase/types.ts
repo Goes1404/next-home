@@ -2799,6 +2799,8 @@ export type Database = {
           ultima_interacao_em: string
           ultima_mensagem: string | null
           ultimo_aviso_evolucao_em: string | null
+          visita_sugerida_para: string | null
+          visita_sugerida_em: string | null
         }
         Insert: {
           alerta_quente_em?: string | null
@@ -2823,6 +2825,8 @@ export type Database = {
           ultima_interacao_em?: string
           ultima_mensagem?: string | null
           ultimo_aviso_evolucao_em?: string | null
+          visita_sugerida_para?: string | null
+          visita_sugerida_em?: string | null
         }
         Update: {
           alerta_quente_em?: string | null
@@ -2847,6 +2851,8 @@ export type Database = {
           ultima_interacao_em?: string
           ultima_mensagem?: string | null
           ultimo_aviso_evolucao_em?: string | null
+          visita_sugerida_para?: string | null
+          visita_sugerida_em?: string | null
         }
         Relationships: [
           {

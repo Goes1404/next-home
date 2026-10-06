@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { situacaoDaTarefa, type Tarefa } from "@/lib/crm/timeline";
 import { horaDoLembrete, situacaoDoLembrete } from "@/lib/crm/lembretes";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
+import { rotuloDaVisita } from "@/lib/whatsapp/mudancaDeVisita";
 import type { Lead } from "@/lib/types";
 
 /**
@@ -27,6 +28,7 @@ export type TipoItemFila =
   | "contato_de_outro_corretor"
   | "lead_novo"
   | "sugestao_de_mensagem"
+  | "visita_combinada"
   | "tarefa_vencida"
   | "tarefa_hoje"
   | "lembrete_vencido"
@@ -55,6 +57,8 @@ export type ItemFila = {
   conversaId?: string;
   /** Sugestão de mensagem (0147) — permite enviar ou dispensar sem sair do Início. */
   followupId?: string;
+  /** Visita combinada no chat (0163) — registrar ou dispensar sem sair do Início. */
+  visitaCombinada?: boolean;
   /** Peso na ordenação; menor primeiro. */
   peso: number;
 };
@@ -128,6 +132,12 @@ const PESO: Record<TipoItemFila, number> = {
    * horas, mas nada está atrasado ainda.
    */
   sugestao_de_mensagem: 4,
+  /*
+   * A visita que o corretor combinou no chat e o CRM ainda não sabe (A2,
+   * 0163). Pesa como lead novo: nada está atrasado, mas sem o registro o
+   * lembrete de véspera não sai — e ele é o que segura o comparecimento.
+   */
+  visita_combinada: 4,
   tarefa_hoje: 5,
   lembrete_hoje: 5,
   sem_revisao: 6,
@@ -423,6 +433,35 @@ export async function getFilaDeTrabalho(
       whatsapp: motivo === "parada" ? undefined : whatsappDoLead(lead),
       peso: PESO.cliente_recusou,
     });
+  }
+
+  /*
+   * Visita combinada no chat (0163): só a do corretor logado, só futura.
+   * Separada do Promise.all acima porque depende do corretor e é magra.
+   */
+  if (corretorId) {
+    const { data: combinadas } = await supabase
+      .from("whatsapp_conversas")
+      .select("id, lead_id, visita_sugerida_para, lead:leads!whatsapp_conversas_lead_id_fkey(nome, telefone)")
+      .eq("corretor_id", corretorId)
+      .not("visita_sugerida_para", "is", null)
+      .gte("visita_sugerida_para", agora.toISOString())
+      .order("visita_sugerida_em", { ascending: false })
+      .limit(INDIVIDUAIS_POR_TIPO);
+    for (const c of combinadas ?? []) {
+      const lead = Array.isArray(c.lead) ? c.lead[0] : c.lead;
+      const quem = nomeParaExibir({ nome: lead?.nome, telefone: lead?.telefone });
+      itens.push({
+        chave: `visita_combinada:${c.id}`,
+        tipo: "visita_combinada",
+        conversaId: c.id,
+        visitaCombinada: true,
+        titulo: `Registrar a visita de ${quem}?`,
+        detalhe: `Combinada no chat para ${rotuloDaVisita(new Date(c.visita_sugerida_para!))}`,
+        href: c.lead_id ? `/corretor/leads/${c.lead_id}` : `/corretor/conversas?c=${c.id}`,
+        peso: PESO.visita_combinada,
+      });
+    }
   }
 
   for (const sugestao of sugestoes.data ?? []) {
