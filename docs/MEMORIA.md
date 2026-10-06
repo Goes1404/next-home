@@ -9455,3 +9455,16 @@ Nota: [[resultado-do-mes-da-imobiliaria]].
 - **O `next build` local pode logar "statement timeout" ao revalidar o
   catálogo** e ainda assim sair com código 0: é o banco de produção lento
   naquele instante, não o código. Conferir o código de saída, não o log.
+
+## O fiscal da imobiliária (0167, 06/10/2026)
+
+Nota: [[fiscal-da-imobiliaria]].
+
+- **Financeiro → Fiscal, só gestor**: impostos estimados do mês, comissões
+  recebidas sem NFS-e, RPA dos autônomos e DIMOB do ano, cada um com planilha
+  `.xlsx` (`/api/painel/fiscal-excel`).
+- **CPF/CNPJ fica em `venda_fiscal`**, nunca em `vendas`, que o corretor lê.
+- **Alíquotas e teto do INSS são dado** (`fiscal_config`, linha única id=1,
+  sem insert pela sessão). Tabela do IRRF e redução de 2026 estão no código
+  (`fiscal.ts`): mudou a lei, muda lá e no teste.
+- Estimativa, não apuração: IRPJ/CSLL são trimestrais e a tela diz isso.

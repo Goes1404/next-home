@@ -717,6 +717,84 @@ export type Database = {
         Update: { id?: string; valor?: number; informado_em?: string; criado_por?: string | null; created_at?: string }
         Relationships: []
       }
+      /** 0167 — configuração fiscal da imobiliária (uma linha só, id = 1; só o gestor). */
+      fiscal_config: {
+        Row: {
+          id: number
+          regime: "simples" | "presumido"
+          aliquota_simples: number
+          aliquota_iss: number
+          teto_inss: number
+          cnpj: string | null
+          razao_social: string | null
+          conferido_em: string | null
+          atualizado_em: string
+        }
+        Insert: {
+          id?: number
+          regime?: "simples" | "presumido"
+          aliquota_simples?: number
+          aliquota_iss?: number
+          teto_inss?: number
+          cnpj?: string | null
+          razao_social?: string | null
+          conferido_em?: string | null
+          atualizado_em?: string
+        }
+        Update: {
+          id?: number
+          regime?: "simples" | "presumido"
+          aliquota_simples?: number
+          aliquota_iss?: number
+          teto_inss?: number
+          cnpj?: string | null
+          razao_social?: string | null
+          conferido_em?: string | null
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0167 — dados fiscais da venda (DIMOB e NFS-e; só o gestor). */
+      venda_fiscal: {
+        Row: {
+          venda_id: string
+          comprador_nome: string | null
+          comprador_documento: string | null
+          vendedor_nome: string | null
+          vendedor_documento: string | null
+          nota_numero: string | null
+          nota_emitida_em: string | null
+          atualizado_em: string
+        }
+        Insert: {
+          venda_id: string
+          comprador_nome?: string | null
+          comprador_documento?: string | null
+          vendedor_nome?: string | null
+          vendedor_documento?: string | null
+          nota_numero?: string | null
+          nota_emitida_em?: string | null
+          atualizado_em?: string
+        }
+        Update: {
+          venda_id?: string
+          comprador_nome?: string | null
+          comprador_documento?: string | null
+          vendedor_nome?: string | null
+          vendedor_documento?: string | null
+          nota_numero?: string | null
+          nota_emitida_em?: string | null
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0167 — vínculo fiscal do corretor: autônomo (RPA) ou PJ (só o gestor). */
+      corretor_fiscal: {
+        Row: { corretor_id: string; vinculo: "autonomo" | "pj"; atualizado_em: string }
+        Insert: { corretor_id: string; vinculo?: "autonomo" | "pj"; atualizado_em?: string }
+        Update: { corretor_id?: string; vinculo?: "autonomo" | "pj"; atualizado_em?: string }
+        Relationships: []
+      }
       /** 0115 — a meta mensal do corretor (F5 do financeiro). */
       metas_corretor: {
         Row: {
