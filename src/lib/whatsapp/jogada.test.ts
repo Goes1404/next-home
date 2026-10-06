@@ -1386,3 +1386,36 @@ describe("quem chega pedindo UM imóvel já respondeu região e estágio (03/10/
     expect(codigo).toMatch(/focoDoCliente: foco\s*\?/);
   });
 });
+
+/*
+ * A recusa em camadas (06/10/2026): a recusa que a IA reconheceu chega ao
+ * planner pronta, e as recusas anteriores que só a IA viu contam para o
+ * segundo "não" encerrar em vez de perguntar o motivo de novo.
+ */
+describe("recusa vinda da IA", () => {
+  const base = {
+    historico: [bot("Posso te mostrar as plantas?")],
+    mensagemAtual: "deixa pra lá",
+    imovelEmFoco: null,
+    catalogo: [IMOVEL],
+  };
+
+  it("a recusa classificada substitui a regex", () => {
+    const e = estadoDaConversa({ ...base, recusa: { familia: "desinteresse", trecho: "deixa pra lá" } });
+    expect(planejarJogada(e).tipo).toBe("acolher_recusa");
+  });
+
+  it("recusa nula da camada vence a regex (a IA disse que não era)", () => {
+    const e = estadoDaConversa({ ...base, mensagemAtual: "não quero", recusa: null });
+    expect(planejarJogada(e).tipo).not.toBe("acolher_recusa");
+  });
+
+  it("a segunda recusa encerra quando a primeira foi reconhecida pela IA", () => {
+    const e = estadoDaConversa({
+      ...base,
+      recusa: { familia: "desinteresse", trecho: "deixa pra lá" },
+      recusasAnterioresExtra: 1,
+    });
+    expect(planejarJogada(e)).toEqual({ tipo: "encerrar_recusado", familia: "desinteresse" });
+  });
+});

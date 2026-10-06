@@ -34,3 +34,31 @@ describe("o pedido de parada é lido com a IA calada", () => {
     expect(corpo).not.toContain("bot_ativo");
   });
 });
+
+describe("toda decisão de recusa é registrada (0162)", () => {
+  const webhook = semComentarios(readFileSync("src/app/api/webhooks/whatsapp/route.ts", "utf8"));
+
+  it("o ramo do silêncio classifica em camadas e registra", () => {
+    const inicio = webhook.indexOf("if (!decisaoIA.responde) {");
+    const fim = webhook.indexOf('action: "ia_calada"', inicio);
+    const ramo = webhook.slice(inicio, fim);
+    expect(ramo).toContain("classificarRecusa(");
+    expect(ramo).toContain("registrarDecisaoDeRecusa(");
+    expect(ramo).not.toContain("detectarRecusa(");
+  });
+
+  it("o caminho do turno registra a recusa decidida no turno", () => {
+    const depois = webhook.slice(webhook.indexOf('turno.jogada.tipo === "encerrar_recusado"'));
+    expect(depois).toMatch(/registrarDecisaoDeRecusa\(\{[\s\S]*?classificacao:\s*turno\.recusa/);
+  });
+
+  it("o turno recebe as recusas que só a IA reconheceu", () => {
+    expect(webhook).toContain("recusasPelaIA: await contarRecusasPelaIA(");
+  });
+
+  it("Liberar contato vira rótulo de falso positivo", () => {
+    const acoes = semComentarios(readFileSync("src/app/corretor/(painel)/leads/[id]/acoes.ts", "utf8"));
+    const corpo = acoes.slice(acoes.indexOf("export async function liberarContatoDoLead("));
+    expect(corpo.slice(0, corpo.indexOf("\n}\n"))).toContain("marcarRecusasDesfeitas(");
+  });
+});

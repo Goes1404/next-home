@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import { marcarCamposDoCorretor } from "@/lib/crm/camposDoCorretor";
+import { marcarRecusasDesfeitas } from "@/lib/whatsapp/repositorio";
 
 /**
  * Ações da ficha do lead: nota, tarefa e qualificação.
@@ -55,6 +56,11 @@ export async function liberarContatoDoLead(leadId: string): Promise<ResultadoCrm
     .not("nao_contatar_em", "is", null)
     .select("id");
   if (error || !data?.length) return { erro: "Não foi possível liberar o contato deste lead." };
+
+  // O rótulo de falso positivo (0162): a decisão que marcou o lead foi
+  // desfeita por quem conhece o cliente. A RLS da sessão, logo acima, já
+  // conferiu que o lead é dele.
+  await marcarRecusasDesfeitas(leadId, ctx.corretor.id);
 
   await ctx.supabase.from("lead_interacoes").insert({
     lead_id: leadId,

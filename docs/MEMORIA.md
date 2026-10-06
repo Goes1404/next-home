@@ -9311,3 +9311,19 @@ Nota: [[quem-nao-quer-contato-e-lido-sempre]].
 - **Religar a IA sozinha depois de X horas foi recusado (06/10/2026).** A
   conversa assumida pelo corretor fica com a IA desligada até ele ativar. A
   rede é o aviso de 30 min no WhatsApp dele. Nota: [[quando-a-ia-responde]].
+
+## Recusa em camadas: regex, IA e registro (0162, 06/10/2026)
+
+Nota: [[recusa-em-camadas]].
+
+- **Regex nenhuma é definitiva**: cada frase nova que escapa pede remendo. A
+  regex agora decide só o óbvio; o que tem sinal de "não" e escapou vai à IA
+  (`classificarRecusa`, 4s, temperatura 0) com a última fala nossa como
+  contexto. A IA só age com confiança ≥ 0,8 e trecho copiado da fala.
+- **Toda decisão vai para `recusas_detectadas`**, e o "Liberar contato" marca
+  `desfeito_em` (rótulo de falso positivo). Revisão: `scripts/revisarRecusas.sql`.
+- **`frasesDeRecusa.ts` é a régua no CI**: nunca acusar conversa normal, toda
+  recusa passar no filtro, regex só melhorar (catraca de 28 em 35).
+- **Guarda que recorta código por um texto quebra quando o texto aparece
+  antes**: "ia_calada" virou nome de caminho do registro, e a guarda da ficha
+  passou a ancorar no `return` do ramo.

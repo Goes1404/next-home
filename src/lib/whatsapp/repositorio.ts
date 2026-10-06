@@ -7,6 +7,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { site } from "@/lib/site";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
+import type { ClassificacaoDeRecusa } from "./recusaEmCamadas";
 import type { ConviteDeEntrada } from "./porteiro";
 import { comRetentativa } from "@/lib/supabase/retentativa";
 import {
@@ -1285,6 +1286,83 @@ export async function registrarRecusaDoCliente(params: {
     detalhes: { familia: params.familia, conversa_id: params.conversaId },
   });
   if (erroTimeline) console.error("[recusa] falha ao registrar na linha do tempo:", erroTimeline.message);
+}
+
+/**
+ * Registra uma decisão de recusa (0162). Nunca lança: perder a linha custa
+ * uma medida; derrubar o atendimento por causa dela custa o cliente.
+ */
+export async function registrarDecisaoDeRecusa(params: {
+  conversaId: string;
+  leadId: string | null;
+  corretorId: string;
+  classificacao: ClassificacaoDeRecusa;
+  caminho: "turno_ia" | "ia_calada";
+  acao: "acolheu" | "encerrou" | "marcou" | "registrou";
+}): Promise<void> {
+  const c = params.classificacao;
+  const familia = c.recusa?.familia ?? c.veredito?.familia;
+  // "nenhuma" não é decisão: registrar toda mensagem com "não" encheria a
+  // tabela de linhas que ninguém revisa.
+  if (!familia || familia === "nenhuma") return;
+  try {
+    const supabase = createServiceClient();
+    const { error } = await supabase.from("recusas_detectadas").insert({
+      conversa_id: params.conversaId,
+      lead_id: params.leadId,
+      corretor_id: params.corretorId,
+      familia,
+      decidido_por: c.decididoPor ?? "ia",
+      confianca: c.veredito?.confianca ?? null,
+      modelo: c.modelo,
+      trecho: (c.recusa?.trecho ?? c.veredito?.trecho ?? "").slice(0, 200) || null,
+      caminho: params.caminho,
+      acao: params.acao,
+    });
+    if (error) console.warn("[recusa] falha ao registrar a decisão:", error.message);
+  } catch (err) {
+    console.warn("[recusa] falha ao registrar a decisão:", err);
+  }
+}
+
+/**
+ * Quantas recusas desta conversa foram reconhecidas pela IA e tratadas. A
+ * regex as conta lendo o histórico; as da IA só existem neste registro.
+ */
+export async function contarRecusasPelaIA(conversaId: string): Promise<number> {
+  try {
+    const supabase = createServiceClient();
+    const { count } = await supabase
+      .from("recusas_detectadas")
+      .select("id", { count: "exact", head: true })
+      .eq("conversa_id", conversaId)
+      .eq("decidido_por", "ia")
+      .in("acao", ["acolheu", "encerrou"])
+      .is("desfeito_em", null);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * O "Liberar contato" carimba as decisões que marcaram este lead: é o
+ * rótulo de falso positivo. Chamado DEPOIS de a action conferir, pela RLS da
+ * sessão, que o lead é de quem clicou.
+ */
+export async function marcarRecusasDesfeitas(leadId: string, corretorId: string): Promise<void> {
+  try {
+    const supabase = createServiceClient();
+    const { error } = await supabase
+      .from("recusas_detectadas")
+      .update({ desfeito_em: new Date().toISOString(), desfeito_por: corretorId })
+      .eq("lead_id", leadId)
+      .in("acao", ["encerrou", "marcou"])
+      .is("desfeito_em", null);
+    if (error) console.warn("[recusa] falha ao marcar como desfeita:", error.message);
+  } catch (err) {
+    console.warn("[recusa] falha ao marcar como desfeita:", err);
+  }
 }
 
 /**

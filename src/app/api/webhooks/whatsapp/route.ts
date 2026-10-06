@@ -54,6 +54,8 @@ import {
   salvarDossie,
   registrarRecusaDoCliente,
   registrarParadaSemIA,
+  registrarDecisaoDeRecusa,
+  contarRecusasPelaIA,
   salvarMemoriaDaConversa,
   ultimaExtracaoDoLead,
   ultimaFalaDoCorretor,
@@ -75,7 +77,7 @@ import { instrucaoDaCampanha } from "@/lib/whatsapp/contextoDaCampanha";
 import { ehSaudacaoAutomatica, SEGUNDOS_PARA_A_SAUDACAO } from "@/lib/whatsapp/saudacaoAutomatica";
 import { decidirPorFalaDoCorretor, palavraDoCorretorNaMensagem } from "@/lib/whatsapp/modoBot";
 import { decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoAIaResponde";
-import { detectarRecusa } from "@/lib/whatsapp/recusaDoCliente";
+import { classificarRecusa } from "@/lib/whatsapp/classificarRecusa";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
 import { registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
@@ -851,13 +853,32 @@ export async function POST(req: NextRequest) {
        * a receber a próxima lista. Só a família `parada`, e o efeito é menor
        * que no turno da IA (ver `registrarParadaSemIA`).
        */
-      const pedidoDeParada = decisaoIA.motivo === "lead_pediu_para_sair" ? null : detectarRecusa(text);
-      if (pedidoDeParada?.familia === "parada") {
-        await registrarParadaSemIA({
+      const historicoCalado = await historicoRecente(conversa.id);
+      if (decisaoIA.motivo !== "lead_pediu_para_sair") {
+        // Em camadas: regex para o óbvio, IA para o duvidoso. Aqui só a
+        // PARADA age; o resto fica registrado para a revisão semanal.
+        const classificacao = await classificarRecusa({
+          texto: text,
+          ultimaFalaNossa:
+            [...historicoCalado].reverse().find((m) => m.remetente !== "cliente")?.texto ?? "",
+        });
+        let acao: "marcou" | "registrou" = "registrou";
+        if (classificacao.recusa?.familia === "parada") {
+          const marcou = await registrarParadaSemIA({
+            conversaId: conversa.id,
+            leadId: conversa.leadId,
+            corretorId: instancia.corretorId,
+            trecho: classificacao.recusa.trecho,
+          });
+          if (marcou) acao = "marcou";
+        }
+        await registrarDecisaoDeRecusa({
           conversaId: conversa.id,
           leadId: conversa.leadId,
           corretorId: instancia.corretorId,
-          trecho: pedidoDeParada.trecho,
+          classificacao,
+          caminho: "ia_calada",
+          acao,
         });
       }
       /*
@@ -868,7 +889,7 @@ export async function POST(req: NextRequest) {
        */
       await atualizarFichaEMemoria({
         conversa,
-        historico: await historicoRecente(conversa.id),
+        historico: historicoCalado,
         telefone: sender,
       });
       return NextResponse.json({ ok: true, action: "ia_calada", motivo: decisaoIA.motivo, sender });
@@ -984,6 +1005,7 @@ export async function POST(req: NextRequest) {
       catalogo,
       historico,
       dossie: dossieAnterior,
+      recusasPelaIA: await contarRecusasPelaIA(conversa.id),
       /*
        * A MEMÓRIA (0110): o estado da negociação que sobrevive à janela de
        * 40 falas. Nas conversas ativas, até 27 dessas 40 são do CORRETOR —
@@ -1188,6 +1210,22 @@ export async function POST(req: NextRequest) {
         conversaId: conversa.id,
         leadId: conversa.leadId,
         familia: turno.jogada.familia,
+      });
+    }
+    // O registro da decisão (0162): quem decidiu e o que a IA fez com isso.
+    if (turno.recusa) {
+      await registrarDecisaoDeRecusa({
+        conversaId: conversa.id,
+        leadId: conversa.leadId,
+        corretorId: instancia.corretorId,
+        classificacao: turno.recusa,
+        caminho: "turno_ia",
+        acao:
+          turno.jogada.tipo === "encerrar_recusado"
+            ? "encerrou"
+            : turno.jogada.tipo === "acolher_recusa"
+              ? "acolheu"
+              : "registrou",
       });
     }
 

@@ -413,6 +413,19 @@ export function estadoDaConversa(params: {
    * escreveu), não oferecido pela IA. Ausente vale false.
    */
   focoDoCliente?: boolean;
+  /**
+   * A recusa já classificada em camadas (regex + IA, `classificarRecusa`).
+   * O turno a calcula porque a IA é assíncrona e este módulo é puro.
+   * Ausente, vale a regex sozinha, que é o que o eval antigo e os traces usam.
+   */
+  recusa?: Recusa | null;
+  /**
+   * Recusas anteriores que a REGEX não enxerga no histórico porque foi a IA
+   * que as reconheceu (contadas no registro `recusas_detectadas`). Sem isto,
+   * o segundo "não" depois de uma recusa reconhecida pela IA ganharia a
+   * pergunta do motivo de novo, em vez de encerrar.
+   */
+  recusasAnterioresExtra?: number;
 }): EstadoDaConversa {
   const { historico, mensagemAtual, dossie } = params;
 
@@ -424,14 +437,18 @@ export function estadoDaConversa(params: {
    * tinha dito não. Uma recusa é acolhida com uma pergunta; a segunda
    * encerra — insistir depois de dois nãos é o que gera denúncia.
    */
-  const recusasAnteriores = falasCliente.filter((f) => detectarRecusa(f) !== null).length;
+  const recusasAnteriores =
+    falasCliente.filter((f) => detectarRecusa(f) !== null).length + (params.recusasAnterioresExtra ?? 0);
   const falaAtualRespondeFunil = assuntosDoFunil(mensagemAtual).length > 0;
   /*
    * O contexto muda o que "não" significa. Depois de ele já ter recusado, um
    * "não, obrigada" é a confirmação; antes disso, é resposta a uma pergunta
    * fechada do funil — e o funil é feito de perguntas fechadas.
    */
-  const recusa = detectarRecusa(mensagemAtual, { jaRecusouAntes: recusasAnteriores > 0 });
+  const recusa =
+    params.recusa !== undefined
+      ? params.recusa
+      : detectarRecusa(mensagemAtual, { jaRecusouAntes: recusasAnteriores > 0 });
 
   const respondidos = new Set<AssuntoDoFunil>();
   for (const texto of [...falasCliente, mensagemAtual]) {

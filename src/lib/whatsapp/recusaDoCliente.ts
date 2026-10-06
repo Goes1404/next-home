@@ -73,7 +73,7 @@ const DESINTERESSE_NO_FIM =
  * logo depois, então basta olhar o resto da frase a partir do casamento.
  */
 const COMPLEMENTO_QUE_DESARMA =
-  /\b(na planta|pronto|em obra|construcao|alphaville|barueri|osasco|aldeia|tambore|centro|bairro|regiao|dormitorio|quarto|suite|vaga|metro|m2|mil|reais|sabado|domingo|segunda|terca|quarta|quinta|sexta|manha|tarde|noite|hoje|amanha|esse imovel|este imovel|essa opcao|esta opcao|nesse|neste|nessa|nesta)s?\b/;
+  /\b(na planta|pronto|em obra|construcao|alphaville|barueri|osasco|aldeia|tambore|centro|bairro|regiao|dormitorio|quarto|suite|vaga|metro|m2|mil|reais|sabado|domingo|segunda|terca|quarta|quinta|sexta|manha|tarde|noite|hoje|amanha|apartamento|ape|casa|cobertura|studio|terreno|sobrado|esse imovel|este imovel|essa opcao|esta opcao|nesse|neste|nessa|nesta)s?\b/;
 
 /*
  * "agora" e "no momento" NÃO desarmam (06/10/2026). "Não pretendo comprar

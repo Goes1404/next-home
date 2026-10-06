@@ -52,7 +52,9 @@ describe("a extração não volta a depender de a IA ter respondido", () => {
   it("o ramo do silêncio atualiza a ficha ANTES de devolver", () => {
     const inicio = FONTE.indexOf("if (!decisaoIA.responde) {");
     expect(inicio, "ramo do silêncio não encontrado").toBeGreaterThan(-1);
-    const fim = FONTE.indexOf("ia_calada", inicio);
+    // Âncora no return do ramo: "ia_calada" sozinho também é o nome de um
+    // caminho do registro de recusa (0162), que vem antes da ficha.
+    const fim = FONTE.indexOf('action: "ia_calada"', inicio);
     expect(fim).toBeGreaterThan(inicio);
     expect(FONTE.slice(inicio, fim)).toContain("atualizarFichaEMemoria({");
   });

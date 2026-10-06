@@ -1654,6 +1654,57 @@ export type Database = {
         }
         Relationships: []
       }
+      recusas_detectadas: {
+        Row: {
+          acao: "acolheu" | "encerrou" | "marcou" | "registrou"
+          caminho: "turno_ia" | "ia_calada"
+          confianca: number | null
+          conversa_id: string | null
+          corretor_id: string | null
+          created_at: string
+          decidido_por: "regex" | "ia"
+          desfeito_em: string | null
+          desfeito_por: string | null
+          familia: "parada" | "desinteresse" | "ja_resolvido" | "nenhuma"
+          id: string
+          lead_id: string | null
+          modelo: string | null
+          trecho: string | null
+        }
+        Insert: {
+          acao: "acolheu" | "encerrou" | "marcou" | "registrou"
+          caminho: "turno_ia" | "ia_calada"
+          confianca?: number | null
+          conversa_id?: string | null
+          corretor_id?: string | null
+          created_at?: string
+          decidido_por: "regex" | "ia"
+          desfeito_em?: string | null
+          desfeito_por?: string | null
+          familia: "parada" | "desinteresse" | "ja_resolvido" | "nenhuma"
+          id?: string
+          lead_id?: string | null
+          modelo?: string | null
+          trecho?: string | null
+        }
+        Update: {
+          acao?: "acolheu" | "encerrou" | "marcou" | "registrou"
+          caminho?: "turno_ia" | "ia_calada"
+          confianca?: number | null
+          conversa_id?: string | null
+          corretor_id?: string | null
+          created_at?: string
+          decidido_por?: "regex" | "ia"
+          desfeito_em?: string | null
+          desfeito_por?: string | null
+          familia?: "parada" | "desinteresse" | "ja_resolvido" | "nenhuma"
+          id?: string
+          lead_id?: string | null
+          modelo?: string | null
+          trecho?: string | null
+        }
+        Relationships: []
+      }
       parametros_credito: {
         Row: {
           atualizado_em: string
