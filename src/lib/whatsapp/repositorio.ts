@@ -4,6 +4,9 @@ import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./priv
 import { mesclarDossie } from "./mesclarDossie";
 import type { SituacaoDaConversa } from "./quandoAIaResponde";
 import { createServiceClient } from "@/lib/supabase/service";
+import { site } from "@/lib/site";
+import { nomeParaExibir } from "@/lib/leads/nomeExibido";
+import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import type { ConviteDeEntrada } from "./porteiro";
 import { comRetentativa } from "@/lib/supabase/retentativa";
 import {
@@ -1282,6 +1285,71 @@ export async function registrarRecusaDoCliente(params: {
     detalhes: { familia: params.familia, conversa_id: params.conversaId },
   });
   if (erroTimeline) console.error("[recusa] falha ao registrar na linha do tempo:", erroTimeline.message);
+}
+
+/**
+ * Pedido de parada numa conversa em que a IA está calada (06/10/2026).
+ *
+ * O detector de recusa só rodava no turno da IA, e desde a 0152 a IA desliga
+ * quando o corretor fala: na maioria das conversas, "me tira da lista" não
+ * era gravado, e o lead voltava a receber a próxima lista de transmissão.
+ *
+ * Aqui só vale a família `parada`, e o efeito é menor que o de
+ * `registrarRecusaDoCliente`, de propósito: a conversa é do corretor. Grava o
+ * FATO (`nao_contatar_em`), tira o lead das listas pendentes e avisa o
+ * corretor pelo WhatsApp dele. Não muda a etapa nem a IA: quem decide o resto
+ * é o corretor, que está tocando a conversa. Desinteresse comum não entra:
+ * ele ganha a pergunta do motivo, e isso só a IA faz.
+ *
+ * Devolve `true` quando a marca foi gravada agora (a primeira vez).
+ */
+export async function registrarParadaSemIA(params: {
+  conversaId: string;
+  leadId: string | null;
+  corretorId: string;
+  trecho: string;
+}): Promise<boolean> {
+  if (!params.leadId) return false;
+  const supabase = createServiceClient();
+  const agora = new Date().toISOString();
+
+  // Uma vez só: o carimbo diz QUANDO ele pediu, e reescrever mentiria.
+  const { data: marcado, error } = await supabase
+    .from("leads")
+    .update({ nao_contatar_em: agora, nao_contatar_motivo: "parada" })
+    .eq("id", params.leadId)
+    .is("nao_contatar_em", null)
+    .select("id, nome, telefone");
+  if (error) {
+    console.error("[recusa sem IA] falha ao marcar o lead:", error.message);
+    return false;
+  }
+  const lead = marcado?.[0];
+  if (!lead) return false;
+
+  const { error: erroFila } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .delete()
+    .eq("lead_id", params.leadId)
+    .eq("status", "pendente");
+  if (erroFila) console.error("[recusa sem IA] falha ao tirar das listas:", erroFila.message);
+
+  const { error: erroTimeline } = await supabase.from("lead_interacoes").insert({
+    lead_id: params.leadId,
+    corretor_id: null,
+    tipo: "sistema",
+    conteudo: `O cliente pediu para não receber mais mensagens ("${params.trecho}"). Saiu das listas de transmissão; a conversa continua com o corretor.`,
+    detalhes: { familia: "parada", conversa_id: params.conversaId, ia_calada: true },
+  });
+  if (erroTimeline) console.error("[recusa sem IA] falha ao registrar na linha do tempo:", erroTimeline.message);
+
+  const nome = nomeParaExibir({ nome: lead.nome, telefone: lead.telefone });
+  await avisarCorretor(
+    supabase,
+    params.corretorId,
+    `🚫 ${nome} pediu para não receber mais mensagens ("${params.trecho}"). Tirei das listas de transmissão. A conversa é sua: se foi engano, dá para reverter na ficha.\n${site.url}/corretor/conversas?c=${params.conversaId}`,
+  );
+  return true;
 }
 
 

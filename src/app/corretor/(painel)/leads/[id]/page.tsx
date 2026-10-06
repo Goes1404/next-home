@@ -228,7 +228,7 @@ export default async function FichaLeadPage({
         <div className="space-y-4">
           <VendaDoLead leadId={lead.id} etapa={lead.etapa} vendas={vendas} />
           <OrigemJornada touchpoints={touchpoints} />
-          <PreferenciasContato leadId={lead.id} preferencias={preferencias} />
+          <PreferenciasContato leadId={lead.id} preferencias={preferencias} naoContatarEm={lead.naoContatarEm} />
           <Qualificacao
             leadId={lead.id}
             inicial={{

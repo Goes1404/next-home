@@ -53,6 +53,7 @@ import {
   resolverInstancia,
   salvarDossie,
   registrarRecusaDoCliente,
+  registrarParadaSemIA,
   salvarMemoriaDaConversa,
   ultimaExtracaoDoLead,
   ultimaFalaDoCorretor,
@@ -74,6 +75,7 @@ import { instrucaoDaCampanha } from "@/lib/whatsapp/contextoDaCampanha";
 import { ehSaudacaoAutomatica, SEGUNDOS_PARA_A_SAUDACAO } from "@/lib/whatsapp/saudacaoAutomatica";
 import { decidirPorFalaDoCorretor, palavraDoCorretorNaMensagem } from "@/lib/whatsapp/modoBot";
 import { decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoAIaResponde";
+import { detectarRecusa } from "@/lib/whatsapp/recusaDoCliente";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
 import { registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
@@ -842,6 +844,22 @@ export async function POST(req: NextRequest) {
         acao: decisaoIA.motivo,
         silencio: registroDoSilencio(decisaoIA, numero),
       });
+      /*
+       * Pedido de parada com a IA calada (06/10/2026). O detector de recusa
+       * só rodava no turno da IA, e desde a 0152 a IA desliga quando o
+       * corretor fala: "me tira da lista" não era gravado, e o lead voltava
+       * a receber a próxima lista. Só a família `parada`, e o efeito é menor
+       * que no turno da IA (ver `registrarParadaSemIA`).
+       */
+      const pedidoDeParada = decisaoIA.motivo === "lead_pediu_para_sair" ? null : detectarRecusa(text);
+      if (pedidoDeParada?.familia === "parada") {
+        await registrarParadaSemIA({
+          conversaId: conversa.id,
+          leadId: conversa.leadId,
+          corretorId: instancia.corretorId,
+          trecho: pedidoDeParada.trecho,
+        });
+      }
       /*
        * A ficha é atualizada MESMO com a IA calada — e este é o caminho
        * mais comum: medido em 7 dias, 127 das 191 falas de cliente foram

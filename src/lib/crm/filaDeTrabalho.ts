@@ -408,8 +408,8 @@ export async function getFilaDeTrabalho(
       titulo: `${nomeParaExibir(lead)} ${FRASE_DA_RECUSA[motivo] ?? FRASE_DA_RECUSA.desinteresse}`,
       detalhe:
         horas >= 1
-          ? `Há ${horas}h · a IA encerrou e ele saiu das campanhas`
-          : "Agora há pouco · a IA encerrou e ele saiu das campanhas",
+          ? `Há ${horas}h · saiu das listas de transmissão`
+          : "Agora há pouco · saiu das listas de transmissão",
       href: `/corretor/leads/${lead.id}`,
       /*
        * Só quem NÃO pediu para parar leva o botão de WhatsApp. Para os

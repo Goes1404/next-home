@@ -9292,3 +9292,19 @@ Nota: [[cliente-sem-resposta-avisa-o-corretor]].
   espera, das 7h às 21h59 de SP, até seis pessoas por mensagem.
 - **"Uma vez por espera" sem tabela nova**: `aviso_sem_resposta_em` só vale
   se for posterior à última mensagem do bot ou do corretor.
+
+## Quem não quer contato só era lido no turno da IA (06/10/2026)
+
+Nota: [[quem-nao-quer-contato-e-lido-sempre]].
+
+- **`detectarRecusa` só rodava dentro de `planejarJogada`**, e desde a 0152 a
+  IA desliga quando o corretor fala. Na maioria das conversas, "me tira da
+  lista" não era gravado, e o lead voltava a receber listas. Agora o ramo do
+  silêncio do webhook lê o pedido de PARADA (`registrarParadaSemIA`). Ele grava
+  a marca, tira das listas e avisa o corretor, sem mexer em etapa nem IA.
+- **Vocabulário medido por sonda de 40 frases**: zero falsos positivos, mas
+  "mais" no meio quebrava o casamento, e "agora" desarmava recusa temporária.
+  Ampliado, com teste para cada frase. Com o banco quase vazio, a precisão se
+  mede por sonda de frases, não por consulta.
+- **Não havia como desfazer `nao_contatar_em`** (o grant existia, a tela não).
+  O botão "Liberar contato" fica na ficha do lead, em "Contato autorizado".

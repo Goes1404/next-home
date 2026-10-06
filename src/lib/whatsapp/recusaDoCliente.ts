@@ -41,7 +41,7 @@ export type Recusa = {
  * razão pela qual a janela de horário comercial existe.
  */
 const PARADA =
-  /\b(me tirar? da lista|tirar da lista|tira meu numero|nao quero mais receber|para de (mandar|enviar|me mandar)|pare de (mandar|enviar|me mandar)|(pode|podem) parar|para com isso|nao me mand(e|em)|nao me manda mais|descadastr\w*|sair da lista|numero errado|pessoa errada|nao era eu|nao sou eu|nao conheco (voces|essa empresa)|(apagar|apaga|apague|excluir|exclui|exclua|remover|remove|remova|deletar|deleta|delete|bloquear|bloqueia|bloqueie) (o |esse |este )?(meu|o meu|meus) (contato|numero|telefone|cadastro|dados)|(vou|ja vou|vou te) bloquear|me bloqueia|me esquece|esquece meu (numero|contato)|nao me procur\w*|nao (me )?(liga|ligue|chama|chame) mais|para de me (ligar|chamar|encher|incomodar)|pare de me (ligar|chamar|encher|incomodar))\b/;
+  /\b(me tirar? (da lista|do grupo)|tirar (da lista|do grupo)|tira meu numero|nao quero mais receber|para de (mandar|enviar|me mandar)|pare de (mandar|enviar|me mandar)|(pode|podem) parar|para com isso|nao me mand(e|em)|nao me manda mais|descadastr\w*|sair (da lista|do grupo)|numero errado|pessoa errada|nao era eu|nao sou eu|nao conheco (voces|essa empresa)|(apagar|apaga|apague|excluir|exclui|exclua|remover|remove|remova|deletar|deleta|delete|bloquear|bloqueia|bloqueie) (o |esse |este )?(meu|o meu|meus) (contato|numero|telefone|cadastro|dados)|(vou|ja vou|vou te) bloquear|me bloqueia|me esquece|esquece meu (numero|contato)|nao me procur\w*|nao (me )?(liga|ligue|chama|chame) mais|nao me (ligue|liga)[\s.!]*$|para de me (ligar|chamar|encher|incomodar)|pare de me (ligar|chamar|encher|incomodar))\b/;
 // "Eu quero te apagar meu contato sua doida" (anúncio do Dom Parque,
 // 29/09/2026) passou batido: a IA seguiu oferecendo o imóvel a quem pediu
 // para sumir. Pedido de parada não é só "me tira da lista": é apagar o
@@ -49,7 +49,7 @@ const PARADA =
 
 /** Fim de jornada: ele resolveu, e não há o que reofertar. */
 const JA_RESOLVIDO =
-  /\b(ja (comprei|aluguei|fechei|resolvi|escolhi|consegui)|comprei outro|fechei com outr\w*|ja estou morando|ja tenho (imovel|apartamento|casa))\b/;
+  /\b(ja (comprei|aluguei|fechei|resolvi|escolhi|consegui)|comprei outro|fechei com outr\w*|ja estou morando|ja tenho (imovel|apartamento|casa)|ja (tenho|tem|estou com|to com) (um |uma |o meu |a minha |meu |minha )?(corretor|corretora|imobiliaria)|ja (tenho|tem) (quem|alguem que) me atend\w*)\b/;
 
 /**
  * Desinteresse no ATENDIMENTO.
@@ -60,10 +60,10 @@ const JA_RESOLVIDO =
  * escolhendo. No fim da frase, sem complemento, ele é o que parece ser.
  */
 const DESINTERESSE_COM_COMPLEMENTO =
-  /\b(nao tenho interesse|sem interesse|nao me interessa|nao e pra mim|nao vou querer|desisti|nao pretendo (comprar|mudar|alugar)|nao estou (procurando|buscando|interessad\w*))\b/;
+  /\b(nao tenho (mais )?interesse|sem interesse|nao me interessa|(pra|para) mim nao interessa|nao e pra mim|nao vou querer|desisti|nao pretendo (mais )?(comprar|mudar|alugar)|nao (estou|to|tou) (mais )?(procurando|buscando|interessad\w*)|nao quero (mais )?(comprar|saber)|nao preciso (mais )?de (imovel|apartamento))\b/;
 
 const DESINTERESSE_NO_FIM =
-  /\b(nao quero|nao quero nada)\b[\s,.!]*(obrigad\w*|nada|isso|mais nada)?\s*$/;
+  /\b(nao quero( mais)?|nao quero nada)\b[\s,.!]*(obrigad\w*|nada|isso|mais nada)?\s*$/;
 
 /**
  * O que transforma "não" em preferência, e não em recusa.
@@ -73,7 +73,21 @@ const DESINTERESSE_NO_FIM =
  * logo depois, então basta olhar o resto da frase a partir do casamento.
  */
 const COMPLEMENTO_QUE_DESARMA =
-  /\b(na planta|pronto|em obra|construcao|alphaville|barueri|osasco|aldeia|tambore|centro|bairro|regiao|dormitorio|quarto|suite|vaga|metro|m2|mil|reais|sabado|domingo|segunda|terca|quarta|quinta|sexta|manha|tarde|noite|hoje|amanha|agora|esse imovel|este imovel|essa opcao|esta opcao|nesse|neste|nessa|nesta)\b/;
+  /\b(na planta|pronto|em obra|construcao|alphaville|barueri|osasco|aldeia|tambore|centro|bairro|regiao|dormitorio|quarto|suite|vaga|metro|m2|mil|reais|sabado|domingo|segunda|terca|quarta|quinta|sexta|manha|tarde|noite|hoje|amanha|esse imovel|este imovel|essa opcao|esta opcao|nesse|neste|nessa|nesta)s?\b/;
+
+/*
+ * "agora" e "no momento" NÃO desarmam (06/10/2026). "Não pretendo comprar
+ * agora" é recusa, só que temporária, e é a IA quem pergunta o motivo: o
+ * desinteresse ganha a pergunta antes de encerrar. Com "agora" na lista, a
+ * frase passava como conversa normal e recebia pergunta de funil.
+ */
+
+/**
+ * A palavra de parada dita SOZINHA, como a mensagem inteira. Em frase, "pare"
+ * e "sair" são verbos de qualquer coisa ("pode sair de casa às 9h"); sozinhas,
+ * são o comando que se manda para lista de transmissão.
+ */
+const PARADA_SOZINHA = /^(pare|stop|sair|chega|cancelar|cancela|descadastrar)[\s.!]*$/;
 
 /** Quantos caracteres depois do casamento contam como "o complemento". */
 const JANELA_DO_COMPLEMENTO = 40;
@@ -107,6 +121,8 @@ export function detectarRecusa(
   if (contexto?.jaRecusouAntes && NEGATIVA_SECA.test(t)) {
     return { familia: "desinteresse", trecho: t };
   }
+
+  if (PARADA_SOZINHA.test(t)) return { familia: "parada", trecho: t };
 
   const paradaAchada = t.match(PARADA);
   // O pedido de parada NÃO se desarma por complemento: quem pede para parar

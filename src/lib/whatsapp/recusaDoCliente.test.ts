@@ -160,3 +160,56 @@ describe("apagar o contato, bloquear e \"me esquece\" são pedido de parada (03/
     expect(detectarRecusa("me liga amanhã de manhã")).toBeNull();
   });
 });
+
+/*
+ * 06/10/2026: a sonda com 40 frases típicas achou recusas que passavam
+ * batido. Palavra no meio ("não tenho MAIS interesse") quebrava o casamento,
+ * e "agora" desarmava recusa temporária.
+ */
+describe("recusas que passavam batido (06/10/2026)", () => {
+  it("desinteresse com palavra no meio ou em outra forma", () => {
+    for (const fala of [
+      "não tenho mais interesse",
+      "não quero mais",
+      "não quero comprar",
+      "não estou mais procurando",
+      "não to procurando",
+      "não preciso de imóvel",
+      "não pretendo comprar agora",
+      "não tenho interesse agora",
+      "No momento, agora pra mim não interessa, porque estou sem tempo",
+    ]) {
+      expect(detectarRecusa(fala)?.familia, fala).toBe("desinteresse");
+    }
+  });
+
+  it("já ter corretor é jornada resolvida", () => {
+    expect(detectarRecusa("já tenho corretor")?.familia).toBe("ja_resolvido");
+    expect(detectarRecusa("já tenho uma corretora que me atende")?.familia).toBe("ja_resolvido");
+    expect(detectarRecusa("ja tenho quem me atende, obrigada")?.familia).toBe("ja_resolvido");
+  });
+
+  it("parada: grupo, \"não me ligue\" e a palavra sozinha", () => {
+    for (const fala of ["pode me tirar do grupo", "quero sair do grupo", "não me ligue", "Pare", "STOP", "sair", "chega!"]) {
+      expect(detectarRecusa(fala)?.familia, fala).toBe("parada");
+    }
+  });
+
+  it("e continua sem acusar conversa normal", () => {
+    for (const fala of [
+      "Hoje não daria, trabalho a noite",
+      "Imprevisto\nHoje não\nBom dia",
+      "Vejo depois",
+      "Infelizmente alto para a minha renda",
+      "não quero comprar na planta",
+      "não quero comprar um de 3 quartos",
+      "não me ligue agora, estou no trabalho, me chama no zap",
+      "pode sair às 10h?",
+      "para? não entendi",
+      "não interessa o bairro, pode ser qualquer um",
+      "já tenho a carta de crédito",
+    ]) {
+      expect(detectarRecusa(fala), fala).toBeNull();
+    }
+  });
+});
