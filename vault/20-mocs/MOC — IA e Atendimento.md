@@ -81,6 +81,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[palavra-chave-cadastra-o-lead]] — a palavra do corretor cadastra número novo; lead de outro corretor só gera aviso para quem digitou (0146, 03/10)
 - [[a-ia-so-responde]] — a IA nunca escreve primeiro; pós-visita vira sugestão, listas sugeridas, resumo do lead, expediente único (0147-0148, 03/10)
 - [[quando-a-ia-responde]] — a decisão de responder numa função só, em duas camadas; trava de liberação removida; motivo do silêncio gravado (0149-0150, 04/10)
+- [[cliente-sem-resposta-avisa-o-corretor]] — 30 min sem resposta vira aviso no WhatsApp do corretor, uma vez por espera (0161, 06/10)
 
 ## Relacionados
 - [[MOC — Evals e Medição]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]

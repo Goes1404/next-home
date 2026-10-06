@@ -2728,6 +2728,7 @@ export type Database = {
         Row: {
           alerta_quente_em: string | null
           atendida_em: string | null
+          aviso_sem_resposta_em: string | null
           memoria: string | null
           memoria_atualizada_em: string | null
           memoria_do_corretor: boolean
@@ -2751,6 +2752,7 @@ export type Database = {
         Insert: {
           alerta_quente_em?: string | null
           atendida_em?: string | null
+          aviso_sem_resposta_em?: string | null
           memoria?: string | null
           memoria_atualizada_em?: string | null
           memoria_do_corretor?: boolean
@@ -2774,6 +2776,7 @@ export type Database = {
         Update: {
           alerta_quente_em?: string | null
           atendida_em?: string | null
+          aviso_sem_resposta_em?: string | null
           memoria?: string | null
           memoria_atualizada_em?: string | null
           memoria_do_corretor?: boolean

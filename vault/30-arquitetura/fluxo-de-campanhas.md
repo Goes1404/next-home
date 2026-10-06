@@ -76,6 +76,9 @@ Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
    corretor (antes da janela).
 3. `alertarLeadsSemContato` — lead de portal/anúncio sem mensagem nossa em
    30 min vira aviso ao corretor, uma vez (antes da janela, 0121).
+3b. `alertarClientesSemResposta` — cliente sem resposta há 30 min (IA desligada
+   ou não) vira aviso no WhatsApp do corretor, uma vez por espera, das 7h às
+   21h59 de SP (antes da janela, 0161).
 4. `liberarReservasVencidas` (0121).
 5. *(fora da janela 9h–20h59: para aqui)*
 6. trava `followups` →

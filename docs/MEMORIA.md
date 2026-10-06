@@ -9280,3 +9280,15 @@ Nota: [[palavra-chave-cadastra-o-lead]].
   fora da régua (inclusive a já salva), e a 0160 arquivou os 5.
 - **Para conferir quem criou um lead estranho:** `leads.origem`.
   `ativado_pelo_corretor` = palavra-chave; `painel/importacao` = planilha.
+
+## Cliente sem resposta vira aviso no WhatsApp do corretor (0161, 06/10/2026)
+
+Nota: [[cliente-sem-resposta-avisa-o-corretor]].
+
+- **Desde a 0152 a fala do corretor desliga a IA**, e o cliente que ele
+  esquece fica esperando. A fila do Início já mostrava, só para quem abre o
+  painel. Agora 30 min sem resposta viram aviso no WhatsApp dele
+  (`alertarClientesSemResposta`, no tique dos follow-ups), uma vez por
+  espera, das 7h às 21h59 de SP, até seis pessoas por mensagem.
+- **"Uma vez por espera" sem tabela nova**: `aviso_sem_resposta_em` só vale
+  se for posterior à última mensagem do bot ou do corretor.

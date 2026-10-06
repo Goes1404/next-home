@@ -34,6 +34,7 @@ import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
 import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
 import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvaliacoes";
 import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
+import { alertarClientesSemResposta } from "@/lib/crm/alertaSemResposta";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
 import { avisarQuemPediuAlerta } from "@/lib/crm/avisoDeNovidade";
 import { lerCaixasDoGmail } from "@/lib/inbound/gmailCaixa";
@@ -602,13 +603,22 @@ export async function GET(req: NextRequest) {
     console.error("[lead sem contato]", e);
     return 0;
   });
+  /*
+   * Cliente sem resposta há 30 min (0161): aviso no WhatsApp do corretor.
+   * Antes da janela comercial: é aviso ao corretor, não contato com cliente,
+   * e tem horário próprio (7h às 21h59).
+   */
+  const semResposta = await alertarClientesSemResposta(supabase).catch((e) => {
+    console.error("[cliente sem resposta]", e);
+    return 0;
+  });
   const reservasLiberadas = await liberarReservasVencidas(supabase).catch(() => 0);
 
   // Fora do horário comercial nada sai — e nada é descartado: o item
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, reservasLiberadas, leadsDoGmail, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, reservasLiberadas, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -653,7 +663,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, reservasLiberadas, avisosDeNovidade, leadsDoGmail });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, reservasLiberadas, avisosDeNovidade, leadsDoGmail });
   } finally {
     await destravarDisparo("followups", dono);
   }
