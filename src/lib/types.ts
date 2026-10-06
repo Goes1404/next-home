@@ -98,12 +98,16 @@ export type CorretorPerfil = Corretor & {
  * coluna só tornaria qualquer contagem inútil.
  *
  * A ordem desta lista é a ordem das colunas: mudar aqui muda a tela. Os
- * valores precisam continuar idênticos ao `check` da migration 0045.
+ * valores precisam continuar idênticos ao `check` da migration 0165.
  */
 export const ETAPAS_FUNIL = [
   "novo",
   "primeiro_contato",
+  "em_conversa",
+  "qualificado",
   "visita_agendada",
+  "visitou",
+  "proposta",
   "documentacao",
   "fechado",
   "perdido",
@@ -112,26 +116,94 @@ export const ETAPAS_FUNIL = [
 export type EtapaFunil = (typeof ETAPAS_FUNIL)[number];
 
 /**
- * O CAMINHO: as cinco etapas que um negócio percorre, em ordem.
+ * O CAMINHO: as etapas que um negócio percorre, em ordem.
  *
  * "Perdido" fica de fora de propósito — não é um passo do caminho, é a saída
- * dele. Ficava ocupando uma coluna no quadro e um chip na lista como se
- * fosse destino, quando o que o corretor faz com um lead perdido é tirá-lo
- * da frente. Continua existindo (seis leads reais estavam nele), agora como
- * ação secundária.
+ * dele.
  */
 export const ETAPAS_DO_CAMINHO = [
   "novo",
   "primeiro_contato",
+  "em_conversa",
+  "qualificado",
   "visita_agendada",
+  "visitou",
+  "proposta",
   "documentacao",
   "fechado",
 ] as const satisfies readonly EtapaFunil[];
 
+/**
+ * Funil completo × resumido (0165, 06/10/2026).
+ *
+ * O banco guarda UM funil, o completo. O resumido é só um jeito de olhar:
+ * cada etapa pertence a um GRUPO, e o grupo é a coluna do funil resumido (as
+ * seis colunas de antes). Relatórios e listas de transmissão contam sempre
+ * pelas etapas reais, então os números de dois corretores batem qualquer
+ * que seja o modo de tela de cada um.
+ *
+ * `primeiro_contato` guarda a chave antiga com o rótulo novo, "Mensagem
+ * enviada": é o mesmo fato de antes (nós falamos, ele ainda não respondeu),
+ * e trocar a chave mexeria em dezenas de consultas sem ganho.
+ */
+export const GRUPOS_FUNIL = ["novo", "contato", "visita", "negociacao", "fechado", "perdido"] as const;
+export type GrupoFunil = (typeof GRUPOS_FUNIL)[number];
+
+export const GRUPO_DA_ETAPA: Record<EtapaFunil, GrupoFunil> = {
+  novo: "novo",
+  primeiro_contato: "contato",
+  em_conversa: "contato",
+  qualificado: "contato",
+  visita_agendada: "visita",
+  visitou: "visita",
+  proposta: "negociacao",
+  documentacao: "negociacao",
+  fechado: "fechado",
+  perdido: "perdido",
+};
+
+export const GRUPO_LABEL: Record<GrupoFunil, string> = {
+  novo: "Leads",
+  contato: "Contatei",
+  visita: "Visita",
+  negociacao: "Documentação",
+  fechado: "Fechado",
+  perdido: "Perdido",
+};
+
+export function etapasDoGrupo(grupo: GrupoFunil): EtapaFunil[] {
+  return ETAPAS_FUNIL.filter((e) => GRUPO_DA_ETAPA[e] === grupo);
+}
+
+/** Soma uma contagem por etapa em contagem por grupo (funil resumido). */
+export function somarPorGrupo(porEtapa: Partial<Record<EtapaFunil, number>>): Record<GrupoFunil, number> {
+  const total = Object.fromEntries(GRUPOS_FUNIL.map((g) => [g, 0])) as Record<GrupoFunil, number>;
+  for (const e of ETAPAS_FUNIL) total[GRUPO_DA_ETAPA[e]] += porEtapa[e] ?? 0;
+  return total;
+}
+
+/**
+ * O lead já chegou em `alvo` (ou passou dele)? Perdido nunca chegou em nada:
+ * a etapa atual dele não diz até onde ele foi.
+ */
+export function chegouEm(etapa: EtapaFunil, alvo: EtapaFunil): boolean {
+  if (etapa === "perdido") return alvo === "perdido";
+  return ETAPAS_FUNIL.indexOf(etapa) >= ETAPAS_FUNIL.indexOf(alvo);
+}
+
+/** Etapas em que a visita já foi marcada (ou passou dela), sem perdido. */
+export const ETAPAS_DE_VISITA_EM_DIANTE: readonly EtapaFunil[] = ETAPAS_DO_CAMINHO.filter((e) =>
+  chegouEm(e, "visita_agendada"),
+);
+
 export const ETAPA_LABEL: Record<EtapaFunil, string> = {
   novo: "Leads",
-  primeiro_contato: "Contatei",
-  visita_agendada: "Visita",
+  primeiro_contato: "Mensagem enviada",
+  em_conversa: "Em conversa",
+  qualificado: "Qualificado",
+  visita_agendada: "Visita marcada",
+  visitou: "Visitou",
+  proposta: "Proposta",
   documentacao: "Documentação",
   fechado: "Fechado",
   perdido: "Perdido",
@@ -140,17 +212,20 @@ export const ETAPA_LABEL: Record<EtapaFunil, string> = {
 /**
  * O que o botão de um toque faz em cada etapa.
  *
- * O rótulo é o ATO, não o destino: "Contatei" (já falei com ele) em vez de
- * "mover para Primeiro contato". O corretor não pensa em mover cartão, ele
- * pensa no que acabou de fazer — e é isso que o botão registra.
+ * O rótulo é o ATO, não o destino. As etapas que a IA move sozinha
+ * (mensagem enviada → em conversa → qualificado) também têm botão: o
+ * corretor que atende pelo próprio celular faz o mesmo trabalho.
  *
- * `null` encerra o caminho: quem fechou ou perdeu não avança para lugar
- * nenhum, e um botão ali só seria armadilha.
+ * `null` encerra o caminho.
  */
 export const PROXIMA_ETAPA: Record<EtapaFunil, { etapa: EtapaFunil; acao: string } | null> = {
-  novo: { etapa: "primeiro_contato", acao: "Falei com ele" },
-  primeiro_contato: { etapa: "visita_agendada", acao: "Marquei visita" },
-  visita_agendada: { etapa: "documentacao", acao: "Visitou, seguiu" },
+  novo: { etapa: "primeiro_contato", acao: "Mandei mensagem" },
+  primeiro_contato: { etapa: "em_conversa", acao: "Ele respondeu" },
+  em_conversa: { etapa: "qualificado", acao: "Qualifiquei" },
+  qualificado: { etapa: "visita_agendada", acao: "Marquei visita" },
+  visita_agendada: { etapa: "visitou", acao: "Ele visitou" },
+  visitou: { etapa: "proposta", acao: "Mandei proposta" },
+  proposta: { etapa: "documentacao", acao: "Aceitou, documentação" },
   documentacao: { etapa: "fechado", acao: "Fechou negócio" },
   fechado: null,
   perdido: null,

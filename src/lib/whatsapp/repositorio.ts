@@ -1092,7 +1092,7 @@ export async function cancelarVisitaLead(leadId: string): Promise<Date | null> {
     .from("leads")
     .update({
       visita_agendada_em: null,
-      ...(voltaEtapa ? { etapa: "primeiro_contato" as const, etapa_alterada_em: new Date().toISOString() } : {}),
+      ...(voltaEtapa ? { etapa: "em_conversa" as const, etapa_alterada_em: new Date().toISOString() } : {}),
     })
     .eq("id", leadId)
     .eq("visita_agendada_em", lead.visita_agendada_em);
@@ -1103,7 +1103,7 @@ export async function cancelarVisitaLead(leadId: string): Promise<Date | null> {
 
   const desmarcada = new Date(lead.visita_agendada_em);
   await apagarLembretesPendentesDeVisita(supabase, leadId);
-  if (voltaEtapa) await registrarEtapaAutomatica(leadId, "visita_agendada", "primeiro_contato", "ia");
+  if (voltaEtapa) await registrarEtapaAutomatica(leadId, "visita_agendada", "em_conversa", "ia");
   const { error: erroTimeline } = await supabase.from("lead_interacoes").insert({
     lead_id: leadId,
     corretor_id: null,
@@ -1223,13 +1223,68 @@ export async function avancarLeadParaPrimeiroContato(
   if (data && data.length > 0) await registrarEtapaAutomatica(leadId, "novo", "primeiro_contato", por);
 }
 
+/**
+ * O cliente respondeu: o lead está EM CONVERSA (0165).
+ *
+ * Só avança quem está antes disso (novo ou mensagem enviada); nunca volta
+ * ninguém, e chamar de novo não faz nada. Mesmo termostato do primeiro
+ * contato.
+ */
+export async function avancarLeadParaEmConversa(leadId: string | null): Promise<void> {
+  if (!leadId) return;
+  const supabase = createServiceClient();
+  const { data: antes } = await supabase.from("leads").select("etapa").eq("id", leadId).maybeSingle();
+  if (antes?.etapa !== "novo" && antes?.etapa !== "primeiro_contato") return;
+  const { data } = await supabase
+    .from("leads")
+    .update({ etapa: "em_conversa", etapa_alterada_em: new Date().toISOString() })
+    .eq("id", leadId)
+    .in("etapa", ["novo", "primeiro_contato"])
+    .select("id");
+  if (data && data.length > 0) await registrarEtapaAutomatica(leadId, antes.etapa, "em_conversa", "ia");
+}
+
+/**
+ * A IA já sabe renda, região e quartos: o lead está QUALIFICADO (0165).
+ *
+ * Os três têm de estar na FICHA (`leads`), que é o que o corretor vê — a
+ * regra é sobre o que a ficha mostra, não sobre um palpite do dossiê. Só
+ * avança quem está antes (até "em conversa"); quem já marcou visita não
+ * volta para trás.
+ */
+export async function avancarLeadParaQualificado(leadId: string | null): Promise<void> {
+  if (!leadId) return;
+  const supabase = createServiceClient();
+  const { data: antes } = await supabase
+    .from("leads")
+    .select("etapa")
+    .eq("id", leadId)
+    .maybeSingle();
+  const { data } = await supabase
+    .from("leads")
+    .update({ etapa: "qualificado", etapa_alterada_em: new Date().toISOString() })
+    .eq("id", leadId)
+    .in("etapa", ["novo", "primeiro_contato", "em_conversa"])
+    .not("renda_mensal", "is", null)
+    .not("regiao_interesse", "is", null)
+    .not("dormitorios_min", "is", null)
+    .select("id");
+  if (data && data.length > 0 && antes?.etapa) {
+    await registrarEtapaAutomatica(leadId, antes.etapa, "qualificado", "ia");
+  }
+}
+
 /** Quem moveu o lead no funil sem o corretor arrastar o cartão. */
 export type QuemMudouAEtapa = "ia" | "lista" | "corretor_no_whatsapp";
 
 const ROTULO_DA_ETAPA: Record<string, string> = {
   novo: "Novo",
-  primeiro_contato: "Primeiro contato",
-  visita_agendada: "Visita agendada",
+  primeiro_contato: "Mensagem enviada",
+  em_conversa: "Em conversa",
+  qualificado: "Qualificado",
+  visita_agendada: "Visita marcada",
+  visitou: "Visitou",
+  proposta: "Proposta",
   documentacao: "Documentação",
   fechado: "Fechado",
   perdido: "Perdido",
@@ -2167,6 +2222,8 @@ export async function salvarDossie(leadId: string, dossie: DossieClienteIA): Pro
   if (Object.keys(doLead).length > 0) {
     await supabase.from("leads").update(doLead).eq("id", leadId);
   }
+
+  await avancarLeadParaQualificado(leadId);
 }
 
 /**

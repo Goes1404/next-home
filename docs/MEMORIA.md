@@ -9399,3 +9399,21 @@ Nota: [[lead-sem-resposta-sai-da-base-sozinho]].
   e `higieneDaBase.ts`), e o teste confere que é o mesmo número.
 - **Arquivar ou restaurar pelo painel limpa `arquivado_motivo`.** Sem isso,
   um lead que o corretor arquivou de propósito voltaria sozinho.
+
+## Funil de 10 etapas, completo ou resumido (0165, 06/10/2026)
+
+Nota: [[funil-completo-e-resumido]]. Substitui o "funil de cinco" da 0045.
+
+- **O banco guarda um funil só; o resumido é agrupamento** (`GRUPO_DA_ETAPA`).
+  Quem escolhe o modo é o botão da tela do Funil, salvo no cookie
+  `nh-funil-modo`.
+- **`primeiro_contato` agora se chama "Mensagem enviada".** A chave não mudou.
+- **Movimentos automáticos:** resposta do cliente → `em_conversa`
+  (`avancarLeadParaEmConversa`, no webhook); renda + região + quartos na
+  ficha → `qualificado` (`avancarLeadParaQualificado`, depois de gravar o
+  dossiê). "Visitou" é só o corretor.
+- **Ao listar "visita em diante" use `ETAPAS_DE_VISITA_EM_DIANTE`/`chegouEm`**
+  de `types.ts`. As listas escritas à mão em quatro arquivos e em duas
+  funções SQL foram o que a 0165 teve de caçar.
+- **Deploy antes da migration**: o código novo aceita as etapas antigas, mas
+  o código antigo não conhece as novas.

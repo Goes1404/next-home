@@ -15,23 +15,27 @@ import {
 describe("passagemDoFunil", () => {
   const passos = passagemDoFunil({
     novo: 10,
-    primeiro_contato: 20,
-    visita_agendada: 6,
-    documentacao: 2,
-    fechado: 2,
+    primeiro_contato: 10,
+    em_conversa: 10,
+    qualificado: 4,
+    visita_agendada: 3,
+    visitou: 1,
+    proposta: 0,
+    documentacao: 1,
+    fechado: 1,
     perdido: 30,
   });
 
   it("conta quem chegou à etapa ou passou dela, sem os perdidos", () => {
-    expect(passos.map((p) => p.alcancaram)).toEqual([40, 30, 10, 4, 2]);
+    expect(passos.map((p) => p.alcancaram)).toEqual([40, 30, 20, 10, 6, 3, 2, 2, 1]);
   });
 
   it("dá a passagem do passo anterior", () => {
-    expect(passos.map((p) => p.doAnterior)).toEqual([null, 75, 33, 40, 50]);
+    expect(passos.map((p) => p.doAnterior)).toEqual([null, 75, 67, 50, 60, 50, 67, 100, 50]);
   });
 
   it("aponta o passo que mais vaza", () => {
-    expect(maiorVazamento(passos)).toBe("visita_agendada");
+    expect(maiorVazamento(passos)).toBe("qualificado");
   });
 
   it("carteira vazia não inventa porcentagem", () => {

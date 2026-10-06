@@ -1,5 +1,6 @@
 "use server";
 
+import { chegouEm, type EtapaFunil } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -54,7 +55,7 @@ export async function registrarVisitaCombinada(conversaId: string): Promise<Resu
     .select("etapa")
     .eq("id", conversa.lead_id)
     .maybeSingle();
-  const avancaEtapa = lead?.etapa === "novo" || lead?.etapa === "primeiro_contato";
+  const avancaEtapa = Boolean(lead?.etapa) && !chegouEm(lead!.etapa as EtapaFunil, "visita_agendada");
 
   const { error } = await supabase
     .from("leads")

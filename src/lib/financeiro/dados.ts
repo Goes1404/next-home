@@ -1,3 +1,4 @@
+import { ETAPAS_DE_VISITA_EM_DIANTE as VISITA_EM_DIANTE } from "@/lib/types";
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
@@ -321,7 +322,7 @@ export type LeadLeve = {
   etapa: string;
 };
 
-const ETAPAS_DE_VISITA = new Set(["visita_agendada", "documentacao", "fechado"]);
+const ETAPAS_DE_VISITA = new Set<string>(VISITA_EM_DIANTE);
 
 /** Teto da leitura de leads do desempenho: ~100 por corretor hoje. */
 const TETO_DE_LEADS = 5000;

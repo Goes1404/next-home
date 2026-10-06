@@ -50,21 +50,24 @@ const TETOS_KB = {
   // do lead dentro da conversa (`resumoDoLead`), a frase de por que a IA
   // responde ou não (`decidirSeAIaResponde` no cliente) e "IA assume agora".
   // A esteira estava vermelha desde então, sem ninguém ver.
-  "/corretor/(painel)/pessoas/page": 1006,
+  // 06/10: +1 KB nas quatro rotas abaixo: o "3/7" de tentativas no cartão
+  // (higieneDaBase) e o funil de 10 etapas com grupos (types.ts), que todas
+  // puxam pelos utilitários de lead.
+  "/corretor/(painel)/pessoas/page": 1007,
   // 28/09: +9 KB (conversas) e +16 (importar) vêm de funcionalidades pedidas:
   // o painel ganhou a transição de tela e a luz dos cartões no LAYOUT (vale
   // em toda rota do painel), e o importador ganhou tours, vídeo em arquivo e
   // a leitura do site da construtora.
   // 29/09: +2 KB em conversas, do motivo do 👎 e do resumo semanal das
   // avaliações (0131), que já tinha ido ao ar 1 KB acima do teto.
-  "/corretor/(painel)/conversas/page": 1044,
+  "/corretor/(painel)/conversas/page": 1045,
   // 28/09: +1 KB em criar-imagem, editor do imóvel e vídeo é
   // `mensagensDoSite` (as mensagens que o porteiro reconhece), puxado via
   // `site.ts`. Sem ela, o visitante novo do site é ignorado pelo webhook.
   "/corretor/(painel)/imoveis/criar-imagem/page": 1013,
   // 30/09: +1 KB. Três ícones novos no menu (Construtoras, Crédito e Marca
   // tinham ícone repetido); o menu vai em toda rota do painel.
-  "/corretor/(painel)/imoveis/[slug]/importar/page": 1021,
+  "/corretor/(painel)/imoveis/[slug]/importar/page": 1022,
   // O editor do imóvel mostra na mesma tela as unidades, o andamento da obra
   // e os leads que combinam (com "reabrir perdidos"): 26/09.
   "/corretor/(painel)/imoveis/[slug]/page": 831,
@@ -72,7 +75,7 @@ const TETOS_KB = {
   // 03/10: +7 KB nas listas de transmissão (0153-0155): pausar, cancelar,
   // variáveis, A/B que decide sozinho e o motivo do limite do dia, tudo no
   // assistente. Vermelho desde 04/10 sem ninguém ver.
-  "/corretor/(painel)/campanhas/page": 807,
+  "/corretor/(painel)/campanhas/page": 808,
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
   // 28/09: +3 KB na home e +7 na listagem são o coração de favorito em cada

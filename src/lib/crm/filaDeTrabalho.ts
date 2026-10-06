@@ -6,7 +6,7 @@ import { situacaoDaTarefa, type Tarefa } from "@/lib/crm/timeline";
 import { horaDoLembrete, situacaoDoLembrete } from "@/lib/crm/lembretes";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import { rotuloDaVisita } from "@/lib/whatsapp/mudancaDeVisita";
-import type { Lead } from "@/lib/types";
+import { ETAPAS_DO_CAMINHO, type Lead } from "@/lib/types";
 
 /**
  * A fila de trabalho do Início — "o que fazer AGORA", em ordem.
@@ -323,7 +323,7 @@ export async function getFilaDeTrabalho(
       .from("leads")
       .select("id, nome, telefone, etapa_alterada_em", { count: "exact" })
       .is("arquivado_em", null)
-      .in("etapa", ["primeiro_contato", "visita_agendada", "documentacao"])
+      .in("etapa", ETAPAS_DO_CAMINHO.filter((e) => e !== "novo" && e !== "fechado"))
       .lt("etapa_alterada_em", limiteEsfriar)
       .order("etapa_alterada_em", { ascending: true })
       .limit(TETO_DA_FILA),

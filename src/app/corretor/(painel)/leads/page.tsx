@@ -11,7 +11,7 @@ import {
   souGestor,
   type FiltroLeads,
 } from "@/lib/corretorSessao";
-import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
+import { ETAPAS_FUNIL, GRUPOS_FUNIL, etapasDoGrupo, type EtapaFunil, type GrupoFunil } from "@/lib/types";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { BotaoVoltarAoTopo } from "../_componentes/BotaoVoltarAoTopo";
 
@@ -24,8 +24,8 @@ export const metadata: Metadata = { title: "Meus leads" };
  */
 const SEGMENTOS: Record<string, EtapaFunil[]> = {
   novos: ["novo"],
-  conversa: ["primeiro_contato", "documentacao"],
-  visitas: ["visita_agendada"],
+  conversa: ["primeiro_contato", "em_conversa", "qualificado", "proposta", "documentacao"],
+  visitas: ["visita_agendada", "visitou"],
   frios: ["perdido", "fechado"],
 };
 
@@ -54,6 +54,12 @@ export default async function LeadsPage({
   const etapaValida = (ETAPAS_FUNIL as readonly string[]).includes(etapaParam)
     ? (etapaParam as EtapaFunil)
     : undefined;
+  // `?grupo=` chega do funil RESUMIDO (0165): a coluna "Contatei" são três
+  // etapas, e o link precisa abrir as três.
+  const grupoParam = primeiroValor(params.grupo);
+  const grupoValido = (GRUPOS_FUNIL as readonly string[]).includes(grupoParam)
+    ? (grupoParam as GrupoFunil)
+    : undefined;
 
   // `?dono=sem` e `?parado=15` chegam dos KPIs da administração — cada
   // número clicável de lá cai aqui JÁ recortado, senão o número mente sobre
@@ -68,8 +74,12 @@ export default async function LeadsPage({
     busca: primeiroValor(params.busca) || undefined,
     // Uma etapa específica (vinda do seletor ou do link do quadro) vale mais
     // que o segmento — os dois juntos seriam uma interseção confusa.
-    etapas: etapaValida ? [etapaValida] : SEGMENTOS[segmento],
-    recorte: !etapaValida && segmento === "hoje" ? "hoje" : undefined,
+    etapas: etapaValida
+      ? [etapaValida]
+      : grupoValido
+        ? etapasDoGrupo(grupoValido)
+        : SEGMENTOS[segmento],
+    recorte: !etapaValida && !grupoValido && segmento === "hoje" ? "hoje" : undefined,
     corretorId: primeiroValor(params.corretor) || undefined,
     // `?campanha=<id do Meta>` chega da tabela por campanha da tela de
     // Anúncios. Sem este par, o link sairia da tela de Anúncios e a lista

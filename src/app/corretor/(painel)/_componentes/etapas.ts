@@ -1,4 +1,4 @@
-import type { EtapaFunil } from "@/lib/types";
+import { ETAPAS_FUNIL, GRUPO_DA_ETAPA, type EtapaFunil, type GrupoFunil } from "@/lib/types";
 
 /**
  * Vocabulário visual das etapas do funil, em um lugar só.
@@ -26,62 +26,70 @@ import type { EtapaFunil } from "@/lib/types";
  * Todos os tokens são de PAPEL e resolvem os dois temas via `light-dark()`.
  */
 
+/*
+ * Desde a 0165 (funil de 10 etapas) a cor é do GRUPO: as etapas do mesmo
+ * grupo do funil resumido dividem a matiz. É o que faz o funil completo e o
+ * resumido conversarem — "Em conversa" e "Qualificado" são turquesa porque
+ * no resumido os dois são "Contatei". O rótulo diferencia dentro do grupo.
+ */
+function porGrupo(mapa: Record<GrupoFunil, string>): Record<EtapaFunil, string> {
+  return Object.fromEntries(ETAPAS_FUNIL.map((e) => [e, mapa[GRUPO_DA_ETAPA[e]]])) as Record<
+    EtapaFunil,
+    string
+  >;
+}
+
 /** Etiqueta arredondada do cartão e da lista. */
-export const ETIQUETA_ETAPA: Record<EtapaFunil, string> = {
+export const ETIQUETA_GRUPO: Record<GrupoFunil, string> = {
   // Sólido só aqui: "novo" é a única etapa que cobra uma ação hoje.
   novo: "bg-etapa-novo text-sobre-cor",
-  primeiro_contato:
-    "bg-etapa-contato-lavado text-etapa-contato border border-etapa-contato-linha",
-  visita_agendada: "bg-etapa-visita-lavado text-etapa-visita border border-etapa-visita-linha",
-  documentacao:
-    "bg-etapa-doc-lavado text-etapa-doc border border-etapa-doc-linha font-semibold",
+  contato: "bg-etapa-contato-lavado text-etapa-contato border border-etapa-contato-linha",
+  visita: "bg-etapa-visita-lavado text-etapa-visita border border-etapa-visita-linha",
+  negociacao: "bg-etapa-doc-lavado text-etapa-doc border border-etapa-doc-linha font-semibold",
   // Sólido também: entrada e vitória são os dois extremos do caminho, e são
-  // os únicos momentos em que a etiqueta grita. O meio do funil é lavado —
-  // se tudo gritasse, nada gritaria.
+  // os únicos momentos em que a etiqueta grita.
   fechado: "bg-etapa-fechado text-sobre-cor",
   perdido: "bg-etapa-perdido-lavado text-etapa-perdido border border-etapa-perdido-linha",
 };
+export const ETIQUETA_ETAPA = porGrupo(ETIQUETA_GRUPO);
 
 /** Borda superior da coluna do quadro. */
-export const BORDA_ETAPA: Record<EtapaFunil, string> = {
+export const BORDA_GRUPO: Record<GrupoFunil, string> = {
   novo: "border-etapa-novo-linha",
-  primeiro_contato: "border-etapa-contato-linha",
-  visita_agendada: "border-etapa-visita-linha",
-  documentacao: "border-etapa-doc-linha",
+  contato: "border-etapa-contato-linha",
+  visita: "border-etapa-visita-linha",
+  negociacao: "border-etapa-doc-linha",
   fechado: "border-etapa-fechado-linha",
   perdido: "border-etapa-perdido-linha",
 };
+export const BORDA_ETAPA = porGrupo(BORDA_GRUPO);
 
 /** Preenchimento do segmento no termômetro do funil. */
-export const BARRA_ETAPA: Record<EtapaFunil, string> = {
+export const BARRA_GRUPO: Record<GrupoFunil, string> = {
   novo: "bg-etapa-novo",
-  primeiro_contato: "bg-etapa-contato",
-  visita_agendada: "bg-etapa-visita",
-  documentacao: "bg-etapa-doc",
+  contato: "bg-etapa-contato",
+  visita: "bg-etapa-visita",
+  negociacao: "bg-etapa-doc",
   fechado: "bg-etapa-fechado",
   perdido: "bg-etapa-perdido",
 };
+export const BARRA_ETAPA = porGrupo(BARRA_GRUPO);
 
 /**
  * O botão de avanço, pintado com a cor da etapa de DESTINO — quem olha vê
- * para onde o lead vai antes de tocar, e depois do toque a régua do cartão
- * fica exatamente daquela cor.
- *
- * Sólido, e não lavado: é a ação primária da tela, e ação primária que se
- * confunde com etiqueta não é apertada.
+ * para onde o lead vai antes de tocar.
  *
  * O texto sai de `sobre-cor` e não de `text-fundo`: no escuro a cor da etapa
- * é clara e pede texto escuro, no claro é profunda e pede texto branco. Um
- * valor chumbado acertaria um tema e sumiria no outro.
+ * é clara e pede texto escuro, no claro é profunda e pede texto branco.
  */
-export const AVANCO_ETAPA: Record<EtapaFunil, string> = {
+export const AVANCO_ETAPA = porGrupo({
   novo: "bg-etapa-novo text-sobre-cor hover:opacity-90",
-  primeiro_contato: "bg-etapa-contato text-sobre-cor hover:opacity-90",
-  visita_agendada: "bg-etapa-visita text-sobre-cor hover:opacity-90",
-  documentacao: "bg-etapa-doc text-sobre-cor hover:opacity-90",
+  contato: "bg-etapa-contato text-sobre-cor hover:opacity-90",
+  visita: "bg-etapa-visita text-sobre-cor hover:opacity-90",
+  negociacao: "bg-etapa-doc text-sobre-cor hover:opacity-90",
   fechado: "bg-etapa-fechado text-sobre-cor hover:opacity-90",
   perdido: "bg-etapa-perdido text-sobre-cor hover:opacity-90",
-};
+});
 
 /**
  * A régua de cor — o elemento que amarra o painel inteiro.

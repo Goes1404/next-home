@@ -32,6 +32,8 @@ import type { Empreendimento } from "@/lib/types";
  */
 const ETAPAS_CONVERTIDAS = new Set([
   "visita_agendada",
+  "visitou",
+  "proposta",
   "documentacao",
   "proposta_enviada",
   "negociacao",

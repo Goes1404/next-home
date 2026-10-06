@@ -19,6 +19,7 @@
  * (`agrupadoEm`, 0132): os clientes e o gasto dele passam a contar na
  * campanha, e o anúncio sai da lista de cima.
  */
+import { ETAPAS_DE_VISITA_EM_DIANTE as VISITA_EM_DIANTE } from "@/lib/types";
 import { TITULO_SEM_ETIQUETA } from "@/lib/whatsapp/anuncioMeta";
 
 export const CANAIS_DE_CAMPANHA = {
@@ -147,7 +148,7 @@ export type ResumoImpulsionamento = LinhaImpulsionamento & {
   leadIds: string[];
 };
 
-const ETAPAS_DE_VISITA_EM_DIANTE = new Set(["visita_agendada", "documentacao", "fechado"]);
+const ETAPAS_DE_VISITA_EM_DIANTE = new Set<string>(VISITA_EM_DIANTE);
 
 /** Mesma normalização do porteiro: o nome do link chega assim no lead. */
 function nomeComparavel(texto: string): string {

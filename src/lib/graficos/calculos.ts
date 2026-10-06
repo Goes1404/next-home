@@ -7,18 +7,12 @@
  * isso as mesmas definições valem em todas as telas (o que é "chegou à
  * visita" é decidido aqui, uma vez).
  */
-import type { EtapaFunil } from "@/lib/types";
+import { ETAPAS_DE_VISITA_EM_DIANTE as VISITA_EM_DIANTE, ETAPAS_DO_CAMINHO, type EtapaFunil } from "@/lib/types";
 
 /** As etapas do caminho, em ordem. "Perdido" é a saída, não um passo. */
-export const CAMINHO_DO_FUNIL: EtapaFunil[] = [
-  "novo",
-  "primeiro_contato",
-  "visita_agendada",
-  "documentacao",
-  "fechado",
-];
+export const CAMINHO_DO_FUNIL: EtapaFunil[] = [...ETAPAS_DO_CAMINHO];
 
-const ETAPAS_DE_VISITA_EM_DIANTE = new Set<EtapaFunil>(["visita_agendada", "documentacao", "fechado"]);
+const ETAPAS_DE_VISITA_EM_DIANTE = new Set<EtapaFunil>(VISITA_EM_DIANTE);
 
 /**
  * O lead chegou à visita? O FATO (`visita_agendada_em`) ou a etapa de visita

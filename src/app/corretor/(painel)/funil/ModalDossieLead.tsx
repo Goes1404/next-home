@@ -1,5 +1,6 @@
 "use client";
 
+import { chegouEm } from "@/lib/types";
 import { useState } from "react";
 import type { Lead } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
@@ -21,7 +22,7 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
   const temFilhos = msg.toLowerCase().includes("filho") || msg.toLowerCase().includes("escola");
   const orcamentoEstimado = 1850000;
   const temperaturaScore =
-    lead.etapa === "visita_agendada" || lead.etapa === "documentacao" ? 92 : 65;
+    chegouEm(lead.etapa, "visita_agendada") ? 92 : 65;
   const isQuente = temperaturaScore >= 75;
   const linkWhatsapp = linkWhatsappLead(lead);
 

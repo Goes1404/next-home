@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Quadro } from "./Quadro";
+import { COOKIE_MODO_DO_FUNIL, lerModoDoFunil } from "./modoDoFunil";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import { getContagemPorEtapa, getLeadsDoFunil, souGestor } from "@/lib/corretorSessao";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
@@ -21,11 +23,13 @@ export default async function FunilPage({
   // meus leads" são os do corretor ou os da imobiliária inteira. A contagem
   // vem à parte porque o quadro tem teto (`TETO_DO_QUADRO`): o cabeçalho da
   // coluna mostra o total real mesmo quando nem todo cartão coube.
-  const [leads, contagens, gestor] = await Promise.all([
+  const [leads, contagens, gestor, jarra] = await Promise.all([
     getLeadsDoFunil(busca),
     getContagemPorEtapa(),
     souGestor(),
+    cookies(),
   ]);
+  const modo = lerModoDoFunil(jarra.get(COOKIE_MODO_DO_FUNIL)?.value);
 
   return (
     <div>
@@ -55,6 +59,7 @@ export default async function FunilPage({
         leads={leads}
         contagens={busca ? undefined : contagens}
         mostrarDono={gestor}
+        modoInicial={modo}
       />
 
       {/* Embaixo do quadro: o quadro é o trabalho, este é o balanço dele. Com

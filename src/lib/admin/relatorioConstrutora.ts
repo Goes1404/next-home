@@ -1,3 +1,5 @@
+import { ETAPAS_DE_VISITA_EM_DIANTE as VISITA_EM_DIANTE } from "@/lib/types";
+
 /**
  * Relatório para a construtora parceira (26/09/2026) — agregação pura.
  *
@@ -25,7 +27,7 @@ export type LinhaDoRelatorio = {
   vgv: number;
 };
 
-const ETAPAS_DE_VISITA_EM_DIANTE = new Set(["visita_agendada", "documentacao", "fechado"]);
+const ETAPAS_DE_VISITA_EM_DIANTE = new Set<string>(VISITA_EM_DIANTE);
 
 export function linhasDoRelatorio(
   imoveis: Array<{ id: string; nome: string }>,

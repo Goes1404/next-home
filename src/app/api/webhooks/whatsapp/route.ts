@@ -32,6 +32,7 @@ import {
   marcarConversaAtendida,
   registrarImovelDeInteresse,
   registrarRespostaDoLead,
+  avancarLeadParaEmConversa,
   situacaoDaConversa,
   buscarDossieAtual,
   cancelarFollowupsPendentes,
@@ -734,6 +735,8 @@ export async function POST(req: NextRequest) {
      * cliente respondeu, e é isso que o número guarda.
      */
     await registrarRespostaDoLead(conversa.leadId);
+    // Respondeu: sai de "novo"/"mensagem enviada" para "em conversa" (0165).
+    await avancarLeadParaEmConversa(conversa.leadId);
 
     /*
      * Mensagem pronta de anúncio (link porteiro /wa/<campanha>): quem

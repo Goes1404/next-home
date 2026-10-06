@@ -19,11 +19,27 @@ import {
   linkWhatsappLead,
   ContagemDeTentativas,
 } from "@/app/corretor/(painel)/_componentes/CartaoLead";
-import { BORDA_ETAPA, REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
+import {
+  BARRA_GRUPO,
+  BORDA_ETAPA,
+  BORDA_GRUPO,
+  ETIQUETA_ETAPA,
+  REGUA_ETAPA,
+} from "@/app/corretor/(painel)/_componentes/etapas";
 import { BotaoAvancar } from "@/app/corretor/(painel)/_componentes/BotaoAvancar";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { ModalDossieLead } from "./ModalDossieLead";
-import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
+import {
+  ETAPAS_FUNIL,
+  ETAPA_LABEL,
+  GRUPOS_FUNIL,
+  GRUPO_DA_ETAPA,
+  GRUPO_LABEL,
+  etapasDoGrupo,
+  type EtapaFunil,
+  type Lead,
+} from "@/lib/types";
+import { gravarModoDoFunil, type ModoDoFunil } from "./modoDoFunil";
 
 /**
  * O funil é um QUADRO de colunas laterais — uma coluna por etapa, lado a
@@ -70,7 +86,48 @@ const ALTURA_COLUNA = "max-h-[68svh]";
 /** Faixa da borda em que o arrasto empurra o quadro de lado, em px. */
 const MARGEM_AUTOSCROLL = 56;
 
-type Arrasto = { id: string; nome: string; origem: EtapaFunil; x: number; y: number };
+type Arrasto = { id: string; nome: string; origem: string; x: number; y: number };
+
+/**
+ * Uma coluna do quadro. No modo completo é uma etapa; no resumido é um grupo
+ * (0165), que junta várias etapas. Soltar um cartão num grupo leva à PRIMEIRA
+ * etapa dele, e só se o cartão ainda não estiver no grupo — senão o arrasto
+ * dentro de "Contatei" puxaria quem está qualificado de volta para
+ * "mensagem enviada".
+ */
+type Coluna = {
+  chave: string;
+  etapas: EtapaFunil[];
+  rotulo: string;
+  borda: string;
+  regua: string;
+  link: string;
+};
+
+function colunasDoModo(modo: ModoDoFunil): Coluna[] {
+  if (modo === "completo") {
+    return ETAPAS_FUNIL.map((e) => ({
+      chave: e,
+      etapas: [e],
+      rotulo: ETAPA_LABEL[e],
+      borda: BORDA_ETAPA[e],
+      regua: REGUA_ETAPA[e],
+      link: `/corretor/leads?etapa=${e}`,
+    }));
+  }
+  return GRUPOS_FUNIL.map((g) => ({
+    chave: g,
+    etapas: etapasDoGrupo(g),
+    rotulo: GRUPO_LABEL[g],
+    borda: BORDA_GRUPO[g],
+    regua: BARRA_GRUPO[g],
+    link: `/corretor/leads?grupo=${g}`,
+  }));
+}
+
+function chaveDaColuna(etapa: EtapaFunil, modo: ModoDoFunil): string {
+  return modo === "completo" ? etapa : GRUPO_DA_ETAPA[etapa];
+}
 type FiltroSituacao = "todos" | "parados" | "sem_retorno" | "com_visita";
 
 function chaveDaOrigem(lead: Lead): string {
@@ -98,25 +155,34 @@ function rotuloDaOrigem(origem: string): string {
  * Qual coluna está debaixo do ponteiro. O fantasma é `pointer-events-none`,
  * então ele não se intercepta e `elementFromPoint` enxerga a coluna.
  */
-function etapaSob(x: number, y: number): EtapaFunil | null {
-  const alvo = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-etapa]");
-  const etapa = alvo?.dataset.etapa;
-  return etapa && (ETAPAS_FUNIL as readonly string[]).includes(etapa)
-    ? (etapa as EtapaFunil)
-    : null;
+function colunaSob(x: number, y: number): string | null {
+  const alvo = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-coluna]");
+  return alvo?.dataset.coluna ?? null;
 }
 
 export function Quadro({
   leads,
   contagens,
   mostrarDono,
+  modoInicial = "completo",
 }: {
   leads: Lead[];
+  /** Completo (10 etapas) ou resumido (6 grupos). Vem do cookie, para o servidor já desenhar certo. */
+  modoInicial?: ModoDoFunil;
   /** Total real por etapa, do banco — o quadro pode ter recebido menos (teto). */
   contagens?: Record<EtapaFunil, number>;
   mostrarDono: boolean;
 }) {
   const [leadDossie, setLeadDossie] = useState<Lead | null>(null);
+  const [modo, setModo] = useState<ModoDoFunil>(modoInicial);
+  const colunas = useMemo(() => colunasDoModo(modo), [modo]);
+
+  function trocarModo(novo: ModoDoFunil) {
+    setModo(novo);
+    // Cookie e não localStorage: o servidor lê na próxima visita e o quadro
+    // já nasce no modo escolhido, sem piscar o outro antes.
+    gravarModoDoFunil(novo);
+  }
   const [situacao, setSituacao] = useState<FiltroSituacao>("todos");
   const [origem, setOrigem] = useState("todas");
   const [responsavel, setResponsavel] = useState("todos");
@@ -134,7 +200,7 @@ export function Quadro({
    * mesmo cartão ficaria marcado até a próxima navegação.
    */
   const [recemMovido, setRecemMovido] = useState<string | null>(null);
-  const [alvo, setAlvo] = useState<EtapaFunil | null>(null);
+  const [alvo, setAlvo] = useState<string | null>(null);
   const faixaRef = useRef<HTMLDivElement | null>(null);
   const posRef = useRef({ x: 0, y: 0 });
   const arrastando = arrasto !== null;
@@ -249,11 +315,11 @@ export function Quadro({
     setArrasto({
       id: lead.id,
       nome: lead.nome,
-      origem: lead.etapa,
+      origem: chaveDaColuna(lead.etapa, modo),
       x: evento.clientX,
       y: evento.clientY,
     });
-    setAlvo(lead.etapa);
+    setAlvo(chaveDaColuna(lead.etapa, modo));
   }
 
   function mexer(evento: React.PointerEvent<HTMLElement>) {
@@ -262,16 +328,17 @@ export function Quadro({
     setArrasto((atual) =>
       atual ? { ...atual, x: evento.clientX, y: evento.clientY } : atual,
     );
-    setAlvo(etapaSob(evento.clientX, evento.clientY));
+    setAlvo(colunaSob(evento.clientX, evento.clientY));
   }
 
   function soltar(evento: React.PointerEvent<HTMLElement>) {
     if (!arrasto) return;
-    const destino = etapaSob(evento.clientX, evento.clientY);
+    const chave = colunaSob(evento.clientX, evento.clientY);
+    const coluna = colunas.find((c) => c.chave === chave);
     const lead = otimista.find((l) => l.id === arrasto.id);
     // Soltar fora de qualquer coluna é DESISTIR: o cartão volta para onde
     // estava e o banco não é tocado.
-    if (lead && destino && destino !== arrasto.origem) mover(lead, destino);
+    if (lead && coluna && coluna.chave !== arrasto.origem) mover(lead, coluna.etapas[0]);
     setArrasto(null);
     setAlvo(null);
   }
@@ -294,6 +361,26 @@ export function Quadro({
 
   return (
     <div className="mt-6">
+      <div
+        role="group"
+        aria-label="Modo do funil"
+        className="border-linha bg-superficie mb-3 inline-flex rounded-xl border p-1 shadow-sm"
+      >
+        {(["completo", "resumido"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            aria-pressed={modo === m}
+            onClick={() => trocarModo(m)}
+            className={`min-h-11 rounded-lg px-4 text-sm font-semibold transition-colors ${
+              modo === m ? "bg-acento text-sobre-cor shadow-sm" : "text-apoio hover:text-titulo"
+            }`}
+          >
+            {m === "completo" ? "Completo" : "Resumido"}
+          </button>
+        ))}
+      </div>
+
       <section
         aria-label="Filtros do funil"
         className="border-linha bg-superficie mb-4 rounded-2xl border p-3 shadow-sm sm:p-4"
@@ -396,42 +483,42 @@ export function Quadro({
         ref={faixaRef}
         className={`flex snap-x gap-3 overflow-x-auto pb-3 ${arrastando ? "select-none" : ""}`}
       >
-        {ETAPAS_FUNIL.map((etapa) => {
-          const daEtapa = visiveis.filter((lead) => lead.etapa === etapa);
+        {colunas.map((coluna, indice) => {
+          const daEtapa = visiveis.filter((lead) => coluna.etapas.includes(lead.etapa));
           // A tela recebe no máximo `TETO_DO_QUADRO` leads; a contagem do
-          // banco é a verdade. `faltando` é o que a consulta cortou — para
-          // quem lê é uma frase só: "tem mais gente aqui do que estou
-          // mostrando".
+          // banco é a verdade. `faltando` é o que a consulta cortou.
           const totalReal = filtrosAtivos
             ? daEtapa.length
-            : (contagens?.[etapa] ?? daEtapa.length);
+            : contagens
+              ? coluna.etapas.reduce((soma, e) => soma + (contagens[e] ?? 0), 0)
+              : daEtapa.length;
           const faltando = Math.max(0, totalReal - daEtapa.length);
           const vazia = daEtapa.length === 0;
-          const mirada = arrastando && alvo === etapa && arrasto.origem !== etapa;
+          const mirada = arrastando && alvo === coluna.chave && arrasto.origem !== coluna.chave;
 
           return (
             <section
-              key={etapa}
-              data-etapa={etapa}
-              aria-labelledby={`etapa-${etapa}`}
+              key={coluna.chave}
+              data-coluna={coluna.chave}
+              aria-labelledby={`coluna-${coluna.chave}`}
               className={`bg-superficie relative flex shrink-0 snap-start flex-col overflow-hidden rounded-2xl border shadow-sm transition-all ${ALTURA_COLUNA} ${
                 vazia ? LARGURA_VAZIA : LARGURA_COLUNA
-              } ${mirada ? "border-acento bg-acento-lavado" : BORDA_ETAPA[etapa]}`}
+              } ${mirada ? "border-acento bg-acento-lavado" : coluna.borda}`}
             >
               <span
                 aria-hidden
-                className={`h-1 w-full shrink-0 ${REGUA_ETAPA[etapa]}`}
+                className={`h-1 w-full shrink-0 ${coluna.regua}`}
               />
               <header className="border-linha flex items-center justify-between gap-2 border-b px-3 py-3">
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="bg-vidro text-tenue flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-semibold tabular-nums">
-                    {ETAPAS_FUNIL.indexOf(etapa) + 1}
+                    {indice + 1}
                   </span>
                   <h2
-                    id={`etapa-${etapa}`}
+                    id={`coluna-${coluna.chave}`}
                     className="text-fluid-sm text-titulo truncate font-semibold"
                   >
-                    {ETAPA_LABEL[etapa]}
+                    {coluna.rotulo}
                   </h2>
                 </div>
                 <span className="bg-vidro text-apoio min-w-7 rounded-full px-2 py-1 text-center text-[11px] font-semibold tabular-nums">
@@ -452,6 +539,7 @@ export function Quadro({
                       mostrarDono={mostrarDono}
                       arrastado={arrasto?.id === lead.id}
                       chegou={recemMovido === lead.id}
+                      mostrarEtapa={modo === "resumido" && coluna.etapas.length > 1}
                       onMover={(destino) => mover(lead, destino)}
                       onVerDossie={() => setLeadDossie(lead)}
                       onPegar={(evento) => pegar(evento, lead)}
@@ -465,7 +553,7 @@ export function Quadro({
 
               {faltando > 0 && (
                 <Link
-                  href={`/corretor/leads?etapa=${etapa}`}
+                  href={coluna.link}
                   className="border-linha text-corpo hover:border-acento-linha hover:text-titulo text-fluid-xs m-3 mt-0 flex min-h-11 items-center justify-center rounded-xl border transition-colors"
                 >
                   Ver os outros {faltando}
@@ -508,6 +596,7 @@ function Cartao({
   mostrarDono,
   arrastado,
   chegou,
+  mostrarEtapa = false,
   onMover,
   onVerDossie,
   onPegar,
@@ -519,6 +608,8 @@ function Cartao({
   mostrarDono: boolean;
   arrastado: boolean;
   chegou: boolean;
+  /** No resumido a coluna junta etapas: o cartão diz em qual delas está. */
+  mostrarEtapa?: boolean;
   onMover: (etapa: EtapaFunil) => void;
   onVerDossie: () => void;
   onPegar: (evento: React.PointerEvent<HTMLElement>) => void;
@@ -605,6 +696,11 @@ function Cartao({
       </div>
 
       <p className="text-fluid-xs text-tenue mt-1 flex flex-wrap items-center gap-x-1 gap-y-1">
+        {mostrarEtapa && (
+          <span className={`rounded-full px-2 py-0.5 font-medium ${ETIQUETA_ETAPA[lead.etapa]}`}>
+            {ETAPA_LABEL[lead.etapa]}
+          </span>
+        )}
         <ContagemDeTentativas lead={lead} />
         {dataDoCartao(lead)}
         {lead.tipo === "proprietario" && " · tem imóvel"}
