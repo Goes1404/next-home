@@ -591,6 +591,7 @@ export type Database = {
           status: "ativa" | "distratada"
           distratada_em: string | null
           comissao_recebida_em: string | null
+          comissao_prevista_em: string | null
           observacao: string | null
           created_at: string
           atualizado_em: string
@@ -609,6 +610,7 @@ export type Database = {
           status?: "ativa" | "distratada"
           distratada_em?: string | null
           comissao_recebida_em?: string | null
+          comissao_prevista_em?: string | null
           observacao?: string | null
           created_at?: string
           atualizado_em?: string
@@ -627,6 +629,7 @@ export type Database = {
           status?: "ativa" | "distratada"
           distratada_em?: string | null
           comissao_recebida_em?: string | null
+          comissao_prevista_em?: string | null
           observacao?: string | null
           created_at?: string
           atualizado_em?: string
@@ -659,6 +662,59 @@ export type Database = {
           repasse_valor?: number
           repasse_pago_em?: string | null
         }
+        Relationships: []
+      }
+      /** 0166 — contas a pagar e a receber do caixa da imobiliária (só o gestor). */
+      caixa_lancamentos: {
+        Row: {
+          id: string
+          tipo: "entrada" | "saida"
+          categoria: string
+          descricao: string
+          valor: number
+          vencimento: string
+          pago_em: string | null
+          recorrencia_id: string | null
+          observacao: string | null
+          criado_por: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          tipo: "entrada" | "saida"
+          categoria: string
+          descricao: string
+          valor: number
+          vencimento: string
+          pago_em?: string | null
+          recorrencia_id?: string | null
+          observacao?: string | null
+          criado_por?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          tipo?: "entrada" | "saida"
+          categoria?: string
+          descricao?: string
+          valor?: number
+          vencimento?: string
+          pago_em?: string | null
+          recorrencia_id?: string | null
+          observacao?: string | null
+          criado_por?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0166 — saldo da conta informado pelo gestor. */
+      caixa_saldos: {
+        Row: { id: string; valor: number; informado_em: string; criado_por: string | null; created_at: string }
+        Insert: { id?: string; valor: number; informado_em: string; criado_por?: string | null; created_at?: string }
+        Update: { id?: string; valor?: number; informado_em?: string; criado_por?: string | null; created_at?: string }
         Relationships: []
       }
       /** 0115 — a meta mensal do corretor (F5 do financeiro). */

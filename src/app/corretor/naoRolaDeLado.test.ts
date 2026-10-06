@@ -30,6 +30,9 @@ const ROLAGEM_DECLARADA = [
   "(painel)/admin/precos/PrecosManager.tsx",
   "(painel)/admin/anuncios/ContaDaMeta.tsx",
   "(painel)/importar/GmailLeadsExtractor.tsx",
+  // Fluxo de 13 semanas do caixa (06/10/2026): tabela de quatro colunas de
+  // valores; no celular ela rola, e cada linha também está nos cartões acima.
+  "(painel)/financeiro/caixa/page.tsx",
   // Faixa de sugestões dentro da simulação de conversa: são atalhos de teste,
   // não navegação, e a caixa imita a janela do WhatsApp de propósito.
   "(painel)/whatsapp/_componentes/PlaygroundIA.tsx",

@@ -9431,3 +9431,17 @@ Nota: [[ia-escreve-e-o-corretor-manda]].
 - **O toque fura a IA desligada da conversa, não o pedido do cliente**:
   `silencioDaConversa` com `botAtivo: true` forçado.
 - Só o dono do lead envia; o ADM recebe recusa (sairia do número dele).
+
+## O caixa da imobiliária (0166, 06/10/2026)
+
+Nota: [[caixa-da-imobiliaria]]. Primeiro bloco do financeiro do dono.
+
+- **Comissão e repasse saem de `vendas`, nunca de lançamento.** A comissão
+  entra em `comissao_prevista_em` (nova); o repasse vence quando a comissão
+  entrou. Lançar de novo contaria duas vezes.
+- **A projeção erra para o lado pessimista**: entrada atrasada fora, saída
+  atrasada hoje, comissão sem data numa lista à parte. Sem saldo informado,
+  a tela não inventa saldo.
+- **`exigirGestorNaAcao` devolve união sem discriminante**: `if (guarda.erro)`
+  não estreita `corretor` para o TS. Use `if (!guarda.corretor)`.
+- Limites: 200 vendas lidas, sem parcelas de comissão, sem conciliação OFX.

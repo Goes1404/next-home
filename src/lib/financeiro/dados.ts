@@ -44,6 +44,8 @@ export type VendaNaTela = {
   status: StatusVenda;
   distratadaEm: string | null;
   comissaoRecebidaEm: string | null;
+  /** Quando a construtora deve pagar (0166). Previsão, não fato. */
+  comissaoPrevistaEm: string | null;
   observacao: string | null;
   participantes: ParticipanteNaTela[];
 };
@@ -54,7 +56,7 @@ export type LeituraDeVendas =
   | { ok: false; motivo: "sem_tabela" | "erro" };
 
 const COLUNAS =
-  "id, corretor_id, lead_id, empreendimento_id, imovel_descricao, unidade, data_venda, valor_venda, comissao_percentual, comissao_valor, status, distratada_em, comissao_recebida_em, observacao";
+  "id, corretor_id, lead_id, empreendimento_id, imovel_descricao, unidade, data_venda, valor_venda, comissao_percentual, comissao_valor, status, distratada_em, comissao_recebida_em, comissao_prevista_em, observacao";
 
 type LinhaVenda = {
   id: string;
@@ -70,6 +72,7 @@ type LinhaVenda = {
   status: StatusVenda;
   distratada_em: string | null;
   comissao_recebida_em: string | null;
+  comissao_prevista_em: string | null;
   observacao: string | null;
 };
 
@@ -138,6 +141,7 @@ async function montar(linhas: LinhaVenda[]): Promise<VendaNaTela[]> {
     status: l.status,
     distratadaEm: l.distratada_em,
     comissaoRecebidaEm: l.comissao_recebida_em,
+    comissaoPrevistaEm: l.comissao_prevista_em ?? null,
     observacao: l.observacao,
     participantes: participantes
       .filter((p) => p.venda_id === l.id)
