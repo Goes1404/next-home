@@ -60,3 +60,36 @@ export async function getCaixa(hoje: string): Promise<LeituraDoCaixa> {
 
   return { ok: true, lancamentos, saldo };
 }
+
+/** Lançamentos PAGOS entre duas datas (inclusive), para o resultado do mês. */
+export async function getLancamentosPagos(
+  desde: string,
+  ate: string,
+): Promise<{ ok: true; lancamentos: LancamentoDoCaixa[] } | { ok: false; motivo: "sem_tabela" | "erro" }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("caixa_lancamentos")
+    .select("id, tipo, categoria, descricao, valor, vencimento, pago_em, recorrencia_id")
+    .gte("pago_em", desde)
+    .lte("pago_em", ate)
+    .order("pago_em")
+    .limit(5000);
+  if (error) {
+    if (error.code === "PGRST205" || error.code === "42P01") return { ok: false, motivo: "sem_tabela" };
+    console.error("[resultado] falha ao ler lançamentos:", error.message);
+    return { ok: false, motivo: "erro" };
+  }
+  return {
+    ok: true,
+    lancamentos: (data ?? []).map((l) => ({
+      id: l.id,
+      tipo: l.tipo as TipoMovimento,
+      categoria: l.categoria as Categoria,
+      descricao: l.descricao,
+      valor: Number(l.valor),
+      vencimento: l.vencimento,
+      pagoEm: l.pago_em,
+      recorrenciaId: l.recorrencia_id,
+    })),
+  };
+}

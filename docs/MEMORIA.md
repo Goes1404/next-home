@@ -9445,3 +9445,13 @@ Nota: [[caixa-da-imobiliaria]]. Primeiro bloco do financeiro do dono.
 - **`exigirGestorNaAcao` devolve união sem discriminante**: `if (guarda.erro)`
   não estreita `corretor` para o TS. Use `if (!guarda.corretor)`.
 - Limites: 200 vendas lidas, sem parcelas de comissão, sem conciliação OFX.
+
+## O resultado do mês (06/10/2026)
+
+Nota: [[resultado-do-mes-da-imobiliaria]].
+
+- **DRE pelo regime de caixa**, sobre os mesmos movimentos do Caixa
+  (`movimentosDo`): nada de segunda conta nem tabela nova.
+- **O `next build` local pode logar "statement timeout" ao revalidar o
+  catálogo** e ainda assim sair com código 0: é o banco de produção lento
+  naquele instante, não o código. Conferir o código de saída, não o log.

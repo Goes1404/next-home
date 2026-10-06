@@ -185,6 +185,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/financeiro", label: "Vendas", icone: IconeCifrao },
           { href: "/corretor/financeiro/extrato", label: "Extrato e meta", icone: IconeExtrato },
           { href: "/corretor/financeiro/caixa", label: "Caixa", icone: IconeExtrato, gestor: true },
+          { href: "/corretor/financeiro/resultado", label: "Resultado do mês", icone: IconeGrafico, gestor: true },
           { href: "/corretor/financeiro/ranking", label: "Ranking de VGV", icone: IconeTrofeu },
           { href: "/corretor/financeiro/desempenho", label: "Desempenho", icone: IconeGrafico, gestor: true },
         ],
