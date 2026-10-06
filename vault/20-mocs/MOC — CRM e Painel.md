@@ -77,6 +77,7 @@ F0–F6.
 - [[catalogo-exportado-em-excel]] — Imóveis → Exportar Excel: o catálogo numa tabela, com leads por imóvel (06/10)
 - [[lead-sem-resposta-sai-da-base-sozinho]] — 7 tentativas sem resposta + 30 dias: arquiva (nunca exclui), volta se responder; cartão mostra "3/7" (06/10)
 - [[funil-completo-e-resumido]] — 10 etapas no banco, resumido (6 grupos) por botão; IA move Mensagem enviada → Em conversa → Qualificado (06/10)
+- [[ia-escreve-e-o-corretor-manda]] — botão ✨ no funil e na lista: IA faz o rascunho, corretor revisa e envia com cota e espaçamento (06/10)
 - [[o-pedido-do-corretor-e-o-que-vai]] — o chat de arte parou de reescrever o pedido; a receita virou skill visível
 - [[vendas-e-o-modulo-financeiro]] — F1 do financeiro: venda com co-corretagem, comissão por venda, distrato; só o gestor marca dinheiro recebido (0114, 25/09)
 - [[link-de-anuncio-e-rodizio-aleatorio]] — sem especialista; link de anúncio sorteia e não repete o último do produto (0117, 26/09)

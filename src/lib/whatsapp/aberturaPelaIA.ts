@@ -15,6 +15,7 @@ import {
   registrarResultadoEnvio,
   registrarTentativaDeContato,
   reservarCotaCampanha,
+  ativarIaNaConversa,
   vincularInteracaoNaMensagem,
   lerConversaPersistida,
   situacaoDaConversa,
@@ -247,6 +248,158 @@ export async function gerarEEnviarPelaIA(params: {
   } finally {
     await destravarDisparo(escopoResposta, donoResposta);
   }
+}
+
+/**
+ * "A IA escreve e eu mando" (06/10/2026): o RASCUNHO.
+ *
+ * Gera com o mesmo turno do webhook, mas NÃO envia: o texto volta para o
+ * corretor ler e ajustar. É o que mantém a regra N1 (a IA só responde): quem
+ * decide falar com o lead é a pessoa, no toque de enviar. Sem trava e sem
+ * cota aqui, porque nada sai; as duas vêm em `enviarRascunhoDaIA`.
+ */
+export async function rascunharPelaIA(params: {
+  conversa: { id: string; leadId: string | null };
+  instancia: InstanciaParaEnvio;
+  instrucaoAbertura: string;
+}): Promise<{ erro?: string; texto?: string }> {
+  const { conversa, instancia } = params;
+  const silencio = await silencioQueOGestoNaoFura(conversa.id);
+  if (silencio) return { erro: fraseDaDecisao({ responde: false, ...silencio }, null) };
+
+  const { data: corretor } = await createServiceClient()
+    .from("corretores")
+    .select("nome, creci, whatsapp, slug")
+    .eq("id", instancia.corretor_id)
+    .single();
+  if (!corretor) return { erro: "Corretor da conversa não encontrado." };
+
+  const { historico, pendentes } = separarRajada(await historicoRecente(conversa.id));
+  const ehAbertura = pendentes.length === 0;
+  const [catalogo, dossie] = await Promise.all([
+    getEmpreendimentos().catch(() => []),
+    conversa.leadId ? buscarDossieAtual(conversa.leadId) : Promise.resolve(null),
+  ]);
+
+  const turno = await executarTurnoDeAtendimento({
+    identidade: {
+      nomeCorretor: corretor.nome,
+      slugCorretor: corretor.slug ?? undefined,
+      creciCorretor: corretor.creci,
+      telefoneCorretor: corretor.whatsapp,
+      nomeAssistente: instancia.nome_assistente ?? site.assistente,
+      tomVoz: instancia.tom_voz ?? "profissional e acolhedor",
+      regrasDaIa: await regrasDaIaDaInstancia(instancia.id),
+    },
+    catalogo,
+    historico,
+    dossie,
+    vezDoCliente: pendentes,
+    fewShot: { corretorId: instancia.corretor_id, conversaAtualId: conversa.id },
+    instrucaoExtra: ehAbertura ? params.instrucaoAbertura : undefined,
+  });
+  if (turno.resposta.meta.fallback) {
+    return { erro: "A IA está indisponível agora. Tente de novo em instantes." };
+  }
+
+  // Abertura é UM balão; resposta a quem escreveu junta os balões numa
+  // mensagem só, porque o corretor revisa e manda o texto inteiro.
+  const texto = ehAbertura
+    ? (turno.baloes[0] ?? turno.resposta.textoResposta)
+    : turno.baloes.join("\n\n");
+  const limpo = texto.trim();
+  if (!limpo) return { erro: "A IA não conseguiu escrever agora. Tente de novo." };
+  return { texto: limpo };
+}
+
+/**
+ * O envio do rascunho que o corretor revisou.
+ *
+ * Mesmas proteções de `gerarEEnviarPelaIA`: o que é do cliente (pedido para
+ * sair, lead transferido), a trava `resposta:<conversa>` e, quando é
+ * iniciativa nossa (ninguém esperando resposta), a cota com espaçamento
+ * anti-ban. Grava como fala da IA e LIGA a IA na conversa: quando o lead
+ * responder, ela assume (o Live Chat faz o contrário, 0152).
+ */
+export async function enviarRascunhoDaIA(params: {
+  conversa: { id: string; telefoneCliente: string; leadId: string | null };
+  instancia: InstanciaParaEnvio & { instance_name: string };
+  texto: string;
+}): Promise<{ erro?: string; enviou: boolean }> {
+  const { conversa, instancia } = params;
+  const texto = params.texto.trim();
+  if (!texto) return { enviou: false, erro: "Escreva a mensagem antes de enviar." };
+  if (texto.length > 4000) return { enviou: false, erro: "Mensagem longa demais para o WhatsApp." };
+
+  const silencio = await silencioQueOGestoNaoFura(conversa.id);
+  if (silencio) return { enviou: false, erro: fraseDaDecisao({ responde: false, ...silencio }, null) };
+
+  const escopoResposta = `resposta:${conversa.id}`;
+  const donoResposta = `rascunho-${conversa.id}-${Date.now()}`;
+  if (!(await travarDisparo(escopoResposta, donoResposta, 55))) {
+    return { enviou: false, erro: "A IA está respondendo esta conversa agora. Tente em instantes." };
+  }
+  try {
+    const ehAbertura = separarRajada(await historicoRecente(conversa.id)).pendentes.length === 0;
+    if (ehAbertura) {
+      const cota = await reservarCotaCampanha(
+        instancia.id,
+        instancia.conectado_em ? new Date(instancia.conectado_em) : null,
+      );
+      if (!cota.permitido) {
+        if (cota.motivo === "aguardando_intervalo") {
+          const s = Math.max(1, Math.ceil((cota.esperaMs ?? 40_000) / 1000));
+          return { enviou: false, erro: `Espaçamento anti-ban: aguarde ~${s}s e tente de novo.` };
+        }
+        if (cota.motivo === "falha" && cota.detalhe) return { enviou: false, erro: cota.detalhe };
+        return {
+          enviou: false,
+          erro: "A cota de envios do dia acabou. É a proteção anti-ban do seu número.",
+        };
+      }
+    }
+
+    const envio = await enviarMensagemWhatsapp({
+      instanceName: instancia.instance_name,
+      telefone: conversa.telefoneCliente,
+      texto,
+    });
+    await registrarResultadoEnvio(instancia.id, envio.enviado);
+    if (!envio.enviado) {
+      return { enviou: false, erro: "Não foi possível enviar agora. Tente de novo em instantes." };
+    }
+
+    await gravarMensagem({
+      conversaId: conversa.id,
+      remetente: "bot",
+      conteudo: texto,
+      // Mensagem que NÓS iniciamos, revisada pelo corretor: atendimento.
+      conversaLiberada: true,
+      providerMessageId: envio.messageId ?? null,
+      statusEntrega: envio.messageId ? "enviada" : null,
+    });
+    await ativarIaNaConversa(conversa.id);
+
+    // Quem fala com o cliente mexe no funil (etapaAutomatica.test.ts).
+    if (conversa.leadId) {
+      if (ehAbertura) await registrarTentativaDeContato(conversa.leadId);
+      await avancarLeadParaPrimeiroContato(conversa.leadId);
+    }
+    return { enviou: true };
+  } finally {
+    await destravarDisparo(escopoResposta, donoResposta);
+  }
+}
+
+/**
+ * O toque do corretor liga a IA (como "IA assume agora"), então a conversa
+ * desligada não barra o rascunho nem o envio. O que é do CLIENTE barra:
+ * pedido para sair e lead transferido.
+ */
+async function silencioQueOGestoNaoFura(conversaId: string) {
+  const persistida = await lerConversaPersistida(conversaId);
+  if (!persistida) return null;
+  return silencioDaConversa({ ...situacaoDaConversa(persistida), botAtivo: true });
 }
 
 /** Nome legível do portal gravado em `leads.portal_origem`. */

@@ -9417,3 +9417,17 @@ Nota: [[funil-completo-e-resumido]]. Substitui o "funil de cinco" da 0045.
   funções SQL foram o que a 0165 teve de caçar.
 - **Deploy antes da migration**: o código novo aceita as etapas antigas, mas
   o código antigo não conhece as novas.
+
+## A IA escreve e o corretor manda (06/10/2026)
+
+Nota: [[ia-escreve-e-o-corretor-manda]].
+
+- **Botão ✨ no cartão do funil, na lista e na folha de ações.** A IA faz o
+  rascunho com o mesmo turno do webhook; o corretor revisa e envia. A regra
+  N1 continua: a IA não inicia sozinha.
+- **Rascunho e envio são funções separadas** (`rascunharPelaIA` não chama o
+  provedor nem gasta cota; `enviarRascunhoDaIA` pega a trava, a cota e o
+  espaçamento). O envio liga a IA na conversa, ao contrário do Live Chat (0152).
+- **O toque fura a IA desligada da conversa, não o pedido do cliente**:
+  `silencioDaConversa` com `botAtivo: true` forçado.
+- Só o dono do lead envia; o ADM recebe recusa (sairia do número dele).

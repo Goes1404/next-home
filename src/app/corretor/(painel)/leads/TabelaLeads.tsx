@@ -14,6 +14,7 @@ import {
 import { FolhaAcoesLead } from "@/app/corretor/(painel)/_componentes/FolhaAcoesLead";
 import { REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { BotaoAvancar } from "@/app/corretor/(painel)/_componentes/BotaoAvancar";
+import { BotaoMensagemPelaIA } from "@/app/corretor/(painel)/_componentes/MensagemPelaIA";
 import type { Lead } from "@/lib/types";
 import { ArrowRight, ChevronDown, Mail, Phone } from "lucide-react";
 
@@ -249,6 +250,7 @@ export function TabelaLeads({
                   />
                 </button>
 
+                {lead.telefone && <BotaoMensagemPelaIA leadId={lead.id} nome={lead.nome} />}
                 {whatsapp && (
                   <a
                     href={whatsapp}
@@ -422,6 +424,9 @@ function FragmentoLinha({
         </td>
         <td className="px-3 py-2.5">
           <div className="flex items-center justify-end gap-1.5">
+            {lead.telefone && (
+              <BotaoMensagemPelaIA leadId={lead.id} nome={lead.nome} className="h-9 w-9" />
+            )}
             <AcoesContato lead={lead} aoVivo />
             <ChevronDown
               className={`h-4 w-4 text-tenue transition-transform ${aberto ? "rotate-180" : ""}`}

@@ -27,6 +27,7 @@ import {
   REGUA_ETAPA,
 } from "@/app/corretor/(painel)/_componentes/etapas";
 import { BotaoAvancar } from "@/app/corretor/(painel)/_componentes/BotaoAvancar";
+import { BotaoMensagemPelaIA } from "@/app/corretor/(painel)/_componentes/MensagemPelaIA";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { ModalDossieLead } from "./ModalDossieLead";
 import {
@@ -754,6 +755,8 @@ function Cartao({
             </option>
           ))}
         </select>
+
+        {lead.telefone && <BotaoMensagemPelaIA leadId={lead.id} nome={lead.nome} className="rounded-lg" />}
 
         {whatsapp && (
           <a

@@ -409,7 +409,13 @@ describe("todo portal do painel carrega a paleta e o módulo", () => {
   // O balão do consultor (11/09) é o terceiro, e nasce com a mesma regra: ele
   // vive no LAYOUT, então aparece em toda tela do painel — uma cor errada ali
   // seria a mais visível de todas.
-  const portalados = ["GavetaLateral.tsx", "pessoas/GavetaConversa.tsx", "BalaoConsultor.tsx"];
+  // A janela "IA escreve" (06/10) é o quarto portal.
+  const portalados = [
+    "GavetaLateral.tsx",
+    "pessoas/GavetaConversa.tsx",
+    "BalaoConsultor.tsx",
+    "_componentes/MensagemPelaIA.tsx",
+  ];
 
   it.each(portalados)("%s repete data-rota e data-modulo no nó portalado", (arq) => {
     const fonte = readFileSync(join(process.cwd(), "src/app/corretor/(painel)", arq), "utf8")
