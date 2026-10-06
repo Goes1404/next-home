@@ -78,6 +78,14 @@ export default async function ImoveisPage() {
                 {l.rotulo} →
               </Link>
             ))}
+            {/* Rota de download, não navegação: `<a>` comum, sem prefetch. */}
+            <a
+              href="/api/painel/catalogo-excel"
+              download
+              className="text-acento-suave text-fluid-sm inline-flex min-h-11 items-center gap-1 font-medium underline decoration-transparent underline-offset-4 hover:decoration-current"
+            >
+              Exportar Excel ↓
+            </a>
           </div>
         }
       />

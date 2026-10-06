@@ -9359,3 +9359,16 @@ todas as empresas, com `empresa_id` + RLS**. Motivo: atualizar N instalações
 enquanto a plataforma muda toda semana. O risco aceito é o vazamento entre
 empresas por filtro esquecido; toda tabela, consulta e cache passa a levar a
 empresa.
+
+## O catálogo exporta para Excel (06/10/2026)
+
+Nota: [[catalogo-exportado-em-excel]].
+
+- **Imóveis → "Exportar Excel"** baixa o catálogo inteiro numa tabela
+  (`/api/painel/catalogo-excel`). O `.xlsx` é escrito sem biblioteca
+  (`xlsxEscrita.ts`), como o leitor de ZIP da importação.
+- **Leads pela RLS da sessão**, sem arquivados, um por lead pelo imóvel de
+  interesse ou do cadastro, paginando de 1000 em 1000.
+- **LibreOffice headless não abre `.xlsx` neste contêiner**, nem o gerado
+  pelo openpyxl ("source file could not be loaded"). Para validar planilha
+  aqui, use `pip install openpyxl` e leia por ele.
