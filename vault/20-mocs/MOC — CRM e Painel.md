@@ -75,6 +75,7 @@ F0–F6.
 - [[action-de-outro-build-vira-sem-conexao]] — 404/500 ao clicar é aba velha, não rede
 - [[ordem-do-catalogo-no-site-tem-tela]] — Imóveis → Ordem no site: subir, descer e destaque; os 6 primeiros vão para a home (24/09)
 - [[catalogo-exportado-em-excel]] — Imóveis → Exportar Excel: o catálogo numa tabela, com leads por imóvel (06/10)
+- [[lead-sem-resposta-sai-da-base-sozinho]] — 7 tentativas sem resposta + 30 dias: arquiva (nunca exclui), volta se responder; cartão mostra "3/7" (06/10)
 - [[o-pedido-do-corretor-e-o-que-vai]] — o chat de arte parou de reescrever o pedido; a receita virou skill visível
 - [[vendas-e-o-modulo-financeiro]] — F1 do financeiro: venda com co-corretagem, comissão por venda, distrato; só o gestor marca dinheiro recebido (0114, 25/09)
 - [[link-de-anuncio-e-rodizio-aleatorio]] — sem especialista; link de anúncio sorteia e não repete o último do produto (0117, 26/09)

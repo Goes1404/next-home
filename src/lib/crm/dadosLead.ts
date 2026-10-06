@@ -34,6 +34,8 @@ export type LeadDetalhado = Lead & {
   imovelInteresse: { nome: string; slug: string } | null;
   /** Preenchido = fora das listas (0055). A ficha continua abrindo por link direto. */
   arquivadoEm: string | null;
+  /** "sem_resposta" quando foi a regra de 7 tentativas (0164) que arquivou. */
+  arquivadoMotivo: string | null;
   /** Quantas vezes NÓS já falamos com ele: campanha, follow-up, Live Chat (0060). */
   tentativasContato: number;
   /** Dessas, quantas desde a última fala dele. Zera quando ele responde. */
@@ -70,7 +72,7 @@ const SELECT_DETALHE = `
   id, nome, email, telefone, mensagem, tipo, detalhes, origem, created_at,
   etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, portal_origem, anuncio_origem,
   orcamento_min, orcamento_max, renda_mensal, dormitorios_min, regiao_interesse, empreendimento_id,
-  arquivado_em, tentativas_contato, tentativas_sem_resposta, ultima_tentativa_em, nao_contatar_em,
+  arquivado_em, arquivado_motivo, tentativas_contato, tentativas_sem_resposta, ultima_tentativa_em, nao_contatar_em,
   corretor:corretores(id, nome),
   empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome, slug, endereco),
   imovel_interesse:empreendimentos!leads_imovel_interesse_id_fkey(nome, slug)
@@ -99,6 +101,7 @@ type LinhaDetalhe = {
   dormitorios_min: number | null;
   regiao_interesse: string | null;
   arquivado_em: string | null;
+  arquivado_motivo: string | null;
   tentativas_contato: number | null;
   tentativas_sem_resposta: number | null;
   ultima_tentativa_em: string | null;
@@ -154,6 +157,7 @@ export async function getLeadDetalhado(id: string): Promise<LeadDetalhado | null
     dormitoriosMin: row.dormitorios_min,
     regiaoInteresse: row.regiao_interesse,
     arquivadoEm: row.arquivado_em,
+    arquivadoMotivo: row.arquivado_motivo ?? null,
     naoContatarEm: row.nao_contatar_em ?? null,
     empreendimentoId: row.empreendimento_id,
     imovelInteresse: row.imovel_interesse,

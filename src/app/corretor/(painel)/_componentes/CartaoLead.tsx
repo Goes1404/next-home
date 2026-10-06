@@ -1,6 +1,7 @@
 import { ETIQUETA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { linkWhatsappPara, site } from "@/lib/site";
 import { ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
+import { TETO_SEM_RESPOSTA, descreverContagem, nivelDaContagem } from "@/lib/crm/higieneDaBase";
 
 /**
  * Utilidades de lead compartilhadas entre a tabela de `/corretor/leads`
@@ -115,4 +116,34 @@ export function diasParado(lead: Lead): number | null {
 /** Data curta para o cartão compacto do quadro, onde não cabe hora. */
 export function dataDoCartao(lead: Lead): string {
   return dataCurta.format(new Date(lead.criadoEm));
+}
+
+const COR_DA_CONTAGEM = {
+  normal: "border-linha text-apoio",
+  atencao: "border-alerta/40 text-alerta",
+  ultima: "border-perigo/50 bg-perigo/10 text-perigo",
+} as const;
+
+/**
+ * Tentativas sem resposta como NÚMERO no cartão (0164): "3/7". Com 7, e 30
+ * dias desde a primeira, o lead é arquivado sozinho. Some em zero, porque
+ * contador que vive em zero ensina a ignorar o contador.
+ */
+export function ContagemDeTentativas({ lead }: { lead: Lead }) {
+  const n = lead.tentativasSemResposta ?? 0;
+  const nivel = nivelDaContagem(n);
+  if (nivel === "nenhum") return null;
+  const descricao = descreverContagem(n);
+  return (
+    <span
+      title={descricao}
+      aria-label={descricao}
+      className={`text-fluid-xs inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 font-semibold tabular-nums ${COR_DA_CONTAGEM[nivel]}`}
+    >
+      <svg viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z" />
+      </svg>
+      {n}/{TETO_SEM_RESPOSTA}
+    </span>
+  );
 }

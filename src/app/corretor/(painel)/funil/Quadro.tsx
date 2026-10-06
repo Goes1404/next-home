@@ -17,6 +17,7 @@ import {
   dataDoCartao,
   diasParado,
   linkWhatsappLead,
+  ContagemDeTentativas,
 } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import { BORDA_ETAPA, REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { BotaoAvancar } from "@/app/corretor/(painel)/_componentes/BotaoAvancar";
@@ -603,7 +604,8 @@ function Cartao({
         </div>
       </div>
 
-      <p className="text-fluid-xs text-tenue mt-1">
+      <p className="text-fluid-xs text-tenue mt-1 flex flex-wrap items-center gap-x-1 gap-y-1">
+        <ContagemDeTentativas lead={lead} />
         {dataDoCartao(lead)}
         {lead.tipo === "proprietario" && " · tem imóvel"}
         {/* Só a partir de 3 dias: antes disso "parado" é só o fim de semana. */}

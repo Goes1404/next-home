@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import {
   BadgePortal,
+  ContagemDeTentativas,
   dataDoCartao,
   dataHora,
   EtiquetaEtapa,
@@ -239,6 +240,7 @@ export function TabelaLeads({
                     </span>
                     <span className="text-fluid-xs text-tenue mt-0.5 flex min-w-0 items-center gap-1.5">
                       <EtiquetaEtapa etapa={lead.etapa} />
+                      <ContagemDeTentativas lead={lead} />
                       <span className="min-w-0 truncate">{dataDoCartao(lead)}</span>
                     </span>
                   </span>
@@ -410,7 +412,10 @@ function FragmentoLinha({
           </td>
         )}
         <td className="px-3 py-2.5">
-          <EtiquetaEtapa etapa={lead.etapa} />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <EtiquetaEtapa etapa={lead.etapa} />
+            <ContagemDeTentativas lead={lead} />
+          </div>
         </td>
         <td className="text-fluid-sm px-3 py-2.5 whitespace-nowrap text-apoio">
           {dataDoCartao(lead)}

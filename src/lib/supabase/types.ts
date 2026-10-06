@@ -2262,6 +2262,7 @@ export type Database = {
         Row: {
           anuncio_origem: string | null
           arquivado_em: string | null
+          arquivado_motivo: string | null
           campos_do_corretor: Json
           consentimento_lgpd: boolean
           corretor_id: string | null
@@ -2303,6 +2304,7 @@ export type Database = {
           telefone: string | null
           telefone_e164: string | null
           tentativas_contato: number
+          primeira_tentativa_sem_resposta_em: string | null
           tentativas_sem_resposta: number
           ultima_tentativa_em: string | null
           tipo: string
@@ -2318,6 +2320,7 @@ export type Database = {
         Insert: {
           anuncio_origem?: string | null
           arquivado_em?: string | null
+          arquivado_motivo?: string | null
           campos_do_corretor?: Json
           consentimento_lgpd?: boolean
           corretor_id?: string | null
@@ -2359,6 +2362,7 @@ export type Database = {
           telefone?: string | null
           telefone_e164?: string | null
           tentativas_contato?: number
+          primeira_tentativa_sem_resposta_em?: string | null
           tentativas_sem_resposta?: number
           ultima_tentativa_em?: string | null
           tipo?: string
@@ -2374,6 +2378,7 @@ export type Database = {
         Update: {
           anuncio_origem?: string | null
           arquivado_em?: string | null
+          arquivado_motivo?: string | null
           campos_do_corretor?: Json
           consentimento_lgpd?: boolean
           corretor_id?: string | null
@@ -2415,6 +2420,7 @@ export type Database = {
           telefone?: string | null
           telefone_e164?: string | null
           tentativas_contato?: number
+          primeira_tentativa_sem_resposta_em?: string | null
           tentativas_sem_resposta?: number
           ultima_tentativa_em?: string | null
           tipo?: string

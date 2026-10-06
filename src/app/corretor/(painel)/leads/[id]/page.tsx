@@ -32,6 +32,7 @@ import { getVendasDoLead } from "@/lib/financeiro/dados";
 import { lerResumoDoLead } from "@/lib/crm/resumoDoLead";
 import { ResumoDoLeadCartao } from "@/app/corretor/(painel)/_componentes/ResumoDoLeadCartao";
 import { perguntaDoLead } from "@/lib/consultor/perguntaDoLead";
+import { TETO_SEM_RESPOSTA } from "@/lib/crm/higieneDaBase";
 
 export const metadata: Metadata = { title: "Lead" };
 
@@ -127,7 +128,11 @@ export default async function FichaLeadPage({
         {lead.tentativasContato > 0 && (
           <p
             className={`text-fluid-xs mt-2 ${
-              lead.tentativasSemResposta >= 3 ? "text-alerta" : "text-tenue"
+              lead.tentativasSemResposta >= TETO_SEM_RESPOSTA - 1
+                ? "text-perigo"
+                : lead.tentativasSemResposta >= 3
+                  ? "text-alerta"
+                  : "text-tenue"
             }`}
           >
             {lead.tentativasContato}{" "}
@@ -135,8 +140,9 @@ export default async function FichaLeadPage({
             {lead.ultimaTentativaEm &&
               ` · última em ${dataHora.format(new Date(lead.ultimaTentativaEm))}`}
             {lead.tentativasSemResposta > 0 &&
-              ` · ${lead.tentativasSemResposta} sem resposta`}
-            {lead.tentativasSemResposta >= 3 && " — talvez seja hora de parar"}
+              ` · ${lead.tentativasSemResposta} de ${TETO_SEM_RESPOSTA} sem resposta`}
+            {lead.tentativasSemResposta === TETO_SEM_RESPOSTA - 1 &&
+              " — a próxima é a última antes de arquivar"}
           </p>
         )}
 
@@ -298,6 +304,7 @@ export default async function FichaLeadPage({
       <ArquivarLead
         leadId={lead.id}
         arquivado={Boolean(lead.arquivadoEm)}
+        semResposta={lead.arquivadoMotivo === "sem_resposta"}
         nome={lead.nome}
         podeExcluir
       />

@@ -49,7 +49,7 @@ export async function arquivarLeadsEmLote(leadIds: string[]): Promise<ResultadoL
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("leads")
-    .update({ arquivado_em: new Date().toISOString() })
+    .update({ arquivado_em: new Date().toISOString(), arquivado_motivo: null })
     .in("id", ids)
     .is("arquivado_em", null)
     .select("id");
@@ -71,7 +71,7 @@ export async function restaurarLeadsEmLote(leadIds: string[]): Promise<Resultado
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("leads")
-    .update({ arquivado_em: null })
+    .update({ arquivado_em: null, arquivado_motivo: null })
     .in("id", ids)
     .not("arquivado_em", "is", null)
     .select("id");

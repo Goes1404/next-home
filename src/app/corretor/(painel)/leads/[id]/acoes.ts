@@ -252,7 +252,7 @@ export async function arquivarLead(leadId: string): Promise<ResultadoCrm> {
 
   const { data, error } = await ctx.supabase
     .from("leads")
-    .update({ arquivado_em: new Date().toISOString() })
+    .update({ arquivado_em: new Date().toISOString(), arquivado_motivo: null })
     .eq("id", leadId)
     .select("id");
 
@@ -270,7 +270,7 @@ export async function restaurarLead(leadId: string): Promise<ResultadoCrm> {
 
   const { data, error } = await ctx.supabase
     .from("leads")
-    .update({ arquivado_em: null })
+    .update({ arquivado_em: null, arquivado_motivo: null })
     .eq("id", leadId)
     .select("id");
 

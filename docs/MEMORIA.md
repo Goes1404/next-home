@@ -9383,3 +9383,19 @@ Nota: [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]].
 - **Link colado vira exportação CSV** (`/export?format=csv&gid=`), só com a
   planilha compartilhada por link. Exportação pública do Google responde por
   `curl` neste contêiner, então dá para testar com planilha real.
+
+## Lead sem resposta sai da base sozinho (0164, 06/10/2026)
+
+Nota: [[lead-sem-resposta-sai-da-base-sozinho]].
+
+- **7 tentativas sem resposta e 30 dias desde a primeira: arquiva, nunca
+  exclui.** Quem faz isso é o pg_cron `arquivar-leads-sem-resposta` (06h10
+  SP). O lead volta sozinho quando responde, porque `registrar_resposta_do_lead`
+  desarquiva o que foi arquivado com `arquivado_motivo = 'sem_resposta'`.
+  Lead arquivado à mão continua arquivado. Etapa `fechado` e visita futura
+  ficam fora.
+- **O cartão do funil e a lista mostram "3/7"** (`ContagemDeTentativas`): a
+  partir de 3 fica âmbar, e na 6ª, vermelho. O teto está em dois lugares (SQL
+  e `higieneDaBase.ts`), e o teste confere que é o mesmo número.
+- **Arquivar ou restaurar pelo painel limpa `arquivado_motivo`.** Sem isso,
+  um lead que o corretor arquivou de propósito voltaria sozinho.
