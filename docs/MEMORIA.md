@@ -9308,3 +9308,6 @@ Nota: [[quem-nao-quer-contato-e-lido-sempre]].
   mede por sonda de frases, não por consulta.
 - **Não havia como desfazer `nao_contatar_em`** (o grant existia, a tela não).
   O botão "Liberar contato" fica na ficha do lead, em "Contato autorizado".
+- **Religar a IA sozinha depois de X horas foi recusado (06/10/2026).** A
+  conversa assumida pelo corretor fica com a IA desligada até ele ativar. A
+  rede é o aviso de 30 min no WhatsApp dele. Nota: [[quando-a-ia-responde]].

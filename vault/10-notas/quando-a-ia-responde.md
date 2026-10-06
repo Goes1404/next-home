@@ -14,7 +14,7 @@ codigo:
   - supabase/migrations/0150_remove_trava_de_liberacao.sql
 fonte: avaliação 6/10 do fluxo de ativação (04/10/2026)
 created: 2026-10-04
-updated: 2026-10-03
+updated: 2026-10-06
 summary: A decisão de responder estava em quatro lugares e a tela refazia as condições por conta própria. Hoje é decidirSeAIaResponde, em duas camadas (conversa, depois número); webhook, varredura atrasada e cabeçalho da conversa perguntam a ela. A trava de liberação e cliente_conhecido saíram do banco. O silêncio grava motivo e contexto em ia_interacoes.silencio.
 ---
 
@@ -106,3 +106,12 @@ nem a ler a coluna removida; o webhook não carimba motivo à mão.
 - [[palavra-chave-cadastra-o-lead]]
 - [[trava-de-palavra-chave-e-cliente-conhecido]] (superada)
 - [[fluxo-do-webhook-whatsapp]]
+
+## Religar sozinha depois de X horas: decidido que NÃO (06/10/2026)
+
+Proposto como item 2 da área I2 do roadmap (opcional, por configuração) e
+recusado pelo usuário: a conversa que o corretor assumiu continua com a IA
+desligada até ele ativar (palavra-chave ou "IA assume agora"). A rede para o
+cliente que fica esperando é o aviso de 30 minutos no WhatsApp do corretor
+([[cliente-sem-resposta-avisa-o-corretor]]), não a volta automática da IA.
+Não reabrir sem um motivo novo.
