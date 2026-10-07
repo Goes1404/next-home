@@ -1,5 +1,6 @@
 "use client";
 
+import { fraseSemWhatsapp } from "@/lib/whatsapp/pausaAutomatica";
 import { listaRecemCriada } from "./listaRecemCriada";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
@@ -105,7 +106,8 @@ export function EnvioImediato({
           empreendimentoNome: null,
           totalLeads: resultado.totalLeads,
         }),
-        `Saindo para ${resultado.totalLeads} lead${resultado.totalLeads === 1 ? "" : "s"}, com 35 a 75 segundos entre uma mensagem e outra — independente do horário.`,
+        `Saindo para ${resultado.totalLeads} lead${resultado.totalLeads === 1 ? "" : "s"}, com 35 a 75 segundos entre uma mensagem e outra — independente do horário.` +
+          fraseSemWhatsapp(resultado.semWhatsapp),
       );
     });
   }

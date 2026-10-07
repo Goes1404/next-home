@@ -77,7 +77,7 @@ const TETOS_KB = {
   // variáveis, A/B que decide sozinho e o motivo do limite do dia, tudo no
   // assistente. Vermelho desde 04/10 sem ninguém ver.
   // 07/10: +1 KB: o menu ganhou Fiscal e Contador (navegação vai em toda rota).
-  "/corretor/(painel)/campanhas/page": 810, // 07/10: +1 KB, o mascote da IA no botão do consultor
+  "/corretor/(painel)/campanhas/page": 811, // 07/10: +1 KB, aviso de números sem WhatsApp ao criar a lista (pausaAutomatica.ts)
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
   // 28/09: +3 KB na home e +7 na listagem são o coração de favorito em cada

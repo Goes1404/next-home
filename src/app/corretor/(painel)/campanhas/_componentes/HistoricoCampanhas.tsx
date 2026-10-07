@@ -218,6 +218,15 @@ export function HistoricoCampanhas({
                 </p>
               </div>
 
+              {c.pausaAutomatica && (
+                <p
+                  role="status"
+                  className="bg-alerta-lavado border-alerta-linha text-alerta text-fluid-xs w-full rounded-xl border px-3 py-2 break-words"
+                >
+                  {c.pausaAutomatica} Revise a lista antes de retomar.
+                </p>
+              )}
+
               {/* O caminho da lista, da entrega à venda (Fase 1). */}
               <div className="text-fluid-xs grid w-full grid-cols-3 gap-x-4 gap-y-2 sm:w-auto sm:grid-cols-6">
                 <Etapa rotulo="Enviadas" valor={`${c.totalEnviados}/${c.totalLeads} (${perc}%)`} />

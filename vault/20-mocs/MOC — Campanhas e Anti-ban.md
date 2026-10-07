@@ -23,6 +23,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[espacamento-anti-ban-so-existia-no-papel]]
 - [[o-lado-certo-de-errar-numa-trava]]
 - [[trocar-numero-zera-reputacao]]
+- [[conta-da-bruna-restringida-e-a-lista-que-para-sozinha]] ⚠️ o WhatsApp restringiu um número por lista fria; a lista agora tira número sem WhatsApp e para sozinha (0171-0172, 07/10)
 - [[aquecimento-do-numero-pelo-uso]] ⚠️ o limite diário segue o uso da última semana, não a idade (0158, 03/10)
 
 ## Diagnóstico

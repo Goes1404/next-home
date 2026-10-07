@@ -20,6 +20,8 @@ import {
 import { horariosDeVisita } from "@/lib/crm/agendaDoCorretor";
 import { enviarMidiasDaLista, type MidiaDaLista } from "./midiasDaLista";
 import { alimentarListasVivas } from "./listasVivas";
+import { MOTIVO_SEM_WHATSAPP, motivoDePausaAutomatica, sinaisDesdeABase } from "./pausaAutomatica";
+import { lerSinaisDaLista } from "./sinaisDaLista";
 import {
   avancarLeadParaPrimeiroContato,
   destravarDisparo,
@@ -460,11 +462,33 @@ async function processarInstancia(ctx: {
        */
       const { data: aindaAtiva } = await supabase
         .from("whatsapp_campanhas")
-        .select("id, corretor_id, criterio, midias, empreendimento_id")
+        .select("id, corretor_id, criterio, midias, empreendimento_id, pausa_base")
         .eq("id", item.campanha_id)
         .eq("status", "em_andamento")
         .maybeSingle();
       if (!aindaAtiva) {
+        idsCampanhas.splice(idsCampanhas.indexOf(item.campanha_id), 1);
+        if (idsCampanhas.length === 0) {
+          parcial.motivo = "fila_vazia";
+          break;
+        }
+        continue;
+      }
+
+      /*
+       * Pausa automática (07/10/2026): números sem WhatsApp demais ou gente
+       * pedindo para sair param a lista antes da próxima mensagem. Nasceu da
+       * restrição da conta da Bruna pelo WhatsApp no meio de uma lista de
+       * 300. Conta só o que veio depois do último "Retomar" (`pausa_base`).
+       */
+      const sinais = await lerSinaisDaLista(supabase, item.campanha_id);
+      const motivoDaPausa = sinais ? motivoDePausaAutomatica(sinaisDesdeABase(sinais, aindaAtiva.pausa_base)) : null;
+      if (motivoDaPausa) {
+        await supabase
+          .from("whatsapp_campanhas")
+          .update({ status: "pausada", pausa_automatica: motivoDaPausa })
+          .eq("id", item.campanha_id)
+          .eq("status", "em_andamento");
         idsCampanhas.splice(idsCampanhas.indexOf(item.campanha_id), 1);
         if (idsCampanhas.length === 0) {
           parcial.motivo = "fila_vazia";
@@ -629,7 +653,7 @@ async function processarInstancia(ctx: {
         // adiada) ou vira erro definitivo.
         const atualizacao =
           classe === "inexistente"
-            ? { status: "erro" as const, erro_motivo: "Número não está no WhatsApp", tentativas }
+            ? { status: "erro" as const, erro_motivo: MOTIVO_SEM_WHATSAPP, tentativas }
             : classe === "dados"
               ? { status: "erro" as const, erro_motivo: MOTIVO_TELEFONE_INVALIDO, tentativas }
               : classe === "incerto"

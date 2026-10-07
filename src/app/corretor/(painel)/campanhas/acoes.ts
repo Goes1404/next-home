@@ -20,7 +20,9 @@ import type { Empreendimento, EtapaFunil } from "@/lib/types";
 import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
 import { processarFilaCampanhas } from "@/lib/whatsapp/campaignDispatcher";
 import { gerarMensagensCampanhaPersonalizadas, montarFilaCampanha } from "@/lib/whatsapp/campaignQueue";
-import { provedorConfigurado } from "@/lib/whatsapp/provider";
+import { conferirNumerosNoWhatsapp, provedorConfigurado } from "@/lib/whatsapp/provider";
+import { lerSinaisDaLista } from "@/lib/whatsapp/sinaisDaLista";
+import type { SinaisDaLista } from "@/lib/whatsapp/pausaAutomatica";
 import { dentroDaJanela, dentroDaJanelaDoCorretor, fraseDoLimite } from "@/lib/whatsapp/antiBan";
 import { calcularLimiteDoDia } from "@/lib/whatsapp/repositorio";
 import { linkDaPagina } from "@/lib/whatsapp/resolverMidia";
@@ -306,7 +308,14 @@ export async function sugerirAberturas(params: {
 }
 
 export type ResultadoCriarCampanha =
-  { ok: true; campanhaId: string; totalLeads: number } | { erro: string };
+  | {
+      ok: true;
+      campanhaId: string;
+      totalLeads: number;
+      /** Quantos saíram da lista por não ter WhatsApp (consulta antes da fila). */
+      semWhatsapp: number;
+    }
+  | { erro: string };
 
 export type ParametrosDaLista = {
   titulo: string;
@@ -381,7 +390,7 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
    */
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("status_conexao")
+    .select("status_conexao, instance_name")
     .eq("corretor_id", corretor.id)
     .maybeSingle();
   if (instancia?.status_conexao !== "conectado") {
@@ -423,6 +432,23 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
   }
   if (elegiveis.length === 0) {
     return { erro: "Nenhum lead elegível para este filtro no momento." };
+  }
+
+  /*
+   * Número sem WhatsApp sai da lista ANTES da fila (07/10/2026). A conta da
+   * Bruna foi restringida no meio de uma lista em que 17 de 131 tentativas
+   * eram números sem WhatsApp; na da Carolini, 24 de 39. Só sai quem o
+   * provedor diz que NÃO tem; "não sei" fica, e o disparador trata no envio.
+   */
+  const existencia = await conferirNumerosNoWhatsapp({
+    instanceName: instancia.instance_name ?? "",
+    telefones: elegiveis.map((l) => l.telefone),
+  });
+  const antesDaConferencia = elegiveis.length;
+  elegiveis = elegiveis.filter((l) => existencia.get(l.telefone) !== false);
+  const semWhatsapp = antesDaConferencia - elegiveis.length;
+  if (elegiveis.length === 0) {
+    return { erro: "Nenhum dos números desta lista tem WhatsApp. Confira os telefones dos leads." };
   }
 
   const viva = Boolean(params.viva) && params.filtro !== "selecionados";
@@ -496,7 +522,7 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
   acenderCorrenteDeDisparo();
 
   revalidatePath("/corretor/campanhas");
-  return { ok: true, campanhaId: campanha.id, totalLeads: elegiveis.length };
+  return { ok: true, campanhaId: campanha.id, totalLeads: elegiveis.length, semWhatsapp };
 }
 
 /**
@@ -650,6 +676,8 @@ export type CampanhaListada = {
   midias: number;
   /** Pode ser repetida (guarda o critério) — listas antigas não guardavam. */
   repetivel: boolean;
+  /** Por que o disparador pausou a lista sozinho (0172), ou null. */
+  pausaAutomatica: string | null;
 };
 
 /** Quantas listas o histórico mostra por vez. */
@@ -669,7 +697,7 @@ export async function listarCampanhas(antesDe?: string): Promise<CampanhaListada
   let consulta = supabase
     .from("whatsapp_campanhas")
     .select(
-      "id, titulo, total_leads, total_enviados, total_respondidos, status, created_at, mensagem_base_b, variante_vencedora, vencedora_em, viva, viva_ate, midias, criterio, empreendimento:empreendimentos(nome)",
+      "id, titulo, total_leads, total_enviados, total_respondidos, status, created_at, mensagem_base_b, variante_vencedora, vencedora_em, viva, viva_ate, midias, criterio, pausa_automatica, empreendimento:empreendimentos(nome)",
     )
     .eq("corretor_id", corretor.id)
     .order("created_at", { ascending: false })
@@ -701,6 +729,7 @@ export async function listarCampanhas(antesDe?: string): Promise<CampanhaListada
     vivaAte: c.viva && c.viva_ate && new Date(c.viva_ate) > new Date() ? c.viva_ate : null,
     midias: Array.isArray(c.midias) ? c.midias.length : 0,
     repetivel: Boolean(c.criterio),
+    pausaAutomatica: c.status === "pausada" ? c.pausa_automatica : null,
   }));
 }
 
@@ -919,7 +948,18 @@ export async function pausarCampanha(campanhaId: string): Promise<{ ok: true } |
 }
 
 export async function retomarCampanha(campanhaId: string): Promise<{ ok: true } | { erro: string }> {
-  const r = await mudarEstadoDaLista(campanhaId, "pausada", "em_andamento");
+  /*
+   * Os sinais de hoje viram a base (0172): a pausa automática só volta com
+   * sinais NOVOS. Sem isso, retomar uma lista que parou sozinha a pararia de
+   * novo na mensagem seguinte. Ler antes de mudar o estado; falha de leitura
+   * deixa a base como estava.
+   */
+  const supabase = await createClient();
+  const sinais = await lerSinaisDaLista(supabase, campanhaId);
+  const r = await mudarEstadoDaLista(campanhaId, "pausada", "em_andamento", {
+    pausa_automatica: null,
+    ...(sinais ? { pausa_base: sinais } : {}),
+  });
   if ("ok" in r) acenderCorrenteDeDisparo();
   return r;
 }
@@ -956,13 +996,14 @@ async function mudarEstadoDaLista(
   campanhaId: string,
   de: "em_andamento" | "pausada",
   para: "em_andamento" | "pausada",
+  extra: { pausa_automatica?: null; pausa_base?: SinaisDaLista } = {},
 ): Promise<{ ok: true } | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
   const supabase = await createClient();
   const { data } = await supabase
     .from("whatsapp_campanhas")
-    .update({ status: para })
+    .update({ status: para, ...extra })
     .eq("id", campanhaId)
     .eq("corretor_id", corretor.id)
     .eq("status", de)
@@ -1024,8 +1065,7 @@ export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
   };
 }
 
-export type ResultadoEnvioImediato =
-  { ok: true; campanhaId: string; totalLeads: number } | { erro: string };
+export type ResultadoEnvioImediato = ResultadoCriarCampanha;
 
 /**
  * Dispara UMA mensagem para todos os leads, a qualquer hora.

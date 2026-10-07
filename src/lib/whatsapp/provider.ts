@@ -1,6 +1,7 @@
 import "server-only";
 
 import { decidirPareamentoPorNumero } from "./pareamento";
+import { lerRespostaDeNumeros, NUMEROS_POR_CONSULTA } from "./numerosNoWhatsapp";
 import { normalizarTelefoneBr } from "./telefone";
 
 /**
@@ -664,6 +665,57 @@ export async function enviarMensagemWhatsapp(params: {
       detalhe: err instanceof Error ? err.message : String(err),
     };
   }
+}
+
+/**
+ * Quais destes números têm WhatsApp (`POST /chat/whatsappNumbers`). Usada
+ * pela lista de transmissão antes de montar a fila, para número sem WhatsApp
+ * sair da lista. Consulta em lotes de `NUMEROS_POR_CONSULTA`, um de cada vez.
+ *
+ * Nunca lança. Lote que falha fica fora do mapa ("não sei"), e o número
+ * continua na lista: o disparador trata o inexistente no envio.
+ */
+export async function conferirNumerosNoWhatsapp(params: {
+  instanceName: string;
+  telefones: string[];
+}): Promise<Map<string, boolean>> {
+  const resultado = new Map<string, boolean>();
+  const config = configDoProvedor();
+  if (!config || !params.instanceName) return resultado;
+
+  const porNumero = new Map<string, string>();
+  for (const t of params.telefones) {
+    const n = normalizarTelefoneBr(t);
+    if (n && !porNumero.has(n)) porNumero.set(n, t);
+  }
+  const numeros = [...porNumero.keys()];
+
+  for (let i = 0; i < numeros.length; i += NUMEROS_POR_CONSULTA) {
+    const lote = numeros.slice(i, i + NUMEROS_POR_CONSULTA);
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(
+        `${config.baseUrl}/chat/whatsappNumbers/${encodeURIComponent(params.instanceName)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: config.apiKey },
+          signal: controller.signal,
+          body: JSON.stringify({ numbers: lote }),
+        },
+      );
+      clearTimeout(timeoutId);
+      if (!res.ok) continue;
+      const lidos = lerRespostaDeNumeros(lote, await res.json().catch(() => null));
+      for (const [numero, tem] of lidos) {
+        const original = porNumero.get(numero);
+        if (original) resultado.set(original, tem);
+      }
+    } catch {
+      // Lote sem resposta: os números dele ficam como "não sei".
+    }
+  }
+  return resultado;
 }
 
 export type MidiaBaixada =

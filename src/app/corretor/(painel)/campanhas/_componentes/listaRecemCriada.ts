@@ -31,5 +31,6 @@ export function listaRecemCriada(params: {
     vivaAte: params.viva ? new Date(Date.now() + 30 * 86_400_000).toISOString() : null,
     midias: params.midias ?? 0,
     repetivel: true,
+    pausaAutomatica: null,
   };
 }

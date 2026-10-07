@@ -1,5 +1,6 @@
 "use client";
 
+import { fraseSemWhatsapp } from "@/lib/whatsapp/pausaAutomatica";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 
 import type { FiltroLeadsCampanha, OpcoesDeRecorte, RecorteDeOrigem } from "@/lib/crm/publicoDaCampanha";
@@ -509,9 +510,10 @@ export function NovaCampanha({
             midias: midias.length,
             viva: viva && !selecaoManual,
           }),
-          modoEnvio === "agendado"
+          (modoEnvio === "agendado"
             ? `Lista agendada para ${new Date(iniciarEm!).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}, com ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}.`
-            : `Lista de transmissão criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens começam a sair sozinhas no próximo horário seguro.`,
+            : `Lista de transmissão criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens começam a sair sozinhas no próximo horário seguro.`) +
+            fraseSemWhatsapp(resultado.semWhatsapp),
         );
 
         // Volta ao começo para a próxima lista, sem nada da anterior.

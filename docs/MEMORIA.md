@@ -9615,3 +9615,20 @@ Nota: [[o-imovel-nao-tem-mais-corretor-dono]].
 - Desconectado, o cliente vai para o WhatsApp do perfil, fora da plataforma:
   sem IA e sem lead automático no CRM.
 
+
+## A conta da Bruna foi restringida pelo WhatsApp (0171-0172, 07/10/2026)
+
+Nota: [[conta-da-bruna-restringida-e-a-lista-que-para-sozinha]].
+
+- **Restrição por "mensagens automáticas ou em massa"** no meio de uma lista
+  fria de 300 (114 enviadas, 17 sem WhatsApp). Aquecimento e espaçamento
+  estavam certos: o que o WhatsApp restringe é primeira mensagem para quem
+  nunca escreveu, de número comum. Massa segura só pela API oficial.
+- **A criação da lista confere os números** (`/chat/whatsappNumbers`, lotes de
+  50) e tira só quem vem com `exists: false`.
+- **A lista para sozinha** (≥20% sem WhatsApp com 5+, ou ≥3 pedidos para sair
+  e ≥2%), com o motivo em `pausa_automatica`. Retomar grava `pausa_base` para
+  não repausar pelos mesmos sinais.
+- A Evolution já confere o número antes de enviar: "Número não está no
+  WhatsApp" nunca chegou a ser mensagem. E pelas regras novas a lista da
+  Bruna não teria parado (13% sem WhatsApp).

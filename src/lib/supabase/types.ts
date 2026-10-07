@@ -2804,6 +2804,8 @@ export type Database = {
           viva_ate: string | null
           viva_varrida_em: string | null
           janela_liberada_ate: string | null
+          pausa_automatica: string | null
+          pausa_base: Json | null
           vencedora_em: string | null
           midias: Json
           contexto_template: Json | null
@@ -2828,6 +2830,8 @@ export type Database = {
           viva_ate?: string | null
           viva_varrida_em?: string | null
           janela_liberada_ate?: string | null
+          pausa_automatica?: string | null
+          pausa_base?: Json | null
           vencedora_em?: string | null
           midias?: Json
           contexto_template?: Json | null
@@ -2852,6 +2856,8 @@ export type Database = {
           viva_ate?: string | null
           viva_varrida_em?: string | null
           janela_liberada_ate?: string | null
+          pausa_automatica?: string | null
+          pausa_base?: Json | null
           vencedora_em?: string | null
           midias?: Json
           contexto_template?: Json | null
