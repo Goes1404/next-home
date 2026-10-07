@@ -5,7 +5,7 @@ import { ChatBase } from "./_componentes/ChatBase";
 import type { PerguntaDeChat } from "./_componentes/chatTipos";
 import { BlocosDaResposta } from "./consultor/BlocosDaResposta";
 import type { EstadoDoChatConsultor } from "./consultor/acoes";
-import { Mascote } from "./_componentes/Mascote";
+import { Mascote } from "@/components/marca/Mascote";
 
 const SUGESTOES = [
   "Renda de 8 mil: o que serve?",

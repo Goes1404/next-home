@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { moduloAtivo } from "./_componentes/navegacao";
 import { useAvisos } from "./_componentes/Avisos";
-import { Mascote } from "./_componentes/Mascote";
+import { Mascote } from "@/components/marca/Mascote";
 import { enviarMensagemDoConsultor, type EstadoDoChatConsultor } from "./consultor/acoes";
 
 /*
@@ -188,7 +188,7 @@ export function BalaoConsultor() {
           className="group pointer-events-auto absolute right-3 bottom-[calc(var(--nav-mobile-h)+0.75rem)] flex h-20 w-[5.25rem] cursor-pointer items-end justify-center transition-transform duration-200 hover:-translate-y-1 active:scale-95 md:right-5 md:bottom-5"
         >
           {/* O mascote com o halo (07/10/2026): ver `Mascote`. */}
-          <Mascote altura={80} className="transition-transform duration-300 group-hover:-rotate-6" />
+          <Mascote altura={80} destaque className="transition-transform duration-300 group-hover:-rotate-6" />
         </button>
       )}
     </div>,

@@ -65,14 +65,14 @@ const TETOS_KB = {
   // 28/09: +1 KB em criar-imagem, editor do imóvel e vídeo é
   // `mensagensDoSite` (as mensagens que o porteiro reconhece), puxado via
   // `site.ts`. Sem ela, o visitante novo do site é ignorado pelo webhook.
-  "/corretor/(painel)/imoveis/criar-imagem/page": 1013,
+  "/corretor/(painel)/imoveis/criar-imagem/page": 1015, // 07/10: +1 KB, o mascote da IA com destaque (disco e pulso) no botão do consultor
   // 30/09: +1 KB. Três ícones novos no menu (Construtoras, Crédito e Marca
   // tinham ícone repetido); o menu vai em toda rota do painel.
   "/corretor/(painel)/imoveis/[slug]/importar/page": 1024, // 07/10: +1 KB, o mascote da IA no botão do consultor
   // O editor do imóvel mostra na mesma tela as unidades, o andamento da obra
   // e os leads que combinam (com "reabrir perdidos"): 26/09.
   "/corretor/(painel)/imoveis/[slug]/page": 833, // 07/10: +1 KB, o mascote da IA no botão do consultor
-  "/corretor/(painel)/marketing/video/page": 1005,
+  "/corretor/(painel)/marketing/video/page": 1007, // 07/10: +1 KB, o mascote da IA com destaque (disco e pulso) no botão do consultor
   // 03/10: +7 KB nas listas de transmissão (0153-0155): pausar, cancelar,
   // variáveis, A/B que decide sozinho e o motivo do limite do dia, tudo no
   // assistente. Vermelho desde 04/10 sem ninguém ver.

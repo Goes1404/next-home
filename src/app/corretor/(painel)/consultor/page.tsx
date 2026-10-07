@@ -1,7 +1,7 @@
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
-import { Mascote } from "@/app/corretor/(painel)/_componentes/Mascote";
+import { Mascote } from "@/components/marca/Mascote";
 import { abrirConversaDoConsultor, listarConversas } from "./acoes";
 import { ChatConsultor } from "./ChatConsultor";
 

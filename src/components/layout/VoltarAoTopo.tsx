@@ -12,8 +12,8 @@ import { rolarAoTopo } from "@/components/motion/lenis";
  * está ativo (`rolarAoTopo`): `window.scrollTo` por fora do laço dele sai
  * aos trancos.
  *
- * Mora um degrau ACIMA do botão do WhatsApp (que é `bottom-4 right-4`,
- * 56px): os dois flutuam no mesmo canto e o degrau é fixo — o WhatsApp some
+ * Mora um degrau ACIMA do botão do WhatsApp (que é `bottom-4 right-4`;
+ * desde 07/10/2026 é o mascote, com 76px de altura): os dois flutuam no mesmo canto e o degrau é fixo — o WhatsApp some
  * ao rolar para baixo no celular, e um degrau condicional faria este pular.
  */
 const DISTANCIA_PARA_APARECER = 700;
@@ -36,7 +36,7 @@ export function VoltarAoTopo() {
       title="Voltar ao topo"
       aria-hidden={!longe}
       tabIndex={longe ? 0 : -1}
-      className={`fixed right-5 bottom-[5.5rem] z-30 flex size-11 items-center justify-center rounded-full border border-linha-forte bg-superficie/90 text-titulo shadow-lg md:backdrop-blur-md transition-[opacity,transform] duration-300 hover:-translate-y-0.5 sm:right-6 sm:bottom-[6.25rem] ${
+      className={`fixed right-5 bottom-[6.75rem] z-30 flex size-11 items-center justify-center rounded-full border border-linha-forte bg-superficie/90 text-titulo shadow-lg md:backdrop-blur-md transition-[opacity,transform] duration-300 hover:-translate-y-0.5 sm:right-6 sm:bottom-[7.25rem] ${
         longe ? "opacity-95 hover:opacity-100" : "pointer-events-none translate-y-2 opacity-0"
       }`}
     >

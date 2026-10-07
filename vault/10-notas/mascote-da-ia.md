@@ -5,8 +5,8 @@ tags: [painel, decisao]
 type: decisao
 status: ativo
 custou: baixo
-codigo: ["src/app/corretor/(painel)/_componentes/Mascote.tsx", "src/app/corretor/(painel)/BalaoConsultor.tsx", "src/app/corretor/(painel)/PainelDoConsultor.tsx", "public/marca/mascote.webp", "public/marca/mascote-original.png"]
-summary: O mascote da IA (robô azul em 3D, sem fundo, sobre um disco azul com anel e a estrela do peito) é o botão flutuante do consultor, o ícone do cabeçalho do chat e o destaque da tela cheia do consultor. O botão de voltar ao topo subiu um degrau para não encostar nele.
+codigo: ["src/components/marca/Mascote.tsx", "src/components/layout/WhatsappCta.tsx", "src/app/corretor/(painel)/BalaoConsultor.tsx", "src/app/corretor/(painel)/PainelDoConsultor.tsx", "public/marca/mascote.webp", "public/marca/mascote-original.png"]
+summary: O mascote da IA é também o botão de WhatsApp do site (com selo verde). O mascote (robô azul em 3D, sem fundo, sobre um disco azul com anel e a estrela do peito) é o botão flutuante do consultor, o ícone do cabeçalho do chat e o destaque da tela cheia do consultor. O botão de voltar ao topo subiu um degrau para não encostar nele.
 updated: 2026-10-07
 ---
 
@@ -41,3 +41,15 @@ Liga com [[o-consultor-em-balao-flutuante]].
   é azul em toda tela.
 - Aparece no botão flutuante (80px), no cabeçalho do chat da IA (44px) e no
   cabeçalho da tela cheia do consultor (96px, só a partir de `sm`).
+
+## No site e com destaque (07/10/2026)
+
+- `Mascote` mudou para `src/components/marca/` (site e painel) e ganhou
+  `destaque`: disco mais cheio, anel claro, sombra azul e um anel que pulsa a
+  cada 6s (`motion-safe:anel-pulso`, a exceção que o WhatsApp do site já
+  tinha). O pulso é centrado por margem, não por translate, porque a animação
+  escreve `transform`.
+- **Botão do canto do painel:** `destaque`.
+- **Site:** o botão flutuante de WhatsApp virou o mascote (76px) com um selo
+  verde do WhatsApp no canto: o mascote chama o olho, o selo diz o destino. O
+  `VoltarAoTopo` do site subiu para `bottom-[6.75rem]` / `sm:bottom-[7.25rem]`.
