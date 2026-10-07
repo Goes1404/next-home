@@ -9601,4 +9601,17 @@ Nota: [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]].
 - **Aba "Foto ou print"** em Adicionar leads, com câmera direta no celular.
 - **Log de runtime do Hobby guarda 1 hora**: `get_runtime_logs` com `since`
   maior devolve 400. Para saber se algo falhou ontem, não há log.
+- **Até 10 fotos de uma vez**, uma chamada da action por foto (o corpo de
+  12 MB não cabe tudo junto); contato repetido entre prints entra uma vez.
+
+## O link pessoal não manda mais o cliente para outro corretor (07/10/2026)
+
+Nota: [[o-imovel-nao-tem-mais-corretor-dono]].
+
+- **A 0130 só dava preferência no sorteio**: número do corretor do link
+  desconectado ou ele em pausa, o clique ia para outro corretor. Agora `/wa`
+  e `/wa/<imóvel>` usam `numeroDoLinkPessoal` antes do sorteio (conectado na
+  plataforma, senão o WhatsApp do perfil). Sem link pessoal, segue o rodízio.
+- Desconectado, o cliente vai para o WhatsApp do perfil, fora da plataforma:
+  sem IA e sem lead automático no CRM.
 

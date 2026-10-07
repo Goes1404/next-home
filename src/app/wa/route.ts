@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
+import { numeroDoLinkPessoal } from "@/lib/whatsapp/numeroDoLinkPessoal";
 import { ehChaveIntencao } from "@/lib/whatsapp/porteiro";
 import { diaEmSaoPauloISO, ipDaRequisicao, segredoDaMedicao, visitanteDoClique } from "@/lib/whatsapp/medicaoDoLink";
 
@@ -17,7 +18,7 @@ export const dynamic = "force-dynamic";
  * (0111).
  *
  * O resto é igual à porta do imóvel: sorteia entre quem tem número
- * conectado (preferindo o corretor do link pessoal), registra o clique e
+ * conectado (ou vai direto ao corretor do link pessoal), registra o clique e
  * nunca termina em tela quebrada.
  */
 export async function GET(req: Request) {
@@ -27,11 +28,17 @@ export async function GET(req: Request) {
   const bruto = url.searchParams.get("i");
   const intencao = ehChaveIntencao(bruto) ? bruto : null;
 
-  // Link pessoal (cookie de 30 dias): PREFERÊNCIA no sorteio, nunca filtro.
-  const preferido = (await getCorretorAtivo())?.id ?? undefined;
-  const { data: sorteio } = await supabase
-    .rpc("sortear_corretor_whatsapp", { preferido })
-    .maybeSingle<{ corretor_id: string; telefone: string }>();
+  // Link pessoal (cookie de 30 dias): vai SEMPRE para o corretor do link,
+  // nunca para o sorteio (07/10/2026).
+  const doLink = await getCorretorAtivo();
+  const numeroDoLink = doLink ? await numeroDoLinkPessoal(supabase, doLink) : null;
+  const sorteio = numeroDoLink
+    ? { corretor_id: doLink!.id, telefone: numeroDoLink }
+    : (
+        await supabase
+          .rpc("sortear_corretor_whatsapp")
+          .maybeSingle<{ corretor_id: string; telefone: string }>()
+      ).data;
 
   const destino = destinoDoPorteiro({ telefone: sorteio?.telefone, nomeImovel: null, intencao, complemento: url.searchParams.get("m") });
 

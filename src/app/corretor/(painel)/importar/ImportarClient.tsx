@@ -263,6 +263,7 @@ function Importador({
   const [consentimento, setConsentimento] = useState(false);
 
   const [analisando, iniciarAnalise] = useTransition();
+  const [lendoFoto, setLendoFoto] = useState<{ atual: number; total: number } | null>(null);
   const [importando, iniciarImportacao] = useTransition();
 
   const selecionados = linhas.filter((l) => l.incluir);
@@ -304,14 +305,35 @@ function Importador({
     });
   }
 
-  /** A foto é lida assim que escolhida: não há o que conferir antes de mandar. */
-  function lerFoto(campo: HTMLInputElement) {
-    const arquivo = campo.files?.[0];
+  /**
+   * As fotos são lidas assim que escolhidas, UMA chamada por foto: juntas
+   * passariam do teto de corpo da Server Action (12 MB), e uma foto ruim não
+   * pode derrubar a leitura das outras.
+   */
+  function lerFotos(campo: HTMLInputElement) {
+    const arquivos = Array.from(campo.files ?? []).slice(0, TETO_DE_FOTOS);
+    const passou = (campo.files?.length ?? 0) > TETO_DE_FOTOS;
     campo.value = "";
-    if (!arquivo) return;
-    const dados = new FormData();
-    dados.set("arquivo", arquivo);
-    analisar(dados);
+    if (arquivos.length === 0) return;
+    iniciarAnalise(async () => {
+      try {
+        const juntos = await lerVariasFotos(arquivos, (n) => setLendoFoto({ atual: n, total: arquivos.length }));
+        if (passou) {
+          juntos.aviso = [`Lemos as ${TETO_DE_FOTOS} primeiras fotos; envie o resto numa próxima leva.`, juntos.aviso]
+            .filter(Boolean)
+            .join(" ");
+        }
+        receber(juntos);
+      } catch (falha) {
+        setErro(
+          ehActionDeOutroBuild(falha)
+            ? "O painel foi atualizado enquanto esta tela estava aberta. Recarregue a página e tente de novo."
+            : "A leitura não terminou. Confira a conexão e tente de novo.",
+        );
+      } finally {
+        setLendoFoto(null);
+      }
+    });
   }
 
   function confirmar() {
@@ -567,13 +589,18 @@ function Importador({
                 analisando && "pointer-events-none opacity-50",
               )}
             >
-              {analisando ? "Lendo a foto…" : "Escolher foto ou print"}
+              {lendoFoto
+                ? `Lendo foto ${lendoFoto.atual} de ${lendoFoto.total}…`
+                : analisando
+                  ? "Lendo…"
+                  : "Escolher fotos ou prints"}
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 className="sr-only"
                 disabled={analisando}
-                onChange={(e) => lerFoto(e.currentTarget)}
+                onChange={(e) => lerFotos(e.currentTarget)}
               />
             </label>
             <label
@@ -589,12 +616,12 @@ function Importador({
                 capture="environment"
                 className="sr-only"
                 disabled={analisando}
-                onChange={(e) => lerFoto(e.currentTarget)}
+                onChange={(e) => lerFotos(e.currentTarget)}
               />
             </label>
           </div>
           <p className="text-fluid-xs text-tenue mt-3">
-            Uma foto por vez, até 10 MB. Foto de perto e com boa luz é lida melhor; número que a IA não consegue ler
+            Até {TETO_DE_FOTOS} fotos de uma vez, 10 MB cada. Foto de perto e com boa luz é lida melhor; número que a IA não consegue ler
             fica de fora em vez de sair errado.
           </p>
         </div>
@@ -651,6 +678,61 @@ function Importador({
       )}
     </div>
   );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Várias fotos                                                                */
+/* -------------------------------------------------------------------------- */
+
+const TETO_DE_FOTOS = 10;
+
+/**
+ * Lê uma foto por vez e junta o resultado. O mesmo contato em dois prints
+ * (a mesma conversa, dois pedaços da mesma lista) entra uma vez só. Foto que
+ * não rendeu ninguém vira aviso nomeando o arquivo, sem cancelar as outras.
+ */
+async function lerVariasFotos(
+  arquivos: File[],
+  aoComecar: (n: number) => void,
+): Promise<ResultadoAnalise> {
+  const candidatos: CandidatoRevisado[] = [];
+  const vistos = new Set<string>();
+  const semNada: string[] = [];
+  let algumaComIa = false;
+
+  for (const [i, arquivo] of arquivos.entries()) {
+    aoComecar(i + 1);
+    const dados = new FormData();
+    dados.set("arquivo", arquivo);
+    const r = await analisarArquivo(dados);
+    if (!r.candidatos?.length) {
+      semNada.push(arquivo.name || `foto ${i + 1}`);
+      continue;
+    }
+    if (r.metodo === "ia") algumaComIa = true;
+    for (const c of r.candidatos) {
+      const chave = c.telefone ? c.telefone.replace(/\D/g, "") : `${c.nome}#${i}`;
+      if (vistos.has(chave)) continue;
+      vistos.add(chave);
+      candidatos.push(c);
+    }
+  }
+
+  if (candidatos.length === 0) {
+    return {
+      erro:
+        arquivos.length === 1
+          ? "Não achamos nenhum telefone legível na foto. Uma foto mais de perto, com boa luz, costuma resolver."
+          : "Não achamos nenhum telefone legível nas fotos. Fotos mais de perto, com boa luz, costumam resolver.",
+    };
+  }
+
+  const avisos = [
+    algumaComIa ? "Lido por IA a partir das fotos: confira nome e telefone de cada linha antes de confirmar." : null,
+    semNada.length > 0 ? `Sem telefone legível em: ${semNada.join(", ")}.` : null,
+  ].filter(Boolean);
+
+  return { candidatos, metodo: algumaComIa ? "ia" : undefined, aviso: avisos.join(" ") || undefined };
 }
 
 /* -------------------------------------------------------------------------- */

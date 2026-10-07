@@ -99,3 +99,7 @@ Formatos aceitos desde 24/09/2026: conversa do WhatsApp (`.zip` **e**
   (`capture="environment"`); a leitura começa ao escolher.
 - `detalheImagem` atravessa `llm.ts` → `openai.ts`; o padrão continua `low`
   (o tradutor de imagem não muda).
+- **Várias fotos de uma vez** (07/10, mesmo dia): até 10, lidas uma chamada
+  por foto (juntas passariam dos 12 MB da Server Action), com o mesmo
+  telefone em dois prints entrando uma vez só. Foto sem telefone legível vira
+  aviso com o nome do arquivo.

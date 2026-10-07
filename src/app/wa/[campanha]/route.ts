@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
+import { numeroDoLinkPessoal } from "@/lib/whatsapp/numeroDoLinkPessoal";
 import { ehChaveIntencao, resolverCampanha } from "@/lib/whatsapp/porteiro";
 import { diaEmSaoPauloISO, ipDaRequisicao, segredoDaMedicao, visitanteDoClique } from "@/lib/whatsapp/medicaoDoLink";
 
@@ -89,14 +90,17 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   }
 
   type Sorteio = { corretor_id: string; telefone: string };
-  // Link pessoal (cookie de 30 dias): PREFERÊNCIA no sorteio, nunca filtro.
-  // Desconectado, o corretor do link simplesmente não ganha a vez.
-  const preferido = (await getCorretorAtivo())?.id ?? undefined;
-  const primeiro = await supabase
-    .rpc("sortear_corretor_whatsapp", { p_empreendimento: alvo.id, preferido })
-    .maybeSingle<Sorteio>();
-  let sorteio = primeiro.data;
-  const erroDoSorteio = primeiro.error;
+  // Link pessoal (cookie de 30 dias): vai SEMPRE para o corretor do link,
+  // nunca para o sorteio — antes, desconectado, ele perdia o cliente para
+  // outro corretor (07/10/2026). Anúncio pago sem cookie segue no rodízio.
+  const doLink = await getCorretorAtivo();
+  const numeroDoLink = doLink ? await numeroDoLinkPessoal(supabase, doLink) : null;
+  let sorteio: Sorteio | null = numeroDoLink ? { corretor_id: doLink!.id, telefone: numeroDoLink } : null;
+  const primeiro = sorteio
+    ? null
+    : await supabase.rpc("sortear_corretor_whatsapp", { p_empreendimento: alvo.id }).maybeSingle<Sorteio>();
+  if (primeiro) sorteio = primeiro.data;
+  const erroDoSorteio = primeiro?.error;
   if (erroDoSorteio) {
     // Banco sem a assinatura nova (0117/0130): sorteia
     // pela versão antiga em vez de perder o clique pago.
