@@ -9547,7 +9547,7 @@ Nota: [[mascote-da-ia]].
 - **Recortar um objeto de uma imagem com fundo detalhado não vale a briga**:
   o rembg manteve o disco brilhante atrás do robô, e cor ou pontos (SAM)
   deixaram bordas sujas. Pedir a imagem sem o elemento ao lado resolveu.
-- **Mascote no site** (07/10): o botão flutuante de WhatsApp virou o mascote
-  com selo verde do WhatsApp; `Mascote` foi para `src/components/marca/` com a
-  variante `destaque` (disco cheio + anel que pulsa), usada também no botão do
-  painel. O voltar ao topo do site subiu um degrau.
+- **O mascote é só do painel** (07/10): chegou a virar o botão de WhatsApp do
+  site e foi desfeito no mesmo dia, a pedido — no site o botão é o do
+  WhatsApp, com o símbolo dele. `Mascote` mora em `src/components/marca/`, com
+  a variante `destaque` (disco cheio + anel que pulsa) no botão do painel.
