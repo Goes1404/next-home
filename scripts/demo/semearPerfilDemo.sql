@@ -274,3 +274,49 @@ begin
   select demo, d, 9, 19 from generate_series(1, 6) d
   on conflict do nothing;
 end $$;
+
+-- Histórico de vendas dos meses anteriores (07/10/2026), para o gráfico de
+-- VGV por mês da tela de Vendas ter ritmo. Cada venda ganha um lead em
+-- "fechado", sem conversa nem visita.
+do $$
+declare
+  demo uuid := (select id from public.corretores where slug = 'demo-lucas-andrade');
+  imoveis uuid[] := array(
+    select id from public.empreendimentos where publicado order by ordem limit 8
+  );
+  nomes text[] := array['Wagner Lopes','Cristina Prado','Maurício Leal','Débora Assis','Rogério Paiva',
+                        'Sabrina Melo','Antônio Queiroz','Viviane Rios','Nelson Barros','Lívia Arantes'];
+  meses_atras int[] := array[5, 5, 4, 3, 3, 2, 2, 1, 1, 1];
+  i int;
+  lead uuid;
+  venda uuid;
+  imovel uuid;
+  quando date;
+  valor numeric;
+  hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+begin
+  if demo is null then raise exception 'Perfil de demonstração não encontrado.'; end if;
+  if exists (select 1 from public.vendas where corretor_id = demo and observacao = 'Venda de demonstração (histórico)') then
+    raise exception 'O histórico de vendas já foi criado.';
+  end if;
+  for i in 1..array_length(nomes, 1) loop
+    imovel := imoveis[1 + ((i * 3) % array_length(imoveis, 1))];
+    quando := (date_trunc('month', hoje) - make_interval(months => meses_atras[i]))::date + (3 + (i * 7) % 22);
+    valor := 360000 + ((i * 53000) % 290000);
+    insert into public.leads (nome, telefone, origem, tipo, consentimento_lgpd, created_at, corretor_id,
+      origem_atribuicao, etapa, etapa_alterada_em, empreendimento_id, imovel_interesse_id, tentativas_contato)
+    values (nomes[i], '(11) 90000-' || lpad((2000 + i)::text, 4, '0'),
+      (array['meta/ctwa','site/formulario','indicacao','portal/zap'])[1 + (i % 4)], 'comprador', true,
+      quando - 40, demo, 'manual', 'fechado', quando, imovel, imovel, 3)
+    returning id into lead;
+    insert into public.lead_interacoes (lead_id, corretor_id, tipo, conteudo, created_at)
+    values (lead, demo, 'etapa', 'Etapa alterada para fechado', quando);
+    insert into public.vendas (corretor_id, lead_id, empreendimento_id, unidade, data_venda, valor_venda,
+      comissao_percentual, comissao_valor, status, comissao_recebida_em, observacao)
+    values (demo, lead, imovel, 'Apto ' || (200 + i * 7)::text, quando, valor, 5, valor * 0.05, 'ativa',
+      case when meses_atras[i] >= 2 then quando + 30 when i = 8 then quando + 20 end, 'Venda de demonstração (histórico)')
+    returning id into venda;
+    insert into public.venda_participantes (venda_id, corretor_id, parte_percentual, repasse_percentual, repasse_valor, repasse_pago_em)
+    values (venda, demo, 100, 40, valor * 0.05 * 0.40, case when meses_atras[i] >= 2 then quando + 35 end);
+  end loop;
+end $$;

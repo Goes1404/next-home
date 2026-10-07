@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCorretorLogado } from "@/lib/corretorSessao";
-import { getVendas, vgvPorCorretor, type VendaNaTela } from "@/lib/financeiro/dados";
-import { formatarPercentual, formatarReais, hojeEmSaoPaulo, vgvCreditado } from "@/lib/financeiro/venda";
+import { getVendas } from "@/lib/financeiro/dados";
+import { montarPainelDeVendas } from "@/lib/financeiro/painelDeVendas";
+import { formatarPercentual, formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
+import { PainelDeVendas } from "./PainelDeVendas";
 
 export const metadata: Metadata = { title: "Vendas" };
 
@@ -61,42 +63,15 @@ export default async function VendasPage() {
   }
 
   const vendas = leitura.vendas;
-  const hoje = hojeEmSaoPaulo();
-  const inicioMes = `${hoje.slice(0, 7)}-01`;
-  const inicioAno = `${hoje.slice(0, 4)}-01-01`;
-
-  const somar = (lista: VendaNaTela[]) =>
-    gestor
-      ? lista.reduce((s, v) => s + vgvCreditado(v, 100), 0)
-      : (vgvPorCorretor(lista).get(corretor.id) ?? 0);
-  const vgvMes = somar(vendas.filter((v) => v.dataVenda >= inicioMes));
-  const vgvAno = somar(vendas.filter((v) => v.dataVenda >= inicioAno));
-  const vendasMes = vendas.filter((v) => v.dataVenda >= inicioMes && v.status === "ativa").length;
-  const aReceber = vendas
-    .filter((v) => v.status === "ativa")
-    .flatMap((v) => v.participantes.filter((p) => (gestor || p.corretorId === corretor.id) && !p.repassePagoEm))
-    .reduce((s, p) => s + p.repasseValor, 0);
-
-  const numeros = [
-    { rotulo: gestor ? "VGV da equipe no mês" : "Seu VGV no mês", valor: formatarReais(vgvMes) },
-    { rotulo: gestor ? "VGV da equipe no ano" : "Seu VGV no ano", valor: formatarReais(vgvAno) },
-    { rotulo: "Vendas no mês", valor: String(vendasMes) },
-    { rotulo: gestor ? "Repasses a pagar" : "Sua comissão a receber", valor: formatarReais(aReceber) },
-  ];
+  const painel = montarPainelDeVendas(vendas, { corretorId: gestor ? null : corretor.id, hoje: hojeEmSaoPaulo() });
 
   return (
     <div>
       {cabecalho}
 
-      <dl className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {numeros.map((n) => (
-          <div key={n.rotulo} className="cartao flex flex-col-reverse gap-1 p-4">
-            <dt className="text-fluid-xs text-tenue">{n.rotulo}</dt>
-            <dd className="text-fluid-lg text-titulo font-bold break-words">{n.valor}</dd>
-          </div>
-        ))}
-      </dl>
+      <PainelDeVendas painel={painel} gestor={gestor} />
 
+      <h2 className="text-fluid-base text-titulo mt-6 font-medium">Todas as vendas</h2>
       {vendas.length === 0 ? (
         <div className="cartao mt-4 space-y-3 p-5">
           <p className="text-fluid-base text-titulo font-medium">Nenhuma venda registrada ainda.</p>
@@ -105,7 +80,7 @@ export default async function VendasPage() {
           </p>
         </div>
       ) : (
-        <ul className="mt-4 space-y-3">
+        <ul className="mt-3 space-y-3">
           {vendas.map((v) => (
             <li key={v.id}>
               <Link

@@ -9514,3 +9514,16 @@ Nota: [[perfil-de-demonstracao-do-corretor]].
 - **`leads_visita_sem_conflito_idx`** recusa duas visitas do mesmo corretor no
   mesmo instante: seed de visitas precisa de horários únicos.
 - Até ser apagado, ele entra nos números da equipe do ADM e no ranking.
+
+## Indicadores e gráficos na tela de Vendas (07/10/2026)
+
+Nota: [[painel-da-tela-de-vendas]].
+
+- **Seis indicadores e três gráficos** (VGV por mês, comissão recebida /
+  liberada / aguardando, ranking de imóveis), calculados em
+  `montarPainelDeVendas` (pura). Corretor soma a parte dele; gestor, a equipe.
+- **Rótulo sem quebra dentro de item de grid estoura o cartão no celular**
+  (`min-width: auto`), e o `scrollWidth` da página não acusa porque o site
+  corta o excesso. Medir o `getBoundingClientRect` dos cartões.
+- O perfil demo ganhou 10 vendas de maio a setembro (segundo bloco de
+  `scripts/demo/semearPerfilDemo.sql`), para as colunas por mês terem ritmo.
