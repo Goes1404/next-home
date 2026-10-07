@@ -54,3 +54,25 @@ Liga com [[vendas-e-o-modulo-financeiro]] e [[graficos-que-decidem]].
 - `vendasSeguras.test.ts` reprova `comissao`/`repasse` no CORPO inteiro da
   função, comentário incluído: comentário dentro dela não pode citar as duas
   palavras.
+
+## Painel no estilo Power BI (07/10/2026)
+
+O topo da tela de Vendas virou um painel interativo (`PainelDeVendas.tsx`,
+cliente; contas em `src/lib/financeiro/indicadoresDeVendas.ts`, puro, com
+teste):
+
+- Filtros numa linha: período (este mês, 3, 6, 12 meses, este ano). Tocar
+  numa fatia da rosca filtra o imóvel; o gestor toca num corretor do ranking e
+  vê o painel como aquele corretor vê.
+- Seis cartões (VGV, vendas, ticket, comissão, recebida, a receber) com
+  variação sobre o período anterior de mesmo tamanho ("este ano" compara com
+  o mesmo trecho do ano passado) e tendência mensal. "A receber" não pinta de
+  verde nem vermelho.
+- A comissão é a das vendas FEITAS no período. O que entrou no caixa mora no
+  Extrato e no Caixa.
+- A cor de cada imóvel vem do ranking de todas as vendas, não do período:
+  trocar o período não repinta. Do 6º em diante vira "Outros", cinza.
+- Para o navegador vai só o necessário (`paraOIndicador`): sem lead,
+  observação nem construtora.
+- No cartão, valor a partir de R$ 1 milhão aparece como "R$ 9,9 mi": o número
+  inteiro quebrava linha no celular.

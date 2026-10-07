@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getVendas } from "@/lib/financeiro/dados";
-import { montarPainelDeVendas } from "@/lib/financeiro/painelDeVendas";
+import { paraOIndicador } from "@/lib/financeiro/indicadoresDeVendas";
 import { formatarPercentual, formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { PainelDeVendas } from "./PainelDeVendas";
@@ -63,13 +63,12 @@ export default async function VendasPage() {
   }
 
   const vendas = leitura.vendas;
-  const painel = montarPainelDeVendas(vendas, { corretorId: gestor ? null : corretor.id, hoje: hojeEmSaoPaulo() });
 
   return (
     <div>
       {cabecalho}
 
-      <PainelDeVendas painel={painel} gestor={gestor} />
+      <PainelDeVendas vendas={paraOIndicador(vendas)} hoje={hojeEmSaoPaulo()} escopo={gestor ? null : corretor.id} />
 
       <h2 className="text-fluid-base text-titulo mt-6 font-medium">Todas as vendas</h2>
       {vendas.length === 0 ? (

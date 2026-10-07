@@ -9585,3 +9585,7 @@ Nota: [[identidade-da-marca-para-o-google]].
   imóvel com tipo e bairro quando cabem (`tituloDoImovel`, 39/39 ≤ 48) e
   perguntas frequentes por imóvel do cadastro (`perguntasDoImovel` +
   `FAQPage`, mesmo texto na tela). `${#t}` do bash conta bytes: "—" vale 3.
+- **A tela de Vendas também ganhou o painel no estilo Power BI** (07/10):
+  período, imóvel (pela rosca) e corretor (gestor, pelo ranking) filtram tudo;
+  contas em `indicadoresDeVendas.ts`. A cor do imóvel segue o ranking de todas
+  as vendas, não o do período.
