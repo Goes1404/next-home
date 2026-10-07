@@ -9589,3 +9589,16 @@ Nota: [[identidade-da-marca-para-o-google]].
   período, imóvel (pela rosca) e corretor (gestor, pelo ranking) filtram tudo;
   contas em `indicadoresDeVendas.ts`. A cor do imóvel segue o ranking de todas
   as vendas, não o do período.
+
+## Cadastrar lead por foto (07/10/2026)
+
+Nota: [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]].
+
+- **A leitura de foto só usava o Gemini**, cuja cota gratuita é de 20
+  chamadas por dia por modelo. Agora vai primeiro à OpenAI pelo `llm.ts`, em
+  `detalheImagem: "high"` (em `low` a foto vira 512px e o dígito some). O
+  Gemini é reserva e o único que tenta HEIC.
+- **Aba "Foto ou print"** em Adicionar leads, com câmera direta no celular.
+- **Log de runtime do Hobby guarda 1 hora**: `get_runtime_logs` com `since`
+  maior devolve 400. Para saber se algo falhou ontem, não há log.
+

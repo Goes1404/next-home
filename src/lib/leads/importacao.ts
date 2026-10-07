@@ -11,6 +11,7 @@ import { ehArquivoVcard, parsearVcards } from "./vcard";
 import { lerPlanilhaXlsx } from "./xlsxLeitura";
 import { lerZip, type MotivoZipIlegivel } from "./zipLeitura";
 import { lerListaComIa } from "./leituraPorIa";
+import { chamarLlmJson } from "@/lib/whatsapp/llm";
 
 /**
  * Leitura de listas de leads que o corretor traz de fora — planilha exportada
@@ -903,24 +904,92 @@ export const TIPOS_DE_IMAGEM = ["image/jpeg", "image/png", "image/webp", "image/
  * a imagem, como no PDF escaneado. Sem a chave, a tela diz isso em vez de
  * "nenhum contato encontrado" — que mandaria procurar defeito na foto.
  */
+/** O que o leitor de foto pede à IA, além do `PROMPT` geral. */
+const INSTRUCAO_DA_FOTO =
+  "A imagem pode ser um print do WhatsApp: numa conversa, o cliente é o nome ou número no TOPO da tela; " +
+  "ignore o número do dono do celular. Numa lista, ficha ou agenda (inclusive escrita à mão), extraia cada " +
+  "contato com telefone. Copie os dígitos exatamente como aparecem; dígito ilegível, deixe o contato de fora.";
+
+/**
+ * Deixa a foto num JPEG que a OpenAI lê: gira pelo EXIF (foto de celular
+ * chega deitada) e reduz para 2048px no lado maior, que é o que o modo
+ * `high` aproveita. `null` quando o `sharp` não abre o arquivo (HEIC, por
+ * exemplo): aí só o Gemini, que aceita o formato, tenta.
+ */
+async function fotoParaJpeg(imagem: Buffer | Uint8Array): Promise<Buffer | null> {
+  try {
+    const sharp = (await import("sharp")).default;
+    return await sharp(Buffer.from(imagem))
+      .rotate()
+      .resize({ width: 2048, height: 2048, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+  } catch {
+    return null;
+  }
+}
+
+function candidatosDoJson(json: unknown): CandidatoLead[] {
+  const bruto = json as { leads?: unknown } | unknown[] | null;
+  const lista = Array.isArray(bruto) ? bruto : Array.isArray(bruto?.leads) ? bruto.leads : [];
+  return (lista as Record<string, unknown>[])
+    .slice(0, LIMITE_POR_IMPORTACAO)
+    .map((item) =>
+      montar({
+        nome: String(item?.nome ?? ""),
+        telefone: String(item?.telefone ?? ""),
+        email: item?.email ? String(item.email) : null,
+        mensagem: item?.mensagem ? String(item.mensagem) : null,
+        imovelInteresse: item?.imovelInteresse ? String(item.imovelInteresse) : null,
+      }),
+    )
+    .filter((c): c is CandidatoLead => c !== null);
+}
+
+/**
+ * Print de conversa, foto de uma lista escrita à mão, foto de uma ficha de
+ * plantão. Aqui não há texto dentro do arquivo para ler de graça: só a IA vê
+ * a imagem.
+ *
+ * Primeiro o motor do atendimento (OpenAI, pelo `llm.ts`) em detalhe ALTO,
+ * porque o que se lê aqui é dígito; o Gemini fica de reserva. Até 07/10/2026
+ * só o Gemini lia foto, e a cota gratuita dele (20 chamadas por dia, por
+ * modelo) é a mesma que já derrubou o atendimento: a leitura caía calada e a
+ * tela dizia que a IA não estava disponível.
+ */
 export async function extrairDeImagem(
   imagem: Buffer | Uint8Array,
   mimeType: string,
 ): Promise<ResultadoExtracao> {
-  const daIa = await chamarGemini([
-    {
-      text:
-        "A imagem pode ser um print do WhatsApp: numa conversa, o cliente é o nome ou número no TOPO da tela; " +
-        "ignore o número do dono do celular. Numa lista ou ficha, extraia cada contato com telefone.",
-    },
-    { inline_data: { mime_type: mimeType, data: Buffer.from(imagem).toString("base64") } },
-  ]);
+  let daIa: CandidatoLead[] | null = null;
+
+  const jpeg = await fotoParaJpeg(imagem);
+  const legivelPelaOpenai = jpeg ?? (/^image\/(jpeg|png|webp)$/.test(mimeType) ? Buffer.from(imagem) : null);
+  if (legivelPelaOpenai) {
+    const tipo = jpeg ? "image/jpeg" : mimeType;
+    const r = await chamarLlmJson(`${PROMPT}\n\n${INSTRUCAO_DA_FOTO}`, {
+      temperature: 0,
+      orcamentoMs: 40_000,
+      fatia: 1,
+      imagens: [`data:${tipo};base64,${legivelPelaOpenai.toString("base64")}`],
+      detalheImagem: "high",
+    });
+    if (r.ok) daIa = candidatosDoJson(r.json);
+    else console.error("[importacao] leitura da foto pela OpenAI falhou:", r.erro, r.detalhe ?? "");
+  }
+
+  if (daIa === null) {
+    daIa = await chamarGemini([
+      { text: INSTRUCAO_DA_FOTO },
+      { inline_data: { mime_type: mimeType, data: Buffer.from(imagem).toString("base64") } },
+    ]);
+  }
 
   if (daIa === null) {
     return {
       candidatos: [],
       metodo: "nenhum",
-      aviso: "A leitura de fotos depende da IA, que não está disponível agora. Digite os contatos na caixa de texto.",
+      aviso: "Não consegui ler a foto agora. Tente de novo em instantes ou digite os contatos na caixa de texto.",
     };
   }
 
@@ -930,7 +999,7 @@ export async function extrairDeImagem(
     metodo: "ia",
     aviso:
       unicos.length === 0
-        ? "Não achamos nenhum telefone legível na imagem."
+        ? "Não achamos nenhum telefone legível na imagem. Uma foto mais de perto, com boa luz, costuma resolver."
         : "Lido por IA a partir da imagem: confira nome e telefone de cada linha antes de confirmar.",
   };
 }

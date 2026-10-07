@@ -86,7 +86,7 @@ type Provedor = {
   modelo: () => string;
   chamar: (
     p: string,
-    o: { temperature?: number; timeoutMs: number; imagens?: string[] },
+    o: { temperature?: number; timeoutMs: number; imagens?: string[]; detalheImagem?: "low" | "high" },
   ) => Promise<ResultadoLlm>;
   /*
    * Este provedor sabe OLHAR para uma imagem?
@@ -213,6 +213,12 @@ export async function chamarLlmJson(
     orcamentoMs?: number;
     imagens?: string[];
     /**
+     * `high` quando o modelo precisa LER texto miúdo na foto (telefone numa
+     * lista escrita à mão). O padrão `low` reduz a 512px: bom para assunto e
+     * clima, ruim para dígito.
+     */
+    detalheImagem?: "low" | "high";
+    /**
      * Fração do orçamento que o primeiro provedor pode gastar, quando o
      * chamador sabe mais que a regra geral. O dossiê passa 1: ninguém está
      * esperando por ele, e timeout não é retentado de qualquer jeito — com
@@ -274,6 +280,7 @@ export async function chamarLlmJson(
       temperature: opts?.temperature,
       timeoutMs,
       imagens,
+      detalheImagem: opts?.detalheImagem,
     });
 
     // Uma retentativa no mesmo provedor só para o que falha rápido (5xx,
@@ -286,6 +293,7 @@ export async function chamarLlmJson(
           temperature: opts?.temperature,
           timeoutMs: Math.min(tetoPorProvedor, aindaResta),
           imagens,
+          detalheImagem: opts?.detalheImagem,
         });
       }
     }

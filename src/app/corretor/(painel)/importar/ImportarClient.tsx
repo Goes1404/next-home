@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import {
   analisarArquivo,
   analisarTexto,
@@ -243,7 +244,7 @@ function Importador({
   ehGestor: boolean;
 }) {
   const [etapa, setEtapa] = useState<Etapa>("entrada");
-  const [modo, setModo] = useState<"colar" | "arquivo">("colar");
+  const [modo, setModo] = useState<"colar" | "arquivo" | "foto">("colar");
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [metodo, setMetodo] = useState<ResultadoAnalise["metodo"] | null>(null);
@@ -291,8 +292,26 @@ function Importador({
 
   function analisar(formData?: FormData) {
     iniciarAnalise(async () => {
-      receber(formData ? await analisarArquivo(formData) : await analisarTexto(texto));
+      try {
+        receber(formData ? await analisarArquivo(formData) : await analisarTexto(texto));
+      } catch (falha) {
+        setErro(
+          ehActionDeOutroBuild(falha)
+            ? "O painel foi atualizado enquanto esta tela estava aberta. Recarregue a página e tente de novo."
+            : "A leitura não terminou. Confira a conexão e tente de novo.",
+        );
+      }
     });
+  }
+
+  /** A foto é lida assim que escolhida: não há o que conferir antes de mandar. */
+  function lerFoto(campo: HTMLInputElement) {
+    const arquivo = campo.files?.[0];
+    campo.value = "";
+    if (!arquivo) return;
+    const dados = new FormData();
+    dados.set("arquivo", arquivo);
+    analisar(dados);
   }
 
   function confirmar() {
@@ -489,8 +508,8 @@ function Importador({
 
   return (
     <div className="cartao max-w-2xl p-6">
-      <div className="flex gap-1">
-        {(["colar", "arquivo"] as const).map((m) => (
+      <div className="flex flex-wrap gap-1">
+        {(["colar", "foto", "arquivo"] as const).map((m) => (
           <button
             key={m}
             type="button"
@@ -502,7 +521,7 @@ function Importador({
                 : "text-apoio hover:text-titulo",
             )}
           >
-            {m === "colar" ? "Colar lista" : "Enviar arquivo"}
+            {m === "colar" ? "Colar lista" : m === "foto" ? "Foto ou print" : "Enviar arquivo"}
           </button>
         ))}
       </div>
@@ -534,6 +553,50 @@ function Importador({
           >
             {analisando ? "Lendo…" : "Ler contatos"}
           </button>
+        </div>
+      ) : modo === "foto" ? (
+        <div className="mt-5">
+          <p className="text-fluid-sm text-corpo">
+            Print de conversa do WhatsApp, foto de uma lista escrita à mão, da ficha do plantão ou da tela de outro
+            sistema. A IA lê nome e telefone de cada contato, e você confere antes de importar.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <label
+              className={cn(
+                "bg-acento hover:bg-acento-hover text-sobre-cor flex min-h-11 cursor-pointer items-center rounded-full px-6 text-sm font-medium transition-colors",
+                analisando && "pointer-events-none opacity-50",
+              )}
+            >
+              {analisando ? "Lendo a foto…" : "Escolher foto ou print"}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={analisando}
+                onChange={(e) => lerFoto(e.currentTarget)}
+              />
+            </label>
+            <label
+              className={cn(
+                "border-linha-forte text-titulo hover:bg-vidro flex min-h-11 cursor-pointer items-center rounded-full border px-6 text-sm font-medium transition-colors",
+                analisando && "pointer-events-none opacity-50",
+              )}
+            >
+              Tirar foto agora
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="sr-only"
+                disabled={analisando}
+                onChange={(e) => lerFoto(e.currentTarget)}
+              />
+            </label>
+          </div>
+          <p className="text-fluid-xs text-tenue mt-3">
+            Uma foto por vez, até 10 MB. Foto de perto e com boa luz é lida melhor; número que a IA não consegue ler
+            fica de fora em vez de sair errado.
+          </p>
         </div>
       ) : (
         <form

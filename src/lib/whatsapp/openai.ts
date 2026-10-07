@@ -63,7 +63,7 @@ const INSTRUCAO_JSON =
  * marca gravada no vidro. Se algum dia a saída mostrar leitura errada de
  * detalhe fino, este é o botão a girar, e ele tem nome.
  */
-const DETALHE_DA_IMAGEM = "low";
+const DETALHE_DA_IMAGEM: "low" | "high" = "low";
 
 type ParteDoConteudo =
   | { type: "text"; text: string }
@@ -76,13 +76,17 @@ type ParteDoConteudo =
  * porque o pedido fala delas por posição ("deixe a 1ª parecida com a 2ª") e
  * o modelo precisa tê-las na mesma ordem em que o corretor as anexou.
  */
-function conteudoDoUsuario(prompt: string, imagens: string[]): string | ParteDoConteudo[] {
+function conteudoDoUsuario(
+  prompt: string,
+  imagens: string[],
+  detalhe: "low" | "high" = DETALHE_DA_IMAGEM,
+): string | ParteDoConteudo[] {
   if (imagens.length === 0) return prompt;
 
   const partes: ParteDoConteudo[] = [];
   imagens.forEach((url, i) => {
     partes.push({ type: "text", text: `Foto ${i + 1} de ${imagens.length}:` });
-    partes.push({ type: "image_url", image_url: { url, detail: DETALHE_DA_IMAGEM } });
+    partes.push({ type: "image_url", image_url: { url, detail: detalhe } });
   });
   partes.push({ type: "text", text: prompt });
   return partes;
@@ -90,7 +94,13 @@ function conteudoDoUsuario(prompt: string, imagens: string[]): string | ParteDoC
 
 export async function chamarOpenaiJson(
   prompt: string,
-  opts: { temperature?: number; timeoutMs: number; modelo?: string; imagens?: string[] },
+  opts: {
+    temperature?: number;
+    timeoutMs: number;
+    modelo?: string;
+    imagens?: string[];
+    detalheImagem?: "low" | "high";
+  },
 ): Promise<ResultadoLlm> {
   const inicio = Date.now();
   const apiKey = chaveApi();
@@ -122,7 +132,7 @@ export async function chamarOpenaiJson(
         model: modelo,
         messages: [
           { role: "system", content: INSTRUCAO_JSON },
-          { role: "user", content: conteudoDoUsuario(prompt, opts.imagens ?? []) },
+          { role: "user", content: conteudoDoUsuario(prompt, opts.imagens ?? [], opts.detalheImagem) },
         ],
         ...(familiaNova
           ? { max_completion_tokens: 4096 }

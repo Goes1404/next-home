@@ -84,3 +84,18 @@ Formatos aceitos desde 24/09/2026: conversa do WhatsApp (`.zip` **e**
 - **Título exato ganha do que só contém a palavra**: na planilha de leads da
   Meta, "ad_name" vinha antes de "full_name" e virava o nome do cliente.
   `_` conta como espaço ("phone_number").
+
+## Foto ou print ganhou aba própria e passou a ser lida pela OpenAI (07/10/2026)
+
+- A leitura de foto existia desde 24/09, mas **só pelo Gemini** (cota
+  gratuita de 20 chamadas por dia, por modelo) e escondida como último item
+  da aba "Enviar arquivo". Agora vai primeiro ao motor do atendimento
+  (`chamarLlmJson`, OpenAI) com `detalheImagem: "high"`: em `low` a foto é
+  reduzida a 512px e telefone escrito à mão vira palpite. O Gemini ficou de
+  reserva, e é o único que tenta HEIC (o `sharp` não abre).
+- A foto é normalizada pelo `sharp` antes (gira pelo EXIF, 2048px, JPEG) e
+  vai como data URL.
+- Aba **Foto ou print** com "Escolher foto ou print" e "Tirar foto agora"
+  (`capture="environment"`); a leitura começa ao escolher.
+- `detalheImagem` atravessa `llm.ts` → `openai.ts`; o padrão continua `low`
+  (o tradutor de imagem não muda).
