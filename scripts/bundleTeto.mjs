@@ -54,30 +54,30 @@ const TETOS_KB = {
   // (higieneDaBase) e o funil de 10 etapas com grupos (types.ts), que todas
   // puxam pelos utilitários de lead.
   // 07/10: +1 KB: o menu ganhou "Alertas e IA" no Financeiro.
-  "/corretor/(painel)/pessoas/page": 1008,
+  "/corretor/(painel)/pessoas/page": 1009, // 07/10: +1 KB, o mascote da IA (Mascote) no botão do consultor, que mora no layout
   // 28/09: +9 KB (conversas) e +16 (importar) vêm de funcionalidades pedidas:
   // o painel ganhou a transição de tela e a luz dos cartões no LAYOUT (vale
   // em toda rota do painel), e o importador ganhou tours, vídeo em arquivo e
   // a leitura do site da construtora.
   // 29/09: +2 KB em conversas, do motivo do 👎 e do resumo semanal das
   // avaliações (0131), que já tinha ido ao ar 1 KB acima do teto.
-  "/corretor/(painel)/conversas/page": 1045,
+  "/corretor/(painel)/conversas/page": 1047, // 07/10: +1 KB, o mascote da IA no botão do consultor
   // 28/09: +1 KB em criar-imagem, editor do imóvel e vídeo é
   // `mensagensDoSite` (as mensagens que o porteiro reconhece), puxado via
   // `site.ts`. Sem ela, o visitante novo do site é ignorado pelo webhook.
   "/corretor/(painel)/imoveis/criar-imagem/page": 1013,
   // 30/09: +1 KB. Três ícones novos no menu (Construtoras, Crédito e Marca
   // tinham ícone repetido); o menu vai em toda rota do painel.
-  "/corretor/(painel)/imoveis/[slug]/importar/page": 1022,
+  "/corretor/(painel)/imoveis/[slug]/importar/page": 1024, // 07/10: +1 KB, o mascote da IA no botão do consultor
   // O editor do imóvel mostra na mesma tela as unidades, o andamento da obra
   // e os leads que combinam (com "reabrir perdidos"): 26/09.
-  "/corretor/(painel)/imoveis/[slug]/page": 831,
+  "/corretor/(painel)/imoveis/[slug]/page": 833, // 07/10: +1 KB, o mascote da IA no botão do consultor
   "/corretor/(painel)/marketing/video/page": 1005,
   // 03/10: +7 KB nas listas de transmissão (0153-0155): pausar, cancelar,
   // variáveis, A/B que decide sozinho e o motivo do limite do dia, tudo no
   // assistente. Vermelho desde 04/10 sem ninguém ver.
   // 07/10: +1 KB: o menu ganhou Fiscal e Contador (navegação vai em toda rota).
-  "/corretor/(painel)/campanhas/page": 809,
+  "/corretor/(painel)/campanhas/page": 810, // 07/10: +1 KB, o mascote da IA no botão do consultor
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
   // 28/09: +3 KB na home e +7 na listagem são o coração de favorito em cada
