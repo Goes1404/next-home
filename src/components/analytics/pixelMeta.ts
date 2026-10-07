@@ -17,6 +17,7 @@ const FORA_DO_PIXEL = [
   "/proposta",
   "/documentos",
   "/parceiro",
+  "/contador",
 ];
 
 export function paginaRastreavel(caminho: string): boolean {

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { problemasDoLancamento, vencimentosDaSerie, type LancamentoDigitado } from "@/lib/financeiro/caixa";
 import { hojeEmSaoPaulo } from "@/lib/financeiro/venda";
+import { mesFechadoEntre, recusaDeMesFechado } from "@/lib/financeiro/mesFechado";
 
 /**
  * As ações do caixa (0166). Toda função confere o gestor antes de tocar no
@@ -36,6 +37,9 @@ export async function criarLancamento(l: LancamentoDigitado): Promise<ResultadoC
     criado_por: guarda.corretor.id,
   }));
 
+  const fechado = await mesFechadoEntre(linhas.map((l) => l.pago_em));
+  if (fechado) return { erro: recusaDeMesFechado(fechado) };
+
   const supabase = await createClient();
   const { error } = await supabase.from("caixa_lancamentos").insert(linhas);
   if (error) {
@@ -53,6 +57,11 @@ export async function marcarLancamentoPago(id: string, data: string | null): Pro
   if (!dataValida(data)) return { erro: "Data inválida." };
 
   const supabase = await createClient();
+  const { data: atual } = await supabase.from("caixa_lancamentos").select("pago_em").eq("id", id).maybeSingle();
+  if (!atual) return { erro: "Lançamento não encontrado." };
+  const fechado = await mesFechadoEntre([atual.pago_em, data]);
+  if (fechado) return { erro: recusaDeMesFechado(fechado) };
+
   const { data: linhas, error } = await supabase
     .from("caixa_lancamentos")
     .update({ pago_em: data, atualizado_em: new Date().toISOString() })
@@ -71,10 +80,13 @@ export async function excluirLancamento(id: string, escopo: "este" | "proximos")
   const supabase = await createClient();
   const { data: alvo } = await supabase
     .from("caixa_lancamentos")
-    .select("id, vencimento, recorrencia_id")
+    .select("id, vencimento, recorrencia_id, pago_em")
     .eq("id", id)
     .maybeSingle();
   if (!alvo) return { erro: "Lançamento não encontrado." };
+  // Só o lançamento pago entra no mês fechado; "este e os próximos" apaga só pendentes.
+  const fechado = escopo === "este" ? await mesFechadoEntre([alvo.pago_em]) : null;
+  if (fechado) return { erro: recusaDeMesFechado(fechado) };
 
   let q = supabase.from("caixa_lancamentos").delete();
   if (escopo === "proximos" && alvo.recorrencia_id) {

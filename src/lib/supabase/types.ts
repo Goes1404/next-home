@@ -795,6 +795,44 @@ export type Database = {
         Update: { corretor_id?: string; vinculo?: "autonomo" | "pj"; atualizado_em?: string }
         Relationships: []
       }
+      /** 0168 — meses fechados e enviados ao contador (só o gestor). */
+      meses_fechados: {
+        Row: { mes: string; arquivo_path: string; totais: Json; observacao: string | null; fechado_por: string | null; fechado_em: string }
+        Insert: { mes: string; arquivo_path: string; totais?: Json; observacao?: string | null; fechado_por?: string | null; fechado_em?: string }
+        Update: { mes?: string; arquivo_path?: string; totais?: Json; observacao?: string | null; fechado_por?: string | null; fechado_em?: string }
+        Relationships: []
+      }
+      /** 0168 — links do contador (o token é a credencial; só o gestor). */
+      acessos_contador: {
+        Row: {
+          token: string
+          nome: string
+          criado_por: string | null
+          criado_em: string
+          expira_em: string
+          revogado_em: string | null
+          ultimo_acesso_em: string | null
+        }
+        Insert: {
+          token?: string
+          nome: string
+          criado_por?: string | null
+          criado_em?: string
+          expira_em?: string
+          revogado_em?: string | null
+          ultimo_acesso_em?: string | null
+        }
+        Update: {
+          token?: string
+          nome?: string
+          criado_por?: string | null
+          criado_em?: string
+          expira_em?: string
+          revogado_em?: string | null
+          ultimo_acesso_em?: string | null
+        }
+        Relationships: []
+      }
       /** 0115 — a meta mensal do corretor (F5 do financeiro). */
       metas_corretor: {
         Row: {

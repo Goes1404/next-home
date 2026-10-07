@@ -85,6 +85,7 @@ F0–F6.
 - [[caixa-da-imobiliaria]] — caixa do dono: contas a pagar e receber, saldo e fluxo de 13 semanas; comissão e repasse vindos das vendas (0166, 06/10)
 - [[resultado-do-mes-da-imobiliaria]] — DRE mensal pelo regime de caixa, com mês anterior, acumulado do ano e 12 meses (06/10)
 - [[fiscal-da-imobiliaria]] — impostos estimados, comissões sem nota, RPA e DIMOB, com planilhas para o contador (0167, 06/10)
+- [[contador-da-imobiliaria]] — fechar o mês, pacote em planilha e link do contador sem login (0168, 07/10)
 - [[oito-funcionalidades-de-26-09]] — imóvel encontra quem procurava, resumo do dia no WhatsApp, documentos e seleção pelo link, unidades, pós-visita e primeiro contato com lead de portal (0118-0120, 26/09)
 - [[aprimoramentos-das-oito-funcionalidades]] — avisos quando o cliente age no link, seleção escolhida à mão, compatibilidade com dossiê e renda, reserva com prazo, espelho da construtora, resumo na hora do corretor, painel de uso (0121-0122, 26/09)
 - [[fechar-o-ciclo-e-ligar-a-plataforma]] — primeiros passos e prontidão da equipe, proposta por link, confirmação da visita, indicação pós-venda, compradores até as chaves, relatório por construtora, metas da equipe (0123-0124, 26/09)

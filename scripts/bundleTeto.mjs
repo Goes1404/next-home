@@ -75,7 +75,8 @@ const TETOS_KB = {
   // 03/10: +7 KB nas listas de transmissão (0153-0155): pausar, cancelar,
   // variáveis, A/B que decide sozinho e o motivo do limite do dia, tudo no
   // assistente. Vermelho desde 04/10 sem ninguém ver.
-  "/corretor/(painel)/campanhas/page": 808,
+  // 07/10: +1 KB: o menu ganhou Fiscal e Contador (navegação vai em toda rota).
+  "/corretor/(painel)/campanhas/page": 809,
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
   // 28/09: +3 KB na home e +7 na listagem são o coração de favorito em cada

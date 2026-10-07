@@ -2,8 +2,8 @@ import "server-only";
 
 import { getVendas, type VendaNaTela } from "./dados";
 import { getLancamentosPagos } from "./caixaDados";
-import { movimentosDo, somarMeses } from "./caixa";
-import { resultadoDoMes } from "./resultado";
+import { movimentosDo, somarMeses, type Movimento } from "./caixa";
+import { resultadoDoMes, type ResultadoDoMes } from "./resultado";
 import { getFiscal } from "./fiscalDados";
 import {
   calcularRpa,
@@ -33,11 +33,16 @@ export type FiscalDoMes = {
   /** Repasses do mês a corretores marcados como PJ (sem RPA, pedem nota). */
   repassesPj: { corretor: string; imovel: string; pagoEm: string; valor: number }[];
   semNota: VendaParaFiscal[];
+  /** Vendas ativas cuja comissão entrou neste mês. */
+  comissoesDoMes: VendaParaFiscal[];
   doAno: VendaParaFiscal[];
   dados: Map<string, DadosFiscaisDaVenda>;
   vinculos: Map<string, "autonomo" | "pj">;
   corretores: { id: string; nome: string }[];
   vendasLidas: boolean;
+  /** Para o pacote do contador: o que foi pago e recebido no mês e a DRE. */
+  movimentosDoMes: Movimento[];
+  resultado: ResultadoDoMes;
 };
 
 export type LeituraFiscalDoMes = { ok: true; fiscal: FiscalDoMes } | { ok: false; motivo: "sem_tabela" | "erro" };
@@ -109,11 +114,14 @@ export async function getFiscalDoMes(mes: string): Promise<LeituraFiscalDoMes> {
       rpas,
       repassesPj,
       semNota: semNotaFiscal(fiscais, dados),
+      comissoesDoMes: fiscais.filter((v) => v.status === "ativa" && v.comissaoRecebidaEm?.startsWith(mes)),
       doAno: vendasDoAno(fiscais, ano),
       dados,
       vinculos,
       corretores: [...corretores.entries()].map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome)),
       vendasLidas: leituraVendas.ok,
+      movimentosDoMes: movimentos.filter((m) => m.pagoEm?.startsWith(mes)),
+      resultado: doMes,
     },
   };
 }

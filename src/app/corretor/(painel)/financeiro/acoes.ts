@@ -11,6 +11,7 @@ import {
   traduzirErroDoBanco,
   type VendaDigitada,
 } from "@/lib/financeiro/venda";
+import { mesFechadoEntre, recusaDeMesFechado } from "@/lib/financeiro/mesFechado";
 
 /**
  * As ações das vendas (0114). Tudo pelo cliente de SESSÃO: a RLS decide quem
@@ -65,6 +66,15 @@ export async function salvarVenda(vendaId: string | null, v: VendaDigitada): Pro
   });
 
   const supabase = await createClient();
+  if (vendaId) {
+    // Venda cujo dinheiro já caiu num mês fechado não muda de valor por baixo do contador.
+    const [{ data: atual }, { data: partes }] = await Promise.all([
+      supabase.from("vendas").select("comissao_recebida_em").eq("id", vendaId).maybeSingle(),
+      supabase.from("venda_participantes").select("repasse_pago_em").eq("venda_id", vendaId),
+    ]);
+    const fechado = await mesFechadoEntre([atual?.comissao_recebida_em, ...(partes ?? []).map((p) => p.repasse_pago_em)]);
+    if (fechado) return { erro: recusaDeMesFechado(fechado) };
+  }
   const { data: id, error } = await supabase.rpc("salvar_venda", {
     p_venda: vendaId,
     p_dados: dados,
@@ -159,6 +169,9 @@ export async function marcarComissaoRecebida(vendaId: string, data: string | nul
   if (data !== null && (!DATA_ISO.test(data) || data > hojeEmSaoPaulo())) return { erro: "Data inválida." };
 
   const supabase = await createClient();
+  const { data: venda } = await supabase.from("vendas").select("comissao_recebida_em").eq("id", vendaId).maybeSingle();
+  const fechado = await mesFechadoEntre([venda?.comissao_recebida_em, data]);
+  if (fechado) return { erro: recusaDeMesFechado(fechado) };
   const { data: ok, error } = await supabase.rpc("marcar_comissao_recebida", { p_venda: vendaId, p_data: data });
   if (error) return { erro: erroDaMarcacao(error.message) };
   if (!ok) return { erro: "Venda não encontrada." };
@@ -174,6 +187,14 @@ export async function marcarRepassePago(vendaId: string, corretorId: string, dat
   if (data !== null && (!DATA_ISO.test(data) || data > hojeEmSaoPaulo())) return { erro: "Data inválida." };
 
   const supabase = await createClient();
+  const { data: parte } = await supabase
+    .from("venda_participantes")
+    .select("repasse_pago_em")
+    .eq("venda_id", vendaId)
+    .eq("corretor_id", corretorId)
+    .maybeSingle();
+  const fechado = await mesFechadoEntre([parte?.repasse_pago_em, data]);
+  if (fechado) return { erro: recusaDeMesFechado(fechado) };
   const { data: ok, error } = await supabase.rpc("marcar_repasse_pago", {
     p_venda: vendaId,
     p_corretor: corretorId,

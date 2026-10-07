@@ -9468,3 +9468,16 @@ Nota: [[fiscal-da-imobiliaria]].
   sem insert pela sessão). Tabela do IRRF e redução de 2026 estão no código
   (`fiscal.ts`): mudou a lei, muda lá e no teste.
 - Estimativa, não apuração: IRPJ/CSLL são trimestrais e a tela diz isso.
+
+## O contador da imobiliária (0168, 07/10/2026)
+
+Nota: [[contador-da-imobiliaria]].
+
+- **Fechar o mês guarda o pacote (.xlsx de 5 abas) no bucket privado
+  `contabilidade` e trava o mês**: caixa, comissão recebida, repasse pago e
+  edição de venda com dinheiro no mês fechado são recusados. Ao criar caminho
+  novo que grava pagamento, chamar `mesFechadoEntre`.
+- **`gerarXlsx` aceita `Planilha[]`** (várias abas). Para validar arquivo
+  neste contêiner, ler com openpyxl.
+- **Link do contador = token em `acessos_contador`**, lido pela chave de
+  serviço; `/contador` entrou na lista de fora do Pixel.

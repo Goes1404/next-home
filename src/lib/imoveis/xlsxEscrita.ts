@@ -113,7 +113,18 @@ function xmlDaAba(planilha: Planilha): string {
 </worksheet>`;
 }
 
-function arquivosDaPlanilha(planilha: Planilha): { nome: string; conteudo: string }[] {
+function arquivosDaPlanilha(entrada: Planilha | Planilha[]): { nome: string; conteudo: string }[] {
+  const planilhas = Array.isArray(entrada) ? entrada : [entrada];
+  // Nome de aba repetido o Excel recusa ao abrir: o segundo ganha um número.
+  const usados = new Set<string>();
+  const nomes = planilhas.map((p) => {
+    const base = nomeDeAba(p.aba);
+    let nome = base;
+    for (let n = 2; usados.has(nome.toLowerCase()); n++) nome = `${base.slice(0, 27)} (${n})`;
+    usados.add(nome.toLowerCase());
+    return nome;
+  });
+  const n = planilhas.length;
   return [
     {
       nome: "[Content_Types].xml",
@@ -122,7 +133,7 @@ function arquivosDaPlanilha(planilha: Planilha): { nome: string; conteudo: strin
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
 <Default Extension="xml" ContentType="application/xml"/>
 <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
-<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+${planilhas.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("\n")}
 <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
 </Types>`,
     },
@@ -137,20 +148,25 @@ function arquivosDaPlanilha(planilha: Planilha): { nome: string; conteudo: strin
       nome: "xl/workbook.xml",
       conteudo: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-<sheets><sheet name="${escapar(nomeDeAba(planilha.aba))}" sheetId="1" r:id="rId1"/></sheets>
-<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">'${escapar(nomeDeAba(planilha.aba)).replace(/'/g, "''")}'!$A$1:$${letraDaColuna(Math.max(planilha.colunas.length - 1, 0))}$${planilha.linhas.length + 1}</definedName></definedNames>
+<sheets>${nomes.map((nome, i) => `<sheet name="${escapar(nome)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("")}</sheets>
+<definedNames>${planilhas
+        .map(
+          (p, i) =>
+            `<definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">'${escapar(nomes[i]).replace(/'/g, "''")}'!$A$1:$${letraDaColuna(Math.max(p.colunas.length - 1, 0))}$${p.linhas.length + 1}</definedName>`,
+        )
+        .join("")}</definedNames>
 </workbook>`,
     },
     {
       nome: "xl/_rels/workbook.xml.rels",
       conteudo: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
-<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+${planilhas.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join("\n")}
+<Relationship Id="rId${n + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>`,
     },
     { nome: "xl/styles.xml", conteudo: ESTILOS },
-    { nome: "xl/worksheets/sheet1.xml", conteudo: xmlDaAba(planilha) },
+    ...planilhas.map((p, i) => ({ nome: `xl/worksheets/sheet${i + 1}.xml`, conteudo: xmlDaAba(p) })),
   ];
 }
 
@@ -226,7 +242,8 @@ export function montarZip(arquivos: { nome: string; conteudo: Buffer }[]): Buffe
   return Buffer.concat([...locais, diretorio, fim]);
 }
 
-export function gerarXlsx(planilha: Planilha): Buffer {
+/** Uma planilha (`Planilha`) ou várias abas no mesmo arquivo (`Planilha[]`). */
+export function gerarXlsx(planilha: Planilha | Planilha[]): Buffer {
   return montarZip(
     arquivosDaPlanilha(planilha).map((a) => ({ nome: a.nome, conteudo: Buffer.from(a.conteudo, "utf8") })),
   );
