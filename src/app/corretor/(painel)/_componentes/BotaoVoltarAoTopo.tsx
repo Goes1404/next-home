@@ -53,7 +53,7 @@ export function BotaoVoltarAoTopo() {
          * painel do consultor está aberto, o que faria este pular no meio da
          * leitura.
          */
-        "bg-acento text-sobre-cor shadow-painel fixed right-4 bottom-[calc(var(--nav-mobile-h)+5rem)] z-30 flex size-11 cursor-pointer items-center justify-center rounded-full ring-1 ring-white/20 transition-all ring-inset hover:-translate-y-0.5 md:right-6 md:bottom-[5.5rem]",
+        "bg-acento text-sobre-cor shadow-painel fixed right-4 bottom-[calc(var(--nav-mobile-h)+6.5rem)] z-30 flex size-11 cursor-pointer items-center justify-center rounded-full ring-1 ring-white/20 transition-all ring-inset hover:-translate-y-0.5 md:right-6 md:bottom-[7rem]",
         longe ? "opacity-90 hover:opacity-100" : "pointer-events-none translate-y-2 opacity-0",
       )}
     >

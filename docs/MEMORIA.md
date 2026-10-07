@@ -9536,3 +9536,14 @@ Nota: [[painel-da-tela-de-vendas]].
   grupo (desativado vê desativados com slug), para o perfil demo ter colegas
   de demonstração (`demo-*`) sem que eles cheguem à equipe real. O script de
   remoção apaga os colegas também.
+
+## O mascote da IA (07/10/2026)
+
+Nota: [[mascote-da-ia]].
+
+- O botão flutuante do consultor virou o mascote (robô azul 3D, sem fundo),
+  `public/marca/mascote.webp`, 80px de altura. O voltar ao topo subiu para
+  `nav+6.5rem` para não encostar nele.
+- **Recortar um objeto de uma imagem com fundo detalhado não vale a briga**:
+  o rembg manteve o disco brilhante atrás do robô, e cor ou pontos (SAM)
+  deixaram bordas sujas. Pedir a imagem sem o elemento ao lado resolveu.

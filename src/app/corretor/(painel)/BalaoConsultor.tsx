@@ -174,7 +174,8 @@ export function BalaoConsultor() {
          * Quem fecha é o ✕ do cabeçalho.
          *
          * O canto é o mesmo do `BotaoVoltarAoTopo`, que subiu um degrau para
-         * dar lugar a ela. A altura dele é fixa, não condicional a esta
+         * dar lugar a ela (e mais um em 07/10, quando a bolha virou o mascote
+         * de 80px de altura). A altura dele é fixa, não condicional a esta
          * bolha: dois botões que dançam conforme o outro aparece é pior que
          * um degrau constante.
          */
@@ -182,11 +183,22 @@ export function BalaoConsultor() {
           type="button"
           onClick={() => setAberto(true)}
           aria-label="Abrir o consultor"
-          className="bg-acento text-sobre-cor shadow-painel pointer-events-auto absolute right-4 bottom-[calc(var(--nav-mobile-h)+1rem)] flex size-14 cursor-pointer items-center justify-center rounded-full ring-1 ring-white/20 transition-transform ring-inset hover:-translate-y-0.5 md:right-6 md:bottom-6"
+          title="Fale com a IA"
+          className="group pointer-events-auto absolute right-3 bottom-[calc(var(--nav-mobile-h)+0.75rem)] flex h-20 w-16 cursor-pointer items-end justify-center transition-transform duration-200 hover:-translate-y-1 active:scale-95 md:right-5 md:bottom-5"
         >
-          <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.4-.7L3 21l1.9-5.1A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z" />
-          </svg>
+          {/*
+           * O mascote da IA (07/10/2026), recortado sem fundo. A sombra segue
+           * o contorno dele (drop-shadow), não um círculo: sem disco atrás,
+           * ele parece estar de pé sobre a tela. 178x240 para 3x de 80px.
+           */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/marca/mascote.webp"
+            alt=""
+            width={178}
+            height={240}
+            className="h-20 w-auto drop-shadow-[0_6px_10px_rgb(0_0_0/0.28)] transition-transform duration-300 group-hover:-rotate-6"
+          />
         </button>
       )}
     </div>,
