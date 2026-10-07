@@ -6,8 +6,6 @@ import {
   CANAIS_DE_CAMPANHA,
   compararCampanhas,
   compararQualidade,
-  clientesPorSemana,
-  porCanal,
   porcentagem,
   MINIMO_PARA_PORCENTAGEM,
   type CriterioDoComparativo,
@@ -20,7 +18,6 @@ import { TITULO_SEM_ETIQUETA } from "@/lib/whatsapp/anuncioMeta";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { CartaoDeGrafico } from "@/app/corretor/(painel)/_componentes/graficos/Moldura";
 import { CustoAoLongoDoTempo, type OpcaoDeSerie } from "./CustoAoLongoDoTempo";
-import { ClientesPorSemana, GastoEClientesPorCanal } from "./GraficosDoInvestimento";
 import {
   agruparAnuncio,
   apagarCampanha,
@@ -130,8 +127,6 @@ export function ListaDeImpulsionamentos({
 }) {
   const comparativo = useMemo(() => compararCampanhas(resumos, nomeDoResumo), [resumos]);
   const qualidade = useMemo(() => compararQualidade(resumos, nomeDoResumo), [resumos]);
-  const canais = useMemo(() => porCanal(resumos), [resumos]);
-  const semanas = useMemo(() => clientesPorSemana(resumos, hoje), [resumos, hoje]);
   const minhasCampanhas = resumos
     .filter((r) => r.criadaPeloCorretor && r.corretorId === meuId)
     .map((r) => ({ id: r.id, nome: nomeDoResumo(r) }));
@@ -150,8 +145,6 @@ export function ListaDeImpulsionamentos({
       <ComoFunciona aberto={resumos.length === 0} />
 
       {resumos.length > 0 && <Totais totais={totais} />}
-      <GastoEClientesPorCanal linhas={canais} />
-      <ClientesPorSemana semanas={semanas} />
 
       <Comparativo comparativo={comparativo} />
       <QualidadeLadoALado linhas={qualidade} />

@@ -96,10 +96,13 @@ antigo não derruba o total.
 
 Ver também [[impulsionamento-do-corretor-pela-etiqueta-da-meta]].
 
-## Gasto e clientes por canal, clientes por semana (07/10/2026)
+## Painel de indicadores no estilo Power BI (07/10/2026)
 
-Dois gráficos novos no topo da tela (`GraficosDoInvestimento.tsx`, conta em
-`porCanal` e `clientesPorSemana`). Por canal: a parte do investimento ao
-lado da parte dos clientes, só com as campanhas que têm valor (a mesma
-população dos totais). Anúncio detectado sem campanha conta como
-"Instagram/Facebook". Por semana: 8 colunas terminando hoje, pelo dia de SP.
+No topo da tela (`PainelDeIndicadores.tsx`, contas em `painelDosAnuncios.ts`):
+filtros de período (30/90/180 dias, tudo) e canal; seis cartões com variação
+contra o período anterior de mesmo tamanho e tendência semanal; rosca do
+investimento por canal (tocar filtra); colunas empilhadas de clientes por
+semana com dica e tabela; funil do anúncio à venda. O gasto do período é o
+registrado distribuído pelos dias (`gastoAte`), e o custo só conta clientes
+de campanha com valor. Cores por canal fixas (`--color-serie-1..6`, paleta
+validada para daltonismo). Substituiu os dois gráficos da manhã.

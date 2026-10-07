@@ -9511,8 +9511,10 @@ Nota: [[perfil-de-demonstracao-do-corretor]].
   visitas futuras, 4 vendas. Apagar com `scripts/demo/apagarPerfilDemo.sql`.
 - **O site listava todo corretor com slug, ativo ou não.** Agora
   `corretoresPublicos` filtra `ativo` (chave do cache `-v3`).
-- **Anúncios pagos ganhou gasto × clientes por canal e clientes por semana**
-  (`porCanal`, `clientesPorSemana`), só com campanhas que têm valor.
+- **Anúncios pagos ganhou painel estilo Power BI** (`PainelDeIndicadores`,
+  `painelDosAnuncios.ts`): filtro de período e canal recalcula cartões com
+  variação, rosca, colunas por semana e funil. Cor de série precisa de
+  CLASSE (`bg-serie-1`): token só em `var()` é removido pelo Tailwind.
 - **Anúncios pagos do demo**: `scripts/demo/semearAnunciosDemo.sql` (5 campanhas,
   2 anúncios detectados, clientes ligados pela origem dos leads demo).
 - **`leads_visita_sem_conflito_idx`** recusa duas visitas do mesmo corretor no

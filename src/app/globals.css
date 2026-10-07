@@ -178,6 +178,15 @@
    * é o contrário. As duas famílias não se encontram em tela nenhuma.
    */
   --color-realce: light-dark(#034b8e, #5695d3);
+  /* Séries de gráfico por canal (07/10/2026): paleta categórica validada
+     (CVD e contraste) nas duas cores do tema. A cor segue o CANAL, nunca a
+     posição: o mapa fixo está em graficosDosAnuncios. */
+  --color-serie-1: light-dark(#2a78d6, #3987e5);
+  --color-serie-2: light-dark(#eb6834, #d95926);
+  --color-serie-3: light-dark(#1baf7a, #199e70);
+  --color-serie-4: light-dark(#eda100, #c98500);
+  --color-serie-5: light-dark(#e87ba4, #d55181);
+  --color-serie-6: light-dark(#008300, #008300);
   --color-realce-suave: light-dark(#023a6f, #8fb9e3);
   --color-realce-lavado: light-dark(rgb(3 75 142 / 0.08), rgb(86 149 211 / 0.16));
   --color-realce-linha: light-dark(rgb(3 75 142 / 0.3), rgb(86 149 211 / 0.34));

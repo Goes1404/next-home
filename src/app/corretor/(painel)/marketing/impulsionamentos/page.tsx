@@ -19,6 +19,8 @@ import { Suspense } from "react";
 import { ContaDaMeta } from "@/app/corretor/(painel)/admin/anuncios/ContaDaMeta";
 import { ListaDeImpulsionamentos, type ClienteDaLista } from "./ListaDeImpulsionamentos";
 import { DoCliqueAConversa } from "./DoCliqueAConversa";
+import { PainelDeIndicadores } from "./PainelDeIndicadores";
+import { montarDadosDoPainel } from "@/lib/crm/painelDosAnuncios";
 
 export const metadata: Metadata = { title: "Anúncios pagos" };
 export const dynamic = "force-dynamic";
@@ -222,6 +224,7 @@ export default async function PaginaImpulsionamentos() {
         titulo="Anúncios pagos"
         descricao="Quanto cada campanha trouxe de clientes, se eles valem a conversa e quanto custou cada um."
       />
+      {!error && <PainelDeIndicadores dados={montarDadosDoPainel(resumos, leadsDeAnuncio, pontos, hoje)} />}
       <ListaDeImpulsionamentos
         resumos={resumos}
         totais={totaisDosImpulsionamentos(resumos)}
