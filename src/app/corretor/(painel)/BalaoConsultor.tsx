@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { moduloAtivo } from "./_componentes/navegacao";
 import { useAvisos } from "./_componentes/Avisos";
+import { Mascote } from "./_componentes/Mascote";
 import { enviarMensagemDoConsultor, type EstadoDoChatConsultor } from "./consultor/acoes";
 
 /*
@@ -184,21 +185,10 @@ export function BalaoConsultor() {
           onClick={() => setAberto(true)}
           aria-label="Abrir o consultor"
           title="Fale com a IA"
-          className="group pointer-events-auto absolute right-3 bottom-[calc(var(--nav-mobile-h)+0.75rem)] flex h-20 w-16 cursor-pointer items-end justify-center transition-transform duration-200 hover:-translate-y-1 active:scale-95 md:right-5 md:bottom-5"
+          className="group pointer-events-auto absolute right-3 bottom-[calc(var(--nav-mobile-h)+0.75rem)] flex h-20 w-[5.25rem] cursor-pointer items-end justify-center transition-transform duration-200 hover:-translate-y-1 active:scale-95 md:right-5 md:bottom-5"
         >
-          {/*
-           * O mascote da IA (07/10/2026), recortado sem fundo. A sombra segue
-           * o contorno dele (drop-shadow), não um círculo: sem disco atrás,
-           * ele parece estar de pé sobre a tela. 178x240 para 3x de 80px.
-           */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/marca/mascote.webp"
-            alt=""
-            width={178}
-            height={240}
-            className="h-20 w-auto drop-shadow-[0_6px_10px_rgb(0_0_0/0.28)] transition-transform duration-300 group-hover:-rotate-6"
-          />
+          {/* O mascote com o halo (07/10/2026): ver `Mascote`. */}
+          <Mascote altura={80} className="transition-transform duration-300 group-hover:-rotate-6" />
         </button>
       )}
     </div>,

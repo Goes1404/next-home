@@ -1,6 +1,7 @@
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
+import { Mascote } from "@/app/corretor/(painel)/_componentes/Mascote";
 import { abrirConversaDoConsultor, listarConversas } from "./acoes";
 import { ChatConsultor } from "./ChatConsultor";
 
@@ -51,6 +52,7 @@ export default async function ConsultorPage({
         secao="Consultor"
         titulo="Pergunte o que quiser sobre o portfólio e o negócio"
         descricao="Ele conhece os imóveis publicados, as regras de crédito e o que já funcionou nas conversas desta casa."
+        acao={<Mascote altura={96} className="hidden sm:inline-flex" />}
       />
       <ChatConsultor
         conversasIniciais={conversas}
