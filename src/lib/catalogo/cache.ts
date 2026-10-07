@@ -51,12 +51,23 @@ export const catalogoPublicado = unstable_cache(
   { tags: [TAG_CATALOGO], revalidate: REVALIDA_EM_SEGUNDOS },
 );
 
-/** Corretores com página pública (slug preenchido), em ordem de nome. */
+/**
+ * Corretores com página pública (ativos e com slug), em ordem de nome.
+ *
+ * `ativo` entrou em 07/10/2026: o perfil de demonstração tem login e slug (sem
+ * slug o painel não abre) e não pode aparecer no site nem valer como link
+ * pessoal. Desativado, ele também fica fora da roleta.
+ */
 export const corretoresPublicos = unstable_cache(
   async (): Promise<CorretorPerfil[]> => {
     const supabase = createClient();
     const { data, error } = await comRetentativa("corretores", () =>
-      supabase.from("corretores").select(SELECT_CORRETOR).not("slug", "is", null).order("nome"),
+      supabase
+        .from("corretores")
+        .select(SELECT_CORRETOR)
+        .eq("ativo", true)
+        .not("slug", "is", null)
+        .order("nome"),
     );
     if (error) throw new Error(`Falha ao listar corretores: ${error.message}`);
     return (data as LinhaCorretor[]).map(mapCorretor);
@@ -64,8 +75,9 @@ export const corretoresPublicos = unstable_cache(
   // A chave muda quando um dado de corretor é corrigido por MIGRATION: o cache
   // de dados da Vercel sobrevive ao deploy, e a etiqueta só é limpa por ação
   // do painel. "-v2" (03/10/2026): a 0151 tirou o vídeo de fundo da Bruna e o
-  // site seguiu mostrando o vídeo pela entrada antiga.
-  ["corretores-publicos-v2"],
+  // site seguiu mostrando o vídeo pela entrada antiga. "-v3" (07/10/2026): o
+  // filtro de `ativo`.
+  ["corretores-publicos-v3"],
   { tags: [TAG_CORRETORES], revalidate: REVALIDA_EM_SEGUNDOS },
 );
 
