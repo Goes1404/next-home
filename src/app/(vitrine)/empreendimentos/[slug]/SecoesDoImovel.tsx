@@ -6,6 +6,7 @@ import { Galeria } from "@/components/empreendimento/Galeria";
 import { Lazer } from "@/components/empreendimento/Lazer";
 import { Localizacao } from "@/components/empreendimento/Localizacao";
 import { NavAncoras, type Secao } from "@/components/empreendimento/NavAncoras";
+import { PerguntasFrequentes } from "@/components/empreendimento/PerguntasFrequentes";
 import { Similares } from "@/components/empreendimento/Similares";
 import { Sobre } from "@/components/empreendimento/Sobre";
 import { BookDigital } from "@/components/empreendimento/BookDigital";
@@ -15,6 +16,7 @@ import { Video } from "@/components/empreendimento/Video";
 import { cederAoStream } from "@/lib/cederAoStream";
 import { fotosDoLazer } from "@/lib/lazerFotos";
 import { getSimilares } from "@/lib/queries";
+import { perguntasDoImovel } from "@/lib/seoDoImovel";
 import type { Empreendimento } from "@/lib/types";
 import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
@@ -28,6 +30,7 @@ function secoesDe(e: Empreendimento): Secao[] {
   if (e.videos.length > 0) secoes.push({ id: "video", label: "Vídeo" });
   if (e.tours360.length > 0) secoes.push({ id: "tour360", label: "Tour 360°" });
   secoes.push({ id: "localizacao", label: "Localização" });
+  secoes.push({ id: "perguntas", label: "Perguntas" });
   secoes.push({ id: "contato", label: "Contato" });
   return secoes;
 }
@@ -72,6 +75,7 @@ export async function SecoesDoImovel({ empreendimento: e }: { empreendimento: Em
       <Video videos={e.videos} />
       <Tour360 tours={e.tours360} />
       <Localizacao empreendimento={e} />
+      <PerguntasFrequentes nome={e.nome} perguntas={perguntasDoImovel(e)} />
       <Contato empreendimento={e} />
       <Similares empreendimentos={similares} />
     </>

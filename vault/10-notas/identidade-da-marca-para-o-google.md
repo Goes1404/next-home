@@ -1,11 +1,11 @@
 ---
 title: Identidade da marca para o Google
-aliases: [SEO da marca, dados estruturados, redirecionamento do vercel.app]
+aliases: [SEO da marca, dados estruturados, redirecionamento do vercel.app, site antigo como concorrente, perguntas frequentes do imóvel]
 tags: [front, seo, decisao]
 type: decisao
 status: ativo
 custou: medio
-codigo: ["src/lib/dadosEstruturados.ts", "src/app/(institucional)/page.tsx", "src/app/(vitrine)/empreendimentos/[slug]/page.tsx", "src/app/(institucional)/regioes/[slug]/page.tsx", "next.config.ts"]
+codigo: ["src/lib/dadosEstruturados.ts", "src/lib/seoDoImovel.ts", "src/components/empreendimento/PerguntasFrequentes.tsx", "src/app/(institucional)/page.tsx", "src/app/(vitrine)/empreendimentos/[slug]/page.tsx", "src/app/(institucional)/regioes/[slug]/page.tsx", "next.config.ts"]
 summary: A home passou a declarar a organização (com os nomes pelos quais procuram a marca) e o WebSite com busca interna; imóvel e região ganharam trilha (BreadcrumbList); o endereço da Vercel redireciona as páginas públicas para o domínio. O que mais pesa continua do lado do dono: o domínio antigo ainda não aponta para cá.
 updated: 2026-10-07
 ---
@@ -50,3 +50,35 @@ aponta para ele.
   local ao site.
 
 Liga com a seção de SEO da MEMORIA (27/08) e com [[dominio-proprio-nexthomeimoveis]].
+
+## O site antigo ficou, e virou concorrente da própria marca (07/10, tarde)
+
+Decisão do dono: `nexthomeimobiliaria.com.br` continua no ar porque uma venda
+saiu por ele. Então não há 301, e os dois sites disputam as mesmas buscas.
+Medido o "concorrente": 65 páginas, 2,5 s para responder, sem `viewport`
+(celular), acentos quebrados (latin1), sem dados estruturados, títulos por
+BAIRRO ("apartamento lançamentos jardim tupanci barueri") — e os mesmos
+empreendimentos que os nossos.
+
+O que entrou para ganhar dele onde ele é fraco:
+
+- **Título do imóvel com tipo e bairro quando cabem** (`tituloDoImovel`):
+  "Joy — Apartamentos em Jardim Tupanci, Barueri" → "Joy Barueri — Jardim
+  Tupanci, Barueri" → "nome — cidade". Medido nos 39: todos ≤ 48 caracteres,
+  29 ganharam o bairro, 5 ganharam o tipo. A regra de 27/08 ("cidade, não
+  bairro") valia porque o bairro NÃO cabia no caso medido; agora o bairro
+  entra quando cabe. **`${#t}` do bash conta BYTES em locale C**: "—" vale 3,
+  e a primeira contagem acusou 6 títulos acima de 48 que tinham 47–48.
+- **Perguntas frequentes por imóvel**, montadas do cadastro e só do que ele
+  tem (dormitórios/metragem/suítes/vagas, onde fica, estágio e entrega, valor,
+  lazer, construtora, como visitar) — à vista na página (`<details>`) e no
+  `FAQPage`, com o MESMO texto. Sem data de entrega a resposta diz que o
+  corretor confirma; nunca inventa. O endereço cadastrado costuma já trazer o
+  bairro: `ondeFica` não repete o que ele contém (a captura pegou "Jardim
+  Tupanci, Jardim Tupanci").
+- A busca do Google que tenho aqui é só dos EUA e não mostra a SERP
+  brasileira: o ranking real se acompanha no Search Console, não daqui.
+
+O que continua do lado do dono e pesa mais: Perfil da Empresa no Google e
+as bios das redes apontando para o domínio novo; um link do site antigo para
+o novo ("lançamentos 2026") passa autoridade sem tirar o antigo do ar.

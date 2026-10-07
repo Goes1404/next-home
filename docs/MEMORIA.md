@@ -9573,3 +9573,9 @@ Nota: [[identidade-da-marca-para-o-google]].
 - **O que pesa mais está fora do código:** `nexthomeimobiliaria.com.br`
   ainda serve o site legado (é o domínio com histórico); precisa de 301 para o
   domínio novo. E Search Console + Perfil da Empresa no Google com o site novo.
+- **O site antigo ficou no ar por decisão do dono** (uma venda saiu por ele),
+  então vira concorrente da marca. Medido: 65 páginas, 2,5 s, sem viewport,
+  sem dados estruturados, títulos por bairro. Resposta em código: título do
+  imóvel com tipo e bairro quando cabem (`tituloDoImovel`, 39/39 ≤ 48) e
+  perguntas frequentes por imóvel do cadastro (`perguntasDoImovel` +
+  `FAQPage`, mesmo texto na tela). `${#t}` do bash conta bytes: "—" vale 3.

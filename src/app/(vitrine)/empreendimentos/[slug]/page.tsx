@@ -8,10 +8,11 @@ import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { precoAPartirDe } from "@/lib/format";
 import { site } from "@/lib/site";
 import { ID_ORGANIZACAO, trilhaJsonLd } from "@/lib/dadosEstruturados";
+import { faqJsonLd, perguntasDoImovel, tituloDoImovel } from "@/lib/seoDoImovel";
 import { getEmpreendimentoBySlug, getSlugsEmpreendimentos } from "@/lib/queries";
 import type { Empreendimento } from "@/lib/types";
 import { EsperaDasSecoes, SecoesDoImovel } from "./SecoesDoImovel";
-import { descricaoDePagina, tituloDePagina } from "@/lib/seo";
+import { descricaoDePagina } from "@/lib/seo";
 
 type Params = { slug: string };
 
@@ -37,13 +38,13 @@ export async function generateMetadata({
   if (!e) return {};
 
   /*
-   * Título com CIDADE e não com bairro: sobram 48 caracteres depois do
-   * sufixo " · Next Home", e "Eternity Alphaville Tamboré — Centro
-   * Comercial Jubran, Barueri" tem 62 — o Google cortava justamente o nome
-   * da cidade, que é o termo que as pessoas buscam. O bairro não se perde:
-   * ele vai para a descrição, onde cabem 155.
+   * O título leva tipo e bairro QUANDO CABEM nos 48 caracteres que sobram
+   * depois do sufixo " · Next Home" — "Eternity Alphaville Tamboré — Centro
+   * Comercial Jubran, Barueri" tem 62 e o Google cortava a cidade; para
+   * esses sobra "nome — cidade". O bairro sempre vai na descrição também.
    */
-  const titulo = tituloDePagina(`${e.nome} — ${e.cidade}`);
+  // Tipo e bairro entram quando cabem; cidade é a rede (ver `seoDoImovel.ts`).
+  const titulo = tituloDoImovel(e);
   const descricao = descricaoDePagina(
     `${e.tagline ? `${e.tagline}${/[.!?]$/.test(e.tagline) ? "" : "."} ` : ""}${e.bairro}, ${e.cidade}. ${precoAPartirDe(e.precoAPartir)}.`,
   );
@@ -137,6 +138,11 @@ export default async function EmpreendimentoPage({
             ]),
           ),
         }}
+      />
+      <script
+        type="application/ld+json"
+        // As mesmas perguntas que a seção "Perguntas frequentes" mostra.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(perguntasDoImovel(e))) }}
       />
 
       <SiteHeader />
