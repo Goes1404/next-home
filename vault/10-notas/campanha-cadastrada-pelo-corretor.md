@@ -11,7 +11,7 @@ codigo:
   - src/app/corretor/(painel)/marketing/impulsionamentos/
   - src/app/corretor/(painel)/_componentes/graficos/OrigemDosLeads.tsx
 created: 2026-09-30
-updated: 2026-09-30
+updated: 2026-10-07
 summary: A tela de impulsionamentos só mostrava anúncio que o webhook detectava, sem como cadastrar campanha, sem qualidade do lead e sem comparação. Agora (0132) o corretor cria campanha com canal, valor e período, coloca anúncios detectados dentro dela e liga clientes de outros canais; cada cartão mostra a qualidade pela temperatura da IA e o custo por cliente, por visita e por cliente quente/morno, e um gráfico compara as campanhas pela mais barata por cliente, marcando a melhor por visita. Desde a 0133 o gasto tem data, e a tela desenha o custo por cliente semana a semana.
 ---
 
@@ -95,3 +95,11 @@ antigo não derruba o total.
   separados, o dono grava e o de outro corretor é recusado.
 
 Ver também [[impulsionamento-do-corretor-pela-etiqueta-da-meta]].
+
+## Gasto e clientes por canal, clientes por semana (07/10/2026)
+
+Dois gráficos novos no topo da tela (`GraficosDoInvestimento.tsx`, conta em
+`porCanal` e `clientesPorSemana`). Por canal: a parte do investimento ao
+lado da parte dos clientes, só com as campanhas que têm valor (a mesma
+população dos totais). Anúncio detectado sem campanha conta como
+"Instagram/Facebook". Por semana: 8 colunas terminando hoje, pelo dia de SP.

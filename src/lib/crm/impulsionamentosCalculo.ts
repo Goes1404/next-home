@@ -632,3 +632,86 @@ export function lerValorEmReais(entrada: string): number | null {
   if (!/^\d+(\.\d{1,2})?$/.test(normalizado)) return Number.NaN;
   return Number(normalizado);
 }
+
+/* ── Gráficos por canal e por semana (07/10/2026) ───────────────────────── */
+
+/** O anúncio detectado e não agrupado não tem canal escrito: é da Meta. */
+export type CanalDoGrafico = CanalDeCampanha | "meta";
+export const ROTULO_CANAL_DO_GRAFICO: Record<CanalDoGrafico, string> = {
+  ...CANAIS_DE_CAMPANHA,
+  meta: "Instagram/Facebook",
+};
+const canalDoResumo = (r: ResumoImpulsionamento): CanalDoGrafico => r.canal ?? "meta";
+
+export type LinhaPorCanal = {
+  canal: CanalDoGrafico;
+  rotulo: string;
+  /** Gasto das campanhas do canal com valor informado. */
+  gasto: number;
+  clientes: number;
+  visitas: number;
+  /** Parte do gasto e dos clientes do total (0–100), da mesma população. */
+  parteDoGasto: number;
+  parteDosClientes: number;
+  custoPorCliente: number | null;
+};
+
+/**
+ * "Onde vai o dinheiro, de onde vêm os clientes?" Só as campanhas com gasto
+ * informado: contar os clientes de uma campanha sem valor faria o canal
+ * parecer barato sem ser (a regra dos totais do topo).
+ */
+export function porCanal(resumos: ResumoImpulsionamento[]): LinhaPorCanal[] {
+  const comGasto = resumos.filter((r) => r.gastoTotal !== null);
+  const mapa = new Map<CanalDoGrafico, { gasto: number; clientes: number; visitas: number }>();
+  for (const r of comGasto) {
+    const c = canalDoResumo(r);
+    const atual = mapa.get(c) ?? { gasto: 0, clientes: 0, visitas: 0 };
+    atual.gasto += r.gastoTotal ?? 0;
+    atual.clientes += r.degraus.chegaram;
+    atual.visitas += r.degraus.visitaram;
+    mapa.set(c, atual);
+  }
+  const gastoTotal = [...mapa.values()].reduce((s, v) => s + v.gasto, 0);
+  const clientesTotal = [...mapa.values()].reduce((s, v) => s + v.clientes, 0);
+  return [...mapa.entries()]
+    .map(([canal, v]) => ({
+      canal,
+      rotulo: ROTULO_CANAL_DO_GRAFICO[canal],
+      gasto: Math.round(v.gasto * 100) / 100,
+      clientes: v.clientes,
+      visitas: v.visitas,
+      parteDoGasto: gastoTotal > 0 ? Math.round((v.gasto / gastoTotal) * 100) : 0,
+      parteDosClientes: clientesTotal > 0 ? Math.round((v.clientes / clientesTotal) * 100) : 0,
+      custoPorCliente: dividir(v.gasto, v.clientes),
+    }))
+    .sort((a, b) => b.gasto - a.gasto);
+}
+
+export type SemanaDeClientes = {
+  /** Último dia da semana, "aaaa-mm-dd". */
+  fim: string;
+  total: number;
+  porCanal: Partial<Record<CanalDoGrafico, number>>;
+};
+
+/** Clientes das campanhas que chegaram em cada uma das últimas `semanas` semanas, terminando hoje. */
+export function clientesPorSemana(resumos: ResumoImpulsionamento[], hoje: string, semanas = 8): SemanaDeClientes[] {
+  const fimMs = emMs(hoje);
+  const lista: SemanaDeClientes[] = Array.from({ length: semanas }, (_, i) => ({
+    fim: deMs(fimMs - (semanas - 1 - i) * 7 * DIA_MS),
+    total: 0,
+    porCanal: {},
+  }));
+  for (const r of resumos) {
+    const canal = canalDoResumo(r);
+    for (const iso of r.datasDosLeads) {
+      const atras = Math.floor((fimMs - emMs(diaDe(iso))) / (7 * DIA_MS));
+      if (atras < 0 || atras >= semanas) continue;
+      const s = lista[semanas - 1 - atras];
+      s.total += 1;
+      s.porCanal[canal] = (s.porCanal[canal] ?? 0) + 1;
+    }
+  }
+  return lista;
+}
