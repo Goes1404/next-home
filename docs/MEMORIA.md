@@ -9493,3 +9493,11 @@ Nota: [[ia-do-financeiro]].
   insert falha calado dentro do try/catch de `registrarInteracao`.
 - `formatarReais` imprime sem centavos quando o valor é redondo ("R$ 30.000"):
   teste de texto não deve esperar ",00".
+
+## Cadastrar corretor pelo painel (07/10/2026)
+
+Nota: [[cadastrar-corretor-pelo-painel]].
+
+- **Administração → Contas → "Cadastrar corretor"** cria ficha e login de uma
+  vez. `corretores` não tem policy de INSERT; a ficha é gravada pela chave de
+  serviço depois de `exigirGestorNaAcao()`, e apagada se o login falhar.

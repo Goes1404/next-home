@@ -6,6 +6,7 @@ import type { CorretorAdmin } from "@/lib/corretorSessao";
 import { Check, Copy, KeyRound, ShieldCheck, TriangleAlert, UserPlus, Users } from "lucide-react";
 import {
   alterarPapelCorretor,
+  cadastrarCorretor,
   alternarAtivoCorretor,
   criarAcessoCorretor,
   criarAcessosQueFaltam,
@@ -322,6 +323,92 @@ function CartaoLote({ lote, aoFechar }: { lote: ResultadoLoteAcessos; aoFechar: 
   );
 }
 
+/**
+ * Cadastro de corretor novo: ficha e login de uma vez. Até 07/10/2026 a
+ * ficha só nascia por SQL e esta tela só criava acesso para quem já tinha.
+ */
+function NovoCorretor({ aoCriar }: { aoCriar: (c: Credencial) => void }) {
+  const [aberto, setAberto] = useState(false);
+  const [dados, setDados] = useState({ nome: "", creci: "", whatsapp: "", email: "" });
+  const [erro, setErro] = useState<string | null>(null);
+  const [pendente, iniciar] = useTransition();
+
+  const campo = (k: keyof typeof dados, rotulo: string, tipo: string, dica: string) => (
+    <label className="text-fluid-xs text-apoio flex flex-col gap-1">
+      {rotulo}
+      <input
+        type={tipo}
+        value={dados[k]}
+        onChange={(e) => setDados((d) => ({ ...d, [k]: e.target.value }))}
+        placeholder={dica}
+        className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-w-0 rounded-xl border px-3.5 py-2.5 focus:outline-none"
+      />
+    </label>
+  );
+
+  const salvar = () =>
+    iniciar(async () => {
+      setErro(null);
+      try {
+        const r = await cadastrarCorretor(dados);
+        if (!r.ok) return setErro(r.erro);
+        aoCriar({ nome: dados.nome.trim(), email: r.email, senha: r.senha, slug: r.slug });
+        setDados({ nome: "", creci: "", whatsapp: "", email: "" });
+        setAberto(false);
+      } catch {
+        setErro("Não consegui cadastrar. Confira a conexão e tente de novo.");
+      }
+    });
+
+  if (!aberto) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        className="text-fluid-xs bg-acento hover:bg-acento-hover mb-5 flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor"
+      >
+        <UserPlus className="h-4 w-4" /> Cadastrar corretor
+      </button>
+    );
+  }
+
+  return (
+    <div className="cartao mb-5 space-y-3 p-5">
+      <h3 className="text-fluid-sm font-bold text-titulo">Novo corretor</h3>
+      <p className="text-fluid-xs text-corpo">
+        Ele já entra no painel, aparece na página da equipe do site e passa a receber leads da roleta. A
+        senha provisória aparece uma vez e é trocada no primeiro acesso.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {campo("nome", "Nome", "text", "Nome e sobrenome")}
+        {campo("creci", "CRECI", "text", "Número do CRECI")}
+        {campo("whatsapp", "WhatsApp", "tel", "(11) 98765-4321")}
+        {campo("email", "E-mail de acesso", "email", "email@docorretor.com")}
+      </div>
+      {erro && (
+        <p className="text-fluid-xs border-perigo-linha bg-perigo-lavado text-perigo rounded-xl border px-3 py-2">{erro}</p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={salvar}
+          disabled={pendente}
+          className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 cursor-pointer items-center rounded-lg px-4 font-bold text-sobre-cor disabled:opacity-60"
+        >
+          {pendente ? "Cadastrando…" : "Cadastrar e criar acesso"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setAberto(false)}
+          className="text-fluid-xs border-linha-forte text-corpo flex min-h-11 cursor-pointer items-center rounded-lg border px-4"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ContasManager({
   corretores,
   meuId,
@@ -361,6 +448,13 @@ export function ContasManager({
           {aviso.msg}
         </p>
       )}
+
+      <NovoCorretor
+        aoCriar={(cred) => {
+          setCredencial(cred);
+          setAviso(null);
+        }}
+      />
 
       {semAcesso > 0 && (
         <div className="border-alerta-linha bg-alerta-lavado mb-5 flex items-start gap-2 rounded-2xl border p-4">

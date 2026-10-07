@@ -6,6 +6,7 @@ import { revalidarCorretores } from "@/lib/catalogo/revalidar";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
 import {
   candidatosDeEmail,
   emailInicial,
@@ -162,6 +163,56 @@ export async function criarAcessoCorretor(
   revalidarCorretores();
   revalidatePath("/corretor/admin/contas");
   return { ok: true, email: emailLimpo, senha, slug };
+}
+
+export type DadosNovoCorretor = { nome: string; creci: string; whatsapp: string; email: string };
+
+/**
+ * Cadastra um corretor novo (ficha + login) de uma vez (07/10/2026).
+ *
+ * Até aqui só existia "Criar acesso" para quem JÁ tinha ficha, e ficha nova
+ * só nascia por SQL. `corretores` não tem policy de INSERT de propósito (a
+ * tabela é pública para leitura), então quem grava é a chave de serviço,
+ * depois de `exigirGestorNaAcao()` decidir que pode.
+ *
+ * Se o login falhar, a ficha é apagada: sem isso sobraria um corretor sem
+ * acesso que aparece no site, e a próxima tentativa com o mesmo nome
+ * ganharia slug com sufixo.
+ */
+export async function cadastrarCorretor(dados: DadosNovoCorretor): Promise<ResultadoCriarAcesso> {
+  const guarda = await exigirGestorNaAcao();
+  if (!guarda.corretor) return { erro: guarda.erro ?? "Acesso negado." };
+
+  const nome = dados.nome.trim().replace(/\s+/g, " ");
+  const creci = dados.creci.trim();
+  const email = dados.email.trim().toLowerCase();
+  const whatsapp = normalizarTelefoneBr(dados.whatsapp);
+  if (nome.length < 3) return { erro: "Informe o nome do corretor." };
+  if (!creci) return { erro: "Informe o CRECI." };
+  if (!whatsapp || whatsapp.length < 12 || whatsapp.length > 13) {
+    return { erro: "WhatsApp inválido. Use DDD + número, por exemplo (11) 98765-4321." };
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { erro: "E-mail inválido." };
+
+  const supabase = await createClient();
+  const slug = await slugDisponivel(supabase, slugificar(nome), "");
+  const servico = createServiceClient();
+  const { data: ficha, error } = await servico
+    .from("corretores")
+    .insert({ nome, creci, whatsapp, slug, ativo: true })
+    .select("id")
+    .single();
+  if (error || !ficha) {
+    console.error("[admin] falha ao cadastrar corretor:", error?.message);
+    return { erro: "Não foi possível cadastrar o corretor agora. Tente de novo." };
+  }
+
+  const acesso = await criarAcessoCorretor(ficha.id, email);
+  if (!acesso.ok) {
+    await servico.from("corretores").delete().eq("id", ficha.id);
+    return { erro: acesso.erro };
+  }
+  return acesso;
 }
 
 export type AcessoEmLote = {
