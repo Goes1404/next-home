@@ -9501,3 +9501,16 @@ Nota: [[cadastrar-corretor-pelo-painel]].
 - **Administração → Contas → "Cadastrar corretor"** cria ficha e login de uma
   vez. `corretores` não tem policy de INSERT; a ficha é gravada pela chave de
   serviço depois de `exigirGestorNaAcao()`, e apagada se o login falhar.
+
+## Perfil de demonstração do corretor (07/10/2026)
+
+Nota: [[perfil-de-demonstracao-do-corretor]].
+
+- **"Lucas Andrade" (`demo-lucas-andrade`)**, login `demo@nexthomeimoveis.com`,
+  `ativo = false`, sem WhatsApp: 49 leads nas 10 etapas, 30 conversas, 5
+  visitas futuras, 4 vendas. Apagar com `scripts/demo/apagarPerfilDemo.sql`.
+- **O site listava todo corretor com slug, ativo ou não.** Agora
+  `corretoresPublicos` filtra `ativo` (chave do cache `-v3`).
+- **`leads_visita_sem_conflito_idx`** recusa duas visitas do mesmo corretor no
+  mesmo instante: seed de visitas precisa de horários únicos.
+- Até ser apagado, ele entra nos números da equipe do ADM e no ranking.
