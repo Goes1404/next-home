@@ -9,6 +9,7 @@ import { Secao } from "@/components/institucional/Secao";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
+import { trilhaJsonLd } from "@/lib/dadosEstruturados";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { getEmpreendimentos } from "@/lib/queries";
 import { REGIOES, regiaoPorSlug, regioesComEstoque } from "@/lib/regioes";
@@ -82,6 +83,19 @@ export default async function PaginaDaRegiao({ params }: Props) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        // A mesma trilha que a página mostra, para o Google ler.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            trilhaJsonLd([
+              { nome: "Início", url: "/" },
+              { nome: "Imóveis", url: "/empreendimentos" },
+              { nome: `Imóveis em ${regiao.nome}`, url: `/regioes/${regiao.slug}` },
+            ]),
+          ),
+        }}
+      />
       <Pagina>
         <Secao espaco="abertura">
           <CabecalhoDePagina

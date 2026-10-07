@@ -8,6 +8,7 @@ import { Footer } from "@/components/layout/Footer";
 import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { site } from "@/lib/site";
+import { OG_IMAGEM } from "@/lib/dadosEstruturados";
 import { COR_DA_BARRA, getTemaEscolhido } from "@/lib/tema";
 import "./globals.css";
 
@@ -79,20 +80,13 @@ export const metadata: Metadata = {
     siteName: site.nomeCompleto,
     title: `${site.nomeCompleto} — Imobiliária de Alto Padrão em Alphaville`,
     description: site.descricao,
-    images: [
-      {
-        url: "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: `${site.nomeCompleto} — Imóveis em Alphaville e Barueri`,
-      },
-    ],
+    images: [OG_IMAGEM],
   },
   twitter: {
     card: "summary_large_image",
     title: `${site.nomeCompleto} — Imobiliária em Alphaville`,
     description: site.descricao,
-    images: ["https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/og-image.jpg"],
+    images: [OG_IMAGEM.url],
   },
   robots: {
     index: true,

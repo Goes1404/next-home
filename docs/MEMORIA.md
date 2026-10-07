@@ -9551,3 +9551,25 @@ Nota: [[mascote-da-ia]].
   site e foi desfeito no mesmo dia, a pedido — no site o botão é o do
   WhatsApp, com o símbolo dele. `Mascote` mora em `src/components/marca/`, com
   a variante `destaque` (disco cheio + anel que pulsa) no botão do painel.
+
+## Identidade da marca para o Google (07/10/2026)
+
+Nota: [[identidade-da-marca-para-o-google]].
+
+- **Medido antes de mexer:** títulos, canonical, sitemap (58 URLs, todas 200)
+  e dados estruturados já estavam certos; `www.nexthomeimoveis.com` no ar e
+  `NEXT_PUBLIC_SITE_URL` apontando para ele. O que faltava era IDENTIDADE,
+  não base técnica.
+- **`dadosEstruturados.ts`**: `RealEstateAgent` com `@id`, `alternateName`
+  ("Next Home", "Next Home Imóveis", "Next Home Imobiliária"), `logo`; `WebSite`
+  com `name` igual ao sufixo dos títulos e `SearchAction` para `?busca=`.
+  BreadcrumbList no imóvel e na região.
+- **O `openGraph` da PÁGINA substitui o do layout, não mescla**: a home
+  estava sem `og:image`. `OG_IMAGEM` é constante única.
+- **`next-home-drab.vercel.app` → domínio (308) só nas páginas públicas.**
+  `/api` fica (webhook, crons e `/api/versao` chamam o host pelo nome),
+  `/corretor` fica (sessão por domínio) e arquivos com extensão ficam. Provado
+  em `next start` com `Host:` antes de subir.
+- **O que pesa mais está fora do código:** `nexthomeimobiliaria.com.br`
+  ainda serve o site legado (é o domínio com histórico); precisa de 301 para o
+  domínio novo. E Search Console + Perfil da Empresa no Google com o site novo.

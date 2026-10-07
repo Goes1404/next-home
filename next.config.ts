@@ -105,6 +105,26 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      /*
+       * O endereço da Vercel (next-home-drab.vercel.app) servia o site inteiro
+       * em paralelo ao domínio: duas cópias do mesmo conteúdo dividindo
+       * sinal. Desde 07/10/2026 as páginas PÚBLICAS dali vão para o domínio
+       * com 308. Ficam de fora, de propósito: `/api` (webhook do WhatsApp,
+       * crons do pg_cron e da Vercel, /api/versao — tudo que chama este
+       * host pelo nome), `/corretor` (o painel; sessão é por domínio, e
+       * mandar a equipe para o outro endereço derrubaria quem está logado) e
+       * arquivos com extensão. Só vale quando o domínio está configurado.
+       */
+      ...(process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("vercel.app")
+        ? [
+            {
+              source: "/:path((?!api/|api$|corretor/|corretor$|_next/|.*\\.).*)",
+              has: [{ type: "host" as const, value: "next-home-drab.vercel.app" }],
+              destination: `${process.env.NEXT_PUBLIC_SITE_URL}/:path`,
+              permanent: true,
+            },
+          ]
+        : []),
       // O site legado servia uma versão mobile separada; agora o layout é
       // responsivo e /m/ redireciona para a raiz preservando o SEO acumulado.
       { source: "/m", destination: "/", permanent: true },

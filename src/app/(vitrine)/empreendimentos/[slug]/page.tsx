@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { precoAPartirDe } from "@/lib/format";
 import { site } from "@/lib/site";
+import { ID_ORGANIZACAO, trilhaJsonLd } from "@/lib/dadosEstruturados";
 import { getEmpreendimentoBySlug, getSlugsEmpreendimentos } from "@/lib/queries";
 import type { Empreendimento } from "@/lib/types";
 import { EsperaDasSecoes, SecoesDoImovel } from "./SecoesDoImovel";
@@ -99,11 +100,8 @@ function jsonLd(e: Empreendimento) {
             price: e.precoAPartir,
             priceCurrency: "BRL",
             availability: "https://schema.org/InStock",
-            seller: {
-              "@type": "RealEstateAgent",
-              name: site.nomeCompleto,
-              url: site.url,
-            },
+            // O mesmo nó da organização que a home descreve, não uma cópia.
+            seller: { "@id": ID_ORGANIZACAO },
           },
         }
       : {}),
@@ -126,6 +124,19 @@ export default async function EmpreendimentoPage({
         // O conteúdo é montado no servidor a partir do nosso próprio banco,
         // não de entrada de usuário.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(e)) }}
+      />
+      <script
+        type="application/ld+json"
+        // Trilha Início › Empreendimentos › imóvel, montada por código a partir do slug.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            trilhaJsonLd([
+              { nome: "Início", url: "/" },
+              { nome: "Empreendimentos", url: "/empreendimentos" },
+              { nome: e.nome, url: `/empreendimentos/${e.slug}` },
+            ]),
+          ),
+        }}
       />
 
       <SiteHeader />
