@@ -6,14 +6,15 @@ import { GraficoVazio } from "./Moldura";
  * Colunas de valor por mês (07/10/2026), usadas em Vendas (VGV) e no
  * Extrato (comissão recebida). O último mês é o atual e vem em destaque; o
  * valor só fica escrito no mês atual e no maior, os outros aparecem no
- * hover e no título — número em toda coluna vira ruído.
+ * hover e no título — número em toda coluna vira ruído. `marca` é uma
+ * segunda linha opcional embaixo do mês (a posição no ranking, por exemplo).
  */
 export function ColunasPorMes({
   meses,
   vazio,
   rotuloAcessivel,
 }: {
-  meses: { mes: string; rotulo: string; valor: number; detalhe?: string }[];
+  meses: { mes: string; rotulo: string; valor: number; detalhe?: string; marca?: string }[];
   vazio: string;
   rotuloAcessivel: string;
 }) {
@@ -47,6 +48,7 @@ export function ColunasPorMes({
         {meses.map((m, i) => (
           <li key={m.mes} className={`text-fluid-xs flex-1 text-center ${i === ultimo ? "text-titulo font-bold" : "text-tenue"}`}>
             {m.rotulo}
+            {m.marca && <span className="text-fluid-xs text-apoio block font-bold">{m.marca}</span>}
           </li>
         ))}
       </ol>

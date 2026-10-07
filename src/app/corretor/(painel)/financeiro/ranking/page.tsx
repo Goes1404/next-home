@@ -5,6 +5,15 @@ import { getRankingVgv } from "@/lib/financeiro/dados";
 import { intervaloDo, lerPeriodo, nomeDoMes, PERIODOS } from "@/lib/financeiro/periodo";
 import { formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
+import { evolucaoNoRanking, fatiaDoCorretor } from "@/lib/financeiro/graficosDoRanking";
+import { mesAntes } from "@/lib/financeiro/painelDeVendas";
+import { Evolucao, Podio, SuaFatia } from "./GraficosDoRanking";
+
+/** "aaaa-mm-dd" do último dia do mês "aaaa-mm". */
+function ultimoDiaDoMes(mes: string): string {
+  const [a, m] = mes.split("-").map(Number);
+  return `${mes}-${String(new Date(Date.UTC(a, m, 0)).getUTCDate()).padStart(2, "0")}`;
+}
 
 export const metadata: Metadata = { title: "Ranking de VGV" };
 
@@ -42,7 +51,16 @@ export default async function RankingPage({
   const periodo = lerPeriodo((await searchParams).periodo);
   const hoje = hojeEmSaoPaulo();
   const { inicio, fim } = intervaloDo(periodo, hoje);
-  const ranking = await getRankingVgv(inicio, fim);
+  // Os 6 últimos meses para "mês a mês": uma chamada por mês, em paralelo.
+  const mesesDaEvolucao = [5, 4, 3, 2, 1, 0].map((d) => mesAntes(hoje, d));
+  const [ranking, ...porMes] = await Promise.all([
+    getRankingVgv(inicio, fim),
+    ...mesesDaEvolucao.map((m) => getRankingVgv(`${m}-01`, m === hoje.slice(0, 7) ? hoje : ultimoDiaDoMes(m))),
+  ]);
+  const evolucao = evolucaoNoRanking(
+    mesesDaEvolucao.map((mes, i) => ({ mes, ranking: porMes[i] ?? [] })),
+    corretor.id,
+  );
 
   const titulo =
     periodo === "mes"
@@ -96,6 +114,13 @@ export default async function RankingPage({
           </div>
 
           {lideres.length > 0 && (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+              <Podio lideres={lideres} eu={corretor.id} />
+              <SuaFatia fatia={fatiaDoCorretor(lideres, corretor.id)} />
+            </div>
+          )}
+
+          {lideres.length > 0 && (
             <ol className="space-y-2">
               {lideres.map((r, i) => {
                 const eu = r.corretorId === corretor.id;
@@ -137,6 +162,8 @@ export default async function RankingPage({
               Sem venda no período: {semVenda.map((r) => (r.corretorId === corretor.id ? `${r.nome} (você)` : r.nome)).join(", ")}.
             </p>
           )}
+          {evolucao.some((m) => m.participantes > 0) && <Evolucao meses={evolucao} />}
+
           <p className="text-fluid-xs text-tenue">
             VGV conta a parte de cada corretor na venda (em co-corretagem, dividido pelas partes). Venda distratada sai do VGV.
             Período de {inicio.split("-").reverse().join("/")} a {fim.split("-").reverse().join("/")}, até hoje ({hoje.split("-").reverse().join("/")}).

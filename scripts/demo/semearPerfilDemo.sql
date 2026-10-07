@@ -328,3 +328,56 @@ update public.vendas set comissao_prevista_em = case unidade
     when 'Apto 270' then (now() at time zone 'America/Sao_Paulo')::date - 6 end
  where corretor_id = (select id from public.corretores where slug = 'demo-lucas-andrade')
    and unidade in ('Apto 263', 'Apto 270') and comissao_recebida_em is null;
+
+-- Colegas de demonstração para o ranking (07/10/2026). Desativados, sem
+-- login e sem WhatsApp: pela 0170, só o perfil demo (também desativado) os
+-- vê no ranking. As vendas deles não têm lead.
+do $$
+declare
+  imoveis uuid[] := array(select id from public.empreendimentos where publicado order by ordem limit 8);
+  colegas text[] := array['Fernanda Rocha','Ricardo Mendes','Juliana Alves','Marcos Prado','Paula Nogueira'];
+  slugs text[] := array['demo-fernanda-rocha','demo-ricardo-mendes','demo-juliana-alves','demo-marcos-prado','demo-paula-nogueira'];
+  -- vendas por colega: meses atrás (0 = este mês) e valor em mil
+  meses int[][] := array[
+    array[0, 0, 0, 1, 2, 3, 4],
+    array[0, 0, 1, 2, 2, 4, 5],
+    array[0, 1, 1, 3, 5, 0, 0],
+    array[0, 2, 3, 4, 0, 0, 0],
+    array[1, 3, 0, 0, 0, 0, 0]];
+  valores int[][] := array[
+    array[540, 610, 470, 520, 480, 590, 430],
+    array[560, 520, 450, 610, 380, 490, 420],
+    array[850, 470, 520, 390, 440, 0, 0],
+    array[460, 580, 410, 370, 0, 0, 0],
+    array[390, 450, 0, 0, 0, 0, 0]];
+  hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+  c int;
+  k int;
+  id_colega uuid;
+  venda uuid;
+  quando date;
+begin
+  if exists (select 1 from public.corretores where slug = 'demo-fernanda-rocha') then
+    raise exception 'Os colegas de demonstração já existem.';
+  end if;
+  for c in 1..array_length(colegas, 1) loop
+    insert into public.corretores (nome, creci, whatsapp, slug, ativo, papel)
+    values (colegas[c], (200000 + c * 1111)::text || '-F', '55119000009' || (80 + c)::text, slugs[c], false, 'corretor')
+    returning id into id_colega;
+    for k in 1..7 loop
+      continue when valores[c][k] = 0;
+      quando := least(hoje - 1, (date_trunc('month', hoje) - make_interval(months => meses[c][k]))::date + ((c * 5 + k * 3) % 24));
+      insert into public.vendas (corretor_id, empreendimento_id, unidade, data_venda, valor_venda,
+        comissao_percentual, comissao_valor, status, distratada_em, comissao_recebida_em, observacao)
+      values (id_colega, imoveis[1 + ((c + k) % array_length(imoveis, 1))], 'Apto ' || (300 + c * 10 + k)::text,
+        quando, valores[c][k] * 1000, 5, valores[c][k] * 50,
+        case when c = 4 and k = 2 then 'distratada' else 'ativa' end,
+        case when c = 4 and k = 2 then quando + 20 end,
+        case when meses[c][k] >= 2 then quando + 30 end,
+        'Venda de demonstração (colega)')
+      returning id into venda;
+      insert into public.venda_participantes (venda_id, corretor_id, parte_percentual, repasse_percentual, repasse_valor)
+      values (venda, id_colega, 100, 40, valores[c][k] * 20);
+    end loop;
+  end loop;
+end $$;

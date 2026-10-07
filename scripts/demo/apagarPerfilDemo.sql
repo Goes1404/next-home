@@ -18,6 +18,12 @@ begin
   delete from public.metas_corretor where corretor_id = demo;
   delete from public.corretor_disponibilidade where corretor_id = demo;
   delete from public.corretores where id = demo;
+
+  -- Colegas de demonstração do ranking (slug demo-*, sem login).
+  delete from public.venda_participantes where venda_id in (
+    select v.id from public.vendas v join public.corretores c on c.id = v.corretor_id where c.slug like 'demo-%');
+  delete from public.vendas where corretor_id in (select id from public.corretores where slug like 'demo-%');
+  delete from public.corretores where slug like 'demo-%' and user_id is null;
   if usuario is not null then
     delete from auth.users where id = usuario;  -- leva identities e sessões
   end if;

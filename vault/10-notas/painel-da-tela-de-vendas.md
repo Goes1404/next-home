@@ -5,8 +5,8 @@ tags: [crm, painel, decisao]
 type: decisao
 status: ativo
 custou: baixo
-codigo: ["src/lib/financeiro/painelDeVendas.ts", "src/lib/financeiro/graficosDoExtrato.ts", "src/app/corretor/(painel)/financeiro/extrato/GraficosDoExtrato.tsx", "src/app/corretor/(painel)/_componentes/graficos/ColunasPorMes.tsx", "src/app/corretor/(painel)/financeiro/PainelDeVendas.tsx", "src/app/corretor/(painel)/financeiro/page.tsx"]
-summary: As telas de Vendas e de Extrato ganharam gráficos. Vendas: seis indicadores (VGV do mês com variação, VGV do ano, vendas, ticket médio, comissão recebida e a receber) e três gráficos (VGV por mês, comissão em três estados, ranking de imóveis), calculados numa função pura. Extrato: comissão recebida por mês, quando entra o que falta e, para o gestor, quanto cada construtora deve.
+codigo: ["src/lib/financeiro/painelDeVendas.ts", "src/lib/financeiro/graficosDoExtrato.ts", "src/app/corretor/(painel)/financeiro/extrato/GraficosDoExtrato.tsx", "src/app/corretor/(painel)/_componentes/graficos/ColunasPorMes.tsx", "src/lib/financeiro/graficosDoRanking.ts", "supabase/migrations/0170_ranking_do_perfil_demo.sql", "src/app/corretor/(painel)/financeiro/PainelDeVendas.tsx", "src/app/corretor/(painel)/financeiro/page.tsx"]
+summary: As telas de Vendas, Extrato e Ranking ganharam gráficos. Vendas: seis indicadores (VGV do mês com variação, VGV do ano, vendas, ticket médio, comissão recebida e a receber) e três gráficos (VGV por mês, comissão em três estados, ranking de imóveis), calculados numa função pura. Extrato: comissão recebida por mês, quando entra o que falta e, para o gestor, quanto cada construtora deve. Ranking: pódio, fatia do VGV da equipe e posição mês a mês.
 updated: 2026-10-07
 ---
 
@@ -39,3 +39,18 @@ Liga com [[vendas-e-o-modulo-financeiro]] e [[graficos-que-decidem]].
   Para o gestor é a comissão da imobiliária.
 - **Quem deve mais (gestor):** construtoras pela dívida; vermelho acima de 60
   dias, a mesma régua da lista abaixo.
+
+## Ranking (07/10/2026)
+
+- **Pódio** (2º, 1º, 3º), **sua fatia** do VGV da equipe (anel, quanto falta
+  para passar quem está acima e a vantagem sobre quem vem atrás) e **mês a
+  mês** (seu VGV e sua posição nos 6 últimos meses: uma chamada de
+  `ranking_vgv` por mês, em paralelo). Contas em `graficosDoRanking.ts`, só
+  com o que o ranking já mostra a todos.
+- **`ranking_vgv` só listava corretor ATIVO**, e o perfil demo é desativado:
+  ele nem aparecia no próprio ranking. A 0170 faz por grupo: ativo vê ativos
+  (nada muda para a equipe real), desativado vê os desativados com slug — o
+  time de demonstração (cinco colegas fictícios `demo-*`, sem login).
+- `vendasSeguras.test.ts` reprova `comissao`/`repasse` no CORPO inteiro da
+  função, comentário incluído: comentário dentro dela não pode citar as duas
+  palavras.

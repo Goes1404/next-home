@@ -9531,3 +9531,8 @@ Nota: [[painel-da-tela-de-vendas]].
   "quando entra o que falta" pela previsão de pagamento (vencida em vermelho,
   sem previsão à parte, nunca um mês inventado) e, para o gestor, quanto cada
   construtora deve. Contas em `graficosDoExtrato.ts` (pura).
+- **Ranking também ganhou gráficos** (07/10): pódio, fatia do VGV da equipe e
+  posição mês a mês. **`ranking_vgv` só lista corretor ativo**; a 0170 faz por
+  grupo (desativado vê desativados com slug), para o perfil demo ter colegas
+  de demonstração (`demo-*`) sem que eles cheguem à equipe real. O script de
+  remoção apaga os colegas também.
