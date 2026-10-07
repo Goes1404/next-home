@@ -320,3 +320,11 @@ begin
     values (venda, demo, 100, 40, valor * 0.05 * 0.40, case when meses_atras[i] >= 2 then quando + 35 end);
   end loop;
 end $$;
+
+-- Previsões de pagamento (07/10/2026), para o gráfico "Quando entra o que
+-- falta?" do Extrato mostrar uma previsão no mês seguinte e uma vencida.
+update public.vendas set comissao_prevista_em = case unidade
+    when 'Apto 263' then (date_trunc('month', now() at time zone 'America/Sao_Paulo') + interval '1 month 9 days')::date
+    when 'Apto 270' then (now() at time zone 'America/Sao_Paulo')::date - 6 end
+ where corretor_id = (select id from public.corretores where slug = 'demo-lucas-andrade')
+   and unidade in ('Apto 263', 'Apto 270') and comissao_recebida_em is null;

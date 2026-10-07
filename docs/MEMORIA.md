@@ -9527,3 +9527,7 @@ Nota: [[painel-da-tela-de-vendas]].
   corta o excesso. Medir o `getBoundingClientRect` dos cartões.
 - O perfil demo ganhou 10 vendas de maio a setembro (segundo bloco de
   `scripts/demo/semearPerfilDemo.sql`), para as colunas por mês terem ritmo.
+- **Extrato também ganhou gráficos** (07/10): comissão recebida por mês,
+  "quando entra o que falta" pela previsão de pagamento (vencida em vermelho,
+  sem previsão à parte, nunca um mês inventado) e, para o gestor, quanto cada
+  construtora deve. Contas em `graficosDoExtrato.ts` (pura).

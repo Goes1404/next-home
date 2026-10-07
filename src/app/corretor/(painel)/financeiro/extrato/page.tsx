@@ -9,7 +9,7 @@ import {
   ROTULO_SITUACAO,
   type SituacaoDoRepasse,
 } from "@/lib/financeiro/extrato";
-import { nomeDoMes } from "@/lib/financeiro/periodo";
+import { quandoEntra, recebidoPorMes } from "@/lib/financeiro/graficosDoExtrato";
 import { preverCaixa, type Previsao } from "@/lib/financeiro/previsao";
 import { getRitmoDoCorretor } from "@/lib/financeiro/ritmoDoCorretor";
 import { centavos, formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
@@ -17,6 +17,7 @@ import { BotaoAcao } from "../../_componentes/BotaoAcao";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
 import { CartaoMeta } from "../CartaoMeta";
 import { marcarComissaoRecebida, marcarRepassePago } from "../acoes";
+import { QuandoEntra, QuemDeveMais, RecebidoPorMes } from "./GraficosDoExtrato";
 
 export const metadata: Metadata = { title: "Extrato e meta" };
 
@@ -146,19 +147,11 @@ export default async function ExtratoPage() {
 
       {!gestor && <CartaoPrevisao previsao={minhaPrevisao} titulo="O que deve entrar" />}
 
-      {meu.recebidoPorMes.length > 0 && (
-        <section className="cartao space-y-2 p-4 sm:p-5">
-          <h2 className="text-fluid-base text-titulo font-medium">Recebido por mês</h2>
-          <ul className="text-fluid-sm divide-linha divide-y">
-            {meu.recebidoPorMes.map((m) => (
-              <li key={m.mes} className="flex justify-between gap-2 py-2">
-                <span className="text-corpo capitalize">{nomeDoMes(`${m.mes}-01`)}</span>
-                <span className="text-titulo font-medium tabular-nums">{formatarReais(m.valor)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {/* min-w-0 nos filhos: item de grid tem min-width auto (ver PainelDeVendas). */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+        <RecebidoPorMes meses={recebidoPorMes(corretor.id, vendas, hoje)} />
+        <QuandoEntra faixas={quandoEntra(gestor ? null : corretor.id, vendas, hoje)} gestor={gestor} />
+      </div>
 
       <section className="space-y-2">
         <h2 className="text-fluid-base text-titulo font-medium">Suas comissões</h2>
@@ -198,6 +191,8 @@ export default async function ExtratoPage() {
       </section>
 
       {gestor && previsaoEquipe && <CartaoPrevisao previsao={previsaoEquipe} titulo="O que deve entrar na imobiliária" />}
+
+      {gestor && <QuemDeveMais construtoras={construtoras} />}
 
       {gestor && (
         <section className="space-y-2">

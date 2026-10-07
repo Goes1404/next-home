@@ -47,10 +47,10 @@ export type PainelDeVendas = {
   porImovel: { imovel: string; vgv: number; vendas: number }[];
 };
 
-const NOMES_MES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+export const NOMES_MES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
 /** "aaaa-mm" do mês `deslocamento` meses antes do mês de `hoje`. */
-function mesAntes(hoje: string, deslocamento: number): string {
+export function mesAntes(hoje: string, deslocamento: number): string {
   const ano = Number(hoje.slice(0, 4));
   const mes = Number(hoje.slice(5, 7)) - 1 - deslocamento;
   const a = ano + Math.floor(mes / 12);

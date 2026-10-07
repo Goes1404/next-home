@@ -1,6 +1,7 @@
 import { formatarReais } from "@/lib/financeiro/venda";
 import { reaisCurto, type PainelDeVendas as Painel } from "@/lib/financeiro/painelDeVendas";
 import { CartaoDeGrafico, GraficoVazio } from "../_componentes/graficos/Moldura";
+import { ColunasPorMes } from "../_componentes/graficos/ColunasPorMes";
 
 /**
  * Indicadores e gráficos da tela de Vendas (07/10/2026). Só desenho: as
@@ -24,44 +25,6 @@ function Indicador({ rotulo, valor, detalhe, tom }: { rotulo: string; valor: str
           {detalhe}
         </dd>
       )}
-    </div>
-  );
-}
-
-function VgvPorMes({ meses }: { meses: Painel["meses"] }) {
-  const maior = Math.max(...meses.map((m) => m.vgv), 0);
-  if (maior === 0) return <GraficoVazio texto="As colunas aparecem quando a primeira venda for registrada." />;
-  const ultimo = meses.length - 1;
-  return (
-    <div>
-      <ol className="flex h-44 items-end gap-2 sm:gap-3" aria-label="VGV por mês">
-        {meses.map((m, i) => {
-          const altura = m.vgv > 0 ? Math.max(4, Math.round((m.vgv / maior) * 100)) : 0;
-          const atual = i === ultimo;
-          const titulo = `${m.rotulo}: ${formatarReais(m.vgv)} em ${m.vendas} ${m.vendas === 1 ? "venda" : "vendas"}`;
-          return (
-            <li key={m.mes} className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1" title={titulo}>
-              <span
-                className={`text-fluid-xs whitespace-nowrap ${atual || m.vgv === maior ? "text-titulo font-bold" : "text-apoio opacity-0 group-hover:opacity-100"}`}
-              >
-                {m.vgv > 0 ? reaisCurto(m.vgv) : ""}
-              </span>
-              <span
-                className={`w-full max-w-14 rounded-t transition-opacity group-hover:opacity-100 ${atual ? "bg-acento" : "bg-acento opacity-45"}`}
-                style={{ height: `${altura}%` }}
-              />
-              <span className="sr-only">{titulo}</span>
-            </li>
-          );
-        })}
-      </ol>
-      <ol className="border-linha mt-1 flex gap-2 border-t pt-1 sm:gap-3" aria-hidden>
-        {meses.map((m, i) => (
-          <li key={m.mes} className={`text-fluid-xs flex-1 text-center ${i === ultimo ? "text-titulo font-bold" : "text-tenue"}`}>
-            {m.rotulo}
-          </li>
-        ))}
-      </ol>
     </div>
   );
 }
@@ -154,7 +117,11 @@ export function PainelDeVendas({ painel, gestor }: { painel: Painel; gestor: boo
       {/* min-w-0 nos filhos: item de grid tem min-width auto, e o rótulo sem quebra de linha alargava o cartão além da tela do celular. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 [&>*]:min-w-0">
         <CartaoDeGrafico titulo="Como está o ritmo de vendas?" subtitulo="VGV por mês, últimos 6 meses">
-          <VgvPorMes meses={painel.meses} />
+          <ColunasPorMes
+            meses={painel.meses.map((m) => ({ mes: m.mes, rotulo: m.rotulo, valor: m.vgv, detalhe: `em ${m.vendas} ${m.vendas === 1 ? "venda" : "vendas"}` }))}
+            vazio="As colunas aparecem quando a primeira venda for registrada."
+            rotuloAcessivel="VGV por mês"
+          />
         </CartaoDeGrafico>
         <CartaoDeGrafico
           titulo={gestor ? "Quanto da comissão já entrou?" : "Quanto da sua comissão já entrou?"}

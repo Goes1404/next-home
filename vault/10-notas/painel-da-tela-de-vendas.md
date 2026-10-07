@@ -5,8 +5,8 @@ tags: [crm, painel, decisao]
 type: decisao
 status: ativo
 custou: baixo
-codigo: ["src/lib/financeiro/painelDeVendas.ts", "src/app/corretor/(painel)/financeiro/PainelDeVendas.tsx", "src/app/corretor/(painel)/financeiro/page.tsx"]
-summary: A tela de Vendas ganhou seis indicadores (VGV do mês com variação, VGV do ano, vendas, ticket médio, comissão recebida e a receber) e três gráficos (VGV por mês, comissão em três estados, ranking de imóveis), calculados numa função pura.
+codigo: ["src/lib/financeiro/painelDeVendas.ts", "src/lib/financeiro/graficosDoExtrato.ts", "src/app/corretor/(painel)/financeiro/extrato/GraficosDoExtrato.tsx", "src/app/corretor/(painel)/_componentes/graficos/ColunasPorMes.tsx", "src/app/corretor/(painel)/financeiro/PainelDeVendas.tsx", "src/app/corretor/(painel)/financeiro/page.tsx"]
+summary: As telas de Vendas e de Extrato ganharam gráficos. Vendas: seis indicadores (VGV do mês com variação, VGV do ano, vendas, ticket médio, comissão recebida e a receber) e três gráficos (VGV por mês, comissão em três estados, ranking de imóveis), calculados numa função pura. Extrato: comissão recebida por mês, quando entra o que falta e, para o gestor, quanto cada construtora deve.
 updated: 2026-10-07
 ---
 
@@ -27,3 +27,15 @@ Pedido de 07/10/2026, depois de ver o [[perfil-de-demonstracao-do-corretor]].
   site corta); só a captura e o `getBoundingClientRect` dos cartões mostraram.
 
 Liga com [[vendas-e-o-modulo-financeiro]] e [[graficos-que-decidem]].
+
+## Extrato (07/10/2026)
+
+- **Quanto entrou por mês:** colunas do repasse pago, com zero nos meses
+  vazios (coluna que falta mente sobre o ritmo). `ColunasPorMes` é o mesmo
+  desenho do VGV de Vendas.
+- **Quando entra o que falta:** liberado agora → previsão vencida (vermelho,
+  pede cobrança) → meses à frente pela `comissao_prevista_em` (0166) → mais
+  adiante → sem previsão. Venda sem previsão nunca ganha um mês inventado.
+  Para o gestor é a comissão da imobiliária.
+- **Quem deve mais (gestor):** construtoras pela dívida; vermelho acima de 60
+  dias, a mesma régua da lista abaixo.
