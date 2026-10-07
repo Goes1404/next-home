@@ -27,7 +27,7 @@ export type InteracaoIA = {
   id?: string;
   conversaId?: string | null;
   corretorId?: string | null;
-  origem: "webhook" | "playground" | "followup" | "eval" | "painel" | "consultor";
+  origem: "webhook" | "playground" | "followup" | "eval" | "painel" | "consultor" | "financeiro";
   /** A conversa foi marcada como teste (palavra-chave de teste, ver 0039). */
   eTeste?: boolean;
   promptVersao: string;

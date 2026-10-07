@@ -53,7 +53,8 @@ const TETOS_KB = {
   // 06/10: +1 KB nas quatro rotas abaixo: o "3/7" de tentativas no cartão
   // (higieneDaBase) e o funil de 10 etapas com grupos (types.ts), que todas
   // puxam pelos utilitários de lead.
-  "/corretor/(painel)/pessoas/page": 1007,
+  // 07/10: +1 KB: o menu ganhou "Alertas e IA" no Financeiro.
+  "/corretor/(painel)/pessoas/page": 1008,
   // 28/09: +9 KB (conversas) e +16 (importar) vêm de funcionalidades pedidas:
   // o painel ganhou a transição de tela e a luz dos cartões no LAYOUT (vale
   // em toda rota do painel), e o importador ganhou tours, vídeo em arquivo e

@@ -9481,3 +9481,15 @@ Nota: [[contador-da-imobiliaria]].
   neste contêiner, ler com openpyxl.
 - **Link do contador = token em `acessos_contador`**, lido pela chave de
   serviço; `/contador` entrou na lista de fora do Pixel.
+
+## A IA do financeiro (0169, 07/10/2026)
+
+Nota: [[ia-do-financeiro]].
+
+- **Financeiro → Alertas e IA, só gestor.** Os alertas saem de conta pura
+  (`alertas.ts`), sem modelo. O chat recebe um bloco com os números já
+  calculados e o guardrail corta a frase que cita valor fora dele.
+- **Origem nova em `ia_interacoes` exige mudar o CHECK** (0169), senão o
+  insert falha calado dentro do try/catch de `registrarInteracao`.
+- `formatarReais` imprime sem centavos quando o valor é redondo ("R$ 30.000"):
+  teste de texto não deve esperar ",00".
