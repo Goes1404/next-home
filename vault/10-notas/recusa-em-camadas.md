@@ -15,7 +15,7 @@ codigo:
   - scripts/revisarRecusas.sql
 fonte: Pergunta do usuário "como arrumamos o regex de forma definitiva?" (06/10/2026)
 created: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-08
 summary: Regex nenhuma cobre o português inteiro, então ela deixou de decidir tudo. Agora a regex resolve o óbvio, o que tem sinal de "não" e escapou vai a uma chamada curta à IA com a última fala nossa como contexto, e toda decisão fica registrada. O "Liberar contato" do corretor vira o rótulo de falso positivo, e um conjunto de frases de referência roda no CI.
 ---
 
@@ -72,3 +72,23 @@ remendo abre espaço para a próxima frase que escapa.
   reprovou porque "outra imobiliária" ainda casava. Refeita tirando os dois.
 
 Ver também: [[memoria-da-conversa-e-ficha-viva]], [[quando-a-ia-responde]].
+
+## Falso positivo medido em 08/10/2026 (em aberto)
+
+Primeira resposta a uma lista no dia: "Bom dia.. acho que você mandou errado".
+A camada da IA decidiu `parada` com confiança 0,90, a assistente respondeu "Não
+enviarei mais mensagens. Agradeço pelo contato e desejo sucesso em seus
+projetos" e o lead ficou marcado como "não contatar". Não era pedido para
+parar: o corretor entrou 8 segundos depois ("eu troquei os contatos") e a
+conversa seguiu bem.
+
+A causa está no próprio pedido à IA (`montarPromptDeRecusa`): a categoria
+`parada` inclui "diz que é número errado / não conhece a empresa", e a dúvida
+"acho que mandou errado" foi lida como número errado.
+
+Ainda não corrigido, porque tirar a frase da `parada` sozinha piora: sem
+recusa, o turno seguiria o funil ("em qual região você procura?"). A correção
+proposta tem duas partes: separar o número errado dito com todas as letras da
+dúvida de engano, e dar à dúvida uma resposta própria (dizer quem é, por que
+escreveu e oferecer parar), sem pergunta de funil.
+

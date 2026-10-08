@@ -307,6 +307,30 @@ describe("Fila de campanha — proteção anti-ban", () => {
     });
   }
 
+  /*
+   * A lista do Ramos (08/10/2026) nasceu com as versões A e B iguais letra
+   * por letra. Duas versões iguais não testam nada: a fila sai sem letra.
+   */
+  it("versão B igual à A não vira teste A/B", () => {
+    const base = "Olá, {nome}! Conheça o {imovel}.";
+    const igual = montarFilaCampanha({
+      campanhaId: "camp-ab",
+      leads,
+      mensagemBase: base,
+      mensagemBaseB: " olá {nome}, conheça o {imovel}! ",
+      empreendimentoNome: "Canvas Alphaville",
+    });
+    expect(igual.every((item) => !item.variante)).toBe(true);
+    const diferente = montarFilaCampanha({
+      campanhaId: "camp-ab",
+      leads,
+      mensagemBase: base,
+      mensagemBaseB: "Oi, {nome}! Saiu novidade no {imovel}. Quer ver?",
+      empreendimentoNome: "Canvas Alphaville",
+    });
+    expect(new Set(diferente.map((item) => item.variante))).toEqual(new Set(["A", "B"]));
+  });
+
   it("substitui as variáveis do template em cada item", async () => {
     const fila = await filaPadrao();
 

@@ -13,6 +13,7 @@ import {
   promptDeVariacao,
   saudacaoDoHorario,
   semelhancaEntreTextos,
+  versoesDiferentes,
 } from "./variacaoDeTexto";
 import { trocarNome } from "./listaDeTransmissao";
 import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
@@ -213,12 +214,61 @@ describe("pedido à IA", () => {
     expect(vistos.size).toBeGreaterThanOrEqual(10);
   });
 
-  it("no teste A/B só troca as palavras, sem mexer no jeito de abrir", () => {
+  it("no teste A/B não mexe no jeito de abrir", () => {
     for (let s = 0; s < 20; s++) {
       const estilo = estiloDaVariacao(s, { temNome: true, manterAbertura: true });
       expect(estilo).toHaveLength(1);
-      expect(estilo[0]).not.toMatch(/abra|ordem|parágrafos/);
+      expect(estilo[0]).not.toMatch(/abra|parágrafos/);
     }
+  });
+
+  /*
+   * Trocar palavra por palavra mantém a sequência, que é o que a conferência
+   * mede. Foi assim que a lista do Ramos parou em 08/10/2026: o modo A/B
+   * mandava "mudar só as palavras", e a sétima reescrita não passou mais.
+   */
+  it("nenhum estilo pede só sinônimos, nem no teste A/B", () => {
+    for (let s = 0; s < 60; s++) {
+      for (const manterAbertura of [false, true]) {
+        const estilo = estiloDaVariacao(s, { temNome: true, manterAbertura });
+        expect(estilo.join(" ")).not.toMatch(/sin[ôo]nimo/);
+      }
+    }
+    const ab = promptDeVariacao({
+      original: ORIGINAL,
+      nome: "Ana",
+      fatos: FATOS,
+      recentes: [],
+      estilo: [],
+      manterAbertura: true,
+    });
+    expect(ab).not.toMatch(/só as palavras/);
+    expect(ab).toContain("mude a ordem das ideias");
+    expect(ab).toContain("não basta: a conferência compara a sequência das palavras");
+  });
+
+  it("recusada por semelhança, a próxima tentativa é mandada mudar a ordem, não só as palavras", () => {
+    const prompt = promptDeVariacao({
+      original: ORIGINAL,
+      nome: "Ana",
+      fatos: FATOS,
+      recentes: [],
+      estilo: [],
+      manterAbertura: false,
+      tentativaAnterior: { problema: "ficou 72% parecida", parecidaCom: "Oi [nome], tudo bem?" },
+    });
+    expect(prompt).toContain("Comece por outra ideia, mude a ordem do resto");
+    const semParecida = promptDeVariacao({
+      original: ORIGINAL,
+      nome: "Ana",
+      fatos: FATOS,
+      recentes: [],
+      estilo: [],
+      manterAbertura: false,
+      tentativaAnterior: { problema: "sumiu o bairro" },
+    });
+    expect(semParecida).toContain("Escreva de outro jeito.");
+    expect(semParecida).not.toContain("Comece por outra ideia");
   });
 
   it("leva os fatos, o marcador, o nome, as recentes e o motivo da recusa anterior", () => {
@@ -291,5 +341,51 @@ describe("o nome na mensagem", () => {
     expect(trocarNome("Oi {nome} tudo bem", null)).toBe("Oi tudo bem");
     expect(trocarNome("Oi {nome},\n\nSaiu novidade.", null)).toBe("Oi,\n\nSaiu novidade.");
     expect(trocarNome("Oi {nome}, tudo bem?", "Ana")).toBe("Oi Ana, tudo bem?");
+  });
+});
+
+/*
+ * A lista do Ramos em 08/10/2026: versões A e B iguais letra por letra, seis
+ * reescritas que só trocavam sinônimos (entre 0,46 e 0,70 umas das outras) e a
+ * sétima que não passou mais. Medido sobre os textos reais.
+ */
+describe("teste A/B e o molde da reescrita", () => {
+  it("versões iguais não são teste A/B", () => {
+    const a = "Olá, Sou Consultor Imobiliário Ramos !! Tudo bem? Lembrei do seu interesse no {imovel}. Quer os detalhes?";
+    expect(versoesDiferentes(a, a)).toBe(false);
+    expect(versoesDiferentes(a, a.toUpperCase().replace("!!", "!"))).toBe(false);
+    expect(versoesDiferentes(a, "Oi! Saiu novidade no {imovel}. Posso te mandar?")).toBe(true);
+    expect(versoesDiferentes(a, null)).toBe(false);
+    expect(versoesDiferentes(a, "   ")).toBe(false);
+  });
+
+  const FATOS_RAMOS = ["Dom Parque", "Jardim Tupanci", "Barueri", "Ramos", "Next Home"];
+  const ENVIADAS = [
+    ["Olá, Sou Consultor Imobiliário Ramos !! Tudo bem? Lembrei do seu interesse e acabou de sair uma condição nova no Dom Parque, em Jardim Tupanci. Quer que eu te mande os detalhes?", []],
+    ["Oi Jhezynha, aqui é o Ramos, Consultor Imobiliário. Tudo certo? Vi que você se interessou e surgiu uma novidade no Dom Parque, lá no Jardim Tupanci. Quer que eu te envie as infos?", ["Jhezynha"]],
+    ["Oi Ana, aqui é o Ramos, Consultor Imobiliário! Tudo certo? Pensei no seu interesse e tem uma novidade no Dom Parque em Jardim Tupanci. Quer que eu te envie os detalhes?", ["Ana"]],
+    ["Olá Amanda, aqui é Ramos, Consultor Imobiliário! Tudo bom? Lembrei que você demonstrou interesse e apareceu uma novidade no Dom Parque, em Jardim Tupanci. Quer que eu te passe as informações?", ["Amanda"]],
+    ["Olá, aqui é Ramos, seu Consultor Imobiliário! Tudo bem, Osmario? Lembrei que você tinha interesse e saiu uma opção nova no Dom Parque, em Jardim Tupanci. Quer que eu mande os detalhes para você?", ["Osmario"]],
+    ["Oi, Vitor! Aqui é o Ramos, consultor imobiliário. Está tudo bem? Me lembrei do seu interesse e surgiu uma nova oferta no Dom Parque, em Jardim Tupanci. Quer que eu te envie as informações?", ["Vitor"]],
+    ["Fala, Dema! Aqui é o Ramos, Consultor Imobiliário. Tudo tranquilo? Me veio à mente seu interesse e tem uma novidade no Dom Parque, em Jardim Tupanci. Quer que eu te mande as informações?", ["Dema"]],
+  ].map(([texto, nomes]) => ({ texto: texto as string, nomes: nomes as string[] }));
+  const contra = (texto: string) => maiorSemelhanca(texto, ["Thais"], ENVIADAS, FATOS_RAMOS).semelhanca;
+
+  it("mais uma troca de sinônimos no mesmo molde não passa", () => {
+    expect(
+      contra(
+        "Oi Thais, aqui é o Ramos, Consultor Imobiliário! Tudo certo? Lembrei do seu interesse e surgiu uma novidade no Dom Parque, em Jardim Tupanci. Quer que eu te mande as informações?",
+      ),
+    ).toBeGreaterThanOrEqual(LIMITE_DE_SEMELHANCA);
+  });
+
+  it("a mesma mensagem com outra ordem de ideias passa com folga", () => {
+    for (const texto of [
+      "Thais, saiu uma condição nova no Dom Parque, em Jardim Tupanci, e lembrei de você na hora. Sou o Ramos, consultor imobiliário. Te mando os detalhes?",
+      "Thais, ainda pensa em morar no Dom Parque? Sou o Ramos, consultor imobiliário, e saiu uma condição nova em Jardim Tupanci. Se quiser, te explico como ficou.",
+      "Bom dia, Thais! Ramos, consultor imobiliário, falando. Como vai? Você tinha comentado do Dom Parque e chegou uma condição diferente lá em Jardim Tupanci. Posso te contar como ficou?",
+    ]) {
+      expect(contra(texto)).toBeLessThan(0.5);
+    }
   });
 });

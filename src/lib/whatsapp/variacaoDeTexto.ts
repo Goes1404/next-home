@@ -381,6 +381,12 @@ type Diretriz = { texto: string; precisaDeNome?: boolean; mexeNaAbertura?: boole
  * Jeitos de abrir e de organizar a mensagem. Um de cada é sorteado por
  * mensagem: a IA sozinha volta sempre ao mesmo molde (foi o que se mediu), e
  * a combinação muda o esqueleto do texto, não só as palavras.
+ *
+ * Nenhum estilo pede só sinônimos (08/10/2026). Trocar palavra por palavra
+ * mantém a sequência, e é a sequência que a conferência mede: na lista do
+ * Ramos, seis reescritas assim ficaram entre 0,46 e 0,70 umas das outras e a
+ * sétima não passou mais. Escritas com outra ordem de ideias, as candidatas
+ * ficaram entre 0,29 e 0,38.
  */
 const ABERTURAS: Diretriz[] = [
   { texto: "abra com um cumprimento curto e o primeiro nome", precisaDeNome: true },
@@ -392,7 +398,7 @@ const ABERTURAS: Diretriz[] = [
 
 const CORPOS: Diretriz[] = [
   { texto: "use frases bem curtas, como quem digita no celular" },
-  { texto: "troque as palavras principais por sinônimos naturais" },
+  { texto: "diga as informações do meio em outra ordem, com as frases montadas de outro jeito" },
   { texto: "junte as informações numa frase só antes da pergunta" },
   { texto: "mude a ordem das ideias, deixando a pergunta no final", mexeNaAbertura: true },
   { texto: "separe em dois parágrafos curtos, com uma linha em branco entre eles", mexeNaAbertura: true },
@@ -416,6 +422,24 @@ export function estiloDaVariacao(
   return [abertura, corpo];
 }
 
+/**
+ * O teste A/B só existe com duas versões DIFERENTES (08/10/2026). A lista do
+ * Ramos nasceu com A e B iguais letra por letra, e o modo A/B mandava a IA
+ * manter a abertura e trocar só as palavras: seis mensagens depois, nada mais
+ * passava na conferência e a lista pausou sozinha. Duas versões iguais não
+ * comparam nada, então a lista é tratada como versão única. A comparação
+ * ignora caixa, acento, pontuação e marcadores: "Olá!" e "olá" são iguais.
+ */
+export function versoesDiferentes(a: string | null | undefined, b: string | null | undefined): boolean {
+  const pa = palavrasDoTexto(a ?? "").join(" ");
+  const pb = palavrasDoTexto(b ?? "").join(" ");
+  return pa.length > 0 && pb.length > 0 && pa !== pb;
+}
+
+/** O aviso da tela quando a versão B repete a A. */
+export const AVISO_DE_VERSOES_IGUAIS =
+  "As duas versões estão iguais, e versões iguais não testam nada. Mude a abertura da versão B ou remova a versão B.";
+
 export type PedidoDeVariacao = {
   original: string;
   nome: string | null;
@@ -436,6 +460,7 @@ export function promptDeVariacao(p: PedidoDeVariacao): string {
   const linhas: (string | null)[] = [
     "Você reescreve uma mensagem de WhatsApp que um corretor de imóveis vai mandar para uma pessoa da carteira dele.",
     "A mesma mensagem vai para muita gente, e o WhatsApp restringe o número que manda texto repetido. Cada versão precisa parecer digitada de novo pelo corretor: outras palavras e outra construção, mesma intenção.",
+    "Trocar palavras por sinônimos não basta: a conferência compara a sequência das palavras. Mude também a ordem das ideias e o jeito de montar as frases.",
     "",
     "Mensagem original:",
     p.original,
@@ -455,7 +480,7 @@ export function promptDeVariacao(p: PedidoDeVariacao): string {
     `- até ${teto} caracteres;`,
     ...p.estilo.map((e) => `- ${e};`),
     p.manterAbertura
-      ? "- esta mensagem faz parte de um teste entre duas aberturas: mantenha o mesmo jeito de abrir e o mesmo tipo de pergunta final do original, mudando só as palavras;"
+      ? "- esta mensagem faz parte de um teste entre duas aberturas: comece do mesmo jeito que o original (o mesmo tipo de cumprimento) e termine com o mesmo tipo de pergunta; entre os dois, mude a ordem das ideias e a construção das frases;"
       : null,
   ];
 
@@ -470,9 +495,13 @@ export function promptDeVariacao(p: PedidoDeVariacao): string {
   if (p.tentativaAnterior) {
     linhas.push("", `A tentativa anterior foi recusada: ${p.tentativaAnterior.problema}.`);
     if (p.tentativaAnterior.parecidaCom) {
-      linhas.push(`Ela ficou parecida demais com esta: ${p.tentativaAnterior.parecidaCom.replace(/\s+/g, " ").trim()}`);
+      linhas.push(
+        `Ela ficou parecida demais com esta: ${p.tentativaAnterior.parecidaCom.replace(/\s+/g, " ").trim()}`,
+        "Ela repetiu a sequência dessa mensagem. Comece por outra ideia, mude a ordem do resto e monte as frases de outro jeito; não basta trocar palavras.",
+      );
+    } else {
+      linhas.push("Escreva de outro jeito.");
     }
-    linhas.push("Escreva de outro jeito.");
   }
   linhas.push("", 'Responda só JSON: {"mensagem": "o texto reescrito"}');
   return linhas.filter((l): l is string => l !== null).join("\n");

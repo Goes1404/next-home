@@ -9663,3 +9663,30 @@ Nota: [[texto-da-lista-conferido-antes-de-sair]].
   publicável com RLS devolve 200 e `[]` para consulta válida, e 400 com
   `PGRST100` para consulta mal formada. Serve para filtros `or()` aninhados.
 
+
+## O primeiro dia da conferência de texto (08/10/2026)
+
+Notas: [[texto-da-lista-conferido-antes-de-sair]], [[recusa-em-camadas]].
+
+- **A lista do Ramos pausou na 7ª mensagem.** As versões A e B eram iguais, e
+  o modo A/B mandava a IA trocar só as palavras. Sinônimos mantêm a sequência,
+  que é o que a conferência mede: as 6 reescritas ficaram entre 0,46 e 0,70 umas
+  das outras, e reescritas com outra ordem de ideias dão 0,29 a 0,38. Agora B
+  igual à A não é A/B (`versoesDiferentes`, recusado ao criar), nenhum estilo
+  pede só sinônimos, e o motivo de cada recusa vai para o log.
+- **Antes de mexer no limite de semelhança, ler os textos que a IA escreveu.**
+  O limite estava certo; o molde vinha do pedido à IA.
+- **O pg_net guarda a resposta do disparador por algumas horas**
+  (`net._http_response`), com o `diagnostico` de cada ciclo. É onde se vê o que
+  aconteceu depois que o log de 1 hora do Hobby já sumiu.
+- **"Acho que você mandou errado" foi lido como pedido para parar** (IA 0,90),
+  porque o pedido de classificação põe "número errado" em `parada`. A IA se
+  despediu e o lead ficou "não contatar". Em aberto: tirar a frase da `parada`
+  sozinha faria o turno seguir o funil.
+- **"Connection Closed" (HTTP 500 da Evolution) em todo envio** abre o
+  disjuntor por 12 h, com o painel ainda dizendo "conectado". Aconteceu com o
+  número da Márcia às 9h; o Ramos mandava normal no mesmo minuto, então era a
+  sessão dela, não o servidor.
+- **O aviso do disjuntor mostrava o horário em UTC** ("pausados até 09/10,
+  00:00" para um bloqueio das 21h). `toLocaleString` no servidor precisa de
+  `timeZone: "America/Sao_Paulo"`.

@@ -154,7 +154,9 @@ export function podeEnviar(ctx: ContextoEnvio): Veredito {
     return {
       permitido: false,
       motivo: "numero_bloqueado",
-      detalhe: `Envios pausados automaticamente até ${ctx.bloqueadoAte.toLocaleString("pt-BR")} após falhas seguidas.`,
+      // O servidor roda em UTC: sem o fuso, o bloqueio das 21h de Brasília
+      // aparecia como "até 09/10, 00:00" (08/10/2026, número da Márcia).
+      detalhe: `Envios pausados automaticamente até ${ctx.bloqueadoAte.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} após falhas seguidas.`,
     };
   }
 

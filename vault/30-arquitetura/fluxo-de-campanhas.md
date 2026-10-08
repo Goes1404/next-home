@@ -116,8 +116,9 @@ por lista) → instância a instância: bloqueio → conexão → listas
 no futuro) → trava → `aplicarVencedoras` → por item: lista ainda ativa →
 pausa automática (0172) → **`motivoParaNaoEnviar`** (pediu para sair,
 arquivado, perdido, transferido, comprou) → guarda de 24h → **texto conferido**
-(`variarSemRepetir`, também no A/B, mantendo a abertura; sem texto próprio, o
-item espera e a lista pausa em 4 ciclos) → cota → `{horarios}` e saudação do
+(`variarSemRepetir`, até 3 tentativas por ciclo; no A/B mantém só o tipo de
+abertura e de pergunta, e só quando A e B são diferentes de verdade; sem texto
+próprio, o item espera, o motivo vai para o log e a lista pausa em 4 ciclos) → cota → `{horarios}` e saudação do
 horário resolvidos agora → envio → `classificarFalhaDeEnvio` → conversa, IA ligada,
 **fotos do imóvel** (`enviarMidiasDaLista`), funil e tentativa. Ver
 [[lista-de-transmissao-visivel-e-controlavel]].

@@ -26,6 +26,30 @@ describe("o texto da lista é conferido antes de sair", () => {
     expect(disparador).toContain("manterAbertura: Boolean(item.variante)");
   });
 
+  // A lista do Ramos (08/10/2026) tinha A e B iguais, e o modo A/B prendia a
+  // IA ao molde: na sétima mensagem nada mais passava e a lista pausou.
+  it("a abertura só fica presa quando A e B são diferentes de verdade", () => {
+    expect(disparador).toMatch(
+      /manterAbertura: Boolean\(item\.variante\) && versoesDiferentes\(aindaAtiva\.mensagem_base, aindaAtiva\.mensagem_base_b\)/,
+    );
+    const recusas = acoes.match(/if \(textoB && !versoesDiferentes\(params\.mensagemBase, textoB\)\) return \{ erro: AVISO_DE_VERSOES_IGUAIS \}/g);
+    // Na prévia e na criação.
+    expect(recusas).toHaveLength(2);
+  });
+
+  it("retomar a lista recomeça a conferência de texto", () => {
+    const ini = acoes.indexOf("export async function retomarCampanha");
+    const corpo = acoes.slice(ini, acoes.indexOf("\nexport ", ini + 10));
+    expect(corpo).toMatch(/\.update\(\{ tentativas_texto: 0 \}\)/);
+    expect(corpo).toContain('.in("erro_motivo", [MOTIVO_TEXTO_PARECIDO, MOTIVO_TEXTO_SEM_IA])');
+  });
+
+  it("o motivo de cada reescrita recusada fica no log", () => {
+    const ini = disparador.indexOf("if (!variacao.ok) {");
+    const bloco = disparador.slice(ini, disparador.indexOf("texto = variacao.texto;", ini));
+    expect(bloco).toMatch(/console\.warn\([\s\S]*variacao\.detalhe/);
+  });
+
   it("texto que não passou não segue para o envio", () => {
     const ini = disparador.indexOf("if (!variacao.ok) {");
     expect(ini).toBeGreaterThan(0);

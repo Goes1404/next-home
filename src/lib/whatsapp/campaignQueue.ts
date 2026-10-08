@@ -16,6 +16,7 @@ import {
   promptDeVariacao,
   RECENTES_NO_PEDIDO,
   type TextoAnterior,
+  versoesDiferentes,
 } from "./variacaoDeTexto";
 
 /**
@@ -283,7 +284,11 @@ export function montarFilaCampanha(params: {
    * também influencia a resposta — dar a primeira metade para a versão A
    * misturaria os dois efeitos e a comparação mediria o relógio.
    */
-  const mensagemB = params.mensagemBaseB?.trim() || null;
+  // Versão B igual à A não testa nada (`versoesDiferentes`): a fila sai
+  // como versão única, sem letra.
+  const mensagemB = versoesDiferentes(params.mensagemBase, params.mensagemBaseB)
+    ? params.mensagemBaseB!.trim()
+    : null;
   const variantes = mensagemB
     ? distribuirVariantes(leads.length, params.comecarVarianteEm ?? comecoAleatorio())
     : [];

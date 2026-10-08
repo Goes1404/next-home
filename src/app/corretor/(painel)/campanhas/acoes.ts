@@ -21,7 +21,13 @@ import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
 import { processarFilaCampanhas } from "@/lib/whatsapp/campaignDispatcher";
 import { exemplosDaLista, montarFilaCampanha, nomesDaPessoa } from "@/lib/whatsapp/campaignQueue";
 import { textosRecentesDoNumero } from "@/lib/whatsapp/textosDoNumero";
-import { fatosDaLista, MOTIVO_TEXTO_PARECIDO, MOTIVO_TEXTO_SEM_IA } from "@/lib/whatsapp/variacaoDeTexto";
+import {
+  AVISO_DE_VERSOES_IGUAIS,
+  fatosDaLista,
+  MOTIVO_TEXTO_PARECIDO,
+  MOTIVO_TEXTO_SEM_IA,
+  versoesDiferentes,
+} from "@/lib/whatsapp/variacaoDeTexto";
 import { site } from "@/lib/site";
 import { conferirNumerosNoWhatsapp, provedorConfigurado } from "@/lib/whatsapp/provider";
 import { lerSinaisDaLista } from "@/lib/whatsapp/sinaisDaLista";
@@ -221,6 +227,7 @@ export async function gerarPreviewCampanha(params: {
   const supabase = await createClient();
   const temAgenda = await corretorTemAgenda(supabase, corretor.id);
   const textoB = params.mensagemBaseB?.trim() || null;
+  if (textoB && !versoesDiferentes(params.mensagemBase, textoB)) return { erro: AVISO_DE_VERSOES_IGUAIS };
   const faltando = [
     ...variaveisSemValor(params.mensagemBase, contexto, { temAgenda }),
     ...(textoB ? variaveisSemValor(textoB, contexto, { temAgenda }) : []),
@@ -454,6 +461,7 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
 
   const temAgenda = await corretorTemAgenda(supabase, corretor.id);
   const textoB = params.mensagemBaseB?.trim() || null;
+  if (textoB && !versoesDiferentes(params.mensagemBase, textoB)) return { erro: AVISO_DE_VERSOES_IGUAIS };
   const faltando = [
     ...variaveisSemValor(params.mensagemBase, contexto, { temAgenda }),
     ...(textoB ? variaveisSemValor(textoB, contexto, { temAgenda }) : []),
@@ -1044,7 +1052,27 @@ export async function retomarCampanha(campanhaId: string): Promise<{ ok: true } 
     pausa_automatica: null,
     ...(sinais ? { pausa_base: sinais } : {}),
   });
-  if ("ok" in r) acenderCorrenteDeDisparo();
+  if ("ok" in r) {
+    /*
+     * A conferência de texto também recomeça (08/10/2026). Sem isso, o item
+     * que esperava texto continuava com os ciclos no teto e pausava a lista
+     * de novo no primeiro ciclo depois de retomar. O motivo de falha de
+     * ENVIO fica: é ele que explica o disjuntor.
+     */
+    await supabase
+      .from("whatsapp_campanhas_fila")
+      .update({ tentativas_texto: 0 })
+      .eq("campanha_id", campanhaId)
+      .eq("status", "pendente")
+      .gt("tentativas_texto", 0);
+    await supabase
+      .from("whatsapp_campanhas_fila")
+      .update({ erro_motivo: null })
+      .eq("campanha_id", campanhaId)
+      .eq("status", "pendente")
+      .in("erro_motivo", [MOTIVO_TEXTO_PARECIDO, MOTIVO_TEXTO_SEM_IA]);
+    acenderCorrenteDeDisparo();
+  }
   return r;
 }
 

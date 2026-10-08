@@ -15,6 +15,7 @@ import {
   MOTIVO_TEXTO_PARECIDO,
   MOTIVO_TEXTO_SEM_IA,
   type TextoAnterior,
+  versoesDiferentes,
 } from "./variacaoDeTexto";
 import { enviarMensagemWhatsapp } from "./provider";
 import { normalizarTelefoneBr } from "./telefone";
@@ -356,7 +357,7 @@ async function processarInstancia(ctx: {
   if (instancia.bloqueado_ate && new Date(instancia.bloqueado_ate) > new Date()) {
     return vazio(
       "numero_bloqueado",
-      `Envios deste número estão pausados até ${new Date(instancia.bloqueado_ate).toLocaleString("pt-BR")} após falhas seguidas do provedor.`,
+      `Envios deste número estão pausados até ${new Date(instancia.bloqueado_ate).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} após falhas seguidas do provedor.`,
     );
   }
 
@@ -482,7 +483,7 @@ async function processarInstancia(ctx: {
       const { data: aindaAtiva } = await supabase
         .from("whatsapp_campanhas")
         .select(
-          "id, corretor_id, criterio, midias, empreendimento_id, pausa_base, contexto_template, empreendimento:empreendimentos(nome)",
+          "id, corretor_id, criterio, midias, empreendimento_id, pausa_base, contexto_template, mensagem_base, mensagem_base_b, empreendimento:empreendimentos(nome)",
         )
         .eq("id", item.campanha_id)
         .eq("status", "em_andamento")
@@ -591,6 +592,7 @@ async function processarInstancia(ctx: {
           Array.isArray(aindaAtiva.empreendimento) ? aindaAtiva.empreendimento[0] : aindaAtiva.empreendimento
         ) as { nome: string } | null;
         const tempoRestante = fimDoOrcamento - Date.now() - margemMs;
+        const tentativasDaIA = tempoRestante > 30_000 ? 3 : tempoRestante > 20_000 ? 2 : 1;
         const variacao = await variarSemRepetir({
           texto,
           nome: primeiroNomeUtil(lead?.nome),
@@ -602,9 +604,12 @@ async function processarInstancia(ctx: {
             nomeDaCasa: site.nome,
           }),
           anteriores: recentes.filter((a) => a.id !== item.id),
-          manterAbertura: Boolean(item.variante),
-          tentativas: tempoRestante > 20_000 ? 2 : 1,
-          orcamentoMs: Math.max(4_000, Math.min(9_000, Math.floor(tempoRestante / 2))),
+          // Abertura mantida só quando o teste compara duas versões de
+          // verdade: A e B iguais não testam nada, e o modo A/B prende a IA
+          // ao molde (`versoesDiferentes`).
+          manterAbertura: Boolean(item.variante) && versoesDiferentes(aindaAtiva.mensagem_base, aindaAtiva.mensagem_base_b),
+          tentativas: tentativasDaIA,
+          orcamentoMs: Math.max(4_000, Math.min(9_000, Math.floor(tempoRestante / (tentativasDaIA + 1)))),
         });
 
         if (!variacao.ok) {
@@ -619,6 +624,11 @@ async function processarInstancia(ctx: {
            */
           const parecida = variacao.motivo === "parecida";
           const ciclos = (item.tentativas_texto ?? 0) + (parecida ? 1 : 0);
+          // O porquê fica no log: sem ele, a pausa da lista do Ramos em
+          // 08/10 não dizia se a IA errou um fato ou só repetiu o molde.
+          console.warn(
+            `[campanha] item ${item.id}: reescrita não passou (${variacao.motivo}, ciclo ${ciclos}): ${variacao.detalhe}`,
+          );
           await supabase
             .from("whatsapp_campanhas_fila")
             .update({

@@ -10,6 +10,7 @@ codigo:
   - src/lib/whatsapp/campaignQueue.ts
   - src/lib/whatsapp/textosDoNumero.ts
   - src/lib/whatsapp/campaignDispatcher.ts
+  - src/lib/whatsapp/variacaoDeTexto.test.ts
   - src/lib/whatsapp/vencedoraAB.ts
   - src/lib/whatsapp/listaDeTransmissao.ts
   - src/lib/leads/nomeExibido.ts
@@ -90,6 +91,40 @@ IA fora do ar não conta para a pausa.
   de mandar): "Bom dia" escrito de manhã sairia errado à tarde.
 - **A prévia da tela passa pelo mesmo caminho**, em sequência (`exemplosDaLista`).
   Em paralelo, os exemplos nasciam sem se ver.
+
+## O primeiro dia: a lista do Ramos parou na sétima
+
+Em 08/10, o primeiro dia com a conferência no ar, a lista do Ramos mandou 6
+mensagens entre 9h00 e 9h09 e pausou sozinha às 9h14. Duas causas juntas:
+
+- **As versões A e B eram iguais**, letra por letra. O modo A/B mandava a IA
+  "manter a abertura e mudar só as palavras", e só sobravam estilos que não
+  mexem na estrutura.
+- **Trocar sinônimos mantém a sequência**, e é a sequência que a subsequência
+  comum mede. As 6 reescritas trocavam palavra por palavra no mesmo molde
+  ("Oi X, aqui é o Ramos, Consultor Imobiliário. Tudo certo? Lembrei do seu
+  interesse e tem uma novidade no Dom Parque... Quer que eu te envie as
+  informações?"): nas trincas ficaram entre 0,04 e 0,43, na sequência entre
+  0,46 e 0,70. A sétima não passou em 8 tentativas.
+
+Escritas com outra ordem de ideias, três candidatas à sétima ficaram entre
+0,29 e 0,38. O limite estava certo; o pedido à IA é que estava errado.
+
+O que mudou:
+
+- `versoesDiferentes`: B igual à A não é teste A/B. A tela recusa ao criar e na
+  prévia (`AVISO_DE_VERSOES_IGUAIS`), a fila nova sai sem letra, e a lista que
+  já existe deixa de prender a abertura.
+- Nenhum estilo pede só sinônimos. O pedido diz que trocar palavras não basta,
+  o A/B mantém só o tipo de abertura e de pergunta final (o meio muda de ordem),
+  e a tentativa recusada por semelhança recebe "comece por outra ideia, mude a
+  ordem do resto".
+- Até 3 tentativas por ciclo quando sobra tempo, e o motivo de cada recusa vai
+  para o log (`[campanha] item ...: reescrita não passou`). Sem ele, a pausa
+  não dizia se a IA errou um fato ou só repetiu o molde.
+- **Retomar recomeça a conferência**: zera `tentativas_texto` dos pendentes.
+  Sem isso, o item que esperava texto pausava a lista de novo no primeiro ciclo
+  depois do "Retomar".
 
 ## Como conferir em produção
 
