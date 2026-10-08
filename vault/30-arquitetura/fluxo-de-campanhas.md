@@ -7,9 +7,9 @@ status: evergreen
 custou: medio
 codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
 created: 2026-09-05
-updated: 2026-10-03
+updated: 2026-10-08
 fonte: leitura do código + docs/MEMORIA.md
-summary: Criação monta a fila com agendado_para (e guarda o critério); a lista viva inclui gente nova a cada hora; cada envio confere o lead de novo antes da cota; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, cota/espaçamento no banco e variação por IA.
+summary: Criação monta a fila com agendado_para (e guarda o critério); a lista viva inclui gente nova a cada hora; cada envio confere o lead de novo antes da cota; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, texto conferido contra as mensagens do número (antes da cota) e cota/espaçamento no banco.
 ---
 # Fluxo de campanhas
 
@@ -29,8 +29,10 @@ summary: Criação monta a fila com agendado_para (e guarda o critério); a list
   de segunda a sábado, 9h–20h59 ([[agendamento-comeca-na-propria-fila]]).
 - Fila gravada com `agendado_para` espaçado (35-75s) e guarda de
   monotonicidade ([[e2e-contra-producao|flake didático]]).
-- **Sem chamada de IA na criação** — a variação anti-ban acontece no ENVIO
-  (`variarMensagemComIA`), um item por vez ([[fila-parada-tres-causas]]).
+- **Sem chamada de IA na criação** — a reescrita acontece no ENVIO
+  (`variarSemRepetir`), um item por vez, e só sai texto abaixo de 0,70 de
+  semelhança com as mensagens do número ([[fila-parada-tres-causas]],
+  [[texto-da-lista-conferido-antes-de-sair]]). `{nome}` vira o primeiro nome.
 
 ## Disparo (`campaignDispatcher.ts`)
 
@@ -112,9 +114,11 @@ Roadmap das listas (0155, 03/10/2026) — a ordem de cada tique agora é:
 por lista) → instância a instância: bloqueio → conexão → listas
 `em_andamento` (fora da janela, só `ignorar_janela` OU `janela_liberada_ate`
 no futuro) → trava → `aplicarVencedoras` → por item: lista ainda ativa →
-**`motivoParaNaoEnviar`** (pediu para sair, arquivado, perdido, transferido,
-comprou) → guarda de 24h → cota → texto (sem IA durante o A/B; `{horarios}`
-resolvido agora) → envio → `classificarFalhaDeEnvio` → conversa, IA ligada,
+pausa automática (0172) → **`motivoParaNaoEnviar`** (pediu para sair,
+arquivado, perdido, transferido, comprou) → guarda de 24h → **texto conferido**
+(`variarSemRepetir`, também no A/B, mantendo a abertura; sem texto próprio, o
+item espera e a lista pausa em 4 ciclos) → cota → `{horarios}` e saudação do
+horário resolvidos agora → envio → `classificarFalhaDeEnvio` → conversa, IA ligada,
 **fotos do imóvel** (`enviarMidiasDaLista`), funil e tentativa. Ver
 [[lista-de-transmissao-visivel-e-controlavel]].
 

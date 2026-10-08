@@ -9638,3 +9638,28 @@ Nota: [[conta-da-bruna-restringida-e-a-lista-que-para-sozinha]].
   repetido 8 vezes. O A/B estava em 4 das 5 listas frias da semana.
 - Só 1 destinatário da lista da Bruna pediu para sair. A pausa automática já
   parou a lista da Grazi (8 de 34 sem WhatsApp).
+
+## O texto da lista é conferido antes de sair (0173, 08/10/2026)
+
+Nota: [[texto-da-lista-conferido-antes-de-sair]].
+
+- **Pedir variação à IA não garantia variação.** As reescritas tinham mediana
+  de 0,95 de semelhança com uma mensagem anterior do mesmo número, e o A/B
+  desligava a reescrita: 77 de 114 mensagens da Bruna idênticas, letra por
+  letra. Hoje `variarSemRepetir` confere fatos, invenções e semelhança, e só
+  sai texto abaixo de 0,70 contra as mensagens do número nos últimos 30 dias.
+  Sem texto próprio, a mensagem espera (`erro_motivo` no item pendente); 4
+  ciclos assim pausam a lista.
+- **Medir semelhança só por trincas de palavras não pega o molde com
+  sinônimos** (0,25 a 0,40 para o mesmo texto). A subsequência comum de
+  palavras pega. Calibrado com 30 variações boas (máximo 0,62) e cópias com
+  palavras trocadas (0,79 a 0,96).
+- **A conferência vem antes da cota**: o que não sai não gasta a cota, e o
+  texto aprovado fica gravado (`semelhanca_max`). Item com a semelhança nula
+  é o que ainda não foi conferido, inclusive o reescrito pela versão antiga.
+- **`{nome}` agora é o primeiro nome** e, sem nome útil, o marcador some com a
+  pontuação dele. "Tudo bem?" no lugar do nome quebrava a frase.
+- **Para testar sintaxe de PostgREST sem a chave de serviço**: a chave
+  publicável com RLS devolve 200 e `[]` para consulta válida, e 400 com
+  `PGRST100` para consulta mal formada. Serve para filtros `or()` aninhados.
+

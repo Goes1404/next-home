@@ -74,6 +74,9 @@ describe("Nome do lead em mensagem de campanha", () => {
       nomeLead: "Contato sem nome",
     });
     expect(texto).not.toContain("Contato sem nome");
-    expect(texto).toContain("Tudo bem?");
+    // Sem nome útil, o marcador sai com a vírgula que só existia por ele.
+    // Antes entrava "Tudo bem?" no lugar, e "Oi {nome}, tudo bem?" virava
+    // "Oi Tudo bem?, tudo bem?" (08/10/2026).
+    expect(texto).toBe("Olá. Temos novidades em nossos lançamentos em Alphaville.");
   });
 });

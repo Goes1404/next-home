@@ -3,7 +3,19 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { dentroDaJanela, dentroDaJanelaDoCorretor } from "./antiBan";
 import { varrerQuedasDeNumero } from "./avisoDeQueda";
-import { variarMensagemComIA } from "./campaignQueue";
+import { nomesDaPessoa, variarSemRepetir } from "./campaignQueue";
+import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
+import { site } from "@/lib/site";
+import { textosRecentesDoNumero } from "./textosDoNumero";
+import {
+  ajustarSaudacaoAoHorario,
+  CICLOS_ATE_PAUSAR,
+  fatosDaLista,
+  MOTIVO_PAUSA_POR_TEXTO,
+  MOTIVO_TEXTO_PARECIDO,
+  MOTIVO_TEXTO_SEM_IA,
+  type TextoAnterior,
+} from "./variacaoDeTexto";
 import { enviarMensagemWhatsapp } from "./provider";
 import { normalizarTelefoneBr } from "./telefone";
 import { aplicarVencedoras } from "./vencedoraAB";
@@ -15,6 +27,7 @@ import {
   MOTIVO_ENVIO_INCERTO,
   MOTIVO_TELEFONE_INVALIDO,
   resolverHorarios,
+  type ContextoTemplate,
   type LeadNoEnvio,
 } from "./listaDeTransmissao";
 import { horariosDeVisita } from "@/lib/crm/agendaDoCorretor";
@@ -121,7 +134,9 @@ export type MotivoParada =
   | "fila_vazia"
   | "aguardando_horario"
   | "sem_tempo"
-  | "outro_disparador";
+  | "outro_disparador"
+  /** A próxima mensagem sairia parecida com outra do número: a fila espera. */
+  | "texto_repetido";
 
 export type ResultadoDispatch = {
   processados: number;
@@ -413,6 +428,10 @@ async function processarInstancia(ctx: {
 
   // Os horários livres da agenda, lidos uma vez por chamada (`{horarios}`).
   let rotulosDaAgenda: string[] | null = null;
+  // As mensagens recentes do número e o nome do corretor, lidos uma vez por
+  // chamada e só quando algum texto precisa ser conferido.
+  let recentes: TextoAnterior[] | null | undefined;
+  let nomeDoCorretor: string | null | undefined;
 
   try {
     // Com a trava na mão: só um disparador reescreve a fila por vez.
@@ -422,7 +441,7 @@ async function processarInstancia(ctx: {
       const { data: itens } = await supabase
         .from("whatsapp_campanhas_fila")
         .select(
-          "id, campanha_id, lead_id, telefone, mensagem_personalizada, personalizado_por_ia, tentativas, agendado_para, variante",
+          "id, campanha_id, lead_id, telefone, mensagem_personalizada, personalizado_por_ia, tentativas, agendado_para, variante, semelhanca_max, tentativas_texto",
         )
         .in("campanha_id", idsCampanhas)
         .eq("status", "pendente")
@@ -462,7 +481,9 @@ async function processarInstancia(ctx: {
        */
       const { data: aindaAtiva } = await supabase
         .from("whatsapp_campanhas")
-        .select("id, corretor_id, criterio, midias, empreendimento_id, pausa_base")
+        .select(
+          "id, corretor_id, criterio, midias, empreendimento_id, pausa_base, contexto_template, empreendimento:empreendimentos(nome)",
+        )
         .eq("id", item.campanha_id)
         .eq("status", "em_andamento")
         .maybeSingle();
@@ -535,6 +556,116 @@ async function processarInstancia(ctx: {
       }
 
       /*
+       * O texto, conferido ANTES da cota (08/10/2026): a mensagem só sai se não
+       * ficou parecida com outra que o número mandou nos últimos 30 dias.
+       * Medido na semana em que o WhatsApp restringiu a conta da Bruna: 65 das
+       * 114 mensagens dela saíram idênticas, porque o teste A/B suspendia a
+       * reescrita, e as que a IA reescrevia convergiam para o mesmo molde.
+       *
+       * Vale também no teste A/B: lá a IA troca só as palavras e mantém a
+       * abertura de cada versão, que é o que o teste compara. Antes da cota,
+       * porque o que não sai não gasta a cota. E gravado de volta na fila: se a
+       * corrente cair antes do envio, a próxima tentativa reaproveita o texto.
+       */
+      let texto = item.mensagem_personalizada;
+      // Conferido = tem a semelhança gravada. Item reescrito pela versão antiga
+      // da reescrita (sem conferência, antes da 0173) passa pela conferência
+      // também: era dela que saíam os textos com 0,95 de semelhança.
+      if (item.semelhanca_max === null) {
+        recentes ??= await textosRecentesDoNumero(supabase, instancia.corretor_id);
+        if (!recentes) {
+          parcial.motivo = "texto_repetido";
+          parcial.diagnostico =
+            "Não consegui conferir as mensagens anteriores do número agora. A fila tenta de novo no próximo ciclo.";
+          break;
+        }
+        if (nomeDoCorretor === undefined) {
+          const { data: corretor } = await supabase
+            .from("corretores")
+            .select("nome")
+            .eq("id", instancia.corretor_id)
+            .maybeSingle();
+          nomeDoCorretor = corretor?.nome ?? null;
+        }
+        const imovelDaLista = (
+          Array.isArray(aindaAtiva.empreendimento) ? aindaAtiva.empreendimento[0] : aindaAtiva.empreendimento
+        ) as { nome: string } | null;
+        const tempoRestante = fimDoOrcamento - Date.now() - margemMs;
+        const variacao = await variarSemRepetir({
+          texto,
+          nome: primeiroNomeUtil(lead?.nome),
+          nomes: nomesDaPessoa(lead?.nome),
+          fatos: fatosDaLista({
+            contexto: aindaAtiva.contexto_template as ContextoTemplate | null,
+            imovelNome: imovelDaLista?.nome,
+            corretorNome: nomeDoCorretor,
+            nomeDaCasa: site.nome,
+          }),
+          anteriores: recentes.filter((a) => a.id !== item.id),
+          manterAbertura: Boolean(item.variante),
+          tentativas: tempoRestante > 20_000 ? 2 : 1,
+          orcamentoMs: Math.max(4_000, Math.min(9_000, Math.floor(tempoRestante / 2))),
+        });
+
+        if (!variacao.ok) {
+          /*
+           * Não sai texto repetido. O item fica na frente da fila com o motivo
+           * à vista (é o que a tela lê) e o próximo ciclo tenta de novo, com
+           * outro estilo sorteado. Se a IA respondeu e mesmo assim nada passou
+           * na conferência por vários ciclos seguidos, o problema é o texto (curto
+           * demais, ou igual ao de uma lista recente): a lista pausa sozinha
+           * com o conselho, em vez de girar para sempre. IA fora do ar não conta
+           * para a pausa: ela volta sozinha, e a fila junto.
+           */
+          const parecida = variacao.motivo === "parecida";
+          const ciclos = (item.tentativas_texto ?? 0) + (parecida ? 1 : 0);
+          await supabase
+            .from("whatsapp_campanhas_fila")
+            .update({
+              erro_motivo: parecida ? MOTIVO_TEXTO_PARECIDO : MOTIVO_TEXTO_SEM_IA,
+              tentativas_texto: ciclos,
+            })
+            .eq("id", item.id)
+            .eq("status", "pendente");
+
+          if (parecida && ciclos >= CICLOS_ATE_PAUSAR) {
+            await supabase
+              .from("whatsapp_campanhas")
+              .update({ status: "pausada", pausa_automatica: MOTIVO_PAUSA_POR_TEXTO })
+              .eq("id", item.campanha_id)
+              .eq("status", "em_andamento");
+            idsCampanhas.splice(idsCampanhas.indexOf(item.campanha_id), 1);
+            if (idsCampanhas.length === 0) {
+              parcial.motivo = "fila_vazia";
+              break;
+            }
+            continue;
+          }
+
+          parcial.motivo = "texto_repetido";
+          parcial.diagnostico = parecida
+            ? "A IA ainda não conseguiu escrever a próxima mensagem diferente das anteriores. A fila tenta de novo no próximo ciclo, para não mandar texto repetido."
+            : "A IA que reescreve as mensagens não respondeu agora. Sem ela, a próxima sairia igual a uma anterior, então a fila espera o próximo ciclo.";
+          break;
+        }
+
+        texto = variacao.texto;
+        await supabase
+          .from("whatsapp_campanhas_fila")
+          .update({
+            mensagem_personalizada: texto,
+            personalizado_por_ia: variacao.personalizadoPorIA,
+            semelhanca_max: variacao.semelhanca,
+            erro_motivo: null,
+          })
+          .eq("id", item.id);
+        recentes = [
+          { id: item.id, texto, nomes: nomesDaPessoa(lead?.nome) },
+          ...recentes.filter((a) => a.id !== item.id),
+        ];
+      }
+
+      /*
        * A vez de disparar: cota diária E espaçamento, decididos no banco
        * (0062). O intervalo precisa ser verificado AQUI, contra o relógio,
        * e não só contra `agendado_para` — item vencido tem espera negativa,
@@ -577,29 +708,6 @@ async function processarInstancia(ctx: {
 
       parcial.processados++;
 
-      // Variação anti-ban feita agora, no envio, e gravada de volta: se a
-      // corrente cair depois desta linha e antes do envio, a próxima
-      // tentativa reaproveita o texto em vez de pagar a IA de novo.
-      let texto = item.mensagem_personalizada;
-      /*
-       * Durante o teste A/B a IA NÃO reescreve (roadmap, Fase 2): reescrever
-       * saudação e vocabulário das duas versões dilui exatamente a diferença
-       * de abertura que o teste quer medir. O espaçamento e o nome de cada
-       * pessoa continuam variando a mensagem. Item com `variante` nula (sem
-       * teste, ou reescrito depois da decisão) segue com a variação.
-       */
-      if (!item.personalizado_por_ia && !item.variante) {
-        const nomeLead = lead?.nome ?? "";
-        const variacao = await variarMensagemComIA({ texto, nomeLead });
-        if (variacao.personalizadoPorIA) {
-          texto = variacao.texto;
-          await supabase
-            .from("whatsapp_campanhas_fila")
-            .update({ mensagem_personalizada: texto, personalizado_por_ia: true })
-            .eq("id", item.id);
-        }
-      }
-
       /*
        * `{horarios}` é resolvido AGORA, e não na criação: a fila anda devagar
        * de propósito, e um horário oferecido na criação pode ter sido marcado
@@ -609,6 +717,10 @@ async function processarInstancia(ctx: {
         rotulosDaAgenda ??= (await horariosDeVisita(instancia.corretor_id).catch(() => [])).map((h) => h.rotulo);
         texto = resolverHorarios(texto, rotulosDaAgenda);
       }
+
+      // A saudação acompanha a hora do ENVIO, não a da escrita: "Bom dia"
+      // escrito de manhã sairia errado à tarde (`ajustarSaudacaoAoHorario`).
+      texto = ajustarSaudacaoAoHorario(texto, new Date());
 
       const envio = await enviarMensagemWhatsapp({
         instanceName: instancia.instance_name,

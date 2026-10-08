@@ -32,5 +32,7 @@ export function listaRecemCriada(params: {
     midias: params.midias ?? 0,
     repetivel: true,
     pausaAutomatica: null,
+    // Nada saiu ainda: não há texto conferido para mostrar.
+    texto: null,
   };
 }

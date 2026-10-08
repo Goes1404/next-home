@@ -240,6 +240,16 @@ export function HistoricoCampanhas({
                 <Etapa rotulo="Vendas" valor={String(c.desfecho.vendas)} />
               </div>
 
+              {/* A prova de que a lista não mandou texto repetido (0173). */}
+              {c.texto && (
+                <p className="text-fluid-xs text-apoio w-full break-words">
+                  {c.texto.conferidas === 1
+                    ? "1 mensagem saiu com texto conferido"
+                    : `${c.texto.conferidas} mensagens saíram com texto conferido`}
+                  : nenhuma parecida com outra do seu número. A mais parecida ficou em {c.texto.maisParecidaPct}%.
+                </p>
+              )}
+
               <div className="flex w-full flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-1">
                   <BotaoDetalheDaLista campanha={c} />

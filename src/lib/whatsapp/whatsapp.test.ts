@@ -4,9 +4,9 @@ import { formatarExemplosFewShot, type ExemploConvertido } from "./aprendizadoCo
 import { classificarTamanho, dividirEmMensagens } from "./chunking";
 import { extrairDossieCliente } from "./dossierExtractor";
 import {
-  gerarMensagensCampanhaPersonalizadas,
+  exemplosDaLista,
   montarFilaCampanha,
-  variarMensagemComIA,
+  variarSemRepetir,
   INTERVALO_MINIMO_SEGUNDOS,
   INTERVALO_MAXIMO_SEGUNDOS,
 } from "./campaignQueue";
@@ -293,10 +293,10 @@ describe("Fila de campanha — proteção anti-ban", () => {
   ];
 
   /*
-   * Caminho de PRODUÇÃO da fila. A variante com IA
-   * (`gerarMensagensCampanhaPersonalizadas`) ficou só para o preview do
-   * painel: uma chamada de rede por lead na criação da campanha estourava o
-   * tempo da server action antes de a fila chegar a ser gravada.
+   * Caminho de PRODUÇÃO da fila. A reescrita por IA acontece no envio
+   * (`variarSemRepetir`), item a item: uma chamada de rede por lead na
+   * criação da campanha estourava o tempo da server action antes de a fila
+   * chegar a ser gravada.
    */
   async function filaPadrao() {
     return montarFilaCampanha({
@@ -356,32 +356,50 @@ describe("Fila de campanha — proteção anti-ban", () => {
     expect(fila.every((i) => i.personalizadoPorIA === false)).toBe(true);
   });
 
-  it("devolve o texto intacto quando a variação por IA não acontece", async () => {
-    // A variação passou a rodar no ENVIO, item a item. Se ela falhar, o
-    // disparo tem que sair mesmo assim — com o texto do template e admitindo
-    // que a proteção de variação não aconteceu naquele item.
+  it("sem IA, o texto do corretor só sai se não repetir o que o número já mandou", async () => {
+    // A reescrita roda no ENVIO, item a item. Sem provedor (o caso do teste),
+    // a primeira mensagem de uma lista nova sai como o corretor escreveu; a
+    // segunda, igual à primeira, NÃO sai: mandar texto idêntico em massa é o
+    // que o WhatsApp restringe (a conta da Bruna, 07/10/2026).
     const original = "Olá, Marina! Conheça o Canvas Alphaville.";
-    const resultado = await variarMensagemComIA({ texto: original, nomeLead: "Marina" });
+    const primeira = await variarSemRepetir({
+      texto: original,
+      nome: "Marina",
+      nomes: ["Marina"],
+      fatos: ["Canvas Alphaville"],
+      anteriores: [],
+    });
+    expect(primeira).toEqual({ ok: true, texto: original, personalizadoPorIA: false, semelhanca: 0 });
 
-    expect(resultado.texto).toBe(original);
-    expect(resultado.personalizadoPorIA).toBe(false);
+    const segunda = await variarSemRepetir({
+      texto: "Olá, Paulo! Conheça o Canvas Alphaville.",
+      nome: "Paulo",
+      nomes: ["Paulo"],
+      fatos: ["Canvas Alphaville"],
+      anteriores: [{ texto: original, nomes: ["Marina"] }],
+    });
+    expect(segunda.ok).toBe(false);
+    if (!segunda.ok) expect(segunda.motivo).toBe("ia_indisponivel");
   });
 
-  it("o preview do painel aplica as mesmas proteções da fila real", async () => {
-    const preview = await gerarMensagensCampanhaPersonalizadas({
+  it("a prévia do painel passa pela mesma conferência do envio", async () => {
+    const fila = montarFilaCampanha({
       campanhaId: "preview",
       leads: leads.slice(0, 3),
       mensagemBase: "Olá, {nome}! Conheça o {imovel}.",
       empreendimentoNome: "Canvas Alphaville",
     });
+    const exemplos = await exemplosDaLista({
+      textos: fila.map((item, i) => ({ texto: item.mensagemPersonalizada, nomeLead: leads[i].nome })),
+      fatos: ["Canvas Alphaville"],
+      anteriores: [],
+    });
 
-    expect(preview).toHaveLength(3);
-    expect(preview[0].mensagemPersonalizada).toContain("Dr. Roberto");
-
-    const instantes = preview.map((i) => new Date(i.agendadoPara).getTime());
-    for (let i = 1; i < instantes.length; i++) {
-      expect(instantes[i]).toBeGreaterThan(instantes[i - 1]);
-    }
+    expect(exemplos.textos).toHaveLength(3);
+    expect(exemplos.textos[0]).toContain("Dr. Roberto");
+    // Sem IA, os três só mudam no nome: o primeiro sai, os outros dois
+    // repetiriam o primeiro e são apontados, como no envio.
+    expect(exemplos.repetidos).toBe(2);
   });
 });
 

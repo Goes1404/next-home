@@ -2906,9 +2906,11 @@ export type Database = {
           mensagem_personalizada: string
           personalizado_por_ia: boolean
           resposta_em: string | null
+          semelhanca_max: number | null
           status: "pendente" | "enviado" | "erro" | "respondido"
           telefone: string
           tentativas: number
+          tentativas_texto: number
         }
         Insert: {
           agendado_para?: string
@@ -2922,9 +2924,11 @@ export type Database = {
           mensagem_personalizada: string
           personalizado_por_ia?: boolean
           resposta_em?: string | null
+          semelhanca_max?: number | null
           status?: "pendente" | "enviado" | "erro" | "respondido"
           telefone: string
           tentativas?: number
+          tentativas_texto?: number
         }
         Update: {
           agendado_para?: string
@@ -2938,9 +2942,11 @@ export type Database = {
           mensagem_personalizada?: string
           personalizado_por_ia?: boolean
           resposta_em?: string | null
+          semelhanca_max?: number | null
           status?: "pendente" | "enviado" | "erro" | "respondido"
           telefone?: string
           tentativas?: number
+          tentativas_texto?: number
         }
         Relationships: [
           {

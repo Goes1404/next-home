@@ -176,6 +176,8 @@ export function NovaCampanha({
   const [agendarPara, setAgendarPara] = useState("");
   const [exemplos, setExemplos] = useState<string[]>([]);
   const [exemploB, setExemploB] = useState<string | null>(null);
+  // O recado embaixo dos exemplos quando a IA não reescreveu algum deles.
+  const [observacaoExemplos, setObservacaoExemplos] = useState<string | null>(null);
   const [gerando, setGerando] = useState(false);
   const [sugerindo, setSugerindo] = useState(false);
   const [criando, iniciarCriacao] = useTransition();
@@ -386,6 +388,7 @@ export function NovaCampanha({
         }
         setExemplos(resultado.mensagens);
         setExemploB(resultado.mensagemB);
+        setObservacaoExemplos(resultado.observacao);
       } catch (err) {
         falhar(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
       } finally {
@@ -836,8 +839,8 @@ export function NovaCampanha({
           <p className="text-fluid-xs text-apoio">
             Escreva como você falaria.{" "}
             {testandoDuas
-              ? "Durante o teste de duas versões a IA não reescreve o texto, para a comparação ser justa: cada pessoa recebe a versão como está, com o nome dela."
-              : "A IA reescreve cada mensagem com palavras um pouco diferentes — mensagens idênticas em massa é o que faz o WhatsApp bloquear números."}
+              ? "A IA reescreve cada mensagem com outras palavras, mantendo a abertura de cada versão para a comparação continuar justa. Nenhuma sai parecida com as que o seu número já mandou."
+              : "A IA reescreve cada mensagem com outras palavras e confere antes de mandar: nenhuma sai parecida com as que o seu número já mandou. Texto repetido em massa é o que faz o WhatsApp restringir números."}
           </p>
           <textarea
             rows={4}
@@ -954,6 +957,11 @@ export function NovaCampanha({
               {exemploB && (
                 <p className="text-fluid-xs text-corpo leading-relaxed break-words">
                   <span className="text-tenue">Versão B · </span>“{exemploB}”
+                </p>
+              )}
+              {observacaoExemplos && (
+                <p className="text-fluid-xs text-apoio border-acento-linha border-t pt-2 leading-relaxed break-words">
+                  {observacaoExemplos}
                 </p>
               )}
             </div>

@@ -1,10 +1,22 @@
-import { site } from "@/lib/site";
 import { dentroDaJanela } from "./antiBan";
-import { nomeUtilDoLead } from "@/lib/leads/nomeExibido";
+import { nomeUtilDoLead, primeiroNomeUtil } from "@/lib/leads/nomeExibido";
 import { algumProvedorConfigurado, chamarLlmJson } from "./llm";
 import type { ItemFilaCampanha } from "./types";
 import { comecoAleatorio, distribuirVariantes, type Variante } from "./testeAB";
-import { aplicarContexto, type ContextoTemplate } from "./listaDeTransmissao";
+import { aplicarContexto, trocarNome, type ContextoTemplate } from "./listaDeTransmissao";
+import { soarHumano } from "./vozHumana";
+import {
+  emPorcentagem,
+  estiloDaVariacao,
+  fatosQueOTextoCita,
+  LIMITE_DE_SEMELHANCA,
+  maiorSemelhanca,
+  mascararNomes,
+  problemaDaVariacao,
+  promptDeVariacao,
+  RECENTES_NO_PEDIDO,
+  type TextoAnterior,
+} from "./variacaoDeTexto";
 
 /**
  * Piso e teto do intervalo humanizado entre disparos, em segundos.
@@ -57,84 +69,152 @@ export function aplicarTemplate(params: {
   const comContexto = params.contexto
     ? aplicarContexto(params.mensagemBase, params.contexto)
     : params.mensagemBase;
-  return comContexto
-    .replace(/{nome}/gi, nomeUtilDoLead(params.nomeLead) || "Tudo bem?")
-    .replace(
-      /{imovel}/gi,
-      params.empreendimentoNome || "nossos lançamentos em Alphaville",
-    );
+  // O primeiro nome, como gente chama gente; sem nome útil, o marcador some
+  // junto com a pontuação que só existia por causa dele (`trocarNome`).
+  return trocarNome(comContexto, primeiroNomeUtil(params.nomeLead)).replace(
+    /{imovel}/gi,
+    params.empreendimentoNome || "nossos lançamentos em Alphaville",
+  );
 }
 
+export type ResultadoDaVariacao =
+  | {
+      ok: true;
+      texto: string;
+      /** false = saiu o texto do corretor, que por si já não repetia nada. */
+      personalizadoPorIA: boolean;
+      /** A maior semelhança do texto escolhido com as mensagens anteriores. */
+      semelhanca: number;
+    }
+  | {
+      ok: false;
+      /**
+       * `ia_indisponivel`: a IA não respondeu, e o texto do corretor repetiria
+       * outro. `parecida`: a IA respondeu, mas nenhuma reescrita passou na
+       * conferência (fatos, invenção ou semelhança).
+       */
+      motivo: "ia_indisponivel" | "parecida";
+      detalhe: string;
+      semelhanca: number;
+    };
+
 /**
- * Reescreve UMA mensagem com o Gemini para que nenhum disparo saia idêntico
- * a outro — a proteção anti-ban de variação de texto.
+ * Reescreve UMA mensagem da lista e só devolve texto que não repete o número
+ * (08/10/2026).
  *
- * Devolve `personalizadoPorIA: false` (e o texto original intacto) sempre
- * que a variação não acontecer de fato: sem chave, erro de rede, resposta
- * vazia. A fila não pode fingir que está protegida quando não está.
+ * A versão anterior pedia à IA "uma mensagem 100% única" e aceitava o que
+ * viesse. Medido na semana da restrição da conta da Bruna: as reescritas
+ * tinham mediana de 0,95 de semelhança com uma mensagem anterior do mesmo
+ * número, e um texto saiu 8 vezes. Agora cada reescrita é CONFERIDA:
+ * - fatos do original continuam escritos igual, e nada foi inventado
+ *   (`problemaDaVariacao`);
+ * - fica abaixo de `LIMITE_DE_SEMELHANCA` contra as mensagens dos últimos 30
+ *   dias do número (`anteriores`, da mais recente para a mais antiga).
+ * Recusada, a próxima tentativa recebe o motivo e a mensagem com que ela se
+ * pareceu. Sem reescrita aproveitável, o texto do corretor só sai se ele
+ * mesmo não repetir nada (a primeira mensagem de uma lista nova, por exemplo).
+ * Fora isso, devolve `ok: false` e quem chama decide esperar: mandar igual é
+ * justamente o que o WhatsApp restringe.
  *
- * Uma chamada por mensagem, chamada no momento do ENVIO e não na criação da
- * campanha. Fazer as N chamadas de uma vez, em série, dentro da server
- * action de criar campanha era o que estourava o tempo da função antes de a
- * fila chegar a ser gravada — campanha com algumas dezenas de leads
- * simplesmente não nascia.
+ * Uma chamada por mensagem, no momento do ENVIO (fazer as N na criação da
+ * lista estourava o tempo da função). Cada uma sorteia um estilo de abertura
+ * e de organização; sozinha, a IA voltava sempre ao mesmo molde.
  */
-export async function variarMensagemComIA(params: {
+export async function variarSemRepetir(params: {
+  /** O texto da fila, com o nome e as variáveis do imóvel já aplicados. */
   texto: string;
-  nomeLead: string;
-  timeoutMs?: number;
-}): Promise<{ texto: string; personalizadoPorIA: boolean }> {
-  const semVariacao = { texto: params.texto, personalizadoPorIA: false };
+  /** Os nomes da pessoa (primeiro e completo), para a conferência e a conta. */
+  nomes: readonly string[];
+  /** O nome que a mensagem usa para chamar a pessoa (`primeiroNomeUtil`). */
+  nome: string | null;
+  /** Trechos que precisam continuar escritos igual (`fatosDaLista`). */
+  fatos: readonly string[];
+  /** Mensagens do número, da mais recente para a mais antiga. */
+  anteriores: readonly TextoAnterior[];
+  /** No teste A/B a abertura é o que se mede: a IA troca só as palavras. */
+  manterAbertura?: boolean;
+  tentativas?: number;
+  orcamentoMs?: number;
+  /** Fixa o estilo sorteado. Só o teste passa isto; produção sorteia. */
+  semente?: number;
+}): Promise<ResultadoDaVariacao> {
+  const tentativas = Math.max(0, params.tentativas ?? 2);
+  const semente = params.semente ?? Math.floor(Math.random() * 1_000_000);
+  const fatosDoOriginal = fatosQueOTextoCita(params.texto, params.fatos);
+  const recentes = params.anteriores
+    .slice(0, RECENTES_NO_PEDIDO)
+    .map((a) => mascararNomes(a.texto, a.nomes ?? []));
 
-  /*
-   * Sem nome utilizável a variação segue em frente — só não pode citar
-   * nome. Antes, `!params.nomeLead` pulava a variação inteira quando o
-   * nome faltava, e "Contato sem nome" passava como se fosse nome de
-   * gente: o pior dos dois mundos, mensagem idêntica às outras (sem a
-   * proteção anti-ban) OU o rótulo interno na tela do cliente.
-   */
-  const nome = nomeUtilDoLead(params.nomeLead);
-  if (!algumProvedorConfigurado()) return semVariacao;
+  let iaRespondeu = false;
+  let recusa: { problema: string; parecidaCom?: string | null } | null = null;
+  let menorSemelhanca = 1;
 
-  const promptVariacao = `Você é um redator imobiliário sênior da ${site.nome}.
-Reescreva a mensagem abaixo ${nome ? `para o cliente "${nome}"` : 'SEM CITAR NOME NENHUM (não sabemos o nome desta pessoa — cumprimente sem nome, e nunca escreva algo como "Contato sem nome", "prezado cliente" ou um nome inventado)'}, mantendo o objetivo de negócio e o tom consultivo e elegante, mas variando a saudação e vocabulário para torná-la 100% natural, humana e única.
-Nunca use emojis em excesso. Máximo 2 parágrafos curtos.
+  if (algumProvedorConfigurado()) {
+    for (let i = 0; i < tentativas; i++) {
+      const prompt = promptDeVariacao({
+        original: params.texto,
+        nome: params.nome,
+        fatos: fatosDoOriginal,
+        recentes,
+        estilo: estiloDaVariacao(semente + i * 7, {
+          temNome: Boolean(params.nome),
+          manterAbertura: Boolean(params.manterAbertura),
+        }),
+        manterAbertura: Boolean(params.manterAbertura),
+        tentativaAnterior: recusa,
+      });
+      const resultado = await chamarLlmJson(prompt, {
+        temperature: i === 0 ? 0.9 : 1,
+        orcamentoMs: params.orcamentoMs ?? 9_000,
+      });
+      if (!resultado.ok) {
+        // A camada do LLM já retenta o que falha rápido; um timeout ou cota
+        // aqui não melhora na segunda chamada e gastaria o tempo do envio.
+        console.warn(`[campanha] reescrita indisponível (${resultado.erro}).`);
+        break;
+      }
+      iaRespondeu = true;
 
-Mensagem Original:
-${params.texto}
+      const bruto = (resultado.json as { mensagem?: unknown })?.mensagem;
+      if (typeof bruto !== "string") {
+        recusa = { problema: "não veio o texto no campo mensagem" };
+        continue;
+      }
+      const candidato = soarHumano(bruto);
+      const problema = problemaDaVariacao({
+        original: params.texto,
+        variacao: candidato,
+        fatos: params.fatos,
+        nome: params.nome,
+      });
+      if (problema) {
+        recusa = { problema };
+        continue;
+      }
 
-Responda em JSON: {"mensagem": "o texto reescrito"}`;
-
-  /*
-   * Passa pela cascata (NVIDIA → Gemini) como o resto do sistema. Aqui a
-   * troca importa por volume: é UMA chamada por mensagem de campanha, e uma
-   * fila de 40 leads sozinha já chega perto do teto por minuto de qualquer
-   * provedor gratuito. Um estouro aqui não quebra nada — só devolve o texto
-   * sem variação, e aí todas as mensagens saem iguais, que é exatamente o
-   * padrão que o WhatsApp lê como spam.
-   *
-   * O contrato virou JSON (era texto cru) porque a cascata fala JSON com os
-   * dois provedores — e é o que permite o adaptador da NVIDIA desembrulhar
-   * a resposta com segurança.
-   */
-  const resultado = await chamarLlmJson(promptVariacao, {
-    temperature: 0.7,
-    orcamentoMs: params.timeoutMs ?? 12_000,
-  });
-
-  if (!resultado.ok) {
-    console.warn(
-      `[campanha] variação por IA indisponível (${resultado.erro}); mantendo o texto base.`,
-    );
-    return semVariacao;
+      const comparacao = maiorSemelhanca(candidato, params.nomes, params.anteriores, params.fatos);
+      if (comparacao.semelhanca < LIMITE_DE_SEMELHANCA) {
+        return { ok: true, texto: candidato, personalizadoPorIA: true, semelhanca: comparacao.semelhanca };
+      }
+      menorSemelhanca = Math.min(menorSemelhanca, comparacao.semelhanca);
+      const parecida = params.anteriores[comparacao.indice];
+      recusa = {
+        problema: `ficou ${emPorcentagem(comparacao.semelhanca)} parecida com uma mensagem que o número já mandou`,
+        parecidaCom: parecida ? mascararNomes(parecida.texto, parecida.nomes ?? []) : null,
+      };
+    }
   }
 
-  const gerado = (resultado.json as { mensagem?: unknown })?.mensagem;
-  if (typeof gerado === "string" && gerado.trim().length > 15) {
-    return { texto: gerado.trim(), personalizadoPorIA: true };
+  const doOriginal = maiorSemelhanca(params.texto, params.nomes, params.anteriores, params.fatos);
+  if (doOriginal.semelhanca < LIMITE_DE_SEMELHANCA) {
+    return { ok: true, texto: params.texto, personalizadoPorIA: false, semelhanca: doOriginal.semelhanca };
   }
-
-  return semVariacao;
+  return {
+    ok: false,
+    motivo: iaRespondeu ? "parecida" : "ia_indisponivel",
+    detalhe: recusa?.problema ?? "sem reescrita, e o texto original repete uma mensagem anterior",
+    semelhanca: Math.min(menorSemelhanca, doOriginal.semelhanca),
+  };
 }
 
 /**
@@ -256,47 +336,47 @@ export function montarFilaCampanha(params: {
 }
 
 /**
- * Monta a fila JÁ com a variação por IA aplicada em todos os itens.
+ * Os exemplos que a tela mostra antes de criar a lista, pelo MESMO caminho do
+ * envio: cada um reescrito e conferido contra as mensagens do número e contra
+ * os exemplos anteriores, em sequência. Em paralelo, os exemplos nasciam sem
+ * se ver e saíam parecidos entre si, e a prévia prometia uma variação que o
+ * envio não entregava.
  *
- * Continua existindo para o preview do painel, que roda sobre uma amostra
- * de 3 leads e precisa mostrar ao corretor o texto exato que sairia. Para a
- * fila de verdade use `montarFilaCampanha` + `variarMensagemComIA` no
- * envio: N chamadas de IA na criação da campanha não cabem no tempo de uma
- * server action, nem em paralelo (a cota do Gemini rejeita a rajada).
+ * Uma tentativa por exemplo (o envio faz até duas): a tela está esperando.
  */
-export async function gerarMensagensCampanhaPersonalizadas(params: {
-  campanhaId: string;
-  leads: {
-    id: string;
-    nome: string;
-    telefone: string;
-    historicoOuInteresse?: string;
-  }[];
-  mensagemBase: string;
-  empreendimentoNome?: string;
-  intervaloSegundosMinimo?: number;
-  contexto?: ContextoTemplate | null;
-}): Promise<ItemFilaCampanha[]> {
-  if (!algumProvedorConfigurado()) {
-    console.warn(
-      "Campanha sem nenhum provedor de IA configurado (NVIDIA_API_KEY / GEMINI_API_KEY): " +
-        "as mensagens sairão sem variação, aumentando o risco de bloqueio por spam.",
-    );
+export async function exemplosDaLista(params: {
+  textos: ReadonlyArray<{ texto: string; nomeLead: string }>;
+  fatos: readonly string[];
+  anteriores: readonly TextoAnterior[];
+  manterAbertura?: boolean;
+}): Promise<{ textos: string[]; reescritos: number; repetidos: number }> {
+  const anteriores = [...params.anteriores];
+  const textos: string[] = [];
+  let reescritos = 0;
+  let repetidos = 0;
+  for (const exemplo of params.textos) {
+    const nome = primeiroNomeUtil(exemplo.nomeLead);
+    const nomes = nomesDaPessoa(exemplo.nomeLead);
+    const v = await variarSemRepetir({
+      texto: exemplo.texto,
+      nome,
+      nomes,
+      fatos: params.fatos,
+      anteriores,
+      manterAbertura: params.manterAbertura,
+      tentativas: 1,
+      orcamentoMs: 7_000,
+    });
+    const texto = v.ok ? v.texto : exemplo.texto;
+    if (v.ok && v.personalizadoPorIA) reescritos++;
+    if (!v.ok) repetidos++;
+    textos.push(texto);
+    anteriores.unshift({ texto, nomes });
   }
+  return { textos, reescritos, repetidos };
+}
 
-  const itens = montarFilaCampanha(params);
-
-  return Promise.all(
-    itens.map(async (item, indice) => {
-      const variacao = await variarMensagemComIA({
-        texto: item.mensagemPersonalizada,
-        nomeLead: params.leads[indice]?.nome ?? "",
-      });
-      return {
-        ...item,
-        mensagemPersonalizada: variacao.texto,
-        personalizadoPorIA: variacao.personalizadoPorIA,
-      };
-    }),
-  );
+/** O nome completo e o primeiro nome, para saírem da conta da semelhança. */
+export function nomesDaPessoa(nomeLead: string | null | undefined): string[] {
+  return [nomeUtilDoLead(nomeLead), primeiroNomeUtil(nomeLead)].filter((n): n is string => Boolean(n));
 }

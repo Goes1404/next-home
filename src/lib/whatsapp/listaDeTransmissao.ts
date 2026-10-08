@@ -87,9 +87,9 @@ export function variaveisUsadas(texto: string): string[] {
 /**
  * As variáveis do texto que vão sair VAZIAS.
  *
- * `{nome}` nunca entra: quem não tem nome útil recebe "Tudo bem?" no lugar,
- * e isso é decisão antiga da casa. Variável desconhecida também conta como
- * sem valor: mandar "{bairo}" para o cliente é o mesmo defeito.
+ * `{nome}` nunca entra: quem não tem nome útil recebe a frase sem o nome
+ * (`trocarNome`). Variável desconhecida também conta como sem valor: mandar
+ * "{bairo}" para o cliente é o mesmo defeito.
  */
 export function variaveisSemValor(
   texto: string,
@@ -110,6 +110,30 @@ export function aplicarContexto(texto: string, contexto: ContextoTemplate): stri
     if (k === "nome" || k === "horarios") return inteiro;
     return contexto[k as keyof ContextoTemplate] ?? inteiro;
   });
+}
+
+/**
+ * Troca `{nome}` pelo primeiro nome, ou tira o marcador sem deixar buraco.
+ *
+ * Quem não tinha nome útil recebia "Tudo bem?" no lugar do nome, e o
+ * resultado dependia de onde o corretor tinha posto o marcador: "Oi {nome},
+ * tudo bem?" saía "Oi Tudo bem?, tudo bem?". Agora o marcador some com a
+ * pontuação que só existia por causa dele: "Olá, {nome}!" vira "Olá!",
+ * "Oi {nome}, tudo bem?" vira "Oi, tudo bem?", e "{nome}, saiu..." vira
+ * "Saiu...". Quebra de linha é preservada: parágrafo é decisão do corretor.
+ */
+export function trocarNome(texto: string, primeiroNome: string | null): string {
+  if (!/\{nome\}/i.test(texto)) return texto;
+  if (primeiroNome) return texto.replace(/\{nome\}/gi, primeiroNome);
+  const semMarcador = texto
+    .replace(/^\s*\{nome\}[ \t]*[,!.:;]?[ \t]*/i, "")
+    .replace(/[ \t]*,[ \t]*\{nome\}(?=[ \t]*[,.!?;:]|[ \t]*$)/gim, "")
+    .replace(/[ \t]+\{nome\}(?=[ \t]*[,.!?;:])/gi, "")
+    .replace(/[ \t]*\{nome\}/gi, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]+([,.!?;:])/g, "$1")
+    .replace(/^[\s,.;:!]+/, "");
+  return semMarcador.charAt(0).toUpperCase() + semMarcador.slice(1);
 }
 
 /**

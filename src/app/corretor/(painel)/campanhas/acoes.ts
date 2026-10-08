@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import { algumProvedorConfigurado, chamarLlmJson } from "@/lib/whatsapp/llm";
 import { aberturasDoJson, EXEMPLOS_VENCEDORES, promptDeAberturas } from "@/lib/marketing/aberturaSugerida";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import {
@@ -19,7 +19,10 @@ import { getEmpreendimentos } from "@/lib/queries";
 import type { Empreendimento, EtapaFunil } from "@/lib/types";
 import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
 import { processarFilaCampanhas } from "@/lib/whatsapp/campaignDispatcher";
-import { gerarMensagensCampanhaPersonalizadas, montarFilaCampanha } from "@/lib/whatsapp/campaignQueue";
+import { exemplosDaLista, montarFilaCampanha, nomesDaPessoa } from "@/lib/whatsapp/campaignQueue";
+import { textosRecentesDoNumero } from "@/lib/whatsapp/textosDoNumero";
+import { fatosDaLista, MOTIVO_TEXTO_PARECIDO, MOTIVO_TEXTO_SEM_IA } from "@/lib/whatsapp/variacaoDeTexto";
+import { site } from "@/lib/site";
 import { conferirNumerosNoWhatsapp, provedorConfigurado } from "@/lib/whatsapp/provider";
 import { lerSinaisDaLista } from "@/lib/whatsapp/sinaisDaLista";
 import type { SinaisDaLista } from "@/lib/whatsapp/pausaAutomatica";
@@ -197,7 +200,7 @@ export async function gerarPreviewCampanha(params: {
   imovelSlug?: string | null;
   /** Canal ou anúncio de origem (Fase 3). */
   recorte?: RecorteDeOrigem | null;
-}): Promise<{ mensagens: string[]; mensagemB: string | null } | { erro: string }> {
+}): Promise<{ mensagens: string[]; mensagemB: string | null; observacao: string | null } | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
   if (!params.mensagemBase.trim()) return { erro: "Escreva uma mensagem base primeiro." };
@@ -215,7 +218,8 @@ export async function gerarPreviewCampanha(params: {
   if (elegiveis.length === 0) return { erro: "Nenhum lead elegível para este filtro no momento." };
 
   const { imovel, contexto } = await contextoDoImovel(params.empreendimentoId, corretor.nome);
-  const temAgenda = await corretorTemAgenda(await createClient(), corretor.id);
+  const supabase = await createClient();
+  const temAgenda = await corretorTemAgenda(supabase, corretor.id);
   const textoB = params.mensagemBaseB?.trim() || null;
   const faltando = [
     ...variaveisSemValor(params.mensagemBase, contexto, { temAgenda }),
@@ -226,38 +230,78 @@ export async function gerarPreviewCampanha(params: {
   const rotulos = temAgenda ? (await horariosDeVisita(corretor.id)).map((h) => h.rotulo) : [];
   const amostra = elegiveis.slice(0, 3);
 
-  // Com teste A/B a IA não reescreve no envio (ver o disparador): o
-  // exemplo mostra o texto exatamente como vai sair.
-  const fila = textoB
-    ? montarFilaCampanha({
-        campanhaId: "preview",
-        leads: amostra,
-        mensagemBase: params.mensagemBase,
-        empreendimentoNome: imovel?.nome,
-        contexto,
-      })
-    : await gerarMensagensCampanhaPersonalizadas({
-        campanhaId: "preview",
-        leads: amostra,
-        mensagemBase: params.mensagemBase,
-        empreendimentoNome: imovel?.nome,
-        contexto,
-      });
+  /*
+   * Os exemplos passam pelo MESMO caminho do envio (08/10/2026): cada um é
+   * reescrito e conferido contra as mensagens recentes do número e contra os
+   * exemplos anteriores, em sequência. No teste A/B as duas versões também
+   * são reescritas, cada uma mantendo a própria abertura. Antes, com duas
+   * versões, o exemplo mostrava o texto cru, que era o que de fato saía.
+   */
+  const anteriores = (await textosRecentesDoNumero(supabase, corretor.id)) ?? [];
+  const fatos = fatosDaLista({
+    contexto,
+    imovelNome: imovel?.nome,
+    corretorNome: corretor.nome,
+    nomeDaCasa: site.nome,
+  });
+  const filaA = montarFilaCampanha({
+    campanhaId: "preview",
+    leads: amostra,
+    mensagemBase: params.mensagemBase,
+    empreendimentoNome: imovel?.nome,
+    contexto,
+  });
+  const exemplosA = await exemplosDaLista({
+    textos: filaA.map((item, i) => ({ texto: item.mensagemPersonalizada, nomeLead: amostra[i]?.nome ?? "" })),
+    fatos,
+    anteriores,
+    manterAbertura: Boolean(textoB),
+  });
 
-  const exemploB = textoB
-    ? montarFilaCampanha({
-        campanhaId: "preview",
-        leads: amostra.slice(0, 1),
-        mensagemBase: textoB,
-        empreendimentoNome: imovel?.nome,
-        contexto,
-      })[0]?.mensagemPersonalizada ?? null
-    : null;
+  let exemploB: string | null = null;
+  let reescritos = exemplosA.reescritos;
+  let repetidos = exemplosA.repetidos;
+  if (textoB) {
+    const filaB = montarFilaCampanha({
+      campanhaId: "preview",
+      leads: amostra.slice(0, 1),
+      mensagemBase: textoB,
+      empreendimentoNome: imovel?.nome,
+      contexto,
+    });
+    const b = await exemplosDaLista({
+      textos: filaB.map((item) => ({ texto: item.mensagemPersonalizada, nomeLead: amostra[0]?.nome ?? "" })),
+      fatos,
+      anteriores: [
+        ...exemplosA.textos.map((texto, i) => ({ texto, nomes: nomesDaPessoa(amostra[i]?.nome) })),
+        ...anteriores,
+      ],
+      manterAbertura: true,
+    });
+    exemploB = b.textos[0] ?? null;
+    reescritos += b.reescritos;
+    repetidos += b.repetidos;
+  }
 
   return {
-    mensagens: fila.map((item) => resolverHorarios(item.mensagemPersonalizada, rotulos)),
+    mensagens: exemplosA.textos.map((texto) => resolverHorarios(texto, rotulos)),
     mensagemB: exemploB ? resolverHorarios(exemploB, rotulos) : null,
+    observacao: observacaoDosExemplos({ iaConfigurada: algumProvedorConfigurado(), reescritos, repetidos }),
   };
+}
+
+/** O recado embaixo dos exemplos quando a IA não reescreveu algum deles. */
+function observacaoDosExemplos(p: { iaConfigurada: boolean; reescritos: number; repetidos: number }): string | null {
+  if (!p.iaConfigurada) {
+    return "A IA que reescreve as mensagens não está configurada. Cada pessoa recebe o texto como está, e mensagem que repetiria outra do seu número não sai.";
+  }
+  if (p.repetidos > 0) {
+    return "A IA não conseguiu deixar algum exemplo diferente das mensagens recentes do seu número. No envio a fila tenta de novo, e mensagem repetida não sai. Se continuar, deixe o texto mais longo ou mude a abertura.";
+  }
+  if (p.reescritos === 0) {
+    return "A IA não respondeu agora, então os exemplos estão como você escreveu. No envio, cada mensagem é reescrita antes de sair.";
+  }
+  return null;
 }
 
 /**
@@ -678,6 +722,11 @@ export type CampanhaListada = {
   repetivel: boolean;
   /** Por que o disparador pausou a lista sozinho (0172), ou null. */
   pausaAutomatica: string | null;
+  /**
+   * As mensagens que saíram com o texto conferido (0173) e a mais parecida
+   * delas com outra do número, em %. Null para listas de antes da conferência.
+   */
+  texto: { conferidas: number; maisParecidaPct: number } | null;
 };
 
 /** Quantas listas o histórico mostra por vez. */
@@ -706,10 +755,11 @@ export async function listarCampanhas(antesDe?: string): Promise<CampanhaListada
   const { data } = await consulta;
 
   const ids = (data ?? []).map((c) => c.id);
-  const [placar, desfechos, funis] = await Promise.all([
+  const [placar, desfechos, funis, textos] = await Promise.all([
     placaresDoTeste(supabase, (data ?? []).filter((c) => c.mensagem_base_b).map((c) => c.id)),
     desfechosDasListas(supabase, ids),
     funisDasListas(supabase, ids),
+    textoDasListas(supabase, ids),
   ]);
 
   return (data ?? []).map((c) => ({
@@ -730,7 +780,41 @@ export async function listarCampanhas(antesDe?: string): Promise<CampanhaListada
     midias: Array.isArray(c.midias) ? c.midias.length : 0,
     repetivel: Boolean(c.criterio),
     pausaAutomatica: c.status === "pausada" ? c.pausa_automatica : null,
+    texto: textos.get(c.id) ?? null,
   }));
+}
+
+/**
+ * Quantas mensagens de cada lista saíram com o texto conferido (0173), e a
+ * mais parecida delas com outra do número. É a prova, na tela, de que a lista
+ * não mandou texto repetido. Paginado: a resposta do banco para em 1.000
+ * linhas, e 20 listas de 300 passariam disso.
+ */
+async function textoDasListas(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  ids: string[],
+): Promise<Map<string, { conferidas: number; maisParecidaPct: number }>> {
+  const resultado = new Map<string, { conferidas: number; maisParecidaPct: number }>();
+  if (ids.length === 0) return resultado;
+  const PAGINA = 1000;
+  for (let pagina = 0; pagina < 10; pagina++) {
+    const { data } = await supabase
+      .from("whatsapp_campanhas_fila")
+      .select("campanha_id, semelhanca_max")
+      .in("campanha_id", ids)
+      .in("status", ["enviado", "respondido"])
+      .not("semelhanca_max", "is", null)
+      .order("id")
+      .range(pagina * PAGINA, pagina * PAGINA + PAGINA - 1);
+    for (const item of data ?? []) {
+      const atual = resultado.get(item.campanha_id) ?? { conferidas: 0, maisParecidaPct: 0 };
+      atual.conferidas++;
+      atual.maisParecidaPct = Math.max(atual.maisParecidaPct, Math.round((item.semelhanca_max ?? 0) * 100));
+      resultado.set(item.campanha_id, atual);
+    }
+    if (!data || data.length < PAGINA) break;
+  }
+  return resultado;
 }
 
 type Contagem = { enviados: number; respostas: number };
@@ -1248,7 +1332,15 @@ export async function limparFilaDisparo(): Promise<ResultadoLimparFila> {
 }
 
 /** O que está impedindo a fila de andar, em categoria — a tela decide o botão por ela. */
-export type TipoDeImpedimento = "sem_numero" | "bloqueado" | "desconectado" | "cota" | "horario" | "expediente";
+export type TipoDeImpedimento =
+  | "sem_numero"
+  | "bloqueado"
+  | "desconectado"
+  | "cota"
+  | "horario"
+  | "expediente"
+  /** A próxima mensagem sairia parecida com outra do número (08/10/2026). */
+  | "texto";
 
 export type StatusDisparo = {
   /** Nome pareado no provedor; null quando o número ainda não conectou. */
@@ -1307,6 +1399,9 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
 
   let pendentes = 0;
   let proximoAgendadoEm: string | null = null;
+  // Itens que esperam a IA reescrever para não sair texto repetido.
+  let esperandoTextoSemIa = 0;
+  let esperandoTextoParecido = 0;
 
   if (ids.length > 0) {
     const { count } = await supabase
@@ -1325,6 +1420,18 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
       .limit(1)
       .maybeSingle();
     proximoAgendadoEm = proximo?.agendado_para ?? null;
+
+    const { data: esperando } = await supabase
+      .from("whatsapp_campanhas_fila")
+      .select("erro_motivo")
+      .in("campanha_id", ids)
+      .eq("status", "pendente")
+      .in("erro_motivo", [MOTIVO_TEXTO_SEM_IA, MOTIVO_TEXTO_PARECIDO])
+      .limit(50);
+    for (const e of esperando ?? []) {
+      if (e.erro_motivo === MOTIVO_TEXTO_SEM_IA) esperandoTextoSemIa++;
+      else esperandoTextoParecido++;
+    }
   }
 
   const conectadoEm = instancia?.conectado_em ? new Date(instancia.conectado_em) : null;
@@ -1367,6 +1474,14 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
   } else if (!noExpediente) {
     impedimentoTipo = "expediente";
     impedimento = `Fora do seu expediente (${instancia.expediente_inicio}h às ${instancia.expediente_fim}h). A fila retoma sozinha no começo do próximo expediente.`;
+  } else if (esperandoTextoSemIa > 0) {
+    impedimentoTipo = "texto";
+    impedimento =
+      "A IA que reescreve cada mensagem não está respondendo agora. Sem ela, a próxima sairia igual a uma que o seu número já mandou, então a fila espera e tenta de novo a cada minuto.";
+  } else if (esperandoTextoParecido > 0) {
+    impedimentoTipo = "texto";
+    impedimento =
+      "A IA está reescrevendo a próxima mensagem até ela ficar diferente das que o seu número já mandou. A fila segue sozinha; se demorar, a lista pausa e avisa o que mudar no texto.";
   }
 
   // A janela de hoje é a interseção entre a janela segura e o expediente.

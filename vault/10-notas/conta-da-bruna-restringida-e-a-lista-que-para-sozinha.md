@@ -78,5 +78,7 @@ sem WhatsApp em 39 tentativas.
   também não a teria parado.
 - A pausa automática já agiu: a lista da Grazi parou sozinha em 07/10 (8 de
   34 sem WhatsApp).
+- **Corrigido em 08/10**: cada mensagem passou a ser conferida antes de sair,
+  inclusive no A/B. Ver [[texto-da-lista-conferido-antes-de-sair]].
 
 Ver [[aquecimento-do-numero-pelo-uso]] e [[lista-de-transmissao-visivel-e-controlavel]].

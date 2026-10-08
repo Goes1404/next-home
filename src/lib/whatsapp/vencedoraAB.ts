@@ -17,8 +17,9 @@ type Supa = ReturnType<typeof createServiceClient>;
  *
  * O carimbo é o claim: o UPDATE só vale se `variante_vencedora` ainda é
  * nulo, então dois tiques não reescrevem a fila duas vezes. Os itens
- * reescritos voltam a `personalizado_por_ia = false` — a variação anti-ban
- * acontece no envio, sobre o texto novo.
+ * reescritos voltam a `personalizado_por_ia = false` e perdem a conferência
+ * (`semelhanca_max` nula): o disparador reescreve e confere de novo no envio,
+ * sobre o texto novo.
  *
  * Nunca lança: falhar aqui só adia a troca para o próximo tique, e o
  * disparo segue com o texto que já estava na fila.
@@ -87,11 +88,13 @@ export async function aplicarVencedoras(supabase: Supa, campanhaIds: string[]): 
              * Sem letra depois da decisão (roadmap das listas, Fase 2): o
              * item já não faz parte do teste. Antes ele ganhava a letra da
              * vencedora, e o placar passava a misturar envios de depois da
-             * troca. Sem letra, ele também volta a ganhar a variação por IA
-             * no envio, que o teste suspende.
+             * troca. Sem letra, a reescrita do envio volta a poder mexer na
+             * abertura, que durante o teste fica fixa.
              */
             variante: null,
             personalizado_por_ia: false,
+            semelhanca_max: null,
+            tentativas_texto: 0,
             mensagem_personalizada: aplicarTemplate({
               mensagemBase: texto,
               nomeLead: (p.lead_id && nomes.get(p.lead_id)) || "",

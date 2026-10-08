@@ -4,7 +4,7 @@ tags: [moc, campanhas, anti-ban]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-03
+updated: 2026-10-08
 summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 ---
 # Campanhas e Anti-ban — Map of Content
@@ -25,6 +25,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[trocar-numero-zera-reputacao]]
 - [[conta-da-bruna-restringida-e-a-lista-que-para-sozinha]] ⚠️ o WhatsApp restringiu um número por lista fria; a lista agora tira número sem WhatsApp e para sozinha (0171-0172, 07/10)
 - [[aquecimento-do-numero-pelo-uso]] ⚠️ o limite diário segue o uso da última semana, não a idade (0158, 03/10)
+- [[texto-da-lista-conferido-antes-de-sair]] ⚠️ cada mensagem só sai abaixo de 0,70 de semelhança com as do número; o A/B também é reescrito (0173, 08/10)
 
 ## Diagnóstico
 - [[fila-parada-tres-causas]] ⚠️ runbook principal
