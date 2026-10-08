@@ -16,7 +16,7 @@ codigo:
   - supabase/migrations/0171_pausa_das_listas_frias.sql
   - supabase/migrations/0172_pausa_automatica_da_lista.sql
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 fonte: print do usuário ("Sua conta foi restringida", 07/10/2026)
 summary: O WhatsApp restringiu o número da Bruna por envio em massa no meio de uma lista fria de 300; a criação da lista passou a tirar números sem WhatsApp e o disparador pausa a lista sozinho quando os sinais pioram.
 ---
@@ -59,5 +59,24 @@ sem WhatsApp em 39 tentativas.
   teria parado**. Bloqueio e denúncia o WhatsApp não nos conta.
 - Envio em massa seguro é só pela API oficial (Cloud API com modelo
   aprovado). Número pessoal serve para responder.
+
+## O texto saía idêntico (medido em 08/10)
+
+- **Durante o teste A/B a IA não reescreve** (para não diluir a diferença que
+  o teste mede), e o comentário do disparador dizia que "o nome de cada pessoa
+  continua variando a mensagem". Isso só vale quando o texto tem `{nome}`, e
+  o da Bruna não tinha: **65 das 114 mensagens saíram idênticas** (30 com o
+  texto A, 35 com o B), de 04/10 a 06/10. Texto igual para dezenas de pessoas
+  é o sinal mais claro de envio em massa.
+- **A variação por IA também repete**: depois do A/B, 49 mensagens deram 35
+  textos, um deles 8 vezes.
+- O A/B estava ligado em 4 das 5 listas frias da semana (Bruna, Carolini,
+  Grazi, Ramos). Na prática, a maior parte dos contatos frios saiu sem
+  variação.
+- Só 1 destinatário da lista da Bruna pediu para sair depois do envio (os 3
+  pedidos da semana eram da carteira inteira). A regra de pedidos para sair
+  também não a teria parado.
+- A pausa automática já agiu: a lista da Grazi parou sozinha em 07/10 (8 de
+  34 sem WhatsApp).
 
 Ver [[aquecimento-do-numero-pelo-uso]] e [[lista-de-transmissao-visivel-e-controlavel]].

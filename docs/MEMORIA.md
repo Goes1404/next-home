@@ -9632,3 +9632,9 @@ Nota: [[conta-da-bruna-restringida-e-a-lista-que-para-sozinha]].
 - A Evolution já confere o número antes de enviar: "Número não está no
   WhatsApp" nunca chegou a ser mensagem. E pelas regras novas a lista da
   Bruna não teria parado (13% sem WhatsApp).
+- **O teste A/B mandava texto idêntico** (medido em 08/10). A IA não reescreve
+  durante o A/B, e sem `{nome}` no texto as mensagens saem iguais: 65 das 114
+  da Bruna (30 A, 35 B). Depois do A/B, a IA deu 35 textos em 49 envios, um
+  repetido 8 vezes. O A/B estava em 4 das 5 listas frias da semana.
+- Só 1 destinatário da lista da Bruna pediu para sair. A pausa automática já
+  parou a lista da Grazi (8 de 34 sem WhatsApp).
