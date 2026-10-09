@@ -9793,3 +9793,20 @@ Nota: [[botoes-que-parecem-botoes]].
   pista é tingida pela cor do próprio texto (`currentColor` a 24%/6%), com o
   raio do botão principal, e o círculo do ícone é desenhado menor que o
   alvo de toque.
+
+## Limites do número só para o lado conservador (09/10/2026)
+
+Nota: [[aquecimento-do-numero-pelo-uso]].
+
+- **Decisão do dono da conta: "vamos ser bem conservadores com esses
+  limites".** Pedido de mais volume se resolve com mais dias de uso ou mais
+  números conectados, nunca com limite maior.
+- **`limitesConservadores.test.ts` congela a política de 09/10** (curva por
+  idade, ×1,5, piso 15, 7 dias, freio com 3 recusas, 1min30 a 2min, janela 9h
+  às 20h59 sem domingo) e reprova afrouxar, inclusive pela fórmula. Apertar
+  passa. Para afrouxar, a referência do teste muda junto, com data e motivo.
+- **Número conectado há menos de 3 dias manda no máximo 15 por dia, e os
+  dias contam em horas, não no calendário** (`diasDesdeConexao` arredonda
+  para baixo). A lista do Ramos (número de 07/10 13h54) parou às 9h30 de
+  09/10 com 15 enviadas; em 10/10 o teto continua 15 até 13h54 e só então
+  sobe (para 23, pelo maior dia da semana × 1,5).
