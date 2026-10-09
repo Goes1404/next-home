@@ -5,9 +5,9 @@ tags: [front, seo, decisao]
 type: decisao
 status: ativo
 custou: medio
-codigo: ["src/lib/dadosEstruturados.ts", "src/lib/seoDoImovel.ts", "src/components/empreendimento/PerguntasFrequentes.tsx", "src/app/(institucional)/page.tsx", "src/app/(vitrine)/empreendimentos/[slug]/page.tsx", "src/app/(institucional)/regioes/[slug]/page.tsx", "next.config.ts"]
+codigo: ["src/lib/dadosEstruturados.ts", "src/lib/seoDoImovel.ts", "src/components/empreendimento/PerguntasFrequentes.tsx", "src/app/(institucional)/page.tsx", "src/app/(vitrine)/empreendimentos/[slug]/page.tsx", "src/app/(institucional)/regioes/[slug]/page.tsx", "next.config.ts", "src/app/favicon.ico", "src/app/icon.png", "src/app/apple-icon.png", "scripts/marca/gerarIcones.mjs"]
 summary: A home passou a declarar a organização (com os nomes pelos quais procuram a marca) e o WebSite com busca interna; imóvel e região ganharam trilha (BreadcrumbList); o endereço da Vercel redireciona as páginas públicas para o domínio. O que mais pesa continua do lado do dono: o domínio antigo ainda não aponta para cá.
-updated: 2026-10-07
+updated: 2026-10-09
 ---
 
 # Identidade da marca para o Google
@@ -82,3 +82,22 @@ O que entrou para ganhar dele onde ele é fraco:
 O que continua do lado do dono e pesa mais: Perfil da Empresa no Google e
 as bios das redes apontando para o domínio novo; um link do site antigo para
 o novo ("lançamentos 2026") passa autoridade sem tirar o antigo do ar.
+
+## O ícone da aba era o do Next.js (09/10)
+
+O `src/app/favicon.ico` era o padrão do `create-next-app` (md5 `c30c7d42…`):
+na aba do navegador, no resultado do Google e na tela inicial do celular
+aparecia o triângulo do Next, não a marca.
+
+- Os três arquivos saem de `node scripts/marca/gerarIcones.mjs`, a partir do
+  símbolo recortado da logo (`scripts/marca/simbolo.png`): `favicon.ico`
+  (16, 32 e 48 px), `icon.png` (192 px, múltiplo de 48 como o Google pede) e
+  `apple-icon.png` (180 px, opaco: o iPhone pinta de preto o transparente).
+- **Só o símbolo, sem o nome**: em 16 px o texto não se lê.
+- **Fundo branco de cantos arredondados**: a casa da logo é desenhada pelo
+  espaço vazio. Com fundo transparente, na aba escura do navegador a casa some.
+- O Next lê esses nomes sozinho e escreve as tags no `<head>`; o `proxy.ts`
+  não toca em caminho com ponto.
+- O resultado do Google demora a trocar o ícone: ele é lido de novo quando o
+  robô volta à página.
+
