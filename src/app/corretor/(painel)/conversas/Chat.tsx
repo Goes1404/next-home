@@ -500,7 +500,7 @@ export function Chat({
           type="button"
           onClick={onVoltar}
           aria-label="Voltar para a lista"
-          className="text-wa-meta hover:text-wa-texto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full md:hidden"
+          className="text-wa-meta hover:text-wa-texto flex size-11 shrink-0 cursor-pointer items-center justify-center md:hidden botao-icone"
         >
           <svg
             viewBox="0 0 24 24"
@@ -560,7 +560,7 @@ export function Chat({
             href={`/corretor/consultor?pergunta=${encodeURIComponent(ultimaDoCliente.conteudo.slice(0, 400))}`}
             title="Perguntar ao consultor"
             aria-label="Perguntar ao consultor sobre a última mensagem do cliente"
-            className="text-wa-meta hover:text-wa-texto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full"
+            className="text-wa-meta hover:text-wa-texto flex size-11 shrink-0 cursor-pointer items-center justify-center botao-icone"
           >
             {/* Balão com uma casa dentro — o mesmo ícone do destino no menu. */}
             <svg
@@ -814,7 +814,7 @@ export function Chat({
             O número não está conectado — conecte o WhatsApp em{" "}
             <a
               href="/corretor/whatsapp"
-              className="text-wa-verde underline-offset-4 hover:underline"
+              className="text-wa-verde link-acao"
             >
               Conexão
             </a>{" "}
@@ -941,7 +941,7 @@ function PerfilLead({
         type="button"
         onClick={onFechar}
         aria-label="Voltar para a conversa"
-        className="text-corpo hover:bg-vidro flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors"
+        className="text-corpo flex size-11 shrink-0 cursor-pointer items-center justify-center transition-colors botao-icone"
       >
         <ArrowLeft aria-hidden className="h-5 w-5" />
       </button>
@@ -1163,7 +1163,7 @@ function SeletorDeMidia({
             <button
               type="button"
               onClick={() => setImovelAberto(null)}
-              className="text-apoio hover:text-titulo min-h-11 cursor-pointer rounded-full px-3 text-xs"
+              className="text-apoio hover:text-titulo min-h-11 cursor-pointer rounded-full px-3 text-xs botao-secundario"
             >
               ← imóveis
             </button>
@@ -1172,7 +1172,7 @@ function SeletorDeMidia({
             type="button"
             onClick={onFechar}
             aria-label="Fechar seletor"
-            className="text-apoio hover:text-titulo min-h-11 cursor-pointer rounded-full px-3 text-xs"
+            className="text-apoio hover:text-titulo grid size-11 place-items-center text-xs botao-icone"
           >
             ✕
           </button>

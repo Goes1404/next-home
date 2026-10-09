@@ -20,6 +20,7 @@ F0–F6.
 - [[medir-carga-com-rollback]]
 
 ## Telas
+- [[botoes-que-parecem-botoes]] — todo botão mostra que é botão sem o mouse; quatro estilos e guarda (09/10)
 - [[lateral-recolhe-e-rola-sozinha]] — lateral rola por dentro, recolhe em ícones; cabeçalho do celular some ao rolar (09/10)
 - [[navegacao-do-painel-tem-regua]]
 - [[a-caixa-de-abas-saiu-das-telas]]

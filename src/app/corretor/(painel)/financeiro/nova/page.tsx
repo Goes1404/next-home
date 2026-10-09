@@ -52,7 +52,7 @@ export default async function NovaVendaPage({
     <div className="space-y-4">
       <Link
         href="/corretor/financeiro"
-        className="text-fluid-sm text-apoio hover:text-titulo inline-flex min-h-11 items-center gap-1.5"
+        className="text-fluid-sm text-apoio hover:text-titulo inline-flex min-h-11 items-center gap-1.5 px-3 botao-secundario"
       >
         ← Vendas
       </Link>

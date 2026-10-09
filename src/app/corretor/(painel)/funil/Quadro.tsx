@@ -473,7 +473,7 @@ export function Quadro({
           <button
             type="button"
             onClick={limparFiltros}
-            className="text-acento-suave ml-1 font-semibold hover:underline"
+            className="text-acento-suave ml-1 font-semibold link-acao"
           >
             Limpar filtros
           </button>
@@ -665,7 +665,7 @@ function Cartao({
           </button>
           <Link
             href={`/corretor/leads/${lead.id}`}
-            className="text-fluid-sm text-titulo hover:text-acento-suave min-w-0 truncate font-medium underline-offset-4 hover:underline"
+            className="text-fluid-sm text-titulo hover:text-acento-suave min-w-0 truncate font-medium link-acao"
           >
             {lead.nome}
           </Link>

@@ -374,7 +374,7 @@ export function ListaLeads({
           </p>
           <Link
             href="/corretor/links"
-            className="text-fluid-sm mt-3 inline-block font-medium text-acento-suave underline-offset-4 hover:underline"
+            className="text-fluid-sm mt-3 inline-block font-medium text-acento-suave link-acao"
           >
             Pegar meus links →
           </Link>

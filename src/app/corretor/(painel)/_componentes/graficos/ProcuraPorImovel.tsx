@@ -91,7 +91,7 @@ export function ProcuraVisual({
                 <Link
                   href={`/corretor/leads?empreendimento=${l.id}&de=${corteDia}`}
                   title={`${l.nome}: ${l.leads} leads, ${l.visitas} visitas, ${l.vendas} vendas`}
-                  className="hover:bg-vidro active:bg-vidro-forte -mx-2 flex min-h-11 items-center gap-3 rounded-xl px-2 py-2 transition-colors"
+                  className="hover:bg-vidro active:bg-vidro-forte -mx-2 flex min-h-11 items-center gap-3 rounded-xl px-2 py-2 transition-colors linha-abre"
                 >
                   <span className="bg-vidro-forte relative size-12 shrink-0 overflow-hidden rounded-lg">
                     {foto ? (

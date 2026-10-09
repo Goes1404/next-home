@@ -173,7 +173,7 @@ function JanelaMensagemPelaIA({
             onClick={aoFechar}
             disabled={enviando}
             aria-label="Fechar"
-            className="text-apoio hover:text-titulo flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+            className="text-apoio hover:text-titulo flex h-11 w-11 shrink-0 items-center justify-center botao-icone"
           >
             <X className="h-5 w-5" />
           </button>

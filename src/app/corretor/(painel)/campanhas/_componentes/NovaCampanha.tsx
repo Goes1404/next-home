@@ -670,7 +670,7 @@ export function NovaCampanha({
                       type="button"
                       onClick={() => setBuscaLead("")}
                       aria-label="Limpar busca"
-                      className="text-tenue hover:text-titulo absolute top-1/2 right-1.5 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg"
+                      className="text-tenue hover:text-titulo absolute top-1/2 right-1.5 flex h-9 w-9 -translate-y-1/2 items-center justify-center botao-icone"
                     >
                       <X aria-hidden className="h-4 w-4" />
                     </button>
@@ -709,7 +709,7 @@ export function NovaCampanha({
                   <button
                     type="button"
                     onClick={alternarVisiveis}
-                    className="text-fluid-xs text-acento-suave hover:text-titulo flex min-h-11 items-center gap-1.5 font-semibold transition-colors"
+                    className="text-fluid-xs text-acento-suave hover:text-titulo flex min-h-11 items-center gap-1.5 px-3 font-semibold botao-secundario"
                   >
                     <CheckCheck aria-hidden className="h-4 w-4" />
                     {todosVisiveisEscolhidos
@@ -770,7 +770,7 @@ export function NovaCampanha({
                     <button
                       type="button"
                       onClick={() => setEscolhidos(new Set())}
-                      className="text-fluid-xs text-apoio hover:text-perigo min-h-9 transition-colors"
+                      className="text-fluid-xs text-apoio hover:text-perigo min-h-9 transition-colors px-3 botao-secundario"
                     >
                       Limpar seleção
                     </button>
@@ -995,7 +995,7 @@ export function NovaCampanha({
                     setTestandoDuas(false);
                     setMensagemB("");
                   }}
-                  className="text-fluid-xs text-apoio hover:text-titulo min-h-9 transition-colors"
+                  className="text-fluid-xs text-apoio hover:text-titulo min-h-9 transition-colors px-3 botao-secundario"
                 >
                   remover
                 </button>
@@ -1182,7 +1182,7 @@ export function NovaCampanha({
           <button
             type="button"
             onClick={() => setPasso((p) => (p === 3 ? 2 : 1))}
-            className="text-fluid-sm text-apoio hover:text-titulo flex min-h-11 cursor-pointer items-center gap-1.5 transition-colors"
+            className="text-fluid-sm text-apoio hover:text-titulo flex min-h-11 cursor-pointer items-center gap-1.5 transition-colors px-3 botao-secundario"
           >
             <ArrowLeft className="h-4 w-4" /> Voltar
           </button>

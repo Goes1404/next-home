@@ -61,7 +61,7 @@ function LinhaDoMovimento({ m, hoje, atrasado }: { m: Movimento; hoje: string; a
       <span className="min-w-0">
         <span className="text-fluid-sm text-titulo block font-medium break-words">
           {m.vendaId ? (
-            <Link href={`/corretor/financeiro/${m.vendaId}`} className="hover:underline">
+            <Link href={`/corretor/financeiro/${m.vendaId}`} className="link-acao">
               {m.descricao}
             </Link>
           ) : (
@@ -254,7 +254,7 @@ export default async function CaixaPage() {
             {comissoesSemData.map((m) => (
               <li key={m.chave} className="flex flex-wrap items-center justify-between gap-2 py-3">
                 <span className="min-w-0">
-                  <Link href={`/corretor/financeiro/${m.vendaId}`} className="text-fluid-sm text-titulo block font-medium break-words hover:underline">
+                  <Link href={`/corretor/financeiro/${m.vendaId}`} className="text-fluid-sm text-titulo block font-medium break-words link-acao">
                     {m.descricao}
                   </Link>
                   <span className="text-fluid-xs text-tenue">

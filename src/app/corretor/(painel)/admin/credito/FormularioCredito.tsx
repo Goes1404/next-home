@@ -118,7 +118,7 @@ export function FormularioCredito({
               <button
                 type="button"
                 onClick={() => setFaixas((l) => l.filter((_, n) => n !== i))}
-                className="text-perigo hover:bg-perigo-lavado min-h-11 cursor-pointer rounded-xl px-3 text-left text-xs sm:col-span-4 sm:w-fit"
+                className="text-perigo min-h-11 cursor-pointer rounded-xl px-3 text-left text-xs sm:col-span-4 sm:w-fit botao-secundario"
               >
                 Remover faixa
               </button>
@@ -172,7 +172,7 @@ export function FormularioCredito({
               <button
                 type="button"
                 onClick={() => setItbi((l) => l.filter((_, n) => n !== i))}
-                className="text-perigo min-h-11 cursor-pointer self-end px-3 text-xs"
+                className="text-perigo min-h-11 cursor-pointer self-end px-3 text-xs botao-secundario"
               >
                 Remover
               </button>

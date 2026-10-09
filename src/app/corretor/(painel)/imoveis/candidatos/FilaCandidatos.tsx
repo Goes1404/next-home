@@ -171,7 +171,7 @@ export function FilaCandidatos({ candidatos }: { candidatos: readonly Candidato[
                     type="button"
                     disabled={pendente}
                     onClick={() => decidir(c.id, "pendente")}
-                    className="text-fluid-xs text-apoio hover:text-titulo min-h-11 transition-colors disabled:opacity-50"
+                    className="text-fluid-xs text-apoio hover:text-titulo min-h-11 transition-colors disabled:opacity-50 px-3 botao-secundario"
                   >
                     voltar à fila
                   </button>
@@ -210,7 +210,7 @@ export function FilaCandidatos({ candidatos }: { candidatos: readonly Candidato[
                   type="button"
                   disabled={pendente}
                   onClick={() => decidir(c.id, "pendente")}
-                  className="text-fluid-xs text-apoio hover:text-titulo min-h-11 transition-colors disabled:opacity-50"
+                  className="text-fluid-xs text-apoio hover:text-titulo min-h-11 transition-colors disabled:opacity-50 px-3 botao-secundario"
                 >
                   voltar à fila
                 </button>

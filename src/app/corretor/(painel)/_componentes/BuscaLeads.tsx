@@ -80,7 +80,7 @@ export function BuscaLeads({
           type="button"
           onClick={() => setTexto("")}
           aria-label="Limpar busca"
-          className="text-tenue hover:text-titulo absolute top-1/2 right-2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full transition-colors"
+          className="text-tenue hover:text-titulo absolute top-1/2 right-2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center transition-colors botao-icone"
         >
           <X className="h-4 w-4" />
         </button>

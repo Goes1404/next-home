@@ -70,7 +70,7 @@ function Cartoes({ itens }: { itens: CartaoDeImovel[] }) {
         <li key={c.slug} className="border-linha bg-elevado min-w-0 overflow-hidden rounded-xl border">
           <Link
             href={`/corretor/imoveis/${c.slug}`}
-            className="hover:bg-fundo/60 flex min-h-11 flex-col gap-1 p-2.5 transition-colors"
+            className="hover:bg-fundo/60 flex min-h-11 flex-col gap-1 p-2.5 transition-colors linha-abre"
           >
             {c.capaUrl && (
               // eslint-disable-next-line @next/next/no-img-element

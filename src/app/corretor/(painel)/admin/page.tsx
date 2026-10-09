@@ -245,7 +245,7 @@ export default async function AdminVisaoGeralPage() {
               <li key={etapa}>
                 <Link
                   href={`/corretor/leads?etapa=${etapa}`}
-                  className="group hover:bg-vidro -mx-2 flex items-center gap-3 rounded-lg px-2 py-1 transition-colors"
+                  className="group hover:bg-vidro -mx-2 flex items-center gap-3 rounded-lg px-2 py-1 transition-colors linha-abre"
                 >
                   <span className="text-fluid-xs text-apoio w-36 shrink-0">
                     {ETAPA_LABEL[etapa]}
@@ -281,7 +281,7 @@ export default async function AdminVisaoGeralPage() {
           <h2 className="text-fluid-base text-titulo font-bold">Carga por corretor</h2>
           <Link
             href="/corretor/admin/leads"
-            className="text-fluid-xs text-acento-suave font-medium underline-offset-4 hover:underline"
+            className="text-fluid-xs text-acento-suave font-medium link-acao"
           >
             Redistribuir →
           </Link>
@@ -291,7 +291,7 @@ export default async function AdminVisaoGeralPage() {
             <li key={linha.id}>
               <Link
                 href={`/corretor/leads?corretor=${linha.id}`}
-                className="group hover:bg-vidro -mx-2 flex items-center gap-3 rounded-lg px-2 py-1 transition-colors"
+                className="group hover:bg-vidro -mx-2 flex items-center gap-3 rounded-lg px-2 py-1 transition-colors linha-abre"
               >
                 <span className="text-fluid-xs text-apoio w-36 shrink-0 truncate">
                   {linha.nome}

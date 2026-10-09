@@ -217,7 +217,7 @@ export default async function ExtratoPage() {
                 <ul className="divide-linha divide-y">
                   {c.vendas.map((v) => (
                     <li key={v.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                      <Link href={`/corretor/financeiro/${v.id}`} className="text-fluid-sm text-corpo hover:text-titulo min-w-0 break-words">
+                      <Link href={`/corretor/financeiro/${v.id}`} className="text-fluid-sm text-corpo hover:text-titulo min-w-0 break-words link-acao">
                         {v.imovel}
                         {v.unidade ? ` · ${v.unidade}` : ""} · {formatarReais(v.valor)} · {v.dias} dias
                       </Link>

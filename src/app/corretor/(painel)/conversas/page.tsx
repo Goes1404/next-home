@@ -312,7 +312,7 @@ export default async function ConversasPage({
           Quando a IA responde por você: <span className="text-titulo font-medium">{ROTULO_MODO[modo]}</span>{" "}
           <Link
             href="/corretor/whatsapp"
-            className="text-acento-suave underline-offset-4 hover:underline"
+            className="text-acento-suave link-acao"
           >
             trocar
           </Link>
@@ -323,7 +323,7 @@ export default async function ConversasPage({
         <p className="border-acento-linha bg-acento-lavado text-fluid-sm text-corpo mt-4 rounded-xl border px-4 py-3">
           Mostrando quem respondeu à lista <span className="text-titulo font-medium">“{filtroDaLista.titulo}”</span> (
           {filtroDaLista.leadIds.length}).{" "}
-          <Link href="/corretor/conversas" className="text-acento-suave font-medium underline-offset-4 hover:underline">
+          <Link href="/corretor/conversas" className="text-acento-suave font-medium link-acao">
             Ver todas as conversas
           </Link>
         </p>

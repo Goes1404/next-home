@@ -106,7 +106,7 @@ export default async function EquipePage() {
                         "quem está com mais leads?". */}
                     <Link
                       href={`/corretor/leads?corretor=${linha.id}`}
-                      className="hover:text-acento-suave underline-offset-4 hover:underline"
+                      className="hover:text-acento-suave link-acao"
                     >
                       {linha.nome}
                     </Link>
@@ -186,7 +186,7 @@ export default async function EquipePage() {
           <h2 className="text-fluid-sm text-titulo font-medium">Contatos recentes</h2>
           <Link
             href="/corretor/leads"
-            className="text-fluid-xs text-acento-suave font-medium underline-offset-4 hover:underline"
+            className="text-fluid-xs text-acento-suave font-medium link-acao"
           >
             Ver todos, com busca e filtro →
           </Link>
@@ -206,7 +206,7 @@ export default async function EquipePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Link
                     href={`/corretor/leads/${lead.id}`}
-                    className="text-fluid-sm text-titulo hover:text-acento-suave underline-offset-4 hover:underline"
+                    className="text-fluid-sm text-titulo hover:text-acento-suave link-acao"
                   >
                     {lead.nome}
                   </Link>

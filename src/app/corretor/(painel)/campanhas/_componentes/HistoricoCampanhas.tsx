@@ -85,7 +85,7 @@ function LinhaDoRascunho({ c, aoMudar }: { c: CampanhaListada; aoMudar?: () => v
               aoMudar?.();
             });
           }}
-          className="text-fluid-xs text-apoio hover:text-perigo flex min-h-11 items-center gap-1 px-2"
+          className="text-fluid-xs text-apoio hover:text-perigo flex min-h-11 items-center gap-1 px-2 botao-secundario"
         >
           <Trash2 className="h-3.5 w-3.5" /> Descartar
         </button>
@@ -205,7 +205,7 @@ export function HistoricoCampanhas({
                   {c.totalRespondidos > 0 && (
                     <Link
                       href={`/corretor/conversas?lista=${c.id}`}
-                      className="text-fluid-xs text-acento flex min-h-11 items-center gap-1 rounded-xl px-2 font-medium hover:underline"
+                      className="text-fluid-xs text-acento flex min-h-11 items-center gap-1 rounded-xl px-2 font-medium link-acao"
                     >
                       <MessagesSquare className="h-3.5 w-3.5" /> Conversas de quem respondeu
                     </Link>
@@ -214,7 +214,7 @@ export function HistoricoCampanhas({
                     <Link
                       href={`/corretor/campanhas?repetir=${c.id}`}
                       title="Monta uma lista nova com o mesmo público e a mesma mensagem"
-                      className="text-fluid-xs text-acento flex min-h-11 items-center gap-1 rounded-xl px-2 font-medium hover:underline"
+                      className="text-fluid-xs text-acento flex min-h-11 items-center gap-1 rounded-xl px-2 font-medium link-acao"
                     >
                       <Repeat className="h-3.5 w-3.5" /> Repetir
                     </Link>

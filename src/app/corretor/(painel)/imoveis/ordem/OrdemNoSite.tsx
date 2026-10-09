@@ -92,7 +92,7 @@ export function OrdemNoSite({ iniciais }: { iniciais: ItemDaTela[] }) {
         <button
           type="button"
           onClick={() => alterar(salva)}
-          className="text-fluid-sm min-h-11 rounded-xl px-3 text-apoio hover:text-titulo"
+          className="text-fluid-sm min-h-11 rounded-xl px-3 text-apoio hover:text-titulo botao-secundario"
         >
           Voltar à ordem salva
         </button>
@@ -175,7 +175,7 @@ export function OrdemNoSite({ iniciais }: { iniciais: ItemDaTela[] }) {
                     onClick={() => alterar(mover(lista, i, -1))}
                     disabled={!podeMover(lista, i, -1)}
                     aria-label={`Subir ${item.nome}`}
-                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-apoio hover:bg-vidro-forte hover:text-titulo disabled:opacity-25"
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center text-apoio hover:text-titulo disabled:opacity-25 botao-icone"
                   >
                     ↑
                   </button>
@@ -184,7 +184,7 @@ export function OrdemNoSite({ iniciais }: { iniciais: ItemDaTela[] }) {
                     onClick={() => alterar(mover(lista, i, 1))}
                     disabled={!podeMover(lista, i, 1)}
                     aria-label={`Descer ${item.nome}`}
-                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-apoio hover:bg-vidro-forte hover:text-titulo disabled:opacity-25"
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center text-apoio hover:text-titulo disabled:opacity-25 botao-icone"
                   >
                     ↓
                   </button>

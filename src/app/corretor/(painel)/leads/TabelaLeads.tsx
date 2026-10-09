@@ -143,7 +143,7 @@ function DetalhesLead({ lead, gestor }: { lead: Lead; gestor: boolean }) {
             <dd className="inline">
               <Link
                 href={`/empreendimentos/${lead.empreendimento.slug}`}
-                className="text-acento-suave underline-offset-4 hover:underline"
+                className="text-acento-suave link-acao"
               >
                 {lead.empreendimento.nome}
               </Link>
@@ -398,7 +398,7 @@ function FragmentoLinha({
             <Link
               href={`/corretor/leads/${lead.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-fluid-sm truncate font-medium text-titulo underline-offset-4 hover:text-acento-suave hover:underline"
+              className="text-fluid-sm truncate font-medium text-titulo hover:text-acento-suave link-acao"
             >
               {lead.nome}
             </Link>

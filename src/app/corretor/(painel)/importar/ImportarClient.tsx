@@ -425,7 +425,7 @@ function Importador({
             <button
               type="button"
               onClick={recomecar}
-              className="text-fluid-sm text-apoio hover:text-titulo cursor-pointer underline-offset-4 hover:underline"
+              className="text-fluid-sm text-apoio hover:text-titulo cursor-pointer link-acao"
             >
               Trocar a lista
             </button>

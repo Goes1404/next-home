@@ -9771,3 +9771,21 @@ Nota: [[lateral-recolhe-e-rola-sozinha]].
   `processarFilaAgora`. A fila só anda pelo disparador (pg_cron e corrente),
   dentro do horário. Guarda em `listaDeTransmissao.test.ts`. A coluna
   `janela_liberada_ate` continua lida pelo disparador, mas nada a grava mais.
+
+## Botões que parecem botões (09/10/2026)
+
+Nota: [[botoes-que-parecem-botoes]].
+
+- **"Os usuários não sabem que são botões."** ~200 botões e links do painel
+  eram só texto colorido ou só ícone; a única pista era a cor mudar no
+  hover, que o celular não tem. É a mesma lição de 07/09 ("link tem de
+  parecer link"), que tinha sido aplicada só na administração.
+- **Quatro estilos no globals.css**: `botao-secundario` (contorno),
+  `botao-icone` (círculo de fundo), `link-acao` (sublinhado sempre),
+  `linha-abre` (seta › por `::after`). Só acrescentam a pista; cor e tamanho
+  ficam com quem usa.
+- **Toque escurece o controle** com sombra interna, não `transform`/`filter`
+  (containing block).
+- **Achar controle sem pista exige AST**, não regex: `className` vive em
+  `cn()`, template e variável. `botoesComPista.test.ts` faz isso e reprova
+  controle novo sem pista; exceções por arquivo, com motivo, só descem.

@@ -89,7 +89,7 @@ export default async function FichaLeadPage({
         href="/corretor/pessoas"
         /* Rótulo e destino batem: dizia "Meus leads" e levava para Pessoas.
            Link que promete um lugar e leva a outro é o começo do labirinto. */
-        className="text-fluid-sm text-apoio hover:text-titulo inline-flex min-h-11 items-center gap-1.5 transition-colors"
+        className="text-fluid-sm text-apoio hover:text-titulo inline-flex min-h-11 items-center gap-1.5 transition-colors px-3 botao-secundario"
       >
         <ArrowLeft className="h-4 w-4" /> Pessoas
       </Link>

@@ -61,7 +61,7 @@ export function PainelDoConsultor({
         <Link
           href={telaCheia}
           onClick={fechar}
-          className="text-acento-suave hover:bg-vidro flex min-h-11 shrink-0 items-center rounded-full px-3 text-xs font-medium transition-colors"
+          className="text-acento-suave flex min-h-11 shrink-0 items-center rounded-full px-3 text-xs font-medium transition-colors botao-secundario"
         >
           Tela cheia
         </Link>
@@ -69,7 +69,7 @@ export function PainelDoConsultor({
           type="button"
           onClick={fechar}
           aria-label="Fechar consultor"
-          className="text-tenue hover:text-corpo flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors"
+          className="text-tenue hover:text-corpo flex size-11 shrink-0 cursor-pointer items-center justify-center transition-colors botao-icone"
         >
           <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
             <path d="M6 6l12 12M18 6L6 18" />

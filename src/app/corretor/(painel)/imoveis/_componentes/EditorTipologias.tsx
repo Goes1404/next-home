@@ -129,7 +129,7 @@ export function EditorTipologias({
       <button
         type="button"
         onClick={() => setEscolhendo(null)}
-        className="min-h-11 text-fluid-xs font-semibold text-apoio hover:text-titulo"
+        className="min-h-11 text-fluid-xs font-semibold text-apoio hover:text-titulo px-3 botao-secundario"
       >
         Fechar
       </button>

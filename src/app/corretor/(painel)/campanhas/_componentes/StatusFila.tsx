@@ -167,7 +167,7 @@ export function StatusFila({
             type="button"
             onClick={() => setMostrarAvancado((m) => !m)}
             aria-expanded={mostrarAvancado}
-            className="text-fluid-xs text-tenue hover:text-apoio mt-4 min-h-11 cursor-pointer transition-colors"
+            className="text-fluid-xs text-apoio hover:text-titulo mt-4 min-h-11 px-3 botao-secundario"
           >
             {mostrarAvancado ? "− Ocultar avançado" : "+ Avançado"}
           </button>

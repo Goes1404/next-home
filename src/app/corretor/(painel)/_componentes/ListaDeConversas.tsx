@@ -123,7 +123,7 @@ export function ListaDeConversas({
             <button
               type="button"
               onClick={() => setTudo(true)}
-              className="text-apoio hover:text-titulo min-h-11 w-full cursor-pointer rounded-lg px-2 text-left text-xs transition-colors"
+              className="text-apoio hover:text-titulo min-h-11 w-full cursor-pointer rounded-lg px-2 text-left text-xs transition-colors botao-secundario"
             >
               Ver todas ({conversas.length})
             </button>
@@ -163,7 +163,7 @@ function BotaoApagar({ titulo, onExcluir }: { titulo: string; onExcluir: () => v
           type="button"
           onClick={() => setConfirmando(false)}
           aria-label="Cancelar"
-          className="text-tenue hover:text-corpo cursor-pointer px-1 text-xs"
+          className="text-apoio hover:text-corpo grid size-8 place-items-center text-xs botao-icone"
         >
           ✕
         </button>
@@ -176,7 +176,7 @@ function BotaoApagar({ titulo, onExcluir }: { titulo: string; onExcluir: () => v
       type="button"
       onClick={() => setConfirmando(true)}
       aria-label={`Apagar conversa "${titulo}"`}
-      className="text-tenue hover:text-perigo absolute right-1 grid size-8 cursor-pointer place-items-center rounded-lg text-base opacity-100 transition group-focus-within:opacity-100 group-hover:opacity-100 md:opacity-0"
+      className="text-tenue hover:text-perigo absolute right-1 grid size-8 cursor-pointer place-items-center text-base opacity-100 transition group-focus-within:opacity-100 group-hover:opacity-100 md:opacity-0 botao-icone"
     >
       ×
     </button>

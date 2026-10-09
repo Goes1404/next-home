@@ -47,7 +47,7 @@ export default async function CarrosselPage({
       <div className="space-y-1">
         <Link
           href={`/corretor/imoveis/${slug}`}
-          className="text-fluid-xs text-apoio hover:text-titulo inline-flex min-h-9 items-center transition-colors"
+          className="text-fluid-xs text-apoio hover:text-titulo inline-flex min-h-9 items-center transition-colors px-3 botao-secundario"
         >
           ← {imovel.nome}
         </Link>

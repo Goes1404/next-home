@@ -217,7 +217,7 @@ export default async function ResultadoPage({ searchParams }: { searchParams: Pr
                 return (
                   <tr key={r.mes} className={r.mes === mes ? "bg-acento-lavado" : undefined}>
                     <td className="py-2 pr-2 whitespace-nowrap">
-                      <Link href={`${ROTA}?mes=${r.mes}`} className="text-corpo hover:underline">
+                      <Link href={`${ROTA}?mes=${r.mes}`} className="text-corpo link-acao">
                         {curtoDoMes(r.mes)}
                       </Link>
                     </td>

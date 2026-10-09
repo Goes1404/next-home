@@ -132,7 +132,7 @@ export default async function MonitorEventosPage() {
                       {evento?.lead_id && (
                         <Link
                           href={`/corretor/leads/${evento.lead_id}`}
-                          className="mt-2 inline-flex min-h-11 items-center text-fluid-sm text-acento-suave underline-offset-4 hover:underline focus-visible:underline"
+                          className="mt-2 inline-flex min-h-11 items-center text-fluid-sm text-acento-suave focus-visible:underline link-acao"
                         >
                           Abrir lead
                         </Link>

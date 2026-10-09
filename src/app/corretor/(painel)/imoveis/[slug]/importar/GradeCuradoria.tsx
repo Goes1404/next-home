@@ -77,10 +77,10 @@ export function GradeCuradoria({
           <strong className="text-corpo">{marcados}</strong> de {itens.length} selecionadas
         </p>
         <div className="flex gap-3 text-fluid-xs">
-          <button type="button" className="min-h-[44px] px-2 text-acento font-bold" onClick={() => trocarTodas(true)}>
+          <button type="button" className="min-h-[44px] px-2 text-acento font-bold botao-secundario" onClick={() => trocarTodas(true)}>
             Marcar todas
           </button>
-          <button type="button" className="min-h-[44px] px-2 text-apoio" onClick={() => trocarTodas(false)}>
+          <button type="button" className="min-h-[44px] px-2 text-apoio botao-secundario" onClick={() => trocarTodas(false)}>
             Limpar
           </button>
         </div>

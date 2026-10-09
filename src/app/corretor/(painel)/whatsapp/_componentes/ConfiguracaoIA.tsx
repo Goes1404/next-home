@@ -219,7 +219,7 @@ export function ConfiguracaoIA({
         type="button"
         onClick={() => setMostrarAvancado((m) => !m)}
         aria-expanded={mostrarAvancado}
-        className="text-fluid-sm text-apoio hover:text-titulo min-h-11 cursor-pointer transition-colors"
+        className="text-fluid-sm text-apoio hover:text-titulo min-h-11 px-3 botao-secundario"
       >
         {mostrarAvancado ? "− Ocultar ajustes avançados" : "+ Ajustes avançados"}
       </button>

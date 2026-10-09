@@ -222,7 +222,7 @@ export function BotoesDeLink({
             >
               Gerar link da proposta
             </button>
-            <button type="button" onClick={() => setProposta(null)} className="min-h-11 rounded-xl px-3 text-fluid-xs text-apoio">
+            <button type="button" onClick={() => setProposta(null)} className="min-h-11 rounded-xl px-3 text-fluid-xs text-apoio botao-secundario">
               Cancelar
             </button>
           </div>
@@ -274,7 +274,7 @@ export function BotoesDeLink({
             <button
               type="button"
               onClick={() => setEscolha(null)}
-              className="min-h-11 rounded-xl px-3 text-fluid-xs text-apoio"
+              className="min-h-11 rounded-xl px-3 text-fluid-xs text-apoio botao-secundario"
             >
               Cancelar
             </button>

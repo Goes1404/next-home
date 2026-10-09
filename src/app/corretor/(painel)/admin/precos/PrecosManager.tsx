@@ -304,7 +304,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                     setTextoColado("");
                     setItensConciliados([]);
                   }}
-                  className="text-fluid-xs text-tenue hover:text-corpo"
+                  className="text-fluid-xs text-tenue hover:text-corpo px-3 min-h-11 botao-secundario"
                 >
                   Limpar tabela
                 </button>
@@ -351,7 +351,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                     <button
                       type="button"
                       onClick={() => toggleTodos(true)}
-                      className="text-fluid-xs text-acento-suave hover:text-acento-suave font-medium"
+                      className="text-fluid-xs text-acento-suave hover:text-acento-suave font-medium px-3 min-h-11 botao-secundario"
                     >
                       Selecionar Todos
                     </button>
@@ -359,7 +359,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                     <button
                       type="button"
                       onClick={() => toggleTodos(false)}
-                      className="text-fluid-xs text-apoio hover:text-corpo font-medium"
+                      className="text-fluid-xs text-apoio hover:text-corpo font-medium px-3 min-h-11 botao-secundario"
                     >
                       Desmarcar Todos
                     </button>

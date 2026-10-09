@@ -649,7 +649,7 @@ function Cartao({
                     type="button"
                     disabled={pendente}
                     onClick={() => rodar(() => agruparAnuncio({ anuncioId: a.id, campanhaId: null }))}
-                    className="min-h-11 px-2 text-fluid-xs font-semibold text-acento-forte"
+                    className="min-h-11 px-2 text-fluid-xs font-semibold text-acento-forte botao-secundario"
                   >
                     Tirar
                   </button>
@@ -779,7 +779,7 @@ function ClientesDaCampanha({
                 aria-label={`Tirar ${c.nome} da campanha`}
                 disabled={pendente}
                 onClick={() => rodar(() => desvincularCliente(c.id))}
-                className="flex h-11 w-11 items-center justify-center text-corpo hover:text-titulo"
+                className="flex h-11 w-11 items-center justify-center text-corpo hover:text-titulo botao-icone"
               >
                 ×
               </button>
@@ -860,7 +860,7 @@ function ApagarCampanha({ rodar, pendente }: { rodar: () => void; pendente: bool
       <button
         type="button"
         onClick={() => setConfirmando(true)}
-        className="min-h-11 text-fluid-xs font-semibold text-corpo hover:text-perigo"
+        className="min-h-11 text-fluid-xs font-semibold text-corpo hover:text-perigo px-3 botao-secundario"
       >
         Apagar campanha
       </button>

@@ -397,7 +397,7 @@ export function ChatDeArte({
                   <button
                     type="button"
                     onClick={() => setReaproveitado(img.prompt)}
-                    className="text-acento-suave min-h-11 cursor-pointer self-start text-xs underline-offset-4 hover:underline"
+                    className="text-acento-suave min-h-11 cursor-pointer self-start text-xs link-acao"
                   >
                     Gerar outra assim
                   </button>
