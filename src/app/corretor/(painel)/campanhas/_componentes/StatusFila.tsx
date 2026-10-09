@@ -4,11 +4,9 @@ import { useState, useTransition } from "react";
 import { INTERVALO_EM_PALAVRAS } from "@/lib/whatsapp/antiBan";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import Link from "next/link";
-import { Clock, Trash2, Zap } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import {
-  liberarEnvioAgora,
   limparFilaDisparo,
-  processarFilaAgora,
   statusDisparo,
   type StatusDisparo,
 } from "../acoes";
@@ -65,9 +63,7 @@ export function StatusFila({
   const [status, setStatus] = useState<StatusDisparo | null>(statusInicial);
   const [mostrarAvancado, setMostrarAvancado] = useState(false);
   const { avisar, falhar } = useAvisos();
-  const [processando, iniciarProcessamento] = useTransition();
   const [limpando, iniciarLimpeza] = useTransition();
-  const [liberando, iniciarLiberacao] = useTransition();
 
   if (!status) return null;
 
@@ -76,23 +72,6 @@ export function StatusFila({
   async function atualizar() {
     setStatus(await statusDisparo());
     await aoMudar?.();
-  }
-
-  function empurrar() {
-    iniciarProcessamento(async () => {
-      const resultado = await processarFilaAgora();
-      if ("erro" in resultado) {
-        falhar(resultado.erro);
-        return;
-      }
-      await atualizar();
-      avisar(
-        resultado.processados === 0
-          ? "Nada para enviar neste instante — as mensagens seguem saindo sozinhas."
-          : `${resultado.enviados} mensagem${resultado.enviados === 1 ? "" : "s"} enviada${resultado.enviados === 1 ? "" : "s"} agora.` +
-              (resultado.restantes > 0 ? ` Faltam ${resultado.restantes}.` : " Não sobrou nenhuma."),
-      );
-    });
   }
 
   /**
@@ -119,35 +98,6 @@ export function StatusFila({
         resultado.removidos === 0
           ? "Não havia nada programado."
           : `${resultado.removidos} mensagem(ns) programada(s) cancelada(s).`,
-      );
-    });
-  }
-
-  /**
-   * Solta UMA VEZ a fila que está esperando o horário (ver
-   * `liberarEnvioAgora`). Só aparece quando o problema é o horário: cota,
-   * número caído ou bloqueado não se resolvem por aqui.
-   */
-  function liberar() {
-    if (
-      !confirm(
-        "As mensagens vão sair AGORA, mesmo fora do horário comercial.\n\n" +
-          "O intervalo entre uma e outra continua valendo — o que muda é só a espera pela " +
-          "manhã. Mensagem de propaganda de madrugada é o que mais gera denúncia, e denúncia " +
-          "é o que derruba um número. Confirma?",
-      )
-    ) {
-      return;
-    }
-    iniciarLiberacao(async () => {
-      const resultado = await liberarEnvioAgora();
-      if ("erro" in resultado) {
-        falhar(resultado.erro);
-        return;
-      }
-      await atualizar();
-      avisar(
-        `Liberado: ${resultado.mensagens} mensagem${resultado.mensagens === 1 ? "" : "s"} saindo agora, com ${INTERVALO_EM_PALAVRAS} entre uma e outra. Depois disso as listas voltam ao horário comercial.`,
       );
     });
   }
@@ -187,22 +137,6 @@ export function StatusFila({
           )}
         </div>
 
-        {/* Quando a fila está parada, o botão útil é o que a solta — não o
-            "enviar agora", que respeita a mesma janela e não faria nada. */}
-        {/* Liberar só existe quando o problema é o HORÁRIO (Fase 0). */}
-        {status.pendentes > 0 &&
-          (status.impedimentoTipo === "horario" || status.impedimentoTipo === "expediente") && (
-          <button
-            type="button"
-            onClick={liberar}
-            disabled={liberando}
-            className="text-fluid-sm border-alerta-linha text-alerta hover:opacity-80 flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-opacity disabled:opacity-60"
-          >
-            <Clock className="h-4 w-4" />
-            {liberando ? "Liberando…" : "Liberar envio agora"}
-          </button>
-        )}
-
         {(status.impedimentoTipo === "desconectado" || status.impedimentoTipo === "sem_numero") && (
           <Link
             href="/corretor/whatsapp"
@@ -212,17 +146,6 @@ export function StatusFila({
           </Link>
         )}
 
-        {status.pendentes > 0 && !parada && (
-          <button
-            type="button"
-            onClick={empurrar}
-            disabled={processando}
-            className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors disabled:opacity-60"
-          >
-            <Zap className="h-4 w-4" />
-            {processando ? "Enviando…" : "Enviar agora"}
-          </button>
-        )}
       </div>
 
       {/*
@@ -235,8 +158,9 @@ export function StatusFila({
       */}
 
       {/* Ferramenta que apaga coisa fica atrás de uma porta: limpar a fila
-          apaga mensagens programadas, e não é rotina. O botão "Liberar
-          envios de hoje", que zerava a proteção do número, saiu (0155). */}
+          apaga mensagens programadas, e não é rotina. "Liberar envios de
+          hoje" saiu na 0155; "Liberar envio agora" e "Enviar agora" saíram
+          em 09/10/2026, a pedido: a fila só anda pelo disparador, no horário. */}
       {status.pendentes > 0 && (
         <>
           <button
@@ -254,7 +178,7 @@ export function StatusFila({
                 <button
                   type="button"
                   onClick={limparFila}
-                  disabled={limpando || processando}
+                  disabled={limpando}
                   className="text-fluid-xs border-perigo-linha bg-perigo-lavado text-perigo flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 transition-opacity hover:opacity-80 disabled:opacity-60"
                 >
                   <Trash2 className="h-3.5 w-3.5" />

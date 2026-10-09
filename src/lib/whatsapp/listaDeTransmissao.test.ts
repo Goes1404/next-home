@@ -175,13 +175,12 @@ describe("guardas de código (Fase 4)", () => {
     expect(achados.filter((a) => !permitidos.has(a))).toEqual([]);
   });
 
-  it("liberar a fila nunca devolve à fila quem deu erro", () => {
+  it("não existe atalho que solte a fila fora do disparador (09/10/2026)", () => {
     const acoes = ler("src/app/corretor/(painel)/campanhas/acoes.ts");
-    const ini = acoes.indexOf("export async function liberarEnvioAgora");
-    const corpo = acoes.slice(ini, acoes.indexOf("\nexport ", ini + 10));
-    expect(corpo).not.toMatch(/\.eq\("status",\s*"erro"\)/);
-    expect(corpo).not.toContain("ignorar_janela: true");
-    expect(corpo).toContain("janela_liberada_ate");
+    for (const nome of ["liberarEnvioAgora", "processarFilaAgora", "enviarAgoraParaTodosOsLeads"]) {
+      expect(acoes).not.toContain(`export async function ${nome}`);
+    }
+    expect(acoes).not.toContain("ignorarJanela");
   });
 
   it("o disparador confere o lead ANTES de gastar a cota", () => {

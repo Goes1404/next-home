@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Clock, MessagesSquare, Repeat, Sprout, Trash2 } from "lucide-react";
+import { MessagesSquare, Repeat, Sprout, Trash2 } from "lucide-react";
 import {
   descartarRascunho,
-  liberarEnvioAgora,
   listarCampanhas,
   type CampanhaListada,
 } from "../acoes";
@@ -43,53 +42,6 @@ function tempoCurto(minutos: number): string {
   if (minutos < 60) return `${minutos} min`;
   if (minutos < 48 * 60) return `${Math.round(minutos / 60)} h`;
   return `${Math.round(minutos / 1440)} dias`;
-}
-
-/**
- * Liberar UMA lista fora do horário. Só aparece quando o problema é o
- * horário (a casca sabe), e vale uma vez: depois a lista volta à janela.
- */
-function BotaoLiberar({ campanhaId, aoLiberar }: { campanhaId: string; aoLiberar?: () => void }) {
-  const [liberando, iniciar] = useTransition();
-  const [aviso, setAviso] = useState<string | null>(null);
-
-  function liberar() {
-    if (
-      !confirm(
-        "Esta lista vai sair AGORA, mesmo fora do horário comercial.\n\n" +
-          "O intervalo entre uma mensagem e outra continua valendo, e depois desta vez a lista volta ao horário comercial. Confirma?",
-      )
-    ) {
-      return;
-    }
-    iniciar(async () => {
-      try {
-        const resultado = await liberarEnvioAgora({ campanhaId });
-        setAviso(
-          "erro" in resultado
-            ? resultado.erro
-            : `${resultado.mensagens} mensagem${resultado.mensagens === 1 ? "" : "s"} saindo agora.`,
-        );
-        if (!("erro" in resultado)) aoLiberar?.();
-      } catch {
-        setAviso("Não deu certo agora. Recarregue a página e tente de novo.");
-      }
-    });
-  }
-
-  if (aviso) return <span className="text-fluid-xs text-apoio">{aviso}</span>;
-
-  return (
-    <button
-      type="button"
-      onClick={liberar}
-      disabled={liberando}
-      className="text-fluid-xs border-alerta-linha text-alerta flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 transition-opacity hover:opacity-80 disabled:opacity-60"
-    >
-      <Clock className="h-3.5 w-3.5" />
-      {liberando ? "Liberando…" : "Liberar agora"}
-    </button>
-  );
 }
 
 function Etapa({ rotulo, valor, destaque }: { rotulo: string; valor: string; destaque?: boolean }) {
@@ -145,13 +97,10 @@ function LinhaDoRascunho({ c, aoMudar }: { c: CampanhaListada; aoMudar?: () => v
 export function HistoricoCampanhas({
   campanhas,
   aoMudar,
-  foraDoHorario = false,
 }: {
   campanhas: CampanhaListada[];
   /** A casca recarrega o status da fila e o histórico quando uma lista muda. */
   aoMudar?: () => void;
-  /** A fila espera o horário: só então "Liberar agora" faz sentido. */
-  foraDoHorario?: boolean;
 }) {
   const [antigas, setAntigas] = useState<CampanhaListada[]>([]);
   const [semMais, setSemMais] = useState(false);
@@ -272,9 +221,6 @@ export function HistoricoCampanhas({
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {foraDoHorario && c.status === "em_andamento" && c.totalEnviados < c.totalLeads && (
-                    <BotaoLiberar campanhaId={c.id} aoLiberar={aoMudar} />
-                  )}
                   <ControlesDaLista campanha={c} aoMudar={aoMudar} />
                 </div>
               </div>

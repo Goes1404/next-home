@@ -9766,5 +9766,8 @@ Nota: [[lateral-recolhe-e-rola-sozinha]].
   `enviarAgoraParaTodosOsLeads`. `criarCampanha` não aceita mais
   `ignorarJanela` do navegador: grava sempre `false`. Conferido no banco:
   só 5 listas concluídas tinham a marca, nenhuma com pendente.
-- Ficam "Liberar envio agora" (solta uma vez a fila que espera o horário,
-  com o intervalo valendo) e "Enviar agora" (empurra a fila no horário).
+- **No mesmo dia saíram também "Liberar envio agora" (e o "Liberar agora"
+  de cada lista) e "Enviar agora"**, com as ações `liberarEnvioAgora` e
+  `processarFilaAgora`. A fila só anda pelo disparador (pg_cron e corrente),
+  dentro do horário. Guarda em `listaDeTransmissao.test.ts`. A coluna
+  `janela_liberada_ate` continua lida pelo disparador, mas nada a grava mais.

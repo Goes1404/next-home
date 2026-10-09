@@ -17,9 +17,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * As server actions desta página (`processarFilaAgora`) chegam a mandar
- * WhatsApp de verdade antes de responder. O teto padrão de 10s de uma
- * função Hobby cortaria o envio no meio.
+ * Criar a lista confere os números no WhatsApp antes de responder; o teto
+ * padrão de 10s de uma função Hobby cortaria a conferência no meio.
  */
 export const maxDuration = 60;
 

@@ -70,7 +70,6 @@ export function CampanhasManager({
       <HistoricoCampanhas
         campanhas={campanhas}
         aoMudar={recarregar}
-        foraDoHorario={status?.impedimentoTipo === "horario" || status?.impedimentoTipo === "expediente"}
       />
     </div>
   );
