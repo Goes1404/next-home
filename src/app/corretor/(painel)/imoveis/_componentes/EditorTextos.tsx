@@ -218,7 +218,7 @@ export function EditorTextos({ dados, onChange, contexto }: Props) {
                   <button
                     type="button"
                     onClick={() => setSugestao(null)}
-                    className="text-fluid-xs min-h-[40px] cursor-pointer rounded-xl px-4 font-bold text-legenda transition-colors hover:text-titulo botao-secundario"
+                    className="text-fluid-xs min-h-[40px] cursor-pointer px-4 font-bold text-legenda transition-colors hover:text-titulo botao-secundario"
                   >
                     Descartar
                   </button>

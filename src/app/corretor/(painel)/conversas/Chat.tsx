@@ -1163,7 +1163,7 @@ function SeletorDeMidia({
             <button
               type="button"
               onClick={() => setImovelAberto(null)}
-              className="text-apoio hover:text-titulo min-h-11 cursor-pointer rounded-full px-3 text-xs botao-secundario"
+              className="text-apoio hover:text-titulo min-h-11 cursor-pointer px-3 text-xs botao-secundario"
             >
               ← imóveis
             </button>

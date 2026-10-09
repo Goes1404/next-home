@@ -34,6 +34,14 @@ quem usa, para não brigar com os utilitários do Tailwind na mesma classe.
 controle com sombra interna. Não `transform` nem `filter`: os dois criam
 containing block, e há `position: fixed` dentro de controles do painel.
 
+## A primeira versão ficou feia
+
+Cinza fixo com borda forte em tudo virou uma grade de caixas iguais ("assim
+ficou feio"). A segunda tinge cada controle com a cor do próprio texto
+(`color-mix` com `currentColor`): contorno a 24%, fundo a 6%. O raio é o
+mesmo do botão principal (0,75rem), e o círculo do ícone é desenhado a ~80%
+do botão por `radial-gradient`, então o alvo de toque segue com 44px.
+
 ## Como foi achado
 
 Um script com a API do TypeScript percorreu todo `<button>`, `<Link>` e

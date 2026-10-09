@@ -118,7 +118,7 @@ export function FormularioCredito({
               <button
                 type="button"
                 onClick={() => setFaixas((l) => l.filter((_, n) => n !== i))}
-                className="text-perigo min-h-11 cursor-pointer rounded-xl px-3 text-left text-xs sm:col-span-4 sm:w-fit botao-secundario"
+                className="text-perigo min-h-11 cursor-pointer px-3 text-left text-xs sm:col-span-4 sm:w-fit botao-secundario"
               >
                 Remover faixa
               </button>

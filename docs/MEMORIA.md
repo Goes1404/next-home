@@ -9789,3 +9789,7 @@ Nota: [[botoes-que-parecem-botoes]].
 - **Achar controle sem pista exige AST**, não regex: `className` vive em
   `cn()`, template e variável. `botoesComPista.test.ts` faz isso e reprova
   controle novo sem pista; exceções por arquivo, com motivo, só descem.
+- **A primeira versão ficou feia** (cinza com borda forte em tudo). Hoje a
+  pista é tingida pela cor do próprio texto (`currentColor` a 24%/6%), com o
+  raio do botão principal, e o círculo do ícone é desenhado menor que o
+  alvo de toque.

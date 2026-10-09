@@ -61,7 +61,7 @@ export function PainelDoConsultor({
         <Link
           href={telaCheia}
           onClick={fechar}
-          className="text-acento-suave flex min-h-11 shrink-0 items-center rounded-full px-3 text-xs font-medium transition-colors botao-secundario"
+          className="text-acento-suave flex min-h-11 shrink-0 items-center px-3 text-xs font-medium transition-colors botao-secundario"
         >
           Tela cheia
         </Link>

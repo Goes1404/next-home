@@ -92,7 +92,7 @@ export function OrdemNoSite({ iniciais }: { iniciais: ItemDaTela[] }) {
         <button
           type="button"
           onClick={() => alterar(salva)}
-          className="text-fluid-sm min-h-11 rounded-xl px-3 text-apoio hover:text-titulo botao-secundario"
+          className="text-fluid-sm min-h-11 px-3 text-apoio hover:text-titulo botao-secundario"
         >
           Voltar à ordem salva
         </button>

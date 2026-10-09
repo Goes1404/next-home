@@ -2509,28 +2509,45 @@
  * texto, tamanho e espaçamento continuam com quem usa. Assim não brigam com
  * os utilitários do Tailwind na mesma classe.
  */
+/*
+ * A pista sai da COR do próprio controle (`currentColor`), não de um cinza
+ * fixo: cada botão fica tingido da cor do seu texto, e a tela não vira uma
+ * grade de caixas iguais. Primeira versão (cinza com borda forte) ficou
+ * pesada — "assim ficou feio", 09/10/2026.
+ */
 @utility botao-secundario {
-  border: 1px solid var(--color-linha-forte);
-  background-color: var(--color-vidro);
+  border: 1px solid color-mix(in oklab, currentColor 24%, transparent);
+  background-color: color-mix(in oklab, currentColor 6%, transparent);
+  /* O mesmo raio do botão principal (`rounded-xl`): formas iguais lado a
+     lado leem como um conjunto; pílula ao lado de retângulo parecia remendo. */
   border-radius: 0.75rem;
   cursor: pointer;
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
   &:hover:not(:disabled) {
-    border-color: var(--color-acento-linha);
-    background-color: var(--color-vidro-forte);
+    border-color: color-mix(in oklab, currentColor 42%, transparent);
+    background-color: color-mix(in oklab, currentColor 12%, transparent);
   }
 }
 
+/* O círculo é DESENHADO menor que o botão: o alvo de toque continua com os
+   44px do elemento, mas o que se vê é um círculo de ~80% dele, com um fio. */
 @utility botao-icone {
-  background-color: var(--color-vidro-forte);
+  --ic-fundo: color-mix(in oklab, currentColor 8%, transparent);
+  --ic-fio: color-mix(in oklab, currentColor 16%, transparent);
+  background: radial-gradient(
+    circle closest-side,
+    var(--ic-fundo) 0 78%,
+    var(--ic-fio) 78% 81%,
+    transparent 83%
+  );
   border-radius: 9999px;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+
   &:hover:not(:disabled) {
-    background-color: var(--color-vidro-mais);
+    --ic-fundo: color-mix(in oklab, currentColor 15%, transparent);
   }
 }
 
@@ -2538,9 +2555,9 @@
   cursor: pointer;
   text-decoration-line: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-  text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
-  transition: text-decoration-color 0.15s ease;
+  text-underline-offset: 5px;
+  text-decoration-color: color-mix(in oklab, currentColor 32%, transparent);
+  transition: text-decoration-color 0.18s ease;
   &:hover {
     text-decoration-color: currentColor;
   }
@@ -2550,13 +2567,20 @@
   &::after {
     content: "";
     flex-shrink: 0;
-    width: 1rem;
-    height: 1rem;
+    width: 0.9rem;
+    height: 0.9rem;
     margin-left: auto;
     background-color: currentColor;
-    opacity: 0.45;
+    opacity: 0.35;
+    transition:
+      opacity 0.18s ease,
+      translate 0.18s ease;
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 6 6 6-6 6'/%3E%3C/svg%3E")
       center / contain no-repeat;
+  }
+  &:hover::after {
+    opacity: 0.7;
+    translate: 2px 0;
   }
 }
 
@@ -2568,7 +2592,7 @@
  * `position: fixed` dentro de controles do painel.
  */
 [data-rota="painel"] :is(button, a[href], [role="button"]):active:not(:disabled) {
-  box-shadow: inset 0 0 0 999px color-mix(in oklab, currentColor 10%, transparent);
+  box-shadow: inset 0 0 0 999px color-mix(in oklab, currentColor 8%, transparent);
 }
 
 @utility cartao {

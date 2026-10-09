@@ -305,7 +305,7 @@ export function EditorFotos({ empreendimentoId, slug, midiasIniciais }: Props) {
               <button
                 type="button"
                 onClick={desfazerOrdem}
-                className="min-h-11 rounded-xl px-3 text-fluid-xs font-semibold text-apoio hover:text-titulo botao-secundario"
+                className="min-h-11 px-3 text-fluid-xs font-semibold text-apoio hover:text-titulo botao-secundario"
               >
                 Voltar à ordem salva
               </button>

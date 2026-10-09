@@ -51,7 +51,7 @@ export function BotoesDaVisitaCombinada({ conversaId, titulo }: { conversaId: st
         disabled={pendente}
         aria-label={`Não era visita: ${titulo}`}
         onClick={() => agir(dispensarVisitaCombinada, "dispensada")}
-        className="text-fluid-xs text-apoio flex min-h-11 items-center rounded-full px-3 transition-colors disabled:opacity-60 botao-secundario"
+        className="text-fluid-xs text-apoio flex min-h-11 items-center px-3 transition-colors disabled:opacity-60 botao-secundario"
       >
         Não era visita
       </button>

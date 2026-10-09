@@ -63,7 +63,7 @@ export function BotoesDaSugestao({ followupId, titulo }: { followupId: string; t
         disabled={pendente}
         aria-label={`Dispensar a sugestão: ${titulo}`}
         onClick={() => agir(dispensarSugestao, "dispensada")}
-        className="text-fluid-xs text-apoio flex min-h-11 items-center rounded-full px-3 transition-colors disabled:opacity-60 botao-secundario"
+        className="text-fluid-xs text-apoio flex min-h-11 items-center px-3 transition-colors disabled:opacity-60 botao-secundario"
       >
         Dispensar
       </button>

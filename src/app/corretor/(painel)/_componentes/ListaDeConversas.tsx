@@ -123,7 +123,7 @@ export function ListaDeConversas({
             <button
               type="button"
               onClick={() => setTudo(true)}
-              className="text-apoio hover:text-titulo min-h-11 w-full cursor-pointer rounded-lg px-2 text-left text-xs transition-colors botao-secundario"
+              className="text-apoio hover:text-titulo min-h-11 w-full cursor-pointer px-2 text-left text-xs transition-colors botao-secundario"
             >
               Ver todas ({conversas.length})
             </button>

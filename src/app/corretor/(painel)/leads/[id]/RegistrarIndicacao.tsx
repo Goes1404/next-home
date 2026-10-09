@@ -75,7 +75,7 @@ export function RegistrarIndicacao({ leadId }: { leadId: string }) {
         >
           {ocupado ? "Salvando…" : "Registrar indicação"}
         </button>
-        <button type="button" onClick={() => setAberto(false)} className="min-h-11 rounded-xl px-3 text-fluid-xs text-apoio botao-secundario">
+        <button type="button" onClick={() => setAberto(false)} className="min-h-11 px-3 text-fluid-xs text-apoio botao-secundario">
           Cancelar
         </button>
       </div>
