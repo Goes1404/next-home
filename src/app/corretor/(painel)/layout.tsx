@@ -1,5 +1,6 @@
 import { Wordmark } from "@/components/ui/Wordmark";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { FundoDoPainel } from "./_componentes/FundoDoPainel";
@@ -10,6 +11,8 @@ import { NavMobileBottom } from "./NavMobileBottom";
 import { GavetaLateral } from "./GavetaLateral";
 import { BotaoGaveta } from "./BotaoGaveta";
 import { BalaoConsultor } from "./BalaoConsultor";
+import { CabecalhoDoPainel } from "./_componentes/CabecalhoDoPainel";
+import { COOKIE_MENU_LATERAL, lerMenuRecolhido } from "./_componentes/menuLateral";
 import { CromaDoModulo } from "./CromaDoModulo";
 import { MenuDaConta } from "./MenuDaConta";
 import { sair } from "@/app/corretor/actions";
@@ -46,8 +49,10 @@ export default async function PainelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [corretor, tema] = await Promise.all([getCorretorLogado(), getTemaEscolhido()]);
+  const [corretor, tema, guardados] = await Promise.all([getCorretorLogado(), getTemaEscolhido(), cookies()]);
   const ehGestor = corretor?.papel === "gestor";
+  // A lateral do computador nasce do jeito que a pessoa deixou (ver menuLateral.ts).
+  const menuRecolhido = lerMenuRecolhido(guardados.get(COOKIE_MENU_LATERAL)?.value);
 
   return (
     <CromaDoModulo className="bg-fundo relative isolate flex min-h-svh flex-1 flex-col">
@@ -62,7 +67,9 @@ export default async function PainelLayout({
       */}
       <FundoDoPainel />
       <LuzDosCartoes />
-      <header className="border-linha bg-fundo/85 sticky top-0 z-40 border-b backdrop-blur-lg">
+      {/* No celular ele sai de cena ao rolar para baixo e volta ao subir
+          (ver CabecalhoDoPainel); no computador fica. */}
+      <CabecalhoDoPainel className="border-linha bg-fundo/85 sticky top-0 z-40 border-b backdrop-blur-lg">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
           <div className="flex items-center gap-1">
             {/* O hambúrguer só existe no celular e só quando há sessão: sem
@@ -101,7 +108,7 @@ export default async function PainelLayout({
 
           </div>
         </div>
-      </header>
+      </CabecalhoDoPainel>
 
       {corretor ? (
         <>
@@ -114,13 +121,15 @@ export default async function PainelLayout({
           <FaixaConexao corretorId={corretor.id} />
 
           {/*
-            A coluna de conteúdo fica em 1fr com a lateral fixa em 15rem, o
-            que dá ~64rem de leitura no monitor comum — a mesma largura de
-            antes. É o que o quadro do funil (seis colunas desde a 0045) e a tabela da
-            equipe (cinco) pedem; formulários se capam por conta própria.
+            A coluna de conteúdo fica em 1fr e a da lateral em `auto`: quem
+            diz a largura é a própria lateral, 15rem aberta e 4rem recolhida
+            (09/10/2026). Aberta, dá ~64rem de leitura no monitor comum — o
+            que o quadro do funil e a tabela da equipe pedem; recolhida, a
+            tela de trabalho ganha 11rem. Formulários se capam por conta
+            própria.
           */}
-          <div className="mx-auto grid w-full max-w-[84rem] flex-1 grid-cols-1 gap-8 px-4 pt-6 pb-28 md:grid-cols-[15rem_minmax(0,1fr)] md:px-8 md:pb-16">
-            <NavPainel ehGestor={ehGestor} />
+          <div className="mx-auto grid w-full max-w-[84rem] flex-1 grid-cols-1 gap-8 px-4 pt-6 pb-28 md:grid-cols-[auto_minmax(0,1fr)] md:px-8 md:pb-16">
+            <NavPainel ehGestor={ehGestor} recolhidoInicial={menuRecolhido} />
             <TransicaoDeTela>{children}</TransicaoDeTela>
           </div>
           <NavMobileBottom />

@@ -9739,3 +9739,21 @@ Notas: [[duvida-de-engano-nao-e-pedido-para-parar]],
   (`consumir_cota_campanha_espacada`), então mudar não precisa de migration.
   O limite diário ficou como estava
   ([[espacamento-anti-ban-so-existia-no-papel]]).
+
+## As barras de navegação (09/10/2026)
+
+Nota: [[lateral-recolhe-e-rola-sozinha]].
+
+- **A lateral do computador passava da dobra e não rolava**: é `sticky` sem
+  altura máxima. Com o Financeiro aberto, 335px do menu ficavam abaixo da
+  tela num notebook (1343x598). Agora rola por dentro.
+- **Botão "Recolher menu"**: trilho de ícones de 64px, cookie
+  `nh-menu-lateral` lido no layout. Cartão do trilho é `fixed` posicionado
+  por script: rolagem da página reposiciona, só a do trilho fecha. O `sticky`
+  precisa de `z-30`, senão os cartões do conteúdo pintam por cima.
+- **No celular o cabeçalho do painel some ao rolar para baixo.** A altura
+  real (69px, não os 60 do CSS) vai para `--painel-header-h`; quem gruda
+  abaixo dele lê `--painel-topo-visivel`.
+- **Site:** cabeçalho do computador marca a página atual (`aria-current`, o
+  CSS já existia); a vitrine ganhou menu no celular.
+- Peso: +8 a +10 KB em toda rota do painel (vai no layout); tetos subiram.

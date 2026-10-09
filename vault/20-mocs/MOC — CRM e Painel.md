@@ -20,6 +20,7 @@ F0–F6.
 - [[medir-carga-com-rollback]]
 
 ## Telas
+- [[lateral-recolhe-e-rola-sozinha]] — lateral rola por dentro, recolhe em ícones; cabeçalho do celular some ao rolar (09/10)
 - [[navegacao-do-painel-tem-regua]]
 - [[a-caixa-de-abas-saiu-das-telas]]
 - [[quadro-do-funil-e-lateral-de-novo]] — kanban lateral com filtros operacionais (11/09)

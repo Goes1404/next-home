@@ -2,6 +2,8 @@ import { Wordmark } from "@/components/ui/Wordmark";
 import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { HeaderCondensado } from "@/components/motion/HeaderCondensado";
+import { MenuMobile } from "@/components/layout/MenuMobile";
+import { LinksDoCabecalho } from "@/components/layout/LinksDoCabecalho";
 
 const LINKS = [
   { href: "/empreendimentos", label: "Empreendimentos" },
@@ -10,7 +12,31 @@ const LINKS = [
   { href: "/contato", label: "Contato" },
 ];
 
-/** Nav pill fixa, sempre sobre a imagem de fundo — por isso o vidro real importa aqui. */
+/*
+ * O menu do celular leva o site INTEIRO, e não só os quatro links de cima.
+ * No computador o catálogo mantém a própria navegação (ver
+ * HeaderInstitucional); no telefone, este menu é a única saída da página —
+ * sem ele, quem caía num imóvel pelo anúncio não chegava a Financiamento nem
+ * a Corretores sem rolar até o rodapé.
+ */
+const LINKS_DO_CELULAR = [
+  { href: "/empreendimentos", label: "Empreendimentos" },
+  { href: "/mapa", label: "Mapa" },
+  { href: "/financiamento", label: "Financiamento" },
+  { href: "/corretores", label: "Corretores" },
+  { href: "/sobre", label: "Sobre" },
+  { href: "/contato", label: "Contato" },
+];
+
+/**
+ * Nav pill fixa, sempre sobre a imagem de fundo — por isso o vidro real
+ * importa aqui.
+ *
+ * No celular ele tinha só a logo e uma seta para a listagem (09/10/2026): a
+ * "barra inferior" que levaria a navegação nunca foi feita, e na própria
+ * listagem a seta apontava para a página em que a pessoa já estava. Ganhou o
+ * mesmo menu lateral do resto do site.
+ */
 export function SiteHeader() {
   return (
     <HeaderCondensado className="fixed inset-x-0 top-0 z-40 flex justify-center px-4 pt-4">
@@ -26,27 +52,9 @@ export function SiteHeader() {
           <Wordmark destaque="text-acento-forte" />
         </Link>
 
-        <ul className="hidden items-center gap-6 text-sm text-corpo sm:flex">
-          {LINKS.map((link) => (
-            <li key={link.href}>
-              <Link href={link.href} className="link-nav transition-colors hover:text-acento-suave">
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <LinksDoCabecalho links={LINKS} />
 
-        {/* No mobile a navegação principal fica na barra inferior (Fase 4);
-            aqui basta um atalho compacto para não competir com a logo. */}
-        <Link
-          href="/empreendimentos"
-          aria-label="Ver empreendimentos"
-          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-colors hover:bg-brand-400 sm:hidden botao-vivo"
-        >
-          <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
+        <MenuMobile links={LINKS_DO_CELULAR} />
       </GlassSurface>
     </HeaderCondensado>
   );

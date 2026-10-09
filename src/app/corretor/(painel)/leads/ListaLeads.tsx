@@ -242,8 +242,10 @@ export function ListaLeads({
       {/* Busca grudada no topo: achar UM lead entre 100 é a tarefa nº 1 da
           tela, então ela nunca sai de baixo do dedo ao rolar. O campo é o
           mesmo das outras abas (`BuscaLeads`) — mesma aparência, mesmo
-          comportamento, e o termo sobrevive à troca de aba. */}
-      <div className="sticky top-[var(--painel-header-h)] z-30 -mx-4 bg-fundo/95 px-4 pt-4 pb-2 backdrop-blur-md sm:mx-0 sm:px-0 md:static md:bg-transparent md:backdrop-blur-none">
+          comportamento, e o termo sobrevive à troca de aba. Ela gruda logo
+          abaixo do cabeçalho, e sobe junto quando ele sai de cena ao rolar
+          (`--painel-topo-visivel`, ver CabecalhoDoPainel). */}
+      <div className="sticky top-[var(--painel-topo-visivel)] z-30 -mx-4 bg-fundo/95 px-4 pt-4 pb-2 backdrop-blur-md transition-[top] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:mx-0 sm:px-0 md:static md:bg-transparent md:backdrop-blur-none">
         <div className="flex gap-2">
           <BuscaLeads className="flex-1" />
           <button

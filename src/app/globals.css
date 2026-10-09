@@ -534,6 +534,12 @@
     /* Altura da barra superior do painel — o que a lateral fixa precisa
        descontar para não escorregar por baixo dela ao rolar. */
     --painel-header-h: 3.75rem;
+
+    /* Quanto do topo o cabeçalho do painel ocupa AGORA: a altura dele, ou
+       zero quando ele saiu de cena ao rolar no celular (CabecalhoDoPainel
+       escreve `data-cabecalho` no <main>). É por ela que se posiciona quem
+       gruda logo abaixo dele. */
+    --painel-topo-visivel: var(--painel-header-h);
   }
 
   /*
@@ -541,7 +547,8 @@
    * escolhido no arquivo de cada componente é como os três elementos fixos
    * do painel foram parar na mesma faixa:
    *
-   *   30  cabeçalhos de seção grudentos
+   *   30  cabeçalhos de seção grudentos e a lateral do computador (o
+   *       cartão do trilho mora nela e precisa passar por cima da tela)
    *   40  cabeçalho do painel, cabeçalhos do site
    *   45  barras de ação flutuantes (seleção em massa, salvar imóvel)
    *   50  navegação inferior do celular
@@ -1313,6 +1320,11 @@
   }
   header[data-oculto="sim"] {
     transform: translateY(-130%);
+  }
+  /* Quem chega nele pelo teclado (Tab) precisa vê-lo: o foco não pode
+     morar num botão fora da tela. */
+  header[data-oculto="sim"]:focus-within {
+    transform: none;
   }
 
   /* Menu do celular: véu que esmaece e painel que desliza da direita; ao
@@ -2666,6 +2678,9 @@
    a bolha ganhou este fundo opaco em z-55 e cobriu o painel inteiro
    (24/09/2026) — cliques passavam, nada aparecia. */
 main[data-rota="painel"] {
+  /* Recalculado AQUI porque o cabeçalho escreve a altura medida no <main>
+     (CabecalhoDoPainel): o valor herdado do :root seria o de 3,75rem. */
+  --painel-topo-visivel: var(--painel-header-h);
   background-image: linear-gradient(
     180deg,
     color-mix(in oklab, var(--color-acento) var(--tinta-topo), var(--color-fundo)) 0,
@@ -2677,6 +2692,68 @@ main[data-rota="painel"] {
 :root:has([data-rota="painel"]) {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklab, currentColor 30%, transparent) transparent;
+}
+
+/* O cabeçalho do painel saiu de cena ao rolar no celular: quem gruda logo
+   abaixo dele sobe junto (ver CabecalhoDoPainel). */
+main[data-cabecalho="oculto"] {
+  --painel-topo-visivel: 0px;
+}
+
+/*
+ * A lateral do painel rola sozinha (09/10/2026): com uma pasta longa aberta
+ * ela passava da altura da janela, e o fim do menu só aparecia no fim da
+ * página. `scrollbar-width` não é herdado do <main>, então vem aqui.
+ *
+ * O esmaecido das bordas diz "tem mais menu para lá" — no Mac a barra de
+ * rolagem fica escondida até alguém rolar, e sem ele nada avisa. Ele segue
+ * a rolagem da própria caixa (`scroll(self)`): some na borda em que não há
+ * mais nada, e não existe quando o menu cabe inteiro (a linha do tempo fica
+ * inativa e as duas medidas voltam a zero). Navegador sem rolagem em CSS só
+ * não esmaece.
+ */
+@property --lateral-esmaece-topo {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --lateral-esmaece-base {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+.lateral-rolagem {
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+@supports (animation-timeline: scroll()) {
+  .lateral-rolagem-esmaece {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 var(--lateral-esmaece-topo),
+      #000 calc(100% - var(--lateral-esmaece-base)),
+      transparent 100%
+    );
+    animation: lateral-esmaece linear both;
+    animation-timeline: scroll(self);
+  }
+  @keyframes lateral-esmaece {
+    0% {
+      --lateral-esmaece-topo: 0px;
+      --lateral-esmaece-base: 28px;
+    }
+    8% {
+      --lateral-esmaece-topo: 28px;
+    }
+    92% {
+      --lateral-esmaece-base: 28px;
+    }
+    100% {
+      --lateral-esmaece-topo: 28px;
+      --lateral-esmaece-base: 0px;
+    }
+  }
 }
 
 /*

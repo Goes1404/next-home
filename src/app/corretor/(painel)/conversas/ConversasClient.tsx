@@ -380,12 +380,19 @@ export function ConversasClient({
 
         {/* Chat aberto */}
         <section
+          // Com o chat aberto por cima da tela, o cabeçalho não sai de cena:
+          // o fim da conversa escorrega a rolagem para a página de trás, e
+          // o chat inteiro pularia junto (ver CabecalhoDoPainel).
+          data-segura-cabecalho={selecionada ? "" : undefined}
           className={cn(
             "min-w-0 flex-1 flex-col md:static md:z-auto",
             selecionada
               ? // Tela cheia entre o cabeçalho e a barra do polegar. `bg-fundo`
                 // é obrigatório: sem ele o conteúdo da página aparece por trás.
-                "bg-wa-fundo fixed inset-x-0 top-[var(--painel-header-h)] bottom-[var(--nav-mobile-h)] z-30 flex md:bottom-0"
+                // `acima-da-nav` e não `--nav-mobile-h` sozinho (09/10/2026):
+                // no iPhone a barra do polegar cresce com a área do gesto, e o
+                // pé do chat — o campo de digitar — ficava escondido atrás dela.
+                "bg-wa-fundo acima-da-nav fixed inset-x-0 top-[var(--painel-topo-visivel)] z-30 flex md:bottom-0"
               : "hidden md:flex",
           )}
         >

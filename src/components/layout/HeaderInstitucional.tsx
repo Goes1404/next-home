@@ -3,6 +3,7 @@ import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { HeaderCondensado } from "@/components/motion/HeaderCondensado";
 import { MenuMobile } from "@/components/layout/MenuMobile";
+import { LinksDoCabecalho } from "@/components/layout/LinksDoCabecalho";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getTemaEscolhido } from "@/lib/tema";
 
@@ -43,15 +44,7 @@ export async function HeaderInstitucional() {
           <Wordmark destaque="text-acento-forte" />
         </Link>
 
-        <ul className="hidden items-center gap-6 text-sm text-corpo sm:flex">
-          {LINKS.map((link) => (
-            <li key={link.href}>
-              <Link href={link.href} className="link-nav transition-colors hover:text-acento-suave">
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <LinksDoCabecalho links={LINKS} />
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {/* Some no mobile, junto com os links: só o essencial cabe ao lado

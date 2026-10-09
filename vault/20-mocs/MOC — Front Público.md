@@ -10,6 +10,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 # Front Público — Map of Content
 
 ## Layout e animação
+- [[lateral-recolhe-e-rola-sozinha]] — página atual marcada no cabeçalho; menu do celular na vitrine (09/10)
 - [[backdrop-filter-cria-containing-block]] ⚠️ já mordeu 4 vezes
 - [[gsap-armadilhas]]
 - [[parallax-em-um-laco]]
