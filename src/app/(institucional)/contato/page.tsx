@@ -14,7 +14,7 @@ import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 export const metadata: Metadata = {
   title: `Fale com a ${site.nome}`,
-  description: `WhatsApp, formulário e atendimento presencial em Alphaville. ${enderecoLinha}.`,
+  description: `WhatsApp, formulário e atendimento presencial em ${site.endereco.cidade}. ${enderecoLinha}.`,
   alternates: { canonical: "/contato" },
   openGraph: {
     title: `Contato | ${site.nomeCompleto}`,

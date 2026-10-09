@@ -5,7 +5,7 @@ tags: [front, seo, decisao]
 type: decisao
 status: ativo
 custou: medio
-codigo: ["src/lib/dadosEstruturados.ts", "src/lib/seoDoImovel.ts", "src/components/empreendimento/PerguntasFrequentes.tsx", "src/app/(institucional)/page.tsx", "src/app/(vitrine)/empreendimentos/[slug]/page.tsx", "src/app/(institucional)/regioes/[slug]/page.tsx", "next.config.ts", "src/app/favicon.ico", "src/app/icon.png", "src/app/apple-icon.png", "scripts/marca/gerarIcones.mjs"]
+codigo: ["src/lib/site.ts", "src/lib/dadosEstruturados.ts", "src/lib/seoDoImovel.ts", "src/components/empreendimento/PerguntasFrequentes.tsx", "src/app/(institucional)/page.tsx", "src/app/(vitrine)/empreendimentos/[slug]/page.tsx", "src/app/(institucional)/regioes/[slug]/page.tsx", "next.config.ts", "src/app/favicon.ico", "src/app/icon.png", "src/app/apple-icon.png", "scripts/marca/gerarIcones.mjs"]
 summary: A home passou a declarar a organização (com os nomes pelos quais procuram a marca) e o WebSite com busca interna; imóvel e região ganharam trilha (BreadcrumbList); o endereço da Vercel redireciona as páginas públicas para o domínio. O que mais pesa continua do lado do dono: o domínio antigo ainda não aponta para cá.
 updated: 2026-10-09
 ---
@@ -100,4 +100,24 @@ aparecia o triângulo do Next, não a marca.
   não toca em caminho com ponto.
 - O resultado do Google demora a trocar o ícone: ele é lido de novo quando o
   robô volta à página.
+
+## O escritório mudou para o Office Bethaville (09/10)
+
+O endereço do site passou a ser **Av. Trindade, 254 — Office Bethaville,
+Bethaville I, Barueri/SP, CEP 06404-326** (era Calçada Antares, 264,
+Alphaville, Santana de Parnaíba).
+
+- Mora num lugar só: `site.endereco` em `src/lib/site.ts`. Rodapé, Contato,
+  Sobre, mapa da sede, `geo.*` do `<head>` e o `RealEstateAgent` leem dali.
+  As duas frases que diziam "imobiliária de Alphaville" e "atendimento
+  presencial em Alphaville" passaram a ler a cidade do endereço.
+- **A coordenada é estimada pelo número.** O OpenStreetMap não tem o prédio,
+  e o pino do anúncio do Office Bethaville (Lopes) cai na avenida vizinha
+  (Av. Presidente Tancredo de Almeida, onde a Av. Trindade começa). A
+  numeração anda ~1 m por número: os prédios 344 e 522 do mesmo lado estão a
+  171 m um do outro, então o 254 fica ~90 m antes do 344. O mapa da sede já
+  diz "aproximado".
+- **O Perfil da Empresa no Google precisa do endereço novo**: endereço
+  diferente entre o site e o perfil enfraquece a busca local
+  (`docs/TAREFAS-FUTURAS.md`).
 

@@ -101,7 +101,7 @@ export const metadata: Metadata = {
   },
   other: {
     "geo.region": "BR-SP",
-    "geo.placename": "Alphaville, Barueri, Santana de Parnaíba",
+    "geo.placename": `${site.endereco.bairro}, ${site.endereco.cidade}`,
     "geo.position": `${site.endereco.lat};${site.endereco.lng}`,
     "ICBM": `${site.endereco.lat}, ${site.endereco.lng}`,
   },

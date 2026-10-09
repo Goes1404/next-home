@@ -9838,3 +9838,18 @@ Nota: [[identidade-da-marca-para-o-google]].
   Agora `favicon.ico`, `icon.png` (192) e `apple-icon.png` (180, opaco) saem
   de `node scripts/marca/gerarIcones.mjs`, com o símbolo da logo sobre fundo
   branco arredondado: a casa da logo é espaço vazio e sumiria na aba escura.
+
+## O escritório mudou para o Office Bethaville (09/10/2026)
+
+Nota: [[identidade-da-marca-para-o-google]].
+
+- Endereço novo em `site.endereco` (`src/lib/site.ts`): Av. Trindade, 254 —
+  Office Bethaville, Bethaville I, Barueri/SP, CEP 06404-326. Não há outra
+  cópia no código; as frases que diziam "Alphaville" como lugar do escritório
+  (Contato, Sobre) e o `geo.placename` passaram a ler o endereço.
+- **Pino de anúncio imobiliário não é a porta do prédio.** O da Lopes caiu na
+  avenida vizinha (reverse do Nominatim). Quando o OpenStreetMap não tem o
+  prédio, a numeração métrica resolve: dois números conhecidos da mesma
+  calçada dão metros por número (aqui ~1 m), e o número procurado sai por
+  extrapolação. Conferir o ponto com o reverse do Nominatim.
+

@@ -17,9 +17,9 @@ function urlDoMapa(lat: number, lng: number): string {
  * O mapa do escritório — em Contato e em Sobre, o MESMO. Duas cópias da
  * mesma moldura divergiriam no primeiro ajuste.
  *
- * A coordenada é o centroide da via (Nominatim), não a porta do prédio; a
- * legenda diz "aproximado" por isso, e o link abre o mapa completo para
- * quem vai de fato até lá.
+ * A coordenada é estimada pelo número na avenida (ver `site.endereco`), não
+ * a porta do prédio; a legenda diz "aproximado" por isso, e o link abre o
+ * mapa completo para quem vai de fato até lá.
  */
 export function MapaDaSede({ className }: { className?: string }) {
   const { lat, lng } = site.endereco;

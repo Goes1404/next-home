@@ -51,17 +51,20 @@ const PADRAO = {
    */
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://next-home-drab.vercel.app",
 
+  // Escritório no Office Bethaville desde 09/10/2026 (antes: Calçada
+  // Antares, 264, Alphaville, Santana de Parnaíba).
   endereco: {
-    logradouro: "Calçada Antares, 264 — 2º andar",
-    bairro: "Alphaville",
-    cidade: "Santana de Parnaíba",
+    logradouro: "Av. Trindade, 254 — Office Bethaville",
+    bairro: "Bethaville I",
+    cidade: "Barueri",
     uf: "SP",
-    cep: "06541-065",
-    // Centroide da via (geocodificado via Nominatim) — o cadastro não tem
-    // coordenada exata do prédio, mesma honestidade de escala usada no
-    // mapa de cada empreendimento (ver Localizacao.tsx).
-    lat: -23.4633543,
-    lng: -46.8774165,
+    cep: "06404-326",
+    // Estimada pelo número: o OpenStreetMap não tem o prédio, e o pino do
+    // anúncio do Office Bethaville cai na avenida vizinha. Os números 344 e
+    // 522 da mesma calçada (lado par) andam ~1 m por número; o 254 fica
+    // ~90 m antes do 344. O mapa diz "aproximado" por isso.
+    lat: -23.50618,
+    lng: -46.86848,
   },
 
   /** Formato E.164 em `numero`, legível em `label`. */

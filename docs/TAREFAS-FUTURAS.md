@@ -14,7 +14,8 @@ mesmas buscas. Em ordem de impacto:
 - [ ] Publicar 2 ou 3 lançamentos em Produtos/Posts com o link da ficha
       (ex.: `https://www.nexthomeimoveis.com/empreendimentos/joy-barueri`)
 - [ ] Conferir que endereço e telefone são iguais aos do site:
-      Calçada Antares, 264, 2º andar, Alphaville; (11) 97220-7204
+      Av. Trindade, 254, Office Bethaville, Bethaville I, Barueri; (11) 97220-7204
+      (o escritório mudou em 09/10/2026: o perfil precisa do endereço novo)
 
 ### 2. Bios das redes
 - [ ] Instagram `@next_home_imoveis`, Facebook, YouTube e LinkedIn com
