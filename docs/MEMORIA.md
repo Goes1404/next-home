@@ -9874,4 +9874,14 @@ Nota: [[telefone-com-55-que-a-planilha-corta]].
 - **Formato do clipboard conferido em documentação, não num Excel de
   verdade.** Se não recuperar, a linha vem marcada e o aviso explica o
   caminho do `.xlsx`.
+- **E o 55 virava DDD** (mesmo dia, relatado ao enviar o `.xlsx`). Com o
+  número inteiro o `.xlsx` sempre esteve certo (16 formas conferidas no
+  pipeline real); o "(55)" vinha de célula de 11 dígitos começando com 55:
+  "+55 98191-8127" (a Meta grava assim quem digita sem DDD) ou número já
+  cortado. "+55" explícito agora é sempre o país; em tabela onde a maioria
+  começa com 55, o número curto vem "sem DDD" e desmarcado; e
+  `normalizarTelefoneBrasileiro` recusa número sem forma de telefone daqui
+  (celular que não começa com 9, DDD com zero), o que pega o cortado.
+  **Diagnóstico**: "(55)" numa importação de lista paga é quase sempre o 55 do
+  país lido como DDD, não cliente de Santa Maria.
 

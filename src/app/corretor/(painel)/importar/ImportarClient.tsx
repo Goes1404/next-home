@@ -288,7 +288,7 @@ function Importador({
      * decidir por ele.
      */
     setLinhas(
-      resultado.candidatos.map((c) => ({ ...c, incluir: !c.jaExiste && Boolean(c.telefone) })),
+      resultado.candidatos.map((c) => ({ ...c, incluir: !c.jaExiste && Boolean(c.telefone) && !c.semDdd })),
     );
     setEtapa("revisao");
   }
@@ -765,11 +765,15 @@ async function lerVariasFotos(
   // Print de planilha mostra o celular com 55 como "5,51198E+12": o número
   // inteiro não está na imagem, só no arquivo da planilha.
   const cortados = candidatos.filter((c) => c.telefoneCortado).length;
+  const semDddNasFotos = candidatos.filter((c) => c.semDdd).length;
   const avisos = [
     algumaComIa ? "Lido por IA a partir das fotos: confira nome e telefone de cada linha antes de confirmar." : null,
     semNada.length > 0 ? `Sem telefone legível em: ${semNada.join(", ")}.` : null,
     cortados > 0
       ? `${cortados === 1 ? "1 telefone aparece cortado" : `${cortados} telefones aparecem cortados`} na foto (como 5,51198E+12), sem os últimos dígitos. Digite o número na linha ou envie a planilha em .xlsx.`
+      : null,
+    semDddNasFotos > 0
+      ? `${semDddNasFotos === 1 ? "1 telefone veio" : `${semDddNasFotos} telefones vieram`} com +55 e sem DDD: digite o DDD antes de importar.`
       : null,
   ].filter(Boolean);
 
@@ -939,7 +943,11 @@ function ListaRevisao({
                 valor={linha.telefone}
                 onChange={(v) => alterar(i, "telefone", v)}
                 // Número digitado de qualquer jeito sai escrito certo ao sair do campo.
-                onBlur={(v) => alterar(i, "telefone", formatarTelefoneBr(v))}
+                // O que veio sem DDD continua sem DDD até o corretor digitar um:
+                // formatar poria o 11 e apagaria o aviso.
+                onBlur={(v) =>
+                  alterar(i, "telefone", linha.semDdd && semDdd(v) ? v : formatarTelefoneBr(v))
+                }
               />
               {!fora.has("email") && (
                 <CampoLinha
@@ -973,7 +981,15 @@ function ListaRevisao({
               <span className="text-alerta bg-alerta-lavado border-alerta-linha col-start-2 h-fit w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium sm:col-start-3 sm:mt-2 sm:justify-self-end">
                 {/* O número que a planilha cortou ("5,51198E+12") não é falta do
                     cadastro: o aviso no topo explica como trazer o inteiro. */}
-                {linha.telefoneCortado ? "número cortado" : "falta o telefone"}
+                {linha.telefoneCortado
+                  ? /e/i.test(linha.telefoneCortado)
+                    ? "número cortado"
+                    : "faltam dígitos"
+                  : "falta o telefone"}
+              </span>
+            ) : linha.semDdd && semDdd(linha.telefone) ? (
+              <span className="text-alerta bg-alerta-lavado border-alerta-linha col-start-2 h-fit w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium sm:col-start-3 sm:mt-2 sm:justify-self-end">
+                sem DDD
               </span>
             ) : linha.jaExiste ? (
               <span className="text-alerta bg-alerta-lavado border-alerta-linha col-start-2 h-fit w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium sm:col-start-3 sm:mt-2 sm:justify-self-end">
@@ -985,6 +1001,11 @@ function ListaRevisao({
       </ul>
     </div>
   );
+}
+
+/** Só o número, sem DDD: oito ou nove dígitos. */
+function semDdd(telefone: string): boolean {
+  return telefone.replace(/\D/g, "").length <= 9;
 }
 
 function CampoLinha({

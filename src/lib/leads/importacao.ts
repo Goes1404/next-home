@@ -1,4 +1,9 @@
-import { lerNumeroDePlanilha, normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
+import {
+  assinanteValido,
+  lerNumeroDePlanilha,
+  normalizarTelefoneBrasileiro,
+  numeroSemDddComDdi,
+} from "@/lib/inbound/phoneUtils";
 import { extrairVariosLeadsViaRegex } from "@/lib/inbound/regexFallback";
 import { extrairTextoDePdf } from "./pdfTexto";
 import {
@@ -41,6 +46,12 @@ export type CandidatoLead = {
    * dígitos que faltam não estão no arquivo, e completar seria inventar.
    */
   telefoneCortado?: string;
+  /**
+   * O telefone veio com o 55 do país e sem o DDD ("+55 98191-8127"). Em
+   * `telefone` fica só o número; a linha vem desmarcada, para o corretor pôr
+   * o DDD. Marcada sem corrigir, entra como DDD 11.
+   */
+  semDdd?: true;
 };
 
 export type ResultadoExtracao = {
@@ -172,19 +183,69 @@ function pareceTelefone(valor: string): boolean {
 }
 
 /**
- * Quantos telefones a planilha cortou. É o aviso que diz ao corretor por que
- * algumas linhas vieram desmarcadas e como trazer o número inteiro.
+ * Quantos telefones vieram sem os últimos dígitos, e o que fazer. Dois casos
+ * com conserto diferente: a notação científica ("5,51198E+12"), em que o
+ * número inteiro está no arquivo da planilha, e o número que já chegou
+ * incompleto ("55119819181"), em que não está em lugar nenhum.
  */
 export function avisoDeNumerosCortados(candidatos: CandidatoLead[]): string | undefined {
   const cortados = candidatos.filter((c) => c.telefoneCortado);
   if (cortados.length === 0) return undefined;
-  const um = cortados.length === 1;
+  const naNotacao = cortados.filter((c) => /e/i.test(c.telefoneCortado ?? ""));
+  const incompletos = cortados.filter((c) => !/e/i.test(c.telefoneCortado ?? ""));
+  const avisos: string[] = [];
+
+  if (naNotacao.length > 0) {
+    const um = naNotacao.length === 1;
+    avisos.push(
+      `${um ? "1 telefone veio cortado" : `${naNotacao.length} telefones vieram cortados`} pela planilha, ` +
+        `como “${naNotacao[0].telefoneCortado}”: a planilha mostra o número com 55 na frente nesse formato e apaga os últimos dígitos. ` +
+        `${um ? "Esse contato veio desmarcado" : "Esses contatos vieram desmarcados"} e com o telefone em branco. ` +
+        "Para trazer o número inteiro, envie o arquivo .xlsx da planilha ou, na planilha, formate a coluna do telefone como Número sem casas decimais e copie de novo.",
+    );
+  }
+  if (incompletos.length > 0) {
+    const um = incompletos.length === 1;
+    avisos.push(
+      `${um ? "1 telefone veio incompleto" : `${incompletos.length} telefones vieram incompletos`} (como “${incompletos[0].telefoneCortado}”): faltam dígitos, e completar seria adivinhar. ` +
+        `${um ? "Ele veio desmarcado" : "Eles vieram desmarcados"} e com o telefone em branco; digite o número certo na linha, se você o tiver.`,
+    );
+  }
+  return avisos.join(" ");
+}
+
+/** Quantos telefones vieram sem DDD, e o que fazer com eles. */
+export function avisoDeNumerosSemDdd(candidatos: CandidatoLead[]): string | undefined {
+  const semDdd = candidatos.filter((c) => c.semDdd).length;
+  if (semDdd === 0) return undefined;
+  const um = semDdd === 1;
   return (
-    `${um ? "1 telefone veio cortado" : `${cortados.length} telefones vieram cortados`} pela planilha, ` +
-    `como “${cortados[0].telefoneCortado}”: a planilha mostra o número com 55 na frente nesse formato e apaga os últimos dígitos. ` +
-    `${um ? "Esse contato veio desmarcado" : "Esses contatos vieram desmarcados"} e com o telefone em branco. ` +
-    "Para trazer o número inteiro, envie o arquivo .xlsx da planilha ou, na planilha, formate a coluna do telefone como Número sem casas decimais e copie de novo."
+    `${um ? "1 telefone veio" : `${semDdd} telefones vieram`} com o 55 do país mas sem o DDD (como 55 98191-8127). ` +
+    `${um ? "Ele veio desmarcado" : "Eles vieram desmarcados"}: digite o DDD antes de importar. Marcado sem DDD, entra como DDD 11.`
   );
+}
+
+/**
+ * Numa tabela em que os telefones vêm com o 55 do país na frente, o número de
+ * 10 ou 11 dígitos que começa com 55 não é do DDD 55: é o 55 do país com o
+ * número sem DDD ("55 98191-8127", como a Meta grava quem digitou sem DDD), ou
+ * um número cortado. Lido sozinho, ele virava "(55) 98191-8127".
+ */
+function aplicarConvencaoDoDdi(candidatos: CandidatoLead[]): CandidatoLead[] {
+  const digitosDe = (c: CandidatoLead) => c.telefone.replace(/\D/g, "");
+  const comTelefone = candidatos.filter((c) => c.telefone);
+  const com55 = comTelefone.filter((c) => c.semDdd || digitosDe(c).startsWith("55"));
+  if (comTelefone.length < 3 || com55.length < comTelefone.length * 0.6) return candidatos;
+
+  return candidatos.map((c) => {
+    if (c.semDdd || !c.telefone) return c;
+    const digitos = digitosDe(c);
+    if (!digitos.startsWith("55") || (digitos.length !== 10 && digitos.length !== 11)) return c;
+    const resto = digitos.slice(2);
+    if (assinanteValido(resto)) return { ...c, telefone: resto, telefoneE164: null, semDdd: true as const };
+    // Nem número sem DDD, nem telefone de DDD 55: faltam dígitos.
+    return { ...c, telefone: "", telefoneE164: null, telefoneCortado: c.telefone };
+  });
 }
 
 /**
@@ -279,7 +340,10 @@ function montar(bruto: {
   // dígitos, e o cortado entra em branco, marcado (ver `telefoneCortado`).
   const daPlanilha = lerNumeroDePlanilha(celula);
   const cortado = daPlanilha?.tipo === "cortado";
-  const telefone = daPlanilha?.tipo === "inteiro" ? daPlanilha.digitos : cortado ? "" : celula;
+  const lido = daPlanilha?.tipo === "inteiro" ? daPlanilha.digitos : cortado ? "" : celula;
+  // "+55 98191-8127": o 55 é o país e falta o DDD (ver `semDdd`).
+  const semDdd = cortado ? null : numeroSemDddComDdi(lido);
+  const telefone = semDdd ?? lido;
 
   const email = bruto.email?.trim();
   const nome = bruto.nome?.trim();
@@ -289,11 +353,12 @@ function montar(bruto: {
     // genérico deixa claro na lista que o nome precisa ser preenchido.
     nome: nome && nome.length >= 2 ? nome.slice(0, 120) : "Contato sem nome",
     telefone: telefone.slice(0, 40),
-    telefoneE164: cortado ? null : normalizarTelefoneBrasileiro(telefone),
+    telefoneE164: cortado || semDdd ? null : normalizarTelefoneBrasileiro(telefone),
     email: email && RE_EMAIL.test(email) ? email.slice(0, 160) : null,
     mensagem: bruto.mensagem?.trim().slice(0, 2000) || null,
     imovelInteresse: bruto.imovelInteresse?.trim().slice(0, 160) || null,
     ...(cortado ? { telefoneCortado: celula.slice(0, 40) } : {}),
+    ...(semDdd ? { semDdd: true as const } : {}),
   };
 }
 
@@ -384,7 +449,7 @@ export function parsearTabelaLeads(conteudo: string): CandidatoLead[] {
     if (resultados.length >= LIMITE_POR_IMPORTACAO) break;
   }
 
-  return resultados;
+  return aplicarConvencaoDoDdi(resultados);
 }
 
 /** Tira repetidos dentro do próprio arquivo, mantendo o primeiro de cada telefone. */

@@ -1,6 +1,6 @@
 ---
 title: O telefone com 55 que a planilha corta
-aliases: [5,51198E+12, notação científica, número cortado, telefone sem os últimos dígitos, importação com 55]
+aliases: [5,51198E+12, notação científica, número cortado, telefone sem os últimos dígitos, importação com 55, 55 como DDD, sem DDD]
 tags: [crm, armadilha]
 type: armadilha
 status: evergreen
@@ -14,10 +14,11 @@ codigo:
   - src/app/corretor/(painel)/importar/actions.ts
   - src/lib/leads/numeroCortado.test.ts
   - src/lib/leads/coladoDaPlanilha.test.ts
+  - src/lib/leads/numeroSemDdd.test.ts
 created: 2026-10-09
 updated: 2026-10-09
 fonte: docs/MEMORIA.md — "O telefone com 55 que a planilha corta (09/10/2026)"
-summary: Excel e Google Planilhas mostram número de 12+ dígitos (todo celular com 55) como "5,51198E+12", e é isso que se cola ou exporta. A importação lia os dígitos que sobravam como telefone e montava "(11) 5511-9812". Agora o número cortado vem marcado e em branco, e onde o número inteiro existe (colar, link do Google, .xlsx) ele é recuperado.
+summary: Excel e Google Planilhas mostram número de 12+ dígitos (todo celular com 55) como "5,51198E+12", e é isso que se cola ou exporta; a importação montava "(11) 5511-9812". E célula de 11 dígitos começando com 55 ("+55 98191-8127", sem DDD) virava DDD 55. Agora o cortado vem marcado, o sem DDD vem desmarcado, e o número inteiro é recuperado onde existe.
 ---
 
 # O telefone com 55 que a planilha corta
@@ -68,6 +69,30 @@ número de telefone fica errado, sem os últimos dígitos".
   `.xlsx` (que guarda o valor cru) e a aba certa é a que tem o mesmo texto nas
   mesmas posições. Sem vencedora clara, segue o CSV com as linhas marcadas.
 - O `.xlsx` enviado como arquivo já trazia o número inteiro (`numeroComoTexto`).
+
+## O 55 que virava DDD (mesmo dia)
+
+Depois da primeira correção: "enviar o xlsx, ele coloca o 55 como DDD".
+
+- Com o número inteiro no `.xlsx` (5511981918127, como número, texto, `+55`,
+  `p:+55` da Meta) a leitura sempre esteve certa: conferido com 16 formas no
+  pipeline real.
+- O "(55)" vinha de células de **11 dígitos começando com 55**: o 55 do país
+  com um número **sem DDD** (a Meta grava "+55 98191-8127" quando a pessoa
+  digita sem DDD) ou um número já **cortado** ("55119819181"). As duas formas
+  eram lidas como DDD 55.
+- "+55" explícito agora é sempre o país (`numeroSemDddComDdi`): sobra o número
+  sem DDD, que segue a regra antiga de quem chega sem DDD (assume 11).
+- Numa tabela em que a maioria dos telefones começa com 55 (o 55 é o país),
+  o número de 10 ou 11 dígitos começando com 55 vira **"sem DDD"**: aparece só
+  o número, desmarcado, com aviso. Fora dessa convenção, "55 98191-8127"
+  continua sendo do DDD 55, que existe (Santa Maria, RS).
+- **Telefone sem forma de telefone daqui deixa de virar telefone**
+  (`assinanteValido`): celular tem 9 dígitos e começa com 9, fixo tem 8 e
+  começa de 2 a 9, DDD não tem zero. É isso que pega o cortado: lido como DDD
+  55, "55119819181" daria um celular começando com 1. De quebra, o americano
+  de 11 dígitos ("1 415 555 2671") deixou de virar "(14) …".
+- O zero de discagem a distância ("011 98191-8127", "+55 011 …") sai.
 
 ## Para diagnosticar
 

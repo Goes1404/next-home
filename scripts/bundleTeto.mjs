@@ -83,7 +83,7 @@ const TETOS_KB = {
   // ícones (cartões, cookie) e o cabeçalho que some ao rolar no celular. Os
   // dois moram no layout, então pesam em toda rota do painel.
   "/corretor/(painel)/marketing/impulsionamentos/page": 807,
-  "/corretor/(painel)/importar/page": 807, // 09/10: +1 KB, telefone com 55 que a planilha cortou ("5,51198E+12") não vira número na revisão; o resto da colagem é carregado sob demanda
+  "/corretor/(painel)/importar/page": 808, // 09/10: +2 KB, telefone com 55 que a planilha cortou ("5,51198E+12") ou que veio sem DDD não vira número errado na revisão; o resto da colagem é carregado sob demanda
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
   // 28/09: +3 KB na home e +7 na listagem são o coração de favorito em cada

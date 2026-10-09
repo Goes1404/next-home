@@ -8,6 +8,7 @@ import {
   LIMITE_POR_IMPORTACAO,
   TIPOS_DE_IMAGEM,
   avisoDeNumerosCortados,
+  avisoDeNumerosSemDdd,
   extrairDeImagem,
   extrairDePdf,
   extrairDeTexto,
@@ -138,7 +139,16 @@ async function marcarExistentes(
   lidos: CandidatoLead[],
 ): Promise<CandidatoRevisado[]> {
   // O telefone já chega à revisão escrito do jeito certo: "(11) 98191-8127".
-  const candidatos = lidos.map((c) => ({ ...c, telefone: c.telefone ? formatarTelefoneBr(c.telefone) : c.telefone }));
+  // O que veio sem DDD chega sem DDD ("98191-8127"): pôr o 11 aqui esconderia
+  // que o DDD não estava na planilha.
+  const candidatos = lidos.map((c) => ({
+    ...c,
+    telefone: c.semDdd
+      ? `${c.telefone.slice(0, -4)}-${c.telefone.slice(-4)}`
+      : c.telefone
+        ? formatarTelefoneBr(c.telefone)
+        : c.telefone,
+  }));
   const chaves = candidatos
     .map((c) => c.telefoneE164)
     .filter((t): t is string => Boolean(t));
@@ -197,11 +207,15 @@ export async function analisarTexto(conteudo: string): Promise<ResultadoAnalise>
 }
 
 /**
- * O aviso da leitura e o dos telefones que a planilha cortou: os dois podem
- * valer ao mesmo tempo, e o segundo é o que explica as linhas desmarcadas.
+ * O aviso da leitura e os dos telefones que vieram cortados ou sem DDD: podem
+ * valer ao mesmo tempo, e são eles que explicam as linhas desmarcadas.
  */
 function juntarAvisos(resultado: ResultadoExtracao): string | undefined {
-  return [resultado.aviso, avisoDeNumerosCortados(resultado.candidatos)].filter(Boolean).join(" ") || undefined;
+  return (
+    [resultado.aviso, avisoDeNumerosCortados(resultado.candidatos), avisoDeNumerosSemDdd(resultado.candidatos)]
+      .filter(Boolean)
+      .join(" ") || undefined
+  );
 }
 
 export async function analisarArquivo(formData: FormData): Promise<ResultadoAnalise> {
