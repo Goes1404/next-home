@@ -9729,3 +9729,8 @@ Notas: [[duvida-de-engano-nao-e-pedido-para-parar]],
   pedido: o corretor apagava o marcador toda vez. O pedido à IA proíbe, e o
   que vier com ele é limpo por `trocarNome`. A variável continua no botão de
   variáveis ([[texto-da-lista-conferido-antes-de-sair]]).
+- **Retomar a lista de outro corretor sem o login dele**: o botão filtra pelo
+  corretor da sessão (nem o ADM retoma). `scripts/ops/retomarLista.ts` faz o
+  mesmo que o botão pelo GitHub Actions, disparado por push do id em
+  `scripts/ops/retomar-lista.json` na branch de produção
+  ([[retomar-lista-sem-o-login-do-dono]]).
