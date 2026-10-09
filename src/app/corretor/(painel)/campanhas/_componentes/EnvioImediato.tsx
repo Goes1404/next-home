@@ -127,7 +127,7 @@ export function EnvioImediato({
           setMensagem(e.target.value);
           setConfirmando(false);
         }}
-        placeholder="Ex.: Oi {nome}, abriu uma condição nova que combina com o que você procurava. Posso te contar?"
+        placeholder="Ex.: Oi! Abriu uma condição nova que combina com o que você procurava. Posso te contar?"
         aria-label="Mensagem para todos os leads"
         className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento mt-4 w-full rounded-xl border p-3.5 focus:outline-none"
       />

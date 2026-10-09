@@ -19,7 +19,7 @@ codigo:
   - supabase/migrations/0173_conferencia_do_texto_da_lista.sql
   - scripts/estadoDoCiclo.sql
 created: 2026-10-08
-updated: 2026-10-08
+updated: 2026-10-09
 fonte: medição das listas frias de 04 a 07/10/2026 e calibração com textos reais
 summary: Cada mensagem da lista é reescrita pela IA e só sai se ficar abaixo de 0,70 de semelhança com as mensagens do número nos últimos 30 dias; o teste A/B também é reescrito, mantendo a abertura de cada versão; sem texto próprio, a mensagem espera.
 ---
@@ -143,3 +143,13 @@ massa seguro é pela API oficial.
 - [[aquecimento-do-numero-pelo-uso]]
 - [[fluxo-de-campanhas]]
 - [[MOC — Campanhas e Anti-ban]]
+
+## O texto pré-pronto não traz {nome} (09/10/2026)
+
+A pedido: o corretor apagava o marcador toda vez. A mensagem que já vem
+escrita na criação da lista ficou "Olá! Tudo bem? ...", e as aberturas
+sugeridas pela IA também saem sem `{nome}`: o pedido à IA proíbe o marcador,
+o que vier com ele assim mesmo é limpo por `trocarNome` (sem deixar buraco), e
+as vencedoras antigas usadas de exemplo entram sem ele. O `{nome}` continua
+disponível no botão de variáveis para quem quiser, e continua virando o
+primeiro nome no envio.

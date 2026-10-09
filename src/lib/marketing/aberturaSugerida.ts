@@ -1,4 +1,5 @@
 import { contemValor } from "@/lib/whatsapp/semValores";
+import { trocarNome } from "@/lib/whatsapp/listaDeTransmissao";
 
 /**
  * Duas aberturas de campanha sugeridas pela IA, para o teste A/B (26/09/2026).
@@ -14,8 +15,12 @@ import { contemValor } from "@/lib/whatsapp/semValores";
  * teste compara duas vezes a mesma coisa.
  *
  * A validação vale depois da IA, por código: sem valor (a regra comercial
- * "a IA não fala valores" vale também aqui), curta, com `{nome}` e
- * terminando em pergunta. Sugestão reprovada não chega à tela.
+ * "a IA não fala valores" vale também aqui), curta e terminando em pergunta.
+ * Sugestão reprovada não chega à tela.
+ *
+ * Sem `{nome}` desde 09/10/2026, a pedido: o corretor apagava o marcador de
+ * toda sugestão. Se a IA puser assim mesmo, ele sai sem deixar buraco
+ * (`trocarNome`), e as vencedoras usadas de exemplo também vão sem ele.
  */
 
 export const TETO_ABERTURA = 220;
@@ -41,7 +46,7 @@ export function promptDeAberturas(
 ): string {
   const onde = [p.bairro, p.cidade].filter(Boolean).join(", ");
   const exemplos = vencedoras
-    .map((v) => v.trim())
+    .map((v) => trocarNome(v.trim(), null))
     .filter(Boolean)
     .slice(0, EXEMPLOS_VENCEDORES);
   return [
@@ -51,7 +56,7 @@ export function promptDeAberturas(
     "",
     "Regras (medidas em conversas reais que viraram visita):",
     "- no máximo 2 frases curtas, até 180 caracteres no total;",
-    "- comece pelo nome usando exatamente {nome};",
+    "- não use o nome da pessoa nem o marcador {nome}: a mesma abertura vai para a lista inteira;",
     "- UMA ideia só, e termine com UMA pergunta fácil de responder (sim/não ou escolha);",
     "- sem valor, preço, parcela, desconto ou condição de pagamento;",
     "- sem urgência falsa (\"últimas horas\", \"imperdível\"), sem emoji em excesso, sem markdown;",
@@ -74,7 +79,6 @@ export function problemaDaAbertura(texto: string): string | null {
   const t = texto.trim();
   if (!t) return "vazia";
   if (t.length > TETO_ABERTURA) return "longa demais";
-  if (!t.includes("{nome}")) return "sem o nome";
   if (!/\?\s*[\p{Emoji_Presentation}\p{Extended_Pictographic}]*\s*$/u.test(t)) return "não termina em pergunta";
   if (contemValor(t)) return "fala valor";
   if (/\*\*|^#|^- /m.test(t)) return "markdown";
@@ -85,8 +89,8 @@ export function aberturasDoJson(json: unknown): { a: string; b: string } | null 
   if (!json || typeof json !== "object") return null;
   const { a, b } = json as Record<string, unknown>;
   if (typeof a !== "string" || typeof b !== "string") return null;
-  const limpaA = a.trim();
-  const limpaB = b.trim();
+  const limpaA = trocarNome(a.trim(), null);
+  const limpaB = trocarNome(b.trim(), null);
   if (problemaDaAbertura(limpaA) || problemaDaAbertura(limpaB)) return null;
   if (limpaA.toLowerCase() === limpaB.toLowerCase()) return null;
   return { a: limpaA, b: limpaB };

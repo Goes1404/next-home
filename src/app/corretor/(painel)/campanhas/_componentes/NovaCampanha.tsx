@@ -119,8 +119,12 @@ function horarioEstaNaJanelaSegura(valor: string): boolean {
   return !domingo && hora >= 9 && hora <= 20;
 }
 
+/*
+ * Sem `{nome}` (09/10/2026): o corretor apagava o marcador toda vez. Quem
+ * quiser o nome põe pelo botão de variáveis.
+ */
 const MENSAGEM_PADRAO =
-  "Olá, {nome}! Tudo bem? Lembrei do seu interesse e acabou de sair uma condição nova no {imovel}, em {bairro}. Quer que eu te mande os detalhes?";
+  "Olá! Tudo bem? Lembrei do seu interesse e acabou de sair uma condição nova no {imovel}, em {bairro}. Quer que eu te mande os detalhes?";
 
 const CONVITE_COM_HORARIOS = " Se quiser conhecer pessoalmente, tenho {horarios}. Qual fica melhor?";
 

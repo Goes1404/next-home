@@ -9725,3 +9725,7 @@ Notas: [[duvida-de-engano-nao-e-pedido-para-parar]],
 - **Prompt v49.** Sem chave de LLM aqui, o efeito na conversa só se mede na
   próxima dúvida real: `ia_interacoes.contexto->'jogada'->>'tipo' =
   'esclarecer_contato'`.
+- **O texto pré-pronto da lista e as aberturas da IA não trazem `{nome}`**, a
+  pedido: o corretor apagava o marcador toda vez. O pedido à IA proíbe, e o
+  que vier com ele é limpo por `trocarNome`. A variável continua no botão de
+  variáveis ([[texto-da-lista-conferido-antes-de-sair]]).
