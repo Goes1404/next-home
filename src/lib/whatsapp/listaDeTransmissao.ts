@@ -14,7 +14,7 @@
  * 4. A PREVISÃO de quando a lista termina, que a tela mostra no lugar de
  *    "uma a cada minuto".
  */
-import { momentoEmSaoPaulo } from "./antiBan";
+import { INTERVALO_MAXIMO_SEGUNDOS, INTERVALO_MINIMO_SEGUNDOS, momentoEmSaoPaulo } from "./antiBan";
 import { precoAPartirDe } from "@/lib/format";
 import type { Empreendimento } from "@/lib/types";
 
@@ -219,8 +219,8 @@ export const MOTIVO_TELEFONE_INVALIDO = "Telefone do cadastro não é um número
 
 // ----------------------------------------------------------------- previsão
 
-/** Intervalo médio entre duas mensagens, no meio dos 35-75s. */
-export const SEGUNDOS_MEDIOS_ENTRE_ENVIOS = 55;
+/** Intervalo médio entre duas mensagens, no meio do sorteio (`antiBan.ts`). */
+export const SEGUNDOS_MEDIOS_ENTRE_ENVIOS = (INTERVALO_MINIMO_SEGUNDOS + INTERVALO_MAXIMO_SEGUNDOS) / 2;
 
 /**
  * Quando a fila deve terminar, contando a janela do dia e a cota.

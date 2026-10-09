@@ -39,8 +39,16 @@ export type ConfigAntiBan = {
  * `campaignQueue` arrastaria o `llm.ts` (variação por IA) para o grafo de
  * quem só quer um número.
  */
-export const INTERVALO_MINIMO_SEGUNDOS = 35;
-export const INTERVALO_MAXIMO_SEGUNDOS = 75;
+/*
+ * 1min30 a 2min desde 09/10/2026, a pedido do dono da conta ("não tem
+ * problema demorar mais"): eram 35–75s. Continua sorteado a cada envio
+ * (no banco, `consumir_cota_campanha_espacada`), porque intervalo exato e
+ * sempre igual também é padrão de robô. O limite diário não mudou.
+ */
+export const INTERVALO_MINIMO_SEGUNDOS = 90;
+export const INTERVALO_MAXIMO_SEGUNDOS = 120;
+/** O mesmo intervalo, para as telas. Um teste confere que bate com os números. */
+export const INTERVALO_EM_PALAVRAS = "1min30 a 2 minutos";
 
 export const CONFIG_PADRAO: ConfigAntiBan = {
   horaInicio: 9,

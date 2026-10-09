@@ -1,0 +1,45 @@
+# Confere se uma lista de transmissão está saindo (scripts/ops/conferirLista.ts).
+#
+# Só LÊ o banco. Roda aqui porque a chave de serviço mora nos secrets do
+# repositório, e o cron do disparo não deixa rastro no log da Vercel. O
+# repositório é público, então o script imprime só agregados: contagens,
+# horários e intervalos, nunca telefone, nome ou texto de mensagem.
+#
+# Dispara no horário agendado (o primeiro: 09/10, 9h20 em São Paulo), quando
+# o pedido muda na branch de produção, ou à mão. O agendamento só vale na
+# branch padrão do repositório, que é a de produção.
+
+name: Conferir lista de transmissão
+
+on:
+  schedule:
+    - cron: "20 12 9 10 *"
+  push:
+    branches: ["claude/modernizar-plataforma-imobiliaria-2tm13q"]
+    paths:
+      - "scripts/ops/conferir-lista.json"
+  workflow_dispatch:
+
+concurrency:
+  group: conferir-lista
+  cancel-in-progress: false
+
+jobs:
+  conferir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Conferir a lista
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        run: npx tsx --conditions=react-server scripts/ops/conferirLista.ts

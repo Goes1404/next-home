@@ -34,6 +34,7 @@ import {
 } from "@/lib/types";
 import { preencherTemplate } from "@/lib/mensagem";
 import { VARIAVEIS_DA_MENSAGEM } from "@/lib/whatsapp/listaDeTransmissao";
+import { INTERVALO_EM_PALAVRAS } from "@/lib/whatsapp/antiBan";
 import { criarTemplate } from "@/app/corretor/actions";
 import {
   criarCampanha,
@@ -1146,8 +1147,8 @@ export function NovaCampanha({
                   id="janela-segura-campanha"
                   className="text-fluid-xs text-apoio mt-1.5"
                 >
-                  Segunda a sábado, entre 9h e 20h59. A pausa de 35–75 segundos continua
-                  valendo.
+                  Segunda a sábado, entre 9h e 20h59. A pausa de {INTERVALO_EM_PALAVRAS} entre as
+                  mensagens continua valendo.
                 </p>
               </div>
             )}
@@ -1169,7 +1170,7 @@ export function NovaCampanha({
 
           <p className="text-fluid-xs text-apoio flex items-start gap-2">
             <Shield aria-hidden className="text-ok mt-0.5 h-4 w-4 shrink-0" />
-            As mensagens saem uma a uma, com 35 a 75 segundos entre elas e só em horário comercial
+            As mensagens saem uma a uma, com {INTERVALO_EM_PALAVRAS} entre elas e só em horário comercial
             — é o que mantém seu número seguro. Quem pedir para sair no meio do caminho não recebe.
           </p>
         </div>

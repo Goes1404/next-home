@@ -25,6 +25,7 @@ summary: Procedimentos de diagnóstico — sintoma → onde olhar, na ordem cert
 | migration nova | [[list-migrations-esta-dessincronizado]] antes de aplicar |
 | ligar e-mail dos portais ou Meta Ads | [[ligar-entradas-de-leads]] |
 | retomar a lista de outro corretor (sem o login dele) | [[retomar-lista-sem-o-login-do-dono]] |
+| a lista está saindo? com que intervalo? (sem acesso ao banco) | [[retomar-lista-sem-o-login-do-dono]] (conferirLista) |
 - [[rodada-de-26-09-parte-3]] — instalar para outro cliente (`docs/INSTALAR-NOVO-CLIENTE.md`) e conectar o Gmail do corretor (26/09)
 
 ## Relacionados

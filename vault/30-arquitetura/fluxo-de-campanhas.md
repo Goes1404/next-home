@@ -27,7 +27,7 @@ summary: Criação monta a fila com agendado_para (e guarda o critério); a list
 - O início opcional vira o primeiro `agendado_para` da própria fila; não há
   tabela nem cron paralelo. Action valida futuro, fuso de Brasília e janela
   de segunda a sábado, 9h–20h59 ([[agendamento-comeca-na-propria-fila]]).
-- Fila gravada com `agendado_para` espaçado (35-75s) e guarda de
+- Fila gravada com `agendado_para` espaçado (1min30–2min desde 09/10/2026; era 35-75s) e guarda de
   monotonicidade ([[e2e-contra-producao|flake didático]]).
 - **Sem chamada de IA na criação** — a reescrita acontece no ENVIO
   (`variarSemRepetir`), um item por vez, e só sai texto abaixo de 0,70 de

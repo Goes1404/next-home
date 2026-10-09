@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { INTERVALO_EM_PALAVRAS } from "@/lib/whatsapp/antiBan";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import Link from "next/link";
 import { Clock, Trash2, Zap } from "lucide-react";
@@ -34,7 +35,7 @@ function horaDeBrasilia(iso: string): string {
 
 /**
  * A frase da previsão (roadmap das listas, Fase 1). A tela dizia "saem uma
- * a cada minuto", mas o intervalo real é de 35 a 75 segundos, e o que o
+ * a cada minuto", mas o intervalo real é o sorteio de `antiBan.ts`, e o que o
  * corretor quer saber é QUANDO termina.
  */
 function frasePrincipal(status: StatusDisparo): string {
@@ -50,7 +51,7 @@ function frasePrincipal(status: StatusDisparo): string {
     const hoje = n - status.continuaAmanha;
     return `Hoje saem ${hoje} mensagem${hoje === 1 ? "" : "s"}, até por volta das ${horaDeBrasilia(status.terminaEm)}; as outras ${status.continuaAmanha} continuam no próximo dia, sozinhas.`;
   }
-  return `${n} mensagem${plural} na fila — saem sozinhas, com 35 a 75 segundos entre uma e outra.`;
+  return `${n} mensagem${plural} na fila — saem sozinhas, com ${INTERVALO_EM_PALAVRAS} entre uma e outra.`;
 }
 
 export function StatusFila({
@@ -146,7 +147,7 @@ export function StatusFila({
       }
       await atualizar();
       avisar(
-        `Liberado: ${resultado.mensagens} mensagem${resultado.mensagens === 1 ? "" : "s"} saindo agora, com 35 a 75 segundos entre uma e outra. Depois disso as listas voltam ao horário comercial.`,
+        `Liberado: ${resultado.mensagens} mensagem${resultado.mensagens === 1 ? "" : "s"} saindo agora, com ${INTERVALO_EM_PALAVRAS} entre uma e outra. Depois disso as listas voltam ao horário comercial.`,
       );
     });
   }

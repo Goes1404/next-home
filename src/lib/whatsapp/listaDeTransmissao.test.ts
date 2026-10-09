@@ -118,7 +118,8 @@ describe("previsão de término (Fase 1)", () => {
     const p = previsaoDeTermino({ pendentes: 10, saldoHoje: 30, agora, expediente });
     expect(p.terminaHoje).toBe(true);
     expect(p.continuaAmanha).toBe(0);
-    expect(p.terminaEm!.getTime() - agora.getTime()).toBe(10 * 55 * 1000);
+    // 10 mensagens × a média do sorteio de 90–120s (09/10/2026).
+    expect(p.terminaEm!.getTime() - agora.getTime()).toBe(10 * 105 * 1000);
   });
 
   it("o que passa do saldo continua no próximo dia", () => {

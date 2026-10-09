@@ -356,3 +356,32 @@ describe("horário dos avisos", () => {
     }
   });
 });
+
+describe("intervalo entre mensagens (09/10/2026)", () => {
+  it("é de 1min30 a 2min, a pedido: \"não tem problema demorar mais\"", async () => {
+    const { INTERVALO_MINIMO_SEGUNDOS, INTERVALO_MAXIMO_SEGUNDOS } = await import("./antiBan");
+    expect(INTERVALO_MINIMO_SEGUNDOS).toBe(90);
+    expect(INTERVALO_MAXIMO_SEGUNDOS).toBe(120);
+  });
+
+  it("o texto das telas diz o mesmo que os números", async () => {
+    const { INTERVALO_MINIMO_SEGUNDOS, INTERVALO_MAXIMO_SEGUNDOS, INTERVALO_EM_PALAVRAS } = await import("./antiBan");
+    const emPalavras = (s: number) =>
+      s % 60 === 0 ? `${s / 60} minuto${s === 60 ? "" : "s"}` : `${Math.floor(s / 60)}min${String(s % 60).padStart(2, "0")}`;
+    expect(INTERVALO_EM_PALAVRAS).toBe(`${emPalavras(INTERVALO_MINIMO_SEGUNDOS)} a ${emPalavras(INTERVALO_MAXIMO_SEGUNDOS)}`);
+  });
+
+  it("nenhuma tela das listas promete o intervalo antigo", async () => {
+    const { readFileSync, readdirSync } = await import("node:fs");
+    const pasta = "src/app/corretor/(painel)/campanhas/_componentes";
+    const comTextoVelho = readdirSync(pasta)
+      .filter((a) => a.endsWith(".tsx"))
+      .filter((a) => /35 ?(a|–|-) ?75 ?(segundos|s\b)/.test(readFileSync(`${pasta}/${a}`, "utf8")));
+    expect(comTextoVelho).toEqual([]);
+  });
+
+  it("a previsão de término usa a média do sorteio", async () => {
+    const { SEGUNDOS_MEDIOS_ENTRE_ENVIOS } = await import("./listaDeTransmissao");
+    expect(SEGUNDOS_MEDIOS_ENTRE_ENVIOS).toBe(105);
+  });
+});

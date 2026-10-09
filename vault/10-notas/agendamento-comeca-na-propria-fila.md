@@ -10,7 +10,7 @@ codigo:
   - src/app/corretor/(painel)/campanhas/acoes.ts
   - src/lib/whatsapp/campaignQueue.ts
 created: 2026-09-11
-updated: 2026-09-11
+updated: 2026-10-09
 fonte: pedido do usuário em 11/09/2026 + leitura do dispatcher
 summary: Agendar não cria um relógio paralelo; o primeiro agendado_para nasce no instante escolhido e os demais preservam janela, ordem e intervalo anti-ban.
 ---
@@ -23,7 +23,7 @@ Brasília. Um agendamento explícito precisa estar no futuro, entre 9h e 20h59,
 de segunda a sábado. A interface orienta, mas a Server Action valida novamente.
 
 `montarFilaCampanha` recebe `iniciarEm`: o primeiro `agendado_para` nasce no
-instante escolhido e os seguintes acumulam o intervalo humanizado de 35–75s.
+instante escolhido e os seguintes acumulam o intervalo humanizado (1min30–2min desde 09/10/2026; era 35–75s).
 Se a lista atravessar o fim da janela, o cálculo já existente empurra o
 restante para a próxima janela permitida.
 

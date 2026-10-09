@@ -9734,3 +9734,8 @@ Notas: [[duvida-de-engano-nao-e-pedido-para-parar]],
   mesmo que o botão pelo GitHub Actions, disparado por push do id em
   `scripts/ops/retomar-lista.json` na branch de produção
   ([[retomar-lista-sem-o-login-do-dono]]).
+- **O intervalo entre mensagens passou para 1min30–2min** (era 35–75s), a
+  pedido: o piso e o teto vão do código para o banco
+  (`consumir_cota_campanha_espacada`), então mudar não precisa de migration.
+  O limite diário ficou como estava
+  ([[espacamento-anti-ban-so-existia-no-papel]]).

@@ -7,6 +7,9 @@ status: growing
 custou: baixo
 codigo:
   - scripts/ops/retomarLista.ts
+  - scripts/ops/conferirLista.ts
+  - scripts/ops/conferir-lista.json
+  - .github/workflows/conferir-lista.yml
   - scripts/ops/retomar-lista.json
   - .github/workflows/retomar-lista.yml
   - src/app/corretor/(painel)/campanhas/acoes.ts
@@ -46,6 +49,19 @@ Retomar de noite é seguro: o disparador só manda das 9h às 20h59 (e no
 expediente do corretor). A exceção é a lista marcada para "qualquer hora"
 (`ignorar_janela` ou `janela_liberada_ate` no futuro): fora da janela o script
 se recusa a retomá-la, porque ela mandaria de madrugada.
+
+## Conferir se a lista está saindo
+
+`scripts/ops/conferirLista.ts` (workflow **Conferir lista de transmissão**)
+só lê: estado da lista, fila por status, quantas saíram hoje, o intervalo REAL
+entre envios (`enviado_em` contra o anterior), a maior semelhança de texto,
+motivos de erro e o número do corretor. Roda no horário agendado, por push em
+`scripts/ops/conferir-lista.json` ou à mão.
+
+O repositório é PÚBLICO e o log do Actions também: os dois scripts imprimem
+só agregados, e motivo de erro do provedor sai com os números mascarados.
+O resumo também vai como anotação da execução
+(`check-runs/<id>/annotations`), que dá para ler sem baixar o log.
 
 ## Relacionadas
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { fraseSemWhatsapp } from "@/lib/whatsapp/pausaAutomatica";
+import { INTERVALO_EM_PALAVRAS } from "@/lib/whatsapp/antiBan";
 import { listaRecemCriada } from "./listaRecemCriada";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
@@ -29,8 +30,8 @@ import {
  *  2. **O aviso aparece quando é de madrugada, não sempre.** Alerta que
  *     está sempre aceso vira paisagem (mesma régua de `situacaoDaTarefa`);
  *     este só acende quando o horário é de fato ruim.
- *  3. **Nada além da janela é afrouxado.** O espaçamento de 35-75s entre
- *     mensagens, a cota diária da curva de aquecimento e o disjuntor de
+ *  3. **Nada além da janela é afrouxado.** O espaçamento sorteado entre
+ *     mensagens (`antiBan.ts`), a cota diária da curva de aquecimento e o disjuntor de
  *     falhas continuam valendo. São eles que protegem o NÚMERO; a janela
  *     protege a reputação junto a quem recebe.
  */
@@ -106,7 +107,7 @@ export function EnvioImediato({
           empreendimentoNome: null,
           totalLeads: resultado.totalLeads,
         }),
-        `Saindo para ${resultado.totalLeads} lead${resultado.totalLeads === 1 ? "" : "s"}, com 35 a 75 segundos entre uma mensagem e outra — independente do horário.` +
+        `Saindo para ${resultado.totalLeads} lead${resultado.totalLeads === 1 ? "" : "s"}, com ${INTERVALO_EM_PALAVRAS} entre uma mensagem e outra — independente do horário.` +
           fraseSemWhatsapp(resultado.semWhatsapp),
       );
     });
