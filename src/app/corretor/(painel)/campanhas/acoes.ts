@@ -380,11 +380,6 @@ export type ParametrosDaLista = {
   iniciarEm?: string | null;
   /** Só para `filtro: "selecionados"` — os leads escolhidos um a um. */
   leadIds?: string[];
-  /**
-   * Dispara em qualquer horário, inclusive madrugada e domingo (0058).
-   * Exceção pedida caso a caso. Espaçamento, cota e disjuntor continuam.
-   */
-  ignorarJanela?: boolean;
   /** Canal ou anúncio de origem (Fase 3). O servidor refaz o recorte. */
   recorte?: RecorteDeOrigem | null;
   /** URLs de fotos/plantas do imóvel, conferidas contra o cadastro (0155). */
@@ -421,7 +416,7 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
   if (inicio && inicio.getTime() < Date.now() - 60_000) {
     return { erro: "O horário escolhido já passou. Escolha um horário futuro." };
   }
-  if (inicio && !params.ignorarJanela && !dentroDaJanela(inicio)) {
+  if (inicio && !dentroDaJanela(inicio)) {
     return {
       erro: "Agende entre 9h e 20h59, de segunda a sábado, no horário de Brasília.",
     };
@@ -517,7 +512,8 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
       mensagem_base_b: textoB,
       total_leads: elegiveis.length,
       status: "em_andamento",
-      ignorar_janela: params.ignorarJanela ?? false,
+      // Sempre false: o botão de enviar a qualquer hora saiu (09/10/2026).
+      ignorar_janela: false,
       criterio: criterioDe(params, imovelSlug),
       viva,
       viva_ate: viva ? new Date(Date.now() + DIAS_DA_LISTA_VIVA * 86_400_000).toISOString() : null,
@@ -539,7 +535,6 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
     mensagemBase: params.mensagemBase,
     empreendimentoNome: imovel?.nome,
     contexto,
-    ignorarJanela: params.ignorarJanela,
     mensagemBaseB: textoB,
     iniciarEm: inicio ?? undefined,
   });
@@ -1176,44 +1171,6 @@ export async function processarFilaAgora(): Promise<ResultadoProcessarFila> {
     continuaSozinha: resultado.deveContinuar,
     diagnostico: resultado.diagnostico,
   };
-}
-
-export type ResultadoEnvioImediato = ResultadoCriarCampanha;
-
-/**
- * Dispara UMA mensagem para todos os leads, a qualquer hora.
- *
- * Por baixo não há caminho novo: monta uma lista comum marcada com
- * `ignorar_janela` (0058) e acende a mesma corrente de disparo. O que muda é
- * a janela, e só ela. Sem imóvel: variáveis do imóvel na mensagem são
- * recusadas (`variaveisSemValor`) em vez de virar texto genérico.
- */
-export async function enviarAgoraParaTodosOsLeads(params: {
-  mensagemBase: string;
-}): Promise<ResultadoEnvioImediato> {
-  const corretor = await getCorretorLogado();
-  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
-
-  const mensagemBase = params.mensagemBase.trim();
-  if (mensagemBase.length < 10) {
-    return { erro: "Escreva a mensagem que vai para os leads (pelo menos uma frase)." };
-  }
-
-  const agora = new Date().toLocaleString("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  return criarCampanha({
-    titulo: `Envio imediato · ${agora}`,
-    empreendimentoId: null,
-    filtro: "todos",
-    mensagemBase,
-    ignorarJanela: true,
-  });
 }
 
 export type ResultadoLiberacao =

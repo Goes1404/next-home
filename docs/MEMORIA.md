@@ -9757,3 +9757,14 @@ Nota: [[lateral-recolhe-e-rola-sozinha]].
 - **Site:** cabeçalho do computador marca a página atual (`aria-current`, o
   CSS já existia); a vitrine ganhou menu no celular.
 - Peso: +8 a +10 KB em toda rota do painel (vai no layout); tetos subiram.
+
+## O botão de enviar para todos a qualquer hora saiu (09/10/2026)
+
+- **"Enviar agora para todos os leads"** (`EnvioImediato`, 0058) criava uma
+  lista com a carteira inteira marcada `ignorar_janela`, saindo inclusive de
+  madrugada. Era de teste e saiu a pedido, junto com a ação
+  `enviarAgoraParaTodosOsLeads`. `criarCampanha` não aceita mais
+  `ignorarJanela` do navegador: grava sempre `false`. Conferido no banco:
+  só 5 listas concluídas tinham a marca, nenhuma com pendente.
+- Ficam "Liberar envio agora" (solta uma vez a fila que espera o horário,
+  com o intervalo valendo) e "Enviar agora" (empurra a fila no horário).

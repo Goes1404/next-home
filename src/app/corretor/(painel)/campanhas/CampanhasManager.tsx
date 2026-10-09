@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import type { Empreendimento, TemplateMensagem } from "@/lib/types";
-import { EnvioImediato } from "./_componentes/EnvioImediato";
 import { HistoricoCampanhas } from "./_componentes/HistoricoCampanhas";
 import { NovaCampanha, type InicialDaLista } from "./_componentes/NovaCampanha";
 import { StatusFila } from "./_componentes/StatusFila";
@@ -63,17 +62,6 @@ export function CampanhasManager({
         corretor={corretor}
         aoCriar={(campanha, aviso) => {
           setCampanhas((prev) => [campanha, ...prev.filter((c) => c.status !== "rascunho" || c.id !== campanha.id)]);
-          avisar(aviso);
-          void recarregar();
-        }}
-      />
-
-      {/* Depois do assistente, e não antes: o caminho normal é criar uma
-          lista escolhendo o público. Este é o atalho para a carteira
-          inteira agora. */}
-      <EnvioImediato
-        aoEnviar={(campanha, aviso) => {
-          setCampanhas((prev) => [campanha, ...prev]);
           avisar(aviso);
           void recarregar();
         }}
