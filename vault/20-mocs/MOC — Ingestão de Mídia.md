@@ -4,7 +4,7 @@ tags: [moc, midia]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-24
+updated: 2026-10-09
 summary: Upload, PDF de construtora, Google Drive, storage, sharp.
 ---
 # Ingestão de Mídia — Map of Content
@@ -31,6 +31,7 @@ Três origens (upload, PDF, Drive), um caminho único de gravação.
 - [[catalogo-conferido-imagem-por-imagem]] — 44 plantas sem metragem, dormitórios chutados, fotos de outros prédios no APV e no Copa 18; conferido imagem por imagem (0137/0138, 02/10)
 - [[videos-e-tours-so-do-canal-da-construtora]] — 18 imóveis sem vídeo nem tour caíram para 4; só canal oficial, conferido pelo oEmbed (0141, 02/10)
 - [[banheiros-e-vagas-pelo-apto-vc]] — 55 plantas sem banheiro e 40 sem vaga caíram para 12 e 8; só número que não contradiz as suítes (0142, 02/10)
+- [[otimizador-de-imagens-tem-cota-no-hobby]] — fotos quebradas por 402 do otimizador da Vercel; 79 de 1.076 publicadas passam de 500 KB (09/10)
 
 ## Relacionados
 - [[MOC — Front Público]] · [[MOC — Banco de Dados]] · [[Home]]

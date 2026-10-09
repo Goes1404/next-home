@@ -9810,3 +9810,31 @@ Nota: [[aquecimento-do-numero-pelo-uso]].
   para baixo). A lista do Ramos (número de 07/10 13h54) parou às 9h30 de
   09/10 com 15 enviadas; em 10/10 o teto continua 15 até 13h54 e só então
   sobe (para 23, pelo maior dia da semana × 1,5).
+
+## As fotos quebravam: a cota do otimizador de imagens acabou (09/10/2026)
+
+Nota: [[otimizador-de-imagens-tem-cota-no-hobby]].
+
+- **Foto quebrada com o arquivo respondendo 200 no Storage não é o arquivo.**
+  As fotos do Dom apareciam só com o texto alternativo, e `/_next/image`
+  respondia 402 com `x-vercel-error: OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED`:
+  a cota mensal de otimização do Hobby acabou. A variante já em cache abre, a
+  nova quebra, então parte das fotos aparecia e parte não, no painel e no site.
+- **Hoje `images.unoptimized: true`**: a foto sai direto do Storage. Custo
+  medido: mediana de 134 KB entre as 1.076 publicadas, mas 79 passam de
+  500 KB e 34 de 1 MB. Reduzi-las é dado de produção (arquivo novo + URL em
+  `midias`) e espera decisão.
+- **Imagem de `public/` precisa chegar leve**: nada a reduz no caminho. O
+  fundo do login era JPEG de 757 KB e virou WebP de 78 KB. Guarda:
+  `imagensSemOtimizador.test.ts` (teto de 300 KB e `unoptimized` mantido).
+- O `/render/image` do Supabase respondeu neste projeto, mas a organização
+  está no plano free e o recurso é do Pro: não depender dele.
+
+## O ícone da aba era o do Next.js (09/10/2026)
+
+Nota: [[identidade-da-marca-para-o-google]].
+
+- `src/app/favicon.ico` era o padrão do `create-next-app` (md5 `c30c7d42…`).
+  Agora `favicon.ico`, `icon.png` (192) e `apple-icon.png` (180, opaco) saem
+  de `node scripts/marca/gerarIcones.mjs`, com o símbolo da logo sobre fundo
+  branco arredondado: a casa da logo é espaço vazio e sumiria na aba escura.

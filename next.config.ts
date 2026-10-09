@@ -39,10 +39,19 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    formats: ["image/avif", "image/webp"],
-    // Larguras alinhadas aos breakpoints reais do layout, evitando gerar
-    // variantes que nunca são pedidas.
-    deviceSizes: [390, 640, 828, 1080, 1280, 1920, 2560],
+    /*
+     * Sem o otimizador de imagens da Vercel (09/10/2026). No plano Hobby ele
+     * tem cota mensal de conversões, e quando ela acaba a Vercel responde
+     * 402 `OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED` para toda variante que
+     * ainda não estava em cache: no painel e no site, a foto aparecia
+     * quebrada, só com o texto alternativo, e as que já tinham sido vistas
+     * continuavam abrindo. Era uma falha calada e parcial.
+     *
+     * As fotos do catálogo já são pequenas (média de 83 KB, ~1080 px), então
+     * servir o arquivo direto do Storage custa pouco e nunca quebra. Imagem
+     * nova em `public/` precisa chegar já leve: nada a reduz no caminho.
+     */
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" },
       // Thumbnails oficiais do YouTube — a facade do PlayerVideo mostra a

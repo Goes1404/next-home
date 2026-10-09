@@ -39,7 +39,7 @@ export default function EntrarPage() {
           coluna da esquerda. */}
       <section className="absolute inset-0 -z-10 overflow-hidden lg:relative lg:z-0 lg:flex lg:items-center">
         <Image
-          src="/img/burj-login-bg.jpg"
+          src="/img/burj-login-bg.webp"
           alt=""
           fill
           priority
