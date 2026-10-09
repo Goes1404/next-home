@@ -246,6 +246,8 @@ function Importador({
   const [etapa, setEtapa] = useState<Etapa>("entrada");
   const [modo, setModo] = useState<"colar" | "arquivo" | "foto">("colar");
   const [texto, setTexto] = useState("");
+  /** Quantos telefones o último colar trouxe inteiros pela versão em HTML da planilha. */
+  const [recuperadosAoColar, setRecuperadosAoColar] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
   const [metodo, setMetodo] = useState<ResultadoAnalise["metodo"] | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -557,10 +559,43 @@ function Importador({
             id="lista"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
+            onPaste={(e) => {
+              /*
+               * Celular com 55 copiado da planilha chega como "5,51198E+12", sem
+               * os últimos dígitos. A cópia traz o número inteiro na versão em
+               * HTML, e é ela que vale quando bate com o texto (ver
+               * `coladoDaPlanilha.ts`). O módulo só é baixado quando a colagem
+               * tem a notação: o resto cola do jeito de sempre.
+               */
+              const plano = e.clipboardData.getData("text/plain");
+              const html = e.clipboardData.getData("text/html");
+              setRecuperadosAoColar(0);
+              if (!html || !/\d[.,]\d+[eE][+]?\d{1,2}/.test(plano)) return;
+              e.preventDefault();
+              const campo = e.currentTarget;
+              const inicio = campo.selectionStart;
+              const fim = campo.selectionEnd;
+              import("@/lib/leads/coladoDaPlanilha")
+                .then(({ recuperarNumerosColados }) => recuperarNumerosColados(plano, html))
+                // Sem o módulo (rede caiu), cola o texto como veio: a importação marca as linhas.
+                .catch(() => ({ texto: plano, recuperados: 0 }))
+                .then((recuperado) => {
+                  setRecuperadosAoColar(recuperado.recuperados);
+                  const colar = recuperado.texto.replace(/\r\n?/g, "\n");
+                  setTexto((atual) => atual.slice(0, inicio) + colar + atual.slice(fim));
+                });
+            }}
             rows={9}
             placeholder={"nome;telefone;email\nAna Prado;(11) 99123-4567;ana@exemplo.com"}
             className={cn(CAMPO, "font-mono text-[13px]")}
           />
+          {recuperadosAoColar > 0 && (
+            <p role="status" className="text-fluid-xs text-ok mt-2">
+              {recuperadosAoColar === 1
+                ? "1 telefone que a planilha mostrava cortado (como 5,51198E+12) veio com o número inteiro."
+                : `${recuperadosAoColar} telefones que a planilha mostrava cortados (como 5,51198E+12) vieram com o número inteiro.`}
+            </p>
+          )}
           <p className="text-fluid-xs text-tenue mt-2">
             Funciona com tabela colada do Excel ou do Google Planilhas, CSV, ou uma lista solta —
             neste último caso a IA lê o texto. Também dá para colar só o link da planilha do
@@ -727,9 +762,15 @@ async function lerVariasFotos(
     };
   }
 
+  // Print de planilha mostra o celular com 55 como "5,51198E+12": o número
+  // inteiro não está na imagem, só no arquivo da planilha.
+  const cortados = candidatos.filter((c) => c.telefoneCortado).length;
   const avisos = [
     algumaComIa ? "Lido por IA a partir das fotos: confira nome e telefone de cada linha antes de confirmar." : null,
     semNada.length > 0 ? `Sem telefone legível em: ${semNada.join(", ")}.` : null,
+    cortados > 0
+      ? `${cortados === 1 ? "1 telefone aparece cortado" : `${cortados} telefones aparecem cortados`} na foto (como 5,51198E+12), sem os últimos dígitos. Digite o número na linha ou envie a planilha em .xlsx.`
+      : null,
   ].filter(Boolean);
 
   return { candidatos, metodo: algumaComIa ? "ia" : undefined, aviso: avisos.join(" ") || undefined };
@@ -894,6 +935,7 @@ function ListaRevisao({
               )}
               <CampoLinha
                 rotulo="Telefone"
+                placeholder={linha.telefoneCortado ? "Digite o número" : undefined}
                 valor={linha.telefone}
                 onChange={(v) => alterar(i, "telefone", v)}
                 // Número digitado de qualquer jeito sai escrito certo ao sair do campo.
@@ -929,7 +971,9 @@ function ListaRevisao({
               */}
             {!linha.telefone ? (
               <span className="text-alerta bg-alerta-lavado border-alerta-linha col-start-2 h-fit w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium sm:col-start-3 sm:mt-2 sm:justify-self-end">
-                falta o telefone
+                {/* O número que a planilha cortou ("5,51198E+12") não é falta do
+                    cadastro: o aviso no topo explica como trazer o inteiro. */}
+                {linha.telefoneCortado ? "número cortado" : "falta o telefone"}
               </span>
             ) : linha.jaExiste ? (
               <span className="text-alerta bg-alerta-lavado border-alerta-linha col-start-2 h-fit w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium sm:col-start-3 sm:mt-2 sm:justify-self-end">
@@ -945,11 +989,13 @@ function ListaRevisao({
 
 function CampoLinha({
   rotulo,
+  placeholder,
   valor,
   onChange,
   onBlur,
 }: {
   rotulo: string;
+  placeholder?: string;
   valor: string;
   onChange: (v: string) => void;
   onBlur?: (v: string) => void;
@@ -961,7 +1007,7 @@ function CampoLinha({
         value={valor}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur ? (e) => onBlur(e.target.value) : undefined}
-        placeholder={rotulo}
+        placeholder={placeholder ?? rotulo}
         className="border-linha bg-campo text-corpo focus:border-acento text-fluid-xs min-h-11 w-full rounded-lg border px-3 outline-none transition-colors"
       />
     </label>

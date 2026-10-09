@@ -7,6 +7,7 @@ import { getCorretorLogado, souGestor } from "@/lib/corretorSessao";
 import {
   LIMITE_POR_IMPORTACAO,
   TIPOS_DE_IMAGEM,
+  avisoDeNumerosCortados,
   extrairDeImagem,
   extrairDePdf,
   extrairDeTexto,
@@ -191,8 +192,16 @@ export async function analisarTexto(conteudo: string): Promise<ResultadoAnalise>
   return {
     candidatos: await marcarExistentes(supabase, resultado.candidatos),
     metodo: resultado.metodo === "nenhum" ? "tabela" : resultado.metodo,
-    aviso: resultado.aviso,
+    aviso: juntarAvisos(resultado),
   };
+}
+
+/**
+ * O aviso da leitura e o dos telefones que a planilha cortou: os dois podem
+ * valer ao mesmo tempo, e o segundo é o que explica as linhas desmarcadas.
+ */
+function juntarAvisos(resultado: ResultadoExtracao): string | undefined {
+  return [resultado.aviso, avisoDeNumerosCortados(resultado.candidatos)].filter(Boolean).join(" ") || undefined;
 }
 
 export async function analisarArquivo(formData: FormData): Promise<ResultadoAnalise> {
@@ -257,7 +266,7 @@ export async function analisarArquivo(formData: FormData): Promise<ResultadoAnal
   return {
     candidatos: await marcarExistentes(supabase, resultado.candidatos),
     metodo: resultado.metodo === "nenhum" ? "tabela" : resultado.metodo,
-    aviso: resultado.aviso,
+    aviso: juntarAvisos(resultado),
   };
 }
 

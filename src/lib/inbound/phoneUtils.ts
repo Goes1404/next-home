@@ -1,11 +1,67 @@
 /**
+ * Telefone guardado como NÚMERO numa planilha chega disfarçado de dois jeitos.
+ *
+ * - Notação científica: "5,51198E+12", "5.511981918127E+12". O Excel e o
+ *   Google Planilhas mostram assim todo número de 12 dígitos ou mais, ou seja,
+ *   todo celular com o 55 na frente. Copiar, colar ou exportar em CSV leva o
+ *   que a planilha MOSTRA, e "5,51198E+12" já não tem os sete últimos dígitos
+ *   em lugar nenhum. Lidos como telefone, os dígitos que sobram viravam
+ *   "(11) 5511-9812": um número que existe e é de outra pessoa.
+ * - Decimal: "5511981918127.0", de exportação feita por programa.
+ *
+ * Devolve os dígitos quando o valor traz o número inteiro, `cortado` quando a
+ * planilha apagou dígitos, e `null` quando o valor não é nenhum dos dois.
+ */
+export type NumeroDePlanilha = { tipo: "inteiro"; digitos: string } | { tipo: "cortado"; original: string };
+
+const RE_CIENTIFICA = /^\+?(\d+)(?:[.,](\d+))?[eE]\+?(\d{1,2})$/;
+const RE_DECIMAL = /^\+?(\d{8,15})[.,]0+$/;
+
+export function lerNumeroDePlanilha(bruto: string | null | undefined): NumeroDePlanilha | null {
+  const original = (bruto ?? "").trim();
+  const valor = original.replace(/\s+/g, "");
+  if (!valor) return null;
+
+  const decimal = valor.match(RE_DECIMAL);
+  if (decimal) return { tipo: "inteiro", digitos: decimal[1] };
+
+  const m = valor.match(RE_CIENTIFICA);
+  if (!m) return null;
+  const inteira = m[1].replace(/^0+/, "");
+  if (!inteira) return null;
+  const fracao = m[2] ?? "";
+  const expoente = Number(m[3]);
+  // Quantos dígitos o número tem de verdade. Fora de 8 a 15, não é telefone.
+  const total = inteira.length + expoente;
+  if (total < 8 || total > 15) return null;
+
+  const algarismos = inteira + fracao;
+  if (algarismos.length < total) return { tipo: "cortado", original };
+  if (algarismos.length === total) return { tipo: "inteiro", digitos: algarismos };
+
+  // Mais algarismos do que o número inteiro tem: a sobra é o resto de ponto
+  // flutuante que o Excel grava ("5.5119912345670002E+12"). Telefone não tem
+  // fração, então só vale se o resto for desprezível.
+  const numero = Number(`${inteira}.${fracao}e${expoente}`);
+  const arredondado = Math.round(numero);
+  if (!Number.isFinite(numero) || Math.abs(numero - arredondado) > 0.01) return null;
+  const digitos = arredondado.toFixed(0);
+  return digitos.length === total ? { tipo: "inteiro", digitos } : null;
+}
+
+/**
  * Normaliza qualquer formato de telefone brasileiro para o padrão E.164 (5511999998888).
  */
 export function normalizarTelefoneBrasileiro(raw: string | null | undefined): string | null {
   if (!raw) return null;
 
+  // Número de planilha: o cortado não tem como virar telefone, e o inteiro
+  // segue com os próprios dígitos.
+  const daPlanilha = lerNumeroDePlanilha(raw);
+  if (daPlanilha?.tipo === "cortado") return null;
+
   // Remove tudo que não for dígito
-  const apenasNumeros = raw.replace(/\D/g, "");
+  const apenasNumeros = (daPlanilha ? daPlanilha.digitos : raw).replace(/\D/g, "");
 
   if (!apenasNumeros) return null;
 
@@ -32,10 +88,10 @@ export function normalizarTelefoneBrasileiro(raw: string | null | undefined): st
  * O telefone brasileiro como se escreve: "(11) 98191-8127".
  *
  * A importação gravava o que vinha na planilha, do jeito que vinha: "+55 11
- * 98191-8127", "11981918127", "5.5119819181E+12". A chave de busca
- * (`telefone_e164`) sempre saiu certa; o que a tela mostrava, não. Número de
- * fora do Brasil, ou que não fecha um celular/fixo daqui, volta como chegou:
- * formatar errado seria pior que não formatar.
+ * 98191-8127", "11981918127". Número de fora do Brasil, ou que não fecha um
+ * celular/fixo daqui, volta como chegou: formatar errado seria pior que não
+ * formatar. O mesmo vale para o número que a planilha cortou ("5,51198E+12",
+ * ver `lerNumeroDePlanilha`): os dígitos que faltam não estão em lugar nenhum.
  */
 export function formatarTelefoneBr(raw: string | null | undefined): string {
   const original = (raw ?? "").trim();

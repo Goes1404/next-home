@@ -13,7 +13,7 @@ codigo:
   - src/app/corretor/(painel)/importar/actions.ts
   - src/app/corretor/(painel)/importar/ImportarClient.tsx
 created: 2026-09-24
-updated: 2026-10-06
+updated: 2026-10-09
 fonte: pedido do usuário em 24/09/2026 ("adicionar leads de mais tipos de arquivo")
 summary: Além de PDF, CSV e o .zip do WhatsApp, a importação passou a ler o .txt solto da conversa (Android), .vcf, .xlsx sem dependência nova, foto/print por IA, e o CSV do Google Contatos — que antes saía vazio, calado.
 ---
@@ -68,6 +68,7 @@ Formatos aceitos desde 24/09/2026: conversa do WhatsApp (`.zip` **e**
   tem onze dígitos, igual a um celular daqui, e viraria "(14) 15555-2671".
 
 ## Relacionadas
+- [[telefone-com-55-que-a-planilha-corta]] — o número com 55 que a planilha mostra como "5,51198E+12"
 - [[importar-conversa-do-whatsapp]]
 - [[falha-calada-e-a-pior]]
 

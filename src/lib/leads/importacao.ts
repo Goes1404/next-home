@@ -1,4 +1,4 @@
-import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
+import { lerNumeroDePlanilha, normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
 import { extrairVariosLeadsViaRegex } from "@/lib/inbound/regexFallback";
 import { extrairTextoDePdf } from "./pdfTexto";
 import {
@@ -35,6 +35,12 @@ export type CandidatoLead = {
   email: string | null;
   mensagem: string | null;
   imovelInteresse: string | null;
+  /**
+   * O que a planilha mostrava no lugar do telefone quando ela o cortou
+   * ("5,51198E+12"). A linha vem com o telefone em branco e desmarcada: os
+   * dígitos que faltam não estão no arquivo, e completar seria inventar.
+   */
+  telefoneCortado?: string;
 };
 
 export type ResultadoExtracao = {
@@ -146,15 +152,52 @@ function primeiroValor(celula: string | undefined): string {
   return (celula ?? "").split(":::")[0].trim();
 }
 
-/** Um telefone brasileiro tem 8 a 13 dígitos; menos que isso é código, mais é ruído. */
+/**
+ * Um telefone brasileiro tem 8 a 13 dígitos; menos que isso é código, mais é
+ * ruído. O número que a planilha cortou ("5,51198E+12") também é telefone:
+ * estragado, mas é a coluna do telefone, e a linha tem de aparecer marcada em
+ * vez de sumir.
+ */
 function pareceTelefone(valor: string): boolean {
-  const digitos = valor.replace(/\D/g, "");
+  const daPlanilha = lerNumeroDePlanilha(valor);
+  if (daPlanilha?.tipo === "cortado") return true;
+  const texto = daPlanilha ? daPlanilha.digitos : valor;
+  const digitos = texto.replace(/\D/g, "");
   if (digitos.length < 8 || digitos.length > 13) return false;
   // Descarta o que é claramente outra coisa: só dígitos com separador de
   // milhar, data, valor em reais.
-  if (/^\d{1,3}([.,]\d{3})+([.,]\d{2})?$/.test(valor.trim())) return false;
-  if (/\d{1,2}\/\d{1,2}\/\d{2,4}/.test(valor)) return false;
+  if (/^\d{1,3}([.,]\d{3})+([.,]\d{2})?$/.test(texto.trim())) return false;
+  if (/\d{1,2}\/\d{1,2}\/\d{2,4}/.test(texto)) return false;
   return true;
+}
+
+/**
+ * Quantos telefones a planilha cortou. É o aviso que diz ao corretor por que
+ * algumas linhas vieram desmarcadas e como trazer o número inteiro.
+ */
+export function avisoDeNumerosCortados(candidatos: CandidatoLead[]): string | undefined {
+  const cortados = candidatos.filter((c) => c.telefoneCortado);
+  if (cortados.length === 0) return undefined;
+  const um = cortados.length === 1;
+  return (
+    `${um ? "1 telefone veio cortado" : `${cortados.length} telefones vieram cortados`} pela planilha, ` +
+    `como “${cortados[0].telefoneCortado}”: a planilha mostra o número com 55 na frente nesse formato e apaga os últimos dígitos. ` +
+    `${um ? "Esse contato veio desmarcado" : "Esses contatos vieram desmarcados"} e com o telefone em branco. ` +
+    "Para trazer o número inteiro, envie o arquivo .xlsx da planilha ou, na planilha, formate a coluna do telefone como Número sem casas decimais e copie de novo."
+  );
+}
+
+/**
+ * O texto tem algum telefone que a planilha cortou? Antes da leitura por IA:
+ * o modelo tende a "limpar" o "5,51198E+12" para "55119812", que tem cara de
+ * telefone e é de outra pessoa. Com número cortado na lista, quem lê é o
+ * leitor de tabela, que marca a linha.
+ */
+export function temNumeroCortado(texto: string): boolean {
+  for (const m of texto.matchAll(/[+]?\d+(?:[.,]\d+)?[eE][+]?\d{1,2}/g)) {
+    if (lerNumeroDePlanilha(m[0])?.tipo === "cortado") return true;
+  }
+  return false;
 }
 
 /** Casa o cabeçalho de cada coluna com o campo que ela alimenta. */
@@ -229,8 +272,14 @@ function montar(bruto: {
   mensagem: string | null;
   imovelInteresse: string | null;
 }): CandidatoLead | null {
-  const telefone = bruto.telefone?.trim();
-  if (!telefone || !pareceTelefone(telefone)) return null;
+  const celula = bruto.telefone?.trim();
+  if (!celula || !pareceTelefone(celula)) return null;
+
+  // Número guardado como número na planilha: o inteiro segue com os próprios
+  // dígitos, e o cortado entra em branco, marcado (ver `telefoneCortado`).
+  const daPlanilha = lerNumeroDePlanilha(celula);
+  const cortado = daPlanilha?.tipo === "cortado";
+  const telefone = daPlanilha?.tipo === "inteiro" ? daPlanilha.digitos : cortado ? "" : celula;
 
   const email = bruto.email?.trim();
   const nome = bruto.nome?.trim();
@@ -240,10 +289,11 @@ function montar(bruto: {
     // genérico deixa claro na lista que o nome precisa ser preenchido.
     nome: nome && nome.length >= 2 ? nome.slice(0, 120) : "Contato sem nome",
     telefone: telefone.slice(0, 40),
-    telefoneE164: normalizarTelefoneBrasileiro(telefone),
+    telefoneE164: cortado ? null : normalizarTelefoneBrasileiro(telefone),
     email: email && RE_EMAIL.test(email) ? email.slice(0, 160) : null,
     mensagem: bruto.mensagem?.trim().slice(0, 2000) || null,
     imovelInteresse: bruto.imovelInteresse?.trim().slice(0, 160) || null,
+    ...(cortado ? { telefoneCortado: celula.slice(0, 40) } : {}),
   };
 }
 
@@ -275,6 +325,13 @@ function acharCabecalho(
     if (mapa) return { indice: i, mapa };
   }
   return null;
+}
+
+/** As linhas de um texto delimitado (CSV, TSV), com o leitor que respeita aspas. */
+export function lerLinhasDelimitadas(conteudo: string): string[][] {
+  const texto = conteudo.replace(/^\uFEFF/, "").trim();
+  const linhas = texto.split(/\r?\n/).filter((l) => l.trim());
+  return linhas.length === 0 ? [] : registrosDelimitados(texto, separadorDoTexto(linhas));
 }
 
 /**
@@ -336,7 +393,13 @@ export function dedupInterno(candidatos: CandidatoLead[]): CandidatoLead[] {
   const unicos: CandidatoLead[] = [];
   for (const c of candidatos) {
     const chave = c.telefoneE164 ?? c.telefone.replace(/\D/g, "");
-    if (!chave || vistos.has(chave)) continue;
+    if (!chave) {
+      // O número cortado não tem chave, e nem por isso é repetido: dez
+      // telefones diferentes aparecem como o mesmo "5,51198E+12".
+      if (c.telefoneCortado) unicos.push(c);
+      continue;
+    }
+    if (vistos.has(chave)) continue;
     vistos.add(chave);
     unicos.push(c);
   }
@@ -445,7 +508,7 @@ export async function extrairDeTexto(
   // erra (ver `leituraPorIa.ts`). Tudo o que ela devolve foi conferido
   // contra o texto; se ela não responder, a escada antiga segue abaixo.
   let iaFalhou = false;
-  if (!comCabecalho) {
+  if (!comCabecalho && !temNumeroCortado(limpo)) {
     const daIa = await lerListaComIa(limpo);
     if (daIa.ok) {
       const candidatos = dedupInterno(
@@ -908,7 +971,10 @@ export const TIPOS_DE_IMAGEM = ["image/jpeg", "image/png", "image/webp", "image/
 const INSTRUCAO_DA_FOTO =
   "A imagem pode ser um print do WhatsApp: numa conversa, o cliente é o nome ou número no TOPO da tela; " +
   "ignore o número do dono do celular. Numa lista, ficha ou agenda (inclusive escrita à mão), extraia cada " +
-  "contato com telefone. Copie os dígitos exatamente como aparecem; dígito ilegível, deixe o contato de fora.";
+  "contato com telefone. Copie os dígitos exatamente como aparecem; dígito ilegível, deixe o contato de fora. " +
+  // Print de planilha mostra o número com 55 como "5,51198E+12": copiado
+  // assim, a importação marca a linha; "convertido", vira o número de outra pessoa.
+  "Telefone que aparece em notação científica, como 5,51198E+12, é copiado exatamente assim, sem converter.";
 
 /**
  * Deixa a foto num JPEG que a OpenAI lê: gira pelo EXIF (foto de celular

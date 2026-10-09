@@ -9853,3 +9853,25 @@ Nota: [[identidade-da-marca-para-o-google]].
   calçada dão metros por número (aqui ~1 m), e o número procurado sai por
   extrapolação. Conferir o ponto com o reverse do Nominatim.
 
+## O telefone com 55 que a planilha corta (09/10/2026)
+
+Nota: [[telefone-com-55-que-a-planilha-corta]].
+
+- **"Tabela com 55 na frente sai sem os últimos dígitos" era a notação
+  científica.** Excel e Google Planilhas mostram número de 12+ dígitos (todo
+  celular com 55) como "5,51198E+12", e é o que se cola ou exporta em CSV. A
+  importação lia os dígitos que sobravam: virava "(11) 5511-9812", e
+  "5.5119819181E+12" virava (11) 98191-81**12**, com o expoente no final.
+  Nenhum lead gravado tinha o padrão (o erro aparecia na revisão).
+- **`normalizarTelefoneBrasileiro` devolve `null` para notação cortada**
+  (`lerNumeroDePlanilha`), e a notação com todos os dígitos ou o decimal
+  "5511981918127.0" viram o número. A linha cortada vem em branco, desmarcada,
+  com etiqueta e aviso; lista solta com número cortado não vai à IA.
+- **O número inteiro existe em três lugares:** no HTML da área de
+  transferência (`x:num` do Excel, `data-sheets-value` do Google, `sdval` do
+  LibreOffice), no `.xlsx` exportado pelo Google e no `.xlsx` enviado. O colar
+  troca só quando a linha e o arredondamento batem (`coladoDaPlanilha.ts`).
+- **Formato do clipboard conferido em documentação, não num Excel de
+  verdade.** Se não recuperar, a linha vem marcada e o aviso explica o
+  caminho do `.xlsx`.
+
