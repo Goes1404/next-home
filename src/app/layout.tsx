@@ -65,6 +65,10 @@ export const metadata: Metadata = {
   description: site.descricao,
   keywords: [...site.keywords],
   applicationName: site.nome,
+  // Nome que o iPhone sugere ao pôr o site na tela inicial. Sem ele, sugere
+  // o título da página inteiro. `capable: false` porque o Next liga sozinho o
+  // `mobile-web-app-capable`, que abriria o atalho sem a barra do navegador.
+  appleWebApp: { title: site.nome, capable: false },
   authors: [{ name: site.nomeCompleto, url: site.url }],
   creator: site.nomeCompleto,
   publisher: site.nomeCompleto,

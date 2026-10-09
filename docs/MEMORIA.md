@@ -9885,3 +9885,22 @@ Nota: [[telefone-com-55-que-a-planilha-corta]].
   **Diagnóstico**: "(55)" numa importação de lista paga é quase sempre o 55 do
   país lido como DDD, não cliente de Santa Maria.
 
+## O atalho da tela inicial guarda o ícone antigo (09/10/2026)
+
+Nota: [[atalho-da-tela-inicial-guarda-o-icone-antigo]].
+
+- **"O favicon ainda não está certo" era um atalho antigo.** O print mostrava
+  o triângulo do Next borrado; os ícones de produção já eram a marca (mesmo
+  md5 do repositório). Atalho guarda o ícone de quando foi criado e não
+  atualiza: apagar e adicionar de novo.
+- **`src/app/manifest.ts`**: ícone de 512 px e versão mascarável (branca até a
+  borda, símbolo dentro do círculo de 80%). Sem `start_url`: o Chrome usa o
+  `start_url` como endereço do atalho, e com `"/"` o corretor que põe o painel
+  na tela inicial ganharia a home do site. `display: "browser"`: com
+  "standalone" o Chrome oferece "Instalar app" a todo visitante.
+- **O Next liga `mobile-web-app-capable` sozinho** quando há `appleWebApp` no
+  metadata, mesmo só com `title`. O layout passa `capable: false`.
+- `public/apple-touch-icon.png` (e `-precomposed`): caminho que alguns
+  navegadores pedem sem ler o `<head>`; antes davam 404.
+- Para conferir sem celular: `Page.getAppManifest` e
+  `Page.getInstallabilityErrors` pelo CDP no Chromium do Playwright.

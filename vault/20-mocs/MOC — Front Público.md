@@ -71,3 +71,4 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[pagina-do-imovel-mostrava-o-cadastro-cru]] — zero que era ausência, frase de destaque repetindo a descrição, Book prometendo PDF, endereço do escritório no Dellagio (0140, 02/10)
 - [[pixel-da-meta-fica-fora-das-paginas-de-token]] — pixel nos layouts públicos, Lead no clique de WhatsApp, fora das páginas de token (02/10)
 - [[identidade-da-marca-para-o-google]] — organização com nomes alternativos + WebSite com busca, trilhas no imóvel e na região, vercel.app → domínio; o domínio antigo ainda não aponta para cá (07/10)
+- [[atalho-da-tela-inicial-guarda-o-icone-antigo]] — atalho guarda o ícone de quando foi criado; manifesto com ícone de 512 px e mascarável, sem start_url e com display "browser" (09/10)

@@ -14,17 +14,28 @@
  * - apple-icon.png 180x180 opaco, porque o iPhone pinta de preto o que for
  *   transparente.
  *
+ * E em public/, para o atalho da tela inicial (lidos pelo manifest.ts):
+ * - icones/icone-512.png, o mesmo ladrilho do icon.png em 512 px;
+ * - icones/icone-mascaravel-512.png, branco até a borda e com o símbolo
+ *   dentro do círculo de 80% que o Android garante mostrar. O celular recorta
+ *   o ícone no formato dele (círculo, gota, quadrado); sem esta versão, o
+ *   Android encolhe o ícone dentro de um quadrado branco;
+ * - apple-touch-icon.png e apple-touch-icon-precomposed.png, cópias do
+ *   apple-icon.png no caminho que alguns navegadores e robôs pedem sem ler
+ *   o <head>. Sem eles, recebiam a página de erro.
+ *
  * O símbolo vai sobre um quadrado BRANCO de cantos arredondados. A casa da
  * logo é desenhada pelo espaço em branco: com fundo transparente, na aba
  * escura do navegador a casa some e o verde quase não aparece.
  */
 import sharp from "sharp";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const raiz = process.cwd();
 const simbolo = process.argv[2] ?? join(raiz, "scripts/marca/simbolo.png");
 const app = join(raiz, "src/app");
+const publico = join(raiz, "public");
 
 /** Quadrado branco com o símbolo no meio. */
 async function ladrilho(lado, { margem, raio, opaco = false }) {
@@ -80,5 +91,20 @@ for (const lado of [16, 32, 48]) {
 }
 writeFileSync(join(app, "favicon.ico"), ico(daAba));
 writeFileSync(join(app, "icon.png"), await ladrilho(192, { margem: 0.12, raio: 0.22 }));
-writeFileSync(join(app, "apple-icon.png"), await ladrilho(180, { margem: 0.14, raio: 0, opaco: true }));
+const daApple = await ladrilho(180, { margem: 0.14, raio: 0, opaco: true });
+writeFileSync(join(app, "apple-icon.png"), daApple);
 console.log("Ícones gravados em src/app: favicon.ico (16/32/48), icon.png (192), apple-icon.png (180).");
+
+mkdirSync(join(publico, "icones"), { recursive: true });
+writeFileSync(join(publico, "icones/icone-512.png"), await ladrilho(512, { margem: 0.12, raio: 0.22 }));
+// Margem de 22%: o símbolo ocupa 56% do lado, e o canto dele fica a
+// 0,28 x raiz de 2 = 39,6% do centro, dentro do círculo de 40% de raio.
+writeFileSync(
+  join(publico, "icones/icone-mascaravel-512.png"),
+  await ladrilho(512, { margem: 0.22, raio: 0, opaco: true }),
+);
+writeFileSync(join(publico, "apple-touch-icon.png"), daApple);
+writeFileSync(join(publico, "apple-touch-icon-precomposed.png"), daApple);
+console.log(
+  "Ícones gravados em public: icones/icone-512.png, icones/icone-mascaravel-512.png, apple-touch-icon(-precomposed).png.",
+);

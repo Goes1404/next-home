@@ -100,6 +100,9 @@ aparecia o triângulo do Next, não a marca.
   não toca em caminho com ponto.
 - O resultado do Google demora a trocar o ícone: ele é lido de novo quando o
   robô volta à página.
+- O atalho da tela inicial não troca: ele guarda o ícone de quando foi criado.
+  O manifesto com ícone grande veio depois, ver
+  [[atalho-da-tela-inicial-guarda-o-icone-antigo]].
 
 ## O escritório mudou para o Office Bethaville (09/10)
 
