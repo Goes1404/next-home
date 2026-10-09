@@ -31,6 +31,7 @@ import {
 import { site } from "@/lib/site";
 import { conferirNumerosNoWhatsapp, provedorConfigurado } from "@/lib/whatsapp/provider";
 import { lerSinaisDaLista } from "@/lib/whatsapp/sinaisDaLista";
+import { MOTIVO_SESSAO_CAIU } from "@/lib/whatsapp/sessaoCaida";
 import type { SinaisDaLista } from "@/lib/whatsapp/pausaAutomatica";
 import { dentroDaJanela, dentroDaJanelaDoCorretor, fraseDoLimite } from "@/lib/whatsapp/antiBan";
 import { calcularLimiteDoDia } from "@/lib/whatsapp/repositorio";
@@ -1430,6 +1431,7 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
   // Itens que esperam a IA reescrever para não sair texto repetido.
   let esperandoTextoSemIa = 0;
   let esperandoTextoParecido = 0;
+  let esperandoSessao = 0;
 
   if (ids.length > 0) {
     const { count } = await supabase
@@ -1454,10 +1456,11 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
       .select("erro_motivo")
       .in("campanha_id", ids)
       .eq("status", "pendente")
-      .in("erro_motivo", [MOTIVO_TEXTO_SEM_IA, MOTIVO_TEXTO_PARECIDO])
+      .in("erro_motivo", [MOTIVO_TEXTO_SEM_IA, MOTIVO_TEXTO_PARECIDO, MOTIVO_SESSAO_CAIU])
       .limit(50);
     for (const e of esperando ?? []) {
       if (e.erro_motivo === MOTIVO_TEXTO_SEM_IA) esperandoTextoSemIa++;
+      else if (e.erro_motivo === MOTIVO_SESSAO_CAIU) esperandoSessao++;
       else esperandoTextoParecido++;
     }
   }
@@ -1485,6 +1488,17 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
   if (!instancia) {
     impedimentoTipo = "sem_numero";
     impedimento = "Nenhum número de WhatsApp cadastrado. Conecte o seu em Minha IA → WhatsApp.";
+  } else if (esperandoSessao > 0) {
+    /*
+     * A sessão do WhatsApp caiu (`sessaoCaida.ts`, 08/10/2026). Vem antes da
+     * pausa porque a pausa que essas falhas abrem NÃO volta sozinha, e o
+     * texto dela diria que volta: sem reconectar, nada sai.
+     */
+    impedimentoTipo = "desconectado";
+    impedimento =
+      instancia.status_conexao === "conectado"
+        ? "A conexão do WhatsApp caiu e as mensagens não estão saindo, mesmo com o número aparecendo como conectado. Em Minha IA → WhatsApp, toque em Desconectar e conecte o número de novo: a fila volta sozinha quando ele reconectar."
+        : "A conexão do WhatsApp caiu e as mensagens não estão saindo. Conecte o número de novo em Minha IA → WhatsApp: a fila volta sozinha quando ele reconectar.";
   } else if (bloqueado) {
     impedimentoTipo = "bloqueado";
     impedimento = `Envios pausados automaticamente até ${new Date(instancia.bloqueado_ate as string).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} depois de falhas seguidas do WhatsApp. Voltam sozinhos.`;

@@ -113,10 +113,21 @@ export function detectarRecusa(
   contexto?: {
     /** Ele já recusou antes nesta conversa — muda o que "não" significa. */
     jaRecusouAntes?: boolean;
+    /**
+     * A última fala nossa perguntou se ele quer continuar recebendo
+     * (`ofereceuParar`). Aí o "não" seco é a resposta, e a resposta é parar.
+     */
+    ofereceuParar?: boolean;
   },
 ): Recusa | null {
   const t = normalizar(texto).trim();
   if (!t || t.startsWith("[mensagem")) return null;
+
+  // Só o "não" explícito: "obrigado" sozinho, depois da oferta, pode ser só
+  // educação, e a IA de recusa decide com a oferta como contexto.
+  if (contexto?.ofereceuParar && NEGATIVA_SECA.test(t) && /^(nao|nada|nenhum)/.test(t)) {
+    return { familia: "parada", trecho: t };
+  }
 
   if (contexto?.jaRecusouAntes && NEGATIVA_SECA.test(t)) {
     return { familia: "desinteresse", trecho: t };

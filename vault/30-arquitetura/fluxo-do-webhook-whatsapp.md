@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/quandoAIaResponde.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
 created: 2026-09-05
-updated: 2026-10-06
+updated: 2026-10-09
 fonte: leitura do código + docs/MEMORIA.md
 summary: Autenticação → eventos técnicos → porteiro de lead cadastrado → transcrição/dedup/rajada → turnoDeAtendimento → envio → gravação → telemetria → dossiê → aviso.
 ---
@@ -63,6 +63,10 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    - com visita futura no CRM (`visitaMarcadaEm`), o planner reconhece
      remarcar e desmarcar; desmarcar é decidido pelo planner e gravado por
      `cancelarVisitaLead` ([[visita-remarcada-e-desmarcada-pela-conversa]]);
+   - dúvida sobre o contato ("acho que você mandou errado", "quem é?") não
+     vai à IA de recusa e vira a jogada `esclarecer_contato`, logo depois da
+     recusa: quem escreve, por quê e, no começo, a oferta de parar; o "não" a
+     essa oferta é parada ([[duvida-de-engano-nao-e-pedido-para-parar]]);
    - LLM ([[motor-unico-openai]], [[timeout-nao-e-retentado]]);
    - guardrails ([[midia-por-slug-nunca-por-url]]), `semValores`
      ([[a-ia-nao-fala-valores]]), prazo

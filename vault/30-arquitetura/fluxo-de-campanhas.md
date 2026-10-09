@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
 created: 2026-09-05
-updated: 2026-10-08
+updated: 2026-10-09
 fonte: leitura do código + docs/MEMORIA.md
 summary: Criação monta a fila com agendado_para (e guarda o critério); a lista viva inclui gente nova a cada hora; cada envio confere o lead de novo antes da cota; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, texto conferido contra as mensagens do número (antes da cota) e cota/espaçamento no banco.
 ---
@@ -59,6 +59,9 @@ Cada envio passa por:
    lead, em paralelo à orgânica ([[a-conversa-fantasma-do-disparo-sem-ddi]]);
 7. destinatário inexistente = erro definitivo + cota devolvida
    ([[numero-sem-whatsapp-nao-e-falha-nossa]]);
+   sessão do WhatsApp caída ("Connection Closed") = cota devolvida, item
+   esperando sem gastar tentativa, e reconectar levanta a pausa
+   ([[sessao-caida-com-o-numero-conectado]]);
 8. gravação na conversa + avanço de etapa
    ([[campanha-tambem-mexe-no-funil]]) + tentativa de contato
    ([[tentativas-de-contato-sao-duas-contagens]]).
@@ -119,7 +122,7 @@ arquivado, perdido, transferido, comprou) → guarda de 24h → **texto conferid
 (`variarSemRepetir`, até 3 tentativas por ciclo; no A/B mantém só o tipo de
 abertura e de pergunta, e só quando A e B são diferentes de verdade; sem texto
 próprio, o item espera, o motivo vai para o log e a lista pausa em 4 ciclos) → cota → `{horarios}` e saudação do
-horário resolvidos agora → envio → `classificarFalhaDeEnvio` → conversa, IA ligada,
+horário resolvidos agora → envio → **sessão caída** ("Connection Closed": cota devolvida, item marcado sem gastar tentativa, disjuntor, vez encerrada; [[sessao-caida-com-o-numero-conectado]]) → `classificarFalhaDeEnvio` → conversa, IA ligada,
 **fotos do imóvel** (`enviarMidiasDaLista`), funil e tentativa. Ver
 [[lista-de-transmissao-visivel-e-controlavel]].
 

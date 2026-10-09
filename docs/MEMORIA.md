@@ -9690,3 +9690,38 @@ Notas: [[texto-da-lista-conferido-antes-de-sair]], [[recusa-em-camadas]].
 - **O aviso do disjuntor mostrava o horário em UTC** ("pausados até 09/10,
   00:00" para um bloqueio das 21h). `toLocaleString` no servidor precisa de
   `timeZone: "America/Sao_Paulo"`.
+
+## A dúvida de engano e a sessão caída (09/10/2026)
+
+Notas: [[duvida-de-engano-nao-e-pedido-para-parar]],
+[[sessao-caida-com-o-numero-conectado]].
+
+- **"Acho que você mandou errado" virava despedida.** A regex não pegava, o
+  filtro largo mandava à IA de recusa por causa de "errado", e o pedido à IA
+  dizia que "número errado" é parada (0,90). Hoje a dúvida sai do filtro
+  antes (`semADuvidaDeEngano`) e vira a jogada `esclarecer_contato`: quem
+  escreve, por quê e, no começo da conversa, se ele quer continuar
+  recebendo. "Mandou errado" só conta como dúvida no começo e sem "a foto",
+  "o link" etc. logo depois; no meio do atendimento é queixa de conteúdo.
+- **A afirmação continua parada**, decidida pela regex: "número errado",
+  "pessoa errada", "não sou eu", "não conheço vocês".
+- **O "não" depois da oferta de parar é parada mesmo sem a IA**
+  (`ofereceuParar` em `detectarRecusa`). Sem isso, caindo a IA de recusa, o
+  "não" recebia "em qual região você procura?".
+- **Ao criar resposta para um caso novo, conferir também a fala seguinte do
+  cliente.** A jogada pergunta "quer continuar recebendo?", e a resposta a
+  essa pergunta precisava de leitura própria.
+- **"Connection Closed" é sessão caída com o número "conectado".** O
+  disjuntor abria por 12h e o painel prometia "volta sozinho às 21h"; não
+  voltaria. Agora o envio com esse erro devolve a cota, não gasta tentativa,
+  marca a fila (`MOTIVO_SESSAO_CAIU`) e encerra a vez; a faixa e a tela de
+  listas pedem para reconectar; reconectar tira a marca e levanta a pausa,
+  só quando achou marca de sessão.
+- **Sem migration de propósito**: a marca mora em `erro_motivo` da fila,
+  porque esta sessão não tinha acesso ao banco e o código não pode esperar
+  coluna que ninguém aplicou.
+- **"Desconectar" no painel zera `conectado_em`** (a curva de aquecimento
+  recomeça). Só é preciso quando o provedor diz "open" com a sessão morta.
+- **Prompt v49.** Sem chave de LLM aqui, o efeito na conversa só se mede na
+  próxima dúvida real: `ia_interacoes.contexto->'jogada'->>'tipo' =
+  'esclarecer_contato'`.

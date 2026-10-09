@@ -17,7 +17,8 @@ import {
   type TextoAnterior,
   versoesDiferentes,
 } from "./variacaoDeTexto";
-import { enviarMensagemWhatsapp } from "./provider";
+import { consultarEstadoConexao, enviarMensagemWhatsapp } from "./provider";
+import { ehFalhaDeSessao, MOTIVO_SESSAO_CAIU } from "./sessaoCaida";
 import { normalizarTelefoneBr } from "./telefone";
 import { aplicarVencedoras } from "./vencedoraAB";
 import { HORAS_DA_GUARDA_HUMANA, MOTIVO_CONVERSA_RECENTE } from "./contextoDaCampanha";
@@ -44,6 +45,7 @@ import {
   gravarMensagem,
   obterOuCriarConversa,
   devolverCotaCampanha,
+  liberarFilaDaSessao,
   registrarResultadoEnvio,
   reservarCotaCampanha,
   sincronizarConexaoInstancia,
@@ -433,6 +435,8 @@ async function processarInstancia(ctx: {
   // chamada e só quando algum texto precisa ser conferido.
   let recentes: TextoAnterior[] | null | undefined;
   let nomeDoCorretor: string | null | undefined;
+  // A marca de sessão caída sai no primeiro envio que dá certo (uma vez).
+  let sessaoConferida = false;
 
   try {
     // Com a trava na mão: só um disparador reescreve a fila por vez.
@@ -755,6 +759,41 @@ async function processarInstancia(ctx: {
        *   vezes. Erro definitivo com aviso para conferir a conversa;
        * - recusa clara do provedor: nada saiu, então vale tentar de novo.
        */
+      /*
+       * A SESSÃO do WhatsApp caiu (`sessaoCaida.ts`, 08/10/2026): nada saiu,
+       * então a cota volta e o item não gasta tentativa; a falha conta para o
+       * disjuntor, e a fila guarda o motivo que faz o painel pedir para
+       * reconectar. Mandar o próximo item agora daria no mesmo: a vez acaba
+       * aqui. Se o provedor também diz que o número caiu, o banco passa a
+       * dizer "desconectado", e a faixa do painel já sabe o que mostrar.
+       */
+      if (!envio.enviado && ehFalhaDeSessao(envio.detalhe)) {
+        await devolverCotaCampanha(instancia.id);
+        await registrarResultadoEnvio(instancia.id, false);
+        await supabase
+          .from("whatsapp_campanhas_fila")
+          .update({
+            erro_motivo: MOTIVO_SESSAO_CAIU,
+            agendado_para: new Date(Date.now() + MINUTOS_ATE_RETENTAR * 60_000).toISOString(),
+          })
+          .eq("id", item.id);
+        parcial.erros++;
+        console.warn(`[campanha] item ${item.id}: sessão do WhatsApp caiu (${envio.detalhe ?? ""})`);
+
+        const estado = await consultarEstadoConexao(instancia.instance_name);
+        if (estado.ok && !estado.conectado) {
+          await sincronizarConexaoInstancia({
+            instanciaId: instancia.id,
+            instanceName: instancia.instance_name,
+            conectadoEmAtual: conectadoEm,
+          });
+        }
+        parcial.motivo = "nao_conectado";
+        parcial.diagnostico =
+          "A conexão do WhatsApp caiu e a mensagem não saiu. Reconecte o número em Minha IA → WhatsApp: a fila volta sozinha quando ele reconectar.";
+        break;
+      }
+
       const classe = envio.enviado ? null : classificarFalhaDeEnvio(envio);
       if (classe === "inexistente" || classe === "dados") {
         // A cota foi reservada antes do envio e este envio não aconteceu
@@ -795,6 +834,16 @@ async function processarInstancia(ctx: {
       }
 
       parcial.enviados++;
+      // Um envio deu certo: a sessão funciona, e as mensagens que esperavam
+      // por ela voltam ao normal (ver `sessaoCaida.ts`).
+      if (!sessaoConferida) {
+        sessaoConferida = true;
+        await liberarFilaDaSessao({
+          instanciaId: instancia.id,
+          corretorId: instancia.corretor_id,
+          levantarPausa: false,
+        });
+      }
       await supabase
         .from("whatsapp_campanhas_fila")
         .update({
@@ -941,7 +990,9 @@ async function processarInstancia(ctx: {
       }
     }
 
-    if (parcial.processados >= ctx.vagas) {
+    // A sessão caída encerra a vez mesmo na última vaga: continuar a
+    // corrente mandaria o próximo item para a mesma sessão morta.
+    if (parcial.processados >= ctx.vagas && parcial.motivo !== "nao_conectado") {
       parcial.motivo = "sem_tempo";
       parcial.deveContinuar = true;
     }

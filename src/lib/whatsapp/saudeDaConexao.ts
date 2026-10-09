@@ -27,6 +27,7 @@
  * aberto é, antes de tudo, um número caído:
  *
  *   caiu           (perigo)  parou, e só o corretor resolve
+ *   sessao_caiu    (perigo)  "conectado" no banco, mas nada sai: reconectar
  *   envios_pausados(alerta)  o sistema se protegeu e volta sozinho
  *   fila_esperando (info)    está funcionando, só não agora
  *
@@ -38,7 +39,7 @@ import { diasDesdeConexao, limiteDiarioCampanha } from "./antiBan";
 
 export type GravidadeAviso = "perigo" | "alerta" | "info";
 
-export type TipoDeAviso = "caiu" | "envios_pausados" | "fila_esperando";
+export type TipoDeAviso = "caiu" | "sessao_caiu" | "envios_pausados" | "fila_esperando";
 
 export interface AvisoDaConexao {
   tipo: TipoDeAviso;
@@ -66,6 +67,11 @@ export interface FotoDaConexao {
   enviosCampanhaContador: number;
   /** Itens ainda `pendente` na fila deste número. */
   pendentes: number;
+  /**
+   * Pendentes que falharam porque a SESSÃO do WhatsApp caiu e nada deu certo
+   * desde então (`sessaoCaida.ts`). Ausente vale zero.
+   */
+  falhasDeSessao?: number;
   /**
    * O limite de hoje pelo uso (`limiteDoDia`, 0158), quando quem monta a foto
    * já o calculou. Sem ele vale o teto por idade, que é sempre maior ou igual.
@@ -171,7 +177,26 @@ export function avaliarSaudeDaConexao(foto: FotoDaConexao, agora: Date): AvisoDa
     };
   }
 
-  // 2. Disjuntor aberto: o sistema pausou os envios sozinho depois de falhas
+  // 2. A sessão caiu com o número ainda "conectado" no banco (08/10/2026).
+  //    Os envios voltam com "Connection Closed", o disjuntor abre, e o aviso
+  //    abaixo diria "volta sozinho" — não volta: sem reconectar, nada sai.
+  //    Medido no número da Márcia, que passou o dia assim.
+  if ((foto.falhasDeSessao ?? 0) > 0) {
+    return {
+      tipo: "sessao_caiu",
+      gravidade: "perigo",
+      titulo: "Seu WhatsApp parou de enviar",
+      detalhe:
+        "As mensagens estão falhando porque a conexão do WhatsApp com a plataforma caiu, mesmo com o número " +
+        "aparecendo como conectado. Em Minha IA → WhatsApp, toque em Desconectar e conecte o número de novo: " +
+        "a fila volta a sair sozinha assim que ele reconectar." +
+        trechoDaFila(foto.pendentes),
+      acao: "Reconectar meu número",
+      mereceEmail: true,
+    };
+  }
+
+  // 3. Disjuntor aberto: o sistema pausou os envios sozinho depois de falhas
   //    seguidas do provedor. É proteção funcionando, não defeito — e volta
   //    sozinho, então não vira e-mail.
   if (foto.bloqueadoAte && foto.bloqueadoAte.getTime() > agora.getTime()) {
@@ -188,7 +213,7 @@ export function avaliarSaudeDaConexao(foto: FotoDaConexao, agora: Date): AvisoDa
     };
   }
 
-  // 3. Cota do dia esgotada com fila esperando. Não é problema: é a curva de
+  // 4. Cota do dia esgotada com fila esperando. Não é problema: é a curva de
   //    aquecimento protegendo um número novo. Só aparece quando há de fato
   //    mensagem parada — sem fila, não há o que explicar.
   if (foto.pendentes > 0 && foto.conectadoEm) {

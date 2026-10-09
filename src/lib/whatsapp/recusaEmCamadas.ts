@@ -1,4 +1,5 @@
 import { normalizar } from "./normalizarFala";
+import { semADuvidaDeEngano } from "./duvidaDeEngano";
 import type { FamiliaDeRecusa, Recusa } from "./recusaDoCliente";
 
 /**
@@ -38,10 +39,17 @@ export const CONFIANCA_MINIMA = 0.8;
 const SINAL_NEGATIVO =
   /\b(nao|n|num|nada|nunca|nem|chega|pare|para de|parar|sair|saia|sai|stop|cancel\w*|bloque\w*|interess\w*|obrigad\w*|dispens\w*|deixa pra la|deixa quieto|esquece|esquecer|tira|tirar|remov\w*|apag\w*|exclu\w*|delet\w*|desist\w*|ja (comprei|tenho|tem|fechei|resolvi|aluguei|escolhi|consegui|estou)|sem condic\w*|incomod\w*|spam|engano|errad\w*|quem e (voce|vc)|quem (fala|ta falando)|nao conheco|chato|encher|perturb\w*|denunci\w*|procon|me deixa|depois|mais pra frente|ano que vem|agora nao|por enquanto|fechei|comprei|aluguei|outra imobiliaria|outro corretor|outra corretora)\b/;
 
+/*
+ * A DÚVIDA sobre o contato sai antes do filtro (08/10/2026). "Acho que você
+ * mandou errado" chegava à IA por causa de "errado", e a IA a lia como
+ * pedido para parar (ver `duvidaDeEngano.ts`). Sem a frase da dúvida, o que
+ * sobra decide: só a dúvida não vai à IA; dúvida com "pode tirar meu
+ * número" ainda vai.
+ */
 export function temSinalNegativo(texto: string): boolean {
   const t = normalizar(texto).trim();
   if (!t || t.startsWith("[mensagem")) return false;
-  return SINAL_NEGATIVO.test(t);
+  return SINAL_NEGATIVO.test(semADuvidaDeEngano(t));
 }
 
 export function montarPromptDeRecusa(p: { ultimaFalaNossa: string; falaDoCliente: string }): string {
@@ -51,7 +59,7 @@ export function montarPromptDeRecusa(p: { ultimaFalaNossa: string; falaDoCliente
     "A pergunta é uma só: o cliente está dizendo que NÃO quer mais ser atendido ou contatado?",
     "",
     "Categorias:",
-    '- "parada": pede para parar de receber mensagens, sair da lista, ser esquecido, ter o contato apagado, ameaça bloquear ou denunciar, ou diz que é número errado / não conhece a empresa.',
+    '- "parada": pede para parar de receber mensagens, sair da lista, ser esquecido, ter o contato apagado, ameaça bloquear ou denunciar, ou AFIRMA que o número é de outra pessoa ("número errado", "não sou eu").',
     '- "desinteresse": diz que não tem interesse no atendimento ou em comprar agora (mesmo que seja temporário: "agora não", "talvez ano que vem").',
     '- "ja_resolvido": já comprou, alugou, fechou com outra empresa ou já tem corretor que o atende.',
     '- "nenhuma": qualquer outra coisa.',
@@ -61,7 +69,8 @@ export function montarPromptDeRecusa(p: { ultimaFalaNossa: string; falaDoCliente
     '- recusa de um horário ("não posso sábado", "hoje não dá");',
     '- objeção de preço ("tá caro", "não cabe no meu bolso") e saída suave ("vou pensar", "vou ver com minha esposa");',
     '- resposta "não" a uma pergunta do funil ("é pronto ou na planta?" → "não sei", "não");',
-    "- reclamação de que não recebeu algo que pediu.",
+    "- reclamação de que não recebeu algo que pediu;",
+    '- DÚVIDA sobre quem escreve ou se a mensagem era para ele, sem pedir para parar ("acho que você mandou errado", "foi engano?", "é pra mim?", "quem é?", "de onde tirou meu número?", "não te conheço"): a resposta certa é explicar quem escreveu, não encerrar.',
     "",
     "Em dúvida, responda \"nenhuma\" com confiança baixa.",
     "",

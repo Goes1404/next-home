@@ -1,6 +1,7 @@
 import "server-only";
 import { algumProvedorConfigurado, chamarLlmJson } from "./llm";
 import { detectarRecusa } from "./recusaDoCliente";
+import { ofereceuParar } from "./duvidaDeEngano";
 import {
   lerVeredito,
   montarPromptDeRecusa,
@@ -27,7 +28,10 @@ export async function classificarRecusa(p: {
   ultimaFalaNossa: string;
   jaRecusouAntes?: boolean;
 }): Promise<ClassificacaoDeRecusa> {
-  const pelaRegex = detectarRecusa(p.texto, { jaRecusouAntes: p.jaRecusouAntes });
+  const pelaRegex = detectarRecusa(p.texto, {
+    jaRecusouAntes: p.jaRecusouAntes,
+    ofereceuParar: ofereceuParar(p.ultimaFalaNossa),
+  });
   if (pelaRegex) return { recusa: pelaRegex, decididoPor: "regex", veredito: null, modelo: null };
 
   if (!temSinalNegativo(p.texto) || !algumProvedorConfigurado()) {

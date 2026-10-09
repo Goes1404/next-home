@@ -58,6 +58,7 @@ function estado(over: Partial<EstadoDaConversa> = {}): EstadoDaConversa {
     perguntaSemDado: null,
     agendamento: { dia: null, hora: null, pediuVisita: false },
     recusa: null,
+    duvidaSobreOContato: null,
     recusasAnteriores: 0,
     falaAtualRespondeFunil: false,
     horasDesdeAUltimaFala: 0,

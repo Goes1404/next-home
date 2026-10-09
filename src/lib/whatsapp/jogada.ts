@@ -7,6 +7,7 @@ import { horariosJaOferecidos } from "./ofertasDeVisita";
 import { capacidadeEstaPendente } from "./funilQualificacao";
 import { estaMarcando, pedidoDeAgendamento, type PedidoDeAgendamento } from "./pedidoDeAgendamento";
 import { detectarMudancaDeVisita, rotuloDaVisita, type MudancaDeVisita } from "./mudancaDeVisita";
+import { duvidaSobreOContato, FALAS_DO_COMECO, ofereceuParar } from "./duvidaDeEngano";
 
 /**
  * A JOGADA: o que esta mensagem vai fazer, decidido ANTES de escrever.
@@ -82,6 +83,12 @@ export type Jogada =
   | { tipo: "retomar"; horas: number }
   | { tipo: "acolher_recusa"; familia: FamiliaDeRecusa; oQueEleDisse: string }
   | { tipo: "encerrar_recusado"; familia: FamiliaDeRecusa }
+  /**
+   * Ele não sabe quem escreve ou se a mensagem era para ele (08/10/2026).
+   * `oferecerParar`: ainda no começo da conversa, a resposta termina
+   * perguntando se ele quer continuar recebendo.
+   */
+  | { tipo: "esclarecer_contato"; oQueEleDisse: string; oferecerParar: boolean }
   | { tipo: "entregar_oferta"; oferta: string }
   | { tipo: "devolver_escolha" };
 
@@ -148,6 +155,11 @@ export interface EstadoDaConversa {
   agendamento: PedidoDeAgendamento;
   /** O cliente está dizendo que NÃO quer — e de qual das três formas. */
   recusa: Recusa | null;
+  /**
+   * Ele não sabe quem escreve ou se a mensagem era para ele ("acho que você
+   * mandou errado", "quem é?"). O trecho que decidiu, ou null.
+   */
+  duvidaSobreOContato: string | null;
   /** Quantas vezes ele já recusou ANTES desta fala. */
   recusasAnteriores: number;
   /**
@@ -470,7 +482,10 @@ export function estadoDaConversa(params: {
   const recusa =
     params.recusa !== undefined
       ? params.recusa
-      : detectarRecusa(mensagemAtual, { jaRecusouAntes: recusasAnteriores > 0 });
+      : detectarRecusa(mensagemAtual, {
+          jaRecusouAntes: recusasAnteriores > 0,
+          ofereceuParar: ofereceuParar(falasBot[falasBot.length - 1] ?? ""),
+        });
 
   const respondidos = new Set<AssuntoDoFunil>();
   for (const texto of [...falasCliente, mensagemAtual]) {
@@ -679,6 +694,9 @@ export function estadoDaConversa(params: {
     oQueEleDisse: mensagemAtual.trim(),
     agendamento,
     recusa,
+    duvidaSobreOContato: duvidaSobreOContato(mensagemAtual, {
+      falasAnterioresDoCliente: falasCliente.length,
+    }),
     recusasAnteriores,
     falaAtualRespondeFunil,
     clienteColaborando:
@@ -783,6 +801,24 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
           familia: estado.recusa.familia,
           oQueEleDisse: estado.oQueEleDisse,
         };
+  }
+
+  /*
+   * A DÚVIDA sobre o contato vem logo depois da recusa (08/10/2026).
+   *
+   * "Acho que você mandou errado" virava pedido para parar; sem isso, viraria
+   * pergunta de funil, que é pior ainda: "em qual região você procura?" para
+   * quem quer saber quem está escrevendo. Responder quem escreve e por quê é
+   * a condição de qualquer outra conversa. A recusa vem antes porque "foi
+   * engano, me tira da lista" é pedido para parar, e pedido para parar
+   * encerra.
+   */
+  if (estado.duvidaSobreOContato) {
+    return {
+      tipo: "esclarecer_contato",
+      oQueEleDisse: estado.oQueEleDisse,
+      oferecerParar: estado.falasDoCliente - 1 <= FALAS_DO_COMECO,
+    };
   }
 
   // O aceite vem antes do resto: é o momento da conversão, e qualquer outra
@@ -1021,7 +1057,15 @@ const PERGUNTA_DO_ASSUNTO: Record<AssuntoDoFunil, string> = {
  * O bloco que vai no TOPO do prompt. Curto e único: é a tarefa da mensagem,
  * e é a única instrução que precisa ganhar de todas as outras.
  */
-export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | null }): string {
+export function blocoDaJogada(
+  jogada: Jogada,
+  contexto: {
+    nomeDoFoco: string | null;
+    /** Para `esclarecer_contato` dizer quem escreve. Ausente, vale o genérico. */
+    nomeAssistente?: string | null;
+    nomeCorretor?: string | null;
+  },
+): string {
   const cabecalho = "SUA ÚNICA TAREFA NESTA MENSAGEM";
 
   switch (jogada.tipo) {
@@ -1267,6 +1311,27 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
             "Despeça-se em UMA frase, agradecendo e deixando a porta aberta para quando ele quiser voltar.",
             "Nenhuma pergunta, nenhuma oferta.",
           ].join("\n");
+    case "esclarecer_contato": {
+      /*
+       * Ele perguntou quem escreve, então apresentar-se é RESPONDER. A
+       * instrução da lista ("não se apresente de novo") e a regra 21 ("não se
+       * apresente como assistente de ninguém") valem para a conversa que já
+       * existe; aqui ele está dizendo que não sabe com quem fala, e o número
+       * que ele vê é o do corretor. Dizer isso é honestidade, não
+       * intermediação.
+       */
+      const quem = contexto.nomeAssistente?.trim() ? `a ${contexto.nomeAssistente.trim()}` : "a assistente";
+      const corretor = contexto.nomeCorretor?.trim() ? `do corretor ${contexto.nomeCorretor.trim()}` : "do corretor";
+      return [
+        `${cabecalho}: ele não sabe quem está escrevendo ou se a mensagem era para ele ("${jogada.oQueEleDisse.slice(0, 100)}"). Responda ISSO, e só isso.`,
+        `Diga quem escreve: você é ${quem}, assistente digital da imobiliária (diga o nome dela), e este WhatsApp é ${corretor}. Ele perguntou, então aqui apresentar-se é responder, mesmo que outra instrução diga para não se apresentar de novo.`,
+        "Em meia frase, diga por que escrevemos: o assunto da mensagem que mandamos antes (o imóvel ou a lista do CENÁRIO, se houver). NÃO invente de onde veio o número dele, nem diga que ele se cadastrou ou pediu informação: você não sabe.",
+        jogada.oferecerParar
+          ? "Se foi engano, peça desculpa. Termine perguntando se ele quer continuar recebendo novidades de imóveis por aqui, e deixe claro que, se não quiser, você não manda mais nada."
+          : "Depois, siga a conversa de onde ela estava, sem pergunta nova.",
+        "Nenhuma pergunta de região, estágio, dormitórios ou renda; nenhum imóvel novo, foto, link ou convite para visita. Uma ou duas frases curtas.",
+      ].join(QUEBRA);
+    }
     case "entregar_oferta":
       return [
         `${cabecalho}: ENTREGAR o que você ofereceu na última mensagem ("${jogada.oferta.slice(0, 90)}") — ele aceitou.`,
@@ -1342,6 +1407,7 @@ export function pendenteDaQualificacao(estado: EstadoDaConversa): AssuntoDoFunil
 const SEM_TRAVA_DE_QUALIFICACAO = new Set<Jogada["tipo"]>([
   "acolher_recusa",
   "encerrar_recusado",
+  "esclarecer_contato",
   "deixar_porta_aberta",
   "encerrar_confirmado",
   "confirmar_visita",

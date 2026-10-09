@@ -23,6 +23,7 @@ import {
 } from "./antiBan";
 import { consultarEstadoConexao } from "./provider";
 import { resetPorTrocaDeNumero } from "./trocaDeNumero";
+import { MOTIVO_SESSAO_CAIU } from "./sessaoCaida";
 import { camposDaFicha } from "./fichaDoLead";
 import type { DossieClienteIA } from "./types";
 import { contaComoRespostaDaLista, type ListaRecenteDoLead } from "./contextoDaCampanha";
@@ -2021,6 +2022,67 @@ export async function marcarRespostaCampanha(lista: ListaRecenteDoLead): Promise
 }
 
 /**
+ * A sessão do WhatsApp voltou a funcionar: as mensagens que esperavam por
+ * ela perdem a marca (`MOTIVO_SESSAO_CAIU`) e, quando quem chama é a
+ * reconexão, a pausa que essas falhas abriram cai junto (ver
+ * `sessaoCaida.ts`).
+ *
+ * Só levanta a pausa quando ACHOU marca de sessão: pausa aberta por outro
+ * tipo de falha (recusa do provedor, número restrito) continua de pé.
+ * Devolve quantas mensagens perderam a marca.
+ */
+export async function liberarFilaDaSessao(params: {
+  instanciaId: string;
+  /** Quem chama e já sabe economiza uma consulta. */
+  corretorId?: string;
+  levantarPausa: boolean;
+}): Promise<number> {
+  const supabase = createServiceClient();
+
+  let corretorId = params.corretorId ?? null;
+  if (!corretorId) {
+    const { data } = await supabase
+      .from("corretor_whatsapp_instancias")
+      .select("corretor_id")
+      .eq("id", params.instanciaId)
+      .maybeSingle();
+    corretorId = data?.corretor_id ?? null;
+  }
+  if (!corretorId) return 0;
+
+  const { data: campanhas } = await supabase
+    .from("whatsapp_campanhas")
+    .select("id")
+    .eq("corretor_id", corretorId);
+  const ids = (campanhas ?? []).map((c) => c.id);
+  if (ids.length === 0) return 0;
+
+  const { data: liberados, error } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .update({ erro_motivo: null })
+    .in("campanha_id", ids)
+    .eq("status", "pendente")
+    .eq("erro_motivo", MOTIVO_SESSAO_CAIU)
+    .select("id");
+  if (error) {
+    console.error("[sessao] falha ao liberar a fila depois da reconexão:", error.message);
+    return 0;
+  }
+
+  const quantos = liberados?.length ?? 0;
+  if (quantos > 0 && params.levantarPausa) {
+    await supabase
+      .from("corretor_whatsapp_instancias")
+      .update({ bloqueado_ate: null, falhas_seguidas: 0 })
+      .eq("id", params.instanciaId);
+    console.warn(
+      `[sessao] número reconectado: ${quantos} mensagens voltam para a fila e a pausa por sessão caída foi levantada.`,
+    );
+  }
+  return quantos;
+}
+
+/**
  * Contabiliza o resultado de um envio.
  *
  * Falhas seguidas quase sempre significam número já restrito pelo
@@ -2387,6 +2449,9 @@ export async function sincronizarConexaoInstancia(params: {
     );
   }
 
+  // A sessão voltou: a fila que esperava por ela anda (ver `sessaoCaida.ts`).
+  await liberarFilaDaSessao({ instanciaId: params.instanciaId, levantarPausa: true });
+
   return { conectado: true, estado: estado.estado, conectadoEm: new Date(conectadoEm) };
 }
 
@@ -2446,6 +2511,9 @@ export async function registrarEventoConexao(params: {
       `[whatsapp] número trocado em ${params.instanceName}: cota, bloqueio e aquecimento zerados.`,
     );
   }
+
+  // A sessão voltou: a fila que esperava por ela anda (ver `sessaoCaida.ts`).
+  if (conectado) await liberarFilaDaSessao({ instanciaId: instancia.id, levantarPausa: true });
 }
 
 // ---------------------------------------------------------------------------

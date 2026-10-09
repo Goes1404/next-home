@@ -44,6 +44,13 @@ export const FRASES_DE_RECUSA: readonly FraseDeRecusa[] = [
   { fala: "chega de mensagem por favor", esperado: "parada", origem: "sonda" },
   { fala: "quem te deu meu número? não conheço vocês", esperado: "parada", origem: "sonda" },
   { fala: "vou denunciar esse número", esperado: "parada", origem: "sonda" },
+  { fala: "foi engano, me tira da lista", esperado: "parada", origem: "sonda" },
+  {
+    fala: "não",
+    esperado: "parada",
+    contexto: "Se foi engano, desculpa! Quer continuar recebendo novidades de imóveis por aqui?",
+    origem: "sonda",
+  },
 
   // ── Desinteresse ────────────────────────────────────────────────────
   { fala: "No momento não tenho interesse. Obrigada", esperado: "desinteresse", origem: "producao" },
@@ -93,6 +100,15 @@ export const FRASES_DE_RECUSA: readonly FraseDeRecusa[] = [
   { fala: "não interessa o bairro, pode ser qualquer um", esperado: null, origem: "sonda" },
   { fala: "já tenho a carta de crédito", esperado: null, origem: "sonda" },
   { fala: "Não precisa ser condomínio", esperado: null, origem: "producao" },
+
+  // ── Dúvida sobre o contato: explica quem escreve, NÃO encerra ───────
+  // A primeira entrou por um falso positivo da IA (08/10/2026): ela leu a
+  // dúvida como pedido para parar e se despediu (ver `duvidaDeEngano.ts`).
+  { fala: "Bom dia.. acho que você mandou errado", esperado: null, origem: "producao" },
+  { fala: "foi engano?", esperado: null, origem: "sonda" },
+  { fala: "quem é?", esperado: null, origem: "sonda" },
+  { fala: "de onde você tirou meu número?", esperado: null, origem: "sonda" },
+  { fala: "é pra mim essa mensagem?", esperado: null, origem: "sonda" },
 ];
 
 /**
@@ -100,4 +116,4 @@ export const FRASES_DE_RECUSA: readonly FraseDeRecusa[] = [
  * melhorar a regex, o teste avisa para atualizar o número; se piorar, reprova.
  * As que ela não pega ficam para a IA (e o filtro garante que chegam lá).
  */
-export const ACERTOS_DA_REGEX = 28; // de 35 recusas em 06/10/2026; as outras 7 ficam para a IA
+export const ACERTOS_DA_REGEX = 29; // de 37 recusas em 08/10/2026; as outras 8 ficam para a IA (o "não" depois da oferta de parar a regex só pega com o contexto)

@@ -68,6 +68,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[memoria-da-conversa-e-ficha-viva]] — memória em prosa, recusa com consequência e pergunta antes do funil (0110)
 - [[quem-nao-quer-contato-e-lido-sempre]] — o pedido de parada passou a ser lido com a IA calada; vocabulário ampliado; "Liberar contato" na ficha (06/10)
 - [[recusa-em-camadas]] — regex para o óbvio, IA para o duvidoso, registro e frases de referência no CI (0162)
+- [[duvida-de-engano-nao-e-pedido-para-parar]] ⚠️ "acho que você mandou errado" virava despedida; agora a IA diz quem escreve, por quê, e oferece parar (v49, 09/10)
 - [[eval-de-28-09-e-a-v41]] — "Next Home" travava o foco no Breeze Home; guarda anti-eco enlatada; visita confirmada sem aceite; renda em 1 de 17 (v41)
 - [[a-renda-da-ficha-nao-chegava-ao-atendimento]] — a renda da ficha entrava null no turno; "o que cabe" passou a olhar o catálogo inteiro e nomear o mais perto (v45)
 - [[perguntas-antes-da-indicacao]] — v42: as quatro perguntas vêm antes de indicar imóvel; o código corta indicação prematura

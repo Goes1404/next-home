@@ -410,16 +410,29 @@ export async function executarTurnoDeAtendimento(
       foco,
       blocoMemoria: blocoDaMemoria(pedido.memoria ?? null),
       blocoJogada: [
-        blocoDaJogada(jogada, { nomeDoFoco: foco?.nome ?? null }),
-        estagio?.bloco ?? "",
-        pendenteDaTrava
-          ? blocoDeQualificacao(pendenteDaTrava, {
-              nomeDoFoco: foco?.nome ?? null,
-              jogadaJaPergunta: jogada.tipo === "perguntar",
-            })
-          : "",
-        teto && escolha && !pendenteDaTrava ? blocoDeCapacidade(teto, escolha) : "",
-        blocoPalpite,
+        blocoDaJogada(jogada, {
+          nomeDoFoco: foco?.nome ?? null,
+          nomeAssistente: pedido.identidade.nomeAssistente,
+          nomeCorretor: pedido.identidade.nomeCorretor,
+        }),
+        /*
+         * Quem perguntou quem escreve recebe SÓ a resposta: estágio, renda e
+         * palpite de nome empurrariam imóvel para quem ainda nem sabe com
+         * quem fala (08/10/2026).
+         */
+        ...(jogada.tipo === "esclarecer_contato"
+          ? []
+          : [
+              estagio?.bloco ?? "",
+              pendenteDaTrava
+                ? blocoDeQualificacao(pendenteDaTrava, {
+                    nomeDoFoco: foco?.nome ?? null,
+                    jogadaJaPergunta: jogada.tipo === "perguntar",
+                  })
+                : "",
+              teto && escolha && !pendenteDaTrava ? blocoDeCapacidade(teto, escolha) : "",
+              blocoPalpite,
+            ]),
       ]
         .filter(Boolean)
         .join("\n\n"),
