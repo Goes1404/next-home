@@ -48,6 +48,11 @@
   para o plano atual — não fique só olhando o histórico de deployments
   (deployment recusado na criação nunca aparece lá). Force um deploy manual
   via API/MCP da Vercel para ver o erro de verdade.
+- **Se só uma das branches ficou sem deployment, o push dela não chegou à
+  Vercel** (10/10/2026: dois previews e nenhum de produção para o mesmo
+  commit). Os status do commit no GitHub (`/commits/<sha>/statuses`) têm um
+  `pending` por push que a Vercel recebeu. Commit só de documentação não
+  precisa de nada; com código, Redeploy no painel ou o próximo push.
 - **`CRON_SECRET`**: precisa estar configurado em Settings → Environment
   Variables → Production. Sem ele, `/api/cron/campanhas` recusa toda
   requisição em produção (falha fechada, mesmo padrão do webhook de
