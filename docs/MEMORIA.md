@@ -9904,3 +9904,8 @@ Nota: [[atalho-da-tela-inicial-guarda-o-icone-antigo]].
   navegadores pedem sem ler o `<head>`; antes davam 404.
 - Para conferir sem celular: `Page.getAppManifest` e
   `Page.getInstallabilityErrors` pelo CDP no Chromium do Playwright.
+- **O mesmo print voltou em 10/10.** O servidor seguia certo nos três
+  endereços, e o favicon do site antigo também é o símbolo da marca. Se o
+  atalho recriado ainda mostrar o triângulo, falta apagar os dados do site no
+  navegador, ou o atalho aponta para um deploy antigo da Vercel (endereço com
+  sufixo), que serve o favicon padrão do Next para sempre.

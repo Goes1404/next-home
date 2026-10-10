@@ -14,7 +14,7 @@ codigo:
   - public/icones/icone-mascaravel-512.png
   - public/apple-touch-icon.png
 created: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 fonte: docs/MEMORIA.md — "O atalho da tela inicial guarda o ícone antigo (09/10/2026)"
 summary: Depois da troca do favicon, o atalho do celular seguia com o triângulo do Next borrado. Atalho guarda o ícone de quando foi criado e não atualiza. O site já entregava o ícone novo; faltava um manifesto com ícone de 512 px e versão mascarável, sem start_url e com display "browser".
 ---
@@ -71,6 +71,33 @@ tamanhos dos ícones, mascarável dentro da zona segura e sem transparência, e
 Ícone errado na tela inicial: antes de mexer no código, conferir o que o site
 entrega (`curl` em `/icon.png`, `/apple-icon.png` e `/manifest.webmanifest`).
 Se estiver certo, o atalho é antigo.
+
+## Voltou a aparecer no dia seguinte (10/10/2026)
+
+O mesmo print chegou de novo ("ainda não arrumou o favicon"). Conferido de
+novo, e nada no servidor mostra o triângulo:
+
+- `www.nexthomeimoveis.com`, `nexthomeimoveis.com` (redireciona para o www) e
+  `next-home-drab.vercel.app` entregam os mesmos arquivos do repositório.
+- O site antigo (`nexthomeimobiliaria.com.br`) usa como ícone o próprio
+  símbolo da marca, num PNG de 32 px. O triângulo também não vem de lá.
+
+O triângulo só pode vir de três lugares, e nenhum se resolve no código:
+
+1. **O atalho antigo continua na tela.** Nenhum celular troca o ícone de um
+   atalho já criado. É preciso apagá-lo e criar outro.
+2. **O navegador guardou o ícone antigo.** Se o atalho novo sair com o
+   triângulo, apagar os dados do site no navegador (Chrome: Configurações →
+   Configurações do site → Todos os sites; iPhone: Ajustes → Safari →
+   Avançado → Dados dos Sites) e abrir o site de novo antes de criar o atalho.
+3. **O atalho aponta para um endereço de deploy antigo da Vercel**
+   (`next-home-…vercel.app` com sufixo). Deploy é imutável: aquele endereço
+   serve o favicon padrão do Next para sempre, e recriar o atalho a partir dele
+   repete o triângulo. O atalho tem de ser criado a partir de
+   `www.nexthomeimoveis.com`.
+
+O Chromium lista `start-url-not-valid` para o nosso manifesto. É esperado,
+porque não há `start_url` de propósito, e não impede o atalho.
 
 ## Relacionadas
 - [[identidade-da-marca-para-o-google]]
