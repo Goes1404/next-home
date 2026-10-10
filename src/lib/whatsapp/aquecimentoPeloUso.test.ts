@@ -140,10 +140,11 @@ describe("quem usa o limite", () => {
 });
 
 /**
- * A queda recomeça o aquecimento (0174, 10/10/2026). O caso real: o número da
- * Bruna mandou 15, 23, 35, 41 e 50 de 04 a 08/10, foi restringido pelo
- * WhatsApp e caiu em 08/10. Sem a regra, ao voltar ele seguiria no ritmo de
- * antes (50 × 1,5).
+ * A queda longa recomeça o aquecimento (0174; desde a 0176, só com 3 dias ou
+ * mais sem conectar). O caso real: o número da Bruna mandou 15, 23, 35, 41 e
+ * 50 de 04 a 08/10, foi restringido pelo WhatsApp e caiu em 08/10. Sem a
+ * regra, ao voltar ele seguiria no ritmo de antes (50 × 1,5). Quem decide se
+ * a queda já durou o bastante é `quedaPedeRecomeco`; aqui o marco já veio.
  */
 describe("limite do dia depois de uma queda", () => {
   const historicoDaBruna = [
@@ -166,7 +167,7 @@ describe("limite do dia depois de uma queda", () => {
     expect(sem.limite).toBe(75);
     expect(com.limite).toBe(PISO_POR_USO);
     expect(com.motivo).toBe("queda");
-    expect(fraseDoLimite(com)).toContain("saiu do ar");
+    expect(fraseDoLimite(com)).toContain("3 dias ou mais sem conectar");
   });
 
   it("depois da queda, sobe de novo com o uso", () => {

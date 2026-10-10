@@ -1,5 +1,6 @@
 /**
- * O número caiu: as listas param e o aquecimento recomeça (0174, 10/10/2026).
+ * O número caiu: as listas param e, se a queda durar, o limite recomeça
+ * (0174 e 0176, 10/10/2026).
  *
  * O caso que criou esta regra: o WhatsApp restringiu o número da Bruna por
  * envio em massa em 07/10. No dia seguinte a lista dela mandou mais 50
@@ -9,28 +10,35 @@
  * do ar logo depois de um volume desses é o pior momento para retomar no
  * mesmo ritmo.
  *
- * Então, quando o número fica fora do ar por 30 minutos:
- * - as listas em andamento do corretor pausam, com o motivo escrito, e só ele
- *   retoma (depois de reconectar e olhar o celular);
- * - o limite diário passa a contar só os envios depois da queda: volta ao
- *   piso de 15 e sobe com o uso de novo (`limiteDoDia`, `recomecoDepoisDe`).
+ * Então:
+ * - com 30 minutos fora do ar, as listas em andamento do corretor pausam,
+ *   com o motivo escrito, e só ele retoma (depois de reconectar e olhar o
+ *   celular);
+ * - com 3 dias seguidos sem conectar, o limite diário passa a contar só os
+ *   envios depois da queda: volta ao piso de 15 e sobe com o uso de novo
+ *   (`limiteDoDia`, `recomecoDepoisDe`).
  *
  * Os 30 minutos separam a queda da oscilação: a Evolution reconecta sozinha
- * as quedas de rede em segundos, e perder a maturidade do número por causa de
- * um soluço de internet seria castigar o número à toa (a mesma régua de
- * `trocaDeNumero.ts`, que não zera nada ao reconectar o mesmo número).
+ * as quedas de rede em segundos.
+ *
+ * Os 3 dias são decisão do dono da conta (10/10/2026). Na 0174 o limite
+ * recomeçava junto com a pausa, aos 30 minutos, e os números caem com
+ * frequência: no mesmo dia, quatro dos seis estavam fora do ar (três com
+ * 401, o aparelho desconectado da conta) e todos voltariam a 15. Quem
+ * reconecta antes de 3 dias volta no ritmo que tinha, como `trocaDeNumero.ts`
+ * já faz ao reconectar o mesmo número; o freio da queda curta é a pausa da
+ * lista, porque retomar é decisão do corretor.
  *
  * As quedas que já existiam em 10/10 não pausaram lista nenhuma, por decisão
- * do dono da conta ("não pause as listas"): a migration as marcou como
- * tratadas e só recomeçou o aquecimento delas.
+ * do dono da conta ("não pause as listas").
  *
  * Puro: quem aplica é `quedaDoNumero.ts`.
  */
 
-import { PISO_POR_USO } from "./antiBan";
+import { DIAS_FORA_PARA_RECOMECAR, PISO_POR_USO } from "./antiBan";
 import { quandoEmSaoPaulo } from "./saudeDaConexao";
 
-/** Quanto tempo fora do ar até a queda contar (oscilação não conta). */
+/** Quanto tempo fora do ar até a queda pausar as listas (oscilação não conta). */
 export const MINUTOS_PARA_A_QUEDA_CONTAR = 30;
 
 export interface FotoDaQueda {
@@ -39,16 +47,30 @@ export interface FotoDaQueda {
   conectadoEm: Date | null;
   /** Marco da queda atual. */
   desconectadoEm: Date | null;
-  /** Quando a proteção rodou pela última vez. */
+  /** Quando as listas foram pausadas por queda pela última vez. */
   quedaTratadaEm: Date | null;
+  /** Começo da última queda que recomeçou o limite. */
+  aquecimentoDesde: Date | null;
 }
 
-/** A queda atual pede a proteção (e ainda não a recebeu)? */
-export function quedaPedeProtecao(f: FotoDaQueda, agora: Date): boolean {
+/** A queda atual pede a pausa das listas (e ainda não a recebeu)? */
+export function quedaPedePausa(f: FotoDaQueda, agora: Date): boolean {
   if (f.statusConexao === "conectado") return false;
   if (!f.conectadoEm || !f.desconectadoEm) return false;
   if (agora.getTime() - f.desconectadoEm.getTime() < MINUTOS_PARA_A_QUEDA_CONTAR * 60_000) return false;
   return !f.quedaTratadaEm || f.quedaTratadaEm.getTime() < f.desconectadoEm.getTime();
+}
+
+/**
+ * A queda atual passou de 3 dias sem conectar e o limite ainda não
+ * recomeçou por ela? O marco gravado é o começo da queda: igual ao começo da
+ * queda atual quer dizer que esta já foi contada.
+ */
+export function quedaPedeRecomeco(f: FotoDaQueda, agora: Date): boolean {
+  if (f.statusConexao === "conectado") return false;
+  if (!f.conectadoEm || !f.desconectadoEm) return false;
+  if (agora.getTime() - f.desconectadoEm.getTime() < DIAS_FORA_PARA_RECOMECAR * 86_400_000) return false;
+  return !f.aquecimentoDesde || f.aquecimentoDesde.getTime() < f.desconectadoEm.getTime();
 }
 
 /** O motivo da queda atual ainda não foi consultado na Evolution? */
@@ -63,15 +85,18 @@ export function motivoAindaNaoConsultado(f: {
 
 /**
  * O texto que a lista pausada mostra. Diz quando caiu, por quê (se o
- * WhatsApp disse) e o que acontece ao retomar, para retomar ser decisão
- * informada e não um clique para fazer o aviso sumir.
+ * WhatsApp disse) e o que acontece com o limite, para retomar ser decisão
+ * informada e não um clique para fazer o aviso sumir. A pausa sai aos 30
+ * minutos, quando ainda não se sabe se a queda vai passar de 3 dias: por
+ * isso o limite aparece como condição.
  */
 export function motivoDaPausaPorQueda(desconectadoEm: Date, motivo: string | null): string {
   return (
     `Pausada sozinha: o número caiu em ${quandoEmSaoPaulo(desconectadoEm)}` +
     (motivo ? ` (${motivo})` : "") +
-    ". Reconecte e confira o celular antes de retomar. Ao retomar, a lista recomeça devagar: " +
-    `até ${PISO_POR_USO} mensagens por dia, subindo conforme o número volta a ser usado.`
+    ". Reconecte e confira o celular antes de retomar. " +
+    `Se ele passar ${DIAS_FORA_PARA_RECOMECAR} dias ou mais sem conectar, o limite volta a ` +
+    `${PISO_POR_USO} mensagens por dia e sobe de novo conforme o número é usado.`
   );
 }
 

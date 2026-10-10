@@ -252,6 +252,12 @@ export const CRESCIMENTO_POR_USO = 1.5;
 export const DIAS_DE_USO_RECENTE = 7;
 /** Recusas na semana a partir das quais o crescimento trava. */
 export const RECUSAS_PARA_FREAR = 3;
+/**
+ * Dias seguidos sem conectar até o limite recomeçar do piso (0176). Queda
+ * mais curta não mexe no limite: o número volta no ritmo que tinha. Ver
+ * `protecaoDaQueda.ts`.
+ */
+export const DIAS_FORA_PARA_RECOMECAR = 3;
 
 export type LimiteDoDia = {
   limite: number;
@@ -281,9 +287,10 @@ export type LimiteDoDia = {
  * `historico` = envios por dia (YYYY-MM-DD em São Paulo). `hoje` no mesmo
  * formato. Pura: a tela e o disparador usam a mesma conta.
  *
- * `recomecoDepoisDe` (0174) é o dia da última queda tratada do número: os
- * envios até ele, inclusive, não contam. O número que caiu volta ao piso e
- * sobe de novo com o uso, em vez de retomar no ritmo de antes da queda
+ * `recomecoDepoisDe` (0174) é o dia em que começou a última queda de 3 dias
+ * ou mais sem conectar (o prazo é da 0176): os envios até ele, inclusive,
+ * não contam. O número que ficou esse tempo fora volta ao piso e sobe de
+ * novo com o uso, em vez de retomar no ritmo de antes da queda
  * (`protecaoDaQueda.ts`). O dia da queda inteiro fica de fora porque o
  * histórico é por dia e a maior parte do que saiu nele foi antes de cair.
  */
@@ -348,6 +355,6 @@ export function fraseDoLimite(l: LimiteDoDia): string {
     case "freio":
       return `Hoje seu número pode mandar até ${l.limite} mensagens de lista. O limite parou de subir porque várias pessoas pediram para sair esta semana — vale rever a mensagem ou o público.`;
     case "queda":
-      return `Hoje seu número pode mandar até ${l.limite} mensagens de lista. Ele saiu do ar, e o limite recomeçou devagar para proteger a linha: sobe de novo conforme ele é usado.`;
+      return `Hoje seu número pode mandar até ${l.limite} mensagens de lista. Ele ficou ${DIAS_FORA_PARA_RECOMECAR} dias ou mais sem conectar, e o limite recomeçou devagar para proteger a linha: sobe de novo conforme ele é usado.`;
   }
 }

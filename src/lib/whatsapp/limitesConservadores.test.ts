@@ -19,6 +19,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CONFIG_PADRAO,
+  DIAS_FORA_PARA_RECOMECAR,
   INTERVALO_MAXIMO_SEGUNDOS,
   INTERVALO_MINIMO_SEGUNDOS,
   limiteDiarioCampanha,
@@ -111,6 +112,14 @@ describe("limites do número: só para o lado conservador (09/10/2026)", () => {
       }
     }
     expect(cenarios).toBeGreaterThan(100);
+  });
+
+  it("a queda recomeça o limite com no máximo 3 dias sem conectar (10/10/2026)", () => {
+    // Afrouxado pelo dono da conta em 10/10/2026: na 0174 o limite voltava a
+    // 15 aos 30 minutos fora do ar, junto com a pausa da lista, e os números
+    // caem com frequência (quatro de seis no mesmo dia, três com 401). Um
+    // prazo maior que 3 dias é afrouxar de novo: decisão dele, com data.
+    expect(DIAS_FORA_PARA_RECOMECAR).toBeLessThanOrEqual(3);
   });
 
   it("o intervalo entre mensagens não fica menor que 1min30 a 2min", () => {

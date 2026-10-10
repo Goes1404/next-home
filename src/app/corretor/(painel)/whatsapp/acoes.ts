@@ -319,6 +319,10 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
       corretor_id: corretor.id,
       instance_name: instanceName,
       status_conexao: resultado.jaConectado ? "conectado" : "conectando",
+      // Já no ar: apaga o marco da queda e a marca do aviso, como o webhook
+      // e a sincronização fazem ao reconectar. Com o marco velho, a próxima
+      // queda herdaria o começo desta e já contaria como 3 dias fora (0176).
+      ...(resultado.jaConectado ? { desconectado_em: null, aviso_queda_enviado_em: null } : {}),
       // No pareamento por número não há QR para ninguém ler: guardar um
       // seria o mesmo lixo de 13 KB que já estava no banco, envelhecendo
       // sem nunca ser exibido.

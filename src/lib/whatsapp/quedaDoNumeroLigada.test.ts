@@ -68,8 +68,46 @@ describe("o disparador", () => {
   });
 });
 
+describe("a varredura da queda (0176)", () => {
+  const varredura = ler("src/lib/whatsapp/quedaDoNumero.ts");
+
+  it("a pausa da lista, aos 30 minutos, não recomeça o limite", () => {
+    const pausa = varredura.match(/\.update\(\{\s*queda_tratada_em:[^}]*\}\)/);
+    expect(pausa, "a varredura grava queda_tratada_em ao pausar").not.toBeNull();
+    expect(pausa?.[0]).not.toContain("aquecimento_desde");
+  });
+
+  it("o limite só recomeça pelo prazo dos 3 dias, e num lugar só", () => {
+    const pergunta = varredura.indexOf("quedaPedeRecomeco(foto");
+    const escrita = varredura.indexOf("aquecimento_desde:");
+    expect(pergunta).toBeGreaterThan(-1);
+    expect(escrita).toBeGreaterThan(pergunta);
+    expect(varredura.match(/aquecimento_desde:/g)).toHaveLength(1);
+  });
+});
+
+describe("toda volta do número apaga o marco da queda (0176)", () => {
+  // Marco velho num número conectado faz a próxima queda herdar o começo da
+  // anterior e já contar como 3 dias fora: o limite voltaria a 15 na hora.
+  it("o botão Conectar com o número já no ar", () => {
+    const acoes = ler("src/app/corretor/(painel)/whatsapp/acoes.ts");
+    const inicio = acoes.indexOf('status_conexao: resultado.jaConectado ? "conectado"');
+    expect(inicio).toBeGreaterThan(-1);
+    const fim = acoes.indexOf("onConflict", inicio);
+    expect(fim).toBeGreaterThan(inicio);
+    expect(acoes.slice(inicio, fim)).toMatch(/jaConectado\s*\?\s*\{\s*desconectado_em:\s*null/);
+  });
+
+  it("a sincronização e o webhook", () => {
+    const repo = ler("src/lib/whatsapp/repositorio.ts");
+    for (const assinatura of ["export async function sincronizarConexaoInstancia(", "export async function registrarEventoConexao("]) {
+      expect(corpoDe(repo, assinatura), assinatura).toMatch(/desconectado_em:\s*null/);
+    }
+  });
+});
+
 describe("o limite do dia", () => {
-  it("conta só o que saiu depois da última queda tratada", () => {
+  it("conta só o que saiu depois da última queda de 3 dias", () => {
     const corpo = corpoDe(ler("src/lib/whatsapp/repositorio.ts"), "export async function calcularLimiteDoDia(");
     expect(corpo).toMatch(/recomecoDepoisDe:\s*instancia\?\.aquecimento_desde/);
   });

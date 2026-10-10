@@ -1,18 +1,27 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
+import { DIAS_FORA_PARA_RECOMECAR, PISO_POR_USO } from "./antiBan";
 import { motivoDaQueda, motivoGuardadoNaEvolution } from "./motivoDaQueda";
-import { motivoAindaNaoConsultado, motivoDaPausaPorQueda, quedaPedeProtecao } from "./protecaoDaQueda";
+import {
+  motivoAindaNaoConsultado,
+  motivoDaPausaPorQueda,
+  quedaPedePausa,
+  quedaPedeRecomeco,
+  type FotoDaQueda,
+} from "./protecaoDaQueda";
 import { consultarMotivoDaQueda } from "./provider";
 
 /**
  * A varredura dos números fora do ar (0174), a cada tique do cron.
  *
- * Duas tarefas, cada uma uma vez por queda:
+ * Três tarefas, cada uma uma vez por queda:
  * 1. perguntar à Evolution o motivo que ela guardou, quando o webhook não o
  *    trouxe (quedas detectadas pela sincronização, ou anteriores a 0174);
  * 2. depois de 30 minutos fora do ar, pausar as listas em andamento do
- *    corretor e recomeçar o aquecimento (`protecaoDaQueda.ts`).
+ *    corretor;
+ * 3. depois de 3 dias seguidos sem conectar, recomeçar o limite do piso
+ *    (0176). Queda mais curta não mexe no limite (`protecaoDaQueda.ts`).
  *
  * Roda antes da janela de horário e de qualquer fila, como a varredura do
  * aviso de queda: proteção pendurada no caminho do disparo herdaria todas as
@@ -24,7 +33,7 @@ export async function protegerNumerosQueCairam(agora: Date = new Date()): Promis
     const { data, error } = await supabase
       .from("corretor_whatsapp_instancias")
       .select(
-        "id, corretor_id, instance_name, status_conexao, conectado_em, desconectado_em, queda_tratada_em, motivo_queda_codigo, motivo_queda_em",
+        "id, corretor_id, instance_name, status_conexao, conectado_em, desconectado_em, queda_tratada_em, aquecimento_desde, motivo_queda_codigo, motivo_queda_em",
       )
       .neq("status_conexao", "conectado")
       .not("desconectado_em", "is", null);
@@ -56,38 +65,50 @@ export async function protegerNumerosQueCairam(agora: Date = new Date()): Promis
         if (codigo !== null) console.warn(`[queda] ${linha.instance_name}: a Evolution guardou o código ${codigo}.`);
       }
 
-      const pede = quedaPedeProtecao(
-        {
-          statusConexao: linha.status_conexao,
-          conectadoEm: linha.conectado_em ? new Date(linha.conectado_em) : null,
-          desconectadoEm,
-          quedaTratadaEm: linha.queda_tratada_em ? new Date(linha.queda_tratada_em) : null,
-        },
-        agora,
-      );
-      if (!pede) continue;
+      const foto: FotoDaQueda = {
+        statusConexao: linha.status_conexao,
+        conectadoEm: linha.conectado_em ? new Date(linha.conectado_em) : null,
+        desconectadoEm,
+        quedaTratadaEm: linha.queda_tratada_em ? new Date(linha.queda_tratada_em) : null,
+        aquecimentoDesde: linha.aquecimento_desde ? new Date(linha.aquecimento_desde) : null,
+      };
 
-      const { data: pausadas, error: erroPausa } = await supabase
-        .from("whatsapp_campanhas")
-        .update({ status: "pausada", pausa_automatica: motivoDaPausaPorQueda(desconectadoEm, motivoDaQueda(codigo)) })
-        .eq("corretor_id", linha.corretor_id)
-        .eq("status", "em_andamento")
-        .select("id");
-      if (erroPausa) {
-        // Sem a pausa, não marca como tratada: o próximo tique tenta de novo.
-        console.error("[queda] não consegui pausar as listas:", erroPausa.message);
-        continue;
+      if (quedaPedePausa(foto, agora)) {
+        const { data: pausadas, error: erroPausa } = await supabase
+          .from("whatsapp_campanhas")
+          .update({ status: "pausada", pausa_automatica: motivoDaPausaPorQueda(desconectadoEm, motivoDaQueda(codigo)) })
+          .eq("corretor_id", linha.corretor_id)
+          .eq("status", "em_andamento")
+          .select("id");
+        if (erroPausa) {
+          // Sem a pausa, não marca como tratada: o próximo tique tenta de novo.
+          console.error("[queda] não consegui pausar as listas:", erroPausa.message);
+        } else {
+          await supabase
+            .from("corretor_whatsapp_instancias")
+            .update({ queda_tratada_em: agora.toISOString() })
+            .eq("id", linha.id);
+          console.warn(
+            `[queda] ${linha.instance_name} fora do ar desde ${desconectadoEm.toISOString()}: ` +
+              `${pausadas?.length ?? 0} lista(s) pausada(s).`,
+          );
+        }
       }
 
-      await supabase
-        .from("corretor_whatsapp_instancias")
-        .update({ queda_tratada_em: agora.toISOString(), aquecimento_desde: desconectadoEm.toISOString() })
-        .eq("id", linha.id);
-
-      console.warn(
-        `[queda] ${linha.instance_name} fora do ar desde ${desconectadoEm.toISOString()}: ` +
-          `${pausadas?.length ?? 0} lista(s) pausada(s) e aquecimento recomeçado.`,
-      );
+      if (quedaPedeRecomeco(foto, agora)) {
+        const { error: erroRecomeco } = await supabase
+          .from("corretor_whatsapp_instancias")
+          .update({ aquecimento_desde: desconectadoEm.toISOString() })
+          .eq("id", linha.id);
+        if (erroRecomeco) {
+          console.error("[queda] não consegui recomeçar o limite:", erroRecomeco.message);
+        } else {
+          console.warn(
+            `[queda] ${linha.instance_name} está há ${DIAS_FORA_PARA_RECOMECAR} dias ou mais sem conectar: ` +
+              `o limite recomeça de ${PISO_POR_USO} por dia.`,
+          );
+        }
+      }
     }
   } catch (e) {
     console.error("[queda] varredura falhou sem derrubar o ciclo:", e);
