@@ -9992,3 +9992,34 @@ Notas: [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]],
   caíram com 401 (aparelho desconectado da conta); a Carolini ficou sem
   motivo guardado. Nenhuma foi queda de internet. Para consultar:
   `motivo_queda_codigo` em `corretor_whatsapp_instancias`.
+
+## O estado do número só o servidor escreve (0175, 10/10/2026)
+
+Nota: [[estado-do-numero-so-o-servidor-escreve]].
+
+- **O corretor reescrevia a própria linha de `corretor_whatsapp_instancias`
+  pela API.** O `authenticated` tinha o grant padrão de tabela e a policy do
+  dono é `for all`: dava para zerar o contador do dia, apagar aquecimento,
+  disjuntor e espaçamento, voltar ao rodízio com a sessão caída, gravar um
+  `webhook_secret` (o webhook o aceita como senha da instância) ou trocar o
+  `instance_name` pelo de um colega. As 6 linhas estavam íntegras: nada
+  indica que o buraco tenha sido usado.
+- **Hoje a sessão lê e altera só a configuração da assistente** (10
+  colunas). A linha nasce, conecta e desconecta pela chave de serviço
+  (`whatsapp/acoes.ts`), depois de conferir a sessão. Guarda:
+  `estadoDoNumero.test.ts`.
+- **Upsert pela sessão não convive com grant por coluna** (faz UPDATE de toda
+  coluna enviada, inclusive a chave): salvar a configuração virou "linha pelo
+  servidor + update pela sessão". A linha que já existe mantém o nome da
+  instância, que precisa bater com a instância criada na Evolution.
+- **Esta migration foi aplicada DEPOIS do deploy**, ao contrário do normal:
+  ela tira um privilégio que o código antigo usava (o conectar gravava o
+  estado pela sessão e ignorava o erro).
+- **Conferido nos dois sentidos**: com a sessão de um corretor, numa
+  transação desfeita, a configuração atualiza 1 linha e contador,
+  `conectado_em`, `webhook_secret`, `instance_name` e insert são recusados;
+  o `anon` (que tinha SELECT de tabela) não lê mais nada; crons em 200 depois
+  da migração.
+- **Antes de fechar grant de uma tabela, procurar quem mais escreve nela no
+  banco** (`pg_proc.prosrc`, triggers, views): aqui todas as funções que
+  escrevem são `security definer` sem execute para o `authenticated`.

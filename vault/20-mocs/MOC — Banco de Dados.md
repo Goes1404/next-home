@@ -22,6 +22,7 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 - [[grant-por-coluna-em-leads]]
 - [[policy-sem-grant-nao-habilita-delete]]
 - [[papel-nunca-ganha-grant-update]]
+- [[estado-do-numero-so-o-servidor-escreve]] ⚠️ o corretor reescrevia contador, aquecimento, disjuntor e segredo do webhook do próprio número pela API; a sessão agora só altera a configuração da assistente (0175, 10/10)
 
 - [[o-site-publico-nao-vai-mais-ao-banco-por-requisicao]] — 0112: 27 policies com `(select auth.uid())` reescritas num bloco `do` a partir de `pg_policies`; 23 índices de FK (13/09)
 

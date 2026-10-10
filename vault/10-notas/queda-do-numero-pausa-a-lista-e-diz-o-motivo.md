@@ -89,9 +89,10 @@ lista, no dia seguinte à restrição.
 - **Ordem no arquivo da migration**: `sorteioDoPorteiro.test.ts` lê do
   `create or replace` do sorteio até o fim do arquivo. Por isso o sorteio é
   a última função da 0174.
-- Colunas de estado do número continuam com UPDATE de tabela para o
-  `authenticated` (o dono pode reescrever a própria linha pela API). Não
-  piorou nem melhorou com a 0174; fica registrado.
+- As colunas de estado desta nota (`aquecimento_desde`, `sessao_caida_em`,
+  `queda_tratada_em`, `motivo_queda_*`) estavam com UPDATE de tabela para o
+  `authenticated`: o dono podia reescrevê-las pela API. Fechado na 0175, ver
+  [[estado-do-numero-so-o-servidor-escreve]].
 
 ## Relacionadas
 - [[primeira-semana-em-producao]]
