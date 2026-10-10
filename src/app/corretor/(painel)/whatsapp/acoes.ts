@@ -7,6 +7,7 @@ import { sondarProvedor } from "@/lib/whatsapp/sonda";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import type { MotivoFalhaLlm } from "@/lib/whatsapp/llmTipos";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
@@ -216,25 +217,41 @@ export async function salvarConfiguracaoWhatsapp(params: {
     if (problema) return { erro: `${rotulo}: ${problema}` };
   }
 
+  /*
+   * Desde a 0175 a sessão do corretor só altera as colunas de configuração.
+   * A linha do número nasce pelo servidor: o nome da instância é o que liga
+   * o webhook da Evolution a ESTE corretor, e escolhido pelo navegador
+   * poderia ser o de um colega que ainda não conectou. Linha que já existe
+   * mantém o nome, porque é com ele que a instância foi criada na Evolution.
+   */
+  if (!atual) {
+    const { error: erroLinha } = await createServiceClient()
+      .from("corretor_whatsapp_instancias")
+      .upsert(
+        { corretor_id: corretor.id, instance_name: nomeInstanciaDe(corretor.slug) },
+        { onConflict: "corretor_id", ignoreDuplicates: true },
+      );
+    if (erroLinha) {
+      console.error("[whatsapp] não consegui criar a linha do número:", erroLinha.message);
+      return { erro: "Não foi possível salvar agora. Tente novamente." };
+    }
+  }
+
   const { data, error } = await supabase
     .from("corretor_whatsapp_instancias")
-    .upsert(
-      {
-        corretor_id: corretor.id,
-        instance_name: nomeInstanciaDe(corretor.slug),
-        nome_assistente: nome,
-        tom_voz: params.tomVoz,
-        palavras_entrada_cliente: frasesEntrada,
-        modo_bot: params.modoBot,
-        palavra_chave_ativacao: palavraChave,
-        palavra_chave_teste: palavraTeste,
-        expediente_inicio: expedienteInicio,
-        expediente_fim: expedienteFim,
-        regras_da_ia: regrasDaIa,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "corretor_id" },
-    )
+    .update({
+      nome_assistente: nome,
+      tom_voz: params.tomVoz,
+      palavras_entrada_cliente: frasesEntrada,
+      modo_bot: params.modoBot,
+      palavra_chave_ativacao: palavraChave,
+      palavra_chave_teste: palavraTeste,
+      expediente_inicio: expedienteInicio,
+      expediente_fim: expedienteFim,
+      regras_da_ia: regrasDaIa,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("corretor_id", corretor.id)
     .select("id");
 
   // Sem o `.select()` de conferência, uma policy que negasse a escrita
@@ -291,8 +308,13 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
     return { configurado: true, erro: resultado.detalhe || "Falha ao falar com o provedor." };
   }
 
-  const supabase = await createClient();
-  await supabase.from("corretor_whatsapp_instancias").upsert(
+  /*
+   * Estado da conexão é do servidor (0175): a sessão do corretor não altera
+   * status, carimbos nem o nome da instância. O corretor vem da sessão e o
+   * estado vem da resposta do provedor; nada aqui sai do navegador.
+   */
+  const servico = createServiceClient();
+  const { error: erroEstado } = await servico.from("corretor_whatsapp_instancias").upsert(
     {
       corretor_id: corretor.id,
       instance_name: instanceName,
@@ -305,6 +327,7 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
     },
     { onConflict: "corretor_id" },
   );
+  if (erroEstado) console.error("[whatsapp] não consegui gravar o estado da conexão:", erroEstado.message);
 
   /*
    * Carimba o marco do pareamento — é dele que sai a curva de aquecimento
@@ -318,7 +341,7 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
    * de um número que já vinha maduro.
    */
   if (resultado.jaConectado) {
-    await supabase
+    await servico
       .from("corretor_whatsapp_instancias")
       .update({ conectado_em: new Date().toISOString() })
       .eq("corretor_id", corretor.id)
@@ -417,8 +440,8 @@ export async function desconectarWhatsapp(): Promise<{ ok?: string; erro?: strin
     return { erro: resultado.detalhe || "Não foi possível desconectar agora. Tente novamente." };
   }
 
-  const supabase = await createClient();
-  await supabase
+  // Pela chave de serviço, como no conectar: estado da conexão é do servidor (0175).
+  const { error } = await createServiceClient()
     .from("corretor_whatsapp_instancias")
     .update({
       status_conexao: "desconectado",
@@ -428,6 +451,7 @@ export async function desconectarWhatsapp(): Promise<{ ok?: string; erro?: strin
       updated_at: new Date().toISOString(),
     })
     .eq("corretor_id", corretor.id);
+  if (error) console.error("[whatsapp] não consegui gravar a desconexão:", error.message);
 
   revalidatePath("/corretor/whatsapp");
   // Desconectar por vontade própria também muda a faixa do layout.
